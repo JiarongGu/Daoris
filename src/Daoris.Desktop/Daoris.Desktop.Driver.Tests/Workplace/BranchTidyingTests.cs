@@ -4,9 +4,9 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// AUTOTIDY1 (D88's note): which session branches the look's own tidy takes without a press, what it says of each, and how
+/// Which session branches the look's own tidy takes without a press, what it says of each, and how
 /// often. The decision reads the clean-up's own judgement (<see cref="SweepItem"/>); every kind the press clears goes by itself
-/// behind the look's guards (AUTOTIDY2a), and the rest stay a press. Nothing here starts a process: the git half is
+/// behind the look's guards, and the rest stay a press. Nothing here starts a process: the git half is
 /// <see cref="BranchTidyingProcessTests"/>'.
 /// </summary>
 public sealed class BranchTidyingTests : IDisposable
@@ -37,21 +37,21 @@ public sealed class BranchTidyingTests : IDisposable
     public static TheoryData<string, At, int, bool, bool, bool> Table => new()
     {
         // Nothing beyond the line: with no tree it goes, whether or not it ever made a commit (a start's failed open left
-        // sixteen such, FG5).
+        // sixteen such).
         { SweepKind.Empty, At.None, 0, false, false, true },
         { SweepKind.Empty, At.None, 0, false, true, true },
-        // With its tree, it goes once its work reached the line and the tree holds nothing at all: the row's own case, a pull
+        // With its tree, it goes once its work reached the line and the tree holds nothing at all: a pull
         // request merged.
         { SweepKind.Empty, At.Home, 0, false, true, true },
-        // A tree whose branch never moved is a conversation's place, which words to its session go on in (D137): the press's.
+        // A tree whose branch never moved is a conversation's place, which words to its session go on in: the press's.
         { SweepKind.Empty, At.Home, 0, false, false, false },
-        // An ignored path the checkout also holds goes with the tree, moved aside for fourteen days (AUTOTIDY2a).
+        // An ignored path the checkout also holds goes with the tree, moved aside for fourteen days.
         { SweepKind.Empty, At.Home, 2, false, true, true },
         // A tree a person checked the branch out in is the person's, whatever it holds.
         { SweepKind.Empty, At.Outside, 0, false, true, false },
         // What git could not read keeps it.
         { SweepKind.Empty, At.Home, 0, true, true, false },
-        // AUTOTIDY2a: every other kind the press clears goes too, behind the same guards: landed (ancestry, or content after a
+        // Every other kind the press clears goes too, behind the same guards: landed (ancestry, or content after a
         // squash) and carried by a completed pull request.
         { SweepKind.Landed, At.None, 0, false, false, true },
         { SweepKind.Landed, At.Home, 0, false, true, true },
@@ -81,7 +81,7 @@ public sealed class BranchTidyingTests : IDisposable
             IgnoredShared = ignoredShared,
             Unread = unread,
             Worked = worked,
-            // A landed row here is the line's: its work is on the line itself (AUTOTIDY2a's wait is the next theory's).
+            // A landed row here is the line's: its work is on the line itself (the wait for the line is the next theory's).
             OnLine = kind == SweepKind.Landed,
         };
 
@@ -89,7 +89,7 @@ public sealed class BranchTidyingTests : IDisposable
     }
 
     /// <summary>
-    /// AUTOTIDY2a: a landed branch goes by itself only once its work is on the line. Landed only on another branch of the
+    /// A landed branch goes by itself only once its work is on the line. Landed only on another branch of the
     /// person's (the branch Accept's landing made, one the person pushed), its pull request still open, the person may still say
     /// words to its session in its own tree: the look waits for the line, and the press may take it earlier by the person's choice.
     /// </summary>
@@ -111,9 +111,9 @@ public sealed class BranchTidyingTests : IDisposable
     }
 
     /// <summary>
-    /// TREEFOLLOW1: an agent that moved its tree onto a branch of its own leaves the session branch behind, which no tree has out.
+    /// An agent that moved its tree onto a branch of its own leaves the session branch behind, which no tree has out.
     /// Empty it goes (the tree stays, on its branch), and the report says where the work is; carried it goes as the press would
-    /// take it (AUTOTIDY2a); landed on the tree's own branch, which the line does not hold yet, it waits for the line; holding
+    /// take it; landed on the tree's own branch, which the line does not hold yet, it waits for the line; holding
     /// commits no branch of the person's holds it stays.
     /// </summary>
     [Theory]
@@ -141,7 +141,7 @@ public sealed class BranchTidyingTests : IDisposable
         Assert.Contains("\"on\":\"feature/x\"", Assert.Single(LogLines()), StringComparison.Ordinal);
     }
 
-    /// <summary>TREEFOLLOW1: the tree's current branch is an additive field of the ledger's entry, kept as written and absent when unset.</summary>
+    /// <summary>The tree's current branch is an additive field of the ledger's entry, kept as written and absent when unset.</summary>
     [Fact]
     public void The_ledger_keeps_the_branch_a_tree_moved_onto_beside_where_the_session_branch_grew_from()
     {
@@ -158,7 +158,7 @@ public sealed class BranchTidyingTests : IDisposable
     }
 
     /// <summary>
-    /// A squash merge's branch landed by content on the line goes by itself as the press takes it (AUTOTIDY2a), its commits kept
+    /// A squash merge's branch landed by content on the line goes by itself as the press takes it, its commits kept
     /// on a ref of their own by the press's one path; a tree whose branch never moved stays the press's, as an empty one's does;
     /// and work a cherry-pick put on another branch of the person's waits for the line.
     /// </summary>
@@ -179,7 +179,7 @@ public sealed class BranchTidyingTests : IDisposable
     }
 
     /// <summary>
-    /// AUTOTIDY2a: a removal says why its kind let it go, as the clean-up's list words the kind: landed on a branch of the
+    /// A removal says why its kind let it go, as the clean-up's list words the kind: landed on a branch of the
     /// person's, landed by content with where its commits are kept, or carried by a completed pull request. The log names the
     /// kind, and the ref a content-held removal kept its commits on, which holds no path.
     /// </summary>
@@ -218,9 +218,9 @@ public sealed class BranchTidyingTests : IDisposable
     }
 
     /// <summary>
-    /// AUTOTIDY2b: a branch a landing made, taken by the look, is said in the report by its name and what proved its work is on
+    /// A branch a landing made, taken by the look, is said in the report by its name and what proved its work is on
     /// the line, and in the machine log by its session alone: its name, and the ref its commits are kept on, carry the title's
-    /// words, which the log never holds (the machine-log design §5). A removal that did not happen is said once, as a session
+    /// words, which the log never holds. A removal that does not happen is said once, as a session
     /// branch's is.
     /// </summary>
     [Fact]
@@ -270,7 +270,7 @@ public sealed class BranchTidyingTests : IDisposable
         Assert.Contains("\"branch\":null,\"why\":\"refused\",\"session\":\"s5\"", lines[4], StringComparison.Ordinal);
     }
 
-    /// <summary>What holds a whole repository holds every session branch in it now, not only the empty ones (AUTOTIDY2a).</summary>
+    /// <summary>What holds a whole repository holds every session branch in it, not only the empty ones.</summary>
     [Fact]
     public void A_repository_held_says_its_session_branches_stay()
     {
@@ -306,7 +306,7 @@ public sealed class BranchTidyingTests : IDisposable
     }
 
     /// <summary>
-    /// KEEP1d: the report's two readers of the set-aside days, a tree's folder and a stray folder moved aside, say the days the person set
+    /// The report's two readers of the set-aside days, a tree's folder and a stray folder moved aside, say the days the person set
     /// in <c>driver.json</c>'s <c>keep</c>, read through the one effective policy.
     /// </summary>
     [Fact]
@@ -332,7 +332,7 @@ public sealed class BranchTidyingTests : IDisposable
     }
 
     /// <summary>
-    /// AUTOTIDY2c: a folder under the trees that git knows no tree in, moved aside, is said with where it went, and logged as
+    /// A folder under the trees that git knows no tree in, moved aside, is said with where it went, and logged as
     /// <c>branch.tidied</c> with no branch, <c>tree</c> true, the folder it went to from the home, and <c>kind</c> <c>stray</c>.
     /// </summary>
     [Fact]
@@ -357,7 +357,7 @@ public sealed class BranchTidyingTests : IDisposable
     }
 
     /// <summary>
-    /// OPENCUT1: a tree whose opening was cut off, moved aside with its branch removed, is said by its branch and why its lock was
+    /// A tree whose opening is cut off, moved aside with its branch removed, is said by its branch and why its lock is
     /// a cut-off opening's, and logged as <c>branch.tidied</c> with that branch and <c>kind</c> <c>opening</c>.
     /// </summary>
     [Fact]
@@ -377,7 +377,7 @@ public sealed class BranchTidyingTests : IDisposable
             [$"tidy  engine: removed `daoris/s-0031408d`, whose tree's opening was cut off: git's own lock from the start of its add was left on it; "
              + $"its tree's folder was moved aside to {aside}, and goes once it is left untouched for 14 days."],
             said);
-        // The folder said relative to the home: under `work/trees/` in a new home (HOMELAYOUT3).
+        // The folder said relative to the home: under `work/trees/` in a new home.
         Assert.Contains(
             "\"branch\":\"daoris/s-0031408d\",\"tree\":true,\"folder\":\"work/trees/.tidied/default/engine/s-0031408d-20261009T090000000Z\","
             + "\"on\":null,\"kind\":\"opening\",\"kept\":null",
@@ -407,8 +407,8 @@ public sealed class BranchTidyingTests : IDisposable
     }
 
     /// <summary>
-    /// OPENCUT1: a lock is an opening cut off only where it is git's own from an add, or Daoris's naming a process that no longer
-    /// runs; a person's lock, with any other reason or none, never is.
+    /// A lock is an opening cut off only where it is git's own from an add, or Daoris's naming a process that does not
+    /// run; a person's lock, with any other reason or none, never is.
     /// </summary>
     [Theory]
     [InlineData(TreeOpenings.GitsOwn, false, true)]
@@ -468,8 +468,8 @@ public sealed class BranchTidyingTests : IDisposable
     }
 
     /// <summary>
-    /// Each path that keeps a branch as <c>unread</c> logs which one it was as a code (AUTOTIDY1a2), so the page can word why; the
-    /// sentence, with its folder, stays the console's, never the log's data (D47 §4).
+    /// Each path that keeps a branch as <c>unread</c> logs which one it is as a code, so the page can word why; the
+    /// sentence, with its folder, stays the console's, never the log's data.
     /// </summary>
     [Theory]
     [InlineData(TidyCause.Folder)]
@@ -566,7 +566,7 @@ public sealed class BranchTidyingTests : IDisposable
 
     /// <summary>
     /// Every other branch the look judged and kept (dirty, in use, commits no branch of the person's holds) is the press's, and
-    /// says nothing: the look now judges every session branch (AUTOTIDY2a), and most of them are these.
+    /// says nothing: the look judges every session branch, and most of them are these.
     /// </summary>
     [Fact]
     public void A_branch_kept_for_what_it_holds_says_nothing()
@@ -612,7 +612,7 @@ public sealed class BranchTidyingTests : IDisposable
     }
 
     /// <summary>
-    /// 🔴 GITLOCK2: a writer of the checkout waits for the newest part of an open quest only while it will go on, never for one completed,
+    /// A writer of the checkout waits for the newest part of an open quest only while it will go on, never for one completed,
     /// declined or failed with no limit; the tree-keeping set (<see cref="BranchTidying.LineTrees"/>) counts them all.
     /// </summary>
     [Theory]
@@ -635,7 +635,7 @@ public sealed class BranchTidyingTests : IDisposable
         Assert.Equal(waits ? new[] { "/trees/s1" } : [], BranchTidying.LineWaiters(records, quests));
     }
 
-    /// <summary>🔴 GITLOCK2: a repository held by a writer of its checkout is said as that writer, never as a session starting.</summary>
+    /// <summary>A repository held by a writer of its checkout is said as that writer, never as a session starting.</summary>
     [Fact]
     public void A_repository_held_by_a_writer_is_said_as_that_writer()
     {
@@ -663,8 +663,8 @@ public sealed class BranchTidyingTests : IDisposable
     }
 
     /// <summary>
-    /// A review step in progress (REVIEWENV1d) keeps the tree it shows from: a build's folder served in it, or the tree a set-up
-    /// waiting for the person was said from, counts as a session in use, whichever of its folders is named.
+    /// A review step in progress keeps the tree it shows from: a build's folder served in it, or the tree a set-up
+    /// waiting for the person is said from, counts as a session in use, whichever of its folders is named.
     /// </summary>
     [Fact]
     public void A_tree_a_review_shows_from_is_in_use_whatever_folder_of_it_is_named()
@@ -702,8 +702,8 @@ public sealed class BranchTidyingTests : IDisposable
     }
 
     /// <summary>
-    /// AUTOTIDY2d: a record that ended with the person's words still waiting on it names its tree, which the next loop goes on
-    /// in (MSG1b, D137 §2.2); an ended record with none, and a running one (the active list's), name none here.
+    /// A record that ended with the person's words still waiting on it names its tree, which the next loop goes on
+    /// in; an ended record with none, and a running one (the active list's), name none here.
     /// </summary>
     [Fact]
     public async Task A_record_ended_with_words_waiting_names_its_tree()
@@ -720,7 +720,7 @@ public sealed class BranchTidyingTests : IDisposable
     }
 
     /// <summary>
-    /// TREEKEEPRETRY1 (the owner's report, 2026-10-31): a tree is judged by every session of its quest, so the newest retry of a quest
+    /// A tree is judged by every session of its quest, so the newest retry of a quest
     /// still open holds the tree its line runs in, though that retry ended waiting on a limit and the run that opened the tree ended long
     /// ago; once the quest closes, nothing holds it.
     /// </summary>
@@ -746,10 +746,10 @@ public sealed class BranchTidyingTests : IDisposable
     }
 
     /// <summary>
-    /// 🔴 HELPERWAIT1 (Codex's #5 on COWORKUX1): a session that ended waiting on its own helper keeps its tree from the tidy while its quest is
-    /// still taken, since it goes on there with the answer or parks for the person; one that ended any other way never did.
-    /// 🔴 HELPERWAIT1b (Codex's round-3 #3): its ask refused and its move back to the person failed, it is still completed and waiting, with
-    /// no ask open: it keeps its tree until that move lands (then it is active), it goes on, or its quest is no longer taken, as the
+    /// A session that ended waiting on its own helper keeps its tree from the tidy while its quest is
+    /// still taken, since it goes on there with the answer or parks for the person; one that ended any other way does not.
+    /// Where its ask is refused and its move back to the person fails, it is still completed and waiting, with
+    /// no ask open: it keeps its tree until that move lands (then it is active), it goes on, or its quest is not taken, as the
     /// service's holder reads it (<c>SessionLedger.HolderAsync</c>), never on an ask being open.
     /// </summary>
     [Fact]
@@ -791,8 +791,8 @@ public sealed class BranchTidyingTests : IDisposable
     }
 
     /// <summary>
-    /// 🔴 TREEGONE2 (the owner's report, 2026-11-03): the tidy took a finished session's empty tree four minutes after the person's last word
-    /// to it, and their next word could not go on there. A session the person spoke to within <see cref="BranchTidying.SpokenWithin"/> keeps
+    /// A finished session's empty tree must not go four minutes after the person's last word
+    /// to it, or their next word could not go on there. A session the person spoke to within <see cref="BranchTidying.SpokenWithin"/> keeps
     /// its tree from the look's tidy, though its quest closed and nothing waits on it; past that, or where only Daoris's words were said to
     /// it, it holds nothing.
     /// </summary>
@@ -829,7 +829,7 @@ public sealed class BranchTidyingTests : IDisposable
         Assert.Empty(await ReviewServed.ReviewingAsync(null, ledger.Client(), CancellationToken.None));
     }
 
-    /// <summary>A browser's half that serves what it was handed, and opens nothing.</summary>
+    /// <summary>A browser's half that serves what it is handed, and opens nothing.</summary>
     private sealed class ServingTabs(params ReviewServe[] serving) : IReviewTabs
     {
         public IReadOnlyList<ReviewServe> Serving => serving;
@@ -846,7 +846,7 @@ public sealed class BranchTidyingTests : IDisposable
     private static SweepItem Item(string branch, string? tree = null) =>
         new("engine", "default", branch, tree, SweepKind.Empty, 0, "main", null);
 
-    /// <summary>A branch a landing made, as the landed group's judgement leaves it (AUTOTIDY2b).</summary>
+    /// <summary>A branch a landing made, as the landed group's judgement leaves it.</summary>
     private static LandedItem Landing(string branch, string kind, string where) =>
         new("engine", "default", branch, kind, where, [], null, null, 1);
 

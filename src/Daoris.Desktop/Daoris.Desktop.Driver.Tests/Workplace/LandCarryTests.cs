@@ -3,7 +3,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// LANDBACK1 (D87's note): the carry-on's words and the kept yes. A done quest's carry-on in the run is no Accept, and the kept yes
+/// The carry-on's words and the kept yes. A done quest's carry-on in the run is no Accept, and the kept yes
 /// counts, restarts and is taken back as the performer's carry-on needs.
 /// </summary>
 /// <remarks>Real git in a scratch repository.</remarks>
@@ -14,7 +14,7 @@ public sealed class LandCarryTests : LandedFixture
     private static readonly DateTimeOffset Pressed = new(2026, 10, 30, 1, 0, 0, TimeSpan.Zero);
 
     /// <summary>
-    /// LANDBACK1 part 2: a done quest's carry-on in the run is no Accept. It keeps no <see cref="CarriedAccepts"/> entry, which is the
+    /// A done quest's carry-on in the run is no Accept. It keeps no <see cref="CarriedAccepts"/> entry, which is the
     /// person's yes and would make the later landing read accepted by them; its words are its own.
     /// </summary>
     [Fact]

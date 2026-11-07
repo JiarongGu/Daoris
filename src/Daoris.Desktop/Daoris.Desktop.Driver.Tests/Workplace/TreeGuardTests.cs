@@ -6,8 +6,8 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// The tree guard (PERM3): a PreToolUse hook Daoris ships, refusing a file write outside the session's
-/// own tree — the one boundary a permission rule cannot say (design §3).
+/// The tree guard: a PreToolUse hook Daoris ships, refusing a file write outside the session's
+/// own tree — the one boundary a permission rule cannot say.
 /// </summary>
 /// <remarks>
 /// <para>The hook is a node script, because it runs inside every session on the harness's side of the
@@ -15,7 +15,7 @@ namespace Daoris.Desktop.Driver.Tests;
 /// hook as a REAL process reading the harness's JSON on stdin and answering on stdout.</para>
 ///
 /// <para>🔴 It refuses STRUCTURALLY — `permissionDecision: "deny"` on stdout with exit 0 — never by an
-/// exit code. HELP3's probe 4 saw PowerShell 5.1 collapse a native exit code, and the harness reads any
+/// exit code. PowerShell 5.1 collapses a native exit code, and the harness reads any
 /// exit but 2 as a non-blocking error: a guard that failed by exiting would let the write through.</para>
 /// </remarks>
 [Trait(Category.Name, Category.Process)]
@@ -157,7 +157,7 @@ public sealed class TreeGuardTests : IDisposable
     }
 
     /// <summary>
-    /// D107: a declared write target is one more argument after the tree. A write there gets no decision, as
+    /// A declared write target is one more argument after the tree. A write there gets no decision, as
     /// one in the tree does, and a write anywhere else is still refused, naming what the session may write.
     /// </summary>
     [Fact]
@@ -188,7 +188,7 @@ public sealed class TreeGuardTests : IDisposable
         Assert.Empty(TreeGuard.For(_home, _home).Also);
     }
 
-    // ——— A shell's writes (TREESHELL1): the targets it can read, judged as an edit tool's path is.
+    // ——— A shell's writes: the targets it can read, judged as an edit tool's path is.
 
     /// <summary>
     /// Each form the guard reads, aimed outside the tree and inside it. The outside one is refused in the guard's own
@@ -234,7 +234,7 @@ public sealed class TreeGuardTests : IDisposable
         Assert.Equal("", allowed.Output.Trim());
     }
 
-    /// <summary>A <c>mv</c> takes its source out of where it was: a source outside the tree is a delete there.</summary>
+    /// <summary>A <c>mv</c> takes its source out of where it sits: a source outside the tree is a delete there.</summary>
     [Fact]
     public async Task A_move_out_of_a_source_outside_the_tree_is_refused_too()
     {
@@ -476,8 +476,8 @@ public sealed class TreeGuardTests : IDisposable
     }
 
     /// <summary>
-    /// 🔴 REV3: a link whose target does not exist YET fails to resolve like a missing file, so the walk
-    /// treated it as a plain name and judged the write inside — and the write went through it, out of
+    /// 🔴 A link whose target does not exist YET fails to resolve like a missing file, so a walk
+    /// treating it as a plain name would judge the write inside — and the write would go through it, out of
     /// the tree, creating the target. A dangling link is followed, not climbed past.
     /// </summary>
     [Fact]
@@ -534,7 +534,7 @@ public sealed class TreeGuardTests : IDisposable
     /// <summary>The hook exactly as the harness runs it: exec form, the tree as one argument, JSON on stdin.</summary>
     private Task<(int Code, string Output)> Hook(string? tree, string stdin) => HookWith(tree is null ? [] : [tree], stdin);
 
-    /// <summary>The same, with the tree and each declared target as one argument each (D107).</summary>
+    /// <summary>The same, with the tree and each declared target as one argument each.</summary>
     private async Task<(int Code, string Output)> HookWith(IReadOnlyList<string> trees, string stdin)
     {
         var script = TreeGuard.Install(_home);

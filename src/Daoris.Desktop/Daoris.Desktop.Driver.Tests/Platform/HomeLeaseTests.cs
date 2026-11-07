@@ -6,9 +6,9 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// 🔴 HOMELEASE1 (the terminal RPC design §5): one instance per install was not one writer per home. A verb acting alone, the
-/// first-start migration and the launcher's swap took no lock, and two paths to one folder were two homes to every check. The
-/// driver's lock grew into the home's lease, which every writer takes, by any path to the folder.
+/// 🔴 One instance per install is not one writer per home. A verb acting alone, the first-start migration and the
+/// launcher's swap take the home's lease like every other writer, by any path to the folder, and two paths to one folder
+/// are one home to every check.
 /// </summary>
 /// <remarks>
 /// A lease naming THIS test process is a live holder as far as any taker can tell — which is what a holder elsewhere on the
@@ -40,7 +40,7 @@ public sealed class HomeLeaseTests : IDisposable
 
     /// <summary>
     /// A lease by hand, as another holder writes it: the file is the contract (twins.md). At the place this build takes it, or,
-    /// <paramref name="older"/>, where a build from before HOMELAYOUT3 took it; an older build's <c>driver.lock</c> is at its old place.
+    /// <paramref name="older"/>, where a build from before the home layout took it; an older build's <c>driver.lock</c> is at its old place.
     /// </summary>
     private void Plant(string kind, int? pid = null, long? started = null, string? what = null, string file = HomeLease.FileName, bool older = false)
     {
@@ -58,7 +58,7 @@ public sealed class HomeLeaseTests : IDisposable
     }
 
     /// <summary>
-    /// 🔴 HOMELAYOUT3: the lease is taken at the home's <c>home-lease</c> entry's new place, <c>run/home.lease</c>, its folder made;
+    /// 🔴 The lease is taken at the home's <c>home-lease</c> entry's new place, <c>run/home.lease</c>, its folder made;
     /// a live lease at the old place, a build's from before the switch, still holds the home; and a stale one there is left where it
     /// is. Every spelling of an install (its folder, its <c>data/</c>) meets the one lease.
     /// </summary>
@@ -185,8 +185,8 @@ public sealed class HomeLeaseTests : IDisposable
     }
 
     /// <summary>
-    /// 🔴 A verb's wait (§5): another verb holds the home, so this one waits up to its thirty seconds, looking again, and then is
-    /// refused with the sentence naming which verb holds it. Nothing was done.
+    /// 🔴 A verb's wait: another verb holds the home, so this one waits up to its thirty seconds, looking again, and then is
+    /// refused with the sentence naming which verb holds it. Nothing is done.
     /// </summary>
     [Fact]
     public void A_verb_waits_for_another_verbs_hold_then_says_which_verb_holds_it()
@@ -221,8 +221,8 @@ public sealed class HomeLeaseTests : IDisposable
     }
 
     /// <summary>
-    /// A verb finding an instance's lease acts beside it, holding nothing, as verbs always have: until RPC1's pipe makes it that
-    /// instance's client, a refusal there would take the terminal's door away. Letting go leaves the instance's lease.
+    /// A verb finding an instance's lease acts beside it, holding nothing: a refusal there
+    /// would take the terminal's door away. Letting go leaves the instance's lease.
     /// </summary>
     [Fact]
     public void A_verb_runs_beside_an_instance_and_leaves_its_lease()
@@ -276,7 +276,7 @@ public sealed class HomeLeaseTests : IDisposable
     }
 
     /// <summary>
-    /// An older build's <c>driver.lock</c> still holds the home while its holder lives, so a desktop from before HOMELEASE1 is a
+    /// An older build's <c>driver.lock</c> still holds the home while its holder lives, so a desktop from before the lease is a
     /// holder to this one; a stale one is ignored and left where it is.
     /// </summary>
     [Fact]

@@ -3,7 +3,7 @@ using Daoris.Driver;
 
 namespace Daoris.Desktop.Driver.Tests;
 
-/// <summary>READSHARE1: each reader of a record AtomicFile moves into place reads it while the move still holds it (MoveHold).</summary>
+/// <summary>Each reader of a record AtomicFile moves into place reads it while the move still holds it (MoveHold).</summary>
 public sealed class ReadShareSessionTests : IDisposable
 {
     private readonly string _home = Path.Combine(TestHomes.Root, "daoris-readshare-sessions-" + Guid.NewGuid().ToString("N")[..8]);
@@ -28,7 +28,7 @@ public sealed class ReadShareSessionTests : IDisposable
         return path;
     }
 
-    /// <summary>READSHARE1: <see cref="ClaudeLineageHook.Install"/> keeps a held script that is as shipped, reading it beside its move.</summary>
+    /// <summary><see cref="ClaudeLineageHook.Install"/> keeps a held script that is as shipped, reading it beside its move.</summary>
     [Fact]
     public void A_held_lineage_script_as_shipped_is_kept_while_its_move_into_place_still_holds_it()
     {
@@ -48,7 +48,7 @@ public sealed class ReadShareSessionTests : IDisposable
         Assert.Equal(ClaudeLineageHook.Source, File.ReadAllText(path));
     }
 
-    /// <summary>READSHARE1: <see cref="SessionProcesses.AnyAlive"/> reads a held marker, so one naming a process gone is none alive.</summary>
+    /// <summary><see cref="SessionProcesses.AnyAlive"/> reads a held marker, so one naming a process gone is none alive.</summary>
     [Fact]
     public void A_marker_is_read_as_no_process_while_its_move_into_place_still_holds_it()
     {
@@ -64,7 +64,7 @@ public sealed class ReadShareSessionTests : IDisposable
         }
     }
 
-    /// <summary>READSHARE1: <see cref="SessionProcesses.OpenerWent"/> reads a held opener's mark, so an opener gone is told gone.</summary>
+    /// <summary><see cref="SessionProcesses.OpenerWent"/> reads a held opener's mark, so an opener gone is told gone.</summary>
     [Fact]
     public void An_openers_mark_is_read_while_its_move_into_place_still_holds_it()
     {
@@ -79,7 +79,7 @@ public sealed class ReadShareSessionTests : IDisposable
         }
     }
 
-    /// <summary>READSHARE1: <see cref="HeldWordsFile.Forget"/> reads the held words beside the move that put them in place.</summary>
+    /// <summary><see cref="HeldWordsFile.Forget"/> reads the held words beside the move that put them in place.</summary>
     [Fact]
     public void Held_words_are_forgotten_while_their_move_into_place_still_holds_them()
     {
@@ -99,7 +99,7 @@ public sealed class ReadShareSessionTests : IDisposable
         Assert.False(File.Exists(path));
     }
 
-    /// <summary>READSHARE1: <see cref="SessionArchive.Marks"/> reads the archive marks while their move into place still holds them.</summary>
+    /// <summary><see cref="SessionArchive.Marks"/> reads the archive marks while their move into place still holds them.</summary>
     [Fact]
     public void Archive_marks_are_read_while_their_move_into_place_still_holds_them()
     {
@@ -118,7 +118,7 @@ public sealed class ReadShareSessionTests : IDisposable
         Assert.Equal(at, Assert.Single(marks, mark => mark.Key == "done").Value);
     }
 
-    /// <summary>READSHARE1: <see cref="SessionRequests.Pending"/> reads a request while the move that put it in place still holds it.</summary>
+    /// <summary><see cref="SessionRequests.Pending"/> reads a request while the move that put it in place still holds it.</summary>
     [Fact]
     public void A_pending_request_is_read_while_its_move_into_place_still_holds_it()
     {
@@ -140,7 +140,7 @@ public sealed class ReadShareSessionTests : IDisposable
     }
 
     /// <summary>
-    /// READSHARE1's one exception (REQTAKE1): a take reads what it moved aside without sharing its deletion, since a hold on it is
+    /// The one exception: a take reads what it moved aside without sharing its deletion, since a hold on it is
     /// another loop's rename about to move it on. Held, it is put back unread and not taken, and the next look takes it.
     /// </summary>
     [Fact]
@@ -163,7 +163,7 @@ public sealed class ReadShareSessionTests : IDisposable
         Assert.Equal(("s1", SessionMove.Finish, true), requests.Take("s1") is { } again ? (again.Session, again.Move, again.Parked) : default);
     }
 
-    /// <summary>READSHARE1: <see cref="SessionRequests.AnswerOf"/> reads a say's answer while the move that put it in place still holds it.</summary>
+    /// <summary><see cref="SessionRequests.AnswerOf"/> reads a say's answer while the move that put it in place still holds it.</summary>
     [Fact]
     public void A_says_answer_is_read_while_its_move_into_place_still_holds_it()
     {
@@ -186,7 +186,7 @@ public sealed class ReadShareSessionTests : IDisposable
     }
 
     /// <summary>
-    /// READSHARE1: <see cref="PressesTold.Drop"/> reads a told press's moment while its move into place still holds it, so one nobody
+    /// <see cref="PressesTold.Drop"/> reads a told press's moment while its move into place still holds it, so one nobody
     /// took in time is removed; unread, it would be judged by its file's own fresh time and kept.
     /// </summary>
     [Fact]
@@ -207,7 +207,7 @@ public sealed class ReadShareSessionTests : IDisposable
         Assert.False(File.Exists(path));
     }
 
-    /// <summary>READSHARE1: <see cref="SessionChecks.Held"/> and <see cref="SessionChecks.HeldMinutes"/> read the kept checks beside their move.</summary>
+    /// <summary><see cref="SessionChecks.Held"/> and <see cref="SessionChecks.HeldMinutes"/> read the kept checks beside their move.</summary>
     [Fact]
     public void A_sessions_kept_checks_are_read_while_their_move_into_place_still_holds_them()
     {

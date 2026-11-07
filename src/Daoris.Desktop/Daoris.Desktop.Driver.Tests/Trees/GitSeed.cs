@@ -5,8 +5,8 @@ using System.Text.RegularExpressions;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// A repository shape built once per test run and copied per test (PROC1h): making a repository (<c>init</c>, <c>config</c>,
-/// the first commit, <c>remote add</c>, the first push) was about half of the fixtures' own git, and every test made the same one.
+/// A repository shape built once per test run and copied per test: making a repository (<c>init</c>, <c>config</c>,
+/// the first commit, <c>remote add</c>, the first push) is about half of the fixtures' own git, and every test would make the same one.
 /// </summary>
 /// <remarks>
 /// A seed is built by the fixture's own steps in a folder under the run's own scratch (<c>_fixtures/seeds/&lt;run&gt;</c>,
@@ -41,8 +41,8 @@ internal static class GitSeed
     }
 
     /// <summary>
-    /// The run folders under <paramref name="seeds"/> whose host no longer runs, removed (OVERVIEWNOISE1a): a host killed at a
-    /// session's timeout never reaches its exit, and its folder stayed, a scratch repository that kept a landed session's tree from
+    /// The run folders under <paramref name="seeds"/> whose host no longer runs, removed: a host killed at a
+    /// session's timeout never reaches its exit, and its folder stays, a scratch repository that keeps a landed session's tree from
     /// the tidy. A folder is a run's by its name, the host's process id then a dash; one whose host still runs (another run in this
     /// checkout, at once) is left, as is any folder not named so. One something still holds is left for a later run's sweep.
     /// </summary>
@@ -84,7 +84,7 @@ internal static class GitSeed
         })).Value;
 
     /// <summary>
-    /// The repository most git classes make (PROCSPEED1b): on <c>main</c>, its identity in its config, and one commit named
+    /// The repository most git classes make: on <c>main</c>, its identity in its config, and one commit named
     /// <c>first</c> holding <c>README.md</c>, <c># name</c>. A copy of the run's seed of <paramref name="name"/> as <paramref name="root"/>,
     /// five git starts a test fewer; its first commit is the seed's, so a test that reads a fresh repository's commit ids or times
     /// builds its own (<see cref="BuildPlainAsync"/>).
@@ -110,7 +110,7 @@ internal static class GitSeed
     }
 
     /// <summary>
-    /// A test repository's git starts no second git behind a commit, a merge, a fetch or a push it receives (PROCSPEED1b): git runs
+    /// A test repository's git starts no second git behind a commit, a merge, a fetch or a push it receives: git runs
     /// <c>maintenance run --auto</c> as a process of its own after each (and a bare repository's push after <c>receive.autogc</c>),
     /// which in a test's repository only looks and finds nothing to do, its thresholds being thousands of objects, yet is a start like
     /// any other: 107 of the 3,023 git starts in the slowest test of each of fifteen slow git classes. Set in the repository's own config, so the
@@ -143,11 +143,10 @@ internal static class GitSeed
     }
 
     /// <summary>
-    /// A scratch folder of repositories removed whole (PROCSPEED1): git writes its objects read-only, a copy keeps that, and
+    /// A scratch folder of repositories removed whole: git writes its objects read-only, a copy keeps that, and
     /// <c>Directory.Delete</c> refuses a read-only file on Windows, so each file is made writable first, as <c>GitTree</c>'s cleanup
     /// does. A link is never walked into, so nothing it points at outside the folder changes. A file something still holds (a
-    /// process a test started, a scanner) is waited for, 12 tries a quarter second apart (SCRATCHLEAK1, as the landing fixtures
-    /// already waited); the last refusal is thrown, as <c>Directory.Delete</c> throws it.
+    /// process a test started, a scanner) is waited for, 12 tries a quarter second apart; the last refusal is thrown, as <c>Directory.Delete</c> throws it.
     /// </summary>
     /// <param name="folder">The scratch folder to remove.</param>
     /// <param name="retry">A test's synchronous control at a refused attempt before the next one; otherwise wait a quarter second.</param>
@@ -188,7 +187,7 @@ internal static class GitSeed
     }
 
     /// <summary>
-    /// A <see cref="Remove"/> whose last refusal is let go (SCRATCHLEAK1): what a test's <c>Dispose</c> calls, so a straggler's hold
+    /// A <see cref="Remove"/> whose last refusal is let go: what a test's <c>Dispose</c> calls, so a straggler's hold
     /// on a file leaves the folder for a later clear and never fails the test that has already passed.
     /// </summary>
     public static void Discard(string folder)
@@ -207,7 +206,7 @@ internal static class GitSeed
     public static string RepoRoot() => RootFrom(AppContext.BaseDirectory);
 
     /// <summary>
-    /// The nearest folder at or above <paramref name="start"/> with a <c>.git</c>, a directory or a file (SCRATCHLEAK1): a linked
+    /// The nearest folder at or above <paramref name="start"/> with a <c>.git</c>, a directory or a file: a linked
     /// worktree's <c>.git</c> is a file, and a walk that wanted a directory passed it into the main checkout's folder.
     /// </summary>
     public static string RootFrom(string start)

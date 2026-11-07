@@ -3,7 +3,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// SESSCTX1f (D189's SESSCTX1f note; the session-context design §3.5): a session's event file is the contract between this writer and
+/// A session's event file is the contract between this writer and
 /// the service's <c>LineEvents</c>, which the connector's <c>line_read</c> pages a line's history with and which shares no code with it,
 /// so each side holds the shape. Here, the file as <see cref="SessionEvents.Append"/> writes it; the service's suite
 /// (<c>LineEventsShapeTests</c>) reads the same text, line for line.

@@ -4,7 +4,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// FOUNDATION1 w (the foundation design §2.7, Part B's row w): the catalogue of working roles read beside, the seed per id, each id read as
+/// The catalogue of working roles read beside, the seed per id, each id read as
 /// absent, set, removed or unreadable, and a role found by work and place. Nothing reads the catalogue: no start, screen or verb changes.
 /// </summary>
 public sealed class RoleCatalogTests : IDisposable
@@ -205,7 +205,7 @@ public sealed class RoleCatalogTests : IDisposable
     {
         var catalog = RoleCatalog.Of([new("intake", "removed", "{}", 2)]);
 
-        // FOUNDATION1y-i: no role is not off; the work's starts hold until the person gives it one.
+        // No role is not off; the work's starts hold until the person gives it one.
         var found = catalog.RoleFor(ParticipantWork.Intake, Machine);
         Assert.Equal((null, RoleCatalog.NoRole(ParticipantWork.Intake)), (found.Role, found.Held));
         var held = Assert.Throws<DriverException>(() => catalog.Order(ParticipantWork.Intake, Machine, DriverConfig.Empty with { Actors = StaffedRoles.On("claude", "codex") }));

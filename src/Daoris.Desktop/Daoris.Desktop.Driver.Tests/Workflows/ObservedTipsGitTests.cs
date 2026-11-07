@@ -3,7 +3,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// FABRIC-PERFORM1i over real git (§C4's fourth rule; D88's PROC1d-ii): a batch of events over several branches reads each branch's tip from
+/// Over real git, a batch of events over several branches reads each branch's tip from
 /// the repository's ref files at every judgement, no git started and never a ref held from the judgement before, so a branch moved outside
 /// Daoris between two judgements makes its event stale; and a repository's identity is its common git folder's, the same through a linked
 /// worktree.
@@ -82,7 +82,7 @@ public sealed class ObservedTipsGitTests : LandedFixture
         };
         try
         {
-            // Begun on each branch's tip and published (FABRIC-PERFORM1m): the three read from the repository's ref files, no git started.
+            // Begun on each branch's tip and published: the three read from the repository's ref files, no git started.
             await runtime.PassAsync(Look(whole: true), CancellationToken.None);
             Assert.Empty(started);
             Assert.All(port.SentTo(Plugin, 1)!.Units, unit => Assert.Equal(RepositoryIdentity.Of(root), unit.Identity));
@@ -194,7 +194,7 @@ public sealed class ObservedTipsGitTests : LandedFixture
             await runtime.PassAsync(Look(whole: true), CancellationToken.None);
             Assert.Empty(started);
 
-            // FABRIC-PERFORM1o: the branch moved outside Daoris and the plugin's events came before the node rebound, one at the old tip and
+            // The branch moves outside Daoris and the plugin's events come before the node rebinds, one at the old tip and
             // one at the new. The old tip's is stale; the new tip's is taken once the pass has rebound the node, with no git started for it.
             await CommitAsync(root, "moved.txt", "moved\n", "moved on");
             await GitAsync(root, "branch", "-f", "feature/a", "HEAD");

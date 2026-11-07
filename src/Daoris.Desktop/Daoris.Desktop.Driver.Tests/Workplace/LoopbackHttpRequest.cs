@@ -8,7 +8,7 @@ namespace Daoris.Desktop.Driver.Tests;
 /// </summary>
 internal sealed record LoopbackHttpRequest(string Method, string Target, IReadOnlyDictionary<string, string> Headers, byte[] Body)
 {
-    /// <summary>The request line as it was sent (<c>GET /path HTTP/1.1</c>).</summary>
+    /// <summary>The request line as sent (<c>GET /path HTTP/1.1</c>).</summary>
     public string Line => $"{Method} {Target} HTTP/1.1";
 
     /// <summary>The target's path, unescaped, without its query.</summary>

@@ -3,7 +3,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// The note codes the service client's reading of a record judges by (FOUNDATION1 mod-iv): the service owns their spelling, the events'
+/// The note codes the service client's reading of a record judges by: the service owns their spelling, the events'
 /// vocabulary (<see cref="NoteCodes"/>) declares them for the page, and the two are held equal here, so a code renamed in one is a
 /// failure and never a strike read wrongly. The note's shapes, now the service's, keep the members their callers spell.
 /// </summary>

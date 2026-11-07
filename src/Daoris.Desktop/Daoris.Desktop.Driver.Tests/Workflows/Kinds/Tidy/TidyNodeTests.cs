@@ -3,7 +3,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// D245's tidy (D247 §4 point 5): reached where the landing record holds what its door ended at the landing's tip; started only on a monitor's
+/// The tidy node is reached where the landing record holds what its door ended at the landing's tip; started only on a monitor's
 /// <c>when merged</c>, so a closed request starts nothing and fails nothing; its record reads back whole.
 /// </summary>
 public sealed class TidyNodeTests : IDisposable

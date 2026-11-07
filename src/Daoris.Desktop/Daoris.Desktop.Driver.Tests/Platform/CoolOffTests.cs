@@ -3,8 +3,8 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// <c>cooloff</c> in <c>driver.json</c> (TOOL4e, D125 §2.2): how long an account cools when its agent's limit names no
-/// time this reads, or one it does not believe (the CLI's twin, <c>driverconfig.ts</c>, left in PUSH1f2b).
+/// <c>cooloff</c> in <c>driver.json</c>: how long an account cools when its agent's limit names no
+/// time this reads, or one it does not believe.
 /// </summary>
 /// <remarks>🔴 <b>Keep each row on one line, its cells literals</b>: the CLI's test reads them.</remarks>
 public sealed class CoolOffTests

@@ -3,9 +3,9 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// RECORDUNREAD1 over real git: a read that failed never forgets or retires a record. Git's quiet verification exits 1 on any failure
+/// Over real git: a read that fails never forgets or retires a record. Git's quiet verification exits 1 on any failure
 /// to resolve, a broken ref's too, and <c>for-each-ref</c> leaves a broken ref out of its list with a warning, exiting 0; only
-/// <c>show-ref --exists</c>'s exit 2 says a ref is missing (FABRIC-END4a's fourth review, <c>ContentHolds.MissingAsync</c>). Each path
+/// <c>show-ref --exists</c>'s exit 2 says a ref is missing (<c>ContentHolds.MissingAsync</c>). Each path
 /// that forgot a record on a failed read is broken here, and keeps it.
 /// </summary>
 [Trait(Category.Name, Category.Process)]
@@ -30,7 +30,7 @@ public sealed class UnreadRecordGitTests : LandedFixture
         return opened.Branch;
     }
 
-    /// <summary>🔴 LAND3's door (TreeTidies.cs:331): a branch that does not read is not "gone already", and its record stays.</summary>
+    /// <summary>🔴 At the door's removal, a branch that does not read is not "gone already", and its record stays.</summary>
     [Fact]
     public async Task The_doors_removal_of_a_branch_that_does_not_read_keeps_its_record_and_says_unread()
     {

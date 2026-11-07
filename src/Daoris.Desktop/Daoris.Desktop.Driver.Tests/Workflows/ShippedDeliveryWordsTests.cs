@@ -3,7 +3,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// SETUPUX1a (D221; the setup UX design §2.5): a default's delivery carries an id, a name and a purpose in English, which are the terminal's
+/// A default's delivery carries an id, a name and a purpose in English, which are the terminal's
 /// words and the page's fallback (the page words them from its catalogues by the ids), the quick set-up's table reads them, a workflow's name
 /// ends in <i>workflow</i>, and no workflow's, delivery's or renamed step's name contains the whole name of another kind's. The shipped data
 /// holds no per-language field: the Chinese names are the web's catalogue, held by its own census and by the glossary's <c>distinct</c> lists.

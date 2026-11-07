@@ -3,8 +3,8 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// STRAYOTHERS1 (D88's note): what a pass a kill cut off left under a repository's trees, an opinion's copy or a replay's tree,
-/// is moved aside by the next pass of its kind once nothing running holds it and nothing in it was written for ten minutes.
+/// What a pass a kill cut off left under a repository's trees, an opinion's copy or a replay's tree,
+/// is moved aside by the next pass of its kind once nothing running holds it and nothing in it changed for ten minutes.
 /// These hold the halves no git or process reaches: the holder's words, and the copies' judgement over plain folders with a
 /// stand-in for which processes run. The real clones and replays are <c>PassLeftoversProcessTests</c>.
 /// </summary>

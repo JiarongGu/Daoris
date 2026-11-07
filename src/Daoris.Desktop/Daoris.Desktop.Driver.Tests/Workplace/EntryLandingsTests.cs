@@ -3,7 +3,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// ACCEPTALL1 (D167's 2026-10-15 amendment points 1 to 3): an entry's Accept as decided before git is asked. Its parts land in the
+/// An entry's Accept as decided before git is asked. Its parts land in the
 /// order handed, the ledger's; a part sharing an earlier part's tree lands once, with it; only the person's choice leaves a part out,
 /// a superseded one included; a merged branch's successor is named for the same first quest; a part is superseded where, replayed
 /// after a later part's work, it conflicts or adds nothing. The landing itself is <c>EntryLandingTests</c>'s, with real git.
@@ -37,7 +37,7 @@ public sealed class EntryLandingsTests
         Assert.Null(steps[0].SameTreeAs);
     }
 
-    /// <summary>A part whose tree is an earlier part's lands with it, whatever was chosen of it: it has nothing of its own to leave out.</summary>
+    /// <summary>A part whose tree is an earlier part's lands with it, whatever is chosen of it: it has nothing of its own to leave out.</summary>
     [Fact]
     public void A_part_sharing_a_tree_is_not_left_out_on_its_own()
     {
@@ -46,7 +46,7 @@ public sealed class EntryLandingsTests
         Assert.Equal(("s1", false), (steps[1].SameTreeAs, steps[1].LeftOut));
     }
 
-    /// <summary>REVIEWFLOW1d: leaving out a shared tree's first part leaves out every part of it; none lands, none is said to share a tree.</summary>
+    /// <summary>Leaving out a shared tree's first part leaves out every part of it; none lands, none is said to share a tree.</summary>
     [Fact]
     public void Leaving_out_a_shared_tree_leaves_out_all_its_parts()
     {
@@ -57,7 +57,7 @@ public sealed class EntryLandingsTests
         Assert.All(steps, step => Assert.Null(step.SameTreeAs));
     }
 
-    /// <summary>REVIEWFLOW1d: a part a kept later part grew from is carried, and is offered no leave-out.</summary>
+    /// <summary>A part a kept later part grew from is carried, and is offered no leave-out.</summary>
     [Fact]
     public void A_part_a_later_part_grew_from_is_carried()
     {
@@ -82,7 +82,7 @@ public sealed class EntryLandingsTests
         Assert.Null(clash);
     }
 
-    /// <summary>ACCEPTCONFLICT1: a conflict beside a clean change is work of its own, which leaving the part out would lose.</summary>
+    /// <summary>A conflict beside a clean change is work of its own, which leaving the part out would lose.</summary>
     [Fact]
     public void A_part_that_conflicts_and_changes_a_file_outside_the_conflict_is_a_clash_naming_the_conflicting_files()
     {
@@ -132,7 +132,7 @@ public sealed class EntryLandingsTests
         Assert.StartsWith("Rebase your work onto `feature/x`: its entry's earlier work landed there", refused.Conflict!.Words);    }
 
     /// <summary>
-    /// ACCEPTALL1c (D167's amendment point 3): a part the person left out is recorded with the landing, a coded note on its conversation
+    /// A part the person left out is recorded with the landing, a coded note on its conversation
     /// naming the branch its line of work landed on, so its review can say so and lead with Discard.
     /// </summary>
     [Fact]

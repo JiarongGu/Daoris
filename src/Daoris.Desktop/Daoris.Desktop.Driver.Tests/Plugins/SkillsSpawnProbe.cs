@@ -4,8 +4,8 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// What HELPPLUG1c's spawn tests share (D170 point 4): a plugin handing sessions one skill, and a stand-in harness for each door
-/// that records, at the moment it is spawned, the plugin folder it was pointed at and the skill it could read there. The pipe
+/// What the spawn tests share: a plugin handing sessions one skill, and a stand-in harness for each door
+/// that records, at the moment it is spawned, the plugin folder it is pointed at and the skill it can read there. The pipe
 /// door is pointed by <c>--plugin-dir</c>; the protocol door by <c>plugins</c> in <c>session/new</c>'s
 /// <c>_meta.claudeCode.options</c>. Both write the probe file their first argument names, and end their turn at once.
 /// </summary>
@@ -31,8 +31,8 @@ internal static class SkillsSpawnProbe
     }
 
     /// <summary>
-    /// A Daoris account for Claude Code's doors in the home, where a start that walks the roster now runs (OWNSPACE1a, D175
-    /// point 2): without one an intake's or a helper's start is held for its sign-in and nothing is spawned. The stand-in
+    /// A Daoris account for Claude Code's doors in the home, where a start that walks the roster runs:
+    /// without one an intake's or a helper's start is held for its sign-in and nothing is spawned. The stand-in
     /// harness answers its sign-in question as signed in. A reviewer's pass is handed its selection, so it needs none.
     /// </summary>
     public static void SignIn(string home) =>

@@ -5,7 +5,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// A plugin tool set up and signed into from the window (ADOSIGNIN1, D150 point 7): a check's <c>fix</c> is a press the person
+/// A plugin tool set up and signed into from the window: a check's <c>fix</c> is a press the person
 /// makes, which opens a visible console running exactly that command, and the tool's checks are read again when it ends.
 /// A stand-in answers for every window and every check, so nothing here starts a program, and no sign-in is ever run.
 /// </summary>

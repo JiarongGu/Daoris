@@ -6,7 +6,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// Pause and resume an ask's work, or one quest's, on this machine (PAUSE1b, D132 points 2–4, design §2): the one
+/// Pause and resume an ask's work, or one quest's, on this machine: the one
 /// implementation the screen's routes and the terminal's verbs call. A pause writes itself first, stops what of the work runs
 /// here as the person's own stop and records each stop as its own, and takes nothing Resume cannot give back: a parked
 /// session stays parked, a running intake goes on, a teammate's session is named. Resume releases each stop it made and names
@@ -157,7 +157,7 @@ public sealed class WorkPausingTests : IDisposable
     }
 
     /// <summary>
-    /// A session another Daoris process here runs is stopped through the request folder SESSUX1g made, `by: pause`, carrying
+    /// A session another Daoris process here runs is stopped through the request folder, `by: pause`, carrying
     /// the pause's words for its record; the loop that runs it takes it, and the stop is the pause's.
     /// </summary>
     [Fact]
@@ -192,7 +192,7 @@ public sealed class WorkPausingTests : IDisposable
         var request = Assert.Single(honoured);
         Assert.Equal((SessionMove.Stop, RequestDoor.Pause), (request.Move, request.By));
         Assert.Equal("paused with ask `#a1`.", heard?.Note);
-        // The request carried the pause's line with its code, and the loop that took it stops with both (LANG1a).
+        // The request carried the pause's line with its code, and the loop that took it stops with both.
         Assert.Equal(["stopped.paused-ask"], NoteAssert.Codes(heard?.Parts));
         Assert.Equal("a1", heard!.Parts[0].Value("ask"));
         Assert.Equal("paused with ask `#a1`.", ledger.Note("w0rk1ng0"));
@@ -200,7 +200,7 @@ public sealed class WorkPausingTests : IDisposable
     }
 
     /// <summary>
-    /// Nothing took the request in time: it is withdrawn, so no loop acts on it after the person was told; the pause still
+    /// Nothing took the request in time: it is withdrawn, so no loop acts on it after the person is told; the pause still
     /// holds, and the session is named as one it could not reach, which the terminal says with exit 2.
     /// </summary>
     [Fact]
@@ -256,7 +256,7 @@ public sealed class WorkPausingTests : IDisposable
         Assert.Null(config.PausedAsk("a1"));
     }
 
-    /// <summary>Paused again, the pause keeps when it was made and the stops it made, and stops what started since.</summary>
+    /// <summary>Paused again, the pause keeps its first time and the stops it made, and stops what has started meanwhile.</summary>
     [Fact]
     public async Task Pausing_again_keeps_its_time_and_its_earlier_stops()
     {
@@ -275,7 +275,7 @@ public sealed class WorkPausingTests : IDisposable
         Assert.Equal(new Dictionary<string, string> { ["q9"] = "s9", ["q2"] = "w0rk1ng0" }, pause.Stopped);
     }
 
-    /// <summary>A work with nothing open or taken here, and no intake to start, has nothing to pause: said, never written (D48 §6).</summary>
+    /// <summary>A work with nothing open or taken here, and no intake to start, has nothing to pause: said, never written.</summary>
     [Fact]
     public async Task A_work_with_nothing_open_has_nothing_to_pause_and_nothing_is_written()
     {
@@ -341,11 +341,11 @@ public sealed class WorkPausingTests : IDisposable
     }
 
     /// <summary>
-    /// CARRY2d: a resume named what still holds a quest by the verdict and the driver's English alone, so the page could word
-    /// no hold that names a session, a pause, a count or a machine in another language. Each hold now carries its facts from
+    /// A resume names what still holds a quest by more than the verdict and the driver's English, so the page can word
+    /// a hold that names a session, a pause, a count or a machine in another language. Each hold carries its facts from
     /// the planner's own consideration, the same reading as its sentence: the person's stop by its session, another pause by
     /// whose it is, a park by the count its sentence says (the records' failures less the person's mark), and a take
-    /// elsewhere by whose it is (CARRY2c). A hold whose sentence needs nothing carries none, and every sentence is as it was.
+    /// elsewhere by whose it is. A hold whose sentence needs nothing carries none, and every sentence is unchanged by them.
     /// </summary>
     [Fact]
     public async Task Resume_names_what_still_holds_with_the_facts_each_hold_is_said_from()
@@ -397,7 +397,7 @@ public sealed class WorkPausingTests : IDisposable
         Assert.All(holds.Values.Where(hold => hold.Verdict != StartVerdict.CannotShow), hold => Assert.Null(hold.CannotShow));
     }
 
-    /// <summary>A resume of what is not paused changes nothing and says so: information, never a refusal (D48 §6).</summary>
+    /// <summary>A resume of what is not paused changes nothing and says so: information, never a refusal.</summary>
     [Fact]
     public async Task A_resume_of_what_is_not_paused_says_so_and_changes_nothing()
     {
@@ -424,7 +424,7 @@ public sealed class WorkPausingTests : IDisposable
         Assert.Empty(DriverConfig.Load(ConfigPath).PausedAsks);
     }
 
-    /// <summary>The machine log keeps names and counts only (D94 §5): the scope, how many it stopped or released, and the door.</summary>
+    /// <summary>The machine log keeps names and counts only: the scope, how many it stopped or released, and the door.</summary>
     [Fact]
     public async Task The_machine_log_counts_a_pause_and_a_resume_and_names_no_id()
     {
@@ -515,7 +515,7 @@ public sealed class WorkPausingTests : IDisposable
         /// <summary>A record's move does not reach the service: the connection fails, as a service that went away fails it.</summary>
         public bool Unreachable { get; set; }
 
-        /// <summary>This machine's claim on a quest, by its id (CARRY2d); a quest not named here has no claim door, as before.</summary>
+        /// <summary>This machine's claim on a quest, by its id; a quest not named here has no claim door.</summary>
         public Dictionary<string, string> Claims { get; } = new(StringComparer.OrdinalIgnoreCase);
 
         public ServiceClient Client() => new("http://ledger.test", null, new HttpClient(this, disposeHandler: false));

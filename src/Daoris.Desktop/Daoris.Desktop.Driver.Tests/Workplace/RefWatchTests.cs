@@ -4,9 +4,8 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// The ref watch (FABRIC-END3, the design §A4.1, §B4 and link 1 of §C6) on the fake source, raising what git's writes raise
-/// (§A5's measured sequences), stepped by hand on a clock that stands still: canaries 1-4 on git, and canary 11's own moves.
-/// The judge here counts; <see cref="RefWatchProcessTests"/> runs the real keeper over real git.
+/// The ref watch on the fake source, raising what git's writes raise,
+/// stepped by hand on a clock that stands still. The judge here counts; <see cref="RefWatchProcessTests"/> runs the real keeper over real git.
 /// </summary>
 public sealed class RefWatchTests : IDisposable
 {
@@ -59,7 +58,7 @@ public sealed class RefWatchTests : IDisposable
     /// <summary>What git's write raises on the repository's common dir, said on the handle open there.</summary>
     private void Say(string name, string moved, ChangeKind kind = ChangeKind.Renamed) => _source.On(CommonDir(name))!.Raise(moved, kind);
 
-    /// <summary>A commit on <c>main</c>, as §A5 measured it: its objects, its lock, its logs, the ref deleted, then the lock renamed onto it.</summary>
+    /// <summary>A commit on <c>main</c>, as git writes it: its objects, its lock, its logs, the ref deleted, then the lock renamed onto it.</summary>
     private void Commit(string name, string branch = "main")
     {
         for (var each = 0; each < 17; each++) Say(name, $"objects/{each:x2}/{Guid.NewGuid():N}", ChangeKind.Created);
@@ -95,7 +94,7 @@ public sealed class RefWatchTests : IDisposable
         ];
     }
 
-    /// <summary>The filter (§A4.1): git's final ref paths are heard; its objects, logs, index and every temporary are not.</summary>
+    /// <summary>The filter: git's final ref paths are heard; its objects, logs, index and every temporary are not.</summary>
     [Theory]
     [InlineData("HEAD", true)]
     [InlineData("packed-refs", true)]
@@ -126,9 +125,9 @@ public sealed class RefWatchTests : IDisposable
     public void The_filter_hears_the_final_ref_paths_alone(string name, bool heard) => Assert.Equal(heard, RefWatch.Hears(name));
 
     /// <summary>
-    /// Canary 3 on git: a commit's burst (37 events, the ref deleted then renamed onto) is one judgement of its repository, handed
+    /// A commit's burst (37 events, the ref deleted then renamed onto) is one judgement of its repository, handed
     /// the repository and never the event; its <c>change.judged</c> line says the hint, how long it waited and what it wrote, and the
-    /// facts it wrote are link 1's <c>chain.fired</c>.
+    /// facts it wrote are <c>chain.fired</c>'s.
     /// </summary>
     [Fact]
     public async Task A_commit_s_burst_is_one_judgement_of_its_repository_and_its_line_says_so()
@@ -155,13 +154,13 @@ public sealed class RefWatchTests : IDisposable
     }
 
     /// <summary>
-    /// Canary 3's other halves: a hint arriving while its repository is judged is judged after it, never beside it, and two
+    /// A hint arriving while its repository is judged is judged after it, never beside it, and two
     /// repositories are judged at once.
     /// </summary>
     /// <summary>
-    /// 🔴 SETUPSTATE1 (the owner's report, 2026-10-23): a set-up's pull request merged on the remote and the checkout pulled outside
-    /// Daoris moved its line with no Daoris landing to say so, and the registry never followed it. Heard, a line standing at another
-    /// commit than the one it was last followed at is the next look's to follow; one standing where it was is not.
+    /// A set-up's pull request merged on the remote and the checkout pulled outside
+    /// Daoris moves its line with no Daoris landing to say so. Heard, a line standing at another
+    /// commit than the last one followed is the next look's to follow; one standing there is not.
     /// </summary>
     [Fact]
     public async Task A_line_heard_moving_outside_daoris_is_due_for_the_registry()
@@ -216,7 +215,7 @@ public sealed class RefWatchTests : IDisposable
     }
 
     /// <summary>
-    /// Canary 2 on git: an overflow on a repository's watcher judges that repository whole at once and reopens it; what its old
+    /// An overflow on a repository's watcher judges that repository whole at once and reopens it; what its old
     /// watcher says after is dropped; a resume judges every repository.
     /// </summary>
     [Fact]
@@ -244,9 +243,9 @@ public sealed class RefWatchTests : IDisposable
     }
 
     /// <summary>
-    /// Canary 1 on git: with the source silenced, nothing is judged by the watch before its deadline, and at the deadline the roots
+    /// With the source silenced, nothing is judged by the watch before its deadline, and at the deadline the roots
     /// are reconciled (a repository absent at the open is opened and judged) while each repository's ends stay the tidy's pass's,
-    /// the reconciliation (§B4): an idle deadline judges no repository a second time.
+    /// the reconciliation: an idle deadline judges no repository a second time.
     /// </summary>
     [Fact]
     public async Task A_silent_source_leaves_the_ends_to_the_tidy_s_pass_and_reconciles_its_roots_at_the_deadline()
@@ -286,7 +285,7 @@ public sealed class RefWatchTests : IDisposable
         Assert.Equal(Repository("engine"), handed);
     }
 
-    /// <summary>Canary 4 on git: a thousand ref hints are one judgement, and the watch runs nothing but its keeper (no look, no sync).</summary>
+    /// <summary>A thousand ref hints are one judgement, and the watch runs nothing but its keeper (no look, no sync).</summary>
     [Fact]
     public async Task A_thousand_ref_hints_are_one_judgement()
     {
@@ -301,7 +300,7 @@ public sealed class RefWatchTests : IDisposable
     }
 
     /// <summary>
-    /// Canary 11: Daoris's own ref move judges its repository at once, without the quiet window, and takes up the watcher's echo
+    /// Daoris's own ref move judges its repository at once, without the quiet window, and takes up the watcher's echo
     /// already heard, so the move is judged once; a move in another home is not this watch's.
     /// </summary>
     [Fact]
@@ -323,7 +322,7 @@ public sealed class RefWatchTests : IDisposable
     }
 
     /// <summary>
-    /// OWNMOVES1: the judgement Daoris's own move asks for is told as its own, the echo taken up with it; another repository's hint
+    /// The judgement Daoris's own move asks for is told as its own, the echo taken up with it; another repository's hint
     /// beside it is told as no own move, and so is the moved repository's next hint, which the own move does not outlive.
     /// </summary>
     [Fact]
@@ -406,7 +405,7 @@ public sealed class RefWatchTests : IDisposable
     }
 
     /// <summary>
-    /// The driver's set (§A4.1): the registry's repositories with a checkout here whose common dir is a folder, and that hold
+    /// The driver's set: the registry's repositories with a checkout here whose common dir is a folder, and that hold
     /// Daoris's work in <c>session-branches.json</c> or <c>landings.json</c>; with no work kept, the registry is not asked.
     /// </summary>
     [Fact]

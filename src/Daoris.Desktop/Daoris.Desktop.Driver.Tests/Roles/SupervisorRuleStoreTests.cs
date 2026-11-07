@@ -5,7 +5,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// CONTEXTDRIVE1c: a place's rules kept in the desktop store's step 19, as <see cref="StaffMovesTests"/> holds <c>role_moves</c>: a home with
+/// A place's rules kept in the desktop store's step 19, as <see cref="StaffMovesTests"/> holds <c>role_moves</c>: a home with
 /// no store holds none and takes none, a write is judged against every place's set in its own transaction, and a refused write leaves nothing.
 /// </summary>
 public sealed class SupervisorRuleStoreTests : IDisposable

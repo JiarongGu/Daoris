@@ -5,7 +5,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// D249: the one management of the processes Daoris starts. A start through the gate is joined to its purpose's job and counted in the
+/// The one management of the processes Daoris starts. A start through the gate is joined to its purpose's job and counted in the
 /// census; a start held by no job is joined to none; and an owner killed takes what it started, and what that started, with it. The owner
 /// is the built stand-in (<c>daoris-owner-stand-in</c>), which starts a node that starts a node of its own, detached.
 /// </summary>
@@ -155,7 +155,7 @@ public sealed class OwnedProcessesProcessTests
             }
             catch (Exception error) when (error is InvalidOperationException or System.ComponentModel.Win32Exception)
             {
-                // Gone as it was stopped.
+                // Gone once stopped.
             }
         }
     }

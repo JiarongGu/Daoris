@@ -4,8 +4,8 @@ namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
 /// The shell's first question — where is the HTTP host — answered in an order a person can predict:
-/// what they said, then what the install carries, then the installed home under the Daoris home
-/// (D63), then the workspace build. A wrong order here starts a stale binary while the person stares
+/// what they said, then what the install carries, then the installed home under the Daoris home,
+/// then the workspace build. A wrong order here starts a stale binary while the person stares
 /// at a fresh one.
 /// </summary>
 public sealed class ServiceHostLocatorTests : IDisposable
@@ -32,7 +32,7 @@ public sealed class ServiceHostLocatorTests : IDisposable
 
     /// <summary>
     /// Then what the install carries, then the installed home — `$DAORIS_HOME/bin`, the CLI's
-    /// `publish:service --install` landing place (D63), its packaged folder before a legacy flat
+    /// `publish:service --install` landing place, its packaged folder before a legacy flat
     /// binary — and the home runs beside its bundle.
     /// Asserted as an ORDER, because the order is the contract: the second deployment found the
     /// machine's older host outranking the one `desktop-publish --service` had just put beside the
@@ -60,7 +60,7 @@ public sealed class ServiceHostLocatorTests : IDisposable
     /// 🔴 <b>Where the installer actually puts it.</b> `service-publish --install` lands the HTTP
     /// host in a directory of its own — `bin/daoris-knowledge-http/daoris-knowledge-http.exe` —
     /// because its <c>wwwroot</c> has to travel beside the executable, while the MCP host installs
-    /// flat beside it. The locator only ever looked flat, so a correctly installed host was invisible
+    /// flat beside it. The locator only ever looked flat, so a correctly installed host went unseen
     /// and the shell fell through to the workspace build.
     /// </summary>
     /// <remarks>
@@ -87,7 +87,7 @@ public sealed class ServiceHostLocatorTests : IDisposable
     }
 
     /// <summary>
-    /// 🔴 <b>A deployed shell runs the host it was published with, even when the machine has one of
+    /// <b>A deployed shell runs the host it ships with, even when the machine has one of
     /// its own.</b> The previous order ranked the installed home above the install's copy so that a
     /// service upgrade would reach every shell — and the second deployment showed the inverse:
     /// `desktop-publish --service` put a NEWER host beside the shell, the shell spawned the OLDER
@@ -144,7 +144,7 @@ public sealed class ServiceHostLocatorTests : IDisposable
         File.WriteAllText(executable, "");
 
         // No home at all: nothing installed machine-wide, which is the deployed case before anything
-        // is set — and a machine with no home has no installed home to look in (D63).
+        // is set — and a machine with no home has no installed home to look in.
         var found = ServiceHostLocator.Locate(null, home: null, app);
 
         Assert.NotNull(found);
@@ -153,7 +153,7 @@ public sealed class ServiceHostLocatorTests : IDisposable
     }
 
     /// <summary>
-    /// LEGACYHOST1: <b>a service republish over a legacy flat install runs the refreshed host.</b>
+    /// <b>A service republish over a legacy flat install runs the refreshed host.</b>
     /// `service-publish --install` replaces only the packaged `bin/daoris-knowledge-http/` folder; an
     /// older install still holds a flat executable and a flat `wwwroot` beside it, which the republish
     /// never touches. The refreshed host and its own bundle must be the ones located.
@@ -195,7 +195,7 @@ public sealed class ServiceHostLocatorTests : IDisposable
         Assert.Equal(bin, found.WorkingDirectory);
     }
 
-    /// <summary>LEGACYHOST1: naming a host still wins over every installed one, packaged or flat.</summary>
+    /// <summary>Naming a host still wins over every installed one, packaged or flat.</summary>
     [Fact]
     public void An_explicit_host_override_wins_over_a_refreshed_install()
     {
@@ -244,10 +244,9 @@ public sealed class ServiceHostLocatorTests : IDisposable
 
         var candidates = ServiceHostLocator.Candidates(null, "/home", lonely);
 
-        // 🔴 Asserted by what the candidates ARE, not by counting them. The assertion here used to be
-        // `Single`, which said "one" while meaning "nothing from a workspace" — so every later
-        // candidate that was not a workspace one (the installer's own layout, then the host beside a
-        // deployed shell) read as a regression when it was the fix.
+        // Asserted by what the candidates ARE, not by counting them: a count of one would mean "nothing from a workspace", and
+        // every later candidate that is not a workspace one (the installer's own layout, then the host beside a
+        // deployed shell) would read as a regression.
         Assert.DoesNotContain(candidates, c => c.Executable.Contains("Daoris.Service.Http"));
         Assert.NotEmpty(candidates);
     }

@@ -3,7 +3,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// The driver's one wait on the service's change stream (FABRIC-EVENT3b, the fabric events design §A4.2): each answer that names a
+/// The driver's one wait on the service's change stream: each answer that names a
 /// family wakes the <c>ledger</c> topic once, the bootstrap wakes nothing, and a door that is missing or refusing is asked again
 /// only after a pause, never in a hot loop.
 /// </summary>
@@ -56,7 +56,7 @@ public sealed class LedgerChangesTests : IDisposable
     }
 
     /// <summary>
-    /// Review of FABRIC-EVENT3b: the bootstrap's answer comes beside the loop's first look, not before it, and its cursor already
+    /// The bootstrap's answer comes beside the loop's first look, not before it, and its cursor already
     /// holds a quest published between that look's reads and the answer. So the bootstrap wakes the plan once, and the quest is
     /// planned now, not at the deadline.
     /// </summary>

@@ -3,9 +3,9 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// FABRIC-MILESTONE1a (the fabric events design §D0 and §D3): the branch adapter's inventory derived from the records it already
+/// The branch adapter's inventory derived from the records it
 /// keeps, a role and a disposition per entry, and the milestone's answer per unit. Pure over <see cref="InventoryFacts"/>: no git, no
-/// home. Canary 27's derivation half: every entry has a disposition, and an unknown owner blocks and says so.
+/// home. Every entry has a disposition, and an unknown owner blocks and says so.
 /// </summary>
 public sealed class WorkInventoryTests
 {
@@ -186,7 +186,7 @@ public sealed class WorkInventoryTests
     }
 
     /// <summary>
-    /// KEEP1a (the cleanup design §5): a folder set aside whose package folders the slim dropped says which, in the line the work
+    /// A folder set aside whose package folders the slim dropped says which, in the line the work
     /// inventory and <c>work state</c> show, beside its date.
     /// </summary>
     [Fact]
@@ -274,7 +274,7 @@ public sealed class WorkInventoryTests
         Assert.Same(entry, Assert.Single(unit.Cleanup.Waits));
     }
 
-    /// <summary>INTEGRATETREE1: a line's integration tree, detached as its run keeps it, is Daoris's own: no unit, so no clean-up waits on the person.</summary>
+    /// <summary>A line's integration tree, detached as its run keeps it, is Daoris's own: no unit, so no clean-up waits on the person.</summary>
     [Fact]
     public void A_lines_integration_tree_is_no_unit_and_one_on_a_branch_is_still_unknown()
     {
@@ -335,7 +335,7 @@ public sealed class WorkInventoryTests
         Assert.Equal(entries.Count, entries.Distinct().Count());
     }
 
-    // ---- FABRIC-UNKNOWN1: a daoris/* branch no record names
+    // ---- A daoris/* branch no record names
 
     /// <summary>No record names it and no tree holds it: an unknown owner, blocked, saying why and which press removes it.</summary>
     [Fact]
@@ -370,10 +370,10 @@ public sealed class WorkInventoryTests
         Assert.Equal(1, units.Count(unit => unit.Entries.Any(entry => entry.Kind == "session-branch" && entry.Resource == "daoris/s1")));
     }
 
-    // ---- OVERVIEWNOISE1b: a tree joined to the session that recorded it, and each blocked entry worded by a kept code
+    // ---- A tree joined to the session that recorded it, and each blocked entry worded by a kept code
 
     /// <summary>
-    /// The owner's report: a tree made again on its branch after that branch's record went (TREEGONE1) is named by no standing record,
+    /// The owner's report: a tree made again on its branch after that branch's record went is named by no standing record,
     /// yet its session recorded it. It joins that session, named by it, its owner known and never titled by its folder's path; and since
     /// no branch record follows it, the look's tidy never takes it: it waits on the clean-up's press, said by its code. While its
     /// session still runs, it is that session's to hold.
@@ -404,8 +404,8 @@ public sealed class WorkInventoryTests
     }
 
     /// <summary>
-    /// CLEANUPADVICE1: where the clean-up would keep an unfollowed tree, its row says what keeps it and the remove that takes it; where the
-    /// clean-up would take it, the row says what it said before; where git could not say, it names no remove.
+    /// Where the clean-up would keep an unfollowed tree, its row says what keeps it and the remove that takes it; where the
+    /// clean-up would take it, the row carries no advice; where git could not say, it names no remove.
     /// </summary>
     [Fact]
     public void An_unfollowed_tree_the_clean_up_would_keep_names_what_keeps_it_and_the_remove_that_takes_it()
@@ -448,7 +448,7 @@ public sealed class WorkInventoryTests
     }
 
     /// <summary>
-    /// FABRIC-END4a's blocked branch says its guard once, by its kept code and when, the tidy's own sentence where one was kept and the
+    /// A blocked branch says its guard once, by its kept code and when, the tidy's own sentence where one is kept and the
     /// guard's words otherwise, never both; and it promises a retry only where the guard frees by itself.
     /// </summary>
     [Theory]

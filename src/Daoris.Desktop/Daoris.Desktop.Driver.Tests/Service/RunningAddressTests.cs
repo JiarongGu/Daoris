@@ -6,7 +6,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// The address the running desktop leaves in its home (FINDDAORIS1, D171 point 1): the service it holds or adopted, and
+/// The address the running desktop leaves in its home: the service it holds or adopted, and
 /// the process that holds it, written whole, and removed by the process that wrote it, only while it still says what that
 /// process wrote.
 /// </summary>
@@ -33,7 +33,7 @@ public sealed class RunningAddressTests : IDisposable
         using var self = Process.GetCurrentProcess();
         Assert.Equal(self.StartTime.ToUniversalTime().Ticks, named.Started);
 
-        // HOMEID1: and the home's id, minted where it had none, so a reader tells this home's address from a copy's.
+        // And the home's id, minted where it had none, so a reader tells this home's address from a copy's.
         Assert.True(HomeIdentity.IsId(named.Home), named.Home);
         Assert.Equal(HomeIdentity.Read(_home), named.Home);
 
@@ -45,7 +45,7 @@ public sealed class RunningAddressTests : IDisposable
             Directory.GetFiles(_home, "*", SearchOption.AllDirectories).Select(Path.GetFullPath).Order(StringComparer.Ordinal));
     }
 
-    /// <summary>A file from before HOMEID1 names no home, and still reads: fields are added, never changed in place.</summary>
+    /// <summary>A file that names no home still reads: fields are added, never changed in place.</summary>
     [Fact]
     public void A_file_from_before_names_no_home_and_still_reads()
     {
@@ -59,7 +59,7 @@ public sealed class RunningAddressTests : IDisposable
     }
 
     /// <summary>
-    /// RPC1a (the terminal RPC design §4.1, §6.3): once the instance serves its pipe, the file names it beside the rest, so a
+    /// Once the instance serves its pipe, the file names it beside the rest, so a
     /// client that reads one finds it served. Its name is the home's id and the Windows session's.
     /// </summary>
     [Fact]

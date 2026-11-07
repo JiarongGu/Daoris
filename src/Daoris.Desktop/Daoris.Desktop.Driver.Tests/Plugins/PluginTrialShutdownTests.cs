@@ -4,7 +4,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// PLUGINSHUTDOWN1: a plugin alive after its last step always gets its <c>shutdown</c> step, however fast it leaves on being told.
+/// A plugin alive after its last step always gets its <c>shutdown</c> step, however fast it leaves on being told.
 /// The race is held, not timed: the told step is released only after the process has exited, the order the flake raced.
 /// </summary>
 public sealed class PluginTrialShutdownTests

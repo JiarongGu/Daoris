@@ -5,7 +5,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// KEEP1e (D195 point 4; the cleanup design §3.3, §4.4, §9): <i>Free up space…</i> and <c>daoris space free</c>, listed first, then
+/// <i>Free up space…</i> and <c>daoris space free</c>, listed first, then
 /// pressed. A list that changes nothing; a press removing only the units listed, one changed since kept and counted; the browser's caches
 /// only while the shell says its browser is not running, and kept with no Daoris; an earlier build's folder a program holds kept as in use;
 /// a second press joining the run under way, and another holder refusing it; the terminal's exits by the run's end, alone and over the
@@ -99,7 +99,7 @@ public sealed class SpaceFreeTests : IAsyncLifetime
         Write(Path.Combine(LeftOver("browser/profile"), "Cookies"), 11);
     }
 
-    /// <summary>Every file under the home with its size and write time: what a list must leave as it was.</summary>
+    /// <summary>Every file under the home with its size and write time: what a list must leave unchanged.</summary>
     private IReadOnlyList<string> Files() =>
         [.. Directory.EnumerateFiles(_home, "*", SearchOption.AllDirectories).Order(StringComparer.Ordinal)
             .Select(file => $"{Path.GetRelativePath(_home, file)}|{new FileInfo(file).Length}|{File.GetLastWriteTimeUtc(file):O}")];
@@ -116,7 +116,7 @@ public sealed class SpaceFreeTests : IAsyncLifetime
 
     private static SpaceRunKind KindOf(SpaceRun run, string id) => run.Kinds.Single(kind => kind.Id == id);
 
-    /// <summary>§3.3 step 1, §6.5: the list names what each rule takes now and each group that could go early, and changes nothing.</summary>
+    /// <summary>The list names what each rule takes now and each group that could go early, and changes nothing.</summary>
     [Fact]
     public void The_list_names_each_rules_now_and_each_group_early_and_changes_nothing()
     {
@@ -149,7 +149,7 @@ public sealed class SpaceFreeTests : IAsyncLifetime
         Assert.Equal(1, (int)group["own"]!);
     }
 
-    /// <summary>§3.3 step 2: a press sends exactly the units listed, each judged again; one changed since is kept and counted.</summary>
+    /// <summary>A press sends exactly the units listed, each judged again; one changed since is kept and counted.</summary>
     [Fact]
     public async Task A_press_removes_only_the_listed_units_and_keeps_one_changed_since_the_list()
     {
@@ -184,7 +184,7 @@ public sealed class SpaceFreeTests : IAsyncLifetime
     }
 
     /// <summary>
-    /// KEEP1d with KEEP1e: the machine log's days the press lists and removes are the person's, as the look's prune keeps them, judged again
+    /// The machine log's days the press lists and removes are the person's, as the look's prune keeps them, judged again
     /// at the press: a day listed past seven days that a rule of thirty keeps since is changed, and stays.
     /// </summary>
     [Fact]
@@ -210,7 +210,7 @@ public sealed class SpaceFreeTests : IAsyncLifetime
         Assert.Equal(new Dictionary<string, int> { [SpaceKept.Changed] = 1 }, kind.Kept);
     }
 
-    /// <summary>A browser host's stand-in: whether its browser runs, and how often it was asked.</summary>
+    /// <summary>A browser host's stand-in: whether its browser runs, and how often it is asked.</summary>
     private sealed class Browser(bool running, Task? until = null) : IBrowserCaches
     {
         public int Asked { get; private set; }
@@ -223,7 +223,7 @@ public sealed class SpaceFreeTests : IAsyncLifetime
         }
     }
 
-    /// <summary>§3.2, §3.3: the caches go only while the shell says its browser is not running; with no Daoris to say, they stay.</summary>
+    /// <summary>The caches go only while the shell says its browser is not running; with no Daoris to say, they stay.</summary>
     [Fact]
     public async Task The_browsers_caches_go_only_while_it_does_not_run_and_stay_with_no_Daoris()
     {
@@ -248,7 +248,7 @@ public sealed class SpaceFreeTests : IAsyncLifetime
         Assert.Equal("done", stopped.Outcome);
     }
 
-    /// <summary>§3.2: a path not in the table is never touched, and a profile a browser still holds keeps every cache.</summary>
+    /// <summary>A path not in the table is never touched, and a profile a browser still holds keeps every cache.</summary>
     [Fact]
     public void The_clear_takes_the_tables_paths_alone_and_none_while_the_profile_is_held()
     {
@@ -268,7 +268,7 @@ public sealed class SpaceFreeTests : IAsyncLifetime
         Assert.True(Directory.Exists(Path.Combine(Engine, "Default", "Cache")));
     }
 
-    /// <summary>§3.5: an earlier build's folder a program holds keeps as in use, its rename refused; the other goes, its sign-ins with it.</summary>
+    /// <summary>An earlier build's folder a program holds keeps as in use, its rename refused; the other goes, its sign-ins with it.</summary>
     [Fact]
     public async Task An_earlier_builds_folder_a_program_holds_is_kept_as_in_use()
     {
@@ -290,7 +290,7 @@ public sealed class SpaceFreeTests : IAsyncLifetime
         Assert.Equal(new Dictionary<string, int> { [SpaceKept.InUse] = 1 }, kind.Kept);
     }
 
-    /// <summary>§3.1, §3.3 step 3: a press while a run is under way here joins it; another holder of the run lock refuses one, named.</summary>
+    /// <summary>A press while a run is under way here joins it; another holder of the run lock refuses one, named.</summary>
     [Fact]
     public async Task A_second_press_joins_the_run_under_way_and_another_holder_refuses_it()
     {
@@ -331,7 +331,7 @@ public sealed class SpaceFreeTests : IAsyncLifetime
         Wait = TimeSpan.FromMinutes(2),
     };
 
-    /// <summary>§4.4: without <c>--yes</c> the terminal lists and changes nothing, exit 0.</summary>
+    /// <summary>Without <c>--yes</c> the terminal lists and changes nothing, exit 0.</summary>
     [Fact]
     public async Task The_terminal_lists_and_changes_nothing_without_yes()
     {
@@ -350,7 +350,7 @@ public sealed class SpaceFreeTests : IAsyncLifetime
         Assert.Contains("nothing was removed", said);
     }
 
-    /// <summary>§4.4: alone, exit 0 where every unit named went, 1 where one was kept, each kind said as it ends; a word it does not answer, 2.</summary>
+    /// <summary>Alone, exit 0 where every unit named went, 1 where one is kept, each kind said as it ends; a word it does not answer, 2.</summary>
     [Fact]
     public async Task The_terminal_alone_exits_by_the_runs_end()
     {
@@ -371,7 +371,7 @@ public sealed class SpaceFreeTests : IAsyncLifetime
         Assert.Contains(SpaceFreeCommand.Usage, _error.ToString());
     }
 
-    /// <summary>§3.3 step 4, D194 point 5: from a session's environment the removal alone is refused, exit 1, and nothing is done.</summary>
+    /// <summary>From a session's environment the removal alone is refused, exit 1, and nothing is done.</summary>
     [Fact]
     public async Task A_sessions_terminal_is_refused_alone_and_nothing_is_done()
     {
@@ -405,7 +405,7 @@ public sealed class SpaceFreeTests : IAsyncLifetime
         },
     };
 
-    /// <summary>§4.4: with Daoris running the verb is its client, confirmed in the window, then reads the run each second to its end.</summary>
+    /// <summary>With Daoris running the verb is its client, confirmed in the window, then reads the run each second to its end.</summary>
     [Fact]
     public async Task A_terminals_press_is_confirmed_in_the_window_and_read_to_the_runs_end()
     {
@@ -424,11 +424,11 @@ public sealed class SpaceFreeTests : IAsyncLifetime
         var press = _standIn!.Presses.First(each => each.GetProperty("type").GetString() == "SYSTEM_SPACE_FREE");
         Assert.Equal("logs", press.GetProperty("payload").GetProperty("units")[0].GetProperty("kind").GetString());
         Assert.Equal(1, _out.ToString().Split("  logs: removed 1").Length - 1);
-        // Nothing was done here: the instance's run removes it.
+        // Nothing done here: the instance's run removes it.
         Assert.True(File.Exists(Path.Combine(DaorisHome.Entry(_home, HomeEntry.Logs), "2026-09-01.driver.jsonl")));
     }
 
-    /// <summary>RPC1c: the person's refusal in the window is exit 1, nothing done here.</summary>
+    /// <summary>The person's refusal in the window is exit 1, nothing done here.</summary>
     [Fact]
     public async Task A_press_the_person_refused_in_the_window_is_exit_1()
     {
@@ -442,7 +442,7 @@ public sealed class SpaceFreeTests : IAsyncLifetime
         Assert.True(File.Exists(Path.Combine(DaorisHome.Entry(_home, HomeEntry.Logs), "2026-09-01.driver.jsonl")));
     }
 
-    /// <summary>§4.4: Daoris stopping while its run is under way is said as not known, exit 2.</summary>
+    /// <summary>Daoris stopping while its run is under way is said as not known, exit 2.</summary>
     [Fact]
     public async Task Daoris_stopping_mid_run_is_said_as_not_known()
     {

@@ -5,7 +5,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// BRAINSTORM1a (D176 points 2-4): the no-model tier of a brainstorm, on values. The packet is frozen within its bounds, names no
+/// The no-model tier of a brainstorm, on values. The packet is frozen within its bounds, names no
 /// machine path, and is named by its content's digest; a generator's answer is held to its schema, its scales and its bounds, and a
 /// failure is codes, never part of an answer; the synthesis is handed anonymous ids with the makers interleaved, is held to placing
 /// every id once and ranking without gap or tie, and Daoris re-attaches who gave which and keeps its own flags on each group.
@@ -65,7 +65,7 @@ public sealed class BrainstormValidationTests
         var packet = BrainstormPackets.Freeze("Why?", null, "words", null, [new("decision", "docs/D1.md", 1, 2, "x", "x")], BrainstormBounds.First);
         Assert.Null(packet.Tier);
 
-        // BRAINSTORMPACKET1: the question's terms, never the question as one phrase.
+        // The question's terms, never the question as one phrase.
         Assert.Equal(["daily report"], BrainstormWordings.Of("Why does the daily report drop its last day?"));
         Assert.Equal(["Why?"], BrainstormWordings.Of("Why?"));
     }

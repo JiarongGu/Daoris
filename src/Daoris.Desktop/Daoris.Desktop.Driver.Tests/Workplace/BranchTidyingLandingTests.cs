@@ -5,18 +5,18 @@ using static Daoris.Desktop.Driver.Tests.GitFixture;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// AUTOTIDY2a and AUTOTIDY2b over real git: the look waits for the line to hold what Accept landed on a branch of the person's,
-/// and takes the branches landings made once it does, after their sessions' branches. Split from
-/// <see cref="BranchTidyingProcessTests"/> (PROC1g), and kept out of the git half: its looks judge the most branches of the tidy's
-/// classes, and with a gate set beside it one ran past the fixture's four-minute <c>Bound</c> alone, so four at once there would
-/// break it. Three classes of one look each (PROCPAR1): a class runs its tests one after another, and three looks in one class
-/// made the Process half's longest class.
+/// Over real git, the look waits for the line to hold what Accept landed on a branch of the person's,
+/// and takes the branches landings made once it does, after their sessions' branches. Kept apart from
+/// <see cref="BranchTidyingProcessTests"/> and out of the git half: its looks judge the most branches of the tidy's
+/// classes, and with a gate set beside it one can run past the fixture's four-minute <c>Bound</c> alone, so four at once there would
+/// break it. Three classes of one look each: a class runs its tests one after another, and three looks in one class
+/// would make the Process half's longest class.
 /// </summary>
 [Trait(Category.Name, Category.Process)]
 public sealed class BranchTidyingLandingTests : BranchTidyingFixture
 {
     /// <summary>
-    /// 🔴 AUTOTIDY2a, the look waits for the line: Accept's landing put each session's commits on a branch of the person's, its
+    /// The look waits for the line: Accept's landing puts each session's commits on a branch of the person's, its
     /// pull request still open, so the line does not hold them and the person may still ask that session to change them in its
     /// own tree. The look keeps each tree and branch, saying nothing, though the press would take them. Once the line has the
     /// commits, merged into its own branch, or only into origin's copy as a fetch leaves a platform's merge nobody pulled yet,
@@ -63,12 +63,12 @@ public sealed class BranchTidyingLandingTests : BranchTidyingFixture
     }
 }
 
-/// <summary>The landing branches a look takes, a class of their own look (PROCPAR1, <see cref="BranchTidyingLandingTests"/>).</summary>
+/// <summary>The landing branches a look takes, a class of their own look (<see cref="BranchTidyingLandingTests"/>).</summary>
 [Trait(Category.Name, Category.Process)]
 public sealed class BranchTidyingLandingBranchesTests : BranchTidyingFixture
 {
     /// <summary>
-    /// 🔴 AUTOTIDY2b, the row's own case: the branches Accept's landings made (D102's group) go by the look once the line holds
+    /// The branches Accept's landings made go by the look once the line holds
     /// their work, after their sessions' branches, as the press takes them: one merged into the line, and one squash-merged, its
     /// commits kept on a ref of their own. Each is said in the report by its name, and in the machine log by its session alone,
     /// since its name carries the title's words. One whose pull request is still open stays, with its session's branch, saying
@@ -98,7 +98,7 @@ public sealed class BranchTidyingLandingBranchesTests : BranchTidyingFixture
 
         Assert.Contains(open.Branch, branches, StringComparison.Ordinal);
         Assert.Contains(open.Tree.Branch, branches, StringComparison.Ordinal);
-        // KEEPSIZE1b (the keep-size design §3.1): where the line does not hold a session branch's tip by ancestry, a squash's form of it,
+        // Where the line does not hold a session branch's tip by ancestry, a squash's form of it,
         // the session branch the look takes keeps its exact tip on a recovery ref, beside the squashed landing's own; a merged one needs none.
         var discarded = $"refs/daoris/discarded/{squashed.Branch}";
         Assert.Equal(
@@ -130,12 +130,12 @@ public sealed class BranchTidyingLandingBranchesTests : BranchTidyingFixture
     }
 }
 
-/// <summary>The landing branches a look keeps, a class of their own look (PROCPAR1, <see cref="BranchTidyingLandingTests"/>).</summary>
+/// <summary>The landing branches a look keeps, a class of their own look (<see cref="BranchTidyingLandingTests"/>).</summary>
 [Trait(Category.Name, Category.Process)]
 public sealed class BranchTidyingLandingKeptTests : BranchTidyingFixture
 {
     /// <summary>
-    /// AUTOTIDY2b: a landing's branch whose work the line holds stays from the look, as the press keeps it, saying nothing, where it
+    /// A landing's branch whose work the line holds stays from the look, as the press keeps it, saying nothing, where it
     /// is checked out in a tree of the person's, holds a commit its remote lacks (pushed, then moved), or a session branch a session
     /// still works in leans on it. The session branch of each of the first two goes, its work on the line through that branch.
     /// </summary>
@@ -175,7 +175,7 @@ public sealed class BranchTidyingLandingKeptTests : BranchTidyingFixture
         }
 
         Assert.DoesNotContain(said, line => line.Contains("feature/", StringComparison.Ordinal));
-        // KEEPSIZE1b (§3.1): the two session branches taken keep their exact tips on recovery refs, the line holding their work by a
+        // The two session branches taken keep their exact tips on recovery refs, the line holding their work by a
         // squash, never by ancestry; the landing branches the look keeps write none.
         Assert.Equal(
             new[] { $"refs/daoris/discarded/{checkedOut.Tree.Branch}", $"refs/daoris/discarded/{pushed.Tree.Branch}" }.Order(StringComparer.Ordinal),

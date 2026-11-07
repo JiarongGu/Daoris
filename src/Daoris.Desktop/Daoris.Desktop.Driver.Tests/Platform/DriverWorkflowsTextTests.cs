@@ -6,7 +6,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// The port keeps today's text (PUSH1f2b, D194 point 6, the alone-path design §3): each case of the retired <c>driver</c> verb's workflows and
+/// The port keeps today's text: each case of the retired <c>driver</c> verb's workflows and
 /// <c>brainstorms</c>, as the CLI's TypeScript verb said it before it
 /// retired (<c>fixtures/driver-workflows-text.json</c>), said again by <see cref="DriverChoicesCommand"/> acting alone on a home of its
 /// own, the terminal in it: the same lines on each stream, the same exit, <c>driver.json</c> after it the same choices, and every other
@@ -21,8 +21,8 @@ public sealed partial class DriverWorkflowsTextTests
         WorkspaceRoot.Folder, "src", "Daoris.Desktop", "Daoris.Desktop.Driver.Tests", "fixtures", "driver-workflows-text.json"))).RootElement.Clone());
 
     /// <summary>
-    /// The rows of the verbs that saved a list of steps, kept in the table as the record of what they said and no longer run (WORKFLOWCLEAN1 1b):
-    /// <c>edit</c>, and <c>new</c>, <c>apply</c> and <c>import</c> of steps are refused now, by the one judge's words, which the command tests prove.
+    /// The rows of the verbs that saved a list of steps, kept in the table as the record of what they said and do not run:
+    /// <c>edit</c>, and <c>new</c>, <c>apply</c> and <c>import</c> of steps are refused, by the one judge's words, which the command tests prove.
     /// </summary>
     private static readonly string[] RetiredPrefixes =
     [
@@ -124,7 +124,7 @@ public sealed partial class DriverWorkflowsTextTests
                 }
             }
 
-            // Nothing else under the home was written: every file there now was there before, or the row says it was written.
+            // Nothing else under the home is written: every file there existed before the verb ran, or the row says it is written.
             var said = written.ValueKind == JsonValueKind.Object ? written.EnumerateObject().Select(file => file.Name).ToHashSet(StringComparer.Ordinal) : [];
             var kept = files.ValueKind == JsonValueKind.Object ? files.EnumerateObject().Select(file => file.Name).ToHashSet(StringComparer.Ordinal) : [];
             foreach (var path in Directory.EnumerateFiles(home, "*", SearchOption.AllDirectories).Where(path => path != config))

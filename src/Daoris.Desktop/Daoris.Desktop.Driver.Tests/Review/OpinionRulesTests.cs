@@ -5,13 +5,12 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// XAGENT1a (D155 point 3, the second-agent design §2.2–§2.6): the second-opinion rule, <c>opinions</c> and
+/// The second-opinion rule, <c>opinions</c> and
 /// <c>workspaceOpinions</c> in <c>driver.json</c> — read, refused, resolved, said and edited, and what each door says of the
-/// gate that reads it (XAGENT1f4). Nothing here chooses a reviewer or starts a process: the gate's own tests hold that.
+/// gate that reads it. Nothing here chooses a reviewer or starts a process: the gate's own tests hold that.
 /// </summary>
 /// <remarks>
-/// Held, cell for cell, to ONE table, this suite's <c>fixtures/opinion-rules.json</c>, which the service's tool test reads too (the
-/// CLI's twin, <c>opinions.ts</c>, left with the driver family's TypeScript in PUSH1f2b).
+/// Held, cell for cell, to ONE table, this suite's <c>fixtures/opinion-rules.json</c>, which the service's tool test reads too.
 /// </remarks>
 public sealed class OpinionRulesTests
 {
@@ -59,7 +58,7 @@ public sealed class OpinionRulesTests
         "gate", row => (Cell(row, 0)!, Cell(row, 1)!, Strings(row[2])));
 
     /// <summary>
-    /// XAGENT1f4: what each door says after the rule's sentences, now that the gate reads the rule (XAGENT1f): what work that
+    /// What each door says after the rule's sentences, given that the gate reads the rule: what work that
     /// waits for another agent's reading at landing, and a chain's next step under <c>steps</c>, wait for, with the person's
     /// terminal doors, and that what is declared safe is not handed to a reviewer yet; nothing after none here.
     /// </summary>
@@ -107,7 +106,7 @@ public sealed class OpinionRulesTests
         "families", row => (Cell(row, 0)!, Cell(row, 1)!, Cell(row, 2)!, row[3].GetBoolean()));
 
     /// <summary>
-    /// Design §3.1: one family is one owner (AGT7) or one declared maker, read from the adapters this build carries, as the
+    /// One family is one owner or one declared maker, read from the adapters this build carries, as the
     /// CLI reads its own toolchain table. Which reviewers a door names as the working agent's own comes from this.
     /// </summary>
     [Theory]
@@ -175,7 +174,7 @@ public sealed class OpinionRulesTests
     }
 
     /// <summary>
-    /// A place on a saved workflow has its opinion decided by that workflow's <c>opinion</c> node (WORKFLOWCLEAN1 1h): `none` is refused in
+    /// A place on a saved workflow has its opinion decided by that workflow's <c>opinion</c> node: `none` is refused in
     /// the shared edit, coded, naming the node; naming reviewers, or a place on Current, is unchanged.
     /// </summary>
     [Fact]

@@ -4,7 +4,7 @@ using static Daoris.Desktop.Driver.Tests.GitFixture;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// AUTOTIDY1 over real git, through the watch: its look runs the tidy beside it. A class of its own (PROC1g): the watch ticks on
+/// Over real git, through the watch: its look runs the tidy beside it. A class of its own: the watch ticks on
 /// its poll, which a neighbour's load could hold, so it runs one at a time, where most of the look's cases run four at once
 /// (<see cref="BranchTidyingFixture"/>).
 /// </summary>

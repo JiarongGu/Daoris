@@ -5,7 +5,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// A plugin's tools checked at a trial (PLUGTOOL1a, D150 point 7; the UX6 design §7.2–§7.3): each declared tool found where
+/// A plugin's tools checked at a trial: each declared tool found where
 /// the tools say (the way in <c>tools.json</c>, else the system's PATH), asked its version against its range, then each of
 /// its checks run one at a time with ten seconds each. A stand-in answers for every program, so nothing here starts one:
 /// what a real start does is <see cref="PluginKitTests"/>' (<c>Process</c>), through <c>plugins try</c>.
@@ -129,7 +129,7 @@ public sealed class PluginToolCheckTests : IDisposable
         Assert.Empty(runner.Calls);
     }
 
-    /// <summary>The way the person chose decides (D121 §2.3): a managed version nobody downloaded refuses, and never falls back to PATH's.</summary>
+    /// <summary>The way the person chose decides: a managed version nobody downloaded refuses, and never falls back to PATH's.</summary>
     [Fact]
     public async Task A_managed_version_nobody_downloaded_is_refused_and_the_paths_is_never_taken()
     {
@@ -232,7 +232,7 @@ public sealed class PluginToolCheckTests : IDisposable
         Assert.Equal("not ready: Signed in. `pwsh` could not be started.", Assert.Single(gone.Ready).Sentence);
     }
 
-    /// <summary>A check's first word is found as a hook's is (TOOLS5): a name a tool answers for is that tool's file, any other the PATH's.</summary>
+    /// <summary>A check's first word is found as a hook's is: a name a tool answers for is that tool's file, any other the PATH's.</summary>
     [Fact]
     public async Task A_checks_first_word_is_the_tools_file_where_a_tool_answers_for_it_and_else_the_paths()
     {
@@ -269,7 +269,7 @@ public sealed class PluginToolCheckTests : IDisposable
 
     /// <summary>
     /// At a trial each tool is a step of its own, then each of its checks, so `plugins try` says each problem in its own
-    /// sentence; the field's problem is a step too. None of them stops the trial (PLUGTOOL1a).
+    /// sentence; the field's problem is a step too. None of them stops the trial.
     /// </summary>
     [Fact]
     public async Task At_a_trial_each_tool_and_each_check_is_a_step_in_its_own_sentence()

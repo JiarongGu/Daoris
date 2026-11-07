@@ -3,7 +3,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// WSR5a, the proof by content, case by case: every file a landed branch changed since it left the line —
+/// The proof by content, case by case: every file a landed branch changed since it left the line —
 /// a deletion and both paths of a rename included — must read on the line as the branch left it.
 /// </summary>
 [Trait(Category.Name, Category.Process)]
@@ -16,7 +16,7 @@ public sealed class LandedProofTests : LandedFixture
         var root = await RepositoryAsync("engine");
         var trees = new SessionTrees(Home);
         var b = await LandAsync(trees, root, "shared.txt", "one\ntwo\n", new LandingSubject("s2", "q2", "Second"), extra: ("b.txt", "b\n"));
-        // The line took b.txt as it was, and shared.txt otherwise.
+        // The line took b.txt as the branch left it, and shared.txt otherwise.
         await CommitAsync(root, "b.txt", "b\n", "part of it");
         await CommitAsync(root, "shared.txt", "one\nsomething else\n", "not quite");
 

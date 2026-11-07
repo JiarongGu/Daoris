@@ -4,9 +4,9 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// The page's terminal twins (PLUGUI1d, D119 §4.4, D50): <c>daoris plugin show &lt;id&gt; [--json]</c> and
+/// The page's terminal twins: <c>daoris plugin show &lt;id&gt; [--json]</c> and
 /// <c>plugins activity &lt;id&gt; [--since &lt;span&gt;] [--json]</c>, run whole in-process, with their exits:
-/// 0 shown, 2 could not do what was asked.
+/// 0 shown, 2 could not do what is asked.
 /// </summary>
 public sealed class PluginsCommandTests : IDisposable
 {
@@ -44,7 +44,7 @@ public sealed class PluginsCommandTests : IDisposable
         Assert.Contains("Holds a quest whose title asks it to.", said);
         Assert.Contains("running since", said);
         Assert.Contains("listening on quest/consider, session/ended", said);
-        // The terminal says the state is the log's, and when and from where (D119 §2).
+        // The terminal says the state is the log's, and when and from where.
         Assert.Contains("the machine log's last word for it", said);
         Assert.Contains("(desktop)", said);
         Assert.Contains("quest/consider", said);
@@ -55,7 +55,7 @@ public sealed class PluginsCommandTests : IDisposable
     }
 
     /// <summary>
-    /// A plugin on the work wire (FABRIC-PERFORM1a): ready says who starts it and when, and unsound says what waits on it, never that
+    /// A plugin on the work wire: ready says who starts it and when, and unsound says what waits on it, never that
     /// nothing does or that it runs nothing itself.
     /// </summary>
     [Fact]
@@ -77,8 +77,8 @@ public sealed class PluginsCommandTests : IDisposable
     }
 
     /// <summary>
-    /// HELPPLUG1a's tightening (D170's note): <c>approve</c> and <c>withdraw</c> are the terminal twins of the page's presses
-    /// (D50): the exact tools a server declares for Ask Daoris, its writes too or its reads alone; a generic execution tool is
+    /// <c>approve</c> and <c>withdraw</c> are the terminal twins of the page's presses:
+    /// the exact tools a server declares for Ask Daoris, its writes too or its reads alone; a generic execution tool is
     /// refused with its reason, exit 2.
     /// </summary>
     [Fact]
@@ -107,11 +107,11 @@ public sealed class PluginsCommandTests : IDisposable
         Assert.Equal(2, refused);
         Assert.Contains("`run_command`", why);
         Assert.Contains("plugin approve <id> <server> [--reads-only | --writes <tool,…>]", PluginsCommand.Usage);
-        // CONFIRMWAIT1b (the confirm-wait design §4.1): an approval and a withdrawal wait on their Confirm, and the usage says for how long.
+        // An approval and a withdrawal wait on their Confirm, and the usage says for how long.
         Assert.Contains(InstanceDoor.WaitUsage, PluginsCommand.Usage, StringComparison.Ordinal);
     }
 
-    /// <summary>HELPPLUG1c: the page accepts each write on its own, and its terminal twin takes the same list (D50).</summary>
+    /// <summary>The page accepts each write on its own, and its terminal twin takes the same list.</summary>
     [Fact]
     public async Task Approve_with_writes_accepts_only_the_writes_named()
     {
@@ -131,7 +131,7 @@ public sealed class PluginsCommandTests : IDisposable
         Assert.Equal(["mcp__issues__create_issue"], grants.Ask);
     }
 
-    /// <summary>PLUGINSHOWCHANGED1: <c>show</c> says an approval changed since, as the page does (D50), and the JSON carries <c>changed</c>.</summary>
+    /// <summary><c>show</c> says an approval changed since, as the page does, and the JSON carries <c>changed</c>.</summary>
     [Fact]
     public async Task Show_says_when_an_approval_changed_since()
     {

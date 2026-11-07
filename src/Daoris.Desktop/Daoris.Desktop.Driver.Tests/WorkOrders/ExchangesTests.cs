@@ -3,7 +3,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// COMMS1d (the comms design §3.4): the exchanges of a line, read from the look's snapshot alone. Delivery and outcome stay apart, the
+/// The exchanges of a line, read from the look's snapshot alone. Delivery and outcome stay apart, the
 /// read is equal across a restart, a source not read is said, and a head after a hand-over holds its predecessor's open exchanges.
 /// </summary>
 public sealed class ExchangesTests
@@ -46,9 +46,9 @@ public sealed class ExchangesTests
     }
 
     /// <summary>
-    /// COMMS1i (wave 2's rest): a reviewer's record is an opinion asked on the line it serves, read from the record alone: reading while it
+    /// A reviewer's record is an opinion asked on the line it serves, read from the record alone: reading while it
     /// runs, which the line waits on; ended or failed once it stopped, the opinion's own words the landing gate's. A record with no
-    /// <c>serves</c>, an opinion from before D203's mark, is on no line.
+    /// <c>serves</c>, an opinion from before the mark, is on no line.
     /// </summary>
     [Fact]
     public void COMMS1i_a_reviewer_s_record_reads_as_an_opinion_asked_on_the_line_it_serves()
@@ -79,8 +79,8 @@ public sealed class ExchangesTests
     }
 
     /// <summary>
-    /// COMMS1i: a conversation's quest is the one it took through its own connector, its <c>quest</c> empty, so the question that quest
-    /// asked is what the line waits on, as the strip reads its wait; a driven part's own quest is read as before.
+    /// A conversation's quest is the one it took through its own connector, its <c>quest</c> empty, so the question that quest
+    /// asked is what the line waits on, as the strip reads its wait.
     /// </summary>
     [Fact]
     public void COMMS1i_a_conversation_waits_on_the_question_of_the_quest_it_took()

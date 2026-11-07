@@ -5,10 +5,10 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// REVIEWENV1j (D154 point 3; the review environment design §1.4–§1.6, §3.6, D50): <c>daoris quest review &lt;id&gt;
+/// <c>daoris quest review &lt;id&gt;
 /// off|on|&lt;environment&gt;</c>, the terminal's twin of the chain's choice at the gate. <c>off</c> is the skip, through the verdict's
 /// door; <c>on</c> or an environment's name is <i>Set it up</i>, through the set-up step's door, in the environment the
-/// repository's rule declares. Each answers in the service's sentence, a refusal included. A service stood in: the fast half (MOD8).
+/// repository's rule declares. Each answers in the service's sentence, a refusal included. A service stood in: the fast half.
 /// </summary>
 public sealed class QuestReviewChoiceTests
 {
@@ -141,7 +141,7 @@ public sealed class QuestReviewChoiceTests
     {
         // The exchange's own refusal: a set-up step follows a done quest.
         { HttpStatusCode.Conflict, "Quest `#q1` is Open: a set-up step shows work that is done, so it follows a done quest. Nothing was published." },
-        // A host handed the person's key refuses a keyless terminal at the person's door (PERSONDOOR1a).
+        // A host handed the person's key refuses a keyless terminal at the person's door.
         {
             HttpStatusCode.Forbidden,
             "Only the person can give a set-up step, and this call carried no key of theirs. Nothing was kept. In Daoris's window, "

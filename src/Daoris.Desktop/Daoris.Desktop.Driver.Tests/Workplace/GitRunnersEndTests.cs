@@ -4,16 +4,15 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// Each of the three git runners returns only once its process has exited (GITAPP1a-iii, the git-app design P1.6 and P1.7's
-/// "kill and wait, observed", Codex R4-5): <c>RunGitAsync</c> beneath <see cref="WorkingTree.GitAsync(string, IReadOnlyList{string}, CancellationToken)"/>,
+/// Each of the three git runners returns only once its process has exited: <c>RunGitAsync</c> beneath <see cref="WorkingTree.GitAsync(string, IReadOnlyList{string}, CancellationToken)"/>,
 /// <see cref="WorkingTree.ReadGitAsync"/> and <see cref="WorkingTree.GitBytesAsync"/>, cancelled during the process's creation and
 /// while it runs; and one whose kill is refused says <c>git.unended</c> rather than returning as if it had ended.
 /// </summary>
 /// <remarks>
-/// Today's tests saw that git's tree was ended (<see cref="GitStreamEndsTests"/>, by a marker a grandchild would have written); never
+/// <see cref="GitStreamEndsTests"/> sees that git's tree is ended, by a marker a grandchild would have written; never
 /// that the runner returned after the exit. The stand-in is a node that waits and ignores its input, started in git's place through the
 /// gate's test seam (<see cref="ProcessStarts.Within"/>); its pid is watched through a handle of the test's own, which the runner's
-/// dispose of its own cannot close. Fixtures live under the repository's gitignored <c>_fixtures/</c>. 🔴 Nothing here reaches a network.
+/// dispose of its own cannot close. Fixtures live under the repository's gitignored <c>_fixtures/</c>. Nothing here reaches a network.
 /// </remarks>
 [Trait(Category.Name, Category.Process)]
 public sealed class GitRunnersEndTests : IDisposable

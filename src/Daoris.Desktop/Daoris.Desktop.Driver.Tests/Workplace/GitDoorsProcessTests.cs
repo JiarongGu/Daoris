@@ -4,7 +4,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// GITAUTH1b's proof (the git-auth design §14 row 2), with this machine's real git and Daoris's built doors laid out as an install's:
+/// The proof, with this machine's real git and Daoris's built doors laid out as an install's:
 /// a fetch and a push through the remote helper against an HTTP host over <c>git http-backend</c>, and through the ssh door against a
 /// stand-in ssh that runs the remote command on this machine; a session's push refused at each door with one line, and the landing's
 /// grant letting one push through, once.
@@ -15,7 +15,7 @@ namespace Daoris.Desktop.Driver.Tests;
 /// <para><b>OpenSSH's own transport</b> is proved against <see cref="GitSshHost"/> (<see cref="GitSshProcessTests"/>); the stand-in ssh
 /// here proves the door's judgement, its argument contract and <c>BatchMode</c> given first.</para>
 /// <para>In the Process half, beside a listener. <see cref="GitDoorsPinnedProcessTests"/> runs every fact again with the MinGit the
-/// toolchain pins (<see cref="PinnedMinGit"/>) named as the home's git, the doors' own proof on both gits (GITAUTH1b).</para>
+/// toolchain pins (<see cref="PinnedMinGit"/>) named as the home's git, the doors' own proof on both gits.</para>
 /// </remarks>
 [Trait(Category.Name, Category.Process)]
 public class GitDoorsProcessTests : IDisposable
@@ -262,7 +262,7 @@ public class GitDoorsProcessTests : IDisposable
     // ── SSH, through the ssh door ─────────────────────────────────────────────────────────────────
 
     /// <summary>
-    /// A stand-in ssh for the repository's own <c>core.sshCommand</c>: it writes the words it was handed, then runs the remote command
+    /// A stand-in ssh for the repository's own <c>core.sshCommand</c>: it writes the words it is handed, then runs the remote command
     /// here, as a host would. Named by a quoted path, so git and the door run it through <c>sh</c>.
     /// </summary>
     private string StandInSsh()
@@ -281,7 +281,7 @@ public class GitDoorsProcessTests : IDisposable
 
     /// <summary>
     /// The work cloned over the stand-in with no door in the way, its own <c>core.sshCommand</c> naming it: git unsets
-    /// <c>GIT_CONFIG_PARAMETERS</c> for its ssh child (measured, GITAUTH1b), so a command-line <c>-c core.sshCommand</c> never reaches
+    /// <c>GIT_CONFIG_PARAMETERS</c> for its ssh child (measured), so a command-line <c>-c core.sshCommand</c> never reaches
     /// the door, and a repository's own setting does.
     /// </summary>
     private async Task<string> CloneOverSshAsync()

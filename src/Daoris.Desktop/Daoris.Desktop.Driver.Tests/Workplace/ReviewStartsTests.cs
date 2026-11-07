@@ -4,7 +4,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// GITAPP1a-i's proof on today's chain (D202 point 2, the git-app design P1.4, P1.8 row 1): Review's read of a session tree, counted
+/// The proof on today's chain: Review's read of a session tree, counted
 /// through the one seam, starts <c>12 + I + M + Uᵣ</c> git before the offer, and the line's guesses and both <c>--show-toplevel</c>s
 /// besides, in today's order, each with today's arguments (<see cref="GitLaunchTests.Today"/>). Real git in scratch repositories,
 /// read through <see cref="SessionReviews"/>, the route's own code.
@@ -27,7 +27,7 @@ public sealed class ReviewStartsTests : LandedFixture
         return (root, trees, tree, began);
     }
 
-    // Today's chain, the oracle GITAPP1a-ii's graph is held equal to (ReviewGraphTodayTests): its starts, in its order.
+    // Today's chain, the oracle the graph is held equal to (ReviewGraphTodayTests): its starts, in its order.
     private static async Task<(SessionReview? Review, GitCount Starts)> ReadAsync(SessionTrees trees, TreeOpened tree, string began)
     {
         using var count = GitLaunch.Count();
@@ -98,7 +98,7 @@ public sealed class ReviewStartsTests : LandedFixture
         TodaysArguments(count);
     }
 
-    /// <summary>REVIEWBASE3's chain step: the record's base and the line's incomparable, so I and M are asked.</summary>
+    /// <summary>A chain step: the record's base and the line's incomparable, so I and M are asked.</summary>
     [Fact]
     public async Task A_chain_step_that_merged_the_line_adds_the_independence_read_and_the_merge()
     {

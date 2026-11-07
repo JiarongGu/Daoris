@@ -4,7 +4,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// FOUNDATION1w-s part 2 (D212's note, the design §19.15, C8-1.2): every save of <c>driver.json</c>, any key's, reads its keeping lock again
+/// Every save of <c>driver.json</c>, any key's, reads its keeping lock again
 /// just before its rename and renames only while the lock still says what this writer wrote; a save whose lock another writer took (an aged
 /// lock taken as stale) is refused with nothing written. The lock is planted here as that writer leaves it, since the writers of one
 /// process queue on a gate and cannot take each other's; <see cref="DriverConfigFenceProcessTests"/> holds it against another process.

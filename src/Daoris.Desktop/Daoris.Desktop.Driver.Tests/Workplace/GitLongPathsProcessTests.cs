@@ -4,7 +4,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// TREELONG1, over real git: a tracked file that fits under its repository's checkout passes Windows' 260 characters in a session's
+/// Over real git: a tracked file that fits under its repository's checkout passes Windows' 260 characters in a session's
 /// tree, which sits deeper. The session's own git, through the environment its start is handed, reads the tree clean; a git handed
 /// nothing reads the same committed file as deleted, which an agent's <c>git add -A</c> would commit.
 /// </summary>
@@ -110,8 +110,8 @@ public sealed class GitLongPathsProcessTests : IDisposable
     }
 
     /// <summary>
-    /// The start hands the setting whatever the person's configuration says, as Daoris's own git calls always pass it (D109): reading
-    /// that configuration started a git at every start, which a help start must never (HelpStartReadTests). It is handed once.
+    /// The start hands the setting whatever the person's configuration says, as Daoris's own git calls always pass it: reading
+    /// that configuration would start a git at every start, which a help start must never (HelpStartReadTests). It is handed once.
     /// </summary>
     [Fact]
     public async Task A_person_whose_configuration_says_otherwise_is_handed_it_once_and_the_start_reads_no_configuration()

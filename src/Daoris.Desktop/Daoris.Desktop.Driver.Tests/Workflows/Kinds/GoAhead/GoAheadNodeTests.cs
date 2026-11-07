@@ -3,7 +3,7 @@ using static Daoris.Desktop.Driver.Tests.GateFixture;
 
 namespace Daoris.Desktop.Driver.Tests;
 
-/// <summary>FABRIC-NODE1b: the <c>go-ahead</c> is reached by the person's yes to its act and rejected by their refusal (D135's answers); anything else waits.</summary>
+/// <summary>The <c>go-ahead</c> is reached by the person's yes to its act and rejected by their refusal; anything else waits.</summary>
 public sealed class GoAheadNodeTests
 {
     [Fact]

@@ -3,7 +3,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// The MinGit the built-in resource list pins (GITAUTH1b, the git design's G1): fetched once into a folder of the repository's
+/// The MinGit the built-in resource list pins: fetched once into a folder of the repository's
 /// <c>_fixtures/</c> by the toolchain's own download, which holds the archive to the list's size and SHA-256 and refuses it otherwise, and
 /// named as a test home's git (<see cref="Lay"/>) so the doors' classes run with it beside the runner's git.
 /// </summary>

@@ -3,8 +3,8 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// FABRIC-PIPELINE1a (the pipeline design §4.2): where a landed route's acceptance stands against the declaration at the line's tip,
-/// read by blob alone: accepted where they are one, changed where the tip's differs, not accepted where none was, and nothing to accept
+/// Where a landed route's acceptance stands against the declaration at the line's tip,
+/// read by blob alone: accepted where they are one, changed where the tip's differs, not accepted where the tip holds none, and nothing to accept
 /// where the route names no verification.
 /// </summary>
 public sealed class LandedGatesTests

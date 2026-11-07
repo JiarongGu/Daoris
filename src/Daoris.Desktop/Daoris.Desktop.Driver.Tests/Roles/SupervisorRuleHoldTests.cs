@@ -3,7 +3,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// CONTEXTDRIVE1e (the context counters design §4.6 point 2): what keeps a supervisor's answer from going on, read at its keeping and again
+/// What keeps a supervisor's answer from going on, read at its keeping and again
 /// at its release: <c>supervisor-bound</c> at the answers-alone rule, <c>rule-holds</c> where another hold rule stands at its number.
 /// </summary>
 public sealed class SupervisorRuleHoldTests

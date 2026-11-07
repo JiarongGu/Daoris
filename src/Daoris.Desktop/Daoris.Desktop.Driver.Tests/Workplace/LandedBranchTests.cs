@@ -3,8 +3,8 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// WSR5a: a branch a landing made, whose pull request reached the line, goes by the same press as a
-/// session's branch (D88 extended). A squash merge puts none of its commits on the line, so git calls it
+/// A branch a landing made, whose pull request reached the line, goes by the same press as a
+/// session's branch. A squash merge puts none of its commits on the line, so git calls it
 /// unmerged; the proof is by content — every file it changed reads on the line as it left it — or by
 /// ancestry into another landed branch that proof clears. Only branches a landing made and recorded are
 /// judged. Real git throughout, in scratch repositories; the proof's cases are <see cref="LandedProofTests"/>
@@ -37,7 +37,7 @@ public sealed class LandedBranchTests : LandedFixture
         Assert.Equal("Fix the API gap", entry.Title);
         Assert.False(entry.Pushed);
         Assert.Null(entry.PullRequest);
-        // Machine-local, under the home (D63) — never in the repository.
+        // Machine-local, under the home — never in the repository.
         Assert.True(File.Exists(DaorisHome.Entry(Home, HomeEntry.Landings)));
         Assert.Empty((await GitAsync(root, "status", "--porcelain")).Trim());
     }
@@ -72,7 +72,7 @@ public sealed class LandedBranchTests : LandedFixture
 
     /// <summary>
     /// The first real ticket's case: a landing made A; a later landing made B from a tree holding A's
-    /// commits; B's pull request was squash-merged onto the line. Git calls both unmerged. B's files read
+    /// commits; B's pull request is squash-merged onto the line. Git calls both unmerged. B's files read
     /// on the line as it left them, and A is inside B — so both go, and a branch of the person's never
     /// is judged at all.
     /// </summary>
@@ -117,7 +117,7 @@ public sealed class LandedBranchTests : LandedFixture
     }
 
     /// <summary>
-    /// SQUASHTIDY1e: a squash carries the aggregate content only, so the removed branch's own commits and messages are kept on a
+    /// A squash carries the aggregate content only, so the removed branch's own commits and messages are kept on a
     /// recovery ref at its judged tip, and the removal says where. A merged branch is on the line, so it keeps none; one that
     /// changed since the list is not removed and leaves none; a name already taken is numbered.
     /// </summary>

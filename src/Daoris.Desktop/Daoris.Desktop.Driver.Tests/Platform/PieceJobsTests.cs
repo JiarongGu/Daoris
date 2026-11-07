@@ -3,7 +3,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// COAGENT1b (D199 point 2; the co-agent design §2.3 steps 5 and 6, §7.2): a piece's strict job is made empty and named, never shared
+/// A piece's strict job is made empty and named, never shared
 /// with another holder of the name, and a look reads it as empty, running or unknown, a job no name answers to being unknown. No process
 /// is started here: a job is a kernel object, and the partner's process in it is the <c>Process</c> half's.
 /// </summary>

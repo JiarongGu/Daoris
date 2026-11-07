@@ -4,7 +4,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// GITAPP1a-ii's comparison (D202 part one, the git-app design P1.7): on each fixture, real git in scratch repositories, Review is read
+/// The comparison: on each fixture, real git in scratch repositories, Review is read
 /// once through today's chain (<see cref="SessionReviews.ChainReadAsync"/>, the oracle) and once through the graph the route reads
 /// through (<see cref="SessionReviews.TimedAsync"/>), and the two outcomes are held equal: an answer field by field, its patches byte for
 /// byte, or a refusal (none answered) or a fault by its type and words. The commands each ran are held equal too: the Π reads (every
@@ -72,7 +72,7 @@ public sealed class ReviewGraphTodayTests : LandedFixture
         static string Spelled(GitLaunched start) => string.Join(' ', start.Arguments);
         static bool Program(GitLaunched start) => GitLaunch.Command(start.Arguments) is [var verb, ..] && Programs.Contains(verb);
 
-        // Π: the same reads in the same order (P1.1: one chain in today's order), each asked once (GitReadOnce). The offer's and the
+        // Π: the same reads in the same order (one chain in today's order), each asked once (GitReadOnce). The offer's and the
         // landed review's own reads are its.
         Assert.Equal(chain.Where(Program).Select(Spelled).Distinct(), graph.Where(Program).Select(Spelled));
 
@@ -257,7 +257,7 @@ public sealed class ReviewGraphTodayTests : LandedFixture
         await SameAsync(trees, tree.Path, began);
     }
 
-    /// <summary>REVIEWBASE3's chain step (ReviewBaseTests.cs:169-187), M answering; and its conflicting variant, M refusing.</summary>
+    /// <summary>A chain step whose base and line are incomparable, M answering; and its conflicting variant, M refusing.</summary>
     [Theory]
     [InlineData("parent.txt")]
     [InlineData("line.txt")]

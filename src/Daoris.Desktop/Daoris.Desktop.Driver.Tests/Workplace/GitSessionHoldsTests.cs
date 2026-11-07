@@ -3,7 +3,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// A session holds nothing (D241 point 7, the git design §3.1 G5): the census of what a session's start is handed, which carries no
+/// A session holds nothing: the census of what a session's start is handed, which carries no
 /// key path, token or grant, its <c>gh</c> and <c>az</c> folders pointed at empty ones of Daoris's, and the harness's rule that denies
 /// reading <c>profiles/git/</c>. Runs in the agent-ports collection, since it sets the process's own variables and reads the workplace.
 /// </summary>

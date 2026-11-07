@@ -56,7 +56,7 @@ public sealed class GraphRunLandingTests : ReviewLandingFixture
 
     /// <summary>
     /// One whole pass of the runtime over the run's quest, done (held for the person's yes where <paramref name="held"/>), and its session's branch,
-    /// whose tip is read from git; what the line holds of it (LANDNODE1k) read in <paramref name="tree"/>, where given.
+    /// whose tip is read from git; what the line holds of it read in <paramref name="tree"/>, where given.
     /// </summary>
     private async Task PassAsync(string root, GrownBranch branch, string? tree = null, bool held = false, LandingDoor? door = null)
     {
@@ -76,7 +76,7 @@ public sealed class GraphRunLandingTests : ReviewLandingFixture
     private LandingDoor Door() => new(() => new LandPerformer(
         _home, _world, new SessionTrees(_home), new SessionEvents(DaorisHome.Entry(_home, HomeEntry.Sessions)), _lines.Add) { HoldsLease = () => true, Told = _told.Add });
 
-    // What the performer told at `work/event` (EVENTHOOK1b).
+    // What the performer told at `work/event`.
     private readonly List<WorkEvent> _told = [];
 
     /// <summary>A branch made for the person, no plugin asked.</summary>
@@ -96,8 +96,8 @@ public sealed class GraphRunLandingTests : ReviewLandingFixture
     }
 
     /// <summary>
-    /// LANDNODE1k: the quest's own holds are a step of the default, which the run's pass keeps active while the done is held for the person's yes;
-    /// the landing waits behind it and lands nothing. WORKFLOWCLEAN1 1c: the look chooses nothing for the run, and closes the entry it holds from
+    /// The quest's own holds are a step of the default, which the run's pass keeps active while the done is held for the person's yes;
+    /// the landing waits behind it and lands nothing. The look chooses nothing for the run, and closes the entry it holds from
     /// before the update as the run's own to land.
     /// </summary>
     [Fact]
@@ -114,7 +114,7 @@ public sealed class GraphRunLandingTests : ReviewLandingFixture
         Assert.Equal(line, await HeadAsync(root));
     }
 
-    /// <summary>LANDNODE1k: a version that holds no `quest.holds` lands a done held for the person's yes, as it is configured to: the look judges none.</summary>
+    /// <summary>A version that holds no `quest.holds` lands a done held for the person's yes, as it is configured to: the look judges none.</summary>
     [Fact]
     public async Task A_version_without_the_holds_lands_a_held_done_with_no_press()
     {
@@ -161,7 +161,7 @@ public sealed class GraphRunLandingTests : ReviewLandingFixture
     }
 
     /// <summary>
-    /// DEFAULTCONFIG1a: a version copied from <i>Merge automatically</i>, as <c>new --from</c> copies it, holds no review, so once its work's
+    /// A version copied from <i>Merge automatically</i>, as <c>new --from</c> copies it, holds no review, so once its work's
     /// requests are answered a pass readies its landing with no Accept, and the door merges the session's work into the line.
     /// </summary>
     [Fact]
@@ -173,7 +173,7 @@ public sealed class GraphRunLandingTests : ReviewLandingFixture
         var branch = Assert.Single(new SessionBranches(_home).All());
         var trees = new SessionTrees(_home);
 
-        // LANDNODE1k: its holds are steps the pass judges, what the line holds read in the session's tree.
+        // Its holds are steps the pass judges, what the line holds read in the session's tree.
         await PassAsync(root, branch, tree);
         var commit = await HeadAsync(tree);
         var gate = await trees.GateAsync(tree, "q1", _world, "s1");
@@ -185,9 +185,9 @@ public sealed class GraphRunLandingTests : ReviewLandingFixture
     }
 
     /// <summary>
-    /// LANDNODE1m: a saved copy of <i>Merge automatically</i> chosen for the repository, whose session's done its conclusion makes due under the
+    /// A saved copy of <i>Merge automatically</i> chosen for the repository, whose session's done its conclusion makes due under the
     /// version, is landed by the look once a pass readies its <c>land</c>: through a delivery, the standing authority's, bound to the commit the
-    /// pass judged and to the version's digest, as Current's look lands through its own (LANDNODE1c3).
+    /// pass judged and to the version's digest, as Current's look lands through its own.
     /// </summary>
     [Fact]
     public async Task A_saved_version_s_land_lands_its_work_at_done_through_its_delivery()
@@ -210,9 +210,9 @@ public sealed class GraphRunLandingTests : ReviewLandingFixture
     }
 
     /// <summary>
-    /// LANDNODE1m: after the look lands a saved version's work, the run read from the home's own records, as the loop's pass reads them once the
+    /// After the look lands a saved version's work, the run read from the home's own records, as the loop's pass reads them once the
     /// line's move is kept, says its landing reached and the line's step passed, every step before them reached; also where the line moved
-    /// after the pass readied the landing, so the work was replayed onto it and its tree followed the replay to another commit.
+    /// after the pass readies the landing, so the work is replayed onto it and its tree follows the replay to another commit.
     /// </summary>
     [Theory]
     [InlineData(false)]
@@ -244,7 +244,7 @@ public sealed class GraphRunLandingTests : ReviewLandingFixture
     }
 
     /// <summary>
-    /// A run whose work was merged into the line outside its `land`, before the land started, and whose tree and branch were tidied after: its
+    /// A run whose work is merged into the line outside its `land`, before the land starts, and whose tree and branch are tidied after: its
     /// branch's tip no longer reads, and its steps bind the commit its session branch records the line holding, so the landing and the line read
     /// reached and the run ends, rather than holding on a branch nothing can read.
     /// </summary>
@@ -306,7 +306,7 @@ public sealed class GraphRunLandingTests : ReviewLandingFixture
     }
 
     /// <summary>
-    /// WORKFLOWCLEAN1 1c: a merge behind a review lands only once the person's Accept is the review's word; the pass that applies the word readies the
+    /// A merge behind a review lands only once the person's Accept is the review's word; the pass that applies the word readies the
     /// <c>land</c> and the runtime starts it on its door, authorized by that Accept, through a delivery. Nothing lands before the word.
     /// </summary>
     [Fact]
@@ -411,13 +411,13 @@ public sealed class GraphRunLandingTests : ReviewLandingFixture
         await door.IdleAsync();
 
         Assert.Equal(await HeadAsync(tree), (await GitAsync(root, "rev-parse", PushBranch)).Trim());
-        // EVENTHOOK1b: the landing told once at `work/event`, with its code.
+        // The landing told once at `work/event`, with its code.
         var landed = Assert.Single(_told);
         Assert.Equal((WorkEventKinds.WorkLanded, LandingCode.Landed, "q1"), (landed.Kind, landed.Code, landed.Quest));
     }
 
     /// <summary>
-    /// LANDBACK1 across the update: a tree holding uncommitted work is not landed past the person's Accept. The session is carried on, the Accept
+    /// Across the update, a tree holding uncommitted work is not landed past the person's Accept. The session is carried on, the Accept
     /// kept as the review's repair on the run's record (no CarriedAccepts file), and once the tip moves only by its own commits the next pass accepts
     /// the review again and the runtime lands it.
     /// </summary>
@@ -455,7 +455,7 @@ public sealed class GraphRunLandingTests : ReviewLandingFixture
     private async Task InventoryPassAsync(string root, LandingDoor? door = null)
     {
         var sessions = _world.Records;
-        // The sessions' trees are joined to their units as the loop's gather joins them (OVERVIEWNOISE1b): no due entry stands in for it.
+        // The sessions' trees are joined to their units as the loop's gather joins them: no due entry stands in for it.
         var branches = WorkInventory.Units(await WorkInventories.GatherAsync(
             _home, new Dictionary<string, string>(), new HashSet<string>(), new List<string>(), recorded: WorkInventories.RecordedOf(sessions)));
         var units = WorkUnits.Linked(branches, QuestUnits.Read([.. _world.Quests.Values], sessions), [], sessions);
@@ -506,7 +506,7 @@ public sealed class GraphRunLandingTests : ReviewLandingFixture
     }
 
     /// <summary>
-    /// LANDNODE1: a session whose tree heads an operation bringing sessions together lands by its combined Accept where the run's pass readies
+    /// A session whose tree heads an operation bringing sessions together lands by its combined Accept where the run's pass readies
     /// its <c>land</c>: the door lands the head with its member brought in (the member's commit stands on the line), and the operation reads landed.
     /// </summary>
     [Fact]

@@ -3,7 +3,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// FOUNDATION1 mod-xii, the Participants cuts (the five small families): the behaviour they keep, written against the surface that
+/// The Participants cuts (the five small families): the behaviour they keep, written against the surface that
 /// exists on both sides of them (the harness conversation file as <c>HarnessConversations</c> reads it, the page's no to a helper's ask
 /// with its transcript line and its note, a conversation's chat run bound under a named workflow, and the attention headline of Ask
 /// Daoris's answer), so the same cases pass on the base and after it. The seams the cuts add are <c>ParticipantsPortsTests</c>'.

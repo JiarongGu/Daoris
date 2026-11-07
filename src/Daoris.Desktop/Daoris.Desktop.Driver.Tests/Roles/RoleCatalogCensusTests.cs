@@ -5,7 +5,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// FOUNDATION1 w, the judge's census (the foundation design §2.7, Part B's row w): every writer of an actor's staffing is named, each by the
+/// The judge's census: every writer of an actor's staffing is named, each by the
 /// file that reaches the judge or the staffing's one write, so a writer added later without joining the census fails here; and the eight
 /// always-on ids are one list.
 /// </summary>
@@ -23,9 +23,8 @@ public sealed partial class RoleCatalogCensusTests : IDisposable
     }
 
     /// <summary>
-    /// Each writer and the files that reach the judge or the staffing's write for it. FOUNDATION1y-i: the role door, which `SET_ROLE`,
-    /// `daoris role` and `role_propose` call; since ONEWAY1a the one door, `SET_ACTOR`, the actor verbs and `setting_propose`'s
-    /// staffing doors gone. D232: the release's migration writes an older home's five orders once.
+    /// Each writer and the files that reach the judge or the staffing's write for it. The role door, which `SET_ROLE`,
+    /// `daoris role` and `role_propose` call, is the one door; the release's migration writes an older home's five orders once.
     /// </summary>
     private static readonly (string Writer, string[] Files)[] Census =
     [

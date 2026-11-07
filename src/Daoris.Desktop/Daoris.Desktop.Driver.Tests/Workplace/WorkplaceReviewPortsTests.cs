@@ -3,7 +3,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// FOUNDATION1 mod-x, the Workplace-names-Review cut: the seams it adds. The landing gate read by the workplace as <see cref="IWorkplaceGate"/>,
+/// The Workplace-names-Review cut: the seams it adds. The landing gate read by the workplace as <see cref="IWorkplaceGate"/>,
 /// the world the look reads as <see cref="IWorkplaceLandingWorld"/> that the review's <see cref="IReviewLandingWorld"/> answers whole, the
 /// operation the review installs for a second opinion owed, the lower words the review's names alias, and the review's parts of the trees'
 /// gate read through the port the workflows install. The behaviour they keep is <see cref="WorkplaceReviewBoundaryTests"/>'.

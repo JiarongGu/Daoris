@@ -3,17 +3,17 @@ using System.Text.RegularExpressions;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// FOUNDATION1d-ii part 1's census of the say door's callers (the foundation design §3.4 rule 2, §10 row d-ii): a host with the <c>head</c> mark
+/// The census of the say door's callers: a host with the <c>head</c> mark
 /// refuses a word said to a record that is not its line's head as <c>continued</c>, naming the head, and every caller of the say door is named here
 /// with what it does then. <i>Follows</i>: the same say again at the head, whole, by <c>WordsHead.FollowAsync</c>, which ends a walk that comes back
 /// to a record it asked. <i>Own</i>: the caller reads the head itself and says the word there through its own judgement. <i>Not on</i>: the word is
 /// not passed on, and why. A new call is a failing line until it is named, and each named call must still be made as it says.
 /// </summary>
 /// <remarks>
-/// Read from the sources of the driver, its host and the modules, by name wherever they lie (STRUCT5a), as <see cref="SayKeysCensusTests"/> and
+/// Read from the sources of the driver, its host and the modules, by name wherever they lie, as <see cref="SayKeysCensusTests"/> and
 /// <see cref="SettledReadersCensusTests"/> are, a call being the door's when its receiver is a service client by the name the code gives it. The
 /// dispatchers' own keeps are named too (<see cref="Dispatchers"/>): a fresh dispatcher answered <c>continued</c> must hold, queue, steer, attempt and
-/// write nothing on its old door, never fall back to holding the word in this process as it does for a refusal from a host before COWORK1c.
+/// write nothing on its old door, never fall back to holding the word in this process as it does for a refusal from an older host.
 /// </remarks>
 [Trait(Category.Name, Category.Census)]
 public sealed partial class ContinuedReadersCensusTests

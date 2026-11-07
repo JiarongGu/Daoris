@@ -3,10 +3,10 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// AUTONOMY1c (D184 points 3 and 5): the setup a session started under is read back off its record, and a session going on in its
+/// The setup a session started under is read back off its record, and a session going on in its
 /// own conversation, which is not handed its instruction again, is told where its go-aheads have changed since. A carry-on is
 /// composed afresh from the setup as it stands, so it needs nothing more; a resumed conversation would otherwise keep the go-aheads
-/// it was first told, and a person who set them back to <c>named</c> would find a session that still asks none.
+/// it first received, and a person who set them back to <c>named</c> would find a session that still asks none.
 /// </summary>
 public sealed class AccessCarriedTests
 {
@@ -45,7 +45,7 @@ public sealed class AccessCarriedTests
         Assert.Contains("now asks no go-ahead but what the quest or the person's words demand", askNone);
 
         Assert.Null(Continuations.GoAheadsChanged(wasNever, GoAheads(AccessRules.Never)));
-        // A record from before the setup was told today's go-aheads, so today's says nothing.
+        // A record from before the setup told today's go-aheads, so today's says nothing.
         Assert.Null(Continuations.GoAheadsChanged(fromBefore, AccessRules.ResolveLevels(null, null, null)));
     }
 }

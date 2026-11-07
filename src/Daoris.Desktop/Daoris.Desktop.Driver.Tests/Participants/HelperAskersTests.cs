@@ -4,7 +4,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// FOUNDATION1q (D212; the foundation design §2.3, §7 row 9; the survey's §1.3 row 6): <i>may this session ask for a helper?</i>, asked
+/// <i>May this session ask for a helper?</i>, asked
 /// of the start layer, the driver's judge and the terminal's <c>sessions helper</c> over one table, <c>fixtures/helper-askers.json</c>
 /// among the service's tests, which the page's route and the service's desk and connector are held to as well, row for row.
 /// </summary>

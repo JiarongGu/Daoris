@@ -5,8 +5,8 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// The service as the review choice's terminal doors meet it (REVIEWENV1j), standing in: each request answered by the test's own
-/// table, or 404 with no JSON where it answers none, and every request kept as it was heard, its method, path and body.
+/// The service as the review choice's terminal doors meet it, standing in: each request answered by the test's own
+/// table, or 404 with no JSON where it answers none, and every request kept as heard, its method, path and body.
 /// </summary>
 internal static class ReviewChoiceStandIn
 {

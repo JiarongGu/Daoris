@@ -8,11 +8,11 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// GITLOCK1 over real git and other processes (D51's note of the row): every writer of a repository's checkout holds the checkout alone
+/// Over real git and other processes, every writer of a repository's checkout holds the checkout alone
 /// (<see cref="TreeLock.TryWriting"/>) from its fresh judgement through its write and its read after it. The other process is a PowerShell
 /// that opens the lock file as a Daoris process does, the file being the contract as <see cref="RecordLockProcessTests"/>' is, or
-/// <c>daoris-driver</c> itself. While another holds the checkout, a line's pull, a promotion and a merge rule's landing each leave it as it
-/// was, said; once it lets go, or dies, each moves it, and at the move another process is refused the lock both ways, alone and shared. A
+/// <c>daoris-driver</c> itself. While another holds the checkout, a line's pull, a promotion and a merge rule's landing each leave it
+/// unmoved, said; once it lets go, or dies, each moves it, and at the move another process is refused the lock both ways, alone and shared. A
 /// writer holding it waits for no lock but a process start's place and a record's. Not in the git half: it starts PowerShell and the host.
 /// </summary>
 [Trait(Category.Name, Category.Process)]
@@ -106,7 +106,7 @@ public sealed class CheckoutLockProcessTests : TreeSyncFixture
         return waits;
     }
 
-    /// <summary>🔴 Under its hold a writer waits only for locks whose holders wait for nothing, and it was seen waiting for one.</summary>
+    /// <summary>Under its hold a writer waits only for locks whose holders wait for nothing.</summary>
     private static void OnlyLeavesWaited(ConcurrentQueue<string> waits)
     {
         Assert.Contains(LockWaits.Starts, waits);
@@ -143,7 +143,7 @@ public sealed class CheckoutLockProcessTests : TreeSyncFixture
     /// <summary>What a writer says of a holder that named nothing, as another process holding the file does.</summary>
     private const string Unnamed = "a session was starting in `engine`, or another of Daoris's writes held it";
 
-    /// <summary>🔴 D109's pull: left, said, while another process holds the checkout; fast-forwarded once it lets go, holding it alone.</summary>
+    /// <summary>A line's pull: left, said, while another process holds the checkout; fast-forwarded once it lets go, holding it alone.</summary>
     [Fact]
     public async Task A_line_s_pull_leaves_the_checkout_while_another_process_holds_it_and_holds_it_alone_as_it_moves()
     {

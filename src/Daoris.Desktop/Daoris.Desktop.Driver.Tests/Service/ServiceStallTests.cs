@@ -3,9 +3,9 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// 🔴 SERVICESTALL1: on 2026-10-28 a terminal's ask exited 2 with <i>no DAORIS_SERVICE_URL … nothing answered as its service</i> a
+/// A terminal's ask exited 2 with <i>no DAORIS_SERVICE_URL … nothing answered as its service</i> a
 /// minute after a landing, on a machine at full load, and the service answered 200 in 62 ms ten seconds later. A request the
-/// service does not answer in its bound is said as what was seen: the address, the bound, and that a read was asked once more
+/// service does not answer in its bound is said as what the client saw: the address, the bound, and that a read got asked once more
 /// after a short wait, while a press that changes state is never asked again blindly and says what to look at instead. A
 /// stand-in host answers late or never, through the client's own bound.
 /// </summary>
@@ -13,7 +13,7 @@ public sealed class ServiceStallTests
 {
     private const string Url = "http://localhost:5181";
 
-    /// <summary>A host that answers each request as the test says, by its number, and counts what it was asked; a delay honours the client's bound.</summary>
+    /// <summary>A host that answers each request as the test says, by its number, and counts what it is asked; a delay honours the client's bound.</summary>
     private sealed class StandIn(Func<int, HttpRequestMessage, CancellationToken, Task<HttpResponseMessage>> answer) : HttpMessageHandler
     {
         public List<string> Asked { get; } = [];
@@ -106,11 +106,11 @@ public sealed class ServiceStallTests
         Assert.Single(host.Asked);
     }
 
-    /// <summary>The client a caller hands in carries the caller's deadline: its timeout ends a read once, as the cancellation HttpClient made it (SERVICESTALL1b).</summary>
+    /// <summary>The client a caller hands in carries the caller's deadline: its timeout ends a read once, as the cancellation HttpClient makes it.</summary>
     private static ServiceHttp Callers(StandIn host, int boundMilliseconds = 100) =>
         new(Url, key: null, new HttpClient(host, disposeHandler: false) { Timeout = TimeSpan.FromMilliseconds(boundMilliseconds) });
 
-    /// <summary>🔴 SERVICESTALL1b: a read that met the timeout of the client its caller handed in is the caller's deadline, not a stalled service.</summary>
+    /// <summary>A read that met the timeout of the client its caller handed in is the caller's deadline, not a stalled service.</summary>
     [Fact]
     public async Task A_read_that_meets_the_callers_own_deadline_stays_a_cancellation_and_is_asked_once()
     {
@@ -125,7 +125,7 @@ public sealed class ServiceStallTests
         Assert.Equal(["GET /api/quests", "GET /api/quests/q1/claim"], host.Asked);
     }
 
-    /// <summary>🔴 SERVICESTALL1b: a press against a host that never answers is sent once, and says nothing of the service's stall where the deadline was the caller's.</summary>
+    /// <summary>A press against a host that never answers is sent once, and says nothing of the service's stall where the deadline is the caller's.</summary>
     [Fact]
     public async Task A_press_the_caller_s_deadline_cut_is_sent_once()
     {
@@ -138,7 +138,7 @@ public sealed class ServiceStallTests
         Assert.Equal(["POST /api/asks", "DELETE /api/asks/1"], host.Asked);
     }
 
-    /// <summary>🔴 SERVICESTALL1b: a caller's deadline that falls while the read waits to be asked once more ends it as that cancellation, and the second try is never sent.</summary>
+    /// <summary>A caller's deadline that falls while the read waits to be asked once more ends it as that cancellation, and the second try is never sent.</summary>
     [Fact]
     public async Task A_caller_deadline_that_falls_between_the_two_tries_stays_a_cancellation()
     {
@@ -154,7 +154,7 @@ public sealed class ServiceStallTests
         Assert.Single(host.Asked);
     }
 
-    /// <summary>A service that could not be reached is not one that stalled: its failure comes back as it was, asked once, so a caller that counts its asks counts one.</summary>
+    /// <summary>A service that could not be reached is not one that stalled: its failure comes back unchanged, asked once, so a caller that counts its asks counts one.</summary>
     [Fact]
     public async Task A_service_that_cannot_be_reached_is_not_asked_again()
     {

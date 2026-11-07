@@ -3,10 +3,10 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// FABRIC-NODE1 (the fabric events design §E2): one lifecycle for every node kind. The table holds the only moves, every kind passes
+/// One lifecycle for every node kind. The table holds the only moves, every kind passes
 /// the same transition tests (canary 43), and what differs by kind is only who may report each outcome. Silence and a deadline never
 /// fail a node, a claim is no evidence, a retry is bounded, and an unknown outcome is reconciled before any new attempt.
-/// FABRIC-NODE1c (a second maker's review): every outcome is bound to its attempt and a reach to its attempt's whole binding, a
+/// Every outcome is bound to its attempt and a reach to its attempt's whole binding, a
 /// dispatched attempt is reconciled before another starts, a move returns what it cleared, and a skip holds for its graph and run.
 /// </summary>
 public sealed class NodeLifecycleTests
@@ -25,7 +25,7 @@ public sealed class NodeLifecycleTests
         {
             Retry = retry ?? new NodeRetry(3, [5, 30]),
             Rejectable = rejectable,
-            // FABRIC-UNIT1d: a plugin's performed node retries only a transient code, and only where it is idempotent or reconciled.
+            // A plugin's performed node retries only a transient code, and only where it is idempotent or reconciled.
             Perform = NodeKit.Row(kind) is null ? Retrying : null,
         };
 
@@ -63,7 +63,7 @@ public sealed class NodeLifecycleTests
     /// <summary>The move a row asks for, as its cause would make it: the kind's own source, the attempt, a binding, a code, the person's words.</summary>
     private static NodeMove MoveFor(NodeTransition row, NodeAuthority authority, NodeStatus status) => (row.To, row.By) switch
     {
-        // FABRIC-PERFORM1g: the person settles a held attempt on their own word, their evidence the person's.
+        // The person settles a held attempt on their own word, their evidence the person's.
         (NodeStates.Reached, NodeCause.Person) => new NodeMove(row.To, row.By) { Source = NodeSource.Person, Attempt = status.Attempt, Acceptance = OnWord(status.Attempt) },
         (NodeStates.Failed, NodeCause.Person) => new NodeMove(row.To, row.By) { Source = NodeSource.Person, Attempt = status.Attempt, Code = HeldResolutions.DidNot },
         (NodeStates.Reached, _) => new NodeMove(row.To, row.By) { Source = authority.ReachBy, Attempt = status.Attempt, Acceptance = Accept(status.Attempt) },
@@ -72,7 +72,7 @@ public sealed class NodeLifecycleTests
             Source = authority.FailureBy ?? NodeSource.Plugin, Attempt = status.Attempt, Code = "deploy-failed", Transient = true,
         },
         (NodeStates.Rejected, _) => new NodeMove(row.To, row.By) { Attempt = status.Attempt, Words = "not what was asked" },
-        // FABRIC-WIRE1g: a record's skip names its source and the attempt, never the person's words.
+        // A record's skip names its source and the attempt, never the person's words.
         (NodeStates.Skipped, NodeCause.Authority) => new NodeMove(row.To, row.By) { Source = authority.SkipBy ?? authority.ReachBy, Attempt = status.Attempt, Scope = Run },
         (NodeStates.Skipped, _) => new NodeMove(row.To, row.By) { Words = "not what was asked", Scope = Run },
         (NodeStates.Unknown, _) => new NodeMove(row.To, row.By) { Attempt = status.Attempt },
@@ -83,7 +83,7 @@ public sealed class NodeLifecycleTests
     /// <summary>What a kind's authority forbids of a row, and nothing else: a person's judgement, a failure, a skip.</summary>
     private static string? Forbidden(NodeTransition row, NodeAuthority authority) => row.To switch
     {
-        // INTEGRATE1p (C33): a failed node is gone on without, by the person, for a request alone.
+        // A failed node is gone on without, by the person, for a request alone.
         NodeStates.Skipped when row is { From: NodeStates.Failed, By: NodeCause.Person } => authority.Kind == NodeKinds.Request ? null : NodeRefusal.NotSkippable,
         NodeStates.Reached or NodeStates.Failed when row.By == NodeCause.Person && !authority.PersonSettles => NodeRefusal.NotSettled,
         NodeStates.Rejected when !authority.PersonJudges => NodeRefusal.NotJudged,
@@ -107,13 +107,13 @@ public sealed class NodeLifecycleTests
             "blocked>ready:daoris", "ready>blocked:daoris", "ready>active:daoris",
             "active>reached:authority", "active>failed:authority", "active>rejected:person", "active>unknown:daoris",
             "unknown>active:daoris", "unknown>reached:authority", "unknown>failed:authority",
-            // FABRIC-PERFORM1g (§D6, D173's note): the person settles what nothing else establishes.
+            // The person settles what nothing else establishes.
             "unknown>reached:person", "unknown>failed:person",
             "failed>ready:daoris", "failed>ready:person", "rejected>ready:person", "stopped>ready:person",
             "ready>skipped:person", "blocked>skipped:person", "active>skipped:person",
-            // INTEGRATE1p (C33): a declined request is gone on without, a request node alone.
+            // A declined request is gone on without, a request node alone.
             "failed>skipped:person",
-            // FABRIC-WIRE1g: an opinion's gate passes it over where nothing is asked of it, as D157's run reads it.
+            // An opinion's gate passes it over where nothing is asked of it.
             "active>skipped:authority",
             "skipped>blocked:person", "skipped>invalidated:daoris",
             "blocked>stopped:person", "ready>stopped:person", "active>stopped:person", "unknown>stopped:person", "invalidated>stopped:person",
@@ -171,12 +171,12 @@ public sealed class NodeLifecycleTests
         }
     }
 
-    /// <summary>That binding reached on the person's word (FABRIC-PERFORM1g): its evidence the person's, never a plugin's reference.</summary>
+    /// <summary>That binding reached on the person's word: its evidence the person's, never a plugin's reference.</summary>
     private static NodeAcceptance OnWord(int attempt) =>
         Bind(attempt) with { Evidence = new NodePort(NodeSource.Person, $"person:n1#{attempt}", "tip-1", null) };
 
     /// <summary>
-    /// FABRIC-PERFORM1g: the person's word settles a held attempt of a plugin's performed node, reached or failed as the person's and never
+    /// The person's word settles a held attempt of a plugin's performed node, reached or failed as the person's and never
     /// its plugin's; it reaches only a node exposing nothing a consumer reads, and it is never the plugin's source or another's evidence.
     /// </summary>
     [Fact]
@@ -273,7 +273,7 @@ public sealed class NodeLifecycleTests
     }
 
     /// <summary>
-    /// DECIDE1a: a decision is reached with one of its declared outcomes, by its authority or on the person's word, and any other node with
+    /// A decision is reached with one of its declared outcomes, by its authority or on the person's word, and any other node with
     /// none. The outcome is no part of the binding, so a start's binding carries none.
     /// </summary>
     [Fact]
@@ -329,7 +329,7 @@ public sealed class NodeLifecycleTests
     }
 
     /// <summary>
-    /// FABRIC-WIRE1g: an opinion's gate passes its started attempt over where nothing is asked of it, as its record's and never the person's:
+    /// An opinion's gate passes its started attempt over where nothing is asked of it, as its record's and never the person's:
     /// its source the gate, no words kept whatever the move brings, the attempt current and the run the attempt's. The person's skip keeps
     /// its own checks, and no other kind is passed over by a record.
     /// </summary>
@@ -363,7 +363,7 @@ public sealed class NodeLifecycleTests
     }
 
     /// <summary>
-    /// FABRIC-WIRE1h: the look's gate passes its attempt over where the choice turns it off, and the landing record passes a pull request over
+    /// The look's gate passes its attempt over where the choice turns it off, and the landing record passes a pull request over
     /// where no branch or nothing landed: each by its own record alone, no words kept, the attempt current and the run the attempt's, and
     /// never by the other's source or the person's.
     /// </summary>
@@ -392,7 +392,7 @@ public sealed class NodeLifecycleTests
     }
 
     /// <summary>
-    /// Canary 43, extended by FABRIC-NODE1b: every state D157's three gates keep (the opinion's, the look's, the go-ahead's), read from its
+    /// Canary 43: every state the three gates keep (the opinion's, the look's, the go-ahead's), read from its
     /// records alone, is a move the one table takes on the started node, by the kind's own authority or in the person's words, and the state
     /// that says nothing yet is no move: no gate keeps a state model of its own beside the nodes'.
     /// </summary>
@@ -493,7 +493,7 @@ public sealed class NodeLifecycleTests
 
     /// <summary>
     /// An unknown outcome is reconciled before any new attempt, through a stop and the person's ask alike. A dispatched attempt found
-    /// still running stays unreconciled until its outcome (FABRIC-NODE1c).
+    /// still running stays unreconciled until its outcome.
     /// </summary>
     [Fact]
     public void An_unknown_outcome_is_reconciled_before_any_new_attempt()
@@ -521,8 +521,8 @@ public sealed class NodeLifecycleTests
     }
 
     /// <summary>
-    /// FABRIC-NODE1f: an observed node's unknown belonged to its old binding and dispatched nothing, so an invalidation (a new binding)
-    /// clears it and the node is offered a start on the new one, where it once stayed Unreconciled and was skipped by the start loop for good.
+    /// An observed node's unknown belongs to the binding it began under and dispatched nothing, so an invalidation (a new binding)
+    /// clears it and the node is offered a start on the new one.
     /// </summary>
     [Theory]
     [InlineData(NodeKinds.Line)]
@@ -539,8 +539,8 @@ public sealed class NodeLifecycleTests
     }
 
     /// <summary>
-    /// FABRIC-NODE1f: a performed plugin node's unknown attempt may have taken effect, so an invalidation never clears it: only its
-    /// reconciliation, or the person's word on it (FABRIC-PERFORM1g), does.
+    /// A performed plugin node's unknown attempt may have taken effect, so an invalidation never clears it: only its
+    /// reconciliation, or the person's word on it, does.
     /// </summary>
     [Fact]
     public void A_performed_node_s_unknown_is_held_across_an_invalidation()
@@ -552,7 +552,7 @@ public sealed class NodeLifecycleTests
         Assert.Equal(NodeRefusal.Unreconciled, NodeLifecycle.Apply(node, ready, Start(2)).Refused);
     }
 
-    /// <summary>FABRIC-NODE1f: an install with nothing armed has no unknown and no held attempt, so a ready node starts as before.</summary>
+    /// <summary>An install with nothing armed has no unknown and no held attempt, so a ready node starts.</summary>
     [Fact]
     public void An_unarmed_node_starts_as_before()
     {
@@ -583,7 +583,7 @@ public sealed class NodeLifecycleTests
     }
 
     /// <summary>
-    /// INTEGRATE1n part n1 (the integration design §17.4): <c>integrate</c> is a built-in kind that waits, reached and failed by the integration
+    /// <c>integrate</c> is a built-in kind that waits, reached and failed by the integration
     /// record and by nothing else, never passed over and never the person's to reject, whose start has an effect outside its record, so a new
     /// attempt waits until the last is known.
     /// </summary>
@@ -602,7 +602,7 @@ public sealed class NodeLifecycleTests
     }
 
     /// <summary>
-    /// INTEGRATE1n (§17.4, <i>its options</i>): the unit's half of the install's policy is <c>request</c> (<c>owner</c>, <c>done</c>,
+    /// The unit's half of the install's policy is <c>request</c> (<c>owner</c>, <c>done</c>,
     /// <c>steward</c>) and <c>conflicts</c> (<c>session</c>, <c>hold</c>), each a text of one of those; any other value, or a value that is no
     /// text, is the declaration's refusal, named by the option. An option the kind has none of is left to later rows, as a graph's options are
     /// opaque to a reader that does not know them.
@@ -627,7 +627,7 @@ public sealed class NodeLifecycleTests
     }
 
     /// <summary>
-    /// INTEGRATE1n (§17.6 point 6): a build without the kind reads a declaration naming it as one of no kind this build knows, so a version
+    /// A build without the kind reads a declaration naming it as one of no kind this build knows, so a version
     /// that names it is unreadable there and its run is held whole. The older build's table is this one's without the row.
     /// </summary>
     [Fact]
@@ -643,9 +643,9 @@ public sealed class NodeLifecycleTests
     }
 
     /// <summary>
-    /// INTEGRATE1o part o1 (the integration design §17.3, §17.6 point 2 and 3): <c>work.requests</c> is a built-in kind that observes, reached by
+    /// <c>work.requests</c> is a built-in kind that observes, reached by
     /// the quests' records and by nothing else; a declined quest holds it active and waiting on the person rather than failing it, so nothing
-    /// fails it. The person may pass it over (the run's existing skip, §17.3) and nothing else passes it; it is never the person's to reject.
+    /// fails it. The person may pass it over (the run's existing skip) and nothing else passes it; it is never the person's to reject.
     /// </summary>
     [Fact]
     public void WorkRequests_observes_the_quests_records_and_the_person_alone_may_pass_it_over()
@@ -664,7 +664,7 @@ public sealed class NodeLifecycleTests
     }
 
     /// <summary>
-    /// INTEGRATE1o (§17.6 point 8; C28): a hold on the work's requests written as an option of <c>claimed</c> would be read by a build that knows
+    /// A hold on the work's requests written as an option of <c>claimed</c> would be read by a build that knows
     /// <c>claimed</c> and run with the hold dropped, so this build refuses a <c>requests</c> option there by name, whatever its value; every other
     /// option of <c>claimed</c> and a <c>requests</c> option on another kind are left as written (a graph's options are opaque to a reader that
     /// does not know them).
@@ -683,7 +683,7 @@ public sealed class NodeLifecycleTests
     }
 
     /// <summary>
-    /// INTEGRATE1o (§17.6 point 6 and 8): the build before this one reads a declaration naming <c>work.requests</c> as no kind, so a version that
+    /// The build before this one reads a declaration naming <c>work.requests</c> as no kind, so a version that
     /// names it is unreadable there and its run is held whole, where it reads a <c>claimed</c> carrying a <c>requests</c> option as readable and runs
     /// it with the option dropped, which is why the hold is a kind. The older build's table is this one's without the row.
     /// </summary>
@@ -705,8 +705,8 @@ public sealed class NodeLifecycleTests
     }
 
     /// <summary>
-    /// FABRIC-UNIT1d (§D6): only a plugin's own performed node says how it is performed, and its retry is one it can take: a transient
-    /// code to retry, on a node that is idempotent or reconciled. A retry or a code nothing could ever take is refused, as NODE1 refuses
+    /// Only a plugin's own performed node says how it is performed, and its retry is one it can take: a transient
+    /// code to retry, on a node that is idempotent or reconciled. A retry or a code nothing could ever take is refused, as is
     /// a retry on a kind nothing can fail.
     /// </summary>
     [Fact]
@@ -737,7 +737,7 @@ public sealed class NodeLifecycleTests
     }
 
     /// <summary>
-    /// FABRIC-UNIT1d: two declarations saying the same are equal, whoever built their collections, so a manifest's step is the one
+    /// Two declarations saying the same are equal, whoever built their collections, so a manifest's step is the one
     /// built by hand and a graph compares declarations by what they say.
     /// </summary>
     [Fact]
@@ -765,7 +765,7 @@ public sealed class NodeLifecycleTests
         Assert.NotEqual(Made(), Made() with { Skippable = false });
         Assert.NotEqual(Made(), Made() with { Version = 2 });
 
-        // DECIDE1a: a decision's outcomes, copied when set, in their order.
+        // A decision's outcomes, copied when set, in their order.
         var outcomes = new List<string> { "approved", "changes-asked" };
         var decision = Made() with { Outcomes = outcomes };
         outcomes.Add("merged");
@@ -775,8 +775,6 @@ public sealed class NodeLifecycleTests
         Assert.NotEqual(decision, Made());
         Assert.NotEqual(decision, Made() with { Outcomes = ["changes-asked", "approved"] });
     }
-
-    // ---- FABRIC-NODE1c: a second maker's review
 
     /// <summary>
     /// Defect 1: a dispatched attempt's outcome is established before another starts, whatever moved the node off it: a stop, an
@@ -837,7 +835,7 @@ public sealed class NodeLifecycleTests
     }
 
     /// <summary>
-    /// FABRIC-WIRE1e: a start names the graph and run its attempt belongs to, as a skip does, and the status keeps it through the attempt's
+    /// A start names the graph and run its attempt belongs to, as a skip does, and the status keeps it through the attempt's
     /// outcome, so a failure or a rejection is a receipt in that run alone. A start naming none, or another graph than its binding's, is
     /// refused.
     /// </summary>
@@ -959,7 +957,7 @@ public sealed class NodeLifecycleTests
     }
 
     /// <summary>
-    /// FABRIC-NODE1d: a declaration copies its collections when they are set, so a caller changing what it supplied changes neither the
+    /// A declaration copies its collections when they are set, so a caller changing what it supplied changes neither the
     /// declaration nor its <see cref="NodeDeclarations.Problem"/>, and a graph's digest over declarations cannot move under it.
     /// </summary>
     [Fact]
@@ -998,7 +996,7 @@ public sealed class NodeLifecycleTests
     }
 
     /// <summary>
-    /// FABRIC-NODE1d: a reach's evidence and outputs name the reach's own acceptance, since a consumer's invalidation follows the one a
+    /// A reach's evidence and outputs name the reach's own acceptance, since a consumer's invalidation follows the one a
     /// port names. Another is refused; a port that names none is kept naming its own.
     /// </summary>
     [Fact]
@@ -1024,8 +1022,8 @@ public sealed class NodeLifecycleTests
     }
 
     /// <summary>
-    /// FABRIC-NODE1e: a reach exposes exactly its node's declared outputs, each at its declared schema, so a <c>data</c> wire's schema checked
-    /// when saved (WIRE1a) holds at run time. An undeclared output, a declared one at another schema, and a declared one missing are each
+    /// A reach exposes exactly its node's declared outputs, each at its declared schema, so a <c>data</c> wire's schema checked
+    /// when saved holds at run time. An undeclared output, a declared one at another schema, and a declared one missing are each
     /// refused with their code; the design's example (a deploy with a declared preview, and a node declaring none) still reaches.
     /// </summary>
     [Fact]
@@ -1059,9 +1057,9 @@ public sealed class NodeLifecycleTests
     }
 
     /// <summary>
-    /// DECIDE1d: a decision's output is required only on the outcomes that carry it, as local-release's <c>find</c> carries its release on
+    /// A decision's output is required only on the outcomes that carry it, as local-release's <c>find</c> carries its release on
     /// <c>release</c> alone: <c>none</c> reaches with no release, <c>release</c> without one is refused, and an output named for no outcome is
-    /// required on every reach, as before.
+    /// required on every reach.
     /// </summary>
     [Fact]
     public void A_decisions_output_is_required_only_on_the_outcomes_that_carry_it()
@@ -1103,7 +1101,7 @@ public sealed class NodeLifecycleTests
     }
 
     /// <summary>
-    /// FABRIC-PIPELINE1a (the pipeline design §4.1): a <c>check</c> is never skipped, by its kind, since a skip would read as a verdict a
+    /// A <c>check</c> is never skipped, by its kind, since a skip would read as a verdict a
     /// stage and the line rest on; its declaration cannot say so itself, as no built-in's can; its doors are a new attempt and a stop.
     /// </summary>
     [Fact]

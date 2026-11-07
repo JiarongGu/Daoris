@@ -3,7 +3,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// RECOVERYDROP1 over real git: the person's press deletes a recovery ref nothing of theirs holds, in one transaction that verifies the
+/// Over real git: the person's press deletes a recovery ref nothing of theirs holds, in one transaction that verifies the
 /// commit they were shown, and skips (saying why) a ref a branch or a tag now holds, one that moved, one gone, and one that is no
 /// recovery ref at all.
 /// </summary>

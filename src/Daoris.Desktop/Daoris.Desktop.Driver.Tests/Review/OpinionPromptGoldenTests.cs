@@ -3,14 +3,14 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// The reviewer's instruction rendered whole (XAGENT1d, D155 points 5 and 6; the second-agent design §4–§5): a pass over a
+/// The reviewer's instruction rendered whole: a pass over a
 /// chain's work with everything the packet can carry, and one asked of a session's tip that carries nothing but the candidate.
 /// A sentence added, moved or reworded shows here as the whole instruction's difference, byte for byte.
 /// </summary>
 /// <remarks>
 /// The golden files under <c>golden/opinion-prompt/</c> are the instruction a reviewer is handed. A change to what it says
 /// changes its golden file in the same commit, so review reads the instruction as the reviewer will; the facts beside it say
-/// why the sentences that hold it read-only are there. This class runs no process, so it is in the fast half (MOD8).
+/// why the sentences that hold it read-only are there. This class runs no process, so it is in the fast half.
 /// </remarks>
 public sealed class OpinionPromptGoldenTests
 {
@@ -66,7 +66,7 @@ public sealed class OpinionPromptGoldenTests
     internal static readonly OpinionPacket Bare = new("asked", Candidate with { Commits = [Candidate.Tip], Paths = [new OpinionPath("M", "README.md")] });
 
     /// <summary>
-    /// The one recheck (XAGENT1e, design §6.5): the commits since the first pass's tip, handed the first pass's findings and how
+    /// The one recheck: the commits since the first pass's tip, handed the first pass's findings and how
     /// the session answered each, a fix's commit as git read it.
     /// </summary>
     internal static readonly OpinionPacket Recheck = new(
@@ -128,7 +128,7 @@ public sealed class OpinionPromptGoldenTests
     }
 
     /// <summary>
-    /// The recheck (XAGENT1e, design §6.5) is told what the first reading found and how each was answered, each answer the
+    /// The recheck is told what the first reading found and how each is answered, each answer the
     /// session's claim beside what git read of a fix; it says of each first-pass finding that it stands or is withdrawn, and its
     /// findings go to the person, never back to the session.
     /// </summary>
@@ -215,8 +215,8 @@ public sealed class OpinionPromptGoldenTests
     }
 
     /// <summary>
-    /// FABRIC-CLOSE1c6: a submission's commit read alone at its session's end reads no evidence, so the instruction hands no reading of
-    /// evidence for it, and says none of the required evidence was read.
+    /// A submission's commit read alone at its session's end reads no evidence, so the instruction hands no reading of
+    /// evidence for it, and says none of the required evidence is read.
     /// </summary>
     [Fact]
     public void A_commit_read_alone_is_handed_as_no_reading_of_evidence()
@@ -232,7 +232,7 @@ public sealed class OpinionPromptGoldenTests
         Assert.Contains("Daoris has read none of its evidence yet.", text);
     }
 
-    /// <summary>The instruction names no machine path but the packet's own file, and none at all where it has none (D47 §4).</summary>
+    /// <summary>The instruction names no machine path but the packet's own file, and none at all where it has none.</summary>
     [Fact]
     public void The_bare_instruction_names_the_commits_and_how_to_read_the_diff_in_the_copy()
     {

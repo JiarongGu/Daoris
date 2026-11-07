@@ -3,10 +3,9 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// LANDREBASE1 (D87's LANDREBASE1 note): a session's work lands on the line's current tip. On the install six sessions landed as
-/// branches at the bases their trees started from, so nearly every merge after conflicted, and the parent resolved them without the
-/// sessions' context. Now every landing whose line moved since its tree left it replays the work onto the line's tip first, aside, as
-/// LANDSYNC1 replays what the line lacks: a clean replay lands as replayed and the session's tree follows it; a conflict is refused
+/// A session's work lands on the line's current tip. Landing at the base a tree started from makes nearly every merge after it
+/// conflict, resolved without the sessions' context, so every landing whose line moved since its tree left it replays the work onto
+/// the line's tip first, aside, as the landing's sync replays what the line lacks: a clean replay lands as replayed and the session's tree follows it; a conflict is refused
 /// with the rebase words, for the session to resolve in its own tree; and a conflict only in files the repository marks generated
 /// takes the line's copy of them, to be written again where the work is merged. Real git in a scratch repository, so this is the
 /// suite's Process half; nothing reaches a network (an <c>origin</c> is a bare repository beside it).
@@ -57,8 +56,8 @@ public sealed class LandRebaseLandingTests : LandedFixture
     }
 
     /// <summary>
-    /// A replay that conflicts with what the line changed: refused with git's lines and the rebase words, nothing made and the tree as it
-    /// was; the session rebases in its own tree as the words ask, resolves and commits, and the next press lands its work on the line's
+    /// A replay that conflicts with what the line changed: refused with git's lines and the rebase words, nothing made and the tree
+    /// unchanged; the session rebases in its own tree as the words ask, resolves and commits, and the next press lands its work on the line's
     /// tip as it stands.
     /// </summary>
     [Fact]
@@ -138,7 +137,7 @@ public sealed class LandRebaseLandingTests : LandedFixture
     }
 
     /// <summary>
-    /// GENREGEN1: where the repository declares the command that writes the generated folder (<c>daoris.gates.json</c>'s
+    /// Where the repository declares the command that writes the generated folder (<c>daoris.gates.json</c>'s
     /// <c>generated</c>) and the person accepted that declaration for its landed route, the replay writes the file again from the replayed
     /// tree, in a commit of Daoris's on top, so the landed index reads as its tree's, the line's work and the session's both.
     /// </summary>
@@ -171,7 +170,7 @@ public sealed class LandRebaseLandingTests : LandedFixture
     }
 
     /// <summary>
-    /// GENREGEN1: a writer runs only as the person accepted it, from the declaration at the line, never the session's own copy: a session
+    /// A writer runs only as the person accepted it, from the declaration at the line, never the session's own copy: a session
     /// that declares one in its work lands with the line's copy of the generated file, as a repository declaring none does.
     /// </summary>
     [Fact]
@@ -199,7 +198,7 @@ public sealed class LandRebaseLandingTests : LandedFixture
     }
 
     /// <summary>
-    /// INTEGRATE1d (D215 point 2, the integration design §4.1): the integration's own acceptance accepts the writers as the landed
+    /// The integration's own acceptance accepts the writers as the landed
     /// route's does, so a repository with no verification pipeline has its generated files written again where the person accepted its
     /// declaration for integration.
     /// </summary>
@@ -223,7 +222,7 @@ public sealed class LandRebaseLandingTests : LandedFixture
     }
 
     /// <summary>
-    /// INTEGRATE1d: an integration acceptance of a declaration the line has since changed accepts nothing (the design §4.3): the line's
+    /// An integration acceptance of a declaration the line has since changed accepts nothing: the line's
     /// copy of the generated file stays, as with no acceptance, until the person accepts the line's new declaration.
     /// </summary>
     [Fact]
@@ -274,7 +273,7 @@ public sealed class LandRebaseLandingTests : LandedFixture
     }
 
     /// <summary>
-    /// TREEFOLLOW1's own branch, not on its remote, whose line moved: replayed in place, keeping its name, and the tree stays on it.
+    /// The tree's own branch, not on its remote, whose line moved: replayed in place, keeping its name, and the tree stays on it.
     /// </summary>
     [Fact]
     public async Task The_tree_s_own_branch_is_replayed_in_place_where_the_line_moved()
@@ -300,8 +299,8 @@ public sealed class LandRebaseLandingTests : LandedFixture
     }
 
     /// <summary>
-    /// The same branch already on its remote: Daoris never rewrites a pushed branch (D109), and here the line holds none of its
-    /// commits, so it lands as it stands, its pull request the place it meets the line, as before.
+    /// The same branch already on its remote: Daoris never rewrites a pushed branch, and here the line holds none of its
+    /// commits, so it lands as it stands, its pull request the place it meets the line.
     /// </summary>
     [Fact]
     public async Task The_tree_s_own_branch_on_its_remote_lands_as_it_stands_where_the_line_holds_none_of_it()
@@ -346,9 +345,9 @@ public sealed class LandRebaseLandingTests : LandedFixture
     }
 
     /// <summary>
-    /// INTEGRATE1g (§4.2's named legacy exception): the merge form's press is carried by the integration transport under
-    /// <c>{ owner, none, 1, merge }</c>. Its outcome is today's, the work replayed and merged with today's message, and the person's checkout
-    /// was only fast-forwarded to the merge its line's run made; its request is settled, and the session's tree stays, as a merge left it.
+    /// The merge form's press is carried by the integration transport under
+    /// <c>{ owner, none, 1, merge }</c>. Its outcome is the work replayed and merged with the usual message, and the person's checkout
+    /// is only fast-forwarded to the merge its line's run made; its request is settled, and the session's tree stays, as a merge left it.
     /// </summary>
     [Fact]
     public async Task The_merge_forms_press_is_carried_by_the_transport_and_the_checkout_only_fast_forwarded()
@@ -374,7 +373,7 @@ public sealed class LandRebaseLandingTests : LandedFixture
     }
 
     /// <summary>
-    /// A stand-in for the index's writer (GENREGEN1): it lists the tree's top <c>.txt</c> files, so the line and the work, each adding
+    /// A stand-in for the index's writer: it lists the tree's top <c>.txt</c> files, so the line and the work, each adding
     /// one, disagree on it, and only the replayed tree's writing holds both. Read alike by <c>cmd.exe</c> and <c>/bin/sh</c>.
     /// </summary>
     private const string Writer = "git ls-files -- *.txt > index/map.md";
@@ -408,7 +407,7 @@ public sealed class LandRebaseLandingTests : LandedFixture
         }).Save(path);
     }
 
-    /// <summary>The person's acceptance of <paramref name="gates"/> for the repository's integration (INTEGRATE1d), as the window's door writes it.</summary>
+    /// <summary>The person's acceptance of <paramref name="gates"/> for the repository's integration, as the window's door writes it.</summary>
     private void AcceptIntegration(string gates)
     {
         var path = DaorisHome.Entry(Home, HomeEntry.DriverConfig);
@@ -424,7 +423,7 @@ public sealed class LandRebaseLandingTests : LandedFixture
     private static async Task<int> TreesAsync(string root) =>
         (await GitAsync(root, "worktree", "list", "--porcelain")).Split('\n').Count(line => line.StartsWith("worktree ", StringComparison.Ordinal));
 
-    /// <summary>What a refused landing must leave as it was, as <c>LineHoldsLandingTests</c> reads it.</summary>
+    /// <summary>What a refused landing must leave unchanged, as <c>LineHoldsLandingTests</c> reads it.</summary>
     private static async Task<string> StateAsync(string root, TreeOpened tree) =>
         string.Join("\n",
             (await GitAsync(root, "for-each-ref", "--format=%(objectname) %(refname)", "refs/heads/", "refs/daoris/")).Trim(),

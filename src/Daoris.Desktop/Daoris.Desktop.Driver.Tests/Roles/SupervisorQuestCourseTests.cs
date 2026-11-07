@@ -4,7 +4,7 @@ using Microsoft.Data.Sqlite;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// <c>refer</c> on the counts only a driven quest has (CONTEXTDRIVE1j; the context counters design §4.6 point 3): failed sessions since
+/// <c>refer</c> on the counts only a driven quest has: failed sessions since
 /// <i>Try again</i> and failures in a row on one choice. The line is held as <c>hold</c> parks it and <c>ask</c> asks, and the supervisor's
 /// <c>go-on</c> is the quest's own <i>Try again</i> between sessions, through the same door the person's press is. The counts a
 /// conversation shares (tries, limits, moves) and the quiet end do not offer it.

@@ -3,7 +3,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// REVIEWBASE2-i (D164's REVIEWBASE2 note): one session's tree brought up to date at the person's press. Pure: the order its
+/// One session's tree brought up to date at the person's press. Pure: the order its
 /// refusals are asked in, and what each answer says, from the facts the press read (<see cref="TreeFacts"/>).
 /// </summary>
 public sealed class TreeUpdateWordsTests
@@ -19,9 +19,9 @@ public sealed class TreeUpdateWordsTests
     }
 
     /// <summary>
-    /// The order a press asks in (point 3): a tree not this home's first, since nothing else of it is read; then what runs in it, its
+    /// The order a press asks in: a tree not this home's first, since nothing else of it is read; then what runs in it, its
     /// uncommitted work and its line, all on the machine; then the hold and the fetch; and only then the line's latest, so "already
-    /// based" is never said of a line that was not fetched; a branch on its remote last, as WSR6's judgement has it.
+    /// based" is never said of a line that has not been fetched; a branch on its remote last, as the sync's judgement has it.
     /// </summary>
     [Fact]
     public void Each_refusal_is_asked_in_its_order()
@@ -109,7 +109,7 @@ public sealed class TreeUpdateWordsTests
         Assert.Contains("look at the tree before anything else", TreeUpdateWords.NotKept("shared.txt", back: false));
     }
 
-    /// <summary>What WSR6's judgement leaves of a tree on a branch, where it is not one of the refusals above.</summary>
+    /// <summary>What the sync's judgement leaves of a tree on a branch, where it is not one of the refusals above.</summary>
     [Fact]
     public void A_branch_left_by_its_judgement_is_said()
     {

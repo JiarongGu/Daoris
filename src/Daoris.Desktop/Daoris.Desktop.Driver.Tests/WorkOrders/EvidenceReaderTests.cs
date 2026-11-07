@@ -3,13 +3,13 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// EVID1b (D144 §3): what Daoris reads of a done's evidence in one commit, through the review's git seam with git standing
+/// What Daoris reads of a done's evidence in one commit, through the review's git seam with git standing
 /// in: each path found with its object, in another case, in the tree uncommitted, or missing; whether this work changed it
-/// since the tree's base; and a gate answered <c>no-queue</c> until the landing queue reads gates (EVID1d). It reads and
+/// since the tree's base; and a gate answered <c>no-queue</c> until the landing queue reads gates. It reads and
 /// never writes, and each path reaches git as one argument, judged again first. <c>EvidenceGitTests</c> holds the same reads
 /// against real git.
 /// </summary>
-/// <remarks>Reads and writes files only (the tree's own, for what is uncommitted), so it is in the fast half (MOD8).</remarks>
+/// <remarks>Reads and writes files only (the tree's own, for what is uncommitted), so it is in the fast half.</remarks>
 public sealed class EvidenceReaderTests : IDisposable
 {
     private readonly string _tree = Path.Combine(TestHomes.Root, "daoris-evidence-" + Guid.NewGuid().ToString("N")[..8]);
@@ -321,7 +321,7 @@ public sealed class EvidenceReaderTests : IDisposable
         Assert.Empty(git.Calls);
     }
 
-    /// <summary>The commit a check reads must be the done's or come after it on the same history (D144 §3).</summary>
+    /// <summary>The commit a check reads must be the done's or come after it on the same history.</summary>
     [Fact]
     public async Task A_commit_is_placed_against_the_dones_on_its_history()
     {

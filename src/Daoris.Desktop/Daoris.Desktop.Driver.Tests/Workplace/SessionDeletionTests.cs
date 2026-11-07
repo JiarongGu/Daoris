@@ -5,7 +5,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// SESSUX1f (D126 §5.4): deleting a conversation that served no quest, the machine's half. The ledger judges the record's
+/// Deleting a conversation that served no quest, the machine's half. The ledger judges the record's
 /// half and its refusal is said first, in its own words and with its word; then the machine's half, a tree still here or
 /// a landing naming it; then the ledger deletes, and only after its yes are the files this machine kept of it removed.
 /// The line in the machine log holds no words.
@@ -72,8 +72,8 @@ public sealed class SessionDeletionTests : IDisposable
     }
 
     /// <summary>
-    /// HIST1c (D153 point 6, the history-clearing design §2.2): the delete and the clear take a session's files through one
-    /// helper, so the four a delete left behind go too: its go-on mark, its choice of a new session, its held words and its
+    /// The delete and the clear take a session's files through one
+    /// helper, so the four a delete would otherwise leave behind go too: its go-on mark, its choice of a new session, its held words and its
     /// closed automatic landing, with the spawn files a crash left. Another session's are untouched.
     /// </summary>
     [Fact]
@@ -118,8 +118,8 @@ public sealed class SessionDeletionTests : IDisposable
     }
 
     /// <summary>
-    /// The files a limit's move and an agent's ask to hand over keep for a session (SESSFILES1), named by its id, and the limit's box once the
-    /// come-up has imported it into the move record and set it aside (FOUNDATION1f-vi part a).
+    /// The files a limit's move and an agent's ask to hand over keep for a session, named by its id, and the limit's box once the
+    /// come-up has imported it into the move record and set it aside.
     /// </summary>
     private string[] Boxes(string id) =>
     [
@@ -133,8 +133,8 @@ public sealed class SessionDeletionTests : IDisposable
     }
 
     /// <summary>
-    /// SESSFILES1 (D153 point 6): a session's limit-move box and its agent's hand-over ask and state were in no inventory row, so a
-    /// delete left all three behind. They go under the name <c>hand-over</c>, in the inventory's order; another session's stay.
+    /// A session's limit-move box and its agent's hand-over ask and state are in the inventory, so a
+    /// delete takes all three. They go under the name <c>hand-over</c>, in the inventory's order; another session's stay.
     /// </summary>
     [Fact]
     public async Task A_delete_takes_a_limit_moves_box_and_a_hand_over_asks_two_files_too()
@@ -187,7 +187,7 @@ public sealed class SessionDeletionTests : IDisposable
     }
 
     /// <summary>
-    /// CHATFLOW1c (the chat-flow design §4.3): a chat's delete takes its chat run's three files, its binding, its opinion gate's file and its
+    /// A chat's delete takes its chat run's three files, its binding, its opinion gate's file and its
     /// look's file, each named by the record its key names, under the name <c>run</c>; another line's run is untouched, and the delete of a
     /// later record of the line takes none of them.
     /// </summary>
@@ -226,8 +226,8 @@ public sealed class SessionDeletionTests : IDisposable
     }
 
     /// <summary>
-    /// SESSDEL1 (D126 §5.4, D153's HIST1j note): a file the disk will not let go of stays, and the delete says which, by the
-    /// names what went is said in, as a clear says what it left over. The record's removal is as it was, and what went goes.
+    /// A file the disk will not let go of stays, and the delete says which, by the
+    /// names what went is said in, as a clear says what it left over. The record's removal stands, and what went goes.
     /// </summary>
     [Fact]
     public async Task A_file_the_disk_keeps_is_said_by_name_and_left_over()
@@ -251,7 +251,7 @@ public sealed class SessionDeletionTests : IDisposable
             outcome.Message);
     }
 
-    /// <summary>Two kept, or one whose name is plural, are said as they read; and nothing kept leaves the sentence as it was.</summary>
+    /// <summary>Two kept, or one whose name is plural, are said as they read; and nothing kept leaves the sentence unchanged.</summary>
     [Fact]
     public async Task What_stays_is_said_in_the_inventorys_order_and_nothing_kept_says_nothing_of_it()
     {
@@ -271,7 +271,7 @@ public sealed class SessionDeletionTests : IDisposable
     }
 
     /// <summary>
-    /// The disk, refusing <paramref name="held"/> as a process holding them does (HIST1j's seam): a held file is not removed, and a
+    /// The disk, refusing <paramref name="held"/> as a process holding them does: a held file is not removed, and a
     /// folder holding one goes in part, its other files removed and the held one kept.
     /// </summary>
     private static Action<string, bool> Holding(params string[] held) => (path, folder) =>
@@ -295,7 +295,7 @@ public sealed class SessionDeletionTests : IDisposable
         throw new IOException($"`{inside.First(Held)}` is held.");
     };
 
-    /// <summary>Ask Daoris's conversation is said as its own kind in the log, as its open is (LOG1b).</summary>
+    /// <summary>Ask Daoris's conversation is said as its own kind in the log, as its open is.</summary>
     [Fact]
     public async Task Ask_daoris_is_logged_as_help()
     {
@@ -311,7 +311,7 @@ public sealed class SessionDeletionTests : IDisposable
     }
 
     /// <summary>
-    /// ASKHIST1: an Ask Daoris conversation deleted from its history goes with the name and pin the person gave it, in the
+    /// An Ask Daoris conversation deleted from its history goes with the name and pin the person gave it, in the
     /// inventory's order, and another conversation's stay.
     /// </summary>
     [Fact]
@@ -334,7 +334,7 @@ public sealed class SessionDeletionTests : IDisposable
     }
 
     /// <summary>
-    /// A conversation with a tree of its own still here (§5.4): the tree is discarded or cleaned up first, and the ledger is
+    /// A conversation with a tree of its own still here: the tree is discarded or cleaned up first, and the ledger is
     /// never asked to delete, so its record and every file stay.
     /// </summary>
     [Fact]
@@ -439,7 +439,7 @@ public sealed class SessionDeletionTests : IDisposable
     }
 
     /// <summary>
-    /// A teammate's record (SYNC4) is refused from the record itself, naming the machine: its id carries the machine, which
+    /// A teammate's record is refused from the record itself, naming the machine: its id carries the machine, which
     /// the ledger's doors cannot address, and nothing this machine does reaches their copy.
     /// </summary>
     [Fact]
@@ -529,7 +529,7 @@ public sealed class SessionDeletionTests : IDisposable
 
     /// <summary>
     /// The service's session doors, in-process: the records, the ledger's judgement, and its delete. It deletes what it is
-    /// asked to unless told to refuse, and keeps what was asked.
+    /// asked to unless told to refuse, and keeps the asks it received.
     /// </summary>
     private sealed class Ledger(params JsonObject[] records) : HttpMessageHandler
     {

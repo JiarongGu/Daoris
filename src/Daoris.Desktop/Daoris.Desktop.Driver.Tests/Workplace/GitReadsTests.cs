@@ -3,7 +3,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// GIT1b (D147 §2.3–§2.6, §4): the reads behind a page from real repositories through the git Daoris runs: a graph page
+/// The reads behind a page from real repositories through the git Daoris runs: a graph page
 /// by its parents, a commit against its first parent, a file's history across a rename and across pages, a blame and the
 /// commit before a change, a compare both ways, and the processes each view starts. <c>GitReadsAskTests</c> holds the
 /// calls and the memory with a stand-in; this holds that git answers each format as it is read.
@@ -37,7 +37,7 @@ public sealed class GitReadsTests : IDisposable
     private sealed record History(string Root, string First, string Topic, string MainB, string Merge, string Renamed);
 
     /// <summary>
-    /// The history, a copy of the run's seed of it (<see cref="GitSeed"/>, PROCSPEED1b), twenty-seven git starts a test fewer: its
+    /// The history, a copy of the run's seed of it (<see cref="GitSeed"/>), twenty-seven git starts a test fewer: its
     /// commits are dated and its identity fixed, so every build of it holds the same ids, and the ids the seed's build read are the copy's.
     /// </summary>
     private async Task<History> HistoryAsync()
@@ -53,7 +53,7 @@ public sealed class GitReadsTests : IDisposable
         return _seeded! with { Root = root };
     }
 
-    // The ids of the run's history seed, read once as it was built; null until then.
+    // The ids of the run's history seed, read once when it is built; null until then.
     private static History? _seeded;
 
     /// <summary>A builder for the seed: its scratch is the seed's folder, which the seed's own cleanup removes.</summary>
@@ -95,7 +95,7 @@ public sealed class GitReadsTests : IDisposable
         Assert.Empty(page.Value.Commits[^1].Parents);
     }
 
-    /// <summary>A branch's page: it and its line since they parted, each commit marked with its side (D147 §2.3).</summary>
+    /// <summary>A branch's page: it and its line since they parted, each commit marked with its side.</summary>
     [Fact]
     public async Task A_branch_beside_its_line_since_they_parted_marks_each_side()
     {
@@ -110,7 +110,7 @@ public sealed class GitReadsTests : IDisposable
 
     /// <summary>
     /// A merge's changes are read against its first parent, as git's own diff of the two gives them, and a root commit's
-    /// against the empty tree (D147 §2.4).
+    /// against the empty tree.
     /// </summary>
     [Fact]
     public async Task A_commit_is_its_fields_and_its_changes_against_its_first_parent()
@@ -139,7 +139,7 @@ public sealed class GitReadsTests : IDisposable
         Assert.Equal(("c.txt", "renamed"), (renamed.Value!.Changes!.Files.Single().Path, renamed.Value.Changes.Files.Single().Status));
     }
 
-    /// <summary>🔴 One process per view (REVIEW3, D147 §4): a commit is two starts, and none once its answer is kept.</summary>
+    /// <summary>One process per view: a commit is two starts, and none once its answer is kept.</summary>
     [Fact]
     public async Task A_commit_starts_two_git_processes_and_none_when_read_again()
     {
@@ -217,7 +217,7 @@ public sealed class GitReadsTests : IDisposable
 
     /// <summary>
     /// Each line with the commit that last changed it, across the rename; and <i>Before this change</i>: a run's previous
-    /// commit and path, blamed in turn (D147 §2.5).
+    /// commit and path, blamed in turn.
     /// </summary>
     [Fact]
     public async Task A_blame_names_each_line_s_commit_and_the_commit_before_it()
@@ -241,7 +241,7 @@ public sealed class GitReadsTests : IDisposable
         Assert.Equal(["one", "two"], before.Value!.Runs.SelectMany(run => run.Lines).Select(line => line.Text));
     }
 
-    /// <summary>D111's test: a binary file has a history and no blame.</summary>
+    /// <summary>A binary file has a history and no blame.</summary>
     [Fact]
     public async Task A_binary_file_has_a_history_and_no_blame()
     {
@@ -272,8 +272,8 @@ public sealed class GitReadsTests : IDisposable
     }
 
     /// <summary>
-    /// The commits only on each side, and what the right side changed since the two parted, or everything that differs
-    /// (D147 §2.6), each as git's own diff of that range has it.
+    /// The commits only on each side, and what the right side changed since the two parted, or everything that differs,
+    /// each as git's own diff of that range has it.
     /// </summary>
     [Fact]
     public async Task A_compare_reads_each_side_and_the_changes_since_they_parted_or_all_of_them()
@@ -342,7 +342,7 @@ public sealed class GitReadsTests : IDisposable
 
     private static Task<string> GitAsync(string cwd, params string[] arguments) => GitWithAsync(cwd, null, null, arguments);
 
-    /// <summary>git through the fixture's one runner (TESTGIT1), its stdout once it has exited cleanly.</summary>
+    /// <summary>git through the fixture's one runner, its stdout once it has exited cleanly.</summary>
     private static async Task<string> GitWithAsync(string cwd, Dictionary<string, string>? environment, string? input, params string[] arguments)
     {
         var run = await GitFixture.RunWithAsync(cwd, environment, input, arguments);

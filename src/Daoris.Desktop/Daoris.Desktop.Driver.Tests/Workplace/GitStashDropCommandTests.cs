@@ -3,7 +3,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// The terminal verb of the Changes tab's stash Drop (GITAPP2, D204; the git-writes design §9): <c>git stash drop &lt;repository&gt; &lt;commit&gt; [--plan|--yes]</c>.
+/// The terminal verb of the Changes tab's stash Drop: <c>git stash drop &lt;repository&gt; &lt;commit&gt; [--plan|--yes]</c>.
 /// A plan says what it would drop and the command that stores it again, and writes nothing; <c>--yes</c> with no Daoris running drops through the
 /// journal's act, refused from a session's terminal.
 /// </summary>

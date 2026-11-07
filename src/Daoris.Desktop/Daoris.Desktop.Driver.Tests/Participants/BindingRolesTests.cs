@@ -4,7 +4,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// FOUNDATION1x step 2 (the foundation design §2.7, §13.3's Bindings family, O3-16): the role a start took and its revision are kept on the
+/// The role a start took and its revision are kept on the
 /// session's binding in the desktop store, each writer of the binding naming its own columns, so the conversation's writer and the role's
 /// never replace each other's, a build that knows no role leaves it where it is, and a deleted record takes it.
 /// </summary>

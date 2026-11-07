@@ -3,7 +3,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// What a graph run's test classes share over the runtime's fixture (PARTWHOLE1; FABRIC-CUTOVER1c, 1f): run <c>q7</c> and its record, the
+/// What a graph run's test classes share over the runtime's fixture: run <c>q7</c> and its record, the
 /// branches' tips a pass reads, a look over the run's home, and the binding to a saved graph version. <see cref="NodeRuntimeRunTests"/> and
 /// <see cref="RunNodeWordsTests"/> derive from it.
 /// </summary>
@@ -34,7 +34,7 @@ public abstract class NodeRunFixture : NodeRuntimeFixture
     /// <summary>Each branch's tip as the pass reads it, by branch.</summary>
     protected readonly Dictionary<string, string> _branchTips = new(StringComparer.Ordinal);
 
-    /// <summary>Why the units' attribution was not read, as the service's outage says it; none where it was read.</summary>
+    /// <summary>Why the units' attribution is unread, as the service's outage says it; none when it read.</summary>
     protected IReadOnlyList<string> _unread = [];
 
     protected int _gatesRead;

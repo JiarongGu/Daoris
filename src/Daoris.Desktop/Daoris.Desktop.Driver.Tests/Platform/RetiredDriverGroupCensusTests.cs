@@ -4,7 +4,7 @@ using System.Text.RegularExpressions;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// The tree has no <c>driver</c> group (D228): a comment, a guide line, an area sentence, a usage or a tool's text names the group a
+/// The tree has no <c>driver</c> group: a comment, a guide line, an area sentence, a usage or a tool's text names the group a
 /// verb is in. The tracked files that teach or comment are read for the retired two-word form; the records that are history (the
 /// decisions, the archive, the fix log, the changelog and the dated design documents) are left out, and each file that may say it
 /// is named here with its count and why, so a new one is a decision.

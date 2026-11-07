@@ -4,7 +4,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// The git design's §4.1 HTTPS row as far as today's doors carry it (D241 point 8), against <see cref="GitTlsHost"/>: a remote nothing
+/// HTTPS as far as the doors carry it, against <see cref="GitTlsHost"/>: a remote nothing
 /// serves is cloned and fetched anonymously through the remote helper over TLS; a session's push is refused at the helper before the
 /// host hears it, and a push under the landing's grant lands; a git not handed the host's authority refuses its certificate.
 /// </summary>
@@ -126,7 +126,7 @@ public sealed class GitTlsProcessTests : IClassFixture<GitTlsHost>, IDisposable
     }
 
     /// <summary>
-    /// GITREADONLY1 at the remote helper: once an HTTPS identity marked read only on its host serves the address, its push is refused at
+    /// At the remote helper: once an HTTPS identity marked read only on its host serves the address, its push is refused at
     /// <c>list for-push</c> in its words, the landing's grant included, before the host hears it. The identity is written as its file
     /// holds it, with no sign-in: the refusal comes before any credential is asked.
     /// </summary>
@@ -155,7 +155,7 @@ public sealed class GitTlsProcessTests : IClassFixture<GitTlsHost>, IDisposable
         Assert.DoesNotContain(_host.Requests.Skip(asked), line => line.Contains("receive-pack", StringComparison.Ordinal));
     }
 
-    // ── GITAUTH1g at the remote helper: the remote's refs and the sources' objects judged, then forwarded as judged ──
+    // ── At the remote helper: the remote's refs and the sources' objects judged, then forwarded as judged ──
 
     /// <summary>The machine's git access as the person set it: Write, and Dangerous where given.</summary>
     private void Access(string write, string dangerous)

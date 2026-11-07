@@ -4,7 +4,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// The commit rule as <c>driver.json</c> keeps it (FOUNDATION1 mod-iii): the settings' own reading and writing, which the commit rules
+/// The commit rule as <c>driver.json</c> keeps it: the settings' own reading and writing, which the commit rules
 /// answer through, so the key is read and kept alike wherever a rule is named.
 /// </summary>
 public sealed class CommitKeyTests

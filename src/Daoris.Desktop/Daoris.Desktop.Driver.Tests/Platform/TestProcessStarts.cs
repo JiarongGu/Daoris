@@ -2,7 +2,7 @@ using System.Text.RegularExpressions;
 
 namespace Daoris.Desktop.Driver.Tests;
 
-/// <summary>What a test's own start of a process is for (D249): the purpose it names, or why no job of the one management holds it.</summary>
+/// <summary>What a test's own start of a process is for: the purpose it names, or why no job of the one management holds it.</summary>
 internal enum TestStartKind
 {
     /// <summary>A program standing in for the thing under test (node, cmd, ping, powershell), started to be watched, held or ended by the test.</summary>
@@ -31,10 +31,10 @@ internal enum TestStartKind
 }
 
 /// <summary>
-/// Every direct start the desktop's tests make, named with its purpose or why no job holds it (OPTIMIZE1b, D249). A test starts a process the
+/// Every direct start the desktop's tests make, named with its purpose or why no job holds it. A test starts a process the
 /// product's gate cannot own: it stands in for the product's neighbour, runs a program whole, or builds a repository. Git through
 /// <c>TestGit.Past</c> or <c>TestGit.Ceiling</c> is held by <c>GitCeilingCensusTests</c> and needs no entry here; every other file with a
-/// direct start is listed under its kind, and a file that no longer starts anything is taken off. How many starts a listed file makes is not
+/// direct start is listed under its kind, and a file that starts nothing is taken off. How many starts a listed file makes is not
 /// pinned.
 /// </summary>
 internal static class TestProcessStarts

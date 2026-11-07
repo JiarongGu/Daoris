@@ -4,7 +4,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// FABRIC-PIPELINE1a (D192 point 2, the pipeline design §1.3): the start node as a repository's or a workspace's Workflow tab draws it,
+/// The start node as a repository's or a workspace's Workflow tab draws it,
 /// read from the choice table: the default, each kind the workspace declares by its label and paths, each with the pipeline it names and
 /// the level that chose it, and the landed route with the gates accepted; beside them the verification pipelines saved here, which
 /// Setup's route row offers.

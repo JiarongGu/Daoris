@@ -3,7 +3,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// HEAVYRUN1a (D180's HEAVYRUN1 note): <c>daoris gate run [--gate &lt;name&gt;]</c>, run in a checkout, runs the gates its
+/// <c>daoris gate run [--gate &lt;name&gt;]</c>, run in a checkout, runs the gates its
 /// <c>daoris.gates.json</c> marks <c>"heavy": true</c>, in declared order, or the one named. Its words, its choice of gates and its
 /// refusals start no process, so they are the fast half's; the runs themselves are <see cref="HeavyRunProcessTests"/>'.
 /// </summary>
@@ -17,7 +17,7 @@ public sealed class HeavyRunCommandTests : IDisposable
     {
         { "", null, false },
         { "--gate web", "web", false },
-        // HEAVYSLOT1: the terminal's twin of a repository's *Heavy run* row, which runs nothing.
+        // The terminal's twin of a repository's *Heavy run* row, which runs nothing.
         { "--look", null, true },
     };
 
@@ -38,7 +38,7 @@ public sealed class HeavyRunCommandTests : IDisposable
     [InlineData("web", "`web` is not a word `run-heavy` takes: it takes `--gate <name>`, `--look`, `-- <command>`, or nothing for every heavy gate.")]
     [InlineData("--gate web --gate e2e", "`run-heavy` runs one named gate, or every heavy one.")]
     [InlineData("--look --gate web", "`--look` says who holds the slot and runs nothing, so it takes no gate.")]
-    // HEAVYQUEUE1: a command of the caller's own, after `--`.
+    // A command of the caller's own, after `--`.
     [InlineData("--", "`--` takes the command to run after it: `run-heavy -- dotnet test --filter Foo`.")]
     [InlineData("--gate web -- dotnet test", "`-- <command>` runs a command of its own, so it takes neither `--gate` nor `--look`.")]
     [InlineData("--look -- dotnet test", "`-- <command>` runs a command of its own, so it takes neither `--gate` nor `--look`.")]
@@ -193,7 +193,7 @@ public sealed class HeavyRunCommandTests : IDisposable
     }
 
     /// <summary>
-    /// FABRIC-PIPELINE1b (the pipeline design §3.2's second layer): run from a tree a session holds, whose run's checks are light, it is
+    /// Run from a tree a session holds, whose run's checks are light, it is
     /// refused at once, exit 1, saying the heavy gates are the verification's, and takes no slot. The session is read from git's own lock
     /// on the tree, whose reason names it, never from a variable the session could leave out.
     /// </summary>
@@ -240,7 +240,7 @@ public sealed class HeavyRunCommandTests : IDisposable
     }
 
     /// <summary>
-    /// FABRIC-PIPELINE1d (the pipeline design §4.2): a session's run that finds its repository's slot held by a verification run does not wait
+    /// A session's run that finds its repository's slot held by a verification run does not wait
     /// behind it: it says the verification runs these gates on the line and where its verdict shows, exits 1, and leaves no waiter.
     /// </summary>
     [Fact]
@@ -422,7 +422,7 @@ public sealed class HeavyRunCommandTests : IDisposable
     }
 
     /// <summary>
-    /// HEAVYSLOT1 (the UI/UX design §3.5): <c>--look</c> says the slot as the page reads it, its holder at its gate and who waits, a run
+    /// <c>--look</c> says the slot as the page reads it, its holder at its gate and who waits, a run
     /// from a terminal named as one, and a holder whose process is gone as no run at all; it runs nothing.
     /// </summary>
     [Fact]
@@ -463,7 +463,7 @@ public sealed class HeavyRunCommandTests : IDisposable
                 TimeSpan.FromMilliseconds(10), TimeSpan.FromMinutes(5), TimeSpan.FromMinutes(5), () => DateTimeOffset.UtcNow, _ => true),
         };
 
-    /// <summary>HEAVYQUEUE1: the words after `--` are a command of the caller's own, kept whole.</summary>
+    /// <summary>The words after `--` are a command of the caller's own, kept whole.</summary>
     [Fact]
     public void The_words_after_two_dashes_are_the_command()
     {
@@ -491,7 +491,7 @@ public sealed class HeavyRunCommandTests : IDisposable
     }
 
     /// <summary>
-    /// HEAVYQUEUE1: a session's focused run beside the merge queue's gate. The queue holds the only place; the run says what it waits for,
+    /// A session's focused run beside the merge queue's gate. The queue holds the only place; the run says what it waits for,
     /// starts no process while it waits, and a stop ends it with nothing held and nothing left waiting.
     /// </summary>
     [Fact]
@@ -525,8 +525,8 @@ public sealed class HeavyRunCommandTests : IDisposable
     }
 
     /// <summary>
-    /// HEAVYQUEUE1: a repository's marked gates take the repository's slot first and then a place in the machine's admission; a run
-    /// stopped while it waits for the place lets the slot go and ran nothing.
+    /// A repository's marked gates take the repository's slot first and then a place in the machine's admission; a run
+    /// stopped while it waits for the place lets the slot go and runs nothing.
     /// </summary>
     [Fact]
     public async Task Marked_gates_wait_for_a_place_after_the_slot_and_let_the_slot_go_if_stopped()

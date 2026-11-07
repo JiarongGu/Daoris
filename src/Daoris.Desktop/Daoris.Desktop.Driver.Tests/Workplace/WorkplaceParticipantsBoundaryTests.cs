@@ -7,7 +7,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// FOUNDATION1 mod-x, the Workplace-names-Participants cut: the behaviour the cut keeps, written against the surface that exists on both
+/// The Workplace-names-Participants cut: the behaviour the cut keeps, written against the surface that exists on both
 /// sides of it (the harness suffix and its set-aside spelling in deletion's inventory, the binding forget, held and refusal path, the
 /// kept conversation's answers as the tool-home origins read them, what holds a tree for a helper's wait, the effective landing and the
 /// merges note's words at each access source, and the piece keeper's outcomes and the ref reading), so the same cases pass on the base

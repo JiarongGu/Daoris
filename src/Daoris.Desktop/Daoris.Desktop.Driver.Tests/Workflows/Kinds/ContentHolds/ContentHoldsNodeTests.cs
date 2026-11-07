@@ -3,7 +3,7 @@ using static Daoris.Desktop.Driver.Tests.HoldFixture;
 
 namespace Daoris.Desktop.Driver.Tests;
 
-/// <summary>LANDNODE1k: <c>content.holds</c> is reached where the work holds a commit nothing of the person's holds and the line does not hold it by content.</summary>
+/// <summary><c>content.holds</c> is reached where the work holds a commit nothing of the person's holds and the line does not hold it by content.</summary>
 public sealed class ContentHoldsNodeTests
 {
     [Fact]

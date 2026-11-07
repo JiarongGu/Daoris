@@ -3,16 +3,15 @@ using System.Text.RegularExpressions;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// FOUNDATION1 row p's census of the readers of a keyed answer (D212's note of the row; the foundation design §3.4 rule 5, round 8's
-/// <i>C7-1.1</i>, <i>O7-F12</i>): a keyed say's or hand's answer may be <b>settled</b>, its own terminal kind with no word, and every reader of
+/// The census of the readers of a keyed answer: a keyed say's or hand's answer may be <b>settled</b>, its own terminal kind with no word, and every reader of
 /// one handles it before it reads a word. Each file outside the tests that says a word to the service under a key, hands a helper's or a partner's
 /// answer, or keeps a word through the dispatchers' door is named here with how it reads a settled answer: <i>first</i>, naming it in its own
 /// code before any word is read, or <i>as kept</i>, asking only whether the words are on the line and never dereferencing a word. A new reader
 /// is a failing line until it is named, and a file named here must still read it as it says.
 /// </summary>
 /// <remarks>
-/// Read from the sources of the driver, its host and the modules, by name wherever they lie (STRUCT5a), as <see cref="SayKeysCensusTests"/> is.
-/// The supervisor's release says with <c>supervised</c> and no settled request: its door stays today's (O7-F12), which the client's tests hold.
+/// Read from the sources of the driver, its host and the modules, by name wherever they lie, as <see cref="SayKeysCensusTests"/> is.
+/// The supervisor's release says with <c>supervised</c> and no settled request: its door stays today's, which the client's tests hold.
 /// </remarks>
 [Trait(Category.Name, Category.Census)]
 public sealed partial class SettledReadersCensusTests

@@ -3,10 +3,10 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// REVIEWENV1b2: the review on the record (REVIEWENV1b, D154 points 3, 4, 8 and 9; the review environment design §2.6, §3.5) as
+/// The review on the record as
 /// the driver reads it from the service: a quest's chain choice, a set-up step's environment, its set-ups and the person's
 /// verdicts, and an ask's choices and its intake's proposals. Each is an optional field, absent where there is none and from a
-/// host before them, so a quest or an ask no review touches reads exactly as it did. Runs no process: the fast half (MOD8).
+/// host before them, so a quest or an ask no review touches reads exactly as it did. Runs no process: the fast half.
 /// </summary>
 public sealed class ServiceClientReviewTests
 {

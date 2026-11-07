@@ -5,7 +5,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// FOUNDATION1 mod-x, the Workplace-names-Work-orders cut: the seams the cut adds. Workplace declares the work-orders operations (the
+/// The Workplace-names-Work-orders cut: the seams the cut adds. Workplace declares the work-orders operations (the
 /// abandons' record, what a unit owes, the inventory read, a done's evidence at a tree's end) and the facet of a session's row; Work orders
 /// implements and installs them. The cases that need no new seam are <see cref="WorkplaceWorkOrdersBoundaryTests"/>'.
 /// </summary>

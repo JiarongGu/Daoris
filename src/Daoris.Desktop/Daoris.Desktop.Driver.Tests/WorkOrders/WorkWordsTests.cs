@@ -3,7 +3,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// FABRIC-MILESTONE1a: the milestone in a terminal's words (<c>trees state</c> and <c>work state</c>, D50), the gather over a real home
+/// The milestone in a terminal's words (<c>trees state</c> and <c>work state</c>), the gather over a real home
 /// (read-only: no record is written), and the host's wiring of both verbs. The console reads its words from <see cref="WorkWords"/>,
 /// so the sentences are held here and the verbs' shape by the host's source, as the other trees verbs are (DriverCommandTests).
 /// </summary>
@@ -90,7 +90,7 @@ public sealed class WorkWordsTests : IDisposable
         Assert.All(before.Zip(after), pair => Assert.Equal(pair.First.Item2, pair.Second.Item2));
     }
 
-    /// <summary>The terminal's two doors (D50): `trees state` with no name, and `work state [unit]`, both usage-listed and read before the plugin ask.</summary>
+    /// <summary>The terminal's two doors: `trees state` with no name, and `work state [unit]`, both usage-listed and read before the plugin ask.</summary>
     [Fact]
     public void The_host_answers_trees_state_with_no_name_and_work_state_over_the_one_inventory()
     {
@@ -105,7 +105,7 @@ public sealed class WorkWordsTests : IDisposable
         Assert.Contains("WorkConsole.ReadAsync(home)", console);
         Assert.Contains("args is [\"work\", \"state\", ..", program);
         Assert.Contains("WorkConsole.MilestonesAsync(", program);
-        // CLEANUP1: the one read gives the units and the recoveries no unit names.
+        // The one read gives the units and the recoveries no unit names.
         Assert.Contains("WorkInventories.ReadAsync(", work);
         Assert.Contains("work state [<unit>]", DriverCommand.Usage);
         // A look: no lease taken, no record written, no window told.

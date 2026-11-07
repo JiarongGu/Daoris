@@ -4,7 +4,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// READSHARE1: each reader of a record AtomicFile moves into place reads it while the move still holds it (MoveHold).
+/// Each reader of a record AtomicFile moves into place reads it while the move still holds it (MoveHold).
 /// </summary>
 /// <remarks>
 /// Each record is written by the product's own writer, or with <see cref="AtomicFile.WriteText"/> at its reader's path, then held as
@@ -16,7 +16,7 @@ public sealed class ReadShareTreeTests : IDisposable
 
     private static readonly DateTimeOffset At = new(2026, 10, 23, 9, 0, 0, TimeSpan.Zero);
 
-    /// <summary>A closure graph of one node, the close (FABRIC-CLOSE1l).</summary>
+    /// <summary>A closure graph of one node.</summary>
     private const string Closing = """
         {"schemaVersion":2,"entries":["close"],"end":"close",
          "nodes":[{"id":"close","kind":"quest.close","version":1,"reach":"performed"}],"wires":[]}
@@ -41,7 +41,7 @@ public sealed class ReadShareTreeTests : IDisposable
             throw new HttpRequestException("the stand-in answers nothing");
     }
 
-    /// <summary>READSHARE1: <see cref="NodeRecordFiles.Read"/> reads a unit's node record while its move into place still holds it.</summary>
+    /// <summary><see cref="NodeRecordFiles.Read"/> reads a unit's node record while its move into place still holds it.</summary>
     [Fact]
     public void A_node_record_is_read_while_its_move_into_place_still_holds_it()
     {
@@ -56,7 +56,7 @@ public sealed class ReadShareTreeTests : IDisposable
         }
     }
 
-    /// <summary>READSHARE1: <see cref="NodeRecordFiles.All"/> lists a node record its move into place still holds, never as unreadable.</summary>
+    /// <summary><see cref="NodeRecordFiles.All"/> lists a node record its move into place still holds, never as unreadable.</summary>
     [Fact]
     public void Every_node_record_is_listed_while_a_move_into_place_still_holds_one()
     {
@@ -74,7 +74,7 @@ public sealed class ReadShareTreeTests : IDisposable
     }
 
     /// <summary>
-    /// READSHARE1: <see cref="NodeRecordFiles.Unread"/> (its <c>UnitNamed</c>) still reads the unit a record that does not read names,
+    /// <see cref="NodeRecordFiles.Unread"/> (its <c>UnitNamed</c>) still reads the unit a record that does not read names,
     /// while its move into place holds it.
     /// </summary>
     [Fact]
@@ -93,7 +93,7 @@ public sealed class ReadShareTreeTests : IDisposable
         }
     }
 
-    /// <summary>READSHARE1: <see cref="ResourceRecordFiles.Read"/> reads a unit's resource record while its move into place still holds it.</summary>
+    /// <summary><see cref="ResourceRecordFiles.Read"/> reads a unit's resource record while its move into place still holds it.</summary>
     [Fact]
     public void A_resource_record_is_read_while_its_move_into_place_still_holds_it()
     {
@@ -108,7 +108,7 @@ public sealed class ReadShareTreeTests : IDisposable
         }
     }
 
-    /// <summary>READSHARE1: <see cref="ResourceRecordFiles.All"/> lists a resource record its move into place still holds, never as unreadable.</summary>
+    /// <summary><see cref="ResourceRecordFiles.All"/> lists a resource record its move into place still holds, never as unreadable.</summary>
     [Fact]
     public void Every_resource_record_is_listed_while_a_move_into_place_still_holds_one()
     {
@@ -130,7 +130,7 @@ public sealed class ReadShareTreeTests : IDisposable
         Receipts = [new("r-1", "acme.deploy", "acme.deploy/preview@1", "p-1", PluginResourceRoles.Temporary, "deploy", 1, "i-1", At)],
     };
 
-    /// <summary>READSHARE1: <see cref="ClosureGraphs.Read"/> reads a kept closure graph while its move into place still holds it.</summary>
+    /// <summary><see cref="ClosureGraphs.Read"/> reads a kept closure graph while its move into place still holds it.</summary>
     [Fact]
     public void A_kept_closure_graph_is_read_while_its_move_into_place_still_holds_it()
     {
@@ -147,7 +147,7 @@ public sealed class ReadShareTreeTests : IDisposable
         }
     }
 
-    /// <summary>READSHARE1: <see cref="QuestReads.Read"/> reads the kept read of the quests while its move into place still holds it.</summary>
+    /// <summary><see cref="QuestReads.Read"/> reads the kept read of the quests while its move into place still holds it.</summary>
     [Fact]
     public void The_kept_read_of_the_quests_is_read_while_its_move_into_place_still_holds_it()
     {
@@ -168,7 +168,7 @@ public sealed class ReadShareTreeTests : IDisposable
         }
     }
 
-    /// <summary>READSHARE1: <see cref="SlimManifest.Read"/> reads a set-aside folder's manifest while its move into place still holds it.</summary>
+    /// <summary><see cref="SlimManifest.Read"/> reads a set-aside folder's manifest while its move into place still holds it.</summary>
     [Fact]
     public void A_slim_manifest_is_read_while_its_move_into_place_still_holds_it()
     {
@@ -189,7 +189,7 @@ public sealed class ReadShareTreeTests : IDisposable
     }
 
     /// <summary>
-    /// READSHARE1: the purge's record of the folders it could not delete (<see cref="TreeSetAside.Failed"/>, its <c>FailedEntries</c>, and
+    /// The purge's record of the folders it could not delete (<see cref="TreeSetAside.Failed"/>, its <c>FailedEntries</c>, and
     /// the purge's write-if-changed check) is read while its move into place still holds it: kept, never dropped as unread.
     /// </summary>
     [Fact]
@@ -220,7 +220,7 @@ public sealed class ReadShareTreeTests : IDisposable
         Assert.True(Directory.Exists(folder));
     }
 
-    /// <summary>READSHARE1: <see cref="TreeGuard.Install"/> keeps a guard as shipped while its move into place still holds it, never writing it again.</summary>
+    /// <summary><see cref="TreeGuard.Install"/> keeps a guard as shipped while its move into place still holds it, never writing it again.</summary>
     [Fact]
     public void An_unchanged_tree_guard_is_kept_while_its_move_into_place_still_holds_it()
     {
@@ -238,7 +238,7 @@ public sealed class ReadShareTreeTests : IDisposable
         Assert.Equal(TreeGuard.Source, File.ReadAllText(path));
     }
 
-    /// <summary>READSHARE1: <see cref="WorkflowFiles.Load"/> reads a named workflow's file while its move into place still holds it.</summary>
+    /// <summary><see cref="WorkflowFiles.Load"/> reads a named workflow's file while its move into place still holds it.</summary>
     [Fact]
     public void A_named_workflow_is_loaded_while_its_move_into_place_still_holds_its_file()
     {
@@ -257,7 +257,7 @@ public sealed class ReadShareTreeTests : IDisposable
         }
     }
 
-    /// <summary>READSHARE1: a trace's read of the landings (<c>Trace.LandingsProblem</c>) finds them readable while their move into place holds them.</summary>
+    /// <summary>A trace's read of the landings (<c>Trace.LandingsProblem</c>) finds them readable while their move into place holds them.</summary>
     [Fact]
     public async Task A_trace_reads_the_landings_while_their_move_into_place_still_holds_them()
     {
@@ -279,7 +279,7 @@ public sealed class ReadShareTreeTests : IDisposable
         Assert.Equal(["feature/q1-fix-the-dashboard-figure"], facts.Landings.Select(each => each.Branch));
     }
 
-    /// <summary>READSHARE1: a trace's read of a session's rules file (<c>TraceReads.Rules</c>) reads it while its move into place still holds it.</summary>
+    /// <summary>A trace's read of a session's rules file (<c>TraceReads.Rules</c>) reads it while its move into place still holds it.</summary>
     [Fact]
     public void A_trace_reads_a_session_s_rules_file_while_its_move_into_place_still_holds_it()
     {

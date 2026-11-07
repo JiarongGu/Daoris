@@ -1,7 +1,7 @@
 namespace Daoris.Driver.Tests;
 
 /// <summary>
-/// INTEGRATE1l (the integration design §9 points 1 and 2): the look reads what each running unit changed, one git read per running session
+/// The look reads what each running unit changed, one git read per running session
 /// of this machine, and two running units whose branches change one path are each told once, as an ordinary word.
 /// </summary>
 public sealed class WorkOverlapsTests : IDisposable

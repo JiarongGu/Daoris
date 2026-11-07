@@ -7,7 +7,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// SESSUX1g (D126 §7.1): <c>daoris session list</c>, the terminal's door to Sessions. It lists this machine's sessions by
+/// <c>daoris session list</c>, the terminal's door to Sessions. It lists this machine's sessions by
 /// what they need, from the one reader the screen reads; stops, finishes and declines a session another process runs
 /// through the request its loop honours, and one nothing here runs through the ledger; and archives, unarchives and deletes
 /// through the owners the screen's routes call. Exit codes are the family's: 0 done, 1 refused, 2 could not.
@@ -118,8 +118,8 @@ public sealed class SessionsCommandTests : IDisposable
     }
 
     /// <summary>
-    /// SESSCTX1b: the terminal says how a part began in its own words, as the page does, a part moved on from one whose own
-    /// conversation was lost among them, and a word this build does not know as a start.
+    /// The terminal says how a part began in its own words, as the page does, a part moved on from one whose own
+    /// conversation is lost among them, and a word this build does not know as a start.
     /// </summary>
     [Theory]
     [InlineData(PartBegan.Retried, "retried after s1")]
@@ -132,7 +132,7 @@ public sealed class SessionsCommandTests : IDisposable
         Assert.Equal(said, SessionsCommand.Began(new EntryPart("s2", null, "working", SessionGroup.Working, began) { After = "s1" }));
     }
 
-    // ——— MSG1f3 (D50, D137 §2.2): *Start a conversation with these words* at a terminal.
+    // ——— *Start a conversation with these words* at a terminal.
 
     [Fact]
     public void Start_from_takes_one_sessions_id_and_both_usages_name_it()
@@ -223,9 +223,9 @@ public sealed class SessionsCommandTests : IDisposable
     }
 
     /// <summary>
-    /// MSG1f2 (D137 §3.2): words that wait on an ended record are said where it is listed, under Resumes later, with what
+    /// Words that wait on an ended record are said where it is listed, under Resumes later, with what
     /// holds them in the line <c>sessions say</c> prints, from the planner's own verdict: here a repository this machine
-    /// was never opted into driving.
+    /// has never been opted into driving.
     /// </summary>
     [Fact]
     public async Task Words_held_on_an_ended_record_are_listed_under_resumes_later_saying_what_holds_them()
@@ -255,7 +255,7 @@ public sealed class SessionsCommandTests : IDisposable
     }
 
     /// <summary>
-    /// LIMITRESUME1d (D206 §3.1, D50's parity): a failed record an account's limit ended is listed <i>limited</i>, as the page says it,
+    /// A failed record an account's limit ended is listed <i>limited</i>, as the page says it,
     /// never <i>failed</i>; one that failed otherwise stays failed. The terminal reads the ledger's flag as the page does.
     /// </summary>
     [Fact]
@@ -276,9 +276,9 @@ public sealed class SessionsCommandTests : IDisposable
     }
 
     /// <summary>
-    /// MSG1f3 (D137 §3.2, its MSG1f2 note): a chat the person wrote to after it ended goes on, since its runner takes the words
+    /// A chat the person wrote to after it ended goes on, since its runner takes the words
     /// up at once, so it is listed under Working, <i>going on</i>; one its runner held says so under Resumes later, in the
-    /// runner's own line. Before, both were listed as they ended.
+    /// runner's own line.
     /// </summary>
     [Fact]
     public async Task A_chat_whose_words_wait_is_going_on_and_one_its_runner_held_resumes_later()
@@ -333,7 +333,7 @@ public sealed class SessionsCommandTests : IDisposable
         var (exit, said) = await RunAsync(ledger, [], world: world);
 
         Assert.Equal(0, exit);
-        // LIMITSWITCH3b: the wait is the word, never the state the record ended in; the hold's line beside it says the reset.
+        // The wait is the word, never the state the record ended in; the hold's line beside it says the reset.
         Assert.Contains("Resumes later (1)\n  c00l1ng0  waiting for a limit to reset  engine — Trim the readme", said);
         Assert.DoesNotContain("completed", said);
         Assert.Contains("held: it waits: the `claude` account `work` is cooling until", said);
@@ -342,9 +342,9 @@ public sealed class SessionsCommandTests : IDisposable
     }
 
     /// <summary>
-    /// 🔴 LIMITSWITCH3 (D137's note of 2026-10-26): a closed quest's session holding Daoris's own rebase word, every account of its agent
+    /// A closed quest's session holding Daoris's own rebase word, every account of its agent
     /// cooling, is listed under Resumes later saying the limit's wait for the earliest reset of any, naming that account, with the
-    /// door out of it: never only that it completed, and never the own account's weekly reset two days on that the word once waited for.
+    /// door out of it: never only that it completed, and never the own account's weekly reset two days on.
     /// With another account ready it is listed going on, since the loop's look hands it to the runner.
     /// </summary>
     [Fact]
@@ -419,7 +419,7 @@ public sealed class SessionsCommandTests : IDisposable
         ],
         [Quest("q1", "Cap the hydration per frame", "Done"), Quest("q4", "Draw the minimap", "Done", to: "game")]);
 
-    /// <summary>SESSONE1b (D167, the design §1.6): the listing is by entry, one line each with its parts, the parts indented under it.</summary>
+    /// <summary>The listing is by entry, one line each with its parts, the parts indented under it.</summary>
     [Fact]
     public async Task The_listing_is_by_entry_with_its_parts_indented_under_it()
     {
@@ -464,7 +464,7 @@ public sealed class SessionsCommandTests : IDisposable
     }
 
     /// <summary>
-    /// LAND4: a session whose tree holds commits no branch of the person's holds offers its landing at the terminal as on the
+    /// A session whose tree holds commits no branch of the person's holds offers its landing at the terminal as on the
     /// screen: <c>--json</c> carries the reader's <c>lands</c> whole, and the listing's line names the branch, its tree and
     /// the door that accepts it, whatever group the session rests in. A row with none says nothing of landing.
     /// </summary>
@@ -497,7 +497,7 @@ public sealed class SessionsCommandTests : IDisposable
         Assert.DoesNotContain(SessionsCommand.Facts(bare, record with { Id = "n0th1ng0" }), fact => fact.Contains("land", StringComparison.Ordinal));
     }
 
-    /// <summary>TREEFOLLOWWEB2: <c>--json</c> carries the branch a moved tree is on in <c>work</c>, as the screen's answer does (SESSUX1g).</summary>
+    /// <summary><c>--json</c> carries the branch a moved tree is on in <c>work</c>, as the screen's answer does.</summary>
     [Fact]
     public void A_moved_trees_branch_is_in_the_json_work()
     {
@@ -512,8 +512,8 @@ public sealed class SessionsCommandTests : IDisposable
     }
 
     /// <summary>
-    /// WAITSAY1b: <c>--json</c> carries a row's running call as the screen's answer does (SESSUX1g), its title and when it began,
-    /// and null where none was heard, which is every row the terminal reads, since it runs no session.
+    /// <c>--json</c> carries a row's running call as the screen's answer does, its title and when it began,
+    /// and null where none is heard, which is every row the terminal reads, as it runs no session.
     /// </summary>
     [Fact]
     public void A_running_call_is_in_the_json_and_none_is_null()
@@ -537,7 +537,7 @@ public sealed class SessionsCommandTests : IDisposable
     }
 
     /// <summary>
-    /// SQUASHTIDY1b: a session whose work the line holds by content is offered no landing at the terminal either: <c>--json</c>
+    /// A session whose work the line holds by content is offered no landing at the terminal either: <c>--json</c>
     /// carries the reader's <c>discards</c> whole, and the listing's line says where its work is, in Discard's own clause, with
     /// the door that discards its tree and the ref its commits stay at; or, where the tree holds what no commit does, why it stays.
     /// </summary>
@@ -617,7 +617,7 @@ public sealed class SessionsCommandTests : IDisposable
     }
 
     /// <summary>
-    /// COWORK1a (the message-urgency design §3.2, §8.6): <c>stop &lt;id&gt; --turn</c> is the keeping stop's twin, the person's own
+    /// <c>stop &lt;id&gt; --turn</c> is the keeping stop's twin, the person's own
     /// press: it stops the session's turn so what waits goes next, through the Daoris that runs it, and says what it came to. Where
     /// the door has no stop that keeps the session it refuses and says why; with no turn to stop it stops nothing; and where nothing
     /// here holds its turns it could not.
@@ -729,8 +729,7 @@ public sealed class SessionsCommandTests : IDisposable
     }
 
     /// <summary>
-    /// 🔴 QUESTCLOSE1 (D126's note): the owner finished two driven sessions at a checkpoint on the install, and each quest
-    /// stayed taken with nothing to close it. A finish at a checkpoint leaves its quest taken, and the terminal says so right
+    /// A finish at a checkpoint leaves its quest taken, and the terminal says so right
     /// after it with the door that closes it; the person's done through that door closes the quest with their words.
     /// </summary>
     [Fact]
@@ -753,8 +752,8 @@ public sealed class SessionsCommandTests : IDisposable
 
         Assert.Equal(0, done);
         Assert.Equal("Done", ledger.QuestStatus("q1"));
-        // Their words go to the person's own door, never respond's: the service writes the sentence that says the done was
-        // theirs before them (QuestPersonDoneTests), and answers none of the quest's requirements.
+        // Their words go to the person's own door, never respond's: the service writes the sentence that says the done is
+        // theirs before them, and answers none of the quest's requirements.
         Assert.Equal("The write-up is in the shared folder.", ledger.DoneWords("q1"));
         Assert.Equal("daoris: Quest `#q1` is now Done: you marked it done.\n", output.ToString().ReplaceLineEndings("\n"));
         // The session's record still says the person finished it.
@@ -874,7 +873,7 @@ public sealed class SessionsCommandTests : IDisposable
         Assert.Empty(new SessionArchive(_home).Marks());
     }
 
-    /// <summary>Delete through the screen's owner (SESSUX1f): a conversation that served no quest goes, logged as the terminal's.</summary>
+    /// <summary>Delete through the screen's owner: a conversation that served no quest goes, logged as the terminal's.</summary>
     [Fact]
     public async Task Delete_goes_through_the_screens_owner_and_says_its_refusal()
     {
@@ -896,8 +895,8 @@ public sealed class SessionsCommandTests : IDisposable
     }
 
     /// <summary>
-    /// SESSDEL1 (D126 §5.4): a delete whose file the disk kept says which, through the world's remover, and exits 2, as a clear's
-    /// kept file does (HIST1d): the record went, and something here could not.
+    /// A delete whose file the disk kept says which, through the world's remover, and exits 2, as a clear's
+    /// kept file does: the record went, and something here could not.
     /// </summary>
     [Fact]
     public async Task A_delete_whose_file_the_disk_kept_says_which_and_exits_2()
@@ -925,7 +924,7 @@ public sealed class SessionsCommandTests : IDisposable
         Assert.True(File.Exists(transcript));
     }
 
-    // ——— HANDBACK1 (D219): a quest's handback at a terminal.
+    // ——— A quest's handback at a terminal.
 
     /// <summary>`handback` takes one id, a session's or a quest's, and `--json`; both usages name it.</summary>
     [Fact]
@@ -992,7 +991,7 @@ public sealed class SessionsCommandTests : IDisposable
 
         public string LastRefusal { get; private set; } = "";
 
-        /// <summary>The handback door's answers by id (HANDBACK1); none answers the door not found, as a service from before it does.</summary>
+        /// <summary>The handback door's answers by id; none answers the door not found, as a service from before it does.</summary>
         public Dictionary<string, JsonObject> Handbacks { get; } = [];
 
         public ServiceClient Client() => new("http://ledger.test", null, new HttpClient(this, disposeHandler: false));
@@ -1005,7 +1004,7 @@ public sealed class SessionsCommandTests : IDisposable
 
         public bool Interrupted(string id) { lock (_gate) return (bool?)Of(id)["interrupted"] ?? false; }
 
-        /// <summary>The codes of the note parts the last move sent, in order (TERMTRUST1a); none where no move came.</summary>
+        /// <summary>The codes of the note parts the last move sent, in order; none where no move came.</summary>
         public IReadOnlyList<string?> Codes(string id)
         {
             lock (_gate) return Of(id)["codes"] is JsonArray codes ? [.. codes.Select(code => (string?)code)] : [];
@@ -1021,7 +1020,7 @@ public sealed class SessionsCommandTests : IDisposable
 
         public string QuestStatus(string id) { lock (_gate) return (string)QuestOf(id)["status"]!; }
 
-        /// <summary>The words the person's done door was given for a quest (QUESTCLOSE1), or null where it was not asked.</summary>
+        /// <summary>The words the person's done door took for a quest, or null where it is not asked.</summary>
         public string? DoneWords(string id) { lock (_gate) return (string?)QuestOf(id)["doneWords"]; }
 
         public void CloseQuest(string id) { lock (_gate) QuestOf(id)["status"] = "Done"; }
@@ -1071,7 +1070,7 @@ public sealed class SessionsCommandTests : IDisposable
                     }));
                 }
 
-                // The person's done door (QUESTCLOSE1): an open or taken quest closes, as the service's own does.
+                // The person's done door: an open or taken quest closes, as the service's own does.
                 if (request.Method == HttpMethod.Post && path.StartsWith("/api/quests/", StringComparison.Ordinal)
                     && path.EndsWith("/done", StringComparison.Ordinal))
                 {
@@ -1097,7 +1096,7 @@ public sealed class SessionsCommandTests : IDisposable
                 {
                     var moved = Of(Uri.UnescapeDataString(rest[..^"/state".Length]));
                     BeforeMove?.Invoke(moved);
-                    // TERMTRUST1a: the ledger's expected state, compared as the store compares it in its step.
+                    // The ledger's expected state, compared as the store compares it in its step.
                     if (body!["expected"] is { } expected && expected.GetValue<string>() != (string)moved["state"]!)
                     {
                         return Answer(HttpStatusCode.Conflict, new JsonObject

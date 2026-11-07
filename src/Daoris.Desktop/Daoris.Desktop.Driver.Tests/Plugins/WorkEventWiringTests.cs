@@ -4,7 +4,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// <c>work/event</c> wired into the hook set (EVENTHOOK1b; the event hook design §4.1, §4.4, §9's proofs 3, 6, 7, 10, 11, 13): a plugin on the
+/// <c>work/event</c> wired into the hook set: a plugin on the
 /// point wanted only by the lease's loop, started with the handshake that says where its events begin, told in order, stopped after three late
 /// answers and held to its wait; the lease's busy read kept; the build of a laid-out install; and the session kinds read from the news teller.
 /// Driven through fake channels, so no process starts.

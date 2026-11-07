@@ -26,7 +26,7 @@ public sealed class ChildLineageTests : IDisposable
     {
         Assert.Equal("lineage.jsonl", ChildLineage.FileName);
         Assert.Equal(DaorisHome.Entry(_home, HomeEntry.Sessions, "s1", "lineage.jsonl"), ChildLineage.PathOf(_home, "s1"));
-        // The sessions' records are data (D172), under `data/` in a new home (HOMELAYOUT3), where they were in an install's.
+        // The sessions' records are data, so a new home keeps them under `data/`.
         Assert.Equal(["data", "sessions", "s1", "lineage.jsonl"], Path.GetRelativePath(_home, ChildLineage.PathOf(_home, "s1")).Split(Path.DirectorySeparatorChar));
     }
 
@@ -77,7 +77,7 @@ public sealed class ChildLineageTests : IDisposable
         Assert.Equal(ChildBindings.Lost, Assert.Single(ChildLineage.Read(_home, "s1").Children).State);
     }
 
-    /// <summary>COWORKVIEW1a's rule 9: no file, read, or unreadable with its kind; the length read is up to the last full line.</summary>
+    /// <summary>No file, read, or unreadable with its kind; the length read is up to the last full line.</summary>
     [Fact]
     public void A_read_finds_no_file_reads_it_or_cannot_and_an_unreadable_file_is_never_an_empty_fold()
     {
@@ -196,7 +196,7 @@ public sealed class ChildLineageTests : IDisposable
         Assert.False(TraceRules.HandsTreeGuard(alone.RootElement));
     }
 
-    /// <summary>A session still running from before the guard judged a shell's writes (TREESHELL1) was handed the edit tools' matcher: still the guard.</summary>
+    /// <summary>A session still running from before the guard judged a shell's writes got the edit tools' matcher: still the guard.</summary>
     [Fact]
     public void The_trace_still_reads_the_guard_a_session_started_before_the_shells_were_judged_was_handed()
     {

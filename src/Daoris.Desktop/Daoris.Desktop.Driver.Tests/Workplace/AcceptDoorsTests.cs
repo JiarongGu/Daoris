@@ -1,7 +1,7 @@
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// CHATFLOW1g (D228): a run's <c>land</c> is the one way to land. The window's press, a chat's press and the terminal's <c>trees land</c>
+/// A run's <c>land</c> is the one way to land. The window's press, a chat's press and the terminal's <c>trees land</c>
 /// land nothing in place and judge no result of their own for a landing: they keep the review's word for the run's <c>land</c>, which
 /// the performer lands at its pass, or say what holds the work (<see cref="Daoris.Driver.RunLandHolds"/>). Read from the sources by name.
 /// </summary>

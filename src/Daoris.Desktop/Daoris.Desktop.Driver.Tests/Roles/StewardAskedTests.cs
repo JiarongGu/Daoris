@@ -3,7 +3,7 @@ using Daoris.Driver;
 
 namespace Daoris.Desktop.Driver.Tests;
 
-/// <summary>STEWARDROLE1d: the steward's verb says its act waits for the owner's Confirm once the instance tells it so, and how it ended.</summary>
+/// <summary>The steward's verb says its act waits for the owner's Confirm once the instance tells it so, and how it ended.</summary>
 public sealed class StewardAskedTests
 {
     private static JsonElement Told(string type, string id) => JsonSerializer.SerializeToElement(new

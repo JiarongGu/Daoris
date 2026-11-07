@@ -3,7 +3,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// TREEDEPS1 (D51's note): a new session tree starts with the dependencies its checkout installed at the same lockfile, copied in,
+/// A new session tree starts with the dependencies its checkout installed at the same lockfile, copied in,
 /// never linked. These hold the gate and the copy over a checkout and a tree that are plain folders, git's facts handed in as the
 /// open would hand them; the real-git rows (the open, its cut-off and the removal) are in <see cref="SessionTreesTests"/>.
 /// </summary>
@@ -71,7 +71,7 @@ public sealed class TreeDependenciesTests : IDisposable
     private static string Resolved(string link) =>
         Path.GetFullPath(Path.Combine(Path.GetDirectoryName(link)!, new DirectoryInfo(link).LinkTarget!));
 
-    /// <summary>Only what the tree holds itself: no folder the copy was made under is left beside what it made.</summary>
+    /// <summary>Only what the tree holds itself: no folder the copy is made under is left beside what it makes.</summary>
     private void AssertNoCopyUnderWay() =>
         Assert.DoesNotContain(Directory.EnumerateDirectories(Tree, "*", SearchOption.AllDirectories), folder => Path.GetFileName(folder).StartsWith(".daoris-", StringComparison.Ordinal));
 
@@ -89,7 +89,7 @@ public sealed class TreeDependenciesTests : IDisposable
         Assert.Empty(copy.Declined);
         var copied = Path.Combine(Tree, "node_modules", "left-pad", "index.js");
         Assert.Equal("module.exports = 'left-pad';\n", File.ReadAllText(copied));
-        // A cache names where it was made: never copied, since the tree is somewhere else.
+        // A cache names the place it is made: never copied, since the tree is somewhere else.
         Assert.False(Directory.Exists(Path.Combine(Tree, "node_modules", ".vite")));
         Assert.False(Directory.Exists(Path.Combine(Tree, "node_modules", ".cache")));
         // npm trusts its hidden lockfile only where no folder of the install is newer than it.
@@ -279,7 +279,7 @@ public sealed class TreeDependenciesTests : IDisposable
     }
 
     /// <summary>
-    /// The look's purge deletes a tree moved aside never following a link (TIDIEDLINK1): a copied workspace link goes as a link, and
+    /// The look's purge deletes a tree moved aside never following a link: a copied workspace link goes as a link, and
     /// the checkout's workspace, and its own link to it, stand.
     /// </summary>
     [Fact]
@@ -300,8 +300,8 @@ public sealed class TreeDependenciesTests : IDisposable
 
     /// <summary>
     /// git's two questions as the open asks them, git's answers stood in: which lockfiles it tracks, and which folders it ignores,
-    /// those on standard input, since git takes <c>-z</c> only with <c>--stdin</c> (the first form answered 128 in every real tree,
-    /// and every copy was declined as unignored). Where git cannot say what it ignores, nothing is copied and git's words are said.
+    /// those on standard input, since git takes <c>-z</c> only with <c>--stdin</c> (the first form answers 128 in every real tree,
+    /// and every copy is declined as unignored). Where git cannot say what it ignores, nothing is copied and git's words are said.
     /// </summary>
     [Fact]
     public async Task The_open_asks_git_what_it_tracks_and_ignores_and_copies_nothing_where_git_cannot_say()
@@ -354,7 +354,7 @@ public sealed class TreeDependenciesTests : IDisposable
         Assert.Equal("x\n", File.ReadAllText(Path.Combine(link, "index.js")));
     }
 
-    /// <summary>The session's agent is told what was copied, and to skip the <c>npm ci</c> that would wipe it; nothing where nothing was.</summary>
+    /// <summary>The session's agent is told what has been copied, and to skip the <c>npm ci</c> that would wipe it; nothing where nothing is copied.</summary>
     [Fact]
     public void The_agent_is_told_what_was_copied_and_to_skip_npm_ci_before_how_to_take_the_quest()
     {

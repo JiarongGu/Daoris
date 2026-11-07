@@ -5,7 +5,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// MODELROLE1c (D205 §4.1, §4.5): a new start walks Build's effective order choice by choice, each choice's accounts by the walk
+/// A new start walks Build's effective order choice by choice, each choice's accounts by the walk
 /// before the next. An entry that cannot run here at all is passed by its code (<c>unavailable</c>, <c>no-connector</c>), a choice
 /// whose every account is cooling is passed with the walk's own reason, and the first that can run is taken; with none, the wait's
 /// sentence names each choice and the soonest cool-off rides beside it. An order of one is today's walk exactly.
@@ -132,7 +132,7 @@ public sealed class BuildWalkTests : IDisposable
         Assert.Equal("piped", first!.Agent);
     }
 
-    /// <summary>`cool` given a second account, both in its list, so a reading can pass one and leave the other (D205 §3.3).</summary>
+    /// <summary>`cool` given a second account, both in its list, so a reading can pass one and leave the other.</summary>
     private void TwoAccounts()
     {
         Directory.CreateDirectory(HarnessSettings.ProfileHome(_home, "cool", "account-2"));
@@ -143,7 +143,7 @@ public sealed class BuildWalkTests : IDisposable
         Assert.Null(AgentOffers.Refused(_home, agent, null, account, model, DateTimeOffset.UtcNow));
 
     /// <summary>
-    /// MODELROLE1c2's proof (D205 §3.3, §13's per-account walk): a first choice naming a model one account refused is run on the other
+    /// A first choice naming a model one account refused is run on the other
     /// account, the refusing account passed for this start and never cooled.
     /// </summary>
     [Fact]
@@ -163,7 +163,7 @@ public sealed class BuildWalkTests : IDisposable
     }
 
     /// <summary>
-    /// MODELROLE1c2's proof (D205 §3.3, §4.1): with neither account offering the first choice's model, the start runs its second, the first
+    /// With neither account offering the first choice's model, the start runs its second, the first
     /// passed `not-offered`; another model of the same agent is judged apart.
     /// </summary>
     [Fact]
@@ -183,7 +183,7 @@ public sealed class BuildWalkTests : IDisposable
     }
 
     /// <summary>
-    /// D205 §3.3's re-ask at the open, the refusal passed as if known before the spawn, taking no count: a later choice of the same agent
+    /// The re-ask at the open, the refusal passed as if known before the spawn, taking no count: a later choice of the same agent
     /// on the same account is set on the open session; any other answer (here another account of the refused choice) ends the record.
     /// </summary>
     [Fact]
@@ -201,7 +201,7 @@ public sealed class BuildWalkTests : IDisposable
     }
 
     /// <summary>
-    /// LOGCOLLECTION1: a quest held at every look is told once, then again only when what was passed or why changes: the install wrote
+    /// A quest held at every look is told once, then again only when what is passed or why changes: the install wrote
     /// 10,488 `actor.passed` lines in a day for one held quest. The passes the walk took are `actor.chose`'s words, not its sentences.
     /// </summary>
     [Fact]
@@ -243,7 +243,7 @@ public sealed class BuildWalkTests : IDisposable
         Assert.Equal(8, Logged("actor.passed").Count);
     }
 
-    /// <summary>A re-ask at an open takes no count of its own, so it writes no pass and leaves the quest's last look as it was.</summary>
+    /// <summary>A re-ask at an open takes no count of its own, so it writes no pass and leaves the quest's last look standing.</summary>
     [Fact]
     public async Task A_re_ask_writes_no_pass_and_does_not_change_what_the_last_look_remembers()
     {
@@ -262,7 +262,7 @@ public sealed class BuildWalkTests : IDisposable
     }
 
     /// <summary>
-    /// FOUNDATION1j part i: a quest's start walks Build's order through its start plan, so its answer is the plan's settled selection, its
+    /// A quest's start walks Build's order through its start plan, so its answer is the plan's settled selection, its
     /// one reservation the taken choice's count; the re-ask at its open walks as a probe and takes none.
     /// </summary>
     [Fact]

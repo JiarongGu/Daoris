@@ -3,7 +3,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// FABRIC-CLOSE1h (the fabric design §E5, D173's note): the result a landing and its gates judge. A closure graph's quest at its
+/// The result a landing and its gates judge. A closure graph's quest at its
 /// submission reads as the done it stands for, held or not, so the landing and its gates wait on an unheld submission where they wait
 /// on an unheld done; every other quest reads exactly as it stands, so the owner's install, which binds nothing, reads as before.
 /// </summary>

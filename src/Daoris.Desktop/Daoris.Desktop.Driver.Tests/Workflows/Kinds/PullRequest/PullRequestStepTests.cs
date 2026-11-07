@@ -3,7 +3,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// G8's pull-request step (D241 point 4): the plugin a step id names, the address its evidence gives, the bind's refusal of a graph whose pull
+/// The pull-request step: the plugin a step id names, the address its evidence gives, the bind's refusal of a graph whose pull
 /// request no plugin serves, and the landing record its address is kept on.
 /// </summary>
 public sealed class PullRequestStepTests : IDisposable

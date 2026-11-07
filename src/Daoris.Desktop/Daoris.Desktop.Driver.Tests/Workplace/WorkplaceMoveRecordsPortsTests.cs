@@ -4,7 +4,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// FOUNDATION1f-i part 1, the delete's port to the move records: Workplace declares the move records' facet and factory, and the Course
+/// The delete's port to the move records: Workplace declares the move records' facet and factory, and the Course
 /// implements and installs them, so a record's delete takes its moves without the workplace naming a Course type. The installed store's own
 /// cases over a real store are <see cref="MoveStoreTests"/>'.
 /// </summary>

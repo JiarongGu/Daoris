@@ -3,7 +3,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// Each working role's last seven days (MODELROLE1f, D205): starts, on which choice, how many fell to a later one and why, summed from the
+/// Each working role's last seven days: starts, on which choice, how many fell to a later one and why, summed from the
 /// machine log's <c>actor.chose</c> lines. A role the log has no start of is absent, never zero.
 /// </summary>
 public sealed class RoleUseTests : IDisposable
@@ -57,7 +57,7 @@ public sealed class RoleUseTests : IDisposable
         "{\"time\":\"" + day + "T10:00:00.000Z\",\"source\":\"driver\",\"level\":\"info\",\"event\":\"actor.moved\",\"data\":{\"role\":\"" + role
         + "\",\"line\":\"q1\",\"from\":\"1\",\"to\":\"2\",\"condition\":\"" + condition + "\",\"action\":\"next\",\"n\":1}}";
 
-    /// <summary>STAFFPOLICY1f: the lines the course moved are counted by the condition that moved them, the most first.</summary>
+    /// <summary>The lines the course moved are counted by the condition that moved them, the most first.</summary>
     [Fact]
     public void A_roles_moves_are_summed_by_condition()
     {

@@ -3,7 +3,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// GITAPP2h over real git (D204; the git-writes design §4, §8, §12 row h): stage and unstage by file, hunk and line through the act journal,
+/// Over real git: stage and unstage by file, hunk and line through the act journal,
 /// and Undo. The case that needs the held blob is HEAD = A, index = B, worktree = A, where Unstage loses B and Undo brings it back exactly.
 /// Stale bytes or a stale index are refused; so are the switch off, a conversation starting, a session in the checkout, an unreadable ledger,
 /// a pull or a promotion holding the lock, an operation in progress and a session's tree.

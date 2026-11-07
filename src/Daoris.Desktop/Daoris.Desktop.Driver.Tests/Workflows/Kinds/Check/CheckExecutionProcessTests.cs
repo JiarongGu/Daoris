@@ -4,7 +4,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// FABRIC-PIPELINE1d (the pipeline design §4.2): a check started through the performer is handed to the real heavy executor, the start
+/// A check started through the performer is handed to the real heavy executor, the start
 /// returning while its gate still runs, and its verdict reaches the run's record through the reconcile alone, under the <c>gates</c> source.
 /// </summary>
 /// <remarks>Real git, node and job processes: the Process half's.</remarks>

@@ -5,11 +5,11 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// FOUNDATION1 z-i (D212, the design §13.2 to §13.4, §13.6's row z-i): the desktop store, read by nothing. Its file in the home's table,
+/// The desktop store, read by nothing. Its file in the home's table,
 /// its four tables, its version and writer stamp, its revisions and the wake file a commit touches, its runs, its imports, and the
 /// guards that keep a build rolled back before its confirmation whole: a store stamped ahead refused for writes, the stamp read inside every
 /// write's own transaction, a stamp-raising migration and every import held until the start's confirmation is settled, a migration
-/// interrupted at each step leaving the store as it was.
+/// interrupted at each step leaving the store as it stood.
 /// </summary>
 /// <remarks>
 /// Every case has its own scratch home under <c>_fixtures/</c> and sets no variable of the process's environment, <c>DAORIS_HOME</c> least.
@@ -49,8 +49,8 @@ public sealed class DesktopStoreTests : IDisposable
     private static readonly int Stamp = DesktopStore.WriterStamp;
 
     /// <summary>
-    /// The version a store stops at before the build's own first raise (LANDNODE1b's step): where a start whose confirmation is not settled, or
-    /// that was handed no reading of it, leaves the store, its stamp still 1.
+    /// The version a store stops at before the build's own first raise: where a start whose confirmation is not settled, or
+    /// that got no reading of it, leaves the store, its stamp still 1.
     /// </summary>
     private static readonly int Unraised = DesktopStore.Steps.TakeWhile(step => step.Writer == DesktopStore.FirstWriter).Count();
 
@@ -85,7 +85,7 @@ public sealed class DesktopStoreTests : IDisposable
         Assert.True(HasTable(store, "supervisor_rule_revisions"));
         Assert.Equal(3, store.Stamp.Writer);
 
-        // A store a step-18 build left reads and migrates forward to it, its stamp where it was.
+        // A store a step-18 build left reads and migrates forward to it, its stamp where it stood.
         var at = Path.Combine(_root, "older.db");
         using (var older = Open(at: at, options: new DesktopStoreOptions { Steps = [.. DesktopStore.Steps.Take(18)], Settled = () => StoreSettled.Yes }))
         {
@@ -111,7 +111,7 @@ public sealed class DesktopStoreTests : IDisposable
         Assert.Single(store.Query("SELECT at FROM continuation_made", reader => reader.GetString(0)));
         Assert.Equal(3, store.Stamp.Writer);
 
-        // A store a step-19 build left reads and migrates forward to it, its stamp where it was.
+        // A store a step-19 build left reads and migrates forward to it, its stamp where it stood.
         var at = Path.Combine(_root, "older.db");
         using (var older = Open(at: at, options: new DesktopStoreOptions { Steps = [.. DesktopStore.Steps.Take(19)], Settled = () => StoreSettled.Yes }))
         {
@@ -326,7 +326,7 @@ public sealed class DesktopStoreTests : IDisposable
             older.Query("SELECT agent IS NULL, refused_bound IS NULL, quiet_at IS NULL FROM moves", reader => (reader.GetBoolean(0), reader.GetBoolean(1), reader.GetBoolean(2))));
     }
 
-    // ——— Step 6, the integration's family (INTEGRATE1e part e2; the integration design §5.6, D212 §13).
+    // ——— Step 6, the integration's family.
 
     private static readonly string[] IntegrationTables = ["integration_requests", "integration_candidates", "integration_members", "integration_steps"];
 
@@ -452,7 +452,7 @@ public sealed class DesktopStoreTests : IDisposable
         foreach (var table in IntegrationTables) Assert.Equal(0, Count(older, table));
     }
 
-    // ——— Step 7, a superseded member's pending disposition (INTEGRATE1e part e4b; the integration design §5.7, D215's note).
+    // ——— Step 7, a superseded member's pending disposition.
 
     [Fact]
     public void Step_7_makes_the_pending_dispositions_table_keyed_by_request_and_commit_and_raises_no_stamp()
@@ -547,7 +547,7 @@ public sealed class DesktopStoreTests : IDisposable
         Assert.Equal(0, Count(older, "integration_dispositions"));
     }
 
-    // ——— Step 12, the owner's decide, a request's queue order and a disposition's answer (INTEGRATE1h; the integration design §5.7, §5.8, §8).
+    // ——— Step 12, the owner's decide, a request's queue order and a disposition's answer.
 
     [Fact]
     public void Step_12_makes_the_decides_one_for_each_candidate_and_adds_the_queue_order_and_the_answer_nullable_and_raises_no_stamp()
@@ -599,7 +599,7 @@ public sealed class DesktopStoreTests : IDisposable
         Assert.Equal(0, Count(again, "integration_decides"));
     }
 
-    // ——— Step 13, the act journal (GITAPP2a; the git-writes design §5).
+    // ——— Step 13, the act journal.
 
     [Fact]
     public void Step_13_makes_the_act_journal_one_open_act_for_each_checkout_and_raises_no_stamp()
@@ -625,7 +625,7 @@ public sealed class DesktopStoreTests : IDisposable
         Assert.Equal(2067, Assert.Throws<SqliteException>(() => Act("a3")).SqliteExtendedErrorCode);
     }
 
-    // ——— Step 15, the delivery record (LANDNODE1b; the land node design §3, §4), the first step to raise the stamp.
+    // ——— Step 15, the delivery record, the first step to raise the stamp.
 
     [Fact]
     public void Step_15_makes_the_deliveries_and_their_phases_and_is_the_first_step_to_raise_the_writer_stamp()
@@ -711,7 +711,7 @@ public sealed class DesktopStoreTests : IDisposable
         Assert.Equal(2, older.Revisions()["probe"]);
     }
 
-    // ——— Step 16, a role's staffing policy, its revisions and the role's new starts (STAFFPOLICY1a; the staff policy design §2.1, §11),
+    // ——— Step 16, a role's staffing policy, its revisions and the role's new starts,
     // the second step to raise the stamp: an older build reads the role's choices and could start one past its budget or outside its works.
 
     [Fact]
@@ -801,7 +801,7 @@ public sealed class DesktopStoreTests : IDisposable
         Assert.True(HasTable(settled, "role_starts"));
     }
 
-    // ——— Step 10, the role catalogue (FOUNDATION1w; the foundation design §2.7, §13.3).
+    // ——— Step 10, the role catalogue.
 
     [Fact]
     public void Step_10_makes_the_roles_and_their_revisions_with_required_columns_and_raises_no_stamp()
@@ -818,7 +818,7 @@ public sealed class DesktopStoreTests : IDisposable
             Columns(store, "role_revisions"));
     }
 
-    // ——— Step 8, the roles' staffing (FOUNDATION1w-s part 1; the foundation design §19.15, D212's note).
+    // ——— Step 8, the roles' staffing.
 
     [Fact]
     public void Step_8_makes_the_staffing_its_one_projection_row_and_the_found_rows_with_required_columns_and_raises_no_stamp()
@@ -863,7 +863,7 @@ public sealed class DesktopStoreTests : IDisposable
         foreach (var table in new[] { "role_staffing", "role_staffing_projection", "role_staffing_found" }) Assert.True(HasTable(store, table), table);
     }
 
-    // ——— A run entered with no family's write (FOUNDATION1f-i part 2, §19.1 point 3).
+    // ——— A run entered with no family's write.
 
     [Fact]
     public void Entering_records_the_process_s_run_once_moving_no_revision_and_touching_no_wake()
@@ -1044,7 +1044,7 @@ public sealed class DesktopStoreTests : IDisposable
         var store = Open(Newer(() => settled));
         store.Write("settings", _ => { });
 
-        // The start's confirmation is not settled: the stamp stays where it was and an older build can still write. The first raise to wait
+        // The start's confirmation is not settled: the stamp stays where it stands and an older build can still write. The first raise to wait
         // is the build's own, the delivery record's, from 1 to 2, and the newer one waits behind it.
         Assert.False(store.Migrate());
         Assert.Equal((Unraised, 1), store.Stamp);

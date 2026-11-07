@@ -4,7 +4,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// COWORKVIEW1e-i (the cowork view design §R11.2 point 4, §6.4): the routing standing is judged once, from the drive, the lanes the
+/// The routing standing is judged once, from the drive, the lanes the
 /// registry declares and the trees, in the order not-driven, no-lanes, one-at-a-time, open; and it is told only to the works that can
 /// publish to their own repository's lanes (build, design, chat). Its words are the standing block's (<c>StandingBlockTests</c>).
 /// </summary>

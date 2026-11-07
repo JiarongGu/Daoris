@@ -4,7 +4,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// WSR1 (D87): how a session's work lands is a workspace's rule, with a repository's override — merged
+/// How a session's work lands is a workspace's rule, with a repository's override — merged
 /// into the line, or put on a branch named by a pattern for the person to push. Daoris never pushes.
 /// Real git for the door, as the other tree tests use it.
 /// </summary>
@@ -53,8 +53,8 @@ public sealed class LandingTests : IDisposable
         Assert.Equal(slug, BranchPatterns.Slug(title));
 
     /// <summary>
-    /// WSR5, found landing TK-2202: a chain lands from its last step, and its branch was named for that
-    /// step (`feature/verify-in-prod-…-381807d1f7bd`). It is named for the chain's first quest — the one
+    /// A chain lands from its last step, and its branch is not named for that
+    /// step (`feature/verify-in-prod-…-381807d1f7bd`) but for the chain's first quest — the one
     /// the ask became — walking up each step's parent, and a quest with none is its own.
     /// </summary>
     [Fact]
@@ -138,7 +138,7 @@ public sealed class LandingTests : IDisposable
     }
 
     /// <summary>
-    /// ACCEPTFOOT2 (D164's 2026-10-16 note): a conversation's plan and press name its branch for its work's oldest commit subject
+    /// A conversation's plan and press name its branch for its work's oldest commit subject
     /// beyond the line, never for its opening, and the two name one branch.
     /// </summary>
     [Fact]
@@ -160,7 +160,7 @@ public sealed class LandingTests : IDisposable
         Assert.Equal(plan.Target, landed.Branch);
     }
 
-    /// <summary>An oldest commit with an empty message names the work `work`, never the commit after it (ACCEPTFOOT2).</summary>
+    /// <summary>An oldest commit with an empty message names the work `work`, never the commit after it.</summary>
     [Fact]
     public async Task A_conversations_oldest_commit_with_no_message_names_it_work()
     {
@@ -215,7 +215,7 @@ public sealed class LandingTests : IDisposable
         Assert.Empty((await GitAsync(root, "branch", "--list", "review/*")).Trim());
     }
 
-    /// <summary>No rule is the merge it always was, through the same door.</summary>
+    /// <summary>No rule is the merge, through the same door.</summary>
     [Fact]
     public async Task With_no_rule_the_door_merges_into_the_line()
     {
@@ -245,7 +245,7 @@ public sealed class LandingTests : IDisposable
         Assert.Equal((LandingForm.Branch, "feature/0fda18-fix-the-api-gap"), (plan.Form, plan.Target));
     }
 
-    // ——— LANDNAME1a: an entered branch name replaces the rule's wholesale
+    // ——— An entered branch name replaces the rule's wholesale
 
     [Fact]
     public async Task An_entered_name_replaces_the_rules_whole_name_and_the_record_keeps_it()
@@ -351,7 +351,7 @@ public sealed class LandingTests : IDisposable
         Assert.Contains("`feature/0fda18-fix`", branch);
         Assert.Contains("do not merge it, push it, or open a pull request", branch);
 
-        // A plugin pushes it once accepted (D100) — and the session still pushes nothing itself.
+        // A plugin pushes it once accepted — and the session still pushes nothing itself.
         var handed = TargetPrompt.Compose(target with { LandsOn = new LandingPlan(LandingForm.Branch, "feature/0fda18-fix", LandingSource.Workspace, "example.github-pull-request") });
         Assert.Contains("the person accepts it, this tree's branch is put on `feature/0fda18-fix`, pushed", handed);
         Assert.Contains("do not merge it, push it, or open a pull request yourself", handed);
@@ -359,7 +359,7 @@ public sealed class LandingTests : IDisposable
         Assert.Equal(TargetPrompt.Compose(target), TargetPrompt.Compose(target with { LandsOn = new LandingPlan(LandingForm.Merge, "main", LandingSource.Default) }));
     }
 
-    // ——— LAND2c: a chain lands on one branch (D145 §3, D149)
+    // ——— A chain lands on one branch
 
     /// <summary>
     /// A chain's later step lands by moving the chain's branch on, as a fast-forward, from the commit the first landing made it
@@ -455,7 +455,7 @@ public sealed class LandingTests : IDisposable
     }
 
     /// <summary>
-    /// STANDSREFUSE1 (D167's ACCEPTALL1g note, D145 §3): the plan says the refusal a standing branch would meet, in the press's own
+    /// The plan says the refusal a standing branch would meet, in the press's own
     /// sentence, before the press: one Daoris did not make, one moved since it landed on it, and one a working tree has checked out.
     /// One it may move on says none, and still stands.
     /// </summary>
@@ -506,8 +506,8 @@ public sealed class LandingTests : IDisposable
     }
 
     /// <summary>
-    /// D149 point 3: a chain's branch whose pull request was merged — every commit on the line, or, after a squash, every file it
-    /// changed reading there as it left it — is not moved on, since commits added now would ride no pull request.
+    /// A chain's branch whose pull request is merged — every commit on the line, or, after a squash, every file it
+    /// changed reading there as it left it — is not moved on, since commits added later would ride no pull request.
     /// </summary>
     [Theory]
     [InlineData("merge")]
@@ -542,7 +542,7 @@ public sealed class LandingTests : IDisposable
         Assert.Equal(tip, (await GitAsync(root, "rev-parse", chain)).Trim());
     }
 
-    /// <summary>SESSONE1d: where no branch holds that work, the part grows from the line, and says that the tree it would have gone into is gone.</summary>
+    /// <summary>Where no branch holds that work, the part grows from the line, and says that the tree it would have gone into is gone.</summary>
     [Fact]
     public async Task A_further_part_whose_sessions_tree_is_gone_with_nothing_landed_grows_from_the_line_and_says_so()
     {
@@ -578,8 +578,8 @@ public sealed class LandingTests : IDisposable
         trees.LandAsync(path, subject, acceptedBy: acceptedBy, gate: _gate);
 
     /// <summary>
-    /// A repository on `main` with one commit, its README: a copy of the run's plain seed (<see cref="GitSeed.PlainAsync"/>, PROC1h;
-    /// PROCSPEED1, PROCSPEED1b), five git starts a test fewer. No test here reads the first commit's id or time.
+    /// A repository on `main` with one commit, its README: a copy of the run's plain seed (<see cref="GitSeed.PlainAsync"/>),
+    /// five git starts a test fewer. No test here reads the first commit's id or time.
     /// </summary>
     private Task<string> RepositoryAsync(string name) => GitSeed.PlainAsync(Path.Combine(_scratch, name), name);
 

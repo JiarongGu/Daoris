@@ -3,8 +3,8 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// FOUNDATION1 mod-xvii, the Plugins cuts: what they keep. A plugin's manifest and the node declarations the workflows read from it, the
-/// plugin page's read of the same, and the plugins the workflow editor lists, each through the surface that stood on both sides of the cut.
+/// The Plugins cuts: what they keep. A plugin's manifest and the node declarations the workflows read from it, the
+/// plugin page's read of the same, and the plugins the workflow editor lists, each through the surface present on both sides of the cut.
 /// The seams the cuts add are <c>PluginsPortsTests</c>'.
 /// </summary>
 public sealed class PluginsBoundaryTests : IDisposable

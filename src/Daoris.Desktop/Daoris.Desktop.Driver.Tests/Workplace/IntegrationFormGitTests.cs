@@ -3,12 +3,12 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// INTEGRATE1e part e3a over real git (D215's note; the integration design §5.2 steps 2 and 3): a candidate formed from a line's queued
+/// Over real git: a candidate formed from a line's queued
 /// requests and each member replayed onto it in the line's own warm integration tree, containment judged first by the frozen tip; a
 /// conflict aborted and handed back with the tree clean for the next member; a crash inside a replay recovered by putting the tree back at
-/// the step's recorded start. Called from no production path. Never moves the line: promotion is row e4's.
+/// the step's recorded start. Called from no production path. Never moves the line.
 /// </summary>
-/// <remarks>The case names follow the merge tool's candidate tests (<c>merge-queue.test.ts</c>, INTEGRATE1c).</remarks>
+/// <remarks>The case names follow the merge tool's candidate tests (<c>merge-queue.test.ts</c>).</remarks>
 [Trait(Category.Name, Category.Process)]
 [Trait(Category.Parallel, Category.Git)]
 public sealed class IntegrationFormGitTests : LandedFixture
@@ -102,7 +102,7 @@ public sealed class IntegrationFormGitTests : LandedFixture
             new DateTimeOffset(2026, 10, 30, 9, 0, order, TimeSpan.Zero))));
 
     /// <summary>
-    /// 🔴 LANDNODE1g: two requests admitted under different policies are not one candidate. The rule changed between them (here the overlap), so
+    /// Two requests admitted under different policies are not one candidate. The rule changed between them (here the overlap), so
     /// the first request's batching must not govern the second: the candidate holds the first alone, the second waits for the next.
     /// </summary>
     [Fact]
@@ -157,9 +157,9 @@ public sealed class IntegrationFormGitTests : LandedFixture
         store.Members(candidate.Id).Single(each => each.Request == request);
 
     /// <summary>
-    /// 🔴 Two queued requests form one candidate on the line's commit and are replayed in order, each merged <c>--no-ff</c> onto the last in a
+    /// Two queued requests form one candidate on the line's commit and are replayed in order, each merged <c>--no-ff</c> onto the last in a
     /// warm tree of Daoris's own under the trees home: the merge commit's second parent is the frozen tip, the line never moves, and the
-    /// person's checkout is left as it was.
+    /// person's checkout is left untouched.
     /// </summary>
     [Fact]
     public async Task Two_members_are_formed_and_replayed_in_order_in_a_tree_of_the_lines_own()
@@ -185,7 +185,7 @@ public sealed class IntegrationFormGitTests : LandedFixture
         Assert.Equal([first.Replayed!, b], await ParentsOfAsync(root, second.Replayed!));
         Assert.Equal("Merge branch 'feature/b'", (await GitAsync(root, "log", "-1", "--format=%s", second.Replayed!)).Trim());
 
-        // The tree is the line's own, under the trees home, detached at the candidate's tip, clean and locked; no one's checkout was used.
+        // The tree is the line's own, under the trees home, detached at the candidate's tip, clean and locked; no one's checkout is used.
         var tree = run.Tree!;
         Assert.StartsWith(Path.GetFullPath(TreesHome), Path.GetFullPath(tree), StringComparison.OrdinalIgnoreCase);
         Assert.DoesNotContain(Path.GetFullPath(root), Path.GetFullPath(tree), StringComparison.OrdinalIgnoreCase);
@@ -273,7 +273,7 @@ public sealed class IntegrationFormGitTests : LandedFixture
     }
 
     /// <summary>
-    /// 🔴 A member whose work the line holds by patch (a cherry-pick, so no ancestry shows it) is judged contained by D87 point 1's judgement and
+    /// A member whose work the line holds by patch (a cherry-pick, so no ancestry shows it) is judged contained by patch equivalence and
     /// never merged, and never read as a conflict.
     /// </summary>
     [Fact]
@@ -293,15 +293,15 @@ public sealed class IntegrationFormGitTests : LandedFixture
         var member = Member(store, candidate, "rx");
         Assert.Equal((IntegrationMemberStates.Contained, null, false), (member.State, member.ContainedBy, member.Stands));
         Assert.Equal(IntegrationRequestCloses.Settled, store.Request("rx")!.ClosedWhy);
-        // Nothing left to promote: the candidate ended, its line free, its tree where it was formed.
+        // Nothing left to promote: the candidate ended, its line free, its tree as formed.
         Assert.Equal((IntegrationCandidateEnds.Empty, null), (candidate.EndedWhy, candidate.Tip));
         Assert.Null(store.StandingFor("engine", "main"));
         Assert.Equal(@base, await CommitOfAsync(run.Tree!, "HEAD"));
     }
 
     /// <summary>
-    /// 🔴 Two members that conflict: the second is aborted, the tree put back at the candidate so far, and it is <c>conflict</c> then handed
-    /// back at its own step with its request closed; the third goes on onto the first, so the warm tree was clean for it, and the line stays.
+    /// Two members that conflict: the second is aborted, the tree put back at the candidate so far, and it is <c>conflict</c> then handed
+    /// back at its own step with its request closed; the third goes on onto the first, so the warm tree is clean for it, and the line stays.
     /// </summary>
     [Fact]
     public async Task One_member_conflicting_is_handed_back_and_the_next_goes_on_in_a_clean_tree()
@@ -338,7 +338,7 @@ public sealed class IntegrationFormGitTests : LandedFixture
         Assert.Contains("`shared.txt`", told.Text, StringComparison.Ordinal);
         Assert.Contains("`feature/a`", told.Text, StringComparison.Ordinal);
 
-        // The third was merged onto the first's replay, not onto the conflicted attempt, and the tree holds only theirs.
+        // The third is merged onto the first's replay, not onto the conflicted attempt, and the tree holds only theirs.
         Assert.Equal([first.Replayed!, c], await ParentsOfAsync(root, third.Replayed!));
         Assert.Equal(third.Replayed, candidate.Tip);
         var tree = run.Tree!;
@@ -351,7 +351,7 @@ public sealed class IntegrationFormGitTests : LandedFixture
         Assert.False(File.Exists(mergeHead), mergeHead);
         Assert.Equal(@base, await CommitOfAsync(root, "main"));
 
-        // The conflict was a replay that ended, then a step of its own that handed it back, before the next member's replay.
+        // The conflict is a replay that ends, then a step of its own that hands it back, before the next member's replay.
         Assert.Equal(
             [
                 (IntegrationStepNames.Form, null, IntegrationStepOutcomes.Done), (IntegrationStepNames.Replay, "ra", IntegrationStepOutcomes.Done),
@@ -362,7 +362,7 @@ public sealed class IntegrationFormGitTests : LandedFixture
     }
 
     /// <summary>
-    /// 🔴 INTEGRATE1e part e3b, step 4 (the twin of the merge tool's "the backlog's line conflict is resolved by the merge base", MERGETASKS1): the
+    /// The twin of the merge tool's "the backlog's line conflict is resolved by the merge base": the
     /// second member and the first change the backlog's neighbouring lines, which git reads as one conflict; the backlog the line declares is
     /// merged by its base, the merge made with the member's frozen tip as its second parent, and the third member goes on onto it in a clean tree.
     /// </summary>
@@ -401,7 +401,7 @@ public sealed class IntegrationFormGitTests : LandedFixture
     }
 
     /// <summary>
-    /// 🔴 The twin of the same test's "one row both sides edited is left (MERGETASKS1)", and of its "backlog beside code": a row both sides edited
+    /// The twin of the same test's "one row both sides edited is left", and of its "backlog beside code": a row both sides edited
     /// is the session's conflict, and so is a settled backlog beside a conflict in code. Nothing the resolve staged stays: the tree goes back to the
     /// candidate so far, and the next member goes on from it.
     /// </summary>
@@ -473,7 +473,7 @@ public sealed class IntegrationFormGitTests : LandedFixture
         Assert.Equal(
             held + "\n## A - a (2026-10-27)\nOutcome A.\n\n## B - b (2026-10-28)\nOutcome B.\n",
             await ShowAsync(root, second.Replayed!, "docs/archive.md"));
-        // One merge commit for the member, its second parent the frozen tip: nothing was committed on top.
+        // One merge commit for the member, its second parent the frozen tip: nothing is committed on top.
         Assert.Equal([Member(store, candidate, "ra").Replayed!, b], await ParentsOfAsync(root, second.Replayed!));
         var step = store.Steps(candidate.Id).Single(each => each is { Step: IntegrationStepNames.Replay, Request: "rb" });
         Assert.Contains("set apart", step.Said, StringComparison.Ordinal);
@@ -520,7 +520,7 @@ public sealed class IntegrationFormGitTests : LandedFixture
     }
 
     /// <summary>
-    /// 🔴 A declared line rule (INTEGRATE1d, §5.2 step 4's <c>run</c> writer): both members change only the line its pattern matches, which the
+    /// A declared line rule (its <c>run</c> writer): both members change only the line its pattern matches, which the
     /// merge by the base settles for its writer to write again from the merged tree, inside the member's merge commit; the rule is read from the
     /// declaration the person accepted for integration, at the line, or it settles nothing and the file is a conflict.
     /// </summary>
@@ -674,9 +674,9 @@ public sealed class IntegrationFormGitTests : LandedFixture
     }
 
     /// <summary>
-    /// 🔴 A crash inside the resolve (the merge made and settled, its commit not yet): another process takes the candidate, the tree goes back to
+    /// A crash inside the resolve (the merge made and settled, its commit not yet): another process takes the candidate, the tree goes back to
     /// the step's recorded start and the member is merged and settled again as the step's next attempt, one merge commit for it. A crash in the
-    /// conflict step after the session was told tells again at the same key, which the door keeps once, and the member is handed back.
+    /// conflict step after the session is told tells again at the same key, which the door keeps once, and the member is handed back.
     /// </summary>
     [Theory]
     [InlineData("after-resolve")]

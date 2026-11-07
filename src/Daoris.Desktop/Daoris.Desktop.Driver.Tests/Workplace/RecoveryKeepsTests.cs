@@ -4,10 +4,10 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// ONEWAY1r's rest (D204, D228; the oneway design §5 G3): each door's recovery ref is kept through the journal's act and dated from it. A
+/// Each door's recovery ref is kept through the journal's act and dated from it. A
 /// judged delete that keeps makes its ref in the delete's own transaction, which its Undo takes back; a keep alone is one <c>ref.keep</c> act;
-/// the retention dates a recorded ref from its act; and the census counts the refs no journal record names, which the old reader and press
-/// stay for.
+/// the retention dates a recorded ref from its act; and the census counts the refs no journal record names, which the reader and press of
+/// unrecorded refs stay for.
 /// </summary>
 [Trait(Category.Name, Category.Process)]
 [Trait(Category.Parallel, Category.Git)]

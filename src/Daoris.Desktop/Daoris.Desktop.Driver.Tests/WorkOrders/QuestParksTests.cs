@@ -4,7 +4,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// What a quest's park is said with (SESSUX1i, D126 §4.6, §4.7): its last session here, how many failed, that session's
+/// What a quest's park is said with: its last session here, how many failed, that session's
 /// note and when it ended. Overview's row and the park's notice read it; it is read from the facts the list's *parked* row
 /// reads (<see cref="SessionGroups"/>), so the row, the notice and the list count one number.
 /// </summary>
@@ -61,7 +61,7 @@ public sealed class QuestParksTests
         Assert.Equal(T0.AddMinutes(21), park.Since);
     }
 
-    /// <summary>The number is the planner's: the records' failures less RETRY1's mark, as the list's parked row counts it.</summary>
+    /// <summary>The number is the planner's: the records' failures less the retry mark, as the list's parked row counts it.</summary>
     [Fact]
     public void The_number_counts_from_the_last_Try_again()
     {
@@ -74,8 +74,8 @@ public sealed class QuestParksTests
     }
 
     /// <summary>
-    /// Only the planner's park is a park. A person's stop holds its quest too (SESSUX1b), and is never said: the person
-    /// caused it (§4.7). Every other verdict is a wait or a hold, and none waits on the person's Try again.
+    /// Only the planner's park is a park. A person's stop holds its quest too, and is never said: the person
+    /// caused it. Every other verdict is a wait or a hold, and none waits on the person's Try again.
     /// </summary>
     [Theory]
     [InlineData(StartVerdict.Stopped)]
@@ -118,7 +118,7 @@ public sealed class QuestParksTests
         Assert.Null(park.Since);
     }
 
-    /// <summary>A teammate's failures are theirs: the strikes and the last run are this machine's own (D47 §6).</summary>
+    /// <summary>A teammate's failures are theirs: the strikes and the last run are this machine's own.</summary>
     [Fact]
     public void A_teammate_record_is_never_a_park_s_last_session()
     {
@@ -134,7 +134,7 @@ public sealed class QuestParksTests
     private static TickReport Tick(params Consideration[] considered) => new(considered, [], Progressed: false);
 
     /// <summary>
-    /// The records are every session ever run (D126 M9), so they are read only when what the planner parked changed: a
+    /// The records are every session ever run, so they are read only when what the planner parked changed: a
     /// park lasts every look until Try again, and reading them every look for the same answer would double the look's
     /// largest read.
     /// </summary>

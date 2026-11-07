@@ -6,7 +6,7 @@ namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
 /// The driver's one send (DriverHttp.SendAsync) and the one download wrapper and streaming hash
-/// (Downloads) the tool installer and the Claude release download share (DEDUP8). The words they throw
+/// (Downloads) the tool installer and the Claude release download share. The words they throw
 /// are pinned: callers and rehearsals read them.
 /// </summary>
 public sealed class DownloadsAndSendTests : IDisposable

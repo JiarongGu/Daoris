@@ -3,7 +3,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// EVENTHOOK1d-iii over real git (D244's note on <c>work.ended</c>, the event channel design §3.4): the end keeping's one writer says each
+/// Over real git (<c>work.ended</c>): the end keeping's one writer says each
 /// entry it writes ended through <see cref="WorkEnds"/>, with the session it names and its quest, whichever caller asked; a fact that still
 /// holds is written and said once; a cleared fact is not said; a process without the home's lease writes and says nothing; and a landing
 /// whose branch is gone, retired with its end, is said as it retires.
@@ -67,7 +67,7 @@ public sealed class WorkEndsGitTests : LandedFixture
     }
 
     /// <summary>
-    /// The kind says what was reached: a fact cleared, the line rewound so it no longer holds the work, is written and not said; and a
+    /// The kind says what is reached: a fact cleared, the line rewound so it no longer holds the work, is written and not said; and a
     /// listener of another home hears nothing of this one.
     /// </summary>
     [Fact]

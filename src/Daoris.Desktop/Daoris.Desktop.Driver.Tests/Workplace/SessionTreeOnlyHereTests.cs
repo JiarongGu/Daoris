@@ -4,8 +4,8 @@ using static Daoris.Desktop.Driver.Tests.GitFixture;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// Abandon's proof on real git (PAUSE1d, D132 point 7, design §3.3): a tree and its branch are discarded only when no commit
-/// after the session's base is on any ref but this machine's local <c>daoris/*</c> branches. D88's proof turned around: the
+/// Abandon's proof on real git: a tree and its branch are discarded only when no commit
+/// after the session's base is on any ref but this machine's local <c>daoris/*</c> branches. The landed proof turned around: the
 /// line, a branch of the person's, a tag and a pushed <c>origin/daoris/*</c> each count as elsewhere, and partly elsewhere is
 /// kept whole. The discard behind it takes the tree with its uncommitted work and its branch, or the branch alone.
 /// </summary>
@@ -70,7 +70,7 @@ public sealed class SessionTreeOnlyHereTests : IDisposable
         Assert.Equal(where switch { "merge" => "main", "branch" => "feature/x", _ => "kept" }, judged.Where);
     }
 
-    /// <summary>🔴 A pushed session branch counts as elsewhere, where D88's proof leaves it out: pushed means somebody may have it.</summary>
+    /// <summary>A pushed session branch counts as elsewhere, where the landed proof leaves it out: pushed means somebody may have it.</summary>
     [Fact]
     public async Task A_pushed_session_branch_is_elsewhere_though_the_clean_up_calls_it_unlanded()
     {
@@ -215,7 +215,7 @@ public sealed class SessionTreeOnlyHereTests : IDisposable
         Assert.Equal(OnlyHereKind.Unknown, (await trees.OnlyHereAsync(tree.Path, "feature/mine", null, root)).Kind);
     }
 
-    /// <summary>A session's tree, its branch, and its base as the record keeps it (SURF6): the commit it stood at when it opened.</summary>
+    /// <summary>A session's tree, its branch, and its base as the record keeps it: the commit it stood at when it opened.</summary>
     private sealed record Opened(string Path, string Branch, string Base);
 
     private async Task<Opened> TreeWithWorkAsync(SessionTrees trees, string root, int commits = 1)
@@ -226,7 +226,7 @@ public sealed class SessionTreeOnlyHereTests : IDisposable
         return opened;
     }
 
-    /// <summary>A copy of the run's plain seed (<see cref="GitSeed.PlainAsync"/>, PROCSPEED1b): no test here reads its first commit.</summary>
+    /// <summary>A copy of the run's plain seed (<see cref="GitSeed.PlainAsync"/>): no test here reads its first commit.</summary>
     private Task<string> RepositoryAsync(string name) => GitSeed.PlainAsync(Path.Combine(_scratch, name), name);
 
     private static void ForceDelete(string folder)

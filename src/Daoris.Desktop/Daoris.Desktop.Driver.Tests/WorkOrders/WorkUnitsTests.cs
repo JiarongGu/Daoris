@@ -6,8 +6,8 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// FABRIC-UNIT1a (the fabric events design §D2): one <see cref="WorkUnit"/> projection over every kind of work. The branch adapter is
-/// MILESTONE1a's inventory read as units, and the milestone is read from the unit; the quest and ask adapters read the service's
+/// One <see cref="WorkUnit"/> projection over every kind of work. The branch adapter is
+/// the work inventory read as units, and the milestone is read from the unit; the quest and ask adapters read the service's
 /// records as units of the same shape; a quest links the branch units its sessions worked, and its ask, by id, never by a copy. Every
 /// adapter reads: no store, no file, no write.
 /// </summary>
@@ -73,7 +73,7 @@ public sealed class WorkUnitsTests : IDisposable
     }
 
     /// <summary>
-    /// A unit retires only once its end is reached and every entry has a terminal disposition (§D3): merged and cleaned is retired;
+    /// A unit retires only once its end is reached and every entry has a terminal disposition: merged and cleaned is retired;
     /// merged with its tree busy is open; a tree no record names has no owner, and is open, never retired by a guess.
     /// </summary>
     [Fact]
@@ -96,7 +96,7 @@ public sealed class WorkUnitsTests : IDisposable
     // ---- the quest adapter
 
     /// <summary>
-    /// A quest is a unit read from its record (§D2: the service's quest store, its writer the service): its end from its status, a held
+    /// A quest is a unit read from its record (the service's quest store, its writer the service): its end from its status, a held
     /// done not yet an end, a decline dropped, a status this reader does not know unknown; its executors the sessions that served it.
     /// </summary>
     [Fact]
@@ -145,7 +145,7 @@ public sealed class WorkUnitsTests : IDisposable
 
     // ---- the ask adapter
 
-    /// <summary>An ask is a unit read from its record (§D2, the quest's space): done is its end, the person's close drops it.</summary>
+    /// <summary>An ask is a unit read from its record: done is its end, the person's close drops it.</summary>
     [Fact]
     public void An_ask_is_a_unit_whose_end_is_its_state_and_whose_executor_is_its_intake()
     {
@@ -173,7 +173,7 @@ public sealed class WorkUnitsTests : IDisposable
 
     /// <summary>
     /// The quest links the branch unit its session worked (by the session's tree), and the ask it came from; each link has its inverse;
-    /// a quest's chain step and its D79 question are links too. Nothing of the branch unit is copied onto the quest.
+    /// a quest's chain step and its question are links too. Nothing of the branch unit is copied onto the quest.
     /// </summary>
     [Fact]
     public void A_quest_links_the_branch_units_its_sessions_worked_and_its_ask_by_id_never_by_a_copy()
@@ -213,9 +213,9 @@ public sealed class WorkUnitsTests : IDisposable
     }
 
     /// <summary>
-    /// FABRIC-UNITLINK1 (D173's CLOSELAND1 note): a landing carrying several units keeps each advance's quest and unit, so each unit is
-    /// executed by its own sessions and produced by its own quest, read from the record alone, with no session records. A landing from
-    /// before, whose advances name no unit, reads as it did: every session executes every unit it carries, and none is linked by it.
+    /// A landing carrying several units keeps each advance's quest and unit, so each unit is
+    /// executed by its own sessions and produced by its own quest, read from the record alone, with no session records. A landing whose
+    /// advances name no unit reads plainly: every session executes every unit it carries, and none is linked by it.
     /// </summary>
     [Fact]
     public void A_landing_carrying_several_units_links_each_to_its_own_quest_and_session_from_its_own_advance()

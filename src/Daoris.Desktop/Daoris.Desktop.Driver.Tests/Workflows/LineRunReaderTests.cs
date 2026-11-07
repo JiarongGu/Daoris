@@ -3,9 +3,9 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// FABRIC-PIPELINE1d (the pipeline design §4.4): a person's verification of a branch is performed by the runtime through the check's port, its
+/// A person's verification of a branch is performed by the runtime through the check's port, its
 /// verdict recorded on the run's node record under the gates' source, and read on its line (<c>workflow run --line</c>, <c>WORKFLOW_RUN {line}</c>)
-/// with the commit it judged, the branch it was asked of, its verdict and each gate's evidence.
+/// with the commit it judged, the branch it is asked of, its verdict and each gate's evidence.
 /// </summary>
 public sealed class LineRunReaderTests : NodeRuntimeFixture
 {
@@ -17,7 +17,7 @@ public sealed class LineRunReaderTests : NodeRuntimeFixture
          "nodes":[{"id":"verify","kind":"check","version":1,"reach":"performed","timeoutSeconds":600}],"wires":[]}
         """;
 
-    /// <summary>The executor as the runtime sees it: what it was sent, and what it answers once it says it has an answer.</summary>
+    /// <summary>The executor as the runtime sees it: what it is sent, and what it answers once it says it has an answer.</summary>
     private sealed class Checks : ICheckPort
     {
         public List<NodeAttempt> Sent { get; } = [];

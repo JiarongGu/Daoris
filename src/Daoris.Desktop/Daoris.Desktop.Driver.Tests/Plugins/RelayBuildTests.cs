@@ -5,7 +5,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// EVENTHOOK1b (the event hook design §4.1, §6.1 step 0; K2.2): a build is its whole bundle. <see cref="RelayBuild.Of"/> hashes one line
+/// A build is its whole bundle. <see cref="RelayBuild.Of"/> hashes one line
 /// per file under the folder, its relative path with <c>/</c>, its size and its own hash, in ordinal order, so a changed companion library
 /// is another build; a folder that is not there is 64 zeros.
 /// </summary>

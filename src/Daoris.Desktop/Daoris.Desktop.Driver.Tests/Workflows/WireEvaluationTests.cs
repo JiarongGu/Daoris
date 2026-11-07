@@ -3,11 +3,11 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// FABRIC-WIRE1b (the fabric events design §E3, §E2, §E7): the wires evaluated. Eligibility from current receipts, each moved through
+/// The wires evaluated. Eligibility from current receipts, each moved through
 /// the one table; an <c>anyOf</c>'s witness; a trigger once per receipt; a skip, a failure and a rejection each a scoped receipt read by
 /// its own wires; forks within the limit; <c>all</c> joins; an invalidation lapsing downstream. Pure: nothing is stored.
 /// </summary>
-/// <remarks>Its unit, run, builders and <see cref="Graph"/> are internal: FABRIC-WIRE1g's <see cref="WireEvaluationDecodedTests"/> evaluates on them too.</remarks>
+/// <remarks>Its unit, run, builders and <see cref="Graph"/> are internal: <see cref="WireEvaluationDecodedTests"/> evaluates on them too.</remarks>
 public sealed class WireEvaluationTests
 {
     internal const string Unit = "unit-a";
@@ -38,7 +38,7 @@ public sealed class WireEvaluationTests
     private static readonly string[] Routes = ["approved", "changes-asked"];
 
     /// <summary>
-    /// A graph's nodes on one record's unit (<see cref="Unit"/> unless named: FABRIC-CUTOVER1a's <c>run:r</c>), with their statuses as a record
+    /// A graph's nodes on one record's unit (<see cref="Unit"/> unless named, as <c>run:r</c>), with their statuses as a record
     /// writer would keep them between evaluations.
     /// </summary>
     internal sealed class Graph(NodeDeclaration[] nodes, Wire[] wires, string unit = Unit)
@@ -145,14 +145,14 @@ public sealed class WireEvaluationTests
     }
 
     /// <summary>
-    /// FABRIC-GRAPH1i (§E7's protected order across a skip): a skip satisfies <c>after</c>, so a chain of reach lets the landing go while the
-    /// opinion is unsettled; the opinion's own wire into the landing, which a save now asks of an authored graph, holds it. Both graphs are
+    /// The protected order across a skip: a skip satisfies <c>after</c>, so a chain of reach lets the landing go while the
+    /// opinion is unsettled; the opinion's own wire into the landing, which a save asks of an authored graph, holds it. Both graphs are
     /// as <see cref="NodeGraphs.Problems"/> reads them: the first is refused (<c>protected-wire</c>), the second holds.
     /// </summary>
     [Fact]
     public void A_skip_of_the_look_passes_the_landing_only_where_the_opinion_is_wired_into_it()
     {
-        // A `land` with its method chosen: a `handed` is no longer saved (WORKFLOWCLEAN1 1b), so it would add its own refusal.
+        // A `land` with its method chosen: a `handed` is saved by no door, so it would add its own refusal.
         NodeDeclaration[] nodes =
         [
             Node("opinion", NodeKinds.Opinion), Node("look", NodeKinds.Look),
@@ -301,7 +301,7 @@ public sealed class WireEvaluationTests
         Assert.Equal((NodeStates.Blocked, NodeStates.Blocked, NodeStates.Ready), (g.State("roll"), g.State("next"), g.State("redo")));
         Assert.StartsWith("rej-", Assert.Single(rejected.Of("redo")!.Receipts), StringComparison.Ordinal);
 
-        // FABRIC-RUN1e: a graph edit restarts no rejected or failed work. The rejection stays for the person, and is no receipt in the new
+        // A graph edit restarts no rejected or failed work. The rejection stays for the person, and is no receipt in the new
         // graph, so its `rejected` wire fires nothing there.
         g.Run = g.Run with { GraphDigest = "graph-2" };
         var other = g.Evaluate();
@@ -366,7 +366,7 @@ public sealed class WireEvaluationTests
     }
 
     /// <summary>
-    /// DECIDE1a: a decision reached with one outcome starts that route alone, on a receipt of its acceptance and that outcome; the other
+    /// A decision reached with one outcome starts that route alone, on a receipt of its acceptance and that outcome; the other
     /// route, and what only it leads to, is not taken. An <c>after</c> from the decision passes on any outcome.
     /// </summary>
     [Fact]
@@ -391,7 +391,7 @@ public sealed class WireEvaluationTests
     }
 
     /// <summary>
-    /// DECIDE1a: a route rests on its decision's outcome, so a new attempt choosing another lapses it and starts the other; the same
+    /// A route rests on its decision's outcome, so a new attempt choosing another lapses it and starts the other; the same
     /// acceptance read with another outcome lapses it too, and one whose outcome no longer reads is judged again, never routed.
     /// </summary>
     [Fact]
@@ -434,7 +434,7 @@ public sealed class WireEvaluationTests
         Assert.Empty(unread.NotTaken);
     }
 
-    /// <summary>DECIDE1a: an <c>anyOf</c> merging a decision's two routes starts on whichever was taken.</summary>
+    /// <summary>An <c>anyOf</c> merging a decision's two routes starts on whichever route is taken.</summary>
     [Fact]
     public void An_anyOf_merging_two_routes_starts_on_either()
     {
@@ -459,7 +459,7 @@ public sealed class WireEvaluationTests
         }
     }
 
-    /// <summary>DECIDE1a: an <c>all</c> join counts a member no route takes as settled, as a skip, on the outcome that closed it.</summary>
+    /// <summary>An <c>all</c> join counts a member no route takes as settled, as a skip, on the outcome that closed it.</summary>
     [Fact]
     public void An_all_join_over_a_route_not_taken_settles()
     {
@@ -516,7 +516,7 @@ public sealed class WireEvaluationTests
         Assert.All(tip.Moves, move => Assert.Equal((WireWhy.Lapsed, NodeLapse.Revision), (move.Why, move.Detail)));
     }
 
-    /// <summary>An evaluation over wires that come back (a save refuses them, WIRE1a) still ends, and settles.</summary>
+    /// <summary>An evaluation over wires that come back (a save refuses them) still ends, and settles.</summary>
     [Fact]
     public void A_cycle_terminates()
     {
@@ -535,7 +535,7 @@ public sealed class WireEvaluationTests
     }
 
     /// <summary>
-    /// NODE1's choice 8: an observed built-in's outcome that needs git is read through the git reads the caller hands in. Without them a
+    /// An observed built-in's outcome that needs git is read through the git reads the caller hands in. Without them a
     /// pushed node is unknown, never guessed; with them it is reached, and its target is eligible in the same evaluation.
     /// </summary>
     [Fact]
@@ -573,8 +573,8 @@ public sealed class WireEvaluationTests
     }
 
     /// <summary>
-    /// FABRIC-WIRE1e, defect 1: a failure is a receipt in its attempt's run alone. In its own run it takes the <c>failed</c> path; kept
-    /// from run 1 and evaluated in run 2 of the same graph and revision, it takes none (and FABRIC-WIRE1f lapses it there). A run never
+    /// A failure is a receipt in its attempt's run alone. In its own run it takes the <c>failed</c> path; kept
+    /// from run 1 and evaluated in run 2 of the same graph and revision, it takes none. A run never
     /// returns to an earlier one, so the own run is evaluated first.
     /// </summary>
     [Fact]
@@ -595,7 +595,7 @@ public sealed class WireEvaluationTests
         Assert.Equal(["w1"], other.Of("roll")!.Waiting);
     }
 
-    /// <summary>FABRIC-WIRE1e, defect 1: a rejection likewise is a receipt in its attempt's run alone.</summary>
+    /// <summary>A rejection likewise is a receipt in its attempt's run alone.</summary>
     [Fact]
     public void A_rejection_in_one_run_is_no_receipt_in_another()
     {
@@ -614,9 +614,9 @@ public sealed class WireEvaluationTests
     }
 
     /// <summary>
-    /// FABRIC-RUN1e, in place of WIRE1f's lapse: a failure kept from another run or graph stays for the person, however often the graph is
+    /// A failure kept from another run or graph stays for the person, however often the graph is
     /// edited back and forth, since a run begins at a graph edit and a Setup save can edit the derived graph; only the person's new attempt
-    /// starts it afresh, in this run, its tries counted afresh and its attempt numbers still growing (WIRE1e's note).
+    /// starts it afresh, in this run, its tries counted afresh and its attempt numbers still growing.
     /// </summary>
     [Fact]
     public void Another_runs_or_graphs_failure_is_kept_for_the_person_until_they_restart_it()
@@ -643,8 +643,8 @@ public sealed class WireEvaluationTests
     }
 
     /// <summary>
-    /// FABRIC-RUN1e: a new revision is new work, so it still lapses a failure kept from another graph, as it lapses one of this graph
-    /// (WIRE1e): the node is judged again on the new tip.
+    /// A new revision is new work, so it still lapses a failure kept from another graph, as it lapses one of this graph:
+    /// the node is judged again on the new tip.
     /// </summary>
     [Fact]
     public void A_new_revision_lapses_a_failure_kept_from_another_graph()
@@ -659,7 +659,7 @@ public sealed class WireEvaluationTests
         Assert.Equal(("d", NodeStates.Invalidated, WireWhy.Lapsed, NodeLapse.Revision), (move.Node, move.Move.To, move.Why, move.Detail));
     }
 
-    /// <summary>FABRIC-WIRE1f, the other direction: in its own run a failure Daoris will not retry is kept for the person, however often evaluated.</summary>
+    /// <summary>In its own run a failure Daoris will not retry is kept for the person, however often evaluated.</summary>
     [Fact]
     public void In_its_own_run_a_failure_is_kept_for_the_person()
     {
@@ -677,7 +677,7 @@ public sealed class WireEvaluationTests
         Assert.Equal(NodeStates.Failed, g.State("d"));
     }
 
-    /// <summary>FABRIC-RUN1e: a rejection kept from another run stays for the person the same way, and a reach is kept, its acceptance omitting the run (§E2).</summary>
+    /// <summary>A rejection kept from another run stays for the person the same way, and a reach is kept, its acceptance omitting the run.</summary>
     [Fact]
     public void Another_runs_rejection_is_kept_for_the_person_and_its_reach_kept()
     {
@@ -696,7 +696,7 @@ public sealed class WireEvaluationTests
     }
 
     /// <summary>
-    /// FABRIC-WIRE1e, defect 2: validity is judged before anything is observed. A push of tip 1 observed after the unit moved to tip 2 is
+    /// Validity is judged before anything is observed. A push of tip 1 observed after the unit moved to tip 2 is
     /// invalidated, never reached, so no receipt of tip 1 makes a node eligible on tip 2, and nothing starts on one in that evaluation.
     /// </summary>
     [Fact]
@@ -723,7 +723,7 @@ public sealed class WireEvaluationTests
     }
 
     /// <summary>
-    /// FABRIC-WIRE1e, defect 3: an <c>all</c> join's outcome is its members' alone. A failure it consumes through its own <c>failed</c>
+    /// An <c>all</c> join's outcome is its members' alone. A failure it consumes through its own <c>failed</c>
     /// wire from a node that is no member is a condition of its start, never a member's failure.
     /// </summary>
     [Fact]
@@ -744,7 +744,7 @@ public sealed class WireEvaluationTests
     }
 
     /// <summary>
-    /// FABRIC-WIRE1e, choice 7 changed: waiting capacity is apart from execution capacity. Parked <c>wait.unit</c> attempts, as many as the
+    /// Waiting capacity is apart from execution capacity. Parked <c>wait.unit</c> attempts, as many as the
     /// performed limit, never queue a performed node; waits are bounded by their own limit.
     /// </summary>
     [Fact]
@@ -768,7 +768,7 @@ public sealed class WireEvaluationTests
     }
 
     /// <summary>
-    /// FABRIC-WIRE1e, choice 9 changed: the revisions are a complete snapshot. A unit a node acts on that they leave out, or a branch they
+    /// The revisions are a complete snapshot. A unit a node acts on that they leave out, or a branch they
     /// name with none, refuses the evaluation with its code and the units it names: nothing moves and nothing starts. A quest's is null by
     /// design, and named so.
     /// </summary>
@@ -797,7 +797,7 @@ public sealed class WireEvaluationTests
         Assert.Null(Assert.Single(quest.Starts).Move.Binding!.SubjectRevision);
     }
 
-    // ——— FABRIC-CUTOVER1a: a run's graph evaluated over its subjects (the cutover design §2.1, §2.2, §11), each seen failing first
+    // ——— A run's graph evaluated over its subjects, each seen failing first
 
     private const string RunRecord = "run:r";
     private const string Act = "deploy the release to production";

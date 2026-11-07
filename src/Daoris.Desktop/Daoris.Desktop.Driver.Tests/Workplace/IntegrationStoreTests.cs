@@ -4,7 +4,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// INTEGRATE1e part e2 (D215's note; the integration design §5.2, §5.6): the integration's family in the desktop store, called from no
+/// The integration's family in the desktop store, called from no
 /// production path. A request kept whole and read back as the door made it, one open per repository and branch under two connections; a
 /// candidate formed with its members and its form step begun under the claim of the run that forms it, one standing per line under two
 /// connections, a request standing in one candidate at a time; one job per candidate; each step's start and end one write each under the
@@ -107,7 +107,7 @@ public sealed class IntegrationStoreTests : IDisposable
     }
 
     /// <summary>
-    /// A request found by its key, the unit and the tip it froze (INTEGRATE1n part n2): closed ones too, so a node's restart finds the request it
+    /// A request found by its key, the unit and the tip it froze: closed ones too, so a node's restart finds the request it
     /// made whatever became of it; another tip, another unit and an empty store find none; the newest where two share a key.
     /// </summary>
     [Fact]
@@ -160,7 +160,7 @@ public sealed class IntegrationStoreTests : IDisposable
     }
 
     /// <summary>
-    /// 🔴 LANDNODE1g: the store itself holds formation to one epoch. A request keeps the epoch it was admitted under and a candidate its first
+    /// The store itself holds formation to one epoch. A request keeps the epoch it is admitted under and a candidate its first
     /// member's; members of two epochs are refused in the formation's transaction and nothing is written; a request with no epoch (older)
     /// is its own, so it forms alone and no other joins it.
     /// </summary>
@@ -373,9 +373,9 @@ public sealed class IntegrationStoreTests : IDisposable
     }
 
     /// <summary>
-    /// INTEGRATE1e part e3a: a member the line holds is contained and settled in one end (its membership ended, its request closed), and a
-    /// candidate whose last member left it ends <c>empty</c> in the same write; the four words a candidate ended with before are read as
-    /// they were beside the new one.
+    /// A member the line holds is contained and settled in one end (its membership ended, its request closed), and a
+    /// candidate whose last member left it ends <c>empty</c> in the same write; the four words a candidate ended with before are read
+    /// unchanged beside the new one.
     /// </summary>
     [Fact]
     public void A_member_the_line_holds_settles_at_once_and_a_candidate_left_with_nothing_ends_empty_in_the_same_write()
@@ -405,8 +405,8 @@ public sealed class IntegrationStoreTests : IDisposable
     }
 
     /// <summary>
-    /// INTEGRATE1e part e3a: a member contained by an earlier member stays in its candidate with its request open, and a candidate that ends
-    /// any way but settled frees it, to be queued again beside its container's request, in arrival order (§5.2 step 3's give-back).
+    /// A member contained by an earlier member stays in its candidate with its request open, and a candidate that ends
+    /// any way but settled frees it, to be queued again beside its container's request, in arrival order.
     /// </summary>
     [Fact]
     public void A_member_contained_by_an_earlier_member_is_given_back_to_the_queue_when_the_candidate_ends_unsettled()
@@ -435,8 +435,8 @@ public sealed class IntegrationStoreTests : IDisposable
     }
 
     /// <summary>
-    /// INTEGRATE1e part e3b (§5.4, <c>conflicts: hold</c>): a member whose conflict is held stands in its candidate in its own state, its request
-    /// open and said, and the candidate goes on without it; the request is no longer queued once it is held, even after the candidate ends, since
+    /// A member whose conflict is held (<c>conflicts: hold</c>) stands in its candidate in its own state, its request
+    /// open and said, and the candidate goes on without it; the request is not queued once it is held, even after the candidate ends, since
     /// it waits for the steward's or the owner's act and a queue that took it up again would form it, conflict and hold it for ever.
     /// </summary>
     [Fact]
@@ -469,8 +469,8 @@ public sealed class IntegrationStoreTests : IDisposable
     }
 
     /// <summary>
-    /// INTEGRATE1e part e4a: a step ends <c>split</c> where the judge ran the candidate's members one at a time, a word added beside the six, so
-    /// an older row is read as it was; the line's last ended candidate is read back by its end, which is how the next form knows to take one
+    /// A step ends <c>split</c> where the judge ran the candidate's members one at a time, a word added beside the six, so
+    /// an older row is read as written; the line's last ended candidate is read back by its end, which is how the next form knows to take one
     /// member.
     /// </summary>
     [Fact]
@@ -640,7 +640,7 @@ public sealed class IntegrationStoreTests : IDisposable
         Assert.Throws<IntegrationRefusedException>(() => store.Begin(claim, IntegrationStepNames.Tidy));
     }
 
-    // ——— A superseded member's pending disposition (INTEGRATE1e part e4b; §5.7).
+    // ——— A superseded member's pending disposition.
 
     private static IntegrationDisposition Disposition(string request, string commit = "c1") =>
         new(request, commit, "refs/daoris/discarded/feature/q1-fix", "b1", ["a.txt"], "work made after the request froze");
@@ -735,7 +735,7 @@ public sealed class IntegrationStoreTests : IDisposable
         Assert.False(Store("run-a").Answer("r1", "c1"));
     }
 
-    /// <summary>INTEGRATE1h: a disposition answered by its word keeps the word beside the moment; one answered by an older build's write keeps none.</summary>
+    /// <summary>A disposition answered by its word keeps the word beside the moment; one answered by an older build's write keeps none.</summary>
     [Fact]
     public void A_disposition_answered_by_its_word_keeps_the_word_and_an_unknown_word_is_refused_with_nothing_written()
     {
@@ -754,7 +754,7 @@ public sealed class IntegrationStoreTests : IDisposable
     }
 
     /// <summary>
-    /// INTEGRATE1h (§5.7): <i>superseded</i> answers a commit with nothing told; <i>rebase it</i> tells the request's session through the say
+    /// <i>Superseded</i> answers a commit with nothing told; <i>rebase it</i> tells the request's session through the say
     /// door, keyed by the request and the commit, and answers only once the words are kept; a request with no session, a door that does not
     /// keep the words and a commit not pending answer nothing.
     /// </summary>
@@ -796,7 +796,7 @@ public sealed class IntegrationStoreTests : IDisposable
         Assert.Equal("answer", (await IntegrationDispositions.AnswerAsync(store, "r2", "c1", "keep", say)).Why);
     }
 
-    // ——— The owner's decide on a held candidate and a queued request's order (INTEGRATE1h; §5.8, §8).
+    // ——— The owner's decide on a held candidate and a queued request's order.
 
     /// <summary>A candidate of r1 and r2 replayed and held at its judge for a decide.</summary>
     private (IntegrationStore Store, IntegrationClaim Claim) HeldForDecide()

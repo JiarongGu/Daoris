@@ -3,9 +3,9 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// STRUCT3d: the service client over its port (D166's STRUCT3d note). <see cref="ServiceClient"/> writes each request and reads
+/// The service client over its port. <see cref="ServiceClient"/> writes each request and reads
 /// each answer; <see cref="IServiceDoors"/> carries them, the HTTP's (<c>ServiceHttp</c>) or this memory's, so a use case is held
-/// with no host and no HTTP. Runs no process: the fast half (MOD8).
+/// with no host and no HTTP. Runs no process: the fast half.
 /// </summary>
 public sealed class ServiceDoorsTests
 {
@@ -66,7 +66,7 @@ public sealed class ServiceDoorsTests
         Assert.True(doors.Disposed);
     }
 
-    /// <summary>The doors in memory: what was asked, in order, and what each answers.</summary>
+    /// <summary>The doors in memory: what got asked, in order, and what each answers.</summary>
     private sealed class Doors : IServiceDoors
     {
         public List<string> Asked { get; } = [];

@@ -3,7 +3,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// HEAVYRUN1b1 (D180's HEAVYRUN1 notes): a driven session in a repository that marks heavy gates is told to run the checks that
+/// A driven session in a repository that marks heavy gates is told to run the checks that
 /// cover what it changes while it works, and those gates once, at its end, through <c>daoris gate run</c>, which waits its
 /// turn behind another session's run of the same repository. Said only where its PATH finds the verb: an install's launchers beside
 /// the home, which every session's PATH starts with. A repository that marks none, and a workspace build, are told nothing.
@@ -52,7 +52,7 @@ public sealed class HeavyToldTests : IDisposable
     }
 
     /// <summary>
-    /// HEAVYQUEUE1: wherever the verb is reached, a session is told to run a long test command of its own through <c>run-heavy -- &lt;command&gt;</c>,
+    /// Wherever the verb is reached, a session is told to run a long test command of its own through <c>run-heavy -- &lt;command&gt;</c>,
     /// whether or not its repository marks a heavy gate, and nothing is promised where no launcher is beside the home.
     /// </summary>
     [Fact]

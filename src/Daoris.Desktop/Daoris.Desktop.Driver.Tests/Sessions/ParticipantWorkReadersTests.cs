@@ -4,11 +4,11 @@ using System.Text.RegularExpressions;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// FOUNDATION1c, census B (D212; the foundation design §10, row c): every line outside <c>ParticipantWork.Of</c> that reads a record's
+/// Every line outside <c>ParticipantWork.Of</c> that reads a record's
 /// <c>Serves</c>, <c>Opinion</c>, <c>Ask</c>, <c>Piece</c>, <c>HelpMode</c> or the Ask Daoris repository to test its presence or identity is
 /// found per source file of the driver library, each file named in <c>fixtures/participant-work-readers.json</c> among the service's
 /// tests with what it reads and the row that moves it. A file that reads and is not listed fails (the new reader the census exists to
-/// catch), and so does a listed file that reads none now; how many lines a listed file reads is not pinned (CENSUSRULES1). The shell's
+/// catch), and so does a listed file that reads none now; how many lines a listed file reads is not pinned. The shell's
 /// modules' census and the service's read the same table over their own sources.
 /// </summary>
 [Trait(Category.Name, Category.Census)]
@@ -32,7 +32,7 @@ public sealed class ParticipantWorkReadersTests
     internal static int Counted(string source) =>
         source.Split('\n').Count(raw => !raw.TrimStart().StartsWith("//", StringComparison.Ordinal) && Reads.Any(read => read.IsMatch(Trailing.Replace(raw, ""))));
 
-    /// <summary>The files, by path, of the sources that read a mark: how many lines each reads is not the rule's (CENSUSRULES1).</summary>
+    /// <summary>The files, by path, of the sources that read a mark: how many lines each reads is not the rule's.</summary>
     internal static SortedSet<string> Reading(IEnumerable<(string File, string Source)> sources) =>
         new(sources.Where(each => Counted(each.Source) > 0).Select(each => each.File), StringComparer.Ordinal);
 
@@ -68,7 +68,7 @@ public sealed class ParticipantWorkReadersTests
         Assert.True(differences.Count == 0, string.Join('\n', differences));
     }
 
-    /// <summary>The census fails on a file it does not list and on a listed file that reads none now, and passes one more read in a listed file (CENSUSRULES1).</summary>
+    /// <summary>The census fails on a file it does not list and on a listed file that reads none now, and passes one more read in a listed file.</summary>
     [Fact]
     public void A_new_reading_file_fails_the_census_and_one_more_read_in_a_listed_file_passes()
     {

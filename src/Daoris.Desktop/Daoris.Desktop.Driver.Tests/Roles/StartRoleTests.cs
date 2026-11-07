@@ -6,7 +6,7 @@ using Microsoft.Data.Sqlite;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// FOUNDATION1x step 1 (the foundation design §2.4, §2.7): the start plan finds a start's role by its work and place from the role
+/// The start plan finds a start's role by its work and place from the role
 /// catalogue, keeps the seeded role for <c>actor</c>, and a continuation of a record an added role started runs as that seeded work.
 /// </summary>
 public sealed class StartRoleTests : IDisposable
@@ -209,7 +209,7 @@ public sealed class StartRoleTests : IDisposable
             },
         };
         var roster = new HarnessRoster(set, DaorisHome.Entry(_home, HomeEntry.Harnesses));
-        // A saved workflow's bind reads the registry for the remote's platform (WORKFLOWCLEAN1 1a), so the service answers an empty one.
+        // A saved workflow's bind reads the registry for the remote's platform, so the service answers an empty one.
         var service = new ServiceClient("http://127.0.0.1:9", null, new HttpClient(new Registry()));
         return new Daoris.Driver.Driver(service, config, set, _home, harnesses: roster);
     }
@@ -223,7 +223,7 @@ public sealed class StartRoleTests : IDisposable
     private static Consideration Engine => new(new QuestView("q1", "platform", "engine", "Split the loader", "Two jobs.", "Open"), StartVerdict.Start, "", Workspace: "default");
 
     /// <summary>
-    /// ROLESTEP1b: a quest whose run's work step names an added role starts on that role's order, not the role its place gives the work,
+    /// A quest whose run's work step names an added role starts on that role's order, not the role its place gives the work,
     /// and its start keeps the role and its record's revision for the session's binding; a role that cannot take it holds the start, said.
     /// </summary>
     [Fact]

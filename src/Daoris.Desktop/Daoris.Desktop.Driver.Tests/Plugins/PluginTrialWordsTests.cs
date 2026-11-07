@@ -2,7 +2,7 @@ using Daoris.Driver;
 
 namespace Daoris.Desktop.Driver.Tests;
 
-/// <summary>A trial's `state` step says commits the way the driver shortens them; a short or missing id no longer throws (DEDUP7c).</summary>
+/// <summary>A trial's `state` step says commits the way the driver shortens them; a short or missing id does not throw.</summary>
 public sealed class PluginTrialWordsTests
 {
     [Fact]

@@ -3,7 +3,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// LINESTOGETHER1d (the review-flow design §4, <i>Checking</i>): every member change accounted from the head's tip, never the agent's
+/// Every member change accounted from the head's tip, never the agent's
 /// claim nor ancestry. Commits the tip holds are held; each other one is tried alone past a conflict, so a conflict cannot hide a later
 /// clean change; a conflict is superseded only by a head commit since the press naming it; the backlog is settled by rule; a merge
 /// commit in the replayed range fails.

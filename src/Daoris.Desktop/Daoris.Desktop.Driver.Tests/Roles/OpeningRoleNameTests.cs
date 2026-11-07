@@ -4,7 +4,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// REVIEW2 T2 (STAFFPOLICY1e2): the opening note names the role that took the work: a seeded role by its own words, an added role by its name
+/// The opening note names the role that took the work: a seeded role by its own words, an added role by its name
 /// as written in the catalogue, and a role the catalogue cannot name by the actor's words.
 /// </summary>
 public sealed class OpeningRoleNameTests : IDisposable

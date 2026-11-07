@@ -5,7 +5,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// The one reader of a session's group (SESSUX1a, D126 §2.4): which of the five groups each session is in, and
+/// The one reader of a session's group: which of the five groups each session is in, and
 /// Archived, with the word it shows and the facts its second line says, from the records, the quests, the planner's
 /// verdicts, the trees' judgement and the archive marks, never from what a session printed. One table holds every state
 /// of the design's §1; the screen and the terminal both read this answer, so they cannot disagree.
@@ -26,15 +26,15 @@ public sealed class SessionGroupsTests
         bool deletable = false, string[]? said = null, string? entry = null, string? from = null, string? fromWhy = null,
         string? noteCode = null, bool limit = false) => new()
         {
-            // An account's limit made its failure (LIMITRESUME1d): the ledger's flag, as the service answers it.
+            // An account's limit made its failure: the ledger's flag, as the service answers it.
             ["limit"] = limit,
-            // Its note's first line by its code (LANG1a), where a case reads one (HELPERWAIT1).
+            // Its note's first line by its code, where a case reads one.
             ["noteParts"] = noteCode is null ? null : new JsonArray(new JsonObject { ["code"] = noteCode, ["values"] = new JsonObject(), ["text"] = "a line." }),
-            // SESSONE1b: the line of work the service answers, and the session a hand-over continues, and why (SESSCTX1b).
+            // The line of work the service answers, and the session a hand-over continues, and why.
             ["entry"] = entry,
             ["from"] = from,
             ["fromWhy"] = fromWhy,
-            // The person's words waiting on it (MSG1a), each by its id, as the service answers this machine.
+            // The person's words waiting on it, each by its id, as the service answers this machine.
             ["said"] = new JsonArray([
                 .. (said ?? []).Select(word => (JsonNode)new JsonObject
                 {
@@ -66,7 +66,7 @@ public sealed class SessionGroupsTests
 
     private static readonly PausedBy ByAsk = new(WorkScope.Ask, "a1");
 
-    /// <summary>The planner's <c>Paused</c> verdict (PAUSE1b), naming ask <c>a1</c>'s pause.</summary>
+    /// <summary>The planner's <c>Paused</c> verdict, naming ask <c>a1</c>'s pause.</summary>
     private static Consideration PausedVerdict(QuestView quest) => Verdict(quest, StartVerdict.Paused) with { PausedBy = ByAsk };
 
     private static SessionLook Look(
@@ -89,19 +89,19 @@ public sealed class SessionGroupsTests
             Held = (held ?? []).ToDictionary(each => each.Session, each => each.Holds, StringComparer.Ordinal),
         };
 
-    /// <summary>The planner's start of a record the person's words wait on (MSG1b's <c>GoOn</c>): it goes on itself.</summary>
+    /// <summary>The planner's start of a record the person's words wait on (<c>GoOn</c>): it goes on itself.</summary>
     private static Consideration GoesOn(QuestView quest) => Verdict(quest, StartVerdict.Start) with { GoesOn = true };
 
-    /// <summary>A cool-off holding the starts of these quests (TOOL4g), ready at <see cref="Reset"/>.</summary>
+    /// <summary>A cool-off holding the starts of these quests, ready at <see cref="Reset"/>.</summary>
     private static AccountWait Cooling(params string[] quests) =>
         new("claude-code", "Claude Code", "work", "default", Reset, Stated: true, "its account is cooling until 11:00.") { Quests = quests };
 
     private static readonly DateTimeOffset Reset = T0.AddHours(2);
 
-    /// <summary>What the chat runner said held a chat's words (MSG1f3): its conversation's last line, in the hold's words.</summary>
+    /// <summary>What the chat runner said held a chat's words: its conversation's last line, in the hold's words.</summary>
     private static readonly WordsHold ChatHeld = new(WordsHold.Waits, "`engine` has no checkout on this machine any more. Your words wait on it.");
 
-    /// <summary>A record's own account cooling, read from the home where no loop's look held its start (MSG1f3). After the reset it names.</summary>
+    /// <summary>A record's own account cooling, read from the home where no loop's look held its start. After the reset it names.</summary>
     private static readonly WordsHold OwnCooling = new(WordsHold.Cooling, "work is cooling until 11:00.") { Until = Reset };
 
     /// <summary>One row of the table: what is on the machine, the session asked about, and where it is shown.</summary>
@@ -116,19 +116,19 @@ public sealed class SessionGroupsTests
     private static readonly QuestView Asking = Quest("q1", "Taken", awaits: "q2");
     private static readonly QuestView Question = Quest("q2", "Open", to: "game");
 
-    /// <summary>A taken step whose standing reopen names session <c>s1</c> (FABRIC-CLOSE1c9), its submission's session.</summary>
+    /// <summary>A taken step whose standing reopen names session <c>s1</c>, its submission's session.</summary>
     private static readonly QuestView ReopenNamesS1 = Taken with
     {
         Reopened = new QuestReopenView("desk", 3, new QuestSubmissionRef("desk", 2), "Do it again.", T0, Session: "s1"),
     };
 
-    /// <summary>The ref an unforced discard of <see cref="Tree"/> keeps its commits at (SQUASHTIDY1c).</summary>
+    /// <summary>The ref an unforced discard of <see cref="Tree"/> keeps its commits at.</summary>
     private const string Kept = "refs/daoris/discarded/daoris/s-1a2b3c4d";
 
-    /// <summary>A call the driver heard begin eight minutes into the session (WAITSAY1b). Before the table, which reads it.</summary>
+    /// <summary>A call the driver heard begin eight minutes into the session. Before the table, which reads it.</summary>
     private static readonly RunningCall NpmTest = new("npm test", T0.AddMinutes(8));
 
-    /// <summary>A squash merge onto <c>main</c> holds the tree's work, and its discard would go now (SQUASHTIDY1b). Before the table, which reads it.</summary>
+    /// <summary>A squash merge onto <c>main</c> holds the tree's work, and its discard would go ahead. Before the table, which reads it.</summary>
     private static readonly HeldWork Squashed = new(new ContentHold("main", Squash: true), Kept, null);
 
     private static readonly Dictionary<string, Case> Cases = new()
@@ -140,14 +140,14 @@ public sealed class SessionGroupsTests
         {
             Also = row => Assert.Null(row.Strikes),
         },
-        // UX7c (D152, design §5.2): a working session's head says it is another try, and how many before it failed.
+        // A working session's head says it is another try, and how many before it failed.
         ["a working session of a quest whose earlier sessions failed says how many"] =
             new(Look([Record("s1", "failed", "q1"), Record("s2", "failed", "q1", at: 10), Record("s3", "working", "q1", at: 20)], [Taken]),
                 "s3", SessionGroup.Working, "working")
             {
                 Also = row => Assert.Equal(2, row.Strikes),
             },
-        // WAITSAY1b (D152's UX7c amendment): a working session of this machine's says the call its agent is inside, as the
+        // A working session of this machine's says the call its agent is inside, as the
         // driver heard it; one that waits on the person, a teammate's and an ended one say none, whatever the memory holds.
         ["a working session says the call its agent is inside"] =
             new(Look([Record("s1", "working", "q1")], [Taken], calls: [("s1", NpmTest)]), "s1", SessionGroup.Working, "working")
@@ -185,7 +185,7 @@ public sealed class SessionGroupsTests
         // Waiting on you: only the person's press moves it.
         ["a parked session waits on you"] =
             new(Look([Record("s1", "awaiting-person", "q1", Tree)], [Taken]), "s1", SessionGroup.You, "awaiting-person"),
-        // ANSWER1c (D131): the person answered, and the same session goes on at the driver's next look, so nothing waits
+        // The person answered, and the same session goes on at the driver's next look, so nothing waits
         // on them. Until that look its record is still parked, with the answer set.
         ["an answered park goes on: working, and shown answered"] =
             new(Look([Record("s1", "awaiting-person", "q1", Tree, answer: "The second; apply it to dev.")], [Taken]),
@@ -226,7 +226,7 @@ public sealed class SessionGroupsTests
             new(Look([Record("s1", "failed", "q1", Tree)], [Taken], [Verdict(Taken, StartVerdict.Exhausted)], [(Tree, new TreeWork(2, 0))]),
                 "s1", SessionGroup.You, ShownState.Parked),
 
-        // To review: an ended session whose own tree holds work no branch of the person's holds (D88's proof).
+        // To review: an ended session whose own tree holds work no branch of the person's holds.
         ["unlanded commits in its own tree are to review"] =
             new(Look([Record("s1", "completed", "q1", Tree)], [Done], trees: [(Tree, new TreeWork(3, 0))]), "s1", SessionGroup.Review, "completed")
             {
@@ -240,7 +240,7 @@ public sealed class SessionGroupsTests
             new(Look([Record("s1", "completed", "q1", Tree)], [Done], trees: [(Tree, new TreeWork(0, 0))]), "s1", SessionGroup.Ended, "completed"),
         ["a stopped session with unlanded work is to review"] =
             new(Look([Record("s1", "stopped", "q1", Tree)], [Taken], trees: [(Tree, new TreeWork(1, 0))]), "s1", SessionGroup.Review, "stopped"),
-        // SESSUX1b: the planner now considers a taken quest the person's stop holds, and nothing goes back into its tree until
+        // The planner considers a taken quest the person's stop holds, and nothing goes back into its tree until
         // they release it, so the stop's work stays to review.
         ["a stop that holds its taken quest leaves its tree to review"] =
             new(Look([Record("s1", "stopped", "q1", Tree)], [Taken], [Verdict(Taken, StartVerdict.Stopped)], [(Tree, new TreeWork(2, 0))]),
@@ -248,7 +248,7 @@ public sealed class SessionGroupsTests
             {
                 Also = row => Assert.True(row.HoldsQuest),
             },
-        // PAUSE1b (D132 §6.1): a session the pause stopped is grouped as a stop's is, since nothing goes back into its tree
+        // A session the pause stopped is grouped as a stop's is, since nothing goes back into its tree
         // until Resume, and the person paused it to look; its line names the pause rather than a stop.
         ["a session the pause stopped leaves its tree to review, naming the pause"] =
             new(Look([Record("s1", "stopped", "q1", Tree)], [Taken], [PausedVerdict(Taken)], [(Tree, new TreeWork(2, 0))]),
@@ -316,7 +316,7 @@ public sealed class SessionGroupsTests
         ["a failed first start whose quest starts again in a new tree leaves its own to review"] =
             new(Look([Record("s1", "failed", "q1", Tree)], [Open], [Verdict(Open, StartVerdict.Start)], [(Tree, new TreeWork(1, 0))]),
                 "s1", SessionGroup.Review, "failed"),
-        // RETRYWORK1: an open quest whose failed session committed work goes back into that tree, whatever holds its carry-on now.
+        // An open quest whose failed session committed work goes back into that tree, whatever holds its carry-on.
         ["a failed first start whose committed work its open quest carries on is ended, not to review"] =
             new(Look([Record("s1", "failed", "q1", Tree)], [Open], [Verdict(Open, StartVerdict.AtCapacity) with { CarriesWork = 1 }],
                     [(Tree, new TreeWork(1, 0))]),
@@ -342,8 +342,7 @@ public sealed class SessionGroupsTests
         ["awaiting reply with work in its tree resumes later: the quest goes back into it"] =
             new(Look([Record("s1", "completed", "q1", Tree)], [Asking, Question], [Verdict(Asking, StartVerdict.Waiting)], [(Tree, new TreeWork(3, 0))]),
                 "s1", SessionGroup.Later, ShownState.AwaitingReply),
-        // LIMITRESUME1d (D206 §3.1, D50's parity): a failure an account's limit made is said limited, as the page says it; one without
-        // the flag stays failed.
+        // A failure an account's limit made is said limited, as the page says it; one without the flag stays failed.
         ["a session a limit ended is limited"] =
             new(Look([Record("s1", "failed", "q1", limit: true)], [Taken]), "s1", SessionGroup.Ended, ShownState.Limited),
         ["a session that failed without a limit is failed"] =
@@ -351,7 +350,7 @@ public sealed class SessionGroupsTests
         ["an earlier session of a waiting quest is ended"] =
             new(Look([Record("s1", "failed", "q1"), Record("s2", "completed", "q1", at: 10)], [Asking, Question], [Verdict(Asking, StartVerdict.Waiting)]),
                 "s1", SessionGroup.Ended, "failed"),
-        // 🔴 HELPERWAIT1: a session that ended its turn on its own helper's ask waits on that helper, never on the person: resumes later,
+        // A session that ended its turn on its own helper's ask waits on that helper, never on the person: resumes later,
         // whatever its tree holds, since it goes on in that tree with the helper's answer. Its answer waiting on it, it goes on.
         ["a session waiting on its own helper resumes later, never to review"] =
             new(Look([Record("s1", "completed", "q1", Tree, noteCode: "ended.awaits-helper")], [Taken], trees: [(Tree, new TreeWork(3, 1))]),
@@ -369,7 +368,7 @@ public sealed class SessionGroupsTests
             new(Look([Record("s1", "completed", "q1", Tree)], [Asking], [Verdict(Asking, StartVerdict.Start)], [(Tree, new TreeWork(3, 0))]),
                 "s1", SessionGroup.Ended, "completed"),
 
-        // MSG1f2 (D137 §3.2): an ended record the person's words wait on goes on with them, or resumes later, its line naming
+        // An ended record the person's words wait on goes on with them, or resumes later, its line naming
         // what holds them, by the planner's own verdict on its quest.
         ["an ended record whose words its run is planned for is going on"] =
             new(Look([Record("s1", "completed", "q1", Tree, said: ["w1"])], [Done], [GoesOn(Done)]),
@@ -380,7 +379,7 @@ public sealed class SessionGroupsTests
         ["words to a session to review go on: working, not to review"] =
             new(Look([Record("s1", "completed", "q1", Tree, said: ["w1"])], [Done], [GoesOn(Done)], [(Tree, new TreeWork(2, 0))]),
                 "s1", SessionGroup.Working, ShownState.GoingOn),
-        // SAIDBACK1a (D137 §2.4): words taken back leave nothing waiting, so the record rests as it ended, even where the last
+        // Words taken back leave nothing waiting, so the record rests as it ended, even where the last
         // look planned it going on with them.
         ["an ended record whose words were taken back rests as it ended"] =
             new(Look([Record("s1", "completed", "q1", said: [])], [Done], [GoesOn(Done)]), "s1", SessionGroup.Ended, "completed"),
@@ -405,7 +404,7 @@ public sealed class SessionGroupsTests
             {
                 Also = row => Assert.Equal((WordsHold.Cooling, (DateTimeOffset?)Reset), (row.Holds!.Why, row.Holds.Until)),
             },
-        // LIMITSWITCH3b: a record a limit ended says so already, so the wait is not laid over it.
+        // A record a limit ended says so already, so the wait is not laid over it.
         ["words a cooling account holds on a record a limit ended keep its own word"] =
             new(Look([Record("s1", "failed", "q1", limit: true, said: ["w1"])], [Done], [Verdict(Done, StartVerdict.Blocked)], waits: [Cooling("q1")]),
                 "s1", SessionGroup.Later, ShownState.Limited)
@@ -418,7 +417,7 @@ public sealed class SessionGroupsTests
             {
                 Also = row => Assert.Equal((WordsHold.Waits, (DateTimeOffset?)null), (row.Holds!.Why, row.Holds.Until)),
             },
-        // TICKSHOWN1: a start the service refused for the person's words is the verdict Blocked with the refusal's sentence.
+        // A start the service refused for the person's words is the verdict Blocked with the refusal's sentence.
         ["words whose start the service refused resume later, with the refusal's sentence"] =
             new(Look([Record("s1", "completed", "q1", said: ["w1"])], [Done],
                     [GoesOn(Done) with { Verdict = StartVerdict.Blocked, Reason = "refused  #q1 → engine: a session is already open." }]),
@@ -461,7 +460,7 @@ public sealed class SessionGroupsTests
         ["an earlier session of a quest whose words wait on a later one is ended"] =
             new(Look([Record("s1", "failed", "q1", said: ["w1"]), Record("s2", "completed", "q1", at: 10, said: ["w2"])], [Taken], [GoesOn(Taken)]),
                 "s1", SessionGroup.Ended, "failed"),
-        // FABRIC-CLOSE1c11 (D137 §3.2, D173's CLOSE1c9 note): the planner goes on with a reopen's words in the session the reopen
+        // The planner goes on with a reopen's words in the session the reopen
         // names though a later one is the quest's last record here, so that row reads going on, or later with the planner's hold.
         ["the session a reopen names goes on with its words though a later one is the quest's last"] =
             new(Look([Record("s1", "completed", "q1", Tree, said: ["w1"]), Record("s2", "completed", "q1", at: 10)], [ReopenNamesS1], [GoesOn(ReopenNamesS1)]),
@@ -488,8 +487,8 @@ public sealed class SessionGroupsTests
             {
                 Also = row => Assert.Equal((WordsHold.Waits, "the planner's sentence"), (row.Holds!.Why, row.Holds.Reason)),
             },
-        // ACCEPTFOOT1b (D164's ACCEPTFOOT1 note): an open conversation's record stays `working` between turns. Once its turn has ended
-        // with nothing waiting, its own tree offers its work to land as an ended session's does (LAND4), and it stays working; while a
+        // An open conversation's record stays `working` between turns. Once its turn has ended
+        // with nothing waiting, its own tree offers its work to land as an ended session's does, and it stays working; while a
         // turn runs, nothing. Never a discard while it is open: its tree is still in use.
         ["an open conversation between turns offers its tree's work to land, and stays working"] =
             new(Look([Record("s1", "working", kind: "chat", tree: Tree)], trees: [(Tree, new TreeWork(2, 1))], between: ["s1"]),
@@ -513,7 +512,7 @@ public sealed class SessionGroupsTests
             {
                 Also = row => Assert.Equal((null, null), (row.Lands, row.Discards)),
             },
-        // MSG1f3: a chat's words are its runner's, which takes them up at once, so a chat they wait on goes on, unless its
+        // A chat's words are its runner's, which takes them up at once, so a chat they wait on goes on, unless its
         // runner said what holds them; one whose every word could not go on is not among them, and rests as it ended.
         ["an ended chat whose words wait is going on: its runner takes them up at once"] =
             new(Look([Record("s1", "completed", kind: "chat", said: ["w1"])], chats: ["s1"]), "s1", SessionGroup.Working, ShownState.GoingOn)
@@ -568,7 +567,7 @@ public sealed class SessionGroupsTests
         ["failed where the quest is not parked is ended"] =
             new(Look([Record("s1", "failed", "q1")], [Open], [Verdict(Open, StartVerdict.Held)]), "s1", SessionGroup.Ended, "failed"),
         ["stopped is ended"] = new(Look([Record("s1", "stopped", "q1")], [Taken]), "s1", SessionGroup.Ended, "stopped"),
-        // SESSUX1b (D126 §2.2): its line says *held here until you try again*, from this fact.
+        // Its line says *held here until you try again*, from this fact.
         ["a stop that holds its quest is ended, and says it holds it"] =
             new(Look([Record("s1", "stopped", "q1")], [Taken], [Verdict(Taken, StartVerdict.Stopped)]), "s1", SessionGroup.Ended, "stopped")
             {
@@ -613,7 +612,7 @@ public sealed class SessionGroupsTests
         ["an archived live session stays working"] =
             new(Look([Record("s1", "working", "q1")], [Taken], archived: ["s1"]), "s1", SessionGroup.Working, "working"),
 
-        // SESSUX1f (D126 §5.4): deletable where the ledger would delete the record and this machine holds nothing of it.
+        // Deletable where the ledger would delete the record and this machine holds nothing of it.
         ["a conversation the ledger would delete is deletable"] =
             new(Look([Record("s1", "completed", kind: "chat", deletable: true)]), "s1", SessionGroup.Ended, "completed")
             {
@@ -635,14 +634,14 @@ public sealed class SessionGroupsTests
                 Also = row => Assert.False(row.Deletable),
             },
 
-        // LAND4: a session that ended with commits no branch of the person's holds offers its landing, whatever its ending and
-        // whichever group it rests in, naming its branch and its tree; the group is the reader's as before.
+        // A session that ended with commits no branch of the person's holds offers its landing, whatever its ending and
+        // whichever group it rests in, naming its branch and its tree; the group is the reader's.
         ["a session finished at a checkpoint with commits offers its landing"] =
             new(Look([Record("s1", "completed", "q1", Tree)], [Taken], trees: [(Tree, new TreeWork(2, 0))]), "s1", SessionGroup.Review, "completed")
             {
                 Also = row => Assert.Equal(new LandOffer("daoris/s-1a2b3c4d", "s-1a2b3c4d", 2, 0), row.Lands),
             },
-        // TREEFOLLOW1: a tree its agent moved onto a branch of its own offers that branch, read from the tree, not the layout's name.
+        // A tree its agent moved onto a branch of its own offers that branch, read from the tree, not the layout's name.
         ["a session whose tree moved onto its own branch offers that branch"] =
             new(Look([Record("s1", "completed", "q1", Tree)], [Taken], trees: [(Tree, new TreeWork(2, 0) { Branch = "feature/TK-1-engine" })]),
                 "s1", SessionGroup.Review, "completed")
@@ -714,7 +713,7 @@ public sealed class SessionGroupsTests
                 Also = row => Assert.Null(row.Lands),
             },
 
-        // SQUASHTIDY1b: commits the line holds by content (a squash merge, a cherry-pick) are not offered to land again, since
+        // Commits the line holds by content (a squash merge, a cherry-pick) are not offered to land again, since
         // accepting would make a branch of work already there. The tree offers its discard instead, saying where the work is
         // in Discard's own words and naming the ref an unforced discard keeps its commits at.
         ["a session whose work the line holds by content offers its discard, not its landing"] =
@@ -840,7 +839,7 @@ public sealed class SessionGroupsTests
 
     /// <summary>
     /// git is asked only of a tree whose work the reader could put to review or offer to land: an ended session's own tree,
-    /// this home's, the newest on it and held by nothing live. LAND4 judges a tree its quest goes back into too, a cut-off's
+    /// this home's, the newest on it and held by nothing live. It also judges a tree its quest goes back into, a cut-off's
     /// and a parked quest's, since its commits are offered to land whatever its ending. A teammate's tree is on their machine.
     /// </summary>
     [Fact]
@@ -850,7 +849,7 @@ public sealed class SessionGroupsTests
         const string busy = "X:/daoris/trees/aurora/engine/s-busy";
         const string parked = "X:/daoris/trees/aurora/engine/s-parked";
         const string elsewhere = "C:/checkouts/engine";
-        // SESSUX1b: a taken quest the person's stop holds goes back into no tree until they release it.
+        // A taken quest the person's stop holds goes back into no tree until they release it.
         const string held = "X:/daoris/trees/aurora/engine/s-held";
         var carriedQuest = Quest("q2", "Taken");
         var parkedQuest = Quest("q3", "Taken");
@@ -878,7 +877,7 @@ public sealed class SessionGroupsTests
         Assert.Empty(SessionGroups.TreesToJudge(look, _ => true, only: ["bare", "old"]));
     }
 
-    /// <summary>ACCEPTFOOT1b: an open conversation's own tree is judged between its turns alone, since only then does it offer its work.</summary>
+    /// <summary>An open conversation's own tree is judged between its turns alone, since only then does it offer its work.</summary>
     [Fact]
     public void An_open_conversations_tree_is_judged_between_its_turns_alone()
     {
@@ -889,7 +888,7 @@ public sealed class SessionGroupsTests
     }
 
     /// <summary>
-    /// 🔴 COAGENT1b (D199 point 3; the co-agent design §2.4): a partner's ended record is never eligible to land, so no tree of its is
+    /// A partner's ended record is never eligible to land, so no tree of its is
     /// judged and neither its own Accept nor an entry's offers it; a helper's ended record keeps its old reading; the press and the
     /// terminal's verb refuse it in words naming the lead's merge.
     /// </summary>
@@ -912,8 +911,8 @@ public sealed class SessionGroupsTests
     }
 
     /// <summary>
-    /// ACCEPTFOOT1b: which open conversations of this machine's are between turns. The word of the runner that holds a conversation
-    /// first, as the page's foot reads it (CONV4a); where nothing in this process holds it (a terminal's listing, or a conversation
+    /// Which open conversations of this machine's are between turns. The word of the runner that holds a conversation
+    /// first, as the page's foot reads it; where nothing in this process holds it (a terminal's listing, or a conversation
     /// another process runs), its own record of its turns, which its runner writes as each ends. Only a live conversation of this
     /// machine's: a driven session's turn is its run's, an ended one offers its work as any ended session does, and a teammate's runs
     /// on their machine.
@@ -975,7 +974,7 @@ public sealed class SessionGroupsTests
 
     /// <summary>
     /// The records as the service answers them: a teammate's keyed `origin/id`, a record with no id skipped, the strikes
-    /// and each quest's last session read by the planner's own readers (DRV6, D79), never a second copy of either rule.
+    /// and each quest's last session read by the planner's own readers, never a second copy of either rule.
     /// </summary>
     [Fact]
     public void The_records_are_read_as_the_service_answers_them()
@@ -1005,7 +1004,7 @@ public sealed class SessionGroupsTests
     }
 
     /// <summary>
-    /// ANSWER1c: the person's answer to a park, as the service answers it to this machine (ANSWER1b keeps the record
+    /// The person's answer to a park, as the service answers it to this machine (the record stays
     /// parked with it). None, an empty one, or one that is not text is no answer.
     /// </summary>
     [Fact]
@@ -1081,8 +1080,8 @@ public sealed class SessionGroupsTests
         Assert.Empty(kept.Latest!);
     }
 
-    // ——— SESSONE1b (D167, the co-working design §1.6, §3): the reader groups by the entry the service answers. An entry's group is
-    // the first of D126's groups any of its parts qualifies for, its leading part is the one that put it there, its parts go
+    // ——— The reader groups by the entry the service answers. An entry's group is
+    // the first of the groups any of its parts qualifies for, its leading part is the one that put it there, its parts go
     // newest last each with how it began, and an ended intake whose ask became quests leaves the list.
 
     private const string AppKey = "ask:c98a7e/app";
@@ -1131,7 +1130,7 @@ public sealed class SessionGroupsTests
     }
 
     /// <summary>
-    /// COAGENT1b (the co-agent design §7.3): a record's <c>serves</c> and <c>piece</c> as the service answers them on loopback. A
+    /// A record's <c>serves</c> and <c>piece</c> as the service answers them on loopback. A
     /// partner carries both; a helper serves alone; a piece with no lead is no partner, as the service keeps a piece only beside
     /// <c>serves</c>; a host from before, or a teammate's record, answers neither.
     /// </summary>
@@ -1211,7 +1210,7 @@ public sealed class SessionGroupsTests
         Assert.Equal(SessionGroup.Ended, Assert.Single(SessionGroups.ReadEntries(unpublished)).Group);
     }
 
-    /// <summary>An ask's quests are known by the sessions that worked them where the quest itself was cleared.</summary>
+    /// <summary>An ask's quests are known by the sessions that worked them where the quest itself is cleared.</summary>
     [Fact]
     public void An_ended_intake_is_off_the_list_where_a_session_of_its_ask_remains()
     {
@@ -1224,7 +1223,7 @@ public sealed class SessionGroupsTests
         Assert.Equal(["ask:a3/engine"], SessionGroups.ReadEntries(look).Select(entry => entry.Key));
     }
 
-    /// <summary>The first of D126's groups any part qualifies for, and the part that put it there leads: the newest of its group.</summary>
+    /// <summary>The first of the groups any part qualifies for, and the part that put it there leads: the newest of its group.</summary>
     [Fact]
     public void An_entry_is_in_the_first_group_any_part_qualifies_for_and_its_leading_part_put_it_there()
     {
@@ -1264,7 +1263,7 @@ public sealed class SessionGroupsTests
     }
 
     /// <summary>
-    /// 🔴 SESSCTX1b (the session-context design §7): every continuation names its link, so a part says how it began by its link's why,
+    /// Every continuation names its link, so a part says how it began by its link's why,
     /// never every link as a hand-over. The five a hand-over is asked for are handed over; `carry-on` carried on; `retry` retried;
     /// `resume` a move of its own; a why this build has no word for, and a record from before with none, as before.
     /// </summary>

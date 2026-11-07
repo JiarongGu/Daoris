@@ -3,7 +3,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// KEEP1d (D195 point 2; the cleanup design §2.2, §3.1, §9): the person's keep rules in <c>driver.json</c>'s <c>keep</c>, judged by the
+/// The person's keep rules in <c>driver.json</c>'s <c>keep</c>, judged by the
 /// one judgement every door makes (<see cref="KeepRules"/>), read by the one effective policy and through it by every reader of the
 /// set-aside days, and the look's daily prune of the machine log at the person's days. Files only, in a home under <c>_fixtures/</c>; the
 /// report's two readers are <see cref="BranchTidyingTests"/>', the card's <see cref="SystemSpaceTests"/>', the terminal's text
@@ -57,7 +57,7 @@ public sealed class KeepRulesTests : IDisposable
         { "logs", null, true, null, false, ChoiceRefusal.KeepOutOfRange },
         { "logs", null, false, null, true, null },
         { "logs", 14, false, null, true, ChoiceRefusal.KeepOutOfRange },
-        // KEEP1g: history's age, decided by the owner; `never` is its default, the press alone.
+        // History's age, decided by the owner; `never` is its default, the press alone.
         { "history", 30, false, null, false, null },
         { "history", 3650, false, null, false, null },
         { "history", 29, false, null, false, ChoiceRefusal.KeepOutOfRange },
@@ -76,7 +76,7 @@ public sealed class KeepRulesTests : IDisposable
         if (refused is null)
         {
             var policy = KeepPolicy.From(DriverConfig.Empty.WithKeep(set).Keep);
-            // History's `never` is its default (KEEP1g), so setting it leaves the kind at its default.
+            // History's `never` is its default, so setting it leaves the kind at its default.
             Assert.Equal(back || (kind == "history" && never), DriverConfig.Empty.WithKeep(set).Keep.IsDefault(kind));
             if (kind == "set-aside" && days is { } kept) Assert.Equal(TimeSpan.FromDays(kept), policy.SetAside.Days);
             if (kind == "set-aside" && whole is { } held) Assert.Equal(held, policy.SetAside.Whole);
@@ -118,7 +118,7 @@ public sealed class KeepRulesTests : IDisposable
         Assert.Equal(new HistoryPolicy(TimeSpan.FromDays(180)), policy.History);
         Assert.Contains("\"history\": {", File.ReadAllText(Config), StringComparison.Ordinal);
 
-        // KEEP1g: history's `never` is its default, so the key goes with it.
+        // History's `never` is its default, so the key goes with it.
         Set(new KeepSet("history", Never: true));
         Assert.Equal(new HistoryPolicy(null), KeepPolicy.Of(_home).History);
         Assert.DoesNotContain("\"history\"", File.ReadAllText(Config), StringComparison.Ordinal);

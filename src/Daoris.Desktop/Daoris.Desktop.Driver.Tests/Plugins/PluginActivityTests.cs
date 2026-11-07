@@ -4,7 +4,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// What a plugin did (PLUGUI1d, D119 §4.1): <see cref="PluginActivity.Read"/> summarises the machine log's lines for
+/// What a plugin did: <see cref="PluginActivity.Read"/> summarises the machine log's lines for
 /// one plugin over a period, with its pushes from the landing record, for the page's Activity and
 /// <c>daoris plugin activity</c> alike.
 /// </summary>

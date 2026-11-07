@@ -4,7 +4,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// FOUNDATION1x step 3, census C (the foundation design §2.2, §2.7; O2-9): every record carrying an <c>actor</c> is held to a role taking its
+/// Every record carrying an <c>actor</c> is held to a role taking its
 /// work, by the revision of that role the start kept on its binding; a role taking <c>design</c> is admitted on a record whose marks read
 /// <c>build</c>. Where the marks and the role would differ the marks decide the work.
 /// </summary>

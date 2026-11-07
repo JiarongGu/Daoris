@@ -6,10 +6,10 @@ using StandIn = Daoris.Desktop.Driver.Tests.HistoryStandIn;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// HIST1c (D153; the history-clearing design §2, §4–§5, §6.3, §6.5): this machine's half of clearing finished history. The
-/// service judges the records (HIST1b) and its word is said first; then this machine's: a process still running, an
+/// This machine's half of clearing finished history. The
+/// service judges the records and its word is said first; then this machine's: a process still running, an
 /// automatic landing still trying, a tree still here, a landing's branch still standing. After the service's yes, every file
-/// the home kept of each cleared session goes through the helper D126's delete calls too, and what names it is tidied. The
+/// the home kept of each cleared session goes through the helper the delete calls use too, and what names it is tidied. The
 /// machine log keeps counts, never a word or an id.
 /// </summary>
 /// <remarks>A scratch home and an in-process stand-in for the service only (<see cref="HistoryStandIn"/>): the suite's fast half.</remarks>
@@ -52,14 +52,14 @@ public sealed class HistoryClearingTests : IDisposable
         File.WriteAllText(Path.Combine(Sessions, id + ReopenMarks.Suffix), "{}");
         File.WriteAllText(Path.Combine(Sessions, id + NewSessionChoices.Suffix), "{}");
         File.WriteAllText(Path.Combine(Sessions, id + HandOverBox.Suffix), "{}");
-        // SESSFILES1: a limit's move, and an agent's ask to hand over with its state.
+        // A limit's move, and an agent's ask to hand over with its state.
         foreach (var suffix in Boxes) File.WriteAllText(Path.Combine(Sessions, id + suffix), "{}");
         Directory.CreateDirectory(DaorisHome.Entry(_home, HomeEntry.Spawn));
         File.WriteAllText(DaorisHome.Entry(_home, HomeEntry.Spawn,$"{id}.mcp.json"), "{}");
         File.WriteAllText(DaorisHome.Entry(_home, HomeEntry.Spawn,$"{id}.settings.json"), "{}");
     }
 
-    /// <summary>What follows a session's id in the three files SESSFILES1 added to the inventory, and in the limit box once it is set aside (FOUNDATION1f-vi part a).</summary>
+    /// <summary>What follows a session's id in the three boxes (a limit's move, a hand-over ask and its state), and in the limit box once it is set aside.</summary>
     private static readonly string[] Boxes =
         [LimitBoxes.Suffix, HandOverAskFiles.AskSuffix, HandOverAskFiles.StateSuffix, LimitBoxes.Suffix + MoveBoxImport.SetAsideSuffix];
 
@@ -104,7 +104,7 @@ public sealed class HistoryClearingTests : IDisposable
         File.WriteAllText(HeldWordsFile.PathOf(_home), """{ "held": [ { "session": "s1", "text": "words", "files": [], "door": "screen" } ] }""");
         new AbandonRecord(_home).Write(new AbandonEntry("quest", "q1", At, "screen", "not needed"));
         new AbandonRecord(_home).Write(new AbandonEntry("quest", "q2", At, "screen", "kept"));
-        // MIXAGENT1a-ii: a quest held on another agent goes back to the machine's with its work cleared; another's stays.
+        // A quest held on another agent goes back to the machine's with its work cleared; another's stays.
         new HandedQuests(_home).Write("q1", new HandedQuest("codex-acp", null, "s1", HandOverWhy.Press, HandOverBy.Person, At));
         new HandedQuests(_home).Write("q2", new HandedQuest("codex-acp", null, "o1", HandOverWhy.Press, HandOverBy.Person, At));
         (DriverConfig.Empty
@@ -161,7 +161,7 @@ public sealed class HistoryClearingTests : IDisposable
     }
 
     /// <summary>
-    /// A teammate's record is forgotten here with the quest it served (D153 point 3): its copy goes, and so does this machine's
+    /// A teammate's record is forgotten here with the quest it served: its copy goes, and so does this machine's
     /// archive mark of it, though it has no file here. A quest a remote numbered is counted as forgotten.
     /// </summary>
     [Fact]
@@ -237,7 +237,7 @@ public sealed class HistoryClearingTests : IDisposable
     }
 
     /// <summary>
-    /// HIST1l: a <c>needs-you</c> refusal, what it names, what the service said waits, and two sentences: the one the records
+    /// A <c>needs-you</c> refusal, what it names, what the service said waits, and two sentences: the one the records
     /// read beside it would mean, and the one the service meant. Each row's records say the other thing, as records read after
     /// the service judged can, once the person answered or accepted between the two reads.
     /// </summary>
@@ -258,7 +258,7 @@ public sealed class HistoryClearingTests : IDisposable
     };
 
     /// <summary>
-    /// 🔴 HIST1l: what waits is read from the service's refusal (<c>waits</c>), never rebuilt from a second read of the records,
+    /// What waits is read from the service's refusal (<c>waits</c>), never rebuilt from a second read of the records,
     /// which can have moved since the service judged: the sentence the service meant is said, at the listing and at the press.
     /// </summary>
     [Theory]
@@ -275,8 +275,8 @@ public sealed class HistoryClearingTests : IDisposable
     }
 
     /// <summary>
-    /// HIST1l: a host from before names nothing waiting, so what waits is read from the records the word names, as HIST1c read
-    /// it; so is a word for it this build does not know.
+    /// A host from before names nothing waiting, so what waits is read from the records the word names;
+    /// so is a word for it this build does not know.
     /// </summary>
     [Theory]
     [MemberData(nameof(Waiting))]
@@ -298,9 +298,9 @@ public sealed class HistoryClearingTests : IDisposable
     }
 
     /// <summary>
-    /// HIST1m: an <c>open</c> or an <c>awaited</c> refusal, the quest and session it names, what the service said beside it (in
+    /// An <c>open</c> or an <c>awaited</c> refusal, the quest and session it names, what the service said beside it (in
     /// <c>stands</c> or <c>by</c>), and two sentences: the one the records read beside it would mean, and the one the service
-    /// meant. Each row's records say the other thing, as a quest read after the service judged can, once it was taken, closed or
+    /// meant. Each row's records say the other thing, as a quest read after the service judged can, once it is taken, closed or
     /// answered between the two reads, but the last: a question names the session that published it, which the records cannot
     /// contradict.
     /// </summary>
@@ -319,7 +319,7 @@ public sealed class HistoryClearingTests : IDisposable
     };
 
     /// <summary>
-    /// 🔴 HIST1m: how the work in progress stands and the open work naming it are read from the service's refusal (<c>stands</c>,
+    /// How the work in progress stands and the open work naming it are read from the service's refusal (<c>stands</c>,
     /// <c>by</c>), never rebuilt from a second read of the quest, which can have moved since the service judged: the sentence the
     /// service meant is said, at the listing and at the press.
     /// </summary>
@@ -339,8 +339,8 @@ public sealed class HistoryClearingTests : IDisposable
     }
 
     /// <summary>
-    /// HIST1m: a host from before names neither, so how the work stands and what names it are read from the quest the word names, as
-    /// HIST1c read them; so is a word for either this build does not know.
+    /// A host from before names neither, so how the work stands and what names it are read from the quest the word names;
+    /// so is a word for either this build does not know.
     /// </summary>
     [Theory]
     [MemberData(nameof(Variants))]
@@ -415,7 +415,7 @@ public sealed class HistoryClearingTests : IDisposable
 
     /// <summary>
     /// A landing's branch that still stands keeps the unit, named by its branch and repository, whether the session made it or
-    /// a later done moved it on (LAND2c); a trace does not, and goes with its session.
+    /// a later done moved it on; a trace does not, and goes with its session.
     /// </summary>
     [Fact]
     public async Task A_landings_standing_branch_keeps_the_unit_and_a_trace_does_not()
@@ -523,8 +523,7 @@ public sealed class HistoryClearingTests : IDisposable
     }
 
     /// <summary>
-    /// A run's binding goes with its quest's unit, after the service's yes, and its size joins the unit's bytes (WORKFLOW1e3, which
-    /// supersedes D157's "not cleared with its work"). Another run's binding stays.
+    /// A run's binding goes with its quest's unit, after the service's yes, and its size joins the unit's bytes. Another run's binding stays.
     /// </summary>
     [Fact]
     public async Task A_cleared_quests_binding_goes_with_it_and_its_bytes_are_counted()
@@ -587,7 +586,7 @@ public sealed class HistoryClearingTests : IDisposable
     }
 
     /// <summary>
-    /// CHATFLOW1c (the chat-flow design §4.3): a chat run's binding, gate file and look file are held by the record their key names, not by a
+    /// A chat run's binding, gate file and look file are held by the record their key names, not by a
     /// quest. A workspace's clear keeps all three while that record stands, however long untouched, and takes them once it is gone.
     /// </summary>
     [Fact]
@@ -619,7 +618,7 @@ public sealed class HistoryClearingTests : IDisposable
     }
 
     /// <summary>
-    /// SESSFILES1 (D153 §2.3): a limit's move box and an agent's hand-over ask and state are left over once their session's record is
+    /// A limit's move box and an agent's hand-over ask and state are left over once their session's record is
     /// gone, nothing runs it here and nothing touched them for an hour, and a workspace's clear takes them. A box still in use is
     /// kept, and the inventory knows by the same three reads as for every other file: the record that stands (a move reads the
     /// ended record, and an ask its session's), a process marked for the session, and the hour a writer's last touch holds.
@@ -648,7 +647,7 @@ public sealed class HistoryClearingTests : IDisposable
         var plan = await HistoryClearing.PlanAsync(world, HistoryScope.Workspace, "aurora");
         var outcome = await HistoryClearing.ClearAsync(world, HistoryScope.Workspace, "aurora", [], PluginEvents.Screen);
 
-        // The gone session's three boxes and its limit box set aside (FOUNDATION1f-vi part a), each a file the inventory names.
+        // The gone session's three boxes and its limit box set aside, each a file the inventory names.
         Assert.Equal(4, plan.Reading!.LeftOver);
         Assert.Equal(4, outcome.LeftOver);
         Assert.All(Files("gone1"), file => Assert.False(File.Exists(file), file));
@@ -693,7 +692,7 @@ public sealed class HistoryClearingTests : IDisposable
         var room = IntakeRoom.PathOf(_home, "aurora");
         Directory.CreateDirectory(room);
         File.WriteAllText(Path.Combine(room, "AGENTS.md"), "the room");
-        // AGENTSPLACE1b: an admission of a quest no store holds goes with the marks.
+        // An admission of a quest no store holds goes with the marks.
         DriverConfig.Empty.WithForgiven("qgone", 4).WithForgiven("q2", 1).WithAdmitted("qgone2", "engine").WithAdmitted("q3", "engine").Save(ConfigPath);
 
         var service = new StandIn
@@ -831,8 +830,8 @@ public sealed class HistoryClearingTests : IDisposable
     };
 
     /// <summary>
-    /// 🔴 A clear says the bytes it freed (HIST1j): a file the disk will not let go of stays, is counted as failed and frees none of
-    /// its bytes, and a folder the disk let go of only in part frees the part that went. The rest of the unit goes as before.
+    /// A clear says the bytes it freed: a file the disk will not let go of stays, is counted as failed and frees none of
+    /// its bytes, and a folder the disk let go of only in part frees the part that went. The rest of the unit goes.
     /// </summary>
     [Fact]
     public async Task A_file_the_disk_keeps_stays_counted_as_failed_and_frees_none_of_its_bytes()
@@ -856,7 +855,7 @@ public sealed class HistoryClearingTests : IDisposable
     }
 
     /// <summary>
-    /// Kept files the service could not remove (HIST1j): its answer names their quest, which the clear counts as failed, and none
+    /// Kept files the service could not remove: its answer names their quest, which the clear counts as failed, and none
     /// of their bytes count as freed; they stay, left over for the next clear of a workspace. An answer from a host before it
     /// names none, and the bytes still on the disk are still not counted.
     /// </summary>

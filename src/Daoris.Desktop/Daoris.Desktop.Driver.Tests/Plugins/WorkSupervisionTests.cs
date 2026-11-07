@@ -4,7 +4,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// The work wire's supervision (FABRIC-PERFORM1a; the fabric events design §C4, §D6): the loop that holds the home's lease starts a plugin's
+/// The work wire's supervision: the loop that holds the home's lease starts a plugin's
 /// process when a unit first awaits one of its steps and stops it once none does; restarts an exit it did not ask for after 1, 5 and 15
 /// minutes, three within an hour marking the plugin unsound until the person tries again; numbers each start with a generation, so an event
 /// from a process since restarted is refused; and resyncs after any restart or drop.
@@ -79,7 +79,7 @@ public sealed class WorkSupervisionTests : IDisposable
 
         public void Listen(Action<JsonElement?>? steps) => Steps = steps;
 
-        /// <summary>Where set and true for a frame, its send fails, as a broken pipe does (FABRIC-PERFORM1i).</summary>
+        /// <summary>Where set and true for a frame, its send fails, as a broken pipe does.</summary>
         public Func<WorkWatchFrame, bool>? Fails { get; set; }
 
         public Task WatchAsync(WorkWatchFrame frame, CancellationToken ct)
@@ -104,7 +104,7 @@ public sealed class WorkSupervisionTests : IDisposable
             return new WorkReconcileAnswer(ReconcileStates.Running);
         }
 
-        /// <summary>The cleanups asked of this process (FABRIC-PERFORM1d).</summary>
+        /// <summary>The cleanups asked of this process.</summary>
         public List<WorkCleanupCall> Cleaned { get; } = [];
 
         public Task<WorkCleanupAnswer> CleanupAsync(WorkCleanupCall call, CancellationToken ct)
@@ -230,7 +230,7 @@ public sealed class WorkSupervisionTests : IDisposable
     }
 
     /// <summary>
-    /// FABRIC-PERFORM1d (§D3): a plugin owed a cleanup has its process started and kept though no unit awaits its steps, is asked through the
+    /// A plugin owed a cleanup has its process started and kept though no unit awaits its steps, is asked through the
     /// performer's fence, and is stopped once it is owed nothing; without the lease, nothing is asked.
     /// </summary>
     [Fact]
@@ -256,8 +256,8 @@ public sealed class WorkSupervisionTests : IDisposable
     }
 
     /// <summary>
-    /// FABRIC-PERFORM1i (§C4's third rule): an event is bound by the last frame its process was actually sent, never the set desired since. A
-    /// send that fails leaves the frame before it; another generation was sent nothing yet.
+    /// An event is bound by the last frame its process has actually been sent, never the set desired since. A
+    /// send that fails leaves the frame before it; another generation has been sent nothing yet.
     /// </summary>
     [Fact]
     public async Task The_frame_an_event_is_bound_by_is_the_last_one_its_process_was_actually_sent()
@@ -269,7 +269,7 @@ public sealed class WorkSupervisionTests : IDisposable
         var first = set.SentTo(Deploy, 1)!;
         Assert.Equal((true, "u-a"), (first.Resync, Assert.Single(first.Units).Unit));
 
-        // A newly desired unit whose send fails: the process was never told of it.
+        // A newly desired unit whose send fails: the process is never told of it.
         channel.Fails = frame => frame.Units.Any(unit => unit.Branch == "quest/b");
         set.Watch(Awaiting(Unit() with { Unit = "u-a" }, Unit("quest/b") with { Unit = "u-b" }));
         Assert.Equal(["quest/a"], set.SentTo(Deploy, 1)!.Units.Select(unit => unit.Branch));
@@ -280,7 +280,7 @@ public sealed class WorkSupervisionTests : IDisposable
         set.Watch(Awaiting(Unit() with { Unit = "u-a" }, Unit("quest/b") with { Unit = "u-b" }, Unit("quest/c") with { Unit = "u-c" }));
         Assert.Equal(["u-a", "u-b", "u-c"], set.SentTo(Deploy, 1)!.Units.Select(unit => unit.Unit));
 
-        // Stopped: nothing it was sent binds an event any more.
+        // Stopped: nothing it has been sent binds an event.
         _holds = false;
         await set.ReconcileAsync(PluginCatalog.Load(_home), CancellationToken.None);
         Assert.Null(set.SentTo(Deploy, 1));
@@ -330,8 +330,8 @@ public sealed class WorkSupervisionTests : IDisposable
     }
 
     /// <summary>
-    /// FABRIC-PERFORM1a, round 2: a process that exits after a look has noted which had exited, and before it judges which go, is an unasked
-    /// exit all the same. It was removed uncounted and started again in the same look, so a plugin crashing on what it is told never waited.
+    /// A process that exits after a look has noted which had exited, and before it judges which go, is an unasked
+    /// exit all the same, never removed uncounted and started again in the same look, so a plugin crashing on what it is told waits out its back-off.
     /// </summary>
     [Fact]
     public async Task An_exit_partway_through_a_look_waits_as_any_unasked_exit()
@@ -398,7 +398,7 @@ public sealed class WorkSupervisionTests : IDisposable
         Assert.False(set.IsUnsound(Deploy));
     }
 
-    /// <summary>FABRIC-PERFORM1a, round 2: choice 7's promise kept — an update (a new version or install) starts an unsound plugin's record afresh.</summary>
+    /// <summary>An update (a new version or install) starts an unsound plugin's record afresh.</summary>
     [Fact]
     public async Task Updating_an_unsound_plugin_starts_it_again_with_its_record_afresh()
     {
@@ -429,7 +429,7 @@ public sealed class WorkSupervisionTests : IDisposable
     }
 
     /// <summary>
-    /// FABRIC-PERFORM1a, round 2: a plugin speaking a loop point keeps its process while the lease is elsewhere, neither told nor heard; once
+    /// A plugin speaking a loop point keeps its process while the lease is elsewhere, neither told nor heard; once
     /// the lease is this loop's again, that same process is heard and told the set with a resync, on its own generation.
     /// </summary>
     [Fact]
@@ -455,7 +455,7 @@ public sealed class WorkSupervisionTests : IDisposable
         Assert.Equal("e1", Assert.Single(set.TakeSteps()).Step.Id);
     }
 
-    /// <summary>The frame bound a plugin is read under (FABRIC-PERFORM1a, round 2): 64 KB where it speaks a work point, else the answers' bound.</summary>
+    /// <summary>The frame bound a plugin is read under: 64 KB where it speaks a work point, else the answers' bound.</summary>
     [Fact]
     public void A_plugin_is_read_under_the_work_wire_s_bound_only_where_it_speaks_a_work_point()
     {
@@ -492,8 +492,8 @@ public sealed class WorkSupervisionTests : IDisposable
     }
 
     /// <summary>
-    /// FABRIC-PERFORM1a, round 2: an answer read from a process is handed back only while that process is still the plugin's current
-    /// generation. One that completes after its process was stopped and the next generation started is refused, never returned as the new one's.
+    /// An answer read from a process is handed back only while that process is still the plugin's current
+    /// generation. One that completes after its process is stopped and the next generation started is refused, never returned as the new one's.
     /// </summary>
     [Fact]
     public async Task An_answer_from_a_generation_since_replaced_is_refused_when_it_is_handed_back()
@@ -524,8 +524,8 @@ public sealed class WorkSupervisionTests : IDisposable
     // ——— the bounds, and the resync after a drop
 
     /// <summary>
-    /// FABRIC-PERFORM1a, round 2: a resync's replay is admitted whole. A plugin replaying one event per awaited step in the same order each
-    /// time had its first 60 taken and the rest dropped at every resync, for ever; the minute after a resync now takes one more per awaited
+    /// A resync's replay is admitted whole. A plugin replaying one event per awaited step in the same order each
+    /// time never has its first 60 taken and the rest dropped at every resync; the minute after a resync takes one more per awaited
     /// step, and as many more wait.
     /// </summary>
     [Theory]
@@ -561,7 +561,7 @@ public sealed class WorkSupervisionTests : IDisposable
         set.Watch(Awaiting(Unit()));
         await set.ReconcileAsync(Performer(), CancellationToken.None);
 
-        // FABRIC-PERFORM1c: §C4's belief codes are counted with the transport's, by plugin and code, never with the frame's words.
+        // The belief codes are counted with the transport's, by plugin and code, never with the frame's words.
         set.Refused(Deploy, WorkRefusals.NotNamed);
         set.Refused(Deploy, WorkRefusals.NotNamed);
         set.Refused(Deploy, WorkRefusals.Stale);
@@ -588,7 +588,7 @@ public sealed class WorkSupervisionTests : IDisposable
         var refused = Assert.Single(Lines(PluginEvents.Step));
         Assert.Equal((WorkRefusals.TooFast, 1), (Text(refused, "code"), Count(refused)));
 
-        // The start's resync was this minute: the drop's waits for the next.
+        // The start's resync is this minute's: the drop's waits for the next.
         await set.ReconcileAsync(PluginCatalog.Load(_home), CancellationToken.None);
         Assert.Single(channel.Told);
         _now = _now.AddMinutes(1);

@@ -5,17 +5,17 @@ using static Daoris.Desktop.Driver.Tests.GitFixture;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// AUTOTIDY1 to AUTOTIDY2c over real git, the folders: a tree's folder moved aside whole and purged after its wait, one something
+/// Over real git, the folders: a tree's folder moved aside whole and purged after its wait, one something
 /// holds open or a link reaches, the folders under the trees git knows no tree in, a tree whose opening a kill cut off, and a
-/// removal's ends. Split from <see cref="BranchTidyingProcessTests"/> (PROC1g).
+/// removal's ends. The tidy's other process cases are <see cref="BranchTidyingProcessTests"/>'.
 /// </summary>
 [Trait(Category.Name, Category.Process)]
 [Trait(Category.Parallel, Category.Git)]
 public sealed class BranchTidyingFolderTests : BranchTidyingFixture
 {
     /// <summary>
-    /// A tree reached through a link under the trees home is somewhere else: here its repository's folder was moved away after
-    /// the tree was opened, and a link left in its place, so git still lists the tree under the trees home. The look keeps it,
+    /// A tree reached through a link under the trees home is somewhere else: here its repository's folder is moved away after
+    /// the tree is opened, and a link left in its place, so git still lists the tree under the trees home. The look keeps it,
     /// saying so, and its folder stays where the link points.
     /// </summary>
     [Fact]
@@ -121,7 +121,7 @@ public sealed class BranchTidyingFolderTests : BranchTidyingFixture
     }
 
     /// <summary>
-    /// AUTOTIDY2a: a branch on the line by content keeps its commits on a ref of their own before its tree's folder moves; where
+    /// A branch on the line by content keeps its commits on a ref of their own before its tree's folder moves; where
     /// something holds the folder open the branch stays, and that ref is let go with the attempt, as the press's refused removal
     /// lets it go, so no ref is left for a branch that still stands. Once nothing holds the folder, the look takes it, kept.
     /// </summary>
@@ -177,7 +177,7 @@ public sealed class BranchTidyingFolderTests : BranchTidyingFixture
         await File.WriteAllTextAsync(Path.Combine(written, "late.db"), "a write that came after the move\n");
         using var log = Log();
 
-        // KEEPSIZE1b: their records kept at the first look's Keeping pass, finished trees' folders go an hour after, not at their days.
+        // Their records kept at the first look's Keeping pass, finished trees' folders go an hour after, not at their days.
         var early = await new BranchTidying(_home) { Clock = () => DateTimeOffset.UtcNow.AddMinutes(30) }
             .LookAsync(_ledger.Client(), log, _closing.Token).WaitAsync(Bound);
         var later = new BranchTidying(_home) { Pace = TimeSpan.Zero, Clock = () => DateTimeOffset.UtcNow.AddHours(2) };
@@ -197,10 +197,10 @@ public sealed class BranchTidyingFolderTests : BranchTidyingFixture
     }
 
     /// <summary>
-    /// 🔴 TIDIEDLINK1, D88's note: a folder moved aside whose build folder holds links, as npm's workspaces and pnpm leave under
+    /// A folder moved aside whose build folder holds links, as npm's workspaces and pnpm leave under
     /// <c>node_modules</c>, is deleted after its wait with each link taken as a link: what one points at outside the folder stays,
-    /// every file in it as it was, and one pointing inside goes with the folder. A link anywhere else keeps its folder, said as
-    /// before, and what it points at is untouched.
+    /// every file in it intact, and one pointing inside goes with the folder. A link anywhere else keeps its folder, said as
+    /// for any kept folder, and what it points at is untouched.
     /// </summary>
     [Fact]
     public async Task The_purge_takes_a_link_under_a_build_folder_as_a_link_and_keeps_a_folder_with_one_elsewhere()
@@ -244,9 +244,9 @@ public sealed class BranchTidyingFolderTests : BranchTidyingFixture
     }
 
     /// <summary>
-    /// 🔴 AUTOTIDY2b: a tree whose own ignored <c>node_modules</c> holds paths past Windows' 260 characters, as an install leaves
+    /// A tree whose own ignored <c>node_modules</c> holds paths past Windows' 260 characters, as an install leaves
     /// one, goes by the look as any other tree: its folder moved aside whole, the deep file in it, git's record of the tree let
-    /// go, and fourteen days later the folder deleted, the deep file with it. On the owner's install such a tree's removal met
+    /// go, and fourteen days later the folder deleted, the deep file with it. Such a tree's removal can meet
     /// "Filename too long", and a purge that cannot delete keeps the folder for good.
     /// </summary>
     [Fact]
@@ -273,7 +273,7 @@ public sealed class BranchTidyingFolderTests : BranchTidyingFixture
         Assert.DoesNotContain(Path.GetFileName(landed.Path), await GitAsync(root, "worktree", "list", "--porcelain"), StringComparison.Ordinal);
         Assert.DoesNotContain(landed.Branch, await GitAsync(root, "branch", "--list", "daoris/*"), StringComparison.Ordinal);
 
-        // KEEPSIZE1b: its record kept at the first look's Keeping pass, a finished tree's folder goes an hour after, not at its days.
+        // Its record kept at the first look's Keeping pass, a finished tree's folder goes an hour after, not at its days.
         var later = await new BranchTidying(_home) { Clock = () => DateTimeOffset.UtcNow.AddHours(2) }
             .LookAsync(_ledger.Client(), log, _closing.Token).WaitAsync(Bound);
 
@@ -343,11 +343,11 @@ public sealed class BranchTidyingFolderTests : BranchTidyingFixture
     }
 
     /// <summary>
-    /// 🔴 AUTOTIDY2c, the owner's install of 2026-10-15: folders under a repository's trees that git lists no tree for (an empty
+    /// Folders under a repository's trees that git lists no tree for (an empty
     /// one a removed tree left, with its branch still here, and folders a session wrote beside its tree) are moved aside whole
-    /// once left quiet, said and logged, and the trees list names them moved aside. The branch whose folder that was is never kept
-    /// as unreadable; made by hand, with no record of Daoris's, its owner is unknown and it stays for the press (FABRIC-END4a, the
-    /// design §C3 and §D3). A tree stays, and so does a folder a running session names.
+    /// once left quiet, said and logged, and the trees list names them moved aside. The branch of such a folder is never kept
+    /// as unreadable; made by hand, with no record of Daoris's, its owner is unknown and it stays for the press.
+    /// A tree stays, and so does a folder a running session names.
     /// </summary>
     [Fact]
     public async Task Folders_under_the_trees_that_are_no_tree_are_moved_aside_and_listed_so()
@@ -392,7 +392,7 @@ public sealed class BranchTidyingFolderTests : BranchTidyingFixture
         {
             Assert.Equal(JsonValueKind.Null, data.GetProperty("branch").ValueKind);
             Assert.True(data.GetProperty("tree").GetBoolean());
-            // Under the trees' folder, `work/trees/` in a new home (HOMELAYOUT3), said relative to the home.
+            // Under the trees' folder, `work/trees/` in a new home, said relative to the home.
             var aside = Path.GetRelativePath(_home, DaorisHome.Entry(_home, HomeEntry.Trees, ".tidied", "default", "engine")).Replace('\\', '/');
             Assert.StartsWith(aside + "/", data.GetProperty("folder").GetString(), StringComparison.Ordinal);
         });
@@ -433,7 +433,7 @@ public sealed class BranchTidyingFolderTests : BranchTidyingFixture
     }
 
     /// <summary>
-    /// 🔴 OPENCUT1, the owner's install of 2026-10-15 (<c>s-0031408d</c>): a tree whose opening a kill cut off is locked, half
+    /// A tree whose opening a kill cut off is locked, half
     /// checked out, on a branch no record names. Where its lock is git's own from an add that never finished, or Daoris's naming a
     /// process that no longer runs, the look lets go of the lock, moves its folder aside, lets git forget it and removes its
     /// branch, which holds nothing of its own. A lock a person made, or one a Daoris process still running holds, keeps its tree.

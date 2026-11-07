@@ -1,7 +1,7 @@
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// The person is taught one command, <c>daoris</c> (D228): no usage, refusal, brief, guide or comment of the desktop's program says
+/// The person is taught one command, <c>daoris</c>: no usage, refusal, brief, guide or comment of the desktop's program says
 /// <c>daoris-driver</c>. The name stays only where it is the file the program is built as, the folder an install carries it in, or the
 /// identity a protocol hello names; each such site is listed here with its count, so a new one is a decision.
 /// </summary>

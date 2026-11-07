@@ -3,7 +3,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// The person's task (NODEKIT1 HUMAN; D245's second note): a <c>human</c> node a run reaches waits on the person, who presses <i>Done</i>, or
+/// The person's task: a <c>human</c> node a run reaches waits on the person, who presses <i>Done</i>, or
 /// <i>Approve</i> or <i>Reject</i> where it is an approval, with a note if they like, on the run's node door; the run goes on along the <c>when</c>
 /// wire of the outcome pressed. What waits is read for <i>What needs you</i> and the press clears it; a press on a node that is not waiting is
 /// refused. Each seen failing first.
@@ -155,7 +155,7 @@ public sealed class HumanNodeTests : NodeRunFixture
         await RunPassAsync(runtime);
         Assert.Equal(began, Assert.Single(runtime.HumanTasks()).Since);
 
-        // Later passes leave the moment it began to wait where it was.
+        // Later passes keep the moment it began to wait.
         _now = _now.AddHours(3);
         await RunPassAsync(runtime, whole: false);
         Assert.Equal(began, Assert.Single(runtime.HumanTasks()).Since);

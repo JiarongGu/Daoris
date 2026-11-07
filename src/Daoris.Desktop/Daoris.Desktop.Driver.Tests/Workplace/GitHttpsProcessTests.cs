@@ -4,7 +4,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// D241 point 6's proof (the git design §4.1's HTTPS row), with this machine's real git and Daoris's built doors laid out as an
+/// The HTTPS identity's proof, with this machine's real git and Daoris's built doors laid out as an
 /// install's, against <see cref="GitTlsHost"/> asking HTTP Basic, and with nothing found beside git: no system file, an empty global
 /// file, a scratch home, no credential manager and no store. An HTTPS identity's token, kept in <c>profiles/git/tokens/&lt;id&gt;/</c>,
 /// fetches and pushes through the remote helper and the credential door; the credential door answers the identity's own host and no

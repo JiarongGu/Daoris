@@ -4,7 +4,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// A plugin's page (PLUGUI1d, D119 §4.1): <see cref="PluginPage.Read"/> answers what the manifest declares as
+/// A plugin's page: <see cref="PluginPage.Read"/> answers what the manifest declares as
 /// written, each point's kind, wait and whether the running process listens there, a landing plugin's rules and
 /// readiness, its source, its data folder counted up to a bound, and its tests — and never an environment value.
 /// </summary>
@@ -15,7 +15,7 @@ public sealed class PluginPageTests : IDisposable
     private readonly string _root = Path.Combine(
         TestHomes.Root, "daoris-page-" + Guid.NewGuid().ToString("N")[..8]);
 
-    /// <summary>The Daoris home, beside the checkout a plugin was added from: a source inside the home is refused.</summary>
+    /// <summary>The Daoris home, beside the checkout a plugin is added from: a source inside the home is refused.</summary>
     private string Home => Path.Combine(_root, "home");
 
     public PluginPageTests() => Directory.CreateDirectory(Home);
@@ -25,7 +25,7 @@ public sealed class PluginPageTests : IDisposable
         try { Directory.Delete(_root, recursive: true); } catch (IOException) { } catch (UnauthorizedAccessException) { }
     }
 
-    /// <summary>🔴 A value may be a key (D119 §4.1): the page answers a server's environment by name, and no value leaves the reader.</summary>
+    /// <summary>A value may be a key: the page answers a server's environment by name, and no value leaves the reader.</summary>
     [Fact]
     public void A_servers_environment_is_read_by_name_only_and_no_value_is_read_out()
     {
@@ -47,7 +47,7 @@ public sealed class PluginPageTests : IDisposable
     }
 
     /// <summary>
-    /// HELPPLUG1a (D170 point 3): the page says who each server is handed to, and the tools Ask Daoris may call there, and the
+    /// The page says who each server is handed to, and the tools Ask Daoris may call there, and the
     /// terminal's <c>plugins show</c> says it in words.
     /// </summary>
     [Fact]
@@ -66,7 +66,7 @@ public sealed class PluginPageTests : IDisposable
         Assert.Equal([["help"], ["sessions", "help"], ["sessions"]], page.Servers.Select(server => server.To));
         Assert.Equal([["search", "get_issue"], [], []], page.Servers.Select(server => server.Allow));
         Assert.Equal([["create_issue"], [], []], page.Servers.Select(server => server.Writes));
-        // The person's approval, as HelpGrants judges it (D170's note).
+        // The person's approval, as HelpGrants judges it.
         Assert.Equal([HelpGrants.Approved, HelpGrants.Waits, null], page.Servers.Select(server => server.Help));
         var shown = PluginsCommand.Show(page);
         Assert.Contains(
@@ -79,7 +79,7 @@ public sealed class PluginPageTests : IDisposable
     }
 
     /// <summary>
-    /// FABRIC-UNIT1e (§D9): the page answers the steps a plugin declares and what they create, and the terminal's <c>plugins show</c>
+    /// The page answers the steps a plugin declares and what they create, and the terminal's <c>plugins show</c>
     /// says each in the words an update's change says it.
     /// </summary>
     [Fact]
@@ -102,7 +102,7 @@ public sealed class PluginPageTests : IDisposable
         Assert.Contains("  creates    acme.deploy/preview@1 (temporary)\n", shown);
     }
 
-    /// <summary>PLUGINSHOWCHANGED1 (D170's HELPPLUG1c note): an approval the manifest has outgrown reads as changed; one never given does not.</summary>
+    /// <summary>An approval the manifest has outgrown reads as changed; one never given does not.</summary>
     [Fact]
     public void A_server_whose_approval_no_longer_matches_is_changed_and_a_never_approved_one_is_not()
     {
@@ -203,7 +203,7 @@ public sealed class PluginPageTests : IDisposable
         Assert.Equal("off", off.Health.State);
     }
 
-    /// <summary>A refused plugin's manifest is shown as written and marked not taken (D119 §3.2); one that does not read shows its sentence alone.</summary>
+    /// <summary>A refused plugin's manifest is shown as written and marked not taken; one that does not read shows its sentence alone.</summary>
     [Fact]
     public void A_refused_plugins_manifest_is_shown_as_written_and_not_taken()
     {

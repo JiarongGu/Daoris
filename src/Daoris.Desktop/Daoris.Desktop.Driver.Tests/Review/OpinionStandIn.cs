@@ -6,7 +6,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// The local host's opinion doors as XAGENT1c built them, in process (XAGENT1e): an opinion read back with where its pass
+/// The local host's opinion doors, in process: an opinion read back with where its pass
 /// stands, the hand door that keeps a first pass's findings on its working session's record once as a word whose <c>by</c> names
 /// the opinion, and the session records that word waits on. The desk's refusals are modelled where the driver meets them: a
 /// recheck, nothing said, nothing raised, handed already, and a working session that is running, parked or stood down.
@@ -24,7 +24,7 @@ internal sealed class OpinionStandIn : HttpMessageHandler
     private readonly List<JsonObject> _sessions = [];
     private readonly List<JsonObject> _quests = [];
 
-    /// <summary>A quest the service holds, closed ones included (XAGENT1f: the gate reads the chain from them).</summary>
+    /// <summary>A quest the service holds, closed ones included (the gate reads the chain from them).</summary>
     public OpinionStandIn Quest(string id, string status = "Done", string? parent = null, string? setUpIn = null, string to = "reports")
     {
         lock (_gate)
@@ -41,62 +41,62 @@ internal sealed class OpinionStandIn : HttpMessageHandler
     }
     private int _words;
 
-    /// <summary>Each hand asked, by opinion id, in order, whether it was taken or refused.</summary>
+    /// <summary>Each hand asked, by opinion id, in order, whether taken or refused.</summary>
     public List<string> Hands { get; } = [];
 
-    /// <summary>The record each hand named (CHATFLOW1e), in the order asked; null where it named none.</summary>
+    /// <summary>The record each hand names, in the order asked; null where it names none.</summary>
     public List<string?> HandsTo { get; } = [];
 
-    /// <summary>Each helper's answer handed, by the helper's session, with the words as the driver composed them (MIXAGENT2a-ii).</summary>
+    /// <summary>Each helper's answer handed, by the helper's session, with the words as the driver composed them.</summary>
     public List<(string Helper, string Text)> HelperHands { get; } = [];
 
-    /// <summary>Each piece's answer handed, by the partner's session, with the record it went to and the words (COAGENT1b).</summary>
+    /// <summary>Each piece's answer handed, by the partner's session, with the record it went to and the words.</summary>
     public List<(string Partner, string To, string Text)> PartnerHands { get; } = [];
 
     /// <summary>
-    /// A helper's or a partner's session whose hand the host answers <b>settled</b> (FOUNDATION1 row p, the design §3.4 rule 5), with the record its
-    /// word left: its key's word was kept by an earlier hand, whose answer was lost, and taken. Nothing is kept, and the answer names no word.
+    /// A helper's or a partner's session whose hand the host answers <b>settled</b>, with the record its
+    /// word left: its key's word has been kept by an earlier hand, whose answer got lost, and taken. Nothing is kept, and the answer names no word.
     /// Asked only of a hand that sends <c>settled</c>, as the service's desks answer.
     /// </summary>
     public Dictionary<string, string> SettledHands { get; } = new(StringComparer.Ordinal);
 
-    /// <summary>Each move asked of a record's state door (HELPERWAIT1), in order: the record, the state, its note's first code.</summary>
+    /// <summary>Each move asked of a record's state door, in order: the record, the state, its note's first code.</summary>
     public List<(string Session, string State, string? Code)> Moves { get; } = [];
 
-    /// <summary>How many times the records were read whole (HELPERWAIT1: a held hand reads none until its asker moves).</summary>
+    /// <summary>How many times the records were read whole (a held hand reads none until its asker moves).</summary>
     public int RecordReads { get; private set; }
 
-    /// <summary>How many times a helper's hand was asked, taken or refused (HELPERWAIT1: a hand the host refuses is not asked again until its asker moves).</summary>
+    /// <summary>How many times a helper's hand is asked, taken or refused (a hand the host refuses is not asked again until its asker moves).</summary>
     public int HelperHandsAsked { get; private set; }
 
-    /// <summary>How many moves were asked of the state door, made or not (HELPERWAIT1).</summary>
+    /// <summary>How many moves were asked of the state door, made or not.</summary>
     public int MovesAsked { get; private set; }
 
-    /// <summary>Where set, the state door fails every move (HELPERWAIT1): <c>unreachable</c> as a transport failure, <c>refused</c> as a refusal.</summary>
+    /// <summary>Where set, the state door fails every move: <c>unreachable</c> as a transport failure, <c>refused</c> as a refusal.</summary>
     public string? StateFailure { get; set; }
 
-    /// <summary>Where set, an ask's read fails (HELPERWAIT1c): <c>unreachable</c> as a transport failure, <c>refused</c> as a refusal.</summary>
+    /// <summary>Where set, an ask's read fails: <c>unreachable</c> as a transport failure, <c>refused</c> as a refusal.</summary>
     public string? AskFailure { get; set; }
 
-    /// <summary>Where set, every helper's hand is refused with this reason (HELPERWAIT1), as an older or a failing desk refuses one.</summary>
+    /// <summary>Where set, every helper's hand is refused with this reason, as an older or a failing desk refuses one.</summary>
     public string? HelperHandRefusal { get; set; }
 
     /// <summary>
-    /// Where set, a helper's hand keeps its word and then its answer is lost (HELPERWAIT1b; Codex's round-3 #2 on COWORKUX1): <c>500</c> as
+    /// Where set, a helper's hand keeps its word and then its answer is lost: <c>500</c> as
     /// the host's exception handler answers, <c>unreadable</c> as a success that does not read, <c>timeout</c> as a client that gave up.
     /// </summary>
     public string? HelperHandLost { get; set; }
 
     /// <summary>
-    /// COMMS1b (the comms design §4.2): the host answers the <c>answers</c> mark, and its three hand doors are the one door for solicited answers.
+    /// The host answers the <c>answers</c> mark, and its three hand doors are the one door for solicited answers.
     /// Each keeps its word under its key (<c>helper:&lt;id&gt;</c>, <c>partner:&lt;piece&gt;</c>, <c>opinion:&lt;id&gt;</c>) on the head of the named
     /// record's line, walked by <c>from</c>; answers a word already waiting there <c>waiting</c> with its holder; answers a key a take settled
     /// (<see cref="Take"/>) or <see cref="SettledHands"/> names <c>settled</c> where the hand asks it; takes a park the person answered; and refuses
-    /// a running turn, a park still waiting on the person and a stood-down part. Off, the doors are a host's before the row.
+    /// a running turn, a park still waiting on the person and a stood-down part. Off, the doors are those of a host without the mark.
     /// </summary>
     public bool Answers { get; set; }
 
-    /// <summary>How many times a partner's hand was asked, taken or refused (COMMS1b: a look whose head runs asks none).</summary>
+    /// <summary>How many times a partner's hand is asked, taken or refused (a look whose head runs asks none).</summary>
     public int PartnerHandsAsked { get; private set; }
 
     // The keys a take settled, with the record each word left (row p's settlement, as the one door reads it).
@@ -130,7 +130,7 @@ internal sealed class OpinionStandIn : HttpMessageHandler
     }
 
     /// <summary>
-    /// A conversation in a tree of its own (CHATFLOW1e): no quest, a line of its own unless <paramref name="from"/> names the record it continues,
+    /// A conversation in a tree of its own: no quest, a line of its own unless <paramref name="from"/> names the record it continues,
     /// made at <paramref name="minute"/> past nine, so a line reads its records in order.
     /// </summary>
     public OpinionStandIn Chat(string id, string state, string tree, string? from = null, int minute = 0, string adapter = "claude-code-acp")
@@ -161,7 +161,7 @@ internal sealed class OpinionStandIn : HttpMessageHandler
         lock (_gate) Find(id)![field] = value;
     }
 
-    /// <summary>A record's note as it now reads (HELPERWAIT1).</summary>
+    /// <summary>A record's note as it reads.</summary>
     public string? Note(string id)
     {
         lock (_gate) return Find(id)!["note"]?.GetValue<string>();
@@ -187,7 +187,7 @@ internal sealed class OpinionStandIn : HttpMessageHandler
         }
     }
 
-    /// <summary>A keyed open's move of a record's waiting words to the part that continues it (FOUNDATION1d-ii part 3), its keys kept.</summary>
+    /// <summary>A keyed open's move of a record's waiting words to the part that continues it, its keys kept.</summary>
     public void MoveWords(string from, string to)
     {
         lock (_gate)
@@ -279,7 +279,7 @@ internal sealed class OpinionStandIn : HttpMessageHandler
                 case ("GET", "/api/registry"):
                     return Answer(HttpStatusCode.OK, new JsonArray([.. _registry.Select(repository => repository.DeepClone())]));
 
-                // COMMS1b: the marks of a host with the one door for solicited answers; a host before it answers none, its route not found.
+                // The marks of a host with the one door for solicited answers; a host without it answers none, its route not found.
                 case ("GET", "/api/protocol") when Answers:
                     return Answer(HttpStatusCode.OK, new JsonObject { ["run"] = "opinions-stand-in", ["marks"] = new JsonObject { ["answers"] = 1 } });
 
@@ -288,18 +288,18 @@ internal sealed class OpinionStandIn : HttpMessageHandler
                                          || path.StartsWith("/api/opinions/", StringComparison.Ordinal)):
                     return OneDoor(path, body);
 
-                // HELPERWAIT1c: an ask's read the service does not answer, or refuses; with neither, the stand-in holds no ask.
+                // An ask's read the service does not answer, or refuses; with neither, the stand-in holds no ask.
                 case ("GET", _) when AskFailure is not null && path.StartsWith("/api/asks/", StringComparison.Ordinal):
                     if (AskFailure == "unreachable") throw new HttpRequestException("the service did not answer");
                     return Refuse(HttpStatusCode.InternalServerError, "the asks could not be read");
 
-                // HELPERWAIT1: the ledger's moves as far as a helper's asker reaches them: a live record moves as the ledger lets it, and a
+                // The ledger's moves as far as a helper's asker reaches them: a live record moves as the ledger lets it, and a
                 // finished one only where it ended waiting on its own helper, back to the person; the note and its parts kept.
                 case ("POST", _) when path.StartsWith("/api/sessions/", StringComparison.Ordinal) && path.EndsWith("/state", StringComparison.Ordinal):
                 {
                     var id = Uri.UnescapeDataString(path["/api/sessions/".Length..^"/state".Length]);
                     MovesAsked++;
-                    // HELPERWAIT1 (Codex's round-2 #5): a door that cannot be reached, or one that refuses the move.
+                    // A door that cannot be reached, or one that refuses the move.
                     if (StateFailure == "unreachable") throw new HttpRequestException("the service did not answer");
                     if (StateFailure == "refused") return Refuse(HttpStatusCode.Conflict, "this service does not make that move");
                     var record = Find(id);
@@ -341,7 +341,7 @@ internal sealed class OpinionStandIn : HttpMessageHandler
                     if (opinion["pass"]!.GetValue<string>() == "recheck") return Refuse(HttpStatusCode.Conflict, "a recheck's findings go to the person");
                     if (opinion["given"] is not JsonObject given) return Refuse(HttpStatusCode.Conflict, "it has said nothing yet");
                     if (given["findings"]!.AsArray().Count == 0) return Refuse(HttpStatusCode.Conflict, "it raised nothing");
-                    // CHATFLOW1e: a chat run's record of the line the driver names, live between turns or ended; handed again once, after a hand-over.
+                    // A chat run's record of the line the driver names, live between turns or ended; handed again once, after a hand-over.
                     var to = string.IsNullOrWhiteSpace(body) ? null : JsonNode.Parse(body)?["to"]?.GetValue<string>();
                     HandsTo.Add(to);
                     if (opinion["handed"] is JsonObject earlier)
@@ -379,7 +379,7 @@ internal sealed class OpinionStandIn : HttpMessageHandler
                     });
                 }
 
-                // MIXAGENT2a-ii: a helper's answer, handed to the session its record serves as a word marked `helper`, once, and refused
+                // A helper's answer, handed to the session its record serves as a word marked `helper`, once, and refused
                 // as the desk refuses it where the asker is gone, stood down, parked or running.
                 case ("POST", _) when path.StartsWith("/api/helpers/", StringComparison.Ordinal) && path.EndsWith("/hand", StringComparison.Ordinal):
                 {
@@ -397,10 +397,10 @@ internal sealed class OpinionStandIn : HttpMessageHandler
                     var state = asker?["state"]!.GetValue<string>();
                     if (asker is null) return Refuse(HttpStatusCode.Conflict, "there is no such session to hand the answer to");
                     if (state == "stood-down") return Refuse(HttpStatusCode.Conflict, "it stood down");
-                    // HELPERWAIT1: a park the person answered takes it beside their answer, as the desk lets it.
+                    // A park the person answered takes it beside their answer, as the desk lets it.
                     if (state == "awaiting-person" && asker["answer"] is null) return Refuse(HttpStatusCode.Conflict, "it waits on the person's answer");
-                    // An open conversation between turns (MIXAGENT2a-iii) takes it, as the desk lets it; and a driven asker working, where
-                    // the driver that runs it asks with `running` (COWORK1d), its answer kept with its level.
+                    // An open conversation between turns takes it, as the desk lets it; and a driven asker working, where
+                    // the driver that runs it asks with `running`, its answer kept with its level.
                     var asked = JsonNode.Parse(body!)!;
                     var open = state == "working" && (asker["kind"]?.GetValue<string>() == "chat" || asked["running"]?.GetValue<bool>() == true);
                     if (Running.Contains(state!) && !open) return Refuse(HttpStatusCode.Conflict, "a helper's answer reaches a running session at its turn's end");
@@ -424,7 +424,7 @@ internal sealed class OpinionStandIn : HttpMessageHandler
                     return Answer(HttpStatusCode.OK, new JsonObject { ["message"] = "Handed.", ["session"] = asker.DeepClone(), ["said"] = word.DeepClone() });
                 }
 
-                // COAGENT1b: a piece's answer, kept under the piece's key on its lead (the stand-in knows no successor), once per key,
+                // A piece's answer, kept under the piece's key on its lead (the stand-in knows no successor), once per key,
                 // and refused as the desk refuses it where the lead is gone, stood down, parked or running.
                 case ("POST", _) when path.StartsWith("/api/partners/", StringComparison.Ordinal) && path.EndsWith("/hand", StringComparison.Ordinal):
                 {
@@ -470,7 +470,7 @@ internal sealed class OpinionStandIn : HttpMessageHandler
     }
 
     /// <summary>
-    /// The one door (COMMS1b), as the service's <c>SolicitedAnswers.KeepAsync</c> takes a hand inside the caller's step: a settled key answered
+    /// The one door, as the service's <c>SolicitedAnswers.KeepAsync</c> takes a hand inside the caller's step: a settled key answered
     /// first, then the named record's line walked to its head, a word waiting there answered <c>waiting</c>, the head's table, and the keep.
     /// </summary>
     private HttpResponseMessage OneDoor(string path, string? body)

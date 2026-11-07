@@ -3,7 +3,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// FOUNDATION1 mod-xvi, the Review cuts: what they keep. Each assertion uses only surface present on both sides of the cuts, so the class
+/// The Review cuts: what they keep. Each assertion uses only surface present on both sides of the cuts, so the class
 /// passes on the move commit as well as after: the chat run's spelling the review's gate reads, the run a chain's work is, the look a named
 /// version says, the checks and the long-call bound a run takes, and the words the landing gate keeps of the run's part and the graph's.
 /// </summary>

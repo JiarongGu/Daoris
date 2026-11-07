@@ -4,7 +4,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// SETUPUX1b (D221): the graph a route actually follows, read by <see cref="WorkflowEffectives"/>. Its identity is
+/// The graph a route actually follows, read by <see cref="WorkflowEffectives"/>. Its identity is
 /// <see cref="WorkflowSelection.Resolve"/>'s, Current's graph is the one <c>workflow new --from current:&lt;repository&gt;</c> writes
 /// (and a workspace's the same handler over the workspace's own rules), each node carries the cell a run answers, and the read writes nothing.
 /// </summary>
@@ -145,7 +145,7 @@ public sealed class WorkflowEffectiveTests : IDisposable
     }
 
     /// <summary>The read writes nothing: the driver's file and the workflows under the home are byte for byte as they were.</summary>
-    /// <summary>REVIEW2: the chart follows the newest version as the run's bind does; a newest that does not read is drawn as its problem, not as an older one.</summary>
+    /// <summary>The chart follows the newest version as the run's bind does; a newest that does not read is drawn as its problem, not as an older one.</summary>
     [Fact]
     public void A_newest_version_that_does_not_read_is_the_problem_drawn_and_no_older_version_is()
     {
@@ -171,7 +171,7 @@ public sealed class WorkflowEffectiveTests : IDisposable
         Store.Write(id, planned.Plan.Result!);
     }
 
-    /// <summary>WORKFLOWCLEAN1h: a copy stamped with an older shipped digest is offered the shipped graph, with the gates the copy has.</summary>
+    /// <summary>A copy stamped with an older shipped digest is offered the shipped graph, with the gates the copy has.</summary>
     [Fact]
     public void A_copy_of_a_default_Daoris_ships_changed_since_offers_the_shipped_graph_with_its_gates()
     {
@@ -188,7 +188,7 @@ public sealed class WorkflowEffectiveTests : IDisposable
         Assert.Null(Read(Choosing("uptodate"), "default").Newer);
     }
 
-    /// <summary>WORKFLOWCLEAN1h: the update is saved as the copy's next version and keeps where it came from, so it is the shipped digest the copy follows after.</summary>
+    /// <summary>The update is saved as the copy's next version and keeps where it came from, so it is the shipped digest the copy follows after.</summary>
     [Fact]
     public async Task Saving_the_update_stamps_the_next_version_with_the_shipped_digest()
     {

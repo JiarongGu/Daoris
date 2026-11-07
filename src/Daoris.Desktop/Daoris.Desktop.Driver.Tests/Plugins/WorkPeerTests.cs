@@ -6,7 +6,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// The work wire on one plugin's process (FABRIC-PERFORM1a; the fabric events design §C4, §D6): the reader takes exactly one notification,
+/// The work wire on one plugin's process: the reader takes exactly one notification,
 /// <c>work/step</c>, and only from a process that declared it and that the lease's loop listens to; a frame over 64 KB is dropped unread;
 /// the handshake keeps the work points and the capability; and <c>work/perform</c> is acknowledged by its invocation, four in flight at most.
 /// </summary>
@@ -96,7 +96,7 @@ public sealed class WorkPeerTests
         Stand stand, IReadOnlyList<string>? declared = null, Action<string>? onLine = null, TimeSpan? patience = null)
     {
         // No case here times a call against the peer's ten-second default, so a handshake a loaded machine answers late waits on
-        // Poll.Patience, a bound that elapses only on failure (FLAKE1, 2026-10-29).
+        // Poll.Patience, a bound that elapses only on failure.
         var peer = new HookPeer(stand.Incoming, stand.Outgoing, "acme.deploy", onLine, patience ?? Poll.Patience, frameLimit: WorkBounds.FrameBytes);
         await peer.InitializeAsync("h", "d", declared ?? Declared, CancellationToken.None);
         return peer;
@@ -107,7 +107,7 @@ public sealed class WorkPeerTests
 
     private static string? IdOf(JsonElement? @params) => @params is { } read && read.TryGetProperty("id", out var id) ? id.GetString() : null;
 
-    /// <summary>Answers every watch with nothing: a call whose answer comes after a pushed frame shows that frame was read.</summary>
+    /// <summary>Answers every watch with nothing: a call whose answer comes after a pushed frame shows that frame has been read.</summary>
     private static string? Answering(JsonElement frame, string points) =>
         Handshake(frame, points) ?? (Method(frame) == WorkWire.WatchMethod ? Ok(frame, "{}") : null);
 
@@ -190,7 +190,7 @@ public sealed class WorkPeerTests
         lock (lines) Assert.Contains(lines, line => line.Contains("64 KB", StringComparison.Ordinal) && line.Contains("dropped unread", StringComparison.Ordinal));
     }
 
-    /// <summary>FABRIC-PERFORM1a, round 2: a plugin that ends its lines with a bare CR is answered, as it was before the bound.</summary>
+    /// <summary>A plugin that ends its lines with a bare CR is answered despite the bound.</summary>
     [Fact]
     public async Task An_answer_ended_by_a_bare_CR_is_read()
     {
@@ -203,8 +203,8 @@ public sealed class WorkPeerTests
     }
 
     /// <summary>
-    /// FABRIC-PERFORM1a, round 2: an answer too long to read fails its call at once, as the plugin's unreadable answer, wherever its id stands
-    /// in the frame — never left to wait out its patience as a late one — and the wire goes on. TESTCLOCK2: the calls have no patience to
+    /// An answer too long to read fails its call at once, as the plugin's unreadable answer, wherever its id stands
+    /// in the frame — never left to wait out its patience as a late one — and the wire goes on. The calls have no patience to
     /// wait out, so a call left waiting as a late one never ends, where the machine's clock timed one against ten seconds.
     /// </summary>
     [Fact]
@@ -235,8 +235,8 @@ public sealed class WorkPeerTests
     }
 
     /// <summary>
-    /// FABRIC-PERFORM1a, round 2: telling a plugin to go is bounded by its grace. A plugin that stopped reading its stdin held the write of
-    /// <c>shutdown</c>, and with it the disposal of its process, for ever. TESTCLOCK2: the grace is read on a clock the test moves, so
+    /// Telling a plugin to go is bounded by its grace. A plugin that stops reading its stdin would hold the write of
+    /// <c>shutdown</c>, and with it the disposal of its process, for ever. The grace is read on a clock the test moves, so
     /// the telling waits until its grace and ends at it, where the machine's clock timed it against five seconds.
     /// </summary>
     [Fact]
@@ -300,7 +300,7 @@ public sealed class WorkPeerTests
     }
 
     /// <summary>
-    /// WORKPEERWAIT1: the fifth call goes when a place frees, and what it waits on is the peer's own loop sending it once an answer has been
+    /// The fifth call goes when a place frees, and what it waits on is the peer's own loop sending it once an answer has been
     /// read — a signal, not a span of the machine's clock. The peer is handed no patience to wait out for a place (a place is waited for
     /// without end, as the too-long answers' calls are), where its ten seconds, counted from the call's start, ended the fifth call
     /// as late under load before the answer's turn came; and the test's own waits read <see cref="Poll.Patience"/>, never a fixed 400 × 25 ms.

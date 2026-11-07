@@ -3,7 +3,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// LINESTOGETHER1d (the review-flow design §4): the operation bringing sessions together, its phases each a compare of the phase it
+/// The operation bringing sessions together, its phases each a compare of the phase it
 /// expects, and a restart's settlement of a landing attempt, only a proved unmade attempt going back to <i>ready to accept</i>.
 /// </summary>
 public sealed class TogetherOperationsTests : IDisposable

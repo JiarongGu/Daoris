@@ -6,7 +6,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// The port keeps today's text (ONEWAY1u, D194 point 6): each case of <c>daoris remote</c> and <c>daoris browser</c>, as the CLI's
+/// The port keeps today's text: each case of <c>daoris remote</c> and <c>daoris browser</c>, as the CLI's
 /// TypeScript verbs said it before they retire (<c>fixtures/driver-files-text.json</c>), said again by the library's operations and
 /// words on a home of their own: the same lines on each stream, the same exit, and the files after the same. A row of the
 /// <c>command</c> door is the verb's own grammar, which the command tree's table reads when the verb retires.

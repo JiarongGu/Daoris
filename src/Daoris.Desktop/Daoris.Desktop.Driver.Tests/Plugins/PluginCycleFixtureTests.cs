@@ -3,7 +3,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// FABRIC-PERFORM1e: the fixture `plugins try --cycle` reads. Each field is optional and its default stands where it is absent; a field
+/// The fixture `plugins try --cycle` reads. Each field is optional and its default stands where it is absent; a field
 /// of the wrong shape is refused naming it, before anything starts.
 /// </summary>
 public sealed class PluginCycleFixtureTests : IDisposable

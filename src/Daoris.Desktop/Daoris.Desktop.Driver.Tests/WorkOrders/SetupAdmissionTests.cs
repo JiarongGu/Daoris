@@ -3,10 +3,10 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// AGENTSPLACE1b (the Agents-place design §4): a set-up pressed where its repository is not driven is admitted alone, by its
+/// A set-up pressed where its repository is not driven is admitted alone, by its
 /// quest's id in <c>driver.json</c>'s <c>admitted</c>. Its session starts and runs while every other quest of that repository,
 /// queued or newly arriving, stays held as not driven, through a restart; the admission ends with the quest; and driving chosen
-/// releases everything as before.
+/// releases everything.
 /// </summary>
 public sealed class SetupAdmissionTests
 {

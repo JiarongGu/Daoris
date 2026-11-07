@@ -3,7 +3,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// The world a workspace plan reads, in memory (WSSETUP6): the registry with its declarations, each line, the tools, the
+/// The world a workspace plan reads, in memory: the registry with its declarations, each line, the tools, the
 /// quests (a publish adds one, open, as the service does), the strikes, the session records and their tool calls, and the
 /// plan's lines. So the plan, its tick and its terminal's words are held with no service, git or spawn.
 /// </summary>
@@ -44,7 +44,7 @@ internal sealed class WorkspaceSetupStandIn : IWorkspaceSetupWorld
     /// <summary>What reading the registry throws, as a service that went away does; null answers.</summary>
     public Exception? Fails { get; set; }
 
-    /// <summary>Each repository whose line was read, in order: a press reads one, a skip is never read again.</summary>
+    /// <summary>Each repository whose line got read, in order: a press reads one, a skip is never read again.</summary>
     public List<string> LinesRead { get; } = [];
 
     /// <summary>A repository with a checkout here, in <paramref name="workspace"/>, declaring nothing.</summary>
@@ -73,7 +73,7 @@ internal sealed class WorkspaceSetupStandIn : IWorkspaceSetupWorld
         Quests[at] = Quests[at] with { Status = status, Note = note, Deletable = false };
     }
 
-    /// <summary>The service's delete (D95): the quest is gone.</summary>
+    /// <summary>The service's delete: the quest is gone.</summary>
     public void Delete(string id) => Quests.RemoveAll(quest => quest.Id == id);
 
     /// <summary>Its line merged and followed: the row adopted and declaring, which the service calls registered.</summary>
@@ -120,7 +120,7 @@ internal sealed class WorkspaceSetupStandIn : IWorkspaceSetupWorld
 
     /// <summary>
     /// Its line set up, as <see cref="SetUp"/> leaves the row: the agents layout finished, declaring, naming the index given or
-    /// none, and built with Node (ORIENT2c).
+    /// none, and built with Node.
     /// </summary>
     public void SetUpLine(string repository, string? index = null)
     {

@@ -3,8 +3,8 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// INTEGRATE1e part e1 (D215's note; the integration design §17.4, F40 and C30): the landing record keeps its acceptance's provenance,
-/// that <c>integrate</c> stood, its <c>request</c> there and whether it was the rule's or the bound version's step, on the landing and on
+/// The landing record keeps its acceptance's provenance,
+/// that <c>integrate</c> stood, its <c>request</c> there and whether it is the rule's or the bound version's step, on the landing and on
 /// each advance beside its own <c>acceptedBy</c>. A record written without it, by an older build or before the field, says neither, and a
 /// shape the reader does not know is read as neither too, so a rewrite can only under-admit. Files only; the landing's own write over real
 /// git is <c>IntegrationRequestsGitTests</c>'.
@@ -124,7 +124,7 @@ public sealed class LandedIntegrateTests : IDisposable
     }
 
     /// <summary>
-    /// A named version's own <c>integrate</c> step writes <c>source: version</c> (INTEGRATE1n part n2, D215 e1's note), its <c>request</c> the
+    /// A named version's own <c>integrate</c> step writes <c>source: version</c>, its <c>request</c> the
     /// node's option; the rule's is never the unit's process there, and a rule's source is written only under Current.
     /// </summary>
     [Fact]

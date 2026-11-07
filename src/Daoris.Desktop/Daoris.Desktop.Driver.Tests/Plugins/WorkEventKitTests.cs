@@ -4,7 +4,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// The kit's entry for <c>work/event</c> (EVENTHOOK1b; the event hook design §5.4, §9): the last point, an observation whose sample is the
+/// The kit's entry for <c>work/event</c>: the last point, an observation whose sample is the
 /// driver's own frame under the sample run, and a scaffold that gives a plugin on it a handler.
 /// </summary>
 public sealed class WorkEventKitTests : IDisposable

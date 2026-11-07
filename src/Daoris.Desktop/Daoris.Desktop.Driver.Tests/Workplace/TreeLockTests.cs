@@ -3,9 +3,9 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// WSR6's open window, closed (LEFT2): a repository's trees are held while a session starts in one, beside any other
+/// A repository's trees are held while a session starts in one, beside any other
 /// start, and while bringing its branches up to date replays them, alone; and its checkout while Daoris writes it, alone
-/// (GITLOCK1), one lock per checkout whatever it is registered as. Files only, so it is the fast half's.
+/// one lock per checkout whatever it is registered as. Files only, so it is the fast half's.
 /// </summary>
 public sealed class TreeLockTests : IDisposable
 {
@@ -88,7 +88,7 @@ public sealed class TreeLockTests : IDisposable
     }
 
     /// <summary>
-    /// GITLOCK1: a writer of the checkout holds the repository alone, as a replay does, in one lock with it: refused while a start, a
+    /// A writer of the checkout holds the repository alone, as a replay does, in one lock with it: refused while a start, a
     /// replay or another writer holds it, and each of those refused while it does.
     /// </summary>
     [Fact]
@@ -117,7 +117,7 @@ public sealed class TreeLockTests : IDisposable
     }
 
     /// <summary>
-    /// 🔴 GITLOCK1: one lock per checkout, keyed by its common git directory: the same checkout registered twice (another name, another
+    /// 🔴 One lock per checkout, keyed by its common git directory: the same checkout registered twice (another name, another
     /// workspace, its path spelled another way) is one lock, and so is any session tree of it, whose <c>.git</c> file names it.
     /// </summary>
     [Fact]
@@ -157,7 +157,7 @@ public sealed class TreeLockTests : IDisposable
     }
 
     /// <summary>
-    /// 🔴 GITLOCK1: what holds the checkout alone says so beside the lock, so whoever it refuses names it; let go, it says nothing, and words
+    /// 🔴 What holds the checkout alone says so beside the lock, so whoever it refuses names it; let go, it says nothing, and words
     /// a process left that is not the one running under its id now are nothing too. A start says nothing: a writer it refuses names one.
     /// </summary>
     [Fact]
@@ -189,7 +189,7 @@ public sealed class TreeLockTests : IDisposable
         Assert.Equal(["held.replaying"], NoteAssert.Codes(HeldWords.Holding("engine", TreeLock.Updating).Line.Parts));
     }
 
-    /// <summary>🔴 GITLOCK2: what a tidy says of a repository it left names the writer that held it, and a start (no holder) as before.</summary>
+    /// <summary>🔴 What a tidy says of a repository it left names the writer that held it, and a start (no holder) names no writer.</summary>
     [Fact]
     public void A_tidy_left_by_a_held_repository_names_the_writer_that_held_it()
     {
@@ -200,7 +200,7 @@ public sealed class TreeLockTests : IDisposable
         Assert.Equal("a session was starting in one of `engine`'s trees" + left, TreeLock.Starting("engine", null));
     }
 
-    /// <summary>🔴 GITLOCK2: the old key's lock files, one per workspace and repository, are removed once, and one a live process holds is kept.</summary>
+    /// <summary>🔴 The old key's lock files, one per workspace and repository, are removed once, and one a live process holds is kept.</summary>
     [Fact]
     public void The_old_keys_lock_files_are_removed_once_and_one_held_is_kept()
     {
@@ -218,7 +218,7 @@ public sealed class TreeLockTests : IDisposable
     }
 
     /// <summary>
-    /// 🔴 GITLOCK1's order: a flow holding a checkout alone is seen making each wait on another lock, and a flow holding it shared or not at
+    /// 🔴 The lock order: a flow holding a checkout alone is seen making each wait on another lock, and a flow holding it shared or not at
     /// all is not; a record's lock is one such wait, a tree's landing hold another, which no writer may make under it.
     /// </summary>
     [Fact]

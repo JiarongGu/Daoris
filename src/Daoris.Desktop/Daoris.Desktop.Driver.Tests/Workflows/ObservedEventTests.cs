@@ -3,7 +3,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// FABRIC-PERFORM1i (the fabric events design §C4, §E2, §E10): an observed plugin node reached by its believed event, over a stand-in port and
+/// An observed plugin node reached by its believed event, over a stand-in port and
 /// a stand-in read of the tips. The event is bound to the frame actually sent to its process and to one observed node of its unit's graph,
 /// believed by the five rules with its tip read fresh, accepted on the node's binding and written before its wire fires; a replay mints
 /// nothing, an older or conflicting word is late, and the person's stop or skip stands. A graph run's observed node is
@@ -118,8 +118,8 @@ public sealed class ObservedEventTests : ObservedEventFixture
         Assert.Equal((Plugin, "deployed", C1, "e1", WorkStates.Reached, "deployed"), (kept.Plugin, kept.Step, kept.Commit, kept.Id, kept.State, kept.Node));
         Assert.Contains(pass.Performed, done => (done.Node, done.What, done.Code) == ("deployed", PerformedWhat.Applied, WorkStates.Reached));
 
-        // Its wire fired once the acceptance was written: the notify sent on the same revision, and the tips read once a pass (FABRIC-PERFORM1m:
-        // the first pass's to bind the node, the second's for the event's belief and the binding alike).
+        // Its wire fires once the acceptance is written: the notify sent on the same revision, and the tips read once a pass
+        // (the first pass's to bind the node, the second's for the event's belief and the binding alike).
         Assert.Equal(C1, Assert.Single(_port.Sent).SubjectRevision);
         Assert.Equal([("checkout", 1), ("checkout", 1)], _tipReads);
         Assert.Empty(_port.Refusals);
@@ -134,7 +134,7 @@ public sealed class ObservedEventTests : ObservedEventFixture
         _port.Fails = units => units.Any(unit => unit.Branch == "feature/b");
         await PassAsync(runtime);
 
-        // Desired and begun, but the process was never told of it: the frame it was last sent names the first unit alone.
+        // Desired and begun, but the process has not been told of it: the frame it last received names the first unit alone.
         Assert.Equal(NodeStates.Active, Record(B).Statuses["deployed"].State);
         Assert.Equal(2, _port.Told[^1][Plugin].Count);
         Assert.Equal(["feature/a"], _port.SentTo(Plugin, 1)!.Units.Select(unit => unit.Branch));
@@ -156,7 +156,7 @@ public sealed class ObservedEventTests : ObservedEventFixture
         await PassAsync(runtime);
         var before = NodeRecordFiles.ToJson(Record());
 
-        // A real repository, a real branch at its tip and the authorised plugin's current process: still no unit that process was told of.
+        // A real repository, a real branch at its tip and the authorised plugin's current process: still no unit that process has been told of.
         _tips["feature/z"] = C1;
         _port.Heard.Enqueue(Event(WorkStates.Reached, "e1", _now, branch: "feature/z"));
         await PassAsync(runtime, whole: false);
@@ -174,8 +174,8 @@ public sealed class ObservedEventTests : ObservedEventFixture
         await PassAsync(runtime);
         Assert.Equal(C1, Assert.Single(_port.SentTo(Plugin, 1)!.Units).Tip);
 
-        // The branch moved after the frame was told and before the event was heard; the wake judges with the unit cached at C1. (The new tip's
-        // event heard in that pass is taken once the node rebinds, FABRIC-PERFORM1o's test below.)
+        // The branch moves after the frame is told and before the event is heard; the wake judges with the unit cached at C1. (The new tip's
+        // event heard in that pass is taken once the node rebinds, as the test below shows.)
         _tips["feature/a"] = C2;
         _port.Heard.Enqueue(Event(WorkStates.Reached, "e1", _now));
         await PassAsync(runtime, whole: false);
@@ -198,9 +198,9 @@ public sealed class ObservedEventTests : ObservedEventFixture
         await PassAsync(runtime);
         Assert.Equal(C1, Record().Statuses["deployed"].Binding!.SubjectRevision);
 
-        // FABRIC-PERFORM1m: the branch moved and the unit's revision, the end fact's, still lags at C1. The next pass, a wake, reads the tip and
-        // rebinds the node to it: the old binding lapses under RUN1's rules, and the person is told nothing, no work is sent, nothing kept.
-        // FABRIC-PERFORM1p: the plugins are told the tip the node rebound to.
+        // The branch moves and the unit's revision, the end fact's, still lags at C1. The next pass, a wake, reads the tip and
+        // rebinds the node to it: the old binding lapses, and the person is told nothing, no work is sent, nothing kept.
+        // The plugins are told the tip the node rebound to.
         _tips["feature/a"] = C2;
         var rebound = await PassAsync(runtime, whole: false);
         var deployed = Record().Statuses["deployed"];
@@ -220,7 +220,7 @@ public sealed class ObservedEventTests : ObservedEventFixture
         Assert.Equal(C2, Assert.Single(reached.Observations).Commit);
         Assert.Empty(_port.Refusals);
 
-        // FABRIC-PERFORM1p: the performed node its wire starts is bound to the same tip, not the unit's lagging revision.
+        // The performed node its wire starts is bound to the same tip, not the unit's lagging revision.
         Assert.Equal(C2, Assert.Single(_port.Sent).SubjectRevision);
 
         // A later look reaches nothing again: the observed node keeps its acceptance and its event, its wire fires no more.
@@ -241,7 +241,7 @@ public sealed class ObservedEventTests : ObservedEventFixture
         _tips["feature/a"] = C2;
         await PassAsync(runtime, whole: false);
 
-        // FABRIC-PERFORM1p: the end fact lags at C1 while the deploy is reached on the branch's tip, C2. Its wire starts the notify on C2, and
+        // The end fact lags at C1 while the deploy is reached on the branch's tip, C2. Its wire starts the notify on C2, and
         // the plugins are told C2 as the unit's tip.
         _port.Heard.Enqueue(Event(WorkStates.Reached, "e1", _now, commit: C2));
         await PassAsync(runtime, whole: false);
@@ -278,7 +278,7 @@ public sealed class ObservedEventTests : ObservedEventFixture
         var call = Assert.Single(_port.Sent);
         Assert.Equal(C1, call.SubjectRevision);
 
-        // FABRIC-PERFORM1p: the branch then unread, at a look and at the completion's wake. The plugins are still told the tip they were told,
+        // The branch then unread, at a look and at the completion's wake. The plugins are still told the tip they had,
         // and the completion is judged on it: taken, never lapsed against the unit's lagging C0.
         _tips.Remove("feature/a");
         await PassAsync(runtime);
@@ -318,7 +318,7 @@ public sealed class ObservedEventTests : ObservedEventFixture
         await PassAsync(runtime);
         Assert.Equal(C1, Record().Statuses["deployed"].Binding!.SubjectRevision);
 
-        // FABRIC-PERFORM1o: the branch moved, and the plugin's event at the new tip came before Daoris rebound the node, so the hearing finds
+        // The branch moves, and the plugin's event at the new tip comes before Daoris rebinds the node, so the hearing finds
         // the node still awaiting C1. The old tip's event is stale; the new tip's is heard again once the evaluation has rebound the node to
         // C2, and taken there with its wire fired in the same pass, the plugin sending nothing again. Its copy in that pass is a replay.
         _tips["feature/a"] = C2;
@@ -335,7 +335,7 @@ public sealed class ObservedEventTests : ObservedEventFixture
             [(PerformedWhat.NotTaken, WorkRefusals.Stale), (PerformedWhat.Begun, null), (PerformedWhat.Applied, WorkStates.Reached), (PerformedWhat.Replay, null)],
             pass.Performed.Where(done => done.Node == "deployed").Select(done => (done.What, done.Code)));
         Assert.Equal((Plugin, WorkRefusals.Stale), Assert.Single(_port.Refusals));
-        Assert.Equal(C2, Assert.Single(_port.Sent).SubjectRevision); // FABRIC-PERFORM1p: the notify on the tip the deploy was reached on.
+        Assert.Equal(C2, Assert.Single(_port.Sent).SubjectRevision); // The notify on the tip the deploy reached.
         Assert.Equal([RunUnit(A)], pass.Evaluated);
 
         // One read of the checkout a pass: the hearing's, the rebinding's and the second hearing's alike.
@@ -353,8 +353,8 @@ public sealed class ObservedEventTests : ObservedEventFixture
     [Fact]
     public async Task An_event_held_past_the_units_one_pass_evaluates_is_taken_in_its_pass_and_the_rotation_still_reaches_every_unit()
     {
-        // FABRIC-PERFORM1q: two units more than a pass's turn. The second look's turn ends on A, so the rotation of the pass that rebinds
-        // begins after it; A's event was held for lagging its node, so A is judged first in that turn all the same, rebound, and its event
+        // Two units more than a pass's turn. The second look's turn ends on A, so the rotation of the pass that rebinds
+        // begins after it; A's event is held for lagging its node, so A is judged first in that turn all the same, rebound, and its event
         // taken in the pass that heard it. The rotation fills the rest of the turn and reaches the two it left at the next pass.
         (string Unit, string Branch)[] many =
         [
@@ -402,7 +402,7 @@ public sealed class ObservedEventTests : ObservedEventFixture
         var runtime = Runtime();
         await PassAsync(runtime);
 
-        // FABRIC-PERFORM1m: B's tip was not read, so its node is left ready, bound to nothing on a guess, and never published.
+        // B's tip is not read, so its node is left ready, bound to nothing on a guess, and never published.
         Assert.Equal(NodeStates.Active, Record().Statuses["deployed"].State);
         Assert.Equal(NodeStates.Ready, Record(B).Statuses["deployed"].State);
         Assert.Equal(["feature/a"], _port.SentTo(Plugin, 1)!.Units.Select(unit => unit.Branch));
@@ -453,12 +453,12 @@ public sealed class ObservedEventTests : ObservedEventFixture
         _port.Heard.Enqueue(Event(WorkStates.Reached, "e1", old));
         await PassAsync(runtime);
 
-        // Heard before anything was published: not watched, and nothing kept that would make its replay a duplicate.
+        // Heard before anything is published: not watched, and nothing kept that would make its replay a duplicate.
         Assert.Equal(NodeStates.Active, Record().Statuses["deployed"].State);
         Assert.Equal((Plugin, WorkRefusals.NotWatched), Assert.Single(_port.Refusals));
         Assert.Empty(Record().Observations);
 
-        // The process restarted and was told the set again: the plugin sends what it knows, the same fact at its own time.
+        // The process restarts and is told the set again: the plugin sends what it knows, the same fact at its own time.
         _port.Restart();
         await PassAsync(runtime, whole: false);
         _port.Heard.Enqueue(Event(WorkStates.Reached, "e1", old));
@@ -491,7 +491,7 @@ public sealed class ObservedEventTests : ObservedEventFixture
         Assert.Equal("e1", Assert.Single(reached.Observations).Id);
         Assert.Single(_port.Sent);
 
-        // Replayed across a plugin restart and a loop restart: nothing minted, no trigger fired again, the evidence as it was.
+        // Replayed across a plugin restart and a loop restart: nothing minted, no trigger fired again, the evidence unchanged.
         _port.Restart();
         var again = Runtime();
         await PassAsync(again);
@@ -566,7 +566,7 @@ public sealed class ObservedEventTests : ObservedEventFixture
     [Fact]
     public async Task A_believed_event_the_one_table_refuses_is_a_counted_refusal_and_no_state_changes()
     {
-        // FABRIC-PERFORM1n: the deploy declares its evidence's schema, and the event's reference names another. The table refuses the move,
+        // The deploy declares its evidence's schema, and the event's reference names another. The table refuses the move,
         // so the node stays awaiting, nothing is kept, no wire fires, and the refusal is a plugin.step line of the table's code.
         _units = Runs(Evidenced, (A, "feature/a"));
         var runtime = Runtime();

@@ -4,7 +4,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// The second-opinion rule as <c>driver.json</c> keeps it (FOUNDATION1 mod-iii): the settings' own reading and writing, which the
+/// The second-opinion rule as <c>driver.json</c> keeps it: the settings' own reading and writing, which the
 /// opinion rules answer through, so the key is read and kept alike wherever a rule is named.
 /// </summary>
 public sealed class OpinionKeyTests

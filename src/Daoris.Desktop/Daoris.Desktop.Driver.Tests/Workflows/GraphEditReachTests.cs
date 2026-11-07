@@ -4,7 +4,7 @@ using static Daoris.Desktop.Driver.Tests.WireEvaluationTests;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// FABRIC-RUN1f (the cutover design §9, D190 point 9): a reach kept across a live graph's edit. Each node is scoped, bound, receipted and fired on
+/// A reach kept across a live graph's edit. Each node is scoped, bound, receipted and fired on
 /// by its place (<see cref="NodeGraphs.Places"/>), so an edit elsewhere leaves it current; a record written before names the whole graph's digest
 /// and the run's old name, and is judged by that rule: nothing lapses or fires at the upgrade, and every one lapses at the first edit after.
 /// </summary>
@@ -30,7 +30,7 @@ public sealed class GraphEditReachTests
     private static NodeGraph GraphOf(params NodeDeclaration[] more) =>
         new([.. Nodes, .. more], Wires, ["s", "f", "r", "t", "u", Opinion, .. more.Select(node => node.Id)], "a1");
 
-    /// <summary>The runtime's run on <paramref name="graph"/> since FABRIC-RUN1f: named by the unit alone, each node by its place.</summary>
+    /// <summary>The runtime's run on <paramref name="graph"/>: named by the unit alone, each node by its place.</summary>
     private static WireRun Now(NodeGraph graph, IEnumerable<string> fired) => new(NodeGraphs.Digest(graph), NodeRuns.Of(Unit))
     {
         Places = NodeGraphs.Places(graph),
@@ -40,7 +40,7 @@ public sealed class GraphEditReachTests
     };
 
     /// <summary>
-    /// The records as the build before wrote them, serialized and read back: its run was named by the unit and the graph and knew no places,
+    /// The records of the build before, serialized and read back: its run is named by the unit and the graph and knows no places,
     /// which is a <see cref="WireRun"/> with neither.
     /// </summary>
     private static (NodeRecord Record, Graph Before) Written()
@@ -155,7 +155,7 @@ public sealed class GraphEditReachTests
         Assert.Equal((WireWhy.SkipScope, (string?)null), lapsed["s"]);
         foreach (var id in new[] { "t", "u", Opinion, "a1", "a2", "a3", "a4" }) Assert.Equal((WireWhy.Lapsed, NodeLapse.Graph), lapsed[id]);
 
-        // A failure and a rejection stay for the person (FABRIC-RUN1e), but are no longer receipts: nothing rests on them.
+        // A failure and a rejection stay for the person, but are not receipts: nothing rests on them.
         Assert.Equal((NodeStates.Failed, NodeStates.Rejected), (edited.Statuses["f"].State, edited.Statuses["r"].State));
         Assert.Equal(["w2"], edited.Of("a2")!.Waiting);
         Assert.Equal(["w3"], edited.Of("a3")!.Waiting);

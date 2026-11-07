@@ -4,8 +4,8 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// INTEGRATE1c: the joins a union merge leaves (a note label or an archive heading glued to the line above) and the rule that sets them
-/// apart, the driver's twin of the merge tool's <c>setApart</c> and <c>setApartHeadings</c> (MERGEJOIN1, UNIONGLUE1). Held cell for cell to
+/// The joins a union merge leaves (a note label or an archive heading glued to the line above) and the rule that sets them
+/// apart, the driver's twin of the merge tool's <c>setApart</c> and <c>setApartHeadings</c>. Held cell for cell to
 /// ONE table, <c>fixtures/union-joins.json</c>, which <c>merge-branch.test.ts</c> holds the merge tool to, row for row. The replay that
 /// sets them apart is <c>LandBacklogLandingTests</c>' (Process). Reads text only.
 /// </summary>

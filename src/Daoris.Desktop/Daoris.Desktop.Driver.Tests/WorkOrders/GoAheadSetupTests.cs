@@ -3,14 +3,14 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// AUTONOMY1c (D184 points 2, 3 and 5): go-aheads follow the repository's access setup. Under <c>named</c>, today's, a session asks one
+/// Go-aheads follow the repository's access setup. Under <c>named</c>, a session asks one
 /// before an act outside its repository or on a production system, and before one the repository or the quest names; under
 /// <c>never</c>, and so under full access, it asks none of those. A go-ahead the quest or the person's own words demand is asked in
-/// every setup, since the person wrote it there. On the install a session waited 41 minutes for go-aheads.
+/// every setup, since the person wrote it there.
 /// </summary>
 public sealed class GoAheadSetupTests
 {
-    /// <summary>Today's sentence (AUTONOMY1e), which <c>named</c> keeps word for word.</summary>
+    /// <summary>The sentence which <c>named</c> keeps word for word.</summary>
     private const string Named =
         "a go-ahead for an act outside this repository or on a production system, or for one this repository or the quest says needs it.";
 
@@ -74,7 +74,7 @@ public sealed class GoAheadSetupTests
     }
 
     /// <summary>
-    /// D184 point 5: a go-ahead the ask itself demands is asked whatever the setup. The ask's words reach the session beneath the
+    /// A go-ahead the ask itself demands is asked whatever the setup. The ask's words reach the session beneath the
     /// quest, verbatim, and under <c>never</c> the instruction still sends it to the person for what those words demand, on the ask.
     /// </summary>
     [Fact]

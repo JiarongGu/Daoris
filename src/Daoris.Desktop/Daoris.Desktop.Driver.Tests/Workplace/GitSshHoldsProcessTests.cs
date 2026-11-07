@@ -4,7 +4,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// The git-auth design §14 row 1's proof over SSH (GITAUTH1a): Daoris's fetch of the line against an OpenSSH server on the loopback
+/// The proof over SSH: Daoris's fetch of the line against an OpenSSH server on the loopback
 /// that refuses the key is held once, and no moment after it connects to the server again until <i>Try again</i>; a server whose key
 /// changed is held as <c>host-changed</c>. Counted by the server's own log of each connection.
 /// </summary>

@@ -3,7 +3,7 @@ using static Daoris.Desktop.Driver.Tests.ObservedFixture;
 
 namespace Daoris.Desktop.Driver.Tests;
 
-/// <summary>FABRIC-NODE1 (the fabric events design §E4): what every observing kind shares, the dispatch to the kind's reading and its refusals.</summary>
+/// <summary>What every observing kind shares, the dispatch to the kind's reading and its refusals.</summary>
 public sealed class NodeObservingTests
 {
     /// <summary>An observer reads only its own unit's kind, and only the observed kinds: a pressed, performed or waited node is its row's.</summary>

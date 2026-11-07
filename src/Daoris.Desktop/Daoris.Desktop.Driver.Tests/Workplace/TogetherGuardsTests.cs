@@ -3,7 +3,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// LINESTOGETHER1d (the review-flow design §4, <i>One lock order</i>): a tree bound into an operation refuses every landing door but its
+/// A tree bound into an operation refuses every landing door but its
 /// combined Accept, naming the operation; a discard, serviceless too, a sync press and a tree's update leave it as it stands, named; and
 /// a landing past its guard holds its tree, so a press binding it waits within its bound and binds nothing.
 /// </summary>
@@ -66,7 +66,7 @@ public sealed class TogetherGuardsTests : TreeSyncFixture
         {
             Assert.Null(none);
             Assert.NotNull(taken);
-            // Taken through the member's tree, it is its checkout's one lock (GITLOCK1).
+            // Taken through the member's tree, it is its checkout's one lock.
             Assert.Null(TreeLock.TryReplaying(Home, root, "engine", TreeLock.Updating));
         }
     }

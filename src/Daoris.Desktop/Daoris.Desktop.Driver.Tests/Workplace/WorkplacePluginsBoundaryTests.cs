@@ -4,7 +4,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// FOUNDATION1 mod-x, the Workplace-names-Plugins cut: the behaviour the cut keeps, written against the surface that exists on both
+/// The Workplace-names-Plugins cut: the behaviour the cut keeps, written against the surface that exists on both
 /// sides of it (the landing's and the state ask's refusal sentences for a plugin that is unknown, switched off, unsound or silent at the
 /// point, the plugin wire's land, hand and state ask through the trees' context with a stand-in channel and the machine log's
 /// <c>plugin.*</c> lines, the door words, the plugin id's shape and the landing line's use of it, the patience and the hold it bounds,
@@ -122,7 +122,7 @@ public sealed class WorkplacePluginsBoundaryTests : IDisposable
         Assert.Equal("plugin `acme.ready` is switched off on this machine — `daoris plugin enable acme.ready` switches it on.", plugins.Problem("acme.ready"));
 
         Assert.Equal(0, started);
-        // Refused before it is started, a plugin was never spoken to and nothing was written about it.
+        // Refused before it is started, a plugin is never spoken to and nothing is written about it.
         Assert.Empty(Lines());
     }
 
@@ -171,7 +171,7 @@ public sealed class WorkplacePluginsBoundaryTests : IDisposable
         var made = new SessionTrees(_home);
         var plugins = Assert.IsType<LandingPlugins>(made.Context.Plugins);
         Assert.StartsWith("the landing names plugin `acme.ready`, which is not installed", plugins.Problem("acme.ready"));
-        // It reads the home it was made over, at each call.
+        // It reads the home it is made over, at each call.
         Install("acme.ready");
         Assert.Null(made.Context.Plugins.Problem("acme.ready"));
         Assert.Equal(DateTimeOffset.UtcNow, made.Context.Plugins.Now, TimeSpan.FromMinutes(1));
@@ -262,7 +262,7 @@ public sealed class WorkplacePluginsBoundaryTests : IDisposable
 
     private static string? By(LogLine line) => Text(line, "by");
 
-    /// <summary>A plugin's channel, faked: it answers a state ask as handed, and says it was let go.</summary>
+    /// <summary>A plugin's channel, faked: it answers a state ask as handed, and says it is let go.</summary>
     private sealed class Stand(Func<object, PullRequestState>? state = null, Action? disposed = null) : IHookChannel
     {
         public IReadOnlyList<string> Points => [HookPoints.State];

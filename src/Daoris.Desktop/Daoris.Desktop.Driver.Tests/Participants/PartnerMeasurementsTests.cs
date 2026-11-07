@@ -3,7 +3,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// COAGENT1b (D199 points 4 and 7; the co-agent design §3.1, §3.3, §3.5): admission by a measured row. A partner starts only where a row
+/// Admission by a measured row. A partner starts only where a row
 /// measured its confinement as held in exactly the effective configuration the start would hand; a different version, posture, system or
 /// digest reads not measured; a stand-in's row never admits a production start; and every row of the table rests on an evidence
 /// document that exists in the repository.

@@ -5,7 +5,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// BRAINSTORM1a3 (D176 points 1 and 8), ONEWAY1t: a brainstorm's request, send and stop are written by the service's desk alone, and
+/// A brainstorm's request, send and stop are written by the service's desk alone, and
 /// read by it and by the driver's look. They share no code, so the files are the contract: this reader and the service's
 /// <c>BrainstormDesk</c> are held, row for row, to one table, <c>fixtures/brainstorm-files.json</c>.
 /// </summary>
@@ -104,7 +104,7 @@ public sealed class BrainstormFilesTwinTests : IDisposable
         }
     }
 
-    /// <summary>🔴 The stop and a meeting's request, state and per-round send rows read here as the service's desk reads them (ONEWAY1t).</summary>
+    /// <summary>The stop and a meeting's request, state and per-round send rows read here as the service's desk reads them.</summary>
     [Fact]
     public void The_stop_and_the_meeting_rows_of_the_files_table_read_as_the_service_reads_them()
     {

@@ -2,7 +2,7 @@ using Daoris.Driver;
 
 namespace Daoris.Desktop.Driver.Tests;
 
-/// <summary>REVIEW2: a local remote is answered by its folder's name, never a machine path (the route's no-machine-path rule).</summary>
+/// <summary>A local remote is answered by its folder's name, never a machine path (the route's no-machine-path rule).</summary>
 public sealed class GitRemoteLocalNameTests
 {
     [Theory]

@@ -3,7 +3,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// TREEPLACE1: a tree this home opened is one under either place of <see cref="HomeEntry.Trees"/>. D172 point 6 never moves a
+/// A tree this home opened is one under either place of <see cref="HomeEntry.Trees"/>. Nothing moves a
 /// tree, so after the home's layout moved the trees opened before stay at the old place while new ones open at the new, and
 /// the one predicate every check asks (<c>TreeContext.Holds</c>) takes both. Paths only, nothing on the disk; the git half,
 /// landing, removing and tidying such a tree, is <see cref="TreePlacesGitTests"/>.

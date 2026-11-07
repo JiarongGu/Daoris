@@ -4,7 +4,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// The workflow choices as <c>driver.json</c> keeps them (FOUNDATION1 mod-iii): the settings' own reading and writing, which the
+/// The workflow choices as <c>driver.json</c> keeps them: the settings' own reading and writing, which the
 /// selection answers through, so a key is read and kept alike wherever a choice is named.
 /// </summary>
 public sealed class WorkflowKeyTests

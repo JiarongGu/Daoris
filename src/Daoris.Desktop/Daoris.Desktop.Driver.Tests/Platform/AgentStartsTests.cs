@@ -4,8 +4,8 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// TERMTRUST1a part (i) (D201 point 4; the terminal-trust design §3.3 point 3, §8 case 2): a start made the launcher's in place, this
-/// process's agents' job first and a piece's beneath it; one that cannot be contained made as it was, said why, and holding the process's
+/// A start made the launcher's in place, this
+/// process's agents' job first and a piece's beneath it; one that cannot be contained made uncontained, said why, and holding the process's
 /// open event until it ends; the line it leaves on the machine log. No process is started here: <see cref="AgentStartsProcessTests"/> starts
 /// the built launcher. Each test's jobs are its own, under a process id that is not this one's.
 /// </summary>
@@ -256,7 +256,7 @@ public sealed class AgentStartsTests : IDisposable
             && !line.GetProperty("contained").GetBoolean() && line.GetProperty("why").GetString() == ContainedWhy.NoLauncher);
         Assert.Contains(lines, line => line.GetProperty("kind").GetString() == "piece"
             && line.GetProperty("contained").GetBoolean() && !line.TryGetProperty("why", out _));
-        // Codes only (D156 §5.1): no path, no name of a program.
+        // Codes only: no path, no name of a program.
         Assert.All(lines, line => Assert.DoesNotContain("cmd", line.GetRawText(), StringComparison.OrdinalIgnoreCase));
     }
 

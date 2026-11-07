@@ -4,7 +4,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// INTEGRATE1q (the integration design §17.7): <i>Integrated into the line</i> and <i>A pull request</i> as graph presets beside the four of
+/// <i>Integrated into the line</i> and <i>A pull request</i> as graph presets beside the four of
 /// steps, each saved by <c>daoris workflow new --from</c> as a graph version that reads and binds a run, with the opinion and look
 /// variants read by the graph's own order; <i>with no press</i> refused where the line does not declare its gates and have them accepted.
 /// </summary>
@@ -58,23 +58,23 @@ public sealed class WorkflowGraphPresetsTests : IDisposable
         Assert.DoesNotContain("quest.close", kinds);
         Assert.Equal(variant.Contains("opinion"), kinds.Contains("opinion"));
         Assert.Equal(variant.Contains("look"), kinds.Contains("look"));
-        // LANDNODE1h: the preset holds a `land`, and the tail its method brings.
+        // The preset holds a `land`, and the tail its method brings.
         var land = Assert.Single(version.Graph.Nodes, node => node.Kind == NodeKinds.Land);
         Assert.Equal(preset == "pull-request" ? "\"branch\"" : "\"integrate\"", land.Options["method"]);
         Assert.Equal(preset == "pull-request", kinds.Contains(NodeKinds.Push) && kinds.Any(kind => kind.EndsWith("/pull-request", StringComparison.Ordinal)));
         Assert.Equal(preset != "pull-request", kinds.Contains(NodeKinds.Integrate));
-        // D245's note: the pull request's monitor routes merged to the tidy and closed to a person's task.
+        // The pull request's monitor routes merged to the tidy and closed to a person's task.
         var routes = version.Graph.Wires.Where(wire => wire.Kind == WireKinds.When)
             .Select(wire => (wire.From!.Node, wire.Outcome, version.Graph.Nodes.Single(node => node.Id == wire.To.Node).Kind));
         (string, string?, string)[] shipped = preset == "pull-request" ? [("monitor", "merged", NodeKinds.Tidy), ("monitor", "closed", NodeKinds.Human)] : [];
         Assert.Equal(shipped, routes);
-        // LANDNODE1c2: the person's Accept is a review before the land, and a preset with no press holds none.
+        // The person's Accept is a review before the land, and a preset with no press holds none.
         Assert.Equal(preset != "integrated-no-press", kinds.Contains(NodeKinds.Review));
     }
 
     /// <summary>
-    /// LANDNODE1c2: <i>Merge with no press</i> is a merge land with no review before it, which a version may hold (D145's press is the flow's);
-    /// DEFAULTCONFIG1a: its id is an alias of <i>Merge automatically</i>, which the copy names.
+    /// <i>Merge with no press</i> is a merge land with no review before it, which a version may hold (the press is the flow's);
+    /// its id is an alias of <i>Merge automatically</i>, which the copy names.
     /// </summary>
     [Fact]
     public async Task A_merge_with_no_press_is_a_merge_land_with_no_review()
@@ -89,7 +89,7 @@ public sealed class WorkflowGraphPresetsTests : IDisposable
         Assert.Equal("merge-automatic", version.From?.Default);
     }
 
-    /// <summary>DEFAULTCONFIG1a: the defaults Daoris ships, in their order, each the graph preset of its id.</summary>
+    /// <summary>The defaults Daoris ships, in their order, each the graph preset of its id.</summary>
     [Fact]
     public void The_defaults_are_shipped_data_and_the_graph_presets_read_them()
     {
@@ -100,7 +100,7 @@ public sealed class WorkflowGraphPresetsTests : IDisposable
         Assert.Equal("merge-automatic", WorkflowPresets.GraphOf("merge-no-press")?.Id);
     }
 
-    /// <summary>DEFAULTCONFIG1a: each default is judged by the graph rules, its delivery is what its graph says, and its line is composed from it.</summary>
+    /// <summary>Each default is judged by the graph rules, its delivery is what its graph says, and its line is composed from it.</summary>
     [Theory]
     [InlineData("merge-after-accept", "You accept each piece of work, and it merges into the line.")]
     [InlineData("merge-automatic", "Each piece of work merges into the line once its agent is done.")]
@@ -134,7 +134,7 @@ public sealed class WorkflowGraphPresetsTests : IDisposable
     /// <summary>A declaration's outputs carried on some outcomes alone, each as <c>output=outcome|outcome</c>.</summary>
     private static List<string> Carried(NodeDeclaration node) => [.. node.OutputsOn.Select(each => $"{each.Key}={string.Join('|', each.Value)}")];
 
-    /// <summary>DECIDE1d: which outcomes carry an output is digested where a graph names it, so the release default's digest moves without it.</summary>
+    /// <summary>Which outcomes carry an output is digested where a graph names it, so the release default's digest moves without it.</summary>
     [Fact]
     public void Which_outcomes_carry_an_output_is_digested_where_it_is_named()
     {
@@ -147,7 +147,7 @@ public sealed class WorkflowGraphPresetsTests : IDisposable
         Assert.NotEqual(NodeGraphs.Digest(graph), NodeGraphs.Digest(without));
     }
 
-    /// <summary>DEFAULTCONFIG1c: the release default's plugin nodes declare what local-release's manifest says, outcomes and ports included.</summary>
+    /// <summary>The release default's plugin nodes declare what local-release's manifest says, outcomes and ports included.</summary>
     [Fact]
     public void The_release_default_declares_what_the_local_release_manifest_says()
     {
@@ -170,7 +170,7 @@ public sealed class WorkflowGraphPresetsTests : IDisposable
     }
 
     /// <summary>
-    /// DEFAULTCONFIG1c: a run of the release default after the line: find saying none ends the run there, release and publish not taken;
+    /// A run of the release default after the line: find saying none ends the run there, release and publish not taken;
     /// find saying release takes both.
     /// </summary>
     [Theory]
@@ -200,7 +200,7 @@ public sealed class WorkflowGraphPresetsTests : IDisposable
         }
 
         g.Start(g.Evaluate(), "find");
-        // DECIDE1d: find carries its release on `release` alone, so `none` reaches with no release port.
+        // Find carries its release on `release` alone, so `none` reaches with no release port.
         ReachAs("find", outcome, outcome == "release");
         var decided = g.Evaluate();
         if (outcome == "none")
@@ -216,7 +216,7 @@ public sealed class WorkflowGraphPresetsTests : IDisposable
         Assert.Equal(["publish"], g.Evaluate().Starts.Select(start => start.Node));
     }
 
-    /// <summary>DEFAULTCONFIG1c: where local-release is not installed, its nodes are declared as the graph has them and none is ever sent.</summary>
+    /// <summary>Where local-release is not installed, its nodes are declared as the graph has them and none is ever sent.</summary>
     [Fact]
     public void Without_the_local_release_plugin_none_of_its_nodes_is_sent()
     {
@@ -234,7 +234,7 @@ public sealed class WorkflowGraphPresetsTests : IDisposable
         Assert.Equal(["check", "find", "publish", "release"], with.Dispatchable.Order());
     }
 
-    /// <summary>DEFAULTCONFIG1a: a version copied from a default keeps where it came from in its file, the default's id and its digest.</summary>
+    /// <summary>A version copied from a default keeps where it came from in its file, the default's id and its digest.</summary>
     [Fact]
     public async Task A_version_copied_from_a_default_keeps_the_default_s_id_and_digest()
     {
@@ -248,7 +248,7 @@ public sealed class WorkflowGraphPresetsTests : IDisposable
         Assert.Contains("A copy of the default `documents`", _out.ToString());
     }
 
-    /// <summary>DEFAULTCONFIG1a: <c>defaults</c> lists what Daoris ships, shows one, and writes one's graph to a file that <c>apply</c> reads.</summary>
+    /// <summary><c>defaults</c> lists what Daoris ships, shows one, and writes one's graph to a file that <c>apply</c> reads.</summary>
     [Fact]
     public async Task The_defaults_are_listed_one_is_shown_and_its_graph_written_to_a_file()
     {
@@ -267,7 +267,7 @@ public sealed class WorkflowGraphPresetsTests : IDisposable
         Assert.Contains("`nothing` is no default Daoris ships", _error.ToString());
     }
 
-    /// <summary>WORKFLOWCLEAN1 1a: a copy of a repository's Current is no longer made by hand; the refusal names <c>workflow convert</c>, the one door.</summary>
+    /// <summary>A copy of a repository's Current is not made by hand; the refusal names <c>workflow convert</c>, the one door.</summary>
     [Fact]
     public async Task New_from_a_repository_s_Current_is_retired_and_names_the_conversion()
     {

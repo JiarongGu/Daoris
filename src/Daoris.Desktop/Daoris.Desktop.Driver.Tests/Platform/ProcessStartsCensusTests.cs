@@ -4,18 +4,18 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// Every process the desktop starts passes the start gate (PROCSTART2, UIFREEZE1): .NET starts every process of the
+/// Every process the desktop starts passes the start gate: .NET starts every process of the
 /// application under one lock, and a start made on the window's thread, before its route's first wait, waited on that lock
 /// there. A source scan, as <see cref="EveryChildIsHandedTheToolsTests"/> holds the tools' environment: the next start
 /// written will not know to.
 /// </summary>
 /// <remarks>
 /// <para><b>A direct start</b> is the runtime's <c>Process.Start</c>, called or handed as a method, a <c>Process</c> built
-/// to be started, or the system's <c>CreateProcessW</c>, declared or called (TERMSTART1); comments are read out first. Each
-/// file that may stay is named below, with why; how many starts a listed file makes is not pinned (CENSUSRULES1).</para>
+/// to be started, or the system's <c>CreateProcessW</c>, declared or called; comments are read out first. Each
+/// file that may stay is named below, with why; how many starts a listed file makes is not pinned.</para>
 /// <para><b>The file manager</b> is the window kit's launcher, which starts its own process: each module that opens a folder
 /// calls it through <c>OpenFolders.OpenAsync</c>, which passes the gate's <c>RunAsync</c>.</para>
-/// <para><b>The agents' route</b> (TERMTRUST1a part (i), D201 point 4): every agent, plugin process and piece is started through
+/// <para><b>The agents' route</b>: every agent, plugin process and piece is started through
 /// <see cref="AgentStarts"/>, which makes its start the launcher's and passes the gate; every other start through the gate is named as
 /// Daoris's own, with its reason, so an agent's start written outside the route is named here.</para>
 /// </remarks>
@@ -27,7 +27,7 @@ public sealed class ProcessStartsCensusTests
         "Daoris.Desktop.Driver", "Daoris.Desktop.Driver.Host", "Daoris.Desktop.Modules", "Daoris.Desktop.App", "Daoris.Desktop.Launcher",
     ];
 
-    /// <summary>The files whose direct starts stay, each with its reason; how many a listed file makes is not pinned (CENSUSRULES1).</summary>
+    /// <summary>The files whose direct starts stay, each with its reason; how many a listed file makes is not pinned.</summary>
     private static readonly Dictionary<string, string> Allowed = new(StringComparer.Ordinal)
     {
         ["Daoris.Desktop.Driver/Platform/ProcessStarts.cs"] = "the gate itself: the one place the runtime's start is handed in",
@@ -75,7 +75,7 @@ public sealed class ProcessStartsCensusTests
             + "the window's among them:\n" + string.Join('\n', problems));
     }
 
-    /// <summary>A new file with a direct start fails; one more direct start in a listed file passes (CENSUSRULES1).</summary>
+    /// <summary>A new file with a direct start fails; one more direct start in a listed file passes.</summary>
     [Fact]
     public void A_direct_start_in_a_new_file_fails_the_census_and_one_more_in_a_listed_file_passes()
     {
@@ -115,7 +115,7 @@ public sealed class ProcessStartsCensusTests
     }
 
     /// <summary>
-    /// Whose each start through the shared gate is (PARALLEL1d, D181 point 5), by file: a background start names
+    /// Whose each start through the shared gate is, by file: a background start names
     /// <c>StartClass.Background</c>, so the person's place is never its; a person's names none, and takes any place free.
     /// </summary>
     private static readonly Dictionary<string, StartClass> Whose = new(StringComparer.Ordinal)
@@ -126,15 +126,15 @@ public sealed class ProcessStartsCensusTests
         ["Daoris.Desktop.Driver/Workplace/GitRuns.cs"] = StartClass.Background,
         ["Daoris.Desktop.Driver/Plugins/HookProcess.cs"] = StartClass.Background,
         ["Daoris.Desktop.Driver/Agents/Providers/Codex/CodexUsage.cs"] = StartClass.Background,
-        // npm installing a session's server's package, once, before the session's start (LAUNCHCHAIN1).
+        // npm installing a session's server's package, once, before the session's start.
         ["Daoris.Desktop.Driver/Agents/ServerPackages.cs"] = StartClass.Background,
-        // A git identity's key made, or its host's keys read and its test run, at the person's own verb (GITAUTH1c).
+        // A git identity's key made, or its host's keys read and its test run, at the person's own verb.
         ["Daoris.Desktop.Driver/Workplace/GitIdentityActs.cs"] = StartClass.Person,
-        // The run over today's transports (AGENTPROVIDER1m-i), every executor's start: its first start's class is its executor's, handed in
-        // (the loop's, or a person's for a run going on with the person's words, and a conversation's, ONEWAY1h-iii); its go-on and its retry
-        // are a person's (ONEWAY1h-ii). A press, a terminal, and the host the window waits on.
+        // The run over today's transports, every executor's start: its first start's class is its executor's, handed in
+        // (the loop's, or a person's for a run going on with the person's words, and a conversation's); its go-on and its retry
+        // are a person's. A press, a terminal, and the host the window waits on.
         ["Daoris.Desktop.Driver/Agents/TransportRun.cs"] = StartClass.Person,
-        // The layer's runner (AGENTLYNTAI1 1b-i): its class is its start's, handed in its seat as the run over today's transports hands its.
+        // The layer's runner: its class is its start's, handed in its seat as the run over today's transports hands its.
         ["Daoris.Desktop.Driver/Agents/Layer/LauncherRunner.cs"] = StartClass.Person,
         ["Daoris.Desktop.Driver/Agents/HarnessActions.cs"] = StartClass.Person,
         ["Daoris.Desktop.Driver/Plugins/PluginTrialProcess.cs"] = StartClass.Person,
@@ -154,7 +154,7 @@ public sealed class ProcessStartsCensusTests
         var seen = new HashSet<string>(StringComparer.Ordinal);
         foreach (var (file, source) in Sources())
         {
-            // The agents' route passes the gate as its caller says (TERMTRUST1a): its sites say whose, and the route hands it on.
+            // The agents' route passes the gate as its caller says: its sites say whose, and the route hands it on.
             if (file == AgentRoute || !Regex.IsMatch(source, @"\bProcessStarts\.Shared\.(?:StartAsync|RunAsync)\(|\bAgentStarts\.StartAsync\(")) continue;
             seen.Add(file);
             if (!Whose.TryGetValue(file, out var whose))
@@ -173,20 +173,20 @@ public sealed class ProcessStartsCensusTests
         Assert.All(Whose.Keys, file => Assert.True(seen.Contains(file), $"{file} starts nothing through the gate now: take it off Whose"));
     }
 
-    /// <summary>The agents' route (TERMTRUST1a): it passes the gate itself, with whose its caller said.</summary>
+    /// <summary>The agents' route: it passes the gate itself, with whose its caller said.</summary>
     private const string AgentRoute = "Daoris.Desktop.Driver/Platform/AgentStarts.cs";
 
     /// <summary>
-    /// Every file that starts through the agents' route (TERMTRUST1a part (i), D201 point 4; the terminal-trust design §0.6 and §8 case 2),
-    /// and what it starts. A new file is named here with its kind; how many starts a listed file makes is not pinned (CENSUSRULES1).
+    /// Every file that starts through the agents' route,
+    /// and what it starts. A new file is named here with its kind; how many starts a listed file makes is not pinned.
     /// </summary>
     private static readonly Dictionary<string, string> Routed = new(StringComparer.Ordinal)
     {
-        // The run over today's transports (AGENTPROVIDER1m-i), every executor's start: driven sessions, answers' resumes, intakes, helpers,
-        // reviewers, brainstorm passes, workflow nodes, carry-ons and partners (ONEWAY1h-i), a native run's go-on with the person's words
-        // (MSG1b) and its resume's one retry (SESSCTX1c) since ONEWAY1h-ii, and a conversation, Ask Daoris's among them, since ONEWAY1h-iii.
+        // The run over today's transports, every executor's start: driven sessions, answers' resumes, intakes, helpers,
+        // reviewers, brainstorm passes, workflow nodes, carry-ons and partners, a native run's go-on with the person's words
+        // and its resume's one retry, and a conversation, Ask Daoris's among them.
         ["Daoris.Desktop.Driver/Agents/TransportRun.cs"] = "piece is null ? ContainedKind.Agent : ContainedKind.Piece",
-        // The layer's runner (AGENTLYNTAI1 1b-i, the agent-lyntai design §5.5): a layer door's turn or read, its kind its seat's.
+        // The layer's runner: a layer door's turn or read, its kind its seat's.
         ["Daoris.Desktop.Driver/Agents/Layer/LauncherRunner.cs"] = "seat.Kind",
         // A plugin's hook program, and the kit's trial of it.
         ["Daoris.Desktop.Driver/Plugins/HookProcess.cs"] = "ContainedKind.Plugin",
@@ -218,8 +218,8 @@ public sealed class ProcessStartsCensusTests
     };
 
     /// <summary>
-    /// 🔴 TERMTRUST1a: every agent start is through the launcher's route, and every other start through the gate is named as Daoris's own
-    /// with its reason. A start written outside the route is not contained, and part (ii)'s standing confirmation would read its agent as the
+    /// 🔴 Every agent start is through the launcher's route, and every other start through the gate is named as Daoris's own
+    /// with its reason. A start written outside the route is not contained, and the standing confirmation would read its agent as the
     /// person.
     /// </summary>
     [Fact]
@@ -256,7 +256,7 @@ public sealed class ProcessStartsCensusTests
 
         Assert.Equal(["Daoris.Desktop.Driver/Loop/Planted.cs: 1 start(s) through the gate"], unrouted);
 
-        // One more start in a file already named as Daoris's own passes (CENSUSRULES1).
+        // One more start in a file already named as Daoris's own passes.
         var own = DaorisOwn.Keys.First(file => file != AgentRoute);
         var more = Sources().Append((own, "ProcessStarts.Shared.StartAsync(a, b, c); ProcessStarts.Shared.StartAsync(a, b, c);"));
         Assert.Empty(Census(more).Unrouted);
@@ -282,8 +282,8 @@ public sealed class ProcessStartsCensusTests
         Regex.Matches(source, @"\bProcessStarts\.Shared\.(?:StartAsync|RunAsync)\(|\bstarts\.StartAsync\(").Count;
 
     /// <summary>
-    /// KEEP1b once (ONEWAY1h-i): the downloads an agent's start is handed are kept by its run's spawn (<see cref="TransportRun"/> through the
-    /// driver's port, or the conversation's since ONEWAY1h-iii; a layer run's through its hold, AGENTLYNTAI1d), and no executor keeps them
+    /// The downloads an agent's start is handed are kept by its run's spawn (<see cref="TransportRun"/> through the
+    /// driver's port, or the conversation's; a layer run's through its hold), and no executor keeps them
     /// beside it.
     /// </summary>
     [Fact]
@@ -303,7 +303,7 @@ public sealed class ProcessStartsCensusTests
             keeping);
     }
 
-    /// <summary>The one runner's runs are questions read to their end: the background's (PARALLEL1d).</summary>
+    /// <summary>The one runner's runs are questions read to their end: the background's.</summary>
     [Fact]
     public void The_child_runner_starts_as_the_background()
     {
@@ -313,9 +313,9 @@ public sealed class ProcessStartsCensusTests
     }
 
     /// <summary>
-    /// What each start through the gate is for (D249), by file: the gate hands every start to the one management
+    /// What each start through the gate is for, by file: the gate hands every start to the one management
     /// (<see cref="OwnedProcesses"/>) under the purpose it names, a required word, so a start cannot pass it unmanaged; this holds which
-    /// purpose each file names. How many starts a listed file makes is not pinned (CENSUSRULES1).
+    /// purpose each file names. How many starts a listed file makes is not pinned.
     /// </summary>
     private static readonly Dictionary<string, string> Purposes = new(StringComparer.Ordinal)
     {
@@ -335,7 +335,7 @@ public sealed class ProcessStartsCensusTests
     };
 
     /// <summary>
-    /// The starts through the gate that no job of the one management holds (D249), each with why: a purpose held by none, and a start the gate
+    /// The starts through the gate that no job of the one management holds, each with why: a purpose held by none, and a start the gate
     /// runs without a process to hand on. The direct starts (<see cref="Allowed"/>) are each a program of its own or held in a job of their
     /// own from before their first instruction, as their reasons say.
     /// </summary>
@@ -350,7 +350,7 @@ public sealed class ProcessStartsCensusTests
             "the terminal's shell, started suspended and held in a job of its own before its first instruction (CONSOLE4a)",
     };
 
-    /// <summary>🔴 D249: every start through the gate names its purpose as listed, and each start no job holds is named with why.</summary>
+    /// <summary>🔴 Every start through the gate names its purpose as listed, and each start no job holds is named with why.</summary>
     [Fact]
     public void Every_start_through_the_gate_names_its_purpose_and_each_held_by_no_job_says_why()
     {
@@ -375,7 +375,7 @@ public sealed class ProcessStartsCensusTests
             PurposeProblems(planted));
     }
 
-    /// <summary>The runtime's kills that stay outside the one management's end (D249, <see cref="OwnedProcesses.End"/>), each with why.</summary>
+    /// <summary>The runtime's kills that stay outside the one management's end (<see cref="OwnedProcesses.End"/>), each with why.</summary>
     private static readonly Dictionary<string, string> OwnKills = new(StringComparer.Ordinal)
     {
         ["Daoris.Desktop.Driver/Platform/OwnedProcesses.cs"] = "the management's own end",
@@ -388,7 +388,7 @@ public sealed class ProcessStartsCensusTests
     [Fact]
     public void Every_process_is_ended_through_the_one_management_but_in_the_files_named_with_their_reason()
     {
-        // The runtime's tree kill, as every kill of the desktop's was written; a plugin trial's own Kill() ends through the management.
+        // The runtime's tree kill; a plugin trial's own Kill() ends through the management.
         var killing = Sources().Where(each => Regex.IsMatch(each.Source, @"\.Kill\(\s*(?:entireProcessTree|true|false)\b")).Select(each => each.File).ToHashSet();
 
         Assert.True(killing.All(OwnKills.ContainsKey), "a process ended outside OwnedProcesses.End: end it there, or name the file in "
@@ -439,7 +439,7 @@ public sealed class ProcessStartsCensusTests
     }
 
     /// <summary>
-    /// Every console program the driver, its tests, the devkit and the service start hides its window (CONSOLEWINDOWS1): a parent with
+    /// Every console program the driver, its tests, the devkit and the service start hides its window: a parent with
     /// no console of its own (the merge queue's detached runner) gives each one a visible window on the owner's screen otherwise.
     /// </summary>
     [Fact]
@@ -454,7 +454,7 @@ public sealed class ProcessStartsCensusTests
         Assert.Empty(NoConsoleStarts.Stale(sources));
     }
 
-    /// <summary>Every direct start a driver test makes is git past the ceiling or named with its purpose in <see cref="TestProcessStarts"/> (D249).</summary>
+    /// <summary>Every direct start a driver test makes is git past the ceiling or named with its purpose in <see cref="TestProcessStarts"/>.</summary>
     [Fact]
     public void Every_direct_start_a_driver_test_makes_is_named_with_its_purpose()
     {

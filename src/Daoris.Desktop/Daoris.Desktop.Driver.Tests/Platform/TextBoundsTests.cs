@@ -3,7 +3,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// The one way the driver clips, folds and quotes text (DEDUP7). Each caller keeps its own limit; these pin the rules the
+/// The one way the driver clips, folds and quotes text. Each caller keeps its own limit; these pin the rules the
 /// copies agreed on and the ones they differed in, so a caller's bytes do not move.
 /// </summary>
 public sealed class TextBoundsTests

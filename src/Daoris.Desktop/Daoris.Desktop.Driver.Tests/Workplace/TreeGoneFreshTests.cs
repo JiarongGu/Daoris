@@ -3,8 +3,8 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// TREEKEEPRETRY1: a waiting part whose tree and branch are gone lost nothing with them where it ended before it took its quest, from a
-/// base the line holds, so its next start opens a fresh tree; any other gone tree still holds the start for the person (TREEGONE1).
+/// A waiting part whose tree and branch are gone lost nothing with them where it ended before it took its quest, from a
+/// base the line holds, so its next start opens a fresh tree; any other gone tree still holds the start for the person.
 /// </summary>
 public sealed class TreeGoneFreshTests
 {

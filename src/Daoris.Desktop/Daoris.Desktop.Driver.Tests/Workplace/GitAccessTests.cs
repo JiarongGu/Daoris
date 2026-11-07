@@ -5,7 +5,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// GITAUTH1f's tables (D198 points 8, 10 and 12; the git-auth design §6.2, §6.4-§6.6, §6.8 and §8): the keys and their resolution at
+/// The tables: the keys and their resolution at
 /// each level with the default's two doors, the judge by value, an edit's widenings, the go-ahead held at a door and its late grant, the
 /// rules composed for every value, and the terminal's verbs.
 /// </summary>
@@ -100,7 +100,7 @@ public sealed class GitAccessTests : IDisposable
         Assert.True(GitAccessRules.Judge(GitAct.Read, "allow", granted: false, readOnlyIdentity: "Deploy").Allowed);
     }
 
-    /// <summary>ONEWAY1q: the judge reads git access alone; a permissions file that lists <c>no-push</c> off moves nothing.</summary>
+    /// <summary>The judge reads git access alone; a permissions file that lists <c>no-push</c> off moves nothing.</summary>
     [Fact]
     public void The_judge_reads_git_access_alone_and_no_push_off_in_the_rules_file_lets_no_push_through()
     {
@@ -374,7 +374,7 @@ public sealed class GitAccessTests : IDisposable
     }
 
     /// <summary>
-    /// GITAUTH1f (§8, D194 point 5): while the window runs, a widening and an answer are pressed there as the page presses them, the
+    /// While the window runs, a widening and an answer are pressed there as the page presses them, the
     /// window's confirmation before each, and nothing is done here; a narrowing runs here; with no window each runs here.
     /// </summary>
     [Fact]

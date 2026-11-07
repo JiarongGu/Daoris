@@ -4,9 +4,9 @@ using System.Text.Json;
 namespace Daoris.Driver.Tests.Platform;
 
 /// <summary>
-/// The folders Daoris's sessions left in the person's own tool home (OWNSPACE2, D175 point 3), LISTED and nothing more: a folder
+/// The folders Daoris's sessions left in the person's own tool home, LISTED and nothing more: a folder
 /// is Daoris's only where its name EQUALS a working directory in which one of Daoris's own session records shows a session ran;
-/// a room no record shows a session in claims nothing; what may still be used is said. There is no press (OWNSPACE2e).
+/// a room no record shows a session in claims nothing; what may still be used is said. There is no press.
 /// 🔴 Every home here is a scratch one handed in: no test reads or touches the real tool home or Daoris home.
 /// </summary>
 public sealed class ToolHomeLeftoversTests : IDisposable
@@ -104,7 +104,7 @@ public sealed class ToolHomeLeftoversTests : IDisposable
         Assert.Equal(["h"], listing.Folders.Single(folder => folder.Name == mine[2]).By);
     }
 
-    /// <summary>A help record's tree is its own room (HOMEROOMS1): a named workspace's room folder is claimed for it, not the default room's.</summary>
+    /// <summary>A help record's tree is its own room: a named workspace's room folder is claimed for it, not the default room's.</summary>
     [Fact]
     public void A_named_workspace_s_help_room_is_claimed_for_its_own_record_alone()
     {

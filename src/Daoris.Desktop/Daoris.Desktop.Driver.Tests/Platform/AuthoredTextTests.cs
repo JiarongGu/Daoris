@@ -3,7 +3,7 @@ using Daoris.Driver;
 
 namespace Daoris.Desktop.Driver.Tests;
 
-/// <summary>I18NOPEN1 (D222): words a person writes are one string or a map of language tags to text, shown in the viewer's language.</summary>
+/// <summary>Words a person writes are one string or a map of language tags to text, shown in the viewer's language.</summary>
 public sealed class AuthoredTextTests
 {
     private static AuthoredText? Read(string json, int most = 0, bool oneLine = false)

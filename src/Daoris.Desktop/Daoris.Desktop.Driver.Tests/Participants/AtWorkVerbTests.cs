@@ -6,7 +6,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// COWORKVIEW1a rule 20: <c>daoris session at-work</c>. With no Daoris window running the verb composes the same answer by
+/// <c>daoris session at-work</c>. With no Daoris window running the verb composes the same answer by
 /// the same function, issuing no token, so an open child reads <i>not known whether it still runs</i> and never <i>working</i>.
 /// </summary>
 public sealed class AtWorkVerbTests : IDisposable
@@ -125,7 +125,7 @@ public sealed class AtWorkVerbTests : IDisposable
     }
 
     /// <summary>
-    /// COMMS1i (the comms design §7): the verb is the window's twin. A lead whose agent asked a helper and waits on a quest says what it
+    /// The verb is the window's twin. A lead whose agent asked a helper and waits on a quest says what it
     /// waits on and its co-workers, in text and in JSON, from the same read the window's <i>At work</i> and head draw.
     /// </summary>
     [Fact]
@@ -153,7 +153,7 @@ public sealed class AtWorkVerbTests : IDisposable
     }
 
     /// <summary>
-    /// COMMS1i (wave 2's rest): a reviewer reading the line's work is one of its co-workers, the line waiting on it while it reads, read
+    /// A reviewer reading the line's work is one of its co-workers, the line waiting on it while it reads, read
     /// from the reviewer's record that serves the line.
     /// </summary>
     [Fact]
@@ -172,7 +172,7 @@ public sealed class AtWorkVerbTests : IDisposable
         Assert.Contains("co-workers:\n  reviewer o1 · stub", said, StringComparison.Ordinal);
     }
 
-    /// <summary>COMMS1i: the composition takes the exchanges from its port, a quest's worded with its lanes, and says a source not read.</summary>
+    /// <summary>The composition takes the exchanges from its port, a quest's worded with its lanes, and says a source not read.</summary>
     [Fact]
     public void COMMS1i_the_composition_carries_the_line_s_exchanges_and_its_unread_sources()
     {

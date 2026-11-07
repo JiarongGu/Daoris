@@ -3,7 +3,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// LINESTOGETHER1c (the review-flow design §3): the sessions of one repository with a tree here, chats included, compared on a git
+/// The sessions of one repository with a tree here, chats included, compared on a git
 /// fixture of three branches, an uncommitted edit counted, and a failed read after a good one said *not read*.
 /// </summary>
 [Trait(Category.Name, Category.Process)]

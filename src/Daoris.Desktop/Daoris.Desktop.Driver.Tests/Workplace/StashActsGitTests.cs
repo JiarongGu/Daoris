@@ -3,8 +3,8 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// GITAPP2k over real git (D204; the git-writes design §8, §12 row k): stash Save through the act journal. The plan says the stash is shared
-/// by every linked tree; a Save takes tracked files only unless asked for the untracked ones; a stash that moved since it was read, the switch
+/// Over real git: stash Save through the act journal. The plan says the stash is shared
+/// by every linked tree; a Save takes tracked files only unless asked for the untracked ones; a stash that moved since its read, the switch
 /// off, a session in the checkout, an unread ledger, an operation in progress and git's lock each refuse.
 /// </summary>
 [Trait(Category.Name, Category.Process)]
@@ -211,7 +211,7 @@ public sealed class StashActsGitTests : TreeSyncFixture
         Assert.Equal("changed\n", await File.ReadAllTextAsync(Path.Combine(root, "a.txt")));
     }
 
-    // ——— GITAPP2l: Apply by commit id.
+    // ——— Apply by commit id.
 
     private static async Task<string> TextAsync(string root, string file) => (await File.ReadAllTextAsync(Path.Combine(root, file))).Replace("\r\n", "\n");
 

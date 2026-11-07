@@ -8,7 +8,7 @@ namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
 /// The stand-in pull-request API (<see cref="PullRequestApiHost"/>) answers as each service's REST API does, for the plugins that will
-/// call it (the git design's G9): a refused token opens nothing and says so in the service's words; a second pull request for one branch
+/// call it: a refused token opens nothing and says so in the service's words; a second pull request for one branch
 /// is refused as the service refuses it; Azure DevOps' token as Basic with an empty user, its list by source branch, and an abandon read.
 /// </summary>
 /// <remarks><para>In the Process half, beside a listener.</para></remarks>

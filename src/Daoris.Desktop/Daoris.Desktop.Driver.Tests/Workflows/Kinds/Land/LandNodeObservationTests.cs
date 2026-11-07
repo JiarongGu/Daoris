@@ -3,7 +3,7 @@ using static Daoris.Desktop.Driver.Tests.ObservedFixture;
 
 namespace Daoris.Desktop.Driver.Tests;
 
-/// <summary>FABRIC-NODE1 (§C2, §C7; FABRIC-CUTOVER1a): <c>land</c> is the work handed on, read from the landing record or the merge the session branch keeps.</summary>
+/// <summary><c>land</c> is the work handed on, read from the landing record or the merge the session branch keeps.</summary>
 public sealed class LandNodeObservationTests
 {
     /// <summary>The landing is <c>handed</c>, reached by its own authority with an acceptance bound to the commit its evidence names and pointing at its record.</summary>
@@ -34,7 +34,7 @@ public sealed class LandNodeObservationTests
     }
 
     /// <summary>
-    /// FABRIC-CUTOVER1a (the cutover design §2.4.4, §11.2): on a run's subject <c>handed</c> is its session's work handed on, reached where the
+    /// On a run's subject <c>handed</c> is its session's work handed on, reached where the
     /// session branch's landing holds the tip it is bound to, by its record: made at it, or squashing it. Its acceptance keeps that tip, the one
     /// its binding lapses on, so the one table takes the reach; its evidence names the landing's tip, which what follows binds. A landing
     /// squashing another tip is not this work's; a branch unit of Current's landing cycle reads as today, on the landing's tip.
@@ -62,7 +62,7 @@ public sealed class LandNodeObservationTests
     }
 
     /// <summary>
-    /// FABRIC-NODE1c, defect 4: an observation takes the binding Daoris evaluated, its inputs and receipts with it. A QA wired before
+    /// An observation takes the binding Daoris evaluated, its inputs and receipts with it. A QA wired before
     /// <c>handed</c> is in <c>handed</c>'s acceptance, so invalidating the QA reaches it. A binding of another unit, node or version is no
     /// observation, and evidence at another tip than the binding's is not this binding's reach.
     /// </summary>

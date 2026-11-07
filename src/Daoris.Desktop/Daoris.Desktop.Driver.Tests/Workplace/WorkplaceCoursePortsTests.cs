@@ -5,7 +5,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// FOUNDATION1 mod-x, the Workplace-names-Course cut: the seams the cut adds. Workplace declares the lower rebase key, the historical
+/// The Workplace-names-Course cut: the seams the cut adds. Workplace declares the lower rebase key, the historical
 /// suffixes, the press's telling and the handed quests' facet; Course implements and installs them. The cases that need no new seam are
 /// <see cref="WorkplaceCourseBoundaryTests"/>'.
 /// </summary>

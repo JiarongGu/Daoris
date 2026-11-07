@@ -3,7 +3,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// GITWORKTREECONFIG1 (D51's note), the fast half: the one check every door that writes through a session's tree asks first
+/// The fast half: the one check every door that writes through a session's tree asks first
 /// (<see cref="TreeBinding"/>), over git standing in at the runner's seam (<see cref="WorkingTree.Runs"/>). Its real-git twin, the
 /// incident's configuration on each door, is <see cref="TreeBindingGitTests"/>.
 /// </summary>
@@ -41,7 +41,7 @@ public sealed class TreeBindingTests : IDisposable
 
     /// <summary>
     /// Another folder: the refusal says what git reports, what binds it and where (<c>git config --show-origin</c>'s answer), that
-    /// nothing was done, and what the person does. Daoris writes no configuration of its own.
+    /// nothing changed, and what the person does. Daoris writes no configuration of its own.
     /// </summary>
     [Fact]
     public async Task A_tree_git_reports_elsewhere_is_refused_saying_what_binds_it()
@@ -80,7 +80,7 @@ public sealed class TreeBindingTests : IDisposable
         Assert.Contains(": a `core.worktree` in the repository's shared git configuration, set by something other than Daoris, binds it there", refused);
     }
 
-    /// <summary>The working root a door's own start read already (the tree's repository and branch, PROC1d-iii) is compared, and asks no git.</summary>
+    /// <summary>The working root a door's own start read already (the tree's repository and branch) is compared, and asks no git.</summary>
     [Fact]
     public async Task A_root_read_already_is_compared_with_no_start()
     {
@@ -132,7 +132,7 @@ public sealed class TreeBindingTests : IDisposable
     }
 
     /// <summary>
-    /// The tree's repository, its working root and its branch are one start (PROC1d-iii, GITWORKTREECONFIG1); where that start fails
+    /// The tree's repository, its working root and its branch are one start; where that start fails
     /// (a branch with no commit yet) the two asks run as before, and no working root is read.
     /// </summary>
     [Fact]

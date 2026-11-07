@@ -4,10 +4,10 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// A driven session on the protocol door leaves its conversation beside its transcript (D76, CONV1).
+/// A driven session on the protocol door leaves its conversation beside its transcript.
 /// </summary>
 /// <remarks>
-/// Through a REAL tick, as INT4i's tests are: node as the stand-in harness, a stand-in service on a
+/// Through a REAL tick: node as the stand-in harness, a stand-in service on a
 /// loopback port, no model and no account. What is under test is the whole path the page will read
 /// back after a restart — the target the driver composed, what the wire said, and how the turn ended —
 /// in the file the driver writes, not in a list a test handed it.
@@ -55,7 +55,7 @@ public sealed class SessionEventRecordTests : IDisposable
         Assert.Equal(SessionEventKind.User, target.Kind);
         Assert.Equal("target", target.Origin);
         Assert.Contains("q1", target.Text);
-        // What it was composed of, kept beside it on the same event through the protocol door's capture (CONTEXT1), and
+        // What it is composed of, kept beside it on the same event through the protocol door's capture, and
         // the rules handed beside it, said whether or not this agent takes any.
         Assert.Equal(target.Text!.Length, target.Account!.Chars);
         Assert.Equal(HandedSections.Quest, target.Account.Sections[0].Name);
@@ -66,10 +66,10 @@ public sealed class SessionEventRecordTests : IDisposable
         Assert.Equal(SessionEventKind.Turn, kinds[^1]);
         Assert.Equal("end_turn", page.Events[^1].StopReason);
 
-        // The same events went out live, in the same order, for a page that was watching.
+        // The same events went out live, in the same order, for a page that is watching.
         lock (live) Assert.Equal(page.Events.Select(e => e.Seq), live.Select(e => e.Seq));
 
-        // And the transcript is still the verbatim text it always was.
+        // And the transcript is still the verbatim text.
         Assert.Contains("looking at the budget", File.ReadAllText(DaorisHome.Entry(_home, HomeEntry.Sessions,"s1.log")));
     }
 

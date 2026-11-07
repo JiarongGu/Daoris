@@ -3,7 +3,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// The actors' one judge and one reading (MODELROLE1c, D205 §3.1, §4.0, §6.1, §6.4, design §13's unit row): <c>Judge</c>'s table,
+/// The actors' one judge and one reading: <c>Judge</c>'s table,
 /// <c>Effective</c>'s for every actor, the reading from today's keys, the write through them, Chat and Brainstorm made explicit on every
 /// change of <c>adapter</c>, an older build's projection, an entry that does not read, and the drain's Intake off.
 /// </summary>
@@ -72,7 +72,7 @@ public sealed class ActorChoicesTests
         var request = Request with { Asked = asked, Command = ["claude"] };
         Dictionary<string, string?> none = [];
 
-        // The native door carries the asked model and effort on its command line; that carrying is not read back as what was asked.
+        // The native door carries the asked model and effort on its command line; that carrying is not read back as the asked choice.
         Assert.Contains("--model", new ClaudeCodeSpawn().Start(request).Arguments);
         Assert.Equal(asked, ActorAsked.ForSpawn("claude-code", request, none, new ClaudeCodeSpawn().ChoiceVariables));
 
@@ -147,7 +147,7 @@ public sealed class ActorChoicesTests
     }
 
     /// <summary>
-    /// FOUNDATION1 mod-viii: the room's facts read the first agent of an order through the settings' <c>ActorKey.FirstAgent</c>, which the
+    /// The room's facts read the first agent of an order through the settings' <c>ActorKey.FirstAgent</c>, which the
     /// actors' own reading answers through, so the two are one rule: the same agent for every actor in each state an order is in (stored, off,
     /// as before, as before with no key), and where an entry does not read the settings' is none where the actors' holds the start.
     /// </summary>

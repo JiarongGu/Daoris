@@ -6,7 +6,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// The lineage as Participants' part of a run's sink (AGENTPROVIDER1l, the agent-provider design §11 row l): each door says a child's start
+/// The lineage as Participants' part of a run's sink: each door says a child's start
 /// and end once, as a reading stamped with its process's token, and the part writes the session's lineage from those readings alone.
 /// </summary>
 public sealed class LineageReadingsTests : IDisposable

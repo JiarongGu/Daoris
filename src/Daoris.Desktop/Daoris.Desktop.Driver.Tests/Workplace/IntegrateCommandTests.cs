@@ -2,7 +2,7 @@ using Daoris.Driver;
 
 namespace Daoris.Desktop.Driver.Tests;
 
-/// <summary>INTEGRATE1h (the integration design §5.8): <c>daoris integrate</c>'s words, and the owner's acts left to the window.</summary>
+/// <summary><c>daoris integrate</c>'s words, and the owner's acts left to the window.</summary>
 public sealed class IntegrateCommandTests
 {
     [Theory]
@@ -54,7 +54,7 @@ public sealed class IntegrateCommandTests
         Assert.Contains("  held: a member's conflict, which waits for the steward's or the owner's act.", said);
     }
 
-    /// <summary>INTEGRATE1h: a candidate held for a decide names the act whole, a recorded decide is said until its run acts, and a moved request says where.</summary>
+    /// <summary>A candidate held for a decide names the act whole, a recorded decide is said until its run acts, and a moved request says where.</summary>
     [Fact]
     public void A_decide_hold_names_its_act_a_recorded_decide_waits_for_the_run_and_the_queue_says_its_order()
     {

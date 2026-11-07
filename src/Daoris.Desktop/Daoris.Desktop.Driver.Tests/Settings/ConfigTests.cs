@@ -3,7 +3,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// The driver's configuration is the person's standing choices (D46 §6/§7): which repositories this
+/// The driver's configuration is the person's standing choices: which repositories this
 /// machine may drive, what is held, how wide the loop runs. It is machine-local by nature and silence
 /// is safe — an empty config drives nothing.
 /// </summary>
@@ -20,7 +20,7 @@ public sealed class ConfigTests
     }
 
     /// <summary>
-    /// 🔴 Silence means ON (SURF5b). Every machine that already has a `driver.json` predates this
+    /// Silence means ON. Every machine that already has a `driver.json` predates this
     /// field, so reading its absence as "off" would ship the feature switched off on exactly the
     /// machines that have been driving longest — where a parked session sitting unnoticed costs most.
     /// </summary>
@@ -51,7 +51,7 @@ public sealed class ConfigTests
     }
 
     /// <summary>
-    /// HELPMODE1a1 (D183 points 1-2): Ask Daoris's access mode is the person's choice, restricted until full is named, written
+    /// Ask Daoris's access mode is the person's choice, restricted until full is named, written
     /// only while full and kept by every other edit. Anything else the file says reads as restricted, never as full; and an edit
     /// naming another mode is refused.
     /// </summary>
@@ -172,7 +172,7 @@ public sealed class ConfigTests
     }
 
     /// <summary>
-    /// Session trees (D51): whose sessions open their own worktree. The same standing-flag shape as
+    /// Session trees: whose sessions open their own worktree. The same standing-flag shape as
     /// drivable, round-tripping through the same file both editors share.
     /// </summary>
     [Fact]
@@ -191,8 +191,8 @@ public sealed class ConfigTests
     }
 
     /// <summary>
-    /// CASEFOLD1d: a repository opted in, held or given trees is another only as <c>OrdinalIgnoreCase</c> parts them, each letter
-    /// to its one capital, as the CLI's <c>driverconfig.ts</c> parted them through <c>casefold.ts</c> until PUSH1f2b: a name full case
+    /// A repository opted in, held or given trees is another only as <c>OrdinalIgnoreCase</c> parts them, each letter
+    /// to its one capital: a name full case
     /// mapping would widen or lower to the same letters is another repository.
     /// </summary>
     [Fact]

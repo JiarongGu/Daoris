@@ -7,7 +7,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// The relay through the built host as processes (EVENTHOOK1c; the event hook design §9's 1c proofs): <c>events relay --where</c> at the host's
+/// The relay through the built host as processes: <c>events relay --where</c> at the host's
 /// entry in front of a lease another act holds, an unwritable lease and a <c>bin</c> entry at both its places, each said by one fixed sentence
 /// and nothing of the lease's <c>what</c>, the home or a path; two <c>--where</c> at once; a copy swapped for a newer build while a relay runs;
 /// and a plugin started through a shim, which the holder's agents' job still holds. Every process is started hidden: no window, no real agent.

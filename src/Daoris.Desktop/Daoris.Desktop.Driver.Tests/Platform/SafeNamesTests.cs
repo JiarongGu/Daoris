@@ -3,8 +3,8 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// DEDUP6 (D166's note): one path rule and three id rules, where ten copies disagreed on <c>\</c>, <c>:</c>, <c>..</c> and
-/// control characters. Each caller keeps its own refusal sentence; these tests hold only the yes or no.
+/// One path rule and three id rules, deciding <c>\</c>, <c>:</c>, <c>..</c> and
+/// control characters in one place. Each caller keeps its own refusal sentence; these tests hold only the yes or no.
 /// </summary>
 public sealed class SafeNamesTests
 {

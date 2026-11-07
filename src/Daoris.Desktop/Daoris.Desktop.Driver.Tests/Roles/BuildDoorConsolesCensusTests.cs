@@ -3,7 +3,7 @@ using System.Text.RegularExpressions;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// AGENTPROVIDER1 s-i: the terminal's consoles read the machine's door as the loop, set-up and the window do, through
+/// The terminal's consoles read the machine's door as the loop, set-up and the window do, through
 /// <c>SetupWorld.Unadopted</c>. It walks the host's sources, so it is a census of its own beside <see cref="BuildDoorTests"/>.
 /// </summary>
 [Trait(Category.Name, Category.Census)]

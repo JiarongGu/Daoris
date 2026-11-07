@@ -3,9 +3,9 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// <c>languages</c> and <c>workspaceLanguages</c> in <c>driver.json</c> (LANG1c, D142 point 7, the language design §7): the
+/// <c>languages</c> and <c>workspaceLanguages</c> in <c>driver.json</c>: the
 /// language a session is asked to write to the person in, set for a repository or a workspace, the repository's winning,
-/// neither set none, from a closed table (the CLI's twin, <c>driverconfig.ts</c>, left in PUSH1f2b).
+/// neither set none, from a closed table.
 /// </summary>
 /// <remarks>🔴 <b>Keep each row on one line, its cells literals</b>: the CLI's test reads them.</remarks>
 public sealed class SessionLanguageTests

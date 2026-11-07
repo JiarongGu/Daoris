@@ -5,7 +5,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// GITAUTH1c's tables (D198 points 1, 4 and 5; the git-auth design §3, §4.2 and §14 row 3): the identities' file, which holds no
+/// The identities' tables: the identities' file, which holds no
 /// secret; the key folder's access, set before any key byte; the one key file an import reads, and what it refuses; a key's type and
 /// fingerprint as OpenSSH writes them; the pointers' resolution, each step and each pointer passed over; the folder's repository; the
 /// ssh door's arguments for an identity; Daoris's known hosts and a host trusted only at a press; and the acts, with ssh's tools stood

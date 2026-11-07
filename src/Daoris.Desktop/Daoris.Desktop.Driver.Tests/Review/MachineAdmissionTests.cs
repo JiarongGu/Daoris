@@ -5,7 +5,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// HEAVYQUEUE1: the machine's heavy-run admission, the driver's side. The merge queue's heavy gates and a driven session's heavy runs take
+/// The machine's heavy-run admission, the driver's side. The merge queue's heavy gates and a driven session's heavy runs take
 /// one place each in one file of the home before they start a heavy process, so the machine never runs more of them at once than it
 /// admits; a run that waits says what for, and a holder that dies releases. Held cell for cell to ONE table,
 /// <c>fixtures/machine-admission.json</c>, which <c>tools/machine-admission.test.mjs</c> carries too. Files only, no process.
@@ -96,7 +96,7 @@ public sealed class MachineAdmissionTests : IDisposable
     }
 
     /// <summary>
-    /// INTEGRATE1b (design §4.5, C7): the merge tool's whole take is N ordinary entries with one <c>since</c> and ids that sort together.
+    /// The merge tool's whole take is N ordinary entries with one <c>since</c> and ids that sort together.
     /// The driver reads such a record as the tool does: the machine is full while they are held, a session's ask waits behind every one of
     /// them and is admitted once they are let go, and a live hold that is not among them is what the tool reads as a doubt.
     /// </summary>
@@ -128,7 +128,7 @@ public sealed class MachineAdmissionTests : IDisposable
 
     private static string None(string name) => name == MachineAdmission.InsideVariable ? "" : "";
 
-    /// <summary>HEAVYQUEUE1's contract: two holders, one waits, says what for, and starts when the first ends.</summary>
+    /// <summary>Two holders, one waits, says what for, and starts when the first ends.</summary>
     [Fact]
     public async Task The_second_run_waits_saying_what_for_and_starts_when_the_first_ends()
     {

@@ -4,11 +4,10 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// ORPHAN1, found on FG5's run: a verify session started its repository's dev servers from a
-/// background shell, its turn ended, the agent exited — and the servers kept running, holding two
-/// ports and a tree whose session was over. Killing the agent's process tree could not reach them,
-/// because by then the agent was gone and they were nobody's children. Everything a session starts
-/// ends when its session does.
+/// A verify session that starts its repository's dev servers from a background shell must not
+/// leave them running, once its turn ends and its agent exits, holding ports and a tree whose
+/// session is over. Killing the agent's process tree cannot reach them, because by then the agent
+/// is gone and they are nobody's children. Everything a session starts ends when its session does.
 /// </summary>
 [Trait(Category.Name, Category.Process)]
 public sealed class ProcessJobTests : IDisposable

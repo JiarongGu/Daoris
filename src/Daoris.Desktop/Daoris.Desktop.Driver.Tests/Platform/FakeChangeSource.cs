@@ -3,7 +3,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// The change watch's fake source (FABRIC-EVENT2, the design §A4.1): what a <see cref="FileSystemWatcher"/> would say, raised
+/// The change watch's fake source: what a <see cref="FileSystemWatcher"/> would say, raised
 /// by a test, with overflows, losses, a folder absent or replaced, and nothing at all when silenced. Every handle it opened is
 /// kept, so a test can raise from an old one and see the watch drop it.
 /// </summary>
@@ -22,7 +22,7 @@ internal sealed class FakeChangeSource : IChangeSource
         }
     }
 
-    /// <summary>How often an open was asked, absent folders included.</summary>
+    /// <summary>How often an open is asked, absent folders included.</summary>
     public int Asked { get; private set; }
 
     /// <summary>The handle now open on <paramref name="folder"/>, or null.</summary>

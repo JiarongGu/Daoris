@@ -5,7 +5,7 @@ using static Daoris.Desktop.Driver.Tests.WireEvaluationTests;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// FABRIC-WIRE1g (the fabric events design §E2, §E4, §E7): the decoded nodes evaluated. A <c>stop</c> sink is reached once on the receipt
+/// The decoded nodes evaluated. A <c>stop</c> sink is reached once on the receipt
 /// of the path into it, and never on a success, a skip, an unknown, a retryable failure or another run's failure; an <c>opinion</c> is
 /// reached, pending or passed over on its gate's judgement or on the opinion a recorded landing kept, and invents nothing. Evaluated on
 /// <see cref="WireEvaluationTests"/>' unit, run and graph helper.
@@ -137,9 +137,9 @@ public sealed class WireEvaluationDecodedTests
     // ---- the opinion
 
     /// <summary>
-    /// The row's proof, over every state the gate has, under a rule that requires an opinion and one that does not: what lets the work go
+    /// The proof, over every state the gate has, under a rule that requires an opinion and one that does not: what lets the work go
     /// is reached (an answer covering the tip, or the person's in its place) or passed over (none asked here, or an optional one none could
-    /// be had), as D157's run reads it; everything else is pending, never failed. A skip is the gate's, in no one's words.
+    /// be had), as the run reads it; everything else is pending, never failed. A skip is the gate's, in no one's words.
     /// </summary>
     [Theory]
     [MemberData(nameof(EveryGateState))]
@@ -257,7 +257,7 @@ public sealed class WireEvaluationDecodedTests
     }
 
     /// <summary>
-    /// FABRIC-WIRE1h: a look the chain's or the ask's choice turns off is passed over by its gate's record, never in the person's words,
+    /// A look the chain's or the ask's choice turns off is passed over by its gate's record, never in the person's words,
     /// and satisfies <c>after</c>; every other state of the gate, and a read not handed in, is the person's to answer and passes nothing
     /// over; and the skip holds for its own run alone.
     /// </summary>
@@ -279,7 +279,7 @@ public sealed class WireEvaluationDecodedTests
             ("no read", null),
             ("not shown", Review(ReviewStates.NotShown, "preview")),
             ("shown", Review(ReviewStates.Shown, "preview")),
-            // FABRIC-NODE1b: the person's own word moves the look (GateNodesTests): their reviewed reaches it, and their skip passes it over in
+            // The person's own word moves the look (GateNodesTests): their reviewed reaches it, and their skip passes it over in
             // their words; a skip kept with no words still waits.
             ("the person's skip with no words", Review(ReviewStates.Skipped, "preview")),
             ("unread", Review(ReviewStates.Unread)),
@@ -293,7 +293,7 @@ public sealed class WireEvaluationDecodedTests
     }
 
     /// <summary>
-    /// FABRIC-WIRE1h: a pull request is passed over by the landing record where the work went into the line with no branch landed; a landed
+    /// A pull request is passed over by the landing record where the work went into the line with no branch landed; a landed
     /// branch, a branch not yet handed on and no record at all are pending, never passed over; and the skip holds for its own run alone.
     /// </summary>
 
@@ -324,7 +324,7 @@ public sealed class WireEvaluationDecodedTests
 
     /// <summary>
     /// The trap of a read that writes: the evaluation takes no home, writer, port or performer, so what it could change is only what it is
-    /// handed, and that stays as it was; evaluated again on the same, it says the same, so a replay keeps nothing twice.
+    /// handed, and that stays unchanged; evaluated again on the same, it says the same, so a replay keeps nothing twice.
     /// </summary>
     [Fact]
     public void Evaluating_the_decoded_nodes_changes_nothing_it_is_handed()

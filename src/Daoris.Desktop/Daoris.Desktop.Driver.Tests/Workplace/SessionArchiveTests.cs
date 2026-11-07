@@ -4,7 +4,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// The archive marks (SESSUX1a, D126 §5.2): this machine's, never the record's, at <c>&lt;home&gt;/sessions/archived.json</c>,
+/// The archive marks: this machine's, never the record's, at <c>&lt;home&gt;/sessions/archived.json</c>,
 /// written whole; a lost mark costs a row back in the list, never a row gone; and archive never hides what needs the
 /// person. Files only, so this is the suite's fast half.
 /// </summary>
@@ -142,7 +142,7 @@ public sealed class SessionArchiveTests : IDisposable
         Assert.Equal(["asked", "done"], archive.Marks().Keys.Order(StringComparer.Ordinal));
     }
 
-    /// <summary>Unarchive brings a session back to its group; one that was not archived is said, as information, never refused (D48 §6).</summary>
+    /// <summary>Unarchive brings a session back to its group; one that is not archived is said, as information, never refused.</summary>
     [Fact]
     public void Unarchive_takes_the_mark_away_and_says_which_were_not_archived()
     {

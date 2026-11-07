@@ -3,7 +3,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// MIXAGENT2a-ii (D163 point 2; the mixed agents design §5): the driver's judgement of each ask for a helper, in process. It
+/// The driver's judgement of each ask for a helper, in process. It
 /// judges what only the driver can: the person's rule (`off`, `ask` held `waiting`, `on`), the two at once per asker and the
 /// cap, and again what the connector judged, since a file may be old. A refusal has a code the asker reads; a wait is no refusal.
 /// </summary>
@@ -43,7 +43,7 @@ public sealed class HelperJudgeTests
     }
 
     /// <summary>
-    /// COAGENT1a (D199 point 5): an asker with a turn in flight waits `turn`, after the person's yes and before the cap, so its work
+    /// An asker with a turn in flight waits `turn`, after the person's yes and before the cap, so its work
     /// in progress is captured only at a turn's boundary; the person's own ask waits the same.
     /// </summary>
     [Fact]
@@ -76,7 +76,7 @@ public sealed class HelperJudgeTests
         }
     }
 
-    /// <summary>FOUNDATION1q (D203 point 6; the foundation design §7 row 9): Ask Daoris asks for no helper, whoever wrote the ask.</summary>
+    /// <summary>Ask Daoris asks for no helper, whoever wrote the ask.</summary>
     [Fact]
     public void Ask_daoris_is_refused_a_helper_as_an_asker_that_may_not_ask()
     {
@@ -94,8 +94,8 @@ public sealed class HelperJudgeTests
     }
 
     /// <summary>
-    /// HELPERNO1 (D163 point 3): the person's no to an agent's ask is a refusal with its own code, `declined`, which the judge reads
-    /// as past judging whatever the rule says now, so a rule turned `on` after the no never starts it.
+    /// The person's no to an agent's ask is a refusal with its own code, `declined`, which the judge reads
+    /// as past judging whatever the rule says, so a rule turned `on` after the no never starts it.
     /// </summary>
     [Theory]
     [InlineData(HelperRules.Ask)]
@@ -109,7 +109,7 @@ public sealed class HelperJudgeTests
     }
 
     /// <summary>
-    /// HELPERDEFAULT1 (D163's 2026-10-24 note): the default is `on` for the agents set up and signed in here. An ask naming one goes,
+    /// The default is `on` for the agents set up and signed in here. An ask naming one goes,
     /// as one naming none does while one is set up; one naming another is refused `not-set-up`, and with none set up `none-set-up`.
     /// The person's own ask is theirs, as under any rule.
     /// </summary>

@@ -4,10 +4,10 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// REVIEWENV1c (D154 point 8; the review environment design §3.3–§3.4, D50): <c>daoris quest review</c>, the terminal's door
+/// <c>daoris quest review</c>, the terminal's door
 /// to the person's verdict. It prints what the set-up step showed and how to show it again, sends the verdict with that set-up by
-/// its <c>machine</c> and <c>sequence</c> (REVIEWENV1b3), says a <i>not yet</i>'s words to the step's session as its next turn, and
-/// says what the gate now says. A service stood in (<see cref="ReviewStandIn"/>): the fast half (MOD8).
+/// its <c>machine</c> and <c>sequence</c>, says a <i>not yet</i>'s words to the step's session as its next turn, and
+/// says what the gate now says. A service stood in (<see cref="ReviewStandIn"/>): the fast half.
 /// </summary>
 public sealed class QuestReviewCommandTests
 {
@@ -15,7 +15,7 @@ public sealed class QuestReviewCommandTests
     {
         new[] { "review" },
         new[] { "review", "q2" },
-        // REVIEWENV1j: a word shaped as an environment's name is a choice of one, so a word no environment can be named stands here.
+        // A word shaped as an environment's name is a choice of one, so a word no environment can be named stands here.
         new[] { "review", "q2", "Approve!" },
         new[] { "review", "q2", "not-yet" },
         new[] { "review", "q2", "not-yet", "   " },
@@ -42,7 +42,7 @@ public sealed class QuestReviewCommandTests
     }
 
     /// <summary>
-    /// A reviewed: what was shown is printed first, the verdict names that set-up whole, the service's sentence follows, the log
+    /// A reviewed: what the step showed is printed first, the verdict names that set-up whole, the service's sentence follows, the log
     /// keeps <c>review.verdict</c>, and the gate says what may land now.
     /// </summary>
     [Fact]

@@ -4,8 +4,8 @@ using static Daoris.Desktop.Driver.Tests.GitFixture;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// TREEPLACE1, on real git: a tree opened before the home's layout moved stays at the old place of <see cref="HomeEntry.Trees"/>
-/// (D172 point 6), and is landed, merged, removed and tidied as one at the new place is. On the install, eleven such trees were
+/// On real git: a tree opened before the home's layout moved stays at the old place of <see cref="HomeEntry.Trees"/>,
+/// and is landed, merged, removed and tidied as one at the new place is. On the install, eleven such trees were
 /// refused as not a session tree by `trees land` and `trees remove`, and the tidy kept them forever. Each tree here is opened
 /// where a new one opens, then moved with `git worktree move` to the old place, which is how it stands on the install; a tree
 /// moved outside both places is still refused by every door. The paths alone are <see cref="TreePlacesTests"/>.

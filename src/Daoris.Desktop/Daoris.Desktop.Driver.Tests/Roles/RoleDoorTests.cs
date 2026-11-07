@@ -4,7 +4,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// FOUNDATION1y-i (the foundation design §2.7, Part B's row y-i): the person's one door into the role catalogue, which the screen's
+/// The person's one door into the role catalogue, which the screen's
 /// <c>SET_ROLE</c>, <c>daoris role</c> and Ask Daoris's <c>role_propose</c> each call. Every judge's code is refused with nothing
 /// written; an added role keeps its record and its staffing; a removed role's work holds its starts, said; a running session goes on.
 /// </summary>
@@ -74,7 +74,7 @@ public sealed class RoleDoorTests : IDisposable
         Assert.Equal(staffed, Config().Actors.Keys.Order(StringComparer.Ordinal).ToList());
     }
 
-    /// <summary>ROLEONE1 (D233 point 2): the supervisor and the steward are staffed through the one door, their holder and window in the record, no staffing row.</summary>
+    /// <summary>The supervisor and the steward are staffed through the one door, their holder and window in the record, no staffing row.</summary>
     [Fact]
     public void The_supervisor_and_the_steward_are_staffed_through_the_role_door_and_read_back()
     {
@@ -101,7 +101,7 @@ public sealed class RoleDoorTests : IDisposable
         Assert.Null(Catalogue().Appointed(AppointedRoles.Steward, new RolePlace())!.Hold!.Holder);
     }
 
-    /// <summary>I18NOPEN1 (D222): a role is named in one language, or in a third, and an old pair reads unchanged; each is shown in the viewer's language, else as written.</summary>
+    /// <summary>A role is named in one language, or in a third, and an old pair reads unchanged; each is shown in the viewer's language, else as written.</summary>
     [Fact]
     public void A_role_named_in_one_language_or_a_third_is_saved_and_read_back_and_an_old_pair_reads_unchanged()
     {

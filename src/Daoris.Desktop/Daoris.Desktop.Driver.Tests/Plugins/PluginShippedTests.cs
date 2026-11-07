@@ -3,10 +3,10 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// An installed copy of one of Daoris's own example plugins that is older than the one this build ships (LANDPIN3, D119): the
+/// An installed copy of one of Daoris's own example plugins that is older than the one this build ships: the
 /// catalogue says so with both versions and what the newer one brings, offers the update as the person's press, and says a copy
 /// whose files the person changed as changed, which is never overwritten by that press. An older copy is judged by the digest
-/// its install from the offer recorded (LANDPIN3b); one from before the digest is said as unjudged.
+/// its install from the offer recorded; one from before the digest is said as unjudged.
 /// </summary>
 public sealed class PluginShippedTests : IDisposable
 {
@@ -61,7 +61,7 @@ public sealed class PluginShippedTests : IDisposable
 
         var shipped = PluginOffers.ShippedOf(folder, manifest, offer);
 
-        // A copy with no record of what its install copied is unjudged (LANDPIN3b): whether it was edited cannot be told.
+        // A copy with no record of what its install copied is unjudged: whether it has been edited cannot be told.
         Assert.Equal(new PluginShipped(PluginShipped.Older, "1.2.0", "1.3.0", "Pushes the commit judged.", Unjudged: true), shipped);
     }
 

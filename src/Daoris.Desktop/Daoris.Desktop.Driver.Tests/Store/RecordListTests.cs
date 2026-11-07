@@ -4,7 +4,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// The small store three of the driver's list files share (DEDUP5): a missing file reads none, an unreadable one reads
+/// The small store three of the driver's list files share: a missing file reads none, an unreadable one reads
 /// none and is not changed by reading, and an edit under the gate writes atomically, bounded.
 /// </summary>
 public sealed class RecordListTests : IDisposable

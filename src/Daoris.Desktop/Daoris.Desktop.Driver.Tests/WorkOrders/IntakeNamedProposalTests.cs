@@ -3,9 +3,9 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// ASKNAME1b: the declarations tier proposes first a repository the ask's sentence names (ASKNAME1), with that name alone
-/// as its evidence. The intake's instruction said every proposal was <i>by words alone</i>; a named one now says the ask
-/// names it, and the rest keep their words. Runs no process, so it is in the fast half (MOD8).
+/// The declarations tier proposes first a repository the ask's sentence names, with that name alone
+/// as its evidence. A named proposal says the ask names it, and the rest keep their words.
+/// Runs no process, so it is in the fast half.
 /// </summary>
 public sealed class IntakeNamedProposalTests
 {

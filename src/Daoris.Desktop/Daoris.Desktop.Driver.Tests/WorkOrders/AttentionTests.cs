@@ -3,16 +3,16 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// What is worth interrupting a person for (SURF5b, working-surface design §4): a session that
+/// What is worth interrupting a person for: a session that
 /// parked, and a session that ended without them asking for it.
 /// </summary>
 /// <remarks>
 /// <para>This is the whole judgement, and it is here rather than in the shell because a toast is the
-/// *delivery* and a machine with no screen still has to answer the same question (D50).</para>
+/// *delivery* and a machine with no screen still has to answer the same question.</para>
 ///
 /// <para><b>The two halves are found differently, and that is the design.</b> A park is a state change
 /// on the record that nothing local performs, so it is seen by diffing what is active. An end is
-/// something the driver concluded, so it is KNOWN — including whose decision it was.</para>
+/// something the driver concluded, so it is KNOWN — including whose decision it is.</para>
 /// </remarks>
 public sealed class AttentionTests
 {
@@ -24,7 +24,7 @@ public sealed class AttentionTests
         new([], [], Progressed: false, Active: active, Concluded: concluded);
 
     /// <summary>
-    /// FOUNDATION1 m-ii (the foundation design §4.3): the watch no longer establishes that a park happened by comparing two looks' snapshots. A
+    /// The watch does not establish that a park happened by comparing two looks' snapshots. A
     /// session's park, its answer and its park again are the journal's rows, told by <c>NewsTeller</c> (<c>NewsTellerTests</c>), so no sequence
     /// of snapshots says one here.
     /// </summary>
@@ -40,8 +40,8 @@ public sealed class AttentionTests
     }
 
     /// <summary>
-    /// FOUNDATION1 m-iii: an end is the journal's row, told by <c>NewsTeller</c> by the one class table (<c>NewsTellerTests</c>: the person's stop,
-    /// an account's limit, LIMITRESUME1a, and an agent's refusal of the choice, D205 §3.5(c), raise none), so no look's concluded ends say one here.
+    /// An end is the journal's row, told by <c>NewsTeller</c> by the one class table (<c>NewsTellerTests</c>: the person's stop,
+    /// an account's limit and an agent's refusal of the choice raise none), so no look's concluded ends say one here.
     /// </summary>
     [Fact]
     public void No_look_s_concluded_ends_say_an_end()
@@ -53,7 +53,7 @@ public sealed class AttentionTests
     }
 
     /// <summary>
-    /// NOTIFY2f (the notification design §2.5): an end's notice keeps its workspace and state; a park keeps none.
+    /// An end's notice keeps its workspace and state; a park keeps none.
     /// </summary>
     [Fact]
     public void An_end_s_notice_keeps_its_workspace_and_a_park_none()
@@ -97,7 +97,7 @@ public sealed class AttentionTests
 
     /// <summary>
     /// The sentence is composed here so both doors say the same thing — a toast on a machine with a
-    /// screen, a console line on one without (D50). It leads with the repository, which is what a
+    /// screen, a console line on one without. It leads with the repository, which is what a
     /// person glancing at a corner of their screen is actually identifying.
     /// </summary>
     [Fact]
@@ -128,7 +128,7 @@ public sealed class AttentionTests
     }
 
     /// <summary>
-    /// A park's notice is the session's own question (NOTICEPLAIN1, D184): Daoris's coded lead is no part of it, and a short
+    /// A park's notice is the session's own question: Daoris's coded lead is no part of it, and a short
     /// balloon cannot cut the question off behind it. A note with no agent part says what it always said.
     /// </summary>
     [Fact]
@@ -159,7 +159,7 @@ public sealed class AttentionTests
         new("q1", "engine") { Session = session, Strikes = strikes, Note = note };
 
     /// <summary>
-    /// SESSUX1i (D126 §4.7): the owner's work stood parked on 1 October and nothing said so. A quest that parks on its
+    /// A quest that parks on its
     /// failed sessions here is said once, with how many failed and the last failure's note.
     /// </summary>
     [Fact]
@@ -222,8 +222,8 @@ public sealed class AttentionTests
     }
 
     /// <summary>
-    /// Never again on a relaunch (§4.7), and no baseline in the watch (FOUNDATION1 m-iv): a quest already parked at the first look is found, once, and
-    /// whether the person was told of it before is the said-set's to answer (<c>AttentionNewsTests</c>). One whose records could not be read at that look
+    /// Never again on a relaunch, and no baseline in the watch: a quest already parked at the first look is found, once, and
+    /// whether the person has been told of it before is the said-set's to answer (<c>AttentionNewsTests</c>). One whose records could not be read at that look
     /// is found at the later one that reads them.
     /// </summary>
     [Fact]
@@ -239,7 +239,7 @@ public sealed class AttentionTests
     }
 
     /// <summary>
-    /// The park says the last failure's note. Its session's end is the journal's now (FOUNDATION1 m-iii) and no look's concluded end is said
+    /// The park says the last failure's note. Its session's end is the journal's, and no look's concluded end is said
     /// beside it here; a quest's park is still the look's, found from the planner's verdict.
     /// </summary>
     [Fact]
@@ -258,7 +258,7 @@ public sealed class AttentionTests
     }
 
     /// <summary>
-    /// 🔴 Never for a hold the person caused (§4.7): their stop holds its quest until Try again (SESSUX1b), and a notice
+    /// Never for a hold the person caused: their stop holds its quest until Try again, and a notice
     /// telling them what they just pressed is how people learn to dismiss notices unread. The parks are read from the
     /// planner's park alone, so a stop never reaches the watch.
     /// </summary>
@@ -291,8 +291,8 @@ public sealed class AttentionTests
     }
 
     /// <summary>
-    /// WSSETUP11: the machine log counts a park where the ledger is moved into it (<c>SessionLog</c>), and the news teller says one from the
-    /// journal's row of that move. Both read <see cref="SessionStates.IsParked"/>'s state, so what the log counts is what the person was told about.
+    /// The machine log counts a park where the ledger is moved into it (<c>SessionLog</c>), and the news teller says one from the
+    /// journal's row of that move. Both read <see cref="SessionStates.IsParked"/>'s state, so what the log counts is what the person is told about.
     /// </summary>
     [Theory]
     [InlineData("awaiting-person", "AwaitingPerson", true)]
@@ -330,8 +330,8 @@ public sealed class AttentionTests
     private static ChatQueue Idle(DateTimeOffset last) => new(false, [], last);
 
     /// <summary>
-    /// NOTIFY1a: the person said something to a conversation and looked away; the turn their words started has ended, and
-    /// that answer is what they wait on. Said with the driver's own sentence (D24), and nothing beside it.
+    /// The person said something to a conversation and looked away; the turn their words started has ended, and
+    /// that answer is what they wait on. Said with the driver's own sentence, and nothing beside it.
     /// </summary>
     [Fact]
     public void A_conversation_that_answers_the_person_s_words_is_worth_saying()
@@ -402,7 +402,7 @@ public sealed class AttentionTests
 
     /// <summary>
     /// A turn the person stopped ends on their own press: telling them it answered is telling them what they just did, as an
-    /// end they asked for never is (SURF5b).
+    /// end they asked for never is.
     /// </summary>
     [Fact]
     public void A_turn_the_person_stopped_is_no_answer()
@@ -426,7 +426,7 @@ public sealed class AttentionTests
         Assert.NotNull(watch.Turned("c1", "engine", Idle(Ended1)));
     }
 
-    /// <summary>A conversation that ended here is forgotten: what it was waited on for goes with it.</summary>
+    /// <summary>A conversation that ended here is forgotten: what it is waited on for goes with it.</summary>
     [Fact]
     public void A_conversation_forgotten_is_waited_on_for_nothing()
     {

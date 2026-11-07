@@ -6,11 +6,11 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// WORKFLOW1e (D157 point 10; the workflow design §4.1 row 1, §4.3, D50): the ask's kind and workflow at a terminal.
+/// The ask's kind and workflow at a terminal.
 /// <c>daoris ask … --kind &lt;kind&gt; [--workflow &lt;id&gt;|current]</c> sends them with a new ask;
 /// <c>daoris ask workflow &lt;id&gt; [--kind …] [--workflow …]|--clear</c> sets them on one. A kind is one the ask's
 /// workspace declares and a workflow one saved here whose newest version reads, judged before the service is asked; every other
-/// answer is the service's sentence, its person's door's refusal included. A service stood in: the fast half (MOD8).
+/// answer is the service's sentence, its person's door's refusal included. A service stood in: the fast half.
 /// </summary>
 public sealed class AskWorkflowCommandTests : IDisposable
 {
@@ -93,7 +93,7 @@ public sealed class AskWorkflowCommandTests : IDisposable
             AskWorkflowCommand.Unchoosable(null, "release-train", "work", world));
     }
 
-    /// <summary>A new ask carries its kind and workflow to the ask's door, and nothing where none was chosen.</summary>
+    /// <summary>A new ask carries its kind and workflow to the ask's door, and nothing where none is chosen.</summary>
     [Fact]
     public async Task A_new_ask_carries_the_choice_to_the_asks_door()
     {
@@ -148,7 +148,7 @@ public sealed class AskWorkflowCommandTests : IDisposable
     }
 
     /// <summary>
-    /// The person's door (D156): a keyless call on a keyed host is refused in the service's words, passed through whole, and exit 1.
+    /// The person's door: a keyless call on a keyed host is refused in the service's words, passed through whole, and exit 1.
     /// </summary>
     [Fact]
     public async Task The_persons_door_refusal_is_the_services_sentence_passed_through()

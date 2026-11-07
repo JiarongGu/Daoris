@@ -3,7 +3,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// MIXAGENT2a-ii (D163 point 2): the person's own door to a helper, <c>daoris session helper &lt;session&gt; "&lt;question&gt;"
+/// The person's own door to a helper, <c>daoris session helper &lt;session&gt; "&lt;question&gt;"
 /// [--agent &lt;name&gt;]</c>. It writes the ask a connector's <c>helper_ask</c> writes, as the person (<c>askedBy: person</c>), for the
 /// driver's look to take; it judges only what the file's reader cannot, since the person is the one asking: the session is one of
 /// this machine's that may ask, and the question is a question.
@@ -189,7 +189,7 @@ public sealed class SessionsHelperTests : IDisposable
         Assert.Empty(new HelperFiles(_home).Asks());
     }
 
-    // ——— HELPERTERM1 (D163 point 3, D50): the yes and the no at a terminal, the page's judge (`HelperPersonWord`).
+    // ——— The yes and the no at a terminal, the page's judge (`HelperPersonWord`).
 
     private static readonly DateTimeOffset At = DateTimeOffset.Parse("2026-10-16T10:00:00Z");
 
@@ -263,7 +263,7 @@ public sealed class SessionsHelperTests : IDisposable
         Assert.Single(events.After("s1", 0).Events, e => e.Kind == SessionEventKind.Note);
     }
 
-    /// <summary>Each answer the judge gives as data is a refusal at the terminal, with its sentence, and the state is left as it was.</summary>
+    /// <summary>Each answer the judge gives as data is a refusal at the terminal, with its sentence, and the state is left unchanged.</summary>
     [Theory]
     [InlineData("--approve", null, null, HelperAsk.ByAgent, "No ask #a1")]
     [InlineData("--approve", HelperStates.Waiting, null, HelperAsk.ByPerson, "your own ask")]

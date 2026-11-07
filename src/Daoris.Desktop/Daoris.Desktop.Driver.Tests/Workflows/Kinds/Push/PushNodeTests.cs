@@ -3,7 +3,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// <c>push</c> (G8; D241 point 2) is Daoris's own push read against git's remote-tracking ref: unread, it is unknown; read at the pushed tip it
+/// The <c>push</c> node is Daoris's own push read against git's remote-tracking ref: unread, it is unknown; read at the pushed tip it
 /// is reached by git; elsewhere it is not yet. Nothing pushed is no outcome, and the push act's refusal is what fails it.
 /// </summary>
 public sealed class PushNodeTests

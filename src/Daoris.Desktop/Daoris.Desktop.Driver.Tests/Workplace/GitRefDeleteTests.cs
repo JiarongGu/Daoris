@@ -4,7 +4,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// GITAPP2d over real git (D204; the git-writes design §6 <i>Delete</i>, §12 row d): a branch or a lightweight tag deleted by one
+/// Delete over real git: a branch or a lightweight tag deleted by one
 /// transaction through the act journal (the delete, the recovery ref's create, each proof ref's verify), then the branch's section removed
 /// under git's own <c>config.lock</c>; refused for the held branches, an annotated tag and an occupied branch; put back where a tree checked
 /// it out between the judgement and the effect; undone, the section included.

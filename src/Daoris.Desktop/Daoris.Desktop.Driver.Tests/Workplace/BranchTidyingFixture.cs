@@ -5,9 +5,9 @@ using static Daoris.Desktop.Driver.Tests.GitFixture;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// What the look's tidy classes over real git share (AUTOTIDY1, D88's note): a home under the scratch folder, the stand-in
+/// What the look's tidy classes over real git share: a home under the scratch folder, the stand-in
 /// ledger read through the real client, repositories on <c>main</c>, session trees with work, landed or landed by Accept's
-/// branch form, and the machine log's events. One class until PROC1g split it four ways: two run four at once with the git-only
+/// branch form, and the machine log's events. Four classes: two run four at once with the git-only
 /// classes (<see cref="BranchTidyingProcessTests"/> and <see cref="BranchTidyingFolderTests"/>), and two one at a time,
 /// <see cref="BranchTidyingLandingTests"/>, whose looks come nearest <see cref="Bound"/>, and <see cref="BranchTidyingWatchTests"/>,
 /// whose watch ticks.
@@ -15,7 +15,7 @@ namespace Daoris.Desktop.Driver.Tests;
 public abstract class BranchTidyingFixture : IDisposable
 {
     // A look judges each branch the line holds with several git calls, twice: a dozen took over a minute while other worktrees
-    // built (FLAKE1), and 22 seconds alone.
+    // built, and 22 seconds alone.
     protected static readonly TimeSpan Bound = TimeSpan.FromMinutes(4);
 
     protected readonly string _scratch;
@@ -29,8 +29,8 @@ public abstract class BranchTidyingFixture : IDisposable
         _scratch = Path.Combine(RepoRoot(), "_fixtures", "autotidy", Guid.NewGuid().ToString("N")[..8]);
         _home = Path.Combine(_scratch, "daoris-home");
         Directory.CreateDirectory(_home);
-        // FABRIC-END4a: the look's tidy takes only what the end's keeper wrote the line holds, and the keeper writes in the process
-        // holding the home's lease alone (FABRIC-END2), as the instance's loop does.
+        // The look's tidy takes only what the end's keeper wrote the line holds, and the keeper writes in the process
+        // holding the home's lease alone, as the instance's loop does.
         _lease = HomeLease.TryAcquire(_home, LeaseKind.Headless, out _);
     }
 
@@ -97,9 +97,9 @@ public abstract class BranchTidyingFixture : IDisposable
         $"tidy  engine: removed `{tree.Branch}`, which held nothing beyond `main`; its tree's folder was moved aside to ";
 
     /// <summary>
-    /// The home's machine log, on the real clock the looks read (MAINRED1): its file is today's, so a look's log prune (KEEP1d), at
-    /// most fifteen days ahead here, never finds it past the logs' days. On a fixed date it aged with the calendar, and from
-    /// 2026-10-24 each look fifteen days ahead removed it and said so.
+    /// The home's machine log, on the real clock the looks read: its file is today's, so a look's log prune, at
+    /// most fifteen days ahead here, never finds it past the logs' days. A fixed date would age with the calendar, and
+    /// each look fifteen days ahead would remove it and say so.
     /// </summary>
     protected MachineLog Log() => new(_home, "driver");
 
@@ -168,7 +168,7 @@ public abstract class BranchTidyingFixture : IDisposable
 
     /// <summary>
     /// A repository on <c>main</c> that ignores a database and a build's output, and holds a build's output itself: a copy of the run's
-    /// seed of that shape (<see cref="GitSeed"/>, PROCSPEED1b), five git starts a test fewer. The copy is outside the home's trees, so
+    /// seed of that shape (<see cref="GitSeed"/>), five git starts a test fewer. The copy is outside the home's trees, so
     /// the strays' quiet (<see cref="TreeStrays.Quiet"/>), which reads the times of what is written under them, never reads its files'
     /// times; no test here reads its first commit's id or time.
     /// </summary>

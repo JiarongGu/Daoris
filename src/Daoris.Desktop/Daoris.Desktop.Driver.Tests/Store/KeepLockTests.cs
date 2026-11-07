@@ -5,7 +5,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// CONFIGLOCK1 (D173's CONFIG1 note): a keeping write holds <c>&lt;file&gt;.lock</c> from its re-read to its rename, so a change another
+/// A keeping write holds <c>&lt;file&gt;.lock</c> from its re-read to its rename, so a change another
 /// writer makes in between is never lost. The stale rules are one table both twins read, <c>fixtures/driver-config-keeps.json</c>'s
 /// <c>lock</c>, row for row with the CLI's <c>keeplock.test.ts</c>; <see cref="KeepLockProcessTests"/> holds it across the two runtimes.
 /// </summary>
@@ -105,7 +105,7 @@ public sealed class KeepLockTests : IDisposable
     }
 
     /// <summary>
-    /// FOUNDATION1w-s part 2 (C8-1.2): a holder can read its lock again and find it still its own text, or not: another writer's, gone,
+    /// A holder can read its lock again and find it still its own text, or not: another writer's, gone,
     /// or the same holder's lock released.
     /// </summary>
     [Fact]

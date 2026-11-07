@@ -8,7 +8,7 @@ using Xunit.Abstractions;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// The git-auth design §14 row 3's proof over SSH (GITAUTH1c, D198 point 4), against the stand-in host (D241 point 8): an SSH identity
+/// The proof over SSH, against the stand-in host: an SSH identity
 /// Daoris generated, the host's key trusted at a test's press, a clone, a fetch and a push through Daoris's built ssh door, and a fetch
 /// in another repository by <c>git -C</c>; a branch pushed so and opened as a pull request on <see cref="PullRequestApiHost"/>; Windows'
 /// OpenSSH, chosen as the ssh, reading the key under its protected folder; and under <c>own</c>, a repository's <c>BatchMode=no</c>
@@ -259,7 +259,7 @@ public class GitSshProcessTests : IClassFixture<GitSshHost>, IClassFixture<PullR
     private bool HostHeardAPush() =>
         _host.Runs.Any(run => run.Command?.StartsWith("git-receive-pack", StringComparison.Ordinal) == true && run.Command.Contains(_path, StringComparison.Ordinal));
 
-    /// <summary>GITREADONLY1: an identity marked read only on its host pushes nothing, the landing's grant included, and says so.</summary>
+    /// <summary>An identity marked read only on its host pushes nothing, the landing's grant included, and says so.</summary>
     [Fact]
     public async Task A_read_only_identitys_push_is_refused_at_the_ssh_door_in_its_words_and_the_host_hears_none()
     {
@@ -277,7 +277,7 @@ public class GitSshProcessTests : IClassFixture<GitSshHost>, IClassFixture<PullR
         Assert.False(HostHeardAPush());
     }
 
-    /// <summary>GITAUTH1f: Write says ask and no instance of Daoris holds the home, so the door refuses the push at once rather than wait.</summary>
+    /// <summary>Write says ask and no instance of Daoris holds the home, so the door refuses the push at once rather than wait.</summary>
     [Fact]
     public async Task With_Daoris_not_running_a_push_its_access_would_ask_about_is_refused_at_once()
     {
@@ -299,7 +299,7 @@ public class GitSshProcessTests : IClassFixture<GitSshHost>, IClassFixture<PullR
         Assert.False(HostHeardAPush());
     }
 
-    // ── GITAUTH1g: each update judged by its kind, a grant bound to its refs, a batch refused whole ─────────────
+    // ── Each update judged by its kind, a grant bound to its refs, a batch refused whole ─────────────
 
     /// <summary>The machine's git access as the person set it: Write, and Dangerous where given.</summary>
     private void Access(string write, string? dangerous = null)

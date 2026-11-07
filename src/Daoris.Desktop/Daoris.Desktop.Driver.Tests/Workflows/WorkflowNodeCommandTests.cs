@@ -3,7 +3,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// FABRIC-CUTOVER1f (D190 point 6, the cutover design §5.2; D194 point 5): <c>daoris workflow skip|stop &lt;run&gt; &lt;node&gt;</c>, the
+/// <c>daoris workflow skip|stop &lt;run&gt; &lt;node&gt;</c>, the
 /// terminal's twin of the run's view's presses: its words read, its alone path keeping the word on the run's record as the door does, and
 /// refused from a session's terminal before anything is read. Each seen failing first.
 /// </summary>
@@ -65,7 +65,7 @@ public sealed class WorkflowNodeCommandTests : IDisposable
     }
 
     /// <summary>
-    /// INTEGRATE1n part n3 (F50): the terminal's stop reads the integration record as the page's does, so a node whose request promoted is refused
+    /// The terminal's stop reads the integration record as the page's does, so a node whose request promoted is refused
     /// in its sentence with exit 1 and nothing kept.
     /// </summary>
     [Fact]
@@ -102,7 +102,7 @@ public sealed class WorkflowNodeCommandTests : IDisposable
         public Task<bool> DropAsync(IntegrationRequest request, CancellationToken ct) => Task.FromResult(false);
     }
 
-    /// <summary>D194 point 5: a person's press acting alone from a session's terminal is refused before anything is read or kept.</summary>
+    /// <summary>A person's press acting alone from a session's terminal is refused before anything is read or kept.</summary>
     [Fact]
     public async Task Alone_from_a_sessions_terminal_it_is_refused_and_nothing_is_kept()
     {

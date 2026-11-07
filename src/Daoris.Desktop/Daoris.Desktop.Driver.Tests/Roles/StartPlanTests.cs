@@ -6,8 +6,8 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// FOUNDATION1j part i (the foundation design §2.4, D212 point 4): one start plan. A start of a work walks its seeded role's effective order
-/// choice by choice, D197's account walk inside each choice, every entry passed in one vocabulary, and answers a settled selection whose one
+/// One start plan. A start of a work walks its seeded role's effective order
+/// choice by choice, the account walk inside each choice, every entry passed in one vocabulary, and answers a settled selection whose one
 /// reservation the roster took at the selection: a probe takes none, a look's starts spread across accounts as each is chosen, and the
 /// re-ask at the open takes no second one.
 /// </summary>
@@ -154,7 +154,7 @@ public sealed class StartPlanTests : IDisposable
     }
 
     /// <summary>
-    /// FOUNDATION1j part v: a conversation's plan walks an order of one as it walks any (an agent this machine lacks is passed and the wait
+    /// A conversation's plan walks an order of one as it walks any (an agent this machine lacks is passed and the wait
     /// said in the role's words), and one start counts once on the account its pick pinned.
     /// </summary>
     [Fact]
@@ -226,7 +226,7 @@ public sealed class StartPlanTests : IDisposable
     }
 
     /// <summary>
-    /// 🔴 A look's starts spread as today (TOOL6b, PARALLEL1c): the count is taken at the selection, before the next start's walk in the same
+    /// A look's starts spread across accounts: the count is taken at the selection, before the next start's walk in the same
     /// look, so a second start goes to the account the first left; a probe between them counts nothing; and a start whose agent refused it
     /// at the open gives its one count back, so the next start takes that account again.
     /// </summary>
@@ -289,7 +289,7 @@ public sealed class StartPlanTests : IDisposable
     }
 
     /// <summary>
-    /// FOUNDATION1j part ii: a plan whose rule names who may run walks its work's role over that fence, each agent taking the role's entries for
+    /// A plan whose rule names who may run walks its work's role over that fence, each agent taking the role's entries for
     /// it, else <c>rule-default</c>; a caller holding its entries already (a helper's own order, a recheck's continuation) walks exactly those.
     /// </summary>
     [Fact]
@@ -308,7 +308,7 @@ public sealed class StartPlanTests : IDisposable
     }
 
     /// <summary>
-    /// FOUNDATION1j part ii: the plan's one loop walks the order its caller gives, under the caller's own rule of which entries an earlier pass
+    /// The plan's one loop walks the order its caller gives, under the caller's own rule of which entries an earlier pass
     /// holds: an entry held is neither asked nor passed, the first that runs is taken, and each pass is said once, in order.
     /// </summary>
     [Fact]
@@ -338,8 +338,8 @@ public sealed class StartPlanTests : IDisposable
     }
 
     /// <summary>
-    /// FOUNDATION1j part ii: an agent nothing of which is installed, or none at the version its pin names, cannot run here at all, so every walk
-    /// passes it <c>unavailable</c> (D205 point 4), read from the account walk's facts as the reviewer's walk reads them.
+    /// An agent nothing of which is installed, or none at the version its pin names, cannot run here at all, so every walk
+    /// passes it <c>unavailable</c>, read from the account walk's facts as the reviewer's walk reads them.
     /// </summary>
     [Fact]
     public void An_agent_not_installed_or_not_at_its_pin_is_passed_unavailable()
@@ -349,8 +349,8 @@ public sealed class StartPlanTests : IDisposable
     }
 
     /// <summary>
-    /// 🔴 FOUNDATION1j part ii (the foundation design §2.4, §7 row 5; D205 point 1 and its PRESSMODEL1 note): a continuation goes on with the
-    /// agent its record's choice was asked of, else the agent it opened on, else its role's first entry; never the machine's <c>adapter</c> key,
+    /// A continuation goes on with the
+    /// agent its record's choice asked for, else the agent it opened on, else its role's first entry; never the machine's <c>adapter</c> key,
     /// which a role read <i>as before</i> answers itself.
     /// </summary>
     [Fact]
@@ -373,7 +373,7 @@ public sealed class StartPlanTests : IDisposable
     }
 
     /// <summary>
-    /// 🔴 FOUNDATION1j part iv (the foundation design §2.4's second row): the agent a start is named for before its walk runs, which the look's
+    /// The agent a start is named for before its walk runs, which the look's
     /// report of a wait names, is a hand-over's, else a continuation's record's, else its role's first entry, the machine's <c>adapter</c> key
     /// only where that entry does not read.
     /// </summary>
@@ -420,7 +420,7 @@ public sealed class StartPlanTests : IDisposable
     }
 
     /// <summary>
-    /// An intake's plan waits in Intake's own words (D205 §4.5), each choice named and the soonest cool-off beside it, and its machine log's
+    /// An intake's plan waits in Intake's own words, each choice named and the soonest cool-off beside it, and its machine log's
     /// lines name the ask, keyed as the intake's walk always wrote them.
     /// </summary>
     [Fact]

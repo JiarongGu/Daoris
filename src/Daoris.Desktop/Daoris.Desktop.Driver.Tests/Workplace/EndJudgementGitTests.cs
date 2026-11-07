@@ -3,8 +3,8 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// FABRIC-END2a: the end judgement's proofs over real git, where its facts come through the proofs' own seams (the fast half is
-/// <see cref="EndJudgementTests"/>). Canary 6's cases that need a repository: a remote branch reading <c>[gone]</c>, a commit the line
+/// The end judgement's proofs over real git, where its facts come through the proofs' own seams (the fast half is
+/// <see cref="EndJudgementTests"/>). The cases that need a repository: a remote branch reading <c>[gone]</c>, a commit the line
 /// holds only by patch, and a plugin's word the line does not hold.
 /// </summary>
 [Trait(Category.Name, Category.Process)]
@@ -55,14 +55,14 @@ public sealed class EndJudgementGitTests : LandedFixture
         Assert.Equal(EndState.Claim, verdict.State);
     }
 
-    /// <summary>The line holds the commit's patch under a commit of its own, and has changed the file since: patch equivalence, never an end (D102, D148).</summary>
+    /// <summary>The line holds the commit's patch under a commit of its own, and has changed the file since: patch equivalence, never an end.</summary>
     [Fact]
     public async Task A_commit_the_line_holds_only_by_patch_is_not_an_end()
     {
         var root = await RepositoryAsync("engine");
         var tip = await BranchAsync(root, "daoris/s1", "b.txt", "two\n");
         // The line gained a file first, so no tree of its own is the branch's tree (a one-commit cherry-pick of a tree that is still
-        // the same would read as a squash, which is SQUASHTIDY1's proof), then took the patch and changed the file again.
+        // the same would read as a squash, which is the content proof), then took the patch and changed the file again.
         await CommitAsync(root, "c.txt", "c\n", "another change");
         await GitAsync(root, "cherry-pick", "-x", tip);
         await CommitAsync(root, "b.txt", "three\n", "the line moves on");
@@ -91,7 +91,7 @@ public sealed class EndJudgementGitTests : LandedFixture
         Assert.Equal((EndState.Ended, EndBy.Merged), (ended.State, ended.By));
     }
 
-    /// <summary>A completed answer whose merge commit is not on the line here is the platform's word alone: handed, never ended (D148 point 4).</summary>
+    /// <summary>A completed answer whose merge commit is not on the line here is the platform's word alone: handed, never ended.</summary>
     [Fact]
     public async Task A_pull_requests_completed_answer_without_its_merge_commit_here_is_not_an_end()
     {

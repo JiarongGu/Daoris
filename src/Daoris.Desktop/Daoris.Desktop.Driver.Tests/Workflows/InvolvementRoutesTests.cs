@@ -3,7 +3,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// FABRIC-PIPELINE1a (D157 point 10, D192 point 2, the pipeline design §1.3): the lowering table gains a landed route removed, set to
+/// The lowering table: a landed route removed, set to
 /// <c>current</c> or pointed at a pipeline whose checks run fewer gates; a verification pipeline's version that drops a check, narrows
 /// its gates or removes the wire a node waits on it by; and a check's <c>failed</c> moved off <c>wait</c>. Raising one never lowers, and
 /// an agent's choice that lowers is kept as a proposal, which only the person's press applies.
@@ -87,7 +87,7 @@ public sealed class InvolvementRoutesTests
         Assert.True(lowered == string.Join("; ", said), $"{name}: {string.Join("; ", said)}");
     }
 
-    /// <summary>LANDNODE1c2: the review before a <c>land</c> taken away lowers the person's part, as a landing's press moved to automatic did.</summary>
+    /// <summary>The review before a <c>land</c> taken away lowers the person's part, as a landing's press moved to automatic does.</summary>
     [Fact]
     public void A_review_taken_from_before_the_land_lowers_and_one_added_lowers_nothing()
     {
@@ -108,7 +108,7 @@ public sealed class InvolvementRoutesTests
         Assert.Empty(Involvement.Lowers(Involvement.StepsOf(Land(true)), Involvement.StepsOf(Land(false))));
     }
 
-    /// <summary>D157 point 10: an agent's choice that lowers the person's part is kept as a proposal; the person's press applies it.</summary>
+    /// <summary>An agent's choice that lowers the person's part is kept as a proposal; the person's press applies it.</summary>
     [Fact]
     public void An_agents_choice_that_lowers_is_kept_as_a_proposal_and_the_persons_press_applies_it()
     {

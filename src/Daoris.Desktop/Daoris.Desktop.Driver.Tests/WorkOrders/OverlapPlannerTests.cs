@@ -1,7 +1,7 @@
 namespace Daoris.Driver.Tests;
 
 /// <summary>
-/// INTEGRATE1l (the integration design §9 point 1): at a start the planner compares the quest's declared paths with every earlier unit of
+/// At a start the planner compares the quest's declared paths with every earlier unit of
 /// its repository, declared or already changed on its branch. Under the rule's <c>overlap: wait</c> the later start is held until the
 /// earlier unit's integration is settled; under <c>warn</c> it starts, and the overlap is said.
 /// </summary>

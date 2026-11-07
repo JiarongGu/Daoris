@@ -4,10 +4,10 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// Clearing downloads (CACHECLEAR1): the agents' and tools' versions under <c>cache/</c> listed with what keeps each, and the press
-/// removing only the listed ones nothing keeps, each judged again right before it goes (D88's shape). One case per kept version.
-/// KEEP1b (D195 point 6; the cleanup design §3.5, §9) adds the rule's rows: the first-unused time of the current unused stretch, the
-/// removal past its days, the judgement under the use files' locks held per version to the rename, the versions a running session was
+/// Clearing downloads: the agents' and tools' versions under <c>cache/</c> listed with what keeps each, and the press
+/// removing only the listed ones nothing keeps, each judged again right before it goes. One case per kept version.
+/// The rule's rows: the first-unused time of the current unused stretch, the
+/// removal past its days, the judgement under the use files' locks held per version to the rename, the versions a running session is
 /// handed, and Tools' delete through the same act.
 /// </summary>
 /// <remarks>Every case runs in a home under <c>_fixtures/</c>, as <see cref="KeepingTests"/>' do, and nothing here starts a program.</remarks>
@@ -17,7 +17,7 @@ public sealed class DownloadClearingTests : IDisposable
 
     private string Home => Path.Combine(_root, "data");
 
-    /// <summary>Long after every folder here was made, so nothing reads as a download a moment old.</summary>
+    /// <summary>Long after every folder here is made, so nothing reads as a download a moment old.</summary>
     private static DateTimeOffset Later => DateTimeOffset.UtcNow + TimeSpan.FromHours(2);
 
     public DownloadClearingTests() => Directory.CreateDirectory(Home);
@@ -286,11 +286,11 @@ public sealed class DownloadClearingTests : IDisposable
         Assert.Equal((0L, false), (row.Bytes, row.Partial));
     }
 
-    // ── KEEP1b: what a running session was handed (Fable F2.5) ─────────────────────────────────────────────────────
+    // ── What a running session is handed ─────────────────────────────────────────────────────
 
     /// <summary>
-    /// 🔴 §3.5 (F2.5): a version holding a file a running session was handed is kept as <c>running</c>, both of an ACP session's: its
-    /// adapter and the <c>claude</c> it is told to use. The rename alone proves nothing (Codex 2.6).
+    /// A version holding a file a running session is handed is kept as <c>running</c>, both of an ACP session's: its
+    /// adapter and the <c>claude</c> it is told to use. The rename alone proves nothing.
     /// </summary>
     [Fact]
     public async Task A_version_a_running_session_was_handed_is_kept_running_both_of_an_acp_session_s()
@@ -310,7 +310,7 @@ public sealed class DownloadClearingTests : IDisposable
     }
 
     /// <summary>
-    /// §3.5 (F2.5): what a start was handed, read off the start itself: the managed binary it runs, a shim's path in its arguments, the
+    /// What a start is handed, read off the start itself: the managed binary it runs, a shim's path in its arguments, the
     /// <c>claude</c> an ACP adapter is told to use, and each managed tool's folder on its PATH; a path outside the downloads is none.
     /// </summary>
     [Fact]
@@ -334,8 +334,8 @@ public sealed class DownloadClearingTests : IDisposable
     }
 
     /// <summary>
-    /// §3.5 (F2.5): a running session whose record holds no versions, a start from before KEEP1b, keeps the start-time rule: kept while it
-    /// started before the version was first found unused, and not where it started after.
+    /// A running session whose record holds no versions keeps the start-time rule: kept while it
+    /// started before the version is first found unused, and not where it started after.
     /// </summary>
     [Fact]
     public async Task A_record_with_no_versions_is_kept_by_its_start_before_the_first_unused_moment()
@@ -355,7 +355,7 @@ public sealed class DownloadClearingTests : IDisposable
     }
 
     /// <summary>
-    /// §3.5 (F2.5): what a start was handed is kept on its record through the record's own door before it is spawned, a go-on's added to the
+    /// What a start is handed is kept on its record through the record's own door before it is spawned, a go-on's added to the
     /// first's, and read back as the running session's; a start handed nothing asks nothing, and a record the service does not know is no
     /// failure of the start.
     /// </summary>
@@ -400,8 +400,8 @@ public sealed class DownloadClearingTests : IDisposable
     }
 
     /// <summary>
-    /// §6.7: with no service to ask, the home's process markers say whether a session runs here at all: none is none; a live one keeps
-    /// every version, since what it was handed cannot be read.
+    /// With no service to ask, the home's process markers say whether a session runs here at all: none is none; a live one keeps
+    /// every version, since what it is handed cannot be read.
     /// </summary>
     [Fact]
     public async Task With_no_service_a_live_process_marker_keeps_every_version_and_none_keeps_none()
@@ -431,10 +431,10 @@ public sealed class DownloadClearingTests : IDisposable
         Assert.True(Directory.Exists(folder));
     }
 
-    // ── KEEP1b: the use files' locks, held per version from the judgement to the rename (Fable F2.2 to F2.4) ──────────────
+    // ── The use files' locks, held per version from the judgement to the rename ──────────────
 
     /// <summary>
-    /// 🔴 §3.5 (F2.2, F2.3): a pin written between the judgement and the rename waits on the harness file's lock, and its writer, looking
+    /// A pin written between the judgement and the rename waits on the harness file's lock, and its writer, looking
     /// again under its lock, finds the version gone and refuses it: no pin is left naming a version that is not there.
     /// </summary>
     [Fact]
@@ -526,7 +526,7 @@ public sealed class DownloadClearingTests : IDisposable
         Assert.True(Directory.Exists(folder));
     }
 
-    // ── KEEP1b: the rule, the current unused stretch and the days (Fable F2.1) ─────────────────────────────────────────
+    // ── The rule, the current unused stretch and the days ─────────────────────────────────────────
 
     /// <summary>A pass's moment, whole seconds as the record writes them, two days past every folder made here, so none reads as recent.</summary>
     private static readonly DateTimeOffset T0 = new(DateTime.UtcNow.Date.AddDays(2).AddHours(9), TimeSpan.Zero);
@@ -631,8 +631,8 @@ public sealed class DownloadClearingTests : IDisposable
     }
 
     /// <summary>
-    /// §3.1: the rule removes within the pass's budget, heard between versions: one spent before any is reached removes nothing and says
-    /// the day's removal was cut, for the next pass to take up.
+    /// The rule removes within the pass's budget, heard between versions: one spent before any is reached removes nothing and says
+    /// the day's removal is cut, for the next pass to take up.
     /// </summary>
     [Fact]
     public async Task A_spent_budget_removes_nothing_and_leaves_the_day_s_removal_to_the_next_pass()
@@ -702,10 +702,10 @@ public sealed class DownloadClearingTests : IDisposable
         Assert.Null(DownloadKeeping.Goes(unused, record, new DownloadsPolicy(null)));
     }
 
-    // ── KEEP1b: Tools' delete takes the same act (§3.5, §6.6) ───────────────────────────────────────────────────────
+    // ── Tools' delete takes the same act ───────────────────────────────────────────────────────
 
     /// <summary>
-    /// Tools' delete of a version a running session was handed is refused the same way, the version left whole: held, its reason the
+    /// Tools' delete of a version a running session is handed is refused the same way, the version left whole: held, its reason the
     /// act's (the page's <c>TOOL_HELD</c> says it), since Tools runs another version.
     /// </summary>
     [Fact]

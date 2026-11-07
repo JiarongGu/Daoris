@@ -5,7 +5,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// The relay's checks, watermark, batch and words (EVENTHOOK1c; the event hook design §6.1 steps 3 to 5, §8): a first line out of its schema
+/// The relay's checks, watermark, batch and words: a first line out of its schema
 /// refused, a frame outside the grammar dropped, the first line's gap at once, one gap line a batch at the place of the first, repeats dropped
 /// without a gap, a kind left out moving the watermark, the 51st event counted, another build's update line, and every line one of
 /// <see cref="RelaySaid"/>'s sentences around checked ids.
@@ -129,7 +129,7 @@ public sealed class RelayBatchTests
         ], batch.Printed().Out);
     }
 
-    /// <summary>CHANNELJOIN1d: a member's own post moves the watermark and prints nothing, another's is said, and the ask's bounds hold.</summary>
+    /// <summary>A member's own post moves the watermark and prints nothing, another's is said, and the ask's bounds hold.</summary>
     [Fact]
     public void A_post_by_the_id_given_to_not_by_moves_the_watermark_and_prints_nothing()
     {

@@ -4,8 +4,8 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// The world registration following reads, in memory (WSSETUP5): the registry's rows, what each line holds, and what
-/// was sent, so the follower and its terminal's words are held with no service and no git.
+/// The world registration following reads, in memory: the registry's rows, what each line holds, and what
+/// got sent, so the follower and its terminal's words are held with no service and no git.
 /// </summary>
 internal class RegistrationStandIn : IRegistrationWorld
 {

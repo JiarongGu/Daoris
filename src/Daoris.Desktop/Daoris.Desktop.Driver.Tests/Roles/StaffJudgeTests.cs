@@ -5,7 +5,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// STAFFPOLICY1a (D226; the staff policy design §3, §4): the policy's two pure judges held to <c>fixtures/staff-policy.json</c>.
+/// The policy's two pure judges held to <c>fixtures/staff-policy.json</c>.
 /// <see cref="StaffJudge.Arrange"/> orders a role's own entries with each one's reason, passes those over budget or held, and leaves those
 /// not taking the work; a sequence feeds each pick back into the window and today's starts; <see cref="StaffJudge.OnCondition"/> answers
 /// a met condition's action, today's for every condition where no policy or no move is set.

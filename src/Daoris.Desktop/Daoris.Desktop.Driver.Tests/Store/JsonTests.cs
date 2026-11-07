@@ -5,7 +5,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// The one field reader the driver's modules share (DEDUP1a): every reader answers absent for a value of the wrong
+/// The one field reader the driver's modules share: every reader answers absent for a value of the wrong
 /// kind, and for an element that is not an object at all, where the private copies it replaced threw on one.
 /// </summary>
 public sealed class JsonTests

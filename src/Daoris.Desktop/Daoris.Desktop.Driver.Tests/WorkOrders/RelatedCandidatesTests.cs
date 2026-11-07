@@ -2,7 +2,7 @@ using Daoris.Driver;
 
 namespace Daoris.Desktop.Driver.Tests;
 
-/// <summary>SESSRELATED1: only a session whose tree folder exists here is a candidate; a gone tree has no work to meet.</summary>
+/// <summary>Only a session whose tree folder exists here is a candidate; a gone tree has no work to meet.</summary>
 public sealed class RelatedCandidatesTests
 {
     private static SessionView Session(string id, string tree, string repository = "Daoris") =>

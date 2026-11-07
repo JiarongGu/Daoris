@@ -5,7 +5,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// GITAPP2i over real git (D204; the git-writes design §5, §8, §12 row i): commit and amend through the act journal. A formatting
+/// Over real git, commit and amend through the act journal. A formatting
 /// <c>pre-commit</c> hook's rewrite is said; an amend keeps a recovery ref at the old tip first; a commit cut off by its owner's death is
 /// reconciled by HEAD, its hook's children ended and nothing run again. The switch off, a session in the checkout, an unread ledger, a stale
 /// HEAD or index and an operation in progress each refuse.
@@ -346,7 +346,7 @@ public sealed class CommitActsGitTests : TreeSyncFixture
         Assert.Equal("ran", (await File.ReadAllTextAsync(Path.Combine(root, ".git", "noted.txt"))).Trim());
     }
 
-    /// <summary>🔴 A commit cut off before git ran reads as not done: HEAD is where it was, and nothing is run again.</summary>
+    /// <summary>A commit cut off before git ran reads as not done: HEAD stays put, and nothing is run again.</summary>
     [Fact]
     public async Task A_commit_cut_off_before_git_ran_is_reconciled_as_not_done()
     {

@@ -4,7 +4,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// ONEWAY1r's proof (D204, D228; the oneway design §5 G3): every branch delete is the journal's <c>ref.delete</c> act with its Undo. A delete a
+/// Every branch delete is the journal's <c>ref.delete</c> act with its Undo. A delete a
 /// door of Daoris's judged (a discard, a withdrawal, a sweep, the clean-up, a housekeeping discard, a removal) passes
 /// <see cref="ContentHolds.DeleteJudgedAsync"/>, which runs <see cref="JournaledDeletes"/>; a forced one reads its tip and passes the same. The
 /// record is pressed by <c>daoris</c>, its section journaled, and <c>GIT_REF_UNDO</c>'s act makes the branch again; under a tidy's hold the act

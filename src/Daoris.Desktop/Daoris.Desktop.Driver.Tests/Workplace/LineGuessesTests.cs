@@ -3,9 +3,9 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// The checkout's guess at its line, asked of git once for as long as what git reads for it stays as it was (IDLECPU1). The
-/// screen's LINES asked git of every checkout with no line set at each ask, one to three starts each, at every tick and every
-/// return to the window, on a machine whose every program start costs a quarter of a second or more (DEVDRIVE1).
+/// The checkout's guess at its line, asked of git once for as long as what git reads for it stays unchanged. Without it the
+/// screen's LINES would ask git of every checkout with no line set at each ask, one to three starts each, at every tick and every
+/// return to the window, on a machine whose every program start costs a quarter of a second or more.
 /// </summary>
 /// <remarks>
 /// No git here: the guess is counted, and the files git reads are laid out by hand, as the files backend keeps them.

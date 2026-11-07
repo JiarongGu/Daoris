@@ -3,7 +3,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// The plugins' work processes as the runtime sees them (FABRIC-PERFORM1i): each call counted, each set told kept as the frame actually sent
+/// The plugins' work processes as the runtime sees them: each call counted, each set told kept as the frame actually sent
 /// to the current generation unless its send fails, the events each plugin sends queued, and every refusal counted.
 /// </summary>
 internal sealed class ObservedPort : IWorkRuntimePort
@@ -18,7 +18,7 @@ internal sealed class ObservedPort : IWorkRuntimePort
 
     public List<(string Plugin, string Code)> Refusals { get; } = [];
 
-    /// <summary>Where set and true for a plugin's units, that send fails: the process keeps the frame it was last sent.</summary>
+    /// <summary>Where set and true for a plugin's units, that send fails: the process keeps the frame it last received.</summary>
     public Func<IReadOnlyList<WatchedUnit>, bool>? Fails { get; set; }
 
     private readonly Dictionary<string, WorkWatchFrame> _sent = new(StringComparer.Ordinal);

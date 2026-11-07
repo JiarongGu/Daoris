@@ -5,13 +5,12 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// WORKFLOW1e (D157 point 10, the workflow design §2.5, §4.1–§4.3): which workflow work follows — <c>workflows</c> and
-/// <c>workspaceWorkflows</c> in <c>driver.json</c> read, written, edited and resolved in §4.1's order — and the versions a kept run
+/// Which workflow work follows — <c>workflows</c> and
+/// <c>workspaceWorkflows</c> in <c>driver.json</c> read, written, edited and resolved in order — and the versions a kept run
 /// names.
 /// </summary>
 /// <remarks>
-/// Held, cell for cell, to ONE table, this suite's <c>fixtures/workflow-selection.json</c> (the CLI's twin, <c>workflowchoice.ts</c>,
-/// left with the driver family's TypeScript in PUSH1f2b).
+/// Held, cell for cell, to ONE table, this suite's <c>fixtures/workflow-selection.json</c>.
 /// </remarks>
 public sealed class WorkflowSelectionTests
 {
@@ -67,7 +66,7 @@ public sealed class WorkflowSelectionTests
     }
 
     /// <summary>
-    /// FABRIC-PIPELINE1a (D192 point 2, the pipeline design §1.2): the landed route resolves on its own, a repository's, else its
+    /// The landed route resolves on its own, a repository's, else its
     /// workspace's, else none, outside the rule by which a repository's development routes replace its workspace's.
     /// </summary>
     [Theory]
@@ -121,7 +120,7 @@ public sealed class WorkflowSelectionTests
             """);
 
         Assert.Equal(["feature", "docs"], config.WorkspaceWorkflows["work"].Kinds.Select(pair => pair.Key));
-        // The choices as the writer writes them, the text they were read from apart (FABRIC-GRAPH1's review: an unedited file is its own bytes).
+        // The choices as the writer writes them, the text they were read from apart (an unedited file is its own bytes).
         var written = (config with { Source = null }).ToJson();
         Assert.Contains("\"feature\": {", written, StringComparison.Ordinal);
         Assert.True(written.IndexOf("\"feature\"", StringComparison.Ordinal) < written.IndexOf("\"docs\"", StringComparison.Ordinal));
@@ -143,8 +142,7 @@ public sealed class WorkflowSelectionTests
 
     private static JsonObject Maps(DriverConfig config)
     {
-        // What the reader holds, as the writer writes it: the text it was read from apart, which the writer keeps what it did not read from
-        // (FABRIC-GRAPH1's review, finding 1).
+        // What the reader holds, as the writer writes it: the text it came from apart, which the writer keeps what it did not read from.
         var written = JsonNode.Parse((config with { Source = null }).ToJson())!.AsObject();
         return new JsonObject
         {

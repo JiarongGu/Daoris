@@ -3,7 +3,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// FABRIC-END4a's link 2 over the records alone (the over-git half is <see cref="TidyEffectGitTests"/>): the tidy pending from the
+/// Over the records alone (the over-git half is <see cref="TidyEffectGitTests"/>): the tidy pending from the
 /// kept facts through the inventory, recovered at the start (canary 16), refused for a busy tree with no git and run when the session
 /// leaves it (canary 17), never pending for an unknown owner (canary 27), and a branch's removal leaving its unit open (canary 35).
 /// </summary>

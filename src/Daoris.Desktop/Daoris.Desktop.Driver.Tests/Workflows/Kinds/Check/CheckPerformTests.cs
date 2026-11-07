@@ -3,7 +3,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// FABRIC-PIPELINE1d (the pipeline design §4.1, §4.2): a <c>check</c> started through the performer as a performed node, its attempt naming
+/// A <c>check</c> started through the performer as a performed node, its attempt naming
 /// the executor and handed to it, its answer through the reconcile alone under the <c>gates</c> source, never asked at its deadline, held for
 /// the person with <i>Run again</i> and <i>Not now</i> where unknown, a stop told to the executor, and a restart sending the same attempt again.
 /// </summary>
@@ -20,7 +20,7 @@ public sealed class CheckPerformTests : IDisposable
 
     public void Dispose() => GitSeed.Discard(_home);
 
-    /// <summary>The executor as the performer sees it: what it was sent and stopped, and what it answers.</summary>
+    /// <summary>The executor as the performer sees it: what it is sent and told to stop, and what it answers.</summary>
     private sealed class Checks : ICheckPort
     {
         public List<NodeAttempt> Sent { get; } = [];

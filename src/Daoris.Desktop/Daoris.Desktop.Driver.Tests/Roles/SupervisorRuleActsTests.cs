@@ -3,7 +3,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// CONTEXTDRIVE1e (the context counters design §4.7): a rule's act said on the line by its code, kept in the decision record with
+/// A rule's act said on the line by its code, kept in the decision record with
 /// <c>holder.kind</c> <c>rule</c> and no question, read back by its holder kind, and passed by the questions' reader.
 /// </summary>
 public sealed class SupervisorRuleActsTests : IDisposable

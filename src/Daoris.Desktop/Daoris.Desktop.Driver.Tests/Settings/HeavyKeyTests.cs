@@ -4,7 +4,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// This machine's heavy gates as <c>driver.json</c> keeps them (FOUNDATION1 mod-iii): the settings' own reading and writing, which the
+/// This machine's heavy gates as <c>driver.json</c> keeps them: the settings' own reading and writing, which the
 /// mapping answers through, so the key is read and kept alike wherever a gate list is named.
 /// </summary>
 public sealed class HeavyKeyTests

@@ -3,7 +3,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// FOUNDATION1q (D212; the foundation design §2.3): one policy shape, read from the keys <c>driver.json</c> has now, so no key moves. Each
+/// One policy shape, read from the keys <c>driver.json</c> has, so no key moves. Each
 /// work's resolved policy carries what every work has (its consent, the agents it permits, its concurrency, its minutes) and a typed
 /// requirement of its own, each default written once in the reader's table: helpers <c>on</c>, hand-over <c>ask</c>, opinions none, a
 /// partner's no rule yet and never <c>on</c>, the brainstorm's mode listed with no reader.
@@ -43,7 +43,7 @@ public sealed class WorkPolicyTests
         Assert.Equal(consent is WorkConsent.On or WorkConsent.Ask, policy.Enabled);
     }
 
-    /// <summary>A helper's default asks Daoris's own set-up agents alone (HELPERDEFAULT1); a rule the person set is read as written.</summary>
+    /// <summary>A helper's default asks Daoris's own set-up agents alone; a rule the person set is read as written.</summary>
     [Fact]
     public void A_helpers_policy_is_the_helpers_rule_standing_for_the_repository()
     {
@@ -56,7 +56,7 @@ public sealed class WorkPolicyTests
         Assert.Equal((WorkConsent.Off, false, "workspace"), (shared.Consent, shared.Enabled, shared.Source));
     }
 
-    /// <summary>A partner's policy is no rule yet whatever is set (no `partners` key, COAGENT1d), admitted only where measured.</summary>
+    /// <summary>A partner's policy is no rule yet whatever is set (no `partners` key), admitted only where measured.</summary>
     [Fact]
     public void A_partners_policy_is_no_rule_yet_and_never_on()
     {

@@ -5,8 +5,8 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// The service as the review's doors meet it (REVIEWENV1c), standing in: a set-up step done and held for its review, the quest
-/// list that answers it, and the review and set-up doors, each post kept as it was heard. Shared by the terminal's verdict and
+/// The service as the review's doors meet it, standing in: a set-up step done and held for its review, the quest
+/// list that answers it, and the review and set-up doors, each post kept as heard. Shared by the terminal's verdict and
 /// the set-up's posting.
 /// </summary>
 internal static class ReviewStandIn

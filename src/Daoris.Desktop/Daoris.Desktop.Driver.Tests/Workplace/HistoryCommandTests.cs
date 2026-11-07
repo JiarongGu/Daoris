@@ -5,14 +5,14 @@ using static Daoris.Desktop.Driver.Tests.HistoryStandIn;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// HIST1d (D153 point 7; the history-clearing design §6.2, D50): the terminal's history verbs, so a machine with no screen clears
+/// The terminal's history verbs, so a machine with no screen clears
 /// as the window does. <c>history</c> reads what this machine keeps of finished work, per workspace; <c>history clear
 /// --workspace</c>, <c>quest clear [--failed]</c> and <c>ask --clear</c> list what a clear would take and keep, and clear it only
 /// with <c>--yes</c>, through the driver library's <see cref="HistoryClearing"/> at the door <c>terminal</c>. Each kept unit is
-/// said in its keep's own sentence. Exit codes are the family's: 0 done, listed or nothing to do · 1 a unit named was kept ·
+/// said in its keep's own sentence. Exit codes are the family's: 0 done, listed or nothing to do · 1 a unit named is kept ·
 /// 2 could not.
 /// </summary>
-/// <remarks>A scratch home and the in-process stand-in HIST1c's tests read (<see cref="HistoryStandIn"/>): the suite's fast half.</remarks>
+/// <remarks>A scratch home and the in-process stand-in the clearing tests read (<see cref="HistoryStandIn"/>): the suite's fast half.</remarks>
 public sealed class HistoryCommandTests : IDisposable
 {
     private readonly string _home = Path.Combine(TestHomes.Root, "daoris-history-verbs-" + Guid.NewGuid().ToString("N")[..8]);
@@ -288,7 +288,7 @@ public sealed class HistoryCommandTests : IDisposable
     }
 
     /// <summary>
-    /// A file the disk would not let go of is said, and the size said is what went (HIST1j): the transcript a process holds stays,
+    /// A file the disk would not let go of is said, and the size said is what went: the transcript a process holds stays,
     /// left over for the next clear of a workspace, and the press is 2, as an abandon's failed step is.
     /// </summary>
     [Fact]
@@ -474,7 +474,7 @@ public sealed class HistoryCommandTests : IDisposable
     }
 
     /// <summary>
-    /// A workspace's name in a command the verbs print is spelled for any shell (HIST1i, D125's ACCTQUOTE1 and ACCTQUOTE1b notes):
+    /// A workspace's name in a command the verbs print is spelled for any shell:
     /// in double quotes where PowerShell, Command Prompt and a POSIX shell all keep it whole, and its placeholder where none does,
     /// so <c>R&amp;D</c> pasted into Command Prompt never runs <c>D</c>. The words around the command name it as it is.
     /// </summary>

@@ -4,7 +4,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// A registration composed from a repository's line (WSSETUP5, D124 §3.3): what <c>connect</c> would send from that
+/// A registration composed from a repository's line: what <c>connect</c> would send from that
 /// manifest. The table is the one holding of <c>LineRegistration</c>: the driver's <c>repository connect</c> and the
 /// registry's follow of a line both compose through it, and no CLI test reads this theory.
 /// </summary>

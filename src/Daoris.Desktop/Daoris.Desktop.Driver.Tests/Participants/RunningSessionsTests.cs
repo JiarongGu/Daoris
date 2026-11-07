@@ -4,7 +4,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// The sessions a driver keeps between looks (DEV3): what a look is answered about a start, and what waits
+/// The sessions a driver keeps between looks: what a look is answered about a start, and what waits
 /// for a later look's report.
 /// </summary>
 public sealed class RunningSessionsTests
@@ -138,7 +138,7 @@ public sealed class RunningSessionsTests
     }
 
     /// <summary>
-    /// LOOKWAIT1b (D181 point 6): work kept beside the looks is never the stage that began it, which does not wait on it. Its git
+    /// Work kept beside the looks is never the stage that began it, which does not wait on it. Its git
     /// waiting for a place while that stage still runs is not the stage's queue: said nowhere, or to a span of its own.
     /// </summary>
     [Theory]

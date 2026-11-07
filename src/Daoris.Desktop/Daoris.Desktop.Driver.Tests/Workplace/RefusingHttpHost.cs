@@ -5,7 +5,7 @@ using System.Text;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// A code host on this machine's loopback that refuses, for the git-auth measurements (GITAUTH1a): every request is answered
+/// A code host on this machine's loopback that refuses, for the git-auth measurements: every request is answered
 /// with one status and the connection closed, and each request is counted. A raw socket rather than <c>HttpListener</c>,
 /// which asks Windows for a reservation an ordinary account may not hold. Never a real host, never a credential of anyone's.
 /// </summary>

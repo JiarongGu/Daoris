@@ -3,10 +3,9 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// LANDSYNC1 (D87's amendment of 2026-10-15): a landing lands only what its line lacks. On the install a session's first commit
-/// was squash-merged onto the line under a new id, the line then changed a changelog near it, and the session went on with two
-/// more commits on its old base: Accept carried all three, so the next pull request held a second copy of merged work and
-/// conflicted. Now the plan names what it leaves out and why, the press replays only the rest onto the line in a tree of
+/// A landing lands only what its line lacks. Where a session's first commit is squash-merged onto the line under a new id, the
+/// line then changes a changelog near it, and the session goes on with two more commits on its old base, carrying all three would
+/// leave the next pull request a second copy of merged work, conflicted. So the plan names what it leaves out and why, the press replays only the rest onto the line in a tree of
 /// Daoris's own, a conflict is refused with nothing made, and the session's tree moves to what landed. Real git in a scratch
 /// repository, so this is the suite's Process half; nothing reaches a network (an <c>origin</c> is a bare repository beside it).
 /// </summary>
@@ -177,7 +176,7 @@ public sealed class LineHoldsLandingTests : LandedFixture
 
     /// <summary>
     /// The control: the line has not moved since the tree left it, so it holds none of the tree's commits and the work lands as made.
-    /// Where it moved, LANDREBASE1 replays the work onto its tip (<c>LandRebaseLandingTests</c>).
+    /// Where it moved, the landing replays the work onto its tip (<c>LandRebaseLandingTests</c>).
     /// </summary>
     [Fact]
     public async Task A_tree_whose_line_has_not_moved_lands_its_commits_as_made()
@@ -219,7 +218,7 @@ public sealed class LineHoldsLandingTests : LandedFixture
         Assert.Equal((await GitAsync(root, "rev-parse", "main^2")).Trim(), await HeadAsync(tree.Path));
     }
 
-    /// <summary>A fetch that fails is no refusal: the landing is judged against the last fetch, and says so in WSR7's words.</summary>
+    /// <summary>A fetch that fails is no refusal: the landing is judged against the last fetch, and says so.</summary>
     [Fact]
     public async Task A_failed_fetch_is_said_and_the_landing_goes_on()
     {
@@ -258,7 +257,7 @@ public sealed class LineHoldsLandingTests : LandedFixture
         return process.ExitCode;
     }
 
-    /// <summary>What a refused landing must leave as it was, as <c>ContentLandingTests</c> reads it.</summary>
+    /// <summary>What a refused landing must leave unchanged, as <c>ContentLandingTests</c> reads it.</summary>
     private static async Task<string> StateAsync(string root, TreeOpened tree) =>
         string.Join("\n",
             (await GitAsync(root, "for-each-ref", "--format=%(objectname) %(refname)", "refs/heads/", "refs/daoris/")).Trim(),

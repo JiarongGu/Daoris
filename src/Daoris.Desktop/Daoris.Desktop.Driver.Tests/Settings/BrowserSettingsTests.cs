@@ -4,9 +4,9 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// CHR7: Daoris's browser's settings, kept in <c>&lt;home&gt;/browser/settings.json</c> and read by
-/// <c>daoris-browser</c> each time it starts — and its <c>links</c> by the page at each click (BRW7).
-/// 🔴 A TWIN file: the CLI's <c>browser.ts</c> reads and edits
+/// Daoris's browser's settings, kept in <c>&lt;home&gt;/browser/settings.json</c> and read by
+/// <c>daoris-browser</c> each time it starts — and its <c>links</c> by the page at each click.
+/// A TWIN file: the CLI's <c>browser.ts</c> reads and edits
 /// it too, and its <c>browser.test.ts</c> carries the same table. A case changed here is changed there,
 /// in the same commit.
 /// </summary>
@@ -26,7 +26,7 @@ public sealed class BrowserSettingsTests : TestHome
             new BrowserSettingsRead(ExtensionsSetting.Offer, BrowserChoice.Daoris, LinksSetting.System, null),
             BrowserSettings.Read(Home));
 
-    /// <summary>Which browser (BRW12) — the CLI's twin table holds these cases, answer for answer.</summary>
+    /// <summary>Which browser — the CLI's twin table holds these cases, answer for answer.</summary>
     [Theory]
     [InlineData("\"daoris\"", "daoris")]
     [InlineData("\"edge\"", "edge")]
@@ -52,7 +52,7 @@ public sealed class BrowserSettingsTests : TestHome
     }
 
     /// <summary>
-    /// Where the page's links open (BRW7) — the CLI's twin table holds these cases, answer for answer.
+    /// Where the page's links open — the CLI's twin table holds these cases, answer for answer.
     /// `daoris` is whichever browser the file's `browser` chooses.
     /// </summary>
     [Theory]
@@ -137,7 +137,7 @@ public sealed class BrowserSettingsTests : TestHome
     }
 
     /// <summary>
-    /// KEEPALL1c: an edit changes only what it edits, the file's numbers and line ends kept, a key written twice refused. The
+    /// An edit changes only what it edits, the file's numbers and line ends kept, a key written twice refused. The
     /// <c>browser/settings.json</c> rows of <c>home-files-keep.json</c>, the table the driver's <c>HomeFilesKeepTests</c> and the
     /// CLI's <c>homefileskeep.test.ts</c> read, row for row.
     /// </summary>

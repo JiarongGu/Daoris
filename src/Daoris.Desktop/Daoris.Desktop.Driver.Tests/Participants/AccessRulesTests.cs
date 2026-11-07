@@ -5,7 +5,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// AUTONOMY1a (D184 points 1, 5): a repository's session access setup, <c>access</c>, <c>workspaceAccess</c> and <c>machineAccess</c> in
+/// A repository's session access setup, <c>access</c>, <c>workspaceAccess</c> and <c>machineAccess</c> in
 /// <c>driver.json</c>, read, resolved pause by pause (repository, then workspace, then machine, then today's behaviour), written and
 /// edited. Nothing set anywhere is today's behaviour, so nothing loosens by itself.
 /// </summary>
@@ -114,7 +114,7 @@ public sealed class AccessRulesTests
         Assert.Equal(("intake", "workspace"), (resolved.Value(AccessRules.Routing), resolved.Source(AccessRules.Routing)));
     }
 
-    /// <summary>D184 point 5: nothing loosens by itself. A file from before says nothing, and nothing is written for it.</summary>
+    /// <summary>Nothing loosens by itself. A file from before says nothing, and nothing is written for it.</summary>
     [Fact]
     public void Nothing_set_writes_nothing_and_every_level_survives_every_other_edit()
     {
@@ -156,7 +156,7 @@ public sealed class AccessRulesTests
         { "a pause the setup does not have", """{"repository":"engine","access":{"plan":"always"}}""", "`plan` is not a pause a session stops for — one of `permissions`, `routing`, `landing`, `goAheads` or `questions`." },
         { "a value its pause does not have", """{"repository":"engine","access":{"permissions":"sometimes"}}""", "`permissions` is `asking`, `auto` or `unrestricted`, not `sometimes`." },
         { "a value that is no word", """{"workspace":"shop","access":{"permissions":true}}""", "`permissions` is `asking`, `auto` or `unrestricted`, not `true`." },
-        // WORKFLOWCLEAN1 1c (D228): how work lands is its workflow's, so no access setup sets it any more.
+        // How work lands is its workflow's, so no access setup sets it.
         { "the landing pause, retired", """{"machine":true,"access":{"landing":"rule"}}""", AccessRules.LandingRetired },
         { "a word that is not full", """{"machine":true,"access":"everything"}""", "an access setup is `full`, or the pauses it names, each with its value — or none, to clear it." },
         { "an empty list of pauses", """{"repository":"engine","access":{}}""", "one change at a time: full access, the pauses it names with their values, or clear." },

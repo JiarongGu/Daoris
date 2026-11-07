@@ -4,7 +4,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// CAPCOUNT1 (D130's note): the cap counts what the driver starts, never a conversation the person holds. On the owner's install two
+/// The cap counts what the driver starts, never a conversation the person holds. On the owner's install two
 /// Ask Daoris conversations idle between turns held two of the cap's four slots for hours, so driven quests started two at a time.
 /// What the driver starts is a driven quest session, an intake, a helper and a reviewer; a conversation is a record of the chat
 /// kind (or Ask Daoris's own place) that none of the driver's own marks names. The list keeps every active session, so a busy tree
@@ -107,7 +107,7 @@ public sealed class CapCountTests
 
     /// <summary>
     /// How a record is told: by its kind and its place, and the marks the driver gives what it starts, never by its words. A record
-    /// the host answers no kind for is read as driven work, as it was before, and counts.
+    /// the host answers no kind for is read as driven work and counts.
     /// </summary>
     [Theory]
     [InlineData("driven", "A", null, null, null, true)]
@@ -126,7 +126,7 @@ public sealed class CapCountTests
 
         Assert.Equal(holds, ActiveSessions.HoldsSlot(session));
         Assert.Equal(holds ? 1 : 0, Snapshot([], session).SlotsHeld);
-        // The same rule over a record's fields, which the Sessions badge and the status bar count by (SESSBADGE1).
+        // The same rule over a record's fields, which the Sessions badge and the status bar count.
         Assert.Equal(holds, ActiveSessions.HoldsSlot(kind, repository, ask, serves, opinion));
     }
 

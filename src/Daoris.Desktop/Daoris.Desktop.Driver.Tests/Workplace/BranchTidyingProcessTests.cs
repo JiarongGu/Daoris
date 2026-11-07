@@ -4,17 +4,17 @@ using static Daoris.Desktop.Driver.Tests.GitFixture;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// AUTOTIDY1 (D88's note) over real git: the look removes a session branch that holds nothing beyond the line, with its tree,
+/// Over real git, the look removes a session branch that holds nothing beyond the line, with its tree,
 /// by the clean-up's own path, and keeps every other branch exactly as the press finds it. The sessions are the stand-in
 /// ledger's, read through the real client. The folders' cases are <see cref="BranchTidyingFolderTests"/>, the landings'
-/// <see cref="BranchTidyingLandingTests"/> and the watch's <see cref="BranchTidyingWatchTests"/> (PROC1g).
+/// <see cref="BranchTidyingLandingTests"/> and the watch's <see cref="BranchTidyingWatchTests"/>.
 /// </summary>
 [Trait(Category.Name, Category.Process)]
 [Trait(Category.Parallel, Category.Git)]
 public sealed class BranchTidyingProcessTests : BranchTidyingFixture
 {
     /// <summary>
-    /// 🔴 The row's own case, AUTOTIDY1's and AUTOTIDY2a's: every branch the press clears whose work is on the line goes by
+    /// Every branch the press clears whose work is on the line goes by
     /// itself, each said once in the report and the machine log. A session branch whose work a merge took onto the line goes with
     /// its tree; one on the line by content after a squash, its commits kept on a ref of
     /// their own; and, each on a branch the line took, a tree holding an ignored file only it holds and one holding a build's
@@ -22,8 +22,7 @@ public sealed class BranchTidyingProcessTests : BranchTidyingFixture
     /// nothing: commits beyond the line; commits on a branch of the person's the line does not hold yet, whose session may still
     /// be asked to change them; a tree whose branch never moved, which words to its session go on in; and, each on a branch the
     /// line took, an uncommitted change, an untracked file, a session working in its tree, and one waiting on the person. A branch
-    /// Daoris did not make and record stays too, with nothing beyond the line: its owner is unknown, so it is the press's
-    /// (FABRIC-END4a, the design §C3 and §D3).
+    /// Daoris did not make and record stays too, with nothing beyond the line: its owner is unknown, so it is the press's.
     /// </summary>
     [Fact]
     public async Task The_look_removes_every_branch_the_press_clears_and_keeps_every_other()
@@ -91,7 +90,7 @@ public sealed class BranchTidyingProcessTests : BranchTidyingFixture
                 StringComparison.Ordinal)
             && line.EndsWith($"Its commits stay at `{discarded}` until you delete that ref; `git branch {squashed.Branch} {discarded}` brings the branch back.",
                 StringComparison.Ordinal));
-        // Each folder was moved aside, never deleted: what it held is all there, an ignored file only it held and a build's output.
+        // Each folder is moved aside, never deleted: what it held is all there, an ignored file only it held and a build's output.
         var asides = Directory.GetDirectories(DaorisHome.Entry(_home, HomeEntry.Trees, ".tidied", "default", "engine"));
         Assert.Equal(gone.Length, asides.Length);
         string Aside(TreeOpened tree) => asides.Single(folder => Path.GetFileName(folder).StartsWith(Path.GetFileName(tree.Path) + "-", StringComparison.Ordinal));
@@ -135,7 +134,7 @@ public sealed class BranchTidyingProcessTests : BranchTidyingFixture
         var second = await tidying.LookAsync(_ledger.Client(), log, _closing.Token).WaitAsync(Bound);
 
         Assert.Equal(2, first.Count);
-        // GITWORKTREECONFIG1: the tree's binding is asked before what it holds, so a link git cannot follow is said as git's answer to
+        // The tree's binding is asked before what it holds, so a link git cannot follow is said as git's answer to
         // where the tree's working root is, naming the tree and git's own words, and nothing is removed through it.
         Assert.Contains(first, line => line.StartsWith(
             $"tidy  engine: `{unreadable.Branch}` stays, since git could not say where the tree at {Path.GetFullPath(unreadable.Path)} has its working root (",
@@ -182,7 +181,7 @@ public sealed class BranchTidyingProcessTests : BranchTidyingFixture
     }
 
     /// <summary>
-    /// A review step in progress (REVIEWENV1d) keeps the tree it shows from, as a session in use keeps its own: a tree the line
+    /// A review step in progress keeps the tree it shows from, as a session in use keeps its own: a tree the line
     /// took whose build is shown stays, and goes at the look after nothing shows from it.
     /// </summary>
     [Fact]
@@ -227,7 +226,7 @@ public sealed class BranchTidyingProcessTests : BranchTidyingFixture
 
     /// <summary>
     /// A tracked file marked <c>assume-unchanged</c> or <c>skip-worktree</c> and then edited reads as clean to git's status: the
-    /// look keeps such a tree for the press, saying why, and the edit stays where it was.
+    /// look keeps such a tree for the press, saying why, and the edit stays in place.
     /// </summary>
     [Fact]
     public async Task A_tree_whose_index_hides_a_change_stays_for_the_press()
@@ -284,7 +283,7 @@ public sealed class BranchTidyingProcessTests : BranchTidyingFixture
     }
 
     /// <summary>
-    /// 🔴 OVERVIEWNOISE1a: a repository a test made under an ignored folder (<c>_fixtures/&lt;run&gt;/repo</c>) is ignored content like
+    /// A repository a test made under an ignored folder (<c>_fixtures/&lt;run&gt;/repo</c>) is ignored content like
     /// any other, so the tree goes by the look and the repository goes aside with it, whole. One the tree does not ignore still
     /// keeps it, as the case above holds.
     /// </summary>
@@ -315,7 +314,7 @@ public sealed class BranchTidyingProcessTests : BranchTidyingFixture
     /// <summary>
     /// The line is read by its full name: a tag named as the line, which git reads before the branch, never stands for it. A
     /// session branch a person's feature branch took, which such a tag holds, is landed elsewhere, not on the line, and stays
-    /// the press's (AUTOTIDY2a's wait for the line).
+    /// the press's (the look waits for the line).
     /// </summary>
     [Fact]
     public async Task A_tag_named_as_the_line_never_stands_for_it()
@@ -337,7 +336,7 @@ public sealed class BranchTidyingProcessTests : BranchTidyingFixture
     }
 
     /// <summary>
-    /// TREEFOLLOW1 (D164 point 4): an agent that ran <c>git checkout -b feature/x</c> in its tree and committed there, as its
+    /// An agent that ran <c>git checkout -b feature/x</c> in its tree and committed there, as its
     /// repository's rules ask, is followed. The look learns the branch (the ledger keeps it, so it outlives the tree) and warns of
     /// nothing; the tree stays on its branch, whose commits the head counts, the plan names and Accept lands. The session branch no
     /// tree has out any more goes once the line holds that branch's work, the tip its kept end is judged at, and the look says where
@@ -377,7 +376,7 @@ public sealed class BranchTidyingProcessTests : BranchTidyingFixture
         Assert.DoesNotContain(moved.Branch, await GitAsync(root, "branch", "--list", "daoris/*"), StringComparison.Ordinal);
         Assert.Equal("feature/x", (await GitAsync(moved.Path, "branch", "--show-current")).Trim());
         Assert.True(File.Exists(Path.Combine(moved.Path, "work.txt")));
-        // Learned, and kept so it is known after the tree goes: the removed branch's trace at once (FABRIC-END4a review), never a
+        // Learned, and kept so it is known after the tree goes: the removed branch's trace at once, never a
         // standing entry of a deleted branch.
         var trace = trees.Grown.Entries().Last(entry => entry.Branch == moved.Branch);
         Assert.Equal(("feature/x", true, true), (trace.Now, trace.GoneAt is not null, trace.Held is not null));
@@ -385,8 +384,8 @@ public sealed class BranchTidyingProcessTests : BranchTidyingFixture
     }
 
     /// <summary>
-    /// TREEFOLLOW1: a session branch that holds commits of its own stays when its tree moved on, silently: its commits are on
-    /// the tree's branch now, so it is landed by ancestry, which the look leaves until the line has it (AUTOTIDY2a), and the
+    /// A session branch that holds commits of its own stays when its tree moves on, silently: its commits are on
+    /// the tree's branch, so it is landed by ancestry, which the look leaves until the line has it, and the
     /// look warns of no unread tree. And the ledger forgets an entry whose tree and both branches are gone at the look, not only
     /// after a removal.
     /// </summary>
@@ -413,9 +412,9 @@ public sealed class BranchTidyingProcessTests : BranchTidyingFixture
     }
 
     /// <summary>
-    /// 🔴 AUTOTIDY2a: a tree whose only holdings are ignored paths goes by the look, the tree's own scratch included: an ignored
+    /// A tree whose only holdings are ignored paths goes by the look, the tree's own scratch included: an ignored
     /// file only it holds, and a file it wrote in an ignored folder the checkout also has (a session's <c>.tmp/*.log</c>), each
-    /// kept in the folder moved aside. The press, which deletes the folder, keeps refusing the tree's own scratch as it did, and an
+    /// kept in the folder moved aside. The press, which deletes the folder, keeps refusing the tree's own scratch, and an
     /// untracked path that is not ignored keeps the tree at both doors.
     /// </summary>
     [Fact]
@@ -458,7 +457,7 @@ public sealed class BranchTidyingProcessTests : BranchTidyingFixture
     }
 
     /// <summary>
-    /// AUTOTIDY2a: the look judges every session branch before it holds the repository, so a start choosing a tree waits on the
+    /// The look judges every session branch before it holds the repository, so a start choosing a tree waits on the
     /// hold only while what may go is judged again and removed. With nothing to take (commits beyond the line, an uncommitted
     /// change on a branch the line took), a start holding the trees meets no look at all.
     /// </summary>
@@ -482,8 +481,8 @@ public sealed class BranchTidyingProcessTests : BranchTidyingFixture
     }
 
     /// <summary>
-    /// 🔴 AUTOTIDY2d: a tree whose session ended with the person's words still waiting on its record stays from the look, as a
-    /// session in use keeps its own: the next loop goes on with those words in that tree (MSG1b, D137 §2.2). A tree whose ended
+    /// A tree whose session ended with the person's words still waiting on its record stays from the look, as a
+    /// session in use keeps its own: the next loop goes on with those words in that tree. A tree whose ended
     /// session holds no words goes as ever.
     /// </summary>
     [Fact]

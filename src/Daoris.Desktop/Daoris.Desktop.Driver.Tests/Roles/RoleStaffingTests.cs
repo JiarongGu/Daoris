@@ -6,7 +6,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// FOUNDATION1 w-s part 1 (D212's note, the design §19.15): the roles' staffing in the desktop store, <c>role_staffing</c> with its
+/// The roles' staffing in the desktop store, <c>role_staffing</c> with its
 /// projection row and its found rows, imported once from <c>driver.json</c> once the start's confirmation is settled, under the staffing's
 /// record lock, and read back; read by nothing, and the file never written.
 /// </summary>
@@ -136,7 +136,7 @@ public sealed class RoleStaffingTests : IDisposable
         Assert.DoesNotContain(unknown, read.Errors.Keys);
     }
 
-    /// <summary>ONEWAY1b: a file with none of the four keys is a fresh home, seeded with the five roles' written orders.</summary>
+    /// <summary>A file with none of the four keys is a fresh home, seeded with the five roles' written orders.</summary>
     [Fact]
     public void ONEWAY1b_a_file_with_no_staffing_is_seeded()
     {
@@ -226,7 +226,7 @@ public sealed class RoleStaffingTests : IDisposable
         Assert.Equal(["build", "chat", "intake"], Staffing().Read()!.Actors.Keys.Order());
     }
 
-    // ——— A file that does not read is no import; no file is a fresh home, seeded (ONEWAY1b's StaffingPartTests).
+    // ——— A file that does not read is no import; no file is a fresh home, seeded.
 
     [Fact]
     public void A_file_that_does_not_read_imports_nothing_and_makes_no_store()
@@ -276,7 +276,7 @@ public sealed class RoleStaffingTests : IDisposable
         Assert.Equal(1, Rows("SELECT COUNT(*) FROM imports WHERE family = 'role_staffing'", row => row.GetInt32(0))[0]);
     }
 
-    // ——— The census (FOUNDATION1w-s parts 3 to 5, §19.15): who names the family, every root wired, every writer through its one write.
+    // ——— The census: who names the family, every root wired, every writer through its one write.
 
     private static IEnumerable<string> Production() =>
         new[] { SourceFiles.DriverProject, "Daoris.Desktop.Driver.Host", "Daoris.Desktop.Modules", "Daoris.Desktop.App" }
@@ -288,7 +288,7 @@ public sealed class RoleStaffingTests : IDisposable
     [Fact]
     public void The_staffing_family_is_named_by_its_own_files_the_roots_that_wire_it_the_loops_check_and_its_writers_doors_alone()
     {
-        // A role's staffing policy (STAFFPOLICY1a) is the family's own too: its digest and its state read the choices as the staffing writes them.
+        // A role's staffing policy is the family's own too: its digest and its state read the choices as the staffing writes them.
         var own = new[] { "RoleStaffing.cs", "StaffingProjection.cs", "RoleStaffingPort.cs", "DriverConfig.cs", "DriverConfigDisk.cs", "StaffPolicy.cs", "StaffLedger.cs" };
         var naming = Production()
             .Where(path => !own.Contains(Path.GetFileName(path)))
@@ -299,12 +299,12 @@ public sealed class RoleStaffingTests : IDisposable
 
         Assert.Equal(
             [
-                // ONEWAY1a: SET_ACTOR, its context write and the retired verbs' press are gone, so the role door alone writes the family.
+                // The role door alone writes the family; SET_ACTOR, its context write and the retired verbs' press do not.
                 "../Daoris.Desktop.App/Program.cs", "../Daoris.Desktop.Driver.Host/Program.cs",
                 "../Daoris.Desktop.Modules/Bridge/Routes/DriverRoutes.cs",
                 "Help/Proposals/HelpRoleProposals.cs",
                 "Loop/Watch/WatchRun.cs", "Roles/RoleDoor.cs", "Roles/RoleVerbs.cs",
-                // D232: the release's migration writes an older home's orders into the family once.
+                // The release's migration writes an older home's orders into the family once.
                 "Transitional/Migration/StaffingStep.cs",
             ],
             naming);
@@ -319,7 +319,7 @@ public sealed class RoleStaffingTests : IDisposable
             var wired = text.IndexOf("RoleStaffing.WireHome(Environment.GetEnvironmentVariable)", StringComparison.Ordinal);
             Assert.True(wired > 0, $"{root} wires no staffing");
             // The shell's own loads are its loop's and routes', made after Program wires it; the host's are its doors' and its loop's.
-            // The one exception is the home's migration, which finds the home by the variable to convert it once before any read of its config (D232).
+            // The one exception is the home's migration, which finds the home by the variable to convert it once before any read of its config.
             var migrating = text.IndexOf("HomeMigration.Run(", StringComparison.Ordinal);
             foreach (var first in (string[])["DriverConfig.Load(", "DriverConfig.FindHome(", "new DriverLoop("])
             {
@@ -349,7 +349,7 @@ public sealed class RoleStaffingTests : IDisposable
             .Select(each => each.Path).Distinct());
     }
 
-    /// <summary>ONEWAY1c-i: a root wires the home's own file whatever the retired variable names, and nothing with no home.</summary>
+    /// <summary>A root wires the home's own file whatever the retired variable names, and nothing with no home.</summary>
     [Fact]
     public void ONEWAY1c_i_a_root_wires_the_homes_own_file_whatever_the_retired_variable_names()
     {

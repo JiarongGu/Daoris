@@ -3,8 +3,8 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// SESSONE2b (D167 point 7; the co-working design §2.3, §2.6): what a part starting on a line of work on an ask is handed from the
-/// ask's channel. The messages for its entry it has not acknowledged (COWORK1d), the newest within the bounds and the older counted,
+/// What a part starting on a line of work on an ask is handed from the
+/// ask's channel. The messages for its entry it has not acknowledged, the newest within the bounds and the older counted,
 /// the person's as their words and another session's as that agent's claim; each is acknowledged once the part has started. The
 /// golden of the instruction is <see cref="TargetPromptGoldenTests"/>'s <c>channel</c>.
 /// </summary>
@@ -24,7 +24,7 @@ public sealed class ChannelHandedTests
 
     // ——— The bounds.
 
-    /// <summary>The newest twenty are handed (SESSONE2a's <c>ChannelBounds.HandedNewest</c>), and the older counted in one line.</summary>
+    /// <summary>The newest twenty are handed (<c>ChannelBounds.HandedNewest</c>), and the older counted in one line.</summary>
     [Fact]
     public void A_next_part_is_handed_the_newest_twenty_and_told_how_many_older_were_left_out()
     {
@@ -64,7 +64,7 @@ public sealed class ChannelHandedTests
     // ——— The wire and the entry.
 
     /// <summary>
-    /// The channel as SESSONE2a answers it, an item without its kind or a moment passed over, a message without words none; COWORK1d's
+    /// The channel as the service answers it, an item without its kind or a moment passed over, a message without words none; the
     /// level and the entry's acknowledgment read beside each message, and an entry handed what it has not had, whatever the mark.
     /// </summary>
     [Fact]
@@ -97,7 +97,7 @@ public sealed class ChannelHandedTests
     }
 
     /// <summary>
-    /// The key a line of work on an ask carries (D167 point 2): an ask's origin and a repository. An intake's, a conversation's and a
+    /// The key a line of work on an ask carries: an ask's origin and a repository. An intake's, a conversation's and a
     /// quest's own origin are on no channel.
     /// </summary>
     [Theory]
@@ -156,8 +156,8 @@ public sealed class ChannelHandedTests
     }
 
     /// <summary>
-    /// 🔴 A starting part is handed the messages for its entry it has not had, and acknowledges each, once the part has started, by its
-    /// own session (COWORK1d, the message-urgency design §6): so the next part is not handed them again, and none passes by its moment.
+    /// A starting part is handed the messages for its entry it has not had, and acknowledges each, once the part has started, by its
+    /// own session: so the next part is not handed them again, and none passes by its moment.
     /// </summary>
     [Fact]
     public async Task A_starting_part_is_handed_what_waited_and_acknowledges_it_once_it_started()

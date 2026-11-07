@@ -5,9 +5,8 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// <c>pausedAsks</c> and <c>pausedQuests</c> in <c>driver.json</c> (PAUSE1a, D132 point 5, design §2.5): each pause by its ask
-/// or quest, with when it was made and the stops it made, each quest against the session it stopped. The driver's half of a
-/// TWIN with the CLI's <c>driverconfig.ts</c>, until it left with the driver family's TypeScript (PUSH1f2b).
+/// <c>pausedAsks</c> and <c>pausedQuests</c> in <c>driver.json</c>: each pause by its ask
+/// or quest, with when it is made and the stops it makes, each quest against the session it stopped.
 /// </summary>
 /// <remarks>
 /// <para>🔴 <b>Keep each row on one line, its cells literals</b>: the CLI's test reads them.</para>

@@ -4,7 +4,7 @@ using Xunit.Abstractions;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// What each page's read asks of git (OPTIMIZE1a): the Git page's reads and plans, and a landed session's review, each counted on its
+/// What each page's read asks of git: the Git page's reads and plans, and a landed session's review, each counted on its
 /// first open over a repository with origin, a session's tree two commits ahead, a branch of the person's and a dirty checkout. Each is
 /// held to the starts measured and to the same command asked again in the same folder as measured. The figures are said in the test's
 /// output, and recorded in the git area's table of starts.
@@ -13,8 +13,8 @@ namespace Daoris.Desktop.Driver.Tests;
 [Trait(Category.Parallel, Category.Git)]
 public sealed class ViewGitCountTests(ITestOutputHelper output) : LandedFixture
 {
-    // Each read's starts on its first open, and those asked twice, as measured (2026-11-06). The commit page and a compare are two by
-    // design (D147 §2.4, §2.6); a plan reads the checkout's top, head and branch one start each before the state its press must find
+    // Each read's starts on its first open, and those asked twice, as measured. The commit page and a compare are two by
+    // design; a plan reads the checkout's top, head and branch one start each before the state its press must find
     // unchanged. Asked twice: the stash plan's `refs/stash` (the plan's state, and the stash step's own read of it), left for the plan's own cut.
     private static readonly Dictionary<string, (int Starts, int Repeated)> Budgets = new(StringComparer.Ordinal)
     {

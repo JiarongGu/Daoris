@@ -3,9 +3,9 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// FABRIC-END2 over real git (the files-only half is <see cref="HeldFactsTests"/>): <c>Held</c> written through the end judgement
+/// Over real git (the files-only half is <see cref="HeldFactsTests"/>): <c>Held</c> written through the end judgement
 /// by the process holding the home's lease alone, lapsing on a standing branch when its tip, its line's commit, its cycle's line or
-/// its repository changes (canary 7), and a trace that survives every removal path and is never judged again.
+/// its repository changes, and a trace that survives every removal path and is never judged again.
 /// </summary>
 [Trait(Category.Name, Category.Process)]
 [Trait(Category.Parallel, Category.Git)]
@@ -129,8 +129,8 @@ public sealed class HeldFactsGitTests : LandedFixture
     }
 
     /// <summary>
-    /// 🔴 A trace survives the person's removal (TreeRemovals' own forget) and the look's tidy (the replay's forget), and is never judged
-    /// again: a line rewound under it leaves its fact as it was.
+    /// A trace survives the person's removal (TreeRemovals' own forget) and the look's tidy (the replay's forget), and is never judged
+    /// again: a line rewound under it leaves its fact unchanged.
     /// </summary>
     [Fact]
     public async Task A_trace_survives_the_removal_and_the_looks_tidy_and_is_never_judged_again()
@@ -158,7 +158,7 @@ public sealed class HeldFactsGitTests : LandedFixture
     }
 
     /// <summary>
-    /// FABRIC-END2d (a), a guard green before and after: a session branch recorded before END2, with no unit, whose squashing landing's branch
+    /// A guard green before and after: a session branch recorded with no unit, whose squashing landing's branch
     /// the line holds, is kept ended with no unit naming its landing. The line holds the squash commit, whose tree is the session's own, so
     /// the content proof ends it on the line, as the clean-up's press proves it there (<c>SquashedHoldAsync</c>, then the content).
     /// </summary>
@@ -180,7 +180,7 @@ public sealed class HeldFactsGitTests : LandedFixture
     }
 
     /// <summary>
-    /// 🔴 KEEPSIZE1b (the keep-size design §3.1; Codex's reads, the row's squash case): a squashing landing's record holds a session's work by a
+    /// A squashing landing's record holds a session's work by a
     /// squash, never its own commits. The look takes the session branch on that record, writes its exact tip on a ref of its own, names the
     /// hold <c>squash</c> in its manifest, and the session's own commit and message read from that ref after the landing's branch is gone too.
     /// </summary>
@@ -207,9 +207,9 @@ public sealed class HeldFactsGitTests : LandedFixture
     }
 
     /// <summary>
-    /// 🔴 FABRIC-END2d (b): a landing inside another whose own proof ended it is kept ended inside that one (D102's group, as the clean-up's
+    /// A landing inside another whose own proof ended it is kept ended inside that one (as the clean-up's
     /// <c>Inside</c> proves it), its fact resting on that branch at the commit read; and the session branch it carries ends with it. With no
-    /// units (an install from before END2), the session branch ends through the landing whose branch holds its work.
+    /// units, the session branch ends through the landing whose branch holds its work.
     /// </summary>
     [Theory]
     [InlineData(true)]

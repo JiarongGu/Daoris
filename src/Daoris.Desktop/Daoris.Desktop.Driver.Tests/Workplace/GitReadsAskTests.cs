@@ -3,7 +3,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// GIT1b (D147 §4): the reads behind a page asked through a stand-in for git, so what is asked, how often, and what is kept
+/// The reads behind a page asked through a stand-in for git, so what is asked, how often, and what is kept
 /// in memory is held without a process. A repository here is a folder with a <c>.git</c> folder in it, which is all the
 /// reads look at before they ask git. <c>GitReadsTests</c> reads the same views from real repositories.
 /// </summary>
@@ -59,7 +59,7 @@ public sealed class GitReadsAskTests : IDisposable
         Assert.Equal((Merge, Line, true, "Merge topic\n\nbody"), (detail.Commit, detail.Against, detail.Merge, detail.Message));
         Assert.Equal("a.txt", Assert.Single(detail.Changes!.Files).Path);
         Assert.Equal(2, git.Asked.Count);
-        // The changes are REVIEW3's one-call reader's, over the first parent to the commit.
+        // The changes are the one-call reader's, over the first parent to the commit.
         Assert.Contains($"{Line}..{Merge}", git.Asked[1]);
         Assert.Contains("--raw", git.Asked[1]);
         Assert.Contains("--numstat", git.Asked[1]);
@@ -191,7 +191,7 @@ public sealed class GitReadsAskTests : IDisposable
     }
 
     /// <summary>
-    /// A session's tree is a linked worktree of its repository (D51), with one object store between them: what one read is
+    /// A session's tree is a linked worktree of its repository, with one object store between them: what one read is
     /// kept for the other, by the common git directory its <c>.git</c> file and <c>commondir</c> name.
     /// </summary>
     [Fact]

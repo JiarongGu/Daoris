@@ -4,8 +4,8 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// INTEGRATE1f part f2: the driver's whole take of the machine's admission, the twin of <c>tools/machine-admission.mjs</c>'s
-/// <c>takeWhole</c> (the integration design §4.5, C7, F34). N ordinary entries of today's schema go in one locked write, first come, so a
+/// The driver's whole take of the machine's admission, the twin of <c>tools/machine-admission.mjs</c>'s
+/// <c>takeWhole</c>. N ordinary entries of today's schema go in one locked write, first come, so a
 /// take waits behind the live holds; a live hold not its own that shows while it runs makes it inconclusive; its own process's place is
 /// let go before it. Files only, no process: the entries of another process are written with a pid the test says is alive.
 /// </summary>
@@ -127,7 +127,7 @@ public sealed class WholeAdmissionTests : IDisposable
         Assert.Equal(["n-1"], Look(2).Holds.Select(entry => entry.Id));
     }
 
-    /// <summary>A place that left the record while it was held is a doubt too, and ending twice answers the same evidence.</summary>
+    /// <summary>A place that leaves the record while it is held is a doubt too, and ending twice answers the same evidence.</summary>
     [Fact]
     public async Task A_place_no_longer_held_is_a_doubt_and_ending_twice_answers_the_same()
     {

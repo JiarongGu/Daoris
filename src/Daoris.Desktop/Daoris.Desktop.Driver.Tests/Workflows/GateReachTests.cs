@@ -3,7 +3,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// The pipeline design §4.7: a check with <c>reach: paths</c> runs the gates its batch's changed paths reach, for any repository, by the
+/// A check with <c>reach: paths</c> runs the gates its batch's changed paths reach, for any repository, by the
 /// <c>paths</c> each gate carries in the accepted declaration, plus every gate still owed; the others are named as kept.
 /// </summary>
 public sealed class GateReachTests : IDisposable

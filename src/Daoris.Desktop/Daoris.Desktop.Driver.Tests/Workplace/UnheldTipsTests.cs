@@ -4,7 +4,7 @@ using static Daoris.Desktop.Driver.Tests.GitFixture;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// D88's question of every session branch is one walk of the repository (PERF1g): which session branches no branch of the person's holds,
+/// The question of every session branch is one walk of the repository: which session branches no branch of the person's holds,
 /// answered for each tip the judgement's refs hold a session branch at, and asked of git on its own for any other commit.
 /// </summary>
 [Trait(Category.Name, Category.Process)]

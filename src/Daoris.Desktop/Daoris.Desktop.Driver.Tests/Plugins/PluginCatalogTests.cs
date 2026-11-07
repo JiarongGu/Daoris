@@ -5,9 +5,8 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// The plugin catalogue (D64, PLUG4): a folder under the home's `plugins/` with a manifest, read by
-/// the host that drives whatever is there and names no plugin. Every rule here had a twin in the CLI's `plugins.ts`, until it left
-/// with `daoris plugin`'s TypeScript (PUSH1f2f): these rows are the rules' one home.
+/// The plugin catalogue: a folder under the home's `plugins/` with a manifest, read by
+/// the host that drives whatever is there and names no plugin. These rows are the rules' one home.
 /// </summary>
 [Trait(Category.Name, Category.Census)]
 public sealed class PluginCatalogTests : IDisposable
@@ -60,7 +59,7 @@ public sealed class PluginCatalogTests : IDisposable
         Assert.Equal("acme.agent", entry.Manifest.Id);
         Assert.Equal("Acme agent", entry.Manifest.Name);
         Assert.Equal("1.2.0", entry.Manifest.Version);
-        // Absent means 1: the field is how a plugin opts into saying something (PLUG1's rule).
+        // Absent means 1: the field is how a plugin opts into saying something.
         Assert.Equal(1, entry.Manifest.ApiVersion);
         Assert.True(entry.Enabled);
         Assert.Null(entry.Problem);
@@ -144,9 +143,9 @@ public sealed class PluginCatalogTests : IDisposable
     }
 
     /// <summary>
-    /// CASEFOLD1e: an id's shape holds to its very end. .NET's <c>$</c> also matches before a final line break, where the
-    /// CLI's shape does not, so <c>acme.gate</c> and a line break was an id here and none there: a door's argument, a source
-    /// folder's manifest and a landing rule's plugin alike. The shape ends at <c>\z</c>, and since REFAC1
+    /// An id's shape holds to its very end. .NET's <c>$</c> also matches before a final line break, where the
+    /// CLI's shape does not, so <c>acme.gate</c> and a line break would be an id here and none there: a door's argument, a source
+    /// folder's manifest and a landing rule's plugin alike. The shape ends at <c>\z</c>, and
     /// <see cref="PluginTools"/> ask <see cref="PluginCatalog.IsId"/> rather than keep a copy.
     /// </summary>
     [Fact]
@@ -164,9 +163,9 @@ public sealed class PluginCatalogTests : IDisposable
     }
 
     /// <summary>
-    /// REFAC1 (the second-opinion review of 2026-10-07): a plugin id's shape has one owner in the driver,
+    /// A plugin id's shape has one owner in the driver,
     /// <see cref="PluginCatalog.IsId"/>, which a landing rule's plugin, a plugin's tool id and the log's landing line ask too;
-    /// CASEFOLD1e had to mend the same pattern in two places. Only <c>PluginIds.cs</c> spells it (FOUNDATION1 mod-iii: the settings'
+    /// a copy would need mending in two places. Only <c>PluginIds.cs</c> spells it (the settings'
     /// parser judges a landing rule's plugin, so the shape sits in Settings, and the catalogue answers through it). The CLI's
     /// <c>isPluginId</c> is the twin, which its own suite holds the same way.
     /// </summary>
@@ -218,7 +217,7 @@ public sealed class PluginCatalogTests : IDisposable
     }
 
     /// <summary>
-    /// CASEFOLD1d: a disabled row is a plugin's only as <c>OrdinalIgnoreCase</c> finds it, as the CLI's <c>plugins.ts</c> finds
+    /// A disabled row is a plugin's only as <c>OrdinalIgnoreCase</c> finds it, as the CLI's <c>plugins.ts</c> finds
     /// it through <c>casefold.ts</c> (<c>plugins.test.ts</c> names this behaviour). An id is lowercase letters, digits, dots and
     /// dashes, so the one letter the two folds part in a row naming one is the Kelvin sign, which lowers to a <c>k</c> and whose
     /// capital is itself: a row naming it switches no plugin off, and is no row of another's.
@@ -236,7 +235,7 @@ public sealed class PluginCatalogTests : IDisposable
     }
 
     /// <summary>
-    /// 🔴 REV3 CLEAN1: a state file that could not be read disables nothing, which keeps every plugin
+    /// A state file that could not be read disables nothing, which keeps every plugin
     /// running — right for a read. An edit over it rewrote the file whole, switching back on every
     /// plugin the person had switched off. It is refused, and the file is kept (the CLI twin agrees).
     /// </summary>
@@ -273,7 +272,7 @@ public sealed class PluginCatalogTests : IDisposable
     }
 
     /// <summary>
-    /// The names this build reserves are the shared table's (PLUGINRESERVE1), which the CLI's <c>reservedHarnesses()</c> is held
+    /// The names this build reserves are the shared table's, which the CLI's <c>reservedHarnesses()</c> is held
     /// to as well: every name either side runs as a harness, each door and each agent a door runs as, <c>codex</c> among them.
     /// </summary>
     [Fact]
@@ -298,7 +297,7 @@ public sealed class PluginCatalogTests : IDisposable
     }
 
     /// <summary>
-    /// A plugin declaring a reserved name is refused whatever the caller hands the check (PLUGINRESERVE1): the doors alone, as
+    /// A plugin declaring a reserved name is refused whatever the caller hands the check: the doors alone, as
     /// the loop and every screen hand it, or nothing at all. The CLI's catalogue refuses the same rows.
     /// </summary>
     [Theory]
@@ -399,7 +398,7 @@ public sealed class PluginCatalogTests : IDisposable
         Assert.False(asked.AgentNamed("asked")!.Program.ProbeByPresence);
     }
 
-    /// <summary>A wire that carries no posture asks for nothing (ACP3): null, never a guessed mode.</summary>
+    /// <summary>A wire that carries no posture asks for nothing: null, never a guessed mode.</summary>
     [Fact]
     public void A_declared_harness_without_a_posture_asks_the_agent_for_none()
     {
@@ -438,7 +437,7 @@ public sealed class PluginCatalogTests : IDisposable
     }
 
     /// <summary>
-    /// XAGENT1b (D155 point 4, the second-agent design §3.1): a declared harness may say what a person calls its tool and who
+    /// A declared harness may say what a person calls its tool and who
     /// makes it, as the built-in toolchains do, so a plugin's agent can count as another maker's. Each is the plugin's word, read
     /// trimmed. A manifest that says neither reads as it always did; one that is not text, or is blank, declares none and never
     /// refuses the plugin, since a maker not declared is only never taken as independent.
@@ -466,7 +465,7 @@ public sealed class PluginCatalogTests : IDisposable
     }
 
     /// <summary>
-    /// OWNSPACE1c (D175): a plugin's agent that names a configuration-home variable always takes a Daoris account, and one whose own
+    /// A plugin's agent that names a configuration-home variable always takes a Daoris account, and one whose own
     /// home is nobody's (a sandboxed tool) says so with <c>ownHome</c>, which only JSON <c>true</c> sets. It is the plugin's own word,
     /// never a reason to refuse the plugin, and the agent without it keeps its variable and holds without an account. Twin:
     /// <c>plugins.test.ts</c>' row, the same manifest read the same.
@@ -511,7 +510,7 @@ public sealed class PluginCatalogTests : IDisposable
         Assert.NotEqual(off, PluginCatalog.Load(_home).Signature);
     }
 
-    // ——— Servers (D65 §1f, INT1): what a plugin hands every session, beside the knowledge host.
+    // ——— Servers: what a plugin hands every session, beside the knowledge host.
 
     [Fact]
     public void Servers_are_read_with_the_placeholder_expanded_and_offered_as_the_wire_names_them()
@@ -539,9 +538,9 @@ public sealed class PluginCatalogTests : IDisposable
     }
 
     /// <summary>
-    /// `${data}` is the plugin's own data folder (D77) — what survives an update (D64 §3). A browser's
+    /// `${data}` is the plugin's own data folder — what survives an update. A browser's
     /// signed-in profile is exactly that, and without a name for it a plugin put it under the user's
-    /// profile, where nothing of Daoris's lives (D63). Twin: `plugins.test.ts`.
+    /// profile, where nothing of Daoris's lives. Twin: `plugins.test.ts`.
     /// </summary>
     [Fact]
     public void The_data_placeholder_is_the_plugins_own_data_folder_in_a_command_and_an_environment()
@@ -562,7 +561,7 @@ public sealed class PluginCatalogTests : IDisposable
     }
 
     /// <summary>
-    /// `${browser}` is NOT the catalogue's to expand (D78): it is the in-app browser's endpoint, which
+    /// `${browser}` is NOT the catalogue's to expand: it is the in-app browser's endpoint, which
     /// exists only while the shell runs, so it survives the read and is filled at hand-over. Twin:
     /// `plugins.test.ts`.
     /// </summary>
@@ -624,7 +623,7 @@ public sealed class PluginCatalogTests : IDisposable
         Assert.Empty(entry.Manifest.Servers);
     }
 
-    // ——— Who a server is handed to (HELPPLUG1a, D170 point 3): sessions by default, Ask Daoris only where declared.
+    // ——— Who a server is handed to: sessions by default, Ask Daoris only where declared.
 
     private const string ToProblem =
         "server `tickets`'s `to` must list who it is handed to, once each: `sessions`, `help` (Ask Daoris) or both.";
@@ -692,7 +691,7 @@ public sealed class PluginCatalogTests : IDisposable
         Assert.Equal(writes, server.Writes);
     }
 
-    // ——— A plugin's skills (HELPPLUG1b, D170 point 4): each a folder `skills/<name>` beside its manifest, for sessions,
+    // ——— A plugin's skills: each a folder `skills/<name>` beside its manifest, for sessions,
     // Ask Daoris, or both.
 
     private const string SkillName =
@@ -734,7 +733,7 @@ public sealed class PluginCatalogTests : IDisposable
 
     /// <summary>
     /// What a tick hands every session is the servers declared for sessions; those declared for Ask Daoris are its alone, and
-    /// reach it only once the person approves their tools (<see cref="HelpGrants"/>, D170's note).
+    /// reach it only once the person approves their tools (<see cref="HelpGrants"/>).
     /// </summary>
     [Fact]
     public void Sessions_are_handed_their_servers_and_ask_daoris_only_those_declared_for_it()
@@ -759,7 +758,7 @@ public sealed class PluginCatalogTests : IDisposable
     /// <summary>
     /// The pipe door's half: a harness that takes a file at spawn is handed one written under the
     /// home, in that harness's own shape — never in the repository, which is the whole reason it is
-    /// handed at spawn rather than written to a `.mcp.json` the driver does not own (D32).
+    /// handed at spawn rather than written to a `.mcp.json` the driver does not own.
     /// </summary>
     [Fact]
     public void The_pipe_door_is_handed_a_file_under_the_home_in_the_harness_own_shape_and_the_file_goes_with_the_session()

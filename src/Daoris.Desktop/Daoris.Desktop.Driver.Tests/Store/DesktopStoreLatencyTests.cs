@@ -7,14 +7,14 @@ using Xunit.Abstractions;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// FOUNDATION1 z-i's measurement of the write latency <c>synchronous = FULL</c> costs (D212, the design §13.4): a claim or a mark lost to a
+/// The write latency <c>synchronous = FULL</c> costs, measured: a claim or a mark lost to a
 /// power cut could repeat an effect, so every commit is synced to the disk, at a write rate low enough for it. Each write here is what a
 /// family's write is, one transaction under the write lock that moves its revision and touches the wake file, on this machine's disk in
 /// the scratch folder, alone and then with a second process-shaped writer taking turns on the same file.
 /// </summary>
 /// <remarks>
-/// A measurement: it asserts that every write landed and that none was pathological (a bound of seconds, which a busy wait that took the
-/// writes would break), and says the percentiles in the test's output for D212's note. The install's own figure is the install's, read on
+/// A measurement: it asserts that every write landed and that none ran pathologically long (a bound of seconds, which a busy wait that took the
+/// writes would break), and says the percentiles in the test's output. The install's own figure is the install's, read on
 /// the next real run; a scratch folder on a developer's disk is no install. No variable of the process's environment is set.
 /// </remarks>
 public sealed class DesktopStoreLatencyTests : IDisposable

@@ -3,7 +3,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// COWORKVIEW1b-ii's composition (the design §R11.3 row 4, §3.1): the quests a part published that opened no part of the entry, each
+/// The composition of the quests a part published that opened no part of the entry, each
 /// chain's steps under it, who took each and what asked the attended part's own quest, read by <see cref="QuestUnits.Read"/>.
 /// </summary>
 public sealed class AtWorkQuestsTests
@@ -211,7 +211,7 @@ public sealed class AtWorkQuestsTests
     [Fact]
     public void A_quest_s_own_wait_is_its_taker_s_row_for_a_session_and_the_question_that_stands_for_a_conversation()
     {
-        // a1 is the question another repository's session was asked; nothing of this entry published it, so it is not a row.
+        // a1 is the question put to another repository's session; nothing of this entry published it, so it is not a row.
         QuestView[] quests =
         [
             Q("q1", "Taken"), Q("q2", "Taken") with { Awaits = "a1" }, Q("q3", "Taken") with { Awaits = "a2" },

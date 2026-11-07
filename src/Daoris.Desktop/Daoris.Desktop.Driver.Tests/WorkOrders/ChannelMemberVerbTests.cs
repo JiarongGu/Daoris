@@ -4,8 +4,8 @@ using System.Text;
 namespace Daoris.Driver.Tests;
 
 /// <summary>
-/// CHANNELJOIN1b (D244 points 10 and 11; the event-channel design §5.3 to §5.5): an agent outside Daoris joins a channel at the terminal
-/// under the person's Confirm, then posts, reads and leaves as the member it was admitted as, at its own doors of the service, never the
+/// An agent outside Daoris joins a channel at the terminal
+/// under the person's Confirm, then posts, reads and leaves as the member it is admitted as, at its own doors of the service, never the
 /// person's; a join while Daoris is closed asks nothing, since no Confirm can be asked.
 /// </summary>
 public sealed class ChannelMemberVerbTests

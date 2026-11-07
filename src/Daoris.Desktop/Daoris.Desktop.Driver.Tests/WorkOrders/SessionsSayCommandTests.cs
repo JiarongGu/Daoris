@@ -6,7 +6,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// MSG1e (D137 §5.2, D50): <c>daoris session say</c>, the terminal's door to what the screen's box says to a session.
+/// <c>daoris session say</c>, the terminal's door to what the screen's box says to a session.
 /// The words reach the loop that runs the session through the request folder; a loop keeps those said to a session nothing
 /// here runs on its record; where no loop drives the home, a driven record keeps them for the next and a conversation is
 /// refused. One line says where they stand. Exit codes are the family's: 0 taken or held, 1 refused, 2 could not.
@@ -52,7 +52,7 @@ public sealed class SessionsSayCommandTests : IDisposable
     private SessionsWorld World(ServiceClient service, bool loop = true, TimeSpan? wait = null, DriverConfig? config = null) =>
         new(service, _home, config ?? Driving, false, null)
         {
-            // A test that names no wait expects the take, a signal: the suite's patience (TESTPATIENCE2). One that expects "held"
+            // A test that names no wait expects the take, a signal: the suite's patience. One that expects "held"
             // names its own short wait.
             Wait = wait ?? Poll.Patience,
             Poll = TimeSpan.FromMilliseconds(20),
@@ -88,20 +88,20 @@ public sealed class SessionsSayCommandTests : IDisposable
         File.WriteAllText(Path.Combine(Pids, $"{id}.pid"), $"{self.Id} {self.StartTime.ToUniversalTime().Ticks}");
     }
 
-    /// <summary>Where a session's process is marked: the home's pid folder (`run/sessions/` since HOMELAYOUT3), as every tracker reads it.</summary>
+    /// <summary>Where a session's process is marked: the home's pid folder (`run/sessions/`), as every tracker reads it.</summary>
     private string Pids => DaorisHome.Entry(_home, HomeEntry.SessionPids);
 
     private bool AnyRequest() => Directory.Exists(Requests) && Directory.EnumerateFiles(Requests).Any();
 
     /// <summary>
-    /// How often a loop under load looks, as these tests make it (FLAKE5): only after the verb's wait would have run out on the
-    /// machine's clock, which is what a loaded machine did to a loop looking every 20 ms.
+    /// How often a loop under load looks, as these tests make it: only after the verb's wait would have run out on the
+    /// machine's clock, as a loaded machine does to a loop looking every 20 ms.
     /// </summary>
     private static TimeSpan Late(SessionsWorld world) => world.Wait * 2;
 
     /// <summary>
-    /// The verb's clock in a test of a loop that took the words (FLAKE5): it stands still until the test's condition has held,
-    /// then runs as the machine's, so the verb's wait counts from the take however late a loaded machine made it. It runs by
+    /// The verb's clock in a test of a loop that took the words: it stands still until the test's condition has held,
+    /// then runs as the machine's, so the verb's wait counts from the take however late a loaded machine makes it. It runs by
     /// itself after <see cref="Poll.Patience"/>, so a condition that never holds fails its test rather than holding it.
     /// </summary>
     private sealed class HeldClock : TimeProvider
@@ -159,7 +159,7 @@ public sealed class SessionsSayCommandTests : IDisposable
     }
 
     /// <summary>
-    /// COWORK1a (the message-urgency design §8.6): <c>--level ordinary|urgent|now</c> says when the words should reach a working
+    /// <c>--level ordinary|urgent|now</c> says when the words should reach a working
     /// session, beside the words and no part of them; <c>--level now</c> is <c>--now</c>; any other word is a problem said.
     /// </summary>
     [Fact]
@@ -179,7 +179,7 @@ public sealed class SessionsSayCommandTests : IDisposable
 
     /// <summary>
     /// The answer a loop gives to a say at <c>now</c> reads back whole, by the request's file, whose level is the one spelling: no writer
-    /// writes <c>now</c> beside it (ONEWAY1l). A waiting file from an older build with <c>now: true</c> and no level is read as now.
+    /// writes <c>now</c> beside it. A waiting file with <c>now: true</c> and no level is read as now.
     /// </summary>
     [Fact]
     public void A_nows_request_and_answer_carry_it_through_the_request_folder()
@@ -206,10 +206,9 @@ public sealed class SessionsSayCommandTests : IDisposable
     }
 
     /// <summary>
-    /// STEER2c, COWORK1a: the verb says what the door did, in its own words, from the answer { sent, reaches, why, now }: taken at
-    /// once, or not now with the reason and where it reads the words instead. No door's turn is stopped (D188 point 3): a door that
-    /// takes words only when its turn ends holds them for it, interrupt or none. Its clock is held until the loop took the words
-    /// (FLAKE5).
+    /// The verb says what the door did, in its own words, from the answer { sent, reaches, why, now }: taken at
+    /// once, or not now with the reason and where it reads the words instead. No door's turn is stopped: a door that
+    /// takes words only when its turn ends holds them for it, interrupt or none. Its clock is held until the loop takes the words.
     /// </summary>
     [Theory]
     [InlineData("steers", "sessions: sent now: it took this at once, cutting its step in flight.\n")]
@@ -272,7 +271,7 @@ public sealed class SessionsSayCommandTests : IDisposable
     }
 
     /// <summary>
-    /// COWORK1a (the design §8.6): a say at a level prints where the words reach, and the level where the door could not honour it
+    /// A say at a level prints where the words reach, and the level where the door could not honour it
     /// with the reason: an ordinary word waits for the turn's end on a door that takes words at its next step; an urgent one asked
     /// of a door that takes words only when its turn ends is held for it, said so.
     /// </summary>
@@ -326,7 +325,7 @@ public sealed class SessionsSayCommandTests : IDisposable
             Record("e4rl1er0", "failed", quest: "q2", minutes: 0),
             Record("l4t3r000", "completed", quest: "q2", minutes: 10),
             Record("laptop/s9", "working", quest: "q2", minutes: 20),
-            // HANDWORDS1: a conversation handed over, then moved: its words go to the latest that continues it.
+            // A conversation handed over, then moved: its words go to the latest that continues it.
             Record("h4nd3d00", "completed", quest: null, kind: "chat", minutes: 30),
             Record("m0v3d000", "completed", quest: null, kind: "chat", minutes: 31, from: "h4nd3d00"),
             Record("n3w3st00", "working", quest: null, kind: "chat", minutes: 32, from: "m0v3d000"),
@@ -334,7 +333,7 @@ public sealed class SessionsSayCommandTests : IDisposable
         [Quest("q2", "Done"), Quest("q3", "Taken")]);
 
     /// <summary>
-    /// D137 §2.2's nevers and MSG1d's codes, judged from the record before anything is asked: no request is written and the
+    /// The nevers and their codes, judged from the record before anything is asked: no request is written and the
     /// say door is never posted to. A refusal is a policy answer, exit 1.
     /// </summary>
     [Theory]
@@ -357,7 +356,7 @@ public sealed class SessionsSayCommandTests : IDisposable
     }
 
     /// <summary>
-    /// ASKHIST1: Ask Daoris's own conversation is no never. With no driver on the home nothing could open it again, so the words
+    /// Ask Daoris's own conversation is no never. With no driver on the home nothing can open it again, so the words
     /// are refused naming the window, where its panel holds it; the say door is never posted to.
     /// </summary>
     [Fact]
@@ -373,10 +372,10 @@ public sealed class SessionsSayCommandTests : IDisposable
         Assert.Equal(0, room.Says);
     }
 
-    /// <summary>The never table is one: the record's facts in, the code out, in D137 §2.2's order, null where it can go on.</summary>
+    /// <summary>The never table is one: the record's facts in, the code out, in the table's order, null where it can go on.</summary>
     [Theory]
     [InlineData("laptop/s1", "working", "q1", "engine", null, null, WordsNever.Teammate)]
-    // ASKHIST1: Ask Daoris's own conversation goes on in itself, as a chat does.
+    // Ask Daoris's own conversation goes on in itself, as a chat does.
     [InlineData("h1", "stopped", null, HelpRoom.Repository, null, null, null)]
     [InlineData("i1", "awaiting-person", null, "ask #a1", "a1", null, WordsNever.Intake)]
     [InlineData("s1", "stood-down", "q1", "engine", null, null, WordsNever.StoodDown)]
@@ -393,7 +392,7 @@ public sealed class SessionsSayCommandTests : IDisposable
     }
 
     /// <summary>
-    /// HANDWORDS1 (D163 point 1, D165 point 3): a conversation handed over or moved went on in another, whose record's <c>from</c>
+    /// A conversation handed over or moved goes on in another, whose record's <c>from</c>
     /// names it; the one it is continued in is the latest down that chain, so a conversation handed over and then moved names where
     /// it is now. A teammate's record continues nothing here, a quest's session that went on is <c>superseded</c>'s, and a chain
     /// that comes back on itself ends where it would repeat.
@@ -429,12 +428,11 @@ public sealed class SessionsSayCommandTests : IDisposable
     private const string HeadSentence = "Session `d0ne0000` went on in `n3xt0000`, its line's head: say it to that one.";
 
     /// <summary>
-    /// FOUNDATION1d-ii part 1 (the foundation design §19.12's row for the head, an older desktop beside a newer host): a refusal word the reader
+    /// A refusal word the reader
     /// does not act on is read as the refusal it is, its word and the service's sentence said as they come, whatever else the answer carries. So
     /// an older desktop meeting the say door's <c>continued</c> with its <c>head</c> says the service's sentence, which names the head, both at
-    /// the terminal where no loop runs and at the headless door. A build before this row read the <c>continued</c> answer with its <c>head</c>
-    /// this way (the row's note on D212 names the run); this build reads it so where the answer names no head, and reads any word it does not
-    /// know so.
+    /// the terminal where no loop runs and at the headless door. The same holds where the answer names no head, and for any word the reader does not
+    /// know.
     /// </summary>
     [Theory]
     [InlineData("continued", null)]
@@ -598,7 +596,7 @@ public sealed class SessionsSayCommandTests : IDisposable
         var clock = new HeldClock();
         var world = World(service, wait: TimeSpan.FromMilliseconds(300)) with { Clock = clock };
         var words = new LoopWords(processes, () => service) { Events = events };
-        // LOADFLAKE2: its look is late, as a loaded machine's was: no watcher wakes it, and it lists only after the wait would end.
+        // Its look is late, as a loaded machine's is: no watcher wakes it, and it lists only after the wait would end.
         // The verb's wait, which bounds its following of the words at the head, counts from the take.
         await using var loop = new SessionRequestWatch(_home, processes, () => service, every: Late(world), source: new FakeChangeSource())
         {
@@ -628,7 +626,7 @@ public sealed class SessionsSayCommandTests : IDisposable
 
     private static Room Running() => new([Record("w0rk1ng0", "working")], [Quest("q1", "Taken")]);
 
-    /// <summary>A running session on a door that takes words during its turn (D136): held at its door, read at its next step.</summary>
+    /// <summary>A running session on a door that takes words during its turn: held at its door, read at its next step.</summary>
     [Fact]
     public async Task A_running_session_on_a_next_step_door_reads_it_at_its_next_step()
     {
@@ -645,13 +643,13 @@ public sealed class SessionsSayCommandTests : IDisposable
         Assert.Equal(0, exit);
         Assert.Equal("sessions: held: it reads this at its next step.\n", said);
         Assert.Equal("use the cache", Assert.Single(inbox.State.Queued).Text);
-        // COWORK1c: the record is asked to keep it for the run first; this one, as a service from before would, refuses a running
-        // record, and the inbox holds it here alone, as it always did.
+        // The record is asked to keep it for the run first; this one refuses a running
+        // record, and the inbox holds it here alone.
         Assert.Equal(1, room.Says);
         Assert.False(AnyRequest());
     }
 
-    /// <summary>A running session on a door that does not (D90, MSG1b's native door): held for the turn's end.</summary>
+    /// <summary>A running session on a door that does not: held for the turn's end.</summary>
     [Fact]
     public async Task A_running_session_on_a_turn_end_door_reads_it_when_its_turn_ends()
     {
@@ -669,8 +667,8 @@ public sealed class SessionsSayCommandTests : IDisposable
     }
 
     /// <summary>
-    /// Words a running session took are the person's words on its ask (D133 §1; MSG1e4): once its door holds them they go to
-    /// the service's door for them by the session's own id, as the screen's do (DRIFT1a2), and the service judges which ask.
+    /// Words a running session took are the person's words on its ask: once its door holds them they go to
+    /// the service's door for them by the session's own id, as the screen's do, and the service judges which ask.
     /// </summary>
     [Fact]
     public async Task Words_a_running_session_took_are_kept_on_its_ask()
@@ -692,7 +690,7 @@ public sealed class SessionsSayCommandTests : IDisposable
     private static Room Ended() => new([Record("d0ne0000", "completed")], [Quest("q1", "Done")]);
 
     /// <summary>
-    /// An ended session (D137 §2.2): the loop keeps the words on its record, shows them in its conversation as the terminal's,
+    /// An ended session: the loop keeps the words on its record, shows them in its conversation as the terminal's,
     /// and nudges its look; the look goes on with them in the same record, and the verb says so.
     /// </summary>
     [Fact]
@@ -713,12 +711,12 @@ public sealed class SessionsSayCommandTests : IDisposable
         Assert.Equal((SessionEventKind.User, "person", "w1", "also the changelog", "resume", RequestDoor.Terminal),
             (shown.Kind, shown.Origin, shown.Id, shown.Text, shown.Reaches, shown.Door));
 
-        // The service keeps words said after a record ended on its ask once taken, as `reopened` (MSG1a): never added twice.
+        // The service keeps words said after a record ended on its ask once taken, as `reopened`: never added twice.
         Assert.Empty(room.Added);
     }
 
     /// <summary>
-    /// FOUNDATION1b (D137, D188): where no shell holds the words, the headless fallback keeps a terminal's words on the ended record
+    /// Where no shell holds the words, the headless fallback keeps a terminal's words on the ended record
     /// under the request's key, as the inbox's path does, so a request read again after a restart keeps one word.
     /// </summary>
     [Fact]
@@ -741,7 +739,7 @@ public sealed class SessionsSayCommandTests : IDisposable
         Assert.Single(room.Said("d0ne0000"));
     }
 
-    /// <summary>Where it could not go on in its own conversation, its words went to a new session, and the verb names it (D137 §3.1).</summary>
+    /// <summary>Where it cannot go on in its own conversation, its words go to a new session, and the verb names it.</summary>
     [Fact]
     public async Task Words_that_went_to_a_new_session_say_which_and_why()
     {
@@ -761,7 +759,7 @@ public sealed class SessionsSayCommandTests : IDisposable
     }
 
     /// <summary>
-    /// A closed quest's session that cannot go on (D137 §2.2): the words stay on its record, marked, and nothing carries them on
+    /// A closed quest's session that cannot go on: the words stay on its record, marked, and nothing carries them on
     /// by itself, so they will not reach it: a refusal, with the conversation the person can start instead.
     /// </summary>
     [Fact]
@@ -771,7 +769,7 @@ public sealed class SessionsSayCommandTests : IDisposable
         using var service = room.Client();
         var events = new SessionEvents(Sessions);
         var clock = new HeldClock();
-        // SAYWAITCLOCK1: keep the loop later than the wait even on a quiet run; count only once its verdict exists.
+        // Keep the loop later than the wait even on a quiet run; count only once its verdict exists.
         var world = World(service, wait: TimeSpan.FromMilliseconds(300)) with { Clock = clock };
         await using var loop = Loop(new SessionProcesses(Pids), service, events, nudge: () =>
         {
@@ -803,13 +801,12 @@ public sealed class SessionsSayCommandTests : IDisposable
     }
 
     /// <summary>
-    /// 🔴 FLAKE3: a loop under load takes the words in time and keeps them, and nudges its look, only after the verb's wait is over.
+    /// A loop under load takes the words in time and keeps them, and nudges its look, only after the verb's wait is over.
     /// A loop that took a say always answers it, so the verb waits on that answer rather than its clock, and follows the words:
-    /// it said the loop had taken them and not said where they stood, exit 2, while the loop was writing its answer.
+    /// it never says the loop took them without saying where they stand, exit 2, while the loop is writing its answer.
     /// </summary>
     /// <remarks>
-    /// 🔴 FLAKE5: "in time" was the machine's 300 ms, which a loaded machine's loop missed, and the verb withdrew the words. The
-    /// loop here looks late, as one under load does, and the verb's wait is read off <see cref="HeldClock"/>, which runs from
+    /// The loop here looks late, as one under load does, and the verb's wait is read off <see cref="HeldClock"/>, which runs from
     /// the take.
     /// </remarks>
     [Fact]
@@ -840,9 +837,9 @@ public sealed class SessionsSayCommandTests : IDisposable
     }
 
     /// <summary>
-    /// The answer is waited for only while a loop holds the home (FLAKE3): one that took the words and went away without
-    /// answering is said at once, never waited out to the loop's bound on a say. TESTCLOCK2: the bound is an hour, so a verb that
-    /// waited it out never ends inside the test's patience, where the machine's clock timed it against twenty seconds.
+    /// The answer is waited for only while a loop holds the home: one that took the words and went away without
+    /// answering is said at once, never waited out to the loop's bound on a say. The bound is an hour, so a verb that
+    /// waited it out never ends inside the test's patience.
     /// </summary>
     [Fact]
     public async Task A_loop_that_took_the_words_and_went_away_unanswered_is_said_at_once()
@@ -875,7 +872,7 @@ public sealed class SessionsSayCommandTests : IDisposable
         Assert.Contains("took your words, and gave no answer of where they stand", said);
     }
 
-    /// <summary>And no longer than the loop's own bound on a say (FLAKE3), where a loop that holds the home never answers.</summary>
+    /// <summary>And no longer than the loop's own bound on a say, where a loop that holds the home never answers.</summary>
     [Fact]
     public async Task A_loop_that_took_the_words_and_never_answers_is_said_after_its_bound()
     {
@@ -899,13 +896,13 @@ public sealed class SessionsSayCommandTests : IDisposable
         Assert.Contains("took your words, and gave no answer of where they stand", said);
     }
 
-    /// <summary>What holds a start holds a reopen, and the line names it (D137 §2.2), by the planner's own verdict.</summary>
+    /// <summary>What holds a start holds a reopen, and the line names it, by the planner's own verdict.</summary>
     [Fact]
     public async Task Held_words_name_what_holds_them()
     {
-        // TESTWAIT5: the line falls back to "at the driver's next look" when the planner's look failed or gave no verdict, which the
+        // The line falls back to "at the driver's next look" when the planner's look failed or gave no verdict, which the
         // world reports (Fell). A try that fell back is asked again, up to three times, over a fresh room; the last try judges, and
-        // names the cause it was told.
+        // names the cause it is told.
         var causes = new List<string>();
         for (var attempt = 1; ; attempt++)
         {
@@ -931,7 +928,7 @@ public sealed class SessionsSayCommandTests : IDisposable
     }
 
     /// <summary>
-    /// Words said as a session winds up wait for its record to end (D137 §2.1): the say door answers it is still running, so
+    /// Words said as a session winds up wait for its record to end: the say door answers it is still running, so
     /// the verb asks again until it has ended, and then the record keeps them.
     /// </summary>
     [Fact]
@@ -949,9 +946,8 @@ public sealed class SessionsSayCommandTests : IDisposable
     }
 
     /// <summary>
-    /// Still winding up when the wait ends: nothing here holds the words. 🔴 FLAKE5: the wait is read off a clock that runs
-    /// once the loop has taken the verb's second ask, so the verb has heard it running before it gives up; on the machine's
-    /// 400 ms a late loop had not answered once, and the verb kept the words as if no loop had taken them.
+    /// Still winding up when the wait ends: nothing here holds the words. The wait is read off a clock that runs
+    /// once the loop has taken the verb's second ask, so the verb has heard it running before it gives up.
     /// </summary>
     [Fact]
     public async Task A_session_still_winding_up_after_the_wait_could_not_take_them()
@@ -1102,7 +1098,7 @@ public sealed class SessionsSayCommandTests : IDisposable
         Assert.Equal(0, room.Says);
     }
 
-    // ——— SAIDBACK1a (D137 §2.4): `sessions take-back` and `sessions reword`, the person's words taken back before a session took them.
+    // ——— `sessions take-back` and `sessions reword`, the person's words taken back before a session took them.
 
     private async Task<(int Exit, string Said)> RunAsync(Room room, string[] args, SessionsWorld? world = null)
     {
@@ -1166,7 +1162,7 @@ public sealed class SessionsSayCommandTests : IDisposable
 
     /// <summary>
     /// Taken back where no loop drives the home: off the record by its id, and its conversation settles the word it showed waiting
-    /// with the withdrawn line, as the composer's <c>Remove</c> does (QUEUEEDIT1a).
+    /// with the withdrawn line, as the composer's <c>Remove</c> does.
     /// </summary>
     [Fact]
     public async Task A_word_taken_back_leaves_the_record_and_its_conversation_says_so()
@@ -1209,7 +1205,7 @@ public sealed class SessionsSayCommandTests : IDisposable
     }
 
     /// <summary>
-    /// SAIDBACK1c: with a loop on the home, a take-back reaches it through the request folder, as a say does, and the loop that
+    /// With a loop on the home, a take-back reaches it through the request folder, as a say does, and the loop that
     /// takes it writes the withdrawn note into its own record of the conversation, so the page settles the word it showed waiting.
     /// A reword's new words are shown by that loop too, and no request is left behind.
     /// </summary>
@@ -1294,7 +1290,7 @@ public sealed class SessionsSayCommandTests : IDisposable
 
     /// <summary>
     /// The service's doors the verb crosses, standing in: the records with the words waiting on each, the quests, the registry,
-    /// and the say door (MSG1a), which keeps words on a parked or ended record and refuses the rest by its word.
+    /// and the say door, which keeps words on a parked or ended record and refuses the rest by its word.
     /// </summary>
     private sealed class Room(IEnumerable<JsonObject> records, IEnumerable<JsonObject> quests) : HttpMessageHandler
     {
@@ -1307,12 +1303,12 @@ public sealed class SessionsSayCommandTests : IDisposable
         /// <summary>How many more times the say door answers a working record still running; at none it has ended.</summary>
         public int Winding { get; set; }
 
-        /// <summary>How many times the say door was posted to.</summary>
+        /// <summary>How many times the say door has been posted to.</summary>
         public int Says { get; private set; }
 
         private readonly List<string?> _keys = [];
 
-        /// <summary>The producer's key each word the say door took was said under, null for none, in order.</summary>
+        /// <summary>The producer's key under which each word the say door took is said, null for none, in order.</summary>
         public IReadOnlyList<string?> Keys
         {
             get
@@ -1321,20 +1317,20 @@ public sealed class SessionsSayCommandTests : IDisposable
             }
         }
 
-        /// <summary>Told each post to the say door, with how many there have been: a test's condition (FLAKE5).</summary>
+        /// <summary>Told each post to the say door, with how many there have been: a test's condition.</summary>
         public Action<int>? Heard { get; init; }
 
-        /// <summary>How many times the take-back door was posted to (SAIDBACK1a).</summary>
+        /// <summary>How many times the take-back door has been posted to.</summary>
         public int TakeBacks { get; private set; }
 
         /// <summary>
-        /// FOUNDATION1d-ii part 1: a refusal the say door answers a say to a record with, its word, its sentence and the head it names where it
+        /// A refusal the say door answers a say to a record with, its word, its sentence and the head it names where it
         /// names one, before any other judgement, as a host answers a word it judges first; null for a record it judges as ever.
         /// </summary>
         public Func<string, (string Word, string Sentence, string? Head)?>? Refusing { get; init; }
 
         /// <summary>
-        /// FOUNDATION1d-ii part 1: the head of each record's line where it is not the record itself, as a host with the <c>head</c> mark judges
+        /// The head of each record's line where it is not the record itself, as a host with the <c>head</c> mark judges
         /// it inside its say door's step: a say to such a record is refused <c>continued</c>, naming the head, before any other refusal.
         /// </summary>
         public Dictionary<string, string> Heads { get; } = new(StringComparer.Ordinal);
@@ -1358,7 +1354,7 @@ public sealed class SessionsSayCommandTests : IDisposable
             lock (_gate) return [.. Of(id)["said"]!.AsArray().Select(word => (string)word!["id"]!)];
         }
 
-        /// <summary>What the door for what the person adds to a running session heard (DRIFT1a), in order: the session, then the words.</summary>
+        /// <summary>What the door for what the person adds to a running session heard, in order: the session, then the words.</summary>
         public IReadOnlyList<(string Session, string Text)> Added
         {
             get
@@ -1372,7 +1368,7 @@ public sealed class SessionsSayCommandTests : IDisposable
             lock (_gate) return [.. Of(id)["said"]!.AsArray().SelectMany(word => word!["files"]!.AsArray().Select(name => (string)name!))];
         }
 
-        /// <summary>The same session goes on with every word waiting: the look took them (MSG1b), and its record is working.</summary>
+        /// <summary>The same session goes on with every word waiting: the look took them, and its record is working.</summary>
         public void GoOn(string id)
         {
             lock (_gate)
@@ -1448,7 +1444,7 @@ public sealed class SessionsSayCommandTests : IDisposable
                         return Refuse(HttpStatusCode.Conflict, "running", $"Session `{id}` is working; it hears words through its driver.");
                     }
 
-                    // FOUNDATION1b: one word per producer's key on a record, as the service's say door keeps it.
+                    // One word per producer's key on a record, as the service's say door keeps it.
                     var key = body!["key"]?.GetValue<string>();
                     _keys.Add(key);
                     if (key is not null && record["said"]!.AsArray().FirstOrDefault(each => (string?)each!["key"] == key) is { } waiting)
@@ -1472,7 +1468,7 @@ public sealed class SessionsSayCommandTests : IDisposable
                     });
                 }
 
-                // The take-back door (SAIDBACK1a): one waiting word off a parked or ended record by its id, or reworded, the new
+                // The take-back door: one waiting word off a parked or ended record by its id, or reworded, the new
                 // words last under a new id; a word not waiting, or a running record's, answers `taken`.
                 if (request.Method == HttpMethod.Post && path.EndsWith("/take-back", StringComparison.Ordinal))
                 {

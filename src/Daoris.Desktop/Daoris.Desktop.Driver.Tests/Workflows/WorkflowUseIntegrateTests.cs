@@ -3,7 +3,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// INTEGRATE1r part r2 (the integration design §17.7; the workflow design §2.3, §4.7): <c>daoris workflow use</c> of a graph version
+/// <c>daoris workflow use</c> of a graph version
 /// that integrates its landing. It refuses, writing nothing, where a repository it reaches cannot carry the <c>integrate</c> (each case its own
 /// sentence), and says, per repository it reaches, <i>integrates with no gates</i> where its line policy's <c>gates</c> is absent or
 /// <c>none</c>. A workspace's <c>use</c> reaches the registry's repositories of that workspace whose own

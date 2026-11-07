@@ -4,8 +4,8 @@ using System.Text.Json;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// The seam's words arrive whole (D194 point 1, the alone-path design §1.1; ONEWAY1ai-i): <c>daoris place …</c>, a word outside the
-/// doctrine commands, started by Node through the CLI's one spawn site, reaches a .NET program with the words it was typed with, read
+/// The seam's words arrive whole: <c>daoris place …</c>, a word outside the
+/// doctrine commands, started by Node through the CLI's one spawn site, reaches a .NET program with the words it is typed with, read
 /// back by .NET's own reading, since a Node stand-in would read them with Node's parser. The program here is a small native fixture this
 /// test builds, named as the desktop program's apphost is; it prints what it read and exits as it is told. The terminal's environment
 /// arrives with no tools' <c>PATH</c> laid over it and the handed mark added, and the program's exit is the run's.

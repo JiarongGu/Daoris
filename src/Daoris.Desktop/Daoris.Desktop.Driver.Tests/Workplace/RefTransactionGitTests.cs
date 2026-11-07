@@ -3,7 +3,7 @@ using static Daoris.Desktop.Driver.Tests.GitFixture;
 
 namespace Daoris.Desktop.Driver.Tests;
 
-/// <summary>GITTXN1 over real git: each expectation alone refuses movement, a symbolic ref is refused, and the rollbacks are conditional.</summary>
+/// <summary>Over real git: each expectation alone refuses movement, a symbolic ref is refused, and the rollbacks are conditional.</summary>
 [Trait(Category.Name, Category.Process)]
 [Trait(Category.Parallel, Category.Git)]
 public sealed class RefTransactionGitTests : IDisposable
@@ -80,7 +80,7 @@ public sealed class RefTransactionGitTests : IDisposable
         Assert.Equal(one, await TipAsync("refs/heads/main"));
     }
 
-    // GITTXN2: git that never answers (-1), having moved the ref first or not.
+    // Git that never answers (-1), having moved the ref first or not.
     private static async Task<T> UnansweredAsync<T>(string root, bool moveFirst, Func<Task<T>> act)
     {
         WorkingTree.Answered.Value = args =>

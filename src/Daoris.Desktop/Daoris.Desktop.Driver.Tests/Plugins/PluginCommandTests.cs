@@ -3,7 +3,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// <c>daoris plugin</c> (PUSH1f2f, D194, the alone-path design §1.2, §1.3, §2): each change names the route the window's press
+/// <c>daoris plugin</c>: each change names the route the window's press
 /// takes, its payload written from the words, or none for the terminal's replace; a person's press acting alone is refused from a
 /// session's terminal with nothing written; and an alone remove of a folder something holds is refused as the route refuses it, nothing
 /// taken. Today's words are <see cref="PluginsTextTests"/>'; both ways through the route are the modules' <c>PluginsBothWaysTests</c>.
@@ -18,7 +18,7 @@ public sealed class PluginCommandTests : IDisposable
 
     private readonly StringWriter _error = new();
 
-    /// <summary>An install's folder (D172 point 2): its <c>data/</c> the home, its <c>app/plugin-offers/</c> the offers, as the text table's.</summary>
+    /// <summary>An install's folder: its <c>data/</c> the home, its <c>app/plugin-offers/</c> the offers, as the text table's.</summary>
     public PluginCommandTests()
     {
         Directory.CreateDirectory(Home);
@@ -97,7 +97,7 @@ public sealed class PluginCommandTests : IDisposable
         Assert.Contains("What it declares does not change", _out.ToString(), StringComparison.Ordinal);
     }
 
-    /// <summary>Every plugin press is the person's (D194 point 5): from a session's terminal, with no Daoris to confirm it, refused alone.</summary>
+    /// <summary>Every plugin press is the person's: from a session's terminal, with no Daoris to confirm it, refused alone.</summary>
     [Theory]
     [InlineData("add")]
     [InlineData("replace")]
@@ -158,7 +158,7 @@ public sealed class PluginCommandTests : IDisposable
         Assert.Equal(0, await PluginCommand.RunAsync(["--help"], World(), CancellationToken.None));
         Assert.All(PluginCommand.Verbs, verb => Assert.Contains(verb, PluginCommand.Usage, StringComparison.Ordinal));
         Assert.Contains("daoris plugin new|try", PluginCommand.Usage, StringComparison.Ordinal);
-        // CONFIRMWAIT1b (the confirm-wait design §4.1): every change waits on its Confirm, and the usage says for how long.
+        // Every change waits on its Confirm, and the usage says for how long.
         Assert.Contains(InstanceDoor.WaitUsage, PluginCommand.Usage, StringComparison.Ordinal);
         Assert.Contains("plugin list  ·  plugin add <folder>", DriverCommand.Usage, StringComparison.Ordinal);
     }

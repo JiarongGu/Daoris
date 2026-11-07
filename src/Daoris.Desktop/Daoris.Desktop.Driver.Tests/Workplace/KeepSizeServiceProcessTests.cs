@@ -6,8 +6,8 @@ using static Daoris.Desktop.Driver.Tests.GitFixture;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// KEEPSIZE1b2 (D195's KEEPSIZE1b notes; the keep-size design §2.2 and §3.3): what KEEPSIZE1b left of its row, the two proofs that read no
-/// destructive path. The driver's own client posts a finished tree's record to the service's own host, started in a process of its own over
+/// Two proofs that read no
+/// destructive path: the driver's own client posts a finished tree's record to the service's own host, started in a process of its own over
 /// a scratch home (<see cref="RealServiceHost"/>), after the look's real move of a real tree over real git: so the tree path posted is the
 /// one the move leaves in the manifest, not one a test wrote, and the sessions are the service's own rows, opened through the client as the
 /// driver opens them. The service's store-level cases (<c>WorkRecordStoreTests</c>, <c>WorkRecordHostTests</c>) write the paths themselves.
