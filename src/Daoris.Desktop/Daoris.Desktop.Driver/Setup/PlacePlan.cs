@@ -1,7 +1,7 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// What a place's quick set-up asks (AGENTSPLACE1a2; the Agents-place design §4): the repositories, a delivery preset with its second opinion
+/// What a place's quick set-up asks: the repositories, a delivery preset with its second opinion
 /// and your look, adoption with what it builds, and general driving, three parts kept apart.
 /// </summary>
 public sealed record PlaceAsk(IReadOnlyList<string> Repositories, string Preset)
@@ -14,7 +14,7 @@ public sealed record PlaceAsk(IReadOnlyList<string> Repositories, string Preset)
 
     /// <summary>
     /// How many adoption quests the driver keeps open at once; an adoption covering more of a workspace's repositories than this is paced by that
-    /// workspace's plan (WORKFLOWCLEAN1 1f). None said is the plan's default, one.
+    /// workspace's plan. None said is the plan's default, one.
     /// </summary>
     public int? AtOnce { get; init; }
 
@@ -101,12 +101,12 @@ public sealed record PlaceApplied(DriverConfig After, IReadOnlyList<PlaceChange>
 public sealed record PlaceSave(string Id, string Default, bool Opinion, bool Look);
 
 /// <summary>
-/// A place's plan (AGENTSPLACE1a2, <c>PLACE_PLAN</c> and <c>daoris place … --plan</c>; the Agents-place design §4): the parts applied to a
+/// A place's plan (<c>PLACE_PLAN</c> and <c>daoris place … --plan</c>): the parts applied to a
 /// copy of the configuration through today's doors' own edits (driving, trees, the workflow choice, the landing rule by
 /// the line's policy, the second opinion and the review rule), read before and after through the resolvers a start uses
 /// (<see cref="PlaceProjection.ValuesAt"/>, <see cref="WorkflowProcesses.Otherwise(IWorkflowStore, DriverConfig, string, string?, string?)"/>,
 /// <see cref="WorkPolicies.Of"/>). It says every refusal at once, what lowers the person's part, §17.7's reach, the work driving releases or,
-/// with adoption and driving off, that the set-up quest starts alone (AGENTSPLACE1b), and each declaration with what accepting it is for. It
+/// with adoption and driving off, that the set-up quest starts alone, and each declaration with what accepting it is for. It
 /// writes nothing and asks no account, plugin, tool or remote.
 /// </summary>
 public static class PlacePlans
@@ -127,7 +127,7 @@ public static class PlacePlans
 
     public const string NoLandingPlugin = "no-landing-plugin";
 
-    /// <summary>What an adoption part says where general driving stays off: the set-up quest is admitted alone (AGENTSPLACE1b).</summary>
+    /// <summary>What an adoption part says where general driving stays off: the set-up quest is admitted alone.</summary>
     public const string AloneSaid = "what starts here while general driving stays off";
 
     /// <summary>The ask's own refusals, said before any repository is read: the delivery, what rides it, and what it builds.</summary>
@@ -167,7 +167,7 @@ public static class PlacePlans
     }
 
     /// <summary>
-    /// The pacing an adoption asks (the workspace plan's, D124 §4.1): <c>atOnce</c> at least one and held to the cap less one so other work keeps a
+    /// The pacing an adoption asks (the workspace plan's): <c>atOnce</c> at least one and held to the cap less one so other work keeps a
     /// slot, <c>pilot</c> not negative, and neither without adoption.
     /// </summary>
     public static IReadOnlyList<PlaceRefusal> PacingRefusals(PlaceAsk ask, DriverConfig config)
@@ -222,7 +222,7 @@ public static class PlacePlans
                 changes.Add(new("SET_TREES", Delivery, "a tree per session", "off", "on"));
             }
 
-            // A step is the workflow's, edited at its one door (WORKFLOWCLEAN1 1a): the ticks choose a copy's variant, and none is kept.
+            // A step is the workflow's, edited at its one door: the ticks choose a copy's variant, and none is kept.
             if (ask.Opinion || ask.Look) Refuse(Delivery, "keeps-workflow", KeepsSteps);
             if (ask.Drive && !Driven(after))
             {
@@ -258,7 +258,7 @@ public static class PlacePlans
             if (SetupPress.OpenRefusal(quests, name) is { } open) Refuse(Adoption, open.Code, open.Sentence);
             changes.Add(new(SetupPressKey, Adoption, "a set-up asked of its own session", "not asked",
                 ask.Builds is { } builds && SetupBuilds.Is(builds) ? $"asked, for {SetupBuilds.Named(builds)}" : "asked"));
-            // AGENTSPLACE1b: not driven after the plan, the press admits its quest alone, and the queued work stays held.
+            // Not driven after the plan, the press admits its quest alone, and the queued work stays held.
             if (!Driven(after)) changes.Add(new(SetupPressKey, Adoption, AloneSaid, "nothing", "its set-up quest alone"));
         }
 
@@ -269,7 +269,7 @@ public static class PlacePlans
     public const string KeepsSteps = "to add a step to the workflow it keeps, use *Edit steps…*.";
 
     /// <summary>
-    /// A delivery as the workflow a place follows (WORKFLOWCLEAN1 1a; the cleanup design §1.2): the home's saved copy of the shipped default, in
+    /// A delivery as the workflow a place follows: the home's saved copy of the shipped default, in
     /// the variant the ticks choose, saved where the home has none, then chosen through <c>WORKFLOW_USE</c>'s own edit. The ticks refused
     /// where nothing is declared to choose among stay refused. Writes no landing rule.
     /// </summary>
@@ -294,7 +294,7 @@ public static class PlacePlans
             refused = true;
         }
 
-        // The ticks choose among what is declared, never beyond it (D23): the agents that read and the environment a look runs in.
+        // The ticks choose among what is declared, never beyond it: the agents that read and the environment a look runs in.
         var reviewersNamed = OpinionRules.Resolve(config, name, workspace) is { Rule.IsNone: false };
         if (ask.Opinion && !reviewersNamed)
         {
@@ -343,7 +343,7 @@ public static class PlacePlans
             }
         }
 
-        // An integration needs the line's policy, however the line is integrated: the default one where the line has none (the design §1.2).
+        // An integration needs the line's policy, however the line is integrated: the default one where the line has none.
         if (land.Method == LandNodes.Integrate && config.LinePolicyOf(name, workspace) is null)
         {
             config = config.WithLinePolicy(name, new LandingIntegrate());
@@ -441,7 +441,7 @@ public static class PlacePlans
     }
 
     /// <summary>
-    /// What the plan lowers of the person's part at a repository (D157 point 10): the steps its work follows compared before and after
+    /// What the plan lowers of the person's part at a repository: the steps its work follows compared before and after
     /// (<see cref="Involvement.Lowers"/>), and its landed route (<see cref="InvolvementRoutes.LowersRoute"/>).
     /// </summary>
     private static IReadOnlyList<string> LowersOf(IWorkflowStore store, DriverConfig config, PlaceApplied applied, string repository, string workspace)

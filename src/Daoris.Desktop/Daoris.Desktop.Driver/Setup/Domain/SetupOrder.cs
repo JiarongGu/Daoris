@@ -1,15 +1,15 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// The order a workspace plan works its repositories in (WSSETUP6, D124 §4.2): what other work touches first, from the facts
+/// The order a workspace plan works its repositories in: what other work touches first, from the facts
 /// this machine keeps, highest first, then by name.
 /// </summary>
 /// <remarks>
 /// <para><b>Three facts, in this order</b>: quests addressed to it by anyone but itself (another repository, an ask, which
 /// the intake or the person routed, or the person); reads into its checkout by other repositories' sessions, from the
-/// conversation records' tool calls and the files they touched (D76); and sessions run in it. A set-up is not work asked of
+/// conversation records' tool calls and the files they touched; and sessions run in it. A set-up is not work asked of
 /// it, and a session reading its own repository is not another's read. Value lands first that way, and a plan stopped at
-/// any point has set up what other work needed most (§4.2).</para>
+/// any point has set up what other work needed most.</para>
 ///
 /// <para><b>An ask's quest counts whichever tier routed it</b>: the quest says only that an ask sent it (<c>ask #id</c>),
 /// not whether the intake or the person chose the receiver, and either way it is work another asked of the repository.</para>

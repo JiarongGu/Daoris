@@ -32,7 +32,7 @@ public static class PlaceApplyRefusals
 }
 
 /// <summary>
-/// A place's recoverable apply (AGENTSPLACE1b2, <c>PLACE_APPLY</c>'s body; the Agents-place design §4): the plan's six steps, each operation's outcome
+/// A place's recoverable apply (<c>PLACE_APPLY</c>'s body): the plan's six steps, each operation's outcome
 /// kept in a receipt written before its first effect. It plans again over the configuration as it stands and refuses <c>moved</c> where the
 /// digest differs, reads the tips and refuses <c>moved</c> for a chosen blob that is no longer the tip's, writes every configuration change and
 /// acceptance in one <see cref="PlaceApplyDoors.Change"/>, judged first, and asks each adoption quest last, keyed by the digest.
@@ -94,7 +94,7 @@ public static class PlaceApplies
     }
 
     /// <summary>
-    /// A restart's read of every receipt (the design §4): each uncertain step settled by its postcondition, nothing asked and nothing written to
+    /// A restart's read of every receipt: each uncertain step settled by its postcondition, nothing asked and nothing written to
     /// the configuration. Returns the receipts as they now stand.
     /// </summary>
     public static async Task<IReadOnlyList<PlaceReceipt>> SettleAllAsync(PlaceApplyDoors doors, CancellationToken ct = default)
@@ -232,7 +232,7 @@ public static class PlaceApplies
         var configuration = receipt.Of(PlaceOperations.Configuration)?.Outcome ?? PlaceOutcomes.Done;
         if (configuration == PlaceOutcomes.Done)
         {
-            // Under oldest-first and a small cap, many set-ups asked together would hold every slot for hours (D117 §9): one at a time unless said.
+            // Under oldest-first and a small cap, many set-ups asked together would hold every slot for hours: one at a time unless said.
             receipt = await PaceAsync(doors, receipts, receipt, receipt.Ask.AtOnce ?? WorkspaceSetupRules.DefaultAtOnce, ct).ConfigureAwait(false);
         }
 
@@ -421,7 +421,7 @@ public static class PlaceApplies
     }
 
     /// <summary>
-    /// An adoption covering more of a workspace's repositories than <paramref name="atOnce"/> (the ask's, else the plan's default of one) is paced (WORKFLOWCLEAN1 1f): the apply writes that
+    /// An adoption covering more of a workspace's repositories than <paramref name="atOnce"/> (the ask's, else the plan's default of one) is paced: the apply writes that
     /// workspace's plan, which the driver's tick works as it always has, and the operations are done once the plan is written. A workspace with
     /// no more than <c>atOnce</c> of them is asked now, as a single adoption is. A plan already working for those repositories is the same write.
     /// </summary>

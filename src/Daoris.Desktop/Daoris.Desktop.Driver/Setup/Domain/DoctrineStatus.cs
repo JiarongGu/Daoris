@@ -13,9 +13,9 @@ public static class DoctrineUpdates
 }
 
 /// <summary>
-/// What the doctrine tool's <c>status --json</c> says of a checkout against the canon it carries (the context-one design §3 A, D230 point 2),
+/// What the doctrine tool's <c>status --json</c> says of a checkout against the canon it carries,
 /// read field by field from its answer: whether the canon moved and by how many files, the keeps it reopened, and a lock a newer canon wrote.
-/// The tool judges, and nothing here judges again: no copy of D19's table (D117).
+/// The tool judges, and nothing here judges again: no copy of its table.
 /// </summary>
 public sealed record DoctrineStatus
 {

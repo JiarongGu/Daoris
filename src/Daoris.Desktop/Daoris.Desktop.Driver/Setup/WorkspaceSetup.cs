@@ -1,12 +1,12 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// The workspace plan (WSSETUP6, D124 §4.1–§4.3): <i>Set up every repository in this workspace</i> writes a plan of single
+/// The workspace plan: <i>Set up every repository in this workspace</i> writes a plan of single
 /// set-ups, and the driver's tick works it, one at a time by default, the repositories other work touches first, pausing
 /// after a pilot.
 /// </summary>
 /// <remarks>
-/// <para><b>One quest per repository, never published at once</b> (D117 §9, D124 §4.1): under oldest-first and a cap of two,
+/// <para><b>One quest per repository, never published at once</b>: under oldest-first and a cap of two,
 /// twenty-nine set-ups published together would hold both slots for hours. So the press writes a plan, and each tick, while
 /// fewer than <c>atOnce</c> of its set-ups are open and it is not paused, publishes the next to go as the single press
 /// publishes it (<see cref="SetupPress.PublishAsync"/>), judged again at that moment.</para>
@@ -14,7 +14,7 @@ namespace Daoris.Driver;
 /// <para><b>Never the last slot</b>: <c>atOnce</c> is one by default and held to <c>cap − 1</c> at every tick, whatever the
 /// file says, so other work always keeps a slot; at a cap of one it is one.</para>
 ///
-/// <para><b>Nothing in the plan is a count</b> (D58): each repository's state is read from the registry (set up), the quests
+/// <para><b>Nothing in the plan is a count</b>: each repository's state is read from the registry (set up), the quests
 /// (open, waiting for review, declined, deleted) and the strikes (parked) every time, so a set-up already open, from the
 /// plan or from the single press, is never asked again. A repository refused at its turn is skipped with its reason and not
 /// judged again until the person resumes the plan; a refusal of the machine's tools pauses the plan instead, since it
@@ -22,7 +22,7 @@ namespace Daoris.Driver;
 ///
 /// <para><b>The pilot</b>: the first <c>pilot</c> set-ups it publishes go alone. Nothing more is asked until all of them
 /// have closed, and then the plan pauses itself and says so once, until the person resumes it with what they cost in
-/// front of them (§7). A parked one has not closed: the person's attention is what it waits on.</para>
+/// front of them. A parked one has not closed: the person's attention is what it waits on.</para>
 ///
 /// <para><b>The use cases, against their port</b>: the world comes through <see cref="IWorkspaceSetupWorld"/>, the plan's
 /// file is <see cref="WorkspaceSetupFile"/>'s, and the rules are <see cref="WorkspaceSetupRules"/>', which its callers name.</para>
@@ -129,7 +129,7 @@ public static class WorkspaceSetup
     }
 
     /// <summary>
-    /// Press: the doctrine tool's verbs into the workspace's scope, once (D124 §4.3), then the plan written. It publishes
+    /// Press: the doctrine tool's verbs into the workspace's scope, once, then the plan written. It publishes
     /// nothing: the tick does. A plan that could not be written takes back the rules it added, and keeps any the person had.
     /// </summary>
     public static Task<WorkspaceSetupOutcome> PressAsync(
@@ -148,7 +148,7 @@ public static class WorkspaceSetup
 
     /// <summary>
     /// The plan written for <paramref name="order"/>, after the doctrine tool's verbs are added to the workspace's rules once: what a press
-    /// does, and what an apply of an adoption covering more repositories than it asks at once does (WORKFLOWCLEAN1 1f). A plan that could not
+    /// does, and what an apply of an adoption covering more repositories than it asks at once does. A plan that could not
     /// be written takes back the rules it added, and keeps any the person had.
     /// </summary>
     public static WorkspaceSetupOutcome Write(
@@ -186,7 +186,7 @@ public static class WorkspaceSetup
     /// <summary>
     /// One look's work on every plan under the home that works and is not paused: the next to go published while fewer than
     /// its <c>atOnce</c> are open, a refusal skipped and said, the pilot's pause taken once it has closed. What it did, in the
-    /// lines a look's report carries, each classed as it is made (NOTIFY2h2): what moved, a pause and a skip included, which the
+    /// lines a look's report carries, each classed as it is made: what moved, a pause and a skip included, which the
     /// workspace's set-up says where the person resumes it; a home with no plan to work reads nothing.
     /// </summary>
     /// <param name="look">The look's classing; none classes and keeps nothing.</param>
@@ -249,7 +249,7 @@ public static class WorkspaceSetup
 
                 if (press.Pressable)
                 {
-                    // ORIENT2c: an index quest's commands are its repository's own, so its rule goes in as the single press
+                    // An index quest's commands are its repository's own, so its rule goes in as the single press
                     // adds one, into the repository's scope, and comes out if the ask is refused.
                     var indexing = press.Case == SetupCase.Index;
                     var outcome = indexing
@@ -364,7 +364,7 @@ public static class WorkspaceSetup
         return new(true, lifted + (skipped > 0 ? $"; the {skipped} it skipped are judged again in their turn." : "."), next);
     }
 
-    /// <summary>The person's stop: the plan ends. What it published stays, and a quest nobody has started can be deleted (D95).</summary>
+    /// <summary>The person's stop: the plan ends. What it published stays, and a quest nobody has started can be deleted.</summary>
     public static WorkspaceSetupSteer Stop(IWorkspaceSetupWorld world, string home, string workspace, DateTimeOffset now)
     {
         var (plan, problem) = WorkspaceSetupFile.Load(home, workspace);
@@ -405,7 +405,7 @@ public static class WorkspaceSetup
     private static string NoPlan(string workspace) =>
         $"there is no plan for workspace `{RemoteTarget.Workspace(workspace)}`: `daoris place --workspace {Spelled(RemoteTarget.Workspace(workspace))} --adoption` makes one.";
 
-    /// <summary>A workspace in a command a person pastes, spelled for any shell (ACCTQUOTE1b); the words around it name it as it is.</summary>
+    /// <summary>A workspace in a command a person pastes, spelled for any shell; the words around it name it as it is.</summary>
     internal static string Spelled(string workspace) => ShellWord.Of(workspace, ShellWord.Workspace);
 
     private static string AtOnceWords(int atOnce) => atOnce == 1 ? "one at a time" : $"{atOnce} at a time";

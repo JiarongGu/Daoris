@@ -1,7 +1,7 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// The generator an index quest names (ORIENT2c, D151 point 5): its path, the toolchain it is written in, and its two
+/// The generator an index quest names: its path, the toolchain it is written in, and its two
 /// commands, the one that writes the index and the one that checks it.
 /// </summary>
 /// <param name="Stack">The toolchain, in the words the quest says it in: <c>Node</c>, <c>.NET</c> or <c>Python</c>.</param>
@@ -11,14 +11,14 @@ namespace Daoris.Driver;
 public sealed record IndexForm(string Stack, string Generator, string Write, string Check);
 
 /// <summary>
-/// Which generator the index quest names, from what a repository is built with (ORIENT2c; the orientation design §2.2):
+/// Which generator the index quest names, from what a repository is built with:
 /// a Node, .NET or Python repository each has one obvious form, and a stack the press does not know gets no quest.
 /// </summary>
 /// <remarks>
 /// <para><b>The first stack the reading names</b> (<see cref="SelfDescription"/>'s order, the Node family first): a
 /// repository built with two is indexed in the first, since one generator writes the whole folder.</para>
 ///
-/// <para><b>Never over a file already there</b> (the design §2.3): <c>tools/index.*</c>, then
+/// <para><b>Never over a file already there</b>: <c>tools/index.*</c>, then
 /// <c>tools/orient-index.*</c>; with both on the line the press names neither and says so.</para>
 ///
 /// <para><b>.NET is a file-based program</b> (<c>dotnet run tools/index.cs</c>), which needs no project file, so the

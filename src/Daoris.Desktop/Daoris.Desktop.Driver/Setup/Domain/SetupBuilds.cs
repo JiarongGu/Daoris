@@ -1,7 +1,7 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// <i>What it builds</i> (AGENTSPLACE1a2; the Agents-place design §4): library or package, web or service, desktop or game, documentation or
+/// <i>What it builds</i>: library or package, web or service, desktop or game, documentation or
 /// tooling. It shapes only the set-up quest's request, the checks the repository's own session is asked to declare in its safe work, and
 /// never sets a permission, an appointment, an account or a model.
 /// </summary>

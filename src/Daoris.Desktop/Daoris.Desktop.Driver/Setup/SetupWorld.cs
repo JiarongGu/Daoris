@@ -5,7 +5,7 @@ using Daoris.Contracts.Knowledge;
 namespace Daoris.Driver;
 
 /// <summary>
-/// The world a set-up press reads on this machine (LAYOUT7): the service's doors, the repository's line read as git
+/// The world a set-up press reads on this machine: the service's doors, the repository's line read as git
 /// objects, and the <c>node</c> and <c>daoris</c> a child of Daoris would find. The press itself is
 /// <see cref="SetupPress"/>; this is only where its facts come from.
 /// </summary>
@@ -36,9 +36,9 @@ public sealed class SetupWorld(ServiceClient service, string home) : ISetupWorld
     }
 
     /// <summary>
-    /// The <c>node</c> Tools resolves and the <c>daoris</c> the <c>PATH</c> a child starts with finds (TOOLS5's one
-    /// environment, D124 §1.3), each asked its version as a child would ask it. In an install that <c>PATH</c> begins
-    /// with the install's own launchers (WSSETUP3), so the <c>daoris</c> found is the install's.
+    /// The <c>node</c> Tools resolves and the <c>daoris</c> the <c>PATH</c> a child starts with finds (one
+    /// environment), each asked its version as a child would ask it. In an install that <c>PATH</c> begins
+    /// with the install's own launchers, so the <c>daoris</c> found is the install's.
     /// </summary>
     public async Task<SetupTools> ToolsAsync(CancellationToken ct)
     {
@@ -83,7 +83,7 @@ public sealed class SetupWorld(ServiceClient service, string home) : ISetupWorld
     public Task<AskAnswer> PublishAsync(string workspace, string sentence, string to, CancellationToken ct) =>
         service.AskAsync(workspace, sentence, [], [], to, ct);
 
-    /// <summary>The <c>PATH</c> a child starts with (TOOLS5's one environment, D124 §1.3).</summary>
+    /// <summary>The <c>PATH</c> a child starts with.</summary>
     private string? ChildPath(ToolsRead read)
     {
         var inherited = Environment.GetEnvironmentVariable(Tools.PathVariable);
@@ -104,7 +104,7 @@ public sealed class SetupWorld(ServiceClient service, string home) : ISetupWorld
             StandardErrorEncoding = Encoding.UTF8,
         };
         info.ArgumentList.Add("--version");
-        // Asked as a child is started (TOOLS5): the launcher runs on the node a child's PATH finds.
+        // Asked as a child is started: the launcher runs on the node a child's PATH finds.
         Tools.Hand(info, read, home);
 
         var run = await ChildProcess.RunAsync(info, Patience, ct, closeInput: false).ConfigureAwait(false);

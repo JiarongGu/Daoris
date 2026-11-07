@@ -3,7 +3,7 @@ using System.Text;
 namespace Daoris.Driver;
 
 /// <summary>
-/// The index quest's words (ORIENT2c; the orientation design §2, D151 point 5): <see cref="SetupQuests.Index"/> and a body
+/// The index quest's words: <see cref="SetupQuests.Index"/> and a body
 /// that asks a set-up repository's own session for a generated index of where things are, kept true by its own check.
 /// </summary>
 /// <remarks>
@@ -12,7 +12,7 @@ namespace Daoris.Driver;
 /// holds it with the other cases.</para>
 ///
 /// <para><b>Inventory, generator, check, marks, declaration, and nothing else</b> (the design §2.2's bounds): an index the
-/// repository already keeps stays whole and where it is (§2.3), and the generator is the one the press named, at its path,
+/// repository already keeps stays whole and where it is, and the generator is the one the press named, at its path,
 /// with exactly the two commands it grants (<see cref="SetupPressRules.IndexRules"/>).</para>
 ///
 /// <para><b>What driven sessions read most is not carried</b>: the design's §2.2 has the press count it from their typed

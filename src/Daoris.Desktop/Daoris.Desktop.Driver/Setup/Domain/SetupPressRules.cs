@@ -3,13 +3,13 @@ using System.Text.RegularExpressions;
 namespace Daoris.Driver;
 
 /// <summary>
-/// The set-up press's rules (LAYOUT7; D124 §2.1, §2.4), pure: the doctrine tool's verbs a set-up's session runs and the rule
+/// The set-up press's rules, pure: the doctrine tool's verbs a set-up's session runs and the rule
 /// that allows them, which set-up a line calls for, the refusals the tools a child finds earn, and how the work lands in
 /// words. <see cref="SetupPress"/> applies them against the world; its callers name them here.
 /// </summary>
 public static partial class SetupPressRules
 {
-    /// <summary>The doctrine tool's verbs a set-up's session runs, exactly (D124 §2.4). 🔴 Each is a verb the body asks for.</summary>
+    /// <summary>The doctrine tool's verbs a set-up's session runs, exactly. 🔴 Each is a verb the body asks for.</summary>
     public static readonly IReadOnlyList<string> Verbs =
     [
         "daoris --version", "daoris init --harness agents", "daoris analyze --json", "daoris sync --dry-run",
@@ -23,8 +23,8 @@ public static partial class SetupPressRules
     public const int NodeFloor = 22;
 
     /// <summary>
-    /// The refusals the tools a child finds earn (D124 §2.1): the machine's, not any one repository's, so a workspace plan
-    /// pauses on them rather than skip every repository in turn (WSSETUP6).
+    /// The refusals the tools a child finds earn: the machine's, not any one repository's, so a workspace plan
+    /// pauses on them rather than skip every repository in turn.
     /// </summary>
     public static IReadOnlyList<SetupRefusal> ToolRefusals(SetupTools tools) =>
         [.. new[] { NodeRefusal(tools), ToolRefusal(tools) }.OfType<SetupRefusal>()];
@@ -37,7 +37,7 @@ public static partial class SetupPressRules
         plan.Index is { } form ? IndexRules(form) : plan.Case == SetupCase.Reconcile ? ReconcileRules : Rules;
 
     /// <summary>
-    /// A reconcile's verbs (D230): the set-up's, the brief's own, and <c>upstream --all</c>, which outside the canon's checkout
+    /// A reconcile's verbs: the set-up's, the brief's own, and <c>upstream --all</c>, which outside the canon's checkout
     /// composes the request's words and writes nothing. 🔴 Each is a verb its body asks for, or one of the set-up's.
     /// </summary>
     public static readonly IReadOnlyList<string> ReconcileVerbs = [.. Verbs, "daoris reconcile", "daoris upstream --all"];
@@ -46,13 +46,13 @@ public static partial class SetupPressRules
     public static IReadOnlyList<string> ReconcileRules { get; } = [.. ReconcileVerbs.Select(verb => $"Bash({verb})")];
 
     /// <summary>
-    /// The doctrine tool's verbs an index quest's session runs (ORIENT2c): the version, the <c>sync</c> that renders the
+    /// The doctrine tool's verbs an index quest's session runs: the version, the <c>sync</c> that renders the
     /// declared index's row, and the two that verify. 🔴 Each is a verb its body asks for.
     /// </summary>
     public static readonly IReadOnlyList<string> IndexVerbs = ["daoris --version", "daoris sync", "daoris check", "daoris status --json"];
 
     /// <summary>
-    /// The rule an index quest's press adds (D151 point 5): <see cref="IndexVerbs"/> and the generator's two commands,
+    /// The rule an index quest's press adds: <see cref="IndexVerbs"/> and the generator's two commands,
     /// exactly, each as a <c>Bash</c> allow, as a set-up's verbs are granted.
     /// </summary>
     public static IReadOnlyList<string> IndexRules(IndexForm form) =>
@@ -61,7 +61,7 @@ public static partial class SetupPressRules
     /// <summary>
     /// Which set-up the line calls for: none adopted is the whole; the older layout, or a move the lock has not
     /// followed, is a move; the agents layout finished and declaring nothing is the knowledge alone; declaring and naming
-    /// no index is the index alone (ORIENT2c); naming one too is done.
+    /// no index is the index alone; naming one too is done.
     /// </summary>
     public static SetupCase CaseOf(LayoutFacts facts) =>
         !facts.Adopted ? SetupCase.Whole
@@ -115,7 +115,7 @@ public static partial class SetupPressRules
             : null;
 
     /// <summary>
-    /// Whether <c>daoris --version</c> printed a version: numbers and dots, as the CLI prints its own. Public since LAYOUT8, so
+    /// Whether <c>daoris --version</c> printed a version: numbers and dots, as the CLI prints its own. Public so
     /// the screen's plan says a version only where one was answered, as the terminal's does.
     /// </summary>
     public static bool IsVersion(string? version) => version is not null && DaorisVersion().IsMatch(version.Trim());
