@@ -279,16 +279,22 @@ export function Canvas({
   useEffect(() => {
     if (on) onView?.(view, viewport0);
   }, [on, view.x, view.y, view.k, viewport0.w, viewport0.h]);
+  const keeping = useRef<(() => void) | null>(null);
   useEffect(() => {
     if (!on || !remember || !moved.current || boxes.current.size === 0) return undefined;
-    const timer = window.setTimeout(() => {
+    const keep = () => {
+      keeping.current = null;
       keepView({
         identity: remember.identity, view: viewRef.current, selected: remember.selected ?? null,
         anchor: anchorOf(viewRef.current, viewport(viewRef.current.k), boxes.current, remember.groupOf ?? (() => null)),
       }, memoryKey(remember.feature, remember.key));
-    }, 400);
+    };
+    keeping.current = keep;
+    const timer = window.setTimeout(keep, 400);
     return () => window.clearTimeout(timer);
   }, [on, view.x, view.y, view.k, remember?.identity, remember?.selected]);
+  // A viewer who leaves before the view has held still keeps the place they left at, not the one before it.
+  useEffect(() => () => keeping.current?.(), []);
   const [mapOn, setMapOn] = useState(minimapWanted);
 
   // The wheel, heard before the window's zoom: a listener of its own, since a passive React one cannot keep the page from scrolling.
