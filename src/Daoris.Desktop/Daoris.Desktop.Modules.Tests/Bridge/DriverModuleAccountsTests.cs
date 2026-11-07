@@ -723,16 +723,14 @@ public sealed class DriverModuleAccountsTests : DriverModuleBridge
         Assert.True(claude.GetProperty("reads").GetBoolean());
         Assert.True(Agent(answer, "codex").GetProperty("reads").GetBoolean());
         Assert.False(Agent(answer, "dsh").GetProperty("reads").GetBoolean());
-        // The page's floor per agent is its question's own: Claude's minute, Codex's five, none where nothing is asked.
-        Assert.Equal(60, claude.GetProperty("readFloor").GetDouble());
-        Assert.Equal(300, Agent(answer, "codex").GetProperty("readFloor").GetDouble());
-        Assert.True(!Agent(answer, "dsh").TryGetProperty("readFloor", out var none) || none.ValueKind == JsonValueKind.Null);
+        // The page reads no account as it opens, so it is told no floor.
+        Assert.False(claude.TryGetProperty("readFloor", out _));
     }
 
     // ---------------------------------------------------------------- ACCOUNTS_READ: Read now
 
     /// <summary>
-    /// SWITCH1d (the switch design §1.2): the screen's <i>Read now</i>, and its read as it opens, ask each account's agent its use
+    /// SWITCH1d (the switch design §1.2): the screen's <i>Read now</i>, asked by a press alone, asks each account's agent its use
     /// only where the reading is older than its question's floor, so an account read within it is asked nothing and keeps its
     /// reading. Answered with the door it was asked through.
     /// </summary>

@@ -41,9 +41,6 @@ import type { ListPanes } from '../work/frame/listPanes';
 /** What a door runs, and so what streams under it in *Ways in* (D49 §2). */
 const DOOR_ACTIONS = ['install', 'update', 'pin', 'unpin'] as const;
 
-/** A reading older than the agent's own floor is read again as its page opens (the switch design §1.2); a shell that names none is read at a minute. */
-const STALE_AFTER_SECONDS = 60;
-
 /**
  * The Agents place's mode as the application holds it (COMPANYVIEW1b): the one it was left in, remembered for the place, and a change of
  * it; and the place Setup last chose (`daoris.list.roles.chosen`).
@@ -108,7 +105,7 @@ export type PlaceHold = {
  * 🔴 **Opening it asks no sign-in** (§5.3). It reads the roster the frame already holds (asked once, and kept:
  * `staleTime: Infinity`) and the accounts' files (`ACCOUNTS`, a file read the tick refreshes); each account says its last
  * known state with when it was read. Only *Read again* asks, on the press, one agent's accounts one at a time. An agent's page
- * reads its accounts' use as it opens, where a reading is older than a minute, and at *Read now* (SWITCH1d): the agent answers
+ * reads its accounts' use at *Read now* alone (SWITCH1d), never as it opens: the agent answers
  * it with no prompt and no model request (D165 point 1, amending §5.3 for that read alone).
  *
  * **Every act has its terminal twin** (D50): `daoris agent …`, named at the page's foot.
@@ -415,23 +412,10 @@ function AgentsMain({ tool, adapter, notify, part, onAnchored, onOpenPlugin, say
     ? null
     : { read: structure.read === 'ok' ? 'ok' as const : structure.read === 'failed' ? 'failed' as const : 'loading' as const, rows: structure.answer ? usedByAgent(structure.answer, tool) : [] };
 
-  // Each account's use read as its page opens (SWITCH1d; the switch design §1.2), once a page, where its agent is asked it and
-  // a reading is older than a minute or none was had: a read asks no sign-in and spends nothing (D165 point 1), and the driver
-  // skips an account cooling, refused, signed out or busy and floors each at its question's minute. A key is never read.
+  // Each account's use is read at *Read now* alone (SWITCH1d; the switch design §1.2), never as the page opens: the page answers
+  // from the kept readings, and a start's walk and the driver's own pace keep them. A read asks no sign-in and spends nothing
+  // (D165 point 1), and the driver skips an account cooling, refused, signed out, busy or a key, and floors each at its question's.
   const readAccounts = useReadAccounts();
-  const stale = Boolean(use?.reads) && tool.present && tool.accounts.some((account) => {
-    if (account.key) return false;
-    const seen = use?.accounts.find((facts) => facts.name === account.name)?.said?.seen;
-    return !seen || Date.now() - new Date(seen).getTime() > (use?.readFloor ?? STALE_AFTER_SECONDS) * 1000;
-  });
-  const readOnOpen = useRef<string | null>(null);
-  const mutateRead = readAccounts.mutate;
-  useEffect(() => {
-    if (!stale || readOnOpen.current === tool.name) return;
-    readOnOpen.current = tool.name;
-    // Unasked, so a failure is not said: *Read now* says its own.
-    mutateRead({ door: door });
-  }, [stale, tool.name, door, mutateRead]);
   // The new account this agent's sign-in kept, waiting on its name (UX7b, POOL1c): the add flow's step 3.
   const addedHere = added && added.harness === door ? added : null;
   // A key added here asks the same question (the UX7 design §4.5, ACCTUX3): by its id and its key's handle, held while the

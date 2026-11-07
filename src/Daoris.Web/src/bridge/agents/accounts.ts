@@ -49,7 +49,7 @@ export const useAccounts = () => {
 };
 
 /**
- * Each account's use read again (SWITCH1d; the switch design §1.2): *Read now*, and the read as an agent's page opens. Each of
+ * Each account's use read again (SWITCH1d; the switch design §1.2): *Read now*, which only a press asks. Each of
  * the agent's accounts whose reading is older than its question's floor is asked by its agent under its own home, with no
  * prompt and no model request (D165 point 1); the driver skips one cooling, refused, signed out, a key or busy. What it reads
  * lands in the accounts' files, which the shell's accounts slice judges at the roster's declared scope and pushes to every window
