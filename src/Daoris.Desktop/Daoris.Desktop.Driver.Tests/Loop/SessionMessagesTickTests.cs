@@ -1433,7 +1433,7 @@ public sealed class SessionMessagesTickTests : IAsyncLifetime
             }
 
             var session = NewSession(body);
-            foreach (var key in new[] { "from", "fromWhy", "fromBy" }) session[key] = body[key]?.GetValue<string>();
+            foreach (var field in new[] { "from", "fromWhy", "fromBy" }) session[field] = body[field]?.GetValue<string>();
             var transfer = new JsonArray();
             if (moves is not null && left is not null)
             {
