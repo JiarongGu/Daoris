@@ -20,6 +20,10 @@ repository.
 - **Fix:** the service's twin is `ServiceProviderCensusTests` in the driver's tests, reading `ProviderVocabulary` (fb376fcc2b); the empty
   cases stand under the OS temp folder (b4871b4dbd); `RunningTask` lies in `Events/Domain` and the store owns `NamesVersion`
   (de055b5b09); the band's asks are read through `asksOf` (55d89632fa). The censuses list what the merged chunks added (b4871b4dbd).
+- **The modules' Process half (2):** an action on an unknown agent named none that exists (D23): AGENTPROVIDER1t's `AgentNamed`
+  answers null where `Toolchain` refused by name (f580136940), and `ManagedAgents.Of` now refuses with the registry's sentence. A start
+  handed its place by the gate's hand-on (984cc575b5) as its wait was cancelled began anyway, so a left read could start a git after
+  the leave on a loaded machine; the gate gives the place back and throws (61ca1454e7).
 - **Verify:** the CI 9 logs are the red; each class green filtered; the driver's fast half (two timing reds beside a running CI,
   `JournalFeedTests` and `ChatGoOnTests`, each green alone); the service's fast half, `quick`, `test-map --check`, the CLI suite and
   MOD9's tool tests.
