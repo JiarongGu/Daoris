@@ -10,11 +10,11 @@ import { readText } from '../../src/platform/fsx.ts';
 import { DaorisError } from '../../src/platform/errors.ts';
 
 /**
- * WSSETUP4 (D124 §1.4): an older doctrine tool never rewrites a newer lock. `sync` measures against the lock
- * (D13), so to an older canon a file the newer canon improved and nobody touched here reads as *improved
- * upstream, untouched here* (D19's second row), and `sync` would rewrite it to the older text and stamp the
- * lock back. Two versions on one machine is a hazard with npm alone (`npx daoris@<older> sync`), and since
- * D124 an install carries a copy of its own. So `sync` and `upstream` refuse such a lock, exit 1, naming both
+ * An older doctrine tool never rewrites a newer lock. `sync` measures against the lock,
+ * so to an older canon a file the newer canon improved and nobody touched here reads as *improved
+ * upstream, untouched here*, and `sync` would rewrite it to the older text and stamp the
+ * lock back. Two versions on one machine is a hazard with npm alone (`npx daoris@<older> sync`), and
+ * an install carries a copy of its own. So `sync` and `upstream` refuse such a lock, exit 1, naming both
  * versions and the command at the lock's.
  */
 

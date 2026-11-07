@@ -1,9 +1,9 @@
-// The index of the on-demand tiers, out of the region (WSSETUP14a; D128 §2.2–§2.4, as D129 amends it).
+// The index of the on-demand tiers, out of the region.
 //
 // The region holds what the canon bounds: the rules, a pointer, the rooms and *Where things are*. The
 // knowledge and skill tables grow with the repository, so they go to `<target>/INDEX.md`, which `sync`
-// writes, `check` rebuilds offline and the lock names. One test per cell of §2.4's table — D19 for a
-// file the canon does not ship — written before the code.
+// writes, `check` rebuilds offline and the lock names. One test per cell of the table, for a
+// file the canon does not ship.
 
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
@@ -56,7 +56,7 @@ test('the region keeps the rules table and points at the index, and lists no doc
   fx.cleanup();
 });
 
-/** D128 §0.3's fixture: the pilot's 169 knowledge documents, 166 without frontmatter, and 18 skills. */
+/** The pilot's fixture: 169 knowledge documents, 166 without frontmatter, and 18 skills. */
 test('169 knowledge documents and 18 skills leave the region\'s bytes unchanged', () => {
   const fx = layoutFixture('index-169');
   fx.sync();
@@ -74,7 +74,7 @@ test('169 knowledge documents and 18 skills leave the region\'s bytes unchanged'
   const index = fx.repoFx.read(INDEX);
   assert.equal(index.match(/^\| `\.claude\/knowledge\//gm)!.length, 170);
   assert.equal(index.match(/^\| `\.claude\/skills\//gm)!.length, 19);
-  // The 166 are listed by their headings, and `check` says how many once (WSSETUP14c, D128 §3.1–§3.2).
+  // The 166 are listed by their headings, and `check` says how many once.
   assert.equal(index.match(/^\| `\.claude\/knowledge\/topic-\d+\.md` _\(local\)_ \| Topic \d+ \|$/gm)!.length, 166);
   const check = fx.cli('check');
   assert.equal(check.code, 0, check.out);
@@ -170,7 +170,7 @@ test('a lock written before the index: check says it is absent until sync writes
   fx.cleanup();
 });
 
-/** D128 §2.7: every adopter meets this at its next sync, and `check` says so until then. */
+/** Every adopter meets this at its next sync, and `check` says so until then. */
 test('a repository synced before the index: check names both halves, and one sync migrates it', () => {
   const fx = layoutFixture('index-migrate');
   fx.sync();
@@ -266,7 +266,7 @@ test('check fails on an index that has become a link held as text', () => {
   fx.cleanup();
 });
 
-/** D18 for the lock's new field: the lock is generated, the file nobody reads closely. */
+/** For the lock's index field: the lock is generated, the file nobody reads closely. */
 test('a lock naming its index anywhere but the target\'s INDEX.md is refused, and nothing is touched', () => {
   for (const crafted of ['.claude/knowledge/storage.md', '../outside/INDEX.md']) {
     const fx = layoutFixture('index-crafted');

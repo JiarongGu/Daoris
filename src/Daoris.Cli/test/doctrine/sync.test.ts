@@ -19,8 +19,8 @@ function seed(packs: string[] = []) {
   const canonFx = makeFixture('sync-canon');
   canonFx.write('canon.json', '{"version":"0.1.0"}');
   canonFx.write('core/rules/sensitive-info.md', doc('sensitive-info'));
-  // A knowledge document, because it is still a FILE — which is where collisions and path-level
-  // refusals still live now that the always-loaded tier is a span (D59).
+  // A knowledge document, because it is a FILE — which is where collisions and path-level
+  // refusals live, the always-loaded tier being a span.
   canonFx.write('core/knowledge/storage.md', doc('storage'));
   canonFx.write('packs/win/pack.json', '{"name":"win","description":"Windows"}');
   canonFx.write('packs/win/rules/gotchas.md', doc('gotchas'));
@@ -39,7 +39,7 @@ function run({ canonFx, repoFx }: Seeded, force = false) {
 }
 
 /**
- * The always-loaded tier is a SPAN in the file every harness reads (D59), so a fresh sync writes a
+ * The always-loaded tier is a SPAN in the file every harness reads, so a fresh sync writes a
  * region rather than a directory — and the pointer that carries it to the one harness reading the
  * other name.
  */
@@ -195,9 +195,9 @@ test('an unrelated retirement and addition are not called a rename', () => {
 });
 
 /**
- * D5 says anything absent from the lock is invisible to the tool. The complement
- * was never enforced: everything the tool touches must sit INSIDE the target
- * directory. A lock entry containing `..` escaped it, and `sync` deleted files
+ * Anything absent from the lock is invisible to the tool. The complement:
+ * everything the tool touches must sit INSIDE the target
+ * directory. A lock entry containing `..` would escape it, and `sync` would delete files
  * daoris never wrote — silently, since retirement reports a count rather than a
  * path resolution.
  *
@@ -205,18 +205,17 @@ test('an unrelated retirement and addition are not called a rename', () => {
  * entry or a crafted one in a pull request both reach the same rmSync.
  */
 /**
- * The state space is lock x disk x canon, and this is the corner that was
- * missed: a rule the repo had improved, retired upstream in the same cycle.
+ * The state space is lock x disk x canon, and this is the corner that is
+ * easy to miss: a rule the repo improved, retired upstream in the same cycle.
  * Drift on a RETAINED file refuses and points at `upstream`; drift on a RETIRED
- * one deleted it without a word — the more destructive path had the weaker
- * guard, and it destroys the edit at exactly the moment it can no longer be
+ * one must refuse too — the more destructive path needs the stronger
+ * guard, since it destroys the edit at exactly the moment it can no longer be
  * promoted, because the canonical file it belonged to is gone.
  */
 /**
  * 🔴 Span-aware, and asserted because it stops working SILENTLY otherwise. A retired rule that lives
  * in the region has no file at its target, so a guard that only stats a path finds nothing, calls it
- * an untouched retirement and deletes the edit without a word — which is the fourth bug D19's last
- * row was written from, arriving again through the tier moving.
+ * an untouched retirement and deletes the edit without a word.
  */
 test('retiring a rule the repo edited refuses rather than destroying the edit', () => {
   const fx = seed(['win']);
@@ -249,8 +248,8 @@ test('retiring an untouched rule needs no ceremony', () => {
 
 /**
  * 🔴 A retired SPAN leaves with the region's rewrite — there is no file of Daoris's at its old path.
- * A file there now is the repository's own (the test above makes that legal), and deleting it was the
- * one thing `sync` does without `--force` that lost work (REV3).
+ * A file there is the repository's own (the test above makes that legal), and deleting it would be the
+ * one thing `sync` does without `--force` that loses work.
  */
 test('retiring a span never deletes the repository\'s own file at the old path', () => {
   const fx = seed(['win']);
@@ -266,9 +265,9 @@ test('retiring a span never deletes the repository\'s own file at the old path',
 });
 
 /**
- * "Everything outside the region survives byte for byte" (`writeRegion`). It did not through `sync`:
- * the file was normalized before it reached the writer, so the line-ending detection always answered
- * LF and every line of an adopter's CRLF file changed on its first sync, BOM gone too (REV3).
+ * "Everything outside the region survives byte for byte" (`writeRegion`), through `sync` too:
+ * a file normalized before it reaches the writer makes the line-ending detection answer
+ * LF, so every line of an adopter's CRLF file would change on its first sync, BOM gone too.
  */
 test('an adopter\'s CRLF instruction files keep their line endings and BOM through a sync', () => {
   const fx = seed();
@@ -310,7 +309,7 @@ test('a lock entry cannot reach outside the target directory', () => {
     editedSwitchedOff: [],
     kept: [],
     keepsDropped: [],
-    // Nothing moves, mirrors or points: a plan on the older layout (D117).
+    // Nothing moves, mirrors or points: a plan on the older layout.
     layout: { from: { harness: 'claude-code', target: '.claude' }, to: { harness: 'claude-code', target: '.claude' } },
     moves: [],
     moveCollisions: [],
@@ -341,9 +340,9 @@ test('a lock entry cannot reach outside the target directory', () => {
 });
 
 /**
- * --force is the only way to lose work with this tool, and it was silent about
+ * --force is the only way to lose work with this tool, so it must not be silent about
  * doing so. A refusal names the file; the override that overrules the refusal
- * should name it too, or the record of what was destroyed exists nowhere.
+ * names it too, or the record of what got destroyed exists nowhere.
  */
 test('--force names what it destroys', () => {
   const fx = seed(['win']);
@@ -406,7 +405,7 @@ test('adopting a repo that already owns a canonical filename refuses rather than
  * 🔴 A consequence of the move, asserted so it is a decision rather than a discovery: **a rule can no
  * longer collide.** The canonical rules land in a region Daoris owns, so a repository's own
  * `.claude/rules/x.md` is no longer at a path the canon claims — it is simply a local document, kept
- * and invisible (D5), whatever it happens to be called. D12's refusal still guards every tier that is
+ * and invisible, whatever it happens to be called. The refusal still guards every tier that is
  * still files, and `doctor` is what reports a local rule that restates a canonical one.
  */
 test('a rule the repo wrote itself is local now, not a collision', () => {
@@ -447,8 +446,8 @@ test('an adopted file identical to the canon is not a collision', () => {
 
 /**
  * The rules' roster is part of the region, so it is loaded rather than merely present, which is the
- * whole reason the tier moved (D59). The documents' is the index beside the tiers, which the region
- * names (WSSETUP14a, D128 §2).
+ * whole reason the tier is a span. The documents' is the index beside the tiers, which the region
+ * names.
  */
 test('sync writes the roster into the region and the index beside the tiers, so a synced repo is immediately consistent', () => {
   const fx = seed();
@@ -468,7 +467,7 @@ test('sync writes the roster into the region and the index beside the tiers, so 
 });
 
 /**
- * A canon knowledge document marked `rule: true` is a rule read on demand (CONSOLIDATE1): a file like any knowledge,
+ * A canon knowledge document marked `rule: true` is a rule read on demand: a file like any knowledge,
  * locked as one, and a row in the region's table linked to it. A repository's own document so marked is not the canon's
  * and gets no row; the `change` line comes with the canon's skill.
  */

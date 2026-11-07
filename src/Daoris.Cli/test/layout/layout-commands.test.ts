@@ -1,4 +1,4 @@
-// check, upstream, doctor, init and status on the agents layout (LAYOUT3; D117 §3.3, §5.2).
+// check, upstream, doctor, init and status on the agents layout.
 
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
@@ -90,7 +90,7 @@ test('check fails on a flipped manifest until sync moves the files, naming both 
   fx.cleanup();
 });
 
-/** codex reads 32,768 bytes of a repository's instruction files and cuts the rest (LAYOUT2). */
+/** codex reads 32,768 bytes of a repository's instruction files and cuts the rest. */
 test('check reports AGENTS.md over the smallest limit an agent reads, and does not fail on it (D54)', () => {
   const fx = agentsSynced('cmd-check-size');
   fx.repoFx.write('AGENTS.md', `# Ours\n\n${'word '.repeat(7000)}\n\n${fx.repoFx.read('AGENTS.md')}`);

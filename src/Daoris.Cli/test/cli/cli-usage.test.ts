@@ -7,7 +7,7 @@ import { runCli } from '../../src/cli.ts';
 import { makeFixture } from '../_fixture.ts';
 
 /**
- * What a person reads from the dispatcher, byte for byte (MOD7).
+ * What a person reads from the dispatcher, byte for byte.
  *
  * `fixtures/cli-usage/` holds the usage and the refusals the CLI says itself, so a change to them is proven by bytes rather than by
  * a reviewer comparing two long texts. A change that means to alter the usage or a refusal updates the fixture in the same change,
@@ -20,12 +20,12 @@ const HELP = readText(join(golden, 'help.txt')).replace(/\n$/, '');
 interface Refusal { argv: string[]; code: number; out: string[] }
 const REFUSALS = JSON.parse(readText(join(golden, 'refusals.json'))) as Refusal[];
 
-/** What the desktop's program was handed by the dispatcher, and what had been written when it was. */
+/** What the desktop's program receives from the dispatcher, and what has been written by then. */
 interface Handed { words: readonly string[]; written: number }
 
 /**
  * Runs one argv in an empty repository on an empty home, with the repository's path spelled `<cwd>`. The desktop's program is a
- * stand-in, which records what it was handed and answers `exit`.
+ * stand-in, which records what it receives and answers `exit`.
  */
 async function run(argv: string[], handed: Handed[] = [], exit: 0 | 1 | 2 = 0): Promise<{ code: number; out: string[] }> {
   const home = makeFixture('cli-usage-home');

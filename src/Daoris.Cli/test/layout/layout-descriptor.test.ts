@@ -1,8 +1,8 @@
-// The agents descriptor, the manifest's new fields and the lock's (LAYOUT3; D117 §2, §5.1).
+// The agents descriptor, the manifest's new fields and the lock's.
 //
 // A second implementation beside `claude-code` in `src/layout/harness.ts`, selected by the manifest's
-// existing `harness` field. The lock grows additively, as D71 grew `switchedOff`: a lock that uses
-// nothing new is byte for byte what it was.
+// existing `harness` field. The lock grows additively: a lock that uses
+// nothing new is byte for byte unchanged.
 
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
@@ -23,7 +23,7 @@ test('the agents descriptor keeps the tiers under .agents, the region in AGENTS.
   assert.equal(agents.tiers.skills!.dir, 'skills');
   assert.equal(agents.tiers.skills!.entryFile, 'SKILL.md');
   assert.deepEqual(agents.pointer, { file: 'CLAUDE.md', imports: 'AGENTS.md' });
-  // Where the reference links `.claude/skills` to `.agents/skills`, Daoris writes a copy (D3).
+  // Where the reference links `.claude/skills` to `.agents/skills`, Daoris writes a copy.
   assert.deepEqual(agents.mirror, { tier: 'skills', root: '.claude/skills', reader: 'Claude Code', skip: ['agents'] });
   assert.equal(agents.formerly, '.claude');
   // The older layout stays, unchanged, for every repository that has not moved.
@@ -56,7 +56,7 @@ test('a target whose skills would sit on the mirror root is refused', () => {
   fx.cleanup();
 });
 
-/** D18 over the declared roots: a target is a folder inside the repository, never beside it. */
+/** Over the declared roots, a target is a folder inside the repository, never beside it. */
 test('a target that leaves the repository is refused', () => {
   const fx = makeFixture('layout-desc-escape');
   fx.write('daoris.json', JSON.stringify({ source: 's', harness: 'agents', target: '../elsewhere' }));
@@ -114,7 +114,7 @@ test('the layout a lock was written under is its own fields, else claude-code un
   assert.equal(lockLayout(fx.repoFx.root, fx.lock(), flipped).target, '.claude');
   assert.equal(lockLayout(fx.repoFx.root, fx.lock(), flipped).harness.id, 'claude-code');
 
-  // No lock: nothing was written anywhere, so the manifest's own layout is the answer.
+  // No lock: nothing is written anywhere, so the manifest's own layout is the answer.
   assert.equal(lockLayout(fx.repoFx.root, null, flipped).target, '.agents');
   fx.cleanup();
 });
@@ -131,7 +131,7 @@ test('a lock whose target escapes the repository is refused (D18)', () => {
   fx.cleanup();
 });
 
-/** D18 for the mirror: a delete is contained in the mirror root, and a layout with none has no mirror to delete. */
+/** For the mirror: a delete is contained in the mirror root, and a layout with none has no mirror to delete. */
 test('a lock mirror outside the mirror root, or on a layout with none, is refused and nothing is deleted', () => {
   const fx = layoutFixture('layout-desc-mirror-escape', 'agents');
   fx.sync();
@@ -154,8 +154,8 @@ test('a lock mirror outside the mirror root, or on a layout with none, is refuse
 });
 
 /**
- * Additive, as D71 was: a lock on the older layout carries no layout field. Every lock names the index it
- * wrote since WSSETUP14a (D128 §2.4), on either layout, which is what makes that file Daoris's to rewrite.
+ * Additive: a lock on the older layout carries no layout field. Every lock names the index it
+ * wrote, on either layout, which is what makes that file Daoris's to rewrite.
  */
 test('a claude-code lock carries no layout fields; an agents lock carries harness, target and mirrors', () => {
   const old = layoutFixture('layout-desc-lock-old');

@@ -1,7 +1,7 @@
-// D19, for a move (LAYOUT3; D117 §5.4, the first two tables).
+// The lock × disk × canon table, for a move.
 //
-// A MOVE is a repository whose manifest names a root other than the one its lock was written under.
-// D19's table still applies to every document at its new root; these are the cells the move adds,
+// A MOVE is a repository whose manifest names a root other than the one its lock records.
+// The table still applies to every document at its new root; these are the cells the move adds,
 // one test per cell, each written before the code and watched failing.
 //
 // Every test starts from a repository synced on `claude-code` — the lock holds `knowledge/storage.md`
@@ -104,12 +104,12 @@ test('move cell: selected, old untouched, new differs — a collision at the new
   assert.equal(error.exitCode, 1);
   assert.match(error.message, /\.agents\/knowledge\/storage\.md/);
   assert.match(error.message, /\.claude\/knowledge\/storage\.md/);
-  // Refused before anything was written: both files as they were, and no lock moved.
+  // Refused before anything is written: both files unchanged, and no lock moved.
   assert.equal(fx.repoFx.read(NEW), '# Our own storage notes\n');
   assert.ok(fx.repoFx.exists(OLD));
   assert.equal(fx.lock().target, undefined);
 
-  // --force accepts the canonical version, as a D12 collision does.
+  // --force accepts the canonical version, as a collision does.
   fx.sync(true);
   assert.match(fx.repoFx.read(NEW), /Body of storage/);
   assert.equal(fx.repoFx.exists(OLD), false);
@@ -242,8 +242,8 @@ test('move cell: a confirmed switch turns it off — D71\'s rows at the old root
 // ---------------------------------------------------------------- the repository's own documents
 
 /**
- * 🔴 Left in the old tier, the index stops listing it and nothing else says so — the silent failure
- * D23 names. Moving it is the repository's own act (D5), and the command is one line.
+ * 🔴 Left in the old tier, the index stops listing it and nothing else says so — a silent failure.
+ * Moving it is the repository's own act, and the command is one line.
  */
 test('own documents in an old on-demand tier refuse the move, each named with the git mv that moves it', () => {
   const fx = layoutFixture('move-left-behind');
@@ -265,7 +265,7 @@ test('own documents in an old on-demand tier refuse the move, each named with th
   assert.match(error.message, /git mv \.claude\/skills\/house \.agents\/skills\/house/);
   // Not even --force leaves them behind: the answer is a move, not a discard.
   assert.ok(captureError(() => fx.sync(true)) instanceof DaorisError);
-  // Refused before anything was written.
+  // Refused before anything is written.
   assert.ok(fx.repoFx.exists(OLD));
   assert.equal(fx.repoFx.exists(NEW), false);
 

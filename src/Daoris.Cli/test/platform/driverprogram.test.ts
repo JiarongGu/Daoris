@@ -10,7 +10,7 @@ import {
 import { captureError, makeFixture } from '../_fixture.ts';
 
 /**
- * The seam (D194 point 1, the alone-path design §1.1; ONEWAY1ai-i): every word outside the doctrine commands is run by Daoris's desktop
+ * The seam: every word outside the doctrine commands is run by Daoris's desktop
  * program, found where `DAORIS_DRIVER_PROGRAM` names its apphost, else in this package's install, else refused; started through the
  * CLI's one spawn site with the terminal's streams, its environment and the handed mark; its exit the run's, a failed start, a Ctrl+C
  * and any other end mapped as the CLI's `relay` maps an agent's.
@@ -78,7 +78,7 @@ test('DAORIS_DRIVER_PROGRAM naming anything but an existing apphost is refused, 
   }
 });
 
-/** A start that records what it was handed and answers as it is told. */
+/** A start that records what it receives and answers as it is told. */
 function standIn(answer: Partial<ReturnType<DriverStart>>): { start: DriverStart; seen: Parameters<DriverStart>[] ; listeners: number[] } {
   const seen: Parameters<DriverStart>[] = [];
   const listeners: number[] = [];
@@ -100,7 +100,7 @@ test('ONEWAY1ai-i the words are handed whole, with the terminal\'s environment a
     assert.equal(seen.length, 1);
     const [command, handed] = seen[0]!;
     assert.deepEqual(command, [program, ...words]);
-    // No tools' PATH laid over it and nothing taken (the TOOLS5 rule's one exception, D194 point 1); the one mark added says who handed
+    // No tools' PATH laid over it and nothing taken (the one exception to the tools' PATH rule); the one mark added says who handed
     // the words, so the program never hands them back.
     assert.deepEqual(handed, { ...env, [HANDED_VARIABLE]: 'cli' });
   } finally {

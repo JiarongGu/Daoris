@@ -54,8 +54,8 @@ test('writeTextAtomic writes BOM-less UTF-8 and leaves no temp file', () => {
   fx.cleanup();
 });
 
-// FABRIC-GRAPH1's re-check, finding 2: every writer staged beside under one name, so two writers of one file at once wrote into and
-// moved each other's staging file. The driver's `AtomicFile` names it per write.
+// A writer staging beside the file under one name lets two writers of one file at once write into and
+// move each other's staging file. The driver's `AtomicFile` names it per write.
 test('two writers of one file never share a staging file, and each is beside the file', () => {
   const fx = makeFixture('fsx-staging');
   const target = join(fx.root, 'choices.json');
@@ -98,7 +98,7 @@ test('listMarkdown returns sorted relative paths and ignores non-markdown', () =
 /**
  * npm installs an extensionless POSIX script beside every `.cmd` on Windows. Present, it counts; to
  * START, only the `.cmd` will do: found first, the bare file is one no Windows process can run. The
- * two PATH lookups this replaced each held one half (REV3 CLEAN1), as the driver's twin holds both.
+ * two PATH lookups each hold one half, as the driver's twin holds both.
  */
 test('a command on PATH is found as present by its bare name, and as startable by its shim', {
   skip: process.platform !== 'win32' && 'a shim is a Windows shape',

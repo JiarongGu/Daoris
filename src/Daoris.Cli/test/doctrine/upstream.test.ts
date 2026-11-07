@@ -45,7 +45,7 @@ const promote = ({ canonFx, repoFx }: Seeded, file: string) =>
     file,
   });
 
-/** A rule is edited where it lives now: inside the region (D59). */
+/** A rule is edited where it lives: inside the region. */
 const edit = (fx: { repoFx: Fixture }, name: string, how: (body: string) => string) => {
   const region = fx.repoFx.read('AGENTS.md');
   fx.repoFx.write('AGENTS.md', region.replace(`Body of ${name}.`, how(`Body of ${name}.`)));
@@ -100,9 +100,9 @@ test('a local file has nothing to upstream and says so', () => {
 });
 
 /**
- * D18's containment, on the other half of the loop. `sync` refuses a lock entry that leaves the
- * target directory; `upstream` wrote wherever an entry's `source` pointed, and the lock is the
- * generated file nobody reads closely in review (REV3).
+ * Containment, on the other half of the loop. `sync` refuses a lock entry that leaves the
+ * target directory; `upstream` must not write wherever an entry's `source` points, the lock being the
+ * generated file nobody reads closely in review.
  */
 test('a lock entry whose source leaves the canon is refused, and nothing is written outside it', () => {
   const fx = synced();

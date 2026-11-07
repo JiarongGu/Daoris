@@ -64,7 +64,7 @@ test('the source directory is the target directory', () => {
 
 /**
  * Core is laid out exactly like a pack, so the tier is the directory there too
- * (D7) and one code path reads both.
+ * and one code path reads both.
  */
 test('core carries tiers of its own, skills included', () => {
   const fx = seedCanon();

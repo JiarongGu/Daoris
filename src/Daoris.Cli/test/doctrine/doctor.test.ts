@@ -105,7 +105,7 @@ test('a REWRITTEN twin is reported, not just a near-verbatim one', () => {
 
 test("a repo's own skill is checked against canonical skills too", () => {
   // The canonical skill has to exist BEFORE the sync, or it is never locked and never a comparison
-  // target. This test used to pass by matching a canonical RULE across tiers, which was the noise.
+  // target.
   const canonFx = makeFixture('doctor-skill-canon');
   canonFx.write('canon.json', '{"version":"0.1.0"}');
   canonFx.write('core/skills/inspect/SKILL.md', CANONICAL);
@@ -136,8 +136,8 @@ test("a repo's own skill is checked against canonical skills too", () => {
 });
 
 /**
- * DOC3: a skill is its entry file. The files beside it — a template, a reference — are supporting
- * material, and comparing them as documents reported a repository's own skill as 61% like a canonical
+ * A skill is its entry file. The files beside it — a template, a reference — are supporting
+ * material, and comparing them as documents would report a repository's own skill as 61% like a canonical
  * skill's backlog-row template. Neither side's supporting files are a twin candidate.
  */
 test("only a skill's entry file is a twin candidate, never the templates beside it", () => {

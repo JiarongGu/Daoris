@@ -17,8 +17,8 @@ function seedCanon() {
   fx.write('core/rules/file-tool-discipline.md', doc('file-tool-discipline',
     'Inspect files with the dedicated read and search tools rather than shell equivalents. '
     + 'Reserve the shell for genuine shell work; destructive commands deserve care.'));
-  // A knowledge document too, because that tier is still files — which is where a collision can
-  // still happen now the always-loaded tier is a span (D59).
+  // A knowledge document too, because that tier is files — which is where a collision can
+  // happen, the always-loaded tier being a span.
   fx.write('core/knowledge/reaching-in.md', doc('reaching-in', 'Never repair another repository.'));
   fx.write('packs/win/pack.json', '{"name":"win","description":"Windows"}');
   fx.write('packs/win/rules/windows-machine.md', doc('windows-machine', 'PowerShell and encoding traps.'));
@@ -50,11 +50,11 @@ test('a repository with no doctrine reports a fresh adoption', () => {
 });
 
 /**
- * The question the command exists to answer, and the one that previously took a sync to find out.
+ * The question the command exists to answer, which must not take a sync to find out.
  */
 /**
  * A collision is still a collision for every tier that is FILES. The always-loaded tier is a span
- * now (D59), and a repository's own `.claude/rules/x.md` is no longer at a path the canon claims —
+ * and a repository's own `.claude/rules/x.md` is not at a path the canon claims —
  * `doctor` is what reports one that restates a canonical rule.
  */
 test('a file the repository wrote at a canonical path is a collision', () => {
@@ -71,7 +71,7 @@ test('a file the repository wrote at a canonical path is a collision', () => {
 });
 
 /**
- * Provenance decides which of the two it is (D12). Without the lock, an already-adopted repository
+ * Provenance decides which of the two it is. Without the lock, an already-adopted repository
  * reports every canonical file as a collision — which is both alarming and wrong.
  */
 test('a file daoris already owns is an update, not a collision', () => {
@@ -122,7 +122,7 @@ test('a renamed twin is found BEFORE adoption, against the canon', () => {
   repoFx.cleanup();
 });
 
-/** DOC3: as `doctor`, only a skill's entry file is compared; a template beside it is not a document. */
+/** As `doctor`, only a skill's entry file is compared; a template beside it is not a document. */
 test("a skill's templates are never a twin candidate before adoption either", () => {
   const canonFx = seedCanon();
   const shell = 'Inspect files with the dedicated read and search tools rather than shell equivalents. '
@@ -181,7 +181,7 @@ const printed = (repoFx: Fixture, canonFx: Fixture): string => {
 };
 
 /**
- * The verdict a person adopting reads before anything else, and the one D59 reversed: the
+ * The verdict a person adopting reads before anything else: the
  * always-loaded tier lands IN `AGENTS.md`, so a repository already on that convention shares the
  * file rather than being blind to what daoris writes. Only the on-demand tiers stay unreachable.
  *
