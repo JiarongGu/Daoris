@@ -643,3 +643,10 @@ the code they cite. D233's notes of 2026-11-08 and D214's principle note bound i
 - The settlement: the `settling` mark and the rules' save made under one hold, the settled mark once it lets go, and the recovery
   saving nothing.
 - An allowed `land` in its window: run at the window's end, or dropped on an overrule or a withdrawal, never both.
+
+
+## Codex, round 4
+
+Codex's confirming check of rows c and e, at `e38ab6db63`, run by the steward from outside the install, read-only; verbatim.
+
+Read at `e38ab6db63`: **the round-3 race is answered; rows c and e are ready to build.** §5.3’s `PermissionRules.Change` takes the permission-file lock before reading and judging the edit, saves without reacquiring it, and covers every existing production writer, including narrowing and setup rollback. The locked recheck and §9e’s two interleavings directly address approval of B restoring withdrawn A. For row c, §2.8 specifies source isolation on both Claude Code doors—user settings plus the handed file, and only Daoris’s connector—with corresponding proof against an allowed external write tool and a copy’s startup hook; `MultiEdit` also joins the denied writes. For row e, the publish-form overlap check keeps explicit and broader publishing widenings with the person while `no-publish` is on, and an allowed landing remains pending through its window so withdrawal or cancellation drops it without a card or landing. The named implementation rows and proof clauses carry these changes consistently. Against the specified D233 notes and D214 principle, **remaining blocking findings in these passages: none.** This confirms the design; no builds or tests ran, and no files changed.
