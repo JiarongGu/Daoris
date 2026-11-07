@@ -4,7 +4,7 @@ using System.Text;
 namespace Daoris.Desktop;
 
 /// <summary>
-/// The kept sign-in's seal (BRW10, BRW13): DPAPI, to the Windows account this runs as, so the file copied to
+/// The kept sign-in's seal: DPAPI, to the Windows account this runs as, so the file copied to
 /// another account or machine opens nothing.
 /// </summary>
 internal sealed class DpapiSeal : ICookieSeal

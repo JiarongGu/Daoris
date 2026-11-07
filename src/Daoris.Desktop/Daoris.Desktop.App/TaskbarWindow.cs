@@ -3,7 +3,7 @@ using System.Runtime.InteropServices;
 namespace Daoris.Desktop;
 
 /// <summary>
-/// Writes an install's <see cref="TaskbarIdentity"/> into each window's property store (TASKBAR1, D108),
+/// Writes an install's <see cref="TaskbarIdentity"/> into each window's property store,
 /// so the taskbar groups the window under the person's pinned Daoris and a pin made from the running
 /// window starts the launcher at the install's root rather than the application in <c>app/</c>.
 /// </summary>
@@ -11,7 +11,7 @@ namespace Daoris.Desktop;
 /// <para><b>Per window, not per process.</b> The relaunch properties are window properties, read only
 /// beside a window-level id, so the id is written there too. <c>SetCurrentProcessExplicitAppUserModelID</c>
 /// would add nothing for these windows and would also relabel everything else the process shows, the
-/// tray icon's hidden window and its notifications among them: a change TASKBAR1 did not ask for,
+/// tray icon's hidden window and its notifications among them: a change nobody asked for,
 /// which no test here could see.</para>
 ///
 /// <para><b>From each handle, back at its end.</b> A property belongs to one window handle, and a
@@ -99,7 +99,7 @@ internal static class TaskbarWindow
         }
         catch (Exception error) when (error is COMException or InvalidCastException or EntryPointNotFoundException)
         {
-            // Not worth a window: an unlabelled one is grouped by its executable, as before D108.
+            // Not worth a window: an unlabelled one is grouped by its executable.
         }
         finally
         {

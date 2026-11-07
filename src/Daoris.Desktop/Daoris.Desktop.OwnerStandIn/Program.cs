@@ -1,7 +1,7 @@
 using System.Diagnostics;
 using Daoris.Driver;
 
-// The entry's own strip, by name: this program references no product code (D249).
+// The entry's own strip, by name: this program references no product code.
 Environment.SetEnvironmentVariable("DAORIS_ROLE_KEY", null);
 Environment.SetEnvironmentVariable("CLAUDE_CODE_MESSAGING_SOCKET", null);
 Environment.SetEnvironmentVariable("CLAUDE_CODE_MESSAGING_TOKEN", null);

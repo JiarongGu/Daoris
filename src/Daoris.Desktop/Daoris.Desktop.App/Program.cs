@@ -5,44 +5,44 @@ using Shenora.Core.Ipc;
 using Shenora.Core.Shell;
 using Shenora.Windows;
 
-// The local driver's shell (D45 part 2, D46 §7): one window that brings up the local service host —
+// The local driver's shell: one window that brings up the local service host —
 // adopting one already running rather than double-starting — carries the platform the host serves,
-// and runs the driver loop in-process. Built on the desktop runtime sibling at a released version
-// (D22); the runtime's single-instance guard also keeps two shells from fighting over the port.
+// and runs the driver loop in-process. Built on the desktop runtime sibling at a released version;
+// the runtime's single-instance guard also keeps two shells from fighting over the port.
 //
-//   DAORIS_HOME            where every machine-local file lives (D63)          (an install: `data/` beside this exe, set here)
+//   DAORIS_HOME            where every machine-local file lives                (an install: `data/` beside this exe, set here)
 //   DAORIS_SERVICE_URL     where the service is, which the page calls         (default: http://localhost:5177)
-//                          — left in the home's `running` entry (`run/running.json`, D172) while it runs, for a terminal the install's
-//                          launchers set nothing for (FINDDAORIS1, D171)
+//                          — left in the home's `running` entry (`run/running.json`) while it runs, for a terminal the install's
+//                          launchers set nothing for
 //   DAORIS_DEVTOOLS_PORT   the engine's DevTools port, in development only     (absent: none)
-//   DAORIS_SERVICE_KEY     sent as a bearer token when set                     (absent: local trust, D21)
+//   DAORIS_SERVICE_KEY     sent as a bearer token when set                     (absent: local trust)
 //   DAORIS_HTTP_HOST       the host executable, when it lives somewhere unusual
-//   DAORIS_REMOTE_URL      one workspace's remote, with its key                (or $DAORIS_HOME/remotes.json — D48 §5)
+//   DAORIS_REMOTE_URL      one workspace's remote, with its key                (or $DAORIS_HOME/remotes.json)
 //   DAORIS_REMOTE_KEY        either env var present means the environment is the answer, whole,
 //   DAORIS_REMOTE_WORKSPACE  for the workspace named here                      (absent: `default`)
 //   DAORIS_REMOTE_CONFIG   where the map is                                    (default: $DAORIS_HOME/remotes.json)
 internal static class Program
 {
-    /// <summary>The DevTools port a development run opens on its engine (D92) — the dev loop's instruments attach there.</summary>
+    /// <summary>The DevTools port a development run opens on its engine — the dev loop's instruments attach there.</summary>
     private const string DevToolsVariable = "DAORIS_DEVTOOLS_PORT";
 
     [STAThread]
     private static void Main(string[] args)
     {
-        // SUPERVISOR1a-ii (D208 §2.2): the holder key leaves this process first, so no start it builds can copy it.
+        // The holder key leaves this process first, so no start it builds can copy it.
         Daoris.Driver.HolderKey.Strip();
 
-        // The start, timed stage by stage from the process's start (STARTFAST1): one `start.stages` line, a stopwatch's cost.
+        // The start, timed stage by stage from the process's start: one `start.stages` line, a stopwatch's cost.
         var stages = StartStages.Begin();
 
-        // Out of `app/` before anything is started (APPCWD1, D139 §5): every child that names no working folder inherits this
+        // Out of `app/` before anything is started: every child that names no working folder inherits this
         // process's, and one standing in `app/` holds the swap's move of it for as long as it lives.
         if (InstallHome.WorkingFolder(AppContext.BaseDirectory, Environment.CurrentDirectory) is { } stand)
         {
             Environment.CurrentDirectory = stand;
         }
 
-        // Daoris's browser is this executable started with the browser's argument (CHR8, D99), decided
+        // Daoris's browser is this executable started with the browser's argument, decided
         // before anything else: the kit starts Chromium as the app is composed, a process runs one
         // Chromium, and the browser is not the window, its home or its log.
         if (EngineBrowser.IsBrowserProcess(args))
@@ -51,20 +51,20 @@ internal static class Program
             return;
         }
 
-        // FOUNDATION1f-i: this process is the shell, and its run of the desktop store says so, before anything of it opens the store.
+        // This process is the shell, and its run of the desktop store says so, before anything of it opens the store.
         Daoris.Driver.StoreProcess.Kind = Daoris.Driver.StoreProcess.Shell;
 
-        // The home before anything else (D63): an install's `data/` folder is the Daoris home for this
+        // The home before anything else: an install's `data/` folder is the Daoris home for this
         // process and every host and session it spawns. Before the builder, because every module
         // captures its path at construction — and a workspace build is left alone, so the dev loop's
-        // scratch home stays the dev loop's. An install's older home is moved into D172's places here too
-        // (HOMELAYOUT3), before anything resolves a path: the log and the window's memory among them.
+        // scratch home stays the dev loop's. An install's older home is moved into its current places here too,
+        // before anything resolves a path: the log and the window's memory among them.
         var home = InstallHome.Establish(AppContext.BaseDirectory);
         // Named once for what carries no home of its own (Daoris's own git, a probe's tools): never the variable a process inherited.
         Daoris.Driver.ProgramHome.Named = Daoris.Driver.DaorisHome.Resolve();
         stages.Mark(StartStages.Home);
 
-        // The machine log (LOG1, D94), opened as soon as there is a home to put it in, so an exception
+        // The machine log, opened as soon as there is a home to put it in, so an exception
         // nothing else catches is written before the process ends; with no home it writes nothing. Then
         // what the move did, which ran before the log had its place.
         using var log = Daoris.Driver.MachineLog.Open("desktop");
@@ -73,9 +73,9 @@ internal static class Program
         stages.Log = log;
         var started = DateTimeOffset.UtcNow;
 
-        // 🔴 No home is a sentence, not a silent exit (REV3). A workspace build started with no
-        // DAORIS_HOME threw from the loop's construction, before any window existed, and a windowed
-        // program has no console to say it on — so nothing appeared and nothing said why.
+        // 🔴 No home is a sentence, not a silent exit. A workspace build started with no
+        // DAORIS_HOME throws from the loop's construction, before any window exists, and a windowed
+        // program has no console to say it on — so nothing would appear and nothing would say why.
         try
         {
             Daoris.Driver.DriverConfig.ResolvePath();
@@ -89,13 +89,13 @@ internal static class Program
             return;
         }
 
-        // D232: this release's migration converts the home once, before the staffing, the loop and the routes read any of it.
+        // This release's migration converts the home once, before the staffing, the loop and the routes read any of it.
         if (Daoris.Driver.DriverConfig.FindHome(Environment.GetEnvironmentVariable) is { } migrating)
         {
             Daoris.Driver.HomeMigration.Log(Daoris.Driver.HomeMigration.Run(migrating), log);
         }
 
-        // FOUNDATION1w-s (the foundation design §19.15): the home's driver.json reads its staffing from the store, wired before the loop
+        // The home's driver.json reads its staffing from the store, wired before the loop
         // and the routes load it.
         Daoris.Driver.RoleStaffing.WireHome(Environment.GetEnvironmentVariable);
 
@@ -104,15 +104,15 @@ internal static class Program
 
         // 🔴 The kit anchors its data area (the engine's profile, the window's geometry) at the bundle's
         // root, which it takes to be the executable's folder unless told. An install's application runs
-        // from `app/` (D93), so it is told the install's root. A `--app-root` given still wins. Its data
-        // area is the window's memory (D172 point 4, HOMELAYOUT3): the home's `window` entry under that
+        // from `app/`, so it is told the install's root. A `--app-root` given still wins. Its data
+        // area is the window's memory: the home's `window` entry under that
         // root where it is an install, `profiles/window/` once moved and the install's `data/` until then,
         // never a second one inside `app/`.
         var installRoot = InstallHome.RootOf(AppContext.BaseDirectory);
         var inInstallApp = !string.Equals(
             installRoot, Path.TrimEndingDirectorySeparator(AppContext.BaseDirectory), StringComparison.OrdinalIgnoreCase);
         var kitRoot = inInstallApp ? AppRootArgument.Resolve(args, installRoot) : null;
-        // A development run is told its one root (`npm run desktop -- run`, HOMELAYOUT4): the scratch Daoris folder that is also
+        // A development run is told its one root (`npm run desktop -- run`): the scratch Daoris folder that is also
         // its home, so its window's memory is that folder's `profiles/window/` as an install's is, not the kit's own `data/`.
         var devRoot = kitRoot is null ? InstallHome.AppRootOf(args) : null;
 
@@ -127,15 +127,15 @@ internal static class Program
                     : new ShenoraPathsOptions(),
         });
 
-        // The engine every window renders on (D92, CHR2): the Chromium the install ships. The pages are
-        // the HTTP host's own bundle, the same bytes a browser gets (D38's one UI), served from the
+        // The engine every window renders on: the Chromium the install ships. The pages are
+        // the HTTP host's own bundle, the same bytes a browser gets, served from the
         // `wwwroot` beside the host this shell would start, on the engine's app origin — and each page
         // reaches the host at its loopback address, which a local host allows (`DesktopPage`).
         var located = Daoris.Driver.ServiceHostLocator.Locate(
             Environment.GetEnvironmentVariable(Daoris.Driver.ServiceHostLocator.PathVariable),
             Daoris.Driver.DaorisHome.Resolve(),
             AppContext.BaseDirectory);
-        // The host begun now (STARTFAST1b, the start-path design §5a), so its cold start runs beside Chromium's, which the kit's runner
+        // The host begun now, so its cold start runs beside Chromium's, which the kit's runner
         // starts before the loop: the loop takes this start rather than beginning its own after it. Only by the launch holding the
         // claim, since the single-instance guard runs later, inside the runner; a later launch handed over begins nothing.
         var supervisor = new HostSupervisor(serviceUrl) { Stages = stages };
@@ -150,13 +150,13 @@ internal static class Program
             ContentRoot = bundle.Folder is { } folder && Directory.Exists(folder) ? folder : AppContext.BaseDirectory,
             VirtualHost = DesktopPage.VirtualHost,
             // The instruments' port (`npm run desktop`), honoured in development only: a published app
-            // has none, so the page that holds the bridge is out of CDP's reach (D78 §3.1).
+            // has none, so the page that holds the bridge is out of CDP's reach.
             DevToolsPort = int.TryParse(Environment.GetEnvironmentVariable(DevToolsVariable), out var port) ? port : 0,
             // The colour scheme's route is mounted below, and the kit asks that an app mounting it say so.
             Shell = new Shenora.Core.Ipc.ShellInfo { Name = "daoris-desktop", Capabilities = [ShellCapability.ColorScheme] },
         });
 
-        // The viewer's chosen theme on the engine every window renders on (THEMESCHEME1): `UseWindows` registers the
+        // The viewer's chosen theme on the engine every window renders on: `UseWindows` registers the
         // app's colour scheme, the engine applies it to Chromium's global context, which the main window's browser and
         // each secondary window's take, and each window's page sets it to the viewer's choice over this route. So
         // Chromium's own UI and `prefers-color-scheme` follow an explicit light or dark, and *System* still follows the OS.
@@ -164,7 +164,7 @@ internal static class Program
         builder.Services.AddShenoraColorScheme();
 
         // The kit's, the engine's and the modules' warnings and errors, into the same log: loggers the container makes, since the
-        // kit asks it for an ILogger<T>, and a provider alone made none (ONEINSTANCE2). And a later launch handed over, which the
+        // kit asks it for an ILogger<T>, and a provider alone makes none. And a later launch handed over, which the
         // single-instance guard and the engine say as information: the engine's line is the only trace of a launch the guard
         // let through and Chromium's own singleton turned away.
         builder.Services.AddSingleton(log);
@@ -178,14 +178,14 @@ internal static class Program
             sp.GetRequiredService<HostSupervisor>(),
             serviceUrl,
             home,
-            // Daoris's own browser (D78), for a plugin server that drives it.
+            // Daoris's own browser, for a plugin server that drives it.
             sp.GetRequiredService<EngineBrowserHost>(),
-            // What the person runs, and how long it takes, into the same log (LOG1b).
+            // What the person runs, and how long it takes, into the same log.
             log,
-            // A set-up step's tab in that browser, and its build served there until the person's verdict (REVIEWENV1d).
+            // A set-up step's tab in that browser, and its build served there until the person's verdict.
             reviews: sp.GetRequiredService<ReviewTabs>()));
         builder.Services.AddSingleton(sp => new ReviewTabs(sp.GetRequiredService<EngineBrowserHost>()));
-        // The install's update (UPDATE1, D139): what is staged beside the install drains the loop and, once the work allows,
+        // The install's update: what is staged beside the install drains the loop and, once the work allows,
         // starts the launcher to swap `app/` and closes this application as the person's close does. A workspace build is no
         // install, and never updates this way.
         builder.Services.AddSingleton(sp => new InstallUpdater(
@@ -194,7 +194,7 @@ internal static class Program
             log,
             work: () => sp.GetRequiredService<DriverLoop>().Work(),
             relaunch: ct => UpdateLauncher.StartAsync(installRoot, Environment.ProcessId, ct),
-            // For good (MAINWINDOWS2): a close from code reads as the person's, which only puts the first away while another
+            // For good: a close from code reads as the person's, which only puts the first away while another
             // main window is open, and an update has to end the application whatever is open.
             close: () => sp.GetRequiredService<MainForm>().CloseForGood(),
             bus: sp.GetRequiredService<Shenora.Core.Events.IEventBus>())
@@ -202,62 +202,62 @@ internal static class Program
             ClosingForUpdate = build => sp.GetRequiredService<DriverLoop>().Processes.Close = Daoris.Driver.ShellClose.Update(build),
         });
         builder.Services.AddIpcModule<UpdateModule>();
-        // The tray's reload of every open window's page (PAGELOOP1 c, D217): the windows are resolved as it is pressed, since they are
+        // The tray's reload of every open window's page: the windows are resolved as it is pressed, since they are
         // made after the tray is; each reload is said in the machine log by the window's name.
         builder.Services.AddSingleton(sp => new PageReloads(
             () => [sp.GetRequiredService<MainForm>(), .. sp.GetRequiredService<SecondaryWindowHost>().Reloadable()],
             window => log.Info(PageReloads.Event, ("window", window))));
         builder.Services.AddSingleton<MainForm>();
-        // A tool named as a file (TOOLS7): the system's file picker, owned by the window whose page asked (MAINWINDOWS2c), as the
+        // A tool named as a file: the system's file picker, owned by the window whose page asked, as the
         // folder picker is: the first main window is hidden while put away, and a dialog owned by it would open behind nobody.
         builder.Services.AddSingleton<PickFile>(sp => (title, window) => Pickers.File(
             Pickers.Owner(sp.GetRequiredService<MainForm>(), sp.GetRequiredService<SecondaryWindowHost>(), window), title));
-        // The session-control surface's host half: the page's driver controls land here (D46 §6).
+        // The session-control surface's host half: the page's driver controls land here.
         builder.Services.AddIpcModule<DriverModule>();
-        // The one thing a page cannot do: name a directory on this machine (D48 §7). Everything else
+        // The one thing a page cannot do: name a directory on this machine. Everything else
         // about managing a repository is an ordinary call to the loopback host.
         builder.Services.AddSingleton<PickFolder>(sp => window => Pickers.Folder(
             Pickers.Owner(sp.GetRequiredService<MainForm>(), sp.GetRequiredService<SecondaryWindowHost>(), window)));
         builder.Services.AddIpcModule<RegistryModule>();
-        // The machine's wiring — which deployment serves each workspace (D48 §5, D50). The same file
+        // The machine's wiring — which deployment serves each workspace. The same file
         // `daoris remote` edits; the service has no door onto it, deliberately.
         builder.Services.AddIpcModule<RemotesModule>();
 
-        // The second screen (D55 §b, SURF8): named windows on their own STA pumps, each carrying
+        // The second screen: named windows on their own STA pumps, each carrying
         // this same bundle at its own route. The other thing a page cannot do for itself.
         builder.Services.AddSingleton(sp => new SecondaryWindows(
             sp.GetService<Microsoft.Extensions.Logging.ILogger<SecondaryWindows>>()));
         builder.Services.AddSingleton<SecondaryWindowHost>();
         builder.Services.AddSingleton<ISecondaryWindows>(
             sp => sp.GetRequiredService<SecondaryWindowHost>());
-        // A later launch of the executable, handed here by the kit's single-instance guard (ONEINSTANCE1, D171 point 2): a new
+        // A later launch of the executable, handed here by the kit's single-instance guard: a new
         // main window of this instance once its service answers, rather than a second process and a second loop on this home.
-        // A put-away first main window is that launch's window, shown again rather than another opened (MAINWINDOWS2).
+        // A put-away first main window is that launch's window, shown again rather than another opened.
         builder.Services.AddSingleton(sp => new SecondLaunch(
             sp.GetRequiredService<ISecondaryWindows>(), sp.GetRequiredService<PlatformAddress>(),
             () => sp.GetRequiredService<DriverLoop>().HostReady, log,
             mains: sp.GetRequiredService<MainWindows>(),
             showFirst: () => sp.GetRequiredService<MainForm>().TakeBack()));
-        // The application ends with its last main window, not its first (MAINWINDOWS2, D171 point 2): the first, whose form the
+        // The application ends with its last main window, not its first: the first, whose form the
         // kit's loop runs on and as which the pickers, the taskbar's count, the tray and the update are resolved, is put away
         // on the person's close while another main window is open, and closed for good when the last of them closes.
         builder.Services.AddSingleton(sp => new MainWindows(() => sp.GetRequiredService<MainForm>().CloseForGood(), log));
-        // A terminal's press waiting unshown lights the taskbar button of the main window last in front (NOTIFY2b, the notification
-        // design §3.3): the judgement's, told each window's focus and what the pipe says waits; the window is resolved as it is lit.
+        // A terminal's press waiting unshown lights the taskbar button of the main window last in front:
+        // the judgement's, told each window's focus and what the pipe says waits; the window is resolved as it is lit.
         builder.Services.AddSingleton(sp => new PressFlash((window, on) => TaskbarFlash.Set(
             window == MainWindows.First ? sp.GetRequiredService<MainForm>() : sp.GetRequiredService<SecondaryWindowHost>().FormNamed(window),
             on)));
-        // Daoris's own browser (D78, D85): the engine's own window, in a process of its own
-        // (`daoris-browser`: this executable with the browser's argument, CHR8), with its profile under
+        // Daoris's own browser: the engine's own window, in a process of its own
+        // (`daoris-browser`: this executable with the browser's argument), with its profile under
         // the home — the home `driver.json` is in, as every machine file's is.
         builder.Services.AddSingleton(_ => new EngineBrowserHost(
             Daoris.Driver.DriverConfig.HomeOf(Daoris.Driver.DriverConfig.ResolvePath())));
         builder.Services.AddSingleton<Daoris.Driver.IInAppBrowser>(sp => sp.GetRequiredService<EngineBrowserHost>());
-        // Its favorites and settings, as a Settings domain (CHR5, CHR7): the files `daoris browser`
+        // Its favorites and settings, as a Settings domain: the files `daoris browser`
         // edits, read by `daoris-browser` each time it starts.
         builder.Services.AddIpcModule<BrowserModule>();
         builder.Services.AddSingleton(new PlatformAddress(serviceUrl));
-        // Each main window's taskbar count (NOTIFY1b), its own workspace's as its own page tells it (NOTIFY2c): the window is resolved
+        // Each main window's taskbar count, its own workspace's as its own page tells it: the window is resolved
         // as the page tells it, never as the module is made, since the windows are made after the modules.
         builder.Services.AddSingleton(new WaitingCount());
         builder.Services.AddSingleton<ShowWaiting>(sp => (window, count, description) =>
@@ -266,46 +266,46 @@ internal static class Program
             if (window == MainWindows.First) sp.GetRequiredService<MainForm>().ShowWaiting(count, description);
             else sp.GetRequiredService<SecondaryWindowHost>().ShowWaiting(window);
         });
-        // Which workspace each main window holds, as its page tells it, and which main window a notification's click opens (NOTIFY2c,
-        // the notification design §9): the one holding what it is about, or the main window last in front where none or several do.
+        // Which workspace each main window holds, as its page tells it, and which main window a notification's click opens:
+        // the one holding what it concerns, or the main window last in front where none or several do.
         builder.Services.AddSingleton(sp => new MainWindowScopes(sp.GetRequiredService<MainWindows>()));
         builder.Services.AddSingleton<BringForward>(sp => window => sp.GetRequiredService<SecondaryWindowHost>().BringForward(window));
-        // The words the notifier says each balloon in, as a main window's page hands them in its language (NOTIFY2d, the notification
-        // design §3.3): told through the windows module, read by the notifier at each balloon.
+        // The words the notifier says each balloon in, as a main window's page hands them in its language:
+        // told through the windows module, read by the notifier at each balloon.
         builder.Services.AddSingleton(new NoticeWords());
-        // And the workspace each main window's page holds, worn in its title (MAINWINDOWS3b): no name is the first main window.
+        // And the workspace each main window's page holds, worn in its title: no name is the first main window.
         builder.Services.AddSingleton<ShowWorkspace>(sp => (name, workspace) =>
         {
             if (name is null) sp.GetRequiredService<MainForm>().ShowWorkspace(workspace);
             else sp.GetRequiredService<SecondaryWindowHost>().ShowWorkspace(name, workspace);
         });
         builder.Services.AddIpcModule<WindowsModule>();
-        // The page's own report into the machine log (LOG1b, D94): what is used and what fails on the
+        // The page's own report into the machine log: what is used and what fails on the
         // screen, taken only as the catalogue names it — the module is where no word gets through. And
-        // Settings → Logs reading it back (LOG1c), with the file manager for Open the folder: the kit's
+        // Settings → Logs reading it back, with the file manager for Open the folder: the kit's
         // shell launcher, which `UseWindows` registers, opened only on the folder the module names.
         builder.Services.AddSingleton<OpenFolder>(sp =>
             folder => sp.GetRequiredService<IShellLauncher>().OpenDirectory(folder));
         builder.Services.AddIpcModule<LogModule>();
-        // This Daoris's set-up presses change the person's account's variables, never the machine's (WIRING1e): the Windows account's,
+        // This Daoris's set-up presses change the person's account's variables, never the machine's: the Windows account's,
         // where there is one.
         if (Daoris.Driver.WindowsAccountEnvironment.Exists) builder.Services.AddSingleton<Daoris.Driver.IAccountEnvironment, Daoris.Driver.WindowsAccountEnvironment>();
-        // The person's own shells for the terminal view (CONSOLE4a, D96): each under a pseudo-console, typed at
+        // The person's own shells for the terminal view: each under a pseudo-console, typed at
         // and read over the bridge alone. The container disposes the module as the app ends, and every
         // terminal with it; each shell's job object ends with this process besides.
         builder.Services.AddSingleton<Daoris.Driver.ITerminalFactory, Daoris.Driver.PseudoConsoleTerminals>();
         builder.Services.AddIpcModule<TerminalModule>();
-        // How late the window's thread answers, and what held it (FREEZE1, D56's note): the strip is the caption, moved on
+        // How late the window's thread answers, and what held it: the strip is the caption, moved on
         // that thread, so a late thread is a frozen bar while the page works on. Composed here for its middleware, which
         // names the route on the thread; the form starts it once it is shown (MainForm).
         builder.Services.AddSingleton(sp => new UiStallWatch(log, bus: sp.GetRequiredService<Shenora.Core.Events.IEventBus>()));
         // And every refusal the bridge answers, by its code: a middleware in the kit's application slot,
         // so every module's answer passes it. Registered before Build, whose own call is a TryAdd.
-        // Then a Daoris route leaves the window's thread at its first wait (UIFREEZE1): after the stall watch, which still
+        // Then a Daoris route leaves the window's thread at its first wait: after the stall watch, which still
         // times and names the part before it, so the window is never where a route's git fan-out goes on.
-        // And what a route declares it changed reaches every window as STATE_CHANGED once it has answered (STATEHUB1b, D169):
+        // And what a route declares it changed reaches every window as STATE_CHANGED once it has answered:
         // innermost, so it publishes off the window's thread and only what the route itself answered. What is under way it holds
-        // in the loop's list, which the driver's UNDER_WAY route reads (STATEHUB1c2).
+        // in the loop's list, which the driver's UNDER_WAY route reads.
         builder.Services.UseMessageDispatcher((sp, dispatcher) => dispatcher
             .Use(RefusalLog.Middleware(log))
             .Use(sp.GetRequiredService<UiStallWatch>().Middleware)
@@ -317,7 +317,7 @@ internal static class Program
             .GetCustomAttributes(typeof(System.Reflection.AssemblyInformationalVersionAttribute), false)
             .OfType<System.Reflection.AssemblyInformationalVersionAttribute>().FirstOrDefault()?.InformationalVersion;
 
-        // The terminal's pipe (RPC1a, D171 point 3): a verb run in a terminal is this Daoris's client, its request run through the
+        // The terminal's pipe: a verb run in a terminal is this Daoris's client, its request run through the
         // dispatcher composed above, which every window's page uses, so its press is the window's: the same handler, the same
         // middleware, under way and heard in every window. The loop serves it once it holds the home and takes it down at its stop.
         builder.Services.AddSingleton(sp => new InstancePipe(
@@ -330,26 +330,26 @@ internal static class Program
         {
             log.Info("app.started", ("version", version), ("installed", inInstallApp));
             var loop = app.Services.GetRequiredService<DriverLoop>();
-            // Composed: a swap waiting for this start is confirmed here, so the launcher keeps this build (D139 §5), and
+            // Composed: a swap waiting for this start is confirmed here, so the launcher keeps this build, and
             // the last swap's outcome is said once. Then the drain watches what is staged, holding the loop's starts.
             var updater = app.Services.GetRequiredService<InstallUpdater>();
             loop.Draining = () => updater.Draining;
             loop.SayUpdate = (mode, token) => updater.SayAsync(mode, "steward");
             // An update's drain holds the pipe's presses that would add to what it waits on, a terminal told Daoris is updating; the close
-            // it ends in is a stop's beginning, which holds every press (§6.3, DRAINHOLD1).
+            // it ends in is a stop's beginning, which holds every press.
             var pipe = app.Services.GetRequiredService<InstancePipe>();
             pipe.Draining = () => updater.Draining;
             pipe.Applying = () => updater.Applying;
             loop.Pipe = pipe;
             loop.Stages = stages;
             // Its look may start the launcher for a build said *now*: through the start gate, off this thread
-            // (UPDATERELAUNCH1). The drain is set before that wait, so before the loop starts; a failed look is said as the
+            // The drain is set before that wait, so before the loop starts; a failed look is said as the
             // updater's own loop says one.
             _ = updater.StartedAsync().ContinueWith(
                 look => log.Warn("update.look", ("message", look.Exception!.GetBaseException().Message)),
                 CancellationToken.None, TaskContinuationOptions.OnlyOnFaulted, TaskScheduler.Default);
             updater.Start();
-            // FABRIC-EVENT2d: the system's resume is told to the loop's change watch, which reopens its roots and judges them;
+            // The system's resume is told to the loop's change watch, which reopens its roots and judges them;
             // SystemEvents raises on its own thread, and the handler lives as long as the process does.
             var power = new PowerResume();
             loop.Power = power;
@@ -376,7 +376,7 @@ internal static class Program
             app.Services.GetRequiredService<HostSupervisor>().Stop();
         });
 
-        // The viewer's colour scheme as the last run kept it (THEMESTART1, D22's THEMESCHEME1 note), beside the window's
+        // The viewer's colour scheme as the last run kept it, beside the window's
         // geometry: the kit keeps the scheme in memory only and asks the app to pass the saved one at its start.
         var keptScheme = Path.Combine(builder.Paths.DataArea("config"), KeptScheme.FileName);
 
@@ -391,24 +391,23 @@ internal static class Program
                 Store = sp => new JsonFileWindowStateStore(
                     Path.Combine(sp.GetRequiredService<ShenoraPaths>().DataArea("config"), "window-state.json")),
             },
-            // One instance per install, the kit's default, and a later launch is a new main window of it (ONEINSTANCE1, D171
-            // point 2): the guard brings this instance's main window forward and hands the launch over on the window's thread,
+            // One instance per install, the kit's default, and a later launch is a new main window of it: the guard brings this instance's main window forward and hands the launch over on the window's thread,
             // and the hand-over opens the window off it, once the service answers. Written as it arrives, and every failure on
-            // the way written too (ONEINSTANCE2).
+            // the way written too.
             SingleInstance = LaterLaunch.Options(log),
         });
 
         using var app = builder.Build();
-        // SUPERVISOR1a-ii (D208 §2.2; the owner's direction of 2026-10-24): a role holder's terminal is a tab of this window's own terminal
-        // panel, never a console window of the system's; the module is read as the appointment is pressed. STEWARDROLE1a-i (D209 §2.2):
-        // its tab runs Daoris's own pinned harness, and every way the tab ends is told to the judge.
+        // A role holder's terminal is a tab of this window's own terminal
+        // panel, never a console window of the system's; the module is read as the appointment is pressed.
+        // Its tab runs Daoris's own pinned harness, and every way the tab ends is told to the judge.
         TerminalModule? Terminals() => app.Services.GetServices<IIpcModule>().OfType<TerminalModule>().FirstOrDefault();
         SupervisorDoor.Panel = new TerminalHolderPanel(Terminals);
         if (Terminals() is { } holderPanel) holderPanel.HolderEnded = SupervisorDoor.HolderEnded;
         // And each choice the page sets from here, for the next start.
         using var keeping = KeptScheme.Keep(app.Services.GetRequiredService<IColorScheme>(), keptScheme, log);
-        // An exception leaving the application is written while the log is open (MACHINELOGAPPEND1, HOSTSTART2's finding for
-        // the desktop): the `using` above closes it as the exception leaves `Main`, which dropped the unhandled line.
+        // An exception leaving the application is written while the log is open: the `using` above
+        // closes it as the exception leaves `Main`, which would drop the unhandled line.
         log.RunWatched(() => app.Run());
     }
 }

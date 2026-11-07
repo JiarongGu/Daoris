@@ -1,8 +1,8 @@
 namespace Daoris.Desktop;
 
 /// <summary>
-/// The platform bundle every window's page is served from (D92): the <c>wwwroot</c> beside the host this
-/// shell would start, or null where no host was found. A missing bundle is said in the window.
+/// The platform bundle every window's page is served from: the <c>wwwroot</c> beside the host this
+/// shell would start, or null where no host is found. A missing bundle is said in the window.
 /// </summary>
 public sealed record PlatformBundle(string? Folder)
 {

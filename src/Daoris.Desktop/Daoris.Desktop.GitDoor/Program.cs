@@ -3,7 +3,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.GitDoor;
 
 /// <summary>
-/// Daoris's git doors (GITAUTH1b, the git-auth design §4.2 and §4.3), started by git alone: as <c>daoris-git-ssh</c>, git's ssh
+/// Daoris's git doors, started by git alone: as <c>daoris-git-ssh</c>, git's ssh
 /// (<see cref="GitDoors.Ssh"/>); as <c>git-remote-daoris</c>, the remote helper for a <c>daoris::</c> address
 /// (<see cref="GitDoors.Helper"/>); as <c>git-credential-daoris</c>, git's credential helper for an identity's token
 /// (<see cref="GitCredentialDoor"/>). The file's own name says which, so the publish lays one program out under both names.
@@ -12,7 +12,7 @@ public static class Program
 {
     public static int Main(string[] args)
     {
-        // SUPERVISOR1a-ii (D208 §2.2): the holder key leaves this process first, so no start it builds can copy it.
+        // The holder key leaves this process first, so no start it builds can copy it.
         Environment.SetEnvironmentVariable("DAORIS_ROLE_KEY", null);
         // The inbox's variables leave with it (the event hook design §6.3).
         Environment.SetEnvironmentVariable("CLAUDE_CODE_MESSAGING_SOCKET", null);

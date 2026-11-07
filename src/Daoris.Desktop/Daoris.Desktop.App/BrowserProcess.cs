@@ -6,7 +6,7 @@ using Shenora.Chromium;
 namespace Daoris.Desktop;
 
 /// <summary>
-/// `daoris-browser`: Daoris's own browser on the engine it ships (D85, CHR3). Since CHR8 (D99) it is this
+/// `daoris-browser`: Daoris's own browser on the engine it ships. It is this
 /// application's own executable started with <see cref="EngineBrowser.Argument"/> first, run as a browser
 /// by the kit's <see cref="ChromiumBrowserProcess"/>, so an install carries one Chromium. It holds no
 /// control and no Daoris page. It prepares its profile under the home, opens the engine's own Chromium
@@ -22,16 +22,14 @@ namespace Daoris.Desktop;
 /// an agent's tabs land in it too. So the first window is made the same way an agent's is, in the
 /// background when a session asked for it.</para>
 ///
-/// <para><b>The port it is given is the kit's relay</b> (CHR6, then CHR8): it passes everything through
-/// and announces a new tab as a <c>page</c> from the start, so an agent's browser MCP can open tabs. Daoris
-/// kept a relay of its own for this until the kit's arrived.</para>
+/// <para><b>The port it is given is the kit's relay</b>: it passes everything through
+/// and announces a new tab as a <c>page</c> from the start, so an agent's browser MCP can open tabs.</para>
 ///
-/// <para><b>Every task started here and not awaited is observed</b> (LOG2b): the machine log's
-/// <c>Observe</c> writes its failure as a line saying where. The first real log held one exception the
-/// finalizer rethrew in this process, from a relay pump nobody awaited (Daoris's own relay, before
-/// CHR8), and a source test holds the rule for the next task written here.</para>
+/// <para><b>Every task started here and not awaited is observed</b>: the machine log's
+/// <c>Observe</c> writes its failure as a line saying where, since an exception nobody awaits is
+/// rethrown by the finalizer. A source test holds the rule for the next task written here.</para>
 ///
-/// <para><b>Nothing under the user profile</b> (D63): with no profile folder it refuses, rather than
+/// <para><b>Nothing under the user profile</b>: with no profile folder it refuses, rather than
 /// let the engine pick a folder of its own.</para>
 /// </remarks>
 internal static class BrowserProcess
@@ -45,7 +43,7 @@ internal static class BrowserProcess
     /// <summary>Run this process as the browser, on the calling (main, STA) thread, and answer its exit code.</summary>
     public static int Run(string[] args)
     {
-        // The machine log (LOG1, D94): this process's start, stop and every exception nothing caught, in
+        // The machine log: this process's start, stop and every exception nothing caught, in
         // a file of its own beside the shell's. The home is the shell's, handed down in the environment.
         using var log = Daoris.Driver.MachineLog.Open("browser");
         log.WatchUnhandled();
@@ -70,7 +68,7 @@ internal static class BrowserProcess
         var started = DateTimeOffset.UtcNow;
         log.Info("app.started");
 
-        // Started and not awaited, so observed (LOG2b): a failure is a line saying where, and a browser
+        // Started and not awaited, so observed: a failure is a line saying where, and a browser
         // that cannot make its window stops, since a process with no window is nothing the person can
         // see or close, and the shell starts another when asked.
         _ = log.Observe(FirstWindowAsync(options, stop.Token), EngineBrowser.FirstWindowPlace, stop.Cancel);
@@ -79,7 +77,7 @@ internal static class BrowserProcess
             return ChromiumBrowserProcess.Run(
                 new ChromiumBrowserProcessOptions
                 {
-                    // The engine's root, whose `Default` is the profile CHR5 and CHR7 prepared above.
+                    // The engine's root, whose `Default` is the profile prepared above.
                     UserDataFolder = options.Profile,
                     RemoteDebuggingPort = options.Port,
                     // The sign-in survives a restart with the engine's own setting (the evidence's §5).
@@ -117,7 +115,7 @@ internal static class BrowserProcess
             return false;
         }
 
-        // Observed like every task started here (LOG2b); a watch that fails is written, and the browser's
+        // Observed like every task started here; a watch that fails is written, and the browser's
         // windows stay the person's to close.
         _ = log.Observe(Task.Run(async () =>
         {
@@ -150,8 +148,8 @@ internal static class BrowserProcess
     /// Cancelled when the shell or the engine went first; any failure is its caller's to observe.
     /// </summary>
     /// <remarks>
-    /// 🔴 LOG2b: this caught a list of exception types and left any other to fault a task nobody held,
-    /// which only the finalizer ever looked at. It throws now, and the caller observes all of it.
+    /// 🔴 It lets every exception through, none caught here: one left to fault a task nobody holds is seen
+    /// only by the finalizer, so the caller observes all of it.
     /// </remarks>
     private static async Task FirstWindowAsync(EngineBrowserOptions options, CancellationToken ct)
     {
@@ -161,8 +159,8 @@ internal static class BrowserProcess
 
     /// <summary>
     /// Before the engine reads its profile: Daoris's favorites become its folder on the bookmarks bar
-    /// (CHR5), and other software's Chrome extensions are refused or offered as the settings say
-    /// (CHR7). Each file that cannot be read is left as it is, and the browser starts regardless.
+    /// and other software's Chrome extensions are refused or offered as the settings say.
+    /// Each file that cannot be read is left as it is, and the browser starts regardless.
     /// </summary>
     private static void Prepare(string profile)
     {

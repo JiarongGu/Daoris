@@ -5,21 +5,21 @@ using Shenora.Windows;
 namespace Daoris.Desktop;
 
 /// <summary>
-/// A secondary window (D55 §b, SURF8): the same platform bundle, at its own route, in a window of
+/// A secondary window: the same platform bundle, at its own route, in a window of
 /// its own — the monitor on a second screen, or one session detached; or the whole platform again,
-/// another main window a later launch opened (ONEINSTANCE1, D171 point 2).
+/// another main window a later launch opened.
 /// </summary>
 /// <remarks>
 /// <para><b>Native chrome, deliberately, for a utility window.</b> The main window is frameless because its
-/// app strip IS the title bar (SURF7); a monitor or a detached session is not: it is a utility, and OS chrome
-/// is what a utility should wear (D55 §b). Another main window is frameless as the main one is
+/// app strip IS the title bar; a monitor or a detached session is not: it is a utility, and OS chrome
+/// is what a utility should wear. Another main window is frameless as the main one is
 /// (<see cref="Options"/> has why it can be).</para>
 ///
-/// <para><b>Its page on the same engine, the same dispatcher and the same bus</b> (D92): a
+/// <para><b>Its page on the same engine, the same dispatcher and the same bus</b>: a
 /// <c>ChromiumView</c> bridges its page's IPC itself, on this window's own thread. Requests go to the same
 /// modules the main window talks to, and every event emitted on the bus reaches every page — which is
-/// how a second window watches the same live console without the driver keeping a second buffer (SES1:
-/// the buffer holds no cursor, so a reader is a position and not a registration). Its page's window
+/// how a second window watches the same live console without the driver keeping a second buffer (the
+/// buffer holds no cursor, so a reader is a position and not a registration). Its page's window
 /// commands act on this window, not the main one.</para>
 /// </remarks>
 public sealed class SecondaryForm : OptimizedForm, IReloadableWindow
@@ -28,13 +28,13 @@ public sealed class SecondaryForm : OptimizedForm, IReloadableWindow
     private readonly ChromiumEngine _engine;
     private readonly ILogger<ChromiumView> _viewLog;
 
-    /// <summary>Set once the browser failed to come up and a sentence stands in its place: nothing is left to reload (PAGELOOP1 c).</summary>
+    /// <summary>Set once the browser failed to come up and a sentence stands in its place: nothing is left to reload.</summary>
     private bool _failed;
 
     string IReloadableWindow.Name => WindowName;
 
     /// <summary>
-    /// The tray's reload (PAGELOOP1 c, D217): the page this window shows is opened again, on this window's thread. The kit's browser
+    /// The tray's reload: the page this window shows is opened again, on this window's thread. The kit's browser
     /// exposes no reload, so the view is made again on the same path (see <c>MainForm</c>'s).
     /// </summary>
     bool IReloadableWindow.ReloadPage()
@@ -66,12 +66,12 @@ public sealed class SecondaryForm : OptimizedForm, IReloadableWindow
     private bool _pageDark;
     private readonly TaskbarBadge? _badge;
 
-    /// <summary>The name this window was opened under: <c>monitor</c>, <c>session:&lt;id&gt;</c> or <c>main:&lt;n&gt;</c>.</summary>
+    /// <summary>The name this window is opened under: <c>monitor</c>, <c>session:&lt;id&gt;</c> or <c>main:&lt;n&gt;</c>.</summary>
     public string WindowName { get; }
 
     /// <param name="startsDark">
     /// The theme to wear until the page says its own: the viewer's held choice, or the OS's at <i>System</i>, asked each
-    /// time (THEMESTART1, <see cref="KeptScheme.StartsDark"/>).
+    /// time (<see cref="KeptScheme.StartsDark"/>).
     /// </param>
     public SecondaryForm(
         string name,
@@ -84,7 +84,7 @@ public sealed class SecondaryForm : OptimizedForm, IReloadableWindow
         _startsDark = startsDark;
         _main = SecondaryWindow.IsMain(name);
         // The taskbar's label and the window's own caption — a utility window HAS a caption, so it is read. Another main
-        // window is named as the main one is, with no count until its own page tells it its workspace's (NOTIFY2c).
+        // window is named as the main one is, with no count until its own page tells it its workspace's.
         Text = name == SecondaryWindow.Monitor ? "Daoris — Monitor" : _main ? WaitingBadge.Title(0) : $"Daoris — {name}";
         StartPosition = FormStartPosition.CenterScreen;
         if (_main)
@@ -94,12 +94,12 @@ public sealed class SecondaryForm : OptimizedForm, IReloadableWindow
             CaptionButtonColors = MainForm.CaptionColors(ChromePalette.For(startsDark()));
         }
 
-        // The main window's taskbar identity (TASKBAR1, D108), or this window would be a button of its
+        // The main window's taskbar identity, or this window would be a button of its
         // own beside the main one's, grouped by the executable the main one no longer is.
         TaskbarWindow.Wear(this);
         WindowName = name;
 
-        // And, for another main window, its own workspace's count on its own button (NOTIFY2c): the host tells it what its page
+        // And, for another main window, its own workspace's count on its own button: the host tells it what its page
         // told (`SecondaryWindowHost.ShowWaiting`), and the button's overlay is put back each time Explorer makes the button, as
         // the main window's is.
         if (_main)
@@ -113,8 +113,8 @@ public sealed class SecondaryForm : OptimizedForm, IReloadableWindow
             };
         }
 
-        // The viewer's held choice, or the OS theme at System, until the page says which one it is in (WINDOW2:
-        // `FollowPage`, over `DAORIS.WINDOWS`; THEMESTART1). Shenora's window commands route a second window's
+        // The viewer's held choice, or the OS theme at System, until the page says which one it is in
+        // (`FollowPage`, over `DAORIS.WINDOWS`). Shenora's window commands route a second window's
         // `SET_THEME` nowhere, so the page tells this form by its name instead. Before it has spoken — the moments
         // while the page comes up — that is the best guess, and a person on System who switches their OS theme
         // with the page not yet up still gets a matching title bar.
@@ -132,7 +132,7 @@ public sealed class SecondaryForm : OptimizedForm, IReloadableWindow
         Microsoft.Win32.SystemEvents.UserPreferenceChanged += _themeChanged;
 
         // The same bytes the main window shows, with one query parameter saying which window this is —
-        // a route into one bundle, never a second frontend (D38's one UI). Its browser opens as the
+        // a route into one bundle, never a second frontend. Its browser opens as the
         // view's handle is created, on this window's own thread.
         _engine = engine;
         _viewLog = log;
@@ -143,10 +143,10 @@ public sealed class SecondaryForm : OptimizedForm, IReloadableWindow
     }
 
     /// <summary>
-    /// How this window is made. A utility window is framed, which is the whole point (D55 §b) — but the DWM dark-mode flag
+    /// How this window is made. A utility window is framed, which is the whole point — but the DWM dark-mode flag
     /// and the border colour are still ours to set, and a light title bar over a dark page is the most visible thing in the
-    /// window. Another main window (ONEINSTANCE1, D171 point 2) carries the whole platform, whose app strip IS the title bar
-    /// (SURF7, D56), so it is frameless with the caption buttons it paints, as the main window is: the kit's window commands
+    /// window. Another main window carries the whole platform, whose app strip IS the title bar,
+    /// so it is frameless with the caption buttons it paints, as the main window is: the kit's window commands
     /// act on the window whose page sent them, its own maximize and caption buttons included, and only the theme has no route
     /// there, which its page says by name over <c>DAORIS.WINDOWS</c> as a utility window's does.
     /// </summary>
@@ -160,7 +160,7 @@ public sealed class SecondaryForm : OptimizedForm, IReloadableWindow
     };
 
     /// <summary>
-    /// Wear the count this window's own page told on its button and in its title (NOTIFY2c), or none at none. From any thread; a
+    /// Wear the count this window's own page told on its button and in its title, or none at none. From any thread; a
     /// window that is not a main window wears nothing.
     /// </summary>
     public void ShowWaiting(int count, string? description)
@@ -190,7 +190,7 @@ public sealed class SecondaryForm : OptimizedForm, IReloadableWindow
     private string? _workspace;
 
     /// <summary>
-    /// The workspace this main window's page holds, worn in its title after the application's name (MAINWINDOWS3b). From any
+    /// The workspace this main window's page holds, worn in its title after the application's name. From any
     /// thread; a window that is not a main window keeps its own name.
     /// </summary>
     public void ShowWorkspace(string? workspace)
@@ -216,7 +216,7 @@ public sealed class SecondaryForm : OptimizedForm, IReloadableWindow
     }
 
     /// <summary>
-    /// The theme the page in this window is in (WINDOW2) — the viewer's choice where there is one —
+    /// The theme the page in this window is in — the viewer's choice where there is one —
     /// painted on the caption and border the page cannot reach. Called on this window's thread.
     /// </summary>
     public void FollowPage(bool dark)
@@ -234,7 +234,7 @@ public sealed class SecondaryForm : OptimizedForm, IReloadableWindow
     /// 🔴 <c>OptimizedForm.ApplyChromeTheme</c> sets the DWM caption only for a FRAMELESS form (Shenora
     /// 0.16 and 0.17 alike: <c>if (_options.FramelessChrome &amp;&amp; IsHandleCreated)</c>), and this one is
     /// framed, so its caption never followed any theme — not the OS's either, whatever the handler
-    /// above intended. Found by looking at WINDOW2's fix, which set a theme nothing painted. So the
+    /// above intended. So the
     /// attribute is set here, on this window's own handle, and the frame is told to repaint: a caption
     /// already on screen keeps its old colours until the next activation otherwise.
     /// </remarks>
@@ -283,8 +283,8 @@ public sealed class SecondaryForm : OptimizedForm, IReloadableWindow
     /// would still be handling theme changes.
     /// </summary>
     /// <remarks>
-    /// 🔴 A closed window's page must stop hearing the bus (REV3: a WebView2 bridge left attached queued
-    /// every later event, up to its cap, once per window ever opened). The view closes its browser, and
+    /// 🔴 A closed window's page must stop hearing the bus: a WebView2 bridge left attached queues
+    /// every later event, up to its cap, once per window ever opened. The view closes its browser, and
     /// its page's IPC with it, as its handle goes; disposing it here makes that happen with the window.
     /// </remarks>
     protected override void OnFormClosed(FormClosedEventArgs e)

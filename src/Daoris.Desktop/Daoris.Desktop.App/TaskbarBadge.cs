@@ -6,7 +6,7 @@ using System.Runtime.InteropServices;
 namespace Daoris.Desktop;
 
 /// <summary>
-/// How much waits on the person, drawn on the main window's taskbar button (NOTIFY1b): a number on a circle, the
+/// How much waits on the person, drawn on the main window's taskbar button: a number on a circle, the
 /// button's overlay icon through the shell's <c>ITaskbarList3</c>, as <see cref="TaskbarWindow"/> writes the button's
 /// identity through the window's property store.
 /// </summary>
@@ -23,7 +23,7 @@ namespace Daoris.Desktop;
 /// have no test, as nothing in this project does.</para>
 ///
 /// <para>A taskbar that cannot be told shows no count; the window works as before. On the window's thread only, the one
-/// the shell's object was made on.</para>
+/// that made the shell's object.</para>
 /// </remarks>
 internal sealed class TaskbarBadge : IDisposable
 {
@@ -65,7 +65,7 @@ internal sealed class TaskbarBadge : IDisposable
         if (_count > 0) Apply();
     }
 
-    /// <summary>Put the last count on the button as it is now: after its handle or its button was made again.</summary>
+    /// <summary>Put the last count on the button as it is now: after its handle or its button is made again.</summary>
     public void Apply()
     {
         if (!_form.IsHandleCreated || _form.IsDisposed || Taskbar() is not { } taskbar) return;
@@ -78,7 +78,7 @@ internal sealed class TaskbarBadge : IDisposable
         }
         catch (Exception error) when (error is ExternalException or ArgumentException)
         {
-            // A canvas that cannot be drawn on leaves the button as it was.
+            // A canvas that cannot be drawn on leaves the button unchanged.
             return;
         }
 

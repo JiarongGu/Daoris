@@ -10,32 +10,32 @@ namespace Daoris.Desktop;
 
 /// <summary>
 /// The one window: the platform the HTTP host serves — the same bytes a browser gets, which is the "one
-/// UI, two shells" rule holding (D38) — on the Chromium the install ships (D92, CHR2). A
+/// UI, two shells" rule holding — on the Chromium the install ships. A
 /// <c>ChromiumView</c> serves the bundle on the engine's app origin and bridges the page's IPC itself;
 /// the page reaches the host at its loopback address.
 /// </summary>
 /// <remarks>
-/// <para><b>It is frameless, and the page's app strip IS the title bar</b> (SURF7 / D56). No OS
+/// <para><b>It is frameless, and the page's app strip IS the title bar</b>. No OS
 /// caption: the strip drags the window, double-click maximizes it, and the room it reserves at its
 /// right edge is handed to the OS as real caption buttons — which <b>this window paints</b>
-/// (<c>NativeCaptionButtons</c>), not the page. D56 as amended has the reason.</para>
+/// (<c>NativeCaptionButtons</c>), not the page.</para>
 ///
 /// <para><b><see cref="OptimizedForm.AppPlacement"/> is the truth about this window's maximize.</b> Since
 /// Shenora 0.22 the frameless maximize is the system's, so <see cref="Form.WindowState"/> reads
 /// <c>Maximized</c> too; but a window minimized from maximized reads <c>Minimized</c> there and
 /// <c>Maximized</c> in <c>AppPlacement</c>, which is what the kit's window-state stack saves and the IPC
 /// module is handed. Un-minimizing with <c>WindowState = Normal</c> brings such a window back
-/// un-maximized: <see cref="Unminimize"/> restores it as it was.</para>
+/// un-maximized: <see cref="Unminimize"/> restores it to its earlier state.</para>
 /// </remarks>
 public sealed class MainForm : OptimizedForm, IReloadableWindow
 {
-    /// <summary>The page's view, once it is made (PAGELOOP1 c); null while the window is on its splash for the service or on its trouble label.</summary>
+    /// <summary>The page's view, once it is made; null while the window is on its splash for the service or on its trouble label.</summary>
     private ChromiumView? _view;
 
     string IReloadableWindow.Name => MainWindows.First;
 
     /// <summary>
-    /// The tray's reload (PAGELOOP1 c, D217): the page this window shows is opened again, on this window's thread. A window still on
+    /// The tray's reload: the page this window shows is opened again, on this window's thread. A window still on
     /// its splash or on its trouble label has no page to reload and reloads nothing.
     /// </summary>
     /// <remarks>
@@ -66,11 +66,11 @@ public sealed class MainForm : OptimizedForm, IReloadableWindow
     private readonly SessionNotifier _notifier;
     private readonly TaskbarBadge _badge;
     private readonly Daoris.Driver.MachineLog _log;
-    // When the splash comes down (SPLASHDATA1): the page's word that its first screen has its data, or the bound.
+    // When the splash comes down: the page's word that its first screen has its data, or the bound.
     private readonly SplashLift _lift;
-    // The start, timed stage by stage (STARTFAST1): the window's shown, its page's browser made, and through the lift the rest.
+    // The start, timed stage by stage: the window's shown, its page's browser made, and through the lift the rest.
     private readonly StartStages? _stages;
-    // Whether a close puts this window away or ends the application (MAINWINDOWS2): the others' count, and a close from code
+    // Whether a close puts this window away or ends the application: the others' count, and a close from code
     // that is for good, since the kit reports one as the person's.
     private readonly MainWindows? _mains;
     private bool _forGood;
@@ -99,8 +99,7 @@ public sealed class MainForm : OptimizedForm, IReloadableWindow
         : base(new OptimizedFormOptions
         {
             FramelessChrome = true,
-            // The window owns the caption pixels and paints them (D56 as amended by SURF7's reading
-            // of the framework). Inert until the page reports where it left the room.
+            // The window owns the caption pixels and paints them. Inert until the page reports where it left the room.
             NativeCaptionButtons = true,
             BackColor = StartingPalette(colorScheme).Page,
             // The 1px Win11 border line. The system default is light, which is visibly wrong on the
@@ -122,15 +121,15 @@ public sealed class MainForm : OptimizedForm, IReloadableWindow
         _lift = new SplashLift(stages);
 
         // Still set: it is the taskbar's label and the caption of the one MessageBox left. While anything
-        // waits on the person it leads with the count (NOTIFY1b, ShowWaiting).
+        // waits on the person it leads with the count (ShowWaiting).
         Text = WaitingBadge.Title(0);
 
-        // One taskbar button for a pinned Daoris (TASKBAR1, D108): an install's window names Daoris's
+        // One taskbar button for a pinned Daoris: an install's window names Daoris's
         // id and a relaunch command that starts the root launcher, so it groups under the person's pin
         // and a pin made from it survives a republish. A workspace build wears nothing.
         TaskbarWindow.Wear(this);
 
-        // And on that button, how much waits on the person (NOTIFY1b): put back each time Explorer makes the
+        // And on that button, how much waits on the person: put back each time Explorer makes the
         // button, which it says with a message of its own, so a restarted taskbar still counts.
         _badge = new TaskbarBadge(this);
         _badge.Wear(_palette);
@@ -147,7 +146,7 @@ public sealed class MainForm : OptimizedForm, IReloadableWindow
         CaptionButtonColors = CaptionColors(_palette);
 
         // The view comes once the host answers (BringUpAsync); the splash holds the window till then, and on until the
-        // page's first screen has its data (SPLASHDATA1).
+        // page's first screen has its data.
         _splash = new SplashPanel(new SplashPanelOptions { BackColor = _palette.Page });
         Controls.Add(_splash);
         _splash.BringToFront();
@@ -166,17 +165,17 @@ public sealed class MainForm : OptimizedForm, IReloadableWindow
             // The page's rectangles are read against the view that sent them (ChromiumView), per
             // monitor, so no coordinate space is named here.
             SetCaptionButtons = SetCaptionButtons,
-            // The page's CLOSE_SPLASH (SPLASHDATA1): its first screen has its data. Only the main window's page reaches it.
+            // The page's CLOSE_SPLASH: its first screen has its data. Only the main window's page reaches it.
             CloseSplash = _lift.PageSaid,
         }));
 
-        // The OS notification (SURF5b), which closes driver design open question 5: a session that
+        // The OS notification: a session that
         // parks while nobody is looking at this window now reaches the person. It decides nothing —
         // `AttentionWatch` in the driver does, so a machine with no screen answers the same question.
-        // Its double-click and a balloon's click take this window back where it was put away (MAINWINDOWS2) before showing it.
-        // NOTIFY2c: a balloon's click opens the main window whose workspace holds what it was about, as the windows' records hold
+        // Its double-click and a balloon's click take this window back from where it is put away before showing it.
+        // A balloon's click opens the main window whose workspace holds what it concerns, as the windows' records hold
         // it, or the main window last in front where none or several do; and only that window's page attends its session.
-        // NOTIFY2d: each balloon in the window's language, from the words a main window's page handed over SET_NOTICE_WORDS.
+        // Each balloon is in the window's language, from the words a main window's page handed over SET_NOTICE_WORDS.
         _notifier = new SessionNotifier(
             this, eventBus, takingBack: () => _mains?.TakeBackFirst(),
             picking: scopes is null ? null : (session, quest) => scopes.PickFor(driver.Slices, session, quest),
@@ -186,16 +185,16 @@ public sealed class MainForm : OptimizedForm, IReloadableWindow
 
         Load += async (_, _) => await BringUpAsync();
         Shown += (_, _) => _stages?.Mark(StartStages.Shown);
-        // Shown again while put away, by the kit's bringing it forward for a later launch: that launch's window (MAINWINDOWS2).
+        // Shown again while put away, by the kit's bringing it forward for a later launch: that launch's window.
         VisibleChanged += (_, _) =>
         {
             if (Visible) _mains?.Shown();
         };
-        // FABRIC-END6: the window's focus is a moment to ask about an open pull request (§A4.3); the driver bounds it to D148's minute.
+        // The window's focus is a moment to ask about an open pull request; the driver bounds it to a minute.
         Activated += (_, _) => _driver.Focused();
-        // NOTIFY2c: the main window last in front is the one a notification about nobody's workspace opens.
+        // The main window last in front is the one a notification about nobody's workspace opens.
         if (scopes is not null) Activated += (_, _) => scopes.CameForward(MainWindows.First);
-        // NOTIFY2b (the notification design §3.3): a terminal's press waiting unshown lights the taskbar button of the main window last
+        // A terminal's press waiting unshown lights the taskbar button of the main window last
         // in front while none is; this window's coming forward stops it. What waits is told by the pipe, on the thread that changed it.
         if (flash is not null)
         {
@@ -212,7 +211,7 @@ public sealed class MainForm : OptimizedForm, IReloadableWindow
         FormClosed += (_, _) => _notifier.Dispose();
         FormClosed += (_, _) => _badge.Dispose();
 
-        // How late this window's thread answers, and what held it (FREEZE1, D56's note): a press on the strip is handed
+        // How late this window's thread answers, and what held it: a press on the strip is handed
         // to this thread to move the window, so a late thread is a frozen bar. Looked at from the moment it is shown.
         if (watch is not null)
         {
@@ -222,7 +221,7 @@ public sealed class MainForm : OptimizedForm, IReloadableWindow
     }
 
     /// <summary>
-    /// The application ends with its last main window, not this one (MAINWINDOWS2, D171 point 2). The kit's message loop runs
+    /// The application ends with its last main window, not this one. The kit's message loop runs
     /// until this form closes, and the pickers, the taskbar's count, the tray and the update are resolved as this window, so
     /// the person's close of it while another main window is open hides it instead, its page and all of that kept, as the
     /// kit's own close-to-tray hides a window and keeps the loop. Cancelled before the base hears it, so nothing of the kit's
@@ -242,7 +241,7 @@ public sealed class MainForm : OptimizedForm, IReloadableWindow
     }
 
     /// <summary>
-    /// Close this window for good, which ends the application, from any thread, never blocking (MAINWINDOWS2): the update's
+    /// Close this window for good, which ends the application, from any thread, never blocking: the update's
     /// close, and the last main window's. The kit reports a close from code as the person's, so this says it is not.
     /// </summary>
     public void CloseForGood() => Post(() =>
@@ -252,14 +251,14 @@ public sealed class MainForm : OptimizedForm, IReloadableWindow
     });
 
     /// <summary>
-    /// Show this window again where it was put away, from any thread, never blocking (MAINWINDOWS2): a later launch's window.
+    /// Show this window again from where it is put away, from any thread, never blocking: a later launch's window.
     /// Un-minimized before it is activated, then brought forward on the OS's side too, as the tray's restore does.
     /// </summary>
     public void TakeBack() => Post(() => Forward(this));
 
     /// <summary>
     /// Bring <paramref name="form"/> in front of the person, on its own thread: the tray's restore, a later launch's window, and a
-    /// notification's click (NOTIFY2c, on whichever main window it opens).
+    /// notification's click (on whichever main window it opens).
     /// </summary>
     /// <remarks>
     /// 🔴 THE ORDER IS THE PART PEOPLE GET WRONG, and the framework's own <c>WindowActivation</c> documents it: un-minimize BEFORE
@@ -279,8 +278,8 @@ public sealed class MainForm : OptimizedForm, IReloadableWindow
     }
 
     /// <summary>
-    /// Un-minimize <paramref name="form"/> to where it was minimized from, maximized if it was (Shenora 0.22): <c>WindowState =
-    /// Normal</c> restores the windowed bounds whatever the window was. The kit's own <c>WindowActivation.Unminimize</c> is
+    /// Un-minimize <paramref name="form"/> to its state before minimizing, maximized if so (Shenora 0.22): <c>WindowState =
+    /// Normal</c> restores the windowed bounds whatever the window's earlier state. The kit's own <c>WindowActivation.Unminimize</c> is
     /// internal to it, so the tray's and a notification's restore call this. No-op when it is not minimized.
     /// </summary>
     internal static void Unminimize(Form form)
@@ -317,7 +316,7 @@ public sealed class MainForm : OptimizedForm, IReloadableWindow
     }
 
     /// <summary>
-    /// How much waits on the person, as the page counts it for Overview's *What needs you* (NOTIFY1b, <c>SET_BADGE</c>):
+    /// How much waits on the person, as the page counts it for Overview's *What needs you* (<c>SET_BADGE</c>):
     /// the taskbar button's overlay and the title's lead. On this window's thread, posted from the bridge's, which waits
     /// on nothing here.
     /// </summary>
@@ -338,7 +337,7 @@ public sealed class MainForm : OptimizedForm, IReloadableWindow
     private string? _workspace;
 
     /// <summary>
-    /// The workspace this window's page holds, worn in the title after the application's name (MAINWINDOWS3b), so two main
+    /// The workspace this window's page holds, worn in the title after the application's name, so two main
     /// windows on two workspaces read apart in the taskbar and Alt-Tab. On this window's thread, posted from the bridge's.
     /// </summary>
     public void ShowWorkspace(string? workspace)
@@ -354,7 +353,7 @@ public sealed class MainForm : OptimizedForm, IReloadableWindow
     }
 
     /// <summary>
-    /// The first paint's palette: the viewer's choice as the app's scheme starts at, kept from the last run (THEMESTART1),
+    /// The first paint's palette: the viewer's choice as the app's scheme starts at, kept from the last run,
     /// and the OS's at <i>System</i>. The page's word, a round trip later, is the one that stands.
     /// </summary>
     private static ChromePalette StartingPalette(IColorScheme colorScheme) =>
@@ -385,8 +384,8 @@ public sealed class MainForm : OptimizedForm, IReloadableWindow
 
     /// <summary>
     /// 🔴 The WINDOW's icon, which a WinForms form does not take from anywhere by itself: it opens wearing the framework's
-    /// default unless told. Read from the `daoris.ico` the build copies beside this assembly (D92): the running executable is
-    /// CEF's launcher now, and wears CEF's face, so the old reading of it would put Chromium's picture on the taskbar. Null
+    /// default unless told. Read from the `daoris.ico` the build copies beside this assembly: the running executable is
+    /// CEF's launcher, and wears CEF's face, so reading the icon from it would put Chromium's picture on the taskbar. Null
     /// where it cannot be read: a face is not worth failing to open a window over, and the default is still a face.
     /// </summary>
     internal static Icon? Face()
@@ -402,7 +401,7 @@ public sealed class MainForm : OptimizedForm, IReloadableWindow
         }
     }
 
-    /// <summary>The caption buttons this window paints, in a palette's colours: another main window wears the same (ONEINSTANCE1).</summary>
+    /// <summary>The caption buttons this window paints, in a palette's colours: another main window wears the same.</summary>
     internal static CaptionButtonColors CaptionColors(ChromePalette palette) => new()
     {
         Surface = palette.Surface,
@@ -419,8 +418,7 @@ public sealed class MainForm : OptimizedForm, IReloadableWindow
     /// so within a round trip.
     /// </summary>
     /// <remarks>
-    /// Dark is the fallback when the value is missing or the hive is unreadable — it was this shell's
-    /// fill before any of this, and a light flash on a dark desktop is the more jarring mistake.
+    /// Dark is the fallback when the value is missing or the hive is unreadable — a light flash on a dark desktop is the more jarring mistake.
     /// </remarks>
     internal static bool OperatingSystemPrefersDark()
     {
@@ -463,7 +461,7 @@ public sealed class MainForm : OptimizedForm, IReloadableWindow
                 return;
             }
 
-            // The page on the engine's app origin, told where its host is (D92). Its browser opens as
+            // The page on the engine's app origin, told where its host is. Its browser opens as
             // the view's handle is created, which adding it to this shown window does.
             var view = _view = new ChromiumView(_engine, _viewLog)
             {
@@ -476,8 +474,8 @@ public sealed class MainForm : OptimizedForm, IReloadableWindow
             if (view.Browser is { } browser) await browser.Created;
             _stages?.Mark(StartStages.Browser);
 
-            // Down once the page says its first screen has its data (SPLASHDATA1), not as its browser is made, which
-            // lifted it onto an empty frame; at the bound, said in the log, when the page never says.
+            // Down once the page says its first screen has its data, not as its browser is made, which
+            // would lift it onto an empty frame; at the bound, said in the log, when the page never says.
             await _lift.WaitAsync(_log, SplashLift.Bound);
             if (!_splash.IsDisposed)
             {
@@ -494,8 +492,7 @@ public sealed class MainForm : OptimizedForm, IReloadableWindow
     /// <summary>
     /// Trouble is a page, never a modal. A MessageBox owned by this window DISABLES it — measured:
     /// the close button stops working, the app cannot be exited until someone finds the dialog, and
-    /// posting WM_CLOSE reports success while doing nothing. The WebView2 runtime check, the one modal
-    /// once kept, went with WebView2 (D92): the engine is the install's own.
+    /// posting WM_CLOSE reports success while doing nothing. No runtime check is needed: the engine is the install's own.
     /// </summary>
     private void ShowTrouble(string message)
     {
@@ -509,7 +506,7 @@ public sealed class MainForm : OptimizedForm, IReloadableWindow
         {
             Dock = DockStyle.Fill,
             Text = message,
-            // Text as it was said, the host's own lines among it (HOSTSTART1): a label reads `&` as a mnemonic marker,
+            // Text verbatim, the host's own lines among it: a label reads `&` as a mnemonic marker,
             // and would drop or underline what the host printed.
             UseMnemonic = false,
             ForeColor = _palette.Ink,
@@ -523,5 +520,5 @@ public sealed class MainForm : OptimizedForm, IReloadableWindow
         _trouble.BringToFront();
     }
 
-    // The folder and file pickers are `Pickers`', owned by the window whose page asked (MAINWINDOWS2c), not this one's alone.
+    // The folder and file pickers are `Pickers`', owned by the window whose page asked, not this one's alone.
 }
