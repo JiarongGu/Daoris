@@ -46,6 +46,24 @@ public sealed class RegistrationFollowTests
     }
 
     [Fact]
+    public async Task Every_line_with_a_commit_is_looked_at_by_the_analysis_set_up_or_not_and_no_other_row_is()
+    {
+        var world = new World();
+        world.Rows.Add(Row("declared", "/checkouts/declared"));
+        world.Rows.Add(Row("plain", "/checkouts/plain"));
+        world.Rows.Add(Row("lineless", "/checkouts/lineless"));
+        world.Rows.Add(Row("elsewhere", null));
+        world.Rows.Add(Row("worktree", "/checkouts/worktree"));
+        world.Worktrees.Add("/checkouts/worktree");
+        world.Lines["declared"] = OnLine(Declared);
+        world.Lines["plain"] = OnLine(null);
+
+        await RegistrationFollow.FollowAsync(world, only: null);
+
+        Assert.Equal([("declared", Commit), ("plain", Commit)], world.Looked.OrderBy(each => each.Repository, StringComparer.Ordinal));
+    }
+
+    [Fact]
     public async Task A_row_that_already_holds_the_lines_declaration_is_sent_nothing()
     {
         var world = new World();

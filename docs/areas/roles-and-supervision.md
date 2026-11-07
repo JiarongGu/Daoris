@@ -37,9 +37,10 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they start wi
 | `SupervisorRuleStore`, `SupervisorRuleBook`, `RuledPolicy` | `Roles/SupervisorRule*.cs`, `Roles/RuledPolicy.cs` | `supervisor_rules`; the fresh seed; what each executor reads; a preset's rules |
 | `SupervisorRuleActs`, `SupervisorRuleHold`, `RuleWiderPlaces`, `RuleWiderPlaceStore` | `Roles/SupervisorRuleActs.cs`, `Roles/SupervisorRuleHold.cs`, `Roles/RuleWiderPlaces.cs`, `Roles/RuleWiderPlaceStore.cs` | A rule's act said, kept and read back; `rule-holds`; a repository's workspace as its wider place, kept in the store from the look's registry. A Planned look pass (`RuleActsLook`, `PlannedRuleActs`) records a park, a transient hold, a rule's move and the moves bound once per session; the supervisor's print lists them (`LineFacts.Acts`) |
 | `QuestionSupervisorDecisions`, `SupervisorWhy`, `SupervisorBounds` | `Roles/QuestionSupervisorDecisions.cs`, `Roles/SupervisorDecision.cs` | The agent supervisor's decisions in memory, its lifecycle, refusals and bounds; the class keeps one-line doors |
-| `SupervisorCourses`, `ReferredPoint`, `ReferredPoints`, `SupervisorCourseForm`, `SupervisorCourseView`, `SupervisePointPrint` | `Roles/SupervisorCourses.cs`, `Roles/ReferredPoint.cs`, `WorkOrders/ReferredPoints.cs` (it reads Course's go-on marks and the planner's considerations), `Roles/SupervisorCourseForm.cs`, `Roles/SupervisorCourseView.cs`, `Roles/SupervisePointPrint.cs`, `Modules/Bridge/SupervisorCourseDoor.cs`, `Modules/Bridge/Routes/SupervisorCourseRoutes.cs` | A `refer` point's course decision kept, held, released or overruled; the open point (answers alone's mark, or a quest's parked or asking verdict) and its release door; the act's form; its route and its listing; the decision read back from memory and its files (`SupervisorReads.CoursesOf`); the holder's print of a point. A quest's go-on is released by `CourseReleaseLook` (`Loop/Look/`) |
+| `SupervisorCourses`, `ReferredPoint`, `ReferredPoints`, `SupervisorCourseView`, `SupervisePointPrint` | `Roles/SupervisorCourses.cs`, `Roles/ReferredPoint.cs`, `WorkOrders/ReferredPoints.cs` (it reads Course's go-on marks and the planner's considerations), `Roles/SupervisorCourseView.cs`, `Roles/SupervisePointPrint.cs` | A `refer` point's course decision kept, held, released or overruled; the open point (answers alone's mark, or a quest's parked or asking verdict), the line's earlier points (`Passed`) and its release door; the decision read back from memory and its files (`SupervisorReads.CoursesOf`); the holder's print of a point. A quest's go-on is released by `CourseReleaseLook` (`Loop/Look/`) |
+| `SupervisorDecisionDoor`, `ISupervisorKind`, `QuestionKind`, `CourseKind`, `SupervisedParks`, `SupervisorSubject`, `SupervisorDecideForm`, `SupervisorLeaveForm` | `Modules/Bridge/SupervisorDecisionDoor.cs`, `Modules/Bridge/SupervisorKinds/`, `Modules/Bridge/Routes/SupervisorDecisionRoutes.cs`, `Roles/SupervisorSubject.cs`, `Roles/SupervisorDecisionForms.cs` | The supervisor's one decision door: `SUPERVISOR_DECIDE`, `SUPERVISOR_LEAVE` and `SUPERVISOR_WAITING`; each kind one row with its waiting subjects, its keeping and so its release; the question kind's park read; the typed subject per kind; the two exact forms the proof is over |
 | `SupervisorBook`, `SupervisorDecisionFiles`, `SupervisorKeeping`, `SupervisorReleasing`, `SupervisorSweeps`, `SupervisorTickets`, `SupervisorReads` | `Roles/Supervisor*.cs` | The decisions' shared memory (live decisions, session locks, closed questions) and its one move in the book; the files, keeping, releasing, sweeps, tickets and reads each reach it and keep no state |
-| `SessionsSuperviseCommand`, `SupervisorQuarantine`, `HolderKey` | `Roles/SessionsSuperviseCommand.cs`, `Roles/SupervisorQuarantine.cs`, `Roles/SupervisorProof.cs` | The holder's verb; unattributed words taken back; the key, its proof and the role terminal's verbs |
+| `SessionsSuperviseCommand`, `SupervisorQuarantine`, `HolderKey` | `Roles/SessionsSuperviseCommand.cs`, `Roles/SupervisorQuarantine.cs`, `Roles/HolderKey.cs`, `Roles/SupervisorProof.cs` | The holder's verb; unattributed words taken back; the key and the role terminal's verbs; the proof |
 | `StandingConfirmation` | `Modules/Platform/StandingConfirmation.cs` | The roles' terminals this run: holds, generations, holders; the act judge over the catalogue. The doors; the memory is `StandingState`'s under its one lock, which `RoleTerminals` (starts, catalogue changes, a holder's end), `RoleJudge` (the role method, the decisions' admission), `RoleActsLedger` (acts, operations, the owner's marks) and `StewardRecord` (the steward's acts this run) reach |
 | Steward | `Roles/StewardCommand.cs`, `Roles/StewardAsked.cs`, `Modules/Bridge/StewardActRows.cs`, `Modules/Bridge/StewardRouteAct.cs`, `Modules/Bridge/StewardHandOverAct.cs`, `Modules/Bridge/StewardPauseAct.cs`, `Modules/Bridge/StewardUpdateAct.cs`, `Modules/Bridge/StewardTargets.cs`, `Modules/Bridge/Routes/QuestEndRoutes.cs`, `Modules/Platform/RoleActs.cs`, `Modules/Platform/StewardAsk.cs` | `steward <act>` over `ROLE_ACT`, and its words when an act asks the owner; the eighteen acts and the set-up act, the route acts among them; pending operations; an act outside the granted ones sent on as its person's press |
 | `StartAdmission`, `CallTable` | `Participants/Domain/StartAdmission.cs`, `Service/Daoris.Service.Mcp/CallTable.cs` | Who may ask for a co-worker; which tools each work is served |
@@ -198,15 +199,23 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they start wi
 **The supervisor and the steward**
 
 41. They are staffed through the role door like every role (`SET_ROLE`, `driver role set --decides --acts --holder --window`,
-    `role_propose`). The act judge reads the catalogue at each act, answer and admission. One resolver
+    `role_propose`). Ask Daoris proposes a supervisor of kinds or a generic one (`HelpSupervisorProposals`): the press names
+    `kind: supervisor` beside `decides` (`[]` is the generic one), `authority`, `holder` (`rules` or `terminal`) and `window`; a field it
+    leaves out keeps the role's own, and a new supervisor names `decides`, is held by the person's rules and is granted nothing. The
+    plan is refused `not-converted` until the home's `supervisor-kinds` step is recorded, the role door's judge refuses the rest (an
+    unknown kind or act, an act of a kind not decided, an agent holder, two of a kind in one scope, a staffing of choices, work), and
+    the card says the supervisor's kinds, holder, acts and window before and after in the catalogue's words, applied by the person's
+    press through the one door. The act judge reads the catalogue at each act, answer and admission. One resolver
     (`SupervisorResolution.Find`, `RoleCatalog.Supervising`) names who decides a decision of a kind at a place, kind first: the
     repository's, the workspace's, then the machine's supervisor deciding the kind, else the repository's, the workspace's, then
     the machine's generic one, the repository placed in the workspace `repository_workspaces` keeps. An unreadable appointed
     record covering the place, or a workspace map that does not read, makes the decision the person's. The admission
     (`Admit(kind, place, act)`) answers that supervisor's hold where its holder is the started terminal and
     `SupervisorGrants.Covers` grants the act, else `not-staffed`, `not-started` or `not-granted`; a leave asks no grant. The judge
-    refuses a holder's answer or go-on its grants do not cover `not-granted`, and the keeping, the releases and the tickets ask the
-    admission with the decision's kind and act, so a grant taken away by any process stops the next step. `ROLES` answers the same
+    refuses a holder's decide its grants do not cover `not-granted` (a supervisor of a kind deciding another kind among them), the
+    keeping refuses one whose hold no longer answers the kind at the subject's place `role-changed` (a generic supervisor where a
+    supervisor of the kind is effective), and the keeping, the releases and the tickets ask the admission with the decision's kind and
+    act, so a grant taken away by any process stops the next step. `ROLES` answers the same
     resolution as `deciders` (`SupervisorDeciders`): for the machine, each place an appointed role's scope or `repository_workspaces`
     names, and a repository no place names, a line per kind naming the supervisor, its place, its holder and the kind's granted acts,
     or the resolver's sentence. A place's Roles words them as *Who decides here* (`WhoDecidesHere`): the supervisor and where it is
@@ -226,9 +235,18 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they start wi
     writes, running only read tools and its roles' verbs. Every other verb refuses `role-terminal`. (from D208, D209)
 45. The holder key is drawn at the appointment, kept only as a hash in memory, and stripped from every other start. The
     verb sends an HMAC proof over the hello's nonce, only to the install's own executable. (from D208, D209)
-46. The supervisor answering a question answers a parked session's recorded question with one offered choice and one to five
-    sourced reasons (`sessions supervise --choice`, under `question.answer`), or leaves it to the owner with a bound (`--leave`,
-    under no grant). (from D208)
+46. A supervisor decides or leaves a decision through one door: `SUPERVISOR_DECIDE { kind, subject, generation, proof, do, choice?,
+    reasons }` and `SUPERVISOR_LEAVE { kind, subject, generation, proof, bound, reasons }`, both `Role`, each proved over its own
+    route's bytes with the subject whole in them. The subject is the kind's typed reference, which does not change while it waits: a
+    question's `{ session, question }`, a referred point's `{ session, point }`; the door takes the question and course kinds, each a
+    row (`QuestionKind`, `CourseKind`) that lists its waiting subjects and keeps a decision against the subject as it stands. A
+    decision's file keeps its `kind` and `subject`, and its holder is the hold's as the catalogue's record names it. On a question it
+    answers a parked session's recorded question with one offered choice and one to five sourced reasons (`--do answer --choice`,
+    under `question.answer`), a decide naming a question the session no longer waits on refused `question-changed`; any subject it may
+    leave to the owner with a bound (`--leave`, under no grant). The holder's verb is `sessions supervise <session> --kind <kind>
+    --subject <id> --generation <g> --do <act> [--choice <label>]`, or `--leave <bound>` in place of `--do`; `SUPERVISOR_WAITING` lists
+    every kind's subjects, `{ kind, subject, repository, generation, acts }`, with the kind's acts the grants cover there, and a subject
+    whose supervisor covers none is not listed. (from D208, D233)
 47. It never answers a go-ahead, a sign-in, an access widening, spending, a deletion, a question the repository says to
     ask the person, a preference, an unrecorded or contradicting one, or one that directs it. (from D208)
 48. It is also refused on a question the agent marked the owner's, past the answers-alone bound, and where a person's
@@ -236,13 +254,17 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they start wi
     stands. Where the answers-alone rule says `refer`, its count's point holds the line as `hold` does, behind *Go on with this
     answer* and *Not now*, and the act is kept as `refer`. The supervisor's list (`SUPERVISOR_WAITING`) names the point where a
     started terminal holds the supervisor for the line's repository and no decision answers it, a question decision still moving
-    on the line answering first; the holder decides it once (`sessions supervise <id> --point --course go-on|hold`,
-    `SUPERVISOR_COURSE`, the supervisor's third route beside answer and defer). `hold` leaves it to the person at once. `go-on` is held for the role's window,
+    on the line answering first; the holder decides it once through the one door (`--kind course --subject <point> --do go-on`, or
+    `--leave <bound>`, kept as `hold` with its bound). A decide naming an earlier point of the line, one the rules recorded and the
+    line has passed, is refused `answered`, and one it never reached `not-referred`. A leave is the person's at once. `go-on` is held for the role's window,
     *Overrule* taking it back, then the supervisor's look releases it between turns through the count's own door, the
     admission and the rules read again first (`role-changed`, `rule-holds`, `answered` move it stale): the mark taken away and
     `answers.supervised` kept, which resets the count as the person's press does. No course act stops, ends or moves a
     session. With no started terminal for the place the point waits for the person and says so (`supervisor.unreferred`). The
-    decision is kept beside the questions' with no `question`; a restart empties memory and leaves the point the person's.
+    decision is kept beside the questions' with no `question`. A restart empties memory: the start's sweep reads every kind's decision
+    files, closes a held or released one stale (`restarted`) and an admitted one interrupted, and remembers each subject final to the
+    person (overruled, stale, superseded, interrupted, left) as closed by its kind and subject, so a point overruled before a restart,
+    or one whose overrule line was never written, is listed for no supervisor again and its decide is refused.
     A quest's point is its rule's act on the quest's last session while the planner's verdicts hold it there, parked (`failures`)
     or asking (`failures-on-choice`); its release is the look after the plan (`CourseReleaseLook`), which reads the same verdicts and
     makes the quest's own *Try again* (`QuestRetry.Decide`: a park's mark, or a policy's one approval, the same writes the person's press
@@ -252,9 +274,9 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they start wi
     memory and from its files after a restart, as `SESSION_SUPERVISOR`'s `courses`: the point's count and value, the rule and its
     place, the act, the holder, when it was kept and goes on, and where it stands (held, went on, overruled, stale with why, left).
     *Details* says the newest in its *Supervisor's decision* row, and the head's card says it with *Overrule* (the person's
-    `SUPERVISOR_OVERRULE`) only while it is held. `sessions supervise <id>` prints a point waiting or already decided: its count,
+    `SUPERVISOR_OVERRULE`) only while it is held; both name the decision's kind (`SESSION_SUPERVISOR`'s rows carry `kind`). `sessions supervise <id>` prints a point waiting or already decided: its count,
     value, rule and place, the course as it stands, the line's course and its commits, and for a waiting point how to decide it.
-    (`SupervisorCourses`, `ReferredPoints`, `SupervisorCourseView`, `SupervisePointPrint`, `Modules/Bridge/SupervisorCourseDoor.cs`,
+    (`SupervisorCourses`, `ReferredPoints`, `SupervisorCourseView`, `SupervisePointPrint`, `Modules/Bridge/SupervisorKinds/CourseKind.cs`,
     `Web/work/head/SupervisorCourseCard.tsx`; from D229)
 49. A decision is held whole in memory for the supervisor role's window (1 to 60 minutes, 5 by default), then released in
     one conditional step that asks the admission again. Its word is `From: supervisor`, never the person's; an

@@ -116,7 +116,7 @@ internal sealed class RoleJudge(StandingConfirmation owner, StandingState state)
         if (place == StandingPlace.InAgentJob) return RoleJudgement.Refused(StandingWhy.InAgentJob);
         if (place != StandingPlace.Outside) return RoleJudgement.Refused(StandingWhy.Untold);
 
-        // The supervisor's answer or defer, each proved over its own route's canonical bytes; or ROLE_ACT's form.
+        // The supervisor's decide or leave, each proved over its own route's canonical bytes, its subject whole; or ROLE_ACT's form.
         RoleActForm? act = null;
         (string Kind, string Act)? asked = null;
         string generation, proof;
@@ -163,7 +163,7 @@ internal sealed class RoleJudge(StandingConfirmation owner, StandingState state)
         {
             if (asked is { } needed && !SupervisorGrants.Covers(found, needed.Kind, needed.Act)) return RoleJudgement.Refused(SupervisorWhy.NotGranted);
             state.Answers[held.Generation] = state.Answers.GetValueOrDefault(held.Generation) + 1;
-            return new RoleJudgement(true, null, held.Kind, repository, held.Generation, holding.Id, Roles: roles);
+            return new RoleJudgement(true, null, held.Kind, repository, held.Generation, holding.Id, Roles: roles) { HolderKind = grant.Holder };
         }
 
         if (!owner.TableOf(role).TryGetValue(act.Act, out var row)) return RoleJudgement.Refused(RoleWhy.NotRole);

@@ -29,6 +29,7 @@ export type RuleActRead = {
  */
 export type CourseRead = {
   id: string;
+  kind?: string;
   point: string;
   count: string;
   n: number;
@@ -116,10 +117,18 @@ export function courseStands(t: TFunction, course: CourseRead): string {
 export const courseWhole = (t: TFunction, course: CourseRead): string =>
   t('work.supervision.whole', { says: courseSays(t, course), stands: courseStands(t, course) });
 
-/** *Details*' Supervisor's decision: the newest course decision on the line, said whole; no row value where the supervisor decided none. */
+/** The kind a decision decided, in the words the card and *Details* name it by; a driver that names none decided a course. */
+export const decisionKind = (t: TFunction, course: CourseRead): string => {
+  const kind = course.kind ?? 'course';
+  return t(`work.supervision.kind.${kind}`, { defaultValue: kind });
+};
+
+/** *Details*' Supervisor's decision: the newest course decision on the line, its kind named, said whole; no value where there is none. */
 export function courseRow(t: TFunction, { courses }: LineSupervision): DetailRow {
   const last = courses.at(-1);
-  return { label: t('work.supervision.decision'), value: last ? courseWhole(t, last) : null };
+  return last
+    ? { label: t('work.supervision.decisionOn', { kind: decisionKind(t, last) }), value: courseWhole(t, last) }
+    : { label: t('work.supervision.decision'), value: null };
 }
 
 /** The count the head's chip names and its words: one a rule holds the line at, or one short of it. */

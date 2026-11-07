@@ -4,22 +4,22 @@ using System.Text.Json.Nodes;
 
 namespace Daoris.Driver;
 
-/// <summary>The supervisor's course acts on a referred point: go on, or leave it to the person.</summary>
+/// <summary>What a course decision did with its point, as its file and the page name it: went on, or held for the person (its leave).</summary>
 public static class SupervisorCourseActs
 {
-    public const string GoOn = "go-on";
+    public const string GoOn = SupervisorKinds.GoOn;
     public const string Hold = "hold";
 
     /// <summary>Every course act; none ends, stops or moves a session.</summary>
     public static IReadOnlyList<string> All { get; } = [GoOn, Hold];
-
-    /// <summary>The bound a <c>hold</c> leaves the point to the person by, as a defer names one.</summary>
-    public const string Bound = "course";
 }
 
-/// <summary>What a holder decides on a referred point (<c>SUPERVISOR_COURSE</c> less its proof, which the door checks).</summary>
+/// <summary>What a holder decides on a referred point: a decide's go-on, or a leave as a <c>hold</c> with its bound.</summary>
 public sealed record SupervisorCourse(
-    string Session, string Point, string Generation, string Do, IReadOnlyList<SupervisorReason> Reasons, SupervisorHolder Holder);
+    string Session, string Point, string Generation, string Do, IReadOnlyList<SupervisorReason> Reasons, SupervisorHolder Holder, string? Bound = null)
+{
+    public SupervisorSubject Subject => SupervisorSubject.Point(Session, Point);
+}
 
 /// <summary>A course decision as memory keeps it: one per referred point, held for the window, then gone on or closed.</summary>
 internal sealed class SupervisorCourseDecision
@@ -42,8 +42,8 @@ internal sealed class SupervisorCourseDecision
 /// a line at, decided by the holder the admission admits for the line's repository. A <c>go-on</c> is held for the role's window, then
 /// released between turns through the count's own door, the rules read again first; a <c>hold</c> leaves the point to the person at once.
 /// Each is kept in the <see cref="SupervisorBook"/> under the session's lock, and written beside the questions' decisions with no
-/// <c>question</c>, so the questions' reader and the start's sweep pass it by. A restart empties memory: a held go-on is never released,
-/// and the line waits for the person.
+/// <c>question</c>, so the questions' reader passes it by. A restart empties memory: the start's sweep closes a held go-on as the
+/// person's, and its point, like one overruled or left, is never listed for a supervisor again.
 /// </summary>
 internal sealed class SupervisorCourses(SupervisorBook book, IDecisionAdmission admission, MachineLog? log)
 {
@@ -61,6 +61,8 @@ internal sealed class SupervisorCourses(SupervisorBook book, IDecisionAdmission 
                 }
             }
 
+            // A point closed as the person's, across a restart too, is never the supervisor's again.
+            refused ??= book.ClosedWhy(course.Subject);
             // One point is asked once: a question decision of the holder still moving on the line answers for it first.
             if (refused is null && book.Live.Values.Any(each => each.Session == course.Session && !SupervisorStates.Final(each.State))) refused = SupervisorWhy.Answered;
             var admitted = admission.Admit(SupervisorKinds.Course, new RolePlace(Repository: point.Repository), course.Do == SupervisorCourseActs.GoOn ? SupervisorKinds.GoOn : null);
@@ -130,16 +132,19 @@ internal sealed class SupervisorCourses(SupervisorBook book, IDecisionAdmission 
     /// <summary>Whether <paramref name="point"/> waits for the holder: no course decision on it, and no question decision moving on the line.</summary>
     public bool Waits(string session, string point) =>
         !book.Courses.Values.Any(each => each.Session == session && each.Point == point)
+        && !book.Closed.ContainsKey(SupervisorSubject.Point(session, point))
         && !book.Live.Values.Any(each => each.Session == session && !SupervisorStates.Final(each.State));
 
     /// <summary>The soonest moment a held go-on is due, across every session.</summary>
     public DateTimeOffset? NextGoesOn() =>
         book.Courses.Values.Where(each => each.State == SupervisorState.Held).Select(each => (DateTimeOffset?)each.GoesOnAt).Min();
 
-    // The act's form and its point: an act of the course's vocabulary, its reasons as an answer's are judged, and the point the one open.
+    // The act, its reasons as an answer's, and the point the one open: one the line has passed is answered, one it never reached not referred.
     private static string? Judge(SupervisorCourse course, ReferredPoint point) =>
         SupervisorKeeping.Refused(course.Reasons, SupervisorCourseActs.All.Contains(course.Do, StringComparer.Ordinal), point.Counts)
-        ?? (point.Open is not { } open || open.Id != course.Point ? SupervisorWhy.NotReferred : null);
+        ?? (point.Open is { } open && open.Id == course.Point ? null
+            : point.Passed.Contains(course.Point, StringComparer.Ordinal) ? SupervisorWhy.Answered
+            : SupervisorWhy.NotReferred);
 
     private void Append(SupervisorCourseDecision decision, SupervisorState to, DateTimeOffset at, string? why)
     {
@@ -152,6 +157,7 @@ internal sealed class SupervisorCourses(SupervisorBook book, IDecisionAdmission 
     {
         ["id"] = id,
         ["kind"] = SupervisorKinds.Course,
+        ["subject"] = new JsonObject { ["session"] = course.Session, ["point"] = course.Point },
         ["session"] = course.Session,
         ["holder"] = new JsonObject { ["kind"] = course.Holder.Kind, ["parent"] = course.Holder.Parent },
         ["generation"] = course.Generation,
@@ -160,7 +166,7 @@ internal sealed class SupervisorCourses(SupervisorBook book, IDecisionAdmission 
             ["point"] = course.Point, ["count"] = point.Open!.Rule.Count, ["n"] = point.Open.N, ["rule"] = point.Open.Rule.Id,
             ["place"] = point.Open.Rule.Place, ["do"] = course.Do,
         },
-        ["bound"] = course.Do == SupervisorCourseActs.Hold ? SupervisorCourseActs.Bound : null,
+        ["bound"] = course.Do == SupervisorCourseActs.Hold ? course.Bound : null,
         ["reasons"] = new JsonArray([.. course.Reasons.Select(reason => (JsonNode)new JsonObject { ["says"] = reason.Says, ["source"] = reason.Source })]),
         ["counts"] = point.Counts is { } counts ? JsonSerializer.SerializeToNode(counts) : null,
         ["keptAt"] = now.ToUniversalTime().ToString("O", CultureInfo.InvariantCulture),

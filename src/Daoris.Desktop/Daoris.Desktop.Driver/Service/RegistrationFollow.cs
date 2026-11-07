@@ -29,6 +29,9 @@ public interface IRegistrationWorld
     /// <summary>Ask the service to read the index again, the refresh every door has; null when it did, else why not.</summary>
     Task<string?> RefreshAsync(CancellationToken ct);
 
+    /// <summary>The analysis's look at the row's line (<see cref="FoundReads"/>); never fails a registration.</summary>
+    Task FilesAsync(RegistrationRow row, string commit, CancellationToken ct);
+
     /// <summary>One repository followed: kept for its row, and handed to whoever logs it.</summary>
     void Followed(RegistrationFollowed what);
 }
@@ -68,7 +71,7 @@ public static class RegistrationFollow
         {
             foreach (var row in rows.Where(row => !string.IsNullOrWhiteSpace(row.Root)).OrderBy(row => row.Repository, StringComparer.Ordinal))
             {
-                followed.Add(await OneAsync(world, row, ct).ConfigureAwait(false));
+                followed.Add(await FollowOneAsync(world, row, ct).ConfigureAwait(false));
             }
         }
         else
@@ -80,7 +83,7 @@ public static class RegistrationFollow
                     ? new(name.Trim(), RegistryOutcome.NotOnRegistry,
                         $"`{name.Trim()}` is not on this machine's registry, so there is nothing to register. Add it on Repositories, "
                         + "or with `daoris repository import <folder> --workspace <name>`.")
-                    : await OneAsync(world, row, ct).ConfigureAwait(false));
+                    : await FollowOneAsync(world, row, ct).ConfigureAwait(false));
             }
         }
 
@@ -100,6 +103,13 @@ public static class RegistrationFollow
             RegistryOutcome.Registered or RegistryOutcome.DeclaresNothing when !followed.Sent => null,
             _ => $"registry  {followed.Repository}: {followed.Said}",
         };
+
+    private static async Task<RegistrationFollowed> FollowOneAsync(IRegistrationWorld world, RegistrationRow row, CancellationToken ct)
+    {
+        var one = await OneAsync(world, row, ct).ConfigureAwait(false);
+        if (one.Commit is { } commit) await world.FilesAsync(row, commit, ct).ConfigureAwait(false);
+        return one;
+    }
 
     private static async Task<RegistrationFollowed> OneAsync(IRegistrationWorld world, RegistrationRow row, CancellationToken ct)
     {

@@ -1,10 +1,7 @@
 namespace Daoris.Driver;
 
-/// <summary>
-/// The one check of a supervisor's grants, read by the admission and so by every step that asks it: the judge at a holder's decide, the
-/// keeping, the releases and the tickets. A supervisor covers an act where it decides the act's kind (a generic one decides every kind)
-/// and its <c>authority</c> lists the act. Leaving a decision to the person needs no grant, so a leave never asks.
-/// </summary>
+/// <summary>The one check of a supervisor's grants, read by the admission, the judge, the keeping, the releases and the tickets: an act
+/// is covered where the supervisor decides its kind (a generic one every kind) and its <c>authority</c> lists it; a leave needs none.</summary>
 public static class SupervisorGrants
 {
     /// <summary>Whether <paramref name="role"/> is a supervisor deciding <paramref name="kind"/>.</summary>
@@ -15,11 +12,6 @@ public static class SupervisorGrants
     public static bool Covers(RoleRecord role, string kind, string act) =>
         Decides(role, kind) && role.Hold!.Acts.Contains(SupervisorKinds.Qualified(kind, act), StringComparer.Ordinal);
 
-    /// <summary>The kind and act a holder's route asks a grant for; null for a leave (a defer, a course's hold), which needs none.</summary>
-    public static (string Kind, string Act)? Asked(ISupervisorAct act) => act switch
-    {
-        SupervisorForm => (SupervisorKinds.Question, SupervisorKinds.Answer),
-        SupervisorCourseForm { Do: SupervisorCourseActs.GoOn } => (SupervisorKinds.Course, SupervisorKinds.GoOn),
-        _ => null,
-    };
+    /// <summary>The kind and act a holder's decide asks a grant for; null for a leave, which needs none.</summary>
+    public static (string Kind, string Act)? Asked(ISupervisorAct act) => act is SupervisorDecideForm decide ? (decide.Kind, decide.Do) : null;
 }

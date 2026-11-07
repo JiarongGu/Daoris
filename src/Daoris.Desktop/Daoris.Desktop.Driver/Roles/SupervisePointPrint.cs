@@ -33,9 +33,9 @@ internal static class SupervisePointPrint
         return answered is null ? null : courses;
     }
 
-    /// <summary>A point still waiting for the holder, as <c>SUPERVISOR_WAITING</c> lists it.</summary>
-    public static Point Waiting(JsonElement listed) => new(
-        Text(listed, "point") ?? "", Text(listed, "count") ?? "", Text(listed, "n") ?? "", Text(listed, "rule") ?? "", Text(listed, "place") ?? "",
+    /// <summary>A point still waiting for the holder, as <c>SUPERVISOR_WAITING</c> lists it under its <paramref name="subject"/>.</summary>
+    public static Point Waiting(JsonElement listed, SupervisorSubject subject) => new(
+        subject.Id, Text(listed, "count") ?? "", Text(listed, "n") ?? "", Text(listed, "rule") ?? "", Text(listed, "place") ?? "",
         "waiting for you to decide", Text(listed, "generation"));
 
     /// <summary>A point the supervisor decided, as <c>SESSION_SUPERVISOR</c> reads its course decision.</summary>
@@ -80,7 +80,9 @@ internal static class SupervisePointPrint
         if (point.Generation is { } generation)
         {
             print.Append($"generation: {generation}\n");
-            print.Append($"decide: daoris session supervise {id} --point {point.Id} --generation {generation} --course go-on|hold --reason \"…\" --source \"<where>\"\n");
+            print.Append($"decide: daoris session supervise {id} --kind {SupervisorKinds.Course} --subject {point.Id} --generation {generation} "
+                + $"--do {SupervisorKinds.GoOn} --reason \"…\" --source \"<where>\"\n");
+            print.Append(SessionsSuperviseCommand.LeaveLine);
         }
 
         await output.WriteAsync(print.ToString()).ConfigureAwait(false);

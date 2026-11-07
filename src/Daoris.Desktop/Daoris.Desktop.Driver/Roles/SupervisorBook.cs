@@ -20,8 +20,8 @@ internal sealed class SupervisorBook(string home, MachineLog? log)
     /// <summary>Every course decision on a referred point by id (<see cref="SupervisorCourses"/>).</summary>
     public ConcurrentDictionary<string, SupervisorCourseDecision> Courses { get; } = new(StringComparer.Ordinal);
 
-    /// <summary>Questions a decision closed as the owner's, by session then question (<c>overruled</c>), across a restart too.</summary>
-    public ConcurrentDictionary<(string Session, string Question), SupervisorState> Closed { get; } = new();
+    /// <summary>Subjects a decision closed as the owner's, by kind and subject, with the state that closed them, across a restart too.</summary>
+    public ConcurrentDictionary<SupervisorSubject, SupervisorState> Closed { get; } = new();
 
     /// <summary>Run <paramref name="body"/> under <paramref name="session"/>'s decision lock.</summary>
     public async Task<T> UnderAsync<T>(string session, Func<Task<T>> body, CancellationToken ct = default)
@@ -38,9 +38,9 @@ internal sealed class SupervisorBook(string home, MachineLog? log)
         }
     }
 
-    /// <summary>Why a question a decision closed refuses another act on it: the owner's again (<c>overruled</c>), or left (<c>answered</c>).</summary>
-    public string? ClosedWhy(string session, string question) =>
-        Closed.TryGetValue((session, question), out var state)
+    /// <summary>Why a subject a decision closed refuses another act on it: the owner's again (<c>overruled</c>), or left (<c>answered</c>).</summary>
+    public string? ClosedWhy(SupervisorSubject subject) =>
+        Closed.TryGetValue(subject, out var state)
             ? state == SupervisorState.Left ? SupervisorWhy.Answered : SupervisorWhy.Overruled
             : null;
 
@@ -69,7 +69,7 @@ internal sealed class SupervisorBook(string home, MachineLog? log)
     {
         if (!SupervisorStates.Moves(decision.State, to)) return decision.State;
         Append(decision, to, at, why);
-        if (SupervisorStates.OwnersAgain(to)) Closed[(decision.Session, decision.Question.Id)] = to;
+        if (SupervisorStates.OwnersAgain(to)) Closed[SupervisorSubject.Question(decision.Session, decision.Question.Id)] = to;
         if (to != SupervisorState.Admitted) decision.Ticket = null;
         var code = $"supervisor.{SupervisorStates.Spell(to)}";
         if (why is null) log?.Info(code, ("session", decision.Session));

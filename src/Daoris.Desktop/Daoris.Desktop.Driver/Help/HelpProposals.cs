@@ -436,6 +436,9 @@ public sealed record HelpPlan(string? Refusal, string Describe, string Terminal,
     /// <summary>For the supervisor's rules at a place: the rules before and after as fields, which the page words from its catalogue; null for every other plan.</summary>
     public HelpRulesView? Rules { get; init; }
 
+    /// <summary>For a supervisor set: its kinds, acts, holder and window as fields, which the page words from its catalogue; null for every other plan.</summary>
+    public HelpSupervisorView? Supervisor { get; init; }
+
     // The session kind's.
 
     /// <summary>

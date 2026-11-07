@@ -9,8 +9,7 @@
 //      which the driver shows under this plugin's name.
 //   2. What it keeps goes in DAORIS_PLUGIN_DATA, never beside this file: the install folder is replaced
 //      whole by the next `daoris plugin add`.
-//   3. Every request is answered, and promptly. A decision that comes late or wrong holds the quest; a
-//      landing has two minutes.
+//   3. Every request is answered, and promptly.
 //
 // Where it is and what it keeps are told in the environment, never guessed:
 //   DAORIS_PLUGIN_ID      this plugin's id, as plugin.json declares it
@@ -25,9 +24,8 @@ const say = (text) => console.error(text);
 const id = process.env.DAORIS_PLUGIN_ID;
 const data = process.env.DAORIS_PLUGIN_DATA;
 {{helpers}}{{work}}
-// The points this plugin listens on, each answering the frame it is sent. Change what they do; keep
-// the shape of what they answer (README.md). A point here that plugin.json does not declare is never
-// asked: the handshake answers only the points the manifest names.
+// The points this plugin listens on, each answering the frame it is sent. A point here that plugin.json
+// does not declare is never asked: the handshake answers only the points the manifest names.
 const points = {
 {{handlers}}
 };
@@ -46,12 +44,9 @@ for await (const line of createInterface({ input: process.stdin })) {
   }
 
   if (frame.method === 'initialize') {
-    // The handshake: the wire this plugin speaks, and the points it ACTUALLY listens on, which are never
-    // more than the manifest declared. The driver sends those as `points`.
     const declared = frame.params?.points ?? [];
     send({ jsonrpc: '2.0', id: frame.id, result: { protocolVersion: 1, points: Object.keys(points).filter((point) => declared.includes(point)){{capabilities}} } });
   } else if (frame.method === 'shutdown') {
-    // The driver is stopping, or this plugin was switched off. Leave; the driver ends a process that stays.
     process.exit(0);
   } else if (typeof frame.method === 'string' && frame.method.startsWith('hook/') && answers[frame.method.slice(5)]) {
     try {
@@ -61,8 +56,6 @@ for await (const line of createInterface({ input: process.stdin })) {
       send({ jsonrpc: '2.0', id: frame.id, error: { code: -32603, message: String(error?.message ?? error) } });
     }
   } else if (frame.id !== undefined) {
-    // A request this plugin does not know is answered in the protocol's own words rather than left
-    // hanging: an unanswered request is a driver waiting on its timeout.
     send({ jsonrpc: '2.0', id: frame.id, error: { code: -32601, message: `no ${frame.method}` } });
   }
 }

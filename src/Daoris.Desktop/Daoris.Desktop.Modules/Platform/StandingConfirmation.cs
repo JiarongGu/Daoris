@@ -69,6 +69,8 @@ public sealed record RoleJudgement(
 {
     internal static RoleJudgement Refused(string why) => new(false, why);
 
+    public string? HolderKind { get; init; }
+
     /// <summary>
     /// A proved holder's act outside the acts the person granted, in its exact form, that asks the person as <see cref="Asks"/>'s press:
     /// the route, and the form as its payload. Null for every other judgement.

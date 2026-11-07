@@ -242,38 +242,14 @@ public sealed class SessionsRoutes(DriverContext context)
     [Publishes("SUPERVISOR_OVERRULE", StateScopes.Sessions | StateScopes.Driver, Session = "id")]
     private Task<object?> SupervisorOverruleAsync(SupervisorOverrule press, CancellationToken cancellationToken) => _wait.OverruleAsync(press, cancellationToken);
 
-    // The supervisor's answer: `{ id, question, generation, proof, choice, reasons }`, a role's act, `Role` in
-    // the pipe's census. Refused on every door but a terminal's the judge's role method covered (`PipeDoor.Role`, never the presses'
-    // standing flag); kept as a held decision on the park, its repository the appointment's. `{ kept, decision?, goesOnAt?, why? }`,
-    // refused as data and keeping nothing.
-    [DriverRoute("SUPERVISOR_ANSWER", PipeClass.Role, Drain = PipeDrain.Passes)]
-    [Publishes("SUPERVISOR_ANSWER", StateScopes.Sessions | StateScopes.Driver, Session = "id")]
-    private Task<object?> SupervisorAnswerAsync(SupervisorActPress press, CancellationToken cancellationToken) => _wait.AnswerAsync(press, cancellationToken);
-
-    // The supervisor's leaving a question to the owner: `{ id, question, generation, proof, bound, reasons }`,
-    // the role's second act, `Role` in the pipe's census and judged as the answer is. Kept as a decision of state `left`, final at once:
-    // nothing reaches the session, and the owner's card says *left to you* with the bound and the reasons. `{ kept, decision?, why? }`.
-    [DriverRoute("SUPERVISOR_DEFER", PipeClass.Role, Drain = PipeDrain.Passes)]
-    [Publishes("SUPERVISOR_DEFER", StateScopes.Sessions | StateScopes.Driver, Session = "id")]
-    private Task<object?> SupervisorDeferAsync(SupervisorActPress press, CancellationToken cancellationToken) => _wait.DeferAsync(press, cancellationToken);
-
     // A role's act: `{ role, act, generation, form, proof }`, `Role` in the pipe's census, judged by the
-    // judge's role method as SUPERVISOR_ANSWER is, then admitted once with an id Daoris draws. Its handler checks the act once more
+    // judge's role method as SUPERVISOR_DECIDE is, then admitted once with an id Daoris draws. Its handler checks the act once more
     // under the judge's lock (still admitted, its holder's hash present, its appointment live) and runs its role's table's
     // handler; the steward's table is empty in this build, so every act is refused `not-role` at the judge. `{ done, why?, answer?,
     // roles, brief }`, refused as data.
     [DriverRoute("ROLE_ACT", PipeClass.Role, Drain = PipeDrain.Waits)]
     [Publishes("ROLE_ACT", StateScopes.Sessions | StateScopes.Driver)]
     private Task<object?> RoleActAsync(RoleActPress press, CancellationToken cancellationToken) => _wait.RoleActAsync(press, cancellationToken);
-
-    // What waits for the supervisor's holder: the parked sessions here with a recorded question and no
-    // decision on it, in a repository a live appointment names, each with its generation. Told by event: it reads the
-    // service and the question files, so an ask is answered from what is held and the verb asks until an answer computed after
-    // its own first ask (`at`) comes. A read naming no key:
-    // `{ waiting: [{ session, repository, question, asked, generation }], at }`.
-    [DriverRoute("SUPERVISOR_WAITING", PipeClass.Open)]
-    [ByEvent("SUPERVISOR_WAITING", Untold = "the question files, and the verb waits for an answer made after its own ask")]
-    private Task<object?> SupervisorWaitingAsync(NoPayload _, CancellationToken cancellationToken) => _wait.WaitingAsync(cancellationToken);
 
     // The steward's acts this run, newest first, and its live hold's generation, what its holder's verb
     // reads before it proves an act: from the judge's memory alone, so it answers at once. A read naming no key:

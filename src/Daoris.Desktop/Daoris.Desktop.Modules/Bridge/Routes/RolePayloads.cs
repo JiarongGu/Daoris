@@ -9,8 +9,8 @@ public sealed record SetRolePress(WholePayload Press);
 /// <summary>Several role changes as <c>SET_ROLES</c> takes them, its <c>changes</c>.</summary>
 public sealed record SetRolesPress(WholePayload Press);
 
-/// <summary>The supervisor's answer or its leaving a question to the owner, as the judge reads either form.</summary>
-public sealed record SupervisorActPress(WholePayload Form);
+/// <summary>The supervisor's decision or its leaving a subject to the owner, as the judge reads either form.</summary>
+public sealed record SupervisorDecisionPress(WholePayload Form);
 
 /// <summary>A role's act, <c>{ role, act, generation, form, proof }</c>.</summary>
 public sealed record RoleActPress(WholePayload Form);

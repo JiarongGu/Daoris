@@ -11,7 +11,7 @@ internal sealed class SupervisorReads(SupervisorBook book)
     /// and <c>overruled</c>): what <c>SUPERVISOR_WAITING</c> leaves out.
     /// </summary>
     public bool Decided(string session, string question) =>
-        book.Closed.ContainsKey((session, question)) || book.Live.Values.Any(each => each.Session == session && each.Question.Id == question);
+        book.Closed.ContainsKey(SupervisorSubject.Question(session, question)) || book.Live.Values.Any(each => each.Session == session && each.Question.Id == question);
 
     /// <summary>
     /// Whether <paramref name="word"/> is the supervisor's: its id is the one memory recorded from a live decision's own release, from

@@ -40,24 +40,24 @@ public sealed class RoleTerminalTests : Bridge
     private static JsonElement Answer(string key, string nonce, string generation, string choice = "Monthly", string? extra = null)
     {
         SupervisorReason[] reasons = [new("The ticket says monthly.", "the quest's line 2")];
-        var proof = SupervisorProof.Prove(key, nonce, SupervisorProof.Canonical("s1", "q-1", generation, choice, reasons))!;
-        var form = new SupervisorForm("s1", "q-1", generation, proof, choice, reasons);
+        var form = new SupervisorDecideForm(SupervisorSubject.Question("s1", "q-1"), generation, "", SupervisorKinds.Answer, choice, reasons).Proved(key, nonce);
         var json = JsonSerializer.Serialize(form.Payload());
         if (extra is not null) json = json[..^1] + "," + extra + "}";
         return JsonDocument.Parse(json).RootElement.Clone();
     }
 
     /// <summary>A defer's payload, proved by <paramref name="key"/> over <paramref name="nonce"/> and the canonical bytes of <paramref name="route"/>.</summary>
-    private static JsonElement Defer(string key, string nonce, string generation, string bound = "sign-in", string route = SupervisorRoutes.Defer)
+    private static JsonElement Defer(string key, string nonce, string generation, string bound = "sign-in", string route = SupervisorRoutes.Leave)
     {
         SupervisorReason[] reasons = [new("A sign-in is the owner's.", "D191 point 3")];
-        var proof = SupervisorProof.Prove(key, nonce, SupervisorProof.Canonical(route, "s1", "q-1", generation, bound, reasons))!;
-        return JsonDocument.Parse(JsonSerializer.Serialize(new SupervisorDeferForm("s1", "q-1", generation, proof, bound, reasons).Payload()))
+        var subject = SupervisorSubject.Question("s1", "q-1");
+        var proof = SupervisorProof.Prove(key, nonce, SupervisorProof.Canonical(route, subject, generation, bound, null, reasons))!;
+        return JsonDocument.Parse(JsonSerializer.Serialize(new SupervisorLeaveForm(subject, generation, proof, bound, reasons).Payload()))
             .RootElement.Clone();
     }
 
     private static RoleJudgement JudgeRole(StandingConfirmation standing, JsonElement payload, string? nonce) =>
-        standing.JudgeRole(Driver, SupervisorRoutes.Answer, payload, null, nonce);
+        standing.JudgeRole(Driver, SupervisorRoutes.Decide, payload, null, nonce);
 
     [Fact]
     public void A_role_staffed_by_the_terminal_is_started_and_neither_its_key_nor_its_hash_reaches_a_file()
@@ -141,15 +141,15 @@ public sealed class RoleTerminalTests : Bridge
         var (_, key) = Start(standing);
         var generation = GenerationOf(standing);
         var nonce = SupervisorProof.Nonce();
-        RoleJudgement Judge(JsonElement payload, string route = SupervisorRoutes.Defer) => standing.JudgeRole(Driver, route, payload, null, nonce);
+        RoleJudgement Judge(JsonElement payload, string route = SupervisorRoutes.Leave) => standing.JudgeRole(Driver, route, payload, null, nonce);
 
         Assert.True(Judge(Defer(key!, nonce, generation)).Covered);
-        Assert.Equal(SupervisorWhy.NotHolder, Judge(Defer(key!, nonce, generation, route: SupervisorRoutes.Answer)).Why);
+        Assert.Equal(SupervisorWhy.NotHolder, Judge(Defer(key!, nonce, generation, route: SupervisorRoutes.Decide)).Why);
         Assert.Equal(SupervisorWhy.Form, Judge(Answer(key!, nonce, generation)).Why);
-        Assert.Equal(SupervisorWhy.Form, Judge(Defer(key!, nonce, generation), SupervisorRoutes.Answer).Why);
+        Assert.Equal(SupervisorWhy.Form, Judge(Defer(key!, nonce, generation), SupervisorRoutes.Decide).Why);
         Assert.Equal(SupervisorWhy.Form, Judge(Defer(key!, nonce, generation, bound: "because")).Why);
         Assert.Equal(SupervisorWhy.NotHolder, Judge(Defer(HolderKey.Draw(), nonce, generation)).Why);
-        Assert.Equal(["SUPERVISOR_ANSWER", "SUPERVISOR_DEFER", "SUPERVISOR_COURSE"], SupervisorRoutes.Acts);
+        Assert.Equal(["SUPERVISOR_DECIDE", "SUPERVISOR_LEAVE"], SupervisorRoutes.Acts);
     }
 
     [Theory]

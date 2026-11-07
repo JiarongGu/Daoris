@@ -16,7 +16,7 @@ import { mkdirSync, rmSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { after, test } from 'node:test';
 import { fileURLToPath } from 'node:url';
-import { added, checkAll, checkChange, comments, judge, namings, share } from './comment-gate.mjs';
+import { added, checkAll, checkChange, comments, isSource, judge, namings, share } from './comment-gate.mjs';
 import { execGit } from './fsx.mjs';
 
 const root = dirname(dirname(fileURLToPath(import.meta.url)));
@@ -197,6 +197,20 @@ test('--all reads every source file: an old comment naming a row id is refused, 
   const refused = run(old.dir);
   assert.equal(refused.status, 1);
   assert.match(refused.stderr, /comment-gate: src\/Old\.cs:8: a comment names a row id \(LOG2b\)/);
+});
+
+test('a template under src is read as the source its extension before .template names, in a change and in --all', () => {
+  assert.equal(isSource('src/Kit/work.mjs.template'), true);
+  assert.equal(isSource('src/Kit/README.md.template'), false);
+  assert.equal(isSource('tools/work.mjs.template'), false);
+  const { dir, git } = repo({ 'src/Kit/work.mjs.template': '// Says why.\nexport const a = 1;\n', 'src/Kit/README.md.template': '# D7 was here\n' });
+  assert.deepEqual(checkAll(dir), { problems: [], checked: 1 });
+  put(dir, { 'src/Kit/work.mjs.template': '// Says why.\n// Names D99.\nexport const a = 1;\n' });
+  assert.match(checkAll(dir).problems.join('\n'), /work\.mjs\.template:2: a comment names a decision number \(D99\)/);
+  const change = checkChange(dir, 'HEAD');
+  assert.equal(change.checked, 1);
+  assert.match(change.problems.join('\n'), /work\.mjs\.template:2: a comment names a decision number \(D99\)/);
+  git('checkout', '-q', '--', '.');
 });
 
 test('--all holds a comment the share rule would let pass, since it has no base to measure against', () => {

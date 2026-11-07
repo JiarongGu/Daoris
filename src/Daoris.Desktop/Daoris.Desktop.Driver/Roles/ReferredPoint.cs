@@ -4,7 +4,11 @@ namespace Daoris.Driver;
 /// What the supervisor's course act is kept against: the line's repository, the point a <c>refer</c> holds it at (none
 /// where none is open), and the counts the keeping read, which a reason's <c>count:</c> source names.
 /// </summary>
-public sealed record ReferredPoint(string Repository, RuleActed? Open, IReadOnlyList<CountFact>? Counts);
+public sealed record ReferredPoint(string Repository, RuleActed? Open, IReadOnlyList<CountFact>? Counts)
+{
+    /// <summary>The ids of the line's referred points the rules recorded, the open one among them: a decide naming another is late.</summary>
+    public IReadOnlyList<string> Passed { get; init; } = [];
+}
 
 /// <summary>
 /// The release side of a referred point, as the look reads it at a course decision's release: why the point no longer takes the

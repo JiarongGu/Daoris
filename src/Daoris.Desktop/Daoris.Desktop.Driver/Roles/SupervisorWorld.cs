@@ -26,12 +26,12 @@ public interface ISupervisorWorld
 /// <summary>What <c>sessions supervise</c> reads of the verb's ask: the form it takes, the session it names and its draft.</summary>
 public interface ISupervisorAsk
 {
-    /// <summary><c>supervise-list</c>, <c>supervise-print</c>, <c>supervise-answer</c> or <c>supervise-leave</c>.</summary>
+    /// <summary><c>supervise-list</c>, <c>supervise-print</c>, <c>supervise-decide</c> or <c>supervise-leave</c>.</summary>
     string Verb { get; }
 
     /// <summary>The sessions the verb names.</summary>
     IReadOnlyList<string> Ids { get; }
 
-    /// <summary>The answer or the leaving the verb carries.</summary>
+    /// <summary>The decision or the leaving the verb carries.</summary>
     SupervisorDraft? Supervised { get; }
 }

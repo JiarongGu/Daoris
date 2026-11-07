@@ -89,6 +89,7 @@ internal sealed class TreeRemovals(TreeContext context, TreeFollows follows, Con
         // The branch the session's agent made where the tree is on one: it goes with no tree, whatever force says.
         var madeBy = detached ? null : await TreeFollows.OwnBranchOfAsync(full, ct).ConfigureAwait(false);
         ContentHold? held = null;
+        ContentHolds.TreeHolds? seen = null;
         LandedBranch? squashedOn = null;
         string? judged = null;
         string? kept = null;
@@ -109,6 +110,7 @@ internal sealed class TreeRemovals(TreeContext context, TreeFollows follows, Con
             // The output the repository declares counts only as the owner accepted it for integration.
             var declared = await context.ScratchAsync(root, owner.Repository, owner.Workspace, ct).ConfigureAwait(false);
             var holds = await ContentHolds.HoldsAsync(full, root, declared, ct).ConfigureAwait(false);
+            seen = holds;
             if (holds is null)
             {
                 return new(false, $"Daoris cannot tell what the tree at {path} holds beyond its commits. "
@@ -270,6 +272,9 @@ internal sealed class TreeRemovals(TreeContext context, TreeFollows follows, Con
             left = why;
         }
 
+        // The line has finished: the ignored tops its tree held, read before it went, are what the found layer's finish looks at.
+        if (seen is not null) NoteFinished(owner.Repository, seen);
+
         // The branch goes with its tree — where this call's proof cleared it, only while it is still the commit judged,
         // or where the person forced it. Never git's own -d, which asks only whether the checkout's HEAD holds
         // it and kept every branch the branch form had landed. A branch left behind would resurrect "never reused" as a pile.
@@ -314,6 +319,19 @@ internal sealed class TreeRemovals(TreeContext context, TreeFollows follows, Con
         return new(true, $"removed the session tree at {path} (branch `{branch}`)"
             + (held is not null ? $": {held.Said}." : squashedOn is not null ? $": {TreeSquashes.SquashedSaid(squashedOn)}." : ".")
             + (left is null ? "" : $" {left}") + (kept is null ? "" : $" {ContentHold.KeptAt(named, kept)}"));
+    }
+
+    /// <summary>The found layer's finish for one removed tree; a layer that cannot be written is written again by the next reading.</summary>
+    private void NoteFinished(string repository, ContentHolds.TreeHolds seen)
+    {
+        try
+        {
+            FoundReads.Finished(context.Home, repository, [.. seen.Shared, .. seen.Written, .. seen.Ignored]);
+        }
+        catch (Exception error) when (error is IOException or UnauthorizedAccessException)
+        {
+            // Nothing else depends on the observation.
+        }
     }
 
     /// <summary>The record forgets one branch; a record that could not be written only keeps a name no branch has.</summary>

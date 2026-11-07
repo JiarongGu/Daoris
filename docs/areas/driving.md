@@ -92,7 +92,8 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they start wi
 | `TreeLocalInputs` | `Workplace/` | Copy the machine-local files the effective `copy` rules name into a tree |
 | `LaneRooms`, `RoomCheck`, `RoomCheckReport`, `RoomPaths` | `Workplace/` | The rooms the lanes file declares, read and checked with the repository's rule file: claim groups by build closure, crossings, refusals |
 | `FileRules`, `FileRuleFile`, `RepositoryFilesReader`, `PersonFiles`, `FoundFiles`, `FilePermissions`, `FileFloor` | `Workplace/Files/` | The rule file's one format, its four layers and the floor, each path's effective rule, the person's permissions; `FilesCommand` is `daoris files` |
-| `FileAnalysis`, `FileSignatures`, `FileGit`, `FileWalk` | `Workplace/Files/` | The analysis that writes the found layer from git's view, bounded walks, the shipped signatures and the tracked scripts |
+| `FileAnalysis`, `FileSignatures`, `FileGit`, `FileWalk`, `WorkspaceMembers` | `Workplace/Files/` | The analysis that writes the found layer from git's view, bounded walks, the shipped signatures, the workspace members a manifest names and the tracked scripts |
+| `FoundReads` | `Workplace/Files/` | When the found layer is written: a repository's registration, its line's move past a file the analysis reads, its toolchain's move, a line's finish; registration following and the tree's removal call it |
 | `RoomsProposal` | `Knowledge/` | The words the set-up's brief and Ask Daoris's room both say to ask a repository with no rooms or classes to propose them |
 | `AutoTidies`, `TreeSetAside`, `TreeSweeps` | `Workplace/` | The look's own tidy, the move aside, and the clean-up press's one path |
 | `EndJudgement`, `EndKeeping` | `Workplace/EndJudgement.cs`, `Workplace/EndKeeping.cs` | Whether a branch's work ended, from git alone, and the one writer of that fact |
@@ -189,7 +190,11 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they start wi
     that is or holds another repository, a linked worktree or a bare repository's shape is `repository`, and a harness's or
     an editor's settings are never copied. The person's `deny`, `allow` and `ask` over `run`, `copy` and `share` are empty by
     default; a `files.json` that does not read holds every act as an ask and is never written over. `daoris files` shows each
-    path's rule and its layer; nothing yet acts on them. (from D51, D214)
+    path's rule and its layer; nothing yet acts on them. The found layer is written only when a repository is registered, when
+    its line moves past a signature, manifest, ignore or gates file or its toolchain's answers move (asked once a day), and
+    when a line finishes (a removed tree's ignored tops marked `scratch`); a look that changed nothing writes nothing. A pnpm
+    or npm repository's workspace members' `node_modules/` are in its root dependency's paths, read at the commit. The set-aside
+    walk holds a bare repository (a `HEAD` and `objects/` and `refs/`) as it holds a `.git`. (from D51, D214)
 23. A session commits on its tree's branch as it goes. An agent that moves its tree onto a branch of its own is
     followed there. (from D164)
 24. One decision says how a line goes on after any trigger (words kept, an answer, a limit, a transient bound, a
