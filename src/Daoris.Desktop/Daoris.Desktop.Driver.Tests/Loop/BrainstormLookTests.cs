@@ -294,7 +294,7 @@ public sealed class BrainstormLookTests : IDisposable
         Assert.Equal(["stub"], document["makers"]!.AsArray().Select(maker => maker!.GetValue<string>()));
         var rows = document["rows"]!.AsArray();
         Assert.Equal([("P1", "g1", "stub"), ("P2", "g2", "acp-stub")],
-            rows[0]!["members"]!.AsArray().Select(member => (member!["id"]!.GetValue<string>(), member["pass"]!.GetValue<string>(), member["adapter"]!.GetValue<string>())));
+            rows[0]!["members"]!.AsArray().Select(member => (member!["id"]!.GetValue<string>(), member["pass"]!.GetValue<string>(), member["door"]!.GetValue<string>())));
         Assert.Equal(1, rows[0]!["makers"]!.GetValue<int>());
         Assert.Empty(rows[0]!["flags"]!.AsArray());
         Assert.Equal(["hard-to-reverse", "risky"], rows[1]!["flags"]!.AsArray().Select(flag => flag!["flag"]!.GetValue<string>()));

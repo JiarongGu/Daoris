@@ -20,7 +20,7 @@ internal enum TestStartKind
     /// <summary>A system command read to its end for a test's set-up (a junction, a version).</summary>
     Probe,
 
-    /// <summary>Git through a seam that counts the start, then passes it on.</summary>
+    /// <summary>The product's own start (git, or a stand-in agent binary) through a seam that counts it, then passes it on.</summary>
     Counted,
 
     /// <summary>Names a start in a sentence, a pattern or a planted source it scans, and starts nothing.</summary>
@@ -94,6 +94,7 @@ internal static class TestProcessStarts
         ]),
         (TestStartKind.Counted,
         [
+            "Daoris.Desktop.Driver.Tests/Agents/AgentSheetStartsTests.cs", "Daoris.Desktop.Modules.Tests/Bridge/AgentsOpenStartsTests.cs",
             "Daoris.Desktop.Driver.Tests/GitStartTally.cs", "Daoris.Desktop.Driver.Tests/Loop/StartTreeCloseGitTests.cs",
             "Daoris.Desktop.Driver.Tests/Workplace/TidyGitCountTests.cs", "Daoris.Desktop.Driver.Tests/Workplace/TidyEffectGitTests.cs",
             "Daoris.Desktop.Driver.Tests/Workplace/TidiedPartKeepingTests.cs",

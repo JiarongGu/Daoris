@@ -1,18 +1,6 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// What the supervisor's course act is kept against (CONTEXTDRIVE1j): the line's repository, the point a <c>refer</c> holds it at (none
-/// where none is open), and the counts the keeping read, which a reason's <c>count:</c> source names.
-/// </summary>
-public sealed record ReferredPoint(string Repository, RuleActed? Open, IReadOnlyList<CountFact>? Counts);
-
-/// <summary>
-/// The release side of a referred point, as the look reads it at a course decision's release: why the point no longer takes the
-/// supervisor's go-on (null where it does), whether the line's session runs a turn now, and the count's own door.
-/// </summary>
-public sealed record CourseLine(Func<string, string, string?> Why, Func<string, bool> Running, Func<string, bool> GoOn);
-
-/// <summary>
 /// The points a <c>refer</c> rule holds a line at (CONTEXTDRIVE1j; the context counters design §4.6 point 3), read for the holder's list, at
 /// the keeping of the supervisor's course act and again at its release, which goes through the count's own door.
 /// <list type="bullet">

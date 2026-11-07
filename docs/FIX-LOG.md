@@ -23,6 +23,22 @@ repository.
   branch (`NodeGoverning`), and binds its branch-side steps at that tip (`NodeRuntime`); the end keeper judges the same branch's tip.
 - **Verify:** `DevLineLandingTests`' `moved-on` shape failed first at `content active`, its `own-branch` shape with every step reached and
   the line lacking the work; both land with no press now, beside the five shapes before.
+## 2026-11-07 - A door present by a file look was never said present after a report, and CI 11's other reds
+
+- **Symptom:** CI run 11's fast half on 75a4b694be: `RoleStructureTests` read a presence-probed agent's `Installed` as unknown after
+  its report; five driver classes found no `adapter` in the records they read; the driver's structure test named Install's
+  `InstallRollback` and Roles' `GoOnMarks`, `RuledLine` and `AnswersAloneNotes` above them; the short-waits, direct-start and home-join
+  censuses named the look-work and session-reads benches and `AgentSheetStartsTests`; the modules README had no `supervisorcourse` row.
+- **Root cause:** d8040ca886 (PERF3) replaced the roster's in-memory reports with `reads.json`, written only by a version question
+  (`BinaryVersion`); a door with no version arguments is present by a look at its file and kept nothing, so the sheet and the role
+  structure, which read only the kept reading, never said what the report found. 6b73851be6 (AGENTPROVIDER1t-ii) renamed those records'
+  field to `door`, its tests not with it. 510049d830 and e9dafcb742 (CONTEXTDRIVE1j) named the upper subdomains' types; the three merged
+  chunks went past their censuses and README rows.
+- **Fix:** `BinaryPresence` keeps the look as the door's reading, written only where it differs from the kept one; the tests read
+  `door`; the going back is asked through Install's `GoingBackRefusals` port, which Workplace fills, and `ReferredPoints` lies in
+  `WorkOrders`, which it reaches since it reads the planner's considerations; each census entry carries its reason, the README its rows. `canon/canon.json`'s reach to the driver was 5d2f0a9506's.
+- **Verify:** each class red first at the tip, then green filtered; both projects' censuses, `AgentSheetStartsTests` with the process
+  settings, the home census and the merge tool's suite-reads test.
 
 ## 2026-11-07 - A `dev-line` run held before its landing on the install, and its automatic merge was filed as the person's press (LANDAUTO1)
 

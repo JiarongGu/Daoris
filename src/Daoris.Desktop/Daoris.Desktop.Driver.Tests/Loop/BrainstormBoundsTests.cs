@@ -228,7 +228,7 @@ public sealed class BrainstormBoundsTests : IDisposable
         var document = Document(id);
         Assert.True(document["ranked"]!.GetValue<bool>());
         var unanswered = Assert.Single(document["unanswered"]!.AsArray())!;
-        Assert.Equal(("acp-stub", "timed-out"), (unanswered["adapter"]!.GetValue<string>(), unanswered["codes"]![0]!.GetValue<string>()));
+        Assert.Equal(("acp-stub", "timed-out"), (unanswered["door"]!.GetValue<string>(), unanswered["codes"]![0]!.GetValue<string>()));
         Assert.Contains("Did not answer: `acp-stub` (maker stub): timed-out", Files.DocumentText(id)!, StringComparison.Ordinal);
     }
 

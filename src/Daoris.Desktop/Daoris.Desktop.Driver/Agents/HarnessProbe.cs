@@ -87,7 +87,7 @@ public static class HarnessProbe
         }
 
         var version = toolchain.Program.ProbeByPresence
-            ? (Ran: resolved.Count > 0 && CommandPresence.Resolvable(resolved[0]), Output: "", Problem: (string?)null)
+            ? BinaryPresence.Look(home, adapter, resolved, now)
             : resolved.Count == 0 ? (Ran: false, Output: "", Problem: "no command to run")
             : await BinaryVersion.AskAsync(
                 home, adapter, Prepared(resolved, toolchain.Program.VersionArguments, profileHome: null, toolchain, isManaged), resolved[0],

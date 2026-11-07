@@ -23,8 +23,8 @@ public sealed class BuildVersionTests : IDisposable
     [Fact]
     public void The_running_build_and_the_launcher_s_read_of_it_carry_the_version_a_stage_s_manifest_names()
     {
-        Assert.Equal(HomeLastBuild.Numbered(Release), HomeLastBuild.Numbered(InstallRollback.This));
-        var library = FileVersionInfo.GetVersionInfo(typeof(InstallRollback).Assembly.Location).ProductVersion;
+        Assert.Equal(HomeLastBuild.Numbered(Release), HomeLastBuild.Numbered(UpdateRefusal.Running));
+        var library = FileVersionInfo.GetVersionInfo(typeof(UpdateRefusal).Assembly.Location).ProductVersion;
         Assert.Equal(HomeLastBuild.Numbered(Release), HomeLastBuild.Numbered(library));
     }
 
@@ -37,8 +37,8 @@ public sealed class BuildVersionTests : IDisposable
             DeliveryAuthorization.Person("accept-1", "r1", "graph-digest", """{"method":"branch"}""", "[]"));
         Assert.True(started.Started, started.Refused ?? started.Held);
 
-        Assert.Null(InstallRollback.Refused(_home, Release, InstallRollback.This));
-        var back = InstallRollback.Refused(_home, "0.0.0", InstallRollback.This);
+        Assert.Null(InstallRollback.Refused(_home, Release, UpdateRefusal.Running));
+        var back = InstallRollback.Refused(_home, "0.0.0", UpdateRefusal.Running);
         Assert.Equal(InstallRollback.Deliveries, back?.Code);
         Assert.Contains("1 delivery is unresolved", back?.Sentence);
     }

@@ -34,7 +34,7 @@ public sealed class AgentSheetStartsTests : IDisposable
 
     private string Settings => DaorisHome.Entry(Home, HomeEntry.Harnesses);
 
-    private string Binary => Path.Combine(Home, "cache", "toolchain", "claude-code", "1.2.3", "node_modules", ".bin", "claude.cmd");
+    private string Binary => Path.Combine(DaorisHome.Entry(Home, HomeEntry.Toolchain), "claude-code", "1.2.3", "node_modules", ".bin", "claude.cmd");
 
     /// <summary>The stand-in, answering <paramref name="version"/> and each account's sign-in from its home's <c>who.json</c>.</summary>
     private void Stand(string version)
