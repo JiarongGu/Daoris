@@ -16,11 +16,12 @@ pushed and opened by a landing plugin, on the person's yes.
 
 ## Its parts
 
-Driver paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/`; `Workplace/` is implied for bare `Git*` names.
+Driver paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/`; `Workplace/` is implied for bare names. A path opening with `Modules/`
+is under `src/Daoris.Desktop/Daoris.Desktop.Modules/`.
 
 | Unit | File | Its job |
 |---|---|---|
-| Wiring | `GitWiring.cs`, `GitRouting.cs` | Hands every start the no-prompt variables, strips askpass, trace, token and the inbox's two messaging variables (each executable's entry strips them too), names the doors where laid |
+| Wiring | `GitWiring.cs`, `GitRouting.cs` | Hands every start the no-prompt variables, strips askpass, trace, the holder key, the host token and the inbox's two messaging variables (each executable's entry strips them too), names the doors where laid |
 | The doors | `GitDoors.cs`, `GitCredentialDoor.cs`, `src/Daoris.Desktop/Daoris.Desktop.GitDoor/Program.cs` | `daoris-git-ssh.exe`, `git-remote-daoris.exe` and `git-credential-daoris.exe`: class each act by its remote command, judge it, apply the identity; the third answers an identity's token to git for its own host |
 | Which repository, which address | `GitFolders.cs`, `GitRemotes.cs`, `GitRemoteRows.cs` | The repository from the act's folder; the one address reader; Setup's remote rows and what serves each |
 | Identities and pointers | `GitIdentities.cs`, `GitIdentityUse.cs` | `data/git-identities.json`; `gitIdentity`, `workspaceGitIdentity`, `machineGitIdentity` in `driver.json`; resolution with its source |
@@ -40,7 +41,7 @@ Driver paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/`; `Workplace/`
 | Harness rules | `GitAccessPolicy.cs` | `no-push`'s rules and classifier sentence composed from a session's Write |
 | Go-aheads | `GitAsks.cs`, `GitDoorAsks.cs` | A door's `ask` as `run/git/asks/{id}.json`, its answer and its late grant; held only while Daoris runs |
 | `no-push` converted | `Transitional/Migration/GitPushStep.cs` | The home's migration: a switched-off `no-push` as the machine's Write `allow` and `no-publish` off |
-| The act engine | `ActRuns.cs`, `ActJournal.cs`, `ActReconciler.cs`, `ActSteps.cs`, `RefTransaction.cs` | Checkout lock, journal, steps in a named job, postconditions, recovery refs |
+| The act engine | `ActRuns.cs`, `ActJournal.cs`, `ActReconciler.cs`, `ActSteps.cs`, `RefTransaction.cs` | Checkout lock, journal, steps in a named job, postconditions, recovery refs, an act's own ref (`ActRefs.cs`, `refs/daoris/acts/<act>`) |
 | The person's acts | `GitFetchActs.cs`, `GitPushActs.cs`, `GitRefActs.cs`, `GitHistoryEdits.cs`, `StageActs.cs`, `ActCommits.cs`, `GitConflicts.cs`, `StashDrops.cs`, each `Git*Command.cs` | Fetch, push, refs, pick/revert/rebase, stage, commit, resolve, switch, stash (save, apply, drop); each with its terminal twin where one exists |
 | The push | `GitPushActs.cs`, `ActPushSteps.cs`, `GitPushCommand.cs`, `src/Daoris.Web/src/projects/git/PushRef.tsx` | One ref to origin under a grant the step writes and drops; `GIT_PUSH`, `GIT_PUSH_PLAN`, `git push`; *Push* and *Push tag* |
 | Every delete | `JournaledDeletes.cs`, `ContentHolds.DeleteJudgedAsync` | A delete a door of Daoris's judged, or forced, as the journal's `ref.delete` act pressed by `daoris`, undone by `GIT_REF_UNDO`; where the door's rule keeps the commits, the recovery ref is made in the delete's own transaction, its record names it, and the Undo takes it back |
@@ -49,11 +50,11 @@ Driver paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/`; `Workplace/`
 | Reads | `GitReads*.cs`, `GitBranches*.cs`, `GitLaunch.cs`, `GitReadCache.cs` | The page's git reads through Tools' git, cached by commit id |
 | Line fetch, bring up to date | `TreeRefs.cs`, `TreeSync.cs` | `fetch origin <line>` past the doors and holds; ff-only, replay, delete what merged |
 | Landing plugin wire | `Plugins/LandingPlugins.cs` | Whether a plugin performs pull-request steps (`ProblemOf`, its manifest speaking on `work/perform`), and `work/state` asks |
-| Pull request state | `PullRequestAsks.cs`, `PullRequestStates.cs`, `PullRequestMoments.cs`, `PullRequestBounds.cs` | When a pull request is asked about, its minute, what a completed answer clears |
+| Pull request state | `PullRequestAsks.cs`, `PullRequestStates.cs`, `PullRequestMoments.cs`, `PullRequestBounds.cs`, `PullRequestRecords.cs`, `PullRequestWords.cs` | When a pull request is asked about, its minute, what a completed answer clears, where an opened one is written on its landing record, why one is not asked |
 | Window doors | `Modules/Bridge/Routes/GitRoutes.cs`, `ToolsRoutes.cs`, `LinesRoutes.cs`, `Modules/Platform/RemotesModule.cs` | Git reads and acts; `GIT_IDENTITY`, `GIT_USE`, `GIT_ANSWER`; `SET_GIT_ACCESS`; the Remotes screen |
 | Page | `src/Daoris.Web/src/settings/git/`, `settings/repository/GitAccess.tsx`, `work/waits/GitAsk.tsx`, `projects/git/RepositoryGitView.tsx` | Settings → Git, Setup's remote and access rows, the go-ahead, Git inside Repositories |
 | Remote wiring, the pass | `Service/RemoteTarget.cs` (`RemoteFile`), `Service/RemoteOperations.cs`, `Service/RemoteSync.cs`, `Daoris.Desktop.Driver.Host/RemoteConsole.cs` | `remotes.json`; `daoris remote`; one pass per wired workspace |
-| Host sync, conflicts | `src/Daoris.Service/Daoris.Service.Core/Remote/` (`Remote`, `QuestSync`, `SessionSync`, `ChannelSync`, `CodeMapSync`, `RemoteConfig`), `Quests/QuestLog.cs`, `QuestExchange.BringForwardAsync`, `WorkOrders/Domain/Planner.cs` | Fetch, rebase, push of quests and records; conflicts and bring-forward |
+| Host sync, conflicts | `src/Daoris.Service/Daoris.Service.Core/Remote/` (`Remote`, `QuestSync`, `SessionSync`, `ChannelSync`, `CodeMapSync`, `RemoteConfig`), the service's `Quests/QuestLog.cs` and `Quests/QuestBringForwards.cs` (reached by `QuestExchange.BringForwardAsync`), the driver's `WorkOrders/Domain/Planner.cs` | Fetch, rebase, push of quests and records; conflicts and bring-forward |
 
 ## Its rules
 
@@ -328,13 +329,13 @@ catalogues (`i18n:check`).
 ## Contradictions
 
 - D47's one home per quest, written through, vs D68 and D69's local commits and fetch-rebase-push: D68 reads right.
-- D109 §1 and D147 point 3 (the line fetch runs with the person's credentials and helper) vs D198 and `TreeRefs.cs:128`
-  through `GitRuns.cs` (`GitStart`): D198 and the code read right. `WorkingTree` is the door to git's reads and runs; the diff reads are
+- D109 §1 and D147 point 3 (the line fetch runs with the person's credentials and helper) vs D198 and `TreeRefs`' fetch
+  through `GitRuns.GitStart`: D198 and the code read right. `WorkingTree` is the door to git's reads and runs; the diff reads are
   `TreeDiffs` and the process starts, with their test seams, are `GitRuns`. A set-aside folder's marks, reads and keeping are
   `SetAsideMarks`, `SetAsideReads` and `SetAsideKeeps`, with `TreeSetAside` the front.
-- D147 point 1 (Git a place on the activity bar) vs D150 and `ProjectsView.tsx:41` (Git inside Repositories): D150 reads right.
+- D147 point 1 (Git a place on the activity bar) vs D150 and `ProjectsView.tsx`' `RepositoryGitView` (Git inside Repositories): D150 reads right.
 - D204's head ("proposed, not yet read; nothing built") vs its 2026-10-31 acceptance note and the built acts
-  (`ActRuns.cs:68`): the note and the code read right.
+  (`ActRuns`): the note and the code read right.
 - D87 and D100's plugin push "with whatever that platform's tools are signed in as" vs D241 point 4 and `LandingPlugins`' remarks
   (Daoris pushes through its own push act under origin's identity and a grant; the plugin opens the pull request): D241 reads right.
 
