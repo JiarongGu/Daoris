@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import { pairRows, parsePatch } from './patch';
 
-// A review's patch as structure (REVIEW2): git's own unified diff, read into hunks with the line
-// numbers each side had, so a view can number them and set them side by side. Pure.
+// A review's patch as structure: git's own unified diff, read into hunks with the line
+// numbers each side has, so a view can number them and set them side by side. Pure.
 
 const PATCH = [
   'diff --git a/src/chunk.rs b/src/chunk.rs',
@@ -44,7 +44,7 @@ describe('reading a patch', () => {
   });
 
   /**
-   * git writes a blank context line as a single space, and a patch whose trailing whitespace was
+   * git writes a blank context line as a single space, and a patch whose trailing whitespace is
    * stripped on the way carries it as an empty line. Either is a line of the file; only the patch's
    * own final newline is not.
    */

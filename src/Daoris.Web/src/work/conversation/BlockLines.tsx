@@ -46,7 +46,7 @@ export function PlanView({ entries }: { entries: PlanEntry[] }) {
       </span>
       <ol className="m-0 mt-1 grid list-none gap-0.5 p-0">
         {entries.map((entry, index) => (
-          // Done is a check, never a strike-through: struck text reads as cancelled (CONV2's look).
+          // Done is a check, never a strike-through: struck text reads as cancelled.
           <li key={index} className={cn('flex gap-2 text-small', entry.status === 'completed' ? 'text-ink-soft' : 'text-ink')}>
             <span
               aria-hidden

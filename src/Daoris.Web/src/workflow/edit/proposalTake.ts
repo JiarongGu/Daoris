@@ -2,15 +2,15 @@ import type { WorkflowGraphChange } from '../../help/ProposalCard';
 import { draftOf, type DraftNode, type DraftWire, type GraphDraft, graphOf } from './graphDraft';
 import { TAIL_KINDS } from './landMethods';
 
-// Ask Daoris's proposal taken into the open draft (FLOWCHART2f; D223 §4, §8.6). The driver says what a proposed graph changes against the
-// draft it was told (`WorkflowGraphDiff`); the page takes a change and every change it needs, as one transaction. Each change's precondition
+// Ask Daoris's proposal taken into the open draft. The driver says what a proposed graph changes against the
+// draft it is told (`WorkflowGraphDiff`); the page takes a change and every change it needs, as one transaction. Each change's precondition
 // is what the proposal's base held of the step, the way or the field it changes, fixed when the proposal is drawn: a take that finds the
-// draft no longer holding one, or that would leave a way to a step the draft does not hold, is refused by that change's name, and the
+// draft not holding one, or that would leave a way to a step the draft does not hold, is refused by that change's name, and the
 // changes it does not touch stay takeable. Pure: the draft is never written but by the take's own result.
 
 type Json = Record<string, unknown>;
 
-/** A proposal as the editor reviews it: the draft it was made against (null where this window no longer holds it), its graph, its changes. */
+/** A proposal as the editor reviews it: the draft it is made against (null where this window does not hold it), its graph, its changes. */
 export type DraftProposal = {
   id: string;
   base: Json | null;
@@ -59,7 +59,7 @@ function heldOf(graph: Json): Held {
 }
 
 
-/** The groups a way's change touches: the base's where it was, the proposal's where it is. */
+/** The groups a way's change touches: the base's and the proposal's. */
 function groupsOf(change: WorkflowGraphChange, base: Held, proposed: Held): string[] {
   if (change.what !== 'way') return [];
   const group = (wire: Json | undefined) => {
@@ -197,7 +197,7 @@ function whole(draft: GraphDraft): boolean {
     && (draft.end === '' || steps.has(draft.end));
 }
 
-/** A take: the draft with the changes in, and every change it took; or the change it was refused at. */
+/** A take: the draft with the changes in, and every change it took; or the change it is refused at. */
 export type Take = { ok: true; draft: GraphDraft; taken: string[] } | { ok: false; at: string };
 
 /**
@@ -221,7 +221,7 @@ export function take(draft: GraphDraft, proposal: DraftProposal, wanted: readonl
   return { ok: true, draft: next, taken: set.map((change) => change.id) };
 }
 
-/** Each change still to take whose take the draft refuses now, with the change it was refused at. */
+/** Each change still to take whose take the draft refuses now, with the change it is refused at. */
 export function staleOf(draft: GraphDraft, proposal: DraftProposal, decided: Decided): Map<string, string> {
   const stale = new Map<string, string>();
   for (const change of proposal.changes) {
@@ -242,7 +242,7 @@ export const PROPOSED = '+';
 export type Union = { draft: GraphDraft; steps: ReadonlyMap<string, Mark>; ways: ReadonlyMap<string, Mark> };
 
 /**
- * The union drawing (D223 §4.3): the draft as it is, the open changes drawn on it, a step added or a way added (a changed way drawn as the
+ * The union drawing: the draft as it is, the open changes drawn on it, a step added or a way added (a changed way drawn as the
  * one to remove and the one new) marked beside what it changes, and nothing the draft holds altered. A way added to a step not drawn is
  * left out of the drawing, its change listed still.
  */

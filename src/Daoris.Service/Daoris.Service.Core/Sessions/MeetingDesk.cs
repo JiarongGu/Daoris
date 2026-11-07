@@ -5,7 +5,7 @@ using static Daoris.Knowledge.BrainstormDesk;
 namespace Daoris.Knowledge;
 
 /// <summary>
-/// A meeting is a kind of brainstorm (ONEWAY1t, D177 points 1, 2, 4 and 7): this desk writes its request, each round's send and its
+/// A meeting is a kind of brainstorm: this desk writes its request, each round's send and its
 /// stop under <c>brainstorms/meetings/&lt;id&gt;/</c>, the files the driver's <c>MeetingFiles</c> reads, and clears it. The packets,
 /// the state, the transcript and the turns are the driver's alone. It shares the brainstorm desk's id shape, bounds and file writer.
 /// </summary>
@@ -20,7 +20,7 @@ public sealed class MeetingDesk(string? home)
 
     public string? Home { get; } = home;
 
-    /// <summary>The home this host was started on (D63), or none.</summary>
+    /// <summary>The home this host is started on, or none.</summary>
     public static MeetingDesk FromEnvironment() => new(DaorisHome.Resolve());
 
     /// <summary>The meeting's request written once, as the driver's look takes it; the same id and words asked again are the same meeting.</summary>
@@ -89,7 +89,7 @@ public sealed class MeetingDesk(string? home)
     }
 
     /// <summary>
-    /// The person's press for one round (D177 point 4): the first round's by itself; a later round's only named, so a send repeated
+    /// The person's press for one round: the first round's by itself; a later round's only named, so a send repeated
     /// from a terminal's history never spends another round; refused while a round runs, and after a stop or the end.
     /// </summary>
     public BrainstormOutcome Send(string id, int? round, DateTimeOffset at)
@@ -145,7 +145,7 @@ public sealed class MeetingDesk(string? home)
             $"Meeting `{id}`'s round {current} sent, packet `{digest}`: its turns start at Daoris's next look, one participant at a time.", Find(id));
     }
 
-    /// <summary>The person's stop (D177's trap, the person leaving): the turn that runs ends, what was said is kept, and nothing more goes.</summary>
+    /// <summary>The person's stop: the turn that runs ends, what the turn said is kept, and nothing more goes.</summary>
     public BrainstormOutcome Stop(string id, DateTimeOffset at)
     {
         if (Find(id) is not { } meeting) return NotFound(id);

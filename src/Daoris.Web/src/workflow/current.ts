@@ -1,9 +1,8 @@
-// A repository's or a workspace's Current workflow as the shell answers it (WORKFLOW1b; D157 point 7, the workflow design
-// §2.7, §3.2): the driver's `WorkflowCurrent.Derive`, read from the machine's driver file, plugins and registry exactly as
+// A repository's or a workspace's Current workflow as the shell answers it: the driver's `WorkflowCurrent.Derive`, read from the machine's driver file, plugins and registry exactly as
 // `daoris workflow show` reads them. The page draws it and derives nothing: what a step is, who takes part, who acts,
-// where it was read and what it cannot do yet are the driver's, and only the words are the page's.
+// where it is read and what it cannot do yet are the driver's, and only the words are the page's.
 
-/** The person's part in a step (design §3.1), said apart from who acts in it. */
+/** The person's part in a step, said apart from who acts in it. */
 export type WorkflowParticipation = 'agent' | 'agent-and-you' | 'you' | 'automatic';
 
 /** Who acts in a step: an agent, Daoris itself, or a plugin speaking for a service. */
@@ -18,7 +17,7 @@ export type WorkflowRuntime = 'built' | 'partial' | 'declared';
 /** A setting's value as a step carries it: text or none, a switch, or a list of names. */
 export type WorkflowValue = string | boolean | string[] | null;
 
-/** The rule a step was read from, or none for the work, and the level it stood at. */
+/** The rule a step is read from, or none for the work, and the level it stands at. */
 export interface WorkflowSource {
   rule: 'landing' | 'review' | 'opinion' | 'workflow' | null;
   level: 'repository' | 'workspace' | 'default' | 'task' | 'repository-kind' | 'workspace-kind' | 'current';
@@ -49,7 +48,7 @@ export interface WorkflowRepository {
 }
 
 /**
- * One development route of the start node (FABRIC-PIPELINE1a, the pipeline design §1.3): the default where `kind` is null, else a kind
+ * One development route of the start node: the default where `kind` is null, else a kind
  * the workspace declares, with its label and paths; the workflow it names (`current` where none does), the level that chose it, and
  * the named workflow's name where it reads.
  */
@@ -74,7 +73,7 @@ export interface WorkflowLanded {
   workflow: string;
   /** `repository-landed`, `workspace-landed`, or `current` where nothing names one. */
   level: string;
-  /** The accepted blob, `none` where the line held none, or null where none was accepted. */
+  /** The accepted blob, `none` where the line holds none, or null where none is accepted. */
   gates: string | null;
   name?: string | null;
   /** One of `LandedState`; one a newer driver names is said as recorded. */
@@ -88,12 +87,12 @@ export interface WorkflowLanded {
 }
 
 /**
- * A repository's integration declaration and the person's acceptance of it (INTEGRATE1d; the integration design §17.7): the
+ * A repository's integration declaration and the person's acceptance of it: the
  * `daoris.gates.json` `integration` object at the line's tip, accepted by its blob on its own, apart from the landed route's gates.
  * `state` is `accepted`, `changed`, `unaccepted` or `unread`; one a newer driver names is said as recorded.
  */
 export interface WorkflowIntegration {
-  /** The accepted blob, `none` where the line held none, or null where none was accepted. */
+  /** The accepted blob, `none` where the line holds none, or null where none is accepted. */
   gates: string | null;
   state: string;
   tip?: { line: string; commit: string; gates: string } | null;
@@ -102,11 +101,11 @@ export interface WorkflowIntegration {
   declaration?: string | null;
 }
 
-/** The start node a Workflow tab draws first (FABRIC-PIPELINE1a): its routes, the landed route, and the verification workflows saved here. */
+/** The start node a Workflow tab draws first: its routes, the landed route, and the verification workflows saved here. */
 export interface WorkflowStart {
   routes: WorkflowRoute[];
   landed: WorkflowLanded;
-  /** A repository's integration declaration; null on a workspace's, and left out by a driver before INTEGRATE1d. */
+  /** A repository's integration declaration; null on a workspace's, and left out by an older driver. */
   integration?: WorkflowIntegration | null;
   verifications: { id: string; name: string }[];
 }
@@ -129,7 +128,7 @@ export interface WorkflowEffectiveCell {
 }
 
 /**
- * The graph a route actually follows (SETUPUX1b, D221): Current drawn from the rules as they stand, or a saved workflow's newest version.
+ * The graph a route actually follows: Current drawn from the rules as they stand, or a saved workflow's newest version.
  * `graph` is a version's graph as saved; it is null for the landed route under Current (no verification) and for a workflow that does not
  * read, which `problem` says in the driver's words.
  */
@@ -158,7 +157,7 @@ export interface WorkflowEffective {
    */
   problemCoded?: { code: string; values: Record<string, string> } | null;
   /**
-   * A copy of a shipped default that this build ships changed since (WORKFLOWCLEAN1h-b): the default's id and English name, and the graph the
+   * A copy of a shipped default that this build ships with a change: the default's id and English name, and the graph the
    * copy's next version would be, with the gates the copy has. Absent or null where the copy is up to date.
    */
   newer?: { default: string; name: string; graph: unknown } | null;
@@ -181,12 +180,12 @@ export interface CurrentWorkflow {
   limits: Record<string, string>;
   /**
    * A workspace's: its repositories, each with whether it sets rules of its own. None (null, or left out) where the registry
-   * was not read, and for a repository's.
+   * is not read, and for a repository's.
    */
   repositories?: WorkflowRepository[] | null;
-  /** The start node (FABRIC-PIPELINE1a); none from a driver before it, and for a run's chart. */
+  /** The start node; none from a driver before it, and for a run's chart. */
   start?: WorkflowStart | null;
-  /** The graph the asked `route` follows; present only where the page asked for a route, and from a driver with SETUPUX1b. */
+  /** The graph the asked `route` follows; present only where the page asked for a route, and from a driver that answers one. */
   effective?: WorkflowEffective | null;
 }
 
@@ -217,7 +216,7 @@ export type SetupDoor =
   | { where: 'workspace'; section: 'defaults' };
 
 /**
- * Where the rule a step was read from is set (design §6.1, §4.7's Setup rows): on a repository's page, its own Setup's
+ * Where the rule a step is read from is set: on a repository's page, its own Setup's
  * *Line and landing* for a rule set here or set nowhere, and its workspace's Setup for one its workspace set; on a
  * workspace's page, its own Setup's defaults. The work is set by no rule, so it has no door; its standing answer does.
  */
@@ -254,7 +253,7 @@ export type YourPress = { press: WorkflowPress; environment?: string };
 export function yourPart(steps: readonly WorkflowStep[]): YourPress[] {
   return steps.flatMap((step, at): YourPress[] => {
     if (step.press === null) return [];
-    // INTEGRATE1r: an integration the owner requests rides the landing's own Accept, so the part says it once; after a landing with no
+    // An integration the owner requests rides the landing's own Accept, so the part says it once; after a landing with no
     // press of its own (an automatic one) it is a press of its own.
     if (step.kind === 'integrate' && steps.slice(0, at).some((before) => before.press === step.press)) return [];
     const environment = step.press === 'reviewed' ? textOf(step, 'environment') ?? undefined : undefined;

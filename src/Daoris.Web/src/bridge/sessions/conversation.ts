@@ -10,11 +10,11 @@ import type { DraftSent } from '../../help/openDraft';
 import { call } from '../call';
 import { notPushed } from '../state/slices';
 
-// A session's conversation (MOD3): its record read back and followed live, its turns, its options,
-// and the verbs that start, speak in and finish one (D76).
+// A session's conversation: its record read back and followed live, its turns, its options,
+// and the verbs that start, speak in and finish one.
 
 /**
- * A session's conversation (D76, CONV1): its record read back a page at a time, and its live events
+ * A session's conversation: its record read back a page at a time, and its live events
  * merged in as the driver writes them.
  *
  * @remarks
@@ -24,17 +24,17 @@ import { notPushed } from '../state/slices';
  * closed by asking for what came `after` the last held — never shown as two halves joined.
  *
  * **It outlives a restart**, which the console does not: the history is the record under the home,
- * so a conversation that happened while this window was closed still reads back.
+ * so a conversation that happened while this window is closed still reads back.
  *
- * Desktop-only for the console's reason (D47 §4): a browser has no bridge, and holds nothing here.
+ * Desktop-only for the console's reason: a browser has no bridge, and holds nothing here.
  */
 export function useSessionEvents(sessionId: string | null) {
   const { isAvailable } = useShenora();
   const [events, setEvents] = useState<SessionEvent[]>([]);
   const [earlier, setEarlier] = useState(false);
-  // What the session was first asked, where the newest page does not hold it (SESS1): a long run reads from it.
+  // The first thing the person asked of the session, where the newest page does not hold it: a long run reads from it.
   const [opening, setOpening] = useState<SessionEvent | null>(null);
-  // Where the first failed call began, wherever it is in the run (SESS1 S9) — the jump's target.
+  // Where the first failed call began, wherever it is in the run — the jump's target.
   const [firstFailure, setFirstFailure] = useState<number | null>(null);
   // Whether the history has answered, so an empty record reads as "nothing said" only once it is one.
   const [loaded, setLoaded] = useState(false);
@@ -115,24 +115,24 @@ export function useSessionEvents(sessionId: string | null) {
   return { events, opening, firstFailure, earlier, loaded, loadEarlier };
 }
 
-/** Where a conversation's turns stand, as the driver holds them (CONV4a). */
+/** Where a conversation's turns stand, as the driver holds them. */
 export type SessionTurns = {
   /** What the person sent that has not reached the harness yet, in the order sent, with its files' names. */
   queued: ChatMessage[];
   /** A turn is on its way to the harness or running there — what stopping the turn acts on. */
   taking: boolean;
   /**
-   * The conversation's door is still opening (HELP4): what is queued waits for it, not for a turn to
+   * The conversation's door is still opening: what is queued waits for it, not for a turn to
    * end. Absent where the driver did not say.
    */
   opening?: boolean;
   /**
-   * A driven session hears what the person adds (SESS3): its words are held and become its next prompt.
+   * A driven session hears what the person adds: its words are held and become its next prompt.
    * Absent for a conversation, which always does, and false for a driven session nothing could hear.
    */
   listening?: boolean;
   /**
-   * When its last turn ended on this machine (RAIL2): a live chat's last move, which its record — moved
+   * When its last turn ended on this machine: a live chat's last move, which its record — moved
    * on state changes only — never says. Absent before any turn has ended here.
    */
   lastTurn?: string;
@@ -146,7 +146,7 @@ const messagesOf = (list: unknown): ChatMessage[] =>
   (Array.isArray(list) ? list : []).flatMap((item) => {
     const message = item as Partial<ChatMessage> | null;
     if (typeof message?.text !== 'string') return [];
-    // Its level (COWORK1a), where the driver says one; a shell from before says none.
+    // Its level, where the driver says one; a shell without levels says none.
     const level = levelOf(message.level);
     return [{
       ...(typeof message.id === 'string' && message.id ? { id: message.id } : {}),
@@ -174,7 +174,7 @@ const answersTurn = (answer: unknown): boolean =>
   typeof (answer as { taking?: unknown } | null | undefined)?.taking === 'boolean';
 
 /**
- * Where each live conversation's turns stand (CONV4b, UX5 U17): whether one is in flight, and what
+ * Where each live conversation's turns stand: whether one is in flight, and what
  * is waiting behind it — asked for once per conversation, then followed as `SESSION_QUEUED`.
  *
  * @remarks
@@ -248,7 +248,7 @@ const optionsOf = (answer: unknown): SessionOption[] => {
 };
 
 /**
- * One conversation's model and effort, as its agent offered them on the protocol door (AGT6b, D98): asked
+ * One conversation's model and effort, as its agent offered them on the protocol door: asked
  * of the driver once, then followed as `SESSION_OPTIONS_CHANGED` — after a change, and when the agent
  * changed them itself. None offered, or a conversation the driver does not hold, is an empty list.
  * Desktop-only: it is a live process on this machine.
@@ -272,7 +272,7 @@ export function useSessionOptions(session: string | null): SessionOption[] {
 }
 
 /**
- * MODELROLE1d2 (D205 §3.5(b)): a conversation whose agent refused its choice at the open went on in its replacement within the same
+ * A conversation whose agent refused its choice at the open goes on in its replacement within the same
  * press, as the shell tells it (`CHAT_REPLACED`): `onReplaced` hears the refused record and the one that took its words. Desktop-only.
  */
 export function useChatReplaced(onReplaced: (from: string, to: string) => void): void {
@@ -283,7 +283,7 @@ export function useChatReplaced(onReplaced: (from: string, to: string) => void):
 }
 
 /**
- * Change one of a conversation's options (AGT6b, D98): `session/set_config_option` on its session, through
+ * Change one of a conversation's options: `session/set_config_option` on its session, through
  * the driver, which refuses the mode and anything the agent never offered. The answer is the options after
  * the change, which is what the composer shows from then on.
  */
@@ -296,16 +296,16 @@ export const useSetSessionOption = () => {
   });
 };
 
-/** What stopping a turn did (CONV4a): whether a turn was asked to stop, and what came back unsent. */
+/** What stopping a turn did: whether a turn is asked to stop, and what came back unsent. */
 export type TurnStop = { cancelled: boolean; withdrawn: ChatMessage[] };
 
 /**
- * Stop the conversation's turn and keep the conversation (CONV4a) — the third verb, beside finishing
- * it and stopping it. What was waiting comes back, for the composer to hand to the person.
+ * Stop the conversation's turn and keep the conversation — the third verb, beside finishing
+ * it and stopping it. What is waiting comes back, for the composer to hand to the person.
  */
 export const useCancelTurn = () =>
   useMutation({
-    // `keep` (STEER2b, D136) stops the turn and keeps its waiting words, so they go next: *Send now* on a turn-end door.
+    // `keep` stops the turn and keeps its waiting words, so they go next: *Send now* on a turn-end door.
     // The id alone is the withdrawal; `withdrawn` then comes back empty under `keep`.
     mutationFn: async (stop: string | { id: string; keep?: boolean }): Promise<TurnStop> => {
       const { id, keep } = typeof stop === 'string' ? { id: stop, keep: false } : stop;
@@ -314,11 +314,11 @@ export const useCancelTurn = () =>
     },
   });
 
-/** What removing or rewording a waiting message did (QUEUEEDIT1b): `taken` is a turn having it already, or no such word. */
+/** What removing or rewording a waiting message did: `taken` is a turn having it already, or no such word. */
 export type QueueEdit = { done: boolean; why?: 'taken' };
 
 /**
- * Remove, reword or change the level of one message waiting behind the turn (QUEUEEDIT1b, D76; COWORK1a), by its id. A reword
+ * Remove, reword or change the level of one message waiting behind the turn, by its id. A reword
  * keeps its place and files but takes a new id, so the list is read again from `SESSION_QUEUED`, never kept by the old one; a
  * level keeps its id, and raised where the door takes words at its next step the word goes there.
  */
@@ -340,11 +340,11 @@ export const useEditQueued = (session: string | null) => {
   };
 };
 
-/** What moving a held word to the head came to (LINESTOGETHER1b): `why` is the host's code, or the page's `not-known` for a lost answer. */
+/** What moving a held word to the head came to: `why` is the host's code, or the page's `not-known` for a lost answer. */
 export type QueueMove = { moved: boolean; why: string | null; message?: string; to?: string };
 
 /**
- * Move one word held on a part's record to the head (LINESTOGETHER1b), in one step on the service. A refusal is data; an answer that
+ * Move one word held on a part's record to the head, in one step on the service. A refusal is data; an answer that
  * never came is `not-known`, never moved, and asking again under the same key says what happened.
  */
 export const useMoveQueued = () =>
@@ -365,25 +365,25 @@ export const useMoveQueued = () =>
   });
 
 /**
- * A conversation with an agent in one repository (D49 §3).
+ * A conversation with an agent in one repository.
  *
  * @remarks
  * Shell-only, because a chat is a process on this machine and processes never leave the driver
- * (D46 §7). The record is the service's — a teammate sees that a chat happened — and only the stream
+ * The record is the service's — a teammate sees that a chat happened — and only the stream
  * and the typing are here.
  *
  * Daoris makes no model calls: the harness carries the model and the conversation, and these three
- * verbs move text and nothing else (D24, `model-decoupling`).
+ * verbs move text and nothing else.
  */
 export const useStartChat = () => {
   return useMutation({
     // Every part after the repository is omittable, and omitted means something: the profile takes
-    // the workspace's default, then the machine's, then the harness's own configuration home (D49
-    // §4); the adapter takes `driver.json`'s; and the tree falls back to the repository's standing
-    // opt-in (D51). The same resolution a driven session gets, so a conversation is not a second
+    // the workspace's default, then the machine's, then the harness's own configuration home;
+    // the adapter takes `driver.json`'s; and the tree falls back to the repository's standing
+    // opt-in. The same resolution a driven session gets, so a conversation is not a second
     // set of rules — which is why each is dropped from the payload rather than sent as a null.
-    // The tree is said exactly where the person chose (D162 point 2): false is the checkout, whatever that opt-in says.
-    // The opening words (NEW1a) open it on its first message, their files as a message's go, and the request id makes a
+    // The tree is said exactly where the person chose: false is the checkout, whatever that opt-in says.
+    // The opening words open it on its first message, their files as a message's go, and the request id makes a
     // press the driver answers once however often it arrives. Its answer is *Start a conversation with these words*'s shape
     // (`StartedFrom`); an empty start carries no `sent`, read as false.
     mutationFn: async (start: {
@@ -401,22 +401,22 @@ export const useStartChat = () => {
         ...(start.requestId ? { requestId: start.requestId } : {}),
       }));
     },
-    // The sessions and the driver are asked again by the route's `STATE_CHANGED`, in every window (STATEHUB1d, D169), as
+    // The sessions and the driver are asked again by the route's `STATE_CHANGED`, in every window, as
     // they are for every press below that opens, ends or says words to a conversation.
   });
 };
 
 /**
- * What the person's words to a session did (MSG1d, D137 §5.3), as `SESSION_INPUT` answers for every state: `sent` when
+ * What the person's words to a session did, as `SESSION_INPUT` answers for every state: `sent` when
  * they are held or taken, when they reach the session (`next-step`, `turn-end` or `resume`), and why nothing takes them,
  * by a code, where nothing does.
  */
 export type WordsAnswer = {
   sent: boolean; reaches: string | null; why: string | null;
-  /** The conversation a `continued` one went on in (HANDWORDS1); present only then. */
+  /** The conversation a `continued` one went on in; present only then. */
   to?: string;
   /**
-   * For words at `now` (STEER2b, COWORK1a): whether the press was carried out. True with `reaches: "now"` is the words taken
+   * For words at `now`: whether the press is carried out. True with `reaches: "now"` is the words taken
    * at once in the running turn. False carries a coded `why` and the words go at the next step or wait for the turn's end; no
    * turn is stopped for them. Absent from an answer to a plain send.
    */
@@ -439,13 +439,13 @@ const wordsOf = (answer: unknown): WordsAnswer => {
 };
 
 /**
- * What a word said now would do, read from `SESSION_QUEUE`'s answer (MSG1d): its `reaches` and `why`, each null where absent,
- * and the conversation a `continued` one went on in where the module names one (HANDWORDS1).
+ * What a word said now would do, read from `SESSION_QUEUE`'s answer: its `reaches` and `why`, each null where absent,
+ * and the conversation a `continued` one went on in where the module names one.
  */
 const reachOf = (answer: unknown): Reach => {
   const { reaches, why, to } = wordsOf(answer);
-  // What the door can do while a turn runs (COWORK1a), where the shell says it: whether its agent steers, and whether it has the
-  // keeping stop. A shell from before says neither.
+  // What the door can do while a turn runs, where the shell says it: whether its agent steers, and whether it has the
+  // keeping stop. A shell without them says neither.
   const door = answer as { steers?: unknown; keepingStop?: unknown } | null | undefined;
   return {
     reaches, why, ...(to ? { to } : {}),
@@ -455,7 +455,7 @@ const reachOf = (answer: unknown): Reach => {
 };
 
 /**
- * The reach a shell that tells it live carries (MSG1f2): `reach`, an object present whenever the shell says it, `{}` for a
+ * The reach a shell that tells it live carries: `reach`, an object present whenever the shell says it, `{}` for a
  * word that would start a turn at once, since the bridge leaves a null out. Undefined where the shell carries
  * none, and where nothing is known yet.
  */
@@ -465,11 +465,11 @@ const toldReach = (answer: unknown): Reach | undefined => {
 };
 
 /**
- * What a word said now to this session would do (MSG1d, D137 §5.3): `SESSION_QUEUE`'s `reaches` and `why`, which decide
+ * What a word said now to this session would do: `SESSION_QUEUE`'s `reaches` and `why`, which decide
  * the box the page offers and the line it draws where nothing takes words (`boxOf`). Undefined until the driver answers.
  *
  * @remarks
- * **Followed live where the shell tells it** (MSG1f2): an answer or a `SESSION_QUEUED` carrying `reach` says the shell
+ * **Followed live where the shell tells it**: an answer or a `SESSION_QUEUED` carrying `reach` says the shell
  * tells it as the session's door changes, as its record moves and as a later session of its quest opens, so it is asked
  * once per session and then taken from the events, never asked again as the session moves. An event that carries none
  * changes nothing.
@@ -512,18 +512,18 @@ export const useSessionReach = (session: { id: string; state: string } | null, l
 };
 
 /**
- * One message into the session (CONV4), and what it did (MSG1d): held or taken, when it reaches the session, or why
+ * One message into the session, and what it did: held or taken, when it reaches the session, or why
  * nothing takes it.
  *
  * @remarks
- * Its files (CONV4c) go as names and bytes, the way a quest's uploads do, and the driver keeps them
+ * Its files go as names and bytes, the way a quest's uploads do, and the driver keeps them
  * for the conversation outside its tree — the page never learns where. A message with none sends none.
  */
 export const useSendMessage = () =>
   useMutation({
-    // A preface (HELP1b) is where the person is, handed to the agent ahead of the words; absent for most.
-    // `level` (COWORK1a, D188) is when the words should reach a working session; none is the person's default, urgent.
-    // `draft` (FLOWCHART2d) is the workflow draft open in the editor, sent where its fingerprint moved since the conversation was told.
+    // A preface is where the person is, handed to the agent ahead of the words; absent for most.
+    // `level` is when the words should reach a working session; none is the person's default, urgent.
+    // `draft` is the workflow draft open in the editor, sent where its fingerprint moved since the conversation last heard of it.
     mutationFn: async (message: { id: string; text: string; files?: File[]; preface?: string; draft?: DraftSent; level?: Level }) => {
       const files = message.files?.length ? await Promise.all(message.files.map(toUpload)) : [];
       return wordsOf(await call('SESSION_INPUT', {
@@ -535,21 +535,21 @@ export const useSendMessage = () =>
     },
   });
 
-/** A level as `SESSION_INPUT` takes it (COWORK1a, ONEWAY1l): `level` alone. None sends nothing: the person's default. */
+/** A level as `SESSION_INPUT` takes it: `level` alone. None sends nothing: the person's default. */
 const levelPayload = (level: Level | undefined) => (level ? { level } : {});
 
 /**
- * The person's words to a session that is not a live chat (MSG1f, D137 §5.1): a working driven session's running door, a
+ * The person's words to a session that is not a live chat: a working driven session's running door, a
  * park's answer, a session that ended, or one winding up, all through `SESSION_INPUT`, which keeps a park's and an ended
- * record's words on the record and nudges the driver's loop (MSG1d). Words alone: the resumed run is handed no files.
+ * record's words on the record and nudges the driver's loop. Words alone: the resumed run is handed no files.
  *
- * The sessions are asked again by the state hub alone (STATEHUB1d, STATEHUB1f), so a park shows its answer and a record its
+ * The sessions are asked again by the state hub alone, so a park shows its answer and a record its
  * words waiting.
  */
 export const useSay = () =>
   useMutation({
-    // `question` (PARKVIEW1): the park's question a press answers, which the door refuses `question-changed` where the park no
-    // longer asks it, keeping nothing.
+    // `question`: the park's question a press answers, which the door refuses `question-changed` where the park
+    // asks another by then, keeping nothing.
     mutationFn: async (words: { id: string; text: string; level?: Level; question?: string }) =>
       wordsOf(await call('SESSION_INPUT', {
         id: words.id, text: words.text, ...levelPayload(words.level), ...(words.question ? { question: words.question } : {}),
@@ -557,27 +557,27 @@ export const useSay = () =>
   });
 
 /**
- * What a go-ahead answered on a park's page did (KNOWUSE1a2, GOAHEAD2b): the go-ahead's sentence, what became of the park,
+ * What a go-ahead answered on a park's page did: the go-ahead's sentence, what became of the park,
  * and whether it still waits on the person.
  */
 export type GoAheadAnswered = WordsAnswer & { waits: boolean; message: string };
 
 /**
- * A go-ahead a parked session asked, answered on the session's own page (KNOWUSE1a2, D135 §2): one press, where the ask's
- * page and the box took two. `SESSION_GO_AHEAD` answers it through the ask's own door, which sends the park on only once
- * none of the go-aheads it asked is open, as the ask's page does (GOAHEAD2b), and says whether it still waits. The
- * person's words are the go-ahead's, never the park's: the record keeps no words they did not write to it (D137). A
+ * A go-ahead a parked session asked, answered on the session's own page: one press, where the ask's
+ * page and the box take two. `SESSION_GO_AHEAD` answers it through the ask's own door, which sends the park on only once
+ * none of the go-aheads it asked is open, as the ask's page does, and says whether it still waits. The
+ * person's words are the go-ahead's, never the park's: the record keeps no words they did not write to it. A
  * refused go-ahead answers nothing else, in the service's sentence.
  *
- * Its route publishes the sessions and the asks, which the state hub asks again in every window (STATEHUB1h, D169). One refused
- * as an error publishes nothing (D169 point 5), yet a park that could not be sent on may still have had its go-ahead answered:
+ * Its route publishes the sessions and the asks, which the state hub asks again in every window. One refused
+ * as an error publishes nothing, yet a park that could not be sent on may still have had its go-ahead answered:
  * this window, which pressed it, asks them again itself.
  */
 export const useParkGoAhead = () => {
   const client = useQueryClient();
   return useMutation({
-    // `goesOn: false` (PARKVIEW1): the page answers the park itself, with the answer to the question it also asked, so the go-ahead
-    // keeps it waiting for that answer (GOAHEAD2's provision for such a caller). Absent, the ask's door decides as it always has.
+    // `goesOn: false`: the page answers the park itself, with the answer to the question it also asked, so the go-ahead
+    // keeps it waiting for that answer. Absent, the ask's door decides.
     mutationFn: async (answer: {
       id: string; ask: string; number: number; approved: boolean; words?: string; goesOn?: boolean;
     }): Promise<GoAheadAnswered> => {
@@ -590,7 +590,7 @@ export const useParkGoAhead = () => {
       return { ...wordsOf(answered), waits: waits === true, message: typeof message === 'string' ? message : '' };
     },
     onError: () => {
-      // The records and the asks themselves, where the shell pushes them, are pushed as they moved (PUSH1d2, PUSH1d3).
+      // The records and the asks themselves, where the shell pushes them, are pushed as they move.
       void client.invalidateQueries({ queryKey: keys.allSessions, predicate: notPushed(client) });
       void client.invalidateQueries({ queryKey: keys.allAsks, predicate: notPushed(client) });
     },
@@ -598,8 +598,8 @@ export const useParkGoAhead = () => {
 };
 
 /**
- * What *Start a conversation with these words* did (MSG1f2): the conversation it opened, whether the words are its first
- * message and off the session they were written to, why nothing was done by a code where it refused, and the driver's
+ * What *Start a conversation with these words* did: the conversation it opened, whether the words are its first
+ * message and off the session they are written to, why nothing is done by a code where it refuses, and the driver's
  * sentence.
  */
 export type StartedFrom = { sessionId: string | null; sent: boolean; why: string | null; message: string };
@@ -616,7 +616,7 @@ const startedOf = (answer: unknown): StartedFrom => {
 };
 
 /**
- * *Start a conversation with these words* (MSG1f2, D137 §2.2, §5.3): `SESSION_START_FROM`, one act of the driver's. A new
+ * *Start a conversation with these words*: `SESSION_START_FROM`, one act of the driver's. A new
  * chat in the session's repository whose first message is the words the session could not go on with, handed with a
  * preface naming it, which is the agent's to read; then the words leave that session's record naming the new one, and its
  * conversation says where they went. What it refuses, it refuses before anything starts, by a code.
@@ -627,8 +627,8 @@ export const useStartFrom = () => useMutation({
 });
 
 /**
- * What *Go on with another agent…* did (MIXAGENT1b-i, D163): the conversation it opened, where it opened at once; whether the
- * ask stands (taken now, or kept for the conversation's turn to end); why nothing was done by a code; and the driver's sentence.
+ * What *Go on with another agent…* did: the conversation it opened, where it opened at once; whether the
+ * ask stands (taken now, or kept for the conversation's turn to end); why nothing is done by a code; and the driver's sentence.
  */
 export type HandedOver = { sessionId: string | null; kept: boolean; why: string | null; message: string };
 
@@ -644,24 +644,24 @@ const handedOf = (answer: unknown): HandedOver => {
 };
 
 /**
- * *Go on with another agent…* (MIXAGENT1b-i, D163): `SESSION_HAND_OVER`, the chat runner's hand-over asked as the person, with
+ * *Go on with another agent…*: `SESSION_HAND_OVER`, the chat runner's hand-over asked as the person, with
  * the reason `press`. A conversation that is not talking goes on at once in a new one of its own; one that is talking keeps the
- * ask for its turn's end. A refusal is the answer, by its code. Daoris's own offer (MIXAGENT1b-ii) names its reason, `near` or
+ * ask for its turn's end. A refusal is the answer, by its code. Daoris's own offer names its reason, `near` or
  * `limit`, and is then asked as Daoris's (`askedBy`), the person's press on the offer; a press sends neither.
  *
- * A press naming no agent is *Go on in a new session* (MSG1g, D137 §2.2, ONEWAY1j): words a resume holds while the account their
+ * A press naming no agent is *Go on in a new session*: words a resume holds while the account their
  * session ran on cools go on in a new session at the driver's next look, handed them, without that conversation. Nothing opens
  * here (`sessionId` is null); `kept` says the choice is kept, and a refusal keeps its code for the page to word.
  *
  * For a conversation, a closed quest's session or Ask Daoris's, which nothing carries on by itself, the same press is *Go on with
- * Daoris's brief* (SESSCTX1c part B, D189 point 3): the session goes on in a new part of itself, in its tree on its agent and account,
+ * Daoris's brief*: the session goes on in a new part of itself, in its tree on its agent and account,
  * handed Daoris's brief and then the words that waited. The answer is the same shape: `sessionId` is the new part, `kept` that it
  * opened, and a refusal, by a code, opened nothing.
  */
 export const useHandOver = () => useMutation({
   mutationFn: async (over: {
     session: string; agent?: string | null; account?: string | null; why?: 'near' | 'limit';
-    /** The model and effort of the choice the offer named (STAFFPOLICY1d): started as approved, never picked again. */
+    /** The model and effort of the choice the offer named: started as approved, never picked again. */
     model?: string | null; effort?: string | null;
   }): Promise<HandedOver> =>
     handedOf(await call('SESSION_HAND_OVER', {
@@ -671,11 +671,11 @@ export const useHandOver = () => useMutation({
     })),
 });
 
-/** What *Stop waiting* came to (LIMITRESUME1d): stopped, or why not in the runner's own sentence. */
+/** What *Stop waiting* came to: stopped, or why not in the runner's own sentence. */
 export type StoppedWaiting = { stopped: boolean; message: string };
 
 /**
- * *Stop waiting* (LIMITRESUME1d, D206 §3.7): `SESSION_STOP_WAITING`, an ended conversation held by its account's limit waits no more,
+ * *Stop waiting*: `SESSION_STOP_WAITING`, an ended conversation held by its account's limit waits no more,
  * so it goes on only when the person writes to it. A refusal (one that runs, one that waits for no limit) is the answer, never thrown.
  */
 export const useStopWaiting = () => useMutation({
@@ -686,11 +686,11 @@ export const useStopWaiting = () => useMutation({
 });
 
 /**
- * Finish a conversation: the harness gets end-of-input, says what it was going to say, and exits.
+ * Finish a conversation: the harness gets end-of-input, says what it has left to say, and exits.
  * `useStopSession` is the other verb and means something else — the person cut it off.
  *
  * @remarks
- * The sessions are asked again by the state hub alone (STATEHUB1d, STATEHUB1f).
+ * The sessions are asked again by the state hub alone.
  */
 export const useEndChat = () =>
   useMutation({

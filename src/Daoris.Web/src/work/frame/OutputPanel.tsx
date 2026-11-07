@@ -8,7 +8,7 @@ import { dragProps, useViewDrop } from './viewDrag';
 import { useTabFit } from './tabFit';
 
 /**
- * One tab of the output panel (CONSOLE2): the session's own console, or something it runs beside
+ * One tab of the output panel: the session's own console, or something it runs beside
  * itself — a subagent, or background work.
  */
 export type PanelTab = {
@@ -17,9 +17,9 @@ export type PanelTab = {
   kind: 'session' | 'subagent' | 'task';
   label: string;
   tone: 'live' | 'ended' | 'failed' | 'idle';
-  /** How it stands, in words: the tab is named by it, so the mark is never hue alone (D41 §6). */
+  /** How it stands, in words: the tab is named by it, so the mark is never hue alone. */
   status: string;
-  /** Whether a person can stop it from here (CONSOLE3a): a running task its harness said can be stopped. */
+  /** Whether a person can stop it from here: a running task its harness says can be stopped. */
   stoppable?: boolean;
 };
 
@@ -31,7 +31,7 @@ export const PANEL_MAX = 720;
 const PANEL_STEP = 48;
 
 /**
- * The stream, as a region a person can **grow, shrink and hide** (D55).
+ * The stream, as a region a person can **grow, shrink and hide**.
  *
  * @remarks
  * A well inside a card is the one arrangement that cannot be made bigger when you need it bigger,
@@ -45,11 +45,11 @@ const PANEL_STEP = 48;
  * console's rule, and the reason is that a layout which springs back on a window resize teaches
  * people not to trust the control.
  *
- * **A tab per thing that is running** (CONSOLE2): the session, then each subagent and background
+ * **A tab per thing that is running**: the session, then each subagent and background
  * task it started, so none of their output is missed. One tab is no tabs — a session running
  * nothing beside itself keeps the header it had.
  *
- * **A region, not the console's alone** (DOCK1b): it holds whichever views stand in the panel, the
+ * **A region, not the console's alone**: it holds whichever views stand in the panel, the
  * console by default, as VS Code's panel does; with more than one, each is a tab, and the list at
  * the header's end names them all and moves the shown one to the right side bar.
  */
@@ -60,7 +60,7 @@ export function OutputPanel({
   /**
    * The attended session's console, or null when nothing is attended — a state rather than an
    * absence. Handed in by the organism above, because the console reaches the bridge and a molecule
-   * imports no hook, not even through an organism (REV3).
+   * imports no hook, not even through an organism.
    */
   console: ReactNode | null;
   height: number;
@@ -72,30 +72,30 @@ export function OutputPanel({
   /** The tab whose console is shown. */
   selected?: string;
   onSelect?: (key: string) => void;
-  /** Stop a stoppable tab's task (CONSOLE3a). */
+  /** Stop a stoppable tab's task. */
   onStop?: (key: string) => void;
-  /** The views standing in the panel (DOCK1b), the console alone until the person moves one. */
+  /** The views standing in the panel, the console alone until the person moves one. */
   views?: readonly ViewId[];
   /** The view shown; ignored when it is not one of `views`. */
   view?: ViewId;
   onView?: (view: ViewId) => void;
   onMove?: (view: ViewId, to: Place) => void;
   onReset?: () => void;
-  /** Told while one of its views is dragged, and with null when the drag ends (DOCK1e). */
+  /** Told while one of its views is dragged, and with null when the drag ends. */
   onDrag?: (view: ViewId | null) => void;
   /** The shown view when it is not the console. */
   children?: ReactNode;
 }) {
   const { t } = useTranslation();
   const [menu, setMenu] = useState(false);
-  // A view dragged from the side bar lands here, hidden or shown (DOCK1e).
+  // A view dragged from the side bar lands here, hidden or shown.
   const drop = useViewDrop('panel', onMove);
   const carry = (id: ViewId) => (onMove ? dragProps(id, 'panel', onDrag) : {});
   const clamp = (value: number) => Math.min(PANEL_MAX, Math.max(PANEL_MIN, value));
   const entries = viewEntries(t, views);
   const shown = entries.some((entry) => entry.id === view) ? view : entries[0]?.id;
   const tabbed = shown === 'console' && tabs && tabs.length > 1;
-  // Whether the unselected views are their icons (TABS1). The header also holds the console's streams, a
+  // Whether the unselected views are their icons. The header also holds the console's streams, a
   // stop and the show or hide, so what they say changes what the views' names need too.
   const fit = useTabFit([
     ...entries.map((entry) => entry.label), shown ?? '', collapsed,
@@ -160,7 +160,7 @@ export function OutputPanel({
                     setMenu(true);
                   }}
                   className={cn(
-                    // The side bar's tabs, a size down (TABS1): the selected one whole, and the rest whole
+                    // The side bar's tabs, a size down: the selected one whole, and the rest whole
                     // while the header holds every name, their icons alone when it does not; never cut.
                     'flex shrink-0 items-center gap-1.5 whitespace-nowrap border-b-2 px-2 py-0.5 text-meta transition-colors duration-(--speed)',
                     shown === id ? 'border-b-accent text-ink' : 'border-b-transparent text-ink-faint hover:text-ink',
@@ -173,7 +173,7 @@ export function OutputPanel({
             </div>
           )
           // One view is no tabs: the header it always had, named for what it holds, and dragged by its
-          // name as VS Code's lone view is by its title (DOCK1e).
+          // name as VS Code's lone view is by its title.
           : entries[0] && (
             <span
               className={cn('shrink-0 text-meta text-ink-faint', onMove && 'cursor-grab')}
@@ -184,8 +184,8 @@ export function OutputPanel({
           )}
         {tabbed && <StreamTabs tabs={tabs} selected={selected} onSelect={onSelect} onStop={onStop} />}
         <div className="ml-auto flex shrink-0 items-center gap-1">
-          {/* Absent where it would list one view and offer nothing (D118 §3a: absent, never a door that does
-              nothing): a detached session's window, which has no side bar to move a view to (FRAME1h). */}
+          {/* Absent where it would list one view and offer nothing (absent, never a door that does
+              nothing): a detached session's window, which has no side bar to move a view to. */}
           {(entries.length > 1 || onMove || onReset) && (
             <ViewsMenu
               region="panel"
@@ -225,13 +225,13 @@ export function OutputPanel({
 }
 
 /**
- * The console's own tabs (CONSOLE2): the session, then each subagent and background task it runs,
- * each named by how it stands. Its own molecule since DOCK1b, because the console can stand in the
+ * The console's own tabs: the session, then each subagent and background task it runs,
+ * each named by how it stands. Its own molecule, because the console can stand in the
  * right side bar too, and its streams go with it.
  *
  * @remarks
- * **The selected task carries its stop, after the tabs** (CONSOLE3a), as VS Code's panel carries *Kill
- * Terminal* for the terminal in view: only while it runs and its harness said it can be stopped, and
+ * **The selected task carries its stop, after the tabs**, as VS Code's panel carries *Kill
+ * Terminal* for the terminal in view: only while it runs and its harness says it can be stopped, and
  * named for the task it stops. Not inside the tab list, which owns tabs and nothing else, and not
  * inside a tab, whose content is one label to a screen reader.
  */

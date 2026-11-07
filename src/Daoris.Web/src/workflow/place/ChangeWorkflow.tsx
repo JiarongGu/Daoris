@@ -29,7 +29,7 @@ type Tab = (typeof TABS)[number];
 
 const nameOf = (saved: SavedWorkflow) => saved.name ?? saved.id;
 
-/** An id made from a copy's name, unique among the saved ones; a name with no letter or digit takes the id it was copied from. */
+/** An id made from a copy's name, unique among the saved ones; a name with no letter or digit takes the id it is copied from. */
 export function copyIdFor(name: string, from: string, taken: readonly string[]): string {
   const base = name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '') || from || 'workflow';
   let id = base;
@@ -113,8 +113,8 @@ function CopyForm({ initial, busy, onSave, onCancel }: { initial: string; busy: 
 const small = 'min-h-0 border border-line px-2 py-0.5 text-small';
 
 /**
- * **Change…** (AGENTSPLACE1h, SETUPUX1p; the Setup design's §2.3): what one route of a place follows, chosen from three tabs: the presets
- * the driver ships, the workflows saved here, and *Current*, which is only the conversion's door (WORKFLOWCLEAN1h-b). Selecting a candidate draws it through the place's own chart
+ * **Change…**: what one route of a place follows, chosen from three tabs: the presets
+ * the driver ships, the workflows saved here, and *Current*, which is only the conversion's door. Selecting a candidate draws it through the place's own chart
  * and writes nothing; where `WORKFLOW_LIST` announces `use: ['plan']`, it also reads the plan of choosing it, and *Use here* carries the
  * plan's `expected` token, so a choice whose plan moved is refused `moved` in the driver's words. Unannounced, *Use here* is today's press.
  * A preset is stored by *Save a copy…* (a name alone) before it is used. *Use the workspace's* clears the place's own choice for the route,
@@ -131,7 +131,7 @@ export function ChangeWorkflow({
 }: {
   /** The saved workflows and the presets; null while read. */
   list: WorkflowListAnswer | null;
-  /** The read was refused. */
+  /** The read is refused. */
   error?: unknown;
   /** The place's Current, for its version. */
   current: CurrentWorkflow;
@@ -373,7 +373,7 @@ export function ChangeWorkflow({
         </ul>
       );
     }
-    // Current is no candidate (D228): the rule it reads is converted to a saved workflow, which is the one way out of it.
+    // Current is no candidate: the rule it reads is converted to a saved workflow, which is the one way out of it.
     return (
       <div className="grid min-w-0 gap-1.5">
         <div className="flex min-w-0 flex-wrap items-baseline gap-x-2 gap-y-0.5">

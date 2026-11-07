@@ -5,7 +5,7 @@ import i18n from '../../locales/i18n';
 import { NodeWord } from '../NodeWord';
 import type { RunStep } from '../run';
 
-// NODEKIT1 HUMAN: under a run's step waiting on the person's task, its presses lead the skip and stop, each the run's node word with a note
+// Under a run's step waiting on the person's task, its presses lead the skip and stop, each the run's node word with a note
 // the person may give; a press already kept is said in place of them.
 
 const step = (acts: string[], asked?: RunStep['asked']) => ({ step: { id: 'sign' }, acts, ...(asked ? { asked } : {}) }) as unknown as RunStep;

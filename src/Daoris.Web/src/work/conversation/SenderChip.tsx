@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { clockOf } from '../../locales/format';
 
 /**
- * The head of a word's turn (COMMS1h, the comms design §7): who it is from, as the one sender rule reads it, and when it was taken;
+ * The head of a word's turn: who it is from, as the one sender rule reads it, and when it is taken;
  * beside it, the door to the word's home where that is elsewhere and the fold of a long word. The doors wrap under the sender at a
  * narrow width, and come after it in the keyboard's order.
  */
@@ -21,7 +21,7 @@ export function SenderChip({ label, at, children }: { label: string; at: string;
   );
 }
 
-/** *In the channel*: opens the channel where a message the turn took is drawn whole (COMMS1h), rather than drawing it again here. */
+/** *In the channel*: opens the channel where a message the turn took is drawn whole, rather than drawing it again here. */
 export function ChannelDoor({ message, onOpen }: { message: string; onOpen: (message: string) => void }) {
   const { t } = useTranslation();
   return (

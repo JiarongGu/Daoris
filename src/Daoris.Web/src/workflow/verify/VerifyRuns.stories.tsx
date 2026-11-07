@@ -5,7 +5,7 @@ import { storyWidths } from '../../design/storyWidths';
 import { FAILED_GATE, lineOf, NOT_NOW, RUNNING, UNKNOWN_HELD, VERIFIED, WAITING } from './lineFixtures';
 import { VerifyRuns } from './VerifyRuns';
 
-// A repository's verifications on its Workflow tab (FABRIC-PIPELINE1d, the pipeline design §4.4): each verdict a person meets, newest
+// A repository's verifications on its Workflow tab: each verdict a person meets, newest
 // first; an unknown held for them with Run again and Not now; none yet, on its way and refused; 中文 and dark.
 
 const held = () => Promise.resolve({ done: true });

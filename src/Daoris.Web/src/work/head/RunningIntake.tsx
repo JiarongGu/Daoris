@@ -2,20 +2,20 @@ import { useTranslation } from 'react-i18next';
 import { Button } from '../../design/ui';
 
 /**
- * A RUNNING intake, and why it has no message box (INT4h).
+ * A RUNNING intake, and why it has no message box.
  *
  * @remarks
- * **An intake is one turn.** It is framed as one prompt (INT4b §1b's trap), so a line typed into a
+ * **An intake is one turn.** It is framed as one prompt, so a line typed into a
  * composer had nowhere true to go: the pipe door spawns it with no stdin, and on the protocol door
  * its stdin is the driver's own JSON-RPC frames — a person's line written there lands in the middle
  * of the protocol. The driver refuses such a line in its own words; this is the screen's half, which
  * offers no box at all and says so in the one line a box would have taken.
  *
  * **Where an answer goes.** An intake that cannot tell whose an ask is asks by PARKING, and then the
- * answer is on the ask (INT4g's `AwaitingIntake`). So the door here opens the ask — a look, not an
+ * answer is on the ask (`AwaitingIntake`). So the door here opens the ask — a look, not an
  * answer, since nothing is being asked yet.
  *
- * **Its stop is the page header's** (SESSUX1d, D126 §3.3): the session's stop has one owner, and the sentence this card
+ * **Its stop is the page header's**: the session's stop has one owner, and the sentence this card
  * said beside it, that the ask stays a proposal, is what the header's stop asks with.
  *
  * A molecule: handed the ask and its door. Where nothing can act (a story, a mirrored record) it is

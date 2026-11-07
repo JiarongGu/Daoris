@@ -8,7 +8,7 @@ import { ABANDON_ANSWER, ABANDONED_ENTRY, MIXED_ASK, PAUSABLE_ASK, SPENT_ASK } f
 import type { Answered } from '../InlineConfirm';
 import { AbandonAsk, AbandonedWork, PauseAsk } from './WorkAsks';
 
-// What a pause and an abandon ask under a header, and what an abandon leaves on a page (PAUSE1e, D132 §2.6, §3.1, §4.2), as
+// What a pause and an abandon ask under a header, and what an abandon leaves on a page, as
 // molecules: every state is reached by passing it, and every press goes out.
 
 const ASK = { scope: 'ask', id: 'a1b2c3' } as const;

@@ -5,7 +5,7 @@ import i18n from '../../locales/i18n';
 import type { Session } from '../../data/api';
 import { SessionHead } from './SessionHead';
 
-// LANDNAME1b (D145's LANDNAME1a note): the head's land ask takes a branch name that replaces the rule's whole name, where the
+// The head's land ask takes a branch name that replaces the rule's whole name, where the
 // rule makes a branch; blank keeps the rule's. The plan is asked again with the name by the frame (`onName`), so a refusal shows
 // before the press.
 
@@ -80,7 +80,7 @@ describe("the head's land ask names a branch", () => {
       landing={{ ...BRANCH, target: 'main', problem: 'a branch named `main` stands, which Daoris did not make.' }} />);
     expect(within(ask()).getByRole('textbox', { name: 'Branch name' })).toHaveAttribute('placeholder', 'feature/delta');
     expect(ask()).toHaveTextContent('which Daoris did not make.');
-    // STANDSREFUSE1: a press the plan says would be refused is held, its sentence saying why.
+    // A press the plan says would be refused is held, its sentence saying why.
     expect(within(ask()).getByRole('button', { name: 'Accept' })).toBeDisabled();
   });
 
@@ -100,7 +100,7 @@ describe("the head's land ask names a branch", () => {
   });
 
   /**
-   * TREEFOLLOWWEB1 (D164's TREEFOLLOW1 note): a tree its agent moved onto a branch of its own lands that branch as it stands, which
+   * A tree its agent moved onto a branch of its own lands that branch as it stands, which
    * the ask says, naming the branch the head's line names; a name entered has nowhere to go, so no field is offered.
    */
   it('says the session’s own branch lands as it stands, and offers no field for a name', async () => {

@@ -5,8 +5,8 @@ import type { SessionGrouping } from './groups';
 import { folderOf, handOverLabel, offeredActs, primaryAct, stopAsk, workTargetOf } from './acts';
 import { said } from '../test/said';
 
-// Which acts a session is offered, by the one rule its row's ⋯ and its page header share (SESSUX1d, D126 §3.1): each
-// offered where it applies and absent where it does not, never disabled (D119 §3.2). Pure, so every session a person
+// Which acts a session is offered, by the one rule its row's ⋯ and its page header share: each
+// offered where it applies and absent where it does not, never disabled. Pure, so every session a person
 // could have is an argument.
 
 const ROOT = 'C:/somewhere/engine';
@@ -38,7 +38,7 @@ describe('the acts a session is offered', () => {
     expect(offeredActs(waiting, 'header')).not.toContain('answer');
   });
 
-  /** PAUSE1e (D132 §7.1): where work going wrong is met, its quest is paused, and its ask's where an ask asked it. */
+  /** Where work going wrong is met, its quest is paused, and its ask's where an ask asked it. */
   it('offers a live driven session Pause quest…, and Pause ask… where its quest is an ask’s', () => {
     const working = { session: session(), grouping: placed({ group: 'working', shown: 'working' }), root: ROOT };
     expect(offeredActs({ ...working, quest: quest('Taken') }, 'header')).toContain('pauseQuest');
@@ -51,7 +51,7 @@ describe('the acts a session is offered', () => {
     expect(offeredActs({ ...working, session: session({ id: 'person@machine-b/s1' }) }, 'row')).not.toContain('pauseQuest');
   });
 
-  /** PAUSE1e (D132 §6.1): where a pause holds its quest, Resume is offered in Try again's place, and leads. */
+  /** Where a pause holds its quest, Resume is offered in Try again's place, and leads. */
   it('offers Resume ask or Resume quest where a pause holds its quest, in Try again’s place, and leads with it', () => {
     const byAsk = placed({ group: 'review', shown: 'stopped', pausedBy: { scope: 'ask', id: 'a1b2c3' } });
     const stopped = { session: session({ state: 'stopped', tree: TREE }), grouping: byAsk, root: ROOT };
@@ -76,7 +76,7 @@ describe('the acts a session is offered', () => {
     expect(workTargetOf('stop', facts)).toBeNull();
   });
 
-  /** ANSWER1c (D131): answered, the same session goes on at the driver's next look, and there is no box to answer in. */
+  /** Answered, the same session goes on at the driver's next look, and there is no box to answer in. */
   it('offers no answer to a park the person has answered, and keeps its stop', () => {
     const answered = {
       session: session({ state: 'awaiting-person', said: said('Use the second.') }),
@@ -97,14 +97,14 @@ describe('the acts a session is offered', () => {
     expect(offeredActs(released, 'row')).not.toContain('retry');
   });
 
-  /** AGENTERRORS1a2 (D210 §5.1, §8): a record past its transient bound, its quest's last here, is released for that end by Try again. */
+  /** A record past its transient bound, its quest's last here, is released for that end by Try again. */
   it('offers Try again on a failed record past its transient bound that holds its quest, and leads with it', () => {
     const transient = session({ state: 'failed', noteParts: [{ code: 'ended.transient', values: { count: 5, minutes: 31 } }] });
     const holding = placed({ group: 'ended', shown: 'failed', holdsQuest: true });
     const acts = offeredActs({ session: transient, grouping: holding, root: ROOT }, 'header');
     expect(acts).toContain('retry');
     expect(primaryAct(acts, holding)).toBe('retry');
-    // Not where it no longer holds its quest (a later record, a hand-over), nor a failed record that ended any other way.
+    // Not where it does not hold its quest (a later record, a hand-over), nor a failed record that ended any other way.
     expect(offeredActs({ session: transient, grouping: placed({ group: 'ended', shown: 'failed', holdsQuest: false }), root: ROOT }, 'row'))
       .not.toContain('retry');
     const struck = session({ state: 'failed', noteParts: [{ code: 'ended.turn-failed-taken', values: {} }] });
@@ -125,7 +125,7 @@ describe('the acts a session is offered', () => {
     expect(offeredActs({ ...ended, grouping: null }, 'row')).not.toContain('archive');
   });
 
-  /** SESSUX1f (D126 §5.4): Delete… only where the reader says the delete would be taken, D95's way, at both doors. */
+  /** Delete… only where the reader says the delete would be taken, at both doors. */
   it('offers Delete… only where the reader says deletable, after the archive marks and before the id', () => {
     const chat = session({ quest: null, kind: 'chat', state: 'completed', tree: null });
     const deletable = { session: chat, grouping: placed({ group: 'ended', shown: 'completed', deletable: true }), root: ROOT };
@@ -166,7 +166,7 @@ describe('the acts a session is offered', () => {
     expect(offeredActs({ session: chat, root: ROOT }, 'header'))
       .toEqual(['handOver', 'askHelper', 'askPiece', 'review', 'openFolder', 'terminal', 'detach', 'copy']);
     expect(offeredActs({ session: { ...chat, state: 'working' }, root: ROOT }, 'header').slice(0, 2)).toEqual(['stop', 'handOver']);
-    // Not a quest's session, an intake, Ask Daoris's, nor a teammate's: each has its own door or none (MIXAGENT1a-i, D163).
+    // Not a quest's session, an intake, Ask Daoris's, nor a teammate's: each has its own door or none.
     expect(offeredActs({ session: session(), root: ROOT }, 'row')).not.toContain('handOver');
     expect(offeredActs({ session: { ...chat, ask: '0fda18' }, root: null }, 'row')).not.toContain('handOver');
     expect(offeredActs({ session: { ...chat, repository: 'daoris:help' }, root: null }, 'row')).not.toContain('handOver');
@@ -174,13 +174,13 @@ describe('the acts a session is offered', () => {
   });
 
   /**
-   * MIXAGENT2b (D163 point 2; the mixed-agents design §3): *Ask another agent…* on the page of a session of this machine's that may
+   * *Ask another agent…* on the page of a session of this machine's that may
    * ask, driven or a conversation, live or ended, after the hand-over; in its header only, where its ask opens, so no row's ⋯ grows.
    * Not a helper (a helper cannot ask for a helper), a reviewer, an intake, Ask Daoris's, nor a teammate's.
    */
   it('offers Ask another agent… in the header of a session of this machine’s that may ask, and nowhere else', () => {
     const driven = { session: session(), grouping: placed({ group: 'working', shown: 'working' }), root: ROOT };
-    // SESSWATCH1a: a live quest session's head offers *Hand over…* too, through the judge its terminal's verb shares.
+    // A live quest session's head offers *Hand over…* too, through the judge its terminal's verb shares.
     expect(offeredActs(driven, 'header'))
       .toEqual(['stop', 'handOver', 'askHelper', 'askPiece', 'pauseQuest', 'review', 'openFolder', 'terminal', 'detach', 'copy']);
     expect(offeredActs(driven, 'row')).not.toContain('handOver');
@@ -195,7 +195,7 @@ describe('the acts a session is offered', () => {
   });
 
   /**
-   * COAGENT1c (the co-agent design §6.1): *Ask another agent to work on a piece…* in the header of a session of this machine's that leads
+   * *Ask another agent to work on a piece…* in the header of a session of this machine's that leads
    * pieces, driven or a conversation, working in a tree of its own; never on a row, and never for a helper, a partner, a reviewer, an
    * intake, Ask Daoris's, a teammate's, or one with no tree.
    */
@@ -211,7 +211,7 @@ describe('the acts a session is offered', () => {
     for (const other of others) expect(offeredActs({ session: { ...chat, ...other }, root: ROOT }, 'header')).not.toContain('askPiece');
   });
 
-  /** HELPERACTS1 (D163's MIXAGENT2a-i note): a helper's and a reviewer's records are refused words and resume, so no act takes any. */
+  /** A helper's and a reviewer's records are refused words and resume, so no act takes any. */
   it('offers a helper or a reviewer no act that takes words, and still its stop and what is not words', () => {
     const chat = session({ quest: null, kind: 'chat', state: 'completed', tree: TREE });
     const wordless = ['handOver', 'answer', 'retry', 'resumeQuest', 'resumeAsk', 'pauseQuest', 'pauseAsk'];
@@ -230,7 +230,7 @@ describe('the acts a session is offered', () => {
   });
 
   /**
-   * FOUNDATION1c (X4-1.3, X4-2.1): drawing a partner as a partner offers it nothing it is not offered now. A partner's record serves, as a
+   * Drawing a partner as a partner offers it nothing it is not offered now. A partner's record serves, as a
    * helper's does, so it is refused words and resume exactly as a helper is, on a host that sends its `work` and on one that sends none:
    * the acts offered are a helper's, none that takes words.
    */
@@ -256,7 +256,7 @@ describe('the acts a session is offered', () => {
   });
 
   /**
-   * LIMITRESUME1d (D206 §3.7): a driven line an account's limit ended goes on now with another agent or account from its header, the
+   * A driven line an account's limit ended goes on now with another agent or account from its header, the
    * hand-over named *Go on now with…*; not on its row, not once its quest is closed, and not while a pause holds it.
    */
   it('offers a line a limit ended Go on now with… in its header, unless closed or paused', () => {
@@ -292,7 +292,7 @@ describe('what a stop says before it is meant', () => {
     expect(stopAsk(session(), quest('Taken'))).toEqual({ key: 'work.stop.drivenHeld', values: {} });
     expect(stopAsk(session({ state: 'queued' }), quest('Open'))).toEqual({ key: 'work.stop.drivenOpen', values: { quest: 'abc123' } });
     expect(stopAsk(session({ state: 'awaiting-person' }), quest('Taken'))).toEqual({ key: 'work.stop.parked', values: {} });
-    // ANSWER1c: answered, it is not stopped unanswered; it holds its quest as a driven session at work does.
+    // Answered, it is not stopped unanswered; it holds its quest as a driven session at work does.
     expect(stopAsk(session({ state: 'awaiting-person', said: said('carry on.') }), quest('Taken')))
       .toEqual({ key: 'work.stop.drivenHeld', values: {} });
     expect(stopAsk(session({ quest: null, kind: 'chat' }), null)).toEqual({ key: 'work.stop.chat', values: {} });

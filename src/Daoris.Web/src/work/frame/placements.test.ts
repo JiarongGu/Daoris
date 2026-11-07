@@ -1,15 +1,15 @@
 import { describe, expect, it } from 'vitest';
 import { DEFAULT_PLACES, placesOf, viewsIn } from './placements';
 
-// DOCK1b: a view is a thing that can move, a region is a place it can go, and where each stands is the
+// A view is a thing that can move, a region is a place it can go, and where each stands is the
 // viewer's, remembered like every other layout choice.
 
 describe('where the views stand', () => {
   it('starts every view where the frame always drew it', () => {
     expect(placesOf(null)).toEqual(DEFAULT_PLACES);
-    // The terminal (CONSOLE4b) stands in the panel, beside the console, as VS Code's does; the workflow (WORKFLOW1c) in the side
-    // bar beside the timeline and the review; *Notifications* (NOTIFY2b, the notification design §2.1) on the right, first; *At work*
-    // (COWORKVIEW1a) on the right after the workflow.
+    // The terminal stands in the panel, beside the console, as VS Code's does; the workflow in the side
+    // bar beside the timeline and the review; *Notifications* on the right, first; *At work*
+    // on the right after the workflow.
     expect(DEFAULT_PLACES).toEqual({
       notifications: 'right', timeline: 'right', review: 'right', workflow: 'right', atWork: 'right', ask: 'right', console: 'panel',
       terminal: 'panel',

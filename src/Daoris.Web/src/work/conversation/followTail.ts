@@ -4,10 +4,10 @@ import { type RefObject, useCallback, useEffect, useLayoutEffect, useRef, useSta
 const SLACK = 48;
 
 /**
- * Follow a growing region's tail until the person scrolls up, and offer the way back (D76, CONV2).
+ * Follow a growing region's tail until the person scrolls up, and offer the way back.
  *
  * @remarks
- * The reference console's rule, and the console's own since SURF4c: **a reader at the bottom stays at
+ * The reference console's rule, and the console's own: **a reader at the bottom stays at
  * the bottom as the conversation grows; a reader who scrolled up to read is left where they are**,
  * and a "back to bottom" control appears for them. Pulling someone mid-sentence to the tail is the
  * one thing a live view must never do.
@@ -15,12 +15,12 @@ const SLACK = 48;
  * `grew` is anything that changes when the content does — the last event's sequence and its text's
  * length, so a message growing chunk by chunk counts. `opened` changes when a different session is
  * attended, which starts at the tail — or, `fromTop`, at the top: a session that has ended opens at
- * its head, which says how it ended (SESS2 H1), with *last words* and the way to the bottom beside it.
+ * its head, which says how it ended, with *last words* and the way to the bottom beside it.
  */
 export function useFollowTail(scroller: RefObject<HTMLElement | null>, grew: unknown, opened: unknown, fromTop = false) {
   const [atTail, setAtTailState] = useState(true);
   const following = useRef(true);
-  // Set only on a change (PAGELOOP1): set unchanged just after a drawing, React keeps the update, which a growth's commit then leaves
+  // Set only on a change: set unchanged just after a drawing, React keeps the update, which a growth's commit then leaves
   // waiting, and React counts such commits toward its update-depth limit (#185).
   const held = useRef(true);
   const setAtTail = useCallback((near: boolean) => {
@@ -54,7 +54,7 @@ export function useFollowTail(scroller: RefObject<HTMLElement | null>, grew: unk
     return () => element.removeEventListener('scroll', onScroll);
   }, [scroller, setAtTail]);
 
-  // A new session opens at its tail, or an ended one at its top, not followed (SESS2 H1).
+  // A new session opens at its tail, or an ended one at its top, not followed.
   useLayoutEffect(() => {
     const element = scroller.current;
     if (!fromTop || !element) {
@@ -68,7 +68,7 @@ export function useFollowTail(scroller: RefObject<HTMLElement | null>, grew: unk
     // Only a new opening moves it; `fromTop` is read with it.
   }, [opened, toTail]);
 
-  // Growth follows only a reader who was following.
+  // Growth follows only a reader who is following.
   useLayoutEffect(() => {
     if (following.current) toTail();
   }, [grew, toTail]);
@@ -77,7 +77,7 @@ export function useFollowTail(scroller: RefObject<HTMLElement | null>, grew: unk
 }
 
 /**
- * Whether the reader has scrolled down from the region's top by more than a line's slack (WAITPANEL1): *To the top* is offered
+ * Whether the reader has scrolled down from the region's top by more than a line's slack: *To the top* is offered
  * only then. Read again when `opened` changes, as a new session opens wherever its conversation puts it.
  */
 export function useAwayFromTop(scroller: RefObject<HTMLElement | null>, opened: unknown): boolean {

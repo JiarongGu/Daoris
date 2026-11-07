@@ -4,13 +4,13 @@ import userEvent from '@testing-library/user-event';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import * as Tooltip from '@radix-ui/react-tooltip';
 
-// LANDSYNC1 (D87's 2026-10-15 amendment points 4 and 5): the review's foot says what Accept leaves out because the line holds it and
+// The review's foot says what Accept leaves out because the line holds it and
 // what it replays, before the press; where replaying conflicts, the plan's trial or the press's refusal, Accept's place holds the words
-// its session is asked to rebase with, and one press says them through D137's say door.
+// its session is asked to rebase with, and one press says them through the say door.
 
 const { invoke, heard } = vi.hoisted(() => ({
   invoke: vi.fn(),
-  // The state hub's ear (STATEHUB1f, D169): what the mocked shell publishes after a press reaches it, as the kit's pump would.
+  // The state hub's ear: what the mocked shell publishes after a press reaches it, as the kit's pump would.
   heard: new Map<string, (payload: unknown) => void>(),
 }));
 
@@ -48,7 +48,7 @@ function answer(landing: () => unknown, pressed?: unknown) {
   });
 }
 
-/** The window's state hub, as `ShellSignals` mounts it: a refused landing's plan is asked again here (STATEHUB1f, D169). */
+/** The window's state hub, as `ShellSignals` mounts it: a refused landing's plan is asked again here. */
 function Hub() {
   useStateHub();
   return null;
@@ -91,7 +91,7 @@ describe('what Accept leaves out because the line holds it', () => {
     expect(screen.queryByText(/replays/)).toBeNull();
   });
 
-  // LANDREBASE1 (D87's note): the line moved since the work began and holds none of it, so Accept replays it onto the line first.
+  // The line moved since the work began and holds none of it, so Accept replays it onto the line first.
   it('says Accept replays the work onto the line first where the line only moved', async () => {
     answer(() => ({ ...PLAN, leftOut: [], lands: LANDS }));
     pane();
@@ -146,7 +146,7 @@ describe('a replay onto the line that conflicts', () => {
   });
 });
 
-// LANDBACK1 part 1 (D87's note): Accept itself carries a session on where its tree holds uncommitted work or its landing conflicts, in
+// Accept itself carries a session on where its tree holds uncommitted work or its landing conflicts, in
 // Daoris's own words, with no card, and the work lands once its tree is clean; Review shows it as carried on, never as finished work.
 describe('an Accept that carries its session on', () => {
   afterEach(() => { invoke.mockReset(); });

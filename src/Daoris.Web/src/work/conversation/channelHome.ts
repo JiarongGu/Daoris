@@ -4,7 +4,7 @@ import type { Channel } from '../channel';
 export type ChannelPoster = { repository: string | null; agent: string | null; outside?: boolean };
 
 /**
- * A channel message's home, seen from the conversation that took it (COMMS1h, the comms design §7): the message is drawn whole in the
+ * A channel message's home, seen from the conversation that took it: the message is drawn whole in the
  * channel, and the turn that took it carries a sender chip that names its poster and opens the channel.
  */
 export type ChannelHome = {

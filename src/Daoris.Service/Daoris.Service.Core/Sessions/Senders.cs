@@ -1,7 +1,7 @@
 namespace Daoris.Knowledge;
 
 /// <summary>
-/// Who said a word kept on a session (COMMS1a, the comms design §3.3), read once from the marks it carries and never stored: the
+/// Who said a word kept on a session, read once from the marks it carries and never stored: the
 /// person, Daoris, the supervisor, a channel post, a helper, a partner, or a second opinion. Authorship comes from the door that kept
 /// the word; a supplied <c>from</c>, a role's name or a quoted instruction grants nothing.
 /// </summary>

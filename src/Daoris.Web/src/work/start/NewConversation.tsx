@@ -13,7 +13,7 @@ import { CHIP, RepositoryPicker, type StartRepository } from './RepositoryPicker
 export type { StartRepository } from './RepositoryPicker';
 
 /**
- * Where a conversation works (D162 point 2): the driver's choice, the repository's standing opt-in, sends nothing; the
+ * Where a conversation works: the driver's choice, the repository's standing opt-in, sends nothing; the
  * checkout and its own tree are said exactly.
  */
 export type TreeChoice = 'driver' | 'checkout' | 'own';
@@ -43,7 +43,7 @@ export type CheckoutReader = (repository: string | null, workspace?: string) => 
 const UNREAD: CheckoutReader = () => ({ read: undefined, refresh: () => {} });
 
 /**
- * The tree chip and its menu (NEW1e-b, design §1). The person's checkout is never switched, so where *The checkout* is chosen
+ * The tree chip and its menu. The person's checkout is never switched, so where *The checkout* is chosen
  * the chip names the branch it is on: read for the chosen repository, again when the menu opens (a branch switched outside
  * Daoris shows), never polled. While the read is pending, refused or unavailable the checkout is said plain; the driver's
  * choice and its own tree name no branch.
@@ -94,9 +94,9 @@ function TreeChip({ tree, onTree, repository, workspace, readCheckout }: {
 }
 
 /**
- * The repository a start opens on: where the person was when they pressed *New conversation* (NEW1f), busy or not, as the tree
+ * The repository a start opens on: where the person is when they press *New conversation*, busy or not, as the tree
  * chip says it is busy; else the one last chosen; each only where it can still be chosen. Else the newest recent one nothing
- * works in, else the first nothing works in, else the first with a checkout here (UX5 U68: it opened on a busy one and was refused).
+ * works in, else the first nothing works in, else the first with a checkout here: a busy one would be refused.
  */
 export function openingRepository(
   repositories: readonly StartRepository[], busy: Readonly<Record<string, string>>, recent: readonly string[], remembered?: string | null,
@@ -112,26 +112,25 @@ export function openingRepository(
 }
 
 /**
- * *New conversation* (NEW1b, D162 point 1, the entry design §1): what the person wants worked on, in their words, then the
+ * *New conversation*: what the person wants worked on, in their words, then the
  * repository, the tree and the agent with its account, and *Start*. The conversation opens on those words.
  *
  * @remarks
- * **It replaced the *Start session* drawer** (D55's), which started an empty conversation the person typed into after. What
- * the drawer knew is the chips': repositories with a checkout here, a busy checkout and what lets it start, the agents by the
- * names Settings gives them (UX5 U67), and the accounts in the set's order (D197 point 2).
+ * **The chips** hold repositories with a checkout here, a busy checkout and what lets it start, the agents by the
+ * names Settings gives them, and the accounts in the set's order.
  *
- * **Every chip may be left alone.** Silence resolves the way a driven session resolves (D49 §4, D51): the agent from
- * `driver.json`, the account the walk of the agent's set takes (D197), the tree from the repository's standing opt-in.
+ * **Every chip may be left alone.** Silence resolves the way a driven session resolves: the agent from
+ * `driver.json`, the account the walk of the agent's set takes, the tree from the repository's standing opt-in.
  * So the defaults say *driver's*, and send nothing.
  *
- * **Enter starts; Shift+Enter is a new line; an input method's Enter is its own** (IME1). Files go with the words, through
+ * **Enter starts; Shift+Enter is a new line; an input method's Enter is its own**. Files go with the words, through
  * the `carry` molecule every composer uses. *Start* waits for words and a repository, and presses once while a start is on
  * its way.
  *
- * **A refusal is the driver's sentence, whole, under *Start*** (UX5 U68), and the words and the choices stay: the composer
+ * **A refusal is the driver's sentence, whole, under *Start***, and the words and the choices stay: the composer
  * clears nothing itself. Its holder clears the draft once a conversation took it.
  *
- * **A browser has no shell** (D46 §7): the composer is absent, and the place says where a conversation starts.
+ * **A browser has no shell**: the composer is absent, and the place says where a conversation starts.
  *
  * A molecule: the rosters arrive as props, so a first run, a busy checkout and a signed-out account are reached without a
  * machine in that state.
@@ -144,27 +143,27 @@ export function NewConversation({
   /** Whether a shell is here; false is a browser. */
   attached?: boolean;
   repositories: readonly StartRepository[];
-  /** Each repository whose checkout an active session on this machine holds, with that session (UX5 U68). */
+  /** Each repository whose checkout an active session on this machine holds, with that session. */
   busy?: Readonly<Record<string, string>>;
   /** This machine's last successful starts, newest first. */
   recent?: readonly string[];
   /** The repository last chosen on this machine. */
   remembered?: string | null;
-  /** The repository of the session attended when *New conversation* was pressed (NEW1f); it opens ahead of `remembered`. */
+  /** The repository of the session attended when *New conversation* is pressed; it opens ahead of `remembered`. */
   attended?: string | null;
   /** Told each repository the person chooses, to remember. */
   onChoose?: (repository: string) => void;
   /** The agents installed here; empty offers no choice. */
   harnesses: readonly string[];
-  /** What a person calls each way in, as Settings names it (UX5 U67); absent, its short name, then its id. */
+  /** What a person calls each way in, as Settings names it; absent, its short name, then its id. */
   labels?: Readonly<Record<string, string>>;
   /** Each agent's short name for the chip (*Claude Code*); absent, its label, then its id. */
   names?: Readonly<Record<string, string>>;
   /** The driver's own agent, whose accounts are offered while no other is chosen. */
   defaultHarness?: string;
-  /** Each agent's accounts, with their sign-in state (D49 §4), by agent: the accounts follow the agent chosen (REV3). */
+  /** Each agent's accounts, with their sign-in state, by agent: the accounts follow the agent chosen. */
   accounts: Readonly<Record<string, Pick<Account, 'name' | 'login' | 'account' | 'displayName' | 'key'>[]>>;
-  /** Each agent's accounts of Daoris's in the set's order, every workspace's (POOL1c, D197); null where it was not answered. */
+  /** Each agent's accounts of Daoris's in the set's order, every workspace's; null where it is not answered. */
   orderOf?: (harness: string) => readonly string[] | null;
   /** The words, where the holder keeps them across a visit elsewhere. Absent, the composer holds its own. */
   draft?: string;
@@ -178,33 +177,33 @@ export function NewConversation({
   refusal?: string | null;
   /**
    * Bumped to put the focus in the prompt: each *New conversation* pressed, including the press that mounts it. Zero is no
-   * ask, and `onFocused` says the ask was met, so its holder can put it down: a composer mounted later by another path (the
-   * attended session deleted) takes no focus it was not asked for.
+   * ask, and `onFocused` says the ask is met, so its holder can put it down: a composer mounted later by another path (the
+   * attended session deleted) takes no focus it is not asked for.
    */
   focus?: number;
   onFocused?: () => void;
   onStart: (start: NewStart) => void;
   /** Attend a session: the one holding a busy checkout. Absent, none is offered. */
   onOpenSession?: (session: string) => void;
-  /** *Add repository…* pressed, at the picker's foot or in the first run: the holder opens its drawer over this (NEW1c). */
+  /** *Add repository…* pressed, at the picker's foot or in the first run: the holder opens its drawer over this. */
   onAdd?: () => void;
   /** *Import a folder…*, the same. */
   onImport?: () => void;
   /**
-   * A repository the holder just registered, to choose (NEW1c): each new `n` is one ask. It is kept until the registry lists it
+   * A repository the holder just registered, to choose: each new `n` is one ask. It is kept until the registry lists it
    * with a checkout, which a refetch may do a render later, so the choice is not lost to the order of the two.
    */
   pick?: { repository: string; n: number } | null;
-  /** Opens the picker on a workspace's group, after an import that registered several (NEW1c). */
+  /** Opens the picker on a workspace's group, after an import that registered several. */
   reveal?: { workspace: string; n: number } | null;
   /** The repository picker drawn open, for a story. */
   pickerOpen?: boolean;
   /** The tree the chip opens on, for a story: a person's own press is what chooses it. */
   openingTree?: TreeChoice;
-  /** The checkout's branch for the chosen repository, for the tree chip (NEW1e-b). Absent, the checkout is said plain. A hook: keep it stable. */
+  /** The checkout's branch for the chosen repository, for the tree chip. Absent, the checkout is said plain. A hook: keep it stable. */
   readCheckout?: CheckoutReader;
   /**
-   * *Make it a task with Daoris…* (NEW1d-b): hands the draft, with a line naming the repository chosen above it, to Ask Daoris as
+   * *Make it a task with Daoris…*: hands the draft, with a line naming the repository chosen above it, to Ask Daoris as
    * a draft the person sends. Absent, the press is not offered. The composer keeps its own draft.
    */
   onMakeTask?: (text: string) => void;
@@ -279,8 +278,8 @@ export function NewConversation({
 
   return (
     <form
-      // A form at what it holds (platform language §4, D141 §4): the prompt reads as one, centred in the main area. Its
-      // room above follows the main area's own width, never the window's (R7, UIFIT1d).
+      // A form at what it holds: the prompt reads as one, centred in the main area. Its
+      // room above follows the main area's own width, never the window's.
       className="mx-auto grid w-full max-w-[48rem] grid-cols-[minmax(0,1fr)] gap-3 pt-[8vh] @max-3xl/main:pt-6"
       onSubmit={(event) => { event.preventDefault(); go(); }}
       {...attach.handlers}
@@ -339,7 +338,7 @@ export function NewConversation({
           value={repository}
           onChoose={(next) => { setChosen(next); onChoose?.(next); }}
           foot={onAdd || onImport ? (close) => (
-            // Registering is not choosing, and it starts nothing (the design §1): the list goes down, then the drawer comes up.
+            // Registering is not choosing, and it starts nothing: the list goes down, then the drawer comes up.
             <>
               {onAdd && (
                 <Button variant="ghost" onClick={() => { close(); onAdd(); }} className="w-full justify-start">
@@ -396,7 +395,7 @@ export function NewConversation({
         </Button>
       </div>
 
-      {/* A first run (the design §1): Start waits, and the way out is here, not on another page, so the words are kept. */}
+      {/* A first run: Start waits, and the way out is here, not on another page, so the words are kept. */}
       {here.length === 0 && (
         <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
           <p className="m-0 text-small text-ink-soft">{t('work.start.none')}</p>
@@ -404,7 +403,7 @@ export function NewConversation({
           {onImport && <Button onClick={onImport}>{t('work.start.import')}</Button>}
         </div>
       )}
-      {/* What lets a busy checkout start after all, said where it is chosen (UX5 U68): its own tree, or the session holding it.
+      {/* What lets a busy checkout start after all, said where it is chosen: its own tree, or the session holding it.
           Nothing is stopped for it. */}
       {held && repository && (
         <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
@@ -419,11 +418,11 @@ export function NewConversation({
           )}
         </div>
       )}
-      {/* A fresh tree's cost is said where the tree is chosen (D51 §4), not found later by a session whose gates cannot run. */}
+      {/* A fresh tree's cost is said where the tree is chosen, not found later by a session whose gates cannot run. */}
       {tree === 'own' && <p className="m-0 text-small text-ink-soft">{t('work.start.ownTreeCost')}</p>}
 
-      {/* The driver's own sentence, whole, where Start was pressed (UX5 U68): it names what to do, and a paraphrase of an
-          instruction is a different instruction (D46 §3). */}
+      {/* The driver's own sentence, whole, where Start is pressed: it names what to do, and a paraphrase of an
+          instruction is a different instruction. */}
       {refusal && (
         <p role="alert" className="m-0 whitespace-pre-wrap border-l-[3px] border-warn pl-2.5 text-small text-ink-soft">
           <Inline text={refusal} />

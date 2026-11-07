@@ -11,7 +11,7 @@ import { DiffLines } from '../review/PatchView';
 import { callLines, FileOpener, type LineRange, treePath } from '../review/preview';
 
 /**
- * A file the card names, as a door into the side bar's preview (PREVIEW1, D111): the path relative to
+ * A file the card names, as a door into the side bar's preview: the path relative to
  * the tree, underlined as a link is, and never the card's own toggle — a press opens the file, not the card.
  */
 function PreviewDoor({ path, lines, open }: { path: string; lines: LineRange | null; open: (file: { path: string; lines: LineRange | null }) => void }) {
@@ -55,18 +55,18 @@ const KIND_ICON: Record<string, IconName> = {
 
 /**
  * A tool call's status, as a liveness mark: running is live, a failure is the one alarm. A call the
- * driver refused (HELP4) is not a failure of the harness's, so it is quiet.
+ * driver refused is not a failure of the harness's, so it is quiet.
  */
 const STATUS_TONE: Record<string, 'live' | 'idle' | 'ended' | 'failed'> = {
   pending: 'idle', in_progress: 'live', completed: 'ended', failed: 'failed', refused: 'idle', cut: 'idle',
 };
 
 /**
- * One tool call in a conversation (D76, CONV2): a row that says what it did — its kind, its title,
+ * One tool call in a conversation: a row that says what it did — its kind, its title,
  * the file it touched, what an edit changed, and how it went — and opens to what it carried.
  *
  * @remarks
- * **Everything here is the wire's own field** (D52): the kind, title, status, places and content an
+ * **Everything here is the wire's own field**: the kind, title, status, places and content an
  * ACP tool call reports. Nothing is inferred from a title or parsed out of the output. The one
  * change on the way to the screen is a path inside the session's tree, shown relative to it.
  *
@@ -74,7 +74,7 @@ const STATUS_TONE: Record<string, 'live' | 'idle' | 'ended' | 'failed'> = {
  * failed one is the line they came for. An edit shows its `+n −m` closed, because that is the size of
  * the change and it costs one glance.
  *
- * **A call the stop cut reads as stopped** (CONV4b), in the quiet tone and closed, whatever status the
+ * **A call the stop cut reads as stopped**, in the quiet tone and closed, whatever status the
  * harness gave it: the person asked for it. What the harness said is one click away, unchanged.
  *
  * A molecule: the call arrives as props, and the one state it owns is whether it is open.
@@ -87,13 +87,13 @@ export function ToolCard({ call, tree }: {
   const { t } = useTranslation();
   const stopped = Boolean(call.stopped);
   const failed = call.status === 'failed' && !stopped;
-  // Follows the call until the person opens or closes it (REV3): read once at the first draw, a call
+  // Follows the call until the person opens or closes it: read once at the first draw, a call
   // drawn running and failing later stayed closed over the line the reader came for.
   const [chosen, setChosen] = useState<boolean | null>(null);
   const open = chosen ?? failed;
 
-  // Each diff once per content, shared by the header's counts and the body (REV3 CLEAN1): a
-  // conversation re-renders its cards as it streams, and this was worked out twice every time.
+  // Each diff once per content, shared by the header's counts and the body: a
+  // conversation re-renders its cards as it streams, and this would be worked out twice every time.
   const lines = useMemo(
     () => (call.content ?? []).map((item) => (item.type === 'diff' ? lineDiff(item.oldText, item.newText) : null)),
     [call.content]);
@@ -103,20 +103,20 @@ export function ToolCard({ call, tree }: {
       .reduce((sum, c) => ({ added: sum.added + c.added, removed: sum.removed + c.removed }), { added: 0, removed: 0 })
     : null;
   const where = call.locations?.[0] ? inTree(call.locations[0], tree) : undefined;
-  // Never the id (SESS1 S5): a call the page holds only the updates of says it began earlier.
+  // Never the id: a call the page holds only the updates of says it began earlier.
   const title = inTree(call.title || t(call.continued ? 'work.tool.continued' : 'work.tool.untitled'), tree);
   const status = call.status ?? 'pending';
   const hasBody = Boolean(call.content?.length || call.input || call.output);
-  // How long it ran, by the driver's clock (SESS1): from its first event to the update that ended it —
+  // How long it ran, by the driver's clock: from its first event to the update that ended it —
   // said from a second on, since under that is the time the wire takes, not the call.
   const took = call.finished ? Date.parse(call.finished) - Date.parse(call.at) : Number.NaN;
   // How much it carried, closed: the lines of its text and output. An edit says its size as +n −m.
   const texts = [...(call.content ?? []).filter((item) => item.type !== 'diff').map((item) => item.text ?? ''), call.output ?? ''];
   const carried = counts ? 0 : texts.reduce((sum, text) => sum + (text ? text.split(/\r?\n/).length : 0), 0);
 
-  // The file this call acted on, as a door into the preview (PREVIEW1, D111): only where the frame opens
+  // The file this call acted on, as a door into the preview: only where the frame opens
   // previews, and only a path the page can see is inside the tree. The lines are a read's own input's, else
-  // the line the location names (LEFT2), which is said of this first location.
+  // the line the location names, which is said of this first location.
   const opener = useContext(FileOpener);
   const previewing = opener && call.locations?.[0] ? treePath(call.locations[0], tree) : null;
   const named = previewing ? callLines(call) : null;
@@ -210,7 +210,7 @@ function Content({ item, lines, tree }: { item: ToolContent; lines?: DiffLine[] 
   const { t } = useTranslation();
   const opener = useContext(FileOpener);
   if (item.type === 'diff') {
-    // The file an edit wrote, as a door into its preview where one opens (PREVIEW1): an edit names no lines.
+    // The file an edit wrote, as a door into its preview where one opens: an edit names no lines.
     const previewing = opener && item.path ? treePath(item.path, tree) : null;
     return (
       <figure className="m-0 overflow-hidden rounded-control border border-line">
@@ -219,7 +219,7 @@ function Content({ item, lines, tree }: { item: ToolContent; lines?: DiffLine[] 
             {previewing && opener ? <PreviewDoor path={previewing} lines={null} open={opener} /> : inTree(item.path, tree)}
           </figcaption>
         )}
-        {/* The review's own lines (REVIEW2), highlighted in the file's language — unnumbered, since an
+        {/* The review's own lines, highlighted in the file's language — unnumbered, since an
             edit's text is a piece of the file and its lines are not the file's. */}
         <div className="max-h-96 overflow-auto py-1 font-mono text-small leading-relaxed">
           <DiffLines
@@ -244,8 +244,8 @@ function Content({ item, lines, tree }: { item: ToolContent; lines?: DiffLine[] 
 }
 
 /**
- * A tool's text, without the Markdown fence an adapter wrapped it in (UX5 U63). The protocol door's
- * Claude Code adapter sends a read's text as one fenced block, and the card showed the fence as the
+ * A tool's text, without the Markdown fence an adapter wraps it in. The protocol door's
+ * Claude Code adapter sends a read's text as one fenced block, which the card would show as the
  * output's first and last lines, where the native door's same read has none. Only a text that is
  * exactly one fenced block is unwrapped — the fence is the adapter's wrapping, not the file — and
  * anything else, a fence inside shell output included, is shown as it came.

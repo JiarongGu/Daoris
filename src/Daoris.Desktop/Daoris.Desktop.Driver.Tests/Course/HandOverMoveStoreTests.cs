@@ -119,7 +119,7 @@ public sealed class HandOverMoveStoreTests : IDisposable
             string repository, string adapter, DriverConfig config, Func<string, string, Task>? onEnded = null, string? profile = null,
             bool? ownTree = null, CancellationToken ct = default, string? tree = null, ContinuedFrom? from = null,
             IReadOnlyList<ActorEffective>? order = null, EarlierMaker? leftBy = null, HarnessSelection? settled = null, bool picked = false,
-            bool ownFirst = false, MoveWords? moves = null)
+            bool ownFirst = false, MoveWords? moves = null, ChatLimitCarry? carries = null)
         {
             Asked.Add(moves);
             if (moves is null)
@@ -145,7 +145,7 @@ public sealed class HandOverMoveStoreTests : IDisposable
         public Task<ChatStart> RunAsync(
             string actor, string sessionId, string message, ChatAgent resolved, HarnessSelection selection, DriverConfig config,
             ChatPlace place, Func<string, string, Task>? onEnded, CancellationToken ct, GoingOn? goOn = null, ActorEffective? chosen = null,
-            ChatPending? pending = null) => throw new NotSupportedException();
+            ChatPending? pending = null, bool working = false) => throw new NotSupportedException();
 
         public ChatPlace RepositoryPlace(
             DriverConfig config, IReadOnlyList<RepoView> registry, RepoView known, string repository, string workTree,

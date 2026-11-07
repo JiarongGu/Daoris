@@ -9,18 +9,18 @@ export type DetailRow = {
   value: ReactNode | null | undefined;
   /** Set in the mono face: an id, a path's name. */
   mono?: boolean;
-  /** The text a press copies, beside the value: an id is for copying (D152 §7). */
+  /** The text a press copies, beside the value: an id is for copying. */
   copy?: string;
 };
 
 /**
- * **A record's *Details*** (UX7c, D152 §7, the UX7 design §5.2–§5.3): what its head leaves out, folded to one line that
+ * **A record's *Details***: what its head leaves out, folded to one line that
  * names a few of them, and open as a list of facts, each named. A session's id, its agent and its clock; a quest's id,
  * its full times and its lanes. An id is its one copyable row.
  *
  * @remarks
  * **Folded by default, for every viewer**: a head says the facts that matter, and these are the ones that are looked up,
- * which is the same reason the trace folds (TRACE1b). A molecule: its one state is whether it is open, and whether it
+ * which is the same reason the trace folds. A molecule: its one state is whether it is open, and whether it
  * just copied.
  */
 export function DetailsFold({ summary, rows, className }: {

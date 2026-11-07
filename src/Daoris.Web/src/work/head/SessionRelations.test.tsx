@@ -6,7 +6,7 @@ import type { Quest, Session } from '../../data/api';
 import { aQuest } from '../../quests/aQuest';
 import { SessionRelations } from './SessionRelations';
 
-// SESS1: who a session worked with, beyond its chain — each relation a door, as the strip's are.
+// Who a session worked with, beyond its chain — each relation a door, as the strip's are.
 
 const quest = (over: Partial<Quest> & { id: string }): Quest => aQuest({
   from: 'portal-ui', to: 'iothub', title: over.id, body: '', status: 'Open', filed: '2026-09-29T01:00:00Z', updated: '2026-09-29T01:00:00Z',
@@ -106,7 +106,7 @@ describe('who a session worked with', () => {
   });
 });
 
-// HEADFIT1 (the UI/UX design §3.7 and R4, the UX7 design §6.2): the relations cost 126 px between the record's head and its
+// The relations cost 126 px between the record's head and its
 // conversation, so they fold to one line that says what is there, and open in place. The page mounts it under the session's id, so
 // another record starts folded; here its one state is whether it is open.
 describe('the relations, folded to one line', () => {

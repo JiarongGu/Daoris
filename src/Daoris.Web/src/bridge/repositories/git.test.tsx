@@ -3,7 +3,7 @@ import { renderHook, waitFor } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import type { ReactNode } from 'react';
 
-// The Git reads as hooks (GIT1d-b, D147): each is the driver's own read, shell-only, and a commit-keyed one is cached by its commit.
+// The Git reads as hooks: each is the driver's own read, shell-only, and a commit-keyed one is cached by its commit.
 
 const { invoke, shell } = vi.hoisted(() => ({ invoke: vi.fn(), shell: { available: true } }));
 

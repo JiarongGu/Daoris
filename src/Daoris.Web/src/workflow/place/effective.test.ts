@@ -4,7 +4,7 @@ import { EFFECTIVE_CURRENT, EFFECTIVE_DOCS, EFFECTIVE_LANDED_NONE, EFFECTIVE_REL
 import { effectiveFlow, effectiveLabel, routeKeyOf, routeRows, routeWords } from './effective';
 import { NO_VERIFICATION, START } from '../fixtures';
 
-// SETUPUX1o (D221; the Setup design's §2.3): the place's routes drawn as a selection, and the chart the chosen one draws: Current or a saved
+// The place's routes drawn as a selection, and the chart the chosen one draws: Current or a saved
 // version, labelled, read onto the one drawing from the driver's `effective` answer.
 
 const t = i18n.t.bind(i18n);

@@ -5,8 +5,7 @@ using static Daoris.Knowledge.JsonFields;
 namespace Daoris.Knowledge;
 
 /// <summary>
-/// A code the service words a line of a session's note by (LANG1a, D142 points 3–4; the language design §4), or of a quest's
-/// (QUESTCLOSE1b1).
+/// A code the service words a line of a session's note by, or of a quest's.
 /// </summary>
 /// <param name="Code">The code, as the record and the page spell it.</param>
 /// <param name="Values">The facts its line carries, each a placeholder in its entry in both catalogues.</param>
@@ -17,8 +16,8 @@ public sealed record LedgerNoteCode(string Code, IReadOnlyList<string> Values)
 }
 
 /// <summary>
-/// Every code the service writes a line of a note by (LANG1a, the language design §4, the service's own lines): the ledger's on
-/// a session's note, and the exchange's on a quest's (QUESTCLOSE1b1). A twin (<c>.claude/knowledge/twins.md</c>): the driver's
+/// Every code the service writes a line of a note by: the ledger's on
+/// a session's note, and the exchange's on a quest's. A twin (<c>.claude/knowledge/twins.md</c>): the driver's
 /// <c>NoteCodes</c> declares the driver's, the page's <c>note.json</c> in both languages words each, and the web's
 /// <c>locales/note.test.ts</c> parses these declarations, one per line as written here, to hold the catalogue to them.
 /// <c>LedgerNoteCodesTests</c> reads both catalogues, so a new line fails until both languages word it.
@@ -28,15 +27,15 @@ public static class LedgerNoteCodes
     public static readonly LedgerNoteCode Answered = new("ledger.answered", []);
     public static readonly LedgerNoteCode Parked = new("ledger.parked", []);
     public static readonly LedgerNoteCode WentOn = new("ledger.went-on", ["at"]);
-    // Another agent's findings alone, or beside the person's words (XAGENT1e2), coded once the page words them (XAGENT1g).
+    // Another agent's findings alone, or beside the person's words, coded once the page words them.
     public static readonly LedgerNoteCode WentOnFindings = new("ledger.went-on-findings", ["at"]);
     public static readonly LedgerNoteCode WentOnBoth = new("ledger.went-on-both", ["at"]);
-    // A helper's answer alone, or beside the person's words (MIXAGENT2a-ii, D163 point 4): never findings, never "your words".
+    // A helper's answer alone, or beside the person's words: never findings, never "your words".
     public static readonly LedgerNoteCode WentOnHelper = new("ledger.went-on-helper", ["at"]);
     public static readonly LedgerNoteCode WentOnHelperBoth = new("ledger.went-on-helper-both", ["at"]);
-    // Daoris's own words alone (COWORK1b, D188): a reopen told, a step's go-on; never "your words".
+    // Daoris's own words alone: a reopen told, a step's go-on; never "your words".
     public static readonly LedgerNoteCode WentOnDaoris = new("ledger.went-on-daoris", ["at"]);
-    // The supervisor's answer alone (SUPERVISOR1a-i, D208): on the owner's behalf, never "your words".
+    // The supervisor's answer alone: on the owner's behalf, never "your words".
     public static readonly LedgerNoteCode WentOnSupervisor = new("ledger.went-on-supervisor", ["at"]);
     // A quest's note (QUESTCLOSE1b1): the person marked it done, their words, where they gave any, a part beneath it.
     public static readonly LedgerNoteCode PersonDone = new("quest.person-done", []);
@@ -51,7 +50,7 @@ public static class LedgerNoteCodes
 }
 
 /// <summary>
-/// One line the ledger writes on a session's note (LANG1a): its own coded line, its English the text, or someone's words.
+/// One line the ledger writes on a session's note: its own coded line, its English the text, or someone's words.
 /// </summary>
 public sealed record NoteLine
 {
@@ -104,7 +103,7 @@ public sealed record NoteLine
 }
 
 /// <summary>
-/// A session note's parts as the store keeps them (LANG1a, D142 point 2; the language design §3): an ordered JSON list beside
+/// A session note's parts as the store keeps them: an ordered JSON list beside
 /// the note, each a coded part (<c>code</c>, <c>values</c>, <c>text</c>) or a words part (<c>words</c>, <c>by</c>). Kept as text,
 /// read and written by hand for the AOT reason every shape in Core is.
 /// </summary>
@@ -126,7 +125,7 @@ public static class NoteParts
         given is { ValueKind: JsonValueKind.Array } list ? Rewritten(list, clean: null) : null;
 
     /// <summary>
-    /// The parts as they may leave this machine (D47 §4, REV3): every string in them, text, words and values alike, cleaned
+    /// The parts as they may leave this machine: every string in them, text, words and values alike, cleaned
     /// as the note is (<see cref="SessionNote.ForAnotherMachine"/>). A code and whose words a part is are identifiers, and stay.
     /// </summary>
     public static string? ForAnotherMachine(string? parts, Session session)
@@ -169,7 +168,7 @@ public static class NoteParts
 
     /// <summary>
     /// Whether the parts carry a coded line of <paramref name="code"/>: how a reader judges what a note says by its code, never its
-    /// English (D142 point 2), a code another component wrote included.
+    /// English, a code another component wrote included.
     /// </summary>
     public static bool Carries(string? parts, string code) =>
         Parse(parts) is { } list

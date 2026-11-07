@@ -6,7 +6,7 @@ import { MERGE_GRAPH, RELEASE_GRAPH, TWO_OUTCOMES_GRAPH } from '../graphFixtures
 import { APPEND, HOLDS, judgedFor, LIST, PALETTE, REFUSED, REFUSED_GRAPH, ROLES } from './editFixtures';
 import { WorkflowEditor } from './WorkflowEditor';
 
-// The workflow editor (WORKFLOWEDIT1b, FLOWCHART2b; D223 §3), drawn from props: the release default on its chart, a ＋ on each way and in
+// The workflow editor, drawn from props: the release default on its chart, a ＋ on each way and in
 // each ◎, judged sound; the merge workflow it is composed from; a decision whose two outcomes reach one step; the same release refused at
 // a way back that goes forward, each refusal with a door to its step; a version appended to a workflow two places choose; nothing composed
 // yet, with the presets and saved workflows to begin from; and its reads on their way and refused. In English and 中文, both themes, at the
@@ -25,7 +25,7 @@ const meta: Meta<typeof WorkflowEditor> = {
     saving: false, onSave: async () => HOLDS, using: false, onUse: async () => ({ done: true, refused: null, message: null, changed: true, reach: [] }),
     place: { repository: 'engine' }, onClose: nothing, startFrom: { graph: RELEASE_GRAPH, name: 'Release workflow' },
   },
-  // A judgement is of one draft (FLOWCHART2c): the story's answer is of the steps it opens on.
+  // A judgement is of one draft: the story's answer is of the steps it opens on.
   render: (args) => <WorkflowEditor {...args} judgedOf={args.judgedOf ?? (args.startFrom ? judgedFor(args.startFrom.graph) : null)} />,
   decorators: [storyWidths.wide],
 };

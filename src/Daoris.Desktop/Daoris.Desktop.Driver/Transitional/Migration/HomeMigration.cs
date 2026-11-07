@@ -4,7 +4,7 @@ using System.Text.Json.Nodes;
 namespace Daoris.Driver;
 
 /// <summary>What a start's migration did: the steps it ran, the files it changed, and why it ran nothing or stopped where it did.</summary>
-/// <param name="Held">Why nothing ran this start: the home's lease was held, so the next start runs it.</param>
+/// <param name="Held">Why nothing ran this start: the home's lease is held, so the next start runs it.</param>
 /// <param name="Failed">The step that stopped and why; the steps before it are recorded, it and those after run at the next start.</param>
 public sealed record HomeMigrated(string Migration, IReadOnlyList<string> Ran, IReadOnlyList<string> Changed, string? Held = null, (string Step, string Said)? Failed = null)
 {
@@ -13,7 +13,7 @@ public sealed record HomeMigrated(string Migration, IReadOnlyList<string> Ran, I
 }
 
 /// <summary>
-/// This release's migration of the home (D232 point 2): at the first start, before anything reads the home, each step converts its records
+/// This release's migration of the home: at the first start, before anything reads the home, each step converts its records
 /// to the shape this build reads, a copy of every file it changes kept in the salvage folder, and <see cref="HomeEntry.Migration"/> records
 /// each step as it finishes, so a home is converted once. The next release that changes a stored shape replaces the steps and the name.
 /// </summary>

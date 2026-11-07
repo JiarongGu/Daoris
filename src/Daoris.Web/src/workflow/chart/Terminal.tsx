@@ -5,8 +5,8 @@ import { GapInsert, type InsertOffer } from './GapInsert';
 import { NodeFrame } from './NodeFrame';
 import type { ChartNode, ChartStep } from './stepKinds';
 
-// A terminator (FLOWCHART2a): the flowchart's rounded end. Only ◎ *No further step*, where an outcome has no route, and *Finished*, which
-// a run's record alone draws. The configured end is no terminal: it is a mark on its own step. In the editor (FLOWCHART2b) a ◎ wears the ＋
+// A terminator: the flowchart's rounded end. Only ◎ *No further step*, where an outcome has no route, and *Finished*, which
+// a run's record alone draws. The configured end is no terminal: it is a mark on its own step. In the editor a ◎ wears the ＋
 // that gives its outcome a new step.
 
 export function Terminal({ context, insert = null }: { context: NodeContext; insert?: InsertOffer | null }) {

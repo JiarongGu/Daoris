@@ -1,7 +1,7 @@
 import { useTranslation } from 'react-i18next';
 import { type Answered, InlineConfirm } from '../../work/InlineConfirm';
 
-/** A person's task's presses (NODEKIT1 HUMAN): a task's *Done*, an approval's *Approve* and *Reject*. */
+/** A person's task's presses: a task's *Done*, an approval's *Approve* and *Reject*. */
 export type TaskAct = 'done' | 'approve' | 'reject';
 
 export const TASK_ACTS: readonly TaskAct[] = ['done', 'approve', 'reject'];
@@ -12,7 +12,7 @@ export const isTaskAct = (act: string): act is TaskAct => (TASK_ACTS as readonly
 const wordsKey = (act: TaskAct) => (act === 'reject' ? 'workflow.run.node.rejectWords' : 'workflow.run.node.taskWords');
 
 /**
- * **The person's press of a waiting task** (NODEKIT1 HUMAN; D245's second note): asked once, with a note they may give, which the run's record
+ * **The person's press of a waiting task**: asked once, with a note they may give, which the run's record
  * keeps with the reach; a *Reject* waits for its reason, which the run's route for rejected carries. The run's view and *What needs you* each press it as the run's node word, so both say it in these words.
  *
  * A molecule: the act, the node, the note and the press arrive as props.

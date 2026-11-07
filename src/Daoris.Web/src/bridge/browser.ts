@@ -4,31 +4,31 @@ import { getBridge, useShenora } from '@shenora/react';
 import { keys } from '../data/queries';
 import { sentence } from '../locales/format';
 
-// Daoris's browser (MOD3): its settings, where the page's links open, and the window itself.
+// Daoris's browser: its settings, where the page's links open, and the window itself.
 
 /**
- * Daoris's browser, as a Settings domain (CHR5, CHR7): its favorites, shown in a Daoris folder on its
+ * Daoris's browser, as a Settings domain: its favorites, shown in a Daoris folder on its
  * bookmarks bar, and whether other software's Chrome extensions are offered or refused.
  *
  * @remarks
  * Shell-only, like every machine domain: the same files `daoris browser` edits and `daoris-browser`
- * reads each time it starts, which the service has no route onto (D47 §4).
+ * reads each time it starts, which the service has no route onto.
  */
 export type BrowserSettingsState = {
   favoritesPath: string;
   favorites: { url: string; title: string }[];
-  /** Why the favorites file gave none, when it was there and could not be read. */
+  /** Why the favorites file gave none, when it is there and cannot be read. */
   favoritesProblem: string | null;
   settingsPath: string;
   extensions: 'offer' | 'refuse';
-  /** Which browser sessions drive and the person opens (BRW12). */
+  /** Which browser sessions drive and the person opens. */
   browser: 'daoris' | 'edge';
   /** Whether this machine has an Edge for that choice to start. */
   edgeFound: boolean;
   /** The profile of Daoris's that Edge runs on — never the person's default, which cannot be driven. */
   edgeProfile: string;
   /**
-   * Where a link on the page opens (BRW7): the system's browser, or Daoris's — whichever `browser` is.
+   * Where a link on the page opens: the system's browser, or Daoris's — whichever `browser` is.
    * Absent, it is the system's.
    */
   links?: 'system' | 'daoris';
@@ -49,7 +49,7 @@ export const useBrowserSettings = () => {
 
 /**
  * An edit to the browser's files. Each answers with the whole state, as the remotes' do, which this window writes at once; the
- * route declares the browser (BROWSERPUBLISH1, D169), so every other window asks it again through the state hub.
+ * route declares the browser, so every other window asks it again through the state hub.
  */
 function useBrowserChange<TVariables extends Record<string, unknown>>(type: string) {
   const client = useQueryClient();
@@ -70,7 +70,7 @@ export const useSetBrowser = () => useBrowserChange<{ browser: 'daoris' | 'edge'
 export const useSetLinks = () => useBrowserChange<{ links: 'system' | 'daoris' }>('SET_LINKS');
 
 /**
- * What opens a link on the page in Daoris's browser (BRW7), or null where links open as links do: a
+ * What opens a link on the page in Daoris's browser, or null where links open as links do: a
  * browser, which has no bridge and no Daoris's browser to open, and a machine whose `links` setting is
  * the system's — or a shell too old to say. `ExternalLink` honours whatever this answers, through the
  * `LinkOpener` the application provides.
@@ -98,9 +98,9 @@ export function useLinkOpener(notify: (text: string, kind?: 'ok' | 'error') => v
 }
 
 /**
- * Daoris's own browser (D78): the window the person signs in to and watches an agent use. Not a route
+ * Daoris's own browser: the window the person signs in to and watches an agent use. Not a route
  * into this bundle like the others — it shows pages that are not Daoris's, with no bridge. Given an address,
- * it opens there whatever the links setting says: a right-click's *Open in Daoris's browser* (CTX1). The shell
+ * it opens there whatever the links setting says: a right-click's *Open in Daoris's browser*. The shell
  * checks the address by its own rule before it opens anything.
  */
 export const useOpenBrowser = () => useMutation({

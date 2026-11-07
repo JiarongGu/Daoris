@@ -1,7 +1,7 @@
 import type { ComponentType } from 'react';
 import { describe, expect, it } from 'vitest';
 import { cleanup, render } from '@testing-library/react';
-import { composeStories } from '@storybook/react-vite';
+import { composeStories } from '../test/composeStories';
 import i18n from '../locales/i18n';
 import { readerIn } from './storyLanguage';
 import { rooted } from '../test/sources';

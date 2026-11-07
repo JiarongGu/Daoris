@@ -12,7 +12,7 @@ import { type ChannelHome, type ChannelPoster, NO_CHANNEL_HOME } from './channel
 import { HandedAccount } from './HandedAccount';
 import { ChannelDoor, SenderChip } from './SenderChip';
 
-/** What each author's words are headed with: never *You* for words that are not the person's (SUPERVISOR1a-i, D208 §6.1). */
+/** What each author's words are headed with: never *You* for words that are not the person's. */
 export const AUTHOR_KEYS = {
   daoris: 'work.conversation.daoris',
   supervisor: 'work.conversation.supervisor',
@@ -21,12 +21,12 @@ export const AUTHOR_KEYS = {
   partner: 'work.conversation.partner',
 } as const satisfies Record<Author, string>;
 
-/** The home of the channel messages the conversation's turns took (COMMS1h): who posted each, and the door to the channel. */
+/** The home of the channel messages the conversation's turns took: who posted each, and the door to the channel. */
 export const ChannelHomes = createContext<ChannelHome>(NO_CHANNEL_HOME);
 
 /** Another session's claim, named by its poster where the page holds the channel's message, else as a claim in Daoris's words. */
 const claimLabel = (t: TFunction, poster: ChannelPoster | undefined) => {
-  // An agent outside Daoris is its own, named as outside, never as the person or a session (CHANNELJOIN1c).
+  // An agent outside Daoris is its own, named as outside, never as the person or a session.
   if (poster?.outside) {
     const who = [poster.repository, poster.agent].filter(Boolean).join(' · ');
     return who ? t('work.conversation.claimFromOutside', { who }) : t('work.conversation.claimFromOutsideAgent');
@@ -38,27 +38,27 @@ const claimLabel = (t: TFunction, poster: ChannelPoster | undefined) => {
 };
 
 /**
- * What the person asked, or the target the driver composed — the latter folded, since it is long, with what it was composed
- * of beneath it (CONTEXT1). Another agent's findings handed as the session's next turn (XAGENT1g, the second-agent design §6.3)
- * are a block from that agent, open, under Daoris's fixed words that name it and its maker, never the person's. Daoris's own words
- * (COWORK1b), a reopen told or a step's go-on, are named as Daoris's by their mark, open, and never as the person's.
+ * What the person asked, or the target the driver composed — the latter folded, since it is long, with what it is composed
+ * of beneath it. Another agent's findings handed as the session's next turn
+ * are a block from that agent, open, under Daoris's fixed words that name it and its maker, never the person's. Daoris's own words,
+ * a reopen told or a step's go-on, are named as Daoris's by their mark, open, and never as the person's.
  *
- * Each is headed by its sender chip (COMMS1h): who, by the one rule, and when. A helper's answer no card folds is that agent's block
- * (MIXAGENT3a-iii), headed by the agent and the question it answers. Another session's claim names its poster where the page holds
+ * Each is headed by its sender chip: who, by the one rule, and when. A helper's answer no card folds is that agent's block,
+ * headed by the agent and the question it answers. Another session's claim names its poster where the page holds
  * the channel's message, and where the page can open the channel, its home, the words that carried it fold here.
  */
 export function AskView({ ask, answer }: { ask: Ask; answer?: AnswerHead }) {
   const { t, i18n } = useTranslation();
   const { posterOf, onOpen } = useContext(ChannelHomes);
   const findings = Boolean(ask.opinion);
-  // Words by an author's mark (COWORK1b; SUPERVISOR1a-i): Daoris's, the supervisor's on the owner's behalf, or not attributed.
+  // Words by an author's mark: Daoris's, the supervisor's on the owner's behalf, or not attributed.
   const marked = Boolean(ask.from);
-  // Another session's claim on the ask's channel (SESSONE2c): Daoris's words around it, kept as the driver's own, short enough to
-  // read whole and never the target Daoris composed. Told by its channel mark (SESSCTX1b), and a record from before by its opening.
+  // Another session's claim on the ask's channel: Daoris's words around it, kept as the driver's own, short enough to
+  // read whole and never the target Daoris composed. Told by its channel mark, and a record from before by its opening.
   const claim = ask.origin === 'target' && !findings && !marked
     && (Boolean(ask.channel) || (ask.text ?? '').startsWith(CHANNEL_CLAIM_OPENING));
   const target = ask.origin === 'target' && !claim && !marked;
-  // A channel message's home is the channel (COMMS1h): a door to it, and another session's claim folded where the door is.
+  // A channel message's home is the channel: a door to it, and another session's claim folded where the door is.
   const home = ask.channel && onOpen ? ask.channel : undefined;
   const folds = target || (claim && Boolean(home));
   const [open, setOpen] = useState(!folds || findings);
@@ -70,7 +70,7 @@ export function AskView({ ask, answer }: { ask: Ask; answer?: AnswerHead }) {
       : t('work.conversation.asked.answerAny'))
       : ask.from ? t(AUTHOR_KEYS[ask.from])
         : claim ? claimLabel(t, ask.channel ? posterOf?.(ask.channel) : undefined)
-          // SESSCTX1b: a new part's first prompt is Daoris's brief of the line it continues, folded as a target is.
+          // A new part's first prompt is Daoris's brief of the line it continues, folded as a target is.
           : target && ask.continues ? t('work.conversation.brief')
             : target ? t('work.conversation.target') : t('work.conversation.you');
 
@@ -95,7 +95,7 @@ export function AskView({ ask, answer }: { ask: Ask; answer?: AnswerHead }) {
           </button>
         )}
       </SenderChip>
-      {/* MIXAGENT3a-iii: the question the helper's answer answers, whose and when, quiet above the answer. */}
+      {/* The question the helper's answer answers, whose and when, quiet above the answer. */}
       {helperAnswer && (
         <p data-answers className="m-0 mt-0.5 line-clamp-2 wrap-anywhere text-meta text-ink-soft">
           {t(helperAnswer.byPerson ? 'work.conversation.answers.yours' : 'work.conversation.answers.session', {
@@ -105,7 +105,7 @@ export function AskView({ ask, answer }: { ask: Ask; answer?: AnswerHead }) {
           <q>{helperAnswer.question}</q>
         </p>
       )}
-      {/* A word wider than the column, a pasted URL, breaks inside it rather than scrolling the region sideways (ASKHIST1b). */}
+      {/* A word wider than the column, a pasted URL, breaks inside it rather than scrolling the region sideways. */}
       {ask.choice
         ? <ChoiceWords choice={ask.choice} text={ask.text ?? ''} className="text-ink" />
         : ask.text && (
@@ -113,15 +113,15 @@ export function AskView({ ask, answer }: { ask: Ask; answer?: AnswerHead }) {
         )}
       <Attached files={ask.files} />
       {ask.receipts && <ReceiptsLine receipts={ask.receipts} />}
-      {/* What the target was composed of, section by section (CONTEXT1), beside the words it composed. */}
+      {/* What the target is composed of, section by section, beside the words it composes. */}
       {target && !findings && <HandedAccount account={ask.account} />}
     </div>
   );
 }
 
 /**
- * What the door observed of these words (COWORK1c, the message-urgency design §7, §8.2): *sent 14:02 · taken 14:03 · turn ended 14:09*,
- * each only where it was observed, folded under them as a quiet line. A turn's end is what Daoris saw, never an answer (COMMS1h).
+ * What the door observed of these words: *sent 14:02 · taken 14:03 · turn ended 14:09*,
+ * each only where it is observed, folded under them as a quiet line. A turn's end is what Daoris saw, never an answer.
  */
 function ReceiptsLine({ receipts }: { receipts: Receipts }) {
   const { t, i18n } = useTranslation();
@@ -132,7 +132,7 @@ function ReceiptsLine({ receipts }: { receipts: Receipts }) {
   return <p data-receipts className="m-0 mt-1 text-meta text-ink-faint">{seen.join(' · ')}</p>;
 }
 
-/** What the person attached (CONV4c): names, as the record keeps them. */
+/** What the person attached: names, as the record keeps them. */
 export function Attached({ files }: { files?: string[] }) {
   const { t } = useTranslation();
   if (!files || files.length === 0) return null;
@@ -152,7 +152,7 @@ export function Attached({ files }: { files?: string[] }) {
 }
 
 /**
- * Words the person pressed as an answer of its park's question (PARKVIEW1; Fable's read, Q4): *Chose* and the answer as its question
+ * Words the person pressed as an answer of its park's question: *Chose* and the answer as its question
  * offered it, then the person's own words, so a press reads as a choice and never as words they typed. The words begin with the label,
  * as the page composes a press; where a record says otherwise they are drawn whole beneath the mark.
  */

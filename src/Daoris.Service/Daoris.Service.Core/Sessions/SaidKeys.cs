@@ -8,9 +8,9 @@ namespace Daoris.Knowledge;
 public sealed record SettledWord(string Record, string Word, string Key, DateTimeOffset At);
 
 /// <summary>
-/// What the keeping doors read of a producer's key before they refuse (FOUNDATION1 row p, D212, the foundation design §3.4 rule 5, §19.2): a
+/// What the keeping doors read of a producer's key before they refuse: a
 /// word keyed under it that left a record of the line, which the service's <c>said_settled</c> holds for seven days, the line being the record
-/// named, its predecessors back along <c>from</c> and, from row d-ii, the records the head walk visits forward to the head. The say door, the
+/// named, its predecessors back along <c>from</c> and the records the head walk visits forward to the head. The say door, the
 /// helper desk and the partner desk each ask it inside their own exclusive step, before any refusal but the record's absence, so a producer's
 /// retry after the take is answered as kept and no window lies between the check and a keep. The supervisor's door reads none: its retry
 /// compares a decision, a question, a choice and a text, which a settlement cannot carry.

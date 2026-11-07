@@ -4,10 +4,10 @@ import { describe, expect, it } from 'vitest';
 import type { ToolDoor } from '../../agents/tools';
 import { nextChoices, otherToolDoors } from './handOverOffer';
 
-// MIXAGENT1c (D191's settling of the mixed agents design): under the `on` rule an agent's ask goes to the next agent in the person's
+// Under the `on` rule an agent's ask goes to the next agent in the person's
 // order, the order this page's hand-over offer draws from. One table both read: the driver's `HandOverOrder.Others` is held to the
 // driver suite's `fixtures/hand-over-order.json` by `HandOverOrderTests`, and `otherToolDoors` here, row for row.
-// MODELROLE1e (D205 §3.5(e), round 4's Opus N1): once the session's actor has an order of its own, every path takes it. The same file's
+// Once the session's actor has an order of its own, every path takes it. The same file's
 // `actorRows` hold the driver's `HandOverOrder.Steps` and this page's `nextChoices` to one table too.
 
 type Door = [harness: string, present: boolean, accountOf: string | null];
@@ -46,7 +46,7 @@ describe("the actor's order a hand-over goes to, as the driver's table holds it"
   });
 });
 
-// STAFFPOLICY1d: the order a start would walk, which a `ROLES` row's staffing carries as `arranged` where a role's policy arranges it, is the one taken.
+// The order a start would walk, which a `ROLES` row's staffing carries as `arranged` where a role's policy arranges it, is the one taken.
 describe("the arranged order a hand-over goes to, as the driver's table holds it", () => {
   it.each(TABLE.arrangedRows.map((row) => [row[0], row] as const))('%s', (_, [, own, doors, stored, arranged, steps]) => {
     const entry = ([agent, model, from]: Entries[number]) => ({ agent, model, from });

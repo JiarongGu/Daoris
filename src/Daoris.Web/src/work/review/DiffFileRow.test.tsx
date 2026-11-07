@@ -8,7 +8,7 @@ import type { DiffFile } from './diff';
 import { DiffFileRow } from './DiffFileRow';
 
 // Props in, states out — every case below is reached without a bridge, a repository or a git
-// process (components plan §2).
+// process.
 
 const FILE: DiffFile = {
   path: 'src/world/chunk.ts',
@@ -49,7 +49,7 @@ describe('DiffFileRow', () => {
   });
 
   /**
-   * The status is a letter AND a label, never a colour alone (D41 §6) — the accessible name carries
+   * The status is a letter AND a label, never a colour alone — the accessible name carries
    * it for everyone the hue does not.
    */
   it('says which kind of change it is, in words', () => {
@@ -80,7 +80,7 @@ describe('DiffFileRow', () => {
     const { onViewed } = show(FILE);
     await userEvent.click(screen.getByRole('checkbox', { name: 'Viewed' }));
     expect(onViewed).toHaveBeenCalledWith(true);
-    // The platform's own box, never the OS's (UX5 U5).
+    // The platform's own box, never the OS's.
     expect(document.querySelector('input[type="checkbox"]:not([aria-hidden="true"])')).toBeNull();
   });
 
@@ -91,7 +91,7 @@ describe('DiffFileRow', () => {
   });
 
   /**
-   * PREVIEW1 (D111): the file itself, read in the side bar, one press from its row — beside the row's own
+   * The file itself, read in the side bar, one press from its row — beside the row's own
    * disclosure, which still opens the patch in place.
    */
   it('opens the file\'s preview from its own button, leaving the patch where it was', async () => {
@@ -110,7 +110,7 @@ describe('DiffFileRow', () => {
     expect(onToggle).not.toHaveBeenCalled();
   });
 
-  /** A door that could only refuse is not offered (UX5 U66): a deleted file is not in the tree any more. */
+  /** A door that could only refuse is not offered: a deleted file is not in the tree. */
   it('offers no preview of a file the session deleted', () => {
     render(
       <Tooltip.Provider>
@@ -123,7 +123,7 @@ describe('DiffFileRow', () => {
     expect(screen.queryByRole('button', { name: /^preview / })).toBeNull();
   });
 
-  /** REVIEW2: the layout the pane chose, side by side here — each removal across from what replaced it. */
+  /** The layout the pane chose, side by side here — each removal across from what replaced it. */
   it('draws its patch in the layout it is given', () => {
     render(
       <ul>

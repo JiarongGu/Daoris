@@ -22,31 +22,31 @@ import { waitingFirst } from '../rail/rail';
 const tileId = (session: string) => `stream-${session}`;
 
 /**
- * The monitor window (D55 §b, SURF8): everything running, live, on a second screen.
+ * The monitor window: everything running, live, on a second screen.
  *
  * @remarks
  * **It is a route into the same bundle**, not a second frontend — so it is the components the Work
  * frame already has, arranged for a screen nobody is typing into. A change to a tile lands in both
  * windows because there is one of it.
  *
- * **Read-only, deliberately.** D56's rule is one owner for the verbs at a time, and two windows
+ * **Read-only, deliberately.** The rule is one owner for the verbs at a time, and two windows
  * offering the same three moves on one parked session is exactly the arrangement it exists to
  * prevent. The main window is that owner; this window's only act is to hand one session a window of
  * its own, which is a window command rather than a move on a session.
  *
- * **What it answers is "what is each session doing"** — which is why a tray icon was rejected for
- * it (D55 §b): a tray icon answers whether anything is running, and that is a different question.
+ * **What it answers is "what is each session doing"**: a tray icon would answer whether anything is running,
+ * which is a different question.
  *
  * **A second reader on the console pump.** A tile on a text door holds its own `SessionConsole`,
  * and so does the main window's output panel. That works because the driver's buffer keeps no
- * cursor — a reader says what it has seen and is told the rest (`SessionOutput`, SES1) — which is
+ * cursor — a reader says what it has seen and is told the rest (`SessionOutput`) — which is
  * asserted in the driver's own tests rather than assumed here. A tile on a door that keeps a
- * conversation shows the conversation instead (UX5 U2), read from the same record the main window
+ * conversation shows the conversation instead, read from the same record the main window
  * reads.
  *
- * **Its rail is a list pane** (D118 §4, FRAME1h), as every view's list is: resized by its edge, closed
- * to its strip, and a strip by itself where the tiles would fall below their floor. It is never hidden,
- * as it was below 1024 px with no way back (audit MO2): the strip keeps each running session's mark, and
+ * **Its rail is a list pane**, as every view's list is: resized by its edge, closed
+ * to its strip, and a strip by itself where the tiles would fall below their floor. It is never hidden:
+ * the strip keeps each running session's mark, and
  * its open lays the rail over the tiles. What it remembers is the monitor's own, apart from the main
  * window's rail, and Ctrl+B, the key of the one region this window has, toggles it.
  */
@@ -57,15 +57,15 @@ export function MonitorWindow({ notify }: { notify: Notify }) {
   const quests = useQuests(null, true);
   const driver = useDriver();
   const openWindow = useOpenWindow();
-  // A conversation's name (RAIL1), as the main window's rail reads it.
+  // A conversation's name, as the main window's rail reads it.
   const openings = useSessionOpenings(sessions.data);
 
-  // The rail's closing and width (`daoris.list.monitor.*`); laid over the tiles is never kept (D118 §3f).
+  // The rail's closing and width (`daoris.list.monitor.*`); laid over the tiles is never kept.
   const lists = useListPanes();
   const [over, setOver] = useState(false);
   const [listMode, setListMode] = useState<ListMode | null>(null);
 
-  // Ctrl+B wherever focus is, as in the main window, by what the room made of the rail (D118 §3a): open,
+  // Ctrl+B wherever focus is, as in the main window, by what the room made of the rail: open,
   // it closes; laid over, it goes; a strip, it opens. The latest, for a listener added once.
   const latest = useRef({ lists, listMode });
   latest.current = { lists, listMode };
@@ -90,13 +90,13 @@ export function MonitorWindow({ notify }: { notify: Notify }) {
   // is read in the main window, where its diff and its record are.
   const live = (sessions.data ?? []).filter((session) => SESSION_ACTIVE.has(session.state));
   // Whether each live conversation has a turn in flight, as the driver says: between turns a chat
-  // reads idle, on its tile and in the rail, as in the main window (UX5 U17).
+  // reads idle, on its tile and in the rail, as in the main window.
   const chatTurns = useChatTurns(live.filter((session) => session.kind === 'chat').map((session) => session.id));
   const taking = Object.fromEntries(Object.entries(chatTurns).map(([id, held]) => [id, held.taking]));
-  // …and when each one's last turn ended here, for the rail's *moved* (RAIL2).
+  // …and when each one's last turn ended here, for the rail's *moved*.
   const lastTurns = Object.fromEntries(Object.entries(chatTurns).flatMap(([id, held]) => (held.lastTurn ? [[id, held.lastTurn]] : [])));
 
-  // What needs a person first — the rail's rule (components plan §3a), which matters more here
+  // What needs a person first — the rail's rule, which matters more here
   // because this window is read from across a desk — then the longest-running.
   const shown = [...live].sort((a, b) => waitingFirst(a, b) || a.created.localeCompare(b.created));
 
@@ -107,7 +107,7 @@ export function MonitorWindow({ notify }: { notify: Notify }) {
     document.getElementById(tileId(id))?.scrollIntoView({ behavior: 'smooth', block: 'start' });
   };
 
-  // The rail (D55 §b: "the rail plus live streams"). It is the same organism the Work frame uses, which is
+  // The rail. It is the same organism the Work frame uses, which is
   // the point of a secondary window being a route rather than an app: it groups by repository and says
   // which are drivable or held, and none of that had to be written twice. Its name and its doors are the
   // session list's, since that is what it is.
@@ -125,8 +125,8 @@ export function MonitorWindow({ notify }: { notify: Notify }) {
   return (
     <div className="flex h-screen flex-col overflow-hidden">
       <header className="flex shrink-0 items-baseline gap-3 border-b border-line px-4 py-2">
-        {/* The one heading step a view has (audit MO11): its class named a step no token declares, so the
-            title was drawn at the body's size. */}
+        {/* The one heading step a view has, so the
+            title is drawn at a size a token declares. */}
         <h1 className="m-0 text-view font-[650] tracking-[-0.01em]">{t('work.monitor.title')}</h1>
         <p className="m-0 text-small text-ink-faint">{t('work.monitor.subtitle')}</p>
         {/* The one piece of ambient truth this window cannot do without: with the driver stopped,
@@ -137,7 +137,7 @@ export function MonitorWindow({ notify }: { notify: Notify }) {
         )}
       </header>
 
-      {/* No side bar beside the tiles (D55 §b), so the rail gives way only for the tiles' own floor. */}
+      {/* No side bar beside the tiles, so the rail gives way only for the tiles' own floor. */}
       <ViewFrame
         layout={{
           list: rail,
@@ -145,7 +145,7 @@ export function MonitorWindow({ notify }: { notify: Notify }) {
             <main data-region="main" className="min-h-0 flex-1 overflow-y-auto p-3">
               {sessions.isPending
               ? <SkeletonRows rows={3} />
-              // A read that failed is not nothing running (PUSHUX1): its sentence, never the empty state.
+              // A read that failed is not nothing running: its sentence, never the empty state.
               : sessions.data === undefined
                 ? <Prose><Inline text={sentence(sessions.error)} /></Prose>
               : shown.length === 0
@@ -161,7 +161,7 @@ export function MonitorWindow({ notify }: { notify: Notify }) {
                   // window instead of sitting in a sixth of it on a wide screen, and six share it
                   // evenly. Measured on the real window at 2560px, where `auto-fill` left a single
                   // tile looking like a rendering failure. A tile is never wider than the tiles' own
-                  // width (FRAME1h): beside the rail at its floor, a 26rem tile overflowed it.
+                  // width: beside the rail at its floor, a 26rem tile overflowed it.
                   //
                   // Rows are `minmax(15rem, 1fr)` for the same reason in the other direction: few
                   // sessions fill the height they are given, many fall back to a readable floor and
@@ -180,7 +180,7 @@ export function MonitorWindow({ notify }: { notify: Notify }) {
                         quest={session.quest ? questFor.get(session.quest) : null}
                         opening={openings[session.id]}
                         taking={taking[session.id]}
-                        // In the session's own workspace where it names one, else following this window (MAINWINDOWS3).
+                        // In the session's own workspace where it names one, else following this window.
                         onDetach={(id) => openWindow.mutate({ name: sessionWindowName(id), workspace: session.workspace })}
                       />
                     ))}
@@ -215,8 +215,8 @@ function Tile({ session, quest, opening, taking, onDetach }: {
   const { t } = useTranslation();
   // Somebody else's machine holds this one, so there is no stream to ask for and the tile says so.
   const here = sessionOrigin(session) === null;
-  // 🔴 The conversation where the door keeps one (UX5 U2, D76 §3): the console is its raw view, and
-  // a tile of console alone said "Nothing said yet" over a kept conversation. A text door, or a
+  // 🔴 The conversation where the door keeps one: the console is its raw view, and
+  // a tile of console alone would say "Nothing said yet" over a kept conversation. A text door, or a
   // roster that has not answered, keeps the console, which claims least.
   const harnesses = useHarnesses();
   const structured = harnesses.data?.harnesses?.find((row) => row.door === session.door)?.structured === true;

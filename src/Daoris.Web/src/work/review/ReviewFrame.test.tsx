@@ -4,9 +4,9 @@ import { I18nextProvider } from 'react-i18next';
 import i18n from '../../locales/i18n';
 import { NothingToLand, REVIEW_REFUSALS, ReviewFailed, ReviewHead, ReviewReading, SLOW_MS } from './ReviewFrame';
 
-// REVIEW4: the review says what it is doing while it loads. Its frame (what the page knows from the record), the
+// The review says what it is doing while it loads. Its frame (what the page knows from the record), the
 // skeleton and its words with how long, and a refusal worded from its code with the person's next move. Props in,
-// sentences out — every state below is reached without a bridge, a repository or a git process (components plan §2).
+// sentences out — every state below is reached without a bridge, a repository or a git process.
 
 const KNOWN = {
   title: 'Fix the report header in portal-ui',
@@ -48,7 +48,7 @@ describe('ReviewHead', () => {
     expect(screen.getByRole('status').textContent).toBe('reading again… 12s');
   });
 
-  /** REVIEWBASE1 (D164's note): the latest line the host knows holds commits this work does not, so the work is not based on it. */
+  /** The latest line the host knows holds commits this work does not, so the work is not based on it. */
   it('says the line has commits this work does not, and where to bring it up to date', () => {
     const { container } = render(<ReviewHead {...KNOWN} behind={{ line: 'main', commits: 3, ahead: 1 }} />);
 
@@ -86,7 +86,7 @@ describe('ReviewHead', () => {
   });
 
   /**
-   * REVIEWBASE4 (D164's note): a tree whose HEAD is on no branch names none. Where it holds nothing beyond the line, HEAD is the
+   * A tree whose HEAD is on no branch names none. Where it holds nothing beyond the line, HEAD is the
    * commit the review is measured from, so one fact says both; where it holds more, the range stays its own fact.
    */
   it('names no branch for a detached tree, and says it is detached at the commit the line holds', () => {
@@ -116,7 +116,7 @@ describe('ReviewHead', () => {
   });
 });
 
-/** REVIEWBASE4 (D164's note): where *Accept* would be, a tree with nothing beyond the line says there is nothing to land. */
+/** Where *Accept* would be, a tree with nothing beyond the line says there is nothing to land. */
 describe('NothingToLand', () => {
   it('says there is nothing to land, and that what its tree holds is on the line already', () => {
     const { container } = render(<NothingToLand line="main" />);

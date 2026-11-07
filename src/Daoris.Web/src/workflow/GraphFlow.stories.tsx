@@ -7,7 +7,7 @@ import { FlowChart } from './chart/FlowChart';
 import { MERGE_GRAPH, RELEASE_GRAPH, TWO_OUTCOMES_GRAPH } from './graphFixtures';
 import { drawnFromJson, graphFlow } from './graphFlow';
 
-// One drawing of a workflow graph (SETUPUX1n; the Setup design's §2.3), through the chart's components (FLOWCHART2a): the shipped release
+// One drawing of a workflow graph, through the chart's components: the shipped release
 // workflow and the merge workflow, always in sections and never left to right, at 80rem and 39rem top to bottom and at 25rem as the rail,
 // in both languages and both themes. The measured-box check draws these in a rendered browser: no edge through a card, no crossing, and
 // each decision's route leaving its outcome's port.

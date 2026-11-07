@@ -6,14 +6,14 @@ import { type GitAskWait, gitAskWorded } from '../attention/attention';
 import { type Answered, Refused } from '../InlineConfirm';
 import { SOUGHT } from './WaitAnchor';
 
-/** A git go-ahead as *What needs you* pushes it (GITAUTH1f): its id, since when it waited, and the act its door holds. */
+/** A git go-ahead as *What needs you* pushes it: its id, since when it waits, and the act its door holds. */
 export type GitAskRow = { id: string; since?: string | null; gitAsk: GitAskWait };
 
 /** The person's Allow (`allow`) or Refuse of one git go-ahead, and how it ended. */
 export type GitAskAnswer = (ask: GitAskRow, allow: boolean, answered: Answered) => void;
 
 /**
- * What the frame hands the head and the foot's strip for the git go-aheads (GITAUTH1f, the git auth design §7.4): every one the shell
+ * What the frame hands the head and the foot's strip for the git go-aheads: every one the shell
  * pushed, of which the session's own are drawn, the answer's one door and its pending. Absent where nothing reads them (a browser).
  */
 export type GitAskWaits = {
@@ -26,13 +26,13 @@ export type GitAskWaits = {
 export const gitAsksFor = (waits: readonly GitAskRow[], session: string) => waits.filter((wait) => wait.gitAsk.session === session);
 
 /**
- * **A git go-ahead, on its session** (GITAUTH1f, D198 point 12; the git auth design §6.6): Daoris's git door holds one act on a remote
+ * **A git go-ahead, on its session**: Daoris's git door holds one act on a remote
  * whose class is ask, a push or a fetch, while it waits; *Allow* lets that one act through and *Refuse* refuses it with one line. Where
  * the act has gone, an Allow is kept for its identical retry. The row in *What needs you* says the same and presses the same door.
  *
  * @remarks
- * **Props only** (components §2): the frame holds the answer and its pending. Without `onAnswer` no press is drawn. A refusal of the
- * answer is said beside it (UXFIX2b3b). Its words never say "waiting on you", which a parked session's are (`person-waits`).
+ * **Props only**: the frame holds the answer and its pending. Without `onAnswer` no press is drawn. A refusal of the
+ * answer is said beside it. Its words never say "waiting on you", which a parked session's are (`person-waits`).
  */
 export function GitAsk({ ask, onAnswer, busy = false, marked = false }: {
   ask: GitAskRow;

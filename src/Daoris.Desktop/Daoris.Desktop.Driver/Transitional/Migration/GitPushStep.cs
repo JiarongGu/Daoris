@@ -3,10 +3,10 @@ using System.Text.Json.Nodes;
 namespace Daoris.Driver;
 
 /// <summary>
-/// <c>no-push</c>'s switch as git access (ONEWAY1q; the one-way design §5 G2): a home whose <c>permissions.json</c> lists <c>no-push</c> in
+/// <c>no-push</c>'s switch as git access: a home whose <c>permissions.json</c> lists <c>no-push</c> in
 /// <c>defaultsOff</c> lists <c>no-publish</c> there instead, since that switch also turned off the publishing sentence; and where this
 /// machine's Write is unset, <c>driver.json</c>'s <c>machineGitAccess.write</c> becomes <c>allow</c>, so its sessions push as they did. A
-/// Write the person set is left as it is: the switch counted only where Write was unset.
+/// Write the person set is left as it is: the switch counts only where Write is unset.
 /// </summary>
 public sealed class GitPushStep : IHomeMigrationStep
 {

@@ -14,9 +14,9 @@ export type RolePlace = { kind: 'repository' | 'workspace'; name: string };
 const roleName = (role: Pick<EditorRole, 'id' | 'name'>, language: string) => authoredText(role.name, language) || role.id;
 
 /**
- * **A step's *Taken by*** (SETUPUX1t; the Setup design's §2.4): the roles that take the step's work and cover this place, each named with its
+ * **A step's *Taken by***: the roles that take the step's work and cover this place, each named with its
  * place, and the door to give the place a role of its own for that work, or to edit the one it has. Both open the one role editor beside the
- * step, which saves the role over `SET_ROLE` at once and gives the draft back as it was; the step then names the role. A refused save leaves
+ * step, which saves the role over `SET_ROLE` at once and gives the draft back unchanged; the step then names the role. A refused save leaves
  * the editor open with the driver's sentence, and the draft untouched.
  *
  * A molecule: the roles and the editor's reads arrive as props, and every press goes out.

@@ -34,7 +34,7 @@ describe('AppMenu', () => {
     const onChoose = vi.fn();
     render(<AppMenu label="Manage" trigger="manage" items={MANAGE} onChoose={onChoose} />);
     const user = await open();
-    // Arrow to it and press Enter: the keyboard path is the one D41 §6 requires, and it is also
+    // Arrow to it and press Enter: the keyboard path is the one the menu requires, and it is also
     // the one that does not depend on the pointer state a previous test may have left behind.
     await user.keyboard('{ArrowDown}{Enter}');
 
@@ -48,7 +48,7 @@ describe('AppMenu', () => {
     expect(screen.getByRole('menuitem', { name: /Quests/ })).toHaveTextContent('3');
   });
 
-  /** The workspace the window is scoped to wears the check (D75); nothing else does. */
+  /** The workspace the window is scoped to wears the check; nothing else does. */
   it('ticks the checked item and no other', async () => {
     const items: MenuItem[] = [
       { id: 'default', label: 'default', checked: true, radio: true },
@@ -62,7 +62,7 @@ describe('AppMenu', () => {
   });
 
   /**
-   * UXFIX1: a tick is said, not only drawn. A toggle (a region shown) is a checkbox item, a choice among its rows (the
+   * A tick is said, not only drawn. A toggle (a region shown) is a checkbox item, a choice among its rows (the
    * place, the workspace) a radio item in one group with the rows it is among, and a door neither; each says whether it
    * is checked, and each is chosen as any row is.
    */
@@ -110,7 +110,7 @@ describe('AppMenu', () => {
     expect(onChoose).toHaveBeenLastCalledWith('view', 'go.nextRegion');
   });
 
-  /** UX7a (D152 §3.2): each row prints its key, a record's group is named, and an act that does not apply keeps its place. */
+  /** Each row prints its key, a record's group is named, and an act that does not apply keeps its place. */
   it('prints a row\'s key, names a group, and keeps an act that does not apply in its place, disabled', async () => {
     const items: MenuItem[] = [
       { id: 'start', label: 'Start a session…', shortcut: 'Ctrl+Shift+N' },
@@ -124,7 +124,7 @@ describe('AppMenu', () => {
     expect(screen.getByRole('menuitem', { name: /Stop/ })).toHaveAttribute('aria-disabled', 'true');
   });
 
-  /** View's *Theme ▸* (D152 §3.3): a row that opens to its side, a radio group ticked as it stands. */
+  /** View's *Theme ▸*: a row that opens to its side, a radio group ticked as it stands. */
   it('opens a submenu to its side, its choices a radio group with the one in force ticked', async () => {
     const onChoose = vi.fn();
     const items: MenuItem[] = [{
@@ -165,7 +165,7 @@ describe('AppMenuBar (D152 §3.3)', () => {
     );
   }
 
-  /** UXFIX1: View's regions are toggles and Go's places one choice; the bar's keys treat those rows as any other. */
+  /** View's regions are toggles and Go's places one choice; the bar's keys treat those rows as any other. */
   const TICKED: BarMenu[] = [
     { id: 'view', label: 'View', letter: 'V', items: [{ id: 'view.panel', label: 'Panel', checked: true }] },
     { id: 'go', label: 'Go', letter: 'G', items: [{ id: 'go.quests', label: 'Quests', checked: true, radio: true }] },
@@ -270,7 +270,7 @@ describe('AppMenuBar (D152 §3.3)', () => {
     expect(screen.getByRole('button', { name: '工作区(W)' })).toBeInTheDocument();
   });
 
-  /** UX7a2: a menu Alt opened from a field, not through a name, still hands the focus back to that field. */
+  /** A menu Alt opens from a field, not through a name, still hands the focus back to that field. */
   it('hands the focus back to the field a menu was opened from without its name', async () => {
     const onChoose = vi.fn();
     render(<AltBar onChoose={onChoose} />);
@@ -287,7 +287,7 @@ describe('AppMenuBar (D152 §3.3)', () => {
 
 /**
  * A bar whose menus Alt opens by their letter, as the window's key handler does (`App`): the key lands where the focus
- * is, which is how Radix learns the menu was opened from the keyboard.
+ * is, which is how Radix learns the menu is opened from the keyboard.
  */
 function AltBar({ compact = false, mnemonics = false, onChoose = () => {} }: {
   compact?: boolean; mnemonics?: boolean; onChoose?: (menu: string, item: string) => void;
@@ -324,7 +324,7 @@ const FOLD_MENUS: BarMenu[] = [
 ];
 
 /**
- * UX7a2 (D152's UX7a note, the design §3.3): below the width the seven names need, they fold into one menu whose rows are
+ * Below the width the seven names need, they fold into one menu whose rows are
  * the menus, each opening its own rows to its side, and the keys still reach every row.
  */
 describe('AppMenuBar folded into one menu (UX7a2)', () => {
@@ -417,8 +417,8 @@ describe('AppMenuBar folded into one menu (UX7a2)', () => {
 });
 
 /**
- * UXFIX1: a menu's name and the fold's ☰ are each a target of 28 px at least, the platform language's floor (§6), and no
- * taller than the 36 px strip they sit in (`AppStrip`'s `h-9`). At `py-1` alone the ☰ was about 23 px tall.
+ * A menu's name and the fold's ☰ are each a target of 28 px at least, the platform language's floor, and no
+ * taller than the 36 px strip they sit in (`AppStrip`'s `h-9`). At `py-1` alone the ☰ would be about 23 px tall.
  */
 describe('the bar\'s triggers as targets', () => {
   /** A Tailwind spacing class's size in px, on the 4 px step. */

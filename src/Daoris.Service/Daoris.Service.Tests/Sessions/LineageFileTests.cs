@@ -64,7 +64,7 @@ public sealed class LineageFileTests : IDisposable
     }
 
     /// <summary>
-    /// FABRIC-C2a (D173's note, point 1): a connector told a session is guarded for it even where its id or home names no file;
+    /// A connector told a session is guarded for it even where its id or home names no file;
     /// only one told none, a person's own agent's, is not.
     /// </summary>
     [Theory]
@@ -95,7 +95,7 @@ public sealed class LineageFileTests : IDisposable
     }
 
     /// <summary>
-    /// COWORKVIEW1a: each call's line names the process the connector serves, the token its entry was handed in
+    /// Each call's line names the process the connector serves, the token its entry is handed in
     /// <c>DAORIS_LINEAGE_PROC</c> (the driver's <c>ChildMarks.LineageProcVariable</c>), where that is shaped as an id.
     /// </summary>
     [Fact]

@@ -7,7 +7,7 @@ import { BringInAgent } from './BringInAgent';
 import { CoWorkers } from './CoWorkers';
 import { MemberThread } from './MemberThread';
 
-// COWORKUX1 (the co-worker design §6.2, §6.4, §7): the head's *Co-workers* with its presses, *Bring in another agent…*, a member's thread
+// The head's *Co-workers* with its presses, *Bring in another agent…*, a member's thread
 // with *Back to lead*, and talking to a member as asking again: *Ask again…* and *Pass to the lead*, in both languages.
 
 const row = (over: Partial<HelperAskRow> & Pick<HelperAskRow, 'id'>): HelperAskRow => ({

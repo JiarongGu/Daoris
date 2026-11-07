@@ -7,12 +7,12 @@ import { ConversationView } from './ConversationView';
 import { ShowEarlier } from './EarlierParts';
 import { beginsByMove, type SessionEvent, settle, toTurns } from './conversation';
 
-// A session's page draws its line as one conversation (SWITCHCTX1c-i; the switch-context design §2.7): the parts the attended one
+// A session's page draws its line as one conversation: the parts the attended one
 // continues above it, oldest first, each with its own record's liveness and read-only, one line on each side of a move and a
 // part's opening line folded under its boundary; where a part began by no move, the strip's *began* words are its boundary; a
 // line longer than three earlier parts draws the nearest three and a press for more. Built by the fold the organism uses, over the
 // events a move writes (`moved.on` and `moved.from`, `chat.moved` and `chat.moved-from`, `chat.handed-over` and `chat.taken-over`).
-// Drawn at the session page's widths (the UI/UX design R6, STORYGAP1), in both languages.
+// Drawn at the session page's widths, in both languages.
 
 let seq = 0;
 const ev = (over: Partial<SessionEvent>): SessionEvent =>

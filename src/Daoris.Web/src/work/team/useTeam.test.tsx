@@ -5,7 +5,7 @@ import type { Session } from '../../data/api';
 import { BringInAgent } from './BringInAgent';
 import { useTeam } from './useTeam';
 
-// COWORKUX1f (the co-worker design §6.2): *Bring in another agent…*'s doors for a session that leads, each judged by its own rule, in
+// *Bring in another agent…*'s doors for a session that leads, each judged by its own rule, in
 // both languages; a session that is no lead brings in nobody.
 
 vi.mock('../../bridge/sessions/sessionHelpers', () => ({

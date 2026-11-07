@@ -14,10 +14,10 @@ import { supervisionChip } from './lineSupervision';
 import { DeleteAsk, SessionPageHead, StopAsk } from './SessionPageHead';
 import { PauseAsk } from '../pausing/WorkAsks';
 
-// A session's page header (SESSUX1d, D126 §3.2) pinned in Sessions' main area, in each state's acts, each stop's ask
-// (§3.3), a teammate's record, below 560 px and with a 中文 title. A molecule, so each is reached by passing it; the
-// conversation below is stand-in lines, scrolled under the header. Drawn in a session's page at the frame's widths (the
-// UI/UX design R6): the helper gives the session's gutters, which the header's sticky box reaches over as it does there.
+// A session's page header pinned in Sessions' main area, in each state's acts, each stop's ask,
+// a teammate's record, below 560 px and with a 中文 title. A molecule, so each is reached by passing it; the
+// conversation below is stand-in lines, scrolled under the header. Drawn in a session's page at the frame's widths:
+// the helper gives the session's gutters, which the header's sticky box reaches over as it does there.
 
 const SESSION: Session = {
   id: 's1a2b3c4', quest: 'abc123', repository: 'engine', door: 'claude-code', state: 'working', kind: 'driven',
@@ -71,7 +71,7 @@ export const Parked: Story = {
   },
 };
 
-/** Stopped, its stop holding its quest (SESSUX1b): *Try again* releases it. */
+/** Stopped, its stop holding its quest: *Try again* releases it. */
 export const StoppedHoldingItsQuest: Story = {
   args: {
     session: { ...SESSION, state: 'stopped' }, shown: 'stopped',
@@ -86,7 +86,7 @@ function TryingAgainHead(args: ComponentProps<typeof SessionPageHead>) {
   return <Page><SessionPageHead {...args} facts={sessionFacts(t, { session: SESSION, shown: 'working', retrying })} /></Page>;
 }
 
-/** AGENTERRORS1a2 (D210 §5.1, §8): its provider failed and Daoris waits to try again in the same conversation; the facts say when. */
+/** Its provider failed and Daoris waits to try again in the same conversation; the facts say when. */
 export const TryingAgain: Story = { render: (args) => <TryingAgainHead {...args} /> };
 
 /** The same in 中文: 将于 … 重试. */
@@ -103,8 +103,8 @@ function HeldForALimitHead(args: ComponentProps<typeof SessionPageHead>) {
 }
 
 /**
- * LIMITSWITCH3b (D137's note of 2026-10-26): a closed quest's finished session whose words wait for an account's reset reads the wait as its
- * word, D206 §3.7's *Waiting for a limit to reset*, with its time and account on the line, never *completed*.
+ * A closed quest's finished session whose words wait for an account's reset reads the wait as its
+ * word, *Waiting for a limit to reset*, with its time and account on the line, never *completed*.
  */
 export const HeldForALimit: Story = {
   args: { session: { ...SESSION, state: 'completed' }, shown: 'limit-waits', acts: ['review', 'openFolder', 'terminal', 'detach', 'archive', 'copy'] },
@@ -122,7 +122,7 @@ export const PastItsTransientBound: Story = {
   },
 };
 
-/** To review: *Review* leads, since nothing but the person will verify the work (D37). */
+/** To review: *Review* leads, since nothing but the person will verify the work. */
 export const ToReview: Story = {
   args: {
     session: { ...SESSION, state: 'completed' }, shown: 'completed',
@@ -130,7 +130,7 @@ export const ToReview: Story = {
   },
 };
 
-/** A teammate's record (SYNC4): read here, offered only what reaches no process. */
+/** A teammate's record: read here, offered only what reaches no process. */
 export const ATeammatesRecord: Story = {
   args: { session: { ...SESSION, id: 'person@machine-b/s1a2b3c4', state: 'completed' }, shown: 'completed', acts: ['archive', 'copy'] },
 };
@@ -175,7 +175,7 @@ export const StopAskingAnIntake: Story = {
   },
 };
 
-/** An ended conversation that served no quest (SESSUX1f): *Delete…* in its ⋯, after the archive marks. */
+/** An ended conversation that served no quest: *Delete…* in its ⋯, after the archive marks. */
 export const ADeletableConversation: Story = {
   args: {
     session: { ...SESSION, quest: null, kind: 'chat', state: 'completed' }, title: 'Cap the hydration per frame', shown: 'completed',
@@ -183,7 +183,7 @@ export const ADeletableConversation: Story = {
   },
 };
 
-/** Its delete asking once under the header (§5.4): what goes, and that nothing brings it back. */
+/** Its delete asking once under the header: what goes, and that nothing brings it back. */
 export const DeleteAsking: Story = {
   args: {
     ...ADeletableConversation.args,
@@ -202,22 +202,22 @@ export const ChineseTitle: Story = {
   args: { title: '为区块接口提供流式预算，让世界流式加载能按帧限制水合工作量，避免卡顿和掉帧' },
 };
 
-// ——— Titles first (UX7c, D152 §7; the UX7 design §5.2): its word, then its title on one line, then its facts by state.
+// ——— Titles first: its word, then its title on one line, then its facts by state.
 // The install's fourth attempt at a re-filed quest, with and without a short title.
 
 const REFILED_TITLE = '(Re-filed from ask #0181ea, whose quest was taken outside the driver with no session.)';
 
-/** Its quest's short title (SESSUX1j): the head says the work, and the fourth attempt is a fact on its line. */
+/** Its quest's short title: the head says the work, and the fourth attempt is a fact on its line. */
 export const FourthAttemptWithAShortTitle: Story = {
   args: { title: 'Continue the production half', facts: ['engine', 'account-1', '2m', 'attempt 4: the 3 before it failed'] },
 };
 
-/** No short title: the title as written, one line, whole in its tip; the word stays where it was. */
+/** No short title: the title as written, one line, whole in its tip; the word stays in its place. */
 export const FourthAttemptWithNoShortTitle: Story = {
   args: { title: REFILED_TITLE, facts: ['engine', 'account-1', '2m', 'attempt 4: the 3 before it failed'] },
 };
 
-/** WAITSHOWN1: working, with nothing yet answered since it was asked: the fact follows its age. */
+/** Working, with nothing yet answered since the turn began: the fact follows its age. */
 export const WorkingWithNoAnswerYet: Story = {
   args: { title: 'Continue the production half', facts: ['engine', '25m', 'no answer yet, asked Oct 14, 09:12 GMT'] },
 };
@@ -241,7 +241,7 @@ export const FourthAttemptNarrow: Story = {
   decorators: [sessionWidths.half],
 };
 
-// ——— HEAD2c (D162; the entry-and-heads design §2): one line whatever the request's length, the acts where they were, the
+// ——— One line whatever the request's length, the acts in place, the
 // facts the repository, its age and one fact; the request as written is its record's *Details*, never a line under the head.
 // At the main area of a 1546 px window and of a 680 px one, in dark and in 中文.
 
@@ -276,13 +276,13 @@ export const OneLineChinese: Story = {
   decorators: [sessionWidths.half, chinese],
 };
 
-// ——— Whom it continues and whom a helper helps (MIXAGENT3a-i, the mixed-agents design §4): the facts line says the agent a
+// ——— Whom it continues and whom a helper helps: the facts line says the agent a
 // handed-over conversation continues and why, in the hand-over's words, and a helper whom it helps; in English, 中文 and dark.
 
 const HANDED: Session = { ...SESSION, quest: null, kind: 'chat', from: 'a1b2c3d4', fromWhy: 'near', fromBy: 'daoris' };
 const A_HELPER: Session = { ...SESSION, id: 'h3lp3r00', quest: null, kind: 'chat', serves: 's1a2b3c4' };
 
-/** A conversation handed over from Codex because its account was near its limit. */
+/** A conversation handed over from Codex because its account is near its limit. */
 export const ContinuesAnother: Story = {
   args: {
     session: HANDED, title: 'Go on with the hydrator fix',
@@ -316,7 +316,7 @@ export const HelpingDark: Story = {
   decorators: [(Story) => <InTheme theme="dark"><Story /></InTheme>],
 };
 
-// ——— *Go on with another agent…* (MIXAGENT1b-i, D163): the hand-over's ask under the head of a conversation, idle and working,
+// ——— *Go on with another agent…*: the hand-over's ask under the head of a conversation, idle and working,
 // and a refusal said in it; each at 680 px of window, in English and 中文.
 
 const ROSTER: HandOverRoster = {
@@ -351,7 +351,7 @@ export const HandOverAskingWhileItWorks: Story = {
   decorators: [sessionWidths.half],
 };
 
-/** A refusal said in the ask, whole, with the choice kept (UX5 U68). */
+/** A refusal said in the ask, whole, with the choice kept. */
 export const HandOverRefused: Story = {
   args: {
     ...HandOverAskingIdle.args,
@@ -392,7 +392,7 @@ export const HandOverRefusedChinese: Story = {
   decorators: [sessionWidths.half, chinese],
 };
 
-// ——— *Ask another agent…* (MIXAGENT2b, D163 point 2): the helper's ask under the head, the question and the agent left to Daoris;
+// ——— *Ask another agent…*: the helper's ask under the head, the question and the agent left to Daoris;
 // at 680 px of window, in English, 中文 and dark.
 
 /** A conversation's ask: what a helper does, the question, which agent, *Ask* waiting for a question, and *Never mind*. */
@@ -413,7 +413,7 @@ export const AskHelperAskingDark: Story = {
   decorators: [sessionWidths.half, (Story) => <InTheme theme="dark"><Story /></InTheme>],
 };
 
-// ——— Daoris's offer to hand over (MIXAGENT1b-ii, D163): the line under the head where nothing else is asked, near the limit and
+// ——— Daoris's offer to hand over: the line under the head where nothing else is asked, near the limit and
 // cut, a longer agent and account name, and each in 中文; every one at 680 px of window.
 
 const OFFER_HEAD = {
@@ -432,8 +432,8 @@ const NEAR: Parameters<typeof HandOverOfferLine>[0]['offer'] = { why: 'near', un
 const CUT: Parameters<typeof HandOverOfferLine>[0]['offer'] = { why: 'limit', until: '2026-10-12T21:30:00Z', agent: 'codex', account: 'team' };
 
 /**
- * The account is near its limit by its scope's near (a limit, credits or its number; never the agent's pace warning alone,
- * USAGEREAD3b): why, *Go on with Codex (team)*, *Choose…* and *Not now*.
+ * The account is near its limit by its scope's near (a limit, credits or its number; never the agent's pace warning alone):
+ * why, *Go on with Codex (team)*, *Choose…* and *Not now*.
  */
 export const HandOverOfferNear: Story = {
   args: { ...OFFER_HEAD, acts: [...OFFER_HEAD.acts], asking: offerLine(NEAR) },
@@ -464,7 +464,7 @@ export const HandOverOfferCutChinese: Story = {
   decorators: [sessionWidths.half, chinese],
 };
 
-// MODELROLE1e (D205 §3.5(e)): a cooling Build's offer names the actor's next choice on another agent and the model it asks.
+// A cooling Build's offer names the actor's next choice on another agent and the model it asks.
 const CUT_CHOICE: Parameters<typeof HandOverOfferLine>[0]['offer'] = { ...CUT, agent: 'codex-acp', choice: { n: '2', model: 'gpt-5' } };
 
 /** The account is cut and Build has an order: the offer names *Build's next choice is 2: Codex · gpt-5*. */
@@ -479,7 +479,7 @@ export const HandOverOfferChoiceChinese: Story = {
   decorators: [sessionWidths.half, chinese],
 };
 
-// ——— RAILLINE1: a running shell call's title is its whole command, three lines of the facts line on the install. The line keeps
+// ——— A running shell call's title is its whole command, which could take three lines of the facts line. The line keeps
 // to one, the call said by its head in at most 40 characters, the whole line in its tip; at the main area's 400 px floor and at
 // 680 px of window, in English and 中文. The facts are `sessionFacts`' own, in the story's language.
 
@@ -529,12 +529,12 @@ export const RunningALongCallAt680Chinese: Story = {
   decorators: [sessionWidths.half, chinese],
 };
 
-/** A running driven session whose quest an ask asked (PAUSE1e): *Pause quest…* and *Pause ask…* in its ⋯. */
+/** A running driven session whose quest an ask asked: *Pause quest…* and *Pause ask…* in its ⋯. */
 export const RunningWithItsPauses: Story = {
   args: { acts: ['stop', 'pauseQuest', 'pauseAsk', 'review', 'openFolder', 'terminal', 'detach', 'copy'] },
 };
 
-/** Its quest's pause asking once under the header, from the driver's plan of what it stops (D132 §2.6). */
+/** Its quest's pause asking once under the header, from the driver's plan of what it stops. */
 export const PauseAsking: Story = {
   args: {
     acts: ['stop', 'pauseQuest', 'pauseAsk', 'review', 'openFolder', 'terminal', 'detach', 'copy'],
@@ -547,7 +547,7 @@ export const PauseAsking: Story = {
   },
 };
 
-/** Stopped by its ask's pause: *Resume ask*, the loud act, in *Try again*'s place (D132 §6.1). */
+/** Stopped by its ask's pause: *Resume ask*, the loud act, in *Try again*'s place. */
 export const PausedWithItsAsk: Story = {
   args: {
     session: { ...SESSION, state: 'stopped' }, shown: 'stopped',
@@ -555,7 +555,7 @@ export const PausedWithItsAsk: Story = {
   },
 };
 
-// ——— The choice its actor ran (MODELROLE1c3, D205 §4.6 item 2, §7.1): the head's quiet *choice n* chip where a later choice than the
+// ——— The choice its actor ran: the head's quiet *choice n* chip where a later choice than the
 // first ran, and *your pick* where the person picked the agent, on the facts line after the facts; at the frame's three widths, in
 // English and 中文. A start on its first choice wears none, as `Running` shows.
 
@@ -594,7 +594,7 @@ export const YourPickChineseNarrow: Story = {
   decorators: [sessionWidths.narrow, chinese],
 };
 
-// STAFFPOLICY1f: the chip says why its choice ran, after a limit and by weight, at the three widths in English, 中文 and dark; at 680 px
+// The chip says why its choice ran, after a limit and by weight, at the three widths in English, 中文 and dark; at 680 px
 // and below the sentence is in the chip's ⓘ.
 const inDark: Decorator = (Story) => <InTheme theme="dark"><Story /></InTheme>;
 const AFTER_A_LIMIT: Session = { ...LATER, chosen: { rule: 'order', by: 'moved', condition: 'limit', from: '1' } };
@@ -621,7 +621,7 @@ export const ByWeightDarkWide: Story = { args: WHY(BY_WEIGHT), decorators: [sess
 export const ByWeightDarkHalf: Story = { args: WHY(BY_WEIGHT), decorators: [sessionWidths.half, inDark] };
 export const ByWeightDarkNarrow: Story = { args: WHY(BY_WEIGHT), decorators: [sessionWidths.narrow, inDark] };
 
-// REVIEWFLOW1b: the facts led by *now · next*, a story per phase, each wide, narrow in 中文, and wide in the dark theme.
+// The facts led by *now · next*, a story per phase, each wide, narrow in 中文, and wide in the dark theme.
 type Phase = {
   session: Partial<Session>; shown: ComponentProps<typeof SessionPageHead>['shown']; flow: { parts: number; landing: boolean };
   integration?: { state: string; line: string }; next?: ComponentProps<typeof SessionPageHead>['next']; branch?: SessionFactsOf['branch'];
@@ -705,7 +705,7 @@ function RuleHeldHead(args: ComponentProps<typeof SessionPageHead>) {
   return <Page><SessionPageHead {...args} chip={chip} /></Page>;
 }
 
-/** CONTEXTDRIVE1h: a rule holds the line, so the head says the count against its number, with the rule in its tip. */
+/** A rule holds the line, so the head says the count against its number, with the rule in its tip. */
 export const AnswersAloneHeldByARule: Story = {
   args: { session: { ...SESSION, state: 'awaiting-person' }, shown: 'awaiting-person' },
   render: (args) => <RuleHeldHead {...args} />,

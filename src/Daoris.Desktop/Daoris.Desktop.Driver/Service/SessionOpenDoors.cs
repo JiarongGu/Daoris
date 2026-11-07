@@ -130,6 +130,13 @@ public sealed class SessionOpenDoors
         lock (_marks) return _opens >= 2;
     }
 
+    /// <summary>Whether the host's keyed open moves the words it is asked to: its <c>opens</c> mark 2 or more; never throws.</summary>
+    public async Task<bool> MovesAsync(CancellationToken ct = default)
+    {
+        await HeadAsync(ct).ConfigureAwait(false);
+        lock (_marks) return _opens >= 2;
+    }
+
     /// <summary>
     /// Opens a driven or chat destination. The body's fields are the existing open request, without an opens member.
     /// A caller recovering a lost answer passes retry; each retry re-reads protocol before it sends anything. The moves that hand a part words

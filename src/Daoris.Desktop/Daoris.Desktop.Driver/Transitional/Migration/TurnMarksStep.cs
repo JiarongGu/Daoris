@@ -1,7 +1,7 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// The turn marks an older build's terminal left under the request folder (D238, RPC1g4): a terminal's conversation is the running
+/// The turn marks an older build's terminal left under the request folder: a terminal's conversation is the running
 /// Daoris's now, so no process tells its turns through a file, and a <c>*.turn</c> mark is removed. A mark carries state only, never a
 /// word or a request, so nothing is copied first. It ends when the owner's install finds none, and the row that deletes it is RPC1g5's
 /// follow-up.

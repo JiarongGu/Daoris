@@ -5,7 +5,7 @@ import { Icon, Tip } from '../../design/ui';
 import { choiceChip, chosenLine } from '../actors';
 
 /**
- * **The choice its actor ran, on the head** (D205 §4.6 item 2, §7: MODELROLE1c2; STAFFPOLICY1f): a quiet `status` chip, *choice n · why*
+ * **The choice its actor ran, on the head**: a quiet `status` chip, *choice n · why*
  * where a later choice than the first ran, *your pick* where the person picked the agent, and nothing otherwise, so a start on its
  * first choice reads as it did. Where the line is narrow the chip keeps the number and the sentence moves into an ⓘ. Text, not a
  * control; *Details* says the rest.

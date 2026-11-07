@@ -3,10 +3,10 @@ import { useShenora } from '@shenora/react';
 import type { TogetherView } from '../../work/head/TogetherDoor';
 import { call } from '../call';
 
-// LINESTOGETHER1d (the review-flow design §4): the operation bringing sessions together a session is in, and the head's presses on it.
-// Each press declares what it moved, so the state hub asks the sessions again in every window (D169); the hooks ask nothing themselves.
+// The operation bringing sessions together a session is in, and the head's presses on it.
+// Each press declares what it moved, so the state hub asks the sessions again in every window; the hooks ask nothing themselves.
 
-/** What a press on the operation came to: done, or the sentence it was refused with. */
+/** What a press on the operation came to: done, or the sentence it is refused with. */
 export type TogetherAnswer = { done: boolean; refused: string | null };
 
 const answerOf = (answer: { operation?: unknown; done?: unknown; refused?: unknown } | null): TogetherAnswer => ({

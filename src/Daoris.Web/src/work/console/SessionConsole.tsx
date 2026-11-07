@@ -3,7 +3,7 @@ import { useSessionConsole } from '../../bridge/shell';
 import { MonoWell } from '../../design/ui';
 
 /**
- * A session's console, live (D49 §2) — the transcript capture as it happens.
+ * A session's console, live — the transcript capture as it happens.
  *
  * @remarks
  * An organism, deliberately: it holds the hook so that `MonoWell` — which does the rendering, the
@@ -16,7 +16,7 @@ import { MonoWell } from '../../design/ui';
  *
  * Shared by the quest's page (a driven session's record) and the chat drawer (a conversation), for
  * the reason those two are one entity in the first place: the console does not care which way in a
- * session was entered.
+ * session is entered.
  */
 export function SessionConsole({ id, tall, fill, quiet }: {
   id: string;
@@ -24,12 +24,12 @@ export function SessionConsole({ id, tall, fill, quiet }: {
   fill?: boolean;
   /**
    * What to say instead of an empty well when this session has said nothing and is not saying
-   * anything (SURF8).
+   * anything.
    *
    * @remarks
    * A bordered empty box reads as a text field, which is the worst thing a read-only region can
    * look like — measured on the real monitor window, where a parked session with no buffer left a
-   * 15rem input in the middle of it. A sentence is also the more honest shape: "nothing was said"
+   * 15rem input in the middle of it. A sentence is also the more honest shape: "nothing said"
    * and "the console is showing you nothing" are different claims.
    */
   quiet?: string;
@@ -43,7 +43,7 @@ export function SessionConsole({ id, tall, fill, quiet }: {
     return <p className="m-0 py-1 text-small text-ink-faint">{quiet}</p>;
   }
 
-  // `fill` is the output panel's mode (D55): the person gave the panel a height, so an empty
+  // `fill` is the output panel's mode: the person gave the panel a height, so an empty
   // console keeps it rather than collapsing the region they just resized.
   if (silent && !fill) return null;
 

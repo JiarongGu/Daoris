@@ -1,20 +1,20 @@
 import { type DragEvent, useRef, useState } from 'react';
 import { type Place, VIEW_IDS, type ViewId } from './placements';
 
-// DOCK1e: a view's tab dragged from one region and dropped on the other, as VS Code's tabs are. The
-// move is the same `onMove` the tab list's *Move to* calls (DOCK1b), so a drop and a menu press can
+// A view's tab dragged from one region and dropped on the other, as VS Code's tabs are. The
+// move is the same `onMove` the tab list's *Move to* calls, so a drop and a menu press can
 // never disagree about what a move does; dragging is the second door, the menu stays the first.
 
 /** What a dragged tab carries: the view, under a type nothing but a Daoris tab writes. */
 const VIEW_TYPE = 'application/x-daoris-view';
 /**
- * Where it was dragged from, as a type of its own: a page may read a drag's types while it is over a
+ * Where it is dragged from, as a type of its own: a page may read a drag's types while it is over a
  * region but not its data, and a region must know whether the view is already its own before the drop,
  * or it would light up for a move that does nothing.
  */
 const fromType = (place: Place) => `application/x-daoris-view-from-${place}`;
 
-// The one list of views, so a view added there (the terminal, CONSOLE4b) can be dropped as surely as moved.
+// The one list of views, so a view added there (the terminal) can be dropped as surely as moved.
 const VIEWS: readonly string[] = VIEW_IDS;
 
 /** What makes a view's tab draggable, and tells the frame while it is being dragged. */

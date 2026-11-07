@@ -3,8 +3,8 @@ import type { HelperAskRow } from '../waits/HelperAsks';
 import type { SessionEvent } from './conversation';
 
 /**
- * A lead's turns as each sender's word began one (COMMS1h, the comms design §7): the person's with its receipts, Daoris's own, another
- * session's claim from the channel, a helper's answer to the person's own ask (MIXAGENT3a-iii), the supervisor's press and a second
+ * A lead's turns as each sender's word began one: the person's with its receipts, Daoris's own, another
+ * session's claim from the channel, a helper's answer to the person's own ask, the supervisor's press and a second
  * opinion's findings; for the tests and the stories alike.
  */
 export const HELPER_QUESTION = 'Does the import keep the store’s write lock until it commits?';

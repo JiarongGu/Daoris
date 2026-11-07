@@ -3,7 +3,7 @@ import { useShenora, useShenoraEvent } from '@shenora/react';
 import { keys } from '../data/queries';
 import { call } from './call';
 
-// A terminal's hold of a conversation (RPC1g1, D238 point 2, the terminal-conversation design §3.1): which conversations a terminal
+// A terminal's hold of a conversation: which conversations a terminal
 // holds over the pipe, read as the page mounts and kept by the shell's `SESSION_HOLDS` at each change, and the person taking one back.
 // Both routes are the window's alone: a terminal lets go of its own hold by the pipe's `LET_GO`.
 

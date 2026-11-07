@@ -2,7 +2,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { renderHook } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 
-// FABRIC-CUTOVER1f (D190 point 6, the cutover design §5.2): the person's skip and stop of a graph run's node, the page's half of
+// The person's skip and stop of a graph run's node, the page's half of
 // `daoris workflow skip|stop`. Seen failing first.
 
 const { invoke } = vi.hoisted(() => ({ invoke: vi.fn(async (): Promise<unknown> => null) }));
@@ -17,7 +17,7 @@ import { waitFor } from '@testing-library/react';
 import { keys } from '../../data/queries';
 import { acceptGatesPress, useAcceptIntegration, useRunNodeWord, useSetLanded, useVerify, useWorkflowCurrent } from './workflow';
 
-// SETUPUX1o: the place's chart asks the effective graph of the route the person chose, and a read of another route is another answer.
+// The place's chart asks the effective graph of the route the person chose, and a read of another route is another answer.
 describe("a repository's Current asked for a route", () => {
   afterEach(() => invoke.mockReset());
   const wrapper = ({ children }: { children: React.ReactNode }) => (
@@ -42,7 +42,7 @@ describe("a repository's Current asked for a route", () => {
   });
 });
 
-// FABRIC-PIPELINE1d part 5: *Verify…*, `daoris gate verify`'s twin, binds a person's verification of a branch or a commit.
+// *Verify…*, `daoris gate verify`'s twin, binds a person's verification of a branch or a commit.
 describe("the person's verification of a branch or a commit", () => {
   afterEach(() => invoke.mockReset());
   const wrapper = ({ children }: { children: React.ReactNode }) => (
@@ -85,7 +85,7 @@ describe("the person's Accept the gates", () => {
   });
 });
 
-// INTEGRATE1d part 3 (the integration design §17.7): the person's acceptance of a repository's integration declaration.
+// The person's acceptance of a repository's integration declaration.
 describe("the person's acceptance of an integration declaration", () => {
   afterEach(() => invoke.mockReset());
   const wrapper = ({ children }: { children: React.ReactNode }) => (

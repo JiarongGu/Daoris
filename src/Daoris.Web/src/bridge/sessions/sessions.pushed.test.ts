@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 
-// The session records as the shell pushes them (PUSH1d2, D182): a partition per workspace keyed by session, composed into the widest
+// The session records as the shell pushes them: a partition per workspace keyed by session, composed into the widest
 // list the service answers (every repository, closed included, every workspace), from which each view's list is read.
 
 vi.mock('@shenora/react', () => ({
@@ -36,7 +36,7 @@ describe('the running calls, pushed (WAITSAY1c2)', () => {
     expect(withCall({ session: 'a', calling: call } as never, { a: held })?.calling).toEqual(held);
   });
 
-  // SESSWATCH1a (the session-watch design §5.1): the watcher's mark laid over a quiet session's call, or a call of no title.
+  // The watcher's mark laid over a quiet session's call, or a call of no title.
   it("lays the watcher's quiet mark over a session's call, or over a call of no title where it makes none", () => {
     const call = { title: 'npm test', since: '2026-10-20T08:00:00+00:00' };
     const since = '2026-10-20T07:50:00+00:00';
@@ -45,14 +45,14 @@ describe('the running calls, pushed (WAITSAY1c2)', () => {
     expect(callsSlice.compose(new Map<string, unknown>([['calling', {}], ['quiet', {}]]), true)).toEqual({});
   });
 
-  // SESSWATCH1b: whether Daoris's word to a quiet session was kept rides its mark; a mark that says not, says nothing.
+  // Whether Daoris's word to a quiet session is kept rides its mark; a mark that says not, says nothing.
   it('carries that Daoris told a quiet session only where its mark says so', () => {
     const since = '2026-10-20T07:50:00+00:00';
     expect(callsSlice.compose(new Map<string, unknown>([['quiet', { a: { since, told: true }, b: { since, told: false } }]]), true))
       .toEqual({ a: { title: '', since, quiet: since, quietTold: true }, b: { title: '', since, quiet: since } });
   });
 
-  // COWORKVIEW1a rule 18 (§3.7): when a session was last heard, laid beside its call, or beside a call of no title.
+  // When a session is last heard, laid beside its call, or beside a call of no title.
   it("lays when a session was last heard beside its call, and takes the partition for no call", () => {
     const call = { title: 'npm test', since: '2026-10-20T08:00:00+00:00' };
     const at = '2026-10-20T08:03:00+00:00';
@@ -98,7 +98,7 @@ describe('the sessions, pushed (PUSH1d2)', () => {
     expect(composed.map((each) => each.id)).toEqual(['d-parked', 'g-open', 'd-early', 'g-late']);
   });
 
-  // PERF1f: a pushed change is merged into the list the page holds, where the whole list was sorted again at every change.
+  // A pushed change is merged into the list the page holds, rather than sorting the whole list again at every change.
   it('merges each pushed change into the list it holds, the same list as composing the whole', () => {
     const workspaces = ['default', 'games', 'site'];
     const many = Array.from({ length: 60 }, (_, at) => record(`s${String(at).padStart(2, '0')}`, {
@@ -159,7 +159,7 @@ describe('the sessions, pushed (PUSH1d2)', () => {
   });
 });
 
-// The session groups as the shell pushes them (PUSH1c3b, D182's PUSH1c3a note): each row under its session with its group's sort
+// The session groups as the shell pushes them: each row under its session with its group's sort
 // inputs, each entry under its key, composed in `SessionGroups.Ordered`'s order into the answer `SESSION_GROUPS` gives.
 
 const row = (session: string, group: SessionGrouping['group']): SessionGrouping =>

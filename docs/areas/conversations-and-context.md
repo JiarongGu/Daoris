@@ -50,7 +50,7 @@ of everything it handed, section by section.
 | `ChatAccountReads` | `Loop/Chat/ChatAccountReads.cs` | A refused call read for its account: a limit cools it, a refused sign-in signs it out; what a part going on from a limit carries |
 | `ChatGoOn` | `Course/Chat/ChatGoOn.cs` | Executor `go-on`: an ended chat goes on with the words kept on its record; it hears the record once the runner is made. `GoingOnRun` (a go-on judged and started, a chat's or Ask Daoris's) and `GoOnRefusals` (the agent's refusal, words that cannot go on, a lost conversation) are built per call over it, reaching its siblings through the wiring; the executor keeps one-line doors to them |
 | `ChatHelperWords` | `Course/Chat/ChatHelperWords.cs` | Executor `helper-words`: a helper's answer said to the conversation that asked, as its next turn |
-| `LimitMove`, `LimitWaits` | `Course/Chat/` | Executors `limit-move` and `limit-wait`: a limit at a turn's end moves to the next account now, or waits for the look's `limits` stage to wake it. `LimitMove`'s ended-conversation move is `EndedLimitMove`, built by it and reaching its siblings through the wiring at run time; `LimitNotes`, `LimitResetWord` and `GoingOn` (the go-on's record of its words) are files of their own |
+| `LimitMove`, `LimitWaits` | `Course/Chat/` | Executors `limit-move` and `limit-wait`: a limit at a turn's end moves to the next account now, or waits for the look's `limits` stage to wake it. `LimitMove`'s ended-conversation move is `EndedLimitMove`, built by it and reaching its siblings through the wiring at run time; both carry through `ChatLimitCarry` and fence their hand through `MoveFence`; `LimitNotes`, `LimitResetWord` and `GoingOn` (the go-on's record of its words, and the carried part it opens) are files of their own |
 | `CurveMove` | `Course/Chat/CurveMove.cs` (`Agents/Domain/SwitchDecision.cs`) | Executor `curve-move`: the usage curve's move of a conversation at its turn's end |
 | `ConversationRules`, `TransientMove`, `LimitRuled` | `Course/Chat/` | A conversation's line as the supervisor's rules read it; executor `transient-move`, the rules' move or hold past its episode; the limits rule's wait and ask and the moves bound before the limit's walk |
 | `HandOver`, `ChatHandOver`, `QuestHandOver`, `PartLeftovers`, `QuestPartStop` | `Course/HandOver/`, `Course/Chat/` | Hand-overs to another agent or account, for conversations (executor `hand-over`) and quests' sessions; what the old part left running, ended and waited for |
@@ -133,9 +133,12 @@ of everything it handed, section by section.
 
 **Moves between accounts and agents**
 
-20. A conversation's limit, at its turn's end: another account of the same agent with room gets a new part, briefed, the
-    held words after the brief, why `limit`. Else the role's next choice on another agent. Else it waits for the earliest
-    reset. (from D206, D205, D197)
+20. A conversation's limit, at its turn's end: another account of the same agent with room gets a new part, why `limit`. A
+    repository's chat carries its own conversation there as a driven line does (rule 24): the new part's record opens as that
+    conversation's resume, the held words then Daoris's word its prompt, no brief, compacted first past its provider's bound. It is
+    briefed, the held words after the brief, where its door cannot carry it or the copy fails, saying why; where the door refuses the
+    carried resume, the same part goes on in the brief, the copy removed, saying so. Ask Daoris's room and a host whose open moves no
+    word are briefed. Else the role's next choice on another agent, briefed. Else it waits for the earliest reset. (from D206, D205, D197)
 21. An account the person picked is never moved off. It waits for that account's reset. A new part a move opens on the picked
     account of the same agent keeps the pick, one agent's two doors one agent and two providers sharing a pool two. (from D206,
     D205, D212)
@@ -146,7 +149,7 @@ of everything it handed, section by section.
 24. A driven line at a limit resumes the same way, inside its carry-on's start. It walks its role's choices only where its
     own account is not ready. On another account of the same agent its new part carries the conversation there and resumes it
     with no brief, compacted first past its provider's bound, and is briefed only where the door cannot carry it or the copy
-    fails, saying why (agents and harnesses, rule 38). A conversation's limit move (rule 20) is briefed. (from D206)
+    fails, saying why (agents and harnesses, rule 38). A conversation's limit move carries the same way (rule 20). (from D206)
 25. The curve moves a conversation at its turn's end, with nothing running or queued, to another account of the same agent
     in its scope with room. Never mid-turn or across agents. Never Ask Daoris or the tool's own home. Not again within 30
     minutes. (from D165)
@@ -238,7 +241,7 @@ of everything it handed, section by section.
   never in `ChatTurns.cs`, which is their door. New behaviour goes in its own file (D231). Agents comes before Participants and
   Context in the structure gate (D166).
 - **Tests that pin it:** `LineCourseTests` (the pinned path table), `CourseCensusTests` (`fixtures/course-sites.json`),
-  `CourseBoundaryTests`, `CoursePortsTests`; `ChatGoOnTests`, `BriefedMoveTests`, `LimitWaitsTests`, `LimitMoveStoreTests`,
+  `CourseBoundaryTests`, `CoursePortsTests`; `ChatGoOnTests`, `BriefedMoveTests`, `LimitWaitsTests`, `LimitMoveStoreTests`, `ChatLimitCarryProcessTests`,
   `CurveMoveTests`, `ChatHandOverTests`, `HandOverTests`, `PartLeftTests`, `HandOverLeftProcessTests`, `MoveStoreTests`, `MoveStoreCensusTests`, `MoveDeliveryTests`; the
   `*CrashProcessTests`, `*DowngradeProcessTests`, `*OlderBuildProcessTests` per move; `ContextBriefTests`,
   `StandingBlockTests`, `InstructionAccountTests`, `CourseCountsTests`, `LineCountsTests`, `LineKeysTests`,
@@ -277,8 +280,9 @@ of everything it handed, section by section.
 
 - **SWITCHCTX1a onward: the account carry.** A move keeps the agent's own conversation by carrying it to the other
   account's home. Proposed (`docs/2026-10-24-switch-context-design.md`, its round 5 read and another round owed), with no backlog row. A driven line's
-  limit move carries through the providers' `IConversationCarry` (`Loop/Run/Hand/LimitCarried.cs`); a conversation's limit move, the curve's move and the
-  hand-over carry nothing; a driven line's carried resume the agent refuses after the copy is briefed in the same start, the copy removed.
+  limit move and a conversation's carry through the providers' `IConversationCarry` (`Loop/Run/Hand/LimitCarried.cs`, `Course/Chat/ChatLimitCarry.cs`);
+  the curve's move and the hand-over carry nothing; a carried resume the agent refuses after the copy is briefed on the same part, the copy removed.
+  A conversation's carried move keeps the `brief` how on its move record, so a shell cut off under it is taken up by the brief.
   `Course/MoveRecords.cs` reserves the `carry` kind and the `copied` and `verified` phases.
 - **SESSCTX1a:** resume and a fresh part measured on each door. No brief has been counted on a harness.
 - **SESSCTX1e (ONEWAY1j):** *Go on fresh*, Daoris's compaction on the person's press, re-cut as a hand-over to the same

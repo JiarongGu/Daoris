@@ -1,8 +1,8 @@
-// A review's patch as structure (REVIEW2): git's unified diff, exactly as the host passed it on, read
-// into hunks with the line numbers each side had — so a view can number the lines, highlight each
+// A review's patch as structure: git's unified diff, exactly as the host passes it on, read
+// into hunks with the line numbers each side has — so a view can number the lines, highlight each
 // side, and set them side by side. Reading, never re-deriving: the lines and their order are git's.
 
-/** One line of a hunk. `old` and `new` are the numbers it had on each side it appears on. */
+/** One line of a hunk. `old` and `new` are the numbers it has on each side it appears on. */
 export type PatchLine =
   | { kind: 'same'; text: string; old: number; new: number }
   | { kind: 'del'; text: string; old: number }
@@ -52,7 +52,7 @@ export function parsePatch(patch: string): Patch {
       case ' ': hunk.lines.push({ kind: 'same', text: body, old: old++, new: now++ }); break;
       case '-': hunk.lines.push({ kind: 'del', text: body, old: old++ }); break;
       case '+': hunk.lines.push({ kind: 'add', text: body, new: now++ }); break;
-      // A blank context line whose single space was stripped on the way — still a line of the file.
+      // A blank context line whose single space is stripped on the way — still a line of the file.
       case undefined: hunk.lines.push({ kind: 'same', text: '', old: old++, new: now++ }); break;
       default: hunk.lines.push({ kind: 'note', text: line });
     }

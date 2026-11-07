@@ -1,18 +1,18 @@
 namespace Daoris.Knowledge;
 
-/// <summary>What the solicited-answer door did with a hand (COMMS1b, the comms design §4.2).</summary>
+/// <summary>What the solicited-answer door did with a hand.</summary>
 internal enum SolicitedFate
 {
-    /// <summary>The word was kept on the line's head now.</summary>
+    /// <summary>The word is kept on the line's head now.</summary>
     Kept,
 
     /// <summary>The key's word already waits: <see cref="SolicitedOutcome.Session"/> holds it and <see cref="SolicitedOutcome.Word"/> is it.</summary>
     Waiting,
 
-    /// <summary>The key's word left a record of the line: <see cref="SolicitedOutcome.SettledOn"/> names it; nothing was kept.</summary>
+    /// <summary>The key's word left a record of the line: <see cref="SolicitedOutcome.SettledOn"/> names it; nothing is kept.</summary>
     Settled,
 
-    /// <summary>Nothing was kept; <see cref="SolicitedOutcome.Refusal"/> says why.</summary>
+    /// <summary>Nothing is kept; <see cref="SolicitedOutcome.Refusal"/> says why.</summary>
     Refused,
 }
 
@@ -66,7 +66,7 @@ internal sealed record SolicitedOutcome(SolicitedFate Fate, string Message)
 {
     public SolicitedRefusal Refusal { get; init; }
 
-    /// <summary>The line's head the word was kept on, or holds it.</summary>
+    /// <summary>The line's head the word is kept on, or holds it.</summary>
     public Session? Session { get; init; }
 
     public SaidWord? Word { get; init; }
@@ -75,7 +75,7 @@ internal sealed record SolicitedOutcome(SolicitedFate Fate, string Message)
 }
 
 /// <summary>
-/// The one door a solicited answer goes through (COMMS1b, the comms design §4.2): a helper's answer, a partner's and an opinion's findings,
+/// The one door a solicited answer goes through: a helper's answer, a partner's and an opinion's findings,
 /// kept once under <c>&lt;case&gt;:&lt;id&gt;</c> on the head of the line the say door reads, inside the caller's exclusive step. One walk
 /// (<see cref="Lines.WalkAsync"/>), one settlement (<see cref="SaidKeys"/>), one table of the head's state.
 /// </summary>

@@ -1,6 +1,6 @@
 namespace Daoris.Knowledge;
 
-/// <summary>The record's half of deleting a session (SESSUX1f, D126 §5.4): whether a record may go, and the delete itself.</summary>
+/// <summary>The record's half of deleting a session: whether a record may go, and the delete itself.</summary>
 internal sealed class SessionDeletes(QuestStore quests, SessionStore sessions, AskStore? asks)
 {
     /// <summary>
@@ -15,12 +15,12 @@ internal sealed class SessionDeletes(QuestStore quests, SessionStore sessions, A
 
     /// <summary>
     /// Delete a conversation's record that served no quest: ended, this machine's, named by no ask's
-    /// intake and no quest's publisher, and held by no remote. Judged and removed as one step (REV3), so a record that
+    /// intake and no quest's publisher, and held by no remote. Judged and removed as one step, so a record that
     /// moved since the driver asked is judged as it now stands.
     /// </summary>
     /// <remarks>
     /// <b>Why so narrow.</b> A session that served a quest is that work's record: which agent, which version, which
-    /// account and which tree did it (D49 §4), and the quest's strikes and carry-ons are read from it (D58, D80). Archive is
+    /// account and which tree did it, and the quest's strikes and carry-ons are read from it. Archive is
     /// how such a session is cleared. A record pushed to a remote would leave the team's copy, since a session record does
     /// not travel as a deletion.
     /// </remarks>
@@ -36,7 +36,7 @@ internal sealed class SessionDeletes(QuestStore quests, SessionStore sessions, A
         }, ct).ConfigureAwait(false);
 
     /// <summary>
-    /// Which of these records <see cref="DeleteAsync"/> would delete, by the same rule (D95's way for quests): a list's
+    /// Which of these records <see cref="DeleteAsync"/> would delete, by the same rule: a list's
     /// answer says it per record, so a page offers *Delete…* only where the ledger would take it.
     /// </summary>
     public async Task<IReadOnlySet<string>> DeletableAsync(IEnumerable<Session> candidates, CancellationToken ct = default)
@@ -54,7 +54,7 @@ internal sealed class SessionDeletes(QuestStore quests, SessionStore sessions, A
             : Judge(session, await NamesAsync(ct).ConfigureAwait(false));
 
     /// <summary>
-    /// What names a session: each ask's intake, and each quest's publishing session (SESS1). Read whole, since a delete is
+    /// What names a session: each ask's intake, and each quest's publishing session. Read whole, since a delete is
     /// rare and a list asks once for all its records.
     /// </summary>
     private async Task<(IReadOnlyList<Ask> Asks, IReadOnlyList<Quest> Quests)> NamesAsync(CancellationToken ct) =>
@@ -89,7 +89,7 @@ internal sealed class SessionDeletes(QuestStore quests, SessionStore sessions, A
                 session) { Quest = served };
         }
 
-        // A chat's take names no quest on its record (CHATTAKE1), so its sentence says the take without one.
+        // A chat's take names no quest on its record, so its sentence says the take without one.
         if (session.Took)
         {
             return new(

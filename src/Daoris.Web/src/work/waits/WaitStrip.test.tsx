@@ -9,7 +9,7 @@ import type { PermissionWait } from './PermissionAsks';
 import { STEP_SHOWN } from '../gates/reviewFixtures';
 import { WaitStrip } from './WaitStrip';
 
-// WAITFOOT1b (D168): what waits on the person, named at the foot above the box with the same presses the head has, so the
+// What waits on the person, named at the foot above the box with the same presses the head has, so the
 // person reading the last message answers it there. Props only: the frame hands it what it hands the head.
 
 const session = (over: Partial<Session> = {}): Session => ({
@@ -35,7 +35,7 @@ describe('the strip of what waits on the person, at the foot', () => {
     expect(container).toBeEmptyDOMElement();
   });
 
-  // WAITFOOT2c (D168): the strip sits directly above the box that takes the park's answer, and the box is the door, so no
+  // The strip sits directly above the box that takes the park's answer, and the box is the door, so no
   // line says "answer it in the box below" over it; a park with nothing else waiting draws nothing.
   it('draws no line for a park\'s question where its box is right below', () => {
     const { container } = render(<WaitStrip session={parked} onResolve={vi.fn()} answerBelow onTop={vi.fn()} />);
@@ -48,8 +48,8 @@ describe('the strip of what waits on the person, at the foot', () => {
     expect(within(strip()).queryByRole('textbox')).toBeNull();
   });
 
-  // PARKVIEW1 (the park's ask design §3): where the box right below is the park's answer box, it draws what the park asks with every
-  // press, its go-aheads among them, so the strip draws none of them and counts none: it counted *2 waiting on you* over one line.
+  // Where the box right below is the park's answer box, it draws what the park asks with every
+  // press, its go-aheads among them, so the strip draws none of them and counts none: it must not count *2 waiting on you* over one line.
   it('draws and counts none of a park\'s waits where its answer box right below draws them', () => {
     const { container } = render(
       <WaitStrip session={parked} onResolve={vi.fn()} answerBelow parkBox goAheads={GO_AHEADS} onGoAhead={vi.fn()} onTop={vi.fn()} />,
@@ -113,7 +113,7 @@ describe('the strip of what waits on the person, at the foot', () => {
     expect(reviewed).toHaveBeenCalled();
   });
 
-  // COMMS1j: a park on the go-ahead it asked waits on that one decision, so its two lines are one wait, as the bell counts it.
+  // A park on the go-ahead it asked waits on that one decision, so its two lines are one wait, as the bell counts it.
   it('folds to one line naming them where several wait, and shows them again', async () => {
     render(<WaitStrip session={parked} onResolve={vi.fn()} goAheads={GO_AHEADS} onGoAhead={vi.fn()} onTop={vi.fn()} />);
     expect(strip()).toHaveAccessibleName('Waiting on you');
@@ -135,7 +135,7 @@ describe('the strip of what waits on the person, at the foot', () => {
     expect(onTop).toHaveBeenCalledTimes(1);
   });
 
-  // WAITFOOT1c (D168 point 4): each line leads to the event in the conversation that raised it, where one was found, and the
+  // Each line leads to the event in the conversation that raised it, where one is found, and the
   // raising block's *To the wait* leads back to its line.
   it('leads each wait to the event in the conversation that raised it, where one was found', async () => {
     const toEvent = { question: vi.fn(), work: vi.fn(), goAheads: { 2: vi.fn() } };
@@ -187,7 +187,7 @@ describe('the strip of what waits on the person, at the foot', () => {
     expect(within(strip()).getByRole('listitem')).toHaveFocus();
   });
 
-  // PROPOSEHERE1b (D168 point 2, D74): a rule the session proposed is a wait, answered through the head's own door.
+  // A rule the session proposed is a wait, answered through the head's own door.
   const RULE: RuleProposal = {
     id: 'r1', state: 'waiting', action: 'add', scope: 'repository', name: 'engine', list: 'allow', rule: 'Bash(git branch -D:*)',
     why: 'Auto mode refused the branch delete you asked for.', session: 's1a2b3c4', proposed: '2026-09-21T11:00:00Z',
@@ -205,7 +205,7 @@ describe('the strip of what waits on the person, at the foot', () => {
 
     await userEvent.click(within(items[0]!).getByRole('button', { name: 'Decline' }));
     expect(onAnswer).toHaveBeenCalledWith(RULE, false, { done: expect.any(Function), refused: expect.any(Function) });
-    // *Allow…* is open in one place at a time: the frame's (D168 point 3).
+    // *Allow…* is open in one place at a time: the frame's.
     await userEvent.click(within(items[0]!).getByRole('button', { name: 'Allow…' }));
     expect(onOpen).toHaveBeenCalledWith('r1');
     rerender(<WaitStrip session={session()} rules={rules} ruleAsk={{ open: 'r1', onOpen }} onTop={vi.fn()} />);
@@ -229,7 +229,7 @@ describe('the strip of what waits on the person, at the foot', () => {
     expect(container).toBeEmptyDOMElement();
   });
 
-  // MIXAGENT2c (D168 points 1 to 3, D163 point 3): an agent's ask for a helper that waits on the person's word, with the head's own
+  // An agent's ask for a helper that waits on the person's word, with the head's own
   // yes and no, and none of the asks that wait on nothing of theirs.
   const ASK: HelperAskRow = {
     id: 'a1', question: 'Which test covers the loader?', agent: 'codex-acp', askedBy: 'agent', at: '2026-09-21T11:00:00Z',
@@ -270,7 +270,7 @@ describe('the strip of what waits on the person, at the foot', () => {
     expect(container).toBeEmptyDOMElement();
   });
 
-  // AUTONOMY1b3c (D184 point 3): a tool call the session holds for the person's answer under asking, with the head's own press per
+  // A tool call the session holds for the person's answer under asking, with the head's own press per
   // choice the agent offered, and none another session holds.
   const HELD: PermissionWait = {
     session: 's1a2b3c4', request: '900', call: 'tc-1', title: 'npm test', kind: 'execute', since: '2026-09-21T11:00:00Z', until: '2026-09-21T11:15:00Z',
@@ -304,7 +304,7 @@ describe('the strip of what waits on the person, at the foot', () => {
     expect(container).toBeEmptyDOMElement();
   });
 
-  // COWORK1e (D188 point 4; the message-urgency design §8.3): a third answer in a row with nobody between, held for the person, with
+  // A third answer in a row with nobody between, held for the person, with
   // the head's own *Go on with this answer* and *Not now*, and none another session's line holds.
   const ALONE = { session: 's1a2b3c4', agent: 'codex-acp', words: ['w3'], since: '2026-10-21T09:00:00Z' };
 
@@ -327,7 +327,7 @@ describe('the strip of what waits on the person, at the foot', () => {
   });
 
   /**
-   * WAITFOOT2a (D168's WAITFOOT2 note): the owner found each wait drawn two and three times at once, so while the head's waits
+   * A wait drawn two and three times at once helps no one, so while the head's waits
    * are on screen the strip stands aside; never from under an ask open in it, nor from under the person's focus.
    */
   it('stands aside while the head\'s waits are on screen', () => {

@@ -3,7 +3,7 @@ import type { Quest, Session } from '../../data/api';
 import { aQuest } from '../../quests/aQuest';
 import { relationsOf } from './relations';
 
-// SESS1: where a session's work came from and what it caused, beyond the chain — from what the
+// Where a session's work came from and what it caused, beyond the chain — from what the
 // records declare (`publishedBy`, `awaits`), never guessed from the times.
 
 const quest = (over: Partial<Quest> & { id: string }): Quest => aQuest({

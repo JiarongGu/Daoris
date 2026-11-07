@@ -6,7 +6,7 @@ using System.Text.RegularExpressions;
 namespace Daoris.Knowledge;
 
 /// <summary>
-/// Where a session's connector writes the lineage each call's harness carried (FABRIC-C1a, D173): one line a call, under the
+/// Where a session's connector writes the lineage each call's harness carried: one line a call, under the
 /// session's own folder in the home the driver named, for the driver to bind the session's native children to its part.
 /// </summary>
 /// <remarks>
@@ -17,7 +17,7 @@ namespace Daoris.Knowledge;
 /// file's, copied there.</para>
 ///
 /// <para><b>Only for a session the driver started.</b> The session is the connector's <c>DAORIS_SESSION_ID</c> and the home
-/// its <c>DAORIS_RULES_HOME</c>, else the Daoris home, as a proposal's (PERM2). A connector a person's own agent started
+/// its <c>DAORIS_RULES_HOME</c>, else the Daoris home, as a proposal's. A connector a person's own agent started
 /// names no session and writes nothing; neither does one whose session is not shaped as an id, so no variable makes it write
 /// anywhere else.</para>
 ///
@@ -36,7 +36,7 @@ public sealed class LineageFile
     private static readonly UTF8Encoding Utf8 = new(encoderShouldEmitUTF8Identifier: false);
 
     /// <summary>
-    /// The variable the driver hands the token of the process this connector serves in (COWORKVIEW1a). 🔴 The driver's
+    /// The variable the driver hands the token of the process this connector serves in. 🔴 The driver's
     /// <c>ChildMarks.LineageProcVariable</c> and the lineage hook spell it as twins.
     /// </summary>
     public const string ProcVariable = "DAORIS_LINEAGE_PROC";
@@ -54,23 +54,23 @@ public sealed class LineageFile
         Proc = CallLineage.Id(proc?.Trim());
     }
 
-    /// <summary>The token of the process this connector serves, or null where it was handed none that is an id.</summary>
+    /// <summary>The token of the process this connector serves, or null where it is handed none that is an id.</summary>
     public string? Proc { get; }
 
     /// <summary>
-    /// Whether the connector was told a session, even one whose id or home names no file: its restricted tools are then a proven
-    /// root's alone (FABRIC-C2a, D173's note, point 1). A person's own agent names none.
+    /// Whether the connector is told a session, even one whose id or home names no file: its restricted tools are then a proven
+    /// root's alone. A person's own agent names none.
     /// </summary>
     public bool NamesSession { get; }
 
     /// <summary>The file this connector appends to, or null when it records nothing.</summary>
     public string? Path { get; }
 
-    /// <summary>What this process was spawned with: the rules home, else the Daoris home, the session and its process's token.</summary>
+    /// <summary>What this process is spawned with: the rules home, else the Daoris home, the session and its process's token.</summary>
     public static LineageFile FromEnvironment(Func<string, string?> environment) =>
         new(RuleProposalBox.FromEnvironment(environment).Home, environment(IntakeScope.SessionVariable), environment(ProcVariable));
 
-    /// <summary>What this process was spawned with.</summary>
+    /// <summary>What this process is spawned with.</summary>
     public static LineageFile FromEnvironment() => FromEnvironment(Environment.GetEnvironmentVariable);
 
     /// <summary>One call, with what its harness carried of its lineage, or none. Never throws.</summary>
@@ -89,7 +89,7 @@ public sealed class LineageFile
 
     /// <summary>
     /// The line for one call: its moment, its tool where that is shaped as a name, the ids its harness wrote, and the process it
-    /// was made under.
+    /// runs under.
     /// </summary>
     public static string Line(string? tool, CallLineage? lineage, DateTimeOffset at, string? proc = null)
     {

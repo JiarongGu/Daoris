@@ -2,22 +2,22 @@ import i18n from '../../locales/i18n';
 import type { PanelTab } from '../frame/OutputPanel';
 
 /**
- * A stream as the driver lists it (CONSOLE2c): something a session runs beside itself — a subagent,
+ * A stream as the driver lists it: something a session runs beside itself — a subagent,
  * or background work — and the key its console is tailed by.
  */
 export type StreamRow = {
   key: string; kind: string; name: string; live: boolean; state: string | null;
-  /** Whether its harness said it can be stopped (CONSOLE3a); absent where the answer lacks it. */
+  /** Whether its harness said it can be stopped; absent where the answer lacks it. */
   canStop?: boolean;
 };
 
 /**
- * The output panel's tabs for a session (CONSOLE2c): its own console first, then each stream in the
+ * The output panel's tabs for a session: its own console first, then each stream in the
  * order it opened, so nothing it started runs out of sight. None when it runs nothing beside itself,
  * because one tab is no tabs.
  *
  * @remarks
- * A tab is named by how it stands, in words, as every mark is (D41 §6): the kind, then the state.
+ * A tab is named by how it stands, in words, as every mark is: the kind, then the state.
  * A state this build has no key for is shown as the wire's own word, never as a blank.
  */
 export function panelTabs(sessionId: string, rows: StreamRow[]): PanelTab[] | undefined {
@@ -39,7 +39,7 @@ export function panelTabs(sessionId: string, rows: StreamRow[]): PanelTab[] | un
         label: row.name,
         tone: row.live ? 'live' : row.state === 'failed' ? 'failed' : 'ended',
         status: `${t(`work.panel.stream.${kind}`)} · ${state}`,
-        // Its harness's word while it runs (CONSOLE3a), never a guess from what kind of stream it is.
+        // Its harness's word while it runs, never a guess from what kind of stream it is.
         stoppable: row.live && row.canStop === true,
       };
     }),

@@ -1,6 +1,6 @@
 import type { OpinionDetail, OpinionGate, OpinionPass } from './opinion';
 
-// The second opinion's gate in each state (XAGENT1g; the second-agent design §8.5), as `DriverModule.Opinion` and
+// The second opinion's gate in each state, as `DriverModule.Opinion` and
 // `OpinionDetail` answer them: the stories and the tests draw the same records. Neutral names only.
 
 const TIP = '4f9c2a7e1b3d5c6a8e0f2b4d6a8c0e2f4a6b8c0d';

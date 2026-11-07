@@ -5,7 +5,7 @@ import i18n from '../../locales/i18n';
 import { type CommandState, commandTable, shortcutGroups } from '../../menus/commands';
 import { KeyboardShortcuts } from './KeyboardShortcuts';
 
-// Help › Keyboard shortcuts (UX7a, D152 §3.2): the table's keys, by menu, in the reader's language.
+// Help › Keyboard shortcuts: the table's keys, by menu, in the reader's language.
 
 const state = (over: Partial<CommandState> = {}): CommandState => ({
   attached: true, view: 'quests', list: { shown: true }, panelShown: true, sideShown: false, moved: false, workspaces: [],
@@ -29,12 +29,12 @@ describe('Keyboard shortcuts', () => {
     expect(workspace.getByText('Ctrl+Shift+N')).toBeInTheDocument();
     expect(within(screen.getByRole('region', { name: 'Go' })).getByText('Ctrl+8')).toBeInTheDocument();
     expect(within(screen.getByRole('region', { name: 'Help' })).getByText('Ctrl+Alt+I')).toBeInTheDocument();
-    // ZOOM1: View's zoom, both of zoom in's keys.
+    // View's zoom, both of zoom in's keys.
     const view = within(screen.getByRole('region', { name: 'View' }));
     expect(view.getByText('Zoom in')).toBeInTheDocument();
     expect(view.getByText('Ctrl++')).toBeInTheDocument();
     expect(view.getByText('Ctrl+0')).toBeInTheDocument();
-    // Run prints no key since NEW1b moved its one keyed item to Workspace's *New conversation…*.
+    // Run prints no key: its one keyed item is Workspace's *New conversation…*.
     expect(screen.getAllByRole('region')).toHaveLength(6);
     expect(screen.getByText(/Alt, pressed and let go, or F10/)).toBeInTheDocument();
   });

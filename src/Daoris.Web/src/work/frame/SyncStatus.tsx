@@ -9,22 +9,22 @@ import { STATUS_PRESSABLE } from './frame';
 export type SyncConflictRow = { id: string; title?: string };
 
 /**
- * Where a circle stands with its remote, as the status bar's sync item (SYNC6b, sync design §6).
+ * Where a circle stands with its remote, as the status bar's sync item.
  *
  * @remarks
- * **Icon and number, not prose** (platform UX §4, from a real VS Code window): up for what waits to
+ * **Icon and number, not prose**: up for what waits to
  * be pushed, down for what the last pass could not bring level, a warning for what needs a person.
  * A level circle says so in one word. Pressing it opens the detail — when it last synced, the wall if
  * the last try hit one, the quests in conflict — and *Sync now*.
  *
- * **Two doors, one pass** (D50): `onSyncNow` is the shell running the tick's own pass, the same one
+ * **Two doors, one pass**: `onSyncNow` is the shell running the tick's own pass, the same one
  * `daoris remote sync` runs. A browser reads the standing over HTTP like anything else and simply is
  * not given it, so the menu has no *Sync now* rather than one that cannot work.
  *
- * The wall is the host's sentence and renders verbatim (frontend architecture §3): it names what
+ * The wall is the host's sentence and renders verbatim: it names what
  * could not be reached, and a paraphrase would be a different answer.
  *
- * **Props only, no hook** (components §2): every state is reachable by passing it.
+ * **Props only, no hook**: every state is reachable by passing it.
  */
 export function SyncStatus({
   workspace, standing, conflicts, syncing = false, onSyncNow, onOpenQuest, onRemotes, defaultOpen,
@@ -111,7 +111,7 @@ export function SyncStatus({
 
         {(onSyncNow || onRemotes) && <Menu.Separator />}
         {onSyncNow && (
-          // A pass already running is the row in its own ink, dimmed while its arrows turn (SYNC6b's look, which MENU1 kept).
+          // A pass already running is the row in its own ink, dimmed while its arrows turn.
           <Menu.Item disabled={syncing} onSelect={onSyncNow} className="data-[disabled]:text-ink-soft data-[disabled]:opacity-60">
             <Icon name="refresh" size={12} className={cn('shrink-0', syncing && 'animate-spin')} />
             {syncing ? t('work.sync.syncing') : t('work.sync.now')}

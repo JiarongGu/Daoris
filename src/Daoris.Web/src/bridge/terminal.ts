@@ -2,7 +2,7 @@ import { useCallback, useMemo, useRef, useState } from 'react';
 import { getBridge, useShenora, useShenoraEvent } from '@shenora/react';
 import type { OpenTerminal, TerminalOpening, TerminalShellChoice, Terminals } from '../work/terminals/terminals';
 
-// The person's own terminals (MOD3), held by the frame over `DAORIS.TERMINAL` (D96).
+// The person's own terminals, held by the frame over `DAORIS.TERMINAL`.
 
 /** How much of one terminal's output the page holds while nothing shows it: enough to catch a screen up, never a log. */
 const TERMINAL_HELD = 256 * 1024;
@@ -14,7 +14,7 @@ const callTerminal = <TData,>(type: string, payload?: Record<string, unknown>): 
   Promise.resolve(getBridge().invoke<TData>('DAORIS.TERMINAL', type, payload ? { payload } : {}));
 
 /**
- * The person's own terminals (CONSOLE4b, D96): opened over `DAORIS.TERMINAL`, typed at, and heard as
+ * The person's own terminals: opened over `DAORIS.TERMINAL`, typed at, and heard as
  * `TERMINAL_OUTPUT` batches.
  *
  * @remarks
@@ -27,13 +27,13 @@ const callTerminal = <TData,>(type: string, payload?: Record<string, unknown>): 
  * **One open at a time**: a second waits for the first's answer, so a view shown twice in one render
  * (React's strict mode runs an effect twice) opens one shell, not two.
  *
- * **Desktop-only** (D47 §4): in a browser there is no bridge, and nothing here asks anything. Nothing is
- * logged: a terminal's words are the person's own (D94).
+ * **Desktop-only**: in a browser there is no bridge, and nothing here asks anything. Nothing is
+ * logged: a terminal's words are the person's own.
  */
 export function useTerminals(): Terminals {
   const { isAvailable } = useShenora();
   const [list, setList] = useState<OpenTerminal[]>([]);
-  // The tab shown (CONSOLE4c): held with the terminals, so a view shown again shows the same one.
+  // The tab shown: held with the terminals, so a view shown again shows the same one.
   const [selected, setSelected] = useState<string | null>(null);
   const [opening, setOpening] = useState(false);
   const [refused, setRefused] = useState<unknown>(null);
@@ -129,7 +129,7 @@ export function useTerminals(): Terminals {
     if (held.current.size > TERMINALS_HELD) held.current.delete(held.current.keys().next().value!);
   });
 
-  // SUPERVISOR1a-ii (D208 §2.2): a terminal the window opened itself, the supervisor's holder's at the owner's Appoint, is a tab here
+  // A terminal the window opened itself, the supervisor's holder's at the owner's Appoint, is a tab here
   // like any other and is shown; its key is in that shell's environment alone, never in what the page is told.
   useShenoraEvent('DAORIS', 'TERMINAL_OPENED', (payload) => {
     const tab = payload as { id?: unknown; shell?: unknown; cwd?: unknown } | undefined;

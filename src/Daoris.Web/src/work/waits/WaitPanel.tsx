@@ -23,7 +23,7 @@ function roomOf(panel: HTMLElement): number {
 }
 
 /**
- * **The waiting panel** (WAITPANEL1): what waits on the person at the foot of a session's conversation, the strip and the box
+ * **The waiting panel**: what waits on the person at the foot of a session's conversation, the strip and the box
  * under it, with its top edge a handle that sizes it and the conversation's own presses above it.
  *
  * @remarks
@@ -35,7 +35,7 @@ function roomOf(panel: HTMLElement): number {
  * conversation's main area its own floor (`WAIT_PANEL.conversation`) of the room the two share in the column, read again as the
  * column changes, so a height kept in a tall window never takes a short window's conversation, nor does the output panel's.
  *
- * **The output panel's handle, turned to this panel** (D55): a separator that takes the focus, ↑ and ↓ a step, Home and End to
+ * **The output panel's handle, turned to this panel**: a separator that takes the focus, ↑ and ↓ a step, Home and End to
  * either end, and a double-click back to where it started, as a sash does. Drawn only while a part is: with nothing waiting there
  * is nothing to size.
  *
@@ -108,7 +108,7 @@ export function WaitPanel({ height, onResize, onReset, controls, children }: {
     window.addEventListener('pointerup', done);
   };
 
-  // Each part's share of the height, held under the ceiling whatever was kept.
+  // Each part's share of the height, held under the ceiling whatever is kept.
   const style = { '--wait-part': `${Math.floor(kept / Math.max(1, parts))}px` } as CSSProperties;
 
   return (

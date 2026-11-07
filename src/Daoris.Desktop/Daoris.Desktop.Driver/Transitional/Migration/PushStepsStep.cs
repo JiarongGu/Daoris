@@ -3,7 +3,7 @@ using System.Text.Json.Nodes;
 namespace Daoris.Driver;
 
 /// <summary>
-/// A saved workflow whose newest version lands by a push or a pull request, as the steps it is now (G8; D241 point 4, <see cref="PushedGraphs"/>):
+/// A saved workflow whose newest version lands by a push or a pull request, as the steps it is now (<see cref="PushedGraphs"/>):
 /// the conversion appends the next version, as the save does, and leaves older versions as they were. A workflow with nothing old is not touched,
 /// so a home already in steps converts to itself. A version the save refuses is left as it is, said.
 /// </summary>
@@ -31,7 +31,7 @@ public sealed class PushStepsStep : IHomeMigrationStep
             }
             catch (ChoiceWords)
             {
-                // The save refuses the converted steps: the version stays as it was, and the workflow editor is where it is mended.
+                // The save refuses the converted steps: the version stays unchanged, and the workflow editor is where it is mended.
             }
         }
     }

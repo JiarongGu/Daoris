@@ -6,7 +6,7 @@ import { chinese } from '../../design/storyLanguage';
 import { LimitWaitLine } from './LimitWaitLine';
 import { type LimitWait, limitWaitSaid } from './limitWait';
 
-// A line an account's limit cut off, waiting (LIMITRESUME1d, D206 §3.7): when it resumes by itself and on which account, which resume
+// A line an account's limit cut off, waiting: when it resumes by itself and on which account, which resume
 // comes, a reset that did not lift the limit, and the person's ways out beside it. Its words are `limitWaitSaid`'s, in the story's
 // language, at the main area's width and at 600 px, in both themes.
 
@@ -24,7 +24,7 @@ const dark: Decorator = (Story) => <InTheme theme="dark"><Story /></InTheme>;
 /** A driven line's wait, in the story's language, with *Go on now with…*, *Try now* and *Pause quest…*. */
 function Waiting({ own = true, stated = true, notLifted = null, refused = false, conversation = null }: {
   own?: boolean; stated?: boolean; notLifted?: string | null; refused?: boolean;
-  /** A conversation's line (LIMITRESUME1d2): *Stop…* while it runs, *Stop waiting* once it ended, never *Pause quest…*. */
+  /** A conversation's line: *Stop…* while it runs, *Stop waiting* once it ended, never *Pause quest…*. */
   conversation?: 'running' | 'ended' | null;
 }) {
   const { t } = useTranslation();
@@ -63,7 +63,7 @@ export const Briefed: Story = { args: { own: false } };
 /** The same in 中文. */
 export const BriefedChinese: Story = { args: { own: false }, decorators: [chinese] };
 
-/** No reset was said, and its last reset did not lift the limit, at 600 px. */
+/** No reset is said, and its last reset does not lift the limit, at 600 px. */
 export const NoResetNotLiftedNarrow: Story = { args: { stated: false, notLifted: 'session' }, decorators: [narrow] };
 
 /** The same in 中文 and dark. */
@@ -72,7 +72,7 @@ export const NoResetNotLiftedNarrowChineseDark: Story = { args: { stated: false,
 /** *Try now* refused: the sentence said under the presses. */
 export const Refused: Story = { args: { refused: true } };
 
-/** A conversation that ended waiting (LIMITRESUME1d2): *Stop waiting* beside *Go on now with…* and *Try now*. */
+/** A conversation that ended waiting: *Stop waiting* beside *Go on now with…* and *Try now*. */
 export const ConversationEnded: Story = { args: { conversation: 'ended' } };
 
 /** The same in 中文. */

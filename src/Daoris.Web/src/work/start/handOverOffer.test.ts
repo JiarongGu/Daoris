@@ -3,11 +3,11 @@ import type { AccountScope, AccountsAnswer, AgentAccounts, NextStart } from '../
 import type { ToolDoor } from '../../agents/tools';
 import { handOverOffer } from './handOverOffer';
 
-// MIXAGENT1b-ii (D163 point 3, the mixed-agents design §5): when Daoris offers to hand a conversation over, as one pure
+// When Daoris offers to hand a conversation over, as one pure
 // answer. Cut by the account's cool-off, or near its limit by the scope's own `near` (a limit reached, usage credits or its
-// number, USAGEREAD3a), and only where another present agent has an account its next start would take; an account that says
-// nothing is never offered as near, and nor is one only ahead of its pace by its agent's warning (USAGEREAD3b, D165 point 2).
-// The offer is the fallback: none where the switch moves the conversation to another account of its agent (SWITCH1e).
+// number), and only where another present agent has an account its next start would take; an account that says
+// nothing is never offered as near, and nor is one only ahead of its pace by its agent's warning.
+// The offer is the fallback: none where the switch moves the conversation to another account of its agent.
 
 const now = new Date('2026-10-04T10:00:00Z');
 const until = '2026-10-04T13:10:00Z';
@@ -185,7 +185,7 @@ describe('handOverOffer', () => {
     expect(offer({} as AccountsAnswer)).toBeNull();
   });
 
-  // MODELROLE1e (D205 §3.5(e), §4.2): a cooling Build's offer names the actor's next choice on another agent, the actor's order and not the
+  // A cooling Build's offer names the actor's next choice on another agent, the actor's order and not the
   // roster's, with the model it asks, and no maker outside the actor's entries is offered.
   describe('names the session’s actor’s next choice (MODELROLE1e)', () => {
     const cut = claude({ accounts: [{ name: 'personal', cooling }, { name: 'work' }] });

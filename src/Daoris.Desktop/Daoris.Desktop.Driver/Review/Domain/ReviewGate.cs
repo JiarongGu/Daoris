@@ -23,10 +23,7 @@ public static class ReviewLevels
     /// <summary>Row 6: the workspace's rule.</summary>
     public const string Workspace = "workspace";
 
-    /// <summary>
-    /// Rows 5 and 6 under a named workflow: the run's bound version's look step, in an
-    /// environment the rule declares, or none where the version has no look.
-    /// </summary>
+    /// <summary>Rows 5 and 6 under a named workflow: the bound version's look step, in an environment the rule declares, or none.</summary>
     public const string Workflow = "workflow";
 
     /// <summary>Row 7: nothing set anywhere, so no review.</summary>
@@ -51,7 +48,7 @@ public static class ReviewStates
     /// <summary>The level says review, and no set-up step shows it yet.</summary>
     public const string NotShown = "not-shown";
 
-    /// <summary>The set-up step is open, taken or working, or its set-up is not posted yet.</summary>
+    /// <summary>The set-up step is open, taken or working, or not posted yet.</summary>
     public const string BeingSetUp = "being-set-up";
 
     /// <summary>Shown, and waiting for the person's look.</summary>
@@ -66,9 +63,7 @@ public static class ReviewStates
     /// <summary>Whether it waits could not be read: the service did not answer.</summary>
     public const string Unread = "unread";
 
-    /// <summary>
-    /// The run's named workflow asks for a look its repository does not declare the environment of: it sits saying why, until the environment is declared or the person skips the review.
-    /// </summary>
+    /// <summary>The named workflow asks for a look its repository declares no environment for: it sits saying why until one is declared or the review is skipped.</summary>
     public const string CannotStart = "cannot-start";
 }
 
@@ -121,10 +116,7 @@ public sealed record ReviewDecision(string Level, string? Environment)
 
     public string? SkippedOn { get; init; }
 
-    /// <summary>
-    /// The chat run whose work this is, where no quest is: no look can be set up for it, and the
-    /// person's way past it is a skip of the look node of the graph it is bound to. Null for a quest's work.
-    /// </summary>
+    /// <summary>The chat run whose work this is where no quest is: no look can be set up for it, and a skip of its graph's look node is the way past. Null for a quest's work.</summary>
     public string? ChatRun { get; init; }
 
     /// <summary>The look node of a chat run's graph, which the person's skip names; null where the run is bound to no graph.</summary>
@@ -205,32 +197,8 @@ public static class ReviewGate
     public static string? RunOf(IReadOnlyList<QuestView> chain, string repository) =>
         chain.FirstOrDefault(quest => string.Equals(quest.To, repository, StringComparison.OrdinalIgnoreCase))?.Id;
 
-    /// <summary>
-    /// The quests of the <c>follows</c> chain <paramref name="id"/> is a step of: up to its first quest, then every
-    /// step published after, in the order the quests are listed. A quest the list does not hold has no chain here.
-    /// </summary>
-    public static IReadOnlyList<QuestView> ChainOf(IReadOnlyList<QuestView> quests, string id)
-    {
-        var byId = quests.GroupBy(quest => quest.Id, StringComparer.OrdinalIgnoreCase)
-            .ToDictionary(group => group.Key, group => group.First(), StringComparer.OrdinalIgnoreCase);
-        if (!byId.TryGetValue(id.TrimStart('#'), out var first)) return [];
-
-        // Up to the first quest; a parent seen twice, which no chain makes, ends the walk rather than looping.
-        var seen = new HashSet<string>(StringComparer.OrdinalIgnoreCase) { first.Id };
-        while (first.Parent is { Length: > 0 } parent && seen.Add(parent) && byId.TryGetValue(parent, out var above)) first = above;
-
-        var chain = new List<QuestView> { first };
-        var visited = new HashSet<string>(StringComparer.OrdinalIgnoreCase) { first.Id };
-        for (var next = 0; next < chain.Count; next++)
-        {
-            foreach (var step in quests.Where(quest => Same(quest.Parent, chain[next].Id)))
-            {
-                if (visited.Add(step.Id)) chain.Add(step);
-            }
-        }
-
-        return chain;
-    }
+    /// <inheritdoc cref="QuestChains.Of"/>
+    public static IReadOnlyList<QuestView> ChainOf(IReadOnlyList<QuestView> quests, string id) => new QuestChains(quests).Of(id);
 
     /// <summary>
     /// The level's table for the chain's work in <paramref name="repository"/>, read from the most specific down;

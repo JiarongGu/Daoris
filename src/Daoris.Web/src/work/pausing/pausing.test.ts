@@ -4,7 +4,7 @@ import {
   pauseNotices, pieceName, resumeNotices, type ResumeAnswer, wiredFor, workOffers, type WorkPlan,
 } from './pausing';
 
-// What a pause and an abandon say on the screen (PAUSE1e, D132, design §2.6, §3.1, §3.2, §4.2, §7.1): pure, so every plan
+// What a pause and an abandon say on the screen: pure, so every plan
 // the driver could answer is an argument, and the ask's page, the quest's page and a session's header read one rule.
 
 const plan = (over: Partial<WorkPlan> = {}): WorkPlan => ({
@@ -258,7 +258,7 @@ describe('the notices', () => {
   });
 
   /**
-   * CARRY2d: the hold a resume names carries the facts its sentence is said from (`heldBy`, `pausedBy`, `strikes`,
+   * The hold a resume names carries the facts its sentence is said from (`heldBy`, `pausedBy`, `strikes`,
    * `takenBy`, the tick's own), and the notice hands them on whole, so the act says it in the reader's language.
    */
   it('hands on the facts a hold is said from with its sentence', () => {
@@ -282,9 +282,9 @@ describe('the notices', () => {
   });
 
   /**
-   * PAUSE1h: a partial abandon was said in the `ok` tone, the shape HIST1n found in a partial clear (D153's HIST1n note).
+   * A partial abandon is said in the error's tone, never `ok`.
    * Only an abandon that took every piece it listed is a plain success; one that kept some, because they changed since the
-   * list or the disk would not let them go (the driver's `went` is what was listed less both), says so in the error's tone.
+   * list or the disk would not let them go (the driver's `went` is what the list held less both), says so in the error's tone.
    */
   it('says a partial abandon in the error’s tone, never as a plain success', () => {
     const partial = { scope: 'ask', id: 'a1', did: 'abandoned', listed: 10, went: 9, changed: [{ piece: 'quest:q1', why: 'gone', changed: true }] } as AbandonAnswer;

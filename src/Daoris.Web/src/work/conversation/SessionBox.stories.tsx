@@ -8,10 +8,10 @@ import { sessionWidths } from '../../design/storyWidths';
 import { NATIVE_WORDS_LIMIT } from '../say';
 import { SessionBox } from './SessionBox';
 
-// Every state of the box at the foot of a session's page (MSG1f, D137 §5.1): the running door at its next step and at its
-// turn's end, the park's answer with what it asks as presses (PARKVIEW1), a session that ended going on, words held while one winds up, the native door's bound,
+// Every state of the box at the foot of a session's page: the running door at its next step and at its
+// turn's end, the park's answer with what it asks as presses, a session that ended going on, words held while one winds up, the native door's bound,
 // and the line for each code nothing takes words for — the states a real session rarely shows at will. Drawn at the
-// frame's widths (the UI/UX design R6, STORYGAP1): half by default, then wide, narrow and dark.
+// frame's widths: half by default, then wide, narrow and dark.
 
 const dark: Decorator = (Story) => <InTheme theme="dark"><Story /></InTheme>;
 
@@ -26,14 +26,14 @@ export default meta;
 type Story = StoryObj<typeof SessionBox>;
 
 /**
- * Its turn running, on a door that takes words at its next step (D136): an urgent word goes at once, so nothing waits above
+ * Its turn running, on a door that takes words at its next step: an urgent word goes at once, so nothing waits above
  * the box; the conversation says when it reads it.
  */
 export const RunningNextStep: Story = {
   args: { box: { kind: 'steer' }, held: { queued: [], taking: true }, levels: { nextStep: true, steers: false } },
 };
 
-/** COWORK1a (D188): words typed while its turn runs go with *Send* at the default, or at a level from the menu beside it. */
+/** Words typed while its turn runs go with *Send* at the default, or at a level from the menu beside it. */
 export const RunningAtALevel: Story = {
   args: {
     box: { kind: 'steer' }, held: { queued: [], taking: true }, levels: { nextStep: true, steers: true },
@@ -42,8 +42,8 @@ export const RunningAtALevel: Story = {
 };
 
 /**
- * Its turn running, on a door that hears words when its turn ends (D90): what it holds waits, and the keeping stop beside it
- * stops the turn so it goes next (COWORK1a), asking once; no word stops the turn.
+ * Its turn running, on a door that hears words when its turn ends: what it holds waits, and the keeping stop beside it
+ * stops the turn so it goes next, asking once; no word stops the turn.
  */
 export const RunningTurnEnd: Story = {
   args: {
@@ -61,7 +61,7 @@ export const RunningTurnEndChinese: Story = {
   decorators: [chinese],
 };
 
-/** QUEUEEDIT1b: a held word with an id can be removed or reworded. */
+/** A held word with an id can be removed or reworded. */
 export const RunningWithControls: Story = {
   args: {
     box: { kind: 'steer' },
@@ -70,10 +70,10 @@ export const RunningWithControls: Story = {
   },
 };
 
-/** Parked to ask the person: the box is the answer (D126 §3.1). */
+/** Parked to ask the person: the box is the answer. */
 export const Parked: Story = { args: { box: { kind: 'say', mode: 'answer' } } };
 
-// PARKVIEW1 (the park's ask design §3-§4): what a park asks, in its box above the words, every answer a press the words go with.
+// What a park asks, in its box above the words, every answer a press the words go with.
 const ASKED: ParkQuestion = {
   id: 'q5t10n00',
   question: 'Which quarterly target should the dashboard tile show? The ticket says "the new quarterly target" without a number.',
@@ -146,7 +146,7 @@ export const ParkedOnAGoAheadAlone: Story = {
 export const ParkedOnAGoAheadAloneChinese: Story = { ...ParkedOnAGoAheadAlone, decorators: [chinese] };
 
 /**
- * PARKWORDS1: parked since five hours ago, its question asked only in its last message. One line says where it asked and how long
+ * Parked since five hours ago, its question asked only in its last message. One line says where it asked and how long
  * it has waited; what it holds and how the answer travels stay folded under *While it waits*.
  */
 export const ParkedLongAbove: Story = {
@@ -170,13 +170,13 @@ export const ParkedLongAboveOpened: Story = {
 /** The same opened, in 中文 at the floor. */
 export const ParkedLongAboveOpenedChineseNarrow: Story = { ...ParkedLongAboveOpened, decorators: [sessionWidths.narrow, chinese] };
 
-/** Ended, and the same session goes on with the words (D137 §2.2): written to after its review, the next day. */
+/** Ended, and the same session goes on with the words: written to after its review, the next day. */
 export const EndedGoingOn: Story = {
   args: { box: { kind: 'say', mode: 'goOn' }, draft: 'also say so in the release notes', onDraft: () => {} },
 };
 
 /**
- * SAIDBACK1b (D76): words waiting on a session that ended, the same session to go on with them, each with *Edit* and *Remove*
+ * Words waiting on a session that ended, the same session to go on with them, each with *Edit* and *Remove*
  * until a session takes them: a closed quest's session's two words, one of them out of date.
  */
 export const EndedWithWordsWaiting: Story = {
@@ -190,12 +190,12 @@ export const EndedWithWordsWaiting: Story = {
   },
 };
 
-/** Written to as its run wound up (D137 §2.1): the words wait for its record to end, then reopen it. */
+/** Written to as its run wound up: the words wait for its record to end, then reopen it. */
 export const HeldWhileWindingUp: Story = {
   args: { box: { kind: 'say', mode: 'ending' }, ending: ['one more thing: keep the old flag for a release'] },
 };
 
-/** On the native door, words past the bound are refused before they are sent (D137 §2.4), and the draft stays. */
+/** On the native door, words past the bound are refused before they are sent, and the draft stays. */
 export const TooLongForTheNativeDoor: Story = {
   args: {
     box: { kind: 'say', mode: 'goOn' },
@@ -204,26 +204,26 @@ export const TooLongForTheNativeDoor: Story = {
   },
 };
 
-/** A teammate's record: its conversation is on their machine (D47 §6). */
+/** A teammate's record: its conversation is on their machine. */
 export const LineTeammate: Story = { args: { box: { kind: 'line', why: 'teammate' } } };
 
 /** A session that stood down: its quest is someone else's. */
 export const LineStoodDown: Story = { args: { box: { kind: 'line', why: 'stood-down' } } };
 
-/** An intake that ended: it is answered through its ask (INT4h). */
+/** An intake that ended: it is answered through its ask. */
 export const LineIntake: Story = { args: { box: { kind: 'line', why: 'intake' } } };
 
-/** Ask Daoris's own conversation: its panel starts a new one (D137 §5.4). */
+/** Ask Daoris's own conversation: its panel starts a new one. */
 export const LineHelp: Story = { args: { box: { kind: 'line', why: 'help' } } };
 
-/** An earlier session of a quest that went on in a later one here (MSG1d). */
+/** An earlier session of a quest that went on in a later one here. */
 export const LineSuperseded: Story = { args: { box: { kind: 'line', why: 'superseded' } } };
 
-/** A conversation handed over or moved, naming the one it went on in (HANDWORDS1). */
+/** A conversation handed over or moved, naming the one it went on in. */
 export const LineContinued: Story = { args: { box: { kind: 'line', why: 'continued', to: 'c4d5e6f7' } } };
 
 /**
- * HANDWORDS1-ii: where the frame holds the conversation it went on in, the line names it by its title and *Open session*
+ * Where the frame holds the conversation it went on in, the line names it by its title and *Open session*
  * attends it: moved by the curve to another account at the end of its turn.
  */
 export const LineContinuedTitled: Story = {
@@ -258,7 +258,7 @@ export const EndedWithWordsWaitingNarrow: Story = { args: EndedWithWordsWaiting.
 /** Its turn running with a held word, in 中文 at the floor. */
 export const RunningTurnEndChineseNarrow: Story = { args: RunningTurnEndChinese.args, decorators: [sessionWidths.narrow, chinese] };
 
-/** LINESTOGETHER1b: a part beside the head, its word held, the first line saying where it goes and *Say it to the head instead*. */
+/** A part beside the head, its word held, the first line saying where it goes and *Say it to the head instead*. */
 export const BesideTheHeadWithAWordHeld: Story = {
   args: {
     box: { kind: 'say', mode: 'goOn' }, goes: 'To this part, beside the head · after a running session here ends', onMove: () => {},
@@ -266,7 +266,7 @@ export const BesideTheHeadWithAWordHeld: Story = {
   },
 };
 
-/** LINESTOGETHER1b: a draft typed on a part beside the head, *To the head* beside the first line. */
+/** A draft typed on a part beside the head, *To the head* beside the first line. */
 export const BesideTheHeadWithADraft: Story = {
   args: {
     box: { kind: 'say', mode: 'goOn' }, goes: 'To this part, beside the head · after a running session here ends',

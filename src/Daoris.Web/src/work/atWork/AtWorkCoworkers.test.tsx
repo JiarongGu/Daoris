@@ -7,7 +7,7 @@ import { COWORKERS, LEAD_WAITING_ON_HELPER, LEAD_WAITING_ON_LANE, REVIEWERS } fr
 import type { AtWorkA } from './types';
 
 /**
- * COMMS1i (the comms design §6, §7): *At work* reads the line's requests. Those that hold are its *Waiting on*, which the head draws
+ * *At work* reads the line's requests. Those that hold are its *Waiting on*, which the head draws
  * from the same read in the same words; the helpers, partners and successors it asked are its co-workers, each with where it stands,
  * what Daoris saw of its delivery apart from its outcome, and a door to the session that took it up. A source not read is said.
  */
@@ -104,7 +104,7 @@ describe('COMMS1i the head’s Waiting on', () => {
 });
 
 /**
- * COMMS1i (the comms design §7): the head's *Waiting on* opens *At work* at the exchange. The request's row takes the focus,
+ * The head's *Waiting on* opens *At work* at the exchange. The request's row takes the focus,
  * outlined, a co-worker's or a quest's; a request with no row of its own leads to the view's *Waiting on* line.
  */
 describe('COMMS1i At work opened at the request the head named', () => {

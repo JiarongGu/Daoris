@@ -5,7 +5,7 @@ import i18n from '../locales/i18n';
 import { answerOf, GRAPH_RUN_DECIDED } from './runFixtures';
 import { WorkflowRunView } from './WorkflowRunView';
 
-// NODEKIT1: the run view says a step's outcome and its routes in the words of the kind that declares them.
+// The run view says a step's outcome and its routes in the words of the kind that declares them.
 
 const row = (id: string) => screen.getAllByRole('listitem').find((item) => item.getAttribute('data-step') === id)!;
 

@@ -3,7 +3,7 @@ import { render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 
-// LANDSYNC1 (D87's 2026-10-15 amendment points 4 and 5): the head's land ask says what Accept leaves out because the line holds it,
+// The head's land ask says what Accept leaves out because the line holds it,
 // in both languages; where replaying conflicts, *Accept…*'s place holds the words its session is asked to rebase with.
 
 const { invoke } = vi.hoisted(() => ({ invoke: vi.fn() }));

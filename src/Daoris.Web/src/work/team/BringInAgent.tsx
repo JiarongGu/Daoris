@@ -2,7 +2,7 @@ import { useTranslation } from 'react-i18next';
 import { Button } from '../../design/ui';
 import { isComposing } from '../../lib/composing';
 
-/** The structures' doors (COWORKUX1f, the co-worker design §6.2, §3.2), each its own door's words and rule. */
+/** The structures' doors, each its own door's words and rule. */
 export const BRING_IN_DOORS = ['question', 'piece', 'opinion', 'goOn', 'alongside'] as const;
 
 export type BringInDoor = (typeof BRING_IN_DOORS)[number];
@@ -14,8 +14,8 @@ export type BringInDoor = (typeof BRING_IN_DOORS)[number];
 export type BringInChoice = { door: BringInDoor; onChoose?: () => void; off?: string | null; note?: string };
 
 /**
- * *Bring in another agent…* (COWORKUX1f, the co-worker design §6.2): one dialog whose choices are the structures' doors, each opening its
- * own door's ask, judged there by its own rule and admission as now. A choice the rules turn off is shown with its reason, never hidden.
+ * *Bring in another agent…*: one dialog whose choices are the structures' doors, each opening its
+ * own door's ask, judged there by its own rule and admission. A choice the rules turn off is shown with its reason, never hidden.
  */
 export function BringInAgent({ choices, onClose }: { choices: readonly BringInChoice[]; onClose: () => void }) {
   const { t } = useTranslation();

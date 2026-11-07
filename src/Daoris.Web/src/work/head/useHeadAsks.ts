@@ -7,8 +7,8 @@ import type { SessionDoors } from '../sessionActs';
 import type { AgentChoice } from '../start/AgentChip';
 
 /**
- * The questions the attended session's header asks now (SESSUX1d, D126 §3.3): a stop, a delete, a hand-over, a helper or a
- * pause, each of the session it was asked of; *Archive what ended…*; and the doors only this frame can open on a session.
+ * The questions the attended session's header asks now: a stop, a delete, a hand-over, a helper or a
+ * pause, each of the session it is asked of; *Archive what ended…*; and the doors only this frame can open on a session.
  */
 export function useHeadAsks({ selected, chosen, attend, setDocked, closeDock, terminal, terminals, openView }: {
   selected: string | null;
@@ -20,31 +20,31 @@ export function useHeadAsks({ selected, chosen, attend, setDocked, closeDock, te
   terminals: Pick<ReturnType<typeof useTerminals>, 'open'>;
   openView: (view: ViewId) => void;
 }) {
-  // *Archive what ended…* pressed in the list's ⋯ (SESSUX1e): its first press stands under the list's header until it
+  // *Archive what ended…* pressed in the list's ⋯: its first press stands under the list's header until it
   // archives or the person never minds. Not remembered: it is a question asked now.
   const [archivingEnded, setArchivingEnded] = useState(false);
-  // The session whose stop asks under the header (SESSUX1d, D126 §3.3), from the header's *Stop…* or its row's: a
+  // The session whose stop asks under the header, from the header's *Stop…* or its row's: a
   // question asked now, of that session only, so attending another closes it.
   const [stopAsking, setStopAsking] = useState<string | null>(null);
-  // The session whose delete asks under the header (SESSUX1f, D126 §5.4), the stop's way: of that session only.
+  // The session whose delete asks under the header, the stop's way: of that session only.
   const [deleteAsking, setDeleteAsking] = useState<string | null>(null);
-  // The session whose hand-over asks under the header (MIXAGENT1b-i, D163), the stop's way: of that session only.
+  // The session whose hand-over asks under the header, the stop's way: of that session only.
   const [handOverAsking, setHandOverAsking] = useState<string | null>(null);
-  // The session whose helper's ask opens under the header (MIXAGENT2b, D163), the stop's way: of that session only.
+  // The session whose helper's ask opens under the header, the stop's way: of that session only.
   const [helperAsking, setHelperAsking] = useState<string | null>(null);
-  // The session whose Pieces section has its ask open (COAGENT1c), from the head's ⋯ or the section's own press: of that session only.
+  // The session whose Pieces section has its ask open, from the head's ⋯ or the section's own press: of that session only.
   const [pieceAsking, setPieceAsking] = useState<string | null>(null);
-  // The agent and account Daoris's offer named, and why, when *Choose…* opened that ask (MIXAGENT1b-ii): the ask opens with
+  // The agent and account Daoris's offer named, and why, when *Choose…* opened that ask: the ask opens with
   // the choice made and its press carries the reason. Cleared by the head's own door, whose press is the person's.
   const [handOverChosen, setHandOverChosen] = useState<{ why: 'near' | 'limit'; choice: AgentChoice } | null>(null);
-  // The conversations whose offer to hand over the person put down: for this run of the frame, never stored (MIXAGENT1b-ii).
+  // The conversations whose offer to hand over the person put down: for this run of the frame, never stored.
   const [offerDismissed, setOfferDismissed] = useState<ReadonlySet<string>>(() => new Set());
-  // The session whose pause asks under the header (PAUSE1e, D132 §2.6), with the work it pauses: of that session only.
+  // The session whose pause asks under the header, with the work it pauses: of that session only.
   const [pauseAsking, setPauseAsking] = useState<{ session: string; target: WorkTarget } | null>(null);
-  // *Answer…* from a row (D126 §3.1): the session it was pressed for, and a count, so the box at its foot takes the focus
+  // *Answer…* from a row: the session it is pressed for, and a count, so the box at its foot takes the focus
   // once per press, including a second press on the same session.
   const [answerFocus, setAnswerFocus] = useState<{ session: string; at: number } | null>(null);
-  // A stop's ask is a question asked now, of the session it was asked of (D126 §3.3): attending another by any door
+  // A stop's ask is a question asked now, of the session it is asked of: attending another by any door
   // puts it down, so coming back later does not find it still open.
   useEffect(() => {
     setStopAsking((asked) => (asked === selected ? asked : null));
@@ -55,7 +55,7 @@ export function useHeadAsks({ selected, chosen, attend, setDocked, closeDock, te
     setPauseAsking((asked) => (asked?.session === selected ? asked : null));
   }, [selected]);
 
-  // What only this frame can do with a session (SESSUX1d, D126 §3.1), handed to the one owner of the acts at both doors,
+  // What only this frame can do with a session, handed to the one owner of the acts at both doors,
   // the page header and the rows: each attends the session first, as a press on its row would.
   const doors: SessionDoors = {
     answer: (id) => {
@@ -72,7 +72,7 @@ export function useHeadAsks({ selected, chosen, attend, setDocked, closeDock, te
       setPauseAsking(null);
       setStopAsking(id);
     },
-    // *Delete…* (SESSUX1f): attended, its ask under its header, as a stop asks.
+    // *Delete…*: attended, its ask under its header, as a stop asks.
     delete: (id) => {
       chosen();
       attend(id);
@@ -82,7 +82,7 @@ export function useHeadAsks({ selected, chosen, attend, setDocked, closeDock, te
       setPauseAsking(null);
       setDeleteAsking(id);
     },
-    // *Go on with another agent…* and *Stop and hand over…* (MIXAGENT1b-i): attended, the hand-over's ask under its header.
+    // *Go on with another agent…* and *Stop and hand over…*: attended, the hand-over's ask under its header.
     handOver: (id) => {
       chosen();
       attend(id);
@@ -93,7 +93,7 @@ export function useHeadAsks({ selected, chosen, attend, setDocked, closeDock, te
       setHandOverChosen(null);
       setHandOverAsking(id);
     },
-    // *Ask another agent…* (MIXAGENT2b): attended, the helper's ask under its header, as a hand-over asks.
+    // *Ask another agent…*: attended, the helper's ask under its header, as a hand-over asks.
     askHelper: (id) => {
       chosen();
       attend(id);
@@ -103,18 +103,18 @@ export function useHeadAsks({ selected, chosen, attend, setDocked, closeDock, te
       setPauseAsking(null);
       setHelperAsking(id);
     },
-    // *Ask another agent to work on a piece…* (COAGENT1c): attended, its Pieces section's ask open, the one the section's press opens.
+    // *Ask another agent to work on a piece…*: attended, its Pieces section's ask open, the one the section's press opens.
     askPiece: (id) => {
       chosen();
       attend(id);
       setPieceAsking(id);
     },
-    // The conversation a hand-over opened, attended as a start's is (MIXAGENT1b-i).
+    // The conversation a hand-over opened, attended as a start's is.
     attend: (id) => {
       chosen();
       attend(id);
     },
-    // *Pause quest…* and *Pause ask…* (PAUSE1e): attended, the pause's ask under its header, as a stop asks.
+    // *Pause quest…* and *Pause ask…*: attended, the pause's ask under its header, as a stop asks.
     pause: (id, target) => {
       chosen();
       attend(id);
@@ -131,7 +131,7 @@ export function useHeadAsks({ selected, chosen, attend, setDocked, closeDock, te
       setDocked((was) => ({ ...was, [id]: 'review' }));
       closeDock(false);
     },
-    // A terminal in its folder (§3.5), only where the terminal is a view here: the panel's, shown if it was hidden.
+    // A terminal in its folder, only where the terminal is a view here: the panel's, shown if it is hidden.
     ...(terminal ? {
       terminal: (folder: string) => {
         terminals.open({ cwd: folder });

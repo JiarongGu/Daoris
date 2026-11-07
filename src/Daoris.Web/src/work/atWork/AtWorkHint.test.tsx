@@ -7,7 +7,7 @@ import { HINTED, THREE } from './atWork.fixtures';
 import { HINT_KEY, LANES_GUIDE } from './words';
 import type { AtWorkHint } from './types';
 
-// COWORKVIEW1e-iii: the hint, drawn as the driver's judge answered it, with the guide's lanes section behind it.
+// The hint, drawn as the driver's judge answered it, with the guide's lanes section behind it.
 
 afterEach(async () => {
   cleanup();

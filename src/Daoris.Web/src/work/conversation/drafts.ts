@@ -1,8 +1,8 @@
 import { useCallback, useState } from 'react';
 import { store, stored } from '../../lib/stored';
 
-// What a person was typing to each session (CONV4b) — a per-viewer convenience, like the panel's
-// height and the language (D42): never machine wiring, never a tracked file, and never shared. A
+// What a person is typing to each session — a per-viewer convenience, like the panel's
+// height and the language: never machine wiring, never a tracked file, and never shared. A
 // storage that is absent or refused costs the draft across a reload, and nothing else.
 
 /** Where the drafts are kept: session and unsent words, oldest first. */
@@ -18,10 +18,10 @@ export type Drafts = ReadonlyArray<readonly [string, string]>;
  * Every kept draft, or none when storage is garbage or refused.
  *
  * @remarks
- * A LIST, because the order is the age. It was a map once, and a map's keys are not in the order they
- * were written: JavaScript puts integer-like keys first. A session id is eight hex characters, and
- * about one in fifty is all digits — so with the limit reached, the draft being typed was the "oldest"
- * and went on every keystroke (REV3). A map written by the earlier build is still read.
+ * A LIST, because the order is the age. A map's keys are not in the order they
+ * are written: JavaScript puts integer-like keys first. A session id is eight hex characters, and
+ * about one in fifty is all digits — so with the limit reached, the draft being typed would be the "oldest"
+ * and go on every keystroke. A map written by an earlier build is still read.
  */
 export function readDrafts(): Drafts {
   try {
@@ -53,7 +53,7 @@ export function draftOf(all: Drafts, session: string): string {
 }
 
 /**
- * Forget one session's draft (SESSUX1f, D126 §5.1): a deleted conversation's words are gone from this machine, and an
+ * Forget one session's draft: a deleted conversation's words are gone from this machine, and an
  * unsent draft is the viewer's copy of some of them.
  */
 export function forgetDraft(session: string): void {
@@ -62,7 +62,7 @@ export function forgetDraft(session: string): void {
 }
 
 /**
- * Put words into a session's draft before its page is shown (NEW1b): a conversation that opened without the words it was
+ * Put words into a session's draft before its page is shown: a conversation that opened without the words it is
  * started on keeps them in its box. Words already in its draft stay, after a blank line, as a send handed back keeps them.
  */
 export function keepDraft(session: string, text: string): void {
@@ -79,12 +79,12 @@ function keep(all: Drafts): void {
  * The attended session's draft and a way to change it — each session its own, kept across a reload.
  *
  * @remarks
- * A state hook, not a data hook: it reaches neither the service nor the shell (components §2), so a
+ * A state hook, not a data hook: it reaches neither the service nor the shell, so a
  * molecule could hold it. The frame does, because the frame knows which session is attended.
  */
 export function useDraft(session: string | null): [string, (next: string | ((was: string) => string)) => void] {
   const [all, setAll] = useState<Drafts>(readDrafts);
-  // Read again as another session is attended: `keepDraft` may have put words in its draft since (NEW1b), and every set here
+  // Read again as another session is attended: `keepDraft` may have put words in its draft meanwhile, and every set here
   // writes the store as it changes the list, so the store is never behind it.
   const [reading, setReading] = useState(session);
   if (reading !== session) {

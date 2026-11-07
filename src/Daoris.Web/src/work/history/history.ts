@@ -2,8 +2,7 @@ import { size } from '../../locales/format';
 import type { Answered } from '../InlineConfirm';
 import type { Translate } from '../pausing/pausing';
 
-// Clearing finished history from this machine on the screen (HIST1e, D153; `docs/2026-10-07-history-clearing-design.md`
-// §2.4, §5, §6.1): the shapes the driver's `HISTORY_PLAN` and `HISTORY_CLEAR` answer (`bridge/sessions/history.ts` asks them),
+// Clearing finished history from this machine on the screen: the shapes the driver's `HISTORY_PLAN` and `HISTORY_CLEAR` answer (`bridge/sessions/history.ts` asks them),
 // what the first press lists and the second sends, and what each says. Pure, so the quest's page, the ask's page and the
 // workspace's read one rule, a molecule may read it, and every plan the driver could answer is a test's argument.
 
@@ -72,7 +71,7 @@ export type HistoryReading = {
   takes: { quests: number; asks: number; sessions: number; teammates: number; bytes: number };
   /** How many units are kept, by the code that keeps each. */
   keptBy: Record<string, number>;
-  /** This machine's conversations in it that served no quest, which only *Delete…* takes (D126 §5.4). */
+  /** This machine's conversations in it that served no quest, which only *Delete…* takes. */
   conversations: { count: number; bytes: number };
   /** For the whole home: files of records no store has any more, which every workspace's clear takes. */
   leftOver: { count: number; bytes: number };
@@ -106,18 +105,18 @@ export type HistoryClearAnswer = {
 };
 
 /**
- * What a page is handed of this machine's driver for its clear (design §6.1): the plan, and the second press. Absent in a
- * browser, which has no driver and no home (D47 §4), so nothing is offered there.
+ * What a page is handed of this machine's driver for its clear: the plan, and the second press. Absent in a
+ * browser, which has no driver and no home, so nothing is offered there.
  */
 export type HistoryDoor = {
   /** The plan of a quest's or an ask's work; null while it is asked, or where the host answers none. */
   plan: HistoryPlan | null;
-  /** A quest's failed sessions' plan (design §1.1's third scope); the ask's page has none. */
+  /** A quest's failed sessions' plan; the ask's page has none. */
   failed?: HistoryPlan | null;
   /** A press on its way: the acts wait for it. */
   busy: boolean;
   /**
-   * The second press: exactly the units the first listed, told back to its ask (UXFIX2): `done` once the driver has
+   * The second press: exactly the units the first listed, told back to its ask: `done` once the driver has
    * answered, `refused` with the sentence that says why not.
    */
   onClear: (target: HistoryTarget, units: readonly HistoryUnitName[], answered: Answered) => void;
@@ -304,12 +303,12 @@ export type ReadingSaid = {
 };
 
 /**
- * What a clear would take now, said from the reading's counts as well as its bytes (HIST1k): a unit that goes takes its
+ * What a clear would take now, said from the reading's counts as well as its bytes: a unit that goes takes its
  * records whether or not they hold a file, and every workspace's clear takes the left-over files however small, so "nothing"
  * is said only where `clearList` would offer no press. Records say their size, 0 B included, and files alone say theirs.
  *
  * @remarks
- * **Only what the reading read** (HIST1n): 0 B is a size, not a count of files, so it is never said as *no files here*,
+ * **Only what the reading read**: 0 B is a size, not a count of files, so it is never said as *no files here*,
  * which beside left-over files of 0 B denied what the next line and *What goes* name.
  */
 function takesSaid(t: Translate, reading: HistoryReading): string {
@@ -351,7 +350,7 @@ export function readingSaid(t: Translate, reading: HistoryReading): ReadingSaid 
 }
 
 /**
- * What a workspace's first press takes where no unit goes (HIST1o): the left-over files, the intake's room, or both. Said as
+ * What a workspace's first press takes where no unit goes: the left-over files, the intake's room, or both. Said as
  * only that, since no finished work of the workspace goes and its words, transcripts and files are not touched.
  */
 const leadBeyondUnits = (list: ClearList) => (list.leftOver.count > 0 && list.room > 0 ? 'workspaceLeftOverRoom'
@@ -361,7 +360,7 @@ const leadBeyondUnits = (list: ClearList) => (list.leftOver.count > 0 && list.ro
  * What a first press says it takes, as one lead sentence, for a quest's, its failed sessions', an ask's or a workspace's.
  *
  * @remarks
- * **Worded from the plan's units, as the list is** (HIST1o): a workspace's names its finished work only where a unit goes;
+ * **Worded from the plan's units, as the list is**: a workspace's names its finished work only where a unit goes;
  * otherwise it says only the left-over files and the intake's room it takes.
  */
 export function clearLead(t: Translate, target: HistoryTarget, list: ClearList): string {
@@ -407,17 +406,17 @@ export function goingSaid(t: Translate, list: ClearList): string[] {
 export type ClearNotice = { text: string; tone: 'ok' | 'error' };
 
 /**
- * Whether a second press took anything (HIST1n): a unit cleared, the left-over files or the intake's room taken, or bytes
- * freed. An answer is no success merely by arriving: one that took nothing keeps its ask open (UXFIX2), as a discard the
+ * Whether a second press took anything: a unit cleared, the left-over files or the intake's room taken, or bytes
+ * freed. An answer is no success merely by arriving: one that took nothing keeps its ask open, as a discard the
  * driver kept does (`settings/Sweep.tsx`'s `sayDiscard`).
  */
 export const clearWent = (answer: HistoryClearAnswer): boolean =>
   (answer.cleared?.length ?? 0) > 0 || number(answer.leftOver) > 0 || answer.intake === true || number(answer.bytes) > 0;
 
 /**
- * What a press that took nothing says inside its ask (HIST1n), in the catalogue's words: that nothing was cleared and how
+ * What a press that took nothing says inside its ask, in the catalogue's words: that nothing is cleared and how
  * many changed since the list, then each unit kept, a line each, by its name and its reason's sentence for its code and
- * variant, and a file the disk kept. The reasons are the answer's own, read when the press was judged, not the list's.
+ * variant, and a file the disk kept. The reasons are the answer's own, read when the press is judged, not the list's.
  */
 export function clearRefusal(t: Translate, answer: HistoryClearAnswer): string {
   const changed = answer.changed ?? [];
@@ -441,8 +440,8 @@ export function clearRefusal(t: Translate, answer: HistoryClearAnswer): string {
  * takes it.
  *
  * @remarks
- * **A partial clear is not a plain success** (HIST1n): where a listed unit was kept, the sentence says what went and what
- * was kept in the error's tone, as a pause says a session it could not stop; only a press that took all it listed says
+ * **A partial clear is not a plain success**: where a listed unit is kept, the sentence says what went and what
+ * stayed in the error's tone, as a pause says a session it could not stop; only a press that took all it listed says
  * `ok`. Its ask still closes, since something went, and the reading, asked again, says what keeps the rest with its door.
  */
 export function clearSaid(t: Translate, answer: HistoryClearAnswer): ClearNotice[] {

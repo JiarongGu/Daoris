@@ -6,7 +6,7 @@ import i18n from '../../locales/i18n';
 import type { ParkQuestion } from './parkQuestion';
 import { QuestionCard } from './QuestionCard';
 
-// QUESTIONUI1a (D208, the supervisor design §8.1-§8.2): a park's question with each answer a row that reads whole, a native radio group
+// A park's question with each answer a row that reads whole, a native radio group
 // labelled by the question, nothing selected at first, the recommended row marked with the agent's reason, its name the label,
 // *recommended* once, and what it does. A molecule: the selection is handed in and reported out; the sends are the frame's
 // (WorkFrame.test.tsx's *a park's question*).
@@ -119,7 +119,7 @@ describe('QuestionCard', () => {
     expect(screen.getByText('It says it needs your answer by: before Friday')).toBeInTheDocument();
   });
 
-  /** SUPERVISOR1b (D208, the supervisor design §4.2): the supervisor's defer, above the choices, the bound in words and each reason with its source. */
+  /** The supervisor's defer, above the choices, the bound in words and each reason with its source. */
   it('says above the answers that the supervisor left it to you, its bound in words and each reason with its source', () => {
     render(<Held question={{
       ...QUESTION,
@@ -135,7 +135,7 @@ describe('QuestionCard', () => {
     for (const radio of screen.getAllByRole('radio')) expect(radio).not.toBeChecked();
   });
 
-  /** SUPERVISOR1b (§4.1, §4.2): the agent's mark that the question is the owner's alone, by its words; a mark this build does not know, unnamed. */
+  /** The agent's mark that the question is the owner's alone, by its words; a mark this build does not know, unnamed. */
   it('says a question its agent marked as yours alone, by the mark\'s words, and a mark it does not know without naming it', () => {
     const { unmount } = render(<QuestionCard question={{ ...QUESTION, owner: 'spending' }} />);
     expect(screen.getByText('Asked of you alone: spending')).toBeInTheDocument();

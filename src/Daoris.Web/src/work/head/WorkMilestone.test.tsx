@@ -7,7 +7,7 @@ import { MilestoneLine, WorkMilestone } from './WorkMilestone';
 import { attentionActs, attentionWorded } from '../attention/attention';
 import { AttentionRow } from '../attention/AttentionRow';
 
-// The milestone on the work's foot (FABRIC-MILESTONE1b, the fabric events design §D0): a molecule over the driver's answer, each
+// The milestone on the work's foot: a molecule over the driver's answer, each
 // state reached by its props. The driver's own clauses pass through as recorded; the labels and the proofs' codes are the page's.
 
 const entry = (over: Partial<MilestoneEntry>): MilestoneEntry => ({
@@ -78,7 +78,7 @@ describe('the milestone on the work’s foot', () => {
     expect(region).toHaveTextContent('Unknown: no record names its unit');
   });
 
-  // CLEANUP1: a landing whose branch the person removed outside Daoris is over without its result, never read as not reached.
+  // A landing whose branch the person removed outside Daoris is over without its result, never read as not reached.
   it('says an end the person dropped as over without its result, in both languages, and as one line', async () => {
     const dropped = unit({
       end: { state: 'dropped', said: '`feature/x` was removed outside Daoris, and git said it is missing' }, result: [],
@@ -96,7 +96,7 @@ describe('the milestone on the work’s foot', () => {
     expect(i18n.t('work.milestone.end.dropped', { said: 'x' })).not.toBe(i18n.t('work.milestone.end.dropped', { said: 'x', lng: 'en' }));
   });
 
-  // FABRIC-END2d: a landing ended inside another landing is said by the page's words for its code, in both languages.
+  // A landing ended inside another landing is said by the page's words for its code, in both languages.
   it('says an end inside another landing in the page’s words, never the driver’s sentence', async () => {
     const inside = unit({ end: { state: 'ended', by: 'inside', on: 'feature/q2-more', said: 'it is inside `feature/q2-more`, whose work is on the line' } });
     render(<WorkMilestone defaultOpen unit={inside} />);
@@ -119,7 +119,7 @@ describe('the milestone on the work’s foot', () => {
     expect(region).toHaveTextContent('结束');
   });
 
-  // OVERVIEWNOISE1b: a blocked entry is said by its code in the reader's language, its reason once, and a tree by its folder's name.
+  // A blocked entry is said by its code in the reader's language, its reason once, and a tree by its folder's name.
   it('says a blocked entry by its code in each language, its reason once, and a tree by its folder', async () => {
     const blocked = unit({
       cleanup: {
@@ -162,7 +162,7 @@ describe('the milestone on the work’s foot', () => {
 });
 
 describe('what of a unit waits on the person', () => {
-  // OVERVIEWNOISE1b, as `NeedsAPerson` judges it: only what the person's press settles; a guard the look keeps a branch by is not theirs.
+  // As `NeedsAPerson` judges it: only what the person's press settles; a guard the look keeps a branch by is not theirs.
   it('is what only the clean-up’s press settles, and never a guard or a wait that ends by itself', () => {
     const unfollowed = entry({ kind: 'tree', disposition: 'blocked', code: 'unfollowed', facts: { branch: 'daoris/s-1' } });
     const kept = entry({ disposition: 'blocked', code: 'kept', facts: { why: 'nested' } });
@@ -177,7 +177,7 @@ describe('what of a unit waits on the person', () => {
     expect(waitsOnPerson(unit({ end: unknown, cleanup: { state: 'pending', waits: [], gone: [] }, entries: [pending] }))).toEqual([pending]);
   });
 
-  // LANDRETIRE1 part 2: a landing's branch whose quest is closed and which the line has not held for a day is the person's to withdraw.
+  // A landing's branch whose quest is closed and which the line has not held for a day is the person's to withdraw.
   it('is a landing branch the line has not held for a day with its quest closed, as .NET judges it', () => {
     const stale = entry({
       kind: 'landing-branch', disposition: 'blocked', code: 'landing-stale', facts: { branch: 'feature/q2-fix', quest: 'q2', since: '2026-10-29T09:00:00Z' },
@@ -194,14 +194,14 @@ describe('what of a unit waits on the person', () => {
   });
 });
 
-// FABRIC-PERFORM1g (the fabric events design §D6): a plugin step's attempt held for the person, shown where they look, What needs you's
+// A plugin step's attempt held for the person, shown where they look, What needs you's
 // row with their three words and the node's place on the work's foot, in both languages.
 const heldAttempt = (over: Partial<HeldAttempt> = {}): HeldAttempt => ({
   unit: 'u1', node: 'deploy', attempt: 2, plugin: 'acme.deploy', step: 'acme.deploy/deploy', nodeState: 'unknown', why: 'unknown',
   at: '2026-10-17T09:00:00Z', said: 'its plugin was asked and cannot say what became of it', ...over,
 });
 
-/** What needs you's row for a held attempt, as the shell pushes it (PUSH1d4: .NET judges it) and the page words it. */
+/** What needs you's row for a held attempt, as the shell pushes it (.NET judges it) and the page words it. */
 const heldRow = (attempt: HeldAttempt) => attentionWorded({
   kind: 'work', id: `${attempt.unit}#${attempt.node}#${attempt.attempt}`, since: attempt.resolvedAt ?? attempt.at, where: attempt.unit, held: attempt,
 });
@@ -237,7 +237,7 @@ describe('an attempt held for the person', () => {
     expect(words).toEqual(['did-not', 'stop', 'happened']);
   });
 
-  // FABRIC-CLOSE1q: Daoris's own close held for the person is the door's, never a plugin's step: its row says what the door answered
+  // Daoris's own close held for the person is the door's, never a plugin's step: its row says what the door answered
   // and offers only the close's recoveries and its stop, never *It happened* or *It did not*, in both languages.
   const heldClose = (over: Partial<HeldAttempt> = {}): HeldAttempt => heldAttempt({
     unit: 'quest:q7', node: 'close', attempt: 1, plugin: 'quest.close', step: 'quest.close', nodeState: 'unknown', why: 'no-acceptance',
@@ -332,7 +332,7 @@ describe('an attempt held for the person', () => {
     expect(zh).toHaveTextContent('deploy，第 2 次尝试：它的插件的答复与它所针对的工作不符（acme-refused）。它在等你的答复。');
   });
 
-  // FABRIC-PERFORM1k (D173's RUN1e note): a plugin step's failure Daoris will not retry waits for the person's new attempt, its one
+  // A plugin step's failure Daoris will not retry waits for the person's new attempt, its one
   // press *Try again*, never their word on what became of it, in both languages.
   const keptFailure = (over: Partial<HeldAttempt> = {}): HeldAttempt => heldAttempt({
     attempt: 1, nodeState: 'failed', why: 'failure-kept', code: 'broken', outcome: 'failed', words: ['again'], said: 'its plugin said it failed', ...over,
@@ -374,7 +374,7 @@ describe('an attempt held for the person', () => {
   });
 });
 
-// FABRIC-CLOSE1j (the fabric events design §E5): a closure graph ended by the person's own done before its end, naming the nodes it
+// A closure graph ended by the person's own done before its end, naming the nodes it
 // stopped, and one closed only in part, naming the quest lost and why, its close node's stop offered while it waits again: on the
 // work's foot and its line, and as What needs you's row with the stop alone, in both languages.
 const graphEnd = (over: Partial<GraphEnd> = {}): GraphEnd => ({
@@ -477,7 +477,7 @@ describe('a closure graph’s end', () => {
   });
 });
 
-// MILESTONEUX1 (the UI/UX design §3.7 and R4): where a piece of work stands is four independent facts, each marked by `Dot`'s
+// Where a piece of work stands is four independent facts, each marked by `Dot`'s
 // tone and never as a sequence, folded to `MilestoneLine` behind a disclosure and opened in place; the line says *blocked* and
 // *held* so nothing that waits on the person hides behind the fold.
 describe('where a piece of work stands: four facts, folded to their line', () => {
@@ -581,7 +581,7 @@ describe('where a piece of work stands: four facts, folded to their line', () =>
     // A clean-up that only waits, and nothing held, say neither.
     render(<MilestoneLine unit={unit({ cleanup: pending(waiting) })} />);
     expect(screen.getByText(/clean-up pending/)).not.toHaveTextContent(/blocked|held/);
-    // OVERVIEWNOISE1b: a guard's block is said here, on the work's own line, and is no row of *What needs you*.
+    // A guard's block is said here, on the work's own line, and is no row of *What needs you*.
     expect(waitsOnPerson(stuck)).toEqual([]);
   });
 

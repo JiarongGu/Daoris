@@ -7,8 +7,8 @@ import { Composer } from './Composer';
 
 // The states the inventory names, and the reason each is a state: sending is not idle, an ending is
 // not a disabled box, a refusal is a sentence rather than a shrug, and a running turn is not idle
-// either — what waits behind it and its own stop are shown (CONV4b). Drawn at the foot of a session's page at the
-// frame's widths (the UI/UX design R6, STORYGAP1): half by default, then wide, narrow, 中文 and dark.
+// either — what waits behind it and its own stop are shown. Drawn at the foot of a session's page at the
+// frame's widths: half by default, then wide, narrow, 中文 and dark.
 
 const dark: Decorator = (Story) => <InTheme theme="dark"><Story /></InTheme>;
 
@@ -29,12 +29,12 @@ export const Idle: Story = {};
 export const Sending: Story = { args: { sending: true } };
 
 /**
- * The session ended while somebody was typing. What they wrote stays, read-only so it can be copied
+ * The session ended while somebody is typing. What they wrote stays, read-only so it can be copied
  * out — a box that swallowed a paragraph they were halfway through gives them no way to get it back.
  */
 export const Ended: Story = { args: { live: false, draft: 'half a thought about the chunk cap', onDraft: () => {} } };
 
-/** An ended session nobody was writing in: no box and no send, since nothing listens (UX5 U9). */
+/** An ended session nobody is writing in: no box and no send, since nothing listens. */
 export const EndedWithNothingWritten: Story = { args: { live: false, context: { door: 'structured' } } };
 
 /** The ledger's own sentence, verbatim, where the person is looking rather than in a toast. */
@@ -43,7 +43,7 @@ export const Refused: Story = {
 };
 
 /**
- * A turn is running (CONV4b): send says *queue*, what waits behind the turn is shown in the order
+ * A turn is running: send says *queue*, what waits behind the turn is shown in the order
  * sent, and the turn's own stop stands beside the two endings.
  */
 export const TurnRunning: Story = {
@@ -57,7 +57,7 @@ export const TurnRunning: Story = {
 };
 
 /**
- * COWORK1a (D188; the message-urgency design §8.1): words typed while a turn runs go with *Send* at the person's default, and
+ * Words typed while a turn runs go with *Send* at the person's default, and
  * the level menu beside it sends them at another; here the agent steers, so *Now, cutting its step* is offered.
  */
 export const LevelsWhileATurnRuns: Story = {
@@ -70,7 +70,7 @@ export const LevelsWhileATurnRuns: Story = {
 };
 
 /**
- * COWORK1a (the design §3.2): a door that takes words only when its turn ends holds them, the person's words at now named so,
+ * A door that takes words only when its turn ends holds them, the person's words at now named so,
  * and the keeping stop stands beside them, asking once.
  */
 export const KeepingStopBesideHeldWords: Story = {
@@ -81,7 +81,7 @@ export const KeepingStopBesideHeldWords: Story = {
   },
 };
 
-/** QUEUEEDIT1b: each waiting message that has an id can be taken back out or reworded; one without shows no controls. */
+/** Each waiting message that has an id can be taken back out or reworded; one without shows no controls. */
 export const WaitingWithControls: Story = {
   args: {
     taking: true, stoppable: true, onStopTurn: () => {},
@@ -99,21 +99,21 @@ export const WaitingAlreadySent: Story = {
   args: { ...WaitingWithControls.args, onRemove: async () => ({ done: false }) },
 };
 
-/** SENDLOST1b: words on their way show at once, as sending, apart from what waits behind the turn, and with no controls. */
+/** Words on their way show at once, as sending, apart from what waits behind the turn, and with no controls. */
 export const WordsSending: Story = {
   args: { ...TurnRunning.args, going: { words: [{ text: 'and the line under the chart?', files: [] }], late: false } },
 };
 
-/** SENDLOST1b: the page stopped waiting on their send; they stay, saying the machine may still take them. */
+/** The page stopped waiting on their send; they stay, saying the machine may still take them. */
 export const WordsUnanswered: Story = {
   args: { ...TurnRunning.args, going: { words: [{ text: 'and the line under the chart?', files: [] }], late: true } },
 };
 
-/** The stop was asked for; the button holds until the driver answers. */
+/** The stop is asked for; the button holds until the driver answers. */
 export const StoppingTheTurn: Story ={ args: { taking: true, stoppable: true, stopping: true, onStopTurn: () => {} } };
 
 /**
- * Files attached (CONV4c): chips above the box a person can take back off, going with the next send.
+ * Files attached: chips above the box a person can take back off, going with the next send.
  * Chosen here through the paperclip in the story; dropped or pasted on the window.
  */
 export const WithFilesAttached: Story = {
@@ -129,8 +129,8 @@ export const WithFilesAttached: Story = {
 };
 
 /**
- * `@` a file (CONV4d): after the `@`, the session tree's files, best first. Arrows move, Enter or Tab
- * writes the one chosen, Escape leaves what was typed.
+ * `@` a file: after the `@`, the session tree's files, best first. Arrows move, Enter or Tab
+ * writes the one chosen, Escape leaves what is typed.
  */
 export const MentioningAFile: Story = {
   decorators: [(Story) => <div className="pt-72"><Story /></div>],
@@ -151,7 +151,7 @@ export const MentioningAFile: Story = {
   },
 };
 
-/** How full the context is (CONV5), at the far end of the controls, where the reference keeps it. */
+/** How full the context is, at the far end of the controls, where the reference keeps it. */
 export const WithContext: Story = {
   args: { context: { usage: { used: 34_120, size: 1_000_000, most: 41_000 }, door: 'structured' } },
 };

@@ -4,7 +4,7 @@ import { cn } from '../../lib/cn';
 import { Icon } from '../../design/ui';
 
 /**
- * The files a mention could mean (CONV4d), floating over the conversation above the composer's box.
+ * The files a mention could mean, floating over the conversation above the composer's box.
  *
  * @remarks
  * **The box keeps the focus.** The list is the textbox's, told by `aria-controls` and followed by
@@ -20,7 +20,7 @@ export function MentionList({ id, options, active, query, listing, refusal, empt
   /** The files to offer, best first. */
   options: string[];
   active: number;
-  /** What was typed after the `@`. */
+  /** What is typed after the `@`. */
   query: string;
   /** The tree's files have been asked for and not answered yet. */
   listing: boolean;
@@ -47,8 +47,8 @@ export function MentionList({ id, options, active, query, listing, refusal, empt
           : null);
 
   return (
-    // Sized to its rows, within bounds: across the box it ran 1,900px on a maximized window for rows
-    // about 450px wide (UX5 U64). It opens from the box's left edge, where the writing starts.
+    // Sized to its rows, within bounds: across the box it would run 1,900px on a maximized window for rows
+    // about 450px wide. It opens from the box's left edge, where the writing starts.
     <div className="absolute bottom-full left-0 z-10 mb-1 w-max min-w-[min(20rem,100%)] max-w-[min(36rem,100%)] overflow-hidden rounded-overlay border border-line bg-overlay shadow-[0_8px_32px_rgb(15_12_8/0.18)]">
       {options.length > 0 && (
         <ul

@@ -6,10 +6,10 @@ using System.Text.Json.Nodes;
 namespace Daoris.Driver;
 
 /// <summary>
-/// The sessions' event logs in the shape this build reads (D232): the receipt <c>answered</c> an older build wrote for the turn that took a
-/// word is the <c>ended</c> COMMS1h writes; a <c>chat.told-routing</c> note, which the standing block replaced, is taken out; and the
-/// <c>map</c>, <c>look</c>, <c>indexes</c> and <c>standing</c> sections of what a session was handed are the one standing block they became
-/// (CONTEXTONE1c), their characters summed. Only a log that holds one of them is read whole and written again.
+/// The sessions' event logs in the shape this build reads: the receipt <c>answered</c> an older build wrote for the turn that took a
+/// word is the <c>ended</c> receipt; a <c>chat.told-routing</c> note, which the standing block replaced, is taken out; and the
+/// <c>map</c>, <c>look</c>, <c>indexes</c> and <c>standing</c> sections of what a session is handed are the one standing block they became,
+/// their characters summed. Only a log that holds one of them is read whole and written again.
 /// </summary>
 public sealed class EventLogsStep : IHomeMigrationStep
 {
@@ -67,7 +67,7 @@ public sealed class EventLogsStep : IHomeMigrationStep
         return changed ? root.ToJsonString(Spelled) : line;
     }
 
-    /// <summary>The four old sections made the one block where the first stood, a section not handed left out; whether any was there.</summary>
+    /// <summary>The four sections made the one block where the first stood, a section not handed left out; whether any is there.</summary>
     private static bool Block(JsonArray sections)
     {
         var old = sections.OfType<JsonObject>().Where(section => HomeMigrationRun.Text(section["name"]) is { } name && Sections.Contains(name, StringComparer.Ordinal)).ToList();

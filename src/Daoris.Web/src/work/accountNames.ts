@@ -1,13 +1,13 @@
 import { accountLabel } from '../agents/agents';
 import { byTool, type ToolDoor } from '../agents/tools';
 
-/** What a person calls each account, by its id: the names a conversation's notes say an account by (NOTENAME1). */
+/** What a person calls each account, by its id: the names a conversation's notes say an account by. */
 export type AccountNames = ReadonlyMap<string, string>;
 
 /**
  * The names a note says an account id by, read from the roster the page already holds, by the rule the agent's page leads its
- * row with (`accountName`, ACCTNAME1), told apart from another sign-in of its email by its organisation (`accountLabel`,
- * ACCOUNTID1b). A note carries an id and no tool for it, so an id is named only where the roster gives it one name everywhere
+ * row with (`accountName`), told apart from another sign-in of its email by its organisation (`accountLabel`).
+ * A note carries an id and no tool for it, so an id is named only where the roster gives it one name everywhere
  * it appears and that name is not the id: an id nobody named, or two tools name differently, stays as the record wrote it.
  */
 export function accountNames(harnesses: readonly ToolDoor[]): AccountNames {

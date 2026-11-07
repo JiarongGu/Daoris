@@ -7,7 +7,7 @@ import { accessRow, startedFull } from './AccessFact';
 import { SessionHead } from './SessionHead';
 import { SessionPageHead } from './SessionPageHead';
 
-// SESSACCESS1 (D184 point 1; the UI/UX design §3.3 and §5, D185): a session says the access it started under, read from its
+// A session says the access it started under, read from its
 // record's pause map as the driver resolved it at the start, never from today's settings. The fixture is that map.
 
 const TODAY = { permissions: 'auto', routing: 'person', landing: 'person', goAheads: 'named', questions: 'claude-code' };
@@ -39,7 +39,7 @@ afterEach(async () => {
 describe('the access a session started under', () => {
   it('wears the full-access chip on its facts line only where every pause it recorded is open', () => {
     pageHead({ access: FULL });
-    // The facts are cut before the chip, never the chip (RAILLINE1): the line holds both, the facts in a span of their own.
+    // The facts are cut before the chip, never the chip: the line holds both, the facts in a span of their own.
     const line = screen.getByText('engine · 12m').parentElement!;
     expect(within(line).getByText('Full access')).toBeInTheDocument();
     expect(line.querySelector('[data-access="full"] svg')).not.toBeNull();
@@ -101,7 +101,7 @@ describe('the access a session started under', () => {
   });
 });
 
-// MODELROLE1c2 (D205 §4.6 item 2): the choice its actor ran is worn beside the access chip, only where it was not the first.
+// The choice its actor ran is worn beside the access chip, only where it is not the first.
 describe('the choice its actor ran', () => {
   it('wears choice n on the facts line before the access chip, and your pick for a pick', () => {
     pageHead({ choice: '2', access: FULL });

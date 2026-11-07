@@ -21,7 +21,7 @@ const short = (id: string) => id.slice(0, 7);
 
 /**
  * Where the landed route's gates stand against the line's tip, the declaration to accept, and the person's press. *Verify…* is offered only
- * once the pipeline's gates are accepted (N17): the place's Workflow draws it under the landed route (SETUPUX1o).
+ * once the pipeline's gates are accepted: the place's Workflow draws it under the landed route.
  */
 export function LandedLines({ landed, page, repository, onAccept, accepting, onVerify, apart }: {
   landed: WorkflowLanded;
@@ -30,7 +30,7 @@ export function LandedLines({ landed, page, repository, onAccept, accepting, onV
   onAccept?: (answered: Answered) => void;
   accepting?: boolean;
   onVerify?: (ask: VerifyAsk, answered: Answered) => void;
-  /** The declaration and its acceptance are drawn apart, in the place page's Gates (AGENTSPLACE1h): the node says where the route stands only. */
+  /** The declaration and its acceptance are drawn apart, in the place page's Gates: the node says where the route stands only. */
   apart?: boolean;
 }) {
   const { t } = useTranslation();
@@ -52,7 +52,7 @@ export function LandedLines({ landed, page, repository, onAccept, accepting, onV
   } else if (landed.state === 'unaccepted') {
     said = t('workflow.start.landed.unaccepted');
   } else {
-    // A workspace has no line: its route's gates are each repository's to accept. Else the driver's own words for why it was not read.
+    // A workspace has no line: its route's gates are each repository's to accept. Else the driver's own words for why it is not read.
     said = page === 'workspace' ? t('workflow.start.landed.perRepository') : landed.problem ?? t('workflow.start.landed.unread');
   }
 
@@ -113,14 +113,14 @@ export function LandedLines({ landed, page, repository, onAccept, accepting, onV
 }
 
 /**
- * **The start node** (FABRIC-PIPELINE1a; D192 point 2, the pipeline design §1.2, §1.3): drawn first on a Workflow tab, the routes the
+ * **The start node**: drawn first on a Workflow tab, the routes the
  * work that comes here takes, read from the choice table the driver keeps: the default, each kind the workspace declares by its label
- * and paths, and the work that lands, each wired to the workflow it names with what chose it, laid out by D186's flow on the canvas (`LifeFlow`). A route
+ * and paths, and the work that lands, each wired to the workflow it names with what chose it, laid out by the flow on the canvas (`LifeFlow`). A route
  * naming nothing says what follows then: Current, or no verification here.
  *
  * @remarks
- * **The landed route says its gates** (§4.2): the declaration the person accepted by its blob at the line's tip, where it stands
- * against the tip now, the declaration that waits to be accepted, and *Accept the gates*, the person's door (D156), where the page
+ * **The landed route says its gates**: the declaration the person accepted by its blob at the line's tip, where it stands
+ * against the tip now, the declaration that waits to be accepted, and *Accept the gates*, the person's door, where the page
  * hands one. This build keeps the route and runs no check yet, and says so.
  *
  * A molecule: the answer arrives as a prop, and the one press goes out.
@@ -132,9 +132,9 @@ export function WorkflowStartNode({ start, page, scope, onAccept, accepting = fa
   /** The person's *Accept the gates*: the landed route's gates at the line's tip, accepted by their blob. */
   onAccept?: (answered: Answered) => void;
   accepting?: boolean;
-  /** The person's *Verify…* (FABRIC-PIPELINE1d): a branch or a commit verified under the accepted gates; offered once they are accepted. */
+  /** The person's *Verify…*: a branch or a commit verified under the accepted gates; offered once they are accepted. */
   onVerify?: (ask: VerifyAsk, answered: Answered) => void;
-  /** The declaration and its acceptance are the page's Gates (AGENTSPLACE1h): the node draws neither. */
+  /** The declaration and its acceptance are the page's Gates: the node draws neither. */
   gatesApart?: boolean;
 }) {
   const { t } = useTranslation();

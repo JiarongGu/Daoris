@@ -8,14 +8,14 @@ import type {
 import type { PluginSourceShown, PluginUpdatePlanShown } from '../plugins/PluginUpdate';
 import { call } from './call';
 
-// This machine's plugins (MOD3): the catalogue, the switches, an update, the install's own, and the kit (D64).
+// This machine's plugins: the catalogue, the switches, an update, the install's own, and the kit.
 
 /**
- * This machine's plugins (D64): folders under the home's `plugins/`, each with what it declares,
+ * This machine's plugins: folders under the home's `plugins/`, each with what it declares,
  * what it speaks on, whether its process is up, and why it contributes nothing when it does not.
  *
  * @remarks
- * Shell-only for the usual reason — a plugin's folder is a machine path (D47 §4) — and read off
+ * Shell-only for the usual reason — a plugin's folder is a machine path — and read off
  * the same catalogue the driver reads each tick, so what the page shows is what the loop has.
  */
 export type PluginEntry = {
@@ -35,43 +35,42 @@ export type PluginEntry = {
   running: boolean;
   folder: string;
   data: string;
-  /** Where it came from (PLUG9 c): what an Update re-reads. */
+  /** Where it came from: what an Update re-reads. */
   source?: PluginSourceShown;
-  /** Whether an update waits (PLUGUI1e): `waits`, `current`, or null with no record that reads. */
+  /** Whether an update waits: `waits`, `current`, or null with no record that reads. */
   update?: 'waits' | 'current' | null;
-  /** Against the install's own plugin of its id (LANDPIN3): older, or changed from it; null where it needs no word. */
+  /** Against the install's own plugin of its id: older, or changed from it; null where it needs no word. */
   shipped?: PluginShippedShown | null;
   /**
-   * Its declared icon as its own bytes, a `data:image/svg+xml` or `data:image/png` URI (PLUGUI2, D140 §3.2), never a
+   * Its declared icon as its own bytes, a `data:image/svg+xml` or `data:image/png` URI, never a
    * path. Null or absent, and the page draws the monogram.
    */
   icon?: string | null;
-  /** Why its declared icon is not drawn, in the reader's sentence (D140 §3.1). */
+  /** Why its declared icon is not drawn, in the reader's sentence. */
   iconProblem?: string | null;
-  /** The servers it hands Ask Daoris, with what Ask Daoris may call on each (HELPPLUG1a, D170 point 3). */
+  /** The servers it hands Ask Daoris, with what Ask Daoris may call on each. */
   helpServers?: HelpServerShown[];
-  /** The skills it hands sessions or Ask Daoris, who each goes to, and why one is not handed (HELPPLUG1b). */
+  /** The skills it hands sessions or Ask Daoris, who each goes to, and why one is not handed. */
   skills?: SkillShown[];
-  /** The steps it declares and what they create (FABRIC-UNIT1e, §D9). */
+  /** The steps it declares and what they create. */
   steps?: StepShown[];
   resources?: ResourceShown[];
-  /** The tools it declares as its manifest says them (ADOSIGNIN1); nothing is found by reading. */
+  /** The tools it declares as its manifest says them; nothing is found by reading. */
   tools?: ToolShown[];
 };
 export type PluginCatalog = {
   folder: string;
   plugins: PluginEntry[];
-  /** Where a new plugin may speak (PLUG8): the kit's points, which are the driver's. */
+  /** Where a new plugin may speak: the kit's points, which are the driver's. */
   kit?: { points: KitPoint[] };
-  /** Daoris's own plugins the install carries (PLUG9 d), each marked installed or not. */
+  /** Daoris's own plugins the install carries, each marked installed or not. */
   offers?: PluginOfferShown[];
   offersFolder?: string;
 };
 
 /**
- * The catalogue. `enabled: false` asks nothing (PLUGUI1b): the application holds the Plugins view on every view, and the
- * view asks only while it is in front; Settings → Driver asks whenever it is drawn, for the plugins folder its row names
- * (UX6j: Settings → Plugins retired into the view).
+ * The catalogue. `enabled: false` asks nothing: the application holds the Plugins view on every view, and the
+ * view asks only while it is in front; Settings → Driver asks whenever it is drawn, for the plugins folder its row names.
  */
 export const usePlugins = ({ enabled = true }: { enabled?: boolean } = {}) => {
   const { isAvailable } = useShenora();
@@ -83,13 +82,13 @@ export const usePlugins = ({ enabled = true }: { enabled?: boolean } = {}) => {
 };
 
 /**
- * The screen's half of `daoris plugin enable|disable|remove` (D50): a row, or the folder gone with the data named. The
+ * The screen's half of `daoris plugin enable|disable|remove`: a row, or the folder gone with the data named. The
  * catalogue, and the roster, since a declared harness came or went with it, are asked again by the route's `STATE_CHANGED`
- * in every window (STATEHUB1d, D169), as for the update and the install below.
+ * in every window, as for the update and the install below.
  *
- * HELPPLUG1a's tightening (D170's note): `help-approve`, `help-reads` and `help-withdraw`, with the `server`, are the person's
+ * `help-approve`, `help-reads` and `help-withdraw`, with the `server`, are the person's
  * approval of the exact tools a plugin's server offers Ask Daoris, its reads only, or its withdrawal, the page's half of
- * `daoris plugin approve|withdraw`. Since HELPPLUG1c `help-approve` carries the `writes` the person ticked, each on its
+ * `daoris plugin approve|withdraw`. `help-approve` carries the `writes` the person ticked, each on its
  * own (`--writes`); without them it approves every write.
  */
 export const usePluginAction = () => useMutation({
@@ -100,7 +99,7 @@ export const usePluginAction = () => useMutation({
 });
 
 /**
- * The screen's half of `daoris plugin update <id>` (PLUG9 c, D50): without `apply`, what an update would
+ * The screen's half of `daoris plugin update <id>`: without `apply`, what an update would
  * change or why it cannot, for the row to show before the press; with it, the update, and the catalogue and
  * the roster asked again, since what the plugin declares may have changed. One route answers both, so the plan's
  * press asks them again too.
@@ -110,7 +109,7 @@ export const usePluginUpdate = () => useMutation({
 });
 
 /**
- * The screen's Install beside one of the install's own plugins (PLUG9 d): `daoris plugin add --offer <id>`'s
+ * The screen's Install beside one of the install's own plugins: `daoris plugin add --offer <id>`'s
  * copy. Nothing runs at the press; the catalogue and the roster are asked again by the state hub.
  */
 export const usePluginInstall = () => useMutation({
@@ -118,7 +117,7 @@ export const usePluginInstall = () => useMutation({
 });
 
 /**
- * The screen's half of `daoris plugin new` (PLUG8, D101): a plugin's folder written into the one
+ * The screen's half of `daoris plugin new`: a plugin's folder written into the one
  * the person named. Nothing is installed, so nothing is asked again.
  */
 export const usePluginNew = () =>
@@ -128,7 +127,7 @@ export const usePluginNew = () =>
   });
 
 /**
- * The person's *Check* of a plugin's declared tools (ADOSIGNIN1, D150 point 7): each found, its version against its range, and
+ * The person's *Check* of a plugin's declared tools: each found, its version against its range, and
  * each readiness check run. Only this press asks the machine; a look at the page reads the manifest alone.
  */
 export const usePluginTools = () =>
@@ -152,7 +151,7 @@ export type PluginToolFixed = {
 };
 
 /**
- * The person's *Set up* or *Sign in* beside an unmet check (ADOSIGNIN1): opens a console they see, running exactly the
+ * The person's *Set up* or *Sign in* beside an unmet check: opens a console they see, running exactly the
  * manifest's `fix` for one of the plugin's own tools, and answers when it closes with the tool read again. Daoris never signs in.
  * It may take as long as the person does at the console.
  */

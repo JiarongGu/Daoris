@@ -53,8 +53,8 @@ describe('the attended session', () => {
   });
 
   /**
-   * UX7c (D152 §7, amending SESS2 H7's remembered choice): the chain opens folded to its one line on every session, whatever
-   * was opened on the last one, so the conversation is not pushed down by a strip the person once opened elsewhere.
+   * The chain opens folded to its one line on every session, whatever
+   * is opened on the last one, so the conversation is not pushed down by a strip the person once opened elsewhere.
    */
   it('opens the chain folded on every session, whatever the last one showed', async () => {
     vi.useRealTimers();
@@ -79,7 +79,7 @@ describe('the attended session', () => {
   });
 
   /**
-   * HEADFIT1: who it worked with is one line, opened in place, and another record starts folded (the relations are the session's
+   * Who it worked with is one line, opened in place, and another record starts folded (the relations are the session's
    * own, unlike the parts', which belong to the line of work), as the milestone's fold does.
    */
   it('folds who it worked with to a line, and another record starts folded again', async () => {
@@ -99,10 +99,10 @@ describe('the attended session', () => {
   });
 
   /**
-   * RELSPAM1: who it worked with and the milestone were both keyed by the session's id under the record's one parent, and React
-   * matched the new fold to the milestone's old one by that key: each draw of a running driven session mounted a fresh fold and left
+   * Who it worked with and the milestone are both keyed by the session's id under the record's one parent, and React
+   * matches a new fold to the milestone's by that key: each draw of a running driven session must not mount a fresh fold and leave
    * the last one in the page, never unmounted. A working session is drawn again at every change of its record, so its relations line
-   * stood eleven times over on the install's window, and moving to another session left the old ones behind too.
+   * must not stand many times over, and moving to another session must not leave the old ones behind.
    */
   it('keeps one line of who it worked with, however often a running session with a milestone is drawn again', async () => {
     vi.useRealTimers();
@@ -142,7 +142,7 @@ describe('the attended session', () => {
   });
 
   /**
-   * The stream has ONE home (design §3, D55) and it is the frame's output panel, not this region.
+   * The stream has ONE home and it is the frame's output panel, not this region.
    * Asserted here because a second console rendered beside the record is exactly the duplication
    * the rule exists to prevent — and it stays invisible until two of them disagree.
    */
@@ -155,7 +155,7 @@ describe('the attended session', () => {
   });
 
   /**
-   * REV3 web-work F8: a detached window has no dock, so it draws the timeline itself, at every width.
+   * A detached window has no dock, so it draws the timeline itself, at every width.
    */
   it('keeps its timeline where there is no dock to hold it', () => {
     render(<AttendedSession session={session()} timeline="always" />);
@@ -163,8 +163,8 @@ describe('the attended session', () => {
   });
 
   /**
-   * FRAME6: the frame's dock is there at every width now — docked, cramped, full or closed to a strip
-   * of its tabs — so the column's narrow-window copy, which drew the timeline twice, is gone.
+   * The frame's dock is there at every width — docked, cramped, full or closed to a strip
+   * of its tabs — so the column draws no narrow-window copy of the timeline.
    */
   it('leaves its timeline to the dock by default, at every width', () => {
     render(<AttendedSession session={session()} />);
@@ -172,7 +172,7 @@ describe('the attended session', () => {
   });
 
   /**
-   * FLOWCHART1c (the flowchart design §2.7): the work's milestone opens how its landing branch landed, on that branch's page, by
+   * The work's milestone opens how its landing branch landed, on that branch's page, by
    * the branch the unit's landing made and never by its session; a unit no landing branch names offers nothing.
    */
   it("opens how its work's landing branch landed from the milestone, and nothing where no landing branch is named", async () => {
@@ -188,7 +188,7 @@ describe('the attended session', () => {
   });
 
   /**
-   * SESSONE1c (D167 point 5): a session that is a part of an entry of several shows its parts under its head, and a press shows
+   * A session that is a part of an entry of several shows its parts under its head, and a press shows
    * another part; a record alone shows no strip.
    */
   it('shows its entry\'s parts under the head, and shows another part on a press', async () => {
@@ -201,7 +201,7 @@ describe('the attended session', () => {
     expect(screen.queryByRole('navigation', { name: 'Parts' })).toBeNull();
 
     rerender(<AttendedSession session={session({ id: 'ap000003' })} parts={{ entry: EVIDENCE_ENTRIES[0]!, attended: 'ap000003', rows, onShow }} />);
-    // HEADFIT1: folded to its one line, which names how many and how the newest began; its parts are a press away.
+    // Folded to its one line, which names how many and how the newest began; its parts are a press away.
     expect(screen.getByRole('navigation', { name: 'Parts' })).toHaveTextContent('Part 3 of 3 · newest: asked by db');
     expect(screen.getByRole('navigation', { name: 'Parts' }).querySelectorAll('button')).toHaveLength(1);
     await userEvent.click(screen.getByRole('button', { name: 'Show the parts' }));
@@ -211,7 +211,7 @@ describe('the attended session', () => {
   });
 
   /**
-   * HEADFIT1: the parts open where the person left them while they move among the parts of one line of work (a press on a part
+   * The parts open where the person left them while they move among the parts of one line of work (a press on a part
    * shows another session, and the flow they are reading must not fold under it), and another line of work starts folded.
    */
   it('keeps the parts open across the parts of one line of work, and folds them for another line', async () => {
@@ -234,8 +234,8 @@ describe('the attended session', () => {
   });
 
   /**
-   * FLOWCHART1b (the flowchart design §2.3): Accept's plan, read once its ask is open, is where the parts would land: a dashed node in
-   * the parts' flow beside the press, drawn from the same plan and not before it is open. HEADFIT1: in the flow the person opened;
+   * Accept's plan, read once its ask is open, is where the parts would land: a dashed node in
+   * the parts' flow beside the press, drawn from the same plan and not before it is open. The flow is the one the person opened;
    * Accept's ask does not open it (a block opening under a press elsewhere would move the control just pressed).
    */
   it('draws the landing plan Accept read as a prospective node in the parts\' flow, once its ask is open', async () => {
@@ -266,9 +266,9 @@ describe('the attended session', () => {
   });
 
   /**
-   * One rule for where a parked session's note is shown, read by the column AND the dock (REV3). The
-   * dock hid the note of every parked session, while the head shows it only where it can be answered
-   * here — so another machine's parked note, on a wide window, was shown nowhere.
+   * One rule for where a parked session's note is shown, read by the column AND the dock. The
+   * head shows it only where it can be answered here, so the dock must not hide the note of every
+   * parked session, or another machine's parked note, on a wide window, is shown nowhere.
    */
   it('says the note is in the head only where the session can be answered here', () => {
     const parked = session({ state: 'awaiting-person', note: 'Two ways forward.' });

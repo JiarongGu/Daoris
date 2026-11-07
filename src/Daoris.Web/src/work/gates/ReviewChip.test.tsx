@@ -18,9 +18,9 @@ const SHOWN: ReviewShown = {
 };
 
 /**
- * REVIEWENV1d (D154 point 8, the review environment design §3.3): beside the browser's door, a chip says a set-up waits for the
+ * Beside the browser's door, a chip says a set-up waits for the
  * person's review, what it showed and whether Daoris still serves its tab; *Show it again* serves it again and brings the tab
- * forward. Never inside the browser, which an agent drives. The verdict presses are REVIEWENV1g's.
+ * forward. Never inside the browser, which an agent drives. The verdict presses are tested below.
  */
 describe('the review chip', () => {
   it('says nothing while no set-up waits', () => {
@@ -58,7 +58,7 @@ describe('the review chip', () => {
   });
 
   /**
-   * REVIEWENV1g (D154 point 8, design §3.3): the verdict on the strip beside the browser, never inside it. *Reviewed* names the
+   * The verdict on the strip beside the browser, never inside it. *Reviewed* names the
    * set-up the step's record holds; *Not yet…* opens the step's page, where the words are asked; with no whole set-up, no
    * verdict is offered.
    */

@@ -1,6 +1,6 @@
 import type { TFunction } from 'i18next';
 
-// What chose a route's workflow, in the page's words (FABRIC-PIPELINE1a, the pipeline design §1.3): the start node's wires and a run's
+// What chose a route's workflow, in the page's words: the start node's wires and a run's
 // view say it alike, from the level the driver named (`WorkflowLevels`), as the run says why (the workflow design §4.1).
 
 /** Whose choices a route reads: the repository where a repository's are read, and the workspace. */

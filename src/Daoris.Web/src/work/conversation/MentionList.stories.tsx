@@ -1,7 +1,7 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { MentionList } from './MentionList';
 
-// What `@` offers (CONV4d), in each state it can be in. The list floats above the box it belongs to,
+// What `@` offers, in each state it can be in. The list floats above the box it belongs to,
 // so the decorator stands a box beneath it and leaves room above.
 
 const meta: Meta<typeof MentionList> = {
@@ -32,7 +32,7 @@ export const SecondChosen: Story = { args: { active: 1 } };
 /** Asked for and not answered yet — said, never an empty panel. */
 export const Listing: Story = { args: { options: [], listing: true } };
 
-/** Nothing matches what was typed. Enter sends it as typed. */
+/** Nothing matches what is typed. Enter sends it as typed. */
 export const NoMatch: Story = { args: { options: [], query: 'zebra' } };
 
 /** A tree with nothing in it to name. */

@@ -8,7 +8,7 @@ import { DETAIL, GATES } from '../gates/opinionFixtures';
 import { STEP_SHOWN } from '../gates/reviewFixtures';
 import { WaitStrip } from './WaitStrip';
 
-// What waits on the person, at the foot (WAITFOOT1b, D168): a park's question with its go-ahead still open, the work to
+// What waits on the person, at the foot: a park's question with its go-ahead still open, the work to
 // accept with its ask open, a dispute and a review's look beside it, several folded, an intake's ask, and a discard the line
 // holds. Drawn above a stand-in for the session's box, at the main area's width, in both languages and both themes.
 
@@ -60,7 +60,7 @@ type Story = StoryObj<typeof WaitStrip>;
 
 /**
  * Parked asking where no box below takes its answer: its question is read at the top, and its go-ahead still open is answered here.
- * Where the box below answers the park, the box draws both with their presses (PARKVIEW1) and the strip draws neither.
+ * Where the box below answers the park, the box draws both with their presses and the strip draws neither.
  */
 export const ParkedWithAGoAhead: Story = {
   args: { session: PARKED, onResolve: nothing, goAheads: GO_AHEADS, onGoAhead: nothing },
@@ -72,7 +72,7 @@ export const ParkedWithAGoAheadChinese: Story = { ...ParkedWithAGoAhead, decorat
 /** The same in dark. */
 export const ParkedWithAGoAheadDark: Story = { ...ParkedWithAGoAhead, decorators: [dark] };
 
-/** PROPOSEHERE1b: a rule the session proposed after auto mode refused it, answered where the person reads (D74). */
+/** A rule the session proposed after auto mode refused it, answered where the person reads. */
 const RULE = {
   id: 'r1', state: 'waiting' as const, action: 'add' as const, scope: 'repository' as const, name: 'engine', list: 'allow' as const,
   rule: 'Bash(git branch -D:*)', why: 'Auto mode refused the local branch delete you asked for; this lets me run it.',
@@ -94,7 +94,7 @@ export const ARuleItProposedUnheardChinese: Story = {
 export const ParkedWithAGoAheadDarkChinese: Story = { ...ParkedWithAGoAhead, decorators: [chinese, dark] };
 
 /**
- * Each line leads to the event in the conversation that raised it, where the conversation found one (WAITFOOT1c): the question
+ * Each line leads to the event in the conversation that raised it, where the conversation finds one: the question
  * and go-ahead 2's call here; the work to accept at the end of its turn.
  */
 export const InTheConversation: Story = {
@@ -130,7 +130,7 @@ export const WorkToAccept: Story = { args: { session: session(), lands: LANDS, l
 export const WorkToAcceptDarkChinese: Story = { ...WorkToAccept, decorators: [chinese, dark] };
 
 /**
- * REVIEWFLOW1a (D168's table): the session's *Accept all* at the foot, in the place of the part's own *Accept…*, where its parts
+ * The session's *Accept all* at the foot, in the place of the part's own *Accept…*, where its parts
  * offer work to land; the same press the head draws, its ask open in one of them.
  */
 const SESSION_PRESS = { scope: 'entry' as const, offered: 2, open: false, onOpen: nothing, onLand: nothing };
@@ -159,12 +159,12 @@ export const SessionAcceptHeldElsewhere: Story = {
 };
 
 /**
- * WAITFOOT2a: the head's waits are on screen, so the strip stands aside and only the box is drawn here, each wait in the head
+ * The head's waits are on screen, so the strip stands aside and only the box is drawn here, each wait in the head
  * alone.
  */
 export const AsideWhileTheHeadIsOnScreen: Story = { args: { ...ParkedWithAGoAhead.args, aside: true } };
 
-/** WAITFOOT2a: on screen or not, the strip stays up while *Accept…* is asking in it. */
+/** On screen or not, the strip stays up while *Accept…* is asking in it. */
 export const AsideButAsking: Story = {
   args: { ...WorkToAccept.args, workAsk: { open: true, onOpen: nothing }, aside: true },
 };

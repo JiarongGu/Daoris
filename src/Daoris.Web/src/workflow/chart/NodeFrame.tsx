@@ -3,12 +3,12 @@ import { useTranslation } from 'react-i18next';
 import { cn } from '../../lib/cn';
 import type { NodeContext, NodeFoot } from '../../design/FlowCanvas';
 
-// What every node of the chart shares (FLOWCHART2a; the flowchart design §3.3, §3.7): one list item named by its title and state and
+// What every node of the chart shares: one list item named by its title and state and
 // described by every edge in and out, one Tab stop, a border that says current or not reached without a status hue, and the foot's
-// presses. The components differ in what they draw inside. In the editor (FLOWCHART2b) a press selects the node, the one selected wears an
+// presses. The components differ in what they draw inside. In the editor a press selects the node, the one selected wears an
 // outline, and in pick mode the nodes that can take the way wear a dashed one, each said in words to a reader; an outline takes no room.
 
-/** How a press selects (CANVAS1b): Ctrl toggles the node in or out of the selection, Shift adds it, where many may be chosen. */
+/** How a press selects: Ctrl toggles the node in or out of the selection, Shift adds it, where many may be chosen. */
 export type SelectHow = 'toggle' | 'add';
 
 /** The ids a node's words carry, for its name. */
@@ -26,7 +26,7 @@ export function NodeFrame({ context, shape = 'box', data, press, selected = fals
   /** The press on the node, its controls apart: a plain press, or one with Ctrl (`toggle`) or Shift (`add`) held. */
   press?: (how?: SelectHow) => void;
   selected?: boolean;
-  /** What the judgement refused here: an outline in declined's hue (its chip is the canvas's), and each refusal is said to a reader (FLOWCHART2c). */
+  /** What the judgement refused here: an outline in declined's hue (its chip is the canvas's), and each refusal is said to a reader. */
   refused?: readonly string[];
   children: (ids: FrameIds) => ReactNode;
 }) {
@@ -61,7 +61,7 @@ export function NodeFrame({ context, shape = 'box', data, press, selected = fals
       className={cn(
         'min-w-0 bg-raised',
         shape === 'pill' ? 'rounded-full px-3 py-1.5' : 'rounded-card px-3 py-2',
-        // Every state keeps the one-pixel border, so none moves a box (CANVAS1b, trap 8): the second pixel of a refusal or of the current
+        // Every state keeps the one-pixel border, so none moves a box: the second pixel of a refusal or of the current
         // step is an inset ring, which takes no room.
         refused.length > 0 ? 'border border-st-declined ring-1 ring-inset ring-st-declined'
           : node.current ? 'border border-ink-soft ring-1 ring-inset ring-ink-soft'

@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { hashKey, QueryClient, QueryObserver } from '@tanstack/react-query';
 
-// COWORKVIEW1a: who is at work, the shell's one numbered read (the cowork view design §4.1, rule 15).
+// Who is at work, the shell's one numbered read.
 
 const { invoke } = vi.hoisted(() => ({ invoke: vi.fn() }));
 vi.mock('@shenora/react', () => ({ getBridge: () => ({ isAvailable: true, invoke }) }));
@@ -144,7 +144,7 @@ describe('who is at work, a numbered read (COWORKVIEW1a)', () => {
   });
 });
 
-// COWORKVIEW1d: an ask's read is the same route keyed `{ ask }`, and its answer a branch of its own.
+// An ask's read is the same route keyed `{ ask }`, and its answer a branch of its own.
 describe('who is at work on an ask (COWORKVIEW1d)', () => {
   afterEach(() => invoke.mockReset());
 

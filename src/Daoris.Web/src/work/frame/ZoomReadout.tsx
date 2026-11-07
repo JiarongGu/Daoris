@@ -7,7 +7,7 @@ import { cn } from '../../lib/cn';
 export const READOUT_LASTS = 1500;
 
 /**
- * The zoom's readout (ZOOM1, the UI/UX design §3.11): the level said as it changes, over the top of the content just under
+ * The zoom's readout: the level said as it changes, over the top of the content just under
  * the title strip, as a browser's zoom bubble says it, and gone after a moment; the status bar keeps saying it while it is
  * not 100%. Said at 100% too, so going back is heard.
  *

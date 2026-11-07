@@ -8,8 +8,8 @@ import { GATES_CHANGED, NO_VERIFICATION, ROUTED, START, WORKSPACE } from './fixt
 import { WorkflowStartNode } from './WorkflowStartNode';
 import { WorkflowTab } from './WorkflowTab';
 
-// FABRIC-PIPELINE1a (D192 point 2, the pipeline design §1.3): a Workflow tab draws its start node first, each route (the default,
-// each kind by its label and paths, the work that lands) wired to the workflow it names and saying what chose it, laid out by D186's
+// A Workflow tab draws its start node first, each route (the default,
+// each kind by its label and paths, the work that lands) wired to the workflow it names and saying what chose it, laid out by the
 // Flow; a route naming nothing says what follows then. The landed route says where its gates stand against the line's tip, and the
 // person's *Accept the gates* goes out where they wait to be accepted. A molecule: every state is reached by its props.
 
@@ -48,7 +48,7 @@ describe("a Workflow tab's start node", () => {
     expect(within(landed).queryByRole('button', { name: 'Accept the gates' })).not.toBeInTheDocument();
   });
 
-  // FABRIC-PIPELINE1d part 5: *Verify…*, daoris gate verify's twin, asks for a branch or a commit once its gates are accepted.
+  // *Verify…*, daoris gate verify's twin, asks for a branch or a commit once its gates are accepted.
   it('offers Verify… once the gates are accepted, and sends a branch, or a commit by its hexadecimal name, for a verification', async () => {
     const onVerify = vi.fn((_ask: unknown, answered: { done: () => void }) => answered.done());
     render(<WorkflowTab page="repository" name="engine" current={ROUTED} onVerify={onVerify} />);
@@ -91,7 +91,7 @@ describe("a Workflow tab's start node", () => {
     expect(onAcceptGates).toHaveBeenCalledOnce();
   });
 
-  // AGENTSPLACE1h: a place's Gates holds the declaration and its acceptance, so its start node says where the route stands and draws neither.
+  // A place's Gates holds the declaration and its acceptance, so its start node says where the route stands and draws neither.
   it("draws neither the declaration nor Accept the gates where the page's Gates are apart, and keeps what the route says", () => {
     render(<WorkflowStartNode start={GATES_CHANGED} page="repository" scope={{ repository: 'engine', workspace: 'aurora' }} onAccept={vi.fn()} gatesApart />);
 

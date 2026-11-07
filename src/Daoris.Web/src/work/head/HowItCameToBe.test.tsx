@@ -9,7 +9,7 @@ import {
   answer, MISSING_CHAIN, NO_ASK_CHAIN, NOTHING, OLD_CHAIN, QUEST, QUEST_CHAIN, SESSION_CHAIN, UNREAD_ANSWER, WAITING_CHAIN,
 } from './traceFixtures';
 
-// Props-only, like every molecule here (TRACE1b, D143): how a session or a quest came to be, worded from the chain's codes in
+// Props-only, like every molecule here: how a session or a quest came to be, worded from the chain's codes in
 // the reader's language, someone's words as written, every state reached by passing an answer.
 
 const section = () => screen.getByRole('region', { name: 'How this came to be' });
@@ -51,7 +51,7 @@ describe('how this came to be', () => {
     expect(ask).toHaveTextContent('Its intake: session i1 · completed');
   });
 
-  /** SESSONE2c (D167): the person's words written on the ask's channel are a kind of their own, said so in both languages. */
+  /** The person's words written on the ask's channel are a kind of their own, said so in both languages. */
   it('says the person’s words on the ask’s channel as written there, in either language', async () => {
     const withChannel = {
       ...QUEST_CHAIN,
@@ -67,7 +67,7 @@ describe('how this came to be', () => {
     expect(screen.getByText('use the v3 one').closest('li')).toHaveTextContent('在需求的频道上写道');
   });
 
-  /** ACCTNAME1 (D152 §4.2): a session's account by the person's name, where the page hands the roster's namer. */
+  /** A session's account by the person's name, where the page hands the roster's namer. */
   it('names a session’s account by the person’s name where a namer is handed', () => {
     const nameOf = (owner: string, profile?: string | null) => (owner === 'claude-code' && profile === 'personal' ? 'home' : profile ?? '');
     render(<HowItCameToBe kind="quest" id="q1" open onToggle={() => {}} answer={answer(QUEST_CHAIN)} nameOf={nameOf} />);
@@ -96,14 +96,14 @@ describe('how this came to be', () => {
     expect(steps.map((item) => item.textContent?.slice(0, 10))).toEqual(['Session s1', 'Session s2']);
     const [first, second] = steps as [HTMLElement, HTMLElement];
     expect(first).toHaveTextContent('by an account\'s limit');
-    // LIMITRESUME1a: a limit's end is worded limited, its note kept, never failed.
+    // A limit's end is worded limited, its note kept, never failed.
     expect(within(first).getByText('limited')).toBeInTheDocument();
     expect(within(first).queryByText('failed')).toBeNull();
     expect(first).toHaveTextContent('agent claude-code · version 2.1.3 · account personal');
     expect(first).toHaveTextContent('The first session on its quest.');
     expect(second).toHaveTextContent('tree dashboards-q1 · grew from abc1234');
     expect(second).toHaveTextContent(`After session s1, which ended failed ${at('2026-10-03T09:15:00Z')}, in the same tree.`);
-    // The driver's own start note is its English, marked; what it was handed is the account's fold.
+    // The driver's own start note is its English, marked; what it is handed is the account's fold.
     expect(second).toHaveTextContent('shown as recorded');
     expect(second).toHaveTextContent('carried on from session s1 on work');
     expect(second).toHaveTextContent('Handed an instruction of 6,786 characters');
@@ -121,7 +121,7 @@ describe('how this came to be', () => {
       'accepted automatically when its quest was done · under the workspace\'s rule · naming the plugin github · accepting automatically');
   });
 
-  /** ACCESSWORDS1b (D184's AUTONOMY1c2 note): a landing the access setup accepted says whose setup it was, in place of the rule's switch. */
+  /** A landing the access setup accepted says whose setup it is, in place of the rule's switch. */
   it('says a landing the access setup accepted, with whose setup it was, in either language, and a level it does not know as recorded', async () => {
     const under = (access: string, acceptedBy = 'auto') => {
       const chain = structuredClone(SESSION_CHAIN);

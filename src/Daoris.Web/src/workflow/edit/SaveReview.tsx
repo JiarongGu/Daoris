@@ -4,7 +4,7 @@ import { Button, CheckField, Inline, Prose } from '../../design/ui';
 import { ChangePlan, type PlanState } from '../place/ChangePlan';
 import type { WorkflowSaveAnswer, WorkflowScopeRow, WorkflowUseAnswer } from './answers';
 
-// The save and the choice (WORKFLOWEDIT1b; SETUPUX1s, the Setup design's §2.3): a new workflow named, its id made from the name and shown
+// The save and the choice: a new workflow named, its id made from the name and shown
 // only under *Details* (no id is asked for), or a version appended against the one read. *Review and save* opens once this draft's
 // judgement holds and says what the save changes and every place an append reaches, which the person lets follow it by one consent bound
 // to exactly those places; then the save. *Use here* is a press of its own, offered only on a draft that is the version it is saved as,
@@ -39,13 +39,13 @@ export function SaveReview({
   id: string;
   onName: (name: string) => void;
   empty: boolean;
-  /** This very draft was judged, and holds. */
+  /** This very draft is judged, and holds. */
   holds: boolean;
   /** The review, open; null while it is not. */
   review: ReviewFacts | null;
   onReview: (open: boolean) => void;
   scopes: WorkflowScopeRow[];
-  /** Consent was given to exactly these places. */
+  /** Consent is given to exactly these places. */
   consented: boolean;
   onConsent: (consented: boolean) => void;
   saving: boolean;

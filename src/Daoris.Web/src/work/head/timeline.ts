@@ -1,15 +1,15 @@
 import type { NotePart, Quest, Session, SessionState } from '../../data/api';
 
-// The observed audit layer (design §3), derived from the record and nothing else.
+// The observed audit layer, derived from the record and nothing else.
 
 /**
- * One thing that was observed about a session.
+ * One thing observed about a session.
  *
  * @remarks
- * **Observed, never inferred, and never parsed out of the stream.** Step-parsing was rejected by
- * name (D52): the only way to get structured progress from a harness is to read another program's
+ * **Observed, never inferred, and never parsed out of the stream.** Step-parsing is rejected:
+ * the only way to get structured progress from a harness is to read another program's
  * stdout, which turns the adapter seam into a screen-scraper that breaks the first time a harness
- * rewords a line (D23/D24). What Daoris actually has is process lifetime, the quest's transitions
+ * rewords a line. What Daoris actually has is process lifetime, the quest's transitions
  * and what landed in git — which is thin, true, and the whole point.
  *
  * **The record carries no event log**, so this is what the record's own fields can honestly say: it

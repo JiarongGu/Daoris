@@ -1,7 +1,7 @@
 import i18n from '../../locales/i18n';
 import { type CommandDoors, type CommandEntry, type CommandState, commandTable, type Translate } from '../../menus/commands';
 
-// The world the menu bar's stories and the palette's stand in (UX7a): the install's two workspaces, an agent, the
+// The world the menu bar's stories and the palette's stand in: the install's two workspaces, an agent, the
 // domains a shell's Settings has, each record group as its page would offer it. Every press does nothing.
 
 /** A shell on Quests, scoped to every workspace, nothing attended and no quest open. */
@@ -43,7 +43,7 @@ export const ATTENDED: Partial<CommandState> = {
 /** An open quest on Quests: *Take*, *Mark done* and *Decline…*, as its header offers them. */
 export const OPEN_QUEST: Partial<CommandState> = { quest: { acts: ['take', 'done', 'decline', 'copy'] }, record: true };
 
-/** A browser: no machine, no session, no window, no terminal (D47 §4). */
+/** A browser: no machine, no session, no window, no terminal. */
 export const IN_A_BROWSER: Partial<CommandState> = { attached: false, agents: [], domains: MENU_STATE.domains.slice(0, 3) };
 
 const nothing = new Proxy({}, { get: () => () => {} }) as CommandDoors;

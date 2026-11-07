@@ -384,7 +384,7 @@ public sealed class ChatRunner : IDisposable, IChatPressing, IChatSendBacks, IEx
     /// <summary><see cref="ClosedNote"/> with its code.</summary>
     public static Noted ClosedNoted => Noted.Of(ChatNoteCodes.ChatClosed, ClosedNote);
 
-    /// <inheritdoc cref="ChatStarts.StartAsync(string, string, DriverConfig, Func{string, string, Task}?, string?, bool?, CancellationToken, string?, ContinuedFrom?, IReadOnlyList{ActorEffective}?, EarlierMaker?, HarnessSelection?, bool, bool, MoveWords?)"/>
+    /// <inheritdoc cref="ChatStarts.StartAsync(string, string, DriverConfig, Func{string, string, Task}?, string?, bool?, CancellationToken, string?, ContinuedFrom?, IReadOnlyList{ActorEffective}?, EarlierMaker?, HarnessSelection?, bool, bool, MoveWords?, ChatLimitCarry?)"/>
     public Task<ChatStart> StartAsync(
         string repository, string adapter, DriverConfig config,
         Func<string, string, Task>? onEnded = null, string? profile = null, bool? ownTree = null,
@@ -445,8 +445,8 @@ public sealed class ChatRunner : IDisposable, IChatPressing, IChatSendBacks, IEx
     internal Task<ChatStart> RunAsync(
         string actor, string sessionId, string message, ChatAgent agent, HarnessSelection selection, DriverConfig config,
         ChatPlace place, Func<string, string, Task>? onEnded, CancellationToken ct, GoingOn? goOn = null, ActorEffective? chosen = null,
-        ChatPending? pending = null) =>
-        _run.RunAsync(actor, sessionId, message, agent, selection, config, place, onEnded, ct, goOn, chosen, pending);
+        ChatPending? pending = null, bool working = false) =>
+        _run.RunAsync(actor, sessionId, message, agent, selection, config, place, onEnded, ct, goOn, chosen, pending, working);
 
     /// <summary>A conversation's start refused at its open moved on: the refused record and the replacement that took its words (<see cref="ChatReplacement.Replaced"/>).</summary>
     public event Action<string, string>? Replaced
@@ -565,8 +565,15 @@ public sealed class ChatRunner : IDisposable, IChatPressing, IChatSendBacks, IEx
     // implement it where they stand; the internal ones, whose places are internal records, answer it here.
     Task<ChatStart> IChatRunning.RunAsync(
         string actor, string sessionId, string message, ChatAgent agent, HarnessSelection selection, DriverConfig config,
-        ChatPlace place, Func<string, string, Task>? onEnded, CancellationToken ct, GoingOn? goOn, ActorEffective? chosen, ChatPending? pending) =>
-        RunAsync(actor, sessionId, message, agent, selection, config, place, onEnded, ct, goOn, chosen, pending);
+        ChatPlace place, Func<string, string, Task>? onEnded, CancellationToken ct, GoingOn? goOn, ActorEffective? chosen, ChatPending? pending,
+        bool working) =>
+        RunAsync(actor, sessionId, message, agent, selection, config, place, onEnded, ct, goOn, chosen, pending, working);
+
+    Task<ChatStart> IChatRunning.StartAsync(
+        string repository, string adapter, DriverConfig config, Func<string, string, Task>? onEnded, string? profile, bool? ownTree,
+        CancellationToken ct, string? tree, ContinuedFrom? from, IReadOnlyList<ActorEffective>? order, EarlierMaker? leftBy,
+        HarnessSelection? settled, bool picked, bool ownFirst, MoveWords? moves, ChatLimitCarry? carries) =>
+        _starts.StartAsync(repository, adapter, config, onEnded, profile, ownTree, ct, tree, from, order, leftBy, settled, picked, ownFirst, moves, carries);
 
     ChatPlace IChatRunning.RepositoryPlace(
         DriverConfig config, IReadOnlyList<RepoView> registry, RepoView known, string repository, string workTree, IReadOnlyList<string>? continued,

@@ -7,8 +7,8 @@ import { askHeld } from '../state/held';
 import type { GitDeletedRef } from '../../projects/git/DeletedRefs';
 import type { GitBlame,GitCommitDetail, GitCompare, GitFileHistory, GitGraphPage } from './gitLog';
 
-// Git's reads (GIT1d-b, D147 §2, D150): the screen's door to `daoris git`, the same reads over the same checkouts, for
-// Repositories' Branches and History tabs. Shell-only: a checkout is this machine's, and no machine path leaves it (D47 §4).
+// Git's reads: the screen's door to `daoris git`, the same reads over the same checkouts, for
+// Repositories' Branches and History tabs. Shell-only: a checkout is this machine's, and no machine path leaves it.
 // Each read answers {value, refusal, problem, commands, remembered}: a refusal is a code the page words (`errors.{code}`, as
 // `sentence` does) and `commands` are the git a person types for the same answer.
 
@@ -46,7 +46,7 @@ export type GitSessionBranch = {
 };
 
 /**
- * What a plugin last answered about a landed branch's pull request (PLUGHOOK1c, D148 point 6): the driver's `PullRequestState`
+ * What a plugin last answered about a landed branch's pull request: the driver's `PullRequestState`
  * as the landing record keeps it, read and never asked.
  */
 export type GitPullRequestState = {
@@ -58,7 +58,7 @@ export type GitPullRequestState = {
   sourceCommit: string | null;
   target: string | null;
   how: string | null;
-  /** When it completed or was abandoned. */
+  /** When it completed or ended abandoned. */
   at: string | null;
   /** The plugin's own sentence: content. */
   message: string | null;
@@ -94,7 +94,7 @@ export type GitBranch = {
   subject: string;
   ahead: number | null;
   behind: number | null;
-  /** The working tree's folder name, never its path (D47 §4); null where none. */
+  /** The working tree's folder name, never its path; null where none. */
   tree: string | null;
   session: GitSessionBranch | null;
   landed: GitLandedBranch | null;
@@ -134,7 +134,7 @@ export type {
   GitLogCommit,
 } from './gitLog';
 
-/** The scope a branch list is read for (D112): the held repositories by default, every one, or one by name. */
+/** The scope a branch list is read for: the held repositories by default, every one, or one by name. */
 export type GitBranchScope = { all?: boolean; repository?: string; workspace?: string; enabled?: boolean };
 
 /** The branches of every repository in a scope, with the repositories apart from it. */
@@ -153,7 +153,7 @@ export const useGitBranches = (scope: GitBranchScope = {}) => {
 };
 
 /**
- * A repository's git remotes with what serves each (GITAUTH1e, the git-auth design §7.3), or every repository of a workspace: the list's
+ * A repository's git remotes with what serves each, or every repository of a workspace: the list's
  * `remotes` beside its branches. Keyed under the tools' root, so a change of identity or choice (`GIT_IDENTITY`, `GIT_USE`) asks again.
  */
 export const useGitRemotes = ({ repository, workspace, enabled = true }: { repository?: string; workspace?: string; enabled?: boolean }) => {
@@ -177,7 +177,7 @@ export type GitRemoteRow = import('../../settings/git/GitRemotes').GitRemoteShow
 export type CheckoutBranch = { branch: string | null };
 
 /**
- * The branch a repository's checkout stands on here (NEW1e-a), for the composer's tree chip. Shell-only; asks nothing without a
+ * The branch a repository's checkout stands on here, for the composer's tree chip. Shell-only; asks nothing without a
  * repository. Always stale, so a window focus asks again and a branch switched elsewhere shows; no polling. A repository with no
  * checkout here is the driver's refusal, which the query holds as its error.
  */
@@ -196,7 +196,7 @@ export const useCheckoutBranch = ({ repository, workspace }: { repository: strin
 };
 
 /**
- * The person's *Try again* on a remote held because it could not authenticate (GITAUTH1a, D198; the git auth design §5.2): the holds of
+ * The person's *Try again* on a remote held because it could not authenticate: the holds of
  * these repositories lifted, in the row's workspace where it has one, so the next act that skipped them connects once. It answers how
  * many it lifted; the attention slice wakes itself, so the row goes as .NET judges it again, and this hook asks nothing again.
  */
@@ -206,11 +206,11 @@ export const useGitTryAgain = () =>
       call('GIT_TRY_AGAIN', { repositories: [...repositories], ...(workspace ? { workspace } : {}) }) as Promise<{ lifted: number }>,
   });
 
-/** What `GIT_REF_CREATE`, `GIT_REF_DELETE`, `GIT_REF_RENAME`, `GIT_REF_FINISH` and `GIT_REF_UNDO` answer (GITAPP2c to e): the journal's act and its outcome, or a refusal as data with the driver's sentence. */
+/** What `GIT_REF_CREATE`, `GIT_REF_DELETE`, `GIT_REF_RENAME`, `GIT_REF_FINISH` and `GIT_REF_UNDO` answer: the journal's act and its outcome, or a refusal as data with the driver's sentence. */
 export type GitRefAnswer = { act?: string | null; outcome?: string | null; refused: boolean; said: string; code?: string | null };
 
 /**
- * The person's *New branch* and *New tag* on a repository, and the undo of the ref one made (GITAPP2c, D204): the driver runs each
+ * The person's *New branch* and *New tag* on a repository, and the undo of the ref one made: the driver runs each
  * as an act of its journal and answers it as data. The Git reads sit under no state scope, so a made or undone ref asks the branch
  * list and the graph again here.
  */
@@ -226,12 +226,12 @@ export const useGitRefActs = (repository: string, workspace: string) => {
     mutationFn: (act: string) => call('GIT_REF_UNDO', { ...base, act }) as Promise<GitRefAnswer>,
     onSuccess: refresh,
   });
-  // GITAPP2d: a branch deleted at the commit the list showed; the driver refuses it where it stands elsewhere.
+  // A branch deleted at the commit the list showed; the driver refuses it where it stands elsewhere.
   const remove = useMutation({
     mutationFn: (ask: { kind: 'branch' | 'tag'; name: string; at: string }) => call('GIT_REF_DELETE', { ...base, ...ask }) as Promise<GitRefAnswer>,
     onSuccess: refresh,
   });
-  // GITAPP2e: a branch renamed at the commit the list showed, and a rename that stopped before its settings moved finished.
+  // A branch renamed at the commit the list showed, and a rename that stopped before its settings moved finished.
   const rename = useMutation({
     mutationFn: (ask: { kind: 'branch' | 'tag'; name: string; to: string; at: string }) => call('GIT_REF_RENAME', { ...base, ...ask }) as Promise<GitRefAnswer>,
     onSuccess: refresh,
@@ -240,7 +240,7 @@ export const useGitRefActs = (repository: string, workspace: string) => {
     mutationFn: (act: string) => call('GIT_REF_FINISH', { ...base, act }) as Promise<GitRefAnswer>,
     onSuccess: refresh,
   });
-  // GITAPP2f: origin's branches fetched into the tracking refs alone; the answer's `notes` name what was made, moved and removed.
+  // Origin's branches fetched into the tracking refs alone; the answer's `notes` name what it made, moved and removed.
   const fetchOrigin = useMutation({
     mutationFn: () => call('GIT_FETCH', base) as Promise<GitFetchAnswer>,
     onSuccess: refresh,
@@ -251,18 +251,18 @@ export const useGitRefActs = (repository: string, workspace: string) => {
   };
 };
 
-/** What `GIT_FETCH` answers (GITAPP2f): a ref act's answer, and in `notes` the refs the fetch made, moved and removed. */
+/** What `GIT_FETCH` answers: a ref act's answer, and in `notes` the refs the fetch made, moved and removed. */
 export type GitFetchAnswer = GitRefAnswer & { notes?: string | null };
 
 /**
- * Whether *Fetch origin* is offered on a repository's Branches (GITAPP2f, D204, D198): the driver's git doors installed, an origin, none of its
+ * Whether *Fetch origin* is offered on a repository's Branches: the driver's git doors installed, an origin, none of its
  * settings that run another program. `reason` says why not in a word (`doors`, `no-origin`, `widened`, `unread`); `address` is origin's as the
  * driver redacts it; `command` is what a person types.
  */
 export type GitFetchPlan = { offered: boolean; reason: string | null; why: string | null; address: string | null; command: string };
 
 
-/** A history edit asked of a branch (GITAPP2m): the commit or `A..B` range to pick or revert onto it, or the commit to rebase it onto. */
+/** A history edit asked of a branch: the commit or `A..B` range to pick or revert onto it, or the commit to rebase it onto. */
 export type GitHistoryAsk = { edit: 'pick' | 'revert' | 'rebase'; branch: string; target: string };
 
 /** The ids a shown plan pinned, which the edit's press carries back. */
@@ -282,7 +282,7 @@ export type GitHistoryAnswer = {
 };
 
 /**
- * A branch's *Edit history* (GITAPP2m, D204): the plan asked first (`plan: true`, which changes nothing, through a mutation since the
+ * A branch's *Edit history*: the plan asked first (`plan: true`, which changes nothing, through a mutation since the
  * route declares the press's change), then the edit carrying the ids the plan pinned, which the driver runs as an act of its journal.
  * The Git reads sit under no state scope, so an edit asks the branch list and the graph again here.
  */
@@ -366,15 +366,15 @@ export const useGitBlame = (repository: string | null, commit: string | null, pa
   return { available: isAvailable, query };
 };
 
-/** One file as a diff names it (GITAPP2b): `A` · `M` · `D` · `T`, with the mode and blob id of each side (all zeros where a side holds none). */
+/** One file as a diff names it: `A` · `M` · `D` · `T`, with the mode and blob id of each side (all zeros where a side holds none). */
 export type ChangeEntry = { path: string; status: string; oldMode: string; newMode: string; oldBlob: string; newBlob: string };
 
 /** A file the index holds in conflict: status's two letters, and the mode and blob id of stages 1, 2 and 3. */
 export type UnmergedEntry = { path: string; code: string; modes: string[]; blobs: string[] };
 
 /**
- * What a checkout's changes are (GITAPP2b), three observations made at `readAt`: HEAD → index, index → worktree (the index not
- * refreshed), and status's untracked and unmerged entries. A staged addition whose file was then removed is in both lists.
+ * What a checkout's changes are, three observations made at `readAt`: HEAD → index, index → worktree (the index not
+ * refreshed), and status's untracked and unmerged entries. A staged addition whose file is then removed is in both lists.
  */
 export type CheckoutChanges = {
   head: string | null;
@@ -385,7 +385,7 @@ export type CheckoutChanges = {
   readAt: string;
 };
 
-// Told by event (NOBLOCK1): a pending answer is none yet, which the query holds as null and the tab says as reading.
+// Told by event: a pending answer is none yet, which the query holds as null and the tab says as reading.
 const readChanges = (raw: unknown): GitAnswer<CheckoutChanges> | null => {
   const answer = raw as Partial<GitAnswer<CheckoutChanges>> | null;
   if (!answer || typeof answer !== 'object' || !('value' in answer)) return null;
@@ -402,7 +402,7 @@ const readChanges = (raw: unknown): GitAnswer<CheckoutChanges> | null => {
 };
 
 /**
- * A checkout's changes, read again at every open, window focus and *Refresh* (GITAPP2b, the git-writes design §1): never fresh
+ * A checkout's changes, read again at every open, window focus and *Refresh*: never fresh
  * enough to keep, so a mount asks again whatever it held, and what the shell holds until its fresh read lands carries its own `readAt`.
  * `askedAt` is stamped as each ask goes out, before its answer can be read, so a read older than it is the held one and never the
  * fresh read itself.
@@ -433,7 +433,7 @@ export type GitHunkLine = { kind: string; text: string };
 export type GitHunk = { id: string; header: string; lines: GitHunkLine[] };
 
 /**
- * One file's hunks on a side (GITAPP2h): `unstaged` is the index → worktree, `staged` HEAD → index. `head`, `index` (`mode blob`, or
+ * One file's hunks on a side: `unstaged` is the index → worktree, `staged` HEAD → index. `head`, `index` (`mode blob`, or
  * empty) and `source` are what a press must find unchanged; the page sends them back unread.
  */
 export type GitFileHunks = { path: string; side: 'unstaged' | 'staged'; head: string | null; index: string; source: string; binary: boolean; hunks: GitHunk[] };
@@ -467,11 +467,11 @@ export const useGitHunks = (repository: string | null, workspace: string, path: 
   });
 };
 
-/** One conflict of a file in conflict (GITAPP2j): what ours and theirs hold there, and a line or two around it; `id` names it for a press. */
+/** One conflict of a file in conflict: what ours and theirs hold there, and a line or two around it; `id` names it for a press. */
 export type GitConflictHunk = { id: string; before: string[]; ours: string[]; theirs: string[]; after: string[] };
 
 /**
- * A file the index holds in conflict, read by its stages (GITAPP2j): `base`, `ours` and `theirs` are `mode blob` (empty where a stage is
+ * A file the index holds in conflict, read by its stages: `base`, `ours` and `theirs` are `mode blob` (empty where a stage is
  * missing) and `worktree` the file's id, which a press sends back unread. `why` is set, with no hunks, where it cannot be taken by hunk.
  */
 export type GitFileConflict = {
@@ -507,7 +507,7 @@ export const useGitConflict = (repository: string | null, workspace: string, pat
   });
 };
 
-/** A resolve or a mark as pressed: the file, the stages and worktree id it was read against, and (for a resolve) a take for every conflict. */
+/** A resolve or a mark as pressed: the file, the stages and worktree id it read against, and (for a resolve) a take for every conflict. */
 export type GitResolvePress = {
   verb: 'resolve' | 'mark';
   path: string;
@@ -518,7 +518,7 @@ export type GitResolvePress = {
 /** What a hunk or a file pressed: whole file with no pick, else the hunks (and lines of them, by index) chosen. */
 export type GitActPick = { id: string; lines?: number[] };
 
-/** What the driver answered an act (GITAPP2h): done, or refused in its sentence; `act` is what Undo takes. */
+/** What the driver answered an act: done, or refused in its sentence; `act` is what Undo takes. */
 export type GitActAnswer = { done: boolean; refused: boolean; act: string | null; outcome: string | null; said: string | null; notes?: string | null };
 
 export type GitActPress = {
@@ -540,7 +540,7 @@ const readAct = (raw: unknown): GitActAnswer => {
 };
 
 /**
- * What a commit or an amend would rest on (GITAPP2i): the tip and the index as a tree, which a press sends back, and what the page says
+ * What a commit or an amend would rest on: the tip and the index as a tree, which a press sends back, and what the page says
  * beside the box: the hooks the git runs, never skipped, and who commits. `tree` is null, with `why`, where a file in conflict stands in the index.
  */
 export type GitCommitPlan = {
@@ -589,7 +589,7 @@ export const useGitCommitPlan = (repository: string | null, workspace: string, v
 /** A commit or an amend as pressed: the message, and the tip and tree of the plan the page showed. */
 export type GitCommitPress = { verb: 'commit' | 'amend'; message: string; head: string | null; tree: string };
 
-/** Commit and amend (GITAPP2i, the git-writes design §8): one act at a time, refusals and a hook's refusal as data in the answer. */
+/** Commit and amend: one act at a time, refusals and a hook's refusal as data in the answer. */
 export const useGitCommitAct = (repository: string | null, workspace: string) =>
   useMutation({
     mutationFn: async (press: GitCommitPress): Promise<GitActAnswer> =>
@@ -599,7 +599,7 @@ export const useGitCommitAct = (repository: string | null, workspace: string) =>
   });
 
 /**
- * What a switch to a branch would rest on (GITAPP2k): where HEAD is, whether tracked files are changed, the folder of another tree that has the
+ * What a switch to a branch would rest on: where HEAD is, whether tracked files are changed, the folder of another tree that has the
  * branch out and, in the driver's sentence, why it would be refused. A press sends back the branch HEAD named and its commit.
  */
 export type GitSwitchPlan = {
@@ -613,7 +613,7 @@ export type GitSwitchPlan = {
   hooks: string[];
 };
 
-/** What a stash Save would rest on (GITAPP2k): the changes, the tip of `refs/stash`, and how many other trees share that stash. */
+/** What a stash Save would rest on: the changes, the tip of `refs/stash`, and how many other trees share that stash. */
 export type GitStashPlan = {
   head: string | null;
   branch: string | null;
@@ -624,7 +624,7 @@ export type GitStashPlan = {
   why: string | null;
   hooks: string[];
   identity: string | null;
-  /** The shared stash newest first, each by its commit id (GITAPP2l); `collides` counts its paths already standing untracked here. */
+  /** The shared stash newest first, each by its commit id; `collides` counts its paths already standing untracked here. */
   entries: { id: string; message: string; untracked: boolean; collides: number; mine: boolean }[];
   /** Why no stash could be applied now, in the driver's sentence; null where one could. */
   applyWhy: string | null;
@@ -707,7 +707,7 @@ const readFetchPlan = readPlanOf<GitFetchPlan>((value) => ({
   offered: value.offered === true, reason: value.reason ?? null, why: value.why ?? null, address: value.address ?? null, command: value.command ?? '',
 }));
 
-/** The fetch's plan, read when the Branches tab opens and again after a fetch (GITAPP2f). */
+/** The fetch's plan, read when the Branches tab opens and again after a fetch. */
 export const useGitFetchPlan = (repository: string | null, workspace: string) => {
   const { isAvailable } = useShenora();
   const client = useQueryClient();
@@ -724,7 +724,7 @@ export const useGitFetchPlan = (repository: string | null, workspace: string) =>
 /** A switch as pressed: the branch, and the branch and commit HEAD stood on in the plan the page showed. */
 export type GitSwitchPress = { branch: string; from: string | null; head: string | null };
 
-/** *Switch* (GITAPP2k, the git-writes design §8): never forced; a refusal is data in the answer. Switching back is the same press on the branch it left. */
+/** *Switch*: never forced; a refusal is data in the answer. Switching back is the same press on the branch it left. */
 export const useGitSwitchAct = (repository: string | null, workspace: string) =>
   useMutation({
     mutationFn: async (press: GitSwitchPress): Promise<GitActAnswer> =>
@@ -734,7 +734,7 @@ export const useGitSwitchAct = (repository: string | null, workspace: string) =>
 /** A stash Save as pressed: untracked files too or not, an optional message, and the tip and stash the plan showed. */
 export type GitStashPress = { untracked: boolean; message: string; head: string | null; stash: string | null };
 
-/** *Save to the stash* (GITAPP2k): tracked files only unless `untracked`; refused where the shared stash moved since the plan. */
+/** *Save to the stash*: tracked files only unless `untracked`; refused where the shared stash moved since the plan. */
 export const useGitStashAct = (repository: string | null, workspace: string) =>
   useMutation({
     mutationFn: async (press: GitStashPress): Promise<GitActAnswer> =>
@@ -746,7 +746,7 @@ export const useGitStashAct = (repository: string | null, workspace: string) =>
 /** A stash Apply as pressed: the stash's commit id (never its place on the list) and the commit HEAD stood on in the plan the page showed. */
 export type GitStashApplyPress = { id: string; head: string | null };
 
-/** *Apply a stash* (GITAPP2l): by commit id, never `pop`; the stash is kept and a conflict stays in the index for Resolve. */
+/** *Apply a stash*: by commit id, never `pop`; the stash is kept and a conflict stays in the index for Resolve. */
 export const useGitStashApplyAct = (repository: string | null, workspace: string) =>
   useMutation({
     mutationFn: async (press: GitStashApplyPress): Promise<GitActAnswer> =>
@@ -761,7 +761,7 @@ export const useGitStashDropAct = (repository: string | null, workspace: string)
   });
 
 /**
- * Stage and unstage by file, hunk or line, and Undo (GITAPP2h, the git-writes design §8). One act at a time: the driver's lock refuses a
+ * Stage and unstage by file, hunk or line, and Undo. One act at a time: the driver's lock refuses a
  * second, and says so. A refusal is data in the answer, never an error; the state hub reads the Changes tab again.
  */
 export const useGitActs = (repository: string | null, workspace: string) => {
@@ -786,7 +786,7 @@ export const useGitActs = (repository: string | null, workspace: string) => {
     },
   });
   const undo = useMutation({ mutationFn: async (act: string) => readAct(await call('GIT_UNDO', { ...scope, act })) });
-  // GITAPP2j: Resolve and Mark resolved of a file in conflict. A mark reads the file's stages and id when it is pressed, as the person marks it
+  // Resolve and Mark resolved of a file in conflict. A mark reads the file's stages and id when it is pressed, as the person marks it
   // once it stands as they want it; a resolve sends the faces its conflicts were read against.
   const resolve = useMutation({
     mutationFn: async (act: GitResolvePress): Promise<GitActAnswer> => {

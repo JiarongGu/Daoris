@@ -5,8 +5,8 @@ import * as Tooltip from '@radix-ui/react-tooltip';
 import '../../locales/i18n';
 import { ViewsMenu, viewEntries } from './ViewsMenu';
 
-// DOCK1b: the button at the end of a region's tab row. Chrome's tab list, so a tab drawn as its icon
-// (TABS1) is never the only way to it, and VS Code's *Move to*, for the tab that is shown.
+// The button at the end of a region's tab row. Chrome's tab list, so a tab drawn as its icon
+// is never the only way to it, and VS Code's *Move to*, for the tab that is shown.
 
 const t = (key: string) => ({
   'work.review.timelineTab': 'Timeline', 'work.review.tab': 'Review', 'help.title': 'Ask Daoris', 'work.views.console': 'Console',
@@ -36,7 +36,7 @@ afterEach(cleanup);
 
 describe('the views menu', () => {
   /**
-   * UXFIX1b: the shown view is one choice among the region's, so its tick is said as well as drawn: a radio row each,
+   * The shown view is one choice among the region's, so its tick is said as well as drawn: a radio row each,
    * in one group named for the region, the shown one `aria-checked`. As a plain item with a drawn tick, a screen reader
    * heard no view as the shown one.
    */

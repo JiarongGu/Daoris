@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { anotherMainWindow, ownWindowName, secondaryWindow, sessionWindowName, WINDOW_PARAMETER } from './window';
 
 /**
- * The window a page is (SURF8). Three readers agree on this string — a URL, an IPC payload and a
+ * The window a page is. Three readers agree on this string — a URL, an IPC payload and a
  * filename — so what counts as a name is asserted once, here.
  */
 describe('which window this page is', () => {
@@ -20,7 +20,7 @@ describe('which window this page is', () => {
 
   it('reads one session, including a mirrored record from another machine', () => {
     expect(secondaryWindow('?window=session:a1b2c3d4')).toEqual({ kind: 'session', id: 'a1b2c3d4' });
-    // `origin/id` is how a feed keys a record it did not produce (D47 §6).
+    // `origin/id` is how a feed keys a record it did not produce.
     expect(secondaryWindow('?window=session:laptop/a1b2c3d4'))
       .toEqual({ kind: 'session', id: 'laptop/a1b2c3d4' });
   });
@@ -63,7 +63,7 @@ describe('which window this page is', () => {
 });
 
 /**
- * ONEINSTANCE1 (D171 point 2): a later launch of the executable opens another main window of the instance that runs, named
+ * A later launch of the executable opens another main window of the instance that runs, named
  * `main:<n>` from two. It is the application itself, so no secondary root; its name is what its page tells its frame by.
  */
 describe('another main window', () => {
@@ -73,7 +73,7 @@ describe('another main window', () => {
     expect(anotherMainWindow('window=main:12')).toBe('main:12');
   });
 
-  // MAINWINDOWS2c: a picker is owned by the window whose page asked, so the page names its own window to the host.
+  // A picker is owned by the window whose page asked, so the page names its own window to the host.
   it('names itself to the host for a picker it asks, the application\'s own window naming none', () => {
     expect(ownWindowName('')).toBeNull();
     expect(ownWindowName('?host=http%3A%2F%2Flocalhost%3A5177')).toBeNull();

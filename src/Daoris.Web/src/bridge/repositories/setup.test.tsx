@@ -2,7 +2,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { renderHook, waitFor } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 
-// AGENTSPLACE1j (the Agents-place design §4): a place's plan is read with its ask, and its apply sends the plan's ask, its digest and the
+// A place's plan is read with its ask, and its apply sends the plan's ask, its digest and the
 // acceptances chosen. Seen failing first.
 
 const { invoke } = vi.hoisted(() => ({ invoke: vi.fn(async (): Promise<unknown> => null) }));

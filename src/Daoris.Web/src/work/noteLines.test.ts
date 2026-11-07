@@ -4,7 +4,7 @@ import type { NotePart } from '../data/api';
 import { moment } from '../locales/format';
 import { hasNote, linesTaken, liveParts, NOTE_CODES, noteBlocks, noteLines, noteText } from './noteLines';
 
-// A session's note as the page words it (LANG1b, D142 points 1, 4, 5; the language design §2, §5, §6): a coded part from
+// A session's note as the page words it: a coded part from
 // the catalogue in the reader's language with its values, someone's words as written, and what the page cannot word as
 // recorded. Pure, so every part a writer could send is an argument.
 
@@ -22,7 +22,7 @@ describe('noteLines', () => {
     expect(noteText(zh, { parts }, 'zh')).toContain('构建 build-1');
     expect(noteText(zh, { parts }, 'zh')).toContain('你下次发话时');
   });
-  /** §2: Daoris's line is chrome, worded from its code and values in the reader's language, never from its English. */
+  /** Daoris's line is chrome, worded from its code and values in the reader's language, never from its English. */
   it('words a coded part in the reader’s language, with its values', () => {
     const parts = [coded('ended.taken-exit', 'exit 2 with the quest still taken.', { exit: 2 })];
     expect(noteLines(t, { parts }, 'en'))
@@ -31,7 +31,7 @@ describe('noteLines', () => {
       .toEqual([{ kind: 'said', text: '退出码 2，委托仍已接下。' }]);
   });
 
-  /** §2: a split note — the lead-in is a code, the agent's question beneath it a part of its own, never in a catalogue. */
+  /** A split note — the lead-in is a code, the agent's question beneath it a part of its own, never in a catalogue. */
   it('keeps someone’s words as written, beneath the line that leads into them', () => {
     const question = 'Which branch should the release land on?\n\n- main\n- release/1.0';
     const parts = [
@@ -49,7 +49,7 @@ describe('noteLines', () => {
     ]);
   });
 
-  /** §5: a code the page does not know — a newer driver's — shows its own English, marked; nothing is invented. */
+  /** A code the page does not know — a newer driver's — shows its own English, marked; nothing is invented. */
   it('shows a part it cannot word as recorded: an unknown code, or a value its sentence needs that is absent', () => {
     expect(noteLines(zh, { parts: [coded('ended.brand-new', 'It did something new.')] }, 'zh'))
       .toEqual([{ kind: 'recorded', text: 'It did something new.' }]);
@@ -62,7 +62,7 @@ describe('noteLines', () => {
     expect(noteLines(t, { parts: [{ code: 'ended.brand-new', values: {} }] }, 'en')).toEqual([]);
   });
 
-  /** §6: a record with no parts has no line, however its English reads; no table re-reads it. */
+  /** A record with no parts has no line, however its English reads; no table re-reads it. */
   it('draws a record with no parts as nothing, and a sentence the driver wrote with no code as recorded', () => {
     const note = 'the quest reached done.';
     expect(noteLines(zh, { parts: null }, 'zh')).toEqual([]);
@@ -78,7 +78,7 @@ describe('noteLines', () => {
   });
 
   /**
-   * WAITSHOWN1: a session that is working again carries its last end in its note (`ended.went-on`, with the ledger's
+   * A session that is working again carries its last end in its note (`ended.went-on`, with the ledger's
    * `ledger.went-on` before it), which says it ended while it works. The page reads past those; the record keeps them.
    */
   it('leaves out what a live session’s past ending and going on said, and keeps the rest', () => {
@@ -89,20 +89,20 @@ describe('noteLines', () => {
     ];
     expect(liveParts(parts)?.map((part) => part.code)).toEqual(['working.goes-on']);
     expect(noteLines(t, { parts: liveParts(parts) }, 'en')).toHaveLength(1);
-    // The record is not changed, and a note with no parts or no such part passes as it was.
+    // The record is not changed, and a note with no parts or no such part passes unchanged.
     expect(parts).toHaveLength(3);
     expect(liveParts(null)).toBeNull();
     expect(liveParts([words('hello', 'person')])).toEqual([words('hello', 'person')]);
   });
 
-  /** §4: a list of quests joined in the reader's language, each an id as the page draws one. */
+  /** A list of quests joined in the reader's language, each an id as the page draws one. */
   it('joins a list of quests the reader’s way', () => {
     const parts = [coded('intake.published', 'published `#a1`, `#b2` onto ask `#0f`.', { quests: ['a1', 'b2', 'c3'], ask: '0f' })];
     expect(noteLines(t, { parts }, 'en')).toEqual([{ kind: 'said', text: 'Published #a1, #b2, and #c3 onto ask #0f.' }]);
     expect(noteLines(zh, { parts }, 'zh')).toEqual([{ kind: 'said', text: '已在需求 #0f 下发布 #a1、#b2和#c3。' }]);
   });
 
-  /** §4: a moment in the reader's language and zone, never the record's ISO string. */
+  /** A moment in the reader's language and zone, never the record's ISO string. */
   it('says a moment the way the reader’s language writes it', () => {
     const parts = [coded('ledger.went-on', 'Went on with your words at 2026-10-03 09:30 UTC.', { at: '2026-10-03T09:30:00Z' })];
     const [line] = noteLines(t, { parts }, 'en');
@@ -111,7 +111,7 @@ describe('noteLines', () => {
     expect(line.text).not.toContain('2026-10-03T');
   });
 
-  /** §4: a `why` is a reason's code, worded by MSG1f's one wording per reason, with that reason's own values. */
+  /** A `why` is a reason's code, worded by one wording per reason, with that reason's own values. */
   it('words a reason by its code and its own values, and falls back where it names what the page was not told', () => {
     const fell = coded('started.fell-back', 'A new session, because its tree is gone.', { why: 'tree' });
     expect(noteLines(zh, { parts: [fell] }, 'zh')).toEqual([{ kind: 'said', text: '改为新会话，因为它的工作树已不在。' }]);
@@ -143,7 +143,7 @@ describe('noteLines', () => {
   });
 
   /**
-   * UX7d-1 (D152's UX7d-1 note): a conversation's first line, worded by its codes: the account it opened on with the step
+   * A conversation's first line, worded by its codes: the account it opened on with the step
    * that chose it, a reason with its own values (a percent, a window, a moment, another account), the rest's step, a refused
    * turn, and what each account said, a line per account and per thing it said. The record's English is never read.
    */
@@ -183,7 +183,7 @@ describe('noteLines', () => {
     });
 
     /**
-     * MODELROLE1c2 (D205 §4.6 item 1, §7.1): where a later choice ran, the actor line beside the opening, the actor by the screen's
+     * Where a later choice ran, the actor line beside the opening, the actor by the screen's
      * name, the choice's number, the entry that ran and each choice passed in the walk's words, which stay as written.
      */
     it('words where a quest marked design ran, the role by its name as written', () => {
@@ -213,7 +213,7 @@ describe('noteLines', () => {
       }]);
     });
 
-    /** MODELROLE1c2 (D205 §3.5(c)): a record its agent's refusal of the choice ended, in both languages, naming no account. */
+    /** A record its agent's refusal of the choice ended, in both languages, naming no account. */
     it('words a choice its agent did not offer', () => {
       const ended = [coded('ended.choice-not-offered', 'Not started: …', { agent: 'claude-code-acp', model: 'opus' })];
       expect(noteLines(t, { parts: ended }, 'en')[0]).toEqual({
@@ -223,7 +223,7 @@ describe('noteLines', () => {
       expect(noteLines(zh, { parts: ended }, 'zh')[0]?.text).toBe('未启动：`claude-code-acp` 在其账户上不提供 `opus`，因此什么也没有运行；下一次查看会按其角色的顺序重新选择。');
     });
 
-    /** LOCKPASSED1: an account passed for its lock is a reason of its own, said in both languages. */
+    /** An account passed for its lock is a reason of its own, said in both languages. */
     it('words an account passed for its lock by its own reason', () => {
       const locked = [
         coded('opening.opened', 'opened on `account-2`: …', { account: 'account-2', why: 'locked', agent: 'claude-code', over: 'account-1' }),
@@ -234,7 +234,7 @@ describe('noteLines', () => {
       expect(noteLines(zh, { parts: locked }, 'zh').every((line) => line.kind === 'said')).toBe(true);
     });
 
-    /** USAGEPROBE1: a window's use projected from its reading and Daoris's own turns since is a line of its own, said as projected. */
+    /** A window's use projected from its reading and Daoris's own turns since is a line of its own, said as projected. */
     it('words a projected use as projected, apart from what the account said', () => {
       const projected = [
         coded('opening.said-projected', 'about 85% of its session limit by now, projected from Daoris’s turns since', { projected: 85, window: 'session' }),
@@ -248,8 +248,8 @@ describe('noteLines', () => {
     });
 
     /**
-     * USAGEREAD3a: the agent's pace warning is its own line, never near; a line written before, `opening.said-near`, and the
-     * step it named, `near-word`, keep being worded as they were.
+     * The agent's pace warning is its own line, never near; a line written before, `opening.said-near`, and the
+     * step it named, `near-word`, keep being worded as before.
      */
     it('words the agent’s pace warning as its own line, and keeps a near line written before, in either language', () => {
       const warned = [
@@ -271,9 +271,9 @@ describe('noteLines', () => {
     });
 
     /**
-     * SWITCH1b-ii (D165 point 2): an account passed over its curve says the window, its use and the curve's value now; the
+     * An account passed over its curve says the window, its use and the curve's value now; the
      * account with the most room under its curve says its room on its tightest window. A line written before by the scope's
-     * one number (`near-used`, `opening.said-near-at`) keeps being worded as it was, as do the pace's under `off`.
+     * one number (`near-used`, `opening.said-near-at`) keeps being worded as before, as do the pace's under `off`.
      */
     it('words over its curve and the most room under it, in English and 中文', () => {
       const over = [
@@ -307,8 +307,8 @@ describe('noteLines', () => {
     });
 
     /**
-     * USAGERESET1 (D165's note): step 4 says what would lapse, the window that won, its unused share, its reset and the moment
-     * its reading was seen. A line written before by its reset alone (`lapsing`) keeps being worded as it was.
+     * Step 4 says what would lapse, the window that won, its unused share, its reset and the moment
+     * its reading is from. A line written before by its reset alone (`lapsing`) keeps being worded as before.
      */
     it('words what would lapse at a week’s reset, in English and 中文, and the reset alone as before', () => {
       const lapses = coded('opening.opened', 'opened on `account-3`: …', {
@@ -343,7 +343,7 @@ describe('noteLines', () => {
         .toBe("Opened on `account-2`: it is furthest behind its week's pace, 10% of its weekly limit used with 43% of its week gone.");
     });
 
-    /** NOTENAME1: an account id is worded by the name the person gave it, and an account the roster lacks keeps its id. */
+    /** An account id is worded by the name the person gave it, and an account the roster lacks keeps its id. */
     it('words an account by the name the person gave it, and keeps the id of one the roster does not know', () => {
       const names = new Map([['account-1', 'personal'], ['account-2', 'team']]);
       expect(noteLines(t, { parts: carried }, 'en', names).map((line) => line.text)).toEqual([
@@ -376,9 +376,9 @@ describe('noteLines', () => {
     });
   });
 
-  /** CONVNOTE2a: a resumed conversation's first line is worded in either language, a version that moved a line beside it. */
+  /** A resumed conversation's first line is worded in either language, a version that moved a line beside it. */
   /**
-   * HANDOVERSAID1 (the owner's report, 2026-10-23): a hand-over's ask names who asked it, by the path that made it, and one let go that
+   * A hand-over's ask names who asked it, by the path that made it, and one let go that
    * Daoris could not take is said as not taken, its reason in words and what the session does next, never as refused.
    */
   describe('a hand-over’s ask and one not taken', () => {
@@ -448,7 +448,7 @@ describe('noteLines', () => {
     });
   });
 
-  /** CONVNOTE2b: a refused permission's lead and close are worded, the call's title between them the agent's words as written. */
+  /** A refused permission's lead and close are worded, the call's title between them the agent's words as written. */
   describe('a refused permission', () => {
     const parts = [
       coded('refused.lead', 'permission refused:'),
@@ -471,7 +471,7 @@ describe('noteLines', () => {
   });
 
   /**
-   * AUTONOMY1b3c (D184's AUTONOMY1b3a note): a permission held for the person under asking, and how it ended, worded around the
+   * A permission held for the person under asking, and how it ended, worded around the
    * call's title as the agent wrote it; the bound's minutes a fact.
    */
   describe('a permission held for the person', () => {
@@ -502,7 +502,7 @@ describe('noteLines', () => {
     });
   });
 
-  /** CONVNOTE2c: a press's note, a chat's setting and where the person is, and a browser withheld, worded; others' words as written. */
+  /** A press's note, a chat's setting and where the person is, and a browser withheld, worded; others' words as written. */
   describe('a press, a chat’s settings and a browser withheld', () => {
     it('words a press by its lead and leaves the landing’s sentence as written', () => {
       const parts = [coded('landing.person-accepted', 'the person accepted this work:'), words('merged `daoris/s4` into `main`.', 'program')];
@@ -525,7 +525,7 @@ describe('noteLines', () => {
       ]);
     });
 
-    /** AGENTERRORS1b (D210 §7, §8): the turn a conversation's provider kept failing past every try ends with this line, then the provider's words as written. */
+    /** The turn a conversation's provider kept failing past every try ends with this line, then the provider's words as written. */
     it("words a conversation's turn ended by its provider's failures, and the provider's words as written (AGENTERRORS1b)", () => {
       const stopped = coded('chat.transient-stopped', "claude-code-acp's provider kept failing, so this turn ends; …:", { agent: 'claude-code-acp' });
       const provider = words('Internal error: API Error: 529 Overloaded. This is a server-side issue, usually temporary.', 'program');
@@ -554,7 +554,7 @@ describe('noteLines', () => {
     });
 
     it('words the process a conversation was told by its commit rule and where it was set, under its own lead', () => {
-      // PROCESS1d-ii: never the browser's lead; the words after it are Daoris's English to the agent, shown as written.
+      // Never the browser's lead; the words after it are Daoris's English to the agent, shown as written.
       const told = (source: string) => coded('chat.told-process', "told the agent this repository's process, …:", { mode: 'ask', source });
       const process = words("This repository's process on this machine, set for its repository: …", 'program');
       expect(noteLines(t, { parts: [told('repository'), process] }, 'en')).toEqual([
@@ -569,7 +569,7 @@ describe('noteLines', () => {
     });
 
     it('words the standing block a conversation was told under its own lead, in both languages, the block as written', () => {
-      // CONTEXTONE1c: the block after the lead is Daoris's English to the agent, its routing among it, shown as written.
+      // The block after the lead is Daoris's English to the agent, its routing among it, shown as written.
       const told = coded('chat.told-block', "told the agent Daoris's standing block:");
       const block = words("Daoris's standing block for this session: where things are, …\n\nRouting standing here: open. …", 'program');
       expect(noteLines(t, { parts: [told, block] }, 'en')).toEqual([
@@ -592,7 +592,7 @@ describe('noteLines', () => {
     });
   });
 
-  /** CONVNOTE2f: a session's own background work, its wait and its end, worded; a program's words as written. */
+  /** A session's own background work, its wait and its end, worded; a program's words as written. */
   describe('background work', () => {
     it('words a wait by the work it names', () => {
       const waits = coded('background.waits', '— its turn ended while its own background work runs: `a`, `b`. …', { works: ['Run the gates', 'Build'] });
@@ -623,7 +623,7 @@ describe('noteLines', () => {
       expect(noteLines(zh, { parts: [coded('background.work-ended', '…', { work: 'x' })] }, 'zh')[0].kind).toBe('recorded');
     });
 
-    /** DONEEND1: the quest no longer waits on the work, so the session ends and the work still running ends with it. */
+    /** The quest no longer waits on the work, so the session ends and the work still running ends with it. */
     it('words a wait its quest no longer needs by the work that ends with the session', () => {
       const over = coded('background.wait-over', '— its quest no longer waits on its background work: …', { works: ['Run the tests'] });
       expect(noteLines(t, { parts: [over] }, 'en')[0].text)
@@ -632,7 +632,7 @@ describe('noteLines', () => {
         .toBe('它的委托不再等这些后台工作：会话结束，仍在运行的工作随之结束：`Run the tests`。');
     });
 
-    /** RUNENDS1: the quest no longer waits, so the session ends rather than wait for a turn its agent's own wakeup starts. */
+    /** The quest no longer waits, so the session ends rather than wait for a turn its agent's own wakeup starts. */
     it('words a session that ends because its quest closed while its agent’s own next turn was awaited', () => {
       const left = coded('background.turn-left', '— its quest no longer waits, and a turn that started on its own was silent: …');
       const closed = coded('background.quest-closed', '— its quest no longer waits while the session waited for its agent’s next turn: …');
@@ -646,7 +646,7 @@ describe('noteLines', () => {
         .toBe('它的委托不再等待，会话原本在等它的智能体的下一轮：会话结束，也不再发送继续的提示。');
     });
 
-    /** LANDBACK1 part 2: a done quest's session carried on for the uncommitted work in its tree, and the bound that ends it. */
+    /** A done quest's session carried on for the uncommitted work in its tree, and the bound that ends it. */
     it('words a session carried on for the uncommitted work its done quest left, and the bound', () => {
       const carried = coded('background.carried-on', '— its quest is done, but its tree holds uncommitted work (paths: 3): …', { paths: 3 });
       const bound = coded('background.carry-bound', '— its session was carried on for the uncommitted work …');
@@ -667,7 +667,7 @@ describe('noteLines', () => {
     });
   });
 
-  /** CONVNOTE2g: a conversation's words waiting for its own account's reset, the account by its id, and the door out, worded. */
+  /** A conversation's words waiting for its own account's reset, the account by its id, and the door out, worded. */
   describe('a wait for an account', () => {
     const until = '2026-10-03T16:02:00Z';
 
@@ -711,7 +711,7 @@ describe('noteLines', () => {
     });
   });
 
-  /** CONVNOTE2g2: the runner's other holds, a reason of Daoris's own as one line, a program's message as its words between lead and tail. */
+  /** The runner's other holds, a reason of Daoris's own as one line, a program's message as its words between lead and tail. */
   describe('a conversation’s words held for another reason', () => {
     it('words each reason of Daoris’s own as one line, its repository or conversation a value', () => {
       const checkout = [coded('held.no-checkout', '— it does not go on yet: `engine` has no checkout …', { repository: 'engine' })];
@@ -747,7 +747,7 @@ describe('noteLines', () => {
       expect(noteLines(zh, { parts: unread }, 'zh')[0].kind).toBe('said');
     });
 
-    /** ROSTERREFUSE1: the roster's refusal, by code between the lead and the tail; an account by the name the page knows. */
+    /** The roster's refusal, by code between the lead and the tail; an account by the name the page knows. */
     it('words the roster’s refusals, an account named as the page knows it', () => {
       const until = '2026-10-03T16:02:00Z';
       const names = new Map([['account-1', 'Work']]);
@@ -759,7 +759,7 @@ describe('noteLines', () => {
       expect(noteLines(t, { parts: signedOut }, 'en')[0].text).toBe(
         "The `codex` account `a-1` is not signed in, so a session would have nothing to run as — `daoris agent login codex --profile a-1` runs the agent's own sign-in into it. Daoris manages the directory and the name; the credential stays in the agent's own store.",
       );
-      // LOCKPASSED1: the accounts a start was held on for their lock, each by the name the page knows.
+      // The accounts a start waited on for their lock, each by the name the page knows.
       const locked = [coded('held.locked', '…', { owner: 'claude-code', accounts: ['account-1'] })];
       expect(noteLines(t, { parts: locked }, 'en', names)[0].text).toBe(
         'Nothing starts now on the `claude-code` account: `Work`. Another question asking about it has held it longer than a start waits, and a start beside that question could sign the account out. The next start tries again.',
@@ -776,7 +776,7 @@ describe('noteLines', () => {
       }
     });
 
-    /** ROSTERREFUSE2: a wait over a list, a pick refused, a provider's refusal, an agent's own tooling, and a wait's added clauses. */
+    /** A wait over a list, a pick refused, a provider's refusal, an agent's own tooling, and a wait's added clauses. */
     it('words the roster’s other refusals, each account named as the page knows it', () => {
       const until = '2026-10-03T16:02:00Z';
       const at = moment(until, 'en');
@@ -849,7 +849,7 @@ describe('noteLines', () => {
     });
   });
 
-  /** CONVNOTE2d1: words the agent would not take, ones that never reached it, and ones not taken off the record, worded; others' words as written. */
+  /** Words the agent would not take, ones that never reached it, and ones not taken off the record, worded; others' words as written. */
   describe('words that did not reach an agent or were not taken', () => {
     it('words a refusal by its lead and leaves the agent’s words as written', () => {
       const parts = [coded('words.refused', '— the session would not take what the person added:'), words('Internal error: busy', 'agent')];
@@ -869,7 +869,7 @@ describe('noteLines', () => {
         .toBe('Messages you sent while it worked never reached it (1,200 in all): Daoris kept no id for its conversation.');
       expect(noteLines(zh, { parts: [unreached('ended-first')] }, 'zh')[0].text)
         .toBe('你在它工作时发送的 2 条消息没有送达：它先结束了。');
-      // FOUNDATION1 row p: words left waiting because their record did not name them marked attempted, in both languages.
+      // Words left waiting because their record did not name them marked attempted, in both languages.
       expect(noteLines(t, { parts: [unreached('unmarked', 1)] }, 'en')[0].text)
         .toBe('Messages you sent while it worked never reached it (1 in all): its record did not mark them attempted, so they wait there for the session\'s next go-on.');
       expect(noteLines(zh, { parts: [unreached('unmarked', 1)] }, 'zh')[0].text)
@@ -892,7 +892,7 @@ describe('noteLines', () => {
         .toBe('这段对话是从 claude-code 的对话 ab12cd34 转交过来继续的，原因：你要求转交；交给它的是 Daoris 对其的记录，而非它自己的轮次。');
       // A reason this build does not know leaves the line as recorded.
       expect(noteLines(t, { parts: [took('moved-on')] }, 'en')[0].kind).toBe('recorded');
-      // SWITCH1c-i: Daoris moved it by the usage curve.
+      // Daoris moved it by the usage curve.
       expect(noteLines(t, { parts: [took('curve')] }, 'en')[0].text)
         .toBe("This conversation went on from claude-code conversation ab12cd34, handed over because its account was over its usage curve; it was handed Daoris's record of it, not its own turns.");
       expect(noteLines(zh, { parts: [took('curve')] }, 'zh')[0].text)
@@ -900,8 +900,8 @@ describe('noteLines', () => {
     });
 
     /**
-     * SWITCH1c-i (the switch design §4): a conversation moved to another account by the usage curve says so at both ends, each
-     * account by the name the person gave it (NOTENAME1), the window over its curve, its use and the curve's value there now.
+     * A conversation moved to another account by the usage curve says so at both ends, each
+     * account by the name the person gave it, the window over its curve, its use and the curve's value there now.
      */
     it('words a conversation moved by the usage curve at both ends, each account by its name (SWITCH1c-i)', () => {
       const values = { window: 'weekly', used: 62, curve: 45 };
@@ -976,7 +976,7 @@ describe('noteLines', () => {
       ]);
     });
 
-    /** CONVNOTE2d2: the chat runner's and the modules' sites. */
+    /** The chat runner's and the modules' sites. */
     it('words words that never reached a conversation, a send that found the agent gone, and held words not kept', () => {
       const never = [coded('words.not-reached', '— what the person added never reached it:'), words('pipe closed at D:/x', 'program')];
       expect(noteLines(t, { parts: never }, 'en')).toEqual([
@@ -1003,7 +1003,7 @@ describe('noteLines', () => {
     });
   });
 
-  /** CONVNOTE2h: a review set-up's record and a second opinion's answers, worded; a program's words as written. */
+  /** A review set-up's record and a second opinion's answers, worded; a program's words as written. */
   describe('a review set-up and a second opinion’s answers', () => {
     it('words a set-up that could not be posted, and a post the next end retries', () => {
       const noRule = coded('review.no-rule', 'its set-up was not posted: no review rule …', { named: 'browser', to: 'web' });
@@ -1056,7 +1056,7 @@ describe('noteLines', () => {
     });
   });
 
-  /** XAGENT1g4a: the reviewer's own conclusion; the failure stays the program's words. */
+  /** The reviewer's own conclusion; the failure stays the program's words. */
   describe('a second opinion’s reviewer ending', () => {
     it('words each ending, the failure beneath as written', () => {
       const failed = [coded('opinion.reviewer-failed', '…', { opinion: 'op1' }), words('no route to D:/x', 'program')];
@@ -1077,7 +1077,7 @@ describe('noteLines', () => {
     });
   });
 
-  /** CONVNOTE2e: a conversation's door that failed; a program's message and the agent's refusal stay as written. */
+  /** A conversation's door that failed; a program's message and the agent's refusal stay as written. */
   describe('a door or a turn that failed', () => {
     it('words a session that could not open or failed, and a turn not taken, and leaves the program’s words as written', () => {
       const open = [coded('door.not-open', 'the ACP session could not open:'), words('could not read D:/x', 'program')];
@@ -1125,7 +1125,7 @@ describe('noteLines', () => {
   });
 
   /**
-   * AGT3d (D125's AGT3c note): a limit's line says the kind of limit, its window worded as the agents' screens word it
+   * A limit's line says the kind of limit, its window worded as the agents' screens word it
    * (`harness.window.*`), and whose accounts, in either language; a window this build does not know is said as named.
    */
   it('words a limit’s window and whose account it was, in either language', () => {
@@ -1152,8 +1152,8 @@ describe('noteLines', () => {
   });
 
   /**
-   * AGT3d: a code keeps what it declares, so a note already on a machine keeps being worded. A cooling line written before
-   * AGT3d is `account.cooling` with its moment and why alone, and the new shapes have codes of their own.
+   * A code keeps what it declares, so a note already on a machine keeps being worded. A cooling line written before
+   * the limit's kind and window is `account.cooling` with its moment and why alone, and the new shapes have codes of their own.
    */
   it('still words a cooling line written before AGT3d, in either language', () => {
     const before = coded('account.cooling', 'The account it ran on is cooling until …', { until: '2026-10-03T16:00:00Z', why: 'stated' });
@@ -1167,7 +1167,7 @@ describe('noteLines', () => {
   });
 
   /**
-   * TREEDEPS1 (D51's note): a tree its checkout's dependencies were copied into says which, each as code, and a project that copied
+   * A tree its checkout's dependencies were copied into says which, each as code, and a project that copied
    * none says why; `started.tree` keeps saying a fresh tree holds no installed dependencies, as the openings written before it did.
    */
   it('words a tree opened with its checkout’s dependencies copied in, and why a project’s were not, in either language', () => {
@@ -1189,7 +1189,7 @@ describe('noteLines', () => {
   });
 
   /**
-   * TREELOCAL1 (D216): the machine-local files a repository's gates read, copied into its tree read-only, each as code, and a
+   * The machine-local files a repository's gates read, copied into its tree read-only, each as code, and a
    * declared one not copied says why; a failed copy's own words follow as the program's.
    */
   it('words the machine-local inputs copied into a tree, and why a declared one was not, in either language', () => {
@@ -1224,9 +1224,9 @@ describe('noteLines', () => {
   });
 
   /**
-   * REVIEWENV1c2: the look under *Accept automatically* that the review's gate holds says so with a code of its own, the gate's
+   * The look under *Accept automatically* that the review's gate holds says so with a code of its own, the gate's
    * sentence beneath it as the driver wrote it, in either language. A note written before it, under `landing.refused`, keeps
-   * being worded as it was.
+   * being worded as before.
    */
   it('words a look held for the person’s review as its own line, never as a refused landing, in either language', () => {
     const gate = 'Waits for your review in `dev`: nothing shows it there yet: no set-up step for `storefront` is in its chain.';
@@ -1252,7 +1252,7 @@ describe('noteLines', () => {
   });
 
   /**
-   * XAGENT1g (XAGENT1e2's lines): a record that went on with another agent's findings says so, never *your words*, in either
+   * A record that went on with another agent's findings says so, never *your words*, in either
    * language, its moment in the reader's own.
    */
   it('words a record that went on with another agent’s findings, alone or beside the person’s words', () => {
@@ -1269,7 +1269,7 @@ describe('noteLines', () => {
   });
 
   /**
-   * LANDREBASE1 (D87's note): the look whose replay onto the line conflicts, and which told the session to rebase in its own tree, says
+   * The look whose replay onto the line conflicts, and which told the session to rebase in its own tree, says
    * so with a code of its own, the landing's sentence beneath it as the driver wrote it, in either language.
    */
   it('words a look that asked the session to rebase as its own line, in either language', () => {
@@ -1294,7 +1294,7 @@ describe('noteLines', () => {
   });
 
   /**
-   * LANDBACK1 part 1 (D87's note): an Accept that carried its session on to clear a dirty tree or a conflict, the bound where it is still
+   * An Accept that carried its session on to clear a dirty tree or a conflict, the bound where it is still
    * not clean after two, and the landing the kept yes made, each a code of its own in either language: the work is accepted, never refused.
    */
   it('words an Accept that carried its session on, its bound, and the landing it made, in either language', () => {
@@ -1324,7 +1324,7 @@ describe('noteLines', () => {
   });
 
   /**
-   * XAGENT1g: the look held for a second opinion says so with a code of its own, the gate's sentence beneath it as the driver
+   * The look held for a second opinion says so with a code of its own, the gate's sentence beneath it as the driver
    * wrote it, in either language; one written before the page worded it says `landing.refused`, and keeps being worded as that.
    */
   it('words a look held for a second opinion as its own line, never as a refused landing, in either language', () => {
@@ -1349,7 +1349,7 @@ describe('noteLines', () => {
   });
 
   /**
-   * FABRIC-CLOSE1h14: a push its landing's gate held back leads with the gate's words, never its quest's, in either language; one
+   * A push its landing's gate held back leads with the gate's words, never its quest's, in either language; one
    * written before it says `landing.push-held`, and keeps being worded as that.
    */
   it('words a push its gate held back as the gate\'s, and one from before as its quest\'s', () => {
@@ -1378,7 +1378,7 @@ describe('noteLines', () => {
 });
 
 describe('noteBlocks', () => {
-  /** §9: Daoris's lines run together as one paragraph; someone's words, or a recorded line, set themselves apart. */
+  /** Daoris's lines run together as one paragraph; someone's words, or a recorded line, set themselves apart. */
   it('runs Daoris’s lines together until someone’s words or a recorded line sets itself apart', () => {
     const lines = noteLines(zh, {
       parts: [
@@ -1410,7 +1410,7 @@ describe('noteText', () => {
   });
 });
 
-// UX6b (design §2.5): a note longer than four lines folds to them in the timeline. The page lays nothing out before it
+// A note longer than four lines folds to them in the timeline. The page lays nothing out before it
 // draws, so how many lines a note takes is estimated from its texts, near enough to fold a verify report and leave a
 // sentence whole.
 describe('linesTaken', () => {
@@ -1449,8 +1449,8 @@ describe('the page’s map of codes', () => {
 });
 
 /**
- * SWITCHCTX1c-i (the switch-context design §2.7): a move is said in the session's words, a new part and never a new session; a
- * line written before keeps the values it was written with, so it reads whole in the new words, its `tokens` and `count` shown.
+ * A move is said in the session's words, a new part and never a new session; a
+ * line written before keeps its own values, so it reads whole in the new words, its `tokens` and `count` shown.
  */
 describe('a move said as a part of one session', () => {
   // The pair a briefed move wrote before the rewording: the values the catalogue's sentences were given.

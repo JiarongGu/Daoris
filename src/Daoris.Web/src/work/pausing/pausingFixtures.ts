@@ -1,7 +1,7 @@
 import type { Consideration } from '../../data/signals';
 import type { AbandonAnswer, AbandonEntry, WorkPlan } from './pausing';
 
-// The work of an ask and of a quest as `WORK_PLAN` answers them (PAUSE1e, D132): the stories' and the tests' one copy, every
+// The work of an ask and of a quest as `WORK_PLAN` answers them: the stories' and the tests' one copy, every
 // state a person meets on the ask's page, the quest's page and a session's header.
 
 /** An ask's work in flight: one quest taken here and running, one open; a parked session; a tree with work only here. */
@@ -129,7 +129,7 @@ export const PAUSABLE_QUEST: WorkPlan = {
 };
 
 /**
- * An ask's work as its page lists it (PAUSE1h, D132 §7.1): a quest whose first session failed and whose second asked two
+ * An ask's work as its page lists it: a quest whose first session failed and whose second asked two
  * questions of other repositories, one a teammate works on another machine and one answered; a quest taken here, its
  * session working; one open in a held repository; and one its person paused on its own, its session stopped by that pause.
  * Its intake is listed by the plan and named in the page's section of its own.

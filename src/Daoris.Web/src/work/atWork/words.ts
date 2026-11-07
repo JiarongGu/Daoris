@@ -25,14 +25,14 @@ export function waitWhat(t: TFunction, wait: AtWorkWait): string {
   return wait.of ? t('work.atWork.what.questOf', values) : t('work.atWork.what.quest', values);
 }
 
-/** The kind of request an exchange is, by its id's prefix (COMMS1i): `helper`, `piece`, `quest`, `hand-over` or `opinion`. */
+/** The kind of request an exchange is, by its id's prefix: `helper`, `piece`, `quest`, `hand-over` or `opinion`. */
 export const exchangeSource = (exchange: AtWorkExchange): string => exchange.id.slice(0, Math.max(0, exchange.id.indexOf(':')));
 
 /** The words a request names before anyone took it up: no agent's name. */
 const UNNAMED = new Set(['helper', 'partner', 'successor', 'reviewer']);
 
 /**
- * Whom or what a request asked (COMMS1i, the comms design §7), the *Waiting on* line's and the co-workers' one wording: a quest as the
+ * Whom or what a request asked, the *Waiting on* line's and the co-workers' one wording: a quest as the
  * strip words its wait, a co-worker by its agent and as what. `nameOf` names an agent as the person calls it.
  */
 export function exchangeWhat(t: TFunction, exchange: AtWorkExchange, nameOf: (agent: string) => string = (agent) => agent): string {
@@ -49,7 +49,7 @@ export function exchangeWhat(t: TFunction, exchange: AtWorkExchange, nameOf: (ag
 const OUTCOMES = ['asked', 'approved', 'answered', 'taken-in', 'refused', 'done', 'declined', 'ended'] as const;
 
 /**
- * Where a request stands (COMMS1i): its protocol's own word, and what Daoris saw of its delivery where that says more; never a
+ * Where a request stands: its protocol's own word, and what Daoris saw of its delivery where that says more; never a
  * turn's end read as an answer. A word this page does not know is said as recorded.
  */
 export function exchangeState(t: TFunction, exchange: AtWorkExchange): string {
@@ -62,7 +62,7 @@ export function exchangeState(t: TFunction, exchange: AtWorkExchange): string {
   return delivery ? `${outcome} · ${delivery}` : outcome;
 }
 
-/** What the line waits on, in one line (COMMS1i): *At work*'s and the head's alike. Null where nothing it asked holds it. */
+/** What the line waits on, in one line: *At work*'s and the head's alike. Null where nothing it asked holds it. */
 export function waitingOnLine(t: TFunction, exchanges: readonly AtWorkExchange[], nameOf?: (agent: string) => string): string | null {
   const holds = exchanges.filter((exchange) => exchange.holds);
   if (holds.length === 0) return null;
@@ -73,7 +73,7 @@ export function waitingOnLine(t: TFunction, exchanges: readonly AtWorkExchange[]
 }
 
 /**
- * How a part joined, in the design's words (§3.4), by what its record and quest say; the strip's own words where it only began
+ * How a part joined, by what its record and quest say; the strip's own words where it only began
  * (retried, resumed, carried on, handed over, moved). Null for a part that simply opened.
  */
 export function joinedLine(t: TFunction, joined: AtWorkJoined): string | null {
@@ -100,7 +100,7 @@ export function joinedLine(t: TFunction, joined: AtWorkJoined): string | null {
 }
 
 /**
- * What asked the attended part's quest, in words (the design §3.1): the publishing session by its place in the strip, the step before,
+ * What asked the attended part's quest, in words: the publishing session by its place in the strip, the step before,
  * the ask, or the person.
  */
 export function askerLine(t: TFunction, asker: AtWorkAsker, parts: readonly AtWorkPart[]): string {
@@ -117,7 +117,7 @@ export function askerLine(t: TFunction, asker: AtWorkAsker, parts: readonly AtWo
 }
 
 /**
- * The one key each child state draws (the cowork view design §5.4, *each state's words*): an end the wire said reads the panel's own
+ * The one key each child state draws (*each state's words*): an end the wire said reads the panel's own
  * word, and a state Daoris's reading gave reads the view's; a key missing from a catalogue fails the mapping's test.
  */
 export const CHILD_STATE_KEY: Readonly<Record<AtWorkChildState, string>> = {
@@ -147,7 +147,7 @@ export const PART_STATES = [
 /** States whose row says the child's last line rather than an end's moment. */
 export const LAST_SEEN: ReadonlySet<AtWorkChildState> = new Set(['uncertain', 'unrecorded', 'agentEnded']);
 
-/** How a state's word is toned: live where it works, warn where it was lost, neutral where nothing is proven. */
+/** How a state's word is toned: live where it works, warn where it is lost, neutral where nothing is proven. */
 export function childTone(state: AtWorkChildState): 'live' | 'warn' | 'failed' | 'ended' | 'neutral' {
   switch (state) {
     case 'working':

@@ -222,9 +222,15 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they start wi
     never at a ledger change, since a wake's pass judges the units as the last look read them; its branch tips and
     remote-tracking refs are read from git's ref files, git asked only for those the files cannot say (`NodeTips`). On ten
     open trees and thirty runs neither starts git where nothing moved, each is under a second, and after one tree moved the
-    overlaps start one git, where every look started twenty, and the nodes read that tree's gates alone, 8 starts where its
-    run's opinion and look wait: a tree's content is one read of its work (`HoldReads` over `WorkAsync`, whose `Unlanded` is the
-    count a landing door asks), so its layout, branch, head and log are each asked once. (from D68, D181)
+    overlaps start one git, where every look started twenty, and the nodes read that tree's content alone, 7 starts where its
+    run's content waits and 6 for the next tree to move: a tree's content is one read of its work (`HoldReads` over `WorkAsync`,
+    whose `Unlanded` is the count a landing door asks), so its layout, branch, head and log are each asked once, the checkout's
+    origin `HEAD` is read from git's file (`WorkingTree.DefaultBranchAsync`), and the branches by date are kept while the repository's
+    counted refs stand (`BranchesByDate`), which a session's own commits do not move. The nodes stage over three hundred runs,
+    five live, is no git where nothing moved and about half a second where it was two (the pass's per-run work: a run's record
+    is read once while its file stands as it was, `NodeRecordFiles.Settled`; a workflow file once per stamp for all the runs
+    bound to it, `StampedWorkflows`; the quests' chains and the units' links are indexed once a read, `QuestChains`,
+    `NodeGoverning`'s `RunReads`), held by `LookWorkBenchProcessTests`. (from D68, D181)
 31. A working session has no time limit: a driven run, a resumed run, a go-on and an intake wait for their exit. Only a
     pass with minutes of its own is bounded (a helper 15, a partner 45, a second opinion 20 within 5 to 120).
     `timeoutMinutes` is no setting: nothing reads or says it, a save keeps it as it keeps any key it does not own, and the

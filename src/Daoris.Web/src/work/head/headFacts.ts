@@ -13,7 +13,7 @@ import { HANDED_REASONS } from '../noteLines';
 import { placedFact } from '../rail/SessionRow';
 import type { Wait } from '../waits/waits';
 
-// The facts line under a head's title (UX7c, D152 §7, the UX7 design §5.2 and §5.3): the two or three facts a record's
+// The facts line under a head's title: the two or three facts a record's
 // state makes matter, said once, faint, beside the state's pill and the title on the line above. Pure, so a head is
 // handed its line and every state is a story; the facts are the row's (`placedFact`, `SessionGroups.Read`) and the
 // record's, so a head and its row cannot disagree.
@@ -21,67 +21,67 @@ import type { Wait } from '../waits/waits';
 /** What a session's facts line is read from: its record, its shown word, and what the list's reader placed it by. */
 export type SessionFactsOf = {
   session: Session;
-  /** Its shown word (D126 §2.2): the record's state, *idle*, or the reader's derived one. */
+  /** Its shown word: the record's state, *idle*, or the reader's derived one. */
   shown: string;
-  /** Where the list's reader placed it, with its line's facts (SESSUX1a); absent where none answered. */
+  /** Where the list's reader placed it, with its line's facts; absent where none answered. */
   grouping?: SessionGrouping | null;
-  /** Its agent has accounts, so a record naming none ran on the tool's own sign-in (D125 §3.7). */
+  /** Its agent has accounts, so a record naming none ran on the tool's own sign-in. */
   ownSignIn?: boolean;
-  /** What its own tree left, as the clean-up judged it (SESS1 S10): an ended session's landing. */
+  /** What its own tree left, as the clean-up judged it: an ended session's landing. */
   branch?: SweepBranch | null;
-  /** What a person calls an account (ACCTNAME1), from the roster; absent, the record's id is said. */
+  /** What a person calls an account, from the roster; absent, the record's id is said. */
   nameOf?: AccountNamer;
   /**
-   * The agent of the session it continues (`from`, MIXAGENT3a-i), by the roster's name for it, where the frame holds that
+   * The agent of the session it continues (`from`), by the roster's name for it, where the frame holds that
    * session. Absent, the line says it continues another session.
    */
   continuesAgent?: string | null;
   /**
-   * The agent its line of work's leading part runs on (SESSCTX1d; the session-context design §7), by the roster's name for it,
+   * The agent its line of work's leading part runs on, by the roster's name for it,
    * where the line's parts ran on more than one agent: a moved session reads as one, on the agent it is on now. Absent otherwise.
    */
   leadingAgent?: string | null;
-  /** The title of the session a helper helps (`serves`, MIXAGENT3a-i), where the frame holds it; absent, another session. */
+  /** The title of the session a helper helps (`serves`), where the frame holds it; absent, another session. */
   helping?: string | null;
   /**
-   * Its partners (COAGENT1b; the co-agent design §6.1): the agents its pieces went to, by the roster's names, and how many work now
+   * Its partners: the agents its pieces went to, by the roster's names, and how many work now
    * (`partnersOf`). Absent where it asked none.
    */
   partners?: { agents: readonly string[]; working: number } | null;
-  /** When the turn its agent is on was asked, while it has answered nothing (`firstAnswerWait`, WAITSHOWN1); absent otherwise. */
+  /** When the turn its agent is on is asked, while it has answered nothing (`firstAnswerWait`); absent otherwise. */
   waitingSince?: string | null;
   /**
-   * The call its agent is inside, and since when, as its conversation reads it (`runningCall`, WAITSAY1); absent where none is
-   * open. Said only where the reader's `grouping` carries no call of its own (RAILLINE1).
+   * The call its agent is inside, and since when, as its conversation reads it (`runningCall`); absent where none is
+   * open. Said only where the reader's `grouping` carries no call of its own.
    */
   calling?: { title: string; since: string; quiet?: string; heard?: string } | null;
-  /** How many others work with it, subagents and other parts (COWORKVIEW1a, the *At work* read); absent where unknown or none. */
+  /** How many others work with it, subagents and other parts (the *At work* read); absent where unknown or none. */
   withIt?: number;
   /** When the window opened, said by the At work read: the moment *nothing heard* counts from. */
   windowOpened?: string;
   /**
-   * Its heavy run's line (HEAVYSLOT1, the UI/UX design §3.5): the gate it runs, the gate it failed at, or whom it waits behind, as
+   * Its heavy run's line: the gate it runs, the gate it failed at, or whom it waits behind, as
    * the rail's line says it (`heavyLine`), in place of the call, which is that run. Absent where it holds and waits for no slot.
    */
   heavy?: string | null;
   /**
-   * When a transient episode tries again (AGENTERRORS1a2, D210 §5.1, §8), as its conversation reads its quiet events (`retryingAt`):
+   * When a transient episode tries again, as its conversation reads its quiet events (`retryingAt`):
    * *Trying again at* while it is still ahead, and nothing once past or while a try runs. Absent where none waits.
    */
   retrying?: string | null;
-  /** Its unit's integration state from the integration record (INTEGRATE1h; the integration design §5.8): one line after the repository; absent where none was asked. */
+  /** Its unit's integration state from the integration record: one line after the repository; absent where none asked. */
   integration?: { state: string; line: string } | null;
   /** The reader's clock for `retrying`; the moment it is read where absent. */
   now?: Date;
   /**
-   * Where the work stands (REVIEWFLOW1b; the review-flow design §1): how many of its parts offer work to land, and whether a landing
-   * is on its way. Present, the line is led by *now*; absent (a row, a browser), it is as it was.
+   * Where the work stands: how many of its parts offer work to land, and whether a landing
+   * is on its way. Present, the line is led by *now*; absent (a row, a browser), the line has no phase.
    */
   flow?: { parts: number; landing: boolean } | null;
 };
 
 /**
- * *Now*, one word for the phase (REVIEWFLOW1b). Integrating is its integration fact, which is read and never said twice, and landed
+ * *Now*, one word for the phase. Integrating is its integration fact, which is read and never said twice, and landed
  * is an ended session's own landing fact; so neither is said here.
  */
 function nowFact(t: TFunction, { session, shown, flow, integration }: SessionFactsOf): string | null {
@@ -107,9 +107,9 @@ export function nextPress(waits: readonly Wait[]): 'answer' | 'accept' | 'rebase
 }
 
 /**
- * The agent a line of work's leading part runs on (SESSCTX1d; the session-context design §7), by the roster's name for it, where
+ * The agent a line of work's leading part runs on, by the roster's name for it, where
  * the parts the page holds ran on more than one agent: what the head says, so a moved session reads as one. Counted by agent, never
- * by door (AGENTPROVIDER1 s-vii): a line moved between one agent's two doors is on one agent, as the roster's sheet (`sheets`) says
+ * by door: a line moved between one agent's two doors is on one agent, as the roster's sheet (`sheets`) says
  * which agent each door is. Null for a record alone, a line on one agent, or a leading part the page does not hold.
  */
 export function leadingAgentOf(
@@ -128,8 +128,8 @@ export function leadingAgentOf(
 }
 
 /**
- * What the record's own links say (MIXAGENT3a-i, the mixed-agents design §4): the agent it continues, then why, in the hand-over's
- * words (`HANDED_REASONS`, the timeline's, `curve` among them since SWITCH1c-i), and whom a helper helps. A why the page has no
+ * What the record's own links say: the agent it continues, then why, in the hand-over's
+ * words (`HANDED_REASONS`, the timeline's, `curve` among them), and whom a helper helps. A why the page has no
  * words for says nothing, never a guess.
  */
 function linkFacts(t: TFunction, session: Session, { continuesAgent, helping, partners }: SessionFactsOf): string[] {
@@ -139,8 +139,8 @@ function linkFacts(t: TFunction, session: Session, { continuesAgent, helping, pa
     const why = session.fromWhy && Object.hasOwn(HANDED_REASONS, session.fromWhy) ? HANDED_REASONS[session.fromWhy] : null;
     if (why) facts.push(t(why.key));
   }
-  // COAGENT1b: a partner works for its lead, a piece's; a helper helps.
-  // A reviewer serves the work it reads too (COMMS1b): the opinion mark is read before `serves`.
+  // A partner works for its lead, a piece's; a helper helps.
+  // A reviewer serves the work it reads too: the opinion mark is read before `serves`.
   const serves = session.opinion ? null : session.serves;
   if (serves && session.piece) facts.push(helping ? t('work.facts.partnerFor', { title: helping }) : t('work.facts.partnerForAnother'));
   else if (serves) facts.push(helping ? t('work.facts.helping', { title: helping }) : t('work.facts.helpingAnother'));
@@ -154,9 +154,9 @@ function linkFacts(t: TFunction, session: Session, { continuesAgent, helping, pa
 }
 
 /**
- * The call a working session is inside, with how long (WAITSAY1): one that waits on the person's answer to its permission request
- * says so, timed from the hold (AUTONOMY1b3b), and one the agent named nothing for is a tool call. Said in a few words on the line
- * (`callHead`, RAILLINE1), and whole in its tip.
+ * The call a working session is inside, with how long: one that waits on the person's answer to its permission request
+ * says so, timed from the hold, and one the agent named nothing for is a tool call. Said in a few words on the line
+ * (`callHead`), and whole in its tip.
  */
 function callFact(t: TFunction, calling: { title: string; since: string; waiting?: boolean }, whole: boolean): string {
   const title = whole ? calling.title : callHead(calling.title);
@@ -167,7 +167,7 @@ function callFact(t: TFunction, calling: { title: string; since: string; waiting
 }
 
 /**
- * The call the head says (RAILLINE1): the driver's, which the row says, wherever the list's reader answered for the session, so
+ * The call the head says: the driver's, which the row says, wherever the list's reader answered for the session, so
  * the two never disagree; the conversation's open call only where no reader answered (a browser) or its host is older than the
  * fact.
  */
@@ -177,18 +177,18 @@ function headCall(of: SessionFactsOf): { title: string; since: string; waiting?:
 }
 
 /**
- * A session's facts line by its shown state (the UX7 design §5.2's table, as HEAD2c amends it): its repository first, then
+ * A session's facts line by its shown state: its repository first, then
  * its age and the one fact its state makes matter. A live session's age, and how many failed before it where its quest's
  * earlier sessions failed; what holds it, from the row's own line where the reader placed it (which names a cooling
- * account); an ended one's landing and how long it ran. An intake says its ask. The account is *Details*' (ACCTNAME1 names
- * it there). Nothing it has nothing to say: an absent fact is left out, never a dash. Whom it continues or helps follows the
- * repository in every state (MIXAGENT3a-i), since it says what the session is.
+ * account); an ended one's landing and how long it ran. An intake says its ask. The account is *Details*'.
+ * Nothing it has nothing to say: an absent fact is left out, never a dash. Whom it continues or helps follows the
+ * repository in every state, since it says what the session is.
  */
 export function sessionFacts(t: TFunction, of: SessionFactsOf): string[] {
   return factsOf(t, of, false);
 }
 
-/** The facts line's tip (RAILLINE1): the line as `sessionFacts` says it, with its running call's title whole. */
+/** The facts line's tip: the line as `sessionFacts` says it, with its running call's title whole. */
 export function sessionFactsTip(t: TFunction, of: SessionFactsOf): string {
   return factsOf(t, of, true).join(' · ');
 }
@@ -200,12 +200,12 @@ function factsOf(t: TFunction, of: SessionFactsOf, whole: boolean): string[] {
   const facts: (string | null)[] = [
     session.repository,
     nowFact(t, of),
-    // SESSCTX1d: the agent the line is on now, where its parts ran on more than one.
+    // The agent the line is on now, where its parts ran on more than one.
     of.leadingAgent ? t('work.facts.leadsOn', { agent: of.leadingAgent }) : null,
     ...linkFacts(t, session, of),
     of.integration ? t(`work.facts.integration.${of.integration.state}`, { line: of.integration.line, defaultValue: of.integration.state }) : null,
   ];
-  // What the row's line says for its group (D126 §2.2): parked after its failures, what it awaits, what holds the words,
+  // What the row's line says for its group: parked after its failures, what it awaits, what holds the words,
   // its stop's hold, its work to review. Said here in the row's own words.
   const placed = placedFact(grouping, shown);
   const running = SESSION_ACTIVE.has(session.state);
@@ -223,25 +223,25 @@ function factsOf(t: TFunction, of: SessionFactsOf, whole: boolean): string[] {
   }
 
   if (running) {
-    // HEAD2c (D162): the account is *Details*'. Where it explains a hold, the row's own line above already says it.
+    // The account is *Details*'. Where it explains a hold, the row's own line above already says it.
     facts.push(session.kind === 'chat' ? t('work.facts.started', { ago: ago(session.created) }) : elapsed(session.created));
-    // UX7c (D152): the fact that matters most on a retried quest, another try and how many failed before it.
+    // The fact that matters most on a retried quest, another try and how many failed before it.
     const failed = typeof grouping?.strikes === 'number' && grouping.strikes > 0 ? grouping.strikes : null;
     if (failed !== null && session.kind !== 'chat') facts.push(t('work.facts.attempt', { count: failed, attempt: failed + 1 }));
-    // AGENTERRORS1a2 (D210 §5.1, §8): its provider failed and Daoris waits to try again in the same conversation; the one line in the
+    // Its provider failed and Daoris waits to try again in the same conversation; the one line in the
     // conversation says why, and this says when, nothing while a try runs. In place of the first answer's wait, which it explains.
     const retrying = of.retrying && Date.parse(of.retrying) > (of.now ?? new Date()).getTime() ? of.retrying : null;
     if (retrying && session.state === 'working') facts.push(t('work.facts.retrying', { time: moment(retrying) }));
-    // WAITSHOWN1: its agent has said nothing since it was asked; a resumed long conversation can wait many minutes.
+    // Its agent has said nothing since the turn began; a resumed long conversation can wait many minutes.
     else if (of.waitingSince && session.state === 'working') facts.push(t('work.facts.firstAnswer', { time: moment(of.waitingSince) }));
-    // WAITSAY1: a call that runs for minutes is what the session waits on; said with how long, and only while it is working.
-    // RAILLINE1: the call the row says, the driver's (pushed since WAITSAY1c2, so it moves live), which also marks a call held for
-    // the person's answer (AUTONOMY1b3b); the record read here only where no reader answered. HEAVYSLOT1: a heavy run held or
+    // A call that runs for minutes is what the session waits on; said with how long, and only while it is working.
+    // The call the row says, the driver's (pushed, so it moves live), which also marks a call held for
+    // the person's answer; the record read here only where no reader answered. A heavy run held or
     // waited for is the call, said by its gate or whom it waits behind; a held permission still first.
     const calling = headCall(of);
     if (of.heavy && !calling?.waiting) facts.push(of.heavy);
     else if (calling && (calling.title || calling.waiting) && session.state === 'working') facts.push(callFact(t, calling, whole));
-    // COWORKVIEW1a (§3.7): who works with it and when it was last heard; the hearing gives way to *quiet* where the watcher marks it.
+    // Who works with it and when it last spoke; the hearing gives way to *quiet* where the watcher marks it.
     if (of.withIt && of.withIt > 0 && session.state === 'working') {
       facts.push(calling?.heard && !calling.quiet
         ? t('work.facts.withItHeard', { count: of.withIt, ago: ago(calling.heard) })
@@ -249,7 +249,7 @@ function factsOf(t: TFunction, of: SessionFactsOf, whole: boolean): string[] {
           ? t('work.facts.withItUnheard', { count: of.withIt, time: clockOf(of.windowOpened) })
           : t('work.facts.withIt', { count: of.withIt }));
     }
-    // SESSWATCH1a (the session-watch design §5.1): quiet since it was last heard, neutral, after a heavy run's line where both hold.
+    // Quiet since it last spoke, neutral, after a heavy run's line where both hold.
     if (calling?.quiet && session.state === 'working') facts.push(t('work.rail.quiet', { time: elapsed(calling.quiet) }));
     return facts.filter((fact): fact is string => Boolean(fact));
   }
@@ -267,14 +267,14 @@ export type QuestFactsOf = {
   quest: Quest;
   /** Its driven session's freshest record on this machine, where there is one. */
   session?: Session | null;
-  /** Why this machine's driver leaves it waiting (D46 §3), where it does. */
+  /** Why this machine's driver leaves it waiting, where it does. */
   sitting?: Consideration | null;
-  /** Lead with *now* (REVIEWFLOW1b): its session waiting on the person is said as the session head says it, timed. */
+  /** Lead with *now*: its session waiting on the person is said as the session head says it, timed. */
   flow?: boolean;
 };
 
 /**
- * The press *next* names on a quest's page, from the body acts the page already offers (REVIEWFLOW1b): the first that moves it on,
+ * The press *next* names on a quest's page, from the body acts the page already offers: the first that moves it on,
  * and its session's door only where that session waits on the person. None where nothing waits.
  */
 export function questNext<Act extends string>(acts: readonly Act[], awaiting: boolean): Act | null {
@@ -283,14 +283,14 @@ export function questNext<Act extends string>(acts: readonly Act[], awaiting: bo
 }
 
 /**
- * A quest's facts line (HEAD2b, D162; the entry-and-heads design §2, amending the UX7 design §5.3): a hold the person lifts
+ * A quest's facts line: a hold the person lifts
  * first where there is one (*awaits your yes*, *awaits review*: their sentences stay in their cards), then where it goes
  * and its age, then the one live fact where there is one: a session starting or working on it here, its park after its
  * failed sessions, or when it closed. The requester, the id, the full times and the lanes are its *Details*.
  */
 export function questFacts(t: TFunction, { quest, session, sitting, flow }: QuestFactsOf): string[] {
   const unreviewed = quest.held === true && quest.hold === 'unreviewed';
-  // FABRIC-CLOSE1c3: a step its source's reopen holds waits on the person's go-on or abandon, which no yes lifts.
+  // A step its source's reopen holds waits on the person's go-on or abandon, which no yes lifts.
   const reopened = quest.held === true && quest.hold === 'source-reopened';
   const facts = [
     ...(unreviewed ? [t('review.pill')] : reopened ? [t('quests.card.reopened')] : quest.held === true ? [t('quests.card.held')] : []),
@@ -315,7 +315,7 @@ export function questFacts(t: TFunction, { quest, session, sitting, flow }: Ques
       : t('quests.facts.parkedSome')];
   }
 
-  // FABRIC-CLOSE1d (§E5): a taken quest at its submission says when it was submitted; it is done only at its graph's close.
+  // A taken quest at its submission says when it submitted; it is done only at its graph's close.
   if (quest.status === 'Taken' && quest.submission) return [...facts, t('quests.facts.submitted', { ago: ago(quest.submission.at) })];
   return quest.status === 'Taken' ? [...facts, t('quests.facts.taken', { ago: ago(quest.updated) })] : facts;
 }

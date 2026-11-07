@@ -3,7 +3,7 @@ import { act, renderHook, waitFor } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import type { ReactNode } from 'react';
 
-// The one owner of the second opinion's presses (XAGENT1g): over a mocked bridge, as an organism is held (components plan §3).
+// The one owner of the second opinion's presses: over a mocked bridge, as an organism is held.
 
 const { invoke, shell } = vi.hoisted(() => ({ invoke: vi.fn(), shell: { here: true } }));
 
@@ -29,12 +29,12 @@ function acts() {
 
 const answered = () => ({ done: vi.fn<Answered['done']>(), refused: vi.fn<Answered['refused']>() });
 
-/** Each route the driver was asked, with its payload. */
+/** Each route the driver is asked, with its payload. */
 const sent = () => invoke.mock.calls.map(([, type, options]) => ({ type, payload: (options as { payload?: unknown })?.payload }));
 
 /**
- * XAGENT1g (D155 point 10; the second-agent design §8.5, §9): each press at the second opinion's gate goes to the driver's own
- * press, says its sentence, and a refusal is said inside the gate that was pressed; *Send back…* is the person's words to the
+ * Each press at the second opinion's gate goes to the driver's own
+ * press, says its sentence, and a refusal is said inside the gate that is pressed; *Send back…* is the person's words to the
  * working session.
  */
 describe("the second opinion's presses", () => {

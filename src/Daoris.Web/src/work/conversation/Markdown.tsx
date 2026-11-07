@@ -5,28 +5,27 @@ import { ExternalLink } from '../../design/links';
 import { CodeBlock } from './CodeBlock';
 
 /**
- * An agent's words as a reader reads them (D76, CONV2): GitHub-flavoured Markdown — headings, lists,
+ * An agent's words as a reader reads them: GitHub-flavoured Markdown — headings, lists,
  * tables, task lists, links, inline code — with fenced code as a {@link CodeBlock}.
  *
  * @remarks
- * **Safe by default** (D76 §5). Raw HTML in the text is shown as text, never parsed: the renderer is
+ * **Safe by default**. Raw HTML in the text is shown as text, never parsed: the renderer is
  * not given the plugin that would, so an agent cannot put markup into the page.
  *
  * **A link leaves the application**, through `ExternalLink`: in the system's browser, or in Daoris's
- * where the person chose that (BRW7). A plain link would navigate the whole window away, which is the
- * drop-a-file failure in another form (platform language §4). **An image is never fetched** — it is
+ * where the person chose that. A plain link would navigate the whole window away, which is the
+ * drop-a-file failure in another form. **An image is never fetched** — it is
  * a link to what it names, opened only on purpose.
  *
  * **Content, not chrome** (translation-parity): the text is the agent's own, in whatever language it
  * wrote, and nothing here translates it.
  *
- * **A line the agent ended stays ended** (UX5 U4). Markdown makes a single newline a space, and an
- * agent's one-item-per-line answer drew as one paragraph on the window. The agent wrote for a
+ * **A line the agent ends stays ended**. Markdown makes a single newline a space, but the agent writes for a
  * terminal, where a newline is a newline, as chat surfaces generally read it.
  *
- * **A word wider than its line breaks inside it** (ASKHIST1b): a URL the agent says again is one word, and it ran past Ask
+ * **A word wider than its line breaks inside it**: a URL the agent says again is one word, and it would run past Ask
  * Daoris's dock. `break-word` rather than `anywhere`, since it leaves each word's width in what a table measures, so a
- * table keeps its columns and scrolls in its own box as before.
+ * table keeps its columns and scrolls in its own box.
  */
 export function Markdown({ text }: { text: string }) {
   return (
@@ -70,9 +69,9 @@ const COMPONENTS: Components = {
       {children}
     </ExternalLink>
   ),
-  // 🔴 Never loaded (REV3). A rendered image is a request the page makes with no click, so whatever an
+  // 🔴 Never loaded. A rendered image is a request the page makes with no click, so whatever an
   // agent wrote into its URL would leave the machine even where its harness's own network tools are
-  // refused (D47 §4, D52). Raw HTML was already text; a Markdown image is not raw HTML. It is a link.
+  // refused. Raw HTML is already text; a Markdown image is not raw HTML. It is a link.
   img: ({ src, alt }) => (
     <ExternalLink href={typeof src === 'string' ? src : undefined} className="text-accent underline underline-offset-2">
       {`🖼 ${alt || (typeof src === 'string' ? src : '')}`}

@@ -12,7 +12,7 @@ import { WaitPanel } from './WaitPanel';
 import { useWaitPanelHeight } from './waitPanelHeight';
 import { WaitStrip } from './WaitStrip';
 
-// The waiting panel (WAITPANEL1): a session's column as the frame lays it out, its conversation scrolled up from the tail above
+// The waiting panel: a session's column as the frame lays it out, its conversation scrolled up from the tail above
 // the panel, and the panel holding the strip and a park's box. Its top edge sizes it, kept per viewer; *To the top* and *Back to
 // bottom* lie above that edge over the conversation's foot. In both languages and both themes, at the floor and kept tall.
 
@@ -59,14 +59,14 @@ type Holds = 'park' | 'stripAndPark' | 'nothing';
 
 /** The column: the conversation scrolling in the main area, with a sticky line of its own, and the panel under it. */
 function Column({ height, onResize, onReset, holds, question = ASKED }: {
-  /** The park's question: three answers, or six long ones (QUESTIONUI1a). */
+  /** The park's question: three answers, or six long ones. */
   question?: ParkQuestion;
   height: number;
   onResize: (height: number) => void;
   onReset?: () => void;
   holds: Holds;
 }) {
-  // The answer selected, held as the frame holds it, so a row chosen in the story stays chosen (QUESTIONUI1a).
+  // The answer selected, held as the frame holds it, so a row chosen in the story stays chosen.
   const [selected, setSelected] = useState<string | null>(null);
   return (
     <Tooltip.Provider>
@@ -148,7 +148,7 @@ export const NothingWaiting: Story = { args: { holds: 'nothing' } };
 /** At the floor: a line of what waits, the rest scrolled, the conversation given the column. */
 export const AtTheFloor: Story = { render: () => <Column height={72} onResize={nothing} holds="park" /> };
 
-/** Six long answers at the floor (QUESTIONUI1a): the rows scroll within the park's part, the field and *Send* stay in sight below it. */
+/** Six long answers at the floor: the rows scroll within the park's part, the field and *Send* stay in sight below it. */
 export const SixLongAtTheFloor: Story = { render: () => <Column height={72} onResize={nothing} holds="park" question={SIX_LONG} /> };
 
 /** The same in 中文 and dark. */

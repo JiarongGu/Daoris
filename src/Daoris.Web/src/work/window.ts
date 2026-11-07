@@ -1,5 +1,5 @@
 /**
- * Which window this page is (D55 §b, SURF8).
+ * Which window this page is.
  *
  * @remarks
  * **A secondary window is a route into the same bundle**, not a second frontend — the same bytes,
@@ -25,7 +25,7 @@ export const MONITOR_WINDOW = 'monitor';
 
 /**
  * Which session ids may be named. Deliberately narrow: the alphabet the ledger actually mints
- * (eight hex characters) plus the `origin/id` a mirrored record wears (D47 §6), and nothing else.
+ * (eight hex characters) plus the `origin/id` a mirrored record wears, and nothing else.
  *
  * @remarks
  * It is a whitelist rather than an escape, because the value crosses three boundaries — a URL, an
@@ -68,7 +68,7 @@ export function secondaryWindow(search: string): SecondaryWindow | null {
 export const FIRST_MAIN_WINDOW = 'main';
 
 /**
- * The name this page's window was opened under, which it tells the host when it asks for a picker (MAINWINDOWS2c): the
+ * The name this page's window is opened under, which it tells the host when it asks for a picker: the
  * dialog is owned by this window, not the first main window, which is hidden while put away. Null for the application's own
  * window, the first, which a host takes a missing name to be (`FIRST_MAIN_WINDOW` where the host names it).
  */
@@ -89,7 +89,7 @@ export function sessionWindowName(id: string): string {
 const MAIN_WINDOW = /^main:(?:[2-9]|[1-9][0-9]+)$/;
 
 /**
- * Another main window of the instance that runs (ONEINSTANCE1, D171 point 2): the name a later launch of the executable
+ * Another main window of the instance that runs: the name a later launch of the executable
  * opened it under, or null for the application's own window and every other.
  *
  * @remarks

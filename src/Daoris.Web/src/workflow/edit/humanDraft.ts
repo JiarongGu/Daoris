@@ -1,6 +1,6 @@
 import type { DraftNode, GraphDraft } from './graphDraftTypes';
 
-// A person's task (NODEKIT1 HUMAN; D245's second note) is one of two: a task the person presses *Done* on, whose outcome is `done`, or an approval
+// A person's task is one of two: a task the person presses *Done* on, whose outcome is `done`, or an approval
 // they *Approve* or *Reject*, whose outcome is `approved` and whose refusal goes on the graph's `rejected` wire as a review's changes do. The
 // driver's `HumanNode` holds the two outcome lists; the draft says which one a node declares.
 

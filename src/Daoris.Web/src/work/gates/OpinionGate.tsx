@@ -12,10 +12,10 @@ import { type FileOpen, FileOpener } from '../review/preview';
 import { shortCommit } from './review';
 
 /**
- * The presses a second opinion's gate is handed (XAGENT1g; the second-agent design §8.5), each where the frame can press it:
+ * The presses a second opinion's gate is handed, each where the frame can press it:
  * *Ask now*, *Try again* and *Ask again* are one ask, the rule's first reviewer that can; *Ask the same agent, fresh* the working
  * agent's own; *Stop* the reviewer reading; *Go on anyway…* and *I looked myself…* the person's answer with their words; *Send
- * back…* their words to the working session (D137's box). Each tells the gate how it ended, a refusal said inside it.
+ * back…* their words to the working session (the session's box). Each tells the gate how it ended, a refusal said inside it.
  */
 export type OpinionGateActs = {
   ask?: (answered: Answered) => void;
@@ -34,27 +34,27 @@ const ACT: Record<OpinionPress, keyof OpinionGateActs> = {
   sendBack: 'sendBack',
 };
 
-/** The border a tone wears, beside its pill's word: never the hue alone (D41 §3). */
+/** The border a tone wears, beside its pill's word: never the hue alone. */
 const RAIL: Record<ReturnType<typeof opinionTone>, string> = {
   open: 'border-l-st-open', taken: 'border-l-st-taken', done: 'border-l-st-done', neutral: 'border-l-line-strong',
 };
 
 /**
- * **Second opinion** (XAGENT1g, D155 points 8–10; the second-agent design §7–§9): where another agent's reading of a session's
+ * **Second opinion**: where another agent's reading of a session's
  * work stands at its landing's gate, what it found and how the working session answered, and the presses that move it, drawn
- * beside D154's *Review in `<environment>`*, before it, as §7's order has it.
+ * beside the review's *Review in `<environment>`*, before it.
  *
  * @remarks
- * **Each state says itself in the reader's language**, from its code, as the review's gate does (the platform language §4): a
+ * **Each state says itself in the reader's language**, from its code, as the review's gate does: a
  * sentence the driver writes is chrome. A state the page does not know, or a gate the driver could not read, says the driver's
  * own sentence beneath, marked as the driver's.
  *
- * **Its findings are claims, never facts** (§6.6): each shows its weight, its place (a door to the file's preview at its line,
- * PREVIEW1), its claim, why it matters, how to see it, how sure it is and what it proposes, with the working session's answer
+ * **Its findings are claims, never facts**: each shows its weight, its place (a door to the file's preview at its line),
+ * its claim, why it matters, how to see it, how sure it is and what it proposes, with the working session's answer
  * beside it, how the driver read that answer, the recheck's word, and whether it is disputed. A fix is *fixed, by its account*,
  * never proven; a pass with no findings says what it read, never *no issues*.
  *
- * **A dispute is the person's** (§8.2): where a press is coming (*Accept…*, or D154's *Reviewed*), the gate says that press answers
+ * **A dispute is the person's**: where a press is coming (*Accept…*, or the review's *Reviewed*), the gate says that press answers
  * it; where none is, *Go on anyway…* answers it here. *Send back…* is the person's words to the working session.
  *
  * A molecule: it is handed the gate, its detail and the presses, and reports each press.
@@ -64,7 +64,7 @@ export function OpinionGate({
 }: {
   gate: Gate;
   /**
-   * Opens a finding's file in the side bar's preview at its line (PREVIEW1), where the frame offers it here; absent, the
+   * Opens a finding's file in the side bar's preview at its line, where the frame offers it here; absent, the
    * frame's own opener is read, and with none a finding's place is plain text.
    */
   onOpenFile?: (open: FileOpen) => void;
@@ -73,7 +73,7 @@ export function OpinionGate({
   acts?: OpinionGateActs;
   /** A press on the record is on its way: none is offered again until it answers. */
   busy?: boolean;
-  /** A press of the person's is coming that answers a dispute or commits nobody read: *Accept…*, or D154's *Reviewed*. */
+  /** A press of the person's is coming that answers a dispute or commits nobody read: *Accept…*, or the review's *Reviewed*. */
   pressComing?: boolean;
   /** The working session, which *Send back…* speaks to. */
   working?: string | null;
@@ -119,7 +119,7 @@ export function OpinionGate({
       className={cn('grid min-w-0 gap-2 rounded-card border border-line border-l-[3px] bg-raised px-3 py-2.5', RAIL[tone], className)}
     >
       <div className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1">
-        {/* Status leads (D41 §4): the state, then what it is and who reads it. */}
+        {/* Status leads: the state, then what it is and who reads it. */}
         <Pill tone={tone}>{t(`opinion.state.${state}`)}</Pill>
         <h3 id={headingId} className="m-0 min-w-0 text-small font-semibold text-ink">{t('opinion.title')}</h3>
         {who && <span className="min-w-0 text-small text-ink-soft [overflow-wrap:anywhere]">{who}</span>}
@@ -175,7 +175,7 @@ export function OpinionGate({
       {refusal && <Refused sentence={refusal} />}
 
       {(asking === 'anyway' || asking === 'myself') && (
-        /* Their answer at the gate, with words they may give (§8.5): kept on the gate and the landing record. */
+        /* Their answer at the gate, with words they may give: kept on the gate and the landing record. */
         <InlineConfirm
           tone="primary"
           label={t(asking === 'anyway' ? 'opinion.ask.anywayTitle' : 'opinion.ask.myselfTitle')}
@@ -195,7 +195,7 @@ export function OpinionGate({
         </InlineConfirm>
       )}
       {asking === 'sendBack' && working && (
-        /* D137's box, in the person's own words: they go to the working session as its next turn. */
+        /* The session's box, in the person's own words: they go to the working session as its next turn. */
         <InlineConfirm
           tone="primary"
           block
@@ -272,7 +272,7 @@ export function opinionSays(t: ReturnType<typeof useTranslation>['t'], gate: Gat
   }
 }
 
-/** Why none could be had, by its code (§8.4): a cool-off says until when, in the reader's own time. */
+/** Why none could be had, by its code: a cool-off says until when, in the reader's own time. */
 function whyWords(t: ReturnType<typeof useTranslation>['t'], gate: Gate, who: string): string {
   switch (gate.code) {
     case 'no-reviewer':
@@ -300,7 +300,7 @@ export function unsettledWords(t: ReturnType<typeof useTranslation>['t'], state:
 
 const tierKey = (tier: string) => (tier === 'person' || tier === 'none' ? `opinion.tier.${tier}` : 'opinion.tier.agent');
 
-/** The findings, each beside its answer, and what the pass read and could not tell (§9). */
+/** The findings, each beside its answer, and what the pass read and could not tell. */
 function Findings({ detail }: { detail: OpinionDetail }) {
   const { t, i18n } = useTranslation();
   const first = detail.first?.findings ?? [];
@@ -352,7 +352,7 @@ function Findings({ detail }: { detail: OpinionDetail }) {
 
 /**
  * One finding: its weight leads, then its place and its claim, why it matters, how to see it, how sure, what it proposes, and
- * beside it the working session's answer, how the driver read it and the recheck's word (§6.4–§6.6). The reviewer's words are
+ * beside it the working session's answer, how the driver read it and the recheck's word. The reviewer's words are
  * content, shown as written.
  */
 function Finding({ finding }: { finding: OpinionFinding }) {
@@ -403,7 +403,7 @@ function Said({ label, text }: { label: string; text: string }) {
 }
 
 /**
- * The working session's answer as the person reads it (§6.4, §6.6): a fix the driver checked, *fixed, by its account*; a fix it
+ * The working session's answer as the person reads it: a fix the driver checked, *fixed, by its account*; a fix it
  * could not count, why; a rejection with its evidence; unresolved with why; a finding left unanswered, *not answered*.
  */
 function answerWords(t: ReturnType<typeof useTranslation>['t'], finding: OpinionFinding): string {

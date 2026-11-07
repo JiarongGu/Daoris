@@ -4,7 +4,7 @@ import { paletteCommands } from '../../menus/commands';
 import { CommandPalette } from './CommandPalette';
 import { ATTENDED, IN_A_BROWSER, menuWorld } from './menuFixtures';
 
-// Every state of the palette (SURF9), on the shipped component, from the one table the menu bar reads (UX7a): "what a
+// Every state of the palette, on the shipped component, from the one table the menu bar reads: "what a
 // browser sees" and "what a shell sees" are arguments rather than arrangements.
 
 const t = i18n.t.bind(i18n);
@@ -26,7 +26,7 @@ export const OnSessions: Story = { args: { commands: paletteCommands(menuWorld(A
 
 /**
  * A browser. Shorter by OMISSION: no machine, no session, no window — because a palette is a promise that what it lists
- * can be done (D47 §4).
+ * can be done.
  */
 export const InABrowser: Story = { args: { commands: paletteCommands(menuWorld(IN_A_BROWSER), t) } };
 
@@ -34,7 +34,7 @@ export const InABrowser: Story = { args: { commands: paletteCommands(menuWorld(I
 export const NothingMatches: Story = { args: { commands: [] } };
 
 /**
- * Where Ask Daoris is here (DOCK1d): the placeholder says anything can be asked, and once something is
+ * Where Ask Daoris is here: the placeholder says anything can be asked, and once something is
  * typed the last row asks it. Type into the story to see the row.
  */
 export const WithAsking: Story = { args: { commands: paletteCommands(menuWorld(), t), onAsk: () => {} } };

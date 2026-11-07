@@ -7,9 +7,9 @@ import { BringInAgent } from './BringInAgent';
 import { CoWorkers } from './CoWorkers';
 import { MemberThread } from './MemberThread';
 
-// The head's *Co-workers* (COWORKUX1, the co-worker design §6.2): the lead, a member working, one answered to the lead, one answered to
+// The head's *Co-workers*: the lead, a member working, one answered to the lead, one answered to
 // the person with *Pass to the lead*, and an agent's ask that waits on the person's yes with its presses; *Bring in another agent…*'s
-// dialog with a door the rules turn off; a member's thread with *Back to lead*, *Ask again…* and the pass (§6.4, §7). In English, 中文 and
+// dialog with a door the rules turn off; a member's thread with *Back to lead*, *Ask again…* and the pass. In English, 中文 and
 // dark, at the frame's widths.
 
 const row = (over: Partial<HelperAskRow> & Pick<HelperAskRow, 'id'>): HelperAskRow => ({
@@ -59,7 +59,7 @@ const OUTSIDE = [
   { id: 'o5d6e7f8', agent: 'other', repository: null, joined: '2026-11-06T09:10:00Z', seen: null },
 ];
 
-/** CHANNELJOIN1c: the agents outside Daoris on the line's channel beside the co-workers, each as itself with *Remove* (§5.8). */
+/** The agents outside Daoris on the line's channel beside the co-workers, each as itself with *Remove*. */
 export const OutsideAgents: Story = { args: { outside: OUTSIDE, onRemoveOutside: () => {} } };
 
 /** The same in 中文. */

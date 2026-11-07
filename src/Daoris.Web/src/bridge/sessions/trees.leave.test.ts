@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { QueryClient } from '@tanstack/react-query';
 
-// Leaving Review stops its git (GITAPP1a-iii, the git-app design P1.6): the review's reader counts its waiters, and once the last
+// Leaving Review stops its git: the review's reader counts its waiters, and once the last
 // has gone for READ_LEAVE_GRACE it sends READ_LEAVE with the read's id; a return within the grace joins the read still running.
 
 const { invoke } = vi.hoisted(() => ({ invoke: vi.fn() }));
@@ -105,7 +105,7 @@ describe('the review’s reader leaves a read nobody waits on', () => {
     shell.answer(0, DIFF);
     await vi.advanceTimersByTimeAsync(READ_LEAVE_GRACE * 2);
     expect(asked('READ_LEAVE')).toHaveLength(0);
-    // Put where a return reads first (REVIEW4).
+    // Put where a return reads first.
     expect(client.getQueryData(keys.diff('s1a2b3c4'))).toEqual(DIFF);
   });
 });

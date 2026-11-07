@@ -10,15 +10,15 @@ const RADIUS = 6;
 const AROUND = 2 * Math.PI * RADIUS;
 
 /**
- * How full the session's context is (CONV5): used against the window, as the agent last reported it,
+ * How full the session's context is: used against the window, as the agent last reported it,
  * under the composer where the reference keeps it.
  *
  * @remarks
- * **Absent is never zero** (TOOL3). A session that has reported nothing draws a dashed ring and a dash,
+ * **Absent is never zero**. A session that has reported nothing draws a dashed ring and a dash,
  * and its tip says which absence it is: a structured door that has not reported yet, or a door that
  * carries only text and never will. A ring at 0% would claim a measurement nobody made.
  *
- * **The numbers are the harness's**, carried as given (D57 §4): no model is named and no price claimed.
+ * **The numbers are the harness's**, carried as given: no model is named and no price claimed.
  * The high-water mark is in the tip, because the latest reading falls when the harness compacts, and
  * the most the session held is what says it came close.
  */

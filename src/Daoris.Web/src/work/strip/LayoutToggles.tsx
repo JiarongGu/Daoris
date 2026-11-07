@@ -7,8 +7,8 @@ import { LIST_DOOR } from '../frame/listKeys';
 export type LayoutRegion = 'list' | 'panel' | 'right';
 
 /**
- * Each region's picture and key — VS Code's, so a hand that knows one knows the other. The key is the table's (UX7a,
- * D152 §3.5), View's item for the region, so the tip and the menu never print two.
+ * Each region's picture and key — VS Code's, so a hand that knows one knows the other. The key is the table's,
+ * View's item for the region, so the tip and the menu never print two.
  */
 export const LAYOUT_KEYS: Record<LayoutRegion, { icon: IconName; keys: string }> = {
   list: { icon: 'layoutRail', keys: keysOf('view.list')[0]! },
@@ -17,13 +17,13 @@ export const LAYOUT_KEYS: Record<LayoutRegion, { icon: IconName; keys: string }>
 };
 
 /**
- * The region toggles (DOCK1c, SURF11): on the strip's right, beside the window controls, as VS Code's
+ * The region toggles: on the strip's right, beside the window controls, as VS Code's
  * layout toggles sit in its title bar — and in the View menu, with the same keys.
  *
  * @remarks
  * **Pressed is shown.** A toggle's state is the region's, so a person can read the layout off the strip.
- * The panel and the side bar are the frame's, on every view (DOCK1a); the list is the view's own and is
- * named for the view (D118 §3a), so the view hands its name in, and a view with no list hands none and
+ * The panel and the side bar are the frame's, on every view; the list is the view's own and is
+ * named for the view, so the view hands its name in, and a view with no list hands none and
  * has no list toggle: a button that could only do nothing is worse than none. A molecule: the state
  * arrives, a press goes out.
  */

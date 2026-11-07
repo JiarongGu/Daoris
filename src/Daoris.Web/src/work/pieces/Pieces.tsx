@@ -17,7 +17,7 @@ export type PieceSection = {
     roster: { harnesses: readonly string[]; labels?: Readonly<Record<string, string>>; names?: Readonly<Record<string, string>> };
     busy?: boolean;
     onAsk: (asked: PieceAsk, answered: Answered) => void;
-    /** Whether the ask stands open, where the frame holds it so the head's ⋯ opens the same ask (COAGENT1c); absent, the section holds it. */
+    /** Whether the ask stands open, where the frame holds it so the head's ⋯ opens the same ask; absent, the section holds it. */
     open?: boolean;
     onOpen?: (open: boolean) => void;
   };
@@ -51,14 +51,14 @@ export function pieceLine(t: TFunction, row: PieceRow, nameOf: (agent: string) =
 }
 
 /**
- * **The Pieces section** (分项; COAGENT1b, D199; the co-agent design §6.1): each piece this session asked another agent to write, its
+ * **The Pieces section** (分项): each piece this session asked another agent to write, its
  * words as the person wrote them (content, shown as they are), then where it stands in the person's words with the facts Daoris read
  * of its work: the one commit kept and the ref it is frozen at, its files and those beyond its piece. A piece whose partner works has
  * a door to the partner's own page and *Stop…*, its record's stop, which keeps what it wrote. Under them, *Ask another agent to work on
  * a piece…* opens the ask in place. The answer is the session's next turn, in the conversation, so it is not said again here.
  *
  * @remarks
- * **Props only** (components §2): the frame reads the pieces and holds the presses. Without `ask` no ask is offered, without `onOpen`
+ * **Props only**: the frame reads the pieces and holds the presses. Without `ask` no ask is offered, without `onOpen`
  * no door, and without `onStop` no stop: a browser, a story. A piece whose work or copy waits for the person takes *Discard…*
  * (its ref and copy removed by the driver's next look), and one a restart left uncertain *Hand over what it left* (its work kept and
  * handed), each through `onAct` and the inline confirmation.

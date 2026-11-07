@@ -3,17 +3,17 @@ import { useMutation } from '@tanstack/react-query';
 import { getBridge, useShenora, useShenoraEvent } from '@shenora/react';
 import { call } from '../call';
 
-// A session's console and the streams it runs beside itself (MOD3): live lines over the bridge, and
+// A session's console and the streams it runs beside itself: live lines over the bridge, and
 // stopping one task from its tab.
 
 /**
- * A session's console, live (D49 §2).
+ * A session's console, live.
  *
  * @remarks
  * **Desktop-only, structurally.** Output is transcript-class material — it can carry machine paths,
- * and a transcript never leaves the machine that produced it (D47 §4) — so it arrives over the
+ * and a transcript never leaves the machine that produced it — so it arrives over the
  * shell's bridge and has no HTTP route at all. A browser over a keyed remote sees the session's
- * record, as it always did, and never its stream.
+ * record and never its stream.
  *
  * The backlog is asked for once on open; live lines arrive as `SESSION_OUTPUT` batches. The driver's
  * sequence numbers are what make those two sources one stream: anything already seen is dropped, and
@@ -22,7 +22,7 @@ import { call } from '../call';
  */
 export type ConsoleLine = { sequence: number; text: string };
 
-/** A phase a process wrote into its relay with its start (SIGNIN1, the UI/UX design R2): which step, and when it began. */
+/** A phase a process writes into its relay with its start: which step, and when it began. */
 export type PhaseMark = { phase: string; at: number };
 
 /**
@@ -61,7 +61,7 @@ export function useSessionConsole(sessionId: string | null) {
   // The newest sequence the page holds — read inside the event handler, which must not re-subscribe
   // every time a line arrives.
   const seen = useRef(0);
-  // Which session this console is for NOW, so an answer asked for another one is dropped (REV3).
+  // Which session this console is for NOW, so an answer asked for another one is dropped.
   const attended = useRef(sessionId);
   attended.current = sessionId;
 
@@ -69,9 +69,9 @@ export function useSessionConsole(sessionId: string | null) {
   // entirely, and the console is the part of the drawer that may be missing. The RECORD above it is
   // what the drawer exists to show, and a console cannot be allowed to take it down.
   //
-  // 🔴 MERGED by sequence, whichever source lands first (REV3) — as `mergeEvents` does for the
+  // MERGED by sequence, whichever source lands first — as `mergeEvents` does for the
   // conversation. Filtered by "newer than the newest held", a live batch that beat the backlog's answer
-  // moved that mark past the whole backlog, and it was thrown away without a word.
+  // would move that mark past the whole backlog, and it would be thrown away without a word.
   const take = useCallback((tail: SessionTail | undefined) => {
     setLive(Boolean(tail?.live));
     setDropped(tail?.dropped ?? 0);
@@ -109,7 +109,7 @@ export function useSessionConsole(sessionId: string | null) {
 
     const first = batch.lines[0]!.sequence;
     if (seen.current > 0 && first > seen.current + 1) {
-      // Something was missed. Ask for it rather than showing two halves as though they joined.
+      // Something is missing. Ask for it rather than showing two halves as though they joined.
       void getBridge()
         .invoke<SessionTail>('DAORIS.DRIVER', 'TAIL_SESSION', { payload: { id: sessionId, after: seen.current } })
         // Only while this console is still that session's: the answer may land after a switch.
@@ -118,15 +118,14 @@ export function useSessionConsole(sessionId: string | null) {
       return;
     }
 
-    // Live unless the batch says otherwise: a session's last words are written after it closed, and a
-    // snapshot without the flag says nothing (CONSOLE3c).
+    // Live unless the batch says otherwise: a session's last words are written after it closes, and a
+    // snapshot without the flag says nothing.
     take({ ...batch, live: batch.live !== false });
   });
 
   // An end is never a line, so a console asks again when one is told, and the answer says whether it
-  // still runs: a stream's end as its session's streams changing (CONSOLE2c), and a session's own as
-  // its ending. Found on the window twice (CONSOLE3a, 3c): a stopped task's console and a completed
-  // chat's both still said live.
+  // still runs: a stream's end as its session's streams changing, and a session's own as
+  // its ending. So a stopped task's console and a completed chat's stop saying live.
   const askAgain = () => {
     if (!sessionId) return;
     void getBridge()
@@ -147,7 +146,7 @@ export function useSessionConsole(sessionId: string | null) {
 }
 
 /**
- * One thing a session runs beside itself (CONSOLE2): a subagent its harness spawned, or background
+ * One thing a session runs beside itself: a subagent its harness spawned, or background
  * work it started, as a console stream of its own. `key` is what `useSessionConsole` tails it by.
  */
 export type SessionStreamRow = {
@@ -157,15 +156,15 @@ export type SessionStreamRow = {
   live: boolean;
   /** How it ended, in the wire's word — null while it runs. */
   state: string | null;
-  /** Whether a person can stop it now (CONSOLE3a): its harness said so, and it runs. */
+  /** Whether a person can stop it now: its harness says so, and it runs. */
   canStop?: boolean;
 };
 
 /**
- * A session's streams, oldest first (CONSOLE2).
+ * A session's streams, oldest first.
  *
  * @remarks
- * Desktop-only for the console's reason (D47 §4). Asked for on open, and again whenever the driver
+ * Desktop-only for the console's reason. Asked for on open, and again whenever the driver
  * says one of this session's streams opened or ended (`SESSION_STREAMS`). Defensive about the shape,
  * as the console is: an answer that is something else leaves the session with
  * no streams.
@@ -202,8 +201,8 @@ export function useSessionStreams(sessionId: string | null): SessionStreamRow[] 
 }
 
 /**
- * Stop one task a session runs, from its tab (CONSOLE3a): the harness's own stop, sent by the session
- * that runs it. `stopped: false` is an answer — nothing here runs it any more, or its tool stopped
+ * Stop one task a session runs, from its tab: the harness's own stop, sent by the session
+ * that runs it. `stopped: false` is an answer — nothing here runs it, or its tool stopped
  * nothing — and the tab changes when the wire says how the task ended, not when this answers.
  */
 export const useStopTask = () => useMutation({

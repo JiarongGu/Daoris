@@ -4,7 +4,7 @@ import { describe, expect, it } from 'vitest';
 import { isPartnerRecord, SENDERS, senderOf, wordSenderOf } from './sender';
 
 /**
- * COMMS1a (the comms design §3.3, §13 point 11): who said a word, read once from an event's marks. The shared table is
+ * Who said a word, read once from an event's marks. The shared table is
  * `fixtures/senders.json` among the service's tests, which the service's and the driver's suites hold row for row; this page's twin reads
  * the `event` shape, and tells a partner from a helper by the work of the record the event's `helper` names.
  */
@@ -30,7 +30,7 @@ describe('who said a word (COMMS1a)', () => {
     expect(senderOf(marks, helperWork)).toBe(row.sender);
   });
 
-  /** ONEWAY1m: the page reads a park's answer from a record's kept words, so it reads a kept word's marks by the service's rule too. */
+  /** The page reads a park's answer from a record's kept words, so it reads a kept word's marks by the service's rule too. */
   it.each(WORD_ROWS.map((row) => [row.name, row] as const))('reads a kept word of %s as the table says', (_name, row) => {
     expect(wordSenderOf(row.word)).toBe(row.sender);
   });

@@ -6,14 +6,14 @@ using Microsoft.Data.Sqlite;
 namespace Daoris.Knowledge;
 
 /// <summary>
-/// A finished tree's record (KEEPSIZE1b, D195's keep-size note; the keep-size design §2.2): <c>work_records</c>, one row per finished tree,
+/// A finished tree's record: <c>work_records</c>, one row per finished tree,
 /// and <c>work_record_sessions</c>, the sessions that ran in it, in <c>knowledge.db</c> beside the sessions' rows. Kept, not derived: the
 /// index's rebuild never touches them, and they carry their own version in <c>work_record_version</c>, never lowered. History: they go with
 /// their last session (<see cref="ForgetSessionAsync"/>, which <see cref="SessionStore.DeleteAsync"/> calls), or with a clear of history
 /// once no session names them. Machine-local: no wire carries them, and a shared host maps no door to them.
 /// </summary>
 /// <remarks>
-/// Searched through <c>work_records_fts</c> (KEEPSIZE1c): one row of the record's own facts and one per linked session, holding that session's
+/// Searched through <c>work_records_fts</c>: one row of the record's own facts and one per linked session, holding that session's
 /// note and the person's words in its row. The table is derived, carries its own version and is rebuilt from the records when it is missing
 /// or older; the conversations' transcript files are the driver's and are not read here.
 /// </remarks>
@@ -38,7 +38,7 @@ public sealed class WorkRecordStore : IWorkRecordSearch
 
     private readonly ConnectionGate _db;
 
-    /// <summary>The memory a post naming a landing releases for its sessions, in its transaction (KNOWCENTRAL2c).</summary>
+    /// <summary>The memory a post naming a landing releases for its sessions, in its transaction.</summary>
     private readonly MemoryOpStore _memory;
 
     private WorkRecordStore(SqliteConnection connection)
@@ -307,7 +307,7 @@ public sealed class WorkRecordStore : IWorkRecordSearch
     /// as the first did and writes nothing. The sessions are this store's rows that name the tree and were made before its move.
     /// </summary>
     /// <param name="turns">
-    /// Each session's turn lines (KNOWCENTRAL2c): a post naming a landing is its sessions' commit point, releasing their staged memory in its
+    /// Each session's turn lines: a post naming a landing is its sessions' commit point, releasing their staged memory in its
     /// transaction with the models of the turn that holds each row's instant.
     /// </param>
     /// <returns>The record as kept, and whether this post kept it.</returns>
@@ -514,8 +514,8 @@ public sealed class WorkRecordStore : IWorkRecordSearch
     }, ct);
 
     /// <summary>
-    /// A session's links gone with its row (§2.2: <see cref="SessionStore.DeleteAsync"/>, which the history clear and the single delete call
-    /// inside their transaction), and each record it was the last session of. Nothing where the tables are not here or a newer build stamped
+    /// A session's links gone with its row (<see cref="SessionStore.DeleteAsync"/>, which the history clear and the single delete call
+    /// inside their transaction), and each record it is the last session of. Nothing where the tables are not here or a newer build stamped
     /// them, which this build never writes into.
     /// </summary>
     internal static async Task ForgetSessionAsync(ConnectionGate db, string session, CancellationToken ct)
@@ -689,7 +689,7 @@ public sealed class WorkRecordStore : IWorkRecordSearch
         return new WorkRecord(post, at, schema, sessions);
     }
 
-    /// <summary>Every session row that names the tree's path and was made before the move, oldest first, with its base.</summary>
+    /// <summary>Every session row that names the tree's path, made before the move, oldest first, with its base.</summary>
     private async Task<IReadOnlyList<(string Id, string? Base)>> SessionsOfAsync(WorkRecordPost post, CancellationToken ct)
     {
         var tree = Trees.Normalize(post.Tree);

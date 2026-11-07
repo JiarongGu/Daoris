@@ -46,6 +46,17 @@ public sealed class WorkingTreeProvenanceTests : IDisposable
         Assert.Equal("main", await WorkingTree.DefaultBranchAsync(_tree.Root));
     }
 
+    /// <summary>Origin's <c>HEAD</c> is a file of git's own, so the line it names is read with no process started.</summary>
+    [Fact]
+    public async Task The_canonical_line_origin_names_is_read_from_the_files()
+    {
+        _tree.Git("symbolic-ref refs/remotes/origin/HEAD refs/remotes/origin/trunk");
+        using var tally = GitStartTally.Open(_tree.Root);
+
+        Assert.Equal("trunk", await WorkingTree.DefaultBranchAsync(_tree.Root));
+        Assert.Empty(tally.Starts);
+    }
+
     /// <summary>
     /// A branch is work in flight, and the provenance says which — this is the field the deployment
     /// refuses on, so it has to be the checked-out branch and not the canonical one.

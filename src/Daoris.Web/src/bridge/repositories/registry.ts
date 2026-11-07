@@ -2,11 +2,11 @@ import { useMutation } from '@tanstack/react-query';
 import { getBridge } from '@shenora/react';
 import { ownWindowName } from '../../work/window';
 
-// The registry's machine half (MOD3): a folder the shell names, and a declaration written in place (D48 §7).
+// The registry's machine half: a folder the shell names, and a declaration written in place.
 
 /**
- * What the shell can say about a folder on this machine (D48 §7) — the one thing a page cannot find
- * out for itself, because a browser may never learn a filesystem path (D46/D47 §4).
+ * What the shell can say about a folder on this machine — the one thing a page cannot find
+ * out for itself, because a browser may never learn a filesystem path.
  */
 export type FolderInspection = {
   path: string;
@@ -21,8 +21,8 @@ export type FolderInspection = {
   join: boolean;
   shareKnowledge: boolean;
   /**
-   * What its manifest says it uses (D91), as the file has it. The registry replaces a row's `uses` with
-   * the declaration's, so a registration made from this answer states them (MANAGE1).
+   * What its manifest says it uses, as the file has it. The registry replaces a row's `uses` with
+   * the declaration's, so a registration made from this answer states them.
    */
   uses: string[];
 };
@@ -35,14 +35,14 @@ export type FolderInspection = {
  * registering that follows is an ordinary call to the loopback host — routing it through IPC too
  * would be a second door onto the same judgement.
  *
- * It waits for as long as the dialog is open (SHEN2): under the bridge's default 30 seconds a person who
- * took longer was told the call timed out while the dialog stayed up, and their pick then answered nobody.
+ * It waits for as long as the dialog is open: under the bridge's default 30 seconds a person who
+ * took longer would be told the call timed out while the dialog stayed up, and their pick then answered nobody.
  * An unbounded wait needs the kit's 0.19, where `Infinity` means no timer rather than one that fires at once.
  */
 export const usePickFolder = () =>
   useMutation({
     mutationFn: () => {
-      // The dialog is owned by the window this page is in (MAINWINDOWS2c); the first main window names none.
+      // The dialog is owned by the window this page is in; the first main window names none.
       const window = ownWindowName(globalThis.location?.search ?? '');
       return getBridge().invoke<FolderInspection | null>('DAORIS.REGISTRY', 'PICK_FOLDER',
         window === null ? { timeoutMs: Infinity } : { payload: { window }, timeoutMs: Infinity });
@@ -50,12 +50,12 @@ export const usePickFolder = () =>
   });
 
 /**
- * Edit a repository's own `daoris.json` through a form instead of a text editor (D48 §7).
+ * Edit a repository's own `daoris.json` through a form instead of a text editor.
  *
  * @remarks
  * Deliberately a different act from re-wiring, and kept visibly apart in the UI: this writes a TRACKED
  * file in that repository, and the diff lands uncommitted for its own review flow. Doctrine — rules,
- * knowledge, skills — stays unwritable from every surface (D31); the manifest is inert data (D26).
+ * knowledge, skills — stays unwritable from every surface; the manifest is inert data.
  */
 export type DeclarationEdit = {
   path: string;

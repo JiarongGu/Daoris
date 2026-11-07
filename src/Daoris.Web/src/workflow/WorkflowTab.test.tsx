@@ -9,9 +9,9 @@ import { FULL, INTEGRATING, NOTHING_SET, PLUGIN_UNREADY, WORK, WORKSPACE } from 
 import { LIST, PALETTE } from './edit/editFixtures';
 import { WorkflowTab } from './WorkflowTab';
 
-// WORKFLOW1b (D157 point 12; the workflow design §6.1, §6.2, §6.4): the Workflow tab draws Current read-only, a vertical
+// The Workflow tab draws Current read-only, a vertical
 // list drawn as a graph. Each step says what it is, the person's part in it and who acts, what it is set to, where that
-// was set with a door there, how much of it this build runs and its limit whole; each edge says what moves work on. A
+// is set with a door there, how much of it this build runs and its limit whole; each edge says what moves work on. A
 // molecule: every state is reached by its props, and every press goes out.
 
 const render = (node: ReactElement) => rtlRender(<Tooltip.Provider>{node}</Tooltip.Provider>);
@@ -33,7 +33,7 @@ describe("a repository's Workflow tab", () => {
     expect(screen.getByText(code('daoris workflow show --repository engine'))).toBeInTheDocument();
   });
 
-  // WORKFLOWEDIT1b: the step editor in place of INTEGRATE1q's presets in words, opened from the tab and told so its reads wait for it.
+  // The step editor in place of the presets in words, opened from the tab and told so its reads wait for it.
   it("opens the step editor for a workflow of one's own, and says the terminal's way where no editor is handed", async () => {
     const onOpen = vi.fn();
     const editor = {
@@ -87,7 +87,7 @@ describe("a repository's Workflow tab", () => {
     expect(opinion).toHaveTextContent('by codex-acp, else dsh');
     expect(opinion).toHaveTextContent('Read before it lands and before each next step; not required; commits that answer it not read again.');
     expect(opinion).toHaveTextContent("Set by the workspace aurora's second-opinion rule.");
-    // In part since XAGENT1f's gate: the landing waits for it, and its limit says what is not built.
+    // In part: the landing waits for it, and its limit says what is not built.
     expect(opinion).toHaveTextContent('works in part');
     expect(opinion).toHaveTextContent("The work here lands only once another agent's reading of it is settled");
 
@@ -130,7 +130,7 @@ describe("a repository's Workflow tab", () => {
     expect(screen.getByText(/^Your part:/)).toHaveTextContent('Your part: you accept it.');
   });
 
-  // INTEGRATE1r (F43): the rule's integrate step is drawn after the landing from its node kind, named, said where it was read, its
+  // The rule's integrate step is drawn after the landing from its node kind, named, said where it is read, its
   // limit whole and its press said once in the person's part; in 中文 too. Nothing runs it until the integration run is built.
   it("draws a rule's integrate step after the landing, named and said, in English and in 中文", async () => {
     render(<WorkflowTab page="repository" name="engine" current={INTEGRATING} />);

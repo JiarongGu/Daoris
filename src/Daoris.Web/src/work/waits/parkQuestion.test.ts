@@ -4,7 +4,7 @@ import { describe, expect, it } from 'vitest';
 import type { GoAhead } from '../../data/api';
 import { afterPress, choiceWords, openGoAheads, readQuestion } from './parkQuestion';
 
-// PARKVIEW1 (the park's ask design §2, §4): the park's question as SESSION_QUESTION answers it, read defensively by the table the
+// The park's question as SESSION_QUESTION answers it, read defensively by the table the
 // driver reads the file by; the words a choice sends; the go-aheads it still waits on; and what the box keeps once a press took its words.
 
 type Row = { name: string; file: Record<string, unknown>; widen?: Record<string, number>; read: Record<string, unknown> | null };
@@ -40,7 +40,7 @@ describe('readQuestion', () => {
     });
   });
 
-  /** SUPERVISOR1b: the route carries the supervisor's defer on the question beside it; read field by field, a part that does not read left out. */
+  /** The route carries the supervisor's defer on the question beside it; read field by field, a part that does not read left out. */
   it('reads the supervisor\'s defer the route carries beside the question, and none where it does not read', () => {
     const asked = { id: 'q1', question: 'Which?', choices: [], at: '2026-10-24T09:00:00Z' };
     const left = readQuestion({ question: { ...asked, left: { bound: 'sign-in', reasons: [{ says: 'Yours.', source: 'D191 point 3' }, { says: 'no source' }] } } });

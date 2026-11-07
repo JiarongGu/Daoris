@@ -1,8 +1,8 @@
 const slug = (text: string) => text.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
 
 /**
- * A new workflow's id from its name (D221 §2.3, as role ids are made): its words in lower case joined by dashes; a name with no ASCII letter
- * or digit takes the id it was copied from, numbered (`release` → `release-2`), else `workflow`; numbered on past an id saved already.
+ * A new workflow's id from its name (as role ids are made): its words in lower case joined by dashes; a name with no ASCII letter
+ * or digit takes the id it is copied from, numbered (`release` → `release-2`), else `workflow`; numbered on past an id saved already.
  */
 export function workflowIdFor(name: string, copiedFrom: string | null, saved: readonly string[]): string {
   const named = slug(name);
@@ -16,7 +16,7 @@ export function workflowIdFor(name: string, copiedFrom: string | null, saved: re
   return id;
 }
 
-/** The editor's history: what was, what is, and what an undo has set aside for a redo. */
+/** The editor's history: what came before, what is now, and what an undo has set aside for a redo. */
 export type History<T> = { past: readonly T[]; present: T; future: readonly T[] };
 
 /** How many changes an undo can go back. */

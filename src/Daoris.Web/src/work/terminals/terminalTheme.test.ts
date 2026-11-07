@@ -2,8 +2,8 @@ import { describe, expect, it } from 'vitest';
 import source from './terminalTheme.ts?raw';
 import { mix, terminalTheme } from './terminalTheme';
 
-// CONSOLE4b: the terminal wears the platform's tokens, never colours of its own (D41: the tokens are the
-// only theme). Each theme below is read from a token table shaped like `tokens.css`'s two blocks.
+// The terminal wears the platform's tokens, never colours of its own: the tokens are the
+// only theme. Each theme below is read from a token table shaped like `tokens.css`'s two blocks.
 
 const LIGHT: Record<string, string> = {
   ink: '#1a1a18', 'ink-soft': '#5b5a55', 'ink-faint': '#8a887f', page: '#faf9f6', raised: '#ffffff',
