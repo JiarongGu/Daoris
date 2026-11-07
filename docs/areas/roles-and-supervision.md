@@ -41,7 +41,7 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they start wi
 | `SupervisorBook`, `SupervisorDecisionFiles`, `SupervisorKeeping`, `SupervisorReleasing`, `SupervisorSweeps`, `SupervisorTickets`, `SupervisorReads` | `Roles/Supervisor*.cs` | The decisions' shared memory (live decisions, session locks, closed questions) and its one move in the book; the files, keeping, releasing, sweeps, tickets and reads each reach it and keep no state |
 | `SessionsSuperviseCommand`, `SupervisorQuarantine`, `HolderKey` | `Roles/SessionsSuperviseCommand.cs`, `Roles/SupervisorQuarantine.cs`, `Roles/SupervisorProof.cs` | The holder's verb; unattributed words taken back; the key, its proof and the role terminal's verbs |
 | `StandingConfirmation` | `Modules/Platform/StandingConfirmation.cs` | The roles' terminals this run: holds, generations, holders; the act judge over the catalogue. The doors; the memory is `StandingState`'s under its one lock, which `RoleTerminals` (starts, catalogue changes, a holder's end), `RoleJudge` (the role method, the decisions' admission), `RoleActsLedger` (acts, operations, the owner's marks) and `StewardRecord` (the steward's acts this run) reach |
-| Steward | `Roles/StewardCommand.cs`, `Roles/StewardAsked.cs`, `Modules/Bridge/StewardActRows.cs`, `Modules/Bridge/StewardRouteAct.cs`, `Modules/Bridge/StewardPauseAct.cs`, `Modules/Bridge/StewardUpdateAct.cs`, `Modules/Bridge/StewardTargets.cs`, `Modules/Bridge/Routes/QuestEndRoutes.cs`, `Modules/Platform/RoleActs.cs`, `Modules/Platform/StewardAsk.cs` | `steward <act>` over `ROLE_ACT`, and its words when an act asks the owner; the seventeen acts, the route acts among them; pending operations; an act outside the granted ones sent on as its person's press |
+| Steward | `Roles/StewardCommand.cs`, `Roles/StewardAsked.cs`, `Modules/Bridge/StewardActRows.cs`, `Modules/Bridge/StewardRouteAct.cs`, `Modules/Bridge/StewardHandOverAct.cs`, `Modules/Bridge/StewardPauseAct.cs`, `Modules/Bridge/StewardUpdateAct.cs`, `Modules/Bridge/StewardTargets.cs`, `Modules/Bridge/Routes/QuestEndRoutes.cs`, `Modules/Platform/RoleActs.cs`, `Modules/Platform/StewardAsk.cs` | `steward <act>` over `ROLE_ACT`, and its words when an act asks the owner; the eighteen acts and the set-up act, the route acts among them; pending operations; an act outside the granted ones sent on as its person's press |
 | `StartAdmission`, `CallTable` | `Participants/Domain/StartAdmission.cs`, `Service/Daoris.Service.Mcp/CallTable.cs` | Who may ask for a co-worker; which tools each work is served |
 | `HelpProposals`, `HelpProposalKinds` | `Help/HelpProposals.cs`, `Help/HelpProposalKinds.cs`, `Help/Proposals/` | Ask Daoris's 16 proposal kinds, each judged by its route's code and applied by the person |
 | `HelpModes`, `HelpSwap`, `HelpHousekeeping`, `HelpSettings`, `HelpReceipt` | `Help/HelpMode.cs` and its neighbours, `Help/HelpWired.cs` | Access mode, its change at a turn, configured access, what a start handed |
@@ -140,7 +140,7 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they start wi
     update's close or the quiet end (`SessionReads.IsFailure`). For each count the most specific place
     holding a rule decides, with no layering. Rules naming the role beat those naming none; `off` ends inheritance. A
     repository's workspace is its wider place at the judge in every process as at the lines: the look keeps the registry's
-    in the store (`repository_workspaces`, step 21) and the judge reads it there; `ROLES` answers each place's wider places,
+    in the store (`repository_workspaces`, the store's step 21) and the judge reads it there; `ROLES` answers each place's wider places,
     and the fold draws what a place's rules replace and inherit along that chain, for each role's lines. (from D229)
 34. A write is refused where any place's effective set has no tries rule, a move with no moves rule, or failures on one
     choice acting at or past failures, and where two rules on one count at the place would apply to one line (`ladder`:
@@ -336,7 +336,7 @@ Web: `agents/roles/*.test.ts(x)` and `agents/setup/*.test.tsx`.
    (`Defaults/roles.json`, `Settings/ActorKey.cs:20`). Code reads right.
 7. D170 (never a shell) vs D183 full access (`Help/HelpMode.cs:17`). D183 reads right; D170 holds in restricted mode.
 8. D209 point 1 and its COMPANYVIEW1e note, and D205's COMPANYVIEW1b note (appointed and staffed under Settings → This
-    Daoris, then Agents → Roles) vs `Web/agents/modes.ts:3-8,29-33` (the Roles mode is retired; its sections sit under
+    Daoris, then Agents → Roles) vs `Web/agents/modes.ts` (`AGENTS_MODES` is `agents` and `setup`: the Roles mode is retired; its sections sit under
     Agents → Setup). Code reads right.
 9. D110 point 4 (a rule is never proposed by an agent) vs `role_propose` carrying the supervisor's rules
    (`Help/Proposals/HelpRoleProposals.cs`, `RulesPlan`). D110 means permission rules; it should say so.
@@ -349,9 +349,9 @@ Web: `agents/roles/*.test.ts(x)` and `agents/setup/*.test.tsx`.
 - **CONTEXTDRIVE1l, m:** the installed proof. The hooks' coverage rows owed at CONTEXTDRIVE1g are not written: the every-door
   census that would hold them was retired with the door-only-where-wanted rule (D233 point 1), so no test names a hook.
 - **STAFFPOLICY1h/i:** selection by measurement; the installed proof.
-- **MODELROLE1l/e2:** the installed proof of a design quest on Design; the partner's real-process case. D233 choice 5
-  removes Ask Daoris's Accept and hand-over proposals, not the hand-over doors a person or an agent presses, so the
-  hand-over's model stands; the four fenced roles are edited in the one role editor.
+- **MODELROLE1l/e2:** built; the installed proof of a design quest on Design is in the installed batch, the partner's real-process
+  case goes with COAGENT1. D233 choice 5 removes Ask Daoris's Accept and hand-over proposals, not the hand-over doors a person or
+  an agent presses, so the hand-over's model stands; the four fenced roles are edited in the one role editor.
 - **SUPERVISOR1a-i (rest):** the author sweep test, the page's mark with *Overrule* on a question's answer (a referred point's
   decision has its card), the go-on's process cases.
 - **SUPERVISOR1a-iii:** the installed proof of the activation: a place's supervisor held by a started terminal on the install's
