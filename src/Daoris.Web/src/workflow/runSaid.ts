@@ -210,7 +210,6 @@ function nodeSaid(t: TFunction, step: RunStep, node: string): string | null {
         return step.words ? t('workflow.run.graph.said.goAhead', { act: step.words }) : t('workflow.run.graph.said.goAheadNone');
       }
       if (node === 'human') return t('workflow.run.graph.said.task');
-      // A hold's record keeps the reason its last reading said, in the driver's words.
       if ((node === 'quest.holds' || node === 'content.holds') && step.words) {
         return t('workflow.run.graph.said.holds', { why: step.words.replace(/\.+$/, '') });
       }

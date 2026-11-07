@@ -290,10 +290,6 @@ public sealed class WorkUnitsTests : IDisposable
         Assert.Contains(none, said => said.Contains("without the service", StringComparison.Ordinal));
     }
 
-    /// <summary>
-    /// A branch whose tree this home holds, and no landing yet, is executed by the session that recorded that tree, as every reader of the
-    /// service's units reads it: a run's holds and gates find the work's tree through that session.
-    /// </summary>
     [Fact]
     public async Task A_branch_with_no_landing_is_executed_by_the_session_that_recorded_its_tree()
     {
@@ -315,7 +311,6 @@ public sealed class WorkUnitsTests : IDisposable
 
         public bool Down { get; init; }
 
-        /// <summary>The tree the session's record names.</summary>
         public string SessionTree { get; init; } = Tree().Path;
 
         public ServiceClient Client() => new("http://units.test", null, new HttpClient(new SessionChanges(this), disposeHandler: false));

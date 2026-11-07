@@ -56,10 +56,6 @@ public sealed record NodeStatus(string Unit, string Node, string State)
     /// <summary>When the newest attempt started, as the move that started it was clocked; null on a node never started, or started unclocked.</summary>
     public DateTimeOffset? Since { get; init; }
 
-    /// <summary>
-    /// Why a hold keeps the node active: the sentence its reading said at the last evaluation that read it (<see cref="NodeObservation.Holds"/>).
-    /// Every move clears it; null where nothing holds it, and on a record written before it was kept.
-    /// </summary>
     public string? Holds { get; init; }
 
     /// <summary>The acceptance that counts now: only a reached node's. An invalidated one's is history, never current evidence.</summary>

@@ -42,9 +42,8 @@ public static class WorkUnits
     }
 
     /// <summary>
-    /// Every unit this home and its service name, each branch executed by the sessions whose records name its tree (OVERVIEWNOISE1b), as
-    /// every other reader of the inventory joins them. Without the service, or where it does not answer, the branch units alone, and
-    /// <paramref name="unread"/> says so: never read as there being no quests (D57).
+    /// Every unit this home and its service name, a branch executed by the sessions whose records name its tree. Without the service, or
+    /// where it does not answer, the branch units alone, and <paramref name="unread"/> says so: never read as there being no quests.
     /// </summary>
     /// <param name="roots">Each repository's checkout, for the recovery refs (<see cref="WorkInventories.GatherAsync"/>).</param>
     /// <param name="inUse">The trees a session still running or waiting holds.</param>
@@ -88,7 +87,6 @@ public static class WorkUnits
             return alone;
         }
 
-        // The records name the trees each session worked, so the branches are gathered after them.
         var branches = await BranchesAsync(sessions).ConfigureAwait(false);
         // FABRIC-PERFORM1d: a quest's or an ask's receipts and attempts are its own, as a branch unit's are (WorkInventory's facts).
         var owed = WorkObligations.Read(home, DateTimeOffset.UtcNow);

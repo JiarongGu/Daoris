@@ -318,10 +318,6 @@ public static class WorkflowGraphRuns
         return WorkflowRunWords.Said(step) ?? "Not reached yet.";
     }
 
-    /// <summary>
-    /// The words a node's step carries: the person's of a skip, a refusal or a stop; a go-ahead's act; and the reason a hold keeps it active, as its
-    /// record keeps it. Null for any other.
-    /// </summary>
     private static string? WordsOf(NodeDeclaration node, NodeStatus status) =>
         status.State is NodeStates.Skipped or NodeStates.Rejected or NodeStates.Stopped ? status.Words
         : node.Kind == NodeKinds.GoAhead ? NodeOptions.Text(node, "act")

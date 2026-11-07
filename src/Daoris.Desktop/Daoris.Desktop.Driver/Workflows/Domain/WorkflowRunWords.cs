@@ -252,7 +252,6 @@ public static class WorkflowRunWords
                     ? "A quest the work's sessions published was declined: it waits on you, and passing it over lets the work go on."
                     : "Waits on the quests the work's sessions published here: each must be done, and one declined is yours to pass over.",
                 // LANDNODE1k: what a landing's start judged, now its steps; each holds the work until it lets go, and passing it over lets it go on.
-                // Its record keeps the reason its last reading said, else its kind says what it holds on.
                 NodeKinds.QuestHolds or NodeKinds.ContentHolds when step.Words is { Length: > 0 } why => $"Holds the work: {why.TrimEnd('.')}.",
                 NodeKinds.QuestHolds => "Holds the work while its quest's done is not in, or is held for your yes or its evidence's verdict.",
                 NodeKinds.ContentHolds => "Holds the work while the line or a branch of yours already holds it, or it holds no commit left to land.",

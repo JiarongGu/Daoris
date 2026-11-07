@@ -39,10 +39,7 @@ public sealed record WireEvaluated(
     /// </summary>
     public IReadOnlyList<WireFiring> Backs { get; init; } = [];
 
-    /// <summary>
-    /// The nodes whose hold's reason this evaluation kept on their statuses (<see cref="NodeStatus.Holds"/>), in the graph's order: no move, and
-    /// so not <see cref="Settled"/>'s concern, but what the record writer keeps all the same.
-    /// </summary>
+    /// <summary>The nodes whose hold's reason this evaluation kept with no move, which the record writer keeps all the same.</summary>
     public IReadOnlyList<string> Held { get; init; } = [];
 
     /// <summary>
