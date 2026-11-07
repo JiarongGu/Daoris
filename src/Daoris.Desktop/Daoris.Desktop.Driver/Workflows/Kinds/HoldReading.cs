@@ -43,8 +43,9 @@ internal static class HoldReading
             },
         };
 
-    /// <summary>What the hold is observed as: <paramref name="outcome"/>, or none yet, with what its records say.</summary>
-    public static NodeObservation Seen(NodeReading reading, string? outcome, string said) => NodeObserving.Seen(reading, outcome, said);
+    /// <summary>What the hold is observed as: <paramref name="outcome"/>, or none yet, with what its records say, which a hold with none keeps as its reason.</summary>
+    public static NodeObservation Seen(NodeReading reading, string? outcome, string said) =>
+        NodeObserving.Seen(reading, outcome, said) with { Holds = outcome is null ? said : null };
 
     /// <summary>
     /// What the save refuses of a hold in <paramref name="graph"/>: each hold once, in a graph that lands, and before every landing by the

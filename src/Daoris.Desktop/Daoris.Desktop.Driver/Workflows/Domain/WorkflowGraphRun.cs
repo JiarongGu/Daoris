@@ -208,8 +208,7 @@ public static class WorkflowGraphRuns
                 Node = node.Kind,
                 Requests = node.Kind == NodeKinds.Claimed && run.Requests.Count > 0 ? run.Requests : null,
                 Code = held ? WorkRequests.DeclinedCode : status.State == NodeStates.Skipped ? status.By : status.Code ?? checkHeld?.Code,
-                Words = cannot ?? (status.State is NodeStates.Skipped or NodeStates.Rejected or NodeStates.Stopped ? status.Words
-                    : node.Kind == NodeKinds.GoAhead ? NodeOptions.Text(node, "act") : null),
+                Words = cannot ?? WordsOf(node, status),
                 Acts = acts.Count > 0 ? acts : null,
                 Asked = asked,
                 Gate = node.Kind == NodeKinds.Check && status.State == NodeStates.Failed ? facts.Failures.GetValueOrDefault(node.Id) : null,
@@ -314,11 +313,20 @@ public static class WorkflowGraphRuns
         {
             Node = node.Kind,
             Code = status.State == NodeStates.Skipped ? status.By : status.Code,
-            Words = status.State is NodeStates.Skipped or NodeStates.Rejected or NodeStates.Stopped ? status.Words
-                : node.Kind == NodeKinds.GoAhead ? NodeOptions.Text(node, "act") : null,
+            Words = WordsOf(node, status),
         };
         return WorkflowRunWords.Said(step) ?? "Not reached yet.";
     }
+
+    /// <summary>
+    /// The words a node's step carries: the person's of a skip, a refusal or a stop; a go-ahead's act; and the reason a hold keeps it active, as its
+    /// record keeps it. Null for any other.
+    /// </summary>
+    private static string? WordsOf(NodeDeclaration node, NodeStatus status) =>
+        status.State is NodeStates.Skipped or NodeStates.Rejected or NodeStates.Stopped ? status.Words
+        : node.Kind == NodeKinds.GoAhead ? NodeOptions.Text(node, "act")
+        : status.State == NodeStates.Active ? status.Holds
+        : null;
 
     /// <summary>
     /// A node's state on the record as a run's step says it, and its detail (<see cref="WorkflowGraphDetails"/>): the one table the drawing

@@ -72,6 +72,7 @@ public static class WireEvaluation
         var moved = new HashSet<string>(StringComparer.Ordinal);
         var moves = new List<WireMove>();
         var refused = new List<WireMove>();
+        var held = new List<string>();
 
         void Make(NodeDeclaration node, NodeMove move, string why, string? detail)
         {
@@ -136,7 +137,19 @@ public static class WireEvaluation
 
             var follows = Members(node.Id, wires).Select(id => nodes.FirstOrDefault(each => each.Id == id)).OfType<NodeDeclaration>().ToList();
             var observation = observes.Observe(NodeReading.Of(run, subject, unit, node, binding, follows));
-            if (observation.Move is not { } move || (status.State == NodeStates.Unknown && move.To == NodeStates.Unknown)) continue;
+            if (observation.Move is not { } move)
+            {
+                // A hold that keeps its node active says why on the node's record, which every reader of the run reads.
+                if (observation.Holds is { } holds && status.State == NodeStates.Active && !string.Equals(status.Holds, holds, StringComparison.Ordinal))
+                {
+                    now[node.Id] = status with { Holds = holds };
+                    held.Add(node.Id);
+                }
+
+                continue;
+            }
+
+            if (status.State == NodeStates.Unknown && move.To == NodeStates.Unknown) continue;
 
             // A record's skip holds for the attempt's graph and run, as the person's does for theirs. FABRIC-RUN1f: an attempt with no scope kept
             // takes its binding's own rule, a place with a place and a graph written before with that graph, so the lifecycle compares like with like.
@@ -229,6 +242,7 @@ public static class WireEvaluation
         {
             NotTaken = [.. untaken.Keys.Order(StringComparer.Ordinal)],
             Backs = [.. backs.Where(back => moves.Any(move => move.Node == back.Node && move.Why == WireWhy.Back))],
+            Held = held,
         };
 
         // The dispatched attempts of one reach not settled yet: active, unknown, or unreconciled whatever moved the node off it.

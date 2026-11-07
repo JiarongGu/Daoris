@@ -36,6 +36,9 @@ public sealed record NodeObservation(string Unit, string Node, string Kind, stri
     /// <summary>The person's words the record kept with their rejection or their skip (FABRIC-NODE1b); null for every other outcome.</summary>
     public string? Words { get; init; }
 
+    /// <summary>Why a hold keeps its node active, kept on the node's record (<see cref="NodeStatus.Holds"/>); null where it holds nothing or is no hold.</summary>
+    public string? Holds { get; init; }
+
     /// <summary>The report as a move on an active node: an outcome by its authority, an unknown by Daoris; none where there is no outcome.</summary>
     public NodeMove? Move => Refused is not null || Outcome is null
         ? null

@@ -40,6 +40,12 @@ public sealed record WireEvaluated(
     public IReadOnlyList<WireFiring> Backs { get; init; } = [];
 
     /// <summary>
+    /// The nodes whose hold's reason this evaluation kept on their statuses (<see cref="NodeStatus.Holds"/>), in the graph's order: no move, and
+    /// so not <see cref="Settled"/>'s concern, but what the record writer keeps all the same.
+    /// </summary>
+    public IReadOnlyList<string> Held { get; init; } = [];
+
+    /// <summary>
     /// Whether the evaluator moved nothing: evaluated again on the same statuses, it moves nothing. It says nothing of pending starts
     /// (<see cref="Starts"/>, <see cref="Queued"/>) nor of execution finished (FABRIC-WIRE1e), and a refused evaluation moved nothing too:
     /// read <see cref="Refusal"/> first.
