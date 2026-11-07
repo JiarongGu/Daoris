@@ -187,15 +187,6 @@ public sealed class DriverContext(IEventBus events, DriverLoop loop, OpenFolder?
     /// <see cref="Door"/> for an owner with a loop and no context: the groups' pushed slice takes the look <c>SESSION_GROUPS</c> takes
     /// (PUSH1c3a), so both read one door.
     /// </summary>
-    public static bool UnadoptedOf(DriverLoop loop, DriverConfig config)
-    {
-        try
-        {
-            return BuildDoor.Drives(loop.Home, config, loop.Harnesses.Adapters);
-        }
-        catch (DriverException refused) when (refused is not UnknownDoorException)
-        {
-            return false;
-        }
-    }
+    public static bool UnadoptedOf(DriverLoop loop, DriverConfig config) =>
+        BuildDoor.Drives(loop.Home, config, loop.Harnesses.Adapters);
 }

@@ -79,6 +79,7 @@ internal sealed class LookDoors(Driver driver) : ILandingWiring, IPluginWiring, 
 
     Func<IWorkspaceSetupWorld>? ISetupWiring.SetupPlans => driver.SetupPlans;
 
+    // Set-up refuses a door nobody knows like the window and the terminal; the set-up pass says the refusal and tries the next look.
     bool ISetupWiring.Unadopted() => BuildDoor.Drives(Context.Home, Context.Config, Context.Adapters);
 
     Func<CancellationToken, Task>? IStartsWiring.Wanted => driver.Wanted;

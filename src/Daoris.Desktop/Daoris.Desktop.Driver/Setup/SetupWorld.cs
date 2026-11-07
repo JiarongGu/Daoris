@@ -16,19 +16,13 @@ public sealed class SetupWorld(ServiceClient service, string home) : ISetupWorld
 
     /// <summary>
     /// Whether this machine's driven sessions may drive a repository that has not adopted Daoris: where any entry of Build's order may
-    /// (<see cref="BuildDoor"/>), the loop's own answer, read against the plugins' agents as a tick reads it.
+    /// (<see cref="BuildDoor"/>), the loop's own answer, read against the plugins' agents as a tick reads it, and the terminal's every
+    /// console's: a door this build does not know is refused (<see cref="UnknownDoorException"/>), as every surface's read refuses it.
     /// </summary>
     public static bool Unadopted(DriverConfig config, string home)
     {
         var built = ProviderRegistry.Built();
-        try
-        {
-            return BuildDoor.Drives(home, config, built.WithPlugins(PluginCatalog.Load(home, built.Names)));
-        }
-        catch (DriverException refused) when (refused is not UnknownDoorException)
-        {
-            return false;
-        }
+        return BuildDoor.Drives(home, config, built.WithPlugins(PluginCatalog.Load(home, built.Names)));
     }
 
     public Task<IReadOnlyList<RepoView>> RegistryAsync(CancellationToken ct) => service.RegistryAsync(ct);
