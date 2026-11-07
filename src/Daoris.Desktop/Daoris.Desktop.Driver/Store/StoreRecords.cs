@@ -3,19 +3,19 @@ using System.Security.Cryptography;
 namespace Daoris.Driver;
 
 /// <summary>
-/// One numbered migration of the desktop store (FOUNDATION1 z-i, the design §13.3): forward only, run in one exclusive transaction, so a
-/// crash in it leaves the store as it was, SQLite's DDL being transactional.
+/// One numbered migration of the desktop store: forward only, run in one exclusive transaction, so a
+/// crash in it leaves the store as it stood, SQLite's DDL being transactional.
 /// </summary>
 /// <param name="Version">The schema version the store holds once it has run: contiguous from 1.</param>
 /// <param name="Writer">
 /// The oldest-writer stamp the store carries once it has run, never lower than the one it holds. A step that leaves it where it is adds a
-/// table an older store-aware build never opens and runs at the first start; a step that raises it (an older build can no longer write)
-/// runs only once the start's confirmation is settled (§13.3, §13.5). The step that makes the store is no raise.
+/// table an older store-aware build never opens and runs at the first start; a step that raises it (an older build cannot write)
+/// runs only once the start's confirmation is settled. The step that makes the store is no raise.
 /// </param>
 /// <param name="Apply">The step's statements, inside its transaction.</param>
 public sealed record StoreMigration(int Version, int Writer, Action<DesktopWrite> Apply);
 
-/// <summary>One process run that has written the store (§13.4): the claim's identity, which a move's executor names from row f-i.</summary>
+/// <summary>One process run that has written the store: the claim's identity, which a move's executor names.</summary>
 /// <param name="Run">The run's id, drawn at its start.</param>
 /// <param name="Kind">What ran: <c>shell</c>, <c>host</c> or <c>verb</c>.</param>
 /// <param name="Pid">Its process id.</param>
@@ -26,7 +26,7 @@ public sealed record StoreMigration(int Version, int Writer, Action<DesktopWrite
 /// <param name="Began">When the run first wrote, ISO 8601.</param>
 public sealed record StoreRun(string Run, string Kind, int Pid, long? Started, string Began);
 
-/// <summary>What an import leaves of its file (§13.5): in place as the backup, or set aside under the import's receipt.</summary>
+/// <summary>What an import leaves of its file: in place as the backup, or set aside under the import's receipt.</summary>
 public static class ImportClass
 {
     /// <summary>The file stays where it is, the backup an older build reads as it stood at the import.</summary>
@@ -36,21 +36,21 @@ public static class ImportClass
     public const string SetAside = "set-aside";
 
     /// <summary>
-    /// The file stays and is the store's projection (§13.5, §19.15): it is not the backup of what was imported but what the newer build keeps
+    /// The file stays and is the store's projection: it is not the backup of what the import read but what the newer build keeps
     /// written for the same staffing, so an older build reads it as its own. Unlike <see cref="Left"/> its content is not held to the SHA-256
     /// the import recorded, since the newer build writes it again; unlike <see cref="SetAside"/> it is never renamed.
     /// </summary>
     public const string Projected = "projected";
 
-    /// <summary>Nothing was in the file to import: a fresh home's rows were written from their seeds, and nothing is projected (ONEWAY1b).</summary>
+    /// <summary>Nothing is in the file to import: a fresh home's rows are written from their seeds, and nothing is projected.</summary>
     public const string Seeded = "seeded";
 }
 
-/// <summary>One file imported into a family (§13.3's <c>imports</c>), as the row records it.</summary>
+/// <summary>One file imported into a family (the <c>imports</c> table), as the row records it.</summary>
 /// <param name="Family">The family the file moved into.</param>
 /// <param name="Path">The file's path in the home, home-relative, <c>/</c> between its parts.</param>
 /// <param name="Size">The file's size at the import.</param>
-/// <param name="Sha256">Its SHA-256, lower-case hex: what the return compares a left file with (§13.5).</param>
+/// <param name="Sha256">Its SHA-256, lower-case hex: what the return compares a left file with.</param>
 /// <param name="Rows">How many rows the import wrote.</param>
 /// <param name="Class"><see cref="ImportClass"/>'s words.</param>
 public sealed record StoreImport(string Family, string Path, long Size, string Sha256, int Rows, string Class)
@@ -69,6 +69,6 @@ public sealed record ImportRecord(long Id, StoreImport Import, string At, string
 /// <summary>What an import came to: made, or held with the sentence that says what it waits on, and nothing written.</summary>
 public sealed record ImportOutcome(bool Done, string? Said, long? Id)
 {
-    /// <summary>Held: the start's confirmation is not settled, and nothing was imported.</summary>
+    /// <summary>Held: the start's confirmation is not settled, and nothing is imported.</summary>
     public static ImportOutcome Held(string? said) => new(false, said, null);
 }

@@ -1,15 +1,15 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// <c>daoris repository register [--repository &lt;name&gt;]</c> (WSSETUP5, D124 §3.1, §4.5): the terminal's door to following a
+/// <c>daoris repository register [--repository &lt;name&gt;]</c>: the terminal's door to following a
 /// line when the person asks, every repository with a checkout here or the one named. The row's <i>Refresh</i> is the
-/// screen's door to the same follow (D50). In the library rather than the host, so its words are held by a test, as the
+/// screen's door to the same follow. In the library rather than the host, so its words are held by a test, as the
 /// set-up press's are.
 /// </summary>
 /// <remarks>
 /// <para>Each repository is one line: the outcome's word, its name, and the sentence its row says. A line the person
 /// moved outside Daoris is read here, as at a start.</para>
-/// <para>Exit codes keep the family contract: 0 each followed, whatever it came to · 1 a repository named that was
+/// <para>Exit codes keep the family contract: 0 each followed, whatever it came to · 1 a repository named that is
 /// refused · 2 a tool error, the usage among them. Every repository followed at once is a report, and a refusal among
 /// them is said and is not a failure: a workspace nobody has set up yet is not set up, which is no error.</para>
 /// </remarks>
@@ -21,7 +21,7 @@ public static class RegisterCommand
         RunAsync(args, output, world, instance: null, ct);
 
     /// <summary>
-    /// The verb, through the running Daoris where one answers (RPCOPEN1, RPC1e, the terminal RPC design §7.2): each repository is one
+    /// The verb, through the running Daoris where one answers: each repository is one
     /// <c>REGISTRY_REFRESH</c>, whose answer is read back into the record the alone path prints from, so the words are the same;
     /// alone where none runs. An instance that lives and does not answer refuses the verb (exit 2), and nothing is registered here.
     /// </summary>
@@ -70,7 +70,7 @@ public static class RegisterCommand
 
     /// <summary>
     /// Every repository with a checkout here, or the one named, each followed by one <c>REGISTRY_REFRESH</c> to the running Daoris; null
-    /// where a press was refused or its answer did not read, which the door has said. The repositories are this machine's registry's,
+    /// where a press is refused or its answer does not read, which the door has said. The repositories are this machine's registry's,
     /// read as the alone path reads them, so the same ones are followed in the same order.
     /// </summary>
     private static async Task<FollowReport?> ThroughAsync(string? named, IRegistrationWorld world, InstanceWorld instance, CancellationToken ct)

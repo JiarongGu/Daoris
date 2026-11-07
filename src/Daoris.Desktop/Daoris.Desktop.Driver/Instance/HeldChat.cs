@@ -4,7 +4,7 @@ using System.Threading.Channels;
 namespace Daoris.Driver;
 
 /// <summary>
-/// A terminal that holds a conversation of the running Daoris (RPC1g2, D238, the terminal-conversation design §3.3): stdin is the
+/// A terminal that holds a conversation of the running Daoris: stdin is the
 /// person and stdout the console, as <c>chat</c> has always read; every line, attachment, stop and finish is a request on the held
 /// connection, and every line the conversation writes, or the person says in the window, is forwarded to it. Nothing runs in this
 /// process.
@@ -18,7 +18,7 @@ namespace Daoris.Driver;
 [CommandGroup("chat", Whole = true)]
 public sealed class HeldChat(InstanceWorld world)
 {
-    /// <summary>The line that attaches a file to the next message (CONV4c).</summary>
+    /// <summary>The line that attaches a file to the next message.</summary>
     public const string Attach = ":attach ";
 
     private enum Kind { Notice, Line, End, Interrupt, Lost }
@@ -160,7 +160,7 @@ public sealed class HeldChat(InstanceWorld world)
         return await LetGoAsync(ct).ConfigureAwait(false);
     }
 
-    /// <summary>The turn stopped and what it handed back said; false where none ran or the stop was refused, and then nothing is said if <paramref name="leaveAtRest"/>.</summary>
+    /// <summary>The turn stopped and what it handed back said; false where none ran or the stop is refused, and then nothing is said if <paramref name="leaveAtRest"/>.</summary>
     private async Task<bool> StopTurnAsync(CancellationToken ct, bool leaveAtRest = false)
     {
         var answer = await AskAsync("CANCEL_TURN", new { id = _session }, ct).ConfigureAwait(false);

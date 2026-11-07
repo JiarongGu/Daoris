@@ -6,29 +6,29 @@ using Microsoft.Data.Sqlite;
 namespace Daoris.Driver;
 
 /// <summary>
-/// The desktop's store (FOUNDATION1 z-i, D212; the design §13.2 to §13.4): <c>data/desktop.db</c>, one SQLite file the driver library alone
+/// The desktop's store: <c>data/desktop.db</c>, one SQLite file the driver library alone
 /// opens, machine-local and never synced, holding what Daoris owns and more than one reader or writer sets: its own tables
 /// (<c>store_version</c>, <c>store_revisions</c>, <c>store_runs</c> and <c>imports</c>) and each family's, one numbered step each.
 /// </summary>
 /// <remarks>
-/// <para><b>One connection per process</b> behind a lock, as the service's <c>ConnectionGate</c> keeps its own (SQLITETX1): write-ahead
+/// <para><b>One connection per process</b> behind a lock, as the service's <c>ConnectionGate</c> keeps its own: write-ahead
 /// logging, so a reader never waits on the writer; <c>synchronous = FULL</c>, since a claim or a mark lost to a power cut could repeat an
 /// effect; and a busy wait of five seconds, then a refusal said in the process's own words (<see cref="DesktopStoreBusyException"/>).</para>
 /// <para><b>Every write is one transaction under the write lock taken at its start</b> (<c>BEGIN IMMEDIATE</c>), and <b>the writer stamp is read
 /// inside it</b>, before anything changes: a process that opened the store before another's migration, and kept its connection, cannot write
-/// after it (<see cref="DesktopStoreNewerException"/>), X3-3.5.</para>
+/// after it (<see cref="DesktopStoreNewerException"/>).</para>
 /// <para><b>Migrations</b> are numbered steps in code (<see cref="DesktopStoreSteps"/>), forward only, each in one exclusive transaction: the first
 /// process to open an older store migrates it while the others wait on the write lock, and the stamp is never lowered. A step that raises the
 /// stamp waits for the start's confirmation, <see cref="Settled"/>'s reading, so a build rolled back before it confirmed still writes the store.</para>
 /// <para><b>Wakes.</b> A write moves its family's revision in the same transaction and, once committed, touches the wake file
 /// <c>data/desktop.db.wake</c>, which holds nothing; what watches it reads the revisions. No reader watches it yet.</para>
 /// <para><b>The git door</b> reads through <see cref="DesktopStoreReader"/>, read-only, once its families move and its start passes the
-/// limit (§19.10); until then it opens none.</para>
+/// limit; until then it opens none.</para>
 /// </remarks>
 public sealed class DesktopStore : IDisposable
 {
     /// <summary>
-    /// The writer stamp this build writes with: 3 since a role's staffing policy (STAFFPOLICY1a), whose step raised it, so a build before it
+    /// The writer stamp this build writes with: 3, raised by a role's staffing policy's step, so a build before it
     /// reads the store and writes nothing there.
     /// </summary>
     public const int WriterStamp = PolicyWriter;
@@ -36,16 +36,16 @@ public sealed class DesktopStore : IDisposable
     /// <summary>The stamp of the first build that knows the store, which every step before the delivery record's leaves the store at.</summary>
     public const int FirstWriter = 1;
 
-    /// <summary>The stamp the delivery record's step raised the store to (LANDNODE1b), which a build of its fifteen steps writes with.</summary>
+    /// <summary>The stamp the delivery record's step raised the store to, which a build of its fifteen steps writes with.</summary>
     public const int DeliveryWriter = 2;
 
-    /// <summary>The stamp a role's staffing policy's step raised the store to (STAFFPOLICY1a).</summary>
+    /// <summary>The stamp a role's staffing policy's step raised the store to.</summary>
     public const int PolicyWriter = 3;
 
-    /// <summary>The version whose step gives the store today's names (AGENTPROVIDER1t, D232), run by the home's migration's <c>StoreNamesStep</c>.</summary>
+    /// <summary>The version whose step gives the store today's names, run by the home's migration's <c>StoreNamesStep</c>.</summary>
     public const int NamesVersion = 22;
 
-    /// <summary>How long a write waits on the file's lock before it is refused, in seconds (§13.4).</summary>
+    /// <summary>How long a write waits on the file's lock before it is refused, in seconds.</summary>
     private const int BusySeconds = 5;
 
     /// <summary>The wake file's suffix: it sits beside the store and holds nothing.</summary>
@@ -55,7 +55,7 @@ public sealed class DesktopStore : IDisposable
     public static IReadOnlyList<StoreMigration> Steps { get; } = DesktopStoreSteps.All;
 
     /// <summary>
-    /// The rows of <c>moves</c> that stand for their record left (FOUNDATION1f-i, §3.3): every phase but the three a move ends at, a phase this
+    /// The rows of <c>moves</c> that stand for their record left: every phase but the three a move ends at, a phase this
     /// build does not know among them. The partial index <c>moves_standing</c> is over these, and a read of the standing move names the same.
     /// </summary>
     public const string StandingMoves = "phase NOT IN ('delivered', 'fell-back', 'closed')";
@@ -154,7 +154,7 @@ public sealed class DesktopStore : IDisposable
             Pragma(connection, $"PRAGMA busy_timeout = {BusySeconds * 1000}");
             Pragma(connection, "PRAGMA journal_mode = WAL");
             Pragma(connection, "PRAGMA synchronous = FULL");
-            // FOUNDATION1f-i: a move's claim names a row of `store_runs` and a word in transfer its move, and the store holds them to it.
+            // A move's claim names a row of `store_runs` and a word in transfer its move, and the store holds them to it.
             Pragma(connection, "PRAGMA foreign_keys = ON");
             store = new DesktopStore(location, connection, options);
             store.Migrate();
@@ -171,7 +171,7 @@ public sealed class DesktopStore : IDisposable
 
     /// <summary>
     /// Migrate as far as the start allows, which is every step but one that raises the stamp while the confirmation is not settled: that
-    /// one is held, <see cref="Held"/> says why, and the call is made again at each come-up and look until it is not (§13.5). A step another
+    /// one is held, <see cref="Held"/> says why, and the call is made again at each come-up and look until it is not. A step another
     /// process has already run is skipped, and a file stamped past this build is left as it is.
     /// </summary>
     /// <returns>True where nothing is waiting.</returns>
@@ -207,7 +207,7 @@ public sealed class DesktopStore : IDisposable
     /// where the work throws.
     /// </summary>
     /// <exception cref="DesktopStoreNewerException">The file's stamp is past this build's.</exception>
-    /// <exception cref="DesktopStoreBusyException">The write lock stayed held past the wait; nothing was written.</exception>
+    /// <exception cref="DesktopStoreBusyException">The write lock stayed held past the wait; nothing is written.</exception>
     public T Write<T>(string family, Func<DesktopWrite, T> work)
     {
         T result;
@@ -241,11 +241,10 @@ public sealed class DesktopStore : IDisposable
     }
 
     /// <summary>
-    /// This process's run recorded in <c>store_runs</c>, and nothing else: no family's revision moves and no wake is touched (FOUNDATION1f-i
-    /// part 2, §19.1 point 3). A shell's come-up enters before it reads the runs, so another shell coming up on the home finds it there.
+    /// This process's run recorded in <c>store_runs</c>, and nothing else: no family's revision moves and no wake is touched. A shell's come-up enters before it reads the runs, so another shell coming up on the home finds it there.
     /// </summary>
     /// <exception cref="DesktopStoreNewerException">The file's stamp is past this build's: nothing is written.</exception>
-    /// <exception cref="DesktopStoreBusyException">The write lock stayed held past the wait; nothing was written.</exception>
+    /// <exception cref="DesktopStoreBusyException">The write lock stayed held past the wait; nothing is written.</exception>
     public void Enter()
     {
         lock (_turn)
@@ -310,7 +309,7 @@ public sealed class DesktopStore : IDisposable
     /// <summary>
     /// Import one family's file, once the start's confirmation is settled: <paramref name="load"/> writes the family's rows and the import's
     /// own row is written with them, in one transaction that moves the family's revision. Where it is not settled nothing is written and
-    /// the outcome says what it waits on, to be asked again at the next look (§13.5, §19.7).
+    /// the outcome says what it waits on, to be asked again at the next look.
     /// </summary>
     public ImportOutcome Import(StoreImport import, Action<DesktopWrite>? load = null)
     {
@@ -327,7 +326,7 @@ public sealed class DesktopStore : IDisposable
         return new ImportOutcome(true, null, id);
     }
 
-    /// <summary>The latest import of a file into a family, which the return compares a left file's SHA-256 with (§13.5); null where none.</summary>
+    /// <summary>The latest import of a file into a family, which the return compares a left file's SHA-256 with; null where none.</summary>
     public ImportRecord? LastImport(string family, string path) =>
         Query(
             "SELECT id, family, path, size, sha256, rows, class, at, build FROM imports WHERE family = $family AND path = $path ORDER BY id DESC LIMIT 1",

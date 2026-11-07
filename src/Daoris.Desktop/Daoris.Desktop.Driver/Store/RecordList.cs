@@ -3,7 +3,7 @@ using System.Text.Json;
 namespace Daoris.Driver;
 
 /// <summary>
-/// The small store the driver's list files of one shape share (DEDUP5, duplication survey §5): a JSON file holding one array
+/// The small store the driver's list files of one shape share: a JSON file holding one array
 /// of records, read as none when the file is missing or does not read, and changed by reading everything, handing it to a
 /// change, bounding the answer and writing it whole under the store's gate.
 /// </summary>
@@ -14,7 +14,7 @@ namespace Daoris.Driver;
 /// this shape would add more than it took away.</para>
 ///
 /// <para><b>One gate per store, not per instance</b>: a store is made anew for each press, so the caller passes its own static
-/// gate. Reading takes no gate, as before; a file that does not read is no record, and is only written over by an edit.</para>
+/// gate. Reading takes no gate; a file that does not read is no record, and is only written over by an edit.</para>
 /// </remarks>
 /// <param name="gate">The store's static lock: one writer at a time in this process.</param>
 /// <param name="array">The name of the array property in the file.</param>
@@ -54,7 +54,7 @@ internal sealed class RecordList<T>(
 
     /// <summary>
     /// Read everything, change it, bound it and write it, under the gate, and under the record's lock across processes where the store
-    /// names one (<paramref name="across"/>, FABRIC-END2): the gate first, so a process's writers queue on it rather than on the file.
+    /// names one (<paramref name="across"/>): the gate first, so a process's writers queue on it rather than on the file.
     /// </summary>
     public void Edit(string path, Func<IReadOnlyList<T>, IReadOnlyList<T>> change, string? across = null)
     {
