@@ -330,6 +330,9 @@ public sealed class DriverLoop(
     /// </summary>
     public Task<bool> PassWholeAsync(TimeSpan bound, CancellationToken ct) => _state.Watch?.PassWholeAsync(bound, ct) ?? Task.FromResult(false);
 
+    /// <summary>Cancelled by the loop's stop alone: what work that outlives the window asking it runs under (a landing's press, LANDPRESS1).</summary>
+    public CancellationToken Stopping => _state.Stopping.Token;
+
     /// <summary>Look now because a terminal's words for <paramref name="session"/> were kept: the requests topic's wake (FABRIC-EVENT2b).</summary>
     public void Said(string session)
     {

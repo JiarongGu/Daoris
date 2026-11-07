@@ -9,10 +9,11 @@ namespace Daoris.Desktop;
 /// diff, the files a composer offers, a file's preview, discard, landing
 /// and the hand-off.
 /// </summary>
-public sealed class TreesRoutes(DriverLoop loop, ReadLeaves reads)
+public sealed class TreesRoutes(DriverLoop loop, ReadLeaves reads, LandPresses presses)
 {
     private readonly DriverLoop _loop = loop;
     private readonly ReadLeaves _reads = reads;
+    private readonly LandPresses _presses = presses;
 
     /// <summary>
     /// What a landing changes: the session, every plan and gate (the line it merged into is what each
@@ -270,7 +271,8 @@ public sealed class TreesRoutes(DriverLoop loop, ReadLeaves reads)
     [Says("LAND_SESSION_TREE", "id:session")]
     [Publishes("LAND_SESSION_TREE", Lands, Session = "id")]
     private Task<object?> LandSessionTreeAsync(LandSessionTree press, CancellationToken cancellationToken) =>
-        _land.LandAsync(new TreesLandDesk.LandAsk(press.Id, press.Branch, Press: true, Answers: press.Answers, Follow: press.Follow), cancellationToken);
+        _presses.PressAsync(press.Id, Lands, token =>
+            _land.LandAsync(new TreesLandDesk.LandAsk(press.Id, press.Branch, Press: true, Answers: press.Answers, Follow: press.Follow), token), cancellationToken);
 
     /// <summary>
     /// What a press that reached the landing answers: whether it landed, the driver's sentence, the branch, the gate's parts, what it left
