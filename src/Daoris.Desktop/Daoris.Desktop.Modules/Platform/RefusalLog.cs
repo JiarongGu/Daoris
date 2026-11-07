@@ -51,7 +51,7 @@ public static class RefusalLog
         if (request.Module == "DAORIS.DRIVER" && request.Type is "HARNESS_ACTION" or "HARNESS_INPUT" or "HARNESS_CANCEL")
         {
             said.Add(("action", Word(request, "action", word => AgentActions.Words.Contains(word, StringComparer.Ordinal))));
-            said.Add(("harness", Word(request, "harness", Agent.IsMatch)));
+            said.Add(("harness", Word(request, "door", Agent.IsMatch)));
         }
 
         // A request that came over the pipe is said as the terminal's (RPC1a, the terminal RPC design §8); the page's own stay unmarked.

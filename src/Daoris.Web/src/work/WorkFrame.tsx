@@ -404,7 +404,7 @@ export function WorkFrame({
               registered={registry.data ?? []}
               sessions={sessions.data}
               agentRoster={agentRoster}
-              defaultHarness={roster.find((row) => row.harness === (harnesses.data?.adapter ?? ''))?.harness}
+              defaultHarness={roster.find((row) => row.door === (harnesses.data?.adapter ?? ''))?.door}
               notify={notify}
               onMakeTask={onMakeTask}
               attend={attend}

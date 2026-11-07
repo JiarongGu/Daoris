@@ -77,7 +77,7 @@ export function AttendedBoxes({
           taking={turns.taking}
           opening={turns.opening}
           // Only a door that can see a turn end can stop one; the roster says which (CONV3b).
-          stoppable={roster.find((row) => row.harness === attended.adapter)?.structured === true}
+          stoppable={roster.find((row) => row.door === attended.adapter)?.structured === true}
           stopping={cancelTurn.isPending}
           onStopTurn={onStopTurn}
           levels={levels}
@@ -93,7 +93,7 @@ export function AttendedBoxes({
           onMentioning={setMentioning}
           context={{
             usage: reading?.session === attended.id ? reading.usage : undefined,
-            door: door(roster.find((row) => row.harness === attended.adapter)?.structured),
+            door: door(roster.find((row) => row.door === attended.adapter)?.structured),
           }}
           offered={offered}
           optionsBusy={setOption.isPending}

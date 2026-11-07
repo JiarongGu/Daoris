@@ -223,7 +223,7 @@ const toRef = (role: NonNullable<StructureWork['role']>): RoleRef => ({ ...role,
 
 /** The agent a choice names, folded to the roster's tool where one has that door. */
 function toolOf(tools: readonly Tool[], agent: string): Tool | undefined {
-  return tools.find((tool) => tool.name === agent || tool.doors.some((door) => door.harness === agent));
+  return tools.find((tool) => tool.name === agent || tool.doors.some((door) => door.door === agent));
 }
 
 const lower = (value: string | undefined | null) => (value ?? '').toLowerCase();
@@ -307,7 +307,7 @@ export function buildStructure(input: StructureInput): Structure {
   for (const tool of input.tools) if (tool.accounts.length > 0 && !keys.has(tool.name)) keys.set(tool.name, { agent: tool.name, tool });
   const rowsOf = agentRows(input.tools, input.accounts);
   const accounts: AccountRow[] = [...keys.entries()].map(([key, { agent, tool }]) => {
-    const names = new Set([agent, key, ...(tool?.doors.map((door) => door.harness) ?? [])]);
+    const names = new Set([agent, key, ...(tool?.doors.map((door) => door.door) ?? [])]);
     const info = [...names].map((name) => named.get(name)).find((each) => each !== undefined);
     const usedBy = new Map<string, UsedBy>();
     for (const row of works) {
@@ -373,7 +373,7 @@ export function buildStructure(input: StructureInput): Structure {
   // ---- The shared filters; a work filter narrows each section to that work.
   const needle = lower(filters.name.trim());
   const hasAgent = (names: Iterable<string>) => filters.agent === null || [...names].some((name) => name === filters.agent);
-  const agentNames = (row: AccountRow) => [row.agent, row.id.slice('agent:'.length), ...(toolOf(input.tools, row.agent)?.doors.map((door) => door.harness) ?? [])];
+  const agentNames = (row: AccountRow) => [row.agent, row.id.slice('agent:'.length), ...(toolOf(input.tools, row.agent)?.doors.map((door) => door.door) ?? [])];
   const workShown = works.filter((row) => (filters.work === null || row.work === filters.work)
     && hasAgent([...row.choices.map((choice) => choice.agent), ...(row.rule?.kind === 'rule' ? row.rule.agents : [])].flatMap((agent) => {
       const tool = toolOf(input.tools, agent);
@@ -630,7 +630,7 @@ export function nodeOfRow(structure: Structure, id: string): string | null {
 
 /** Each role that leans on an agent at this machine, for the agent's page (*Used by*): the roles at their choices' positions. */
 export function usedByAgent(structure: RoleStructure, tool: Pick<Tool, 'name' | 'doors'>): UsedBy[] {
-  const names = new Set([tool.name, ...tool.doors.map((door) => door.harness)]);
+  const names = new Set([tool.name, ...tool.doors.map((door) => door.door)]);
   const machine = structure.places.find((place) => place.workspace === undefined && place.repository === undefined);
   const used = new Map<string, UsedBy>();
   for (const work of machine?.works ?? []) {

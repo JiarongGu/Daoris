@@ -18,8 +18,8 @@ export function agentOfDoor(door: string, agents: AgentDoors): string {
  * where its agent is the tool or one of its doors (a plugin's door keyed by another door's pool is an agent of its own).
  */
 export function usageOfTool<Share extends { agent: string }>(
-  tool: { name: string; doors: readonly { harness: string }[] },
+  tool: { name: string; doors: readonly { door: string }[] },
   used: readonly Share[],
 ): Share[] {
-  return used.filter((share) => share.agent === tool.name || tool.doors.some((each) => each.harness === share.agent));
+  return used.filter((share) => share.agent === tool.name || tool.doors.some((each) => each.door === share.agent));
 }

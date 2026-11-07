@@ -17,14 +17,14 @@ export function agentRosterOf(
   accounts: Session['accounts']['data'],
 ): HandOverRoster {
   return {
-    harnesses: roster.filter((row) => row.present).map((row) => row.harness),
-    labels: Object.fromEntries(roster.map((row) => [row.harness, doorLabel(t, row)])),
-    names: Object.fromEntries(roster.map((row) => [row.harness, row.product || row.harness])),
-    accounts: Object.fromEntries(roster.map((row) => [row.harness, Array.isArray(row.profiles) ? row.profiles : []])),
+    harnesses: roster.filter((row) => row.present).map((row) => row.door),
+    labels: Object.fromEntries(roster.map((row) => [row.door, doorLabel(t, row)])),
+    names: Object.fromEntries(roster.map((row) => [row.door, row.product || row.door])),
+    accounts: Object.fromEntries(roster.map((row) => [row.door, Array.isArray(row.profiles) ? row.profiles : []])),
     // The set's order of the agent's accounts of Daoris's, every workspace's (POOL1c, D197), by the accounts' owner (AGT7),
     // from the files the frame already reads.
     orderOf: (harness) => {
-      const door = roster.find((row) => row.harness === harness);
+      const door = roster.find((row) => row.door === harness);
       const use = door ? agentOf(accounts, toolOf(door)) : null;
       return use ? machineScope(use).list : null;
     },

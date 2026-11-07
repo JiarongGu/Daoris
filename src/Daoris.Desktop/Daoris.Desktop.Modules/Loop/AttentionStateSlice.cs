@@ -113,7 +113,7 @@ public static class AttentionStateSlice
         ["unreadable"] = WorkStateSlice.Fields["unreadable"],
         ["graphEnd"] = WorkStateSlice.Fields["graphEnd"],
         ["holding"] = ["quests", "asks"],
-        ["account"] = ["agent", "product", "harness", "signsIn", "named", "noAccount"],
+        ["account"] = ["agent", "product", "door", "signsIn", "named", "noAccount"],
         ["named"] = ["id", "name", "state", "read", "until"],
         ["confirmation"] = ["module", "route", "asker", "expires", "shownAt"],
         ["asker"] = ["process", "pid"],

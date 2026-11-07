@@ -383,13 +383,13 @@ function Band({ doors, notify, onSessions, onRun, inView }: {
     // The agent's own sign-in through its account-owning door, as its page starts it (SIGNIN1): its end is said wherever the
     // person is, and the roster read again then, which reads that account (ROSTER1).
     signIn: (item, account) => {
-      const harness = item.account?.harness;
+      const harness = item.account?.door;
       if (harness) harnessRun.run(harness, 'login', account);
     },
     // *Sign in for Daoris* (OWNSPACE1b-B, D175 point 7): the add flow's new sign-in, through the same door, in place. Its end is
     // said wherever the person is; a new account serves by default, so there is no step 3 here.
     signInNew: (item) => {
-      const harness = item.account?.harness;
+      const harness = item.account?.door;
       if (harness) harnessRun.run(harness, 'login-new');
     },
     // That one account, read on the press (ROSTER1): the reading a person may ask for, one account at a time.
@@ -404,12 +404,12 @@ function Band({ doors, notify, onSessions, onRun, inView }: {
     ? { harness: harnessRun.running.slice(0, -':login'.length), account: harnessRun.runningProfile }
     : null;
   const signingRow = signing
-    ? waiting.find((item) => item.account?.harness === signing.harness
+    ? waiting.find((item) => item.account?.door === signing.harness
       && item.account.named.some((one) => one.id === signing.account))
     : undefined;
   // A new account's sign-in, from the no-account row (OWNSPACE1b-B): under the first row that offers it for that door.
   const signingNewRow = harnessRun.signingInNew
-    ? waiting.find((item) => item.account?.noAccount && item.account.harness === harnessRun.signingInNew)
+    ? waiting.find((item) => item.account?.noAccount && item.account.door === harnessRun.signingInNew)
     : undefined;
   // A row of What needs you says the sign-in's line alone, its phase now with what it says (SIGNIN1, the UI/UX design §3.2).
   const ends = {
@@ -420,7 +420,7 @@ function Band({ doors, notify, onSessions, onRun, inView }: {
   };
   const below = (item: Attention) => {
     if (signingNewRow && item.id === signingNewRow.id && item.kind === signingNewRow.kind) {
-      return <SignIn id={`${signingNewRow.account!.harness}:login-new`} harness={signingNewRow.account!.harness!} action="login-new" tool={signingNewRow.account!.product} {...ends} />;
+      return <SignIn id={`${signingNewRow.account!.door}:login-new`} harness={signingNewRow.account!.door!} action="login-new" tool={signingNewRow.account!.product} {...ends} />;
     }
     if (!signing || !signingRow || item.id !== signingRow.id || item.kind !== signingRow.kind) return null;
     const label = item.account?.named.find((one) => one.id === signing.account)?.label ?? signing.account;

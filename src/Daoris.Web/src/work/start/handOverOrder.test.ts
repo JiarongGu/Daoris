@@ -25,7 +25,7 @@ const TABLE = JSON.parse(readFileSync(
   join(process.cwd(), '..', 'Daoris.Desktop', 'Daoris.Desktop.Driver.Tests', 'fixtures', 'hand-over-order.json'), 'utf8')) as {
   rows: Row[]; actorRows: ActorRow[]; arrangedRows: ArrangedRow[];
 };
-const roster = (doors: Door[]): ToolDoor[] => doors.map(([harness, present, accountOf]) => ({ harness, present, accountOf }));
+const roster = (doors: Door[]): ToolDoor[] => doors.map(([harness, present, accountOf]) => ({ door: harness, present, accountOf }));
 
 describe("the person's order a hand-over goes to, as the driver's table holds it", () => {
   it('reads the table', () => {
@@ -34,7 +34,7 @@ describe("the person's order a hand-over goes to, as the driver's table holds it
   });
 
   it.each(TABLE.rows.map((row) => [row[0], row] as const))('%s', (_, [, own, doors, order]) => {
-    expect(otherToolDoors({ adapter: own }, roster(doors)).map((door) => door.harness)).toEqual(order);
+    expect(otherToolDoors({ adapter: own }, roster(doors)).map((door) => door.door)).toEqual(order);
   });
 });
 
@@ -42,7 +42,7 @@ describe("the actor's order a hand-over goes to, as the driver's table holds it"
   it.each(TABLE.actorRows.map((row) => [row[0], row] as const))('%s', (_, [, own, doors, entries, steps]) => {
     const actor = { choices: entries.map(([agent, model, from]) => ({ agent, model, from })) };
 
-    expect(nextChoices({ adapter: own }, roster(doors), actor).map((step) => [step.door.harness, step.model, step.from])).toEqual(steps);
+    expect(nextChoices({ adapter: own }, roster(doors), actor).map((step) => [step.door.door, step.model, step.from])).toEqual(steps);
   });
 });
 
@@ -52,6 +52,6 @@ describe("the arranged order a hand-over goes to, as the driver's table holds it
     const entry = ([agent, model, from]: Entries[number]) => ({ agent, model, from });
     const actor = { choices: stored.map(entry), ...(arranged ? { arranged: arranged.map(entry) } : {}) };
 
-    expect(nextChoices({ adapter: own }, roster(doors), actor).map((step) => [step.door.harness, step.model, step.from])).toEqual(steps);
+    expect(nextChoices({ adapter: own }, roster(doors), actor).map((step) => [step.door.door, step.model, step.from])).toEqual(steps);
   });
 });

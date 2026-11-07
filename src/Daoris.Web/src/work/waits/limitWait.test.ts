@@ -26,7 +26,7 @@ AccountsAnswer {
   return { agents: [agent] };
 }
 
-const doors = [{ harness: 'claude-code-acp', accountOf: 'claude-code' }] as never[];
+const doors = [{ door: 'claude-code-acp', accountOf: 'claude-code' }] as never[];
 const session = (profile: string | null, noteParts: unknown[] = []) =>
   ({ adapter: 'claude-code-acp', profile, noteParts }) as never;
 const t = i18n.t.bind(i18n) as (key: string, options?: Record<string, unknown>) => string;

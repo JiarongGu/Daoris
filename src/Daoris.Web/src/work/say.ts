@@ -251,7 +251,7 @@ export function handOverSaid(
 export function coolingFor(
   session: Pick<Session, 'adapter' | 'profile'>, doors: readonly ToolDoor[], answer: AccountsAnswer | null | undefined, now: Date,
 ): string | null {
-  const door = doors.find((each) => each.harness === session.adapter);
+  const door = doors.find((each) => each.door === session.adapter);
   const agent = agentOf(answer, door ? toolOf(door) : session.adapter);
   if (!agent) return null;
   const accounts = Array.isArray(agent.accounts) ? agent.accounts : [];

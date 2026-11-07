@@ -172,7 +172,7 @@ export function SessionConversation({
   // The door's own word on what an empty record means — undefined until the roster answers, which reads
   // as the console sentence: it claims least.
   const harnesses = useHarnesses();
-  const structured = harnesses.data?.harnesses?.find((row) => row.harness === adapter)?.structured;
+  const structured = harnesses.data?.harnesses?.find((row) => row.door === adapter)?.structured;
   // What the person calls each account, so the opening line and a wait name one as the agents' page does (NOTENAME1).
   const roster = harnesses.data?.harnesses;
   const names = useMemo(() => accountNames(Array.isArray(roster) ? roster : []), [roster]);

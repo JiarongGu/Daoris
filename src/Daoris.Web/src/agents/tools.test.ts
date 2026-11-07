@@ -9,7 +9,7 @@ import { type Account, type AgentSheet, byTool, doorOf, toolOf, type ToolDoor } 
  * tools looks exactly like a machine with four tools on it.
  */
 
-const door = (over: Partial<ToolDoor> & { harness: string }): ToolDoor => ({
+const door = (over: Partial<ToolDoor> & { door: string }): ToolDoor => ({
   present: false,
   ...over,
 });
@@ -17,13 +17,13 @@ const door = (over: Partial<ToolDoor> & { harness: string }): ToolDoor => ({
 describe('byTool', () => {
   it('folds a door that borrows an account into the tool that owns it', () => {
     const tools = byTool([
-      door({ harness: 'claude-code', present: true, version: '2.1.278' }),
-      door({ harness: 'claude-code-acp', accountOf: 'claude-code', transport: 'protocol' }),
+      door({ door: 'claude-code', present: true, version: '2.1.278' }),
+      door({ door: 'claude-code-acp', accountOf: 'claude-code', transport: 'protocol' }),
     ]);
 
     expect(tools).toHaveLength(1);
     expect(tools[0]!.name).toBe('claude-code');
-    expect(tools[0]!.doors.map((d) => d.harness)).toEqual(['claude-code', 'claude-code-acp']);
+    expect(tools[0]!.doors.map((d) => d.door)).toEqual(['claude-code', 'claude-code-acp']);
   });
 
   /**
@@ -33,14 +33,14 @@ describe('byTool', () => {
    * called `codex-acp`, which is the confusion this was written to remove.
    */
   it('names a tool after its account even when no door carries that name', () => {
-    const tools = byTool([door({ harness: 'codex-acp', accountOf: 'codex', transport: 'protocol' })]);
+    const tools = byTool([door({ door: 'codex-acp', accountOf: 'codex', transport: 'protocol' })]);
 
     expect(tools.map((t) => t.name)).toEqual(['codex']);
-    expect(tools[0]!.doors.map((d) => d.harness)).toEqual(['codex-acp']);
+    expect(tools[0]!.doors.map((d) => d.door)).toEqual(['codex-acp']);
   });
 
   it('leaves a tool that owns its own account alone', () => {
-    const tools = byTool([door({ harness: 'dsh', present: true, transport: 'protocol' })]);
+    const tools = byTool([door({ door: 'dsh', present: true, transport: 'protocol' })]);
 
     expect(tools.map((t) => t.name)).toEqual(['dsh']);
     expect(tools[0]!.doors).toHaveLength(1);
@@ -48,9 +48,9 @@ describe('byTool', () => {
 
   it('keeps the roster’s order, so installing something does not reshuffle the surface', () => {
     const tools = byTool([
-      door({ harness: 'dsh' }),
-      door({ harness: 'claude-code' }),
-      door({ harness: 'claude-code-acp', accountOf: 'claude-code' }),
+      door({ door: 'dsh' }),
+      door({ door: 'claude-code' }),
+      door({ door: 'claude-code-acp', accountOf: 'claude-code' }),
     ]);
 
     expect(tools.map((t) => t.name)).toEqual(['dsh', 'claude-code']);
@@ -63,8 +63,8 @@ describe('byTool', () => {
   it('reports one account once, however many doors can see it', () => {
     const profiles: Account[] = [{ name: 'owner', home: '/profiles/owner', login: 'in' }];
     const tools = byTool([
-      door({ harness: 'claude-code', profiles }),
-      door({ harness: 'claude-code-acp', accountOf: 'claude-code', profiles }),
+      door({ door: 'claude-code', profiles }),
+      door({ door: 'claude-code-acp', accountOf: 'claude-code', profiles }),
     ]);
 
     expect(tools[0]!.accounts).toHaveLength(1);
@@ -77,8 +77,8 @@ describe('byTool', () => {
    */
   it('takes an account\'s sign-in from the tool that owns it, never a door\'s unknown', () => {
     const tools = byTool([
-      door({ harness: 'claude-code-acp', accountOf: 'claude-code', profiles: [{ name: 'account-1', home: '/p/one', login: 'unknown' }] }),
-      door({ harness: 'claude-code', profiles: [{ name: 'account-1', home: '/p/one', login: 'out' }] }),
+      door({ door: 'claude-code-acp', accountOf: 'claude-code', profiles: [{ name: 'account-1', home: '/p/one', login: 'unknown' }] }),
+      door({ door: 'claude-code', profiles: [{ name: 'account-1', home: '/p/one', login: 'out' }] }),
     ]);
 
     expect(tools).toHaveLength(1);
@@ -87,9 +87,9 @@ describe('byTool', () => {
 
   it('deduplicates on the directory, because that is what an account IS', () => {
     const tools = byTool([
-      door({ harness: 'claude-code', profiles: [{ name: 'work', home: '/p/one', login: 'in' }] }),
+      door({ door: 'claude-code', profiles: [{ name: 'work', home: '/p/one', login: 'in' }] }),
       door({
-        harness: 'claude-code-acp',
+        door: 'claude-code-acp',
         accountOf: 'claude-code',
         // The same directory under another name is the same account; a different one is not.
         profiles: [
@@ -104,8 +104,8 @@ describe('byTool', () => {
 
   it('answers "have I got this" across the doors', () => {
     const tools = byTool([
-      door({ harness: 'claude-code', present: false }),
-      door({ harness: 'claude-code-acp', accountOf: 'claude-code', present: true }),
+      door({ door: 'claude-code', present: false }),
+      door({ door: 'claude-code-acp', accountOf: 'claude-code', present: true }),
     ]);
 
     expect(tools[0]!.present).toBe(true);
@@ -119,8 +119,8 @@ describe('byTool', () => {
    */
   it('carries the tool’s own login, and no default or workspace’s choice of account', () => {
     const tools = byTool([
-      door({ harness: 'claude-code', present: true, ownLogin: 'in' }),
-      door({ harness: 'claude-code-acp', accountOf: 'claude-code', ownLogin: 'unknown' }),
+      door({ door: 'claude-code', present: true, ownLogin: 'in' }),
+      door({ door: 'claude-code-acp', accountOf: 'claude-code', ownLogin: 'unknown' }),
     ]);
 
     expect(tools[0]!.ownLogin).toBe('in');
@@ -135,12 +135,12 @@ describe('byTool', () => {
   it('carries who is signed in, from the door that can ask', () => {
     const tools = byTool([
       door({
-        harness: 'claude-code',
+        door: 'claude-code',
         ownAccount: 'owner@example.invalid',
         profiles: [{ name: 'account-1', home: '/p/one', login: 'in', account: 'someone@example.invalid' }],
       }),
       door({
-        harness: 'claude-code-acp',
+        door: 'claude-code-acp',
         accountOf: 'claude-code',
         ownAccount: null,
         profiles: [{ name: 'account-1', home: '/p/one', login: 'unknown', account: null }],
@@ -151,14 +151,14 @@ describe('byTool', () => {
       { name: 'account-1', home: '/p/one', login: 'in', account: 'someone@example.invalid' },
     ]);
     expect(tools[0]!.ownAccount).toBe('owner@example.invalid');
-    expect(byTool([door({ harness: 'dsh' })])[0]!.ownAccount).toBeNull();
+    expect(byTool([door({ door: 'dsh' })])[0]!.ownAccount).toBeNull();
   });
 
   /** AGT1: what a person calls the tool and whose it is — the first door that says, or nothing. */
   it('names the tool and its maker from the doors, and leaves both empty when none says', () => {
     const tools = byTool([
-      door({ harness: 'codex-acp', accountOf: 'codex', product: 'Codex', maker: 'OpenAI' }),
-      door({ harness: 'acme-agent' }),
+      door({ door: 'codex-acp', accountOf: 'codex', product: 'Codex', maker: 'OpenAI' }),
+      door({ door: 'acme-agent' }),
     ]);
 
     expect([tools[0]!.name, tools[0]!.product, tools[0]!.maker]).toEqual(['codex', 'Codex', 'OpenAI']);
@@ -166,12 +166,12 @@ describe('byTool', () => {
   });
 
   it('answers unknown for a tool whose doors say nothing about their own home', () => {
-    expect(byTool([door({ harness: 'dsh' })])[0]!.ownLogin).toBe('unknown');
+    expect(byTool([door({ door: 'dsh' })])[0]!.ownLogin).toBe('unknown');
   });
 
   it('treats a blank borrowed account as none at all', () => {
-    expect(toolOf(door({ harness: 'dsh', accountOf: '  ' }))).toBe('dsh');
-    expect(toolOf(door({ harness: 'codex-acp', accountOf: 'codex' }))).toBe('codex');
+    expect(toolOf(door({ door: 'dsh', accountOf: '  ' }))).toBe('dsh');
+    expect(toolOf(door({ door: 'codex-acp', accountOf: 'codex' }))).toBe('codex');
   });
 });
 
@@ -191,8 +191,8 @@ describe('byTool and an account\'s own settings', () => {
 
   it('takes the choices from the first door that offers them', () => {
     const tools = byTool([
-      door({ harness: 'claude-code-acp', accountOf: 'claude-code', settingsChoices: choices }),
-      door({ harness: 'claude-code', settingsChoices: null }),
+      door({ door: 'claude-code-acp', accountOf: 'claude-code', settingsChoices: choices }),
+      door({ door: 'claude-code', settingsChoices: null }),
     ]);
 
     expect(tools[0]!.settingsChoices).toEqual(choices);
@@ -208,20 +208,20 @@ describe('byTool and an account\'s own settings', () => {
       name: 'probe', home: 'H:/probe', login: 'unknown' as const,
       settings: { perModel: [] } as unknown as Account['settings'],
     };
-    const [tool] = byTool([door({ harness: 'claude-code', profiles: [account] })]);
+    const [tool] = byTool([door({ door: 'claude-code', profiles: [account] })]);
     expect(tool!.accounts[0]!.settings).toEqual({ model: null, effort: null, perModel: [], problem: null });
   });
 
   it('offers none where the doors say none, and claims nothing for a shell that never said', () => {
-    expect(byTool([door({ harness: 'dsh', settingsChoices: null })])[0]!.settingsChoices).toBeNull();
-    expect(byTool([door({ harness: 'codex-acp', accountOf: 'codex' })])[0]!.settingsChoices).toBeUndefined();
+    expect(byTool([door({ door: 'dsh', settingsChoices: null })])[0]!.settingsChoices).toBeNull();
+    expect(byTool([door({ door: 'codex-acp', accountOf: 'codex' })])[0]!.settingsChoices).toBeUndefined();
   });
 });
 
 describe('doorOf', () => {
   const roster = [
-    door({ harness: 'claude-code', present: true, transport: 'native' }),
-    door({ harness: 'claude-code-acp', accountOf: 'claude-code', transport: 'protocol' }),
+    door({ door: 'claude-code', present: true, transport: 'native' }),
+    door({ door: 'claude-code-acp', accountOf: 'claude-code', transport: 'protocol' }),
   ];
 
   it('answers the configured adapter\'s own door', () => {
@@ -232,8 +232,8 @@ describe('doorOf', () => {
   it('answers nothing it cannot read: no adapter, one the roster lacks, or a door it does not name', () => {
     expect(doorOf(undefined, roster)).toBeNull();
     expect(doorOf('dsh', roster)).toBeNull();
-    expect(doorOf('claude-code', [door({ harness: 'claude-code' })])).toBeNull();
-    expect(doorOf('claude-code', [door({ harness: 'claude-code', transport: 'smoke-signal' })])).toBeNull();
+    expect(doorOf('claude-code', [door({ door: 'claude-code' })])).toBeNull();
+    expect(doorOf('claude-code', [door({ door: 'claude-code', transport: 'smoke-signal' })])).toBeNull();
   });
 });
 
@@ -246,7 +246,7 @@ describe("the roster's sheet half (COAGENT1e)", () => {
 
   it("gives each tool its agent's acts, lead and sheets, found by its id or by any of its doors", () => {
     const tools = byTool(
-      [door({ harness: 'claude-code' }), door({ harness: 'claude-code-acp', accountOf: 'claude-code' }), door({ harness: 'codex-acp', accountOf: 'codex' })],
+      [door({ door: 'claude-code' }), door({ door: 'claude-code-acp', accountOf: 'claude-code' }), door({ door: 'codex-acp', accountOf: 'codex' })],
       [sheet('claude-code', ['claude-code', 'claude-code-acp']), sheet('codex', ['codex-acp'])],
     );
 
@@ -258,7 +258,7 @@ describe("the roster's sheet half (COAGENT1e)", () => {
   });
 
   it('says nothing of an agent the sheet does not name: its own name leads and no act is known', () => {
-    const [tool] = byTool([door({ harness: 'dsh' })], [sheet('claude-code', ['claude-code'])]);
+    const [tool] = byTool([door({ door: 'dsh' })], [sheet('claude-code', ['claude-code'])]);
 
     expect(tool!.acts).toBeNull();
     expect(tool!.lead).toBe('dsh');

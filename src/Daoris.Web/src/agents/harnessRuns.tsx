@@ -102,14 +102,14 @@ function useRunState(notify: Notify): HarnessRun {
   // Whether a door's agent signs in by a device code beside its own sign-in, read from the roster the page already holds.
   const deviceCodeOf = (harness: string) => {
     const roster = client.getQueryData<HarnessRoster>(keys.harnesses);
-    return Boolean(roster?.harnesses.find((each) => each.harness === harness)?.deviceCode);
+    return Boolean(roster?.harnesses.find((each) => each.door === harness)?.deviceCode);
   };
 
   // Read the roster at the moment an action ends: a rename or a view change can happen while a sign-in runs.
   // Looking in the shared cache asks no agent to read its sign-in again.
   const called = (harness: string, profile: string) => {
     const roster = client.getQueryData<HarnessRoster>(keys.harnesses);
-    const tool = byTool(roster?.harnesses ?? []).find((each) => each.doors.some((door) => door.harness === harness));
+    const tool = byTool(roster?.harnesses ?? []).find((each) => each.doors.some((door) => door.door === harness));
     const account = tool?.accounts.find((each) => each.name === profile);
     return account ? accountLabel(account, tool) : null;
   };
@@ -171,7 +171,7 @@ function useRunState(notify: Notify): HarnessRun {
   // 🔴 A process action ends as NEWS (2026-09-23): a sign-in waits on a person in a browser, longer
   // than a request may take on the bridge. Only the action this state started is this state's.
   useHarnessEnded((news) => {
-    if (runningRef.current !== `${news.harness}:${news.action}`) return;
+    if (runningRef.current !== `${news.door}:${news.action}`) return;
     // Stopped for the same sign-in by the other way (CODEXLOGIN1), which runs on in the same panel: nothing to say.
     if (news.switched) {
       stopped.current = true;
@@ -208,7 +208,7 @@ function useRunState(notify: Notify): HarnessRun {
     if (action === 'login-new') setAdded(null);
     // The way only where it is not the first or it switches, so a press says what it always said.
     const how = signIn && (way !== 'browser' || switching) ? { way, ...(switching ? { switch: true } : {}) } : {};
-    act.mutate({ harness, action, profile, version, ...how }, {
+    act.mutate({ door: harness, action, profile, version, ...how }, {
       // A file edit ends inside the request; a process answers `started` and ends as news, heard
       // above. Either way the end is said once, by the same sentence.
       onSuccess: (result) => {

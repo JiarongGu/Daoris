@@ -54,10 +54,10 @@ const presses: [hook: string, usePress: () => Press, variables: unknown, family:
   // MODELROLE1d, ONEWAY1a: Intake's order, set by the role door, moves what an intake in each circle runs on, as SET_INTAKE's did.
   ['useSetRole', useSetRole, { change: 'set', id: 'intake', choices: [{ agent: 'claude-code' }] }, [keys.allStarts]],
   ['useTrustFolder', useTrustFolder, { folder: 'engine', trustFile: 'trust.json' }, [keys.driver]],
-  ['useAccountUse', useAccountUse, { harness: 'claude-code', action: 'use' }, [keys.accounts, keys.harnesses]],
-  ['useHarnessAction', useHarnessAction, { harness: 'claude-code', action: 'profile-rename', profile: 'work' },
+  ['useAccountUse', useAccountUse, { door: 'claude-code', action: 'use' }, [keys.accounts, keys.harnesses]],
+  ['useHarnessAction', useHarnessAction, { door: 'claude-code', action: 'profile-rename', profile: 'work' },
     [keys.harnesses, keys.accounts]],
-  ['useSetAgentSettings', useSetAgentSettings, { harness: 'claude-code', profile: 'work', model: 'opus' }, [keys.harnesses]],
+  ['useSetAgentSettings', useSetAgentSettings, { door: 'claude-code', profile: 'work', model: 'opus' }, [keys.harnesses]],
   // HARNESSREFRESH1: *Read again* moved the roster, the starts an account's reading lets through and the accounts, which sit under it.
   ['useRefreshHarnesses', useRefreshHarnesses, { agent: 'claude-code', profile: 'work' }, [keys.harnesses, keys.allStarts, keys.accounts]],
   ['usePostChannel', usePostChannel, { ask: 'a1', post: { text: 'hi' } }, [channelKey('a1')]],

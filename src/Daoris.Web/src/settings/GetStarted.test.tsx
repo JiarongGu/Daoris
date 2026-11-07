@@ -20,7 +20,7 @@ const HALFWAY = setupSteps(readMachine({
   attached: true,
   registry: [{ repository: 'engine' }],
   driver: { drivable: [], helperAgent: 'claude-code-acp' },
-  harnesses: [{ harness: 'claude-code', present: true, ownLogin: 'in', profiles: [{ name: 'work', home: 'h', login: 'in' }] }],
+  harnesses: [{ door: 'claude-code', present: true, ownLogin: 'in', profiles: [{ name: 'work', home: 'h', login: 'in' }] }],
   lines: [],
 }));
 

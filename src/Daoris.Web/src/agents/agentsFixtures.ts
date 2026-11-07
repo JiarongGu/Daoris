@@ -21,7 +21,7 @@ export function sheetsOf(doors: readonly ToolDoor[], rows: (door: ToolDoor) => S
   const names = [...new Set(doors.map(toolOf))];
   return names.map((name) => {
     const own = doors.filter((door) => toolOf(door) === name);
-    const ordered = [...own.filter((door) => door.harness === name), ...own.filter((door) => door.harness !== name)];
+    const ordered = [...own.filter((door) => door.door === name), ...own.filter((door) => door.door !== name)];
     return {
       id: name,
       product: ordered.map((door) => door.product).find(Boolean) ?? null,
@@ -34,8 +34,8 @@ export function sheetsOf(doors: readonly ToolDoor[], rows: (door: ToolDoor) => S
         deviceCode: ordered.some((door) => Boolean(door.deviceCode)),
         installs: ordered.some((door) => door.installs !== false),
       },
-      doors: ordered.map((door) => ({ door: door.harness, transport: door.transport === 'protocol' ? 'protocol' as const : 'native' as const, rows: rows(door) })),
-      lead: ordered[0]?.harness ?? null,
+      doors: ordered.map((door) => ({ door: door.door, transport: door.transport === 'protocol' ? 'protocol' as const : 'native' as const, rows: rows(door) })),
+      lead: ordered[0]?.door ?? null,
     };
   });
 }
@@ -50,7 +50,7 @@ export const sheeted = (invoke: (...call: any[]) => Promise<unknown>) => async (
 export const toolsOf = (doors: readonly ToolDoor[], rows?: (door: ToolDoor) => SheetRow[]): Tool[] => byTool(doors, sheetsOf(doors, rows));
 
 const CLAUDE: ToolDoor = {
-  harness: 'claude-code', product: 'Claude Code', maker: 'Anthropic', present: true, version: '2.1.4 (Claude Code)',
+  door: 'claude-code', product: 'Claude Code', maker: 'Anthropic', present: true, version: '2.1.4 (Claude Code)',
   transport: 'native', structured: true, takesRules: true, signsIn: true, takesKey: true, pinnable: true, updates: 'tool',
   ownLogin: 'unknown', ownRead: null, ownAccount: null,
   settingsChoices: { models: ['default', 'sonnet', 'opus'], efforts: ['low', 'medium', 'high'] },
@@ -65,22 +65,22 @@ const CLAUDE: ToolDoor = {
 };
 
 const CLAUDE_ACP: ToolDoor = {
-  ...CLAUDE, harness: 'claude-code-acp', accountOf: 'claude-code', transport: 'protocol', version: '0.9.1', updates: 'pin', takesKey: false,
+  ...CLAUDE, door: 'claude-code-acp', accountOf: 'claude-code', transport: 'protocol', version: '0.9.1', updates: 'pin', takesKey: false,
 };
 
 const CODEX: ToolDoor = {
-  harness: 'codex-acp', accountOf: 'codex', product: 'Codex', maker: 'OpenAI', present: true, version: '0.159.3', transport: 'protocol',
+  door: 'codex-acp', accountOf: 'codex', product: 'Codex', maker: 'OpenAI', present: true, version: '0.159.3', transport: 'protocol',
   signsIn: true, pinnable: true, ownLogin: 'unknown', settingsChoices: null,
   profiles: [{ name: 'account-1', home: 'C:/somewhere/data/harnesses/codex/account-1', login: 'in', account: 'codex@example.invalid', read: READ }],
 };
 
 const DSH: ToolDoor = {
-  harness: 'dsh', product: 'DeepSeek Harness', maker: 'DeepSeek', present: false, version: null, transport: 'protocol', pinnable: true,
+  door: 'dsh', product: 'DeepSeek Harness', maker: 'DeepSeek', present: false, version: null, transport: 'protocol', pinnable: true,
   problem: '`dsh` is not on this machine\'s PATH — `daoris agent install dsh` installs it', profiles: [],
 };
 
 const DECLARED: ToolDoor = {
-  harness: 'acme-agent', product: 'Acme agent', maker: 'Acme', present: true, version: '(not asked)', transport: 'protocol',
+  door: 'acme-agent', product: 'Acme agent', maker: 'Acme', present: true, version: '(not asked)', transport: 'protocol',
   plugin: 'acme.gate', pinnable: false, signsIn: false, profiles: [],
 };
 

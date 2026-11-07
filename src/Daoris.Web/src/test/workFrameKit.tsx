@@ -37,7 +37,7 @@ export const ROSTER = {
   adapter: 'claude-code',
   harnesses: [
     {
-      harness: 'claude-code', present: true, version: 'claude 9.9.9', problem: null,
+      door: 'claude-code', present: true, version: 'claude 9.9.9', problem: null,
       machineDefault: 'personal',
       profiles: [
         { name: 'personal', home: 'C:/somewhere/.daoris/harnesses/claude-code/personal', login: 'in' },
@@ -45,7 +45,7 @@ export const ROSTER = {
       ],
     },
     {
-      harness: 'codex', present: false, version: null,
+      door: 'codex', present: false, version: null,
       problem: '`codex` is not on this machine\'s PATH', machineDefault: null, profiles: [],
     },
   ],
@@ -54,7 +54,7 @@ export const ROSTER = {
 /** A roster whose chat harness reads a structured wire — a door where a turn can be stopped (CONV4). */
 export const STRUCTURED_ROSTER = {
   ...ROSTER,
-  harnesses: [{ harness: 'stub', present: true, version: 'stub 1.0.0', problem: null, machineDefault: null, profiles: [], structured: true }],
+  harnesses: [{ door: 'stub', present: true, version: 'stub 1.0.0', problem: null, machineDefault: null, profiles: [], structured: true }],
 };
 
 export const REGISTRY = [{

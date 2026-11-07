@@ -57,7 +57,7 @@ export const useAccounts = () => {
  */
 export const useReadAccounts = () =>
   useMutation({
-    mutationFn: ({ harness }: { harness: string }) => call('ACCOUNTS_READ', { harness }) as Promise<{ harness: string }>,
+    mutationFn: ({ door }: { door: string }) => call('ACCOUNTS_READ', { door }) as Promise<{ door: string }>,
   });
 
 /**
@@ -72,8 +72,8 @@ export const useReadAccounts = () =>
  */
 export const useAccountUse = () =>
   useMutation({
-    mutationFn: ({ harness, action, ...rest }: {
-      harness: string;
+    mutationFn: ({ door, action, ...rest }: {
+      door: string;
       action: 'order' | 'use' | 'ready' | 'said';
       /** For `order`: the order, the accounts named first. */
       accounts?: string[];
@@ -82,5 +82,5 @@ export const useAccountUse = () =>
       /** For `said`: the receipts the page showed, by id. */
       ids?: string[];
     } & AccountUseChange) =>
-      call('ACCOUNT_USE', { harness, action, ...rest }) as Promise<{ harness: string; action: string; profile?: string | null; ended?: boolean }>,
+      call('ACCOUNT_USE', { door, action, ...rest }) as Promise<{ door: string; action: string; profile?: string | null; ended?: boolean }>,
   });

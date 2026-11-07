@@ -32,7 +32,7 @@ type World = {
 const FRESH: World = {
   registry: [],
   state: { drivable: [], holds: [], trees: [], running: [], helperAgent: '', intakeAgent: '' },
-  harnesses: [{ harness: 'claude-code', present: false, ownLogin: 'unknown' }],
+  harnesses: [{ door: 'claude-code', present: false, ownLogin: 'unknown' }],
   lines: [],
   landings: [],
 };
@@ -105,7 +105,7 @@ describe('Get started, on the desktop', () => {
     machine({
       ...FRESH,
       registry: [{ repository: 'engine', workspace: 'aurora' }],
-      harnesses: [{ harness: 'claude-code', present: true, ownLogin: 'in', product: 'Claude Code', profiles: [{ name: 'work', home: 'h', login: 'in' }] }],
+      harnesses: [{ door: 'claude-code', present: true, ownLogin: 'in', product: 'Claude Code', profiles: [{ name: 'work', home: 'h', login: 'in' }] }],
     });
     show();
 
