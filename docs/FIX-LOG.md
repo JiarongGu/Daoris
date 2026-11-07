@@ -5,6 +5,34 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-11-07 - The relay took a folder made while it was read for a link, and stopped with `home`
+
+- **Symptom:** `RelayRunTests` failed under load, and alone in 2 runs out of 5: one case ended with `RelayStop: home` from the test's
+  own `RelayRun.Subscribers`, and another waited out the pipe's two-minute patience because the relay's run had stopped the same way.
+- **Root cause:** `RelayCopy.Plain` read `FileInfo.Exists`, then `Directory.Exists`, then the `FileInfo`'s cached attributes. A folder
+  made between the first two reads was absent to the first, whose cached attributes then have every bit set, and present to the
+  second, so it read as a reparse point. The relay and a second reader each make the subscribers' folders. Introduced by 1ea057dacd
+  (EVENTHOOK1c).
+- **Fix:** `Plain` reads the attributes once with `File.GetAttributes`. A path that cannot be read counts as plain, as it did before,
+  and the act that touches it fails there (b348de5bc6).
+- **Verification:** `RelayCopyTests.A_folder_made_while_it_is_read_is_plain` failed 3 runs out of 3 before the change. `RelayCopyTests`
+  and `RelayRunTests` passed 3 runs out of 3 after it.
+
+## 2026-11-07 - A delete's kept binding was said by its fallback, and an answers-alone hold said its note before the course's answer
+
+- **Symptom:** the driver's fast half on main: `KeptNamesTwinTests` failed every run (the driver had `Binding`, the table `Harness`);
+  `ChatGoOnTests.A_third_answer_alone_to_an_ended_chat_waits_for_the_person_until_they_let_it_go_on` failed about half its runs,
+  alone too, with no course answer heard when the hold's note was read. A delete that kept a binding toasted *its binding*.
+- **Root cause:** d785480704 (AGENTPROVIDER1t t-iii) renamed `SessionHomeFiles.Harness` to `Binding`, since the stored old-names census
+  lets no source off its list spell `"harness"`, and left the twin table, the page's kept names and both catalogues on `harness`. The
+  go-on and the helper's turn asked the course only after `AnswersAloneHold.Holds` had marked the answers and kept its note, an order
+  set by 915de3a1fb (FOUNDATION1h branch 7). The rule read (65526863d5) and the rule's act (0f4b400bc0) widened that gap to 25-40 ms,
+  measured, against the test's ~55 ms poll.
+- **Fix:** the table, `KEPT_NAMES` and `work.delete.kept.binding` in both catalogues (1f66d01939). `Holds` hands the held number to
+  its caller's course answer before any mark or note, and `HeldAt` is gone (447a6c17a6).
+- **Verification:** `KeptNamesTwinTests` and `sessionActs.test.tsx` pass. `AnswersAloneHoldTests.The_held_number_is_handed_on_before_the_hold_marks_or_says_anything`
+  failed to compile before the change. `ChatGoOnTests` passed 8 runs out of 8, where it had failed 3 of 5.
+
 ## 2026-11-07 - The service's provider census read a file no service gate writes, and the locator's empty cases found the checkout's build (CI 9)
 
 - **Symptom:** CI run 9's fast half: all eleven `ProviderCensusTests` of the service failed with *the page's service types hold no
