@@ -37,7 +37,7 @@ internal sealed class LookTold(
             .ConfigureAwait(false);
         // Told once across restarts by the said-set, not by a first look's baseline.
         var attend = AttentionNews.Told(news, _attention.Observe(report, read), DateTimeOffset.UtcNow);
-        // EVENTHOOK1b: a quest's park told at `work/event` as the person is told it.
+        // A quest's park told at `work/event` as the person is told it.
         foreach (var parked in attend) if (WorkEventNews.Of(parked, DateTimeOffset.UtcNow) is { } happened) shared.Hooks?.Tell(happened);
         // Kept in Notifications whatever the switch says: recording is not telling.
         loop.Notices.Keep(attend);

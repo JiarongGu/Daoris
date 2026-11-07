@@ -4,7 +4,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop;
 
 /// <summary>
-/// The one judge of who is at work (COWORKVIEW1a, the design §4.1, rules 11 to 13): each landed composition registers what it read,
+/// The one judge of who is at work: each landed composition registers what it read,
 /// and the judge, asked by the lineage files' topic, the three slices' pushes and health and the token set's moves, compares each read's
 /// own versions and tells <paramref name="wake"/> once where any moved, that read then leaving the union until it is asked again and
 /// lands. A line wakes only where it moves what its reading holds (<see cref="ChildBindings.Wakes"/>).
@@ -24,9 +24,9 @@ public sealed class AtWorkWatch
     private readonly Func<string, string>? _standing;
     private readonly StateSlice? _asks;
 
-    /// <param name="driver">The driver slice, whose pushes move a repository's drive and trees (COWORKVIEW1e-iii).</param>
+    /// <param name="driver">The driver slice, whose pushes move a repository's drive and trees.</param>
     /// <param name="standing">A repository's routing standing word; the registry's answers reach the judge through <see cref="JudgeStandings"/>.</param>
-    /// <param name="asks">The asks slice, an ask's read's existence dependency (COWORKVIEW1d).</param>
+    /// <param name="asks">The asks slice, an ask's read's existence dependency.</param>
     public AtWorkWatch(
         Action wake, StateSlice? groups, StateSlice? sessions, StateSlice? quests, LineageTokens tokens, StateSlice? driver = null,
         Func<string, string>? standing = null, StateSlice? asks = null)

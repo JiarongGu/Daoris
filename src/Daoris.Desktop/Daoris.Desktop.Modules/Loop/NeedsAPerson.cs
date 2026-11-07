@@ -6,15 +6,15 @@ using static Daoris.Desktop.AttentionJson;
 namespace Daoris.Desktop;
 
 /// <summary>
-/// Who needs the person (PUSH1d4, D182 point 6): <i>What needs you</i>'s rows, the parks and the sessions the driver runs, judged once for every
+/// Who needs the person: <i>What needs you</i>'s rows, the parks and the sessions the driver runs, judged once for every
 /// window. Each row carries its kind, its id, since when it has waited and the values it is worded from; what it is called, its
-/// sentences and the order the band draws are the page's (D182's PUSH1d4 note).
+/// sentences and the order the band draws are the page's.
 /// </summary>
 /// <remarks>
-/// <para><b>No row starts anything to find out</b> (design §6.3): every input is a record a slice already holds or the look already
+/// <para><b>No row starts anything to find out</b>: every input is a record a slice already holds or the look already
 /// kept. A row whose wait no record says has a <c>since</c> of null, never the clock's now, which would move at every judgement.</para>
 ///
-/// <para><b>The scope a window reads</b> (NEEDSSCOPE1): a row that is a session's, a quest's or an ask's carries that record's
+/// <para><b>The scope a window reads</b>: a row that is a session's, a quest's or an ask's carries that record's
 /// <c>workspace</c>, however its wait reached the judge, the service's records or the driver's own lists (a review, an opinion, a
 /// helper's ask, a hand-over ask, a held call, a held answer, a unit's clean-up), by which a window scoped to one circle filters, as its lists were. Only
 /// what is the machine's carries none, and every window shows it: a terminal's press, a rule for the whole machine, a folder or an
@@ -22,7 +22,7 @@ namespace Daoris.Desktop;
 /// </remarks>
 public static class NeedsAPerson
 {
-    /// <summary>The intake states in which an ask is the harness's to answer, not yet the person's (D65 §1b).</summary>
+    /// <summary>The intake states in which an ask is the harness's to answer, not yet the person's.</summary>
     private static readonly HashSet<string> IntakeBusy = new(StringComparer.Ordinal) { "queued", "starting", "working" };
 
     /// <summary>How a quest's and an ask's units are named (<see cref="QuestUnits.IdOf"/>, <see cref="AskUnits.IdOf"/>).</summary>
@@ -31,7 +31,7 @@ public static class NeedsAPerson
     /// <summary>How the work inventory names a session's unit before a branch record follows it.</summary>
     private const string SessionUnit = "session:";
 
-    /// <summary>What an integration's wait names on its row (INTEGRATE1h): which wait, its line, and the candidate, request, commit or unit it is of.</summary>
+    /// <summary>What an integration's wait names on its row: which wait, its line, and the candidate, request, commit or unit it is of.</summary>
     private static readonly string[] IntegrationFields =
         ["wait", "repository", "line", "branch", "branches", "candidate", "request", "commit", "subject", "unit", "tip", "why", "state"];
 
@@ -48,7 +48,7 @@ public static class NeedsAPerson
             if (Text(unit, "unit") is { } id) units.TryAdd(id, unit);
         }
 
-        // The workspace of the session a row is, where its record is in hand (NEEDSSCOPE1); else none, and every window shows it.
+        // The workspace of the session a row is, where its record is in hand; else none, and every window shows it.
         string? SessionScope(string? id) => id is not null && sessions.GetValueOrDefault(id) is { } record ? Scope(record) : null;
         // A unit's: a quest's or an ask's unit by that record; else the session of the unit as the work slice holds it, or the one its id names.
         string? UnitScope(string? unit) => unit switch
@@ -64,7 +64,7 @@ public static class NeedsAPerson
         var live = facts.Asks.Where(ask => Text(ask, "state") is "Open" or "Proposed").ToList();
         JsonObject? IntakeOf(JsonObject ask) => Truthy(ask, "intake") is { } intake ? sessions.GetValueOrDefault(intake) : null;
 
-        // Whom an ask in this workspace could be published to: what the host says can be asked, as the ask's page offers (D70).
+        // Whom an ask in this workspace could be published to: what the host says can be asked, as the ask's page offers.
         List<string> ReceiversIn(string? workspace) =>
         [
             .. facts.Registry
@@ -98,14 +98,14 @@ public static class NeedsAPerson
             rows.Add(proposal);
         }
 
-        // Every go-ahead still asked on an ask that is not closed: one row each, since each is its own act (KNOWUSE1a).
+        // Every go-ahead still asked on an ask that is not closed: one row each, since each is its own act.
         foreach (var ask in facts.Asks.Where(ask => Text(ask, "state") != "Closed"))
         {
             foreach (var goAhead in Objects(ask["goAheads"]).Where(goAhead => Text(goAhead, "state") == "asked"))
             {
                 var first = Objects(goAhead["asked"]).FirstOrDefault();
                 var row = Row("go-ahead", $"{Text(ask, "id")}#{Part(goAhead["number"])}", Text(first, "at") ?? Text(ask, "updated"), Scope(ask));
-                // COMMS1j: keyed by its exchange's id, the one obligation its askers' parks wait on too.
+                // Keyed by its exchange's id, the one obligation its askers' parks wait on too.
                 row["obligation"] = $"go-ahead:{Text(ask, "id")}/{Part(goAhead["number"])}";
                 row["ask"] = Text(ask, "id");
                 row["number"] = goAhead["number"]?.DeepClone();
@@ -118,8 +118,8 @@ public static class NeedsAPerson
             }
         }
 
-        // A done its departure holds for the person's yes (DRIFT1d2), until they accept it. A set-up step its review holds waits for
-        // their review instead (REVIEWENV1g), which no yes lifts, so it is the set-up's row and never this one.
+        // A done its departure holds for the person's yes, until they accept it. A set-up step its review holds waits for
+        // their review instead, which no yes lifts, so it is the set-up's row and never this one.
         foreach (var quest in facts.Quests.Where(quest => quest["held"] is JsonValue held && held.TryGetValue<bool>(out var yes) && yes
                      && Truthy(quest, "accepted") is null && Text(quest, "hold") != "unreviewed"))
         {
@@ -129,7 +129,7 @@ public static class NeedsAPerson
             rows.Add(row);
         }
 
-        // A set-up step whose newest set-up waits for the person's look (REVIEWENV1g, design §3.3): what it showed, and the set-up the
+        // A set-up step whose newest set-up waits for the person's look: what it showed, and the set-up the
         // row drew, which its verdict names.
         foreach (var quest in facts.Quests)
         {
@@ -144,7 +144,7 @@ public static class NeedsAPerson
             rows.Add(row);
         }
 
-        // A second opinion that waits on the person (XAGENT1g, design §9), from the driver's own list, its wait whole.
+        // A second opinion that waits on the person, from the driver's own list, its wait whole.
         foreach (var wait in facts.Opinions)
         {
             var row = Row("opinion", Text(wait, "session"), Text(wait, "since"), Text(wait, "workspace") ?? SessionScope(Text(wait, "session")));
@@ -153,8 +153,8 @@ public static class NeedsAPerson
             rows.Add(row);
         }
 
-        // What Sessions' list places To review (D126), from the groups the list reads: never a reader of its own. Ask Daoris's
-        // conversations are reached from its own panel, never from Sessions (ASKRAIL1).
+        // What Sessions' list places To review, from the groups the list reads: never a reader of its own. Ask Daoris's
+        // conversations are reached from its own panel, never from Sessions.
         foreach (var placed in facts.Groups.Where(placed => Text(placed, "group") == "review"))
         {
             var record = sessions.GetValueOrDefault(Text(placed, "session") ?? "");
@@ -165,12 +165,12 @@ public static class NeedsAPerson
             rows.Add(row);
         }
 
-        // A park the person answered goes on at the driver's next look (ANSWER1c): it no longer needs them. A parked intake whose ask is
+        // A park the person answered goes on at the driver's next look: it no longer needs them. A parked intake whose ask is
         // live is the ask's row.
         var standsFor = live.Select(ask => Truthy(ask, "intake")).OfType<string>().ToHashSet(StringComparer.Ordinal);
-        // SUPERVISOR1a-i (the supervisor design §4.2): nor a park a supervisor's held or released decision answers for. COMMS1j (the comms
-        // design §4.1 clause 3): nor a park on a go-ahead its session asked, or on its agent's ask to hand it over, still asked: the person's
-        // one decision is that row's, which holds the work, so the bell counts the obligation once.
+        // Nor a park a supervisor's held or released decision answers for, nor a park on a go-ahead its session asked,
+        // or on its agent's ask to hand it over, still asked: the person's one decision is that row's, which holds the
+        // work, so the bell counts the obligation once.
         var decided = OwnAsks(facts);
         foreach (var session in facts.Sessions.Where(session =>
                      Parks(session) && !standsFor.Contains(Text(session, "id") ?? "") && !facts.Supervised.Contains(Text(session, "id") ?? "")
@@ -182,7 +182,7 @@ public static class NeedsAPerson
             rows.Add(row);
         }
 
-        // A quest parked on its failed sessions here (SESSUX1i): the planner's verdict, since its last session ended, else its last move.
+        // A quest parked on its failed sessions here: the planner's verdict, since its last session ended, else its last move.
         foreach (var consideration in facts.Considered.Where(consideration => Text(consideration, "verdict") == "Exhausted"))
         {
             var held = quests.GetValueOrDefault(Text(consideration, "quest") ?? "");
@@ -192,7 +192,7 @@ public static class NeedsAPerson
             rows.Add(row);
         }
 
-        // STAFFPOLICY1e2 (D226, design §11 point 7): a quest its role's policy holds, for an ask or for the bound of moves, waits on the person's
+        // A quest its role's policy holds, for an ask or for the bound of moves, waits on the person's
         // yes (Try again, one move). The planner's typed verdict, so a plan with no look says it as the look does.
         foreach (var consideration in facts.Considered.Where(consideration => Text(consideration, "verdict") == "PolicyHeld"))
         {
@@ -203,7 +203,7 @@ public static class NeedsAPerson
             rows.Add(row);
         }
 
-        // STEWARDROLE1b (D209 §5.3): a quest the steward's stop holds waits on a Try again, the steward's or the owner's: *Stopped by the
+        // A quest the steward's stop holds waits on a Try again, the steward's or the owner's: *Stopped by the
         // steward*, the one act of the steward's that can leave something waiting on the owner. Read from the planner's verdict by its code.
         foreach (var consideration in facts.Considered.Where(consideration => Text(consideration, "verdict") == "Stopped"
                      && consideration["said"] is JsonObject said && Text(said, "code") == SittingFact.Steward))
@@ -216,7 +216,7 @@ public static class NeedsAPerson
             rows.Add(row);
         }
 
-        // INTEGRATE1o part o3 (§17.3): a run whose work.requests holds it at a declined request waits on the person's *Pass over…*, one row per
+        // A run whose work.requests holds it at a declined request waits on the person's *Pass over…*, one row per
         // run, keyed by it, since the decline. Its workspace is the run's own. Read from the runtime's last look, never stored on the node.
         foreach (var hold in facts.Requests)
         {
@@ -226,7 +226,7 @@ public static class NeedsAPerson
             {
                 ["node"] = Text(hold, "node"), ["quest"] = Text(hold, "quest"), ["to"] = Text(hold, "to"), ["work"] = Text(hold, "work"),
             };
-            // INTEGRATE1p (C33): the run's own request, whose acts are *Ask again…* and *Go on without it…*; written only where true, so the work's stays as it was.
+            // The run's own request, whose acts are *Ask again…* and *Go on without it…*; written only where true, so the work's stays as it is.
             if (hold["request"] is JsonValue asked && asked.TryGetValue<bool>(out var own) && own) declined["request"] = true;
             row["declined"] = declined;
             rows.Add(row);
@@ -234,7 +234,7 @@ public static class NeedsAPerson
 
         rows.AddRange(HumanTaskRows.Of(facts.Tasks));
 
-        // INTEGRATE1h (the integration design §5.8, §17.4): a candidate the policy held for the owner's decide, a superseded commit awaiting
+        // A candidate the policy held for the owner's decide, a superseded commit awaiting
         // its answer, and a landing whose integration waits for the owner's card, one row each in its repository's workspace, its door the
         // repository's Integration tab, where each is pressed. A held candidate holds its line's next, and a card's landing its unit's flow.
         // A declaration owed acceptance is the fourth: its door opens the repository's set-up page, where the person reads it and accepts;
@@ -265,9 +265,9 @@ public static class NeedsAPerson
 
         rows.AddRange(Folders(facts, quests, asks));
 
-        // An agent's proposal to widen the rules (PERM2, D74) waits for the person's word: the proposal whole, why in its session's words.
+        // An agent's proposal to widen the rules waits for the person's word: the proposal whole, why in its session's words.
         // Its workspace is the one its change reaches: a workspace's rule that workspace's, a repository's the proposing session's. A
-        // rule for the whole machine carries none, deliberately: it reaches every workspace, so every window shows it (NEEDSSCOPE1).
+        // rule for the whole machine carries none, deliberately: it reaches every workspace, so every window shows it.
         foreach (var proposal in facts.Proposals.Where(proposal => Text(proposal, "state") == "waiting"))
         {
             var reaches = Text(proposal, "scope") switch
@@ -285,16 +285,16 @@ public static class NeedsAPerson
 ﻿        rows.AddRange(AttentionSessionRows.Rows(facts, sessions, SessionScope));
         rows.AddRange(AttentionMachineRows.Rows(facts, UnitScope));
 
-        // The starts waiting on their accounts, and the signed-out accounts no waiting start names (UX6d).
+        // The starts waiting on their accounts, and the signed-out accounts no waiting start names.
         rows.AddRange(AccountAttention.Rows(facts));
         return rows;
     }
 
     /// <summary>
-    /// What parked on the person (UX5 U20's set, D126 §2.5), which the page keeps out of Sessions' running mark (BADGEUX1; a place counts
+    /// What parked on the person, which the page keeps out of Sessions' running mark (a place counts
     /// the rows), each by a key of its own: this machine's sessions parked to ask that
     /// nobody answered, a parked intake among them, and each quest parked on its failed sessions, each with its workspace for the window's
-    /// scope (NEEDSSCOPE1); a parked quest whose record is not in hand says none, and every window counts it. A teammate's park waits on them.
+    /// scope; a parked quest whose record is not in hand says none, and every window counts it. A teammate's park waits on them.
     /// </summary>
     public static IReadOnlyList<(string Key, JsonObject Value)> WaitingInSessions(AttentionFacts facts)
     {
@@ -312,7 +312,7 @@ public static class NeedsAPerson
             counted.Add(($"quest:{quest}", parked));
         }
 
-        // STAFFPOLICY1e2: and a quest its role's policy holds for the person's yes, by its own key beside the parked quests'.
+        // And a quest its role's policy holds for the person's yes, by its own key beside the parked quests'.
         foreach (var quest in facts.Considered.Where(consideration => Text(consideration, "verdict") == "PolicyHeld").Select(each => Text(each, "quest")).Distinct())
         {
             var held = new JsonObject { ["kind"] = "policy-hold" };
@@ -324,9 +324,9 @@ public static class NeedsAPerson
     }
 
     /// <summary>
-    /// The sessions the driver runs on this machine (SESSBADGE1, D76's note), each by a key of its own with its workspace for the window's
-    /// scope: what the status bar says, and, less the parks, Sessions' running mark (BADGEUX1). One count, the cap's: an active record of this
-    /// machine's that takes a place under the cap (CAPCOUNT1, <see cref="ActiveSessions.HoldsSlot(string?, string?, string?, string?, string?)"/>),
+    /// The sessions the driver runs on this machine, each by a key of its own with its workspace for the window's
+    /// scope: what the status bar says, and, less the parks, Sessions' running mark. One count, the cap's: an active record of this
+    /// machine's that takes a place under the cap (<see cref="ActiveSessions.HoldsSlot(string?, string?, string?, string?, string?)"/>),
     /// a parked one among them, never a conversation the person holds, Ask Daoris's or a chat. A teammate's runs on its own machine.
     /// </summary>
     public static IReadOnlyList<(string Key, JsonObject Value)> Working(AttentionFacts facts) =>
@@ -345,14 +345,14 @@ public static class NeedsAPerson
     private static readonly HashSet<string> Active = new(StringComparer.Ordinal) { "queued", "starting", "working", "awaiting-person" };
 
     /// <summary>
-    /// One row per folder in one file: two quests held on one untrusted tree are one grant (D73), waiting since the oldest thing it holds.
-    /// Its identity is the file AND the folder (REV3): the folder alone gave one folder held in two accounts' files two rows with one key.
+    /// One row per folder in one file: two quests held on one untrusted tree are one grant, waiting since the oldest thing it holds.
+    /// Its identity is the file AND the folder: the folder alone gave one folder held in two accounts' files two rows with one key.
     /// </summary>
     private static IEnumerable<JsonObject> Folders(AttentionFacts facts, Dictionary<string, JsonObject> quests, Dictionary<string, JsonObject> asks)
     {
         var folders = new List<JsonObject>();
         var seen = new Dictionary<string, JsonObject>(StringComparer.Ordinal);
-        // Each folder's workspace while every hold's record names the same one; null once one is not in hand or two differ (NEEDSSCOPE1).
+        // Each folder's workspace while every hold's record names the same one; null once one is not in hand or two differ.
         var scopes = new Dictionary<string, string?>(StringComparer.Ordinal);
         foreach (var hold in facts.Untrusted)
         {
@@ -374,7 +374,7 @@ public static class NeedsAPerson
             // Its repository where it holds a quest in hand; else the page names the ask it holds, or the quest by its id.
             row["where"] = Text(held, "to");
             row["trust"] = new JsonObject { ["folder"] = Text(hold, "folder"), ["trustFile"] = Text(hold, "trustFile") };
-            // Its file the own sign-in's (POOL1a3, D197 point 3): the page draws no press, and TRUST_FOLDER refuses one.
+            // Its file the own sign-in's: the page draws no press, and TRUST_FOLDER refuses one.
             if (hold["own"]?.GetValueKind() == JsonValueKind.True) row["trust"]!["own"] = true;
             // What its door opens: the quest it holds, or the ask whose intake it holds.
             if (Truthy(hold, "quest") is { } holds) row["quest"] = holds;
@@ -394,7 +394,7 @@ public static class NeedsAPerson
     }
 
     /// <summary>
-    /// A go-ahead nothing on its ask could still use (GOAHEADSTALE1, D196's note): no session that asked it, no intake of the ask and no
+    /// A go-ahead nothing on its ask could still use: no session that asked it, no intake of the ask and no
     /// session of a quest the ask asked is queued, starting, working or parked, and no quest the ask asked is open, taken or held for the
     /// person's yes, whose next session would be handed its answer. It is then stale since the last thing on its ask moved: the newest of
     /// those records' moves and its own askings, so its age says how long nothing has needed it. Null while anything could still use it.
@@ -427,7 +427,7 @@ public static class NeedsAPerson
 
     /// <summary>
     /// A quest whose next session would still be handed its ask's go-aheads: open or taken, or a done held for the person's yes that no
-    /// acceptance has let on yet (DRIFT1d2), as the page counts a held quest among those not closed.
+    /// acceptance has let on yet, as the page counts a held quest among those not closed.
     /// </summary>
     private static bool StillOpen(JsonObject quest) =>
         Text(quest, "status") is "Open" or "Taken"
@@ -457,7 +457,7 @@ public static class NeedsAPerson
     }
 
     /// <summary>
-    /// A set-up step's newest set-up where it waits for the person's look (REVIEWENV1g, the page's <c>waitsForLook</c>): the step names
+    /// A set-up step's newest set-up where it waits for the person's look (the page's <c>waitsForLook</c>): the step names
     /// an environment, it stands shown, and its newest set-up is named whole; null otherwise.
     /// </summary>
     private static JsonObject? Looked(JsonObject quest)
@@ -467,7 +467,7 @@ public static class NeedsAPerson
         return StepState(quest, newest) == "shown" && Reference(newest) is not null ? newest : null;
     }
 
-    /// <summary>Where a set-up step stands, from its own record (design §3.2), as the page's <c>stepState</c> reads it.</summary>
+    /// <summary>Where a set-up step stands, from its own record, as the page's <c>stepState</c> reads it.</summary>
     private static string StepState(JsonObject step, JsonObject? newest)
     {
         if (Text(step, "status") == "Declined") return "none";
@@ -487,30 +487,30 @@ public static class NeedsAPerson
             : string.Equals(Text(verdict, "commit") ?? "", Text(setUp, "commit") ?? "", StringComparison.OrdinalIgnoreCase)));
     }
 
-    /// <summary>A set-up's reference, whole, or null where the record carries half of one or none (REVIEWENV1b3).</summary>
+    /// <summary>A set-up's reference, whole, or null where the record carries half of one or none.</summary>
     private static (string Machine, double Sequence)? Reference(JsonObject? setUp) =>
         Truthy(setUp, "machine") is { } machine && setUp!["sequence"] is JsonValue sequence && sequence.TryGetValue<double>(out var number)
             ? (machine, number)
             : null;
 
     /// <summary>
-    /// A session parked to ask that nobody answered yet (ANSWER1c): the person's answer, read from its keyed words (ONEWAY1m), goes on at
-    /// the driver's next look. Never Ask Daoris's conversation, which is answered in its own panel (ASKRAIL1).
+    /// A session parked to ask that nobody answered yet: the person's answer, read from its keyed words, goes on at
+    /// the driver's next look. Never Ask Daoris's conversation, which is answered in its own panel.
     /// </summary>
     private static bool Parks(JsonObject session) =>
         Text(session, "state") == "awaiting-person" && SessionRecords.PersonsSaid(session) is null && !AskDaoris(session);
 
-    /// <summary>Ask Daoris's conversation (HELP1a, D89), by the repository it is recorded in: no session row of Sessions' (ASKRAIL1).</summary>
+    /// <summary>Ask Daoris's conversation, by the repository it is recorded in: no session row of Sessions'.</summary>
     private static bool AskDaoris(JsonObject? session) => Text(session, "repository") == HelpRoom.Repository;
 
-    /// <summary>A teammate's session, keyed by its machine's origin (D47): a local id never carries a separator.</summary>
+    /// <summary>A teammate's session, keyed by its machine's origin: a local id never carries a separator.</summary>
     private static bool Elsewhere(string id) => id.IndexOf('/') > 0;
 
-    /// <summary>Whether a repository can be asked: the host's answer (D70), or adoption where an older host gives none.</summary>
+    /// <summary>Whether a repository can be asked: the host's answer, or adoption where an older host gives none.</summary>
     private static bool CanBeAsked(JsonObject row) =>
         (row["addressable"] ?? row["adopted"]) is JsonValue value && value.TryGetValue<bool>(out var yes) && yes;
 
-    /// <summary>A record's note whole, its parts beside the English, which the row words in the reader's language (LANG1b).</summary>
+    /// <summary>A record's note whole, its parts beside the English, which the row words in the reader's language.</summary>
     private static JsonObject NoteOf(JsonObject record)
     {
         var note = new JsonObject();
@@ -520,7 +520,7 @@ public static class NeedsAPerson
     }
 
     /// <summary>
-    /// The sessions whose park is a row of its own request (COMMS1j): one that asked a go-ahead still asked on an ask not closed, or whose
+    /// The sessions whose park is a row of its own request: one that asked a go-ahead still asked on an ask not closed, or whose
     /// agent's ask to hand it over waits on the person. Their parks wait on that one decision.
     /// </summary>
     private static HashSet<string> OwnAsks(AttentionFacts facts)

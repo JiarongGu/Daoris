@@ -4,7 +4,7 @@ using Shenora.Core.Events;
 namespace Daoris.Desktop;
 
 /// <summary>
-/// The ends this process read from the service's journal, told on its bus (FOUNDATION1 l-i, the foundation design §4.2): <c>part.ended</c> as
+/// The ends this process read from the service's journal, told on its bus: <c>part.ended</c> as
 /// the shell's one event for an end, whoever drove it, so a slice that wakes on an end hears a driven one at once (<see cref="DriverLoop.PartEndedType"/>).
 /// </summary>
 public static class PartEndRelay

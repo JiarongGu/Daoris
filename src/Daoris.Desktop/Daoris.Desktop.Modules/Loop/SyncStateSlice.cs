@@ -7,7 +7,7 @@ using Shenora.Core.Ipc;
 namespace Daoris.Desktop;
 
 /// <summary>
-/// Where each wired circle stands with its remote, as every window holds it (PUSH1a2, D182 points 2 and 5): what <c>/api/sync</c>
+/// Where each wired circle stands with its remote, as every window holds it: what <c>/api/sync</c>
 /// answers for each circle this machine has a remote for, read once per wake for every window and pushed when it moves, so a tick
 /// reads <c>/api/sync</c> again in no window.
 /// </summary>
@@ -31,7 +31,7 @@ namespace Daoris.Desktop;
 /// tells its own end.</para>
 ///
 /// <para><b>Desktop-only.</b> The wall is the host's own sentence about this machine's remote, and the circles are this machine's
-/// wiring (D47, D182 point 2); the remote's key is read to name the circles and never written into a partition.</para>
+/// wiring; the remote's key is read to name the circles and never written into a partition.</para>
 /// </remarks>
 public static class SyncStateSlice
 {

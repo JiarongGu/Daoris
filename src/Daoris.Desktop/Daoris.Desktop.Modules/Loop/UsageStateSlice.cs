@@ -7,7 +7,7 @@ using Shenora.Core.Ipc;
 namespace Daoris.Desktop;
 
 /// <summary>
-/// What sessions on this machine consumed, as every window holds it (PUSH1e, D182 points 2-4): <c>USAGE</c>'s answer, read from the
+/// What sessions on this machine consumed, as every window holds it: <c>USAGE</c>'s answer, read from the
 /// usage file once per wake for every window and pushed when it moves, so a window's mount and focus read <c>USAGE</c> again in no
 /// window that holds it.
 /// </summary>
@@ -16,16 +16,16 @@ namespace Daoris.Desktop;
 /// written by <see cref="Session"/> and <see cref="Account"/> over one read of the file, so the pull and the push cannot drift.</para>
 ///
 /// <para><b>Keyed, two partitions</b> (<see cref="StateSlice.Keyed"/>): <see cref="Sessions"/>, each measured session under its id,
-/// and <see cref="Accounts"/>, each account's share under its agent and account (<see cref="AccountKey"/>), counted by agent (AGENTPROVIDER1
-/// s-vii) so one account used through both of an agent's doors is one share. A session's end pushes that session and its account's share
+/// and <see cref="Accounts"/>, each account's share under its agent and account (<see cref="AccountKey"/>), counted by agent
+/// so one account used through both of an agent's doors is one share. A session's end pushes that session and its account's share
 /// alone; the oldest let go past the file's bound is named among the keys gone. A place in the list is no field: the page orders the
 /// sessions newest first by <c>when</c>, a tie by id, and the accounts by agent then account, as the route orders them.</para>
 ///
 /// <para><b>Its wakes.</b> A session's end, which is when a driven session, an intake or a conversation records what it used, as the
-/// journal tells it (FOUNDATION1 l-i), or as a conversation's route tells it where the host keeps no journal; and the service coming up.
+/// journal tells it, or as a conversation's route tells it where the host keeps no journal; and the service coming up.
 /// A terminal's driver sharing the home records into the same file, read at the period.</para>
 ///
-/// <para><b>Desktop-only.</b> A record names the account it ran as, which only this machine's windows read (TOOL3, D47 §4).</para>
+/// <para><b>Desktop-only.</b> A record names the account it ran as, which only this machine's windows read.</para>
 /// </remarks>
 public static class UsageStateSlice
 {
@@ -47,7 +47,7 @@ public static class UsageStateSlice
     /// <summary>
     /// What wakes it on the kit's bus: a part's end as the journal tells it, a driven one included, and the service coming up; and while
     /// <paramref name="journal"/> says the host answers no journal, a conversation's end as its route tells it, the old surface kept as the
-    /// adapter (the foundation design §19.12), since such a host tells no <c>part.ended</c>.
+    /// adapter, since such a host tells no <c>part.ended</c>.
     /// </summary>
     public static IReadOnlyList<SliceWake> WakesOn(Func<bool> journal) =>
         [new(DriverLoop.PartEndedType), new(DriverLoop.EndedType, _ => !journal()), new("DRIVER_READY")];

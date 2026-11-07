@@ -7,12 +7,12 @@ using Shenora.Core.Ipc;
 namespace Daoris.Desktop;
 
 /// <summary>
-/// The call each working session's agent is inside as every window holds it (WAITSAY1c1): what the rail says as *running `npm test`
+/// The call each working session's agent is inside as every window holds it: what the rail says as *running `npm test`
 /// for 8 min*, pushed as the call starts and ends rather than read again at a tick or a record's move.
 /// </summary>
 /// <remarks>
-/// <para><b>Its own slice</b> (D182's WAITSAY1c1 note says why not the records'). The call is a fact of this loop alone, heard from
-/// the events its sessions write (<see cref="RunningCalls"/>, WAITSAY1b), so the judge reads memory and no service: judged at once,
+/// <para><b>Its own slice</b>, not the records'. The call is a fact of this loop alone, heard from
+/// the events its sessions write (<see cref="RunningCalls"/>), so the judge reads memory and no service: judged at once,
 /// never <c>notJudged</c> past its first judgement.</para>
 ///
 /// <para><b>One partition, keyed by session</b> (<see cref="StateSlice.Keyed"/>): each running call under its session's id as
@@ -24,7 +24,7 @@ namespace Daoris.Desktop;
 /// a burst one judgement. No bus event wakes it.</para>
 ///
 /// <para><b>Desktop-only.</b> A call's title is the agent's words for it and may name a file by its path, which only this machine's
-/// windows read (D47, D182 point 2).</para>
+/// windows read.</para>
 /// </remarks>
 public static class CallsStateSlice
 {
@@ -35,7 +35,7 @@ public static class CallsStateSlice
     public const string Partition = "calling";
 
     /// <summary>
-    /// SESSWATCH1a's partition (D200, the session-watch design §5.1): each session the watcher marks quiet, keyed by session, with when
+    /// The quiet partition: each session the watcher marks quiet, keyed by session, with when
     /// it was last heard, which the rail and the head say as <i>quiet · 14 min</i>. Judged empty, pushed empty.
     /// </summary>
     public const string QuietPartition = "quiet";
@@ -56,7 +56,7 @@ public static class CallsStateSlice
     /// <summary>
     /// One judgement of the calls running now: the one partition, each call under its session as <c>SESSION_GROUPS</c> writes a row's
     /// <c>calling</c> (<c>{title, since, waiting, told}</c>, the start as the ISO string the page's clock reads, whether it waits on the
-    /// person's answer, AUTONOMY1b3b, and whether Daoris told the session it ran past its bound, FABRIC-PIPELINE1c).
+    /// person's answer, and whether Daoris told the session it ran past its bound).
     /// </summary>
     public static IReadOnlyList<SliceJudged> Judge(IReadOnlyDictionary<string, RunningCall> now)
     {
@@ -70,7 +70,7 @@ public static class CallsStateSlice
     }
 
     /// <summary>
-    /// The watcher's marks (SESSWATCH1a, SESSWATCH1b): each quiet session under its id as <c>{since, told}</c>, when it was last heard and
+    /// The watcher's marks: each quiet session under its id as <c>{since, told}</c>, when it is last heard and
     /// whether Daoris's word to it was kept.
     /// </summary>
     public static SliceJudged Quiet(IReadOnlyDictionary<string, QuietMark> quiet)
@@ -85,7 +85,7 @@ public static class CallsStateSlice
     }
 
     /// <summary>
-    /// COWORKVIEW1a's partition (the cowork view design §3.7): each session whose console is live and has said something, keyed by
+    /// The live-console partition: each session whose console is live and has said something, keyed by
     /// session, with the moment of its newest line or its streams' (<i>last heard</i>). Memory alone; the held answer carries none.
     /// </summary>
     public const string HeardPartition = "heard";

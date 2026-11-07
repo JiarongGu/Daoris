@@ -11,7 +11,7 @@ internal static class AttentionMachineRows
     public static IEnumerable<JsonObject> Rows(AttentionFacts facts, Func<string?, string?> unitScope)
     {
         var rows = new List<JsonObject>();
-        // A unit only the person's press settles (FABRIC-MILESTONE1b, OVERVIEWNOISE1b): one whose owner nothing records, or a tree its session
+        // A unit only the person's press settles: one whose owner nothing records, or a tree its session
         // recorded that no branch record follows, each waiting on the clean-up's press; its blocked entries with the code the page words
         // each by. A guard the tidy keeps a branch by is said on its session's page and its branch's line; a wait that ends by itself is no row.
         foreach (var unit in facts.Works)
@@ -21,7 +21,7 @@ internal static class AttentionMachineRows
             var end = unit["end"] as JsonObject;
             var unknown = Text(end, "state") == "unknown";
             // A unit no record owns carries none, deliberately: nothing says whose it is, so every window shows it.
-            // LANDRETIRE1 part 2: a stale landing is named by its own branch, and stands since its day passed, where no end says since when.
+            // A stale landing is named by its own branch, and stands since its day passed, where no end says since when.
             var stale = waits.Where(entry => Text(entry, "code") == InventoryCode.LandingStale).Select(entry => entry["facts"] as JsonObject).FirstOrDefault();
             var row = Row("work", Text(unit, "session") ?? Text(unit, "unit"), Text(end, "at") ?? Text(stale, "since"), unitScope(Text(unit, "unit")));
             row["where"] = Text(unit, "repository");
@@ -36,7 +36,7 @@ internal static class AttentionMachineRows
             rows.Add(row);
         }
 
-        // A plugin step's attempt held for the person (FABRIC-PERFORM1g), a held close among them (FABRIC-CLOSE1q): the attempt whole, since
+        // A plugin step's attempt held for the person, a held close among them: the attempt whole, since
         // its word was recorded where one was, else since it was held.
         foreach (var attempt in facts.Held)
         {
@@ -48,7 +48,7 @@ internal static class AttentionMachineRows
             rows.Add(row);
         }
 
-        // A node record that does not read (FABRIC-PERFORM1j, §D3): nothing on its unit is judged or started until the person mends it, and
+        // A node record that does not read: nothing on its unit is judged or started until the person mends it, and
         // the row's press opens the folder it is kept in. By its file, since its unit may be unknown; since it was last written.
         foreach (var record in facts.Unreadable)
         {
@@ -58,7 +58,7 @@ internal static class AttentionMachineRows
             rows.Add(row);
         }
 
-        // A closure graph closed only in part (FABRIC-CLOSE1j, §E5): while its close node's stop is offered, or the person's stop waits for
+        // A closure graph closed only in part: while its close node's stop is offered, or the person's stop waits for
         // the next look, since it was found. An override is the person's own, and said on the work's foot alone.
         foreach (var end in facts.Ends.Where(end => Text(end, "kind") == "partially-closed"
                      && (Text(end, "resolution") is not null || (end["words"] as JsonArray)?.Any(word => word?.GetValue<string>() == "stop") == true)))
@@ -69,12 +69,12 @@ internal static class AttentionMachineRows
             rows.Add(row);
         }
 
-        // A press a terminal sent that waits for the person's Confirm in the window (CONFIRMSEEN1): its terminal holds still until they
+        // A press a terminal sent that waits for the person's Confirm in the window: its terminal holds still until they
         // answer on its card, or its time ends, which refuses it. By its route and the terminal as the system names it, since it was
         // asked; never a value it carries, which the card alone shows beside its Confirm. Every window shows it: the pipe is this machine's.
         foreach (var waiting in facts.Confirmations)
         {
-            // No workspace, deliberately (NEEDSSCOPE1): a terminal's press is the machine's, whichever workspace its route touches.
+            // No workspace, deliberately: a terminal's press is the machine's, whichever workspace its route touches.
             var row = Row("confirmation", Text(waiting, "id"), Text(waiting, "asked"));
             var asker = waiting["asker"] as JsonObject;
             row["confirmation"] = new JsonObject
@@ -88,7 +88,7 @@ internal static class AttentionMachineRows
             rows.Add(row);
         }
 
-        // A volume still below its free-space floor once the floor freed what Daoris can make again (KEEP1f, the cleanup design §3.2): the
+        // A volume still below its free-space floor once the floor freed what Daoris can make again: the
         // rest is the person's to free, by the press its row opens, since it was said; it goes once the volume is above its floor by the
         // margin. Every window shows it: the disk is the machine's.
         foreach (var low in facts.Space)
@@ -106,10 +106,10 @@ internal static class AttentionMachineRows
             rows.Add(row);
         }
 
-        // A git remote that cannot authenticate, held (GITAUTH1a, the git-auth design §5.2 and §7.4): one row per held group, its host,
+        // A git remote that cannot authenticate, held: one row per held group, its host,
         // class, what it holds and the identity that serves it in a workspace, the repositories in it named on the row. Said once here; a
-        // session's and a press's words name this row rather than repeat it. Its acts are its class's (§7.4), Try again among them.
-        // The move (GITAUTH1e, §6.8): every remote nothing serves in a workspace is one row, whatever its host, its repositories counted
+        // session's and a press's words name this row rather than repeat it. Its acts are its class's, Try again among them.
+        // The move: every remote nothing serves in a workspace is one row, whatever its host, its repositories counted
         // and those whose own configuration names authentication listed apart. Either holds work where a session of one of its
         // repositories runs or waits on the person.
         var moved = facts.Git.Where(held => Text(held, "class") == "no-identity").ToList();
@@ -161,7 +161,7 @@ internal static class AttentionMachineRows
             rows.Add(row);
         }
 
-        // A git go-ahead (GITAUTH1f, the git-auth design §6.6, §7.4): a door holds a remote act whose class is ask until the person allows
+        // A git go-ahead: a door holds a remote act whose class is ask until the person allows
         // or refuses it, or its bound passes; its session's where its marker named one, else its repository's. Scoped as its repository's
         // workspace; one with no workspace known is the machine's, every window's.
         foreach (var ask in facts.GitAsks)
@@ -193,7 +193,7 @@ internal static class AttentionMachineRows
     private static List<JsonObject> WaitsOnPerson(JsonObject unit)
     {
         var blocked = Objects((unit["cleanup"] as JsonObject)?["waits"]).Where(entry => Text(entry, "disposition") == "blocked").ToList();
-        // LANDRETIRE1 part 2: and a landing's branch whose quest is closed and which the line has not held for a day, which the person withdraws.
+        // And a landing's branch whose quest is closed and which the line has not held for a day, which the person withdraws.
         if (Text(unit["end"] as JsonObject, "state") != "unknown")
         {
             return [.. blocked.Where(entry => Text(entry, "code") is InventoryCode.Unfollowed or InventoryCode.LandingStale)];
@@ -210,13 +210,13 @@ internal static class AttentionMachineRows
         return said;
     }
 
-    /// <summary>The first tree entry's folder by its name (OVERVIEWNOISE1b): what a unit with no branch is called, never its path.</summary>
+    /// <summary>The first tree entry's folder by its name: what a unit with no branch is called, never its path.</summary>
     private static string? TreeName(IEnumerable<JsonObject> entries) =>
         entries.Where(entry => Text(entry, "kind") == InventoryKind.Tree).Select(entry => Text(entry, "resource")).OfType<string>()
             .Select(path => path.Replace('\\', '/').TrimEnd('/').Split('/')[^1]).FirstOrDefault(name => name.Length > 0);
 
     /// <summary>
-    /// Whether a held git group holds work (GITAUTH1e, the git-auth design §6.8): a session of one of its repositories in its workspace
+    /// Whether a held git group holds work: a session of one of its repositories in its workspace
     /// runs a turn or waits on the person, so its next remote act waits on this row.
     /// </summary>
     private static bool GitWorkWaits(AttentionFacts facts, string workspace, IReadOnlyList<JsonObject> held)

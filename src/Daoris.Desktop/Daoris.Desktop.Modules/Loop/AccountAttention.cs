@@ -3,23 +3,22 @@ using System.Text.Json.Nodes;
 namespace Daoris.Desktop;
 
 /// <summary>
-/// <i>What needs you</i>'s accounts (UX6d, D150 §6.2–§6.3; TOOL4m's row), judged in .NET (PUSH1d4, D182 point 6): a start waiting for
+/// <i>What needs you</i>'s accounts, judged in .NET: a start waiting for
 /// accounts, and a signed-out account of Daoris's that no waiting start names, with the states of the Agents place the rows read
 /// (<c>accountState</c> on the page), each over the roster's doors as <c>HARNESSES</c> answers them, each agent's accounts as
-/// <c>ACCOUNTS</c> answers them and the look's waits as the tick hands them. Every account is in its agent's one set (POOL1a2, D197;
-/// the account-pool design §2.4): each holds work, none runs only somewhere, and none is outside a start's list.
+/// <c>ACCOUNTS</c> answers them and the look's waits as the tick hands them. Every account is in its agent's one set:
+/// each holds work, none runs only somewhere, and none is outside a start's list.
 /// </summary>
 /// <remarks>
-/// <para>🔴 <b>No row starts a process to find out</b> (§6.3, D150 point 5): the waits are the look's own, an account's state the
+/// <para>🔴 <b>No row starts a process to find out</b>: the waits are the look's own, an account's state the
 /// roster's last reading with its time, its cool-off and its scope's list the accounts' files. What no read answered is said so,
 /// <i>unknown, never read</i>, and never guessed signed in or out.</para>
 ///
 /// <para><b>What a row carries</b>: the ids of the accounts it names, each with its state, when it was read, its cool-off's end and the
 /// name the look read beside it; and what the start holds. No account is outside the set, so none is offered to let in or read
-/// first (POOL1c). An account's name, the row's title and its line of why are the page's words, named from the roster it holds
-/// (D182's PUSH1d4 note).</para>
+/// first. An account's name, the row's title and its line of why are the page's words, named from the roster it holds.</para>
 ///
-/// <para><b>A signed-out account's row has no wait</b> (UXFIX3): only when it was read is known, so it carries its reading and no
+/// <para><b>A signed-out account's row has no wait</b>: only when it is read is known, so it carries its reading and no
 /// <c>since</c>. A start whose work no record in hand names waits since its limit, or since nothing known: never the clock's now.</para>
 /// </remarks>
 internal static class AccountAttention
@@ -37,10 +36,10 @@ internal static class AccountAttention
         string Name, string? Product, IReadOnlyList<JsonObject> Doors, IReadOnlyList<JsonObject> Accounts, bool Present, string OwnLogin,
         string? OwnRead);
 
-    /// <summary>An account's state as last known (D150 §5.3), when it was read, its cool-off, and whether it holds work.</summary>
+    /// <summary>An account's state as last known, when it is read, its cool-off, and whether it holds work.</summary>
     private sealed record State(string Name, string? Read, JsonObject? Cooling, bool HoldsWork)
     {
-        /// <summary>Whether it waits on the person as a sign-out does (ACCTUX1): signed out, or a key its provider refused.</summary>
+        /// <summary>Whether it waits on the person as a sign-out does: signed out, or a key its provider refused.</summary>
         public bool WaitsOnPerson => Name is "out" or "refused";
     }
 
@@ -56,8 +55,8 @@ internal static class AccountAttention
         {
             var tool = ToolOf(held.Agent);
             var use = AgentOf(facts.Use, held.Agent);
-            // The agent's one set, whatever the start's workspace (POOL1a2): every start reads it. A cool-off of the tool's own sign-in
-            // holds a conversation begun there, which the set never serves (D197 point 3), so it names no account of the set.
+            // The agent's one set, whatever the start's workspace: every start reads it. A cool-off of the tool's own sign-in
+            // holds a conversation begun there, which the set never serves, so it names no account of the set.
             var scope = use is not null && held.Cooling is not { Account: null } ? SetScope(use) : null;
             var accounts = ServingIds(scope, held).Select(id => NamedAccount(id, tool, use, scope, held)).ToList();
             foreach (var account in accounts) named.Add($"{held.Agent}/{Text(account, "id") ?? ""}");
@@ -84,14 +83,14 @@ internal static class AccountAttention
                 ["holding"] = new JsonObject { ["quests"] = Strings(held.Quests), ["asks"] = Strings(held.Asks) },
                 ["account"] = whose,
             };
-            // The starts it holds are their workspace's where they share one, for the window's scope (NEEDSSCOPE1); held across
+            // The starts it holds are their workspace's where they share one, for the window's scope; held across
             // workspaces, or where none is known, it is the machine's account's wait, and every window shows it.
             if (!string.IsNullOrEmpty(held.Workspace)) row["workspace"] = held.Workspace;
             rows.Add(row);
         }
 
-        // A signed-out account of Daoris's, which no waiting start names; never the tool's own sign-in, which holds no work (D175 point
-        // 1, OWNSPACE1b-A). No workspace, deliberately (NEEDSSCOPE1): an account of the set serves every workspace (POOL1a2).
+        // A signed-out account of Daoris's, which no waiting start names; never the tool's own sign-in, which holds no work.
+        // No workspace, deliberately: an account of the set serves every workspace.
         foreach (var tool in tools.Where(tool => tool.Present))
         {
             var use = AgentOf(facts.Use, tool.Name);
@@ -110,7 +109,7 @@ internal static class AccountAttention
                 {
                     ["kind"] = "signed-out",
                     ["id"] = $"signed-out:{tool.Name}/{id}",
-                    // When it was read, which its row says as *read …*; since when it holds work nobody knows (UXFIX3).
+                    // When it is read, which its row says as *read …*; since when it holds work nobody knows.
                     ["since"] = null,
                     ["read"] = state.Read,
                     ["where"] = tool.Product ?? tool.Name,
@@ -125,7 +124,7 @@ internal static class AccountAttention
     /// <summary>
     /// The starts held on their accounts: each of the look's waits, then each quest a consideration says waits that no wait holds (an
     /// older shell's look carried no waits). Quests held alike, in one workspace, are one start's wait. A wait with no <c>until</c> is no
-    /// cool-off (UX6d1, UX6d2): it names no account, and its key is its own.
+    /// cool-off: it names no account, and its key is its own.
     /// </summary>
     private static List<Held> HeldStarts(AttentionFacts facts)
     {
@@ -184,7 +183,7 @@ internal static class AccountAttention
 
     /// <summary>
     /// The accounts that would serve a held start: its scope's list, else its default, less the account kept for conversations, which a
-    /// driven start drops (D130 point 6) unless it would leave none; then whatever the look named that the list no longer holds.
+    /// driven start drops unless it would leave none; then whatever the look named that the list no longer holds.
     /// </summary>
     private static List<string?> ServingIds(JsonObject? scope, Held held)
     {
@@ -209,7 +208,7 @@ internal static class AccountAttention
     }
 
     /// <summary>
-    /// One account as last known (§5.3): the roster's reading with when, the accounts' files' cool-off. Where the roster has no reading,
+    /// One account as last known: the roster's reading with when, the accounts' files' cool-off. Where the roster has no reading,
     /// the look's word stands: the start's own refusal said it signed out, or its wait said it cools.
     /// </summary>
     private static JsonObject NamedAccount(string? id, Tool? tool, JsonObject? use, JsonObject? scope, Held held)
@@ -218,7 +217,7 @@ internal static class AccountAttention
             ? new JsonObject { ["until"] = cooled.Until, ["stated"] = cooled.Stated }
             : null;
         var passed = id is not null && held.SignedOut.Any(one => one.Id == id);
-        // The driver's own judgement of what holds each account, asked of the walk without probing (TOOL6e).
+        // The driver's own judgement of what holds each account, asked of the walk without probing.
         var holds = Text(Objects((scope?["next"] as JsonObject)?["others"]).FirstOrDefault(other => Text(other, "account") == id), "hold");
         var tickedName = id is null ? null
             : held.Cooling?.Account == id ? held.Cooling.Name
@@ -236,13 +235,13 @@ internal static class AccountAttention
         var cooling = Cooling(use, id) ?? ticked;
         var known = account is not null ? StateOf(account, cooling, holdsWork: true).Name : cooling is not null ? "cooling" : "unknown";
         var signedOut = known == "unknown" && (passed || holds is "signedOut" or "refused");
-        // A key the walk says its provider refused is refused, whatever the tool last said of it (ACCTUX1, AGT3b).
+        // A key the walk says its provider refused is refused, whatever the tool last said of it.
         var refused = known == "keyed" && holds == "refused";
         return Named(id, tickedName, refused ? "refused" : signedOut ? "out" : known, Text(account, "read"), Text(cooling, "until"), Unwritten(cooling));
     }
 
     /// <param name="unwritten">
-    /// Its cool-off is held in memory only, the file not having taken it (LIMITRESUME1d2, D206 §3.1, <c>AccountCooling.Unwritten</c>):
+    /// Its cool-off is held in memory only, the file not having taken it (<c>AccountCooling.Unwritten</c>):
     /// the band says Daoris could not keep it, the machine's problem beside the account. Written only where true.
     /// </param>
     private static JsonObject Named(string? id, string? name, string state, string? read, string? until, bool unwritten = false)
@@ -252,7 +251,7 @@ internal static class AccountAttention
         return named;
     }
 
-    /// <summary>Whether <c>ACCOUNTS</c> said the cool-off is held in memory only (LIMITRESUME1d2).</summary>
+    /// <summary>Whether <c>ACCOUNTS</c> said the cool-off is held in memory only.</summary>
     private static bool Unwritten(JsonObject? cooling) => cooling?["unwritten"] is JsonValue value && value.TryGetValue<bool>(out var unwritten) && unwritten;
 
     /// <summary>
@@ -338,7 +337,7 @@ internal static class AccountAttention
     private static JsonObject? AgentOf(JsonObject? answer, string agent) =>
         Objects(answer?["agents"]).FirstOrDefault(each => Text(each, "agent") == agent);
 
-    /// <summary>The agent's one set as <c>ACCOUNTS</c> answers it (POOL1a2): its one scope, or an empty one where none was answered.</summary>
+    /// <summary>The agent's one set as <c>ACCOUNTS</c> answers it: its one scope, or an empty one where none is answered.</summary>
     private static JsonObject SetScope(JsonObject agent) =>
         Objects(agent["scopes"]).FirstOrDefault(scope => Truthy(scope, "workspace") is null)
         ?? new JsonObject { ["workspace"] = null, ["default"] = null, ["list"] = new JsonArray(), ["use"] = new JsonObject() };
@@ -358,7 +357,7 @@ internal static class AccountAttention
         return new State(name, Text(account, "read"), cooling, holdsWork);
     }
 
-    /// <summary>The tool's own sign-in's state: its word only at a person's press (TOOL6g), its cool-off where it cools; it holds no work.</summary>
+    /// <summary>The tool's own sign-in's state: its word only at a person's press, its cool-off where it cools; it holds no work.</summary>
     private static State OwnState(Tool tool, JsonObject? use)
     {
         var login = tool.OwnLogin is "in" or "out" ? tool.OwnLogin : "unknown";
@@ -372,7 +371,7 @@ internal static class AccountAttention
         foreach (var account in tool.Accounts)
         {
             var name = Text(account, "name") ?? "";
-            // Every account of Daoris's is in the set, so each holds work (POOL1a2).
+            // Every account of Daoris's is in the set, so each holds work.
             states.TryAdd(name, StateOf(account, Cooling(use, name), holdsWork: true));
         }
 
