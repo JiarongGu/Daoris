@@ -2,7 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { makeFixture } from './_fixture.ts';
 
-// DOC4 (D122 §2.7): a document the manifest declares with a ceiling is measured at the manifest's number,
+// A document the manifest declares with a ceiling is measured at the manifest's number,
 // so a ceiling is written once. `tools/doc-budgets.json` keeps only what no role names.
 // @ts-expect-error — untyped workspace tooling; the same seam dogfood.test.ts documents
 const { ceilings, words } = await import('../../../tools/doc-budgets.mjs') as {
@@ -16,7 +16,7 @@ const { ceilings, words } = await import('../../../tools/doc-budgets.mjs') as {
 const BUDGETS = 'tools/doc-budgets.json';
 
 test('a word is a whitespace-separated token, as check counts one', () => {
-  // #, Tasks, -, [, ], **ROW1, —, a, row**, done: a bracket and a dash are tokens, as a reader sees them.
+  // The heading marker, the list marker, the box, the dash and the bold name are tokens: a bracket and a dash count as a reader sees them.
   assert.equal(words('# Tasks\n\n- [ ] **ROW1 — a  row**\tdone\r\n'), 10);
   assert.equal(words('  '), 0);
 });

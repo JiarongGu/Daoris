@@ -10,7 +10,7 @@ import { fileURLToPath } from 'node:url';
 import { makeFixture, type Fixture } from './_fixture.ts';
 import { homeEntry } from '../src/platform/home.ts';
 
-// ORIENT1c: `tools/knowledge-server.mjs` is what `.mcp.json` starts. It runs a build of the MCP host the
+// `tools/knowledge-server.mjs` is what `.mcp.json` starts. It runs a build of the MCP host the
 // workspace keeps under `local/` and never builds at a session's start; a worktree reaches its main checkout's
 // build; and with no build it says so in the protocol's own words, so a session reads why and works as before.
 type Located = { served: string; folder: string; build: string; entry: string; digest: string; builtAt: string };
@@ -178,9 +178,9 @@ test('a workspace session runs the workspace\'s build; a driven one the machine\
 });
 
 /**
- * CONNECTOR1: the driver hands a protocol-door session the connector its install carries ahead of the home's `bin/`
+ * The driver hands a protocol-door session the connector its install carries ahead of the home's `bin/`
  * copy (`KnowledgeConnector.Candidates`), and a driven pipe-door session whose `.mcp.json` starts this file runs the
- * same one. An install's shell makes its own `data/` the home every session inherits (D63), so the install is the folder
+ * same one. An install's shell makes its own `data/` the home every session inherits, so the install is the folder
  * above a home named `data` that holds the install's marker. The `bin/` copy is what no republish refreshes.
  */
 test('a driven session on an install runs the connector the install carries, ahead of the home’s bin/ copy', () => {
@@ -202,7 +202,7 @@ test('a driven session on an install runs the connector the install carries, ahe
   assert.equal(tool.serverCommand('driven', { DAORIS_HOME: scratch }, null, 'win32')?.command, join(scratch, 'bin', 'daoris-knowledge.exe'));
   assert.equal(tool.installConnector(join(fx.root, 'install', 'elsewhere'), 'daoris-knowledge.exe'), null);
 
-  // HOMELAYOUT3: a home made since keeps its copy in `cache/bin/` under its Daoris folder, which is found too.
+  // A newer home keeps its copy in `cache/bin/` under its Daoris folder, which is found too.
   const fresh = join(fx.root, 'fresh');
   const cached = fx.write('fresh/cache/bin/daoris-knowledge.exe', '');
   assert.equal(tool.serverCommand('driven', { DAORIS_HOME: fresh }, null, 'win32')?.command, cached);
@@ -245,7 +245,7 @@ test('started with no build anywhere, it speaks the protocol on its standard str
   fx.write('tools/knowledge-server.mjs', readFileSync(toolPath, 'utf8'));
   fx.write('tools/fsx.mjs', readFileSync(join(dirname(toolPath), 'fsx.mjs'), 'utf8'));
   fx.write('tools/index-fresh.mjs', readFileSync(join(dirname(toolPath), 'index-fresh.mjs'), 'utf8'));
-  // What `fsx.mjs` starts git through (GITSTART4), at the paths it imports them from.
+  // What `fsx.mjs` starts git through, at the paths it imports them from.
   for (const file of ['tools/gitforwindows.ts', 'platform/fsx.ts', 'platform/errors.ts']) {
     fx.write(`src/Daoris.Cli/src/${file}`, readFileSync(join(dirname(toolPath), '..', 'src', 'Daoris.Cli', 'src', file), 'utf8'));
   }
@@ -275,12 +275,12 @@ test('started with no build anywhere, it speaks the protocol on its standard str
 });
 
 // ---------------------------------------------------------------------------------------------------
-// A running session follows the current build (KNOWHOLD1)
+// A running session follows the current build
 //
 // A fix to the host reaches a running session only if the relay moves it onto the build a merge made: a server left on its
-// first build kept a fixed host's whole-checkout watch, and held a rehearsal's swap (the fix log's KNOWHOLD1 entry).
+// first build keeps a fixed host's whole-checkout watch, and holds a rehearsal's swap.
 
-/** A server as the relay sees one: its streams, its end, and the requests it was handed. */
+/** A server as the relay sees one: its streams, its end, and the requests it is handed. */
 type FakeServer = EventEmitter & {
   stdin: PassThrough;
   stdout: PassThrough;
@@ -325,7 +325,7 @@ function fakeServer(build: string, { mode = 'answers' }: { mode?: 'answers' | 'e
   return server;
 }
 
-/** A session's side of the relay: what it sends, and each line it was answered with. */
+/** A session's side of the relay: what it sends, and each line it is answered with. */
 function session(options: { current: () => string | null; start?: (entry: string) => FakeServer; first?: string }) {
   const input = new PassThrough();
   const output = new PassThrough();

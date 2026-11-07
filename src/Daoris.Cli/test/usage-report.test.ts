@@ -11,8 +11,8 @@ import {
 import { homeEntry } from '../src/platform/home.ts';
 
 /**
- * The usage report (LOG1d, D94): an install's machine log, summarised for a development session — what
- * was used most, how the conversations went and how long they took, what was refused, what failed, and
+ * The usage report: an install's machine log, summarised for a development session — what
+ * is used most, how the conversations went and how long they took, what is refused, what failed, and
  * the lifecycle. Workspace tooling, tested from here for the reason `desktop-tool.test.ts` states.
  *
  * 🔴 **The parse table is a twin's** (`docs/2026-09-30-machine-log-design.md` §3): the driver's
@@ -57,7 +57,7 @@ type Report = {
   failed: Failure[];
 };
 
-/** One agent action's runs in the period (SIGNIN1): how many, how they ended, and each phase's time. */
+/** One agent action's runs in the period: how many, how they ended, and each phase's time. */
 type HarnessRow = {
   harness: string; action: string; started: number; prompted: number; ended: Counted[];
   starting: Timing; asking: Timing; tool: Timing; who: Timing; lists: Timing; whole: Timing;
@@ -71,7 +71,7 @@ type SetupCost = {
   used: number | null; size: number | null;
 };
 
-/** One driven session's cost (USAGECOST1): absent is null, never zero. */
+/** One driven session's cost: absent is null, never zero. */
 type DrivenCost = {
   session: string; started: string; repository: string; workspace: string; adapter: string; models: string[]; turns: number;
   ms: number | null; calls: number | null;
@@ -175,7 +175,7 @@ function week(): string {
     line('2026-09-30T08:17:00.000Z', 'desktop', 'info', 'proposal.settled', { applied: true }),
     line('2026-09-30T08:18:00.000Z', 'desktop', 'info', 'proposal.settled', { applied: false }),
     line('2026-09-30T08:19:00.000Z', 'desktop', 'info', 'message.sent', { kind: 'help', length: 10, files: 1 }),
-    // LEFT2's preview.opened: a file read for its preview in the side bar, by session and path within the tree.
+    // preview.opened: a file read for its preview in the side bar, by session and path within the tree.
     line('2026-09-30T08:20:00.000Z', 'desktop', 'info', 'preview.opened', { session: 's3', path: 'src/chunk.ts' }),
     line('2026-09-30T08:21:00.000Z', 'desktop', 'info', 'preview.opened', { session: 's3', path: 'README.MD' }),
     line('2026-09-30T08:22:00.000Z', 'desktop', 'info', 'preview.opened', { session: 's2', path: 'src/api/routes.ts' }),
@@ -244,7 +244,7 @@ test('what was used most: views, commands and panel moves, most first', () => {
 });
 
 /**
- * LEFT3 f: whether the side bar's reading room is used (LEFT2, D111): how many previews opened, in how many sessions,
+ * Whether the side bar's reading room is used: how many previews opened, in how many sessions,
  * and what kinds of file, by extension. Never which file: a kind says what is read, and a path says nothing more a
  * development session needs.
  */
@@ -292,7 +292,7 @@ test('what was refused, by code, most first, with the requests that met it', () 
 });
 
 /**
- * SIGNIN1: an agent's sign-in, install or pin tells its life to the log (`harness.started`, `harness.prompted`,
+ * An agent's sign-in, install or pin tells its life to the log (`harness.started`, `harness.prompted`,
  * `harness.ended`), and a refused one names its action. The report says each action's runs, how they ended and each phase's
  * time, and a refusal by its request and action; never anything a line does not hold, so a time a run never reached is left
  * out rather than counted as zero.
@@ -395,7 +395,7 @@ test('an empty period says so in every section rather than printing nothing', ()
   assert.match(text, /No lines in this period\./);
   assert.match(text, /^Refused\n {2}none$/m);
   assert.match(text, /^Used most\n {2}none$/m);
-  // OUTCOME1: with no host named, the outcomes are not read, and the section says how to read them.
+  // With no host named, the outcomes are not read, and the section says how to read them.
   assert.match(text, /^Outcomes\n {2}not read — no host was named: --service <url> reads its quests and sessions$/m);
   const quiet: string = render(summarise([], {
     from: since, to: NOW, skipped: 0,
@@ -405,7 +405,7 @@ test('an empty period says so in every section rather than printing nothing', ()
 });
 
 /**
- * UNBLOCK5 (D122 §3.10): a week of asks. Four sessions started in the period and one before it; the
+ * A week of asks. Four sessions started in the period and one before it; the
  * driver's `permission.refused` lines, one per refused call; and the home's rule proposals, one file each.
  */
 function asksWeek(): string {
@@ -476,7 +476,7 @@ test('asks per session: the mean, the median, the 90th percentile and the share 
       { name: 'engine', sessions: 2, asks: 4, mean: 2, median: 2, p90: 3, none: 0 },
       { name: 'game', sessions: 2, asks: 0, mean: 0, median: 0, p90: 0, none: 1 },
     ]);
-    // What was refused, over every ask in the period, and what the wire did not say is `(unsaid)`.
+    // What is refused, over every ask in the period, and what the wire did not say is `(unsaid)`.
     assert.deepEqual(asks.byKind, [{ name: 'execute', count: 3 }, { name: 'edit', count: 1 }, { name: 'fetch', count: 1 }]);
     assert.deepEqual(asks.by, [{ name: '(unsaid)', count: 2 }, { name: 'rule', count: 2 }, { name: 'mode', count: 1 }]);
     assert.equal(asks.byTool.find((tool: Counted) => tool.name === 'Bash')?.count, 2);
@@ -602,7 +602,7 @@ test('the runner reads the home\'s proposals beside its log', async () => {
 });
 
 /**
- * WSSETUP11 (D124 §7.3): two weeks of set-ups and parks. Three set-up sessions in two repositories (one parks,
+ * Two weeks of set-ups and parks. Three set-up sessions in two repositories (one parks,
  * is answered and carried on by a second; one has not ended, and its turn is the older shape with no counts),
  * and the parks of the period: driven sessions, an intake, and one whose open its process never saw.
  */
@@ -680,7 +680,7 @@ test('each set-up\'s cost: how it stands, its minutes, its tool calls, its token
         input: null, cacheRead: null, cacheWrite: null, output: null, used: null, size: null,
       },
     ]);
-    // The total sums what was measured, and its context is the largest any set-up held.
+    // The total sums what is measured, and its context is the largest any set-up held.
     assert.deepEqual(setups.total, {
       sessions: 3, seconds: 1800, calls: 13, input: 117, cacheRead: 52100, cacheWrite: 16900, output: 137, used: 60000, size: 1000000,
     });
@@ -742,7 +742,7 @@ test('the text report says each set-up\'s cost and the parks by week, and none w
 
     assert.match(text, /^Set-ups$/m);
     assert.match(text, /started\s+3 — completed 2 · not ended 1/);
-    // Anew is what was read fresh, written to the cache included; the rest was read from it.
+    // Anew is what is read fresh, written to the cache included; the rest is read from it.
     assert.match(text, /s1\s+billing \(work\)\s+completed · parked 1 · 10m 0s · 3 calls · 16\.7K anew · 51\.1K from cache · 87 out · context 48K of 1M/);
     assert.match(text, /s3\s+reports \(work\)\s+not ended · not measured/);
     assert.match(text, /total\s+3 sessions · 30m 0s · 13 calls · 17K anew · 52\.1K from cache · 137 out · largest context 60K of 1M/);
@@ -757,7 +757,7 @@ test('the text report says each set-up\'s cost and the parks by week, and none w
 });
 
 /**
- * USAGECOST1: what each driven session cost. Three driven sessions (one with two turns and two models, one whose turn
+ * What each driven session cost. Three driven sessions (one with two turns and two models, one whose turn
  * has no turn time and whose models the log wrote as a CLR type name, one with no turn.ended at all), a set-up and a
  * conversation beside them that are no driven session's, and a turn of a session the period never saw start.
  */
@@ -915,7 +915,7 @@ test('the arguments: a home, or an install\'s data folder, a number of days, JSO
   assert.deepEqual(
     parseArguments(['--install', 'i', '--days', '30', '--json']),
     { home: join('i', 'data'), days: 30, json: true, service: null });
-  // OUTCOME1: the host is named by its origin, and only this machine's own: the report reads the local host alone.
+  // The host is named by its origin, and only this machine's own: the report reads the local host alone.
   for (const [given, origin] of [
     ['http://localhost:5177', 'http://localhost:5177'],
     ['http://localhost:5177/', 'http://localhost:5177'],
@@ -964,10 +964,10 @@ test('the runner prints the text, or the same as JSON, and says when a home hold
 });
 
 /**
- * OUTCOME1 (the future-directions review's §3, row 4): an outcome per quest, from the records. The quests and the session
+ * An outcome per quest, from the records. The quests and the session
  * records are the local host's (`/api/quests` and `/api/sessions`, closed ones included), the person's words are each
- * ask's (D133, `/api/asks`), and the parks are the machine log's. A report, never a gate (D54); a fact no store keeps is
- * said missing, never zero (D57, D143 point 3).
+ * ask's (`/api/asks`), and the parks are the machine log's. A report, never a gate; a fact no store keeps is
+ * said missing, never zero.
  */
 type Group = {
   quests: number; done: number; declined: number;
@@ -1017,7 +1017,7 @@ const QUESTS = [
   }),
   // Asked by a repository, filed before the period and still worked in it: a failure, an interrupted stop, a third run.
   quest('q-strikes', 'engine', 'game', 'Taken', '2026-09-20T08:00:00', '2026-09-21T08:00:00'),
-  // Declined by its session; its ask keeps the person's words only from after it was published.
+  // Declined by its session; its ask keeps the person's words only from after publication.
   quest('q-declined', 'ask #a2', 'game', 'Declined', '2026-09-29T09:00:00', '2026-09-29T09:45:00'),
   // Done with a departure still held for the person's yes; its ask is not on the host; a teammate's record stood down.
   quest('q-held', 'ask #gone', 'engine', 'Done', '2026-09-29T11:00:00', '2026-09-29T13:00:00', {
@@ -1058,7 +1058,7 @@ const SESSIONS = [
 const word = (kind: string, at: string, session: string | null, questId: string | null, text: string) =>
   ({ kind, text, at: `${at}+00:00`, session, quest: questId });
 
-/** The host's asks, closed ones included, each with the person's words (DRIFT1a). */
+/** The host's asks, closed ones included, each with the person's words. */
 const ASKS = [
   {
     id: 'a1', workspace: 'work', sentence: 'ASKED-WORDS', state: 'Open', tier: 'intake', quests: ['q-first', 'q-carry', 'q-quiet'],
@@ -1116,7 +1116,7 @@ test('the outcomes hold every quest the period touched, by publish, close or a s
   const outcomes = outcomesFor();
   assert.equal(outcomes.read, true);
   assert.equal(outcomes.unread, null);
-  // q-strikes was published before the period and is in it by its sessions; q-old is wholly before it.
+  // q-strikes is published before the period and is in it by its sessions; q-old is wholly before it.
   assert.deepEqual(outcomes.quests.map((each) => each.quest), ['q-strikes', 'q-first', 'q-carry', 'q-declined', 'q-held', 'q-quiet']);
 });
 
@@ -1143,7 +1143,7 @@ test('carry-ons, strikes and limits: a run after a cut-off is a carry-on, a limi
 
   assert.deepEqual(counts('q-first'), [0, 0, 0]);
   assert.deepEqual(counts('q-carry'), [1, 0, 1]);
-  // A failure, then an interrupted stop (D104), then a third run: two carry-ons and two strikes (D58 as amended).
+  // A failure, then an interrupted stop, then a third run: two carry-ons and two strikes.
   assert.deepEqual(counts('q-strikes'), [2, 2, 0]);
   assert.deepEqual(counts('q-held'), [0, 0, 0]);
 });
@@ -1217,8 +1217,8 @@ test('a first pass is done by its one working session, with no departure and not
 });
 
 /**
- * The first-pass table: a done quest with one working session, and what is known of whether the person was asked. Either
- * store saying the person was asked makes it no first pass; one saying nothing was asked makes it one; neither knowing is
+ * The first-pass table: a done quest with one working session, and what is known of whether the person is asked. Either
+ * store saying the person is asked makes it no first pass; one saying nothing is asked makes it one; neither knowing is
  * not known, and is said missing.
  */
 const FIRST_PASS: [why: string, answered: boolean | null, parked: boolean | null, firstPass: boolean | null][] = [
@@ -1312,7 +1312,7 @@ test('records the host did not answer are said, and the log\'s report still stan
   assert.match(asksUnread.get('q-first')!.missing.find((each) => each.fact === 'answers')?.why ?? '', /answered 404/);
   assert.equal(asksUnread.get('q-first')!.parks, 0);
 
-  // An ask from a host before DRIFT1a answers no words.
+  // An ask from a host that predates the person's words answers no words.
   const wordless = byId(outcomesFor({ ...RECORDS, asks: [{ id: 'a1' }] }));
   assert.match(wordless.get('q-first')!.missing.find((each) => each.fact === 'answers')?.why ?? '', /without the person's words/);
 
@@ -1322,7 +1322,7 @@ test('records the host did not answer are said, and the log\'s report still stan
   assert.match(none.unread ?? '', /--service/);
 });
 
-/** A host that answers the three routes from the fixture, and remembers what it was asked. */
+/** A host that answers the three routes from the fixture, and remembers what it is asked. */
 function fakeHost(answers: Record<string, { status: number; body: unknown } | Error> = {}) {
   const asked: { url: string; method: string }[] = [];
   const fetch = async (url: string, init: { method?: string } = {}) => {

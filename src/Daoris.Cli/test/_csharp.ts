@@ -4,11 +4,11 @@ import { basename, dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 /**
- * The driver's `[InlineData(…)]` rows, read as data (TOOLS2, TOOLS3): how a CLI test holds a twin's table to
+ * The driver's `[InlineData(…)]` rows, read as data: how a CLI test holds a twin's table to
  * its own, cell for cell and in order, so a row changed on one side alone fails `npm run verify`. The C#
  * side keeps each row on one line, its cells literals.
  *
- * And the file each row is read from, found by its name wherever it lies under its desktop project (STRUCT1, D166): the
+ * And the file each row is read from, found by its name wherever it lies under its desktop project: the
  * driver's sources and tests move into module folders one module per branch, so a reader names the file and never its
  * folder. `driver-names.test.ts` holds every reader to it.
  */
@@ -76,7 +76,7 @@ export function csharpRow(line: string, words: Record<string, Cell> = {}): Cell[
       let text = '';
       at += 1;
       while (line[at] !== '"') {
-        // `\uXXXX` is the letter it names (CASEFOLD1: a row spells a combining dot above by its escape, so it can be seen).
+        // `\uXXXX` is the letter it names (a row spells a combining dot above by its escape, so it can be seen).
         const unit = line[at] === '\\' && line[at + 1] === 'u' ? /^[0-9A-Fa-f]{4}/.exec(line.slice(at + 2))?.[0] : undefined;
         text += unit !== undefined ? String.fromCharCode(parseInt(unit, 16)) : line[at] === '\\' ? line[at + 1] : line[at];
         at += unit !== undefined ? 6 : line[at] === '\\' ? 2 : 1;
@@ -97,7 +97,7 @@ export function csharpRow(line: string, words: Record<string, Cell> = {}): Cell[
   return cells;
 }
 
-/** The rows of one theory in a C# test class's source, in its order; the theory may be `void` or `async Task` (TOOLS4). */
+/** The rows of one theory in a C# test class's source, in its order; the theory may be `void` or `async Task`. */
 export function driverRows(source: string, method: string, words: Record<string, Cell> = {}, owner = 'the driver’s tests'): Cell[][] {
   const end = Math.max(source.indexOf(`public void ${method}(`), source.indexOf(`public async Task ${method}(`));
   assert.ok(end > 0, `${owner} have no ${method}`);

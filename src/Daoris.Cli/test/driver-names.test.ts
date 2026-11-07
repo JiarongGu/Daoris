@@ -7,8 +7,7 @@ import { fileURLToPath } from 'node:url';
 import { DESKTOP, desktopFile, driverFile, driverTestFile, oneNamed, projectFiles } from './_csharp.ts';
 
 /**
- * Every reader of the driver's files finds each by name, wherever it lies under its project (STRUCT1, D166; the
- * code-structure design §6), so the driver's files move into module folders, one module per branch, and no reader is
+ * Every reader of the driver's files finds each by name, wherever it lies under its project, so the driver's files move into module folders, one module per branch, and no reader is
  * edited for it. Held two ways over every reader in the repository: the driver's and the modules' C# tests, the CLI's
  * tests, the page's tests and the tools. Each name a reader reads by is one file under its project, which this suite,
  * run at every merge, proves for the readers no fast gate runs (a Process class, a rehearsal's helper); and no reader
@@ -57,7 +56,7 @@ const isReader = (path: string): boolean =>
  */
 const SCANNERS = new Set([
   'src/Daoris.Cli/test/driver-names.test.ts', 'src/Daoris.Cli/tool-test/merge-branch.test.ts', 'src/Daoris.Web/src/test/driverSource.test.ts',
-  // LIVELOGIN1's census plants a tree of its own in scratch, a driver file among it, and reads nothing of the repository's.
+  // The live-logins census plants a tree of its own in scratch, a driver file among it, and reads nothing of the repository's.
   'tools/live-logins.test.mjs',
 ]);
 
