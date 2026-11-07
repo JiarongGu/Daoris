@@ -21,7 +21,7 @@ public static class SupervisorCourseDoor
         if (uncovered is not null) return Refused(uncovered);
 
         var counts = (await LineCountsRead.FactsAsync(service, loop.Home, form.Id, ct).ConfigureAwait(false)).Counts;
-        var point = ReferredPoints.For(loop.Home, loop.Events, new GoOnMarks(loop.Home)).PointOf(record, counts);
+        var point = ReferredPoints.For(loop.Home, loop.Events, new GoOnMarks(loop.Home)).PointOf(record, counts, loop.Look.Latest);
         var kept = await loop.Supervisor.CourseAsync(
             new SupervisorCourse(form.Id, form.Point, form.Generation, form.Do, form.Reasons, new SupervisorHolder(RoleHolders.Terminal, null)),
             point, DateTimeOffset.UtcNow, ct).ConfigureAwait(false);
@@ -38,7 +38,7 @@ public static class SupervisorCourseDoor
         var waiting = new List<object>();
         foreach (var record in records)
         {
-            if (record.Teammate || record.Repository is not { } repository || points.Open(record.Session) is not { } open) continue;
+            if (record.Teammate || record.Repository is not { } repository || points.Open(record.Session, loop.Look.Latest) is not { } open) continue;
             if (!loop.Supervisor.Refers(record.Session, open.Id) || admission.Admit(repository) is not { Why: null, Generation: { } generation }) continue;
             waiting.Add(new { Session = record.Session, Repository = repository, Point = open.Id, Count = open.Rule.Count, N = open.N, Generation = generation });
         }

@@ -109,6 +109,7 @@ internal sealed class RoundConsidering(PlanRound round)
                 Failures = failures,
                 FailedSince = strikes,
                 ParksAt = parks,
+                LastSession = snapshot.LastRun.GetValueOrDefault(quest.Id)?.Session,
             };
         }
 

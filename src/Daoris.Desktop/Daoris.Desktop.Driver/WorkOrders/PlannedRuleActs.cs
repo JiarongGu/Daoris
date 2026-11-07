@@ -33,7 +33,11 @@ internal static class PlannedRuleActs
             switch (held)
             {
                 case { Verdict: StartVerdict.Exhausted, FailedSince: { } failed }:
-                    Add(held.Quest, SupervisorRules.Failures, rule => rule.Do == SupervisorRules.Hold, failed, "start");
+                    Add(held.Quest, SupervisorRules.Failures, rule => rule.Do is SupervisorRules.Hold or SupervisorRules.Refer, failed, "start", held.LastSession);
+                    break;
+                // A failed choice's ask is the person's yes as it always was; only a refer's is kept, the point the supervisor is asked at.
+                case { Verdict: StartVerdict.PolicyHeld, Said.Code: SittingFact.PolicyAsk, HeldBy: { } ended } when StaffSnapshotCourse.FailedStrike(ended):
+                    Add(held.Quest, SupervisorRules.FailuresOnChoice, rule => rule.Do == SupervisorRules.Refer, snapshot.FailedRuns.GetValueOrDefault(held.Quest.Id), "start", ended.Session);
                     break;
                 case { Verdict: StartVerdict.TransientHeld, HeldBy: { } ended }:
                     Add(held.Quest, SupervisorRules.Tries, rule => rule.Do == SupervisorRules.Hold, LineCounts.TriesOf(ended), "episode", ended.Session);

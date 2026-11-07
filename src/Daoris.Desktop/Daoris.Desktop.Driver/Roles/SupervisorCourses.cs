@@ -28,6 +28,7 @@ internal sealed class SupervisorCourseDecision
     public required string Session { get; init; }
     public required string Repository { get; init; }
     public required string Point { get; init; }
+    public required string Count { get; init; }
     public required string Do { get; init; }
     public required string Generation { get; init; }
     public required DateTimeOffset GoesOnAt { get; init; }
@@ -73,7 +74,7 @@ internal sealed class SupervisorCourses(SupervisorBook book, IDecisionAdmission 
             var goesOnAt = left ? now : now + QuestionSupervisorDecisions.WindowOf(admitted);
             var decision = new SupervisorCourseDecision
             {
-                Id = id, Session = course.Session, Repository = point.Repository, Point = course.Point, Do = course.Do, Generation = course.Generation,
+                Id = id, Session = course.Session, Repository = point.Repository, Point = course.Point, Count = point.Open!.Rule.Count, Do = course.Do, Generation = course.Generation,
                 GoesOnAt = goesOnAt, State = left ? SupervisorState.Left : SupervisorState.Held,
             };
             Directory.CreateDirectory(book.Files.FolderOf(course.Session));
@@ -89,10 +90,12 @@ internal sealed class SupervisorCourses(SupervisorBook book, IDecisionAdmission 
     /// again (<paramref name="line"/>), a line running a turn left held until it ends, and only then the count's door. Returns the states
     /// the moved decisions reached.
     /// </summary>
-    public async Task<IReadOnlyList<SupervisorState>> ReleaseAsync(CourseLine line, DateTimeOffset now, CancellationToken ct = default)
+    public async Task<IReadOnlyList<SupervisorState>> ReleaseAsync(CourseLine line, DateTimeOffset now, IReadOnlyCollection<string>? counts = null, CancellationToken ct = default)
     {
         var moved = new List<SupervisorState>();
-        foreach (var due in book.Courses.Values.Where(each => each.State == SupervisorState.Held && each.GoesOnAt <= now).ToList())
+        // A point is released by the look that reads what holds it: answers alone's before the plan, a quest's with the plan's verdicts.
+        foreach (var due in book.Courses.Values
+                     .Where(each => each.State == SupervisorState.Held && each.GoesOnAt <= now && (counts is null || counts.Contains(each.Count))).ToList())
         {
             var reached = await book.UnderAsync(due.Session, () =>
             {
