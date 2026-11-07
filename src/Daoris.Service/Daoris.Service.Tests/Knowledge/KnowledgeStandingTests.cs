@@ -19,11 +19,18 @@ public sealed class KnowledgeStandingTests : IDisposable
     public void Dispose()
     {
         SqlitePools.Release(Path.Combine(_root, "knowledge.db"));
-        // Git writes its objects read-only, which a recursive delete on Windows refuses.
-        if (Directory.Exists(_root))
+        // Git's objects are read-only, and a watcher or a git child can hold the folder a moment past the service's disposal.
+        for (var tries = 0; Directory.Exists(_root); tries++)
         {
-            foreach (var file in Directory.EnumerateFiles(_root, "*", SearchOption.AllDirectories)) File.SetAttributes(file, FileAttributes.Normal);
-            Directory.Delete(_root, recursive: true);
+            try
+            {
+                foreach (var file in Directory.EnumerateFiles(_root, "*", SearchOption.AllDirectories)) File.SetAttributes(file, FileAttributes.Normal);
+                Directory.Delete(_root, recursive: true);
+            }
+            catch (IOException) when (tries < 50)
+            {
+                Thread.Sleep(100);
+            }
         }
     }
 
