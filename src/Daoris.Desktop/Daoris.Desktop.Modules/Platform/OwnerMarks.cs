@@ -4,7 +4,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop;
 
 /// <summary>
-/// What a payload's field names, as an owner's door marks it (STEWARDROLE1a-ii, D209 §5.4): a workspace, a repository or a quest; a
+/// What a payload's field names, as an owner's door marks it: a workspace, a repository or a quest; a
 /// session, resolved to its quest; an ask, an entry (<c>ask:&lt;id&gt;/&lt;repository&gt;</c>) or a work unit (<c>quest:&lt;id&gt;</c>,
 /// <c>ask:&lt;id&gt;</c>), each resolved to its quests.
 /// </summary>
@@ -20,7 +20,7 @@ public static class OwnerKinds
 }
 
 /// <summary>
-/// The closed reasons a route marks nothing by (D209 §5.4). <see cref="ActsOnNothing"/> and <see cref="OwnConversation"/> are taken
+/// The closed reasons a route marks nothing by. <see cref="ActsOnNothing"/> and <see cref="OwnConversation"/> are taken
 /// only by a route on the census sweep's reviewed exemptions where it names a target (<c>OwnerSetCensusTests</c>).
 /// </summary>
 public static class OwnerNone
@@ -48,7 +48,7 @@ public static class OwnerNone
 public sealed record OwnerField(string Field, string Kind, bool Many = false);
 
 /// <summary>
-/// A route's column of <see cref="PipeTargets"/> D209 adds (§5.4): the fields that name what it acts on, or <see cref="None"/> with its
+/// A route's column of <see cref="PipeTargets"/>: the fields that name what it acts on, or <see cref="None"/> with its
 /// closed reason, or <see cref="ByPlan"/> where it marks by the plan it applies (<c>HELP_APPLY</c>).
 /// </summary>
 public sealed record OwnerTarget(IReadOnlyList<OwnerField> Fields, string? None = null, bool ByPlan = false)
@@ -62,7 +62,7 @@ public sealed record OwnerTarget(IReadOnlyList<OwnerField> Fields, string? None 
 public sealed record OwnerNamed(string Kind, string Name);
 
 /// <summary>
-/// What an owner's act resolves to (§5.4's target resolution): the repositories and quests it marks, and the gates it takes, a
+/// What an owner's act resolves to: the repositories and quests it marks, and the gates it takes, a
 /// workspace among them; <see cref="Unresolved"/> where a session, an ask or an entry could not be read, which marks every quest.
 /// </summary>
 public sealed record OwnerResolved(IReadOnlyList<RoleScope> Marks, IReadOnlyList<RoleScope> Gates, bool Unresolved)
@@ -71,7 +71,7 @@ public sealed record OwnerResolved(IReadOnlyList<RoleScope> Marks, IReadOnlyList
 }
 
 /// <summary>
-/// The reads the target resolution makes (§5.4): a session's quest, an ask's quests, a quest's repository, a repository's workspace and
+/// The reads the target resolution makes: a session's quest, an ask's quests, a quest's repository, a repository's workspace and
 /// a workspace's repositories. A read that fails throws; a session that serves no quest (a conversation) answers null.
 /// </summary>
 public interface IOwnerScopes
@@ -90,7 +90,7 @@ public interface IOwnerScopes
     Task<bool> PersonWroteAsync(string quest, DateTimeOffset since, CancellationToken ct);
 }
 
-/// <summary>The target resolution's reads from the service's answers (§5.4): this machine's records, the registry and the asks.</summary>
+/// <summary>The target resolution's reads from the service's answers: this machine's records, the registry and the asks.</summary>
 public sealed class ServiceOwnerScopes(Func<ServiceClient?> service) : IOwnerScopes
 {
     private ServiceClient Service => service() ?? throw new InvalidOperationException("the service is not reachable yet.");
@@ -144,7 +144,7 @@ public sealed class ServiceOwnerScopes(Func<ServiceClient?> service) : IOwnerSco
 }
 
 /// <summary>
-/// The owner's mark (STEWARDROLE1a-ii, D209 §5.4): <see cref="Of"/> answers what an owner's door names from its census row
+/// The owner's mark: <see cref="Of"/> answers what an owner's door names from its census row
 /// (<see cref="PipeTargets.Mark"/>), <see cref="ResolveAsync"/> resolves it to its scopes, and <see cref="EnterAsync"/> takes their
 /// gates beside the owner's other presses and marks them in the judge's memory before the handler runs inside.
 /// </summary>
@@ -178,7 +178,7 @@ public static class OwnerMarks
     }
 
     /// <summary>
-    /// <paramref name="named"/> resolved to its scopes (§5.4): a workspace to itself and every repository the registry places in it, a
+    /// <paramref name="named"/> resolved to its scopes: a workspace to itself and every repository the registry places in it, a
     /// session to its quest (a conversation's to nothing), an ask, an entry or a unit to its quests. A read that fails marks every quest
     /// for the run (<see cref="OwnerResolved.Unresolved"/>), so the owner's press is never held up and the steward is held back.
     /// </summary>
@@ -266,7 +266,7 @@ public static class OwnerMarks
     }
 
     /// <summary>
-    /// The owner's step before a handler (§5.4): what <paramref name="named"/> resolves to, its gates taken beside the owner's other
+    /// The owner's step before a handler: what <paramref name="named"/> resolves to, its gates taken beside the owner's other
     /// presses in the fixed order, and its targets marked <c>owner-set</c> in <paramref name="judge"/>'s memory, which cancels every act
     /// and pending operation on them; the handler runs inside, and the gates are released as the answer is disposed. A judge whose steward
     /// no holder holds marks nothing and takes no gate, so an unstaffed steward changes nothing the owner uses.

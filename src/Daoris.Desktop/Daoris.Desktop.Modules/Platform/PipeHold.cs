@@ -1,7 +1,7 @@
 namespace Daoris.Desktop;
 
 /// <summary>
-/// One connection's hold of one conversation (D238 point 2): in the pipe's state alone (<see cref="PipeState.Holds"/>), never on disk, and
+/// One connection's hold of one conversation: in the pipe's state alone (<see cref="PipeState.Holds"/>), never on disk, and
 /// forwarding that conversation's lines to the connection (<see cref="PipeForwarding"/>).
 /// </summary>
 internal sealed class PipeHold(string session, PipeConnection connection, DateTimeOffset since, PipeForwarding forwarding)

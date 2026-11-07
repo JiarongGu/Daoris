@@ -2,12 +2,12 @@ using Shenora.Core.Ipc;
 
 namespace Daoris.Desktop;
 
-/// <summary>A press whose grounds are being read before its card (§15.2 item 9): what ends it meanwhile, and what it was sent with.</summary>
+/// <summary>A press whose grounds are being read before its card: what ends it meanwhile, and what it is sent with.</summary>
 internal sealed class PipeReserved(
     IpcRequest request, PipeBinding binding, TaskCompletionSource<string> line, PipeConnection connection, PipePlace place, DateTimeOffset asked,
     bool hold = false)
 {
-    /// <summary>That it was sent with <c>hold: true</c> (RPC1g1): its card says the Confirm also lets its terminal hold what it opens.</summary>
+    /// <summary>That it is sent with <c>hold: true</c>: its card says the Confirm also lets its terminal hold what it opens.</summary>
     public bool Hold { get; } = hold;
 
     public IpcRequest Request { get; } = request;

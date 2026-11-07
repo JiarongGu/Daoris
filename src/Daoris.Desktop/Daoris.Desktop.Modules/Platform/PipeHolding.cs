@@ -6,7 +6,7 @@ using Shenora.Core.Ipc;
 namespace Daoris.Desktop;
 
 /// <summary>
-/// A terminal's hold of a conversation (RPC1g1, D238 points 2 and 3, the terminal-conversation design §3.1, §3.2): the person's Confirm
+/// A terminal's hold of a conversation: the person's Confirm
 /// in the window, once, binds one pipe connection to one conversation, and from then that connection's words in the verb's form, its
 /// turn stops and its finish for that conversation run with no further card, and the pipe forwards it the conversation's console lines,
 /// its events and its end.

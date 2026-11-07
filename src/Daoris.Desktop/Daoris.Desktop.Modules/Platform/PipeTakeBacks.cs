@@ -5,8 +5,7 @@ using Shenora.Core.Ipc;
 namespace Daoris.Desktop;
 
 /// <summary>
-/// What a terminal asks of a press it sent, each by the key that sent it (the terminal RPC design §6.1, §6.2, the confirm-wait design
-/// §4.2, §4.3): the kit's <c>CANCEL</c>, the pipe's <c>RESULT</c> and its <c>WITHDRAW</c>. Each reads and marks the pipe's state
+/// What a terminal asks of a press it sent, each by the key that sent it: the kit's <c>CANCEL</c>, the pipe's <c>RESULT</c> and its <c>WITHDRAW</c>. Each reads and marks the pipe's state
 /// (<see cref="PipeState"/>) under its gate, and asks the confirmations outside it but where it says.
 /// </summary>
 internal sealed class PipeTakeBacks(InstancePipe pipe)
@@ -19,7 +18,7 @@ internal sealed class PipeTakeBacks(InstancePipe pipe)
     private PipeConfirmations Confirmations => pipe.Confirmations;
 
     /// <summary>
-    /// The kit's <c>CANCEL { requestId }</c> from a terminal (RPC1h, §6.2), for a press this pipe began and with the key that sent it:
+    /// The kit's <c>CANCEL { requestId }</c> from a terminal, for a press this pipe began and with the key that sent it:
     /// passed to the dispatcher's own <c>SHENORA.REQUESTS</c> module, which aborts the token the press runs under, so the press ends as
     /// a cancelled one and <c>RESULT</c> says so. A press that has ended answers <c>cancelled: false</c> and nothing runs; an id this pipe
     /// did not begin (a window's, an id nobody sent) or one begun with another key is refused as an id bound elsewhere is, and
@@ -54,7 +53,7 @@ internal sealed class PipeTakeBacks(InstancePipe pipe)
         }
 
         _log.Info("pipe.cancelled", ("request", target));
-        // RPC1c: a press still waiting for the window is taken back from it, its card gone and nothing run. One the person answered
+        // A press still waiting for the window is taken back from it, its card gone and nothing run. One the person answered
         // meanwhile is under way, and the dispatcher's cancel reaches it as any press's does.
         if (waiting is not null && Confirmations.Withdraw(waiting) == PipeWithdrawal.Withdrawn)
         {
@@ -67,7 +66,7 @@ internal sealed class PipeTakeBacks(InstancePipe pipe)
 
     /// <summary>
     /// <c>RESULT { id, key }</c>: how the press stands, told only to the key that sent it, whichever connection asks. <c>waiting</c> while
-    /// its card waits for the person (CONFIRMWAIT1a-i, the confirm-wait design §4.2), with when it was asked, whether a terminal waits on
+    /// its card waits for the person, with when it is asked, whether a terminal waits on
     /// its line for it, and when a window first showed it; <c>running</c> while its Confirm is judged and once it runs; then
     /// <c>answered</c> with its ending, or <c>unknown</c>.
     /// </summary>
@@ -83,7 +82,7 @@ internal sealed class PipeTakeBacks(InstancePipe pipe)
             if (_state.Running.TryGetValue(id, out var running))
             {
                 if (running.Binding.Key != holder) return pipe.RefuseTaken(request);
-                // CONFIRMWAIT1 (§15.2 item 9): its grounds are being read before its card; it waits, checking.
+                // Its grounds are being read before its card; it waits, checking.
                 if (_state.Reserved.TryGetValue(id, out var reserved))
                 {
                     return IpcResponse.CreateSuccess(request.Id, new
@@ -110,7 +109,7 @@ internal sealed class PipeTakeBacks(InstancePipe pipe)
                 { } seen when seen.Binding.Key != holder => pipe.RefuseTaken(request),
                 { State: PipeJournal.Seen.Answered, Answer: { } answer } =>
                     IpcResponse.CreateSuccess(request.Id, new { state = "answered", answer = JsonDocument.Parse(answer).RootElement.Clone() }),
-                // CONFIRMWAIT1 (the confirm-wait design §15.3 item 10): begun and never ended, it stopped while under way, as WITHDRAW says.
+                // Begun and never ended, it stopped while under way, as WITHDRAW says.
                 { State: PipeJournal.Seen.Interrupted } => IpcResponse.CreateSuccess(request.Id, new
                 {
                     state = "answered",
@@ -128,7 +127,7 @@ internal sealed class PipeTakeBacks(InstancePipe pipe)
             : null;
 
     /// <summary>
-    /// <c>WITHDRAW { id, key }</c> (CONFIRMWAIT1a-i, the confirm-wait design §4.3): the asker takes back a press of its own that still
+    /// <c>WITHDRAW { id, key }</c>: the asker takes back a press of its own that still
     /// waits for the person, under the confirmations' lock, where a Confirm is taken too, so the first of the two wins. Answered
     /// <c>withdrawn</c>; <c>running</c> where the person confirmed it meanwhile, its grounds being judged or it running, and nothing is
     /// cancelled; <c>ended</c> with its answer; another key's, or an id the pipe does not know, refused <see cref="InstancePipe.IdTaken"/>.
@@ -148,7 +147,7 @@ internal sealed class PipeTakeBacks(InstancePipe pipe)
             if (_state.Running.TryGetValue(id, out var running))
             {
                 if (running.Binding.Key != holder) return pipe.RefuseTaken(request);
-                // CONFIRMWAIT1 (§15.2 item 9): one whose grounds are still being read is taken back at once, before it has a card.
+                // One whose grounds are still being read is taken back at once, before it has a card.
                 if (!_state.Reserved.Remove(id, out reserved))
                 {
                     waiting = _state.WaitingFor.GetValueOrDefault(id);
@@ -194,7 +193,7 @@ internal sealed class PipeTakeBacks(InstancePipe pipe)
             _state.Withdrawn.Remove(id);
         }
 
-        // CONFIRMWAIT1 (§15.2 item 8): its record could not say it was taken back, so it was not, and it still waits.
+        // Its record cannot say it is taken back, so it is not, and it still waits.
         if (withdrawal == PipeWithdrawal.Unrecorded)
         {
             return pipe.Refuse(request, InstancePipe.Unrecorded, "Daoris could not keep that this was taken back, so it still waits for the person; send WITHDRAW again.");

@@ -3,7 +3,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop;
 
 /// <summary>
-/// What Settings → Git and the remote rows read (GITAUTH1e; the git-auth design §7.1), from the files alone, as <c>TOOLS_LIST</c>'s
+/// What Settings → Git and the remote rows read, from the files alone, as <c>TOOLS_LIST</c>'s
 /// <c>identities</c>: the identities with what points at them, the hosts, and the hosts the person's own sign-ins are chosen for. No secret by construction: a public key, a fingerprint and whether an API token is set are the most it holds.
 /// </summary>
 internal static class GitIdentityPage
@@ -34,7 +34,7 @@ internal static class GitIdentityPage
                 };
             }).ToArray(),
             Own = pointers.Machine.Keys.Order(StringComparer.Ordinal).ToArray(),
-            // Each workspace's choice for a host (§3.2 step 2): an identity's id or `own`, as an array so no name is a key.
+            // Each workspace's choice for a host: an identity's id or `own`, as an array so no name is a key.
             Choices = pointers.Workspace.SelectMany(workspace => workspace.Value.Select(host => new { Workspace = workspace.Key, Host = host.Key, Value = host.Value }))
                 .OrderBy(each => each.Workspace, StringComparer.Ordinal).ThenBy(each => each.Host, StringComparer.Ordinal).ToArray(),
             Hosts = identities.Select(each => each.Host).Concat(pointers.Machine.Keys).Distinct(StringComparer.Ordinal).Order(StringComparer.Ordinal).ToArray(),

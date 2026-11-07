@@ -6,8 +6,8 @@ using Shenora.Core.Ipc;
 namespace Daoris.Desktop;
 
 /// <summary>
-/// The page and the machine log (D94): its report into the log (LOG1b) — what is used, and what fails, on
-/// the screen — and Settings → Logs, the screen's door to reading it (LOG1c).
+/// The page and the machine log: its report into the log — what is used, and what fails, on
+/// the screen — and Settings → Logs, the screen's door to reading it.
 /// </summary>
 /// <remarks>
 /// <para><b><c>EVENT</c></b> carries <c>{ event, data }</c>. The answer is always nothing: the report is
@@ -15,14 +15,14 @@ namespace Daoris.Desktop;
 /// one.</para>
 ///
 /// <para><b><c>LINES</c></b> reads every source's lines through <see cref="MachineLogReader"/>, the
-/// reader <c>daoris logs</c> uses (D50: the two doors filter alike), with the filters applied here
+/// reader <c>daoris logs</c> uses (the two doors filter alike), with the filters applied here
 /// and a cap, so the page is handed the recent lines and never the month. <b><c>OPEN_FOLDER</c></b> opens
 /// the log's own folder in the file manager; the page names no path. Both are the shell's only: no HTTP
-/// route serves the log, and a browser sees none of it (D47 §4).</para>
+/// route serves the log, and a browser sees none of it.</para>
 ///
-/// <para>🔴 <b>This is where D94's list of what is never logged is enforced.</b> The page is the one writer
+/// <para>🔴 <b>This is where the list of what is never logged is enforced.</b> The page is the one writer
 /// that could pass a word through by mistake, so the module takes only the catalogue's events
-/// (<c>docs/2026-09-30-machine-log-design.md</c> §4), each with only its declared fields, each field only
+/// (<c>docs/2026-09-30-machine-log-design.md</c>), each with only its declared fields, each field only
 /// in its declared kind: a name (an identifier, never a sentence), a short text, a count, a flag. Anything
 /// else (another event, another field, a sentence where a name goes, words where a count goes) is dropped
 /// without a word. A message is its length and how many files it carried; never its text, never a name.</para>
@@ -64,18 +64,18 @@ public sealed class LogModule(
         Flag,
     }
 
-    /// <summary>The page's events, each with its fields and each field's kind — the design's §4, and nothing more.</summary>
+    /// <summary>The page's events, each with its fields and each field's kind, and nothing more.</summary>
     private static readonly IReadOnlyDictionary<string, (string Level, (string Field, Kind Kind)[] Fields)> Catalogue =
         new Dictionary<string, (string, (string, Kind)[])>(StringComparer.Ordinal)
         {
             ["view.opened"] = ("info", [("view", Kind.Name)]),
             ["command.run"] = ("info", [("command", Kind.Name)]),
             ["panel.moved"] = ("info", [("view", Kind.Name), ("region", Kind.Name)]),
-            // `reach` (MSG1d, D137 §3.3): where the words reach the session, as SESSION_INPUT answered it.
+            // `reach`: where the words reach the session, as SESSION_INPUT answered it.
             ["message.sent"] = ("info",
                 [("session", Kind.Name), ("kind", Kind.Name), ("length", Kind.Count), ("files", Kind.Count), ("reach", Kind.Name)]),
             ["proposal.settled"] = ("info", [("applied", Kind.Flag)]),
-            // `view` and `stack` (PAGELOOP1, D217): a render the page's error screen caught, with the view it showed and its
+            // `view` and `stack`: a render the page's error screen caught, with the view it showed and its
             // component stack's first frames by name; never a frame's location, which the page leaves out before it reports.
             ["page.error"] = ("error",
                 [("where", Kind.Name), ("message", Kind.Text), ("view", Kind.Name), ("stack", Kind.Text)]),
@@ -153,7 +153,7 @@ public sealed class LogModule(
             $"one of {string.Join(", ", MachineLogReader.Sources)}");
         var level = Filter(payload, "level", MachineLogReader.Floors.Contains, "warn or error");
         var named = PayloadHelper.GetOptionalValue<string>(payload, "event") is { Length: > 0 } wanted ? wanted : null;
-        // AUTOTIDY1a (D88): a list of events, and one workspace as the driver writes it (trimmed) and the page holds it (without case).
+        // A list of events, and one workspace as the driver writes it (trimmed) and the page holds it (without case).
         var ofEvents = payload is { ValueKind: JsonValueKind.Object } body && body.TryGetProperty("events", out var list) && list.ValueKind == JsonValueKind.Array
             ? list.EnumerateArray().Where(item => item.ValueKind == JsonValueKind.String).Select(item => item.GetString()!).ToHashSet(StringComparer.Ordinal)
             : null;
@@ -226,7 +226,7 @@ public sealed class LogModule(
 
     /// <summary>
     /// The log's own folder in the file manager, made first if nothing has written to it yet: opened through the start gate,
-    /// off the window's thread, since the launcher starts the file manager's process (PROCSTART2).
+    /// off the window's thread, since the launcher starts the file manager's process.
     /// </summary>
     private async Task<object?> OpenAsync(CancellationToken cancellationToken)
     {

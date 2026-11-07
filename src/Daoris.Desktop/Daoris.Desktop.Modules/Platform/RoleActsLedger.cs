@@ -3,7 +3,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop;
 
 /// <summary>
-/// The run's memory of a role's acts (D209 §3.4 steps 7 and 8, §5.1a, §5.4): an admitted act run, done and its operations moved on, and
+/// The run's memory of a role's acts: an admitted act run, done and its operations moved on, and
 /// the owner's marks. Every step is one hold of the standing confirmation's one lock (<see cref="StandingState"/>), never across an await.
 /// </summary>
 internal sealed class RoleActsLedger(StandingConfirmation owner, StandingState state)
@@ -11,7 +11,7 @@ internal sealed class RoleActsLedger(StandingConfirmation owner, StandingState s
     private readonly MachineLog _log = owner.Log;
 
     /// <summary>
-    /// §3.4 step 8, under the act's gates: the act still <c>admitted</c> (no revoke and no owner's mark cancelled it), its holder's hash
+    /// Under the act's gates: the act still <c>admitted</c> (no revoke and no owner's mark cancelled it), its holder's hash
     /// present and its generation live, and its target not <c>owner-set</c>, moved to <c>running</c>; null where it may run, else
     /// <c>owner-set</c> or <c>role-changed</c>.
     /// </summary>
@@ -30,14 +30,14 @@ internal sealed class RoleActsLedger(StandingConfirmation owner, StandingState s
         }
     }
 
-    /// <summary>The admitted act's target, which its gates are taken for (§5.4); null where no act has the id.</summary>
+    /// <summary>The admitted act's target, which its gates are taken for; null where no act has the id.</summary>
     public RoleScope? ActTarget(string id)
     {
         lock (state.Gate) return state.Acts.TargetOf(id);
     }
 
     /// <summary>
-    /// The owner's mark (STEWARDROLE1a-ii, D209 §5.4), set inside the gates of every scope it resolved to: each repository and quest
+    /// The owner's mark, set inside the gates of every scope it resolved to: each repository and quest
     /// marked <c>owner-set</c> for the run, every admitted act, pending stage and binding on it cancelled in this one step; an owner's
     /// target that could not be resolved holds every quest.
     /// </summary>
@@ -64,7 +64,7 @@ internal sealed class RoleActsLedger(StandingConfirmation owner, StandingState s
         if (cancelled > 0) _log.Info("role.cancelled", ("count", StandingState.Count(cancelled)), ("why", RoleWhy.OwnerSet));
     }
 
-    /// <summary>Whether the owner acted on <paramref name="target"/> this run (§5.4).</summary>
+    /// <summary>Whether the owner acted on <paramref name="target"/> this run.</summary>
     public bool IsOwnerSet(RoleScope target)
     {
         lock (state.Gate) return state.OwnerHolds(target);
@@ -83,7 +83,7 @@ internal sealed class RoleActsLedger(StandingConfirmation owner, StandingState s
     }
 
     /// <summary>
-    /// A pending operation registered for an act that ran (§5.1a): its kind, its stages in order, whether its last is a binding, and the
+    /// A pending operation registered for an act that ran: its kind, its stages in order, whether its last is a binding, and the
     /// complete operation its consumers act on. Cancelled at once where its hold ended since the act ran.
     /// </summary>
     public RoleOperation? Pend(string id, string kind, IReadOnlyList<string> stages, bool binds, object? operation)
@@ -94,14 +94,14 @@ internal sealed class RoleActsLedger(StandingConfirmation owner, StandingState s
         return pending;
     }
 
-    /// <summary>A consumer's first step (§5.1a): the live operation on <paramref name="target"/> at <paramref name="stage"/>, from memory first; null where none.</summary>
+    /// <summary>A consumer's first step: the live operation on <paramref name="target"/> at <paramref name="stage"/>, from memory first; null where none.</summary>
     public RoleOperation? FindOperation(string target, string stage)
     {
         lock (state.Gate) return state.Acts.Find(target, stage, state.Live);
     }
 
     /// <summary>
-    /// A consumer's take, and after its awaits its second step, the execution cutoff (§5.1a, finding 5): the operation still at
+    /// A consumer's take, and after its awaits its second step, the execution cutoff: the operation still at
     /// <paramref name="stage"/> and live, moved past it; null where a revoke or an owner's act cancelled it, or another took it.
     /// </summary>
     public RoleOperation? TakeOperation(string id, string stage)
@@ -109,7 +109,7 @@ internal sealed class RoleActsLedger(StandingConfirmation owner, StandingState s
         lock (state.Gate) return state.Acts.Take(id, stage, state.Live);
     }
 
-    /// <summary>The quest's live hand-over binding, read by each later start this run (§5.1a); null where none.</summary>
+    /// <summary>The quest's live hand-over binding, read by each later start this run; null where none.</summary>
     public RoleOperation? Binding(string target)
     {
         lock (state.Gate) return state.Acts.Binding(target, state.Live);
@@ -122,7 +122,7 @@ internal sealed class RoleActsLedger(StandingConfirmation owner, StandingState s
     }
 
     /// <summary>
-    /// The generation of a live hold of <paramref name="kind"/>, which its holder's verb proves over (D209 §3.3), or null where none is
+    /// The generation of a live hold of <paramref name="kind"/>, which its holder's verb proves over, or null where none is
     /// live (not staffed by the terminal, or not started). The supervisor's listing names its own the same way.
     /// </summary>
     public string? LiveGeneration(string kind)
@@ -130,7 +130,7 @@ internal sealed class RoleActsLedger(StandingConfirmation owner, StandingState s
         lock (state.Gate) return state.Holds.FirstOrDefault(each => each.Kind == kind && state.Live(each.Generation))?.Generation;
     }
 
-    /// <summary>A session's act re-keyed to the quest its session resolved to (§5.4), before its gates' step.</summary>
+    /// <summary>A session's act re-keyed to the quest its session resolved to, before its gates' step.</summary>
     public void Retarget(string id, RoleScope target)
     {
         lock (state.Gate) state.Acts.Retarget(id, target);

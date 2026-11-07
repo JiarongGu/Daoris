@@ -12,7 +12,7 @@ namespace Daoris.Desktop;
 public sealed record ServiceConfirmationsNow(long Seq, IReadOnlyList<JsonElement> Waiting);
 
 /// <summary>
-/// The presses waiting at the service's own door, told to the windows (NOTIFY2j, D196 point 4, the notification design §2.5, §3.3):
+/// The presses waiting at the service's own door, told to the windows:
 /// the desktop's host holds one wait on the service (<see cref="ConfirmationDoors.WaitAsync"/>) and raises <c>DAORIS</c>
 /// <see cref="Event"/> with what waits at each change, beside the pipe's <see cref="PipeConfirmations.Event"/>, so every window counts
 /// one list and no window polls. The bridge's <c>SERVICE_CONFIRMATIONS</c> reads it for a window that opens mid-wait.
