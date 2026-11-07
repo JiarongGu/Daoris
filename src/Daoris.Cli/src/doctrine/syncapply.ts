@@ -96,7 +96,6 @@ export function refuseWhatForceCannot(plan: SyncPlan): void {
   }
 }
 
-/** The kept files a move would carry, which refuse it: none unless the layout's root changes. */
 export function keptInMove(plan: SyncPlan): string[] {
   if (plan.layout.from.target === plan.layout.to.target) return [];
   return plan.writes.filter((write) => write.kept && !write.in).map((write) => write.target);

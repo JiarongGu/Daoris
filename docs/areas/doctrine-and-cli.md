@@ -57,7 +57,9 @@ as a pack.
 4. Core today holds three rules (`file-tool-discipline`, `repository-owns-its-work`, `sensitive-info`), five on-demand
    rules, and the skills `caveman`, `change` and `set-up-documents`. Every change goes through `change`. (from CONSOLIDATE1)
 5. A canon document carries `name` (its filename), `applies_when` and `enforces`; a skill carries `name` and `description`
-   and ships its whole folder. A document missing frontmatter is listed and marked, never dropped. (from D14, D128)
+   and ships its whole folder. A document missing frontmatter is listed and marked, never dropped. A rule carried in the
+   region has no line opening with a daoris marker, since the region reads rules back by those lines: `sync` refuses such a
+   rule as a tool error before writing. (from D14, D128)
 6. Canon content is project-agnostic. It names no path, build command, private name or skill roster; a skill sends the
    reader to the generated index for repository specifics. (from D14)
 7. A concern only some repositories have is a pack, never core. A pack is `canon/packs/<name>/pack.json` with a

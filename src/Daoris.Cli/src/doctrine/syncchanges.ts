@@ -58,7 +58,7 @@ export function detectRenames(
 /**
  * What actually changed in the doctrine since this repo last synced.
  *
- * Computed from the lock and the shipped canon, so it needs no network and no
+ * Computed from the lock and the shipped canon, read where the lock says the files are, so it needs no network and no
  * version control — the lock already records a per-file hash, which is a better
  * marker than "commits since last run" because it survives a shallow clone.
  *
@@ -77,8 +77,6 @@ export function planChanges(
   const added: string[] = [];
   const changed: string[] = [];
 
-  // Where the lock says the files are, as every other reader of them does: a manifest flipped to another layout
-  // names a root nothing has been moved to yet.
   const was = lockLayout(root, lock, manifest);
   const harness = was.harness;
   const keeps = manifest.kept ?? {};
