@@ -12,7 +12,7 @@ import type { PlaceRoleEditor } from './PlaceRoles';
 
 const SUPERVISOR: RoleRow = {
   id: 'supervisor', state: 'seed', seeded: true, name: { en: 'Supervisor', zh: '主管' }, takes: [], scopeKind: 'machine', revision: 0,
-  hold: { kind: 'supervisor', acts: ['answer', 'defer'], holder: 'rules', window: 5 },
+  hold: { kind: 'supervisor', acts: ['question.answer', 'course.go-on', 'limit.move'], holder: 'rules', window: 5 },
 };
 const STEWARD: RoleRow = {
   id: 'steward', state: 'seed', seeded: true, name: { en: 'Steward', zh: '管家' }, takes: [], scopeKind: 'machine', revision: 0,
@@ -35,7 +35,7 @@ describe('The appointed roles of a place', () => {
   it('shows each role with its holder and acts, and sets them over SET_ROLE', async () => {
     const onSet = draw();
 
-    expect(screen.getByText('Held by your rules · answer a question and leave a question to you · an answer is held 5 minutes for your overrule')).toBeTruthy();
+    expect(screen.getByText('Held by your rules · answer a question and let a line go on and move a line to another choice · an answer is held 5 minutes for your overrule')).toBeTruthy();
     expect(screen.getByText(/^Held by no one · drive and stop$/)).toBeTruthy();
 
     fireEvent.click(screen.getByRole('button', { name: /Steward/ }));

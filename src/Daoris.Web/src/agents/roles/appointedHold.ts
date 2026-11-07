@@ -2,9 +2,22 @@ import type { TFunction } from 'i18next';
 import type { RoleCatalogue, RoleChangePress, RoleHoldRead, RoleRow } from '../../data/wiring';
 import type { AppointedRead } from './roleStructure';
 
+/** The kinds of decision a supervisor decides, each with the acts a grant names, as the driver's vocabulary has them (`SupervisorKinds`). */
+export const DECISION_KINDS: Readonly<Record<string, readonly string[]>> = {
+  question: ['question.answer'],
+  course: ['course.go-on'],
+  limit: ['limit.move', 'limit.wait'],
+  allow: ['allow.once', 'allow.reject', 'allow.standing', 'allow.steward'],
+  files: ['files.allow-run', 'files.allow-copy', 'files.allow-share'],
+  landing: ['landing.accept', 'landing.approve', 'landing.reject'],
+};
+
+/** The kinds whose decisions act as soon as they are kept, with no overrule window. */
+export const AT_ONCE: readonly string[] = ['allow', 'files'];
+
 /** The acts each kind may hold, as the driver's vocabulary has them (`AppointedRoles`). */
 export const ACTS: Readonly<Record<RoleHoldRead['kind'], readonly string[]>> = {
-  supervisor: ['answer', 'defer'],
+  supervisor: Object.values(DECISION_KINDS).flat(),
   steward: ['drive', 'undrive', 'trees', 'hold', 'resume', 'stop', 'finish', 'retry', 'workflow', 'pause', 'unpause', 'done', 'delete', 'updatenow', 'updatecancel', 'land', 'clean', 'handover', 'setup'],
 };
 
@@ -17,13 +30,23 @@ export const HOLDERS: Readonly<Record<RoleHoldRead['kind'], readonly HoldDraft['
 /** The bounds of the supervisor's window, in minutes. */
 export const WINDOW_BOUNDS = { least: 1, most: 60 } as const;
 
-/** An appointed role's hold as the editor keeps it: the window as text while typed. */
-export type HoldDraft = { kind: RoleHoldRead['kind']; acts: string[]; holder: 'rules' | 'terminal' | 'none'; window: string };
+/** An appointed role's hold as the editor keeps it: the window as text while typed; a supervisor's kinds, none for a generic one. */
+export type HoldDraft = { kind: RoleHoldRead['kind']; acts: string[]; holder: 'rules' | 'terminal' | 'none'; window: string; decides: string[] };
 
 /** The draft an appointed role's editor opens with. */
 export const holdDraftOf = (hold: RoleHoldRead): HoldDraft => ({
-  kind: hold.kind, acts: [...hold.acts], holder: hold.holder ?? 'none', window: String(hold.window ?? 5),
+  kind: hold.kind, acts: [...hold.acts], holder: hold.holder ?? 'none', window: String(hold.window ?? 5), decides: [...(hold.decides ?? [])],
 });
+
+/** The kinds a supervisor's acts are offered for: those it decides, or every kind for a generic one. */
+export const decidedKinds = (decides: readonly string[]): string[] => (decides.length > 0 ? [...decides] : Object.keys(DECISION_KINDS));
+
+/** The draft with <kind> decided or not, its acts kept to the kinds it decides. */
+export function toggleKind(draft: HoldDraft, kind: string): HoldDraft {
+  const decides = draft.decides.includes(kind) ? draft.decides.filter((each) => each !== kind) : [...draft.decides, kind];
+  const offered = decidedKinds(decides).flatMap((each) => DECISION_KINDS[each] ?? []);
+  return { ...draft, decides, acts: draft.acts.filter((act) => offered.includes(act)) };
+}
 
 /** Whether a draft is one the driver may be asked to keep: a whole window within its bounds for a supervisor. */
 export const holdReads = (draft: HoldDraft): boolean => {
@@ -32,10 +55,10 @@ export const holdReads = (draft: HoldDraft): boolean => {
   return Number.isInteger(window) && window >= WINDOW_BOUNDS.least && window <= WINDOW_BOUNDS.most;
 };
 
-/** The appointed fields of a `SET_ROLE` press; the supervisor's window only. */
-export const holdPress = (draft: HoldDraft): Pick<NonNullable<RoleChangePress['role']>, 'filled' | 'authority' | 'holder' | 'window'> => ({
+/** The appointed fields of a `SET_ROLE` press; the supervisor's window and the kinds it decides only. */
+export const holdPress = (draft: HoldDraft): Pick<NonNullable<RoleChangePress['role']>, 'filled' | 'authority' | 'holder' | 'window' | 'decides'> => ({
   filled: 'appointed', authority: draft.acts, holder: draft.holder === 'none' ? null : draft.holder,
-  ...(draft.kind === 'supervisor' ? { window: Number(draft.window) } : {}),
+  ...(draft.kind === 'supervisor' ? { window: Number(draft.window), ...(draft.decides.length > 0 ? { decides: draft.decides } : {}) } : {}),
 });
 
 /** An appointed role's folded line: who holds it, its acts, and the supervisor's window. */

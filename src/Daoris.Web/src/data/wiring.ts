@@ -263,8 +263,11 @@ export type RoleRow = {
   hold?: RoleHoldRead | null;
 };
 
-/** What an appointed role holds: its kind, its acts, who holds it (none is a role not staffed) and the supervisor's window in minutes. */
-export type RoleHoldRead = { kind: 'supervisor' | 'steward'; acts: string[]; holder?: 'rules' | 'terminal' | null; window?: number };
+/**
+ * What an appointed role holds: its kind, its acts, who holds it (none is a role not staffed), the supervisor's window in minutes, and the
+ * kinds of decision a supervisor decides (none is its scope's generic supervisor).
+ */
+export type RoleHoldRead = { kind: 'supervisor' | 'steward'; acts: string[]; holder?: 'rules' | 'terminal' | null; window?: number; decides?: string[] };
 
 /** A role Daoris suggests adding: the Designer while no role takes design, applied only by the person's press. */
 
@@ -332,7 +335,7 @@ export type RoleChangePress = {
   role?: {
     name: Authored; takes: string[]; scope: { kind: string; id?: string | null };
     /** An appointed role's record: `filled`, its acts (`authority`), its holder (null is none) and the supervisor's window. */
-    filled?: 'appointed'; authority?: string[]; holder?: string | null; window?: number;
+    filled?: 'appointed'; authority?: string[]; holder?: string | null; window?: number; decides?: string[];
   };
   choices?: RoleChoice[] | null;
   /** A preset's name, a record, or null to clear; absent leaves the policy as it is. Only `SET_ROLE`/`SET_ROLES` write it. */
