@@ -7,7 +7,7 @@ import { isSwitchedOff, resolveSelection } from './canon.ts';
 import { holds, keepStates } from './keep.ts';
 import { lockIndex } from './config.ts';
 import { indexInput } from './indexgen.ts';
-import { indexPath, renderIndex, spanBody, tierRuleBody } from './tierrender.ts';
+import { indexPath, renderIndex, spanBody, structureLine, tierRuleBody } from './tierrender.ts';
 import { findRegion } from './region.ts';
 import { resolveHarness } from '../layout/harness.ts';
 import { folderTiers, isFile, lockLayout, planLeftBehind } from '../layout/layout.ts';
@@ -97,6 +97,14 @@ export function planSync(
       const trimmed = stripFrontmatter(body);
       const digest = sha256(trimmed);
       const entry = locked.get(file.target);
+
+      // A rule is read back out of the region by its provenance line, so one holding such a line of its own
+      // would be cut short there, and `check` would call the copy just written drifted.
+      const structure = keep ? null : structureLine(trimmed);
+      if (structure !== null) {
+        throw new DaorisError(`the canon's ${file.source} holds a line the region reads as its own structure: ${structure}\n`
+          + '  a rule is carried in the region whole, so no line of it may open with a daoris marker; the canon is at fault');
+      }
       const { meta } = parseFrontmatter(body, []);
 
       // Kept: the region is rebuilt with this repository's own text of the rule, and its lock entry is carried

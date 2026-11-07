@@ -50,7 +50,7 @@ public sealed class DoctrineGate : IGate
         {
             0 => GateResult.Pass(Name, result.Output.Trim()),
             1 => GateResult.Fail(Name, $"{result.Output.Trim()}\n{result.Error.Trim()}".Trim()),
-            _ => GateResult.Fail(Name, $"daoris check could not run: {result.Error.Trim()}"),
+            _ => GateResult.Fail(Name, $"daoris check could not run: {result.Output.Trim()}\n{result.Error.Trim()}".Trim()),
         };
     }
 }

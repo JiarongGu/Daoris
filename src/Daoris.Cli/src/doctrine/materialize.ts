@@ -7,7 +7,7 @@ import { refuseNewerLock } from './lockversion.ts';
 import { shortLink } from '../layout/links.ts';
 import { shortDocumentLink } from '../layout/documents.ts';
 import { planSync } from './syncplan.ts';
-import { applySync, refuseWhatForceCannot } from './syncapply.ts';
+import { applySync, keptInMove, refuseWhatForceCannot } from './syncapply.ts';
 export { planSync } from './syncplan.ts';
 export { planChanges } from './syncchanges.ts';
 export { applySync } from './syncapply.ts';
@@ -97,6 +97,7 @@ export function commandSync({ root, argv, write, packageRoot }: CommandArgs): Ex
     for (const keep of plan.kept.filter((each) => each.absentCore)) write(`  ABSENT    ${keep.target} (a core file kept, with no text here)`);
     for (const problem of plan.links) write(`  LINK      ${problem.path} — ${shortLink(problem)}`);
     for (const link of plan.documents.links) write(`  LINK      ${link.declared} (${link.role}) — ${shortDocumentLink(link)}`);
+    for (const target of keptInMove(plan)) write(`  KEPT MOVE ${target} — a kept file the move would carry`);
     for (const doc of plan.leftBehind) write(`  LEFT BEHIND ${doc.path} — ${doc.move}`);
     for (const pair of plan.bothRoots) write(`  TWO COPIES ${pair.old} and ${pair.neu}`);
     for (const path of plan.rooms.missing) write(`  NO ROOM   ${path} — declared in daoris.json, and absent`);
@@ -145,7 +146,7 @@ export function commandSync({ root, argv, write, packageRoot }: CommandArgs): Ex
 
 /** Whether applying this plan would refuse without `--force` — the dry run's exit code. */
 function refuses(plan: SyncPlan): boolean {
-  return plan.index.collision || plan.kept.some((keep) => keep.absentCore) || [
+  return plan.index.collision || plan.kept.some((keep) => keep.absentCore) || keptInMove(plan).length > 0 || [
     plan.links, plan.documents.links, plan.leftBehind, plan.bothRoots, plan.rooms.missing, plan.drifted, plan.collisions,
     plan.moveCollisions, plan.editedRetirements, plan.editedSwitchedOff,
     plan.mirrors.edited, plan.mirrors.collisions, plan.mirrors.editedGone,
