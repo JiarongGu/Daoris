@@ -219,7 +219,7 @@ public static class Launcher
     {
         if (!File.Exists(shell) || Older(Path.GetDirectoryName(Path.GetDirectoryName(shell)!)!) is not null) return null;
 
-        // Not the tools' environment: the application is Daoris's own program, and every child it starts is
+        // Not the tools' environment (TOOLS5): the application is Daoris's own program, and every child it starts is
         // handed the tools' environment there, read at each start; its own environment is never rewritten.
         // Through the shell: a start that does not go through it hands the application every inheritable handle
         // this launcher holds, which it inherited from the application that asked for the update, so the new one found the
