@@ -229,4 +229,95 @@ public sealed class HelpRoleProposalsTests : HelpProposalsFixture, IDisposable
         Assert.Contains("(revision)", HelpProposals.Plan(Role("set", "supervisor", Press), DriverConfig.Empty, Machine).Refusal);
         Assert.Contains("carries a place's `rules` and `rulesRevision` alone", HelpProposals.Plan(Role("set", "supervisor", """{ "takes": ["build"], "place": "machine", "rulesRevision": 1, "rules": [] }"""), DriverConfig.Empty, Machine).Refusal);
     }
+
+    private void Converted() => HomeMigration.Run(_home, [new SupervisorStep(() => null)]);
+
+    private const string Gatekeeper =
+        """{ "kind": "supervisor", "name": { "en": "Gatekeeper", "zh": "守门人" }, "decides": ["allow", "landing"], "authority": ["allow.once", "landing.accept"], "holder": "terminal", "window": 10, "scope": { "kind": "workspace", "id": "w1" }, "revision": 0 }""";
+
+    /// <summary>
+    /// A supervisor of kinds is proposed with its kinds, acts, holder and window, judged by the role door's judge, said on the card as
+    /// fields with the terminal's twin, and applied only by the person's press through that door.
+    /// </summary>
+    [Fact]
+    public void A_supervisor_of_kinds_is_judged_described_and_applied_by_the_press_alone()
+    {
+        Converted();
+        var plan = HelpProposals.Plan(Role("set", "gatekeeper", Gatekeeper), DriverConfig.Empty, Machine);
+
+        Assert.Null(plan.Refusal);
+        Assert.Equal(
+            "daoris role set gatekeeper --name \"Gatekeeper\" --name-in zh=\"守门人\" --scope workspace:w1 --decides allow,landing --acts allow.once,landing.accept --holder terminal --window 10",
+            plan.Terminal);
+        Assert.Contains("Set the supervisor `gatekeeper` (Gatekeeper · 守门人): it decides allow, landing in workspace `w1`, held by a terminal", plan.Describe);
+        var view = plan.Supervisor!;
+        Assert.Equal(("gatekeeper", "workspace", "w1"), (view.Id, view.Scope.Kind, view.Scope.Id));
+        Assert.Equal(["Gatekeeper", "守门人"], view.Names);
+        Assert.Equal(["allow", "landing"], view.Hold.Decides);
+        Assert.Equal(["allow.once", "landing.accept"], view.Hold.Acts);
+        Assert.Equal((RoleHolders.Terminal, 10), (view.Hold.Holder, view.Hold.Window));
+        Assert.Null(view.Before);
+        Assert.DoesNotContain(RoleCatalog.Read(Staffing.Location).Slots, slot => slot.Id == "gatekeeper");
+
+        RoleDoor.Apply(Staffing, plan.Role!.Change, plan.Role.Choices, plan.Role.Read, plan.Role.Policy, RoleDoor.Doors.Proposal);
+        var held = RoleCatalog.Read(Staffing.Location).Slots.Single(slot => slot.Id == "gatekeeper").Role!.Hold!;
+        Assert.Equal(["allow", "landing"], held.Decides);
+        Assert.Equal(["allow.once", "landing.accept"], held.Acts);
+        Assert.Equal((RoleHolders.Terminal, 10), (held.Holder, held.Window));
+    }
+
+    /// <summary>A generic supervisor names no kind, a field a set leaves out keeps the role's own, and a new one is held by the person's rules with every act off.</summary>
+    [Fact]
+    public void A_generic_supervisor_names_no_kind_and_a_set_leaving_a_field_out_keeps_the_roles_own()
+    {
+        Converted();
+        var generic = HelpProposals.Plan(
+            Role("set", "wide", """{ "kind": "supervisor", "name": "Wide", "decides": [], "scope": { "kind": "workspace", "id": "w1" } }"""), DriverConfig.Empty, Machine);
+
+        Assert.Null(generic.Refusal);
+        Assert.Contains("--decides every --acts \"\" --holder rules --window 5", generic.Terminal);
+        Assert.Contains("it decides every decision no other supervisor here takes", generic.Describe);
+        Assert.Contains("granting no act, so it leaves every decision to you", generic.Describe);
+
+        RoleDoor.Apply(Staffing, RoleChange.Set(new RoleRecord("gatekeeper", AuthoredText.Of("Gatekeeper"), RoleRecord.Appointed, [], new RoleScope(RoleScope.Workspace, "w1"),
+            new RoleHold(AppointedRoles.Supervisor, ["allow.once"], RoleHolders.Terminal, 10) { Decides = [SupervisorKinds.Allow] })));
+        var longer = HelpProposals.Plan(Role("set", "gatekeeper", """{ "kind": "supervisor", "window": 20, "revision": 1 }"""), DriverConfig.Empty, Machine);
+
+        Assert.Null(longer.Refusal);
+        Assert.Equal(("allow.once", RoleHolders.Terminal, 20), (longer.Supervisor!.Hold.Acts.Single(), longer.Supervisor.Hold.Holder, longer.Supervisor.Hold.Window));
+        Assert.Equal(10, longer.Supervisor.Before!.Window);
+        Assert.Equal("Gatekeeper", Assert.Single(longer.Supervisor.Names));
+    }
+
+    /// <summary>A proposal outside the supervisor's shape is refused with the role door's own sentence, every one before the person sees it.</summary>
+    [Fact]
+    public void A_supervisor_outside_the_shape_is_refused_by_the_role_door_s_judge()
+    {
+        Converted();
+        const string Scope = """, "scope": { "kind": "workspace", "id": "w1" }""";
+        RoleDoor.Apply(Staffing, RoleChange.Set(new RoleRecord("gatekeeper", AuthoredText.Of("Gatekeeper"), RoleRecord.Appointed, [], new RoleScope(RoleScope.Workspace, "w1"),
+            new RoleHold(AppointedRoles.Supervisor, [], RoleHolders.Rules) { Decides = [SupervisorKinds.Allow] })));
+        string? Refused(string id, string press) => HelpProposals.Plan(Role("set", id, press), DriverConfig.Empty, Machine).Refusal;
+
+        Assert.Contains("is no kind of decision", Refused("cook", """{ "kind": "supervisor", "name": "C", "decides": ["cooking"], "holder": "rules" """ + Scope + "}"));
+        Assert.Contains("is an act of a kind `cook` does not decide", Refused("cook", """{ "kind": "supervisor", "name": "C", "decides": ["allow"], "authority": ["landing.accept"], "holder": "rules" """ + Scope + "}"));
+        Assert.Contains("is no act of the supervisor's", Refused("cook", """{ "kind": "supervisor", "name": "C", "decides": ["allow"], "authority": ["allow.fry"], "holder": "rules" """ + Scope + "}"));
+        Assert.Contains("held by an agent", Refused("cook", """{ "kind": "supervisor", "name": "C", "decides": ["landing"], "holder": "agent" """ + Scope + "}"));
+        Assert.Contains("held from 1 to 60 minutes", Refused("cook", """{ "kind": "supervisor", "name": "C", "decides": ["landing"], "window": 99 """ + Scope + "}"));
+        Assert.Contains("never a staffing of choices", Refused("cook", """{ "kind": "supervisor", "name": "C", "decides": ["landing"], "choices": [{ "agent": "claude-code" }] """ + Scope + "}"));
+        Assert.Contains("takes no work", Refused("cook", """{ "kind": "supervisor", "name": "C", "decides": ["landing"], "takes": ["build"] """ + Scope + "}"));
+        Assert.Contains("a supervisor's alone", Refused("cook", """{ "kind": "steward", "name": "C", "decides": ["landing"] """ + Scope + "}"));
+        Assert.Contains("allow", Refused("cook", """{ "kind": "supervisor", "name": "C", "decides": ["allow"] """ + Scope + "}"));
+        Assert.Contains("every decision", Refused("wide", """{ "kind": "supervisor", "name": "W", "decides": [] }"""));
+        Assert.NotNull(Refused("cook", """{ "kind": "supervisor", "name": "C", "decides": "allow" """ + Scope + "}"));
+        Assert.NotNull(Refused("supervisor", """{ "kind": "supervisor", "name": "S", "decides": ["allow"] }"""));
+    }
+
+    [Fact]
+    public void A_supervisor_is_refused_until_the_home_is_converted()
+    {
+        var plan = HelpProposals.Plan(Role("set", "gatekeeper", Gatekeeper), DriverConfig.Empty, Machine);
+
+        Assert.Equal(SupervisorConversion.NotConvertedSaid, plan.Refusal);
+    }
 }
