@@ -3,7 +3,7 @@ using System.Text;
 namespace Daoris.Driver;
 
 /// <summary>
-/// Daoris's own plugins (PLUG9 d): the install carries its example plugins as offers, named by id on the
+/// Daoris's own plugins: the install carries its example plugins as offers, named by id on the
 /// wire, so the helper can propose installing one before proposing that one be made. Said only where the
 /// install offers one this machine has not installed.
 /// </summary>
@@ -39,7 +39,7 @@ internal sealed class HelpRoomOwnPlugins : IHelpRoomSection
 
         if (offer.Harnesses.Count > 0) parts.Add($"declares {string.Join(", ", offer.Harnesses.Select(name => $"`{name}`"))}");
         if (offer.Servers.Count > 0) parts.Add($"hands every session {string.Join(", ", offer.Servers.Select(name => $"`{name}`"))}");
-        // HELPPLUG1a (D170 point 3 and its note): what it would offer Ask Daoris itself, once installed and approved.
+        // What it would offer Ask Daoris itself, once installed and approved.
         if (offer.HelpServers.Count > 0)
         {
             parts.Add($"offers you {string.Join(", ", offer.HelpServers.Select(name => $"`{name}`"))} once the person approves it on its page");
@@ -50,7 +50,7 @@ internal sealed class HelpRoomOwnPlugins : IHelpRoomSection
 }
 
 /// <summary>
-/// One of Daoris's own plugins the install offers and this machine has not installed (PLUG9 d), as the room
+/// One of Daoris's own plugins the install offers and this machine has not installed, as the room
 /// lists it: by id, with what it speaks on and what it needs, so an add can name it — never by a path.
 /// </summary>
 public sealed record HelpOffer(string Id, string Name, string Version, IReadOnlyList<string> Points, IReadOnlyList<string> Needs)
@@ -60,6 +60,6 @@ public sealed record HelpOffer(string Id, string Name, string Version, IReadOnly
 
     public IReadOnlyList<string> Servers { get; init; } = [];
 
-    /// <summary>The servers it hands Ask Daoris (HELPPLUG1a, D170 point 3), by name.</summary>
+    /// <summary>The servers it hands Ask Daoris, by name.</summary>
     public IReadOnlyList<string> HelpServers { get; init; } = [];
 }

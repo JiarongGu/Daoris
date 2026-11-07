@@ -1,7 +1,7 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// The judge of a plugin's declared skill (D170 point 3; FOUNDATION1 mod-viii, the design §14.3): whether its file is there and it allows
+/// The judge of a plugin's declared skill: whether its file is there and it allows
 /// itself no tool. The spawn composes only the skills this passes (<see cref="SpawnSkills"/>, which answers through it), and the room says
 /// the same skills it would be handed, so the judge is one.
 /// </summary>

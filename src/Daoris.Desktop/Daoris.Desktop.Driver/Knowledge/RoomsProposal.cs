@@ -1,7 +1,7 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// What a repository with no rooms and no classes of its ignored files is asked to propose (the tree-pool design's R5.4 and R5.5):
+/// What a repository with no rooms and no classes of its ignored files is asked to propose:
 /// the set-up's brief and Ask Daoris's room say it in these words, so the two proposals ask the same. The conventions are the canon's
 /// knowledge, never code, and a model writes the declaration, so nothing is proposed where none runs. The declaration is the
 /// repository's own change, on its own branch, accepted by the person where it lands; Daoris writes none of it.

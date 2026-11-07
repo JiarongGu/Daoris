@@ -5,19 +5,19 @@ using static Daoris.Driver.Json;
 namespace Daoris.Driver;
 
 /// <summary>
-/// One read from a commit, a session or a quest back to its ask (TRACE1, D143): the reads and the resolution. Nothing here
+/// One read from a commit, a session or a quest back to its ask: the reads and the resolution. Nothing here
 /// writes, anywhere: every request to the service is a <c>GET</c>, and every file is opened to read.
 /// </summary>
 /// <remarks>
-/// <para><b>Each link from the store that keeps it.</b> The person's words and go-aheads from the ask (D133, D135); the
+/// <para><b>Each link from the store that keeps it.</b> The person's words and go-aheads from the ask; the
 /// quest, its requirements and answers from the quest as its operations replay; each session's agent, account, harness, tree
-/// and base commit from its record; its start's notes and its instruction from its events (D76); its rules from the file it
-/// was handed while that file exists; a branch landing from <c>landings.json</c> (WSR5) and the person's acceptance from its
-/// events (D100); the standing answer from <c>driver.json</c> (D135 §3). Nothing is derived from what is current where the
+/// and base commit from its record; its start's notes and its instruction from its events; its rules from the file it
+/// is handed while that file exists; a branch landing from <c>landings.json</c> and the person's acceptance from its
+/// events; the standing answer from <c>driver.json</c>. Nothing is derived from what is current where the
 /// store kept no moment.</para>
 ///
 /// <para><b>What it cannot reach</b>, said where it would have been: a quest's moves on a host from before their door
-/// (FLOWCHART1a2, whose door reads each quest's operations as moves, by allow-list); a merge into the line's own commit, which the
+/// (whose door reads each quest's operations as moves, by allow-list); a merge into the line's own commit, which the
 /// acceptance does not name; an ended session's rules, whose file goes with its run; and a teammate's machine-local half.</para>
 /// </remarks>
 public static class Trace
@@ -31,8 +31,8 @@ public static class Trace
     }
 
     /// <summary>
-    /// Read the stores, find what the id names, read the asks the chain names, and answer the chain (TRACE1b): the one read the
-    /// terminal prints and the screen words (D50). Where nothing names the id, or several kinds do, the sentence says so.
+    /// Read the stores, find what the id names, read the asks the chain names, and answer the chain: the one read the
+    /// terminal prints and the screen words. Where nothing names the id, or several kinds do, the sentence says so.
     /// </summary>
     public static async Task<TraceRead> ReadChainAsync(TraceAsk asked, TraceSources sources, CancellationToken ct = default)
     {
@@ -47,7 +47,7 @@ public static class Trace
             asks[id] = await ReadAskAsync(sources.Service, id, ct).ConfigureAwait(false);
         }
 
-        // FLOWCHART1a2: each quest the chain reads through, and that the service holds, with its moves; no other quest's are asked.
+        // Each quest the chain reads through, and that the service holds, with its moves; no other quest's are asked.
         var moves = new Dictionary<string, TraceMovesRead>(StringComparer.OrdinalIgnoreCase);
         foreach (var quest in found.Quests.Select(id => facts.Quests.FirstOrDefault(each => string.Equals(each.Id, id, StringComparison.OrdinalIgnoreCase))))
         {
@@ -73,7 +73,7 @@ public static class Trace
     }
 
     /// <summary>
-    /// A quest's moves as the door answers them (FLOWCHART1a2), in its order, field by field; a move with no kind, machine or time is
+    /// A quest's moves as the door answers them, in its order, field by field; a move with no kind, machine or time is
     /// passed over. Null where the answer is not the moves.
     /// </summary>
     internal static IReadOnlyList<TraceMove>? ParseMoves(string json)
@@ -158,7 +158,7 @@ public static class Trace
     }
 
     /// <summary>
-    /// What an id names in what was read: a session by its record's id, a quest by its id, a commit by the evidence and the
+    /// What an id names in what is read: a session by its record's id, a quest by its id, a commit by the evidence and the
     /// landings that name it. Several kinds named, or none, is a sentence instead.
     /// </summary>
     internal static (TraceFound? Found, string? Problem) Resolve(TraceAsk asked, TraceFacts facts)
@@ -329,7 +329,7 @@ public static class Trace
                             each.Number!.Value, Filled(each.Answer, "met"), Filled(each.Answer, "departed"), Filled(each.Answer, "quote"))),
                 ],
                 Held = Flag(quest, "held"),
-                // Why it waits and what was read of its evidence (EVID1a, D144 §5): codes and names, as the quest keeps them.
+                // Why it waits and what is read of its evidence: codes and names, as the quest keeps them.
                 Hold = Filled(quest, "hold"),
                 Evidence = EvidenceVerdict.Read(quest),
                 Accepted = Moment(quest, "accepted"),
@@ -366,6 +366,6 @@ public static class Trace
 
     private static DateTimeOffset? Moment(JsonElement element, string name) => Moments.Read(element, name);
 
-    // Empty strings are kept here, as the copy this replaced kept them.
+    // Empty strings are kept here.
     private static IReadOnlyList<string> Strings(JsonElement element, string name) => Json.Strings(element, name, keepEmpty: true);
 }

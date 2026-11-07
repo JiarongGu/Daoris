@@ -1,7 +1,7 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// The named workflow a landing went by (WORKFLOW1f, the workflow design §5.5): its id, the version its run kept, the level of §4.1
+/// The named workflow a landing went by: its id, the version its run kept, the level
 /// that chose it, and the task's kind. Kept on the landing record beside the review and the opinion; absent under Current.
 /// </summary>
 public sealed record LandingWorkflow(string Workflow, int Version, string Level)
@@ -9,7 +9,7 @@ public sealed record LandingWorkflow(string Workflow, int Version, string Level)
     public string? Kind { get; init; }
 }
 
-/// <summary>Which level of §4.1's table chose a workflow, as a code a door words and a run keeps (D143).</summary>
+/// <summary>Which level chose a workflow, as a code a door words and a run keeps.</summary>
 public static class WorkflowLevels
 {
     /// <summary>Row 1: the task's own choice, its ask's.</summary>
@@ -30,10 +30,10 @@ public static class WorkflowLevels
     /// <summary>Row 6: nothing above names a workflow, so the home's default (<c>defaultWorkflow</c>), a saved copy of a shipped default.</summary>
     public const string Home = "home";
 
-    /// <summary>Row 6 on a home that names no default: Current, the transitional path (WORKFLOWCLEAN1 design §4.7).</summary>
+    /// <summary>Row 6 on a home that names no default: Current, the transitional path.</summary>
     public const string Current = "current";
 
-    /// <summary>The repository's landed route (FABRIC-PIPELINE1a), its <c>current</c> keeping its workspace's away.</summary>
+    /// <summary>The repository's landed route, its <c>current</c> keeping its workspace's away.</summary>
     public const string RepositoryLanded = "repository-landed";
 
     /// <summary>The workspace's landed route, where the repository names none.</summary>

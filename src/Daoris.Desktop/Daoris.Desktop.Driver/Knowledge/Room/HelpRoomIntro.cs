@@ -3,9 +3,9 @@ using System.Text;
 namespace Daoris.Driver;
 
 /// <summary>
-/// The room's opening (HELP1a): the mode its conversation runs in, first, so the agent knows it too (HELPMODE1a1, D183 point 3);
-/// then whose room it is, what a conversation here is for, and that Daoris writes it. A workspace's room (ASKSCOPE1b, D158's
-/// ASKSCOPE1 note point 4) says next which of what it lists is the workspace's and which the machine's.
+/// The room's opening: the mode its conversation runs in, first, so the agent knows it too;
+/// then whose room it is, what a conversation here is for, and that Daoris writes it. A workspace's room
+/// says next which of what it lists is the workspace's and which the machine's.
 /// </summary>
 internal sealed class HelpRoomIntro : IHelpRoomSection
 {
@@ -18,7 +18,7 @@ internal sealed class HelpRoomIntro : IHelpRoomSection
         text.Append("# Ask Daoris\n\n");
         if (machine.Mode == HelpModeNames.Full)
         {
-            // D183 point 5: the doctrine still speaks in full access. Words, not a gate; the mode is the gate.
+            // The doctrine still speaks in full access. Words, not a gate; the mode is the gate.
             text.Append("This conversation runs with full access, as the person chose: you may act on this machine yourself, with\n");
             text.Append("no asking (*What you may do*, below). A repository's own work is still asked for through a quest;\n");
             text.Append("Daoris's own housekeeping, its trees and its home, is yours to do.\n\n");
@@ -38,8 +38,8 @@ internal sealed class HelpRoomIntro : IHelpRoomSection
     }
 
     /// <summary>
-    /// ASKSCOPE1c (D158's ASKSCOPE1 note point 5): what binds its tools to its workspace. Restricted: its connector and its checkouts
-    /// are its workspace's, and another, or all, is refused. Full access (D183 point 5, the modes design §7's trap of a workspace's
+    /// What binds its tools to its workspace. Restricted: its connector and its checkouts
+    /// are its workspace's, and another, or all, is refused. Full access (the trap is a workspace's
     /// label read as confinement): its shell reaches the whole machine, so the workspace is said to be no fence, and what stays
     /// scoped is said as such. Words, not a gate; the mode is the gate.
     /// </summary>
@@ -62,7 +62,7 @@ internal sealed class HelpRoomIntro : IHelpRoomSection
     }
 
     /// <summary>
-    /// ASKSCOPE1b: what a workspace's room lists is that workspace's, every count its own, and what the machine holds for every
+    /// What a workspace's room lists is that workspace's, every count its own, and what the machine holds for every
     /// workspace is said as the machine's; asked about another workspace, the helper says where that is read.
     /// </summary>
     private static string Scope(string workspace)

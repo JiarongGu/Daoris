@@ -8,7 +8,7 @@ internal static class KnowledgeRoomPaths
     internal const string Folder = "help";
 
     /// <summary>
-    /// The longest a named workspace's part of its room's folder name is spelled out (ASKSCOPE1b); a longer one keeps its first
+    /// The longest a named workspace's part of its room's folder name is spelled out; a longer one keeps its first
     /// <see cref="NameKept"/> characters and a digest of the whole name, so a folder's name stays well inside what a file system holds.
     /// </summary>
     private const int NameSpelled = 48;
@@ -27,8 +27,8 @@ internal static class KnowledgeRoomPaths
     }
 
     /// <summary>
-    /// A named workspace's room folder (ASKSCOPE1b): <c>help-</c> and the name as one workspace is one name, whatever its letters'
-    /// case (D48), its ASCII letters and digits kept, lowercase, and every other character spelled by its UTF-8 bytes, each
+    /// A named workspace's room folder: <c>help-</c> and the name as one workspace is one name, whatever its letters'
+    /// case, its ASCII letters and digits kept, lowercase, and every other character spelled by its UTF-8 bytes, each
     /// <c>_</c> and two hex digits. One name is one folder and two names are two, and none is <see cref="Folder"/>: no character
     /// is kept that a file system or the harness's own naming of a folder would change. A name spelled longer than
     /// <see cref="NameSpelled"/> keeps its first <see cref="NameKept"/> characters, <c>-</c> and a digest of the whole name, a
@@ -61,7 +61,7 @@ internal static class KnowledgeRoomPaths
     }
 
     /// <summary>
-    /// The workspace whose room a kept conversation goes on in (ASKSCOPE1b): its record's, save one whose record says it ran in
+    /// The workspace whose room a kept conversation goes on in: its record's, save one whose record says it ran in
     /// <c>default</c>'s room (<paramref name="tree"/>, <see cref="PathOf(string)"/>), started there before each workspace had its own,
     /// which goes on there, its harness keeping it by that folder; null is <c>default</c>'s.
     /// </summary>

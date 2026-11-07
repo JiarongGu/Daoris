@@ -1,7 +1,7 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// One MCP server a session is handed on `session/new` (ACP4) — a local program the agent spawns.
+/// One MCP server a session is handed on `session/new` — a local program the agent spawns.
 /// </summary>
 /// <remarks>
 /// <b>This is how a driven session gets a voice without anything being written into its repository.</b>
