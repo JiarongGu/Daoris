@@ -4,7 +4,7 @@ import { type GraphCommit, graphLanes } from './graphLanes';
 
 /**
  * A commit as the graph draws it: what its row says, beside what its lanes are laid from. The bridge's `GitLogCommit` is
- * one, so `GIT_GRAPH`'s commits are handed as they are answered, and the molecule imports nothing of the bridge (D52).
+ * one, so `GIT_GRAPH`'s commits are handed as they are answered, and the molecule imports nothing of the bridge.
  */
 export type GraphCommitRow = GraphCommit & {
   subject: string;
@@ -26,8 +26,8 @@ const x = (lane: number) => GUTTER + lane * LANE;
 const y = (row: number) => row * ROW + ROW / 2;
 
 /**
- * **A commit graph** (UX6h1, the built-in Git design §2.3): its commits newest first, each a row with its subject, its short
- * id, its author and when it was committed, beside the lanes `graphLanes` lays from their parents. A merge's dot is hollow.
+ * **A commit graph**: its commits newest first, each a row with its subject, its short
+ * id, its author and its commit date, beside the lanes `graphLanes` lays from their parents. A merge's dot is hollow.
  *
  * @remarks
  * **A molecule**: the commits arrive as a prop, as `GIT_GRAPH` answers them, the pages accumulated. The lanes are one drawing
@@ -37,7 +37,7 @@ export function CommitGraph({ label, commits, tips = NO_TIPS }: {
   /** The list's accessible name: whose history, on which line. */
   label: string;
   commits: readonly GraphCommitRow[];
-  /** The tips the graph was walked from, in the order asked: the first keeps the first lane. */
+  /** The tips the graph is walked from, in the order asked: the first keeps the first lane. */
   tips?: readonly string[];
 }) {
   const layout = useMemo(() => graphLanes(commits, tips), [commits, tips]);
@@ -92,8 +92,8 @@ export function CommitGraph({ label, commits, tips = NO_TIPS }: {
             <li key={commit.commit} data-commit={commit.commit} tabIndex={-1} className="flex min-w-0 items-center gap-2" style={{ height: ROW }}>
               <span className="min-w-0 flex-1 truncate text-body text-ink">{commit.subject}</span>
               <code className="shrink-0 font-mono text-small text-ink-soft">{commit.commit.slice(0, 7)}</code>
-              {/* The author is a column of its own, and gives way first, by the main area's width, never the window's
-                  (D118 §3b). */}
+              {/* The author is a column of its own, and gives way first,
+                  by the main area's width, never the window's. */}
               <span className="hidden w-32 shrink-0 truncate text-small text-ink-soft @xl/main:inline">{commit.author}</span>
               {at && <span className="shrink-0 text-meta text-ink-faint tabular-nums">{ago(at)}</span>}
             </li>

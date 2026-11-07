@@ -10,9 +10,9 @@ type Step =
   | { is: 'said'; sentence: string };
 
 /**
- * **Fetch origin** (GITAPP2f, D204, D198; the git-writes design §9): a disclosure on a repository's Branches that says what will move
+ * **Fetch origin**: a disclosure on a repository's Branches that says what will move
  * (only the `origin/…` branches here; tags, the person's own branches and their last fetch's record are left) and sends nothing until it
- * is confirmed. The driver answers as data: what was made, moved and removed in its own words, refused in its sentence, or not known,
+ * is confirmed. The driver answers as data: what it made, moved and removed in its own words, refused in its sentence, or not known,
  * which is said and never retried. It draws nothing where the driver does not offer the fetch, and says why only where origin's settings
  * refuse it.
  *

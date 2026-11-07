@@ -1,7 +1,7 @@
 import { type ReactNode, useLayoutEffect } from 'react';
 import { cn } from '../lib/cn';
 
-// What the Plugins view's stories share (PLUGUI2, D140): declared icons as the driver hands them, and a theme to look at
+// What the Plugins view's stories share: declared icons as the driver hands them, and a theme to look at
 // each state in. Stories only: nothing in the product imports this.
 
 /** A declared SVG icon as its bytes, the shape `PluginIcon.Read` hands the page: a plug on a teal disc. */
@@ -16,7 +16,7 @@ export const SVG_ICON = `data:image/svg+xml;base64,${btoa(
 export const PNG_ICON = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAArklEQVR42sXYwQ2AIAyF4U7ERI7AKIzlQG6AiYkREbAtfeXwn/slcGnp2DdqFWJyqR6cy0JMqJqA3AqNGA73QLAAQAQfAELQ9Q5cAABB92/MixAPYBHiDViA+AKcEW2AI6IPcEKMAQ6IfwAYwQMAEXwACCEDABBygDFCBzBE6AFGiDmAAWIeMImwAUwg7ABKhC1AgbAHCBEYgACBAzARVC6K3giqAZ4I6gFg9c4AJ98nM2TuJe/oAAAAAElFTkSuQmCC';
 
 /**
- * A story drawn in a chosen theme, the way a person chooses one (D66): `data-theme` on the document, put back when the
+ * A story drawn in a chosen theme, the way a person chooses one: `data-theme` on the document, put back when the
  * story goes. Without it a story follows the OS, so both themes are reviewed by a pair of stories.
  */
 export function InTheme({ theme, children, className }: { theme: 'light' | 'dark'; children: ReactNode; className?: string }) {

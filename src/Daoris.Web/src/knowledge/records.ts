@@ -1,13 +1,13 @@
 import { type Convergence, type Entry, notFound } from '../data/api';
 import { sentence } from '../locales/format';
 
-// What Search's and Convergence's lists remember and read (FRAME1f, D118 §2, §3f): their filters as kept, a finding's
-// name, the tier an answer was made by, and an entry as a page reads it. Pure, so the list, the page and the memory
+// What Search's and Convergence's lists remember and read: their filters as kept, a finding's
+// name, the tier an answer is made by, and an entry as a page reads it. Pure, so the list, the page and the memory
 // read one answer, and every case is an assertion.
 
 /**
  * The similarity's slider: its floor, its ceiling, where it starts and its step. Below the floor two documents only
- * share words, so nothing lower is offered (UX5 U42). The useful value depends on the embedder and the corpus:
+ * share words, so nothing lower is offered. The useful value depends on the embedder and the corpus:
  * measured on this family, 0.82 returns nothing, 0.70 the true pairs, 0.60 begins pulling in unrelated documents.
  */
 export const SIMILARITY = { min: 0.5, max: 0.95, initial: 0.75, step: 0.01 } as const;
@@ -60,7 +60,7 @@ export function findingTitle(finding: Pick<Convergence, 'entries'>): string {
 }
 
 /**
- * Which tier made a search's answer (TIER1, D24): the one that ANSWERED, from the service's header, never the one
+ * Which tier made a search's answer: the one that ANSWERED, from the service's header, never the one
  * configured; an answer without the header names none, and the configured tier is then all there is to say. `none`
  * is no half answering, which is not the same as nothing matching.
  */

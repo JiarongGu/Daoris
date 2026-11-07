@@ -1,7 +1,7 @@
 import { store, stored } from '../lib/stored';
 
 /**
- * Knowledge's two modes (UX6i, D150 §2.2), in the order its list's head draws them: Search, which finds what the family
+ * Knowledge's two modes, in the order its list's head draws them: Search, which finds what the family
  * wrote by words or meaning, and Convergence, where two repositories reached one conclusion. Two views of one index, so
  * one place whose list switches between them.
  */

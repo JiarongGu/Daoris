@@ -2,7 +2,7 @@ import type { Meta, StoryObj } from '@storybook/react-vite';
 import { SyncSection, type LinePull, type RebaseBranch } from './Sync';
 import type { LandedBranch } from './Sweep';
 
-// Bring up to date (WSR6), in the shape the driver's TREES_SYNC_PLAN answer takes: the owner's case after a
+// Bring up to date, in the shape the driver's TREES_SYNC_PLAN answer takes: the owner's case after a
 // squash-merged pull request, every reason a row stays, and the section before anyone has looked.
 
 const pull = (extra: Partial<LinePull> & Pick<LinePull, 'kind'>): LinePull => ({
@@ -44,7 +44,7 @@ export const AfterASquashMerge: Story = {
 };
 
 /**
- * LANDSYNC3b, the install's case: a session went on in its tree after its first commit was squash-merged, so its replay leaves
+ * A session goes on in its tree after its first commit is squash-merged, so its replay leaves
  * that commit out and carries the two the line lacks; a second branch the line holds entirely moves onto it.
  */
 export const LeavesOutWhatTheLineHolds: Story = {
@@ -83,7 +83,7 @@ export const EveryReasonToStay: Story = {
 };
 
 /**
- * The owner's workspace after the look (WSR7): the git on the path could not reach any SSH origin, while their own Git
+ * The owner's workspace after the look: the git on the path could not reach any SSH origin, while their own Git
  * client could. Said once, first, with when each last heard from origin; each row carries a short mark.
  */
 export const NothingFetched: Story = {
@@ -101,7 +101,7 @@ export const NothingFetched: Story = {
 };
 
 /**
- * The owner's workspace (WSR7, D112): three repositories hold Daoris's branches and the look fetches those; the rest
+ * The owner's workspace: three repositories hold Daoris's branches and the look fetches those; the rest
  * are listed apart, collapsed, to be ticked and included.
  */
 export const RepositoriesApart: Story = {
@@ -121,7 +121,7 @@ export const UpToDate: Story = {
 /** A press under way: its button reads as busy, and the section says what it is doing. */
 export const Working: Story = { args: { ...AfterASquashMerge.args, bringing: true } };
 
-/** A look under way (WSR7): how many repositories it is fetching, said where the person pressed. */
+/** A look under way: how many repositories it is fetching, said where the person pressed. */
 export const Looking: Story = { args: { ...RepositoriesApart.args, looking: true, lookingAt: 3 } };
 
 /** A look the page stopped waiting for, said in the section rather than only in a toast. */

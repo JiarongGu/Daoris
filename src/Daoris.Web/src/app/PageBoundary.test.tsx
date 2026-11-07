@@ -3,7 +3,7 @@ import { StrictMode, useLayoutEffect, useState } from 'react';
 import { cleanup, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 
-// The page's own error screen (PAGELOOP1): a render that throws anywhere below the root draws this screen rather than a blank
+// The page's own error screen: a render that throws anywhere below the root draws this screen rather than a blank
 // window, reports itself once into the machine log, and offers a reload of the page alone. The bridge is mocked and switched on
 // and off, as `bridge/log.test.ts` does, since a shell logs and a browser does not.
 
@@ -82,7 +82,7 @@ describe("the page's error screen", () => {
     expect(closeSplash).toHaveBeenCalledTimes(1);
   });
 
-  /** PAGELOOP1 (D217): where it broke, which the window's `error` line never knew, and before any view said what it shows, none. */
+  /** Where it broke, which the window's `error` line never knew, and before any view said what it shows, none. */
   it('names the components it broke in, innermost first, and no view before one was shown', async () => {
     render(<PageBoundary><section><Holder /></section></PageBoundary>);
 

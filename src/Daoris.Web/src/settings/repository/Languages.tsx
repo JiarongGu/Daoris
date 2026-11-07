@@ -2,12 +2,12 @@ import { useTranslation } from 'react-i18next';
 import { SelectField } from '../../design/ui';
 
 /**
- * One row of the driver's closed table of session languages (LANG1c): its code, and the name a session's line gives it. The
+ * One row of the driver's closed table of session languages: its code, and the name a session's line gives it. The
  * page names each option by it, so adding a language is a row in the driver's table and needs no catalogue here.
  */
 export type LanguageOption = { code: string; name: string };
 
-/** Where a repository's session language was set (LANG1c): for it, or for its workspace. */
+/** Where a repository's session language is set: for it, or for its workspace. */
 export type LanguageSource = 'repository' | 'workspace';
 
 /** One repository's session language as the driver resolves it; `language`, `name` and `source` absent where none is set. */
@@ -23,7 +23,7 @@ export type RepositoryLanguage = {
 const UNSET = 'unset';
 
 /**
- * **One session language's field** (LANG1c): what is set here, or the unset choice, which names what stands without it — a
+ * **One session language's field**: what is set here, or the unset choice, which names what stands without it — a
  * repository's workspace's language, or none. Choosing what is already chosen sends nothing. Props only (components §2).
  */
 export function LanguageChoice({ label, set, inherited, table, onChoose }: {

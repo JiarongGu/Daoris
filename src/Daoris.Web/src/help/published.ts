@@ -3,8 +3,8 @@ import { SESSION_ACTIVE } from '../data/api';
 import { shownStatus } from '../quests/records';
 
 /**
- * One thing an Ask Daoris conversation's Apply published (ASKQUESTS1, the Ask Daoris design §9 item 12), as `HELP_PUBLISHED`
- * answers it: when, the proposal applied, its kind, the workspace it was asked at, and the ask and the quest by the ids the
+ * One thing an Ask Daoris conversation's Apply published, as `HELP_PUBLISHED`
+ * answers it: when, the proposal applied, its kind, the workspace it is asked at, and the ask and the quest by the ids the
  * service answered. Ids only: each one's state is read live from the pushed quests, asks and sessions.
  */
 export type HelpPublishedEntry = {
@@ -15,8 +15,8 @@ export type HelpPublishedEntry = {
 export type Held<T> = T | 'reading' | 'gone';
 
 /**
- * Where a published quest stands, as its list says it (D185 §3.8: a slice not judged is reading, never empty): its status, `held`
- * where a departure holds its done for the person's yes (DRIFT1d), which waits on them; its session here, the live one on it; and
+ * Where a published quest stands, as its list says it (a slice not judged is reading, never empty): its status, `held`
+ * where a departure holds its done for the person's yes, which waits on them; its session here, the live one on it; and
  * whether its take is another machine's, said only where both machines are known and differ.
  */
 export type PublishedQuest = {
@@ -28,8 +28,8 @@ export type PublishedQuest = {
 };
 
 /**
- * Where a published ask stands: its state; whether it waits on the person, a proposal theirs to accept or a go-ahead asked of them
- * (KNOWUSE1a); and the quests it became, each as above.
+ * Where a published ask stands: its state; whether it waits on the person, a proposal theirs to accept or a go-ahead asked of them;
+ * and the quests it became, each as above.
  */
 export type PublishedAsk = { id: string; record: Held<Ask>; waits: boolean; quests: PublishedQuest[] };
 
@@ -85,7 +85,7 @@ export function publishedItems(entries: readonly HelpPublishedEntry[], lists: Pu
   return items;
 }
 
-/** What the folded line counts (ASKQUESTS1), each with its noun in the words; a quest under two rows counted once. */
+/** What the folded line counts, each with its noun in the words; a quest under two rows counted once. */
 export type PublishedCounts = {
   quests: number; waits: number; open: number; taken: number; done: number; declined: number; asked: number; gone: number;
   reading: boolean;

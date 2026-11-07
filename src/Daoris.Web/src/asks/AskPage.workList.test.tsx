@@ -12,7 +12,7 @@ import { LISTED_ASK, LISTED_CONSIDERED, PAUSED_LISTED_ASK, PAUSED_LISTED_CONSIDE
 import { AskPage } from './AskPage';
 import { PUBLISHED } from './fixtures';
 
-// An ask's page shows its work (PAUSE1h, D132 §7.1): each quest of `WORK_PLAN` with its state and why it sits, the questions
+// An ask's page shows its work: each quest of `WORK_PLAN` with its state and why it sits, the questions
 // its sessions asked of other repositories under the quest whose session asked them, and those sessions as doors into
 // Sessions, so the person sees what a pause or an abandon reaches before pressing. Props in, presses out (components §2).
 
@@ -114,7 +114,7 @@ describe("an ask's page lists its work", () => {
     expect(within(section()).getByText('#5e4f3d')).toBeInTheDocument();
   });
 
-  // FABRIC-CLOSE1d2: a quest of the work reads as the quest's page does, from the quests the page holds.
+  // A quest of the work reads as the quest's page does, from the quests the page holds.
   it('says submitted and source reopened for the work\'s quests the page holds so, and taken for the rest', () => {
     const held = (id: string, over: Partial<Quest>): Quest => aQuest({
       id, from: 'ask #a1b2c3', to: 'engine', title: id, body: '', status: 'Taken', filed: '2026-10-01T00:00:00Z', updated: '2026-10-01T00:00:00Z', ...over,

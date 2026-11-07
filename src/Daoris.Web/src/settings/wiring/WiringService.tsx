@@ -13,8 +13,8 @@ const CONNECTOR_VARIABLE = 'DAORIS_MCP_HOST';
 const HELD_WORD: Record<string, string> = { hosted: 'hosted', adopted: 'adopted', none: 'none' };
 
 /**
- * Service (the this-Daoris design §3.2): its address and where it came from, who started it, whether it answers, its tier and
- * version, the host program and the connector handed to sessions with how each was found, whether the person key was proved
+ * Service: its address and where it came from, who started it, whether it answers, its tier and
+ * version, the host program and the connector handed to sessions with how each is found, whether the person key is proved
  * (never the key), and each workspace's remote with its key's audit prefix. A service that is not answering leads, with why.
  *
  * @remarks
@@ -23,7 +23,7 @@ const HELD_WORD: Record<string, string> = { hosted: 'hosted', adopted: 'adopted'
  */
 export function WiringService({ wiring, setup }: {
   wiring: Pick<SystemWiring, 'service' | 'remotes' | 'remotesWhy'>;
-  /** *Change the service's address* (WIRING1e), under the address row, drawn by the domain; none where the shell offers none. */
+  /** *Change the service's address*, under the address row, drawn by the domain; none where the shell offers none. */
   setup?: ReactNode;
 }) {
   const { t } = useTranslation();

@@ -17,7 +17,7 @@ import {
 } from './viewMath';
 import { SCALE, WORLD, worldBox, type WorldRead } from './worldBoxes';
 
-/** What a feature opts into (CANVAS1a; the canvas design §2.2): its mode, its zoom's bounds and its own words for fit and for moving. */
+/** What a feature opts into: its mode, its zoom's bounds and its own words for fit and for moving. */
 export type CanvasOptions = {
   mode: 'display' | 'edit';
   /** Within 10–250%: the workflow's 80–200% editing and 50–200% reading. */
@@ -38,7 +38,7 @@ export type CanvasOptions = {
 const ARROW = 60;
 
 /**
- * What a feature does with a selection beyond a press on a node (CANVAS1b; the canvas design §2.4): a press on the ground (which
+ * What a feature does with a selection beyond a press on a node: a press on the ground (which
  * releases the selection in display, does nothing in edit and chooses open ground in pick mode), and, where many may be chosen, a
  * Shift+drag box on the ground.
  */
@@ -59,7 +59,7 @@ export type CanvasHandle = {
 };
 
 /**
- * What the viewer keeps (CANVAS1d; the canvas design §4, trap 18): the view, by feature and key, restored if the graph's identity is
+ * What the viewer keeps: the view, by feature and key, restored if the graph's identity is
  * the same, else by the surviving anchor. `onGone` says the selection kept is no longer in the graph.
  */
 export type CanvasMemory = {
@@ -118,9 +118,9 @@ function scrollsItself(target: Element | null, stop: Element, dx: number, dy: nu
 }
 
 /**
- * **The canvas** (CANVAS1a; D224, the canvas design §2.4): a placed world, HTML laid out by CSS, transformed in a viewport that pans and
+ * **The canvas**: a placed world, HTML laid out by CSS, transformed in a viewport that pans and
  * zooms and never lays it out again; its scale is said on the world for the boxes the drawing reads in world units. Where it is not
- * offered (below the 36rem floor, the list chosen, nothing measured) it is the pane as it always was. A molecule: the view is its own.
+ * offered (below the 36rem floor, the list chosen, nothing measured) it is the pane without a canvas. A molecule: the view is its own.
  */
 export function Canvas({
   ref, active, options, label, width, rem, pane, paneProps, tools, showTools, entry, selected = null, selection = null, connect = null,
@@ -181,7 +181,7 @@ export function Canvas({
   const element = useRef<HTMLDivElement>(null);
   const settle = useRef(0);
   const hitScale = useRef(1);
-  // The element a focus landed on while a way or any control was being pressed: revealed when the press ends, if it was no drag.
+  // The element a focus landed on while a way or any control is being pressed: revealed when the press ends, if it is no drag.
   const pressedFocus = useRef<HTMLElement | null>(null);
   const pressing = useRef(false);
 
@@ -484,8 +484,8 @@ export function Canvas({
     const shown = holder ?? (event.target as HTMLElement);
     const scene = element.current;
     if (scene && scene.contains(shown)) {
-      // While a way or a control is pressed the view is the person's, and a card or line moved from under the pointer loses its click;
-      // a press that was no drag follows the focus when it ends.
+      // While a way or a control is pressed the view is the person's, and a card or line shifted from under the pointer loses its click;
+      // a press that is no drag follows the focus when it ends.
       if (connection.active() || pressing.current) pressedFocus.current = shown;
       else {
         const box = worldBox(shown, scene.getBoundingClientRect(), viewRef.current.k);

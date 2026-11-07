@@ -8,7 +8,7 @@ import { Button, Pill } from '../design/ui';
 import { type Answered, Refused } from '../work/InlineConfirm';
 import { InConversation } from '../work/waits/WaitAnchor';
 
-/** A yes or no to a go-ahead: its number, the answer, the person's words if any, and how the answer ended (UXFIX2b3b). */
+/** A yes or no to a go-ahead: its number, the answer, the person's words if any, and how the answer ended. */
 export type GoAheadAnswer = (number: number, approved: boolean, words: string | undefined, answered: Answered) => void;
 
 /** A go-ahead's state on its pill: waiting is the person's to answer, approved done, refused declined. */
@@ -22,37 +22,37 @@ const GO_AHEAD_TONE: Record<GoAhead['state'], 'open' | 'done' | 'declined'> = {
 const KINDS = new Set(['write', 'release', 'push', 'sign-in', 'run']);
 
 /**
- * **The go-aheads an ask holds** (KNOWUSE1a, D135 §2): what its sessions asked the person for, each once, by its number —
+ * **The go-aheads an ask holds**: what its sessions asked the person for, each once, by its number —
  * the act by its kind, where it lands and what it touches; what became of it, with the person's words on an answer
  * verbatim; why the first session needed it, in its words; and how many more asked again. One waiting is answered here,
- * yes or no with words if any; one answered is answered again only once asked to, since the first answer was meant.
+ * yes or no with words if any; one answered is answered again only once asked to, since the first answer is meant.
  *
  * @remarks
  * Where it lands and what it touches are the session's words, shown as written; the kind is the service's word, in the
- * page's language. `daoris ask go-ahead` is the terminal's twin (D50). **Props only, no hook** (components §2):
+ * page's language. `daoris ask go-ahead` is the terminal's twin. **Props only, no hook** (components §2):
  * without `onAnswer` there is no door, and nothing offers one.
  *
- * The same list stands on a parked session's page (KNOWUSE1a2), the go-aheads that session asked, where answering the
- * last one open sends the session on (GOAHEAD2b): its lead says so there, handed in as `lead`.
+ * The same list stands on a parked session's page, the go-aheads that session asked, where answering the
+ * last one open sends the session on: its lead says so there, handed in as `lead`.
  */
 export function GoAheadList({ goAheads, busy = false, onAnswer, lead, inConversation, marked, stale }: {
   goAheads: GoAhead[];
   busy?: boolean;
   /**
-   * The go-aheads nothing on the ask could still use, by number, as What needs you's rows say (GOAHEADSTALE1): each marked stale with
+   * The go-aheads nothing on the ask could still use, by number, as What needs you's rows say: each marked stale with
    * how long, its refusal the one answer offered. Absent, none is (a browser, which judges none).
    */
   stale?: Readonly<Record<number, StaleSince>>;
   /**
-   * The way to each go-ahead's call in the session's conversation, by its number, where the conversation found it (WAITFOOT1c,
-   * D168 point 4): *In the conversation* on its item. Absent, none.
+   * The way to each go-ahead's call in the session's conversation, by its number, where the conversation finds it:
+   * *In the conversation* on its item. Absent, none.
    */
   inConversation?: Readonly<Record<number, () => void>>;
-  /** The go-ahead a raising block's *To the wait* led to (WAITFOOT1c): outlined. */
+  /** The go-ahead a raising block's *To the wait* led to: outlined. */
   marked?: number;
   /**
-   * The person's yes or no to go-ahead `number`, with their words where they gave any, and how to tell the item how it ended
-   * (UXFIX2b3b); absent where there is no door.
+   * The person's yes or no to go-ahead `number`, with their words where they gave any, and how to tell the item how it ended;
+   * absent where there is no door.
    */
   onAnswer?: GoAheadAnswer;
   /** What the list's line above it says where it stands: the ask's own, absent. */
@@ -78,7 +78,7 @@ export function GoAheadList({ goAheads, busy = false, onAnswer, lead, inConversa
 
 /**
  * One go-ahead. Its yes and no are direct presses, not an ask (platform UX §4: a yes or no every session is handed is not a
- * destructive edit), so they wait in place and a refused answer is said beside this item (UXFIX2b3b), the words kept and
+ * destructive edit), so they wait in place and a refused answer is said beside this item, the words kept and
  * both presses pressable again.
  */
 function GoAheadItem({ goAhead, kindWord, busy, onAnswer, onConversation, marked = false, stale }: {
@@ -88,7 +88,7 @@ function GoAheadItem({ goAhead, kindWord, busy, onAnswer, onConversation, marked
   onAnswer?: GoAheadAnswer;
   onConversation?: () => void;
   marked?: boolean;
-  /** Nothing on the ask could still use it (GOAHEADSTALE1): marked so with how long, and only its refusal offered. */
+  /** Nothing on the ask could still use it: marked so with how long, and only its refusal offered. */
   stale?: StaleSince;
 }) {
   const { t } = useTranslation();
@@ -144,7 +144,7 @@ function GoAheadItem({ goAhead, kindWord, busy, onAnswer, onConversation, marked
     >
       <p className="m-0 flex min-w-0 flex-wrap items-baseline gap-x-2 gap-y-1">
         <span className="font-mono text-meta text-ink-faint">#{goAhead.number}</span>
-        {/* GOAHEADSTALE1: still asked, but nothing on the ask waits for it, so it is not said to wait on the person. */}
+        {/* Still asked, but nothing on the ask waits for it, so it is not said to wait on the person. */}
         {stale
           ? <Pill tone="neutral">{t('asks.goAhead.stale.pill')}</Pill>
           : <Pill tone={GO_AHEAD_TONE[goAhead.state]}>{t(`asks.goAhead.state.${goAhead.state}`)}</Pill>}
@@ -182,7 +182,7 @@ function GoAheadItem({ goAhead, kindWord, busy, onAnswer, onConversation, marked
             onChange={(e) => setWords(e.target.value)}
             className="min-h-[1.9rem] flex-1 basis-56 rounded-control border border-line-strong bg-raised px-2.5 py-1.5 text-body"
           />
-          {/* A stale one is offered its refusal alone (GOAHEADSTALE1): nothing on the ask waits for a yes. */}
+          {/* A stale one is offered its refusal alone: nothing on the ask waits for a yes. */}
           {!stale && (
             <Button disabled={waiting} aria-describedby={refusal ? refusalId : undefined} onClick={() => answer(true)}>
               {t('asks.goAhead.approve')}
@@ -192,7 +192,7 @@ function GoAheadItem({ goAhead, kindWord, busy, onAnswer, onConversation, marked
             {t('asks.goAhead.refuse')}
           </Button>
           {changing && <Button variant="ghost" disabled={waiting} onClick={() => setChanging(false)}>{t('common.cancel')}</Button>}
-          {/* Drawn from the first, so it is a live region before it speaks (UXFIX2c). */}
+          {/* Drawn from the first, so it is a live region before it speaks. */}
           <span role="status" aria-live="polite" className={pending ? 'self-center text-small text-ink-faint' : 'sr-only'}>
             {pending ? t('work.confirm.pending') : null}
           </span>

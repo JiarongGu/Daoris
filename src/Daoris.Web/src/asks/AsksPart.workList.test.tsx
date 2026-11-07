@@ -3,7 +3,7 @@ import { waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { QueryClient } from '@tanstack/react-query';
 
-// The ask's page lists its work in the shell (PAUSE1h, D132 §7.1): the asks' organism hands the page the driver's plan of the
+// The ask's page lists its work in the shell: the asks' organism hands the page the driver's plan of the
 // chosen ask and the tick's last look at each quest, so each quest says why it sits, and a session's door attends it. Over a
 // mocked bridge, as the shell-attached half is held (`docs/2026-09-19-frontend-architecture.md` §4).
 

@@ -2,7 +2,7 @@ import { useTranslation } from 'react-i18next';
 import { Button } from '../ui';
 
 /**
- * *Show as list* and *Show as graph* (the canvas design §2.6): the one toolbar control that turns a world into its `CanvasList` and
+ * *Show as list* and *Show as graph*: the one toolbar control that turns a world into its `CanvasList` and
  * back, offered at every width. A molecule: whether the list stands is given.
  */
 export function ListToggle({ listed, onToggle }: { listed: boolean; onToggle: () => void }) {

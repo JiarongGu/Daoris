@@ -4,7 +4,7 @@ import { describe, expect, it } from 'vitest';
 import { shellWord, shellWords } from './shellWord';
 
 /**
- * An argument as a terminal hint prints it (ACCTQUOTE1, D125's ACCTQUOTE1 note). The page's half of a TWIN with the driver's
+ * An argument as a terminal hint prints it. The page's half of a TWIN with the driver's
  * `ShellWord`: both read `fixtures/shell-words.json` among the driver's tests, row for row, so the screen's twin of a command and
  * the terminal's own spell an argument the same way. The CLI's suite holds the table against the shells themselves.
  */

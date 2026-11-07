@@ -4,7 +4,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import i18n from '../../locales/i18n';
 import { CurveChart, CurvePoints } from './UsageCurve';
 
-// The usage curve as the switch's setting draws and edits it (SWITCH1d; D165 point 2; the switch design §5): a small chart a
+// The usage curve as the switch's setting draws and edits it: a small chart a
 // window, the curve and each account of the list on it now, and the point editor *My own curve* opens. Molecules: props in,
 // presses out.
 
@@ -64,8 +64,8 @@ describe('a window’s own points, edited', () => {
 
   it('says a window it leaves out takes Daoris’s curve, and starts its own from Daoris’s points', async () => {
     const onSave = vi.fn();
-    // Daoris's week as the accounts' answer carries the curve in effect (PUSH1e): its pace plus 20 up to 95 at three-quarters gone,
-    // then to the whole week at its reset (USAGERESET1).
+    // Daoris's week as the accounts' answer carries the curve in effect: its pace plus 20 up to 95 at three-quarters gone,
+    // then to the whole week at its reset.
     render(
       <CurvePoints
         window="weekly" points={null} start={[[0, 20], [75, 95], [100, 100]]}
@@ -100,7 +100,7 @@ describe('a window’s own points, edited', () => {
   });
 
   /**
-   * Points that break a rule are refused by the door (PUSH1e: the rules are .NET's alone), whose sentence the editor says under the
+   * Points that break a rule are refused by the door (the rules are.NET's alone), whose sentence the editor says under the
    * rows it keeps, and an empty field is sent as no number, which the door refuses as no point. A change clears it.
    */
   it('says what the door refused in its own sentence, keeping the rows', async () => {

@@ -10,7 +10,7 @@ import { ASK_OPEN, ASK_PLAN } from '../work/history/historyFixtures';
 import { AskPage } from './AskPage';
 import { CLOSED, DONE, PUBLISHED } from './fixtures';
 
-// An ask's clear (HIST1e, D153; the history-clearing design §6.1), as the page draws it from its props: *Clear from this
+// An ask's clear, as the page draws it from its props: *Clear from this
 // machine…* in its header's ⋯ once every quest of its work is closed and its plan says it may go, listed under the header
 // first and then pressed, whole or not at all.
 
@@ -23,7 +23,7 @@ const of = (plan: HistoryPlan, id: string): HistoryPlan => ({
 
 const door = (over: Partial<HistoryDoor> = {}): HistoryDoor => ({ plan: null, busy: false, onClear: vi.fn(), ...over });
 
-/** How a clear's ask hears its end (UXFIX2, ACCTEDIT1's contract). */
+/** How a clear's ask hears its end. */
 const ANSWERED = expect.objectContaining({ done: expect.any(Function), refused: expect.any(Function) });
 
 const page = (ask: Ask, history?: HistoryDoor) => render(
@@ -60,7 +60,7 @@ describe('an ask’s clear (design §6.1)', () => {
   });
 
   it('offers no clear where the plan keeps it, while it is asked, on a live ask, or in a browser', async () => {
-    // The ⋯ is always drawn since HEAD2d (it holds the ask's id), so its items say what is offered.
+    // The ⋯ is always drawn (it holds the ask's id), so its items say what is offered.
     const { unmount } = page(DONE, door({ plan: of(ASK_OPEN, DONE.id) }));
     expect(await more()).not.toContain('Clear from this machine…');
     unmount();
@@ -75,7 +75,7 @@ describe('an ask’s clear (design §6.1)', () => {
   });
 
   /**
-   * UXFIX2: *Never mind* gives the focus back to the ⋯. What goes takes the focus on opening; the ask stays open until the
+   * *Never mind* gives the focus back to the ⋯. What goes takes the focus on opening; the ask stays open until the
    * clear answers, a refusal said in it.
    */
   it('gives the focus back to the ⋯ drawn again, and says a refused clear inside its ask', async () => {

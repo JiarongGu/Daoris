@@ -10,48 +10,48 @@ import type { Starter, StarterDoor } from './starters';
 export type AskConversationSlot = {
   /** The newest conversation's record, or null when there is none to show. */
   body: ReactNode | null;
-  /** What it proposes that waits for the person (HELP1c), or null. */
+  /** What it proposes that waits for the person, or null. */
   proposals?: ReactNode;
   /**
-   * What it published (ASKQUESTS1), each with its live state: a strip under its head, outside the scroll, or absent where it
+   * What it published, each with its live state: a strip under its head, outside the scroll, or absent where it
    * published nothing.
    */
   published?: ReactNode;
-  /** The box, or null where nothing may be written yet: a conversation being checked, or one that cannot go on (ASKHIST1c). */
+  /** The box, or null where nothing may be written yet: a conversation being checked, or one that cannot go on. */
   composer: ReactNode;
   /** Whether the conversation shown has ended, so a message starts the next. */
   ended: boolean;
   /**
-   * What the next words do, said right above the box where they are written (ASKHIST1, as ASKHIST1c placed it): that an
+   * What the next words do, said right above the box where they are written: that an
    * ended one goes on, cannot and offers a new one from its words, or is being checked, each with its press.
    */
   note?: ReactNode;
-  /** The way back to the conversation's tail, where the reader left it (ASKHIST1c): a strip of its own above the box. */
+  /** The way back to the conversation's tail, where the reader left it: a strip of its own above the box. */
   tail?: ReactNode;
-  /** What the open conversation is called (ASKHIST1c); null for a new one with nothing said yet. */
+  /** What the open conversation is called; null for a new one with nothing said yet. */
   title?: string | null;
   /** Changed to a new number to put the focus on the conversation's heading, as one is opened from the history. */
   focusHead?: number;
-  /** Whether Escape goes back to the history: where the conversation shown was opened from it. */
+  /** Whether Escape goes back to the history: where the conversation shown is opened from it. */
   escapeToList?: boolean;
   /** Start again: finish the one running and clear the panel. Absent while there is nothing to clear. */
   onNew?: () => void;
   /** The host is finishing the conversation before opening a blank one. */
   newPending?: boolean;
-  /** The history (ASKHIST1), drawn in the conversation's place while it is open, its own head with it. */
+  /** The history, drawn in the conversation's place while it is open, its own head with it. */
   history?: ReactNode;
   /** Whether the history is open. */
   historyOpen?: boolean;
   /** Open the history. Absent where there is none to show. */
   onHistory?: () => void;
   /**
-   * Ask Daoris's access (HELPMODE1b, the modes design §5): its chip, the press that opens *What it has*, and full access's
+   * Ask Daoris's access: its chip, the press that opens *What it has*, and full access's
    * confirmation, in a strip of its own right above the box. Absent where the snapshot names no mode, which offers no choice.
    */
   access?: ReactNode;
-  /** *What it has* (HELPMODE1b, design §6), drawn in the conversation's place while it is open, the box still below it. */
+  /** *What it has*, drawn in the conversation's place while it is open, the box still below it. */
   wired?: ReactNode;
-  /** Whether the next start runs with full access, which the opening words then say: it acts, not proposes (D183 point 1). */
+  /** Whether the next start runs with full access, which the opening words then say: it acts, not proposes. */
   full?: boolean;
 };
 
@@ -59,21 +59,21 @@ export type AskConversationSlot = {
 const KEEPS_ESCAPE = 'input, textarea, select, [contenteditable="true"], form, [role="menu"], [role="dialog"]';
 
 /**
- * Ask Daoris (HELP1, D89): a panel beside whatever the person is looking at, which stays open across
- * views. With no agent named it holds the no-agent tier (HELP1d): what the machine lacks, each with the
- * screen that fixes it and the terminal command that does the same (D50). With one, the conversation
- * (HELP1a) takes the panel, and the starters show until there is a conversation to read.
+ * Ask Daoris: a panel beside whatever the person is looking at, which stays open across
+ * views. With no agent named it holds the no-agent tier: what the machine lacks, each with the
+ * screen that fixes it and the terminal command that does the same. With one, the conversation
+ *  takes the panel, and the starters show until there is a conversation to read.
  *
  * @remarks
  * A chat agent to help configure a workspace. A molecule: the starters and the conversation arrive made, a door press goes
  * out, and the region the conversation scrolls in is handed back to the organism that follows its tail.
  *
- * **Two views, each with its own head** (ASKHIST1c), the same in the side bar, in its own region and at 680 px, where the
+ * **Two views, each with its own head**, the same in the side bar, in its own region and at 680 px, where the
  * dock is the whole frame: the history's (what it is, a new conversation, the search), drawn by `AskHistory`; and the open
  * conversation's, left-led: *← History*, its title whole, and a new conversation at its end. The head says which view is
  * open, where a *History* button at the far right looked the same open or closed. Under the head, outside the words' scroll,
- * what the conversation published (ASKQUESTS1), folded to its line. Under the conversation's words, outside their scroll and in
- * this order: the way back to the tail, what the next words do, the access chip with *What it has* (HELPMODE1b), and the box.
+ * what the conversation published, folded to its line. Under the conversation's words, outside their scroll and in
+ * this order: the way back to the tail, what the next words do, the access chip with *What it has*, and the box.
  * Nothing floats over the words.
  */
 export function AskPanel({
@@ -83,7 +83,7 @@ export function AskPanel({
   /** The agent Ask Daoris runs on, or null. */
   helper: string | null;
   /**
-   * How far the setup guide's required steps are done (SETUP1a, D97), which the starters lead to while
+   * How far the setup guide's required steps are done, which the starters lead to while
    * any is left — or absent where that is not known yet.
    */
   setup?: { done: number; of: number };
@@ -109,7 +109,7 @@ export function AskPanel({
   const browsing = Boolean(conversation?.historyOpen && conversation.history);
   const talking = Boolean(conversation?.body);
 
-  // Escape goes back to the history the conversation was opened from; a field, a menu or an input method takes it first.
+  // Escape goes back to the history the conversation is opened from; a field, a menu or an input method takes it first.
   const onKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
     if (isComposing(event) || event.key !== 'Escape' || event.defaultPrevented) return;
     if (browsing || !conversation?.escapeToList || !conversation.onHistory) return;
@@ -177,10 +177,10 @@ export function AskPanel({
           newPending={conversation.newPending}
         />
       )}
-      {/* What it published (ASKQUESTS1), under its head and outside the scroll, so it stays in view as the words move. */}
+      {/* What it published, under its head and outside the scroll, so it stays in view as the words move. */}
       {conversation?.published && !conversation.wired && talking && conversation.published}
       <div ref={scroller} className="min-h-0 flex-1 overflow-y-auto px-4 py-3">
-        {/* What it has takes the conversation's place while it is open (HELPMODE1b); the box stays below it. */}
+        {/* What it has takes the conversation's place while it is open; the box stays below it. */}
         {conversation?.wired ?? (talking ? (
           <>
             {conversation!.body}
@@ -193,7 +193,7 @@ export function AskPanel({
       {note && (
         <div className="grid shrink-0 grid-cols-[minmax(0,1fr)] justify-items-start gap-1.5 border-t border-line px-4 py-2">{note}</div>
       )}
-      {/* The access chip beside the box (HELPMODE1b, design §5), in the side bar's dock as in its own region. */}
+      {/* The access chip beside the box, in the side bar's dock as in its own region. */}
       {conversation?.access && <div className="shrink-0 border-t border-line px-3 py-1.5">{conversation.access}</div>}
       {conversation?.composer}
     </div>
@@ -231,7 +231,7 @@ export function AskPanel({
 }
 
 /**
- * The open conversation's head (ASKHIST1c), left-led: the way back to the history, the conversation's title whole and
+ * The open conversation's head, left-led: the way back to the history, the conversation's title whole and
  * wrapping where it must, so two pasted URLs read apart, and a new conversation at its end. Its heading takes the focus as a
  * conversation is opened from the history, so a keyboard lands where the person now is.
  */

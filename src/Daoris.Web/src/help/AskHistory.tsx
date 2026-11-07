@@ -15,7 +15,7 @@ import { previewText, rowLine } from './preview';
 
 /** What a row of the history may do, each pressed through the organism that holds the bridge. */
 export type AskHistoryActs = {
-  /** Show it in the panel, telling where the list was scrolled so going back puts it there again (ASKHIST1c). */
+  /** Show it in the panel, telling where the list is scrolled so going back puts it there again. */
   onOpen: (id: string, scroll: number) => void;
   /** Name it, or give it its first question back with null; told how it ended. */
   onRename: (id: string, name: string | null, answered: Answered) => void;
@@ -30,7 +30,7 @@ export type AskHistoryActs = {
 const KEEPS_ESCAPE = 'form, [role="menu"], [role="dialog"]';
 
 /**
- * Ask Daoris's history (ASKHIST1, as ASKHIST1c made it): its conversations, kept on this machine only, grouped as a person
+ * Ask Daoris's history: its conversations, kept on this machine only, grouped as a person
  * reads time; a search by words across them; and each one's acts, a rename and a delete asked where they were pressed.
  *
  * @remarks
@@ -40,9 +40,9 @@ const KEEPS_ESCAPE = 'form, [role="menu"], [role="dialog"]';
  *   right, the search the whole width under them. Only the rows scroll.
  * - **A row reads its title whole**, wrapped where it must be, so two pasted URLs can be told apart without a tip (UX §4);
  *   then *current* on the one the panel shows, whose selection is the accent (UX §3); a conversation's line as plain words
- *   (`previewText`), or where a search found its words, those words marked; and a pin mark, when and what it was. Opening a
+ *   (`previewText`), or where a search found its words, those words marked; and a pin mark, when and what it is. Opening a
  *   row only reads it: what the next words do is said where they are written.
- * - **Its ⋯ is a 28 px control beside the row**, there at rest (UX §6), holding what has no other home (D76's RAIL1 rule). A
+ * - **Its ⋯ is a 28 px control beside the row**, there at rest (UX §6), holding what has no other home. A
  *   live one is offered no delete, since only an ended conversation's record goes.
  * - **Its keys are a list's** (`useListKeys`): ↓ from the search into the rows, ↑ ↓ Home End along them across the groups.
  *   Escape goes back to the conversation once the search is empty; a menu, a form or an input method takes it first.
@@ -51,10 +51,10 @@ const KEEPS_ESCAPE = 'form, [role="menu"], [role="dialog"]';
  * - **Every state says itself** (UX §4): a first load as skeleton rows with its words, a newer answer over the rows held
  *   dimmed, a list it could not read with why and a retry, an empty one with a way to start, a search that found nothing with
  *   a way to clear it, and a search too short to look with how long one must be.
- * - **It is read a page at a time** (ASKHIST1d2): the driver orders and searches every conversation and answers a page of
- *   them (D158's ASKHIST1d1 note). A search says how many it found and that it searched every one; a list with more says how
+ * - **It is read a page at a time**: the driver orders and searches every conversation and answers a page of
+ *   them. A search says how many it found and that it searched every one; a list with more says how
  *   many of how many it shows, and *Show more* lists the next page and takes the reader to the first row it brought.
- * - **It is the window's workspace's, or every workspace's** (ASKSCOPE1d, D158's ASKSCOPE1 note, point 6): the choice between the
+ * - **It is the window's workspace's, or every workspace's**: the choice between the
  *   two sits in its head, under what it is; every workspace's labels each row with its own, and a search says the scope it ran
  *   over. A window on every workspace has no workspace of its own to offer, so its list is every one's, labelled.
  */
@@ -64,7 +64,7 @@ export function AskHistory({
 }: {
   rows: HelpConversationRow[];
   /**
-   * Whose conversations the list holds (ASKSCOPE1d): `workspace`'s, or every workspace's for null, each row then labelled with
+   * Whose conversations the list holds: `workspace`'s, or every workspace's for null, each row then labelled with
    * its own; `here` is the window's workspace, which `onEvery` offers beside every workspace's. Absent, the list says nothing of
    * workspaces, as before them.
    */
@@ -77,13 +77,13 @@ export function AskHistory({
   onMore?: () => void;
   /** The next page is on its way. */
   loadingMore?: boolean;
-  /** Why the next page could not be read, in the sentence the person reads; null when it was. */
+  /** Why the next page could not be read, in the sentence the person reads; null when it could. */
   moreError?: string | null;
   /** Its first answer is on its way. */
   loading?: boolean;
   /** A newer answer is on its way: the rows shown are the last one's. */
   refreshing?: boolean;
-  /** Why the list could not be read, in the sentence the person reads; null when it was. */
+  /** Why the list could not be read, in the sentence the person reads; null when it could. */
   error?: string | null;
   /** The search's words, as typed. */
   search: string;
@@ -98,7 +98,7 @@ export function AskHistory({
   onSearch: (words: string) => void;
   /** A blank new conversation: the head's and an empty list's. Absent, none is offered. */
   onNew?: () => void;
-  /** Back to the conversation the list was opened over. */
+  /** Back to the conversation the list is opened over. */
   onClose?: () => void;
   /** Ask for the list again, after it could not be read. */
   onRetry?: () => void;
@@ -119,7 +119,7 @@ export function AskHistory({
   // The workspace the list holds alone, which its sentences name; every workspace's labels each row instead.
   const onlyIn = scope?.workspace ?? null;
   const labelled = scope !== undefined && onlyIn === null;
-  // *Show more* pressed: how many rows there were and what was searched, so the first row the next page brings takes the focus.
+  // *Show more* pressed: how many rows there are and what is searched, so the first row the next page brings takes the focus.
   const pressed = useRef<{ words: string; at: number } | null>(null);
 
   // The next page arrived: the reader goes on from its first row, unless they went elsewhere meanwhile (the search, say),
@@ -144,7 +144,7 @@ export function AskHistory({
     onMore();
   };
 
-  // Coming back to the list: the row it was left from, where the list was scrolled; the search where that row went.
+  // Coming back to the list: the row it is left from, where the list is scrolled; the search where that row went.
   useLayoutEffect(() => {
     if (!restore) return;
     if (scroller.current) scroller.current.scrollTop = restore.scroll;
@@ -155,7 +155,7 @@ export function AskHistory({
   }, []);
 
   const onKeyDown = (event: KeyboardEvent<HTMLElement>) => {
-    // A key an input method is composing with is the method's, the search's arrow into the rows among them (IME1).
+    // A key an input method is composing with is the method's, the search's arrow into the rows among them.
     if (isComposing(event)) return;
     keys(event);
     if (event.key !== 'Escape' || event.defaultPrevented || !onClose) return;
@@ -171,7 +171,7 @@ export function AskHistory({
   };
 
   return (
-    // `minmax(0,1fr)` on every grid between a row's words and the panel (ASKHIST1b): a grid's implicit column is `auto`, which
+    // `minmax(0,1fr)` on every grid between a row's words and the panel: a grid's implicit column is `auto`, which
     // grows to its widest child's min-content, and a pasted URL ran the search and every row past the dock.
     <section aria-labelledby={headingId} className="flex min-h-0 flex-1 flex-col" onKeyDown={onKeyDown}>
       <header className="grid grid-cols-[minmax(0,1fr)] gap-2 border-b border-line px-4 pb-2.5 pt-2.5">
@@ -230,8 +230,8 @@ export function AskHistory({
           </Notice>
         ) : searching ? (
           !refreshing && (
-            // Every conversation was searched (ASKHIST1d1), and the hint says so: none is left out of a search. Within one
-            // workspace, every one of its conversations (ASKSCOPE1d).
+            // Every conversation is searched, and the hint says so: none is left out of a search. Within one
+            // workspace, every one of its conversations.
             <Notice
               icon="search"
               headline={t('help.history.none', { words })}
@@ -325,7 +325,7 @@ function Marked({ text, words }: { text: string; words: string }) {
 }
 
 /**
- * Whose conversations the list holds (ASKSCOPE1d): the window's workspace, or every one's, two presses that say which is chosen.
+ * Whose conversations the list holds: the window's workspace, or every one's, two presses that say which is chosen.
  * The window's own is named, as the switcher names it.
  */
 function WorkspaceChoice({ here, every, onEvery }: { here: string; every: boolean; onEvery: (every: boolean) => void }) {
@@ -353,7 +353,7 @@ function WorkspaceChoice({ here, every, onEvery }: { here: string; every: boolea
 
 function HistoryRow({ row, labelled, current, busy, words, asking, onAsk, onOpen, onRename, onPin, onStartFrom, onDelete }: {
   row: HelpConversationRow;
-  /** Every workspace's list (ASKSCOPE1d): the row says its workspace, a row from before as `default`'s. */
+  /** Every workspace's list: the row says its workspace, a row from before as `default`'s. */
   labelled: boolean;
   current: boolean;
   busy: boolean;
@@ -365,9 +365,8 @@ function HistoryRow({ row, labelled, current, busy, words, asking, onAsk, onOpen
 } & Omit<AskHistoryActs, 'onOpen'>) {
   const { t } = useTranslation();
   const trigger = useRef<HTMLButtonElement>(null);
-  // Where a search found its words: in the title, which is then marked, or in what was said, which takes the line's place.
-  // Its line is parsed whole and then cut from a little before the words (ASKHIST1d2); a driver before pages sent only the
-  // 60 characters around them, already cut.
+  // Where a search found its words: in the title, which is then marked, or in what is said, which takes the line's place.
+  // Its line is parsed whole and then cut from a little before the words.
   const inTitle = words !== '' && row.found === row.title;
   const find = words === '' || inTitle ? null
     : row.foundLine ? rowLine(previewText(row.foundLine), words)
@@ -393,7 +392,7 @@ function HistoryRow({ row, labelled, current, busy, words, asking, onAsk, onOpen
     }]),
   ];
 
-  // A rename put down gives the focus back to the ⋯ it was opened from.
+  // A rename put down gives the focus back to the ⋯ it is opened from.
   const putDown = () => {
     trigger.current?.focus();
     onAsk(null);
@@ -436,7 +435,7 @@ function HistoryRow({ row, labelled, current, busy, words, asking, onAsk, onOpen
             </span>
           )}
           <span className="min-w-0 wrap-anywhere">{marks.join(' · ')}</span>
-          {/* HELPMODE1b (D183 point 3): the mode it ran under, said where it was full access, in the warning colour. */}
+          {/* The mode it ran under, said where it is full access, in the warning colour. */}
           {row.mode === 'full' && <span className="text-warn">{t('help.history.full')}</span>}
         </span>
       </button>
@@ -487,10 +486,10 @@ function HistoryRow({ row, labelled, current, busy, words, asking, onAsk, onOpen
 const FIELD_KEYS = new Set(['ArrowDown', 'ArrowUp', 'Home', 'End']);
 
 /**
- * A conversation's name, set where its row is (ASKHIST1, as ASKHIST1c made it): it starts from the title shown, selected, so
+ * A conversation's name, set where its row is: it starts from the title shown, selected, so
  * typing replaces it; the field the row's whole width above presses that wrap; *Use the original question* for a named one,
- * since a name cleared to nothing was a press nobody could read; its wait said aloud, and no Escape while it waits; and the
- * terminal's twin under it (D50).
+ * since a name cleared to nothing is a press nobody could read; its wait said aloud, and no Escape while it waits; and the
+ * terminal's twin under it.
  */
 function RenameHelp({ row, onSave, onClose }: {
   row: HelpConversationRow;

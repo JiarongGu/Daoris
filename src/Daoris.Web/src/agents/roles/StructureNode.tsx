@@ -4,7 +4,7 @@ import { cn } from '../../lib/cn';
 import type { Drawn } from './structureWords';
 
 /**
- * One node of the structure (CANVAS1c; from the three columns' `NodeBox`): its title and lines, a fold's press, and in the list its edges
+ * One node of the structure: its title and lines, a fold's press, and in the list its edges
  * out as presses that move to their target. A band's label, a role in a band, an appointment and an agent are all this; `data-flow-node`
  * is its key (one for each occurrence), `data-node` the one identity a selection and its detail are of. The selection is an outline, which
  * takes no room.

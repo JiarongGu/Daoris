@@ -3,9 +3,9 @@ import type { RepositoryLine } from '../settings/repository/Lines';
 import type { GraphCommitRow } from './git/CommitGraph';
 import type { RepositorySetupProps } from './setup/RepositorySetup';
 
-// Repositories as the registry and the index answer them (FRAME1e), for the list's and the page's stories: the
+// Repositories as the registry and the index answer them, for the list's and the page's stories: the
 // example family's two adopters, a teammate's registration with no checkout here, one that declared nothing, two not
-// adopted (one with a root here, one without), and a name in 中文. Since UX6h1, the engine's branches and its line's history
+// adopted (one with a root here, one without), and a name in 中文. The engine's branches and its line's history
 // as Git's reads answer them.
 
 export const ENGINE: Registration = {
@@ -24,19 +24,19 @@ export const GAME: Registration = {
   packs: [], entries: 18,
 };
 
-/** A teammate's registration, mirrored from a remote: no checkout on this machine (D47 §9). */
+/** A teammate's registration, mirrored from a remote: no checkout on this machine. */
 export const MIRRORED: Registration = {
   repository: 'studio-tools', adopted: true, registered: true, workspace: 'studio',
   summary: 'Build and release tooling the studio shares.', owns: ['the build'], accepts: ['a broken pipeline'], packs: [], entries: 6,
 };
 
-/** Adopted, and declared nothing: addressable, and an asker would be guessing (D34). */
+/** Adopted, and declared nothing: addressable, and an asker would be guessing. */
 export const UNDECLARED: Registration = {
   repository: 'sandbox', adopted: true, registered: true, workspace: 'default', root: 'C:/somewhere/sandbox',
   owns: [], accepts: [], packs: [], entries: 0,
 };
 
-/** Not adopted, with a root here: drivable over the protocol door (INT3c, D70). */
+/** Not adopted, with a root here: drivable over the protocol door. */
 export const NEWBIE: Registration = {
   repository: 'newbie', adopted: false, registered: true, addressable: true, workspace: 'default', root: 'C:/somewhere/newbie',
   owns: [], accepts: [], packs: [], entries: 3,
@@ -69,16 +69,16 @@ export const COUNTS: Record<string, Repository> = {
   渲染管线: { name: '渲染管线', total: 12, local: 12, canonical: 0, workspace: 'default' },
 };
 
-/** The engine's line, set for the repository itself (WSR2). */
+/** The engine's line, set for the repository itself. */
 export const LINE: RepositoryLine = { repository: 'engine', workspace: 'default', branch: 'develop', source: 'repository' };
 
 const nothing = () => {};
 
-/** The driver's table of session languages (LANG1c), as it answers it. */
+/** The driver's table of session languages, as it answers it. */
 export const LANGUAGES = [{ code: 'en', name: 'English' }, { code: 'zh', name: 'Simplified Chinese (简体中文)' }];
 
 /**
- * The engine's Setup as Daoris decides it (UX6f): driven here with a tree per session, its line its workspace's, its work
+ * The engine's Setup as Daoris decides it: driven here with a tree per session, its line its workspace's, its work
  * merged into its line, no session language, no standing answer, read by agents outside it, writing into nothing else
  * and no rule of its own. Every section folds.
  */
@@ -108,7 +108,7 @@ export const SETUP_DEFAULTS: RepositorySetupProps = {
 };
 
 /**
- * The engine's Setup with the person's own values (UX6f): its own line, work put on a branch a plugin pushes and accepts
+ * The engine's Setup with the person's own values: its own line, work put on a branch a plugin pushes and accepts
  * automatically, its own session language, a standing answer, read by nobody outside it, writing into the game, and two
  * rules of its own. Line and landing, Sessions and Reach open; Driving folds.
  */
@@ -139,7 +139,7 @@ export const SETUP_OWN: RepositorySetupProps = {
 };
 
 /**
- * The engine's Setup with its process as a shell since DOORS1b answers it (D164's amendment point 3): how its work is committed
+ * The engine's Setup with its process as a shell answers it: how its work is committed
  * at Daoris's default, on *Line and landing*, and what a helper its agent asks for does from its workspace, on *Sessions*.
  */
 export const SETUP_PROCESS: RepositorySetupProps = {
@@ -157,7 +157,7 @@ export const SETUP_PROCESS: RepositorySetupProps = {
 };
 
 /**
- * The engine's process set for it (DOORS1b): branches named by a ticket its key finds and squashed to one commit, each commit
+ * The engine's process set for it: branches named by a ticket its key finds and squashed to one commit, each commit
  * waiting for the person's yes under their convention, and no helper offered. Line and landing and Sessions open.
  */
 export const SETUP_PROCESS_OWN: RepositorySetupProps = {
@@ -183,14 +183,14 @@ const hoursAgo = (hours: number) => new Date(Date.now() - hours * 3_600_000).toI
 const sessionOf = (session: string, state: string, quest: string | null) =>
   ({ session: session as string | null, state: state as string | null, quest, grewFrom: null as string | null, from: null as string | null });
 
-/** What a plugin last answered about a landed branch's pull request, asked some hours ago (PLUGHOOK1c). */
+/** What a plugin last answered about a landed branch's pull request, asked some hours ago. */
 const pullRequestOf = (state: string, asked: number, done: number | null = null) => ({
   state, pullRequest: 'https://code.example.invalid/engine/pull/12' as string | null, mergeCommit: null as string | null,
   sourceCommit: null as string | null, target: 'main' as string | null, how: null as string | null,
   at: done === null ? null : hoursAgo(done), message: null as string | null, plugin: 'azure' as string | null, askedAt: hoursAgo(asked),
 });
 
-/** A landed branch's record (D102) and how it stands to its own name on origin, one of the driver's `GitOrigin`. */
+/** A landed branch's record and how it stands to its own name on origin, one of the driver's `GitOrigin`. */
 const landedOf = (origin: string, { pushed = true, pullRequest = null, ahead = null, behind = null, state = null, failed = null }: {
   pushed?: boolean;
   pullRequest?: string | null;
@@ -216,7 +216,7 @@ const branchOf = (name: string, kind: string, short: string, hours: number, subj
 } = {}) => ({ name, kind, commit: id(short), at: hoursAgo(hours) as string | null, subject, ahead, behind, tree, session, landed });
 
 /**
- * The engine's branches as `GIT_BRANCHES` answers them for its repository (GIT1d), in the driver's order (the line, then each
+ * The engine's branches as `GIT_BRANCHES` answers them for its repository, in the driver's order (the line, then each
  * kind newest first): its line, two sessions' (one no record names), three landed (in step with an open pull request, gone
  * from origin after it merged, never pushed), seven of the person's and one only origin holds. Its shape is the bridge's,
  * which `ProjectsView.git.test.tsx` holds it to; a fixture beside the molecules imports none.
@@ -254,9 +254,9 @@ export const GIT_BRANCHES_ENGINE = {
 };
 
 /**
- * The game's branches as `GIT_BRANCHES` answers them for it alone (UX6h2b2): a checkout holding no branch of Daoris's, so a
+ * The game's branches as `GIT_BRANCHES` answers them for it alone: a checkout holding no branch of Daoris's, so a
  * workspace's read lists it apart and its tab draws it once the person includes it. Its line, set for the repository, is
- * behind origin's copy and was last fetched days ago; then two of the person's.
+ * behind origin's copy and last fetched days ago; then two of the person's.
  */
 export const GIT_BRANCHES_GAME = {
   repository: 'game', workspace: 'default',
@@ -282,15 +282,15 @@ export const GIT_HISTORY_ENGINE: LoggedCommit[] = [
   logged('1b07c9', [], 'Begin the engine', 'Mei Lin', 400),
 ];
 
-/** The same history as two pages of `GIT_GRAPH`: the first answers `more`, and its tail's parents are the second's (UX6h3a). */
+/** The same history as two pages of `GIT_GRAPH`: the first answers `more`, and its tail's parents are the second's. */
 export const GIT_HISTORY_PAGES: [LoggedCommit[], LoggedCommit[]] = [GIT_HISTORY_ENGINE.slice(0, 3), GIT_HISTORY_ENGINE.slice(3)];
 
 const ZEROS = '0000000000000000000000000000000000000000';
 const blob = (short: string) => `${short}${'a'.repeat(40 - short.length)}`;
 
 /**
- * The engine's checkout as `GIT_CHANGES` reads it (GITAPP2b): a modified file staged, `notes.txt` staged as an addition and then
- * removed from disk (in both lists), a file changed since it was staged, one untracked, and one in conflict after a merge.
+ * The engine's checkout as `GIT_CHANGES` reads it: a modified file staged, `notes.txt` staged as an addition and then
+ * removed from disk (in both lists), a file changed after staging, one untracked, and one in conflict after a merge.
  */
 export const GIT_CHANGES_ENGINE = {
   head: id('c4f1a2') as string | null,
@@ -310,7 +310,7 @@ export const GIT_CHANGES_ENGINE = {
 };
 
 /**
- * `src/budget.cs`'s hunks on the index → worktree side, as `GIT_HUNKS` answers them (GITAPP2h): one hunk of a changed line and an
+ * `src/budget.cs`'s hunks on the index → worktree side, as `GIT_HUNKS` answers them: one hunk of a changed line and an
  * added one, with the ids a press sends back (`index` is the entry the list shows for it).
  */
 export const GIT_HUNKS_BUDGET = {
@@ -336,7 +336,7 @@ export const GIT_HUNKS_BUDGET = {
 };
 
 /**
- * `src/cache.cs`'s conflicts, as `GIT_CONFLICT` answers them (GITAPP2j): two, the first with a line each side changed and the second where
+ * `src/cache.cs`'s conflicts, as `GIT_CONFLICT` answers them: two, the first with a line each side changed and the second where
  * ours holds a line theirs removed, with the stages and the worktree id a press sends back.
  */
 export const GIT_CONFLICT_CACHE = {
@@ -366,7 +366,7 @@ export const GIT_CONFLICT_CACHE = {
 };
 
 /**
- * What a commit of the engine's staged changes rests on, as `GIT_COMMIT_PLAN` answers it (GITAPP2i): the tip and the index as a tree,
+ * What a commit of the engine's staged changes rests on, as `GIT_COMMIT_PLAN` answers it: the tip and the index as a tree,
  * HEAD's message for an amend, the hooks its git runs and who commits.
  */
 export const GIT_COMMIT_PLAN_ENGINE = {
@@ -380,7 +380,7 @@ export const GIT_COMMIT_PLAN_ENGINE = {
   identity: 'Aurora Dev <aurora@example.com>' as string | null,
 };
 
-/** `GIT_SWITCH_PLAN` for the engine's `release` branch from `main`: nothing changed, a post-checkout hook (GITAPP2k). */
+/** `GIT_SWITCH_PLAN` for the engine's `release` branch from `main`: nothing changed, a post-checkout hook. */
 export const GIT_SWITCH_PLAN_ENGINE = {
   from: 'main' as string | null,
   head: id('c4f1a2') as string | null,
@@ -391,7 +391,7 @@ export const GIT_SWITCH_PLAN_ENGINE = {
   hooks: ['post-checkout'],
 };
 
-/** `GIT_STASH_PLAN` for the engine: two tracked files changed, one untracked, one session tree sharing the stash (GITAPP2k). */
+/** `GIT_STASH_PLAN` for the engine: two tracked files changed, one untracked, one session tree sharing the stash. */
 export const GIT_STASH_PLAN_ENGINE = {
   head: id('c4f1a2') as string | null,
   stash: null as string | null,
@@ -409,7 +409,7 @@ export const GIT_STASH_PLAN_ENGINE = {
 
 /**
  * The physics session's branch beside the engine's line since they parted, as `GIT_GRAPH` answers `sinceParted` with the two
- * tips, the branch then the line (UX6h3b): its two commits (`left`) and the line's two since it grew from `77a0e1` (`right`),
+ * tips, the branch then the line: its two commits (`left`) and the line's two since it grew from `77a0e1` (`right`),
  * the asset cache's merge among them, in date order.
  */
 export const GIT_BRANCH_PARTED: LoggedCommit[] = [

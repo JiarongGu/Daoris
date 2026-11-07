@@ -6,7 +6,7 @@ import { textWidth } from './measure';
 import { said } from '../test/said';
 import { ASKS, buildTopology, keepQuests, LINE_KINDS, type LineKind, layoutRing, showLines } from './topology';
 
-// MAP2 (D67 §3, `docs/2026-09-23-map-design.md` §1): the workspace's repositories and what actually
+// The workspace's repositories and what actually
 // moved between them, read from data the service already serves — no model, no machine path.
 
 const repo = (repository: string, extra: Partial<Registration> = {}): Registration => ({
@@ -46,7 +46,7 @@ describe('the workspace topology', () => {
     ]);
   });
 
-  /** A repository outside this circle is not a node, and it is still counted. An ask is its own line (MAP4b). */
+  /** A repository outside this circle is not a node, and it is still counted. An ask is its own line. */
   it('counts quests with an end off the map rather than inventing a node for it', () => {
     const map = buildTopology([repo('engine')], [
       quest('q1', 'ask #abc', 'engine'),
@@ -167,8 +167,8 @@ describe('the workspace topology', () => {
   });
 
   /**
-   * 🔴 Seen on the window (POLISH4): a repository whose one session was parked, waiting on the
-   * person, was ringed "working now". Parked is its own fact, and the one the person acts on.
+   * 🔴 Seen on the window: a repository whose one session is parked, waiting on the
+   * person, must not be ringed "working now". Parked is its own fact, and the one the person acts on.
    */
   it('marks a session parked on the person apart from one working', () => {
     const map = buildTopology([repo('game'), repo('engine')], [], [], [
@@ -181,7 +181,7 @@ describe('the workspace topology', () => {
   });
 
   /**
-   * ANSWER1e (D131's ANSWER1c note, answer-continues design §5): a park the person answered stays parked until the
+   * A park the person answered stays parked until the
    * driver's next look, and the same session goes on then, so nothing there waits on the person. Until that look it is
    * marked as a queued session is: neither parked nor working, on a node or on a line.
    */
@@ -199,8 +199,8 @@ describe('the workspace topology', () => {
   });
 
   /**
-   * UX5 U49: scoped to every workspace, a circle's repositories sit together on the ring, so its
-   * quests stay within its arc, where by name alone the circles interleaved with nothing saying which.
+   * Scoped to every workspace, a circle's repositories sit together on the ring, so its
+   * quests stay within its arc, where by name alone the circles interleave with nothing saying which.
    */
   it('keeps each circle together when it spans more than one, and counts them', () => {
     const one = buildTopology([repo('game', { workspace: 'default' }), repo('engine', { workspace: 'default' })], [], [], []);
@@ -216,7 +216,7 @@ describe('the workspace topology', () => {
     ]);
   });
 
-  /** Two repositories that learned the same thing (D17): undirected, once per pair, counted. */
+  /** Two repositories that learned the same thing: undirected, once per pair, counted. */
   it('draws a knowledge edge per pair that converged, once however the group lists them', () => {
     const map = buildTopology([repo('a'), repo('b'), repo('c')], [], [
       group(['b', 'a']), group(['a', 'b', 'c']), group(['a', 'elsewhere']),
@@ -267,7 +267,7 @@ describe('the drawing\'s frame (UX5 U44)', () => {
     expect(frame.y).toBeLessThan(placeLabel(at['engine']!.x, at['engine']!.y).y - 10);
   });
 
-  /** 🔴 Seen on the window: *engine-asset-pipeline* on a side node was drawn *engine-asset-p*. */
+  /** 🔴 Seen on the window: *engine-asset-pipeline* on a side node must not be cut to *engine-asset-p*. */
   it('holds a long name on a side node whole', () => {
     const long = buildTopology([repo('a'), repo('engine-asset-pipeline'), repo('z')], [], [], []);
     const at = layoutRing(long.nodes.map((n) => n.id), 600);
@@ -292,9 +292,9 @@ describe('the drawing\'s frame (UX5 U44)', () => {
   });
 
   /**
-   * UX5 U59: content follows the window. A wide, tall card draws a larger ring, up to
-   * what the window's height leaves it, with names still at their size. It stayed at the old
-   * square's ring, 531px in a card three times as wide.
+   * Content follows the window. A wide, tall card draws a larger ring, up to
+   * what the window's height leaves it, with names still at their size, rather than the
+   * square's ring of 531px in a card three times as wide.
    */
   it('grows the ring with a wide card, as far as the height the window leaves it', () => {
     const radius = fitRadius(three, 1500, words, 870);
@@ -303,7 +303,7 @@ describe('the drawing\'s frame (UX5 U44)', () => {
     expect(radius).toBeGreaterThan(300);
     expect(frame.height).toBeLessThanOrEqual(870);
     expect(frame.width).toBeLessThanOrEqual(1500);
-    // Where nothing measures the height, the ring grows no further than it always was.
+    // Where nothing measures the height, the ring grows no further than the square's.
     expect(fitRadius(three, 1500, words)).toBeCloseTo(204);
   });
 
@@ -318,7 +318,7 @@ describe('the drawing\'s frame (UX5 U44)', () => {
 });
 
 describe('the ring layout', () => {
-  /** Seen on the window (MAP4b): at the centre of two repositories asked both ways, the asks hid both counts. */
+  /** Seen on the window: at the centre of two repositories asked both ways, the asks hid both counts. */
   it('stands the asks clear of every line between repositories, not on the centre they cross', () => {
     for (const count of [2, 3, 4]) {
       const ids = ['a', 'b', 'c', 'd'].slice(0, count);

@@ -38,15 +38,15 @@ import { usedByAgent } from './roles/roleStructure';
 import { useStructureRead } from './roles/structureRead';
 import type { ListPanes } from '../work/frame/listPanes';
 
-/** What a door runs, and so what streams under it in *Ways in* (D49 §2). */
+/** What a door runs, and so what streams under it in *Ways in*. */
 const DOOR_ACTIONS = ['install', 'update', 'pin', 'unpin'] as const;
 
 /**
- * The Agents place's mode as the application holds it (COMPANYVIEW1b): the one it was left in, remembered for the place, and a change of
+ * The Agents place's mode as the application holds it: the one last chosen, remembered for the place, and a change of
  * it; and the place Setup last chose (`daoris.list.roles.chosen`).
  *
  * @remarks
- * **A switch to Agents is a door that names no item** (UX6b, D150 §1 rule 6): the agent chosen is read again before it is shown.
+ * **A switch to Agents is a door that names no item**: the agent chosen is read again before it is shown.
  */
 export function useAgentsMode(lists: ListPanes) {
   const [mode, setMode] = useState<AgentsMode>(readAgentsMode);
@@ -60,11 +60,11 @@ export function useAgentsMode(lists: ListPanes) {
   }, [reopen]);
   const place = lists.pane('roles').chosen || null;
   const onPlace = useCallback((next: string) => choose('roles', next), [choose]);
-  // AGENTSPLACE1k: an ask Ask Daoris proposed for a place's *Set up…*, held until the place's page has opened on it.
+  // An ask Ask Daoris proposed for a place's *Set up…*, held until the place's page has opened on it.
   const [seeded, setSeeded] = useState<{ place: string; ask: PlaceAsk } | null>(null);
   const onSeed = useCallback((target: string, ask: PlaceAsk) => setSeeded({ place: target, ask }), []);
   const onSeeded = useCallback(() => setSeeded(null), []);
-  // SETUPUX1h: a door to a place at a section and a row (and the way back), held until the place's page has opened on it.
+  // A door to a place at a section and a row (and the way back), held until the place's page has opened on it.
   const [arrival, setArrival] = useState<{ place: string; at: PlaceAt } | null>(null);
   const onPlaceAt = useCallback((next: string, at: PlaceAt) => {
     choose('roles', next);
@@ -75,7 +75,7 @@ export function useAgentsMode(lists: ListPanes) {
 }
 
 /**
- * What a place's sections' bodies are handed besides the place (SETUPUX1o): the route and step its Workflow shows and a choice of them, which
+ * What a place's sections' bodies are handed besides the place: the route and step its Workflow shows and a choice of them, which
  * the shell holds above the mounts, a door that opens another section of the page, and a door to another place at a section and row.
  */
 export type PlaceHold = {
@@ -83,10 +83,10 @@ export type PlaceHold = {
   row: PlaceRow;
   /** The row a door asked for here, until it is brought into view. */
   asked?: string | null;
-  /** The draft a door asked the Workflow's editor to open on (FLOWCHART2g), and the word that it has. */
+  /** The draft a door asked the Workflow's editor to open on, and the word that it has. */
   edit?: PlaceEdit | null;
   onEdited?: () => void;
-  /** The step editor's draft, kept above the mounts so it outlives the section (REVIEW2 P5). */
+  /** The step editor's draft, kept above the mounts so it outlives the section. */
   held?: PlaceFlowHold | null;
   onHold?: (held: PlaceFlowHold | null) => void;
   view: PlaceView;
@@ -96,66 +96,66 @@ export type PlaceHold = {
 };
 
 /**
- * **The Agents place** (UX6e, D150 §5): what it hands the frame (D118 §5), its list pane and its main area. The list is
+ * **The Agents place**: what it hands the frame, its list pane and its main area. The list is
  * each agent this machine knows, once; the main area is the chosen agent's page.
  *
  * @remarks
  * **A hook, because a view hands the frame a value**, as the Plugins view does. The application holds it on every view.
  *
- * 🔴 **Opening it asks no sign-in** (§5.3). It reads the roster the frame already holds (asked once, and kept:
+ * 🔴 **Opening it asks no sign-in**. It reads the roster the frame already holds (asked once, and kept:
  * `staleTime: Infinity`) and the accounts' files (`ACCOUNTS`, a file read the tick refreshes); each account says its last
- * known state with when it was read. Only *Read again* asks, on the press, one agent's accounts one at a time. An agent's page
- * reads its accounts' use at *Read now* alone (SWITCH1d), never as it opens: the agent answers
- * it with no prompt and no model request (D165 point 1, amending §5.3 for that read alone).
+ * known state with when it is read. Only *Read again* asks, on the press, one agent's accounts one at a time. An agent's page
+ * reads its accounts' use at *Read now* alone, never as it opens: the agent answers
+ * it with no prompt and no model request, for that read alone.
  *
- * **Every act has its terminal twin** (D50): `daoris agent …`, named at the page's foot.
+ * **Every act has its terminal twin**: `daoris agent …`, named at the page's foot.
  */
 export function useAgentsView({ active, chosen, onChoose, notify, part = null, onAnchored, onOpenPlugin, say, modes, roleDoors, bodies, driving, setUp }: {
   /**
-   * A place's *Set up…* (AGENTSPLACE1j), opened in its main area and handed in by the application for the same reason: it reads the plan and
+   * A place's *Set up…*, opened in its main area and handed in by the application for the same reason: it reads the plan and
    * presses Apply, the person's own act. The set-up's draft per place is held here, so a door out of it and back finds it as left.
    */
   setUp?: (place: SetUpPlace, page: SetUpPage, doorFor: SetUpDoor) => ReactNode;
   /**
-   * A place's Workflow and Sessions sections' bodies (AGENTSPLACE1f, 1h), handed in by the application, which holds the presses the rows
+   * A place's Workflow and Sessions sections' bodies, handed in by the application, which holds the presses the rows
    * make: this place imports none of them, so Ask Daoris's census of what the place presses does not take them for its own. A section
    * mounts its body only while it is open, so a folded one reads nothing.
    */
   bodies?: (place: PlaceHold) => { workflow: ReactNode; sessions: ReactNode };
-  /** A repository's driving for its page head (SETUPUX1h): the organism holds the hooks and renders the page with what it made. */
+  /** A repository's driving for its page head: the organism holds the hooks and renders the page with what it made. */
   driving?: (row: PlaceRow, render: (driving: PlaceDriving) => ReactNode) => ReactNode;
   /** The view is in front. */
   active: boolean;
   /**
-   * The Roles mode beside Agents (COMPANYVIEW1b, the company-view design §1), on a desktop only: the mode in front and a change of it,
+   * The Roles mode beside Agents, on a desktop only: the mode in front and a change of it,
    * and the section chosen in the Roles mode and a change of it. Absent, the place is the Agents list alone, as a browser's is.
    */
   modes?: {
     mode: AgentsMode; onMode: (mode: AgentsMode) => void;
     /** The place Setup has chosen, and a change of it. */
     place: string | null; onPlace: (place: string) => void;
-    /** A door's section and row at a place, and the way back (SETUPUX1h), which the page opens on once. */
+    /** A door's section and row at a place, and the way back, which the page opens on once. */
     onPlaceAt?: (place: string, at: PlaceAt) => void;
     arrival?: { place: string; at: PlaceAt } | null; onArrived?: () => void;
-    /** The set-up Ask Daoris proposed for a place, which opens on it once (AGENTSPLACE1k), and the word that it has. */
+    /** The set-up Ask Daoris proposed for a place, which opens on it once, and the word that it has. */
     seeded?: { place: string; ask: PlaceAsk } | null; onSeeded?: () => void;
   };
   /** The list's chosen item: an agent's id, which the application remembers (`daoris.list.agents.chosen`). */
   chosen: string | null;
   onChoose: (item: string | null) => void;
   notify: Notify;
-  /** The part of an agent's page a door named (D150 §2.4), opened and brought into view. */
+  /** The part of an agent's page a door named, opened and brought into view. */
   part?: AgentPart | null;
   /** Told once the part is open, so a later visit opens at the page's top again. */
   onAnchored?: () => void;
-  /** A door's *declared by plugin* opens that plugin in the Plugins place (PLUGUI1c2b). */
+  /** A door's *declared by plugin* opens that plugin in the Plugins place. */
   onOpenPlugin?: (plugin: string) => void;
   /**
-   * The words to a session (PROPOSEHERE1c), handed in by the application: an *Accept* on a proposal tells the session that
+   * The words to a session, handed in by the application: an *Accept* on a proposal tells the session that
    * proposed it. The bridge's say hook is pressed there, not here, so this place answers for no control it did not have.
    */
   say?: (session: string, text: string) => Promise<{ sent: boolean }>;
-  /** Where the Roles mode's doors lead (COMPANYVIEW1d), handed in by the application, which holds every view's opening. */
+  /** Where the Roles mode's doors lead, handed in by the application, which holds every view's opening. */
   roleDoors?: RoleOpeners;
 }): ViewLayout {
   const { t } = useTranslation();
@@ -165,7 +165,7 @@ export function useAgentsView({ active, chosen, onChoose, notify, part = null, o
   // The Roles page's state lives here, so a door out of it and the way back find the selection and the scope as left.
   const rolesPage = useRolesPage();
   const setUpPage = useSetUpPage();
-  // AGENTSPLACE1k: a place's *Set up…* opens on the ask Ask Daoris proposed. The page plans it on opening, and Apply stays the person's.
+  // A place's *Set up…* opens on the ask Ask Daoris proposed. The page plans it on opening, and Apply stays the person's.
   const seeded = modes?.seeded ?? null;
   const onSeeded = modes?.onSeeded;
   const seededHere = active && inSetup && seeded !== null && seeded.place === modes?.place;
@@ -174,7 +174,7 @@ export function useAgentsView({ active, chosen, onChoose, notify, part = null, o
     setUpPage.open(seeded.place, seeded.ask.repositories, draftOfAsk(seeded.ask));
     onSeeded?.();
   }, [seededHere, seeded, setUpPage, onSeeded]);
-  // SETUPUX1h: the page's state (the sections open, the row a door asked for, the way back) is held here, above the sections' mounts.
+  // The page's state (the sections open, the row a door asked for, the way back) is held here, above the sections' mounts.
   const shell = usePlaceShell();
   const arrival = modes?.arrival ?? null;
   const onArrived = modes?.onArrived;
@@ -199,11 +199,11 @@ export function useAgentsView({ active, chosen, onChoose, notify, part = null, o
 
   const harnesses = Array.isArray(roster.data?.harnesses) ? roster.data.harnesses : null;
   const tools = harnesses ? byTool(harnesses, roster.data?.agents) : [];
-  // Every agent this build knows, installed or not (AGENTS2): a fold for the ones not installed hid Codex.
+  // Every agent this build knows, installed or not: a fold for the ones not installed hid Codex.
   const rows = agentRows(tools, accounts.data);
   const chosenTool = tools.find((tool) => tool.name === chosen) ?? null;
   const adapter = roster.data?.adapter;
-  // A row's Install (AGENTS2) opens its agent and asks the page to run the installer there, where the application's running
+  // A row's Install opens its agent and asks the page to run the installer there, where the application's running
   // action is held and its console streams under *Ways in*; this view's hook sits outside that holder.
   const [installing, setInstalling] = useState<string | null>(null);
   const install = (agent: string) => {
@@ -211,7 +211,7 @@ export function useAgentsView({ active, chosen, onChoose, notify, part = null, o
     setInstalling(agent);
   };
 
-  // A door that names a part and no agent opens the agent that has it (D150 §2.4): what agents may do is the agent's that
+  // A door that names a part and no agent opens the agent that has it: what agents may do is the agent's that
   // Daoris hands the rules file; usage and accounts the agent driven work starts on, else the first installed.
   useEffect(() => {
     if (!active || !part || !harnesses) return;
@@ -253,7 +253,7 @@ export function useAgentsView({ active, chosen, onChoose, notify, part = null, o
         onGo,
       })
       : undefined;
-    // SETUPUX1j: a refusal's door leaves the set-up with its draft kept, opens the page where the cause is put right (the place's own, or for a
+    // A refusal's door leaves the set-up with its draft kept, opens the page where the cause is put right (the place's own, or for a
     // workspace the refusing repository's) and returns by *Back*, which finds the draft as left and the plan read again.
     const doorFor: SetUpDoor = (refusal) => {
       if (!setUpPlace || !doorOf(refusal.code)) return null;
@@ -275,7 +275,7 @@ export function useAgentsView({ active, chosen, onChoose, notify, part = null, o
         head: <AgentsModes mode={modes.mode} onMode={modes.onMode} />,
         strip: <AgentsStrip mode={modes.mode} onMode={modes.onMode} />,
         chosen: modes.place,
-        // A choice is the head's to be read from: the list laid over the page goes, and the focus returns to the head (SETUPUX1h).
+        // A choice is the head's to be read from: the list laid over the page goes, and the focus returns to the head.
         body: <SetupList state={places} chosen={modes.place} onChoose={(next) => { shell.clearBack(); modes.onPlace(next); shell.askFocus(); }} />,
       },
       main: (
@@ -296,7 +296,7 @@ export function useAgentsView({ active, chosen, onChoose, notify, part = null, o
                   onSource={sourceDoor({ id: modes.place!, name }, row.workspace, onGo)}
                 />
               ),
-              // SETUPUX1m: This machine alone draws every role once, its diagram and the suggested choices.
+              // This machine alone draws every role once, its diagram and the suggested choices.
               ...(placed.kind === 'machine'
                 ? { allRoles: <AllRoles notify={notify} page={rolesPage} doors={roleDoors} onGo={onGo} /> }
                 : {}),
@@ -305,7 +305,7 @@ export function useAgentsView({ active, chosen, onChoose, notify, part = null, o
             : {}}
           notes={placed?.kind === 'machine'
             ? <MachineNotes onShow={() => { rolesPage.onView('list'); shell.arrive(MACHINE, { section: 'allRoles' }); }} />
-            // D230 point 2: an adopted repository's page offers its reconcile where the doctrine tool's status says the canon moved.
+            // An adopted repository's page offers its reconcile where the doctrine tool's status says the canon moved.
             : placed?.kind === 'repository' && row?.adopted && row.repository
               ? <ReconcileNote key={row.repository} repository={row.repository} />
               : undefined}
@@ -335,7 +335,7 @@ export function useAgentsView({ active, chosen, onChoose, notify, part = null, o
       loading,
       empty: harnesses && rows.length === 0 ? { headline: t('agents.empty.headline'), body: t('agents.empty.body') } : undefined,
       chosen,
-      // A remembered agent reopens only while this machine still knows it (UX6b): one gone opens nothing chosen.
+      // A remembered agent reopens only while this machine still knows it: one gone opens nothing chosen.
       standing: !chosen ? undefined : !harnesses ? 'unread' : chosenTool ? 'live' : 'gone',
       body: <AgentList rows={rows} chosen={chosen} onChoose={onChoose} onInstall={install} />,
     },
@@ -366,12 +366,12 @@ export function useAgentsView({ active, chosen, onChoose, notify, part = null, o
 }
 
 /**
- * The chosen agent's page and every act on it (UX6e): the organism under the page, inside the application's running
- * action (SIGNIN1), so a sign-in started here outlives leaving the place and its end is said wherever the person is.
+ * The chosen agent's page and every act on it: the organism under the page, inside the application's running
+ * action, so a sign-in started here outlives leaving the place and its end is said wherever the person is.
  */
 function AgentsMain({ tool, adapter, notify, part, onAnchored, onOpenPlugin, say, usedBy: asksUsedBy = false, install = false, onInstallTaken }: {
   tool: Tool;
-  /** Whether the page says the roles that lean on the agent (COMPANYVIEW1d): on a desktop, where the Roles mode is. */
+  /** Whether the page says the roles that lean on the agent: on a desktop, where the Roles mode is. */
   usedBy?: boolean;
   say?: (session: string, text: string) => Promise<{ sent: boolean }>;
   adapter?: string;
@@ -379,7 +379,7 @@ function AgentsMain({ tool, adapter, notify, part, onAnchored, onOpenPlugin, say
   part?: AgentPart | null;
   onAnchored?: () => void;
   onOpenPlugin?: (plugin: string) => void;
-  /** The list's Install was pressed on this agent (AGENTS2): its installer runs here, once. */
+  /** The list's Install is pressed on this agent: its installer runs here, once. */
   install?: boolean;
   /** Told as the install is taken, so the request is spent. */
   onInstallTaken?: () => void;
@@ -393,9 +393,9 @@ function AgentsMain({ tool, adapter, notify, part, onAnchored, onOpenPlugin, say
   const accountUse = useAccountUse();
   const rules = useRules();
   const ruleAct = useRuleAction();
-  // A proposal's answer, its one owner (PROPOSEHERE1b): *What needs you* and the session's conversation press the same.
+  // A proposal's answer, its one owner: *What needs you* and the session's conversation press the same.
   const ruleAnswer = useRuleAnswer({ notify });
-  // The session that proposed a rule is found in the list while a proposal names one and a door to it was handed (PROPOSEHERE1c).
+  // The session that proposed a rule is found in the list while a proposal names one and a door to it is handed.
   const proposalSessions = useSessions(null, true, Boolean(say) && Array.isArray(rules.data?.proposals) && rules.data.proposals.some((one) => one.session));
   const {
     running, runningProfile, signingInNew, busy: acting, run, added, settleAdded, refusal, retry, dismiss,
@@ -412,14 +412,14 @@ function AgentsMain({ tool, adapter, notify, part, onAnchored, onOpenPlugin, say
     ? null
     : { read: structure.read === 'ok' ? 'ok' as const : structure.read === 'failed' ? 'failed' as const : 'loading' as const, rows: structure.answer ? usedByAgent(structure.answer, tool) : [] };
 
-  // Each account's use is read at *Read now* alone (SWITCH1d; the switch design §1.2), never as the page opens: the page answers
-  // from the kept readings, and a start's walk and the driver's own pace keep them. A read asks no sign-in and spends nothing
-  // (D165 point 1), and the driver skips an account cooling, refused, signed out, busy or a key, and floors each at its question's.
+  // Each account's use is read at *Read now* alone, never as the page opens: the page answers
+  // from the kept readings, and a start's walk and the driver's own pace keep them. A read asks no sign-in and spends nothing,
+  // and the driver skips an account cooling, refused, signed out, busy or a key, and floors each at its question's.
   const readAccounts = useReadAccounts();
-  // The new account this agent's sign-in kept, waiting on its name (UX7b, POOL1c): the add flow's step 3.
+  // The new account this agent's sign-in kept, waiting on its name: the add flow's step 3.
   const addedHere = added && added.harness === door ? added : null;
-  // A key added here asks the same question (the UX7 design §4.5, ACCTUX3): by its id and its key's handle, held while the
-  // page is, since it ends inside the request on this page; it serves every workspace whatever is answered (D197).
+  // A key added here asks the same question: by its id and its key's handle, held while the
+  // page is, since it ends inside the request on this page; it serves every workspace whatever is answered.
   const [keyAdded, setKeyAdded] = useState<{ profile: string; key: string | null } | null>(null);
   // The step answers the key's first, the newer press; a sign-in's waits behind it, held above every view.
   const answering = keyAdded
@@ -428,7 +428,7 @@ function AgentsMain({ tool, adapter, notify, part, onAnchored, onOpenPlugin, say
       ? { profile: addedHere.profile, who: addedHere.account, offered: addedHere.offered, key: null, settle: settleAdded }
       : null;
 
-  // The list's Install (AGENTS2): the account-owning door's installer, as the first Install under *Ways in* runs it. Taken
+  // The list's Install: the account-owning door's installer, as the first Install under *Ways in* runs it. Taken
   // once, by a ref, since a development build runs an effect twice and the run's own guard learns of the first only later.
   const installTaken = useRef(false);
   useEffect(() => {
@@ -439,7 +439,7 @@ function AgentsMain({ tool, adapter, notify, part, onAnchored, onOpenPlugin, say
     if (installTaken.current) return;
     installTaken.current = true;
     onInstallTaken?.();
-    // An agent Daoris has no installer for is never run one (INSTALLDOOR1): the driver refuses it, and its page says how.
+    // An agent Daoris has no installer for is never run one: the driver refuses it, and its page says how.
     if (!tool.present && tool.acts?.installs) run(door, 'install');
   }, [install, onInstallTaken, tool.present, tool.doors, run, door]);
 
@@ -449,9 +449,9 @@ function AgentsMain({ tool, adapter, notify, part, onAnchored, onOpenPlugin, say
     return account ? accountLabel(account, tool) : name;
   };
 
-  // ACCT2's rename, the terminal's `daoris agent profile rename` (D50), said as it lands.
+  // The rename, the terminal's `daoris agent profile rename`, said as it lands.
   const rename = async (account: string, name: string | null) => {
-    // Naming an account its own id gives it no name of its own (ACCT2): the one way to clear it at the door.
+    // Naming an account its own id gives it no name of its own: the one way to clear it at the door.
     const answer = await act.mutateAsync({ door: door, action: 'profile-rename', profile: account, name: name ?? account });
     notify(answer.name
       ? t('agents.renamed', { id: account, name: answer.name })
@@ -459,17 +459,17 @@ function AgentsMain({ tool, adapter, notify, part, onAnchored, onOpenPlugin, say
     return answer.name ?? null;
   };
 
-  // ACCTEDIT1: a question's act told back to it: done once it lands, so it closes then and not on the press; refused, its
+  // A question's act told back to it: done once it lands, so it closes then and not on the press; refused, its
   // sentence is said in the question, whole, with what the person entered kept. A press with no question (an ⋯ item) has
   // no form to say it in, so it is a toast (the platform language §4).
   const told = (landing: Promise<unknown>, answered?: Answered) => {
     landing.then(() => answered?.done(), (error: unknown) => (answered ? answered.refused(sentence(error)) : onError(error)));
   };
 
-  // The set's order and its one entry of settings (POOL1c, D197 point 2): no workspace is named, since one set serves them all.
+  // The set's order and its one entry of settings: no workspace is named, since one set serves them all.
   const scope: ScopeActs = {
     onOrder: (list) => accountUse.mutate({ door: door, action: 'order', accounts: list }, { onError }),
-    // A refusal the press's own place says (the curve's editor, PUSH1e) is told there, in the reader's language, and toasted nowhere.
+    // A refusal the press's own place says (the curve's editor) is told there, in the reader's language, and toasted nowhere.
     onUse: (change, refused) => accountUse.mutate(
       { door: door, action: 'use', ...change },
       { onError: refused ? (error: unknown) => refused(sentence(error)) : onError },
@@ -484,13 +484,13 @@ function AgentsMain({ tool, adapter, notify, part, onAnchored, onOpenPlugin, say
     onReadOne: (account) => read.mutate({ agent: tool.name, profile: account }, { onError }),
     onReadNow: () => readAccounts.mutate({ door: door }, { onError }),
     onSignInNew: () => run(door, 'login-new'),
-    // ACCTUX3: told back to the key's field, which closes once the key is kept and says a refusal in it; kept, the account
-    // goes to the add flow's last step for its name, where a toast said it was added.
+    // Told back to the key's field, which closes once the key is kept and says a refusal in it; kept, the account
+    // goes to the add flow's last step for its name, not to a toast saying it is added.
     onAddKey: (key, answered) => told((async () => {
       const result = await act.mutateAsync({ door: door, action: 'key-add', key });
       if (result.profile) setKeyAdded({ profile: result.profile, key: result.key ?? null });
     })(), answered),
-    // KEYREPLACE1b: the key goes into the same account, which keeps its name and its place in the order, so no add flow follows.
+    // The key goes into the same account, which keeps its name and its place in the order, so no add flow follows.
     onReplaceKey: (account, key, answered) => told(
       act.mutateAsync({ door: door, action: 'key-replace', profile: account, key }), answered,
     ),
@@ -501,7 +501,7 @@ function AgentsMain({ tool, adapter, notify, part, onAnchored, onOpenPlugin, say
     ),
     onRemove: (account, answered) => run(door, 'profile-remove', account, undefined, answered),
     onRename: (account, name, answered) => told(rename(account, name), answered),
-    // The add flow's end (D152 §4.5; POOL1c, the account-pool design §4.1): its name kept where the field holds one other than
+    // The add flow's end: its name kept where the field holds one other than
     // the one it has; refused, the question stays up, so nothing the person typed is lost, and says why in it.
     onAddedAnswer: ({ name }, answered) => {
       if (!answering) return;
@@ -513,10 +513,10 @@ function AgentsMain({ tool, adapter, notify, part, onAnchored, onOpenPlugin, say
         answering.settle();
       })(), answered);
     },
-    // *Got it* (POOL1a; the account-pool design §6.3): the receipts the page showed, by id, marked said; a failure is a toast,
+    // *Got it*: the receipts the page showed, by id, marked said; a failure is a toast,
     // since the block stays and the press is offered again.
     onPooledSaid: (ids) => accountUse.mutate({ door: door, action: 'said', ids }, { onError }),
-    // ACCTUX3: told back to its editor, which closes once the save lands and says a refusal under it, the choice kept.
+    // Told back to its editor, which closes once the save lands and says a refusal under it, the choice kept.
     onSaveSettings: (account, label, change, answered) => told((async () => {
       await tune.mutateAsync({ door: door, profile: account, ...change });
       notify(t('harness.settings.saved', { account: label }));
@@ -552,7 +552,7 @@ function AgentsMain({ tool, adapter, notify, part, onAnchored, onOpenPlugin, say
 
   const rulesAnswer = rules.data && Array.isArray(rules.data.defaults) && Array.isArray(rules.data.scopes) ? rules.data : null;
   const doorRunning = tool.doors.find((each) => DOOR_ACTIONS.some((action) => running === `${each.door}:${action}`))?.door ?? null;
-  // Not answered yet is not nothing measured (PUSHUX1): the fold says it is reading until the usage is known.
+  // Not answered yet is not nothing measured: the fold says it is reading until the usage is known.
   const used = usage.isPending ? null : Array.isArray(usage.data?.accounts) ? usage.data.accounts : [];
 
   return (

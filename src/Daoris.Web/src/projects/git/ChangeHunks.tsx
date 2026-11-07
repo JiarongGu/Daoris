@@ -18,8 +18,8 @@ export type HunksValue = {
 export type HunkPress = { picks: { id: string; lines?: number[] }[]; faces: { head: string | null; index: string; source: string } };
 
 /**
- * **A file's hunks in the Changes tab** (GITAPP2h, D204, the git-writes design §4): each hunk as git prints it, a hunk pressed whole or
- * the lines chosen in it (`Stage` on the index → worktree side, `Unstage` on HEAD → index). What it sends back is the ids it was read
+ * **A file's hunks in the Changes tab**: each hunk as git prints it, a hunk pressed whole or
+ * the lines chosen in it (`Stage` on the index → worktree side, `Unstage` on HEAD → index). What it sends back is the ids it reads
  * with, so the driver refuses a hunk whose file moved since. A binary file has no hunk: it is pressed whole above.
  *
  * @remarks **A molecule**: the read arrives as a prop; `busy` holds every press while an act runs.

@@ -1,9 +1,9 @@
 import { type AccountFacts, type AccountScope, type AgentAccounts, USE_DEFAULTS } from './accounts';
 import type { AccountChoice } from './AccountUse';
 
-// How an agent's accounts are used, as the stories and the molecules' tests hand it (TOOL4g): one account, three, and six,
+// How an agent's accounts are used, as the stories and the molecules' tests hand it: one account, three, and six,
 // since nothing counts accounts; a cooling one, one near by its number, one its agent says is ahead of its pace and one that
-// said nothing; each agent's accounts one set in one order, every workspace's (POOL1c, D197). Names are neutral, as every
+// said nothing; each agent's accounts one set in one order, every workspace's. Names are neutral, as every
 // fixture's are.
 
 const minutesFrom = (minutes: number) => new Date(Date.now() + minutes * 60_000).toISOString();
@@ -19,7 +19,7 @@ export const CHOICES: AccountChoice[] = [
 
 export const SIX_CHOICES: AccountChoice[] = SIX.map((name, at) => ({ name, label: `seat-${at + 1}@example.invalid`, login: 'in' }));
 
-/** Daoris's curve on each window, as the accounts' answer carries the curve in effect (PUSH1e): the five-hour flat, the week's pace. */
+/** Daoris's curve on each window, as the accounts' answer carries the curve in effect: the five-hour flat, the week's pace. */
 export const SMART_CURVES = { session: [[0, 90]], weekly: [[0, 20], [75, 95], [100, 100]] } as AccountScope['curves'];
 
 export const scopeOf = (over: Partial<AccountScope> = {}): AccountScope => ({
@@ -28,7 +28,7 @@ export const scopeOf = (over: Partial<AccountScope> = {}): AccountScope => ({
 });
 
 /**
- * account-2's two windows against Daoris's curve, as .NET judges them (PUSH1e): 88% of the five-hour window under its 90%, and 14%
+ * account-2's two windows against Daoris's curve, as.NET judges them: 88% of the five-hour window under its 90%, and 14%
  * of the week, three sevenths of it gone, under its 63%.
  */
 const UNDER_SMART = [
@@ -65,7 +65,7 @@ export const THREE: AgentAccounts = {
     { name: 'account-3', running: 1 },
   ],
   scopes: [
-    // The order's first cooling: of the rest, the one running fewer of Daoris's sessions (TOOL6e).
+    // The order's first cooling: of the rest, the one running fewer of Daoris's sessions.
     scopeOf({
       list: ['account-1', 'account-2', 'account-3'], begins: 'account-1', near: [], measured: UNDER_SMART,
       next: {
@@ -77,7 +77,7 @@ export const THREE: AgentAccounts = {
 };
 
 /**
- * account-2 as its agent said it with Claude Code's pace warning on its week (USAGEREAD3b, D165 point 2): 60% of its week
+ * account-2 as its agent said it with Claude Code's pace warning on its week: 60% of its week
  * used, ahead of its pace by the agent's own thresholds, and not near by that alone.
  */
 export const AHEAD: AccountFacts = {
@@ -98,8 +98,8 @@ export const AHEAD: AccountFacts = {
 };
 
 /**
- * The set on the person's own curve, its five-hour window flat at 85 (SWITCH1d; the old `near` derived from it): account-2's
- * five-hour window at 88% is over it, as .NET judges it (PUSH1e).
+ * The set on the person's own curve, its five-hour window flat at 85: account-2's
+ * five-hour window at 88% is over it, as.NET judges it.
  */
 export const MACHINE_NEAR = scopeOf({
   list: ['account-1', 'account-2', 'account-3'], begins: 'account-1',
@@ -129,7 +129,7 @@ export const SILENT: AgentAccounts = {
 };
 
 /**
- * TOOL6e, the owner's case: the order's first came out of its cool-off 58 minutes ago, nothing runs, and the others started
+ * The owner's case: the order's first came out of its cool-off 58 minutes ago, nothing runs, and the others started
  * since, so the next start takes it; account-3 cools until a stated reset.
  */
 export const OFFERED_AGAIN: AgentAccounts = {

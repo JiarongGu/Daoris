@@ -4,7 +4,7 @@ import {
 } from './flowFixtures';
 import { type Fold, type FoldShape, largeFolds, WHOLE_MOST } from './flowFolds';
 
-// FLOWCHART1d (D186 point 7; the flowchart design §3.6 and trap 16): a flow is drawn whole up to 24 nodes. Past that, settled
+// A flow is drawn whole up to 24 nodes. Past that, settled
 // stretches fold, then the flow is focused on the ranks around every current node, or with none current where nothing has
 // started, before the end where all has settled, or where it got to; *earlier*, *between* and *later* folds hold the rest. Pure:
 // the folds are a function of the graph's shape, what is current and settled, and which folds the person opened.

@@ -1,7 +1,7 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { PhaseList, type PhaseRow } from './phases';
 
-// R2 (the UI/UX design, SIGNIN1): a step that waits says its phase and how long. Each state as the list standing open,
+// A step that waits says its phase and how long. Each state as the list standing open,
 // where the process is its own surface, and as the line alone, where a row or a head has no room for a list.
 
 const AT = Date.now();

@@ -8,7 +8,7 @@ import { code } from '../test/code';
 import { type AskConversationSlot, AskPanel as Panel } from './AskPanel';
 import { starters } from './starters';
 
-// HELP1d (D89): Ask Daoris's panel — what the machine lacks, each with its door and its command.
+// Ask Daoris's panel — what the machine lacks, each with its door and its command.
 
 /** The panel as the application holds it, under the one tooltip provider the page mounts. */
 const AskPanel = (props: Parameters<typeof Panel>[0]) => <Tooltip.Provider><Panel {...props} /></Tooltip.Provider>;
@@ -69,7 +69,7 @@ describe('Ask Daoris', () => {
   });
 
   /**
-   * SETUP1a (D97 §2): the starters lead to the setup guide while its required steps are not all done —
+   * The starters lead to the setup guide while its required steps are not all done —
    * what is missing in order, beside what is missing now.
    */
   it('leads to the setup guide while setup is not done, and not after', async () => {
@@ -85,7 +85,7 @@ describe('Ask Daoris', () => {
     expect(screen.queryByRole('button', { name: /set up Daoris/ })).toBeNull();
   });
 
-  /** ASKHIST1: open, the history takes the conversation's place, its head, its words and its box together. */
+  /** Open, the history takes the conversation's place, its head, its words and its box together. */
   it('draws the history in the conversation’s place while it is open, with no box to write in', () => {
     const slot = {
       body: <p>the conversation</p>, composer: <p>the box</p>, ended: false, onNew: vi.fn(), title: 'what is a workspace?',
@@ -108,7 +108,7 @@ describe('Ask Daoris', () => {
 });
 
 /**
- * ASKHIST1c: the open conversation's head (the way back to the history, the conversation's title, a new one), the strips
+ * The open conversation's head (the way back to the history, the conversation's title, a new one), the strips
  * between its words and its box (the way back to the tail, then what the next words do), and its Escape back to the list.
  */
 describe.each(['en', 'zh'])('Ask Daoris’s open conversation in %s', (language) => {

@@ -3,7 +3,7 @@ import { IDENT_HUES } from './icon';
 import { PluginIcon } from './PluginIcon';
 import { InTheme, PNG_ICON, SVG_ICON } from './storyIcons';
 
-// A plugin's icon (PLUGUI2, D140 §3): its own, drawn as an image of the bytes the driver handed, or its monogram, at the
+// A plugin's icon: its own, drawn as an image of the bytes the driver handed, or its monogram, at the
 // strip's, a row's and a page's size, in both themes.
 
 /** One plugin for each identity hue, by an id whose hash lands on it, with a 中文 name among them. */

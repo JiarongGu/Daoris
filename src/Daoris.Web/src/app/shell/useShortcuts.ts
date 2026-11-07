@@ -16,14 +16,14 @@ export function useShortcuts({ commandState, commandDoors, translate, openMenu, 
   setMnemonics: React.Dispatch<React.SetStateAction<boolean>>;
   setOpenMenu: React.Dispatch<React.SetStateAction<string | null>>;
 }) {
-  // The keys (D152 §3.4), read from the one table at the press, so a key runs what its menu row runs and only while it
+  // The keys, read from the one table at the press, so a key runs what its menu row runs and only while it
   // applies: a field keeps what a field means, the terminal that and a shell's next line, and a browser what it keeps.
   const tableNow = useRef<() => ReturnType<typeof commandTable>>(() => []);
   tableNow.current = () => commandTable(commandState(), commandDoors, translate);
   const menuOpen = useRef(openMenu);
   menuOpen.current = openMenu;
   useEffect(() => {
-    // Alt pressed and let go with nothing between reaches the bar, as Windows' menu bars do (the design §3.3).
+    // Alt pressed and let go with nothing between reaches the bar, as Windows' menu bars do.
     let altAlone = false;
     const onKey = (event: KeyboardEvent) => {
       // A shell's alone: a browser keeps Alt and F10 for its own menu.

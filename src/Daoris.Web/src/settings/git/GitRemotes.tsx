@@ -5,7 +5,7 @@ import { InlineConfirm, Refused } from '../../work/InlineConfirm';
 import { Button, Inline, Pill, SelectField } from '../../design/ui';
 import type { GitIdentityShown } from './Git';
 
-/** One git remote of a repository, with what serves it (GITAUTH1e, the git-auth design §7.3), as `GIT_BRANCHES`' `remotes` answers it. */
+/** One git remote of a repository, with what serves it, as `GIT_BRANCHES`' `remotes` answers it. */
 export type GitRemoteShown = {
   name: string;
   /** The effective address with no user-info (§4.4, §10). */

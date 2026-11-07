@@ -11,13 +11,13 @@ import { PlaceSetUp } from './PlaceSetUp';
 import type { HoldOutcome } from './PlaceReview';
 
 /**
- * **A place's *Set up…*** (AGENTSPLACE1j, the Agents-place design §4), the organism over `PlaceSetUp`: it reads the plan for the draft the
+ * **A place's *Set up…***, the organism over `PlaceSetUp`: it reads the plan for the draft the
  * application holds and presses *Apply* as the person's own (`PLACE_APPLY`), straight to the route.
  *
  * @remarks
  * The plan is first read as *Not driven*, which changes nothing, to learn what the driver suggests; the suggestion is then preselected where
  * every repository suggests the same, so the person reads a plan of a choice made for them and not of none, and where they differ nothing is
- * preselected (SETUPUX1j). The deliveries come from the data (`WORKFLOW_LIST`), a workspace's repositories from its whole list (`PLACES`
+ * preselected. The deliveries come from the data (`WORKFLOW_LIST`), a workspace's repositories from its whole list (`PLACES`
  * `members`). *Hold it after driving* sets the repository's hold before the apply (`SET_HOLD`), after which the plan reads no queued work as
  * released.
  */
@@ -51,7 +51,7 @@ export function PlaceSetUpPanel({ place, page, doorFor, onOpenQuest }: {
     if (next !== null) change(id, { preset: next, adoption });
   }, [next, adoption, id, change]);
 
-  // A tick is bound to the declaration it was made at: once the plan for the draft is read, one whose line or blob moved is cleared, with its reason.
+  // A tick is bound to the declaration it is made at: once the plan for the draft is read, one whose line or blob moved is cleared, with its reason.
   const fresh = plan !== null && !planned.stale && !planned.reading;
   const ticked = draft?.accept;
   const cleared = draft?.cleared;

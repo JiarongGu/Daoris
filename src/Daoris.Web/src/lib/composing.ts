@@ -5,12 +5,12 @@
 export type KeyPress = { keyCode: number; isComposing?: boolean; nativeEvent?: { isComposing: boolean } };
 
 /**
- * Whether an input method is composing with this press (IME1): the press is the input method's, and a handler that
+ * Whether an input method is composing with this press: the press is the input method's, and a handler that
  * acts on Enter, Escape, Tab or the arrows asks this first and does nothing when it answers yes.
  *
  * @remarks
  * Enter accepts a candidate and Escape drops the composition, so a handler that acted on them sent a half-written
- * message, picked a row, or closed what the person was typing in. For a person writing 中文, nearly every word is
+ * message, picked a row, or closed what the person is typing in. For a person writing 中文, nearly every word is
  * composed.
  *
  * **229 is composing too.** The engine reports keyCode 229 for a press an input method took, and with some input

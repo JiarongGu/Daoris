@@ -23,7 +23,7 @@ export type BranchFacts = {
 };
 
 /**
- * Its graph since it parted from its line (D147's `sinceParted`), the pages accumulated: the tips in the order drawn, the line's
+ * Its graph since it parted from its line (`sinceParted`), the pages accumulated: the tips in the order drawn, the line's
  * first so it keeps the leftmost lane as History's does; or that its line has no commit here to be drawn beside.
  */
 export type BranchGraph =
@@ -31,8 +31,8 @@ export type BranchGraph =
   | { state: 'noLine' };
 
 /**
- * What the page reads: the list on its way, with no checkout here, or refused in words; the branch gone from the list since it
- * was opened; or the branch as listed, with its graph.
+ * What the page reads: the list on its way, with no checkout here, or refused in words; the branch gone from the list after it
+ * is opened; or the branch as listed, with its graph.
  */
 export type BranchRead =
   | { state: 'reading' }
@@ -42,16 +42,16 @@ export type BranchRead =
   | { state: 'read'; value: BranchFacts; graph: BranchGraph };
 
 /**
- * **A branch's page** (UX6h3b, the built-in Git design §2.3), in Repositories' main area, opened from a branch's name in a
+ * **A branch's page**, in Repositories' main area, opened from a branch's name in a
  * repository's Branches or a workspace's. Its header names the branch and its kind, a session's with its state and title as its
  * list row says them, and says in one line where it stands: against its line, against origin and its pull request, in the
  * list's own words (`branchStanding`). Its act goes back to the repository's Branches. Beneath, the branch's commits since it
- * left its line beside the line's since then (`sinceParted`), in lanes, a page at a time with the load-more foot (UX6h3a).
+ * left its line beside the line's since then (`sinceParted`), in lanes, a page at a time with the load-more foot.
  *
  * @remarks
  * **A molecule**: the read arrives as a prop, and its holder (`RepositoryBranch`) reads the list and the graph. The header and
  * its way back are there in every state, so a branch the list no longer holds says so beside the press that leaves. Commit
- * rows keep no press (GIT1f's); a branch of the person's own carries *Edit history* (GITAPP2m) where its holder hands the
+ * rows keep no press; a branch of the person's own carries *Edit history* where its holder hands the
  * presses, and no other act of git's; the walk's sides are not marked.
  */
 export function BranchPage({ repository, name, read, onBack, onMore, landing, edits }: {
@@ -64,11 +64,11 @@ export function BranchPage({ repository, name, read, onBack, onMore, landing, ed
   /** The next page, asked: the holder reads it and hands the commits back accumulated. */
   onMore?: () => void;
   /**
-   * How a landed branch landed (FLOWCHART1c): its fold and its reads, which the holder keeps. Absent for any other kind of branch,
+   * How a landed branch landed: its fold and its reads, which the holder keeps. Absent for any other kind of branch,
    * and where nothing can read the trace (a browser).
    */
   landing?: LandingDoor;
-  /** *Edit history*'s presses (GITAPP2m), drawn only on a branch of the person's own; absent, the page offers none. */
+  /** *Edit history*'s presses, drawn only on a branch of the person's own; absent, the page offers none. */
   edits?: HistoryEdits;
 }) {
   const { t } = useTranslation();
@@ -128,8 +128,8 @@ export function BranchPage({ repository, name, read, onBack, onMore, landing, ed
     );
   })();
 
-  // How a landed branch landed stands above its commits, once the list has read it (FLOWCHART1c); so does a branch of the person's own
-  // *Edit history* (GITAPP2m).
+  // How a landed branch landed stands above its commits, once the list has read it; so does a branch of the person's own
+  // *Edit history*.
   const editing = edits && facts && kindOf(facts.branch) === 'yours' ? <HistoryEdit branch={name} line={facts.line} edits={edits} /> : null;
   return (
     <ViewMain header={head}>

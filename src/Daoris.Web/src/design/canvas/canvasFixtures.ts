@@ -1,7 +1,7 @@
 import type { FlowEdge, FlowNode } from '../FlowCanvas';
 import type { Scene } from './layoutScene';
 
-// The synthetic placed worlds the canvas is measured on (CANVAS1a; the canvas design §5's fixtures): stories and the measured spec only.
+// The synthetic placed worlds the canvas is measured on: stories and the measured spec only.
 
 /** The ranks' sizes, repeated: a step, a split three ways, two that join. */
 const RANKS = [1, 3, 2] as const;

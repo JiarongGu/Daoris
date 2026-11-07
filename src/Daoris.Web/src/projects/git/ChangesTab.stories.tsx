@@ -11,22 +11,22 @@ import { ConflictHunks } from './ConflictHunks';
 import { CommitBox, type CommitPlanValue } from './CommitBox';
 import { type ChangesActs, ChangesTab } from './RepositoryGit';
 
-// A repository's Changes tab (GITAPP2b, D204, the git-writes design §1, §4, §11), drawn where the person let Daoris change the
+// A repository's Changes tab, drawn where the person let Daoris change the
 // checkout's files: what is staged against the last commit, what the files hold beyond it (a file staged and then removed is in
-// both), what is untracked and what a merge left in conflict, each with its mode and blob, and when it was read. At the main
+// both), what is untracked and what a merge left in conflict, each with its mode and blob, and when it is read. At the main
 // area's three widths (80, 39 and 25rem) in English and 中文, in both themes; and its states: on its way, no checkout here,
 // refused, none, and read again.
 
 const nothing = () => {};
 const dark: Decorator = (Story) => <InTheme theme="dark"><Story /></InTheme>;
 
-// GITAPP2i: and the commit box (the message, Amend the last commit, the hooks it runs, who commits), whose plan a story may change.
+// And the commit box (the message, Amend the last commit, the hooks it runs, who commits), whose plan a story may change.
 const commitBox = (over: Partial<CommitPlanValue> = {}, amended = false): NonNullable<ChangesActs['Commit']> => function Commit({ busy }) {
   const [amend, setAmend] = useState(amended);
   return <CommitBox read={{ state: 'read', value: { ...GIT_COMMIT_PLAN_ENGINE, ...over } }} amend={amend} onAmend={setAmend} busy={busy} onPress={nothing} />;
 };
 
-// GITAPP2k: and the switch box (a branch chosen, its plan) and the stash box (what a Save would take, the stash shared with every linked tree).
+// And the switch box (a branch chosen, its plan) and the stash box (what a Save would take, the stash shared with every linked tree).
 const switchBox = (chosen = '', over: Partial<SwitchPlanValue> = {}): NonNullable<ChangesActs['Switch']> => function Switch({ busy }) {
   const [now, setNow] = useState(chosen);
   return (
@@ -40,7 +40,7 @@ const stashBox = (over: Partial<StashPlanValue> = {}): NonNullable<ChangesActs['
   return <StashBox read={{ state: 'read', value: { ...GIT_STASH_PLAN_ENGINE, ...over } }} busy={busy} onPress={nothing} onApply={nothing} onDrop={nothing} />;
 };
 
-// GITAPP2h: every story below carries the presses (Stage, Unstage, Show changes) a tab has where the switch is on.
+// Every story below carries the presses (Stage, Unstage, Show changes) a tab has where the switch is on.
 const acts = (over: Partial<ChangesActs> = {}): ChangesActs => ({
   busy: false,
   last: null,
@@ -50,7 +50,7 @@ const acts = (over: Partial<ChangesActs> = {}): ChangesActs => ({
     <ChangeHunks read={{ state: 'read', value: GIT_HUNKS_BUDGET }} verb={side === 'unstaged' ? 'stage' : 'unstage'} busy={busy} onPress={onPress} />
   ),
   Commit: commitBox(),
-  // GITAPP2j: and the conflicted file's conflicts, with Mark resolved beside them.
+  // And the conflicted file's conflicts, with Mark resolved beside them.
   resolve: nothing,
   mark: nothing,
   Conflict: ({ busy, onPress }) => <ConflictHunks read={{ state: 'read', value: GIT_CONFLICT_CACHE }} busy={busy} onPress={onPress} />,
@@ -101,7 +101,7 @@ export const HunksOpenHalfChinese: Story = { decorators: [storyWidths.half, chin
 export const HunksOpenNarrow: Story = { decorators: [storyWidths.narrow], play: openChanges };
 export const HunksOpenNarrowChineseDark: Story = { decorators: [storyWidths.narrow, chinese, dark], play: openChanges };
 
-/** Opens the conflicted file's conflicts and takes ours for all, as a person would (GITAPP2j). */
+/** Opens the conflicted file's conflicts and takes ours for all, as a person would. */
 const openConflicts: Story['play'] = async ({ canvasElement }) => {
   const rows = [...canvasElement.querySelectorAll<HTMLButtonElement>('li button[aria-expanded]')];
   rows[rows.length - 1]?.click();
@@ -216,7 +216,7 @@ export const Refused: Story = {
   args: { read: { state: 'refused', sentence: 'git could not read this checkout\'s changes: it may be busy, or git did not start.' } },
 };
 
-// GITAPP2k: a switch done (with the way back), one the plan holds for a changed tracked file, and a stash Save done / holding to untracked files only.
+// A switch done (with the way back), one the plan holds for a changed tracked file, and a stash Save done / holding to untracked files only.
 export const SwitchDone: Story = {
   args: { acts: acts({ last: { verb: 'switch', path: 'release', act: 'a2', done: true, said: null, notes: 'Switch back to `main` to undo it.' } }) },
 };
@@ -239,7 +239,7 @@ export const StashUntrackedOnly: Story = { args: { acts: acts({ Stash: stashBox(
 export const StashUntrackedOnlyNarrowChinese: Story = { ...StashUntrackedOnly, decorators: [storyWidths.narrow, chinese] };
 export const StashUntrackedOnlyHalfDark: Story = { ...StashUntrackedOnly, decorators: [storyWidths.half, dark] };
 
-// GITAPP2l: the saved stashes, each applied by its commit id; one has two untracked files in the way.
+// The saved stashes, each applied by its commit id; one has two untracked files in the way.
 export const StashApply: Story = { args: { acts: acts({ Stash: stashBox() }) } };
 export const StashApplyNarrowChinese: Story = { ...StashApply, decorators: [storyWidths.narrow, chinese] };
 export const StashApplyHalfDark: Story = { ...StashApply, decorators: [storyWidths.half, dark] };

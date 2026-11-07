@@ -5,7 +5,7 @@ import { ChoiceLine } from './ChoiceLine';
 import { codeChoice, mapChoice } from './choiceWords';
 import type { MapNode, Topology } from './topology';
 
-// MAPUX1b (the map UX design §4): the choice's line is the Map's one polite live region, said once per choice.
+// The choice's line is the Map's one polite live region, said once per choice.
 
 const node = (id: string, extra: Partial<MapNode> = {}): MapNode => ({ id, owns: [], accepts: [], open: 0, working: false, parked: false, sessions: 0, ...extra });
 const TOPOLOGY: Topology = {

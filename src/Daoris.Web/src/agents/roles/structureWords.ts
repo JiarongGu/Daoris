@@ -4,7 +4,7 @@ import { entryText } from './Roles';
 import { type DiagramEdge, type DiagramNode } from './roleStructure';
 import { nameOf, positionOf, stateText, workList } from './StructureSections';
 
-// The words the structure's nodes and edges say (COMPANYVIEW1f, kept by CANVAS1c): a node's title and lines, and an edge as its source's
+// The words the structure's nodes and edges say: a node's title and lines, and an edge as its source's
 // foot says it and as its target hears it. Pure; the bands decide where they stand, never what they say.
 
 /** A node as drawn: its title, its lines, and whether it is drawn dashed (a place or an agent as written, an agent not installed). */

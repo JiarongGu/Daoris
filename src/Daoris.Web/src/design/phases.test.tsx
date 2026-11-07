@@ -5,7 +5,7 @@ import { phaseTime } from '../locales/format';
 import { Elapsed, PhaseList, type PhaseRow } from './phases';
 
 /**
- * R2 (the UI/UX design, SIGNIN1): a step that waits says its phase and how long. Its time steps by its own clock, seconds in
+ * A step that waits says its phase and how long. Its time steps by its own clock, seconds in
  * the first minute and minutes after, and stops when its phase ends; its phases are a list, each named by its words and its
  * state in words, so a reader hears where it is, and never by hue alone.
  */

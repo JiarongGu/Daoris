@@ -4,7 +4,7 @@ import { chinese } from '../../design/storyLanguage';
 import { storyWidths } from '../../design/storyWidths';
 import { PushRef } from './PushRef';
 
-// Push a branch on a Yours row, or a tag just made (GITAPP2g, n; D241 point 2): the press, what will move on origin confirmed, a tag's
+// Push a branch on a Yours row, or a tag just made: the press, what will move on origin confirmed, a tag's
 // Dangerous value said, and the door's refusal. At the main area's three widths (80, 39 and 25rem) in English and 中文, in both themes.
 
 const pushed = async () => ({ act: 'p1', outcome: 'done', refused: false, said: '' });

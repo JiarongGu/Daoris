@@ -7,7 +7,7 @@ import { PluginIcon } from './PluginIcon';
 import { Body, HelpServers, Lead, NameRows, PageHead, PageSection, PointRows, SkillRows, StepRows } from './PluginPage';
 
 /**
- * **One of Daoris's own plugins, not installed here** (D119 §3.2, D103): a header with its name, its version,
+ * **One of Daoris's own plugins, not installed here**: a header with its name, its version,
  * *not installed* and *Install*; its description; Points, Agents and Servers from its manifest; *What it needs*, its
  * README's bullets verbatim; and a line saying that installing runs nothing.
  *
@@ -57,7 +57,7 @@ export function OfferPage({ offer, kitPoints, installing = false, onInstall }: {
       {offer.servers.length > 0 && (
         <PageSection title={t('plugin.section.servers')}><NameRows names={offer.servers} /></PageSection>
       )}
-      {/* HELPPLUG1a (D170 point 3): what it would hand Ask Daoris, said before Install. */}
+      {/* What it would hand Ask Daoris, said before Install. */}
       <HelpServers servers={offer.helpServers} />
       <SkillRows skills={offer.skills} />
       <StepRows plugin={offer.id} steps={offer.steps} resources={offer.resources} />

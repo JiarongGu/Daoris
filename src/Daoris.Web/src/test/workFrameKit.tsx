@@ -11,7 +11,7 @@ import { WorkFrame } from '../work/WorkFrame';
 // What the parts of the Work frame's suite (`WorkFrame.*.test.tsx`) share besides the bridge: the typing, the records the
 // frame is shown, and the two ways of mounting it. A part imports this after it has mocked the bridge (`workFrameBridge`).
 
-// WEBSPEED1: user-event's default waits one macrotask between keys and each key re-renders the whole frame, which
+// User-event's default waits one macrotask between keys and each key re-renders the whole frame, which
 // made the suite the slowest in the web unit set. `delay: null` keeps every key event and drops only the waits; a
 // fresh instance per direct call keeps the pointer and keyboard state of one call from leaking into the next.
 // Only typing and key presses drop the wait: a click with no wait did not open the review tab before its test read it.
@@ -24,7 +24,7 @@ export const userEvent = {
 /**
  * Puts the keyboard focus on an element the way a person's Tab does. A native `focus()` called from a test runs outside
  * `act`, and a focused trigger opens its `Tip` (Radix opens a tooltip on focus), whose state update React then reports as
- * unwrapped (FRAMEACT1): the focus and what it renders settle together here.
+ * unwrapped: the focus and what it renders settle together here.
  */
 export function focus(element: HTMLElement) {
   act(() => { element.focus(); });
@@ -51,7 +51,7 @@ export const ROSTER = {
   ],
 };
 
-/** A roster whose chat harness reads a structured wire — a door where a turn can be stopped (CONV4). */
+/** A roster whose chat harness reads a structured wire — a door where a turn can be stopped. */
 export const STRUCTURED_ROSTER = {
   ...ROSTER,
   harnesses: [{ door: 'stub', present: true, version: 'stub 1.0.0', problem: null, machineDefault: null, profiles: [], structured: true }],
@@ -84,7 +84,7 @@ export const PARKED = {
   noteParts: [{ words: 'Two ways forward; I recommend the second.', by: 'agent' }],
 };
 
-/** An intake that could not settle whose an ask is, parked asking the person (INT4b). */
+/** An intake that could not settle whose an ask is, parked asking the person. */
 export const PARKED_INTAKE = {
   id: 'i9n8t7k6', quest: null, repository: 'ask #0fda18', ask: '0fda18', door: 'stub',
   state: 'awaiting-person', kind: 'chat', tree: 'C:/somewhere/data/intake/default',
@@ -93,15 +93,15 @@ export const PARKED_INTAKE = {
   created: '2026-09-02T00:00:00Z', updated: '2026-09-02T00:05:00Z',
 };
 
-/** An intake still at work on its ask (INT4h) — one turn, with no message box. */
+/** An intake still at work on its ask — one turn, with no message box. */
 export const RUNNING_INTAKE = { ...PARKED_INTAKE, id: 'r7n8t7k6', state: 'working', note: undefined };
 
-/** What words on their way say once the page stopped waiting on their send (SENDLOST1b). */
+/** What words on their way say once the page stopped waiting on their send. */
 export const UNANSWERED = 'The machine has not answered yet; it may still take them.';
 /** The bridge's own end of a call the page stopped waiting on (`stoppedWaiting`). */
 export const timedOut = () => Object.assign(new Error('The driver did not answer in time.'), { code: 'TIMEOUT' });
 
-/** A drag's data as a page sees it (DOCK1e): jsdom has no `DataTransfer`, and a region reads its types. */
+/** A drag's data as a page sees it: jsdom has no `DataTransfer`, and a region reads its types. */
 export function carried() {
   const data: Record<string, string> = {};
   return {
@@ -134,7 +134,7 @@ export function show(selected: string | null = null, notify: (text: string) => v
   return { ...view, onSelect, client };
 }
 
-/** The frame on a go's group (ENTRY1g), held as `App` holds it: let go once brought, which `brought` is told. */
+/** The frame on a go's group, held as `App` holds it: let go once brought, which `brought` is told. */
 export function going(group: OpenGroup) {
   const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   const brought = vi.fn();

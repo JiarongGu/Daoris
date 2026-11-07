@@ -1,2 +1,2 @@
-/** How the roles page shows its catalogue (COMPANYVIEW1f): as its list, or the diagram. */
+/** How the roles page shows its catalogue: as its list, or the diagram. */
 export type RolesView = 'list' | 'diagram';

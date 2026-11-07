@@ -9,7 +9,7 @@ export const QUEST_STATUSES = ['Open', 'Taken', 'Done', 'Declined'] as const;
 type Status = (typeof QUEST_STATUSES)[number];
 
 /**
- * The moves `QuestTransitions.Allows` allows (D46 §3): taken only from open; done and declined from open or taken; nothing
+ * The moves `QuestTransitions.Allows` allows: taken only from open; done and declined from open or taken; nothing
  * leaves a close, and nothing returns to open. A page constant, held to the service's source by `questLife.test.ts`.
  */
 export const QUEST_MOVES: readonly (readonly [Status, Status])[] = [
@@ -19,7 +19,7 @@ export const QUEST_MOVES: readonly (readonly [Status, Status])[] = [
 type Translate = (key: string, values?: Record<string, unknown>) => string;
 
 /**
- * One line inside a status (FLOWCHART1a2): a move that changed no status, one the replay did not apply, or a conflict, which is
+ * One line inside a status: a move that changed no status, one the replay did not apply, or a conflict, which is
  * `refused`. Its words carry who made it and when.
  */
 export type QuestMoveLine = { id: string; text: string; refused?: boolean; notApplied?: boolean };
@@ -49,7 +49,7 @@ export const heldWord = (t: Translate, hold: QuestHold): string =>
   hold === 'unreviewed' ? t('review.pill') : hold === 'source-reopened' ? t('quests.card.reopened') : t('quests.card.held');
 
 /**
- * **A quest's life as a flow** (FLOWCHART1a1-a2; the flowchart design §2.1): its four statuses and the moves the table allows,
+ * **A quest's life as a flow** : its four statuses and the moves the table allows,
  * entered at Open by its publish, the status it stands at lit in its own tone (`QUEST_TONE`), and each move said by its cause in
  * its source's foot. With its moves read (`GET /api/quests/{id}/moves`), the way it went: each move on its path drawn heavier
  * and said, the statuses it reached, who made each move into them, and inside each status what happened there.

@@ -4,7 +4,7 @@ import type { PlaceRow, PlacesRead } from '../../data/wiring';
 import { findPlace } from './SetupPlaces';
 import { useKeptPlace } from './useKeptPlace';
 
-// SETUPUX1i: the place chosen in the tree is kept across its pages and searches.
+// The place chosen in the tree is kept across its pages and searches.
 
 const place = (patch: Partial<PlaceRow> = {}): PlaceRow => ({
   workspace: 'aurora', repository: 'engine', driven: true, held: false, trees: false, checkout: true, adopted: true, works: [], needs: [], ...patch,

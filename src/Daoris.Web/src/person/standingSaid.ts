@@ -1,7 +1,7 @@
 import type { TFunction } from 'i18next';
 
 /**
- * The words a card says about where its terminal stands (CHANNELJOIN1c, D244 point 10), from the code the pipe wrote on its record: only
+ * The words a card says about where its terminal stands, from the code the pipe wrote on its record: only
  * the one place the system would not tell has words, since a join from a process in an agents' job is refused before any card. Any other
  * code, the standing confirmation's reasons among them, says nothing here.
  */

@@ -3,8 +3,8 @@ import { chinese } from '../design/storyLanguage';
 import { storyWidths } from '../design/storyWidths';
 import { AiJobs } from './AiJobs';
 
-// Daoris's own AI (AGT6): each job it may use a model for, the tier that answers it now, and how to
-// change it — in the shapes the service's status answers with. Intake and Ask Daoris are rows of *Actors* since MODELROLE1d
+// Daoris's own AI: each job it may use a model for, the tier that answers it now, and how to
+// change it — in the shapes the service's status answers with. Intake and Ask Daoris are rows of *Actors*
 // (`ai/Actors.stories.tsx`).
 
 const LEXICAL = {
@@ -16,7 +16,7 @@ const meta: Meta<typeof AiJobs> = {
   title: 'Settings/AiJobs',
   component: AiJobs,
   args: { search: LEXICAL },
-  // The main area at its wide width, as the frame gives it (the UI/UX design R6, UIFIT1).
+  // The main area at its wide width, as the frame gives it.
   decorators: [storyWidths.wide],
 };
 export default meta;
@@ -49,7 +49,7 @@ export const TierNotYetKnown: Story = {
 };
 
 /**
- * HELPMODE1c1 (the modes design §5's sketch): Ask Daoris on Claude Code, restricted, with its configured access under the access
+ * Ask Daoris on Claude Code, restricted, with its configured access under the access
  * row, housekeeping's inspection chosen and the browser waiting for approval.
  */
 export const RestrictedWithConfiguredAccess: Story = {

@@ -8,9 +8,9 @@ import { type StewardActNow, stewardReverse } from '../person/standing';
 import { StewardLine } from './StewardLine';
 
 /**
- * The steward's line as *Notifications* holds it (STEWARDROLE1b, D209 §5.3, §5.4): each act's reverse press sent as the window sends
+ * The steward's line as *Notifications* holds it: each act's reverse press sent as the window sends
  * the owner's ordinary press today: `SET_DRIVABLE`, `SET_TREES`, `SET_HOLD`, or `RETRY_QUEST` with what it did said as *Try again* says
- * it. Who holds the supervisor and the steward is their roles' (D233 point 2). The view draws it in its slot (`NotificationsView`'s
+ * it. Who holds the supervisor and the steward is their roles'. The view draws it in its slot (`NotificationsView`'s
  * `standing`), so the view presses no hook itself.
  */
 export function NotificationsStanding({ notify }: { notify: Notify }) {

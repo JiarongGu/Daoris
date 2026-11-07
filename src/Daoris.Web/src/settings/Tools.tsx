@@ -7,17 +7,17 @@ import {
   Button, Card, CardHeader, Inline, PathText, Pill, Prose, Segmented, SelectField, SettingList, SettingRow,
 } from '../design/ui';
 
-/** How a tool is run (D121 §2.2): the system's, from PATH; a version Daoris keeps; or a file the person names. */
+/** How a tool is run: the system's, from PATH; a version Daoris keeps; or a file the person names. */
 export type ToolWay = 'system' | 'managed' | 'file';
 
 /**
- * One tool as the shell's `TOOLS_LIST` answers it (TOOLS7, D121 §4.1): the fields its card draws. The bridge reads the
+ * One tool as the shell's `TOOLS_LIST` answers it: the fields its card draws. The bridge reads the
  * same shape; a molecule names its props here rather than reach the bridge. The bridge leaves a null out, so every
  * field that may be null may also be absent.
  */
 export type ToolShown = {
   tool: string;
-  /** Its product's name, Latin in both languages (D116 §3b). */
+  /** Its product's name, Latin in both languages. */
   name: string;
   /** The way set; absent when the file does not read, and the tool is refused. */
   way?: ToolWay | null;
@@ -48,14 +48,14 @@ export type ToolShown = {
   running?: { action: string; version?: string | null } | null;
 };
 
-/** One resource list as the screen shows it (§3.3): what vouches for it, when it was fetched, what it names here. */
+/** One resource list as the screen shows it: what vouches for it, when it is fetched, what it names here. */
 export type ToolListShown = {
   /** The person's address; absent for the list built in. */
   address?: string | null;
-  /** `built in`, `this machine`, or the host the person chose to trust (§3.5). */
+  /** `built in`, `this machine`, or the host the person chose to trust. */
   integrity?: string | null;
   exists: boolean;
-  /** When its copy was fetched, for a location. */
+  /** When its copy is fetched, for a location. */
   fetched?: string | null;
   sha256?: string | null;
   /** `<tool> <version>` it names for this machine. */
@@ -71,13 +71,13 @@ export type ToolsShown = {
   /** Why the file does not read; every tool is then refused. */
   problem?: string | null;
   tools: ToolShown[];
-  /** Settings → Git's identities (GITAUTH1e), from the files alone. */
+  /** Settings → Git's identities, from the files alone. */
   identities?: GitPageShown;
   locations: ToolListShown[];
   builtIn: ToolListShown;
 };
 
-/** One location looked at (§3.7). The sentence is the driver's. */
+/** One location looked at. The sentence is the driver's. */
 export type ToolLookShown = {
   address: string;
   outcome: 'fetched' | 'unread' | 'failed';
@@ -86,7 +86,7 @@ export type ToolLookShown = {
   dropped: string[];
 };
 
-/** How a tool's action ended, as the `TOOLS_ENDED` news says it (§3.6). */
+/** How a tool's action ended, as the `TOOLS_ENDED` news says it. */
 export type ToolEndShown = {
   tool: string;
   name: string;
@@ -99,7 +99,7 @@ export type ToolEndShown = {
   nothing?: string | null;
 };
 
-/** What a switch of git changes (§4.1): the checkout keys the git that runs now and the one it would run read differently. */
+/** What a switch of git changes: the checkout keys the git that runs now and the one it would run read differently. */
 export type GitSwitchShown = {
   now: { file?: string | null; problem?: string | null };
   then: { file?: string | null; problem?: string | null };
@@ -137,7 +137,7 @@ export function changes(tool: ToolShown, choice: ToolChoice): boolean {
 }
 
 /**
- * One tool's card in Settings → Tools (TOOLS7, D121 §4.1): what Daoris needs it for, how it is run as one choice of
+ * One tool's card in Settings → Tools: what Daoris needs it for, how it is run as one choice of
  * three, the file it runs or why none, and its version. *Managed* adds the versions downloaded and those the lists name
  * for this machine, with *Download*, *Use this version* and *Delete*; *Custom* adds the file with *Browse…*. Props in,
  * presses out: the domain holds the list, the presses and the choice, and the running action's console comes in as
@@ -145,11 +145,11 @@ export function changes(tool: ToolShown, choice: ToolChoice): boolean {
  *
  * @remarks
  * **Nothing applies on choosing.** A segment shows a way's controls; a press applies it. So a switch of git is said
- * before it applies (§4.1): for git, a press asks first (`onAsk`), and `asking` carries the two gits' answers, with the
+ * before it applies: for git, a press asks first (`onAsk`), and `asking` carries the two gits' answers, with the
  * switch confirmed beside *Never mind*. A version of git not yet downloaded is downloaded first, since what it changes
  * is asked of it.
  *
- * *Delete* asks once (D41 §4): its first press opens a sentence saying what the second does.
+ * *Delete* asks once: its first press opens a sentence saying what the second does.
  */
 export function ToolCard({
   tool, choice, busy = false, asking, console, onChoice, onUse, onAsk, onDownload, onStop, onDelete, onBrowse,
@@ -168,7 +168,7 @@ export function ToolCard({
   onAsk?: (use: ToolUse | null) => void;
   onDownload: (version: string) => void;
   onStop: () => void;
-  /** The delete's second press, told how it ended: a refusal is said inside the ask (UXFIX2b1). */
+  /** The delete's second press, told how it ended: a refusal is said inside the ask. */
   onDelete: (version: string, answered: Answered) => void;
   /** The system's file picker, where this window has one. */
   onBrowse?: () => void;
@@ -213,7 +213,7 @@ export function ToolCard({
       <CardHeader title={tool.name} aside={state} />
       <Prose className="mt-1 text-small">{t(`settings.tools.why.${tool.tool}`)}</Prose>
 
-      {/* The way set cannot run, in the driver's own words: it never falls back to PATH (D121 §2.3). */}
+      {/* The way set cannot run, in the driver's own words: it never falls back to PATH. */}
       {tool.refused && tool.problem && (
         <p className="mt-2 border-l-[3px] border-warn bg-page/60 px-3.5 py-2 text-body text-ink-soft">
           <Inline text={tool.problem} />
@@ -310,7 +310,7 @@ export function ToolCard({
               ? <Prose className="text-small"><Inline text={t('settings.tools.noVersions', { name: tool.name })} /></Prose>
               : (
                 <div className="flex flex-wrap items-center justify-start gap-2">
-                  {/* Which lists name the version chosen (§3.7): the person's first, then the one built in. */}
+                  {/* Which lists name the version chosen: the person's first, then the one built in. */}
                   {chosenOffered && (
                     <span className="text-small text-ink-faint">
                       {t('settings.tools.namedBy', { lists: chosenOffered.lists.map(listName).join(', ') })}
@@ -386,7 +386,7 @@ export function ToolCard({
 }
 
 /**
- * What a switch of git changes, said before it applies (§4.1): the checkout keys the two gits read differently, each
+ * What a switch of git changes, said before it applies: the checkout keys the two gits read differently, each
  * as it is now and as it would be, and the switch confirmed beside *Never mind*. Line endings that differ between the
  * person's git and Daoris's in one checkout would show every file changed.
  */
@@ -438,7 +438,7 @@ export function GitSwitch({ asking, busy = false, onConfirm, onCancel }: {
 }
 
 /**
- * The resource locations (§3.3): the person's in order, each with what vouches for it, when it was fetched and what it
+ * The resource locations: the person's in order, each with what vouches for it, when it is fetched and what it
  * names here, then the list built in, which cannot be removed; *Look for updates* for all of them, and *Add location…*.
  * Removing one narrows what is offered, and a version already downloaded stays.
  */
@@ -562,7 +562,7 @@ export function ToolLocations({
   );
 }
 
-/** What a tool's action's end means to the person, said once (§3.6): downloaded, switched, stopped, or refused and why. */
+/** What a tool's action's end means to the person, said once: downloaded, switched, stopped, or refused and why. */
 export function endSaid(t: (key: string, values?: Record<string, unknown>) => string, end: ToolEndShown): string {
   const named = { name: end.name, version: end.version ?? '' };
   if (end.stopped) return t('settings.tools.ended.stopped', named);

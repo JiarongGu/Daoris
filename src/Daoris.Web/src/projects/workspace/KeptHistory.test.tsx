@@ -9,10 +9,10 @@ import {
 import type { Answered } from '../../work/InlineConfirm';
 import { KeptHistory } from './KeptHistory';
 
-/** How a clear's ask hears its end (UXFIX2, ACCTEDIT1's contract). */
+/** How a clear's ask hears its end. */
 const ANSWERED = expect.objectContaining({ done: expect.any(Function), refused: expect.any(Function) });
 
-// A workspace's *Kept on this machine* (HIST1e, D153; the history-clearing design §2.4, §6.1): always the reading of what the
+// A workspace's *Kept on this machine*: always the reading of what the
 // home keeps of its finished work, then *Clear history…* while anything may go, listing first and sending on its second
 // press exactly the units it listed. A molecule: every state is reached by passing it, and every press goes out.
 
@@ -46,13 +46,13 @@ describe('a workspace’s Kept on this machine (design §2.4)', () => {
     await userEvent.click(screen.getByRole('button', { name: 'Clear history…' }));
     const ask = screen.getByRole('group', { name: 'clear from this machine' });
     expect(screen.queryByRole('button', { name: 'Clear history…' })).toBeNull();
-    // The reading is asked again while the list is open: the press still sends what was listed.
+    // The reading is asked again while the list is open: the press still sends what it listed.
     rerender(<KeptHistory workspace="aurora" plan={WORKSPACE_KEPT} onClear={clear} />);
     await userEvent.click(within(ask).getByRole('button', { name: 'Clear 3' }));
     expect(clear).toHaveBeenCalledWith(
       [{ kind: 'ask', id: 'a1b2c3' }, { kind: 'quest', id: '0c1d2e' }, { kind: 'quest', id: '3f4a5b' }], ANSWERED,
     );
-    // Until the driver answers, the list stays, waiting (UXFIX2); once it answers, the list is put down.
+    // Until the driver answers, the list stays, waiting; once it answers, the list is put down.
     expect(within(ask).getByRole('button', { name: 'Never mind' })).toBeDisabled();
     act(() => (clear.mock.calls[0]![1] as Answered).done());
     expect(await screen.findByRole('region', { name: 'Kept on this machine' })).toBeInTheDocument();
@@ -60,7 +60,7 @@ describe('a workspace’s Kept on this machine (design §2.4)', () => {
   });
 
   /**
-   * UXFIX2 (the second-opinion review, `ClearAsk.tsx:101`): what goes and what stays take the focus and describe *Clear N*,
+   * What goes and what stays take the focus and describe *Clear N*,
    * so a keyboard reaches it having heard them; a refusal is said inside the list, which stays; *Never mind* gives the
    * focus back to *Clear history…*, drawn again.
    */
@@ -85,7 +85,7 @@ describe('a workspace’s Kept on this machine (design §2.4)', () => {
   });
 
   /**
-   * UXFIX2c (the second-opinion review, `InlineConfirm.tsx:163`, `KeptHistory.tsx:69`): *Clear history…* is not offered
+   * *Clear history…* is not offered
    * while it asks, so a clear that landed gave the focus back to a press no longer drawn, and it fell to the page's body. It
    * goes to *Clear history…* drawn again, and where nothing more may go and none is drawn, to the section.
    */
@@ -129,7 +129,7 @@ describe('a workspace’s Kept on this machine (design §2.4)', () => {
   });
 
   /**
-   * HIST1n (the second-opinion review's afternoon round): 0 B was said as *no files here* beside left-over files of 0 B, which
+   * 0 B is not said as *no files here* beside left-over files of 0 B, which
    * the next line and *What goes* name. The reading says what it read, the records and their size, and nothing of files.
    */
   it('says the records and 0 B, and no claim about files, beside left-over files that hold nothing', async () => {

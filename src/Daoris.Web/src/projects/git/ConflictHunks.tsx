@@ -24,9 +24,9 @@ export type ConflictPress = { picks: { id: string; take: ConflictTake }[]; faces
 const TAKES: readonly ConflictTake[] = ['ours', 'theirs', 'both'];
 
 /**
- * **A conflicted file's conflicts in the Changes tab** (GITAPP2j, D204, the git-writes design §8): each conflict with what ours and theirs hold
+ * **A conflicted file's conflicts in the Changes tab**: each conflict with what ours and theirs hold
  * there, and a choice of ours, theirs or both. The file is written once every conflict has a choice; what is sent back is the stages and the
- * file's id it was read with, so the driver refuses a file that moved since. A file the driver cannot take by hunk says why instead.
+ * file's id it read, so the driver refuses a file that has moved. A file the driver cannot take by hunk says why instead.
  *
  * @remarks **A molecule**: the read arrives as a prop; `busy` holds every press while an act runs.
  */

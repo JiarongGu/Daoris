@@ -1,10 +1,10 @@
 import { type AccountsAnswer, agentOf, machineScope } from '../../settings/accounts/accounts';
 import type { Tool } from '../../agents/tools';
 
-// What a workspace's page reads (UX6g, D150 §4.3), worked out from answers the page already holds. Pure, so every
+// What a workspace's page reads, worked out from answers the page already holds. Pure, so every
 // machine is an argument.
 
-/** The accounts one agent's work in a workspace may run on: Daoris's accounts, one set for every workspace (D197). */
+/** The accounts one agent's work in a workspace may run on: Daoris's accounts, one set for every workspace. */
 export type AccountsHere = {
   agent: string;
   product: string;
@@ -13,7 +13,7 @@ export type AccountsHere = {
 };
 
 /**
- * **The accounts each agent may run here** (§4.3, read-only; POOL1c, D197 point 1): for each installed agent, every account of
+ * **The accounts each agent may run here** (read-only): for each installed agent, every account of
  * Daoris's, in the set's order, since one set serves every workspace; one the order does not name yet goes after, as the next
  * change would place it. None where the agent has no account of Daoris's: the tool's own sign-in is never what a start runs on,
  * and the page says no Daoris account is signed in.

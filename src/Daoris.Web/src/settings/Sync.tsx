@@ -10,7 +10,7 @@ function Working() {
   return <Icon name="refresh" size={14} className="motion-safe:animate-spin" />;
 }
 
-/** What pulling a repository's line would do (WSR6). Only `fast-forward` moves anything. */
+/** What pulling a repository's line would do. Only `fast-forward` moves anything. */
 export type PullKind =
   | 'fast-forward' | 'up-to-date' | 'ahead' | 'diverged' | 'dirty' | 'checked-out' | 'no-remote' | 'no-local' | 'no-line' | 'unknown';
 
@@ -27,16 +27,16 @@ export type LinePull = {
   commits: number;
   /** Why the fetch did not happen, in git's words. Content, never translated. */
   fetch?: string | null;
-  /** Where it was not fetched: when this checkout last heard from origin, an ISO moment, or none — never (WSR7). */
+  /** Where it is not fetched: when this checkout last heard from origin, an ISO moment, or none — never. */
   lastFetch?: string | null;
-  /** Where it was not fetched: how origin is reached — `ssh`, `https`, `http`, `git` or `file` (WSR7). */
+  /** Where it is not fetched: how origin is reached — `ssh`, `https`, `http`, `git` or `file`. */
   reach?: string | null;
   /** Git's own words where it could not tell. Content. */
   detail?: string | null;
   moves: boolean;
 };
 
-/** What bringing one branch up to date would do (WSR6). Only `replay` moves anything. */
+/** What bringing one branch up to date would do. Only `replay` moves anything. */
 export type RebaseKind =
   | 'replay' | 'up-to-date' | 'in-use' | 'dirty' | 'checked-out' | 'pushed' | 'grew-from-unlanded' | 'unknown';
 
@@ -51,30 +51,30 @@ export type RebaseBranch = {
   onto?: string | null;
   /** The commit its own commits start after, short. */
   cut?: string | null;
-  /** How that commit was found: it grew from the line, its record, or its content. */
+  /** How that commit is found: it grew from the line, its record, or its content. */
   cutBy?: 'line' | 'record' | 'content' | null;
   /** The step before's branch it grew from, where its record knows one. */
   grewFrom?: string | null;
   commits: number;
   /**
-   * Replay: how many of its commits the line already holds, which the replay leaves out beside the `commits` it carries
-   * (LANDSYNC3b). A host from before answers none: read as 0.
+   * Replay: how many of its commits the line already holds, which the replay leaves out beside the `commits` it carries.
+   * A host from before answers none: read as 0.
    */
   leftOut?: number;
   detail?: string | null;
   replays: boolean;
 };
 
-/** A repository with a checkout here, and whether it holds a branch of Daoris's (TREES_SYNC_SCOPE, D112). */
+/** A repository with a checkout here, and whether it holds a branch of Daoris's (TREES_SYNC_SCOPE). */
 export type SyncRepository = { repository: string; workspace: string; holds: boolean };
 
-/** What a look takes beside the repositories holding Daoris's branches (D112): every one, or those named. */
+/** What a look takes beside the repositories holding Daoris's branches: every one, or those named. */
 export type SyncInclude = 'all' | string[];
 
 /**
  * The driver's TREES_SYNC_PLAN answer: each line, each branch, and the landed branches whose work reached the line;
- * then what the look took, and every other repository with a checkout, listed apart (D112). An answer without WSR7
- * carries neither of the last two.
+ * then what the look took, and every other repository with a checkout, listed apart. An older
+ * answer carries neither of the last two.
  */
 export type SyncPlan = {
   lines: LinePull[];
@@ -88,14 +88,14 @@ export type SyncPlan = {
 const includes = (include: SyncInclude | undefined, repository: string) =>
   include === 'all' || (include ?? []).includes(repository);
 
-/** `was` and `more` together: every one stays every one. */
+/** The earlier include and `more` together: every one stays every one. */
 const together = (was: SyncInclude | undefined, more: SyncInclude): SyncInclude =>
   was === 'all' || more === 'all' ? 'all' : [...new Set([...(was ?? []), ...more])];
 
 /**
- * What was not fetched, said once, before the rows (WSR7): how many, grouped by git's reason, when each last heard from
+ * What is not fetched, said once, before the rows: how many, grouped by git's reason, when each last heard from
  * origin — which is what its row is judged against — and what the git Daoris runs needs to reach an origin over SSH or
- * HTTPS. Every fetch failed on the owner's workspace, and the look said so only at the end of each of 29 rows.
+ * HTTPS. A failed fetch repeats on every row of a workspace, so the reason is not said at the end of each.
  *
  * @remarks
  * The person's own Git client may reach origin where this cannot: one carries its own git and ssh, and the driver runs
@@ -136,7 +136,7 @@ function NotFetched({ lines }: { lines: LinePull[] }) {
 }
 
 /**
- * The repositories with a checkout here that hold no branch of Daoris's (D112): listed apart, collapsed, and looked at
+ * The repositories with a checkout here that hold no branch of Daoris's: listed apart, collapsed, and looked at
  * only once the person ticks them — each, or all — and asks.
  */
 function ApartList({ apart, busy, onInclude }: {
@@ -185,7 +185,7 @@ export const syncKeys = (plan: SyncPlan) => [
 ];
 
 /**
- * Bring up to date (WSR6, D109): after a pull request merges, each repository's line is fetched from origin and
+ * Bring up to date: after a pull request merges, each repository's line is fetched from origin and
  * fast-forwarded, the branches still at work are replayed onto it — only their own commits, cut at the commit each
  * grew from, so a squash-merged parent's commits drop — and the branches landings made whose work reached it go.
  *
@@ -194,26 +194,26 @@ export const syncKeys = (plan: SyncPlan) => [
  * the press of *Look for updates*. **The press does only what the list showed**, and the driver judges each row again
  * right before it acts: a line only by a fast-forward, in a clean checkout on it or as a ref nothing has checked out;
  * a replay in a tree of Daoris's own, aborted on a conflict. Nothing is pushed, and a branch on its remote is left.
- * `daoris tree sync` is the terminal's door (D50). A section of the session branches card, drawn above them.
+ * `daoris tree sync` is the terminal's door. A section of the session branches card, drawn above them.
  *
- * **It takes the repositories that hold Daoris's branches** (D112). Every other one with a checkout is listed apart,
+ * **It takes the repositories that hold Daoris's branches**. Every other one with a checkout is listed apart,
  * collapsed, and looked at only once the person ticks it — or all of them — and asks; looking again keeps it. A workspace's
- * Branches tab lists them once, in its groups' fold, and passes `apartFolded` (UX6h2b3): the section then draws no list, and
+ * Branches tab lists them once, in its groups' fold, and passes `apartFolded`: the section then draws no list, and
  * its look takes what that fold included.
  *
- * **A look takes a while, and says so** (WSR7): a sentence naming how many repositories it is fetching, and a button
+ * **A look takes a while, and says so**: a sentence naming how many repositories it is fetching, and a button
  * that reads as busy, since a dimmed one read as nothing happening. A look or a press the page stopped waiting for is
- * said here, where it was asked, not only in a toast that goes.
+ * said here, where it is asked, not only in a toast that goes.
  */
 export function SyncSection({ plan, scope, included, apartFolded, looking, lookingAt, bringing, stopped, onLook, onSync }: {
   /** Undefined until the person looks. */
   plan?: SyncPlan;
   /** Every repository with a checkout here, and whether each holds a branch of Daoris's; undefined until known. */
   scope?: SyncRepository[];
-  /** What the last look was asked to take beside the default. */
+  /** What the last look is asked to take beside the default. */
   included?: SyncInclude;
   /**
-   * The page lists what is apart in a fold of its own, whose include is `included` (UX6h2b3): the section draws no list
+   * The page lists what is apart in a fold of its own, whose include is `included`: the section draws no list
    * apart, and its look takes what the fold included.
    */
   apartFolded?: boolean;
@@ -237,7 +237,7 @@ export function SyncSection({ plan, scope, included, apartFolded, looking, looki
   // What the look left apart; before one, what it would, from the machine's own reading.
   const apart = plan?.apart ?? (scope ?? []).filter((each) => !each.holds && !includes(included, each.repository));
   const holding = (scope ?? []).filter((each) => each.holds).length;
-  // With the page's fold, what it included is taken beside them, and said (UX6h2b3).
+  // With the page's fold, what it included is taken beside them, and said.
   const taken = apartFolded ? (scope ?? []).filter((each) => each.holds || includes(included, each.repository)).length : holding;
   const lookedAtNone = plan !== undefined && Array.isArray(plan.looked) && plan.looked.length === 0;
 
@@ -257,7 +257,7 @@ export function SyncSection({ plan, scope, included, apartFolded, looking, looki
     }
   };
 
-  // What the line already holds is said beside what the replay carries, as the press's answer says it (LANDSYNC3b).
+  // What the line already holds is said beside what the replay carries, as the press's answer says it.
   const leavesOut = (branch: RebaseBranch) => (branch.leftOut ?? 0) > 0
     ? ` ${t('settings.sync.branch.leavesOut', { count: branch.leftOut })}`
     : '';
@@ -307,7 +307,7 @@ export function SyncSection({ plan, scope, included, apartFolded, looking, looki
         </Prose>
       )}
 
-      {/* What is under way, where the person asked: a look fetches for minutes on a large workspace (WSR7). */}
+      {/* What is under way, where the person asked: a look fetches for minutes on a large workspace. */}
       {looking && (
         <p role="status" className="mt-2 text-small text-ink">
           {lookingAt ? t('settings.sync.looking', { count: lookingAt }) : t('settings.sync.lookingSome')}
@@ -325,17 +325,17 @@ export function SyncSection({ plan, scope, included, apartFolded, looking, looki
       {plan && !lookedAtNone && acting.length === 0 && <Prose className="mt-2">{t('settings.sync.nothing')}</Prose>}
 
       {/* A group, not a region, per repository: the session branches below draw a region of the same name. A look
-          again holds the last answer, dimmed, until the new one comes (D41's loading rule). */}
+          again holds the last answer, dimmed, until the new one comes. */}
       {plan && repositories.map((repository) => (
         <div key={repository} role="group" aria-label={repository} className={cn('mt-2', looking && 'opacity-60')}>
           <div className="text-small font-medium text-ink-soft">{repository}</div>
-          {/* The session branches card's own rows (UXFIX4): a line's and a branch's name whole, stacked by the list's width. */}
+          {/* The session branches card's own rows: a line's and a branch's name whole, stacked by the list's width. */}
           <ul className={cn(BRANCH_ROWS, 'mt-1')}>
             {plan.lines.filter((pull) => pull.repository === repository).map((pull) => (
               <BranchRow key={`line:${pull.line ?? ''}`} name={pull.line ?? t('settings.sync.line.none')} moving={pull.moves}
                 word={t(pull.moves ? 'settings.sync.moves' : 'settings.sync.stays')}>
                 <Inline text={pulls(pull)} />
-                {/* A short mark: the reason is said once, above the rows (WSR7). */}
+                {/* A short mark: the reason is said once, above the rows. */}
                 {pull.fetch && <span className="mt-0.5 block text-meta text-ink-faint">{t('settings.sync.line.notFetched')}</span>}
                 {pull.kind === 'unknown' && pull.detail && (
                   <span className="mt-0.5 block break-words font-mono text-meta text-ink-faint">{pull.detail}</span>

@@ -4,11 +4,11 @@ import userEvent from '@testing-library/user-event';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import * as Tooltip from '@radix-ui/react-tooltip';
 
-// The activity bar's places and the bell (BADGEUX1; SESSUX1c, D126 §2.5 before it), the way the application holds them: the whole window over a
-// mocked shell that pushes who needs the person (PUSH1d4: judged in .NET, `AttentionStateSliceTests` holds what is counted),
-// since the badge is only drawn where Sessions is, and Sessions is the shell's alone (D47 §4). `App.test.tsx` holds the window
+// The activity bar's places and the bell, the way the application holds them: the whole window over a
+// mocked shell that pushes who needs the person (judged in .NET, `AttentionStateSliceTests` holds what is counted),
+// since the badge is only drawn where Sessions is, and Sessions is the shell's alone. `App.test.tsx` holds the window
 // in a browser, where there is no Sessions to badge. And Overview's *What needs you* with the quest the driver parked, and its
-// badge (SESSUX1i, §4.6), which only a driver says.
+// badge, which only a driver says.
 
 const { invoke, notifyReady } = vi.hoisted(() => ({
   invoke: vi.fn(),
@@ -43,7 +43,7 @@ const SESSIONS = [
   { ...base, id: 'w0rk1ng0', quest: 'q2', repository: 'game', kind: 'driven', state: 'working' },
 ];
 
-/** An ask the declarations proposed and nobody has published (INT4a), as the service lists it. */
+/** An ask the declarations proposed and nobody has published, as the service lists it. */
 const ASKS = [{
   id: '7c1e9a04b2d5', workspace: 'default', sentence: 'Cap the hydration per frame.\n\nThe trace is attached.', state: 'Proposed',
   tier: 'declarations', asked: '2026-09-21T08:00:00Z', updated: '2026-09-21T08:00:00Z',
@@ -57,7 +57,7 @@ const PARKED: Consideration = {
 };
 
 /**
- * What the shell pushes of the sessions above (PUSH1d4), as .NET judges them: each parked session a row, the teammate's among
+ * What the shell pushes of the sessions above, as .NET judges them: each parked session a row, the teammate's among
  * them; what the Sessions badge counts, this machine's park alone.
  */
 const PARKS: PushedAttention[] = SESSIONS.filter((one) => one.state === 'awaiting-person').map((one) => ({
@@ -65,7 +65,7 @@ const PARKS: PushedAttention[] = SESSIONS.filter((one) => one.state === 'awaitin
 }));
 const PARKED_QUEST: PushedAttention = { kind: 'parked-quest', id: 'q1', since: PARKED.since!, where: 'engine', sitting: PARKED };
 const COUNTED = { 'session:c4a7c4a7': { kind: 'parked', workspace: 'default' } };
-/** INTEGRATE1h: an integration's waits on the owner, as .NET pushes them, each counted at Repositories, whose Integration tab its door opens. */
+/** An integration's waits on the owner, as.NET pushes them, each counted at Repositories, whose Integration tab its door opens. */
 const INTEGRATION_WAITS: PushedAttention[] = [
   {
     kind: 'integration', id: 'decide:c1', since: '2026-10-01T10:00:00Z', workspace: 'default', where: 'engine', stands: true,
@@ -80,7 +80,7 @@ const INTEGRATION_WAITS: PushedAttention[] = [
     integration: { wait: 'card', repository: 'engine', branch: 'feature/c', unit: 'u1', tip: 'def5678' },
   },
 ];
-/** INTEGRATE1o part o3: a run held at a quest the receiver declined, as .NET pushes it; its work is the quest below. */
+/** A run held at a quest the receiver declined, as.NET pushes it; its work is the quest below. */
 const DECLINED: PushedAttention = {
   kind: 'request-declined', id: 'r7', since: '2026-10-01T10:00:00Z', workspace: 'default', where: 'engine',
   declined: { node: 'requests', quest: 'q9', to: 'web', work: 'q1' },
@@ -109,13 +109,13 @@ function respond(url: string): Response {
   return Response.json([]);
 }
 
-/** The session the driver runs among the records above, as .NET counts it (SESSBADGE1): the person's chat and the teammate's are not. */
+/** The session the driver runs among the records above, as.NET counts it: the person's chat and the teammate's are not. */
 const WORKING = { 'session:w0rk1ng0': { workspace: 'default' } };
 
 /**
- * The window over a shell that pushes who needs the person (PUSH1d4): its snapshot answers `STATE_SLICE` for the attention slice,
+ * The window over a shell that pushes who needs the person: its snapshot answers `STATE_SLICE` for the attention slice,
  * every other slice keeping its pull. `rows` are the band's, `counted` what waits on the person in Sessions, `working` the sessions
- * the driver runs (SESSBADGE1), each as .NET judged them; `scope` the workspace the window holds, null for every one.
+ * the driver runs, each as.NET judged them; `scope` the workspace the window holds, null for every one.
  */
 function start(
   rows: PushedAttention[], counted: Record<string, unknown> = COUNTED, working: Record<string, unknown> = WORKING, scope: string | null = null,
@@ -160,12 +160,12 @@ const figure = (name: string) => within(placeButton(name)).queryByText(/^\d+$/)?
 const runs = (name: string) => placeButton(name).querySelector('[data-running]') !== null;
 const statusBar = () => screen.getByLabelText('state of this machine');
 
-/** The title bar's bell (NOTIFY2b, the notification design §2.1), which counts what Overview's badge counted. */
+/** The title bar's bell, which counts what Overview's badge counts. */
 const bell = () => screen.getByRole('button', { name: /^Notifications/ });
 
 /**
- * BADGEUX1 (the UI/UX design §3.10): the owner, using Daoris, found numbers on the activity bar that counted work no one waited on
- * (Sessions' the sessions the driver runs, SESSBADGE1; Quests' every outstanding quest) drawn like the bell's. A number on a place now
+ * The owner, using Daoris, found numbers on the activity bar that counted work no one waited on
+ * (Sessions' the sessions the driver runs; Quests' every outstanding quest) drawn like the bell's. A number on a place
  * counts only what waits on the person there, the bell's rows whose door opens it, in the window's workspace, so each place's number
  * is the bell's for the same rows; running work is a mark, never a number, said in words in the place's tip.
  */
@@ -258,7 +258,7 @@ describe("A place's number", () => {
     await waitFor(() => expect(figure('Sessions')).toBe('1'));
     expect(runs('Sessions')).toBe(false);
     expect(sessionsButton()).toHaveAccessibleDescription('1 waiting on you');
-    // The status bar still says the cap's count, the parked one among it (SESSBADGE1, CAPCOUNT1).
+    // The status bar still says the cap's count, the parked one among it.
     expect(within(statusBar()).getByText('1 session')).toBeInTheDocument();
   });
 
@@ -279,16 +279,16 @@ describe("A place's number", () => {
   });
 });
 const overviewButton = () => within(screen.getByRole('navigation', { name: 'Views' })).getByRole('button', { name: 'Overview' });
-/** *Notifications* shown by its bell, where every row of What needs you is (NOTIFY2b). */
+/** *Notifications* shown by its bell, where every row of What needs you is. */
 const openNotifications = async () => {
   await userEvent.click(bell());
   await screen.findByRole('tab', { name: 'Notifications', selected: true });
 };
 
 /**
- * SESSUX1i (D126 §4.6): on 1 October the owner's work stood parked on its failed sessions, and *What needs you* said
- * nothing. It holds the quest the driver's last look parked, after the parked sessions; the bell counts the rows, as Overview's
- * badge did until NOTIFY2b moved the count to the title bar and the rows to *Notifications*; and the row's door opens the quest's
+ * On 1 October the owner's work stood parked on its failed sessions, and *What needs you* said
+ * nothing. It holds the quest the driver's last look parked, after the parked sessions; the bell counts the rows, which
+ * live in *Notifications* with the count in the title bar; and the row's door opens the quest's
  * page, where *Try again* is.
  */
 describe("What needs you, on a machine", () => {
@@ -303,7 +303,7 @@ describe("What needs you, on a machine", () => {
   it('holds the quest the driver parked, counts it, and opens its page', async () => {
     start([...PARKS, PARKED_QUEST]);
 
-    // Two sessions parked to ask, and the parked quest: the bell's count in open's hue; Overview wears no badge (NOTIFY2b).
+    // Two sessions parked to ask, and the parked quest: the bell's count in open's hue; Overview wears no badge.
     await waitFor(() => expect(within(bell()).getByText('3')).toBeInTheDocument());
     expect(within(bell()).getByText('3')).toHaveAttribute('data-tone', 'open');
     expect(within(overviewButton()).queryByText(/^\d+$/)).toBeNull();
@@ -317,14 +317,14 @@ describe("What needs you, on a machine", () => {
     expect(screen.getAllByRole('region', { name: 'What needs you' }).some((region) => region.contains(row))).toBe(true);
     expect(within(row).getByText('parked after failed sessions')).toBeInTheDocument();
 
-    // UX6c: the row's door is its own press, beside *Try again*, which the row offers in place.
+    // The row's door is its own press, beside *Try again*, which the row offers in place.
     expect(within(row).getByRole('button', { name: 'Try again' })).toBeInTheDocument();
     await userEvent.click(within(row).getByRole('button', { name: 'Open' }));
     expect(await screen.findByRole('heading', { level: 1, name: 'Expose a streaming budget' })).toBeInTheDocument();
     expect(window.localStorage.getItem('daoris.list.quests.chosen')).toBe('q1');
   });
 
-  /** The badge counts every row the band lists: an agent's proposal to widen the rules was listed and not counted. */
+  /** The badge counts every row the band lists: an agent's proposal to widen the rules is listed and must be counted. */
   it('counts an agent’s proposal waiting on the person, as the band lists it', async () => {
     const proposal: RuleProposal = {
       id: 'p0000002', state: 'waiting', action: 'add', scope: 'machine', list: 'allow', rule: 'WebFetch',
@@ -338,7 +338,7 @@ describe("What needs you, on a machine", () => {
   });
 
   /**
-   * INT4d: an ask waits on a person, and its row is a door into the ask's record in Quests, where the answer is, chosen there as
+   * An ask waits on a person, and its row is a door into the ask's record in Quests, where the answer is, chosen there as
    * an ask; its row is named by the ask's first line, from the asks the page holds.
    */
   it('opens an ask’s record from its row, chosen as an ask', async () => {
@@ -355,8 +355,8 @@ describe("What needs you, on a machine", () => {
   });
 
   /**
-   * FABRIC-MILESTONEDOOR1: a unit known only by its branch, whose owner nothing records, has no session to open; its row's door is
-   * the workspace's Branches, where the clean-up's press is (OVERVIEWNOISE1b).
+   * A unit known only by its branch, whose owner nothing records, has no session to open; its row's door is
+   * the workspace's Branches, where the clean-up's press is.
    */
   it('opens the workspace’s Branches from a work row with no session', async () => {
     start([{
@@ -373,7 +373,7 @@ describe("What needs you, on a machine", () => {
   });
 
   /**
-   * FABRIC-UNKNOWN1c: an unknown owner's branch named for a session the page holds, by its tree's folder, opens that session, whose
+   * An unknown owner's branch named for a session the page holds, by its tree's folder, opens that session, whose
    * head discards the branch it left; the row stays named by its branch, since nothing records the session as its owner.
    */
   it('opens the session an unknown owner’s branch was cut for', async () => {
@@ -409,7 +409,7 @@ describe("What needs you, on a machine", () => {
 const badges = () => invoke.mock.calls.filter(([module, type]) => module === 'DAORIS.WINDOWS' && type === 'SET_BADGE');
 
 /**
- * NOTIFY1b: the owner, on 15 October, asked for *a notification number at the tab icon*. The main window's page tells its
+ * The owner, on 15 October, asked for *a notification number at the tab icon*. The main window's page tells its
  * frame Overview's count, the one its badge shows, for the taskbar button's overlay and the window's title, with the
  * words a screen reader says of it. A secondary window counts the same and says nothing: the button is the main window's.
  */
@@ -431,7 +431,7 @@ describe("The taskbar's count", () => {
   });
 
   /**
-   * WAITCOUNT1: the band listed an agent's ask for a helper and a second opinion that waits on the person, and the badge and
+   * The band listed an agent's ask for a helper and a second opinion that waits on the person, and the badge and
    * the taskbar did not count them: two answers to "how many need me". One count, every row the band lists, one judgement.
    */
   it('counts an agent’s ask for a helper and a second opinion that wait on the person, as the band lists them', async () => {
@@ -454,10 +454,10 @@ describe("The taskbar's count", () => {
   });
 
   /**
-   * AUTONOMY1b3c (D184 point 3): a tool call a session holds for the person's answer stands its turn still until they answer, or
+   * A tool call a session holds for the person's answer stands its turn still until they answer, or
    * the bound refuses it, so the badge counts it as the band lists it: the window behind others still says a turn waits on them.
    */
-  /** INTEGRATE1o part o3: a run held at a declined request is one wait, in the bell, the taskbar and the band, with its *Pass over…*. */
+  /** A run held at a declined request is one wait, in the bell, the taskbar and the band, with its *Pass over…*. */
   it('counts a run held at a declined request, lists it with Pass over…, and counts none for a run without one', async () => {
     start([DECLINED], {}, {});
 
@@ -470,7 +470,7 @@ describe("The taskbar's count", () => {
     expect(within(row).getByRole('button', { name: 'Pass over…' })).toBeInTheDocument();
   });
 
-  /** INTEGRATE1h: an integration's three waits on the owner are three waits, in the bell, the taskbar and the band, each with its door. */
+  /** An integration's three waits on the owner are three waits, in the bell, the taskbar and the band, each with its door. */
   it('counts an integration’s waits on the owner and lists each with its door to the Integration tab', async () => {
     start(INTEGRATION_WAITS, {}, {});
 
@@ -484,7 +484,7 @@ describe("The taskbar's count", () => {
     expect(within(held).getByRole('button', { name: 'Open integration' })).toBeInTheDocument();
   });
 
-  /** INTEGRATE1h (§5.8): a declaration owed acceptance is a wait counted at Repositories, its door the Setup, where it is read and accepted. */
+  /** A declaration owed acceptance is a wait counted at Repositories, its door the Setup, where it is read and accepted. */
   it('counts a declaration owed acceptance and lists it with its door to Setup', async () => {
     start([{
       kind: 'integration', id: 'declaration:engine', since: '2026-10-01T10:15:00Z', workspace: 'default', where: 'engine',
@@ -520,7 +520,7 @@ describe("The taskbar's count", () => {
   });
 
   /**
-   * NOTIFY2e (D196 point 8): an agent's ask to hand its session over was drawn only on its session's page, and counted nowhere; the
+   * An agent's ask to hand its session over must not be drawn only on its session's page and counted nowhere; the
    * bell and the taskbar count it as the band lists it, in each language.
    */
   it('counts an agent’s ask to hand its session over, as the band lists it', async () => {
@@ -545,7 +545,7 @@ describe("The taskbar's count", () => {
   });
 
   /**
-   * COWORK1e (D188 point 4; the message-urgency design §8.3): a third answer alone held for the person stands its line still until they
+   * A third answer alone held for the person stands its line still until they
    * answer, so the badge counts it as the band lists it.
    */
   it('counts a third answer alone held for the person, as the band lists it', async () => {
@@ -568,7 +568,7 @@ describe("The taskbar's count", () => {
 });
 
 /**
- * NEEDSSCOPE1: two windows on one home, each on its own workspace, and one window's bell and taskbar counted three sessions the other's
+ * Two windows on one home, each on its own workspace, and one window's bell and taskbar counted three sessions the other's
  * list placed to review. Each row of a session, a quest or an ask carries its workspace (`AttentionStateSliceTests` holds which), so a
  * window on one workspace neither counts nor lists another's, on the bell, the taskbar or Sessions' badge; the machine's rows carry
  * none and are counted and listed in every window, and a window on every workspace counts them all.
@@ -603,7 +603,7 @@ describe('A window on one workspace', () => {
     start(ROWS, WAITING, WORKING, 'default');
 
     // The two parks and the machine's rule, on the bell and the taskbar; Sessions counts its own parks and Agents the rule, the
-    // places summing to the bell (BADGEUX1); the other workspace's review and parked quest are counted nowhere.
+    // places summing to the bell; the other workspace's review and parked quest are counted nowhere.
     await waitFor(() => expect(within(bell()).getByText('3')).toBeInTheDocument());
     await waitFor(() => expect(badges().at(-1)).toEqual(
       ['DAORIS.WINDOWS', 'SET_BADGE', { payload: { count: 3, description: '3 waiting on you', order: expect.any(Number) } }]));
@@ -618,7 +618,7 @@ describe('A window on one workspace', () => {
   });
 
   /**
-   * NOTIFY2c: with two main windows open, one per workspace, each wears its own workspace's count on its own taskbar button and title;
+   * With two main windows open, one per workspace, each wears its own workspace's count on its own taskbar button and title;
    * the second tells its own frame by its name, and the workspace it holds beside its title, as data.
    */
   it('tells its own frame its own count and its workspace where it is another main window', async () => {
@@ -644,7 +644,7 @@ describe('A window on one workspace', () => {
     await waitFor(() => expect(within(bell()).getByText('5')).toBeInTheDocument());
     await waitFor(() => expect(badges().at(-1)).toEqual(
       ['DAORIS.WINDOWS', 'SET_BADGE', { payload: { count: 5, description: '5 waiting on you', order: expect.any(Number) } }]));
-    // Every workspace's: the parks and the review in Sessions, the parked quest in Quests, the rule in Agents (BADGEUX1).
+    // Every workspace's: the parks and the review in Sessions, the parked quest in Quests, the rule in Agents.
     expect(sessionsButton()).toHaveAccessibleDescription('3 waiting on you · 1 under way');
     expect([figure('Sessions'), figure('Quests'), figure('Agents')]).toEqual(['3', '1', '1']);
 

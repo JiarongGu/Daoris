@@ -3,7 +3,7 @@ import { act, cleanup, render } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import * as Tooltip from '@radix-ui/react-tooltip';
 
-// An idle window asks the shell for next to nothing (IDLECPU1): the installed Daoris used almost two cores with nobody pressing
+// An idle window asks the shell for next to nothing: the installed Daoris used almost two cores with nobody pressing
 // anything. The whole window over a mocked shell and a fake clock, the way `sessionsBadge.test.tsx` holds it, counting every
 // route and service read over a minute. The page's own clocks are what this holds; what the driver tells it (a tick, a change)
 // is the shell's to send only when something moved (`TickLinesTests`).
@@ -48,7 +48,7 @@ function asked(): Map<string, number> {
   return counts;
 }
 
-/** What was asked between two counts, by name. */
+/** What is asked between two counts, by name. */
 const since = (before: Map<string, number>, after: Map<string, number>) => Object.fromEntries(
   [...after].map(([name, n]) => [name, n - (before.get(name) ?? 0)] as const).filter(([, n]) => n > 0),
 );

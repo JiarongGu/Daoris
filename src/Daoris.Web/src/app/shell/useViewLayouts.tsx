@@ -49,7 +49,7 @@ export function useViewLayouts({ notify, settingsSection, chooseSettings, settin
   refresh: UseMutationResult<RefreshResponse, Error, void, unknown>;
   mapCode: string | null;
 }) {
-  // Settings on the frame (FRAME1g): its domains are its list pane and the domain chosen its main area.
+  // Settings on the frame: its domains are its list pane and the domain chosen its main area.
   const settings = useSettingsLayout({
     notify,
     section: settingsSection,
@@ -59,35 +59,35 @@ export function useViewLayouts({ notify, settingsSection, chooseSettings, settin
     gitHost: settingsGitHost,
     onGitHostClosed: () => setSettingsGitHost(null),
     onGo: go,
-    // Ask Daoris is the shell's (HELP1): a browser's guide offers no hand-off.
+    // Ask Daoris is the shell's: a browser's guide offers no hand-off.
     onAskSetup: attached ? askSetup : undefined,
-    // Who is driving Daoris's browser (BRW8), for its domain, each a door into Sessions.
+    // Who is driving Daoris's browser, for its domain, each a door into Sessions.
     browserDrivers: driving,
     onAttend: attached ? openInWork : undefined,
   });
 
   /**
-   * Every view but Sessions, as it hands itself to the frame (D118 §5): its list pane where it has one, and
+   * Every view but Sessions, as it hands itself to the frame: its list pane where it has one, and
    * its main area, in a shell's frame beside the side bar and the panel, and in a browser's without them.
-   * Plugins was built on the frame (PLUGUI1b), and Quests (FRAME1d), Repositories (FRAME1e), Settings (FRAME1g),
-   * Convergence and Search (FRAME1f, Knowledge since UX6i) moved onto it: each hands its list and its pages whole.
-   * Overview and Map have no list (§4), and their page is their main area.
+   * Plugins, Quests, Repositories, Agents, Settings and
+   * Knowledge are built on it: each hands its list and its pages whole.
+   * Overview and Map have no list, and their page is their main area.
    */
   const listedLayouts: Partial<Record<View, ViewLayout>> = { plugins, quests, projects, knowledge, agents, settings };
   const { contextDoors } = useContextDoors({ notify, t, openings, setSearchAsked, open, attached, askQuickly, openBrowser, copyText });
   const renderView = (): ViewLayout => listedLayouts[view] ?? {
     main: (
-      // No cap: content follows the window (UX5 U59), as the session's centre does since U16. It was 72rem,
-      // and a maximized window left every view a third empty. Every block wraps at the column's edge, prose
-      // included (D141), and a form keeps its own size. The main area is the container a view's split
-      // follows (§3b).
+      // No cap: content follows the window, as the session's centre does. A 72rem cap
+      // would leave every view a third empty in a maximized window. Every block wraps at the column's edge, prose
+      // included, and a form keeps its own size. The main area is the container a view's split
+      // follows.
       <ViewMain>
         {view === 'overview' && (
           <OverviewView
             onNavigate={(target) => open(target)}
             onOpenQuest={openQuest}
             notify={notify}
-            // Its summary's lines, each a door into *Notifications* at its group (NOTIFY2b, §4): the app's alone.
+            // Its summary's lines, each a door into *Notifications* at its group: the app's alone.
             presses={presses}
             onNotifications={attached ? (group) => showNotifications({ group }) : undefined}
             onRefresh={onRefresh}

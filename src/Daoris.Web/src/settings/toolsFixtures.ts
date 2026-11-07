@@ -1,6 +1,6 @@
 import type { ToolListShown, ToolShown, ToolsShown } from './Tools';
 
-// Settings → Tools (TOOLS7) in the shape the shell's `TOOLS_LIST` answers: the stories, the cards' tests and the
+// Settings → Tools in the shape the shell's `TOOLS_LIST` answers: the stories, the cards' tests and the
 // domain's tests draw the same machine. Neutral by convention: a tracked file carries no machine path, not even a
 // plausible-looking one.
 

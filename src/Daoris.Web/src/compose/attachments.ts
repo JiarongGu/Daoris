@@ -1,4 +1,4 @@
-// What a quest carries beside its words (D65 §2), as the composer handles it BEFORE the service
+// What a quest carries beside its words, as the composer handles it BEFORE the service
 // judges it. The service is the authority on every limit here — `QuestExchange` refuses whatever these
 // miss, in its own sentence — and these exist only so the form does not offer an ask it would refuse,
 // and can say why while the person is still choosing files.
@@ -14,7 +14,7 @@ export type Upload = { name: string; content: string };
 
 /**
  * Add what fits, in the order it came, and say what did not. A file past the count or past the total
- * is left out rather than failing the whole drop — the ones that fit are still what was meant.
+ * is left out rather than failing the whole drop — the ones that fit are still what is meant.
  */
 export function admit(current: File[], incoming: File[]): { files: File[]; refused: 'tooMany' | 'tooLarge' | null } {
   const files = [...current];

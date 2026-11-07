@@ -14,14 +14,14 @@ type Shared = {
   ask: string;
   considered: readonly Consideration[];
   questTitles: Record<string, string>;
-  /** The quests the page holds, by id: what says a quest is submitted, or held for its source reopened (FABRIC-CLOSE1d2). */
+  /** The quests the page holds, by id: what says a quest is submitted, or held for its source reopened. */
   quests?: Readonly<Record<string, Quest>>;
   onOpenQuest: (id: string) => void;
   onAttend?: (session: string) => void;
 };
 
 /**
- * **An ask's work, as its page lists it** (PAUSE1h, D132 §7.1): each quest of `WORK_PLAN`'s answer with its state, its route
+ * **An ask's work, as its page lists it**: each quest of `WORK_PLAN`'s answer with its state, its route
  * and why it sits; the sessions that worked on it, as doors into Sessions; and under it the questions those sessions asked of
  * other repositories, each listed the same way. It leads by saying that this is what a pause or an abandon reaches, so the
  * person sees it before pressing either.
@@ -33,7 +33,7 @@ type Shared = {
  *
  * **A door opens something, or it is not a door** (platform language §4): a quest's title opens its page only where the page
  * holds it, and a session is a door only where Sessions is; elsewhere each is named. A session's word is its record's state;
- * a teammate's says the machine it runs on, which nothing this machine sends reaches (D47 §4).
+ * a teammate's says the machine it runs on, which nothing this machine sends reaches.
  */
 export function AskWork({ items, ...shared }: Shared & { items: readonly WorkItem[] }) {
   const { t } = useTranslation();
@@ -65,7 +65,7 @@ function WorkRow({ item, ...shared }: Shared & { item: WorkItem }) {
         <span className="shrink-0 font-mono text-meta text-ink-faint">#{quest.quest.slice(0, 6)}</span>
         {/* A door only onto a quest the page holds: a question to a repository in another workspace is named, not opened. */}
         {questTitles[quest.quest] ? (
-          // Named as every list names it (SESSUX1j), whole on its tip.
+          // Named as every list names it, whole on its tip.
           <button
             type="button"
             title={quest.title}

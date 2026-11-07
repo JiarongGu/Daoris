@@ -4,13 +4,13 @@ import { useTranslation } from 'react-i18next';
 import { Button, Segmented } from '../../design/ui';
 
 /**
- * A commit rule as the driver answers it (PROCESS1a, D164's amendment point 1): how a session commits its work in its own tree,
+ * A commit rule as the driver answers it: how a session commits its work in its own tree,
  * `as-you-go` (the default), `ask` (each commit waits for the person's yes) or `at-end` (one commit when the work is done), and
  * the person's convention, how a commit message is written, quoted to each session as written. None is left out.
  */
 export type CommitRule = { mode: string; convention?: string | null };
 
-/** Where a repository's rule was set: for it, for its workspace, or nowhere, which is the default's. */
+/** Where a repository's rule is set: for it, for its workspace, or nowhere, which is the default's. */
 export type CommitSource = 'repository' | 'workspace' | 'default';
 
 /** One repository's rule as the driver resolves it (`LINES`' `commits`): never null, its source `default` where nothing is set. */
@@ -38,7 +38,7 @@ const MODE_KEY: Record<string, string> = { 'as-you-go': 'asYouGo', ask: 'ask', '
 const modeKey = (mode: string) => MODE_KEY[mode] ?? 'asYouGo';
 
 /**
- * What each door says of a rule (DOORS1b), in the page's language: its mode in the terminal's sentence (`driver commits`), then
+ * What each door says of a rule, in the page's language: its mode in the terminal's sentence (`driver commits`), then
  * the person's convention, quoted as written.
  */
 export function commitSays(t: TFunction, rule: CommitRule): string[] {
@@ -48,7 +48,7 @@ export function commitSays(t: TFunction, rule: CommitRule): string[] {
   ];
 }
 
-/** What a Setup row says of the rule standing: the door's sentences, then where it was set, the default included. */
+/** What a Setup row says of the rule standing: the door's sentences, then where it is set, the default included. */
 export function commitRowSays(t: TFunction, rule: CommitRule, from: { source?: CommitSource | null; workspace?: string }): string {
   return [
     ...commitSays(t, rule),
@@ -72,7 +72,7 @@ export function commitToast(t: TFunction, name: string, edit: CommitEdit): strin
 const FIELD = 'w-full min-w-0 rounded-control border border-line-strong bg-raised px-2.5 py-1 font-mono text-small text-ink placeholder:italic placeholder:text-ink-faint';
 
 /**
- * **One commit rule's control** (DOORS1b, D164's amendment point 3): its mode, and the person's convention as one paragraph,
+ * **One commit rule's control**: its mode, and the person's convention as one paragraph,
  * starting from the rule set here, else from what stands above it, so *Set for this …* saves it as it stands. Every press goes
  * out as the twins' edit, mode and convention whole, judged by the driver, whose refusal is said in its words: a line break or
  * more than 400 characters in the convention is refused there, as the terminal refuses it. Props only (components §2).
@@ -103,7 +103,7 @@ export function CommitField({ name, set, inherited, busy = false, onChange }: {
 
   return (
     <form
-      // Sized to its content up to the pane (R1, UIFIT1d): the convention is a sentence, which takes the form's width.
+      // Sized to its content up to the pane: the convention is a sentence, which takes the form's width.
       className="grid gap-2"
       onSubmit={(event) => {
         event.preventDefault();

@@ -5,7 +5,7 @@ import { type OfferShown, pluginGroups, type PluginShown } from './catalog';
 import { PluginList, PluginStrip } from './PluginList';
 import { InTheme, PNG_ICON, SVG_ICON } from './storyIcons';
 
-// The Plugins view's list as a catalogue (PLUGUI2, D140 §2; PLUGUI1b, D119 §3.1) on its list pane, in every state the
+// The Plugins view's list as a catalogue on its list pane, in every state the
 // design names: the catalogue in both themes, empty, loading, an error with no answer ever, a refused row, a 中文 name,
 // the strip, and laid over the main area.
 
@@ -104,7 +104,7 @@ export default meta;
 type Story = StoryObj<typeof PluginsListPane>;
 
 /**
- * The catalogue (D140 §2): *Installed*, the one waiting on you first, then on, then off; then Daoris's own plugins not
+ * The catalogue: *Installed*, the one waiting on you first, then on, then off; then Daoris's own plugins not
  * installed. Each row its icon, its name and version and state, what it gives, then where it came from, what it adds
  * and *update available*.
  */

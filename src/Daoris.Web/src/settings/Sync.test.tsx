@@ -6,7 +6,7 @@ import i18n from '../locales/i18n';
 import { SyncSection, type LinePull, type RebaseBranch, type SyncPlan, type SyncRepository } from './Sync';
 import type { LandedBranch } from './Sweep';
 
-// WSR6 (D109): after a pull request merges — each line pulled by a fast-forward, the branches still at work
+// After a pull request merges — each line pulled by a fast-forward, the branches still at work
 // replayed onto it, the landed branches whose work reached it deleted. Listed first, done by one press, and the
 // list is asked for, never fetched on its own.
 
@@ -105,7 +105,7 @@ describe('bringing repositories up to date', () => {
       expect(onLook).toHaveBeenLastCalledWith(['beta', 'alpha']);
     });
 
-    // UX6h2b3: a workspace's Branches tab lists what is apart once, in its own fold, so the section draws no list of its own
+    // A workspace's Branches tab lists what is apart once, in its own fold, so the section draws no list of its own
     // there; its look takes what the fold included, and its sentence counts them.
     it("draws no list apart where the page's own fold holds it, and looks at what that fold included", async () => {
       const { onLook } = draw({ plan: undefined, scope: SCOPE, included: ['beta'], apartFolded: true });
@@ -143,7 +143,7 @@ describe('bringing repositories up to date', () => {
   });
 
   /**
-   * LANDSYNC3b (D87's 2026-10-15 amendment point 4, by analogy): a replay counts only what the line lacks, and says beside it how
+   * A replay counts only what the line lacks, and says beside it how
    * many commits it leaves out because the line already holds them, as the press's answer does. A host from before answers no
    * count, and the row reads as it did.
    */
@@ -182,7 +182,7 @@ describe('bringing repositories up to date', () => {
     });
   });
 
-  /** UXFIX4: its rows are the session branches card's, so a long name is heard and shown whole here too. */
+  /** Its rows are the session branches card's, so a long name is heard and shown whole here too. */
   it('names each row by the name it shows, whole, in rows that follow their own list’s width', () => {
     const LONG = 'feature/0fda18-fix-the-api-gap-before-the-quarter-closes';
     draw({
@@ -223,7 +223,7 @@ describe('bringing repositories up to date', () => {
   });
 
   /**
-   * WSR7: every fetch failed on the owner's workspace (the git on the path could not reach its SSH remotes), and the
+   * Every fetch failed on the owner's workspace (the git on the path could not reach its SSH remotes), and the
    * look said so only at the end of each row. It is said once, first: how many, grouped by git's reason, when each
    * last heard from origin, and what that git needs — with a short mark on each row.
    */

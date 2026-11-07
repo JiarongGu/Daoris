@@ -5,8 +5,8 @@ import { failure, type Notify, useErrorNotify } from '../design/ui';
 import { LOG_FILTERS, LogList, type LogFilters } from './Logs';
 
 /**
- * The machine log read back (LOG1c, D94): the filters are held here and applied by the shell, the same
- * reading `daoris logs` prints at a terminal (D50).
+ * The machine log read back: the filters are held here and applied by the shell, the same
+ * reading `daoris logs` prints at a terminal.
  */
 export function LogsDomain({ notify }: { notify: Notify }) {
   const { t } = useTranslation();

@@ -2,9 +2,9 @@ import type { Decorator } from '@storybook/react-vite';
 import { createContext, type ReactNode, useContext, useLayoutEffect, useState } from 'react';
 import { cn } from '../lib/cn';
 
-// A story shows the widths the frame gives, without help (the UI/UX design R6; UIFIT1). Stories only: nothing in the
+// A story shows the widths the frame gives, without help. Stories only: nothing in the
 // product imports this. The one helper replaces the local `mainAt` and `at` decorators stories carried, each of which
-// chose a width of its own, and some a gap or a cap the page does not have, which is how every R1 defect passed its stories.
+// chose a width of its own, and some a gap or a cap the page does not have, which lets a layout defect pass its stories.
 
 /**
  * The main area's widths: wide and half of a 1546 px window (about 1,290 px with the list open, and 630 px at a 680 px
@@ -80,8 +80,7 @@ export function localFrames(files: [path: string, source: string][]): string[] {
 
 /**
  * The stories that still draw a frame of their own, each a part of another region, with where it is mounted: the helper gives
- * the main area, and these are not in one. STORYGAP1 moved every main-area story to the helper (UIFIT1 had moved Settings',
- * Setup's and the workspace page's); a main-area story added here instead of taking the helper fails review, and one not
+ * the main area, and these are not in one. A main-area story added here instead of taking the helper fails review, and one not
  * named here fails `storyWidths.test.tsx`.
  */
 export const NOT_IN_A_MAIN_AREA: Readonly<Record<string, string>> = {

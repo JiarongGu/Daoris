@@ -4,12 +4,12 @@ import userEvent from '@testing-library/user-event';
 import i18n from '../../locales/i18n';
 import { InclusionContext, WorkspaceBranches } from './WorkspaceBranches';
 
-// The branch list in a workspace's Branches tab (UX6h2b2, the built-in Git design §2.2, D112): a molecule, each state reached
+// The branch list in a workspace's Branches tab: a molecule, each state reached
 // by its props. Each repository holding a branch of Daoris's is a group headed by its door, folded after five; the others
 // with a checkout here are folded apart, each drawn once the person includes it. A group's list is its holder's, asked for
 // only where the group shows.
 
-/** A group's list as its holder would draw it, and the groups it was asked for. */
+/** A group's list as its holder would draw it, and the groups it is asked for. */
 function holder() {
   const asked = new Set<string>();
   const group = (repository: string, included: boolean) => {
@@ -98,7 +98,7 @@ describe("a workspace's Branches tab's list", () => {
   });
 
   /**
-   * UX6h2b3: the fold is the one place a workspace's repositories apart are included, so its include is held by the Branches
+   * The fold is the one place a workspace's repositories apart are included, so its include is held by the Branches
    * part and handed up, where *Updates*' next look reads it. A held set draws its groups, and a press hands the ticked ones up.
    */
   it('hands what it includes to the page that holds it, and draws the groups that page says are included', async () => {

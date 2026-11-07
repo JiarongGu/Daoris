@@ -1,4 +1,4 @@
-// What each work may call (COMPANYVIEW1i, the company-view design §2 row 9): the service's call table, which is code with no machine
+// What each work may call: the service's call table, which is code with no machine
 // state, shown read-only. `callTable.test.ts` holds this file cell for cell to the service's `fixtures/call-table.json`, which the
 // service's `McpRoleFilterTests` holds to `CallTable` over the host's registration; a tool added there fails one until placed here.
 
@@ -22,7 +22,7 @@ const READS = [
   'memory_search', 'quest_list', 'registry',
 ];
 const MEMORY_CHANGES = ['memory_end', 'memory_write'];
-// What every session working in a repository is served (CONTEXTONE1d2), less what its work is refused.
+// What every session working in a repository is served, less what its work is refused.
 const CORE = [
   ...READS, 'channel_post', 'channel_read', 'helper_ask', 'memory_propose', ...MEMORY_CHANGES, 'quest_publish', 'quest_respond',
 ];

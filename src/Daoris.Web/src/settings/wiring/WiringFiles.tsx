@@ -4,7 +4,7 @@ import { PathText, Pill, SettingRow } from '../../design/ui';
 import { moment, size } from '../../locales/format';
 import { Door, Fact, Fold, Unread, WiringCard } from './WiringParts';
 
-/** Each entry's file name, as D172's `data/` and `profiles/` spell it: a name on disk, never translated. */
+/** Each entry's file name, as the `data/` and `profiles/` folders spell it: a name on disk, never translated. */
 const FILE_NAME: Record<string, string> = {
   driver: 'driver.json', harnesses: 'harnesses.json', accounts: 'accounts.json', permissions: 'permissions.json',
   tools: 'tools.json', 'plugin-state': 'plugins.json', 'browser-settings': 'browser/settings.json', update: 'update.json',
@@ -55,13 +55,13 @@ function FileRow({ file, onDoor, onOpen }: { file: WiringFile; onDoor: (door: st
 }
 
 /**
- * Settings files (the this-Daoris design §3.4): one row per file a person's choice lives in, each saying what it holds, where
- * it is, its size and when it was last written, whether it reads, the variable that overrides it where one is set, and the
- * door to where it is edited. The records fold under, with no door. **A file's contents are never shown** (§5): the read
+ * Settings files: one row per file a person's choice lives in, each saying what it holds, where
+ * it is, its size and its last write, whether it reads, the variable that overrides it where one is set, and the
+ * door to where it is edited. The records fold under, with no door. **A file's contents are never shown**: the read
  * parses a file to say whether it reads, and the page carries the verdict.
  *
  * @remarks
- * A molecule: drawn from props. A door is a press that goes where the file is edited; this page edits nothing. *Open folder* (WIRING1e)
+ * A molecule: drawn from props. A door is a press that goes where the file is edited; this page edits nothing. *Open folder*
  * sends the file's id, never its path, and the shell opens the folder it is in.
  */
 export function WiringFiles({ files, onDoor, onOpen }: { files: SystemWiring['files']; onDoor: (door: string) => void; onOpen?: (id: string) => void }) {

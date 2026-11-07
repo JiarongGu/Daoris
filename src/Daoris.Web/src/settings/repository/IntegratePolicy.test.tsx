@@ -4,7 +4,7 @@ import userEvent from '@testing-library/user-event';
 import i18n from '../../locales/i18n';
 import { LinePolicyField, policySays } from './IntegratePolicy';
 
-// WORKFLOWCLEAN1h-b: the Line row shows and edits the line's policy, the same choices the Landing tab's integrate group offers.
+// The Line row shows and edits the line's policy, the same choices the Landing tab's integrate group offers.
 
 afterEach(async () => {
   await act(async () => { await i18n.changeLanguage('en'); });

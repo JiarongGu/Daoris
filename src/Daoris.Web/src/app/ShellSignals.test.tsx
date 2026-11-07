@@ -2,8 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, screen, waitFor } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 
-// The shell's push channel: ticks, attention and endings become toasts and refetches. Moved from
-// `shell.test.tsx` with MOD3: tests follow their code.
+// The shell's push channel: ticks, attention and endings become toasts and refetches.
 
 const { invoke, notifyReady, eventHandlers } = vi.hoisted(() => ({
   invoke: vi.fn(),
@@ -42,7 +41,7 @@ describe('the shell push channel (ShellSignals)', () => {
   });
 
   /**
-   * NOTIFY2h (D196 point 7, the notification design §5.1): a tick's lines are the machine log's, never a toast. News among them is a
+   * A tick's lines are the machine log's, never a toast. News among them is a
    * notice in *Done and failed*, a wait its row; an English log line no longer toasts in a 中文 window.
    */
   it("a tick's lines toast nothing, and everything a tick can change refetches", () => {
@@ -57,30 +56,29 @@ describe('the shell push channel (ShellSignals)', () => {
 
     expect(notify).not.toHaveBeenCalled();
     // The index too: a schema rebuild is observable, and a summary cached mid-feed stayed "555 · 7"
-    // on an index of 1,050 · 17 for as long as the window was open (deployed app, 2026-09-23).
-    // And where each circle stands with its remote (SYNC6b): every tick runs a pass. And the asks: a
-    // tick takes them (INT4b) and the band reads them (INT4d) — seen on the window, an ask made by the
-    // other door was missing from *What needs you*, and its parked intake read as a bare session.
-    // And the rules: a tick settles what agents proposed about them (PERM2), and the band reads that.
-    // And the registry (FG4): a folder imported from a terminal left Overview saying *no workspace
+    // on an index of 1,050 · 17 for as long as the window stayed open (deployed app, 2026-09-23).
+    // And where each circle stands with its remote: every tick runs a pass. And the asks: a
+    // tick takes them and the band reads them — seen on the window, an ask made by the
+    // other door went missing from *What needs you*, and its parked intake read as a bare session.
+    // And the rules: a tick settles what agents proposed about them, and the band reads that.
+    // And the registry: a folder imported from a terminal left Overview saying *no workspace
     // yet* until a reload, because nothing told the page the registry had moved.
-    // What is read under the sessions', the quests' and the asks' keys, passing over the records where the shell pushes them (PUSH1d2,
-    // PUSH1d3).
+    // What is read under the sessions', the quests' and the asks' keys, passing over the records where the shell pushes them.
     for (const key of [keys.allSessions, keys.allQuests, keys.allAsks]) {
       expect(invalidate).toHaveBeenCalledWith({ queryKey: key, predicate: expect.any(Function) });
     }
-    // Not the repositories, the rules or the registry (FOUNDATION1s): a look declares what it moved of them as their own scopes.
+    // Not the repositories, the rules or the registry: a look declares what it moved of them as their own scopes.
     for (const key of [keys.allRepositories, keys.rules, keys.allRegistry]) {
       expect(invalidate).not.toHaveBeenCalledWith(expect.objectContaining({ queryKey: key }));
     }
-    // Where each circle stands, passing over the standings where the shell pushes them (PUSH1a2): each pass pushes what it moved.
+    // Where each circle stands, passing over the standings where the shell pushes them: each pass pushes what it moved.
     expect(invalidate).toHaveBeenCalledWith({ queryKey: keys.allSync, predicate: expect.any(Function) });
-    // What is read under the driver's key, passing over its state where the shell pushes it (PUSH1a, `pushedState.test.tsx`).
+    // What is read under the driver's key, passing over its state where the shell pushes it (`pushedState.test.tsx`).
     expect(invalidate).toHaveBeenCalledWith({ queryKey: keys.driver, predicate: expect.any(Function) });
   });
 
   /**
-   * LOOK2a: the driver saying its service is up is heard wherever the ticks are, and the driver's answers are asked
+   * The driver saying its service is up is heard wherever the ticks are, and the driver's answers are asked
    * again then, since the first tick can be long in coming.
    */
   it('the driver coming up asks its answers again', () => {
@@ -90,14 +88,14 @@ describe('the shell push channel (ShellSignals)', () => {
 
     eventHandlers.get('DAORIS.DRIVER_READY')!({ ready: true });
 
-    // Its state itself is passed over where the shell pushes it, whose push says it is up (PUSH1a).
+    // Its state itself is passed over where the shell pushes it, whose push says it is up.
     expect(invalidate).toHaveBeenCalledWith({ queryKey: keys.driver, predicate: expect.any(Function) });
   });
 
   /**
-   * 🔴 UX5 U30: a tick that could not reach the service toasted the .NET socket's own words, *No
+   * 🔴 A tick that could not reach the service must not toast the.NET socket's own words, *No
    * connection could be made because the target machine actively refused it. (127.0.0.1:5188)*. The
-   * loop now says which failure it was, and the page words a known one from its catalogue, in the
+   * loop says which failure it is, and the page words a known one from its catalogue, in the
    * reader's language; an unknown one keeps the driver's words.
    */
   it("words a failed tick from the catalogue when the driver names the failure", () => {
@@ -112,9 +110,9 @@ describe('the shell push channel (ShellSignals)', () => {
   });
 
   /**
-   * Why a quest is sitting — the driver has said it every tick since D46, the shell forwarded it,
-   * and the page dropped it: the Overview asked "is anything sitting" and never said why, while
-   * the only surface that did was a toast (deployed application, 2026-09-23).
+   * Why a quest is sitting — the driver says it every tick and the shell forwards it, so the page
+   * must not drop it: the Overview that asks "is anything sitting" and never says why, while
+   * the only surface that does is a toast, leaves the person guessing (deployed application, 2026-09-23).
    */
   it('the Overview says why a quest is sitting, in the driver’s own words from its last tick', async () => {
     const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
@@ -128,7 +126,7 @@ describe('the shell push channel (ShellSignals)', () => {
     await screen.findByText('Expose a streaming budget');
     expect(screen.queryByText(/sitting —/)).not.toBeInTheDocument();
 
-    // What the shell pushes of its last look (FOUNDATION1s): the slice's push writes the entry, as `pushedState.test.tsx` holds.
+    // What the shell pushes of its last look: the slice's push writes the entry, as `pushedState.test.tsx` holds.
     act(() => {
       client.setQueryData(keys.considerations, {
         considered: [{ quest: 'abc123', repository: 'engine', verdict: 'NotDrivable', reason: 'engine is not drivable on this machine' }],
@@ -161,9 +159,9 @@ describe('the shell push channel (ShellSignals)', () => {
   });
 
   /**
-   * The in-window half of the notification (SURF5b). The shell raises an OS balloon only while
+   * The in-window half of the notification. The shell raises an OS balloon only while
    * nobody is looking at the window, so these two never both fire — this is the one for when
-   * somebody is. Since NOTIFY2d it is said in the window's own words, the balloon's, and what the
+   * somebody is. It is said in the window's own words, the balloon's, and what the
    * session wrote beside them as written.
    */
   it('a session that needs somebody becomes a toast, and the sessions refetch', () => {
@@ -187,7 +185,7 @@ describe('the shell push channel (ShellSignals)', () => {
   });
 
   /**
-   * NOTIFY2d: a 中文 window toasted the driver's English headline over its own chrome. Each kind is said in the window's words, and
+   * A 中文 window toasted the driver's English headline over its own chrome. Each kind is said in the window's words, and
    * what the session wrote stays as written.
    */
   it('a 中文 window toasts in 中文, and what the session wrote as written', async () => {
@@ -206,7 +204,7 @@ describe('the shell push channel (ShellSignals)', () => {
     }
   });
 
-  /** NOTIFY2d (§5): a held tool call, which its bound refuses by itself, is announced as a park is, its call's title as written. */
+  /** A held tool call, which its bound refuses by itself, is announced as a park is, its call's title as written. */
   it('a held tool call is a demand, said as a park is', () => {
     const notify = vi.fn();
     show(<ShellSignals notify={notify} />);
@@ -220,7 +218,7 @@ describe('the shell push channel (ShellSignals)', () => {
   });
 
   /**
-   * SESSUX1i (D126 §4.7): a quest parked on its failed sessions waits on the person's Try again, so it wears the park's
+   * A quest parked on its failed sessions waits on the person's Try again, so it wears the park's
    * tone. What its last session wrote is said as written.
    */
   it("a quest's park is a demand, its failure as written", () => {
@@ -236,7 +234,7 @@ describe('the shell push channel (ShellSignals)', () => {
   });
 
   /**
-   * CONFIRMSEEN1: a terminal's press waiting for the window is its card's and its row's; the shell's balloon is for when no window is
+   * A terminal's press waiting for the window is its card's and its row's; the shell's balloon is for when no window is
    * in front, so the page says it in no toast over the card.
    */
   it("a terminal's press waiting for the window is no toast of its words: its card and its row say it", () => {
@@ -252,7 +250,7 @@ describe('the shell push channel (ShellSignals)', () => {
   });
 
   /**
-   * NOTIFY2b (the notification design §3.3): the press's own event, told once at its ask, is handed to the window by the press's id,
+   * The press's own event, told once at its ask, is handed to the window by the press's id,
    * which the window keys its announcement on; a snapshot of what waits is never what says it.
    */
   it("hands a terminal's press's event to the window by the press's id, and nothing without one", () => {
@@ -279,7 +277,7 @@ describe('the shell push channel (ShellSignals)', () => {
   });
 
   /**
-   * NOTIFY1a: a conversation that answered the person is news they wait on, never a demand: in the ending's tone, and the
+   * A conversation that answered the person is news they wait on, never a demand: in the ending's tone, and the
    * sessions asked again so its row shows the turn's end.
    */
   it('a conversation that answered is news', () => {
@@ -297,7 +295,7 @@ describe('the shell push channel (ShellSignals)', () => {
   });
 
   /**
-   * NOTIFY1c: the conversation the person is reading in a window in front already shows its answer, so its toast says nothing
+   * The conversation the person is reading in a window in front already shows its answer, so its toast says nothing
    * new; every other session's answer, every other kind and a hidden window keep theirs.
    */
   it('skips the answered toast for the conversation attended in a window in front, and only that', () => {
@@ -331,7 +329,7 @@ describe('the shell push channel (ShellSignals)', () => {
     }
   });
 
-  /** A reworded payload: the console must tolerate any shape (SES1's rule). */
+  /** A reworded payload: the console must tolerate any shape. */
   it('an attention event with nothing to say is not a blank toast', () => {
     const notify = vi.fn();
     show(<ShellSignals notify={notify} />);
@@ -343,7 +341,7 @@ describe('the shell push channel (ShellSignals)', () => {
   });
 
   /**
-   * NOTIFY2f (the notification design §5): a notice another process recorded, the headless host's, is said in the reader's words in
+   * A notice another process recorded, the headless host's, is said in the reader's words in
    * the window in front alone, once for an event heard twice; a window not focused as it hears it says nothing, and never later.
    */
   it("says another process's notice once, in the reader's words, in the focused window alone", async () => {
@@ -377,7 +375,7 @@ describe('the shell push channel (ShellSignals)', () => {
   });
 
   /**
-   * REV3: the driver said a conversation ended the moment its record moved, and no page code
+   * The driver said a conversation ended the moment its record moved, and no page code
    * listened — so a chat whose harness exited read as working until the next tick, and a message
    * typed into it in that window went nowhere.
    */
@@ -394,7 +392,7 @@ describe('the shell push channel (ShellSignals)', () => {
   });
 
   /**
-   * STATEHUB1 (D169): the 采纳 a tab switch read stale. A landing pressed in another window, or anywhere but this view, reaches
+   * The 采纳 a tab switch read stale. A landing pressed in another window, or anywhere but this view, reaches
    * this window as the driver's event alone, with no press of this client's; the plan is asked again where it is shown, and a
    * view mounted again after it (a tab switched back) reads the new plan rather than the one its cache held as fresh.
    */
@@ -430,7 +428,7 @@ describe('the shell push channel (ShellSignals)', () => {
     expect(invoke).not.toHaveBeenCalledWith('DAORIS.DRIVER', 'LAND_SESSION_TREE', expect.anything());
   });
 
-  /** A notification is a door (design §4): clicking it names the session to attend. */
+  /** A notification is a door: clicking it names the session to attend. */
   it('the shell can ask the page to attend a session', () => {
     const onAttend = vi.fn();
     show(<ShellSignals notify={() => {}} onAttend={onAttend} />);
@@ -438,13 +436,13 @@ describe('the shell push channel (ShellSignals)', () => {
     eventHandlers.get('DAORIS.ATTEND_SESSION')!({ session: 's1a2b3c4' });
     expect(onAttend).toHaveBeenCalledWith('s1a2b3c4');
 
-    // Nothing named is nothing to open, not a door onto whatever was last selected.
+    // Nothing named is nothing to open, not a door onto whatever is selected.
     eventHandlers.get('DAORIS.ATTEND_SESSION')!({});
     expect(onAttend).toHaveBeenCalledTimes(1);
   });
 
   /**
-   * MODELROLE1d2 (D205 §3.5(b)): a conversation refused at its open went on in its replacement within the same press, and the window
+   * A conversation refused at its open goes on in its replacement within the same press, and the window
    * showing the refused one follows it; a window showing another conversation, or none, keeps what it shows.
    */
   it('follows a conversation into its replacement only where it shows the refused one', () => {
@@ -463,7 +461,7 @@ describe('the shell push channel (ShellSignals)', () => {
   });
 
   /**
-   * NOTIFY2c: the shell brings forward the main window whose workspace holds what the notification was about, and names it; only that
+   * The shell brings forward the main window whose workspace holds what the notification is about, and names it; only that
    * window's page attends the session, so a window on another workspace keeps what it shows. The first main window is `main`.
    */
   it('attends the session only in the window the shell names', () => {

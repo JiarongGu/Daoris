@@ -7,7 +7,7 @@ import i18n from '../locales/i18n';
 import { WorkspaceScopeProvider } from '../data/scope';
 import { MapView } from './MapView';
 
-// MAPUX1f (the map UX design §8, §9): the Map's empty and failing cases, and *Which quests* first the last 30 days.
+// The Map's empty and failing cases, and *Which quests* first the last 30 days.
 
 const DAY = 24 * 60 * 60 * 1000;
 const ago = (days: number) => new Date(Date.now() - days * DAY).toISOString();

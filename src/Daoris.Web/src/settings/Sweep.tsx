@@ -6,9 +6,9 @@ import { ago } from '../locales/format';
 import { type Answered, InlineConfirm } from '../work/InlineConfirm';
 
 /**
- * What a session branch holds (D88), one of the driver's `SweepKind` constants (`Landing.cs`), which the modules send as they
+ * What a session branch holds, one of the driver's `SweepKind` constants (`Landing.cs`), which the modules send as they
  * are. Only `empty`, `landed` and `carried` go: `carried` is work a completed pull request carried, by its plugin's word
- * where git confirms it (PLUGHOOK1a, D148 point 4).
+ * where git confirms it.
  */
 export type SweepKind = 'empty' | 'landed' | 'carried' | 'unlanded' | 'dirty' | 'in-use';
 
@@ -22,7 +22,7 @@ export type SweepBranch = {
   /** Unlanded and carried: how many commits only Daoris's branches hold. */
   commits: number;
   /**
-   * Landed: the first branch of the person's that holds it, or what holds its work by content (SQUASHTIDY1). Empty: the line.
+   * Landed: the first branch of the person's that holds it, or what holds its work by content. Empty: the line.
    * Carried: the landed branch whose completed pull request carried it.
    */
   where?: string | null;
@@ -30,29 +30,29 @@ export type SweepBranch = {
   detail?: string | null;
   removable: boolean;
   /**
-   * Whether its discard is offered beside it (LAND3b), by the driver's own rule: a failed or superseded attempt's commits,
-   * which no clean-up takes. An answer without LAND3b carries none, and nothing is offered.
+   * Whether its discard is offered beside it, by the driver's own rule: a failed or superseded attempt's commits,
+   * which no clean-up takes. An answer without it carries none, and nothing is offered.
    */
   discardable?: boolean;
   /**
-   * The session its tree is, by id and how it ended (LAND4), where its tree is still here and a record of this machine's
+   * The session its tree is, by id and how it ended, where its tree is still here and a record of this machine's
    * names it. Absent where the answer lacks it.
    */
   session?: { id: string; state: string } | null;
   /**
-   * Whether its session's landing is offered beside it (LAND4), by the driver's own rule: its tree still here, holding commits
+   * Whether its session's landing is offered beside it, by the driver's own rule: its tree still here, holding commits
    * no branch of the person's holds, whatever that session's ending; the line `trees clean` prints beside the same row.
    */
   landable?: boolean;
 };
 
-/** What discarding a session branch answered (LAND3b): done, or the driver's sentence for why it was kept. */
+/** What discarding a session branch answers: done, or the driver's sentence for why it is kept. */
 export type BranchDiscard = { repository: string; branch: string; done: boolean; message: string };
 
 /**
- * A discard's answer said once (LAND3b): the branch gone in the reader's words, which name no tree's path; a branch kept
+ * A discard's answer said once: the branch gone in the reader's words, which name no tree's path; a branch kept
  * in the driver's own sentence, whole, since a refusal is the contract. Pressed in an ask, a kept branch is said inside it
- * and the ask closes only once the branch went (UXFIX2); with no ask, in a toast.
+ * and the ask closes only once the branch went; with no ask, in a toast.
  */
 export const sayDiscard = (notify: Notify, t: (key: string, options?: Record<string, unknown>) => string, answered?: Answered) =>
   (result: BranchDiscard) => {
@@ -66,10 +66,10 @@ export const sayDiscard = (notify: Notify, t: (key: string, options?: Record<str
   };
 
 /**
- * A session branch's discard, asked once (LAND3b, D102's LAND3 note): it names the branch, its repository, its tree where
- * it still has one, and that its commits go with it for good, beside the move and *never mind* (platform language §4).
+ * A session branch's discard, asked once: it names the branch, its repository, its tree where
+ * it still has one, and that its commits go with it for good, beside the move and *never mind*.
  * The commits are the ones the driver counted that no branch of the person's holds; the press is forced, as
- * `daoris tree remove <branch> --repository <name> --force` is. The one inline confirmation (UXFIX2): open until
+ * `daoris tree remove <branch> --repository <name> --force` is. The one inline confirmation: open until
  * the discard lands, a branch the driver kept said inside it.
  */
 export function DiscardBranchAsk({ branch, busy = false, onDiscard, onClose, className }: {
@@ -99,7 +99,7 @@ export function DiscardBranchAsk({ branch, busy = false, onDiscard, onClose, cla
   );
 }
 
-/** What a branch a landing made holds (WSR5). Only `on-line`, `merged` and `inside` go. */
+/** What a branch a landing made holds. Only `on-line`, `merged` and `inside` go. */
 export type LandedKind =
   | 'on-line' | 'merged' | 'inside' | 'differs' | 'checked-out' | 'ahead-of-remote' | 'leaned-on' | 'unknown';
 
@@ -119,21 +119,21 @@ export type LandedBranch = {
   /** Ahead of its remote: the commits the remote lacks; otherwise those the line lacks. */
   commits: number;
   removable: boolean;
-  /** When the landing recorded it (LANDRETIRE1 part 2), the age its row says; the answer is none. */
+  /** When the landing recorded it, the age its row says; the answer is none. */
   landedAt?: string | null;
   /** The quest the landing is named for, where it names one. */
   quest?: string | null;
-  /** Whether the service says that quest is closed: false where it was not read, so a row never says a quest closed on no answer. */
+  /** Whether the service says that quest is closed: false where it is not read, so a row never says a quest closed on no answer. */
   questClosed?: boolean;
 };
 
-/** What withdrawing a landing's branch answered (LANDRETIRE1): done with the ref its commits stay on, or the driver's sentence for why not. */
+/** What withdrawing a landing's branch answered: done with the ref its commits stay on, or the driver's sentence for why not. */
 export type LandedWithdrawal = { repository: string; branch: string; done: boolean; planned?: boolean; message: string; keptRef?: string | null };
 
 /**
- * A withdrawal's answer said once (LANDRETIRE1): the branch gone in the reader's words, naming the recovery ref its commits stay on; a branch
+ * A withdrawal's answer said once: the branch gone in the reader's words, naming the recovery ref its commits stay on; a branch
  * kept in the driver's own sentence, whole, since a refusal is the contract. Pressed in an ask, a refusal is said inside it and the ask closes
- * only once the branch went, as a discard's does (UXFIX2); with no ask, in a toast.
+ * only once the branch went, as a discard's does; with no ask, in a toast.
  */
 export const sayWithdraw = (notify: Notify, t: (key: string, options?: Record<string, unknown>) => string, answered?: Answered) =>
   (result: LandedWithdrawal) => {
@@ -149,9 +149,9 @@ export const sayWithdraw = (notify: Notify, t: (key: string, options?: Record<st
   };
 
 /**
- * A landing's branch withdrawn, asked once (LANDRETIRE1, D102's note): it names the branch and its repository, that the line will never
+ * A landing's branch withdrawn, asked once: it names the branch and its repository, that the line will never
  * hold its work and its commits stay on a recovery ref, and asks the reason the record keeps; the move waits for one, as
- * `daoris tree remove <branch> --repository <name> --why "…"` asks `--why`. The one inline confirmation (UXFIX2).
+ * `daoris tree remove <branch> --repository <name> --why "…"` asks `--why`. The one inline confirmation.
  */
 export function WithdrawLandedAsk({ branch, busy = false, onWithdraw, onClose, className }: {
   branch: Pick<LandedBranch, 'repository' | 'branch'>;
@@ -191,20 +191,20 @@ export function WithdrawLandedAsk({ branch, busy = false, onWithdraw, onClose, c
 export const sweepKey = (branch: { repository: string; branch: string }) => `${branch.repository}:${branch.branch}`;
 
 /**
- * A list of branch rows (UXFIX4): its own container, so its rows lay out by the list's width, which is the main area's less
+ * A list of branch rows: its own container, so its rows lay out by the list's width, which is the main area's less
  * the card's gutters, and never by the window's.
  */
 export const BRANCH_ROWS = '@container/branches m-0 list-none p-0';
 
 /**
- * **One branch's row** (UXFIX4): what the press does to it, its name, and the sentence. The session branches, the landed
+ * **One branch's row**: what the press does to it, its name, and the sentence. The session branches, the landed
  * group and bringing up to date all draw it, so the three lists cannot lay a row out three ways.
  *
  * @remarks
  * **Its columns follow its list's width** (`BRANCH_ROWS`). Three where the list holds 30rem: the mark, the name up to 16rem,
  * and the sentence never under 13rem, so neither is a word a line at a 680 px window. Narrower, the name stays beside its
- * mark and the sentence goes under the name. At the main area's 400 px floor the three columns stayed, and the sentence was
- * left whatever width the name did not take.
+ * mark and the sentence goes under the name. At the main area's 400 px floor the three columns stay, and the sentence is
+ * left whatever width the name does not take.
  *
  * **Its name is shown whole and heard whole.** It wraps after its separators as a path does (`PathText`). It is never cut
  * to one line with the rest in a tip, since a tip is reached by neither a keyboard nor a reader. The row is named by
@@ -236,7 +236,7 @@ export function BranchRow({ name, moving, word, children, under }: {
 }
 
 /**
- * Session branches (WSR3, D88): every `daoris/` branch in a repository with a checkout here, with what it
+ * Session branches: every `daoris/` branch in a repository with a checkout here, with what it
  * holds — then one press removes those whose work is on a branch of the person's, or that hold nothing,
  * with their trees.
  *
@@ -244,22 +244,22 @@ export function BranchRow({ name, moving, word, children, under }: {
  * Daoris's branches go once their work has merged: the first real workspace left sixteen empty ones in one repository. **The list comes
  * first, and the press removes only what it listed to go** — the driver judges each again right before
  * it goes. Work no branch of the person's holds, uncommitted work, and a tree a session still uses are
- * kept and named, never removed from here. `daoris tree clean` is the terminal's door (D50).
+ * kept and named, never removed from here. `daoris tree clean` is the terminal's door.
  *
- * **The branches landings made are their own group** (WSR5): a squash merge leaves git calling them
+ * **The branches landings made are their own group**: a squash merge leaves git calling them
  * unmerged, so each is proven by content — every file it changed reads on the line as it left it, or it is
  * inside another that does — and goes by the same press. Only branches a landing made here are listed.
  *
- * **A session branch a completed pull request carried goes too** (PLUGHOOK1a, D148 point 4): a squash left its commits on no
+ * **A session branch a completed pull request carried goes too**: a squash left its commits on no
  * branch of the person's, and the landed branch's plugin answered that its pull request carried them, where git confirms it.
- * Its row names that landed branch (SWEEPCARRIED1).
+ * Its row names that landed branch.
  *
- * **A failed or superseded attempt's branch is discarded by its own press** (LAND3b, D102's LAND3 note): its commits are on
+ * **A failed or superseded attempt's branch is discarded by its own press**: its commits are on
  * no branch of the person's, so the clean-up keeps it. Beside each row the driver says `discardable`, *Discard branch…*
  * asks once under the row and then discards it, as `daoris tree remove … --force` does beside the same rows. The
- * ask stays open until the driver answers, and says a branch it kept inside itself (UXFIX2).
+ * ask stays open until the driver answers, and says a branch it kept inside itself.
  *
- * **A kept branch whose tree is still here says how it lands** (LAND4, D102's LAND4 note): where the driver says `landable`,
+ * **A kept branch whose tree is still here says how it lands**: where the driver says `landable`,
  * the row names the session its tree is and how it ended, and that its page offers Accept, as `daoris tree land`
  * does from the terminal, whose list prints that line beside the same row. Words only: the press is the session's.
  */
@@ -272,20 +272,20 @@ export function SweepList({ branches, landed, busy, onLook, onClean, onDiscard, 
   onLook: () => void;
   onClean: (only: string[]) => void;
   /**
-   * Discard one branch the driver offers it for, once the person said so (LAND3b), told back to its ask (UXFIX2). Absent,
+   * Discard one branch the driver offers it for, once the person said so, told back to its ask. Absent,
    * no row offers it.
    */
   onDiscard?: (branch: SweepBranch, answered: Answered) => void;
   /** The branch whose discard is on its way, by its `sweepKey`: its row's presses wait for it. */
   discarding?: string | null;
   /**
-   * Withdraw one landing's branch the line will never hold, once the person gave the reason (LANDRETIRE1), told back to its ask. Absent, no
+   * Withdraw one landing's branch the line will never hold, once the person gave the reason, told back to its ask. Absent, no
    * row offers it.
    */
   onWithdraw?: (branch: LandedBranch, why: string, answered: Answered) => void;
   /** The landing's branch whose withdrawal is on its way, by its `sweepKey`: its row's press waits for it. */
   withdrawing?: string | null;
-  /** Bringing repositories up to date after a pull request merged (WSR6), drawn first: it runs before a clean-up. */
+  /** Bringing repositories up to date after a pull request merged, drawn first: it runs before a clean-up. */
   sync?: ReactNode;
 }) {
   const { t } = useTranslation();
@@ -297,7 +297,7 @@ export function SweepList({ branches, landed, busy, onLook, onClean, onDiscard, 
   const repositories = [...new Set((branches ?? []).map((branch) => branch.repository))].sort((a, b) => a.localeCompare(b));
   const landedIn = [...new Set((landed ?? []).map((branch) => branch.repository))].sort((a, b) => a.localeCompare(b));
 
-  // Each kind the driver sends has its own case (SWEEPCARRIED1): a kind left to a shared fallthrough said another kind's
+  // Each kind the driver sends has its own case: a kind left to a shared fallthrough said another kind's
   // sentence, as `carried` said the in-use one. A kind this window has no words for is said as the driver named it.
   const holds = (branch: SweepBranch): string => {
     switch (branch.kind) {
@@ -335,7 +335,7 @@ export function SweepList({ branches, landed, busy, onLook, onClean, onDiscard, 
   const beneath = (branch: LandedBranch) => branch.kind === 'differs'
     ? branch.files.join(', ')
     : branch.kind === 'unknown' ? branch.detail ?? null : null;
-  // LANDRETIRE1 part 2: how long a row the line does not hold has stood, and whether its quest is closed, as `trees clean` says it.
+  // How long a row the line does not hold has stood, and whether its quest is closed, as `trees clean` says it.
   const standing = (branch: LandedBranch) => {
     if (branch.removable || !branch.landedAt) return null;
     const when = ago(branch.landedAt);
@@ -366,7 +366,7 @@ export function SweepList({ branches, landed, busy, onLook, onClean, onDiscard, 
                   name={branch.branch}
                   moving={branch.removable}
                   word={t(branch.removable ? 'settings.sweep.goes' : 'settings.sweep.kept')}
-                  // Open until the discard answers (UXFIX2), its presses waiting for it.
+                  // Open until the discard answers, its presses waiting for it.
                   under={discardable && asking === key && (
                     <DiscardBranchAsk
                       branch={branch}
@@ -380,7 +380,7 @@ export function SweepList({ branches, landed, busy, onLook, onClean, onDiscard, 
                   {branch.kind === 'unlanded' && branch.detail && (
                     <span className="mt-0.5 block whitespace-pre-line font-mono text-meta text-ink-faint">{branch.detail}</span>
                   )}
-                  {/* LAND4: whose work it is, and how it lands: its session's page, or the terminal's line beside the row. */}
+                  {/* Whose work it is, and how it lands: its session's page, or the terminal's line beside the row. */}
                   {branch.landable && branch.session && (
                     <span className="mt-0.5 block">
                       <Inline text={t('settings.sweep.lands', {
@@ -426,7 +426,7 @@ export function SweepList({ branches, landed, busy, onLook, onClean, onDiscard, 
                       name={branch.branch}
                       moving={branch.removable}
                       word={t(branch.removable ? 'settings.sweep.goes' : 'settings.sweep.kept')}
-                      // Open until the withdrawal answers, its presses waiting for it, a refusal said inside it (UXFIX2).
+                      // Open until the withdrawal answers, its presses waiting for it, a refusal said inside it.
                       under={withdrawable && withdrawAsking === key && (
                         <WithdrawLandedAsk
                           branch={branch}

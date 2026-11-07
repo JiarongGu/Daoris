@@ -1,7 +1,7 @@
 import type { EdgeStyle } from './flowLayout';
 
 /**
- * The hardest graphs a flowchart draws (FLOWCHART1a1; the flowchart design §7, trap 3), as data in both languages: the
+ * The hardest graphs a flowchart draws, as data in both languages: the
  * layout's tests read their shapes, `LifeFlow`'s stories draw them, and the measured-box check runs over those stories in a
  * rendered browser. Tests and stories only: nothing in the product imports this.
  *
@@ -20,7 +20,7 @@ export type FixtureNode = {
   state?: { word: Said; tone: 'neutral' | 'open' | 'taken' | 'done' | 'declined' };
   current?: boolean;
   reached?: boolean;
-  /** Done or passed over: what a settled stretch folds (FLOWCHART1d, §3.6 step 2). */
+  /** Done or passed over: what a settled stretch folds. */
   settled?: boolean;
 };
 
@@ -92,7 +92,7 @@ export const LIFECYCLE: Fixture = (() => {
 })();
 
 /**
- * A dense process at the bounds (the fabric design §E7): 24 authored steps with `allOf` and `anyOf` groups, each group's
+ * A dense process at the bounds: 24 authored steps with `allOf` and `anyOf` groups, each group's
  * synthetic join, failure sinks and tasks, the protected order's `after` wires from each hold to every later gate, and
  * data wires across the steps, 96 wires in all.
  */
@@ -254,7 +254,7 @@ const LANES = [
 const LANE_STEPS = 31;
 
 /**
- * **A run too large to show whole** (FLOWCHART1d; the flowchart design §3.6, §4.4 and trap 16): 96 nodes, a decoded graph's
+ * **A run too large to show whole**: 96 nodes, a decoded graph's
  * bound, as three lines of work side by side, each 31 steps one after another from one start, then their join and the landing.
  * Each line stands at a step (current there, in `waits` waiting on you, else working), at `done`, or not started; the join and
  * the landing are done only where the run `ended`.

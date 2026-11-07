@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { layerModules } from './codeLayout';
 
-// MAP3a: a repository's modules in layers by dependency — what uses a module above it, what it
+// A repository's modules in layers by dependency — what uses a module above it, what it
 // depends on below — as a pure function, so the picture does not move between two looks.
 
 const dep = (from: string, to: string) => ({ from, to, kind: 'imports' });

@@ -15,7 +15,7 @@ import { type Drawn, drawnOf, inText, outText } from './structureWords';
 import { positionOf, type SectionProps, StructureShell } from './StructureSections';
 import { StructureNode } from './StructureNode';
 
-/** The drawn geometry: its paths and labels, the drawing's size, and how many times it was drawn. */
+/** The drawn geometry: its paths and labels, the drawing's size, and how many times it is drawn. */
 type Ink = { paths: InkPath[]; labels: InkLabel[]; width: number; height: number; drawn: number };
 
 /** A band's label, a role's cell and an agent are each this wide, in rem; the gutter between the bands and the agents is four. */
@@ -25,7 +25,7 @@ const GUTTER_REM = 4;
 const BESIDE_REM = 40;
 
 /**
- * **The agents' structure** (CANVAS1c; D224, the canvas design §3.2), which replaces the three columns: one band for each place in tree
+ * **The agents' structure**: one band for each place in tree
  * order, its roles stacked beside its label (above it from the canvas's floor to 40rem), and the agents once each across a gutter, joined to
  * the roles leaning on them by the *staffed* edges alone, numbered by position and dashed where the last reading says the choice cannot
  * run. *Placed* and *appointed* are what the band says, and stay in each node's description and in the list. Inheritance is lit, never
@@ -36,7 +36,7 @@ const BESIDE_REM = 40;
  *   it, and wherever nothing measures, its list: the same nodes in the same order with their edges in words. There is no drag of a node.
  * - **One identity, many occurrences:** a role placed in two places is drawn in both; choosing either lights both and opens the one detail.
  * - **Legible at size:** past 24 nodes each workspace folds to one band, opened by its press; opening one reads nothing more.
- * - **One list in reading order** (the flowchart design §3.7): the nodes are one `role="list"`, a roving tab stop, ↓ ↑ Home End in reading
+ * - **One list in reading order**: the nodes are one `role="list"`, a roving tab stop, ↓ ↑ Home End in reading
  *   order, → along the first edge out and ← back; Enter chooses a node or opens a fold. The edges are one SVG hidden from a reader, drawn
  *   from the measured boxes, and each node's description says every edge in and out.
  *
@@ -371,7 +371,7 @@ export function StructureCanvas({ diagram, selected, onSelect }: { diagram: Diag
   );
 }
 
-/** The drawn geometry from the world the page laid out, in world units, or null where nothing was laid out (a unit test's DOM). */
+/** The drawn geometry from the world the page laid out, in world units, or null where nothing is laid out (a unit test's DOM). */
 function measure(element: HTMLElement, world: WorldRead, layout: FlowLayout): Omit<Ink, 'drawn'> | null {
   const boxes = world.nodes;
   if (layout.order.some((id) => !boxes.has(id))) return null;

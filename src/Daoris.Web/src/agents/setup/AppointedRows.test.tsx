@@ -7,7 +7,7 @@ import { appointedOf } from '../roles/appointedHold';
 import { AppointedRows } from './AppointedRows';
 import type { PlaceRoleEditor } from './PlaceRoles';
 
-// ROLEONE1b: the supervisor and the steward are catalogue rows with a `hold`; their rows show holder and acts, and the one role editor sets
+// The supervisor and the steward are catalogue rows with a `hold`; their rows show holder and acts, and the one role editor sets
 // them over SET_ROLE.
 
 const SUPERVISOR: RoleRow = {

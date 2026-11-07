@@ -1,8 +1,8 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { DomainList } from './DomainList';
 
-// Settings' list (FRAME1g, D118 §5) at its 176 px start: a shell's seven domains since Workspace and Permissions left for
-// a workspace's page (UX6g) and Plugins for its place (UX6j, D150 §2.3), a browser's three with what it is not offered,
+// Settings' list at its 176 px start: a shell's seven domains since Workspace and Permissions left for
+// a workspace's page and Plugins for its place, a browser's three with what it is not offered,
 // the 中文 names, and the chosen domain last.
 
 const SHELL = [

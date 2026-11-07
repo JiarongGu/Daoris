@@ -6,7 +6,7 @@ import { shellWord } from '../../lib/shellWord';
 import { type Answered, Refused } from '../../work/InlineConfirm';
 
 /**
- * Which checks a repository's sessions run under Current (FABRIC-PIPELINE1b, D192 point 4; `STATE`'s `sessionChecks`): `light`, the gates
+ * Which checks a repository's sessions run under Current (`STATE`'s `sessionChecks`): `light`, the gates
  * it does not mark heavy and the checks a change reaches, its heavy gates left to the verification and refused to its sessions; or
  * `heavy-at-end`, its heavy gates once, at a session's end. None is today's.
  */
@@ -32,8 +32,8 @@ export function sessionChecksToast(t: TFunction, name: string, checks: string | 
 }
 
 /**
- * **A repository's sessions' checks** (FABRIC-PIPELINE1b, the pipeline design §3.1, §3.2): a row of its Setup's *Heavy gates*, the same
- * `sessionChecks` `daoris place checks` edits (D50). It says what the choice standing means; under light, its light gates and its heavy
+ * **A repository's sessions' checks**: a row of its Setup's *Heavy gates*, the same
+ * `sessionChecks` `daoris place checks` edits. It says what the choice standing means; under light, its light gates and its heavy
  * gates by name as the driver read them, that an agent which takes no rules from Daoris is told them and refused `run-heavy` rather than
  * refused in its shell, and that nothing runs the heavy gates after a landing yet; and a repository that marks no heavy gate gives its
  * sessions every gate. A press goes out at once and the driver judges it; its refusal is said in its words. The person's choice alone:

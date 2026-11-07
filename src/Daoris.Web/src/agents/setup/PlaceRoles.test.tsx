@@ -3,7 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 
-// AGENTSPLACE1g1 (the Agents-place design §3, Roles): a place's page lists one row per work for the place's chain, with the role editor's
+// A place's page lists one row per work for the place's chain, with the role editor's
 // *Give … its own…* on a row taken from a parent and *Edit* and *Back to …'s* on a role placed here, all over SET_ROLE.
 
 const { invoke, notifyReady, eventHandlers } = vi.hoisted(() => ({
@@ -100,7 +100,7 @@ describe('A place page, Roles', () => {
   const openEngine = async () => {
     show(<Place />);
     await userEvent.click(await screen.findByRole('treeitem', { name: /engine/ }));
-    // A repository's page opens on Workflow; Roles is folded to its line until pressed (SETUPUX1h).
+    // A repository's page opens on Workflow; Roles is folded to its line until pressed.
     await userEvent.click(await screen.findByRole('button', { name: 'Roles' }));
     return (await screen.findAllByText('Engine build · in repository engine'))[0]!;
   };
@@ -112,7 +112,7 @@ describe('A place page, Roles', () => {
     expect(build.getByText(/claude-code · sonnet · high · cannot run: signed out/)).toBeTruthy();
     await unfold();
     const design = rowOf('design and decisions');
-    // A role placed above the place says where, and its source mark is a door to that place (SETUPUX1h).
+    // A role placed above the place says where, and its source mark is a door to that place.
     expect(design.getByRole('button', { name: 'on this machine' })).toBeTruthy();
     expect(design.getByText(/claude-code · opus · high · can run/)).toBeTruthy();
   });
@@ -389,7 +389,7 @@ describe('A place page, Roles', () => {
     expect(rowOf('开发').getByRole('button', { name: '回到aurora的角色，开发' })).toBeTruthy();
   });
 
-  // STAFFPOLICY1f (the staff policy design §6.2): the fold reads the role's policy, says a stale one, and its give copies the parent's.
+  // The fold reads the role's policy, says a stale one, and its give copies the parent's.
   describe('its staffing policy', () => {
     const policy = (role: string, over: Record<string, unknown> = {}) => ({
       role, policyState: 'set', revision: 2, next: null,

@@ -16,9 +16,9 @@ export type RefActs = {
   rename: (ask: { kind: RefKind; name: string; to: string; at: string }) => Promise<RefOutcome>;
   finish: (act: string) => Promise<RefOutcome>;
   undo: (act: string) => Promise<RefOutcome>;
-  /** *Fetch origin* (GITAPP2f); absent, the tab offers none. */
+  /** *Fetch origin*; absent, the tab offers none. */
   fetch?: FetchActs;
-  /** *Push* and *Push tag* (GITAPP2g, n); absent, the tab offers neither. */
+  /** *Push* and *Push tag*; absent, the tab offers neither. */
   push?: PushActs;
 };
 
@@ -65,9 +65,9 @@ type Stage =
 const short = (commit: string) => commit.slice(0, 7);
 
 /**
- * **New branch or tag** (GITAPP2c, D204; the git-writes design §6): a disclosure on a repository's Branches. The person names a
+ * **New branch or tag**: a disclosure on a repository's Branches. The person names a
  * branch or a lightweight tag, is told what will be made and at which commit, and confirms; only then is the press sent. The
- * driver answers as data: made (with an *Undo*, which deletes the ref only at the id it was made at), refused in its own words
+ * driver answers as data: made (with an *Undo*, which deletes the ref only at the id it made), refused in its own words
  * with the name kept to change, or not known, which is said and never retried.
  *
  * @remarks

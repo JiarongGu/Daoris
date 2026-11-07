@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest';
 import { DRIVER_FOLDER, driverFiles, driverSource, oneNamed } from './driverSource';
 
 /**
- * A twin vitest reads the driver's source by the file's name, wherever it lies under the driver's folder (STRUCT1, D166),
+ * A twin vitest reads the driver's source by the file's name, wherever it lies under the driver's folder,
  * so the driver's files move into module folders and no twin is edited for it. The cases name no driver file but one the
  * twins parse already, so a change to another driver file never owes this suite a run.
  */

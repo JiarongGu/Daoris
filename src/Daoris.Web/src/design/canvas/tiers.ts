@@ -1,7 +1,7 @@
 import { type Grid, queryGrid } from './spatialGrid';
 import type { Box, Size } from './viewMath';
 
-// How much of a positioned world is drawn, and how (CANVAS1d; the canvas design §4): the tier follows the effective size of `text-meta`,
+// How much of a positioned world is drawn, and how: the tier follows the effective size of `text-meta`,
 // the budget lowers it before the frame drops, and past 400 nodes only what is in view, and what must stay, is mounted.
 
 export type Tier = 'full' | 'chip' | 'dot';

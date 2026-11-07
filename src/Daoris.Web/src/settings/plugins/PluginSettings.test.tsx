@@ -6,7 +6,7 @@ import i18n from '../../locales/i18n';
 import type { PluginShown } from '../../plugins/catalog';
 import { PluginSettings } from './PluginSettings';
 
-// PLUGSET1 (the modes design §4.1): Settings' Plugins section lists each installed plugin with what it holds set and leads to
+// Settings' Plugins section lists each installed plugin with what it holds set and leads to
 // its page, where a plugin's settings are changed; it changes nothing itself.
 
 const plugin = (extra: Partial<PluginShown> & Pick<PluginShown, 'id' | 'name'>): PluginShown => ({

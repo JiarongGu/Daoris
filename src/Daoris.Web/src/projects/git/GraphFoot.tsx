@@ -11,8 +11,8 @@ export type GraphPaging = {
 };
 
 /**
- * **The paging a graph's holder keeps** (UX6h3a, UXLOADMORE1): the press, and the focus carried to the first row it brought.
- * The focus goes only where it was on the body or in the foot; a reader who went elsewhere keeps their place, as Ask Daoris's
+ * **The paging a graph's holder keeps**: the press, and the focus carried to the first row it brought.
+ * The focus goes only if it is on the body or in the foot; a reader who went elsewhere keeps their place, as Ask Daoris's
  * history keeps it. It is the holder's, not the foot's, because the last page takes the foot away with it and the focus is
  * still owed to the row that page brought.
  */
@@ -25,7 +25,7 @@ export function useGraphPaging({ shown, loadingMore, onMore, rowAt }: {
   rowAt: (index: number) => HTMLElement | null;
 }): GraphPaging {
   const foot = useRef<HTMLDivElement>(null);
-  // How many rows there were when *Show more* was pressed, so the first row the next page brings takes the focus.
+  // How many rows there are when *Show more* is pressed, so the first row the next page brings takes the focus.
   const pressed = useRef<number | null>(null);
 
   useLayoutEffect(() => {
@@ -48,9 +48,9 @@ export function useGraphPaging({ shown, loadingMore, onMore, rowAt }: {
 }
 
 /**
- * **The foot of a paged graph** (UX6h3a, UXLOADMORE1): the count of what is listed, with no total, since the graph answers
+ * **The foot of a paged graph**: the count of what is listed, with no total, since the graph answers
  * none; *Show more*; a status that is there from the first, so a reader hears the wait begin; and the next page's refusal
- * said in its words. The History tab's, and the branch page's (UX6h3b).
+ * said in its words. The History tab's, and the branch page's.
  *
  * @remarks
  * **A molecule**: its holder draws it only while a next page exists, and holds the pages and their paging.

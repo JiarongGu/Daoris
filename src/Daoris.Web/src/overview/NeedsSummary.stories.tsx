@@ -8,9 +8,9 @@ import type { Confirmation } from '../person/Confirmations';
 import type { PushedAttention } from '../work/attention/attention';
 import { NeedsSummary } from './NeedsSummary';
 
-// Overview's summary of what needs the person (NOTIFY2b, the notification design §4): a line per group with its count and its oldest
-// wait, each a door into *Notifications*; on one label track at 32rem and wider, stacked below it (R1). At the main area's wide,
-// half and narrow widths (R6), in English and 中文, light and dark; and with nothing waiting.
+// Overview's summary of what needs the person: a line per group with its count and its oldest
+// wait, each a door into *Notifications*; on one label track at 32rem and wider, stacked below it. At the main area's wide,
+// half and narrow widths, in English and 中文, light and dark; and with nothing waiting.
 
 const ago = (minutes: number) => new Date(Date.now() - minutes * 60_000).toISOString();
 const ROWS: PushedAttention[] = [
@@ -47,7 +47,7 @@ export const Nothing: Story = { args: { attention: { ...KNOWN, rows: [] }, press
 /** A plain browser: the app's to judge. */
 export const InABrowser: Story = { args: { attention: { state: 'app' }, presses: [], onNotifications: undefined } };
 
-/** *Done and failed*'s line after what waits (NOTIFY2f): its notices, and how many are unread. */
+/** *Done and failed*'s line after what waits: its notices, and how many are unread. */
 const NOTICES: Notice[] = [
   { id: 'ended-s1', kind: 'ended', at: ago(5), read: false, repository: 'game', state: 'failed' },
   { id: 'ended-s2', kind: 'ended', at: ago(90), read: true, repository: 'engine', state: 'completed' },
@@ -56,7 +56,7 @@ export const WithDoneAndFailed: Story = { args: { notices: NOTICES } };
 export const WithDoneAndFailedChinese: Story = { args: { notices: NOTICES }, decorators: [chinese] };
 export const WithDoneAndFailedNarrow: Story = { args: { notices: NOTICES }, decorators: [storyWidths.narrow] };
 
-/** *Messages*' line before what ended (NOTIFY2g): its items, an ask's and a teammate's and an answer, and how many are unread. */
+/** *Messages*' line before what ended: its items, an ask's and a teammate's and an answer, and how many are unread. */
 const MESSAGES: AskMessages[] = [
   { ask: 'a1', workspace: 'default', teammate: false, unread: 3 },
   { ask: '7e6f51', workspace: 'default', teammate: true, unread: 1 },

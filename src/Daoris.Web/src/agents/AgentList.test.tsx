@@ -9,7 +9,7 @@ import { AgentList, AgentStrip } from './AgentList';
 import { agentRows } from './agents';
 import { CLAUDE_USE, CODEX_USE, TOOLS, toolsOf } from './agentsFixtures';
 
-// The Agents list closed to its strip (D118 §3a; ACCTUX2): each agent a mark a person tells from its neighbours, where the
+// The Agents list closed to its strip: each agent a mark a person tells from its neighbours, where the
 // first character alone drew Claude Code and Codex both `C`.
 
 describe('the agent strip', () => {
@@ -29,7 +29,7 @@ describe('the agent strip', () => {
   });
 });
 
-// INSTALLDOOR1: where Daoris has no installer for an agent, its row offers *How to install*, which opens its page and runs none.
+// Where Daoris has no installer for an agent, its row offers *How to install*, which opens its page and runs none.
 describe('the agent list, an agent Daoris has no installer for', () => {
   beforeEach(() => i18n.changeLanguage('en'));
   afterEach(cleanup);

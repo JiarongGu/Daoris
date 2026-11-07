@@ -9,9 +9,8 @@ import { type FolderInspection, usePickFolder, useWriteDeclaration } from '../br
 import { Button, Chip, Drawer, failure, Inline, type Notify, PathText, SectionTitle, Tip } from '../design/ui';
 
 /**
- * Managing the machine's repositories (D48 §7) — the surfaces that exist only where a shell is
- * attached, because managing repositories means touching machine paths and a browser is never told one
- * (D46/D47 §4).
+ * Managing the machine's repositories — the surfaces that exist only where a shell is
+ * attached, because managing repositories means touching machine paths and a browser is never told one.
  *
  * Three rules hold across everything here, and each is visible in the UI rather than only in the code:
  *
@@ -22,7 +21,7 @@ import { Button, Chip, Drawer, failure, Inline, type Notify, PathText, SectionTi
  *   diff lands uncommitted for its own review. Presenting them as one form would blur the only
  *   distinction that matters.
  * - **Adoption is not ours to do.** A folder with no manifest is added as a non-adopter and the steps
- *   are shown as text to run in that repository, never as a button here (D31's shape).
+ *   are shown as text to run in that repository, never as a button here.
  */
 
 /** What an import answered: the repositories it registered, the workspace they landed in and the service's own sentence. */
@@ -33,12 +32,12 @@ const EMPTY_LINES =(value: string): string[] =>
 
 export function AddProjectDrawer({ onClose, onAdded, notify, initialWorkspace }: {
   onClose: () => void;
-  /** Told the repository registered, so the list that opened the drawer can have it chosen (FRAME1e). */
+  /** Told the repository registered, so the list that opened the drawer can have it chosen. */
   onAdded?: (repository: string) => void;
   notify: Notify;
   /**
-   * The workspace the drawer opens filled with (ENTRY1d2b): Ask Daoris's go's. Its field shows before the folder is
-   * chosen, so the person sees where the repository lands before picking the folder, which stays theirs (D48 §3/§7).
+   * The workspace the drawer opens filled with: Ask Daoris's go's. Its field shows before the folder is
+   * chosen, so the person sees where the repository lands before picking the folder, which stays theirs.
    */
   initialWorkspace?: string;
 }) {
@@ -60,7 +59,7 @@ export function AddProjectDrawer({ onClose, onAdded, notify, initialWorkspace }:
     register.mutate({
       repository: found.name,
       root: found.path,
-      // What the shell found there, stated (D70): registered is addressable, adopted is disciplined —
+      // What the shell found there, stated: registered is addressable, adopted is disciplined —
       // and a row that said adopted without a manifest would be driven with no connector.
       adopted: found.adopted,
       ...(workspace.trim() ? { workspace: workspace.trim() } : {}),
@@ -82,7 +81,7 @@ export function AddProjectDrawer({ onClose, onAdded, notify, initialWorkspace }:
     });
   };
 
-  // Below what the folder holds once it is found; before it, alone, where a go filled it (ENTRY1d2b).
+  // Below what the folder holds once it is found; before it, alone, where a go filled it.
   const field = (
     <>
       <label className={`${found ? 'mt-4 ' : ''}block text-small text-ink-faint`} htmlFor="add-workspace">
@@ -104,8 +103,7 @@ export function AddProjectDrawer({ onClose, onAdded, notify, initialWorkspace }:
       title={t('projects.manage.addTitle')}
       onClose={onClose}
       footer={
-        // The move, then *never mind*, as every other drawer puts them (UX5 U38): this one was reversed,
-        // its action pushed to the far edge.
+        // The move, then *never mind*, as every other drawer puts them.
         <div className="flex items-center gap-2">
           <Button
             variant="primary"
@@ -137,7 +135,7 @@ export function AddProjectDrawer({ onClose, onAdded, notify, initialWorkspace }:
           {found.summary && <p className="mt-2 text-body text-ink-soft">{found.summary}</p>}
 
           {!found.adopted && (
-            /* The join steps as TEXT to run in that repository (D31): adoption is its own agent's
+            /* The join steps as TEXT to run in that repository: adoption is its own agent's
                job — the collisions, the review, the budget — and a button here would do that work
                from outside, by whoever knows that codebase least. */
             <p className="mt-3 rounded-control bg-accent-soft px-3 py-2.5 font-mono text-small">
@@ -159,18 +157,18 @@ export function AddProjectDrawer({ onClose, onAdded, notify, initialWorkspace }:
 }
 
 /**
- * Setting a folder up as a workspace (D77): every folder inside it registered at once, wired to the
+ * Setting a folder up as a workspace: every folder inside it registered at once, wired to the
  * workspace named here — `daoris import <folder> --workspace <name>`'s screen twin. The folder's own
  * name is offered, because that is what setting a folder up as a workspace means. Emptied, the import
- * names none, and an import that names none moves nobody (D48 §2).
+ * names none, and an import that names none moves nobody.
  *
- * Since ENTRY1d2b Ask Daoris's go may open it filled (`initialWorkspace`), its field shown before the folder is chosen, as
+ * Ask Daoris's go may open it filled (`initialWorkspace`), its field shown before the folder is chosen, as
  * Add's is. The folder's name is offered only over an empty field or the name it offered last, so a name the go filled or
  * the person typed stays when a folder is chosen.
  */
 export function ImportFolderDrawer({ onClose, onImported, notify, initialWorkspace }: {
   onClose: () => void;
-  /** Told what the import answered, before the drawer closes, so a composer that opened it can choose or list what came (NEW1c). */
+  /** Told what the import answered, before the drawer closes, so a composer that opened it can choose or list what came. */
   onImported?: (result: ImportAnswer) => void;
   notify: Notify;
   initialWorkspace?: string;
@@ -250,7 +248,7 @@ export function ImportFolderDrawer({ onClose, onImported, notify, initialWorkspa
 export function ManageProjectDrawer({ project, onClose, onRetired, notify }: {
   project: Registration;
   onClose: () => void;
-  /** Told the repository is retired, so the page it was managed from can go back to choosing (FRAME1e). */
+  /** Told the repository is retired, so the page it is managed from can go back to choosing. */
   onRetired?: () => void;
   notify: Notify;
 }) {
@@ -278,7 +276,7 @@ export function ManageProjectDrawer({ project, onClose, onRetired, notify }: {
   // Two writes, in order, because they are two different things: the tracked file first (it is what a
   // reviewer will see), then the registration that reflects it — the whole of it, `uses` included, since
   // the registry replaces a row's `uses` with the declaration's and the form has no field for them: the
-  // shell's answer reads them back from the file it just wrote (MANAGE1).
+  // shell's answer reads them back from the file it just wrote.
   const saveDeclaration = () => {
     if (!project.root) return;
     writeDeclaration.mutate({
@@ -368,7 +366,7 @@ export function ManageProjectDrawer({ project, onClose, onRetired, notify }: {
             </Button>
           </>
         ) : (
-          /* A registration with no checkout here — a teammate's, mirrored down from a remote (D47 §9).
+          /* A registration with no checkout here — a teammate's, mirrored down from a remote.
              Its manifest lives on their machine, and editing it from here would be reaching in. */
           <p className="text-body text-ink-soft">{t('projects.manage.noCheckout')}</p>
         )}
@@ -390,7 +388,7 @@ export function ManageProjectDrawer({ project, onClose, onRetired, notify }: {
             onConfirm={(answered) => retire.mutate(project.repository, {
               // The service's own sentence, verbatim — it is the part that says what did not happen.
               onSuccess: (answer) => { notify(answer.message); onRetired?.(); answered.done(); onClose(); },
-              // A refusal is said inside the ask, where it was pressed (UXFIX2b1).
+              // A refusal is said inside the ask, where it is pressed.
               onError: (error) => answered.refused(sentence(error)),
             })}
             onClose={() => setConfirming(false)}

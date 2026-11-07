@@ -5,9 +5,8 @@ import userEvent from '@testing-library/user-event';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import * as Tooltip from '@radix-ui/react-tooltip';
 
-// The Agents place in SHELL mode (UX6e, D150 §5): the list of agents and an agent's page, its accounts with their last known
-// state and when each was read, and every act on it, over the mocked bridge. Moved from Settings → Agents' suite with the
-// cards it tested (`settings/AgentsDomain.test.tsx` until UX6e).
+// The Agents place in SHELL mode: the list of agents and an agent's page, its accounts with their last known
+// state and when each is read, and every act on it, over the mocked bridge.
 const { invoke, notifyReady, eventHandlers } = vi.hoisted(() => ({
   invoke: vi.fn(),
   notifyReady: vi.fn(() => Promise.resolve()),
@@ -52,7 +51,7 @@ function Place({ notify, first = 'claude-code', part = null, onAnchored, onOpenP
 const place = (notify: (message: string, tone?: 'ok' | 'error') => void = () => {}, options: Partial<Parameters<typeof Place>[0]> = {}) =>
   show(<Place notify={notify} {...options} />);
 
-/** Open a folded section by its name (D150 §1 rule 4). */
+/** Open a folded section by its name. */
 const unfold = async (section: string) => userEvent.click(await screen.findByRole('button', { name: `Show ${section}` }));
 
 /** An account's ⋯, opened from the keyboard: in this suite a pointer click leaves a Radix trigger closed. */
@@ -66,9 +65,9 @@ async function more(account: string) {
 const READ = '2026-10-04T10:42:00.000Z';
 
 /**
- * The toolchain roster (D49 §4, D50) on the Agents place: which agents this machine has, and the accounts they hold.
+ * The toolchain roster on the Agents place: which agents this machine has, and the accounts they hold.
  *
- * Shell-only for the sharpest reason yet — a profile HOME is a filesystem path (D47 §4) — so every call must land on the
+ * Shell-only for the sharpest reason yet — a profile HOME is a filesystem path — so every call must land on the
  * bridge and none on the API. **No credential is anywhere on this surface**: there is nowhere to type one but an API key's
  * field, behind a press, and logging in spawns the agent's own flow.
  */
@@ -109,7 +108,7 @@ describe('the Agents place', () => {
     place();
 
     expect(await screen.findByText('claude 9.9.9')).toBeTruthy();
-    // AGT1: an agent is named as a person knows it, with whose it is.
+    // An agent is named as a person knows it, with whose it is.
     expect(screen.getByRole('heading', { level: 1, name: 'Claude Code' })).toBeTruthy();
     expect(within(screen.getByRole('main')).getByText('Anthropic')).toBeTruthy();
     expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'HARNESSES', {});
@@ -117,7 +116,7 @@ describe('the Agents place', () => {
   });
 
   /**
-   * 🔴 D150 §5.3: opening the place starts no process and asks no account. It reads the roster as the frame holds it and
+   * 🔴 Opening the place starts no process and asks no account. It reads the roster as the frame holds it and
    * the accounts' files; only *Read again* asks, on the press, one agent's accounts.
    */
   it('asks no account when it opens, and reads this agent’s accounts again only on Read again', async () => {
@@ -127,13 +126,13 @@ describe('the Agents place', () => {
     const asked = () => invoke.mock.calls.filter(([, type]) => type === 'HARNESSES' || type === 'HARNESS_ACTION');
     expect(asked()).toEqual([['DAORIS.DRIVER', 'HARNESSES', {}]]);
 
-    // Its own route (HARNESSREFRESH1): the roster's read never carries the press, so it can stay a read that publishes nothing.
+    // Its own route: the roster's read never carries the press, so it can stay a read that publishes nothing.
     await userEvent.click(screen.getByRole('button', { name: 'Read again' }));
     expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'HARNESSES_REFRESH', { payload: { agent: 'claude-code' } });
     expect(invoke).not.toHaveBeenCalledWith('DAORIS.DRIVER', 'HARNESS_ACTION', expect.anything());
   });
 
-  /** ROSTER1 (§5.3): an account's ⋯ reads that one account again, on the press, and nothing else. */
+  /** An account's ⋯ reads that one account again, on the press, and nothing else. */
   it('reads one account again from its own ⋯, naming that account alone', async () => {
     place();
     await screen.findByText('claude 9.9.9');
@@ -146,7 +145,7 @@ describe('the Agents place', () => {
     expect(invoke).not.toHaveBeenCalledWith('DAORIS.DRIVER', 'HARNESS_ACTION', expect.anything());
   });
 
-  /** Each account says its last known state with when it was read, and one nothing answered was never read (§5.3). */
+  /** Each account says its last known state with when it is read, and one nothing answered has never been read. */
   it('says each account’s state as last known and when it was read', async () => {
     invoke.mockImplementation(async (_module: string, type: string) => (type === 'HARNESSES'
       ? {
@@ -160,12 +159,12 @@ describe('the Agents place', () => {
     place();
 
     const work = await screen.findByRole('listitem', { name: 'work' });
-    // `work` reads signed out, and every account of Daoris's holds work (D197), so it wears open's hue. Beside the word, the
-    // time alone (D152 §4.2): the column and the list's head say what it is.
+    // `work` reads signed out, and every account of Daoris's holds work, so it wears open's hue. Beside the word, the
+    // time alone: the column and the list's head say what it is.
     expect(within(work).getByText('signed out')).toBeTruthy();
     expect(within(work).getByText(/\d{2}:\d{2}$/)).toBeTruthy();
     expect(within(screen.getByRole('listitem', { name: 'spare' })).getByText('never read')).toBeTruthy();
-    // POOL1c (D197 point 3): your own sign-in is never asked, so its row says no state and no reading; its ⓘ says why.
+    // Your own sign-in is never asked, so its row says no state and no reading; its ⓘ says why.
     const own = screen.getByRole('listitem', { name: 'Your own sign-in' });
     expect(within(own).queryByText('unknown')).toBeNull();
     expect(within(own).queryByText('never read')).toBeNull();
@@ -173,8 +172,8 @@ describe('the Agents place', () => {
   });
 
   /**
-   * D152 §4.2: an account reads unknown on the install while a list held it, offered nothing on its row, and the owner pressed
-   * the header's sign-in and made a new account (ACCT1). Unknown gets *Read*, that account alone; signed out gets *Sign in*,
+   * An account reads unknown on the install while a list held it, offered nothing on its row, and the owner pressed
+   * the header's sign-in and made a new account. Unknown gets *Read*, that account alone; signed out gets *Sign in*,
    * to that account; each is loud where a list holds it.
    */
   it('gives each row the one act its state asks for: Read when unknown, Sign in when signed out, to that account', async () => {
@@ -203,7 +202,7 @@ describe('the Agents place', () => {
   });
 
   /**
-   * AGENTS2: every agent this build knows is listed, installed or not. One not installed says so and carries its Install
+   * Every agent this build knows is listed, installed or not. One not installed says so and carries its Install
    * beside the row, and the list has no ⋯ to unfold it: Codex went unseen behind one.
    */
   it('lists every agent this build knows, installed or not, with no fold for those not installed', async () => {
@@ -221,8 +220,8 @@ describe('the Agents place', () => {
   });
 
   /**
-   * AGENTS2: the row's Install opens the agent and runs its own installer there, once, so it streams under its ways in as
-   * the page's own Install does; the row's right-click offers the same press (CTX1).
+   * The row's Install opens the agent and runs its own installer there, once, so it streams under its ways in as
+   * the page's own Install does; the row's right-click offers the same press.
    */
   it('installs an agent from its row: the agent opens and its own installer runs once', async () => {
     invoke.mockImplementation(async (_module: string, type: string) => {
@@ -247,7 +246,7 @@ describe('the Agents place', () => {
   });
 
   /**
-   * FRAME1g (D118 §3h): the page drew nothing until the roster's first answer. It holds its place with skeleton rows until
+   * The page drew nothing until the roster's first answer. It holds its place with skeleton rows until
    * the roster answers.
    */
   it('holds the page’s place with skeleton rows on its first load, never nothing', async () => {
@@ -274,7 +273,7 @@ describe('the Agents place', () => {
     expect(screen.getByRole('button', { name: 'Hide Ways in' })).toBeTruthy();
     expect(screen.getByText(/is not on this machine's PATH/)).toBeTruthy();
 
-    // D152 §4.6: its page heads with its own installer, the one *Ways in* runs too.
+    // Its page heads with its own installer, the one *Ways in* runs too.
     const head = screen.getByRole('heading', { level: 1, name: 'codex' }).closest('header')!;
     await userEvent.click(within(head).getByRole('button', { name: 'Install' }));
     expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'HARNESS_ACTION', {
@@ -283,7 +282,7 @@ describe('the Agents place', () => {
   });
 
   /**
-   * INSTALLDOOR1: where Daoris has no installer for an agent, its row offers *How to install*, which opens the page and
+   * Where Daoris has no installer for an agent, its row offers *How to install*, which opens the page and
    * installs nothing; the page shows no Install press, and says the maker's own tooling installs it.
    */
   it('an agent Daoris has no installer for opens its page from its row, and nothing installs', async () => {
@@ -331,7 +330,7 @@ describe('the Agents place', () => {
   });
 
   /**
-   * SIGNIN1: a sign-in outlives leaving the place. Its running action is held above every view, so its panel is there on
+   * A sign-in outlives leaving the place. Its running action is held above every view, so its panel is there on
    * the way back, and its end is said wherever the person is.
    */
   it('a sign-in outlives leaving the place: its panel is there on the way back, and its end is said away from it', async () => {
@@ -381,8 +380,8 @@ describe('the Agents place', () => {
   });
 
   /**
-   * 🔴 The account a person actually has — the tool's own configuration home — is the last row (D152 §4.3), named *Your own
-   * sign-in*, its explanation on its ⓘ. POOL1c (D197 point 3; the account-pool design §4.2): it is outside Daoris's accounts and
+   * 🔴 The account a person actually has — the tool's own configuration home — is the last row, named *Your own
+   * sign-in*, its explanation on its ⓘ. It is outside Daoris's accounts and
    * never asked, so its row shows no state, no who, no reading and no press, and has no ⋯: no default, no read, no sign-in.
    */
   it('your own sign-in is the last row, outside Daoris’s accounts, with its ⓘ alone and nothing to press', async () => {
@@ -400,7 +399,7 @@ describe('the Agents place', () => {
     expect(invoke).not.toHaveBeenCalledWith('DAORIS.DRIVER', 'HARNESS_ACTION', expect.anything());
   });
 
-  /** POOL1c (the account-pool design §4.2): no row says where an account runs, every account serving every workspace. */
+  /** No row says where an account runs, every account serving every workspace. */
   it('says no workspace an account runs for, and no default, on any row', async () => {
     place();
 
@@ -415,9 +414,9 @@ describe('the Agents place', () => {
   });
 
   /**
-   * 🔴 An account is made by SIGNING IN (D66 §3), from *Add an account…* (D152 §4.5): where an account reads signed out, its
-   * own *Sign in* is offered first, so it stays the same account (ACCT1); *Add a new account* starts the sign-in; its end names
-   * who signed in, says it joined Daoris's accounts, and asks only its name, who signed in offered (POOL1c, D197 point 4).
+   * 🔴 An account is made by SIGNING IN, from *Add an account…*: where an account reads signed out, its
+   * own *Sign in* is offered first, so it stays the same account; *Add a new account* starts the sign-in; its end names
+   * who signed in, says it joined Daoris's accounts, and asks only its name, who signed in offered.
    */
   it('Add an account… offers a signed-out account’s own sign-in first, then makes a new one and asks only its name', async () => {
     invoke.mockImplementation(async (_module: string, type: string) => {
@@ -458,7 +457,7 @@ describe('the Agents place', () => {
   });
 
   /**
-   * OWNSPACE1b-B (D175 point 6): while the agent has no Daoris account, the header's add press is *Sign in for Daoris*, a label
+   * While the agent has no Daoris account, the header's add press is *Sign in for Daoris*, a label
    * that names no account, and runs the same `login-new` flow, its panel under the header as *Add an account…*'s is.
    */
   it('heads with Sign in for Daoris while the agent has no Daoris account, and runs login-new', async () => {
@@ -478,8 +477,8 @@ describe('the Agents place', () => {
   });
 
   /**
-   * CODEXSIGNIN2: a sign-in the driver refuses to start keeps its panel and says the driver's sentence in it, with *Try again*
-   * and *Close*, where it was a toast and the panel closed with it (platform-ux §4).
+   * A sign-in the driver refuses to start keeps its panel and says the driver's sentence in it, with *Try again*
+   * and *Close*, not as a toast with the panel closed.
    */
   it('keeps the sign-in panel when its start is refused, says the sentence in it, and starts again from it', async () => {
     let refuse = true;
@@ -541,7 +540,7 @@ describe('the Agents place', () => {
   });
 
   /**
-   * D152 §4.5's last step (POOL1c, the account-pool design §4.1): the name in its field is kept (ACCT2's `profile-rename`), the
+   * The add flow's last step: the name in its field is kept (`profile-rename`), the
    * terminal's twin under it, and the question goes. Nothing joins a list: the account serves every workspace as it is made.
    */
   it('keeps the new account’s name at the add flow’s end, and joins it to no list', async () => {
@@ -584,7 +583,7 @@ describe('the Agents place', () => {
     }));
   });
 
-  /** ACCTEDIT1: the add flow's last step, refused, stays up with the name as it was and says why in it. */
+  /** The add flow's last step, refused, stays up with the name as typed and says why in it. */
   it('keeps the add flow’s last step up with its name when its rename is refused, and says why in it', async () => {
     invoke.mockImplementation(async (_module: string, type: string, options?: { payload?: Record<string, unknown> }) => {
       if (type === 'HARNESS_ACTION') {
@@ -622,7 +621,7 @@ describe('the Agents place', () => {
   });
 
   /**
-   * POOL1c (D197 point 7; the account-pool design §4.2, §6.3): what the fold into one set changed is one block above the rows
+   * What the fold into one set changed is one block above the rows
    * while any of it is unsaid, a line per change in the reader's language; *Got it* marks the receipts shown said, by id, over
    * `ACCOUNT_USE` `said`; a new account signed in has nothing to place, and no row offers *Use in a workspace…*.
    */
@@ -688,8 +687,8 @@ describe('the Agents place', () => {
   });
 
   /**
-   * A sign-in that kept nothing says so in its own panel (SIGNIN1, the UI/UX design §3.2's *Failed at a phase*), with *Try
-   * again* and *Close*, where it was a toast and the panel closed.
+   * A sign-in that kept nothing says so in its own panel (*Failed at a phase*), with *Try
+   * again* and *Close*, not as a toast with the panel closed.
    */
   it('a sign-in that kept nothing says so in its panel, which stays until it is closed', async () => {
     invoke.mockImplementation(async (_module: string, type: string) => {
@@ -716,7 +715,7 @@ describe('the Agents place', () => {
   });
 
   /**
-   * SIGNIN1: a sign-in the tool failed stays on its row with the sentence and *Try again*; one the person cancelled closes
+   * A sign-in the tool failed stays on its row with the sentence and *Try again*; one the person cancelled closes
    * and says nothing, since they pressed it (the driver's end news says `cancelled`).
    */
   it('a failed sign-in stays on its row with its sentence, and a cancelled one closes saying nothing', async () => {
@@ -749,10 +748,10 @@ describe('the Agents place', () => {
   });
 
   /**
-   * CODEXACCT1: Codex's one door is `codex-acp`, which signs its accounts in with `codex login` (the roster's `signsIn`, its
-   * agent's flow, AGT7), so Agents → Codex offers *Add an account…* as the terminal's `daoris agent login codex --new` does:
+   * Codex's one door is `codex-acp`, which signs its accounts in with `codex login` (the roster's `signsIn`, its
+   * agent's flow), so Agents → Codex offers *Add an account…* as the terminal's `daoris agent login codex --new` does:
    * a signed-out account's own sign-in first, then a new account on the door, whose end asks its name, since Codex names
-   * nobody. Its own sign-in says no state, since Daoris never asks it (POOL1c, D197 point 3).
+   * nobody. Its own sign-in says no state, since Daoris never asks it.
    */
   it('Agents → Codex adds an account through its one door, as the terminal does, and asks its name at the end', async () => {
     const CODEX = {
@@ -774,7 +773,7 @@ describe('the Agents place', () => {
 
     expect(await screen.findByRole('heading', { level: 1, name: 'Codex' })).toBeTruthy();
     expect(within(screen.getByRole('listitem', { name: 'Your own sign-in' })).queryByText('signed in')).toBeNull();
-    // No key: Daoris holds none Codex is measured to take (D67 §1).
+    // No key: Daoris holds none Codex is measured to take.
     expect(screen.queryByRole('button', { name: 'Add an API key' })).toBeNull();
     await userEvent.click(screen.getByRole('button', { name: 'Add an account…' }));
     const back = screen.getByRole('region', { name: 'Add an account' });
@@ -801,7 +800,7 @@ describe('the Agents place', () => {
   });
 
   /**
-   * CODEXLOGIN1: Codex signs in by its browser first and its device code beside it (the roster's `deviceCode`). Switching while
+   * Codex signs in by its browser first and its device code beside it (the roster's `deviceCode`). Switching while
    * one runs asks the driver to stop it and start the other (`switch`), and the stopped one's end, told as switched, keeps the
    * panel and says nothing; a start the driver refused for its held port offers the device code, which starts as a press.
    */
@@ -883,7 +882,7 @@ describe('the Agents place', () => {
   });
 
   /**
-   * D152 §4.2 and ACCT2: one name leads, the account's, the person's where they gave one, with who signed in beside it where
+   * One name leads, the account's, the person's where they gave one, with who signed in beside it where
    * the two differ, never one as title and the other faint; a fresh id the person never chose never leads.
    */
   it('leads each row with the account’s name, who signed in beside it, and never a fresh id', async () => {
@@ -908,11 +907,11 @@ describe('the Agents place', () => {
     expect(within(screen.getByRole('listitem', { name: 'lab' })).getByText('lab@example.invalid')).toBeTruthy();
     expect(screen.getByRole('listitem', { name: 'new@example.invalid' })).toBeTruthy();
     expect(screen.queryByText('acct-9f8e7d6c')).toBeNull();
-    // POOL1c (D197 point 3): your own sign-in is never asked, so a who kept from before is not said; it would only age.
+    // Your own sign-in is never asked, so a who kept from before is not said; it would only age.
     expect(within(screen.getByRole('listitem', { name: 'Your own sign-in' })).queryByText('owner@example.invalid')).toBeNull();
   });
 
-  /** ACCOUNTID1b: one email signed in to two organisations, and the agent's own sign-in in a third, each row told apart. */
+  /** One email signed in to two organisations, and the agent's own sign-in in a third, each row told apart. */
   it('tells two sign-ins of one email apart by their organisations, each said once', async () => {
     const home = (id: string) => `C:/somewhere/.daoris/harnesses/claude-code/${id}`;
     invoke.mockImplementation(async (_module: string, type: string) => (type === 'HARNESSES'
@@ -937,11 +936,11 @@ describe('the Agents place', () => {
     const b = screen.getByRole('listitem', { name: 'person@example.invalid·Org-B' });
     expect(within(b).queryByText(/Org B/)).toBeNull();
     expect(within(screen.getByRole('listitem', { name: 'work' })).getByText('person@example.invalid · Org D')).toBeTruthy();
-    // POOL1c: your own sign-in says no who, never asked; the accounts of Daoris's are still told apart from it.
+    // Your own sign-in says no who, never asked; the accounts of Daoris's are still told apart from it.
     expect(within(screen.getByRole('listitem', { name: 'Your own sign-in' })).queryByText(/person@example\.invalid/)).toBeNull();
   });
 
-  /** ACCOUNTID1b: the add flow's last step offers the name the driver offered at the sign-in's end, and no third copy of its rule. */
+  /** The add flow's last step offers the name the driver offered at the sign-in's end, and no third copy of its rule. */
   it('offers the name the sign-in’s end offered, and none where it offered none', async () => {
     invoke.mockImplementation(async (_module: string, type: string, options?: { payload?: Record<string, unknown> }) => {
       if (type === 'HARNESS_ACTION') return { door: 'claude-code', action: options?.payload?.action, started: true };
@@ -966,7 +965,7 @@ describe('the Agents place', () => {
     expect(await signIn(null)).toHaveValue('');
   });
 
-  /** ACCT2's rename, from an account's ⋯: the person's name, sent as `daoris agent profile rename` sends it, and said once. */
+  /** The rename, from an account's ⋯: the person's name, sent as `daoris agent profile rename` sends it, and said once. */
   it('renames an account from its ⋯, and an emptied name gives it none', async () => {
     invoke.mockImplementation(async (_module: string, type: string, options?: { payload?: Record<string, unknown> }) => {
       if (type === 'HARNESS_ACTION') {
@@ -989,8 +988,8 @@ describe('the Agents place', () => {
   });
 
   /**
-   * ACCTEDIT1: a rename stays open until its act lands. Refused, it keeps the name the person typed and says why under it,
-   * whole, as a refused start is said in its form (UX5 U68); a retry that lands closes it, and *Never mind* is the one other
+   * A rename stays open until its act lands. Refused, it keeps the name the person typed and says why under it,
+   * whole, as a refused start is said in its form; a retry that lands closes it, and *Never mind* is the one other
    * way out.
    */
   it('keeps a refused rename open with the name typed, says why in it, and closes once a retry lands', async () => {
@@ -1020,7 +1019,7 @@ describe('the Agents place', () => {
     expect(await within(form).findByRole('alert')).toHaveProperty(
       'textContent', 'office already names personal — each claude-code account has a name of its own, and an id is one.');
     expect(within(form).getByRole('textbox', { name: 'Its name' })).toHaveProperty('value', 'office');
-    // Said where it was asked, not as a corner toast as well.
+    // Said where it is asked, not as a corner toast as well.
     expect(notify).not.toHaveBeenCalledWith(expect.anything(), 'error');
 
     await userEvent.click(within(form).getByRole('button', { name: 'Save the name' }));
@@ -1052,7 +1051,7 @@ describe('the Agents place', () => {
     expect(within(row).queryByRole('alert')).toBeNull();
   });
 
-  /** 🔴 Remove REMOVES (D66 §3): it deletes the sign-in, so its first press only asks, and says what the second will do. */
+  /** 🔴 Remove REMOVES: it deletes the sign-in, so its first press only asks, and says what the second will do. */
   it('Remove… asks once, then deletes the account', async () => {
     invoke.mockImplementation(async (_module: string, type: string) => {
       if (type === 'HARNESS_ACTION') return { door: 'claude-code', action: 'profile-remove', exitCode: 0 };
@@ -1075,7 +1074,7 @@ describe('the Agents place', () => {
     expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'HARNESS_ACTION', {
       payload: { door: 'claude-code', action: 'profile-remove', profile: 'work' },
     });
-    // UXFIX2: the ask closes once the removal answered, never on the press.
+    // The ask closes once the removal answered, never on the press.
     await waitFor(() => expect(within(work).queryByRole('group', { name: 'remove work' })).toBeNull());
     // An account edit is not a door's work: nothing streams under *Ways in* for it.
     await new Promise((settle) => setTimeout(settle, 50));
@@ -1083,7 +1082,7 @@ describe('the Agents place', () => {
   });
 
   /**
-   * UXFIX2 (the second-opinion review): the remove's ask is the one inline confirmation. What it deletes takes the focus
+   * The remove's ask is the one inline confirmation. What it deletes takes the focus
    * and describes *Remove account*; a refused removal is said inside the ask, word for word, which stays open, where it
    * closed on the press and refused in a toast.
    */
@@ -1136,7 +1135,7 @@ describe('the Agents place', () => {
     expect(screen.queryByRole('button', { name: 'Sign in' })).toBeNull();
   });
 
-  /** 🔴 USE1a: a door the roster gives no Update offers none. */
+  /** 🔴 A door the roster gives no Update offers none. */
   it('offers no update on a door the roster gives none', async () => {
     place();
 
@@ -1178,7 +1177,7 @@ describe('the Agents place', () => {
   });
 
   /**
-   * POOL1c (D197; the account-pool design §4.2): with workspaces on this machine, no row says where it runs and no ⋯ offers a
+   * With workspaces on this machine, no row says where it runs and no ⋯ offers a
    * default in any of them, nor a list to join or leave: every account serves every workspace. The bridge refuses each.
    */
   it('offers no default and no list in any workspace, from any account’s ⋯', async () => {
@@ -1202,7 +1201,7 @@ describe('the Agents place', () => {
   });
 
   /**
-   * ACCTNAME1 (D152 §4.2, D125's ACCT2 note): a sign-in's end says the account by the person's name, looked up on the roster
+   * A sign-in's end says the account by the person's name, looked up on the roster
    * as it is said, never who signed in or its id.
    */
   it('says a sign-in’s end by the account’s name', async () => {
@@ -1235,8 +1234,8 @@ describe('the Agents place', () => {
   });
 
   /**
-   * A sign-in is the tool's to keep (D49 §4): there is no field for a token or a password. An API key is the one exception
-   * (D67 §1), behind a press, on an agent that takes a key.
+   * A sign-in is the tool's to keep: there is no field for a token or a password. An API key is the one exception,
+   * behind a press, on an agent that takes a key.
    */
   it('offers nowhere to put a sign-in', async () => {
     place();
@@ -1245,7 +1244,7 @@ describe('the Agents place', () => {
     expect(within(screen.getByRole('main')).queryByLabelText(/token|password|credential|API key/i)).toBeNull();
   });
 
-  /** 🔴 An account that is an API key (AGT3, D67 §1): one password field, behind a press; the page is told only its handle. */
+  /** 🔴 An account that is an API key: one password field, behind a press; the page is told only its handle. */
   it('takes an API key once, behind a press, and never shows it back', async () => {
     const key = 'sk-ant-api03-page-test-wxyz';
     invoke.mockImplementation(async (_module: string, type: string) => {
@@ -1269,7 +1268,7 @@ describe('the Agents place', () => {
     expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'HARNESS_ACTION', {
       payload: { door: 'claude-code', action: 'key-add', key },
     });
-    // Said where it was added, in the step that asks its name (ACCTUX3), rather than in a toast.
+    // Said where it is added, in the step that asks its name, rather than in a toast.
     const asking = await screen.findByRole('region', { name: 'Add an API key' });
     expect(within(asking).getByText('Added the API key …wxyz.')).toBeTruthy();
     expect(notify).not.toHaveBeenCalled();
@@ -1278,8 +1277,8 @@ describe('the Agents place', () => {
   });
 
   /**
-   * ACCTUX3: the key's field emptied and closed on the press, so a key the driver refused was gone with the place to say why,
-   * the failure ACCTEDIT1 fixed for a rename. Refused, the field stays with the key in it and says why; a retry that lands
+   * The key's field does not empty and close on the press, which would lose a key the driver refused along with the
+   * place to say why, as a rename's field would. Refused, the field stays with the key in it and says why; a retry that lands
    * closes it.
    */
   it('keeps a refused key in its field, says why in it, and closes once a retry lands', async () => {
@@ -1317,8 +1316,7 @@ describe('the Agents place', () => {
   });
 
   /**
-   * ACCTUX3, the UX7 design §4.5: *a key added asks the same question* as a sign-in's last step, its name and the lists it
-   * joins; it ended in a toast, and the account in no list. Left empty, it is called by its key's handle.
+   * *A key added asks the same question* as a sign-in's last step, its name, not a toast alone. Left empty, it is called by its key's handle.
    */
   it('asks a key added its name, and keeps it, as a sign-in’s last step does', async () => {
     invoke.mockImplementation(async (_module: string, type: string, options?: { payload?: Record<string, unknown> }) => {
@@ -1343,7 +1341,7 @@ describe('the Agents place', () => {
     expect(name).toHaveProperty('value', '');
     expect(name).toHaveProperty('placeholder', 'API key …wxyz');
     expect(within(asking).queryByText(/Signed in/)).toBeNull();
-    // POOL1c (the account-pool design §4.1): a key added says the same sentence a sign-in does, and asks nothing about where.
+    // A key added says the same sentence a sign-in does, and asks nothing about where.
     expect(within(asking).getByText("API key …wxyz joined Daoris's accounts: every workspace's work may run on it.")).toBeTruthy();
     expect(within(asking).queryByRole('checkbox')).toBeNull();
     await userEvent.type(name, 'spare-key');
@@ -1356,7 +1354,7 @@ describe('the Agents place', () => {
     await waitFor(() => expect(screen.queryByRole('region', { name: 'Add an API key' })).toBeNull());
   });
 
-  /** 🔴 Cancel is no: an untyped button inside the key's form was a SUBMIT, and saved what it closed. */
+  /** 🔴 Cancel is no: an untyped button inside the key's form is a SUBMIT, and would save what it closes. */
   it('saves nothing when the person cancels a typed key', async () => {
     invoke.mockImplementation(async (_module: string, type: string) => (type === 'HARNESSES'
       ? { ...ROSTER, harnesses: [{ ...ROSTER.harnesses[0], takesKey: true }, ROSTER.harnesses[1]] }
@@ -1372,7 +1370,7 @@ describe('the Agents place', () => {
   });
 
   /**
-   * KEYREPLACE1b: a refused key's own act puts a new key into that account (`key-replace`, the account named), not a new
+   * A refused key's own act puts a new key into that account (`key-replace`, the account named), not a new
    * account: its field is on the row, a refusal is said in it with the key kept, and a landed key closes it with no add
    * flow asking a name.
    */
@@ -1422,7 +1420,7 @@ describe('the Agents place', () => {
     expect(container.innerHTML).not.toContain(key);
   });
 
-  /** AGT6 (D98): an account's own model and effort, from the choices the tool offers, under *Model and effort*. */
+  /** An account's own model and effort, from the choices the tool offers, under *Model and effort*. */
   it("sets an account's own model over the bridge, from the choices the tool offers", async () => {
     const CHOICES = { models: ['default', 'sonnet', 'opus'], efforts: ['low', 'medium', 'high', 'xhigh'] };
     invoke.mockImplementation(async (_module: string, type: string) => {
@@ -1445,7 +1443,7 @@ describe('the Agents place', () => {
     place(notify);
 
     await unfold('Model and effort');
-    // What an account's own model means now roles choose models (D205 §6.4, MODELROLE1c2): their account default.
+    // What an account's own model means when roles choose models: their account default.
     expect(screen.getByText('Used where a role runs this agent on its account default; a model a role names outranks it.')).toBeInTheDocument();
     const row = screen.getByText('model opus · effort high').closest('li')!;
     await userEvent.click(within(row).getByRole('button', { name: 'Model & effort' }));
@@ -1464,8 +1462,8 @@ describe('the Agents place', () => {
   });
 
   /**
-   * ACCTUX3: the editor closed on the press, so a save the driver refused lost the choice with the place to say why, the
-   * failure ACCTEDIT1 fixed for a rename. Refused, it stays open with the choice made and says why under it.
+   * The editor does not close on the press, which would lose the choice of a save the driver refused along with the
+   * place to say why. Refused, it stays open with the choice made and says why under it.
    */
   it("keeps a refused model save open with the choice made, and says why under it", async () => {
     const CHOICES = { models: ['default', 'sonnet', 'opus'], efforts: ['low', 'medium', 'high', 'xhigh'] };
@@ -1540,7 +1538,7 @@ describe('the Agents place', () => {
 
     const row = await screen.findByRole('listitem', { name: 'API key …wxyz' });
     expect(within(row).queryByRole('button', { name: 'Sign in' })).toBeNull();
-    // 🔴 Never signed in: the tool says so for any key, a wrong one included (measured, AGT3).
+    // 🔴 Never signed in: the tool says so for any key, a wrong one included (measured).
     expect(within(row).getByText('unchecked')).toBeTruthy();
     expect(within(row).queryByText('signed in')).toBeNull();
     const menu = await more('API key …wxyz');
@@ -1548,7 +1546,7 @@ describe('the Agents place', () => {
     expect(within(menu).getByRole('menuitem', { name: 'Remove…' })).toBeTruthy();
   });
 
-  /** A door a plugin declared says so beside its name (D64), and the build's own say nothing. */
+  /** A door a plugin declared says so beside its name, and the build's own say nothing. */
   it('a declared door names the plugin it came from', async () => {
     invoke.mockImplementation(async (_module: string, type: string) => (type === 'HARNESSES'
       ? {
@@ -1567,7 +1565,7 @@ describe('the Agents place', () => {
 
     await unfold('Ways in');
     expect(screen.getAllByText(/declared by plugin/)).toHaveLength(1);
-    // PLUGUI1c2b: the name is a door to the plugin's page, not text.
+    // The name is a door to the plugin's page, not text.
     await userEvent.click(screen.getByRole('button', { name: 'declared by plugin acme.gate' }));
     expect(onOpenPlugin).toHaveBeenCalledWith('acme.gate');
   });
@@ -1582,7 +1580,7 @@ describe('the Agents place', () => {
     expect(screen.getByRole('main').getAttribute('aria-busy')).toBeNull();
   });
 
-  /** Usage says nothing measured as nothing, never a row of zeroes (D57). */
+  /** Usage says nothing measured as nothing, never a row of zeroes. */
   it('says usage is nothing measured on a machine that has measured none', async () => {
     place();
 
@@ -1591,7 +1589,7 @@ describe('the Agents place', () => {
     expect(screen.queryByText(/context$/)).toBeNull();
   });
 
-  /** PUSHUX1: usage not answered yet is read as reading, never as nothing measured. */
+  /** Usage not answered yet is read as reading, never as nothing measured. */
   it('says usage is being read, never nothing measured, before it is answered', async () => {
     invoke.mockImplementation(async (_module: string, type: string) => {
       if (type === 'HARNESSES') return ROSTER;
@@ -1605,7 +1603,7 @@ describe('the Agents place', () => {
   });
 
   /**
-   * UX5 U72 and D150 §2.4: the Agents menu's *Usage* opens the agent's page at its usage, open and in view once it is
+   * The Agents menu's *Usage* opens the agent's page at its usage, open and in view once it is
    * drawn, and says it has, so a later visit opens at the top again.
    */
   it('opens at the part a door names, once that part is drawn', async () => {
@@ -1629,7 +1627,7 @@ describe('the Agents place', () => {
     }
   });
 
-  /** A door naming what agents may do and no agent opens the agent Daoris hands the rules file (D150 §2.4). */
+  /** A door naming what agents may do and no agent opens the agent Daoris hands the rules file. */
   it('opens the agent that takes the rules for a door that names what agents may do', async () => {
     const RULES = {
       path: 'C:/somewhere/.daoris/permissions.json',
@@ -1673,11 +1671,11 @@ describe('the Agents place', () => {
     const usage = screen.getByRole('region', { name: 'Usage' });
     expect(within(usage).getByText('Your own sign-in')).toBeTruthy();
     expect(within(usage).getByText(/Measured, not billed/).className).not.toMatch(/\bmax-w-/);
-    // 🔴 No price is claimed anywhere — Daoris does not know what a token costs (D24).
+    // 🔴 No price is claimed anywhere — Daoris does not know what a token costs.
     expect(screen.queryByText(/[$£€]/)).toBeNull();
   });
 
-  /** The managed toolchain (TOOL2/D57): absent means PATH, and the door says so rather than a blank. */
+  /** The managed toolchain: absent means PATH, and the door says so rather than a blank. */
   it('says a door runs from PATH until something is pinned', async () => {
     place();
 
@@ -1686,7 +1684,7 @@ describe('the Agents place', () => {
     expect(screen.queryByText(/^pinned /)).toBeNull();
   });
 
-  /** UX5 U56: a way in that is not there does not run from PATH yet. */
+  /** A way in that is not there does not run from PATH yet. */
   it('says a missing way in will run from PATH once it is there', async () => {
     invoke.mockImplementation(async (_module: string, type: string) => (type === 'HARNESSES'
       ? { ...ROSTER, harnesses: ROSTER.harnesses.map((door) => (door.door === 'codex' ? { ...door, pinnable: true } : door)) }
@@ -1758,9 +1756,8 @@ describe('the Agents place', () => {
 });
 
 /**
- * What it may do (PERM1, PERM2; D150 §3.1): Daoris's defaults, the rules for every session on this machine and the
- * proposals, on the page of the agent Daoris hands the rules file, each press the terminal's `daoris agent rules`. Moved
- * here from Settings → Permissions' suite with UX6e.
+ * What it may do: Daoris's defaults, the rules for every session on this machine and the
+ * proposals, on the page of the agent Daoris hands the rules file, each press the terminal's `daoris agent rules`.
  */
 describe('what it may do', () => {
   const ROSTER = {
@@ -1815,7 +1812,7 @@ describe('what it may do', () => {
     await waitFor(() => expect(notify).toHaveBeenCalledWith('The default no-publish is off on this machine.'));
   });
 
-  /** PERM2 (D74): a proposal waiting opens the section, and the person's answer lands as `daoris agent rules accept` would. */
+  /** A proposal waiting opens the section, and the person's answer lands as `daoris agent rules accept` would. */
   it('a proposal waiting opens the section, and one accepted lands on the bridge by its id', async () => {
     const proposed = {
       ...RULES,
@@ -1836,7 +1833,7 @@ describe('what it may do', () => {
       'Accepted: allow WebFetch for every session on this machine. Sessions started from now on are handed it.'));
   });
 
-  /** PROPOSEHERE1c: an *Accept* here tells the session that proposed the rule too, through the door the application hands the place. */
+  /** An *Accept* here tells the session that proposed the rule too, through the door the application hands the place. */
   it('tells the session that proposed a rule once it is accepted, through the door it is handed', async () => {
     const proposed = {
       ...RULES,
@@ -1874,7 +1871,7 @@ describe('what it may do', () => {
 });
 
 /**
- * How each agent's accounts are used (TOOL4g; D125 §2.4, §3.7, §6; D130 §9, §16.6; POOL1c, D197), on the agent's page: each
+ * How each agent's accounts are used, on the agent's page: each
  * account's cool-off with *Try now*, the set's one order with up and down, its one entry of settings, and the terms. Each press
  * is the terminal's `daoris agent profile order|use|ready`, naming no workspace.
  */
@@ -1892,7 +1889,7 @@ describe('how accounts are used', () => {
       ],
     }],
   };
-  /** The set's one scope (POOL1a2): every account in its order, no default, every workspace's. */
+  /** The set's one scope: every account in its order, no default, every workspace's. */
   const MACHINE = {
     workspace: null, default: null as string | null, list: ['personal', 'work'], begins: 'personal' as string | null,
     use: { use: 'goal', keep: null, early: true, near: 90 }, unknown: [], problem: null, near: [],
@@ -1930,10 +1927,10 @@ describe('how accounts are used', () => {
 
     const personal = await screen.findByRole('listitem', { name: 'personal' });
     expect(await within(personal).findByText('cooling')).toBeTruthy();
-    // The hold's end, never a reset the column cannot know was reported (ACCTUX1).
+    // The hold's end, never a reset the column cannot know is reported.
     expect(within(personal).getByText(/^until /)).toBeTruthy();
     expect(within(personal).queryByText(/^resets /)).toBeNull();
-    // *Now* says what runs on it; *nothing said yet* and *0 sessions* are not said (D152 §2 rule 4).
+    // *Now* says what runs on it; *nothing said yet* and *0 sessions* are not said.
     expect(within(personal).getByText('1 session')).toBeTruthy();
     expect(within(screen.getByRole('main')).queryByText(/nothing said yet|0 sessions|sessions running/)).toBeNull();
     await userEvent.click(within(personal).getByRole('button', { name: 'try personal now' }));
@@ -1945,7 +1942,7 @@ describe('how accounts are used', () => {
   });
 
   /**
-   * POOL1c (D197 point 2; the account-pool design §4.2): the order moves an account up or down, written whole through the
+   * The order moves an account up or down, written whole through the
    * terminal's profile order with no workspace, and no row has a *Use* switch; the summary says the set's, every workspace's.
    */
   it('moves an account in the one order through the terminal\'s profile order, with no Use switch and no workspace', async () => {
@@ -1962,7 +1959,7 @@ describe('how accounts are used', () => {
     // No ⋯ offers a default or a list: the order says where starts begin.
     expect(within(await more('work')).queryByRole('menuitem', { name: /default|list/i })).toBeNull();
     await userEvent.keyboard('{Escape}');
-    // The plans and terms fold to one line at the list's foot, which opens the paragraph (D152 §4.4).
+    // The plans and terms fold to one line at the list's foot, which opens the paragraph.
     expect(screen.queryByText(/^Each account's own plan and terms apply\./)).toBeNull();
     await userEvent.click(screen.getByRole('button', { name: "Each account's own plan and terms" }));
     expect(screen.getByText(/^Each account's own plan and terms apply\./)).toBeTruthy();
@@ -1982,7 +1979,7 @@ describe('how accounts are used', () => {
   });
 
   /**
-   * ACCTQUOTE1 (D125's ACCTQUOTE1 note): a twin is a command a person pastes into whichever shell they have, so a name a shell
+   * A twin is a command a person pastes into whichever shell they have, so a name a shell
    * can take is printed, and one no spelling holds in every shell (`R&D`) is a placeholder rather than a command that runs
    * something else.
    */
@@ -2002,7 +1999,7 @@ describe('how accounts are used', () => {
   });
 
   /**
-   * OWNSPACE1b-A (D175 point 1), POOL1c (D197 point 3): never asked, so an old cool-off and who it is are not said and no *Try
+   * Never asked, so an old cool-off and who it is are not said and no *Try
    * now* is offered; its ⓘ says it is outside Daoris's accounts.
    */
   it('says the own sign-in is outside Daoris’s accounts, with no old cool-off, no who and no Try now', async () => {
@@ -2016,7 +2013,7 @@ describe('how accounts are used', () => {
     invoke.mockImplementation(answer(shared, cooling));
     place();
 
-    // Its explanation is its row's ⓘ, kept whole, one press away (D152 §4.3), and no longer a callout before the accounts.
+    // Its explanation is its row's ⓘ, kept whole, one press away, and no longer a callout before the accounts.
     const own = await screen.findByRole('listitem', { name: 'Your own sign-in' });
     expect(within(own).getByRole('note', { name: /^Your own sign-in: the account this tool uses at your own terminal\. It is not one of Daoris's accounts/ })).toBeTruthy();
     expect(within(own).queryByText('cooling')).toBeNull();
@@ -2026,7 +2023,7 @@ describe('how accounts are used', () => {
   });
 
   /**
-   * CODEXUSE3, POOL1c (D197 point 3; the account-pool design §3 point 3): a reading of your own sign-in kept from before is not
+   * A reading of your own sign-in kept from before is not
    * shown, since nothing reads it again and it would only age; its row has no ⋯ to read it, and the accounts say their own.
    */
   it('says nothing your own sign-in said before, and offers no read of it', async () => {
@@ -2061,8 +2058,8 @@ describe('how accounts are used', () => {
   });
 
   /**
-   * SWITCH1d (the switch design §1.2, §5): an agent whose accounts' use is read by asking it reads them at *Read now* and
-   * never as its page opens, whatever the age of what was kept; each window says its share against its curve now and where its
+   * An agent whose accounts' use is read by asking it reads them at *Read now* and
+   * never as its page opens, whatever the age of what is kept; each window says its share against its curve now and where its
    * reading came from.
    */
   it('reads each account’s use at Read now and not as its page opens, and says each window against its curve', async () => {
@@ -2073,7 +2070,7 @@ describe('how accounts are used', () => {
         ...ACCOUNTS.agents[0]!, reads: true,
         accounts: [
           {
-            // As .NET judges it beside the reading (PUSH1e): the smart curve's five-hour window is flat at 90%, so 95% is over it.
+            // As.NET judges it beside the reading: the smart curve's five-hour window is flat at 90%, so 95% is over it.
             name: 'personal', running: 0,
             said: { seen, windows: [{ window: 'session', used: 0.95, reset, standing: null, credits: false, seen, source: 'read', curve: 90, over: true }] },
           },
@@ -2121,7 +2118,7 @@ describe('how accounts are used', () => {
     expect(invoke).not.toHaveBeenCalledWith('DAORIS.DRIVER', 'ACCOUNTS_READ', expect.anything());
   });
 
-  /** TOOL6e: each scope says which account its next start takes and why, with what holds the others. */
+  /** Each scope says which account its next start takes and why, with what holds the others. */
   it('says which account the next start takes and why', async () => {
     const next = {
       agents: [{
@@ -2138,15 +2135,15 @@ describe('how accounts are used', () => {
 
     await unfold('How accounts are used');
     const fold = screen.getByRole('region', { name: 'How accounts are used' });
-    // An account is named by its name everywhere on the page (ACCT2), an old `account-N`-like id where the person gave none.
+    // An account is named by its name everywhere on the page, an old `account-N`-like id where the person gave none.
     expect(await within(fold).findByText("The next start takes work: it is the only one of Daoris's accounts that is ready.")).toBeTruthy();
     expect(within(fold).getByText(/^personal is cooling until .+\.$/)).toBeTruthy();
     expect(within(fold).getByText(/^Claude Code's own sign-in, the account it uses at your terminal, carries none of these starts/)).toBeTruthy();
   });
 
   /**
-   * ACCTUX4b (the second opinion's lines 125, 128-133): the set's next start, in any workspace, is said above the accounts, in
-   * the fold's words and with no fold opened; no row says where it runs or that it comes first (POOL1c: *Runs for* went).
+   * The set's next start, in any workspace, is said above the accounts, in
+   * the fold's words and with no fold opened; no row says where it runs or that it comes first.
    */
   it('says above the accounts which account the next start takes and why, and marks no row', async () => {
     const next = {
@@ -2173,7 +2170,7 @@ describe('how accounts are used', () => {
   });
 
   /**
-   * ACCTUX4c, POOL1c: with a workspace in view, the next start said above the accounts is still the set's, never named for a
+   * With a workspace in view, the next start said above the accounts is still the set's, never named for a
    * workspace, since every workspace's start reads the one set.
    */
   it('says the set’s next start above the accounts with a workspace in view, naming no workspace', async () => {
@@ -2217,7 +2214,7 @@ describe('how accounts are used', () => {
     expect(within(older).queryByText(/\(first\)/)).toBeNull();
   });
 
-  /** POOL1c (the account-pool design §4.2): the *Workspaces* fold went, since every workspace reads the one set. */
+  /** The *Workspaces* fold went, since every workspace reads the one set. */
   it('draws no Workspaces fold: there is one set to say', async () => {
     invoke.mockImplementation(answer(ROSTER, ACCOUNTS));
     place();
@@ -2227,7 +2224,7 @@ describe('how accounts are used', () => {
     expect(screen.queryByText(/this machine's|its own \(/)).toBeNull();
   });
 
-  /** A refusal reads as the terminal's, in the reader's language (REV2): the host's code, from the catalogue. */
+  /** A refusal reads as the terminal's, in the reader's language: the host's code, from the catalogue. */
   it('says a refused edit in the catalogue\'s words', async () => {
     const answered = answer(ROSTER, ACCOUNTS);
     invoke.mockImplementation(async (module: string, type: string) => {

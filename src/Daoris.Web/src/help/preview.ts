@@ -1,5 +1,5 @@
 /**
- * An answer's Markdown as a line of plain words (ASKHIST1c): what a row of Ask Daoris's history shows of a conversation, and
+ * An answer's Markdown as a line of plain words: what a row of Ask Daoris's history shows of a conversation, and
  * of where a search found its words. The row read the agent's raw Markdown (`**#d208d4**`, backticks); a row is a button,
  * so its line holds words only, never a link, a code span or a button of its own.
  *
@@ -41,7 +41,7 @@ export function previewText(markdown: string): string {
     .trim();
 }
 
-/** How much of a parsed line a row holds (ASKHIST1d2): past the two lines its clamp shows at any width the panel takes. */
+/** How much of a parsed line a row holds: past the two lines its clamp shows at any width the panel takes. */
 export const ROW_LINE = 240;
 
 /** How much of a found line is kept before the words a search found, so they show in a row's two lines at the dock's floor. */
@@ -51,13 +51,13 @@ export const ROW_BEFORE = 24;
 const second = (text: string, at: number) => /[\uDC00-\uDFFF]/.test(text.charAt(at));
 
 /**
- * A parsed line cut to what a row holds (ASKHIST1d2): from its start, or with `words` found in it, from a little before them,
+ * A parsed line cut to what a row holds: from its start, or with `words` found in it, from a little before them,
  * so a clamp to two lines never hides what a search found; cut between words where it has spaces, by its characters where it
  * has none (中文), never inside one, with an ellipsis wherever it goes on.
  *
  * @remarks
  * Run on what {@link previewText} made of the driver's Markdown, never before it: a cut made on Markdown can split a delimiter
- * from its partner (D158's ASKHIST1d1 note). The words are found as the row marks them (`marked`), case aside. The clamp
+ * from its partner. The words are found as the row marks them (`marked`), case aside. The clamp
  * still cuts what is too wide; this cut keeps a row's name, which a reader hears whole, to a few lines.
  */
 export function rowLine(plain: string, words = '', limit = ROW_LINE): string {

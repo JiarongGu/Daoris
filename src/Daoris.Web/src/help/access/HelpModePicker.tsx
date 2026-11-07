@@ -6,7 +6,7 @@ import { cn } from '../../lib/cn';
 import { type Answered, InlineConfirm } from '../../work/InlineConfirm';
 import { chipOf } from './modes';
 
-// Ask Daoris's access, chosen from its chip (HELPMODE1b, D183 point 2; the modes design §1, §5): beside the panel's composer, and in
+// Ask Daoris's access, chosen from its chip: beside the panel's composer, and in
 // Settings → AI features beside its agent. The chip and the confirmation are apart so each holder places the confirmation where it
 // has room; `useModeChoice` is the one rule both follow. Its press is the holder's: this file presses nothing.
 
@@ -14,9 +14,9 @@ import { chipOf } from './modes';
 const MODES: readonly HelpMode[] = ['restricted', 'full'];
 
 /**
- * The rule of a pick (design §5; ACCESSASK1, the UI/UX design §3.4): restricted is set at once; full access asks once, inline, and
+ * The rule of a pick: restricted is set at once; full access asks once, inline, and
  * is set only by its own press, the ask staying open until the driver answers (`InlineConfirm` closes it on `done` and says a
- * refusal inside it). A switch back refused is held as `refusal`, which its holder says under the chip (R3). A pick of the mode
+ * refusal inside it). A switch back refused is held as `refusal`, which its holder says under the chip. A pick of the mode
  * already chosen does nothing.
  */
 export function useModeChoice(selected: HelpMode, onChoose: (mode: HelpMode, answered: Answered) => void) {
@@ -50,11 +50,11 @@ export function useModeChoice(selected: HelpMode, onChoose: (mode: HelpMode, ans
 }
 
 /**
- * Ask Daoris's access chip (design §1): the mode the conversation in view runs under, its record's, or the mode chosen before any
- * start; a switch waiting for the conversation's next turn reads *Restricted · full access next turn* (ACCESSSWAP1), until its next
+ * Ask Daoris's access chip: the mode the conversation in view runs under, its record's, or the mode chosen before any
+ * start; a switch waiting for the conversation's next turn reads *Restricted · full access next turn*, until its next
  * words resume it under the mode chosen and its record says that mode. Full access, now or next, wears the
  * warning colour. Its menu offers the two modes, the chosen one ticked; Radix gives it the keyboard. Given a door to restricted
- * mode's configured access, it offers *Configure restricted access…* under them (HELPMODE1c1, design §5).
+ * mode's configured access, it offers *Configure restricted access…* under them.
  */
 export function HelpModeChip({ selected, running = null, busy = false, open, onPick, onConfigure }: {
   /** The mode chosen for this machine: what each conversation's next turn takes. */
@@ -63,10 +63,10 @@ export function HelpModeChip({ selected, running = null, busy = false, open, onP
   running?: HelpMode | null;
   /** A change on its way. */
   busy?: boolean;
-  /** Changed to a new number to open the menu: a lack's door to the mode (design §6). */
+  /** Changed to a new number to open the menu: a lack's door to the mode. */
   open?: number;
   onPick: (mode: HelpMode) => void;
-  /** The door to restricted mode's configured access (HELPMODE1c1); none offers no row. */
+  /** The door to restricted mode's configured access; none offers no row. */
   onConfigure?: () => void;
 }) {
   const { t } = useTranslation();
@@ -138,7 +138,7 @@ export function HelpModeChip({ selected, running = null, busy = false, open, onP
 }
 
 /**
- * Full access asked once (design §5; ACCESSASK1, the UI/UX design §3.4): the design's sentence, the servers it would add that
+ * Full access asked once: the design's sentence, the servers it would add that
  * restricted mode withholds, and when it takes effect, with *Enable full access* and *Never mind*. It is the one inline ask,
  * `InlineConfirm`, in its warning tone: the sentence takes the focus as it opens, Escape and *Never mind* give it back to the
  * chip, and the press keeps it open and waiting until the driver answers, a refusal said inside it.

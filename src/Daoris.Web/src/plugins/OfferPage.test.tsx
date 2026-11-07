@@ -9,7 +9,7 @@ import { cappedBlocks } from '../test/measure';
 import type { OfferShown } from './catalog';
 import { OfferPage } from './OfferPage';
 
-// One of Daoris's own plugins, not installed here (PLUGUI1b, D119 §3.2): a molecule, every state by its props.
+// One of Daoris's own plugins, not installed here: a molecule, every state by its props.
 
 const render = (node: ReactElement) => rtlRender(<Tooltip.Provider>{node}</Tooltip.Provider>);
 
@@ -34,13 +34,13 @@ describe("an offer's page", () => {
     expect(onInstall).toHaveBeenCalledWith('land-github');
   });
 
-  /** D140 §2 and D141: the detail's blocks share the pane's width, none keeping a measure of its own. */
+  /** The detail's blocks share the pane's width, none keeping a measure of its own. */
   it('lets every block take the pane\'s width', () => {
     const { container } = render(<OfferPage offer={OFFER} kitPoints={KIT} onInstall={vi.fn()} />);
     expect(cappedBlocks(container)).toEqual([]);
   });
 
-  /** D140 §2: an offer wears its icon too, and the monogram it will wear installed, since both are keyed by its id. */
+  /** An offer wears its icon too, and the monogram it will wear installed, since both are keyed by its id. */
   it('leads its header with its icon', () => {
     render(<OfferPage offer={OFFER} kitPoints={KIT} onInstall={vi.fn()} />);
 
@@ -62,8 +62,8 @@ describe("an offer's page", () => {
     ]);
   });
 
-  /** Installing runs nothing, and a landing plugin runs only where a landing rule names it (D103). */
-  /** HELPPLUG1a (D170 point 3): what it would hand Ask Daoris is said before Install; one that hands it nothing says nothing. */
+  /** Installing runs nothing, and a landing plugin runs only where a landing rule names it. */
+  /** What it would hand Ask Daoris is said before Install; one that hands it nothing says nothing. */
   it('says what it would hand Ask Daoris before Install', () => {
     const { unmount } = render(
       <OfferPage offer={{ ...OFFER, helpServers: [{ name: 'wiki', allow: ['search'] }] }} kitPoints={KIT} onInstall={vi.fn()} />,
@@ -71,7 +71,7 @@ describe("an offer's page", () => {
     const section = screen.getByRole('region', { name: 'Ask Daoris' });
     expect(section).toHaveTextContent('Reads with search');
     expect(section).toHaveTextContent('A plugin is code that runs as you');
-    // Nothing here has installed it, so there is nothing to approve yet (D170's note).
+    // Nothing here has installed it, so there is nothing to approve yet.
     expect(within(section).queryByRole('button')).toBeNull();
     unmount();
 

@@ -5,8 +5,8 @@ import { Button, CheckField, Icon, Inline, Pill } from '../../design/ui';
 import { cn } from '../../lib/cn';
 import { GRANTS, grantState, type GrantSpec } from './grants';
 
-// Restricted mode's configured access (HELPMODE1c1, D183 point 1; the modes design §4.1 and §5's Settings sketch), drawn from
-// props, first for the owner's review before any grant was built; it presses nothing itself. It lives in help/ so both
+// Restricted mode's configured access, drawn from
+// props; it presses nothing itself. It lives in help/ so both
 // Settings → Daoris's own AI → Ask Daoris and the panel can draw it. Not `HelpGrants`, which is the driver's name for the
 // plugin approvals the browser's grant reads.
 
@@ -16,14 +16,14 @@ const TONE: Record<HelpGrantState, 'neutral' | 'open' | 'done'> = {
 };
 
 /**
- * Ask Daoris's configured access in restricted mode: the five grants of §4.1 in its order. Each says what it reaches in a
+ * Ask Daoris's configured access in restricted mode: the five grants in its order. Each says what it reaches in a
  * sentence, its default and its state, and opens its operations from its door (*Choose operations*, *Manage*, *Choose
  * settings*): each a box of its own where the table chooses them apart, one box for a group; the checkouts a box each, by the
- * repositories the driver serves (HELPMODE1c4). A grant set on a plugin's own tab,
- * the browser's, is drawn read only from that record and its *Manage* leads to the tab, never a second set of boxes (HELPMODE1c3).
+ * repositories the driver serves. A grant set on a plugin's own tab,
+ * the browser's, is drawn read only from that record and its *Manage* leads to the tab, never a second set of boxes.
  * A grant this agent cannot be held to says *unavailable on this agent* and why, its boxes disabled, whatever is chosen; the
  * browser says signed-in pages may be affected; and a choice a conversation running did not start with is marked as taking its
- * next turn (ACCESSSWAP1), since *What it has* keeps what the start was handed (§4.1's traps).
+ * next turn, since *What it has* keeps what the start is handed.
  */
 export function ConfiguredAccess({ agent, grants, opened = [], busy = false, built, onChoose, onManage }: {
   /** The agent Ask Daoris runs on: whether it takes permission rules decides what it can be held to. */
@@ -34,7 +34,7 @@ export function ConfiguredAccess({ agent, grants, opened = [], busy = false, bui
   opened?: readonly HelpGrantId[];
   busy?: boolean;
   /**
-   * The operations the driver acts on, for a grant it serves (HELPMODE1c2b): another of its operations is drawn disabled and
+   * The operations the driver acts on, for a grant it serves: another of its operations is drawn disabled and
    * said not built yet, so it is never chosen. A grant not named is drawn as the mock draws it.
    */
   built?: Partial<Record<HelpGrantId, readonly string[]>>;
@@ -90,10 +90,10 @@ function Grant({ spec, choice, agent, open: openAtFirst, busy, built, onChoose, 
     : state === 'changed' ? t('help.grants.why.changed')
       : state === 'later' ? t('help.grants.why.shell') : null;
 
-  // HELPMODE1c4: a grant whose operations the driver names (the checkouts) draws a box for each it serves, none where it serves none.
+  // A grant whose operations the driver names (the checkouts) draws a box for each it serves, none where it serves none.
   const operations = spec.served ? built ?? [] : spec.operations;
   const box = (operation: string) => {
-    // HELPMODE1c2b: an operation the driver does not act on yet is said so, and never chosen.
+    // An operation the driver does not act on yet is said so, and never chosen.
     const later = built !== undefined && !built.includes(operation);
     const field = (
       <CheckField
@@ -103,7 +103,7 @@ function Grant({ spec, choice, agent, open: openAtFirst, busy, built, onChoose, 
         onChange={(checked) => onChoose(spec.id, operation, checked)}
         // A checkout is named by its repository, as written: authored, never translated.
         label={spec.served ? operation : t(`help.grants.op.${spec.id}.${operation}`)}
-        // A box the agent cannot be held to reads as disabled, its sentence too, while it keeps what was chosen.
+        // A box the agent cannot be held to reads as disabled, its sentence too, while it keeps what is chosen.
         className={cn('text-small', (!held || later) && 'cursor-not-allowed opacity-60')}
       />
     );
@@ -122,7 +122,7 @@ function Grant({ spec, choice, agent, open: openAtFirst, busy, built, onChoose, 
         <Pill tone={TONE[state]}>{t(`help.grants.state.${state}`)}</Pill>
         {choice?.pending && <Pill title={t('help.grants.pendingWhy')}>{t('help.grants.pending')}</Pill>}
         {spec.door && spec.onPlugin && onManage && (
-          // HELPMODE1c3: its record is the plugin's, changed on that plugin's tab alone, so the door goes there and opens nothing here.
+          // Its record is the plugin's, changed on that plugin's tab alone, so the door goes there and opens nothing here.
           <Button
             variant="ghost"
             className="ml-auto text-small text-accent"

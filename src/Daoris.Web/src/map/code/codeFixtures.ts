@@ -1,6 +1,6 @@
 import type { CodeDependency, CodeModule } from '../../data/api';
 
-// The code map's fixtures (CANVAS1f; the canvas design §9): this repository's own map, synthetic ones at any size, a cycle and long ids.
+// The code map's fixtures: this repository's own map, synthetic ones at any size, a cycle and long ids.
 // Stories, tests and the measured book draw these; nothing ships them.
 
 export type CodeFixture = { modules: CodeModule[]; dependencies: CodeDependency[] };

@@ -9,7 +9,7 @@ import type { RolesView } from './RoleSections';
 import { type RoleOpeners, type RolesPage, useRolesMode } from './RolesView';
 
 /**
- * **This machine's *All roles*** (SETUPUX1m, the setup-UX design §2.4): every role once, by where it is placed, as a list or as the
+ * **This machine's *All roles***: every role once, by where it is placed, as a list or as the
  * diagram, with what Daoris suggests and the staffing changes found above the rows. A role placed elsewhere is read here and opened at its
  * place; one placed on this machine is edited in place by the one role editor.
  *

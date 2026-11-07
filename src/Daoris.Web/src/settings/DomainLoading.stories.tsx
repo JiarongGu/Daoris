@@ -1,7 +1,7 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { DomainLoading } from './DomainLoading';
 
-// A machine domain's first load (FRAME1g, D118 §3h): one card's place, and the two Permissions holds.
+// A machine domain's first load: one card's place, and the two Permissions holds.
 
 const meta = {
   title: 'Settings/DomainLoading',

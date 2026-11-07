@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { EDIT_EVENT, fieldTracker, findTarget, runEdit } from './editing';
 
-// Edit and Find from the menu bar (UX7a, D152 §3.2): on the field the person was in, and on the box in front.
+// Edit and Find from the menu bar: on the field the person is in, and on the box in front.
 
 afterEach(() => {
   document.body.innerHTML = '';
@@ -66,7 +66,7 @@ describe("Edit's acts", () => {
   });
 });
 
-// FLOWCHART2b: a region with a history of its own, the workflow editor's draft, takes Edit's undo, redo, copy and paste where no field
+// A region with a history of its own, the workflow editor's draft, takes Edit's undo, redo, copy and paste where no field
 // holds the focus; a field inside it keeps its own.
 describe('a region with a history of its own', () => {
   it('is what Edit acts on outside a field, kept while the menu bar holds the focus, and its field is still the field', () => {

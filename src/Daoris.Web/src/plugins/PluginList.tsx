@@ -9,9 +9,9 @@ import {
 import { PluginIcon } from './PluginIcon';
 
 /**
- * A state's word and its pill's tone (D119 §2). **Running is the quiet neutral** (PLUG10 P9): a hook process is up
+ * A state's word and its pill's tone. **Running is the quiet neutral**: a hook process is up
  * between calls as a chat is between turns, so it borrows no outcome's hue. **Refused waits on the person**, and wears
- * the waiting hue. Simply on says no word until PLUGUI1f's health gives it one.
+ * the waiting hue. Simply on says no word until the loop's health gives it one.
  */
 export const STATE_WORD: Record<PluginState, { key: string; tone: 'neutral' | 'open' } | null> = {
   running: { key: 'plugin.running', tone: 'neutral' },
@@ -31,7 +31,7 @@ function useFragments() {
 }
 
 /**
- * The Plugins view's list as a **catalogue** (D140 §2, amending D119 §3.1): *Installed*, waiting on you first, then on,
+ * The Plugins view's list as a **catalogue**: *Installed*, waiting on you first, then on,
  * then off; then *Daoris's own plugins* not installed; each section with its count and absent with none.
  *
  * @remarks
@@ -49,7 +49,7 @@ export function PluginList({ groups, chosen, installing = false, unanswered, onC
   chosen: string | null;
   /** An offer's install is on its way. */
   installing?: boolean;
-  /** The sentence for a list that has never had an answer, said in place rather than left blank (D118 §3h). */
+  /** The sentence for a list that has never had an answer, said in place rather than left blank. */
   unanswered?: string | null;
   onChoose: (item: string) => void;
   onInstall: (id: string) => void;
@@ -67,7 +67,7 @@ export function PluginList({ groups, chosen, installing = false, unanswered, onC
         <Group title={t('plugin.group.installed', { count: groups.installed.length })}>
           {groups.installed.map((plugin) => {
             const word = STATE_WORD[pluginState(plugin)];
-            // What it adds is what a refused plugin is not taken for, so it says none (D64 §5).
+            // What it adds is what a refused plugin is not taken for, so it says none.
             const adds = plugin.problem ? '' : fragments(plugin) || t('plugin.quiet');
             const source = sourceWord(plugin.source);
             return (
@@ -101,7 +101,7 @@ export function PluginList({ groups, chosen, installing = false, unanswered, onC
 }
 
 /**
- * A catalogue row's face (D140 §2): the icon at its left; its name, version and state's word; what it gives, cut to the
+ * A catalogue row's face: the icon at its left; its name, version and state's word; what it gives, cut to the
  * row; and its meta line. Content (the name, the version, what it gives) is shown as declared.
  */
 function CatalogueRow({ icon, name, version, quiet = false, word, gives, meta, update }: {
@@ -139,7 +139,7 @@ function CatalogueRow({ icon, name, version, quiet = false, word, gives, meta, u
 }
 
 /**
- * What a plugin's row offers a right-click (CTX1, D138 §4): opening it, its row's own act (an offer's *Install*), and its
+ * What a plugin's row offers a right-click: opening it, its row's own act (an offer's *Install*), and its
  * id. What is done to a plugin is its page's.
  */
 function rowMenu(t: (key: string) => string, name: string, id: string, open: () => void, own?: MenuAct): ContextOffer {
@@ -188,7 +188,7 @@ function OfferRow({ offer, chosen, installing, adds, onChoose, onInstall }: {
 }) {
   const { t } = useTranslation();
   const item = offerItem(offer.id);
-  // Its Install, where its row offers one, is its right-click's too (CTX1).
+  // Its Install, where its row offers one, is its right-click's too.
   const install = offer.problem
     ? undefined
     : { id: 'install', label: t('plugin.offers.install'), icon: 'plus' as const, disabled: installing, onSelect: () => onInstall(offer.id) };
@@ -196,7 +196,7 @@ function OfferRow({ offer, chosen, installing, adds, onChoose, onInstall }: {
     <li data-list-row="" className="flex items-center" {...contextOffer(rowMenu(t, offer.name || offer.id, offer.id, () => onChoose(item), install))}>
       <div className="min-w-0 flex-1">
         <RowDoor chosen={chosen === item} onPress={() => onChoose(item)}>
-          {/* No state and no source: its section says both (D140 §2). */}
+          {/* No state and no source: its section says both. */}
           <CatalogueRow
             icon={<PluginIcon id={offer.id} name={offer.name} icon={offer.icon} />}
             name={offer.name}
@@ -224,7 +224,7 @@ function OfferRow({ offer, chosen, installing, adds, onChoose, onInstall }: {
 }
 
 /**
- * The list closed to its strip (D119 §3.1): each installed plugin's icon and its mark, in the list's order (D140 §2: its
+ * The list closed to its strip: each installed plugin's icon and its mark, in the list's order (its
  * icon in its initial's place). Waiting on you wears the waiting mark, off a faint icon, on no mark. Offers are not on
  * the strip, which holds what this machine has; a strip longer than the window scrolls, since the list pane's strip does.
  */

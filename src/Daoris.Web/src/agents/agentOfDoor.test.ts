@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { agentOfDoor, usageOfTool } from './agentOfDoor';
 
-// AGENTPROVIDER1 s-vii (the agent-provider design §7 row 10): the leading agent and usage are counted by agent, a move between one agent's
+// The leading agent and usage are counted by agent, a move between one agent's
 // two doors one agent, as the roster's sheet says which agent each door is.
 
 const SHEETS = [

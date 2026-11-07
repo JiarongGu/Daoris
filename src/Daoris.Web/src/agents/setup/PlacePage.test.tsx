@@ -7,7 +7,7 @@ import i18n from '../../locales/i18n';
 import { PlacePageView, type PlaceDriving, type PlaceHeadProps, type PlaceSectionSpec } from './PlacePage';
 import type { PlaceSection } from './placeShell';
 
-// SETUPUX1h (the setup-UX design §2.1): a place page is a head and folded sections; a section's state is its holder's, a folded one mounts
+// A place page is a head and folded sections; a section's state is its holder's, a folded one mounts
 // nothing, a door opens its row, and *Back* returns once.
 
 const mounts = vi.fn();
@@ -62,7 +62,7 @@ describe('the place page', () => {
     expect(screen.getByRole('button', { name: 'Roles' })).toHaveAccessibleDescription('roles summary (from aurora)');
   });
 
-  // SETUPUX1o: from 64 rem the sections stand beside a column the open Workflow's chart is drawn into; below it there is none.
+  // From 64 rem the sections stand beside a column the open Workflow's chart is drawn into; below it there is none.
   it('keeps a column for the open Workflow\'s chart from 64 rem, and none below', () => {
     const measure = vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect').mockImplementation(function (this: HTMLElement) {
       const width = this.hasAttribute('data-place-page') ? 1232 : 0;

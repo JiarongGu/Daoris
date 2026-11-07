@@ -4,7 +4,7 @@ import { BODIES, CJK_FINDING, CONVERGENT, IDENTICAL, RESTATEMENT } from './fixtu
 import { FindingMainNotice, FindingPage } from './FindingPage';
 import type { EntryReading } from './records';
 
-// A finding's page (FRAME1f, D118 §2) in Convergence's main area, where each of its entries was a drawer of its own: a
+// A finding's page in Convergence's main area: a
 // drifted copy, a lesson learned in different words, a document pasted in three places, an entry still on its way, an
 // entry the index let go, an entry whose read failed, a 中文 entry; and the main area with no finding: nothing chosen,
 // gone, loading, an error with no answer ever.
@@ -49,7 +49,7 @@ export const AnEntryLoading: Story = {
   args: { finding: CONVERGENT, readings: { ...read(CONVERGENT), [CONVERGENT.entries[1]!.id]: { state: 'loading' } } },
 };
 
-/** One entry the index let go since the finding was made: said in its place, and the other read. */
+/** One entry the index let go since the finding is made: said in its place, and the other read. */
 export const AnEntryGone: Story = {
   args: { finding: CONVERGENT, readings: { ...read(CONVERGENT), [CONVERGENT.entries[0]!.id]: { state: 'gone' } } },
 };
@@ -68,7 +68,7 @@ export const Chinese: Story = { args: { finding: CJK_FINDING, readings: read(CJK
 /** Nothing chosen: how to choose. */
 export const NothingChosen: Story = { render: () => <FindingMainNotice state="none" /> };
 
-/** A finding the list chose and the answer no longer holds, at the similarity it was asked at. */
+/** A finding the list chose and the answer no longer holds, at the similarity it is asked at. */
 export const Gone: Story = { render: () => <FindingMainNotice state="gone" at={0.82} /> };
 
 /** The chosen finding on its way: skeleton rows, never the empty state. */

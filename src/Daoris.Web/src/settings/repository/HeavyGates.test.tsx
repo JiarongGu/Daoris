@@ -7,9 +7,9 @@ import { code } from '../../test/code';
 import type { Answered } from '../../work/InlineConfirm';
 import { type HeavyGate, HeavyGates, type HeavyMarks, heavySummary, heavyToast } from './HeavyGates';
 
-// HEAVYRUN1b2b (D180's HEAVYRUN1b2a note): this machine's heavy gates for a repository whose own daoris.gates.json marks none, shown
+// This machine's heavy gates for a repository whose own daoris.gates.json marks none, shown
 // and edited on its Setup. The list is one sequence, so it is edited whole and saved whole, in its order, or cleared; the driver
-// judges it, and its refusal is said where Save was pressed.
+// judges it, and its refusal is said where Save is pressed.
 
 const t = i18n.t.bind(i18n);
 
@@ -161,7 +161,7 @@ describe("a repository's heavy gates on its Setup", () => {
   });
 
   /**
-   * HEAVYRUN1b2c (D180): the section says whether this repository's own file wins, as the driver read it (`HEAVY_MARKS`). The page judges
+   * The section says whether this repository's own file wins, as the driver read it (`HEAVY_MARKS`). The page judges
    * nothing: a file that does not read is "cannot tell" in the driver's words, never "marks none".
    */
   it("says whether the repository's own file wins, and cues the folded line where it does", async () => {

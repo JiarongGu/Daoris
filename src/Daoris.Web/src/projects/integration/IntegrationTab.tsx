@@ -2,7 +2,7 @@ import type { ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Button, Inline, Prose, SkeletonRows } from '../../design/ui';
 import { PageSection } from '../../work/frame/ViewMain';
-// The look as the tab draws it; the bridge's `IntegrationLook` is one (D52: the molecule imports nothing of the bridge).
+// The look as the tab draws it; the bridge's `IntegrationLook` is one (the molecule imports nothing of the bridge).
 type IntegrationRequestRow = {
   request: string;
   line: string;
@@ -39,7 +39,7 @@ type IntegrationLook = {
   waiting?: IntegrationWaitingRow[];
 };
 
-/** What a page hands its Integration tab: the look, or that it is on its way or was refused, and the owner's acts. */
+/** What a page hands its Integration tab: the look, or that it is on its way or refused, and the owner's acts. */
 export type IntegrationTabProps = {
   look?: IntegrationLook | null;
   reading?: boolean;
@@ -48,15 +48,15 @@ export type IntegrationTabProps = {
   onDrop?: (request: string) => void;
   /** *Check again*: have the line looked at now. */
   onRecheck?: () => void;
-  /** The owner's decide on a candidate the policy held for one (INTEGRATE1h): *Split*, *Hand back*, *Land*. */
+  /** The owner's decide on a candidate the policy held for one: *Split*, *Hand back*, *Land*. */
   onDecide?: (candidate: string, decide: Decide) => void;
-  /** A queued request moved first or last in its line's queue (INTEGRATE1h). */
+  /** A queued request moved first or last in its line's queue. */
   onOrder?: (request: string, place: 'first' | 'last') => void;
-  /** A superseded commit answered (INTEGRATE1h): *Superseded*, or *Rebase it*, which asks its session. */
+  /** A superseded commit answered: *Superseded*, or *Rebase it*, which asks its session. */
   onAnswer?: (request: string, commit: string, answer: 'superseded' | 'rebase') => void;
-  /** The owner's card for a landing whose integration waits for it (INTEGRATE1h): *Request into the line*. */
+  /** The owner's card for a landing whose integration waits for it: *Request into the line*. */
   onRequest?: (branch: string) => void;
-  /** The related sessions' read, drawn read-only after the history (LINESTOGETHER1c). */
+  /** The related sessions' read, drawn read-only after the history. */
   related?: ReactNode;
 };
 
@@ -65,8 +65,8 @@ const short = (tip: string) => tip.slice(0, 7);
 const PRESS = 'border border-line px-2 py-0 text-meta';
 
 /**
- * **A repository's Integration tab** (INTEGRATE1h; the integration design §5.8): the queue in its order, each line's standing candidate with
- * its members and a fixed strip of steps, what holds it and the act that releases it, what was handed back, the superseded commits awaiting
+ * **A repository's Integration tab**: the queue in its order, each line's standing candidate with
+ * its members and a fixed strip of steps, what holds it and the act that releases it, what is handed back, the superseded commits awaiting
  * a disposition with their answers, the landings waiting for the owner's request, and the promoted history. Read from the integration
  * record, never copied; a terminal's twin is `daoris integrate`.
  */

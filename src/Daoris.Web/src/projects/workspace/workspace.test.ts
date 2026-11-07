@@ -3,7 +3,7 @@ import { THREE } from '../../settings/accounts/accountsFixtures';
 import { byTool, type Tool, type ToolDoor } from '../../agents/tools';
 import { accountsHere, hostOf } from './workspace';
 
-// What a workspace's page works out from answers it already holds (UX6g, D150 §4.3).
+// What a workspace's page works out from answers it already holds.
 
 const tool = (over: Partial<Tool> = {}): Tool => ({
   name: 'claude-code', product: 'Claude Code', maker: 'Anthropic', doors: [], accounts: [], present: true,
@@ -13,7 +13,7 @@ const tool = (over: Partial<Tool> = {}): Tool => ({
 const named = (owner: string, profile?: string | null) => (profile ? `${profile}@${owner}` : `own@${owner}`);
 const accounts = (...names: string[]) => names.map((name) => ({ name, home: `h/${name}`, login: 'in' as const }));
 
-/** POOL1c (D197 point 1): one set of Daoris's accounts serves every workspace, so every workspace's page names the same. */
+/** One set of Daoris's accounts serves every workspace, so every workspace's page names the same. */
 describe('the accounts each agent may run in a workspace', () => {
   it("names every account of Daoris's, in the set's order", () => {
     expect(accountsHere([tool({ accounts: accounts('account-1', 'account-2', 'account-3') })], { agents: [THREE] }, named)).toEqual([{
@@ -29,7 +29,7 @@ describe('the accounts each agent may run in a workspace', () => {
       .toEqual(['account-4@claude-code', 'account-1@claude-code', 'account-2@claude-code', 'account-3@claude-code']);
   });
 
-  /** OWNSPACE1b-A (D175): never the tool's own sign-in; none where the agent has no account of Daoris's. */
+  /** Never the tool's own sign-in; none where the agent has no account of Daoris's. */
   it('names none where the agent has no account of Daoris’s, and leaves out an agent not installed', () => {
     expect(accountsHere([tool(), tool({ name: 'codex', product: null, present: false })], { agents: [] }, named)).toEqual([
       { agent: 'claude-code', product: 'Claude Code', accounts: [] },

@@ -1,7 +1,7 @@
 import { useSyncExternalStore } from 'react';
 
 /**
- * Words put in Ask Daoris's box for the person to finish (FLOWCHART2c, D223 §3): a page hands them over, the window that holds Ask Daoris
+ * Words put in Ask Daoris's box for the person to finish: a page hands them over, the window that holds Ask Daoris
  * opens it with them as a draft, and the person sends them or not. Only a window with a helper registers a door, so a page offers its
  * *Ask why* and *Fix it* only where there is one.
  */

@@ -4,7 +4,7 @@ import userEvent from '@testing-library/user-event';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import * as Tooltip from '@radix-ui/react-tooltip';
 
-// D118 §3a, the way the application holds it: the whole window over a mocked shell, so the list's four
+// The list's doors, the way the application holds them: the whole window over a mocked shell, so the list's four
 // doors — the strip's toggle, the View menu's item, Ctrl+B and a press on the current place — are what a
 // person meets on the window, named for the view, and absent on a view with no list.
 
@@ -71,7 +71,7 @@ function start(view: 'sessions' | 'overview') {
 const TOGGLE = 'show or hide the session list (Ctrl+B)';
 const bar = () => screen.getByRole('navigation', { name: 'Views' });
 
-/** A menu opens from the keyboard in jsdom, the path D41 §6 requires anyway (see `AppMenu.test`). */
+/** A menu opens from the keyboard in jsdom, the path the menu contract requires anyway (see `AppMenu.test`). */
 async function viewMenu() {
   const user = userEvent.setup();
   screen.getByRole('button', { name: 'View' }).focus();
@@ -94,7 +94,7 @@ describe("the list's doors, on the window", () => {
     await waitFor(() => expect(toggle).toHaveAttribute('aria-pressed', 'true'));
 
     await viewMenu();
-    // A toggle, said as one (UXFIX1): a screen reader hears that the list is shown, as the tick draws it.
+    // A toggle, said as one: a screen reader hears that the list is shown, as the tick draws it.
     const item = screen.getByRole('menuitemcheckbox', { name: /^Session list/ });
     expect(item).toHaveAttribute('aria-checked', 'true');
     expect(item.querySelector('svg')).not.toBeNull();
@@ -137,7 +137,7 @@ describe("the list's doors, on the window", () => {
     expect(await screen.findByRole('region', { name: 'Sessions' })).toBeInTheDocument();
     await userEvent.click(toggle);
     await waitFor(() => expect(screen.queryByRole('region', { name: 'Sessions' })).toBeNull());
-    // Laying it over was never the person closing it.
+    // Laying it over is not the person closing it.
     expect(window.localStorage.getItem('daoris.railClosed')).toBeNull();
   });
 
@@ -155,7 +155,7 @@ describe("the list's doors, on the window", () => {
     expect(await screen.findByRole('separator', { name: 'session list width' })).toBeInTheDocument();
   });
 
-  /** D118 §3e: F6 and Shift+F6 walk the window's regions, VS Code's Focus Next Part and Previous Part. */
+  /** F6 and Shift+F6 walk the window's regions, VS Code's Focus Next Part and Previous Part. */
   it('walks the regions on F6 and back on Shift+F6: the activity bar\'s place, then the list\'s row', async () => {
     start('sessions');
     await screen.findByRole('separator', { name: 'session list width' });
@@ -182,7 +182,7 @@ describe("the list's doors, on the window", () => {
     expect(window.localStorage.getItem('daoris.railClosed')).toBeNull();
 
     await viewMenu();
-    // By the role the list's row has where it is present, so this absence is the row's and not a role's (UXFIX1).
+    // By the role the list's row has where it is present, so this absence is the row's and not a role's.
     expect(screen.queryByRole('menuitemcheckbox', { name: /^Session list/ })).toBeNull();
     expect(screen.getByRole('menuitemcheckbox', { name: /^Panel/ })).toBeInTheDocument();
   });

@@ -7,15 +7,15 @@ import { documentMenu, EntryPills, entryPlace, EntryText } from './EntryPage';
 import { type EntryReading, findingTitle } from './records';
 
 /**
- * **A finding's page** (FRAME1f, D118 §2): Convergence's main area, the finding chosen in its list. Its header is its
+ * **A finding's page**: Convergence's main area, the finding chosen in its list. Its header is its
  * entries' titles, how alike they are, what kind of likeness, and the repositories that reached it; then **the
  * service's sentence**, verbatim; then **each entry read whole**, as it is written, so the two are read side by side
- * on one page where each was a drawer of its own (audit CO4).
+ * on one page.
  *
  * @remarks
  * **A molecule**: the finding and each entry's reading arrive, and the page holds nothing.
  *
- * - **The service's sentence is the contract** (D21, D31): a command to run where the file lives, never a button
+ * - **The service's sentence is the contract**: a command to run where the file lives, never a button
  *   that applies it, and it already says what kind of finding this is, so no gloss of the UI's sits beside it.
  * - **An entry not read yet is skeleton rows in its place**; one the index no longer holds says so in its place, and
  *   a read that failed says its sentence, so one entry's trouble never blanks the others.
@@ -42,7 +42,7 @@ export function FindingPage({ finding, readings }: {
         const reading = readings[entry.id] ?? { state: 'loading' };
         const read = reading.state === 'read' ? reading.entry : null;
         return (
-          // Each entry is a document: a right-click on it copies its path (CTX1, D138 §4).
+          // Each entry is a document: a right-click on it copies its path.
           <section key={entry.id} aria-label={entry.title} className="mt-6 border-t border-line pt-4" {...contextOffer(documentMenu(t, entry))}>
             <h2 className="m-0 text-title font-semibold wrap-anywhere">{entry.title}</h2>
             <div className="mb-3 mt-1 flex flex-wrap items-baseline gap-x-2 gap-y-1">
@@ -61,7 +61,7 @@ export function FindingPage({ finding, readings }: {
 }
 
 /**
- * Convergence's main area with no finding to read (D118 §3b): **nothing chosen** says how to choose; **gone** says the
+ * Convergence's main area with no finding to read: **nothing chosen** says how to choose; **gone** says the
  * finding chosen is not among the findings at this similarity; **loading** is skeleton rows, never the empty state; and
  * a comparison that never answered says its sentence in place.
  */

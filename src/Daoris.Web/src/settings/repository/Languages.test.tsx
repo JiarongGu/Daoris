@@ -4,9 +4,9 @@ import * as Tooltip from '@radix-ui/react-tooltip';
 import { describe, expect, it, vi } from 'vitest';
 import { LanguageChoice, type LanguageOption } from './Languages';
 
-// LANG1c (D142 point 7): a session language's field, named from the driver's own table, set as `daoris place language`
-// sets it from a terminal (D50). The window's language is Appearance's, and nothing here touches it. One field, on a
-// workspace's Setup and a repository's (UX6f, UX6g; D150 §4.2, §4.3), so its behaviour is held here.
+// A session language's field, named from the driver's own table, set as `daoris place language`
+// sets it from a terminal. The window's language is Appearance's, and nothing here touches it. One field, on a
+// workspace's Setup and a repository's, so its behaviour is held here.
 
 const TABLE: LanguageOption[] = [
   { code: 'en', name: 'English' },

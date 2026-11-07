@@ -10,11 +10,11 @@ import {
 import type { BrowserDriver } from '../work/strip/browserDrivers';
 
 /**
- * Daoris's browser (CHR5, CHR7): its favorites, which it shows in a Daoris folder on its bookmarks
+ * Daoris's browser: its favorites, which it shows in a Daoris folder on its bookmarks
  * bar, and whether other software's Chrome extensions are offered or refused. The same two files
- * `daoris browser` edits (D50), which `daoris-browser` reads each time it starts, so the page says
+ * `daoris browser` edits, which `daoris-browser` reads each time it starts, so the page says
  * that an edit shows at the next start rather than implying it shows now — except where the page's
- * links open (BRW7), which the page itself reads at each click, and says so. Who is driving it (BRW8)
+ * links open, which the page itself reads at each click, and says so. Who is driving it
  * leads the domain, as it does beside the strip's door.
  */
 export function BrowserDomain({ notify, drivers, onAttend }: {
@@ -51,7 +51,7 @@ export function BrowserDomain({ notify, drivers, onAttend }: {
     <>
       <Prose className="mb-3">{t('settings.browser.nextStart')}</Prose>
 
-      {/* Which browser (BRW12): Daoris's own, or the person's Edge on a profile of Daoris's. */}
+      {/* Which browser: Daoris's own, or the person's Edge on a profile of Daoris's. */}
       <Card id="settings-which-browser" className="scroll-mt-3">
         <SectionTitle>{t('settings.browser.which.title')}</SectionTitle>
         <SettingList>
@@ -77,7 +77,7 @@ export function BrowserDomain({ notify, drivers, onAttend }: {
             />
           )}
         />
-        {/* Whose hands are on it (BRW8): the running sessions handed it, each a door into Sessions. */}
+        {/* Whose hands are on it: the running sessions handed it, each a door into Sessions. */}
         <SettingRow
           label={t('settings.browser.driving.label')}
           hint={t('settings.browser.driving.hint')}
@@ -113,7 +113,7 @@ export function BrowserDomain({ notify, drivers, onAttend }: {
         )}
       </Card>
 
-      {/* Where the page's links open (BRW7): the system's browser, or the one chosen above. The page
+      {/* Where the page's links open: the system's browser, or the one chosen above. The page
           reads this at each click, so unlike the rest of the domain it holds at once. */}
       <Card id="settings-links" className="scroll-mt-3">
         <SettingList>
@@ -181,7 +181,7 @@ export function BrowserDomain({ notify, drivers, onAttend }: {
           </ul>
         )}
         {/* The rule runs the card's width, as the list's rows do; the fields are sized to what they
-            hold, an address long and a title short, by the form's own width (R1, UIFIT1d). */}
+            hold, an address long and a title short, by the form's own width. */}
         <div className="mt-3 border-t border-line pt-3">
         <FormGrid columns={['long', 'name', 'acts']}>
         <FormRow>

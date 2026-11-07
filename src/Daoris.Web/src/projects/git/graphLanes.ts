@@ -25,9 +25,8 @@ export type GraphRow = {
 export type GraphLayout = { lanes: number; rows: GraphRow[] };
 
 /**
- * **A commit graph's lanes** (UX6h1, the built-in Git design §2.3): laid out from each commit's parents, a pure helper the
- * page draws from. They are never read from `git log --graph`'s drawing, which is parsing another program's screen (the
- * working surface design §3).
+ * **A commit graph's lanes**: laid out from each commit's parents, a pure helper the
+ * page draws from. They are never read from `git log --graph`'s drawing, which is parsing another program's screen.
  *
  * @remarks
  * The commits come newest first, in git's date order, which shows no parent before all of its children. Each lane holds the
@@ -38,7 +37,7 @@ export type GraphLayout = { lanes: number; rows: GraphRow[] };
  * - **Its first parent keeps its lane**, so a line of first parents runs straight. Each other parent of a merge is reached
  *   in the lane already leading to it, or in the leftmost free one.
  * - **A root frees its lane**, which the next branch to start takes. A parent the list does not hold keeps its lane to the
- *   bottom, where the next page picks it up: the layout takes the whole accumulated list (UX6h3 pages by `sinceParted`).
+ *   bottom, where the next page picks it up: the layout takes the whole accumulated list.
  * - **The tips keep the first lanes in the order they were asked** (`tips`), held empty until each is reached or a merge
  *   names it, so a branch's line asked first stays leftmost though the branch's commits are newer.
  */

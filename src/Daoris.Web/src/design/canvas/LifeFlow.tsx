@@ -5,7 +5,7 @@ import { FlowNodeBox } from '../FlowNodeBox';
 import { type CanvasOptions } from './Canvas';
 
 /**
- * **A life-flow on the canvas** (ONEWAY1aa; D224, D228): the landing's, a quest's, the parts' and a session's lives, and a workflow's
+ * **A life-flow on the canvas**: the landing's, a quest's, the parts' and a session's lives, and a workflow's
  * routes, each drawn as the generic box in the canvas's viewport from its 36rem floor, with its fit, its zoom and its focus, and below
  * it as the rail. The layout, ink, keys and folds are `FlowCanvas`'s; the one box is `FlowNodeBox`.
  *

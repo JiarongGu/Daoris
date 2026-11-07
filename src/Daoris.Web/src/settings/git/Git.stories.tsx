@@ -6,7 +6,7 @@ import { GitDefaults, GitIdentities, GitIdentityRow, GitOwn } from './Git';
 import { GitAdd } from './GitAdd';
 import { ACTS, DEPLOY, EMPTY_PAGE, PAGE, PERSONAL, UNKNOWN_HOST, WORK } from './gitFixtures';
 
-// Settings → Git (GITAUTH1e, the git-auth design §7.1-§7.2), in the shape the shell's `TOOLS_LIST` answers as `identities`: the
+// Settings → Git, in the shape the shell's `TOOLS_LIST` answers as `identities`: the
 // three cards with an SSH identity reached, an HTTPS one reached and an SSH one the host refused; the empty set; a host not yet
 // trusted with its keys against the published ones; the add form for both ways and its refusal; the new key to give the host; and the
 // person's own sign-ins. Each at the main area's three widths, and in 中文.

@@ -12,7 +12,7 @@ import { AskPage } from './AskPage';
 import { anAsk } from './anAsk';
 import { CLOSED, PROPOSED } from './fixtures';
 
-// REVIEWENV1g (D154 point 3; the review environment design §1.5–§1.6): the person chooses the review of an ask's work in the
+// The person chooses the review of an ask's work in the
 // composer and on its page; an intake's proposal is shown beside the choice and applies only on the person's press.
 
 const render = (node: ReactElement) => rtlRender(<Tooltip.Provider>{node}</Tooltip.Provider>);
@@ -90,7 +90,7 @@ describe("the review choice for an ask's work", () => {
     expect(onChooseReview).toHaveBeenCalledWith('off', 'a typo', expect.anything());
   });
 
-  // ACCESSASK1 (the UI/UX design R3): a refused choice is said under its press with the choice and the words still as typed, and
+  // A refused choice is said under its press with the choice and the words still as typed, and
   // an Apply refused under its proposal; neither is a toast.
   it('says a refused choice under Set, keeping what was typed, and an Apply refused under its proposal', async () => {
     const onChooseReview = vi.fn();
@@ -149,7 +149,7 @@ describe("the review choice for an ask's work", () => {
     expect(within(section).queryByRole('button', { name: 'Set' })).toBeNull();
   });
 
-  // REVIEWENV1j2 (D50): each screen that sets the choice names its terminal twin, quietly.
+  // Each screen that sets the choice names its terminal twin, quietly.
   it("names the terminal twin under the composer's review field, and on a live ask's page with its id", () => {
     render(<Composer onSubmit={vi.fn()} />);
     expect(document.body).toHaveTextContent('daoris ask --review rule|on|<environment>|off "…"');

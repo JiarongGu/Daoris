@@ -6,7 +6,7 @@ import type { LogRow } from '../../settings/Logs';
 import type { MilestoneUnit } from '../../work/head/milestone';
 import { WorkspaceTidied } from './WorkspaceTidied';
 
-// What the look cleaned up on its own, in a workspace's Branches tab (AUTOTIDY1a, D88): a molecule over the log's lines, each
+// What the look cleaned up on its own, in a workspace's Branches tab: a molecule over the log's lines, each
 // state reached by its props. The log's own words (`why`, the event) are never shown as they are written.
 
 const hoursAgo = (hours: number) => new Date(Date.now() - hours * 3_600_000).toISOString();
@@ -47,7 +47,7 @@ describe('what was cleaned up on its own', () => {
     expect(second).not.toHaveTextContent('set aside');
   });
 
-  // TIDIEDSTRAY1: a stray folder and a cut-off opening are set aside with no word of the session branch's, and say which they were.
+  // A stray folder and a cut-off opening are set aside with no word of the session branch's, and say which they were.
   it('says a stray folder was a folder under the trees that was no tree', () => {
     render(<WorkspaceTidied lines={[tidied('', 2, { branch: null, kind: 'stray', tree: true, folder: 'trees/.tidied/work/billing/x-1' })]} />);
     const [row] = screen.getAllByRole('listitem');
@@ -63,7 +63,7 @@ describe('what was cleaned up on its own', () => {
     expect(row).toHaveTextContent('An opening that was cut off: its tree was set aside');
   });
 
-  // AUTOTIDY2b: a landing's branch name carries the quest title's words, which the log never holds, so the line has a session and no branch.
+  // A landing's branch name carries the quest title's words, which the log never holds, so the line has a session and no branch.
   const landing = (session: string, hours: number): LogRow => tidied('', hours, { branch: null, session, kind: 'on-line', kept: null });
 
   it("says a branch tidied with a session and no branch was a landing's, for that session, in English and Chinese", async () => {
@@ -112,7 +112,7 @@ describe('what was cleaned up on its own', () => {
     expect(unknown).not.toHaveTextContent('some-new-code');
   });
 
-  // The driver logs a kept branch once at each start of the window, so one branch kept for a week is a line a start (AUTOTIDY1a2).
+  // The driver logs a kept branch once at each start of the window, so one branch kept for a week is a line a start.
   it('draws the lines of one branch kept for the same reason as one row: the newest time, and since the oldest', () => {
     const lines = Array.from({ length: 7 }, (_, index) => kept('unread', 2 + index * 24, { cause: 'folder' }));
     render(<WorkspaceTidied lines={lines} />);
@@ -170,7 +170,7 @@ describe('what was cleaned up on its own', () => {
     expect(screen.queryByRole('button', { name: /Show/ })).toBeNull();
   });
 
-  // FABRIC-MILESTONE1b (the fabric events design §D0): a branch the look cleaned or kept says where its unit's work stands.
+  // A branch the look cleaned or kept says where its unit's work stands.
   it('says under a branch where its unit stands: the end, the clean-up and the recovery kept', () => {
     const unit: MilestoneUnit = {
       unit: 'u1', repository: 'billing', branch: 'daoris/s-1f2e3d4c', session: 's-1',

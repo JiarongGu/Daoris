@@ -3,26 +3,26 @@ import { useTranslation } from 'react-i18next';
 import { LIST_TONE, RULE_LISTS, type RuleListName } from '../../settings/repository/AgentRules';
 import { Button, Icon, Pill, SelectField } from '../../design/ui';
 
-/** One scope's three lists of Claude Code's rules (PERM1, D72): what it allows, asks for and denies. */
+/** One scope's three lists of Claude Code's rules: what it allows, asks for and denies. */
 export type RuleLists = { allow: string[]; ask: string[]; deny: string[] };
 
 /**
- * **Claude Code's rules for one repository, or one workspace** (UX6f, UX6g; D150 §3.1): the rules this machine hands
+ * **Claude Code's rules for one repository, or one workspace**: the rules this machine hands
  * every session there beside its own and those above it, each with its remove, and *Add a rule* one press away. The same
- * file `daoris agent rules … --repository <name>` or `--workspace <name>` edits (D50), so a refusal is the driver's
+ * file `daoris agent rules … --repository <name>` or `--workspace <name>` edits, so a refusal is the driver's
  * sentence, said by whoever holds the page.
  *
  * @remarks
  * **Only this one scope**: the machine's rules, Daoris's defaults and a workspace's are said where they are
- * set, and nothing here ranks one scope over another, since precedence is the harness's (PERM1). The words stay in the
- * box until the driver has taken them, so a rule it refused can be corrected rather than typed again (REV3).
+ * set, and nothing here ranks one scope over another, since precedence is the harness's. The words stay in the
+ * box until the driver has taken them, so a rule it refused can be corrected rather than typed again.
  *
  * Props only, no hook from the query layer or the shell (components §2).
  */
 export function RepositoryRules({ rules, busy = false, none, onAdd, onRemove }: {
   rules: RuleLists;
   busy?: boolean;
-  /** What holds where this scope adds none: a repository's workspace's and the machine's, or a workspace's machine's (UX6g). */
+  /** What holds where this scope adds none: a repository's workspace's and the machine's, or a workspace's machine's. */
   none?: string;
   /** Add a rule to a list; call `added` once the driver has taken it. Absent, nothing can be added. */
   onAdd?: (list: RuleListName, rule: string, added: () => void) => void;

@@ -8,7 +8,7 @@ const short = (commit: string) => commit.slice(0, 7);
 type Step = { is: 'idle' } | { is: 'confirm' } | { is: 'working' } | { is: 'said'; sentence: string };
 
 /**
- * **Delete a branch** (GITAPP2d, D204; the git-writes design §6): a press on one of *Yours*' rows that names what will go and where its
+ * **Delete a branch**: a press on one of *Yours*' rows that names what will go and where its
  * commits stay, and sends nothing until it is confirmed. The press carries the commit the row showed, so the driver refuses a branch that
  * has moved. A refusal is said in the driver's own sentence; a branch that went is handed to the list (`onDeleted`), whose notice outlives
  * this row and holds the *Undo* (`Deleted`).

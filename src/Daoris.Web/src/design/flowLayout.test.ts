@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { APPEND_AFTER, APPEND_BEFORE, DENSE, type Fixture, HARDEST, LIFECYCLE, MANY_CURRENT, NONE_CURRENT, UNEQUAL } from './flowFixtures';
 import { type FlowShape, findStacks, layoutFlow, needs, placementFor, slotCrossings } from './flowLayout';
 
-// FLOWCHART1a1 (D186; the flowchart design §3.1, §3.2, §3.5, §7 traps 1, 2, 4 and the first half of 3): the layout is a
+// The layout is a
 // pure function of the graph's shape. It finds the back edges, ranks by the longest path, threads a waypoint through each
 // rank an edge skips, orders each rank by four barycentre sweeps, and says what each placement needs.
 
@@ -17,7 +17,7 @@ const ofFixture = (fixture: Fixture): FlowShape => ({ nodes: fixture.nodes, edge
 /** Each rank's slots as words: a node by its id, a waypoint as `·`. */
 const ranks = (shape: FlowShape) => layoutFlow(shape).ranks.map((rank) => rank.map((slot) => (slot.kind === 'node' ? slot.id : '·')));
 
-/** The four statuses and the moves `QuestTransitions.Allows` allows (D46 §3). */
+/** The four statuses and the moves `QuestTransitions.Allows` allows. */
 const QUEST = shape(['Open', 'Taken', 'Done', 'Declined'],
   [['Open', 'Taken'], ['Open', 'Done'], ['Open', 'Declined'], ['Taken', 'Done'], ['Taken', 'Declined']]);
 
@@ -186,7 +186,7 @@ describe('the placement by the pane\'s width (§3.2, trap 4)', () => {
     expect(placementFor(layoutFlow(QUEST), 1200, true)).toBe('rail');
   });
 
-  // FLOWCHART1d (the flowchart design §5.1): a workflow's step holds its settings and its run's facts, so its caller keeps a wider
+  // A workflow's step holds its settings and its run's facts, so its caller keeps a wider
   // floor for the node track, 19rem, and draws it top to bottom where it fits, never left to right: the side bar's 300 px floor is
   // the rail before its gutters as after them (276), and the main area's 400 px floor (376 inside) draws it.
   it('keeps a caller\'s wider floor for its node tracks, and never places left to right where the caller rules it out', () => {
@@ -202,7 +202,7 @@ describe('the placement by the pane\'s width (§3.2, trap 4)', () => {
     expect(placementFor(layoutFlow(chain(2)), 1200)).toBe('across');
   });
 
-  // COMPANYVIEW1f (the company-view design §4): the roles' diagram is three columns, places, roles and agents, each as tall as its
+  // The roles' diagram is three columns, places, roles and agents, each as tall as its
   // nodes, so its caller bounds a column by its own count, not three. At a 12rem floor three columns and two 3rem gaps are 42rem.
   it("takes a caller's column bound, so a column of eight is left to right where its three columns fit", () => {
     const columns = layoutFlow(shape(
@@ -300,7 +300,7 @@ describe('stacks (FLOWCHART1c; the flowchart design §3.5, §3.6 step 1)', () =>
   });
 });
 
-// FLOWCHART2a (D223): a decision's outcomes are ports, each its own path; a data wire is no way on and never ranks or crosses.
+// A decision's outcomes are ports, each its own path; a data wire is no way on and never ranks or crosses.
 describe('ports and data wires (FLOWCHART2a)', () => {
   const decided = (): FlowShape => ({
     nodes: [{ id: 'find' }, { id: 'record' }, { id: 'none' }],

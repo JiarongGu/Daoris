@@ -8,21 +8,21 @@ import {
   CODEX_USE, DSH_TOOL, INSTALL_TOOL, INSTALL_USE, ORGS_TOOL, READ, READINGS_TOOL, READINGS_USE, RULES, USAGE,
 } from './agentsFixtures';
 
-// An agent's page (UX7b, D152 §4; first UX6e, D150 §5.2; POOL1c, the account-pool design §4.2) in the main area: the design's
+// An agent's page in the main area: the design's
 // Claude Code, three accounts of Daoris's, one set for every workspace, of which two read signed out and one cools, your own
 // sign-in last with its ⓘ alone, each section folded to its line; what the fold into one set changed, above the rows until
 // *Got it*, at each width, in 中文 and in dark; the install's shape, a row per state with its one act; the add flow's last
 // step, its name alone; *Read again* on its way; a proposal waiting, which opens *What it may do*; an agent with one account
-// and no settings Daoris knows; Codex with no account of Daoris's, your own sign-in never asked (D197 point 3); Codex's
-// accounts read, in the same window cells as Claude Code's (ACCTUX4), at each width and in 中文; one not installed; an API
-// key; what each row knows (ACCTUX1), in both themes; the same read without a pointer (ACCTUX2), each row's explanation
+// and no settings Daoris knows; Codex with no account of Daoris's, your own sign-in never asked; Codex's
+// accounts read, in the same window cells as Claude Code's, at each width and in 中文; one not installed; an API
+// key; what each row knows, in both themes; the same read without a pointer, each row's explanation
 // opened, at 680 px and the main area's 400 px floor in both themes; Claude Code's pace warning on the account the next start
-// takes, said as *ahead of its pace* and never near (USAGEREAD3b), in both themes and in 中文; each window against its curve
-// with *Read now* (SWITCH1d), in both themes and in 中文; a key added asking its name, and a key refused in its field
-// (ACCTUX3), at the same widths; and the main area with no page. Each at the main area's widths: the frame's 52rem, the 680 px
-// window's main area, where rows stack, and the 400 px floor. Above the accounts, the set's next start (ACCTUX4b): a wait in
+// takes, said as *ahead of its pace* and never near, in both themes and in 中文; each window against its curve
+// with *Read now*, in both themes and in 中文; a key added asking its name, and a key refused in its field,
+// at the same widths; and the main area with no page. Each at the main area's widths: the frame's 52rem, the 680 px
+// window's main area, where rows stack, and the 400 px floor. Above the accounts, the set's next start: a wait in
 // `ThreeAccounts`, the order's first taken in `Readings`, and the order's first passed over in `CodexWindows`. One email in
-// several organisations, each row told apart (ACCOUNTID1b), in English and 中文, and the add flow offering a second sign-in's
+// several organisations, each row told apart, in English and 中文, and the add flow offering a second sign-in's
 // name.
 
 const nothing = () => {};
@@ -41,7 +41,7 @@ const meta: Meta<typeof AgentPage> = {
     tool: CLAUDE_TOOL, use: CLAUDE_USE, rules: QUIET_RULES, usage: USAGE, adapter: 'claude-code',
     acts: ACTS,
   },
-  // A width between the side bar's two states (D119 §3.6), and the page's whole height, so a shot shows every section.
+  // A width between the side bar's two states, and the page's whole height, so a shot shows every section.
   decorators: [(Story) => (
     <div className="flex min-h-[52rem] w-[52rem] max-w-full border border-line bg-page">
       <Story />
@@ -54,7 +54,7 @@ type Story = StoryObj<typeof AgentPage>;
 
 /**
  * The design's page: two accounts signed out that hold work, one cooling, the own sign-in never read, sections folded. Above
- * the accounts, the next start waits for the cooling one's reset, sooner for a sign-in (ACCTUX4b).
+ * the accounts, the next start waits for the cooling one's reset, sooner for a sign-in.
  */
 export const ThreeAccounts: Story = {};
 
@@ -67,7 +67,7 @@ export const ThreeAccountsNarrow: Story = {
 };
 
 /**
- * What the fold into one set changed (POOL1a, D197 point 7; the account-pool design §4.2): one block above the rows while any
+ * What the fold into one set changed: one block above the rows while any
  * of it is unsaid, a line per change of two receipts, and *Got it*, which marks them said by id.
  */
 export const FoldSaid: Story = { args: { use: CLAUDE_POOLED_USE } };
@@ -90,7 +90,7 @@ export const FoldSaidFloorChineseDark: Story = {
 };
 
 /**
- * The install's shape (the UX7 design §4.7): a row per state with its one act, *Read* on the account that reads unknown, *Try
+ * The install's shape: a row per state with its one act, *Read* on the account that reads unknown, *Try
  * now* on the one cooling, none on the new account signed in, last in the order, and your own sign-in last of all.
  */
 export const TheInstall: Story = { args: { tool: INSTALL_TOOL, use: INSTALL_USE, usage: [] } };
@@ -102,7 +102,7 @@ export const TheInstallNarrow: Story = {
 };
 
 /**
- * The add flow's last step, under the header (the account-pool design §4.1): it joined Daoris's accounts, the email offered
+ * The add flow's last step, under the header: it joined Daoris's accounts, the email offered
  * as its name, and *Done*.
  */
 export const AddedAskingName: Story = {
@@ -113,8 +113,8 @@ export const AddedAskingName: Story = {
 export const AddedAskingNameChinese: Story = { args: AddedAskingName.args, decorators: [chinese] };
 
 /**
- * One email in three organisations and the tool's own sign-in in a fourth (ACCOUNTID1b): each row says what tells it apart,
- * after the email and once; a name that says both repeats neither, and a plan stands where no organisation was named.
+ * One email in three organisations and the tool's own sign-in in a fourth: each row says what tells it apart,
+ * after the email and once; a name that says both repeats neither, and a plan stands where no organisation is named.
  */
 export const OneEmailManyOrganisations: Story = { args: { tool: ORGS_TOOL, use: null, usage: [] } };
 
@@ -135,15 +135,15 @@ export const Reading: Story = { args: { reading: true } };
 /** A proposal waiting opens *What it may do*, the one thing in it that waits on the person. */
 export const ProposalWaiting: Story = { args: { rules: RULES } };
 
-/** Opened at its usage by the Agents menu's *Usage* (D150 §2.4). */
+/** Opened at its usage by the Agents menu's *Usage*. */
 export const AtUsage: Story = { args: { part: 'usage' } };
 
 /** Codex: one account signed in, no rules file and no settings Daoris knows, so neither section is drawn (§5.1). */
 export const OneAccount: Story = { args: { tool: CODEX_TOOL, use: CODEX_USE, rules: QUIET_RULES, usage: [] } };
 
 /**
- * Codex with no account of Daoris's (D197 point 3; the account-pool design §3, §4.2): your own sign-in's row is its name and its
- * ⓘ alone, no state, no reading, no *Read again* and no ⋯, though a reading of it was kept from before: Daoris never asks it.
+ * Codex with no account of Daoris's: your own sign-in's row is its name and its
+ * ⓘ alone, no state, no reading, no *Read again* and no ⋯, though an earlier reading of it is kept: Daoris never asks it.
  */
 export const OwnSignInNeverAsked: Story = { args: { tool: CODEX_OWN_TOOL, use: CODEX_OWN_USE, rules: QUIET_RULES, usage: [] } };
 
@@ -151,7 +151,7 @@ export const OwnSignInNeverAsked: Story = { args: { tool: CODEX_OWN_TOOL, use: C
 export const OwnSignInNeverAskedChinese: Story = { args: OwnSignInNeverAsked.args, decorators: [chinese] };
 
 /**
- * Codex's accounts read (ACCTUX4): the same cells as Claude Code's `Readings`, the five hours then the week on every row, each
+ * Codex's accounts read: the same cells as Claude Code's `Readings`, the five hours then the week on every row, each
  * with its exact share, a bar of that window's own allowance, its reset and its own reading's age; a window not reported is
  * unknown in words with no bar, and a window of another length follows the two.
  */
@@ -161,7 +161,7 @@ export const CodexWindows: Story = { args: { tool: CODEX_READ_TOOL, use: CODEX_R
 export const NotInstalled: Story = { args: { tool: DSH_TOOL, use: null, rules: null, usage: [] } };
 
 /**
- * An agent not installed that Daoris has no installer for (INSTALLDOOR1): no Install in the header or under *Ways in*, and
+ * An agent not installed that Daoris has no installer for: no Install in the header or under *Ways in*, and
  * the foot says its maker's own tooling installs it.
  */
 export const NotInstalledNoInstaller: Story = {
@@ -169,14 +169,13 @@ export const NotInstalledNoInstaller: Story = {
 };
 
 /**
- * What each door can do, from the roster's sheet (COAGENT1e): each capability with its value and how it is known, or *not known*
+ * What each door can do, from the roster's sheet: each capability with its value and how it is known, or *not known*
  * with the fallback that applies. *Ways in* is open here because the agent is not installed.
  */
 export const TheSheet: Story = { args: NotInstalled.args };
 
 /**
- * The card speaks for the account's own door, and says one line for each other door whose own-home answer differs (AGENTPROVIDER1 row
- * s-ix o1 to o3): here a plugin's door beside Claude Code that starts in its own home where Claude Code's start is owed an account.
+ * The card speaks for the account's own door, and says one line for each other door whose own-home answer differs: here a plugin's door beside Claude Code that starts in its own home where Claude Code's start is owed an account.
  */
 export const CardDoors: Story = {
   args: {
@@ -203,7 +202,7 @@ export const ApiKey: Story = {
   },
 };
 
-/** A way in a plugin declared (PLUGUI1c2b), *Ways in* opened: *declared by plugin …* is a button, a door to that plugin. */
+/** A way in a plugin declared, *Ways in* opened: *declared by plugin …* is a button, a door to that plugin. */
 export const DeclaredByPlugin: Story = {
   args: {
     tool: { ...CLAUDE_TOOL, doors: CLAUDE_TOOL.doors.map((door) => ({ ...door, plugin: 'acme.gate' })) },
@@ -217,14 +216,14 @@ export const DeclaredByPlugin: Story = {
 const dark: Decorator =(Story) => <InTheme theme="dark"><Story /></InTheme>;
 
 /**
- * What each row knows (ACCTUX1): a key its provider refused says *key refused* with *New API key*, which opens a field on its row (KEYREPLACE1b); *reserve*, cooling for
+ * What each row knows: a key its provider refused says *key refused* with *New API key*, which opens a field on its row; *reserve*, cooling for
  * Daoris's default because its agent named no reset, says until when and *reset unknown*; *team*, cooling until the reset its
  * agent named, says each window's share in the ink and its reset beside it in the soft ink; and an account named for its
  * email says it once.
  */
 export const Readings: Story = { args: { tool: READINGS_TOOL, use: READINGS_USE, usage: [] } };
 
-/** The same in dark, where the faint ink the readings wore was the hardest to read. */
+/** The same in dark, where the faint ink of the readings is the hardest to read. */
 export const ReadingsDark: Story = { args: Readings.args, decorators: [dark] };
 
 /** The same at the 680 px window's main area, each row stacked, in dark. */
@@ -237,7 +236,7 @@ export const ReadingsNarrowDark: Story = {
 export const ReadingsChinese: Story = { args: Readings.args, decorators: [chinese] };
 
 /**
- * Claude Code's pace warning (USAGEREAD3b, D165 point 2): the account the next start takes says its week is ahead of its pace
+ * Claude Code's pace warning: the account the next start takes says its week is ahead of its pace
  * at 60%, in the agent's own words and the warning's hue, never *near its limit*, and the next start still takes it.
  */
 export const AheadOfPace: Story = { args: { tool: READINGS_TOOL, use: AHEAD_USE, usage: [] } };
@@ -249,7 +248,7 @@ export const AheadOfPaceDark: Story = { args: AheadOfPace.args, decorators: [dar
 export const AheadOfPaceChinese: Story = { args: AheadOfPace.args, decorators: [chinese] };
 
 /**
- * SWITCH1d (the switch design §5): each window against its curve now and where its reading came from, read from Claude Code or
+ * Each window against its curve now and where its reading came from, read from Claude Code or
  * said by a session, with *Read now* beside *Read again*: the week over its curve says so in the ink and the warning hue.
  */
 export const AgainstTheCurve: Story = { args: { tool: READINGS_TOOL, use: CURVE_USE, usage: [] } };
@@ -264,7 +263,7 @@ export const AgainstTheCurveChinese: Story = { args: AgainstTheCurve.args, decor
 export const ReadingNow: Story = { args: { ...AgainstTheCurve.args, readingNow: true } };
 
 const narrow: Decorator = (Story) => <div className="w-[37rem] max-w-full"><Story /></div>;
-/** The main area's floor, 400 px beside an open list and side bar (UXFIX2c). */
+/** The main area's floor, 400 px beside an open list and side bar. */
 const atFloor: Decorator = (Story) => <div className="w-[25rem] max-w-full"><Story /></div>;
 
 /** Codex's windows at the 680 px window's main area, each row stacked, its two cells side by side, in dark. */
@@ -276,15 +275,15 @@ export const CodexWindowsChinese: Story = { args: CodexWindows.args, decorators:
 /** At the 400 px floor: each cell's times wrap under its share, and the two cells keep their columns. */
 export const CodexWindowsFloor: Story = { args: CodexWindows.args, decorators: [atFloor] };
 
-/** Each row's *About … state* pressed (ACCTUX2): why it cools, why a key reads unchecked or refused, said under the row. */
+/** Each row's *About … state* pressed: why it cools, why a key reads unchecked or refused, said under the row. */
 const explainEach: Story['play'] = async ({ canvasElement }) => {
   canvasElement.querySelectorAll<HTMLButtonElement>('li button[aria-label^="About "][aria-expanded="false"]')
     .forEach((about) => about.click());
 };
 
 /**
- * Read without a pointer (ACCTUX2), at the 680 px window's main area: who signed in said whole beside each name, and each
- * row's explanation opened from its press, where it was a tip on hover alone.
+ * Read without a pointer, at the 680 px window's main area: who signed in said whole beside each name, and each
+ * row's explanation opened from its press, not a tip on hover alone.
  */
 export const ReadingsExplainedNarrow: Story = { args: Readings.args, decorators: [narrow], play: explainEach };
 
@@ -301,7 +300,7 @@ export const ReadingsExplainedFloorDark: Story = { args: Readings.args, decorato
 export const TheInstallFloorDark: Story = { args: TheInstall.args, decorators: [atFloor, dark] };
 
 /**
- * A key added asks its name (ACCTUX3, the UX7 design §4.5; the account-pool design §4.1), where it ended in a toast: *Added the
+ * A key added asks its name, not only a toast: *Added the
  * API key …*, that it joined Daoris's accounts, and its name left empty to be called by its handle.
  */
 export const KeyAddedAskingWhere: Story = {
@@ -314,7 +313,7 @@ export const KeyAddedAskingWhereNarrow: Story = { args: KeyAddedAskingWhere.args
 /** The same at the 400 px floor, in dark. */
 export const KeyAddedAskingWhereFloorDark: Story = { args: KeyAddedAskingWhere.args, decorators: [atFloor, dark] };
 
-/** A key the driver refused, said in its field (ACCTUX3): every press on the page refuses it with this sentence. */
+/** A key the driver refused, said in its field: every press on the page refuses it with this sentence. */
 const REFUSING: AgentActs = {
   ...ACTS,
   onAddKey: (_key, answered) => answered.refused('`claude-code` takes no key while a sign-in runs: let it end, then save the key again.'),
@@ -331,7 +330,7 @@ const saveARefusedKey: Story['play'] = async ({ canvasElement }) => {
 };
 
 /**
- * Refused, the key's field stays with the key in it and says why under it (ACCTUX3), at the 680 px window's main area: it
+ * Refused, the key's field stays with the key in it and says why under it, at the 680 px window's main area: it
  * emptied and closed on the press, so the refusal had nowhere to be said.
  */
 export const KeyRefusedNarrow: Story = { args: { acts: REFUSING }, decorators: [narrow], play: saveARefusedKey };

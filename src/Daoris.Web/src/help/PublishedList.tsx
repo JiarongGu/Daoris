@@ -11,15 +11,15 @@ import type { PublishedCounts, PublishedItem, PublishedQuest } from './published
 export type PublishedDoor = { view: 'quests'; item: string };
 
 /**
- * What an Ask Daoris conversation published (ASKQUESTS1, the Ask Daoris design §9 item 12), in a strip of its own under the
+ * What an Ask Daoris conversation published, in a strip of its own under the
  * conversation's head, outside its scroll. Folded, one line: what it is, and what stands, each count with its noun, in the soft ink
- * but for what waits on the person (D185 §3.10.2). Opened in place: each ask with the quests it became under it, and each quest
+ * but for what waits on the person. Opened in place: each ask with the quests it became under it, and each quest
  * published on its own, the newest first, each as its own list says it, and each a press that opens its record on Quests.
  *
  * @remarks
  * **A molecule**: the rows arrive judged (`publishedItems`), and a press goes out as the door a go uses. It adds no act: every act
- * on a quest or an ask is its page's (D50). A record no longer on this machine is said so and opens nothing; one still being read
- * says so, never empty (D185 §3.8).
+ * on a quest or an ask is its page's. A record no longer on this machine is said so and opens nothing; one still being read
+ * says so, never empty.
  */
 export function PublishedList({ items, counts, failed = false, open, onToggle, onOpen }: {
   items: readonly PublishedItem[];

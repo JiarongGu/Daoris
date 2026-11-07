@@ -3,8 +3,8 @@
  *
  * @remarks
  * Guarded, because storage can be absent or refused (a private window, a blocked origin), and not
- * remembering is a lesser failure than not working. Five files each wrote this guard for themselves
- * (REV3 CLEAN1). Per viewer and per browser by nature: nothing here is state another viewer or the
+ * remembering is a lesser failure than not working. Five files each wrote this guard for themselves.
+ * Per viewer and per browser by nature: nothing here is state another viewer or the
  * machine may rely on.
  */
 export function stored(key: string): string | null {
@@ -26,7 +26,7 @@ export function store(key: string, value: string | null): void {
 }
 
 /**
- * What this window alone remembers (MAINWINDOWS3): its own session storage, which a reload of the window keeps and no
+ * What this window alone remembers: its own session storage, which a reload of the window keeps and no
  * other window reads, since the host opens each window as a document of its own. Guarded as `stored` is.
  */
 export function storedHere(key: string): string | null {

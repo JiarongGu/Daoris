@@ -9,8 +9,8 @@ import { code } from '../test/code';
 import { setupSteps } from '../help/setup';
 import { GetStarted } from './GetStarted';
 
-// SETUP1a (D97): the Get started domain, drawn from props — each step in order with its state, the
-// screens that do it and the command that does the same, shown and copyable (D50).
+// The Get started domain, drawn from props — each step in order with its state, the
+// screens that do it and the command that does the same, shown and copyable.
 
 const FRESH = setupSteps(readMachine({
   attached: true, registry: [], driver: { drivable: [], helperAgent: '' }, harnesses: [], lines: [],
@@ -63,10 +63,10 @@ describe('Get started', () => {
   it('opens the screen each step is done on', async () => {
     const { onGo } = draw();
 
-    // UX6e: an agent's install and its accounts are on its page in the Agents place.
+    // An agent's install and its accounts are on its page in the Agents place.
     await userEvent.click(within(step(/An agent/)).getByRole('button', { name: 'Open Agents' }));
     expect(onGo).toHaveBeenLastCalledWith({ view: 'agents', agentPart: 'accounts' });
-    // Ask Daoris and the intake are roles: Agents → Roles, the one door (COMPANYVIEW1g).
+    // Ask Daoris and the intake are roles: Agents → Roles, the one door.
     expect(within(step(/Ask Daoris's agent/)).queryByRole('button', { name: 'Open AI features' })).toBeNull();
     await userEvent.click(within(step(/Ask Daoris's agent/)).getByRole('button', { name: 'Open Roles' }));
     expect(onGo).toHaveBeenLastCalledWith({ view: 'agents', agentsMode: 'setup', roleSection: 'allRoles' });
@@ -77,7 +77,7 @@ describe('Get started', () => {
     // A place's Set up… is on the Agents place's Setup.
     await userEvent.click(within(step(/Set a place up/)).getByRole('button', { name: 'Open Setup' }));
     expect(onGo).toHaveBeenLastCalledWith({ view: 'agents', agentsMode: 'setup' });
-    // And what agents may do is on the page of the agent Daoris hands the rules file (D150 §3.1).
+    // And what agents may do is on the page of the agent Daoris hands the rules file.
     await userEvent.click(within(step(/agents may do/)).getByRole('button', { name: 'Open what agents may do' }));
     expect(onGo).toHaveBeenLastCalledWith({ view: 'agents', agentPart: 'rules' });
   });
@@ -89,7 +89,7 @@ describe('Get started', () => {
 
     const agent = step(/An agent/);
     expect(within(agent).getByText(code('daoris agent install <agent>'))).toBeInTheDocument();
-    // The console's one code span, so a step's command breaks only between its words (LOOK5).
+    // The console's one code span, so a step's command breaks only between its words.
     const login = within(agent).getByText(code('daoris agent login <agent>'));
     expect([...login.children].map((word) => word.textContent)).toEqual(['daoris', 'agent', 'login', '<agent>']);
     for (const word of login.children) expect(word).toHaveClass('inline-block', 'max-w-full');
@@ -126,7 +126,7 @@ describe('Get started', () => {
     expect(onAtStart).toHaveBeenCalledWith(false);
   });
 
-  /** A browser may learn nothing of a machine (D47 §4): it shows what is registered, and says the rest is the desktop's. */
+  /** A browser may learn nothing of a machine: it shows what is registered, and says the rest is the desktop's. */
   it('shows a browser only the step it can know, and says the rest is the desktop\'s', () => {
     draw({ steps: BROWSER, helper: null, atStart: undefined, onAtStart: undefined, onAsk: undefined });
 

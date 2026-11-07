@@ -1,7 +1,7 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { AgentRules, type AgentRulesState } from './AgentRules';
 
-// What agents may do (PERM1, D72): Claude Code's own permission rules in Daoris's scopes — the shapes
+// What agents may do: Claude Code's own permission rules in Daoris's scopes — the shapes
 // the driver's RULES answer carries. The machine's scope has no name on the wire (the bridge leaves a
 // null out), and a file read cleanly carries no problem.
 
@@ -25,7 +25,7 @@ const DEFAULTS: AgentRulesState['defaults'] = [
     id: 'no-publish', list: 'deny', on: true, rules: [],
     why: "Publishing a package or creating a release leaves this machine, and that stays the person's call.",
   },
-  // A hook, not a rule (PERM3): the driver answers the tools it judges, and no rules.
+  // A hook, not a rule: the driver answers the tools it judges, and no rules.
   {
     id: 'tree-guard', list: 'deny', on: true, rules: [], hook: 'Edit|Write|MultiEdit|NotebookEdit|Bash|PowerShell',
     why: 'A session writes files only inside its own tree: an edit, a write or a shell command\'s write anywhere else is refused, through links as well. A change needed elsewhere is a quest.',
@@ -80,7 +80,7 @@ export const ADefaultOff: Story = {
 };
 
 /**
- * What agents proposed (PERM2, D74): a widening waiting for the person, one the driver has not judged
+ * What agents proposed: a widening waiting for the person, one the driver has not judged
  * yet, and the history one press away — a narrowing that applied itself, a no with its reason.
  */
 export const Proposals: Story = {

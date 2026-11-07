@@ -4,7 +4,7 @@ import { buildStructure, NO_FILTERS } from './roleStructure';
 import { readingOrder, structureBands } from './structureBands';
 import { DRIVER, LINES, PLUGINS, REGISTRY, STRUCTURE, TOOLS, largeStructure } from './structureFixtures';
 
-// CANVAS1c (D224; the canvas design §3.2): the structure as bands. One band per place in tree order, this machine, each workspace and its
+// The structure as bands. One band per place in tree order, this machine, each workspace and its
 // repositories that set something of their own; in each the roles placed or appointed there; beside them the agents, once each, by the
 // bands of the roles leaning on them; only the staffed edges. Past 24 nodes each workspace folds to one band. Pure.
 

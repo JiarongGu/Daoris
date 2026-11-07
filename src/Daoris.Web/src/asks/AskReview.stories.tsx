@@ -5,8 +5,8 @@ import { storyWidths } from '../design/storyWidths';
 import { AskReview } from './AskReview';
 import { CLOSED, PROPOSED } from './fixtures';
 
-// An ask's review choice (REVIEWENV1g, D154 point 3), as its page's *review* section draws it (`AskPage.tsx`), on its own
-// (STORYGAP1, the UI/UX design §1.2 item 6): nothing chosen, a choice with the person's words, an intake's proposal beside it
+// An ask's review choice, as its page's *review* section draws it (`AskPage.tsx`), on its own:
+// nothing chosen, a choice with the person's words, an intake's proposal beside it
 // with *Apply*, a press on its way, a closed ask; at the main area's three widths (`storyWidths`), in 中文 and dark.
 
 const nothing = () => {};

@@ -6,11 +6,11 @@ import { rooted } from '../test/sources';
 import { localFrames, MAIN_WIDTHS, NOT_IN_A_MAIN_AREA, sessionWidths, storyWidths } from './storyWidths';
 
 /**
- * R6 (the UI/UX design, UIFIT1): a story shows the widths the frame gives, without help. A main-area organism's stories
+ * A story shows the widths the frame gives, without help. A main-area organism's stories
  * are drawn at wide, half and narrow from one helper, and no decorator adds what the page does not have: a gap, a cap, a
- * padding. Every R1 defect passed its stories, which were drawn at 46rem with a gap of their own.
+ * padding. A story drawn at 46rem with a gap of its own passes defects the page shows.
  */
-// Quests' main area is drawn from `asks/` and `quests/` as well (STORYGAP1): an ask's page, its sections, a quest's.
+// Quests' main area is drawn from `asks/` and `quests/` as well: an ask's page, its sections, a quest's.
 const stories = rooted(import.meta.glob('/src/{settings,projects,work,workflow,asks,quests}/**/*.stories.tsx', {
   eager: true, query: '?raw', import: 'default',
 }) as Record<string, string>);
@@ -83,7 +83,7 @@ describe('the story widths', () => {
   });
 
   /**
-   * STORYGAP1 moved every main-area story to the helper: what still draws a frame of its own is a part of another region, named
+   * Every main-area story takes the helper: what still draws a frame of its own is a part of another region, named
    * with where it is mounted, and a new one fails here. A main-area story is never added to the list: it takes the helper.
    */
   it('holds: every story of a component mounted in a main area draws at the helper\'s widths, but the parts of other regions', () => {

@@ -2,7 +2,7 @@ import type { MouseEvent as ReactMouseEvent } from 'react';
 import { webAddress } from '../design/links';
 import type { MenuAct } from '../design/ui';
 
-// The right-click menu's rules (CTX1, D138, design §3): what a press is on, what a surface offers, and the groups the
+// The right-click menu's rules: what a press is on, what a surface offers, and the groups the
 // menu draws, most specific first. Pure, so `ContextMenus` only listens and draws, and each case is an assertion.
 
 /** What a surface offers a right-click: its acts, as its ⋯ or its page lists them, and what it is called. */
@@ -12,7 +12,7 @@ export type ContextOffer = {
   acts: readonly MenuAct[];
 };
 
-/** What the frame can do with a press's words or link; each absent where this window cannot (design §6). */
+/** What the frame can do with a press's words or link; each absent where this window cannot. */
 export type ContextDoors = {
   /** Copy the words and say so. */
   copy: (text: string) => void;
@@ -53,7 +53,7 @@ export function offeredContext(event: Event): ContextOffer | null {
 }
 
 /**
- * What a surface spreads on its root to offer its acts to a right-click (design §6). It holds no hook, so a molecule may
+ * What a surface spreads on its root to offer its acts to a right-click. It holds no hook, so a molecule may
  * offer; with nothing to offer it adds nothing.
  */
 export function contextOffer(offer: ContextOffer | null | undefined): { onContextMenu?: (event: ReactMouseEvent) => void } {
@@ -65,7 +65,7 @@ export function contextOffer(offer: ContextOffer | null | undefined): { onContex
 const NOT_TYPED = new Set(['checkbox', 'radio', 'button', 'submit', 'reset', 'image', 'range', 'color', 'file', 'hidden']);
 
 /**
- * Whether a press is in a field that takes words, where the engine's own menu stays (D138 §4): cut, copy and paste, which
+ * Whether a press is in a field that takes words, where the engine's own menu stays: cut, copy and paste, which
  * the page could not offer without a clipboard permission. The terminal is one: its menu pastes into the shell.
  */
 export function isTextField(element: Element | null): boolean {
@@ -80,7 +80,7 @@ export function insideMenu(element: Element | null): boolean {
   return element?.closest('[role="menu"]') != null;
 }
 
-/** The keys that ask for a menu (design §5): the menu key alone, and Shift+F10. */
+/** The keys that ask for a menu: the menu key alone, and Shift+F10. */
 export function isMenuKey(event: KeyboardEvent): boolean {
   const others = event.ctrlKey || event.altKey || event.metaKey;
   if (event.key === 'ContextMenu') return !others && !event.shiftKey;
@@ -104,7 +104,7 @@ export function keyPoint(rect: DOMRect, viewport: { width: number; height: numbe
   };
 }
 
-/** The selected words, where the press is on them, or null: a selection left elsewhere is not what was pressed. */
+/** The selected words, where the press is on them, or null: a selection left elsewhere is not what is pressed. */
 function selectedAt(target: Element, selection: Selection | null): string | null {
   if (!selection || selection.isCollapsed || selection.rangeCount === 0) return null;
   const words = selection.toString();
@@ -124,7 +124,7 @@ export function pressedOn(target: Element, selection: Selection | null): Pressed
     ? {
       href: anchor.getAttribute('href') ?? '',
       web: webAddress(anchor.getAttribute('href')),
-      // A sign-in's link is always the system's browser (D78 §3.4), and says so on itself.
+      // A sign-in's link is always the system's browser, and says so on itself.
       system: anchor.dataset.link === 'system',
       element: anchor,
     }
@@ -138,7 +138,7 @@ export function pressedOn(target: Element, selection: Selection | null): Pressed
 type Translate = (key: string, values?: Record<string, unknown>) => string;
 
 /**
- * The groups the menu draws for a press (design §3), most specific first, each a list of acts: the selection's, the
+ * The groups the menu draws for a press, most specific first, each a list of acts: the selection's, the
  * link's, the code's where nothing is selected, then the surface's. Its name is the surface's where one offered. No
  * group is no menu, and the engine's is suppressed.
  */
@@ -164,7 +164,7 @@ export function contextSections({ pressed, offer, doors, t }: {
     const { openInBrowser } = doors;
     const web = link.system ? null : link.web;
     sections.push([
-      // The link's own click, so it opens where the person chose (BRW7), as a press on it would.
+      // The link's own click, so it opens where the person chose, as a press on it would.
       { id: 'open', label: t('contextMenu.act.open'), icon: 'external', onSelect: () => link.element.click() },
       ...(openInBrowser && web
         ? [{ id: 'openInBrowser', label: t('contextMenu.act.openInBrowser'), icon: 'browser' as const, onSelect: () => openInBrowser(web) }]

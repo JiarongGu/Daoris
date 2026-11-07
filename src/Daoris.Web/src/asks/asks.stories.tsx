@@ -8,8 +8,8 @@ import {
   BY_INTAKE, CLOSED, DONE, INTAKE_ASKED, LONG_CJK, NAMED, PROPOSED, PUBLISHED, REFUSED, SHORT_TITLED, UNKNOWN_TIER, UNMATCHED,
 } from './fixtures';
 
-// An ask (D65 §1a), made at a workspace and read back as a record (INT4c): its row in Quests' list and the composer
-// that makes one, a drawer since it is a form (FRAME1d, D118 §3d). Its page is `AskPage.stories.tsx`. Every state a
+// An ask, made at a workspace and read back as a record: its row in Quests' list and the composer
+// that makes one, a drawer since it is a form. Its page is `AskPage.stories.tsx`. Every state a
 // real machine reaches, and a sentence long enough and CJK enough to try the layout.
 
 const meta: Meta = { title: 'Asks' };
@@ -20,7 +20,7 @@ const RECEIVERS = ['engine', 'game', 'lantern'];
 
 const Provided = ({ children }: { children: ReactNode }) => <Tooltip.Provider>{children}</Tooltip.Provider>;
 
-/** Rows at the list's width (D118 §3a: 280 px to start). */
+/** Rows at the list's width (280 px to start). */
 const Rows = ({ children }: { children: ReactNode }) => (
   <ul className="m-0 w-[280px] list-none border border-line bg-page p-0">{children}</ul>
 );
@@ -35,7 +35,7 @@ export const RowsInEveryState: StoryObj = {
   ),
 };
 
-/** What an ask waits for, as the band says it (POLISH4): an intake reading it, then one asking you. */
+/** What an ask waits for, as the band says it: an intake reading it, then one asking you. */
 export const RowsWithTheirIntake: StoryObj = {
   render: () => (
     <Rows>
@@ -59,7 +59,7 @@ function Composing({ fixed, circles, start, environments }: {
   );
 }
 
-/** REVIEWENV1g: the review of its work chosen in the composer, `local`, with the person's words beside it. */
+/** The review of its work chosen in the composer, `local`, with the person's words beside it. */
 export const ComposeChoosingAReview: StoryObj = {
   render: () => (
     <Composing

@@ -12,13 +12,13 @@ function looking(): boolean {
 }
 
 /**
- * The toasts that say a press came (NOTIFY2b, D196 point 4, the notification design §3.3, §5, Fable's F1.1): a toast with *Open*
+ * The toasts that say a press came: a toast with *Open*
  * in the focused main window, said once, staying until the view opens or the press ends, never closed by its seven seconds.
  *
  * @remarks
  * **Said on an arrival, never a snapshot** (§5): a terminal's press on its own event (`SESSION_ATTENTION` of the kind `Confirming`,
  * told once at its ask), keyed by its id, so an event heard twice is said once; a service's press the first time the list this
- * window is told holds its id (NOTIFY2j: the shell tells every window the one list at once, so only the focused one says it), and
+ * window is told holds its id (the shell tells every window the one list at once, so only the focused one says it), and
  * never one already waiting at this window's first read of the list, which arrived before the window did, as a terminal's does.
  * A window not focused as it hears it says nothing, and the press is counted in its bell; an arrival missed is never said later,
  * which a press may accept only because the bell's warning hue stays while it waits unshown.
@@ -43,7 +43,7 @@ export function usePressAnnouncements({ presses, serviceRead = true, viewOpen, w
   heard: (id: string) => void;
   /** The toasts that stay, the newest last. */
   toasts: ToastItem[];
-  /** The person's × on one: true where it was one of these, which is then gone. */
+  /** The person's × on one: true where it is one of these, which is then gone. */
   close: (id: number) => boolean;
 } {
   // What this window decided once for each press: said, or heard while it could not say it. Never said twice, never said later.
@@ -115,7 +115,7 @@ const SAID = 200;
 const MESSAGE_IDS = -1_000_000;
 
 /**
- * The toasts that say an agent's or a teammate's urgent message to everyone came (NOTIFY2g, D196, the notification design §5): the
+ * The toasts that say an agent's or a teammate's urgent message to everyone came: the
  * shell's `MESSAGE`, which it says once per run while the notify switch is on, said here by a toast with *Open* in the window focused
  * as it hears it, once per message.
  *
@@ -137,7 +137,7 @@ export function useMessageAnnouncements({ words, openLabel, onOpen }: {
   heard: (value: unknown) => void;
   /** The toasts standing, the newest last. */
   toasts: ToastItem[];
-  /** A toast closed, by the person or its seven seconds: true where it was one of these, which is then gone. */
+  /** A toast closed, by the person or its seven seconds: true where it is one of these, which is then gone. */
   close: (id: number) => boolean;
 } {
   // What this window decided once for each message: said, or heard while it could not say it. Never said twice, never said later.
@@ -171,7 +171,7 @@ export function useMessageAnnouncements({ words, openLabel, onOpen }: {
 }
 
 /**
- * A conversation's answer read where it is on screen (NOTIFY2g, the notification design §2.4): its `answered` notice is read when its
+ * A conversation's answer read where it is on screen: its `answered` notice is read when its
  * conversation is the one this window attends, in a window visible and focused, which shows the answer on the page (the condition
  * `ShellSignals` reads to keep the answer's toast off it). Looked at as the notices or the attended conversation move, and again as
  * the window comes in front; each asked once, the read being the shell's to push to every window.

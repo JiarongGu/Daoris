@@ -5,7 +5,7 @@ import type { NodeState } from '../design/canvas/SuppliedCanvas';
 import { LayerCard, RingNode } from './MapCards';
 import type { MapNode } from './topology';
 
-// MAPUX1a (the map UX design §3): each tier of a repository says less about the same card. The canvas gives the tier; jsdom has no zoom,
+// Each tier of a repository says less about the same card. The canvas gives the tier; jsdom has no zoom,
 // so a state is handed in.
 
 const words = { parked: 'waiting on you', working: 'working' };

@@ -5,7 +5,7 @@ import * as Tooltip from '@radix-ui/react-tooltip';
 import '../locales/i18n';
 import { QuickAsk } from './QuickAsk';
 
-// DOCK1d: Ask Daoris's conversation in a box at the palette's place — VS Code's Quick Chat.
+// Ask Daoris's conversation in a box at the palette's place — VS Code's Quick Chat.
 
 function show(open = true) {
   const onClose = vi.fn();

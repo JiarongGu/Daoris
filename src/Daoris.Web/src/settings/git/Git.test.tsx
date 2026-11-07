@@ -7,7 +7,7 @@ import { GitDefaults, GitIdentities, GitIdentityRow, GitOwn, type GitActs } from
 import { GitAdd } from './GitAdd';
 import { ACTS, DEPLOY, EMPTY_PAGE, PAGE, PERSONAL, UNKNOWN_HOST, WORK } from './gitFixtures';
 
-// Settings → Git (GITAUTH1e, the git-auth design §7.1-§7.2): the organisms drawn from props. GitDomain holds the bridge.
+// Settings → Git: the organisms drawn from props. GitDomain holds the bridge.
 
 const acts = (over: Partial<GitActs> = {}): GitActs => ({ ...ACTS, ...Object.fromEntries(Object.entries(ACTS).map(([name, act]) => [name, vi.fn(act)])), ...over });
 

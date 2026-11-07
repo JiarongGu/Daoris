@@ -2,7 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 
-// The Logs domain in SHELL mode. Moved from `shell.test.tsx` with MOD4: tests follow their code.
+// The Logs domain in SHELL mode.
 
 const { invoke, notifyReady, eventHandlers } = vi.hoisted(() => ({
   invoke: vi.fn(),
@@ -24,9 +24,9 @@ import { SettingsView } from './SettingsView';
 import { DRIVER_STATE, respond, serviceCalls, show } from '../test/shellHarness';
 
 /**
- * Settings → Logs (LOG1c, D94): the machine log read back over `DAORIS.LOG`, with the filters the
+ * Settings → Logs: the machine log read back over `DAORIS.LOG`, with the filters the
  * terminal's `daoris logs` takes applied by the shell, and the folder opened by the shell. None
- * of it goes over the service: the log is the machine's (D47 §4).
+ * of it goes over the service: the log is the machine's.
  */
 describe('the logs domain', () => {
   const READING = {

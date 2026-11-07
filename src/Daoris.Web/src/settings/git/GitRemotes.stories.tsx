@@ -5,7 +5,7 @@ import { storyWidths } from '../../design/storyWidths';
 import { GitHosts, GitRemotes, type GitRemoteShown } from './GitRemotes';
 import { DEPLOY, PERSONAL, WORK } from './gitFixtures';
 
-// A repository's *Git remote* and a workspace's *Git* on their Setup (GITAUTH1e, the git-auth design §7.3): remotes served by
+// A repository's *Git remote* and a workspace's *Git* on their Setup: remotes served by
 // a repository's choice, its workspace's and a host's default; one nothing serves; one on the person's own sign-ins; a local path;
 // and a workspace's hosts. At the main area's three widths and in 中文.
 

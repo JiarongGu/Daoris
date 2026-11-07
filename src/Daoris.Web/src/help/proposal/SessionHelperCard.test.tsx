@@ -5,7 +5,7 @@ import i18n from '../../locales/i18n';
 import { type HelpProposal, ProposalCard } from '../ProposalCard';
 import { sessionHelperDoor } from './sessionHelperDoor';
 
-// COWORKUX1: the helper and pass doors of a `session` proposal, drawn from the command the driver wrote for them.
+// The helper and pass doors of a `session` proposal, drawn from the command the driver wrote for them.
 const HELPER: HelpProposal = {
   id: 'h1', kind: 'session', why: 'the person wants a second look',
   describe: 'Ask agent `codex` a question about session `s1`.',

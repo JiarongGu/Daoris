@@ -6,7 +6,7 @@ import i18n from '../locales/i18n';
 import type { ToolShown } from './catalog';
 import { PluginTools } from './PluginTools';
 
-// A plugin's tools on its page (ADOSIGNIN1): each declared tool, what a Check found, and a press per unmet check.
+// A plugin's tools on its page: each declared tool, what a Check found, and a press per unmet check.
 
 const SHIP: ToolShown = {
   id: 'ship', name: 'Ship CLI', for: 'Opens the release.', versions: '>=2.0.79',

@@ -9,8 +9,8 @@ import { WorkspaceScopeProvider } from '../data/scope';
 import { columnsFollow } from '../test/mainSplit';
 import type { Notify } from '../design/ui';
 
-// Overview (D40), over a stubbed service, in a browser. Its page takes its final shape with FRAME1c: no
-// list (D118 §4), and its two cards laid out by the main area's own width (§3b). Since UX6c *What needs you* leads it,
+// Overview, over a stubbed service, in a browser. Its page has no
+// list, and its two cards are laid out by the main area's own width. *What needs you* leads it,
 // and settles from its rows what one press can.
 
 const REPOSITORIES = [{ name: 'engine', total: 3, local: 3, canonical: 0, workspace: 'default' }];
@@ -20,14 +20,14 @@ let QUESTS: unknown[] = [];
 let SESSIONS: unknown[] = [];
 let ASKS: unknown[] = [];
 
-/** An ask the declarations proposed and nobody has published (INT4a). */
+/** An ask the declarations proposed and nobody has published. */
 const PROPOSED = {
   id: '7c1e9a04b2d5', workspace: 'default', sentence: 'Cap the hydration per frame.', state: 'Proposed',
   tier: 'declarations', asked: '2026-09-21T08:00:00Z', updated: '2026-09-21T08:00:00Z',
   links: [], attachments: [], quests: [], proposal: [{ repository: 'engine', score: 3, matched: ['frame'] }],
 };
 
-/** A done held for the person's yes, its second requirement departed (DRIFT1d2). */
+/** A done held for the person's yes, its second requirement departed. */
 const HELD = {
   id: '5e7a11', from: 'game', to: 'engine', title: 'Read the media field names from config', body: 'hard-coded.',
   status: 'Done', filed: '2026-09-20T00:00:00Z', updated: '2026-09-21T07:00:00Z', held: true,
@@ -77,9 +77,9 @@ describe('Overview', () => {
   });
 
   /**
-   * Audit OV3: *Outstanding* sat beside *Repositories by index size* from the viewport's 1024 px, so the
-   * side bar narrowed both cards without the window changing. USE1 had moved the repository rows onto a
-   * container query and left the grid on the viewport.
+   * *Outstanding* sits beside *Repositories by index size* by the main area's width, not from the viewport's 1024 px:
+   * the side bar narrows both cards without the window changing, and the repository rows already answer a
+   * container query.
    */
   it('lays its two cards out by the main area\'s own width, never the viewport\'s', async () => {
     show();
@@ -96,8 +96,8 @@ describe('Overview', () => {
 });
 
 /**
- * OVERVIEWNOISE1d: an empty index's card promised the next refresh and offered no way to start one, while the workspace's
- * repositories held thousands of entries stamped with the workspace they had moved from. It now offers the shell's refresh.
+ * An empty index's card offers the shell's refresh, not only a promise of the next one, since the workspace's
+ * repositories can hold thousands of entries stamped with a workspace they no longer belong to.
  */
 describe("Overview's empty index", () => {
   beforeEach(() => vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL, init?: RequestInit) =>
@@ -153,7 +153,7 @@ describe("Overview's empty index", () => {
 });
 
 /**
- * UX6c (design §6): *What needs you* is Overview's lead. Who needs the person is judged by the app (PUSH1d4, D182 point 6), so a
+ * *What needs you* is Overview's lead. Who needs the person is judged by the app, so a
  * plain browser has no rows to show: its band says it is the app's. `AttentionBand.test.tsx` holds its rows and their acts, in a
  * shell.
  */
@@ -176,7 +176,7 @@ describe("Overview's lead, What needs you", () => {
   });
 
   /**
-   * The owner's decision (PUSH1d4): a plain browser judges nothing, so it lists no row, even with an ask proposed and a done held
+   * A plain browser judges nothing, so it lists no row, even with an ask proposed and a done held
    * at the service, and says the band is the app's. Never *Nothing needs you*, which would be a claim it cannot make.
    */
   it('says in a browser that what needs you is the app’s, listing no row', async () => {
@@ -190,7 +190,7 @@ describe("Overview's lead, What needs you", () => {
     expect(within(band).queryByText('Nothing needs you')).toBeNull();
   });
 
-  // FABRIC-CLOSE1d2: an outstanding quest reads as the quest's page does, timed by its submission.
+  // An outstanding quest reads as the quest's page does, timed by its submission.
   it('says submitted, timed by the submission, and source reopened; a quest no closure holds reads taken as before', async () => {
     const hoursAgo = (count: number) => new Date(Date.now() - count * 3_600_000).toISOString();
     const base = { from: 'game', to: 'engine', body: '', status: 'Taken', filed: hoursAgo(30), updated: hoursAgo(20) };

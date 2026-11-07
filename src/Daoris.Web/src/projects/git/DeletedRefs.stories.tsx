@@ -5,7 +5,7 @@ import { storyWidths } from '../../design/storyWidths';
 import type { GitDeletedRef } from './DeletedRefs';
 import { DeletedRefs } from './DeletedRefs';
 
-// A repository's deletes as the journal holds them (ONEWAY1r, D204): who pressed each, its kept commits, and its Undo open, shut or refused,
+// A repository's deletes as the journal holds them: who pressed each, its kept commits, and its Undo open, shut or refused,
 // at the main area's three widths (80, 39 and 25rem) in English and 中文, in both themes.
 
 const dark: Decorator = (Story) => <InTheme theme="dark"><Story /></InTheme>;
@@ -44,7 +44,7 @@ export const Narrow: Story = {
 };
 export const NarrowChineseDark: Story = { args: Narrow.args, decorators: [storyWidths.narrow, chinese, dark] };
 
-/** Commits kept for recovery before every keep was journaled, counted under the list. */
+/** Commits kept for recovery from before keeps were journaled, counted under the list. */
 export const Unrecorded: Story = { args: { unrecorded: 4 } };
 export const UnrecordedChinese: Story = { args: { unrecorded: 4 }, decorators: [storyWidths.half, chinese] };
 

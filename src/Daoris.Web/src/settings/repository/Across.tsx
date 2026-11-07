@@ -1,7 +1,7 @@
-// Reading across (READ1, D107) as the driver's ACROSS answer tells it: the shapes a repository's Setup and a workspace's page
-// read. Its list left with Settings → Permissions (UX6g, D150 §3.1).
+// Reading across as the driver's ACROSS answer tells it: the shapes a repository's Setup and a workspace's page
+// read. Its list left with Settings → Permissions.
 
-/** What said whether a checkout is read across (D107): set for its repository, for its workspace, or neither. */
+/** What said whether a checkout is read across: set for its repository, for its workspace, or neither. */
 export type ReadSource = 'repository' | 'workspace' | 'default';
 
 /** One repository here, as the driver's ACROSS answer tells it. */

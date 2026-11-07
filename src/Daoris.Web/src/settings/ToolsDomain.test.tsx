@@ -2,8 +2,8 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 
-// Settings → Tools in SHELL mode (TOOLS7, D121 §4.1): every call goes over the bridge to DAORIS.DRIVER, and nothing
-// over the service, since a tool's file is this machine's (D47 §4).
+// Settings → Tools in SHELL mode: every call goes over the bridge to DAORIS.DRIVER, and nothing
+// over the service, since a tool's file is this machine's.
 
 const { invoke, notifyReady, eventHandlers } = vi.hoisted(() => ({
   invoke: vi.fn(),

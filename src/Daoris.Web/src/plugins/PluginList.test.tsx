@@ -9,7 +9,7 @@ import { menuActs, rightClick } from '../test/contextMenu';
 import { type OfferShown, pluginGroups, type PluginShown } from './catalog';
 import { PluginList, PluginStrip } from './PluginList';
 
-// The Plugins view's list (PLUGUI1b, D119 §3.1): a molecule, every state reached by its props.
+// The Plugins view's list: a molecule, every state reached by its props.
 
 const render = (node: ReactElement) => rtlRender(<Tooltip.Provider>{node}</Tooltip.Provider>);
 
@@ -36,7 +36,7 @@ const headings = () => screen.getAllByRole('heading').map((heading) => heading.t
 const SVG = `data:image/svg+xml;base64,${btoa('<svg xmlns="http://www.w3.org/2000/svg"/>')}`;
 
 describe('the plugin list', () => {
-  /** A catalogue (D140 §2): the installed, waiting on you first, then on, then off; then Daoris's own not installed. */
+  /** A catalogue: the installed, waiting on you first, then on, then off; then Daoris's own not installed. */
   it('is a catalogue: the installed with their count, waiting on you first, then the offers', () => {
     render(<PluginList groups={GROUPS} chosen={null} onChoose={vi.fn()} onInstall={vi.fn()} />);
 
@@ -47,7 +47,7 @@ describe('the plugin list', () => {
   });
 
   /**
-   * NAME2: 关闭 is close's word (an ask's, a quest's 已关闭), so a plugin switched off read as closed. A
+   * 关闭 is close's word (an ask's, a quest's 已关闭), so a plugin switched off read as closed. A
    * plugin is 启用 and 停用 in Chinese, wherever its state is said.
    */
   it('names the sections and the off word in 中文 by the switch, never by close; a plugin\'s words stay as declared', async () => {
@@ -74,7 +74,7 @@ describe('the plugin list', () => {
     expect(headings()).toEqual(['Installed (1)']);
   });
 
-  /** A row (D140 §2): its icon, name and version, its state; what it gives in its author's words; then its meta line. */
+  /** A row: its icon, name and version, its state; what it gives in its author's words; then its meta line. */
   it('reads each row as a catalogue\'s: what it gives, then where it came from and what it adds', () => {
     render(<PluginList groups={pluginGroups([
       plugin({ source: { kind: 'folder', folder: 'C:/somewhere/checkout/gate' } }),
@@ -106,7 +106,7 @@ describe('the plugin list', () => {
     expect(container.querySelectorAll('img')).toHaveLength(1);
   });
 
-  /** An update waits on nobody, so it is never a state (D119 §2): a neutral pill on the meta line. */
+  /** An update waits on nobody, so it is never a state: a neutral pill on the meta line. */
   it('says update available on the row where its source declares something different, and only there', () => {
     render(<PluginList groups={pluginGroups([
       plugin({ source: { kind: 'offer', offer: 'acme.gate' }, update: 'waits' }),
@@ -119,7 +119,7 @@ describe('the plugin list', () => {
     expect(within(screen.getByRole('button', { name: /Same/ })).queryByText('update available')).toBeNull();
   });
 
-  /** LANDPIN3: an older copy of the install's own plugin waits for a press; a changed one is said, never offered. */
+  /** An older copy of the install's own plugin waits for a press; a changed one is said, never offered. */
   it('says update available on an older copy of the shipped one and changed here on a changed copy', () => {
     render(<PluginList groups={pluginGroups([
       plugin({ source: { kind: 'none' }, shipped: { state: 'older', installed: '1.2.0', shipped: '1.3.0' } }),
@@ -149,13 +149,13 @@ describe('the plugin list', () => {
     expect(within(row).getByText('2 points · 1 agent')).toBeInTheDocument();
     expect(within(row).getByText('1.2.0')).toBeInTheDocument();
     expect(within(row).getByText('running')).toBeInTheDocument();
-    // A refused plugin waits on the person: its word wears the waiting hue, never an outcome's (D119 §2).
+    // A refused plugin waits on the person: its word wears the waiting hue, never an outcome's.
     const refused = within(screen.getByRole('button', { name: /Future/ })).getByText('refused');
     expect(refused.className).toMatch(/\bborder-st-open\b/);
     expect(within(screen.getByRole('button', { name: /Quiet hours/ })).getByText('off')).toBeInTheDocument();
   });
 
-  /** PLUG10 (P9) carried over: running is a state, so its word is the quiet neutral, never done's green. */
+  /** Running is a state, so its word is the quiet neutral, never done's green. */
   it('says running in the neutral tone', () => {
     render(<PluginList groups={GROUPS} chosen={null} onChoose={vi.fn()} onInstall={vi.fn()} />);
 
@@ -212,7 +212,7 @@ describe("the plugin list's strip", () => {
     expect(marks.map((mark) => mark.getAttribute('aria-label'))).toEqual(['Future · refused', 'Acme gate · running', 'Quiet hours · off']);
     expect(marks[0]!.querySelector('.bg-st-open')).not.toBeNull();
     expect(marks[1]!.querySelector('[class*="bg-"][aria-hidden].rounded-full')).toBeNull();
-    // Each mark is the plugin's icon at the strip's size, its monogram here (D140 §2).
+    // Each mark is the plugin's icon at the strip's size, its monogram here.
     expect(marks.map((mark) => mark.querySelector('[data-hue]')?.textContent)).toEqual(['F', 'A', 'Q']);
     expect(marks[1]!.querySelector('[data-hue]')!.className).toContain('size-5');
     expect(marks[2]!.querySelector('.opacity-55')).not.toBeNull();
@@ -221,7 +221,7 @@ describe("the plugin list's strip", () => {
     expect(container.textContent).not.toMatch(/In-app/);
   });
 
-  /** CTX1 (D138, design §4): a plugin's row offers what it does: opening it, an offer's Install, and its id. */
+  /** A plugin's row offers what it does: opening it, an offer's Install, and its id. */
   it('offers Open, an offer’s Install and its id on a right-click', async () => {
     const copy = vi.fn();
     const onChoose = vi.fn();

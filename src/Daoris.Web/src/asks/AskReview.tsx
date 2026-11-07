@@ -8,14 +8,14 @@ import { choiceWords } from '../work/gates/ReviewGate';
 import { type Answered, Refused } from '../work/InlineConfirm';
 
 /**
- * Where a press was made among an ask's presses, and the refusal said there (ACCESSASK1, the UI/UX design R3): a proposal's
+ * Where a press is made among an ask's presses, and the refusal said there: a proposal's
  * *Apply* by its key, or the choice's own press.
  */
 export type PressRefusal = { at: string; sentence: string } | null;
 
 /**
- * The refusal said where its press was (the UI/UX design R3): a press clears the last one and is answered here, `done` saying
- * nothing, `refused` the driver's sentence under that press; an answer to a press made before the latest is no longer read.
+ * The refusal said where its press is: a press clears the last one and is answered here, `done` saying
+ * nothing, `refused` the driver's sentence under that press; an answer to a press made before the latest is not read.
  */
 export function usePressRefusal() {
   const [refusal, setRefusal] = useState<PressRefusal>(null);
@@ -41,16 +41,15 @@ export function usePressRefusal() {
 const SET = 'set';
 
 /**
- * **An ask's review choice** (REVIEWENV1g, D154 point 3; the review environment design §1.5–§1.6): what the person chose for its
+ * **An ask's review choice**: what the person chose for its
  * work, the latest standing, with their words; each proposal its intake made with its reason, which only their press applies;
  * and the choice changed, while the ask is open.
  *
  * @remarks
- * **The person's alone to set** (D74, REVIEWENV1b3): an intake proposes and never sets `off`, so a proposal is shown beside the
- * choice with *Apply*, and nothing applies it but that press. Nothing chosen says each repository's rule decides, which is how
- * an ask stood before.
+ * **The person's alone to set**: an intake proposes and never sets `off`, so a proposal is shown beside the
+ * choice with *Apply*, and nothing applies it but that press. Nothing chosen says each repository's rule decides.
  *
- * **A refusal is said where it was pressed** (ACCESSASK1, the UI/UX design R3): an *Apply* refused under its proposal, the
+ * **A refusal is said where it is pressed**: an *Apply* refused under its proposal, the
  * choice's *Set* under its press with the choice and the words still as typed, so it can be pressed again.
  *
  * A molecule: it is handed the ask and the press.
@@ -71,7 +70,7 @@ export function AskReview({ ask, environments = [], busy = false, onChoose }: {
   const [words, setWords] = useState('');
   const refusal = usePressRefusal();
   const latest = ask.reviewChoices?.at(-1) ?? null;
-  // A proposal stands until the person's choice says what it proposed (design §1.6): then it was applied, or chosen anyway.
+  // A proposal stands until the person's choice says what it proposed: then it is applied, or chosen anyway.
   const proposals = (ask.reviewProposals ?? []).filter((proposal) => proposal.choice !== latest?.choice);
   const live = ask.state !== 'Closed';
 

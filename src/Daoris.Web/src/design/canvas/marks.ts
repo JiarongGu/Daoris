@@ -1,6 +1,6 @@
 import type { Box } from './viewMath';
 
-// Where a mark's chip stands (CANVAS1b; D224, the canvas design §2.3): beside its node, where it clears every box, and dropped where it
+// Where a mark's chip stands: beside its node, where it clears every box, and dropped where it
 // clears none. A mark never adds a line or a border's width to a node, so a judgement landing after an edit moves nothing below it.
 
 /** A chip to place: its node's box and its own size, in world units. */

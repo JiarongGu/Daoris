@@ -4,13 +4,13 @@ import { cn } from '../../lib/cn';
 import { Button } from '../../design/ui';
 import type { LandingIntegrate } from './IntegratePolicy';
 
-/** Where a repository's line came from (WSR2): set for it, set for its workspace, the checkout's guess, or nothing. */
+/** Where a repository's line came from: set for it, set for its workspace, the checkout's guess, or nothing. */
 export type LineSource = 'repository' | 'workspace' | 'checkout' | 'none';
 
 /** One repository's line on this machine, as the driver resolves it — the answer every door reads. */
 export type RepositoryLine = {
   repository: string; workspace: string; branch?: string; source: LineSource;
-  /** The pushed lines only (PUSH1b2): the checkout's guess is not judged yet, so `none` is not an answer. Read before `source`. */
+  /** The pushed lines only: the checkout's guess is not judged yet, so `none` is not an answer. Read before `source`. */
   notReadYet?: boolean;
   /** How work is integrated into the line, the policy that reaches it (own, else its workspace's); absent where none is set. */
   policy?: LandingIntegrate | null;
@@ -25,7 +25,7 @@ export type LineChange = { repository?: string; workspace?: string; branch?: str
 /**
  * One line's field: what is set, with what would stand without it as the placeholder, and a clear
  * only where something is set — clearing an inherited line would change nothing and say it had.
- * A repository's Setup gives each value its own *Clear* beside the field (UX6f), so there it carries none.
+ * A repository's Setup gives each value its own *Clear* beside the field, so there it carries none.
  */
 export function LineField({ label, set, placeholder, busy, clearable = true, onSave }: {
   label: string;
@@ -57,7 +57,7 @@ export function LineField({ label, set, placeholder, busy, clearable = true, onS
         spellCheck={false}
         // What would stand is a placeholder, and it must not read as what is set: in dark the two were
         // one shade apart (seen on the window). The field gives way to a narrow column, never its Save,
-        // whose word broke over two lines in a repository's Setup at 544 px (UX6f, seen in its story).
+        // whose word broke over two lines in a repository's Setup at 544 px.
         className="w-44 min-w-0 max-w-full rounded-control border border-line-strong bg-raised px-2.5 py-1 font-mono text-small text-ink placeholder:italic placeholder:text-ink-faint"
       />
       <Button type="submit" className="shrink-0 whitespace-nowrap" disabled={busy || !typed || typed === set}>{t('settings.lines.set')}</Button>

@@ -34,7 +34,7 @@ function Row({ row, chosen, focused, onPress }: { row: TreeRow; chosen: boolean;
 }
 
 /**
- * **The Map's list** (MAPUX1e; the map UX design §6): one tree on both levels, the WAI pattern, with one row in the tab order. The arrows
+ * **The Map's list**: one tree on both levels, the WAI pattern, with one row in the tab order. The arrows
  * walk it, → and ← open, close and climb, Enter chooses an item or opens a group, and Escape releases the choice. Below the 36rem floor
  * `detail` is given, and opens in place under the chosen row, so a long list is never scrolled away from to read a choice.
  *

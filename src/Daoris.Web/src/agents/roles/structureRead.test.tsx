@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { renderHook } from '@testing-library/react';
 
-// AGENTSPLACE1a: the read behind the Roles mode is scoped: a chosen place asks its chain alone, and no read asks a repository that is
+// The read behind the Roles mode is scoped: a chosen place asks its chain alone, and no read asks a repository that is
 // not driven.
 
 const { whole, chain, driver } = vi.hoisted(() => ({

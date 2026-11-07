@@ -10,7 +10,7 @@ import { HowItChooses, LimitsFold, WeightField } from './RolePolicy';
 import { RoleRulesNote } from './RoleRulesNote';
 import { aimOf, type PolicyDraft, type PolicyFields, type Preset, withPreset } from './staffPolicyDraft';
 
-/** The most choices a role holds (D205 §3.1, `ActorChoices.Most`). */
+/** The most choices a role holds (`ActorChoices.Most`). */
 const MOST = 4;
 
 const FIELD = 'w-full min-w-0 rounded-control border border-line-strong bg-raised px-2.5 py-1 font-mono text-small text-ink placeholder:italic placeholder:text-ink-faint';
@@ -19,8 +19,8 @@ const FIELD = 'w-full min-w-0 rounded-control border border-line-strong bg-raise
 export type Draft = { key: number; agent: string; model: string; effort: string } & PolicyFields;
 
 /**
- * A role in the catalogue's one editor, over `SET_ROLE` (ONEWAY1a: its record and its choices together). `policy` is the role's staffing
- * policy (STAFFPOLICY1f), absent where the role keeps none: a new role, a brainstorm or a driver before policies.
+ * A role in the catalogue's one editor, over `SET_ROLE` (its record and its choices together). `policy` is the role's staffing
+ * policy, absent where the role keeps none: a new role, a brainstorm or a driver before policies.
  */
 export type Editing = {
   id: string; isNew: boolean; revision: number | null; name: string; nameIn: [string, string][]; takes: string[]; work: string;
@@ -65,7 +65,7 @@ export type RoleEditorProps = {
 };
 
 /**
- * **The role editor** (SETUPUX1l, the Setup design §2.4): a role's choices of agent, model and effort first, each model and effort from what
+ * **The role editor**: a role's choices of agent, model and effort first, each model and effort from what
  * the agent offers or typed after *other…*; *Edit role*, folded, holds its names, work and place; the prose of how choices run stands
  * behind one ⓘ and one sentence of consequence before *Save*. A role that takes several works names them and changes none.
  *

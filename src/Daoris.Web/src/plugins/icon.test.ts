@@ -4,7 +4,7 @@ import { describe, expect, it } from 'vitest';
 import { fnv1a, IDENT_HUES, iconSource, monogram } from './icon';
 
 /**
- * A plugin's icon on the page (PLUGUI2, D140 §3.2, §3.3): which declared icon is drawn, and the monogram drawn instead.
+ * A plugin's icon on the page: which declared icon is drawn, and the monogram drawn instead.
  * The monogram is **deterministic** (the same plugin wears the same one on every machine and every reload) and its hues
  * are **computed, not eyeballed** (platform language §3), both held here.
  */
@@ -149,7 +149,7 @@ describe('the identity hues', () => {
   });
 
   it('stand at least ΔE 20 from every status hue, its ink and the accent, so a monogram never reads as a state', () => {
-    // A state's word wears its hue's ink (UXFIX5c), and a monogram is a glyph beside such words, so the inks count too.
+    // A state's word wears its hue's ink, and a monogram is a glyph beside such words, so the inks count too.
     const states = ['--st-open', '--st-taken', '--st-done', '--st-declined', '--ink-open', '--ink-taken', '--ink-done', '--ink-danger'];
     for (const [theme, tokens] of Object.entries(THEMES)) {
       for (const hue of IDENT_HUES) {

@@ -16,37 +16,36 @@ import { questName } from '../work/identity';
 import { NeedsSummary } from './NeedsSummary';
 
 /**
- * The management landing (D40). A person overseeing several projects' agents opens this window to
+ * The management landing. A person overseeing several projects' agents opens this window to
  * answer one question first — what needs me, and is anything sitting — so that is what leads: a summary of *What needs you*
- * (NOTIFY2b, the notification design §4: a line per group, each a door into *Notifications*, where every row is), then family
+ * (a line per group, each a door into *Notifications*, where every row is), then family
  * health as stat tiles, the outstanding quests oldest-first, and the repositories by what the index holds. Every row is a door.
  *
  * The repository bars are ONE series in one hue: entries per repository is magnitude, not identity.
  * Values sit beside the marks in ink, never in the mark's color.
  */
 export function OverviewView({ onNavigate, onOpenQuest, notify, presses = [], onNotifications, onRefresh, refreshing }: {
-  /** The shell's refresh of the index, its notices its own: offered by the empty repositories card (OVERVIEWNOISE1d). */
+  /** The shell's refresh of the index, its notices its own: offered by the empty repositories card. */
   onRefresh?: () => void;
   /** Whether that refresh is running, so the card's button waits for it. */
   refreshing?: boolean;
   onNavigate: (tab: 'quests' | 'projects') => void;
   /**
-   * Where an outstanding row goes: that quest's page on Quests (§5; FRAME1d). The row went to Quests and opened
-   * nothing, so the person pressed a quest and had to find it again (UX5 U26).
+   * Where an outstanding row goes: that quest's page on Quests, so the person never has to find it again.
    */
   onOpenQuest: (id: string) => void;
   notify: Notify;
-  /** The presses waiting for the person's confirmation, of either source, which the summary's first line counts (NOTIFY2b). */
+  /** The presses waiting for the person's confirmation, of either source, which the summary's first line counts. */
   presses?: Confirmation[];
   /** *Notifications* shown at a group, each summary line's door: the app's alone, since a browser has no side bar. */
   onNotifications?: (group: NotificationsGroup) => void;
 }) {
   const { t } = useTranslation();
-  // Who needs the person, as the shell pushes it (PUSH1d4), which the summary counts by group.
+  // Who needs the person, as the shell pushes it, which the summary counts by group.
   const attention = useAttention();
-  // Done and failed (NOTIFY2f): its line follows what waits.
+  // Done and failed: its line follows what waits.
   const notices = useNotices();
-  // Messages (NOTIFY2g): its line, before what ended, while anything is unread.
+  // Messages: its line, before what ended, while anything is unread.
   const messages = useMessages();
   const repositories = useRepositories();
   const registry = useRegistry();
@@ -57,7 +56,7 @@ export function OverviewView({ onNavigate, onOpenQuest, notify, presses = [], on
 
   const repos = repositories.data ?? [];
   const adopted = (registry.data ?? []).filter((r) => r.adopted);
-  // The quests not answered yet are not none (PUSHUX1): their tiles hold placeholders, and the card its skeleton, until they are.
+  // The quests not answered yet are not none: their tiles hold placeholders, and the card its skeleton, until they are.
   const questsKnown = quests.data !== undefined;
   const open = (quests.data ?? []).filter((q) => q.status === 'Open');
   const taken = (quests.data ?? []).filter((q) => q.status === 'Taken');
@@ -65,8 +64,8 @@ export function OverviewView({ onNavigate, onOpenQuest, notify, presses = [], on
   const oldest = open.length ? Math.max(...open.map((q) => sittingDays(q.filed))) : 0;
   // The service already orders open before taken, oldest first — exactly the reading order here.
   const outstanding = quests.data ?? [];
-  // Ranked and capped — a real machine has fourteen of these and the card ran past the fold, taking
-  // its own legend with it (D62: the fixture holds two, so it looked finished).
+  // Ranked and capped — a real machine has fourteen of these and an uncapped card runs past the fold, taking
+  // its own legend with it (the fixture holds two, so it would look finished).
   const { shown, hidden } = ranked(repos);
   const most = widest(shown);
 
@@ -74,8 +73,8 @@ export function OverviewView({ onNavigate, onOpenQuest, notify, presses = [], on
     <section>
       <PageHeader title={t('overview.title')} description={t('overview.description')} />
 
-      {/* The page's lead, above the tiles, because "what needs me" outranks "how is the family" (UX6c, design §6.1); since
-          NOTIFY2b a line per group, each a door into *Notifications*, and one line when nothing is waiting. */}
+      {/* The page's lead, above the tiles, because "what needs me" outranks "how is the family": a line per
+          group, each a door into *Notifications*, and one line when nothing is waiting. */}
       <NeedsSummary
         attention={attention}
         presses={presses}
@@ -116,9 +115,9 @@ export function OverviewView({ onNavigate, onOpenQuest, notify, presses = [], on
         />
       </div>
 
-      {/* Two cards side by side by the main area's own width, never the viewport's (D118 §3b): the side bar
-          and a list narrow the main area while the window stays as wide (audit OV3). 56rem is where a
-          1024 px window's main area split before. */}
+      {/* Two cards side by side by the main area's own width, never the viewport's: the side bar
+          and a list narrow the main area while the window stays as wide. 56rem is where a
+          1024 px window's main area splits. */}
       <div className="grid items-start gap-3.5 @4xl/main:grid-cols-2">
         <Card>
           <CardHeader
@@ -152,13 +151,13 @@ export function OverviewView({ onNavigate, onOpenQuest, notify, presses = [], on
                       {quest.from} → {quest.to} · {quest.status === 'Open'
                         ? t('overview.outstanding.filed', { ago: ago(quest.filed) })
                         : quest.status === 'Taken' && quest.submission
-                          // Timed by the submission's moment (FABRIC-CLOSE1d2): the quest's own record moved at the take.
+                          // Timed by the submission's moment: the quest's own record moves at the take.
                           ? t('overview.outstanding.submitted', { ago: ago(quest.submission.at) })
                           : t('overview.outstanding.taken', { ago: ago(quest.updated) })}
                     </span>
                     {/* WHY it is sitting, on the desktop only (a browser has no driver): the driver's
                         own sentence from its last look — which is the answer to the question this
-                        view leads with, and was a toast that dismissed itself until now (D62). */}
+                        view leads with. */}
                     {sitting && (
                       <Tip content={t('overview.outstanding.sittingTip')}>
                         <span className="basis-full truncate text-small text-ink-faint">
@@ -188,14 +187,14 @@ export function OverviewView({ onNavigate, onOpenQuest, notify, presses = [], on
             }
           />
           {repositories.isPending && <SkeletonRows />}
-          {/* An empty index is a state (§4, POLISH2's rule): once retiring emptied it (POLISH5) this
-              card was its heading over a footnote about dots with nothing to mark. */}
+          {/* An empty index is a state: a card of a heading over a footnote about dots with nothing to mark
+              would say nothing. */}
           {repositories.data?.length === 0 && (
             <EmptyState
               icon="projects"
               headline={t('overview.repositories.emptyHeadline')}
               body={t('overview.repositories.emptyBody')}
-              // The refresh the body names, started here (OVERVIEWNOISE1d): the state promised one and offered no way to it.
+              // The refresh the body names, started here: the state promised one and offered no way to it.
               action={onRefresh && (
                 <Button onClick={onRefresh} disabled={refreshing}>
                   <Icon name="refresh" size={14} />
@@ -204,8 +203,8 @@ export function OverviewView({ onNavigate, onOpenQuest, notify, presses = [], on
               )}
             />
           )}
-          {/* Sized by its own width, not the window's (USE1, looked at): beside the side bar a wide window
-              still leaves this card narrow, and a viewport breakpoint kept three columns until the
+          {/* Sized by its own width, not the window's: beside the side bar a wide window
+              still leaves this card narrow, and a viewport breakpoint would keep three columns until the
               counts ran past the card's edge. */}
           <ul className="@container m-0 list-none p-0">
             {shown.map((repository) => {

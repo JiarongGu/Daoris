@@ -7,7 +7,7 @@ import { readerIn } from './storyLanguage';
 import { rooted } from '../test/sources';
 
 /**
- * A story's language is the story's, never the page's remembered choice (STORY2, found by TRACE1b). A 中文 reader made
+ * A story's language is the story's, never the page's remembered choice. A 中文 reader made
  * with `i18n.cloneInstance` shares the page's language detector, and a clone's own start caches its language under
  * `daoris.language` as the page's switch does: one module of 中文 stories, merely imported, brought every later story up
  * in 中文 in that browser profile, English ones too. Storybook imports a story's module to show any story in it, so the
@@ -49,8 +49,8 @@ describe('a story in another language (STORY2)', () => {
   });
 
   // 🔴 Its own hang detector: this one test imports every story module (93 on 2026-10-11), so its time grows with the
-  // stories. Alone it took 7.5 s; in a full run beside a building worktree it passed the suite's 20 s, at ACCTUX4b's merge,
-  // which added stories (FIX-LOG's FLAKE1). A hang still fails; a slow import of one more story does not.
+  // stories. Alone it takes 7.5 s; in a full run beside a building worktree it can pass the suite's 20 s
+  // once stories are added (see the fix log). A hang still fails; a slow import of one more story does not.
   it('remembers no language for any story module imported, as a fresh profile finds it', { timeout: 60_000 }, async () => {
     localStorage.removeItem(KEY);
     for (const load of Object.values(import.meta.glob<StoriesModule>('/src/**/*.stories.tsx'))) await load();
@@ -69,13 +69,13 @@ describe('a story in another language (STORY2)', () => {
     expect(localStorage.getItem(KEY)).toBe('en');
   });
 
-  // ACCTUX4j: pure helpers call the page's global `i18n.t`, so a 中文 story points the global at 中文 for its life.
+  // Pure helpers call the page's global `i18n.t`, so a 中文 story points the global at 中文 for its life.
   it('draws a 中文 story’s helpers in 中文 and gives the page’s language and choice back as found', async () => {
     localStorage.setItem(KEY, 'en');
     await i18n.changeLanguage('en');
     const agents = composed(await import('../agents/AgentPage.stories'));
     const { container, unmount } = render(<agents.CodexWindowsChinese />);
-    // The set's summary (POOL1c), a pure helper's words, where the *Runs for* mark was before it went.
+    // The set's summary, a pure helper's words.
     expect(container.textContent).toContain('全部 3 个账户，用于所有工作区');
     expect(container.textContent).toContain('下一次启动使用');
     expect(i18n.language).toBe('zh');

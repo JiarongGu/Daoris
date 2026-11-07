@@ -6,8 +6,8 @@ import i18n from '../locales/i18n';
 import { AskHistory } from './AskHistory';
 import type { HelpConversationRow } from './history';
 
-// IME1: a name or a search typed through an input method is composed, and the Escape that drops a composition is the
-// input method's. Apart from `AskHistory.test.tsx`, whose history is being redrawn beside this (ASKHIST1c).
+// A name or a search typed through an input method is composed, and the Escape that drops a composition is the
+// input method's. Apart from `AskHistory.test.tsx`, whose history is being redrawn beside this.
 
 const ROW: HelpConversationRow = {
   session: 'h3', title: 'how do I land on a branch?', name: null, opening: 'how do I land on a branch?', about: null,

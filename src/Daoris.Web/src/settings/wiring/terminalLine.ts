@@ -1,4 +1,4 @@
-/** The terminals a line is offered for (the this-Daoris design §4). */
+/** The terminals a line is offered for. */
 export type TerminalShell = 'powershell' | 'cmd' | 'bash';
 
 export const TERMINAL_SHELLS: readonly TerminalShell[] = ['powershell', 'cmd', 'bash'];
@@ -13,7 +13,7 @@ const powershell = (text: string): string => `'${text.replaceAll("'", "''")}'`;
 const bash = (text: string): string => `'${text.replaceAll("'", `'\\''`)}'`;
 
 /**
- * The line a person pastes into a terminal to reach this Daoris from it (WIRING1e): `DAORIS_HOME` and `DAORIS_SERVICE_URL` for that
+ * The line a person pastes into a terminal to reach this Daoris from it: `DAORIS_HOME` and `DAORIS_SERVICE_URL` for that
  * terminal only, and the install's launchers first on its `PATH`, so a script or a terminal from before the address file reaches this
  * install. It names this machine's paths and goes nowhere but the clipboard; nothing is changed on the account.
  */

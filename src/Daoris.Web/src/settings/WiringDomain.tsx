@@ -20,7 +20,7 @@ import { WiringDownloads } from './wiring/WiringDownloads';
 import { WiringSpace } from './wiring/WiringSpace';
 import { WiringSpaceFree } from './wiring/WiringSpaceFree';
 
-/** Where each file's door goes: the read names the place by a word, and the page knows its door (§3.4). */
+/** Where each file's door goes: the read names the place by a word, and the page knows its door. */
 const FILE_DOORS: Record<string, StarterDoor> = {
   driver: { view: 'settings', section: 'driver' },
   tools: { view: 'settings', section: 'tools' },
@@ -31,49 +31,49 @@ const FILE_DOORS: Record<string, StarterDoor> = {
 };
 
 /**
- * Settings → This Daoris (WIRING1c, the this-Daoris design §2): how this install is set up here, read from the shell's one
- * reader (`SYSTEM_WIRING`, WIRING1b) and drawn as cards. **It shows, and sets only the keep rules and the account's wiring**: the
- * domain that sets a thing keeps its control, and a row whose value is set elsewhere carries a door to where. Its acts are the Downloads row's clearing
- * (CACHECLEAR1), listed first and then pressed, which removes only what nothing uses; setting the wiring up (WIRING1e): *Open* by a
+ * Settings → This Daoris: how this install is set up here, read from the shell's one
+ * reader (`SYSTEM_WIRING`) and drawn as cards. **It shows, and sets only the keep rules and the account's wiring**: the
+ * domain that sets a thing keeps its control, and a row whose value is set elsewhere carries a door to where. Its acts are the Downloads row's clearing,
+ * listed first and then pressed, which removes only what nothing uses; setting the wiring up: *Open* by a
  * row's id, *Put on my PATH*, *Copy a terminal line* and *Change the service's address*, each said first inside its row, on the
- * account alone; the Disk space card's *Change…* (KEEP1d),
- * the keep rules, which have no other place on the page (the cleanup design §8, the this-Daoris design §9); and that card's *Free up
- * space…* (KEEP1e), listed first and then pressed, removing exactly what was listed.
+ * account alone; the Disk space card's *Change…*,
+ * the keep rules, which have no other place on the page; and that card's *Free up
+ * space…*, listed first and then pressed, removing exactly what is listed.
  *
- * - **Machine-only** like every machine domain (D47 §4): a browser is never offered it, and no host route answers any of it.
+ * - **Machine-only** like every machine domain: a browser is never offered it, and no host route answers any of it.
  * - **Sizes are asked once**, when the page first has its answer: the open itself walks no folder, and the answer to the ask
  *   says it is measuring, which the query reads again every two seconds until each size is counted.
  *
- * The cards are molecules over props, composed by `WiringCards` so a story draws the whole domain (R6); this holds the hooks
+ * The cards are molecules over props, composed by `WiringCards` so a story draws the whole domain; this holds the hooks
  * (`presentational.test.ts`).
  */
 export function WiringDomain({ notify, onGo }: Pick<SettingsDomainProps, 'notify' | 'onGo'>) {
   const { t } = useTranslation();
   const { query, measure } = useSystemWiring();
-  // The update is the shell's own state, not the wiring's (UPDATE1b): the Versions card's line.
+  // The update is the shell's own state, not the wiring's: the Versions card's line.
   const update = useUpdateState();
-  // The Logs card's own *Open folder* (LOG1c); every other row opens by its id (WIRING1e, below).
+  // The Logs card's own *Open folder*; every other row opens by its id.
   const openLogs = useOpenLogFolder();
   const [busy, setBusy] = useState(false);
-  // CACHECLEAR1: the Downloads row's list, read once the person opens it, and the one press after it (D88's shape).
-  // KEEP1c: which row opened it, the Folders card's or the Disk space card's, so the list is drawn under the row that was pressed.
+  // The Downloads row's list, read once the person opens it, and the one press after it.
+  // Which row opened it, the Folders card's or the Disk space card's, so the list is drawn under the row that is pressed.
   const [downloadsOpen, setDownloadsOpen] = useState<false | 'folders' | 'space'>(false);
   const [cleared, setCleared] = useState<DownloadCleared[] | null>(null);
   const downloads = useSystemDownloads(downloadsOpen !== false);
-  // KEEP1c: the Disk space card's read; its sizes are counted only when the person asks, or by the look once a day.
+  // The Disk space card's read; its sizes are counted only when the person asks, or by the look once a day.
   const space = useSystemSpace();
   const [counting, setCounting] = useState(false);
   useErrorNotify(space.query.error, notify);
   const clearDownloads = useClearDownloads();
-  // KEEP1d: each rule's *Change…*, the same `keep` `daoris settings keep` edits; a refusal is said under its editor.
+  // Each rule's *Change…*, the same `keep` `daoris settings keep` edits; a refusal is said under its editor.
   const setKeep = useSetKeep();
-  // KEEP1e: Free up space…, listed first under the card's head, then pressed; a refusal stays beside the press (R3).
+  // Free up space…, listed first under the card's head, then pressed; a refusal stays beside the press (R3).
   const spaceFree = useSpaceFree();
   const [freeOpen, setFreeOpen] = useState(false);
   const [plan, setPlan] = useState<SpacePlan | undefined>(undefined);
   const [freeRefused, setFreeRefused] = useState<SpaceStarted | null>(null);
   useErrorNotify(downloads.error, notify);
-  // WIRING1e: setting it up from the page: Open by id, the account's PATH and the service's address, each said first inside its row.
+  // Setting it up from the page: Open by id, the account's PATH and the service's address, each said first inside its row.
   const setup = useSetupWiring();
   const asked = useRef(false);
   useErrorNotify(query.error, notify);

@@ -5,8 +5,8 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import i18n from '../../locales/i18n';
 import { CommitField, type CommitRule, commitRowSays, commitSays, commitSummary, commitToast } from './Commits';
 
-// DOORS1b (D164's amendment points 1 and 3): how a repository's work is committed, set on its Setup's *Line and landing* and on
-// a workspace's Defaults as `daoris place commits` sets it from a terminal (D50). Each mode's sentence is the terminal's
+// How a repository's work is committed, set on its Setup's *Line and landing* and on
+// a workspace's Defaults as `daoris place commits` sets it from a terminal. Each mode's sentence is the terminal's
 // (`driver commits`' words in the CLI's `driverconfig.ts`), the person's convention is quoted as written, and the field sends
 // the twins' edit, which the driver judges.
 
@@ -67,7 +67,7 @@ describe('what a commit rule says', () => {
     expect(commitToast(t, 'web-app', { set: { mode: 'ask' } })).toBe('web-app 中的每次提交现在都先等你同意。');
   });
 
-  /** Its terminal twin is one command with its alternatives joined by `|`, never translated, as its neighbours' (OPINIONTWIN1). */
+  /** Its terminal twin is one command with its alternatives joined by `|`, never translated, as its neighbours'. */
   it('says its terminal twin as its neighbours do, one command with its alternatives joined by |, in both languages', () => {
     for (const key of ['settings.commits.twin.repository', 'settings.commits.twin.workspace']) {
       const english = i18n.getFixedT('en')(key, { repository: 'engine', workspace: 'aurora' });

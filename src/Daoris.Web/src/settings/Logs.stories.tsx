@@ -1,7 +1,7 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { LOG_FILTERS, LogList, type LogReading } from './Logs';
 
-// Settings → Logs (LOG1c, D94), in the shape the shell's DAORIS.LOG · LINES answer takes: a morning's
+// Settings → Logs, in the shape the shell's DAORIS.LOG · LINES answer takes: a morning's
 // lines across the sources, a period narrowed to errors, a reading that holds more than it shows, and
 // nothing at all.
 
@@ -42,7 +42,7 @@ export const ErrorsOnly: Story = {
 
 export const MoreThanShown: Story = { args: { reading: { ...READING, total: 1234, skipped: 2 } } };
 
-/** A host line whose exception is longer than a line shows (LOGVIEW1): it says how much more, and opens whole. */
+/** A host line whose exception is longer than a line shows: it says how much more, and opens whole. */
 const EXCEPTION = [
   'Example.Transport.ConnectionLostException: The peer closed the connection before the reply was read.',
   ' ---> Example.Transport.SocketClosedException (0x800704CD): An operation was attempted on a connection that no longer exists.',

@@ -7,7 +7,7 @@ import { rooted } from '../test/sources';
 import '../locales/i18n';
 
 /**
- * 🔴 **Every block of a record page wraps at one edge, the pane's** (D141, LAYOUT11), in every state its stories carry.
+ * 🔴 **Every block of a record page wraps at one edge, the pane's**, in every state its stories carry.
  *
  * On the install at 1600 px a quest's title ran the pane while its body stopped at 456 px (`max-w-prose`), a plugin's
  * detail wrapped its description at 65ch and its source line at the pane's edge, and five more blocks of a quest's and
@@ -15,7 +15,7 @@ import '../locales/i18n';
  * or `em`, a named width); this renders each page and reads what it draws, so a cap an atom adds, or one in `rem`, is
  * seen too.
  *
- * What keeps a size of its own is no page's block (D141 §4), and is set aside by its shape:
+ * What keeps a size of its own is no page's block, and is set aside by its shape:
  * - **a story's frame**: a named width, which no product source may name (the scan), so on a rendered story it is the
  *   decorator standing in for the column;
  * - **a form's own size**: a cap on an element that holds a control, sized to what it holds (platform language §4);

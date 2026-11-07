@@ -3,7 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 
-// COMPANYVIEW1f (the company-view design §4, *Moving between them*): the Roles mode's diagram, one read and one hook with the list.
+// The Roles mode's diagram, one read and one hook with the list.
 // The toggle keeps the selection and the filters; choosing a node of another kind moves the section, so *Show as list* lands on its
 // row; a node's detail is its row's molecule and its *Edit* the same editor; a row's ⋯ offers *On the diagram*. A unit test's DOM
 // measures nothing, so the diagram is its list here, the same nodes in the same order; the drawing is held by the measured check.

@@ -3,7 +3,7 @@ import { isComposing } from '../../lib/composing';
 import { edgeDrift } from './gesture';
 import type { Point } from './viewMath';
 
-// The connection line (CANVAS1b; D224, the canvas design §2.5), which takes over the chart's port handling with its drop rules: a press on
+// The connection line, which takes over the chart's port handling with its drop rules: a press on
 // a port begins the way, a drag from it draws a rubber line from the port's box to the pointer with the step under it outlined where
 // it can take the way, and a release over that step commits one intent. The view pans at the viewport's edge, Escape and a lost capture
 // cancel, and a release on open ground is the feature's.
@@ -44,7 +44,7 @@ export function useConnection(
   down: (event: PointerEvent) => void; move: (event: PointerEvent) => void; up: (event: PointerEvent) => void; lost: () => void;
   /** Whether a way is being drawn: the view is the person's meanwhile, and no focus the way begins moves it. */
   active: () => boolean;
-  /** Whether the press just ended was dragged: a plain press on a port is followed by the view, a drawn line is not. */
+  /** Whether the press that just ended dragged: a plain press on a port is followed by the view, a drawn line is not. */
   dragged: () => boolean;
   overlay: ReactNode;
 } {

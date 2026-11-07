@@ -6,7 +6,7 @@ import { Button, Icon, SectionTitle } from '../design/ui';
 import { PageSection } from '../work/frame/ViewMain';
 
 /**
- * Why *Bring mine forward* is not offered on this machine's lost take (SYNCMERGE1c2, D178 point 3), in the order the service refuses
+ * Why *Bring mine forward* is not offered on this machine's lost take, in the order the service refuses
  * it: the step closed; taken, by this machine's later take or by another machine (named where the host says which); its source held
  * by the reopen.
  */
@@ -17,7 +17,7 @@ export type ConflictRow = {
   conflict: QuestConflict;
   /** This machine's own lost take, whose two choices the row offers: never where the host names no machine (a browser). */
   mine: boolean;
-  /** Its bring-forward lost again (a second loss): when it was made, and whether the reopen, not another machine's take, beat it. */
+  /** Its bring-forward lost again (a second loss): when it is made, and whether the reopen, not another machine's take, beat it. */
   lostAgain: { at: string; reopened: boolean } | null;
   /** The conflicts of the fresh takes its lost bring-forwards made, read as part of this row and dropped with it. */
   also: SubmissionRef[];
@@ -28,7 +28,7 @@ export type ConflictRow = {
 const sameName = (a: SubmissionRef, b: SubmissionRef) => a.machine === b.machine && a.sequence === b.sequence;
 const isMine = (conflict: QuestConflict, here: string | null) =>
   here !== null && conflict.machine === here && conflict.attempted === 'Taken';
-/** Brought forward offline: the remote has not answered, so it is said as it stands and never as settled (D178 point 8). */
+/** Brought forward offline: the remote has not answered, so it is said as it stands and never as settled. */
 const unconfirmed = (conflict: QuestConflict) => conflict.ended === 'brought-forward' && conflict.forward?.standing === 'unconfirmed';
 
 /** Whether this machine's lost take can be brought forward as the quest stands, or why not, in the service's refusal order. */
@@ -40,7 +40,7 @@ function forwardStands(quest: Quest, here: string): true | ForwardWait {
 }
 
 /**
- * A quest's conflicts as the page reads them (SYNCMERGE1c2, from what SYNCMERGE1b0 answers): the open ones by row, a second loss folded
+ * A quest's conflicts as the page reads them: the open ones by row, a second loss folded
  * into the conflict whose bring-forward lost again rather than said as a new conflict; the bring-forwards still unconfirmed, which wait
  * on the remote; and the settled ones, each with how it ended.
  */
@@ -74,7 +74,7 @@ function lineOf(t: TFunction, conflict: QuestConflict, here: string | null): str
   return t('quests.detail.conflictLine', { machine: conflict.machine, attempted: t(`status.${conflict.attempted}`) });
 }
 
-/** How a settled conflict ended (D178 point 7): dropped, or brought forward and confirmed or lost again. */
+/** How a settled conflict ended: dropped, or brought forward and confirmed or lost again. */
 function endedOf(t: TFunction, conflict: QuestConflict): string {
   if (conflict.ended === 'dropped') {
     return conflict.forward?.standing === 'lost' ? t('quests.conflict.ended.droppedFirst') : t('quests.conflict.ended.dropped');
@@ -97,7 +97,7 @@ function Line({ conflict, here, settled = false }: { conflict: QuestConflict; he
 }
 
 /**
- * **A quest's conflicts** (D68 §5; SYNCMERGE1c2, D178 points 2, 7 and 8): moves that reached the remote second, kept for a person and
+ * **A quest's conflicts**: moves that reached the remote second, kept for a person and
  * never merged, so above the body, as what the quest waits on. The note is that session's own words.
  *
  * @remarks
@@ -106,9 +106,9 @@ function Line({ conflict, here, settled = false }: { conflict: QuestConflict; he
  *   moves nothing else; and *Bring mine forward*, a fresh take its kept session goes on from, offered only where it can stand. Where it
  *   cannot, the row says why: the step closed, held by another machine or by this one's later take, or its source reopened.
  * - **Another machine's conflict offers what it did before**, its dismissal, as does every conflict where the host names no machine.
- * - **A second loss is the bring-forward lost again**, said on the conflict it was to settle; its fresh take's own conflict is read as
+ * - **A second loss is the bring-forward lost again**, said on the conflict it is to settle; its fresh take's own conflict is read as
  *   part of that row, and dropped with it.
- * - **A bring-forward the remote has not answered is unconfirmed**, said here as it stands and never as settled (D178 point 8).
+ * - **A bring-forward the remote has not answered is unconfirmed**, said here as it stands and never as settled.
  */
 export function QuestConflicts({
   quest, busy = false, onDismiss, onForward, className,
@@ -156,7 +156,7 @@ export function QuestConflicts({
                   {t('quests.conflict.forward')}
                 </Button>
               )}
-              {/* The dismissal travels, so every machine stops showing it (SYNC6c); on this machine's take it is *Drop mine*. */}
+              {/* The dismissal travels, so every machine stops showing it; on this machine's take it is *Drop mine*. */}
               <Button
                 variant="ghost"
                 disabled={busy}
@@ -184,7 +184,7 @@ export function QuestConflicts({
   );
 }
 
-/** **How its conflicts ended** (SYNCMERGE1c2, D178 point 7): each settled one, dropped or brought forward, and nothing to press. */
+/** **How its conflicts ended**: each settled one, dropped or brought forward, and nothing to press. */
 export function SettledConflicts({ quest }: { quest: Quest }) {
   const { t } = useTranslation();
   const { settled } = readConflicts(quest);

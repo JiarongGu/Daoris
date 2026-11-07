@@ -3,7 +3,7 @@ import type { HelpReceipt, HelpWiredLack } from '../../bridge/help';
 import type { PluginEntry } from '../../bridge/plugins';
 import { chipOf, fullAdds, lackDoor } from './modes';
 
-// HELPMODE1b (D183 points 2-4; the modes design §1, §5, §6): the chip's mode, what full access would add, and the door each lack
+// The chip's mode, what full access would add, and the door each lack
 // names, as values.
 
 const receipt = (over: Partial<HelpReceipt>): HelpReceipt => ({

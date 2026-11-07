@@ -9,10 +9,10 @@ import { INTEGRATION_ACCEPTED, INTEGRATION_CHANGED, INTEGRATION_UNACCEPTED, NO_V
 import { SETUP_DEFAULTS, SETUP_OWN } from '../fixtures';
 import { RepositorySetup, type RepositorySetupProps } from './RepositorySetup';
 
-// UX6f (D150 §4.2, §1 rule 4): a repository's Setup, every setting it holds on this machine in four sections, each folding
+// A repository's Setup, every setting it holds on this machine in four sections, each folding
 // to a line that names its values, a value at its workspace's or Daoris's default marked as such. A section holding a value
 // set for this repository opens on its own, and that value carries Clear; a value from above offers Set for this
-// repository. Each row's hint is its terminal twin (D50). Props only: the view above holds the driver and its presses.
+// repository. Each row's hint is its terminal twin. Props only: the view above holds the driver and its presses.
 
 const draw = (props: RepositorySetupProps) => render(<Tooltip.Provider><RepositorySetup {...props} /></Tooltip.Provider>);
 
@@ -53,7 +53,7 @@ describe("a repository's Setup", () => {
     expect(head('Driving')).toHaveAttribute('aria-expanded', 'false');
   });
 
-  // GITAUTH1f (the git-auth design §7.3): its Git remote section carries its git access, each class with where it came from; a value set
+  // Its Git remote section carries its git access, each class with where it came from; a value set
   // here opens the section, and a change is this repository's.
   it('carries its git access in its Git remote section, set for this repository', async () => {
     const onChange = vi.fn();
@@ -138,14 +138,14 @@ describe("Setup's Driving", () => {
     expect(onHold).toHaveBeenCalledWith(true);
   });
 
-  /** INT3c: what driving here does that the choice alone does not say, under it. */
+  /** What driving here does that the choice alone does not say, under it. */
   it('says what driving here does, under the choice', async () => {
     draw({ ...SETUP_DEFAULTS, driving: { ...SETUP_DEFAULTS.driving!, note: 'This machine drives on a direct agent.' } });
     await userEvent.click(head('Driving'));
     expect(within(section('Driving')).getByText('This machine drives on a direct agent.')).toBeInTheDocument();
   });
 
-  /** STEWARDROLE1b (D209 §5.1): a driving choice the steward set, from this run's memory, says so in the section. */
+  /** A driving choice the steward set, from this run's memory, says so in the section. */
   it('says a setting the steward set, at its time, and nothing where none stands', async () => {
     const at = '2026-10-25T10:02:00Z';
     const { rerender } = draw({ ...SETUP_DEFAULTS, driving: { ...SETUP_DEFAULTS.driving!, stewardSet: at } });
@@ -162,7 +162,7 @@ describe("Setup's Driving", () => {
 });
 
 describe("Setup's Work", () => {
-  /** PUSH1b2: the shell pushes a repository whose line is not judged yet with `notReadYet`, read before the source. */
+  /** The shell pushes a repository whose line is not judged yet with `notReadYet`, read before the source. */
   it('says a line not read yet as that, not as no line', async () => {
     const line = { repository: 'engine', workspace: 'default', source: 'none' as const, notReadYet: true };
     draw({ ...SETUP_DEFAULTS, work: { ...SETUP_DEFAULTS.work, line } });
@@ -203,7 +203,7 @@ describe("Setup's Work", () => {
     expect(onLine).toHaveBeenLastCalledWith(undefined);
   });
 
-  // WORKFLOWCLEAN1h-b: the Line row shows the line's policy and edits it through SET_LINE's policy.
+  // The Line row shows the line's policy and edits it through SET_LINE's policy.
   it("shows the line's policy beside its line, and withdraws it", async () => {
     const onLinePolicy = vi.fn();
     const line = { ...SETUP_DEFAULTS.work!.line!, policy: { order: 'arrival', batch: 4 } };
@@ -216,7 +216,7 @@ describe("Setup's Work", () => {
     expect(onLinePolicy).toHaveBeenLastCalledWith(null);
   });
 
-  // WORKFLOWCLEAN1h-b (D228): the row is the followed version's land options; a place on Current has none.
+  // The row is the followed version's land options; a place on Current has none.
   it("is the followed version's land options, folded to what the version says", async () => {
     draw({ ...SETUP_DEFAULTS, lands: { is: 'version', summary: 'Merge into the line, as Release v2 says', editor: <p>the land options</p> } });
     expect(head('Line and landing')).toHaveAccessibleDescription(expect.stringContaining('Merge into the line, as Release v2 says'));
@@ -355,7 +355,7 @@ describe("Setup's Reach", () => {
     expect(onAddRule).toHaveBeenLastCalledWith('allow', 'Edit(/docs/**)', expect.any(Function));
   });
 
-  // GITAPP2b (D204, the git-writes design §2): the switch is off by default, and on it says whether sessions already run there.
+  // The switch is off by default, and on it says whether sessions already run there.
   describe('the switch for changing the checkout\'s files', () => {
     const LABEL = "Daoris may change this checkout's files";
     const withSwitch = (checkout: NonNullable<NonNullable<RepositorySetupProps['reach']>['checkout']>) =>
@@ -421,7 +421,7 @@ describe("Setup's Reach", () => {
 });
 
 /**
- * REVIEWENV1a (D154 point 2, design §1.7–§1.8): *Review before landing*, beside how its work lands, as the driver resolves it.
+ * *Review before landing*, beside how its work lands, as the driver resolves it.
  * Nothing set says today's behaviour; a workspace's rule says so and offers *Set for this repository*; its own carries Clear,
  * which hands it back to its workspace's. Each says it is declared only, until the gate reads it.
  */
@@ -453,7 +453,7 @@ describe("a repository's review before landing", () => {
     const review = row(section('Line and landing'), 'Review before landing');
 
     expect(review).toHaveTextContent('Before work here lands, it is shown to you in dev and waits for you to say it is right.');
-    // What the landing's gate does with it since REVIEWENV1c (REVIEWENV1c2), never that nothing reads it.
+    // What the landing's gate does with it, never that nothing reads it.
     expect(review).toHaveTextContent('Where work here waits for your review, it lands only once you say it is reviewed');
     expect(review).not.toHaveTextContent('Declared only');
     expect(review).toHaveTextContent('From the workspace work.');
@@ -484,9 +484,9 @@ describe("a repository's review before landing", () => {
 });
 
 /**
- * XAGENT1a (D155 point 3, design §2.5–§2.6): *Second opinion before landing*, beside *Review before landing*, as the driver
+ * *Second opinion before landing*, beside *Review before landing*, as the driver
  * resolves it. Nothing set says today's behaviour; a workspace's rule says so and offers *Set for this repository*; its own
- * carries Clear, which hands it back to its workspace's. Each says what the gate does with it (XAGENT1f4).
+ * carries Clear, which hands it back to its workspace's. Each says what the gate does with it.
  */
 describe("a repository's second opinion before landing", () => {
   const withOpinion = (opinion: NonNullable<RepositorySetupProps['work']>['opinion'], onOpinion = vi.fn()) => ({
@@ -517,7 +517,7 @@ describe("a repository's second opinion before landing", () => {
     expect(opinion).toHaveTextContent('Before work here lands, codex-acp, else claude-code-acp, reads it, in a copy of its own');
     expect(opinion).toHaveTextContent('If no reviewer can read it, the work waits for you.');
     expect(opinion).toHaveTextContent('claude-code-acp is the same agent as the one that does the work here');
-    // XAGENT1f4: the twins' gate sentence, its terminal doors drawn as code.
+    // The twins' gate sentence, its terminal doors drawn as code.
     expect(opinion).toHaveTextContent("Where work here waits for another agent's reading, it lands only once that reading is settled");
     expect(within(opinion).getByText(code('daoris session opinion anyway <session>'))).toBeInTheDocument();
     expect(opinion).not.toHaveTextContent('Declared only');
@@ -550,7 +550,7 @@ describe("a repository's second opinion before landing", () => {
 });
 
 /**
- * DOORS1b (D164's amendment points 1 and 3): *Commits* on *Line and landing*, as Ask Daoris's room names it, as the driver
+ * *Commits* on *Line and landing*, as Ask Daoris's room names it, as the driver
  * resolves it: Daoris's default where nothing is set, its workspace's with *Set for this repository*, its own with Clear.
  */
 describe("a repository's commit rule", () => {
@@ -594,7 +594,7 @@ describe("a repository's commit rule", () => {
 });
 
 /**
- * DOORS1b (D163 point 3, D164's amendment point 3): *Helpers* on *Sessions*, as Ask Daoris's room names it, as the driver
+ * *Helpers* on *Sessions*, as Ask Daoris's room names it, as the driver
  * resolves it, beside the language its sessions write in.
  */
 describe("a repository's helpers rule", () => {
@@ -639,8 +639,8 @@ describe("a repository's helpers rule", () => {
 });
 
 /**
- * AUTONOMY1d (D184 points 1-3): *Sessions' access*, beside its line and landing: full access confirmed once, then each pause with
- * its value and where it was set, as the driver resolves them (`LINES`' `access`).
+ * *Sessions' access*, beside its line and landing: full access confirmed once, then each pause with
+ * its value and where it is set, as the driver resolves them (`LINES`' `access`).
  */
 describe("a repository's sessions' access", () => {
   const pauses = (overrides: Record<string, { value: string; source: string }> = {}) => [
@@ -674,7 +674,7 @@ describe("a repository's sessions' access", () => {
     expect(head("Sessions' access")).toHaveAttribute('aria-expanded', 'true');
     const access = section("Sessions' access");
     expect(row(access, 'Permission prompts')).toHaveTextContent('From the workspace aurora.');
-    // ACCESSWORDS1: a merge rule still waits for the person's Accept, and the sentence says so before its source.
+    // A merge rule still waits for the person's Accept, and the sentence says so before its source.
     expect(row(access, 'Landing')).toHaveTextContent('Finished work lands by the landing rule, with no press. A merge rule still waits for your Accept…. Set for this repository.');
     await userEvent.click(within(row(access, 'Landing')).getByRole('button', { name: 'Clear' }));
     expect(onChange).toHaveBeenLastCalledWith({ access: { landing: null } }, expect.anything());
@@ -716,7 +716,7 @@ describe("a repository's sessions' access", () => {
 });
 
 /**
- * FABRIC-PIPELINE1a (the pipeline design §1.3): the landed route is a row of *Line and landing*, folded to what verifies the work that
+ * The landed route is a row of *Line and landing*, folded to what verifies the work that
  * lands, open where the repository names a route of its own, and its choice the person's press.
  */
 describe("a repository's landed route", () => {
@@ -732,7 +732,7 @@ describe("a repository's landed route", () => {
     expect(onChoose).toHaveBeenLastCalledWith('current', expect.anything());
   });
 
-  /** INTEGRATE1h (§5.8): *What needs you*'s door brings the person to Setup, where the declaration owed acceptance is open to read and accept. */
+  /** *What needs you*'s door brings the person to Setup, where the declaration owed acceptance is open to read and accept. */
   it('opens Line and landing on an integration declaration owed acceptance, and stays folded once it is accepted', () => {
     const none = { ...NO_VERIFICATION, integration: INTEGRATION_UNACCEPTED };
     const owed = draw({ ...SETUP_DEFAULTS, landed: { start: none, workspace: 'aurora', onChoose: vi.fn(), onAcceptIntegration: vi.fn() } });
@@ -751,7 +751,7 @@ describe("a repository's landed route", () => {
     expect(head('Line and landing')).toHaveAttribute('aria-expanded', 'false');
   });
 
-  // AGENTSPLACE1h: the place's Gates draws the declaration and its acceptance once, so Line and landing draws neither and opens for neither.
+  // The place's Gates draws the declaration and its acceptance once, so Line and landing draws neither and opens for neither.
   it('draws no integration declaration and does not open for one where the page draws its Gates apart', () => {
     const none = { ...NO_VERIFICATION, integration: INTEGRATION_UNACCEPTED };
     draw({ ...SETUP_DEFAULTS, gatesApart: true, landed: { start: none, workspace: 'aurora', onChoose: vi.fn(), onAcceptIntegration: vi.fn() } });
@@ -769,7 +769,7 @@ describe("a repository's landed route", () => {
 });
 
 /**
- * HEAVYRUN1b2b (D180's HEAVYRUN1b2a note): *Heavy gates*, after its sessions' access: this machine's list for a repository whose own
+ * *Heavy gates*, after its sessions' access: this machine's list for a repository whose own
  * daoris.gates.json marks none, folded to its gates by name in their order, open where a list is set, edited and saved whole.
  */
 describe("a repository's heavy gates", () => {
@@ -785,7 +785,7 @@ describe("a repository's heavy gates", () => {
     expect(heavy).toHaveAttribute('aria-expanded', 'false');
   });
 
-  /** HEAVYRUN1b2c: where the repository's own file marks heavy gates, its section says this list is not run, and its folded line cues it. */
+  /** Where the repository's own file marks heavy gates, its section says this list is not run, and its folded line cues it. */
   it("says why this list is not run where the repository's own file wins (the folded line's cue is heavySummary's)", () => {
     draw(withHeavy({ gates: [{ name: 'build', run: 'dotnet build' }], marks: { marks: true, names: ['web'] }, onSave: vi.fn() }));
 

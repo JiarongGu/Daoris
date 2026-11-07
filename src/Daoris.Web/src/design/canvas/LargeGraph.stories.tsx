@@ -6,7 +6,7 @@ import { storyWidths } from '../storyWidths';
 import { syntheticScene } from './canvasFixtures';
 import { PositionedCanvas } from './PositionedCanvas';
 
-// The large positioned worlds (CANVAS1d; D224, the canvas design §4): synthetic scenes of 100, 1,000, 5,000 and 10,000 nodes with 50,000
+// The large positioned worlds: synthetic scenes of 100, 1,000, 5,000 and 10,000 nodes with 50,000
 // edges, in the viewport at the main area's 80, 39 and 25rem, in English and 中文 and both themes. At 25rem, below the 36rem floor, the
 // graph is the grouped list. Past 1,000 nodes a grouped world is its overview: a card per group, the lines between groups counted, one
 // group opened at a time. Keyboard: Tab reaches the toolbar, find (from 40 nodes), then the world's one stop; the arrows walk to the

@@ -14,7 +14,7 @@ import { attentionGroup, type AttentionGroup, GROUP_ORDER, needsListed } from '.
 type Line = { id: 'presses' | AttentionGroup | 'messages' | 'done'; label: string; count: number; detail: string | null; opens: NotificationsGroup };
 
 /**
- * Overview's summary of what needs the person (NOTIFY2b, D196 point 5, the notification design §4): a line per group with its count
+ * Overview's summary of what needs the person: a line per group with its count
  * and its oldest wait (the presses waiting for confirmation, *Holding work*, *Waiting for your word*, *Ready for you*), each a door
  * that shows *Notifications* at its group. Overview lists no row: every one, with its words and acts, is in *Notifications*.
  *
@@ -24,17 +24,17 @@ type Line = { id: 'presses' | AttentionGroup | 'messages' | 'done'; label: strin
  * waits for the person's word), a press's own row being its card. The presses' line says the time left of the one that
  * ends first (R2), the others their oldest wait. **R1**: the lines share one label track while the summary is 32rem wide or more,
  * each value beside its words, and stack below it. With nothing waiting, today's one line, *Nothing needs you* and the sessions
- * working; not judged yet, its skeleton (PUSHUX1); in a plain browser, that this is the app's (D47 §4). After what waits, *Messages*
- * (NOTIFY2g) where anything is unread, its items and how many are unread, then *Done and failed*.
+ * working; not judged yet, its skeleton; in a plain browser, that this is the app's. After what waits, *Messages*
+ *  where anything is unread, its items and how many are unread, then *Done and failed*.
  *
  * A molecule: what waits comes in, and the doors go out.
  */
 export function NeedsSummary({ attention, presses, notices = [], messages = [], answered = [], onNotifications, now = Date.now() }: {
   attention: AttentionRead;
   presses: Confirmation[];
-  /** *Done and failed*, the window's notices (NOTIFY2f): their line, after what waits, with how many are unread. */
+  /** *Done and failed*, the window's notices: their line, after what waits, with how many are unread. */
   notices?: Notice[];
-  /** *Messages*' asks, the window's entries (NOTIFY2g): their line, before what ended, while anything is unread. */
+  /** *Messages*' asks, the window's entries: their line, before what ended, while anything is unread. */
   messages?: readonly AskMessages[];
   /** *Messages*' answers, the window's `answered` notices. */
   answered?: readonly Notice[];
@@ -44,7 +44,7 @@ export function NeedsSummary({ attention, presses, notices = [], messages = [], 
   now?: number;
 }) {
   const { t } = useTranslation();
-  // Read again whole (PUSHUX1): the last lines held, dimmed, until it lands, as the band held its rows.
+  // Read again whole: the last lines held, dimmed, until it lands, as the band held its rows.
   const resyncing = attention.state === 'known' && attention.resyncing;
   const region = (body: React.ReactNode) => (
     <section
@@ -63,7 +63,7 @@ export function NeedsSummary({ attention, presses, notices = [], messages = [], 
   const rows = needsListed(attention.rows);
   const lines: Line[] = [];
   if (presses.length > 0) {
-    // No request ends by a time (CONFIRMWAIT1a-i, ONEWAY1n-i): each waits until the person answers.
+    // No request ends by a time: each waits until the person answers.
     lines.push({ id: 'presses', label: t('person.label'), count: presses.length, opens: 'presses', detail: t('person.waits') });
   }
   for (const group of GROUP_ORDER) {
@@ -77,7 +77,7 @@ export function NeedsSummary({ attention, presses, notices = [], messages = [], 
   }
 
   // Messages wait on nobody either: their line follows the waits while anything is unread, counting its items, its detail how many
-  // are unread (NOTIFY2g).
+  // are unread.
   const said = messagesCount(messages, answered);
   const told: Line | null = said.items > 0
     ? {
@@ -98,7 +98,7 @@ export function NeedsSummary({ attention, presses, notices = [], messages = [], 
   if (done) lines.push(done);
 
   return region(
-    // R1 (the UI/UX design §2): one label track at 32rem and wider, each line's count and wait beside its words; stacked below.
+    // One label track at 32rem and wider, each line's count and wait beside its words; stacked below.
     // Lines, not a list of rows: every row is *Notifications*' (§4), so nothing here reads as one.
     <div className="@container grid grid-cols-[fit-content(min(22rem,50%))_auto_minmax(0,1fr)_auto] gap-x-4 @max-[32rem]:grid-cols-[minmax(0,1fr)_auto]">
       {lines.map((line) => {
@@ -106,7 +106,7 @@ export function NeedsSummary({ attention, presses, notices = [], messages = [], 
           <>
             <span className="min-w-0 text-body text-ink">{line.label}</span>
             {/* A wait's figure wears open's ink, the bell's, a press's the warning hue; Messages' and Done and failed's count items and
-                notices, which wait on nobody, so theirs is neutral (BADGEUX1, the UI/UX design §3.10). */}
+                notices, which wait on nobody, so theirs is neutral. */}
             <span className={cn('font-mono text-meta tabular-nums', line.id === 'presses' ? 'text-warn'
               : line.id === 'messages' || line.id === 'done' ? 'text-ink-soft' : 'text-ink-open')}
             >

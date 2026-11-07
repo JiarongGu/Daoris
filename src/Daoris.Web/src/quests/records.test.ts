@@ -7,8 +7,8 @@ import {
 } from './records';
 import { REOPENED, SEALED, STANDING, SUBMITTED, TAKEN, WITHDRAWN } from './fixtures';
 
-// FABRIC-CLOSE1d and CLOSE1c3 (§E5; D173's CLOSE1c note): what a closure graph's quest reads, which step stands on its submission
-// (the seal the reopen needs), and whether a held step's source is ready again for the person's go-on.
+// What a closure graph's quest reads, which step stands on its submission (the seal the reopen needs), and whether a
+// held step's source is ready again for the person's go-on.
 describe("a closure graph's quests as values", () => {
   it('reads a taken quest with a current submission as submitted, and every other as its status', () => {
     expect(shownStatus(SUBMITTED)).toBe('Submitted');
@@ -19,7 +19,7 @@ describe("a closure graph's quests as values", () => {
 
   it('finds the live step standing on the current submission, and none once it is reopened, closed or grew from another', () => {
     expect(standingStep(SEALED, [SEALED, STANDING])?.id).toBe(STANDING.id);
-    // A step from before names no source, and stands on whatever its parent submitted (CLOSE1c's *step from before*).
+    // A step from before names no source, and stands on whatever its parent submitted.
     expect(standingStep(SEALED, [SEALED, { ...STANDING, grewFrom: null }])?.id).toBe(STANDING.id);
     expect(standingStep(SEALED, [SEALED, { ...STANDING, grewFrom: { machine: 'desk', sequence: 40 } }])).toBeNull();
     expect(standingStep(SEALED, [SEALED, WITHDRAWN])).toBeNull();
@@ -46,7 +46,7 @@ describe("a closure graph's quests as values", () => {
   });
 });
 
-// Quests' list and its memory as values (FRAME1d, D118 §2, §3f): every list a person could have is an argument.
+// Quests' list and its memory as values: every list a person could have is an argument.
 
 const quest = (over: Partial<Quest>): Quest => aQuest({
   id: 'abc123', from: 'game', to: 'engine', title: 'A quest', body: 'Why.', status: 'Open',
@@ -84,7 +84,7 @@ describe("Quests' groups", () => {
   });
 
   /**
-   * DRIFT1d2 (D133 §4): a done a departure holds is outstanding, and the service lists it without closed ones, so the list
+   * A done a departure holds is outstanding, and the service lists it without closed ones, so the list
    * shows it first, awaiting the person's yes, whether closed quests are shown or not, and never twice.
    */
   it('puts a quest a departure holds first, awaiting the person, with closed quests shown or not', () => {
@@ -153,7 +153,7 @@ describe('the question a quest waits on (D79)', () => {
   });
 });
 
-// UX6b (design §1 rule 6): Quests reopens its chosen record only while it still waits on something. The install reopened
+// Quests reopens its chosen record only while it still waits on something. The install reopened
 // yesterday's done quest while two asks waited to be published.
 describe('whether a chosen record still waits', () => {
   const ask = (over: Partial<Ask>): Ask => ({

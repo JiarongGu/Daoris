@@ -1,12 +1,12 @@
 import type { TFunction } from 'i18next';
 import type { ListedBranch, ListedLanded } from './BranchList';
 
-// How a branch stands, in the words a repository's Branches says it (UX6h2a) and its branch page says it again (UX6h3b): one
-// set of sentences, so the list and the page never say the same fact two ways (the built-in Git design §2.2, §2.3).
+// How a branch stands, in the words a repository's Branches says it and its branch page says it again: one
+// set of sentences, so the list and the page never say the same fact two ways.
 
 const KINDS = new Set(['line', 'session', 'landed', 'origin']);
 
-/** A branch's kind: a kind the page has no word for is the person's, as a branch the record no longer matches is (D113). */
+/** A branch's kind: a kind the page has no word for is the person's, as a branch the record no longer matches is. */
 export const kindOf = (branch: Pick<ListedBranch, 'kind'>) => (KINDS.has(branch.kind) ? branch.kind : 'yours');
 
 /** How a branch stands to `than` by the commits each holds that the other lacks; null where git did not count. */

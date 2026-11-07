@@ -70,7 +70,7 @@ export type TreeMove = { focus?: string; toggle?: string; choose?: string };
 /**
  * The tree's keys, the WAI tree pattern's: ↓ and ↑ walk the rows in view, Home and End go to either end, → opens a closed row and
  * then enters it, ← closes an open row and then leaves for its parent, and Enter or Space chooses (a fold toggles instead, since it is no
- * place). Null where the key is not the tree's, or is an input method's (IME1).
+ * place). Null where the key is not the tree's, or is an input method's.
  */
 export function keyInTree(items: readonly TreeItem[], current: string, press: KeyPress & { key: string }): TreeMove | null {
   if (isComposing(press)) return null;

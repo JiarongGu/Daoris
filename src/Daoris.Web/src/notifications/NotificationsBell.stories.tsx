@@ -3,8 +3,8 @@ import { chinese } from '../design/storyLanguage';
 import { InTheme } from '../plugins/storyIcons';
 import { NotificationsBell } from './NotificationsBell';
 
-// The title bar's bell (NOTIFY2b, the notification design §2.1, §3.3): what needs the person in open's hue; the presses' own count
-// in the warning hue while one waits unshown, which must be seen at a glance beside the strip's other controls in both themes (§10).
+// The title bar's bell: what needs the person in open's hue; the presses' own count
+// in the warning hue while one waits unshown, which must be seen at a glance beside the strip's other controls in both themes.
 
 /** The strip's trailing group, beside a stand-in for the browser's door, at the strip's height. */
 const strip: Decorator = (Story) => (
@@ -30,7 +30,7 @@ export const PressUnshownDark: Story = { args: { needs: 5, presses: 2, warn: tru
 export const PressUnshownChinese: Story = { args: { needs: 5, presses: 2, warn: true }, decorators: [chinese] };
 export const Nothing: Story = { args: { needs: 0, presses: 0 } };
 
-/** Something unread in *Done and failed* (NOTIFY2f): a dot, never a second count. */
+/** Something unread in *Done and failed*: a dot, never a second count. */
 export const Unread: Story = { args: { unread: true } };
 export const UnreadDark: Story = { args: { unread: true }, decorators: [dark] };
 export const UnreadAlone: Story = { args: { needs: 0, presses: 0, unread: true } };

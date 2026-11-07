@@ -6,7 +6,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import i18n from '../../locales/i18n';
 import { type Editing, RoleEditor } from './RoleEditor';
 
-// SETUPUX1l (the Setup design §2.4): one role editor serves a place, All roles and a step. Its choices come first, with the agent's offers or
+// One role editor serves a place, All roles and a step. Its choices come first, with the agent's offers or
 // a typed model; its prose stands behind one ⓘ and one sentence of consequence before Save; a shared role names its works; a refusal is
 // the driver's sentence under the form.
 

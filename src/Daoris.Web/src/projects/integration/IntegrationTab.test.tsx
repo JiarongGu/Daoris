@@ -5,7 +5,7 @@ import i18n from '../../locales/i18n';
 import type { IntegrationLook } from '../../bridge/repositories/integrate';
 import { IntegrationTab } from './IntegrationTab';
 
-// INTEGRATE1h (the integration design §5.8): the Integration tab draws the queue, a candidate's fixed strip of steps with what holds it,
+// The Integration tab draws the queue, a candidate's fixed strip of steps with what holds it,
 // what went back, the superseded commits and the history, in both languages.
 
 const STEPS = ['form', 'replay', 'resolve', 'conflict', 'gates', 'judge', 'promote', 'settle', 'tidy', 'close']
@@ -25,7 +25,7 @@ const LOOK: IntegrationLook = {
   waiting: [],
 };
 
-/** INTEGRATE1h: a candidate the policy held for the owner's decide, the queue in its order, and a landing waiting for the card. */
+/** A candidate the policy held for the owner's decide, the queue in its order, and a landing waiting for the card. */
 const ACTS: IntegrationLook = {
   ...LOOK,
   queue: [
@@ -79,7 +79,7 @@ describe("a repository's Integration tab", () => {
     expect(screen.queryByRole('button', { name: 'Check again' })).toBeNull();
   });
 
-  /** INTEGRATE1h (§4.5, §8): a candidate held for a decide offers the owner's three, each pressed with its candidate; a recorded one says it waits for the run. */
+  /** A candidate held for a decide offers the owner's three, each pressed with its candidate; a recorded one says it waits for the run. */
   it('offers the owner’s decide on a held candidate and says a recorded one waits for the line’s run', async () => {
     const onDecide = vi.fn();
     const { rerender } = render(<IntegrationTab repository="engine" look={ACTS} onDecide={onDecide} />);
@@ -95,7 +95,7 @@ describe("a repository's Integration tab", () => {
     expect(screen.queryByRole('button', { name: 'Land' })).toBeNull();
   });
 
-  /** INTEGRATE1h: the queue says each request's place and where an order moved it, and moves one first or last. */
+  /** The queue says each request's place and where an order moved it, and moves one first or last. */
   it('numbers the queue in its order, says a moved request, and moves one first or last', async () => {
     const onOrder = vi.fn();
     render(<IntegrationTab repository="engine" look={ACTS} onOrder={onOrder} />);
@@ -107,7 +107,7 @@ describe("a repository's Integration tab", () => {
     expect(onOrder.mock.calls).toEqual([['r1', 'first'], ['r5', 'last']]);
   });
 
-  /** INTEGRATE1h (§5.7, §17.4): a superseded commit's two answers, and a landing waiting for the owner's card with its Request. */
+  /** A superseded commit's two answers, and a landing waiting for the owner's card with its Request. */
   it('answers a superseded commit and requests a landing that waits for the card', async () => {
     const onAnswer = vi.fn();
     const onRequest = vi.fn();

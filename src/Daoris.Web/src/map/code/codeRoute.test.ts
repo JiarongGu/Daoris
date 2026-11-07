@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { buildTree, layoutCode } from './codeClusters';
 import { createRouter, crosses } from './codeRoute';
 
-// CANVAS1f (the canvas design §3.4): the code map's lines routed around its cards, the direct shape kept where it crosses none.
+// The code map's lines routed around its cards, the direct shape kept where it crosses none.
 
 const card = (x: number, y: number) => ({ x, y, w: 136, h: 36 });
 const clear = (points: readonly { x: number; y: number }[], box: { x: number; y: number; w: number; h: number }) =>

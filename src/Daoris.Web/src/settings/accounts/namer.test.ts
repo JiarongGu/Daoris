@@ -4,9 +4,9 @@ import type { ToolDoor } from '../../agents/tools';
 import { namer } from './namer';
 
 /**
- * ACCTNAME1 (D152 §4.2, D125's ACCT2 note): the roster's one namer says an account as the agent's page leads its row with it,
- * so every card names an account the same way: the person's name (ACCT2), else a key's handle, else, for a fresh id nobody
- * named, who signed in, else its id. Looked up on the tool, since a door's accounts are its owner's (AGT7).
+ * The roster's one namer says an account as the agent's page leads its row with it,
+ * so every card names an account the same way: the person's name, else a key's handle, else, for a fresh id nobody
+ * named, who signed in, else its id. Looked up on the tool, since a door's accounts are its owner's.
  */
 describe('the roster’s one namer', () => {
   const roster: ToolDoor[] = [
@@ -28,7 +28,7 @@ describe('the roster’s one namer', () => {
   it('says the person’s name, a key’s handle, who signed in for a fresh id nobody named, else the id', () => {
     expect(nameOf('claude-code', 'acct-3f9c1a2b')).toBe('work');
     expect(nameOf('claude-code', 'acct-77aa00ff')).toBe('spare@example.invalid');
-    // An old `account-N` is the word every list and the terminal say (D152 §4.2): its id, as its row leads with it.
+    // An old `account-N` is the word every list and the terminal say: its id, as its row leads with it.
     expect(nameOf('claude-code', 'account-2')).toBe('account-2');
     expect(nameOf('claude-code', 'acct-0badc0de')).toBe(i18n.t('harness.profile.keyName', { handle: 'sk-…a1b2' }));
   });
@@ -44,7 +44,7 @@ describe('the roster’s one namer', () => {
     expect(nameOf('codex-acp')).toBe(i18n.t('harness.own'));
   });
 
-  /** ACCOUNTID1b: the session header and every card say an account told apart from another sign-in of its email. */
+  /** The session header and every card say an account told apart from another sign-in of its email. */
   it('says the organisation after an email two sign-ins of the agent share, the own sign-in among them', () => {
     const email = 'person@example.invalid';
     const shared = namer(i18n.t.bind(i18n), [{

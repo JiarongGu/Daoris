@@ -5,7 +5,7 @@ import { PathText, Pill, SettingRow } from '../../design/ui';
 import { moment } from '../../locales/format';
 import { Fact, Unread, WiringCard } from './WiringParts';
 
-/** The two variables a terminal reads first (D171 point 1), read again from §3.5's rows. */
+/** The two variables a terminal reads first, read again from §3.5's rows. */
 const ACCOUNT_VARIABLES = ['DAORIS_HOME', 'DAORIS_SERVICE_URL'] as const;
 
 /** Which `PATH` holds the install's launchers, in the words of the design's three answers (§3.7). */
@@ -30,10 +30,10 @@ function Found({ found }: { found: SystemWiring['terminal']['firstDaoris'] }) {
 }
 
 /**
- * Terminal (the this-Daoris design §3.7), read-only: whether each launcher is there (a development run has none, and says
+ * Terminal, read-only: whether each launcher is there (a development run has none, and says
  * so), which `PATH` holds them, what a new terminal runs for `daoris`, the address file a terminal reads
  * to find the service and whether it takes it, and the account's `DAORIS_HOME` and `DAORIS_SERVICE_URL`, which a terminal
- * reads first. Only whether `PATH` holds the install's folder is shown, never the whole of it (§5).
+ * reads first. Only whether `PATH` holds the install's folder is shown, never the whole of it.
  *
  * @remarks
  * A molecule: drawn from props. It sets nothing and copies nothing itself: the PATH presses and *Copy a terminal line* come in as `setup`.
@@ -41,7 +41,7 @@ function Found({ found }: { found: SystemWiring['terminal']['firstDaoris'] }) {
 export function WiringTerminal({ terminal, variables, setup }: {
   terminal: SystemWiring['terminal'];
   variables: SystemWiring['variables'];
-  /** The set-up rows (WIRING1e): *Put on my PATH* and *Copy a terminal line*, drawn by the domain; none where the shell offers none. */
+  /** The set-up rows: *Put on my PATH* and *Copy a terminal line*, drawn by the domain; none where the shell offers none. */
   setup?: ReactNode;
 }) {
   const { t } = useTranslation();

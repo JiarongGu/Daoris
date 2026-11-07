@@ -2,7 +2,7 @@ import { type Aggregate, type Layout, NODE_H, NODE_W, type PlacedGroup, type Sce
 import { OVERVIEW_PAST } from './tiers';
 import type { Box } from './viewMath';
 
-// A laid-out scene as the canvas reads it (CANVAS1d; the canvas design §4): every node's box, which of them are shown (a grouped world
+// A laid-out scene as the canvas reads it: every node's box, which of them are shown (a grouped world
 // past 1,000 nodes shows its groups, and one group opened at a time shows its nodes), and the edges each node holds.
 
 export const GROUP = 'group:';

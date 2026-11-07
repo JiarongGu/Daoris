@@ -7,7 +7,7 @@ import type { StartWiring } from '../../map/wiring';
 import { AskDaorisAbout, IntakeAbout } from '../../settings/ai/ActorAbout';
 import { type Editing, RolesCard } from './Roles';
 
-// The roles on AI features (FOUNDATION1y-i, MODELROLE1c, COMPANYVIEW1a), one row for each, in the shapes `ROLES` answers
+// The roles on AI features, one row for each, in the shapes `ROLES` answers
 // with: the seeded roles with their staffing, Chat removed and waiting, an added role in a workspace with its choices, and the Designer
 // Daoris suggests while no role takes design.
 
@@ -62,7 +62,7 @@ const meta: Meta<typeof RolesCard> = {
     ],
     onSet: () => {},
   },
-  // The main area at its wide width, as the frame gives it (the UI/UX design R6, UIFIT1).
+  // The main area at its wide width, as the frame gives it.
   decorators: [storyWidths.wide],
 };
 export default meta;
@@ -78,13 +78,13 @@ export const CatalogueHalf: Story = { decorators: [storyWidths.half] };
 /** The same at the 400 px floor: each value under its words. */
 export const CatalogueNarrow: Story = { decorators: [storyWidths.narrow] };
 
-/** The same in 中文, each role named as it was written in Chinese. */
+/** The same in 中文, each role named as written in Chinese. */
 export const CatalogueChinese: Story = { decorators: [chinese] };
 
 /** The same in 中文 at the floor. */
 export const CatalogueChineseNarrow: Story = { decorators: [storyWidths.narrow, chinese] };
 
-// MODELROLE1f: each role's last seven days under its row; Build fell to later choices, Intake kept to its first, the rest have no line.
+// Each role's last seven days under its row; Build fell to later choices, Intake kept to its first, the rest have no line.
 const WEEK: RoleCatalogue = {
   ...CATALOGUE,
   use: {
@@ -117,7 +117,7 @@ export const WeekShownChineseNarrow: Story = { args: { catalogue: WEEK }, decora
 /** A log of three days says its span instead of seven. */
 export const WeekOfAYoungLog: Story = { args: { catalogue: { ...WEEK, use: { ...WEEK.use!, days: 3 } } }, decorators: [storyWidths.narrow] };
 
-// AGENTSPLACE1g: All roles with *Open at <place>* on the role placed elsewhere, and the editor open on the added role of a workspace with
+// All roles with *Open at <place>* on the role placed elsewhere, and the editor open on the added role of a workspace with
 // the agent's own offers (a model picked, an effort typed after other…); it asks for no id and its place is fixed.
 const OFFERS = { 'claude-code': { models: ['opus', 'sonnet', 'haiku'], efforts: ['low', 'medium', 'high'] }, 'codex-acp': { models: ['gpt-5'], efforts: ['low', 'high'] } };
 
@@ -160,7 +160,7 @@ export const RoleEditorChinese: Story = { args: EDIT, decorators: [chinese] };
 /** The same in 中文 at the floor. */
 export const RoleEditorChineseNarrow: Story = { args: EDIT, decorators: [storyWidths.narrow, chinese] };
 
-/** The same in dark, and in 中文 in dark at the floor (SETUPUX1l: one editor in both themes). */
+/** The same in dark, and in 中文 in dark at the floor: one editor in both themes. */
 export const RoleEditorDark: Story = { args: EDIT, decorators: [dark] };
 export const RoleEditorChineseDarkNarrow: Story = { args: EDIT, decorators: [storyWidths.narrow, chinese, dark] };
 
@@ -188,7 +188,7 @@ const intakeStart = (extra: Partial<StartWiring>): StartWiring => ({
 const NAMES: Record<string, string> = { 'account-1': 'someone@example.invalid', 'account-2': 'API key …wxyz' };
 
 /**
- * MODELROLE1d (D205 §7): the Intake and Ask Daoris explanations on their rows. Intake set, in two circles, one with its own
+ * The Intake and Ask Daoris explanations on their rows. Intake set, in two circles, one with its own
  * account and one the driver would hold, in its words; Ask Daoris off, its own words for off.
  */
 const FOLDED = {

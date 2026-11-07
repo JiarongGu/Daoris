@@ -9,7 +9,7 @@ import { AskHistory, type AskHistoryActs } from './AskHistory';
 import type { HelpConversationRow } from './history';
 import { ROW_LINE } from './preview';
 
-// ASKHIST1, as ASKHIST1c made it: Ask Daoris's history, a molecule. Its head (what it is, kept on this machine, a new
+// Ask Daoris's history, a molecule. Its head (what it is, kept on this machine, a new
 // conversation, the search), its rows grouped by day, each row's acts, and its states, in both catalogues.
 
 // The rows are dated from the clock as the file loads, and their groups by day are read from it as they draw: a run across
@@ -115,7 +115,7 @@ describe.each(['en', 'zh'])('Ask Daoris’s history in %s', (language) => {
     expect(screen.queryByText(/starts anew|将开始新对话/)).toBeNull();
   });
 
-  /** HELPMODE1b (D183 point 3): a conversation that ran with full access says so on its row, in the warning colour. */
+  /** A conversation that ran with full access says so on its row, in the warning colour. */
   it('names the mode of a conversation that ran with full access, and of none that ran restricted', async () => {
     await i18n.changeLanguage(language);
     draw({
@@ -180,7 +180,7 @@ describe.each(['en', 'zh'])('Ask Daoris’s history in %s', (language) => {
     expect(screen.getAllByRole('listitem')).toHaveLength(3);
   });
 
-  // ASKHIST1d2: one Han character is a word on its own (区, 圈), and the driver searches by it (`SessionEvents.Searchable`).
+  // One Han character is a word on its own (区, 圈), and the driver searches by it (`SessionEvents.Searchable`).
   it('searches by one Han character', async () => {
     await i18n.changeLanguage(language);
     draw({ search: '树', rows: [] });
@@ -252,7 +252,7 @@ describe.each(['en', 'zh'])('Ask Daoris’s history in %s', (language) => {
     const { onSearch } = draw({ rows: [], search: 'nothing like this' });
     expect(screen.getByText(i18n.t('help.history.none', { words: 'nothing like this' }))).toBeInTheDocument();
     expect(screen.getByText(i18n.t('help.history.noneHint'))).toBeInTheDocument();
-    // The driver searches every conversation (ASKHIST1d1): none is said to be left unsearched.
+    // The driver searches every conversation: none is said to be left unsearched.
     expect(screen.queryByText(/not searched|未被搜索/)).toBeNull();
     await userEvent.click(screen.getByRole('button', { name: i18n.t('help.history.clearSearch') }));
     expect(onSearch).toHaveBeenCalledWith('');
@@ -278,8 +278,8 @@ describe.each(['en', 'zh'])('Ask Daoris’s history in %s', (language) => {
   });
 
   /**
-   * ASKSCOPE1d (D158's ASKSCOPE1 note, point 6): the list is the window's workspace's, or every workspace's, the person's choice
-   * between the two in its head; every workspace's labels each row with its workspace, a row from before ASKSCOPE1a as
+   * The list is the window's workspace's, or every workspace's, the person's choice
+   * between the two in its head; every workspace's labels each row with its workspace, a row kept with no workspace as
    * `default`'s, and the window's own labels none. A search says it searched the scope it ran over.
    */
   it('offers the window’s workspace or every one’s, labelling each row with its workspace under every one', async () => {
@@ -383,7 +383,7 @@ describe.each(['en', 'zh'])('Ask Daoris’s history in %s', (language) => {
   });
 });
 
-/** ASKHIST1c: the list's keys, and where the focus goes as the person comes back to it. */
+/** The list's keys, and where the focus goes as the person comes back to it. */
 describe.each(['en', 'zh'])('the history’s keys in %s', (language) => {
   afterEach(async () => {
     cleanup();
@@ -422,7 +422,7 @@ describe.each(['en', 'zh'])('the history’s keys in %s', (language) => {
     await userEvent.keyboard('{Escape}');
     expect(second.onClose).toHaveBeenCalledOnce();
 
-    // A key composing a word belongs to the input method, the last press of a composition (229) among them (IME1).
+    // A key composing a word belongs to the input method, the last press of a composition (229) among them.
     fireEvent.keyDown(searchBox(), { key: 'Escape', isComposing: true });
     fireEvent.keyDown(door('Landing'), { key: 'Escape', keyCode: 229 });
     expect(second.onClose).toHaveBeenCalledOnce();
@@ -460,7 +460,7 @@ describe.each(['en', 'zh'])('the history’s keys in %s', (language) => {
   });
 });
 
-/** ASKHIST1c: a rename starts from the title shown, says its wait, and gives the focus back to the row's ⋯. */
+/** A rename starts from the title shown, says its wait, and gives the focus back to the row's ⋯. */
 describe.each(['en', 'zh'])('a conversation’s rename in %s', (language) => {
   afterEach(async () => {
     cleanup();
@@ -546,7 +546,7 @@ describe.each(['en', 'zh'])('a conversation’s rename in %s', (language) => {
     expect(within(form).getByRole('status')).toHaveTextContent('');
   });
 
-  /** A delete asks once (UXFIX2): its first press says what the second will do; a live conversation is offered none. */
+  /** A delete asks once: its first press says what the second will do; a live conversation is offered none. */
   it('asks once before a delete, and offers none for a conversation still running', async () => {
     await i18n.changeLanguage(language);
     const onDelete = vi.fn((_id: string, answered: { done: () => void }) => answered.done());
@@ -569,7 +569,7 @@ describe.each(['en', 'zh'])('a conversation’s rename in %s', (language) => {
 });
 
 /**
- * ASKHIST1c: a delete that takes its row gives the focus to what held it, never the page's body: the rows left, or the
+ * A delete that takes its row gives the focus to what held it, never the page's body: the rows left, or the
  * history once the last one went. The row is really removed, as the organism removes it once the driver answers.
  */
 describe('the focus once a delete took its row', () => {
@@ -610,9 +610,9 @@ describe('the focus once a delete took its row', () => {
 });
 
 /**
- * ASKHIST1b: the history fits the dock at any width down to its floor. A grid's implicit column is `auto`, which grows to its
+ * The history fits the dock at any width down to its floor. A grid's implicit column is `auto`, which grows to its
  * widest child's min-content: a pasted URL ran the search and every row past the dock's edge, and the panel scrolled
- * sideways. jsdom lays nothing out, so what bounds each part is asserted by its class. ASKHIST1c wraps a title rather than
+ * sideways. jsdom lays nothing out, so what bounds each part is asserted by its class. The row wraps a title rather than
  * cutting it, so a keyboard user can tell two such URLs apart.
  */
 describe('Ask Daoris’s history at the dock’s edge', () => {

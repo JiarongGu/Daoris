@@ -10,7 +10,7 @@ import {
 } from './fixtures';
 import { QuestPage } from './QuestPage';
 
-// SYNCMERGE1c2 (D178 points 2, 7 and 8): a conflict's choices on the quest's page. This machine's own lost take offers *Drop mine* (the
+// A conflict's choices on the quest's page. This machine's own lost take offers *Drop mine* (the
 // dismissal) and *Bring mine forward*, and says why the second is not offered where it cannot stand; another machine's offers its
 // dismissal only. A second loss is said as the bring-forward lost again, a settled conflict says how it ended, and an unconfirmed
 // bring-forward is never said as settled. A held step's go-on and abandon are this machine's same two choices.

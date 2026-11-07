@@ -11,11 +11,11 @@ import {
   regionShown, routeKey,
 } from './Confirmations';
 
-// The window's confirmation of a terminal's press (PERSONDOOR1f, RPC1c; D156 point 4, the person-door design §4.2), as NOTIFY2b
-// (D196 point 4, the notification design §3) draws it in *Notifications*: in plain words that keep what tells one session and one
+// The window's confirmation of a terminal's press, as *Notifications*
+// draws it: in plain words that keep what tells one session and one
 // file from another, every value in the card's view, the route's name under *Details*; its decision region bounded, and *shown*
-// once that region is in view in a window in front of the person. A terminal's press waits until the person answers
-// (CONFIRMWAIT1a-i): its card says so and whether a terminal still waits on it; its Confirm is judged before it runs.
+// once that region is in view in a window in front of the person. A terminal's press waits until the person answers:
+// its card says so and whether a terminal still waits on it; its Confirm is judged before it runs.
 
 const SAY: Confirmation = {
   source: 'pipe', id: 'c1', module: 'DAORIS.DRIVER', route: 'SESSION_INPUT',
@@ -180,7 +180,7 @@ describe("the window's confirmation of a terminal's press", () => {
     expect(notify).not.toHaveBeenCalled();
   });
 
-  // NOTIFY2a (D196 point 4, the notification design §3.4): a Confirm past its time finds its card gone, so its refusal is toasted.
+  // A Confirm past its time finds its card gone, so its refusal is toasted.
   it.each([
     ['en', 'Confirm', 'This no longer waits: it was answered in another window, or its terminal took it back.'],
     ['zh', '确认', '此请求已不再等待：它已在另一个窗口中得到回答，或其终端已将它撤回。'],
@@ -200,7 +200,7 @@ describe("the window's confirmation of a terminal's press", () => {
     expect(notify).toHaveBeenCalledTimes(1);
   });
 
-  // CONFIRMWAIT1 (the confirm-wait design §15.3 item 11): the shell takes a changed press's card as its answer settles, so the removal can
+  // The shell takes a changed press's card as its answer settles, so the removal can
   // come before PERSON_CONFIRM answers; the reason is then toasted, in the reader's words, never lost.
   it.each([
     ['en', 'Confirm', 'Not done: the branch quest/x gained or lost commits while this waited.'],
@@ -223,10 +223,10 @@ describe("the window's confirmation of a terminal's press", () => {
   it("says a service's request and a terminal's press alike, that each waits until the person answers", () => {
     draw([SERVICE, { ...STOP, id: 'u', shown: true, waitedOn: true }, { ...STOP, id: 'w', waitedOn: false }]);
     const [service, waited, left] = screen.getAllByRole('group');
-    // ONEWAY1n-ii: no request has a clock, so no time is drawn for either source.
+    // No request has a clock, so no time is drawn for either source.
     expect(service).toHaveTextContent('It waits until you answer.');
     expect(service).not.toHaveTextContent('refused by itself');
-    // CONFIRMWAIT1a-i: whether a terminal waits on a terminal's press is said, shown or not.
+    // Whether a terminal waits on a terminal's press is said, shown or not.
     expect(waited).toHaveTextContent('It waits until you answer. A terminal waits on this.');
     expect(waited).not.toHaveTextContent('refused by itself');
     expect(left).toHaveTextContent('It waits until you answer. No terminal waits on this now; it can read how it ended later.');
@@ -285,7 +285,7 @@ describe("the window's confirmation of a terminal's press", () => {
     expect(screen.getByRole('button', { name: confirm })).toBeEnabled();
   });
 
-  // CONFIRMWAIT1a-ii (the confirm-wait design §7.2, §8.1, §8.3): a press restored after a restart names its asker as its record's, in the
+  // A press restored after a restart names its asker as its record's, in the
   // three forms the asker has; one carrying a key says it does not wait across a restart; a Confirm during an update's drain is refused on
   // its card, and it still waits.
   it.each([
@@ -329,7 +329,7 @@ describe("the window's confirmation of a terminal's press", () => {
     expect(screen.getByRole('button', { name: confirm })).toBeEnabled();
   });
 
-  // DRAINHOLD1 part 2: a Confirm held by a drain says what the drain waits on and since when, and offers the update's *not now* in place.
+  // A Confirm held by a drain says what the drain waits on and since when, and offers the update's *not now* in place.
   const HELD = async (): Promise<ConfirmationAnswer> => ({ answered: false, why: 'draining', message: 'Daoris is about to restart; this still waits.' });
   // 14:05 of the day the test runs: the card says a moment of today by its time alone, and a fixed date read as another day's after it.
   const today = new Date();
@@ -373,7 +373,7 @@ describe("the window's confirmation of a terminal's press", () => {
     expect(screen.queryByRole('button', { name: 'Install later' })).not.toBeInTheDocument();
   });
 
-  // CONFIRMWAIT1 (the confirm-wait design §15.2 item 8): an answer Daoris could not keep is said on the card, which waits on, its buttons back.
+  // An answer Daoris could not keep is said on the card, which waits on, its buttons back.
   it.each([
     ['en', 'Refuse', 'Daoris could not keep your answer just now; nothing was done, and it still waits.'],
     ['zh', '拒绝', 'Daoris 暂时无法记下你的回答；未执行任何操作，它仍在等待。'],
@@ -406,7 +406,7 @@ describe("the window's confirmation of a terminal's press", () => {
   });
 });
 
-// CONFIRMWAIT1c (the confirm-wait design §8.1, §15.3 item 13): a terminal's press that rests on a plan is confirmed hours later from
+// A terminal's press that rests on a plan is confirmed hours later from
 // its card, so the card opens that plan's own page, scoped to the press's own session, repository, workspace, quest or ask.
 describe("the door to a press's plan", () => {
   afterEach(async () => { await i18n.changeLanguage('en'); });
@@ -482,7 +482,7 @@ describe('the adoption notice', () => {
 });
 
 /**
- * *Shown* (NOTIFY2b, the notification design §3.4): the region in view, by one judgement over its intersection with its area, the
+ * *Shown*: the region in view, by one judgement over its intersection with its area, the
  * window's focus and size, and a drawer's scrim. jsdom lays nothing out, so each box is the test's, and an `IntersectionObserver`
  * stand-in (`watchScreen`) wakes the judgement as the window would.
  */

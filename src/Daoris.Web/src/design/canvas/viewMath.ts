@@ -1,4 +1,4 @@
-// The canvas's arithmetic (CANVAS1a, D224; the canvas design §2.4), pure. A view is the world point at the viewport's top left and the
+// The canvas's arithmetic, pure. A view is the world point at the viewport's top left and the
 // scale, the map's convention: `screen = origin + k × (world − view)`, so the world's transform is a translation of −k × the view's point
 // and then the scale, about the world's own top left.
 

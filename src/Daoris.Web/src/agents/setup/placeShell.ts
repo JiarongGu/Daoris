@@ -4,7 +4,7 @@ import type { PlaceRow, PlaceWork } from '../../data/wiring';
 import { type Authored, authoredText } from '../../locales/authored';
 import type { EditorHold } from '../../workflow/edit/WorkflowEditor';
 
-// A place page's shell (SETUPUX1h, the setup-UX design §2.1): its three sections, the one that opens on arrival and the one a need opens, the
+// A place page's shell: its three sections, the one that opens on arrival and the one a need opens, the
 // one-line summary each folds to, and the state the application holds above the page so a door out and back finds it as left.
 
 export const SECTIONS = ['workflow', 'roles', 'sessions'] as const;
@@ -21,7 +21,7 @@ export const sectionsOf = (kind: PlaceKind): readonly PlaceSection[] => (kind ==
 /** The section that opens on arrival: Workflow on a repository and a workspace, Roles on this machine. */
 export const firstSection = (kind: PlaceKind): PlaceSection => sectionsOf(kind)[0]!;
 
-/** A role's name as one text, as authored words are shown (D222); none where the driver named none. */
+/** A role's name as one text, as authored words are shown; none where the driver named none. */
 export function roleNameOf(name: Authored | null | undefined, language: string): string {
   return authoredText(name, language);
 }
@@ -37,7 +37,7 @@ export function needOpening(row: PlaceRow): { section: PlaceSection; row: string
 
 const capital = (text: string) => (text ? text[0]!.toLocaleUpperCase() + text.slice(1) : text);
 
-/** A delivery preset's name from the page's catalogue by its id (SETUPUX1a); *Not driven* is chrome; an id the catalogue lacks reads as itself. */
+/** A delivery preset's name from the page's catalogue by its id; *Not driven* is chrome; an id the catalogue lacks reads as itself. */
 const deliveryNameOf = (t: TFunction, preset: string): string =>
   preset === 'not-driven' ? t('agents.setup.set.notDriven') : t(`workflow.shipped.delivery.${preset}.name`, { defaultValue: preset });
 
@@ -180,21 +180,21 @@ export function headOf(
   return { pill, facts: [...(lands ? [lands] : []), ...(row.driven && row.trees ? [t('agents.setup.page.trees')] : [])] };
 }
 
-/** Where a door leaves the person: a section of a place, and a row of it; and the editor of its Workflow asked on a draft (FLOWCHART2g). */
+/** Where a door leaves the person: a section of a place, and a row of it; and the editor of its Workflow asked on a draft. */
 export type PlaceAt = { section?: PlaceSection; row?: string | null; back?: PlaceBack | null; edit?: PlaceEdit };
 
 /**
- * The editor of a place's Workflow asked on a draft (FLOWCHART2g): the fingerprint of the draft a conversation was told, which the card
+ * The editor of a place's Workflow asked on a draft: the fingerprint of the draft a conversation is told, which the card
  * of its proposal is against, with the saved workflow and version it came from where it came from one.
  */
 export type PlaceEdit = { draft: string | null; workflow?: string; name?: string; base?: number };
 
-/** The page a door came from, to return to: its place and section, or the place's *Set up…* (SETUPUX1j), which keeps its draft. */
+/** The page a door came from, to return to: its place and section, or the place's *Set up…*, which keeps its draft. */
 export type PlaceBack = { place: string; name: string; section: PlaceSection | null; setUp?: boolean };
 
 /**
  * The step editor open on a place's Workflow, kept above the mounts so a fold, *Set up…* or a change of layout that unmounts the section
- * leaves the draft as it was: the route it opened on, the steps it began from and the editor's own history and target.
+ * leaves the draft as it stands: the route it opened on, the steps it began from and the editor's own history and target.
  */
 export type PlaceFlowHold = { route: string; from?: { graph: unknown; id?: string; name?: string; base?: number | null; told?: boolean }; editor: EditorHold | null };
 
@@ -220,15 +220,15 @@ export type PlaceShell = {
   /** The row a door asked for at the place, until it is brought into view. */
   rowOf: (place: string) => string | null;
   rowBrought: (place: string) => void;
-  /** The draft a door asked the place's Workflow editor to open on, until the editor has opened (FLOWCHART2g). */
+  /** The draft a door asked the place's Workflow editor to open on, until the editor has opened. */
   editOf: (place: string) => PlaceEdit | null;
   editOpened: (place: string) => void;
-  /** The step editor's draft at the place, kept while the section is unmounted; null once the editor is closed (REVIEW2 P5). */
+  /** The step editor's draft at the place, kept while the section is unmounted; null once the editor is closed. */
   holdOf: (place: string) => PlaceFlowHold | null;
   hold: (place: string, held: PlaceFlowHold | null) => void;
   /** A door to a place: its section opens, its row is asked for, and the way back is kept once. */
   arrive: (place: string, at: PlaceAt) => void;
-  /** The way back, where the chosen place was reached from another. */
+  /** The way back, where the chosen place is reached from another. */
   backTo: (place: string) => PlaceBack | null;
   clearBack: () => void;
   /** A count, raised when a choice in the list asks the head to take the focus. */

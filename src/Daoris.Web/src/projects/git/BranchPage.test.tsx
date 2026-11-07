@@ -7,7 +7,7 @@ import type { LandingDoor } from './LandingFlow';
 import { SHARED_BRANCH, SHARED_UNITS } from './landingFixtures';
 import { GIT_BRANCH_PARTED, GIT_BRANCH_PARTED_PAGES, GIT_BRANCHES_ENGINE } from '../fixtures';
 
-// A branch's page (UX6h3b, the built-in Git design §2.3): its header names it and its kind, says in one line where it stands
+// A branch's page: its header names it and its kind, says in one line where it stands
 // against its line, against origin and its pull request, in the list's words, and goes back to Branches; beneath it, the
 // branch beside its line since they parted, a page at a time. A molecule: each state reached by its props.
 

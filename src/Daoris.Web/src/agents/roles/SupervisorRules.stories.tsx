@@ -5,7 +5,7 @@ import { storyWidths } from '../../design/storyWidths';
 import { InTheme } from '../../plugins/storyIcons';
 import { SupervisorRulesFold } from './SupervisorRulesFold';
 
-// CONTEXTDRIVE1g (the context counters design §7.1): a repository's supervisor rules at the wide, half and narrow widths, in English, 中文
+// A repository's supervisor rules at the wide, half and narrow widths, in English, 中文
 // and dark: its own rules saying what they replace, the machine's rules offered, an empty place and a refused press. No bridge: every state is props.
 
 const dark: Decorator = (Story) => <InTheme theme="dark"><Story /></InTheme>;

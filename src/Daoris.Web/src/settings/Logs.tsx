@@ -4,7 +4,7 @@ import { figure, stamp } from '../locales/format';
 import { cn } from '../lib/cn';
 import { Button, Card, Icon, Inline, MonoWell, PathText, Prose, Segmented, SelectField, SettingList, SettingRow, SkeletonRows } from '../design/ui';
 
-/** The process kinds that write a file (D94 §2), in the order the terminal names them. */
+/** The process kinds that write a file, in the order the terminal names them. */
 export const LOG_SOURCES = ['desktop', 'host', 'mcp', 'browser', 'driver'] as const;
 export type LogSource = typeof LOG_SOURCES[number];
 
@@ -64,7 +64,7 @@ export type DataPart = {
 /**
  * A line's data as `key=value` parts, the way the terminal prints them: a value that would break the line (a space, a
  * quote, an equals sign) is quoted, and a long one is cut, counting what it left out in characters, so a cut never
- * splits one (LOGVIEW1).
+ * splits one.
  */
 export function dataParts(data: LogRow['data']): DataPart[] {
   return Object.entries(data).map(([key, value]) => {
@@ -86,7 +86,7 @@ const EVERY = '*';
 /**
  * Each line's key: its moment, process and event, and how many such came before it, since two lines of one moment are as
  * likely as not. Never its place in the list: a reading again puts newer lines above, and a line opened to read its
- * exception would close under the reader (LOGVIEW1).
+ * exception would close under the reader.
  */
 export function lineKeys(lines: readonly LogRow[]): string[] {
   const seen = new Map<string, number>();
@@ -105,10 +105,10 @@ const whole = (value: string) => value.replace(/\r\n?/g, '\n');
  * One line of the log: when, which process, how loud, the event and its data as the terminal prints them.
  *
  * @remarks
- * **A value cut short says so, and opens whole** (LOGVIEW1): beside the cut, how many characters it left out, a press
+ * **A value cut short says so, and opens whole**: beside the cut, how many characters it left out, a press
  * that opens the value beneath the line in a monospace well, its line breaks kept, so an exception reads a frame a
  * line and selects for copying. A line whose values are whole offers nothing to open. A host's exception cut silently
- * after its first sentence hid the type it named, and the defect was misread for a day.
+ * after its first sentence would hide the type it names.
  */
 function LogLine({ line, level }: { line: LogRow; level: string }) {
   const { t } = useTranslation();
@@ -131,8 +131,8 @@ function LogLine({ line, level }: { line: LogRow; level: string }) {
       <span className="truncate font-mono text-meta text-ink-soft">{line.source}</span>
       <span className={cn(
         'truncate text-meta',
-        // A failure wears an outcome's hue, as a failed tool call does, in the danger ink a red word wears
-        // (UXFIX5b); the rest stay quiet.
+        // A failure wears an outcome's hue, as a failed tool call does, in the danger ink a red word wears;
+        // the rest stay quiet.
         line.level === 'error' ? 'font-medium text-ink-danger' : line.level === 'warn' ? 'font-medium text-ink' : 'text-ink-faint',
       )}
       >
@@ -177,13 +177,13 @@ function LogLine({ line, level }: { line: LogRow; level: string }) {
 }
 
 /**
- * Settings → Logs (LOG1c, D94): what happens on this machine, read back — the recent lines newest first,
+ * Settings → Logs: what happens on this machine, read back — the recent lines newest first,
  * the terminal's filters, a count per level, and the folder they live in.
  *
  * @remarks
- * **Desktop only** (D47 §4): the log is the machine's, and a browser is offered no such domain. **Drawn
+ * **Desktop only**: the log is the machine's, and a browser is offered no such domain. **Drawn
  * from props**: SettingsView holds the bridge, and the filters are applied by the shell, the same reading
- * `daoris logs` prints (D50). **Nobody's words are here** because none are in the log: an event's
+ * `daoris logs` prints. **Nobody's words are here** because none are in the log: an event's
  * name and data are the log's own and shown as written, never translated.
  */
 export function LogList({ reading, filters, busy, onFilters, onOpenFolder, onRefresh }: {
@@ -204,7 +204,7 @@ export function LogList({ reading, filters, busy, onFilters, onOpenFolder, onRef
     (name === 'info' || name === 'warn' || name === 'error' ? t(`settings.logs.level.${name}`) : name);
 
   return (
-    // No title of its own (NAME1b, UX5 U57): the card is alone in its domain, and the settings list names
+    // No title of its own: the card is alone in its domain, and the settings list names
     // it *Machine log*, as every card alone in its domain leaves it.
     <Card id="settings-logs" className="scroll-mt-3">
       <Prose className="text-small text-ink-soft"><Inline text={t('settings.logs.body')} /></Prose>

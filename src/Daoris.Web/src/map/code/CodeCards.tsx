@@ -16,7 +16,7 @@ export const lastSegment = (id: string) => cutId(id.split(/[/\\.:]/).filter(Bool
 export type GroupCard = { kind: 'folder'; name: string; count: number } | { kind: 'cycle'; title: string; count: number };
 
 /**
- * A module, a closed folder or a cycle, each tier its own (MAPUX1a; the map UX design §3): at the full tier a module's id cut at `FITS`,
+ * A module, a closed folder or a cycle, each tier its own: at the full tier a module's id cut at `FITS`,
  * a folder's name and ×n, a cycle's title with the folders it crosses; at the chip tier the id's last segment, a folder's name and ×n;
  * at the dot tier nothing inside. The chosen and the focused keep their name beside the card at every tier but the full.
  */

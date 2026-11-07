@@ -1,7 +1,7 @@
 import { store, stored } from '../lib/stored';
 
 /**
- * The Agents place's two modes (the Agents-place design §3), in the order its list's head draws them: Agents, each agent this machine
+ * The Agents place's two modes, in the order its list's head draws them: Agents, each agent this machine
  * knows, and Setup, the tree of places. One place whose list switches between them, as Knowledge's does.
  */
 export const AGENTS_MODES = ['agents', 'setup'] as const;
@@ -20,7 +20,7 @@ export function readAgentsMode(): AgentsMode {
   return isAgentsMode(kept) ? kept : 'agents';
 }
 
-/** The ids of Setup's places, as its list chooses them and a door names them (AGENTSPLACE1e, 1f): this machine, a workspace, a repository. */
+/** The ids of Setup's places, as its list chooses them and a door names them: this machine, a workspace, a repository. */
 export const MACHINE = 'machine';
 export const workspaceId = (workspace: string) => `workspace:${workspace}`;
 export const repositoryId = (workspace: string | null | undefined, repository: string) => `repo:${workspace ?? ''}/${repository}`;

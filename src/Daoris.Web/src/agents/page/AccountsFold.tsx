@@ -86,15 +86,15 @@ export function AccountsFold({ adding, goingBack, signInNewPanel, added, back, b
         </div>
       )}
 
-      {/* The accounts: one list, whatever doors reach the agent (D150 §5.2, TOOL6g), a row each (D152 §4.2). Never folded;
-          an agent not installed has none until it is (§4.6), and no list head stands over nothing. */}
+      {/* The accounts: one list, whatever doors reach the agent, a row each. Never folded;
+          an agent not installed has none until it is, and no list head stands over nothing. */}
       {(tool.present || tool.accounts.length > 0) && (
         <section id="agents-accounts" aria-label={t('harness.accounts')} className="scroll-mt-3">
           <div className="mb-1 flex flex-wrap items-baseline gap-x-3 gap-y-1">
             <SectionTitle>{t('harness.accounts')}</SectionTitle>
             <span className="ml-auto flex items-baseline gap-2 text-meta text-ink-faint">
               {latest && <span>{t('agents.read.at', { when: clockOf(latest, now) })}</span>}
-              {/* Each account's use, asked of its agent with no prompt (SWITCH1d): no sign-in, so beside *Read again*. */}
+              {/* Each account's use, asked of its agent with no prompt: no sign-in, so beside *Read again*. */}
               {tool.present && use?.reads && (
                 <Tip content={t('agents.read.nowTip', { agent: product })}>
                   <Button variant="ghost" disabled={readingNow || busy} aria-busy={readingNow || undefined} onClick={acts.onReadNow}>
@@ -112,7 +112,7 @@ export function AccountsFold({ adding, goingBack, signInNewPanel, added, back, b
               )}
             </span>
           </div>
-          {/* What the fold into one set changed (POOL1a, the account-pool design §4.2, §6.3), one block above the rows while
+          {/* What the fold into one set changed, one block above the rows while
               any of it is unsaid, a line per change, each receipt's lines in the reader's language; *Got it* marks the receipts
               shown said, by id, and the person's acknowledgement is all it is. */}
           {pooled.length > 0 && (
@@ -133,8 +133,7 @@ export function AccountsFold({ adding, goingBack, signInNewPanel, added, back, b
               </Button>
             </section>
           )}
-          {/* Which account the next start takes and why, in any workspace, above the rows that answer it in parts (ACCTUX4b; the
-              second opinion's lines 128-133): a light line, not a setting's row, in the words of the fold's *Next start*; what
+          {/* Which account the next start takes and why, in any workspace, above the rows that answer it in parts: a light line, not a setting's row, in the words of the fold's *Next start*; what
               holds the account the order begins on follows in the soft ink, since that is the one a person expects it to take. */}
           {nextSaid && (
             <p className="m-0 mb-2 text-small text-ink [overflow-wrap:anywhere]">
@@ -146,13 +145,12 @@ export function AccountsFold({ adding, goingBack, signInNewPanel, added, back, b
           <ul className={ACCOUNT_COLUMNS}>
             {(tool.accounts.length > 0 || tool.present) && <AccountColumnsHead />}
             {tool.accounts.map(accountRow)}
-            {/* Your own sign-in last, outside Daoris's accounts (D152 §4.3; POOL1c, D197 point 3, the account-pool design §3 and
-                §4.2): its name and its ⓘ, which says all of it, and no state, no who, no reading, no act and no ⋯, since Daoris
+            {/* Your own sign-in last, outside Daoris's accounts : its name and its ⓘ, which says all of it, and no state, no who, no reading, no act and no ⋯, since Daoris
                 never asks it anything and never changes it. An agent not installed has none. */}
             {tool.present && <AccountRow name={ownLabel} why={ownLine()} menu={[]} now={now} />}
           </ul>
-          {/* Each account's own plan and terms apply (D130 point 12): one line at the list's foot that opens the paragraph,
-              a target of 28 px (the platform language §6, ACCTUX2) where its line of text was about 16. */}
+          {/* Each account's own plan and terms apply: one line at the list's foot that opens the paragraph,
+              a target of 28 px where its line of text is about 16. */}
           {tool.accounts.length > 0 && (
             <div className="mt-1">
               <button
@@ -181,7 +179,7 @@ export function AccountsFold({ adding, goingBack, signInNewPanel, added, back, b
                 className="min-w-72 flex-1 rounded-control border border-line-strong bg-raised px-2.5 py-1 font-mono text-small text-ink outline-none placeholder:text-ink-faint"
               />
               <Button type="submit" variant="primary" disabled={busy || !keyDraft.trim()}>{t('harness.profile.keySave')}</Button>
-              {/* Held while the key is on its way, so a refusal is never said to nobody (ACCTEDIT1). */}
+              {/* Held while the key is on its way, so a refusal is never said to nobody. */}
               <Button variant="ghost" disabled={busy} onClick={() => askKey(false)}>{t('common.cancel')}</Button>
               {refusalOf('key', '') && <Refused sentence={refusalOf('key', '')!} />}
               <span className="basis-full text-meta text-ink-faint">{t('harness.profile.keyHint')}</span>
@@ -190,8 +188,8 @@ export function AccountsFold({ adding, goingBack, signInNewPanel, added, back, b
         </section>
       )}
 
-      {/* How the accounts are used (TOOL4g; D130 §16.6; POOL1c, the account-pool design §4.2): the one set's order and its one
-          entry of settings, every workspace's. The *Workspaces* fold went with it: there is one scope to say. */}
+      {/* How the accounts are used: the one set's order and its one
+          entry of settings, every workspace's. There is one scope to say. */}
       {use && machine && tool.accounts.length > 0 && (
         <Fold
           section="use"
@@ -204,7 +202,7 @@ export function AccountsFold({ adding, goingBack, signInNewPanel, added, back, b
         </Fold>
       )}
 
-      {/* The ways in, a property of the agent (D53, D57 §c): each door, its version, its pin, which one driven work starts on. */}
+      {/* The ways in, a property of the agent: each door, its version, its pin, which one driven work starts on. */}
     </>
   );
 }

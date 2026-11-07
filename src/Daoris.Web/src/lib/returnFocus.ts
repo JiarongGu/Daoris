@@ -1,5 +1,5 @@
 /**
- * **The way back returns the focus** (UX6h3d, the platform UX contract's load-more foot rule): a page opened from a press
+ * **The way back returns the focus** (the platform UX contract's load-more foot rule): a page opened from a press
  * goes back to the page that held it, and the focus goes back to that press, so a keyboard reader keeps their place. The page
  * is redrawn after the press, and what it lists may still be on its way, so the focus waits for it, as the History foot's
  * waits for the row it targets (`help/AskHistory.tsx`).

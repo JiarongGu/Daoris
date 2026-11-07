@@ -4,7 +4,7 @@ import i18n from '../../locales/i18n';
 import { DoorSheetLines } from './DoorSheetLines';
 import { TOOLS } from '../agentsFixtures';
 
-// The sheet on the agent's page (COAGENT1e): each capability a door's sheet answered, in both languages.
+// The sheet on the agent's page: each capability a door's sheet answered, in both languages.
 
 const sheet = TOOLS.find((tool) => tool.name === 'claude-code')!.sheet!.find((one) => one.door === 'claude-code-acp')!;
 

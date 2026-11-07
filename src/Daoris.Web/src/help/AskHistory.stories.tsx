@@ -5,7 +5,7 @@ import { DOCK } from '../work/frame/layout';
 import { AskHistory } from './AskHistory';
 import type { HelpConversationRow } from './history';
 
-// ASKHIST1, as ASKHIST1c made it: Ask Daoris's history, kept on this machine only. Each state drawn at the dock's floor
+// Ask Daoris's history, kept on this machine only. Each state drawn at the dock's floor
 // (300 px) and at the width the owner's window gave it (430 px), side by side, in the panel's own height.
 
 const minutesAgo = (minutes: number) => new Date(Date.now() - minutes * 60_000).toISOString();
@@ -91,8 +91,8 @@ export const GroupedChineseDark: Story = {
 };
 
 /**
- * A search's finds, its words marked: in what was said, in place of the line, and in a title it was found in; above them, how
- * many it found and that it searched every conversation (ASKHIST1d2).
+ * A search's finds, its words marked: in what is said, in place of the line, and in a title it is found in; above them, how
+ * many it found and that it searched every conversation.
  */
 export const SearchHits: Story = {
   args: {
@@ -120,7 +120,7 @@ const LONG_BEFORE = 'Each repository keeps its own line: **engine** lands on `ma
   + 'branch the writers named last week, which the feed reads again every hour and the status bar shows as it changes; ';
 
 /**
- * A find deep in a long line (ASKHIST1d2): the driver hands the line whole as Markdown, and the row parses it, then cuts it
+ * A find deep in a long line: the driver hands the line whole as Markdown, and the row parses it, then cuts it
  * from a little before the words, so its two lines show them rather than the line's start.
  */
 export const FoundInLongLine: Story = {
@@ -136,12 +136,12 @@ export const FoundInLongLine: Story = {
   },
 };
 
-/** One letter typed: the search says how many it needs, and the whole list stays. One Han character searches (ASKHIST1d2). */
+/** One letter typed: the search says how many it needs, and the whole list stays. One Han character searches. */
 export const ShortSearch: Story = { args: { search: 'a' } };
 
 export const ShortSearchChinese: Story = { args: { search: 'a' }, decorators: [chinese] };
 
-/** A search that found nothing: that every conversation was searched, and the way out. */
+/** A search that found nothing: that every conversation is searched, and the way out. */
 export const NoMatch: Story = { args: { rows: [], search: 'nothing like this' } };
 
 export const NoMatchUrl: Story = { args: { rows: [], search: URL } };
@@ -162,7 +162,7 @@ export const Empty: Story = { args: { rows: [] } };
 
 export const EmptyChinese: Story = { args: { rows: [] }, decorators: [chinese] };
 
-/** More than a page (ASKHIST1d2): how many of how many are listed, and *Show more* for the next page. */
+/** More than a page: how many of how many are listed, and *Show more* for the next page. */
 export const More: Story = { args: { total: 457, onMore: () => {} } };
 
 export const MoreChinese: Story = { args: { rows: CHINESE_ROWS, shown: 'z2b3c4d5', total: 457, onMore: () => {} }, decorators: [chinese] };
@@ -173,7 +173,7 @@ export const LoadingMore: Story = { args: { total: 457, onMore: () => {}, loadin
 /** The next page could not be read: why, beside the press that asks for it again. */
 export const MoreFailed: Story = { args: { total: 457, onMore: () => {}, moreError: 'the driver stopped answering.' } };
 
-/** A pin that could not be kept, said where it was pressed. */
+/** A pin that could not be kept, said where it is pressed. */
 export const Refused: Story = { args: { refusal: 'no conversation here is `h3c4d5e6` any more.' } };
 
 /** Opens the first row's ⋯ and chooses its `item`th act, as a person would by the keyboard. */

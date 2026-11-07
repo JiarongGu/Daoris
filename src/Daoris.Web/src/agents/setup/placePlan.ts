@@ -1,7 +1,7 @@
 import { useCallback, useState } from 'react';
 import type { PresetWorkflow } from '../../workflow/edit/answers';
 
-// A place's quick set-up as the driver answers it (AGENTSPLACE1j; `PLACE_PLAN` and `PLACE_APPLY`, the Agents-place design §4): the shapes
+// A place's quick set-up as the driver answers it (`PLACE_PLAN` and `PLACE_APPLY`): the shapes
 // the molecule draws, the ask the draft makes, and the draft the application holds for each place. The bridge leaves a null out.
 
 /**
@@ -82,7 +82,7 @@ export type PlacePlanned = {
 
 export type PlaceAccept = { repository: string; purpose: string };
 
-/** An acceptance ticked, bound to the declaration it was ticked at: the line and blob the plan read. The route is sent only the {@link PlaceAccept}. */
+/** An acceptance ticked, bound to the declaration it is ticked at: the line and blob the plan read. The route is sent only the {@link PlaceAccept}. */
 export type PlaceTick = PlaceAccept & { line: string; blob: string };
 
 export type PlaceOperation = { id: string; kind: string; repository?: string | null; said: string; outcome: string; note?: string | null; quest?: string | null };
@@ -106,13 +106,13 @@ export type SetUpDraft = {
   /** What it builds, one of {@link BUILDS}, or none said. */
   builds: string;
   drive: boolean;
-  /** The acceptances ticked, each at the declaration it was read at; none is, until the person ticks it. */
+  /** The acceptances ticked, each at the declaration it is read at; none is, until the person ticks it. */
   accept: PlaceTick[];
   /** The ticks the page cleared because the declaration changed since, kept to say so until the next tick. */
   cleared: PlaceTick[];
   /** What the last Apply came to, kept until the plan changes. */
   result: PlaceApplied | null;
-  /** Where each repository stood once the last Apply was done (what it started), kept with its result. */
+  /** Where each repository stands once the last Apply is done (what it started), kept with its result. */
   ended: { state: DrivingState; repositories: string[] }[] | null;
   /** Whether the set-up is on its review rather than its choices. */
   review: boolean;
@@ -122,7 +122,7 @@ export const freshDraft = (repositories: string[]): SetUpDraft => ({
   repositories, preset: null, opinion: false, look: false, adoption: null, builds: '', drive: false, accept: [], cleared: [], result: null, ended: null, review: false,
 });
 
-/** The draft an ask makes (AGENTSPLACE1k, SETUPUX1k): what Ask Daoris's place card seeds a place's *Set up…* with, which opens on the review. */
+/** The draft an ask makes: what Ask Daoris's place card seeds a place's *Set up…* with, which opens on the review. */
 export const draftOfAsk = (ask: PlaceAsk): Partial<SetUpDraft> => ({
   repositories: ask.repositories, preset: ask.preset, opinion: ask.opinion, look: ask.look, adoption: ask.adoption, builds: ask.builds ?? '', drive: ask.drive, review: true,
 });
@@ -169,7 +169,7 @@ const savedWorkflow = (row: PlaceRepositoryPlan): string | null => {
 };
 
 /**
- * What one repository suggests: {@link KEEP} where its landing was chosen (`why.code` `kept`) or its work follows a saved workflow chosen for it,
+ * What one repository suggests: {@link KEEP} where its landing is chosen (`why.code` `kept`) or its work follows a saved workflow chosen for it,
  * which a delivery would replace with a copy of Daoris's; else the driver's delivery with its why.
  */
 function suggestionOf(row: PlaceRepositoryPlan): { preset: string; why: SuggestionWhy | null } {
@@ -242,7 +242,7 @@ export const isChosen = (accept: readonly PlaceAccept[], one: PlaceAccept) =>
 
 /**
  * The ticks that still hold against the plan read, and the ones cleared: a tick for an acceptance the plan offers at another line or blob than it
- * was ticked at is cleared, since it was agreed to for a text no longer the one read. A tick for what the plan does not offer stands, inert.
+ * the tick's own is cleared, since it agrees to a text other than the one read. A tick for what the plan does not offer stands, inert.
  */
 export function reconcileTicks(accept: readonly PlaceTick[], plan: PlacePlanned): { accept: PlaceTick[]; cleared: PlaceTick[] } {
   const now = offered(plan);
@@ -272,7 +272,7 @@ export type SetUpDoor = (refusal: PlaceRefusal) => (() => void) | null;
 export type SetUpPage = {
   /** The draft of an open place; none where its set-up is closed. */
   draftOf: (place: string) => SetUpDraft | null;
-  /** Whether the set-up is in front: a draft left through a door is kept but not shown (SETUPUX1j). */
+  /** Whether the set-up is in front: a draft left through a door is kept but not shown. */
   shown: (place: string) => boolean;
   /** Opens a place's set-up; a seed (an ask Ask Daoris proposed) replaces the draft the place held, since the person came for it. */
   open: (place: string, repositories: string[], seed?: Partial<SetUpDraft>) => void;

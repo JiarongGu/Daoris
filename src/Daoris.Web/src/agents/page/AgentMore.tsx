@@ -54,10 +54,10 @@ export function AgentMore({ rulesShown, t, rules, open, toggle, busy, acts, sett
         </Fold>
       )}
 
-      {/* Each account's own model and effort (AGT6, D98), only where Daoris knows the tool's settings. */}
+      {/* Each account's own model and effort, only where Daoris knows the tool's settings. */}
       {settingsShown && (
         <Fold section="settings" title={t('agents.section.settings')} summary={settingsSummary(tool)} open={open.has('settings')} onToggle={toggle}>
-          {/* What an account's own model means now actors choose models (D205 §6.4, MODELROLE1c2): their *account default*. */}
+          {/* What an account's own model means now actors choose models: their *account default*. */}
           <p className="m-0 pb-1.5 text-meta text-ink-soft">{t('agents.settings.roles')}</p>
           <ul className="m-0 list-none p-0">
             {tool.accounts.filter((account) => account.settings).map((account) => (
@@ -69,9 +69,9 @@ export function AgentMore({ rulesShown, t, rules, open, toggle, busy, acts, sett
                     {t('harness.settings.open')}
                   </Button>
                 )}
-                {/* ACCTUX3: open until the save lands, never closed on the press, so a refused one keeps the choice made and
-                    says why under it (ACCTEDIT1's contract). The form holds its own *Never mind* while it saves
-                    (SETTINGSWAIT1), so a refusal is never said to nobody. */}
+                {/* Open until the save lands, never closed on the press, so a refused one keeps the choice made and
+                    says why under it. The form holds its own *Never mind* while it saves,
+                    so a refusal is never said to nobody. */}
                 {tuning === account.name && (
                   <AccountSettingsForm
                     harness={lead}
@@ -95,8 +95,8 @@ export function AgentMore({ rulesShown, t, rules, open, toggle, busy, acts, sett
         </Fold>
       )}
 
-      {/* What each account has carried (TOOL3, D57 §4): measured, never priced, and nothing measured said so; an agent not
-          installed has carried nothing here, so it has no usage to fold (§5.1, D152 §4.6). Counted by agent (AGENTPROVIDER1 s-vii), so
+      {/* What each account has carried: measured, never priced, and nothing measured said so; an agent not
+          installed has carried nothing here, so it has no usage to fold. Counted by agent, so
           an account used through both of the agent's doors is one row. */}
       {(tool.present || sessions > 0) && (
         <Fold section="usage" title={t('usage.title')} summary={usage === null ? t('agents.usage.reading') : usageSummary(sessions)} open={open.has('usage')} onToggle={toggle}>
@@ -122,7 +122,7 @@ export function AgentMore({ rulesShown, t, rules, open, toggle, busy, acts, sett
         </Fold>
       )}
 
-      {/* The roles that lean on it (COMPANYVIEW1d): read from the structure's last readings, so opening the page asks no account. */}
+      {/* The roles that lean on it: read from the structure's last readings, so opening the page asks no account. */}
       {usedBy && (
         <Fold
           section="used" title={t('agents.roles.used.title')} open={open.has('used')} onToggle={toggle}
@@ -144,7 +144,7 @@ export function AgentMore({ rulesShown, t, rules, open, toggle, busy, acts, sett
         </Fold>
       )}
 
-      {/* The two doors stay in sight (D50): the agent's id is said here, where the terminal types it; an agent not installed
+      {/* The two doors stay in sight: the agent's id is said here, where the terminal types it; an agent not installed
           has one door to name, its installer. */}
     </>
   );

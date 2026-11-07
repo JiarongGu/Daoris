@@ -7,7 +7,7 @@ import { AGENTS_MODES, type AgentsMode } from './modes';
 const MODE_GLYPH: Record<AgentsMode, IconName> = { agents: 'terminal', setup: 'workflow' };
 
 /**
- * **The Agents place's list head** (COMPANYVIEW1b, the company-view design §1): a two-way choice, *Agents · Setup*, over the mode's own
+ * **The Agents place's list head**: a two-way choice, *Agents · Setup*, over the mode's own
  * list, as Knowledge's head is. It stays in reach above the list's rows, outside their scroll.
  *
  * A molecule: the mode in front arrives, and each choice goes out.
@@ -28,7 +28,7 @@ export function AgentsModes({ mode, onMode }: { mode: AgentsMode; onMode: (mode:
 }
 
 /**
- * The list closed to its strip (D118 §3a): the two modes, each by its glyph and named, the one in front marked, and under them what
+ * The list closed to its strip: the two modes, each by its glyph and named, the one in front marked, and under them what
  * the mode's own strip holds (the agents' marks, or the five sections'). The strip stands for the head's choice, so a list closed to
  * give a page room still switches between the modes.
  */

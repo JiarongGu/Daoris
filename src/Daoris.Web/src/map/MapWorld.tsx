@@ -21,14 +21,14 @@ const BELOW = 140;
 const ZOOM = { min: 0.25, max: 2.5 } as const;
 
 /**
- * The workspace map (MAP2, MAP4; CANVAS1e; D224): a ring below `RING_MAX` repositories, fitted and not zoomed, and layers above it that
+ * The workspace map: a ring below `RING_MAX` repositories, fitted and not zoomed, and layers above it that
  * pan and zoom, one `SuppliedCanvas` either way, so crossing twelve changes the layout and keeps the choice and the focus. Display
  * only: a press chooses a repository or a line, a second press, Escape or the ground releases it.
  *
  * @remarks
- * **Status is never colour alone** (D41): open lines solid and accented, closed ones faint, a shared finding dashed, a session there
+ * **Status is never colour alone**: open lines solid and accented, closed ones faint, a shared finding dashed, a session there
  * ringed and said in words. Every card and line is a stop the canvas walks (→ from a card to its first line out, and on to the card
- * beyond), named for what it holds. **The choice stands forward** (MAPUX1b): its lines and its neighbours at full ink, the rest
+ * beyond), named for what it holds. **The choice stands forward**: its lines and its neighbours at full ink, the rest
  * stepped back; hovering or focusing a card lights its lines without choosing it.
  */
 export function MapWorld({ topology, selected, onSelect, tools, storeKey, reveal, detail }: {
@@ -92,7 +92,7 @@ export function MapWorld({ topology, selected, onSelect, tools, storeKey, reveal
     repositories: t('map.listRepositories'), kind: (kind) => t(`map.kind.${kind}`),
     node: (id) => (id === ASKS ? nodeLabel(id) : listNode(t, nodes.get(id)!)), line: (line) => listLine(t, line),
   });
-  // Find reaches a repository by its name, then by what it says it owns and accepts, which a result says (MAPUX1d).
+  // Find reaches a repository by its name, then by what it says it owns and accepts, which a result says.
   const findItems = useMemo(
     () => stops.map((id) => {
       const node = nodes.get(id);

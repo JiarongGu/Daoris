@@ -16,13 +16,13 @@ export type Command = {
 };
 
 /**
- * What the palette lists now (D152 §2): every row in its rule that applies and is not the choice in force, under its
+ * What the palette lists now: every row in its rule that applies and is not the choice in force, under its
  * menu's name, in the menus' order.
  *
  * @remarks
  * **A row is absent where its surface is absent, and where it does not apply** — never present-and-disabled, as the menus
  * keep it: a palette is a promise that what it lists can be done, and its order is by match, so a place learned there
- * means nothing. The disclosure boundary (D47 §4) is therefore kept by omission, and Playwright asserts the absence.
+ * means nothing. The disclosure boundary is therefore kept by omission, and Playwright asserts the absence.
  */
 export function paletteCommands(entries: readonly CommandEntry[], t: Translate = (key) => key): Command[] {
   const menuName = (menu: MenuId) => t(MENUS.find((each) => each.id === menu)!.label);
@@ -36,7 +36,7 @@ export function paletteCommands(entries: readonly CommandEntry[], t: Translate =
   }));
 }
 
-/** Every key the window answers, by menu, in the reader's language: what *Keyboard shortcuts* prints (D152 §3.2). */
+/** Every key the window answers, by menu, in the reader's language: what *Keyboard shortcuts* prints. */
 export function shortcutGroups(entries: readonly CommandEntry[], t: Translate): { menu: string; rows: { label: string; keys: string[] }[] }[] {
   return MENUS
     .map((menu) => ({
@@ -49,7 +49,7 @@ export function shortcutGroups(entries: readonly CommandEntry[], t: Translate): 
 }
 
 /**
- * Which commands match what was typed.
+ * Which commands match what is typed.
  *
  * @remarks
  * **Subsequence, not substring.** "oq" finds *Open quests* and "cnv" finds *Convergence* — the

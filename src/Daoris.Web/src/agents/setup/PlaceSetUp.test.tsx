@@ -3,8 +3,8 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 
-// AGENTSPLACE1j (the Agents-place design §4) and SETUPUX1j (the setup-UX design §2.2): a place's quick set-up as a molecule, its choices page.
-// SETUPUX1k: the choices end at the plan's line and *Review the plan*, which opens the review (`PlaceReview.test.tsx`) over the same draft.
+// A place's quick set-up as a molecule, its choices page.
+// The choices end at the plan's line and *Review the plan*, which opens the review (`PlaceReview.test.tsx`) over the same draft.
 
 import i18n from '../../locales/i18n';
 import { KEPT_ROW, planOf, SETUP_PRESETS } from './placeFixtures';

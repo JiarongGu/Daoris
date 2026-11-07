@@ -35,7 +35,7 @@ function foldedHere(): Set<NotificationsGroup> {
 }
 
 /**
- * *Notifications* (NOTIFY2b, D196 point 3, the notification design §2): everything that comes to the person, in one view of the
+ * *Notifications*: everything that comes to the person, in one view of the
  * frame's regions, the right side bar by default or the panel where the person moved it.
  *
  * @remarks
@@ -43,8 +43,8 @@ function foldedHere(): Set<NotificationsGroup> {
  * confirmation channel alone (never a row's copy); then *What needs you*, today's rows in their groups and order with their acts and
  * doors, its `confirmation` row drawn as its card above. Each is headed by its name and its count and folds by its head, the fold
  * this window's own; a group holding nothing is not drawn, and with nothing in any, *Nothing needs you* and the sessions working.
- * Then *Done and failed* (NOTIFY2f): what ended, failed or went unanswered, newest first, each read once it is shown here in a
- * window in front (`DoneAndFailed`). Between them *Messages* (NOTIFY2g): each ask with anything past the person's mark and each
+ * Then *Done and failed*: what ended, failed or went unanswered, newest first, each read once it is shown here in a
+ * window in front (`DoneAndFailed`). Between them *Messages*: each ask with anything past the person's mark and each
  * conversation's answer unread, headed by how many are unread, none read by being listed (`Messages`). With nothing waiting and
  * nothing unread, *Nothing unread* under *Nothing needs you*.
  *
@@ -58,7 +58,7 @@ export function NotificationsView({
   presses, needs, working, attention, onAnswer, notify, onShown, names, at = null, onVisible, notices = [], onRead, onOpenNotice, onDismiss,
   messages = [], answered = [], messageNames, onOpenAsk, onMarkAsk, onOpenAnswer, standing, onOpenPlan, update, onSayUpdate,
 }: {
-  /** The install's update and the person's word on it (DRAINHOLD1): a Confirm held by a drain says what it waits on, and offers *Install later*. */
+  /** The install's update and the person's word on it: a Confirm held by a drain says what it waits on, and offers *Install later*. */
   update?: UpdateState;
   onSayUpdate?: (mode: UpdateMode) => void;
   /** The steward's line (`NotificationsStanding`), at the head of the presses' group. */
@@ -74,20 +74,20 @@ export function NotificationsView({
   notify?: Notify;
   onShown?: (waiting: Confirmation) => void;
   names?: PressNames;
-  /** A press's door to its plan's own page (CONFIRMWAIT1c, the confirm-wait design §8.1). */
+  /** A press's door to its plan's own page. */
   onOpenPlan?: (door: PlanDoor) => void;
   /** What a door asked to show: its group unfolded and brought into view, or a press's card. */
   at?: NotificationsAt | null;
   /** Told whether the view is drawn: a press's toast stays until the view opens (§3.3). */
   onVisible?: (shown: boolean) => void;
-  /** *Done and failed*, the window's notices newest first (NOTIFY2f). */
+  /** *Done and failed*, the window's notices newest first. */
   notices?: Notice[];
   /** The notices shown here in a window in front, *Opened*, or named by *Mark all read*, read. */
   onRead?: (ids: string[]) => void;
   /** A notice's door: its session's page. */
   onOpenNotice?: (notice: Notice) => void;
   onDismiss?: (notice: Notice) => void;
-  /** *Messages*' asks, the window's entries as the shell pushes them (NOTIFY2g); one with nothing unread is not listed. */
+  /** *Messages*' asks, the window's entries as the shell pushes them; one with nothing unread is not listed. */
   messages?: readonly AskMessages[];
   /** *Messages*' answers, the window's `answered` notices; one read is not listed. Read through `onRead`. */
   answered?: readonly Notice[];
@@ -199,10 +199,10 @@ function Group({ id, title, count, folded, onFold, warn = false, unread, childre
   count: number | null;
   folded: boolean;
   onFold: (group: NotificationsGroup) => void;
-  /** The presses' group wears the warning hue its cards wear (D185 R2: a wait with a clock). */
+  /** The presses' group wears the warning hue its cards wear: a wait with a clock. */
   warn?: boolean;
   /**
-   * Its count in words where it counts what is unread, which waits on nobody (BADGEUX1, the UI/UX design §3.10): said in a neutral
+   * Its count in words where it counts what is unread, which waits on nobody: said in a neutral
    * ink, never a bare figure in open's, which is a wait's.
    */
   unread?: string;

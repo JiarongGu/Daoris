@@ -6,19 +6,19 @@ import { Button, DotMark, Pill, StripMark } from '../design/ui';
 import type { AgentRow } from './agents';
 
 /**
- * **The Agents place's list** (UX6e, D150 §5.1): each agent this build knows once, whatever doors reach it, the installed in
- * the roster's order and then *Not installed* as a group of its own (AGENTS2, D152 §4.6). A row is its name and maker, and its
+ * **The Agents place's list**: each agent this build knows once, whatever doors reach it, the installed in
+ * the roster's order and then *Not installed* as a group of its own. A row is its name and maker, and its
  * accounts in a phrase (*3 accounts · 2 signed out*, *1 account*, *not installed*); a row with an account the person must
  * act on wears the waiting mark, and one not installed carries its *Install* beside it.
  *
  * @remarks
  * **A molecule**: the rows arrive worded (`agentRows`), and every press goes out. Each row is a row of its list
  * (`data-list-row`), so ↑, ↓, Home and End move along it. The list has no `＋`: an account is made on its agent's page, and
- * an agent arrives by its own installer or a plugin (D64). Adding an agent adds a row, never a screen.
+ * an agent arrives by its own installer or a plugin. Adding an agent adds a row, never a screen.
  *
- * **No fold for the agents not installed** (AGENTS2): the list's ⋯ hid them, and Codex, which this build drives, went
+ * **No fold for the agents not installed**: the list's ⋯ hid them, and Codex, which this build drives, went
  * unseen behind it. An agent's *Install* is its own installer, the one `daoris agent install` runs; one Daoris has no
- * installer for (`installs` false) offers *How to install* in its place, which opens its page and runs nothing (INSTALLDOOR1).
+ * installer for (`installs` false) offers *How to install* in its place, which opens its page and runs nothing.
  */
 export function AgentList({ rows, chosen, onChoose, onInstall }: {
   rows: readonly AgentRow[];
@@ -34,10 +34,10 @@ export function AgentList({ rows, chosen, onChoose, onInstall }: {
     <ul className="m-0 list-none p-0" aria-label={t('nav.agents')}>
       {installedFirst(rows).map((row, at) => {
         const install = !row.installed && row.installs && onInstall ? () => onInstall(row.name) : undefined;
-        // Where Daoris has no installer, the same slot says how: it opens the agent's page and runs nothing (INSTALLDOOR1).
+        // Where Daoris has no installer, the same slot says how: it opens the agent's page and runs nothing.
         const howTo = !row.installed && !row.installs && onInstall ? () => onChoose(row.name) : undefined;
         return [
-          // The agents not installed, a group of their own under the installed (D152 §4.6), named once at its head.
+          // The agents not installed, a group of their own under the installed, named once at its head.
           at === absentFrom && (
             <li key="absent" role="presentation" className="pb-0.5 pl-[calc(0.625rem+3px)] pr-2.5 pt-2.5 text-meta font-medium uppercase tracking-[0.04em] text-ink-faint">
               {t('agents.list.absent')}
@@ -89,13 +89,13 @@ export function AgentList({ rows, chosen, onChoose, onInstall }: {
   );
 }
 
-/** The installed agents first, then those not installed, each in the roster's order (D152 §4.6). */
+/** The installed agents first, then those not installed, each in the roster's order. */
 function installedFirst(rows: readonly AgentRow[]): AgentRow[] {
   return [...rows.filter((row) => row.installed), ...rows.filter((row) => !row.installed)];
 }
 
 /**
- * What a row offers a right-click (CTX1, D138 §4): opening it, its Install where its row carries one, and its id. What
+ * What a row offers a right-click: opening it, its Install where its row carries one, and its id. What
  * else is done to an agent is its page's.
  */
 function rowMenu(t: (key: string) => string, row: AgentRow, open: () => void, install?: () => void, howTo?: () => void): ContextOffer {
@@ -129,8 +129,8 @@ function RowDoor({ chosen, onPress, children }: { chosen: boolean; onPress: () =
 }
 
 /**
- * The list closed to its strip: each agent's mark, a letter or two no neighbour wears (*CC*, *Co*; ACCTUX2), the waiting mark
- * on one with an account the person must act on, and one not installed drawn faint (D118 §3a).
+ * The list closed to its strip: each agent's mark, a letter or two no neighbour wears (*CC*, *Co*), the waiting mark
+ * on one with an account the person must act on, and one not installed drawn faint.
  */
 export function AgentStrip({ rows, chosen, onChoose }: {
   rows: readonly AgentRow[];

@@ -4,7 +4,7 @@ import i18n from '../../locales/i18n';
 import type { NodeState } from '../../design/canvas/SuppliedCanvas';
 import { CodeCard, cutId, FITS, lastSegment } from './CodeCards';
 
-// MAPUX1a (the map UX design §3): each tier of a module, a folder and a cycle says less about the same card.
+// Each tier of a module, a folder and a cycle says less about the same card.
 
 const state = (extra: Partial<NodeState> = {}): NodeState => ({ tier: 'full', selected: false, focused: false, dim: false, scale: 1, ...extra });
 const LONG = 'src/Daoris.Service/session-registry';

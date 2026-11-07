@@ -4,7 +4,7 @@ import userEvent from '@testing-library/user-event';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import * as Tooltip from '@radix-ui/react-tooltip';
 
-// UX7a (D152): the menu bar a person reaches for, on the whole window over a mocked shell — the seven menus, the keys
+// The menu bar a person reaches for, on the whole window over a mocked shell — the seven menus, the keys
 // the table gives them, the record in front acted on through its own owner, and the bar reached from the keyboard.
 
 const { invoke, notifyReady } = vi.hoisted(() => ({
@@ -79,7 +79,7 @@ const menuBar = async () => {
 };
 const places = () => screen.getByRole('navigation', { name: 'Views' });
 
-/** A menu opens from the keyboard in jsdom, the path D41 §6 requires anyway (see `AppMenu.test`). */
+/** A menu opens from the keyboard in jsdom, the path the menu contract requires anyway (see `AppMenu.test`). */
 async function openMenu(name: string) {
   const user = userEvent.setup();
   within(await menuBar()).getByRole('button', { name }).focus();
@@ -104,12 +104,12 @@ describe('the menu bar on the desktop (D152 §1)', () => {
   it('prints every place\'s key under Go, and the key goes there', async () => {
     start();
     await openMenu('Go');
-    // Each place is one choice among Go's places, said as a radio (UXFIX1).
+    // Each place is one choice among Go's places, said as a radio.
     expect(await screen.findByRole('menuitemradio', { name: /^Sessions/ })).toHaveTextContent('Ctrl+2');
     expect(screen.getByRole('menuitemradio', { name: /^Plugins/ })).toHaveTextContent('Ctrl+8');
     fireEvent.keyDown(document.activeElement!, { key: 'Escape' });
 
-    // The bar's place says its key too, in its tip (the design §7: a position is shown in the menu and the bar's tip).
+    // The bar's place says its key too, in its tip: a position is shown in the menu and the bar's tip.
     expect(within(places()).getByRole('button', { name: /^Quests/ })).toHaveAttribute('aria-keyshortcuts', 'Ctrl+3');
     expect(within(places()).getByRole('button', { name: 'Settings' })).toHaveAttribute('aria-keyshortcuts', 'Ctrl+,');
     expect(fireEvent.keyDown(window, { key: '3', code: 'Digit3', ctrlKey: true })).toBe(false);
@@ -157,7 +157,7 @@ describe('the bar from the keyboard (the design §3.3)', () => {
 });
 
 /**
- * UX7a2 (D152's UX7a note, the design §3.3): the seven names need about 590 CSS px of strip beside the command center's glyph
+ * The seven names need about 590 CSS px of strip beside the command center's glyph
  * and the window's buttons, so below that they fold into one menu, and the keys reach it as they reach the bar.
  */
 describe('a narrow window\'s menu bar', () => {
@@ -217,7 +217,7 @@ describe('the keys (D152 §3.4)', () => {
     expect(await screen.findByRole('navigation', { name: 'Settings domains' })).toBeInTheDocument();
   });
 
-  /** NEW1b (D162 point 1): Ctrl+N is *New conversation*, in Sessions with the focus in its prompt; a new ask is Ctrl+Shift+N. */
+  /** Ctrl+N is *New conversation*, in Sessions with the focus in its prompt; a new ask is Ctrl+Shift+N. */
   it('leaves Ctrl+K and Ctrl+F to a field, and takes Ctrl+N and Ctrl+Shift+N in one', async () => {
     start();
     await menuBar();

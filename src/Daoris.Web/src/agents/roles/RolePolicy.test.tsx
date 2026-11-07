@@ -7,7 +7,7 @@ import type { ActorRow, RoleCatalogue, RolePolicyRow } from '../../data/wiring';
 import i18n from '../../locales/i18n';
 import { RolesCard, policyLine } from './Roles';
 
-// STAFFPOLICY1f (the staff policy design §6.1): a role's staffing as a policy, set in the role editor. How it chooses, each choice's weight
+// A role's staffing as a policy, set in the role editor. How it chooses, each choice's weight
 // and aim, its limits and what happens when a choice cannot go on; saved through the role door with the policy revision read, the draft kept
 // on a refusal; the stale and no-store states said; the next new start read from `ROLES`.
 

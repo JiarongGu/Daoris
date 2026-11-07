@@ -4,7 +4,7 @@ import { chinese } from '../../design/storyLanguage';
 import { storyWidths } from '../../design/storyWidths';
 import { Renamed } from './Renamed';
 
-// What a rename left, with its Finish and Undo (GITAPP2e, D204): kept by the list beyond the renamed row. Renamed, stopped before the
+// What a rename left, with its Finish and Undo: kept by the list beyond the renamed row. Renamed, stopped before the
 // branch's settings moved, undone, refused in the driver's sentence and not known, at the main area's three widths (80, 39 and 25rem)
 // in English and 中文, in both themes.
 

@@ -2,8 +2,8 @@ import { describe, expect, it, vi } from 'vitest';
 import { type CommandState, commandTable } from './commands';
 import { commandForKey, frameShortcut, isPress } from './shortcuts';
 
-// The keys, read from the one table (UX7a, D152 §3): what the frame takes wherever focus is, and what it leaves to
-// whatever has focus — a field, the shell included (CONSOLE4b).
+// The keys, read from the one table: what the frame takes wherever focus is, and what it leaves to
+// whatever has focus — a field, the shell included.
 
 const press = (key: string, mods: Partial<{ ctrl: boolean; shift: boolean; alt: boolean; meta: boolean }> = {}, code = '') => ({
   key, code, ctrlKey: Boolean(mods.ctrl), shiftKey: Boolean(mods.shift), altKey: Boolean(mods.alt), metaKey: Boolean(mods.meta),
@@ -14,7 +14,7 @@ describe('a key, read as its menu prints it', () => {
     expect(isPress(press('b', { ctrl: true }), 'Ctrl+B')).toBe(true);
     expect(isPress(press('B', { ctrl: true, alt: true }), 'Ctrl+Alt+B')).toBe(true);
     expect(isPress(press('¬', { ctrl: true, shift: true, alt: true }, 'KeyL'), 'Ctrl+Shift+Alt+L')).toBe(true);
-    // Shift turns ` into ~ and 1 into !: the place is what was meant.
+    // Shift turns ` into ~ and 1 into !: the place is what is meant.
     expect(isPress(press('~', { ctrl: true, shift: true }, 'Backquote'), 'Ctrl+Shift+`')).toBe(true);
     expect(isPress(press('`', { ctrl: true }, 'Backquote'), 'Ctrl+`')).toBe(true);
     expect(isPress(press('1', { ctrl: true }, 'Digit1'), 'Ctrl+1')).toBe(true);
@@ -30,7 +30,7 @@ describe('a key, read as its menu prints it', () => {
   });
 
   /**
-   * ZOOM1: the plus is the one key a menu prints after a `+`, and it is typed with Shift on some layouts (Shift+= on a US
+   * The plus is the one key a menu prints after a `+`, and it is typed with Shift on some layouts (Shift+= on a US
    * board) and without it on others and on the numpad, so it is read by what it says, Shift or none.
    */
   it('reads the plus by what it says, Shift or none, and the equals, the minus and the zero as printed', () => {
@@ -58,12 +58,12 @@ describe("the frame's keys, everywhere", () => {
     expect(frameShortcut(press('B', { ctrl: true, alt: true }))).toBe('view.side');
     expect(frameShortcut(press('F6'))).toBe('go.nextRegion');
     expect(frameShortcut(press('F6', { shift: true }))).toBe('go.previousRegion');
-    // UX7a's: the places, Settings, the terminal and the console are the frame's everywhere too.
+    // The places, Settings, the terminal and the console are the frame's everywhere too.
     expect(frameShortcut(press('3', { ctrl: true }, 'Digit3'))).toBe('go.quests');
     expect(frameShortcut(press(',', { ctrl: true }, 'Comma'))).toBe('workspace.settings');
     expect(frameShortcut(press('`', { ctrl: true }, 'Backquote'))).toBe('terminal.show');
     expect(frameShortcut(press('U', { ctrl: true, shift: true }, 'KeyU'))).toBe('view.console');
-    // ZOOM1: the window's zoom, as VS Code's terminal leaves it to the workbench.
+    // The window's zoom, as VS Code's terminal leaves it to the workbench.
     expect(frameShortcut(press('=', { ctrl: true }, 'Equal'))).toBe('view.zoomIn');
     expect(frameShortcut(press('+', { ctrl: true, shift: true }, 'Equal'))).toBe('view.zoomIn');
     expect(frameShortcut(press('-', { ctrl: true }, 'Minus'))).toBe('view.zoomOut');
@@ -73,7 +73,7 @@ describe("the frame's keys, everywhere", () => {
   it('leaves every other key to whatever has focus: a shell\'s interrupt, its line keys, the palette\'s key in a field', () => {
     expect(frameShortcut(press('c', { ctrl: true }))).toBeNull();
     expect(frameShortcut(press('k', { ctrl: true }))).toBeNull();
-    // A shell's next line (D152 §3.4), and a field's find.
+    // A shell's next line, and a field's find.
     expect(frameShortcut(press('n', { ctrl: true }, 'KeyN'))).toBeNull();
     expect(frameShortcut(press('f', { ctrl: true }, 'KeyF'))).toBeNull();
     expect(frameShortcut(press('j', { ctrl: true, alt: true }))).toBeNull();
@@ -98,7 +98,7 @@ describe('which command a press runs', () => {
   const inTerminal = { field: true, terminal: true };
 
   it('runs the table\'s command for its key, outside a field', () => {
-    // NEW1b: Ctrl+N is a new conversation, and a new ask Ctrl+Shift+N.
+    // Ctrl+N is a new conversation, and a new ask Ctrl+Shift+N.
     expect(commandForKey(entries(), press('n', { ctrl: true }, 'KeyN'), outside)?.id).toBe('workspace.newConversation');
     expect(commandForKey(entries(), press('N', { ctrl: true, shift: true }, 'KeyN'), outside)?.id).toBe('workspace.newAsk');
     expect(commandForKey(entries(), press('P', { ctrl: true, shift: true }, 'KeyP'), outside)?.id).toBe('view.commands');
@@ -115,7 +115,7 @@ describe('which command a press runs', () => {
     expect(commandForKey(entries(), press('N', { ctrl: true, shift: true }, 'KeyN'), inTerminal)).toBeNull();
     // The frame's own keys stay the frame's in both.
     expect(commandForKey(entries(), press('2', { ctrl: true }, 'Digit2'), inTerminal)?.id).toBe('go.sessions');
-    // The zoom too (ZOOM1): a field and a shell have no meaning of their own for it.
+    // The zoom too: a field and a shell have no meaning of their own for it.
     expect(commandForKey(entries(), press('=', { ctrl: true }, 'Equal'), inField)?.id).toBe('view.zoomIn');
     expect(commandForKey(entries(), press('-', { ctrl: true }, 'Minus'), inTerminal)?.id).toBe('view.zoomOut');
     expect(commandForKey(entries({ zoom: 125 }), press('0', { ctrl: true }, 'Digit0'), inTerminal)?.id).toBe('view.zoomReset');
@@ -126,7 +126,7 @@ describe('which command a press runs', () => {
     expect(commandForKey(entries({ list: null }), press('b', { ctrl: true }), outside)).toBeNull();
   });
 
-  /** ZOOM1: a browser zooms its page itself, so it is left the keys, and the page claims none of them. */
+  /** A browser zooms its page itself, so it is left the keys, and the page claims none of them. */
   it("leaves a browser its own zoom's keys", () => {
     const browser = entries({ attached: false, zoom: 125 });
     expect(commandForKey(browser, press('=', { ctrl: true }, 'Equal'), outside)).toBeNull();

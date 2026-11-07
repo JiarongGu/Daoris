@@ -9,7 +9,7 @@ const CHAR = 12;
 type Observed = { callback: ResizeObserverCallback; observer: ResizeObserver };
 
 /**
- * A row of tabs laid out for jsdom, which lays nothing out (TABS1).
+ * A row of tabs laid out for jsdom, which lays nothing out.
  *
  * @remarks
  * `useTabFit` reads two numbers and nothing else: the row's `clientWidth`, and each tab list's

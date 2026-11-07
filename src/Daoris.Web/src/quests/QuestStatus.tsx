@@ -7,8 +7,8 @@ import { shownStatus } from './records';
 export type QuestFacts = Pick<Quest, 'status' | 'submission' | 'hold'>;
 
 /**
- * A quest's status where a list or a line draws it (FABRIC-CLOSE1d2): *submitted* for a closure graph's quest whose agent made
- * its work ready, the pill's tone staying the status's (a submission is not a status, §E5), and *source reopened* beside it for
+ * A quest's status where a list or a line draws it: *submitted* for a closure graph's quest whose agent made
+ * its work ready, the pill's tone staying the status's (a submission is not a status), and *source reopened* beside it for
  * a step held so. Keyed on the hold, not the status: a withdrawn step is Open. A quest no closure holds draws as it always did.
  *
  * @remarks

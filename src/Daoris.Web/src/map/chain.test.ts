@@ -3,7 +3,7 @@ import type { Quest, QuestStep, Session } from '../data/api';
 import { aQuest } from '../quests/aQuest';
 import { buildChain } from './chain';
 
-// MAP1 (D67 §3, `docs/2026-09-23-map-design.md` §2): how the higher loop carried one piece of work —
+// How the higher loop carried one piece of work —
 // the ask it came from, the quests before and after it, the steps still to come, and every session
 // that ran each one. Read from records the service already keeps; no model, no machine path.
 
@@ -30,7 +30,7 @@ describe('a quest chain', () => {
     expect(buildChain('gone', [quest('q1')], [])).toEqual([]);
   });
 
-  /** A step publishes the next with `parent` set and the rest of the list carried on (D65 §4). */
+  /** A step publishes the next with `parent` set and the rest of the list carried on. */
   it('walks up through the parents and down through the published steps, in order', () => {
     const quests = [
       quest('c', { parent: 'b', filed: '2026-09-23T03:00:00Z' }),

@@ -1,7 +1,7 @@
 import type { Decorator } from '@storybook/react-vite';
 import { InTheme } from '../plugins/storyIcons';
 
-// What a flowchart's stories share (FLOWCHART1a1; the flowchart design §4.4): its frame's widths and its themes. Stories
+// What a flowchart's stories share: its frame's widths and its themes. Stories
 // only: nothing in the product imports this.
 
 /** The frame's widths (§3.2): the side bar's floor, the main area's floor, a 680 px window's main area, a wide pane. */

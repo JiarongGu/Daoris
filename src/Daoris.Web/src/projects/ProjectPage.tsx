@@ -12,7 +12,7 @@ import { HeavySlotRow } from '../work/HeavySlotLine';
 
 export type { Driving } from './setup/RepositorySetup';
 
-/** One fact of a repository: its label in the page's label column, its content wrapping beside it (POLISH4). */
+/** One fact of a repository: its label in the page's label column, its content wrapping beside it. */
 function Fact({ label, children }: { label: string; children: ReactNode }) {
   return (
     <>
@@ -23,13 +23,13 @@ function Fact({ label, children }: { label: string; children: ReactNode }) {
 }
 
 /**
- * **A repository's page** (FRAME1e, D118 §2): in Repositories' main area beside the list. Its header holds its name, its
- * standing, its summary as its one line, and its acts: the door to its code map (MAP3a) and *Manage*. Beneath, its tabs
- * (UX6f, D150 §4.2): **Details**, its facts (what the index holds, the commit it was fed from, its workspace, its line, its
+ * **A repository's page**: in Repositories' main area beside the list. Its header holds its name, its
+ * standing, its summary as its one line, and its acts: the door to its code map and *Manage*. Beneath, its tabs:
+ * **Details**, its facts (what the index holds, the commit it is fed from, its workspace, its line, its
  * unlanded branches), its declaration and for one not adopted the steps to adopt; **Branches** and **History**, its branches
- * and its line's graph as Git reads them here (UX6h1, §4.4: Git inside Repositories, D147 §2.2-§2.3); **Changes**, where the
- * person let Daoris change the checkout's files, what is staged, not staged, untracked and in conflict (GITAPP2b); **Workflow**, how its
- * work moves, drawn read-only from its rules as they stand (WORKFLOW1b, the workflow design §6.1), each step's door opening
+ * and its line's graph as Git reads them here (Git inside Repositories); **Changes**, where the
+ * person let Daoris change the checkout's files, what is staged, not staged, untracked and in conflict; **Workflow**, how its
+ * work moves, drawn read-only from its rules as they stand, each step's door opening
  * the Setup row that sets it; and **Setup**, every setting it holds on this machine (`RepositorySetup`).
  *
  * @remarks
@@ -39,32 +39,32 @@ function Fact({ label, children }: { label: string; children: ReactNode }) {
  *
  * - **A setting has one home, its Setup** (§1 rule 1): Details shows its line read-only, with a door to Setup at *Line
  *   and landing*.
- * - **A browser gets Details alone** (D47 §4): setup is this machine's, and so are its workflows (design §2.4, §6.1) and
- *   its branches and history (D147 §6); one tab is no tabs, so it has no tab row.
- * - **Adoption is the repository's own act** (D31, D32): one not adopted is offered the steps as text, and none of
+ * - **A browser gets Details alone**: setup is this machine's, and so are its workflows and
+ *   its branches and history; one tab is no tabs, so it has no tab row.
+ * - **Adoption is the repository's own act**: one not adopted is offered the steps as text, and none of
  *   adoption's own acts, like *Manage*, which writes its declaration into it. Asking its own session to take the steps is the
  *   place's *Set up…* (its adoption part), plan first, which writes nothing into the repository.
- * - **An absent act is absent, never disabled**: *Manage* and Setup only where a shell answers (D48 §7), Setup's
- *   driving only where there is somewhere to start (INT3c).
- * - **A page never prints a machine path it was answered** (D47 §4): a checkout here is a mark, never its folder.
+ * - **An absent act is absent, never disabled**: *Manage* and Setup only where a shell answers, Setup's
+ *   driving only where there is somewhere to start.
+ * - **A page never prints a machine path it is answered**: a checkout here is a mark, never its folder.
  */
 export function ProjectPage({
   registration, counts, line, unlanded = 0, here, drivable, held, branches, history, changes, integration, tab = 'details', onTab,
   onManage, onOpenCode, onOpenSetup, heavy,
 }: {
-  /** Open its page in the Agents place's Setup mode, where its Setup is (AGENTSPLACE1f). */
+  /** Open its page in the Agents place's Setup mode, where its Setup is. */
   onOpenSetup?: () => void;
   /**
-   * Its heavy-run slot (HEAVYSLOT1): who holds it at which gate and who waits, each session named by `titleOf` and opened by `onOpen`.
+   * Its heavy-run slot: who holds it at which gate and who waits, each session named by `titleOf` and opened by `onOpen`.
    * A shell's, once the driver answered; absent, no row.
    */
   heavy?: { slot: HeavySlot; titleOf: (session: string) => string; onOpen?: (session: string) => void } | null;
   registration: Registration;
   /** What the index holds of it: absent where it holds nothing. */
   counts?: Repository;
-  /** Its line as the driver resolves it (WSR2): a shell's, absent in a browser. */
+  /** Its line as the driver resolves it: a shell's, absent in a browser. */
   line?: RepositoryLine | null;
-  /** How many session branches hold work no branch of the person's holds (WSR3, D88). */
+  /** How many session branches hold work no branch of the person's holds. */
   unlanded?: number;
   /** Whether it has a checkout on this machine: absent where nothing can tell, a browser. */
   here?: boolean;
@@ -73,25 +73,25 @@ export function ProjectPage({
   /** The person has stopped the driver starting anything new here, which its header marks. */
   held?: boolean;
   /**
-   * Its Branches tab's body (UX6h1): a shell's, since a checkout is this machine's (D147 §6). Its holder reads the list only
+   * Its Branches tab's body: a shell's, since a checkout is this machine's. Its holder reads the list only
    * once the page draws it, while the tab shows. Absent, there is no Branches tab.
    */
   branches?: ReactNode;
-  /** Its History tab's body, its line's graph (UX6h1): a shell's, read only while it shows. Absent, there is no History tab. */
+  /** Its History tab's body, its line's graph: a shell's, read only while it shows. Absent, there is no History tab. */
   history?: ReactNode;
   /**
-   * Its Changes tab's body (GITAPP2b): a shell's, drawn only where the person let Daoris change this checkout's files, and read only
+   * Its Changes tab's body: a shell's, drawn only where the person let Daoris change this checkout's files, and read only
    * while it shows. Absent, there is no Changes tab.
    */
   changes?: ReactNode;
-  /** Its Integration tab's body (INTEGRATE1h): a shell's, read only while it shows. Absent, there is no Integration tab. */
+  /** Its Integration tab's body: a shell's, read only while it shows. Absent, there is no Integration tab. */
   integration?: ReactNode;
   /** The tab shown, its holder's to remember; Details where it is not handed. */
   tab?: ProjectTab;
   onTab?: (tab: ProjectTab) => void;
-  /** Manage its declaration, its wiring and its retirement (D48 §7): a shell's, and an adopter's. */
+  /** Manage its declaration, its wiring and its retirement: a shell's, and an adopter's. */
   onManage?: () => void;
-  /** Open its code map, one level into the Map (MAP3a). */
+  /** Open its code map, one level into the Map. */
   onOpenCode?: () => void;
 }) {
   const { t } = useTranslation();
@@ -119,7 +119,7 @@ export function ProjectPage({
       {onManage && <Button onClick={onManage}>{t('projects.manage.open')}</Button>}
     </>
   );
-  // A right-click on the page offers its header's acts, as its buttons press them, then its name (CTX1, D138 §4).
+  // A right-click on the page offers its header's acts, as its buttons press them, then its name.
   const menu = {
     label: repository,
     acts: [
@@ -144,7 +144,7 @@ export function ProjectPage({
   const details = (
     <>
       {adopted && !summary && (
-        /* Addressable regardless — adoption gates addressing, declaration does not (D34) — but an asker deserves to
+        /* Addressable regardless — adoption gates addressing, declaration does not — but an asker deserves to
            know they would be guessing. */
         <p className="m-0 mb-4 border-l-[3px] border-warn bg-raised px-3.5 py-2 text-body text-ink-soft">
           <Inline text={t('projects.undeclared')} />
@@ -158,7 +158,7 @@ export function ProjectPage({
           <span className="font-mono text-small tabular-nums text-ink-soft">{index}</span>
         </Fact>
         {counts?.fed && (
-          /* Where this deployment's copy came from (D48 §6). Shown rather than implied: the index is a claim about a
+          /* Where this deployment's copy came from. Shown rather than implied: the index is a claim about a
              commit, and a person who cannot see which commit has no way to tell a current view from one a machine
              stopped feeding a month ago. */
           <Fact label={t('projects.fed')}>
@@ -173,15 +173,15 @@ export function ProjectPage({
           </Fact>
         )}
         {registration.workspace && (
-          /* Which workspace this one shares with (D48). Shown rather than assumed: a machine holding two workspaces
+          /* Which workspace this one shares with. Shown rather than assumed: a machine holding two workspaces
              would otherwise present them as one family. */
           <Fact label={t('projects.workspace')}>
             <Tip content={t('projects.workspaceTip')}><Chip>{registration.workspace}</Chip></Tip>
           </Fact>
         )}
         {line?.branch && (
-          /* The branch this machine grows its work here from and lands it on (WSR2), and what said so: read-only here,
-             since a setting has one home (UX6f, D150 §1), and its door opens Setup at Line and landing, where it is set. */
+          /* The branch this machine grows its work here from and lands it on, and what said so: read-only here,
+             since a setting has one home, and its door opens Setup at Line and landing, where it is set. */
           <Fact label={t('projects.line')}>
             <span className="text-small text-ink-soft">
               <Inline text={t(`settings.lines.from.${line.source}`, { branch: line.branch, workspace: line.workspace })} />
@@ -199,7 +199,7 @@ export function ProjectPage({
           </Fact>
         )}
         {heavy && (
-          /* Who holds its heavy-run slot and at which gate, and who waits, each a door (HEAVYSLOT1, the UI/UX design §3.5): the
+          /* Who holds its heavy-run slot and at which gate, and who waits, each a door: the
              driver's reading of the slot's records; its ⓘ names the terminal's twin. */
           <Fact label={t('projects.heavy.slot')}>
             <HeavySlotRow slot={heavy.slot} titleOf={heavy.titleOf} onOpen={heavy.onOpen} />
@@ -211,7 +211,7 @@ export function ProjectPage({
       {adopted && declared && (
         <PageSection title={t('projects.page.declaration')}>
           {/* The labels are a column and the chips wrap in their own, so a second line of chips lines up under the
-              first (POLISH4). */}
+              first. */}
           <dl className="m-0 grid grid-cols-[max-content_1fr] items-baseline gap-x-4 gap-y-2">
             {registration.owns.length > 0 && (
               <Fact label={t('projects.owns')}>{registration.owns.map((item) => <Chip key={item}>{item}</Chip>)}</Fact>
@@ -228,12 +228,12 @@ export function ProjectPage({
 
       {!adopted && (
         <PageSection title={t('projects.page.adopt')}>
-          {/* The reasoning is one press away, not eight lines read before the steps on every visit (UX5 U36). */}
+          {/* The reasoning is one press away, not eight lines read before the steps on every visit. */}
           <div className="flex items-start gap-1.5">
             <Prose>{t('projects.outside.lead')}</Prose>
             <span className="mt-0.5 shrink-0"><WhyGlyph why={t('projects.outside.body')} /></span>
           </div>
-          {/* A sentence with its commands as code — it was all monospace, prose included (POLISH4). */}
+          {/* A sentence with its commands as code; the prose around them is not monospace. */}
           <p className="mt-3 mb-0 rounded-control bg-accent-soft px-3 py-2.5 text-small">
             <Inline text={t('projects.outside.join')} />
           </p>
@@ -281,13 +281,13 @@ export function ProjectPage({
 }
 
 /**
- * Repositories' main area with no page to show (D118 §3b): **nothing chosen** says how to choose and offers the list's
- * `＋` where there is one; **gone** says the chosen repository, or workspace, is no longer here; **loading** is skeleton
+ * Repositories' main area with no page to show: **nothing chosen** says how to choose and offers the list's
+ * `＋` where there is one; **gone** says the chosen repository, or workspace, is gone; **loading** is skeleton
  * rows, never the empty state; and a registry that never answered says its sentence in place.
  */
 export function ProjectsMainNotice({ state, of = 'repository', sentence, action }: {
   state: 'none' | 'gone' | 'loading' | 'unanswered';
-  /** What has gone: the chosen repository, or the chosen workspace (UX6g). */
+  /** What has gone: the chosen repository, or the chosen workspace. */
   of?: 'repository' | 'workspace';
   /** The sentence for a registry that has never had an answer. */
   sentence?: string;

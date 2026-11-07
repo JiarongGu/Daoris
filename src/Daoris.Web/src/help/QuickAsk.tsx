@@ -3,14 +3,14 @@ import { useTranslation } from 'react-i18next';
 import { Button, Icon, QuickPanel, Tip } from '../design/ui';
 
 /**
- * Quick Ask (DOCK1d): Ask Daoris's conversation in a box at the palette's place, for one question
+ * Quick Ask: Ask Daoris's conversation in a box at the palette's place, for one question
  * without opening a region — VS Code's Quick Chat.
  *
  * @remarks
  * **The same conversation, not a second one**: the box holds the organism the side bar holds, so a
  * question asked here is read on there, and *Open in the side bar* carries on in the region with nothing
  * lost. It opens from its key, from the palette's *Quick Ask*, and from the palette's last row, which
- * asks what was typed.
+ * asks what is typed.
  *
  * **Where the palette is, and shaped like it** (`QuickPanel`): near the top, not centred, since the
  * conversation grows downward; the title bar and the status bar stay live around it. Escape or a click

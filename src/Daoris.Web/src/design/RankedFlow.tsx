@@ -17,7 +17,7 @@ import { rem, MarkChip, RailMark, describe, foldStacks, foldRanges, padding, DAS
 const LIST_KEY = 'daoris.flow.list';
 
 /**
- * **A flowchart** (FLOWCHART1a1; D186, the flowchart design §3 and §4): one process drawn from its record, laid out in
+ * **A flowchart**: one process drawn from its record, laid out in
  * layers by `layoutFlow` and placed by the pane's own width, left to right, top to bottom, or as the rail, a list whose
  * edges are words. The same nodes are one list in reading order in every placement, so a reader and a keyboard follow
  * the list and never the drawing.
@@ -36,21 +36,21 @@ const LIST_KEY = 'daoris.flow.list';
  *   → along the first edge out, ← back along the edge it came by else its first edge in; Enter opens its door; a key
  *   aimed at a control inside a node is the control's, and Escape gives the focus back to its node. The focus is kept by
  *   node id across a change of placement and a new layout. A key an input method is composing with is the method's.
- * - **Too large to show whole** (FLOWCHART1d, §3.6): past 24 nodes, after the stacks, settled stretches fold and the flow is focused
+ * - **Too large to show whole**: past 24 nodes, after the stacks, settled stretches fold and the flow is focused
  *   on the ranks around every current node, or with none current where it starts, ends or got to (`largeFolds`). A fold is a node
  *   with a press, every edge across its boundary drawn to it, merged by cause and by the node outside and counted; *Show whole*
  *   opens every fold and *Fold again* folds them back. What is open is page state, never remembered, and a fold the person opened
  *   stays open while the state moves; a node folded away gives its focus to its fold, and an opened fold gives it back.
- * - **Sections** (FLOWCHART1d): a caller's titles, each from a node's rank, the first heading the flow and each later one a divider
+ * - **Sections**: a caller's titles, each from a node's rank, the first heading the flow and each later one a divider
  *   before its rank; a flow in sections is never left to right.
  *
- * - **Ports and data** (FLOWCHART2a): the canvas draws the layout, the ink and the keys and a caller draws the nodes (`renderNode`) and
+ * - **Ports and data**: the canvas draws the layout, the ink and the keys and a caller draws the nodes (`renderNode`) and
  *   the chips (`renderLabel`). A `when` edge with a `port` leaves the box of that port, which the caller's node draws; a `data` edge
  *   is read by neither the layout nor the folds, and is drawn only while a flow given `selected` has an end selected.
- * - **Editing** (FLOWCHART2b): an editor's ＋ on a way (`renderInsert`), placed as a label is and under its source in the rail, and pick
+ * - **Editing**: an editor's ＋ on a way (`renderInsert`), placed as a label is and under its source in the rail, and pick
  *   mode (`pick`), in which the keys walk only the nodes that can take the way being chosen. What a press does is the caller's.
  *
- * - **The viewport** (CANVAS1a; D224): a caller that opts in (`viewport`) has its drawing stand in the canvas (`canvas/Canvas.tsx`) from
+ * - **The viewport**: a caller that opts in (`viewport`) has its drawing stand in the canvas (`canvas/Canvas.tsx`) from
  *   36rem of the pane, where a zoom and a pan transform it and lay nothing out again: its boxes are read in world units
  *   (`canvas/worldBoxes.ts`), its track is sized from the pane at 100%, and a focus walked takes `preventScroll`, the canvas revealing it.
  *   A rem is the root's as measured, so the window's zoom places a flow by what it needs.
@@ -62,7 +62,7 @@ export function RankedFlow({
   renderInsert, pick = null, viewport = 'none', selection = null, connect = null, onEdge,
 }: FlowCanvasProps) {
   const { t } = useTranslation();
-  // A data wire is no way on: the layout, the stacks and the folds never read it (FLOWCHART2a).
+  // A data wire is no way on: the layout, the stacks and the folds never read it.
   const givenEdges = useMemo(() => allEdges.filter((edge) => edge.style !== 'data'), [allEdges]);
   const dataEdges = useMemo(() => allEdges.filter((edge) => edge.style === 'data'), [allEdges]);
   const showsData = selected !== undefined;
@@ -84,7 +84,7 @@ export function RankedFlow({
   // *Show whole* (§3.6): every fold opened, stacks among them, until *Fold again*. Page state, never remembered.
   const [whole, setWhole] = useState(false);
 
-  // Stacks (FLOWCHART1c; §3.6 step 1): three or more like nodes in a chain drawn as one fold, opened by its press. Which are open is
+  // Stacks: three or more like nodes in a chain drawn as one fold, opened by its press. Which are open is
   // page state, never remembered. The stacks are found from the shape alone, as the layout is; the focus follows a fold that opens
   // to its first member, and one that closes to the fold.
   const stackKey = JSON.stringify([given.map((node) => [node.id, node.stack?.key ?? null]), givenEdges.map((edge) => [edge.id, edge.from, edge.to]), givenEntries]);
@@ -104,7 +104,7 @@ export function RankedFlow({
   }, []);
   const stacked = foldStacks(t, given, givenEdges, givenEntries, whole ? [] : stacks, opened, toggle);
 
-  // Past 24 nodes (FLOWCHART1d; §3.6 steps 2-3): settled stretches, then the focus, which follow what is current and settled, so
+  // Past 24 nodes: settled stretches, then the focus, which follow what is current and settled, so
   // they are kept by that and by the folds the person opened. A fold opens to the node that had the focus where it holds it.
   const [openedLarge, setOpenedLarge] = useState<ReadonlySet<string>>(() => new Set());
   const large = stacked.nodes.length > WHOLE_MOST;
@@ -154,13 +154,13 @@ export function RankedFlow({
 
   const byId = useMemo(() => new Map(nodes.map((node) => [node.id, node])), [nodes]);
   const backs = useMemo(() => new Set(layout.paths.filter((path) => path.back).flatMap((path) => path.edges)), [layout]);
-  // The paths that carry an edge the record kept as taken (FLOWCHART1a2), drawn heavier; the layout never reads it.
+  // The paths that carry an edge the record kept as taken, drawn heavier; the layout never reads it.
   const taken = useMemo(() => {
     const kept = new Set(edges.filter((edge) => edge.taken).map((edge) => edge.id));
     return new Set(layout.paths.filter((path) => path.edges.some((id) => kept.has(id))).map((path) => path.id));
   }, [layout, edges]);
 
-  // Sections (FLOWCHART1d): the first heads the flow; each later one divides the drawing before the rank its node is drawn in, and a
+  // Sections: the first heads the flow; each later one divides the drawing before the rank its node is drawn in, and a
   // reader hears its title at that node.
   const [head, ...later] = sections ?? [];
   const divided = new Map<string, string[]>();
@@ -174,8 +174,8 @@ export function RankedFlow({
     if (rank !== undefined) dividedAt.set(rank, [...(dividedAt.get(rank) ?? []), ...titles]);
   }
 
-  // The roving stop: the node the person was last on, else the current one, else the first in reading order; in pick mode, a node that
-  // can take the way (FLOWCHART2b).
+  // The roving stop: the node the person last stood on, else the current one, else the first in reading order; in pick mode, a node that
+  // can take the way.
   const roving = stop !== null && byId.has(drawnOf(stop))
     ? drawnOf(stop)
     : layout.order.find((id) => byId.get(id)?.current) ?? layout.order[0] ?? null;
@@ -225,7 +225,7 @@ export function RankedFlow({
 
   const onKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
     if (isComposing(event)) return;
-    // A key with Ctrl, Alt or the system key is the page's around the flow, such as an editor's move or undo (FLOWCHART2b).
+    // A key with Ctrl, Alt or the system key is the page's around the flow, such as an editor's move or undo.
     if (event.ctrlKey || event.altKey || event.metaKey) return;
     const target = event.target as HTMLElement;
     const holder = target.closest<HTMLElement>('[data-flow-node]');
@@ -299,7 +299,7 @@ export function RankedFlow({
 
   // The edges, drawn from the measured boxes, again on each resize of the drawing or of a node; nothing drawn moves a box.
   // The resizes of one frame are drawn once, on the next (trap 14), and a geometry that came out the same is not drawn.
-  // The ＋ an editor offers on each way: none on a way back, and on the drawing none on a path that merges several edges (FLOWCHART2b).
+  // The ＋ an editor offers on each way: none on a way back, and on the drawing none on a path that merges several edges.
   const inserts = new Map<string, ReactNode>();
   if (renderInsert) {
     for (const edge of edges) {
@@ -333,7 +333,7 @@ export function RankedFlow({
     return observeWorld(element, () => {
       const read = readWorld(element);
       const next = read && measure(element, read, layout, placement, shownData, onPaths);
-      // The canvas follows the world the ink was drawn from: its size, its opening and the anchor across a relayout.
+      // The canvas follows the world the ink is drawn from: its size, its opening and the anchor across a relayout.
       if (read) canvas.current?.measured(read);
       setInk((was) => {
         if (!next) return was === null ? was : null;
@@ -361,13 +361,13 @@ export function RankedFlow({
     ...(pick ? { picking: pick.can(id) } : {}),
   });
 
-  // In pick mode a press on a node that cannot take the way leaves the focus where it is (FLOWCHART2b).
+  // In pick mode a press on a node that cannot take the way leaves the focus where it is.
   const onMouseDown = (event: MouseEvent<HTMLDivElement>) => {
     const holder = (event.target as HTMLElement).closest<HTMLElement>('[data-flow-node]');
     if (pick && holder && !pick.can(holder.dataset.flowNode!)) event.preventDefault();
   };
 
-  // *Show whole* where a flow past 24 nodes draws a fold, *Fold again* once one was opened (§3.6).
+  // *Show whole* where a flow past 24 nodes draws a fold, *Fold again* once one is opened.
   const anyFold = folds.length > 0 || (!whole && stacks.some((stack) => !opened.has(stack.id)));
   const showWhole = large && !whole && anyFold;
   const foldAgain = large && (whole || openedLarge.size > 0);

@@ -17,7 +17,7 @@ import { graphIdentity } from './viewMemory';
 import type { Box, ZoomBounds } from './viewMath';
 import type { WorldRead } from './worldBoxes';
 
-// A positioned world the feature supplies (CANVAS1e; D224, the canvas design §2.2): the feature's own frame, boxes and drawing over the
+// A positioned world the feature supplies: the feature's own frame, boxes and drawing over the
 // canvas, which gives the viewport, the tiers with culling past 400 cards and the dot layer, find with its list, the list view, the
 // viewer's place with the selection-gone notice, the minimap and one roving stop. Nodes are the
 // feature's content in a button the canvas places; lines are the feature's SVG, each a stop the canvas walks. Display only: a press
@@ -259,7 +259,7 @@ export function SuppliedCanvas({
     </>
   );
 
-  // Below the floor the list is the reading (MAPUX1e): no viewport is offered there, so no way back to the graph either.
+  // Below the floor the list is the reading: no viewport is offered there, so no way back to the graph either.
   const narrow = list !== undefined && width !== undefined && !wide;
   if ((listed || narrow) && list !== undefined) {
     return (

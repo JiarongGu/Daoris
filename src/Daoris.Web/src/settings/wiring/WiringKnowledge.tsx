@@ -8,7 +8,7 @@ import { Door, Fact, WiringCard } from './WiringParts';
 const DB_VARIABLE = 'DAORIS_KNOWLEDGE_DB';
 
 /**
- * The knowledge store (the this-Daoris design §3.8): its file and what named it, its size counting the write-ahead log, the
+ * The knowledge store: its file and what named it, its size counting the write-ahead log, the
  * family root the hosted service indexes (what this window handed it), and the tier the service reports, with the door to AI
  * features, where the tier is set.
  *
