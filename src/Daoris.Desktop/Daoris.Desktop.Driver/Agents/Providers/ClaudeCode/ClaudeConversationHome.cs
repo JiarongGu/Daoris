@@ -18,4 +18,7 @@ internal sealed class ClaudeConversationHome : IConversationHome
 
     /// <inheritdoc/>
     public ProjectFolders? Projects { get; } = new("CLAUDE_CONFIG_DIR", ".claude", "projects", path => Other.Replace(path, "-"));
+
+    /// <inheritdoc/>
+    public IConversationCarry? Carry => ClaudeConversationCarry.Carry;
 }

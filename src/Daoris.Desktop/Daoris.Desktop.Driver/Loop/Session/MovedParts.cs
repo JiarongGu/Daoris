@@ -18,19 +18,38 @@ internal static class MovedParts
     /// its console too, with the context the part it left stood at and the brief's characters; and <c>session.moved</c> in the
     /// machine log. Every driven start that continues another says it, whatever moved it.
     /// </summary>
-    public static void Say(LoopContext context, PriorSession prior, string sessionId, string agent, string? account, string why, ComposedBrief brief)
+    /// <param name="notCarried">The carry's code where a limit's move asked to carry its conversation and could not, said on the new part.</param>
+    public static void Say(
+        LoopContext context, PriorSession prior, string sessionId, string agent, string? account, string why, ComposedBrief brief, string? notCarried = null)
     {
         var used = RotatedOpening.ContextOf(context.Usage, context.Events, prior.Session);
         var ranOn = prior.Adapter ?? agent;
         var on = HandOverNotes.MovedOn(sessionId, agent, account, why, used, brief.Text.Length);
         var from = HandOverNotes.MovedFrom(prior.Session, ranOn, prior.Profile, why, used, brief.Text.Length);
-        foreach (var (session, line) in new[] { (prior.Session, on), (sessionId, from) })
-        {
-            context.Output?.Append(session, line.Note);
-            context.Events.Keep(session, new SessionEvent { Kind = SessionEventKind.Note, Text = line.Note, Parts = line.Parts }, say: null);
-        }
+        var lines = new List<(string, Noted)> { (prior.Session, on), (sessionId, from) };
+        if (notCarried is not null) lines.Add((sessionId, CarriedNotes.NotCarried(notCarried)));
+        foreach (var (session, line) in lines) Keep(context, session, line);
 
-        context.Service.AccountSaid(Continuations.Moved(sessionId, prior.Session, ranOn, agent, prior.Profile, account, why, briefed: true));
+        context.Service.AccountSaid(Continuations.Moved(sessionId, prior.Session, ranOn, agent, prior.Profile, account, why, briefed: true, carry: notCarried));
+    }
+
+    /// <summary>
+    /// A limit's move whose own conversation was carried to the new account, said on the part it left and in the machine log; the new
+    /// part's line is its resume's first (<see cref="CarriedNotes.From"/>).
+    /// </summary>
+    public static void SayCarried(LoopContext context, PriorSession prior, string sessionId, string agent, string? account, string why, CarryPlan.Carried carried)
+    {
+        var ranOn = prior.Adapter ?? agent;
+        Keep(context, prior.Session, CarriedNotes.On(sessionId, agent, account, why, carried.Tokens));
+        context.Service.AccountSaid(Continuations.Moved(
+            sessionId, prior.Session, ranOn, agent, prior.Profile, account, why, briefed: false,
+            carry: carried is CarryPlan.Compacted ? "compacted" : "whole"));
+    }
+
+    private static void Keep(LoopContext context, string session, Noted line)
+    {
+        context.Output?.Append(session, line.Note);
+        context.Events.Keep(session, new SessionEvent { Kind = SessionEventKind.Note, Text = line.Note, Parts = line.Parts }, say: null);
     }
 
     /// <summary>

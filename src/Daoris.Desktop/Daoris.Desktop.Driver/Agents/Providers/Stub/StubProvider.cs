@@ -88,7 +88,7 @@ internal static class StubProvider
             Known<UsagePart>.Absent,
             Known<LentPart>.Declared(lent, Evidence),
             Known<ISettingsFile>.Absent, Known<IChildVocabulary>.Absent, Known<IRuleLanguage>.Absent, Known<ISkillLayout>.Absent,
-            Known<IConversationHome>.Absent,
+            Known<IConversationHome>.Declared(StubConversationHome.Home, Evidence),
             Reach.Everywhere,
             Known<VocabularyPart>.Absent);
     }

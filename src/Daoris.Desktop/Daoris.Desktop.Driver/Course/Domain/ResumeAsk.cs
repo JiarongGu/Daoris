@@ -79,7 +79,7 @@ internal sealed class ResumeAsk(
     /// What the conversation is resumed with on the native door: the words, then the appendix, after a blank line. Never the standing
     /// block, which its first message carried: a go-on is the same conversation.
     /// </summary>
-    public string Prompt => string.Join("\n\n", new[] { Answer }.Concat(Afterwards));
+    public string Prompt => string.Join("\n\n", new[] { Answer }.Where(answer => answer.Length > 0).Concat(Afterwards));
 
     /// <summary>The same on the protocol door: each word its own text block in order, then the appendix as one more.</summary>
     public IReadOnlyList<string> Blocks =>

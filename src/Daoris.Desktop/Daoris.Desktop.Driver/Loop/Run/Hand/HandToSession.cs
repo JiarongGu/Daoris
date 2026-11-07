@@ -69,12 +69,20 @@ internal sealed class HandToSession(IRunWiring wiring) : IRunStage
             // turn's outcome, read in the tree this start works in, which every carry-on is handed, since a cut-off for any reason loses
             // the same thread. And the note its agent left where it asked to hand over, the brief's own section as that agent's claim.
             var handedNote = carryingOn && handedFrom ? handedQuest?.Note : null;
-            var brief = prior is null
+            // A limit's move onto another account of the same agent carries the conversation itself where its door can, and is briefed only
+            // where it cannot or the copy fails.
+            var carryPlan = LimitCarried.Plan(context, adapter, prior, continues?.Why, selection, workTree);
+            var conversation = carryPlan as CarryPlan.Carried;
+            var brief = prior is null || conversation is not null
                 ? null
                 : await ContextBriefs.ComposeAsync(
                     service, context.Events, home, prior.Session, continues?.Why ?? HandOverWhy.CarryOn, conversation: false, note: handedNote,
                     config: config, tree: workTree, ct: ct).ConfigureAwait(false);
-            if (prior is not null && continues is not null && brief is not null) wiring.SayMoved(prior, sessionId, agent, selection.Profile, continues.Why, brief);
+            if (prior is not null && continues is not null && conversation is not null) wiring.SayCarried(prior, sessionId, agent, selection.Profile, continues.Why, conversation);
+            if (prior is not null && continues is not null && brief is not null)
+            {
+                wiring.SayMoved(prior, sessionId, agent, selection.Profile, continues.Why, brief, (carryPlan as CarryPlan.Briefed)?.Why);
+            }
             // A start with no brief carries its line's course where any count is not zero, a quest that failed here before among them.
             var course = brief is null ? ContextBrief.Counted((await LineCountsRead.FactsAsync(service, home, sessionId, ct).ConfigureAwait(false)).Counts) : null;
             var elsewhere = prior is not null && AccountIdentity.OnAnotherAccount(prior, selection.Profile, limitWalks ? agent : null);
@@ -217,7 +225,12 @@ internal sealed class HandToSession(IRunWiring wiring) : IRunStage
                 SetUpFrom = setUp is null ? null : ReviewRules.Resolve(config, quest.To, start.Workspace)?.Source,
             };
             tree.OneLook.Dispose();
-            var (info, harnessNotice) = wiring.Prepare(adapter, target, selection);
+            var (info, harnessNotice) = wiring.Prepare(
+                adapter, target, selection, conversation is null ? null : LimitCarried.Prepared(context, adapter, target, conversation));
+            if (conversation is not null) LimitCarried.Compact(info, conversation);
+            var carriedAsk = conversation is null || prior is null || continues is null
+                ? null
+                : LimitCarried.Ask(conversation, CarriedNotes.From(prior.Session, prior.Adapter ?? agent, prior.Profile, continues.Why, conversation), movedOn);
 
             // The creating sentence, on the record while the session runs: where it grew from and what a fresh tree does not hold. The
             // conclusion's note replaces it.
@@ -272,6 +285,8 @@ internal sealed class HandToSession(IRunWiring wiring) : IRunStage
                 handedPlan: connectors,
                 drivesBrowser: drivesBrowser,
                 said: wiring.Said(adapter, selection, sessionId), limits: wiring.NativeLimit(adapter),
+                // A carried conversation is resumed on the new account, its first prompt Daoris's word.
+                resume: carriedAsk,
                 // A native run holds what the person says while it works, and goes on with it in its own conversation.
                 goesOnAs: selection,
                 stopMade: stop => endings.StoppedFirst = stop,
