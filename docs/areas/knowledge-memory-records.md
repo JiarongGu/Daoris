@@ -145,7 +145,8 @@ one job each, checked by `verify`.
     request key or a parent is a quest's identity, so it answers its own quest whatever became of it.
 32. Records sync, processes never. Session records, channel messages and code maps travel keyed by origin and id, a feed taken
     whole or refused whole. Only local knowledge feeds, replacing that repository's entries. No wire carries a root, a
-    transcript or private content. (from D47)
+    transcript or private content. A feed is admitted, ordered and written inside one gate, so one queued behind a declaration
+    that stopped sharing is refused. (from D47)
 33. Two trust shapes: local trusts the loopback and binds nothing else; shared gates every route with minted per-person,
     per-machine, expiring keys, stored as a hash. (from D47)
 
