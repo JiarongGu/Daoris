@@ -235,9 +235,7 @@ public static class AccountSettings
         HarnessRoster harnesses, string harness, string? profile,
         Func<(AgentSettingEdit? Model, AgentSettingEdit? Effort, IReadOnlyDictionary<string, AgentSettingEdit>? PerModel)> edits)
     {
-        _ = harnesses.AgentOf(harness)
-            ?? throw new DriverException(
-                $"Daoris manages no toolchain for `{harness}` — its accounts are its own tooling's.");
+        _ = ManagedAgents.Of(harnesses, harness);
         var owner = harnesses.Adapters.OwnerOfAgent(harness).Value;
         var file = harnesses.AccountAgentOf(harness)?.Accounts.SettingsFile
             ?? throw new DriverException(

@@ -25,6 +25,7 @@ vi.mock('@shenora/react', async () => {
 
 import i18n from '../../locales/i18n';
 import { keys } from '../../data/queries';
+import { asksOf } from '../../test/sliceShell';
 import { WorkspaceScopeProvider } from '../../data/scope';
 import type { RuleProposal } from '../../settings/repository/AgentRules';
 import { composeAttention, type HarnessRoster } from '../../bridge/shell';
@@ -162,8 +163,8 @@ function start(rows: PushedAttention[], props: {
   );
 }
 
-/** What the band asked the bridge, by its call's type. */
-const asked = () => invoke.mock.calls.map(([, type]) => type as string);
+/** What the band asked the bridge. */
+const asked = () => asksOf(invoke);
 
 describe('What needs you on a machine', () => {
   afterEach(() => {

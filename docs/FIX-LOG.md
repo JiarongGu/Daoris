@@ -5,6 +5,28 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-11-07 - The service's provider census read a file no service gate writes, and the locator's empty cases found the checkout's build (CI 9)
+
+- **Symptom:** CI run 9's fast half: all eleven `ProviderCensusTests` of the service failed with *the page's service types hold no
+  PROVIDER_VOCABULARY*; MOD9's tool test refused the same read; the driver's `ServiceHostLocatorTests` and `KnowledgeConnectorTests`
+  answered the gate tree's built service host where nothing should exist; and two `StructureTests` cases, a web vitest and seven
+  censuses were red beside them.
+- **Root cause:** AGENTPROVIDER1t (5f5d5417a9) had the service's census read its ids and words from the page's generated service
+  types, ignored by git and written only by `quick` and the web's pre-scripts, so the service gate read whatever an earlier run left.
+  The fixture root's move under the checkout (7952835475) left the locators' nothing-anywhere cases under it, where the walk up reaches
+  the checkout's manifest and its build (6105fca831 moved two of the three). The watcher's long-call look (37701903a3) and the store's
+  names step (06a4d64cd6) each named a type above its subdomain. The band's vitest counted the mocked window's slice reads, which land
+  once the page's modules load, as the band's asks.
+- **Fix:** the service's twin is `ServiceProviderCensusTests` in the driver's tests, reading `ProviderVocabulary` (fb376fcc2b); the empty
+  cases stand under the OS temp folder (b4871b4dbd); `RunningTask` lies in `Events/Domain` and the store owns `NamesVersion`
+  (de055b5b09); the band's asks are read through `asksOf` (55d89632fa). The censuses list what the merged chunks added (b4871b4dbd).
+- **The modules' Process half (2):** an action on an unknown agent named none that exists (D23): AGENTPROVIDER1t's `AgentNamed`
+  answers null where `Toolchain` refused by name (f580136940), and `ManagedAgents.Of` now refuses with the registry's sentence. A start
+  handed its place by the gate's hand-on (984cc575b5) as its wait was cancelled began anyway, so a left read could start a git after
+  the leave on a loaded machine; the gate gives the place back and throws (61ca1454e7).
+- **Verify:** the CI 9 logs are the red; each class green filtered; the driver's fast half (two timing reds beside a running CI,
+  `JournalFeedTests` and `ChatGoOnTests`, each green alone); the service's fast half, `quick`, `test-map --check`, the CLI suite and
+  MOD9's tool tests.
 ## 2026-11-07 - Two browser specs kept the note and the rail as they were before ONEWAY1 moved them (CI run 9)
 
 - **Symptom:** CI run 9 on main: the e2e "a driven session's record reaches the quest's page (D46)" found no "the process is alive" in

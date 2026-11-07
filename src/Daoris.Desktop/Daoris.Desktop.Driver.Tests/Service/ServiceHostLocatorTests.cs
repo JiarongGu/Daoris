@@ -268,9 +268,9 @@ public sealed class ServiceHostLocatorTests : IDisposable
     [Fact]
     public void Locate_answers_null_rather_than_throwing_when_nothing_exists()
     {
-        var lonely = Path.Combine(_root, "nothing");
+        var lonely = Path.Combine(_bare, "nothing");
         Directory.CreateDirectory(lonely);
 
-        Assert.Null(ServiceHostLocator.Locate(null, Path.Combine(_root, "no-home"), lonely));
+        Assert.Null(ServiceHostLocator.Locate(null, Path.Combine(_bare, "no-home"), lonely));
     }
 }

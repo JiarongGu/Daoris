@@ -7,16 +7,15 @@ namespace Daoris.Driver;
 /// </summary>
 internal static class HistoryPieces
 {
-    /// <summary>Taken in, discarded or refused: nothing of the piece waits on anyone, and its ref and box stay as they stand.</summary>
-    public static bool Settled(string state) =>
-        state is PartnerStates.TakenIn or PartnerStates.Discarded or PartnerStates.Refused;
-
-    /// <summary>The keep naming the lead of the first unsettled piece one of <paramref name="sessions"/> asked for; null where none is.</summary>
-    public static HistoryKeep? Keep(IReadOnlyList<string> sessions, PartnerFiles files)
+    /// <summary>
+    /// The keep naming the lead of the first unsettled piece one of <paramref name="sessions"/> asked for; null where none is. A settled
+    /// piece's ref and box stay as they stand.
+    /// </summary>
+    public static HistoryKeep? Keep(IReadOnlyList<string> sessions, IReadOnlyList<HistoryPiece> pieces)
     {
-        foreach (var piece in files.Reservations())
+        foreach (var piece in pieces)
         {
-            if (Settled(piece.State) || !sessions.Contains(piece.Lead, StringComparer.Ordinal)) continue;
+            if (piece.Settled || !sessions.Contains(piece.Lead, StringComparer.Ordinal)) continue;
             return new HistoryKeep(
                 HistoryWords.NeedsYou,
                 $"Session `{piece.Lead}`'s piece `{piece.Id}` is still {piece.State} and waits on you; take it in, or discard it, first.")

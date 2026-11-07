@@ -471,10 +471,11 @@ public sealed class AccountsRoutes(DriverLoop loop)
     /// A door's accounts are its owner's (AGT7); a door with no toolchain has no accounts to edit. Ask Daoris's account cards
     /// ask it too, as the screen's own door.
     /// </summary>
-    internal static string OwnerOf(HarnessRoster harnesses, string harness) =>
-        harnesses.AgentOf(harness) is null
-            ? throw new DriverException($"Daoris manages no toolchain for `{harness}` — its accounts are its own tooling's.")
-            : harnesses.Adapters.OwnerOfAgent(harness).Value;
+    internal static string OwnerOf(HarnessRoster harnesses, string harness)
+    {
+        _ = ManagedAgents.Of(harnesses, harness);
+        return harnesses.Adapters.OwnerOfAgent(harness).Value;
+    }
 
     /// <summary>
     /// A scope's list written whole (D125 §3.1, D130 §3.1, §4.6), as <c>daoris agent account order</c> writes it: each name an

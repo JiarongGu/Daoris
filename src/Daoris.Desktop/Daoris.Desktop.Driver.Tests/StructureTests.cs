@@ -390,7 +390,7 @@ public sealed class StructureTests(Xunit.Abstractions.ITestOutputHelper output)
     public void Agents_reads_review_background_data_below_the_review_operation()
     {
         Assert.Empty(Tree.Value.Analysis.Edges.Where(edge => edge.File.StartsWith("Agents/", StringComparison.Ordinal)
-            && (edge.Type == "ReviewDesk" || edge.Type == "RunningTask" && edge.DeclaredIn.Any(path => !path.StartsWith("Agents/", StringComparison.Ordinal)))));
+            && (edge.Type == "ReviewDesk" || edge.Type == "RunningTask" && edge.DeclaredIn.Any(path => path.StartsWith("Review/", StringComparison.Ordinal)))));
     }
 
     [Fact]

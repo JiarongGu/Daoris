@@ -353,9 +353,7 @@ public sealed class AgentsRoutes(DriverContext context)
         var config = DriverConfig.Load(_loop.ConfigPath);
         // A DriverException, so it travels the same way `Toolchain` already refuses an adapter
         // name it does not know: one mapping, one shape, and the driver's own sentence intact.
-        var toolchain = _loop.Harnesses.AgentOf(harness)
-            ?? throw new DriverException(
-                $"Daoris manages no toolchain for `{harness}` — its accounts are its own tooling's.");
+        var toolchain = ManagedAgents.Of(_loop.Harnesses, harness);
 
         var command = config.Commands.GetValueOrDefault(harness);
         var stream = Actions.Relay(harness, action);

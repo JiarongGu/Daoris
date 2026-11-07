@@ -137,8 +137,7 @@ internal sealed class HelpScreenDoors(DriverContext context, ServiceClient? serv
     public Task StartAgentActionAsync(string harness, string action, string? version, Action<int, string?> ended, CancellationToken ct)
     {
         var config = DriverConfig.Load(_loop.ConfigPath);
-        var toolchain = _loop.Harnesses.AgentOf(harness)
-            ?? throw new DriverException($"Daoris manages no toolchain for `{harness}` — its accounts are its own tooling's.");
+        var toolchain = ManagedAgents.Of(_loop.Harnesses, harness);
         return context.Actions.StartProcessActionAsync(
             harness, action, profile: null, version, toolchain, config.Commands.GetValueOrDefault(harness),
             context.Actions.Relay(harness, action), config, ended);

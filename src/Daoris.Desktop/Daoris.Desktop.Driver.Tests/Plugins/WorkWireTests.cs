@@ -22,8 +22,9 @@ public sealed class WorkWireTests
     public void The_points_and_methods_are_named_once()
     {
         Assert.Equal(["work/watch", "work/step", "work/perform"], HookPoints.Work);
-        // FABRIC-PERFORM1e: they joined the kit's points last, in their order, so the earlier points keep their places.
-        Assert.Equal(HookPoints.Work, HookPoints.All.TakeLast(3));
+        // FABRIC-PERFORM1e: they joined the kit's points after the earlier ones, in their order, and work/event (EVENTHOOK1b) after them,
+        // so every earlier point keeps its place.
+        Assert.Equal([.. HookPoints.Work, HookPoints.Event], HookPoints.All.TakeLast(4));
         Assert.Equal(("hook/work/watch", "hook/work/perform", "hook/work/reconcile", "work/step"),
             (WorkWire.WatchMethod, WorkWire.PerformMethod, WorkWire.ReconcileMethod, WorkWire.StepMethod));
         Assert.Equal("work.perform@1", WorkWire.Capability);

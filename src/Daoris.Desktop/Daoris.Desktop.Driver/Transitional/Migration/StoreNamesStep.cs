@@ -8,7 +8,7 @@ namespace Daoris.Driver;
 public sealed class StoreNamesStep : IHomeMigrationStep
 {
     /// <summary>The store's version whose step renames them.</summary>
-    public const int Version = 22;
+    public const int Version = DesktopStore.NamesVersion;
 
     public string Name => "store-names";
 

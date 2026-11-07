@@ -1,20 +1,22 @@
-using System.Text;
 using System.Text.Json;
 using System.Text.RegularExpressions;
+using Daoris.Driver;
 
-namespace Daoris.Service.Tests;
+namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// AGENTPROVIDER1 row a, part 3 (the agent-provider design §9, D213): the service's twin of the driver's <c>ProviderCensusTests</c>. The
+/// AGENTPROVIDER1 row a, part 3 (the agent-provider design §9, D213): the service's twin of <see cref="ProviderCensusTests"/>. The
 /// service names no driver type, so what can cross is a literal and a key: every site in the service's four production projects that
 /// names a provider's id, variable, file or wire key is counted over the source with its comments blanked, and each is a named exception
-/// in the <c>service</c> section of the driver's <c>fixtures/provider-census.json</c>, by file and token (the count is not pinned, CENSUSRULES1), the design's row that moves
-/// it and its class. The ids and the vocabulary are the driver's registrations', which the contracts' generator writes into the page's
-/// service types (<c>PROVIDER_VOCABULARY</c>), the one table the four censuses share; nothing here copies a word of it. The service's ordered
-/// call readers (<c>Core/Sessions/CallLineage.cs</c>, §3.3) and its open's default (D23's supported default, §6) are named exceptions with
-/// the row or the decision that keeps them.
+/// in the <c>service</c> section of <c>fixtures/provider-census.json</c>, by file and token (the count is not pinned, CENSUSRULES1), the
+/// design's row that moves it and its class. The ids and the vocabulary are the registrations' own, <see cref="ProviderVocabulary"/>, read
+/// here in the suite that holds them: the service's tests reference no driver, and the page's generated types are written by no service
+/// gate and tracked by no commit. A change to the service's sources reaches this suite through the service lane's gates.
+/// The service's ordered call readers (<c>Core/Sessions/CallLineage.cs</c>, §3.3) and its open's default (D23's supported default, §6)
+/// are named exceptions with the row or the decision that keeps them.
 /// </summary>
-public sealed class ProviderCensusTests
+[Trait(Category.Name, Category.Census)]
+public sealed class ServiceProviderCensusTests
 {
     /// <summary>The design's rows (§11) that can remove a site; <c>-</c> is a site no row removes.</summary>
     private static readonly string[] Rows =
@@ -26,14 +28,10 @@ public sealed class ProviderCensusTests
 
     private sealed record Row(string File, string Token, string Rank, string Class, string Why);
 
-    private static string Fixtures() => Path.Combine(
-        SourceFiles.WorkspaceFolder(), "src", "Daoris.Desktop", "Daoris.Desktop.Driver.Tests", "fixtures");
-
-    private static string Escape(string text) => Regex.Escape(text);
-
     private static readonly Lazy<(string[] Roots, List<Row> Rows)> Section = new(() =>
     {
-        using var document = JsonDocument.Parse(File.ReadAllText(Path.Combine(Fixtures(), "provider-census.json")));
+        using var document = JsonDocument.Parse(File.ReadAllText(Path.Combine(
+            WorkspaceRoot.Folder, "src", "Daoris.Desktop", "Daoris.Desktop.Driver.Tests", "fixtures", "provider-census.json")));
         var service = document.RootElement.GetProperty("service");
         return (
             service.GetProperty("roots").EnumerateArray().Select(each => each.GetString()!).ToArray(),
@@ -41,39 +39,21 @@ public sealed class ProviderCensusTests
                 row[0].GetString()!, row[1].GetString()!, row[2].GetString()!, row[3].GetString()!, row[4].GetString()!)).ToList());
     });
 
-    /// <summary>The page's service types, where the contracts' generator writes the registrations' table.</summary>
-    private static string ServiceTypes() => Path.Combine(SourceFiles.WorkspaceFolder(), "src", "Daoris.Web", "src", "data", "generated", "service.ts");
-
-    /// <summary>The <c>PROVIDER_VOCABULARY</c> object of the generated service types, one row a line and its end a line holding <c>};</c>.</summary>
-    private static JsonDocument Vocabulary()
-    {
-        var path = ServiceTypes();
-        Assert.True(File.Exists(path), "the page's service types are not written, and the census reads its table there: run `node tools/contracts.mjs`");
-        var text = File.ReadAllText(path).Replace("\r\n", "\n");
-        var start = text.IndexOf("export const PROVIDER_VOCABULARY", StringComparison.Ordinal);
-        var open = start < 0 ? -1 : text.IndexOf("= {", start, StringComparison.Ordinal);
-        var close = open < 0 ? -1 : text.IndexOf("\n};", open, StringComparison.Ordinal);
-        Assert.True(close > 0, "the page's service types hold no PROVIDER_VOCABULARY: run `node tools/contracts.mjs`");
-        return JsonDocument.Parse(text[(open + 2)..(close + 2)]);
-    }
-
     private static readonly Lazy<List<Token>> Tokens = new(() =>
     {
-        using var vocabulary = Vocabulary();
         var tokens = new List<Token>();
-        var ids = vocabulary.RootElement.GetProperty("ids").EnumerateArray().Select(row => row[0].GetString()!).ToList();
-        tokens.AddRange(ids.Select(id => new Token($"\"{id}\"", new Regex(Escape($"\"{id}\""), RegexOptions.CultureInvariant))));
+        var ids = ProviderVocabulary.Ids.Select(row => row.Id).ToList();
+        tokens.AddRange(ids.Select(id => new Token($"\"{id}\"", new Regex(Regex.Escape($"\"{id}\""), RegexOptions.CultureInvariant))));
 
         tokens.Add(new Token("StartsWith(agent)", new Regex(@"\.StartsWith\(\s*""(?:claude|codex|dsh)", RegexOptions.CultureInvariant)));
         // An id as an example or a name in a sentence (help, a refusal): words, but still a site that names a provider. A hyphened id is no
         // ordinary word, so every one the registrations hold is counted.
-        var hyphened = string.Join('|', ids.Where(id => id.Contains('-')).OrderByDescending(id => id.Length).Select(Escape));
+        var hyphened = string.Join('|', ids.Where(id => id.Contains('-')).OrderByDescending(id => id.Length).Select(Regex.Escape));
         tokens.Add(new Token("id in a sentence", new Regex($@"(?<![\w@/.\-])(?:{hyphened})(?![\w""\-])", RegexOptions.CultureInvariant)));
-        foreach (var row in vocabulary.RootElement.GetProperty("words").EnumerateArray())
+        foreach (var word in ProviderVocabulary.Words.Select(row => row.Word))
         {
-            var word = row[0].GetString()!;
             var plain = word.All(c => char.IsAsciiLetterOrDigit(c) || c == '_') && !word.StartsWith('_') && !word.EndsWith('_');
-            tokens.Add(new Token(word, plain ? new Regex($@"(?<![A-Za-z0-9_]){Escape(word)}(?![A-Za-z0-9_])") : new Regex(Escape(word))));
+            tokens.Add(new Token(word, plain ? new Regex($@"(?<![A-Za-z0-9_]){Regex.Escape(word)}(?![A-Za-z0-9_])") : new Regex(Regex.Escape(word))));
         }
 
         return tokens;
@@ -87,7 +67,7 @@ public sealed class ProviderCensusTests
         var found = new Dictionary<string, Dictionary<string, int>>(StringComparer.Ordinal);
         foreach (var (file, source) in sources)
         {
-            var text = StripComments(source);
+            var text = ProviderCensusTests.StripComments(source);
             foreach (var token in Tokens.Value)
             {
                 var count = token.Pattern.Matches(text).Count;
@@ -144,7 +124,6 @@ public sealed class ProviderCensusTests
     {
         var rows = Section.Value.Rows;
         var known = Tokens.Value.Select(token => token.Name).ToHashSet(StringComparer.Ordinal);
-        var workspace = SourceFiles.WorkspaceFolder();
 
         Assert.Equal(
             rows.OrderBy(each => each.File, StringComparer.Ordinal).ThenBy(each => each.Token, StringComparer.Ordinal).Select(each => (each.File, each.Token)),
@@ -154,24 +133,23 @@ public sealed class ProviderCensusTests
         {
             Assert.Contains(each.Rank, Rows);
             Assert.Contains(each.Class, Classes);
-            Assert.True(each.Why.Length > 0,$"{each.File}: {each.Token} says no reason");
+            Assert.True(each.Why.Length > 0, $"{each.File}: {each.Token} says no reason");
             Assert.Contains(each.Token, known);
-            Assert.True(File.Exists(Path.Combine(workspace, each.File)), $"{each.File} is no file");
+            Assert.True(File.Exists(Path.Combine(WorkspaceRoot.Folder, each.File)), $"{each.File} is no file");
             // Only a behaviour is removed by a row; a permanent site, an id in words and a measurement stay.
             Assert.Equal(each.Class != "behaviour", each.Rank == "-");
         }
     }
 
     [Fact]
-    public void The_census_reads_its_ids_and_its_vocabulary_from_the_shared_table_a_word_for_each()
+    public void The_census_reads_its_ids_and_its_vocabulary_from_the_registrations_a_word_for_each()
     {
-        using var vocabulary = Vocabulary();
         var names = Tokens.Value.Select(token => token.Name).ToHashSet(StringComparer.Ordinal);
 
-        Assert.True(vocabulary.RootElement.GetProperty("ids").GetArrayLength() >= 9);
-        Assert.True(vocabulary.RootElement.GetProperty("words").GetArrayLength() >= 15);
-        foreach (var row in vocabulary.RootElement.GetProperty("ids").EnumerateArray()) Assert.Contains($"\"{row[0].GetString()}\"", names);
-        foreach (var row in vocabulary.RootElement.GetProperty("words").EnumerateArray()) Assert.Contains(row[0].GetString()!, names);
+        Assert.True(ProviderVocabulary.Ids.Count >= 9);
+        Assert.True(ProviderVocabulary.Words.Count >= 15);
+        foreach (var row in ProviderVocabulary.Ids) Assert.Contains($"\"{row.Id}\"", names);
+        foreach (var row in ProviderVocabulary.Words) Assert.Contains(row.Word, names);
     }
 
     // ---- the planted cases (design §11 row a): each must go red ----
@@ -219,81 +197,10 @@ public sealed class ProviderCensusTests
         Assert.Empty(found);
     }
 
-    // ---- reading ----
-
-    /// <summary>A source's text with its comments blanked and its strings kept, every offset and line kept.</summary>
-    private static string StripComments(string text)
-    {
-        var builder = new StringBuilder(text.Length);
-        var i = 0;
-        while (i < text.Length)
-        {
-            var c = text[i];
-            if (c == '/' && i + 1 < text.Length && text[i + 1] == '/')
-            {
-                while (i < text.Length && text[i] != '\n') { builder.Append(' '); i++; }
-            }
-            else if (c == '/' && i + 1 < text.Length && text[i + 1] == '*')
-            {
-                var end = text.IndexOf("*/", i + 2, StringComparison.Ordinal);
-                end = end < 0 ? text.Length : end + 2;
-                for (; i < end; i++) builder.Append(text[i] == '\n' ? '\n' : ' ');
-            }
-            else if (c == '"')
-            {
-                var verbatim = i > 0 && text[i - 1] == '@' || i > 1 && text[i - 1] == '$' && text[i - 2] == '@';
-                var raw = i + 2 < text.Length && text[i + 1] == '"' && text[i + 2] == '"';
-                var start = i;
-                if (raw)
-                {
-                    var quotes = 0;
-                    while (start + quotes < text.Length && text[start + quotes] == '"') quotes++;
-                    var end = text.IndexOf(new string('"', quotes), start + quotes, StringComparison.Ordinal);
-                    end = end < 0 ? text.Length : end + quotes;
-                    builder.Append(text, start, end - start);
-                    i = end;
-                    continue;
-                }
-
-                builder.Append(c);
-                i++;
-                while (i < text.Length)
-                {
-                    var d = text[i];
-                    builder.Append(d);
-                    i++;
-                    if (!verbatim && d == '\\' && i < text.Length) { builder.Append(text[i]); i++; continue; }
-                    if (d == '"')
-                    {
-                        if (verbatim && i < text.Length && text[i] == '"') { builder.Append('"'); i++; continue; }
-                        break;
-                    }
-
-                    if (d == '\n' && !verbatim) break;
-                }
-            }
-            else if (c == '\'')
-            {
-                var end = i + 1;
-                while (end < text.Length && text[end] != '\'' && text[end] != '\n') end += text[end] == '\\' ? 2 : 1;
-                end = Math.Min(end + 1, text.Length);
-                builder.Append(text, i, end - i);
-                i = end;
-            }
-            else
-            {
-                builder.Append(c);
-                i++;
-            }
-        }
-
-        return builder.ToString();
-    }
-
     /// <summary>Every production source of the section's projects, by its path under the workspace; the build's output is none.</summary>
     private static IEnumerable<(string File, string Source)> Sources()
     {
-        var workspace = SourceFiles.WorkspaceFolder();
+        var workspace = WorkspaceRoot.Folder;
         foreach (var root in Section.Value.Roots)
         {
             foreach (var file in Directory.EnumerateFiles(Path.Combine(workspace, root), "*.cs", SearchOption.AllDirectories))
