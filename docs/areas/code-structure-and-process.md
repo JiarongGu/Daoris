@@ -141,7 +141,16 @@ finishes first and the whole set runs once.
     fast half does not hang in a worktree: run twice in a session's tree, once alone and once beside the merge queue's driver-process gate, it
     ran its 3,006 tests in about 4 minutes of test time each (the slowest test 5 s, 230 s of test time in all, one class at a time). The
     second run first waited about 3 minutes in `daoris gate run` for a heavy-run place (all three held), which it said, and which has no
-    time-out: that wait, not a test, is what a run beside a long Process run spends its time on. (from OPTIMIZE1d)
+    time-out: that wait, not a test, is what a run beside a long Process run spends its time on.
+    The web's unit run, measured on 2026-11-08 at the
+    configured five workers beside other sessions' heavy runs: 12,693 tests in 592 files, 814 s; the tests are 2,745 s of the 4,070 worker
+    seconds, spread flat (4,287 tests of 100 ms or more make 92% of it; the 25 slowest files are 55%), the rest the per-file jsdom window,
+    the setup and the imports. A profile of a slow file is React's development build, Radix tooltips and the command palette's list.
+    `vmThreads` is the right pool: `threads` ran the same 13 files 1.9 to 2.2 times and `forks` 1.7 to 2.7 times as long. The setup no longer loads
+    Storybook (the five files that compose stories set its annotations through `src/test/composeStories.ts`): 13 files at two workers
+    ran 26.7, 28.4 and 30.5 s against 32.0, 36.5 and 31.4 s, but the full run took 841 s, inside the machine's noise, so the cut is
+    unproven and the run still takes thirteen minutes. Left: the worker count (WEBGATE1's quarter of the machine, measured at no other
+    count), and the tests that render the whole shell per case. (from OPTIMIZE1d)
 
 ## Where a change goes
 

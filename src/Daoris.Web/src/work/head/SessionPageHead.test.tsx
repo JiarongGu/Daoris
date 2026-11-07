@@ -6,7 +6,7 @@ import i18n from '../../locales/i18n';
 import type { Session } from '../../data/api';
 import { code } from '../../test/code';
 import type { Answered } from '../InlineConfirm';
-import { composeStories } from '@storybook/react-vite';
+import { composeStories } from '../../test/composeStories';
 import { DeleteAsk, SessionPageHead, StopAsk } from './SessionPageHead';
 import * as stories from './SessionPageHead.stories';
 
