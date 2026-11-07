@@ -23,13 +23,13 @@ public sealed record PluginWorld
 }
 
 /// <summary>
-/// One plugin's press (PUSH1f2f, D194 points 4 and 6): the route the window's press sends, or none where the terminal's verb alone does it
+/// One plugin's press: the route the window's press sends, or none where the terminal's verb alone does it
 /// (a replace), the payload the verb writes from its words, the operation it calls alone, and the one function that says it on both paths.
 /// <see cref="PluginCommand.Plan"/> makes it; a test sends its payload through the route.
 /// </summary>
 /// <param name="Route">The route, or null where none takes the press: it then acts alone, on the terminal's word.</param>
 /// <param name="Act">The operation, alone: it writes.</param>
-/// <param name="Words">The verb's words, both paths', returning its exit code; what they say was read before the press.</param>
+/// <param name="Words">The verb's words, both paths', returning its exit code; what they say is read before the press.</param>
 public sealed record PluginPress(string Verb, InstanceRoute? Route, JsonObject Payload, Action Act, Func<int> Words)
 {
     /// <summary>The end state asked for is already so (a remove of what is not there): said, and nothing pressed or written.</summary>
@@ -43,10 +43,10 @@ public sealed class PluginWords(string message, int exit = 2) : Exception(messag
 }
 
 /// <summary>
-/// <c>daoris plugin</c> (PUSH1f2f, D194, the alone-path design §1.2): this machine's plugins from a terminal, the words
+/// <c>daoris plugin</c>: this machine's plugins from a terminal, the words
 /// <c>daoris plugin …</c> hands this program, beside the host's own <c>plugins</c> (the kit, a package, a plugin's page); no sub-verb
 /// is shared. Each change is its route through <see cref="InstanceDoor.PressAsync"/> where the running Daoris answers, confirmed in its
-/// window; else its operation, on the terminal's word (D50), refused from a session's terminal (D194 point 5). A replace has no route: the
+/// window; else its operation, on the terminal's word, refused from a session's terminal. A replace has no route: the
 /// window's add adds and never replaces, so the terminal's replace is this program's alone. Its words are one function per verb on both
 /// paths, today's text kept (<c>fixtures/plugins-text.json</c>).
 /// </summary>
@@ -73,7 +73,7 @@ public static class PluginCommand
 
     /// <summary>
     /// Whether the words are a short change, which holds the home's lease from the top: an add, an update with <c>--yes</c>, a remove and a
-    /// switch. A list, an update's plan, the kit's pointers and the usage hold none (the alone-path design §1.2).
+    /// switch. A list, an update's plan, the kit's pointers and the usage hold none.
     /// </summary>
     public static bool Changes(IReadOnlyList<string> args)
     {
@@ -116,7 +116,7 @@ public static class PluginCommand
     /// <summary>The install's offers, beside the home, where the CLI looked for them: in an install, its <c>app/plugin-offers/</c>.</summary>
     private static string Offers(PluginWorld world, string home) => world.Offers ?? PluginOffers.BesideHome(home);
 
-    /// <summary>The id a verb names, its second word, refused before it becomes a path (REV3: `remove ..` was the whole home).</summary>
+    /// <summary>The id a verb names, its second word, refused before it becomes a path (`remove ..` would name the whole home).</summary>
     private static string RequireId(IReadOnlyList<string> args, string verb)
     {
         var id = args.Count > 1 ? args[1] : null;
@@ -138,7 +138,7 @@ public static class PluginCommand
             case "list":
                 return List(RequireHome(world), world);
 
-            // The plan, said and nothing replaced; with --yes the update is a press (Plan).
+            // The plan, said and nothing overwritten; with --yes the update is a press (Plan).
             case "update":
             {
                 var home = RequireHome(world);
@@ -147,13 +147,13 @@ public static class PluginCommand
                 return 1;
             }
 
-            // The kit a plugin is made with lives with the code that starts plugins (PLUG8, D101): asked for here, it says where it is.
+            // The kit a plugin is made with lives with the code that starts plugins: asked for here, it says where it is.
             case "new" or "try":
                 throw new PluginWords(
                     $"the plugin kit is `daoris plugin {verb}`, or the Plugins place — it starts a plugin as the driver would, so it "
                     + "lives with the driver. `daoris plugin` says what each takes.");
 
-            // A package is read by the host's `plugins install` (PLUGDIST1a, D120 §4).
+            // A package is read by the host's `plugins install`.
             case "install":
                 throw new PluginWords(
                     "a plugin package is installed by `daoris plugin install <file.nupkg>` — the driver reads a package and checks it "
@@ -251,7 +251,7 @@ public static class PluginCommand
     }
 
     /// <summary>
-    /// An add (PLUG9): a folder named, or one of the install's offers by its id; judged first by the driver's own add (where it is, then
+    /// An add: a folder named, or one of the install's offers by its id; judged first by the driver's own add (where it is, then
     /// its manifest read as the catalogue reads it, with nothing this build refuses), so a refusal copies nothing. Where nothing of its id
     /// is installed it is the window's add; where something is, the terminal's replace, which no route makes.
     /// </summary>
@@ -322,7 +322,7 @@ public static class PluginCommand
                 () => PluginInstall.Add(home, from, reserved), Said);
     }
 
-    /// <summary>What updating would change, said line by line before anything is pressed; a refusal is the plan's, nothing replaced.</summary>
+    /// <summary>What updating would change, said line by line before anything is pressed; a refusal is the plan's, nothing overwritten.</summary>
     private static PluginUpdatePlan Planned(string home, string id, PluginWorld world)
     {
         var (plan, refusal) = PluginInstall.PlanUpdate(home, id, Reserved(world), Offers(world, home));
@@ -384,7 +384,7 @@ public static class PluginCommand
 
     private static string Version(PluginManifest manifest) => manifest.Version.Length > 0 ? $" {manifest.Version}" : "";
 
-    /// <summary>What the list says of a plugin's tools: the ones it runs, then each problem, never a refusal (PLUGTOOL1a).</summary>
+    /// <summary>What the list says of a plugin's tools: the ones it runs, then each problem, never a refusal.</summary>
     private static IEnumerable<string> ToolLines(PluginManifest manifest)
     {
         var read = manifest.Tools.Where(tool => tool.Problem is null).ToList();
@@ -408,7 +408,7 @@ public static class PluginCommand
             return "no record of where it came from — added before Daoris kept one, or copied in by hand; `daoris plugin add <folder>` records it";
         }
 
-        // A package is installed whole, so `update` is not offered for one it would refuse (PLUGDIST1a).
+        // A package is installed whole, so `update` is not offered for one it would refuse.
         return source.Package is not null
             ? $"from {source.Said}"
             : $"from {source.Said}; `daoris plugin update {Path.GetFileName(installFolder)}` takes a newer one";
@@ -417,9 +417,9 @@ public static class PluginCommand
     private static void Say(PluginWorld world, string line) => world.Instance.Out.WriteLine(line);
 
     /// <summary>
-    /// A press as the alone-path design §1.1 takes it: its route through the instance that answers, its words said once it answers; else
-    /// its operation here, refused from a session's terminal, every plugin press being the person's (D194 point 5), its refusal one line
-    /// with its code (D194 point 6).
+    /// A press: its route through the instance that answers, its words said once it answers; else
+    /// its operation here, refused from a session's terminal, every plugin press being the person's, its refusal one line
+    /// with its code.
     /// </summary>
     private static async Task<int> PressAsync(PluginWorld world, PluginPress press, CancellationToken ct)
     {
@@ -444,7 +444,7 @@ public static class PluginCommand
             }
             catch (IOException held)
             {
-                // The file's edit lock, held by another writer for the whole of its wait: nothing was written.
+                // The file's edit lock, held by another writer for the whole of its wait: nothing is written.
                 await error.WriteLineAsync($"{Prefix}: {held.Message}").ConfigureAwait(false);
                 return 2;
             }

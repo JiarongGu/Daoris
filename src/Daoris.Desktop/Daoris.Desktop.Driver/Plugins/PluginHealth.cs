@@ -1,14 +1,14 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// The loop's own record of each plugin's health (PLUGUI1d, D119 §2), fed by everything in its process that speaks
+/// The loop's own record of each plugin's health, fed by everything in its process that speaks
 /// to a plugin: the hook set, the landing and the hand-off, through <see cref="PluginLog"/>. A terminal, which is
 /// another process, reads the same state from the machine log's last word (<see cref="FromLog(PluginEntry, string)"/>).
 /// </summary>
 /// <remarks>
 /// The record and the clock it stamps each word with are this class's; the rules it plays them by, and the five states,
-/// are the Domain's <see cref="PluginHealthRules"/> (STRUCT3a), which a terminal's reading plays the log's lines through,
-/// and which callers name for a state and for a reading of lines (FLAT1b-i).
+/// are the Domain's <see cref="PluginHealthRules"/>, which a terminal's reading plays the log's lines through,
+/// and which callers name for a state and for a reading of lines.
 /// </remarks>
 public sealed class PluginHealth(Func<DateTimeOffset>? clock = null)
 {

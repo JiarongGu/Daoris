@@ -11,7 +11,7 @@ namespace Daoris.Driver;
 /// </param>
 /// <param name="Said">The sentence: the refusal's words, or what the pressed check answered when read again.</param>
 /// <param name="ExitCode">The console's exit; null where nothing ran.</param>
-/// <param name="Install">The plugin's install words for this platform, where the tool was not found.</param>
+/// <param name="Install">The plugin's install words for this platform, where the tool is not found.</param>
 /// <param name="Found">The tool read again after the console ended; null where nothing ran.</param>
 public sealed record ToolSetUp(string? Code, string Said, int? ExitCode, string? Install, PluginToolFound? Found);
 
@@ -19,7 +19,7 @@ public sealed record ToolSetUp(string? Code, string Said, int? ExitCode, string?
 internal delegate Task<int?> ConsoleRunner(ProcessStartInfo info, CancellationToken ct);
 
 /// <summary>
-/// A plugin tool set up or signed into on the person's press (ADOSIGNIN1, D150 point 7; the UX6 design §7.2): a check's
+/// A plugin tool set up or signed into on the person's press: a check's
 /// <c>fix</c> run in a console window the person sees, then the tool's checks read again.
 /// </summary>
 /// <remarks>
@@ -52,7 +52,7 @@ public static class PluginToolSetUp
 
     /// <summary>
     /// Each declared tool found and checked, on the person's press of <i>Check</i>: the plugin page's read of where its tools stand.
-    /// Never at a look (§7.2); a check may reach the platform or read another tool's sign-in.
+    /// Never at a look; a check may reach the platform or read another tool's sign-in.
     /// </summary>
     public static async Task<IReadOnlyList<PluginToolFound>> CheckAsync(string home, IReadOnlyList<PluginTool> tools, CancellationToken ct = default)
     {
@@ -91,7 +91,7 @@ public static class PluginToolSetUp
         var (words, problem) = PluginTools.FixWords(tools, ready);
         if (words is null) return Refused("fix_not_declared", problem!);
 
-        // Its first word is found as a check's is (TOOLS5): the file a tool answers with, else the PATH's.
+        // Its first word is found as a check's is: the file a tool answers with, else the PATH's.
         var read = Tools.Read(home);
         var inherited = path ?? PluginToolRuns.InheritedPath();
         var childPath = Tools.ChildPath(read, home, inherited) ?? inherited;
@@ -118,14 +118,14 @@ public static class PluginToolSetUp
         }
         catch (DriverException error)
         {
-            // An argument a Windows command shim would read again (the shim rule, USE1f): refused, never passed.
+            // An argument a Windows command shim would read again: refused, never passed.
             return Refused("refused", error.Message);
         }
 
         var exit = await console(info, ct).ConfigureAwait(false);
         if (exit is null) return Refused("not_started", $"`{first}` could not be started.");
 
-        // The checks are read again whatever the console's exit was: the standing is what they say, not what the window did.
+        // The checks are read again whatever the console's exit is: the standing is what they say, not what the window did.
         var again = await PluginToolChecks.CheckAsync(home, tool, root, path, run, ct).ConfigureAwait(false);
         var said = check <= again.Ready.Count ? again.Ready[check - 1].Sentence : again.Sentence;
         return new(null, said, exit, null, again);
@@ -150,7 +150,7 @@ public static class PluginToolSetUp
         Process? process;
         try
         {
-            // Through the start gate (PROCSTART2): a plugin tool's set-up is a press, so a person's start (PARALLEL1d).
+            // Through the start gate: a plugin tool's set-up is a press, so a person's start.
             process = await ProcessStarts.Shared.StartAsync(info, ProcessPurpose.Tool, ct).ConfigureAwait(false);
         }
         catch (Win32Exception)

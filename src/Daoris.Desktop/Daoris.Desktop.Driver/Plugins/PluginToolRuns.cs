@@ -4,7 +4,7 @@ using System.Text;
 namespace Daoris.Driver;
 
 /// <summary>
-/// A plugin's tool checks as programs on this machine (PLUGTOOL1a, D150 point 7; STRUCT3a): how each is started and its
+/// A plugin's tool checks as programs on this machine: how each is started and its
 /// answer read. <see cref="PluginToolChecks"/> asks through its <see cref="CheckRunner"/> port, whose
 /// real runner this is; a fast test hands a stand-in.
 /// </summary>
@@ -13,7 +13,7 @@ internal static class PluginToolRuns
     /// <summary>UTF-8 with no byte-order mark: a mark is not part of what a program is told.</summary>
     private static readonly Encoding Utf8 = new UTF8Encoding(encoderShouldEmitUTF8Identifier: false);
 
-    /// <summary>The <c>PATH</c> this process was started with: where the system's tools are found when none is named.</summary>
+    /// <summary>The <c>PATH</c> this process started with: where the system's tools are found when none is named.</summary>
     public static string? InheritedPath() => Environment.GetEnvironmentVariable(Tools.PathVariable);
 
     /// <summary>A start, handed the tools' environment, in <paramref name="root"/>.</summary>
@@ -35,7 +35,7 @@ internal static class PluginToolRuns
         };
         foreach (var argument in arguments) info.ArgumentList.Add(argument);
         // git walks up: a scratch folder under a checkout answers for the checkout, so git is told no repository is here,
-        // as a trial's sample frames are (D101).
+        // as a trial's sample frames are.
         info.Environment["GIT_DIR"] = Path.Combine(root, ".git");
         info.Environment["GIT_TERMINAL_PROMPT"] = "0";
         Tools.Hand(info, read, home);

@@ -13,14 +13,14 @@ public sealed record WorkEventMade(WorkEventPoint Point, IDisposable Ends) : IAs
 }
 
 /// <summary>
-/// The handshake's <c>events</c> for a plugin on <c>work/event</c> (the event hook design §4.1): the set's run, the grammar it speaks, the
+/// The handshake's <c>events</c> for a plugin on <c>work/event</c>: the set's run, the grammar it speaks, the
 /// last <c>seq</c> minted, and the build; the relay plugin's first line names all four.
 /// </summary>
 public sealed record WorkEventHandshake(string Run, int Grammar, long Seq, string Build);
 
 /// <summary>
-/// The hook set's half of <c>work/event</c> (EVENTHOOK1b, the event hook design §4.1, §4.4): which plugins it starts for the point, the
-/// handshake each is started with, and the lease's answer kept across a busy read (P6), so a plugin on the point is wanted only by the
+/// The hook set's half of <c>work/event</c>: which plugins it starts for the point, the
+/// handshake each is started with, and the lease's answer kept across a busy read, so a plugin on the point is wanted only by the
 /// loop that holds the home and a busy read neither stops it nor counts an exit.
 /// </summary>
 public static class WorkEventPlugins
@@ -50,7 +50,7 @@ public static class WorkEventPlugins
     /// <summary>
     /// A hook set's point: an event whose required field fails logged by its kind and field, a failed call by its kind, a plugin late
     /// <see cref="WorkEventPoint.LateInARow"/> times handed to <paramref name="late"/> to stop; and each end the home's end keeping writes,
-    /// whichever caller asked, told as <c>work.ended</c> with its session and quest (EV-F; the event channel design §3.4).
+    /// whichever caller asked, told as <c>work.ended</c> with its session and quest.
     /// </summary>
     public static WorkEventMade Made(string home, MachineLog? log, PluginLog plugins, Action<string> late, Func<DateTimeOffset> clock)
     {
@@ -69,7 +69,7 @@ public static class WorkEventPlugins
 
     /// <summary>
     /// Whether this process holds <paramref name="home"/>, read once a look: a read the lease file's lock made busy keeps the answer before
-    /// it, so a moment's lock neither stops a plugin nor counts its exit (P6).
+    /// it, so a moment's lock neither stops a plugin nor counts its exit.
     /// </summary>
     public static Func<bool> Held(string home)
     {
