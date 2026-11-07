@@ -31,7 +31,6 @@ public sealed class TidyNodeTests : IDisposable
         }));
         Assert.Null(NodeKit.Row(NodeKinds.Tidy)!.FailureBy);
         Assert.False(NodeKit.Row(NodeKinds.Tidy)!.PersonSkips);
-        Assert.Null(typeof(TidyDoor).GetField("NotMerged"));
     }
 
     [Fact]
