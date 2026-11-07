@@ -576,9 +576,9 @@ public sealed class DriverModuleAccountsTests : DriverModuleBridge
     {
         Accounts("claude-code", "account-1", "account-2");
         Wiring("""{ "rotation": { "claude-code": ["account-1", "account-2"] } }""");
-        // account-1's week resets in four days; account-2's in ten hours, with 60% of it unused, read an hour ago.
+        // Both weeks end in ten hours with room in one band, so what would lapse decides: account-2 has 60% unused, read an hour ago.
         var seen = Now.AddHours(-1);
-        AccountWindows.Said(Home, "claude-code", "account-1", [new WindowReading("weekly", 0.30, Now.AddDays(4))], Now, "s1");
+        AccountWindows.Said(Home, "claude-code", "account-1", [new WindowReading("weekly", 0.41, Now.AddHours(10))], Now, "s1");
         AccountWindows.Said(Home, "claude-code", "account-2", [new WindowReading("weekly", 0.40, Now.AddHours(10))], seen, "s2");
 
         var next = Scope(Agent(await AnswerAsync(Module(), "ACCOUNTS"), "claude-code"), null).GetProperty("next");
