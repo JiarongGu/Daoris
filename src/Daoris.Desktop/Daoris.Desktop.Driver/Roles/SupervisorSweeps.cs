@@ -97,9 +97,10 @@ internal sealed class SupervisorSweeps(SupervisorBook book, MachineLog? log)
     }
 
     /// <summary>
-    /// The start's sweep, before the first look's carry-ons: every decision file on disk read only to close it, <c>held</c> and
-    /// <c>released</c> to <c>stale</c> (<see cref="SupervisorWhy.Restarted"/>), <c>admitted</c> to <c>interrupted</c>; each closed
-    /// question remembered as the owner's. Memory is empty, so nothing is live and nothing is handable.
+    /// The start's sweep, before the first look's carry-ons: every kind's decision file on disk read only to close it, <c>held</c> and
+    /// <c>released</c> to <c>stale</c> (<see cref="SupervisorWhy.Restarted"/>), <c>admitted</c> to <c>interrupted</c>; each subject final
+    /// to the owner remembered as closed by its kind and subject, so no list hands it to a supervisor again. A decision whose state line
+    /// was not written reads as held and is closed as the owner's too. Memory is empty, so nothing is live and nothing is handable.
     /// </summary>
     /// <returns>The sessions with a decision the sweep closed, whose waiting supervisor's words the look takes back.</returns>
     public IReadOnlyList<string> SweepAtStart(DateTimeOffset now)
@@ -112,7 +113,7 @@ internal sealed class SupervisorSweeps(SupervisorBook book, MachineLog? log)
             foreach (var file in Directory.EnumerateFiles(folder, "*.json"))
             {
                 var id = Path.GetFileNameWithoutExtension(file);
-                if (book.Live.ContainsKey(id) || book.Files.Earlier(session, id) is not { } earlier) continue;
+                if (book.Live.ContainsKey(id) || book.Courses.ContainsKey(id) || Decided(session, id) is not { } earlier) continue;
                 var closed = earlier.State switch
                 {
                     SupervisorState.Held or SupervisorState.Released => SupervisorState.Stale,
@@ -129,11 +130,18 @@ internal sealed class SupervisorSweeps(SupervisorBook book, MachineLog? log)
                 }
 
                 var state = closed ?? earlier.State;
-                // A question left to the owner stays decided across the restart, as one closed as theirs does.
-                if (SupervisorStates.OwnersAgain(state) || state == SupervisorState.Left) book.Closed[(session, earlier.Question.Id)] = state;
+                // A subject left to the owner stays decided across the restart, as one closed as theirs does.
+                if (SupervisorStates.OwnersAgain(state) || state == SupervisorState.Left) book.Closed[earlier.Subject] = state;
             }
         }
 
         return swept;
     }
+
+    // A decision file of any kind as the sweep reads it: its subject and the state its lines reached; null for a file that is no
+    // supervisor's decision (a rule's act) or does not read.
+    private (SupervisorSubject Subject, SupervisorState State)? Decided(string session, string id) =>
+        book.Files.Earlier(session, id) is { } question ? (SupervisorSubject.Question(session, question.Question.Id), question.State)
+        : SupervisorCourseView.Read(book.Files, session, id) is { } course ? (SupervisorSubject.Point(session, course.Point), course.State)
+        : null;
 }

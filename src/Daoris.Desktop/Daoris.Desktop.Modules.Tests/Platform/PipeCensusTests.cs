@@ -69,17 +69,19 @@ public sealed class PipeCensusTests
     [Fact]
     public void The_supervisors_verb_names_its_routes_as_the_census_classes_them()
     {
-        var answer = Daoris.Driver.SessionsSuperviseCommand.Answer;
-        var defer = Daoris.Driver.SessionsSuperviseCommand.Defer;
+        var decide = Daoris.Driver.SessionsSuperviseCommand.Decide;
+        var leave = Daoris.Driver.SessionsSuperviseCommand.Leave;
         var waiting = Daoris.Driver.SessionsSuperviseCommand.Waiting;
-        Assert.Equal((DriverModule.Name, PipeClass.Role, Daoris.Driver.RouteClass.Role), (answer.Module, PipeCensus.Daoris.Of(answer.Module, answer.Route), answer.Class));
-        Assert.Equal((DriverModule.Name, PipeClass.Role, Daoris.Driver.RouteClass.Role), (defer.Module, PipeCensus.Daoris.Of(defer.Module, defer.Route), defer.Class));
+        Assert.Equal((DriverModule.Name, PipeClass.Role, Daoris.Driver.RouteClass.Role), (decide.Module, PipeCensus.Daoris.Of(decide.Module, decide.Route), decide.Class));
+        Assert.Equal((DriverModule.Name, PipeClass.Role, Daoris.Driver.RouteClass.Role), (leave.Module, PipeCensus.Daoris.Of(leave.Module, leave.Route), leave.Class));
         Assert.Equal((PipeClass.Open, Daoris.Driver.RouteClass.Open), (PipeCensus.Daoris.Of(waiting.Module, waiting.Route), waiting.Class));
         Assert.Equal(PipeClass.Window, PipeCensus.Daoris.Of(DriverModule.Name, Daoris.Driver.RoleRoutes.StartTerminal));
-        // The steward's one route beside the supervisor's two, and nothing else of the class.
+        // The supervisor's one door is two routes, the decide and the leave, beside the steward's one, and nothing else of the class:
+        // the answer, the defer and the course each went with the door that replaced them.
         Assert.Equal(
-            Daoris.Driver.SupervisorRoutes.Acts.Append(Daoris.Driver.RoleRoutes.Act).Order(),
+            ["ROLE_ACT", "SUPERVISOR_DECIDE", "SUPERVISOR_LEAVE"],
             PipeCensus.Daoris.Routes.Where(route => route.Class == PipeClass.Role).Select(route => route.Route).Order());
+        Assert.DoesNotContain(PipeCensus.Daoris.Routes, route => route.Route is "SUPERVISOR_ANSWER" or "SUPERVISOR_DEFER" or "SUPERVISOR_COURSE");
     }
 
     /// <summary>
@@ -496,7 +498,8 @@ public sealed class PipeCensusTests
     [InlineData("SESSION_GO_AHEAD", PipeDrain.Passes)]
     [InlineData("RETRY_QUEST", PipeDrain.Passes)]
     [InlineData("SET_LANGUAGE", PipeDrain.Passes)]
-    [InlineData("SUPERVISOR_ANSWER", PipeDrain.Passes)]
+    [InlineData("SUPERVISOR_DECIDE", PipeDrain.Passes)]
+    [InlineData("SUPERVISOR_LEAVE", PipeDrain.Passes)]
     // A review's findings: Ask Daoris is told a dismissal as a turn, and a setting can release work the look starts outside the drain's
     // holds of quests (a helper asked under `ask`, now `on`).
     [InlineData("HELP_DISMISS", PipeDrain.Waits)]

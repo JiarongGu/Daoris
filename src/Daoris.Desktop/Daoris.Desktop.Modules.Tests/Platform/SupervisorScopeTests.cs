@@ -60,15 +60,14 @@ public sealed class SupervisorScopeTests : IDisposable
     private static JsonElement Answer(string key, string nonce, string generation, string session = "s1")
     {
         SupervisorReason[] reasons = [new("The ticket says monthly.", "the quest's line 2")];
-        var proof = SupervisorProof.Prove(key, nonce, SupervisorProof.Canonical(session, "q-1", generation, "Monthly", reasons))!;
-        var form = new SupervisorForm(session, "q-1", generation, proof, "Monthly", reasons);
+        var form = new SupervisorDecideForm(SupervisorSubject.Question(session, "q-1"), generation, "", SupervisorKinds.Answer, "Monthly", reasons).Proved(key, nonce);
         return JsonDocument.Parse(JsonSerializer.Serialize(form.Payload())).RootElement.Clone();
     }
 
     private static RoleJudgement JudgeAnswer(StandingConfirmation standing, string key, string generation)
     {
         var nonce = SupervisorProof.Nonce();
-        return standing.JudgeRole(DriverModule.Name, SupervisorRoutes.Answer, Answer(key, nonce, generation), null, nonce);
+        return standing.JudgeRole(DriverModule.Name, SupervisorRoutes.Decide, Answer(key, nonce, generation), null, nonce);
     }
 
     private static ParkQuestion Asked(string session) =>

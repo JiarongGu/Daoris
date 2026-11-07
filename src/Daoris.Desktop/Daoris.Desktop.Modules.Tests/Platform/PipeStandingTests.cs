@@ -202,8 +202,8 @@ public sealed class PipeStandingTests : Bridge
     private static object Proved(string key, string? nonce, string generation, string choice = "Monthly")
     {
         SupervisorReason[] reasons = [new("The ticket says monthly.", "the quest's line 2")];
-        var proof = nonce is null ? new string('0', 64) : SupervisorProof.Prove(key, nonce, SupervisorProof.Canonical("s1", "q-1", generation, choice, reasons))!;
-        return new SupervisorForm("s1", "q-1", generation, proof, choice, reasons).Payload();
+        var form = new SupervisorDecideForm(SupervisorSubject.Question("s1", "q-1"), generation, new string('0', 64), SupervisorKinds.Answer, choice, reasons);
+        return (nonce is null ? form : form.Proved(key, nonce)).Payload();
     }
 
     private static string? NonceOf(JsonElement hello) =>
@@ -226,7 +226,7 @@ public sealed class PipeStandingTests : Bridge
         var nonce = NonceOf(await client.HelloAsync(HomeId));
         Assert.Equal(64, nonce!.Length);
 
-        var id = await client.SendAsync(DriverModule.Name, SupervisorRoutes.Answer, Proved(key, nonce, generation));
+        var id = await client.SendAsync(DriverModule.Name, SupervisorRoutes.Decide, Proved(key, nonce, generation));
         var answer = await client.AnswerAsync(id);
 
         Assert.True(answer.GetProperty("success").GetBoolean(), answer.GetRawText());
@@ -270,10 +270,10 @@ public sealed class PipeStandingTests : Bridge
         if (wrong == "replayed")
         {
             // The first use of the nonce is the holder's own; the same proof sent again finds it used.
-            Assert.True((await client.AnswerAsync(await client.SendAsync(DriverModule.Name, SupervisorRoutes.Answer, payload))).GetProperty("success").GetBoolean());
+            Assert.True((await client.AnswerAsync(await client.SendAsync(DriverModule.Name, SupervisorRoutes.Decide, payload))).GetProperty("success").GetBoolean());
         }
 
-        var answer = await client.AnswerAsync(await client.SendAsync(DriverModule.Name, SupervisorRoutes.Answer, payload));
+        var answer = await client.AnswerAsync(await client.SendAsync(DriverModule.Name, SupervisorRoutes.Decide, payload));
         Assert.False(answer.GetProperty("success").GetBoolean());
         Assert.Equal(SupervisorWhy.NotHolder, CodeOf(answer));
         Assert.Equal(wrong == "replayed" ? 1 : 0, driver.Seen.Count);
@@ -295,7 +295,7 @@ public sealed class PipeStandingTests : Bridge
         ((StandingConfirmationTests.Placed)judge.Caller).Answer = StandingPlace.InAgentJob;
         await using var client = await PipeClient.ConnectAsync(pipe.Name!);
         var nonce = NonceOf(await client.HelloAsync(HomeId))!;
-        var refused = await client.AnswerAsync(await client.SendAsync(DriverModule.Name, SupervisorRoutes.Answer, Proved(key, nonce, generation)));
+        var refused = await client.AnswerAsync(await client.SendAsync(DriverModule.Name, SupervisorRoutes.Decide, Proved(key, nonce, generation)));
         Assert.Equal(StandingWhy.InAgentJob, CodeOf(refused));
         Assert.Empty(driver.Seen);
 
@@ -311,7 +311,7 @@ public sealed class PipeStandingTests : Bridge
             using var darkServed = dark;
             await using var darkClient = await PipeClient.ConnectAsync(name);
             var darkNonce = NonceOf(await darkClient.HelloAsync(HomeIdentity.Read(Path.Combine(Home, "dark-home"))!))!;
-            var answer = await darkClient.AnswerAsync(await darkClient.SendAsync(DriverModule.Name, SupervisorRoutes.Answer, Proved(key, darkNonce, generation)));
+            var answer = await darkClient.AnswerAsync(await darkClient.SendAsync(DriverModule.Name, SupervisorRoutes.Decide, Proved(key, darkNonce, generation)));
             Assert.Equal(SupervisorWhy.NotStaffed, CodeOf(answer));
             Assert.Empty(driver.Seen);
         }
@@ -628,10 +628,10 @@ public sealed class PipeStandingTests : Bridge
     {
         { RoleRoutes.Act, "path-claude" }, { RoleRoutes.Act, "cmd-shim" }, { RoleRoutes.Act, "node-script" }, { RoleRoutes.Act, "one-argument" },
         { RoleRoutes.Act, "other-config" }, { RoleRoutes.Act, "changed-settings" }, { RoleRoutes.Act, "planted-file" }, { RoleRoutes.Act, "outside" },
-        { SupervisorRoutes.Answer, "path-claude" }, { SupervisorRoutes.Answer, "one-argument" }, { SupervisorRoutes.Answer, "other-config" },
-        { SupervisorRoutes.Answer, "planted-file" }, { SupervisorRoutes.Answer, "outside" },
-        { SupervisorRoutes.Defer, "cmd-shim" }, { SupervisorRoutes.Defer, "node-script" }, { SupervisorRoutes.Defer, "changed-settings" },
-        { SupervisorRoutes.Defer, "outside" },
+        { SupervisorRoutes.Decide, "path-claude" }, { SupervisorRoutes.Decide, "one-argument" }, { SupervisorRoutes.Decide, "other-config" },
+        { SupervisorRoutes.Decide, "planted-file" }, { SupervisorRoutes.Decide, "outside" },
+        { SupervisorRoutes.Leave, "cmd-shim" }, { SupervisorRoutes.Leave, "node-script" }, { SupervisorRoutes.Leave, "changed-settings" },
+        { SupervisorRoutes.Leave, "outside" },
     };
 
     /// <summary>
@@ -689,8 +689,8 @@ public sealed class PipeStandingTests : Bridge
     /// <summary>The walk admits a harness whose configuration directory also holds the harness's own state, as the real harness writes it.</summary>
     [Theory]
     [InlineData(RoleRoutes.Act)]
-    [InlineData(SupervisorRoutes.Answer)]
-    [InlineData(SupervisorRoutes.Defer)]
+    [InlineData(SupervisorRoutes.Decide)]
+    [InlineData(SupervisorRoutes.Leave)]
     public void The_walk_admits_the_harness_Daoris_started_beside_the_harness_s_own_state(string route)
     {
         var config = HolderTerminal.Own(Home);
@@ -742,10 +742,10 @@ public sealed class PipeStandingTests : Bridge
         return (key!, holder => route switch
         {
             RoleRoutes.Act => RoleKit.Act(holder, nonce, generation),
-            SupervisorRoutes.Answer => JsonDocument.Parse(JsonSerializer.Serialize(new SupervisorForm("s1", "q-1", generation,
-                SupervisorProof.Prove(holder, nonce, SupervisorProof.Canonical("s1", "q-1", generation, "Monthly", reasons))!, "Monthly", reasons).Payload())).RootElement.Clone(),
-            _ => JsonDocument.Parse(JsonSerializer.Serialize(new SupervisorDeferForm("s1", "q-1", generation,
-                SupervisorProof.Prove(holder, nonce, SupervisorProof.Canonical(SupervisorRoutes.Defer, "s1", "q-1", generation, "sign-in", reasons))!, "sign-in", reasons).Payload())).RootElement.Clone(),
+            SupervisorRoutes.Decide => JsonDocument.Parse(JsonSerializer.Serialize(new SupervisorDecideForm(SupervisorSubject.Question("s1", "q-1"), generation,
+                "", SupervisorKinds.Answer, "Monthly", reasons).Proved(holder, nonce).Payload())).RootElement.Clone(),
+            _ => JsonDocument.Parse(JsonSerializer.Serialize(new SupervisorLeaveForm(SupervisorSubject.Question("s1", "q-1"), generation,
+                "", "sign-in", reasons).Proved(holder, nonce).Payload())).RootElement.Clone(),
         });
     }
 }

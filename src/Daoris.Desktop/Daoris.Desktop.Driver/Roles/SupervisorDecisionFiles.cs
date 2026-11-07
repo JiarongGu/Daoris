@@ -117,6 +117,10 @@ internal sealed class SupervisorDecisionFiles(string home)
     {
         writer.WriteString("decision", id);
         writer.WriteString("kind", SupervisorKinds.Question);
+        writer.WriteStartObject("subject");
+        writer.WriteString("session", session);
+        writer.WriteString("question", question.Id);
+        writer.WriteEndObject();
         writer.WriteString("session", session);
         writer.WriteStartObject("question");
         writer.WriteString("id", question.Id);

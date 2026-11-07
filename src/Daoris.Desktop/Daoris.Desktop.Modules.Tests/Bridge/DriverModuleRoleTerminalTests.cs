@@ -272,23 +272,25 @@ public sealed class DriverModuleRoleTerminalTests : DriverModuleBridge
 
             var waiting = (await AnswerAsync(module, "SUPERVISOR_WAITING")).GetProperty("waiting");
             var listed = Assert.Single(waiting.EnumerateArray());
-            Assert.Equal(("s1", "q-1", generation), (listed.GetProperty("session").GetString(), listed.GetProperty("question").GetString(), listed.GetProperty("generation").GetString()));
+            var subject = listed.GetProperty("subject");
+            Assert.Equal(("question", "s1", "q-1", generation), (listed.GetProperty("kind").GetString(), subject.GetProperty("session").GetString(),
+                subject.GetProperty("question").GetString(), listed.GetProperty("generation").GetString()));
+            Assert.Equal(["answer"], listed.GetProperty("acts").EnumerateArray().Select(act => act.GetString()));
             Assert.DoesNotContain(key!, waiting.GetRawText(), StringComparison.Ordinal);
 
             SupervisorReason[] reasons = [new("The ticket says monthly.", "the quest's line 2")];
-            object Form(string nonce) => new SupervisorForm(
-                "s1", "q-1", generation, SupervisorProof.Prove(key!, nonce, SupervisorProof.Canonical("s1", "q-1", generation, "Monthly", reasons))!,
-                "Monthly", reasons).Payload();
+            object Form(string nonce) => new SupervisorDecideForm(
+                SupervisorSubject.Question("s1", "q-1"), generation, "", SupervisorKinds.Answer, "Monthly", reasons).Proved(key!, nonce).Payload();
 
             // The page's door: refused, nothing kept.
-            var page = await AnswerAsync(module, "SUPERVISOR_ANSWER", Form(SupervisorProof.Nonce()));
+            var page = await AnswerAsync(module, "SUPERVISOR_DECIDE", Form(SupervisorProof.Nonce()));
             Assert.Equal((false, "not-holder"), (page.GetProperty("kept").GetBoolean(), page.GetProperty("why").GetString()));
             Assert.Empty(loop.Supervisor.LiveOf("s1"));
 
             await using var client = await PipeClient.ConnectAsync(pipe.Name!);
             var hello = await client.HelloAsync(HomeIdentity.Read(Home)!);
             var nonce = hello.GetProperty("data").GetProperty("nonce").GetString()!;
-            var answer = await client.AnswerAsync(await client.SendAsync(DriverModule.Name, "SUPERVISOR_ANSWER", Form(nonce)));
+            var answer = await client.AnswerAsync(await client.SendAsync(DriverModule.Name, "SUPERVISOR_DECIDE", Form(nonce)));
             Assert.True(answer.GetProperty("success").GetBoolean(), answer.GetRawText());
             Assert.True(answer.GetProperty("data").GetProperty("kept").GetBoolean(), answer.GetRawText());
             var held = Assert.Single(loop.Supervisor.LiveOf("s1"));
@@ -345,22 +347,19 @@ public sealed class DriverModuleRoleTerminalTests : DriverModuleBridge
                 return answer.GetProperty("data");
             }
 
-            object Answer(string nonce) => new SupervisorForm(
-                "s1", "q-1", generation, SupervisorProof.Prove(key!, nonce, SupervisorProof.Canonical("s1", "q-1", generation, "Monthly", reasons))!,
-                "Monthly", reasons).Payload();
-            object Defer(string nonce) => new SupervisorDeferForm(
-                "s1", "q-1", generation,
-                SupervisorProof.Prove(key!, nonce, SupervisorProof.Canonical(SupervisorRoutes.Defer, "s1", "q-1", generation, "sign-in", reasons))!,
-                "sign-in", reasons).Payload();
+            object Answer(string nonce) => new SupervisorDecideForm(
+                SupervisorSubject.Question("s1", "q-1"), generation, "", SupervisorKinds.Answer, "Monthly", reasons).Proved(key!, nonce).Payload();
+            object Defer(string nonce) => new SupervisorLeaveForm(
+                SupervisorSubject.Question("s1", "q-1"), generation, "", "sign-in", reasons).Proved(key!, nonce).Payload();
 
-            var answered = await SendAsync("SUPERVISOR_ANSWER", Answer);
+            var answered = await SendAsync("SUPERVISOR_DECIDE", Answer);
             Assert.Equal((false, SupervisorWhy.OwnerQuestion), (answered.GetProperty("kept").GetBoolean(), answered.GetProperty("why").GetString()));
             Assert.Empty(loop.Supervisor.LiveOf("s1"));
 
-            var page = await AnswerAsync(module, "SUPERVISOR_DEFER", Defer(SupervisorProof.Nonce()));
+            var page = await AnswerAsync(module, "SUPERVISOR_LEAVE", Defer(SupervisorProof.Nonce()));
             Assert.Equal((false, "not-holder"), (page.GetProperty("kept").GetBoolean(), page.GetProperty("why").GetString()));
 
-            var left = await SendAsync("SUPERVISOR_DEFER", Defer);
+            var left = await SendAsync("SUPERVISOR_LEAVE", Defer);
             Assert.True(left.GetProperty("kept").GetBoolean(), left.GetRawText());
             var decision = Assert.Single(loop.Supervisor.LiveOf("s1"));
             Assert.Equal((SupervisorState.Left, "sign-in"), (decision.State, decision.Bound));

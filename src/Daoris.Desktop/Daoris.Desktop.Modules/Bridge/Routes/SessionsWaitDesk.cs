@@ -91,6 +91,7 @@ internal sealed class SessionsWaitDesk(DriverContext context)
     internal static object SupervisorDecisionRow(SupervisorDecisionView view) => new
     {
         view.Id,
+        Kind = SupervisorKinds.Question,
         Question = new { view.Question.Id, Text = view.Question.Question, Choices = view.Question.Choices.Select(choice => choice.Label).ToList() },
         view.Choice,
         view.Bound,
@@ -108,6 +109,7 @@ internal sealed class SessionsWaitDesk(DriverContext context)
     internal static object SupervisorCourseRow(SupervisorCourseView view) => new
     {
         view.Id,
+        Kind = SupervisorKinds.Course,
         view.Point,
         view.Count,
         view.N,
@@ -135,17 +137,8 @@ internal sealed class SessionsWaitDesk(DriverContext context)
         return new { Done = state == SupervisorState.Overruled, State = state is { } moved ? SupervisorStates.Spell(moved) : null };
     }
 
-    public async Task<object?> AnswerAsync(SupervisorActPress press, CancellationToken cancellationToken) =>
-        await SupervisorDoor.AnswerAsync(_loop, press.Form.Json, cancellationToken).ConfigureAwait(false);
-
-    public async Task<object?> DeferAsync(SupervisorActPress press, CancellationToken cancellationToken) =>
-        await SupervisorDoor.DeferAsync(_loop, press.Form.Json, cancellationToken).ConfigureAwait(false);
-
     public async Task<object?> RoleActAsync(RoleActPress press, CancellationToken cancellationToken) =>
         await SupervisorDoor.ActAsync(_loop.Pipe, press.Form.Json, cancellationToken, context.OwnerScopesOf(), context.StewardWorldOf()).ConfigureAwait(false);
-
-    public async Task<object?> WaitingAsync(CancellationToken cancellationToken) =>
-        new { Waiting = await SupervisorDoor.WaitingAsync(_loop, cancellationToken).ConfigureAwait(false), At = Moments.Write(DateTimeOffset.UtcNow) };
 
     public object? StewardActs() => _loop.Pipe?.StandingConfirmation is { } judge
         ? new { Generation = judge.LiveGeneration(AppointedRoles.Steward), Acts = judge.StewardActsNow() }

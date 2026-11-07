@@ -30,7 +30,7 @@ internal sealed class SupervisorKeeping(SupervisorBook book, IDecisionAdmission 
                 return Task.FromResult(new SupervisorKept(false, null, null, why));
             }
 
-            if (book.ClosedWhy(answer.Session, answer.Question) is { } closed)
+            if (book.ClosedWhy(SupervisorSubject.Question(answer.Session, answer.Question)) is { } closed)
             {
                 log?.Info("supervisor.refused", ("why", closed));
                 return Task.FromResult(new SupervisorKept(false, null, null, closed));
@@ -85,7 +85,7 @@ internal sealed class SupervisorKeeping(SupervisorBook book, IDecisionAdmission 
                 refused = SupervisorStates.OwnersAgain(held.State) ? SupervisorWhy.Overruled : SupervisorWhy.Answered;
             }
 
-            refused ??= book.ClosedWhy(defer.Session, defer.Question);
+            refused ??= book.ClosedWhy(SupervisorSubject.Question(defer.Session, defer.Question));
             if (refused is null && (admission.Admit(SupervisorKinds.Question, new RolePlace(Repository: park.Repository), act: null) is not { Why: null, Generation: { } effective } || effective != defer.Generation))
             {
                 refused = SupervisorWhy.RoleChanged;
