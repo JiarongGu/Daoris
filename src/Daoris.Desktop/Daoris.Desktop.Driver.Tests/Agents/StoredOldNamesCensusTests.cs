@@ -22,37 +22,11 @@ public sealed class StoredOldNamesCensusTests : IDisposable
     /// <summary>Each kept record, by the name the area's census gives it, and the sources that spell its old word.</summary>
     private static readonly IReadOnlyDictionary<string, string[]> Kept = new Dictionary<string, string[]>
     {
-        ["the session store's renamed columns"] = ["Daoris.Service/Daoris.Service.Core/Sessions/SessionColumnNames.cs"],
-        ["an opinion's record"] =
+        ["the service stores' renamed columns and notes"] =
         [
-            "Daoris.Service/Daoris.Service.Core/Review/Opinions.cs",
-            "Daoris.Desktop/Daoris.Desktop.Driver/Review/Domain/OpinionLines.cs",
-        ],
-        ["a memory operation's author"] =
-        [
-            "Daoris.Service/Daoris.Service.Core/Knowledge/Memory/MemoryOpStore.cs",
-            "Daoris.Service/Daoris.Service.Core/Knowledge/Memory/MemoryProposals.cs",
-        ],
-        ["the machine log's fields"] =
-        [
-            "Daoris.Desktop/Daoris.Desktop.Driver/Agents/AccountCooling.cs",
-            "Daoris.Desktop/Daoris.Desktop.Driver/Agents/TransientRetries.cs",
-            "Daoris.Desktop/Daoris.Desktop.Driver/Course/Domain/Continuation.cs",
-            "Daoris.Desktop/Daoris.Desktop.Driver/Events/SessionLog.cs",
-            "Daoris.Desktop/Daoris.Desktop.Driver/Events/SessionWatch.cs",
-            "Daoris.Desktop/Daoris.Desktop.Driver/Loop/Chat/ChatConclusion.cs",
-            "Daoris.Desktop/Daoris.Desktop.Driver/Loop/Chat/ChatRun.cs",
-            "Daoris.Desktop/Daoris.Desktop.Driver/Participants/GoOn/HarnessConversations.cs",
-            "Daoris.Desktop/Daoris.Desktop.Modules/Bridge/AgentActions.cs",
-            "Daoris.Desktop/Daoris.Desktop.Modules/Platform/RefusalLog.cs",
-        ],
-        ["a note's part"] =
-        [
-            "Daoris.Desktop/Daoris.Desktop.Driver/Agents/Domain/ContinueReason.cs",
-            "Daoris.Desktop/Daoris.Desktop.Driver/Events/Domain/ContinueCodes.cs",
-            "Daoris.Desktop/Daoris.Desktop.Driver/Events/NoteCodes.cs",
-            "Daoris.Desktop/Daoris.Desktop.Driver/Events/StartNoteCodes.cs",
-            "Daoris.Desktop/Daoris.Desktop.Driver/Loop/Continue/NativeWords.cs",
+            "Daoris.Service/Daoris.Service.Core/Sessions/SessionColumnNames.cs",
+            "Daoris.Service/Daoris.Service.Core/Knowledge/Memory/MemoryAuthorColumnNames.cs",
+            "Daoris.Service/Daoris.Service.Core/Sessions/NotePartNames.cs",
         ],
         ["a plugin's work event"] =
         [
@@ -61,13 +35,7 @@ public sealed class StoredOldNamesCensusTests : IDisposable
             "Daoris.Desktop/Daoris.Desktop.Driver/Plugins/Domain/WorkEventGrammar.cs",
             "Daoris.Desktop/Daoris.Desktop.Driver/Plugins/Relay/RelaySaid.cs",
         ],
-        ["a brainstorm's and a meeting's files"] =
-        [
-            "Daoris.Desktop/Daoris.Desktop.Driver/WorkOrders/BrainstormFiles.cs",
-            "Daoris.Desktop/Daoris.Desktop.Driver/WorkOrders/Domain/BrainstormDocument.cs",
-            "Daoris.Desktop/Daoris.Desktop.Driver/WorkOrders/Domain/BrainstormRoomMeasure.cs",
-            "Daoris.Desktop/Daoris.Desktop.Driver/WorkOrders/Domain/MeetingPacket.cs",
-        ],
+        ["a brainstorm's and a meeting's files"] = ["Daoris.Desktop/Daoris.Desktop.Driver/Transitional/Migration/BrainstormFilesStep.cs"],
         ["a binding file"] = ["Daoris.Desktop/Daoris.Desktop.Driver/Transitional/Migration/BindingFilesStep.cs"],
         ["driver.json's staffing keys"] =
         [
@@ -84,7 +52,6 @@ public sealed class StoredOldNamesCensusTests : IDisposable
             "Daoris.Desktop/Daoris.Desktop.Driver/Participants/Domain/ChildBindings.cs",
             "Daoris.Service/Daoris.Service.Core/Sessions/LineageFile.cs",
         ],
-        ["the chat start's press"] = ["Daoris.Desktop/Daoris.Desktop.Driver/Instance/HeldVerbs.cs"],
         ["not a seam's word"] =
         [
             "Daoris.Desktop/Daoris.Desktop.Driver/Help/HelpWired.cs",

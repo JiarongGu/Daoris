@@ -18,6 +18,12 @@ const TIME_SHAPE = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d{1,7})?Z$/;
 export const named = (value) => (typeof value === 'string' && value.length > 0 ? value : null);
 
 /**
+ * The door a line names: its `door`, else the word a log line written before the door was named spelt it (`adapter` on a session's lines,
+ * `harness` on an agent action's). A line already written is read, never rewritten; the older word ends when those files age out.
+ */
+export const doorOf = (data, older = 'adapter') => named(data.door) ?? named(data[older]);
+
+/**
  * One line of a file, or null when it is not one the format describes: a JSON object whose `time` is UTC
  * in the §3 shape and whose `source`, `level` and `event` are strings. Data that is absent or no object
  * is none; a field nobody knows is ignored.

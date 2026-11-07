@@ -32,12 +32,12 @@ public sealed record SessionHandOverPress(
 public sealed record SessionGoAheadPress(string Id, string Ask, bool Approved, long? Number, string? Words, bool? GoesOn);
 
 /// <summary>
-/// A conversation started in a repository, on the <c>Adapter</c> named or Chat's order, under a <c>Profile</c>, in a tree of its own or not
+/// A conversation started in a repository, on the <c>Door</c> named or Chat's order, under a <c>Profile</c>, in a tree of its own or not
 /// (<c>OwnTree</c>, none leaving it to the repository's standing choice). <c>Text</c> are the opening words and <c>Files</c> what is attached
 /// to them, each <c>{ name, content }</c> with the bytes as base64; <c>RequestId</c> keeps a press that arrives twice to one start.
 /// </summary>
 public sealed record StartChatPress(
-    string Repository, string? Adapter, string? Profile, string? Text, System.Text.Json.JsonElement? Files, string? RequestId, bool? OwnTree);
+    string Repository, string? Door, string? Profile, string? Text, System.Text.Json.JsonElement? Files, string? RequestId, bool? OwnTree);
 
 /// <summary>
 /// The person's words to a session. <c>Level</c> is when they should reach a working session; <c>Question</c> names the park's question

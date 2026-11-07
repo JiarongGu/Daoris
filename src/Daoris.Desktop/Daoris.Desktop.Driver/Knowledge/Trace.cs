@@ -266,7 +266,7 @@ public static class Trace
             {
                 Quest = Filled(session, "quest"),
                 Kind = Text(session, "kind") ?? "driven",
-                Adapter = Filled(session, "door"),
+                Door = Filled(session, "door"),
                 DoorVersion = Filled(session, "doorVersion"),
                 Profile = Filled(session, "profile"),
                 Tree = Filled(session, "tree"),

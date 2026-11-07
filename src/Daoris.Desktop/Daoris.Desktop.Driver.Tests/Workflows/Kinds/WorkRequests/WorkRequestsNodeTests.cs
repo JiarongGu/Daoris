@@ -48,8 +48,8 @@ public sealed class WorkRequestsNodeTests
         QuestView[] published = [Quest("q9", "Taken"), Quest("q8", "Done", to: "docs", note: "shipped it"), Quest("q6", "Declined", note: "not here")];
         TracedSession[] helpers =
         [
-            new("h1", "engine", "working") { Serves = "s1", Adapter = "codex", Created = Then },
-            new("h2", "engine", "failed") { Serves = "s1", Adapter = "gemini", Note = "ran out", Updated = Then },
+            new("h1", "engine", "working") { Serves = "s1", Door = "codex", Created = Then },
+            new("h2", "engine", "failed") { Serves = "s1", Door = "gemini", Note = "ran out", Updated = Then },
         ];
 
         var drawn = WorkRequests.Draw(published, work, helpers);

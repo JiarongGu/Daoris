@@ -38,7 +38,7 @@ public sealed class ConversationRoutes(DriverContext context)
     [DriverRoute("START_CHAT", PipeClass.Person, Drain = PipeDrain.Waits)]
     [Owner("START_CHAT", None = OwnerNone.OwnConversation)]
     [GroundRepository("START_CHAT", "repository")]
-    [Says("START_CHAT", "repository:repository", "adapter:agent", "text:words")]
+    [Says("START_CHAT", "repository:repository", "door:agent", "text:words")]
     [Publishes("START_CHAT", StateScopes.Sessions | StateScopes.Driver)]
     private async Task<object?> StartChatAsync(StartChatPress press, CancellationToken cancellationToken)
     {
@@ -49,7 +49,7 @@ public sealed class ConversationRoutes(DriverContext context)
         // A blank adapter is none named, and Chat's order is walked (D205 §4.1, MODELROLE1d); one named is the person's pick, its model
         // Chat's first entry for that agent (§3.5(d)). This route took a blank one as a name (REV3 CLEAN1); the page happens never to
         // send one.
-        var (adapter, order) = ActorChoices.NewChat(config, press.Adapter);
+        var (adapter, order) = ActorChoices.NewChat(config, press.Door);
 
         // The end of a conversation is news the page wants without asking: the drawer is
         // probably open, and a record that moved silently reads as one that hung.

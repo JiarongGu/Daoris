@@ -108,7 +108,7 @@ public sealed class ChatGoOnTests : IDisposable
             Assert.Contains(("kind", (object?)"chat"), line.Data);
             Assert.Contains(("resumed", (object?)false), line.Data);
             Assert.Contains(("why", (object?)ContinueWhy.Unkept), line.Data);
-            Assert.Contains(("door", (object?)"screen"), line.Data);
+            Assert.Contains(("saidAt", (object?)"screen"), line.Data);
         }
     }
 
@@ -970,7 +970,7 @@ internal sealed class ChatLedger : HttpMessageHandler
             {
                 ["id"] = id, ["occasion"] = "landing", ["pass"] = "first", ["working"] = working, ["session"] = "r-" + id,
                 ["candidate"] = new JsonObject { ["repository"] = "engine", ["base"] = tip, ["tip"] = tip, ["commits"] = new JsonArray(tip) },
-                ["reviewer"] = new JsonObject { ["adapter"] = "codex-acp", ["label"] = "another-maker", ["product"] = "Codex", ["maker"] = "OpenAI" },
+                ["reviewer"] = new JsonObject { ["door"] = "codex-acp", ["label"] = "another-maker", ["product"] = "Codex", ["maker"] = "OpenAI" },
                 ["families"] = new JsonArray("claude-code"), ["posture"] = "copy-alone", ["minutes"] = 20, ["tier"] = "agent",
                 ["asked"] = "2026-10-03T09:00:00Z", ["due"] = "2026-10-03T09:20:00Z", ["state"] = "given",
                 ["given"] = new JsonObject

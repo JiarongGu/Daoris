@@ -79,10 +79,10 @@ public static class NoteCodes
     public static readonly NoteReasons Continue = new(
     [
         new(ContinueCodes.Account, [], "work.say.why.account"),
-        new(ContinueCodes.Adapter, ["from", "to"], "work.say.why.adapter"),
+        new(ContinueCodes.Door, ["from", "to"], "work.say.why.door"),
         new(ContinueCodes.Unkept, [], "work.say.why.unkept"),
         new(ContinueCodes.Tree, [], "work.say.why.tree"),
-        new(ContinueCodes.Unable, ["adapter"], "work.say.why.unable"),
+        new(ContinueCodes.Unable, ["door"], "work.say.why.unable"),
         new(ContinueCodes.Offered, [], "work.say.why.offered"),
         new(ContinueCodes.Gone, [], "work.say.why.gone"),
         new(ContinueCodes.Refused, [], "work.say.why.refused"),

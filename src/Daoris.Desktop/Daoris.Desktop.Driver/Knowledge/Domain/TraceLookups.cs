@@ -32,8 +32,8 @@ internal static class TraceLookups
     /// <summary>What ran it, as its record names it.</summary>
     internal static TraceAgent AgentOf(TracedSession session) => new()
     {
-        Adapter = session.Adapter,
-        Harness = session.DoorVersion,
+        Door = session.Door,
+        DoorVersion = session.DoorVersion,
         Account = session.Teammate ? null : session.Profile,
         Teammate = session.Teammate,
     };

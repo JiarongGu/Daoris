@@ -267,12 +267,12 @@ export const NOTE_CODES: Readonly<Record<string, NoteCode>> = {
   'chat.workflow': { values: ['workflow', 'version', 'owner'] },
   'chat.workflow-unread': { values: ['workflow', 'owner', 'problem'] },
   'chat.workflow-failed': { values: ['problem'] },
-  // A resumed conversation's first line: the adapter and whose words, a version that moved riding inside it.
-  'resumed.opening': { values: ['adapter', 'why'], why: 'resumed' },
+  // A resumed conversation's first line: the door and whose words, a version that moved riding inside it.
+  'resumed.opening': { values: ['door', 'why'], why: 'resumed' },
   'resumed.moved': { values: ['now', 'then'] },
-  'resumed.native': { values: ['adapter'] },
+  'resumed.native': { values: ['door'] },
   // The native door going on with Daoris's own words alone: never "what you said".
-  'resumed.native-daoris': { values: ['adapter'] },
+  'resumed.native-daoris': { values: ['door'] },
   // A permission the rules refused: the call's title rides between the two as the agent's words.
   'refused.lead': { values: [] },
   'refused.governs': { values: [] },

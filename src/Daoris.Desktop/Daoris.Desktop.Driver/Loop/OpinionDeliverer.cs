@@ -371,16 +371,16 @@ internal sealed class OpinionDeliverer(LoopContext context, DriverOpinions opini
             ? []
             : OpinionWriters.Agents(records, reading.Session, []);
         wrote = [.. wrote, .. answeredBy.Where(agent => !wrote.Contains(agent, StringComparer.OrdinalIgnoreCase))];
-        var firstFamily = AgentFamily.Of(_context.Harnesses.Adapters, first.Adapter);
+        var firstFamily = AgentFamily.Of(_context.Harnesses.Adapters, first.Door);
         IReadOnlyList<string> reviewers = answeredBy.Any(agent => AgentFamily.Of(_context.Harnesses.Adapters, agent).Same(firstFamily))
             ? [.. asked.Rule.Reviewers.Where(each => !AgentFamily.Of(_context.Harnesses.Adapters, each).Same(firstFamily))]
-            : [first.Adapter];
+            : [first.Door];
         // D205 §4.2: a recheck by the first reviewer is a continuation, so it takes the first pass's record's asked choice, not the actor as it
         // stands now; with the record's asked unread (an older record), or another reviewer chosen above, it reads the actor's entries as the
         // first pass did.
-        IReadOnlyList<ActorEffective>? order = reviewers is [var same] && string.Equals(same, first.Adapter, StringComparison.OrdinalIgnoreCase)
+        IReadOnlyList<ActorEffective>? order = reviewers is [var same] && string.Equals(same, first.Door, StringComparison.OrdinalIgnoreCase)
             && records.GetValueOrDefault(first.Session) is { Asked: { } was } record
-            ? [new ActorEffective(first.Adapter, was.NamedModel, was.Effort is { Carried: true, Value: { } effort } ? effort : null, record.Choice ?? "rule-default")]
+            ? [new ActorEffective(first.Door, was.NamedModel, was.Effort is { Carried: true, Value: { } effort } ? effort : null, record.Choice ?? "rule-default")]
             : null;
         Task<ReviewerChoice> Walk(IReadOnlyList<ReviewerPassed>? passed) =>
             ReviewerChoice.ChooseAsync(

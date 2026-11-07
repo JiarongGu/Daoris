@@ -213,7 +213,7 @@ describe('a new conversation', () => {
     expect(screen.getByRole('button', { name: "Agent and account: Codex · driver's" })).toBeInTheDocument();
 
     await userEvent.type(prompt(), 'Hello{Enter}');
-    expect(onStart).toHaveBeenCalledWith({ repository: 'engine', text: 'Hello', files: [], adapter: 'codex' });
+    expect(onStart).toHaveBeenCalledWith({ repository: 'engine', text: 'Hello', files: [], door: 'codex' });
   });
 
   /**

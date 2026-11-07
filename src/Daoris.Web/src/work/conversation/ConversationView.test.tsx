@@ -825,7 +825,7 @@ describe('ConversationView', () => {
     // backticks drawn as code (UX7d-1).
     const { container } = view([
       ev({ kind: 'user', origin: 'person', id: 'w1', reaches: 'resume', text: 'also cap it' }),
-      ev({ kind: 'note', text: '— your words went to session `n3wn3w00`, because it ran on `a`, and starts here now run on `b`.', words: ['w1'], to: 'n3wn3w00', why: 'adapter' }),
+      ev({ kind: 'note', text: '— your words went to session `n3wn3w00`, because it ran on `a`, and starts here now run on `b`.', words: ['w1'], to: 'n3wn3w00', why: 'door' }),
     ]);
     expect(container.textContent).toContain('— your words went to session n3wn3w00, because it ran on a, and starts here now run on b.');
     expect(within(container).getByText('n3wn3w00').tagName).toBe('CODE');

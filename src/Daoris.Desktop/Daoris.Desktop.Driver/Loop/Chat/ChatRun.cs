@@ -334,7 +334,7 @@ internal sealed class ChatRun(
                     {
                         var read = agent.Read(harnesses.Adapters, DoorFailures.OfPrompt(refused), clock().GetUtcNow(), harnesses.Zone);
                         using var log = new MachineLog(home, "driver");
-                        log.Info("agent.error", ("session", sessionId), ("adapter", agent.Name), ("account", selection.Profile), ("kind", read.Spelled), ("by", read.By));
+                        log.Info("agent.error", ("session", sessionId), ("door", agent.Name), ("account", selection.Profile), ("kind", read.Spelled), ("by", read.By));
                         return read;
                     })
                 {
@@ -346,7 +346,7 @@ internal sealed class ChatRun(
                         using var log = new MachineLog(home, "driver");
                         log.Info(
                             "agent.transient",
-                            ("session", sessionId), ("adapter", agent.Name), ("account", selection.Profile), ("by", episode.First.By), ("try", number),
+                            ("session", sessionId), ("door", agent.Name), ("account", selection.Profile), ("by", episode.First.By), ("try", number),
                             ("next", next));
                     },
                 },

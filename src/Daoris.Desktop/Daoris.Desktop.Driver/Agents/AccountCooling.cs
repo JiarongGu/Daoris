@@ -491,7 +491,7 @@ public static class AccountLines
         public static AccountLine Limited(string session, string adapter, string? account, LimitSeen seen, long turn, long? used) =>
             new("account.limited",
             [
-                ("session", session), ("adapter", adapter), ("account", Profile(account)), ("hit", Bounded(seen.Hit)),
+                ("session", session), ("door", adapter), ("account", Profile(account)), ("hit", Bounded(seen.Hit)),
                 ("window", Bounded(seen.Window)), ("until", AccountCooling.Stamp(seen.Until)), ("stated", seen.Stated),
                 ("assumedZone", seen.AssumedZone), ("turn", turn), ("used", used),
             ]);
@@ -502,7 +502,7 @@ public static class AccountLines
         public static AccountLine CoolingUnkept(string session, string adapter, string? account, LimitSeen seen) =>
             new("account.cooling-unkept",
             [
-                ("session", session), ("adapter", adapter), ("account", Profile(account)), ("until", AccountCooling.Stamp(seen.Until)),
+                ("session", session), ("door", adapter), ("account", Profile(account)), ("until", AccountCooling.Stamp(seen.Until)),
             ]);
 
         /// <summary>
@@ -512,7 +512,7 @@ public static class AccountLines
         public static AccountLine NotLifted(string session, string adapter, string? account, LimitSeen seen) =>
             new("account.not-lifted",
             [
-                ("session", session), ("adapter", adapter), ("account", Profile(account)), ("hit", Bounded(seen.Hit)),
+                ("session", session), ("door", adapter), ("account", Profile(account)), ("hit", Bounded(seen.Hit)),
                 ("window", Bounded(seen.Window)), ("until", AccountCooling.Stamp(seen.Until)),
             ]);
 
@@ -530,7 +530,7 @@ public static class AccountLines
             string adapter, string? account, string? workspace, DateTimeOffset? until, int quests, IReadOnlyList<string>? signedOut = null) =>
             new("starts.waiting",
             [
-                ("adapter", adapter), ("account", Profile(account)), ("workspace", workspace),
+                ("door", adapter), ("account", Profile(account)), ("workspace", workspace),
                 ("until", until is { } at ? AccountCooling.Stamp(at) : null), ("quests", quests),
                 ("signedOut", (signedOut ?? []).Select(Profile).OfType<string>().ToList() is { Count: > 0 } named ? string.Join(",", named) : null),
             ]);
@@ -560,7 +560,7 @@ public static class AccountLines
             string? fromSaid = null, string? toSaid = null) =>
             new("account.rotated",
             [
-                ("session", session), ("adapter", adapter), ("from", Profile(from)), ("to", Profile(to)), ("carries", carries),
+                ("session", session), ("door", adapter), ("from", Profile(from)), ("to", Profile(to)), ("carries", carries),
                 ("why", Word(why)), ("scope", Profile(scope)), ("said", said), ("fromSaid", Standing(fromSaid)), ("toSaid", Standing(toSaid)),
             ]);
 

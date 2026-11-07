@@ -125,7 +125,7 @@ public sealed class AccountLimitHoldTests : IDisposable
         var line = Assert.Single(lines);
         Assert.Equal("account.limited", line.Event);
         Assert.Equal(
-            ["session", "adapter", "account", "hit", "window", "until", "stated", "assumedZone", "turn", "used"],
+            ["session", "door", "account", "hit", "window", "until", "stated", "assumedZone", "turn", "used"],
             line.Data.Select(field => field.Key));
         Assert.Equal(
             new object?[] { "s1", "acp-stub", null, "individual spend", "weekly", "2026-10-03T10:17:00Z", true, false, 1L, 370_104L },
@@ -366,7 +366,7 @@ public sealed class AccountLimitHoldTests : IDisposable
         for (var look = 0; look < 3; look++) await Driver(service, roster).TickAsync().WaitAsync(Bound);
 
         var line = Assert.Single(lines, l => l.Event == "starts.waiting");
-        Assert.Equal(["adapter", "account", "workspace", "until", "quests", "signedOut"], line.Data.Select(field => field.Key));
+        Assert.Equal(["door", "account", "workspace", "until", "quests", "signedOut"], line.Data.Select(field => field.Key));
         Assert.Equal(
             ["acp-stub", null, "default", "2026-10-03T10:17:00Z", 1, null],
             line.Data.Select(field => field.Value));
@@ -497,13 +497,13 @@ public sealed class AccountLimitHoldTests : IDisposable
         var lines = Directory.GetFiles(DaorisHome.Entry(_home, HomeEntry.Logs)).SelectMany(StubFile.Lines)
             .Select(line => JsonDocument.Parse(line).RootElement.Clone()).ToList();
         Assert.Equal(
-            """{"session":"s1","adapter":"claude-code-acp","account":"account-1","hit":"weekly","window":"weekly","until":"2026-10-03T10:17:00Z","stated":true,"assumedZone":false,"turn":2,"used":370104}""",
+            """{"session":"s1","door":"claude-code-acp","account":"account-1","hit":"weekly","window":"weekly","until":"2026-10-03T10:17:00Z","stated":true,"assumedZone":false,"turn":2,"used":370104}""",
             lines.Single(l => l.GetProperty("event").GetString() == "account.limited").GetProperty("data").GetRawText());
         Assert.Equal(
             [
-                """{"adapter":"claude-code-acp","account":null,"workspace":"work","until":"2026-10-03T10:17:00Z","quests":3,"signedOut":null}""",
-                """{"adapter":"claude-code","account":"gmail","workspace":null,"until":"2026-10-03T10:17:00Z","quests":2,"signedOut":"account-1,account-2"}""",
-                """{"adapter":"claude-code","account":null,"workspace":null,"until":null,"quests":1,"signedOut":"account-1"}""",
+                """{"door":"claude-code-acp","account":null,"workspace":"work","until":"2026-10-03T10:17:00Z","quests":3,"signedOut":null}""",
+                """{"door":"claude-code","account":"gmail","workspace":null,"until":"2026-10-03T10:17:00Z","quests":2,"signedOut":"account-1,account-2"}""",
+                """{"door":"claude-code","account":null,"workspace":null,"until":null,"quests":1,"signedOut":"account-1"}""",
             ],
             lines.Where(l => l.GetProperty("event").GetString() == "starts.waiting").Select(l => l.GetProperty("data").GetRawText()));
     }

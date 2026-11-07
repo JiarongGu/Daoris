@@ -670,7 +670,7 @@ public sealed class AccountRotationTests : IDisposable
         var line = AccountLine.Rotated("s2", "claude-code-acp", "account-1", "account-2", carries: "s1", WalkStep.Cooling, scope: "work");
 
         Assert.Equal("account.rotated", line.Event);
-        Assert.Equal(["session", "adapter", "from", "to", "carries", "why", "scope", "said", "fromSaid", "toSaid"], line.Data.Select(field => field.Key));
+        Assert.Equal(["session", "door", "from", "to", "carries", "why", "scope", "said", "fromSaid", "toSaid"], line.Data.Select(field => field.Key));
         Assert.Equal(
             new object?[] { "s2", "claude-code-acp", "account-1", "account-2", "s1", "cooling", "work", false, null, null },
             line.Data.Select(field => field.Value));
@@ -708,7 +708,7 @@ public sealed class AccountRotationTests : IDisposable
             .Select(text => JsonDocument.Parse(text).RootElement.Clone())
             .Single(entry => entry.GetProperty("event").GetString() == "account.rotated");
         Assert.Equal(
-            """{"session":"s2","adapter":"claude-code-acp","from":"account-1","to":"account-2","carries":"s1","why":"leastRecent","scope":null,"said":false,"fromSaid":null,"toSaid":null}""",
+            """{"session":"s2","door":"claude-code-acp","from":"account-1","to":"account-2","carries":"s1","why":"leastRecent","scope":null,"said":false,"fromSaid":null,"toSaid":null}""",
             line.GetProperty("data").GetRawText());
     }
 }

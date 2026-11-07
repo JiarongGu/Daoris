@@ -51,7 +51,7 @@ public static class Continuations
         var ranOn = park.Adapter ?? kept?.Adapter;
         if (ranOn is { Length: > 0 } && !string.Equals(ranOn, adapter, StringComparison.OrdinalIgnoreCase))
         {
-            return ContinueWhy.AdapterChanged(ranOn, adapter);
+            return ContinueWhy.DoorChanged(ranOn, adapter);
         }
 
         if (account is not null) return account;
@@ -301,14 +301,14 @@ public static class Continuations
         var lead = $"— {said} the next turn of its own conversation, resumed on `{adapter}`";
         if (now is not { Length: > 0 } || then is not { Length: > 0 } || string.Equals(now, then, StringComparison.Ordinal))
         {
-            return Noted.Of(StartNoteCodes.ResumedOpening, lead + ".", ("adapter", adapter), ("why", why));
+            return Noted.Of(StartNoteCodes.ResumedOpening, lead + ".", ("door", adapter), ("why", why));
         }
 
         // The lead's text stops where the English goes on, so each part's text is inside the note.
         var moved = $"{now}; it opened on {then}";
         return new Noted(
             $"{lead} {moved}.",
-            [StartNoteCodes.ResumedOpening.Part(lead, ("adapter", adapter), ("why", why)), StartNoteCodes.ResumedMoved.Part(moved, ("now", now), ("then", then))]);
+            [StartNoteCodes.ResumedOpening.Part(lead, ("door", adapter), ("why", why)), StartNoteCodes.ResumedMoved.Part(moved, ("now", now), ("then", then))]);
     }
 
     /// <summary>
@@ -354,14 +354,14 @@ public static class Continuations
     /// </summary>
     /// <param name="from">The ended state it went on from, in the record's spelling.</param>
     /// <param name="why">Null where it resumed.</param>
-    /// <param name="door">Where the words were said, <c>screen</c> or <c>terminal</c> (MSG1d); null where no door was kept.</param>
+    /// <param name="door">Where the words were said, <c>screen</c> or <c>terminal</c> (MSG1d), logged as <c>saidAt</c>; null where no door was kept.</param>
     /// <param name="kind">The record's kind: <c>driven</c>, or <c>chat</c> for an ended chat the person wrote to (MSG1c).</param>
     public static AccountLine Reopened(
         string session, string adapter, string from, ContinueReason? why, string? door = null, string kind = "driven") =>
         new("session.reopened",
         [
-            ("session", session), ("kind", kind), ("adapter", adapter), ("from", from), ("resumed", why is null), ("why", why?.Code),
-            ("door", door),
+            ("session", session), ("kind", kind), ("door", adapter), ("from", from), ("resumed", why is null), ("why", why?.Code),
+            ("saidAt", door),
         ]);
 
     /// <summary>
@@ -409,7 +409,7 @@ public static class Continuations
     /// <param name="session">The parked session the person answered.</param>
     /// <param name="why">Null where it resumed.</param>
     public static AccountLine Answered(string session, string adapter, ContinueReason? why) =>
-        new("session.answered", [("session", session), ("adapter", adapter), ("resumed", why is null), ("why", why?.Code)]);
+        new("session.answered", [("session", session), ("door", adapter), ("resumed", why is null), ("why", why?.Code)]);
 
     /// <summary>
     /// <c>session.moved</c> (SESSCTX1c, D189 point 8; the session-context design §7): once per move to a new part, as
@@ -421,7 +421,7 @@ public static class Continuations
         string session, string continues, string? ranOn, string adapter, string? from, string? to, string why, bool briefed) =>
         new("session.moved",
         [
-            ("session", session), ("continues", continues), ("ranOn", ranOn), ("adapter", adapter), ("from", from), ("to", to),
+            ("session", session), ("continues", continues), ("ranOn", ranOn), ("door", adapter), ("from", from), ("to", to),
             ("why", why), ("briefed", briefed),
         ]);
 }

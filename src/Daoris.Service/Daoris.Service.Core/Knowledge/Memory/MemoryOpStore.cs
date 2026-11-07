@@ -13,7 +13,7 @@ namespace Daoris.Knowledge;
 public sealed class MemoryOpStore
 {
     internal const string Columns =
-        "id, repository, kind, state, at, session, workspace, quest, adapter, harness, role, role_revision, models, text, target, revision, source, "
+        "id, repository, kind, state, at, session, workspace, quest, door, door_version, role, role_revision, models, text, target, revision, source, "
         + "relation, approver, holds, entry, applied, settled, recheck, predecessors, carried, answer, told, began";
 
     private static readonly JsonSerializerOptions Json = new(JsonSerializerDefaults.Web);
@@ -49,8 +49,8 @@ public sealed class MemoryOpStore
               session       TEXT NULL,
               workspace     TEXT NULL,
               quest         TEXT NULL,
-              adapter       TEXT NULL,
-              harness       TEXT NULL,
+              door          TEXT NULL,
+              door_version  TEXT NULL,
               role          TEXT NULL,
               role_revision TEXT NULL,
               models        TEXT NULL,
@@ -72,6 +72,7 @@ public sealed class MemoryOpStore
             {EventJournal.MemorySchema}
             """;
         await command.ExecuteNonQueryAsync(ct).ConfigureAwait(false);
+        await MemoryAuthorColumnNames.RenameAsync(_db, ct).ConfigureAwait(false);
         // KNOWCENTRAL2d: the records a write cites; a row from before reads none.
         await SchemaColumns.EnsureAsync(_db, "memory_ops", "recheck", "recheck TEXT NULL", ct).ConfigureAwait(false);
         // KNOWCENTRAL2h: a replacement's predecessors as JSON; a row from before replaces none.
@@ -408,7 +409,7 @@ public sealed class MemoryOpStore
         await using var insert = _db.Command();
         insert.CommandText = $"""
             INSERT INTO memory_ops ({Columns})
-            VALUES ($id, $repository, $kind, $state, $at, $session, $workspace, $quest, $adapter, $harness, $role, $roleRevision, $models, $text,
+            VALUES ($id, $repository, $kind, $state, $at, $session, $workspace, $quest, $door, $doorVersion, $role, $roleRevision, $models, $text,
                     $target, $revision, $source, $relation, NULL, NULL, NULL, NULL, NULL, $recheck, $predecessors, $carried, NULL, NULL, NULL)
             """;
         insert.Parameters.AddWithValue("$recheck", Value(op.Change.Recheck));
@@ -423,8 +424,8 @@ public sealed class MemoryOpStore
         insert.Parameters.AddWithValue("$session", Value(op.By?.Session));
         insert.Parameters.AddWithValue("$workspace", Value(op.By?.Workspace));
         insert.Parameters.AddWithValue("$quest", Value(op.By?.Quest));
-        insert.Parameters.AddWithValue("$adapter", Value(op.By?.Adapter));
-        insert.Parameters.AddWithValue("$harness", Value(op.By?.Harness));
+        insert.Parameters.AddWithValue("$door", Value(op.By?.Door));
+        insert.Parameters.AddWithValue("$doorVersion", Value(op.By?.DoorVersion));
         insert.Parameters.AddWithValue("$role", Value(op.By?.Role));
         insert.Parameters.AddWithValue("$roleRevision", Value(op.By?.RoleRevision));
         insert.Parameters.AddWithValue("$models", Value(op.Models));

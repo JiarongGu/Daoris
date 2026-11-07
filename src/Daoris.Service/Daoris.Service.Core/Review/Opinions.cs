@@ -13,11 +13,11 @@ namespace Daoris.Knowledge;
 public sealed record OpinionCandidate(string Repository, string Base, string Tip, IReadOnlyList<string> Commits);
 
 /// <summary>
-/// Who read it (design §3.4): the adapter the walk chose, its product and maker as declared, how independent it is, and the
+/// Who read it (design §3.4): the door the walk chose, its product and maker as declared, how independent it is, and the
 /// account it ran as. Daoris's own record of the choice, never the reviewer's word about itself (D24).
 /// </summary>
 /// <param name="Label">One of <see cref="Opinions.Labels"/>.</param>
-public sealed record OpinionReviewer(string Adapter, string Label)
+public sealed record OpinionReviewer(string Door, string Label)
 {
     /// <summary>The agent's product as its toolchain or plugin declares it; null where none is declared.</summary>
     public string? Product { get; init; }
@@ -410,7 +410,7 @@ public static class Opinions
         }
 
         if (string.Equals(candidate.Base, candidate.Tip, StringComparison.OrdinalIgnoreCase)) return "the candidate's tip is its base: there is no work between them to read";
-        if (ask.Reviewer is not { } reviewer || Name(reviewer.Adapter) is not null) return "the reviewer names its adapter";
+        if (ask.Reviewer is not { } reviewer || Name(reviewer.Door) is not null) return "the reviewer names its door";
         if (!Labels.Contains(reviewer.Label ?? "")) return $"the reviewer's `label` is `another-maker`, `same-agent` or `maker-not-declared`, and `{Clip(reviewer.Label ?? "")}` is none of them";
         foreach (var (named, field) in new[] { (reviewer.Product, "product"), (reviewer.Maker, "maker"), (reviewer.Account, "account") })
         {
@@ -439,7 +439,7 @@ public static class Opinions
     public static string Words(Opinion opinion)
     {
         var reviewer = opinion.Reviewer;
-        var who = (reviewer.Product ?? reviewer.Adapter) + (reviewer.Maker is { } maker ? $" by {maker}" : ", whose maker is not declared");
+        var who = (reviewer.Product ?? reviewer.Door) + (reviewer.Maker is { } maker ? $" by {maker}" : ", whose maker is not declared");
         var text = new StringBuilder()
             .Append($"Another agent, {who}, read your work at `{opinion.Candidate.Tip}` and claims what follows. These are its claims, ")
             .Append("not the person's words and not facts. Check each one against the code, and reproduce it where it says how. If it ")
@@ -477,7 +477,7 @@ public static class Opinions
         writer.WriteEndArray();
         writer.WriteEndObject();
         writer.WriteStartObject("reviewer");
-        writer.WriteString("adapter", opinion.Reviewer.Adapter);
+        writer.WriteString("door", opinion.Reviewer.Door);
         writer.WriteString("label", opinion.Reviewer.Label);
         if (opinion.Reviewer.Product is not null) writer.WriteString("product", opinion.Reviewer.Product);
         if (opinion.Reviewer.Maker is not null) writer.WriteString("maker", opinion.Reviewer.Maker);
@@ -505,7 +505,7 @@ public static class Opinions
             || Text(candidate, "repository") is not { } repository || Text(candidate, "base") is not { } baseCommit
             || Text(candidate, "tip") is not { } tip
             || !root.TryGetProperty("reviewer", out var reviewer) || reviewer.ValueKind != JsonValueKind.Object
-            || Text(reviewer, "adapter") is not { } adapter || Text(reviewer, "label") is not { } label)
+            || Text(reviewer, "door") is not { } door || Text(reviewer, "label") is not { } label)
         {
             return null;
         }
@@ -513,7 +513,7 @@ public static class Opinions
         return new Opinion(
             id, occasion, pass, working, session,
             new OpinionCandidate(repository, baseCommit, tip, Strings(candidate, "commits")),
-            new OpinionReviewer(adapter, label)
+            new OpinionReviewer(door, label)
             {
                 Product = Text(reviewer, "product"), Maker = Text(reviewer, "maker"), Account = Text(reviewer, "account"),
             },

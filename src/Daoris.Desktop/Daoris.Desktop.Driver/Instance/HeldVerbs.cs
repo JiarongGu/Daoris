@@ -17,7 +17,7 @@ public static class HeldVerbs
     public static Task<int> StartAsync(InstanceWorld world, ChatStart start, Func<Action, IDisposable>? interrupts = null, CancellationToken ct = default)
     {
         var payload = new Dictionary<string, object?> { ["repository"] = start.Repository };
-        if (!string.IsNullOrWhiteSpace(start.Agent)) payload["adapter"] = start.Agent;
+        if (!string.IsNullOrWhiteSpace(start.Agent)) payload["door"] = start.Agent;
         if (!string.IsNullOrWhiteSpace(start.Account)) payload["profile"] = start.Account;
         if (start.OwnTree) payload["ownTree"] = true;
         return HoldAsync(world, TreesRoutes.DriverModule, "START_CHAT", payload, hold: true, "chat", interrupts, ct);

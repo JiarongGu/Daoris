@@ -8,7 +8,7 @@ import type { TraceAnswer, TraceAskLink, TraceChain, TraceQuestLink, TraceSessio
 /** The ask: the person's words, each with how and when it was given, and a go-ahead approved and one still waiting. */
 export const ASK: TraceAskLink = {
   id: 'a1', source: 'asks', namedBy: { kind: 'quest', id: 'q1' }, workspace: 'work', state: 'Published', tier: 'intake',
-  intake: { session: 'i1', state: { state: 'completed' }, agent: { adapter: 'claude-code', harness: '2.1.4', account: 'work' } },
+  intake: { session: 'i1', state: { state: 'completed' }, agent: { door: 'claude-code', doorVersion: '2.1.4', account: 'work' } },
   quests: ['q1'],
   words: [
     { kind: 'asked', text: 'The dashboard figure reads zero. Use the v3 bridge, as common-report does.', at: '2026-10-03T09:00:00Z' },
@@ -41,7 +41,7 @@ export const QUEST: TraceQuestLink = {
 export const FIRST: TraceSessionLink = {
   id: 's1', source: 'sessions', kind: 'driven', state: { state: 'failed', limit: true },
   opened: '2026-10-03T09:05:00Z', moved: '2026-10-03T09:15:00Z',
-  agent: { adapter: 'claude-code', harness: '2.1.3', account: 'personal' },
+  agent: { door: 'claude-code', doorVersion: '2.1.3', account: 'personal' },
   tree: 'dashboards-q1', baseCommit: 'abc1234def567890', quest: 'q1', before: { first: true },
   evidence: { said: 'no commits landed', lines: [], commits: [] },
   events: {
@@ -61,7 +61,7 @@ export const FIRST: TraceSessionLink = {
 export const SECOND: TraceSessionLink = {
   id: 's2', source: 'sessions', kind: 'driven', state: { state: 'completed' },
   opened: '2026-10-03T09:40:00Z', moved: '2026-10-03T10:00:00Z',
-  agent: { adapter: 'claude-code', harness: '2.1.4', account: 'work' },
+  agent: { door: 'claude-code', doorVersion: '2.1.4', account: 'work' },
   tree: 'dashboards-q1', baseCommit: 'abc1234def567890', quest: 'q1',
   before: { first: false, session: 's1', state: 'failed', ended: true, at: '2026-10-03T09:15:00Z', tree: 'same' },
   took: true,
@@ -130,7 +130,7 @@ export const MISSING_CHAIN: TraceChain = {
       kind: 'session',
       session: {
         id: 's3', source: 'sessions', kind: 'driven', state: { state: 'stopped', interrupted: true }, moved: '2026-10-03T08:30:00Z',
-        agent: { adapter: 'claude-code' }, quest: 'q3',
+        agent: { door: 'claude-code' }, quest: 'q3',
         events: { source: 'events', missing: 'none-here', starts: [], instructions: [], accepted: [] },
         rules: { source: 'rules', missing: 'gone-with-run', allowed: 0, asked: 0, denied: 0, hard: 0, guarded: false },
         landing: { source: 'landings', missing: 'unknown', branches: [] },
@@ -156,7 +156,7 @@ export const NO_ASK_CHAIN: TraceChain = {
       kind: 'session',
       session: {
         id: 's5', source: 'sessions', kind: 'driven', state: { state: 'working' }, opened: '2026-10-03T11:05:00Z',
-        moved: '2026-10-03T11:06:00Z', agent: { adapter: 'codex', harness: '0.48.0' }, tree: 'reports-q5', baseCommit: 'feedface',
+        moved: '2026-10-03T11:06:00Z', agent: { door: 'codex', doorVersion: '0.48.0' }, tree: 'reports-q5', baseCommit: 'feedface',
         quest: 'q5', before: { first: true },
         events: { source: 'events', starts: [], instructions: [{ seq: 1, chars: 70000, kept: 65536, account: null }], accepted: [] },
         rules: { source: 'rules', allowed: 14, asked: 0, denied: 4, hard: 1, guarded: true },
@@ -190,7 +190,7 @@ export const OLD_CHAIN: TraceChain = {
       kind: 'session',
       session: {
         id: 's7', source: 'sessions', kind: 'driven', state: { state: 'completed' }, opened: '2026-10-02T09:10:00Z',
-        moved: '2026-10-02T09:40:00Z', agent: { adapter: 'claude-code', harness: '2.1.0' }, tree: 'web-q7', baseCommit: '0badc0de',
+        moved: '2026-10-02T09:40:00Z', agent: { door: 'claude-code', doorVersion: '2.1.0' }, tree: 'web-q7', baseCommit: '0badc0de',
         quest: 'q7', before: { first: true },
         evidence: { said: 'commits landed:', lines: ['7c7c7c7 Rename the button'], commits: [{ sha: '7c7c7c7', line: '7c7c7c7 Rename the button' }] },
         events: {
@@ -206,7 +206,7 @@ export const OLD_CHAIN: TraceChain = {
       kind: 'session',
       session: {
         id: 'laptop/s8', source: 'sessions', kind: 'driven', state: { state: 'completed' }, opened: '2026-10-02T09:45:00Z',
-        moved: '2026-10-02T09:55:00Z', agent: { adapter: 'claude-code', harness: '2.1.0', teammate: true }, teammate: true,
+        moved: '2026-10-02T09:55:00Z', agent: { door: 'claude-code', doorVersion: '2.1.0', teammate: true }, teammate: true,
         quest: 'q7', before: { first: false, session: 's7', state: 'completed', ended: true, at: '2026-10-02T09:40:00Z', tree: 'unknown' },
         stood: { goAheads: [] },
       },
@@ -223,7 +223,7 @@ export const WAITING_CHAIN: TraceChain = {
     kind: 'session',
     session: {
       id: 's8', source: 'sessions', kind: 'driven', state: { state: 'completed' }, opened: '2026-10-03T12:00:00Z',
-      moved: '2026-10-03T12:30:00Z', agent: { adapter: 'claude-code', harness: '2.1.4', account: 'work' }, tree: 'dashboards-q8',
+      moved: '2026-10-03T12:30:00Z', agent: { door: 'claude-code', doorVersion: '2.1.4', account: 'work' }, tree: 'dashboards-q8',
       baseCommit: 'abc1234def', quest: 'q8', before: { first: true },
       evidence: { said: 'commits landed:', lines: ['5e5e5e5 Tidy the legend'], commits: [{ sha: '5e5e5e5', line: '5e5e5e5 Tidy the legend' }] },
       events: { source: 'events', starts: [], instructions: [{ seq: 1, chars: 4200, account: null }], accepted: [] },

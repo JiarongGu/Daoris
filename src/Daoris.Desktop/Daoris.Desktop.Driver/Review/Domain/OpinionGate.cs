@@ -176,7 +176,7 @@ public static class OpinionGate
         return new LandingOpinion(gate.State)
         {
             Opinion = opinion?.Id,
-            Reviewer = opinion?.Adapter,
+            Reviewer = opinion?.Door,
             Label = opinion?.Label,
             Base = opinion?.Base,
             Tip = read,

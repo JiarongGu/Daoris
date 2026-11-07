@@ -10,7 +10,7 @@ namespace Daoris.Driver;
 /// <param name="Minutes">The rule's bound of one pass, as the opinion keeps it: the service holds no rule.</param>
 /// <param name="Tree">The reviewer's copy, never the working session's tree.</param>
 public sealed record OpinionAskBody(
-    string Occasion, string Working, OpinionCandidateRead Candidate, string Adapter, string Label, IReadOnlyList<string> Families,
+    string Occasion, string Working, OpinionCandidateRead Candidate, string Door, string Label, IReadOnlyList<string> Families,
     string Posture, int Minutes, string Tree)
 {
     /// <summary><c>first</c>, or a recheck's (XAGENT1e).</summary>
@@ -33,7 +33,7 @@ public sealed record OpinionAskBody(
     /// <summary>The ask as the door declares it.</summary>
     internal AskOpinion Route() => new(
         Occasion, Pass, Working, new OpinionCandidateWire(Candidate.Repository, Candidate.Base, Candidate.Tip, [.. Candidate.Commits]),
-        new OpinionReviewerWire(Adapter, Label, Product, Maker, Account), Posture, Minutes, Tree, Rechecks, [.. Families], DoorVersion);
+        new OpinionReviewerWire(Door, Label, Product, Maker, Account), Posture, Minutes, Tree, Rechecks, [.. Families], DoorVersion);
 }
 
 /// <summary>What the host answered a pass's ask: the opinion and its reviewer's record, or why not, in its sentence.</summary>

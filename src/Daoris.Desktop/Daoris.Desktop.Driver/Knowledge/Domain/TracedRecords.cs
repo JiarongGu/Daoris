@@ -28,7 +28,7 @@ public sealed record TracedSession(string Id, string Repository, string State)
     /// <summary><c>driven</c> or <c>chat</c>, as the record says.</summary>
     public string Kind { get; init; } = "driven";
 
-    public string? Adapter { get; init; }
+    public string? Door { get; init; }
 
     /// <summary>The tool's version the record opened on (D49 §4), or null where it names none.</summary>
     public string? DoorVersion { get; init; }

@@ -9,11 +9,11 @@ namespace Daoris.Contracts.Review;
 public sealed record OpinionCandidateWire(string? Repository, string? Base, string? Tip, IReadOnlyList<string?>? Commits);
 
 /// <summary>
-/// The reviewer as the driver's walk chose it: its adapter, its label (<c>another-maker</c>, <c>same-agent</c>,
+/// The reviewer as the driver's walk chose it: its door, its label (<c>another-maker</c>, <c>same-agent</c>,
 /// <c>maker-not-declared</c>), its declared product and maker, and the account it runs as.
 /// </summary>
 public sealed record OpinionReviewerWire(
-    string? Adapter, string? Label, string? Product = null, string? Maker = null, string? Account = null);
+    string? Door, string? Label, string? Product = null, string? Maker = null, string? Account = null);
 
 /// <summary>
 /// An opinion with where its pass stands, derived when read: <c>State</c> is <c>reading</c>, <c>given</c> or <c>failed</c>, and

@@ -191,7 +191,7 @@ export const GO_ON_BRIEF: Record<string, string> = {
  * record that had ended and the person's own start. A proven loss goes on by itself, so its line shows only where that move failed.
  */
 const BRIEF_WAITS: ReadonlySet<string> = new Set([
-  'account', 'adapter', 'unkept', 'unable', 'offered', 'gone', 'refused', 'elsewhere', 'exited',
+  'account', 'door', 'unkept', 'unable', 'offered', 'gone', 'refused', 'elsewhere', 'exited',
 ]);
 
 /**
@@ -296,14 +296,14 @@ export function newSessionSaid(
   return { sentence: answer.message, startChat: false };
 }
 
-/** The agents a reason may name (D137 §5.1): the adapter a session ran on, the one starts ride now, and its agent's name. */
+/** The agents a reason may name (D137 §5.1): the door a session ran on, the one starts ride now, and its agent's name. */
 export type ReasonValues = {
-  /** The adapter the session ran on. */
+  /** The door the session ran on. */
   from?: string | null;
-  /** The adapter this machine's starts ride now. */
+  /** The door this machine's starts ride now. */
   to?: string | null;
-  /** The adapter that cannot continue a conversation. */
-  adapter?: string | null;
+  /** The door that cannot continue a conversation. */
+  door?: string | null;
   /** What a person calls the agent the session ran on. */
   agent?: string | null;
 };
@@ -314,10 +314,10 @@ export type ReasonValues = {
  */
 export const REASONS: Readonly<Record<string, { key: string; needs?: readonly (keyof ReasonValues)[] }>> = {
   'account': { key: 'work.say.why.account' },
-  'adapter': { key: 'work.say.why.adapter', needs: ['from', 'to'] },
+  'door': { key: 'work.say.why.door', needs: ['from', 'to'] },
   'unkept': { key: 'work.say.why.unkept' },
   'tree': { key: 'work.say.why.tree' },
-  'unable': { key: 'work.say.why.unable', needs: ['adapter'] },
+  'unable': { key: 'work.say.why.unable', needs: ['door'] },
   'offered': { key: 'work.say.why.offered' },
   'gone': { key: 'work.say.why.gone' },
   'refused': { key: 'work.say.why.refused' },

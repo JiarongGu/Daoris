@@ -332,7 +332,7 @@ public static class BrainstormDocuments
     {
         writer.WriteString("pass", by.Pass);
         writer.WriteString("maker", by.Maker);
-        writer.WriteString("adapter", by.Adapter);
+        writer.WriteString("door", by.Adapter);
         if (by.Account is null) writer.WriteNull("account");
         else writer.WriteString("account", by.Account);
     }

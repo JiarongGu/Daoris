@@ -39,7 +39,7 @@ export type TraceNamedBy = { kind: string; id?: string | null };
 
 export type TraceState = { state: string; limit?: boolean; interrupted?: boolean; answered?: boolean };
 
-export type TraceAgent = { adapter?: string | null; harness?: string | null; account?: string | null; teammate?: boolean };
+export type TraceAgent = { door?: string | null; doorVersion?: string | null; account?: string | null; teammate?: boolean };
 
 export type TraceWord = { kind: string; text: string; at: string; session?: string | null; quest?: string | null };
 

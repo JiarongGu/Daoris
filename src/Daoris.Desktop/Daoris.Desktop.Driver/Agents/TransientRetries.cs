@@ -27,7 +27,7 @@ internal static class TransientRetries
             {
                 var read = AgentErrors.Read(adapters, adapter, DoorFailures.OfPrompt(refused), clock.GetUtcNow(), harnesses.Zone);
                 log?.Write("info", "agent.error", [
-                    ("session", sessionId), ("adapter", adapter.Id.Value), ("account", profile), ("kind", read.Spelled), ("by", read.By),
+                    ("session", sessionId), ("door", adapter.Id.Value), ("account", profile), ("kind", read.Spelled), ("by", read.By),
                 ]);
                 return read;
             },
@@ -42,7 +42,7 @@ internal static class TransientRetries
             Tried = (episode, number, next) =>
             {
                 log?.Write("info", "agent.transient", [
-                    ("session", sessionId), ("adapter", adapter.Id.Value), ("account", profile), ("by", episode.First.By), ("try", number),
+                    ("session", sessionId), ("door", adapter.Id.Value), ("account", profile), ("by", episode.First.By), ("try", number),
                     ("next", next),
                 ]);
                 // AGENTERRORS1a2 (§5.1, §8): the record's quiet event, a try going, which the head says nothing for.

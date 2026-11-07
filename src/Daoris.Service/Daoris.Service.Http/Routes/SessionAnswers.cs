@@ -122,7 +122,7 @@ public static class SessionAnswers
             new MemoryChangeResponse(
                 change.Kind, change.Text, change.Target, change.Revision, change.Source, change.Relation, change.Recheck,
                 change.Predecessors?.Select(each => new MemoryPredecessorResponse(each.Entry, each.Revision)).ToList()),
-            op.By is { } by ? new MemoryAuthorResponse(by.Session, by.Workspace, by.Quest, by.Adapter, by.Harness, by.Role, by.RoleRevision, by.At) : null,
+            op.By is { } by ? new MemoryAuthorResponse(by.Session, by.Workspace, by.Quest, by.Door, by.DoorVersion, by.Role, by.RoleRevision, by.At) : null,
             op.At, op.Models, op.Approver, op.Holds, op.Entry, op.Applied, op.Settled, op.Carried, op.Answer, op.Told, op.Began);
     }
 

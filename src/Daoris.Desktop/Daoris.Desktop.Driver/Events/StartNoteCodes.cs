@@ -129,10 +129,10 @@ public static class StartNoteCodes
 
     // ——— A resumed conversation's first line (<see cref="Continuations.Opening"/>): the adapter it resumed on is a fact, and a version
     // that moved is a part riding inside it.
-    public static readonly NoteCode ResumedOpening = new("resumed.opening", ["adapter", "why"]) { Why = NoteCodes.Resumed };
+    public static readonly NoteCode ResumedOpening = new("resumed.opening", ["door", "why"]) { Why = NoteCodes.Resumed };
     public static readonly NoteCode ResumedMoved = new("resumed.moved", ["now", "then"]);
-    public static readonly NoteCode ResumedNative = new("resumed.native", ["adapter"]);
+    public static readonly NoteCode ResumedNative = new("resumed.native", ["door"]);
 
     // The native door going on with Daoris's own words alone: never "what you said".
-    public static readonly NoteCode ResumedNativeDaoris = new("resumed.native-daoris", ["adapter"]);
+    public static readonly NoteCode ResumedNativeDaoris = new("resumed.native-daoris", ["door"]);
 }

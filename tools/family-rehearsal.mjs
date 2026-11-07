@@ -4661,7 +4661,7 @@ const portAnsweredLines = readEvents(driver({ serviceUrl: BASE, config: acpConfi
   .filter((data) => data.session === portGoneOn?.id);
 check(
   'the machine log has `session.answered` for it once: resumed, on `acp-stub`, with no reason to give',
-  portAnsweredLines.length === 1 && portAnsweredLines[0].resumed === true && portAnsweredLines[0].adapter === 'acp-stub'
+  portAnsweredLines.length === 1 && portAnsweredLines[0].resumed === true && portAnsweredLines[0].door === 'acp-stub'
     && (portAnsweredLines[0].why ?? null) === null,
   JSON.stringify(portAnsweredLines),
 );
@@ -4772,7 +4772,7 @@ const heardReopened = readEvents(driver({ serviceUrl: BASE, config: sayConfig, m
 check(
   'the machine log has `session.reopened` for it twice: a driven record, from completed, resumed, the words said at the terminal',
   heardReopened.length === 2 && heardReopened.every((data) => data.kind === 'driven' && data.from === 'completed'
-    && data.resumed === true && data.door === 'terminal' && data.adapter === 'acp-stub'),
+    && data.resumed === true && data.saidAt === 'terminal' && data.door === 'acp-stub'),
   JSON.stringify(heardReopened),
 );
 
@@ -5049,7 +5049,7 @@ const setupStart = sessionStarts(startsRead.out).find((line) => line.data?.sessi
 check(
   'the machine log marks its start as a set-up\'s: `session.started` says `setup`, driven, atlas, in its workspace',
   startsRead.code === 0 && setupStart?.data?.setup === true && setupStart.data.kind === 'driven'
-    && setupStart.data.repository === 'atlas' && setupStart.data.workspace === 'default' && setupStart.data.adapter === 'acp-stub',
+    && setupStart.data.repository === 'atlas' && setupStart.data.workspace === 'default' && setupStart.data.door === 'acp-stub',
   startsRead.out,
 );
 

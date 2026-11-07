@@ -190,7 +190,7 @@ public sealed class MemoryProposals(MemoryOpStore ops, QuestStore quests, QuestE
             ["as"] = MemoryProposer.KindOf(from.Sender, by),
             ["workspace"] = from.Workspace,
             ["session"] = by.Session.Length == 0 ? null : by.Session,
-            ["adapter"] = by.Adapter.Length == 0 ? null : by.Adapter,
+            ["door"] = by.Door.Length == 0 ? null : by.Door,
             ["role"] = by.Role,
         },
     };

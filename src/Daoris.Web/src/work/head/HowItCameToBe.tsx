@@ -411,12 +411,12 @@ function SessionStep({ session, doors, nameOf }: { session: TraceSessionLink; do
         session.opened ? t('work.trace.session.opened', { at: at(session.opened) }) : t('work.trace.session.openedUnknown'),
       ]} />
       <Facts parts={[
-        session.agent.adapter ? t('work.trace.session.agent', { agent: session.agent.adapter }) : t('work.trace.session.agentUnknown'),
-        session.agent.harness ? t('work.trace.session.version', { version: session.agent.harness }) : t('work.trace.session.versionUnknown'),
+        session.agent.door ? t('work.trace.session.agent', { agent: session.agent.door }) : t('work.trace.session.agentUnknown'),
+        session.agent.doorVersion ? t('work.trace.session.version', { version: session.agent.doorVersion }) : t('work.trace.session.versionUnknown'),
         // The account by the person's name for it (ACCTNAME1), looked up as the trace is drawn; the record keeps the id.
         !session.teammate && (session.agent.account
           ? t('work.trace.session.account', {
-            account: nameOf && session.agent.adapter ? nameOf(session.agent.adapter, session.agent.account) : session.agent.account,
+            account: nameOf && session.agent.door ? nameOf(session.agent.door, session.agent.account) : session.agent.account,
           })
           : t('work.trace.session.ownSignIn')),
       ]} />

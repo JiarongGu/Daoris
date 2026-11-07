@@ -192,7 +192,7 @@ public static class WorkflowRuns
             var submitted = work.Any(quest => !Closed(quest));
             return Step(WorkflowRunStates.Done, submitted ? WorkflowRunDetails.Submitted : WorkflowRunDetails.Finished) with
             {
-                Count = done, Quest = work[^1].Id, Session = last?.Id, Agent = last?.Adapter,
+                Count = done, Quest = work[^1].Id, Session = last?.Id, Agent = last?.Door,
                 At = (work[^1] is { Status: "Taken", Submission.At: { } made } ? made : work[^1].Updated) ?? last?.Updated,
             };
         }
@@ -203,7 +203,7 @@ public static class WorkflowRuns
         var quests = new HashSet<string>(work.Select(quest => quest.Id), StringComparer.OrdinalIgnoreCase);
         WorkflowRunStep At(string state, string detail) => Step(state, detail) with
         {
-            Count = done, Quest = current.Id, Session = latest?.Id, Agent = latest?.Adapter,
+            Count = done, Quest = current.Id, Session = latest?.Id, Agent = latest?.Door,
         };
 
         // A go-ahead a session of the work asked holds that session's act until the person answers (D135, KNOWUSE1a).

@@ -95,7 +95,7 @@ public sealed class OpinionStoreTests : IAsyncLifetime
         Assert.Equal(("Owner", Base, Tip), (opinion.Candidate.Repository, opinion.Candidate.Base, opinion.Candidate.Tip));
         Assert.Equal([Tip], opinion.Candidate.Commits);
         Assert.Equal(("codex-acp", Opinions.AnotherMaker, "Codex", "OpenAI", "work"),
-            (opinion.Reviewer.Adapter, opinion.Reviewer.Label, opinion.Reviewer.Product, opinion.Reviewer.Maker, opinion.Reviewer.Account));
+            (opinion.Reviewer.Door, opinion.Reviewer.Label, opinion.Reviewer.Product, opinion.Reviewer.Maker, opinion.Reviewer.Account));
         Assert.Equal(["claude-code"], opinion.Families);
         Assert.Equal((Opinions.CopyAlone, 20, Opinions.Agent, Now), (opinion.Posture, opinion.Minutes, opinion.Tier, opinion.Asked));
         Assert.Null(opinion.Given);
@@ -504,7 +504,7 @@ public sealed class OpinionStoreTests : IAsyncLifetime
 
         Assert.Equal([1, 2], read.Given!.Findings.Select(finding => finding.Number));
         Assert.Equal((2, Opinions.Rejected), (Assert.Single(read.Answers).Finding, read.Answers[0].Said));
-        Assert.Equal(("codex-acp", Tip), (read.Reviewer.Adapter, read.Candidate.Tip));
+        Assert.Equal(("codex-acp", Tip), (read.Reviewer.Door, read.Candidate.Tip));
         Assert.Equal(working.Id, read.Handed!.Session);
         Assert.Equal([opinion.Id], (await _desk.ListAsync(working.Id, null, null, Now)).Where(each => each.Opinion.Pass == Opinions.First).Select(each => each.Opinion.Id));
     }

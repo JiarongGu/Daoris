@@ -396,14 +396,14 @@ test('a call made inside the page answers its own reply, and every push still re
     push({ category: 'ipc', id: request.id, success: true, data: { sessionId: 'c0ffee', message: 'opened' } });
   });
 
-  const answer = await invokeInPage(page.window, 'DAORIS.DRIVER', 'START_CHAT', { repository: 'newcomer', adapter: 'acp-stub' });
+  const answer = await invokeInPage(page.window, 'DAORIS.DRIVER', 'START_CHAT', { repository: 'newcomer', door: 'acp-stub' });
 
   assert.deepEqual(answer, { ok: true, data: { sessionId: 'c0ffee', message: 'opened' } });
   assert.equal(page.posted.length, 1);
   const [posted] = page.posted;
   assert.equal(posted?.module, 'DAORIS.DRIVER');
   assert.equal(posted?.type, 'START_CHAT');
-  assert.deepEqual(posted?.payload, { repository: 'newcomer', adapter: 'acp-stub' });
+  assert.deepEqual(posted?.payload, { repository: 'newcomer', door: 'acp-stub' });
   assert.equal(typeof posted?.id, 'string');
   // It listened BESIDE the page's bridge, never instead of it: all three pushes reached the page…
   assert.equal(page.heard.length, 3);
@@ -450,11 +450,11 @@ test('the expression sent over the debug port closes over nothing of this module
   const context = vm.createContext({ window: page.window, setTimeout, clearTimeout });
 
   const answer = await vm.runInContext(
-    bridgeCall('DAORIS.DRIVER', 'START_CHAT', { repository: 'newcomer', adapter: 'acp-stub' }, PATIENCE), context);
+    bridgeCall('DAORIS.DRIVER', 'START_CHAT', { repository: 'newcomer', door: 'acp-stub' }, PATIENCE), context);
 
   // Across realms, so compared as JSON: the object came from the page's realm, not this one.
   assert.deepEqual(JSON.parse(JSON.stringify(answer)), { ok: true, data: { sessionId: 'b0a7' } });
-  assert.deepEqual(page.posted[0]?.payload, { repository: 'newcomer', adapter: 'acp-stub' });
+  assert.deepEqual(page.posted[0]?.payload, { repository: 'newcomer', door: 'acp-stub' });
 });
 
 /**

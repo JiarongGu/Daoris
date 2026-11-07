@@ -173,7 +173,7 @@ public sealed class AgentActions(IEventBus events, DriverLoop loop)
             if (life.Up is null)
             {
                 life.Up = life.Now;
-                _loop.Log?.Info("harness.started", ("harness", harness), ("action", action), ("ms", life.Up));
+                _loop.Log?.Info("harness.started", ("door", harness), ("action", action), ("ms", life.Up));
                 // The tool's process is up: what it does with the browser now is one phase, ending when it exits (R2).
                 if (signsIn) Phase(life, SignInPhase.Browser);
             }
@@ -371,7 +371,7 @@ public sealed class AgentActions(IEventBus events, DriverLoop loop)
     {
         var now = life.Now;
         _loop.Log?.Info("harness.ended",
-            ("harness", life.Harness), ("action", life.Action), ("outcome", outcome), ("code", code),
+            ("door", life.Harness), ("action", life.Action), ("outcome", outcome), ("code", code),
             ("startMs", life.Up), ("toolMs", life.Exited - life.Up),
             ("whoMs", life.WhoDone - life.Who), ("listsMs", life.Joined - life.Lists), ("ms", now));
     }
@@ -608,7 +608,7 @@ public sealed class AgentActions(IEventBus events, DriverLoop loop)
             : throw Refusals.Because(
                 Refusals.HarnessActionIdle,
                 $"nothing is running for `{harness}` {action} — it finished, or was never started.",
-                ("harness", harness), ("action", action));
+                ("door", harness), ("action", action));
     }
 
     /// <summary>Stop the action running under `harness:action`, its end then told to the log as cancelled (SIGNIN1).</summary>
@@ -675,7 +675,7 @@ public sealed class AgentActions(IEventBus events, DriverLoop loop)
             if (Up is not { } up || Volatile.Read(ref _prompted) != 0) return;
             if (!text.Contains("https://", StringComparison.OrdinalIgnoreCase) && !text.Contains("http://", StringComparison.OrdinalIgnoreCase)) return;
             if (Interlocked.Exchange(ref _prompted, 1) != 0) return;
-            log?.Info("harness.prompted", ("harness", Harness), ("action", Action), ("ms", Now - up));
+            log?.Info("harness.prompted", ("door", Harness), ("action", Action), ("ms", Now - up));
         }
     }
 

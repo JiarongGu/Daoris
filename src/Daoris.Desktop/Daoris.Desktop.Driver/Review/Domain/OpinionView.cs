@@ -35,7 +35,7 @@ public sealed record OpinionAnswerView(int Finding, string Said)
 /// <param name="Session">The reviewer's own session record.</param>
 /// <param name="State"><c>reading</c>, <c>given</c> or <c>failed</c>, derived by the host when read.</param>
 public sealed record OpinionView(
-    string Id, string Occasion, string Pass, string Working, string Session, string Repository, string Base, string Tip, string Adapter,
+    string Id, string Occasion, string Pass, string Working, string Session, string Repository, string Base, string Tip, string Door,
     string Label, string State)
 {
     /// <summary>For a recheck, the first pass it reads the commits since; null for a first pass.</summary>
@@ -83,7 +83,7 @@ public sealed record OpinionView(
     public bool Given => State == OpinionViews.GivenState && Findings is not null;
 
     /// <summary>Who read it, as the person reads it: its product, else its adapter, and its maker where declared.</summary>
-    public string Who => (Product ?? Adapter) + (Maker is { } maker ? $" ({maker})" : "");
+    public string Who => (Product ?? Door) + (Maker is { } maker ? $" ({maker})" : "");
 
     /// <summary>The answer standing for <paramref name="finding"/>: the latest kept, or null where none was.</summary>
     public OpinionAnswerView? AnswerTo(int finding) => Answers.LastOrDefault(answer => answer.Finding == finding);
@@ -134,14 +134,14 @@ public static class OpinionViews
     /// </summary>
     public static OpinionView? Read(OpinionResponse? root)
     {
-        if (root is not { Id.Length: > 0, Working: not null, Session: not null, Candidate: { Repository: { } repository, Base: { } @base, Tip: { } tip }, Reviewer.Adapter: { } adapter })
+        if (root is not { Id.Length: > 0, Working: not null, Session: not null, Candidate: { Repository: { } repository, Base: { } @base, Tip: { } tip }, Reviewer.Door: { } door })
         {
             return null;
         }
 
         var given = root.Given;
         return new OpinionView(
-            root.Id, root.Occasion ?? "", root.Pass ?? FirstPass, root.Working, root.Session, repository, @base, tip, adapter,
+            root.Id, root.Occasion ?? "", root.Pass ?? FirstPass, root.Working, root.Session, repository, @base, tip, door,
             root.Reviewer.Label ?? "", root.State ?? "")
         {
             Rechecks = root.Rechecks,

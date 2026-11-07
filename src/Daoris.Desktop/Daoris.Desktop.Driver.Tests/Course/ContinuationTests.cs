@@ -134,7 +134,7 @@ public sealed class ContinuationTests : IDisposable
     {
         var why = Continuations.Judge(Park(adapter: "claude-code"), "claude-code-acp", doorResumes: true, profile: "account-1", Kept);
 
-        Assert.Equal(ContinueWhy.Adapter, why?.Code);
+        Assert.Equal(ContinueWhy.Door, why?.Code);
         Assert.Equal("it ran on `claude-code`, and starts here now run on `claude-code-acp`", why?.Sentence);
     }
 
@@ -248,7 +248,7 @@ public sealed class ContinuationTests : IDisposable
             Assert.False(ContinueWhy.Of(code).Holds, code);
         }
 
-        Assert.False(ContinueWhy.AdapterChanged("claude-code", "codex-acp").Holds);
+        Assert.False(ContinueWhy.DoorChanged("claude-code", "codex-acp").Holds);
         Assert.False(ContinueWhy.CannotResume("claude-code").Holds);
     }
 
@@ -276,7 +276,7 @@ public sealed class ContinuationTests : IDisposable
             Assert.False(ContinueWhy.Of(code).Lost, code);
         }
 
-        Assert.False(ContinueWhy.AdapterChanged("claude-code", "codex-acp").Lost);
+        Assert.False(ContinueWhy.DoorChanged("claude-code", "codex-acp").Lost);
     }
 
     /// <summary>
@@ -339,10 +339,10 @@ public sealed class ContinuationTests : IDisposable
 
         Assert.Equal("session.answered", resumed.Event);
         Assert.Equal(
-            [("session", (object?)"s1"), ("adapter", "claude-code-acp"), ("resumed", true), ("why", null)],
+            [("session", (object?)"s1"), ("door", "claude-code-acp"), ("resumed", true), ("why", null)],
             resumed.Data);
         Assert.Equal(
-            [("session", (object?)"s1"), ("adapter", "claude-code-acp"), ("resumed", false), ("why", "gone")],
+            [("session", (object?)"s1"), ("door", "claude-code-acp"), ("resumed", false), ("why", "gone")],
             carried.Data);
     }
 
@@ -380,7 +380,7 @@ public sealed class ContinuationTests : IDisposable
         var line = Continuations.Moved("s2", "s1", "codex-acp", "claude-code", from: "work", to: null, HandOverWhy.Retry, briefed: true);
         Assert.Equal("session.moved", line.Event);
         Assert.Equal(
-            [("session", (object?)"s2"), ("continues", "s1"), ("ranOn", "codex-acp"), ("adapter", "claude-code"), ("from", "work"),
+            [("session", (object?)"s2"), ("continues", "s1"), ("ranOn", "codex-acp"), ("door", "claude-code"), ("from", "work"),
              ("to", null), ("why", "retry"), ("briefed", true)],
             line.Data);
     }
@@ -472,7 +472,7 @@ public sealed class ContinuationTests : IDisposable
     {
         Assert.False(ContinueWhy.Of(ContinueWhy.Account).Never);
         Assert.False(ContinueWhy.Of(ContinueWhy.Elsewhere).Never);
-        Assert.False(ContinueWhy.AdapterChanged("a", "b").Never);
+        Assert.False(ContinueWhy.DoorChanged("a", "b").Never);
     }
 
     /// <summary>
@@ -821,10 +821,10 @@ public sealed class ContinuationTests : IDisposable
 
         Assert.Equal("session.reopened", resumed.Event);
         Assert.Equal(
-            [("session", (object?)"s1"), ("kind", "driven"), ("adapter", "claude-code-acp"), ("from", "completed"), ("resumed", true), ("why", null), ("door", "screen")],
+            [("session", (object?)"s1"), ("kind", "driven"), ("door", "claude-code-acp"), ("from", "completed"), ("resumed", true), ("why", null), ("saidAt", "screen")],
             resumed.Data);
         Assert.Equal(
-            [("session", (object?)"s1"), ("kind", "driven"), ("adapter", "claude-code-acp"), ("from", "failed"), ("resumed", false), ("why", "account"), ("door", null)],
+            [("session", (object?)"s1"), ("kind", "driven"), ("door", "claude-code-acp"), ("from", "failed"), ("resumed", false), ("why", "account"), ("saidAt", null)],
             carried.Data);
     }
 

@@ -1334,7 +1334,7 @@ if (!done.ok) throw new Error(done.text);
   let opened = { ok: false, error: { code: 'NO_PAGE', message: found } };
   for (let attempt = 0; attempt < 40 && cdp; attempt += 1) {
     opened = await bounded(
-      cdp.evaluate(bridgeCall('DAORIS.DRIVER', 'START_CHAT', { repository: 'newcomer', adapter: 'acp-stub' }))
+      cdp.evaluate(bridgeCall('DAORIS.DRIVER', 'START_CHAT', { repository: 'newcomer', door: 'acp-stub' }))
         .catch((error) => ({ ok: false, error: { code: 'EVALUATE', message: error.message } })),
       45_000,
       { ok: false, error: { code: 'NO_ANSWER', message: 'the page did not answer within 45s' } });
