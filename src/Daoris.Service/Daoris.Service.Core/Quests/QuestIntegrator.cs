@@ -16,16 +16,16 @@ internal sealed class QuestIntegrator(QuestStore store)
     /// pushed on top — through the one table. Answers the cursor it now stands at and every move that
     /// became a conflict on the way.
     /// </summary>
-    /// <param name="workspace">The circle whose remote these came from: what a publish among them is filed under here (SYNC0a).</param>
+    /// <param name="workspace">The circle whose remote these came from: what a publish among them is filed under here.</param>
     /// <param name="fetched">The remote's operations, each carrying its number.</param>
     /// <param name="through">The last number the fetch covered; the cursor moves there.</param>
     /// <remarks>
     /// An operation this machine already holds — its own, pushed and fetched back — takes the number it
-    /// was given; any other is kept under the machine that made it. Then every quest the fetch touched
+    /// is given; any other is kept under the machine that made it. Then every quest the fetch touched
     /// is replayed: accepted operations by number, then pending ones. A pending move that no longer
-    /// applies becomes a <see cref="QuestOperationKind.Conflict"/> and is never dropped (design §5).
+    /// applies becomes a <see cref="QuestOperationKind.Conflict"/> and is never dropped.
     /// <para>An operation on a quest this machine forgot (<see cref="QuestStore.ForgetAsync"/>) is passed over, and the cursor still
-    /// moves past it (HIST1b): a closed quest still takes a conflict or a dismissal from another machine, and kept, either
+    /// moves past it: a closed quest still takes a conflict or a dismissal from another machine, and kept, either
     /// would make half a quest here; a cursor back at zero would bring the whole of it.</para>
     /// </remarks>
     public Task<QuestIntegration> IntegrateAsync(
@@ -55,7 +55,7 @@ internal sealed class QuestIntegrator(QuestStore store)
                 if (!touched.Contains(operation.Quest, StringComparer.Ordinal)) touched.Add(operation.Quest);
             }
 
-            // A stray an older build left pending on a lost take (WAITCLAIM4) sits on a quest no fetch touches once the
+            // A stray an older build left pending on a lost take sits on a quest no fetch touches once the
             // take's conflict has come back, so it is rebased whether or not anything arrived for it.
             foreach (var quest in await store.Sync.StrayQuestsAsync(circle, transaction, inside).ConfigureAwait(false))
             {

@@ -1,17 +1,17 @@
 namespace Daoris.Knowledge;
 
-/// <summary>Deleting a quest made by mistake (D95), and what stands in a delete's way.</summary>
+/// <summary>Deleting a quest made by mistake, and what stands in a delete's way.</summary>
 internal sealed class QuestDeletes(
     KnowledgeService service, QuestStore quests, QuestFiles? files, SessionStore? sessions, AskStore? asks, QuestRemoteClaims claims)
 {
     /// <summary>
-    /// Delete a quest nobody has started on (D95): open, no session record naming it, and no taken quest
+    /// Delete a quest nobody has started on: open, no session record naming it, and no taken quest
     /// waiting on it. One that may have left this machine is tombstoned, and deleted by push when its
-    /// circle's remote answers, as a take claims by push (D69); any other simply goes. The files this
+    /// circle's remote answers, as a take claims by push; any other simply goes. The files this
     /// machine kept for it go with it.
     /// </summary>
     /// <param name="askGoesToo">
-    /// The ask that asked it is being deleted with it (D95), so its answer says nothing of what stands of the ask.
+    /// The ask that asked it is being deleted with it, so its answer says nothing of what stands of the ask.
     /// Otherwise a delete that leaves its ask with no quest says what the ask now is.
     /// </param>
     public async Task<QuestDeleteOutcome> DeleteAsync(string id, DateTimeOffset now, CancellationToken ct, bool askGoesToo)
@@ -49,7 +49,7 @@ internal sealed class QuestDeletes(
                 quest);
         }
 
-        // Deleted by push (D69's shape): the pass runs before the answer returns, so a delete that lost to
+        // Deleted by push: the pass runs before the answer returns, so a delete that lost to
         // another machine's take is known now, not at a tick nobody watches.
         var pass = await QuestSync.RunAsync(quests, service, remote, quest.Workspace, ct).ConfigureAwait(false);
         if (await quests.FindAsync(quest.Id, ct).ConfigureAwait(false) is { } back)
@@ -108,9 +108,9 @@ internal sealed class QuestDeletes(
     }
 
     /// <summary>
-    /// What the ask that asked a deleted quest now stands as, when this was its last quest: its own sentence
+    /// What the ask that asked a deleted quest now stands as, when this is its last quest: its own sentence
     /// after a blank line, so a person who deleted the quest is told, not left to find the ask changed. Empty for a quest no
-    /// ask asked, an ask that goes too, one still carrying another quest, and a closed one, which was already ended.
+    /// ask asked, an ask that goes too, one still carrying another quest, and a closed one, already ended.
     /// </summary>
     private async Task<string> AskLeftAsync(Quest deleted, bool askGoesToo, CancellationToken ct)
     {
@@ -122,7 +122,7 @@ internal sealed class QuestDeletes(
     }
 
     /// <summary>
-    /// Which of <paramref name="candidates"/> may be deleted (D95) — the judgement <see cref="DeleteAsync"/>
+    /// Which of <paramref name="candidates"/> may be deleted — the judgement <see cref="DeleteAsync"/>
     /// runs, answered for a list so a page offers the verb only where the service would take it.
     /// </summary>
     public async Task<IReadOnlySet<string>> DeletableAsync(IEnumerable<Quest> candidates, CancellationToken ct = default)
@@ -140,7 +140,7 @@ internal sealed class QuestDeletes(
     }
 
     /// <summary>
-    /// Why a quest's record must stay (D95), in a phrase that follows its name, with what to do instead
+    /// Why a quest's record must stay, in a phrase that follows its name, with what to do instead
     /// — null when nothing stands on it and it may go.
     /// </summary>
     public async Task<(string Stands, string Instead)?> KeptAsync(Quest quest, CancellationToken ct)

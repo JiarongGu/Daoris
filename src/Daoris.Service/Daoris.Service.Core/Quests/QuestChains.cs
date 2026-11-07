@@ -1,6 +1,6 @@
 namespace Daoris.Knowledge;
 
-/// <summary>Whether a chain's steps can each be published when their turn comes (D65 §4).</summary>
+/// <summary>Whether a chain's steps can each be published when their turn comes.</summary>
 internal static class QuestChains
 {
     /// <summary>
@@ -9,7 +9,7 @@ internal static class QuestChains
     /// quest it follows is. Null when the chain is fit (or there is none).
     /// </summary>
     /// <remarks>
-    /// <b>All shared or all local</b> (D65 §4, D68): a step is published by the close of the one before
+    /// <b>All shared or all local</b>: a step is published by the close of the one before
     /// it, on whichever machine closed it. A shared quest may be closed on a teammate's machine, which
     /// cannot see a repository local to this one; and a local quest's step to a shared receiver would
     /// publish only here, where no teammate's driver can see it close. A chain that straddles the two is
@@ -59,7 +59,7 @@ internal static class QuestChains
     }
 
     /// <summary>
-    /// A chain's set-up steps, each judged as its composition must leave it (D154 point 4, design §2.1): the
+    /// A chain's set-up steps, each judged as its composition must leave it: the
     /// environment's name, never production; the repository of the step before it, and none of that repository's steps after
     /// it, so its tree grows from the work it shows and holds all of it, once; and never on a chain whose choice is
     /// <c>off</c>. Null when every one is fit, or there is none.

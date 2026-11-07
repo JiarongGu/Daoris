@@ -9,7 +9,7 @@ internal sealed class QuestChain(QuestStore store)
     private readonly ConnectionGate _db = store.Db;
 
     /// <summary>
-    /// Every quest of the <c>follows</c> chain <paramref name="id"/> is on (D149 point 1; REVIEWENV1b3): its first quest, found by
+    /// Every quest of the <c>follows</c> chain <paramref name="id"/> is on: its first quest, found by
     /// walking <c>parent</c> up, and every quest that follows it at any depth, a chain step its close published or a set-up step
     /// a door published after it. Empty for an unknown id. The late set-up door judges a repository's part of the chain on it.
     /// </summary>

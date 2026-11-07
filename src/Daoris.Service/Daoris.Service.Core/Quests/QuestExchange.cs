@@ -13,10 +13,10 @@ namespace Daoris.Knowledge;
 /// <para>The messages are composed here too, not only the verdicts. They are what an agent acts on, so
 /// two hosts phrasing them differently is two behaviours in all the ways that matter.</para>
 ///
-/// <para><b>Every verb commits here</b> (D68): a quest shared with a team is published, taken and
+/// <para><b>Every verb commits here</b>: a quest shared with a team is published, taken and
 /// closed on this machine like any other, and reaches the remote on the next sync. Nothing fails
 /// because a remote is down. One verb WAITS on it when it answers: a take on a shared quest claims by
-/// push (D69), so a take that lost is known before any work starts.</para>
+/// push, so a take that lost is known before any work starts.</para>
 ///
 /// <para>The exchange is the root that wires: each responsibility is a type of its own
 /// (<see cref="QuestPublishing"/>, <see cref="QuestResponses"/>,<see cref="QuestReadies"/>,
@@ -72,11 +72,11 @@ public sealed class QuestExchange
     /// remote itself.
     /// </param>
     /// <param name="sessions">
-    /// The session records — what a delete asks whether any session was started for a quest (D95). Null
+    /// The session records — what a delete asks whether any session is started for a quest. Null
     /// where none are kept, where no session can stand in a delete's way.
     /// </param>
     /// <param name="asks">
-    /// The asks — whose words a requirement's quote is checked against (D133 §3). Null where none
+    /// The asks — whose words a requirement's quote is checked against. Null where none
     /// are kept, where a requirement has no words to quote and is refused rather than kept unchecked.
     /// </param>
     public QuestExchange(
@@ -101,7 +101,7 @@ public sealed class QuestExchange
 
     /// <summary>
     /// The store this exchange judges over — for the ask desk, which reads an ask's standing from the
-    /// quests asked by it (USE1c) and judges nothing of its own about them.
+    /// quests asked by it and judges nothing of its own about them.
     /// </summary>
     internal QuestStore Store => quests;
 
@@ -124,7 +124,7 @@ public sealed class QuestExchange
         string id, string? kind, string? workflow, string? words, DateTimeOffset now, CancellationToken ct = default) =>
         kinds.ChooseWorkflowAsync(id, kind, workflow, words, now, ct);
 
-    /// <summary>A quest that carries nothing but its words — every caller before D65.</summary>
+    /// <summary>A quest that carries nothing but its words.</summary>
     public Task<QuestPublishOutcome> PublishAsync(
         string from, string to, string title, string body, DateTimeOffset now, CancellationToken ct = default) =>
         PublishAsync(new QuestAsk(from, to, title, body), now, ct);

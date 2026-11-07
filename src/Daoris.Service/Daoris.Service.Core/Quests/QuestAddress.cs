@@ -1,7 +1,7 @@
 namespace Daoris.Knowledge;
 
 /// <summary>
-/// Whom a quest asks (D115 §2.2): a repository, or lanes inside one, spelled `repository:lane` or
+/// Whom a quest asks: a repository, or lanes inside one, spelled `repository:lane` or
 /// `repository:lane+lane` at every door. Split once, by the exchange: the quest keeps `to` as the
 /// repository, so everything keyed on a repository — the registry, the planner, the ledger, the scopes,
 /// the sync — goes on reading one, and the lanes ride beside it.

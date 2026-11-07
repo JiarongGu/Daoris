@@ -5,6 +5,6 @@ namespace Daoris.Knowledge;
 /// <param name="More">Whether another page follows.</param>
 public sealed record QuestFetch(IReadOnlyList<QuestOperation> Operations, long Through, bool More)
 {
-    /// <summary>The remote's handshake (FABRIC-CLOSE1i), as it stood at this fetch; null from a remote before it.</summary>
+    /// <summary>The remote's handshake at this fetch; null from a remote before it.</summary>
     public QuestClosure? Closure { get; init; }
 }

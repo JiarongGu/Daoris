@@ -5,7 +5,7 @@ internal sealed class QuestRemoteClaims(KnowledgeService service, QuestStore que
 {
     /// <summary>
     /// The remote a quest leaves this machine for — its circle's, when its receiver is joined there
-    /// (design §8) — or null for a quest that never leaves: no remote for its circle, or a receiver
+    /// — or null for a quest that never leaves: no remote for its circle, or a receiver
     /// nobody shares.
     /// </summary>
     public async Task<IRemote?> SharedAtAsync(Quest quest, CancellationToken ct)
@@ -20,7 +20,7 @@ internal sealed class QuestRemoteClaims(KnowledgeService service, QuestStore que
     }
 
     /// <summary>
-    /// A take on a shared quest claims by push (D69): committed here a moment ago, it is pushed now and
+    /// A take on a shared quest claims by push: committed here a moment ago, it is pushed now and
     /// its answer awaited, so a take that lost is known before any work starts. Null for a quest this
     /// machine does not share — its take is the local one, and the answer the ordinary one.
     /// </summary>
@@ -28,11 +28,11 @@ internal sealed class QuestRemoteClaims(KnowledgeService service, QuestStore que
     /// Taken when the remote numbered it. <see cref="QuestRespondRefusal.AlreadyTaken"/> when another
     /// machine's take reached it first — the take is a conflict on the quest now, and the session stands
     /// down on the same sentence it always has. Taken, UNCONFIRMED, when the remote did not answer or did
-    /// not take it: offline work is allowed (D68 §4), and the next sync decides.
+    /// not take it: offline work is allowed, and the next sync decides.
     /// </returns>
     public async Task<QuestRespondOutcome?> ClaimByPushAsync(Quest quest, CancellationToken ct)
     {
-        // Only a quest whose receiver is joined in its circle ever leaves this machine (design §8); a
+        // Only a quest whose receiver is joined in its circle ever leaves this machine; a
         // take on any other is complete the moment it commits.
         if (await SharedAtAsync(quest, ct).ConfigureAwait(false) is not { } remote) return null;
 

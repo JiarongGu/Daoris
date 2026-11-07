@@ -3,7 +3,7 @@ using System.Text.Json;
 namespace Daoris.Knowledge;
 
 /// <summary>
-/// A quest turned down, with the reason as its note. One made while the quest is open (PAUSE1c) is kept with that mark, so a rebase or a
+/// A quest turned down, with the reason as its note. One made while the quest is open is kept with that mark, so a rebase or a
 /// remote judges it by the same rule. Its move is <see cref="QuestTakeOperation.MoveAsync"/>.
 /// </summary>
 [QuestOperation("declined", QuestOperationPhase.Log)]

@@ -4,7 +4,7 @@ namespace Daoris.Knowledge;
 internal static class QuestLanes
 {
     /// <summary>
-    /// Whether the lanes an address names are the receiver's (D115 §2.2): each must be one its
+    /// Whether the lanes an address names are the receiver's: each must be one its
     /// registration declares, matched in any case and kept in the declared spelling, once, sorted. Any
     /// lane of a repository that declares none is refused, saying to address the repository; an
     /// unknown lane is refused, naming the lanes there are and how to address one.
@@ -53,7 +53,7 @@ internal static class QuestLanes
     }
 
     /// <summary>
-    /// What would let a repository that declares no lanes hand its own work out (D115 §2.2): the
+    /// What would let a repository that declares no lanes hand its own work out: the
     /// same words at the self-address refusal and on its registry row.
     /// </summary>
     public static string NoLanesWay(string repository) =>

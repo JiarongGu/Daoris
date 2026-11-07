@@ -4,7 +4,7 @@ namespace Daoris.Knowledge;
 internal sealed class QuestReadies(QuestStore quests, QuestReviews reviews, QuestAnswering answering)
 {
     /// <summary>
-    /// The agent's <c>ready</c> in a closure graph (§E5): its result, carrying exactly what a done carries, its
+    /// The agent's <c>ready</c> in a closure graph: its result, carrying exactly what a done carries, its
     /// note and an answer to each requirement, kept as a submission while the quest stays taken. Its holds are a done's, and an
     /// unheld one publishes the chain's next step, which seals it. Refused where no closure graph holds the quest, on a take this
     /// machine lost, and on a sealed submission.
@@ -20,7 +20,7 @@ internal sealed class QuestReadies(QuestStore quests, QuestReviews reviews, Ques
 
         if (NotReady(live) is { } why) return new(QuestRespondRefusal.NotInGraph, why, Quest: null);
 
-        // A done's own judgements, unchanged (§E5): a set-up step's result has a set-up, and each requirement is answered.
+        // A done's own judgements, unchanged: a set-up step's result has a set-up, and each requirement is answered.
         if (await reviews.NotShownAsync(live, ct).ConfigureAwait(false) is { } unshown) return new(QuestRespondRefusal.NotShown, unshown, Quest: null);
         var judged = await answering.JudgeAnswersAsync(live, answers, ct).ConfigureAwait(false);
         if (judged.Refusal is { } refusal) return new(refusal, judged.Message!, Quest: null);

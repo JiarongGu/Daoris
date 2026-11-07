@@ -8,7 +8,7 @@ internal sealed class QuestTakeReadings(QuestStore store)
 {
     private readonly ConnectionGate _db = store.Db;
 
-    /// <summary>This machine's bring-forwards on a quest (SYNCMERGE1b0), in the order they were made.</summary>
+    /// <summary>This machine's bring-forwards on a quest, in the order they are made.</summary>
     private async Task<IReadOnlyList<QuestForwardPress>> PressesAsync(string id, CancellationToken ct)
     {
         await using var command = _db.Command();
@@ -30,7 +30,7 @@ internal sealed class QuestTakeReadings(QuestStore store)
     }
 
     /// <summary>
-    /// Who holds a quest's step and how each take that lost on it stands or ended (SYNCMERGE1b0, <see cref="QuestLog.Read"/>), with this
+    /// Who holds a quest's step and how each take that lost on it stands or ended (<see cref="QuestLog.Read"/>), with this
     /// machine's own bring-forwards: what the quest's answer and the claim's say of them, and what the session ledger carries a
     /// stand-down on by. <see cref="QuestTakeReading.None"/> for a quest this store does not hold.
     /// </summary>

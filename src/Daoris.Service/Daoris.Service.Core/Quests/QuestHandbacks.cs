@@ -5,13 +5,13 @@ using System.Text.RegularExpressions;
 namespace Daoris.Knowledge;
 
 /// <summary>
-/// A quest's handback (HANDBACK1, D219): the note a session gave through its connector as it closed the quest done, said it ready or
+/// A quest's handback: the note a session gave through its connector as it closed the quest done, said it ready or
 /// declined it, as the operation that made that act keeps it, with how it answered each of the person's requirements, when, on which
 /// machine, and the session that wrote it. Written once, at that act, in the same write as the move; read back from the quest's
 /// history, never from a session's event log. It travels with the quest, as every operation does.
 /// </summary>
 /// <param name="Quest">The quest it hands back.</param>
-/// <param name="Act">The act it was written at: a done, a ready's submission, or a decline.</param>
+/// <param name="Act">The act it is written at: a done, a ready's submission, or a decline.</param>
 /// <param name="Note">The note whole, as the session gave it.</param>
 /// <param name="Answers">How it answered each of the person's requirements; empty where the quest carries none, and on a decline.</param>
 /// <param name="At">When, on the clock of the machine that made it.</param>
@@ -29,12 +29,12 @@ public sealed record QuestHandback(
     };
 }
 
-/// <summary>A quest's handback read from its history (HANDBACK1, D219).</summary>
+/// <summary>A quest's handback read from its history.</summary>
 public static class QuestHandbacks
 {
     /// <summary>
     /// The handback <paramref name="history"/> holds: its <see cref="LastClose"/>, where that names the session that wrote it. Null
-    /// where it names none (a close from before HANDBACK1, or through a door that names no session: the person's decline, their own
+    /// where it names none (a close from before, or through a door that names no session: the person's decline, their own
     /// done) or there is none yet; the quest's own note then answers, said as the quest's.
     /// </summary>
     public static QuestHandback? Of(IEnumerable<QuestOperation> history) => From(LastClose(history));
@@ -47,7 +47,7 @@ public static class QuestHandbacks
 
     /// <summary>
     /// The quest's latest close in <paramref name="history"/>: the latest done, ready or decline the replay applied, whoever made it, so
-    /// no later close through another door is answered by an older note (HANDBACK1's review). A done the graph's close wrote is passed
+    /// no later close through another door is answered by an older note. A done the graph's close wrote is passed
     /// over: its note is a copy of the submission it closed on, which stays the answer. Null where the quest has none yet.
     /// </summary>
     public static QuestOperation? LastClose(IEnumerable<QuestOperation> history)
@@ -66,7 +66,7 @@ public static class QuestHandbacks
 }
 
 /// <summary>
-/// One quest's handback as the read answers it (HANDBACK1, D219): what the id named, and the words, phrased once for every door.
+/// One quest's handback as the read answers it: what the id named, and the words, phrased once for every door.
 /// </summary>
 /// <param name="Id">The id asked, as read.</param>
 /// <param name="Quest">The quest read, or null where the id names none, or names one outside the workspace asked.</param>
@@ -83,7 +83,7 @@ public sealed record HandbackReading(string Id, Quest? Quest, Session? Session, 
 }
 
 /// <summary>
-/// One quest's handback as anyone entitled to the work reads it (HANDBACK1, D219): its steward, another session of the workspace, a
+/// One quest's handback as anyone entitled to the work reads it: its steward, another session of the workspace, a
 /// terminal. By the quest's id, or by the id of a session for the quest it served; in any state, open or closed; from one workspace,
 /// as <c>quest_list</c> scopes it, or from every one. The connector's <c>handback_read</c>, the local host's <c>GET /api/handbacks/{id}</c>
 /// and <c>daoris session handback</c> answer through it.
@@ -122,7 +122,7 @@ public sealed class HandbackReader(QuestStore quests, SessionLedger? ledger = nu
                 return new(named, null, session, null, $"Session `{session.Id}` served quest `#{served}`, which is not here, so its handback cannot be read.");
             }
 
-            // HANDBACK1's review: a session's quest is judged by its own workspace as a quest read by its id is, since a conversation may
+            // A session's quest is judged by its own workspace as a quest read by its id is, since a conversation may
             // take a quest of another workspace, and its record's workspace says nothing of that quest's.
             if (Elsewhere(work.Workspace, workspace) is { } across)
             {
@@ -140,7 +140,7 @@ public sealed class HandbackReader(QuestStore quests, SessionLedger? ledger = nu
         return new(named, null, null, null, $"No quest or session `{named}` here: a quest's id comes from `quest_list`, a session's from its record.");
     }
 
-    /// <summary>The refusal's tail for a record of another workspace than the one asked; null where it is that workspace's, or none was.</summary>
+    /// <summary>The refusal's tail for a record of another workspace than the one asked; null where it is that workspace's, or none is.</summary>
     private static string? Elsewhere(string kept, string? asked) =>
         asked is null || Workspaces.Same(kept, asked)
             ? null
@@ -189,7 +189,7 @@ public sealed class HandbackReader(QuestStore quests, SessionLedger? ledger = nu
 
     private static string Note(string? note) => string.IsNullOrWhiteSpace(note) ? "It gave no note." : note;
 
-    /// <summary>How each requirement was answered, as <c>quest_list</c> says it.</summary>
+    /// <summary>How each requirement is answered, as <c>quest_list</c> says it.</summary>
     private static void Answered(StringBuilder text, IReadOnlyList<QuestAnswer> answers)
     {
         if (answers.Count > 0) text.Append('\n');
@@ -203,7 +203,7 @@ public sealed class HandbackReader(QuestStore quests, SessionLedger? ledger = nu
 }
 
 /// <summary>
-/// What a session's closing note must be (HANDBACK1, D219): the handback itself, since the note is the one record of the work that
+/// What a session's closing note must be: the handback itself, since the note is the one record of the work that
 /// outlives the session's conversation, and whoever reads the quest later (its steward, another session of the workspace, a terminal)
 /// reads the note and never the messages. A note that only points elsewhere is refused at <c>quest_respond</c>.
 /// </summary>
@@ -275,7 +275,7 @@ public static class HandbackNotes
     [
         // See the commit · refer to my last message · see docs/handback.md for the details.
         new($@"^(?:please\s+)?(?:see|refer to|cf\.?)\s+{Target}(?:{ForWhat})?$", Options),
-        // Read my last message · read the chat; and read a file only for the details (HANDBACK1's review): `Read README.md` is what a
+        // Read my last message · read the chat; and read a file only for the details: `Read README.md` is what a
         // reading quest's session did, a report and never a pointer.
         new($@"^(?:please\s+)?read\s+(?:{Message}|{Place}|above|below)(?:{ForWhat})?$", Options),
         new($@"^(?:please\s+)?read\s+{Target}{ForWhat}$", Options),
@@ -348,7 +348,7 @@ public static class HandbackNotes
         + "where (the commits), what you proved, and what you did not. Nothing moved.";
 
     /// <summary>
-    /// Markdown's emphasis and code marks anywhere in a part (<c>**Details** are in…</c>, HANDBACK1's review): every <c>*</c> and backtick,
+    /// Markdown's emphasis and code marks anywhere in a part (<c>**Details** are in…</c>): every <c>*</c> and backtick,
     /// and an underscore at a word's edge, never one inside a name such as <c>my_file.md</c>. A short pattern with no nesting, so the
     /// backtracking engine its look-arounds need costs a part's length.
     /// </summary>

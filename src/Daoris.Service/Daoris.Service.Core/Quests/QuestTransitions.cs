@@ -1,7 +1,7 @@
 namespace Daoris.Knowledge;
 
 /// <summary>
-/// The one transition table (D47 §5, kept by D68): judged by the store before an operation is written,
+/// The one transition table: judged by the store before an operation is written,
 /// and again by the replay that turns a history into a status — so the lock and the record cannot
 /// disagree, on this machine or on any other that replays the same history.
 /// </summary>
@@ -9,7 +9,7 @@ public static class QuestTransitions
 {
     /// <summary>
     /// Taken only from open (the atomic take); closed only from live; nothing leaves a close; nothing
-    /// moves back to open — one title is one quest forever (D46 §3).
+    /// moves back to open — one title is one quest forever.
     /// </summary>
     public static bool Allows(QuestStatus from, QuestStatus to) => to switch
     {

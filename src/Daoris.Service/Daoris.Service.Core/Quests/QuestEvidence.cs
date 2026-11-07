@@ -4,7 +4,7 @@ using static Daoris.Knowledge.JsonFields;
 namespace Daoris.Knowledge;
 
 /// <summary>
-/// One fact a requirement names as its evidence (EVID1a, D144 point 1): exactly one of a repository-relative
+/// One fact a requirement names as its evidence: exactly one of a repository-relative
 /// <see cref="Path"/> the done's commit must hold, or a <see cref="Gate"/> the receiving repository declares. The
 /// check stays the words a person reads; this is the part of it a fact settles. One shape at every door, in the log
 /// and on the wire.
@@ -29,11 +29,11 @@ public sealed record QuestEvidence(string? Path = null, string? Gate = null)
     public string Named => Path ?? Gate ?? "";
 
     /// <summary>
-    /// Why <paramref name="path"/> is not one a commit can be asked for, or null when it is (D144 §2). A path is read by
+    /// Why <paramref name="path"/> is not one a commit can be asked for, or null when it is. A path is read by
     /// the driver from git, one argument and never through a shell, so it is judged before it is kept: forward slashes,
     /// relative, inside the tree, and named one way, so the verdict's fact is about the path the person named.
     /// </summary>
-    /// <remarks>Also what keeps a machine's path off the wire (D47 §4): an absolute path or a drive is refused here.</remarks>
+    /// <remarks>Also what keeps a machine's path off the wire: an absolute path or a drive is refused here.</remarks>
     public static string? JudgePath(string path)
     {
         if (path.Length == 0) return "it is empty";
@@ -80,7 +80,7 @@ public sealed record QuestEvidence(string? Path = null, string? Gate = null)
     /// <summary>
     /// A requirement's evidence read from JSON another build wrote: null when an item is not an object, names both or
     /// neither, or names a path or gate the exchange would refuse — half of a fact is not one, and a path that is a
-    /// machine's would carry that machine across (D47 §4).
+    /// machine's would carry that machine across.
     /// </summary>
     internal static IReadOnlyList<QuestEvidence>? Judged(JsonElement items)
     {
@@ -102,7 +102,7 @@ public sealed record QuestEvidence(string? Path = null, string? Gate = null)
 }
 
 /// <summary>
-/// Why a done is held for the person (DRIFT1d, EVID1a; D133 §4, D144 §6): a departure from what they required, a met
+/// Why a done is held for the person: a departure from what they required, a met
 /// answer whose evidence Daoris has not yet read, or one whose evidence it read and did not find.
 /// </summary>
 public enum QuestHold
@@ -113,23 +113,23 @@ public enum QuestHold
     /// <summary>A met answer names evidence nobody has read yet: the driver reads it when the session that made the done ends.</summary>
     EvidenceUnread,
 
-    /// <summary>The evidence was read, and something it names was not in the commit read.</summary>
+    /// <summary>The evidence is read, and something it names is not in the commit read.</summary>
     EvidenceMissing,
 
     /// <summary>
-    /// A set-up step's done waits for the person's review (REVIEWENV1b, D154 point 9): only their <c>reviewed</c> on its
+    /// A set-up step's done waits for the person's review: only their <c>reviewed</c> on its
     /// newest set-up, or their skip, lets it go.
     /// </summary>
     Unreviewed,
 
     /// <summary>
-    /// A chain's step whose source submission the person reopened (FABRIC-CLOSE1c, §E5): open, it is withdrawn and taken by no
+    /// A chain's step whose source submission the person reopened: open, it is withdrawn and taken by no
     /// session; taken, its session goes no further. Only the person's word lets it go on, or abandons it.
     /// </summary>
     SourceReopened,
 }
 
-/// <summary>The codes a hold and a verdict are written in (LANG1a): codes, never sentences, so every reader words them itself.</summary>
+/// <summary>The codes a hold and a verdict are written in: codes, never sentences, so every reader words them itself.</summary>
 public static class QuestEvidenceCodes
 {
     /// <summary>A hold's code, as the doors answer it.</summary>
@@ -142,13 +142,13 @@ public static class QuestEvidenceCodes
         _ => "unreviewed",
     };
 
-    /// <summary>What a path's read may say (D144 §3, §5).</summary>
+    /// <summary>What a path's read may say.</summary>
     public static readonly IReadOnlyList<string> PathResults = ["found", "missing", "uncommitted", "case"];
 
-    /// <summary>What a gate's read may say (D144 §4, §5), read from the landing queue's verdict.</summary>
+    /// <summary>What a gate's read may say, read from the landing queue's verdict.</summary>
     public static readonly IReadOnlyList<string> GateResults = ["found", "not-declared", "not-run", "failed", "no-queue"];
 
-    /// <summary>How the commit read was chosen (D144 §3): a session's end, the orphan sweep, or the person at the terminal.</summary>
+    /// <summary>How the commit read is chosen: a session's end, the orphan sweep, or the person at the terminal.</summary>
     public static readonly IReadOnlyList<string> How = ["session-end", "sweep", "terminal"];
 
     /// <summary>The one result that is the evidence there: every other leaves the done held.</summary>
@@ -165,17 +165,17 @@ public static class QuestEvidenceCodes
         session is { Length: > 0 and <= 64 } && session.All(c => char.IsAsciiLetterOrDigit(c) || c is '-' or '_' or '.');
 }
 
-/// <summary>What one evidence item was found to be, in the commit read (D144 §3, §5): its requirement, what it names, and a code.</summary>
+/// <summary>What one evidence item proved to be, in the commit read: its requirement, what it names, and a code.</summary>
 /// <param name="Requirement">The requirement it belongs to: its number, from 1, as the quest lists them.</param>
 /// <param name="Path">The path it names — null for a gate.</param>
 /// <param name="Gate">The gate it names — null for a path.</param>
 /// <param name="Result">One of <see cref="QuestEvidenceCodes.PathResults"/> or <see cref="QuestEvidenceCodes.GateResults"/>.</param>
 public sealed record QuestEvidenceRead(int Requirement, string? Path, string? Gate, string Result)
 {
-    /// <summary>The object id found at the path, where one was.</summary>
+    /// <summary>The object id found at the path, where there is one.</summary>
     public string? Object { get; init; }
 
-    /// <summary>Whether this work changed it, between the tree's base and the commit read; null where that was not read.</summary>
+    /// <summary>Whether this work changed it, between the tree's base and the commit read; null where that is not read.</summary>
     public bool? Changed { get; init; }
 
     /// <summary>
@@ -189,16 +189,16 @@ public sealed record QuestEvidenceRead(int Requirement, string? Path, string? Ga
         string.Equals(Path, item.Path, StringComparison.Ordinal) && string.Equals(Gate, item.Gate, StringComparison.Ordinal);
 }
 
-/// <summary>Which field of a verdict is not one in shape (REFAC3): on the verdict, or on one of its items.</summary>
+/// <summary>Which field of a verdict is not one in shape: on the verdict, or on one of its items.</summary>
 public enum QuestVerdictField
 {
     /// <summary>The commit read is not a full object id.</summary>
     Commit,
 
-    /// <summary>How the commit was chosen is none of <see cref="QuestEvidenceCodes.How"/>.</summary>
+    /// <summary>How the commit is chosen is none of <see cref="QuestEvidenceCodes.How"/>.</summary>
     How,
 
-    /// <summary>The session whose end was read is not a session's id.</summary>
+    /// <summary>The session whose end is read is not a session's id.</summary>
     Session,
 
     /// <summary>An item's requirement is not numbered from 1.</summary>
@@ -222,46 +222,46 @@ public enum QuestVerdictField
     /// <summary>An item's <c>spelled</c> is not a <c>case</c> read's spelling of the path it names.</summary>
     Spelled,
 
-    /// <summary>The submission it was asked for is half named: no machine, or a sequence below 1 (FABRIC-CLOSE1e).</summary>
+    /// <summary>The submission it is asked for is half named: no machine, or a sequence below 1.</summary>
     Submission,
 }
 
 /// <summary>
-/// Why a verdict is not one in shape (REFAC3): the field at fault, the item it is on, numbered from 1 (null for the
+/// Why a verdict is not one in shape: the field at fault, the item it is on, numbered from 1 (null for the
 /// verdict's own), and, for a path, a gate or a spelling, why it is not one. Each door words it, or refuses on it, itself.
 /// </summary>
 public sealed record QuestVerdictFault(QuestVerdictField Field, int? Item = null, string? Why = null);
 
 /// <summary>
-/// What Daoris read of a done's evidence (EVID1a, D144 points 3 and 6): the commit read and how it was chosen, and each
+/// What Daoris read of a done's evidence: the commit read and how it is chosen, and each
 /// item's code. Kept on the quest in an <see cref="QuestOperationKind.Evidenced"/> operation, which travels like every
-/// verb (D68): names and codes only, never bytes or a machine's path (D47 §4).
+/// verb: names and codes only, never bytes or a machine's path.
 /// </summary>
 /// <param name="Commit">The commit read, by its full id.</param>
-/// <param name="How">How it was chosen: one of <see cref="QuestEvidenceCodes.How"/>.</param>
+/// <param name="How">How it is chosen: one of <see cref="QuestEvidenceCodes.How"/>.</param>
 /// <param name="Items">One read for each item of each met requirement that names evidence.</param>
 public sealed record QuestEvidenceVerdict(string Commit, string How, IReadOnlyList<QuestEvidenceRead> Items)
 {
-    /// <summary>The session whose end was read — at a session's end or by the sweep; null for the terminal's check.</summary>
+    /// <summary>The session whose end is read — at a session's end or by the sweep; null for the terminal's check.</summary>
     public string? Session { get; init; }
 
-    /// <summary>When it was read: the operation's time, set on the quest as the replay keeps it.</summary>
+    /// <summary>When it is read: the operation's time, set on the quest as the replay keeps it.</summary>
     public DateTimeOffset? At { get; init; }
 
     /// <summary>The machine that read it: the operation's, set on the quest as the replay keeps it.</summary>
     public string? Machine { get; init; }
 
     /// <summary>
-    /// The submission it was asked for (FABRIC-CLOSE1e, §E5), by the machine and sequence that made it, as a close names one.
+    /// The submission it is asked for, by the machine and sequence that made it, as a close names one.
     /// Null on a verdict read of a done, which is every verdict from before.
     /// </summary>
     public QuestOperationRef? Submission { get; init; }
 
-    /// <summary>Whether every item was found: the one verdict that lets what the done held go on.</summary>
+    /// <summary>Whether every item is found: the one verdict that lets what the done held go on.</summary>
     public bool Found => Items.Count > 0 && Items.All(item => item.Result == QuestEvidenceCodes.Found);
 
     /// <summary>
-    /// Whether it reads exactly what <paramref name="quest"/> waits on (D144 §3): one read for each item of each met
+    /// Whether it reads exactly what <paramref name="quest"/> waits on: one read for each item of each met
     /// requirement that names evidence, and nothing else.
     /// </summary>
     public bool Covers(Quest quest)
@@ -279,7 +279,7 @@ public sealed record QuestEvidenceVerdict(string Commit, string How, IReadOnlyLi
     }
 
     /// <summary>
-    /// Whether it was asked for what <paramref name="quest"/> stands on (FABRIC-CLOSE1e, §E5): its current submission, named by
+    /// Whether it is asked for what <paramref name="quest"/> stands on: its current submission, named by
     /// machine and sequence, or no submission on a quest that has none, which is every done from before. Covering the same
     /// requirements is not enough: a later ready replaces a submission without changing them, and a verdict read before it,
     /// arriving after, would release a submission nobody read.
@@ -289,17 +289,16 @@ public sealed record QuestEvidenceVerdict(string Commit, string How, IReadOnlyLi
         : Submission is null;
 
     /// <summary>
-    /// Whether it is a commit read alone that <paramref name="quest"/> keeps (FABRIC-CLOSE1c6, §E5): it reads no evidence, and the quest is
+    /// Whether it is a commit read alone that <paramref name="quest"/> keeps: it reads no evidence, and the quest is
     /// taken with a current submission that waits on none, whose commit no verdict gave yet. Read at the end of the session that said the
     /// <c>ready</c>, it is what a step that grew from the submission is brought up to date with on the person's go-on
-    /// (<see cref="Quest.SubmissionCommit"/>). It holds and lets go nothing: a submission that waits on none was not held for it.
+    /// (<see cref="Quest.SubmissionCommit"/>). It holds and lets go nothing: a submission that waits on none is not held for it.
     /// </summary>
     public bool KeepsCommitOf(Quest quest) =>
         Items.Count == 0 && quest is { Status: QuestStatus.Taken, Submission: not null, AwaitsEvidence: false, SubmissionCommit: null };
 
     /// <summary>
-    /// Why this verdict is not one in shape, naming the first field at fault — or null when every field is one (REFAC3,
-    /// D144 §3, §5). The one judge both doors call: the exchange, before it judges whether the verdict reads what the done
+    /// Why this verdict is not one in shape, naming the first field at fault — or null when every field is one. The one judge both doors call: the exchange, before it judges whether the verdict reads what the done
     /// waits on, and the wire (<see cref="Judged"/>), whose replay judges that by <see cref="Covers"/>. Whether the quest
     /// waits on evidence at all, and what it waits on, are never this judge's: it reads the verdict alone.
     /// </summary>
@@ -327,8 +326,8 @@ public sealed record QuestEvidenceVerdict(string Commit, string How, IReadOnlyLi
     }
 
     /// <summary>
-    /// Why <paramref name="spelled"/> is not how the commit spells <paramref name="item"/>'s path, or null when it is
-    /// (REFAC3, D144 §3): only a <c>case</c> read names a spelling, and it names the same path in another case. On any
+    /// Why <paramref name="spelled"/> is not how the commit spells <paramref name="item"/>'s path, or null when it is:
+    /// only a <c>case</c> read names a spelling, and it names the same path in another case. On any
     /// other result, or naming another path, it would say the commit holds a file the read did not find.
     /// </summary>
     private static string? JudgeSpelled(QuestEvidenceRead item, string spelled) =>
@@ -354,7 +353,7 @@ public sealed record QuestEvidenceVerdict(string Commit, string How, IReadOnlyLi
         writer.WriteString("commit", Commit);
         writer.WriteString("how", How);
         if (Session is not null) writer.WriteString("session", Session);
-        // Written only when named (FABRIC-CLOSE1e), so a verdict from before reads as it did.
+        // Written only when named, so a verdict without one reads the same.
         if (Submission is { } asked)
         {
             writer.WriteStartObject("submission");

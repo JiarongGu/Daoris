@@ -40,16 +40,16 @@ internal sealed class QuestCarry(QuestFiles? files)
 
         if (ask.Uploads.Count > 0 && files is null)
         {
-            // No home, no files (D63): writing them somewhere nobody pointed this host is the thing
-            // that was removed. A shared deployment never reaches here — its door takes names only.
+            // No home, no files: writing them somewhere nobody pointed this host is refused.
+            // A shared deployment never reaches here — its door takes names only.
             return Refuse(QuestPublishRefusal.NoHome, DaorisHome.Sentence);
         }
 
         var attachments = new List<QuestAttachment>();
         foreach (var named in ask.Named)
         {
-            // A name that arrives already described was made safe by the machine that kept the file;
-            // one that is not safe was never kept by Daoris, and a record naming it would lie.
+            // A name that arrives already described is made safe by the machine that kept the file;
+            // one that is not safe is never kept by Daoris, and a record naming it would lie.
             if (named.Name != QuestFiles.SafeName(named.Name)
                 || named.Sha256.Length != 64 || !named.Sha256.All(Uri.IsHexDigit) || named.Sha256 != named.Sha256.ToLowerInvariant()
                 || named.Bytes < 0)
@@ -93,7 +93,7 @@ internal sealed class QuestCarry(QuestFiles? files)
     }
 
     /// <summary>
-    /// The same judgement over what an ASK carries (D65 §1a) — an ask keeps its links and files until
+    /// The same judgement over what an ASK carries — an ask keeps its links and files until
     /// it becomes quests, and a limit it did not share with them would be refused only later, at a
     /// publish nobody is watching.
     /// </summary>
@@ -110,7 +110,7 @@ internal sealed class QuestCarry(QuestFiles? files)
     /// </summary>
     /// <remarks>
     /// Only bytes the record actually names are kept: a quest published before, under the same title,
-    /// is answered as it stands (D46 §3), and what this call carried beyond it is SAID rather than
+    /// is answered as it stands, and what this call carried beyond it is SAID rather than
     /// quietly dropped. A file the disk refuses leaves the quest published and says which — the
     /// record's name for it is honest either way, because every reader asks whether it is here.
     /// </remarks>

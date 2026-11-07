@@ -4,8 +4,8 @@ using static Daoris.Knowledge.QuestRecordCodec;
 namespace Daoris.Knowledge;
 
 /// <summary>
-/// Where histories meet (D68 section 3): a machine rebases what it has not pushed on top of what a remote accepted, and a remote accepts a
-/// quest's operations only when nothing reached that quest since the push was rebased. Both halves act on the one log table.
+/// Where histories meet: a machine rebases what it has not pushed on top of what a remote accepted, and a remote accepts a
+/// quest's operations only when nothing reached that quest since the push is rebased. Both halves act on the one log table.
 /// </summary>
 internal sealed class QuestLogSync(QuestStore store)
 {
@@ -16,7 +16,7 @@ internal sealed class QuestLogSync(QuestStore store)
     /// and what a machine fetches. <paramref name="number"/> is where a remote placed it; a remote
     /// itself keeps none, because its own position is the number.
     /// </summary>
-    /// <returns>The position it was kept at — on a remote, the number it was given.</returns>
+    /// <returns>The position it is kept at — on a remote, the number it is given.</returns>
     internal async Task<long> KeepAsync(
         QuestOperation operation, long? number, SqliteTransaction transaction, CancellationToken ct)
     {
@@ -55,9 +55,9 @@ internal sealed class QuestLogSync(QuestStore store)
     /// Replay one quest — accepted first, pending on top — and rewrite what did not survive, each kind by
     /// <see cref="QuestLog.Lost"/>: a move becomes a conflict, a publish of an ask already held is the same
     /// ask again, and a follow-up that only a lost close published goes with it. A wait made on this machine's
-    /// take that lost goes with the take, and the take's conflict names it (WAITCLAIM1); one made after the take was
-    /// rewritten was refused by the store (WAITCLAIM2), and one an older build made then is lost here as the claim reads
-    /// (WAITCLAIM4). Answers the conflicts made.
+    /// take that lost goes with the take, and the take's conflict names it; one made after the take is
+    /// rewritten is refused by the store, and one an older build made then is lost here as the claim reads.
+    /// Answers the conflicts made.
     /// </summary>
     internal async Task<IReadOnlyList<QuestOperation>> RebaseAsync(
         string id, SqliteTransaction transaction, CancellationToken ct)
@@ -65,21 +65,21 @@ internal sealed class QuestLogSync(QuestStore store)
         var conflicts = new List<QuestOperation>();
         Quest? quest = null;
 
-        // Once this machine's take has lost, its later moves on the quest were made on a claim it never
-        // held (D69): an offline session that finished would otherwise close the quest over the winner's
+        // Once this machine's take has lost, its later moves on the quest are made on a claim it never
+        // held: an offline session that finished would otherwise close the quest over the winner's
         // take, because the table allows done from taken. Every pending operation is this machine's.
-        // A wait made on that take is part of its move (WAITCLAIM1): applied to the winner's quest, it would
+        // A wait made on that take is part of its move: applied to the winner's quest, it would
         // hold the winner's session on a question it never asked. It goes with the take, and the take's
         // conflict, the loss this machine reports, names the question, so whoever asked learns the quest
         // no longer waits on it. A move or a wait made after the pass that rewrote the take never meets this
-        // rule: the store's verbs refuse it as the claim reads (WAITCLAIM2), so it is never pending here.
+        // rule: the store's verbs refuse it as the claim reads, so it is never pending here.
         var claimLost = false;
         (long Position, int Reported)? lostTake = null;
         // The history as this rebase leaves it so far: what QuestLog.OnALostTake reads this machine's claim from.
         var replayed = new List<QuestOperation>();
         var losses = new QuestRebaseLosses(replayed, store.Machine);
         var history = await store.HistoryAsync(id, transaction, ct).ConfigureAwait(false);
-        // SYNCMERGE1a (D178 point 5): a take this machine made to bring its lost take forward stands only with the dismissal marked with
+        // A take this machine made to bring its lost take forward stands only with the dismissal marked with
         // it, written in the same write: a conflict another machine dismissed first authorizes no take, so where the mark would land
         // nowhere, the take loses too, kept as a conflict like any lost take, and the mark goes with it as the take's own.
         var bringing = history
@@ -93,8 +93,8 @@ internal sealed class QuestLogSync(QuestStore store)
                             && bringing.TryGetValue(new QuestOperationRef(operation.Machine, operation.Sequence), out var mark)
                             && QuestLog.Applies(quest, operation) && !QuestLog.Brings(QuestLog.Step(quest, operation), mark);
 
-            // A stray (WAITCLAIM4): a done, a decline or a wait a build before WAITCLAIM2 made after the take's conflict
-            // was written, which the remote refuses at every pass (WAITCLAIM3), so the circle never pushed clean. Judged by
+            // A stray: a done, a decline or a wait an older build made after the take's conflict
+            // is written, which the remote refuses at every pass, so the circle never pushed clean. Judged by
             // the rule the store's verbs and the remote judge by, and lost by its kind's rule as one made on a take this
             // rebase finds lost is. A forgotten wait is named on no conflict: the take's is already written, a remote may
             // have numbered it, and no machine rewrites a numbered operation. The remote never kept the wait, so no other
@@ -125,10 +125,10 @@ internal sealed class QuestLogSync(QuestStore store)
                 continue;
             }
 
-            // A move. On a quest another machine deleted first (D95) it is kept as a conflict on a quest no list shows,
+            // A move. On a quest another machine deleted first it is kept as a conflict on a quest no list shows,
             // so this machine's claim reads lost and its driver stops the session. A decline made while open that lost
-            // to a take (PAUSE1c) is kept like any losing move, with its reason: the conflict says it attempted a
-            // decline, and the flag, a decline's, goes with the kind. So does a take's source (FABRIC-CLOSE1c18): a conflict carries none,
+            // to a take is kept like any losing move, with its reason: the conflict says it attempted a
+            // decline, and the flag, a decline's, goes with the kind. So does a take's source: a conflict carries none,
             // and is reported as the log keeps it.
             var lost = operation with
             {
@@ -136,7 +136,7 @@ internal sealed class QuestLogSync(QuestStore store)
                 Submission = null,
             };
 
-            // A step's take made on a submission the step no longer grew from (FABRIC-CLOSE1c25): another machine's chain published
+            // A step's take made on a submission the step no longer grew from: another machine's chain published
             // the step anew on other work, so the take's own words alone would not say why it lost. Read from the stamp and the step
             // alone, as the source's own history may not be rewritten yet. A take that lost to the person's reopen of the source
             // (its rebind moves the step's GrewFrom too) keeps the take's words.
@@ -160,7 +160,7 @@ internal sealed class QuestLogSync(QuestStore store)
             conflicts.AddRange(await LostAsync(operation, quest, lostClaim, losses, transaction, ct).ConfigureAwait(false));
         }
 
-        // The take's conflict names what went with it, after its own note (WAITCLAIM1). It is rewritten before
+        // The take's conflict names what went with it, after its own note. It is rewritten before
         // it is pushed, so every machine keeps the one note.
         if (lostTake is { } take && losses.Any)
         {
@@ -176,7 +176,7 @@ internal sealed class QuestLogSync(QuestStore store)
             };
         }
 
-        // A quest a fetched delete ended leaves the cache, as it left every other machine's (D95).
+        // A quest a fetched delete ended leaves the cache, as it left every other machine's.
         if (quest is not null) await store.WriteCacheAsync(quest, transaction, ct).ConfigureAwait(false);
         else await DropCacheAsync(id, transaction, ct).ConfigureAwait(false);
         return conflicts;
@@ -191,7 +191,7 @@ internal sealed class QuestLogSync(QuestStore store)
 
     /// <summary>
     /// The circle's quests where this machine holds a done, a decline, a wait or a set-up not yet pushed beside a take of its
-    /// own that is a conflict (WAITCLAIM4, REVIEWENV1b): where a stray can be. <see cref="RebaseAsync"/> judges each operation by
+    /// own that is a conflict: where a stray can be. <see cref="RebaseAsync"/> judges each operation by
     /// <see cref="QuestLog.OnALostTake"/>, so a quest this finds and nothing strays on is replayed as it stands.
     /// </summary>
     internal async Task<IReadOnlyList<string>> StrayQuestsAsync(string circle, SqliteTransaction transaction, CancellationToken ct)
@@ -220,7 +220,7 @@ internal sealed class QuestLogSync(QuestStore store)
         return quests;
     }
 
-    /// <summary>Take a quest's row out of the cache — the replay says there is no quest (D95).</summary>
+    /// <summary>Take a quest's row out of the cache — the replay says there is no quest.</summary>
     internal async Task DropCacheAsync(string id, SqliteTransaction transaction, CancellationToken ct)
     {
         await using var command = _db.Command();
@@ -231,8 +231,8 @@ internal sealed class QuestLogSync(QuestStore store)
     }
 
     /// <summary>
-    /// What this machine has not pushed for a workspace's quests, in the order it was made — only for
-    /// quests whose receiver <paramref name="shared"/> says may leave the machine (design §8).
+    /// What this machine has not pushed for a workspace's quests, in the order it is made — only for
+    /// quests whose receiver <paramref name="shared"/> says may leave the machine.
     /// </summary>
     /// <param name="shared">
     /// Whether a receiver is joined in this workspace — here or on a teammate's machine. Silence means
@@ -240,7 +240,7 @@ internal sealed class QuestLogSync(QuestStore store)
     /// </param>
     /// <remarks>
     /// The receiver and the circle are read from the quest's own first publish in the log, not from the
-    /// cache: a deleted quest has no row, and its tombstone must travel all the same (D95). The two
+    /// cache: a deleted quest has no row, and its tombstone must travel all the same. The two
     /// agree for every quest that has one, since the row is the publish replayed.
     /// </remarks>
     public Task<IReadOnlyList<QuestOperation>> PendingAsync(
@@ -269,7 +269,7 @@ internal sealed class QuestLogSync(QuestStore store)
             return pending;
         }, ct);
 
-    /// <summary>Record the numbers a push was given — the operations stop being pending.</summary>
+    /// <summary>Record the numbers a push is given — the operations stop being pending.</summary>
     public Task AcceptedAsync(IReadOnlyList<QuestAcceptance> accepted, CancellationToken ct = default) =>
         _db.InTransactionAsync(async (transaction, inside) =>
         {
@@ -286,7 +286,7 @@ internal sealed class QuestLogSync(QuestStore store)
         }, ct);
 
     /// <summary>
-    /// Where a circle stands (SYNC6a): what this machine has not pushed, the quests carrying a conflict,
+    /// Where a circle stands: what this machine has not pushed, the quests carrying a conflict,
     /// and how its last pass ended.
     /// </summary>
     /// <param name="shared">Whether a receiver may leave the machine — what <see cref="PendingAsync"/> reads.
@@ -355,17 +355,17 @@ internal sealed class QuestLogSync(QuestStore store)
         }, ct);
 
     /// <summary>
-    /// Judge a push, quest by quest (design §8): <b>behind</b> when anything reached the quest after
+    /// Judge a push, quest by quest: <b>behind</b> when anything reached the quest after
     /// <paramref name="base"/> that this push did not carry, or it is a step whose source holds no submission it grew from here
-    /// (<see cref="AwaitsItsSourceAsync"/>, FABRIC-CLOSE1c21), or, naming none, whose parent is not done here (FABRIC-CLOSE1e2);
+    /// (<see cref="AwaitsItsSourceAsync"/>), or, naming none, whose parent is not done here;
     /// <b>refused</b> when an operation does not
-    /// apply through the table, is made on a take its machine lost (<see cref="QuestLog.OnALostTake"/>,
-    /// WAITCLAIM3), or is a publish that fails <paramref name="judge"/>; otherwise every operation is
+    /// apply through the table, is made on a take its machine lost (<see cref="QuestLog.OnALostTake"/>),
+    /// or is a publish that fails <paramref name="judge"/>; otherwise every operation is
     /// kept under the machine that made it and numbered.
     /// </summary>
     /// <param name="base">The number the pushing machine rebased on — its cursor.</param>
     /// <param name="judge">The exchange's say over a publish, null when it is fit.</param>
-    /// <param name="workspaceOf">Where a publish is filed HERE — the receiving side's wiring, never the push's (SYNC0a).</param>
+    /// <param name="workspaceOf">Where a publish is filed HERE — the receiving side's wiring, never the push's.</param>
     public Task<QuestPush> ReceiveAsync(
         long @base, IReadOnlyList<QuestOperation> pushed, Func<Quest, string?> judge, Func<Quest, string> workspaceOf,
         CancellationToken ct = default) =>
@@ -381,7 +381,7 @@ internal sealed class QuestLogSync(QuestStore store)
                 var fresh = new List<QuestOperation>();
                 foreach (var operation in group)
                 {
-                    // Already here — a push retried after its answer was lost: the number it was given.
+                    // Already here — a push retried after its answer is lost: the number it is given.
                     if (await PositionOfAsync(operation.Machine, operation.Sequence, transaction, inside).ConfigureAwait(false)
                         is { } held)
                     {
@@ -422,25 +422,25 @@ internal sealed class QuestLogSync(QuestStore store)
                                 ? $"`{KindText(filed.Kind)}` on quest `#{group.Key}`, which was deleted here."
                                 : $"`{KindText(filed.Kind)}` on quest `#{group.Key}`, which this deployment has never had published."
                             : filed.WhileOpen
-                                // PAUSE1c: named as the decline it is, so the refusal its machine relays says why it did not land; a
-                                // publication's rebind likewise (FABRIC-CLOSE1c15).
+                                // Named as the decline it is, so the refusal its machine relays says why it did not land; a
+                                // publication's rebind likewise.
                                 ? $"`{KindText(filed.Kind)}` applies to quest `#{group.Key}` only while it is open (`whileOpen`), "
                                   + $"and it is {quest.Status} here, so the quest stays {quest.Status}."
                                 : filed is { Kind: QuestOperationKind.Taken, Submission: { } found } && quest.Status == QuestStatus.Open
-                                    // FABRIC-CLOSE1c18: a take made on the step as it grew from work the person reopened since.
+                                    // A take made on the step as it grew from work the person reopened since.
                                     ? $"`taken` on quest `#{group.Key}` was made on the step as it grew from submission "
                                       + $"`{found.Machine}:{found.Sequence}`, and the person's reopen has moved the step from that work since, "
                                       + "so the take does not apply and the step stays Open."
                                     : $"`{KindText(filed.Kind)}` does not apply to quest `#{group.Key}`, which is {quest.Status}.";
                     }
 
-                    // A done, a decline or a wait from a machine whose take on the quest lost (WAITCLAIM3): made after the
-                    // pass that found the take lost, by a build whose store does not refuse it (WAITCLAIM2). The table
+                    // A done, a decline or a wait from a machine whose take on the quest lost: made after the
+                    // pass that found the take lost, by a build whose store does not refuse it. The table
                     // allows it, and applied it would close or hold the winner's quest. Refused by the rule the store
                     // judges by, in the words the store's refusal is answered in, so the pushing machine's pass relays the
                     // lost take and its stand-down.
-                    // FABRIC-CLOSE1c18: on an open step the take was lost to the person's reopen, and is said so; or it lost with the
-                    // work it was made on, the step published anew on another submission (FABRIC-CLOSE1c24), said as that.
+                    // On an open step the take is lost to the person's reopen, and is said so; or it lost with the
+                    // work it rests on, the step published anew on another submission, said as that.
                     if (why is null && QuestLog.OnALostTake(quest, [.. history, .. staged], filed))
                     {
                         var open = quest is { Status: QuestStatus.Open };
@@ -478,25 +478,25 @@ internal sealed class QuestLogSync(QuestStore store)
         }, ct);
 
     /// <summary>
-    /// Whether a pushed step's publication waits on the submission it grew from (FABRIC-CLOSE1c21, §E5): this store holds the step's
+    /// Whether a pushed step's publication waits on the submission it grew from: this store holds the step's
     /// source quest but not that submission, so the source's own operations did not land in this push (behind, or refused). Kept alone,
     /// the step would stand here on work its machine's rebase may yet lose with a take, as a take lost to the person's reopen loses its
-    /// submission and the step it published (FABRIC-CLOSE1e's *Left*, the parent behind). Answered behind, so the machine goes round:
+    /// submission and the step it published (the parent behind). Answered behind, so the machine goes round:
     /// its rebase forgets the step with the submission, or pushes it again beside it. The source's group comes first in a push, since its
-    /// submission was written before the step's publication, so a submission kept by this push is held here by then. A source this store
+    /// submission is written before the step's publication, so a submission kept by this push is held here by then. A source this store
     /// never held (its receiver stays on its machine) waits on nothing.
-    /// <para>A step naming no source (FABRIC-CLOSE1e2) was published by its parent's close, in the close's own write, so it waits until this
+    /// <para>A step naming no source is published by its parent's close, in the close's own write, so it waits until this
     /// store holds the parent done; a done is terminal here, so once held it is held for good. Kept alone, it would stand on a close the
-    /// machine's rebase loses, as CLOSE1e's <i>Left</i> had it for a lost done's follow-up; answered behind, the machine goes round and its
+    /// machine's rebase loses, as for a lost done's follow-up; answered behind, the machine goes round and its
     /// rebase forgets the follow-up with the done (<see cref="ForgetFollowUpsAsync"/>), or pushes the done again beside it. A parent deleted
-    /// here was never done, since a delete takes only an open quest nobody moved, so its follow-up waits too, and goes as the done does.</para>
+    /// here is never done, since a delete takes only an open quest nobody moved, so its follow-up waits too, and goes as the done does.</para>
     /// </summary>
     private async Task<bool> AwaitsItsSourceAsync(QuestOperation first, SqliteTransaction transaction, CancellationToken ct) =>
         first is { Kind: QuestOperationKind.Published, Published: { Parent: { Length: > 0 } parent } step }
         && await store.HistoryAsync(parent, transaction, ct).ConfigureAwait(false) is { Count: > 0 } history
         && (step.GrewFrom is { } source
             ? await PositionOfAsync(source.Machine, source.Sequence, transaction, ct).ConfigureAwait(false) is null
-            // FABRIC-CLOSE1e2: a step naming no source was published by its parent's close (a chain's next step, or a set-up step, which
+            // A step naming no source is published by its parent's close (a chain's next step, or a set-up step, which
             // follows a done one), so it waits until this store holds the parent done: a close this push did not land here.
             : QuestLog.Replay(history) is not { Status: QuestStatus.Done });
 
@@ -529,7 +529,7 @@ internal sealed class QuestLogSync(QuestStore store)
         await command.ExecuteNonQueryAsync(ct).ConfigureAwait(false);
     }
 
-    /// <summary>Drop one pending operation a rebase found was never anybody's decision (a quest's clear is <see cref="QuestStore.ForgetAsync"/>).</summary>
+    /// <summary>Drop one pending operation a rebase found is nobody's decision (a quest's clear is <see cref="QuestStore.ForgetAsync"/>).</summary>
     internal async Task ForgetOperationAsync(long position, SqliteTransaction transaction, CancellationToken ct)
     {
         await using var command = _db.Command();

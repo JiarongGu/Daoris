@@ -3,7 +3,7 @@ using System.Text.Json;
 namespace Daoris.Knowledge;
 
 /// <summary>
-/// The person's kind and workflow for a quest before it starts (WORKFLOW1e2, the workflow design §4.1 row 1, §4.3). It applies only
+/// The person's kind and workflow for a quest before it starts. It applies only
 /// while the quest is open, since a run is bound at its first start; the latest stands, and it moves no status.
 /// </summary>
 [QuestOperation("chosen", QuestOperationPhase.Log)]

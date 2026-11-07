@@ -15,23 +15,23 @@ public enum QuestRespondRefusal
     NotFound,
 
     /// <summary>
-    /// Somebody got there first — the losing side of the race stands down (D47 §5). Also a done, a decline or a wait this
+    /// Somebody got there first — the losing side of the race stands down. Also a done, a decline or a wait this
     /// machine makes on a quest whose take it lost: made on a claim it never held.
     /// </summary>
     AlreadyTaken,
 
-    /// <summary>Done and Declined are terminal: one title is one quest forever (D46 §3).</summary>
+    /// <summary>Done and Declined are terminal: one title is one quest forever.</summary>
     Closed,
 
-    /// <summary>A wait that waits on nothing (D79): no question named, an unknown or answered one, itself, or a quest nobody has taken.</summary>
+    /// <summary>A wait that waits on nothing: no question named, an unknown or answered one, itself, or a quest nobody has taken.</summary>
     CannotWait,
 
-    /// <summary>A done that leaves one of the quest's requirements unanswered (D133 §4) — the answer names each.</summary>
+    /// <summary>A done that leaves one of the quest's requirements unanswered — the answer names each.</summary>
     Unanswered,
 
     /// <summary>
     /// An answer that is not one: it names no requirement the quest carries, or one twice; it says both met
-    /// and departed, or neither; a departure lacks its reason or the person's words; or it came with no done to answer.
+    /// and departed, or neither; a departure lacks its reason or the person's words; or it comes with no done to answer.
     /// </summary>
     BadAnswer,
 
@@ -43,7 +43,7 @@ public enum QuestRespondRefusal
 
     /// <summary>
     /// A verdict on a quest whose done waits on no evidence: not closed done, none of its met requirements names
-    /// any, its evidence was already found, or the person accepted the done as it stands.
+    /// any, its evidence is already found, or the person accepted the done as it stands.
     /// </summary>
     NotAwaitingEvidence,
 
@@ -56,7 +56,7 @@ public enum QuestRespondRefusal
     BadVerdict,
 
     /// <summary>
-    /// A set-up step's done before it said what it showed (design §2.6): a done always has a set-up, so the
+    /// A set-up step's done before it said what it showed: a done always has a set-up, so the
     /// person's review has something to look at.
     /// </summary>
     NotShown,
@@ -83,44 +83,44 @@ public enum QuestRespondRefusal
     ReviewRefused,
 
     /// <summary>
-    /// An agent's done on a quest a closure graph holds (§E5): it says <c>ready</c>, and the graph's close
+    /// An agent's done on a quest a closure graph holds: it says <c>ready</c>, and the graph's close
     /// writes the Done at the work's end.
     /// </summary>
     ClosedByGraph,
 
     /// <summary>
-    /// A <c>ready</c> where no closure graph holds the quest (§E5): not taken, or never bound by its taker's
+    /// A <c>ready</c> where no closure graph holds the quest: not taken, or never bound by its taker's
     /// driver. A bind on a quest that is not taken, already submitted, or bound to another graph.
     /// </summary>
     NotInGraph,
 
     /// <summary>
-    /// A <c>ready</c> on a submission that already published its chain's next step (§E5): sealed while that
+    /// A <c>ready</c> on a submission that already published its chain's next step: sealed while that
     /// step stands, and reopened only by the person.
     /// </summary>
     Sealed,
 
     /// <summary>
-    /// A take, done or <c>ready</c> on a chain's step whose source submission the person reopened (§E5): withdrawn
+    /// A take, done or <c>ready</c> on a chain's step whose source submission the person reopened: withdrawn
     /// while open, held while taken, until the person chooses to go on with it or to abandon it.
     /// </summary>
     SourceReopened,
 
     /// <summary>
     /// The person's reopen of a submission that is not the quest's current sealed one, or whose step has closed; or their word to
-    /// go on with a step no reopen holds, or whose source has no unheld submission yet (§E5). The answer says which.
+    /// go on with a step no reopen holds, or whose source has no unheld submission yet. The answer says which.
     /// </summary>
     NotSealed,
 
     /// <summary>
-    /// The person's bring-forward of a conflict that is not this machine's lost take still standing (D178 point 3): another
+    /// The person's bring-forward of a conflict that is not this machine's lost take still standing: another
     /// machine's or none, settled already here or elsewhere, a dismissal of it that reached the remote first, or a step this machine holds
     /// again by a take of its own. The answer says which.
     /// </summary>
     NoLostTake,
 
     /// <summary>
-    /// The person's bring-forward while a session here still runs on the quest (D178 point 3): it waits until that process
+    /// The person's bring-forward while a session here still runs on the quest: it waits until that process
     /// has ended, so the old session's late moves cannot stand on the fresh take. The answer names the session.
     /// </summary>
     StillRunning,
@@ -132,14 +132,14 @@ public enum QuestRespondRefusal
     BadWorkflow,
 
     /// <summary>
-    /// A kind or a workflow on a quest an ask published (the workflow design §4.1 row 1): the ask's choice is the task's,
+    /// A kind or a workflow on a quest an ask published: the ask's choice is the task's,
     /// chosen on the ask. The answer names it.
     /// </summary>
     AskChooses,
 
     /// <summary>
-    /// A session's done, <c>ready</c> or decline through the connector whose note only points elsewhere (D219,
-    /// <see cref="HandbackNotes"/>): the note is the handback itself, and the answer quotes the pointer and says what one holds.
+    /// A session's done, <c>ready</c> or decline through the connector whose note only points elsewhere
+    /// (<see cref="HandbackNotes"/>): the note is the handback itself, and the answer quotes the pointer and says what one holds.
     /// </summary>
     PointsElsewhere,
 }
