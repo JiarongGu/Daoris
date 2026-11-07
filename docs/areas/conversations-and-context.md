@@ -1,6 +1,6 @@
 # Conversations and context — how it works now
 
-Read from main at `ea73c6439` (2026-11-04). Paths without a root are under `src/Daoris.Desktop/Daoris.Desktop.Driver/`.
+Read from main at `7b04533ba` (2026-11-07). Paths without a root are under `src/Daoris.Desktop/Daoris.Desktop.Driver/`.
 
 ## What it does
 
@@ -18,10 +18,10 @@ of everything it handed, section by section.
 |---|---|---|
 | `CourseDecision`, `LimitCourse` | `Course/Domain/LineCourse.Decide.cs`, `Course/Domain/LimitCourse.cs` | The one pure decision of how a line goes on, paths A to N, for both loops; the limit paths (D, E, F), the carry-on and the transient bound are `LimitCourse` |
 | `CourseTrigger`, `CourseFacts` | `Course/Domain/CourseTriggers.cs`, `CourseFacts.cs` | What asks the course, and the facts an executor hands it |
-| `MoveStore`, `MoveRecords` | `Course/MoveStore.cs`, `Course/MoveRecords.cs` | Every move's one durable row (`moves`, `move_words`) and its phases. `MoveRows` holds the columns by store version and the row's reading, `MoveImporter` writes a box's move with its receipt, and `MoveTakes` takes or receives a move from a run that goes no further; the store keeps one-line doors to them |
+| `MoveStore`, `MovePhases` | `Course/MoveStore.cs`, `Course/MoveRecords.cs` | Every move's one durable row (`moves`, `move_words`) and its phases. `MoveRows` holds the columns by store version and the row's reading, `MoveImporter` writes a box's move with its receipt, and `MoveTakes` takes or receives a move from a run that goes no further; the store keeps one-line doors to them |
 | `ConversationMoves`, `MoveTakeUp` | `Course/ConversationMoves.cs`, `Course/MoveTakeUp.cs` | The conversations' move holder; takes up a dead shell's moves at come-up and at each look |
-| `MoveDelivery`, `MoveResolve`, `MoveBoxImports` | `Course/` | Delivers moved words; settles a held move; imports an older build's boxes once |
-| `ChatRunner` | `Loop/Chat/ChatRunner.cs` (root, 38 KB) | Wires a conversation's units and the registered executors; keeps the doors callers use, each one line to the unit or executor that does the work |
+| `MoveDelivery`, `MoveResolve`, `MoveBoxImport` | `Course/` (`MoveBoxImports.cs`) | Delivers moved words; settles a held move; imports an older build's boxes once |
+| `ChatRunner` | `Loop/Chat/ChatRunner.cs` (root, 37 KB) | Wires a conversation's units and the registered executors; keeps the doors callers use, each one line to the unit or executor that does the work |
 | `ChatRun` | `Loop/Chat/ChatRun.cs` | The run of a conversation whose record is open, one method for every kind: its process spawned with its rules and servers, its door's turns held, its watch started, or its record concluded when the spawn fails |
 | `ExecutorAttribute`, `IExecutor`, `IExecutorWiring` | `Course/Chat/Executors/` | A conversation's kinds of run, each registered with its phase (a start before a move) and what it comes after; the runner builds them in that order from its wiring and refuses a cycle; listed in `docs/index/registered.md` |
 | `HelpStart` | `Help/HelpStart.cs` | Ask Daoris's start: placed in its workspace's room, the machine read within its bound, run; its replacement's open |
@@ -53,7 +53,7 @@ of everything it handed, section by section.
 | `LimitMove`, `LimitWaits` | `Course/Chat/` | Executors `limit-move` and `limit-wait`: a limit at a turn's end moves to the next account now, or waits for the look's `limits` stage to wake it. `LimitMove`'s ended-conversation move is `EndedLimitMove`, built by it and reaching its siblings through the wiring at run time; `LimitNotes`, `LimitResetWord` and `GoingOn` (the go-on's record of its words) are files of their own |
 | `CurveMove` | `Course/Chat/CurveMove.cs` (`Agents/Domain/SwitchDecision.cs`) | Executor `curve-move`: the usage curve's move of a conversation at its turn's end |
 | `ConversationRules`, `TransientMove`, `LimitRuled` | `Course/Chat/` | A conversation's line as the supervisor's rules read it; executor `transient-move`, the rules' move or hold past its episode; the limits rule's wait and ask and the moves bound before the limit's walk |
-| `HandOver`, `ChatHandOver`, `HandOverQuest`, `PartLeftovers`, `QuestPartStop` | `Course/HandOver/`, `Course/Chat/` | Hand-overs to another agent or account, for conversations (executor `hand-over`) and quests' sessions; what the old part left running, ended and waited for |
+| `HandOver`, `ChatHandOver`, `QuestHandOver`, `PartLeftovers`, `QuestPartStop` | `Course/HandOver/`, `Course/Chat/` | Hand-overs to another agent or account, for conversations (executor `hand-over`) and quests' sessions; what the old part left running, ended and waited for |
 | `StartFrom`, `StartWith` | `Course/Chat/ChatRunner.StartFrom.cs`, `StartWith.cs` | *Start a conversation with these words*; a conversation opened on its first words |
 | `DrivenCourse`, `LimitResume` | `Course/GoOn/DrivenCourse.cs`, `Course/LimitResume.cs` | A driven line's carry-ons, and its resume after a limit or update |
 | `Continuations`, `ResumeAsk` | `Course/Domain/Continuation.cs`, `ResumeAsk.cs` | Judges whether a record resumes; what a resumed run is told |
@@ -61,7 +61,7 @@ of everything it handed, section by section.
 | `SaidDoor`, `DrivenInbox` | `Course/SaidDoor.cs`, `Course/DrivenInbox.cs` | Words kept on a record's `said`, and their delivery to a running session |
 | `ContextBrief`, `ContextBriefs` | `Context/Domain/ContextBrief.cs`, `BriefLine.cs` (its input records), `BriefReading.cs` (the line read into turns), `Context/Events/ContextBriefs.cs` | The brief (pure), and the read of the line it is composed from |
 | `StandingBlock`, `StandingBlocks` | `Context/Domain/StandingBlock.cs`, `Context/StandingBlocks.cs` | The standing block (pure), and the facts a start reads for it |
-| `InstructionAccounting`, `HandedCodes` | `Context/InstructionAccounting.cs`, `Events/Domain/HandedCodes.cs` | The account of what a session was handed; page `work/conversation/HandedAccount.tsx` |
+| `InstructionAccounting`, `HandedSections` | `Context/InstructionAccounting.cs`, `Events/Domain/HandedCodes.cs` | The account of what a session was handed; page `work/conversation/HandedAccount.tsx` |
 | `LineKeys`, `LineCounts`, `LineCountsRead`, `CountTexts` | `Course/Domain/`, `Course/LineCountsRead.cs`, `Roles/Domain/CountTexts.cs` | A line's key, its counts, and Daoris's words for them |
 | `SessionEventLog`, `TranscriptFile` | `Context/Events/`, `Context/TranscriptFile.cs` | A session's events and verbatim transcript, kept on the machine |
 | `HelpConversations` | `Context/HelpConversations.cs` | Ask Daoris's history: names, pins, what a conversation started from and was handed |
@@ -132,32 +132,32 @@ of everything it handed, section by section.
 
 **Moves between accounts and agents**
 
-19. A conversation's limit, at its turn's end: another account of the same agent with room gets a new part, briefed, the
+20. A conversation's limit, at its turn's end: another account of the same agent with room gets a new part, briefed, the
     held words after the brief, why `limit`. Else the role's next choice on another agent. Else it waits for the earliest
     reset. (from D206, D205, D197)
-20. An account the person picked is never moved off. It waits for that account's reset. A new part a move opens on the picked
+21. An account the person picked is never moved off. It waits for that account's reset. A new part a move opens on the picked
     account of the same agent keeps the pick, one agent's two doors one agent and two providers sharing a pool two. (from D206,
     D205, D212)
-21. A limited end is `failed` with the limit flag on the wire. It is worded *limited*, never red, with no strike and no
+22. A limited end is `failed` with the limit flag on the wire. It is worded *limited*, never red, with no strike and no
     *Ended* notice. (from D206)
-22. The wake is the look's `limits` stage, with no timer. Own account ready and conversation resumable: a full resume,
+23. The wake is the look's `limits` stage, with no timer. Own account ready and conversation resumable: a full resume,
     Daoris's `limit.reset` word, then the held words, never a brief. Else a briefed part elsewhere. Else it waits. (from D206)
-23. A driven line at a limit resumes the same way, inside its carry-on's start. It walks its role's choices only where its
+24. A driven line at a limit resumes the same way, inside its carry-on's start. It walks its role's choices only where its
     own account is not ready. (from D206)
-24. The curve moves a conversation at its turn's end, with nothing running or queued, to another account of the same agent
+25. The curve moves a conversation at its turn's end, with nothing running or queued, to another account of the same agent
     in its scope with room. Never mid-turn or across agents. Never Ask Daoris or the tool's own home. Not again within 30
     minutes. (from D165)
-25. `switch: off` moves nothing. A driven line meets the curve only at its next start's walk, why `curve`. (from D165, D125)
-26. A hand-over is the person's press or the agent's ask. The agent's ask passes the `handOver` rule first: `on` admits it,
+26. `switch: off` moves nothing. A driven line meets the curve only at its next start's walk, why `curve`. (from D165, D125)
+27. A hand-over is the person's press or the agent's ask. The agent's ask passes the `handOver` rule first: `on` admits it,
     `ask` puts it to the person, `off` refuses it. (from D163)
-27. A conversation's hand-over is taken at its turn's end. Its first message is the brief, with none of the person's words.
+28. A conversation's hand-over is taken at its turn's end. Its first message is the brief, with none of the person's words.
     A quest's session stops at once for the person's press, which is their stop. An agent's ask waits for the turn's end.
     Before the next part starts in the tree (a conversation's hand-over, an account's move, or a quest's session handed over),
     the old part's job is taken from its tracking, and once its process has gone what the job still holds (a command left in the
     background) is ended and waited for, up to 30 seconds (`PartLeftovers`; a quest's part through `QuestPartStop`); the old
     record says so, `chat.left-ended`, or `chat.left-running` past the bound. A quest's move is written old-ended only after that
     wait, so its carry-on starts at a later look. (from D163, D188)
-28. A hand-over is refused for Ask Daoris, for the same agent and account, for a closed quest, for a tree that is gone, and
+29. A hand-over is refused for Ask Daoris, for the same agent and account, for a closed quest, for a tree that is gone, and
     for a session the person parked. (from D163, D212)
     *Go on in a new session*, the words a cooling account holds on a driven record, is the same press naming no agent:
     `SESSION_HAND_OVER` without `agent` (and `daoris session hand-over <id>`) keeps the choice for the next look, and
@@ -169,48 +169,48 @@ of everything it handed, section by section.
 
 **The brief**
 
-29. The brief is a pure function of the line's records, in Daoris's one English, with no model. It opens by saying it is
+30. The brief is a pure function of the line's records, in Daoris's one English, with no model. It opens by saying it is
     not the agent's memory. (from D189)
-30. Its sections: the request as first written; every word taken (the person's verbatim, others' as claims); each turn's
+31. Its sections: the request as first written; every word taken (the person's verbatim, others' as claims); each turn's
     last message and one line of what it did; the plan; uncommitted paths and commits; the last failed check; attachments;
     the outgoing agent's note; the entry's other parts; the line's course; what was left out. (from D189, D163, D229)
-31. Its bound is 40,000 weight, with a Han character weighing 3. Each section has a cap. Past the bound, the oldest turn and
+32. Its bound is 40,000 weight, with a Han character weighing 3. Each section has a cap. Past the bound, the oldest turn and
     then the oldest word drop. It is kept as the new part's first event, with its account. (from D189)
-32. It never hands the agent's thoughts, a tool call's output (but the last failed check's, bounded), a model's summary, an
+33. It never hands the agent's thoughts, a tool call's output (but the last failed check's, bounded), a model's summary, an
     account's name, or anything from a harness's store. (from D189)
-33. `line_read` pages one part at a time, by part id, under the brief's bound. A working session may call it; a reviewer and a
+34. `line_read` pages one part at a time, by part id, under the brief's bound. A working session may call it; a reviewer and a
     helper may not. It carries no counts. (from D189, D229)
 
 **What a session is told at its start**
 
-34. The driver composes the standing block with no model. It is handed once, at the start or at a move (with the memory the
+35. The driver composes the standing block with no model. It is handed once, at the start or at a move (with the memory the
     line read), and never at a go-on. It says where things are, the routing, the person's choices, and the repository's and
     workspace's facts. (from D230)
-35. The whole first prompt fits the native door's one argument (32,767). Over 30,000, the block goes to
+36. The whole first prompt fits the native door's one argument (32,767). Over 30,000, the block goes to
     `spawn/<session>.standing/block.md`, and one line points to it. (from D230)
-36. A conversation's first message carries where the person is (bounded), the browser line, the process in a tree of its
-    own, an open workflow draft, the person's words, then the block. A hand-over's first message is the brief and Daoris's
-    briefing. (from D162, D163, D164, D230)
-37. A session is listed only the tools its kind may call: the core 18 plus its kind's. Ask Daoris gets every tool. A Claude
+37. A conversation's first message carries the browser line, the process in a tree of its
+    own, where the person is (bounded), an open workflow draft, the person's words, then the block. A hand-over's first
+    message is the brief, Daoris's briefing and the browser line. (from D162, D163, D164, D230)
+38. A session is listed only the tools its kind may call: the core 18 plus its kind's. Ask Daoris gets every tool but the turns and the memory changes. A Claude
     session runs with auto-memory and synced skills, plugins and connectors off. No account home is written. (from D230)
 
 **Counts and the handed account**
 
-38. `LineCounts.Of` reads each count from the one record that carries it, and stores nothing. A count is *exact*,
+39. `LineCounts.Of` reads each count from the one record that carries it, and stores nothing. A count is *exact*,
     *at least* or *unknown*, with why. A count a line does not have is absent. (from D229)
-39. The session sees its counts as facts: in the brief's course section, in a go-on's words, and at a start with no brief
+40. The session sees its counts as facts: in the brief's course section, in a go-on's words, and at a start with no brief
     where a count is above zero. They are never instructions and never another agent's text. (from D229)
-40. Everything handed is accounted: each section's size, source and cuts, by `HandedSections` and `HandedCuts` codes. The
+41. Everything handed is accounted: each section's size, source and cuts, by `HandedSections` and `HandedCuts` codes. The
     account rides the event of the instruction or first message. A section that could have been handed and was not is
     said, with why. (from D143, D189)
 
 **Ask Daoris**
 
-41. Ask Daoris is a conversation in its own room, one at a time per workspace. It proposes, and the person applies every
+42. Ask Daoris is a conversation in its own room, one at a time per workspace. It proposes, and the person applies every
     change. A limit move opens it again in its room. (from D89, D170, D183, D158)
-42. Its conversations stay on this machine. Only those the person spoke in or named are listed, pinned first, then newest.
+43. Its conversations stay on this machine. Only those the person spoke in or named are listed, pinned first, then newest.
     They resume by kept id. A briefed continuation stays one history row. (from D158, D189)
-43. A new Ask Daoris conversation started from an earlier one is handed Daoris's brief of that one's line, why `press`, ahead
+44. A new Ask Daoris conversation started from an earlier one is handed Daoris's brief of that one's line, why `press`, ahead
     of the person's first message, and keeps it as Daoris's first prompt. A repository's *Start a conversation with these
     words* carries the words alone. (from D158, D233)
 
@@ -228,10 +228,11 @@ of everything it handed, section by section.
   rules are the roles area's.
 - **Ask Daoris:** history in `Context/HelpConversations.cs`; a door's answer, where one is wanted, in `Help/Proposals/` with its
   row in the room's doors table.
-- **Never grow the hubs.** `Course/Chat/ChatGoOn.cs` (66 KB) is over budget, and a conversation's turns grow in their parts
-  under `Loop/Chat/Turns/`, never in `ChatTurns.cs`, which is their door;
-  `ChatRunner.cs` (38 KB) only wires and `ChatRun.cs` (30 KB) is the one run. New behaviour goes in its own file (D231). Agents comes before Participants and Context in the
-  structure gate (D166).
+- **Never grow the hubs.** `Course/Chat/ChatGoOn.cs` (39 KB), `Loop/Chat/ChatRunner.cs` (37 KB) and `Loop/Chat/ChatRun.cs`
+  (31 KB) stand near the 40 KB source budget and do not grow: `ChatGoOn` takes new go-on behaviour in a unit beside it,
+  `ChatRunner` only wires and `ChatRun` is the one run. A conversation's turns grow in their parts under `Loop/Chat/Turns/`,
+  never in `ChatTurns.cs`, which is their door. New behaviour goes in its own file (D231). Agents comes before Participants and
+  Context in the structure gate (D166).
 - **Tests that pin it:** `LineCourseTests` (the pinned path table), `CourseCensusTests` (`fixtures/course-sites.json`),
   `CourseBoundaryTests`, `CoursePortsTests`; `ChatGoOnTests`, `BriefedMoveTests`, `LimitWaitsTests`, `LimitMoveStoreTests`,
   `CurveMoveTests`, `ChatHandOverTests`, `HandOverTests`, `PartLeftTests`, `HandOverLeftProcessTests`, `MoveStoreTests`, `MoveStoreCensusTests`, `MoveDeliveryTests`; the
@@ -245,45 +246,47 @@ of everything it handed, section by section.
 
 ## Contradictions
 
-1. D189 point 2 ("the old part ends at its turn's end, never mid-turn") vs `Course/Domain/LineCourse.Decide.cs:530`: the
+1. D189 point 2 ("the old part ends at its turn's end, never mid-turn") vs `HandOverOf` in `Course/Domain/LineCourse.Decide.cs`: the
    person's hand-over of a quest's session moves now, as their stop. The code reads right (D163 point 1).
 2. D137 point 4 and D158 point 3 (a chat, or one with no kept id, waits for the person's new conversation) vs
-   `Agents/Domain/ContinueReason.cs:46` and `LineCourse.Decide.cs:152`: `unkept` and `gone` count as lost, and the line goes on
-   by itself, briefed. The code (and D189 point 3) reads right. `Course/Chat/ChatGoOn.cs:72-74`'s comment is stale.
-3. D137 point 7 (a cooling account holds the words, with *Go on in a new session* offered) vs `LineCourse.Decide.cs:172-176,
-   563`: a conversation's words switch off a cooling account now, and *Go on in a new session* is a driven record's alone.
+   `ContinueReason.Lost` in `Agents/Domain/ContinueReason.cs` and `Judged` in `LineCourse.Decide.cs`: `unkept` and `gone` count
+   as lost, and the line goes on by itself, briefed. The code (and D189 point 3) reads right.
+3. D137 point 7 (a cooling account holds the words, with *Go on in a new session* offered) vs the `Elsewhere` cases of
+   `LineCourse.Decide.cs`'s `Judged`: a conversation's words switch off a cooling account now, and *Go on in a new session* is a driven record's alone.
    The code reads right.
 4. D125 point 4 ("a running session never rotates") vs D165 point 3 and `Course/Chat/CurveMove.cs`: a conversation moves at
    its turn's end. D165 reads right.
 5. D80, D125 point 4, D131 point 3 and D163 point 1 (a new part gets the request, last plan, last words and what is
-   uncommitted) vs D189 point 4 and `Context/Domain/ContextBrief.cs:171`: every new part gets the brief. D189 reads right.
-6. D163's MIXAGENT1a-i note point 1 (the ask is the box `<id>.hand-over.json`) vs `Course/HandOver/HandOver.cs:115-118`: a
-   move row in the store; boxes are imported only. The code reads right. `HandOver.cs:1-5`'s comment is stale.
-7. `Events/Domain/HandOverWhy.cs:9-10` and D163's note (`near` means the account is near its limit) vs
-   `Roles/Domain/CountTexts.cs:104` ("handed over near its context's end"). D163 reads right; the count's words are wrong.
+   uncommitted) vs D189 point 4 and `ContextBrief.Compose` (`Context/Domain/ContextBrief.cs`): every new part gets the brief. D189 reads right.
+6. D163's MIXAGENT1a-i note point 1 (the ask is the box `<id>.hand-over.json`) vs `HandOver.JudgedAsync`'s summary in
+   `Course/HandOver/HandOver.cs`: a move row in the store; boxes are imported only. The code reads right. The class summary at
+   the top of `HandOver.cs` is stale.
+7. `HandOverWhy.Near` (`Events/Domain/HandOverWhy.cs`) and D163's note (`near` means the account is near its limit) vs
+   the `Began` map of `Roles/Domain/CountTexts.cs` ("handed over near its context's end"). D163 reads right; the count's words are wrong.
 8. D206's body cites `Conversations/Chat/ChatGoOn.cs`. The driver has no `Conversations` folder; the unit is
    `Course/Chat/ChatGoOn.cs`. The code reads right.
 9. D188's status line says *proposed*. Its own note (`docs/decisions/D188.md:178`) says accepted and built by COWORK1a-d.
     The note reads right.
-10. `TASKS.md`'s LIMITGOON1 line and `Course/Chat/LimitMove.cs:4` say a limit move goes on "in the same conversation". D189
-    points 1-2 and `LimitMove.cs:12-13` make it a new part handed the brief. The new part is right; the wording mixes up the
+10. The archived LIMITGOON1 entry (`docs/task-archive.md`) and the summary of `Course/Chat/LimitMove.cs` say a limit move goes
+    on "in the same conversation". D189 points 1-2 and `LimitMove`'s remark on the carrier make it a new part handed the brief. The new part is right; the wording mixes up the
     line and the agent's conversation.
-11. SESSCTX1e's re-cut (*Go on fresh* as a hand-over to the same agent and account) vs `LineCourse.Decide.cs:500`, which
+11. SESSCTX1e's re-cut (*Go on fresh* as a hand-over to the same agent and account) vs `HandOverOf` in `LineCourse.Decide.cs`, which
     refuses exactly that (`HandOver.SameAgent`). The code is today's; the re-cut must change the refusal when it is built.
 
 ## Open
 
 - **SWITCHCTX1a onward: the account carry.** A move keeps the agent's own conversation by carrying it to the other
-  account's home. Proposed, waiting on Codex's owed read; nothing is built. `Course/MoveRecords.cs` reserves the `carry`
+  account's home. Proposed (`docs/2026-10-24-switch-context-design.md`, its round 5 read and another round owed), with no backlog row; nothing is built. `Course/MoveRecords.cs` reserves the `carry`
   kind and the `copied` and `verified` phases.
 - **SESSCTX1a:** resume and a fresh part measured on each door. No brief has been counted on a harness.
 - **SESSCTX1e (ONEWAY1j):** *Go on fresh*, Daoris's compaction on the person's press, re-cut as a hand-over to the same
   agent and account, after SESSCTX1a is measured.
-- **LIMITGOON1 (row i):** the limit move seen on the installed window.
-- **LIMITRESUME1 (ONEWAY1g row f):** the limit resume's remaining row on the installed doors.
-- **CHATFLOW1:** a conversation's work in its own tree runs its repository's workflow.
+- **LIMITGOON1 (STAFFPOLICY1 row i):** the limit move seen on the installed window, among that row's installed proof.
+- **LIMITRESUME1 (ONEWAY1g row f):** the native door's limit sentence and a missing-id `--resume` recorded, so a native limit
+  concludes limited with no strike.
+- **CHATFLOW1:** a conversation's work in its own tree runs its repository's workflow; left, the installed look (SETUPUX1x).
 - **RPC1g:** a terminal's conversation is the running Daoris's. The design (`docs/2026-11-06-terminal-conversation-design.md`)
-  is accepted (D238): one runner, a terminal holding one conversation over the pipe under one Confirm, nothing alone with no instance.
+  is accepted (D238; g5, seen on the install, is left): one runner, a terminal holding one conversation over the pipe under one Confirm, nothing alone with no instance.
   The pipe holds a conversation for one connection (`src/Daoris.Desktop/Daoris.Desktop.Modules/Platform/PipeHolding.cs`),
   and a held conversation's head says *Held by a terminal*. `daoris chat --repository` starts one through `START_CHAT` with
   `hold: true` and `--session` holds one open; `session start-from` and `session hand-over <id> --agent` hold what they open
