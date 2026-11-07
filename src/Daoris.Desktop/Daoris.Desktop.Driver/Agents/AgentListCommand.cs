@@ -71,7 +71,7 @@ internal static class AgentListCommand
 
             // One account list per tool (TOOL6g): a door onto another agent's accounts lists them nowhere of its own, since its owner
             // listed them with what the agent said of each.
-            if (toolchain.AccountOf is { Length: > 0 } owner && set.AgentNamed(owner) is { } owned)
+            if (set.BorrowedFrom(name) is { } owner && set.AgentNamed(owner) is { } owned)
             {
                 var whose = owned.Product ?? owner;
                 Say($"{Under}its accounts are {whose}'s, listed under `{owner}`: this is another way {whose} runs on them");
@@ -218,7 +218,7 @@ internal static class AgentListCommand
 
         // Then the person's own sign-in, outside the set (D197 point 3, §3): no state, never asked. Its cool-off is Daoris's own record of a
         // conversation begun there, which `profile ready --own` still ends.
-        if (toolchain.AccountOf is null && toolchain.Accounts.LoginArguments is not null && report.Present)
+        if (set.BorrowedFrom(name) is null && toolchain.Accounts.LoginArguments is not null && report.Present)
         {
             // OWNSPACE1d (D175): Daoris never starts in it; what began there is read where it is and goes on there.
             lines.Add($"{Under}your own sign-in, the account `{name}` uses at your own terminal, is not one of Daoris's accounts:");

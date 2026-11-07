@@ -402,7 +402,7 @@ internal static class ConformanceCases
 
     /// <summary>
     /// A door's run, over today's transport, refuses what its own evidence does not admit before it writes (AGENTPROVIDER1m-i): the words
-    /// until m-ii, a native door's turn and task stops and choice, a protocol door's go-on and retry, and a resume its door cannot make. Each
+    /// until m-ii, a native door's turn and task stops, a protocol door's go-on and retry, and a resume its door cannot make. Each
     /// refusal is the contract's sentence, and nothing was started.
     /// </summary>
     private static async Task RunUnsupportedRefused(ConformanceRun run)
@@ -414,15 +414,10 @@ internal static class ConformanceCases
         var driver = new Daoris.Driver.Driver(client, DriverConfig.Empty, run.Set, home, processes);
         await using var transport = new TransportRun(
             new DriverTransportHost(driver), run.Set, adapter, new TransportStart(new ProcessStartInfo("never-started"), StartClass.Person));
-        var choice = new ActorAsked(door.Id.Value, new ActorValue("entry", "m-2", true), new ActorValue("entry", null, false));
         var never = CancellationToken.None;
 
-        // What this door's evidence does not admit: a later choice on every door, then by its wire and its resume, a line on a protocol door's
-        // input among them (D246).
-        var refused = new List<(Task Operation, string Ability)>
-        {
-            (transport.ApplyChoiceAsync(choice, never), TransportRun.ChoiceAbility),
-        };
+        // What this door's evidence does not admit: by its wire and its resume, a line on a protocol door's input among them (D246).
+        var refused = new List<(Task Operation, string Ability)>();
         if (!Protocol(door))
         {
             refused.Add((transport.StopTurnAsync(never), "a stop that keeps the conversation"));

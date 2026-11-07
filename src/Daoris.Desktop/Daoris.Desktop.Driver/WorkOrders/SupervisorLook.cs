@@ -25,7 +25,7 @@ internal sealed class SupervisorLook(ILookWiring wiring) : ILookPass
             .ToDictionary(record => record.Session, StringComparer.Ordinal);
         await wiring.Supervisor.ReleaseCoursesAsync(
             ReferredPoints.For(wiring.Home, wiring.Events, wiring.Marks).Line(looked.GetValueOrDefault, session => looked.GetValueOrDefault(session)?.Running == true),
-            DateTimeOffset.UtcNow, ct).ConfigureAwait(false);
+            DateTimeOffset.UtcNow, [SupervisorRules.AnswersAlone], ct).ConfigureAwait(false);
         IReadOnlyDictionary<string, PriorSession>? lines = null;
         SupervisorBound bound = async (session, token) =>
         {
