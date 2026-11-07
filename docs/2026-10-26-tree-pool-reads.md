@@ -20,6 +20,10 @@ It answers the read of round 4 in the design's §25, one row each, and writes wh
 repository's churn measured by class (R5.2). Codex's read and the independent Opus reader's read of round 5 are both owed before any of it
 is accepted, and nothing is built until then.
 
+**Round 6, for row 2 alone** (2026-11-07), is written from main at `5643df4196` and answers the independent read of round 5 in the
+design's §26. The independent Opus reader's read of round 6 is below, under *Opus (independent), round 6*: another round for row 2, on its
+F1 to F3. Codex's read of round 6 is owed.
+
 ## Codex, round 1
 
 Codex's read of round 1 at `3f55eb1e5`: another round. It finds four wrong claims (two blocking: an interrupted move that is no interrupted
@@ -1525,6 +1529,209 @@ condition under which rooms in place keep their work and give a session its own 
 - **Rows 3 and 4 next, in either order,** once Codex's read finds nothing blocking in them, with F10's and F9's changes. Neither depends on
   rooms: row 4's landings are today's, and row 3 serves today's fresh trees too.
 - **Row 2 after another round** on F1 to F4, and **row 5 after row 2's week**, as §17.0 says.
+
+## Opus (independent), round 6
+
+The independent Opus 5.5 reader's read of round 6, row 2 alone, at main `b347f3ab20`: 9 findings, 3 of them blocking, all in row 2. I read
+the owner's three choices (D214's note of 2026-11-07) as given, and round 6's scope as §26 sets it: row 2, and rows 1, 4 and 5 where round 6
+changed them.
+- **The fast-forward holds.** It never writes a held group's working file, nothing it moves comes back as a revert, and both crash cases
+  reconcile, with precisions (F6).
+- **The claim holds.** It names the line, `TidyHolders` holds it live, only the line's carry-on takes a dead run's claim, and the release
+  writes over only what a ref holds. A line that comes back after its release needs a sentence (F4).
+- **Claude Code alone in place, and claim groups by build closure, hold in their frame**, leaving this repository one session in place
+  beside the records, as R5.4 says.
+- **Three cases still lose work or stop a line**, each from code or a tool the design does not cite:
+  - a room's branch has no tree, and every tidy and delete keeps a session branch only through its tree (F1);
+  - the turn's end reads `HEAD` and the index, never a working file, and the keep is one ref rewritten each turn, so a reset passes unseen
+    and the next keep overwrites the last good one (F2);
+  - the repository's own commit and merge hooks run over the shared working tree, where common ones rewrite every file (F3).
+
+  Each has a small change inside the owner's frame, and none reopens a choice.
+
+**Verdict: another round for row 2, on F1 to F3.** Rows 1, 3 and 4 may go ahead (§4).
+
+Read at main `b347f3ab20`, which holds round 6's `70ee53cf7c`; no file round 6 cites changed after its `5643df4196`. I read with git and
+read-only commands and changed no file but this one. I built and ran nothing; what I say of other tools is from their documentation. A bare
+path is under `src/Daoris.Desktop/Daoris.Desktop.Driver/`, `Tests/` is the driver's tests, and `Design` is
+`docs/2026-10-26-tree-pool-design.md`.
+
+### 1. Round 6 against main today
+
+| § | Holds? | What I found |
+|---|---|---|
+| R5.3, the claim | Yes | *Spoken to* is read only by the look's `InUseAsync` (`Workplace/TidyHolders.cs:16-37`), not `:39-51` (F9). A released line's return is unsaid (F4) |
+| R5.3, working in place | In part | The hooks rewrite the tree (F3); the check misses a reset to the index's content (F2) |
+| R5.3, the line's move | Yes | Against `Workplace/IntegrationPromotes.cs:366-419`, `Workplace/LinePulls.cs:57-78`, `Workplace/ActSteps.cs:149-205` (F6). Its `post-merge` is F3's |
+| R5.3, the record and census | In part | It misses the judgements that keep a branch because a tree has it out (F1) |
+| R5.3, the harness | In part | The fallback for Codex and plugins holds. The PowerShell tool and `git config` are missed; the guard reaches `local/` (F5). A reset is unbounded (F2) |
+| R5.3 builds; R5.4 groups | Yes | For builds, and this repository's count is right. A program's write outside its room is F2's |
+| Break 8; §18 items 7, 9 | In part | Item 7 misses the revert a `commit -a` lands and a session's scratch (F7); item 9, the records room's writers (F8) |
+| §17.0 rows 1, 4, 5; §19, §20 | Yes | Row 4 now extends a census row 2 builds, though it was to go first (F9) |
+
+### 2. Round 6's answers to round 5 (§26)
+
+| Finding | Round 6 | Answered? |
+|---|---|---|
+| F1 (blocking) a room's branch cannot land | The room-aware fast-forward | **Yes** (F6); the branch it lands is not kept from the tidy (F1) |
+| F2 (blocking) the claim hands a line's files on | Claimed by line; a lossless release | **Yes** (F4) |
+| F3 (blocking) a harness's own git | Claude Code alone, and protections | **In part**: a reset is unbounded (F2); spellings (F5) |
+| F4 (blocking) builds cross rooms | Claim groups by closure | **Yes** for builds |
+| F5 the private-index commit | Each taken | **Yes**, but running the hooks is F3's |
+| F6, F10's last point, F11 (b), (c) | As §26 says | Yes |
+| F7 the person, another home | Item 7; a marker | **In part** (F7; the marker leaves another home's replays, F1) |
+
+### 3. Findings
+
+1. **Blocking. A room's branch has no tree, and every tidy and delete keeps a session branch only through its tree.**
+   - **Where:** Design:188 makes the branch "without a checkout"; Design:183-185 shields it from `TreeLandSyncs`, `TreeUpdates` and a pull's
+     replays only. Against it:
+     - the look's tidy takes, with no press, a branch the clean-up would clear, empty or landed: "With no tree it goes"
+       (`Workplace/TreeSetAside.cs:29-32`; driving rule 48, `docs/areas/driving.md:280-281`);
+     - the sweep's in-use test reads a branch's tree, so a branch with none is never in use (`Workplace/TreeSweeps.cs:338`), and the press
+       judges every `daoris/` branch (`:46-54`);
+     - the landed clean-up keeps a landed branch only where `git worktree list` has it out (`Workplace/LandedCleanups.cs:339-341`);
+     - every delete door (`DISCARD_SESSION_BRANCH`, `SWEEP`, the look's clean-up, a run's `tidy`) passes `ContentHolds.DeleteJudgedAsync`,
+       which refuses "a branch a working tree has checked out" and nothing else (`Workplace/ContentHolds.cs:313-323`; git rule 38);
+     - the replays judge a branch with no tree with no in-use or dirty test (`Workplace/BranchJudging.cs:117-124`), over every `daoris/`
+       branch, grown here or not (`:47-52`).
+   - **What goes wrong:**
+     - A take makes the branch at the group's base, which the line holds, so until the agent's first commit it is *empty*. The look's tidy
+       deletes it once the end keeper marks it held, and the person's clean-up press lists it as going.
+     - A room's line that lands and goes on (a quest's next part, a conversation spoken to again) has a landed branch with no tree. The next
+       pull's clean-up (`Workplace/TreeSync.cs:277-279`) or the look's deletes it while its group is held.
+     - Either way the next `commit` has no tip for its private index, and the hold by its files (Design:162) and the release's test
+       (Design:170-172) have nothing to compare. Nothing committed is lost, but the line stops; and a `commit` that makes the branch again at
+       `HEAD` commits the held paths at their base, reverting every landing into the group.
+     - A second home reads no claim, so its pull replays the room's branch: round 5's F1 through another door.
+   - **Smallest change:**
+     - One predicate, *a branch is out*: a tree has it checked out, or a standing `room_claims` row names it, or another home's marker stands
+       in the checkout, which makes every tree-less `daoris/` branch out. It is read wherever a judgement now asks the worktree list: the
+       sweep's in-use test, `GoesByItself`, the landed clean-up, `DeleteJudgedAsync` before and after its delete, and the replay and update
+       judgements.
+     - Row 2's census adds those readers by a source scan of `Worktrees.ReadAsync`, `WorktreesAsync` and `Tree is null`.
+     - Row 2's proofs: a fresh room branch survives the look's tidy and the press; a landed one survives the pull's clean-up while its group is
+       held; a second home's pull leaves it.
+
+2. **Blocking. The turn's end never reads a working file, and the keep is one ref rewritten each turn.**
+   - **Where:** Design:277-284; break 8's "the keep bounds the first" (Design:324-325); §18 item 7 (Design:1876). The keep writes
+     `refs/daoris/rooms/<line>`, and git keeps no reflog outside `refs/heads/`, `refs/remotes/`, `refs/notes/` and `HEAD` by default
+     (`core.logAllRefUpdates`).
+   - **What goes wrong:**
+     - After a take, and after every fast-forward, the held paths' index equals `HEAD`. So `checkout -- .`, `restore .`, `stash -u`,
+       `reset --hard`, `clean -fd` and an editor's *Discard all* change working files alone. `HEAD`, the line's moves and the held index
+       entries are as Daoris left them, and the turn's end passes.
+     - The session goes on, and its turn's keep overwrites the last good keep, which no ref or reflog then holds. Every uncommitted change
+       made before the reset is gone. A parked group the person's *Discard all* reached loses it at its next turn the same way.
+     - The commit's check catches a committed change put back at the base's content. But a reset writes the index's content, which the
+       fast-forward moved to `N` for held paths (Design:228). Where the line also changed a path the branch changed, the reset puts `N`'s
+       content there, the check passes, and the commit reverts the session's own committed change; the landing then takes the line's side.
+     - The same blindness lets a program's write outside its room through. A formatter, a fixer or a snapshot update run over the repository
+       writes another group's files, which that group's next `add -A` commits as its own, or dirties a free path, which holds every move of the
+       line (Design:224-225). The guard cannot see a program's own write (`Workplace/TreeGuard.cs:16-21`).
+   - **Smallest change:**
+     - Each keep commit's parent is the previous keep, or the ref is written with a reflog, so every turn's state stays reachable until the
+       release ends the chain.
+     - Before writing the keep, the turn's end compares the room's files with the last keep: a path it held changed that is now at the index's
+       or the base's content stops the session for the person. The keep is still written, as a new link.
+     - The commit's check also refuses a path the branch changed that now holds the index's content.
+     - The turn's end also reads the free paths against `HEAD`, and each group whose session is between turns against its last keep; a change
+       there is said and holds that group's next commit for the person. R5.3 says two sessions in turns at once can still reach each other
+       through a program.
+     - Row 2's proof: a room reset by a script, then a turn: the session stopped at that turn's end, its earlier work on the keep's chain.
+
+3. **Blocking. The repository's own hooks run over the shared working tree.**
+   - **Where:** Design:194-196 runs `pre-commit`, `prepare-commit-msg`, `commit-msg` and `post-commit` with the private index named;
+     Design:232 runs `post-merge` after the move; break 8 allows the person's Commit of free paths (Design:320-322), an act whose hooks run
+     and are never skipped (`Tests/Workplace/CheckoutWritersCensusTests.cs:33`; git rule 37).
+   - **What goes wrong:** a hook runs in the checkout, so it meets every room, and common ones write the whole tree:
+     - the `pre-commit` framework saves every working change against the index it reads as a patch, runs `git checkout -- .`, runs its hooks,
+       and applies the patch back. For the hooks' length every other room's work is off disk, under its session's build. A write made
+       meanwhile conflicts with the patch, and the framework checks out again and loses it. A commit act ended past its bound never applies
+       the patch, which stays in the person's cache, where Daoris does not look;
+     - `lint-staged` restores a failed run by `git reset --hard HEAD` and a stash apply.
+     - `post-merge` hooks commonly install dependencies, which writes the folder every group reads (break 4) under running sessions.
+     - This repository's hooks are `post-checkout` and `post-merge`, writing the ignored `docs/index/` (`tools/index-hook.mjs:7-11`), so its
+       own proofs would not show it.
+   - **Smallest change:** in place only where the hooks path holds no `pre-commit` or `post-merge` hook, or where the gates file declares each
+     set hook as writing only its own outputs, as this repository would its index hook; otherwise the start takes the fallback, said.
+     `prepare-commit-msg` and `commit-msg` write the message alone and may run. The person's Commit, while a group is held, follows the same
+     rule. Row 2's proof: a `pre-commit` hook that rewrites the tree refusing in place.
+
+4. **Not blocking, before row 2. A line that comes back after its room's release.**
+   - **Where:** Design:170-172 releases a room once neither hold stands, and row 2 places "a start whose work lies in one free group" in the
+     checkout. The writer's holders stop counting a completed part (`Workplace/TidyHolders.cs:54-59`), and *spoken to* lapses in an hour.
+   - **What goes wrong:** a quest's next part, or a conversation spoken to again, goes on in a line whose branch holds commits `HEAD` does
+     not. Taken again at `HEAD`, its room lacks its own commits. Its first commit is stopped where its changes read back at the base, and
+     reverts its own change where the line also moved that path.
+   - **Smallest change:** say it. Such a line goes on as a gone tree does, from its branch in a fresh tree or a kept slot (from the brief, its
+     conversation being filed under the checkout), or its take first writes its branch's room paths in a journaled act. Row 2's proof: a
+     quest's second part after its room's release.
+
+5. **Not blocking, before row 2. The harness's denials and the guard.**
+   - The deny forms are `Bash(…)` alone. A driven session on Windows may use the PowerShell tool, which the guard judges
+     (`Agents/Domain/TreeGuardHook.cs:10`) and no rule names (`Setup/SetupPress.cs:17-18`). Name its forms, or deny it in place.
+   - An alias, a path to git, a quoted subcommand and a script are the classifier's, as `no-push` says of itself
+     (`Agents/Permissions.cs:176-178`). "In every spelling" should say so; F2's turn's end then catches them.
+   - `git config` is not on the list, but a `core.hooksPath`, `core.fsmonitor` or alias the agent sets runs its program from Daoris's own
+     `git hook run`, every `status` and the person's git. Deny its writing forms, and run the acts' hooks from the path read at the take.
+   - The guard allows "what git ignores" anywhere (Design:268-269): the person's `local/`, whose `sensitive-patterns.txt` the sensitive gate
+     reads, and an ignored `.claude/settings.local.json` that every later session in place reads. Allow ignored writes only under the room's
+     paths and the declared output and scratch classes.
+   - `TakesSettings` is a door's declaration (`Agents/Contract/DoorAbilities.cs:47`), which a plugin may make with no Claude Code rule
+     language or hook. Admit in place only where `SessionRules.Hand` wrote the rules and the guard.
+   - A lead may send a builder into the harness's worktree (Design:272-274), but has no door to bring its commits into the room: `merge`
+     and `cherry-pick` are denied. Name one.
+
+6. **Not blocking. The fast-forward's precisions.**
+   - The reconciliation writes a free path back from `O` only where it still holds `N`'s bytes, and an index entry only where it still holds
+     the act's, as the act engine's steps compare first (`Workplace/ActJournal.cs:61-62`; `Workplace/ActSteps.cs:162-164`).
+   - Free paths are written through git's checkout (`checkout-index`, `restore --worktree --source`), so smudge filters and line endings
+     apply.
+   - The pull is judged dirty before it is tried (`Workplace/LinePulls.cs:40-43`); that read leaves the held paths out too.
+   - With every path free the room-aware move is a fast-forward: keep it as the one way, not beside `merge --ff-only` (D228).
+   - The line-keyed commit act needs its own unique key and reconciler: the journal's one open act and a writer's reconciler are per checkout
+     (`Workplace/ActJournal.cs:173-174`; `Workplace/IntegrationPromotes.cs:373`).
+
+7. **Not blocking, before the owner answers §18 item 7. The person's checkout.**
+   - With the held paths' index at `N` and their files at the base, the person's `commit -a`, or an editor's *stage all* on an empty stage,
+     lands on the line, ungated, the reverse of every landing into a held group. The turn's end stops the sessions, and nothing undoes the
+     line. Item 7 should say so beside "commits the rooms' work".
+   - A session's scratch stays in the person's checkout (`_fixtures/` here), where nothing can tell it from theirs or remove it. R5.5's
+     scratch row (Design:376) and the owner's decision that a finished session's scratch goes with its tree (D195) do not hold in place.
+     Item 7 should ask it.
+
+8. **Not blocking. This repository.**
+   - A change here moves its task to the archive with its code (the task-lifecycle rule), which a code session in place cannot do:
+     `TASKS.md` and `docs/task-archive.md` are the records room's. Either the records room joins the code group, or each change sends it a
+     quest. §18 item 9 should say which.
+   - The rooms are read from `daoris.lanes.json`, a records path, which a session in place may edit while groups are held. Read the
+     declaration at `HEAD`, never from the working file.
+
+9. **Not blocking. Rows and nits.**
+   - Row 4 now "extends row 2's census" (Design:1573, :2115), but rows 3 and 4 were to go before row 2. Whichever of rows 2 and 4 lands
+     first builds the census and `WhereIs(line)`.
+   - The claim's holder read takes `InUseAsync`'s *spoken to* beside `HoldersAsync`.
+   - A keep ref per line, never dropped, grows by one a line. The release ends it, and the recovery retention takes it.
+
+**9 findings, 3 of them blocking.**
+
+### 4. Verdict, and the rows that may be built first
+
+**Verdict: another round for row 2, on F1 to F3.**
+- F1: one *out* predicate for a branch, read by every tidy, delete and replay, and their census.
+- F2: a chained keep, a turn's end that reads the room's files, and a commit's check against the index's content.
+- F3: in place only where the repository's commit and merge hooks are absent or declared safe.
+
+F4 to F9 are named changes the steward can check without another read. Round 6's own mechanics hold: the fast-forward, the claim by line,
+Claude Code alone and the claim groups. None of the three reopens the owner's choices.
+
+**The rows:**
+- **Row 0** is built.
+- **Row 1 may go ahead** as round 6 writes it. Nothing acts on it.
+- **Rows 3 and 4 may go ahead, in either order,** once Codex's read finds nothing blocking in them, row 4 building the census if it lands
+  before row 2 (F9).
+- **Row 2 after another round** on F1 to F3, and **row 5 after row 2's week**.
 
 ## Moved from the design at round 4
 
