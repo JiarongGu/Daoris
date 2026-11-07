@@ -39,10 +39,11 @@ public static class StewardCommand
     /// <summary>What the verb's usage says.</summary>
     public const string Usage =
         "usage: daoris steward acts | drive <repo> | undrive <repo> | trees <repo> on | hold <repo> | resume <repo> | stop <id> | "
-        + "finish <id> | retry <quest> | workflow <repo> <workflow> | pause <quest> | unpause <quest> | done <quest> | delete <quest> | land <id> | clean <id> | update now | update cancel | desk | desk decline <request> \"<reason>\" | request <act> <target> \"<why>\"";
+        + "finish <id> | retry <quest> | workflow <repo> <workflow> | pause <quest> | unpause <quest> | done <quest> | delete <quest> | land <id> | clean <id> | update now | update cancel | "
+        + "hand-over <id> --agent <agent> [--account <account>] | desk | desk decline <request> \"<reason>\" | request <act> <target> \"<why>\"";
 
     /// <summary>The acts a request may ask for: those the steward's verbs make.</summary>
-    public static IReadOnlyList<string> Requestable { get; } = ["drive", "undrive", "trees", "hold", "resume", "stop", "finish", "retry", "workflow", "pause", "unpause", "done", "delete", "land", "clean", "updatenow", "updatecancel"];
+    public static IReadOnlyList<string> Requestable { get; } = ["drive", "undrive", "trees", "hold", "resume", "stop", "finish", "retry", "workflow", "pause", "unpause", "done", "delete", "land", "clean", "updatenow", "updatecancel", "handover"];
 
     /// <summary>The one line the desk's print says before its first fence.</summary>
     public const string Header =
@@ -73,6 +74,11 @@ public static class StewardCommand
         ["clean", var id] when Named(id) => ("clean", new { id }),
         ["update", "now"] => ("updatenow", new { }),
         ["update", "cancel"] => ("updatecancel", new { }),
+        ["hand-over", var id, "--agent", var agent] when Named(id) && Named(agent) => ("handover", new { id, agent }),
+        ["hand-over", var id, "--agent", var agent, "--account", var account] when Named(id) && Named(agent) && Named(account) =>
+            ("handover", new { id, agent, account }),
+        ["hand-over", var id, "--account", var account, "--agent", var agent] when Named(id) && Named(agent) && Named(account) =>
+            ("handover", new { id, agent, account }),
         _ => null,
     };
 
@@ -164,7 +170,8 @@ public static class StewardCommand
         var succeeded = envelope.TryGetProperty("success", out var success) && success.ValueKind == JsonValueKind.True;
         if (owners.Asked)
         {
-            await output.WriteLineAsync(owners.Ended($"{asked.Act} {string.Join(' ', args.Skip(1))}", succeeded)).ConfigureAwait(false);
+            var refusal = !succeeded && envelope.TryGetProperty("error", out var refused) ? refused : (JsonElement?)null;
+            await output.WriteLineAsync(owners.Ended($"{asked.Act} {string.Join(' ', args.Skip(1))}", succeeded, refusal)).ConfigureAwait(false);
             return succeeded ? 0 : 1;
         }
 
@@ -181,7 +188,9 @@ public static class StewardCommand
             ? asked.Act == "desk-decline"
                 ? $"steward: request {args[2]} declined with your reason, which the owner sees under the steward's line."
                 : $"steward: {asked.Act} {string.Join(' ', args.Skip(1))}: done, recorded as the steward's."
-            : $"steward: {asked.Act} {string.Join(' ', args.Skip(1))}: refused ({InstanceClient.Text(acted, "why")}); nothing was done.").ConfigureAwait(false);
+            : InstanceClient.Text(acted, "message") is { Length: > 0 } words
+                ? $"steward: {asked.Act} {string.Join(' ', args.Skip(1))}: refused ({InstanceClient.Text(acted, "why")}): {words} Nothing was done."
+                : $"steward: {asked.Act} {string.Join(' ', args.Skip(1))}: refused ({InstanceClient.Text(acted, "why")}); nothing was done.").ConfigureAwait(false);
         if (acted.TryGetProperty("roles", out var roles) && roles.ValueKind == JsonValueKind.Array)
         {
             var named = roles.EnumerateArray().Where(each => each.ValueKind == JsonValueKind.String).Select(each => each.GetString()!).ToList();

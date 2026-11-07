@@ -175,6 +175,7 @@ public static class StewardWhy
     public const string NothingToPause = "nothing-to-pause";
     public const string NothingStaged = "nothing-staged";
     public const string LandingPushes = "landing-pushes";
+    public const string OwnerHeld = "owner-held";
 }
 
 /// <summary>
@@ -203,6 +204,7 @@ public static class StewardActRows
         StewardRouteAct.Clean,
         new StewardUpdateAct(StewardActNames.UpdateNow, UpdateMode.Now),
         new StewardUpdateAct(StewardActNames.UpdateCancel, UpdateMode.NotNow),
+        new StewardHandOverAct(),
     ];
 
     /// <summary>

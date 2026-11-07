@@ -33,6 +33,9 @@ public sealed class StewardCommandTests : IDisposable
     [InlineData("clean s1", "clean", """{"id":"s1"}""")]
     [InlineData("update now", "updatenow", "{}")]
     [InlineData("update cancel", "updatecancel", "{}")]
+    [InlineData("hand-over s1 --agent codex", "handover", """{"id":"s1","agent":"codex"}""")]
+    [InlineData("hand-over s1 --agent codex --account work", "handover", """{"id":"s1","agent":"codex","account":"work"}""")]
+    [InlineData("hand-over s1 --account work --agent codex", "handover", """{"id":"s1","agent":"codex","account":"work"}""")]
     public void Each_verb_makes_its_route_s_exact_form(string words, string act, string form)
     {
         var read = StewardCommand.Read(words.Split(' '));
@@ -42,13 +45,18 @@ public sealed class StewardCommandTests : IDisposable
         Assert.Equal(form, JsonSerializer.Serialize(read.Value.Form));
     }
 
-    /// <summary>What is the owner's has no verb here: trees off, a decline, a hand-over, words, a forced clean or an update's later word.</summary>
+    /// <summary>
+    /// What is the owner's has no verb here: trees off, a decline, words, a forced clean, an update's later word, or a hand-over
+    /// naming no agent, which would leave the walk to pick one.
+    /// </summary>
     [Theory]
     [InlineData("trees engine off")]
     [InlineData("decline s1")]
     [InlineData("clean s1 --force")]
     [InlineData("update when-idle")]
-    [InlineData("hand-over s1 --agent codex")]
+    [InlineData("hand-over s1")]
+    [InlineData("hand-over s1 --account work")]
+    [InlineData("hand-over s1 --agent")]
     [InlineData("say s1 go on")]
     [InlineData("drive")]
     [InlineData("drive --key abc")]

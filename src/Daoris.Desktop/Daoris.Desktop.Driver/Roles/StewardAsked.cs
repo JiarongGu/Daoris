@@ -28,8 +28,21 @@ public sealed class StewardAsked(string id, TextWriter output)
         }
     }
 
-    /// <summary>What the verb says of an act the owner is asked: confirmed and done as theirs, or not done.</summary>
-    public string Ended(string act, bool done) => done
-        ? $"steward: {act}: the owner confirmed it in Daoris's window; it is recorded as the owner's."
-        : $"steward: {act}: the owner did not confirm it; nothing was done.";
+    /// <summary>
+    /// What the verb says of an act the owner is asked: confirmed and done as theirs, refused by its route's own judge before any
+    /// card with that judge's words, or not done.
+    /// </summary>
+    public string Ended(string act, bool done, JsonElement? error = null)
+    {
+        if (done) return $"steward: {act}: the owner confirmed it in Daoris's window; it is recorded as the owner's.";
+        if (error is { ValueKind: JsonValueKind.Object } refused && InstanceClient.Text(refused, "code") == NotAllowed)
+        {
+            return $"steward: {act}: refused before the owner was asked: {InstanceClient.Text(refused, "message")} Nothing was done.";
+        }
+
+        return $"steward: {act}: the owner did not confirm it; nothing was done.";
+    }
+
+    // The pipe's code for a press its route's own judge refuses once its grounds are read, before any card is raised.
+    private const string NotAllowed = "not-allowed";
 }

@@ -58,6 +58,8 @@ public sealed class RoleActTests : IDisposable
         { "updatecancel", "{}" },
         { "land", """{"id":"s1"}""" },
         { "clean", """{"id":"s1"}""" },
+        { "handover", """{"id":"s1","agent":"codex"}""" },
+        { "handover", """{"id":"s1","agent":"codex","account":"work"}""" },
     };
 
     [Theory]
@@ -68,7 +70,7 @@ public sealed class RoleActTests : IDisposable
 
         Assert.Equal(
             ["drive", "undrive", "trees", "hold", "resume", "stop", "finish", "retry", "workflow",
-             "pause", "unpause", "done", "delete", "land", "clean", "updatenow", "updatecancel"],
+             "pause", "unpause", "done", "delete", "land", "clean", "updatenow", "updatecancel", "handover"],
             StewardActs.Table.Keys);
         var judged = Act(judge, key, act, form);
         Assert.True(judged.Covered, judged.Why);
@@ -85,6 +87,11 @@ public sealed class RoleActTests : IDisposable
     [InlineData("finish", """{"id":"s1","state":"declined","said":true}""", "form")]
     [InlineData("stop", """{"id":"s1"}""", "form")]
     [InlineData("retry", """{"quest":"q1","session":"s1"}""", "form")]
+    [InlineData("handover", """{"id":"s1"}""", "form")]
+    [InlineData("handover", """{"id":"s1","account":"work"}""", "form")]
+    [InlineData("handover", """{"id":"s1","agent":"codex","said":true}""", "form")]
+    [InlineData("handover", """{"id":"s1","agent":"codex","model":"large"}""", "form")]
+    [InlineData("handover", """{"id":"s1","agent":"codex","why":"limit"}""", "form")]
     public void Anything_but_the_exact_form_is_refused(string act, string form, string? why)
     {
         var (judge, key) = Appointed();

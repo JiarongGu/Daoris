@@ -115,9 +115,11 @@ public sealed class HandOverAskJudgeTests
         var agent = HandOverAskNotes.Asked("codex-acp");
         var terminal = HandOverAskNotes.AskedBy(HandOverAsker.Terminal, "codex-acp");
         var window = HandOverAskNotes.AskedBy(HandOverAsker.Window, "codex-acp");
+        var steward = HandOverAskNotes.AskedBy(HandOverAsker.Steward, "codex-acp");
 
-        Assert.Equal(["handover.asked", "handover.asked-terminal", "handover.asked-window"],
-            [agent.Parts[0].Code, terminal.Parts[0].Code, window.Parts[0].Code]);
+        Assert.Equal(["handover.asked", "handover.asked-terminal", "handover.asked-window", "handover.asked-steward"],
+            [agent.Parts[0].Code, terminal.Parts[0].Code, window.Parts[0].Code, steward.Parts[0].Code]);
+        Assert.Equal("The steward asked to hand this session over to codex-acp: Daoris takes it at its next look.", steward.Note);
         Assert.StartsWith("Its agent asked to hand this session over", agent.Note, StringComparison.Ordinal);
         Assert.Equal("You asked at a terminal to hand this session over to codex-acp: Daoris takes it at its next look.", terminal.Note);
         Assert.Equal("You asked in the window to hand this session over to codex-acp: Daoris takes it at its next look.", window.Note);

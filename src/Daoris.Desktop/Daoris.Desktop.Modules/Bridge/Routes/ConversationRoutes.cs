@@ -244,8 +244,9 @@ public sealed class ConversationRoutes(DriverContext context)
                 .ConfigureAwait(false);
             if (answer.Kept)
             {
-                // The session's record names who asked, the person by the window's press.
-                HandOverAskNotes.Say(_loop.Events, _loop.Output, id, HandOverAskNotes.AskedBy(HandOverAsker.Window, agent));
+                // The session's record names who asked: the steward where its granted act runs this route, else the person by the window's press.
+                var asker = PipeDoor.Role?.Role == AppointedRoles.Steward ? HandOverAsker.Steward : HandOverAsker.Window;
+                HandOverAskNotes.Say(_loop.Events, _loop.Output, id, HandOverAskNotes.AskedBy(asker, agent));
                 SessionWatch.Of(_loop.Events).Pressed(id);
                 _loop.Nudge();
             }
