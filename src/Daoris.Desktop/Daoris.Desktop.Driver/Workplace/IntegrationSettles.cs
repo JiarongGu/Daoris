@@ -135,19 +135,19 @@ internal static class IntegrationSettles
     private static string Commits(int count) => count == 1 ? "commit" : "commits";
 
     /// <summary>What a member's judgement is made from, read of git: where its branch stands now, where the unit began, and what of the line is its own work.</summary>
-    private sealed record Read(string BranchTip, string Fork, IReadOnlySet<string> Own);
+    internal sealed record Read(string BranchTip, string Fork, IReadOnlySet<string> Own);
 
-    private static async Task<(Read? Read, string? Unread)> ReadAsync(
+    internal static async Task<(Read? Read, string? Unread)> ReadAsync(
         string root, IntegrationCandidate candidate, IntegrationMember member, IntegrationRequest request, CancellationToken ct)
     {
         // A branch the landing's tidy removed holds nothing after its frozen tip.
         var (branchCode, branchOut, branchErr) = await WorkingTree.GitAsync(root, ["rev-parse", "--verify", "--quiet", $"refs/heads/{request.Branch}^{{commit}}"], ct).ConfigureAwait(false);
-        if (branchCode > 1) return (null, $"git could not read `{request.Branch}` ({ContentHolds.Said(branchErr)}): nothing was written, and it is asked again at the next look.");
+        if (branchCode is not (0 or 1)) return (null, $"git could not read `{request.Branch}` ({ContentHolds.Said(branchErr)}): nothing was written, and it is asked again at the next look.");
         var branchTip = branchCode == 0 && branchOut.Trim().Length > 0 ? branchOut.Trim() : request.Tip;
 
         // Where the unit began is the commit its work and the line first shared: what the line changed after it is the line's side.
         var (forkCode, forkOut, forkErr) = await WorkingTree.GitAsync(root, ["merge-base", request.Tip, candidate.Base], ct).ConfigureAwait(false);
-        if (forkCode > 1) return (null, $"git could not find where `{request.Branch}` began ({ContentHolds.Said(forkErr)}): nothing was written, and it is asked again at the next look.");
+        if (forkCode is not (0 or 1)) return (null, $"git could not find where `{request.Branch}` began ({ContentHolds.Said(forkErr)}): nothing was written, and it is asked again at the next look.");
         var fork = forkCode == 0 && forkOut.Trim().Length > 0 ? forkOut.Trim() : candidate.Base;
 
         // The unit's own landed work: its merge commit and the commits the merge brought in, which supersede nothing.
