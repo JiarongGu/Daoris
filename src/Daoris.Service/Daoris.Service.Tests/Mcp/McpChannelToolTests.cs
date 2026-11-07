@@ -87,10 +87,7 @@ public sealed class McpChannelToolTests : IAsyncLifetime
         Assert.DoesNotContain("use the older bridge", again);
     }
 
-    /// <summary>
-    /// 🔴 A member outside Daoris is read as such: not "another session's claim", and named by its agent where it said no repository, so
-    /// the line never opens on an empty name (rule 17).
-    /// </summary>
+    /// <summary>🔴 A member's message reads as an outside agent's claim, never a session's, even with no repository said.</summary>
     [Fact]
     public async Task A_read_says_an_agent_outside_Daoris_wrote_a_member_s_message()
     {
