@@ -5,7 +5,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// AGENTPROVIDER1l's census of the native door's work frames (D228): a child's or a background task's start and end are read off Claude Code's
+/// Census of the native door's work frames: a child's or a background task's start and end are read off Claude Code's
 /// stream by its two readers alone (<see cref="NativeChildren"/>, <see cref="NativeTasks"/>), so no other driver source names a task frame's
 /// subtype or a subagent's task type in code, and the run's own ending takes no frame: it reads those readings, as the streams beside do.
 /// </summary>

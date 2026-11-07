@@ -5,7 +5,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// COWORKVIEW1a (the design §3.6, *who holds the token*): the lineage tokens one Daoris process issues, each held from its issue,
+/// Who holds the token: the lineage tokens one Daoris process issues, each held from its issue,
 /// watched once handed its process, kept unwatched where it cannot be, and gone once its process's exit is seen or no process ever ran
 /// under it, each move told; and the issuer each start names, which a reader compares with itself.
 /// </summary>
@@ -105,7 +105,7 @@ public sealed class LineageTokensTests
     }
 }
 
-/// <summary>COWORKVIEW1a: a watched token leaves at its process's real exit, seen through the set's own handle, told once.</summary>
+/// <summary>A watched token leaves at its process's real exit, seen through the set's own handle, told once.</summary>
 [Trait(Category.Name, Category.Process)]
 public sealed class LineageTokensProcessTests
 {

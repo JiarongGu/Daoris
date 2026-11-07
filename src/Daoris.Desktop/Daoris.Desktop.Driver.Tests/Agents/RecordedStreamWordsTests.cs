@@ -4,9 +4,9 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// The streams beside and the run's own ending read a child's and a background task's start and end from their readings alone
-/// (AGENTPROVIDER1l): every recorded Claude Code stream through the native capture, with a console and without one, says its transcript, its
-/// console, its streams and its ending byte for byte as the capture said them when each reader read those off the frame
+/// The streams beside and the run's own ending read a child's and a background task's start and end from their readings alone:
+/// every recorded Claude Code stream through the native capture, with a console and without one, says its transcript, its
+/// console, its streams and its ending byte for byte as recorded
 /// (<c>fixtures/native/recorded-words.txt</c>, written by that capture).
 /// </summary>
 public sealed class RecordedStreamWordsTests : IDisposable

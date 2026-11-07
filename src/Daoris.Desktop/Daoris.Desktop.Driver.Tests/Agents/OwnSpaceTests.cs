@@ -4,14 +4,14 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// OWNSPACE1a (D175 points 1-3 and its OWNSPACE1a note): every start Daoris makes runs in a configuration home Daoris owns. Where
+/// Every start Daoris makes runs in a configuration home Daoris owns. Where
 /// a start's scope names no account, the agent's Daoris accounts on this machine are its list; with none signed in it waits, with
 /// one sentence, and nothing is spawned; a record that began in the person's own tool home resumes there; a test double, whose own
 /// home is nobody's, is exempt.
 /// </summary>
 /// <remarks>
 /// Nothing here starts a process: the agent is present by a file look (<see cref="TestAgent.ProbeByPresence"/>), as
-/// <c>SignedOutWaitTests</c>' is, and declares no login question, so an account never read runs (SES3). Each start kind is asked
+/// <c>SignedOutWaitTests</c>' is, and declares no login question, so an account never read runs. Each start kind is asked
 /// through the roster's door its own site asks, and its answer is applied as the spawn applies it (<see cref="Shell.Equip"/>).
 /// </remarks>
 public sealed class OwnSpaceTests : IDisposable
@@ -113,13 +113,12 @@ public sealed class OwnSpaceTests : IDisposable
         Assert.Equal("held.no-account", part.Code);
         Assert.Equal("fake", part.Value("owner"));
         Assert.Equal(("fake", 0), (selection.SignedOut!.Agent, selection.SignedOut.Accounts.Count));
-        // OWNSPACE1b-B (D175 point 3): the page learns "no account" from this fact, never from the empty list.
+        // The page learns "no account" from this fact, never from the empty list.
         Assert.True(selection.SignedOut.NoAccount);
     }
 
     /// <summary>
-    /// Rewritten by POOL1a2 (D197 point 1; the account-pool design §2.1, §2.4): with nothing named, accounts all signed out once held
-    /// with the no-account sentence, which sends the person to sign in a new one. They are the set's now, an order every start
+    /// With nothing named, accounts all signed out are the set's, an order every start
     /// reads, so the hold is the set's: each account named with its own sign-in, since a signed-out account stays in the set until
     /// signed in again. <c>held.no-account</c> stays the sentence of an agent with no account at all (above).
     /// </summary>
@@ -173,7 +172,7 @@ public sealed class OwnSpaceTests : IDisposable
     }
 
     /// <summary>
-    /// 🔴 And against the set (D197 point 3; the account-pool design §3 point 5, Fable's F1): once the come-up has folded Daoris's
+    /// And against the set: once the come-up has folded Daoris's
     /// accounts into one order, a record begun in the person's own sign-in still goes on there; the set never displaces it.
     /// </summary>
     [Theory]
@@ -226,7 +225,7 @@ public sealed class OwnSpaceTests : IDisposable
 
     /// <summary>
     /// 🔴 A resume of a record begun in the tool's own home goes on there, but where its words are carried to a NEW record (its
-    /// conversation could not go on), that record is a new start: it takes the walk (D130 §16.2), and holds where the walk holds,
+    /// conversation could not go on), that record is a new start: it takes the walk, and holds where the walk holds,
     /// never a new session in the person's home.
     /// </summary>
     [Fact]

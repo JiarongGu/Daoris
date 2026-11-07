@@ -12,14 +12,14 @@ internal enum ParityCorrespondence
     /// <summary>A time: the same instant, or the same interval from the run's start; a named library clock within its interval.</summary>
     Time,
 
-    /// <summary>The library clock a time was read on: named on the layer path alone, and only a clock the projection names.</summary>
+    /// <summary>The library clock a time is read on: named on the layer path alone, and only a clock the projection names.</summary>
     Clock,
 }
 
 /// <summary>
 /// The projection (the agent-lyntai design §6.3 point 3): the fields that name the path, fixed here before any move and never grown inside
 /// one. Every other field is compared exactly and in order: semantic outcomes, payloads, the order of writes and of lines. A recovery, a
-/// limit's end, a delivery, an access disposition, what was hit and a write's place are never here, so no correspondence lets one change.
+/// limit's end, a delivery, an access disposition, what is hit and a write's place are never here, so no correspondence lets one change.
 /// A field a move would need added is a correction or a request before the move.
 /// </summary>
 internal static class ParityProjection
@@ -44,10 +44,10 @@ internal static class ParityProjection
 
     public const string Clock = "clock";
 
-    /// <summary>The usage source's own clock, which no seam reaches (Lyntai's <c>CliUsageSource</c>, AG20).</summary>
+    /// <summary>The usage source's own clock, which no seam reaches (Lyntai's <c>CliUsageSource</c>).</summary>
     public const string UsageSourceClock = "lyntai:usage-source";
 
-    /// <summary>The Claude reader's clock, a relative reset read against it until LQ16 widened hands that reader the host's.</summary>
+    /// <summary>The Claude reader's clock, against which a relative reset is read.</summary>
     public const string ClaudeReaderClock = "lyntai:claude-reader";
 
     public static IReadOnlyDictionary<string, ParityCorrespondence> Fields { get; } = new Dictionary<string, ParityCorrespondence>

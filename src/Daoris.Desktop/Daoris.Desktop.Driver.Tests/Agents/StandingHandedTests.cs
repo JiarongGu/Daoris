@@ -3,10 +3,9 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// KNOWUSE1b (D135 §3) as CONTEXTONE1c places it (D230 point 4): a standing answer the person keeps for a repository on this machine
+/// A standing answer the person keeps for a repository on this machine
 /// (<c>standing</c> in <c>driver.json</c>) is handed to every session there as the person's choices in its standing block: a claim, a
-/// resume, a carry-on on any account and a follow-up step alike, and none once it is cleared. The owner's development-first answer was
-/// given once, on one quest, and read by no later session (`docs/2026-10-03-knowledge-use-evidence.md` §5.1).
+/// resume, a carry-on on any account and a follow-up step alike, and none once it is cleared.
 /// </summary>
 public sealed class StandingHandedTests
 {
@@ -66,7 +65,7 @@ public sealed class StandingHandedTests
         Assert.DoesNotContain(Says, prompt);
     }
 
-    /// <summary>Gone once removed: a repository with none, and one whose answer was cleared, read exactly as they did.</summary>
+    /// <summary>Gone once removed: a repository with none, and one whose answer is cleared, read the same.</summary>
     [Fact]
     public void A_repository_with_none_or_one_cleared_is_handed_nothing()
     {

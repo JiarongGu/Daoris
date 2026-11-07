@@ -5,7 +5,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// The driver hands every session it starts the rules composed for it (PERM1, D72), through a REAL
+/// The driver hands every session it starts the rules composed for it, through a REAL
 /// tick: a real process, spawned by the executor, against a stand-in service on a loopback port. What
 /// is asserted is what the harness would have been handed — on each door — and that the file goes when
 /// the session does. No model anywhere, and no account.
@@ -67,10 +67,10 @@ public sealed class PermissionSpawnTests : IDisposable
         Assert.Contains("Bash(git push:*)", deny);
         Assert.Contains("Bash(git -* push)", deny);
         Assert.Contains("Bash(rm -rf:*)", deny);
-        // D241 point 7: what Daoris keeps for git is no session's to read, and the session's access record is begun at its start.
+        // What Daoris keeps for git is no session's to read, and the session's access record is begun at its start.
         Assert.Contains(GitSessionHolds.ProfileDeny(_home), deny);
         Assert.Equal("engine", Assert.Single(GitSessionAccess.All(_home)).Repository);
-        // UNBLOCK4: the same file tells auto mode's classifier a push in any form is the person's, the
+        // The same file tells auto mode's classifier a push in any form is the person's, the
         // harness's own hard denials named first so they are kept.
         HoldsThePushInAutoMode(handed);
 
@@ -86,8 +86,8 @@ public sealed class PermissionSpawnTests : IDisposable
     }
 
     /// <summary>
-    /// The tree guard (PERM3) rides the same file, naming the tree THIS session works in — the
-    /// executor's own, never re-derived by the hook — and the commit the session may make (PERM4).
+    /// The tree guard rides the same file, naming the tree THIS session works in — the
+    /// executor's own, never re-derived by the hook — and the commit the session may make.
     /// </summary>
     [Fact]
     public async Task A_session_is_handed_the_tree_guard_on_its_own_tree_and_may_commit()
@@ -109,8 +109,8 @@ public sealed class PermissionSpawnTests : IDisposable
     }
 
     /// <summary>
-    /// A session may READ the folder its quest's files are kept in (INT4j), and nothing else under the
-    /// home: they live outside its tree, and a read there would otherwise be asked, and refused (D52).
+    /// A session may READ the folder its quest's files are kept in, and nothing else under the
+    /// home: they live outside its tree, and a read there would otherwise be asked, and refused.
     /// </summary>
     [Fact]
     public async Task A_session_may_read_its_quests_kept_files_and_nothing_else_of_the_home()
@@ -145,7 +145,7 @@ public sealed class PermissionSpawnTests : IDisposable
     }
 
     /// <summary>
-    /// D107, by default: a session may read its workspace's other checkouts — a read and two read-only git
+    /// By default a session may read its workspace's other checkouts — a read and two read-only git
     /// commands — and write none of them, refused by rule as well as by the tree guard. Another workspace's
     /// checkout is refused its read too. The instruction names what it may read, where.
     /// </summary>
@@ -177,7 +177,7 @@ public sealed class PermissionSpawnTests : IDisposable
     }
 
     /// <summary>
-    /// D107: a checkout switched off is refused its read, and a declared relationship lets the session edit
+    /// A checkout switched off is refused its read, and a declared relationship lets the session edit
     /// and commit in its target — the tree guard naming the target after the tree — and says so.
     /// </summary>
     [Fact]
@@ -205,7 +205,7 @@ public sealed class PermissionSpawnTests : IDisposable
     }
 
     /// <summary>
-    /// An agent's narrowing (PERM2) is settled at the START of a tick, so the session that tick spawns
+    /// An agent's narrowing is settled at the START of a tick, so the session that tick spawns
     /// is already handed the narrower rules — "applies at the next tick" means this one's spawns too.
     /// </summary>
     [Fact]
@@ -239,7 +239,7 @@ public sealed class PermissionSpawnTests : IDisposable
 
     /// <summary>
     /// The connector the driver offers names THIS session and the home its rules live in, so a proposal
-    /// says who made it and lands beside the rules it would change (PERM2) — an intake's ask rides too.
+    /// says who made it and lands beside the rules it would change — an intake's ask rides too.
     /// </summary>
     [Fact]
     public void The_connector_carries_the_session_and_the_rules_home_beside_an_intakes_scope()
@@ -254,7 +254,7 @@ public sealed class PermissionSpawnTests : IDisposable
         Assert.Equal("i9n8t7k6", intake[IntakeRoom.SessionVariable]);
     }
 
-    /// <summary>COWORKVIEW1a: a connector entry composed for one process carries that process's token, and one for none carries none.</summary>
+    /// <summary>A connector entry composed for one process carries that process's token, and one for none carries none.</summary>
     [Fact]
     public void The_connector_entry_carries_its_process_s_lineage_token()
     {
@@ -269,7 +269,7 @@ public sealed class PermissionSpawnTests : IDisposable
 
     /// <summary>
     /// 🔴 On the protocol door the rules ride `session/new` — the stand-in agent writes down the `_meta`
-    /// it was given, and the file it names is the one composed for this session.
+    /// it is given, and the file it names is the one composed for this session.
     /// </summary>
     [Fact]
     public async Task A_protocol_door_session_is_handed_them_on_session_new()
@@ -288,11 +288,11 @@ public sealed class PermissionSpawnTests : IDisposable
         Assert.Equal(adapter.Handed, settings);
         using var handed = JsonDocument.Parse(adapter.HandedText!);
         Assert.Contains("Bash(make:*)", handed.RootElement.GetProperty("permissions").GetProperty("allow").EnumerateArray().Select(e => e.GetString()));
-        // The door auto mode runs on (D81), so the one where the classifier's hard denial counts.
+        // The door auto mode runs on, so the one where the classifier's hard denial counts.
         HoldsThePushInAutoMode(handed);
     }
 
-    /// <summary>What the pipe door was handed: the allow and deny lists, and the tree guard's arguments.</summary>
+    /// <summary>What the pipe door is handed: the allow and deny lists, and the tree guard's arguments.</summary>
     private static (List<string> Allow, List<string> Deny, List<string> Args) Handed(RecordingPipeAdapter adapter)
     {
         using var handed = JsonDocument.Parse(adapter.HandedText!);
@@ -322,7 +322,7 @@ public sealed class PermissionSpawnTests : IDisposable
             harnesses: new HarnessRoster(adapters, DaorisHome.Entry(_home, HomeEntry.Harnesses)));
     }
 
-    /// <summary>A pipe-door harness that takes a settings file, and remembers what it was handed.</summary>
+    /// <summary>A pipe-door harness that takes a settings file, and remembers what it is handed.</summary>
     private sealed class RecordingPipeAdapter : ISpawn
     {
         private readonly ISpawn _stub = TestDoors.SpawnOf(BuiltDoors.Stub);
@@ -331,7 +331,7 @@ public sealed class PermissionSpawnTests : IDisposable
         public string? Handed { get; private set; }
         public string? HandedText { get; private set; }
 
-        /// <summary>The instruction the session was given, as every door composes it.</summary>
+        /// <summary>The instruction the session is given, as every door composes it.</summary>
         public string Prompt { get; private set; } = "";
 
         public ProcessRecipe Start(SpawnRequest request)

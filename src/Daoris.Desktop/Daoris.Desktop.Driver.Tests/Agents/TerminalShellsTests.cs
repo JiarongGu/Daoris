@@ -3,7 +3,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// CONSOLE4 (D96): which shells a terminal offers. PowerShell 7 when it is installed, else Windows
+/// Which shells a terminal offers. PowerShell 7 when it is installed, else Windows
 /// PowerShell, then whatever else the machine has — found on PATH by the plugin door's resolver, never a
 /// third one.
 /// </summary>

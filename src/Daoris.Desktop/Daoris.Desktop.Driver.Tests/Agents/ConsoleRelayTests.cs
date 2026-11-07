@@ -3,7 +3,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// The relay (D49 §2): lines out a window at a time, grouped by session. Per-line messages would be
+/// The relay: lines out a window at a time, grouped by session. Per-line messages would be
 /// correct and unkind — a session can emit thousands in a second, and a bridge carrying one message
 /// each turns watching into a stalled window.
 /// </summary>
@@ -33,7 +33,7 @@ public sealed class ConsoleRelayTests
     }
 
     /// <summary>
-    /// A second destination on the pump costs the first one nothing (SURF8) — the tee is an event,
+    /// A second destination on the pump costs the first one nothing — the tee is an event,
     /// not a single delegate, so subscribing does not consume.
     /// </summary>
     /// <remarks>

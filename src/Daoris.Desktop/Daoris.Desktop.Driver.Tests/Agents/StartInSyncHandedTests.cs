@@ -3,9 +3,9 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// LANDSYNC2 (D87's 2026-10-15 amendment point 7): a session going on in an old tree starts from the line, and is told so. The words
+/// A session going on in an old tree starts from the line, and is told so. The words
 /// (<see cref="TreeStartWords"/>) and where an instruction carries them: before the close paragraph, the driver's own words, on a
-/// resume, a carry-on and a further part alike. Without them the instruction reads as it did.
+/// resume, a carry-on and a further part alike. Without them the instruction carries no such words.
 /// </summary>
 public sealed class StartInSyncHandedTests
 {
@@ -48,7 +48,7 @@ public sealed class StartInSyncHandedTests
         Assert.DoesNotContain("Before this turn", TargetPrompt.Compose(TargetPromptGoldenTests.Part));
     }
 
-    /// <summary>What moved: what the line held was left out, and what of the tree's own was replayed onto which commit of the line.</summary>
+    /// <summary>What moved: what the line held is left out, and what of the tree's own is replayed onto which commit of the line.</summary>
     [Fact]
     public void A_tree_brought_up_to_date_says_what_was_left_out_and_what_was_replayed()
     {
@@ -60,7 +60,7 @@ public sealed class StartInSyncHandedTests
         Assert.Contains("and the tree now stands on `main` with nothing of its own beyond it.", TreeStartWords.Moved("main", "main", 2, 0));
     }
 
-    /// <summary>A conflict, or any reason it was left, is told with the ask to replay its own commits onto the line itself (point 5).</summary>
+    /// <summary>A conflict, or any reason it is left, is told with the ask to replay its own commits onto the line itself.</summary>
     [Fact]
     public void A_tree_left_as_it_was_is_asked_to_replay_its_own_commits_onto_the_line()
     {
@@ -74,7 +74,7 @@ public sealed class StartInSyncHandedTests
         Assert.Equal("Before this turn Daoris judged this tree against `main`, and the line holds none of its work.", TreeStartWords.HoldsNone("main"));
     }
 
-    /// <summary>A detached tree's own press says what the line held apart from what became empty (LANDSYNC3).</summary>
+    /// <summary>A detached tree's own press says what the line held apart from what became empty.</summary>
     [Fact]
     public void A_detached_trees_replay_says_what_the_line_held_apart_from_what_became_empty()
     {

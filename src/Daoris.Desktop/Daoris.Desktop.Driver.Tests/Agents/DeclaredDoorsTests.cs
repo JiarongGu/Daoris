@@ -3,9 +3,9 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// AGENTPROVIDER1 row q (the agent-provider design §4.8): a plugin's manifest is converted to a <see cref="DeclaredDoor"/> and Agents' factory
+/// A plugin's manifest is converted to a <see cref="DeclaredDoor"/> and Agents' factory
 /// makes it a contract door on the protocol transport, its identity and its home its own, so the family table, the joined door's reads and
-/// the manifest's ignored fields are what they were when a class stood for it.
+/// the manifest's ignored fields are those of a door a class stands for.
 /// </summary>
 public sealed class DeclaredDoorsTests : IDisposable
 {

@@ -3,10 +3,10 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// LANG1c (D142 point 6, the language design §7): where the work sets a session language, one line naming it is handed beside
+/// Where the work sets a session language, one line naming it is handed beside
 /// the close instruction it governs, in the claiming, resuming, carrying-on and intake instructions and a resumed
-/// conversation's appendix; where none is set, every instruction is byte for byte what it was, which the golden files under
-/// <c>golden/</c> hold unchanged. Never a chat's nor Ask Daoris's: neither composes from a target.
+/// conversation's appendix; where none is set, every instruction is byte for byte the golden file's under
+/// <c>golden/</c>. Never a chat's nor Ask Daoris's: neither composes from a target.
 /// </summary>
 public sealed class SessionLanguageHandedTests
 {
@@ -74,7 +74,7 @@ public sealed class SessionLanguageHandedTests
 
     /// <summary>
     /// A resumed conversation is told again after the person's words and the go-aheads' answers, since the setting may have
-    /// changed since it was handed it; with none set, the appendix is what it was.
+    /// changed in between; with none set, the appendix is the plain one.
     /// </summary>
     [Fact]
     public void A_resumed_conversation_is_told_after_its_appendix_and_only_where_one_is_set()

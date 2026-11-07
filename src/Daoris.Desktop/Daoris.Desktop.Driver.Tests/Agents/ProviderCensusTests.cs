@@ -6,7 +6,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// AGENTPROVIDER1 row a (the agent-provider design §9, D213): every site in the desktop's code that knows a provider by a string or a
+/// Every site in the desktop's code that knows a provider by a string or a
 /// type is counted, and each is a named exception with the row that moves it, so a later row moves named sites and a new one cannot
 /// appear unnoticed. The fixture is <c>fixtures/provider-census.json</c> (the exceptions, the providers' folders and the declared
 /// references between them); the ids and the words are the registrations' own, <see cref="ProviderVocabulary"/>.
@@ -21,7 +21,7 @@ namespace Daoris.Desktop.Driver.Tests;
 /// (a qualified, aliased or statically imported reference carries the name and counts; a different type of the same name would too, and
 /// is named as another sense below). One reading for three projects keeps the exceptions in one table.</para>
 /// <para><b>Outside the providers' folders</b> every site is an exception, listed by file and token with its reason; how many times a listed
-/// file names a token is not pinned (CENSUSRULES1). <b>Inside</b> <c>Agents/Providers/&lt;Id&gt;/</c>
+/// file names a token is not pinned. <b>Inside</b> <c>Agents/Providers/&lt;Id&gt;/</c>
 /// a provider's folder names another provider's type, variable or wire key only where the fixture declares that reference;
 /// <c>Agents/Registry/Providers.cs</c>, the one registration list, names registrations and nothing else.</para>
 /// </remarks>
@@ -150,7 +150,7 @@ public sealed class ProviderCensusTests
     {
         var problems = new List<string>();
         var owners = TheTokens.Value.ToDictionary(token => token.Name, token => token.Owner, StringComparer.Ordinal);
-        // How often a listed file names a token is not the rule's (CENSUSRULES1): a file and token that are listed pass at any count.
+        // How often a listed file names a token is not the rule's: a file and token that are listed pass at any count.
         var allowed = fixture.Exceptions.Select(each => (each.File, each.Token)).ToHashSet();
         foreach (var (file, counts) in found.OrderBy(each => each.Key, StringComparer.Ordinal))
         {
@@ -275,7 +275,7 @@ public sealed class ProviderCensusTests
             $"expected {token} named in {file}, got: {string.Join(" | ", problems)}");
     }
 
-    /// <summary>A second site in a file that already holds a named one passes, and a named one gone is named: the sites are not counted (CENSUSRULES1).</summary>
+    /// <summary>A second site in a file that already holds a named one passes, and a named one gone is named: the sites are not counted.</summary>
     [Fact]
     public void A_site_added_to_a_named_file_passes_and_one_gone_from_it_is_named_by_the_census()
     {

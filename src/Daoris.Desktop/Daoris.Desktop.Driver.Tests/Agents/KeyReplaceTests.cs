@@ -3,7 +3,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// KEYREPLACE1a: a key its provider refused is replaced in the same account (D125's ACCTUX1 note). The account keeps its
+/// A key its provider refused is replaced in the same account. The account keeps its
 /// id, so its name, lists and defaults stand; what marked it refused, its last reading and its cool-off, is cleared. The
 /// CLI's <c>replaceKeyAccount</c> is the twin, over the same <c>keys.json</c>.
 /// </summary>

@@ -3,7 +3,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// One reader of Claude Code's <c>stream-json</c> (AGENTPROVIDER1l): the capture reads each line into one <see cref="NativeFrame"/>, and the
+/// One reader of Claude Code's <c>stream-json</c>: the capture reads each line into one <see cref="NativeFrame"/>, and the
 /// children it says (<see cref="NativeChildren"/>), the streams beside and the dialect's mapper each take that frame, never the text to parse
 /// again.
 /// </summary>

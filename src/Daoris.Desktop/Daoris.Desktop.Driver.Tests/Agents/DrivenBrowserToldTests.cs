@@ -3,8 +3,8 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// BRWHINT1b (D78): a quest's session and an intake are told the browser they were handed, in BRWHINT1a's one line, as a block
-/// of their own, and say nothing where none was handed.
+/// A quest's session and an intake are told the browser they were handed, in one line, as a block
+/// of their own, and say nothing where none is handed.
 /// </summary>
 public sealed class DrivenBrowserToldTests
 {

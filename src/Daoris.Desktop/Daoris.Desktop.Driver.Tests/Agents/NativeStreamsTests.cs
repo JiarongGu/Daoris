@@ -5,8 +5,8 @@ using Daoris.Driver;
 namespace Daoris.Driver.Tests;
 
 /// <summary>
-/// CONSOLE3c: what a session on the native door runs beside itself, read off <c>stream-json</c> as the
-/// probe recorded it (docs/2026-09-30-console3-native-streams-evidence.md): a task announced on a
+/// What a session on the native door runs beside itself, read off <c>stream-json</c> as the
+/// probe recorded it: a task announced on a
 /// <c>system</c> line, a subagent's lines marked by <c>parent_tool_use_id</c>, a command's output read
 /// from the file the harness names, and each ending in the wire's own word.
 /// </summary>
@@ -82,14 +82,14 @@ public sealed class NativeStreamsTests : IDisposable
         Assert.DoesNotContain("# console3 room", said);
     }
 
-    /// <summary>A native turn that backgrounded its gates and ended (BGWAIT1c), shaped on the console3 probe's lines.</summary>
+    /// <summary>A native turn that backgrounded its gates and ended, shaped on a probe's lines.</summary>
     private static readonly string[] BackgroundCut = File.ReadAllLines(Path.Combine(
             Daoris.Desktop.Driver.Tests.WorkspaceRoot.Folder, "src", "Daoris.Desktop", "Daoris.Desktop.Driver.Tests", "fixtures", "native", "claude-background-cut.stream.jsonl"))
         .Where(line => line.Length > 0)
         .ToArray();
 
     /// <summary>
-    /// BGWAIT1c: the background work the harness ended with the turn is read off the stream as the run's ending, whether or not a
+    /// The background work the harness ended with the turn is read off the stream as the run's ending, whether or not a
     /// console keeps the streams that take the task lines: a command still running at the turn's <c>result</c> and ended after it,
     /// never one that finished before, and never a subagent's.
     /// </summary>
@@ -108,7 +108,7 @@ public sealed class NativeStreamsTests : IDisposable
     }
 
     /// <summary>
-    /// BGWAIT1c: what is no cut. The stream ending at the turn's end, with the work's end unsaid; the work ending before the turn's
+    /// What is no cut. The stream ending at the turn's end, with the work's end unsaid; the work ending before the turn's
     /// end; a subagent; and a run begun again, which reads its own lines alone.
     /// </summary>
     [Fact]
@@ -136,8 +136,8 @@ public sealed class NativeStreamsTests : IDisposable
     }
 
     /// <summary>
-    /// BGWAIT1c at the capture's close: Daoris ended the process at its turn's end after the harness killed its command and before it wrote the
-    /// notification, so the update's word is the command's end and the run's ending cuts it; its stream ends with its session, as before.
+    /// At the capture's close: Daoris ended the process at its turn's end after the harness killed its command and before it wrote the
+    /// notification, so the update's word is the command's end and the run's ending cuts it; its stream ends with its session.
     /// </summary>
     [Fact]
     public async Task A_command_killed_after_the_turn_with_no_notification_is_cut_at_the_capture_s_close()
@@ -172,7 +172,7 @@ public sealed class NativeStreamsTests : IDisposable
     }
 
     /// <summary>
-    /// AGENTPROVIDER1l: a child's and a background task's start and end reach the streams beside and the run's own ending as readings alone, no
+    /// A child's and a background task's start and end reach the streams beside and the run's own ending as readings alone, no
     /// frame saying them, and a child's lines still go to the stream its start's call opened.
     /// </summary>
     [Fact]
@@ -228,7 +228,7 @@ public sealed class NativeStreamsTests : IDisposable
         Assert.Contains("  background: watcher ended with its session", output.Tail("s2").Lines.Select(line => line.Text));
     }
 
-    /// <summary>With nowhere to keep streams, every line is the session's, as before CONSOLE3c.</summary>
+    /// <summary>With nowhere to keep streams, every line is the session's.</summary>
     [Fact]
     public async Task Without_a_console_a_childs_line_is_the_sessions_as_before()
     {

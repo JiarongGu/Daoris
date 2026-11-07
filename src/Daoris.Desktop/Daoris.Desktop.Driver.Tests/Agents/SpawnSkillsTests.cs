@@ -5,9 +5,9 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// A plugin's skills handed at spawn (HELPPLUG1b, D170 point 4): each contributing plugin's skills for one destination copied,
+/// A plugin's skills handed at spawn: each contributing plugin's skills for one destination copied,
 /// per session, into a harness plugin of its own under the home's <c>spawn/</c>, and the harness pointed at it by its own
-/// session-only door (<c>--plugin-dir</c>, measured on Claude Code 2.1.299 in an untrusted folder; D170's note). Never into a
+/// session-only door (<c>--plugin-dir</c>, measured on Claude Code 2.1.299 in an untrusted folder). Never into a
 /// repository, and never a skill that would allow itself tools.
 /// </summary>
 public sealed class SpawnSkillsTests : IDisposable
@@ -69,7 +69,7 @@ public sealed class SpawnSkillsTests : IDisposable
     }
 
     /// <summary>
-    /// D170 point 3 and the development documents' finding (§2 point 3): a skill's <c>allowed-tools</c> pre-approves its tools
+    /// A skill's <c>allowed-tools</c> pre-approves its tools
     /// for the turn that invokes it, untrusted too, so a plugin's skill declaring it is never handed, to either destination;
     /// nor one whose folder holds no <c>SKILL.md</c>. Each says why.
     /// </summary>
@@ -139,7 +139,7 @@ public sealed class SpawnSkillsTests : IDisposable
     }
 
     /// <summary>
-    /// AGENTPROVIDER1 row o: the skills are laid out by the door's provider. Claude Code's protocol door is handed the same copies
+    /// The skills are laid out by the door's provider. Claude Code's protocol door is handed the same copies
     /// as its native door, carried in its meta and never on its command line; a door whose provider lays out none (Codex, dsh, the
     /// stand-ins, none of whose doors read a plugin folder) is handed none, and nothing is written for it.
     /// </summary>

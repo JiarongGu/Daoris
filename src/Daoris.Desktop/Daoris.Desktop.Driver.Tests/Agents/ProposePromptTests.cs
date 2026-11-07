@@ -3,9 +3,9 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// PERM2b: the connector's `permission_propose` is only useful if a session knows it is there. The
-/// composed target named every other connector verb it relies on (take, close, publish) and not this
-/// one, so a session refused a command its work genuinely needed had nothing to reach for but a
+/// The connector's `permission_propose` is only useful if a session knows it is there. The
+/// composed target names every other connector verb it relies on (take, close, publish) and this
+/// one too, so a session refused a command its work genuinely needs has something to reach for besides a
 /// decline — which is honest, and leaves the person no rule to say yes to.
 /// </summary>
 public sealed class ProposePromptTests

@@ -3,14 +3,14 @@ using Xunit.Abstractions;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// AGENTPROVIDER1 row b, part 2 (the agent-provider design §10): the conformance suite's Process half, a stand-in's program run live, as real
+/// The conformance suite's Process half, a stand-in's program run live, as real
 /// model-free processes, one case after another within the class. Its rows are the registry's <c>StandIn</c> providers' doors, never a list of
 /// names: a start, a turn, a resume of its own conversation, a missing one and another active writer, a transient error tried again, access
 /// and fatal on their paths, a sign-in through the roster's sign-in and login question, and a listing with a command configured; every other
-/// live case of §10 is held pending in the stand-in's own <c>pending.json</c> with its row.
+/// live case is held pending in the stand-in's own <c>pending.json</c> with its row.
 /// </summary>
 /// <remarks>
-/// The program a case runs is the stand-in's own (part 3): its folder's <c>Program/</c> entry, which the driver project's glob carries into
+/// The program a case runs is the stand-in's own: its folder's <c>Program/</c> entry, which the driver project's glob carries into
 /// this test's build output, each door chosen by the arguments its <c>provider.json</c> states and each case by the scenario contract's
 /// name; nothing here names a stand-in by its id. No model, no account, no variable of the process's environment set. Each class's
 /// scratch is under <c>_fixtures/</c>.

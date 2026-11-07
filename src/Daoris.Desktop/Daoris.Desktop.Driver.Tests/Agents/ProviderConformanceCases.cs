@@ -126,14 +126,14 @@ internal static class ConformanceCases
             Assert.Single(doors, other => Same(other.Id.Value, door.Id.Value));
             Assert.DoesNotContain(others, other => Same(other.Id.Value, door.Id.Value));
             Assert.Equal(provider.Id, registry.ProviderOf(door.Id));
-            // A door's plugin is the source's word, one of the plugins its provider was declared by; a built-in door names none.
+            // A door's plugin is the source's word, one of the plugins its provider is declared by; a built-in door names none.
             if (door.Identity.DeclaredBy is { } plugin) Assert.Contains(plugin, provider.Identity.DeclaredBy);
         }
 
         if (provider.Unavailable) Assert.Empty(provider.Doors);
         else Assert.True(provider.Doors.Count > 0 || provider.Program.IsKnown, $"'{provider.Id}' has no door and names no program: no provider and no holder");
 
-        // A provider's id where a door is asked is D23's error naming what exists, never its first door; an unknown id is that error too.
+        // A provider's id where a door is asked is the error naming what exists, never its first door; an unknown id is that error too.
         if (!provider.Doors.Any(door => Same(door.Id.Value, provider.Id.Value)))
         {
             Assert.Contains("one of:", Assert.Throws<DriverException>(() => registry.Door(provider.Id.Value)).Message);
@@ -143,7 +143,7 @@ internal static class ConformanceCases
         Assert.Contains(provider.Id.Value, Assert.Throws<DriverException>(() => registry.Provider(unknown)).Message);
         Assert.Contains("one of:", Assert.Throws<DriverException>(() => registry.Door(unknown)).Message);
 
-        // A plugin declares no id the built set holds; a built provider's ids are reserved by registering (D64's rule 3, O4-F9).
+        // A plugin declares no id the built set holds; a built provider's ids are reserved by registering.
         var names = provider.Doors.Select(door => door.Id.Value).Append(provider.Id.Value).ToList();
         if (provider.Identity.DeclaredBy.Count > 0 || provider.Unavailable)
         {
@@ -401,9 +401,9 @@ internal static class ConformanceCases
     }
 
     /// <summary>
-    /// A door's run, over today's transport, refuses what its own evidence does not admit before it writes (AGENTPROVIDER1m-i): the words
-    /// until m-ii, a native door's turn and task stops, a protocol door's go-on and retry, and a resume its door cannot make. Each
-    /// refusal is the contract's sentence, and nothing was started.
+    /// A door's run, over today's transport, refuses what its own evidence does not admit before it writes: a native door's turn and task stops,
+    /// a protocol door's go-on, retry and input line, and a resume its door cannot make. Each
+    /// refusal is the contract's sentence, and nothing is started.
     /// </summary>
     private static async Task RunUnsupportedRefused(ConformanceRun run)
     {
@@ -416,7 +416,7 @@ internal static class ConformanceCases
             new DriverTransportHost(driver), run.Set, adapter, new TransportStart(new ProcessStartInfo("never-started"), StartClass.Person));
         var never = CancellationToken.None;
 
-        // What this door's evidence does not admit: by its wire and its resume, a line on a protocol door's input among them (D246).
+        // What this door's evidence does not admit: by its wire and its resume, a line on a protocol door's input among them.
         var refused = new List<(Task Operation, string Ability)>();
         if (!Protocol(door))
         {
@@ -525,7 +525,7 @@ internal static class ConformanceCases
         foreach (var recorded in registry.LimitsOf(door.Id)?.Recorded ?? [])
         {
             var words = InZone(recorded.Sentence);
-            // A limit's sentence first, whatever transient kind or status is beside it (D210 §3.2 step 1).
+            // A limit's sentence first, whatever transient kind or status is beside it.
             Assert.Equal(AgentErrorKind.Limit, Read(words, 529, "overloaded", DoorWhere.Prompt, Seen(recorded.Seen)).Kind);
             // The source before any kind: the harness's own lines are never a limit.
             Assert.NotEqual(AgentErrorKind.Limit, Read(words, null, null, DoorWhere.Lines, Seen(recorded.Seen)).Kind);
@@ -667,8 +667,8 @@ internal static class ConformanceCases
     private static string Sentinel(string name) => "conformance-sentinel-" + name.ToLowerInvariant();
 
     /// <summary>
-    /// Runs <paramref name="body"/> with each variable planted in the process's environment, the case's own home as Daoris's, and puts
-    /// back what was there.
+    /// Runs <paramref name="body"/> with each variable planted in the process's environment, the case's own home as Daoris's, and restores
+    /// the previous values.
     /// </summary>
     private static void Planted(ConformanceRun run, IEnumerable<string> variables, Action body)
     {

@@ -5,10 +5,10 @@ using StandInService = Daoris.Desktop.Driver.Tests.OrphanedSessionTests.StandInS
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// SESSPROC1: a process's end takes away its own entry and its own marker, never the live one a second start of the same record
-/// stood beside. The registry used to keep one entry per session, so the second start's tracking replaced the live one and its end
-/// removed whatever the session had and deleted the marker: the window's stop found none, and another Daoris's orphan sweep read the
-/// record as run by nothing and stopped it while it ran (the cowork view design §9, D173's note accepting COWORKVIEW1 row a).
+/// A process's end takes away its own entry and its own marker, never the live one a second start of the same record
+/// stands beside. A registry that kept one entry per session would let the second start's tracking replace the live one and its end
+/// remove whatever the session had and delete the marker: the window's stop would find none, and another Daoris's orphan sweep would read the
+/// record as run by nothing and stop it while it ran.
 /// </summary>
 /// <remarks>
 /// Stand-in processes (node holding a timer, never an agent), each test in a scratch home of its own under the repository's scratch
@@ -158,7 +158,7 @@ public sealed class SessionProcessesProcessTests : IDisposable
     }
 
     /// <summary>
-    /// A run that exited and was replaced by its continuation is replaced as ever (a stop reads the continuation's flags), and its
+    /// A run that exited and is replaced by its continuation (a stop reads the continuation's flags): its
     /// late end takes neither the continuation nor its marker.
     /// </summary>
     [Fact]
@@ -180,7 +180,7 @@ public sealed class SessionProcessesProcessTests : IDisposable
     }
 
     /// <summary>
-    /// Both running, the newest answers, as the only one did before a second was kept: the window's stop ends it, its flags are what
+    /// Both running, the newest answers: the window's stop ends it, its flags are what
     /// the conclusion reads, and the older one answers again once it is gone.
     /// </summary>
     [Fact]

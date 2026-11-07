@@ -89,7 +89,7 @@ public sealed class PendingRowsTests
         { ConformanceSubjects.PluginDoor, ConformanceSubjects.PluginDoor, null, "AGENTLYNTAI1e-iv" },
         { "claude-code", "claude-code", "Driven", "AGENTLYNTAI1d" },
         { "claude-code", "claude-code", "Conversation", "AGENTLYNTAI1f-i" },
-        // Its own `_meta` keys, which no layer reader reads before a registration brings its own dialect set (AG15).
+        // Its own `_meta` keys, which no layer reader reads before a registration brings its own dialect set.
         { "alt-stub", "alt-acp-stub", null, "j" },
     };
 

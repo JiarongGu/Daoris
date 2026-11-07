@@ -4,9 +4,8 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// A background task's output, read as its harness writes it (CONSOLE2). The wire carries none of it:
-/// the task names a file, and the file is the only live view of a dev server
-/// (docs/2026-09-28-console2-streams-evidence.md).
+/// A background task's output, read as its harness writes it. The wire carries none of it:
+/// the task names a file, and the file is the only live view of a dev server.
 /// </summary>
 public sealed class OutputTailTests : IDisposable
 {

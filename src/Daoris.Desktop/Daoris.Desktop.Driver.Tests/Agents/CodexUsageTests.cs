@@ -6,7 +6,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// CODEXUSE1 (D125's CODEXUSE1 note; the Codex usage evidence): a Codex account's windows, asked of Codex's own app server
+/// A Codex account's windows, asked of Codex's own app server
 /// with <c>account/rateLimits/read</c>, which spends no model usage, and read into the same reading Claude Code's frames fill.
 /// Pure and in process: the reader's table, and the protocol against a stand-in server that speaks the measured lines.
 /// </summary>
@@ -53,7 +53,7 @@ public sealed class CodexUsageTests
         """{"rateLimits":{"limitId":"codex","primary":""" + (primary ?? "null") + ""","secondary":""" + (secondary ?? "null")
         + ""","rateLimitReachedType":null}}""";
 
-    // ——— The table: every window length the reader names stands on a recorded answer, as an entry of D125's tables does.
+    // ——— The table: every window length the reader names stands on a recorded answer.
 
     [Fact]
     public void Every_window_length_the_reader_names_stands_on_a_recorded_answer()
@@ -114,8 +114,8 @@ public sealed class CodexUsageTests
         Assert.Equal([new WindowReading(named, 0.42, In(2))], Read(Answer(Window(42, minutes, Seconds(2)))));
     }
 
-    // ——— What the usage history keeps of an answer (USAGECAP1a1, D179 point 8): each window by its length and its limit's
-    // scope (`limitId`), never its slot; its plan not read, as before.
+    // ——— What the usage history keeps of an answer: each window by its length and its limit's
+    // scope (`limitId`), never its slot; its plan not read.
 
     private static UsageAnswer Kept(string answer) => CodexUsage.Read(JsonDocument.Parse(answer).RootElement.Clone());
 
@@ -184,7 +184,7 @@ public sealed class CodexUsageTests
         { "a reset no calendar holds", Answer(Window(15, 300, 1e300)) },
     };
 
-    /// <summary>Absent is never zero (D57): a window the answer does not say whole says nothing, and the account stays unknown.</summary>
+    /// <summary>Absent is never zero: a window the answer does not say whole says nothing, and the account stays unknown.</summary>
     [Theory]
     [MemberData(nameof(Unread))]
     public void What_does_not_read_is_nothing_said(string why, string answer)

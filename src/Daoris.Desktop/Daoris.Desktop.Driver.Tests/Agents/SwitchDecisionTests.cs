@@ -3,7 +3,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// When a running session moves to another account by the usage curve (SWITCH1c-i; the switch design §2 and §4; D165): stay,
+/// When a running session moves to another account by the usage curve: stay,
 /// read the others first, or move to the account with the most room, at least the margin under its curve on every window it
 /// said. Pure: the readings, the readiness, the moment and the last move are values handed in.
 /// </summary>
@@ -196,7 +196,7 @@ public sealed class SwitchDecisionTests
         Assert.Equal(new SwitchChoice.Stay(SwitchStay.Room), Decide(Said(0.45), [Ready("account-3", Said(0.10))]));
     }
 
-    // ——— What would lapse chooses only where a required move goes (USAGERESET1, the switch design §4): among the candidates
+    // ——— What would lapse chooses only where a required move goes: among the candidates
     // with the margin's room, the most of a week that would lapse per hour to its reset first, then the most room.
 
     /// <summary>A candidate whose week resets in <paramref name="hours"/> with <paramref name="weekly"/> of it used.</summary>
