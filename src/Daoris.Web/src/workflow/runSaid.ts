@@ -210,6 +210,10 @@ function nodeSaid(t: TFunction, step: RunStep, node: string): string | null {
         return step.words ? t('workflow.run.graph.said.goAhead', { act: step.words }) : t('workflow.run.graph.said.goAheadNone');
       }
       if (node === 'human') return t('workflow.run.graph.said.task');
+      // A hold's record keeps the reason its last reading said, in the driver's words.
+      if ((node === 'quest.holds' || node === 'content.holds') && step.words) {
+        return t('workflow.run.graph.said.holds', { why: step.words.replace(/\.+$/, '') });
+      }
       // INTEGRATE1o part o2: a decline holds the work's requests active and waiting on you; the driver reads it from the quests, as its code.
       if (node === 'work.requests') {
         return t(step.code === DECLINED ? 'workflow.run.graph.said.requestsDeclined' : 'workflow.run.graph.said.requests');
