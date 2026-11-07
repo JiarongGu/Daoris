@@ -63,7 +63,7 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/Agents/` unless they s
 | `HarnessCapture`, `ClaudeStreams`, `NativePrompt`; `StreamMapped`, `IStreamMapper`, `IStreamsReader`, `ClaudeStreamJson` | same names; the last four in `StructuredOutput.cs` | The native door: capture, `stream-json` mapping, the prompt written on stdin |
 | `NativeFrame` | `NativeFrame.cs` | A native stdout line parsed once: the capture reads each line into one frame, which the children and background tasks it says (`NativeChildren`, `NativeTasks`), the streams beside (`ClaudeStreams`, for a child's words and a command's output path) and the dialect's mapper each take, none parsing the text again |
 | `NativeChildren` | `NativeChildren.cs` | The children a native stream says: a subagent's `task_started` and its `task_notification`, each read once per child into one `ChildSeen` (the call its lines name among it) or `ChildEnded` reading on the run's sink, in the wire's own words; the protocol door's `AcpStreams` says its announcements and ends the same way |
-| `NativeTasks` | `NativeTasks.cs` | The background commands a native stream says: a `task_started` of any type but a subagent's, and its `task_notification` in its word or else its `task_updated`'s, each read once per task into one `TaskStarted` or `TaskEnded` reading on the run's sink, an end after the turn's `result` marked so, and at the stream's close a task its update ended whose notification never came (a process Daoris ended at its turn's end) ended in the update's word, one with no ending word saying none; the capture and the layer run hand each child's and task's reading to the run's ending (`HarnessWords`) and the streams beside (`ClaudeStreams`), which open, end and cut by it and read no start or end off the frame (`NativeWorkFramesCensusTests`) |
+| `NativeTasks` | `NativeTasks.cs` | The background commands a native stream says: a `task_started` of any type but a subagent's, and its `task_notification` in its word or else its `task_updated`'s, each read once per task into one `TaskStarted` or `TaskEnded` reading on the run's sink, an end after the turn's `result` marked so, and at the stream's close a task its update ended whose notification never came (a process Daoris ended at its turn's end) ended in the update's word, one with no ending word saying none; the capture hands each child's and task's reading, and the layer run each its events say (`LayerWork`), to the run's ending (`HarnessWords`) and the streams beside (`ClaudeStreams`), which open, end and cut by it and read no start or end off the frame (`NativeWorkFramesCensusTests`) |
 | `HarnessRoster` | `HarnessRoster.cs` (hub, 26 KB) | One judgement for every start, kept as one-line doors to the units below, with the roster's state and settings reads |
 | `RosterCooling`, `RosterReport`, `RosterSelection` | same names | Cool-offs, refusals and signed-out accounts; the Agents page's report, a press and an account's status question; choosing the harness and account of a start, a resume and a carry-on |
 | `RosterWalk`, `RosterNext`, `RosterStarts`, `RosterUsage` | same names | The account walk and its pass; the next start's reason, last reading and wiring; the numbered starts in flight; the usage questions and the accounts a switch could reach. What each account carried (`SessionUsage.ByAccount`) is counted by agent, each session keeping its door |
@@ -509,7 +509,10 @@ Agents page, and `universal` (which writes the orient index) and `code-map` once
   stop; the conversation named by the first start the agent announced; a refused model told by `LayerRefusals` against the door's
   model-refusal entries, the ending's flag on a native turn that ran nothing; the turn's own report, `LayerTurnReport`: denials, the
   context against the window the harness names and the tokens by model, said at the terminal as the native capture says them, a protocol
-  door's context figures as sent), the two containers
+  door's context figures as sent; a child's and a background task's start and end, `LayerWork`: Lyntai's `AgentTaskStarted` of the
+  subagent's kind one `ChildSeen` and its `AgentTaskEnded` one `ChildEnded`, any other kind one `TaskStarted` and `TaskEnded`, the end
+  carrying the output file the events named and whether it came after the terminal, each once, as `NativeChildren` and `NativeTasks` read
+  the same frames), the two containers
   (`LayerContainer`: the registry's, which never spawns and refuses a door registered twice; one per start or read over its own
   runner), `LauncherRunner` (every layer start through `AgentStarts`, no clock on a turn, a read bounded by its patience, each raw line
   heard, the lines outside a frame and stderr kept as the harness's own, stdin recorded, a stop the kill of the tree), `LayerRun`
@@ -530,8 +533,11 @@ Agents page, and `universal` (which writes the orient index) and `code-map` once
   the layer's stdin write returns and acknowledged once the agent names its conversation; a go-on carries the held words, a retry the
   words the ended process never acknowledged. Its readings say nothing of an end Daoris made (a bound, the quiet, a registered stop) or
   of a clean exit before the agent stated its end, as today's capture says nothing of a stream without its result, and its ending is
-  the harness's own words with what its stream said of its background work (`HarnessWords`, told the child and task readings each raw
-  frame the seat hands says, on the run's sink too). A
+  the harness's own words with what its events said of its background work (`HarnessWords`, told the child and task readings, on the run's
+  sink too); no raw frame is read beside the layer. Where someone watches its console, what it runs beside itself is the door's streams
+  beside (`LayerRegistration.Beside`, Claude's `ClaudeStreams`), opened and ended by those readings, and each event naming a `ParentCallId`
+  is said on that child's stream through a translation of its own (`LayerStreams`, `IStreamsReader.Said`), never on the session's console
+  or in its record, as the native capture takes a child's frames. A
   move's parity is the oracle's
   (`Tests/Agents/Parity/`): what each path observed, by a fixed list of channels, compared exactly and in order but for the
   projection's fields (a provenance by the door's relation of permitted pairs and the pair its scenario expects, a generated id by
@@ -541,9 +547,12 @@ Agents page, and `universal` (which writes the orient index) and `code-map` once
   scenario alike (a refused model, a denial, the context and tokens by model, the unannounced start and a meter-only failure among them)
   but for a tool step's kind, which the Claude reader derives from the tool's name, and the context a count written to the cache
   adds, which the layer's tick does not carry (`LayerParityProcessTests`). A difference the oracle knows is a named gap, set apart
-  before the rest is compared and failing once it sets nothing apart (`ParityGap`). Over every recorded Claude Code stream, today's
+  before the rest is compared and failing once it sets nothing apart (`ParityGap`). Each path's sink is watched, and a child's reading is
+  observed with the lineage line it writes. Over every recorded Claude Code stream, today's
   door and the driven binding read alike (`ClaudeDrivenParityProcessTests`), the init's reading of what the harness loaded handed
-  before the conversation its frame names, and a message's id on its words read from Lyntai's `TextDelta`. Their spawns hand
+  before the conversation its frame names, a message's id on its words read from Lyntai's `TextDelta`, and a family's lineage, the streams
+  beside and a child's words and calls on its own stream among them; a command its update alone ended, its notification never written,
+  is the one named gap, since Lyntai's Claude door yields no task's update. Their spawns hand
   Claude Code the same arguments on each driven mode, `default` among them, but for the three flow tools the layer's door always denies
   (`ClaudeDrivenSpawnParityProcessTests`). A
   pending line may name the run kind it holds its case on (`run`, read by the suite and `tools/stand-ins.mjs` alike), and each
@@ -571,9 +580,10 @@ Agents page, and `universal` (which writes the orient index) and `code-map` once
   `end_turn` or `cancelled`), so `LimitMove` moves it to the next account and its end says `limited`.
 - Row s-ii of the agent-layer adoption: a driven Claude Code start denies or keeps the three tools a headless turn cannot
   answer. The measurement needs the owner's yes; until it is made, the layer's door denying them is a gap of row d's spawn.
-- Row d of the agent-layer adoption: its installed proof, and one gap the sibling library answers: a
-  child's start and end and the streams beside, which the layer's members do not carry yet (AG18 with LQ7), so a layer run's lineage
-  file holds the process's token but no child and a watched console no stream of a background task.
+- Row d of the agent-layer adoption: its installed proof, and two gaps the sibling library answers: its Claude door yields no task's
+  update, so a command its update alone ended (a process Daoris ended at its turn's end) is still running when a layer run's stream
+  closes and the ending names no cut; and it names a command's output file only where a frame's `output_file` does, at its end, so a
+  watched console shows a running command's output only once it ended.
 - **CODEXTOOLS1**: Codex's first tool catalogue waits for the connector to be ready.
 - **STEER3**, **MSG1h**, **MSG1i**: steering and next-step words measured on other doors (Codex, native).
 - **BGWAIT2b**, **SESSCTX1a**, **HELPMODE1a3**, **FABRIC-C2b**: woken-turn words, resume and fresh part per door, full access
