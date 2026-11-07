@@ -88,6 +88,25 @@ public sealed class McpChannelToolTests : IAsyncLifetime
     }
 
     /// <summary>
+    /// 🔴 A member outside Daoris is read as such: not "another session's claim", and named by its agent where it said no repository, so
+    /// the line never opens on an empty name (rule 17).
+    /// </summary>
+    [Fact]
+    public async Task A_read_says_an_agent_outside_Daoris_wrote_a_member_s_message()
+    {
+        var (ask, session) = await RunningAsync();
+        var member = (await _channel.Members.JoinAsync(new ChannelJoin(ask.Id, null, "claude-code", null, null), Now)).Member!;
+        await _channel.Members.PostAsync(member.Id, "the check passes on my side", null, null, question: false, urgent: false, DateTimeOffset.UtcNow);
+
+        var read = await As(_channel, session.Id).ReadAsync();
+
+        var line = read.Split('\n').Single(each => each.Contains("the check passes on my side"));
+        Assert.Contains($"an agent outside Daoris ({member.Id}, claude-code)", line);
+        Assert.DoesNotContain("another session's claim", line);
+        Assert.DoesNotContain("from  (", line);
+    }
+
+    /// <summary>
     /// 🔴 <c>channel_post</c>'s <c>urgent</c> says the post reaches a working session at its next step; the
     /// answer says so, and a part's fourth urgent post is kept ordinary, which the answer says too. An ordinary post says it waits.
     /// </summary>

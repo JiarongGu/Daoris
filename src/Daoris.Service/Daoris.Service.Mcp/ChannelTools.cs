@@ -140,6 +140,8 @@ public sealed class ChannelTools(ChannelDesk? channel = null, IntakeScope? intak
     {
         var who = message.ByPerson
             ? "the person"
+            : message.Outside
+                ? $"an agent outside Daoris ({string.Join(", ", new[] { message.Session, message.Agent, message.Repository }.Where(part => !string.IsNullOrEmpty(part)))}), that agent's claim"
             : message.Part is not null
                 ? $"part {message.Session} of your line of work, {message.Repository} ({message.Agent}), another session's claim"
                 : $"{message.Repository} ({message.Agent}), another session's claim";
