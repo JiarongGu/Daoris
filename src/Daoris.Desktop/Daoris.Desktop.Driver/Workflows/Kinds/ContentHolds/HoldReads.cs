@@ -10,8 +10,10 @@ public static class HoldReads
     public static async Task<HoldContent?> ContentAsync(SessionTrees trees, string tree, string tip, CancellationToken ct = default)
     {
         if (!string.Equals(TreeTips.Read(tree), tip, StringComparison.OrdinalIgnoreCase)) return null;
-        var carried = await trees.DiscardOfferAsync(tree, ct).ConfigureAwait(false);
-        var unlanded = await trees.UnlandedHereAsync(tree, ct).ConfigureAwait(false);
+        // One read of the tree's work gives the head's sentence and D88's count, so the layout, the branch and the log are asked once.
+        var work = await trees.WorkAsync(tree, ct).ConfigureAwait(false);
+        var carried = work is null ? null : DiscardOffer.Of(tree, work);
+        var unlanded = work?.Unlanded;
         var ahead = unlanded == 0 ? await trees.AheadOfLineAsync(tree, ct).ConfigureAwait(false) : unlanded;
         return new HoldContent(carried?.NotLanded, unlanded, ahead);
     }

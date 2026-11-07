@@ -267,6 +267,13 @@ public sealed record TreeWork(int? Commits, int? Uncommitted)
     /// every other branch of the person's, so a landing of it is that branch as it stands.
     /// </summary>
     public string? Branch { get; init; }
+
+    /// <summary>
+    /// D88's proof as the record's squash settles it, before the content proof reads the commits: how many the tree holds that no branch of
+    /// the person's holds, zero where a squashing landing's record holds them. What a landing door asks as <c>UnlandedHere</c>; null where git
+    /// could not say.
+    /// </summary>
+    public int? Unlanded { get; init; }
 }
 
 
