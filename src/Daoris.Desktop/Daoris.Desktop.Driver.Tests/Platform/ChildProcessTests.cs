@@ -134,4 +134,16 @@ public sealed class ChildProcessKillTests
         using var never = new Process();
         Assert.NotNull(OwnedProcesses.End(never));
     }
+
+    // A tree some of whose members cannot be killed is reported by the runtime as an AggregateException, and a runner's bound
+    // makes this kill on a timer thread, where a throw is unhandled.
+    [Fact]
+    public void Ending_a_tree_some_of_whose_members_refuse_says_why_and_does_not_throw()
+    {
+        using var never = new Process();
+        using (OwnedProcesses.EndingWith(_ => throw new AggregateException("refused by the test", new System.ComponentModel.Win32Exception(5))))
+        {
+            Assert.Contains("refused by the test", OwnedProcesses.End(never));
+        }
+    }
 }

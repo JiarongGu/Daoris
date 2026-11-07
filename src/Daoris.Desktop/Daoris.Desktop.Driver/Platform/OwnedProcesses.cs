@@ -120,9 +120,9 @@ public sealed class OwnedProcesses
             else process.Kill(entireProcessTree: true);
             return null;
         }
-        catch (Exception error) when (error is InvalidOperationException or Win32Exception or NotSupportedException)
+        catch (Exception error) when (error is InvalidOperationException or Win32Exception or NotSupportedException or AggregateException)
         {
-            // It ended when stopped, or the exit wait after it says it did not.
+            // It ended when stopped, or the exit wait after it says it did not; a tree some of whose members refuse is an aggregate.
             return error.Message;
         }
     }
