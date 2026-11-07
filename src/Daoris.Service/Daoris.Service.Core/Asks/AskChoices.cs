@@ -4,7 +4,7 @@ namespace Daoris.Knowledge;
 internal sealed class AskChoices(AskStore asks, AskStandings standings)
 {
     /// <summary>
-    /// The person sets the ask's review choice (D154 point 3; design §1.5): <c>off</c>, <c>on</c> or an environment's
+    /// The person sets the ask's review choice: <c>off</c>, <c>on</c> or an environment's
     /// name, with any words they give, kept with when; the latest stands, as a go-ahead's answer does. Applying the intake's
     /// proposal is this same press, with the proposal's choice.
     /// </summary>
@@ -69,12 +69,12 @@ internal sealed class AskChoices(AskStore asks, AskStandings standings)
     }
 
     /// <summary>
-    /// The person sets the ask's kind and workflow (D157 point 10; design §4.3): a kind, a workflow, both, or neither to
+    /// The person sets the ask's kind and workflow: a kind, a workflow, both, or neither to
     /// clear them, with any words they give, kept with when; the latest stands, as a review choice does. It reaches each chain the
-    /// ask publishes whose work has not started: a run is bound at its first start (§4.5).
+    /// ask publishes whose work has not started: a run is bound at its first start.
     /// </summary>
     /// <remarks>
-    /// <b>The person's door</b> (D156 §3.2), a local host's as every ask route is: an agent proposes a kind, the intake's,
+    /// <b>The person's door</b>, a local host's as every ask route is: an agent proposes a kind, the intake's,
     /// and never sets one. Whether the ask's workspace declares the kind and the workflow reads here is the driving machine's to
     /// say; the service holds neither.
     /// </remarks>

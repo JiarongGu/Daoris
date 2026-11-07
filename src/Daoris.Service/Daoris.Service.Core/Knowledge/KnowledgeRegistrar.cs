@@ -5,7 +5,7 @@ internal sealed class KnowledgeRegistrar(
     IKnowledgeStore store, Registry? registry, RegistrationStore? registrations, TimeProvider time, Action refuseNewerIndex)
 {
     /// <summary>
-    /// Take a repository off the map (D48 §3).
+    /// Take a repository off the map.
     /// </summary>
     /// <remarks>
     /// <b>Nothing on disk is touched.</b> This ends a registration: the repository stops being
@@ -13,20 +13,20 @@ internal sealed class KnowledgeRegistrar(
     /// history and its doctrine are its own — the one thing a person must be able
     /// to trust about a remove is what it does not do.
     /// </remarks>
-    /// <returns>Whether there was a registration to retire; false is an answer, not a failure.</returns>
+    /// <returns>Whether there is a registration to retire; false is an answer, not a failure.</returns>
     public async Task<bool> RetireAsync(string repository, CancellationToken ct)
     {
-        // Refused whole over an index a newer Daoris wrote (KSCHEMA1): the registration alone would go, and the index
-        // would keep serving what was taken off the map.
+        // Refused whole over an index a newer Daoris wrote: the registration alone would go, and the index
+        // would keep serving what is taken off the map.
         refuseNewerIndex();
         var stored = registrations is not null
             && await registrations.DeleteAsync(repository, ct).ConfigureAwait(false);
         var known = registry?.Retire(repository) ?? false;
 
-        // 🔴 Its entries go with it (REV3). "They leave on the next refresh" held only for a host that
-        // refreshes — a fed deployment never does, so it served a retired repository's knowledge to
-        // every keyed caller for as long as it ran. It reads no source, so it always writes, moving the generation a
-        // refresh begun before it read (KNOWCENTRAL2a).
+        // 🔴 Its entries go with it. "They leave on the next refresh" holds only for a host that
+        // refreshes — a fed deployment never does, so it would serve a retired repository's knowledge to
+        // every keyed caller for as long as it runs. It reads no source, so it always writes, moving the generation a
+        // refresh begun before it read.
         if (stored || known)
         {
             await store.ReplaceRepositoryAsync(repository, [], ReadingWrite.Taken(time.GetUtcNow()), ct: ct).ConfigureAwait(false);
@@ -44,14 +44,14 @@ internal sealed class KnowledgeRegistrar(
     /// connected.</para>
     ///
     /// <para>What is served is what the store DECIDED, not what arrived — because the workspace is
-    /// preserved rather than overwritten when a registration says nothing about it (D48 §2). Serving
+    /// preserved rather than overwritten when a registration says nothing about it. Serving
     /// the incoming record instead would re-point every repository to `default` in memory the moment
     /// an ordinary sync tick re-registered it, and the store on disk would keep saying otherwise.</para>
     /// </remarks>
     /// <returns>The registration as it now stands, workspace resolved.</returns>
     public async Task<Registration> RegisterAsync(Registration registration, DateTimeOffset now, CancellationToken ct)
     {
-        // Where it stood before, so a move is known as one (OVERVIEWNOISE1d).
+        // Where it stood before, so a move is known as one.
         var before = registrations is not null
             ? (await registrations.AllAsync(ct).ConfigureAwait(false)).Named(registration.Repository)
             : (registry?.Read() ?? []).Named(registration.Repository);
@@ -70,14 +70,14 @@ internal sealed class KnowledgeRegistrar(
     }
 
     /// <summary>
-    /// A moved repository's entries carried into its new workspace (OVERVIEWNOISE1d).
+    /// A moved repository's entries carried into its new workspace.
     /// </summary>
     /// <remarks>
-    /// An entry is stamped with the workspace it was indexed under, and a local host reads its checkouts again only
+    /// An entry is stamped with the workspace it is indexed under, and a local host reads its checkouts again only
     /// into an empty store or on request: a repository moved between workspaces kept its old stamp, and the
     /// workspace it moved to counted none of its knowledge. Re-stamped in one write of the store's, which leaves the bodies
     /// as they are and moves the generation, so a reading that took the old wiring is refused after it, whichever
-    /// connector took it (KNOWCENTRAL2a); over an index a newer Daoris wrote, nothing is rewritten (KSCHEMA1).
+    /// connector took it; over an index a newer Daoris wrote, nothing is rewritten.
     /// </remarks>
     private async Task RestampAsync(string repository, string workspace, CancellationToken ct)
     {

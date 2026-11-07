@@ -5,8 +5,7 @@ namespace Daoris.Knowledge;
 /// </summary>
 /// <remarks>
 /// Quests, sessions, registrations and asks add columns rather than rebuild, because a record that
-/// vanished on an upgrade is the failure those stores exist to prevent. Each of the four wrote this
-/// probe for itself (REV3 CLEAN1). Called inside the connection's gate, as every command is (SQLITETX1).
+/// vanished on an upgrade is the failure those stores exist to prevent. Called inside the connection's gate, as every command is.
 /// </remarks>
 internal static class SchemaColumns
 {

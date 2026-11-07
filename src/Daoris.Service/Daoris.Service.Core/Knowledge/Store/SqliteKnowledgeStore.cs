@@ -3,7 +3,7 @@ using Microsoft.Data.Sqlite;
 namespace Daoris.Knowledge;
 
 /// <summary>
-/// Keeps entries in a SQLite file, with an FTS5 index for search.
+/// Keeps entries in a SQLite file, with an fts5 index for search.
 /// </summary>
 /// <remarks>
 /// SQLite because it needs no server, no container and no setup — the local mode has to be fully
@@ -12,28 +12,28 @@ namespace Daoris.Knowledge;
 ///
 /// <para><b>No migrations, deliberately.</b> The index is <em>derived</em> data: a local deployment
 /// re-reads it from the repositories in seconds, and a shared one — which can see no repository — is
-/// re-fed whole by each desktop's next sync tick (D47 §9). A schema change therefore does not need
+/// re-fed whole by each desktop's next sync tick. A schema change therefore does not need
 /// migrating, it needs rebuilding — so the schema carries a version, and an older one drops the tables
-/// and starts over. A NEWER one is left as it is and refused, the index alone (<see cref="Refusal"/>,
-/// KSCHEMA1): the store opens, and every operation on the index throws. The cognition sibling's
+/// and starts over. A NEWER one is left as it is and refused, the index alone (<see cref="Refusal"/>):
+/// the store opens, and every operation on the index throws. The cognition sibling's
 /// storage uses a migration runner because its data is
 /// authored and cannot be regenerated; the same choice here would be ceremony guarding something that
 /// is not at risk.</para>
 ///
-/// <para>FTS5 ships in the standard SQLite build, so full-text search costs no extra dependency and
+/// <para>fts5 ships in the standard SQLite build, so full-text search costs no extra dependency and
 /// replaces a hand-rolled scorer with a ranked one.</para>
 /// </remarks>
 public sealed class SqliteKnowledgeStore : IKnowledgeStore, IAsyncDisposable
 {
     /// <summary>Bump when the schema changes. An older version rebuilds rather than migrates; a newer one is refused.</summary>
-    /// <remarks>2 — entries carry their workspace (D48).</remarks>
+    /// <remarks>2 — entries carry their workspace.</remarks>
     // 3: the FTS rows carry CJK text cut into bigrams (`Text.Segment`), so every existing index is
     //    rebuilt from the raw entries on open — the rows it held were never findable in 中文.
-    // 4: the FTS rows carry each identifier's words beside it (`Text.Segment`, ORIENT1f): a row written
+    // 4: the FTS rows carry each identifier's words beside it (`Text.Segment`): a row written
     //    before holds `ProbeLock` as one token, which a question in words never finds.
-    // 5: entries keep the lines of their file they are (`first_line`, `last_line`, ORIENT2e), and the kinds
+    // 5: entries keep the lines of their file they are (`first_line`, `last_line`), and the kinds
     //    gain `Index`: an entry written before names no lines, which a hit then could not name.
-    // 6: each repository's reading is kept beside its entries and written with them (KNOWCENTRAL2a), and both move to
+    // 6: each repository's reading is kept beside its entries and written with them, and both move to
     //    tables named by this version, which a connector an older build opened before the upgrade never reaches.
     internal const int SchemaVersion = 6;
 
@@ -62,13 +62,13 @@ public sealed class SqliteKnowledgeStore : IKnowledgeStore, IAsyncDisposable
     /// Whether opening this store dropped an index an older schema had written (a version bump).
     /// </summary>
     /// <remarks>
-    /// The composer reads it to forget which commits a fed deployment held (REV3): the entries went,
+    /// The composer reads it to forget which commits a fed deployment held: the entries go,
     /// and a claim that they are held would refuse the very re-feed that restores them.
     /// </remarks>
     public bool Rebuilt { get; private set; }
 
     /// <summary>
-    /// Why the index answers nothing here: a newer Daoris wrote it (KSCHEMA1). Null when it answers. Set at open, and
+    /// Why the index answers nothing here: a newer Daoris wrote it. Null when it answers. Set at open, and
     /// then the index's tables are neither dropped nor stamped, and each operation on them throws it again.
     /// </summary>
     public NewerIndexException? Refusal { get; private set; }
@@ -97,7 +97,7 @@ public sealed class SqliteKnowledgeStore : IKnowledgeStore, IAsyncDisposable
 
     /// <summary>
     /// The connection string a store at <paramref name="path"/> opens with. Its pool is named by this text, so a test that lets
-    /// go of its file clears this pool and no other (FLAKE3).
+    /// go of its file clears this pool and no other.
     /// </summary>
     internal static string ConnectionString(string path) => new SqliteConnectionStringBuilder
     {
@@ -108,7 +108,7 @@ public sealed class SqliteKnowledgeStore : IKnowledgeStore, IAsyncDisposable
     }.ToString();
 
     /// <remarks>
-    /// One write transaction, the read through the stamp (KSCHEMA1): every host on the machine opens this file, and an
+    /// One write transaction, the read through the stamp: every host on the machine opens this file, and an
     /// older build that read its own version a moment before a newer one stamped the file would write its number back
     /// over the newer tables, which the newer build's next start would then rebuild.
     /// </remarks>
@@ -116,7 +116,7 @@ public sealed class SqliteKnowledgeStore : IKnowledgeStore, IAsyncDisposable
     {
         var version = Convert.ToInt32(await ScalarAsync("PRAGMA user_version;", inside).ConfigureAwait(false));
 
-        // 🔴 An older build never drops a newer index (KSCHEMA1, NewerIndexException's remarks say why), and never refuses
+        // 🔴 An older build never drops a newer index (NewerIndexException's remarks say why), and never refuses
         // the store around it: nothing is dropped, created or stamped, and the index alone answers the refusal.
         if (version > SchemaVersion)
         {
@@ -173,8 +173,8 @@ public sealed class SqliteKnowledgeStore : IKnowledgeStore, IAsyncDisposable
 
     /// <remarks>
     /// The connection is every store's, and SQLite does not nest transactions: a publish arriving mid-refresh waits for
-    /// this one to end (<see cref="ConnectionGate"/>), as does every other request's command (SQLITETX1). Not the
-    /// caller's token once the transaction begins: a cancelled replace would roll back half a refresh (REV3).
+    /// this one to end (<see cref="ConnectionGate"/>), as does every other request's command. Not the
+    /// caller's token once the transaction begins: a cancelled replace would roll back half a refresh.
     /// </remarks>
     public Task<bool> ReplaceRepositoryAsync(
         string repository, IReadOnlyList<KnowledgeEntry> entries, ReadingWrite reading,
@@ -389,7 +389,7 @@ public sealed class SqliteKnowledgeStore : IKnowledgeStore, IAsyncDisposable
         return (await ReadAllAsync(command, ct).ConfigureAwait(false)).FirstOrDefault();
     }, ct);
 
-    /// <summary>The refusal as an operation's answer, or null when the index answers (KSCHEMA1); the search asks it too.</summary>
+    /// <summary>The refusal as an operation's answer, or null when the index answers; the search asks it too.</summary>
     internal Task<T>? Refused<T>() => Refusal is { } refused ? Task.FromException<T>(refused.Again()) : null;
 
     internal const string Columns =
@@ -401,8 +401,8 @@ public sealed class SqliteKnowledgeStore : IKnowledgeStore, IAsyncDisposable
 
     /// <summary>
     /// How many columns <see cref="Columns"/> selects — so anything reading PAST them (a computed rank)
-    /// moves when they do. Counted rather than written down: the one that was written down was wrong
-    /// the moment a column was added.
+    /// moves when they do. Counted rather than written down, which goes wrong
+    /// the moment a column is added.
     /// </summary>
     internal static readonly int ColumnCount = Columns.Split(',').Length;
 
@@ -412,7 +412,7 @@ public sealed class SqliteKnowledgeStore : IKnowledgeStore, IAsyncDisposable
     /// </summary>
     internal SqliteConnection Connection => _connection;
 
-    /// <summary>The connection's gate, which every store over it and the search take for each command (SQLITETX1).</summary>
+    /// <summary>The connection's gate, which every store over it and the search take for each command.</summary>
     internal ConnectionGate Gate => _db;
 
     internal static KnowledgeEntry Read(SqliteDataReader reader) => new(

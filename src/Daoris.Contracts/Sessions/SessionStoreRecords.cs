@@ -11,7 +11,7 @@ public sealed record WorkRecordCommitWire(string Id, string Subject, IReadOnlyLi
 /// <summary>Which hold kept a finished tree's commits as its branch went: <c>line</c>, <c>landing</c>, <c>squash</c>, <c>content</c>, <c>carried</c> or <c>empty</c>.</summary>
 public sealed record WorkRecordHoldWire(string Kind, string? Where, string? Form);
 
-/// <summary>The landing that carried a finished tree's work: the branch it made, the line, when it landed, and its pull request where one was opened.</summary>
+/// <summary>The landing that carried a finished tree's work: the branch it made, the line, when it landed, and its pull request where one is opened.</summary>
 public sealed record WorkRecordLandingWire(string Branch, string? Line, DateTimeOffset At, string? PullRequest);
 
 /// <summary>What a finished tree held that no commit holds, by name: at most the walk's limit of names, the rest counted.</summary>
@@ -26,7 +26,7 @@ public sealed record WorkRecordPostResponse(
     WorkRecordHoldWire Hold, string Tip, string? GrewFrom, string? Ref, IReadOnlyList<WorkRecordCommitWire>? Commits, string? CommitsUnread,
     WorkRecordLeftWire Left, bool Whole, WorkRecordLandingWire? Landing = null, string? LandingWhy = null);
 
-/// <summary>A finished tree's record, as kept: what the driver posted, when it was kept, and its sessions.</summary>
+/// <summary>A finished tree's record, as kept: what the driver posted, when it is kept, and its sessions.</summary>
 public sealed record WorkRecordShownResponse(WorkRecordPostResponse Post, DateTimeOffset At, int Schema, IReadOnlyList<WorkRecordSessionResponse> Sessions);
 
 /// <summary>The record as kept: whether this post kept it (false for a second post of a kept identity, which wrote nothing), when, and its sessions.</summary>

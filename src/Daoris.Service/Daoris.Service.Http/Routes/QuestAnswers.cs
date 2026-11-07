@@ -25,7 +25,7 @@ public sealed class QuestAnswers(HostWiring host)
     /// <summary>This machine's id: an id no person gave, by which the page tells its own conflict and take from another machine's.</summary>
     public string? HereFor(HttpContext http) => host.MachineLocal(http) ? host.Service.Quests.Machine : null;
 
-    /// <param name="taken">The quest's log read for its holder and its conflicts; null where nothing was read, which answers none of them.</param>
+    /// <param name="taken">The quest's log read for its holder and its conflicts; null where nothing is read, which answers none of them.</param>
     public static QuestResponse ToQuest(
         Quest q, QuestFiles? files, bool machineLocal, bool deletable = false, QuestTakeReading? taken = null, string? here = null) => new(
         q.Id, q.From, q.To, q.Title, q.Body, q.Status.ToString(), q.Note, q.Filed, q.Updated, q.Workspace,

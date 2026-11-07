@@ -4,7 +4,7 @@ using Microsoft.Data.Sqlite;
 namespace Daoris.Service.Tests;
 
 /// <summary>
-/// Ask Daoris's session (HELP1a, D89): a conversation about Daoris itself, opened in a room under the
+/// Ask Daoris's session: a conversation about Daoris itself, opened in a room under the
 /// driver's home the way an intake's is — a chat serving no quest and no ask, in no repository, one
 /// running per room. The harness carries the model; nothing here names one.
 /// </summary>
@@ -42,7 +42,7 @@ public sealed class HelpSessionTests : IAsyncLifetime
 
         Assert.Equal(SessionOpenRefusal.None, opened.Refusal);
         var session = opened.Session!;
-        // A conversation (SES2), the kind every build already reads as one nothing plans from.
+        // A conversation, the kind every build reads as one nothing plans from.
         Assert.Equal(SessionKind.Chat, session.Kind);
         Assert.Null(session.Quest);
         Assert.Null(session.Ask);
@@ -80,11 +80,11 @@ public sealed class HelpSessionTests : IAsyncLifetime
         await Assert.ThrowsAsync<ArgumentException>(() => _ledger.OpenHelpAsync("stub", " ", Now));
     }
 
-    // ——— ASKSCOPE1a (D158's ASKSCOPE1 note, points 1-3): a conversation keeps the workspace it started in, one runs per workspace.
+    // ——— A conversation keeps the workspace it started in, one runs per workspace.
 
     /// <summary>
     /// 🔴 One running per workspace, not per machine: two workspaces' conversations open at once and both run, in the one room
-    /// folder they share until ASKSCOPE1b; a second in a workspace is refused naming that workspace's, never the other's.
+    /// folder they share; a second in a workspace is refused naming that workspace's, never the other's.
     /// </summary>
     [Fact]
     public async Task Two_workspaces_conversations_run_at_once_and_a_second_in_one_is_refused_naming_its_own()
@@ -106,14 +106,14 @@ public sealed class HelpSessionTests : IAsyncLifetime
     }
 
     /// <summary>
-    /// A record from before has no workspace of its own and is read as <c>default</c>, as it was recorded (point 1): it is the
+    /// A record from before has no workspace of its own and is read as <c>default</c>: it is the
     /// default workspace's running conversation, so a start with none named is refused naming it and one in a named workspace
     /// runs beside it.
     /// </summary>
     [Fact]
     public async Task A_record_from_before_reads_as_default_and_holds_only_the_default_workspace()
     {
-        // As OpenHelpAsync recorded one before ASKSCOPE1a: no workspace named.
+        // A record with no workspace named.
         var before = await _sessions.CreateAsync(null, SessionLedger.HelpRepository, "stub", Now, kind: SessionKind.Chat, tree: Room());
 
         Assert.Equal("default", (await _sessions.FindAsync(before.Id))!.Workspace);
@@ -169,7 +169,7 @@ public sealed class HelpSessionTests : IAsyncLifetime
         Assert.Equal(SessionOpenRefusal.None, (await ledger.OpenHelpAsync("stub", Room(), Now)).Refusal);
     }
 
-    // ——— HELPMODE1a2 (D183 point 3): the record keeps the mode its start got, the effective one, apart from the mode chosen.
+    // ——— The record keeps the mode its start got, the effective one, apart from the mode chosen.
 
     /// <summary>The open keeps the mode the driver says its start got, spelled as the ledger spells it; none told is restricted.</summary>
     [Fact]
@@ -209,7 +209,7 @@ public sealed class HelpSessionTests : IAsyncLifetime
     }
 
     /// <summary>
-    /// A conversation going on after the mode changed records the mode it goes on under (D183 point 3), on Ask Daoris's records of
+    /// A conversation going on after the mode changed records the mode it goes on under, on Ask Daoris's records of
     /// this machine's alone; any other record, or an unknown mode, is refused and nothing moves.
     /// </summary>
     [Fact]

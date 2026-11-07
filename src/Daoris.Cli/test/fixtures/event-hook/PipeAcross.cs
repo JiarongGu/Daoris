@@ -1,5 +1,5 @@
 #:project ../../../../Daoris.Desktop/Daoris.Desktop.Modules/Daoris.Desktop.Modules.csproj
-// EVENTHOOK1a's M9 and M10 (the event hook design §7): pipes and the agents' job across elevations, in .NET, since Node can call
+// The event hook's M9 and M10: pipes and the agents' job across elevations, in .NET, since Node can call
 // neither InstancePipe.Security, OpenJobObject nor IsProcessInJob. The Node half is only the client and server being measured.
 // Run by hand from the repository's root, in an elevated shell, never by a gate:
 //   dotnet run --file src/Daoris.Cli/test/fixtures/event-hook/PipeAcross.cs --artifacts-path _fixtures/event-probe-build

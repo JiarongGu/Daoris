@@ -4,7 +4,7 @@ using Daoris.Knowledge.Mcp;
 namespace Daoris.Service.Tests;
 
 /// <summary>
-/// HANDBACK1 (D219): a session's handback is the note it closes its quest with through the connector, and anyone entitled to the work
+/// A session's handback is the note it closes its quest with through the connector, and anyone entitled to the work
 /// reads it whole: the steward, another session of the workspace, a terminal. `quest_respond` refuses a note that only points elsewhere;
 /// `handback_read` answers one quest's handback, by the quest's id or the session's, in any state, from the session's own workspace.
 /// </summary>
@@ -80,7 +80,7 @@ public sealed class McpHandbackToolTests : McpToolsFixture
     }
 
     /// <summary>
-    /// 🔴 By the quest's id: the handback whole, the act it was written at, the session that wrote it, how it answered each of the
+    /// 🔴 By the quest's id: the handback whole, the act it is written at, the session that wrote it, how it answered each of the
     /// person's requirements, and that it is that session's claim.
     /// </summary>
     [Fact]

@@ -3,7 +3,7 @@ using static Daoris.Knowledge.HelpProposalFile;
 namespace Daoris.Knowledge;
 
 /// <summary>
-/// The <c>role</c> kind's writer (FOUNDATION1y-i, the foundation design §2.7): a working role of the role catalogue added, changed,
+/// The <c>role</c> kind's writer: a working role of the role catalogue added, changed,
 /// removed or given back its seed (one role's, or every seeded role's at once), the change <c>daoris role</c> and Agents → Roles → Working roles make. Its door is
 /// the change, its target the role's id, and its own <c>press</c> the record and choices as the driver's role door takes them, with the
 /// revision Ask Daoris read. Whether the judge takes it is the driver's to say, before the person sees it.
@@ -13,12 +13,12 @@ internal sealed class HelpRoleProposalWriter(HelpProposalFile file)
     /// <summary>The changes a role proposal makes, as the driver's role door reads them.</summary>
     public static readonly IReadOnlyList<string> Doors = ["set", "remove", "default", "default-all"];
 
-    /// <summary>DEFAULTCONFIG1b's <i>Restore all role defaults</i>: every seeded role given back its seed, added roles kept. It names no one role, so its id is <c>*</c>.</summary>
+    /// <summary>The <i>Restore all role defaults</i>: every seeded role given back its seed, added roles kept. It names no one role, so its id is <c>*</c>.</summary>
     private const string AllDoor = "default-all";
 
     private const string AllId = "*";
 
-    /// <summary>The staffing policy's presets, as the driver's role door fills them (STAFFPOLICY1b).</summary>
+    /// <summary>The staffing policy's presets, as the driver's role door fills them.</summary>
     private static readonly string[] Presets = ["first", "even", "weighted"];
 
     private static readonly System.Text.RegularExpressions.Regex Tag = new("^[A-Za-z]{2,8}(-[A-Za-z0-9]{1,8})*$");
@@ -28,7 +28,7 @@ internal sealed class HelpRoleProposalWriter(HelpProposalFile file)
     /// it takes, its scope (<c>machine</c>, <c>workspace:&lt;id&gt;</c> or <c>repository:&lt;id&gt;</c>) and its choices, each
     /// <c>"agent [model|-] [effort|-]"</c>; a field a set leaves out keeps the role's own. Shape alone is checked here. A name is
     /// <paramref name="name"/> alone (one text as written), or with <paramref name="nameIn"/> a map of language tags to texts (the text
-    /// kept as <c>en</c>), or the map alone; no language is required (D222).
+    /// kept as <c>en</c>), or the map alone; no language is required.
     /// </summary>
     public (string? Id, string Message) Propose(
         string change, string id, string? name, IReadOnlyDictionary<string, string>? nameIn, IReadOnlyList<string>? takes, string? scope, IReadOnlyList<string>? choices,
@@ -133,7 +133,7 @@ internal sealed class HelpRoleProposalWriter(HelpProposalFile file)
         }, why, session, at);
     }
 
-    /// <summary>The reserved id whose proposal carries a place's rules (CONTEXTDRIVE1d), as the driver's role door reads it.</summary>
+    /// <summary>The reserved id whose proposal carries a place's rules, as the driver's role door reads it.</summary>
     private const string Supervisor = "supervisor";
 
     private static void Head(System.Text.Json.Utf8JsonWriter writer, string door, string target)
@@ -147,7 +147,7 @@ internal sealed class HelpRoleProposalWriter(HelpProposalFile file)
     }
 
     /// <summary>
-    /// CONTEXTDRIVE1d (the context counters design §7.6): a <c>set</c> of <c>supervisor</c> carries a place's rules written whole, as JSON, with
+    /// A <c>set</c> of <c>supervisor</c> carries a place's rules written whole, as JSON, with
     /// the revision of the place's rules read; nothing of a working role rides it. Shape alone is checked here; the rules' judge is the driver's.
     /// </summary>
     private (string? Id, string Message) ProposeRules(

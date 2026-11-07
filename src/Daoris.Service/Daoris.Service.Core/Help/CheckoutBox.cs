@@ -4,15 +4,15 @@ using System.Text.RegularExpressions;
 namespace Daoris.Knowledge;
 
 /// <summary>
-/// Ask Daoris's reading of the checkouts, the connector's half (HELPMODE1c4, D183's note; the Ask Daoris modes design §4.1): each call
+/// Ask Daoris's reading of the checkouts, the connector's half: each call
 /// of <c>checkout_read</c> is a keyed request in the home's session requests for the conversation's own session, as a chosen setting's
 /// is (<see cref="SettingsBox"/>), which the driver's loop running that conversation takes once, judges and answers beside it with
-/// what was read. One tool for every agent, in place of the permission rules only Claude took.
+/// what it read. One tool for every agent, in place of the permission rules only Claude took.
 /// </summary>
 /// <remarks>
 /// <para><b>This judges what only the connector can say</b>: that it speaks for a session, that the session's record is an Ask
 /// Daoris conversation of this machine's (a driven session is handed the same connector), and that the call names what its read
-/// needs. Whether the checkout is granted and was handed at this start, the conversation's workspace, the path and what git ignores
+/// needs. Whether the checkout is granted and handed at this start, the conversation's workspace, the path and what git ignores
 /// are the driver's, at every call, whatever the agent.</para>
 ///
 /// <para><b>A twin, the file the contract</b> (<c>.claude/knowledge/twins.md</c>): the request's fields are the driver's
@@ -41,7 +41,7 @@ public sealed partial class CheckoutBox(string? home)
     /// <summary>Who asked, as the requests name a door: Ask Daoris's tool.</summary>
     public const string By = "help";
 
-    /// <summary>The most of what was read this side says: the driver's own bound, held here again so no answer runs past it.</summary>
+    /// <summary>The most of what is read this side says: the driver's own bound, held here again so no answer runs past it.</summary>
     public const int Bound = 200 * 1024;
 
     private const string NoSession =
@@ -59,11 +59,11 @@ public sealed partial class CheckoutBox(string? home)
     /// <summary>How often the folder is looked at while waiting.</summary>
     public TimeSpan Poll { get; init; } = TimeSpan.FromMilliseconds(100);
 
-    /// <summary>The home the driver names on the connector it offers, else the account's (D63): where the session requests live.</summary>
+    /// <summary>The home the driver names on the connector it offers, else the account's: where the session requests live.</summary>
     public static CheckoutBox FromEnvironment() => new(RuleProposalBox.FromEnvironment().Home);
 
     /// <summary>
-    /// Ask the loop running the conversation to read one checkout, and answer what the agent reads: the loop's words, then what was
+    /// Ask the loop running the conversation to read one checkout, and answer what the agent reads: the loop's words, then what is
     /// read, or why there is none.
     /// </summary>
     /// <param name="asker">The record of the session the connector names, or null when it names none or none is held.</param>
@@ -105,7 +105,7 @@ public sealed partial class CheckoutBox(string? home)
         };
     }
 
-    /// <summary>The loop's words, then what was read, bounded; or why the answer does not read.</summary>
+    /// <summary>The loop's words, then what is read, bounded; or why the answer does not read.</summary>
     private static string Said(string answer)
     {
         if (HelpRequestExchange.Said(answer) is not { } said)

@@ -4,7 +4,7 @@ using Microsoft.Data.Sqlite;
 namespace Daoris.Knowledge;
 
 /// <summary>
-/// The journal read by position (FOUNDATION1 l-i): read on the service's one connection inside its gate, as every store does (SQLITETX1).
+/// The journal read by position: read on the service's one connection inside its gate, as every store does.
 /// A database with no journal yet answers an empty page.
 /// </summary>
 public static class JournalRows

@@ -4,8 +4,8 @@ using System.Text.Json;
 namespace Daoris.Knowledge;
 
 /// <summary>
-/// One Ask Daoris proposal's file under the home (HELP1c, D89), as every kind's writer writes it: its head and its tail
-/// around the kind's own fields, and the small rules the writers share (PART7).
+/// One Ask Daoris proposal's file under the home, as every kind's writer writes it: its head and its tail
+/// around the kind's own fields, and the small rules the writers share.
 /// </summary>
 /// <remarks>
 /// The kinds' writers (<c>Help&lt;Kind&gt;ProposalWriter</c>) import the shared rules with <c>using static</c>, so each

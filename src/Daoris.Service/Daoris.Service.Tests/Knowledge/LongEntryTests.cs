@@ -5,10 +5,10 @@ using Lyntai.Memory;
 namespace Daoris.Service.Tests;
 
 /// <summary>
-/// SEM3 (D123): a long entry's tail must reach a vector. The semantic tier embedded an entry's title and
-/// the first 2,000 characters of its body and dropped the rest without a word, and an embedder cuts
+/// A long entry's tail must reach a vector. Embedding only an entry's title and
+/// the first 2,000 characters of its body drops the rest without a word, and an embedder cuts
 /// whatever passes its own window the same way — so a search for something a long decision says near its
-/// end could not find it by meaning, however close the meaning was.
+/// end could not find it by meaning, however close the meaning is.
 /// </summary>
 /// <remarks>
 /// The vectors here are the deterministic stand-in's (<see cref="DimensionEmbedder"/>): one dimension per
@@ -102,8 +102,8 @@ public class LongEntryTests
 
     /// <summary>
     /// The measurement: the fact sits only past the cut, and a search for its meaning must put the
-    /// entry that says it first. Before SEM3 its one vector held build words only (cosine 0), and the
-    /// distractor that mentions the meaning in passing took the place.
+    /// entry that says it first. With one vector it holds build words only (cosine 0), and the
+    /// distractor that mentions the meaning in passing takes the place.
     /// </summary>
     [Fact]
     public async Task A_fact_past_the_old_cut_is_found_by_meaning()
@@ -122,7 +122,7 @@ public class LongEntryTests
     /// <summary>
     /// The embedder's own cut, which Daoris cannot see: an embedder whose context is 600 characters reads
     /// the opening of each text and drops the rest without a word. The window the deployment states is what
-    /// makes every piece fit it (D24): unstated, the fact at character 900 is still lost; stated, it is found.
+    /// makes every piece fit it: unstated, the fact at character 900 is still lost; stated, it is found.
     /// </summary>
     [Fact]
     public async Task A_window_the_deployment_states_keeps_every_piece_inside_its_embedders_context()
@@ -254,7 +254,7 @@ public class LongEntryTests
     }
 
     /// <summary>
-    /// Convergence compares a seed with every piece of its neighbours, and names each entry once (D123).
+    /// Convergence compares a seed with every piece of its neighbours, and names each entry once.
     /// Both entries are long, so whichever the detector takes as the seed, the other is many vectors.
     /// </summary>
     [Fact]

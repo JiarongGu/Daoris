@@ -5,7 +5,7 @@ using Daoris.Knowledge.Mcp;
 namespace Daoris.Service.Tests;
 
 /// <summary>
-/// MIXAGENT2a-i (D163 point 2; the mixed agents design §3): the connector's two tools for a helper. `helper_ask` writes an ask
+/// The connector's two tools for a helper. `helper_ask` writes an ask
 /// file the driver takes, for the working session its connector names; `helper_answer` writes the answer of the helper the
 /// driver started for an ask. Each is an agent's, and a helper cannot ask for a helper (depth one).
 /// </summary>
@@ -13,7 +13,7 @@ public sealed class McpHelperToolTests : McpToolsFixture
 {
     private string HelpersHome => Path.Combine(_root, "rules-home");
 
-    /// <summary>The helpers' box in that home, asked of the table as the box asks it (HOMELAYOUT3), and a file in it.</summary>
+    /// <summary>The helpers' box in that home, asked of the table as the box asks it, and a file in it.</summary>
     private string Helpers(params string[] file) => DaorisHome.Entry(HelpersHome, HomeEntry.Helpers, file);
 
     /// <summary>The connector a session is handed, with a ledger to read its record and a box under the rules home.</summary>
@@ -60,7 +60,7 @@ public sealed class McpHelperToolTests : McpToolsFixture
     }
 
     /// <summary>
-    /// 🔴 COWORK1d (D188 point 2; the message-urgency design §2.2, §9): `helper_ask`'s `urgent` asks the answer at the asker's next
+    /// 🔴 `helper_ask`'s `urgent` asks the answer at the asker's next
     /// step, kept on the ask file as `urgent: true` and said in the answer; an ordinary ask keeps no field, which reads as today's delivery.
     /// </summary>
     [Fact]
@@ -73,7 +73,7 @@ public sealed class McpHelperToolTests : McpToolsFixture
 
         Assert.Contains("at your next step", urgent);
         Assert.Contains("as your next turn", ordinary);
-        // COAGENT1a (D199 point 5): either is started once the asker's turn has ended, reading its uncommitted work.
+        // Either is started once the asker's turn has ended, reading its uncommitted work.
         Assert.All([urgent, ordinary], said => Assert.Contains("starts it once your turn has ended", said));
         Assert.All([urgent, ordinary], said => Assert.Contains("what you have not committed included", said));
         var kept = Directory.GetFiles(Helpers(), "*.ask.json").Select(file => JsonDocument.Parse(File.ReadAllText(file)).RootElement).ToList();

@@ -5,7 +5,7 @@ import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 /**
- * PROCREACH1 (D180 point 2): which classes of a `Process` half a change reaches, read from the sources by
+ * Which classes of a `Process` half a change reaches, read from the sources by
  * `tools/process-reach.mjs`, so the merge tool's CI runs those again and keeps the rest. The census is held here to
  * C# as this repository writes it, to a small tree whose every rule a case names, and to this repository itself: every
  * class carrying the Process trait is read into a half. Run by the `tool-tests` gate with the merge tool's tests.

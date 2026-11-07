@@ -4,7 +4,7 @@ using Microsoft.Data.Sqlite;
 namespace Daoris.Service.Tests;
 
 /// <summary>
-/// WORKFLOW1e (D157 point 10; the workflow design §4.1 row 1, §4.3): the ask's kind and workflow, the person's choice for every chain
+/// The ask's kind and workflow, the person's choice for every chain
 /// it publishes. Kept with when and their words, from the composer and on the ask, the latest standing; one naming neither clears
 /// it. The service judges only the shape: which kinds a workspace declares and which workflows read are the driving machine's.
 /// </summary>

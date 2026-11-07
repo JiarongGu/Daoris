@@ -4,7 +4,7 @@ using Microsoft.Data.Sqlite;
 namespace Daoris.Service.Tests;
 
 /// <summary>
-/// Posting to a teammate's ask (SESSONE2i, <see cref="TeammateAskChannel"/>): an ask held on another machine, whose messages the sync
+/// Posting to a teammate's ask (<see cref="TeammateAskChannel"/>): an ask held on another machine, whose messages the sync
 /// mirrored here. The person and a session here on it post as on an ask's channel, kept as this machine's own so the sync carries them,
 /// at their level; the session reads it as an entry reads an ask's. A line's own channel is read by the person (<see cref="LineChannel"/>).
 /// </summary>
@@ -61,7 +61,7 @@ public sealed class TeammateAskChannelTests : IAsyncLifetime
 
     /// <summary>
     /// A session here on an ask its teammate holds: the ask's record is not on this machine, the session's entry keeps the ask's origin it
-    /// was opened with, and one message of the holder's is mirrored.
+    /// opened with, and one message of the holder's is mirrored.
     /// </summary>
     private async Task<(string Ask, Session Session, ChannelMessage Theirs)> OnTeammatesAskAsync()
     {
@@ -123,7 +123,7 @@ public sealed class TeammateAskChannelTests : IAsyncLifetime
     }
 
     /// <summary>
-    /// 🔴 A part here on a teammate's ask is handed the holder's message by the look (COMMS1 loose item): its entry's claim is one part's
+    /// 🔴 A part here on a teammate's ask is handed the holder's message by the look: its entry's claim is one part's
     /// only, taken once, and the entry's read carries what it acknowledged, so a message taken is not handed again; an ask nothing
     /// mirrors has none to acknowledge.
     /// </summary>
@@ -170,7 +170,7 @@ public sealed class TeammateAskChannelTests : IAsyncLifetime
     }
 
     /// <summary>
-    /// 🔴 The person posts on a line's own channel (COMMS1 loose item): their words, to everyone or to one repository the line holds, kept at
+    /// 🔴 The person posts on a line's own channel: their words, to everyone or to one repository the line holds, kept at
     /// their level with no cap; the line's parts are handed it as the person's, never a session's claim; a blank, a repository the line does
     /// not hold, and a session on an ask held here are refused or answered none.
     /// </summary>

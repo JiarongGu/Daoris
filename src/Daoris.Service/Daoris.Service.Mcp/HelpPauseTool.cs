@@ -3,7 +3,7 @@ using ModelContextProtocol.Server;
 
 namespace Daoris.Knowledge.Mcp;
 
-/// <summary>Ask Daoris's <c>pause_propose</c> (PAUSE1f-a): the <c>pause</c> kind's tool, written by <see cref="HelpProposalBox.ProposePause"/>.</summary>
+/// <summary>Ask Daoris's <c>pause_propose</c>: the <c>pause</c> kind's tool, written by <see cref="HelpProposalBox.ProposePause"/>.</summary>
 [McpServerToolType]
 public sealed class HelpPauseTool(IntakeScope? intake = null, HelpProposalBox? help = null)
 {

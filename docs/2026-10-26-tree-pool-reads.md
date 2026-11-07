@@ -1211,6 +1211,321 @@ laying back makes the move a delay, not a loss.
 
 The round's mechanics hold at main's code, and I found no case in which they lose work.
 
+## Opus (independent), round 5
+
+The independent Opus 5.5 reader's read of round 5 at main `353a67a334`: 11 findings, 4 of them blocking, all four in row 2. I read the owner's
+three choices (D214's note of 2026-11-07) as given: rooms in place, kept slots as the fallback, no Dev Drive. BUILDSTAMP1 is built as R5.8
+says (`Directory.Build.props:12-16`, imported by `src/Daoris.Desktop/Directory.Build.props:3` and `src/Daoris.Service/Directory.Build.props:3`,
+`-p:DaorisStamp=true` at `tools/service-publish.mjs:51`).
+- **The fallback holds.** §25's answers to round 4's F1 to F8 hold at main, with three named changes (F9). I found no case in which it
+  loses work.
+- **The classes and the store** are stack-agnostic in their frame, and safe on Windows as R5.6 places them, by copy. F10 names what the
+  copy, the manifest and the key still need.
+- **Rooms in place, as R5.3 writes them, lose work or give a wrong build in four cases**, each from code the design does not cite:
+  - every way a line moves in a checkout refuses one that is dirty or has a session in it, and the design's replacement leaves stale files
+    that a later line commits as a revert (F1);
+  - a room's files hold its line's work, and after any restart the claim hands them to another line (F2);
+  - a harness's own git reaches every room: for Claude Code it is held by rules and a hook that fail open, for Codex by nothing (F3);
+  - a build or a gate in one room reads and writes another room's in-flight work, and no lock can hold it (F4).
+
+  Each has a smallest change inside the owner's frame, and none reopens a choice.
+
+**Verdict: another round, scoped to row 2 (F1 to F4).** Rows 1, 3 and 4 may go ahead (§4).
+
+Read at main `353a67a334`, round 5's `bfdb82acd6` with a day of main merged, BUILDSTAMP1 and D214's note among it. Every line cited here was
+read there. I read with git and read-only commands and changed no file but this one. I built and ran nothing, so every figure here is the
+round's own. A bare path is under `src/Daoris.Desktop/Daoris.Desktop.Driver/`, and `Design` is `docs/2026-10-26-tree-pool-design.md`.
+
+### 1. Round 5 against main today
+
+| § | Holds? | What I found |
+|---|---|---|
+| R5.1, R5.2 | Not re-measured | The 93% ignored share and the kept tree's 526 MB are the round's figures |
+| R5.3, the claim | **No** | The claim is a run's, but a room's files are its line's (F2). It is per home, not per checkout (F7) |
+| R5.3, working in place | In part | The private index has precedents (`Workplace/ActCommits.cs:131`, `Workplace/PieceKeeper.cs:289`). Its commit skips the hooks and stages a person's skip-worktree files (F5). Today's in-root mode is a second way (F6) |
+| R5.3, landing | **No** | The merge tool merges in the main checkout, not in GATEWT1's gate tree. Daoris's merge, promotion and pull each refuse a dirty checkout or one a session works in (F1) |
+| R5.3, break 1 | **No** | Codex takes no rules. Claude Code's are prefix rules beside a guard that fails open (F3) |
+| R5.3, breaks 2 and 3 | **No** | Nothing can lock an agent's own build. Runnable outputs and repository-wide gates cross rooms (F4) |
+| R5.3, breaks 4 to 8 | In part | The generators hold their own locks (`tools/contracts.mjs:139-147`). Laneless build inputs and the central package file are missed (F4, F8). The person's acts are refused while any room is held (F7) |
+| R5.4 | In part | The check misses build inputs outside a unit's folder. This repository's eight rooms meet in most of their closures (F4, F8) |
+| R5.5 | Yes, as a frame | Mixed folders and path-bound installs need a word (F10) |
+| R5.6 | Yes, by copy | The copy keeps the read-only mark, a removal must not follow links, nothing fills the store without a template, and under rooms it serves nothing (F10) |
+| R5.7 | Yes, under the owner's no | C, the Dev Drive and §18 item 6 are answered by the owner's no (F11) |
+| R5.8 | Yes, built | As above |
+| §17.0 | In part | Row 2's proofs cannot pass as written (F1 to F4). Rows 1, 3 and 4 stand apart from them |
+| §18 items 7, 8 | In part | Item 7 must say what the person loses in their own checkout (F7) |
+
+### 2. Round 5's answers to round 4 (§25)
+
+| Finding | Round 5 | Answered? |
+|---|---|---|
+| F1 (blocking) the commit stamp | Row 0 | **Yes**, built (`Directory.Build.props:12-16`) |
+| F2 (blocking) `bin/` and `wwwroot` run without a build | The runnable-outputs class, cleared at every take | **For the fallback, yes.** Under rooms, "A room's session has outputs of its own making only" (Design:1888) does not hold (F4) |
+| F3 `CopyAsync` refreshes nothing | The slot's copies deleted first | Yes |
+| F4 the take's undo under the shared hold | Detach and free; the takeover deletes | Yes |
+| F5 every line holds ignored paths | Declared outputs | Yes, by this repository's declaration (Design:240-242) |
+| F6 npm's freshness by a file's time | The store keyed by bytes | **Partly.** A kept slot's dependencies are placed again only when their key moves (Design:1892). So an agent's `npm install --no-save` at an unchanged lockfile is still carried, unless the manifest is read at every take (F9) |
+| F7 branches derived from a listed folder | Row 4's census | Yes |
+| F8 nits | Each taken | Yes |
+
+### 3. Findings
+
+1. **Blocking. A room's branch cannot land, and the design's way to land it leaves files that a later line commits as a revert.**
+   - **Where:** Design:165-169: "The merge tool already lands in a gate tree of its own (GATEWT1), so a room's branch lands as any branch
+     does". Then `git reset -q <new tip> -- <landed paths>` moves the index, "only where each still equals the old tip's". Against it:
+     - the merge tool merges in the main checkout and refuses unless it is clean (`tools/merge-branch.mjs:23`, `:3164-3174`, the merge at
+       `:5237`). GATEWT1's tree runs the full set beside the merge (`:111-128`);
+     - Daoris's own `merge` refuses a path that is not a tree it opened (`Workplace/TreeMerges.cs:61-65`) and a root that is not clean
+       (`:139-145`). It merges in the line's integration tree, then fast-forwards the checkout (`:157-160`);
+     - the promotion waits for any session the ledger holds in that checkout (`Workplace/IntegrationPromotes.cs:402`; `Workplace/CheckoutBeside.cs:37`,
+       a session whose tree is the checkout). It refuses a checkout that is not clean (`:408-409`) and moves it only by `merge --ff-only`
+       in it (`:410`): "never by a ref moved under it" (`:407`; `:23-25`);
+     - a line's pull waits the same way (`Workplace/TreeSync.cs:225`).
+   - **What goes wrong:**
+     - Under rooms the checkout is dirty, and a session works in it, whenever any room is held. So no branch of that repository lands or
+       is pulled while one is: neither a room's nor a fallback tree's.
+     - The replacement moves the ref under the checkout and moves the index alone. That is right only for a path whose working file already
+       holds the new content. A path the move changes that the room's session did not write keeps its old working file.
+     - An example. Room A is held in place. A fallback session's branch changes `a/p` and lands: R5.4 lets a repository declare rooms for
+       part of itself, and nothing keeps a fallback session out of a room's paths. The index takes the new `a/p`, and the working file
+       keeps the old. A's builds read the old file. The next line in room A grows from the new tip, and its first commit (`add -A -- <room>`)
+       stages the old file. Its branch reverts the landed change, and its landing lands the revert. A pull request merged on the remote
+       and pulled in does the same.
+   - **Smallest change:**
+     - One room-aware fast-forward: a journaled act under the checkout's lock, used for every move of a line that a checkout has out
+       (the merge's, the promotion's and the pull's). For each path the move changes:
+       - a working file and index at the old content take the new in both, as a fast-forward writes them;
+       - a path of the landing room's own, whose working file holds that session's later work, takes the new index alone;
+       - any other path, above all a path in another held room, holds the whole move, said, with nothing written, as `merge --ff-only`
+         refuses today.
+
+       Then one `update-ref` that verifies the old value.
+     - `CheckoutBeside` waits for a session whose room's paths the move changes, not for any session in the checkout. `TreeMerges`' tree
+       and clean-root refusals are read for a branch that has no tree.
+     - Row 2's proofs: a fallback branch landing into a held room's path is held, said; a landing beside a held room writes the free paths
+       and moves the index; nothing reverts.
+
+2. **Blocking. A room's files are its line's work, and the claim hands them to another line.**
+   - **Where:** Design:146-150: the claim is "passed on only from a dead process by `HomeLease`'s test", and "a room whose paths hold
+     changes no session made (the person's) is refused to a session". Against it:
+     - in place, a line's commits go to its branch, not to the checkout's `HEAD` (Design:156-161). So the room's working files hold both the
+       line's uncommitted work and every commit of it not yet landed;
+     - a shutdown, an update's included, kills every session and carries it on (driving rule 41, `docs/areas/driving.md:257-258`). A parked
+       session holds its tree (`:245`), and uncommitted work keeps one (`:282-283`);
+     - round 4 kept a slot's holder out of the claim: "Whether a slot is held is never stored". It is read live from `TidyHolders`
+       (Design:608-610; `Workplace/TidyHolders.cs:39-51`).
+   - **What goes wrong:**
+     - After any restart, every claim names a dead run. If the look plans another quest to that lane before the line's carry-on, the room
+       goes to the new line, and that line's first commit stages the old line's work onto its own branch.
+     - The old line's carry-on finds the room held and takes the fallback, where its uncommitted work is not.
+     - A parked line's room is taken the same way.
+     - "Changes no session made" cannot be read: the working files say nothing of who wrote them.
+   - **Smallest change:**
+     - The claim names the line. A dead run's claim is taken over only by that line's carry-on or resume, the look binding it to the new
+       run.
+     - A room is held by its line under `TidyHolders`' rules, read live, as round 4 reads a slot's holder.
+     - A room is free for another line only when its paths equal the line's tip (`status --porcelain -- <room>` empty, `HEAD` at the tip).
+       F1's fast-forward makes that true once the line's work lands.
+     - A line that is discarded or withdrawn puts its room's files back at the tip, in the same journaled act that keeps its branch on a
+       recovery ref.
+     - Row 2's proofs: a restart with two quests to one lane gives the room back to the line that was carried on; a parked line's room is
+       never taken.
+
+3. **Blocking. A harness's own git and writes reach every room: Claude Code is held by rules and a hook that fail open, and Codex by
+   nothing.**
+   - **Where:** Design:176-178: "The session's permissions deny git's writing commands (Claude Code's deny rules, Codex's rules)". Against
+     it:
+     - Codex takes no rules file (`docs/areas/git-and-remotes.md:159-160`). A harness that a Claude Code rule means nothing to is handed
+       nothing (`Loop/Session/SessionRules.cs:39-42`). Where Daoris needed Codex held, as a reviewer, Codex was held "by its copy alone"
+       (`Participants/Domain/OpinionPosture.cs:10-17`);
+     - the git area never rests what an act may do on "the harness's rules alone" (`docs/areas/git-and-remotes.md:293-294`);
+     - the tree guard is "defence beside the working-directory boundary, never instead of it", and a hook that fails or times out blocks
+       nothing (`Workplace/TreeGuard.cs:14-25`). In place, that boundary is the whole checkout;
+     - this repository's own builder runs in the harness's own worktree (`.claude/agents/branch-worker.md:6`), which the harness makes with
+       git from the checkout's `HEAD`.
+   - **What goes wrong:**
+     - A Codex session's `git checkout -- .`, `git restore .`, `git stash -u`, `git reset --hard` or `git clean -fd`, or a harness's own undo
+       from a snapshot, removes every room's uncommitted work. It puts each room's working files back at the checkout's `HEAD`, without
+       that room's commits. The next private-index commit of every other room then stages those files, and each branch reverts its own
+       commits.
+     - A Claude Code session reaches the same through a spelling its prefix rules miss (`git -C . stash`, a script, an npm script that runs
+       git), or through a guard that timed out.
+     - A habitual `git commit` lands on the checkout's own branch, which is the line, with no gate.
+     - A lead in a room that dispatches a builder into the harness's own worktree grows that builder from the line, without the lead's
+       in-place work.
+     - The harness's own `git status` takes the index lock, so the landing's index move can fail on `index.lock`.
+   - **Smallest change:**
+     - In place only for an adapter that takes Daoris's rules and guard (`adapter.Can.TakesSettings`, as `OpinionPosture.Of` reads it).
+       Every other harness takes the fallback until it can be held.
+     - For that adapter:
+       - every writing form of git is denied in each spelling, as `no-push` denies `git -* push` (`Agents/Permissions.cs:181`);
+       - the classifier's sentence names Daoris's `commit`, since this repository's canon tells every agent to commit as it goes;
+       - the guard is narrowed to the room's paths and refuses git's working-tree writers by their structure;
+       - `GIT_OPTIONAL_LOCKS=0` is in its environment, as `HelperCapture` hands it (`Participants/Helpers/HelperCapture.cs:12`, `:90`);
+       - the harness's own worktree isolation is refused in place.
+     - What protects the branch, whatever ran:
+       - Daoris's `commit` refuses when the room's files no longer hold its branch's own changes (a path its branch changed is back at the
+         base's content, or a file it added is gone). It stops the session for the person rather than committing the revert;
+       - the turn-end read of `HEAD` and the index compares entries, never bytes, since the person's editor rewrites the index's stat data.
+     - Routing the harness's git through an environment `GIT_DIR` over the shared working tree is no way out. It reaches every git the
+       session's tools start, a test's fixture repositories among them, where `git init` or `git commit` would write the session's own git
+       directory.
+     - Row 2's proofs: a Codex start for a lane takes the fallback; a Claude Code session's `git -C . stash` is refused; a room's files reset
+       by hand stop its session before any commit.
+
+4. **Blocking. A build or a gate in one room reads and writes another room's in-flight work, and no lock can hold it.**
+   - **Where:** breaks 2 and 3 build a shared unit "under one lock per unit, Daoris's own" (Design:179-183); also Design:207-215, row 2's
+     proof "two builds of a shared unit serialised" (:1419), and :1888. Against them:
+     - the agent runs its own builds and tests in its shell. Daoris sees a build only through a tool, which is model B, later, and "never a
+       shim on the path, which a script or an absolute path steps around" (Design:313-314). The lock has nothing to take;
+     - the web's build writes `src/Daoris.Service/Daoris.Service.Http/wwwroot/`, a path of the service room, which the modules' `DesktopPage`
+       and the HTTP host serve without a build (round 4's F2). A test project's `bin/` is written by whichever room built it last;
+     - `npm run quick`, which every session runs, reads every room: the generator over the service's contracts, the type check, the
+       doctrine check, the size ratchet (`package.json:16`);
+     - `tools/contracts` compiles the contracts and the modules (`tools/contracts/ContractsGen.csproj:19-20`);
+     - some build inputs lie outside any unit's folder:
+       - the root `Directory.Build.props`, laneless;
+       - `canon/canon.json`, laneless, which `src/Daoris.Desktop/Directory.Build.props:29` reads;
+       - `src/Daoris.Desktop/Directory.Packages.props`, in the modules lane (`daoris.lanes.json:49`), which sets every desktop project's
+         package versions (`src/Daoris.Desktop/Directory.Build.props:17`).
+   - **What goes wrong:**
+     - Two rooms that build one unit at once race on its `obj/`. On Windows, a test host or the window holding a unit's `bin/` open fails
+       the other room's copy.
+     - A room's `--no-build`, `e2e-host.mjs` or `desktop.mjs run` runs another session's in-flight build as its own. That is round 4's F2
+       again, inside one checkout.
+     - A gate turned red or green by another room's half-done edit is not the branch's result.
+     - The check as written passes every one of these, since it reads only the sources of declared build units.
+     - The landing's gates in the integration tree stay the proof, so nothing wrong lands. But the session's own results are wrong, and
+       row 2's proof cannot pass.
+   - **Smallest change:**
+     - The check reads each room's build closure: its units, what they reference, the inputs outside their folders that `builds` lists
+       (props, central package files, a version file), the sources its generators read, and the outputs its builds write into another
+       room's paths.
+     - Rooms whose closures meet are one claim group: one session in place per group, a second start in it taking the fallback, until
+       model B builds the rooms apart. Or a repository's own build gives each session outputs of its own (for .NET, an `ArtifactsPath`
+       from the session's environment), which ends the race and the crossing outputs but builds each session cold once.
+     - In this repository, the contracts, `wwwroot`, the generated types, `tools/contracts`, the root props and `canon/canon.json` join the
+       web, driver, modules, service, tools and docs rooms, and the CLI reads `canon/`. So nearly the whole repository is one group. R5.4
+       should say what that leaves in place (one session at a time beside the records, the rest on the fallback, until B), and Design:1888
+       should be corrected.
+     - A session's instruction says that its repository-wide gates read other rooms' working files, and that the landing's gates are its
+       proof.
+
+5. **Not blocking, before row 2. The private-index commit.**
+   - **Where:** Design:156-163; precedents at `Workplace/ActCommits.cs:131` and `Workplace/PieceKeeper.cs:289`.
+   - **What goes wrong, and the change, for each:**
+     - (a) `read-tree` writes no skip-worktree bit. So a file the person keeps out of their own commits with `update-index
+       --skip-worktree`, a local configuration and sometimes a secret, is staged by `add -A` into a session's branch, which a `push` step
+       may publish. And in a sparse checkout, every room path not on disk is staged as a delete. Refuse in place where the real index holds
+       a skip-worktree or assume-unchanged entry in the room, or the checkout is sparse.
+     - (b) `commit-tree` runs no `pre-commit` or `commit-msg` hook and signs nothing, where a session's `git commit` in a tree runs both.
+       Run them with the private index named (`git hook run`, git 2.36, the floor §25's F8(b) already sets), or refuse in place where they
+       are set.
+     - (c) The lanes' paths are globs with `!` exclusions (`daoris.lanes.json`'s `web-shell`), and git's pathspecs need `:(glob)` and
+       `:(exclude,glob)`. Prove the translation against `git ls-files`.
+     - (d) As an act, the commit takes the checkout lock alone (`Workplace/ActRuns.cs:113`) and the one open act per checkout
+       (`Workplace/ActJournal.cs:173`). So it is refused while any start holds the shared hold, while another room commits, and while the
+       person acts. It writes only its own branch and its private index, so it can be one ref transaction that verifies the old value,
+       journaled as a keep is, outside the checkout's exclusive hold.
+     - (e) Staging the whole room ends the agent's selective commit. Let `commit` take paths within the room.
+
+6. **Not blocking. Today's in-root mode is a second way to work in the checkout.**
+   - **Where:** driving rule 12 (`docs/areas/driving.md:139-140`); `Loop/Run/Choose/CleanCheckout.cs:13-15`;
+     `Participants/Domain/RoutingStanding.cs:27`. A repository whose sessions open no tree already runs one session in the root, and that
+     session runs git itself and commits on the checkout's own branch.
+   - **What goes wrong:** rooms put a second way beside it (D228), with the opposite rule for the agent's git. And `CleanCheckout` holds
+     every in-place start whenever another room has left the checkout dirty, which under rooms is always.
+   - **Smallest change:** say which way stands. The in-root mode becomes a repository with one room covering every path, under row 2's rules,
+     and the old way goes in the same chunk. `CleanCheckout` reads the room's paths only.
+
+7. **Not blocking. The person's checkout, and another home.**
+   - **Where:** Design:191-192 (break 8); §18 item 7 (Design:1712-1717). `Workplace/StageActs.cs:147` and git rule 39
+     (`docs/areas/git-and-remotes.md:211-212`) refuse the person's acts while a session works in the checkout. `Workplace/TreeLock.cs:43`,
+     `:88-89` keep the checkout lock under the home, and the store keeps every claim there too.
+   - **What goes wrong:**
+     - While any room is held, the person's Stage, Commit, Switch and Stash in Daoris are refused. Their own editor's *Discard all* or
+       `git switch` reaches every room's working files.
+     - A second home that registers the same checkout, a development run from source among them, sees no claim and no lock.
+   - **Smallest change:** §18 item 7 says the first plainly, and the Projects row says it while a room is held. A marker in the checkout's
+     common git directory names the home that holds rooms there, and every other home refuses to work in place.
+
+8. **Not blocking. The room check, this repository's rooms, and the word.**
+   - The laneless paths are not documents alone: `canon/`, `.claude/`, `examples/`, `daoris.json`, `daoris.lock` and two
+     `Directory.Build.props` (F4). R5.4's "docs" room holds them, and every desktop build reads some of them.
+   - Joining `web-shell` and `web-settings` renames lanes that the backlog and the dispatch skill name. A room can name its lanes instead.
+   - "Room" already names the intake's place (`<home>/work/rooms/intake`, `docs/areas/driving.md:266`; `Workplace/IntakeRoomPaths.cs`),
+     meeting rooms (AGENTROOM1) and the doctrine's rooms. The Projects row's word needs a glossary term of its own, in both catalogues.
+
+9. **Not blocking, before row 4. The fallback against round 4's F1 to F8.** §25's answers hold, with three changes and one consequence.
+   - The manifest is read at every take, not only when the key moves (Design:1892). Otherwise round 4's F6 stands for an agent's install
+     at an unchanged lockfile.
+   - The order at a take: switch, check, clear the runnable outputs and the local copies, then run the hook, which writes `docs/index/`,
+     an output, again.
+   - Every removal at a take or a finish removes each link as a link first and never follows one (F10).
+   - Row 4's landings are today's and land as today's do, but only while no room is held in that checkout (F1).
+
+10. **Not blocking, before row 3. The classes and the store, on Windows and across stacks.**
+    - **Hard links and junctions stay rejected,** for Windows' own reasons beside D51's.
+      - An NTFS hard link shares one file record, its read-only mark included. The sealed mark makes every tree's file read-only, and
+        clearing it in one tree clears it in the store. After that, a tool that writes in place (a postinstall patch, `patch-package`, a
+        rebuild of a native module) writes every tree and the store. One file takes at most 1,024 names.
+      - A junction is the store itself to every tool. An install or a cache under it writes the store, Node and TypeScript resolve modules
+        by the store's real path, and a removal that follows it empties the store.
+      - That last is no theory here: `git worktree remove --force` followed a builder's junction to the main checkout's `node_modules` and,
+        through npm's workspace link, deleted the CLI's tracked sources (PRUNELINKS1, `docs/task-archive.md:30`;
+        `tools/worktree-remove.mjs:2-5`).
+    - **The copy** (R5.6) is safe, with four changes.
+      - `File.Copy` copies the read-only mark. So a placement clears it in the tree, and every delete of a placed folder clears it first,
+        as TREELOCAL1's deletes do.
+      - Every removal of a placed folder (a re-placement, a clearing, the finish's set-aside, an eviction) first removes, as links, the
+        workspace links it made again, by `tools/worktree-remove.mjs`'s rule.
+      - The manifest fails on an entry file changed or gone, not on files added beside them (`node_modules/.cache`, `.vite`). Otherwise
+        every run places the folder again.
+      - With the owner's no to a Dev Drive there is no template, so the store fills only when a slot is made or renewed. After any lockfile
+        change, every take misses and the agent installs: 72 to 93 s, against TREEDEPS1's copy of 6 to 17 s. Instead, a miss runs `prepare`
+        in the taken slot before the session starts, at the line's tip with its dependency folder cleared first, and seals the result.
+    - **Keys.** The lockfile and the toolchain miss the package manager's own tracked configuration (`.npmrc` and its kin) and any
+      environment that changes an install (`NODE_ENV`). The proposal's conventions name them in `key`, and `prepare` runs in the gates'
+      environment.
+    - **Two shapes that no class holds:**
+      - a path-bound install keyed by a lockfile (a pip `.venv`, a conda environment) can be neither placed nor trusted to check itself.
+        Make it an intermediate with a `key`, cleared when its key moves;
+      - a folder that holds intermediates and runnable outputs together (a CMake build tree, Maven's `target/`) is an output unless every
+        runner builds first. The class belongs to the runner, not the folder, and the canon's conventions say so per stack.
+    - **Under rooms, the store serves nothing.** The checkout's own `node_modules` belongs to every room, and a room that owns a lockfile
+      reinstalls under every other room's `npm run quick`. So R5.6's "a person's install never reaches a session" (Design:282) holds on the
+      fallback only, and the "under both" of D214's note needs that said.
+
+11. **Not blocking. Nits.**
+    - (a) The owner's no to a Dev Drive (D214:324-326) answers R5.7's C, its Dev Drive steps, the clone inside a slot and §18 item 6. R5.6's
+      "template" and R5.7's choice should say so.
+    - (b) Design:171-173 sets "eight rooms" against "the five workers the dispatch skill runs today". Those workers are the harness's own
+      worktree builders (`.claude/agents/branch-worker.md:6`), which rooms do not change, and after F4 here there is about one room in
+      place.
+    - (c) Design:183 calls the build lock "Daoris's own", while Design:313 has builds reach Daoris only by its MCP tool. Say which rows each
+      holds for.
+
+**11 findings, 4 of them blocking.**
+
+### 4. Verdict, and the rows that may be built first
+
+**Verdict: another round, scoped to row 2.**
+- F1: the room-aware fast-forward, for every move of a line.
+- F2: the line's hold of its room.
+- F3: in place only for a harness Daoris holds, and a commit that refuses a reverted room.
+- F4: claim groups by build closure, and this repository's count said.
+
+F5 to F11 are named changes that the steward can check without another read. None of the four reopens the owner's choices. Each is a
+condition under which rooms in place keep their work and give a session its own build.
+
+**The rows:**
+- **Row 0** is built.
+- **Row 1 first,** with F4's closure and F8's laneless inputs in its check. Nothing acts on it, and it lets the steward read this
+  repository's claim groups before row 2 is cut again.
+- **Rows 3 and 4 next, in either order,** once Codex's read finds nothing blocking in them, with F10's and F9's changes. Neither depends on
+  rooms: row 4's landings are today's, and row 3 serves today's fresh trees too.
+- **Row 2 after another round** on F1 to F4, and **row 5 after row 2's week**, as §17.0 says.
+
 ## Moved from the design at round 4
 
 Round 4 moved the design's own superseded round text here, so the design does not grow: rounds 1 to 3's standings and *Read at* paragraphs,

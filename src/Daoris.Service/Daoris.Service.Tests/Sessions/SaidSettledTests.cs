@@ -5,10 +5,10 @@ using Microsoft.Data.Sqlite;
 namespace Daoris.Service.Tests;
 
 /// <summary>
-/// FOUNDATION1 row p (D212; the foundation design §3.4 rule 5, §19.2): a word that leaves a record's <c>said</c> is settled by the statement
+/// A word that leaves a record's <c>said</c> is settled by the statement
 /// that takes it, one row per record left, word id and producer key, and a producer's retry after the take is answered from it by every
 /// keeping door but the supervisor's, inside the door's own exclusive step and before any refusal but the record's absence, over the line's
-/// records back along <c>from</c> (the head walk's forward records are row d-ii's). Every case here runs on a database file of its own under
+/// records back along <c>from</c> (the head walk's forward records are another rule's). Every case here runs on a database file of its own under
 /// the repository's gitignored <c>_fixtures/</c>, since the retry that races a take needs two connections, which is what two processes are.
 /// </summary>
 public sealed class SaidSettledTests : IAsyncLifetime
@@ -181,7 +181,7 @@ public sealed class SaidSettledTests : IAsyncLifetime
 
     /// <summary>
     /// An older connector composes its own stores and runs the statement it always ran over the migrated database: <c>TakeSaidAsync</c> as it
-    /// was before the table, a read then a whole-list rewrite. The trigger settles the word whoever writes it.
+    /// runs without the table, a read then a whole-list rewrite. The trigger settles the word whoever writes it.
     /// </summary>
     [Fact]
     public async Task An_older_connectors_own_take_statement_over_the_migrated_database_settles_its_word()
@@ -548,7 +548,7 @@ public sealed class SaidSettledTests : IAsyncLifetime
     }
 
     /// <summary>
-    /// 🔴 Row d-ii, *O8-F1* the second way: K said at the head B, after its say to A was refused <c>Continued</c>, waits on B. K's retry naming
+    /// 🔴 The second way: K said at the head B, after its say to A is refused <c>Continued</c>, waits on B. K's retry naming
     /// A is answered <c>Settled</c>, naming B where the word waits to go, nothing kept on either; an older client's retry, which asks no
     /// settlement, is answered by the door as it stands on A: refused <c>Continued</c>.
     /// </summary>

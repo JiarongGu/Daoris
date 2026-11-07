@@ -110,7 +110,7 @@ public sealed class CallLineageTests
         // A null, like a key left out, sent nothing: the root's own metadata carries `parent_thread_id: null`.
         Assert.Null(CallLineage.Read(CodexMeta(Turn("019a-root", null), asText: false))!.Malformed);
         Assert.Equal(
-            """{"at":"1970-01-01T00:00:00.000Z","by":"call","tool":"helper_ask","harness":"codex","thread":"t2","malformed":"parent"}""",
+            """{"at":"1970-01-01T00:00:00.000Z","by":"call","tool":"helper_ask","door":"codex","thread":"t2","malformed":"parent"}""",
             LineageFile.Line("helper_ask", new CallLineage(CallLineage.Codex) { Thread = "t2", Malformed = "parent" }, DateTimeOffset.UnixEpoch));
     }
 
@@ -129,10 +129,10 @@ public sealed class CallLineageTests
         var at = new DateTimeOffset(2026, 10, 16, 8, 30, 0, 123, TimeSpan.Zero);
 
         Assert.Equal(
-            """{"at":"2026-10-16T08:30:00.123Z","by":"call","tool":"knowledge_search","harness":"claude-code","toolUse":"toolu_1"}""",
+            """{"at":"2026-10-16T08:30:00.123Z","by":"call","tool":"knowledge_search","door":"claude-code","toolUse":"toolu_1"}""",
             LineageFile.Line("knowledge_search", new CallLineage(CallLineage.Claude) { ToolUse = "toolu_1" }, at));
         Assert.Equal(
-            """{"at":"2026-10-16T08:30:00.123Z","by":"call","tool":"knowledge_get","harness":"codex","thread":"t2","parent":"t1","kind":"thread_spawn","source":"subagent","root":"t1"}""",
+            """{"at":"2026-10-16T08:30:00.123Z","by":"call","tool":"knowledge_get","door":"codex","thread":"t2","parent":"t1","kind":"thread_spawn","source":"subagent","root":"t1"}""",
             LineageFile.Line(
                 "knowledge_get",
                 new CallLineage(CallLineage.Codex) { Thread = "t2", Parent = "t1", Kind = "thread_spawn", Source = "subagent", Root = "t1" },
@@ -155,7 +155,7 @@ public sealed class CallLineageTests
         var twin = document.RootElement.GetProperty("service").GetProperty("callKeys").EnumerateArray()
             .Select(row => (row[0].GetString(), row[1].GetString()));
 
-        Assert.Equal(twin, CallLineage.Readers.Select(reader => ((string?)reader.Harness, (string?)reader.Key)));
+        Assert.Equal(twin, CallLineage.Readers.Select(reader => ((string?)reader.Door, (string?)reader.Key)));
     }
 
     /// <summary>A call carrying both agents' keys is read as the first in the list's, Claude Code's (O1-F17).</summary>

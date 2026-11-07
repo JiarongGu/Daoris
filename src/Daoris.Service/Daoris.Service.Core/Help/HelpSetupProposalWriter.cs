@@ -3,7 +3,7 @@ using static Daoris.Knowledge.HelpProposalFile;
 namespace Daoris.Knowledge;
 
 /// <summary>
-/// A place's quick set-up a <c>place</c> proposal asks (AGENTSPLACE1k): the delivery preset, the other repositories beside the proposal's own,
+/// A place's quick set-up a <c>place</c> proposal asks: the delivery preset, the other repositories beside the proposal's own,
 /// the second opinion and the person's look, adoption with what it builds, and general driving. Shape alone is checked in the box.
 /// </summary>
 public sealed record HelpSetupPlace(
@@ -11,12 +11,12 @@ public sealed record HelpSetupPlace(
     bool Drive = false);
 
 /// <summary>
-/// The <c>setup</c> kind's writer (LAYOUT8, D170 point 1): a place's quick set-up of one or several registered repositories, its one door
-/// <c>place</c> (AGENTSPLACE1k; WORKFLOWCLEAN1 1f took the repository-alone <c>setup</c> door away, adoption being the place's part).
+/// The <c>setup</c> kind's writer: a place's quick set-up of one or several registered repositories, its one door
+/// <c>place</c>.
 /// </summary>
 /// <remarks>
-/// The file keeps its <c>door</c> and its common <c>workspace</c>, written null, so the doors WSSETUP7 adds to this kind
-/// (<c>register</c>, and a workspace's plan with its pause, resume and stop, D124 §4.5) are a door and a field of the same file.
+/// The file keeps its <c>door</c> and its common <c>workspace</c>, written null, so the doors added to this kind
+/// (<c>register</c>, and a workspace's plan with its pause, resume and stop) are a door and a field of the same file.
 /// </remarks>
 internal sealed class HelpSetupProposalWriter(HelpProposalFile file)
 {
@@ -28,7 +28,7 @@ internal sealed class HelpSetupProposalWriter(HelpProposalFile file)
     /// </summary>
     public (string? Id, string Message) Propose(string repository, string why, string? session, DateTimeOffset at, HelpSetupPlace? place = null)
     {
-        // The repository-alone `setup` door is gone (WORKFLOWCLEAN1 1f): a set-up is always a place's, whose delivery is named.
+        // A set-up is always a place's, whose delivery is named.
         place ??= new HelpSetupPlace("");
         var named = Blank(repository);
         if (string.IsNullOrWhiteSpace(why)) return NoReason;

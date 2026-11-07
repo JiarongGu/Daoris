@@ -5,7 +5,7 @@ namespace Daoris.Contracts.Confirmations;
 
 // A local host's alone: a shared host has no door that is the person's alone. An ask waits with no clock; the window lists it and the
 // person answers with the key, and at the Confirm the host makes the request as asked. The asker polls its one, and withdraws it with
-// the token its ask was answered with. An id an earlier start held reads <c>restarted</c>.
+// the token its ask is answered with. An id an earlier start held reads <c>restarted</c>.
 
 /// <summary>What waits, oldest first.</summary>
 public sealed record ListConfirmations : IRoute<ConfirmationResponse[]>
@@ -54,7 +54,7 @@ public sealed record RefuseConfirmation(string Id) : IRoute<ConfirmationActionRe
     public static string Path => "/api/confirmations/{id}/refuse";
 }
 
-/// <summary>An asker's withdrawal of its own ask, by the token its ask was answered with.</summary>
+/// <summary>An asker's withdrawal of its own ask, by the token its ask is answered with.</summary>
 [OptionalBody]
 public sealed record WithdrawConfirmation(string Id, string? Token = null) : IRoute<ConfirmationActionResponse>
 {

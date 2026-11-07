@@ -3,7 +3,7 @@ using System.Text.Json;
 namespace Daoris.Knowledge;
 
 /// <summary>
-/// Daoris's reading of a done's evidence (EVID1a, D144 point 3): the commit read, and what each item it waits on was found to be. It
+/// Daoris's reading of a done's evidence: the commit read, and what each item it waits on proved to be. It
 /// applies only to a done waiting on exactly what it reads; found, it lets go what the done held, and it moves no status.
 /// </summary>
 [QuestOperation("evidenced", QuestOperationPhase.Log)]
@@ -11,7 +11,7 @@ internal sealed class QuestEvidenceOperation : IQuestOperation
 {
     public QuestOperationKind Kind => QuestOperationKind.Evidenced;
 
-    /// <summary>What was read; its when and machine are the operation's own columns.</summary>
+    /// <summary>What is read; its when and machine are the operation's own columns.</summary>
     public void WritePayload(Utf8JsonWriter writer, QuestOperation operation)
     {
         writer.WriteStartObject();
@@ -36,7 +36,7 @@ internal sealed class QuestEvidenceOperation : IQuestOperation
     /// Daoris read a done's evidence: judged by the replay's rule inside the write. Found, and nothing else holding the done, the chain's
     /// next step is published in the same write, as the yes publishes one; missing, the done stays held, now for that. A commit read
     /// alone keeps the commit of a submission that waits on no evidence, once, and publishes nothing
-    /// (FABRIC-CLOSE1c6, <see cref="QuestEvidenceVerdict.KeepsCommitOf"/>).
+    /// (<see cref="QuestEvidenceVerdict.KeepsCommitOf"/>).
     /// </summary>
     /// <returns>
     /// The quest as it now stands, whether this call kept the verdict (false for a quest not waiting on what it reads), and the step

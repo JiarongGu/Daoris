@@ -4,8 +4,8 @@ using Microsoft.Data.Sqlite;
 namespace Daoris.Service.Tests;
 
 /// <summary>
-/// A memory operation's author names its door by <c>door</c> and the version its spawn observed by <c>door_version</c>
-/// (AGENTPROVIDER1t-ii): a log whose table spells them <c>adapter</c> and <c>harness</c> has both renamed as it opens, every row kept.
+/// A memory operation's author names its door by <c>door</c> and the version its spawn observed by <c>door_version</c>:
+/// a log whose table spells them <c>adapter</c> and <c>harness</c> has both renamed as it opens, every row kept.
 /// </summary>
 public sealed class MemoryAuthorColumnTests : IAsyncLifetime
 {

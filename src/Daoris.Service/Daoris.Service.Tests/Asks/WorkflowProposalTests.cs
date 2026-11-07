@@ -4,7 +4,7 @@ using Microsoft.Data.Sqlite;
 namespace Daoris.Service.Tests;
 
 /// <summary>
-/// WORKFLOW1i-a (D157, the workflow design §4.3): an intake proposes a kind for the ask on the person's quoted words, and the
+/// An intake proposes a kind for the ask on the person's quoted words, and the
 /// service keeps the proposal on the ask with its reason, beside the person's choice. The reason must quote the ask, as a
 /// review choice's words do; only the person's press applies a kind (v1: an agent never sets one).
 /// </summary>

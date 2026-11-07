@@ -7,7 +7,7 @@ import { fileURLToPath } from 'node:url';
 import { extractTarGz } from '../src/platform/tarball.ts';
 
 /**
- * GITHUBDOCS1 (D211): the README npm shows is the one the packed CLI carries, so it is read from the tarball, not the
+ * The README npm shows is the one the packed CLI carries, so it is read from the tarball, not the
  * tree. The package is packed whole, its prepack (the build and the stager) and postpack included, from a copy of what
  * the pack reads, laid out as in the repository under `_fixtures/`: packing the CLI's own folder would stage `dist/`
  * and `canon/` into it while the other tool-test files run beside this one. Run by the `tool-tests` gate.

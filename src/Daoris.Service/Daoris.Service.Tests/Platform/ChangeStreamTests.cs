@@ -4,7 +4,7 @@ using Microsoft.Data.Sqlite;
 namespace Daoris.Service.Tests;
 
 /// <summary>
-/// The service's change stream (FABRIC-EVENT3b, the fabric events design §A4.2): one sampler on its own observer connection, each
+/// The service's change stream: one sampler on its own observer connection, each
 /// ledger family answered by its own revision, and the cursor's every case. The host's store and a connector write the file from
 /// connections of their own, as these tests' writer does.
 /// </summary>
@@ -14,7 +14,7 @@ public sealed class ChangeStreamTests : IAsyncLifetime
 
     /// <summary>
     /// The longest the stream holds a wait. Its bound is read on <see cref="_clock"/>, which stands still, so a wait of it never ends
-    /// by itself: an answer to one came at once or was woken, never at its end, however late the load made it (TESTCLOCK3). A test
+    /// by itself: an answer to one comes at once or on a wake, never at its end, however late the load made it. A test
     /// waiting on the answer waits <see cref="Poll.Patience"/>.
     /// </summary>
     private static readonly TimeSpan Long = ChangeStream.LongestWait;
@@ -35,7 +35,7 @@ public sealed class ChangeStreamTests : IAsyncLifetime
 
     public async Task InitializeAsync()
     {
-        // Unpooled, so it closes its file when it goes (FLAKE3).
+        // Unpooled, so it closes its file when it goes.
         _writer = new SqliteConnection($"Data Source={_file};Pooling=False");
         await _writer.OpenAsync();
         _quests = await QuestStore.OpenAsync(_writer);
@@ -182,7 +182,7 @@ public sealed class ChangeStreamTests : IAsyncLifetime
     private static readonly Ask Asked =new("a5c0de", Workspaces.Default, "Make the bridge faster", AskState.Open, "declarations", Now, Now);
 
     /// <summary>
-    /// PUSH1d1 (D182 point 5; the design §A4.2): the asks family moves on every write an ask takes, each path its own (an agent's
+    /// The asks family moves on every write an ask takes, each path its own (an agent's
     /// connector makes most of them from its own process): asked, saved whole again, published, closed, served by an intake, a word,
     /// each list appended to, the go-aheads decided, and deleted. Every one names the asks family alone.
     /// </summary>
@@ -260,7 +260,7 @@ public sealed class ChangeStreamTests : IAsyncLifetime
         await _asks.SaveAsync(Asked);
         var since = await Bootstrap();
         var seen = _stream.Seen;
-        // TESTWAIT2, as below: held until the observer has seen a commit after every write here, then cancelled.
+        // Held until the observer has seen a commit after every write here, then cancelled.
         using var release = new CancellationTokenSource();
         var waiting = _stream.WaitAsync(since, Long, release.Token);
 
@@ -290,9 +290,9 @@ public sealed class ChangeStreamTests : IAsyncLifetime
             session is null ? null : "ask:" + ask, To: null, Re: null, Question: false, "Start with the bridge.", origin);
 
     /// <summary>
-    /// PUSH1d1: the channel family moves on every change to what a channel holds: a message posted (the person's or a session's,
+    /// The channel family moves on every change to what a channel holds: a message posted (the person's or a session's,
     /// through a connector), a teammate's mirrored by a sync pass, and an ask's channel forgotten with the ask. The forgotten one is
-    /// an older message than another ask's, so the newest arrival number stays where it was and the count alone tells it.
+    /// an older message than another ask's, so the newest arrival number does not move and the count alone tells it.
     /// </summary>
     [Theory]
     [InlineData("posted")]
@@ -482,7 +482,7 @@ public sealed class ChangeStreamTests : IAsyncLifetime
 
         var since = await Bootstrap();
         var seen = _stream.Seen;
-        // TESTWAIT2: held open until the observer has seen the passes' writes, then cancelled, as in the test below.
+        // Held open until the observer has seen the passes' writes, then cancelled.
         using var release = new CancellationTokenSource();
         var waiting = _stream.WaitAsync(since, Long, release.Token);
 
@@ -572,7 +572,7 @@ public sealed class ChangeStreamTests : IAsyncLifetime
     }
 
     /// <summary>
-    /// FOUNDATION1 row k: the stamp is the schema's to write (the journal's epoch), and the observer only reads it: an existing stamp, which
+    /// The stamp is the schema's to write (the journal's epoch), and the observer only reads it: an existing stamp, which
     /// old files carry, is read as it stands, and a file with none is not written by the observer, whose open then waits for the schema.
     /// </summary>
     [Fact]
@@ -596,7 +596,7 @@ public sealed class ChangeStreamTests : IAsyncLifetime
     }
 
     /// <summary>
-    /// Review of FABRIC-EVENT3b: an observer that could not open at the start still issues cursors; once it opens, the epoch is new,
+    /// An observer that could not open at the start still issues cursors; once it opens, the epoch is new,
     /// so what moved meanwhile is answered every family and never taken as the baseline.
     /// </summary>
     [Fact]
@@ -633,8 +633,8 @@ public sealed class ChangeStreamTests : IAsyncLifetime
     }
 
     /// <summary>
-    /// Review of FABRIC-EVENT3b: a wait refused a slot is answered at once, never queued behind a sample a writer's lock holds. Here
-    /// the sample is held for as long as the test likes (TESTCLOCK3), where a writer's lock held it for the observer's two seconds,
+    /// A wait refused a slot is answered at once, never queued behind a sample a writer's lock holds. Here
+    /// the sample is held for as long as the test likes, where a writer's lock holds it for the observer's two seconds,
     /// so a ninth that queued behind it is never answered rather than answered late.
     /// </summary>
     [Fact]
@@ -656,7 +656,7 @@ public sealed class ChangeStreamTests : IAsyncLifetime
     }
 
     /// <summary>
-    /// Review of FABRIC-EVENT3b: where a replacement can happen under an open handle, a copy carries the stamp, so the path is
+    /// Where a replacement can happen under an open handle, a copy carries the stamp, so the path is
     /// another database also when its revisions differ from the observer's while the observer's held still around the read.
     /// </summary>
     [Theory]
@@ -684,7 +684,7 @@ public sealed class ChangeStreamTests : IAsyncLifetime
     {
         var since = await Bootstrap();
         var seen = _stream.Seen;
-        // TESTWAIT2: the wait is held open until the observer has seen the write (its count moving, bounded by Long), then
+        // The wait is held open until the observer has seen the write (its count moving, bounded by Long), then
         // cancelled: a cancelled wait answers what it would have answered then, so the negative is read at the moment of the
         // positive, not after a clock the load can outrun.
         using var release = new CancellationTokenSource();
@@ -701,7 +701,7 @@ public sealed class ChangeStreamTests : IAsyncLifetime
         Assert.Empty(answer.Moved);
     }
 
-    // ---- FOUNDATION1 row k part 2: the journal family, named only to a reader that asks ----
+    // ---- the journal family, named only to a reader that asks ----
 
     /// <summary>
     /// The journal is not one of <see cref="ChangeFamilies.All"/>, which is what a reader that never asked is answered, and the revisions'

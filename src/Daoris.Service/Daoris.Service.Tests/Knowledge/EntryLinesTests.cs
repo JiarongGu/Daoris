@@ -4,9 +4,8 @@ using Daoris.Knowledge;
 namespace Daoris.Service.Tests;
 
 /// <summary>
-/// Every entry the scanner reads as a run of its file's lines keeps them (ORIENT2e; the orientation design §3.2):
-/// a hit names <c>path:first-last</c>, and a session reads that range rather than the file. ORIENT1 found decision
-/// files read whole 21 times because a search named the file and not the note.
+/// Every entry the scanner reads as a run of its file's lines keeps them:
+/// a hit names <c>path:first-last</c>, and a session reads that range rather than the file.
 /// </summary>
 /// <remarks>
 /// The lines are the body's: line <c>i</c> of the body is line <c>first + i</c> of the file, so a heading the body
@@ -102,7 +101,7 @@ public sealed class EntryLinesTests : IDisposable
         AssertVerbatim(entries);
     }
 
-    /// <summary>A deployment's documents folder (ORIENT1c): the opening and each section, by their lines.</summary>
+    /// <summary>A deployment's documents folder: the opening and each section, by their lines.</summary>
     [Fact]
     public void A_deployment_s_documents_keep_their_lines()
     {
@@ -145,7 +144,7 @@ public sealed class EntryLinesTests : IDisposable
     }
 
     /// <summary>
-    /// A declared index's row is its line as written (ORIENT2h), so it names that line, and the prose around its
+    /// A declared index's row is its line as written, so it names that line, and the prose around its
     /// table names its own: a range reads the row a hit named.
     /// </summary>
     [Fact]
@@ -191,7 +190,7 @@ public sealed class EntryLinesTests : IDisposable
     }
 
     /// <summary>
-    /// A deployment's index row is its cells labelled by their columns (ORIENT1c), which is not its file's line as
+    /// A deployment's index row is its cells labelled by their columns, which is not its file's line as
     /// written, so it names no lines: absent, never a line whose text a range would misreport.
     /// </summary>
     [Fact]

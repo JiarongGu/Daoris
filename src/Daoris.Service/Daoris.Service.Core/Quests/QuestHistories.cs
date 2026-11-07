@@ -10,7 +10,7 @@ internal sealed class QuestHistories(QuestStore store)
 
     /// <summary>
     /// Give every quest of this store's own that the log has never seen its history, from what its row
-    /// says: published when it was filed, and the move to where it stands when it last moved.
+    /// says: published when it is filed, and the move to where it stands when it last moved.
     /// </summary>
     /// <remarks>
     /// A quest is not derivable from anything, so a store from before the log is migrated rather than
@@ -67,8 +67,8 @@ internal sealed class QuestHistories(QuestStore store)
     }
 
     /// <summary>
-    /// A quest's history, in the order it replays (design §8): what a remote accepted, by its number,
-    /// then what this machine has not pushed, in the order it was made. Empty for an unknown id.
+    /// A quest's history, in the order it replays: what a remote accepted, by its number,
+    /// then what this machine has not pushed, in the order it is made. Empty for an unknown id.
     /// </summary>
     public Task<IReadOnlyList<QuestOperation>> HistoryAsync(string id, CancellationToken ct = default) =>
         _db.RunAsync(() => HistoryAsync(id, transaction: null, ct), ct);
@@ -77,7 +77,7 @@ internal sealed class QuestHistories(QuestStore store)
         string id, SqliteTransaction? transaction, CancellationToken ct)
     {
         await using var command = _db.Command();
-        // None handed in keeps the one the command was made in: the connection hands a new command the transaction it
+        // None handed in keeps the one the command is made in: the connection hands a new command the transaction it
         // has open, and a caller holding one without its object (HistoryDesk's, HistoryWithinAsync) must not lose it.
         if (transaction is not null) command.Transaction = transaction;
         command.CommandText = $"""
@@ -95,7 +95,7 @@ internal sealed class QuestHistories(QuestStore store)
     /// <summary>
     /// A quest's history read inside a transaction the caller already holds — <see cref="HistoryDesk"/>'s, which judges a
     /// unit again where it clears it. The same read as <see cref="HistoryAsync(string, CancellationToken)"/>: the gate is
-    /// reentrant within the work that holds it (SQLITETX1), and the read joins that work's transaction.
+    /// reentrant within the work that holds it, and the read joins that work's transaction.
     /// </summary>
     internal Task<IReadOnlyList<QuestOperation>> HistoryWithinAsync(string id, CancellationToken ct) =>
         HistoryAsync(id, ct);

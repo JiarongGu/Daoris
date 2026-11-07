@@ -1,8 +1,8 @@
 namespace Daoris.Knowledge;
 
 /// <summary>
-/// Who holds a quest's step and how each take that lost on it stands or ended, read from its log (SYNCMERGE1b0, D178 point 7): the take the
-/// quest stands taken by, null unless it is taken; the conflicts still on it; and those settled, in the order they were.
+/// Who holds a quest's step and how each take that lost on it stands or ended, read from its log: the take the
+/// quest stands taken by, null unless it is taken; the conflicts still on it; and those settled, in their order.
 /// </summary>
 public sealed record QuestTakeReading(
     QuestOperation? Take, IReadOnlyList<QuestConflictReading> Conflicts, IReadOnlyList<QuestConflictReading> Settled)

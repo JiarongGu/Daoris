@@ -40,7 +40,7 @@ test('every shipped canon file has complete frontmatter', () => {
 });
 
 /**
- * What the harness needs of a canon's skills, as problems (DOC3).
+ * What the harness needs of a canon's skills, as problems.
  *
  * A skill is a FOLDER whose entry file is `SKILL.md`; everything else in the folder is supporting
  * material (a template, a script) that `canon.ts` ships with it on purpose. So the unit held here is
@@ -109,8 +109,8 @@ test('every shipped canon skill carries the frontmatter the harness needs', () =
 });
 
 /**
- * A template beside a canon skill that its entry file never names, or one it names that is not there
- * (ORIENT2a). A skill's templates arrive in every adopter, and a session reaches one only through the
+ * A template beside a canon skill that its entry file never names, or one it names that is not there.
+ * A skill's templates arrive in every adopter, and a session reaches one only through the
  * skill's own words: an unnamed template is shipped and never copied, and a named one that is gone sends
  * the session to a file that does not exist. Both are silent, so they are held here.
  */
@@ -155,7 +155,7 @@ test('every template beside a canon skill is named by it, and every template it 
 });
 
 /**
- * The roles a manifest may declare are the canon's (ORIENT2b; D122 §2.7, D151 point 4). `ROLES`' jobs
+ * The roles a manifest may declare are the canon's. `ROLES`' jobs
  * are the canon's roles table cut short, so a role the canon teaches that the CLI does not know is a
  * declaration every adopter is refused, and one the CLI knows that the canon does not teach is a row no
  * adopter has a reason to write. `knowledge` and `skill` are never declared: the index
@@ -171,7 +171,7 @@ test("the canon's roles table and the roles a manifest may declare name the same
 });
 
 /**
- * The skill files whose frontmatter pre-approves tools (D122, finding 3; DOC3).
+ * The skill files whose frontmatter pre-approves tools.
  *
  * A project skill's `allowed-tools` is honoured for the turn that invokes it, and the harness's maker
  * documents that workspace trust never gates it, an untrusted folder in a pipe included. A canonical
@@ -227,7 +227,7 @@ test('every pack declares a description and ships at least one file', () => {
 
 test('no canon file names a private sibling project or a machine path', () => {
   const canon = readCanon(join(repoRoot, 'canon'));
-  // Every separator a Windows home is spelled with — the devkit's sensitive gate's twin (REV3).
+  // Every separator a Windows home is spelled with — the devkit's sensitive gate's twin.
   const forbidden = /[A-Z]:(?:\\{1,2}|\/)Users(?:\\{1,2}|\/)|\/home\/[a-z]/i;
   for (const pack of canon.packs.values()) {
     for (const file of pack.files) {
@@ -238,7 +238,7 @@ test('no canon file names a private sibling project or a machine path', () => {
 });
 
 /**
- * Doctrine must not hard-require the tool that shipped it (D48 §2a, CANON6).
+ * Doctrine must not hard-require the tool that shipped it.
  *
  * An adopted repository stays fully workable for contributors who do not run Daoris — their agents
  * included, because those agents load the same vendored markdown. Almost everything the canon names
@@ -253,7 +253,7 @@ test('no canon file names a private sibling project or a machine path', () => {
  * This fails silently without a check, which is why there is one: nothing breaks, no gate goes red,
  * and a contributor's agent simply has nothing to do when it reaches that line.
  *
- * Two mechanisms since WSSETUP14a (D129 §2): a quest, and a search over the repository's knowledge
+ * Two mechanisms: a quest, and a search over the repository's knowledge
  * that a connected service answers by meaning. Each is held to its own carve-out, so a file that
  * degrades one cannot stand in for the other.
  */
@@ -294,7 +294,7 @@ function serviceOnlyProblems(files: readonly { source: string; text: string }[])
 }
 
 test('the service-only scan finds a connected search without its tool-absent path, and passes one with it', () => {
-  // D129 §4.2's doc-loader step 2, drafted without its last clause and then with it.
+  // The doc-loader's step 2, drafted without its last clause and then with it.
   const draft = '2. **The generated index.** Read it whole when it is a few dozen rows. When it is longer, search it '
     + "more than once. Where a search over this repository's knowledge is connected, ask it too, since it matches by "
     + 'meaning, which a word search cannot.';
@@ -339,13 +339,13 @@ test('every declared gate is actually run by the release workflow', () => {
   const gates = JSON.parse(readText(join(repoRoot, 'daoris.gates.json'))) as {
     gates: { name: string; run: string }[];
   };
-  // 🔴 What the workflow RUNS, never what it says (REV3): a comment naming a command is not the command,
+  // 🔴 What the workflow RUNS, never what it says: a comment naming a command is not the command,
   // and deleting the Verify step left this green because a comment beside another step said
   // `npm run verify`. Full-line comments go; a step's own text stays.
   const workflow = readText(join(repoRoot, '.github', 'workflows', 'release.yml'))
     .split('\n').filter((line) => !/^\s*#/.test(line)).join('\n');
-  // A gate `npm run verify` runs is run wherever verify is — the universal gates' one home (REV3
-  // CLEAN1: the workflow ran them as a step of their own too, the same command twice).
+  // A gate `npm run verify` runs is run wherever verify is — the universal gates' one home;
+  // a step of their own would run the same command twice.
   const verify = (JSON.parse(readText(join(repoRoot, 'package.json'))) as {
     scripts: { verify: string };
   }).scripts.verify;
@@ -412,7 +412,7 @@ test('every .NET test project is run by a declared gate', () => {
 });
 
 /**
- * One level further in again (MOD8, PROC1c). A desktop suite runs as gates: the tests that start real
+ * One level further in again. A desktop suite runs as gates: the tests that start real
  * processes or run real ticks carry the `Process` category, a subagent's worktree runs the rest, and
  * the parent runs these by run settings files: one class at a time, and the classes that also carry
  * `Parallel=Git` four at once, by a second file. The test above counts a suite as reached by any half,
@@ -437,7 +437,7 @@ test('a suite gated without its Process tests has gates that run them: bounded, 
   for (const target of fast) {
     const serial = filtered(target, 'Category=Process&amp;Parallel!=Git');
     assert.ok(serial, `${target} is gated without its Process tests, and no gate runs them`);
-    // PROCPAR1 (D180's budget note): the settings leave whether classes run at once to each suite's assembly (the modules' run
+    // The settings leave whether classes run at once to each suite's assembly (the modules' run
     // one at a time by their own attribute, which a value here would override), and bound how many run; what a class shares
     // with its neighbours runs alone after the rest, which the driver's CategoryTests hold.
     assert.doesNotMatch(serial.settings, /<ParallelizeTestCollections>/,
@@ -445,7 +445,7 @@ test('a suite gated without its Process tests has gates that run them: bounded, 
     assert.match(serial.settings, /<MaxParallelThreads>\d+<\/MaxParallelThreads>/,
       `${target}'s Process tests run at once with no bound — load is what fails them (FLAKE1)`);
 
-    // PROC1b: a suite that marks a class to run four at once has the gate that runs those, and only four.
+    // A suite that marks a class to run four at once has the gate that runs those, and only four.
     const marks = listFiles(join(repoRoot, target), (name) => name.endsWith('.cs'))
       .some((file) => /\[Trait\(Category\.Parallel, Category\.Git\)\]/.test(readText(join(repoRoot, target, file))));
     if (!marks) continue;
@@ -462,8 +462,8 @@ test('a suite gated without its Process tests has gates that run them: bounded, 
 
 /**
  * The release commit stages what release-prep rewrote, by a pathspec the workflow spells out — a
- * second list of the same files (REV3 CLEAN1). It had already missed the example manifests once, and
- * `verify` went red on main after a release. release-prep says what it writes; this holds the
+ * second list of the same files. A pathspec that misses the example manifests turns
+ * `verify` red on main after a release. release-prep says what it writes; this holds the
  * pathspec to it. (The re-sync's writes are the workflow's own and are not read here.)
  */
 test('the release commit stages every file release-prep writes', async () => {
@@ -484,11 +484,11 @@ test('the release commit stages every file release-prep writes', async () => {
 });
 
 /**
- * The same gap one list further in (SEN1): the universal gates were declared and in the workflow, and
- * red on this repository for a day, because nothing a session runs before committing ran them — the
- * workflow is dispatched by hand and the pre-commit hook was never installed. Placeholder home paths
- * reached six fixtures across four landings that way. The universal half is the one that belongs in
- * `verify`: it is fast, it judges facts (D54), and a leak is cheapest caught the moment it is written.
+ * The same gap one list further in: the universal gates are declared and in the workflow, but
+ * nothing a session runs before committing would run them — the
+ * workflow is dispatched by hand and the pre-commit hook may not be installed. Placeholder home paths
+ * could reach fixtures that way. The universal half is the one that belongs in
+ * `verify`: it is fast, it judges facts, and a leak is cheapest caught the moment it is written.
  */
 test('the universal gates run in verify, not only at release', () => {
   const gates = JSON.parse(readText(join(repoRoot, 'daoris.gates.json'))) as {
@@ -512,20 +512,20 @@ test('the universal gates run in verify, not only at release', () => {
  *
  * Adopted from deepseek-harness, where every active note carries a mandatory `## Alternatives
  * considered` (`docs/2026-09-21-dsh-evaluation.md` §3): two ecosystems keeping the same record for the
- * same reason, which is the D17 bar. Their rule comes with the discipline that makes it honest —
+ * same reason. Their rule comes with the discipline that makes it honest —
  * **alternatives are recorded, never invented** — and so does this one: the 41 entries written before
  * it are grandfathered rather than backfilled, because writing a plausible rejected alternative into
  * a decision nobody actually weighed would make the record worse while making the gate green.
  *
- * The line is the number, because the numbers only increase: every entry from D51 — the working-surface
- * arc onward — must say what it turned down. `Rejected` in any of its shapes, or a `Why not X?`
+ * The line is the number, because the numbers only increase: every entry from the working-surface
+ * arc onward must say what it turned down. `Rejected` in any of its shapes, or a `Why not X?`
  * heading; both are already the house style, which is the evidence that the rule is describing
  * practice rather than imposing it.
  */
 test('every decision entry from D51 on says what it rejected', () => {
-  // One file per decision since DOC8a (D134): `docs/decisions/D<n>.md`, its number in its name, so a file
-  // is an entry whole and no split at headings can drop one. The page left at `docs/DECISIONS.md` holds
-  // none; read in their place, it was the guard below that refused to pass on its zero entries.
+  // One file per decision: `docs/decisions/D<n>.md`, its number in its name, so a file
+  // is an entry whole and no split at headings can drop one. The page at `docs/DECISIONS.md` holds
+  // none; read in their place, the guard below refuses to pass on zero entries.
   const folder = join(repoRoot, 'docs', 'decisions');
   const GRANDFATHERED_THROUGH = 50;
   const entries = readdirSync(folder)
@@ -556,20 +556,19 @@ test('daoris holds its own doctrine and checks clean', () => {
 });
 
 /**
- * D8's offline guarantee, scoped to what it actually claims.
+ * The offline guarantee, scoped to what it actually claims.
  *
  * The guarantee is about the DOCTRINE operations — `check` above all, because it runs inside build
  * gates and a gate that can fail on a network call is not a gate. The MANAGEMENT commands are a
- * different thing (D50): `connect`, `retire` and `import` are explicit, opt-in conversations with a
+ * different thing: `connect`, `retire` and `import` are explicit, opt-in conversations with a
  * knowledge service, never run by a gate.
  *
- * This was briefly written as "nothing anywhere in the CLI may open a socket", which is a stronger
- * claim than D8 makes and would have made a client impossible. Two assertions replace it, and together
- * they are the real invariant: exactly one module may reach the network, and nothing on `check`'s path
- * may import it — directly or three modules deep.
+ * "Nothing anywhere in the CLI may open a socket" would be a stronger claim than the guarantee makes
+ * and would make a client impossible. The real invariant is two assertions: exactly one module may
+ * reach the network, and nothing on `check`'s path may import it — directly or three modules deep.
  *
- * The first half survived the management class growing past one command because the network itself
- * stayed in one file. Had each verb opened its own socket, "the named management modules" would be a
+ * The first half survives the management class growing past one command because the network itself
+ * stays in one file. Had each verb opened its own socket, "the named management modules" would be a
  * list that grows, and a list that grows is one somebody eventually appends to without thinking.
  */
 /** A module named by any import spelling: `from`, a bare `import`, a dynamic `import(`, a `require(`. */
@@ -577,8 +576,8 @@ const importing = (modules: string) => new RegExp(
   String.raw`(?:\bfrom|\bimport\s*\(?|\brequire\s*\()\s*['"](?:node:)?(?:${modules})['"]`);
 
 /**
- * Widened by REV3: it held only `node:http(s)` and `require('http(s)')`, so a bare `'https'`, `net`,
- * `tls`, `http2`, `undici` or a dynamic `import()` walked straight past it.
+ * Not only `node:http(s)` and `require('http(s)')`: a bare `'https'`, `net`,
+ * `tls`, `http2`, `undici` or a dynamic `import()` would walk straight past those.
  */
 const NETWORK = new RegExp([
   String.raw`\b(?:fetch|XMLHttpRequest|WebSocket)\s*\(`,
@@ -591,7 +590,7 @@ const SPAWNING = importing('child_process');
 
 /**
  * A check you have not watched fail proves nothing — and a pattern is only as good as the spellings it
- * was shown. These are the realistic regressions, each of which the previous patterns missed.
+ * is shown. These are the realistic regressions.
  */
 test('the guards recognise every spelling of the primitives they hold', () => {
   for (const line of [
@@ -613,8 +612,7 @@ test('the guards recognise every spelling of the primitives they hold', () => {
 });
 
 /**
- * The one module permitted to spawn: the seam that starts Daoris's driver program (PUSH1f2f renamed it from `toolchain.ts` when the
- * agents' declarations left with the last family's TypeScript). Doctrine commands must not reach it either (below).
+ * The one module permitted to spawn: the seam that starts Daoris's driver program. Doctrine commands must not reach it either (below).
  */
 const SPAWNS = cliSource('driverprogram.ts');
 
@@ -630,7 +628,7 @@ test('only the seam may spawn a process', () => {
 });
 
 /**
- * One start (TOOLS5, D121 §2.4, as PUSH1f2f leaves it): the seam starts its one child, Daoris's driver program, in ONE place,
+ * One start: the seam starts its one child, Daoris's driver program, in ONE place,
  * `startChild`, with the terminal's environment exactly. The program hands its own children the tools (the driver's
  * `EveryChildIsHandedTheToolsTests`), and its `agent install` finds the machine's npm on the PATH it inherited, so a managed node's
  * first would install the agent into the managed node's folder. A second `spawnSync`, or a start that rewrote the environment, would
@@ -656,8 +654,8 @@ test('the seam starts its one child in one place, from runDriverProgram, with th
 });
 
 /**
- * ONEWAY1ai-i: the CLI reaches no network at all. Its service client left with the registry's verbs, which are the desktop program's
- * typed operations now (ONEWAY1u), so no module of this package may open a socket.
+ * The CLI reaches no network at all. The registry's verbs are the desktop program's
+ * typed operations, so no module of this package may open a socket.
  */
 test('no module of the CLI touches the network', () => {
   for (const dir of ['src', 'bin']) {
@@ -674,7 +672,7 @@ test('no module of the CLI touches the network', () => {
  * Walked from every DOCTRINE command's entry point, not only `check`'s: they all run offline, and a
  * test that named one of them would be silent the day `sync` grew a "just ask the service" shortcut.
  *
- * Since the commands became a table (MOD7), each doctrine command's row under `cli/` is an entry point
+ * The commands are a table, so each doctrine command's row under `cli/` is an entry point
  * too, read from the table rather than listed, so a new doctrine verb is walked the day it lands.
  */
 const DOCTRINE_ROWS = COMMANDS.filter((command) => command.kind === 'doctrine').map((command) => `cli/${command.name}.ts`);
@@ -692,7 +690,7 @@ test('the doctrine rows are read from the table, and check is one of them', () =
 
 
 /**
- * The same guarantee, one door further out (D49 §4). `driverprogram.ts` SPAWNS A PROCESS — Daoris's driver program, which runs
+ * The same guarantee, one door further out. `driverprogram.ts` SPAWNS A PROCESS — Daoris's driver program, which runs
  * each agent's own installer, updater and login flow — and a doctrine command that reached it could run one of them inside a build
  * gate.
  *
@@ -722,9 +720,8 @@ function reachableFrom(entry: string): Set<string> {
     seen.add(module);
     const file = join(cliRoot, 'src', module);
     if (!existsSync(file)) return;
-    // `from './x.ts'`, a bare `import './x.ts'` and a dynamic `import('./x.ts')`, in either quote — the
-    // side-effect import was missed at first, and the dynamic one and the double quote until REV3. A
-    // parent or nested path since MOD7, when the table's rows moved one folder down.
+    // `from './x.ts'`, a bare `import './x.ts'` and a dynamic `import('./x.ts')`, in either quote — each
+    // spelling is a way to miss an import. A parent or nested path counts too, for the table's rows one folder down.
     for (const match of readText(file).matchAll(/(?:\bfrom|\bimport)\s*\(?\s*['"](\.{1,2}\/[\w./-]+\.ts)['"]/g)) {
       walk(posix.join(posix.dirname(module), match[1]!));
     }
@@ -735,7 +732,7 @@ function reachableFrom(entry: string): Set<string> {
 }
 
 /**
- * ONEWAY1ai-i (the oneway design §11): every word outside the doctrine commands is the desktop program's, handed by the dispatcher
+ * Every word outside the doctrine commands is the desktop program's, handed by the dispatcher
  * alone. No row reaches the seam, so every row is a doctrine command, offline and spawning nothing; the dispatcher is the one module
  * that does.
  */

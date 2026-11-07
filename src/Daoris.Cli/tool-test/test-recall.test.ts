@@ -2,9 +2,8 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 
 /**
- * CISCOPE1c (D207, design §3.5 and §4.1 point 4): the failure reader and the signature (`tools/test-failures.mjs`), and
- * recall's search for a failure's introducing commit (`tools/test-recall.mjs`) over synthetic histories, each reaching the
- * verdict the design gives it. Run by the `tool-tests` gate.
+ * The failure reader and the signature (`tools/test-failures.mjs`), and recall's search for a failure's introducing commit
+ * (`tools/test-recall.mjs`) over synthetic histories, each reaching the verdict the design gives it. Run by the `tool-tests` gate.
  */
 
 interface Frame { method: string; file: string | null; line: number | null }

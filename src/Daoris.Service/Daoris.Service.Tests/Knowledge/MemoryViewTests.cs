@@ -4,8 +4,8 @@ using Daoris.Knowledge.Mcp;
 namespace Daoris.Service.Tests;
 
 /// <summary>
-/// KNOWCENTRAL2g (the memory coordinator design §6 B): every read of another repository's memory goes through Lyntai's read-only view
-/// (MC7), never its owner's engine. The view moves nothing of the owner's, asks the caller's scope about an entry before it reads it, and a
+/// Every read of another repository's memory goes through Lyntai's read-only view,
+/// never its owner's engine. The view moves nothing of the owner's, asks the caller's scope about an entry before it reads it, and a
 /// foreign entry an entry cites is rechecked through it; an engine that gives no view says so and reads nothing.
 /// </summary>
 public sealed class MemoryViewTests : IAsyncLifetime
@@ -59,8 +59,8 @@ public sealed class MemoryViewTests : IAsyncLifetime
     }
 
     /// <summary>
-    /// 🔴 A foreign expansion asks the caller's scope again before it reads: a repository the registry moved out of the workspace after the
-    /// entry was read is refused, and the expansion looks nothing up. The view's check records each reference it was asked about.
+    /// 🔴 A foreign expansion asks the caller's scope again before it reads: a repository the registry moves out of the workspace after the
+    /// entry is read is refused, and the expansion looks nothing up. The view's check records each reference it is asked about.
     /// </summary>
     [Fact]
     public async Task A_foreign_expansion_outside_the_scope_is_refused_before_lookup()
@@ -258,7 +258,7 @@ public sealed class MemoryViewTests : IAsyncLifetime
         }
     }
 
-    /// <summary>A view's check answering every reference alike, and recording each it was asked about.</summary>
+    /// <summary>A view's check answering every reference alike, and recording each it is asked about.</summary>
     private sealed class Recording(bool permits) : IMemoryViewCheck
     {
         public List<MemoryReference> Asked { get; } = [];

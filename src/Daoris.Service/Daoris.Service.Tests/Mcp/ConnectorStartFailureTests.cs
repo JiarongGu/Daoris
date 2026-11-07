@@ -6,10 +6,10 @@ using Daoris.Knowledge;
 namespace Daoris.Service.Tests;
 
 /// <summary>
-/// HOSTSTART2: the connector a session's harness starts left nothing of why in its machine log when its start threw, as
-/// the HTTP host did before HOSTSTART1. Its entry point is async and holds its log in a <c>using</c>, so the log was closed
-/// as the exception left the entry point, before the runtime raised it as unhandled, and the <c>error</c> line written for
-/// an unhandled exception was dropped on a closed log. The real executable in a process of its own, since only a real
+/// The connector a session's harness starts must leave why in its machine log when its start throws. Its entry point is
+/// async and holds its log in a <c>using</c>, so the log would be closed
+/// as the exception leaves the entry point, before the runtime raises it as unhandled, and the <c>error</c> line written for
+/// an unhandled exception dropped on a closed log. The real executable in a process of its own, since only a real
 /// process raises an exception as unhandled.
 /// </summary>
 public sealed class ConnectorStartFailureTests : IDisposable

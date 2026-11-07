@@ -1,9 +1,9 @@
-// The skills mirror (LAYOUT3; D117 §3.2, §3.3 and §5.4's mirror table).
+// The skills mirror.
 //
 // Where the reference links `.claude/skills` to `.agents/skills`, `sync` writes a copy of every skill
 // — canonical and the repository's own — for the agent that reads only there. The lock records each
-// mirror and it is measured against the lock (D13), so each cell below is a lock × disk × source
-// question, one test per cell, written before the code.
+// mirror and it is measured against the lock, so each cell below is a lock × disk × source
+// question, one test per cell.
 
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
@@ -39,7 +39,7 @@ test('mirror cell: not in the lock, absent, source present — created, with its
   fx.sync();
 
   const mirror = fx.repoFx.read(MIRROR);
-  // Frontmatter at byte 0, or the harness never surfaces the skill (D14).
+  // Frontmatter at byte 0, or the harness never surfaces the skill.
   assert.ok(mirror.startsWith('---\nname: finder\n'), mirror.slice(0, 80));
   assert.match(mirror, /---\n<!-- daoris: mirror of \.agents\/skills\/finder\/SKILL\.md for agents that read only \.claude\/skills/);
   assert.match(mirror, /daoris upstream/, 'a canonical skill names the way to promote an edit');
@@ -229,8 +229,8 @@ test('mirror cell: in the lock, absent, source gone — the entry is dropped', (
 });
 
 /**
- * §5.3: the roster points at the source, and says once where the copy is and which to edit. Since
- * WSSETUP14a the rows are the index's, and the sentence stays in the region beside its pointer.
+ * The roster points at the source, and says once where the copy is and which to edit. The
+ * rows are the index's, and the sentence stays in the region beside its pointer.
  */
 test('the index lists skills at .agents, and the region says the mirror sentence once', () => {
   const fx = agentsRepo('mirror-roster');

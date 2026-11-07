@@ -3,9 +3,9 @@ using System.Text;
 namespace Daoris.Knowledge;
 
 /// <summary>
-/// A workspace's remote as this machine's host speaks to it (D68 §3, D69): quest operations fetched
+/// A workspace's remote as this machine's host speaks to it: quest operations fetched
 /// since a number and pushed on one, session records — this machine's own fed up, the team's fetched
-/// since a number (SYNC4) — and the team's code maps, brought down when they move (MAP3e).
+/// since a number — and the team's code maps, brought down when they move.
 /// </summary>
 public interface IRemote
 {
@@ -14,14 +14,14 @@ public interface IRemote
     Task<QuestFetch> FetchQuestsAsync(long since, CancellationToken ct = default);
 
     /// <summary>A push of pending operations rebased on <paramref name="base"/>, judged quest by quest.</summary>
-    /// <param name="declares">The pushing machine, declaring it knows a bound quest (FABRIC-CLOSE1i); none declares nothing.</param>
+    /// <param name="declares">The pushing machine, declaring it knows a bound quest; none declares nothing.</param>
     /// <exception cref="RemoteException">The remote could not be reached, or answered with a wall.</exception>
     Task<QuestPush> PushQuestsAsync(
         long @base, IReadOnlyList<QuestOperation> operations, CancellationToken ct = default, string? declares = null);
 
     /// <summary>
     /// This machine's own records, fed up — keyed at the remote by the key that carried them, and
-    /// taken whole or refused whole (D47 §6).
+    /// taken whole or refused whole.
     /// </summary>
     /// <exception cref="RemoteException">The remote could not be reached, or refused the feed.</exception>
     Task PushSessionsAsync(IReadOnlyList<FedSessionRecord> records, CancellationToken ct = default);
@@ -33,16 +33,16 @@ public interface IRemote
     /// <exception cref="RemoteException">The remote could not be reached, or answered with a wall.</exception>
     Task<SessionFetch> FetchSessionsAsync(long since, CancellationToken ct = default);
 
-    /// <summary>An ask's channel messages of this machine, fed up (SESSONE2d); taken whole or refused whole, as the session feed is.</summary>
+    /// <summary>An ask's channel messages of this machine, fed up; taken whole or refused whole, as the session feed is.</summary>
     /// <exception cref="RemoteException">The remote could not be reached, or refused the feed; a <c>Status</c> of 404 is a remote from before the channel.</exception>
     Task PushChannelAsync(IReadOnlyList<ChannelMessage> messages, CancellationToken ct = default);
 
-    /// <summary>The team's channel messages the remote holds after <paramref name="since"/>, every origin but the caller's own (SESSONE2d).</summary>
+    /// <summary>The team's channel messages the remote holds after <paramref name="since"/>, every origin but the caller's own.</summary>
     /// <exception cref="RemoteException">The remote could not be reached, or answered with a wall.</exception>
     Task<ChannelFetch> FetchChannelAsync(long since, CancellationToken ct = default);
 
     /// <summary>
-    /// The commit a repository's code map is held at there (MAP3e), or null where it holds none — asked
+    /// The commit a repository's code map is held at there, or null where it holds none — asked
     /// before the map itself, so a map that has not moved is not sent again.
     /// </summary>
     /// <exception cref="RemoteException">The remote could not be reached, or answered with a wall.</exception>
@@ -53,7 +53,7 @@ public interface IRemote
     Task<FedCodeMap?> FetchCodeMapAsync(string repository, CancellationToken ct = default);
 
     /// <summary>
-    /// A person's retirement of <paramref name="machine"/> there (FABRIC-CLOSE1i2): whether it retired one, and the handshake as it
+    /// A person's retirement of <paramref name="machine"/> there: whether it retired one, and the handshake as it
     /// stands after it. A remote without it answers as one before the door: a 404.
     /// </summary>
     /// <exception cref="RemoteException">The remote could not be reached, has no such door (404), or answered with a wall.</exception>
@@ -67,21 +67,21 @@ public interface IRemote
 public sealed record SessionFetch(IReadOnlyList<Session> Records, long Through, bool More);
 
 /// <summary>The remote could not be reached, or refused the conversation outright — named, never swallowed.</summary>
-/// <param name="Status">The HTTP status the remote answered, where it answered one: a 404 on a door is a remote from before it (SESSONE2d).</param>
+/// <param name="Status">The HTTP status the remote answered, where it answered one: a 404 on a door is a remote from before it.</param>
 public sealed class RemoteException(string message, int? status = null) : Exception(message)
 {
     public int? Status { get; } = status;
 }
 
-/// <summary>Which remote serves a workspace, on this machine — or none, which is the silent default (D21).</summary>
+/// <summary>Which remote serves a workspace, on this machine — or none, which is the silent default.</summary>
 public interface IRemotes
 {
     IRemote? For(string workspace);
 }
 
 /// <summary>
-/// The machine's remotes map, read when asked (D48 §5): a circle wired a moment ago is wired now, and a
-/// removed one is gone now — the lesson SYNC0d taught the driver, kept by the hosts.
+/// The machine's remotes map, read when asked: a circle wired a moment ago is wired now, and a
+/// removed one is gone now.
 /// </summary>
 public sealed class ConfiguredRemotes(Func<IReadOnlyDictionary<string, RemoteConfig>> load) : IRemotes
 {
@@ -93,12 +93,12 @@ public sealed class ConfiguredRemotes(Func<IReadOnlyDictionary<string, RemoteCon
 
 /// <summary>
 /// The one HTTP client of a remote's doors. The service opens this socket and nothing else: it still
-/// spawns nothing (D46 §7), and the knowledge feed, which needs git, stays in the driver (D69).
+/// spawns nothing, and the knowledge feed, which needs git, stays in the driver.
 /// </summary>
 public sealed class HttpRemote(RemoteConfig config) : IRemote
 {
     // One client for the process: a take waits on it, so a remote that hangs costs a bounded wait,
-    // after which the take stands on this machine, unconfirmed (D68 §4).
+    // after which the take stands on this machine, unconfirmed.
     private static readonly HttpClient Http = new() { Timeout = TimeSpan.FromSeconds(15) };
 
     public async Task<QuestFetch> FetchQuestsAsync(long since, CancellationToken ct = default) =>
@@ -172,7 +172,7 @@ public sealed class HttpRemote(RemoteConfig config) : IRemote
         {
             throw; // Cancellation belongs to the caller, never converted into "unreachable".
         }
-        // 🔴 Everything else is the wall (REV3). An address with no scheme — `team.example.com:5177`, which
+        // 🔴 Everything else is the wall. An address with no scheme — `team.example.com:5177`, which
         // `remote add` and the environment both accept — parses as a scheme or as relative, and threw
         // NotSupportedException or InvalidOperationException past a list of three: a sync pass answered a
         // bare 500, and a take on a shared quest committed here and then threw.

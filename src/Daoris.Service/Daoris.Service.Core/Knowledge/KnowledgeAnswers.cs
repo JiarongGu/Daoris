@@ -1,8 +1,8 @@
 namespace Daoris.Knowledge;
 
 /// <summary>
-/// A search, and which tier ANSWERED (TIER1, D24): a door reports this, never
-/// <see cref="KnowledgeService.SemanticEnabled"/>, which is only what was configured.
+/// A search, and which tier ANSWERED: a door reports this, never
+/// <see cref="KnowledgeService.SemanticEnabled"/>, which is only what is configured.
 /// </summary>
 /// <remarks>
 /// <para>A composition that is not the hybrid is the lexical search alone — the factory builds nothing
@@ -10,7 +10,7 @@ namespace Daoris.Knowledge;
 ///
 /// <para>A search that names no kinds answers with the best <see cref="KnowledgeService.IndexEntriesUnasked"/> index entries, at
 /// the places they rank, and fills the rest from every other kind in the order the same search ranks them
-/// (ORIENT2e): here, in Core, so every door answers one question alike. The answer says when more matched.</para>
+/// here, in Core, so every door answers one question alike. The answer says when more matched.</para>
 /// </remarks>
 internal sealed class KnowledgeAnswers(
     IKnowledgeSearch search,

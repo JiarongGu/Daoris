@@ -8,7 +8,7 @@ namespace Daoris.Contracts.Platform;
 /// <summary>
 /// Which ledger families moved after <c>Since</c> (<c>&lt;epoch&gt;.&lt;n&gt;</c>), answered as soon as one moves or at <c>Wait</c> seconds (30 at
 /// most) with none. A missing, malformed, stale or future cursor is answered at once with every family and the current cursor. <c>Journal</c>
-/// <c>1</c> (or <c>true</c>) asks for the event journal, woken by it and told its family after the others (FOUNDATION1 row k part 2).
+/// <c>1</c> (or <c>true</c>) asks for the event journal, woken by it and told its family after the others.
 /// </summary>
 public sealed record ReadChanges(string? Since = null, int? Wait = null, string? Journal = null) : IRoute<ChangesResponse>
 {
@@ -16,7 +16,7 @@ public sealed record ReadChanges(string? Since = null, int? Wait = null, string?
     public static string Path => "/api/changes";
 }
 
-/// <summary>The journal's rows after a position, oldest first, with where the journal stands (FOUNDATION1 l-i).</summary>
+/// <summary>The journal's rows after a position, oldest first, with where the journal stands.</summary>
 public sealed record ReadJournal(long? Since = null, int? Limit = null) : IRoute<JournalPage>
 {
     public static string Method => "GET";

@@ -3,7 +3,7 @@ using ModelContextProtocol.Server;
 
 namespace Daoris.Knowledge.Mcp;
 
-/// <summary>Ask Daoris's <c>sync_propose</c> (HELP10): the <c>sync</c> kind's tool, written by <see cref="HelpProposalBox.ProposeSync"/>.</summary>
+/// <summary>Ask Daoris's <c>sync_propose</c>: the <c>sync</c> kind's tool, written by <see cref="HelpProposalBox.ProposeSync"/>.</summary>
 [McpServerToolType]
 public sealed class HelpSyncTool(IntakeScope? intake = null, HelpProposalBox? help = null)
 {

@@ -2,17 +2,17 @@ namespace Daoris.Knowledge;
 
 /// <summary>Reads repositories from a directory on this machine — the local-first source.</summary>
 /// <remarks>
-/// <b>The folder is re-read on every read, not enumerated once.</b> It used to snapshot the directory
-/// list when the source was constructed, which quietly made `refresh` — whose whole promise is
+/// <b>The folder is re-read on every read, not enumerated once.</b> A snapshot of the directory
+/// list taken when the source is constructed would quietly make `refresh` — whose whole promise is
 /// "re-read every repository from disk" — re-read only the repositories that existed when the process
-/// launched. A project born today was invisible until someone restarted the host, and nothing said so:
-/// the refresh reported success and a count that looked right. That is the ghost rule's mirror image,
+/// launched. A project born today would be invisible until someone restarted the host, and nothing would say so:
+/// the refresh would report success and a count that looks right. That is the ghost rule's mirror image,
 /// and it fails the same way — by looking fine.
 /// </remarks>
 /// <param name="repositoryRoots">The checkouts to read, listed afresh on every read.</param>
 /// <param name="scanner">
-/// How each is read: the scanner a deployment configured, with the documents and the index it names
-/// (ORIENT1c), or the default, which reads neither.
+/// How each is read: the scanner a deployment configured, with the documents and the index it names,
+/// or the default, which reads neither.
 /// </param>
 public sealed class FileSystemKnowledgeSource(
     Func<IReadOnlyList<string>> repositoryRoots, RepositoryScanner? scanner = null) : IRootReadingSource

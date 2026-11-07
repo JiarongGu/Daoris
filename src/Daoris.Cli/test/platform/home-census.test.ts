@@ -7,16 +7,16 @@ import { DESKTOP } from '../_csharp.ts';
 import { makeFixture } from '../_fixture.ts';
 
 /**
- * 🔴 HOMELAYOUT2's census (D172 point 5, the install layout design §6.2 and §11): no code joins a home path by hand. Each file
- * and folder under the Daoris home is an entry of D172's table, asked by name of its twin (`DaorisHome.Entry` in the driver
- * and the service, `homeEntry` here), so the move (HOMELAYOUT3) changes the table and no reader.
+ * 🔴 The census: no code joins a home path by hand. Each file
+ * and folder under the Daoris home is an entry of the table, asked by name of its twin (`DaorisHome.Entry` in the driver
+ * and the service, `homeEntry` here), so a move changes the table and no reader.
  *
  * A join by hand is a `Path.Combine(…)` (C#) or a `join(…)` or `resolve(…)` (the CLI's TypeScript) whose first part is a home:
  * a variable, field or property called `home`, `_home` or `Home`, alone or a member's. In the code every such join is one; in a
  * test, one that names an entry (a literal whose first part is a place the table holds, or a constant naming a folder or a
  * file), since a test's home is also its scratch. Each join kept is owed below with its reason; one fixed is a row this test
  * refuses until it is dropped. Scanned: every desktop and service project, the CLI's sources and tests, and the repository's
- * tools (HOMELAYOUT2b). A test's own names for the root it hands as `DAORIS_HOME` count as homes (HOMELAYOUT2c).
+ * tools. A test's own names for the root it hands as `DAORIS_HOME` count as homes.
  */
 
 const SRC = join(DESKTOP, '..');
@@ -90,7 +90,7 @@ function joinsIn(file: string, source: string, csharp: boolean): Join[] {
     const open = match.index! + match[0].length;
     let parts = argumentsOf(source, open);
     if (!parts) continue;
-    // C#'s collection form, `Path.Combine([home, .. Folder, name])` (HOMELAYOUT3: `ToolResources.LocationCopy` hid a join so):
+    // C#'s collection form, `Path.Combine([home, .. Folder, name])` (a join can hide so):
     // its parts are the collection's, a spread read as what it spreads.
     const collection = parts.length === 1 && /^\[[\s\S]*\]$/.test(parts[0]!) ? argumentsOf(`${parts[0]!.slice(1, -1)})`, 0) : null;
     if (collection) parts = collection.map((part) => part.replace(/^\.\.\s*/, ''));
@@ -137,12 +137,12 @@ const isHome = (part: string): boolean => /^(?:[A-Za-z_][\w]*(?:\(\))?\.)*_?[Hh]
 /**
  * The names a test gives the root it hands a tool as its home: a fixture's root, `at`, `root`, a C# test's `DataHome`. A fixture's
  * own relative path (`fx.read('workflows/docs.json')`) is not read here: most name a file a per-file override hands over, so a
- * test reads a home's place through `fx.entry` or `homeEntry` by its own care (HOMELAYOUT3 found two such reads merged from main).
+ * test reads a home's place through `fx.entry` or `homeEntry` by its own care.
  */
 const TEST_ROOT = /^(?:fx\.root|at|root|DataHome)$/;
 
 /**
- * The top folders of the Daoris folder that are a category and no entry (HOMELAYOUT3): `data`, `profiles`, `work`, `cache` and
+ * The top folders of the Daoris folder that are a category and no entry: `data`, `profiles`, `work`, `cache` and
  * `run`. Alone each names nothing, so a test's own `data` (an install's shape) or a workspace it calls `work` is no entry; with
  * the part after it, it names the entry whose new place begins so. The logs are both their category and their entry.
  */
@@ -206,7 +206,7 @@ function census(): { found: Join[]; scanned: number } {
     { folder: join(SRC, 'Daoris.Service'), extension: '.cs', csharp: true },
     { folder: join(SRC, 'Daoris.Cli', 'src'), extension: '.ts', csharp: false },
     { folder: join(SRC, 'Daoris.Cli', 'test'), extension: '.ts', csharp: false },
-    // HOMELAYOUT2b: the tools ask the table too (they import the CLI's `homeEntry`).
+    // The tools ask the table too (they import the CLI's `homeEntry`).
     { folder: join(SRC, '..', 'tools'), extension: '.mjs', csharp: false },
   ];
   const found: Join[] = [];
@@ -220,7 +220,7 @@ function census(): { found: Join[]; scanned: number } {
       for (const each of joinsIn(name, readFileSync(path, 'utf8'), root.csharp)) {
         // A join has a part under the home: `resolve(home)` alone is the home made whole, no place in it.
         if (each.parts.length < 2) continue;
-        // A test hands its scratch root as `DAORIS_HOME` under names of its own (HOMELAYOUT2c): there too, a place the table
+        // A test hands its scratch root as `DAORIS_HOME` under names of its own: there too, a place the table
         // holds is asked of it.
         if (!isHome(each.parts[0]!) && !(testing && TEST_ROOT.test(each.parts[0]!))) continue;
         if (testing && !namesEntry(each.parts.slice(1))) continue;
@@ -235,8 +235,7 @@ const owedMatches = (each: Join, owed: (typeof OWED)[number]): boolean =>
   basename(each.file) === owed.file && (owed.like ? each.text.startsWith(owed.join) : each.text === owed.join);
 
 /**
- * HOMELAYOUT2c's test files still reading a scratch root's place by hand, each converted to `homeEntry` before the new places
- * were switched on (HOMELAYOUT3): empty, and a file the scan finds is refused, so a test never joins one again.
+ * Test files that read a scratch root's place by hand: empty, and a file the scan finds is refused, so a test never joins one.
  */
 const PENDING_TESTS: ReadonlySet<string> = new Set([]);
 
@@ -293,7 +292,7 @@ test('the census sees each way of joining a home, and never a join under an entr
   assert.ok(['fx.root', 'at', 'root', 'DataHome'].every((name) => TEST_ROOT.test(name)) && !TEST_ROOT.test('repoRoot'));
   assert.ok(namesEntry(["'harnesses.json'"]) && namesEntry(['TOOLS_FOLDER']));
   assert.ok(!namesEntry(['"engine"']) && !namesEntry(['"agent.log"']) && !namesEntry(['name']));
-  // HOMELAYOUT3: a category's folder names an entry only with the part after it, as its new place begins.
+  // A category's folder names an entry only with the part after it, as its new place begins.
   assert.deepEqual([...CATEGORY_FOLDERS].sort(), ['cache', 'data', 'profiles', 'run', 'work']);
   assert.ok(namesEntry(["'data'", "'driver.json'"]) && namesEntry(['"run/home.lease"']) && namesEntry(['"work"', '"brainstorm-rooms"', '"b1"']));
   assert.ok(namesEntry(['"logs"']) && namesEntry(['"profiles"', '"agents"']));

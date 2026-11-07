@@ -136,10 +136,10 @@ public sealed class RepositoryScannerTests : IDisposable
     }
 
     /// <summary>
-    /// 🔴 REV3: two sections under one heading — date-only fix headings do it — shared an id, and the
-    /// SQLite store's primary key threw on the second, failing the WHOLE refresh for every repository
-    /// sorted after this one. The in-memory store the tests used took the duplicate without a word. Every
-    /// section keeps an id of its own; the second is told apart, the first keeps the id it always had.
+    /// 🔴 Two sections under one heading — date-only fix headings do it — share an id, and the
+    /// SQLite store's primary key throws on the second, failing the WHOLE refresh for every repository
+    /// sorted after this one. The in-memory store the tests use takes the duplicate without a word. Every
+    /// section keeps an id of its own; the second is told apart, the first keeps the id it has.
     /// </summary>
     [Fact]
     public void Two_sections_under_one_heading_are_two_entries_with_two_ids()
@@ -155,10 +155,10 @@ public sealed class RepositoryScannerTests : IDisposable
     }
 
     /// <summary>
-    /// 🔴 ORIENT2h3: counting titles is not reserving anchors. A title that is literally another title's counted
-    /// anchor, <c>A</c>, <c>A</c>, <c>A (2)</c>, gave <c>A</c>, <c>A (2)</c>, <c>A (2)</c>: two entries shared an id
-    /// and the store's insert failed the whole refresh, as REV3's did. Every reader that anchors by a count gets the
-    /// next free anchor, and the anchors a title had while every id was unique are kept.
+    /// 🔴 Counting titles is not reserving anchors. A title that is literally another title's counted
+    /// anchor, <c>A</c>, <c>A</c>, <c>A (2)</c>, must not give <c>A</c>, <c>A (2)</c>, <c>A (2)</c>: two entries would share an id
+    /// and the store's insert would fail the whole refresh. Every reader that anchors by a count gets the
+    /// next free anchor, and the anchors a title has while every id is unique are kept.
     /// </summary>
     [Theory]
     [InlineData("a log's sections")]
@@ -190,7 +190,7 @@ public sealed class RepositoryScannerTests : IDisposable
         }
 
         // Each path is the test's own file under its temporary root, held in a constant: written as an argument after
-        // a call, MOD9's scan (merge-branch.test.ts) reads it as this test reading the repository's file of that name.
+        // a call, the merge tool's scan (merge-branch.test.ts) reads it as this test reading the repository's file of that name.
         (RepositoryScanner, string, string?[]) Log()
         {
             const string log = "docs/FIX-LOG.md";
@@ -219,10 +219,10 @@ public sealed class RepositoryScannerTests : IDisposable
         }
     }
 
-    // ── a folder of records (DOC8c; D134 §5, docs/2026-10-03-decisions-record-design.md §3.5) ────────
+    // ── a folder of records ────────
     //
-    // Since DOC8a this repository's decisions are a folder, one file each, and the scanner titled each by
-    // its file name: a search showed *D130* where the file's own heading says what D130 decided.
+    // A repository's decisions are a folder, one file each, and the scanner titles each by the
+    // file's own heading, not by its file name.
 
     private void DeclareFolders(string documents) =>
         Write("daoris.json", $$"""{"source":"s","packs":[],"documents":{{documents}}}""");
@@ -241,14 +241,14 @@ public sealed class RepositoryScannerTests : IDisposable
         // Located by its path, as before: a title is what a search shows, never what the index keys on.
         Assert.Equal($"{new DirectoryInfo(_root).Name}:docs/decisions/D130.md", record.Id);
         Assert.Contains("Why.", record.Body);
-        // Its dated note is an entry of its own since ORIENT1g (the tests below).
+        // Its dated note is an entry of its own (the tests below).
         Assert.DoesNotContain("A note.", record.Body);
     }
 
-    // ── a decision's dated notes (ORIENT1g; D134 §5 as amended) ──────────────────────────────────────
+    // ── a decision's dated notes ──────────────────────────────────────
     //
-    // D125 is one file and twenty-two dated notes, read as one entry: a question about one note was answered
-    // with the whole file, or by a shorter entry elsewhere, and the note itself was buried under the rest.
+    // A decision file with many dated notes is not read as one entry: a question about one note would be answered
+    // with the whole file, or by a shorter entry elsewhere, and the note itself buried under the rest.
 
     /// <summary>
     /// Each dated note is an entry of its own, labelled as the decisions digest labels it and titled by its
@@ -339,7 +339,7 @@ public sealed class RepositoryScannerTests : IDisposable
 
     /// <summary>
     /// A router declared as a folder holds documents, not records, and a document is named by its file as the
-    /// knowledge tier's are (D122): only the logs' folders are titled by their headings.
+    /// knowledge tier's are: only the logs' folders are titled by their headings.
     /// </summary>
     [Fact]
     public void A_router_declared_as_a_folder_keeps_its_file_names()
@@ -371,15 +371,14 @@ public sealed class RepositoryScannerTests : IDisposable
         Assert.Empty(new RepositoryScanner().Scan(Path.Combine(_root, "does-not-exist")));
     }
 
-    // ── the region (CANON8e / D59) ────────────────────────────────────────────────────────────────
+    // ── the region ────────────────────────────────────────────────────────────────
     //
-    // 🔴 Measured after the migration, not imagined: `.claude/rules/` is empty now, so the eight
-    // canonical rules fell straight out of the index and a search for one returned only a
-    // repository's OWN local rule. Cross-repository search and convergence are what the service
-    // exists for, and they had quietly lost the always-loaded tier — with every gate green, because
-    // none asserted that a canonical RULE was searchable.
+    // 🔴 `.claude/rules/` is empty, so the canonical rules are read from the lock's region, or a
+    // search for one returns only a repository's OWN local rule. Cross-repository search and
+    // convergence are what the service exists for, and they would quietly lose the always-loaded
+    // tier unless a test asserts that a canonical RULE is searchable.
     //
-    // The twin contract is what failed: the CLI moved a tier, and this artefact reads the same layout
+    // The twin contract: the CLI moves a tier, and this artefact reads the same layout
     // from another language where nothing breaks at compile time.
 
     /// <summary>A repository on the new layout: the rules in a region, the lock saying where.</summary>
@@ -450,9 +449,9 @@ public sealed class RepositoryScannerTests : IDisposable
     }
 
     /// <summary>
-    /// LAYOUT4: a repository on the older layout indexes exactly as before the service learned the
-    /// agents layout — the same entries, in the same order, with the same provenance, read at the
-    /// manifest's root alone. Written against the scanner before LAYOUT4 and run against both.
+    /// A repository on the older layout indexes exactly as the agents layout would not change it —
+    /// the same entries, in the same order, with the same provenance, read at the
+    /// manifest's root alone.
     /// </summary>
     [Fact]
     public void A_repository_on_the_older_layout_indexes_exactly_as_before()
@@ -467,7 +466,7 @@ public sealed class RepositoryScannerTests : IDisposable
         Write(".claude/skills/finder/SKILL.md", "---\nname: finder\n---\n\nSteps.");
         Write(".claude/skills/house/SKILL.md", "---\nname: house\n---\n\nOur steps.");
         Write("docs/DECISIONS.md", "## D1 — one\n\nA.\n");
-        // Nothing on the older layout names these, and before LAYOUT4 nothing read them.
+        // Nothing on the older layout names these, so nothing reads them.
         Write(".agents/knowledge/elsewhere.md", "# Elsewhere\n\nNot this layout's.");
         Write("pkg/AGENTS.md", "# A package\n\nUndeclared.");
 

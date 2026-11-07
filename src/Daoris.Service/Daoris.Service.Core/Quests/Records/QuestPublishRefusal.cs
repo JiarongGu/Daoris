@@ -10,14 +10,13 @@ public enum QuestPublishRefusal
 
     /// <summary>
     /// Nothing could answer it: the target is not registered, or it has neither adopted nor a root on
-    /// this machine (D34 as amended by D70).
+    /// this machine.
     /// </summary>
     NotAddressable,
 
     /// <summary>
-    /// The two repositories are in different workspaces, and the workspace is the unit of sharing
-    /// (D48 §4). Cross-workspace asking is deliberately out of scope — a person carries it, or a
-    /// later, explicit door does, with its own disclosure argument (design §10).
+    /// The two repositories are in different workspaces, and the workspace is the unit of sharing. Cross-workspace asking is deliberately out of scope — a person carries it, or a
+    /// later, explicit door does, with its own disclosure argument.
     /// </summary>
     CrossWorkspace,
 
@@ -27,11 +26,11 @@ public enum QuestPublishRefusal
     /// <summary>More files, or more bytes, than a quest carries — or a file named in a shape no record keeps.</summary>
     BadAttachment,
 
-    /// <summary>Files arrived with their bytes and this host has no Daoris home to keep them under (D63).</summary>
+    /// <summary>Files arrived with their bytes and this host has no Daoris home to keep them under.</summary>
     NoHome,
 
     /// <summary>
-    /// A chain (D65 §4) with a step that cannot be published when its turn comes: nobody there can see
+    /// A chain with a step that cannot be published when its turn comes: nobody there can see
     /// it, it asks the asker, it has no words, it is shared where the chain is local or local where it
     /// is shared, or there are too many.
     /// </summary>
@@ -39,12 +38,12 @@ public enum QuestPublishRefusal
 
     /// <summary>
     /// The address names a lane its repository does not declare, or any lane of a repository that
-    /// declares none (D115 §2.2). The answer names the lanes there are.
+    /// declares none. The answer names the lanes there are.
     /// </summary>
     UnknownLane,
 
     /// <summary>
-    /// A requirement that is not one (D133 §3): it lacks the person's words or its check, there
+    /// A requirement that is not one: it lacks the person's words or its check, there
     /// are too many or one is too long, or the quest is asked on no ask whose words it could quote.
     /// </summary>
     BadRequirement,
@@ -65,13 +64,13 @@ public enum QuestPublishRefusal
     BadRequest,
 
     /// <summary>
-    /// The same words as a quest this machine cleared after its remote numbered it (D153 point 3): the remote holds
+    /// The same words as a quest this machine cleared after its remote numbered it: the remote holds
     /// it closed, and would refuse a fresh copy on every pass, so a new ask is a new title.
     /// </summary>
     Cleared,
 
     /// <summary>
-    /// A review choice that is not one (D154 point 3): not <c>off</c>, <c>on</c> or an environment's name, words
+    /// A review choice that is not one: not <c>off</c>, <c>on</c> or an environment's name, words
     /// past their bound, or a session setting one without the person's words, or on no ask whose words it could quote.
     /// </summary>
     BadReview,

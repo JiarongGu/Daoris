@@ -13,13 +13,13 @@ public sealed record QuestSyncReport(
     IReadOnlyList<string> Behind, string? Problem)
 {
     /// <summary>
-    /// The remote's handshake as this pass last heard it (FABRIC-CLOSE1i): which machines of the workspace did not declare they know a
+    /// The remote's handshake as this pass last heard it: which machines of the workspace did not declare they know a
     /// bound quest. Null where it heard none: a wall, or a remote before it.
     /// </summary>
     public QuestClosure? Closure { get; init; }
 }
 
-/// <summary>Where a circle stands on this machine (SYNC6a) — what the status bar and `daoris remote sync status` read.</summary>
+/// <summary>Where a circle stands on this machine — what the status bar and `daoris remote sync status` read.</summary>
 /// <param name="Ahead">Operations this machine made that the circle's remote has not numbered yet.</param>
 /// <param name="Behind">
 /// Quests the last pass could not bring level, because the remote moved them on every round. A pass
@@ -35,8 +35,8 @@ public sealed record QuestStanding(
     DateTimeOffset? Synced, DateTimeOffset? Tried, string? Problem);
 
 /// <summary>
-/// One pass of fetch, rebase, push for one workspace's quests (D68 §3, sync design §8) — the ONE
-/// implementation, run by a take that claims by push and by the driver's tick alike (D69).
+/// One pass of fetch, rebase, push for one workspace's quests — the ONE
+/// implementation, run by a take that claims by push and by the driver's tick alike.
 /// </summary>
 /// <remarks>
 /// A store's passes over one workspace are taken one at a time: two at once would each be correct —
@@ -60,7 +60,7 @@ public static class QuestSync
     }
 
     /// <summary>
-    /// A person's retirement of <paramref name="machine"/> at <paramref name="workspace"/>'s remote (FABRIC-CLOSE1i2): asked there, and the
+    /// A person's retirement of <paramref name="machine"/> at <paramref name="workspace"/>'s remote: asked there, and the
     /// handshake it answers kept as the last pass keeps what it heard, so a bind reads it at once. A wall, or a remote before the door,
     /// is the <see cref="RemoteException"/> the caller says; a machine the remote has heard nothing from is answered not retired, and
     /// what it answers is kept all the same.
@@ -73,7 +73,7 @@ public static class QuestSync
         return answered;
     }
 
-    /// <summary>Where a circle stands (SYNC6a), with what may leave read the way a pass reads it.</summary>
+    /// <summary>Where a circle stands, with what may leave read the way a pass reads it.</summary>
     public static async Task<QuestStanding> StandingAsync(
         QuestStore store, KnowledgeService service, string workspace, CancellationToken ct = default)
     {
@@ -148,7 +148,7 @@ public static class QuestSync
                 var pending = await store.PendingAsync(circle, shared, ct).ConfigureAwait(false);
                 if (pending.Count == 0)
                 {
-                    // FABRIC-CLOSE1i: a remote that knows the handshake and has not heard this machine's declaration hears it once, by a
+                    // A remote that knows the handshake and has not heard this machine's declaration hears it once, by a
                     // push of nothing; a remote before it, or one that has heard it, is asked nothing more.
                     if (closure is { } heard && heard.Undeclared.Contains(store.Machine, StringComparer.Ordinal))
                     {
@@ -158,7 +158,7 @@ public static class QuestSync
                     return new(pushed, conflicts, refused, [], null) { Closure = closure };
                 }
 
-                // Each push declares this machine's build knows a bound quest (FABRIC-CLOSE1i), and its answer says whether every one did.
+                // Each push declares this machine's build knows a bound quest, and its answer says whether every one did.
                 var push = await remote.PushQuestsAsync(integrated.Cursor, pending, ct, declares: store.Machine).ConfigureAwait(false);
                 closure = push.Closure;
                 await store.AcceptedAsync(push.Accepted, ct).ConfigureAwait(false);

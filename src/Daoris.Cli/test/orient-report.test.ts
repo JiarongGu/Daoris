@@ -8,8 +8,8 @@ import { homeEntry } from '../src/platform/home.ts';
 import { driverFile } from './_csharp.ts';
 import { makeFixture } from './_fixture.ts';
 
-// ORIENT1d: `tools/orient-report.mjs` reads a session's transcript and says what it spent before its first edit, so
-// the orientation index's effect is measured on the branches it was built for, before and after.
+// `tools/orient-report.mjs` reads a session's transcript and says what it spent before its first edit, so
+// the orientation index's effect is measured on the branches it serves, before and after.
 type Summary = {
   label: string;
   total: number;
@@ -22,7 +22,7 @@ type Summary = {
   indexReads: number;
   firstEdit: { name: string; path: string } | null;
 };
-/** One call as a session's typed events tell it (ORIENT1e): its updates merged under its id. */
+/** One call as a session's typed events tell it: its updates merged under its id. */
 type EventCall = {
   id: string | null; kind: string | null; title: string | null; locations: string[] | null; status: string | null;
   input: string | null; chars: number; sized: boolean;
@@ -159,7 +159,7 @@ test('the report gives each branch its line, the totals, and the files read most
   assert.match(text, /^\s+2\s+1 KB\s+docs\/index\/routes\.md$/m);
 });
 
-// ORIENT1c: whether a branch asked the workspace's knowledge server, before its first edit and after.
+// Whether a branch asked the workspace's knowledge server, before its first edit and after.
 test('the asks of the knowledge server are counted, before the first edit and in all, and said for each branch', () => {
   const asked = transcript([
     ['mcp__daoris-knowledge__knowledge_search', { query: 'where is the SESSION_GO_ON_NEW handler' }, 'r'.repeat(400)],
@@ -198,8 +198,8 @@ test('it runs on transcript files, says which it could not read, and prints JSON
   fx.cleanup();
 });
 
-// ORIENT1e: a driven session is kept as typed events (D76 §2), never as the harness's transcript, which lives in an
-// account's home Daoris never reads (D125). These fixtures are each door's events as the driver writes them.
+// A driven session is kept as typed events, never as the harness's transcript, which lives in an
+// account's home Daoris never reads. These fixtures are each door's events as the driver writes them.
 
 /** A session's events file as `SessionEvents` writes it: one camel-cased event a line, numbered, absent fields left out. */
 function events(...list: Record<string, unknown>[]) {
@@ -256,7 +256,7 @@ function acpSession() {
     { kind: 'tool', id: 'c2', title: '`rg -n foo`', toolKind: 'execute', status: 'pending', input: '{"command":"rg -n foo"}', content: [{ type: 'text', text: 'Search for foo' }] },
     { kind: 'tool', id: 'c2', status: 'completed', content: [{ type: 'text', text: 'p'.repeat(120) }] },
     { kind: 'tool', id: 'c3', title: '`git log --oneline`', toolKind: 'execute', status: 'pending', input: '{"command":"git log --oneline"}' },
-    // A raw output past 400 characters is cut by the door, saying how long it was.
+    // A raw output past 400 characters is cut by the door, saying how long it is.
     { kind: 'tool', id: 'c3', status: 'completed', output: `"${'o'.repeat(399)}… (5000 chars)` },
     // Nothing came back that the record kept: the call counts, its size is not known.
     { kind: 'tool', id: 'c4', title: 'grep "foo"', toolKind: 'search', status: 'pending' },
@@ -345,7 +345,7 @@ test('a path is placed in its session\'s tree by the home, or by the tree\'s min
   assert.deepEqual(tool.placeOf('D:/Daoris/data/sessions/s-1.log', home), { tree: null, rel: '<home>/sessions/s-1.log', inside: false });
   assert.deepEqual(tool.placeOf('D:/scratchpad/plan.md', home), { tree: null, rel: 'D:/scratchpad/plan.md', inside: false });
   assert.equal(tool.placeOf('D:/repo/trees/a/b/c/x.ts', home)?.inside, false, 'a folder named trees elsewhere is no session tree');
-  // A home's new place for its trees (D172), and a home that lies in a session's own tree, as a driven session's test's (ORIENTTREE1).
+  // A home's place for its trees, and a home that lies in a session's own tree, as a driven session's test's.
   assert.deepEqual(tool.placeOf('D:/Daoris/data/work/trees/main/engine/s-1a2b3c4d/src/a.ts', home)?.tree, ['main', 'engine', 's-1a2b3c4d']);
   const nested = 'D:/h/trees/games/Daoris/s-349e65e2/_fixtures/home';
   assert.deepEqual(tool.placeOf(`${nested}/work/trees/main/engine/s-1a2b3c4d/src/a.ts`, nested), { tree: ['main', 'engine', 's-1a2b3c4d'], rel: 'src/a.ts', inside: true });
@@ -501,7 +501,7 @@ test('the record\'s spellings it reads are the driver\'s: the tool event, its fi
   assert.match(events, /public IReadOnlyList<string>\? Locations \{ get; init; \}/);
   assert.match(events, /public IReadOnlyList<ToolContent>\? Content \{ get; init; \}/);
   assert.match(events, /JsonNamingPolicy\.CamelCase/);
-  // The cut's spelling is the one helper's (DEDUP7): `TextBounds.ClipCounted`, which both fields' cuts call.
+  // The cut's spelling is the one helper's: `TextBounds.ClipCounted`, which both fields' cuts call.
   assert.match(readFileSync(driverFile('TextBounds.cs'), 'utf8'), /\$"\{text\[\.\.limit\]\}\{Ellipsis\} \(\{text\.Length\} chars\)"/);
   assert.match(events, /TextBounds\.ClipCounted\(text, limit\)/);
   assert.match(readFileSync(driverFile('AcpRender.cs'), 'utf8'), /TextBounds\.ClipCounted\(raw, 400\)/);

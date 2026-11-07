@@ -9,26 +9,26 @@ namespace Daoris.Knowledge;
 /// <param name="DatabasePath">The SQLite index. Created if absent.</param>
 /// <param name="EmbedModel">
 /// Which model, when the deployment has one — read here only so every host reads it the same way. The
-/// provider itself is BUILT BY THE HOST and passed in; Core stays on <c>IVectorProvider</c> (D22, D24).
+/// provider itself is BUILT BY THE HOST and passed in; Core stays on <c>IVectorProvider</c>.
 /// </param>
 /// <param name="EmbedUrl">The endpoint, for a deployment that has one.</param>
 /// <param name="EmbedWindow">
-/// The most characters one embedded text carries, its title included (SEM3, D123) — the deployment's
+/// The most characters one embedded text carries, its title included — the deployment's
 /// statement of its embedder's window, since only the deployment knows which model answers. A longer
 /// entry is embedded in pieces this long, so no part of it is cut.
 /// </param>
 /// <param name="Repository">
-/// The one checkout this deployment serves, when it serves one (ORIENT1c): a workspace's own knowledge
+/// The one checkout this deployment serves, when it serves one: a workspace's own knowledge
 /// server, asked by the agents working in it. The bootstrap registers that checkout alone, never the
 /// folder around it, and each process re-reads it at its first use and once its reading is older than
 /// <see cref="CheckoutRereadAfter"/>, since the checkout is merged into while the index persists.
 /// </param>
 /// <param name="Documents">
-/// A folder of documents to read in every registered repository, repository-relative (ORIENT1c): each
-/// markdown file under it split at its headings, as a log is. Unset reads none, as before.
+/// A folder of documents to read in every registered repository, repository-relative: each
+/// markdown file under it split at its headings, as a log is. Unset reads none.
 /// </param>
 /// <param name="Index">
-/// A generated index to read in every registered repository, repository-relative (ORIENT1c): each table
+/// A generated index to read in every registered repository, repository-relative: each table
 /// row and list item of a markdown file under it one entry, so a search for where something is lands on
 /// the row that says so. Unset reads none.
 /// </param>
@@ -52,8 +52,8 @@ public sealed record ServiceOptions(
     public const string IndexVariable = "DAORIS_KNOWLEDGE_INDEX";
 
     /// <summary>
-    /// How old a reading of the one checkout may be before an answer re-reads it (ORIENT1c), when no watch of it is in
-    /// service (FABRIC-EVENT6: a watched checkout is marked stale by what moves and reconciled at
+    /// How old a reading of the one checkout may be before an answer re-reads it, when no watch of it is in
+    /// service (a watched checkout is marked stale by what moves and reconciled at
     /// <see cref="CheckoutFreshness.Deadline"/>). A minute: a session's server lives as long as the session, the checkout is
     /// merged into meanwhile, and one repository re-read costs a second or two (1.2 to 1.7 s for this repository's 7,724
     /// entries, measured), paid at most once a minute by the search that finds it stale.
@@ -86,7 +86,7 @@ public sealed record ServiceOptions(
             error ?? repositoryError ?? documentsError ?? indexError);
     }
 
-    /// <summary>The one checkout served (ORIENT1c): an existing folder, or an error naming what was set.</summary>
+    /// <summary>The one checkout served: an existing folder, or an error naming what is set.</summary>
     private static (string? Checkout, string? Error) ParseCheckout(string? value)
     {
         if (string.IsNullOrWhiteSpace(value)) return (null, null);
@@ -98,7 +98,7 @@ public sealed record ServiceOptions(
     }
 
     /// <summary>
-    /// A repository-relative folder (ORIENT1c), spelled with forward slashes and no trailing one, as the
+    /// A repository-relative folder, spelled with forward slashes and no trailing one, as the
     /// scanner names every path; or an error, for a folder that would be read outside the repository.
     /// </summary>
     private static (string? Folder, string? Error) ParseFolder(string variable, string? value)
@@ -114,7 +114,7 @@ public sealed record ServiceOptions(
     }
 
     /// <summary>
-    /// The embedder's window (D123). Absence is <see cref="EntryPieces.DefaultWindow"/>, silently; anything
+    /// The embedder's window. Absence is <see cref="EntryPieces.DefaultWindow"/>, silently; anything
     /// else is a whole number of characters at least <see cref="EntryPieces.MinimumWindow"/>, or it errors.
     /// </summary>
     public static (int Window, string? Error) ParseEmbedWindow(string? value)
@@ -135,9 +135,9 @@ public sealed record ServiceOptions(
 /// <param name="Service">The composed service. Convergence is reached through it, not beside it.</param>
 /// <param name="Quests">Work one repository has asked of another — service state, not anyone's files.</param>
 /// <param name="Exchange">The publish/respond judgement, shared so no two hosts can disagree on it.</param>
-/// <param name="Sessions">Driver-started session records — the record is service state, the process never is (D46).</param>
+/// <param name="Sessions">Driver-started session records — the record is service state, the process never is.</param>
 /// <param name="Ledger">The open/advance judgement for sessions, shared for the same reason the exchange is.</param>
-/// <param name="Keys">The shared deployment's machine credentials (D47 §7). Present in every mode —
+/// <param name="Keys">The shared deployment's machine credentials. Present in every mode —
 /// minting is deployment administration — but only shared mode's gate consults them.</param>
 /// <param name="SemanticEnabled">Whether the semantic tier answered. Report it; never imply it.</param>
 /// <remarks>
@@ -150,56 +150,56 @@ public sealed record ComposedService(
 {
     internal SqliteKnowledgeStore? Store { get; init; }
 
-    /// <summary>The watch of the one checkout a deployment serves (FABRIC-EVENT6); null when it serves none, and disposed with the service.</summary>
+    /// <summary>The watch of the one checkout a deployment serves; null when it serves none, and disposed with the service.</summary>
     internal CheckoutFreshness? Freshness { get; init; }
 
     /// <summary>
-    /// Why the index answers nothing on this host, or null when it answers (KSCHEMA1): a newer Daoris wrote it. The
+    /// Why the index answers nothing on this host, or null when it answers: a newer Daoris wrote it. The
     /// host still starts, and what is not derived works; a host says this once, at its start.
     /// </summary>
     public NewerIndexException? IndexRefusal => Store?.Refusal;
 
     /// <summary>
-    /// Where this deployment keeps the bytes a quest carries (D65 §2) — null on a deployment that keeps
-    /// none: a shared one, which holds names only, or a local one with no Daoris home (D63).
+    /// Where this deployment keeps the bytes a quest carries — null on a deployment that keeps
+    /// none: a shared one, which holds names only, or a local one with no Daoris home.
     /// </summary>
     public QuestFiles? Files { get; init; }
 
-    /// <summary>Asks made at a workspace, and the judgement over them (D65 §1a).</summary>
+    /// <summary>Asks made at a workspace, and the judgement over them.</summary>
     public AskDesk Asks { get; init; } = null!;
 
-    /// <summary>This machine's remotes, by workspace — what a sync pass runs against (D69). Null on a remote.</summary>
+    /// <summary>This machine's remotes, by workspace — what a sync pass runs against. Null on a remote.</summary>
     public IRemotes? Remotes { get; init; }
 
     /// <summary>
-    /// Clearing finished history from this machine (HIST1b, D153): the records' half, judged in one place for both of a
+    /// Clearing finished history from this machine: the records' half, judged in one place for both of a
     /// local host's doors. Composed on every host and reached by none at a shared deployment, which maps no door to it.
     /// </summary>
     public HistoryDesk History { get; init; } = null!;
 
     /// <summary>
-    /// Second opinions (XAGENT1c, D155 point 11): kept by a local host beside its session records. Composed on every host, and
+    /// Second opinions: kept by a local host beside its session records. Composed on every host, and
     /// a shared host's refuses every door with its sentence, since it keeps none.
     /// </summary>
     public OpinionDesk Opinions { get; init; } = null!;
 
     /// <summary>
-    /// Finished trees' records (KEEPSIZE1b, the keep-size design §2.2): kept beside the session records, machine-local, posted by the
+    /// Finished trees' records: kept beside the session records, machine-local, posted by the
     /// driver on loopback. Composed on every host and reached by none at a shared deployment, which maps no door to it.
     /// </summary>
     public WorkRecordStore Records { get; init; } = null!;
 
-    /// <summary>A helper's record and its answer's return (MIXAGENT2a-ii, D163 point 2): a local host's two doors; a shared host's refuse.</summary>
+    /// <summary>A helper's record and its answer's return: a local host's two doors; a shared host's refuse.</summary>
     public HelperDesk Helpers { get; init; } = null!;
 
-    /// <summary>A partner's record (COAGENT1b, D199 point 2): a local host's door, idempotent by the piece; a shared host's refuses.</summary>
+    /// <summary>A partner's record: a local host's door, idempotent by the piece; a shared host's refuses.</summary>
     public PartnerDesk Partners { get; init; } = null!;
 
-    /// <summary>An ask's channel (SESSONE2a, D167 point 8): the messages beside the asks they are on. Composed on every host; only a local host maps its doors.</summary>
+    /// <summary>An ask's channel: the messages beside the asks they are on. Composed on every host; only a local host maps its doors.</summary>
     public ChannelDesk Channel { get; init; } = null!;
 
     /// <summary>
-    /// Each repository's memory (KNOWCENTRAL2d): Lyntai's engines over this machine's file beside the index. Null on a shared host, which
+    /// Each repository's memory: Lyntai's engines over this machine's file beside the index. Null on a shared host, which
     /// keeps no memory, and for an index held in memory.
     /// </summary>
     public LyntaiMemory? Memory { get; init; }
@@ -207,7 +207,7 @@ public sealed record ComposedService(
     /// <summary>The event journal read by position, through the service's one connection's gate.</summary>
     public Func<long, int, CancellationToken, Task<JournalPage>> Journal { get; init; } = null!;
 
-    /// <summary>The channel's messages themselves (SESSONE2d): what the sync and a shared host's two channel doors read and keep.</summary>
+    /// <summary>The channel's messages themselves: what the sync and a shared host's two channel doors read and keep.</summary>
     public ChannelStore Messages { get; init; } = null!;
 
     public ValueTask DisposeAsync()
@@ -222,7 +222,7 @@ public sealed record ComposedService(
 /// </summary>
 /// <remarks>
 /// <para>It exists because there are now two hosts — MCP over stdio for an agent, HTTP for the browser —
-/// and the wiring was about to be written twice. Two copies of "which tier is active, and how is the
+/// and the wiring would be written twice. Two copies of "which tier is active, and how is the
 /// embedder built" would drift, and one of them would end up quietly lexical-only while reporting
 /// otherwise. That is this project's own thesis; committing it inside the project would be worse than
 /// finding it elsewhere.</para>
@@ -236,7 +236,7 @@ public sealed record ComposedService(
 /// must not diverge between hosts is the part that lives here: whether the semantic tier is on, what
 /// hybrid fuses, and which tier gets reported.</para>
 ///
-/// <para><b>The deployment picks the model, the feature never names one (D24).</b> Naming a model turns
+/// <para><b>The deployment picks the model, the feature never names one.</b> Naming a model turns
 /// the semantic tier on and hybrid search fuses both. Silence leaves the service lexical-only rather than
 /// refusing to start — a knowledge index that will not run without an embedding endpoint is not
 /// local-first, and every feature here still does its useful part with no model at all.</para>
@@ -257,18 +257,17 @@ public sealed record KeyAdministration(ApiKeyStore Keys) : IAsyncDisposable
 public static class ServiceFactory
 {
     /// <summary>
-    /// Open ONLY the credential store, for the deployment's key console (D47 §7).
+    /// Open ONLY the credential store, for the deployment's key console.
     /// </summary>
     /// <remarks>
     /// <para>Key administration has nothing to do with knowledge, and composing the whole service to
     /// mint a key had a consequence nobody chose: the composition bootstraps a registry from the
-    /// configured root the first time a store is used (D48 §3), so <c>keys mint</c> on a server
+    /// configured root the first time a store is used, so <c>keys mint</c> on a server
     /// imported whatever sat beside the binary — machine paths included — into the deployment that
-    /// must be FED, NEVER SCANNED (D47 §4). Found by the family rehearsal's own assertion that every
-    /// row at a workspace's deployment belongs to that workspace.</para>
+    /// must be FED, NEVER SCANNED.</para>
     ///
-    /// <para>The narrow door is also the honest one: an operator verb that quietly indexed a disk was
-    /// doing something its name did not say.</para>
+    /// <para>The narrow door is also the honest one: an operator verb that quietly indexed a disk does
+    /// something its name does not say.</para>
     /// </remarks>
     public static async Task<KeyAdministration> OpenKeysAsync(
         ServiceOptions options, CancellationToken ct = default)
@@ -286,27 +285,27 @@ public static class ServiceFactory
         IVectorProvider? embedder = null,
         IVectorStore? vectors = null,
         IDisclosurePolicy? disclosure = null,
-        // This machine's remotes, by workspace (D48 §5) — what a take claims at (D69) and what a chain's
-        // composition asks, because a chain is all shared or all local (D68). Passed in like the
+        // This machine's remotes, by workspace — what a take claims at and what a chain's
+        // composition asks, because a chain is all shared or all local. Passed in like the
         // embedder: the deployment decides, and both doors get the same exchange so neither can drift.
         // A shared host passes nothing — it is the remote.
         IRemotes? remotes = null,
         // What the index reads from, when the deployment is not the usual scan-this-folder one. A
-        // shared host passes EmptyKnowledgeSource, because it is fed and never scans (D47 §4) — the
+        // shared host passes EmptyKnowledgeSource, because it is fed and never scans — the
         // route refusal alone would leave the index-on-first-use path free to scan the server's disk.
         IKnowledgeSource? source = null,
-        // Where a quest's files are kept, when this deployment keeps any (D65 §2). A local host passes
+        // Where a quest's files are kept, when this deployment keeps any. A local host passes
         // the home's keeper; a shared host passes nothing — it holds names, never bytes — and so does a
-        // local host with no home, whose exchange then refuses files with the home's sentence (D63).
+        // local host with no home, whose exchange then refuses files with the home's sentence.
         QuestFiles? files = null,
-        // The rule proposals a clear reads and tidies (HIST1b, design §2.2): a pending one keeps the work that made it, and
+        // The rule proposals a clear reads and tidies: a pending one keeps the work that made it, and
         // a settled one goes with it. A local host passes the home's box; with none, no proposal is read or removed.
         RuleProposalBox? proposals = null,
-        // Which host this is (D47 §3): what is this machine's alone, a second opinion first (XAGENT1c), is kept by a local
+        // Which host this is: what is this machine's alone, a second opinion first, is kept by a local
         // host and refused by a shared one. The MCP host is always local.
         ServiceMode mode = ServiceMode.Local,
         CancellationToken ct = default,
-        // The clock the index's readings and the roots' judging are measured on; the system's unless a test moves one (KNOWCURRENT1).
+        // The clock the index's readings and the roots' judging are measured on; the system's unless a test moves one.
         TimeProvider? time = null)
     {
         Directory.CreateDirectory(Path.GetDirectoryName(options.DatabasePath)!);
@@ -321,12 +320,12 @@ public static class ServiceFactory
         var asks = await AskStore.OpenAsync(store.Connection, ct).ConfigureAwait(false);
         var channel = await ChannelStore.OpenAsync(store.Connection, ct).ConfigureAwait(false);
 
-        // 🔴 A rebuilt index holds nothing, so nothing may claim it holds a commit (REV3). Otherwise the
+        // 🔴 A rebuilt index holds nothing, so nothing may claim it holds a commit. Otherwise the
         // re-feed that restores a shared deployment is judged already held, and it stays empty until
         // each repository commits again.
         if (store.Rebuilt) await registrations.ForgetAllKnowledgeProvenanceAsync(ct).ConfigureAwait(false);
 
-        // The registry is the authority now (D48 §3): the list is what has been registered, not what a
+        // The registry is the authority: the list is what has been registered, not what a
         // folder happens to hold. Loaded before the first read so a restart is invisible to a client.
         var registry = new Registry();
         foreach (var registration in await registrations.AllAsync(ct).ConfigureAwait(false))
@@ -336,12 +335,12 @@ public static class ServiceFactory
 
         // Whether this deployment READS THE LOCAL DISK at all is one decision with two consequences,
         // and they must not drift apart: a fed deployment neither reads checkouts for knowledge
-        // (D47 §4) nor bootstraps a registry from whatever sits beside its binary. A caller that
+        // nor bootstraps a registry from whatever sits beside its binary. A caller that
         // supplies its own source is saying "I am fed"; that is the same sentence, so it decides both.
         var readsLocalCheckouts = source is null;
-        // The index reads the REGISTERED paths (D48 §3) — resolved per read, so a repository added or
+        // The index reads the REGISTERED paths — resolved per read, so a repository added or
         // retired a moment ago is in or out of the very next refresh without a restart. Its documents and
-        // its index are read where the deployment names them (ORIENT1c), and nowhere else.
+        // its index are read where the deployment names them, and nowhere else.
         source ??= new FileSystemKnowledgeSource(
             () => RegisteredRoots(registry), new RepositoryScanner(options.Documents, options.Index));
 
@@ -360,8 +359,8 @@ public static class ServiceFactory
             vectors = null;
         }
 
-        // One checkout moves under a persisted index (ORIENT1c): a watch of its refs and knowledge folders marks it stale
-        // (FABRIC-EVENT6), and the minute below is what a checkout nothing could watch falls back to.
+        // One checkout moves under a persisted index: a watch of its refs and knowledge folders marks it stale,
+        // and the minute below is what a checkout nothing could watch falls back to.
         var freshness = options.Repository is { } served && readsLocalCheckouts
             ? new CheckoutFreshness(served, options.Documents, options.Index)
             : null;
@@ -371,22 +370,22 @@ public static class ServiceFactory
             rereadAfter: options.Repository is null ? null : ServiceOptions.CheckoutRereadAfter,
             time: time, freshness: freshness,
             // A host over the registered roots (the installed one, and a session's connector) judges each root at use
-            // (KNOWCURRENT1); the one-checkout shape keeps its watch and its minute above.
+            // the one-checkout shape keeps its watch and its minute above.
             rootSignature: options.Repository is null && readsLocalCheckouts
                 ? root => RootSignature.Of(root, options.Documents, options.Index)
                 : null,
-            // What a hit says of its reading (KNOWFRESH1a-ii): one git status a root as it is read, never a hit.
+            // What a hit says of its reading: one git status a root as it is read, never a hit.
             uncommitted: readsLocalCheckouts ? root => UncommittedRecords.Of(root, options.Documents, options.Index) : null,
-            // A record holds a person's words and this machine's names: a shared host never answers one (KEEPSIZE1c).
+            // A record holds a person's words and this machine's names: a shared host never answers one.
             records: mode == ServiceMode.Local ? records : null,
-            // A citation's recheck asks of the cited file alone (KNOWCENTRAL2a).
+            // A citation's recheck asks of the cited file alone.
             fileUncommitted: readsLocalCheckouts ? UncommittedRecords.OfFile : null);
 
-        // The bootstrap (D48 §3): a store that has never been managed imports its configured root ONCE
+        // The bootstrap: a store that has never been managed imports its configured root ONCE
         // and says so. Without it, a machine that has been running on DAORIS_KNOWLEDGE_ROOT would come
         // up to an empty family after the upgrade — and an empty family is indistinguishable from a
         // broken one. Once, because a second run would resurrect everything the person retired. A
-        // deployment over one checkout registers that checkout alone (ORIENT1c): the folder around it holds
+        // deployment over one checkout registers that checkout alone: the folder around it holds
         // repositories its agents never asked to search.
         if (readsLocalCheckouts && !await registrations.WasImportedAsync(ct).ConfigureAwait(false))
         {
@@ -405,25 +404,25 @@ public static class ServiceFactory
             }
         }
 
-        // The session records ride along for one question only: whether a session was started for a
-        // quest someone wants to delete (D95). The asks for one too: what the person said on the ask a
-        // quest is asked by, which a requirement must quote (DRIFT1c).
+        // The session records ride along for one question only: whether a session started for a
+        // quest someone wants to delete. The asks for one too: what the person said on the ask a
+        // quest is asked by, which a requirement must quote.
         var exchange = new QuestExchange(service, quests, remotes, files, sessions, asks);
-        // SUPERVISOR1a-i: the home a park's question is filed under (the proposals' box names it on a local host; a shared host has none).
+        // The home a park's question is filed under (the proposals' box names it on a local host; a shared host has none).
         var ledger = new SessionLedger(quests, sessions, service, asks, proposals?.Home, opinions);
         var askDesk = new AskDesk(service, asks, exchange, files);
         return new ComposedService(
             service, quests, exchange,
             // The ledger reads the registry for the one thing a chat cannot inherit from a quest: which
-            // repository it runs in, and therefore which circle its record belongs to (D49 §3) — and
-            // the asks, for the one thing an intake cannot inherit from either (D65 §1b).
+            // repository it runs in, and therefore which circle its record belongs to — and
+            // the asks, for the one thing an intake cannot inherit from either.
             sessions, ledger, keys, service.SemanticEnabled)
         {
             Store = store,
             Freshness = freshness,
             Files = files,
             Remotes = remotes,
-            // An ask's quests go through the same exchange every other door uses (D65 §1a).
+            // An ask's quests go through the same exchange every other door uses.
             Asks = askDesk,
             Messages = channel,
             Journal = (since, limit, token) => JournalRows.ReadAsync(store.Connection, since, limit, token),
@@ -442,7 +441,7 @@ public static class ServiceFactory
     /// </summary>
     /// <remarks>
     /// A row with no root is a FOREIGN registration: a teammate's repository, mirrored down from a
-    /// remote, which this machine has no copy of (D47 §9). It belongs on the map and has nothing here
+    /// remote, which this machine has no copy of. It belongs on the map and has nothing here
     /// to read, and the distinction is structural rather than a flag — a mirror has no field for a
     /// machine path, so it cannot carry one.
     /// </remarks>

@@ -3,7 +3,7 @@ using ModelContextProtocol.Server;
 
 namespace Daoris.Knowledge.Mcp;
 
-/// <summary>Ask Daoris's <c>clear_propose</c> (HIST1f-a): the <c>clear</c> kind's tool, written by <see cref="HelpProposalBox.ProposeClear"/>.</summary>
+/// <summary>Ask Daoris's <c>clear_propose</c>: the <c>clear</c> kind's tool, written by <see cref="HelpProposalBox.ProposeClear"/>.</summary>
 [McpServerToolType]
 public sealed class HelpClearTool(IntakeScope? intake = null, HelpProposalBox? help = null)
 {

@@ -4,7 +4,7 @@ using Microsoft.Data.Sqlite;
 namespace Daoris.Service.Tests;
 
 /// <summary>
-/// What the review-step test classes stand on (PART6): two repositories, an ask desk, an exchange and a ledger over in-memory
+/// What the review-step test classes stand on: two repositories, an ask desk, an exchange and a ledger over in-memory
 /// stores, and helpers that build a chain to its set-up step and show it. xunit builds one per test, so a derived class shares
 /// the setup and no state.
 /// </summary>

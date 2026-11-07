@@ -20,7 +20,7 @@ public sealed record OpenIntake(
 /// <summary>
 /// Ask Daoris's conversation: the record of the conversation about Daoris itself, in the room the driver keeps for it.
 /// </summary>
-/// <param name="Workspace">The one its window was on at the press, which the record keeps; none is <c>default</c>. One this machine does not hold is not found.</param>
+/// <param name="Workspace">The one its window is on at the press, which the record keeps; none is <c>default</c>. One this machine does not hold is not found.</param>
 /// <param name="Mode">The access mode its start got, <c>restricted</c> or <c>full</c>; none is <c>restricted</c>. One the ledger does not know is the caller's mistake.</param>
 public sealed record OpenHelp(
     string? Door, string? Room, string? DoorVersion = null, string? Profile = null, string? Workspace = null,
@@ -45,7 +45,7 @@ public sealed record KeepAccess(string Id, IReadOnlyDictionary<string, string>? 
 }
 
 /// <summary>
-/// The actor provenance a start of a record was handed, any record of this machine's. Answered not found, with no body, to a caller off
+/// The actor provenance a start of a record is handed, any record of this machine's. Answered not found, with no body, to a caller off
 /// this machine.
 /// </summary>
 public sealed record KeepActor(
@@ -57,7 +57,7 @@ public sealed record KeepActor(
 }
 
 /// <summary>
-/// The downloaded versions a start of the record was handed, <c>agent|tool/&lt;name&gt;/&lt;version&gt;</c>, which the record adds to those
+/// The downloaded versions a start of the record is handed, <c>agent|tool/&lt;name&gt;/&lt;version&gt;</c>, which the record adds to those
 /// of its earlier starts; the downloads' rule keeps each while the session runs.
 /// </summary>
 public sealed record KeepResolved(string Id, List<string>? Resolved) : IRoute<SessionActionResponse>

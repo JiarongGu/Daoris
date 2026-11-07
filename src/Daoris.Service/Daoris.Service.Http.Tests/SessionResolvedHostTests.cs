@@ -3,9 +3,9 @@ using System.Text.Json;
 namespace Daoris.Service.Http.Tests;
 
 /// <summary>
-/// KEEP1b (D195 point 6; the cleanup design §3.5, Fable F2.5): a session's record keeps the downloaded versions each of its starts was
+/// A session's record keeps the downloaded versions each of its starts is
 /// handed, which the downloads' rule keeps while it runs. The driver names them through the record's own door before each spawn, and the
-/// record answers them to a caller on this machine only (D47 §4), as a reviewer's <c>opinion</c> is; one told none carries none.
+/// record answers them to a caller on this machine only, as a reviewer's <c>opinion</c> is; one told none carries none.
 /// </summary>
 public sealed class SessionResolvedHostTests(LocalHost host) : IClassFixture<LocalHost>
 {

@@ -5,7 +5,7 @@ using Microsoft.Data.Sqlite;
 namespace Daoris.Service.Tests;
 
 /// <summary>
-/// KNOWCENTRAL2h (the memory coordinator design §4, §6 A, over Lyntai's MC12): a write that replaces entries is held on its row, awaits the
+/// A write that replaces entries is held on its row, awaits the
 /// person as an end does, and applies as one change under its row's key, so no read sees the old and the new both current.
 /// </summary>
 public sealed class MemorySupersessionTests : IAsyncLifetime
@@ -143,7 +143,7 @@ public sealed class MemorySupersessionTests : IAsyncLifetime
     }
 
     /// <summary>
-    /// 🔴 A replacement whose answer was lost after the engine applied it: the next start's repeat by its key answers <c>applied</c>, naming the
+    /// 🔴 A replacement whose answer is lost after the engine applied it: the next start's repeat by its key answers <c>applied</c>, naming the
     /// successor, the key on each entry it ended; repeated again by the key, it changes nothing.
     /// </summary>
     [Fact]

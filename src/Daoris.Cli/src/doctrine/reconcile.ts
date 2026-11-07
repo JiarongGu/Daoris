@@ -25,9 +25,9 @@ export interface ReconcileItem {
 }
 
 /**
- * What `daoris reconcile` lists (D230): only the differences. What a sync would update, add or retire (`planChanges`, the
- * update `status` reports); the copies edited here (D19's drift, the disk against the lock); a keep whose canon file moved
- * since it was judged, or that the canon no longer ships; and a set-up gap `check` already reports. Offline: it reads the
+ * What `daoris reconcile` lists: only the differences. What a sync would update, add or retire (`planChanges`, the
+ * update `status` reports); the copies edited here (drift, the disk against the lock); a keep whose canon file moved
+ * since its judgement, or that the canon no longer ships; and a set-up gap `check` already reports. Offline: it reads the
  * repository and the canon this tool carries, and writes nothing.
  */
 export function reconcileItems(
@@ -168,7 +168,7 @@ export function commandReconcile({ root, argv, write, packageRoot }: CommandArgs
       + "comes first, with 'daoris init' and 'daoris sync'", 1);
   }
   const canon = readCanon(resolveCanonRoot(packageRoot));
-  // An older canon never judges a newer lock's text (WSSETUP4): its brief would offer the older text as an update.
+  // An older canon never judges a newer lock's text: its brief would offer the older text as an update.
   refuseNewerLock(lock, canon.version, ['reconcile', ...argv]);
 
   const items = reconcileItems({ root, manifest, lock, canon });

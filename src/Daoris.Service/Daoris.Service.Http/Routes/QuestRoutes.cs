@@ -136,7 +136,7 @@ public sealed class QuestRoutes(HostWiring host) : IRouteModule
         {
             QuestRespondRefusal.None => await _answers.MovedAsync(http, outcome.Quest!, outcome.Message, ct),
             QuestRespondRefusal.NotFound => Refusal.NotFound(outcome.Message),
-            // A refused transition is a state: the losing side of a race stands down, as does a step whose source was reopened.
+            // A refused transition is a state: the losing side of a race stands down, as does a step whose source reopens.
             QuestRespondRefusal.AlreadyTaken or QuestRespondRefusal.Closed or QuestRespondRefusal.SourceReopened => Refusal.Conflict(outcome.Message),
             _ => Refusal.BadRequest(outcome.Message),
         };

@@ -3,19 +3,19 @@ namespace Daoris.Knowledge;
 /// <summary>
 /// The person's own moves on a quest: their yes to a departure, a reopen of a sealed submission, the word to go on with a held
 /// step, and their done. The person's doors, never an agent's: no connector tool reaches any of them. Each commits here and
-/// travels like any verb (D68).
+/// travels like any verb.
 /// </summary>
 internal sealed class QuestPersonMoves(QuestStore quests, QuestReviews reviews)
 {
     /// <summary>
-    /// The sentence a person's done writes on its quest (D126's note): theirs, with their words after it where
+    /// The sentence a person's done writes on its quest: theirs, with their words after it where
     /// they gave any. The record's English, byte for byte: the page words its lead from <see cref="PersonDoneParts"/>.
     /// </summary>
     public static string PersonDoneNote(string? words) =>
         QuestWords.Blank(words) is { } said ? $"The person marked this done: {said}" : "The person marked this done.";
 
     /// <summary>
-    /// The note's parts beside <see cref="PersonDoneNote"/> (D142 point 1): Daoris's lead by its code, which a
+    /// The note's parts beside <see cref="PersonDoneNote"/>: Daoris's lead by its code, which a
     /// page words in its reader's language, then the person's words as a part of their own, as written. Each part's English is
     /// the note's own, so the lead's ends on the colon where words follow it.
     /// </summary>
@@ -25,8 +25,8 @@ internal sealed class QuestPersonMoves(QuestStore quests, QuestReviews reviews)
             : [NoteLine.Coded(LedgerNoteCodes.PersonDone, "The person marked this done.")]);
 
     /// <summary>
-    /// The person accepts a done's departure from what they required (D133 §4), or a done held for its evidence
-    /// as it stands (D144 §6): what it held goes on — the chain's next step is published now, and a quest waiting
+    /// The person accepts a done's departure from what they required, or a done held for its evidence
+    /// as it stands: what it held goes on — the chain's next step is published now, and a quest waiting
     /// on it resumes at the driver's next look. Only a held quest takes a yes; any other is refused saying why, as a
     /// state, not a malformed ask.
     /// </summary>
@@ -47,7 +47,7 @@ internal sealed class QuestPersonMoves(QuestStore quests, QuestReviews reviews)
                 { Status: not QuestStatus.Done } =>
                     $"Quest `#{standing.Id}` is {standing.Status}: only a quest closed done with a departure from what you "
                     + "required waits for your yes.",
-                // A yes accepts a departure or its evidence, never a review (D154 point 9): said for what it is.
+                // A yes accepts a departure or its evidence, never a review: said for what it is.
                 { Hold: QuestHold.Unreviewed } =>
                     $"Quest `#{standing.Id}` waits for your review in `{standing.SetUpIn}`, which a yes does not give: say "
                     + "`reviewed` once you have looked at what it shows, or skip the review for this work.",
@@ -58,7 +58,7 @@ internal sealed class QuestPersonMoves(QuestStore quests, QuestReviews reviews)
         }
 
         var resumes = QuestWords.Resumes(await quests.WaitingOnAsync(move.Quest.Id, ct).ConfigureAwait(false));
-        // A done held for its evidence alone is accepted as it stands, unread or missing (D144 §6); a departure's
+        // A done held for its evidence alone is accepted as it stands, unread or missing; a departure's
         // words are as they were, since its yes is the same yes.
         var accepted = move.Quest.Answers.Any(answer => answer.IsDeparture)
             ? $"Accepted the departure on quest `#{move.Quest.Id}`"
@@ -73,7 +73,7 @@ internal sealed class QuestPersonMoves(QuestStore quests, QuestReviews reviews)
     }
 
     /// <summary>
-    /// The person reopens a sealed submission (§E5): the quest stays taken with no current submission, so a
+    /// The person reopens a sealed submission: the quest stays taken with no current submission, so a
     /// close naming it is stale and its agent's next <c>ready</c> is judged anew; the step it published is withdrawn if nobody
     /// took it, and held with its reason if somebody did. Only the machine holding the take reopens, as only it submits.
     /// </summary>
@@ -128,7 +128,7 @@ internal sealed class QuestPersonMoves(QuestStore quests, QuestReviews reviews)
     }
 
     /// <summary>
-    /// The person's word to go on with a step its source's reopen held (§E5): it grows from the source's current
+    /// The person's word to go on with a step its source's reopen held: it grows from the source's current
     /// submission once that is unheld, its hold let go, and any result it submitted on the reopened work cleared, with
     /// the next step that result published withdrawn or held. To abandon it instead is their decline, at the decline's
     /// own door.
@@ -169,7 +169,7 @@ internal sealed class QuestPersonMoves(QuestStore quests, QuestReviews reviews)
 
     /// <summary>
     /// What the go-on did to the step's own successor, which the cleared result had published: withdrawn until the step
-    /// submits again, or held for the person's word as the step was. Nothing where none stood on that result.
+    /// submits again, or held for the person's word as the step is. Nothing where none stood on that result.
     /// </summary>
     private static string SuccessorWords(Quest? successor) => successor switch
     {
@@ -179,21 +179,21 @@ internal sealed class QuestPersonMoves(QuestStore quests, QuestReviews reviews)
     };
 
     /// <summary>
-    /// The person marks a quest done (D126's note), open or taken: what the quest page's *Mark done…* and
+    /// The person marks a quest done, open or taken: what the quest page's *Mark done…* and
     /// <c>daoris quest done</c> say, after a session finished at a checkpoint left its quest taken, or whenever they
     /// decide its work is done. It is the person's done, so it answers none of their requirements one by one: they are the
-    /// person's own words, and the done is their word on them. Its note says it was theirs (<see cref="PersonDoneNote"/>), its
+    /// person's own words, and the done is their word on them. Its note says it is theirs (<see cref="PersonDoneNote"/>), its
     /// parts beside it (<see cref="PersonDoneParts"/>).
     /// </summary>
     /// <remarks>
-    /// A closed quest does not move (D46 §3), and a done on a take this machine lost is the lost take's stand-down, each said
+    /// A closed quest does not move, and a done on a take this machine lost is the lost take's stand-down, each said
     /// as the respond door says it. It publishes a chain's next step and lets a quest waiting on it resume.
     /// </remarks>
     public async Task<QuestRespondOutcome> PersonDoneAsync(string id, string? words, DateTimeOffset now, CancellationToken ct = default)
     {
         var quest = id.TrimStart('#');
 
-        // A set-up step's done has a set-up, the person's own included (design §3.3: *I set it up myself…*).
+        // A set-up step's done has a set-up, the person's own included (*I set it up myself…*).
         if (await quests.FindAsync(quest, ct).ConfigureAwait(false) is { Status: QuestStatus.Open or QuestStatus.Taken } live
             && await reviews.NotShownAsync(live, ct).ConfigureAwait(false) is { } unshown)
         {

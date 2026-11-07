@@ -1,14 +1,13 @@
 namespace Daoris.Knowledge.Http;
 
 /// <summary>
-/// A request whose route threw (HOSTLOG1): what was thrown goes into the machine log, and the caller is
+/// A request whose route threw: what is thrown goes into the machine log, and the caller is
 /// answered a sentence in the house's <see cref="ErrorResponse"/> shape instead of an empty 500.
 /// </summary>
 /// <remarks>
-/// <para><b>Why.</b> On an install, two routes answered 500 for a stretch while others answered, and the
-/// log held only the server's own line that something was thrown, so the cause could not be read. The
-/// host now catches the throw itself, before the server does, and writes it as the <c>error</c> event
-/// (machine-log design §4).</para>
+/// <para><b>Why.</b> The server's own line says only that something threw, so the cause cannot be
+/// read. The host catches the throw itself, before the server does, and writes it as the <c>error</c>
+/// event (machine-log design §4).</para>
 ///
 /// <para><b>What is written</b>: <c>where</c> as the method and the route's pattern, each also on its own;
 /// the exception's <c>type</c> and <c>message</c>; its first <see cref="Frames"/> frames as the runtime
@@ -20,11 +19,11 @@ namespace Daoris.Knowledge.Http;
 ///
 /// <para><b>What is answered</b>: <see cref="Logged"/>, or <see cref="Unlogged"/> on a host with no home,
 /// which keeps no log. Neither names anything of the exception: its message and its frames can carry a
-/// machine path, and a browser, or a shared host's keyed caller, is never told one (D46, D47 §4).</para>
+/// machine path, and a browser, or a shared host's keyed caller, is never told one.</para>
 /// </remarks>
 public static class UnhandledRequests
 {
-    /// <summary>The answer when the exception was written to the log.</summary>
+    /// <summary>The answer when the exception is written to the log.</summary>
     public const string Logged = "The service hit an error it did not expect, and wrote what it was to its log.";
 
     /// <summary>The answer on a host with no home, which writes no log (machine-log design §2).</summary>

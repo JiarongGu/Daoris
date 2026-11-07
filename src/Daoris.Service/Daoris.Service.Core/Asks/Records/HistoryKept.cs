@@ -1,8 +1,8 @@
 namespace Daoris.Knowledge;
 
 /// <summary>
-/// Why a unit stays, or a piece of it is kept: the refusal, its sentence, and what it names (design §1.2). The driver reads
-/// the refusal's word and the facts beside it, never the sentence, as it reads a session delete's (SESSUX1f).
+/// Why a unit stays, or a piece of it is kept: the refusal, its sentence, and what it names. The driver reads
+/// the refusal's word and the facts beside it, never the sentence, as it reads a session delete's.
 /// </summary>
 /// <param name="Message">The sentence a person reads, phrased once here: the piece, and the act that would free it.</param>
 public sealed record HistoryKept(HistoryRefusal Refusal, string Message)
@@ -19,16 +19,16 @@ public sealed record HistoryKept(HistoryRefusal Refusal, string Message)
     /// <summary>The workspace whose remote has yet to take a move or a record of it.</summary>
     public string? Workspace { get; init; }
 
-    /// <summary>What waits on the person, for <see cref="HistoryRefusal.NeedsYou"/> only (HIST1l); null for every other word.</summary>
+    /// <summary>What waits on the person, for <see cref="HistoryRefusal.NeedsYou"/> only; null for every other word.</summary>
     public HistoryWaiting? Waits { get; init; }
 
-    /// <summary>How the work in progress stands, for <see cref="HistoryRefusal.Open"/> only (HIST1m); null for every other word.</summary>
+    /// <summary>How the work in progress stands, for <see cref="HistoryRefusal.Open"/> only; null for every other word.</summary>
     public HistoryStands? Stands { get; init; }
 
-    /// <summary>The open work that names the unit, for <see cref="HistoryRefusal.Awaited"/> only (HIST1m); null for every other word.</summary>
+    /// <summary>The open work that names the unit, for <see cref="HistoryRefusal.Awaited"/> only; null for every other word.</summary>
     public HistoryAwaitedBy? By { get; init; }
 
-    // Every word below is held, with the driver's constants, to one table: the service tests' fixtures/history-words.json (HIST1m).
+    // Every word below is held, with the driver's constants, to one table: the service tests' fixtures/history-words.json.
 
     /// <summary>The refusal's word on the wire, kebab-case as every word there: <c>needs-you</c>, <c>not-ours</c>.</summary>
     public static string Spell(HistoryRefusal refusal) => refusal switch

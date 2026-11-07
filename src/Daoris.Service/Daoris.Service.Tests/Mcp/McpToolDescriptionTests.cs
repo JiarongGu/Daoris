@@ -13,7 +13,7 @@ namespace Daoris.Service.Tests;
 /// </summary>
 public sealed partial class McpToolDescriptionTests
 {
-    /// <summary>Every method of every tool class the host registers (PART10a), tool or not.</summary>
+    /// <summary>Every method of every tool class the host registers, tool or not.</summary>
     private static IEnumerable<MethodInfo> Methods() => KnowledgeServer.ToolTypes.SelectMany(type => type.GetMethods());
 
     /// <summary>The name of every tool the host offers.</summary>
@@ -55,7 +55,7 @@ public sealed partial class McpToolDescriptionTests
     }
 
     /// <summary>
-    /// LAYOUT8: the set-up tool says it only proposes the press, which publishes one quest to the repository's own session and
+    /// The set-up tool says it only proposes the press, which publishes one quest to the repository's own session and
     /// adds the rule its session needs, and that Daoris never writes into the repository; a repository is named, never a folder.
     /// </summary>
     [Fact]
@@ -71,7 +71,7 @@ public sealed partial class McpToolDescriptionTests
         Assert.Contains("never its folder", text);
     }
 
-    /// <summary>AGENTSPLACE1k: the set-up tool's place ask says the card opens the page and the person presses Apply there.</summary>
+    /// <summary>The set-up tool's place ask says the card opens the page and the person presses Apply there.</summary>
     [Fact]
     public void The_setup_tool_says_its_place_ask_opens_the_page_for_the_person_to_apply()
     {
@@ -82,7 +82,7 @@ public sealed partial class McpToolDescriptionTests
         Assert.Contains("presses Apply there", text);
     }
 
-    /// <summary>SETUPUX1j: the set-up tool's preset ask names `keep`, which writes no landing and no workflow choice, beside the deliveries.</summary>
+    /// <summary>The set-up tool's preset ask names `keep`, which writes no landing and no workflow choice, beside the deliveries.</summary>
     [Fact]
     public void The_setup_tool_names_keep_how_it_lands_beside_the_deliveries()
     {
@@ -93,7 +93,7 @@ public sealed partial class McpToolDescriptionTests
         Assert.Contains("`merge-after-accept`", text);
     }
 
-    /// <summary>WORKFLOW1h-a: the workflow tool says it only proposes, wants whole steps, and names the parts not proposed yet.</summary>
+    /// <summary>The workflow tool says it only proposes, wants whole steps, and names the parts not proposed yet.</summary>
     [Fact]
     public void The_workflow_tool_says_it_only_proposes_whole_steps()
     {
@@ -104,7 +104,7 @@ public sealed partial class McpToolDescriptionTests
         Assert.Contains("Not proposed yet", text);
     }
 
-    /// <summary>FABRIC-PIPELINE1i: the workflow tool says a verification pipeline takes a graph, and a route alone chooses and saves nothing.</summary>
+    /// <summary>The workflow tool says a verification pipeline takes a graph, and a route alone chooses and saves nothing.</summary>
     [Fact]
     public void The_workflow_tool_says_a_graph_and_a_route_alone()
     {
@@ -116,7 +116,7 @@ public sealed partial class McpToolDescriptionTests
         Assert.Contains("saving nothing", text);
     }
 
-    /// <summary>FLOWCHART2e: the workflow tool says a change to the open draft goes by its fingerprint with the whole graph, saving and choosing nothing.</summary>
+    /// <summary>The workflow tool says a change to the open draft goes by its fingerprint with the whole graph, saving and choosing nothing.</summary>
     [Fact]
     public void The_workflow_tool_says_a_change_to_the_open_draft_saves_nothing()
     {
@@ -130,7 +130,7 @@ public sealed partial class McpToolDescriptionTests
         Assert.Contains("open in the person's editor", text);
     }
 
-    /// <summary>WORKFLOW1h-name: the workflow tool says a new workflow is named by the person's words, and an edit keeps its name.</summary>
+    /// <summary>The workflow tool says a new workflow is named by the person's words, and an edit keeps its name.</summary>
     [Fact]
     public void The_workflow_tool_says_a_new_workflow_takes_the_persons_name()
     {
@@ -142,7 +142,7 @@ public sealed partial class McpToolDescriptionTests
     }
 
     /// <summary>
-    /// WORKFLOW1i-a: quest_publish's kind proposal says it quotes the person's own words, is at most 300 characters, is a kind and
+    /// quest_publish's kind proposal says it quotes the person's own words, is at most 300 characters, is a kind and
     /// not a workflow, and that only the person's press applies it.
     /// </summary>
     [Fact]
@@ -157,8 +157,8 @@ public sealed partial class McpToolDescriptionTests
     }
 
     /// <summary>
-    /// A server over one checkout says what it reads and that it matches words (ORIENT1c), in the words a
-    /// session reads before it searches the files: the checkout's name, the folders it was given, the tier.
+    /// A server over one checkout says what it reads and that it matches words, in the words a
+    /// session reads before it searches the files: the checkout's name, the folders it is given, the tier.
     /// </summary>
     [Fact]
     public void A_server_over_one_checkout_says_what_it_reads_and_which_tier_answers()
@@ -180,8 +180,8 @@ public sealed partial class McpToolDescriptionTests
     }
 
     /// <summary>
-    /// HIST1b (D153, D37): removing a record is a person's act, so no connector tool clears history, and none is handed the
-    /// desk that would. Ask Daoris may only propose one (HIST1f), as it proposes a delete.
+    /// Removing a record is a person's act, so no connector tool clears history, and none is handed the
+    /// desk that would. Ask Daoris may only propose one, as it proposes a delete.
     /// </summary>
     [Fact]
     public void No_tool_clears_history_or_is_handed_what_would()
@@ -189,7 +189,7 @@ public sealed partial class McpToolDescriptionTests
         var tools = ToolNames();
 
         Assert.Contains("quest_publish", tools);
-        // HIST1f-a: `clear_propose` only writes a proposal the person applies, as `delete_propose` does.
+        // `clear_propose` only writes a proposal the person applies, as `delete_propose` does.
         Assert.DoesNotContain(
             tools.Where(name => name != "clear_propose"),
             name => name.Contains("clear") || name.Contains("history") || name.Contains("forget"));
@@ -201,7 +201,7 @@ public sealed partial class McpToolDescriptionTests
     }
 
     /// <summary>
-    /// XAGENT1c (D155 points 5, 8 and 9): an agent is never the person. A second opinion has two tools, the reviewer's and the
+    /// An agent is never the person. A second opinion has two tools, the reviewer's and the
     /// working session's, and no tool asks for one, hands one on, or answers a dispute (*Go on anyway…*, *I looked myself…*);
     /// each says the findings are claims, not facts, and that the person sees them.
     /// </summary>
@@ -222,7 +222,7 @@ public sealed partial class McpToolDescriptionTests
     }
 
     /// <summary>
-    /// EVID1a (D144 §1, §3): the session a requirement will judge never writes its verdict — the driver reads the commit and
+    /// The session a requirement will judge never writes its verdict — the driver reads the commit and
     /// posts it to a local door no connector tool reaches. What the session is told is to commit what its evidence names,
     /// since Daoris reads its last commit when it ends; and the publish says a requirement may name its evidence.
     /// </summary>
@@ -240,7 +240,7 @@ public sealed partial class McpToolDescriptionTests
     }
 
     /// <summary>
-    /// ORIENT2e (the orientation design §3.1–§3.2): the search says it finds where things are and its kinds name
+    /// The search says it finds where things are and its kinds name
     /// the index, and the reader takes the lines a hit names, so a session asks for the range and not the file.
     /// </summary>
     [Fact]
@@ -259,7 +259,7 @@ public sealed partial class McpToolDescriptionTests
     }
 
     /// <summary>
-    /// KNOWCENTRAL2b (the memory coordinator design §2, §4): the memory reads say they change nothing, an end that it waits for its approver
+    /// The memory reads say they change nothing, an end that it waits for its approver
     /// and that another repository's entry is proposed instead, and a proposal that it reaches the owner as a quest.
     /// </summary>
     [Fact]
@@ -291,7 +291,7 @@ public sealed partial class McpToolDescriptionTests
         Assert.Null(KnowledgeServer.Instructions(new Daoris.Knowledge.ServiceOptions("root", "db"), semantic: false));
     }
 
-    /// <summary>MIXAGENT2a-i: what a session reads of the helper tools says what each does and what it leaves to the person's rule.</summary>
+    /// <summary>What a session reads of the helper tools says what each does and what it leaves to the person's rule.</summary>
     [Fact]
     public void The_helper_tools_say_the_answer_is_another_agents_claim_and_the_rule_is_the_persons()
     {
@@ -306,7 +306,7 @@ public sealed partial class McpToolDescriptionTests
     }
 
     /// <summary>
-    /// COAGENT1b: what a partner reads of `partner_answer` says it answers once, that its files are its piece and Daoris reads them, that
+    /// What a partner reads of `partner_answer` says it answers once, that its files are its piece and Daoris reads them, that
     /// its words are a claim, and that nobody asks it anything after; it names no decision.
     /// </summary>
     [Fact]
@@ -322,7 +322,7 @@ public sealed partial class McpToolDescriptionTests
     }
 
     /// <summary>
-    /// MIXAGENT1c: what a session reads of `handover_propose` says its note is its own claim, that the person's rule settles it, and
+    /// What a session reads of `handover_propose` says its note is its own claim, that the person's rule settles it, and
     /// that it does not end the turn.
     /// </summary>
     [Fact]
@@ -336,7 +336,7 @@ public sealed partial class McpToolDescriptionTests
     }
 
     /// <summary>
-    /// PARKVIEW1: what a session reads of `question_ask` says the person answers with a press at the conversation's end, sends a
+    /// What a session reads of `question_ask` says the person answers with a press at the conversation's end, sends a
     /// go-ahead to `go_ahead_ask`, and says the turn ends after it; and `go_ahead_ask` itself names no question tool.
     /// </summary>
     [Fact]
@@ -351,7 +351,7 @@ public sealed partial class McpToolDescriptionTests
     }
 
     /// <summary>
-    /// SUPERVISOR1b (D208; the supervisor design §4.1): `question_ask`'s `owner` mark is said with each of its six codes, as what the
+    /// `question_ask`'s `owner` mark is said with each of its six codes, as what the
     /// owner alone answers, so an agent knows when to set it; and that it only narrows.
     /// </summary>
     [Fact]
@@ -365,7 +365,7 @@ public sealed partial class McpToolDescriptionTests
     }
 
     /// <summary>
-    /// SESSCTX1f (the session-context design §3.5): what a session reads of `line_read` says it changes nothing, reads this machine's
+    /// What a session reads of `line_read` says it changes nothing, reads this machine's
     /// record and never over the network, reads its own session's line and refuses any other record, and never shows the agent's
     /// thoughts; it is the one tool of its kind.
     /// </summary>
@@ -385,7 +385,7 @@ public sealed partial class McpToolDescriptionTests
     }
 
     /// <summary>
-    /// HANDBACK1: what a session reads of `quest_respond` says its note is its handback, the record whoever reads the quest later reads,
+    /// What a session reads of `quest_respond` says its note is its handback, the record whoever reads the quest later reads,
     /// names what one holds, and says a note that only points elsewhere is refused.
     /// </summary>
     [Fact]
@@ -400,7 +400,7 @@ public sealed partial class McpToolDescriptionTests
     }
 
     /// <summary>
-    /// HANDBACK1: what a session reads of `handback_read` says it reads one quest's handback whole, by a quest's or a session's id, in
+    /// What a session reads of `handback_read` says it reads one quest's handback whole, by a quest's or a session's id, in
     /// any state, from its own workspace as `quest_list` does, changes nothing, and that a handback is its session's claim.
     /// </summary>
     [Fact]
@@ -417,7 +417,7 @@ public sealed partial class McpToolDescriptionTests
     }
 
     /// <summary>
-    /// SESSONE2a (D167 point 7; the co-working design §2.2): the channel's two tools say what it is for and that work stays a quest, that
+    /// The channel's two tools say what it is for and that work stays a quest, that
     /// another repository's message is that agent's claim, and that a read moves the mark; no tool starts a session through it.
     /// </summary>
     [Fact]
@@ -505,7 +505,7 @@ public sealed partial class McpToolDescriptionTests
             && (name.Contains("log") || name.Contains("diff") || name.Contains("show") || name.Contains("write")));
     }
 
-    /// <summary>STAFFPOLICY1g: the role tool says a policy is a change of spending, shown before and after on the card, and names the moves it enforces.</summary>
+    /// <summary>The role tool says a policy is a change of spending, shown before and after on the card, and names the moves it enforces.</summary>
     [Fact]
     public void The_role_tool_says_its_policy_is_shown_before_and_after_and_names_the_revision_it_reads()
     {
@@ -519,7 +519,7 @@ public sealed partial class McpToolDescriptionTests
         Assert.DoesNotContain("not enforce yet is refused. A change", text);
     }
 
-    /// <summary>CONTEXTDRIVE1d: the role tool says the supervisor's rules are a set of `supervisor`, names their counts and actions, and the revision read.</summary>
+    /// <summary>The role tool says the supervisor's rules are a set of `supervisor`, names their counts and actions, and the revision read.</summary>
     [Fact]
     public void CONTEXTDRIVE1d_the_role_tool_names_the_supervisor_s_rules_their_counts_and_the_revision_read()
     {
@@ -532,7 +532,7 @@ public sealed partial class McpToolDescriptionTests
         Assert.Contains("before and after: say what holds earlier or later", text);
     }
 
-    // Not after `#`: an entry id's example (`…/DECISIONS.md#D12`) is an anchor in the reader's own
+    // Not after `#`: an entry id's anchor is in the reader's own
     // repository, not a citation of this one's.
     [GeneratedRegex(@"(?<![#\w])D\d{1,3}\b")]
     private static partial Regex DecisionNumber();

@@ -1,4 +1,4 @@
-// A vendor's package, unpacked whole (AGT2b). Codex ships as a gzipped tar whose executable finds its
+// A vendor's package, unpacked whole. Codex ships as a gzipped tar whose executable finds its
 // helpers through the package's own layout, so the bare executable alone is not the tool — the whole
 // archive is.
 //
@@ -11,8 +11,8 @@
 // No dependency: gzip is `node:zlib`, and tar is a 512-byte header format with three ways of
 // spelling a long name.
 //
-// Each refusal names its check — the code the driver's `ToolArchives` spells for a tool's `tar.gz` (TOOLS4, D121 §3.6),
-// which this unpacked too until PUSH1f2c made a tool's download the driver program's: absolute, outside, stream, link,
+// Each refusal names its check — the code the driver's `ToolArchives` spells for a tool's `tar.gz`:
+// absolute, outside, stream, link,
 // entry (neither a file nor a folder), checksum, truncated and damaged.
 
 import { chmodSync, closeSync, createReadStream, mkdirSync, openSync, writeSync } from 'node:fs';

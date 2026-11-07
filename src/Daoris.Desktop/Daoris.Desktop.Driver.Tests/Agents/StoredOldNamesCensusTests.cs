@@ -5,9 +5,8 @@ using Microsoft.Data.Sqlite;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// AGENTPROVIDER1t's census of stored names: no column of a fresh desktop store is spelled with an old seam's word, and every source that
-/// spells one as a stored key, column or value is a record the agents-and-harnesses area names with its end. A record renamed leaves the
-/// list with its files; a source that comes to spell one, outside the list, fails here.
+/// The census of stored names: no column of a fresh desktop store is spelled with an old seam's word, and every source that spells one as
+/// a stored key, column or value is a record the agents-and-harnesses area names with its end; a source outside the list fails here.
 /// </summary>
 [Trait(Category.Name, Category.Census)]
 public sealed class StoredOldNamesCensusTests : IDisposable
@@ -46,12 +45,7 @@ public sealed class StoredOldNamesCensusTests : IDisposable
         ],
         ["Ask Daoris's wired file"] = ["Daoris.Desktop/Daoris.Desktop.Driver/Transitional/Migration/WiredFilesStep.cs"],
         ["the usage file"] = ["Daoris.Desktop/Daoris.Desktop.Driver/Transitional/Migration/UsageFileStep.cs"],
-        ["the lineage"] =
-        [
-            "Daoris.Desktop/Daoris.Desktop.Driver/Events/Chain.cs",
-            "Daoris.Desktop/Daoris.Desktop.Driver/Participants/Domain/ChildBindings.cs",
-            "Daoris.Service/Daoris.Service.Core/Sessions/LineageFile.cs",
-        ],
+        ["the lineage files"] = ["Daoris.Desktop/Daoris.Desktop.Driver/Transitional/Migration/LineageFilesStep.cs"],
         ["not a seam's word"] =
         [
             "Daoris.Desktop/Daoris.Desktop.Driver/Help/HelpWired.cs",

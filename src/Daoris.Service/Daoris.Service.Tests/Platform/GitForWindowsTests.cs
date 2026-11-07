@@ -4,7 +4,7 @@ using Daoris.Knowledge;
 namespace Daoris.Service.Tests;
 
 /// <summary>
-/// Git for Windows' launcher, started past (GITSTART2): which layout is the launcher's, the variables it hands its child,
+/// Git for Windows' launcher, started past: which layout is the launcher's, the variables it hands its child,
 /// and the service's bare git found on its <c>PATH</c>. The driver's <c>GitForWindowsTests</c> twin: its rows up to the
 /// fixture's git are here case for case (<c>.claude/knowledge/twins.md</c>), and a change to one table is a change to both.
 /// </summary>
@@ -152,7 +152,7 @@ public sealed class GitForWindowsTests : IDisposable
         Assert.Equal(held, tooLong.Environment.ToDictionary(pair => pair.Key, pair => pair.Value));
     }
 
-    // ── The launcher's variables (measured: FIX-LOG, GITSTART1) ─────────────────────────────────────
+    // ── The launcher's variables (measured) ─────────────────────────────────────
 
     [Theory]
     [InlineData("mingw64", "MINGW64")]
@@ -244,7 +244,7 @@ public sealed class GitForWindowsTests : IDisposable
         Assert.Equal(Folders() + @"C:\a", GitForWindows.ChildEnvironment(Behind(), Variables(("PATH", @"C:\a"), ("HOME", tooLong)))["PATH"]);
     }
 
-    // ── The service's bare git (GITSTART2) ──────────────────────────────────────────────────────────
+    // ── The service's bare git ──────────────────────────────────────────────────────────
 
     [Fact]
     public void A_bare_git_whose_PATH_finds_the_launcher_starts_the_real_git_with_the_launchers_variables()

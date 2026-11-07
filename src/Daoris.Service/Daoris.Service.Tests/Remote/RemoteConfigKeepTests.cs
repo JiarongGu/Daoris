@@ -4,7 +4,7 @@ using Daoris.Knowledge;
 namespace Daoris.Service.Tests;
 
 /// <summary>
-/// KEEPALL1e (D173's KEEPALL1e note): the service reads the <c>remotes.json</c> its twins' editors write. The driver's <c>RemoteFile</c>
+/// The service reads the <c>remotes.json</c> its twins' editors write. The driver's <c>RemoteFile</c>
 /// and the CLI's <c>readRemoteFile</c> are held to <c>src/Daoris.Cli/test/fixtures/home-files-keep.json</c> for the bytes an edit
 /// writes; each <c>remotes.json</c> row's <c>reads</c> is the map every reader reads from them, and this reader is the third.
 /// </summary>

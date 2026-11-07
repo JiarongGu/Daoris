@@ -4,7 +4,7 @@ import { fileURLToPath } from 'node:url';
 import { oneNamed } from './_csharp.ts';
 
 /**
- * The CLI's sources, found by name wherever they lie under `src/` (STRUCT5d, D166; the code-structure design §6): the
+ * The CLI's sources, found by name wherever they lie under `src/`: the
  * sources sit in module folders (`structure.test.ts`), so a test that reads a source by path names the file and never its
  * folder, and a move between folders edits no reader. The command rows under `cli/` are the exception, named by their path
  * (`cli/agent.ts`): each row shares its verb's name with the module that handles it.

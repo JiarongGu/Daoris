@@ -7,12 +7,12 @@ import { runCli } from '../../src/cli.ts';
 import { makeFixture } from '../_fixture.ts';
 
 /**
- * What a person reads from the dispatcher, byte for byte (MOD7).
+ * What a person reads from the dispatcher, byte for byte.
  *
  * `fixtures/cli-usage/` holds the usage and the refusals the CLI says itself, so a change to them is proven by bytes rather than by
  * a reviewer comparing two long texts. A change that means to alter the usage or a refusal updates the fixture in the same change,
  * and the diff is then the one place a reviewer sees what a person will read. Every word outside the doctrine commands is the
- * desktop's program's (ONEWAY1ai-i), so its usage and refusals are that program's tests'.
+ * desktop's program's, so its usage and refusals are that program's tests'.
  */
 const golden = join(dirname(dirname(fileURLToPath(import.meta.url))), 'fixtures', 'cli-usage');
 const HELP = readText(join(golden, 'help.txt')).replace(/\n$/, '');
@@ -20,12 +20,12 @@ const HELP = readText(join(golden, 'help.txt')).replace(/\n$/, '');
 interface Refusal { argv: string[]; code: number; out: string[] }
 const REFUSALS = JSON.parse(readText(join(golden, 'refusals.json'))) as Refusal[];
 
-/** What the desktop's program was handed by the dispatcher, and what had been written when it was. */
+/** What the desktop's program receives from the dispatcher, and what has been written by then. */
 interface Handed { words: readonly string[]; written: number }
 
 /**
  * Runs one argv in an empty repository on an empty home, with the repository's path spelled `<cwd>`. The desktop's program is a
- * stand-in, which records what it was handed and answers `exit`.
+ * stand-in, which records what it receives and answers `exit`.
  */
 async function run(argv: string[], handed: Handed[] = [], exit: 0 | 1 | 2 = 0): Promise<{ code: number; out: string[] }> {
   const home = makeFixture('cli-usage-home');
@@ -69,7 +69,7 @@ test('every refusal the CLI says itself says it, with its exit code, and hands n
 });
 
 /**
- * ONEWAY1ai-i (the oneway design §11): every word outside the doctrine commands goes to the desktop's program whole, its `--help` and
+ * Every word outside the doctrine commands goes to the desktop's program whole, its `--help` and
  * a word it has no command for among them, nothing written before the start, and the program's exit the run's.
  */
 test('a word outside the doctrine goes to the desktop\'s program whole, with nothing written first, and its exit is the run\'s', async () => {
@@ -83,7 +83,7 @@ test('a word outside the doctrine goes to the desktop\'s program whole, with not
     ['browser', 'favorite', 'add', 'https://example.com', '--title', 'R&D'],
     ['repository', 'import', 'C:/Work Trees', '--workspace', 'Work & play'],
     ['brainstorm', 'why is it slow?', '--agents', 'codex,claude-code'],
-    // ONEWAY1ae: `daoris convert` is the home's one conversion door, a group of the tree, a leave among its words.
+    // `daoris convert` is the home's one conversion door, a group of the tree, a leave among its words.
     ['convert', '--apply', 'a'.repeat(64), '--leave', 'quests'],
     ['tool', '--help'],
     ['driver', 'drive', 'engine'],

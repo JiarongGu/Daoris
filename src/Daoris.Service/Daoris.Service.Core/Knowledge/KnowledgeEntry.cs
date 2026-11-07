@@ -26,21 +26,21 @@ public enum EntryKind
     TaskOutcome,
 
     /// <summary>
-    /// One entry of a repository's declared index of where things are (ORIENT2e; D151 §6): the prose or the list
-    /// under one heading of a generated file, or one row of its tables (ORIENT2h), each naming a place in the code
+    /// One entry of a repository's declared index of where things are: the prose or the list
+    /// under one heading of a generated file, or one row of its tables, each naming a place in the code
     /// or the records. Last, so the kinds stored before it keep their numbers.
     /// </summary>
     Index,
 
     /// <summary>
-    /// A finished tree's record (KEEPSIZE1c): its landing, tip, commits and what it left, with its sessions' words. Kept in the records'
+    /// A finished tree's record: its landing, tip, commits and what it left, with its sessions' words. Kept in the records'
     /// own tables, never in a repository's feed; local to this machine.
     /// </summary>
     Record,
 }
 
 /// <summary>
-/// The lines of its file an entry is, counted from 1 (ORIENT2e; the orientation design §3.2): what a hit names as
+/// The lines of its file an entry is, counted from 1: what a hit names as
 /// <c>path:first-last</c>, and what a range is read against.
 /// </summary>
 /// <param name="First">The entry's first line in its file.</param>
@@ -118,9 +118,9 @@ public enum Provenance
 /// <param name="Title">The heading, or the document name where the whole file is one entry.</param>
 /// <param name="Body">The entry's text, without its heading.</param>
 /// <param name="RelativePath">Path within the repository, always '/'-separated.</param>
-/// <param name="Anchor">The heading this section was split at, when it was split from a larger file.</param>
+/// <param name="Anchor">The heading this section is split at, when it is split from a larger file.</param>
 /// <param name="Workspace">
-/// Which circle this entry is searchable within (D48). Denormalized from the repository's registry row
+/// Which circle this entry is searchable within. Denormalized from the repository's registry row
 /// and stamped at ingest, not carried by the file — the index is derived data, so re-wiring a
 /// repository to another workspace re-stamps its entries on the next refresh rather than migrating
 /// anything. Not part of <see cref="Id"/>: moving a repository between circles does not make its
@@ -128,8 +128,8 @@ public enum Provenance
 /// </param>
 /// <param name="Lines">
 /// The lines of its file the body is, as written and trimmed at its ends: line <c>i</c> of the body is line
-/// <c>First + i</c> of the file (ORIENT2e). Null where the body is not a run of its file's lines (a row read with
-/// its columns, ORIENT1c) or where nobody said (a feed that named none). Not part of <see cref="Id"/>: a
+/// <c>First + i</c> of the file. Null where the body is not a run of its file's lines (a row read with
+/// its columns) or where nobody said (a feed that named none). Not part of <see cref="Id"/>: a
 /// section that moved down the file is the same section.
 /// </param>
 public sealed record KnowledgeEntry(
@@ -152,7 +152,7 @@ public sealed record KnowledgeEntry(
     /// wholly outside the entry or the entry names no lines it can be cut at.
     /// </summary>
     /// <remarks>
-    /// Cut from the body, never from the file on disk: the body is what was indexed, at the lines a hit named, and
+    /// Cut from the body, never from the file on disk: the body is what is indexed, at the lines a hit names, and
     /// a deployment fed by another machine has no file to read. A body that is not as many lines as its span
     /// claims is not cut, since each line would be named for another's text.
     /// </remarks>
@@ -170,7 +170,7 @@ public sealed record KnowledgeEntry(
 
     /// <summary>
     /// A stable identity for the entry, so re-ingesting the same repository updates rather than
-    /// duplicates. Deliberately derived from location rather than content: an entry whose text was
+    /// duplicates. Deliberately derived from location rather than content: an entry whose text is
     /// edited is the same entry, and treating it as a new one is how an index accumulates ghosts.
     /// </summary>
     public string Id => Kind == EntryKind.Record

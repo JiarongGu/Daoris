@@ -5,9 +5,9 @@ using Microsoft.Data.Sqlite;
 namespace Daoris.Service.Tests;
 
 /// <summary>
-/// The session entry's key (SESSONE1a, D167 points 2 and 3): <c>&lt;origin&gt;/&lt;repository&gt;</c>, one rule in the service
+/// The session entry's key: <c>&lt;origin&gt;/&lt;repository&gt;</c>, one rule in the service
 /// that the ledger writes at the open and every read answers for a record from before, never written back. The origin is the
-/// ask a quest was asked by, else the origin of the session that published it, else its chain parent's, else the quest itself;
+/// ask a quest is asked by, else the origin of the session that published it, else its chain parent's, else the quest itself;
 /// a conversation is its own, and one handed over takes the one it continues.
 /// </summary>
 public sealed class SessionEntryTests : IAsyncLifetime
@@ -69,9 +69,9 @@ public sealed class SessionEntryTests : IAsyncLifetime
 
     private static Task<string> KeyOf(Facts facts, Session session) => SessionEntries.KeyAsync(session, facts);
 
-    // ——— The rule's table, one case per origin rule (D167 point 2).
+    // ——— The rule's table, one case per origin rule.
 
-    /// <summary>Rule one: the ask a quest was asked by, from its sender, a chain step's included.</summary>
+    /// <summary>Rule one: the ask a quest is asked by, from its sender, a chain step's included.</summary>
     [Fact]
     public async Task A_quest_an_ask_asked_takes_the_ask()
     {
@@ -169,7 +169,7 @@ public sealed class SessionEntryTests : IAsyncLifetime
         Assert.Equal("session:c2/app", await KeyOf(facts, facts.Session("c2", from: "gone")));
     }
 
-    /// <summary>A quest a clear forgot (HIST1b) leaves the record its own entry, <c>session:&lt;id&gt;/&lt;repository&gt;</c>.</summary>
+    /// <summary>A quest a clear forgets leaves the record its own entry, <c>session:&lt;id&gt;/&lt;repository&gt;</c>.</summary>
     [Fact]
     public async Task A_forgotten_quest_leaves_the_record_its_own_line()
     {
@@ -286,7 +286,7 @@ public sealed class SessionEntryTests : IAsyncLifetime
 
     /// <summary>
     /// 🔴 A record from before the key: answered by the same rule at read, and the column stays empty, so it groups the day the
-    /// reader lands and nothing was rewritten.
+    /// reader lands and nothing is rewritten.
     /// </summary>
     [Fact]
     public async Task A_record_from_before_is_answered_a_derived_key_and_never_written_back()
@@ -317,7 +317,7 @@ public sealed class SessionEntryTests : IAsyncLifetime
         Assert.Equal("ask:c98a7e/app", (await _ledger.WithEntryAsync(record)).Entry);
     }
 
-    // ——— A quest a conversation took joins that conversation's line (CHATTAKE1, design §1.2 rule 2).
+    // ——— A quest a conversation took joins that conversation's line.
 
     /// <summary>🔴 The chat's take records the quest's id, and a later part on that quest opens under the chat's entry.</summary>
     [Fact]

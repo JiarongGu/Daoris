@@ -2,7 +2,7 @@ using Daoris.Knowledge;
 
 namespace Daoris.Service.Tests;
 
-/// <summary>The <c>delete</c> kind's writer (HELP6): a quest or an ask made by mistake, by its id — the drawer's and the record's Delete.</summary>
+/// <summary>The <c>delete</c> kind's writer: a quest or an ask made by mistake, by its id — the drawer's and the record's Delete.</summary>
 public sealed class HelpDeleteProposalTests : HelpProposalBoxFixture
 {
     [Fact]

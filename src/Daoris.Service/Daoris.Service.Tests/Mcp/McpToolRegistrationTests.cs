@@ -8,7 +8,7 @@ using ModelContextProtocol.Server;
 namespace Daoris.Service.Tests;
 
 /// <summary>
-/// PART10a: the tools the connector's host advertises, read through the SDK's own listing of what the host registers. The
+/// The tools the connector's host advertises, read through the SDK's own listing of what the host registers. The
 /// names are the wire, which the driver's connector and the family rehearsal call by name, so moving a tool to a class of
 /// its own changes none of them, and none is lost or offered twice.
 /// </summary>
@@ -50,7 +50,7 @@ public sealed class McpToolRegistrationTests : McpToolsFixture
     }
 
     /// <summary>
-    /// BRAINSTORM1a2 (D176 point 2): a brainstorm's pass is denied every tool of the connector but its result, by name, from the
+    /// A brainstorm's pass is denied every tool of the connector but its result, by name, from the
     /// driver's <c>BrainstormPermissions.ConnectorTools</c>. A tool the connector gains is denied there in the same change, or a pass
     /// could be offered it. The merge tool's rule for the driver's file runs this suite when it changes.
     /// </summary>

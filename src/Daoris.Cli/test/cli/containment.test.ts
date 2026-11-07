@@ -6,12 +6,11 @@ import { makeFixture } from '../_fixture.ts';
 import { runCli } from '../../src/cli.ts';
 
 /**
- * Daoris must never write into a repository that is not the one it was run in.
+ * Daoris must never write into a repository that is not the one it runs in.
  *
- * This is not a hypothetical. A quest command once wrote into a sibling's backlog, and removing it
- * again damaged that repository's working tree — including an uncommitted edit its own session was
- * about to commit. The rule (`repository-owns-its-work`) already said not to; the tooling did it
- * anyway, and no test would have caught it.
+ * This is not a hypothetical. A command that writes into a sibling's backlog, and removing it
+ * again, damages that repository's working tree — including an uncommitted edit its own session is
+ * about to commit. The rule (`repository-owns-its-work`) says not to; only a test holds the tooling to it.
  *
  * So the guarantee is asserted the only way worth trusting: run the commands against one repository
  * with a sibling sitting beside it, and require the sibling to be byte-for-byte unchanged. A future

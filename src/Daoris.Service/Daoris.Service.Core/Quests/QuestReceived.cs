@@ -4,7 +4,7 @@ namespace Daoris.Knowledge;
 internal sealed class QuestReceived(QuestCarry carry)
 {
     /// <summary>
-    /// A remote's say over a publish a machine pushed (design §8) — the judgement the machine's own
+    /// A remote's say over a publish a machine pushed — the judgement the machine's own
     /// exchange already ran, run again where it lands, because a remote takes nobody's word for it.
     /// Null when the quest is fit to keep here.
     /// </summary>
@@ -15,7 +15,7 @@ internal sealed class QuestReceived(QuestCarry carry)
     /// </remarks>
     public string? Judge(Quest asked, IReadOnlyList<Registration> registered)
     {
-        // Adopted, not merely addressable (D70): a deployment holds no roots, and a repository that
+        // Adopted, not merely addressable: a deployment holds no roots, and a repository that
         // has not adopted has no manifest to declare a join with, so its quests never leave the
         // machine that can drive it. A pushed quest to one is a quest nobody here could answer.
         if (!registered.Any(r => r.Adopted && string.Equals(r.Repository, asked.To, StringComparison.OrdinalIgnoreCase)))
@@ -24,7 +24,7 @@ internal sealed class QuestReceived(QuestCarry carry)
                    + $"`#{asked.Id}`. Its registration travels first; the next sync tries again.";
         }
 
-        // Its lanes were judged against the registration by the machine that published it (D115 §2.2),
+        // Its lanes were judged against the registration by the machine that published it,
         // and a registration here may lag its own; but a lane no registration could declare is no lane.
         if (asked.Lanes.FirstOrDefault(lane => !QuestAddress.IsLaneId(lane)) is { } malformed)
         {
@@ -32,7 +32,7 @@ internal sealed class QuestReceived(QuestCarry carry)
                    + "lane is lower-case letters, digits and dashes, starting with a letter.";
         }
 
-        // Whether the person said a requirement's quote was judged where the ask is; a remote holds
+        // Whether the person said a requirement's quote is judged where the ask is; a remote holds
         // no asks, but a requirement missing half of itself is no requirement wherever it lands.
         if (QuestRequirementJudge.JudgeShape(asked.Requirements).Refusal is { } unfitRequirement)
         {

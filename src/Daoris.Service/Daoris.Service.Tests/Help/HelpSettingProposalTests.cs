@@ -3,7 +3,7 @@ using Daoris.Knowledge;
 
 namespace Daoris.Service.Tests;
 
-/// <summary>The <c>setting</c> kind's writer (HELP1c): one of the driver's doors, spelled as the CLI's verbs are.</summary>
+/// <summary>The <c>setting</c> kind's writer: one of the driver's doors, spelled as the CLI's verbs are.</summary>
 public sealed class HelpSettingProposalTests : HelpProposalBoxFixture
 {
     [Fact]
@@ -35,7 +35,7 @@ public sealed class HelpSettingProposalTests : HelpProposalBoxFixture
             new SettingChange("landing", Target: "engine", Workspace: null, Value: "merge"), "why", session: "h1e1p000", Now).Message);
     }
 
-    /// <summary>HELP9: reading and writing across (D107) and a cap pass the shape as the terminal spells them.</summary>
+    /// <summary>Reading and writing across and a cap pass the shape as the terminal spells them.</summary>
     [Theory]
     [InlineData("across", "engine", null, "read off")]
     [InlineData("across", null, "work", "read --clear")]
@@ -45,28 +45,28 @@ public sealed class HelpSettingProposalTests : HelpProposalBoxFixture
     [InlineData("cooloff", null, null, "90")]
     [InlineData("quiet", null, null, "5")]
     [InlineData("quiet", null, null, "120")]
-    // GITAUTH1e: a repository's remote or a workspace's host pointed at an identity, or taken back.
+    // A repository's remote or a workspace's host pointed at an identity, or taken back.
     [InlineData("git-use", "engine", null, "Work")]
     [InlineData("git-use", "engine", null, "--remote upstream Work")]
     [InlineData("git-use", "engine", null, "--clear")]
     [InlineData("git-use", null, "work", "--host github.com Work")]
-    // KEEP1d: each kind's keep rule, a kind and its rule, for this machine.
+    // Each kind's keep rule, a kind and its rule, for this machine.
     [InlineData("keep", null, null, "set-aside 30")]
     [InlineData("keep", null, null, "set-aside whole")]
     [InlineData("keep", null, null, "downloads never")]
     [InlineData("keep", null, null, "logs default")]
-    // KEEP1g: history's age, the person's to apply.
+    // History's age, the person's to apply.
     [InlineData("keep", null, null, "history 365")]
     [InlineData("keep", null, null, "history never")]
-    // KNOWUSE1b: a standing answer for a repository, in the person's words, or cleared.
+    // A standing answer for a repository, in the person's words, or cleared.
     [InlineData("standing", "engine", null, "dev writes allowed; test locally against dev; prod only on a yes")]
     [InlineData("standing", "engine", null, "--clear")]
-    // LANG1c2 (D142 point 7): a session language for a repository or a workspace, a code of the table in any case, or cleared.
+    // A session language for a repository or a workspace, a code of the table in any case, or cleared.
     [InlineData("language", "engine", null, "zh")]
     [InlineData("language", null, "work", "en")]
     [InlineData("language", "engine", null, "ZH")]
     [InlineData("language", null, "work", "--clear")]
-    // REVIEWENV1a (D154 point 2): a review rule for a repository or a workspace, as `daoris place review` takes its words, a
+    // A review rule for a repository or a workspace, as `daoris place review` takes its words, a
     // quoted command kept whole whatever it holds; the rule, the registry and the procedure are the driver's to judge.
     [InlineData("review", "storefront", null, "dev --kind local --procedure README.md --address http://localhost:4200 --required")]
     [InlineData("review", null, "work", "local --kind local --procedure README.md --address http://localhost:4200 --run \"npm run serve -- --port 4300\"")]
@@ -74,14 +74,14 @@ public sealed class HelpSettingProposalTests : HelpProposalBoxFixture
     [InlineData("review", "storefront", null, "--drop dev")]
     [InlineData("review", null, "work", "--not-required")]
     [InlineData("review", "storefront", null, "--clear")]
-    // XAGENT1a (D155 point 3): a second-opinion rule for a repository or a workspace, as `daoris place opinion` takes its
+    // A second-opinion rule for a repository or a workspace, as `daoris place opinion` takes its
     // words, a quoted list kept whole; the rule and the registry are the driver's to judge.
     [InlineData("opinion", "web-app", null, "--agents codex-acp,dsh --on landing,steps --required --verify --minutes 30")]
     [InlineData("opinion", null, "work", "--agents \"codex-acp, dsh\" --no-recheck")]
     [InlineData("opinion", "web-app", null, "--not-required --no-verify --recheck")]
     [InlineData("opinion", "notes-site", null, "none")]
     [InlineData("opinion", "web-app", null, "--clear")]
-    // DOORS1a (D163 point 3; D164's amendment points 1 and 5): a helpers rule and a commit rule for a repository or a workspace,
+    // A helpers rule and a commit rule for a repository or a workspace,
     // as `daoris place helpers` and `daoris place commits` take their words, a quoted list or convention kept whole; the rule and
     // the registry are the driver's to judge.
     [InlineData("helpers", "web-app", null, "--mode on --agents codex-acp,dsh")]
@@ -100,7 +100,7 @@ public sealed class HelpSettingProposalTests : HelpProposalBoxFixture
         Assert.Equal(value, file.GetProperty("value").GetString());
     }
 
-    /// <summary>HELP10: a retry names its quest as the target, and nothing else; whether it is parked is the driver's to judge.</summary>
+    /// <summary>A retry names its quest as the target, and nothing else; whether it is parked is the driver's to judge.</summary>
     [Fact]
     public void A_retry_is_written_with_its_quest_as_the_target()
     {
@@ -112,7 +112,7 @@ public sealed class HelpSettingProposalTests : HelpProposalBoxFixture
         Assert.Equal(JsonValueKind.Null, file.GetProperty("value").ValueKind);
     }
 
-    /// <summary>HELP9: the connector's tool names every door the box takes, so the helper is told of each.</summary>
+    /// <summary>The connector's tool names every door the box takes, so the helper is told of each.</summary>
     [Fact]
     public void The_tool_names_every_door()
     {
@@ -131,7 +131,7 @@ public sealed class HelpSettingProposalTests : HelpProposalBoxFixture
     }
 
     /// <summary>
-    /// SESSUX1b2: `retry` releases a quest the person's stop holds as well as one its failed sessions parked (D126 §3.4),
+    /// `retry` releases a quest the person's stop holds as well as one its failed sessions parked,
     /// so the tool and its target say both, as the room lists both.
     /// </summary>
     [Fact]
@@ -149,7 +149,7 @@ public sealed class HelpSettingProposalTests : HelpProposalBoxFixture
     }
 
     /// <summary>
-    /// LANG1c2 (D142 points 7–8): the tool tells the helper what a session language takes, and that it is the work's, never
+    /// The tool tells the helper what a session language takes, and that it is the work's, never
     /// the window's, so it proposes the codes the box takes rather than learning them from a refusal.
     /// </summary>
     [Fact]
@@ -210,10 +210,10 @@ public sealed class HelpSettingProposalTests : HelpProposalBoxFixture
     }
 
     /// <summary>
-    /// REVIEWENV1a (D154 points 1–2, design §1.7), as REVIEWENV1c3 words it: the tool tells the helper what a review takes,
+    /// The tool tells the helper what a review takes,
     /// that production is never one, that `--required` is the person's say-so, and what the landing's gate then does with
-    /// work that waits, in the sentence every other door says, the twins' table's (REVIEWENV1c4). Never that nothing reads
-    /// it: the gate does (REVIEWENV1c).
+    /// work that waits, in the sentence every other door says, the twins' table's. Never that nothing reads
+    /// it: the gate does.
     /// </summary>
     [Fact]
     public void The_tool_says_what_a_review_takes_that_production_is_never_one_and_what_the_gate_does()
@@ -241,10 +241,10 @@ public sealed class HelpSettingProposalTests : HelpProposalBoxFixture
     }
 
     /// <summary>
-    /// XAGENT1a (D155 point 3, design §2.4–§2.5), as XAGENT1f4 words it: the tool tells the helper what an opinion takes, that
+    /// The tool tells the helper what an opinion takes, that
     /// its reviewers are only the ones the person names, that `--required` and `--verify` are the person's say-so, and what the
     /// gate then does with work that waits, in the sentences every other door says, the twins' table's. Never that nothing
-    /// reads it: the gate does (XAGENT1f).
+    /// reads it: the gate does.
     /// </summary>
     [Fact]
     public void The_tool_says_what_an_opinion_takes_that_its_reviewers_are_the_persons_and_what_the_gate_does()
@@ -273,7 +273,7 @@ public sealed class HelpSettingProposalTests : HelpProposalBoxFixture
     }
 
     /// <summary>
-    /// DOORS1a (D164's amendment point 5, D110): the tool tells the helper what a helpers rule and a commit rule take, that it may
+    /// The tool tells the helper what a helpers rule and a commit rule take, that it may
     /// seed either, and a landing's branch name, from the repository's own instructions for the person to apply, and that a
     /// landing's key and squash are kept unless the proposal names them, so it never learns them from a refusal.
     /// </summary>
@@ -337,18 +337,18 @@ public sealed class HelpSettingProposalTests : HelpProposalBoxFixture
     [InlineData("language", "engine", null, null, "`language` is set to `en` or `zh`, or `--clear`")]
     [InlineData("language", null, "work", "fr", "`language` is set to `en` or `zh`, or `--clear`")]
     [InlineData("language", "engine", null, "en zh", "`language` is set to `en` or `zh`, or `--clear`")]
-    // REVIEWENV1a: exactly one of a repository or a workspace, some words, and only the flags `daoris place review` takes.
+    // Exactly one of a repository or a workspace, some words, and only the flags `daoris place review` takes.
     [InlineData("review", null, null, "none", "review rule is set for a repository or a workspace — name exactly one")]
     [InlineData("review", "storefront", "work", "none", "review rule is set for a repository or a workspace — name exactly one")]
     [InlineData("review", "storefront", null, null, "review is `<environment> --kind local|deployed --procedure <path>")]
     [InlineData("review", "storefront", null, "dev --kind local --colour blue", "`none`, `--drop <environment>`, `--required|--not-required` or `--clear`")]
-    // XAGENT1a: exactly one of a repository or a workspace, some words, and only the flags `daoris place opinion` takes.
+    // Exactly one of a repository or a workspace, some words, and only the flags `daoris place opinion` takes.
     [InlineData("opinion", null, null, "none", "second-opinion rule is set for a repository or a workspace — name exactly one")]
     [InlineData("opinion", "web-app", "work", "--clear", "second-opinion rule is set for a repository or a workspace — name exactly one")]
     [InlineData("opinion", "web-app", null, null, "opinion is `--agents <adapter,adapter> [--on landing,steps]")]
     [InlineData("opinion", "web-app", null, "  ", "opinion is `--agents <adapter,adapter> [--on landing,steps]")]
     [InlineData("opinion", "web-app", null, "--agents dsh --colour blue", "`none` or `--clear`")]
-    // DOORS1a: exactly one of a repository or a workspace, some words, and only the flags `daoris place helpers` and
+    // Exactly one of a repository or a workspace, some words, and only the flags `daoris place helpers` and
     // `daoris place commits` take; a merge carrying a key or a squash is no shape the box takes, and its sentence names both.
     [InlineData("helpers", null, null, "--mode on", "helpers rule is set for a repository or a workspace — name exactly one")]
     [InlineData("helpers", "web-app", "work", "--clear", "helpers rule is set for a repository or a workspace — name exactly one")]

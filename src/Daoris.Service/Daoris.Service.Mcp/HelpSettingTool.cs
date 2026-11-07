@@ -3,7 +3,7 @@ using ModelContextProtocol.Server;
 
 namespace Daoris.Knowledge.Mcp;
 
-/// <summary>Ask Daoris's <c>setting_propose</c> (HELP1c): the <c>setting</c> kind's tool, written by <see cref="HelpProposalBox.ProposeSetting"/>.</summary>
+/// <summary>Ask Daoris's <c>setting_propose</c>: the <c>setting</c> kind's tool, written by <see cref="HelpProposalBox.ProposeSetting"/>.</summary>
 [McpServerToolType]
 public sealed class HelpSettingTool(IntakeScope? intake = null, HelpProposalBox? help = null)
 {

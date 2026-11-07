@@ -20,7 +20,7 @@ internal sealed class QuestCache(QuestStore store)
     }
 
     /// <summary>
-    /// A source reopened by a build before FABRIC-CLOSE1c4 has a row that keeps no reopen, though its log holds one no submission
+    /// A source reopened by an older build has a row that keeps no reopen, though its log holds one no submission
     /// answered since. Those taken quests are replayed from the log, which reads it, so the driver tells it from one not yet ready.
     /// A step its source's reopen reached holds a reopen too, but no submission of its own, so it is never selected; and once
     /// replayed a source's row keeps its reopen, so no later open selects it again.
@@ -36,7 +36,7 @@ internal sealed class QuestCache(QuestStore store)
             ct);
 
     /// <summary>
-    /// A cache written before dismissals (SYNC6c) holds conflicts without the sequence that names them,
+    /// A cache written before dismissals holds conflicts without the sequence that names them,
     /// and a conflict that cannot be named cannot be dismissed. Those quests are replayed from the log,
     /// which has always kept the sequence — the cache is only ever what the history replays to.
     /// </summary>
@@ -44,7 +44,7 @@ internal sealed class QuestCache(QuestStore store)
         RecacheAsync("SELECT id FROM quests WHERE conflicts <> '[]' AND conflicts NOT LIKE '%\"sequence\"%'", ct);
 
     /// <summary>
-    /// A quest closed before a close cleared <c>awaits</c> (AWAITSTALE1, D79) still names the question it waited on.
+    /// A quest closed before a close cleared <c>awaits</c> still names the question it waited on.
     /// Those closed rows are replayed from the log, which clears it and keeps the Waited operation.
     /// </summary>
     private Task RecacheClosedAwaitsAsync(CancellationToken ct) =>

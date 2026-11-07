@@ -5,10 +5,10 @@ using Daoris.Knowledge.Mcp;
 namespace Daoris.Service.Tests;
 
 /// <summary>
-/// FOUNDATION1c (D212; the foundation design §2.2; <c>.claude/knowledge/twins.md</c>): the participant's work, read once from a record's
+/// The participant's work (<c>.claude/knowledge/twins.md</c>), read once from a record's
 /// marks by one rule, and answered for every record of this machine on loopback. It is held to <c>fixtures/participant-work.json</c>
 /// beside this suite, which the driver's <c>ParticipantWorkTests</c> and the page's <c>identity.test.ts</c> read as well, row for row:
-/// what the rule answers, and where a reader of the same marks answered otherwise before it, each such row named and decided.
+/// what the rule answers, and where a reader of the same marks answers otherwise, each such row named and decided.
 /// </summary>
 public sealed class ParticipantWorkTests : McpToolsFixture
 {
@@ -34,8 +34,8 @@ public sealed class ParticipantWorkTests : McpToolsFixture
     }
 
     /// <summary>
-    /// Census A, the connector's half: the connector reads a record's work by the one rule (FOUNDATION1r), so where its reading of
-    /// <c>serves</c> and <c>piece</c> said a partner before, the work says it as well, on every row; a difference would be a listed decision.
+    /// Census A, the connector's half: the connector reads a record's work by the one rule, so where its reading of
+    /// <c>serves</c> and <c>piece</c> says a partner, the work says it as well, on every row; a difference would be a listed decision.
     /// </summary>
     [Theory]
     [MemberData(nameof(Rows))]

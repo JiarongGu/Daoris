@@ -1,18 +1,18 @@
 namespace Daoris.Knowledge;
 
 /// <summary>
-/// A knowledge index a newer Daoris wrote, which this build neither reads nor rebuilds (KSCHEMA1): what every operation
+/// A knowledge index a newer Daoris wrote, which this build neither reads nor rebuilds: what every operation
 /// on that index throws, and what every door answers.
 /// </summary>
 /// <remarks>
 /// <para><b>Only the index is refused.</b> Every host on a machine opens the one file, and a connector an update left
 /// behind is an older build. One that rebuilt a newer index broke the newer host serving it. One that refused the whole
-/// store would leave an install an update rolled back (D139) with no host at all until a person updated it, while the
-/// store's quests, sessions, asks and keys are not derived and an older build works with them (D36's KSCHEMA1 note). So
+/// store would leave an install an update rolled back with no host at all until a person updated it, while the
+/// store's quests, sessions, asks and keys are not derived and an older build works with them. So
 /// the store opens, drops and stamps nothing, and each way into the index throws this.</para>
 ///
 /// <para><b>Its message names no path</b>, because a door answers it: a browser and a shared host's keyed caller are
-/// never told one (D46, D47 §4). <see cref="Store"/> and <see cref="Build"/> are for this machine's own stderr.</para>
+/// never told one. <see cref="Store"/> and <see cref="Build"/> are for this machine's own stderr.</para>
 /// </remarks>
 public sealed class NewerIndexException(string store, int found, int known) : Exception(Sentence(found, known))
 {

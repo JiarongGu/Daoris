@@ -3,19 +3,19 @@ using System.Text;
 
 namespace Daoris.Knowledge;
 
-/// <summary>What a feed's arrival means against what this deployment holds (SYNC5a).</summary>
+/// <summary>What a feed's arrival means against what this deployment holds.</summary>
 public enum FeedVerdict
 {
-    /// <summary>Replace what is held: nothing was, the feed fast-forwards it, or it is newer by commit time.</summary>
+    /// <summary>Replace what is held: nothing is, the feed fast-forwards it, or it is newer by commit time.</summary>
     Take,
 
     /// <summary>The same commit, read the same way — nothing to do, and the first feeder stays credited.</summary>
     AlreadyHeld,
 
-    /// <summary>The same commit, read differently. The first reading stands (SYNC0c).</summary>
+    /// <summary>The same commit, read differently. The first reading stands.</summary>
     ContentDiffers,
 
-    /// <summary>The feed was checked against a commit that another machine has since replaced.</summary>
+    /// <summary>The feed is checked against a commit that another machine has since replaced.</summary>
     Moved,
 
     /// <summary>The feed could not be ordered by ancestry and is older by commit time.</summary>
@@ -36,7 +36,7 @@ public sealed record FeedHeld(string? Knowledge, string? CodeMap, string? Regist
 ///
 /// <para>Commit time is the fallback, not the rule. It orders a diverged history and an older client,
 /// which cannot do better; a rebase keeps author dates and a clock can be wrong, so ancestry wins
-/// wherever it was asked.</para>
+/// wherever it is asked.</para>
 /// </remarks>
 public static class FeedOrder
 {
@@ -72,7 +72,7 @@ public static class FeedOrder
 
 /// <summary>
 /// What a feed SAYS, as one hash — so that the same commit fed twice can be told apart from the same
-/// commit read two ways (SYNC0c).
+/// commit read two ways.
 /// </summary>
 /// <remarks>
 /// Computed at the deployment over what it would store, never trusted from the wire: a digest the
@@ -92,7 +92,7 @@ public static class FeedDigest
             Field(text, entry.Body);
             Field(text, entry.RelativePath);
             Field(text, entry.Anchor);
-            // Its lines (ORIENT2e), only when it names them: a section that moved is content a hit names, and
+            // Its lines, only when it names them: a section that moved is content a hit names, and
             // an entry that names none hashes as it did before lines were kept.
             if (entry.Lines is { } lines) Field(text, $"lines {lines}");
         }
@@ -101,7 +101,7 @@ public static class FeedDigest
     }
 
     /// <summary>
-    /// A repository's declaration (SYNC5b): what it says about itself, and nothing the deployment
+    /// A repository's declaration: what it says about itself, and nothing the deployment
     /// decides — the root it never keeps, the entry count it computes, the workspace its own wiring sets.
     /// </summary>
     public static string Of(Registration registration)
@@ -114,10 +114,10 @@ public static class FeedDigest
         Field(text, registration.Joined ? "joined" : "local");
         Field(text, registration.SharesKnowledge ? "shares" : "keeps");
         Field(text, registration.DefaultBranch);
-        // What it says it uses (D91), only when it says something: a declaration of none hashes as it
+        // What it says it uses, only when it says something: a declaration of none hashes as it
         // did before the field existed, so every row a deployment already holds keeps its digest.
         if (registration.DependsOn.Count > 0) List(text, registration.DependsOn);
-        // Its lanes (D115 §2.2), on the same terms: a declaration of none hashes as it always did.
+        // Its lanes, on the same terms: a declaration of none hashes as it always did.
         if (registration.DeclaredLanes.Count > 0)
         {
             Field(text, "lanes");

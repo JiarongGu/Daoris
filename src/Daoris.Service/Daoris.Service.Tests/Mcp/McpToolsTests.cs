@@ -7,8 +7,8 @@ namespace Daoris.Service.Tests;
 
 /// <summary>
 /// The MCP door itself — what an agent actually calls. The exchange behind it is tested on its own;
-/// what only the door does is turn a PATH into bytes (D65 §2) and take a chain as a list of steps
-/// (D65 §4), and a schema the agent cannot read is a parameter that does not exist.
+/// what only the door does is turn a PATH into bytes and take a chain as a list of steps,
+/// and a schema the agent cannot read is a parameter that does not exist.
 /// </summary>
 public sealed class McpToolsTests : McpToolsFixture
 {
@@ -21,7 +21,7 @@ public sealed class McpToolsTests : McpToolsFixture
     }
 
     /// <summary>
-    /// SEM3 (D123): an entry longer than the window becomes several vectors, and the agent's door says how
+    /// An entry longer than the window becomes several vectors, and the agent's door says how
     /// many did and at what window — a reader of the index sees it rather than assumes it.
     /// </summary>
     [Fact]
@@ -72,7 +72,7 @@ public sealed class McpToolsTests : McpToolsFixture
     }
 
     /// <summary>
-    /// SESSUX1j: an agent gives its quest a short title through this door, and the listing says it; one past 40
+    /// An agent gives its quest a short title through this door, and the listing says it; one past 40
     /// characters is refused in the exchange's words, and nothing is published.
     /// </summary>
     [Fact]
@@ -89,7 +89,7 @@ public sealed class McpToolsTests : McpToolsFixture
         Assert.Single(await _quests.ListAsync(receiver: "Owner"));
     }
 
-    /// <summary>FOUNDATION1x: an agent marks design work through this door; one that marks nothing publishes unmarked.</summary>
+    /// <summary>An agent marks design work through this door; one that marks nothing publishes unmarked.</summary>
     [Fact]
     public async Task Publishing_carries_a_weight_and_without_one_the_quest_is_unmarked()
     {
@@ -103,7 +103,7 @@ public sealed class McpToolsTests : McpToolsFixture
     }
 
     /// <summary>
-    /// D115 §2.2 (DEV4): the registry's answer lists each repository's lanes, so an asker can see what it
+    /// The registry's answer lists each repository's lanes, so an asker can see what it
     /// may address and how; a quest to one is published through this door and listed with its lanes.
     /// </summary>
     [Fact]
@@ -124,7 +124,7 @@ public sealed class McpToolsTests : McpToolsFixture
     }
 
     /// <summary>
-    /// SELFASK1: the registry's row for a repository with no lanes says what would let it hand its own work
+    /// The registry's row for a repository with no lanes says what would let it hand its own work
     /// out, in the words the exchange's self-address refusal uses; a row with lanes lists them instead.
     /// </summary>
     [Fact]
@@ -156,7 +156,7 @@ public sealed class McpToolsTests : McpToolsFixture
     }
 
     /// <summary>
-    /// An intake's connector (D65 §1b): the room is no repository, so the quest is asked BY THE ASK, in
+    /// An intake's connector: the room is no repository, so the quest is asked BY THE ASK, in
     /// the ask's circle — and because the session publishing is the ask's own intake, the ask says a
     /// harness decided. The `from` an agent fills in is not what decides who asked.
     /// </summary>
@@ -190,7 +190,7 @@ public sealed class McpToolsTests : McpToolsFixture
     }
 
     /// <summary>
-    /// DRIFT1c (D133 §3): an intake names what the person requires, each in their own words with the check
+    /// An intake names what the person requires, each in their own words with the check
     /// that proves it. A quote they said is published and listed on the quest; one they never said is
     /// refused, naming the words, and nothing is published.
     /// </summary>
@@ -226,8 +226,8 @@ public sealed class McpToolsTests : McpToolsFixture
     }
 
     /// <summary>
-    /// SHORTFIT1: a publish that gives no short title is told what a list will call its quest, the name read from its own
-    /// words, so the publisher sees what it left to be derived. One that gave a short title is told nothing more.
+    /// A publish that gives no short title is told what a list will call its quest, the name read from its own
+    /// words, so the publisher sees what it leaves to be derived. One that gives a short title is told nothing more.
     /// </summary>
     [Fact]
     public async Task A_publish_with_no_short_title_is_told_what_a_list_will_call_it()
@@ -246,7 +246,7 @@ public sealed class McpToolsTests : McpToolsFixture
     }
 
     /// <summary>
-    /// SHORTFIT1 (DRIFT1c, D133 §3): an intake's publish with no requirements is told that nothing of the person's words
+    /// An intake's publish with no requirements is told that nothing of the person's words
     /// will be checked, since a done answers only the requirements its quest carries. One that carries a requirement is
     /// not told it, and neither is a repository's own publish, on which requirements are refused.
     /// </summary>
@@ -295,8 +295,8 @@ public sealed class McpToolsTests : McpToolsFixture
     }
 
     /// <summary>
-    /// A quest an intake published with the person's requirements, taken by the receiving repository's connector
-    /// (DRIFT1d): the receiver's tools, over the same exchange, which holds the asks a departure is checked against.
+    /// A quest an intake published with the person's requirements, taken by the receiving repository's connector:
+    /// the receiver's tools, over the same exchange, which holds the asks a departure is checked against.
     /// </summary>
     private async Task<(QuestTools Owner, Quest Quest)> RequiredQuestAsync()
     {
@@ -318,8 +318,8 @@ public sealed class McpToolsTests : McpToolsFixture
     }
 
     /// <summary>
-    /// DRIFT1d (D133 §4): `quest_respond`'s done answers each requirement by its number. One left unanswered is
-    /// refused naming it, and nothing closes; each met closes the quest, and the list says how each was met.
+    /// `quest_respond`'s done answers each requirement by its number. One left unanswered is
+    /// refused naming it, and nothing closes; each met closes the quest, and the list says how each is met.
     /// </summary>
     [Fact]
     public async Task A_done_over_the_connector_answers_each_requirement_and_one_left_is_refused_naming_it()
@@ -370,7 +370,7 @@ public sealed class McpToolsTests : McpToolsFixture
     }
 
     /// <summary>
-    /// EVID1a (D144 §2): an intake names a requirement's evidence over the connector — a path the done's commit must hold —
+    /// An intake names a requirement's evidence over the connector — a path the done's commit must hold —
     /// and the list shows it beneath its requirement; a gate is refused, naming the queue it waits for, and nothing is published.
     /// </summary>
     [Fact]
@@ -403,9 +403,9 @@ public sealed class McpToolsTests : McpToolsFixture
     }
 
     /// <summary>
-    /// EVID1a (D144 §2, §6): a done over the connector meeting a requirement that names evidence is held until Daoris reads it
+    /// A done over the connector meeting a requirement that names evidence is held until Daoris reads it
     /// in the session's last commit, which the answer says, so the session can commit it first; the list says it waits on
-    /// its evidence, then, once the driver's verdict is kept, what was read and what was not found.
+    /// its evidence, then, once the driver's verdict is kept, what is read and what is not found.
     /// </summary>
     [Fact]
     public async Task A_met_done_over_the_connector_is_held_for_its_evidence_and_the_list_says_what_was_read()
@@ -491,7 +491,7 @@ public sealed class McpToolsTests : McpToolsFixture
     }
 
     /// <summary>
-    /// The driver names the session on every connector it hands over (PERM2), so a rule proposal says
+    /// The driver names the session on every connector it hands over, so a rule proposal says
     /// who made it. With no ask that changes nothing about a publish: only an intake publishes as its ask.
     /// </summary>
     [Fact]
@@ -509,7 +509,7 @@ public sealed class McpToolsTests : McpToolsFixture
     }
 
     /// <summary>
-    /// SESS1: a quest says which session published it, from the name its connector was handed, so the
+    /// A quest says which session published it, from the name its connector is handed, so the
     /// session's view can say what it caused without guessing from the times — an intake's publish on
     /// its ask's behalf too. A publish no session made, the platform's own composer, names none.
     /// </summary>
@@ -539,9 +539,8 @@ public sealed class McpToolsTests : McpToolsFixture
     }
 
     /// <summary>
-    /// STANDDOWN2: a session the driver started takes its quest through its own connector, and the take
-    /// is written on its record. FG5's verify session took its quest and stopped to ask the person, and
-    /// its end read "someone else has it", because nothing said whose take it was.
+    /// A session the driver started takes its quest through its own connector, and the take
+    /// is written on its record, so its end can say whose take it is.
     /// </summary>
     [Fact]
     public async Task A_take_through_a_sessions_own_connector_is_written_on_its_record()
@@ -562,7 +561,7 @@ public sealed class McpToolsTests : McpToolsFixture
     }
 
     /// <summary>
-    /// CHATTAKE1: a chat takes a quest through the connector its driver handed it, named with its session, and the take is
+    /// A chat takes a quest through the connector its driver handed it, named with its session, and the take is
     /// written on its record as a driven session's is, so a delete knows the chat served that quest.
     /// </summary>
     [Fact]
@@ -584,8 +583,8 @@ public sealed class McpToolsTests : McpToolsFixture
     }
 
     /// <summary>
-    /// KNOWUSE1a (D135 §2): a session asks the person for a go-ahead through its own connector, held on the ask its quest
-    /// was asked by; a second session asking for the act in other words joins it rather than asking again, and a connector
+    /// A session asks the person for a go-ahead through its own connector, held on the ask that asked its quest;
+    /// a second session asking for the act in other words joins it rather than asking again, and a connector
     /// that speaks for no session is told there is no ask to hold one.
     /// </summary>
     [Fact]
@@ -616,7 +615,7 @@ public sealed class McpToolsTests : McpToolsFixture
     }
 
     /// <summary>
-    /// REVIEWENV1b (D154; the review environment design §1.5, §2.1): an intake composes a set-up step through this door and
+    /// An intake composes a set-up step through this door and
     /// sets the chain's review choice on the person's quoted words, or proposes one with its reason, kept on the ask; a choice
     /// on words the person never said is refused, and so is a proposal from a connector that speaks for no intake. The listing
     /// says the choice and the set-up step.
@@ -661,7 +660,7 @@ public sealed class McpToolsTests : McpToolsFixture
         Assert.Contains("speaks for no intake", refused);
         Assert.DoesNotContain(await _quests.ListAsync(receiver: "Owner"), each => each.Title == "Another");
 
-        // WORKFLOW1i-a: a kind proposal quotes the person, as the review's words do, and is kept on the ask, never applied.
+        // A kind proposal quotes the person, as the review's words do, and is kept on the ask, never applied.
         var unquoted = await tools.PublishQuestAsync(
             "intake", "Owner", "Write the guide", "b", workflowProposal: new WorkflowProposal("docs", "it only changes a document"));
         Assert.Contains("never said", unquoted);
@@ -680,7 +679,7 @@ public sealed class McpToolsTests : McpToolsFixture
     }
 
     /// <summary>
-    /// REVIEWENV1b (design §2.6): a set-up step's own session asks Daoris to serve its build and says what it showed through
+    /// A set-up step's own session asks Daoris to serve its build and says what it showed through
     /// its connector; its done is refused until one is said, and once said closes held for the person's review, which the
     /// listing says. A connector for a session on another quest, and one that speaks for no session, are refused.
     /// </summary>
@@ -734,8 +733,8 @@ public sealed class McpToolsTests : McpToolsFixture
     }
 
     /// <summary>
-    /// HELP6: Ask Daoris's four further tools each write one proposal under the home, naming the
-    /// conversation its connector was handed — and a malformed one writes nothing, said in the agent's terms.
+    /// Ask Daoris's four further tools each write one proposal under the home, naming the
+    /// conversation its connector is handed — and a malformed one writes nothing, said in the agent's terms.
     /// </summary>
     [Fact]
     public void Ask_Daoris_proposes_an_agent_action_a_delete_an_accounts_settings_and_a_screen()
@@ -773,7 +772,7 @@ public sealed class McpToolsTests : McpToolsFixture
     }
 
     /// <summary>
-    /// PLUG9: Ask Daoris proposes adding a plugin that has landed, from its folder in a repository's
+    /// Ask Daoris proposes adding a plugin that has landed, from its folder in a repository's
     /// checkout, or switching one on or off; the file names the conversation, and a malformed one writes nothing.
     /// </summary>
     [Fact]
@@ -785,7 +784,7 @@ public sealed class McpToolsTests : McpToolsFixture
         Assert.Contains("Proposed", tools.ProposePlugin("add", "the person wants quests held overnight", repository: "house-plugins", folder: "quiet-hours"));
         Assert.Contains("Proposed", tools.ProposePlugin("enable", "the person wants it on", id: "example.lands"));
         Assert.Contains("Nothing was proposed", tools.ProposePlugin("add", "no folder named"));
-        // PLUG9 (c) and (d): one of the install's own by its id, and an update of an installed one.
+        // One of the install's own by its id, and an update of an installed one.
         Assert.Contains("Proposed", tools.ProposePlugin("add", "the person wants pull requests opened", offer: "github-pull-request"));
         Assert.Contains("Proposed", tools.ProposePlugin("update", "a newer one has landed", id: "example.lands"));
 
@@ -838,8 +837,8 @@ public sealed class McpToolsTests : McpToolsFixture
 }
 
 /// <summary>
-/// TIER1 at the agent's door: `knowledge_search` says the tier that ANSWERED (D24). With the embedder
-/// down it said nothing at all, because the configured tier was semantic — an agent read a
+/// At the agent's door `knowledge_search` says the tier that ANSWERED. With the embedder
+/// down it would say nothing at all, because the configured tier is semantic — an agent would read a
 /// words-only answer as complete.
 /// </summary>
 public sealed class SearchToolTierTests

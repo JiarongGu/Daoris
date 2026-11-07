@@ -4,8 +4,8 @@ using Microsoft.Data.Sqlite;
 namespace Daoris.Service.Tests;
 
 /// <summary>
-/// A shared quest at the exchange (D68): every verb commits on this machine, whoever the receiver is,
-/// and nothing fails because a remote is down; a take on a shared quest claims by push (D69). What may
+/// A shared quest at the exchange: every verb commits on this machine, whoever the receiver is,
+/// and nothing fails because a remote is down; a take on a shared quest claims by push. What may
 /// leave is decided by the receiver (design §8); what a quest carries leaves as names, never bytes;
 /// and a chain is all shared or all local.
 /// </summary>
@@ -88,7 +88,7 @@ public sealed class QuestShareTests : IAsyncLifetime
     private SqliteConnection? _remoteConnection;
 
     /// <summary>
-    /// 🔴 Nothing fails because a remote is down (D68 §1): a quest to a joined receiver is published HERE,
+    /// 🔴 Nothing fails because a remote is down: a quest to a joined receiver is published HERE,
     /// and a take on it commits HERE — unconfirmed, and the answer says so and why. The sync carries both
     /// when the remote answers again.
     /// </summary>
@@ -107,7 +107,7 @@ public sealed class QuestShareTests : IAsyncLifetime
         Assert.Equal(2, (await _quests.PendingAsync(Workspaces.Default, _ => true)).Count);
     }
 
-    /// <summary>The claim by push (D69): a take on a shared quest waits for the remote, which numbers it.</summary>
+    /// <summary>The claim by push: a take on a shared quest waits for the remote, which numbers it.</summary>
     [Fact]
     public async Task A_take_on_a_shared_quest_claims_at_the_remote_before_it_answers()
     {
@@ -125,7 +125,7 @@ public sealed class QuestShareTests : IAsyncLifetime
     }
 
     /// <summary>
-    /// 🔴 The online race, decided before any work (D69): another machine's take reached the remote
+    /// 🔴 The online race, decided before any work: another machine's take reached the remote
     /// first, so this take is rebased into a conflict and the session hears the stand-down it always
     /// has. The quest is the winner's, here too, and the loser's attempt is kept on it.
     /// </summary>
@@ -150,7 +150,7 @@ public sealed class QuestShareTests : IAsyncLifetime
     }
 
     /// <summary>
-    /// 🔴 A session that goes on after its take lost (WAITCLAIM2), told to stand down or not stopped yet after a pass found
+    /// 🔴 A session that goes on after its take lost, told to stand down or not stopped yet after a pass found
     /// it lost, is refused its wait, its done and its decline as the stand-down they are: each answer says this machine's
     /// take lost and nothing moved, at the door's 409 as the take's own loss is. Nothing is written, so the next pass
     /// carries nothing of them to the winner's quest.
@@ -223,7 +223,7 @@ public sealed class QuestShareTests : IAsyncLifetime
         Assert.Equal(0, remote.Calls);
     }
 
-    // ——— A decline that applies only while open (PAUSE1c, D132 point 10): an abandon's, through the one exchange.
+    // ——— A decline that applies only while open: an abandon's, through the one exchange.
 
     /// <summary>
     /// A decline made while open commits here like any verb, the flag on it. On a shared quest the answer says what
@@ -285,7 +285,7 @@ public sealed class QuestShareTests : IAsyncLifetime
     }
 
     /// <summary>
-    /// 🔴 The disclosure boundary for a quest's files (D65 §2, D47 §4): the bytes are kept on THIS
+    /// 🔴 The disclosure boundary for a quest's files: the bytes are kept on THIS
     /// machine under the quest's id, and what will travel — the pending publish — carries the name, the
     /// hash and the size, and has no field for anything more.
     /// </summary>
@@ -315,7 +315,7 @@ public sealed class QuestShareTests : IAsyncLifetime
     }
 
     /// <summary>
-    /// 🔴 All shared or all local (D65 §4, D68): each step is published on the machine that closes the
+    /// 🔴 All shared or all local: each step is published on the machine that closes the
     /// one before it, and a shared quest may close on a teammate's machine, which cannot see a
     /// repository local to this one. A chain that straddles is refused when composed, naming both.
     /// </summary>
@@ -371,7 +371,7 @@ public sealed class QuestShareTests : IAsyncLifetime
         Assert.Contains("not a link a quest can carry", Exchange().JudgeReceived(Asked("Federated", ["javascript:alert(1)"]), registered));
     }
 
-    // ——— SYNCMERGE1a (D178 point 3): the person brings this machine's lost take forward, pushed and awaited as a take is (D69).
+    // ——— The person brings this machine's lost take forward, pushed and awaited as a take is.
 
     /// <summary>
     /// This machine's take of a chain's step lost to the other machine's reopen of the step's source (the remote's own store stands in for
@@ -405,7 +405,7 @@ public sealed class QuestShareTests : IAsyncLifetime
     }
 
     /// <summary>
-    /// 🔴 SYNCMERGE1a: the press writes the fresh take and the marked dismissal, pushes them and awaits the remote: confirmed, the answer
+    /// 🔴 The press writes the fresh take and the marked dismissal, pushes them and awaits the remote: confirmed, the answer
     /// says the take holds and the conflict is dismissed as brought forward, and what the kept session goes on from. A second press is
     /// refused: the conflict is settled.
     /// </summary>
@@ -432,9 +432,9 @@ public sealed class QuestShareTests : IAsyncLifetime
     }
 
     /// <summary>
-    /// 🔴 SYNCMERGE1a (D178 point 3): another machine's take of the step reached the remote first, so the fresh take loses too. The answer says
-    /// the second loss, that the conflict stays unresolved and that the step is not this machine's, and never that anything was brought
-    /// forward; a dismissal of the conflict that reached the remote first says the conflict was settled there, and that a settled conflict
+    /// 🔴 Another machine's take of the step reached the remote first, so the fresh take loses too. The answer says
+    /// the second loss, that the conflict stays unresolved and that the step is not this machine's, and never that anything is brought
+    /// forward; a dismissal of the conflict that reached the remote first says the conflict is settled there, and that a settled conflict
     /// authorizes no take.
     /// </summary>
     [Theory]
@@ -460,7 +460,7 @@ public sealed class QuestShareTests : IAsyncLifetime
     }
 
     /// <summary>
-    /// 🔴 SYNCMERGE1a (D178 point 8): offline, the press stands on this machine, unconfirmed, and the answer says so and why; it is never said
+    /// 🔴 Offline, the press stands on this machine, unconfirmed, and the answer says so and why; it is never said
     /// as settled before the remote answers.
     /// </summary>
     [Fact]
@@ -479,7 +479,7 @@ public sealed class QuestShareTests : IAsyncLifetime
     }
 
     /// <summary>
-    /// 🔴 SYNCMERGE1a3 (D178 point 7): the person's done and a decline on a step this machine's take lost stay refused, and the refusal
+    /// 🔴 The person's done and a decline on a step this machine's take lost stay refused, and the refusal
     /// names the two choices that stand for the conflict: on a step open again on new work, both as they are; on a step the reopen still
     /// withdraws, *Bring mine forward* once its source is submitted again. Nothing moves.
     /// </summary>
@@ -512,7 +512,7 @@ public sealed class QuestShareTests : IAsyncLifetime
         Assert.Empty(await _quests.PendingAsync(Workspaces.Default, _ => true));
     }
 
-    /// <summary>SYNCMERGE1a: each refusal is said in words that name why the press is not offered, and nothing moves.</summary>
+    /// <summary>Each refusal is said in words that name why the press is not offered, and nothing moves.</summary>
     [Fact]
     public async Task A_bring_forward_refused_says_why_and_moves_nothing()
     {
@@ -535,7 +535,7 @@ public sealed class QuestShareTests : IAsyncLifetime
     }
 
     /// <summary>
-    /// 🔴 SYNCMERGE1c4 (D178 point 3 and its trap of the old session's late moves): while this machine's session on the step still has a
+    /// 🔴 While this machine's session on the step still has a
     /// process, driven for it or a conversation that took it, the press is refused naming it and nothing moves; parked or ended, the press
     /// stands. A teammate's record, whose process is on their machine, holds nothing here.
     /// </summary>

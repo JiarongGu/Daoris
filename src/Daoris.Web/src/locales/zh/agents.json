@@ -354,7 +354,7 @@
   "agents.setup.roles.hold.act.delete": "删除委托",
   "agents.setup.roles.hold.act.updatenow": "立即安装已备好的更新",
   "agents.setup.roles.hold.act.updatecancel": "搁置已备好的更新",
-  "agents.setup.roles.hold.act.land": "合入会话的工作树，从不推送",
+  "agents.setup.roles.hold.act.land": "让会话的工作树落地，从不推送",
   "agents.setup.roles.hold.act.clean": "清理会话的工作树，从不强制",
   "agents.setup.roles.hold.act.setup": "设置",
   "agents.setup.sessions.title": "会话",

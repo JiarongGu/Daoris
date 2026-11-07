@@ -33,9 +33,9 @@ test('versions compare numerically, not as strings', () => {
 });
 
 /**
- * The whole point of TOOL4: a consumer that sees `changed rules/sensitive-info.md`
+ * The whole point: a consumer that sees `changed rules/sensitive-info.md`
  * still has to guess whether it matters. This is the "why", and it comes from
- * the canon shipped in the package, so it stays offline (D8, D11).
+ * the canon shipped in the package, so it stays offline.
  */
 test('only the versions between the lock and the canon are returned', () => {
   const fx = seeded();

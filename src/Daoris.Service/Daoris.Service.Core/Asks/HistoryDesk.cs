@@ -1,12 +1,12 @@
 namespace Daoris.Knowledge;
 
 /// <summary>
-/// The records' half of clearing finished history from this machine (HIST1b, D153; the history-clearing design §1, §2.1,
-/// §3, §6.3): one judgement for both of a local host's doors (D36's one place), read by the driver's <c>HistoryClearing</c>,
-/// which judges the machine's half and removes the home's files (HIST1c).
+/// The records' half of clearing finished history from this machine:
+/// one judgement for both of a local host's doors, read by the driver's <c>HistoryClearing</c>,
+/// which judges the machine's half and removes the home's files.
 /// </summary>
 /// <remarks>
-/// <para><b>Listed first, then pressed</b> (D88): <see cref="PlanAsync"/> and <see cref="PlanWorkspaceAsync"/> list each unit
+/// <para><b>Listed first, then pressed</b>: <see cref="PlanAsync"/> and <see cref="PlanWorkspaceAsync"/> list each unit
 /// with what it would take or why it stays, and change nothing. <see cref="ClearAsync"/> clears exactly the units named,
 /// judging each again inside the one transaction that clears it, so a unit that changed since the list is kept with its word
 /// and is never half cleared.</para>
@@ -30,7 +30,7 @@ public sealed class HistoryDesk(
     }
 
     /// <summary>
-    /// A workspace's finished history, unit by unit (design §1.1): each ask whose work closed or that was closed, then each
+    /// A workspace's finished history, unit by unit: each ask whose work closed or that is closed, then each
     /// closed quest no ask here asked, oldest first, each once. A question rides with the work that asked it, and a quest
     /// with its ask. Changes nothing. Any name is read, so a workspace no page shows any more is still listed by its records.
     /// </summary>
@@ -88,7 +88,7 @@ public sealed class HistoryDesk(
                     named, await LookAsync(within: true, inside).ConfigureAwait(false), wiring, inside).ConfigureAwait(false);
                 if (judged.Refusal is not null) return (judged, false);
 
-                // KEEPSIZE1b (the keep-size design §2.2): the clear's range ends at its sessions' last move, read before they go.
+                // The clear's range ends at its sessions' last move, read before they go.
                 DateTimeOffset? through = null;
                 foreach (var session in judged.Sessions)
                 {
@@ -113,7 +113,7 @@ public sealed class HistoryDesk(
                 foreach (var ask in judged.Asks)
                 {
                     if (asks is not null) await asks.DeleteAsync(ask, inside).ConfigureAwait(false);
-                    // SESSONE2d: the ask's channel goes with it, messages and marks, as deleting the ask forgets it (D167 point 8).
+                    // The ask's channel goes with it, messages and marks, as deleting the ask forgets it.
                     if (channel is not null) await channel.ForgetAsync(ask, inside).ConfigureAwait(false);
                 }
 
@@ -135,8 +135,8 @@ public sealed class HistoryDesk(
         Func<string, CancellationToken, Task<IReadOnlyList<QuestOperation>>> History);
 
     /// <summary>
-    /// The records, read whole: a clear is rare, and a unit's work is read across every quest and record (§1.1). Within the
-    /// press's transaction a history is read inside the connection's gate that transaction already holds (SQLITETX1).
+    /// The records, read whole: a clear is rare, and a unit's work is read across every quest and record. Within the
+    /// press's transaction a history is read inside the connection's gate that transaction already holds.
     /// </summary>
     private async Task<Look> LookAsync(bool within, CancellationToken ct) => new(
         await quests.ListAsync(includeClosed: true, ct: ct).ConfigureAwait(false),
@@ -237,7 +237,7 @@ public sealed class HistoryDesk(
     /// <summary>
     /// The work read from <paramref name="roots"/> (design §1.1): the session records of each quest in it, and each quest a
     /// session of it published, applied again to what that adds until nothing more joins. The driver's <c>AskWork.Read</c>
-    /// reads a work the same way (D132 §1), so a pause, an abandon and a clear reach the same pieces.
+    /// reads a work the same way, so a pause, an abandon and a clear reach the same pieces.
     /// </summary>
     private static Work Read(IEnumerable<Quest> roots, IEnumerable<Session> intake, Look look)
     {
@@ -433,13 +433,13 @@ public sealed class HistoryDesk(
             : null;
 
     /// <summary>
-    /// A <see cref="HistoryRefusal.NeedsYou"/> that names what waits (HIST1l): the one way the desk says the word, so none of
+    /// A <see cref="HistoryRefusal.NeedsYou"/> that names what waits: the one way the desk says the word, so none of
     /// its sentences reaches the wire without the variant the driver reads in place of the records.
     /// </summary>
     private static HistoryKept Waiting(HistoryWaiting waits, string message) => new(HistoryRefusal.NeedsYou, message) { Waits = waits };
 
     /// <summary>
-    /// A <see cref="HistoryRefusal.Open"/> that names how <paramref name="quest"/> stands (HIST1m), as <see cref="Waiting"/> names
+    /// A <see cref="HistoryRefusal.Open"/> that names how <paramref name="quest"/> stands, as <see cref="Waiting"/> names
     /// what waits: the one way the desk says the word, so the driver reads *taken* from the refusal and not from the quest again.
     /// </summary>
     private static HistoryKept InProgress(Quest quest, string message) => new(HistoryRefusal.Open, message)
@@ -447,7 +447,7 @@ public sealed class HistoryDesk(
         Quest = quest.Id, Stands = quest.Status == QuestStatus.Taken ? HistoryStands.Taken : HistoryStands.Open,
     };
 
-    /// <summary>A <see cref="HistoryRefusal.Awaited"/> that names the open work naming the unit (HIST1m): the one way the desk says the word.</summary>
+    /// <summary>A <see cref="HistoryRefusal.Awaited"/> that names the open work naming the unit: the one way the desk says the word.</summary>
     private static HistoryKept Awaited(HistoryAwaitedBy by, string message) => new(HistoryRefusal.Awaited, message) { By = by };
 
     /// <summary>An open <paramref name="question"/> the work's session <paramref name="session"/> published: the work awaits its answer.</summary>
@@ -459,7 +459,7 @@ public sealed class HistoryDesk(
 
     /// <summary>
     /// A record of this machine's, of a repository joined in its wired workspace, written after the last push: the team's
-    /// copy still to come (SYNC4). A record of a repository that never joined stays home, so it is never waited for.
+    /// copy still to come. A record of a repository that never joined stays home, so it is never waited for.
     /// </summary>
     private async Task<HistoryKept?> UnpushedRecordAsync(IEnumerable<Session> records, Wiring wiring, CancellationToken ct)
     {
@@ -488,8 +488,8 @@ public sealed class HistoryDesk(
         };
 
     /// <summary>
-    /// A closed quest's failed sessions (design §1.1, §4): this machine's go, a teammate's are listed and kept. Never an open
-    /// or taken quest's, whose strikes are counted from them (D58).
+    /// A closed quest's failed sessions: this machine's go, a teammate's are listed and kept. Never an open
+    /// or taken quest's, whose strikes are counted from them.
     /// </summary>
     private async Task<HistoryUnit> JudgeFailedAsync(string id, Look look, Wiring wiring, CancellationToken ct)
     {
@@ -543,10 +543,10 @@ public sealed class HistoryDesk(
     // ——— After the records.
 
     /// <summary>
-    /// What the service keeps for a cleared unit, removed once its records are gone (design §2.2, §5 step 2): each quest's and
-    /// the ask's kept files, and each settled rule proposal naming a cleared session or the ask. Best effort, as D95's delete
+    /// What the service keeps for a cleared unit, removed once its records are gone: each quest's and
+    /// the ask's kept files, and each settled rule proposal naming a cleared session or the ask. Best effort, as an ask's delete
     /// removes kept files: a file the disk will not let go of is left over, and nothing names it any more. The quests and asks
-    /// whose kept files stayed come back (HIST1j), so the driver counts them as failed rather than freed; a rule proposal that
+    /// whose kept files stayed come back, so the driver counts them as failed rather than freed; a rule proposal that
     /// stays is not among them, since no clear of a workspace takes one as left over.
     /// </summary>
     private HistoryFailed Tidy(HistoryUnit unit)
@@ -606,7 +606,7 @@ public sealed class HistoryDesk(
     private static Quest? Find(Look look, string id) =>
         look.Quests.FirstOrDefault(quest => string.Equals(quest.Id, id, StringComparison.OrdinalIgnoreCase));
 
-    /// <summary>Every quest an ask asked, chain steps included, closed ones included: each names the ask as its sender (D65 §4).</summary>
+    /// <summary>Every quest an ask asked, chain steps included, closed ones included: each names the ask as its sender.</summary>
     private static List<Quest> AskedBy(Look look, Ask ask)
     {
         var sender = AskDesk.SenderOf(ask.Id);
@@ -615,7 +615,7 @@ public sealed class HistoryDesk(
 
     /// <summary>
     /// Whether a quest's <c>publishedBy</c> names this record's session: as the record is keyed, or, for a teammate's record
-    /// (keyed <c>origin/id</c>, SYNC4), as their machine spells it. The driver's <c>AskWork</c> reads it the same way.
+    /// (keyed <c>origin/id</c>), as their machine spells it. The driver's <c>AskWork</c> reads it the same way.
     /// </summary>
     private static bool Spells(Session record, string by) =>
         string.Equals(record.Id, by, StringComparison.Ordinal)

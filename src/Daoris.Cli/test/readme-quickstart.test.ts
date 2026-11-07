@@ -7,7 +7,7 @@ import { fileURLToPath } from 'node:url';
 import { makeFixture } from './_fixture.ts';
 
 /**
- * GITHUBDOCS1 (D211): the README's quickstart is the first thing a person runs, so it runs here as written. Its commands are
+ * The README's quickstart is the first thing a person runs, so it runs here as written. Its commands are
  * read out of the README's own `## Quickstart` block, `npx daoris@<version>` replaced by this checkout's entry point (the
  * README's last quickstart line says the same), in a fresh git repository under `_fixtures/`.
  */

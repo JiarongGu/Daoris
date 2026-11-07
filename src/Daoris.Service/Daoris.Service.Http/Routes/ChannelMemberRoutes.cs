@@ -5,7 +5,7 @@ using Daoris.Knowledge.Hosting;
 namespace Daoris.Knowledge.Http.Routes;
 
 /// <summary>
-/// An agent outside Daoris on a channel (CHANNELJOIN1; the event-channel design §5.3, §5.4), a local host's alone: the person's admission,
+/// An agent outside Daoris on a channel (the event-channel design §5.3, §5.4), a local host's alone: the person's admission,
 /// pressed by their Confirm of the join, and the member's three doors, answered without the key and judged as the member's, its id the
 /// one name it has. The person's key at the leave is their <i>Remove</i>.
 /// </summary>

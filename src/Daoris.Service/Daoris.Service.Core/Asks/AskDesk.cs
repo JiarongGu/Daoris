@@ -1,7 +1,7 @@
 namespace Daoris.Knowledge;
 
 /// <summary>
-/// The judgement over asks (D65 §1a): what may be asked where, what the no-model tier proposes, and
+/// The judgement over asks: what may be asked where, what the no-model tier proposes, and
 /// how an ask becomes a quest. The store holds state; this decides — the exchange's shape, for the
 /// same reason: two doors (the page and `daoris ask`), one set of answers. The desk is the root that wires: each
 /// responsibility is a type of its own (<see cref="AskStandings"/>, <see cref="AskPublishing"/>, <see cref="AskQuests"/>,
@@ -10,7 +10,7 @@ namespace Daoris.Knowledge;
 /// <remarks>
 /// <b>An ask's quests are asked BY the ask</b> — <c>ask #id</c> is their sender. It cannot be mistaken
 /// for a repository, it names the record a reader can follow back to the person's words, and the
-/// exchange places it in the ask's own circle, because an ask has no registry row to say it (D48 §4).
+/// exchange places it in the ask's own circle, because an ask has no registry row to say it.
 /// </remarks>
 public sealed class AskDesk
 {
@@ -21,8 +21,8 @@ public sealed class AskDesk
     public const string ByName = "named";
 
     /// <summary>
-    /// The ask's own intake session published it (D65 §1b) — a harness decided, and which harness is
-    /// on the session record. Never a model's name (D24): the harness carries the model.
+    /// The ask's own intake session published it — a harness decided, and which harness is
+    /// on the session record. Never a model's name: the harness carries the model.
     /// </summary>
     public const string ByIntake = "intake";
 
@@ -47,9 +47,9 @@ public sealed class AskDesk
     public static string SenderOf(string askId) => $"ask #{askId}";
 
     /// <summary>
-    /// The ask a quest was asked by, read from its sender — the reverse of <see cref="SenderOf"/>;
+    /// The ask that asked a quest, read from its sender — the reverse of <see cref="SenderOf"/>;
     /// null for a quest a repository asked. A chain step names the ask too, since it is published on the
-    /// ask's behalf (D65 §4).
+    /// ask's behalf.
     /// </summary>
     public static string? AskOf(string? sender)
     {
@@ -69,7 +69,7 @@ public sealed class AskDesk
     /// <summary>What an ask is, read against the quests asked by it; see <see cref="AskStandings.Standing"/>.</summary>
     public static Ask Standing(Ask ask, IReadOnlyList<Quest> asked) => AskStandings.Standing(ask, asked);
 
-    /// <summary>What stands of an ask whose last quest was deleted; see <see cref="AskStandings.NoQuestLeft"/>.</summary>
+    /// <summary>What stands of an ask whose last quest is deleted; see <see cref="AskStandings.NoQuestLeft"/>.</summary>
     public static string NoQuestLeft(Ask ask) => AskStandings.NoQuestLeft(ask);
 
     /// <summary>Delete an ask made by mistake, with every quest asked by it; see <see cref="AskDeletes.DeleteAsync"/>.</summary>

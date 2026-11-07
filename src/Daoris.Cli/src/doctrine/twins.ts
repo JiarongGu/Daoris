@@ -9,7 +9,7 @@ import { spanBody } from './tierrender.ts';
 import { DEFAULT_HARNESS, HARNESSES, tierNames } from '../layout/harness.ts';
 import { lockLayout } from '../layout/layout.ts';
 
-// The pre-D59 generated roster. A repository that adopted before the tier moved still has one on
+// The generated roster of an older layout. A repository on it still has one on
 // disk, and a generated file is never a twin of a canonical one.
 const INDEX_FILE = 'RULES_INDEX.md';
 const TIERS = tierNames(HARNESSES[DEFAULT_HARNESS]!);
@@ -73,8 +73,7 @@ const THRESHOLD = 0.3;
  * different name.
  *
  * This is the one failure the rest of the tool structurally cannot see: the
- * twin is local, and local is invisible by design (D5). It surfaced on the very
- * first real adoption and was only caught by reading the generated index.
+ * twin is local, and local is invisible by design. Only reading the generated index catches it.
  *
  * Deliberately advisory. Word overlap is a crude signal, and a false positive
  * that failed a build would be worse than the duplication it warns about.
@@ -83,9 +82,9 @@ export function findTwins(
   { root, manifest, lock }: { root: string; manifest: Manifest; lock: Lock | null },
 ): Twin[] {
   const locked = lockIndex(lock);
-  // Where the files are is the lock's answer (D117 §5.1).
+  // Where the files are is the lock's answer.
   const { target: base, harness } = lockLayout(root, lock, manifest);
-  // 🔴 A mirror is a copy of its source, so it would score as a perfect twin of it (D117 §5.2). Skipped
+  // 🔴 A mirror is a copy of its source, so it would score as a perfect twin of it. Skipped
   // by what the lock records, wherever the mirror root happens to sit relative to the one scanned.
   const mirrors = new Set((lock?.mirrors ?? []).map((entry) => entry.path));
 
@@ -95,7 +94,7 @@ export function findTwins(
   for (const tier of TIERS) {
     for (const file of listMarkdown(join(root, base, tier))) {
       if (file === INDEX_FILE || mirrors.has(`${base}/${tier}/${file}`)) continue;
-      // A skill is its entry file (DOC3): a template beside it is supporting material, and comparing it
+      // A skill is its entry file: a template beside it is supporting material, and comparing it
       // as a document reported a repository's own skill as a twin of a canonical skill's template.
       if (!isEntry(harness, tier, file)) continue;
       const target = `${tier}/${file}`;
@@ -104,7 +103,7 @@ export function findTwins(
     }
   }
 
-  // 🔴 The canonical RULES live in a region now (D59), so without this the always-loaded tier has no
+  // 🔴 The canonical RULES live in a region, so without this the always-loaded tier has no
   // canonical side at all and every local rule is compared against nothing. That is also exactly the
   // case the move creates: a repository keeps its own `.claude/rules/x.md` — which is no longer a
   // collision, because the canon does not claim that path any more — and it may well restate a rule

@@ -4,7 +4,7 @@ using Microsoft.Data.Sqlite;
 namespace Daoris.Service.Tests;
 
 /// <summary>
-/// Fetch, rebase, push (D68 §3, design §8), in process: two machines' stores and a remote's, synced
+/// Fetch, rebase, push, in process: two machines' stores and a remote's, synced
 /// by exactly the steps the driver runs over HTTP. Every verb commits locally; the remote orders what
 /// it accepts; the first push wins and the loser is kept as a conflict.
 /// </summary>
@@ -38,7 +38,7 @@ public sealed class QuestSyncTests : IAsyncLifetime
 
     /// <summary>
     /// One pass of one machine against the remote — the real <see cref="QuestSync"/>, through the real
-    /// wire: cursor, fetch, integrate, push what is pending, record what was accepted, and round again
+    /// wire: cursor, fetch, integrate, push what is pending, record what is accepted, and round again
     /// while the remote says a quest moved first.
     /// </summary>
     private Task<QuestSyncReport> SyncAsync(QuestStore machine, Func<string, bool>? shared = null) =>
@@ -66,7 +66,7 @@ public sealed class QuestSyncTests : IAsyncLifetime
         Assert.Equal(["https://tickets.example/T-1"], arrived.Links);
         Assert.Equal("trace.log", Assert.Single(arrived.Attachments).Name);
         Assert.Equal("Verify {parent}", Assert.Single(arrived.Then).Title);
-        // Which session published it travels with it (SESS1): the session's record syncs too (SYNC4).
+        // Which session published it travels with it: the session's record syncs too.
         Assert.Equal("s1a2b3c4", arrived.PublishedBy);
         Assert.Equal(_a.Machine, Assert.Single(await _b.HistoryAsync(published.Id)).Machine);
     }
@@ -93,9 +93,9 @@ public sealed class QuestSyncTests : IAsyncLifetime
         """[{"code":"quest.person-done","values":{},"text":"The person marked this done:"},{"words":"Landed.","by":"person"}]""";
 
     /// <summary>
-    /// 🔴 QUESTCLOSE1b1 (D126's and D142's notes): a done's note parts travel with its note, kept in the remote's log and on
-    /// the other machine's quest as they were written, so each machine's page words Daoris's lead in its own language. A move
-    /// that writes a note without parts clears them, as a session's does (D142 point 2).
+    /// 🔴 A done's note parts travel with its note, kept in the remote's log and on
+    /// the other machine's quest as they are written, so each machine's page words Daoris's lead in its own language. A move
+    /// that writes a note without parts clears them, as a session's does.
     /// </summary>
     [Fact]
     public async Task A_done_s_note_parts_travel_with_its_note_and_reach_the_other_machine_as_written()
@@ -123,7 +123,7 @@ public sealed class QuestSyncTests : IAsyncLifetime
 
     /// <summary>
     /// An operation from a build before note parts, or one an older remote kept without them, reads as one with none: its
-    /// note is the whole of it, as it always was, and the page shows it as recorded.
+    /// note is the whole of it, and the page shows it as recorded.
     /// </summary>
     [Fact]
     public void An_operation_from_before_note_parts_reads_as_one_with_none()
@@ -180,7 +180,7 @@ public sealed class QuestSyncTests : IAsyncLifetime
     }
 
     /// <summary>
-    /// 🔴 D69: once a machine's take has lost, its later moves on that quest were made on a claim it
+    /// 🔴 Once a machine's take has lost, its later moves on that quest are made on a claim it
     /// never held — an offline session that finished its work would otherwise CLOSE the quest over the
     /// winner's take, because the table allows done from taken. They become conflicts too.
     /// </summary>
@@ -266,7 +266,7 @@ public sealed class QuestSyncTests : IAsyncLifetime
     }
 
     /// <summary>
-    /// The cursor is what was FETCHED, never the highest number held: a push numbered past other
+    /// The cursor is what is FETCHED, never the highest number held: a push numbered past other
     /// quests' operations this machine has not seen must not skip them.
     /// </summary>
     [Fact]
@@ -289,7 +289,7 @@ public sealed class QuestSyncTests : IAsyncLifetime
         Assert.Single(await _a.HistoryAsync(fromA.Id));
     }
 
-    /// <summary>A push retried after its answer was lost is answered with the numbers it was given, and kept once.</summary>
+    /// <summary>A push retried after its answer is lost is answered with the numbers it is given, and kept once.</summary>
     [Fact]
     public async Task A_retried_push_is_answered_with_the_numbers_it_was_given()
     {
@@ -305,11 +305,11 @@ public sealed class QuestSyncTests : IAsyncLifetime
     }
 
     /// <summary>
-    /// 🔴 HIST1a (D153 point 4, H1): both sides know an operation by machine and sequence alone, so a sequence handed out
+    /// 🔴 Both sides know an operation by machine and sequence alone, so a sequence handed out
     /// twice loses the second move without an error: the remote answers its push as the retry above, and the fetch before
     /// the push brings the remote's operation back under that number and takes it for the new move. Here the machine's
-    /// newest operations are removed after the remote numbered them, as the hand purge of 2026-10-07 removed them and a
-    /// clear will forget them (HIST1b), and the next move still reaches the remote and the other machine.
+    /// newest operations are removed after the remote numbered them, as a hand purge removes them and a
+    /// clear will forget them, and the next move still reaches the remote and the other machine.
     /// </summary>
     [Fact]
     public async Task A_move_made_after_the_newest_operations_were_removed_reaches_the_remote_and_is_no_retry()
@@ -361,7 +361,7 @@ public sealed class QuestSyncTests : IAsyncLifetime
     }
 
     /// <summary>
-    /// 🔴 Neither door carries a workspace (SYNC0a): a publish is filed by the RECEIVING side's wiring —
+    /// 🔴 Neither door carries a workspace: a publish is filed by the RECEIVING side's wiring —
     /// at the remote by the receiver's registration, on a machine by the sync it came through.
     /// </summary>
     [Fact]
@@ -379,7 +379,7 @@ public sealed class QuestSyncTests : IAsyncLifetime
     }
 
     /// <summary>
-    /// A follow-up published only by a close that lost goes with it (D65 §4): the chain did not move,
+    /// A follow-up published only by a close that lost goes with it: the chain does not move,
     /// so the step it would have published is not anybody's open quest.
     /// </summary>
     [Fact]
@@ -391,7 +391,7 @@ public sealed class QuestSyncTests : IAsyncLifetime
         await SyncAsync(_b);
 
         // Declined is terminal, so B's close cannot land on top of it. A take would not do: done from
-        // taken is a move the table allows, whoever took it — that race is SYNC3's, not the rebase's.
+        // taken is a move the table allows, whoever took it — that race is the take's own, not the rebase's.
         await _a.MoveAsync(parent.Id, QuestStatus.Declined, "Not ours.", Now.AddHours(1));
         var followUp = (await _b.MoveAsync(parent.Id, QuestStatus.Done, null, Now.AddHours(2))).FollowUp!;
         await SyncAsync(_a);
@@ -404,7 +404,7 @@ public sealed class QuestSyncTests : IAsyncLifetime
     }
 
     /// <summary>
-    /// 🔴 FABRIC-CLOSE1e2 (D65 §4, D173's FABRIC-CLOSE1e <i>Left</i>): B, offline, takes the parent and closes it done, which publishes
+    /// 🔴 B, offline, takes the parent and closes it done, which publishes
     /// the follow-up, and in one case takes that too, while A's take of the parent reaches the remote first. Plain, B fetches A's take
     /// before pushing; raced, A's take reaches the remote between B's fetch and its push, so B pushes the follow-up while the parent is
     /// behind. Either way the follow-up names no submission it grew from, and it stands on nothing: the remote numbers none of it while
@@ -479,7 +479,7 @@ public sealed class QuestSyncTests : IAsyncLifetime
         }
     }
 
-    /// <summary>A chain's parent carrying the person's requirement (DRIFT1c), closed done on B departing from it (DRIFT1d).</summary>
+    /// <summary>A chain's parent carrying the person's requirement, closed done on B departing from it.</summary>
     private async Task<Quest> HeldOnBothAsync()
     {
         var parent = await _a.PublishAsync(
@@ -499,7 +499,7 @@ public sealed class QuestSyncTests : IAsyncLifetime
     }
 
     /// <summary>
-    /// DRIFT1d: a departure's yes said on two machines before either pushes is one yes. The second rebases away, as a
+    /// A departure's yes said on two machines before either pushes is one yes. The second rebases away, as a
     /// second copy of a decision already made, and the step both published is the one quest everywhere.
     /// </summary>
     [Fact]
@@ -527,8 +527,8 @@ public sealed class QuestSyncTests : IAsyncLifetime
     }
 
     /// <summary>
-    /// DRIFT1d: a yes to a departure whose done lost goes with it, and so does the step it published: there is no
-    /// departure left to accept, and the chain did not move.
+    /// A yes to a departure whose done lost goes with it, and so does the step it published: there is no
+    /// departure left to accept, and the chain does not move.
     /// </summary>
     [Fact]
     public async Task A_yes_on_a_done_that_lost_goes_with_it_and_its_step_too()
@@ -556,7 +556,7 @@ public sealed class QuestSyncTests : IAsyncLifetime
         Assert.Equal(QuestStatus.Done, Assert.Single(standing.Conflicts).Attempted);
     }
 
-    // ——— Evidence (EVID1a, D144): names and codes travel like every verb, never bytes or a machine's path.
+    // ——— Evidence: names and codes travel like every verb, never bytes or a machine's path.
 
     private static readonly QuestRequirement Reported =
         new("the bridge report in docs", "The report is in docs/report-bridge.md.") { Evidence = [new QuestEvidence("docs/report-bridge.md")] };
@@ -565,7 +565,7 @@ public sealed class QuestSyncTests : IAsyncLifetime
         new("a1b2c3d4e5f60718293a4b5c6d7e8f9012345678", "session-end",
             [new QuestEvidenceRead(1, "docs/report-bridge.md", null, result)]);
 
-    /// <summary>A chain's parent naming evidence (EVID1a), closed done met on B: held there, and on A once synced, for its evidence.</summary>
+    /// <summary>A chain's parent naming evidence, closed done met on B: held there, and on A once synced, for its evidence.</summary>
     private async Task<Quest> AwaitingOnBothAsync()
     {
         var parent = await _a.PublishAsync(
@@ -584,7 +584,7 @@ public sealed class QuestSyncTests : IAsyncLifetime
     }
 
     /// <summary>
-    /// 🔴 EVID1a: a verdict read on B reaches A and the remote as an operation, the hold lifts on every machine, and the step
+    /// 🔴 A verdict read on B reaches A and the remote as an operation, the hold lifts on every machine, and the step
     /// its release published is one quest everywhere.
     /// </summary>
     [Fact]
@@ -608,7 +608,7 @@ public sealed class QuestSyncTests : IAsyncLifetime
     }
 
     /// <summary>
-    /// EVID1a: a verdict found on two machines before either pushes is one: the second no longer applies when it lands on
+    /// A verdict found on two machines before either pushes is one: the second does not apply when it lands on
     /// the first, and rebases away as a second yes does, with no conflict and the step published once.
     /// </summary>
     [Fact]
@@ -633,8 +633,8 @@ public sealed class QuestSyncTests : IAsyncLifetime
     }
 
     /// <summary>
-    /// EVID1a: a verdict on a done that lost goes with it, and so does the step its release published: there is no done
-    /// left whose evidence it read, and the chain did not move.
+    /// A verdict on a done that lost goes with it, and so does the step its release published: there is no done
+    /// left whose evidence it read, and the chain does not move.
     /// </summary>
     [Fact]
     public async Task A_verdict_on_a_done_that_lost_goes_with_it_and_its_step_too()
@@ -659,7 +659,7 @@ public sealed class QuestSyncTests : IAsyncLifetime
     }
 
     /// <summary>
-    /// EVID1a: a missing verdict on one machine and a later found one on the other both stand, in order: the first keeps
+    /// A missing verdict on one machine and a later found one on the other both stand, in order: the first keeps
     /// the done held, the second lets it go, on every machine.
     /// </summary>
     [Fact]
@@ -747,7 +747,7 @@ public sealed class QuestSyncTests : IAsyncLifetime
         Assert.Equal(QuestClaim.None, await _b.ClaimAsync(quest.Id));
     }
 
-    // ——— Dismissing a conflict (SYNC6c): a person's act on one machine, and the conflict goes on every
+    // ——— Dismissing a conflict: a person's act on one machine, and the conflict goes on every
     // machine — an operation like any other, pushed and fetched, which moves no status.
 
     /// <summary>Both machines take one quest; the loser is kept on it. A person on either machine dismisses it, and it goes everywhere.</summary>
@@ -819,7 +819,7 @@ public sealed class QuestSyncTests : IAsyncLifetime
         Assert.Single(elsewhere.Quest!.Conflicts);
 
         // A sequence with no machine names no conflict — sequences are per machine — so it dismisses
-        // none. It used to fall into "naming none" and dismiss every one (REV3 service F18).
+        // none.
         var conflict = Assert.Single(elsewhere.Quest.Conflicts);
         var half = await _a.DismissAsync(quest.Id, machine: null, conflict.Sequence, Now.AddHours(3));
         Assert.Equal(0, half.Dismissed);
@@ -834,7 +834,7 @@ public sealed class QuestSyncTests : IAsyncLifetime
     }
 
     /// <summary>
-    /// SYNCMERGE1a (D178 point 3): bringing a lost take forward is offered only where it can stand. Refused, and nothing written, while
+    /// Bringing a lost take forward is offered only where it can stand. Refused, and nothing written, while
     /// another machine holds the quest, on another machine's conflict or none, and once the quest is closed; and for a quest there is not.
     /// </summary>
     [Fact]
@@ -861,8 +861,8 @@ public sealed class QuestSyncTests : IAsyncLifetime
     }
 
     /// <summary>
-    /// 🔴 SYNCMERGE1a (D178 points 2 and 3): B's take of a step lost with the work it was made on, to C's take of the step's source, and C's
-    /// chain published the step anew under the same id (FABRIC-CLOSE1c24). B's person brings the lost take forward: a take of the step as it
+    /// 🔴 B's take of a step lost with the work it is made on, to C's take of the step's source, and C's
+    /// chain published the step anew under the same id. B's person brings the lost take forward: a take of the step as it
     /// stands, on C's work, and the conflict dismissed with it. It holds on every machine and the remote, the conflict gone, and B's done on
     /// the step it now holds lands, which before the press it could not.
     /// </summary>
@@ -914,7 +914,7 @@ public sealed class QuestSyncTests : IAsyncLifetime
         Assert.Equal(QuestStatus.Done, (await _remote.FindAsync(step.Id))!.Status);
     }
 
-    // ——— Where a circle stands (SYNC6a): what this machine has not pushed, the quests carrying a
+    // ——— Where a circle stands: what this machine has not pushed, the quests carrying a
     // conflict, and how the last pass ended — what the status bar and `daoris remote sync status` read.
 
     [Fact]
@@ -1029,9 +1029,9 @@ public sealed class QuestSyncTests : IAsyncLifetime
     }
 
     /// <summary>
-    /// 🔴 REV3 CLEAN1: a publish whose attachments or chain hold something other than objects is not
-    /// whole, and is refused like any other half-made operation. The reader looked inside each item as
-    /// if it were an object, and on a number it threw instead, so a remote's malformed push was a 500
+    /// 🔴 A publish whose attachments or chain hold something other than objects is not
+    /// whole, and is refused like any other half-made operation. A reader that looks inside each item as
+    /// if it were an object throws on a number, so a remote's malformed push would be a 500
     /// at the door rather than a refusal.
     /// </summary>
     [Theory]
@@ -1079,7 +1079,7 @@ public sealed class QuestSyncTests : IAsyncLifetime
         Assert.Null(QuestWire.ReadPush("""{ "base": 1, "operations": [{ "machine": "m1", "sequence": 1, "quest": "q", "kind": "dismissed", "at": "2026-09-24T10:00:00Z" }] }"""));
     }
 
-    // ——— A delete (QUEST1, D95): a tombstone in the quest's history, pushed and fetched like any
+    // ——— A delete: a tombstone in the quest's history, pushed and fetched like any
     // operation, so no sync — from any cursor — brings the quest back.
 
     /// <summary>
@@ -1231,7 +1231,7 @@ public sealed class QuestSyncTests : IAsyncLifetime
     }
 
     /// <summary>
-    /// A quest that never left the machine simply goes: its receiver is not shared and nothing of it was
+    /// A quest that never left the machine simply goes: its receiver is not shared and nothing of it is
     /// numbered, so nothing anywhere holds a copy, and its history is removed rather than tombstoned.
     /// </summary>
     [Fact]
@@ -1303,12 +1303,12 @@ public sealed class QuestSyncTests : IAsyncLifetime
         Assert.Equal(5, rest.Through);
     }
 
-    // ——— A wait (D79): its taker's question, an operation that travels like every verb and moves no status.
+    // ——— A wait: its taker's question, an operation that travels like every verb and moves no status.
 
     /// <summary>
     /// 🔴 A wait made on this machine after another machine closed the quest has nothing left to say, so the rebase drops
     /// it, as it drops a wait on a quest that is gone. Rewritten as a conflict it would attempt no status, which the wire
-    /// refuses as half-made, and every later push of the circle with it (QUESTOP1).
+    /// refuses as half-made, and every later push of the circle with it.
     /// </summary>
     [Fact]
     public async Task A_wait_on_a_quest_another_machine_closed_first_is_dropped_and_the_circle_still_pushes()
@@ -1337,7 +1337,7 @@ public sealed class QuestSyncTests : IAsyncLifetime
     }
 
     /// <summary>
-    /// 🔴 A wait made after this machine's own take is part of that take's move (WAITCLAIM1, D69's note): when the take
+    /// 🔴 A wait made after this machine's own take is part of that take's move: when the take
     /// loses the race, the wait goes with it. Applied to the winner's quest, it would hold the winner's session on a
     /// question it never asked. The loss this machine reports, the take's conflict, names the wait, so whoever asked
     /// learns that nothing waits on the question's answer.
@@ -1381,12 +1381,12 @@ public sealed class QuestSyncTests : IAsyncLifetime
     }
 
     /// <summary>
-    /// 🔴 FABRIC-CLOSE1e, finding 2 (D173's FABRIC-CLOSE1a note, §E5): a submission made on a take that lost goes with the take,
+    /// 🔴 A submission made on a take that lost goes with the take,
     /// and the step it published goes with it, even once this machine took that step. Kept, the step's publication and take would
     /// sync on their own, and its session would run on a quest nobody asked. Its take reads lost, so the driver stops that session,
     /// and the loss says why: the parent's take lost.
-    /// <para>FABRIC-CLOSE1f: raced, B's take reaches the remote between A's fetch and its push, so A pushes the step while its parent is
-    /// behind. The remote numbers none of it, since the step grew from a submission it does not hold (CLOSE1c21's rule), and A's next round
+    /// <para>Raced, B's take reaches the remote between A's fetch and its push, so A pushes the step while its parent is
+    /// behind. The remote numbers none of it, since the step grew from a submission it does not hold, and A's next round
     /// loses the step with the submission as in the plain order: no rebase is asked to forget a numbered step.</para>
     /// </summary>
     [Theory]
@@ -1437,11 +1437,11 @@ public sealed class QuestSyncTests : IAsyncLifetime
     private const string SetUpCommit = "a1b2c3d4e5f60718293a4b5c6d7e8f9012345678";
 
     /// <summary>
-    /// 🔴 FABRIC-CLOSE1c24: B, offline, takes the source, binds, submits and takes the step its submission published, while C's take
+    /// 🔴 B, offline, takes the source, binds, submits and takes the step its submission published, while C's take
     /// of the source reaches the remote first; C's chain then publishes the same step anew (its id comes from the parent and the step),
-    /// after B's pass found its loss or before it. B's take of the step lost with the work it was made on, and B's session runs until
+    /// after B's pass found its loss or before it. B's take of the step lost with the work it is made on, and B's session runs until
     /// its driver's next look: its done, decline or set-up on the open step lands nowhere. B's store refuses it inside its write, a
-    /// remote refuses one a build before this one pushes, saying the step was published anew (never the person's reopen), and B's
+    /// remote refuses one a build before this one pushes, saying the step is published anew (never the person's reopen), and B's
     /// rebase loses one such a build left pending. B's claim on the step reads lost, to another machine's take; the step stays open on
     /// C's work everywhere, and a fresh take of it is still B's to make.
     /// </summary>
@@ -1521,7 +1521,7 @@ public sealed class QuestSyncTests : IAsyncLifetime
         Assert.Contains("published anew", said);
         Assert.DoesNotContain("reopen", said);
 
-        // A build before this one pushes it: the remote refuses it, in words that say the step was published anew.
+        // A build before this one pushes it: the remote refuses it, in words that say the step is published anew.
         var made = kind == QuestOperationKind.SetUp
             ? new QuestOperation(step.Id, kind, _b.Machine, 999, at, SetUp: setUp)
             : new QuestOperation(step.Id, kind, _b.Machine, 999, at, "After the take lost.");
@@ -1556,7 +1556,7 @@ public sealed class QuestSyncTests : IAsyncLifetime
         Assert.Equal(QuestClaim.Unconfirmed, await _b.ClaimAsync(step.Id));
     }
 
-    /// <summary>The take's note stays as it was given, and the waits that went with it follow it, each named (WAITCLAIM1).</summary>
+    /// <summary>The take's note stays as it is given, and the waits that go with it follow it, each named.</summary>
     [Theory]
     [InlineData(null, new[] { "q2" },
         "This take's wait on #q2 went with it, so this quest does not wait on that question's answer.")]
@@ -1566,7 +1566,7 @@ public sealed class QuestSyncTests : IAsyncLifetime
         Assert.Equal(said, QuestWaitOperation.WaitsWentWith(note, questions));
 
     /// <summary>
-    /// A wait on a quest this machine did not take was never part of a take of its own (WAITCLAIM1): the pass that drops
+    /// A wait on a quest this machine did not take is never part of a take of its own: the pass that drops
     /// the wait on a lost take keeps it, and the quest waits on the question everywhere.
     /// </summary>
     [Fact]
@@ -1607,7 +1607,7 @@ public sealed class QuestSyncTests : IAsyncLifetime
     }
 
     /// <summary>
-    /// 🔴 A wait and a close made after the pass that found this machine's take lost (WAITCLAIM2, D69's note): the session
+    /// 🔴 A wait and a close made after the pass that found this machine's take lost: the session
     /// has not been stopped yet and does not know, so it asks, waits and closes. The store refuses each as the claim reads,
     /// lost, and writes nothing, so neither reaches the remote: the winner's quest neither waits on this machine's question
     /// nor closes. What this machine keeps says why: each refusal names the lost claim, and its copy of the quest carries
@@ -1652,15 +1652,15 @@ public sealed class QuestSyncTests : IAsyncLifetime
         Assert.Empty(next.Conflicts);
         Assert.Empty(await _a.PendingAsync(Workspaces.Default, _ => true));
 
-        // The question is a quest of its own and still went up: only the wait on it was refused.
+        // The question is a quest of its own and still goes up: only the wait on it is refused.
         Assert.NotNull(await _remote.FindAsync(question.Id));
     }
 
-    // ——— A remote judges a lost claim too (WAITCLAIM3, D69's note): a machine on a build before WAITCLAIM2 makes the move
-    // its own store would now refuse, and pushes it.
+    // ——— A remote judges a lost claim too: a machine on an older build makes the move
+    // its own store would refuse, and pushes it.
 
     /// <summary>
-    /// What a machine on a build before WAITCLAIM2 writes for a move or a wait it makes after its take lost: the store's
+    /// What a machine on an older build writes for a move or a wait it makes after its take lost: the store's
     /// own append, with no claim judged, so the operation is pending in its log as any move is and goes up with the next
     /// pass. Written by hand because no verb of this build writes it.
     /// </summary>
@@ -1686,8 +1686,8 @@ public sealed class QuestSyncTests : IAsyncLifetime
     }
 
     /// <summary>
-    /// The pass a build before WAITCLAIM4 ran on a quest whose take lost: its rebase left a move or a wait made on that take
-    /// as it was, so the pass pushed it. The fetch is not rebased, which on such a quest is all that build's pass did
+    /// The pass an older build runs on a quest whose take lost: its rebase leaves a move or a wait made on that take
+    /// as it is, so the pass pushes it. The fetch is not rebased, which on such a quest is all that build's pass does
     /// differently: the push stands on everything the remote numbered, and what it gave numbers to stops being pending.
     /// </summary>
     private async Task<QuestSyncReport> PushAsAnOlderBuildAsync(QuestStore machine)
@@ -1705,7 +1705,7 @@ public sealed class QuestSyncTests : IAsyncLifetime
     /// it for that quest, answering in the lost take's words: the winner's quest neither closes nor waits, on the remote
     /// or the winner's machine. The older machine's pass reads the refusal, its claim reads lost so its driver stops the
     /// session, and what it made stays pending there, since only its own build could rewrite it. Its pass is that build's
-    /// (PushAsAnOlderBuildAsync): this build's rebase loses the operation before it is pushed (WAITCLAIM4).
+    /// (PushAsAnOlderBuildAsync): this build's rebase loses the operation before it is pushed.
     /// </summary>
     [Theory]
     [InlineData(QuestOperationKind.Done, "Finished after the take lost.")]
@@ -1763,7 +1763,7 @@ public sealed class QuestSyncTests : IAsyncLifetime
     }
 
     /// <summary>
-    /// The remote's refusal reaches only a move made on a lost take (WAITCLAIM3). The winner's own wait and close land, as
+    /// The remote's refusal reaches only a move made on a lost take. The winner's own wait and close land, as
     /// does the losing machine's dismissal of its conflict, which is no move on the take.
     /// </summary>
     [Fact]
@@ -1796,7 +1796,7 @@ public sealed class QuestSyncTests : IAsyncLifetime
     }
 
     /// <summary>
-    /// An open quest is nobody's work (D95, WAITCLAIM3): published again after a delete, it takes a move from the machine
+    /// An open quest is nobody's work: published again after a delete, it takes a move from the machine
     /// whose take lost to that delete, though that machine's claim on the quest read lost. Its take then holds, and its
     /// close lands.
     /// </summary>
@@ -1831,7 +1831,7 @@ public sealed class QuestSyncTests : IAsyncLifetime
     }
 
     /// <summary>
-    /// The edge of FABRIC-CLOSE1c24's rule (D95): a take that lost to a delete lands on no quest, never on the quest open, so the quest
+    /// The edge of the lost-take rule: a take that lost to a delete lands on no quest, never on the quest open, so the quest
     /// published again after it is nobody's work, and a done its machine makes there with no fresh take lands, here and at the remote.
     /// </summary>
     [Fact]
@@ -1860,13 +1860,13 @@ public sealed class QuestSyncTests : IAsyncLifetime
         }
     }
 
-    // ——— What an older build left pending on a lost take, after the upgrade (WAITCLAIM4, D69's note).
+    // ——— What an older build left pending on a lost take, after the upgrade.
 
     /// <summary>
-    /// 🔴 Upgraded, a machine still holds the done, decline or wait its older build made after its take's conflict was
+    /// 🔴 Upgraded, a machine still holds the done, decline or wait its older build made after its take's conflict is
     /// written, which the remote refused at every pass. Its rebase now reads the claim as the remote does
     /// (QuestLog.OnALostTake), on a quest no fetch touched: a done or a decline becomes a conflict of its own, kept for a
-    /// person with its note as D69 keeps a move made on a take that lost; a wait names no status a conflict could carry,
+    /// person with its note as a lost take keeps a move made on a take that lost; a wait names no status a conflict could carry,
     /// and is forgotten. The pass pushes clean, the next has nothing to push, and every machine holds one quest: the
     /// winner's take, the loser's take-conflict and, for a move, the move's conflict.
     /// </summary>
@@ -1929,9 +1929,9 @@ public sealed class QuestSyncTests : IAsyncLifetime
         Assert.NotNull(await _remote.FindAsync(question.Id));
     }
 
-    // ——— A decline that applies only while open (PAUSE1c, D132 point 10, design §5.2): an abandon judged its decline
-    // on an open quest, so one that reaches the remote after another machine's take is a conflict on the quest (D68
-    // rule 2), and the take stands.
+    // ——— A decline that applies only while open: an abandon judged its decline
+    // on an open quest, so one that reaches the remote after another machine's take is a conflict on the quest,
+    // and the take stands.
 
     private Task<QuestSyncReport> SyncThroughAsync(QuestStore machine, IRemote remote) =>
         QuestSync.RunAsync(machine, _ => true, remote, Workspaces.Default);
@@ -1971,9 +1971,9 @@ public sealed class QuestSyncTests : IAsyncLifetime
     }
 
     /// <summary>
-    /// Decline first: the decline reached the remote while the quest was open, so it is the quest's answer, and a
+    /// Decline first: the decline reaches the remote while the quest is open, so it is the quest's answer, and a
     /// take made meanwhile on another machine is the conflict, as any losing take is. The flag crosses the wire both
-    /// ways: the remote keeps it, and the machine that fetched it holds the decline as it was made.
+    /// ways: the remote keeps it, and the machine that fetched it holds the decline as it is made.
     /// </summary>
     [Fact]
     public async Task A_decline_made_while_open_that_lands_first_declines_and_the_later_take_is_the_conflict()
@@ -1998,8 +1998,8 @@ public sealed class QuestSyncTests : IAsyncLifetime
     }
 
     /// <summary>
-    /// An older record: a decline that says nothing of the flag — every decline before PAUSE1c, and the quest page's
-    /// plain *Decline…* today — crosses the wire exactly as before and still lands over a take, because a person
+    /// An older record: a decline that says nothing of the flag — the quest page's
+    /// plain *Decline…* — crosses the wire and still lands over a take, because a person
     /// declining work they see taken means to.
     /// </summary>
     [Fact]
@@ -2025,10 +2025,10 @@ public sealed class QuestSyncTests : IAsyncLifetime
     }
 
     /// <summary>
-    /// 🔴 A remote built before PAUSE1c reads the decline as a plain one and keeps it without the flag. The race still
+    /// 🔴 An older remote reads the decline as a plain one and keeps it without the flag. The race still
     /// ends as it does at a remote of this build — take first, the decline is the conflict and the take stands; decline
     /// first, the later take is the conflict — because this machine's rebase judges the flag before it pushes, and a
-    /// remote judges a push only when nothing reached the quest after the base it was rebased on. What the older remote
+    /// remote judges a push only when nothing reached the quest after the base it is rebased on. What the older remote
     /// loses is its own second judgement, and the flag on what it hands back.
     /// </summary>
     [Fact]
@@ -2061,7 +2061,7 @@ public sealed class QuestSyncTests : IAsyncLifetime
     }
 
     /// <summary>
-    /// The remote judges the flag too, through the same table (D47 §5): a push it judges — nothing reached the quest
+    /// The remote judges the flag too, through the same table: a push it judges — nothing reached the quest
     /// after its base — whose decline would land on a taken quest is refused for that quest, naming why. An older
     /// remote, judging the same push, keeps it as a plain decline: that is the one place its build decides, and no
     /// machine of this build sends such a push, since its rebase made the decline a conflict first.
@@ -2087,9 +2087,9 @@ public sealed class QuestSyncTests : IAsyncLifetime
     }
 
     /// <summary>
-    /// HANDBACK1 (D219): a done and a decline name the session that wrote their handback, and the name crosses to the remote and to
-    /// every machine of the circle with the operation. A remote built before it keeps each without the name, as it keeps a submission
-    /// from before FABRIC-CLOSE1c4: the quest closes everywhere, its handback's writer not recorded.
+    /// A done and a decline name the session that wrote their handback, and the name crosses to the remote and to
+    /// every machine of the circle with the operation. An older remote keeps each without the name, as it keeps a submission
+    /// without a session: the quest closes everywhere, its handback's writer not recorded.
     /// </summary>
     [Fact]
     public async Task A_closes_session_crosses_and_an_older_remote_keeps_the_close_without_it()

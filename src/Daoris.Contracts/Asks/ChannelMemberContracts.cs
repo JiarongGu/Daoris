@@ -1,6 +1,6 @@
 namespace Daoris.Contracts.Asks;
 
-// The doors of an agent outside Daoris on a channel, a local host's alone (CHANNELJOIN1): the person's admission once they confirmed its
+// The doors of an agent outside Daoris on a channel, a local host's alone: the person's admission once they confirmed its
 // join, and the member's own read, post and leave, answered without the key and judged as the member's. A member's id is no session's.
 
 /// <summary>
@@ -64,7 +64,7 @@ public sealed record PostMemberChannelMessage(
 
 /// <summary>
 /// A membership ended: the member's own leave, or with the person's key their <i>Remove</i>, or, with the key and <c>Why</c> of
-/// <c>expired</c>, the look's end of one whose claims expired or that was quiet a day. Refused <c>not-member</c> once it has.
+/// <c>expired</c>, the look's end of one whose claims expired or that is quiet a day. Refused <c>not-member</c> once it has.
 /// </summary>
 public sealed record LeaveChannel(string Id, string? Why = null) : IRoute<ChannelMemberResponse>
 {

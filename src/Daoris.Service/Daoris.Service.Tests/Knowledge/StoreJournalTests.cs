@@ -4,7 +4,7 @@ using Microsoft.Data.Sqlite;
 namespace Daoris.Service.Tests;
 
 /// <summary>
-/// D236: the store writes ahead into a log beside its file and syncs each commit, never a rollback journal made and deleted at every
+/// The store writes ahead into a log beside its file and syncs each commit, never a rollback journal made and deleted at every
 /// commit. The mode is the file's own, so every host that opens it after the first writes the same way; the sync is each connection's,
 /// so the store sets it at every open.
 /// </summary>

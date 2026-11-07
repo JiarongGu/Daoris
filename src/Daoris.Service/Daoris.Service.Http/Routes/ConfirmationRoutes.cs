@@ -3,7 +3,7 @@ using Daoris.Contracts.Confirmations;
 namespace Daoris.Knowledge.Http.Routes;
 
 /// <summary>
-/// The window's confirmation of what an asker asked (PERSONDOOR1b, D156 point 4; ONEWAY1n-i, the oneway design §4 M4). A terminal cannot be
+/// The window's confirmation of what an asker asked. A terminal cannot be
 /// told from a session, so a keyless call to the person's or the driver's door is refused, and its asker asks here with the exact request.
 /// It waits with no clock; the window lists it and the person answers with the key, and at the Confirm the host makes the request as asked.
 /// A local host's alone: a shared host has no door that is the person's alone (§6). <see cref="PersonConfirmations"/> holds the rules.
@@ -19,7 +19,7 @@ public sealed class ConfirmationRoutes(HostWiring host) : IRouteModule
         routes.Map<ListConfirmations, ConfirmationResponse[]>((_, _, _) =>
             Task.FromResult<Answer<ConfirmationResponse[]>>(Confirmations.Waiting().Select(PersonConfirmations.Wire).ToArray()));
 
-        // NOTIFY2j (D196 point 4, the notification design §2.5): what waits after `since`, answered as soon as it moves, one past its time
+        // What waits after `since`, answered as soon as it moves, one past its time
         // at its time, or at `wait` seconds (30 at most) as it is; any other cursor at once. The desktop's host holds one and tells every
         // window, so no window polls.
         routes.Map<WaitConfirmations, ConfirmationsWaitingResponse>(async (request, _, ct) =>
@@ -57,7 +57,7 @@ public sealed class ConfirmationRoutes(HostWiring host) : IRouteModule
             ConfirmationAskRefusal.None => new ConfirmationAskedResponse(PersonConfirmations.Wire(asked!), message, token!),
             // A host handed no key refused nothing, so there is nothing to confirm: a state, the lock's own shape.
             ConfirmationAskRefusal.NoKey => Refusal.Conflict(message),
-            // Its asker's places taken (PERSONDOOR1j): the gate's refusal, in its shape and with its log line, asking nothing.
+            // Its asker's places taken: the gate's refusal, in its shape and with its log line, asking nothing.
             ConfirmationAskRefusal.Full => host.Gate.Refusal(http, PersonDoors.ConfirmationsFull, message),
             ConfirmationAskRefusal.Bound => host.Gate.Refusal(http, PersonDoors.AskerFull, message),
             _ => Refusal.BadRequest(message),

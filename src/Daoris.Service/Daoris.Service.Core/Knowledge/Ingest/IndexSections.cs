@@ -15,7 +15,7 @@ public readonly record struct IndexSection(
 
 /// <summary>
 /// A file of a repository's declared index of where things are, split at its headings, each table row and each list
-/// item an entry of its own (ORIENT2e, ORIENT2h, ORIENT2h2; D151 §6, the orientation design §3.1).
+/// item an entry of its own.
 /// </summary>
 /// <remarks>
 /// <para>At every heading, of every level, where a log splits at one level: an index is written to be looked up,
@@ -23,18 +23,18 @@ public readonly record struct IndexSection(
 /// generator put them. Each section is titled by the headings above it too, so a search for a file's title
 /// finds its sections and a hit says where it sits.</para>
 ///
-/// <para><b>A table is read a row at a time</b> (ORIENT2h): one row answers "where is X", and read as part of its
+/// <para><b>A table is read a row at a time</b>: one row answers "where is X", and read as part of its
 /// section a matching row is weighed against every row beside it. Measured on this repository's index, a route's
-/// row in a 102-row section did not reach the first page for a question naming the route, below five short
-/// sections (D151's ORIENT2e note), which is ORIENT1c's finding about sections met again. A row is titled by its
-/// section's headings and its label, named by its column as ORIENT1c names a cell
+/// row in a 102-row section does not reach the first page for a question naming the route, below five short
+/// sections. A row is titled by its
+/// section's headings and its label, named by its column as a cell is
 /// (<c>Bridge routes › DAORIS.DRIVER (102) › Route: SESSION_GO_ON_NEW</c>), so the title's weight goes to the name
 /// the question asked for and to what the name is: the header is no line of the row, and without the column's
-/// name <i>sync verb</i> did not reach the <c>sync</c> row when measured. Its body is its line as written, so it
+/// name <i>sync verb</i> does not reach the <c>sync</c> row when measured. Its body is its line as written, so it
 /// names that line. The header and its separator are no entry: a column's name tells no row from another.</para>
 ///
-/// <para><b>A list is read an item at a time</b> (ORIENT2h2), for the same reason: read as its section, a fixture's
-/// item was answered by the 61 lines around it. An item is its line and its continuation lines, as markdown reads
+/// <para><b>A list is read an item at a time</b>, for the same reason: read as its section, a fixture's
+/// item is answered by the 61 lines around it. An item is its line and its continuation lines, as markdown reads
 /// them: a line with no blank before it continues the item it follows, and after a blank only a line indented to
 /// the item's text does. A nested item is an entry of its own, titled by its parents' labels as well as the
 /// headings, so read alone it keeps its place: an outline's method names its class, which its line as written does
@@ -43,8 +43,8 @@ public readonly record struct IndexSection(
 /// otherwise (<c>9-12 Widget()</c>). It is not named as a row's is: a list has no header, and what its items are
 /// is said by the headings above them, which the title carries. Text of an item after its nested items is a second
 /// run of it, titled as the item is. An item is anchored by its title with the lines each label leads with taken out
-/// (<c>class Widget › Widget()</c>, <see cref="IndexRows.Unnumbered"/>, ORIENT2h5), so an edit above the lines it
-/// names leaves its id as it was; its title keeps them, since a person reads them.</para>
+/// (<c>class Widget › Widget()</c>, <see cref="IndexRows.Unnumbered"/>), so an edit above the lines it
+/// names leaves its id unchanged; its title keeps them, since a person reads them.</para>
 ///
 /// <para>The prose around a table or a list stays a section, each run of it between them an entry of its own,
 /// since an entry is one run of lines. The headings, the table and the items are read as
@@ -84,9 +84,9 @@ public static class IndexSections
         {
             var raw = lines[at];
             var line = firstLine + at;
-            // A fence's text is its section's, or the item's its opening line is indented into (ORIENT2h3: closed as
+            // A fence's text is its section's, or the item's its opening line is indented into (closed as
             // CommonMark closes it). A row opens with a pipe and a fence never does, so the rows a table reads past
-            // below leave the fence as it was.
+            // below leave the fence as it stands.
             var inside = fence.Open;
             if (fence.Holds(raw))
             {
@@ -117,7 +117,7 @@ public static class IndexSections
                 for (at += 2; at < lines.Length && lines[at].TrimStart().StartsWith('|'); at++)
                 {
                     if (Label(lines[at]) is not { } label) continue;
-                    // Named by its column (ORIENT2h): the header is no line of the row, and a question names what a row is.
+                    // Named by its column: the header is no line of the row, and a question names what a row is.
                     var column = label.Column < columns.Count ? columns[label.Column] : string.Empty;
                     var named = column.Length > 0 ? $"{column}: {label.Text}" : label.Text;
                     var anchoredAs = column.Length > 0 ? $"{column}: {IndexRows.Unnoted(label.Text)}" : IndexRows.Unnoted(label.Text);
@@ -222,9 +222,8 @@ public static class IndexSections
     private static int Indent(string raw) => raw.Length - raw.TrimStart().Length;
 
     /// <summary>
-    /// What an item is about (ORIENT2h2): its leading code span or link text, without its code marks, where it opens
-    /// with one, as a generated index puts the place it answers for first; its text otherwise, as ORIENT1c titles an
-    /// item.
+    /// What an item is about: its leading code span or link text, without its code marks, where it opens
+    /// with one, as a generated index puts the place it answers for first; its text otherwise.
     /// </summary>
     internal static string ItemLabel(string text)
     {

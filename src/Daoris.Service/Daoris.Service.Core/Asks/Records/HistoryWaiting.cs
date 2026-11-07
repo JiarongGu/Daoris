@@ -1,7 +1,7 @@
 namespace Daoris.Knowledge;
 
 /// <summary>
-/// Which thing waits on the person, where a unit stays for <see cref="HistoryRefusal.NeedsYou"/> (HIST1l): named by the desk
+/// Which thing waits on the person, where a unit stays for <see cref="HistoryRefusal.NeedsYou"/>: named by the desk
 /// that judged it, so the driver says the sentence meant from the refusal itself rather than from a second read of the
 /// records, which may have moved between the two.
 /// </summary>

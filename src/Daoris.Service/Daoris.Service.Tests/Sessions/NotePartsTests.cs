@@ -7,7 +7,7 @@ using Microsoft.Data.Sqlite;
 namespace Daoris.Service.Tests;
 
 /// <summary>
-/// A session note's parts on the service's side (LANG1a, D142 point 2; the language design §3): the ledger's own codes held to
+/// A session note's parts on the service's side: the ledger's own codes held to
 /// both catalogues, the store's rule for a note written with or without parts, the ledger's lines added after a record's
 /// parts, and every string in them cleaned where the note is.
 /// </summary>
@@ -76,7 +76,7 @@ public sealed class NotePartsTests : IAsyncLifetime
         return document.RootElement[index].GetProperty("values").GetProperty(name).GetString();
     }
 
-    /// <summary>Each coded part's text, and each words part's words, inside the note it was built into.</summary>
+    /// <summary>Each coded part's text, and each words part's words, inside the note it is built into.</summary>
     private static void Holds(string? note, string? parts)
     {
         foreach (var (code, text, words, _) in Parts(parts))

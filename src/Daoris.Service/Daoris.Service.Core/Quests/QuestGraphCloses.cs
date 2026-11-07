@@ -4,13 +4,13 @@ namespace Daoris.Knowledge;
 internal sealed class QuestGraphCloses(QuestStore quests)
 {
     /// <summary>
-    /// The graph's close door (§E5): every quest of the chain this repository holds, Done in one transaction,
+    /// The graph's close door: every quest of the chain this repository holds, Done in one transaction,
     /// each on the submission named.
     /// </summary>
     /// <remarks>
     /// <para>The driver's door, never an agent's or a shared host's: it runs under the unit's record lock, which the driver
     /// holds across the whole close (the fence's steps 1 and 3), and this is step 2, one SQLite transaction over every quest
-    /// named. A remote judges the Done it pushes quest by quest (D68), where a take lost meanwhile leaves the chain partially
+    /// named. A remote judges the Done it pushes quest by quest, where a take lost meanwhile leaves the chain partially
     /// closed, which the driver shows.</para>
     ///
     /// <para><paramref name="id"/> is the quest the route names, which must be among those named: the close is the unit's.</para>
@@ -25,7 +25,7 @@ internal sealed class QuestGraphCloses(QuestStore quests)
     }
 
     /// <summary>
-    /// What became of a close sent with <paramref name="key"/> (§E5 step 4): the driver's question, at the close
+    /// What became of a close sent with <paramref name="key"/>: the driver's question, at the close
     /// door's side, before it would ever send a close it holds no answer to again. Answered from what the store keeps under the
     /// key, in the words the close door answers that close with, never by judging or writing a Done; a key never taken is
     /// withdrawn as it is answered, so its close never runs (<see cref="QuestStore.CloseOutcomeAsync"/>).
@@ -90,7 +90,7 @@ internal sealed class QuestGraphCloses(QuestStore quests)
 
         if (closing.Replayed && closing.Refusal != QuestCloseRefusal.None)
         {
-            // The first outcome, though what refused it may be gone since: said as it was, not as it now stands.
+            // The first outcome, though what refused it may be gone since: said as then, not as it now stands.
             return new(closing.Refusal,
                 $"This close was refused when it was first sent with key `{close.Key}`: {RefusedThen(closing.Refusal, on)} The same "
                 + "close sent again answers its first outcome, so a new attempt is sent with a new key. Nothing was closed.",
@@ -112,7 +112,7 @@ internal sealed class QuestGraphCloses(QuestStore quests)
         };
     }
 
-    /// <summary>Which check refused a close when it was first sent, in words that hold however the quest has moved since.</summary>
+    /// <summary>Which check refused a close when it is first sent, in words that hold however the quest has moved since.</summary>
     private static string RefusedThen(QuestCloseRefusal refusal, string on) => refusal switch
     {
         QuestCloseRefusal.NotFound => $"no quest `#{on}` was found.",
@@ -133,7 +133,7 @@ internal sealed class QuestGraphCloses(QuestStore quests)
         string.Join(", ", quests.Select(quest => $"`#{quest.Id}` is {quest.Status}"));
 
     /// <summary>
-    /// Which of the close's checks refused it, on which quest (§E5 step 2). A scope check also names the
+    /// Which of the close's checks refused it, on which quest. A scope check also names the
     /// quest the close is at, <paramref name="at"/>, whose repository, chain and graph are the close's.
     /// </summary>
     private static string Refused(QuestCloseRefusal refusal, Quest quest, Quest? at) => refusal switch

@@ -6,9 +6,9 @@ namespace Daoris.Service.Tests;
 
 /// <summary>
 /// A host holds one connection for all its stores and answers requests at once, and a connection is not safe to use from
-/// two threads. So every unit of work on it goes through <c>ConnectionGate</c>, commands as well as transactions
-/// (SQLITETX1): SYNC1 gated only the transactions, and on the install a say met another request's open transaction
-/// (answered 500), and an exception left the database inside a transaction nobody owned, failing every later one (KNOW500).
+/// two threads. So every unit of work on it goes through <c>ConnectionGate</c>, commands as well as transactions:
+/// a command can meet another request's open transaction (answered 500), and an exception can leave the database
+/// inside a transaction nobody owns, failing every later one.
 /// </summary>
 public sealed class ConnectionGateTests : IAsyncLifetime
 {
@@ -65,7 +65,7 @@ public sealed class ConnectionGateTests : IAsyncLifetime
     }
 
     /// <summary>
-    /// QUESTOPENLOCK1: every write with a <c>RETURNING</c> clause runs in a write transaction, which only the gate opens, taken at once:
+    /// Every write with a <c>RETURNING</c> clause runs in a write transaction, which only the gate opens, taken at once:
     /// on its own it commits when its reader ends, where the driver never waits for another host's lock (<c>ReturningLockTests</c>). A
     /// source scan, as the gate's is: the member around each statement takes the caller's transaction, or opens one, before it.
     /// </summary>
@@ -125,8 +125,8 @@ public sealed class ConnectionGateTests : IAsyncLifetime
 
     /// <summary>
     /// A write arriving while another request's transaction is open waits for it to end, and lands after it, whatever
-    /// that transaction does. It used to join the transaction, and a rollback took the write with it, though its request
-    /// had answered that it was kept.
+    /// that transaction does. It does not join the transaction: a rollback would take the write with it, though its request
+    /// had answered that it is kept.
     /// </summary>
     [Fact]
     public async Task A_write_beside_an_open_transaction_waits_for_it_and_outlives_its_rollback()
@@ -171,8 +171,8 @@ public sealed class ConnectionGateTests : IAsyncLifetime
     }
 
     /// <summary>
-    /// KNOW500's shape: the database left inside a transaction no object owns (a BEGIN ran and the object meant to own it
-    /// was never made). Nothing can commit it, so the next unit of work rolls it back rather than failing every BEGIN
+    /// The database left inside a transaction no object owns (a BEGIN ran and the object meant to own it
+    /// never came to exist). Nothing can commit it, so the next unit of work rolls it back rather than failing every BEGIN
     /// after it until the host restarts.
     /// </summary>
     [Fact]
@@ -192,7 +192,7 @@ public sealed class ConnectionGateTests : IAsyncLifetime
 
     /// <summary>
     /// A unit of work that ends with a transaction still open (a path that began one and never ended it) is rolled back
-    /// before the next unit begins, and the unit itself fails, because nothing it wrote there was kept. One that threw
+    /// before the next unit begins, and the unit itself fails, because nothing it wrote there is kept. One that threw
     /// answers with its own exception.
     /// </summary>
     [Fact]

@@ -1,12 +1,12 @@
 namespace Daoris.Knowledge;
 
 /// <summary>
-/// The ask a connector speaks for, when the session that spawned it is an INTAKE (D65 §1b).
+/// The ask a connector speaks for, when the session that spawned it is an INTAKE.
 /// </summary>
 /// <remarks>
 /// <para><b>Why the environment.</b> An intake runs in a room under the home, which is no registered
 /// repository — so nothing about where it runs can say which ask it answers, or which circle that ask
-/// was made in. The driver that opened the session knows both, and hands them to the connector it
+/// belongs to. The driver that opened the session knows both, and hands them to the connector it
 /// offers the way it hands everything else a session needs: in the spawn's environment.</para>
 ///
 /// <para><b>The session names itself, and the ask checks it.</b> A connector carrying these publishes
@@ -16,7 +16,7 @@ namespace Daoris.Knowledge;
 /// <param name="Ask">The ask the session answers, or null for every other session.</param>
 /// <param name="Session">
 /// The session answering it — what the ask's record is checked against. The driver names it for every
-/// session it starts, and a rule proposal records it as the author (PERM2); with no ask it changes
+/// session it starts, and a rule proposal records it as the author; with no ask it changes
 /// nothing about a publish.
 /// </param>
 public sealed record IntakeScope(string? Ask, string? Session)
@@ -39,7 +39,7 @@ public sealed record IntakeScope(string? Ask, string? Session)
     /// <summary>Its revision; null with it.</summary>
     public string? RoleRevision { get; init; }
 
-    /// <summary>What this process was spawned with. Blank is nothing said.</summary>
+    /// <summary>What this process got at spawn. Blank is nothing said.</summary>
     public static IntakeScope FromEnvironment() => new(
         Blank(Environment.GetEnvironmentVariable(AskVariable)),
         Blank(Environment.GetEnvironmentVariable(SessionVariable)))

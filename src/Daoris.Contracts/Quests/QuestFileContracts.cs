@@ -6,7 +6,7 @@ namespace Daoris.Contracts.Quests;
 // A local host's alone: what a person reads off a quest that is not a record of the ledger.
 
 /// <summary>
-/// One quest's handback whole (HANDBACK1, D219), by the quest's id or the id of the session that served it, in any state: what
+/// One quest's handback whole, by the quest's id or the id of the session that served it, in any state: what
 /// <c>daoris session handback</c> prints. Any id is answered, one naming nothing as not found, so a client tells this door from an older host's 404.
 /// </summary>
 public sealed record ReadHandback(string Id, [property: FromQuery] string? Workspace = null) : IRoute<HandbackResponse>

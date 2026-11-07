@@ -3,7 +3,7 @@ using Daoris.Knowledge;
 namespace Daoris.Service.Http.Tests;
 
 /// <summary>
-/// KNOWCENTRAL2d (the memory coordinator design §1, §3, §4) through the local host's doors: the driver hands a session's turn lines on its
+/// Through the local host's doors: the driver hands a session's turn lines on its
 /// state's move, a session's memory changes read for its page without the row's token, and the person decides an awaiting end and keeps
 /// or drops an ended session's staged changes, each answered to nothing off this machine.
 /// </summary>
@@ -82,7 +82,7 @@ public sealed class MemoryHostTests(LocalHost host) : IClassFixture<LocalHost>
     }
 
     /// <summary>
-    /// 🔴 KNOWCENTRAL2f: what a line read, as the driver reads it for a hand-over's brief, is answered as it stands now: an entry ended since
+    /// 🔴 What a line read, as the driver reads it for a hand-over's brief, is answered as it stands now: an entry ended since
     /// its session read it is answered ended, with its reason; nothing is answered off this machine.
     /// </summary>
     [Fact]
@@ -106,7 +106,7 @@ public sealed class MemoryHostTests(LocalHost host) : IClassFixture<LocalHost>
     }
 
     /// <summary>
-    /// 🔴 KNOWCENTRAL2e: the page reads a proposal as its quest left it, a decline settled before the rows are answered, so a proposer's
+    /// 🔴 The page reads a proposal as its quest left it, a decline settled before the rows are answered, so a proposer's
     /// page never shows open what the owner declined.
     /// </summary>
     [Fact]

@@ -7,14 +7,14 @@ using Microsoft.Extensions.Options;
 
 namespace Daoris.Knowledge.Http;
 
-/// <summary>One value a confirmation's card shows: its name, its JSON type and its value (PERSONDOOR1b).</summary>
+/// <summary>One value a confirmation's card shows: its name, its JSON type and its value.</summary>
 /// <param name="Name">An address's value by its parameter's or its query's name; a body's by its JSON pointer.</param>
 /// <param name="Type"><c>string</c>, <c>number</c>, <c>boolean</c>, <c>null</c>, <c>object</c> or <c>array</c>.</param>
 /// <param name="Value">A string as it is, and anything else as its JSON.</param>
 public sealed record ConfirmationValue(string Name, string Type, string Value);
 
 /// <summary>
-/// What a door binds (PERSONDOOR1b, after its review): the body's type as its handler takes it, whether the body may be
+/// What a door binds: the body's type as its handler takes it, whether the body may be
 /// absent, and the names it reads from the query. Read from the host's own endpoint, the body's type from the metadata the
 /// framework records for the parameter it binds and the query's names from the handler's own parameters, so it cannot
 /// drift from what the handlers bind.

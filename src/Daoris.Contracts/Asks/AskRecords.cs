@@ -74,7 +74,7 @@ public sealed record GoAheadAnswerResponse(bool Approved, string? Words, DateTim
 /// <summary>What a door did to an ask: the ask as it now stands, the desk's sentence, and the quest it published, where it did.</summary>
 public sealed record AskActionResponse(AskResponse Ask, string Message, QuestResponse? Quest);
 
-/// <summary>What a message reached in one repository it addresses; never more than was observed.</summary>
+/// <summary>What a message reached in one repository it addresses; never more than is observed.</summary>
 public sealed record ChannelReceiptResponse(string Repository, string State);
 
 /// <summary>

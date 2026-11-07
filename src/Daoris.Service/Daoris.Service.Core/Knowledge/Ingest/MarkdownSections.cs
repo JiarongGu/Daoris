@@ -3,7 +3,7 @@ namespace Daoris.Knowledge;
 /// <summary>One heading and the text beneath it, up to the next heading of the same level.</summary>
 /// <param name="Heading">The heading text, with its leading hashes and whitespace removed.</param>
 /// <param name="Body">Everything under the heading, trimmed.</param>
-/// <param name="First">The body's first line in the text split, from 1; 0 when the body is empty (ORIENT2e).</param>
+/// <param name="First">The body's first line in the text split, from 1; 0 when the body is empty.</param>
 /// <param name="Last">The body's last line, the same.</param>
 public readonly record struct MarkdownSection(string Heading, string Body, int First = 0, int Last = 0);
 
@@ -32,19 +32,19 @@ public static class MarkdownSections
     /// </summary>
     /// <remarks>
     /// A log's preamble describes the file, but a README's is the part a newcomer reads first, what the
-    /// repository is (WSSETUP8; D124 §5). Found by the same walk, so a heading inside a fence ends neither.
+    /// repository is. Found by the same walk, so a heading inside a fence ends neither.
     /// </remarks>
     public static string Preamble(string markdown, int level = 2) => Walk(markdown, level).Preamble.Body;
 
     /// <summary>
-    /// <see cref="Preamble"/> as a section with no heading, with its lines (ORIENT2e): the part a README's
+    /// <see cref="Preamble"/> as a section with no heading, with its lines: the part a README's
     /// reader titles itself.
     /// </summary>
     public static MarkdownSection PreambleAt(string markdown, int level = 2) => Walk(markdown, level).Preamble;
 
     /// <summary>
     /// The text of the document's first heading at any level, trimmed, or null when it has none: what a record
-    /// in a folder is titled by (DOC8c; D134 §5).
+    /// in a folder is titled by.
     /// </summary>
     /// <remarks>
     /// Any level, since an ADR opens with <c>#</c> where a decision split out of a log keeps its <c>##</c>. Read

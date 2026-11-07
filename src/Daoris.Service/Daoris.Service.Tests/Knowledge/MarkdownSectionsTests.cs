@@ -92,7 +92,7 @@ public class MarkdownSectionsTests
     }
 
     /// <summary>
-    /// The text a log drops is a README's most useful part: what the repository is (WSSETUP8; D124 §5).
+    /// The text a log drops is a README's most useful part: what the repository is.
     /// Everything before the first heading at the level, its own title line included, trimmed.
     /// </summary>
     [Fact]

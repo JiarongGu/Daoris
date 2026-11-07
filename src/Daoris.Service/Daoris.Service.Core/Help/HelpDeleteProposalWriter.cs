@@ -2,11 +2,11 @@ using static Daoris.Knowledge.HelpProposalFile;
 
 namespace Daoris.Knowledge;
 
-/// <summary>The <c>delete</c> kind's writer (HELP6): a quest or an ask made by mistake, by its id.</summary>
+/// <summary>The <c>delete</c> kind's writer: a quest or an ask made by mistake, by its id.</summary>
 internal sealed class HelpDeleteProposalWriter(HelpProposalFile file)
 {
     /// <summary>
-    /// Write one delete proposal (HELP6): a quest or an ask made by mistake, by its id. Whether the record
+    /// Write one delete proposal: a quest or an ask made by mistake, by its id. Whether the record
     /// may go is the service's own reading, which the driver asks before the person sees the card.
     /// </summary>
     public (string? Id, string Message) Propose(string? quest, string? ask, string? deleteSession, string why, string? session, DateTimeOffset at)

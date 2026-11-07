@@ -49,7 +49,7 @@ public class DisclosureTests
 
     /// <summary>
     /// Applied at ingest, not at query. Withheld-at-query means the material is in the store and one
-    /// forgotten filter discloses it; withheld-at-ingest means it was never there to leak.
+    /// forgotten filter discloses it; withheld-at-ingest means it is never there to leak.
     /// </summary>
     [Fact]
     public async Task Withheld_entries_never_enter_the_store()

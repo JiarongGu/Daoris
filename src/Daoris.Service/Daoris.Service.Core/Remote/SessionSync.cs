@@ -6,19 +6,19 @@ namespace Daoris.Knowledge;
 public sealed record SessionSyncReport(int Pushed, int Fetched, string? Problem);
 
 /// <summary>
-/// One pass of the session records for one workspace (SYNC4): this machine's own records up, by the
+/// One pass of the session records for one workspace: this machine's own records up, by the
 /// cursor of what it last pushed; the team's down, by the remote's revision cursor — so a record is
 /// sent when it changes, not every tick, and every machine sees the team's.
 /// </summary>
 /// <remarks>
 /// <para><b>What goes up</b> is this machine's own records of JOINED repositories in the circle, and
-/// nothing a record may not carry: the wire has no field for a transcript, a tree or a profile (D47 §4).
+/// nothing a record may not carry: the wire has no field for a transcript, a tree or a profile.
 /// A record fed down from a teammate never goes back up — it is theirs to feed.</para>
 ///
 /// <para><b>What comes down</b> is filed in THIS sync's circle, by this machine's wiring, and keeps its
-/// `origin/id`: read-only here, and never this machine's lock (D47 §6).</para>
+/// `origin/id`: read-only here, and never this machine's lock.</para>
 ///
-/// <para><b>Except a record of a quest this machine forgot</b> (HIST1b, D153 point 3): a clear took the quest and every
+/// <para><b>Except a record of a quest this machine forgot</b>: a clear took the quest and every
 /// record of it here, and a teammate's record fetched again, by a later move or from a cursor at zero, would name a quest
 /// nothing here holds. It is passed over and the cursor moves past it, as the quest fetch passes over the quest's
 /// operations. Which is why the quests are handed in: the forgotten mark is theirs.</para>
@@ -27,7 +27,7 @@ public static class SessionSync
 {
     /// <summary>
     /// Whether one of this machine's records goes up: its repository joined the circle, and it is no Ask Daoris record. A help
-    /// record stays home whatever its workspace (ASKSCOPE1a, D158's ASKSCOPE1 note point 2), judged by its kind, never by its
+    /// record stays home whatever its workspace, judged by its kind, never by its
     /// workspace, which it has now, nor by its repository's name never joining.
     /// </summary>
     public static bool GoesUp(Session session, IReadOnlySet<string> joined) =>
@@ -49,7 +49,7 @@ public static class SessionSync
         try
         {
             var changed = await store.OwnChangedSinceAsync(pushedThrough, circle, ct).ConfigureAwait(false);
-            // SESSONE1a: the entry's key goes up with each record — the stored one, else the rule's for a record from before, which the
+            // The entry's key goes up with each record — the stored one, else the rule's for a record from before, which the
             // team then groups as this machine does. Nothing is written back here.
             var facts = new StoreEntryFacts(quests, store);
             var feed = new List<FedSessionRecord>();
@@ -57,28 +57,28 @@ public static class SessionSync
             {
                 feed.Add(new FedSessionRecord(
                     c.Session.Id, c.Session.Quest, c.Session.Repository, c.Session.Door, c.Session.StateName,
-                    // Free text the driver wrote, cleaned of what is machine-local in it (REV3).
+                    // Free text the driver wrote, cleaned of what is machine-local in it.
                     SessionNote.ForAnotherMachine(c.Session.Note, c.Session), c.Session.Evidence,
                     c.Session.Created, c.Session.Updated,
                     c.Session.Kind.ToString(), c.Session.DoorVersion,
-                    // A limit names no account, so it goes up with the record (TOOL4c).
+                    // A limit names no account, so it goes up with the record.
                     c.Session.Limit,
-                    // The note's parts with it, every string cleaned as the note is (LANG1a).
+                    // The note's parts with it, every string cleaned as the note is.
                     NoteParts.ForAnotherMachine(c.Session.NoteParts, c.Session),
                     await SessionEntries.KeyAsync(c.Session, facts, ct).ConfigureAwait(false),
-                    // CHATTAKE1: the quest a chat took, which names no path and no account.
+                    // The quest a chat took, which names no path and no account.
                     c.Session.TookQuest));
             }
 
             if (feed.Count > 0)
             {
                 await remote.PushSessionsAsync(feed, ct).ConfigureAwait(false);
-                // The team holds these now (SESSUX1f): a delete here would leave their copy, so it is refused.
+                // The team holds these now: a delete here would leave their copy, so it is refused.
                 await store.MarkPushedAsync(changed.Where(c => GoesUp(c.Session, joined)).Select(c => c.Session.Id), ct).ConfigureAwait(false);
             }
 
-            // Past everything examined, sent or not: a record of a repository that was not joined when
-            // it was written stays home, as it was when it was made.
+            // Past everything examined, sent or not: a record of a repository not joined when
+            // it is written stays home.
             if (changed.Count > 0)
             {
                 await store.AdvanceCursorAsync(circle, pushed: changed[^1].Revision, ct: ct).ConfigureAwait(false);

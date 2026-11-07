@@ -3,13 +3,13 @@ using Microsoft.AspNetCore.Builder;
 namespace Daoris.Knowledge.Http;
 
 /// <summary>
-/// Where the HTTP host reads its settings from and what it watches (HTTPWATCH1).
+/// Where the HTTP host reads its settings from and what it watches.
 /// </summary>
 /// <remarks>
 /// The web host's defaults watch <c>appsettings.json</c> in the content root, and the framework's watcher covers the whole
 /// folder below it and walks every folder renamed there. The host's folder is the install's <c>app/</c> when the desktop
 /// hosts it, which an update swaps, and the project folder, with <c>bin/</c> and <c>obj/</c>, in development; a host that
-/// watched either held the folders other work had to move (the fix log's KNOWWALK1 found it in the connector). No file of the
+/// watched either would hold the folders other work has to move. No file of the
 /// host's is watched: a settings change is read at the next start.
 /// </remarks>
 public static class HostRoot

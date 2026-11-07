@@ -3,7 +3,7 @@ using Daoris.Knowledge;
 namespace Daoris.Service.Http.Tests;
 
 /// <summary>
-/// LINESTOGETHER1b (the review-flow design §2) over the wire: <c>POST /api/sessions/{id}/move</c> moves a held word to the head and answers
+/// Over the wire: <c>POST /api/sessions/{id}/move</c> moves a held word to the head and answers
 /// <c>moved</c>, a retry answers <c>moved</c> again with nothing kept, a word gone is <c>taken</c>, and a running head refuses, naming itself.
 /// </summary>
 public sealed class HeldWordMoveHostTests(LocalHost host) : IClassFixture<LocalHost>

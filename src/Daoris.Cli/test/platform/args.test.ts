@@ -4,8 +4,8 @@ import { flagValue, operands } from '../../src/platform/args.ts';
 import { DaorisError } from '../../src/platform/errors.ts';
 
 /**
- * The CLI's one argument parser (REV3 CLI C2). Five commands each scanned `argv` their own way, and
- * two of them read a flag's value as an operand whenever the flag came first.
+ * The CLI's one argument parser: commands must not scan `argv` each their own way, since
+ * some read a flag's value as an operand whenever the flag comes first.
  */
 
 test('operands skip a valued flag and its value, wherever the flag sits', () => {

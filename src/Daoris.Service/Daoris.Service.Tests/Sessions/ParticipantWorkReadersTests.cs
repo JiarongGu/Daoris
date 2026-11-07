@@ -4,7 +4,7 @@ using System.Text.RegularExpressions;
 namespace Daoris.Service.Tests;
 
 /// <summary>
-/// FOUNDATION1c, census B (D212; the foundation design §10, row c), the service's half: every line of the service's Core, Http and Mcp
+/// The census, the service's half: every line of the service's Core, Http and Mcp
 /// sources that reads a record's <c>Serves</c>, <c>Opinion</c>, <c>Ask</c>, <c>Piece</c>, <c>HelpMode</c> or the Ask Daoris repository to test
 /// its presence or identity is counted per file, each file named in <c>fixtures/participant-work-readers.json</c> beside this suite, which the
 /// driver's and the modules' <c>ParticipantWorkReadersTests</c> read over their own sources. A new line, or a new file, fails until it is
@@ -38,7 +38,7 @@ public sealed class ParticipantWorkReadersTests
     }
 
     /// <summary>Each source of the three projects with the lines it reads, the rule's own file left out, by its path from the services' folder, each project named by its last word.</summary>
-    /// <summary>The files, by path, of the sources that read a mark: how many lines each reads is not the rule's (CENSUSRULES1).</summary>
+    /// <summary>The files, by path, of the sources that read a mark: how many lines each reads is not the rule's.</summary>
     internal static SortedSet<string> Reading(IEnumerable<(string File, string Source)> sources) =>
         new(sources.Where(each => Counted(each.Source) > 0).Select(each => each.File), StringComparer.Ordinal);
 
@@ -81,7 +81,7 @@ public sealed class ParticipantWorkReadersTests
         Assert.True(differences.Count == 0, string.Join('\n', differences));
     }
 
-    /// <summary>The census fails on a file it does not list and on a listed file that reads none now, and passes one more read in a listed file (CENSUSRULES1).</summary>
+    /// <summary>The census fails on a file it does not list and on a listed file that reads none now, and passes one more read in a listed file.</summary>
     [Fact]
     public void A_new_reading_file_fails_the_census_and_one_more_read_in_a_listed_file_passes()
     {

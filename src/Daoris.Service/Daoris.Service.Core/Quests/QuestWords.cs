@@ -8,7 +8,7 @@ internal static class QuestWords
     /// the take, then <paramref name="what"/>, what that means for this one, then the stand-down the take's own loss says.
     /// A remote refusing such a push says it in the same words, and the pushing machine's pass relays them.
     /// <paramref name="reopened"/> where the take lost to the person's reopen of the work its step grew from: said as
-    /// that, never as another machine's take. <paramref name="outgrown"/> where it lost with the work it was made on, and the step stands
+    /// that, never as another machine's take. <paramref name="outgrown"/> where it lost with the work it rests on, and the step stands
     /// open on another submission, published anew by the chain that won its source: said as that, since nobody took
     /// the step itself first. A refusal on a step open reads one or the other from its history (<see cref="QuestMove.LostToTheReopen"/>).
     /// </summary>
@@ -26,7 +26,7 @@ internal static class QuestWords
 
     /// <summary>
     /// The lost take's words for a move or a set-up the store refused with <see cref="QuestMove.ClaimLost"/>: on a step open, the
-    /// person's reopen or the work the take was made on gone, as the store read it inside its write.
+    /// person's reopen or the work the take rests on gone, as the store reads it inside its write.
     /// </summary>
     public static string LostTake(string id, string what, QuestMove move) =>
         LostTake(id, what, reopened: move is { Quest.Status: QuestStatus.Open, LostToTheReopen: true },
@@ -39,8 +39,8 @@ internal static class QuestWords
     public static string LostStep(string id, string what, QuestMove move) => LostTake(id, what, move) + Choices(move.Quest!);
 
     /// <summary>
-    /// The person's two choices on this machine's lost take (D178 point 2), named as the page and the terminal name them, with why
-    /// <i>Bring mine forward</i> does not stand yet where it does not (point 3): the step held by another machine, or its source held by the
+    /// The person's two choices on this machine's lost take, named as the page and the terminal name them, with why
+    /// <i>Bring mine forward</i> does not stand yet where it does not: the step held by another machine, or its source held by the
     /// reopen. A closed step offers neither, and no refusal here meets one.
     /// </summary>
     public static string Choices(Quest step)
@@ -58,7 +58,7 @@ internal static class QuestWords
     }
 
     /// <summary>
-    /// Why a session's take, done or <c>ready</c> on a step moved nothing: the work it grew from was reopened, and
+    /// Why a session's take, done or <c>ready</c> on a step moved nothing: the work it grew from is reopened, and
     /// the person chooses. Said as a stand-down, since its session should go no further.
     /// </summary>
     public static string SourceReopenedWords(Quest step) =>
@@ -68,7 +68,7 @@ internal static class QuestWords
             : "it is held, and goes no further")
         + " until they choose to go on with it on the new work or to abandon it. Nothing moved. Stop here.";
 
-    /// <summary>The chain's next step a close or a yes published (D65 §4), said so whoever moved it knows whose it now is.</summary>
+    /// <summary>The chain's next step a close or a yes published, said so whoever moved it knows whose it now is.</summary>
     public static string Then(Quest? followUp) => followUp is { } next
         ? $"\n\nThen: published `#{next.Id}` to `{next.To}` on behalf of `{next.From}` — {next.Status}."
           + (next.Then.Count > 0 ? $" {next.Then.Count} more step(s) follow it." : "")

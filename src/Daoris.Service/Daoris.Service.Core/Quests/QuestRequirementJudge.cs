@@ -1,6 +1,6 @@
 namespace Daoris.Knowledge;
 
-/// <summary>What the person requires of a quest (D133 §3): each requirement's shape, its evidence, and whether the person said its quote.</summary>
+/// <summary>What the person requires of a quest: each requirement's shape, its evidence, and whether the person said its quote.</summary>
 internal sealed class QuestRequirementJudge(AskStore? asks)
 {
     /// <summary>
@@ -47,7 +47,7 @@ internal sealed class QuestRequirementJudge(AskStore? asks)
     }
 
     /// <summary>
-    /// A requirement's evidence as a quest keeps it (D144 §2): at most <see cref="QuestEvidence.MaxItems"/> items,
+    /// A requirement's evidence as a quest keeps it: at most <see cref="QuestEvidence.MaxItems"/> items,
     /// each exactly one of a path or a gate, a path trimmed at its ends and judged (<see cref="QuestEvidence.JudgePath"/>),
     /// a gate's name judged — or why not, naming the requirement. A gate is refused for now, naming the queue it waits for.
     /// </summary>
@@ -92,7 +92,7 @@ internal sealed class QuestRequirementJudge(AskStore? asks)
                 return ([], $"{which}, `{Clip(gate!)}`, is not a gate's name: {unfit}.");
             }
 
-            // Until the landing queue reads gates (D144 point 5), nothing here could read one: refused, not kept unread.
+            // Until the landing queue reads gates, nothing here could read one: refused, not kept unread.
             return ([], $"{which} names the gate `{gate}`. A gate is read from the landing queue's verdict, and this build "
                         + "has no landing queue to read it from yet, so a gate cannot be named. Say the gate in the check, "
                         + "and name a path the work leaves if there is one.");
@@ -102,7 +102,7 @@ internal sealed class QuestRequirementJudge(AskStore? asks)
     }
 
     /// <summary>
-    /// Whether the person said what each requirement quotes (D133 §3): somewhere in one of their
+    /// Whether the person said what each requirement quotes: somewhere in one of their
     /// words on the ask that asks this quest — its sentence, an answer to a session, or a message added to
     /// one — verbatim, whitespace and case aside. Null when every quote is theirs, or there are none.
     /// </summary>
@@ -111,7 +111,7 @@ internal sealed class QuestRequirementJudge(AskStore? asks)
     /// are no words of the person's to quote; which ask a repository's session works for is its record's, and
     /// is not read here.</para>
     ///
-    /// <para><b>A fact, with no model</b> (D24, D54): a reading of the person's words is the body's, never a
+    /// <para><b>A fact, with no model</b>: a reading of the person's words is the body's, never a
     /// requirement, so a quote that is not theirs is refused rather than compared by meaning.</para>
     /// </remarks>
     public async Task<(QuestPublishRefusal Refusal, string Message)?> JudgeQuotesAsync(

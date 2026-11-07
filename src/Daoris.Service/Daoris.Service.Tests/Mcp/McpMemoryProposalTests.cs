@@ -4,7 +4,7 @@ using Daoris.Knowledge.Mcp;
 namespace Daoris.Service.Tests;
 
 /// <summary>
-/// KNOWCENTRAL2e (the memory coordinator design §4): a reader's proposal travels as a quest to the entry's owner. Proposals from one
+/// A reader's proposal travels as a quest to the entry's owner. Proposals from one
 /// repository join its open quest, each its own decision; the owner's session decides through its own operations or declines, and the
 /// decline reaches each proposer; a target that moves leaves its proposal stale; closing the quest applies nothing, and no door of the
 /// proposer's ends the entry.
@@ -188,7 +188,7 @@ public sealed class McpMemoryProposalTests : McpToolsFixture
     }
 
     /// <summary>
-    /// 🔴 The owner closing the quest done applies nothing: the service's applier runs and the memory stays as it was; each proposal
+    /// 🔴 The owner closing the quest done applies nothing: the service's applier runs and the memory is unchanged; each proposal
     /// is answered, never applied, and the proposer is told the owner's handback.
     /// </summary>
     [Fact]

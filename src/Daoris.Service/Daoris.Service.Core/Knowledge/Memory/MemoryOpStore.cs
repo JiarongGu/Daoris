@@ -5,7 +5,7 @@ using Microsoft.Data.Sqlite;
 namespace Daoris.Knowledge;
 
 /// <summary>
-/// The memory coordinator's log of record (KNOWCENTRAL2c; the design §3): <c>memory_ops</c> in <c>knowledge.db</c>, beside the sessions and
+/// The memory coordinator's log of record: <c>memory_ops</c> in <c>knowledge.db</c>, beside the sessions and
 /// the finished trees' records, so a commit point moves its session's rows in the transaction that records it, whichever process records it.
 /// A connector stages rows and reads; only the service marks <c>applying</c>, calls the engine and settles. The read sets
 /// (<see cref="MemoryOpReads"/>) and the changes since a cursor (<see cref="MemoryOpChanges"/>) are types of their own, and their doors here are one line each.
@@ -73,15 +73,15 @@ public sealed class MemoryOpStore
             """;
         await command.ExecuteNonQueryAsync(ct).ConfigureAwait(false);
         await MemoryAuthorColumnNames.RenameAsync(_db, ct).ConfigureAwait(false);
-        // KNOWCENTRAL2d: the records a write cites; a row from before reads none.
+        // The records a write cites; a row from before reads none.
         await SchemaColumns.EnsureAsync(_db, "memory_ops", "recheck", "recheck TEXT NULL", ct).ConfigureAwait(false);
-        // KNOWCENTRAL2h: a replacement's predecessors as JSON; a row from before replaces none.
+        // A replacement's predecessors as JSON; a row from before replaces none.
         await SchemaColumns.EnsureAsync(_db, "memory_ops", "predecessors", "predecessors TEXT NULL", ct).ConfigureAwait(false);
-        // KNOWCENTRAL2e: a proposal's quest, the owner's answer and when its proposer was told; a row from before reads none.
+        // A proposal's quest, the owner's answer and when its proposer is told; a row from before reads none.
         await SchemaColumns.EnsureAsync(_db, "memory_ops", "carried", "carried TEXT NULL", ct).ConfigureAwait(false);
         await SchemaColumns.EnsureAsync(_db, "memory_ops", "answer", "answer TEXT NULL", ct).ConfigureAwait(false);
         await SchemaColumns.EnsureAsync(_db, "memory_ops", "told", "told TEXT NULL", ct).ConfigureAwait(false);
-        // KNOWCENTRAL2j: when the row began applying, against which a receipt's expiry is judged; a row from before reads none.
+        // When the row began applying, against which a receipt's expiry is judged; a row from before reads none.
         await SchemaColumns.EnsureAsync(_db, "memory_ops", "began", "began TEXT NULL", ct).ConfigureAwait(false);
     }
 
@@ -187,7 +187,7 @@ public sealed class MemoryOpStore
         [nameof(SessionState.Queued), nameof(SessionState.Starting), nameof(SessionState.Working), nameof(SessionState.AwaitingPerson)];
 
     /// <summary>
-    /// What waits on the person (KNOWCENTRAL2e), a row per session, oldest first: ends and replacements awaiting their approver, and the staged
+    /// What waits on the person, a row per session, oldest first: ends and replacements awaiting their approver, and the staged
     /// rows of a session no longer running, which the person keeps or drops. A running session's staged rows wait for its own commit point.
     /// </summary>
     public Task<IReadOnlyList<MemoryWait>> WaitsAsync(CancellationToken ct = default) => _db.RunAsync<IReadOnlyList<MemoryWait>>(async () =>
@@ -543,7 +543,7 @@ public sealed class MemoryOpStore
         }, ct);
 
     /// <summary>
-    /// The proposals of <paramref name="session"/>, and of the sessions it continues, that settled since its proposer was last told, each
+    /// The proposals of <paramref name="session"/>, and of the sessions it continues, that settled since its proposer is last told, each
     /// told once.
     /// </summary>
     public Task<IReadOnlyList<MemoryOp>> TellProposalsAsync(string session, DateTimeOffset now, CancellationToken ct = default) =>

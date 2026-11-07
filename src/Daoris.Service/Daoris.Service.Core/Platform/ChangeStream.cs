@@ -5,14 +5,14 @@ using Microsoft.Data.Sqlite;
 namespace Daoris.Knowledge;
 
 /// <summary>
-/// The ledger's families the change stream answers (FABRIC-EVENT3b, the fabric events design §A4.2), each by its own revision.
+/// The ledger's families the change stream answers, each by its own revision.
 /// A family is added once its revision is shown to move on every write a look acts on and on none it makes itself; a family not
 /// here stays on the look's clock.
 /// </summary>
 public static class ChangeFamilies
 {
     /// <summary>
-    /// The session records: <c>session_revision.revision</c>, the highest revision issued (HIST1a). It moves on each write that
+    /// The session records: <c>session_revision.revision</c>, the highest revision issued. It moves on each write that
     /// issues a record's revision (an open, a state, a mirror, a took, a note kept with words); not on words kept or taken without
     /// a note, a push's mark, or the cursors, which never travel either.
     /// </summary>
@@ -48,7 +48,7 @@ public static class ChangeFamilies
     public const string Words = "words";
 
     /// <summary>
-    /// The event journal (FOUNDATION1 row k part 2, the foundation design §4.1): its newest position, which every journalled move of a record
+    /// The event journal: its newest position, which every journalled move of a record
     /// raises, a word taken included, which moves no family above. <b>Never one of <see cref="All"/></b> and never in a default answer: a
     /// client from before it wakes its <c>ledger</c> topic for any family an answer names, so the stream names this one only to a reader that
     /// asks for it (<c>journal=1</c> on the route; <see cref="ChangeStream.WaitAsync"/>'s <c>journal</c>), and an older client is woken by
@@ -83,19 +83,19 @@ public static class ChangeFamilies
 /// <summary>
 /// What a wait on the change stream answers: the cursor to ask from next, and the families that moved after the one asked from,
 /// in <see cref="ChangeFamilies.All"/>'s order, the journal after them where the reader asked for it. Families, never records, and no
-/// path (D169 §3). <paramref name="Journal"/> is the journal's place, answered only to a reader that asked for the journal.
+/// path. <paramref name="Journal"/> is the journal's place, answered only to a reader that asked for the journal.
 /// </summary>
 public sealed record ChangesAnswer(string Since, IReadOnlyList<string> Moved, JournalPlace? Journal = null);
 
 /// <summary>
-/// Where the event journal stands (FOUNDATION1 row k part 2, §4.1): the store's identity, which a position is of (the journal's epoch), the
+/// Where the event journal stands: the store's identity, which a position is of (the journal's epoch), the
 /// lowest position kept (<paramref name="Floor"/>), and the newest issued (<paramref name="Newest"/>). A reader whose cursor is below the floor
 /// has lost the moves between, and one whose store is another has no cursor of this one's.
 /// </summary>
 public sealed record JournalPlace(string Store, long Floor, long Newest);
 
 /// <summary>
-/// The local host's change stream (FABRIC-EVENT3b, the fabric events design §A4.2): one sampler serving every wait, on an observer
+/// The local host's change stream: one sampler serving every wait, on an observer
 /// connection of its own, apart from the store's (which the composed stores share). It reads <c>PRAGMA data_version</c> in short
 /// autocommit reads, which moves when any other connection commits: the host's own writes, and each connector's from its own
 /// process. When it moves, each family's own revision is read, and only a family whose revision moved is marked.
@@ -140,7 +140,7 @@ public sealed class ChangeStream : IAsyncDisposable
     /// <summary>How long a lost observer waits before it opens again.</summary>
     public static readonly TimeSpan ReopenAfter = TimeSpan.FromSeconds(5);
 
-    // SQLite's busy and locked: a writer held the file for the moment; the next sample reads again, and nothing was lost.
+    // SQLite's busy and locked: a writer held the file for the moment; the next sample reads again, and nothing is lost.
     private const int Busy = 5;
     private const int Locked = 6;
 
@@ -194,7 +194,7 @@ public sealed class ChangeStream : IAsyncDisposable
     /// <param name="pace">How often the sampler reads while a wait is held; <see cref="Pace"/> unless a test hurries it.</param>
     /// <param name="identityPace">How often the path's identity is read; by default <see cref="IdentityPace"/>, and never on Windows.</param>
     /// <param name="clock">
-    /// The clock a wait's bound is read on: the machine's unless a test holds it (TESTCLOCK3), so a wait the clock never ends is
+    /// The clock a wait's bound is read on: the machine's unless a test holds it, so a wait the clock never ends is
     /// answered only by a move, a cursor or a slot, and "at once" is a claim the test states without timing it. The sampler's
     /// paces are how often it looks, not a bound, and stay on the machine's clock.
     /// </param>
@@ -227,7 +227,7 @@ public sealed class ChangeStream : IAsyncDisposable
 
     /// <summary>
     /// Holds the sampler as a sample under way holds it, until the answer is disposed: what a writer's lock does to a sample, for as
-    /// long as a test needs (TESTCLOCK3), so "never queues behind it" is a wait that never ends rather than one timed.
+    /// long as a test needs, so "never queues behind it" is a wait that never ends rather than one timed.
     /// </summary>
     internal async Task<IDisposable> HoldSamplerAsync()
     {
@@ -250,7 +250,7 @@ public sealed class ChangeStream : IAsyncDisposable
     /// A cancelled wait answers what it would have answered then.
     /// </summary>
     /// <param name="journal">
-    /// Whether the reader asks for the event journal (FOUNDATION1 row k part 2): it is then woken by, and answered with, the
+    /// Whether the reader asks for the event journal: it is then woken by, and answered with, the
     /// <see cref="ChangeFamilies.Journal"/> family and the journal's place. By default it is neither: a reader from before the journal is
     /// woken by nothing a journal-only append does.
     /// </param>
@@ -523,7 +523,7 @@ public sealed class ChangeStream : IAsyncDisposable
     }
 
     /// <summary>
-    /// The file's identity: the stamp kept in it, which the session store's schema writes once (FOUNDATION1 row k: it is the event
+    /// The file's identity: the stamp kept in it, which the session store's schema writes once (it is the event
     /// journal's epoch, so the schema owns it, not this observer), and which a file stamped by an earlier build's observer already
     /// carries. A file with none is not stamped here: the observer's open waits and tries again once the schema has run. A different
     /// database at the path has its own, or none.
@@ -590,7 +590,7 @@ public sealed class ChangeStream : IAsyncDisposable
     }
 
     /// <summary>
-    /// Whether the database at the path is another than the one observed (FABRIC-EVENT3b's review): another stamp or none; no
+    /// Whether the database at the path is another than the one observed: another stamp or none; no
     /// family's revisions; or, since a copy of the file carries the stamp, revisions that differ from the observer's while the
     /// observer's held still around the path's read (<paramref name="before"/>, <paramref name="after"/>). Where the observer
     /// moved between, nothing is told this time. A copy of the current state with nothing written since is told by the first
@@ -622,7 +622,7 @@ public sealed class ChangeStream : IAsyncDisposable
     }
 
     /// <summary>
-    /// Short reads on a connection of the stream's own, made through its gate as every command in the service is (SQLITETX1): only
+    /// Short reads on a connection of the stream's own, made through its gate as every command in the service is: only
     /// the sampler uses it, under <c>_sampling</c>, so the gate is never waited on.
     /// </summary>
     private static Task<T> GatedAsync<T>(SqliteConnection connection, Func<ConnectionGate, T> read)

@@ -4,19 +4,19 @@ using Daoris.Knowledge;
 namespace Daoris.Knowledge.Http;
 
 /// <summary>
-/// Which pages a browser may call this host from, and the gate that keeps every other page off its writes (ORIGIN1);
-/// and the names a local host answers under, which keep a page whose name was pointed at the loopback off it (ORIGIN2).
+/// Which pages a browser may call this host from, and the gate that keeps every other page off its writes;
+/// and the names a local host answers under, which keep a page whose name is pointed at the loopback off it.
 /// </summary>
 /// <remarks>
 /// <para><b>Why a gate, and not CORS alone.</b> CORS keeps a page from <i>reading</i> an answer. A <c>POST</c> with no
 /// body, a text body or a form body is a simple request: a browser sends it without asking first, so the route runs
-/// whatever CORS later says of its answer. A local host trusts the loopback (D47 §7, as amended), and a browser on this
+/// whatever CORS later says of its answer. A local host trusts the loopback, and a browser on this
 /// machine is on the loopback, so before this gate any page on any site could press a door that binds no body: the
 /// yes to a departure at <c>/accept</c> among them.</para>
 ///
 /// <para><b>One list.</b> <see cref="Allowed"/> is what the CORS policy allows and what this gate allows: the
 /// development UI's origin when <c>DAORIS_WEB_ORIGIN</c> names one, and on a local host the shell's page
-/// (<see cref="DesktopPage.Origin"/>, D92). A local host also answers its own page, which it serves and which calls it
+/// (<see cref="DesktopPage.Origin"/>). A local host also answers its own page, which it serves and which calls it
 /// on its own origin (<see cref="IsOwnOrigin"/>).</para>
 ///
 /// <para><b>The rule</b> (<see cref="Refused"/>), on <c>POST</c>, <c>PUT</c>, <c>PATCH</c> and <c>DELETE</c> only:</para>
@@ -34,15 +34,15 @@ namespace Daoris.Knowledge.Http;
 /// which a browser counts <c>cross-site</c>. Refusing every <c>cross-site</c> write would refuse every press in the
 /// window.</item>
 /// <item>A request with neither header is a program, not a page (the CLI, the driver, the shell's modules, a
-/// rehearsal), and is answered as before. A program sets any header it likes, so this gate tells pages apart and
-/// never people from agents: that is PERSONDOOR1's (D156 §8, <i>Trusting the Origin header</i>).</item>
+/// rehearsal), and is answered. A program sets any header it likes, so this gate tells pages apart and
+/// never people from agents: that is the person key's.</item>
 /// </list>
 ///
 /// <para><b>The host's own origin</b> is the one the request itself names, <c>{scheme}://{Host}</c>, and only under a
 /// loopback name. A name rebound to the loopback by a website's DNS would otherwise make that website's page its own
 /// origin here.</para>
 ///
-/// <para><b>The name's gate</b> (ORIGIN2, <see cref="HostCode"/>): a local host refuses every request, reads included,
+/// <para><b>The name's gate</b> (<see cref="HostCode"/>): a local host refuses every request, reads included,
 /// whose <c>Host</c> is not a loopback name (<see cref="IsLoopbackName"/>), before CORS or this gate is asked. A rebound
 /// page is same-origin with the host, so neither could tell it from the host's own page, and its reads would be
 /// answered: the index, the quests, the roots a loopback caller is given. A shared host has no such gate: it is
@@ -50,7 +50,7 @@ namespace Daoris.Knowledge.Http;
 ///
 /// <para><b>A shared host keeps the gate too</b>, in front of its key gate. A browser reaches it on the network, and
 /// today a bearer key is what stops a page elsewhere, since a browser never sends one on its own; a browser credential
-/// the remote gains later, with person sign-in (D47), would not be. Its callers are machines that send no origin, so
+/// the remote gains later, with person sign-in, would not be. Its callers are machines that send no origin, so
 /// the gate costs them nothing.</para>
 /// </remarks>
 public static class BrowserOrigins
@@ -77,7 +77,7 @@ public static class BrowserOrigins
     {
         var origins = new List<string>();
         if (!string.IsNullOrWhiteSpace(webOrigin)) origins.Add(webOrigin);
-        // No website can present this origin: only the shell's engine serves that host name (D92).
+        // No website can present this origin: only the shell's engine serves that host name.
         if (mode == ServiceMode.Local) origins.Add(DesktopPage.Origin);
         return origins;
     }
@@ -113,7 +113,7 @@ public static class BrowserOrigins
     }
 
     /// <summary>
-    /// Whether <paramref name="origin"/> is the address the request was sent to, under a loopback name: the page this
+    /// Whether <paramref name="origin"/> is the address the request is sent to, under a loopback name: the page this
     /// host served, calling it on its own origin.
     /// </summary>
     public static bool IsOwnOrigin(HttpRequest request, string origin) =>
@@ -123,7 +123,7 @@ public static class BrowserOrigins
     /// <summary>
     /// Whether <paramref name="name"/>, a request's host without its port, is one of this machine's loopback names:
     /// <c>localhost</c> in any case, or a loopback address (127/8, <c>[::1]</c>). The one definition the host's own
-    /// origin and the name's gate both read (ORIGIN1, ORIGIN2). A name under <c>.localhost</c> is not one: no caller
+    /// origin and the name's gate both read. A name under <c>.localhost</c> is not one: no caller
     /// uses one, and the shell's page names <c>daoris.localhost</c> as its origin, never as the host it calls.
     /// </summary>
     public static bool IsLoopbackName(string name)
@@ -133,10 +133,10 @@ public static class BrowserOrigins
             || (IPAddress.TryParse(bare, out var address) && IPAddress.IsLoopback(address));
     }
 
-    /// <summary>The name's refusal's code (ORIGIN2), which a client reads instead of the sentence.</summary>
+    /// <summary>The name's refusal's code, which a client reads instead of the sentence.</summary>
     public const string HostCode = "host";
 
-    /// <summary>The name's refusal's sentence (ORIGIN2).</summary>
+    /// <summary>The name's refusal's sentence.</summary>
     public const string HostSentence =
         "This request named this service by a name that is not this machine's own. A local service answers only "
         + "`localhost`, `127.0.0.1` or `[::1]`, so that a website whose name was pointed at this machine reads nothing "

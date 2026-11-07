@@ -3,7 +3,7 @@ using Lyntai.Memory;
 
 namespace Daoris.Knowledge;
 
-/// <summary>How a candidate was found, which is also how much confidence it carries.</summary>
+/// <summary>How a candidate is found, which is also how much confidence it carries.</summary>
 public enum ConvergenceMethod
 {
     /// <summary>Byte-identical after normalisation. A copy, not a coincidence.</summary>
@@ -19,7 +19,7 @@ public enum ConvergenceMethod
 /// <summary>A set of entries from different repositories that appear to state the same lesson.</summary>
 /// <param name="Entries">The entries, the strongest-connected first.</param>
 /// <param name="Similarity">The best pairwise similarity in the group, 0 to 1.</param>
-/// <param name="Method">How it was found — see <see cref="ConvergenceMethod"/>.</param>
+/// <param name="Method">How it is found — see <see cref="ConvergenceMethod"/>.</param>
 public sealed record ConvergenceCandidate(
     IReadOnlyList<KnowledgeEntry> Entries, double Similarity, ConvergenceMethod Method)
 {
@@ -34,10 +34,10 @@ public sealed record ConvergenceCandidate(
 /// value depends on the comparison in use, and a threshold copied from a different one is a guess
 /// wearing a number.
 /// </param>
-/// <param name="Kinds">Restrict to these kinds. Null means every kind but the index of where things are (ORIENT2e).</param>
+/// <param name="Kinds">Restrict to these kinds. Null means every kind but the index of where things are.</param>
 /// <param name="MaxCandidates">How many groups to return.</param>
 /// <param name="Workspace">
-/// The circle to look within (D48). Null spans every workspace — which is rarely what is wanted here:
+/// The circle to look within. Null spans every workspace — which is rarely what is wanted here:
 /// two unrelated circles stating the same lesson have not converged, they have simply never had to
 /// agree, and reporting it invites promoting doctrine neither of them shares.
 /// </param>
@@ -54,21 +54,21 @@ public sealed record ConvergenceOptions(
 /// <para><b>It never requires a model.</b> Without one it compares text and finds identical copies and
 /// restatements, which on a real corpus is most of what is there. With one it additionally finds
 /// <em>convergence</em> — the same conclusion in different words — which text comparison provably
-/// cannot see (<c>docs/DECISIONS.md</c> D17). The model raises the ceiling; it is not the floor.</para>
+/// cannot see. The model raises the ceiling; it is not the floor.</para>
 ///
 /// <para>That distinction is the point. A feature that returns nothing without an optional dependency
 /// has made the dependency mandatory in everything but name, and the useful two-thirds it could have
 /// delivered are lost to an all-or-nothing check.</para>
 ///
 /// <para>It proposes; a person disposes. A candidate is a prompt to look, not a merge — doctrine that
-/// appeared without anyone choosing it is the failure this project exists to prevent (D21).</para>
+/// appeared without anyone choosing it is the failure this project exists to prevent.</para>
 ///
 /// <para>Two exclusions do most of the work. <b>Same-repository pairs are not convergence</b> — two
 /// related documents in one repository are a repository being coherent, which is not news. And
 /// <b>canonical entries are excluded</b>: they are identical everywhere by construction, so they would
 /// match themselves across every adopter and mean nothing.</para>
 /// </remarks>
-/// <param name="window">The embedder's window (D123): a seed is an entry's first piece, as the search embeds it.</param>
+/// <param name="window">The embedder's window: a seed is an entry's first piece, as the search embeds it.</param>
 public sealed class ConvergenceDetector(
     IKnowledgeStore store, IVectorProvider? embedder = null, IVectorStore? vectors = null,
     int window = EntryPieces.DefaultWindow)
@@ -83,7 +83,7 @@ public sealed class ConvergenceDetector(
 
         var considered = (await store.AllAsync(ct).ConfigureAwait(false))
             .Where(e => e.Provenance == Provenance.Local)
-            // The index of where things are is no lesson (ORIENT2e): two generated from one template read alike
+            // The index of where things are is no lesson: two generated from one template read alike
             // and have learned nothing together, so it converges only when it is asked for by kind.
             .Where(e => options.Kinds is null ? e.Kind != EntryKind.Index : options.Kinds.Contains(e.Kind))
             .Where(e => options.Workspace is null || Workspaces.Same(options.Workspace, e.Workspace))
@@ -101,9 +101,9 @@ public sealed class ConvergenceDetector(
 
         if (SemanticAvailable)
         {
-            // 🔴 The semantic tier not answering costs the semantic half and nothing else (D24; REV3):
-            // an embedding failure threw out of the whole call, the copies and restatements above went
-            // with it, and the landing view answered 500.
+            // 🔴 The semantic tier not answering costs the semantic half and nothing else:
+            // an embedding failure must not throw out of the whole call and take the copies and
+            // restatements above with it.
             try
             {
                 candidates.AddRange(
@@ -168,10 +168,9 @@ public sealed class ConvergenceDetector(
 
             var group = new List<KnowledgeEntry> { seed };
             var best = 0.0;
-            // 🔴 Only the entries AFTER the seed (POLISH3). Containment is symmetric, so an earlier
+            // 🔴 Only the entries AFTER the seed. Containment is symmetric, so an earlier
             // entry has already been compared with this one: it either claimed it or scored below the
-            // threshold. Looking back repeated half the work and found nothing new. That was about
-            // seven seconds a call on the first real index (1,052 entries).
+            // threshold. Looking back would repeat half the work and find nothing new.
             for (var j = i + 1; j < entries.Count; j++)
             {
                 var other = entries[j];
@@ -214,7 +213,7 @@ public sealed class ConvergenceDetector(
             ct.ThrowIfCancellationRequested();
             if (claimed.Contains(seed.Id)) continue;
 
-            // An entry is its pieces (SEM3, D123), so the nearest vectors include the seed's own and several
+            // An entry is its pieces, so the nearest vectors include the seed's own and several
             // of one long neighbour's: four places for each of the twelve entries this compared before.
             var matches = await vectors!
                 .SearchAsync(SemanticKnowledgeSearch.Collection, seedVectors[seed.Id], 48, ct)
@@ -244,7 +243,7 @@ public sealed class ConvergenceDetector(
     }
 
     /// <summary>
-    /// Vectors already computed, keyed by what was embedded rather than by which entry it was.
+    /// Vectors already computed, keyed by what is embedded rather than by which entry holds it.
     /// </summary>
     /// <remarks>
     /// The vector store can be searched but not read by key, so a seed vector cannot be fetched back
@@ -257,7 +256,7 @@ public sealed class ConvergenceDetector(
     /// it every move re-embedded the whole corpus: measured at 31 seconds per call over 449 entries,
     /// which is long enough that the honest answer to "is it working?" is "probably".
     /// </remarks>
-    // Concurrent (REV3): two overlapping calls — a person dragging the threshold — wrote it at once.
+    // Concurrent: two overlapping calls — a person dragging the threshold — write it at once.
     private readonly System.Collections.Concurrent.ConcurrentDictionary<string, float[]> _memo = new(StringComparer.Ordinal);
 
     private async Task<Dictionary<string, float[]>> EmbedAllAsync(

@@ -3,7 +3,7 @@ using System.Text.Json;
 namespace Daoris.Knowledge;
 
 /// <summary>
-/// The folder scan, demoted from an authority to a bootstrap (D48 §3): it reads a folder's
+/// The folder scan, a bootstrap, not an authority: it reads a folder's
 /// subdirectories and <em>proposes</em> registrations for them.
 /// </summary>
 /// <remarks>
@@ -32,7 +32,7 @@ public static class RegistryImport
 
     /// <summary>
     /// One checkout, read as a registration proposal: what a deployment serving that checkout alone
-    /// registers (ORIENT1c), by the same reading a folder's subdirectories get.
+    /// registers, by the same reading a folder's subdirectories get.
     /// </summary>
     public static Registration ProposeAt(string directory)
     {
@@ -71,14 +71,14 @@ public static class RegistryImport
                 Entries: 0,
                 Root: directory,
                 Joined: joined,
-                // Knowledge feeds only from a joined repository (D47 §4). The CLI refuses this
+                // Knowledge feeds only from a joined repository. The CLI refuses this
                 // manifest; an import reads manifests the CLI never validated, so it narrows too.
                 SharesKnowledge: joined && remote is not null && Bool(remote.Value, "knowledge"),
-                // What it says it uses (D91), read by the one rule every door applies.
+                // What it says it uses, read by the one rule every door applies.
                 Uses: Declared.Uses(domain is null ? [] : Strings(domain.Value, "uses"), name));
         }
         // JSON of the wrong shape (an array, a string) throws InvalidOperationException from the element
-        // reads, and is as broken as JSON that will not parse (REV3).
+        // reads, and is as broken as JSON that will not parse.
         catch (Exception error) when (error is JsonException or InvalidOperationException)
         {
             // A manifest that will not parse is the repository's own problem and its own tooling will

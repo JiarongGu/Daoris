@@ -42,7 +42,7 @@ public sealed record ListSessionChanges(string? Since = null) : IRoute<SessionCh
 /// The move of the ledger's state machine. Not found for an unknown record; a conflict for a terminal record, an illegal move, a tree
 /// another session holds, or words that changed; a bad request for an unknown state name.
 /// </summary>
-/// <param name="Interrupted">A move to <c>stopped</c> that was not the person's.</param>
+/// <param name="Interrupted">A move to <c>stopped</c> that is not the person's.</param>
 /// <param name="Limit">A move to <c>failed</c> that an account's limit made.</param>
 /// <param name="NoteParts">The note's lines by code, beside it; a note sent without them clears the record's.</param>
 /// <param name="Expected">The state the record must be in, compared in the ledger's step.</param>

@@ -1,12 +1,12 @@
 namespace Daoris.Knowledge;
 
 /// <summary>
-/// What each entry's reading and, for a decision, its own record say of its standing, by entry id (KNOWFRESH1a-ii).
+/// What each entry's reading and, for a decision, its own record say of its standing, by entry id.
 /// </summary>
 /// <remarks>
 /// <para>🔴 The entry, its file's entries and its repository's reading are read together, from the index every connector
-/// writes (KNOWCENTRAL2a): a reading this process kept beside marks another connector wrote said one commit over another's
-/// record. An entry another write replaced since it was found, or one whose reading names no commit, says <c>unknown</c>.
+/// writes: a reading this process keeps beside marks another connector writes would say one commit over another's
+/// record. An entry another write replaces after it is found, or one whose reading names no commit, says <c>unknown</c>.
 /// The commit is the stored reading's, read or fed, and costs no git call; the uncommitted status is asked once for that
 /// reading's commit and signature. A decision's marks are derived from its file's note entries
 /// (<see cref="DecisionNotes.Marks(IEnumerable{KnowledgeEntry})"/>), so a fed host derives what a local one does.</para>

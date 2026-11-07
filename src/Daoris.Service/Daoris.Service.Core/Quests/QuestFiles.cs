@@ -3,23 +3,23 @@ using System.Security.Cryptography;
 namespace Daoris.Knowledge;
 
 /// <summary>A file arriving at a door with its bytes — on the machine that has it, and nowhere else.</summary>
-/// <param name="Name">The name it was given, which is not yet safe to keep — <see cref="QuestFiles.SafeName"/> is.</param>
+/// <param name="Name">The name it is given, which is not yet safe to keep — <see cref="QuestFiles.SafeName"/> is.</param>
 /// <param name="Content">Its bytes.</param>
 public sealed record QuestUpload(string Name, byte[] Content);
 
 /// <summary>
-/// The bytes a quest carries (D65 §2), kept under the home of the machine that has them (D63): one
+/// The bytes a quest carries, kept under the home of the machine that has them: one
 /// directory per quest, one file per content, named so a person and a session can both read it.
 /// </summary>
 /// <remarks>
-/// <para><b>Machine-local, the transcript's boundary</b> (D47 §4). A remote keeps the record's names
+/// <para><b>Machine-local, the transcript's boundary</b>. A remote keeps the record's names
 /// and hashes and never the bytes; a machine the quest synced to learns a file exists and that it is
 /// not here — which <see cref="Has"/> answers, and which every reader says rather than hides.</para>
 ///
 /// <para><b>The layout is this class's alone</b>: <c>quests/&lt;id&gt;/attachments/&lt;first 12 of the
 /// hash&gt;-&lt;name&gt;</c> under the home. Nobody else derives it — the driver's home is not always this
 /// one (it is wherever <c>driver.json</c> lives), so a caller on this machine is TOLD where each kept
-/// file lies, the way a transcript's path is (D47 §4), and hands a session that directory as
+/// file lies, the way a transcript's path is, and hands a session that directory as
 /// <c>DAORIS_QUEST_ATTACHMENTS</c>. The hash in the name is what keeps two pasted screenshots — both
 /// called <c>image.png</c> — two files, and the same file dropped twice one; the name after it is what
 /// lets a session know which file is the screenshot.</para>
@@ -29,18 +29,18 @@ public sealed class QuestFiles(string home, HomeEntry? entry = null)
     /// <summary>The home's entry that holds every record's own, one per record: a quest's (<see cref="HomeEntry.QuestFiles"/>) unless told.</summary>
     private readonly HomeEntry _entry = entry ?? HomeEntry.QuestFiles;
 
-    /// <summary>How a record's folder is removed whole: from the disk, unless a test hands one that refuses (HIST1j).</summary>
+    /// <summary>How a record's folder is removed whole: from the disk, unless a test hands one that refuses.</summary>
     private readonly Action<string> _remove = path => Directory.Delete(path, recursive: true);
 
     /// <summary>
     /// A keeper whose removals go through <paramref name="remove"/>: a test's disk that will not let go of a file, as a process
-    /// holding one makes the real disk refuse, so a refused removal is held on every platform (HIST1j).
+    /// holding one makes the real disk refuse, so a refused removal is held on every platform.
     /// </summary>
     internal QuestFiles(string home, HomeEntry entry, Action<string> remove) : this(home, entry) => _remove = remove;
 
     /// <summary>
     /// The same keeper for another kind of record under the same home — an ask keeps its files beside
-    /// the quests it may become (D65 §1a), with the same layout and the same naming rules.
+    /// the quests it may become, with the same layout and the same naming rules.
     /// </summary>
     public QuestFiles For(HomeEntry other) => new(home, other, _remove);
 
@@ -50,7 +50,7 @@ public sealed class QuestFiles(string home, HomeEntry? entry = null)
     /// <summary>How much of the hash the file name carries: 48 bits, among one quest's few files.</summary>
     private const int HashInName = 12;
 
-    /// <summary>The keeper for the home the environment names, or null where there is none (D63).</summary>
+    /// <summary>The keeper for the home the environment names, or null where there is none.</summary>
     public static QuestFiles? FromEnvironment() =>
         DaorisHome.Resolve() is { } home ? new QuestFiles(home) : null;
 
@@ -66,13 +66,13 @@ public sealed class QuestFiles(string home, HomeEntry? entry = null)
         $"{attachment.Sha256[..Math.Min(HashInName, attachment.Sha256.Length)]}-{attachment.Name}";
 
     /// <summary>
-    /// Remove everything kept for one record — its quest or ask was deleted (D95) or cleared (D153). Best
-    /// effort: a file the disk will not let go of stays where it was, and the record is gone either way.
-    /// Says whether nothing of it is left, so a clear can report what stayed (HIST1j); D95's delete reads
+    /// Remove everything kept for one record — its quest or ask is deleted or cleared. Best
+    /// effort: a file the disk will not let go of stays where it is, and the record is gone either way.
+    /// Says whether nothing of it is left, so a clear can report what stayed; a delete reads
     /// nothing from it.
     /// </summary>
     /// <param name="id">The record's own id, as its store holds it — never a caller's words.</param>
-    /// <returns>True where its folder is gone or was never here; false where the disk kept any of it.</returns>
+    /// <returns>True where its folder is gone or is never here; false where the disk kept any of it.</returns>
     public bool Forget(string id)
     {
         var directory = DaorisHome.Entry(home, _entry, id);
@@ -117,7 +117,7 @@ public sealed class QuestFiles(string home, HomeEntry? entry = null)
     /// <summary>
     /// A file named by its path on this machine — the MCP door's shape, where an agent attaches what
     /// its session can see. Relative paths are the session's repository's, which is where its MCP host
-    /// was started. Too large is refused from the size alone: a quest never loads what it cannot carry.
+    /// is started. Too large is refused from the size alone: a quest never loads what it cannot carry.
     /// </summary>
     public static async Task<(QuestUpload? Upload, string? Refusal)> ReadAsync(
         string path, string relativeTo, CancellationToken ct = default)
@@ -142,7 +142,7 @@ public sealed class QuestFiles(string home, HomeEntry? entry = null)
     /// <summary>
     /// A name made safe to keep. It is the person's name for the file, but a PATH is not theirs to give:
     /// any directory in it is dropped, and a character no file system takes becomes an underscore — so
-    /// a kept file can never land outside its quest's directory, whatever a door was sent.
+    /// a kept file can never land outside its quest's directory, whatever a door is sent.
     /// </summary>
     public static string SafeName(string name)
     {

@@ -1,15 +1,15 @@
 namespace Daoris.Knowledge.Mcp;
 
 /// <summary>
-/// Which circle a tool's call answers from (D48 §4), shared by the tools that answer from one: the search tools and
-/// <c>quest_list</c>. The tools' registration adds one (PART10a); a tool file imports its statics with <c>using static</c>.
+/// Which circle a tool's call answers from, shared by the tools that answer from one: the search tools and
+/// <c>quest_list</c>. The tools' registration adds one; a tool file imports its statics with <c>using static</c>.
 /// </summary>
 /// <remarks>
 /// <para>An agent asking "has anyone solved this" means its own family, not every family the machine can see — and it has no
 /// reason to know the wiring, because the wiring is a registry row and not anything in its tree. So the ambient answer is
 /// resolved here rather than asked for; naming one explicitly is how a person looks across.</para>
 ///
-/// <para><b>A session bound to its workspace never looks across</b> (ASKSCOPE1c, D158's ASKSCOPE1 note point 5): Ask Daoris in a
+/// <para><b>A session bound to its workspace never looks across</b>: Ask Daoris in a
 /// workspace's room is bound by its record, not by its arguments. A tool naming another workspace, or <c>all</c>, answers
 /// <see cref="Refused"/>'s sentence, and <see cref="ResolveAsync"/> answers the bound workspace whatever is named, so a tool that
 /// forgot to ask still never answers wider.</para>
@@ -21,12 +21,12 @@ public sealed class WorkspaceScope(KnowledgeService service, AmbientWorkspace am
         "Which workspace to answer from. Omit for the one this session's repository belongs to, which "
         + "is almost always right; `all` deliberately spans every workspace on this machine.";
 
-    /// <summary>The workspace this session is bound to by its record (ASKSCOPE1c), or null for one that may look across.</summary>
+    /// <summary>The workspace this session is bound to by its record, or null for one that may look across.</summary>
     public string? Bound => ambient.Bound;
 
     /// <summary>
     /// What the caller named, or the workspace of the repository this session is running in; null for every workspace. A bound
-    /// session's is its workspace, whatever was named.
+    /// session's is its workspace, whatever is named.
     /// </summary>
     public async Task<string?> ResolveAsync(string? named, CancellationToken ct)
     {
@@ -42,7 +42,7 @@ public sealed class WorkspaceScope(KnowledgeService service, AmbientWorkspace am
     }
 
     /// <summary>
-    /// The sentence a bound session's tool answers when its call names another workspace, or <c>all</c> (ASKSCOPE1c); null where
+    /// The sentence a bound session's tool answers when its call names another workspace, or <c>all</c>; null where
     /// it named none, or its own, or the session is bound to none.
     /// </summary>
     public string? Refused(string? named)
@@ -56,7 +56,7 @@ public sealed class WorkspaceScope(KnowledgeService service, AmbientWorkspace am
     }
 
     /// <summary>
-    /// The sentence a bound session's read answers for an entry of another workspace (ASKSCOPE1c); null where the entry is its
+    /// The sentence a bound session's read answers for an entry of another workspace; null where the entry is its
     /// workspace's, or the session is bound to none.
     /// </summary>
     public string? Outside(KnowledgeEntry entry) =>
@@ -66,12 +66,12 @@ public sealed class WorkspaceScope(KnowledgeService service, AmbientWorkspace am
             : null;
 
     /// <summary>
-    /// The scope that ran, said on every answer — including when it was every workspace.
+    /// The scope that ran, said on every answer — including when it is every workspace.
     /// </summary>
     /// <remarks>
     /// An unscoped answer looks exactly like one family's answer, and a caller cannot tell the
     /// difference from the results. Naming it is the same discipline as reporting which recall tier
-    /// answered (D24): the shape of the answer is part of the answer.
+    /// answered: the shape of the answer is part of the answer.
     /// </remarks>
     public static string Scoped(string? scope) =>
         scope is null ? " across every workspace on this machine" : $" in workspace `{scope}`";

@@ -130,7 +130,7 @@
   "notifications.steward.did.delete": "删除了",
   "notifications.steward.did.updatenow": "安装了备好的更新",
   "notifications.steward.did.updatecancel": "搁置了备好的更新",
-  "notifications.steward.did.land": "合入了工作树：",
+  "notifications.steward.did.land": "让工作树落地了：",
   "notifications.steward.did.clean": "清理了工作树：",
   "notifications.steward.target.session": "委托 #{{quest}} 的会话 {{session}}",
   "notifications.steward.target.quest": "#{{quest}}",
@@ -166,6 +166,6 @@
   "notifications.steward.desk.act.delete": "删除",
   "notifications.steward.desk.act.updatenow": "安装更新",
   "notifications.steward.desk.act.updatecancel": "搁置更新",
-  "notifications.steward.desk.act.land": "合入工作树",
+  "notifications.steward.desk.act.land": "让工作树落地",
   "notifications.steward.desk.act.clean": "清理工作树"
 }

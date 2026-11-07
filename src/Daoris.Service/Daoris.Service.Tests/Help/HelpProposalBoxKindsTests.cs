@@ -6,7 +6,7 @@ using ModelContextProtocol.Server;
 namespace Daoris.Service.Tests;
 
 /// <summary>
-/// Every kind the box writes is whole (MOD6): its writer in a file of its own that writes exactly that kind, and
+/// Every kind the box writes is whole: its writer in a file of its own that writes exactly that kind, and
 /// the connector's tool that proposes it. The driver's <c>HelpProposalKindsTests</c> holds the same table, and
 /// also checks that each kind has its judge there and its card on the page.
 /// </summary>
@@ -50,8 +50,8 @@ public sealed class HelpProposalBoxKindsTests
 
     /// <summary>
     /// Each kind's file, <c>Help&lt;Kind&gt;ProposalWriter.cs</c> (the name the driver's twin tests read), holds that kind's
-    /// writer class of the same name, writing exactly that kind, and no part of the box: since PART7
-    /// (D166's note, no partial type without generated code) the box is the one class of <c>HelpProposalBox.cs</c>.
+    /// writer class of the same name, writing exactly that kind, and no part of the box: with no partial type without generated code,
+    /// the box is the one class of <c>HelpProposalBox.cs</c>.
     /// </summary>
     [Fact]
     public void Every_kind_is_written_by_a_class_in_a_file_of_its_own()
@@ -74,7 +74,7 @@ public sealed class HelpProposalBoxKindsTests
     [Fact]
     public void Every_kind_has_its_connectors_tool()
     {
-        // Every class the host registers (PART10a), so a kind's tool is found whichever class holds it.
+        // Every class the host registers, so a kind's tool is found whichever class holds it.
         var tools = KnowledgeServer.ToolTypes.SelectMany(type => type.GetMethods())
             .Select(method => method.GetCustomAttribute<McpServerToolAttribute>()?.Name)
             .OfType<string>()

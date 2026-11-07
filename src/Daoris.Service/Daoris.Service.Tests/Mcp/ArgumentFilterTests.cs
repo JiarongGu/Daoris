@@ -11,10 +11,10 @@ using ModelContextProtocol.Server;
 namespace Daoris.Service.Tests;
 
 /// <summary>
-/// CONNARGS1: a connector tool called without a required argument is refused in plain words, not logged as an unhandled exception. On the
-/// install a session called <c>quest_respond</c> with the wrong parameter names four times, and each time the SDK's argument marshaller threw
-/// <see cref="ArgumentException"/> ("missing a value for the required parameter id"), which the machine log kept as an error and the usage
-/// report counted as failed. A server over in-memory streams with the host's own tools, logging and filter, and the machine log read after.
+/// A connector tool called without a required argument is refused in plain words, not logged as an unhandled exception. A call to
+/// <c>quest_respond</c> with the wrong parameter names makes the SDK's argument marshaller throw
+/// <see cref="ArgumentException"/> ("missing a value for the required parameter id"), which the machine log would keep as an error and the usage
+/// report count as failed. A server over in-memory streams with the host's own tools, logging and filter, and the machine log read after.
 /// </summary>
 public sealed class ArgumentFilterTests : IDisposable
 {
@@ -148,7 +148,7 @@ public sealed class ArgumentFilterTests : IDisposable
     }
 
     /// <summary>
-    /// 🔴 FILTERORDER1: a partner's call to a tool its role refuses, with a required argument left out, is answered with the role's denial
+    /// 🔴 A partner's call to a tool its role refuses, with a required argument left out, is answered with the role's denial
     /// and never the argument refusal, which would name the denied tool's parameters. Over the wire with every tool the host advertises,
     /// the two filters registered in the host's order, and nothing in the log for the argument refusal.
     /// </summary>
@@ -193,7 +193,7 @@ public sealed class ArgumentFilterTests : IDisposable
         Assert.DoesNotContain("not a partner's to call", answer.Text);
     }
 
-    /// <summary>The host registers the role's judgement before the argument refusal, so the first to see a call is the role (FILTERORDER1).</summary>
+    /// <summary>The host registers the role's judgement before the argument refusal, so the first to see a call is the role.</summary>
     [Fact]
     public void The_host_registers_the_role_before_the_argument_refusal()
     {

@@ -4,7 +4,7 @@ using System.Text.RegularExpressions;
 namespace Daoris.Service.Tests;
 
 /// <summary>
-/// The service core's map (D166): each module the core holds, and the test folders that hold a door's tests. A file's module,
+/// The service core's map: each module the core holds, and the test folders that hold a door's tests. A file's module,
 /// and a test's, is its first folder, so no file is listed. A trimmed copy of the driver's gate: that one is internal to the
 /// driver's tests, and the service's tests may not reference it. Read from <c>fixtures/structure.json</c>.
 /// </summary>

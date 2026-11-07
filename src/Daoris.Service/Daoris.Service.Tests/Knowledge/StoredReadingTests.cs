@@ -4,7 +4,7 @@ using Microsoft.Data.Sqlite;
 namespace Daoris.Service.Tests;
 
 /// <summary>
-/// KNOWCENTRAL2a (the memory coordinator design's §5): every session's connector is its own process over the one
+/// Every session's connector is its own process over the one
 /// <c>knowledge.db</c>, so the index keeps each repository's reading beside its entries, and a write lands only where the
 /// generation is still the one its writer read before reading the source. Each service here opens its own connection to
 /// the file, as a second connector does.
@@ -42,7 +42,7 @@ public sealed class StoredReadingTests : IDisposable
         repository, Adopted: true, "A repository.", ["its area"], ["a quest"], [], 0,
         Joined: true, SharesKnowledge: true, Workspace: workspace, DefaultBranch: "main");
 
-    /// <summary>A source that answers with one entry, and when held, waits to be let go after saying it was asked.</summary>
+    /// <summary>A source that answers with one entry, and when held, waits to be let go after saying it is asked.</summary>
     private sealed class HeldSource(string repository, string body) : IKnowledgeSource
     {
         private TaskCompletionSource? _release;

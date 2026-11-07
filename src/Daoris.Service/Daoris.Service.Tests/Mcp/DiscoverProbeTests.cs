@@ -11,7 +11,7 @@ using Microsoft.Extensions.Logging;
 namespace Daoris.Service.Tests;
 
 /// <summary>
-/// The protocol's discovery probe at the connector (MCPDISCOVER1): a client of the 2026-07-28 revision opens
+/// The protocol's discovery probe at the connector: a client of the 2026-07-28 revision opens
 /// with <c>server/discover</c> (SEP-2575), and this server, which predates the revision, answers method not
 /// found, which is how the client learns to fall back to <c>initialize</c>. That answer is the protocol's; the
 /// two warnings the SDK wrote beside it into the machine log at every connector's start were not, since a

@@ -4,9 +4,9 @@ using Microsoft.Data.Sqlite;
 namespace Daoris.Service.Tests;
 
 /// <summary>
-/// A teammate's code map, brought down to this machine (MAP3e). MAP3b held a fed map at the remote
-/// only, so a machine without the checkout answered "no map" for a teammate's repository that keeps
-/// one. The host's pass now holds what the remote holds, at the commit the remote holds it, for the
+/// A teammate's code map, brought down to this machine. A map fed at the remote
+/// only would leave a machine without the checkout answering "no map" for a teammate's repository that keeps
+/// one. The host's pass holds what the remote holds, at the commit the remote holds it, for the
 /// circle's repositories this machine has no checkout of — and says where each came from.
 /// </summary>
 public sealed class CodeMapSyncTests : IAsyncLifetime, IDisposable

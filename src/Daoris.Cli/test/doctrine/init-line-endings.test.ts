@@ -1,6 +1,6 @@
-// `init` pins the line endings `sync` writes (INIT1, D25's note): a repository with no `.gitattributes` gets one
+// `init` pins the line endings `sync` writes: a repository with no `.gitattributes` gets one
 // holding `* text=auto eol=lf`, and one that has its own keeps it byte for byte, named when it pins nothing.
-// The file is never recorded in the lock, so from then on it is the repository's own (D5, D19).
+// The file is never recorded in the lock, so from then on it is the repository's own.
 
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
@@ -153,7 +153,7 @@ test('the lock never records .gitattributes, so the repository edits it freely a
   assert.equal(check.code, 0, check.out);
   assert.doesNotMatch(check.out, /gitattributes/);
 
-  // Nor does a later sync touch it: a lock entry the canon does not hold would be a retirement (D19).
+  // Nor does a later sync touch it: a lock entry the canon does not hold would be a retirement.
   const again = fx.cli('sync');
   assert.equal(again.code, 0, again.out);
   assert.deepEqual(bytes(fx.repoFx.root, '.gitattributes'), edited);

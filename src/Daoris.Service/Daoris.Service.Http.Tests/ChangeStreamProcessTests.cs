@@ -7,7 +7,7 @@ using Microsoft.Data.Sqlite;
 namespace Daoris.Service.Http.Tests;
 
 /// <summary>
-/// The change stream hears another process (FABRIC-EVENT3b, the fabric events design §A4.2): each session's connector writes the
+/// The change stream hears another process: each session's connector writes the
 /// store from its own process, so the host's observer must see a commit no connection of its own made. The host runs as the shell
 /// starts it, over a scratch home of its own; this test's process is the connector, writing the host's file directly.
 /// </summary>
@@ -15,8 +15,8 @@ public sealed class ChangeStreamProcessTests : IDisposable
 {
     /// <summary>
     /// The wait these tests ask for, the longest the host holds one. The real host's clock is the machine's, so an answer is told
-    /// woken (or answered by the stop) from one at its end by coming before it, counted from the ask (TESTCLOCK3): the code's own
-    /// bound, where a few seconds of the test's were the machine's load.
+    /// woken (or answered by the stop) from one at its end by coming before it, counted from the ask: the code's own
+    /// bound, where a few seconds of the test's are the machine's load.
     /// </summary>
     private static readonly TimeSpan Wait = ChangeStream.LongestWait;
 
@@ -39,7 +39,7 @@ public sealed class ChangeStreamProcessTests : IDisposable
 
     /// <summary>
     /// A connector's commit wakes the wait, naming its family; and a wait still held never holds the host's stop, which the shell
-    /// waits for (FLAKE2): the stop answers it.
+    /// waits for: the stop answers it.
     /// </summary>
     [Fact]
     public async Task A_write_from_another_process_wakes_the_wait()
@@ -78,7 +78,7 @@ public sealed class ChangeStreamProcessTests : IDisposable
     }
 
     /// <summary>
-    /// PUSH1d1 (D182 point 5): an ask a connector writes from its own process wakes the host's held wait, naming the asks family
+    /// An ask a connector writes from its own process wakes the host's held wait, naming the asks family
     /// alone, so the windows hear it without waiting for the look.
     /// </summary>
     [Fact]
@@ -110,7 +110,7 @@ public sealed class ChangeStreamProcessTests : IDisposable
     }
 
     /// <summary>
-    /// FOUNDATION1 row k part 2 (the foundation design §4.1, F10): a journal-only append a connector's process makes, a word taken, wakes a reader
+    /// A journal-only append a connector's process makes, a word taken, wakes a reader
     /// that asks for the journal and wakes an older client's reader by nothing. The older client's reader is the driver's own
     /// (<c>Driver/Service/LedgerChanges.cs</c>), which a service test cannot run: it asks the route as that reader does (<c>wait</c>, then
     /// <c>since</c>, no other parameter) and wakes its <c>ledger</c> topic for any family the answer names, which is what the cases below judge.

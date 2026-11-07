@@ -4,11 +4,10 @@ using Microsoft.Data.Sqlite;
 namespace Daoris.Service.Tests;
 
 /// <summary>
-/// KNOWUSE1a (D135 §2): a go-ahead is asked once and held on the ask. A session that needs the person's yes for an act
-/// outside its repository asks for it on the ask its quest was asked by, named by the act: its kind, where it lands and
+/// A go-ahead is asked once and held on the ask. A session that needs the person's yes for an act
+/// outside its repository asks for it on the ask its quest is asked by, named by the act: its kind, where it lands and
 /// what it touches. A request for an act already asked joins the first rather than asking again, and the person's answer
-/// is kept on it. Three production acts drew thirteen asks because nothing held a go-ahead between sessions
-/// (`docs/2026-10-03-knowledge-use-evidence.md` §5.1).
+/// is kept on it, so a go-ahead is held between sessions.
 /// </summary>
 public sealed class GoAheadTests : GoAheadFixture
 {
@@ -44,7 +43,7 @@ public sealed class GoAheadTests : GoAheadFixture
     /// <summary>
     /// The proof: a second request for one act joins the first. A carry-on on another account asks for the same production
     /// write in other words (`prod`, the possessive, the act's own kind and place repeated in what it touches), and nothing
-    /// new is asked of the person: go-ahead 1 now holds both requests, and the answer says it was asked before.
+    /// new is asked of the person: go-ahead 1 now holds both requests, and the answer says it is asked before.
     /// </summary>
     [Fact]
     public async Task A_second_request_for_one_act_joins_the_first()
@@ -239,7 +238,7 @@ public sealed class GoAheadTests : GoAheadFixture
     }
 
     /// <summary>
-    /// A quest a session on the ask published to a sibling is on the ask's line (COMMS1c, D225): the sibling's session asks its
+    /// A quest a session on the ask published to a sibling is on the ask's line: the sibling's session asks its
     /// go-ahead on the ask, joined to the same act the ask's own session asked, and a quest published by a session on no ask stays on none.
     /// </summary>
     [Fact]
@@ -260,7 +259,7 @@ public sealed class GoAheadTests : GoAheadFixture
         Assert.Equal(GoAheadJoin.Joined, joined.Join);
     }
 
-    /// <summary>A chain step is asked by the ask too (D65 §4): its sessions' go-aheads are held on the same ask.</summary>
+    /// <summary>A chain step is asked by the ask too: its sessions' go-aheads are held on the same ask.</summary>
     [Fact]
     public async Task A_follow_up_steps_session_asks_on_the_same_ask()
     {
@@ -353,7 +352,7 @@ public sealed class GoAheadTests : GoAheadFixture
     }
 
     /// <summary>
-    /// How an act is named, so two wordings of one act join (D135 §2): its kind by five words and their usual synonyms, where
+    /// How an act is named, so two wordings of one act join: its kind by five words and their usual synonyms, where
     /// it lands with an environment's usual names read as one, and what it touches by its words, without case, the
     /// small words, the possessive, a plural's ending, and its own kind and place said again.
     /// </summary>
@@ -409,7 +408,7 @@ public sealed class GoAheadTests : GoAheadFixture
         Assert.Equal(match, GoAheadAct.Match(new GoAhead(1, kind, on, act), laterKind, laterOn, laterAct));
 
     /// <summary>
-    /// 🔴 REVIEWENV1b (D154 point 6, design §2.5): production is refused by construction for a set-up step. Its session asking a
+    /// 🔴 Production is refused by construction for a set-up step. Its session asking a
     /// go-ahead whose place reads as production, in any of the place table's words or as a word of a longer one, is refused
     /// and told to stop and say so, and nothing is asked of the person; a go-ahead toward dev is asked as any other, and a
     /// session on any other quest still asks production's.

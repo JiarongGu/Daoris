@@ -129,7 +129,7 @@ public sealed record ChildBindings
 
     private static readonly Regex IdShape = LineageText.IdShape;
 
-    private static readonly string[] Signals = ["hook", "call", "stream", "acp"];
+    private static readonly string[] Signals = ["hook", "call", "stream", "announced"];
 
     private static readonly string[] Words = [Completed, Failed, Cancelled, Disconnected, Stopped];
 
@@ -241,8 +241,8 @@ public sealed record ChildBindings
         public string? Type { get; set; }
         public string? StreamParent { get; set; }
         public int? StreamDepth { get; set; }
-        public string? AcpParent { get; set; }
-        public bool AcpByRoot { get; set; }
+        public string? AnnouncedParent { get; set; }
+        public bool AnnouncedByRoot { get; set; }
         public string? CallParent { get; set; }
         public string? Label { get; set; }
         public HashSet<string> Seen { get; } = new(StringComparer.Ordinal);
@@ -291,7 +291,7 @@ public sealed record ChildBindings
 
             switch (Text(line, "by"))
             {
-                case "acp" when Id(line, "agent") is { } agent:
+                case "announced" when Id(line, "agent") is { } agent:
                     announced.TryAdd(ReRun.Replace(agent, ""), agent);
                     break;
                 case "start" when Id(line, "proc") is { } proc && !starts.ContainsKey(proc):
@@ -343,7 +343,7 @@ public sealed record ChildBindings
                     else if (said.Kind == ChildCallKind.Unjoined) unjoined++;
                     else if (said.Kind == ChildCallKind.Child) (who, agent) = (speaker, said.Agent);
                     break;
-                case "stream" or "acp" when Id(line, "agent") is { } named:
+                case "stream" or "announced" when Id(line, "agent") is { } named:
                     (who, agent, word) = (speaker, named, Id(line, by == "stream" ? "status" : "state"));
                     act = Text(line, "event") switch { "started" => Act.Start, "ended" => Act.Stop, _ => Act.Touch };
                     break;
@@ -460,9 +460,9 @@ public sealed record ChildBindings
                 child.StreamDepth = Number(line, "depth");
                 child.Label ??= Text(line, "description");
                 break;
-            case "acp" when Text(line, "event") == "started":
-                child.AcpParent ??= Id(line, "parent") is { } parent ? key(parent) : null;
-                child.AcpByRoot |= Number(line, "depth") == 1;
+            case "announced" when Text(line, "event") == "started":
+                child.AnnouncedParent ??= Id(line, "parent") is { } parent ? key(parent) : null;
+                child.AnnouncedByRoot |=Number(line, "depth") == 1;
                 child.Label ??= Text(line, "name") ?? Text(line, "task");
                 break;
             case "call":
@@ -473,7 +473,7 @@ public sealed record ChildBindings
 
     private static ChildBinding Bound(Child child, IReadOnlyDictionary<string, Child> byId, string? root, string? harness, string? kind)
     {
-        var parent = child.StreamParent ?? child.AcpParent ?? child.CallParent ?? (child.StreamDepth == 1 || child.AcpByRoot ? root : null);
+        var parent = child.StreamParent ?? child.AnnouncedParent ?? child.CallParent ?? (child.StreamDepth == 1 || child.AnnouncedByRoot ? root : null);
         var run = child.Runs.MaxBy(each => (each.Generation.Order, each.Order))!;
         var (state, endedAt, lastSeen) = Read(run, kind, child.Unsaid);
         return new ChildBinding(child.Harness ?? harness, child.Native)
@@ -527,8 +527,8 @@ public sealed record ChildBindings
     private static int? DepthOf(Child child, IReadOnlyDictionary<string, Child> byId, string? root, int walked)
     {
         if (child.StreamDepth is { } said) return said;
-        if (child.AcpByRoot && child.AcpParent is null) return 1;
-        var parent = child.StreamParent ?? child.AcpParent ?? child.CallParent;
+        if (child.AnnouncedByRoot && child.AnnouncedParent is null) return 1;
+        var parent = child.StreamParent ?? child.AnnouncedParent ?? child.CallParent;
         if (parent is null || walked > byId.Count) return null;
         if (parent == root) return 1;
         return byId.TryGetValue(parent, out var above) && DepthOf(above, byId, root, walked + 1) is { } depth ? depth + 1 : null;
@@ -548,7 +548,7 @@ public sealed record ChildBindings
             case WireReading.ChildSeen { Replayed: false } seen when IdShape.IsMatch(seen.Child):
             {
                 var stream = seen.Signal == ChildSignal.Stream;
-                var line = Stamped(at, stream ? "stream" : "acp", "started", seen.Child);
+                var line = Stamped(at, stream ? "stream" : "announced", "started", seen.Child);
                 if (seen.Parent is { } parent && IdShape.IsMatch(parent)) line["parent"] = parent;
                 if (seen.Depth is int depth and > 0) line["depth"] = depth;
                 if (seen.Type is { } type && IdShape.IsMatch(type)) line["type"] = type;
@@ -560,7 +560,7 @@ public sealed record ChildBindings
             case WireReading.ChildEnded { Replayed: false } ended when IdShape.IsMatch(ended.Child):
             {
                 var stream = ended.Signal == ChildSignal.Stream;
-                var line = Stamped(at, stream ? "stream" : "acp", "ended", ended.Child);
+                var line = Stamped(at, stream ? "stream" : "announced", "ended", ended.Child);
                 if (ended.Word is { } word && IdShape.IsMatch(word)) line[stream ? "status" : "state"] = word;
                 return Named(line, ended.Process);
             }
@@ -608,7 +608,7 @@ public sealed record ChildBindings
     private static string? SpokenBy(JsonObject line, IReadOnlyDictionary<string, IChildVocabulary> spoken)
     {
         var by = Text(line, "by");
-        if (by == "call") return Text(line, "harness") is { } named && spoken.ContainsKey(named) ? named : null;
+        if (by == "call") return Text(line, "door") is { } named && spoken.ContainsKey(named) ? named : null;
         foreach (var (id, vocabulary) in spoken)
         {
             if (vocabulary.HookLines.Contains(by) || vocabulary.StreamSignals.Contains(by)) return id;

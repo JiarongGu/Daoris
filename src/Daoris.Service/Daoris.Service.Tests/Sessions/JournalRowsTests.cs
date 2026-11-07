@@ -4,7 +4,7 @@ using Microsoft.Data.Sqlite;
 namespace Daoris.Service.Tests;
 
 /// <summary>
-/// FOUNDATION1 row l-i (the foundation design §4.1, §4.5): the journal's rows answered to a reader by position, so a process that reads the
+/// The journal's rows answered to a reader by position, so a process that reads the
 /// journal from its come-up learns what moved in order. Each case runs on a database file of its own under <c>_fixtures/</c>.
 /// </summary>
 public sealed class JournalRowsTests : IAsyncLifetime

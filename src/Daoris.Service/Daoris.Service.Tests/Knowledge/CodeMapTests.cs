@@ -3,8 +3,8 @@ using Daoris.Knowledge;
 namespace Daoris.Service.Tests;
 
 /// <summary>
-/// <b>A repository's code map</b> (MAP3a, <c>docs/2026-09-23-map-design.md</c> §3): one committed
-/// file, found by convention, judged whole — and read from the checkout, never written to it (D32).
+/// <b>A repository's code map</b> : one committed
+/// file, found by convention, judged whole — and read from the checkout, never written to it.
 /// </summary>
 public sealed class CodeMapTests : IDisposable
 {
@@ -98,7 +98,7 @@ public sealed class CodeMapTests : IDisposable
     }
 
     /// <summary>
-    /// 🔴 MAP3c's twin, from the judge's side. This repository's own map is written by the devkit
+    /// 🔴 The same check, from the judge's side. This repository's own map is written by the devkit
     /// (`daoris-devkit map`), a separate artefact that shares no code with this reader — so the file it
     /// committed is judged here, whole, by the reader every deployment uses. The devkit's tests hold its
     /// restated rules to this file's source; this holds its output to this reader.

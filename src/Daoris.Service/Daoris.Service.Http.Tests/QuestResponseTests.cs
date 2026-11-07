@@ -7,7 +7,7 @@ using Daoris.Knowledge.Http;
 namespace Daoris.Service.Http.Tests;
 
 /// <summary>
-/// QUESTOP1: what a quest carries is answered on every quest route. A kind of operation that gives a quest new state adds
+/// What a quest carries is answered on every quest route. A kind of operation that gives a quest new state adds
 /// a property to <see cref="Quest"/>, and the HTTP answer is one of the places <c>.claude/knowledge/quest-operations.md</c>
 /// names for it: a property no route answers is state the page, the driver and a terminal never learn.
 /// </summary>

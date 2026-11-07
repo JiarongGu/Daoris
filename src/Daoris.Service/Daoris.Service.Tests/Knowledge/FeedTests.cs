@@ -3,7 +3,7 @@ using Daoris.Knowledge;
 namespace Daoris.Service.Tests;
 
 /// <summary>
-/// The remote's knowledge ingest (D47 §4): fed entries are the only entries a remote has — it never
+/// The remote's knowledge ingest: fed entries are the only entries a remote has — it never
 /// scans a filesystem — and the disclosure judgement runs AT the door, over what each repository's own
 /// reviewed manifest declared. Join admits records; knowledge is a second, separate declaration.
 /// </summary>
@@ -18,14 +18,14 @@ public sealed class FeedTests : IAsyncLifetime
 
     public async Task InitializeAsync()
     {
-        // A REAL registration store, because since D48 §6 the door's judgement has a memory: what
+        // A REAL registration store, because the door's judgement has a memory: what
         // commit this deployment already holds is the thing a stale feed is compared against, and it
         // must survive a restart or the first feed after one would always win.
         _connection = new Microsoft.Data.Sqlite.SqliteConnection("Data Source=:memory:");
         await _connection.OpenAsync();
         _registrations = await RegistrationStore.OpenAsync(_connection);
 
-        // Registrations are the only family here — the remote's own shape, and since D48 §3 every
+        // Registrations are the only family here — the remote's own shape, and every
         // deployment's shape: the registry is an explicit list, never a view over a folder.
         _service = new KnowledgeService(
             _store, new LexicalKnowledgeSearch(_store), new EmptyKnowledgeSource(),
@@ -44,7 +44,7 @@ public sealed class FeedTests : IAsyncLifetime
         "What was learned.", "docs/DECISIONS.md", title);
 
     /// <summary>The ordinary feed: the canonical line, at a moment in its history.</summary>
-    /// <param name="onBase">The commit the deployment held when this machine checked its ancestry (SYNC5a).</param>
+    /// <param name="onBase">The commit the deployment held when this machine checked its ancestry.</param>
     private static FeedProvenance From(
         string commit = "aaaa1111bbbb2222", string branch = "main", string at = "2026-09-20T09:00:00Z",
         string? origin = "person@machine-a", string? onBase = null) =>
@@ -108,7 +108,7 @@ public sealed class FeedTests : IAsyncLifetime
         Assert.Empty(await _store.AllAsync());
     }
 
-    // ——— Which point in the history speaks (D48 §6). Wholesale replacement between two machines is a
+    // ——— Which point in the history speaks. Wholesale replacement between two machines is a
     // flapping generator without these three: each tick, whichever fed last would overwrite the other.
 
     /// <summary>
@@ -185,9 +185,9 @@ public sealed class FeedTests : IAsyncLifetime
     /// </summary>
     /// <remarks>
     /// A commit time carries whatever offset the committer's machine had, and every other test here
-    /// feeds `Z` times — so the offset was always zero and the sentence was never exercised. It
-    /// printed the LOCAL wall clock and appended `Z`, which is a sentence claiming an instant it is
-    /// not: the ordering underneath was right and its explanation was wrong, which is the worst
+    /// feeds `Z` times — so the offset is always zero and the sentence is never exercised. It
+    /// must not print the LOCAL wall clock and append `Z`, which is a sentence claiming an instant it is
+    /// not: an ordering that is right with a wrong explanation is the worst
     /// shape for a message whose whole job is to convince a person that being refused is fine.
     /// </remarks>
     [Fact]
@@ -225,7 +225,7 @@ public sealed class FeedTests : IAsyncLifetime
     }
 
     /// <summary>
-    /// Re-feeding the same commit stays idempotent, as the feed always was — a tick that re-sent what
+    /// Re-feeding the same commit stays idempotent — a tick that re-sent what
     /// it sent last time must not be answered as though the machine had gone backwards.
     /// </summary>
     [Fact]
@@ -259,8 +259,8 @@ public sealed class FeedTests : IAsyncLifetime
     }
 
     /// <summary>
-    /// 🔴 REV3: retiring took the row and left the ENTRIES — and a fed host never refreshes, so its
-    /// search kept serving a retired repository's knowledge to every keyed caller, forever. The entries
+    /// 🔴 Retiring takes the row and the ENTRIES — a fed host never refreshes, so its
+    /// search would serve a retired repository's knowledge to every keyed caller, forever. The entries
     /// go with the registration.
     /// </summary>
     [Fact]
@@ -275,9 +275,9 @@ public sealed class FeedTests : IAsyncLifetime
     }
 
     /// <summary>
-    /// The same, for a declaration that stops sharing (or unjoins) at a shared deployment (SYNC5b): its
-    /// knowledge stays home from then on, so what it fed while sharing leaves — and the commit it was
-    /// held at goes too, or sharing again from the same commit would be "already held" into an empty index.
+    /// The same, for a declaration that stops sharing (or unjoins) at a shared deployment: its
+    /// knowledge stays home from then on, so what it fed while sharing leaves — and the commit it
+    /// held goes too, or sharing again from the same commit would be "already held" into an empty index.
     /// </summary>
     [Fact]
     public async Task A_declaration_that_stops_sharing_takes_its_knowledge_with_it()
@@ -299,8 +299,8 @@ public sealed class FeedTests : IAsyncLifetime
     }
 
     /// <summary>
-    /// A fed host reads nothing from disk, so a refresh there must keep what it was fed — the case the
-    /// ghost rule's guard exists for, and the one POLISH5's registry rule must never reach: only a host
+    /// A fed host reads nothing from disk, so a refresh there must keep what it is fed — the case the
+    /// ghost rule's guard exists for, and the one the registry rule must never reach: only a host
     /// that reads its registered roots lets the registry decide what is a ghost.
     /// </summary>
     [Fact]
@@ -329,7 +329,7 @@ public sealed class FeedTests : IAsyncLifetime
         Assert.Equal(FeedRefusal.NotDefaultBranch, outcome.Refusal);
     }
 
-    // ——— Ancestry and the digest (SYNC5a, sync design §8). The machine with the checkout asks git
+    // ——— Ancestry and the digest. The machine with the checkout asks git
     // whether its commit descends from the one held; the deployment checks that it still holds it.
 
     /// <summary>
@@ -350,7 +350,7 @@ public sealed class FeedTests : IAsyncLifetime
     }
 
     /// <summary>
-    /// SYNC0c: two machines on one commit whose readings differ used to replace each other on every
+    /// Two machines on one commit whose readings differ must not replace each other on every
     /// tick. The first reading of a commit stands, and the second hears why — as information.
     /// </summary>
     [Fact]
@@ -370,7 +370,7 @@ public sealed class FeedTests : IAsyncLifetime
     }
 
     /// <summary>
-    /// Ancestry decides where it was asked, not the clock. A commit that descends from the one held is
+    /// Ancestry decides where it is asked, not the clock. A commit that descends from the one held is
     /// a fast-forward even when its committer's clock reads earlier — a rebase keeps author dates and a
     /// machine's clock can be wrong, and neither makes a descendant stale.
     /// </summary>
@@ -442,7 +442,7 @@ public sealed class FeedTests : IAsyncLifetime
             FeedDigest.Of([one with { Title = "a", Body = "bc" }]));
     }
 
-    // ——— The code map, fed (MAP3b): the same gates and the same judgement as knowledge, and the file
+    // ——— The code map, fed: the same gates and the same judgement as knowledge, and the file
     // judged whole again at the door by the reader that judges it on disk.
 
     private const string MapJson = """
@@ -450,7 +450,7 @@ public sealed class FeedTests : IAsyncLifetime
          "dependencies":[{"from":"web","to":"core","kind":"project"}]}
         """;
 
-    /// <summary>A shared deployment has no checkout; what was fed is the map it answers with.</summary>
+    /// <summary>A shared deployment has no checkout; what is fed is the map it answers with.</summary>
     [Fact]
     public async Task A_fed_code_map_is_what_a_repository_with_no_checkout_answers()
     {
@@ -541,7 +541,7 @@ public sealed class FeedTests : IAsyncLifetime
         Assert.Equal("mapcommit", held.CodeMap);
     }
 
-    // ——— A registration by ancestry (SYNC5b, sync design §8): the declaration is the manifest at a
+    // ——— A registration by ancestry: the declaration is the manifest at a
     // commit, ordered like a feed, so two checkouts of one repository stop overwriting each other.
 
     private static Registration Declaration(string summary = "A repo.", string? defaultBranch = "main") =>
@@ -569,8 +569,8 @@ public sealed class FeedTests : IAsyncLifetime
     }
 
     /// <summary>
-    /// SYNC0b's last-writer-wins: a checkout behind the held commit re-sent its older declaration every
-    /// tick and overwrote the newer one. A descendant fast-forwards; an older commit keeps what is held.
+    /// No last-writer-wins: a checkout behind the held commit that re-sends its older declaration every
+    /// tick must not overwrite the newer one. A descendant fast-forwards; an older commit keeps what is held.
     /// </summary>
     [Fact]
     public async Task A_newer_declaration_fast_forwards_and_an_older_one_keeps_what_is_held()
@@ -677,7 +677,7 @@ public sealed class FeedTests : IAsyncLifetime
 }
 
 /// <summary>
-/// The session feed's judgement, in Core beside the ledger's (D47 §6): records upsert whole under
+/// The session feed's judgement, in Core beside the ledger's: records upsert whole under
 /// their origin, only joined repositories' records are taken, and a refused feed changes nothing.
 /// </summary>
 public sealed class SessionFeedTests : IAsyncLifetime
@@ -734,7 +734,7 @@ public sealed class SessionFeedTests : IAsyncLifetime
     }
 
     /// <summary>
-    /// A conversation mirrors as a conversation (D49 §3): no quest, and the KIND travels. Without it
+    /// A conversation mirrors as a conversation: no quest, and the KIND travels. Without it
     /// every chat would arrive at a teammate's deployment looking like planned work — and demanding a
     /// quest would make it unmirrorable, so the repository would simply fall silent instead.
     /// </summary>
@@ -752,7 +752,7 @@ public sealed class SessionFeedTests : IAsyncLifetime
     }
 
     /// <summary>
-    /// TOOL4c (D125 §5.2): a record that says an account's limit failed it mirrors saying so. The flag names
+    /// A record that says an account's limit failed it mirrors saying so. The flag names
     /// no account, so a teammate's deployment may hold it.
     /// </summary>
     [Fact]

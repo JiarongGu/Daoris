@@ -4,7 +4,7 @@ using Microsoft.Data.Sqlite;
 namespace Daoris.Service.Tests;
 
 /// <summary>
-/// FABRIC-CLOSE1a (the fabric events design §E5, D173's part E notes): in a graph that closes its quest itself, the agent's
+/// In a graph that closes its quest itself, the agent's
 /// result is a submission, never a done. The driver binds the taken quest to the graph; the agent says <c>ready</c>, which keeps
 /// the quest taken and hangs a done's holds on the submission; an unheld submission publishes the chain's next step and is
 /// sealed by it; and the graph's close door writes every quest's Done in one transaction, fenced by the submissions it names
@@ -75,7 +75,7 @@ public sealed class QuestClosureTests : IAsyncLifetime
 
     /// <summary>
     /// The report quest, naming its file as evidence, with a verifying step to follow when asked, and taken. The step asks
-    /// <paramref name="next"/>: the checker by default, the report's own repository for a chain closed there (FABRIC-CLOSE1v).
+    /// <paramref name="next"/>: the checker by default, the report's own repository for a chain closed there.
     /// </summary>
     private async Task<Quest> Taken(bool chain = true, string title = "Write the bridge report", string next = "checker")
     {
@@ -111,7 +111,7 @@ public sealed class QuestClosureTests : IAsyncLifetime
     private async Task<QuestRespondOutcome> Found(Quest quest) =>
         await Found(quest, (await Find(quest.Id)).Submission is { } current ? new QuestOperationRef(current.Machine, current.Sequence) : null);
 
-    /// <summary>The report found, read for the submission named (FABRIC-CLOSE1e): a verdict says which submission it read.</summary>
+    /// <summary>The report found, read for the submission named: a verdict says which submission it read.</summary>
     private Task<QuestRespondOutcome> Found(Quest quest, QuestOperationRef? asked) =>
         _exchange.EvidenceAsync(quest.Id, new QuestEvidenceVerdict(Commit, "session-end",
             [new QuestEvidenceRead(1, "docs/report-bridge.md", null, "found") { Object = Blob, Changed = true }]) { Submission = asked }, Now);
@@ -119,7 +119,7 @@ public sealed class QuestClosureTests : IAsyncLifetime
     private static (string, QuestOperationRef) Named(Quest quest) =>
         (quest.Id, new QuestOperationRef(quest.Submission!.Machine, quest.Submission.Sequence));
 
-    /// <summary>A close at the last quest named, as the driver closes a chain at its last quest here (FABRIC-CLOSE1v).</summary>
+    /// <summary>A close at the last quest named, as the driver closes a chain at its last quest here.</summary>
     private Task<QuestCloseOutcome> Close(string key, params Quest[] quests) =>
         _exchange.CloseAsync(quests[^1].Id, key, "token-" + key, [.. quests.Select(Named)], Now);
 
@@ -257,7 +257,7 @@ public sealed class QuestClosureTests : IAsyncLifetime
 
         Assert.Equal(QuestRespondRefusal.None, replaced.Refusal);
         Assert.NotEqual(departed.Submission!.Sequence, replaced.Quest!.Submission!.Sequence);
-        // The yes was the earlier submission's: the new one is judged again, and waits on its evidence.
+        // The yes is the earlier submission's: the new one is judged again, and waits on its evidence.
         Assert.Null(replaced.Quest.Accepted);
         Assert.Equal(QuestHold.EvidenceUnread, replaced.Quest.Hold);
     }
@@ -284,8 +284,8 @@ public sealed class QuestClosureTests : IAsyncLifetime
     }
 
     /// <summary>
-    /// FABRIC-CLOSE1c5 (§E5): a submission's commit is the one its evidence was read at, for that submission alone. None before the
-    /// read, none from a verdict read of another submission, and none once a later ready replaced it.
+    /// A submission's commit is the one its evidence is read at, for that submission alone. None before the
+    /// read, none from a verdict read of another submission, and none once a later ready supersedes it.
     /// </summary>
     [Fact]
     public async Task A_submissions_commit_is_the_one_its_own_evidence_was_read_at()
@@ -317,10 +317,10 @@ public sealed class QuestClosureTests : IAsyncLifetime
         (await Find(quest.Id)).Submission is { } current ? new QuestOperationRef(current.Machine, current.Sequence) : throw new InvalidOperationException();
 
     /// <summary>
-    /// 🔴 FABRIC-CLOSE1c6 (§E5, D173's CLOSE1c5 note, <i>Left</i>): a submission whose answers name no evidence is read for none, so its
-    /// commit was never known, and a step that grew from it was brought up to date with the line alone. The commit its session's end read
+    /// 🔴 A submission whose answers name no evidence is read for none, so its
+    /// commit is never known, and a step that grew from it is brought up to date with the line alone. The commit its session's end read
     /// is kept alone, for that submission: it answers the commit, holds nothing and lets nothing go. Once, for the current submission
-    /// alone: a second is refused, one for a submission a later ready replaced is refused, and the later one's own is kept.
+    /// alone: a second is refused, one for a submission a later ready supersedes is refused, and the later one's own is kept.
     /// </summary>
     [Fact]
     public async Task A_submission_that_waits_on_no_evidence_answers_the_commit_its_sessions_end_read()
@@ -392,8 +392,8 @@ public sealed class QuestClosureTests : IAsyncLifetime
     }
 
     /// <summary>
-    /// FABRIC-CLOSE1e, finding 1: evidence read for one submission, arriving after a later ready replaced it, would release a
-    /// submission nobody read, and publish its step. A verdict names the submission it was asked for, and is no verdict on another.
+    /// Evidence read for one submission, arriving after a later ready supersedes it, would release a
+    /// submission nobody read, and publish its step. A verdict names the submission it is asked for, and is no verdict on another.
     /// </summary>
     [Fact]
     public async Task A_late_verdict_read_for_a_replaced_submission_never_releases_the_one_that_replaced_it()
@@ -436,7 +436,7 @@ public sealed class QuestClosureTests : IAsyncLifetime
 
     /// <summary>
     /// Canary 48: a two-step chain advances on the first step's unheld submission, and the close closes both in order. The step stays in
-    /// the report's repository, as a close names only its own repository's chain (FABRIC-CLOSE1v), so it inherits the requirements with
+    /// the report's repository, as a close names only its own repository's chain, so it inherits the requirements with
     /// their evidence, and its own submission is released by its own read.
     /// </summary>
     private async Task<(Quest First, Quest Second)> Chain(string firstGraph = Graph, string next = "reports")
@@ -456,7 +456,7 @@ public sealed class QuestClosureTests : IAsyncLifetime
     }
 
     /// <summary>
-    /// A chain across two repositories (FABRIC-CLOSE1v): the report's quest, and its verifying step in the checker, each bound, submitted and
+    /// A chain across two repositories: the report's quest, and its verifying step in the checker, each bound, submitted and
     /// unheld. The step to another repository inherits the requirements without their evidence, so nothing holds its submission.
     /// </summary>
     private async Task<(Quest First, Quest Second)> ChainAcross()
@@ -484,7 +484,7 @@ public sealed class QuestClosureTests : IAsyncLifetime
     }
 
     /// <summary>
-    /// FABRIC-CLOSE1v: the door holds its own scope, not only the driver's filter. A quest bound, submitted and unheld, but of no chain the
+    /// The door holds its own scope, not only the driver's filter. A quest bound, submitted and unheld, but of no chain the
     /// close's quest grew from, is refused by its own code, the whole close with it, and nothing is written; the same close again answers it.
     /// </summary>
     [Fact]
@@ -519,7 +519,7 @@ public sealed class QuestClosureTests : IAsyncLifetime
     }
 
     /// <summary>
-    /// FABRIC-CLOSE1v: a close is one repository's. A chain's quest in another repository, its parent or its step, is refused by its own
+    /// A close is one repository's. A chain's quest in another repository, its parent or its step, is refused by its own
     /// code wherever the close is at, though it is bound to the same graph, held here and unheld.
     /// </summary>
     [Fact]
@@ -540,7 +540,7 @@ public sealed class QuestClosureTests : IAsyncLifetime
     }
 
     /// <summary>
-    /// FABRIC-CLOSE1v: one graph's close is its own. A quest of the chain here bound to another graph is refused by its own code, the whole
+    /// One graph's close is its own. A quest of the chain here bound to another graph is refused by its own code, the whole
     /// close with it, though it is held here, submitted and unheld.
     /// </summary>
     [Fact]
@@ -581,7 +581,7 @@ public sealed class QuestClosureTests : IAsyncLifetime
     }
 
     /// <summary>
-    /// FABRIC-CLOSECASE1 (§E5): a step naming the report's repository in another case is the same repository, as the driver's close names it
+    /// A step naming the report's repository in another case is the same repository, as the driver's close names it
     /// too. It inherits the requirements whole, its evidence holding it as in the same tree, and the close at it takes both.
     /// </summary>
     [Fact]
@@ -617,7 +617,7 @@ public sealed class QuestClosureTests : IAsyncLifetime
     }
 
     /// <summary>
-    /// FABRIC-CLOSE1e, finding 3: a key is one invocation. Its replay names the same token and the same submissions; anything
+    /// A key is one invocation. Its replay names the same token and the same submissions; anything
     /// else sent with it is another call, refused, never answered with the first close's success.
     /// </summary>
     [Fact]
@@ -626,7 +626,7 @@ public sealed class QuestClosureTests : IAsyncLifetime
         var (first, second) = await Chain();
         Assert.Equal(QuestCloseRefusal.None, (await Close("k1", first)).Refusal);
 
-        // The same key, naming a still-taken quest beside the closed one: not the close it was, so nothing is written.
+        // The same key, naming a still-taken quest beside the closed one: not the first close, so nothing is written.
         var wider = await Close("k1", first, second);
 
         Assert.Equal(QuestCloseRefusal.KeyReused, wider.Refusal);
@@ -647,8 +647,8 @@ public sealed class QuestClosureTests : IAsyncLifetime
     }
 
     /// <summary>
-    /// FABRIC-CLOSE1e, finding 4: the first outcome is the answer, a refusal as much as a close. A close refused for a hold whose
-    /// answer was lost, sent again after the hold is released, answers the same refusal and writes nothing; a new attempt takes a
+    /// The first outcome is the answer, a refusal as much as a close. A close refused for a hold whose
+    /// answer is lost, sent again after the hold is released, answers the same refusal and writes nothing; a new attempt takes a
     /// new key. The refusal is kept in the store, beside the closes, and never as an operation that syncs.
     /// </summary>
     [Fact]
@@ -667,7 +667,7 @@ public sealed class QuestClosureTests : IAsyncLifetime
         Assert.Contains("k1", retried.Message, StringComparison.Ordinal);
         Assert.Equal(QuestStatus.Taken, (await Find(quest.Id)).Status);
         Assert.Equal(written, (await _quests.HistoryAsync(quest.Id)).Count);
-        // Under the key it was refused with, another call is still another call.
+        // Under the key it is refused with, another call is still another call.
         Assert.Equal(QuestCloseRefusal.KeyReused,
             (await _exchange.CloseAsync(quest.Id, "k1", "another-token", [Named(held)], Now)).Refusal);
         // Kept in the store: a store opened again answers it alike.
@@ -681,7 +681,7 @@ public sealed class QuestClosureTests : IAsyncLifetime
     }
 
     /// <summary>
-    /// FABRIC-CLOSE1u: what became of a close is answered from its key, executing nothing. A key never taken is withdrawn in that
+    /// What became of a close is answered from its key, executing nothing. A key never taken is withdrawn in that
     /// answer's transaction, so its close never runs: the same close arriving after is refused under it, the quest left taken. A
     /// key taken answers its first outcome, a close as a refusal, and another call under it is refused as one; asked again, the
     /// same answer, and nothing is written.
@@ -716,7 +716,7 @@ public sealed class QuestClosureTests : IAsyncLifetime
         Assert.Equal(QuestCloseRefusal.None, (await Asked("k2")).Refusal);
         Assert.Single(await _quests.HistoryAsync(quest.Id), op => op.Kind == QuestOperationKind.Done);
 
-        // Another call under a key is not that close; a refusal kept is answered as it was.
+        // Another call under a key is not that close; a refusal kept is answered as kept.
         Assert.Equal(QuestCloseRefusal.KeyReused, (await Asked("k2", "another-token")).Refusal);
         Assert.Equal(QuestCloseRefusal.Closed, (await Close("k3", submitted)).Refusal);
         Assert.Equal(QuestCloseRefusal.Closed, (await Asked("k3")).Refusal);
@@ -776,7 +776,7 @@ public sealed class QuestClosureTests : IAsyncLifetime
         Assert.Equal(QuestCloseRefusal.Malformed, (await _exchange.CloseAsync(quest.Id, "k", "t", [], Now)).Refusal);
         Assert.Equal(QuestCloseRefusal.Malformed,
             (await _exchange.CloseAsync(quest.Id, "k", "t", [Named(submitted), Named(submitted)], Now)).Refusal);
-        // Each call is its own close, so each takes its own key (FABRIC-CLOSE1e): a malformed call is none, and keeps no key.
+        // Each call is its own close, so each takes its own key: a malformed call is none, and keeps no key.
         Assert.Equal(QuestCloseRefusal.NotFound,
             (await _exchange.CloseAsync("feedfacecafe", "k", "t", [("feedfacecafe", new QuestOperationRef("m", 1))], Now)).Refusal);
 

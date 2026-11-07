@@ -5,7 +5,7 @@ namespace Daoris.Knowledge;
 /// names are the same name.
 /// </summary>
 /// <remarks>
-/// <para><b>The workspace is the unit of sharing</b> (D48). Everything that crosses repositories —
+/// <para><b>The workspace is the unit of sharing</b>. Everything that crosses repositories —
 /// search, convergence, the registry, quests, session records — is scoped to one, and the boundary is
 /// drawn where a person drew it rather than where a folder happened to be.</para>
 ///

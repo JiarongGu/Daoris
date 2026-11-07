@@ -1,16 +1,16 @@
-// The development documents a repository declares: roles bound to paths (DOC3; D122,
-// `docs/2026-10-01-development-documents-design.md` §2.7–§2.8).
+// The development documents a repository declares: roles bound to paths
+// (`docs/2026-10-01-development-documents-design.md` §2.7–§2.8).
 //
 // The canon names its records by their job (the backlog, the decisions, the fix log) and never by their
 // path, which is right for doctrine and costs every session in every adopter a search. A repository
 // declares where each one is in its manifest's `documents`; `sync` renders that as the region's *Where
-// things are* table, and `check` holds the table and the paths to the facts. Nouns, so the manifest (D26).
+// things are* table, and `check` holds the table and the paths to the facts. Nouns, so the manifest.
 //
 // 🔴 **A repository that declares nothing sees no change.** No table, no report, and a region byte for
-// byte what it was, so no adopter and no example needs a re-sync until it declares.
+// byte unchanged, so no adopter and no example needs a re-sync until it declares.
 //
-// The service's `RepositoryScanner` reads the same field for the declared decisions, fixes and archive
-// (DOC5), and the declared index (ORIENT2e): the manifest-reading table in `documents-manifest.test.ts` is
+// The service's `RepositoryScanner` reads the same field for the declared decisions, fixes and archive,
+// and the declared index: the manifest-reading table in `documents-manifest.test.ts` is
 // the one its reader matches.
 
 import type { DeclaredDocument, DocumentLinkProblem, Harness } from '../doctrine/records.ts';
@@ -29,23 +29,23 @@ type Binding = 'path' | 'ceiling';
  * for a record needs, since every row is paid for in the always-loaded region of every declaring adopter.
  *
  * @remarks
- * A closed set, refused by name when unknown, as an unknown harness is (D23). `brief` and `room` take a
+ * A closed set, refused by name when unknown, as an unknown harness is. `brief` and `room` take a
  * ceiling and no path: the brief is the repository's own part of the root instruction file, outside the
  * region, and the rooms are `rooms`'. `knowledge` and `skill` are roles too, and are not declared here:
  * the index already lists them from the target, which is where the descriptor keeps them.
  *
  * The service keeps a copy, `RepositoryDocuments.Roles`, and its `RepositoryDocumentsTests` reads this
  * array from this file, each row's role and binding in this order, so a role added here fails the service's
- * suite until the copy gains it (ORIENT2e2). Its pattern reads each row as written here, its role and
+ * suite until the copy gains it. Its pattern reads each row as written here, its role and
  * binding first.
  */
 export const ROLES: readonly { role: string; binding: Binding; job: string }[] = [
   { role: 'brief', binding: 'ceiling', job: 'what this is, the constraint every change serves, and where everything else is' },
   { role: 'room', binding: 'ceiling', job: "one folder's conventions, traps and checks" },
   { role: 'router', binding: 'path', job: 'every document, its kind and its standing' },
-  // ORIENT2b (D151 point 4): the generated index of where things are, the row that sends a session to it
+  // The generated index of where things are, the row that sends a session to it
   // before it searches. The service reads the declared index as entries of the kind `index`, each naming
-  // the lines of its file (ORIENT2e).
+  // the lines of its file.
   { role: 'index', binding: 'path', job: 'where things are in the code and the records, generated: open it before searching' },
   { role: 'areas', binding: 'path', job: 'how each area works now, from the code: read first, rewritten in place' },
   { role: 'decisions', binding: 'path', job: 'history: why each rule was chosen and what it rejected, read for the reasoning only' },
@@ -60,7 +60,7 @@ export const ROLES: readonly { role: string; binding: Binding; job: string }[] =
 /** The roles the index lists from the descriptor's tiers, so nothing is declared for them. */
 const TIER_ROLES: Record<string, string> = { knowledge: 'knowledge', skill: 'skills' };
 
-/** The roles whose absence `check` reports: the records the canon's rules name most (D122 §2.8). */
+/** The roles whose absence `check` reports: the records the canon's rules name most. */
 export const RECORD_ROLES = ['backlog', 'decisions'] as const;
 
 const FIELDS = new Set(['path', 'words']);
@@ -69,7 +69,7 @@ const FIELDS = new Set(['path', 'words']);
 const PRESENT = 'present';
 
 /**
- * `documents`, checked at the edge (D122 §2.7, D18): what every command reads, before a single path is
+ * `documents`, checked at the edge: what every command reads, before a single path is
  * planned. Refused rather than corrected, as a room is: a role nobody knows, a path that leaves the
  * repository, or a role declared twice is a manifest saying something this tool cannot honour, and
  * honouring half of it would render a table the repository did not write.
@@ -96,7 +96,7 @@ export function checkDocuments(raw: unknown, text: string, target: string, harne
   const known = ROLES.map((row) => row.role).join(', ');
   const found = new Map<string, DeclaredDocument>();
   for (const [role, value] of Object.entries(raw as Record<string, unknown>)) {
-    // KNOWFRESH1a-iii: the present records `tools/doc-current.mjs` reads are declared beside the roles and are no document.
+    // The present records `tools/doc-current.mjs` reads are declared beside the roles and are no document.
     if (role === PRESENT) continue;
     const name = `daoris.json's documents.${role}`;
     const tier = TIER_ROLES[role];
@@ -146,11 +146,11 @@ export function checkDocuments(raw: unknown, text: string, target: string, harne
 const isObject = (value: unknown): value is Record<string, unknown> =>
   typeof value === 'object' && value !== null && !Array.isArray(value);
 
-/** A declared path, or a refusal (D18; the design's §2.7): inside the repository, below its root, and clear of Daoris's roots. */
+/** A declared path, or a refusal: inside the repository, below its root, and clear of Daoris's roots. */
 function checkPath(name: string, path: string, target: string, harness: Harness): string {
   const normal = declared(path);
   if (escapes(normal)) throw new DaorisError(`${name} '${path}' leaves the repository — a document is a file or folder inside it`);
-  // DOC3a: judged where it lands, since `docs/..` is the root and `x/../.claude/…` the target, whatever
+  // Judged where it lands, since `docs/..` is the root and `x/../.claude/…` the target, whatever
   // the spelling; the spelling is still what the index shows.
   const landed = posix.normalize(normal).replace(/\/+$/, '');
   if (landed === '' || landed === '.') throw new DaorisError(`${name} is the repository's root — a document is a file or folder inside it`);
@@ -268,7 +268,7 @@ export const wordCount = (text: string): number => text.split(/\s+/).filter(Bool
 type DocumentLink = DocumentLinkProblem;
 
 /**
- * The declared paths that are not a plain file or folder (D117 §5.4's link table, for a path Daoris
+ * The declared paths that are not a plain file or folder (for a path Daoris
  * points sessions at rather than writes). Never read through: what the table names, every session reads.
  */
 export function documentLinks(root: string, documents: readonly DeclaredDocument[]): DocumentLink[] {
@@ -314,7 +314,7 @@ export function present(root: string, path: string): 'file' | 'folder' | null {
 }
 
 /**
- * Where a repository usually keeps each record, by conventional names (D122 §2.7): what `init` and
+ * Where a repository usually keeps each record, by conventional names: what `init` and
  * `analyze` name as candidates. Matched without regard to case, files before folders, and the
  * repository's own readme never: it is the project's front page, not a router of its documents.
  */

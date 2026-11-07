@@ -6,7 +6,7 @@ using Microsoft.Data.Sqlite;
 namespace Daoris.Service.Http.Tests;
 
 /// <summary>
-/// A route that throws (HOSTLOG1): the machine log carries what was thrown, by its type, its message and
+/// A route that throws: the machine log carries what the route threw, by its type, its message and
 /// its first frames, beside the route's pattern and method; the caller is answered the house's
 /// <c>ErrorResponse</c> sentence instead of an empty 500, and that sentence names nothing of the exception.
 /// Nothing of the request's body, query or headers reaches the log.
@@ -56,7 +56,7 @@ public sealed class UnhandledRequestTests
         Assert.Equal(500, answer.Status);
         Assert.StartsWith("application/json", answer.ContentType);
         Assert.Equal(UnhandledRequests.Logged, answer.Error);
-        // The sentence is the whole answer: nothing of what was thrown.
+        // The sentence is the whole answer: nothing of what the route threw.
         Assert.DoesNotContain("Sqlite", answer.Body, StringComparison.OrdinalIgnoreCase);
         Assert.DoesNotContain("the store refused this write", answer.Body);
 
@@ -145,7 +145,7 @@ public sealed class UnhandledRequestTests
     }
 
     /// <summary>
-    /// 🔴 A shared host answers keyed callers off the machine (D47 §4): what was thrown can name a machine
+    /// 🔴 A shared host answers keyed callers off the machine: what a route throws can name a machine
     /// path, and the answer carries none of it. The log keeps it, since the log never leaves the machine.
     /// </summary>
     [Fact]

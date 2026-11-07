@@ -5,10 +5,9 @@ using Microsoft.Data.Sqlite;
 namespace Daoris.Service.Tests;
 
 /// <summary>
-/// FOUNDATION1q (D212; the foundation design §2.3, §7 row 9; the survey's §1.3 row 6): the service's two doors that ask whether a
+/// The service's two doors that ask whether a
 /// session may ask for a helper, the desk that opens a helper's record and the connector's <c>helper_ask</c>, keep their own guard over
-/// the store, held to the driver's start layer by one table, <c>fixtures/helper-askers.json</c>, row for row. Ask Daoris is refused at both
-/// (D203 point 6).
+/// the store, held to the driver's start layer by one table, <c>fixtures/helper-askers.json</c>, row for row. Ask Daoris is refused at both.
 /// </summary>
 public sealed class HelperAskersTests : IAsyncLifetime
 {

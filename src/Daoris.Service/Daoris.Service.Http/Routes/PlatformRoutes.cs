@@ -3,8 +3,8 @@ using Daoris.Contracts.Platform;
 namespace Daoris.Knowledge.Http.Routes;
 
 /// <summary>
-/// What a local host tells the processes beside it that tell from its ledger: which families moved (FABRIC-EVENT3b, the fabric events
-/// design §A4.2) and the event journal's rows (FOUNDATION1 l-i). A read every caller may make, as the connector reads the same store.
+/// What a local host tells the processes beside it that tell from its ledger: which families moved (the fabric events
+/// design §A4.2) and the event journal's rows. A read every caller may make, as the connector reads the same store.
 /// </summary>
 public sealed class PlatformRoutes(HostWiring host) : IRouteModule
 {
@@ -14,7 +14,7 @@ public sealed class PlatformRoutes(HostWiring host) : IRouteModule
 
         // A missing, malformed, stale or future cursor is answered at once with every family and the current cursor; a ninth wait at once
         // with the cursor. The host's stop answers a held wait at once, so a long-poll never holds the shell's wait. A reader that never
-        // asks for the journal, every client from before the family, is answered what it always was and woken by nothing a journal-only
+        // asks for the journal is answered the families alone and woken by nothing a journal-only
         // append does; the host's `journal` protocol mark says a host answers it.
         routes.Map<ReadChanges, ChangesResponse>(async (request, _, ct) =>
         {

@@ -3,15 +3,15 @@ using static Daoris.Knowledge.HelpProposalFile;
 namespace Daoris.Knowledge;
 
 /// <summary>
-/// The <c>repository</c> kind's writer (ENTRY1d1, D161's ENTRY1d note): a registered repository moved to a workspace on this
+/// The <c>repository</c> kind's writer: a registered repository moved to a workspace on this
 /// machine, by the registry's name and the workspace's.
 /// </summary>
 internal sealed class HelpRepositoryProposalWriter(HelpProposalFile file)
 {
     /// <summary>
-    /// Write one proposal to move a repository to a workspace (ENTRY1d1): the repository as the registry names it, its
+    /// Write one proposal to move a repository to a workspace: the repository as the registry names it, its
     /// <c>target</c>, and the workspace, its <c>value</c>, for the person to apply. It is the Manage drawer's *Move to
-    /// workspace*, which edits one field of the registry's row (D48 §7). A move needs no path, so none is written; adding or
+    /// workspace*, which edits one field of the registry's row. A move needs no path, so none is written; adding or
     /// importing a repository needs a folder, which stays the person's pick. Whether the repository is registered, and whether
     /// it is already in that workspace, is the driver's to judge against the registry.
     /// </summary>

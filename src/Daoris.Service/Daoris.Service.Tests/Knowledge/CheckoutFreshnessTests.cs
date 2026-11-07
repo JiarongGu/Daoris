@@ -3,7 +3,7 @@ using Daoris.Knowledge;
 namespace Daoris.Service.Tests;
 
 /// <summary>
-/// The knowledge server's freshness on a watch (FABRIC-EVENT6; the events design part A): a checkout's moving is heard and
+/// The knowledge server's freshness on a watch: a checkout's moving is heard and
 /// marked, the next search reads it, and a silenced watch is caught by its deadline, never by a timer of the search's own.
 /// </summary>
 public sealed class CheckoutFreshnessTests : IDisposable
@@ -169,7 +169,7 @@ public sealed class CheckoutFreshnessTests : IDisposable
     [Fact]
     public async Task A_write_in_a_folder_git_ignores_inside_a_watched_one_is_not_heard()
     {
-        // KNOWWALK1: `.claude/` is watched for the knowledge in it, and `.claude/worktrees/` beneath it holds every agent's
+        // `.claude/` is watched for the knowledge in it, and `.claude/worktrees/` beneath it holds every agent's
         // checkout, written by each build and each install; none of it is this checkout's knowledge.
         var checkout = Path.Combine(_root, "served");
         Write("served/.gitignore", ".claude/worktrees/\n");
@@ -194,7 +194,7 @@ public sealed class CheckoutFreshnessTests : IDisposable
     [Fact]
     public async Task A_checkouts_ignored_folders_at_its_top_are_neither_read_nor_watched()
     {
-        // KNOWHOLD1: the deployment rehearsal runs under `local/gate-tree/`, and its swap renames the install's `app/` there,
+        // The deployment rehearsal runs under `local/gate-tree/`, and its swap renames the install's `app/` there,
         // refused while any handle is open inside it. What reads and watches a checkout opens nothing under `local/`,
         // `node_modules/` or `_fixtures/`, and hears nothing written there.
         var checkout = Path.Combine(_root, "served");
@@ -245,7 +245,7 @@ public sealed class CheckoutFreshnessTests : IDisposable
     [Fact]
     public async Task A_knowledge_folder_made_after_the_watch_opened_is_read_at_the_next_search_with_no_deadline_passing()
     {
-        // FABRIC-EVENT6b: a `docs/` made after start was left to the deadline. Its making is heard at the checkout's top, and
+        // A `docs/` made after start is not left to the deadline. Its making is heard at the checkout's top, and
         // its own watch opens then, so a write in it later is heard as well.
         Write("served/daoris.json", """{ "source": "s" }""");
         Write("served/.git/HEAD", "ref: refs/heads/main\n");
@@ -316,7 +316,7 @@ public sealed class CheckoutFreshnessTests : IDisposable
     }
 
     /// <summary>
-    /// The setup's own writes heard and taken (FLAKE1, 2026-10-30): a loaded machine delivers them after any fixed window, so the reading
+    /// The setup's own writes heard and taken: a loaded machine delivers them after any fixed window, so the reading
     /// is taken again until half a second passes with nothing heard, within <see cref="Poll.Patience"/>.
     /// </summary>
     private static async Task Settled(CheckoutFreshness freshness)

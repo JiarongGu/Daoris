@@ -4,7 +4,7 @@ using Microsoft.Data.Sqlite;
 namespace Daoris.Service.Tests;
 
 /// <summary>
-/// KNOWCENTRAL2c (the memory coordinator design §3): a trigger journals every move of a memory row into <c>event_journal</c> as ids and
+/// A trigger journals every move of a memory row into <c>event_journal</c> as ids and
 /// codes; a reader holds a cursor <c>(store, position)</c> that re-validates across stores, below the floor and across a change of scope,
 /// taken by a bootstrap that reads the rows and the newest position in one transaction.
 /// </summary>
@@ -22,7 +22,7 @@ public sealed class MemoryChangesTests : IAsyncLifetime
 
     private static MemoryRecheck Holds(string entry, long revision = 1) => new("Owner", entry, revision, Holds: true);
 
-    /// <summary>🔴 Each move of a row is journalled once, in the order it was made, naming ids and codes and never the text.</summary>
+    /// <summary>🔴 Each move of a row is journalled once, in the order it is made, naming ids and codes and never the text.</summary>
     [Fact]
     public async Task Each_move_is_journalled_once_in_order_with_no_text()
     {

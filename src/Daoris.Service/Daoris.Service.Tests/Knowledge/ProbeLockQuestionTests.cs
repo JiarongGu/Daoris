@@ -3,10 +3,10 @@ using Daoris.Knowledge;
 namespace Daoris.Service.Tests;
 
 /// <summary>
-/// The question D24's ORIENT1c note measured, asked of a miniature of this repository's records through the
+/// A question a decision's note measured, asked of a miniature of this repository's records through the
 /// deployment a workspace's own server is (one checkout, its <c>docs/</c> a section each, SQLite, words only).
-/// The answer is the TOOL6g note under D125 and the FIX-LOG entry it points to; the competition is what beat
-/// them there: a design section titled with <i>lock</i> and <i>decided</i>, and a decision about another lock.
+/// The answer is a decision's note and the FIX-LOG entry it points to; the competition is what beats
+/// them: a design section titled with <i>lock</i> and <i>decided</i>, and a decision about another lock.
 /// </summary>
 /// <remarks>
 /// The texts are the real entries cut short. Forty decisions about nothing in particular stand for the rest of
@@ -121,8 +121,8 @@ public sealed class ProbeLockQuestionTests : IDisposable
     }
 
     /// <summary>
-    /// ORIENT1f's proof: the fix or the decision that names <c>ProbeLock</c> answers first, where the design
-    /// section titled with two of the question's words did.
+    /// The fix or the decision that names <c>ProbeLock</c> answers first, not the design
+    /// section titled with two of the question's words.
     /// </summary>
     [Fact]
     public async Task The_probe_lock_question_is_answered_first_by_the_fix_or_the_decision_that_names_it()
@@ -135,8 +135,8 @@ public sealed class ProbeLockQuestionTests : IDisposable
     }
 
     /// <summary>
-    /// ORIENT1g's proof: the answer is the TOOL6g note itself, an entry of its own, labelled as the digest labels
-    /// it; D125 whole buried it under its opening and every other note, and the fix outranked it.
+    /// The answer is the note itself, an entry of its own, labelled as the digest labels
+    /// it; the decision whole buries it under its opening and every other note, and the fix outranks it.
     /// </summary>
     [Fact]
     public async Task The_probe_lock_question_lands_on_the_TOOL6g_note_as_its_own_entry()

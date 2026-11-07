@@ -2,7 +2,7 @@ namespace Daoris.Knowledge;
 
 /// <summary>
 /// What a shared deployment takes from a checkout's feed: its declaration, its knowledge and its code map, each judged by the
-/// same door and ordered by the commit it was read at (D47 §4, D48 §6, SYNC5).
+/// same door and ordered by the commit it is read at.
 /// </summary>
 internal sealed class KnowledgeFeeds(
     IKnowledgeStore store,
@@ -12,11 +12,11 @@ internal sealed class KnowledgeFeeds(
     Action refuseNewerIndex,
     TimeProvider time)
 {
-    /// <summary>One feed judged and written at a time (SYNC5a): the check and the write are one step.</summary>
+    /// <summary>One feed judged and written at a time: the check and the write are one step.</summary>
     private readonly SemaphoreSlim _feedGate = new(1, 1);
 
     /// <summary>
-    /// A declaration arriving at a shared deployment from a checkout (SYNC5b): the manifest at a commit,
+    /// A declaration arriving at a shared deployment from a checkout: the manifest at a commit,
     /// ordered as a feed is, so two checkouts of one repository stop overwriting each other.
     /// </summary>
     /// <remarks>
@@ -26,9 +26,9 @@ internal sealed class KnowledgeFeeds(
     /// not yet the family's. And one naming no commit cannot be ordered against one that does, so it
     /// does not replace it.
     /// </remarks>
-    /// <param name="provenance">The commit the manifest was read at, with the held one git said it
+    /// <param name="provenance">The commit the manifest is read at, with the held one git says it
     /// descends from; null when the checkout could not name one.</param>
-    /// <returns>The judgement, and the registration as it now stands when it was taken or already held.</returns>
+    /// <returns>The judgement, and the registration as it now stands when it is taken or already held.</returns>
     public async Task<(FeedOutcome Outcome, Registration? Registered)> RegisterFedAsync(
         Registration registration, FeedProvenance? provenance, DateTimeOffset now, CancellationToken ct)
     {
@@ -91,16 +91,16 @@ internal sealed class KnowledgeFeeds(
                 return (NotTaken(verdict, registration.Repository, "registration", standing!, arriving), null);
             }
 
-            // Over an index a newer Daoris wrote (KSCHEMA1), a declaration that stops sharing what it shared is refused
+            // Over an index a newer Daoris wrote, a declaration that stops sharing what it shared is refused
             // whole, since what it fed could not be taken back; one that never shared has nothing there to take.
             var withdraws = !(registration.Joined && registration.SharesKnowledge);
             if (withdraws && existing is { Joined: true, SharesKnowledge: true }) refuseNewerIndex();
 
             var taken = await register(registration, now, ct).ConfigureAwait(false);
 
-            // 🔴 A declaration that no longer joins-and-shares takes back what it fed while it did (REV3):
+            // 🔴 A declaration that no longer joins-and-shares takes back what it fed while it did:
             // from here its knowledge stays home, and a deployment that kept serving it would be the
-            // disclosure the declaration was written to prevent. Its held commit goes too, or sharing
+            // disclosure the declaration exists to prevent. Its held commit goes too, or sharing
             // again from that commit would be "already held" into an index that holds nothing.
             if (!(taken.Joined && taken.SharesKnowledge) && store.Refusal is null)
             {
@@ -124,7 +124,7 @@ internal sealed class KnowledgeFeeds(
 
     /// <summary>
     /// Accept one repository's knowledge content from a feed — the only ingest a remote deployment has,
-    /// since it never scans a filesystem (D47 §4). The disclosure judgement runs HERE, at the door,
+    /// since it never scans a filesystem. The disclosure judgement runs HERE, at the door,
     /// over what the repository's own reviewed manifest declared: join admits records, knowledge is a
     /// second declaration, and silence refused both. Accepted entries are normalized — the repository
     /// name from the registration, provenance forced Local, because canonical doctrine is distributed
@@ -143,8 +143,8 @@ internal sealed class KnowledgeFeeds(
             {
                 Repository = registration!.Repository,
                 Provenance = Provenance.Local,
-                // The RECEIVING deployment's wiring decides the circle, never the feed's claim about it
-                // (D48): a feed that could name its own workspace could write itself into someone
+                // The RECEIVING deployment's wiring decides the circle, never the feed's claim about it:
+                // a feed that could name its own workspace could write itself into someone
                 // else's, which is the scoping bug that becomes a disclosure.
                 Workspace = registration.InWorkspace,
             })
@@ -173,7 +173,7 @@ internal sealed class KnowledgeFeeds(
 
             if (verdict != FeedVerdict.Take) return NotTaken(verdict, registration!.Repository, "knowledge", held!, arriving);
 
-            // 🔴 The provenance is recorded in the entries' own write (KNOWCENTRAL2a): a fault between the two left new bodies
+            // 🔴 The provenance is recorded in the entries' own write: a fault between the two would leave new bodies
             // under the old commit, and a store that failed mid-replace claiming a commit it does not hold would refuse the
             // next feed from that commit as a duplicate of work that never happened.
             var named = registration!.Repository;
@@ -203,7 +203,7 @@ internal sealed class KnowledgeFeeds(
     }
 
     /// <summary>
-    /// Accept one repository's code map from a feed (MAP3b) — the map a deployment with no checkout
+    /// Accept one repository's code map from a feed — the map a deployment with no checkout
     /// answers with. The same gates and the same ordering as knowledge, each held at its own commit.
     /// </summary>
     /// <remarks>
@@ -214,7 +214,7 @@ internal sealed class KnowledgeFeeds(
     /// <para>A null map is the repository saying it keeps none at that commit. The held map goes and
     /// the commit stays, so a checkout from before the deletion cannot bring the map back.</para>
     /// </remarks>
-    /// <param name="file">Which candidate the map was read from; ignored when there is no map.</param>
+    /// <param name="file">Which candidate the map is read from; ignored when there is no map.</param>
     /// <param name="map">The file's text, or null when the checkout keeps no map.</param>
     public async Task<FeedOutcome> FeedCodeMapAsync(
         string repository, string? file, string? map, FeedProvenance? provenance, CancellationToken ct)
@@ -222,7 +222,7 @@ internal sealed class KnowledgeFeeds(
         var (registration, refused) = await AdmitAsync(repository, provenance, "a code map", ct).ConfigureAwait(false);
         if (refused is not null) return refused;
 
-        // A composition without the store has nowhere to hold what was fed. Every real one has it
+        // A composition without the store has nowhere to hold what is fed. Every real one has it
         // (ServiceFactory), so this is a wiring mistake, said as one.
         var held = registrations
             ?? throw new InvalidOperationException("a fed code map is held in the registration store, and this service was composed without one");
@@ -293,7 +293,7 @@ internal sealed class KnowledgeFeeds(
     /// The door every feed from a checkout passes: joined, sharing, naming a commit, on the canonical
     /// line. Phrased once here so the knowledge feed and the code map feed cannot drift on it.
     /// </summary>
-    /// <param name="what">What was fed, as the refusal says it: "knowledge", "a code map".</param>
+    /// <param name="what">What is fed, as the refusal says it: "knowledge", "a code map".</param>
     private async Task<(Registration? Registration, FeedOutcome? Refused)> AdmitAsync(
         string repository, FeedProvenance? provenance, string what, CancellationToken ct)
     {
@@ -318,7 +318,7 @@ internal sealed class KnowledgeFeeds(
                 Entries: 0));
         }
 
-        // ——— Which point in the history is speaking (D48 §6). Wholesale replacement is the right
+        // ——— Which point in the history is speaking. Wholesale replacement is the right
         // shape — the index is derived data, and merging two machines' derivations invents a second
         // truth beside git — but it is only safe once the deployment can tell a newer view from an
         // older one. Unguarded, two machines feeding one repository are a flapping generator.

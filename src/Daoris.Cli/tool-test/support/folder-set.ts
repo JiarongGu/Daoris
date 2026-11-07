@@ -2,7 +2,7 @@ const held = new WeakMap<readonly string[], Set<string>>();
 
 /**
  * Every folder above a tracked file, for the list handed in. The scan asks once per .cs file for the same list, and building
- * the set each time was minutes of the tool tests' wall time, so it is built once for a list.
+ * the set each time would cost minutes of the tool tests' wall time, so it is built once for a list.
  */
 export function folderSet(files: readonly string[]): Set<string> {
   let folders = held.get(files);

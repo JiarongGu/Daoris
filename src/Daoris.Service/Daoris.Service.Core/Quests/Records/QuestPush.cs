@@ -6,6 +6,6 @@ namespace Daoris.Knowledge;
 public sealed record QuestPush(
     IReadOnlyList<QuestAcceptance> Accepted, IReadOnlyList<string> Behind, IReadOnlyList<QuestPushRefusal> Refused)
 {
-    /// <summary>The remote's handshake (FABRIC-CLOSE1i), as it stood after this push; null from a remote before it.</summary>
+    /// <summary>The remote's handshake after this push; null from a remote before it.</summary>
     public QuestClosure? Closure { get; init; }
 }

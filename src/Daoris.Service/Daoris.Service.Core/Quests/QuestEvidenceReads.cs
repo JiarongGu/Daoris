@@ -4,16 +4,16 @@ namespace Daoris.Knowledge;
 internal sealed class QuestEvidenceReads(QuestStore quests, QuestReviews reviews)
 {
     /// <summary>
-    /// Daoris read a done's evidence (D144 §3): the driver's verdict at the end of the session that made the done,
+    /// Daoris read a done's evidence: the driver's verdict at the end of the session that made the done,
     /// the orphan sweep's, or the person's check at the terminal. The quest must be done and waiting on its evidence, and
     /// the verdict must name the commit read and read every item of every met requirement, and nothing else. Found, what
     /// the done held goes on — its next step published in the same transaction; missing, it waits for the person.
     /// </summary>
     /// <remarks>
     /// <para>The driver's door, never an agent's: no connector tool reaches it, since the session a requirement judges
-    /// never writes its verdict (D144 §1). It commits here and travels like any verb (D68).</para>
+    /// never writes its verdict. It commits here and travels like any verb.</para>
     ///
-    /// <para><b>A fact, with no model</b> (D24, D54): the exchange cannot read a commit, so it judges only that the verdict
+    /// <para><b>A fact, with no model</b>: the exchange cannot read a commit, so it judges only that the verdict
     /// reads what the done waits on, in codes, and keeps it. Whether the commit is the done's or follows it on the same
     /// history is the reader's to settle, which has the tree.</para>
     /// </remarks>
@@ -89,8 +89,8 @@ internal sealed class QuestEvidenceReads(QuestStore quests, QuestReviews reviews
     };
 
     /// <summary>
-    /// Why <paramref name="verdict"/> was not asked for what <paramref name="quest"/> stands on (§E5), or null
-    /// when it was: a submission's verdict names that submission, and a done's names none.
+    /// Why <paramref name="verdict"/> is not asked for what <paramref name="quest"/> stands on, or null
+    /// when it is: a submission's verdict names that submission, and a done's names none.
     /// </summary>
     private static string? Unasked(Quest quest, QuestEvidenceVerdict verdict) => verdict.AskedFor(quest)
         ? null
@@ -186,7 +186,7 @@ internal sealed class QuestEvidenceReads(QuestStore quests, QuestReviews reviews
 
     /// <summary>
     /// What a kept verdict means for whoever posted it: found, and what the done held goes on; missing, which item
-    /// was not there and the person's two doors; or found beside a departure, which still waits for their yes.
+    /// is not there and the person's two doors; or found beside a departure, which still waits for their yes.
     /// </summary>
     private async Task<string> EvidencedAsync(Quest quest, QuestEvidenceVerdict verdict, CancellationToken ct)
     {

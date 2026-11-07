@@ -5,10 +5,10 @@ using Daoris.Knowledge.Mcp;
 namespace Daoris.Service.Tests;
 
 /// <summary>
-/// HELPMODE1c4 (D183's note; the Ask Daoris modes design §4.1): Ask Daoris reads the checkouts through one typed tool,
+/// Ask Daoris reads the checkouts through one typed tool,
 /// <c>checkout_read</c>, for every agent. Each call is a keyed request in the home's session requests for the conversation's own
 /// session, as a chosen setting's is, which the loop running it takes, judges and answers beside; the tool says the answer's words,
-/// then what was read. The connector judges only what it can: that it speaks for an Ask Daoris conversation, and that the call names
+/// then what is read. The connector judges only what it can: that it speaks for an Ask Daoris conversation, and that the call names
 /// what its read needs. Which checkout, the path and what git ignores are the driver's.
 /// </summary>
 /// <remarks>
@@ -80,7 +80,7 @@ public sealed class McpCheckoutToolTests : McpToolsFixture
 
     /// <summary>
     /// 🔴 A read is one keyed request for the conversation's own session, with the move, who asked, the operation, the repository and
-    /// the path; the tool says the loop's words and then what was read, and the answer is read once and removed.
+    /// the path; the tool says the loop's words and then what is read, and the answer is read once and removed.
     /// </summary>
     [Fact]
     public async Task A_read_is_a_request_for_the_conversations_own_session_and_says_what_was_read()
@@ -149,8 +149,8 @@ public sealed class McpCheckoutToolTests : McpToolsFixture
     }
 
     /// <summary>
-    /// 🔴 A request nobody takes in time is withdrawn, so no loop reads after the agent was told nothing was read; one taken and not
-    /// answered says so, never that nothing was read. What was read is bounded on this side too: past 200 KB it is cut.
+    /// 🔴 A request nobody takes in time is withdrawn, so no loop reads after the agent is told nothing is read; one taken and not
+    /// answered says so, never that nothing is read. What is read is bounded on this side too: past 200 KB it is cut.
     /// </summary>
     [Fact]
     public async Task A_request_nobody_takes_is_withdrawn_and_an_answer_is_bounded()

@@ -1,8 +1,7 @@
 namespace Daoris.Knowledge;
 
 /// <summary>
-/// Cites an entry at the reading the index stores for it, and rechecks a citation (KNOWCENTRAL2a; the memory coordinator
-/// design's §5).
+/// Cites an entry at the reading the index stores for it, and rechecks a citation.
 /// </summary>
 internal sealed class KnowledgeCitations(
     IKnowledgeStore store,

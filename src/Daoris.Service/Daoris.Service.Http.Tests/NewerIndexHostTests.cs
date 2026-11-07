@@ -8,9 +8,9 @@ using Microsoft.Data.Sqlite;
 namespace Daoris.Service.Http.Tests;
 
 /// <summary>
-/// KSCHEMA1, at the HTTP host: over an index a newer Daoris wrote, the host starts and serves what is not derived, and
-/// every route over the index answers the refusal, 409 in the house's error shape, rather than HOSTLOG1's sentence for
-/// an error nobody expected. The answer names no machine path, the index is left as it was, and the host says so once in
+/// At the HTTP host: over an index a newer Daoris wrote, the host starts and serves what is not derived, and
+/// every route over the index answers the refusal, 409 in the house's error shape, rather than the sentence for
+/// an error nobody expected. The answer names no machine path, the index is left untouched, and the host says so once in
 /// its log. 409 and not 503: nothing about it passes by waiting, so it is a refusal a caller shows, as every other 409
 /// here is, never a busy host to try again.
 /// </summary>
@@ -69,7 +69,7 @@ public sealed class NewerIndexHostTests : IDisposable
         var lines = host.LogLines();
         var refused = Assert.Single(lines, line => line.Contains("\"event\":\"index.refused\"", StringComparison.Ordinal));
         Assert.Contains($"\"found\":{ahead}", refused);
-        // A refusal is not an error nobody expected (HOSTLOG1): none is written as one, and none counts as failed.
+        // A refusal is not an error nobody expected: none is written as one, and none counts as failed.
         Assert.DoesNotContain(lines, line => line.Contains("\"event\":\"error\"", StringComparison.Ordinal));
         Assert.DoesNotContain(lines, line => line.Contains("\"event\":\"request.failed\"", StringComparison.Ordinal));
         Assert.Equal(ahead, Version(host.Database));

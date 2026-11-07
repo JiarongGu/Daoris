@@ -31,7 +31,7 @@ test('init writes a manifest with no packs and reports what is available', () =>
   const manifest = readManifest(repoFx.root);
   assert.deepEqual(manifest.packs, []);
   assert.equal(manifest.target, '.claude');
-  // The npm package the canon shipped in, at the canon's version (DIST1, D105): what a consumer
+  // The npm package the canon shipped in, at the canon's version: what a consumer
   // re-runs as `npx <source> sync`, and never a git ref, which has no `bin` to run.
   assert.equal(manifest.source, 'daoris@0.1.0');
   assert.match(out.join('\n'), /win\s+—\s+Windows machine traps/);
@@ -82,8 +82,8 @@ test('status says when the shipped canon is newer than the lock', () => {
 });
 
 /**
- * The stamp stays at 0.0.1 through every 0.0.x build, and `status` once looked for an update only when the versions
- * differed, so an adopter missing a whole canon file heard nothing (CONTEXTONE1a). The plan runs whatever the versions
+ * The stamp stays at 0.0.1 through every 0.0.x build, so `status` must not look for an update only when the versions
+ * differ, or an adopter missing a whole canon file hears nothing. The plan runs whatever the versions
  * say; with equal versions it cannot say which side is newer, so it names the difference and calls nothing behind.
  */
 test('status is not silent when the versions match and the canon has a file the lock lacks', () => {
@@ -151,8 +151,8 @@ test('status names what changed, ignoring a pure version bump', () => {
 
 /**
  * A rule that moved packs under the same name is still one rule on disk, written under the LOCK's
- * provenance. `status` read the span by the canon's new provenance, found nothing, and left a real
- * change out of the list (REV3 CLEAN1: the span lookup now has one reader, and it reads by the lock).
+ * provenance. `status` reads the span by the lock, since reading it by the canon's new provenance
+ * finds nothing and leaves a real change out of the list.
  */
 test('status names a change to a rule the canon moved into a pack', () => {
   const canonFx = canonFixture();
@@ -219,7 +219,7 @@ test('status prints why the canon changed, for the versions being skipped', () =
 });
 
 /**
- * The agent operator's surface (D37): status as facts rather than prose. The JSON carries the same
+ * The agent operator's surface: status as facts rather than prose. The JSON carries the same
  * numbers the text prints, computed once and rendered twice — two paths that compute separately are
  * two paths that can disagree about whether an update exists.
  */
@@ -227,8 +227,8 @@ test('status --json emits the same facts as the text, machine-readable', () => {
   const canonFx = canonFixture();
   const repoFx = makeFixture('cmd-status-json');
   repoFx.write('daoris.json', '{"source":"s","packs":[]}');
-  // A knowledge document, because that tier is still files. A repository's own always-loaded text
-  // lives in its instruction file outside the region now (D59) — prose, not an enumerable document.
+  // A knowledge document, because that tier is files. A repository's own always-loaded text
+  // lives in its instruction file outside the region — prose, not an enumerable document.
   repoFx.write('.claude/knowledge/house-style.md', '# local\n');
   repoFx.write(
     'daoris.lock',
@@ -250,7 +250,7 @@ test('status --json emits the same facts as the text, machine-readable', () => {
   assert.equal(report.update.direction, 'newer');
   assert.equal(report.update.versionOnly, false);
   assert.ok(Array.isArray(report.drifted));
-  // Silence means local (D47 §4), and status says so rather than omitting the question.
+  // Silence means local, and status says so rather than omitting the question.
   assert.equal(report.remote, null);
 
   delete process.env.DAORIS_CANON;
@@ -259,9 +259,8 @@ test('status --json emits the same facts as the text, machine-readable', () => {
 });
 
 /**
- * The remote declaration is the manifest's one disclosure control (D47 §4), and "what is this
- * repository sharing?" is exactly the question status exists to answer — it was the one manifest
- * field status could not report.
+ * The remote declaration is the manifest's one disclosure control, and "what is this
+ * repository sharing?" is exactly the question status exists to answer.
  */
 test('status surfaces the remote declaration, in both shapes', () => {
   const canonFx = canonFixture();

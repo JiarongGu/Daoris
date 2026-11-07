@@ -1,6 +1,6 @@
 namespace Daoris.Knowledge.Mcp;
 
-/// <summary>Who may call a tool, for a connector that names a session (FABRIC-C2a, D173's FABRIC-C2a note, point 3).</summary>
+/// <summary>Who may call a tool, for a connector that names a session.</summary>
 public enum ToolClass
 {
     /// <summary>Answers from what Daoris knows and changes nothing: served to every caller.</summary>
@@ -14,13 +14,13 @@ public enum ToolClass
 }
 
 /// <summary>
-/// Every tool the connector registers, and its class (FABRIC-C2a, D173's FABRIC-C2a note, point 3). A census
+/// Every tool the connector registers, and its class. A census
 /// (<c>ToolClassesTests</c>) holds it to the registration, so a tool added later has no class, and is refused to a child, until
 /// it is given one here.
 /// </summary>
 /// <remarks>
-/// The note's reads, and <c>line_read</c> and <c>handback_read</c>, added since, which read records and move nothing, and
-/// <c>memory_search</c> and <c>memory_get</c>, which open every engine with no reinforcement (KNOWCENTRAL2b).
+/// The reads, including <c>line_read</c> and <c>handback_read</c>, which read records and move nothing, and
+/// <c>memory_search</c> and <c>memory_get</c>, which open every engine with no reinforcement.
 /// <c>channel_read</c> is restricted because it moves the parent's read mark, <c>knowledge_refresh</c> because it rebuilds the
 /// index every session shares, and <c>checkout_read</c> and <c>housekeeping_inspect</c> because they read under a person's grant
 /// to the session. Every <c>*_propose</c> is restricted by its suffix.

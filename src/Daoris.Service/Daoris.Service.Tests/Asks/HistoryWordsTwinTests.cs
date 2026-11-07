@@ -4,7 +4,7 @@ using Daoris.Knowledge;
 namespace Daoris.Service.Tests;
 
 /// <summary>
-/// HIST1m (D153's HIST1m note; the history-clearing design §6.3; <c>.claude/knowledge/twins.md</c>): every word the history
+/// Every word (see <c>.claude/knowledge/twins.md</c>) the history
 /// doors spell is held to one table, <c>fixtures/history-words.json</c> beside this suite, which the driver's
 /// <c>HistoryWordsTwinTests</c> holds its constants to as well. Here each group's names are the desk's enum members, in their
 /// order, and each is spelled as the table's word, so a word the desk adds, renames or respells fails until the table says it,
