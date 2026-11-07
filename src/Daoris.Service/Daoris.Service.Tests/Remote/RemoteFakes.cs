@@ -16,7 +16,7 @@ internal sealed class StoreRemote(
 {
     public int Calls { get; private set; }
 
-    /// <summary>The last channel feed as it crossed the wire (SESSONE2d) — what a disclosure test reads.</summary>
+    /// <summary>The last channel feed as it crossed the wire — what a disclosure test reads.</summary>
     public string? LastChannelFeed { get; private set; }
 
     public async Task PushChannelAsync(IReadOnlyList<ChannelMessage> messages, CancellationToken ct = default)
@@ -36,7 +36,7 @@ internal sealed class StoreRemote(
     /// <summary>The last session feed as it crossed the wire — what a disclosure test reads.</summary>
     public string? LastFeed { get; private set; }
 
-    /// <summary>The pushes as they crossed the wire, the empty ones a declaration alone makes included (FABRIC-CLOSE1i).</summary>
+    /// <summary>The pushes as they crossed the wire, the empty ones a declaration alone makes included.</summary>
     public List<string> Pushes { get; } = [];
 
     public async Task<QuestFetch> FetchQuestsAsync(long since, CancellationToken ct = default)
@@ -45,7 +45,7 @@ internal sealed class StoreRemote(
         return QuestWire.ReadPage(QuestWire.Page(await remote.OperationsSinceAsync(since, ct: ct) with { Closure = await remote.ClosureAsync(ct) }))!;
     }
 
-    // As the shared host's door does: the push judged, its declaration heard, and the handshake answered beside it (FABRIC-CLOSE1i).
+    // As the shared host's door does: the push judged, its declaration heard, and the handshake answered beside it.
     public async Task<QuestPush> PushQuestsAsync(
         long @base, IReadOnlyList<QuestOperation> operations, CancellationToken ct = default, string? declares = null)
     {
@@ -80,7 +80,7 @@ internal sealed class StoreRemote(
         return SessionWire.ReadPage(SessionWire.Page(await sessions!.TeamSinceAsync(since, caller, ct: ct)))!;
     }
 
-    // The team's code maps (MAP3e) are asked of the remote's registry service, when one is given.
+    // The team's code maps are asked of the remote's registry service, when one is given.
     public async Task<string?> HeldCodeMapAsync(string repository, CancellationToken ct = default)
     {
         Calls++;
@@ -98,9 +98,9 @@ internal sealed class StoreRemote(
 
 /// <summary>
 /// A remote built before a field an existing kind gained: a real store behind the real wire, whose reader has no field for
-/// <paramref name="unknown"/>, by default a decline's <c>whileOpen</c> (PAUSE1c), or a dismissal's <c>forward</c> (SYNCMERGE1a). The
+/// <paramref name="unknown"/>, by default a decline's <c>whileOpen</c>, or a dismissal's <c>forward</c>. The
 /// field is taken out of every operation it reads and every one it serves, so it keeps, judges and hands back the operation as an older
-/// build does. Used to fetch from a current remote, it is a machine built before the field. Quests only: nothing else of an older build
+/// build does. Fetching from a current remote, it is a machine built before the field. Quests only: nothing else of an older build
 /// differs here.
 /// </summary>
 internal sealed class OlderRemote(QuestStore remote, string unknown = "whileOpen") : IRemote
@@ -108,7 +108,7 @@ internal sealed class OlderRemote(QuestStore remote, string unknown = "whileOpen
     public async Task<QuestFetch> FetchQuestsAsync(long since, CancellationToken ct = default) =>
         QuestWire.ReadPage(Without(QuestWire.Page(await remote.OperationsSinceAsync(since, ct: ct))))!;
 
-    // A remote before FABRIC-CLOSE1i hears no declaration and answers no handshake.
+    // An older remote hears no declaration and answers no handshake.
     public async Task<QuestPush> PushQuestsAsync(
         long @base, IReadOnlyList<QuestOperation> operations, CancellationToken ct = default, string? declares = null)
     {
@@ -117,7 +117,7 @@ internal sealed class OlderRemote(QuestStore remote, string unknown = "whileOpen
             await remote.ReceiveAsync(sent, pushed, _ => null, _ => Workspaces.Default, ct)))!;
     }
 
-    /// <summary>What an older reader makes of the JSON: every operation as it was, less the field it never knew.</summary>
+    /// <summary>What an older reader makes of the JSON: every operation as it is, less the field it does not know.</summary>
     private string Without(string json)
     {
         var root = System.Text.Json.Nodes.JsonNode.Parse(json)!.AsObject();

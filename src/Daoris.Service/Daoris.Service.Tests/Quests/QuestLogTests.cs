@@ -4,9 +4,9 @@ using Microsoft.Data.Sqlite;
 namespace Daoris.Service.Tests;
 
 /// <summary>
-/// A quest is its operations in order (D68 §1, SYNC1): every verb appends to the quest's history, and
+/// A quest is its operations in order: every verb appends to the quest's history, and
 /// the status table is a cache of replaying that history through the one transition table. Local
-/// behaviour is unchanged — <see cref="QuestStoreTests"/> passes on the log as it did on the table.
+/// behaviour is the table's — <see cref="QuestStoreTests"/> passes on the log.
 /// </summary>
 public sealed class QuestLogTests : IAsyncLifetime
 {
@@ -56,7 +56,7 @@ public sealed class QuestLogTests : IAsyncLifetime
 
     /// <summary>
     /// A quest published before the id widened keeps its six characters until it closes, but no lookup
-    /// reads that width: the same words published again make a new quest of the wide id (ONEWAY1x).
+    /// reads that width: the same words published again make a new quest of the wide id.
     /// </summary>
     [Fact]
     public async Task A_quest_from_before_the_wider_id_stays_open_and_the_same_words_make_a_new_one()
@@ -142,7 +142,7 @@ public sealed class QuestLogTests : IAsyncLifetime
     }
 
     /// <summary>
-    /// 🔴 HIST1a (D153 point 4, H1): the sequence never goes back. Removing this machine's newest operations, as D95's
+    /// 🔴 The sequence never goes back. Removing this machine's newest operations, as the
     /// delete of a quest that never left does, leaves the next one numbered past them, even from a store opened again,
     /// because a remote that already holds a number answers a second operation under it as a retried push.
     /// </summary>
@@ -163,8 +163,8 @@ public sealed class QuestLogTests : IAsyncLifetime
     }
 
     /// <summary>
-    /// HIST1a: an operation of this machine's that a fetch brings back, as one does after a hand purge made before the mark
-    /// once a cursor is at zero (H4), raises the mark as well: the remote holds that number, so removing it again must
+    /// An operation of this machine's that a fetch brings back, as one does after a hand purge made before the mark
+    /// once a cursor is at zero, raises the mark as well: the remote holds that number, so removing it again must
     /// not hand it out a second time.
     /// </summary>
     [Fact]
@@ -186,7 +186,7 @@ public sealed class QuestLogTests : IAsyncLifetime
     }
 
     /// <summary>
-    /// HIST1a: a store from before the mark starts it at the highest sequence this machine issued, so a removal made
+    /// A store from before the mark starts it at the highest sequence this machine issued, so a removal made
     /// after the upgrade cannot take the sequence back either. Another machine's sequences are theirs, and count for nothing.
     /// </summary>
     [Fact]
@@ -197,7 +197,7 @@ public sealed class QuestLogTests : IAsyncLifetime
         var newest = await Publish("Removed");
         await using (var older = _connection.CreateCommand())
         {
-            // The build before HIST1a: no mark, and nothing that moves one. Another machine's operation, far ahead.
+            // No mark, and nothing that moves one. Another machine's operation, far ahead.
             older.CommandText = """
                 DROP TRIGGER IF EXISTS quest_sequence_issued;
                 ALTER TABLE quest_machine DROP COLUMN sequence;
@@ -215,7 +215,7 @@ public sealed class QuestLogTests : IAsyncLifetime
     }
 
     /// <summary>
-    /// The claim SYNC1 exists to make true: what the platform reads is what replaying the history
+    /// The claim the log exists to make true: what the platform reads is what replaying the history
     /// gives — for every quest, whatever it carries and however it ended, a chain's step included.
     /// </summary>
     [Fact]
@@ -276,7 +276,7 @@ public sealed class QuestLogTests : IAsyncLifetime
     /// <summary>
     /// Replay IS the transition table applied in order: a take after a take and anything after a
     /// close are not moves, whichever machine's history they came from — so no order of operations
-    /// can reach a state the table forbids. SYNC2's rebase stands on exactly this.
+    /// can reach a state the table forbids. A rebase stands on exactly this.
     /// </summary>
     [Fact]
     public void Replay_goes_through_the_transition_table()
@@ -296,7 +296,7 @@ public sealed class QuestLogTests : IAsyncLifetime
         Assert.Equal(Now.AddHours(3), replayed.Updated);
     }
 
-    // ——— Dismissing a conflict (SYNC6c): a person's act that travels. It names the conflict by the
+    // ——— Dismissing a conflict: a person's act that travels. It names the conflict by the
     // machine and sequence of the move that lost — the conflict's identity on every machine.
 
     private static QuestOperation Lost(string machine, long sequence, string note) =>
@@ -347,7 +347,7 @@ public sealed class QuestLogTests : IAsyncLifetime
         Assert.Equal(Shape(once), Shape(twice));
     }
 
-    // ——— A delete (QUEST1, D95): an operation, so it travels; it ends an open quest and nothing else.
+    // ——— A delete: an operation, so it travels; it ends an open quest and nothing else.
 
     /// <summary>
     /// A delete ends an open quest — the history replays to no quest — and the same words published
@@ -375,7 +375,7 @@ public sealed class QuestLogTests : IAsyncLifetime
 
     /// <summary>
     /// Somebody's work is never deleted: a delete does not apply to a taken quest, whichever machine's history it came from. A closed
-    /// quest is removed only by the closed quest's remover (ONEWAY1x), whose tombstone then applies.
+    /// quest is removed only by the closed quest's remover, whose tombstone then applies.
     /// </summary>
     [Fact]
     public void A_closed_quest_s_removal_applies_and_replays_to_nothing()
@@ -406,7 +406,7 @@ public sealed class QuestLogTests : IAsyncLifetime
         Assert.False(QuestLog.Applies(null, Op(3, QuestOperationKind.Deleted)));
     }
 
-    // ——— A decline that applies only while open (PAUSE1c, D132 point 10): an abandon judged its decline on an
+    // ——— A decline that applies only while open: an abandon judged its decline on an
     // open quest, so landing after somebody's take it must not decline their work under them.
 
     private static QuestOperation WhileOpen(long sequence, string reason) =>
@@ -440,7 +440,7 @@ public sealed class QuestLogTests : IAsyncLifetime
     }
 
     /// <summary>
-    /// A decline that says nothing of the flag is a plain one — every decline before PAUSE1c, and the quest page's
+    /// A decline that says nothing of the flag is a plain one — the quest page's
     /// *Decline…* — and a plain decline still applies over a take: a person declining work they see taken means to.
     /// </summary>
     [Fact]
@@ -458,7 +458,7 @@ public sealed class QuestLogTests : IAsyncLifetime
     }
 
     /// <summary>
-    /// The store judges the flag inside the write, as it judges every move (D47 §5): an open quest is declined and
+    /// The store judges the flag inside the write, as it judges every move: an open quest is declined and
     /// its history keeps the flag; a taken one is refused and its history gains nothing.
     /// </summary>
     [Fact]
@@ -482,7 +482,7 @@ public sealed class QuestLogTests : IAsyncLifetime
     }
 
     /// <summary>
-    /// The flag is written only when set: a plain decline's record is byte for byte what it was before PAUSE1c, and
+    /// The flag is written only when set: a plain decline's record carries none, and
     /// a record from before — a decline whose payload says nothing of the flag — reads back plain.
     /// </summary>
     [Fact]
@@ -532,7 +532,7 @@ public sealed class QuestLogTests : IAsyncLifetime
         Assert.Null(QuestLog.Replay([]));
     }
 
-    /// <summary>D47 §5's table: taken only from open; closed only from live; nothing leaves a close; nothing reopens.</summary>
+    /// <summary>The transition table: taken only from open; closed only from live; nothing leaves a close; nothing reopens.</summary>
     [Theory]
     [InlineData(QuestStatus.Open, QuestStatus.Taken, true)]
     [InlineData(QuestStatus.Taken, QuestStatus.Taken, false)]
@@ -586,7 +586,7 @@ public sealed class QuestLogTests : IAsyncLifetime
     /// <summary>
     /// Pins what the connection's gate rests on: a command made while a transaction is open JOINS it rather
     /// than failing, so a store method a transaction's work calls inside the gate it holds writes in that
-    /// transaction (SQLITETX1). Another request's command never meets it now: it waits for the gate. A driver
+    /// transaction. Another request's command never meets it: it waits for the gate. A driver
     /// version that changed this would fail every store call made inside a transaction's work.
     /// </summary>
     [Fact]
@@ -645,7 +645,7 @@ public sealed class QuestLogTests : IAsyncLifetime
 
     /// <summary>
     /// Quests are not derivable from anything, so a store from before the log is given each local
-    /// quest's history from what its row says — once, however many hosts open it. A mirror row was a
+    /// quest's history from what its row says — once, however many hosts open it. A mirror row is a
     /// copy of a remote's quest, so it is dropped rather than migrated (design §8): the first fetch
     /// brings it back as history. After that the old quests move exactly as new ones do.
     /// </summary>

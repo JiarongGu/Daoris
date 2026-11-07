@@ -5,7 +5,7 @@ using Daoris.Knowledge.Mcp;
 namespace Daoris.Service.Tests;
 
 /// <summary>
-/// HELPMODE1c2a (D183's note): Ask Daoris's three housekeeping tools. Each is a keyed request in the home's session requests for
+/// Ask Daoris's three housekeeping tools. Each is a keyed request in the home's session requests for
 /// the conversation's own session, which the loop running it takes, judges and answers beside; the tool says the answer's words.
 /// The connector judges only what it can: that it speaks for an Ask Daoris conversation, and that the call names what its
 /// operation needs. The grant, the workspace and the cleanup's judges are the driver's.
@@ -151,7 +151,7 @@ public sealed class McpHousekeepingToolTests : McpToolsFixture
     }
 
     /// <summary>
-    /// 🔴 A request nobody takes in time is withdrawn, so no loop acts on it after the agent was told nothing was done (REQTAKE2's
+    /// 🔴 A request nobody takes in time is withdrawn, so no loop acts on it after the agent is told nothing is done (the
     /// withdrawal, on this side of the twin).
     /// </summary>
     [Fact]
@@ -165,7 +165,7 @@ public sealed class McpHousekeepingToolTests : McpToolsFixture
         Assert.Empty(Directory.GetFiles(Requests));
     }
 
-    /// <summary>A request taken and not answered in time says so, and that the act may still be under way: never that nothing was done.</summary>
+    /// <summary>A request taken and not answered in time says so, and that the act may still be under way: never that nothing is done.</summary>
     [Fact]
     public async Task A_request_taken_and_not_answered_in_time_says_it_may_still_be_under_way()
     {

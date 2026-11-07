@@ -6,10 +6,10 @@ internal sealed class AskGoAheadAnswers(AskStore asks, AskStandings standings)
     /// <summary>
     /// Keep the person's answer to go-ahead <paramref name="number"/> on ask <paramref name="id"/>: yes or no, with their
     /// words where they gave any. A later answer replaces an earlier one, since the latest is what they now say; every
-    /// session on the ask is handed it at its next start (D135 §2).
+    /// session on the ask is handed it at its next start.
     /// </summary>
     /// <remarks>
-    /// <b>The person's alone</b>: the production acts stay theirs (D37, D52), so no connector tool answers a go-ahead, and a
+    /// <b>The person's alone</b>: the production acts stay theirs, so no connector tool answers a go-ahead, and a
     /// local host's door is the only one, as the ask routes are.
     /// </remarks>
     public async Task<GoAheadAnswerOutcome> AnswerAsync(
@@ -31,7 +31,7 @@ internal sealed class AskGoAheadAnswers(AskStore asks, AskStandings standings)
             GoAhead? answered = held with { Answer = answer };
             IReadOnlyList<(System.Text.Json.JsonElement Raw, GoAhead? Read)> next =
                 [.. entries.Select(entry => entry.Read?.Number == number ? (entry.Raw, answered) : entry)];
-            // Read as it was stored, in the same transaction: whether this is the person's first answer to it.
+            // Read as stored, in the same transaction: whether this is the person's first answer to it.
             return (next, (answered, held.Answer is null, []));
         }, now, ct).ConfigureAwait(false);
 

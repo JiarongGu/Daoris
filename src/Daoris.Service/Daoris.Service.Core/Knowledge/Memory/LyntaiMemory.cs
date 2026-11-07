@@ -9,10 +9,10 @@ using Lyntai.Storage.Sqlite.Migrations;
 namespace Daoris.Knowledge;
 
 /// <summary>
-/// Each repository's memory as Lyntai's graph engine keeps it (KNOWCENTRAL2d; the memory coordinator design §1, §2): one engine per
+/// Each repository's memory as Lyntai's graph engine keeps it: one engine per
 /// repository, named by its registry name, over one SQLite file of this machine's beside <c>knowledge.db</c>. Every engine is opened with
 /// <c>ReinforceOn = None</c>, so a recall or an expansion touches, links and logs nothing of the owner's. Another repository reads one
-/// through Lyntai's view (MC7, KNOWCENTRAL2g), taken from a reader's engine over the same store and name, never the owner's instance.
+/// through Lyntai's view, taken from a reader's engine over the same store and name, never the owner's instance.
 /// </summary>
 public sealed class LyntaiMemory : IMemoryEngines
 {
@@ -225,7 +225,7 @@ public sealed class LyntaiMemory : IMemoryEngines
             }
             catch (Exception refused) when (refused is ArgumentException or InvalidOperationException and not MemoryKeyConflictException)
             {
-                // A predecessor gone, the successor itself, or one another successor already ended: nothing was written.
+                // A predecessor gone, the successor itself, or one another successor already ended: nothing is written.
                 return new(false, null);
             }
 

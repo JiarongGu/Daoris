@@ -5,7 +5,7 @@ using Microsoft.Data.Sqlite;
 namespace Daoris.Service.Tests;
 
 /// <summary>
-/// HIST1b (D153, the history-clearing design §1, §2.1, §3): the records' half of clearing finished work from this machine,
+/// The records' half of clearing finished work from this machine,
 /// judged by <see cref="HistoryDesk"/>. A closed quest's work, an ask's work, or a closed quest's failed sessions is listed
 /// with what it takes, and goes whole or stays whole, its refusal naming the piece that keeps it. A record that never left
 /// the machine simply goes, row and log together. What a remote numbered is forgotten, which the sync tests hold.
@@ -113,7 +113,7 @@ public sealed class HistoryDeskTests : IAsyncLifetime
         return (await _sessions.FindAsync(session.Id))!;
     }
 
-    /// <summary>A teammate's record of <paramref name="quest"/>, as a fetch brings it down (SYNC4).</summary>
+    /// <summary>A teammate's record of <paramref name="quest"/>, as a fetch brings it down.</summary>
     private async Task<Session> Theirs(Quest quest, SessionState state = SessionState.Completed, string origin = "b@two")
     {
         var record = new Session(
@@ -164,7 +164,7 @@ public sealed class HistoryDeskTests : IAsyncLifetime
     }
 
     /// <summary>
-    /// Kept files the disk will not let go of (HIST1j): the records still go, since a unit is cleared whole or not at all, and the
+    /// Kept files the disk will not let go of: the records still go, since a unit is cleared whole or not at all, and the
     /// answer names the quest whose kept files stayed, so the driver counts them as failed rather than freed. They stay, named by
     /// nothing, for the next clear of a workspace to take.
     /// </summary>
@@ -201,8 +201,8 @@ public sealed class HistoryDeskTests : IAsyncLifetime
     }
 
     /// <summary>
-    /// A quest's work takes every closed question its sessions asked (D79), applied again to what each adds, as the driver's
-    /// reading of a work does (D132 §1): the question's sessions too, and its teammate's copies, so nothing left behind names
+    /// A quest's work takes every closed question its sessions asked, applied again to what each adds, as the driver's
+    /// reading of a work does: the question's sessions too, and its teammate's copies, so nothing left behind names
     /// a session nothing holds.
     /// </summary>
     [Fact]
@@ -263,7 +263,7 @@ public sealed class HistoryDeskTests : IAsyncLifetime
     }
 
     /// <summary>
-    /// HIST1m: how the work in progress stands is named beside <c>open</c> (design §6.3), as HIST1l names what waits beside
+    /// How the work in progress stands is named beside <c>open</c>, as what waits is named beside
     /// <c>needs-you</c>, so the driver says the taken quest's sentence from the refusal itself and never from a second read of
     /// the quest, which may have been taken or closed since: a quest still open, one taken, and the failed sessions of each.
     /// </summary>
@@ -388,7 +388,7 @@ public sealed class HistoryDeskTests : IAsyncLifetime
     }
 
     /// <summary>
-    /// HIST1l: which thing waits on the person is named beside the word (design §6.3), so the driver says the sentence meant from
+    /// Which thing waits on the person is named beside the word, so the driver says the sentence meant from
     /// the refusal itself and never from a second read of the records, which may have moved since: a parked session, a done
     /// held for a yes, a conflict nobody dismissed, an ask proposed or open, a rule proposal of the work's session or for the
     /// ask, and a failed session's proposal in a failed-sessions clear.
@@ -529,7 +529,7 @@ public sealed class HistoryDeskTests : IAsyncLifetime
     }
 
     /// <summary>
-    /// HIST1m: the open work that names it is named beside <c>awaited</c> (design §6.3), so the driver says the chain's sentence
+    /// The open work that names it is named beside <c>awaited</c>, so the driver says the chain's sentence
     /// from the refusal itself and never from a second read of the quest it names, which may have had its answer since: an
     /// open question a session of the work published, a taken quest awaiting its answer, a chain's open next step, and an
     /// open question a failed session published, in a failed-sessions clear.
@@ -655,8 +655,8 @@ public sealed class HistoryDeskTests : IAsyncLifetime
     }
 
     /// <summary>
-    /// 🔴 A session of an open or taken quest is never cleared (design §4): its strikes are counted from these records, and
-    /// clearing one would lower the count under RETRY1's mark. Archive is how it leaves the list.
+    /// 🔴 A session of an open or taken quest is never cleared: its strikes are counted from these records, and
+    /// clearing one would lower the count under the retry mark. Archive is how it leaves the list.
     /// </summary>
     [Fact]
     public async Task Failed_sessions_of_an_open_quest_are_its_strikes_and_stay()
@@ -675,7 +675,7 @@ public sealed class HistoryDeskTests : IAsyncLifetime
         Assert.NotNull(await _sessions.FindAsync(failed.Id));
     }
 
-    /// <summary>Nothing to clear is information, never a refusal (D48 §6): a closed quest with no failed session says so.</summary>
+    /// <summary>Nothing to clear is information, never a refusal: a closed quest with no failed session says so.</summary>
     [Fact]
     public async Task A_closed_quest_with_no_failed_session_has_nothing_to_clear()
     {
@@ -693,7 +693,7 @@ public sealed class HistoryDeskTests : IAsyncLifetime
 
     // ——— An ask's work (design §1.1): the ask, its intake, every quest of its work, or not at all.
 
-    /// <summary>🔴 SESSONE2d: a clear forgets the ask's channel, messages and marks both, inside its transaction, as deleting the ask does.</summary>
+    /// <summary>🔴 A clear forgets the ask's channel, messages and marks both, inside its transaction, as deleting the ask does.</summary>
     [Fact]
     public async Task A_cleared_ask_forgets_its_channel()
     {
@@ -720,7 +720,7 @@ public sealed class HistoryDeskTests : IAsyncLifetime
 
     /// <summary>
     /// An ask whose work closed goes whole: the ask, the quests it became and their sessions, its intake's record, and the
-    /// files both kept on this machine. Asks never leave the machine (D65), so an ask always simply goes.
+    /// files both kept on this machine. Asks never leave the machine, so an ask always simply goes.
     /// </summary>
     [Fact]
     public async Task An_ask_whose_work_closed_goes_with_its_quests_its_intake_and_its_files()
@@ -756,7 +756,7 @@ public sealed class HistoryDeskTests : IAsyncLifetime
         Assert.False(kept.Has(ask.Id, ask.Attachments[0]));
     }
 
-    /// <summary>One quest that may not go keeps the whole ask (D95's rule, kept): nothing of it is cleared.</summary>
+    /// <summary>One quest that may not go keeps the whole ask: nothing of it is cleared.</summary>
     [Fact]
     public async Task An_ask_with_a_quest_still_open_stays_whole()
     {
@@ -778,7 +778,7 @@ public sealed class HistoryDeskTests : IAsyncLifetime
     // ——— A workspace's finished history, and the press.
 
     /// <summary>
-    /// A workspace lists each closed quest no ask here asked and each ask whose work closed or that was closed, once: a
+    /// A workspace lists each closed quest no ask here asked and each ask whose work closed or that is closed, once: a
     /// question rides with the work that asked it, a quest with its ask, and nothing open or of another workspace is listed.
     /// </summary>
     [Fact]
@@ -808,7 +808,7 @@ public sealed class HistoryDeskTests : IAsyncLifetime
     }
 
     /// <summary>
-    /// 🔴 The second press clears exactly the units named and judges each again where it clears it (D88, design §5): one
+    /// 🔴 The second press clears exactly the units named and judges each again where it clears it: one
     /// that changed since the list is kept with its word, and the next unit still goes.
     /// </summary>
     [Fact]
@@ -841,7 +841,7 @@ public sealed class HistoryDeskTests : IAsyncLifetime
     public void A_refusal_is_spelled_as_its_word(HistoryRefusal refusal, string word) =>
         Assert.Equal(word, HistoryKept.Spell(refusal));
 
-    /// <summary>What waits on the person is spelled as the driver reads it (HIST1l): one lower-case word each.</summary>
+    /// <summary>What waits on the person is spelled as the driver reads it: one lower-case word each.</summary>
     [Theory]
     [InlineData(HistoryWaiting.Parked, "parked")]
     [InlineData(HistoryWaiting.Held, "held")]

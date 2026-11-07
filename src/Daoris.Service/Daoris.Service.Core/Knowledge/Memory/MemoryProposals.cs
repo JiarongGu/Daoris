@@ -4,11 +4,11 @@ using System.Text.Json.Nodes;
 
 namespace Daoris.Knowledge;
 
-/// <summary>A proposal published or joined: the row kept, the quest it travels on and whether it joined one; or why none was.</summary>
+/// <summary>A proposal published or joined: the row kept, the quest it travels on and whether it joined one; or why none is.</summary>
 public sealed record MemoryProposed(MemoryOp? Op, Quest? Quest, bool Joined, string? Refused = null);
 
 /// <summary>
-/// Who a proposal travels as (KNOWCENTRAL2e2; D220): the sender its quest is published by, in <paramref name="Workspace"/>. A session
+/// Who a proposal travels as: the sender its quest is published by, in <paramref name="Workspace"/>. A session
 /// Daoris started in a registered repository, and a person's own agent running in one, propose as that repository; an intake as its
 /// ask, the sender every quest it publishes has; Ask Daoris as <see cref="SessionLedger.HelpRepository"/>, Daoris's own sender, since it
 /// serves no repository. The quest says which of the four it is, and a proposal is only ever a request its owner's session decides.
@@ -47,7 +47,7 @@ public sealed record MemoryProposer(string Sender, string Workspace)
 }
 
 /// <summary>
-/// A reader's proposal (KNOWCENTRAL2e; the memory coordinator design §4): a quest to the entry's owner, joined while nobody has taken it by
+/// A reader's proposal: a quest to the entry's owner, joined while nobody has taken it by
 /// every further proposal from the same repository, each its own row and its own decision. The owner's session decides through its own
 /// operations or declines; how the quest closes settles each proposal, which applies nothing. Settling is read from the quest and the
 /// target at each look, so whichever door closed the quest, and on whichever machine, the rows say the same.
@@ -115,7 +115,7 @@ public sealed class MemoryProposals(MemoryOpStore ops, QuestStore quests, QuestE
 
     /// <summary>
     /// Every awaiting proposal settled where its quest closed (declined, or <c>answered</c> on a done, each with the owner's note), is
-    /// gone (<c>dropped</c>), or its target moved past the revision read while it was open (<c>stale</c>).
+    /// gone (<c>dropped</c>), or its target moved past the revision read while it is open (<c>stale</c>).
     /// </summary>
     public async Task SettleAsync(DateTimeOffset now, CancellationToken ct = default)
     {

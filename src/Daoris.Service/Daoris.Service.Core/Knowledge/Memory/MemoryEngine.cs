@@ -46,21 +46,21 @@ public enum MemoryReinforcement
     OnRecall,
 }
 
-/// <summary>What a key's receipt names (Lyntai's MC11): the entry the keyed call concerned and its revision after.</summary>
+/// <summary>What a key's receipt names: the entry the keyed call concerned and its revision after.</summary>
 public sealed record MemoryKeyReceipt(string Key, string? Entry, long? Revision);
 
-/// <summary>An entry not confirmed since a sweep's instant, with the re-check text it was written with (the design §3).</summary>
+/// <summary>An entry not confirmed since a sweep's instant, with the re-check text it is written with.</summary>
 public sealed record MemoryDue(string Id, long Revision, string Recheck);
 
-/// <summary>An entry a replacement ends, and the revision its approver read (the design §6 A).</summary>
+/// <summary>An entry a replacement ends, and the revision its approver read.</summary>
 public sealed record MemoryPredecessor(string Entry, long Revision);
 
 /// <summary>What a replacement did: applied, its successor current and every predecessor ended by it; or nothing changed.</summary>
 public sealed record MemorySuperseded(bool Applied, MemoryEntry? Successor);
 
 /// <summary>
-/// One repository's memory engine (Lyntai's, from KNOWCENTRAL2d): the reads its own repository makes, the writes only the service makes
-/// once a change is released, and the view every other repository reads it through (KNOWCENTRAL2g). A write carrying <c>key</c> leaves a
+/// One repository's memory engine (Lyntai's): the reads its own repository makes, the writes only the service makes
+/// once a change is released, and the view every other repository reads it through. A write carrying <c>key</c> leaves a
 /// receipt where the engine <see cref="HoldsReceipts"/>.
 /// </summary>
 public interface IMemoryEngine : IMemoryReads
@@ -85,7 +85,7 @@ public interface IMemoryEngine : IMemoryReads
     Task<MemoryEntry?> EndAsync(string id, long revision, string reason, CancellationToken ct = default, string? key = null);
 
     /// <summary>
-    /// The successor written and every predecessor ended by it, in one change (Lyntai's MC12, the design §6 A); nothing changed where a
+    /// The successor written and every predecessor ended by it, in one change; nothing changed where a
     /// predecessor is gone, ended, or at another revision. A repeat with <c>key</c> answers what the key applied and changes nothing.
     /// </summary>
     /// <exception cref="NotSupportedException">An engine that cannot apply the pair as one change.</exception>

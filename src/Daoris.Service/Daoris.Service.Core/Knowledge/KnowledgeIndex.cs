@@ -6,7 +6,7 @@ namespace Daoris.Knowledge;
 /// <remarks>
 /// The policy is applied at <b>ingest</b>, not at query time. Withholding at query time means the
 /// material is already in the store and one forgotten filter discloses it; withholding at ingest
-/// means it was never there to leak.
+/// means it is never there to leak.
 /// </remarks>
 public sealed class KnowledgeIndex(IKnowledgeStore store, IDisclosurePolicy? disclosure = null, TimeProvider? time = null)
 {
@@ -15,17 +15,17 @@ public sealed class KnowledgeIndex(IKnowledgeStore store, IDisclosurePolicy? dis
     private readonly TimeProvider _time = time ?? TimeProvider.System;
 
     /// <param name="workspaceOf">
-    /// Which circle a repository is wired to (D48). Stamped HERE, on the way in, because a source reads
+    /// Which circle a repository is wired to. Stamped HERE, on the way in, because a source reads
     /// files and the wiring is a registry row — no scanner can know it, and asking one to would put
     /// machine configuration inside a filesystem walk. Absent, everything lands in the default, which
     /// is what a machine that never named a workspace should see.
     /// </param>
     /// <param name="stillRegistered">
     /// Whether a repository is still registered, when the source reads the registered roots and
-    /// nothing else fills this store (a local host, POLISH5). Then a held repository the registry no
+    /// nothing else fills this store (a local host). Then a held repository the registry no
     /// longer names is a ghost whatever the scan saw — retiring the LAST repository leaves a scan that
     /// sees nothing, and the guard below would keep every retired repository indexed forever. Absent
-    /// for a fed store, whose empty source says nothing about what it was fed.
+    /// for a fed store, whose empty source says nothing about what it is fed.
     /// </param>
     public async Task<IndexReport> RefreshAsync(
         IKnowledgeSource source, Func<string, string>? workspaceOf = null,
@@ -34,12 +34,12 @@ public sealed class KnowledgeIndex(IKnowledgeStore store, IDisclosurePolicy? dis
         (await RefreshReadingAsync(source, workspaceOf, stillRegistered, onlyRoots, generations: null, readOf: null, ct)
             .ConfigureAwait(false)).Report;
 
-    /// <summary>A refresh that says which repositories it did not write (KNOWCENTRAL2a).</summary>
+    /// <summary>A refresh that says which repositories it did not write.</summary>
     /// <param name="generations">
     /// Each repository's generation, read before anything the refresh judged by (the registry, the source); null reads them here,
     /// before the source. A repository written since is not written again, and is named in <c>Refused</c>.
     /// </param>
-    /// <param name="readOf">The commit and root signature a repository was read at; null names none.</param>
+    /// <param name="readOf">The commit and root signature a repository is read at; null names none.</param>
     internal async Task<(IndexReport Report, IReadOnlySet<string> Refused)> RefreshReadingAsync(
         IKnowledgeSource source, Func<string, string>? workspaceOf, Func<string, bool>? stillRegistered,
         IReadOnlyList<string>? onlyRoots, IReadOnlyDictionary<string, long>? generations,
@@ -51,7 +51,7 @@ public sealed class KnowledgeIndex(IKnowledgeStore store, IDisclosurePolicy? dis
             new(generations.TryGetValue(repository, out var generation) ? generation : 0, commit, signature, Fed: false, at);
         var refused = new HashSet<string>(StringComparer.Ordinal);
 
-        // Some roots alone (KNOWCURRENT1): a root that moved is replaced and the others stand. No ghost is retired from a
+        // Some roots alone: a root that moved is replaced and the others stand. No ghost is retired from a
         // part, since what it did not read says nothing about what is gone.
         var partial = onlyRoots is not null && source is IRootReadingSource;
         var read = partial
@@ -74,7 +74,7 @@ public sealed class KnowledgeIndex(IKnowledgeStore store, IDisclosurePolicy? dis
 
         // Retire what the source no longer has. Replace-what-you-saw covers every present repository
         // and says nothing about the absent ones — which is exactly where the ghosts live: a
-        // repository renamed on disk was still being served weeks later, indistinguishable from a
+        // repository renamed on disk is still served weeks later, indistinguishable from a
         // live project. Guarded on the scan having seen ANYTHING, because a scan that found nothing
         // is a mis-set root far more often than a family that emptied, and "refresh wiped the index"
         // is the wrong answer to a wrong path.

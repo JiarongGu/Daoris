@@ -3,7 +3,7 @@ using ModelContextProtocol.Server;
 
 namespace Daoris.Knowledge.Mcp;
 
-/// <summary>Ask Daoris's <c>session_propose</c> (SESSUX1h2a, COWORKUX1): the <c>session</c> kind's tool, written by <see cref="HelpProposalBox.ProposeSession"/>.</summary>
+/// <summary>Ask Daoris's <c>session_propose</c>: the <c>session</c> kind's tool, written by <see cref="HelpProposalBox.ProposeSession"/>.</summary>
 [McpServerToolType]
 public sealed class HelpSessionTool(IntakeScope? intake = null, HelpProposalBox? help = null)
 {

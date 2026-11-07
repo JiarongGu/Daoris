@@ -3,7 +3,7 @@ using Daoris.Knowledge;
 namespace Daoris.Service.Tests;
 
 /// <summary>
-/// COMMS1e (the comms design §5.2, §13 point 7): a person's press of an offered choice names its question, which the say door keeps on
+/// A person's press of an offered choice names its question, which the say door keeps on
 /// the word and checks inside its one step against the question on file. Their free words name none and are never read as a choice.
 /// </summary>
 public sealed class PersonPressTests : GoAheadFixture

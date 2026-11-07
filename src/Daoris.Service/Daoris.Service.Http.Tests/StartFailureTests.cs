@@ -6,10 +6,8 @@ using Daoris.Knowledge;
 namespace Daoris.Service.Http.Tests;
 
 /// <summary>
-/// HOSTSTART1: a host whose start threw left nothing of why in its machine log. Its entry point is async, so the log it
-/// opened was closed as the exception left the entry point, before the runtime raised it as unhandled, and the
-/// <c>error</c> line written for an unhandled exception was dropped on a closed log. A start that throws now writes one
-/// <c>error</c> line at <c>start</c>. The real executable in a process of its own, since only a real process raises an
+/// A start that throws writes one <c>error</c> line at <c>start</c> in the host's machine log, though its entry point is
+/// async and the exception leaves it before the runtime raises it as unhandled. The real executable in a process of its own, since only a real process raises an
 /// exception as unhandled: the in-process host hands it to the test instead.
 /// </summary>
 public sealed class StartFailureTests : IDisposable
@@ -80,8 +78,8 @@ public sealed class StartFailureTests : IDisposable
     }
 
     /// <summary>
-    /// REALHOSTPORT1 (FLAKE2's finding): a start took its host as up once anything answered at its port, so a port taken
-    /// between being drawn and being bound talked to another host. Here another host holds the port and answers a status over
+    /// A start must not take its host as up once anything answers at its port: a port taken
+    /// between being drawn and being bound talks to another host. Here another host holds the port and answers a status over
     /// a home of its own: the start is not taken for up, and says what answered in its place.
     /// </summary>
     [Fact]

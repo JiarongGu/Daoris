@@ -5,19 +5,18 @@ using System.Text.RegularExpressions;
 namespace Daoris.Knowledge;
 
 /// <summary>
-/// A quest's short title (SESSUX1j, the session management design §6): the few words that tell it apart where a list
-/// gives it one line. Whoever publishes it may give one; where none was given, its name is read from its own words.
+/// A quest's short title: the few words that tell it apart where a list
+/// gives it one line. Whoever publishes it may give one; where none is given, its name is read from its own words.
 /// </summary>
 /// <remarks>
 /// <para><b>A given short title is the publisher's</b>: kept as written, trimmed, never translated, and refused past
 /// <see cref="MaxShort"/> characters or over a line break, in this service's own words, so every door refuses the same.</para>
 ///
-/// <para><b>A derived name is honest about what it is</b> (SESSUX1j, as the dispatch asked it after the install's long
-/// titles): only the quest's own words, chosen and never rewritten; whole words, a Chinese character being the smallest
+/// <para><b>A derived name is honest about what it is</b>: only the quest's own words, chosen and never rewritten; whole words, a Chinese character being the smallest
 /// cut, save where a single word would be kept: then the next is cut by its characters, at its last <c>/</c>, <c>-</c> or
-/// <c>_</c> that fits, so a verb and a long branch name say more than the verb (SHORTFIT1); an ellipsis where words were
+/// <c>_</c> that fits, so a verb and a long branch name say more than the verb; an ellipsis where words are
 /// left off, never after one that only joins; the first line that says what is wanted, skipping a line that is wholly a
-/// bracketed note and setting aside a note that leads a line (the install's re-filed asks put theirs first); and a ticket key
+/// bracketed note and setting aside a note that leads a line; and a ticket key
 /// the ask names (<c>TK-2203</c>) leading it, as trackers name work. It is read when asked, never written into the
 /// record, so the record keeps only what a publisher said, and a quest from before the field is named the same way.</para>
 /// </remarks>
@@ -83,7 +82,7 @@ public static partial class QuestTitles
     /// <summary>Punctuation a key or a cut may stand beside, which neither keeps.</summary>
     private static readonly char[] Around = ['(', ')', '[', ']', ':', ',', '.', ';', '（', '）', '，', '：', '；', '。'];
 
-    /// <summary>What a cut name may not end on: a word that only joins what was left off.</summary>
+    /// <summary>What a cut name may not end on: a word that only joins what is left off.</summary>
     private static readonly char[] Dangling = [',', ';', ':', '(', '[', '—', '–', '-', '·', '/', '、', '，', '；', '：', '（', '「'];
 
     /// <summary>
@@ -168,7 +167,7 @@ public static partial class QuestTitles
 
     /// <summary>
     /// The words joined, whole when they fit <see cref="MaxShort"/> columns, else as many as fit with room for the cut's
-    /// mark, never ending on one that only joins what was left off. A first word too wide alone is cut by its characters;
+    /// mark, never ending on one that only joins what is left off. A first word too wide alone is cut by its characters;
     /// so is the word after a single one kept, at its last joiner that fits (<see cref="Part"/>).
     /// </summary>
     private static string Fit(List<Word> words)
@@ -197,8 +196,8 @@ public static partial class QuestTitles
             return cut + Cut;
         }
 
-        // A single word kept says only a verb when the next is a long one, a branch name most often (SHORTFIT1): that word
-        // is cut too, so the name says what the verb acts on. A part left empty keeps the single word, as before.
+        // A single word kept says only a verb when the next is a long one, a branch name most often: that word
+        // is cut too, so the name says what the verb acts on. A part left empty keeps the single word.
         if (kept.Count == 1)
         {
             var next = words[1];
@@ -214,7 +213,7 @@ public static partial class QuestTitles
     private static readonly char[] Joiners = ['/', '-', '_'];
 
     /// <summary>
-    /// As much of a word as fits <paramref name="room"/> columns (SHORTFIT1): up to its last joiner whose part before it
+    /// As much of a word as fits <paramref name="room"/> columns: up to its last joiner whose part before it
     /// fits, the joiner left off so the name never ends on it; where none falls inside the room, its characters as fit.
     /// </summary>
     private static string Part(Word word, int room)

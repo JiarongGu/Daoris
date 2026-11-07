@@ -1,6 +1,6 @@
 namespace Daoris.Knowledge;
 
-/// <summary>Why a delete did not delete — or <see cref="None"/> when it did (D95).</summary>
+/// <summary>Why a delete did not delete — or <see cref="None"/> when it did.</summary>
 public enum QuestDeleteRefusal
 {
     None,

@@ -5,7 +5,7 @@ using Microsoft.Data.Sqlite;
 namespace Daoris.Service.Tests;
 
 /// <summary>
-/// ASKSCOPE1c (D158's ASKSCOPE1 note point 5): an Ask Daoris conversation in a workspace's room is handed a connector bound to
+/// An Ask Daoris conversation in a workspace's room is handed a connector bound to
 /// that workspace by its record, never by its arguments. Its search, its reads, the registry and the quests answer from that
 /// workspace alone, and a call naming another workspace, or `all`, is refused and says so. A connector bound to none, as
 /// <c>default</c>'s room's is, answers as before.
@@ -123,7 +123,7 @@ public sealed class McpHelpCircleTests : IAsyncLifetime
         Assert.StartsWith("Refused:", await tools.ListQuestsAsync(workspace: "all"));
     }
 
-    /// <summary><c>default</c>'s room is the whole machine (ASKSCOPE1b): its connector is bound to none, and answers as before.</summary>
+    /// <summary><c>default</c>'s room is the whole machine: its connector is bound to none, and answers as before.</summary>
     [Fact]
     public async Task A_connector_bound_to_none_answers_as_before()
     {

@@ -1,6 +1,6 @@
 namespace Daoris.Knowledge;
 
-/// <summary>How the person gave a word on an ask (D133 §1).</summary>
+/// <summary>How the person gave a word on an ask.</summary>
 public enum AskWordKind
 {
     /// <summary>The ask's own sentence — only ever its first word, derived from the record.</summary>
@@ -13,7 +13,7 @@ public enum AskWordKind
     Added,
 
     /// <summary>
-    /// Words said to a session after it ended, which went on with them (D137 §2.4): kept once a session took
+    /// Words said to a session after it ended, which went on with them: kept once a session took
     /// them — the reopened record itself, or the session a fallback handed them to.
     /// </summary>
     Reopened,
@@ -28,7 +28,7 @@ public enum AskWordKind
     Skipped,
 
     /// <summary>
-    /// Their message on the ask's channel (D167 point 7): kept on the ask as every word they give is, beside the channel's own
+    /// Their message on the ask's channel: kept on the ask as every word they give is, beside the channel's own
     /// record of it. A build from before passes a kind it does not know over, so no older reader fails on it.
     /// </summary>
     Channel,

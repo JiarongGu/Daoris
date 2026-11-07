@@ -4,10 +4,9 @@ using Microsoft.Data.Sqlite;
 namespace Daoris.Service.Tests;
 
 /// <summary>
-/// QUESTCLOSE1 (D126's note): the person marks a quest done. On the install (2026-10-08) two driven sessions were finished at
-/// a checkpoint, each record moved to completed, and each quest stayed taken: nothing the person could press closed it, since
-/// a done on a quest an ask asked must answer each of the person's requirements, which only the agent's done can. The
-/// person's done is theirs: it answers none of their own requirements, and its note says it was theirs, with their words.
+/// The person marks a quest done. A done on a quest an ask asked must answer each of the person's requirements, which
+/// only the agent's done can, so the person's own done is theirs: it answers none of their own requirements, and its
+/// note says it is theirs, with their words.
 /// </summary>
 public sealed class QuestPersonDoneTests : IAsyncLifetime
 {
@@ -84,7 +83,7 @@ public sealed class QuestPersonDoneTests : IAsyncLifetime
 
     /// <summary>
     /// 🔴 The owner's case: a taken quest carrying the person's requirement closes done on the person's word, answering none,
-    /// its note saying it was theirs with their words, nothing held, and its chain going on as any done's does.
+    /// its note saying it is theirs with their words, nothing held, and its chain going on as any done's does.
     /// </summary>
     [Fact]
     public async Task The_persons_done_closes_a_taken_quest_with_requirements_and_says_it_was_theirs()
@@ -107,7 +106,7 @@ public sealed class QuestPersonDoneTests : IAsyncLifetime
     }
 
     /// <summary>
-    /// 🔴 QUESTCLOSE1b1 (D126's and D142's notes): the note's lead is Daoris's line, so it is coded, and a 中文 page words it;
+    /// 🔴 The note's lead is Daoris's line, so it is coded, and a 中文 page words it;
     /// the person's words beneath it are theirs, a part of their own, as written. The English note is unchanged, byte for byte,
     /// and the parts travel with it in the log, so every machine that replays the quest words the same lead.
     /// </summary>
@@ -200,7 +199,7 @@ public sealed class QuestPersonDoneTests : IAsyncLifetime
         Assert.Equal(QuestStatus.Taken, (await _quests.FindAsync(quest.Id))!.Status);
     }
 
-    /// <summary>A quest waiting on this one (D79) resumes once the person's done closes it, and the answer says so.</summary>
+    /// <summary>A quest waiting on this one resumes once the person's done closes it, and the answer says so.</summary>
     [Fact]
     public async Task A_quest_waiting_on_it_is_said_to_resume()
     {

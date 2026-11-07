@@ -11,7 +11,7 @@ using Microsoft.Extensions.Options;
 
 namespace Daoris.Knowledge.Http;
 
-/// <summary>Where a confirmation stands (PERSONDOOR1b; ONEWAY1n-i), as its poll answers it.</summary>
+/// <summary>Where a confirmation stands, as its poll answers it.</summary>
 public enum ConfirmationState
 {
     /// <summary>Asked, and waiting for the person in the window, however long they take.</summary>
@@ -23,10 +23,10 @@ public enum ConfirmationState
     /// <summary>Made at the Confirm, and its door took it.</summary>
     Made,
 
-    /// <summary>The person refused it: nothing was made.</summary>
+    /// <summary>The person refused it: nothing is made.</summary>
     Refused,
 
-    /// <summary>Its asker withdrew it: nothing was made.</summary>
+    /// <summary>Its asker withdrew it: nothing is made.</summary>
     Withdrawn,
 
     /// <summary>Made at the Confirm, and its door refused it: what it rested on moved while it waited.</summary>
@@ -37,9 +37,9 @@ public enum ConfirmationState
 }
 
 /// <summary>
-/// One request an asker asked the person to confirm (PERSONDOOR1b; ONEWAY1n-i): what it is shown by, and the request as asked, which
+/// One request an asker asked the person to confirm: what it is shown by, and the request as asked, which
 /// the host makes at the Confirm. <see cref="Path"/> is the path and query exactly as asked, made with the path unescaped as its door
-/// was found, the query as sent and the body to the byte. <see cref="Session"/> is the session the ask named, or null for a terminal's.
+/// finds it, the query as sent and the body to the byte. <see cref="Session"/> is the session the ask named, or null for a terminal's.
 /// Once it ends, <see cref="Ended"/>, and for one made, the door's <see cref="Status"/>, its <see cref="Answer"/> and, where it refused,
 /// its <see cref="Reason"/>. The asker's token is held by its hash and never answered.
 /// </summary>
@@ -68,10 +68,10 @@ public sealed record Confirmation(
     internal byte[] Bytes { get; init; } = [];
 }
 
-/// <summary>What a request made at the Confirm was answered: its status and its body, as its door wrote them.</summary>
+/// <summary>What a request made at the Confirm is answered with: its status and its body, as its door wrote them.</summary>
 public sealed record MadeRequest(int Status, byte[] Body);
 
-/// <summary>Why an ask was not taken: none, a host holding no key, a request out of shape, every place taken, or its asker's bound.</summary>
+/// <summary>Why an ask is not taken: none, a host holding no key, a request out of shape, every place taken, or its asker's bound.</summary>
 public enum ConfirmationAskRefusal
 {
     None,
@@ -82,7 +82,7 @@ public enum ConfirmationAskRefusal
 }
 
 /// <summary>
-/// Why an answer was not taken, or how a Confirm's request went: none, no such confirmation, one of an earlier start, one no longer
+/// Why an answer is not taken, or how a Confirm's request went: none, no such confirmation, one of an earlier start, one no longer
 /// waiting, a request its door did not take, or a withdrawal without its asker's token.
 /// </summary>
 public enum ConfirmationAnswerRefusal
@@ -96,7 +96,7 @@ public enum ConfirmationAnswerRefusal
 }
 
 /// <summary>
-/// The service's confirmation queue (PERSONDOOR1b, D156 point 4; ONEWAY1n-i, the oneway design §4 M4; the person-door design §4.2). A
+/// The service's confirmation queue. A
 /// keyless call to a person's or the driver's door is refused; its asker asks here with the exact request (method, path and body); the
 /// window lists what waits by the door's name and the request's own fields; and the person confirms or refuses it with the key. It waits
 /// with no clock until then, or until its asker withdraws it. At the Confirm the host makes the request itself, as asked, through its own
@@ -108,7 +108,7 @@ public enum ConfirmationAnswerRefusal
 /// restart ends what waits, and an asker polling an id of an earlier start reads <see cref="RestartedSentence"/>. One that ended is
 /// forgotten <see cref="Kept"/> after its end, the oldest first past <see cref="MostEnded"/>.</para>
 ///
-/// <para><b>Bounded</b> (PERSONDOOR1j): the host cannot tell the person's terminal from a session (the person-door design §4.1), so
+/// <para><b>Bounded</b>: the host cannot tell the person's terminal from a session, so
 /// an ask is placed by what it says of itself, as a body may narrow who acted and never widen it (§3.1). Asks naming a session fill at
 /// most <see cref="Most"/> places; an ask naming none, the terminal's, may take one more, so sessions' asks never fill the last. Each
 /// asker, a session or the terminal, holds at most <see cref="PerAsker"/> at once. Past either, the ask is refused, naming the asker's own
@@ -117,10 +117,10 @@ public enum ConfirmationAnswerRefusal
 /// cannot hold both; where the process cannot be read, the nameless asks are the one terminal asker.</para>
 ///
 /// <para><b>A session can ask, and cannot answer.</b> The ask is any caller's; the answers are the key's, and a withdrawal its
-/// asker's alone, by the token its ask was answered with. Only a door that wants the key can be asked for, in the very form that wants
+/// asker's alone, by the token its ask is answered with. Only a door that wants the key can be asked for, in the very form that wants
 /// it, and never the confirmations' own doors.</para>
 ///
-/// <para><b>The card shows only what binds</b> (after the review of PERSONDOOR1b). A body is asked for only with names its door binds,
+/// <para><b>The card shows only what binds</b>. A body is asked for only with names its door binds,
 /// each once, and a query only with names its handler reads (<see cref="DoorContract"/>): a name the binder ignores would be shown and
 /// never kept, so a card would show one act while the request made did another. Each value is named by its JSON pointer and keeps its
 /// JSON type.</para>
@@ -132,7 +132,7 @@ public enum ConfirmationAnswerRefusal
 /// refused or withdrawn, by the door's method and pattern. Never the id, the token, the path's values or the body. A refused ask is the
 /// gate's <c>person.refused</c> line.</para>
 ///
-/// <para><b>What waits says its change</b> (NOTIFY2j, D196 point 4, the notification design §2.5): a wait on <see cref="WaitAsync"/>
+/// <para><b>What waits says its change</b>: a wait on <see cref="WaitAsync"/>
 /// is answered as soon as what waits moves, or at its bound with what waits as it is, so the desktop's host holds one wait and tells
 /// every window, and no window polls. The cursor is <c>&lt;epoch&gt;.&lt;n&gt;</c>, the epoch new at each start of the host; any other
 /// cursor is answered at once.</para>
@@ -211,7 +211,7 @@ public sealed class PersonConfirmations(
     /// <summary>An answer to a confirmation its asker withdrew.</summary>
     public const string WithdrawnSentence = "Its asker withdrew this act, and nothing was done.";
 
-    /// <summary>A withdrawal without the token the ask was answered with.</summary>
+    /// <summary>A withdrawal without the token the ask is answered with.</summary>
     public const string NotAskerSentence =
         "Only the asker withdraws its ask, with the token its ask was answered with, and this call carried none of it. "
         + "Nothing was withdrawn.";
@@ -224,8 +224,8 @@ public sealed class PersonConfirmations(
     public const int MostWaits = 8;
 
     /// <summary>
-    /// The door a wait on what waits is held at (NOTIFY2j): its time is its wait, as the change stream's is, so the request log never
-    /// writes it as slow (STARTFAST1b).
+    /// The door a wait on what waits is held at: its time is its wait, as the change stream's is, so the request log never
+    /// writes it as slow.
     /// </summary>
     public const string WaitingRoute = "/api/confirmations/waiting";
 
@@ -354,7 +354,7 @@ public sealed class PersonConfirmations(
             : (null, ConfirmationAnswerRefusal.NotFound, NotFoundSentence(id));
 
     /// <summary>
-    /// An ask: the request it was refused, exactly, and the session asking, if a session asks. Taken only on a host that holds a key,
+    /// An ask: the request it is refused, exactly, and the session asking, if a session asks. Taken only on a host that holds a key,
     /// for a door that wants it in the form the body makes, and within the asker's places. Answered with the token that withdraws it,
     /// the only time it is answered.
     /// </summary>
@@ -463,7 +463,7 @@ public sealed class PersonConfirmations(
         {
             Sweep(clock.GetUtcNow());
             List<Confirmation> waiting = [.. _kept.Where(c => c.State == ConfirmationState.Waiting)];
-            // A nameless ask whose process is read is that process's alone, holding one place of the terminal's two (PERSONDOOR1j).
+            // A nameless ask whose process is read is that process's alone, holding one place of the terminal's two.
             var byProcess = asker is null && process is not null;
             List<Confirmation> yours = [.. waiting.Where(c => string.Equals(c.Session, asker, StringComparison.Ordinal)
                 && (asker is not null || c.Process == process))];
@@ -475,7 +475,7 @@ public sealed class PersonConfirmations(
     }
 
     /// <summary>
-    /// The person's Confirm, with the key, only while it waits: the request is made as it was asked (<see cref="MakeAsync"/>), and it
+    /// The person's Confirm, with the key, only while it waits: the request is made as asked (<see cref="MakeAsync"/>), and it
     /// ends made where its door took it, or stale or failed with its door's own reason, which the Confirm is answered with as
     /// <see cref="ConfirmationAnswerRefusal.NotMade"/>.
     /// </summary>
@@ -534,7 +534,7 @@ public sealed class PersonConfirmations(
     public (Confirmation? Confirmation, ConfirmationAnswerRefusal Refusal, string Message) Refuse(string id) =>
         End(id, token: null, ConfirmationState.Refused, RefusedAnswer);
 
-    /// <summary>Its asker's withdrawal, with the token its ask was answered with, only while it waits: nothing is made.</summary>
+    /// <summary>Its asker's withdrawal, with the token its ask is answered with, only while it waits: nothing is made.</summary>
     public (Confirmation? Confirmation, ConfirmationAnswerRefusal Refusal, string Message) Withdraw(string id, string? token) =>
         End(id, token ?? "", ConfirmationState.Withdrawn, WithdrawnAnswer);
 
@@ -595,7 +595,7 @@ public sealed class PersonConfirmations(
 
     /// <summary>
     /// The request <paramref name="asked"/>, made through the host's whole pipeline (<paramref name="pipeline"/>, routing included) in
-    /// this process, as it was asked: its method, its path unescaped as its door was found and as sent, its query as sent, and its body
+    /// this process, as asked: its method, its path unescaped as its door finds it and as sent, its query as sent, and its body
     /// to the byte, labelled UTF-8 JSON. It carries the host's own key, which never leaves the process, so the gate judges it as it
     /// judges the person's window; it comes from no address, as the in-process server's calls do. Its answer is read whole.
     /// </summary>

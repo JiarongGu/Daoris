@@ -20,8 +20,8 @@ public sealed class SchemaRebuildTests : IDisposable
     }
 
     /// <summary>
-    /// REV3 service F3: the rebuild dropped the entries and kept `feed_provenance`, so the same
-    /// commit's re-feed was judged already held and the shared index stayed empty until that
+    /// A rebuild that drops the entries but keeps `feed_provenance` judges the same
+    /// commit's re-feed already held, and the shared index stays empty until that
     /// repository's next commit.
     /// </summary>
     [Fact]

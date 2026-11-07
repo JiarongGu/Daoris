@@ -28,7 +28,7 @@ public sealed record QuestRequirementResponse(string Quote, string Check, IReadO
 /// <summary>How a done answered one requirement: <c>Met</c> with how, or <c>Departed</c> with the reason and the words it turns on.</summary>
 public sealed record QuestAnswerResponse(int Requirement, string? Met, string? Departed = null, string? Quote = null);
 
-/// <summary>A chain's review choice, <c>off</c>, <c>on</c> or an environment's name, and the person's words it was set on.</summary>
+/// <summary>A chain's review choice, <c>off</c>, <c>on</c> or an environment's name, and the person's words it is set on.</summary>
 public sealed record QuestReviewChoiceResponse(string Choice, string? Words = null);
 
 /// <summary>A submission by the machine and sequence that made it.</summary>
@@ -41,9 +41,9 @@ public sealed record QuestSetUpRefResponse(string Machine, long Sequence);
 public sealed record QuestEvidenceReadResponse(
     int Requirement, string? Path, string? Gate, string Result, string? Object = null, bool? Changed = null, string? Spelled = null);
 
-/// <summary>What Daoris read of a done's evidence: the commit, how it was chosen, the session whose end was read, each item.</summary>
-/// <param name="At">When it was read, as is <paramref name="Machine"/>.</param>
-/// <param name="Submission">The submission it was read for; a done's verdict names none.</param>
+/// <summary>What Daoris read of a done's evidence: the commit, how it is chosen, the session whose end is read, each item.</summary>
+/// <param name="At">When it is read, as is <paramref name="Machine"/>.</param>
+/// <param name="Submission">The submission it is read for; a done's verdict names none.</param>
 public sealed record QuestEvidenceVerdictResponse(
     string Commit, string How, string? Session, IReadOnlyList<QuestEvidenceReadResponse> Items,
     DateTimeOffset? At, string? Machine, QuestSubmissionRefResponse? Submission);

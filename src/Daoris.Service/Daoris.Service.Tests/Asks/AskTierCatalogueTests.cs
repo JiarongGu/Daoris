@@ -6,13 +6,13 @@ namespace Daoris.Service.Tests;
 
 /// <summary>
 /// The tier an ask names and the words the platform says it in are two lists that must agree, in two
-/// languages and two artefacts, with no compiler between them (INT4d).
+/// languages and two artefacts, with no compiler between them.
 /// </summary>
 /// <remarks>
 /// <para>Every record says which tier answered it (<c>model-decoupling</c>), and the platform says it in
 /// the person's language: <c>asks.tier.&lt;tier&gt;</c> on the record, <c>asks.tierShort.&lt;tier&gt;</c>
 /// on the card. A tier the catalogue does not carry is shown raw. That keeps the page honest, but it
-/// is a gap all the same, and INT4b's <c>intake</c> reached the screen exactly that way.</para>
+/// is a gap all the same, as the <c>intake</c> tier showed.</para>
 ///
 /// <para>Checked from this side because this is the side that decides which tiers exist. A tier is a
 /// <c>By…</c> constant on <see cref="AskDesk"/>, and every one is asked for, so a new tier cannot ship
@@ -29,8 +29,8 @@ public sealed class AskTierCatalogueTests
     }
 
     /// <summary>
-    /// A language's whole catalogue. Since MOD2 it is one file per area under `locales/<language>/`, merged
-    /// at load, and read here the same way; a single `<language>.json` no longer exists.
+    /// A language's whole catalogue. It is one file per area under `locales/<language>/`, merged
+    /// at load, and read here the same way.
     /// </summary>
     private static JsonElement Catalogue(string language)
     {

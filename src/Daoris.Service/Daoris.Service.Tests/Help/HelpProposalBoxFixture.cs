@@ -3,7 +3,7 @@ using Daoris.Knowledge;
 
 namespace Daoris.Service.Tests;
 
-/// <summary>What every kind's writer tests stand on (MOD6): a home of the test's own, the box over it, and the file a proposal left.</summary>
+/// <summary>What every kind's writer tests stand on: a home of the test's own, the box over it, and the file a proposal left.</summary>
 public abstract class HelpProposalBoxFixture : IDisposable
 {
     protected readonly string _home = Path.Combine(Path.GetTempPath(), "daoris-help-proposals-" + Guid.NewGuid().ToString("N")[..8]);

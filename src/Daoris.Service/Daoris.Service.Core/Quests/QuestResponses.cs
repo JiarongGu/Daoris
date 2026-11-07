@@ -10,16 +10,16 @@ internal sealed class QuestResponses(
     /// </summary>
     public async Task<QuestRespondOutcome> RespondAsync(
         string id, string action, string? reason, DateTimeOffset now, CancellationToken ct,
-        // The question a `wait` waits on (D79): a quest the waiting session asked another repository.
+        // The question a `wait` waits on: a quest the waiting session asked another repository.
         string? on,
-        // How a `done` answers each of the quest's requirements (D133 §4).
+        // How a `done` answers each of the quest's requirements.
         IReadOnlyList<QuestAnswer>? answers,
-        // A decline that applies only while the quest is open (D132 point 10): an abandon's.
+        // A decline that applies only while the quest is open: an abandon's.
         bool whileOpen,
         // The session answering, as its connector's intake names it. A done or a decline keeps it on its operation, as a ready's
-        // submission does (D219): which session wrote the handback.
+        // submission does: which session wrote the handback.
         string? session,
-        // The note is a session's handback (D219): the connector's `quest_respond`, so a close whose note only points
+        // The note is a session's handback: the connector's `quest_respond`, so a close whose note only points
         // elsewhere is refused. Every other door, the person's among them, keeps its words as given.
         bool handback)
     {
@@ -85,14 +85,14 @@ internal sealed class QuestResponses(
                 Quest: null);
         }
 
-        // A done answers each of the person's requirements (D133 §4), judged before the move. A quest's
+        // A done answers each of the person's requirements, judged before the move. A quest's
         // requirements are fixed at its publish, so a look outside the write judges what the write will hold; whether
         // it may still close is the store's, inside it.
         IReadOnlyList<QuestAnswer> answered = [];
         if (status == QuestStatus.Done
             && await quests.FindAsync(id.TrimStart('#'), ct).ConfigureAwait(false) is { Status: QuestStatus.Open or QuestStatus.Taken } live)
         {
-            // A set-up step closes done once it has said what it showed (design §2.6), so a done always has a
+            // A set-up step closes done once it has said what it showed, so a done always has a
             // set-up for the person to look at.
             if (await reviews.NotShownAsync(live, ct).ConfigureAwait(false) is { } unshown) return new(QuestRespondRefusal.NotShown, unshown, Quest: null);
 
@@ -101,8 +101,8 @@ internal sealed class QuestResponses(
             answered = judged.Answers;
         }
 
-        // Every verb commits here, shared or not (D68): the next sync carries it to the remote, where the
-        // first push wins and a later one is kept as a conflict rather than lost (design §5).
+        // Every verb commits here, shared or not: the next sync carries it to the remote, where the
+        // first push wins and a later one is kept as a conflict rather than lost.
         // A take judges the graph named for it inside its own write: by the session taking, and by the remotes map as
         // it reads at that moment, never by a look taken here before it.
         var move = await quests.MoveAsync(
@@ -122,7 +122,7 @@ internal sealed class QuestResponses(
             return new(QuestRespondRefusal.SourceReopened, QuestWords.SourceReopenedWords(move.Quest), Quest: null);
         }
 
-        // A done where the quest's graph closes it (§E5): the result is a submission, said as the action to take.
+        // A done where the quest's graph closes it: the result is a submission, said as the action to take.
         if (move.ClosedByGraph)
         {
             return new(
@@ -140,7 +140,7 @@ internal sealed class QuestResponses(
 
         if (move.Moved)
         {
-            // The chain moved on with the close (D65 §4) — said here, because the next step is now
+            // The chain moved on with the close — said here, because the next step is now
             // somebody's open quest and whoever closed this one should know whose.
             return new(
                 QuestRespondRefusal.None,
@@ -178,7 +178,7 @@ internal sealed class QuestResponses(
         }
 
         // The store refused the transition; the quest comes back unchanged so the answer can name the
-        // state that refused it. For a take that is the race resolving (D47 §5) — the same message a
+        // state that refused it. For a take that is the race resolving — the same message a
         // session racing an outside session already acts on.
         return move.Quest.Status == QuestStatus.Taken
             ? new(
@@ -192,7 +192,7 @@ internal sealed class QuestResponses(
     }
 
     /// <summary>
-    /// Wait on a question asked of another repository (D79): the quest stays taken, marked, and the
+    /// Wait on a question asked of another repository: the quest stays taken, marked, and the
     /// driver resumes it once the question is answered — done or declined — with the answer in hand.
     /// </summary>
     private async Task<QuestRespondOutcome> WaitAsync(string id, string? on, DateTimeOffset now, CancellationToken ct)

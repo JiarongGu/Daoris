@@ -3,7 +3,7 @@ using Daoris.Knowledge;
 namespace Daoris.Service.Tests;
 
 /// <summary>
-/// The machine log's service writer (LOG1a, D94): the HTTP host's and the MCP host's lines, in the
+/// The machine log's service writer: the HTTP host's and the MCP host's lines, in the
 /// format the desktop's writer keeps.
 /// </summary>
 /// <remarks>
@@ -76,7 +76,7 @@ public sealed class MachineLogTests : IDisposable
         Assert.Equal([line], Lines("2026-09-30.host.jsonl"));
     }
 
-    /// <summary>The twin of the driver writer's test (LOGCOLLECTION1): only a collection of strings is an array; no object is serialized.</summary>
+    /// <summary>The twin of the driver writer's test: only a collection of strings is an array; no object is serialized.</summary>
     [Fact]
     public void Only_a_collection_of_strings_is_an_array_and_no_object_is_serialized()
     {
@@ -199,7 +199,7 @@ public sealed class MachineLogTests : IDisposable
     }
 
     /// <summary>
-    /// HOSTSTART1, HOSTSTART2: the exception that ends an async entry point arrives once the entry point's <c>using</c> has
+    /// The exception that ends an async entry point arrives once the entry point's <c>using</c> has
     /// closed its log, which then drops the line; the watch writes it with a writer of its own, at <c>start</c>.
     /// </summary>
     [Fact]
@@ -245,9 +245,9 @@ public sealed class MachineLogTests : IDisposable
     }
 
     /// <summary>
-    /// MACHINELOGAPPEND2: two writers of one source on one day's file — two sessions' knowledge hosts on the day's one
-    /// <c>mcp</c> file — each write at the file's end. Before, each wrote at its own handle's position, and the second's
-    /// line was gone after the first's next (the driver's twin, MACHINELOGAPPEND1).
+    /// Two writers of one source on one day's file — two sessions' knowledge hosts on the day's one
+    /// <c>mcp</c> file — each write at the file's end, not at their own handle's position, which would lose
+    /// the second's line at the first's next.
     /// </summary>
     [Fact]
     public void Two_logs_on_one_file_keep_each_others_lines()

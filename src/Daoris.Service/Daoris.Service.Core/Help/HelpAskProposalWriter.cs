@@ -3,8 +3,8 @@ using static Daoris.Knowledge.HelpProposalFile;
 namespace Daoris.Knowledge;
 
 /// <summary>
-/// The <c>ask</c> kind's writer (HELP1c): something to start, which becomes an ask when the person applies it, with the review
-/// choice the person said for its work and their words with it (ENTRY1c), as the composer sends them.
+/// The <c>ask</c> kind's writer: something to start, which becomes an ask when the person applies it, with the review
+/// choice the person said for its work and their words with it, as the composer sends them.
 /// </summary>
 internal sealed class HelpAskProposalWriter(HelpProposalFile file)
 {
@@ -13,15 +13,15 @@ internal sealed class HelpAskProposalWriter(HelpProposalFile file)
 
     /// <summary>Write one ask proposal — something to start, which becomes an ask when the person applies it.</summary>
     /// <param name="review">
-    /// ENTRY1c: the person's review choice for the ask's work, as the composer and <c>daoris ask --review</c> take it:
+    /// The person's review choice for the ask's work, as the composer and <c>daoris ask --review</c> take it:
     /// <c>on</c>, an environment's name or <c>off</c>; null, blank or <c>rule</c> writes none, and each repository's rule decides.
     /// </param>
     /// <param name="reviewWords">The person's words with the choice, written only with one.</param>
-    /// <param name="shortTitle">HEAD2e: the ask's short title (at most 40, the person's own where they gave one); null or blank writes none.</param>
+    /// <param name="shortTitle">The ask's short title (at most 40, the person's own where they gave one); null or blank writes none.</param>
     /// <remarks>
-    /// ENTRY1c: the shape only, as the setting kind's <c>review</c> door judges its words: words go with a choice, and a choice is
+    /// The shape only, as the setting kind's <c>review</c> door judges its words: words go with a choice, and a choice is
     /// one word. Whether a name is an environment's, and one the ask's workspace declares, is the driver's, with the rule's own
-    /// judgement. No kind or workflow is carried (D161's ENTRY1c note).
+    /// judgement. No kind or workflow is carried.
     /// </remarks>
     public (string? Id, string Message) Propose(
         string sentence, string workspace, string why, string? session, DateTimeOffset at,
@@ -30,7 +30,7 @@ internal sealed class HelpAskProposalWriter(HelpProposalFile file)
         if (string.IsNullOrWhiteSpace(why)) return (null, "A proposal needs its reason: what the person asked, and what the change would do. Nothing was proposed.");
         if (string.IsNullOrWhiteSpace(sentence)) return (null, "An ask needs its words: what is to be done, as the person would say it. Nothing was proposed.");
         if (string.IsNullOrWhiteSpace(workspace)) return (null, "An ask is made at a workspace — name it. Nothing was proposed.");
-        // HEAD2e: the short title is judged by the quest's rule, as the ask door judges it, so Apply never meets a refusal for it.
+        // The short title is judged by the quest's rule, as the ask door judges it, so Apply never meets a refusal for it.
         var (shortKept, unfitShort) = QuestTitles.Judge(shortTitle);
         if (unfitShort is not null) return (null, $"{unfitShort} Nothing was proposed.");
         var choice = Blank(review) is { } said && said != ReviewByRule ? said : null;

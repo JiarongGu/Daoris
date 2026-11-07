@@ -1,8 +1,8 @@
 namespace Daoris.Service.Http.Tests;
 
 /// <summary>
-/// A clock a test moves, so two minutes pass without waiting them (PERSONDOOR1b). Its timestamp moves with it, and a timer it made
-/// fires only once <see cref="Move"/> passes its time (TESTCLOCK3), so a host handed it holds a change stream's wait until the test
+/// A clock a test moves, so two minutes pass without waiting them. Its timestamp moves with it, and a timer it made
+/// fires only once <see cref="Move"/> passes its time, so a host handed it holds a change stream's wait until the test
 /// moves it: a wait it never moves is answered only by a move, a cursor or a slot.
 /// </summary>
 public sealed class MovableClock : TimeProvider
@@ -43,7 +43,7 @@ public sealed class MovableClock : TimeProvider
     }
 
     /// <summary>
-    /// Until <paramref name="count"/> timers wait on the clock (TESTCLOCK3): a wait the host holds on it has made its timer, so a move
+    /// Until <paramref name="count"/> timers wait on the clock: a wait the host holds on it has made its timer, so a move
     /// after reaches it. Bounded by <see cref="Poll.Patience"/>, which only a wait never held reaches.
     /// </summary>
     public async Task PendingAsync(int count)

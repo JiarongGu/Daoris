@@ -4,7 +4,7 @@ namespace Daoris.Service.Tests;
 
 /// <summary>
 /// The machine's remotes are a MAP — workspace → { url, key } — in one file under the profile, with
-/// the environment overriding (D48 §5). Absence is the default, silently (D21).
+/// the environment overriding. Absence is the default, silently.
 /// </summary>
 /// <remarks>
 /// The driver carries a deliberate twin of this judgement (`RemoteTarget`, which links against no
@@ -77,7 +77,7 @@ public sealed class RemoteConfigTests : IDisposable
         Assert.Equal("dk_envkey", overridden["tools"].Key);
     }
 
-    /// <summary>An unnamed env pair serves the workspace silence means, everywhere (D48 §2).</summary>
+    /// <summary>An unnamed env pair serves the workspace silence means, everywhere.</summary>
     [Fact]
     public void An_unnamed_environment_pair_serves_the_default_workspace()
     {

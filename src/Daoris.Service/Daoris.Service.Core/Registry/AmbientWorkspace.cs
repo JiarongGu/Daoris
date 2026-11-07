@@ -4,38 +4,38 @@ namespace Daoris.Knowledge;
 /// Which workspace a session is speaking for, resolved from where it is running.
 /// </summary>
 /// <remarks>
-/// <para><b>The default scope is the session's own circle</b> (D48 §4). An agent asking "has anyone
+/// <para><b>The default scope is the session's own circle</b>. An agent asking "has anyone
 /// solved this" means its own family — answering with every family the machine can see is the
 /// disclosure the workspace boundary exists to prevent, and it happens on the very first call a
 /// session makes.</para>
 ///
-/// <para><b>Resolved from the registry by path, never from the tree.</b> Membership is wiring (D48 §2):
+/// <para><b>Resolved from the registry by path, never from the tree.</b> Membership is wiring:
 /// nothing in a repository says which workspace it belongs to, and nothing should — that is what makes
 /// a fork, a mirror and a private copy work. So the answer is a registry row found by matching the
 /// working directory against the roots the machine knows.</para>
 ///
 /// <para><b>No match is null, and null means "say so".</b> A session running somewhere unregistered has
 /// no circle to default to, and quietly picking one would be a guess presented as a scope. The caller
-/// spans everything and reports that it did — the D24 shape: name the tier that answered.</para>
+/// spans everything and reports that it did: name the tier that answered.</para>
 ///
-/// <para><b>One session knows its circle without a row: an intake</b> (D65 §1b). Its room is under the
+/// <para><b>One session knows its circle without a row: an intake</b>. Its room is under the
 /// home, never registered, and the circle is its ASK's — so the host names it here, from the ask, and
 /// the room's path is never asked.</para>
 ///
-/// <para><b>One session is BOUND to its circle: Ask Daoris in a workspace's room</b> (ASKSCOPE1c, D158's ASKSCOPE1 note point 5).
-/// Its record keeps the workspace it was started in, and the driver hands that to its connector; what it asks is answered from
+/// <para><b>One session is BOUND to its circle: Ask Daoris in a workspace's room</b>.
+/// Its record keeps the workspace it is started in, and the driver hands that to its connector; what it asks is answered from
 /// that workspace alone, and naming another, or <c>all</c>, is refused (<see cref="Bound"/>).</para>
 /// </remarks>
 public sealed class AmbientWorkspace(string workingDirectory, string? circle = null)
 {
     /// <summary>
-    /// The variable the driver names a conversation's bound workspace in (ASKSCOPE1c). 🔴 A twin: the driver's
+    /// The variable the driver names a conversation's bound workspace in. 🔴 A twin: the driver's
     /// <c>HelpCircle.Variable</c> spells the same name, and each side's test holds the spelling.
     /// </summary>
     public const string BoundVariable = "DAORIS_SESSION_WORKSPACE";
 
     /// <summary>
-    /// The workspace this session is bound to by its record (ASKSCOPE1c): every answer is that workspace's, whatever a call names.
+    /// The workspace this session is bound to by its record: every answer is that workspace's, whatever a call names.
     /// Null for every other session, which answers from its own circle unless a call deliberately names another.
     /// </summary>
     public string? Bound { get; init; }
@@ -101,7 +101,7 @@ public sealed class AmbientWorkspace(string workingDirectory, string? circle = n
 
     /// <summary>
     /// Case-insensitive, because Windows and macOS are — and a case-sensitive miss here is silent: the
-    /// session simply gets an unscoped answer with no indication that its own root was right there.
+    /// session simply gets an unscoped answer with no indication that its own root is right there.
     /// </summary>
     private const StringComparison Comparison = StringComparison.OrdinalIgnoreCase;
 }

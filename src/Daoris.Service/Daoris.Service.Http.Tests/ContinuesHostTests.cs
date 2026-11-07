@@ -3,9 +3,9 @@ using System.Text.Json;
 namespace Daoris.Service.Http.Tests;
 
 /// <summary>
-/// MIXAGENT1a-iii (D163 point 4; the mixed-agents design §4): a session that continues another says so on its own record. The
+/// A session that continues another says so on its own record. The
 /// driver names the session continued, why and who asked through either open door, and the record answers the three to a caller
-/// on this machine only (D47 §4), as a reviewer's `opinion` is; a record that continues none carries none.
+/// on this machine only, as a reviewer's `opinion` is; a record that continues none carries none.
 /// </summary>
 public sealed class ContinuesHostTests(LocalHost host) : IClassFixture<LocalHost>
 {

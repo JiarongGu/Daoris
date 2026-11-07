@@ -3,8 +3,8 @@ using System.Text.Json;
 namespace Daoris.Service.Http.Tests;
 
 /// <summary>
-/// FOUNDATION1c (D212; the foundation design §2.2): the host answers a record's <c>work</c> to a caller on this machine, in the list and in
-/// the answer of an open, and to no caller off it, as a reviewer's <c>opinion</c> is (D47 §4); the reading is the marks' and is stored
+/// The host answers a record's <c>work</c> to a caller on this machine, in the list and in
+/// the answer of an open, and to no caller off it, as a reviewer's <c>opinion</c> is; the reading is the marks' and is stored
 /// nowhere. The rule's table is <c>ParticipantWorkTests</c>'.
 /// </summary>
 public sealed class ParticipantWorkHostTests(LocalHost host) : IClassFixture<LocalHost>

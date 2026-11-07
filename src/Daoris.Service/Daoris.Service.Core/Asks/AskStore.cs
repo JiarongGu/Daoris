@@ -41,8 +41,8 @@ public sealed class AskStore
         // word it had — it is the record of what a person asked, and nothing re-derives it.
         await SchemaColumns.EnsureAsync(_db, "asks", "intake", "intake TEXT NULL", ct).ConfigureAwait(false);
 
-        // The person's words after the ask (D133 §1), appended where they are kept. A store from before keeps
-        // every row it had, and their earlier answers and messages were never kept, so the
+        // The person's words after the ask, appended where they are kept. A store from before keeps
+        // every row it had, and their earlier answers and messages are not kept, so the
         // moment keeping began is written on each of them, once, rather than read as nothing more said.
         await SchemaColumns.EnsureAsync(_db, "asks", "words", "words TEXT NOT NULL DEFAULT '[]'", ct)
             .ConfigureAwait(false);
@@ -56,35 +56,35 @@ public sealed class AskStore
             await mark.ExecuteNonQueryAsync(ct).ConfigureAwait(false);
         }
 
-        // The go-aheads its sessions asked for (D135 §2), beside the person's words. A store from before keeps
-        // every ask it had, each holding none: nothing was ever asked on one in a way a later session could be handed.
+        // The go-aheads its sessions asked for, beside the person's words. A store from before keeps
+        // every ask it had, each holding none: nothing has been asked on one in a way a later session could be handed.
         await SchemaColumns.EnsureAsync(_db, "asks", "go_aheads", "go_aheads TEXT NOT NULL DEFAULT '[]'", ct)
             .ConfigureAwait(false);
 
-        // The person's review choices and the intake's proposals (D154 point 3), each appended where it is kept. A
-        // store from before keeps every ask it had, each holding none: nothing was chosen or proposed on it.
+        // The person's review choices and the intake's proposals, each appended where it is kept. A
+        // store from before keeps every ask it had, each holding none: nothing is chosen or proposed on it.
         await SchemaColumns.EnsureAsync(_db, "asks", "review_choices", "review_choices TEXT NOT NULL DEFAULT '[]'", ct)
             .ConfigureAwait(false);
         await SchemaColumns.EnsureAsync(_db, "asks", "review_proposals", "review_proposals TEXT NOT NULL DEFAULT '[]'", ct)
             .ConfigureAwait(false);
 
-        // The person's kind and workflow choices (D157 point 10), appended where they are kept. A store from before keeps
-        // every ask it had, each holding none: nothing was chosen on it, so each repository's choice decides, as it did.
+        // The person's kind and workflow choices, appended where they are kept. A store from before keeps
+        // every ask it had, each holding none: nothing is chosen on it, so each repository's choice decides.
         await SchemaColumns.EnsureAsync(_db, "asks", "workflow_choices", "workflow_choices TEXT NOT NULL DEFAULT '[]'", ct)
             .ConfigureAwait(false);
 
-        // The intake's kind proposals (D157), appended as the review's are, beside the person's choices.
+        // The intake's kind proposals, appended as the review's are, beside the person's choices.
         await SchemaColumns.EnsureAsync(_db, "asks", "workflow_proposals", "workflow_proposals TEXT NOT NULL DEFAULT '[]'", ct)
             .ConfigureAwait(false);
 
-        // The asker's short title (D162 point 4), as a quest's. A store from before keeps every ask it had,
-        // each holding none, so a page heads it with its sentence's first line as it did.
+        // The asker's short title, as a quest's. A store from before keeps every ask it had,
+        // each holding none, so a page heads it with its sentence's first line.
         await SchemaColumns.EnsureAsync(_db, "asks", "short_title", "short_title TEXT NULL", ct).ConfigureAwait(false);
 
         // The paths its asker declared; an ask from before declared none.
         await SchemaColumns.EnsureAsync(_db, "asks", "paths", "paths TEXT NULL", ct).ConfigureAwait(false);
 
-        // The asks' revision (D182 point 5), the change stream's `asks` family, one row moved by every insert, update and
+        // The asks' revision, the change stream's `asks` family, one row moved by every insert, update and
         // delete of an ask. Kept by triggers, as `session_revision` is, because the triggers live in the file: a connector built
         // before them writes the row and still moves it, and no writer here has to remember to. A count, not a moment, so a
         // delete moves it too. Opened again, it keeps its count.
@@ -115,7 +115,7 @@ public sealed class AskStore
             await revision.ExecuteNonQueryAsync(ct).ConfigureAwait(false);
         }
 
-        // An ask kept, and each move of its state, as a row of the event journal (D212, the foundation design §4.1),
+        // An ask kept, and each move of its state, as a row of the event journal,
         // minted by triggers in the statement that writes it, so a connector built before them mints it too.
         await using (var journal = _db.Command())
         {
@@ -262,9 +262,9 @@ public sealed class AskStore
     /// statement, so two publishers never overwrite each other.
     /// </summary>
     /// <remarks>
-    /// An intake's connector and a person's page publish from two processes. Each used to save the
-    /// whole record it had read, and the second save dropped the first one's quest. A closed ask stays
-    /// closed: a quest that was published before the close landed is still one the ask became.
+    /// An intake's connector and a person's page publish from two processes. Saving the
+    /// whole record read would drop the first one's quest. A closed ask stays
+    /// closed: a quest published before the close landed is still one the ask became.
     /// </remarks>
     /// <param name="tier">The tier the ask is now answered at, or null to keep it.</param>
     public Task RecordPublishedAsync(
@@ -301,7 +301,7 @@ public sealed class AskStore
         await command.ExecuteNonQueryAsync(ct).ConfigureAwait(false);
     }, ct);
 
-    /// <summary>Remove the ask's row — the desk deleted it, and every quest asked by it first (D95).</summary>
+    /// <summary>Remove the ask's row — the desk deleted it, and every quest asked by it first.</summary>
     public Task DeleteAsync(string id, CancellationToken ct = default) => _db.RunAsync(async () =>
     {
         await using var command = _db.Command();
@@ -322,7 +322,7 @@ public sealed class AskStore
     }, ct);
 
     /// <summary>
-    /// Clear the intake serving the ask, only where it is still <paramref name="session"/> (D206; D205 §3.5(f)'s door): that
+    /// Clear the intake serving the ask, only where it is still <paramref name="session"/>: that
     /// column alone, compared and cleared in one statement, so a binding a later intake made is never cleared by an earlier one's end.
     /// </summary>
     public Task UnbindIntakeAsync(string id, string session, DateTimeOffset now, CancellationToken ct = default) => _db.RunAsync(async () =>
@@ -340,7 +340,7 @@ public sealed class AskStore
     /// for the reason a published quest is — the say door and a driver's report arrive from two
     /// processes, and a whole-record save would drop the other's word.
     /// </summary>
-    /// <returns>False when no ask has that id, and nothing was kept.</returns>
+    /// <returns>False when no ask has that id, and nothing is kept.</returns>
     public Task<bool> RecordWordAsync(string id, AskWord word, DateTimeOffset now, CancellationToken ct = default) => _db.RunAsync<bool>(async () =>
     {
         await using var command = _db.Command();
@@ -363,13 +363,13 @@ public sealed class AskStore
     }, ct);
 
     /// <summary>
-    /// Read the ask's go-aheads, decide, and write what was decided, as one step across hosts: two sessions
+    /// Read the ask's go-aheads, decide, and write what is decided, as one step across hosts: two sessions
     /// asking for one act at once, or a request beside the person's answer, would otherwise each write what they read and
     /// drop the other's. The column alone is written, for the reason a word is.
     /// </summary>
     /// <param name="decide">
     /// Given every entry as stored, each with what this build reads of it: the entries to write back (an entry it could not
-    /// read kept as it was), or null to write nothing; and what to answer.
+    /// read kept unchanged), or null to write nothing; and what to answer.
     /// </param>
     /// <returns>Whether an ask has that id, and what <paramref name="decide"/> answered; nothing is decided for none.</returns>
     public Task<(bool Found, T? Result)> DecideGoAheadsAsync<T>(

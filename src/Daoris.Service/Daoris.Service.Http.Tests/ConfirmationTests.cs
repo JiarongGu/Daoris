@@ -7,7 +7,7 @@ using Microsoft.AspNetCore.Http;
 namespace Daoris.Service.Http.Tests;
 
 /// <summary>
-/// The service's confirmation queue (PERSONDOOR1b, D156 point 4; ONEWAY1n-i, the oneway design §4 M4): a terminal's keyless call to a
+/// The service's confirmation queue: a terminal's keyless call to a
 /// person's or the driver's door is refused, and its asker asks the window with the exact request. It waits with no clock until the
 /// person confirms or refuses it or its asker withdraws it; the host makes it, as asked, at the Confirm, and a request the door then
 /// refuses is <c>stale</c> with that door's own sentence. The asker reads how it ended by its id. Five sessions' asks wait at most, the
@@ -159,8 +159,8 @@ public sealed class ConfirmationTests
         (await host.GetAsync("/api/asks?workspace=default")).Json.GetArrayLength();
 
     /// <summary>
-    /// The whole path (the oneway design §4 M4): refused, asked, listed, left an hour with nothing ending it, then confirmed with the
-    /// key, which makes the request as it was asked, as the person's; the asker reads it made, with the door's own answer. Answered
+    /// The whole path: refused, asked, listed, left an hour with nothing ending it, then confirmed with the
+    /// key, which makes the request as asked, as the person's; the asker reads it made, with the door's own answer. Answered
     /// once.
     /// </summary>
     [Fact]
@@ -313,7 +313,7 @@ public sealed class ConfirmationTests
     }
 
     /// <summary>
-    /// Its asker withdraws it (§4 M4, the confirm-wait design §4.3), by the token its ask was answered with: nothing is made, it waits
+    /// Its asker withdraws it, by the token its ask got: nothing is made, it waits
     /// no more, and it can be confirmed no more. Another asker's token withdraws nothing, and one being or already made is no longer
     /// withdrawn.
     /// </summary>
@@ -356,7 +356,7 @@ public sealed class ConfirmationTests
     }
 
     /// <summary>
-    /// PERSONDOOR1j (the person-door design §4.2; the oneway design §4 M4): with no clock to drain them, sessions' asks could hold every
+    /// With no clock to drain them, sessions' asks could hold every
     /// place. Five may wait for asks that name a session; the person's terminal, which names none, keeps one more, so six sessions' asks
     /// leave it free. A sixth is refused <c>confirmations-full</c> and an asker at its bound <c>asker-full</c>, each naming the asker's
     /// own requests waiting, so it can withdraw one.
@@ -448,9 +448,9 @@ public sealed class ConfirmationTests
         host.GetAsync($"/api/confirmations/waiting?wait={wait}" + (since is null ? "" : $"&since={Uri.EscapeDataString(since)}"));
 
     /// <summary>
-    /// NOTIFY2j (D196 point 4, the notification design §2.5): what waits says its change, so the desktop's host holds one wait and no
+    /// What waits says its change, so the desktop's host holds one wait and no
     /// window polls. No cursor, or another start's, is answered at once; a wait from the current cursor is held and answered by an ask,
-    /// a refusal, a withdrawal and a Confirm; with nothing moving, an hour on, at its bound with what waits as it was.
+    /// a refusal, a withdrawal and a Confirm; with nothing moving, an hour on, at its bound with what waits unchanged.
     /// </summary>
     [Fact]
     public async Task What_waits_is_answered_at_each_change_and_an_hour_moves_nothing()
@@ -478,7 +478,7 @@ public sealed class ConfirmationTests
         var (refused, left) = await WaitingAsync(held);
         Assert.Equal([first], left);
 
-        // An hour passes with nothing moving: the wait is answered at its bound, what waits as it was.
+        // An hour passes with nothing moving: the wait is answered at its bound, what waits unchanged.
         var others = clock.Pending;
         held = WaitFromAsync(host, refused, wait: 10);
         await clock.PendingAsync(others + 1);
@@ -499,7 +499,7 @@ public sealed class ConfirmationTests
     }
 
     /// <summary>
-    /// NOTIFY2j: at most eight waits on what waits are held at once, as the change stream's are; a ninth is answered at once with
+    /// At most eight waits on what waits are held at once, as the change stream's are; a ninth is answered at once with
     /// what waits and the cursor as it is, and the eight are still answered by the next move.
     /// </summary>
     [Fact]
@@ -521,7 +521,7 @@ public sealed class ConfirmationTests
     }
 
     /// <summary>
-    /// 🔴 STARTFAST1b (the start-path design §3.4): a wait on what waits held past the request log's two seconds is the wait it asked
+    /// 🔴 A wait on what waits held past the request log's two seconds is the wait it asked
     /// for, never a failure. The desktop holds one from its start, and each start's log said <c>request.failed</c> of it at 20 s. The
     /// wait is held on the host's clock, which never reaches its bound, while the machine's passes the log's threshold.
     /// </summary>
@@ -697,7 +697,7 @@ public sealed class ConfirmationTests
     }
 
     /// <summary>
-    /// 🔴 The review's case (PERSONDOOR1b): a card must never show one act while the request made does another. A body is asked for
+    /// 🔴 A card must never show one act while the request made does another. A body is asked for
     /// only with the names its door binds, each once, so the card shows only what binds: a property the binder would ignore (an empty
     /// name above a dismissal's fields, or a near spelling) leaves the door's own fields unbound, and a dismissal that names none
     /// dismisses every conflict. So is a query, and a body on a door that binds none.
@@ -738,7 +738,7 @@ public sealed class ConfirmationTests
     }
 
     /// <summary>
-    /// An ask is bounded before it is read whole (the review of PERSONDOOR1b): the ask itself is read no further than
+    /// An ask is bounded before it is read whole: the ask itself is read no further than
     /// <see cref="PersonConfirmations.AskLimit"/>, a body over <see cref="PersonConfirmations.BodyLimit"/> or carrying over
     /// <see cref="PersonConfirmations.FieldLimit"/> values is refused, and while every place a session's ask may take is taken, a
     /// session's ask is refused before its body is parsed.
@@ -866,7 +866,7 @@ public sealed class ConfirmationTests
 }
 
 /// <summary>
-/// The real host, as a terminal reaches it (ONEWAY1n-i): the path a client sends, escapes and all, and a body, each made at the
+/// The real host, as a terminal reaches it: the path a client sends, escapes and all, and a body, each made at the
 /// Confirm through the host's own pipeline and reaching its door as asked. What the in-process host cannot show: Kestrel's own
 /// reading of the address.
 /// </summary>
@@ -917,7 +917,7 @@ public sealed class ConfirmationProcessTests : IDisposable
         using var client = new HttpClient { Timeout = Poll.Patience };
 
         // A retire whose name holds a space, sent escaped: the address the client asked for is the one made, and its door reads the
-        // name unescaped. Nothing by that name is registered here, so the door answers that nothing was retired.
+        // name unescaped. Nothing by that name is registered here, so the door answers that it retired nothing.
         const string Retire = "/api/registry/my%20repo";
         Assert.Equal(403, (await SendAsync(client, host.Url, "DELETE", Retire, null)).Status);
         var (retire, retireToken) = await AskedAsync(client, host.Url, "DELETE", Retire, null);

@@ -51,10 +51,10 @@ public class SearchTests : IAsyncLifetime
         return new SqliteKnowledgeSearch(store);
     }
 
-    // ── identifiers (ORIENT1f) ───────────────────────────────────────────────────────────────────
+    // ── identifiers ───────────────────────────────────────────────────────────────────
     //
-    // *What decided the probe lock* never reached the decision that named `ProbeLock` (D24's ORIENT1c
-    // note): the code's word was one token, and no word of the question was it.
+    // *What decided the probe lock* must reach the decision that names `ProbeLock`:
+    // the code's word is one token, and no word of the question is it.
 
     public static TheoryData<string, string, bool> Spellings()
     {
@@ -177,7 +177,7 @@ public class SearchTests : IAsyncLifetime
     }
 
     /// <summary>
-    /// 🔴 Seen on the window (POLISH4): every canon-shaped entry opens with its frontmatter, so its
+    /// 🔴 Every canon-shaped entry opens with its frontmatter, so its
     /// excerpt read "--- name: world-streaming applies_when: …" — the file's machinery, flattened onto
     /// one line, where the reader wanted its prose. The frontmatter still matches; it is not shown.
     /// </summary>
@@ -201,8 +201,8 @@ public class SearchTests : IAsyncLifetime
     }
 
     /// <summary>
-    /// 🔴 UX5 U39: the frontmatter went (POLISH4) and the Markdown's own markers stayed, so an excerpt
-    /// read "# World streaming — chunk hydration order … **chunk hydration** runs neighbours-first".
+    /// 🔴 The frontmatter goes and the Markdown's own markers stay, so an excerpt
+    /// reads "# World streaming — chunk hydration order … **chunk hydration** runs neighbours-first".
     /// The page shows an excerpt as plain text, so a heading's hashes, emphasis's asterisks and code's
     /// backticks are machinery too. The words stay; an identifier's underscore stays.
     /// </summary>

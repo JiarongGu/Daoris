@@ -3,7 +3,7 @@ using ModelContextProtocol.Server;
 
 namespace Daoris.Knowledge.Mcp;
 
-/// <summary>Ask Daoris's <c>role_propose</c> (FOUNDATION1y-i): the <c>role</c> kind's tool, written by <see cref="HelpProposalBox.ProposeRole"/>.</summary>
+/// <summary>Ask Daoris's <c>role_propose</c>: the <c>role</c> kind's tool, written by <see cref="HelpProposalBox.ProposeRole"/>.</summary>
 [McpServerToolType]
 public sealed class HelpRoleTool(IntakeScope? intake = null, HelpProposalBox? help = null)
 {

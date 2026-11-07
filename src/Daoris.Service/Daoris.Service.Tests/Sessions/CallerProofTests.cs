@@ -3,7 +3,7 @@ using Daoris.Knowledge;
 namespace Daoris.Service.Tests;
 
 /// <summary>
-/// FABRIC-C2a (D173's FABRIC-C2a note, points 1 and 2; its 2026-10-31 note): who made a call, by the lineage its harness wrote,
+/// Who made a call, by the lineage its harness wrote,
 /// failing closed. A Codex call is a root's where its thread is its session's root and nothing says a child; a Claude Code call
 /// where its id joins a hook line naming no agent. Anything else is a child, or unreadable, and the second never claims the first.
 /// </summary>
@@ -18,7 +18,7 @@ public sealed class CallerProofTests
         CallerProof.OfAsync(lineage, _ => Task.FromResult(joined));
 
     /// <summary>
-    /// The Codex reading (D173's 2026-10-31 note): codex-acp's 128 calls each carried `thread` equal to `root` and no source, so
+    /// The Codex reading: codex-acp's calls each carry `thread` equal to `root` and no source, so
     /// a call whose thread is its session's root reads as the root, as the CLI's with source <c>user</c> does.
     /// </summary>
     [Fact]

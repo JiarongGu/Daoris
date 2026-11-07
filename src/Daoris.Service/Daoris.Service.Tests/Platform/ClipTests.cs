@@ -2,7 +2,7 @@ using Daoris.Knowledge;
 
 namespace Daoris.Service.Tests;
 
-/// <summary>DEDUP9c: the one way the service core clips text for a refusal or a log line.</summary>
+/// <summary>The one way the service core clips text for a refusal or a log line.</summary>
 public sealed class ClipTests
 {
     [Theory]

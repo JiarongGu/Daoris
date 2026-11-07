@@ -10,7 +10,7 @@ namespace Daoris.Service.Http.Tests;
 /// <summary>
 /// The host's own build, beside these tests', started in a process of its own as the shell starts it: input redirected,
 /// on a free loopback port, over a machine of its own under <paramref name="Scratch"/>, with every variable it reads set
-/// or cleared. What the in-process host cannot show is shown here: the real standard input (LOG2a, PERSONDOOR1a) and a
+/// or cleared. What the in-process host cannot show is shown here: the real standard input and a
 /// clean stop.
 /// </summary>
 public sealed class RealHost(Process process, string url, string scratch) : IDisposable
@@ -25,15 +25,15 @@ public sealed class RealHost(Process process, string url, string scratch) : IDis
 
     private static string HomeOf(string scratch) => Path.Combine(scratch, "home");
 
-    /// <summary>The id of the home this host was started over, minted before it starts: what it answers at its status.</summary>
+    /// <summary>The id of the home this host starts over, minted before it starts: what it answers at its status.</summary>
     public string HomeId => HomeIdentity.Read(Home, out _)!;
 
     /// <summary>
     /// Start the host and wait until it answers as itself. <paramref name="starter"/> writes on its input first, as the shell
-    /// writes the person key before the host can answer anyone (PERSONDOOR1a).
+    /// writes the person key before the host can answer anyone.
     /// </summary>
     /// <remarks>
-    /// REALHOSTPORT1: the port is free when it is drawn, not when the host binds it, so whatever answers there may be another
+    /// The port is free when it is drawn, not when the host binds it, so whatever answers there may be another
     /// host that took it between. Only an answer naming this host's own home, minted under its scratch before it started, is
     /// taken for it; an answer naming another is said if the host then exits or never answers.
     /// </remarks>
@@ -72,7 +72,7 @@ public sealed class RealHost(Process process, string url, string scratch) : IDis
         other is null ? "" : $"; another host answered at its port, over home {(other.Length == 0 ? "(none)" : other)}";
 
     /// <summary>
-    /// Start the host and return at once, without waiting for it to answer: for a host that is not to answer (HOSTSTART1).
+    /// Start the host and return at once, without waiting for it to answer: for a host that is not to answer.
     /// Its standard error is kept, in <see cref="Said"/>, and its output drained.
     /// </summary>
     public static RealHost Launch(string scratch, IReadOnlyDictionary<string, string?> environment)
@@ -80,7 +80,7 @@ public sealed class RealHost(Process process, string url, string scratch) : IDis
         var repositories = Path.Combine(scratch, "repositories");
         Directory.CreateDirectory(HomeOf(scratch));
         Directory.CreateDirectory(repositories);
-        // Minted here, before the host starts, so its status names a home only this host was started over (REALHOSTPORT1).
+        // Minted here, before the host starts, so its status names a home only this host starts over.
         if (HomeIdentity.Ensure(HomeOf(scratch), out var unread) is null) throw new InvalidOperationException(unread);
         // An address the test names is the host's; otherwise a port free as it is drawn.
         var url = environment.GetValueOrDefault("ASPNETCORE_URLS") ?? $"http://127.0.0.1:{FreePort()}";
@@ -117,7 +117,7 @@ public sealed class RealHost(Process process, string url, string scratch) : IDis
             ["ASPNETCORE_ENVIRONMENT"] = "Production",
             ["ASPNETCORE_URLS"] = url,
             // The host's own lifetime says when its stop began and ended ("Hosting stopping", "Hosting stopped"), so a stop
-            // that misses its bound names the step it sat in (FLAKE2).
+            // that misses its bound names the step it sat in.
             ["Logging__LogLevel__Microsoft.Extensions.Hosting"] = "Debug",
         };
         foreach (var (name, value) in environment) variables[name] = value;
@@ -161,8 +161,8 @@ public sealed class RealHost(Process process, string url, string scratch) : IDis
     }
 
     /// <summary>
-    /// Stop the host as the shell does (LOG2a), by closing its input, and wait <paramref name="within"/> for it to exit. Null
-    /// when it did; otherwise what a reader of the failure needs to tell where it sat (FLAKE2): whether its lifetime began
+    /// Stop the host as the shell does, by closing its input, and wait <paramref name="within"/> for it to exit. Null
+    /// when it did; otherwise what a reader of the failure needs to tell where it sat: whether its lifetime began
     /// to stop (the log's <c>app.stopped</c>), and the last lines it printed, its own lifetime's among them, with their times.
     /// </summary>
     public string? StopByInput(TimeSpan within)

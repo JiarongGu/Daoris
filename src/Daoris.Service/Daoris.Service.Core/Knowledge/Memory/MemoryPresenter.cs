@@ -17,7 +17,7 @@ public static class MemoryStanding
 }
 
 /// <summary>
-/// An entry as presented: its reference, the revision it was read at, how it stands now, the entry as read now where it was, and why where
+/// An entry as presented: its reference, the revision it is read at, how it stands now, the entry as read now where it is held, and why where
 /// it is not current (or what amended a current one's cited record).
 /// </summary>
 public sealed record MemoryShown(MemoryReference Reference, long Read, string Standing, MemoryEntry? Entry = null, string? Why = null)
@@ -25,7 +25,7 @@ public sealed record MemoryShown(MemoryReference Reference, long Read, string St
     /// <summary>The most of an entry's text one line carries.</summary>
     public const int TextLimit = 300;
 
-    /// <summary>The revision it was checked at; null where it was not stamped.</summary>
+    /// <summary>The revision it is checked at; null where it is not stamped.</summary>
     public long? Checked => Standing == MemoryStanding.Current ? Entry?.Revision : null;
 
     /// <summary>The entry in one line of Daoris's English.</summary>
@@ -48,12 +48,12 @@ public sealed record MemoryShown(MemoryReference Reference, long Read, string St
 }
 
 /// <summary>
-/// Memory shown as current is current (KNOWCENTRAL2f; the memory coordinator design §3, §6 at presentation): each entry a line read is
+/// Memory shown as current is current: each entry a line read is
 /// read again and its cited records rechecked, an entry stamped <c>checked at</c> its revision only where every check holds, and shown as
 /// read where none answers. An entry that moved between the reading and the answer's delivery discards the answer, which is read again, up
 /// to <see cref="Tries"/> times; what still moves is shown as read. What is presented is kept as the line's read, so a move after it is told
 /// once and one before it is not told again. An entry of a repository other than <see cref="Own"/> is read, and a cited entry of another
-/// repository rechecked, through that memory's view (KNOWCENTRAL2g), never its engine.
+/// repository rechecked, through that memory's view, never its engine.
 /// </summary>
 /// <param name="ops">The log whose journal says what moved, and where the read set is kept.</param>
 /// <param name="engines">Each repository's memory; none where memory is off, and everything shows as read.</param>

@@ -3,7 +3,7 @@ using static Daoris.Knowledge.QuestWords;
 namespace Daoris.Knowledge;
 
 /// <summary>
-/// What a set-up posted at its door carries (REVIEWENV1b, design §2.6, §3.3): the commit Daoris read, how the environment is
+/// What a set-up posted at its door carries: the commit Daoris read, how the environment is
 /// reached, and either the session whose said set-ups it posts or the person's own set-up.
 /// </summary>
 /// <param name="Commit">The commit read: the step's tree <c>HEAD</c> for a session's, the chain's tip for the person's own.</param>
@@ -16,18 +16,18 @@ public sealed record QuestSetUpPost(
     string? Commit, string? Kind, string? Session = null, string? Look = null, string? Shows = null, string? Again = null);
 
 /// <summary>
-/// The review on the record (REVIEWENV1b, D154; the review environment design §1.4–§1.5, §2.1, §2.5–§2.6, §3.5): the
+/// The review on the record: the
 /// chain's choice judged at publish, a set-up step published after its chain's close, a set-up posted with the commit Daoris
-/// read, and the person's verdict. The gate that reads them, and the step's driving, are the driver's (REVIEWENV1c).
-/// The exchange hands in the stores it judges over and keeps the three public doors as one-line calls (PART6).
+/// read, and the person's verdict. The gate that reads them, and the step's driving, are the driver's.
+/// The exchange hands in the stores it judges over and keeps the three public doors as one-line calls.
 /// </summary>
 public sealed class QuestReviews(QuestStore quests, SessionStore? sessions, AskStore? asks)
 {
     /// <summary>
-    /// A chain's review choice as a quest keeps it, or why not (REVIEWENV1b, design §1.5): <c>off</c>, <c>on</c> or an
+    /// A chain's review choice as a quest keeps it, or why not: <c>off</c>, <c>on</c> or an
     /// environment's name, the words trimmed and bounded. The person's own door sets it with any words they give. An agent
     /// sets it only on the person's words, which must stand in what they said on the ask that asks the quest, checked as a
-    /// requirement's quote is (DRIFT1c) — otherwise it proposes one, which only the person's press applies.
+    /// requirement's quote is — otherwise it proposes one, which only the person's press applies.
     /// </summary>
     /// <remarks>
     /// <para><b>An agent is whoever is not the person's own door</b> (REVIEWENV1b3): <see cref="QuestAsk.ByAgent"/>, or a
@@ -84,8 +84,8 @@ public sealed class QuestReviews(QuestStore quests, SessionStore? sessions, AskS
     }
 
     /// <summary>
-    /// An agent's quoted <c>off</c> as the proposal it becomes (REVIEWENV1b3): the person's words as its reason, cut to the
-    /// proposal's bound, so the person reads what it was set on beside the press that applies it.
+    /// An agent's quoted <c>off</c> as the proposal it becomes: the person's words as its reason, cut to the
+    /// proposal's bound, so the person reads what it is set on beside the press that applies it.
     /// </summary>
     private static string OffReason(string words)
     {
@@ -120,13 +120,13 @@ public sealed class QuestReviews(QuestStore quests, SessionStore? sessions, AskS
             : "";
 
     /// <summary>
-    /// Post a set-up on a set-up step (REVIEWENV1b, D154 point 9; design §2.6, §3.3): every set-up a session said and its
+    /// Post a set-up on a set-up step: every set-up a session said and its
     /// driver has not yet posted, each with the commit the driver read from the step's tree, or the person's own set-up with
     /// the commit Daoris read at their press. The commit is read, never reported: no connector tool reaches this door.
     /// </summary>
     /// <remarks>
     /// <para><b>The driver's door, and the person's</b>, a local host's alone, as the evidence door is: the tree is on the machine
-    /// that holds it, and the set-up travels from there as an operation (D68).</para>
+    /// that holds it, and the set-up travels from there as an operation.</para>
     ///
     /// <para><b>Once each.</b> A set-up kept is marked posted on the session's record, and the same set-up posted again is no
     /// move, so the driver may post at every session end and every later turn.</para>
@@ -192,7 +192,7 @@ public sealed class QuestReviews(QuestStore quests, SessionStore? sessions, AskS
                 $"No session `{Clip(session)}` of this machine's works set-up step `#{quest.Id}`. Nothing was kept.", Quest: null);
         }
 
-        // Read, posted and marked in one transaction, so two posts at once never both post one set-up (REV3).
+        // Read, posted and marked in one transaction, so two posts at once never both post one set-up.
         var (posted, refused, standing) = await sessions.ExclusiveAsync<(int, QuestRespondOutcome?, Quest)>(async inside =>
         {
             var review = await sessions.ReviewOfAsync(record.Id, inside).ConfigureAwait(false);
@@ -231,7 +231,7 @@ public sealed class QuestReviews(QuestStore quests, SessionStore? sessions, AskS
             standing);
     }
 
-    /// <summary>Why a set-up the store did not keep is refused, or null where it was kept or was already there.</summary>
+    /// <summary>Why a set-up the store did not keep is refused, or null where it is kept or is already there.</summary>
     private static QuestRespondOutcome? SetUpRefused(Quest quest, QuestMove move) =>
         move.Quest is null ? new(QuestRespondRefusal.NotFound, $"No quest `#{quest.Id}`. Ids come from `quest_list`.", Quest: null)
         : move.ClaimLost ? new(QuestRespondRefusal.AlreadyTaken, LostStep(quest.Id, "so its set-up is not this machine's to post. Nothing was kept.",
@@ -241,19 +241,19 @@ public sealed class QuestReviews(QuestStore quests, SessionStore? sessions, AskS
         : null;
 
     /// <summary>
-    /// The person's verdict on a set-up step (REVIEWENV1b, D154 point 8; design §3.3–§3.6): <c>reviewed</c> or <c>not-yet</c>
+    /// The person's verdict on a set-up step: <c>reviewed</c> or <c>not-yet</c>
     /// on the set-up they name, its newest, or <c>skipped</c> for the work, on a set-up step or on the chain's last quest in a repository with
     /// none. A <c>reviewed</c> or a skip lets go what the step's review held, publishing the chain's next step; a
     /// <c>not-yet</c> keeps it held, its words kept for the step's session. Their words are kept on the ask, each as its own
-    /// kind (design §3.5).
+    /// kind.
     /// </summary>
     /// <remarks>
     /// <b>The person's alone</b>: no connector tool and no Ask Daoris card reaches it, since the verdict is a look only they
-    /// have taken. A local host's door, as the yes is; it travels from there as an operation (D68).
+    /// have taken. A local host's door, as the yes is; it travels from there as an operation.
     /// </remarks>
     /// <param name="setUp">
     /// The set-up a <c>reviewed</c> or a <c>not-yet</c> answers, as the person's view showed it: required, and refused unless it
-    /// is the newest (REVIEWENV1b3). A skip answers none and ignores it.
+    /// is the newest. A skip answers none and ignores it.
     /// </param>
     public async Task<QuestRespondOutcome> ReviewAsync(
         string id, string? verdict, string? words, QuestOperationRef? setUp, DateTimeOffset now, CancellationToken ct = default)
@@ -323,8 +323,8 @@ public sealed class QuestReviews(QuestStore quests, SessionStore? sessions, AskS
     /// refused: no set-up named, nothing shown yet, a set-up that is not the newest, or a review already given or skipped.
     /// </summary>
     /// <remarks>
-    /// <b>Named, never defaulted</b> (REVIEWENV1b3): a verdict that named none once answered the newest, so a set-up posted
-    /// after the person's view was drawn took a <c>reviewed</c> for work they never saw run. What they looked at is what the
+    /// <b>Named, never defaulted</b>: a verdict that named none would answer the newest, so a set-up posted
+    /// after the person's view is drawn would take a <c>reviewed</c> for work they never saw run. What they looked at is what the
     /// verdict answers, and a newer one refuses it as stale.
     /// </remarks>
     private static (QuestReviewVerdict? Verdict, QuestRespondOutcome? Refused) Look(Quest quest, string said, string? words, QuestOperationRef? named)
@@ -395,7 +395,7 @@ public sealed class QuestReviews(QuestStore quests, SessionStore? sessions, AskS
         };
     }
 
-    /// <summary>The person's words on a verdict, kept on the ask the quest was asked by as their own kind; the ask's id, or null for none.</summary>
+    /// <summary>The person's words on a verdict, kept on the ask the quest is asked by as their own kind; the ask's id, or null for none.</summary>
     private async Task<string?> KeepWordAsync(Quest quest, string said, string words, DateTimeOffset now, CancellationToken ct)
     {
         if (asks is null || AskDesk.AskOf(quest.From) is not { } askId) return null;
@@ -411,15 +411,15 @@ public sealed class QuestReviews(QuestStore quests, SessionStore? sessions, AskS
     }
 
     /// <summary>
-    /// The person's <i>Set it up in <c>environment</c></i> (REVIEWENV1b, D154 point 4; design §2.1, §3.6): a set-up step
+    /// The person's <i>Set it up in <c>environment</c></i>: a set-up step
     /// published following <paramref name="follows"/>, a done quest, to its repository, in Daoris's fixed words, carrying its
-    /// requirements and its chain's choice. A door that sets <c>follows</c> after its chain's close joins D149 point 1's rule,
+    /// requirements and its chain's choice. A door that sets <c>follows</c> after its chain's close joins the follow rule,
     /// so the step's tree grows from the work it shows.
     /// </summary>
     /// <remarks>
     /// The environment is judged by its name here; whether the repository's rule declares it is the door's, which reads the
-    /// rule, and the planner sits a step whose environment is not declared (REVIEWENV1c). It is the person's later word, so a
-    /// chain whose choice was <c>off</c> takes it, as its row in the design's table ranks above the chain's.
+    /// rule, and the planner sits a step whose environment is not declared. It is the person's later word, so a
+    /// chain whose choice is <c>off</c> takes it, as its row in the design's table ranks above the chain's.
     /// </remarks>
     public async Task<QuestRespondOutcome> PublishSetUpStepAsync(
         string follows, string? environment, DateTimeOffset now, CancellationToken ct = default)

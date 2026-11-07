@@ -4,7 +4,7 @@ using Daoris.Knowledge.Mcp;
 namespace Daoris.Service.Tests;
 
 /// <summary>
-/// KNOWCENTRAL2d (the memory coordinator design §1, §3, §4): what the person decides through a row. An end awaits its approver across a
+/// What the person decides through a row. An end awaits its approver across a
 /// restart and is decided through its row; its proposer, and any session of the proposer's lineage, is refused; a stopped session's
 /// staged rows wait for the person's Keep or Drop; and a reader never sees the row's token in an end's reason.
 /// </summary>
@@ -154,7 +154,7 @@ public sealed class MemoryDecisionTests : IAsyncLifetime
     }
 
     /// <summary>
-    /// 🔴 KNOWCENTRAL2e: while an end awaits, a hit on its entry says who proposed it and that it awaits the person, in a search and a read;
+    /// 🔴 While an end awaits, a hit on its entry says who proposed it and that it awaits the person, in a search and a read;
     /// once decided, the hit says nothing of it.
     /// </summary>
     [Fact]

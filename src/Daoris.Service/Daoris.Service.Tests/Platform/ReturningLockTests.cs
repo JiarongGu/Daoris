@@ -4,14 +4,14 @@ using Microsoft.Data.Sqlite;
 namespace Daoris.Service.Tests;
 
 /// <summary>
-/// QUESTOPENLOCK1: a write with a <c>RETURNING</c> clause, run on its own, writes at its first step and commits when its reader ends,
+/// A write with a <c>RETURNING</c> clause, run on its own, writes at its first step and commits when its reader ends,
 /// and the driver waits out a busy lock only at a statement's first step. In a rollback journal that commit needs every other host's
 /// read to have ended, and a read under way answered it at once as busy: eight sessions started at once on the install, and two of their
 /// connectors exited with <i>database is locked</i> at the quest store's version stamp. Each such write runs in a write transaction of
 /// its own, taken at once, whose <c>BEGIN IMMEDIATE</c> and <c>COMMIT</c> the driver waits on as first steps.
 /// </summary>
 /// <remarks>
-/// The store writes ahead (D236): another host's read holds no commit, so a write beside it is kept at once, and what a write still
+/// The store writes ahead: another host's read holds no commit, so a write beside it is kept at once, and what a write still
 /// meets is another host's write, which it waits out and is kept.
 /// </remarks>
 public sealed class ReturningLockTests : IDisposable
@@ -21,7 +21,7 @@ public sealed class ReturningLockTests : IDisposable
     /// <summary>How long another host's read is held: past the driver's first retry, far short of its command timeout.</summary>
     private static readonly TimeSpan Held = TimeSpan.FromMilliseconds(500);
 
-    /// <summary>The quest store's version stamp, as it was written on its own.</summary>
+    /// <summary>The quest store's version stamp, as written on its own.</summary>
     private const string Stamp = """
         INSERT INTO stamp (one, version) VALUES (1, 1)
         ON CONFLICT(one) DO UPDATE SET version = MAX(version, excluded.version)
@@ -229,7 +229,7 @@ public sealed class ReturningLockTests : IDisposable
         Assert.Single(await quests.HistoryAsync(published.Id));
     }
 
-    /// <summary>Another host's connection to the same file, unpooled so it lets go of the file when it goes (FLAKE3).</summary>
+    /// <summary>Another host's connection to the same file, unpooled so it lets go of the file when it goes.</summary>
     private async Task<SqliteConnection> HostAsync()
     {
         var connection = new SqliteConnection($"Data Source={Database};Pooling=False");

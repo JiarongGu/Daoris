@@ -13,7 +13,7 @@ internal readonly record struct ListItem(int Indent, int Content, string Text);
 public readonly record struct IndexRow(string Title, string Body, string? Anchor);
 
 /// <summary>
-/// A generated index read a row at a time (ORIENT1c).
+/// A generated index read a row at a time.
 /// </summary>
 /// <remarks>
 /// <para>An index answers "where is X" with one row: the route and its handler, the verb and its file, a
@@ -46,7 +46,7 @@ public static class IndexRows
 
         string Where() => string.Join(" › ", new[] { title, heading }.OfType<string>().Distinct(StringComparer.Ordinal));
 
-        // An item is anchored past the lines it leads with (ORIENT2h5), a row by its title as it always was.
+        // An item is anchored past the lines it leads with, a row by its title.
         void Emit(string rowTitle, string line, string? anchored = null)
         {
             if (rowTitle.Length == 0) return;
@@ -167,7 +167,7 @@ public static class IndexRows
     /// <summary>
     /// A table row's cells, trimmed, split at each pipe that is neither escaped nor inside code: an index's
     /// cells hold commands, and a command's pipe is not a column. A declared index's rows are read by it too
-    /// (<see cref="IndexSections"/>, ORIENT2h), so a table is one table to both readers.
+    /// (<see cref="IndexSections"/>), so a table is one table to both readers.
     /// </summary>
     internal static List<string> Cells(string row)
     {
@@ -205,9 +205,9 @@ public static class IndexRows
         cell.Trim(':').Length > 0 && cell.Trim(':').All(c => c == '-');
 
     /// <summary>
-    /// What an item is anchored by (ORIENT2h5): its label without the lines it leads with, where its first word is a
+    /// What an item is anchored by: its label without the lines it leads with, where its first word is a
     /// line or a range of lines (<c>695-731 PublishAsync()</c>) or ends in one after a colon
-    /// (<c>Tests.cs:284</c>, <c>D151:195-239 …</c>); the label as it is otherwise, and where nothing else would be left.
+    /// (<c>Tests.cs:284</c>, <c>Notes.md:195-239 …</c>); the label as it is otherwise, and where nothing else would be left.
     /// </summary>
     /// <remarks>
     /// A generator puts first where a thing is, and an edit above it moves those lines while the thing stays what it
@@ -236,7 +236,7 @@ public static class IndexRows
     /// </summary>
     /// <remarks>
     /// A generated heading counts what is under it, so one new note moved every id beneath it: between two commits of
-    /// this repository's index, 457 of the 1,259 ids that moved (D151's ORIENT2h5 note). The title keeps the count,
+    /// this repository's index, 457 of the 1,259 ids moved. The title keeps the count,
     /// since a person reads it. Taken out before <see cref="EntryAnchors"/> counts repeats, which keep their own
     /// <c> (n)</c>.
     /// </remarks>

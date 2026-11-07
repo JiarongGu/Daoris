@@ -3,7 +3,7 @@ using Daoris.Knowledge;
 namespace Daoris.Service.Tests;
 
 /// <summary>
-/// A deployment may name a repository's documents folder and its generated index (ORIENT1c): each document
+/// A deployment may name a repository's documents folder and its generated index: each document
 /// split at its headings, as a log is, and each row of the index one entry, so a search for where something
 /// is lands on the row that says so rather than on a table of ninety-nine.
 /// </summary>
@@ -76,7 +76,7 @@ public sealed class CheckoutDocumentsTests : IDisposable
         var entries = new RepositoryScanner(documents: null, index: "docs/index").Scan(_root);
 
         var row = Assert.Single(entries, e => e.Title == "SESSION_GO_ON_NEW");
-        // The index's own kind (ORIENT2e), as a declared index's sections are: asked for by `index`.
+        // The index's own kind, as a declared index's sections are: asked for by `index`.
         Assert.Equal(EntryKind.Index, row.Kind);
         Assert.Equal(Provenance.Local, row.Provenance);
         Assert.Equal("docs/index/routes.md", row.RelativePath);

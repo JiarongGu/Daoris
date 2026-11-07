@@ -4,9 +4,9 @@ namespace Daoris.Knowledge.Mcp;
 public sealed record CallRefusal(string Code, string Text);
 
 /// <summary>
-/// The call layer's table (FOUNDATION1r; the foundation design §2.3): which tools a named session is served, by where the connector
+/// The call layer's table (the foundation design §2.3): which tools a named session is served, by where the connector
 /// places it (<see cref="SessionWork"/>), over every tool the host registers. A tool <see cref="ToolClasses"/> does not class, and a work
-/// the table does not know, refuse. What a session is served is all its <c>tools/list</c> names (CONTEXTONE1d2).
+/// the table does not know, refuse. What a session is served is all its <c>tools/list</c> names.
 /// </summary>
 /// <remarks>
 /// <c>McpRoleFilterTests</c> holds every cell to <c>fixtures/call-table.json</c> over the host's registration. A box that judges by the
@@ -14,7 +14,7 @@ public sealed record CallRefusal(string Code, string Text);
 /// checkouts, housekeeping and settings, and a brainstorm's turn. A named session the connector cannot place is served the reads alone
 /// (the foundation design §7 row 10), and a reviewer and a brainstorm's voice only what their handed rules allow (row 11). A session
 /// working in a repository is served <see cref="CoreServed"/> and its own work's tools, since its harness loads every tool it is listed at
-/// its start (D230 point 3); Ask Daoris is served every tool but the turns and the memory changes.
+/// its start; Ask Daoris is served every tool but the turns and the memory changes.
 /// </remarks>
 public static class CallTable
 {
@@ -38,7 +38,7 @@ public static class CallTable
     ];
 
     /// <summary>
-    /// What a partner is served (COAGENT1b, D199 point 4): the knowledge and reading tools, its lead's line, and its answer. The driver's
+    /// What a partner is served: the knowledge and reading tools, its lead's line, and its answer. The driver's
     /// <c>PartnerPermissions.Offered</c> names the same.
     /// </summary>
     public static IReadOnlyList<string> PartnerServed { get; } =
@@ -50,7 +50,7 @@ public static class CallTable
     private static readonly HashSet<string> Partner = new(PartnerServed, StringComparer.Ordinal);
 
     /// <summary>
-    /// What a second opinion's reviewer is served (the foundation design §7 row 11; D155): the knowledge, the quests and their handbacks
+    /// What a second opinion's reviewer is served (the foundation design §7 row 11): the knowledge, the quests and their handbacks
     /// it reads, and its one say. The driver's <c>OpinionPermissions.Offered</c> hands the same where its agent takes rules.
     /// </summary>
     public static IReadOnlyList<string> ReviewerServed { get; } =

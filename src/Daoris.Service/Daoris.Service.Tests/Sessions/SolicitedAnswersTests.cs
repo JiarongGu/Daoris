@@ -4,7 +4,7 @@ using Microsoft.Data.Sqlite;
 namespace Daoris.Service.Tests;
 
 /// <summary>
-/// COMMS1b (the comms design §4.2, §13 points 1 to 5): a helper's answer, a partner's and an opinion's findings go through one door, which
+/// A helper's answer, a partner's and an opinion's findings go through one door, which
 /// walks the line's head as the say door does, answers a retry from the settlement or from the word already waiting, and takes the head by
 /// one table of its state. Every row of the table runs for each case, so the desks cannot disagree again.
 /// </summary>
@@ -220,7 +220,7 @@ public sealed class SolicitedAnswersTests : IAsyncLifetime
         Assert.Equal((opened.Session!.Id, first.WordId), (retry.Holder, retry.WordId));
         if (kind == "opinion")
         {
-            // The part that holds the findings answers them (an authority change, D225's note).
+            // The part that holds the findings answers them (an authority change).
             Assert.Equal(opened.Session.Id, (await _desk.ReadAsync(hand.Id, Now))!.Opinion.Handed!.Session);
             var answered = await _desk.AnswerAsync(opened.Session.Id, null, [new OpinionAnswer(1, "unresolved", Now) { Why = "x" }], Now);
             Assert.Equal(OpinionRefusal.None, answered.Refusal);

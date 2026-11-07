@@ -3,7 +3,7 @@ using Daoris.Knowledge;
 namespace Daoris.Service.Tests;
 
 /// <summary>
-/// MIXAGENT2a-ii (D163 point 2): the helpers' files are the contract between this box and the driver's reader, which share no
+/// The helpers' files are the contract between this box and the driver's reader, which share no
 /// code, so each side holds the shape. Here, the driver's state file as it writes it, with the marks only it keeps; the driver's
 /// suite (<c>HelperFilesTests</c>) holds the same text from its side.
 /// </summary>
@@ -40,7 +40,7 @@ public sealed class HelperBoxShapeTests : IDisposable
     }
 
     /// <summary>
-    /// 🔴 COWORK1d (the message-urgency design §9): an urgent ask is written with `urgent: true` after `askedBy`, the text the driver's
+    /// 🔴 An urgent ask is written with `urgent: true` after `askedBy`, the text the driver's
     /// suite (<c>HelperFilesTests</c>) reads; an ordinary ask writes no field, which the driver reads as today's delivery.
     /// </summary>
     [Fact]
@@ -60,7 +60,7 @@ public sealed class HelperBoxShapeTests : IDisposable
     }
 
     /// <summary>
-    /// 🔴 COWORKUX1d (the co-worker design §4.3): `after` and `to` are the person's doors' alone, written by the driver's
+    /// 🔴 `after` and `to` are the person's doors' alone, written by the driver's
     /// <c>HelperPersonAsk</c> after `askedBy` (its suite, <c>HelperPersonAskTests</c>, holds that text); an agent's ask carries neither, so
     /// the driver reads it as a first ask whose answer goes to the session that asked, today's one path.
     /// </summary>

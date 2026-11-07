@@ -5,7 +5,7 @@ using Microsoft.Data.Sqlite;
 namespace Daoris.Service.Tests;
 
 /// <summary>
-/// Deleting a quest made by mistake (QUEST1, D95), at the exchange: only a quest nobody has started on
+/// Deleting a quest made by mistake, at the exchange: only a quest nobody has started on
 /// goes, every refusal names what to do instead, a quest that never left the machine simply goes, and
 /// a shared one is deleted by push — confirmed, lost to a take, or unconfirmed while the remote is away.
 /// </summary>
@@ -144,7 +144,7 @@ public sealed class QuestDeleteTests : IAsyncLifetime
     }
 
     /// <summary>
-    /// An open quest a session was started for keeps its record: the session's record names it, and a
+    /// An open quest a session is started for keeps its record: the session's record names it, and a
     /// record naming a quest that is gone would lead nowhere. Decline it instead.
     /// </summary>
     [Fact]
@@ -163,7 +163,7 @@ public sealed class QuestDeleteTests : IAsyncLifetime
     }
 
     /// <summary>
-    /// The question a taken quest waits on (D79) keeps its record: deleted, the waiting quest would wait
+    /// The question a taken quest waits on keeps its record: deleted, the waiting quest would wait
     /// on nothing for good. Declined, its taker is resumed with the reason.
     /// </summary>
     [Fact]
@@ -227,7 +227,7 @@ public sealed class QuestDeleteTests : IAsyncLifetime
         Assert.False(Directory.Exists(Path.GetDirectoryName(files.DirectoryOf(quest.Id))));
     }
 
-    // ——— A shared quest: deleted by push, as a take claims by push (D69).
+    // ——— A shared quest: deleted by push, as a take claims by push.
 
     /// <summary>A delete on a shared quest waits for the remote, which keeps the tombstone — confirmed, and said so.</summary>
     [Fact]
@@ -267,7 +267,7 @@ public sealed class QuestDeleteTests : IAsyncLifetime
     }
 
     /// <summary>
-    /// 🔴 The online race: another machine's take reached the remote first, so the delete lost and was
+    /// 🔴 The online race: another machine's take reached the remote first, so the delete loses and is
     /// dropped. The quest stands taken here too, and the answer says so, and what to do instead.
     /// </summary>
     [Fact]
@@ -289,18 +289,18 @@ public sealed class QuestDeleteTests : IAsyncLifetime
         Assert.Empty(here.Conflicts);
     }
 
-    // ——— An ask (D95): deleted with the quests asked by it, or not at all.
+    // ——— An ask: deleted with the quests asked by it, or not at all.
 
     private async Task<(AskDesk Desk, QuestExchange Exchange, QuestFiles Files)> DeskAsync()
     {
         var files = new QuestFiles(_root + "-home");
-        // The asks too, as the host composes the exchange: a delete says what its ask stands as (QUESTDELETE1).
+        // The asks too, as the host composes the exchange: a delete says what its ask stands as.
         var asks = await AskStore.OpenAsync(_connection);
         var exchange = new QuestExchange(_service, _quests, remotes: null, files, _sessions, asks);
         return (new AskDesk(_service, asks, exchange, files), exchange, files);
     }
 
-    /// <summary>An ask none of whose quests was taken goes, and every quest asked by it goes with it.</summary>
+    /// <summary>An ask none of whose quests is taken goes, and every quest asked by it goes with it.</summary>
     [Fact]
     public async Task An_ask_whose_quests_nobody_took_is_deleted_with_them()
     {
@@ -385,9 +385,9 @@ public sealed class QuestDeleteTests : IAsyncLifetime
     }
 
     /// <summary>
-    /// 🔴 QUESTDELETE1: deleting the quest an ask NAMED a receiver for leaves the ask standing with no quest, and says so — in the
-    /// delete's answer and on the ask's own note. It is never an ask an intake routes. Found on the installed build: the driver
-    /// re-published such an ask a minute after the delete, to the three repositories of its routing proposal, two of which it
+    /// 🔴 Deleting the quest an ask NAMED a receiver for leaves the ask standing with no quest, and says so — in the
+    /// delete's answer and on the ask's own note. It is never an ask an intake routes. The driver
+    /// must not re-publish such an ask after the delete, to the three repositories of its routing proposal, two of which it
     /// never named.
     /// </summary>
     [Fact]
@@ -414,7 +414,7 @@ public sealed class QuestDeleteTests : IAsyncLifetime
     }
 
     /// <summary>
-    /// 🔴 QUESTDELETE1, the regression: over several looks — every read the driver's look and the ledger make — a named ask with no
+    /// 🔴 Over several looks — every read the driver's look and the ledger make — a named ask with no
     /// quest publishes nothing, to the repository it named or to any the declarations tier proposed, and no intake opens for it.
     /// </summary>
     [Fact]
@@ -444,7 +444,7 @@ public sealed class QuestDeleteTests : IAsyncLifetime
     }
 
     /// <summary>
-    /// QUESTDELETE1: an intake-routed ask is unchanged — with its quest deleted it is a proposal again with no note, its intake
+    /// An intake-routed ask is unchanged — with its quest deleted it is a proposal again with no note, its intake
     /// already served it, so nothing routes it a second time, and the delete's answer says that.
     /// </summary>
     [Fact]
@@ -511,9 +511,9 @@ public sealed class QuestDeleteTests : IAsyncLifetime
     }
 
     /// <summary>
-    /// The ledger reads an ask's standing as the desk does: an unnamed ask whose every quest was deleted is a
+    /// The ledger reads an ask's standing as the desk does: an unnamed ask whose every quest is deleted is a
     /// proposal again, so an intake may answer it — or the driver's loop would ask, and be refused, on
-    /// every tick. A named ask is not (QUESTDELETE1).
+    /// every tick. A named ask is not.
     /// </summary>
     [Fact]
     public async Task An_intake_may_open_for_an_unnamed_ask_whose_quests_were_all_deleted()

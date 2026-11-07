@@ -4,7 +4,7 @@ using Microsoft.Data.Sqlite;
 namespace Daoris.Service.Tests;
 
 /// <summary>
-/// FOUNDATION1x: a quest carries the mark its publisher or its intake put on the work, <c>design</c> where it is design or decision
+/// A quest carries the mark its publisher or its intake put on the work, <c>design</c> where it is design or decision
 /// work. Kept with the quest, in its publish operation and on the wire; none is every quest from before and an unmarked one.
 /// </summary>
 public sealed class QuestWeightTests : IAsyncLifetime

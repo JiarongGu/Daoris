@@ -3,7 +3,7 @@ using Daoris.Knowledge;
 namespace Daoris.Service.Tests;
 
 /// <summary>
-/// COAGENT1b (the co-agent design §7.1): a piece's box is the contract between this reader and the driver's <c>PartnerFiles</c>, which
+/// A piece's box is the contract between this reader and the driver's <c>PartnerFiles</c>, which
 /// share no code, so each side holds the shape. Here, the ask and the state as the driver writes them (the driver's suite,
 /// <c>PartnerFilesTests</c>, writes the same text), and the answer <c>partner_answer</c> keeps, which the driver reads.
 /// </summary>

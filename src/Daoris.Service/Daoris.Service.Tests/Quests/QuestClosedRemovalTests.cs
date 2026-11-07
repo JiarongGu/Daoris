@@ -4,7 +4,7 @@ using Microsoft.Data.Sqlite;
 namespace Daoris.Service.Tests;
 
 /// <summary>
-/// ONEWAY1x: the one remover of a closed quest. One that may have travelled is tombstoned, so a peer drops it and no fetch brings it back;
+/// The one remover of a closed quest. One that may have travelled is tombstoned, so a peer drops it and no fetch brings it back;
 /// one that never left simply goes; one still open is refused.
 /// </summary>
 public sealed class QuestClosedRemovalTests : IAsyncLifetime

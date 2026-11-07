@@ -4,7 +4,7 @@ namespace Daoris.Knowledge;
 /// The index's reading kept current behind a read that only counts what it holds: the registry. Such a read waits for the index
 /// only while it holds nothing; otherwise it answers what is held and the reading that judges the roots (and reads again the ones
 /// that moved) runs beside it, one at a time, its answer the next read's. The repositories' summary still waits: what it answers is
-/// the reading itself, when and from which commit each root was read.
+/// the reading itself, when and from which commit each root is read.
 /// </summary>
 /// <remarks>
 /// The registry is what every door resolves a workspace by, so a reading it waited for (a rescan, a root that moved, the first one
@@ -17,7 +17,7 @@ internal sealed class ReadingBehind(Func<CancellationToken, Task<bool>> holdsAny
     private int _running;
 
     // Asked until the index first holds something, and never after: a door that resolves a workspace reads the registry once per
-    // record it judges, and a count of the index each time was most of what such a door cost.
+    // record it judges, and a count of the index each time would be most of what such a door costs.
     private volatile bool _held;
 
     /// <summary>The reading the caller may count from: awaited where the index holds nothing, else started behind it.</summary>

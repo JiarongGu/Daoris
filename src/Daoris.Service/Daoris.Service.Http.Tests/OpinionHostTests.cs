@@ -4,7 +4,7 @@ using Daoris.Knowledge;
 namespace Daoris.Service.Http.Tests;
 
 /// <summary>
-/// XAGENT1c (D155 points 7 and 11; the second agent design §6.2–§6.3): a local host's doors to a second opinion. The driver
+/// A local host's doors to a second opinion. The driver
 /// asks a pass, which opens its reviewer's record beside it, reads it back, and hands its findings to the working session;
 /// each answered only to a caller on this machine. Another agent's findings wait on the working session's record by whom,
 /// never in `answer`, and never reach the ask as the person's words; and the say door refuses a reviewer's record.

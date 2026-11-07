@@ -4,7 +4,7 @@ using Microsoft.Data.Sqlite;
 namespace Daoris.Service.Tests;
 
 /// <summary>
-/// HIST1b (D153 point 3, the history-clearing design §3): a closed quest a remote numbered is FORGOTTEN on the machine that
+/// A closed quest a remote numbered is FORGOTTEN on the machine that
 /// clears it, over the real wire. Its rows, log and records go here and its id is kept; the fetches pass over it while the
 /// cursors move past, so no later move and no cursor at zero brings it back; nothing is pushed and nothing travels, so the
 /// remote and a teammate keep the team's copy, and a new store fetches it whole.
@@ -267,7 +267,7 @@ public sealed class HistorySyncTests : IAsyncLifetime
     }
 
     /// <summary>
-    /// H5: the same words make the same id. Where the quest was forgotten, the remote still holds it closed and would refuse
+    /// The same words make the same id. Where the quest is forgotten, the remote still holds it closed and would refuse
     /// a fresh copy on every pass, so the publish is refused in a closed quest's words and nothing is written. Where it
     /// simply went, as after a delete, the same words make it again.
     /// </summary>

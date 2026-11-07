@@ -4,7 +4,7 @@ using Daoris.Knowledge.Http;
 
 namespace Daoris.Service.Http.Tests;
 
-/// <summary>A local host handed its person key on its input (PERSONDOOR1a), over the same two repositories as <see cref="LocalHost"/>.</summary>
+/// <summary>A local host handed its person key on its input, over the same two repositories as <see cref="LocalHost"/>.</summary>
 public sealed class KeyedHost() : DaorisHost(ServiceMode.Local, seed: LocalHost.Seed, input: Key + "\n")
 {
     /// <summary>This start's key.</summary>
@@ -15,11 +15,11 @@ public sealed class KeyedHost() : DaorisHost(ServiceMode.Local, seed: LocalHost.
 }
 
 /// <summary>
-/// PERSONDOOR1a (D156 points 3 and 5; the person-door design §3, §5): a local host handed its key gates its writes by the
+/// A local host handed its key gates its writes by the
 /// route's class. A read is answered to anyone. An agent's door answers a keyless call and judges it as an agent's. The
 /// driver's own and the person's alone want the key, and a call without it is refused 403 with a sentence and a code,
-/// never a 500, and nothing is kept. A key from another start is refused at every door but a read. Before this, one
-/// <c>curl</c> from any session's shell kept a skip of a review, a yes or a go-ahead's answer as the person's.
+/// never a 500, and nothing is kept. A key from another start is refused at every door but a read. Otherwise one
+/// <c>curl</c> from any session's shell could keep a skip of a review, a yes or a go-ahead's answer as the person's.
 /// </summary>
 public sealed class PersonDoorHostTests(KeyedHost host) : IClassFixture<KeyedHost>
 {
@@ -145,7 +145,7 @@ public sealed class PersonDoorHostTests(KeyedHost host) : IClassFixture<KeyedHos
     }
 
     /// <summary>
-    /// The yes to a departure (D133 §4) is the person's: a session that closed its quest with a departure cannot give it to
+    /// The yes to a departure is the person's: a session that closed its quest with a departure cannot give it to
     /// itself. The ask is the person's words, and is made with the key; the publish, take and done are a session's.
     /// </summary>
     [Fact]
@@ -225,7 +225,7 @@ public sealed class PersonDoorHostTests(KeyedHost host) : IClassFixture<KeyedHos
     }
 
     /// <summary>
-    /// WORKFLOW1e (D157 point 10; the workflow design §4.3): an ask's kind and workflow are the person's, as what a review is set to
+    /// An ask's kind and workflow are the person's, as what a review is set to
     /// is. A session's keyless set is refused and nothing is kept; with the key the person's choice stands, and the composer's
     /// kind and workflow ride the person's own ask.
     /// </summary>
@@ -254,8 +254,8 @@ public sealed class PersonDoorHostTests(KeyedHost host) : IClassFixture<KeyedHos
     }
 
     /// <summary>
-    /// The respond door is an agent's (the stubs take and close there), and its abandon's decline is the person's
-    /// (PAUSE1c): <c>whileOpen</c> without the key is refused, and the quest stays open.
+    /// The respond door is an agent's (the stubs take and close there), and its abandon's decline is the person's:
+    /// <c>whileOpen</c> without the key is refused, and the quest stays open.
     /// </summary>
     [Fact]
     public async Task Respond_is_an_agents_door_and_an_abandons_decline_the_persons()
@@ -299,7 +299,7 @@ public sealed class PersonDoorHostTests(KeyedHost host) : IClassFixture<KeyedHos
     }
 
     /// <summary>
-    /// What the driver read for itself is the driver's (D46, D144): a session cannot post its own evidence or its own state,
+    /// What the driver read for itself is the driver's: a session cannot post its own evidence or its own state,
     /// however it words the body.
     /// </summary>
     [Fact]
@@ -358,8 +358,8 @@ public sealed class PersonDoorHostTests(KeyedHost host) : IClassFixture<KeyedHos
     }
 
     /// <summary>
-    /// The shell's proof of possession (design §2.3): asked with a nonce, a host holding a key answers an HMAC of it under
-    /// the key, the twin's vector; asked without, its status is what it always was. The key itself is never answered.
+    /// The shell's proof of possession: asked with a nonce, a host holding a key answers an HMAC of it under
+    /// the key, the twin's vector; asked without, its status is unchanged. The key itself is never answered.
     /// </summary>
     [Fact]
     public async Task Status_proves_the_key_when_asked_and_is_unchanged_when_not()
@@ -369,8 +369,8 @@ public sealed class PersonDoorHostTests(KeyedHost host) : IClassFixture<KeyedHos
         Assert.Equal("gQMDWolsIQRnw-_d19k3A1c9E6ey2aP9-8RL_n_pJ50", proved.Json.GetProperty("proof").GetString());
         Assert.DoesNotContain(Key, proved.Body);
 
-        // No `proof` unasked. `home`, the home's id, is HOMEID1's (`HomeStatusTests`), on every local host's status; `version`,
-        // the host's own, WIRING1b's; `closure`, FABRIC-CLOSE1b's handshake; `closeRemote`, FABRIC-CLOSE1i's.
+        // No `proof` unasked. `home`, the home's id, is on every local host's status (`HomeStatusTests`); `version`,
+        // the host's own; `closure`, the closure handshake; `closeRemote`, the remote's.
         var plain = await host.GetAsync("/api/status");
         Assert.Equal(
             new[] { "semantic", "tier", "note", "home", "version", "closure", "closeOutcome", "closeRemote" },
@@ -378,7 +378,7 @@ public sealed class PersonDoorHostTests(KeyedHost host) : IClassFixture<KeyedHos
     }
 
     /// <summary>
-    /// The page carries the key on its writes (PERSONDOOR1f), and ORIGIN1's gate still stands in front: the shell's page
+    /// The page carries the key on its writes, and the origin gate still stands in front: the shell's page
     /// with the key is answered, without it refused as an agent, and a page elsewhere is refused by its origin even with it.
     /// </summary>
     [Fact]
@@ -396,7 +396,7 @@ public sealed class PersonDoorHostTests(KeyedHost host) : IClassFixture<KeyedHos
     }
 }
 
-/// <summary>PERSONDOOR1a's other hosts: the log a refusal writes, a host handed no key, and a start that cannot read one.</summary>
+/// <summary>The other hosts: the log a refusal writes, a host handed no key, and a start that cannot read one.</summary>
 public sealed class PersonDoorHostLogTests
 {
     private static JsonElement Parse(string line) => JsonDocument.Parse(line).RootElement;
@@ -418,7 +418,7 @@ public sealed class PersonDoorHostLogTests
     }
 
     /// <summary>
-    /// One warning per refusal (design §5.1), by the method, the route's pattern, what was presented and the code: never
+    /// One warning per refusal, by the method, the route's pattern, what the call presented and the code: never
     /// the key, the id in the path or the body's words, and no failed request beside it. The forms a route judges write
     /// the same line.
     /// </summary>
@@ -460,7 +460,7 @@ public sealed class PersonDoorHostLogTests
     }
 
     /// <summary>
-    /// A host handed no key keeps today's trust (design §2.1) until the shell and the gates hand one (PERSONDOOR1d–h): every
+    /// A host handed no key keeps today's trust until the shell and the gates hand one: every
     /// route answers a keyless call as before, a key presented to it means nothing, a keyless publish is the person's,
     /// and it proves nothing it does not hold.
     /// </summary>
@@ -522,8 +522,8 @@ public sealed class PersonDoorHostLogTests
 }
 
 /// <summary>
-/// The real host, as the shell will start it (PERSONDOOR1g): its key on the first line of a redirected input, the stop on
-/// that input's end after it (LOG2a). What the in-process host cannot show: the real standard input, read before the host
+/// The real host, as the shell will start it: its key on the first line of a redirected input, the stop on
+/// that input's end after it. What the in-process host cannot show: the real standard input, read before the host
 /// answers anyone.
 /// </summary>
 public sealed class PersonDoorProcessTests : IDisposable

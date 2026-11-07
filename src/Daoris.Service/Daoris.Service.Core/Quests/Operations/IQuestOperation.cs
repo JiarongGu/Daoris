@@ -22,7 +22,7 @@ internal interface IQuestOperation
     /// <summary>The kind's own fields read from a row's payload onto <paramref name="read"/>, which holds what every kind reads.</summary>
     QuestOperation ReadPayload(QuestOperation read, JsonElement payload);
 
-    /// <summary>Whether a remote keeps one pushed on a quest it deleted, which the table applies it to no longer (D95).</summary>
+    /// <summary>Whether a remote keeps one pushed on a quest it deleted, which the table does not apply it to.</summary>
     bool KeptOnADeletedQuest => false;
 
     /// <summary>

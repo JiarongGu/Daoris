@@ -1,6 +1,6 @@
 namespace Daoris.Contracts.Confirmations;
 
-// PERSONDOOR1b (D156 point 4, design §4.2; ONEWAY1n-i): the window's confirmation of what an asker asked. A terminal cannot be told from
+// The window's confirmation of what an asker asked. A terminal cannot be told from
 // a session, so a keyless call to the person's or the driver's door is refused, and its asker asks here with the exact request.
 
 /// <summary>
@@ -30,7 +30,7 @@ public sealed record ConfirmationActionResponse(ConfirmationResponse Confirmatio
 public sealed record ConfirmationAskedResponse(ConfirmationResponse Confirmation, string Message, string Token);
 
 /// <summary>
-/// What waits for the person, as a held wait answers it (NOTIFY2j). <c>Since</c> is the cursor to ask from next (<c>&lt;epoch&gt;.&lt;n&gt;</c>),
+/// What waits for the person, as a held wait answers it. <c>Since</c> is the cursor to ask from next (<c>&lt;epoch&gt;.&lt;n&gt;</c>),
 /// and <c>Waiting</c> every confirmation waiting now, whole, oldest first.
 /// </summary>
 public sealed record ConfirmationsWaitingResponse(string Since, IReadOnlyList<ConfirmationResponse> Waiting);

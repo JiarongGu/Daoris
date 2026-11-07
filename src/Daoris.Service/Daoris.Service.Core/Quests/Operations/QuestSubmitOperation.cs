@@ -3,7 +3,7 @@ using System.Text.Json;
 namespace Daoris.Knowledge;
 
 /// <summary>
-/// A closure graph's work submitted (FABRIC-CLOSE1a, §E5): a done's note and answers, and the chain's next step it publishes when
+/// A closure graph's work submitted: a done's note and answers, and the chain's next step it publishes when
 /// nothing holds it, in the same transaction. A submission seals that step, and a lost one takes it with it.
 /// </summary>
 [QuestOperation("submitted", QuestOperationPhase.Log)]
@@ -30,10 +30,10 @@ internal sealed class QuestSubmitOperation : IQuestOperation
     public QuestOperation ReadPayload(QuestOperation read, JsonElement payload) => read with { Session = QuestRecordCodec.ReadSession(payload) };
 
     /// <summary>
-    /// A submission that lost takes the step it published with it, its publication pending on the same take (FABRIC-CLOSE1a, §E5), and
+    /// A submission that lost takes the step it published with it, its publication pending on the same take, and
     /// the take's conflict names it. One that lost to another machine's done leaves the step that done published, which is the same one.
-    /// The step goes even once this machine took it, and its take reads lost, so its session is stopped (FABRIC-CLOSE1e); where the take
-    /// this submission was made on lost to the person's reopen, the step's take says that (FABRIC-CLOSE1c22), read here because the step
+    /// The step goes even once this machine took it, and its take reads lost, so its session is stopped; where the take
+    /// this submission rests on lost to the person's reopen, the step's take says that, read here because the step
     /// keeps no history to.
     /// </summary>
     public async Task<IReadOnlyList<QuestOperation>> LostAsync(
@@ -65,7 +65,7 @@ internal sealed class QuestSubmitOperation : IQuestOperation
             now);
 
     /// <summary>
-    /// The step that seals <paramref name="quest"/>'s current submission (FABRIC-CLOSE1a, FABRIC-CLOSE1c; §E5): its chain's next step,
+    /// The step that seals <paramref name="quest"/>'s current submission: its chain's next step,
     /// standing on that submission, withdrawn by no reopen. Null where none does, so a later <c>ready</c> replaces it, and the close
     /// door reads it unsealed. A step from before names no submission, and seals whichever is current, as it always did.
     /// </summary>
@@ -76,14 +76,14 @@ internal sealed class QuestSubmitOperation : IQuestOperation
             ? step
             : null;
 
-    /// <summary>Whether <paramref name="step"/> stands on <paramref name="submission"/> (FABRIC-CLOSE1c): grown from it, no reopen since.</summary>
+    /// <summary>Whether <paramref name="step"/> stands on <paramref name="submission"/>: grown from it, no reopen since.</summary>
     internal static bool Grows(Quest step, QuestOperationRef submission) =>
         step.SourceReopened is null && (step.GrewFrom is not { } from || from == submission);
 
     /// <summary>
-    /// A lost take's note, then the submission that went with it (FABRIC-CLOSE1a, §E5), said on the conflict every machine
-    /// shows: the winner's work is what the quest's graph now closes. A take lost to the person's reopen (FABRIC-CLOSE1c21,
-    /// <see cref="QuestLog.LostToTheReopen"/>) has no winner, so it says the reopen, as the take's refusals do.
+    /// A lost take's note, then the submission that went with it, said on the conflict every machine
+    /// shows: the winner's work is what the quest's graph now closes. A take lost to the person's reopen
+    /// (<see cref="QuestLog.LostToTheReopen"/>) has no winner, so it says the reopen, as the take's refusals do.
     /// </summary>
     internal static string SubmissionWentWith(string? note, bool reopened = false)
     {

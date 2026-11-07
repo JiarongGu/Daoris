@@ -4,9 +4,8 @@ using Microsoft.Data.Sqlite;
 namespace Daoris.Knowledge;
 
 /// <summary>
-/// Second opinions, kept by the local host beside the session records (XAGENT1c, D155 point 11; the second agent design
-/// §6.2): one row a pass, this machine's alone. Nothing here is a quest operation, has a revision or goes on any wire: the
-/// candidate is commits only this machine holds until they land, and the reviewer names an account (D47 §4).
+/// Second opinions, kept by the local host beside the session records : one row a pass, this machine's alone. Nothing here is a quest operation, has a revision or goes on any wire: the
+/// candidate is commits only this machine holds until they land, and the reviewer names an account.
 /// </summary>
 /// <remarks>
 /// <b>As blind as the session store.</b> What may be kept is judged by <see cref="OpinionDesk"/>, which calls these inside
@@ -14,7 +13,7 @@ namespace Daoris.Knowledge;
 /// </remarks>
 public sealed class OpinionStore
 {
-    /// <summary>The connection's gate: every command here runs inside it (SQLITETX1).</summary>
+    /// <summary>The connection's gate: every command here runs inside it.</summary>
     private readonly ConnectionGate _db;
 
     private OpinionStore(SqliteConnection connection) => _db = ConnectionGate.For(connection);
@@ -51,7 +50,7 @@ public sealed class OpinionStore
             CREATE INDEX IF NOT EXISTS opinions_session ON opinions (session);
             """;
         await command.ExecuteNonQueryAsync(ct).ConfigureAwait(false);
-        // CHATFLOW1e: the record findings were first handed to, once they were handed again after a hand-over.
+        // The record findings are first handed to, once they are handed again after a hand-over.
         await SchemaColumns.EnsureAsync(_db, "opinions", "handed_from", "handed_from TEXT NULL", ct).ConfigureAwait(false);
         await OpinionReviewerNames.RenameAsync(_db, ct).ConfigureAwait(false);
     }
@@ -144,8 +143,8 @@ public sealed class OpinionStore
     }, ct);
 
     /// <summary>
-    /// Hand the findings again, once (CHATFLOW1e, the chat-flow design §6.1 (e)): moved from <see cref="OpinionHanded.From"/>, where they still
-    /// stand and were never handed again, to the record <paramref name="handed"/> names. False where they moved meanwhile.
+    /// Hand the findings again, once: moved from <see cref="OpinionHanded.From"/>, where they still
+    /// stand and are never handed again, to the record <paramref name="handed"/> names. False where they moved meanwhile.
     /// </summary>
     public Task<bool> KeepRehandedAsync(string id, OpinionHanded handed, CancellationToken ct = default) => _db.RunAsync<bool>(async () =>
     {
@@ -163,7 +162,7 @@ public sealed class OpinionStore
     }, ct);
 
     /// <summary>
-    /// Move where the findings stand with their word (COMMS1b): an open moved the word <paramref name="word"/> from <paramref name="from"/> to
+    /// Move where the findings stand with their word: an open moved the word <paramref name="word"/> from <paramref name="from"/> to
     /// <paramref name="to"/>, so the part that holds it answers them. False where they stand elsewhere or under another word.
     /// </summary>
     public Task<bool> KeepFollowedAsync(string id, string word, string from, string to, CancellationToken ct = default) => _db.RunAsync<bool>(async () =>

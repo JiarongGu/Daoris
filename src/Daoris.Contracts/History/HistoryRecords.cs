@@ -28,7 +28,7 @@ public sealed record HistoryPlanResponse(IReadOnlyList<HistoryUnitResponse> Unit
 public sealed record HistoryUnitRequest(string? Kind, string? Id);
 
 /// <summary>
-/// What the press did to one unit: the unit as judged where it was cleared, whether it went, and the desk's sentence. <c>Failed</c>,
+/// What the press did to one unit: the unit as judged where it is cleared, whether it went, and the desk's sentence. <c>Failed</c>,
 /// only where a removal failed, names the quests and asks whose kept files the disk would not let go of, so the driver counts them
 /// as failed and frees none of their bytes.
 /// </summary>

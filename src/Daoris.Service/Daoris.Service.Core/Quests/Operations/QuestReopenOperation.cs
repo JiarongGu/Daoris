@@ -3,7 +3,7 @@ using System.Text.Json;
 namespace Daoris.Knowledge;
 
 /// <summary>
-/// The person's reopen of a sealed submission, and their word to go on with a step it held (FABRIC-CLOSE1c, §E5). A reopen names the
+/// The person's reopen of a sealed submission, and their word to go on with a step it held. A reopen names the
 /// submission by its machine and sequence, on the quest that submitted it and on the step that submission published; it moves no status.
 /// </summary>
 [QuestOperation("reopened", QuestOperationPhase.Log)]
@@ -27,7 +27,7 @@ internal sealed class QuestReopenOperation : IQuestOperation
     };
 
     /// <summary>
-    /// The person's reopen of a sealed submission (FABRIC-CLOSE1c, §E5), in one write on the machine holding the take: a
+    /// The person's reopen of a sealed submission, in one write on the machine holding the take: a
     /// <see cref="QuestOperationKind.Reopened"/> on the quest, which leaves it taken with no current submission, and one on the step
     /// that submission published, which withdraws it while open and holds it while taken.
     /// </summary>
@@ -48,7 +48,7 @@ internal sealed class QuestReopenOperation : IQuestOperation
 
         QuestReopening Refused(QuestReopenRefusal refusal, Quest? step = null) => new(refusal, standing, step);
         if (standing.Status != QuestStatus.Taken) return Refused(QuestReopenRefusal.NotTaken);
-        // Only the take's machine submits, so only its store judges the seal (CLOSE1a's choice 3).
+        // Only the take's machine submits, so only its store judges the seal.
         if (QuestLog.OnALostTake(standing, history, new QuestOperation(id, QuestOperationKind.Done, tx.Machine, 0, now))
             || QuestLog.Claim(history, tx.Machine) is not (QuestClaim.Held or QuestClaim.Unconfirmed))
         {
@@ -87,9 +87,9 @@ internal sealed class QuestReopenOperation : IQuestOperation
     }
 
     /// <summary>
-    /// The person's word to go on with a step its source's reopen held (FABRIC-CLOSE1c, §E5): a <see cref="QuestOperationKind.Rebound"/>
+    /// The person's word to go on with a step its source's reopen held: a <see cref="QuestOperationKind.Rebound"/>
     /// naming the source's current submission, once that is unheld; and in the same write, a <see cref="QuestOperationKind.Reopened"/> on
-    /// the step's own successor, which the submission the rebind cleared had published (FABRIC-CLOSE1c14).
+    /// the step's own successor, which the submission the rebind cleared had published.
     /// </summary>
     internal async Task<QuestReopening> ContinueAsync(QuestTx tx, string id, DateTimeOffset now)
     {
@@ -102,7 +102,7 @@ internal sealed class QuestReopenOperation : IQuestOperation
         }
 
         // The go-on clears the step's own submission, and a successor already closed on it is not reopened (a reopen takes no close back),
-        // so the step's next submission would never be sealed. Refused as the person's reopen of it is (FABRIC-CLOSE1c19).
+        // so the step's next submission would never be sealed. Refused as the person's reopen of it is.
         if (standing.Submission is { } closedOn
             && await tx.SuccessorAsync(standing).ConfigureAwait(false) is { Status: QuestStatus.Done or QuestStatus.Declined } closed
             && QuestSubmitOperation.Grows(closed, new QuestOperationRef(closedOn.Machine, closedOn.Sequence)))
@@ -124,7 +124,7 @@ internal sealed class QuestReopenOperation : IQuestOperation
 
         // The rebind cleared the step's own submission, so the successor that submission published is reopened in the same write, as the
         // person's reopen of it would be: its next submission then rebinds a withdrawn one, and a held one waits on the person's word, so
-        // the step's close is never left unsealed (FABRIC-CLOSE1c14).
+        // the step's close is never left unsealed.
         var successor = standing.Submission is { } cleared
             ? await ReopenSuccessorAsync(tx, standing, new QuestOperationRef(cleared.Machine, cleared.Sequence), now).ConfigureAwait(false)
             : null;

@@ -3,7 +3,7 @@ using System.Text.Json;
 namespace Daoris.Knowledge;
 
 /// <summary>
-/// Its taker waits on a question it asked another repository (D79): its note names the quest it waits on. It moves no status; the
+/// Its taker waits on a question it asked another repository: its note names the quest it waits on. It moves no status; the
 /// quest stays taken, since its work in progress is in the taker's tree. A wait made on a take that lost goes with the take, which the
 /// rebase names on the take's conflict.
 /// </summary>
@@ -24,7 +24,7 @@ internal sealed class QuestWaitOperation : IQuestOperation
     public QuestOperation ReadPayload(QuestOperation read, JsonElement payload) => read;
 
     /// <summary>
-    /// A wait made on a take that lost goes with the take, and is named on the take's conflict (WAITCLAIM1): applied to the winner's quest it
+    /// A wait made on a take that lost goes with the take, and is named on the take's conflict: applied to the winner's quest it
     /// would hold the winner's session on a question it never asked. A wait that lost for any other reason is named on nothing: the take's
     /// conflict is already written, and a remote may have numbered it.
     /// </summary>
@@ -36,7 +36,7 @@ internal sealed class QuestWaitOperation : IQuestOperation
     }
 
     /// <summary>
-    /// A lost take's note as it was given, then the waits that went with it (WAITCLAIM1): said on the conflict, which every
+    /// A lost take's note as given, then the waits that went with it: said on the conflict, which every
     /// machine shows, so the words hold wherever they are read.
     /// </summary>
     internal static string WaitsWentWith(string? note, IReadOnlyList<string> questions)
@@ -52,7 +52,7 @@ internal sealed class QuestWaitOperation : IQuestOperation
     /// <summary>A wait on <paramref name="on"/>, judged by the replay's rule inside the write. It moves no status.</summary>
     /// <returns>
     /// The quest as it now stands and whether this call marked it; a null quest means no such id. Refused with
-    /// <see cref="QuestMove.ClaimLost"/> where this machine's take on the quest lost (WAITCLAIM2).
+    /// <see cref="QuestMove.ClaimLost"/> where this machine's take on the quest lost.
     /// </returns>
     internal async Task<QuestMove> WaitAsync(QuestTx tx, string id, string on, DateTimeOffset now)
     {
@@ -62,7 +62,7 @@ internal sealed class QuestWaitOperation : IQuestOperation
         // Only a taken quest waits (QuestLog.Applies), and a wait the log held but the quest did not show would be a move nobody could see.
         if (quest.Status != QuestStatus.Taken || string.IsNullOrWhiteSpace(on)) return new QuestMove(quest, Moved: false);
 
-        // A wait on the winner's take, made here after the pass that found this machine's take lost (WAITCLAIM2).
+        // A wait on the winner's take, made here after the pass that found this machine's take lost.
         var judged = new QuestOperation(id, QuestOperationKind.Waited, tx.Machine, 0, now, on);
         if (QuestLog.OnALostTake(quest, history, judged)) return new QuestMove(quest, Moved: false) { ClaimLost = true };
 

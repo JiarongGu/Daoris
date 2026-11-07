@@ -19,7 +19,7 @@ public sealed class DisclosurePolicy(bool sharing, IReadOnlySet<string>? shareab
         if (!sharing) return true;
 
         // Canonical content is public by construction — it is the canon, installed identically
-        // everywhere — so it travels regardless of which repository it was read from.
+        // everywhere — so it travels regardless of which repository it comes from.
         if (entry.Provenance == Provenance.Canonical) return true;
 
         return shareableRepositories?.Contains(entry.Repository) == true;

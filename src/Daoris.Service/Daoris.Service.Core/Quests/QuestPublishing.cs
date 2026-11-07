@@ -6,17 +6,17 @@ internal sealed class QuestPublishing(
     QuestRequirementJudge requirements, QuestWorkflowKinds kinds)
 {
     /// <summary>
-    /// Publish a quest to another repository, or to lanes of a repository (`repository:lane+lane`,
-    /// D115 §2.2), its own included. Refuses a self-addressed quest that names no lane, a target nothing
+    /// Publish a quest to another repository, or to lanes of a repository (`repository:lane+lane`),
+    /// its own included. Refuses a self-addressed quest that names no lane, a target nothing
     /// could answer, and a lane the target does not declare; warns when the target has not adopted, or
-    /// has declared nothing about itself (D34, D70). It is published HERE,
-    /// whoever the receiver is (D68), and a joined receiver's quest reaches the remote on the next sync.
+    /// has declared nothing about itself. It is published HERE,
+    /// whoever the receiver is, and a joined receiver's quest reaches the remote on the next sync.
     /// What it carries is judged before anything is written anywhere, and its files are kept HERE —
-    /// under this machine's home — wherever the record travels (D65 §2).
+    /// under this machine's home — wherever the record travels.
     /// </summary>
     public async Task<QuestPublishOutcome> PublishAsync(QuestAsk ask, DateTimeOffset now, CancellationToken ct)
     {
-        // `repository:lane+lane` is split once, here (D115 §2.2): from now on `to` is the repository,
+        // `repository:lane+lane` is split once, here: from now on `to` is the repository,
         // and the lanes ride beside it to the store.
         var address = QuestAddress.Parse(ask.To);
         var (from, to, title, body) = (ask.From, address.Repository, ask.Title, ask.Body);
@@ -28,7 +28,7 @@ internal sealed class QuestPublishing(
         var sender = registered.Named(from);
 
         // Work for another lane is work for another session, so a repository may ask one of its own
-        // lanes (D115, amending this refusal). To itself whole is still refused, and the refusal says
+        // lanes. To itself whole is still refused, and the refusal says
         // how it asks itself: its lanes, or the file that would give it some.
         if (!address.Named && string.Equals(from, to, StringComparison.OrdinalIgnoreCase))
         {
@@ -42,8 +42,8 @@ internal sealed class QuestPublishing(
                     : $"{whole} Use its own backlog. {QuestLanes.NoLanesWay(sender?.Repository ?? to)}",
                 Quest: null, Addressable: []);
         }
-        // A registered sender's row decides its circle. A sender with none — an ask (D65 §1a) — names
-        // its own, and silence places it where an unregistered sender always was.
+        // A registered sender's row decides its circle. A sender with none — an ask — names
+        // its own, and silence places it where an unregistered sender always is.
         var home = sender?.InWorkspace ?? Workspaces.Normalize(ask.Workspace);
 
         // Who can be asked is who shares the asker's circle. A refusal that listed the whole machine
@@ -70,7 +70,7 @@ internal sealed class QuestPublishing(
 
         if (!Workspaces.Same(target.InWorkspace, home))
         {
-            // The workspace is the unit of sharing (D48), so this is not a permission failure — it is
+            // The workspace is the unit of sharing, so this is not a permission failure — it is
             // two circles that were never joined. The sentence names BOTH sides, because "no" that
             // does not say which side is where leaves the asker with the question it should settle:
             // the answer is either to re-wire one of them, or to carry the request by hand.
@@ -83,7 +83,7 @@ internal sealed class QuestPublishing(
                 Quest: null, addressable);
         }
 
-        // The registration's lanes are what an address is judged by (D115 §2.2): the line's file is
+        // The registration's lanes are what an address is judged by: the line's file is
         // the authority for what runs, and this is what askers read.
         var (lanes, unfitLane) = QuestLanes.Judge(address, target);
         if (unfitLane is not null)
@@ -125,15 +125,15 @@ internal sealed class QuestPublishing(
         }
 
         // A chain is judged now, while the person or the intake composing it can still act on the
-        // answer — not at a close nobody is watching (D65 §4). Whether this circle shares with a team
-        // is this machine's wiring; whether a receiver is shared is its registration (design §8).
+        // answer — not at a close nobody is watching. Whether this circle shares with a team
+        // is this machine's wiring; whether a receiver is shared is its registration.
         var circleWired = remotes?.For(home) is not null;
         if (QuestChains.Judge(ask, to, registered, home, circleWired, circleWired && target.Joined, addressable) is { } unfitChain)
         {
             return new(QuestPublishRefusal.BadChain, unfitChain, Quest: null, addressable);
         }
 
-        // The chain's review choice (D154 point 3): its shape, then, from an agent, the person's words it quotes; an
+        // The chain's review choice: its shape, then, from an agent, the person's words it quotes; an
         // agent's `off` is a proposal for the person's press, never the chain's choice.
         var (review, proposedOff, unfitReview) = await reviews.JudgeReviewAsync(from, ask, now, ct).ConfigureAwait(false);
         if (unfitReview is { } refusedReview)
@@ -147,7 +147,7 @@ internal sealed class QuestPublishing(
             return new(unfitKind.Refusal, unfitKind.Message, Quest: null, addressable);
         }
 
-        // What the person requires is judged against what they said (D133 §3), here, so every door
+        // What the person requires is judged against what they said, here, so every door
         // refuses the same quote: its shape first, then whether they said it.
         var (required, unfitRequirement) = QuestRequirementJudge.JudgeShape(ask.Requirements);
         if (unfitRequirement is not null)
@@ -160,7 +160,7 @@ internal sealed class QuestPublishing(
             return new(unquoted.Refusal, unquoted.Message, Quest: null, addressable);
         }
 
-        // A cleared quest a remote numbered is forgotten here (D153 point 3), and its words make its id again: the
+        // A cleared quest a remote numbered is forgotten here, and its words make its id again: the
         // remote still holds it closed and would refuse a fresh copy on every pass, so this is answered as a closed quest is.
         // Where the quest simply went (no remote ever numbered it), nothing is marked and the words make it again.
         if (await quests.ForgottenIdAsync(from, to, title, lanes, ct, request).ConfigureAwait(false) is { } cleared)
@@ -178,7 +178,7 @@ internal sealed class QuestPublishing(
             .ConfigureAwait(false);
 
         var caution = !target.Adopted
-            // Registered is addressable; adopted is disciplined (D70). Said at publish, because it is
+            // Registered is addressable; adopted is disciplined. Said at publish, because it is
             // the one fact that decides whether the quest is ever answered: a person working there by
             // hand has no connector, and a machine driving over the pipe door holds it.
             ? $"\n\n⚠ `{target.Repository}` has not adopted Daoris, so only a session the driver starts "
@@ -189,7 +189,7 @@ internal sealed class QuestPublishing(
                 : $"\n\n⚠ `{target.Repository}` has not declared what it owns or accepts, so this may not be "
                   + "its problem. Worth checking before you rely on it.";
 
-        // Said of the quest as it stands: a publish already held answers with the requirements it was kept with.
+        // Said of the quest as it stands: a publish already held answers with the requirements it is kept with.
         var carrying = quest.Requirements.Count switch
         {
             0 => "",

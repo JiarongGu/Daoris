@@ -1,11 +1,11 @@
 namespace Daoris.Knowledge;
 
-/// <summary>A done answers each requirement, and a departure holds what follows for the person's yes (D133 §4).</summary>
+/// <summary>A done answers each requirement, and a departure holds what follows for the person's yes.</summary>
 internal sealed class QuestAnswering(AskStore? asks, QuestReviews reviews)
 {
     /// <summary>
     /// The answers a done gives, judged against the quest's requirements: one for each, by its
-    /// number, each <c>met</c> with how its check was met, or <c>departed</c> with the reason and the person's words it
+    /// number, each <c>met</c> with how its check is met, or <c>departed</c> with the reason and the person's words it
     /// turns on, which must be theirs. The answers as kept, trimmed at their ends, in the requirements' order — or why
     /// not, naming each requirement or answer at fault.
     /// </summary>
@@ -146,7 +146,7 @@ internal sealed class QuestAnswering(AskStore? asks, QuestReviews reviews)
         var met = closed.Answers.Count == 1 ? " Its requirement is met." : $" Each of its {closed.Answers.Count} requirements is met.";
         if (closed.Hold is null or QuestHold.Unreviewed) return met;
 
-        // What a met answer's evidence is, for the session that can still commit it (D144 §2): Daoris reads the
+        // What a met answer's evidence is, for the session that can still commit it: Daoris reads the
         // work's last commit when the session ends, and a met answer without it holds the quest for the person.
         var wanted = closed.EvidenceWanted;
         var read = $"Daoris reads {string.Join(", ", wanted.Select(each => $"`{each.Item.Named}`").Distinct())} in this work's "

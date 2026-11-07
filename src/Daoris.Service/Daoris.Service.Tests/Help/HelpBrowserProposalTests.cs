@@ -4,7 +4,7 @@ using Daoris.Knowledge;
 namespace Daoris.Service.Tests;
 
 /// <summary>
-/// The <c>browser</c> kind's writer (HELP10): Daoris's browser's settings, spelled as <c>daoris browser</c> spells them —
+/// The <c>browser</c> kind's writer: Daoris's browser's settings, spelled as <c>daoris browser</c> spells them —
 /// which browser, where links open, other software's extensions, a favorite with its address and its title. The driver
 /// judges it against the files as the desktop read them; here only the shape is checked.
 /// </summary>

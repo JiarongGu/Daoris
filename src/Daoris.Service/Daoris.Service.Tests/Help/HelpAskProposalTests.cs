@@ -2,7 +2,7 @@ using System.Text.Json;
 
 namespace Daoris.Service.Tests;
 
-/// <summary>The <c>ask</c> kind's writer (HELP1c): something to start, with its words and its workspace.</summary>
+/// <summary>The <c>ask</c> kind's writer: something to start, with its words and its workspace.</summary>
 public sealed class HelpAskProposalTests : HelpProposalBoxFixture
 {
     [Fact]
@@ -14,12 +14,12 @@ public sealed class HelpAskProposalTests : HelpProposalBoxFixture
         Assert.Equal("ask", file.GetProperty("kind").GetString());
         Assert.Equal("fix the chunk streamer's cold-cache stall", file.GetProperty("sentence").GetString());
         Assert.Equal("work", file.GetProperty("workspace").GetString());
-        // ENTRY1c: nothing said is the composer's default, each repository's rule, so no choice is written.
+        // Nothing said is the composer's default, each repository's rule, so no choice is written.
         Assert.Equal(JsonValueKind.Null, file.GetProperty("review").ValueKind);
         Assert.Equal(JsonValueKind.Null, file.GetProperty("reviewWords").ValueKind);
     }
 
-    /// <summary>HEAD2e: the short title is written trimmed, null where none is given, and judged by the quest's rule.</summary>
+    /// <summary>The short title is written trimmed, null where none is given, and judged by the quest's rule.</summary>
     [Fact]
     public void An_ask_carries_a_short_title_judged_as_a_quests_is()
     {
@@ -35,7 +35,7 @@ public sealed class HelpAskProposalTests : HelpProposalBoxFixture
     }
 
     /// <summary>
-    /// ENTRY1c: the composer's choices, as the box writes them. Each row but the last is one the driver's
+    /// The composer's choices, as the box writes them. Each row but the last is one the driver's
     /// <c>AskReviewCommand.Compose</c> takes (its <c>Composed</c> table, and <c>HelpAskProposalsTests</c>), so the box never refuses
     /// what the driver would send; the last is a tool's empty argument, which says nothing, so none is written.
     /// </summary>
@@ -59,7 +59,7 @@ public sealed class HelpAskProposalTests : HelpProposalBoxFixture
     }
 
     /// <summary>
-    /// ENTRY1c: the box judges the shape only, as the setting kind's <c>review</c> door does: words go with a choice, and a choice
+    /// The box judges the shape only, as the setting kind's <c>review</c> door does: words go with a choice, and a choice
     /// is <c>on</c>, <c>off</c> or one name. Whether a name is one the ask's workspace declares is the driver's, at Apply.
     /// </summary>
     [Theory]

@@ -10,12 +10,12 @@ namespace Daoris.Knowledge;
 /// This exists to close a gap that is measured rather than assumed. Word overlap finds
 /// <em>restatement</em> and cannot find <em>convergence</em>: two repositories that reached the same
 /// conclusion in different vocabulary score like unrelated documents, and no threshold separates
-/// them — the same limit the drift detector has, quantified in <c>docs/DECISIONS.md</c> D17. Since
+/// them — the same limit the drift detector has. Since
 /// the whole point of a cross-repository index is noticing that two repositories learned the same
 /// thing, that gap is not a nicety.
 ///
 /// The vector provider and the vector store are the cognition sibling's seams, consumed as a library
-/// (D22). The provider is app-composed by that library's design, which is what keeps this optional:
+/// The provider is app-composed by that library's design, which is what keeps this optional:
 /// with none configured the service is lexical-only, and local mode still works with nothing installed.
 /// </remarks>
 public sealed class SemanticKnowledgeSearch(
@@ -25,7 +25,7 @@ public sealed class SemanticKnowledgeSearch(
     internal const string Collection = "daoris-knowledge";
 
     /// <summary>
-    /// Embed every part of every entry and make the collection exactly that (SEM3, D123). Called during a
+    /// Embed every part of every entry and make the collection exactly that. Called during a
     /// refresh, with the whole corpus; batched because that is what real embedding endpoints reward, and
     /// because the library's primitive is a batch.
     /// </summary>
@@ -69,7 +69,7 @@ public sealed class SemanticKnowledgeSearch(
             var (entry, piece) = pieces[i];
             // The payload is the entry's id: its text lives in the store, and duplicating it here would
             // give two copies that can disagree about what an entry says. The vector's own id says which
-            // piece it was, so a hit can show that passage.
+            // piece it is, so a hit can show that passage.
             await vectors.UpsertAsync(Collection, EntryPieces.VectorId(entry.Id, piece.Start), embedded[i], entry.Id, ct)
                 .ConfigureAwait(false);
         }
@@ -88,7 +88,7 @@ public sealed class SemanticKnowledgeSearch(
 
         // Over-fetch, because filtering happens after the search: asking for exactly `Limit` and then
         // discarding the ones that fail a filter silently returns fewer results than requested. And read
-        // further while that still leaves too few (SEM3): an entry is several vectors and is named once,
+        // further while that still leaves too few: an entry is several vectors and is named once,
         // so a long entry's pieces can take many of the places one read returns.
         var hits = new List<KnowledgeHit>();
         var named = new HashSet<string>(StringComparer.Ordinal);
@@ -120,7 +120,7 @@ public sealed class SemanticKnowledgeSearch(
     /// <summary>
     /// The passage of the piece that matched: a hit found by a long entry's later piece shows that
     /// piece's opening, not the entry's, or the reader cannot see why it matched. With the line of the
-    /// body it starts on (ORIENT2e), the piece's own lines counted.
+    /// body it starts on, the piece's own lines counted.
     /// </summary>
     private static (string Text, int Line) Excerpt(KnowledgeEntry entry, int start)
     {

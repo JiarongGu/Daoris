@@ -2,11 +2,11 @@ using static Daoris.Knowledge.HelpProposalFile;
 
 namespace Daoris.Knowledge;
 
-/// <summary>The <c>account</c> kind's writer (HELP6): an account's own model and effort, with its own <c>account</c>, <c>model</c> and <c>effort</c>.</summary>
+/// <summary>The <c>account</c> kind's writer: an account's own model and effort, with its own <c>account</c>, <c>model</c> and <c>effort</c>.</summary>
 internal sealed class HelpAccountProposalWriter(HelpProposalFile file)
 {
     /// <summary>
-    /// Write one proposal to change an account's own model and effort (HELP6): the Agents screen's
+    /// Write one proposal to change an account's own model and effort: the Agents screen's
     /// <i>Model &amp; effort</i>, which the driver judges with that route's own rules.
     /// </summary>
     /// <param name="model">A model the tool reads, or <c>unset</c> for the tool's own default; null leaves it.</param>

@@ -3,7 +3,7 @@ using Daoris.Knowledge;
 namespace Daoris.Service.Tests;
 
 /// <summary>
-/// KNOWCENTRAL2a (the memory coordinator design's §5): a record cited by its entry id, the stored reading's commit and its
+/// A record cited by its entry id, the stored reading's commit and its
 /// body's digest, and rechecked against the index's stored reading before it is shown as current.
 /// </summary>
 public sealed class CitationRecheckTests : IAsyncLifetime
@@ -17,7 +17,7 @@ public sealed class CitationRecheckTests : IAsyncLifetime
 
     private const string Opening = "served:docs/decisions/D60.md";
 
-    /// <summary>D10: superseded by D50 in its own record.</summary>
+    /// <summary>A decision superseded by another in its own record.</summary>
     private const string Superseded =
         "# D10: The probe lock\n\nAardvark opening: one probe at a time.\n\n"
         + "**Built 2026-10-01 (LOCK1a).** Quokka note: the lock is held.\n\n"
@@ -240,9 +240,9 @@ public sealed class CitationRecheckTests : IAsyncLifetime
     }
 
     /// <summary>
-    /// 🔴 KNOWCENTRAL2d (the memory coordinator design §3): the sweep reads Lyntai's entries due a recheck and rechecks each one's citations
+    /// 🔴 The sweep reads Lyntai's entries due a recheck and rechecks each one's citations
     /// through <c>RecheckAsync</c>: one whose record holds is written as a <c>ready</c> confirmation at the revision read, one whose record
-    /// was superseded as an <c>awaiting</c> end naming its successor, and a second sweep before either settles writes neither again.
+    /// is superseded as an <c>awaiting</c> end naming its successor, and a second sweep before either settles writes neither again.
     /// </summary>
     [Fact]
     public async Task The_sweep_rechecks_due_entries_through_RecheckAsync()

@@ -3,7 +3,7 @@ using System.Text.Json;
 namespace Daoris.Knowledge;
 
 /// <summary>
-/// An open quest deleted (D95). A quest that may have left this machine, or whose history a remote numbered, is tombstoned by this
+/// An open quest deleted. A quest that may have left this machine, or whose history a remote numbered, is tombstoned by this
 /// operation, which the next pass carries, because a copy elsewhere would otherwise come back on the next fetch. Any other quest simply
 /// goes, its history with it.
 /// </summary>
@@ -37,7 +37,7 @@ internal sealed class QuestDeleteOperation : IQuestOperation
         if (quest is null) return new QuestDeletion(null, Deleted: false);
         if (quest.Status != QuestStatus.Open) return new QuestDeletion(quest, Deleted: false);
 
-        // A push reads the log, so a quest with no history was never pushed, and goes like a local one.
+        // A push reads the log, so a quest with no history has not been pushed, and goes like a local one.
         var tombstoned = history.Count > 0 && (travels || history.Any(operation => operation.Number is not null));
         await using (var command = tx.Command())
         {

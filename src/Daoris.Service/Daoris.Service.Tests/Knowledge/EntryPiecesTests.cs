@@ -3,7 +3,7 @@ using Daoris.Knowledge;
 namespace Daoris.Service.Tests;
 
 /// <summary>
-/// SEM3 (D123): how an entry becomes the texts its vectors are made from — every part of its body, in
+/// How an entry becomes the texts its vectors are made from — every part of its body, in
 /// pieces no longer than the deployment's window, each led by its title.
 /// </summary>
 public class EntryPiecesTests
@@ -128,7 +128,7 @@ public class EntryPiecesTests
         Assert.Equal(0, EntryPieces.StartOf(EntryPieces.VectorId("alpha:docs/a.md#x@9", 0)));
     }
 
-    // ——— The window is the deployment's (D24): read once, refused when it cannot mean what it says.
+    // ——— The window is the deployment's: read once, refused when it cannot mean what it says.
 
     [Theory]
     [InlineData(null, EntryPieces.DefaultWindow)]

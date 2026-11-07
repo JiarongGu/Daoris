@@ -3,7 +3,7 @@ using Daoris.Knowledge;
 
 namespace Daoris.Service.Tests;
 
-/// <summary>The <c>agent</c> kind's writer (HELP6): an agent's Update, or a pin to one version — the Agents screen's two presses.</summary>
+/// <summary>The <c>agent</c> kind's writer: an agent's Update, or a pin to one version — the Agents screen's two presses.</summary>
 public sealed class HelpAgentProposalTests : HelpProposalBoxFixture
 {
     [Fact]
@@ -39,8 +39,8 @@ public sealed class HelpAgentProposalTests : HelpProposalBoxFixture
     }
 
     /// <summary>
-    /// TOOL4l-a: a use door carries exactly the fields the driver reads; keep none is an explicit null, unchanged is absent. Since POOL1b
-    /// (§5.3) it names no workspace; it carried `lab` before.
+    /// A use door carries exactly the fields the driver reads; keep none is an explicit null, unchanged is absent. It names no
+    /// workspace.
     /// </summary>
     [Fact]
     public void A_use_is_written_with_its_fields_and_keep_none_is_told_from_unchanged()
@@ -64,7 +64,7 @@ public sealed class HelpAgentProposalTests : HelpProposalBoxFixture
     }
 
     /// <summary>
-    /// SWITCH1d: the use door's switch and curve, the curve spelled as the terminal's `--curve` a window and written as
+    /// The use door's switch and curve, the curve spelled as the terminal's `--curve` a window and written as
     /// `harnesses.json` keeps it; no curve is an explicit null, which the driver reads as `--no-curve`.
     /// </summary>
     [Fact]
@@ -118,8 +118,8 @@ public sealed class HelpAgentProposalTests : HelpProposalBoxFixture
     }
 
     /// <summary>
-    /// An order puts the accounts named first, or clears back to the ids' order, each marked for the set (POOL1b, §5.3) and naming no
-    /// workspace; before POOL1b a clear named the workspace it sent back to the machine's accounts.
+    /// An order puts the accounts named first, or clears back to the ids' order, each marked for the set and naming no
+    /// workspace.
     /// </summary>
     [Fact]
     public void An_order_is_written_with_its_accounts_or_a_clear_marked_for_the_set()
@@ -136,7 +136,7 @@ public sealed class HelpAgentProposalTests : HelpProposalBoxFixture
         Assert.False(cleared.TryGetProperty("accounts", out _));
     }
 
-    /// <summary>An update, a pin or a ready is no proposal for the set, so it carries no mark (POOL1b, §5.3).</summary>
+    /// <summary>An update, a pin or a ready is no proposal for the set, so it carries no mark.</summary>
     [Fact]
     public void Only_a_use_or_an_order_is_marked_for_the_set()
     {

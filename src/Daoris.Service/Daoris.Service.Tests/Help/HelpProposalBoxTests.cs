@@ -3,11 +3,11 @@ using Daoris.Knowledge;
 namespace Daoris.Service.Tests;
 
 /// <summary>
-/// Ask Daoris's proposals (HELP1c, D89): a change it wants is a file under the driver's home, shaped
+/// Ask Daoris's proposals: a change it wants is a file under the driver's home, shaped
 /// here and judged by the driver with the route's own code before the person sees it. Nothing here
 /// applies anything: every change is the person's press.
 /// </summary>
-/// <remarks>What holds for every kind. Each kind's writer is held beside this under <c>Help/</c> (MOD6).</remarks>
+/// <remarks>What holds for every kind. Each kind's writer is held beside this under <c>Help/</c>.</remarks>
 public sealed class HelpProposalBoxTests : HelpProposalBoxFixture
 {
     [Fact]

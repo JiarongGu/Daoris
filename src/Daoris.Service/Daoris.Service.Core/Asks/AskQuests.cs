@@ -36,7 +36,7 @@ internal sealed class AskQuests(QuestExchange exchange, QuestFiles? askFiles)
                 Links = [.. ask.Links.Concat(draft?.Links ?? []).Distinct(StringComparer.Ordinal)],
                 Uploads = [.. uploads, .. draft?.Uploads ?? []],
                 Then = draft?.Then ?? [],
-                // The person's words, each with its check (D133 §3): the exchange judges them against this ask's.
+                // The person's words, each with its check: the exchange judges them against this ask's.
                 Requirements = draft?.Requirements ?? [],
                 // The intake's short title; where it gives none, the ask's own, so the quest and the ask
                 // it came from share one name. Neither, and the quest is named from the ask's words.
@@ -73,7 +73,7 @@ internal sealed class AskQuests(QuestExchange exchange, QuestFiles? askFiles)
 
     /// <summary>
     /// An intake's words first — it read the ticket — and the person's own beneath them, verbatim: a
-    /// receiver weighing a paraphrase deserves the words it was paraphrased from.
+    /// receiver weighing a paraphrase deserves the words behind it.
     /// </summary>
     private static string DraftBodyOf(Ask ask, string words)
     {

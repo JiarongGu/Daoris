@@ -3,8 +3,8 @@ using System.Text.Json;
 namespace Daoris.Service.Http.Tests;
 
 /// <summary>
-/// MIXAGENT2a-i (D163 points 2 to 4): a helper's record names the session it serves, and a helper's answer waits on the asker's
-/// record marked as the helper's. Both are this machine's own (D47 §4), as a reviewer's `opinion` is, and the helper's answer
+/// A helper's record names the session it serves, and a helper's answer waits on the asker's
+/// record marked as the helper's. Both are this machine's own, as a reviewer's `opinion` is, and the helper's answer
 /// is never the person's words.
 /// </summary>
 public sealed class HelperHostTests(LocalHost host) : IClassFixture<LocalHost>
@@ -39,7 +39,7 @@ public sealed class HelperHostTests(LocalHost host) : IClassFixture<LocalHost>
     }
 
     /// <summary>
-    /// MIXAGENT2a-ii: the creation door the driver's helper session opens its record by. A chat that serves the asker and no
+    /// The creation door the driver's helper session opens its record by. A chat that serves the asker and no
     /// quest, in the asker's repository and workspace, in the clone the driver names; an asker that is itself a helper, a reviewer,
     /// an intake, unknown, or whose tree is the helper's own is refused in a sentence.
     /// </summary>
@@ -47,7 +47,7 @@ public sealed class HelperHostTests(LocalHost host) : IClassFixture<LocalHost>
     public async Task The_creation_door_opens_a_record_that_serves_its_asker_and_refuses_what_cannot_ask()
     {
         var sessions = host.Composed.Sessions;
-        // Its own repository: a session of another test that holds no tree yet holds every tree of its repository (D51).
+        // Its own repository: a session of another test that holds no tree yet holds every tree of its repository.
         var asker = await sessions.CreateAsync(null, "Opener", "stub", DateTimeOffset.UtcNow, workspace: "default", kind: Daoris.Knowledge.SessionKind.Chat, tree: "trees/default/Opener/s-aaaaaaaa");
 
         var opened = await host.PostAsync("/api/helpers", new { asker = asker.Id, door = "codex-acp", tree = "trees/default/Opener/o-bbbbbbbb", account = "work", baseCommit = "ABCDEF1" });
@@ -76,7 +76,7 @@ public sealed class HelperHostTests(LocalHost host) : IClassFixture<LocalHost>
     }
 
     /// <summary>
-    /// MIXAGENT2a-ii: the answer's return. A word marked `helper` waits on an ended asker's record and reopens it; a running
+    /// The answer's return. A word marked `helper` waits on an ended asker's record and reopens it; a running
     /// asker takes it at its turn's end (409), and it goes once.
     /// </summary>
     [Fact]
@@ -100,7 +100,7 @@ public sealed class HelperHostTests(LocalHost host) : IClassFixture<LocalHost>
         var kept = (await sessions.FindAsync(asker.Id))!;
         Assert.Equal((helper.Id, false), (kept.Said[0].Helper, kept.Said[0].Persons));
 
-        // COMMS1b: a word already waiting is answered with its holder and word, never refused; nothing is kept twice.
+        // A word already waiting is answered with its holder and word, never refused; nothing is kept twice.
         var twice = await host.PostAsync($"/api/helpers/{helper.Id}/hand", new { text = "Helper says five." });
         Assert.Equal(200, twice.Status);
         Assert.True(twice.Json.GetProperty("waiting").GetBoolean());
@@ -111,7 +111,7 @@ public sealed class HelperHostTests(LocalHost host) : IClassFixture<LocalHost>
     }
 
     /// <summary>
-    /// HELPERWAIT1 (D189 point 6): an asker its line has left (a hand-over, a move, a carry-on) is never reopened by its helper's answer: the
+    /// An asker its line has left (a hand-over, a move, a carry-on) is never reopened by its helper's answer: the
     /// answer goes to the newest record continuing it, as a partner's piece does, and is keyed by its helper; the record left keeps nothing.
     /// </summary>
     [Fact]
@@ -135,8 +135,8 @@ public sealed class HelperHostTests(LocalHost host) : IClassFixture<LocalHost>
     }
 
     /// <summary>
-    /// COMMS1b: the door walks the line as the say door does, to the store's one bound (<see cref="Daoris.Knowledge.Lines.Bound"/>), so a line
-    /// past the helper's old sixteen links reaches its newest part too, and the parts it left keep nothing.
+    /// The door walks the line as the say door does, to the store's one bound (<see cref="Daoris.Knowledge.Lines.Bound"/>), so a line
+    /// past the helper's sixteen links reaches its newest part too, and the parts it left keep nothing.
     /// </summary>
     [Theory]
     [InlineData(16)]
@@ -167,7 +167,7 @@ public sealed class HelperHostTests(LocalHost host) : IClassFixture<LocalHost>
     }
 
     /// <summary>
-    /// HELPERWAIT1 (Codex's round-2 #1 on COWORKUX1): a park waits on the person, so its helper's answer is refused while they have not
+    /// A park waits on the person, so its helper's answer is refused while they have not
     /// answered, and kept beside their answer once they have: its go-on then hands both in one prompt, the person's answer still theirs.
     /// </summary>
     [Fact]
@@ -191,7 +191,7 @@ public sealed class HelperHostTests(LocalHost host) : IClassFixture<LocalHost>
     }
 
     /// <summary>
-    /// MIXAGENT2a-iii: a conversation that asked is handed the answer while it is open (working, between turns), since the chat
+    /// A conversation that asked is handed the answer while it is open (working, between turns), since the chat
     /// runner says it as the conversation's next turn; a conversation still being started, an intake, a helper and a stood-down
     /// record keep their refusals.
     /// </summary>
@@ -223,7 +223,7 @@ public sealed class HelperHostTests(LocalHost host) : IClassFixture<LocalHost>
     }
 
     /// <summary>
-    /// 🔴 COWORK1d (the message-urgency design §5): an urgent ask's answer reaches its running asker at its next step, so the driver that
+    /// 🔴 An urgent ask's answer reaches its running asker at its next step, so the driver that
     /// runs it hands it with `running`: kept on the running record's words with its level, for that run's inbox, and still once. Without
     /// `running` a running asker refuses it, as before.
     /// </summary>

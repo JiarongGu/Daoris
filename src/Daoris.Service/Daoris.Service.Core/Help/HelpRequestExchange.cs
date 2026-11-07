@@ -4,14 +4,14 @@ using System.Text.Json;
 namespace Daoris.Knowledge;
 
 /// <summary>
-/// The exchange each of Ask Daoris's granted tools makes with the driver (HELPMODE1c2a, HELPMODE1c3, HELPMODE1c4; D183's notes): a keyed
+/// The exchange each of Ask Daoris's granted tools makes with the driver: a keyed
 /// request written under the home's session requests (<see cref="HomeEntry.Requests"/>) for the conversation's own session, the take
 /// waited for, a request nobody took withdrawn, then the answer beside it waited for and read once. <see cref="HousekeepingBox"/>,
 /// <see cref="SettingsBox"/> and <see cref="CheckoutBox"/> each write their own request and say their own words around it.
 /// </summary>
 /// <remarks>
 /// <b>A twin, the file the contract</b> (<c>.claude/knowledge/twins.md</c>): the driver's <c>SessionRequests</c> takes the request by
-/// renaming it and writes the answer beside it; the withdrawal of one nobody took is the driver's REQTAKE2, renamed aside, then
+/// renaming it and writes the answer beside it; the withdrawal of one nobody took is the driver's, renamed aside, then
 /// removed only once nothing holds it, so of a withdrawal and a take only one wins.
 /// </remarks>
 internal static class HelpRequestExchange
@@ -155,7 +155,7 @@ internal static class HelpRequestExchange
     }
 
     /// <summary>
-    /// Withdraw a request nobody took (the driver's REQTAKE2, this side of the twin): renamed aside as a take renames it, then
+    /// Withdraw a request nobody took (this side of the driver's twin): renamed aside as a take renames it, then
     /// opened alone and removed as it closes, which waits out a take's rename begun a moment before. False where a take won, when
     /// the loop has it and the answer is waited for.
     /// </summary>

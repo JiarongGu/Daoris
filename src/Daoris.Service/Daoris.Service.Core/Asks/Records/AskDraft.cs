@@ -2,7 +2,7 @@ namespace Daoris.Knowledge;
 
 /// <summary>
 /// The quest an ask becomes, in words other than the ask's own — what an intake session writes once
-/// it has read the ticket (D65 §1b). A publish with no draft uses the person's sentence, as it always has.
+/// it has read the ticket. A publish with no draft uses the person's sentence, as it always has.
 /// </summary>
 /// <param name="Title">One line: what is wanted. Blank takes the ask's first line.</param>
 /// <param name="Body">Why, and the evidence, with the ask's words quoted beneath. Blank takes the ask's words alone.</param>
@@ -14,11 +14,11 @@ public sealed record AskDraft(string? Title, string? Body)
     /// <summary>Files beyond the ask's own — the ask's always travel too.</summary>
     public IReadOnlyList<QuestUpload> Uploads { get; init; } = [];
 
-    /// <summary>What to ask next once this closes done (D65 §4) — judged by the exchange, like any chain.</summary>
+    /// <summary>What to ask next once this closes done — judged by the exchange, like any chain.</summary>
     public IReadOnlyList<QuestStep> Then { get; init; } = [];
 
     /// <summary>
-    /// What the person requires, in their own words with the check that proves each (D133 §3) —
+    /// What the person requires, in their own words with the check that proves each —
     /// judged by the exchange against the ask's words.
     /// </summary>
     public IReadOnlyList<QuestRequirement> Requirements { get; init; } = [];

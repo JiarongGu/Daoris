@@ -6,7 +6,7 @@ namespace Daoris.Knowledge;
 public readonly record struct EntryPiece(int Start, string Text);
 
 /// <summary>
-/// How an entry becomes the texts its vectors are made from (SEM3, D123): every part of its body, in
+/// How an entry becomes the texts its vectors are made from: every part of its body, in
 /// pieces no longer than the deployment's window, each led by the entry's title.
 /// </summary>
 /// <remarks>
@@ -16,7 +16,7 @@ public readonly record struct EntryPiece(int Start, string Text);
 /// third of the text never reached a vector — so a search by meaning could not find what a long decision
 /// says past its opening.</para>
 ///
-/// <para><b>The window is the deployment's</b> (D24): it is the most characters one embedded text carries,
+/// <para><b>The window is the deployment's</b>: it is the most characters one embedded text carries,
 /// the title included, and only the deployment knows its embedder's window. Characters only approximate
 /// tokens, so a deployment leaves margin for code and for scripts a tokenizer counts densely.</para>
 ///
@@ -24,12 +24,12 @@ public readonly record struct EntryPiece(int Start, string Text);
 /// break, a sentence end, a space, or at the window itself — never inside a surrogate pair. <b>Where the
 /// next begins</b>: at a line or a sentence inside the last <see cref="Overlap"/> of the one before, so a
 /// sentence a cut falls through is whole in one of them. Deterministic: the same entry and window always
-/// give the same pieces. An entry within the window is one piece, the same text it always was.</para>
+/// give the same pieces. An entry within the window is one piece, the same text.</para>
 /// </remarks>
 public static class EntryPieces
 {
     /// <summary>
-    /// The window when the deployment states none: the number the body was always cut at, now a statement
+    /// The window when the deployment states none: the number the body is cut at, a statement
     /// rather than a silence. About 500 tokens of English prose, a small embedder's window.
     /// </summary>
     public const int DefaultWindow = 2000;
@@ -57,7 +57,7 @@ public static class EntryPieces
     }
 
     /// <summary>
-    /// What leads every piece: the title twice, as the whole entry was always embedded — it is the author's
+    /// What leads every piece: the title twice, as the whole entry is embedded — it is the author's
     /// own summary, and one line of it carries more than several of body — or once where two would take
     /// more than half the window. A title longer than that is cut in the lead alone: the entry keeps it
     /// whole, and the body, which is the knowledge, still reaches a vector in full.
@@ -77,7 +77,7 @@ public static class EntryPieces
     /// <summary>The id a piece's vector is stored under: the entry's, and where the piece starts.</summary>
     /// <remarks>
     /// The payload stays the entry's id, which is what every reader of the collection resolves; the id
-    /// only has to be unique and say which passage it was. The start is always written, so reading it from
+    /// only has to be unique and say which passage it is. The start is always written, so reading it from
     /// the LAST <c>@</c> is unambiguous whatever an entry's own heading holds.
     /// </remarks>
     public static string VectorId(string entryId, int start) => $"{entryId}@{start}";

@@ -4,7 +4,7 @@ using Microsoft.Data.Sqlite;
 namespace Daoris.Service.Tests;
 
 /// <summary>
-/// The workspace is the unit of sharing (D48). These are its rules at the layer that decides them —
+/// The workspace is the unit of sharing. These are its rules at the layer that decides them —
 /// the name itself, the wiring that carries it, and the scoping every cross-repository answer obeys.
 /// </summary>
 /// <remarks>
@@ -44,7 +44,7 @@ public sealed class WorkspaceNameTests
 
 /// <summary>
 /// Membership is wiring, like a git remote — a row on this machine, never a tracked declaration
-/// (D48 as amended). The store is where "preserved on upsert, defaulting to the existing row then
+/// The store is where "preserved on upsert, defaulting to the existing row then
 /// `default`" is actually true, because it is the only place both the old row and the new statement
 /// are in hand at once.
 /// </summary>
@@ -302,9 +302,9 @@ public sealed class WorkspaceScopeTests : IAsyncLifetime
 }
 
 /// <summary>
-/// A repository moved to another workspace takes its knowledge with it (OVERVIEWNOISE1d). Its entries carry the
-/// workspace they were indexed under, and a local host reads its checkouts again only into an empty index or on
-/// request, so the workspace it moved to counted none of them until the move re-stamped them.
+/// A repository moved to another workspace takes its knowledge with it. Its entries carry the
+/// workspace they are indexed under, and a local host reads its checkouts again only into an empty index or on
+/// request, so the workspace it moved to would count none of them unless the move re-stamps them.
 /// </summary>
 public sealed class WorkspaceMoveTests : IAsyncLifetime
 {
@@ -365,7 +365,7 @@ public sealed class WorkspaceMoveTests : IAsyncLifetime
 /// <summary>
 /// The quest boundary (design §4): publishing checks that both sides share a workspace, and the
 /// refusal names both — because "no" that does not say which side is where leaves the asker with the
-/// one question the answer was supposed to settle.
+/// one question the answer is supposed to settle.
 /// </summary>
 public sealed class WorkspaceQuestTests : IAsyncLifetime
 {

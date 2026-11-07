@@ -3,7 +3,7 @@ using Daoris.Knowledge;
 
 namespace Daoris.Service.Tests;
 
-/// <summary>The <c>go</c> kind's writer (HELP6): a screen to open — a view, a Settings domain, a part of it or a setup step.</summary>
+/// <summary>The <c>go</c> kind's writer: a screen to open — a view, a Settings domain, a part of it or a setup step.</summary>
 public sealed class HelpGoProposalTests : HelpProposalBoxFixture
 {
     [Fact]
@@ -20,7 +20,7 @@ public sealed class HelpGoProposalTests : HelpProposalBoxFixture
     }
 
     /// <summary>
-    /// ENTRY1f1 (D161's ENTRY1f note): a go may name one quest, by its id, or one ask, as <c>ask:&lt;id&gt;</c>. The box
+    /// A go may name one quest, by its id, or one ask, as <c>ask:&lt;id&gt;</c>. The box
     /// writes it as named, its spelling kept; whether the machine holds it, and where it may be named, is the driver's to judge.
     /// </summary>
     [Fact]
@@ -34,7 +34,7 @@ public sealed class HelpGoProposalTests : HelpProposalBoxFixture
     }
 
     /// <summary>
-    /// ENTRY1d2a (D161's ENTRY1d note): a go to Repositories' Add repository or Import a folder may carry the workspace the
+    /// A go to Repositories' Add repository or Import a folder may carry the workspace the
     /// drawer opens with, written trimmed and not held to one word, since the drawer's free text takes any name. Where it may
     /// be named, and whether a repository is in it yet, is the driver's to judge; a go with none writes none.
     /// </summary>
@@ -51,7 +51,7 @@ public sealed class HelpGoProposalTests : HelpProposalBoxFixture
     }
 
     /// <summary>
-    /// NEW1d-a (D162's note): a go to Sessions' New conversation may carry the repository and the words the composer opens
+    /// A go to Sessions' New conversation may carry the repository and the words the composer opens
     /// with, in the common <c>repository</c> and <c>sentence</c> fields, written trimmed; a go with none writes none. Whether
     /// the repository is registered with a checkout here is the driver's to judge.
     /// </summary>
@@ -71,7 +71,7 @@ public sealed class HelpGoProposalTests : HelpProposalBoxFixture
         Assert.Equal(JsonValueKind.Null, Written(other!).GetProperty("sentence").ValueKind);
     }
 
-    /// <summary>NEW1d-a: a repository is named as Repositories lists it, never by a folder, as a workspace is.</summary>
+    /// <summary>A repository is named as Repositories lists it, never by a folder, as a workspace is.</summary>
     [Theory]
     [InlineData("C:\\work\\engine")]
     [InlineData("work/engine")]
@@ -87,7 +87,7 @@ public sealed class HelpGoProposalTests : HelpProposalBoxFixture
         Assert.False(Directory.Exists(DaorisHome.Entry(_home, HomeEntry.HelpProposals)));
     }
 
-    /// <summary>UX6i2b: the texts list the places the frame has (D150's UX6i2a note), never the ones it retired.</summary>
+    /// <summary>The texts list the places the frame has, never the ones it retired.</summary>
     [Fact]
     public void The_texts_name_the_places_the_window_has()
     {
@@ -120,7 +120,7 @@ public sealed class HelpGoProposalTests : HelpProposalBoxFixture
         // UX6h4: a repository's Branches and History tabs, named apart from a workspace's Branches.
         Assert.Contains("branches (a repository's Branches)", part);
         Assert.Contains("history (a repository's History)", part);
-        // ENTRY1h: the four parts ENTRY1b added, and that a part names no session or quest.
+        // The four parts, and that a part names no session or quest.
         foreach (var name in new[] { "waiting", "review", "asks", "held" })
             Assert.Contains(name, part);
         Assert.Contains("names no session or quest", part);
@@ -133,7 +133,7 @@ public sealed class HelpGoProposalTests : HelpProposalBoxFixture
         // ENTRY1f2: and one session under sessions, by its id, never Ask Daoris's own conversation.
         Assert.Contains("For sessions", item);
         Assert.Contains("a session by its id", item);
-        // PLUGUI1h: and under plugins, an installed plugin by its id or an offer as offer:<id>.
+        // Under plugins, an installed plugin by its id or an offer as offer:<id>.
         Assert.Contains("For plugins", item);
         Assert.Contains("offer:<id>", item);
         Assert.Contains("Ask Daoris's own", item);
@@ -147,7 +147,7 @@ public sealed class HelpGoProposalTests : HelpProposalBoxFixture
         Assert.Contains("never a folder", workspace);
         Assert.Contains("may carry the workspace", part);
         Assert.Contains("Add repository or Import a folder", tool);
-        // NEW1d-a: New conversation opens with a repository and words.
+        // New conversation opens with a repository and words.
         Assert.Contains("new (New conversation", part);
         Assert.Contains("New conversation", tool);
         Assert.Contains("For sessions' new only", Of("repository"));
@@ -162,7 +162,7 @@ public sealed class HelpGoProposalTests : HelpProposalBoxFixture
     [InlineData("settings|work space||", "one word")]
     // ENTRY1f1: an item is one word, as an id is; which item is the driver's to judge.
     [InlineData("quests|||q1 a2", "item is one word")]
-    // ENTRY1d2a: a workspace is named, never a folder, so no path the conversation was not given is written (D48 §3/§7).
+    // A workspace is named, never a folder, so no path the conversation is not given is written.
     [InlineData("projects||add||C:\\work", "never by a folder")]
     [InlineData("projects||import||work/engine", "never by a folder")]
     [InlineData("projects||add||/checkouts/work", "never by a folder")]

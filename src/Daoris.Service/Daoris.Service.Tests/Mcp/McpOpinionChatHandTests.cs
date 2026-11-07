@@ -4,7 +4,7 @@ using Daoris.Knowledge.Mcp;
 namespace Daoris.Service.Tests;
 
 /// <summary>
-/// CHATFLOW1e (the chat-flow design §6.1 (a) and (e), the Opus check's finding 7): the service's hand of a chat run's findings, beside the
+/// The service's hand of a chat run's findings, beside the
 /// connector's <c>opinion_answer</c> (<see cref="McpOpinionToolTests"/>). It admits a conversation of the working session's line in its tree,
 /// live between turns or ended and the line's newest, records that record as the one handed to, and so lets only it answer; every other
 /// active record is refused as before. Findings handed before a hand-over are handed again once, to the newest record.
@@ -90,7 +90,7 @@ public sealed class McpOpinionChatHandTests : McpToolsFixture
     }
 
     /// <summary>
-    /// 🔴 (a), the Opus check's finding 7, as COMMS1b's door reads it: a hand to a record the line went on from goes to the line's head, the
+    /// 🔴 A hand to a record the line went on from goes to the line's head, the
     /// newest record, never to the one left; so after a hand-over the head holds the findings and only it answers.
     /// </summary>
     [Fact]

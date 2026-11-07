@@ -3,13 +3,13 @@ using static Daoris.Knowledge.HelpProposalFile;
 namespace Daoris.Knowledge;
 
 /// <summary>
-/// The <c>browser</c> kind's writer (HELP10): Daoris's browser's settings, each a <c>daoris browser</c> verb, and a
+/// The <c>browser</c> kind's writer: Daoris's browser's settings, each a <c>daoris browser</c> verb, and a
 /// favorite with its address (the proposal's target) and its own <c>title</c>.
 /// </summary>
 internal sealed class HelpBrowserProposalWriter(HelpProposalFile file)
 {
     /// <summary>
-    /// Write one proposal to change Daoris's browser's settings (HELP10): Settings → Browser, and <c>daoris browser</c>.
+    /// Write one proposal to change Daoris's browser's settings: Settings → Browser, and <c>daoris browser</c>.
     /// Whether an address is a web page, a favorite removed is one kept, or the files can be read is the driver's.
     /// </summary>
     /// <param name="door">`use`, `links`, `extensions` or `favorite`, as the terminal spells them.</param>

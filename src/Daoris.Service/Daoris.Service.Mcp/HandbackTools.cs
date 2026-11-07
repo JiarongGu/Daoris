@@ -5,7 +5,7 @@ using static Daoris.Knowledge.Mcp.WorkspaceScope;
 namespace Daoris.Knowledge.Mcp;
 
 /// <summary>
-/// One quest's handback, read whole (HANDBACK1): the note its session closed it with through <c>quest_respond</c>, by the quest's id
+/// One quest's handback, read whole: the note its session closed it with through <c>quest_respond</c>, by the quest's id
 /// or the id of the session that served it, in any state, from this session's workspace as <c>quest_list</c> scopes it. The steward
 /// that archives a closed row reads its handback here rather than in the whole list, and another session of the workspace reads what
 /// a sibling did. Read-only; the words are <see cref="HandbackReader"/>'s, which every door answers.

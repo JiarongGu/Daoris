@@ -4,7 +4,7 @@ namespace Daoris.Knowledge.Http;
 
 /// <summary>
 /// `keys mint|list|revoke` — the deployment's own console is where machine credentials come from
-/// until person-auth exists (D47 §7). A console verb on the serving binary, against the same store,
+/// until person-auth exists. A console verb on the serving binary, against the same store,
 /// exiting without ever binding: it is not a web concern, which is why it does not live in Program.cs.
 /// Exit codes are the contract: 0 clean, 1 the prefix named nothing, 2 bad usage.
 /// </summary>
@@ -13,8 +13,8 @@ internal static class KeysConsole
     public static async Task<int> RunAsync(string[] args, ServiceOptions options)
     {
         // The KEY STORE alone — never the composed service. Composing it bootstraps a registry from
-        // the configured root (D48 §3), which on a server would import whatever sits beside the binary
-        // into a deployment that must be fed and never scanned (D47 §4). Minting a credential has no
+        // the configured root, which on a server would import whatever sits beside the binary
+        // into a deployment that must be fed and never scanned. Minting a credential has no
         // business touching an index.
         await using var composed = await ServiceFactory.OpenKeysAsync(options);
 

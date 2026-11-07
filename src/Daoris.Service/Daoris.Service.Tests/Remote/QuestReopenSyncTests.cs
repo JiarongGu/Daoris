@@ -4,7 +4,7 @@ using Microsoft.Data.Sqlite;
 namespace Daoris.Service.Tests;
 
 /// <summary>
-/// FABRIC-CLOSE1c (§E5, D173's note): the person's reopen is operations, so it travels (D68), and a seal kept in one store could
+/// The person's reopen is operations, so it travels, and a seal kept in one store could
 /// not. Two machines and a remote, synced by the real <see cref="QuestSync"/>: a reopen on the take's machine meets another
 /// machine's take of the step it withdraws. Whichever reached the remote first, both machines and the remote read one step, the
 /// reasoned hold or the withdrawal, and the source's old submission closes nowhere.
@@ -788,9 +788,9 @@ public sealed class QuestReopenSyncTests : IAsyncLifetime
         Assert.Equal(grewFrom, (await _remote.FindAsync(built.FollowUp!.Id))!.GrewFrom);
     }
 
-    // ——— SYNCMERGE1a (D178 points 3 and 5): a take lost to the person's reopen, brought forward by the person on its machine.
+    // ——— A take lost to the person's reopen, brought forward by the person on its machine.
 
-    /// <summary>B's take of the step lost to A's reopen of its source (FABRIC-CLOSE1c18), kept on the step as a conflict on both machines.</summary>
+    /// <summary>B's take of the step lost to A's reopen of its source, kept on the step as a conflict on both machines.</summary>
     private async Task<(Quest Quest, Quest Step, QuestOperationRef Conflict)> LostToTheReopenAsync()
     {
         var (quest, step, submission) = await SealedOnBothAsync();
@@ -814,7 +814,7 @@ public sealed class QuestReopenSyncTests : IAsyncLifetime
     }
 
     /// <summary>
-    /// 🔴 SYNCMERGE1a: B's take lost to the person's reopen. While the reopen holds the step's source, the press is refused; once A's next
+    /// 🔴 B's take lost to the person's reopen. While the reopen holds the step's source, the press is refused; once A's next
     /// submission rebinds the step, B's press writes a take stamped with the step's source as it stands and the conflict's dismissal marked
     /// with that take, in one write. Pushed, it holds: the step is B's on both machines, a third and the remote, the conflict gone
     /// everywhere and the mark kept with it. A second press is refused, and a plain dismissal of the same conflict changes nothing.
@@ -860,8 +860,8 @@ public sealed class QuestReopenSyncTests : IAsyncLifetime
     }
 
     /// <summary>
-    /// 🔴 SYNCMERGE1a (D178 point 3, the trap of a fresh take losing again): A's take of the step reaches the remote between B's fetch and its
-    /// push. B's fresh take loses too, a new conflict on the step; the mark goes with it, so the conflict it was to resolve stays, on every
+    /// 🔴 A fresh take losing again: A's take of the step reaches the remote between B's fetch and its
+    /// push. B's fresh take loses too, a new conflict on the step; the mark goes with it, so the conflict it is to resolve stays, on every
     /// machine and the remote, and nothing anywhere reads brought forward. The step is A's, and B's press is refused while A holds it.
     /// </summary>
     [Fact]
@@ -908,7 +908,7 @@ public sealed class QuestReopenSyncTests : IAsyncLifetime
     }
 
     /// <summary>
-    /// 🔴 SYNCMERGE1a (D178, the trap of a bring-forward racing a plain dismissal): A's person drops B's conflict while B's person brings it
+    /// 🔴 A bring-forward racing a plain dismissal: A's person drops B's conflict while B's person brings it
     /// forward. Whichever reached the remote first is the one choice that stands everywhere. A dismissal first: a settled conflict authorizes
     /// no take, so B's fresh take loses, kept as a conflict of its own, and its mark goes with it; the step stays open. The bring-forward
     /// first: the step is B's, and A's dismissal, of a conflict already gone, changes nothing and is refused nowhere.
@@ -969,7 +969,7 @@ public sealed class QuestReopenSyncTests : IAsyncLifetime
     }
 
     /// <summary>
-    /// 🔴 SYNCMERGE1a2 (D178 point 7): a plain dismissal settled B's first conflict before B's fresh take lost, so the fresh take's loss is
+    /// 🔴 A plain dismissal settled B's first conflict before B's fresh take lost, so the fresh take's loss is
     /// to A's take of the step, not to the person's reopen, which the dismissal superseded. The claim's reason is the true one: B reads
     /// lost, and not lost to the reopen, whether it ran its bring-forward offline first or not.
     /// </summary>
@@ -993,7 +993,7 @@ public sealed class QuestReopenSyncTests : IAsyncLifetime
     }
 
     /// <summary>
-    /// 🔴 SYNCMERGE1a (D178 point 8, the offline trap): B presses offline. The fresh take and the marked dismissal stay on B, unconfirmed,
+    /// 🔴 B presses offline. The fresh take and the marked dismissal stay on B, unconfirmed,
     /// through a restart; meanwhile A's take of the step reaches the remote. Once B reaches it, the fresh take loses, the mark with it, and
     /// B's first conflict is back on the step beside the new one: unconfirmed throughout, then lost, and never settled.
     /// </summary>
@@ -1030,7 +1030,7 @@ public sealed class QuestReopenSyncTests : IAsyncLifetime
     }
 
     /// <summary>
-    /// 🔴 SYNCMERGE1a (D178 point 5, the trap of an older build): a marked dismissal reaching a remote built before the mark is kept there as
+    /// 🔴 A marked dismissal reaching a remote built before the mark is kept there as
     /// a plain one, and one a current remote holds reaches a machine built before it as a plain one. Nothing is refused, and every machine
     /// reads the step B's with the conflict gone: a mixed family degrades to the conflict dismissed.
     /// </summary>
@@ -1067,7 +1067,7 @@ public sealed class QuestReopenSyncTests : IAsyncLifetime
     }
 
     /// <summary>
-    /// SYNCMERGE1a: a step this machine took afresh by an ordinary take holds its claim already, so its lost take has nothing to bring forward:
+    /// A step this machine took afresh by an ordinary take holds its claim already, so its lost take has nothing to bring forward:
     /// the press is refused, and the conflict stays for the person to dismiss.
     /// </summary>
     [Fact]

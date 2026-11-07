@@ -1,9 +1,9 @@
 namespace Daoris.Service.Tests;
 
 /// <summary>
-/// A clock that stands still until the test moves it (TESTCLOCK3, the driver tests' <c>MovedClock</c>): its timestamp and its now
+/// A clock that stands still until the test moves it: its timestamp and its now
 /// move only by <see cref="Advance"/>, and a timer it made fires only once <see cref="Advance"/> passes its time, so a wait read on
-/// it is the test's to spend, never the machine's load. <see cref="Timed"/> says a timer was made, so the test moves the clock only
+/// it is the test's to spend, never the machine's load. <see cref="Timed"/> says a timer is made, so the test moves the clock only
 /// once the code is waiting on it.
 /// </summary>
 internal sealed class MovedClock : TimeProvider

@@ -3,7 +3,7 @@ using System.Text.Json;
 namespace Daoris.Knowledge;
 
 /// <summary>
-/// The person's verdict on a set-up step's review, or their skip of it (REVIEWENV1b, D154 point 8). A <c>reviewed</c> or a skip lets go
+/// The person's verdict on a set-up step's review, or their skip of it. A <c>reviewed</c> or a skip lets go
 /// what the step's review held and publishes the chain's next step; a <c>not-yet</c> keeps it held. It moves no status.
 /// </summary>
 [QuestOperation("verdict", QuestOperationPhase.Log)]

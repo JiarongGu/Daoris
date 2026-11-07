@@ -8,7 +8,7 @@ using ModelContextProtocol.Server;
 namespace Daoris.Service.Tests;
 
 /// <summary>
-/// BRAINSTORM1a2 (D176 points 1-4): a brainstorm pass's two result tools on the connector. `brainstorm_give` (a generator's turn) and
+/// A brainstorm pass's two result tools on the connector. `brainstorm_give` (a generator's turn) and
 /// `brainstorm_synthesize` (the synthesis's) write the turn's answer file the driver's spawn names, and nothing else; each answers only
 /// a turn of its own kind; and each judges the answer by the same table as the driver's validator, saying a refusal's codes back to
 /// the agent as the tool's answer, so it may give it again within its turn. The driver judges the file again when the turn ends,
@@ -125,7 +125,7 @@ public sealed class McpBrainstormToolTests : IDisposable
     }
 
     /// <summary>
-    /// 🔴 The synthesis is judged against the ids its room was handed: one it was not handed is refused by code, and every id placed
+    /// 🔴 The synthesis is judged against the ids its room is handed: one it is not handed is refused by code, and every id placed
     /// once, ranked without gap, is kept with its groups and what it left out.
     /// </summary>
     [Fact]

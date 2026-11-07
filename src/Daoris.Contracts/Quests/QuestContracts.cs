@@ -55,7 +55,7 @@ public sealed record AcceptQuest(string Id) : IRoute<QuestActionResponse>
     public static string Path => "/api/quests/{id}/accept";
 }
 
-/// <summary>The person's own done, which answers none of their requirements and says it was theirs, with their words.</summary>
+/// <summary>The person's own done, which answers none of their requirements and says it is theirs, with their words.</summary>
 [OptionalBody]
 public sealed record MarkQuestDone(string Id, string? Note = null) : IRoute<QuestActionResponse>
 {

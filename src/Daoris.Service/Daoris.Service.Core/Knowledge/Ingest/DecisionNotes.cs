@@ -2,17 +2,17 @@ using System.Text.RegularExpressions;
 
 namespace Daoris.Knowledge;
 
-/// <summary>One dated note under a decision, as the decisions digest gives it (ORIENT1g).</summary>
+/// <summary>One dated note under a decision, as the decisions digest gives it.</summary>
 /// <param name="Label">The emphasised span that opens it, or its dated heading, cut to a row: the digest's label.</param>
 /// <param name="First">Its first line in the file, from 1.</param>
 /// <param name="Last">Its last line, the blank lines before the next note left out.</param>
 /// <param name="Body">Its lines, its label's line first, so the label is searched in full.</param>
-/// <param name="Full">Its label whole, whitespace flattened, which a mark's <c>replacing</c> quote names (KNOWFRESH1a-i).</param>
+/// <param name="Full">Its label whole, whitespace flattened, which a mark's <c>replacing</c> quote names.</param>
 /// <param name="Emphasised">Whether an emphasised span gave the label, and not a dated heading: only a span can be a mark.</param>
 public sealed record DecisionNote(string Label, int First, int Last, string Body, string Full, bool Emphasised);
 
 /// <summary>
-/// What a note's label says of a later record (KNOWFRESH1a-i; the knowledge-freshness design's §3.1).
+/// What a note's label says of a later record.
 /// </summary>
 /// <param name="Line">The note's first line in the file, from 1.</param>
 /// <param name="Kind"><c>amended</c> or <c>superseded</c>.</param>
@@ -22,14 +22,13 @@ public sealed record DecisionNote(string Label, int First, int Last, string Body
 public sealed record NoteMark(int Line, string Kind, int? By, string? Quote, int? Target);
 
 /// <summary>
-/// A decision split at its dated notes (ORIENT1g; D134 §5 as amended): the decision's own text, then each note
+/// A decision split at its dated notes: the decision's own text, then each note
 /// appended under it, found and labelled as <c>tools/orient-index.mjs</c> finds and labels them for the decisions
 /// digest, so a hit and the digest's row name a note alike.
 /// </summary>
 /// <remarks>
-/// <para>🔴 <b>One entry per decision buried its notes.</b> D125 is one file and twenty-two dated notes; asked
-/// what decided the probe lock, the search could not land on the TOOL6g note that did, because no entry was
-/// that note (D24's ORIENT1c note). The digest already lists every note with its lines; the index now holds each
+/// <para>🔴 <b>One entry per decision buries its notes:</b> asked what decided a thing, the search cannot land on the note that did,
+/// because no entry is that note. The digest already lists every note with its lines; the index now holds each
 /// as an entry of its own.</para>
 ///
 /// <para><b>A note</b> starts at a line after the decision's opening paragraph, outside a fence (read as markdown
@@ -37,13 +36,13 @@ public sealed record NoteMark(int Line, string Kind, int? By, string? Quote, int
 /// line, that is a <c>###</c> heading with a date in it, or a line that opens with an emphasised span which is
 /// dated or in a form the record writes undated (<see cref="Label"/>, the digest's <c>noteLabel</c> and
 /// <c>doc-duplicates</c>' <c>isNoteLabel</c>). It runs to the line before the next note. The opening is never a
-/// note, dated or not (<c>**Decision (DOC8, …)**</c>). A label glued to the line above is that line's text, as
+/// note, dated or not (<c>**Decision (…)**</c>). A label glued to the line above is that line's text, as
 /// the digest reads it, and the record's own check refuses it.</para>
 ///
 /// <para>A twin of the digest's reader with no code shared: both are held to one table,
-/// <c>tools/orient-index-fixtures/decision-notes.json</c>, row for row (ORIENT1h), this one by
+/// <c>tools/orient-index-fixtures/decision-notes.json</c>, row for row, this one by
 /// <c>DecisionNotesTests</c> and the digest by <c>tools/orient-index.test.mjs</c>. The marks a note carries
-/// (<see cref="Marks"/>, KNOWFRESH1a-i) are held to a second table, <c>note-marks.json</c>, the same way.</para>
+/// (<see cref="Marks"/>) are held to a second table, <c>note-marks.json</c>, the same way.</para>
 /// </remarks>
 public static partial class DecisionNotes
 {
@@ -100,7 +99,7 @@ public static partial class DecisionNotes
 
     /// <summary>
     /// The same span whole, whitespace flattened: what a mark's <c>replacing "…"</c> quote names, where the label cut to
-    /// a row would let a long label never match (KNOWFRESH1a-i). Null for a line that is no note's.
+    /// a row would let a long label never match. Null for a line that is no note's.
     /// </summary>
     private static string? Span(string line)
     {
@@ -129,7 +128,7 @@ public static partial class DecisionNotes
     }
 
     /// <summary>
-    /// The marks of one decision (KNOWFRESH1a-i): each emphasised note whose label opens <c>Amended by D&lt;n&gt;</c> or
+    /// The marks of one decision: each emphasised note whose label opens <c>Amended by D&lt;n&gt;</c> or
     /// <c>Superseded by D&lt;n&gt;</c>, or, with no decision named, holds a <c>, replacing "…"</c> quote and so amends the
     /// decision's own earlier note. A quote is matched against each earlier note's full label, and a quote holding a
     /// quote mark is tried at each place it could end. The tool's <c>readMarks</c> reads the same, and both are held
@@ -138,8 +137,8 @@ public static partial class DecisionNotes
     public static IReadOnlyList<NoteMark> Marks(string text) => Marks(Split(text).Notes);
 
     /// <summary>
-    /// The same marks read from a decision's note entries, the ones <see cref="Split"/> made into entries of their own
-    /// (KNOWFRESH1a-ii): each note's label opens its body and its lines say where it is in the file. A host holding the
+    /// The same marks read from a decision's note entries, the ones <see cref="Split"/> made into entries of their own:
+    /// each note's label opens its body and its lines say where it is in the file. A host holding the
     /// entries and no file, as a fed one does, derives the marks from them, so a mark has no field of its own on the wire.
     /// An entry that names no lines is left out, since its place among the notes is not known.
     /// </summary>
@@ -205,7 +204,7 @@ public static partial class DecisionNotes
     private static partial Regex Opener();
 
     /// <summary>
-    /// The forms the record writes a note's label in (D134 §3.4, <c>doc-duplicates</c>' <c>NOTE_LABEL</c>): the
+    /// The forms the record writes a note's label in (<c>doc-duplicates</c>' <c>NOTE_LABEL</c>): the
     /// commonest words with or without a date, a rarer word only with one, and a note named by its task first.
     /// </summary>
     private static readonly Regex[] NoteForms =
@@ -217,7 +216,7 @@ public static partial class DecisionNotes
         SupersededBy(),
     ];
 
-    /// <summary>The mark an older record keeps of a later one that supersedes it, dated or not (KNOWFRESH1a-i).</summary>
+    /// <summary>The mark an older record keeps of a later one that supersedes it, dated or not.</summary>
     [GeneratedRegex(@"^\*\*?Superseded by D[1-9][0-9]*\b", RegexOptions.ECMAScript)]
     private static partial Regex SupersededBy();
 

@@ -186,10 +186,10 @@ public sealed class SessionOpensTests : IAsyncLifetime
     private async Task<IReadOnlyList<SaidWord>> SaidAsync(string id) => (await _sessions.FindAsync(id))!.Said;
 
     /// <summary>
-    /// 🔴 The selection is .NET's: after the course read A, the person said a late word and a helper answered, another agent's claim was passed
+    /// 🔴 The selection is .NET's: after the course read A, the person said a late word and a helper answered, another agent's claim is passed
     /// on, and the person withdrew one word the course named. The open moves the named words still waiting and the person's late word, in A's
     /// order, each under its producer key with its transfer id; keeps Daoris's word, the helper's answer, the agent's claim and the person's
-    /// late word a dispatcher attempted on A; keeps every field of a moved word but the attempt, which was A's; and B's later word goes behind.
+    /// late word a dispatcher attempted on A; keeps every field of a moved word but the attempt, which is A's; and B's later word goes behind.
     /// </summary>
     [Fact]
     public async Task The_open_moves_the_named_words_still_waiting_and_the_persons_late_ones_in_order_and_keeps_the_rest()
@@ -279,7 +279,7 @@ public sealed class SessionOpensTests : IAsyncLifetime
     }
 
     /// <summary>
-    /// 🔴 FOUNDATION1o, the bound the design's §3.4 rule 4 states (round 6, *C5-1.11*, *C5-2.4*): a word the shell kept on A while A wound up for a
+    /// 🔴 A word the shell kept on A while A winds up for a
     /// move; an older build's briefed move reads A's words before its own open, which names no key (<c>BriefedMove.cs:99</c>), and pauses there.
     /// This build's keyed open moves the word to B, whose delivery takes it, and B ends. Resumed, the older move opens its own part unkeyed from A
     /// and delivers the copy it read, and its take by A's ids finds nothing there. So each build delivers once, and no word waits on A, B or the

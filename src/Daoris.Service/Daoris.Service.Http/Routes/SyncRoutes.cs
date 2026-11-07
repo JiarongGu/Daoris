@@ -3,7 +3,7 @@ using Daoris.Contracts.Sync;
 namespace Daoris.Knowledge.Http.Routes;
 
 /// <summary>
-/// A local host's sync doors (D69, SYNC4): one pass for one circle, where it stands, a machine's retirement at the remote, and where this
+/// A local host's sync doors: one pass for one circle, where it stands, a machine's retirement at the remote, and where this
 /// machine's claim on a quest stands, which is how its driver knows a session to stop. A shared host is what they sync with and has none.
 /// </summary>
 public sealed class SyncRoutes(HostWiring host) : IRouteModule
@@ -31,9 +31,9 @@ public sealed class SyncRoutes(HostWiring host) : IRouteModule
 
         var quests = await QuestSync.RunAsync(Service.Quests, Service.Service, remote, circle, ct);
         var sessions = await SessionSync.RunAsync(Service.Sessions, Service.Quests, Service.Service, remote, circle, ct);
-        // An ask's channel travels on the same pass (SESSONE2d); a remote from before it is told once and the channel stays here.
+        // An ask's channel travels on the same pass; a remote without it is told once and the channel stays here.
         var channel = await ChannelSync.RunAsync(Service.Messages, Service.Sessions, Service.Service, remote, circle, ct);
-        // The team's code maps come down on the same pass (MAP3e): pulling one needs no git, so it is the host's to do, and the host is
+        // The team's code maps come down on the same pass: pulling one needs no git, so it is the host's to do, and the host is
         // what answers the page for a repository with no checkout here.
         var maps = await CodeMapSync.RunAsync(Service.Service, remote, circle, ct);
         return new SyncResponse(
@@ -57,11 +57,11 @@ public sealed class SyncRoutes(HostWiring host) : IRouteModule
         return new SyncStandingResponse(
             circle, Wired: true, standing.Ahead, standing.Behind, standing.Conflicts,
             standing.Synced, standing.Tried, standing.Problem,
-            // FABRIC-CLOSE1i2: the machines the remote last said had not declared, as the last pass heard them; none where it heard none.
+            // The machines the remote last said had not declared, as the last pass heard them; none where it heard none.
             Service.Quests.ClosureOf(circle)?.Undeclared);
     }
 
-    // Asked at the remote, and what it answers kept as a pass keeps it. A wall or a remote before the door is said in the remote's
+    // Asked at the remote, and what it answers kept as a pass keeps it. A wall or a remote without the door is said in the remote's
     // words, and nothing here changes.
     private async Task<Answer<MachineRetiredResponse>> RetireAsync(RetireSyncMachine request, HttpContext http, CancellationToken ct)
     {
@@ -96,12 +96,12 @@ public sealed class SyncRoutes(HostWiring host) : IRouteModule
         var takes = await Service.Quests.ReadTakesAsync(id, ct);
         return new QuestClaimResponse(
             id, (await Service.Quests.ClaimAsync(id, ct)).ToString().ToLowerInvariant(),
-            // FABRIC-CLOSE1c18: a take lost to the person's reopen, which the driver's stop says as that.
+            // A take lost to the person's reopen, which the driver's stop says as that.
             await Service.Quests.LostToTheReopenAsync(id, ct) ? "source-reopened" : null,
-            // SYNCMERGE1b0: the take it holds the quest by, where the person's bring-forward made it, which the driver carries a
-            // stood-down session on over (SYNCMERGE1b).
+            // The take it holds the quest by, where the person's bring-forward made it, which the driver carries a
+            // stood-down session on over.
             takes.BroughtForwardBy(Service.Quests.Machine) is { } forward ? QuestAnswers.ToForward(forward) : null,
-            // CARRY3: when the take it stands taken by was made, which a submission, a reopen or a go-on never moves as they move `updated`.
+            // When the take it stands taken by is made, which a submission, a reopen or a go-on never moves as they move `updated`.
             takes.Take?.At);
     }
 }

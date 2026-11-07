@@ -1,7 +1,7 @@
 namespace Daoris.Service.Tests;
 
 /// <summary>
-/// A desktop source, found by name wherever it lies under its project's folder (FOUNDATION1 mod-0, D166 point 4): the driver's files move
+/// A desktop source, found by name wherever it lies under its project's folder: the driver's files move
 /// into subdomain folders one row at a time, so a service test that reads one names the file and never the folder it is in. A copy of the
 /// desktop tests' reader, which holds the same rule there: the test projects share no code. The build's own output (<c>bin/</c>,
 /// <c>obj/</c>) is no source.

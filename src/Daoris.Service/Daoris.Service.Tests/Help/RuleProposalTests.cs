@@ -5,7 +5,7 @@ using Daoris.Knowledge.Mcp;
 namespace Daoris.Service.Tests;
 
 /// <summary>
-/// An agent proposes a change to what agents may do (PERM2, D74) — through the connector, because an
+/// An agent proposes a change to what agents may do — through the connector, because an
 /// agent's only voice is its tools, and into a FILE under the Daoris home, beside the rules it would
 /// change, because the rules are machine-local and so is anything that would change them.
 /// </summary>
@@ -26,7 +26,7 @@ public sealed class RuleProposalTests : IDisposable
         if (Directory.Exists(_root)) Directory.Delete(_root, recursive: true);
     }
 
-    /// <summary>The rule tool alone, which needs only the box and the session it speaks for (PART10a).</summary>
+    /// <summary>The rule tool alone, which needs only the box and the session it speaks for.</summary>
     private static RuleProposalTools Tools(RuleProposalBox box, string? session = "s1a2b3c4", string? ask = null) =>
         new(box, new IntakeScope(ask, session));
 
@@ -104,7 +104,7 @@ public sealed class RuleProposalTests : IDisposable
 
     [Theory]
     [InlineData("add", "deny", "rm -rf everything", "machine", null, "not a permission rule")]
-    // PERMSHAPE1: the door passes the rule untrimmed, and .NET's `$` also matches before a final line break.
+    // The door passes the rule untrimmed, and .NET's `$` also matches before a final line break.
     [InlineData("add", "deny", "Bash\n", "machine", null, "not a permission rule")]
     [InlineData("remove", null, "Bash(rm:*)\n", "machine", null, "not a permission rule")]
     [InlineData("add", "maybe", "Bash(ls)", "machine", null, "`allow`, `ask` or `deny`")]
@@ -141,7 +141,7 @@ public sealed class RuleProposalTests : IDisposable
         Assert.Empty(Written());
     }
 
-    /// <summary>No home, no box (D63): a proposal with nowhere to go says so rather than guessing a place.</summary>
+    /// <summary>No home, no box: a proposal with nowhere to go says so rather than guessing a place.</summary>
     [Fact]
     public void With_no_home_the_proposal_is_refused_with_the_homes_sentence()
     {

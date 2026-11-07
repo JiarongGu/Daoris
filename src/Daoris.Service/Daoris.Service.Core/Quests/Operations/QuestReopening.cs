@@ -1,6 +1,6 @@
 namespace Daoris.Knowledge;
 
-/// <summary>Why the person's reopen, or their word to go on, moved nothing (FABRIC-CLOSE1c, §E5), or <see cref="None"/>.</summary>
+/// <summary>Why the person's reopen, or their word to go on, moved nothing, or <see cref="None"/>.</summary>
 public enum QuestReopenRefusal
 {
     None,
@@ -37,7 +37,7 @@ public sealed record QuestReopening(QuestReopenRefusal Refusal, Quest? Quest, Qu
 {
     /// <summary>
     /// For a word to go on: the step's own successor, which the submission it cleared had published, as the same write reopened it,
-    /// withdrawn or held (FABRIC-CLOSE1c14). Null where none stood on that submission.
+    /// withdrawn or held. Null where none stood on that submission.
     /// </summary>
     public Quest? Successor { get; init; }
 }

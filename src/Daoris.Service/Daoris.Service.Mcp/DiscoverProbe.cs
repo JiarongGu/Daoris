@@ -9,11 +9,11 @@ namespace Daoris.Knowledge.Mcp;
 /// <summary>
 /// The probe a client of the protocol's 2026-07-28 revision opens with, <c>server/discover</c> (SEP-2575),
 /// answered as a server that predates the revision answers it: method not found, which is how the client
-/// learns to fall back to the <c>initialize</c> handshake (MCPDISCOVER1).
+/// learns to fall back to the <c>initialize</c> handshake.
 /// </summary>
 /// <remarks>
-/// <para>The SDK this host is built on registers no handler for the probe, so that was already the answer on
-/// the wire. It came with two warnings, the missing handler and the handler's failure with its exception,
+/// <para>The SDK this host is built on registers no handler for the probe, so that is the answer on
+/// the wire. It comes with two warnings, the missing handler and the handler's failure with its exception,
 /// written into the machine log at every connector's start, where a warning is something a person should
 /// look at (<c>docs/2026-09-30-machine-log-design.md</c> §4) and this one asks nothing of anyone. Answered
 /// here, before the SDK's dispatch, the client gets the same error and the log one line at debug, below

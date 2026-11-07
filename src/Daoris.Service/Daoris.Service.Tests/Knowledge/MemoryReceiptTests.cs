@@ -3,7 +3,7 @@ using Daoris.Knowledge;
 namespace Daoris.Service.Tests;
 
 /// <summary>
-/// KNOWCENTRAL2d with 2j's core (the memory coordinator design §3, §6 C, over Lyntai's MC11): the service applies each row under its own
+/// The service applies each row under its own
 /// id as the call's key, so after a lost answer the key's receipt says whether it ran. A row whose key left a receipt settles by it, one
 /// whose key left none is applied again, and nothing is applied twice; the service's start runs the applier and keeps it running.
 /// </summary>
@@ -41,7 +41,7 @@ public sealed class MemoryReceiptTests : IAsyncLifetime
     }
 
     /// <summary>
-    /// 🔴 A write whose answer was lost after the engine kept it, its relation not yet made: the restart settles it by its key's receipt,
+    /// 🔴 A write whose answer is lost after the engine kept it, its relation not yet made: the restart settles it by its key's receipt,
     /// relates once, and a second recovery changes nothing.
     /// </summary>
     [Fact]
@@ -80,7 +80,7 @@ public sealed class MemoryReceiptTests : IAsyncLifetime
         Assert.Equal(1, await _lyntai.CountAsync("Owner"));
     }
 
-    /// <summary>🔴 A row killed in <c>applying</c> before the engine was called left no receipt, so it is applied again, once.</summary>
+    /// <summary>🔴 A row killed in <c>applying</c> before the engine is called leaves no receipt, so it is applied again, once.</summary>
     [Fact]
     public async Task A_key_with_no_receipt_is_applied_again()
     {

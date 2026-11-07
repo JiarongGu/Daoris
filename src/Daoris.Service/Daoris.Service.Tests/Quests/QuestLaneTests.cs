@@ -6,7 +6,7 @@ using Microsoft.Data.Sqlite;
 namespace Daoris.Service.Tests;
 
 /// <summary>
-/// A quest addresses a lane (D115 §2.2, DEV4): `repository:lane`, or `repository:lane+lane`. The
+/// A quest addresses a lane: `repository:lane`, or `repository:lane+lane`. The
 /// exchange splits the address once; the quest keeps `to` as the repository, so everything keyed on a
 /// repository goes on reading one, and gains `lanes`. The registration's lanes are what the address is
 /// judged by, and a quest from a repository to one of its own lanes is work for another session, so it
@@ -91,8 +91,8 @@ public sealed class QuestLaneTests : IAsyncLifetime
     }
 
     /// <summary>
-    /// The id widens only when there are lanes (D115 §2.2), as it did for a chain's parent: every quest
-    /// published before keeps the id it was quoted by, and a lane's quest is not the repository's.
+    /// The id widens only when there are lanes, as for a chain's parent: every quest
+    /// published without lanes keeps the id it is quoted by, and a lane's quest is not the repository's.
     /// </summary>
     [Fact]
     public async Task The_id_widens_only_with_lanes()
@@ -147,9 +147,9 @@ public sealed class QuestLaneTests : IAsyncLifetime
     }
 
     /// <summary>
-    /// D115 amends the exchange's self-address refusal: work for another lane is work for another
-    /// session, so a repository may ask one of its own lanes. To itself with no lane is still refused,
-    /// and the refusal names its lanes as the way it asks itself (SELFASK1).
+    /// Work for another lane is work for another
+    /// session, so a repository may ask one of its own lanes. To itself with no lane is refused,
+    /// and the refusal names its lanes as the way it asks itself.
     /// </summary>
     [Fact]
     public async Task A_repository_may_ask_its_own_lane_and_never_itself_whole()
@@ -174,7 +174,7 @@ public sealed class QuestLaneTests : IAsyncLifetime
     }
 
     /// <summary>
-    /// SELFASK1: a repository that declares no lanes and asks itself is told what would let it hand its
+    /// A repository that declares no lanes and asks itself is told what would let it hand its
     /// own work out — a lanes file with a steward lane — rather than only to use its backlog.
     /// </summary>
     [Fact]

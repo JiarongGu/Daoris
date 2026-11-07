@@ -4,7 +4,7 @@ using Daoris.Knowledge;
 namespace Daoris.Service.Tests;
 
 /// <summary>
-/// A checkout's read never enters what git ignores (KNOWWALK1): git's own answer names the ignored folders without listing
+/// A checkout's read never enters what git ignores: git's own answer names the ignored folders without listing
 /// what is in them, and a walk of a documents folder skips them before it lists them, so a read over a checkout with a large
 /// ignored tree opens nothing under it.
 /// </summary>
@@ -126,7 +126,7 @@ public sealed class IgnoredPathsTests : IDisposable
     public void The_start_names_the_real_git_behind_the_launcher_with_its_variables()
     {
         if (!OperatingSystem.IsWindows()) return;
-        // GITSTART2: an install laid as Git for Windows lays one, empty files, its launcher's folder first on PATH.
+        // An install laid as Git for Windows lays one, empty files, its launcher's folder first on PATH.
         var top = Path.Combine(_root, "Git");
         Write("Git/cmd/git.exe", "");
         var real = Write("Git/mingw64/bin/git.exe", "");

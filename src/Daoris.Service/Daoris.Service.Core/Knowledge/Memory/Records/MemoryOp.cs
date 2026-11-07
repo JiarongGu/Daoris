@@ -29,7 +29,7 @@ public sealed record MemoryOp(string Id, string Repository, string State, Memory
     /// <summary>The owner's note on the quest that settled a proposal: its decline's reason or its handback.</summary>
     public string? Answer { get; init; }
 
-    /// <summary>When the proposer was told how its proposal settled.</summary>
+    /// <summary>When the proposer is told how its proposal settled.</summary>
     public DateTimeOffset? Told { get; init; }
 
     /// <summary>When the service marked it <c>applying</c>: the instant an engine's receipt for its key could have begun; null on a row from before.</summary>

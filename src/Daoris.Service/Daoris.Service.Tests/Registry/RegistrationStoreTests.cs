@@ -7,7 +7,7 @@ namespace Daoris.Service.Tests;
 /// A pushed registration must outlive the process that received it. `daoris connect` is how a
 /// repository a remote service cannot scan makes itself addressable — and a registration held only in
 /// memory turns every service restart into that repository silently dropping off the map, which is
-/// SVC1's "nothing survives between sessions" in its most concrete form.
+/// "nothing survives between sessions" in its most concrete form.
 /// </summary>
 public sealed class RegistrationStoreTests : IAsyncLifetime
 {
@@ -46,7 +46,7 @@ public sealed class RegistrationStoreTests : IAsyncLifetime
     }
 
     /// <summary>
-    /// D91: what a repository says it uses is part of its declaration — kept, read back by the one
+    /// What a repository says it uses is part of its declaration — kept, read back by the one
     /// rule, and replaced with the rest on the next registration (silence here says "nothing").
     /// </summary>
     [Fact]
@@ -60,7 +60,7 @@ public sealed class RegistrationStoreTests : IAsyncLifetime
     }
 
     /// <summary>
-    /// The rule `uses` is read by (D91), as a table the CLI's `usesOf` keeps line for line (twins):
+    /// The rule `uses` is read by, as a table the CLI's `usesOf` keeps line for line (twins):
     /// absent is empty; trimmed; a blank dropped; a repeat in any case dropped, the first spelling kept;
     /// the repository's own name dropped.
     /// </summary>
@@ -76,7 +76,7 @@ public sealed class RegistrationStoreTests : IAsyncLifetime
     }
 
     /// <summary>
-    /// D115 §2.2 (DEV4): a repository's lanes are kept as their words. A registration that says
+    /// A repository's lanes are kept as their words. A registration that says
     /// nothing of them (null: the page's add, an import, an older client) keeps what the row holds —
     /// only `connect` reads the file, and it always says, `[]` for none — and the row comes back as the
     /// store decided, so the registry in memory never disagrees with the one on disk.
@@ -100,7 +100,7 @@ public sealed class RegistrationStoreTests : IAsyncLifetime
     }
 
     /// <summary>
-    /// A shared deployment orders declarations by their digest (SYNC5b): one with no lanes hashes as it
+    /// A shared deployment orders declarations by their digest: one with no lanes hashes as it
     /// did before the field existed, so every row a deployment holds keeps its digest, and lanes are
     /// part of what a declaration says.
     /// </summary>
@@ -120,7 +120,7 @@ public sealed class RegistrationStoreTests : IAsyncLifetime
     }
 
     /// <summary>
-    /// The rule a lane's words are kept by (D115 §2.2), as a table the CLI's `laneWords` keeps row for
+    /// The rule a lane's words are kept by, as a table the CLI's `laneWords` keeps row for
     /// row (twins, `lanes.test.ts`): absent and empty are none; trimmed; an id that is not lower-case
     /// letters, digits and dashes starting with a letter names no lane and is dropped; a repeated id is
     /// dropped, the first kept; only the first lane marked steward keeps the mark; a missing title or
@@ -165,7 +165,7 @@ public sealed class RegistrationStoreTests : IAsyncLifetime
 
     /// <summary>
     /// The canonical line survives a restart, and an ordinary re-registration does not erase it
-    /// (D48 §6) — the same shape the workspace has, for the same reason: `connect` says nothing about
+    /// — the same shape the workspace has, for the same reason: `connect` says nothing about
     /// branches and runs on every tick. A restart is exactly when this matters, because that is when
     /// the in-memory registry is rebuilt from these rows.
     /// </summary>
@@ -209,7 +209,7 @@ public sealed class RegistrationStoreTests : IAsyncLifetime
     }
 
     /// <summary>
-    /// The root is the one field spawning needs (D46): `connect` runs in the repository and knows it.
+    /// The root is the one field spawning needs: `connect` runs in the repository and knows it.
     /// Stored machine-locally — this store never leaves the machine it serves.
     /// </summary>
     [Fact]
@@ -225,7 +225,7 @@ public sealed class RegistrationStoreTests : IAsyncLifetime
     }
 
     /// <summary>
-    /// The remote declaration is the disclosure boundary's input (D47 §4): the sync loop feeds only
+    /// The remote declaration is the disclosure boundary's input: the sync loop feeds only
     /// repositories whose own reviewed manifest said so, and that answer must survive a restart.
     /// </summary>
     [Fact]
@@ -280,7 +280,7 @@ public sealed class RegistrationStoreTests : IAsyncLifetime
     }
 
     /// <summary>
-    /// A commit held before digests existed survives the upgrade with none (SYNC5a) — which the
+    /// A commit held before digests existed survives the upgrade with none — which the
     /// ordering reads as "compare nothing, take the same commit once" — and records one from then on.
     /// </summary>
     [Fact]
@@ -310,7 +310,7 @@ public sealed class RegistrationStoreTests : IAsyncLifetime
         Assert.Equal("d1g35t", (await store.ProvenanceAsync("Elder"))!.Digest);
     }
 
-    // ——— A retire is a tombstone that travels (SYNC5b). The store records it in the same statement
+    // ——— A retire is a tombstone that travels. The store records it in the same statement
     // that ends the row, so no caller can retire a joined checkout and forget to tell the circle.
 
     private static Registration Held(string name = "Yumeora", string workspace = "aurora") =>
@@ -345,7 +345,7 @@ public sealed class RegistrationStoreTests : IAsyncLifetime
     }
 
     /// <summary>
-    /// Nothing leaves a circle it was never known in, and a teammate's copy is not this machine's to
+    /// Nothing leaves a circle it is never known in, and a teammate's copy is not this machine's to
     /// remove from the team: a row without a root records no tombstone, and neither does one never joined.
     /// </summary>
     [Fact]
@@ -376,7 +376,7 @@ public sealed class RegistrationStoreTests : IAsyncLifetime
     }
 
     /// <summary>
-    /// The commit a registration was declared at (SYNC5b), held like a feed's and gone with the row: a
+    /// The commit a registration is declared at, held like a feed's and gone with the row: a
     /// deployment keeps no tombstone of its own, so a repository that joins again is registered afresh.
     /// </summary>
     [Fact]

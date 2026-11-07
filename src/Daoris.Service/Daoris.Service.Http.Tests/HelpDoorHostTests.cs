@@ -1,7 +1,7 @@
 namespace Daoris.Service.Http.Tests;
 
 /// <summary>
-/// ASKSCOPE1a (D158's ASKSCOPE1 note, point 1): Ask Daoris's open takes the workspace the person's window was on, and its record
+/// Ask Daoris's open takes the workspace the person's window is on, and its record
 /// keeps it; none is <c>default</c>, as a driver from before sends it; a workspace this machine does not hold is refused, saying
 /// which it holds. The ledger's rules are <c>HelpSessionTests</c>'; this is the door's reading of its body.
 /// </summary>
@@ -31,7 +31,7 @@ public sealed class HelpDoorHostTests(LocalHost host) : IClassFixture<LocalHost>
 }
 
 /// <summary>
-/// HELPMODE1a2 (D183 point 3): the open keeps the mode its start got, answered to this machine as <c>helpMode</c>; a mode the ledger
+/// The open keeps the mode its start got, answered to this machine as <c>helpMode</c>; a mode the ledger
 /// does not know is a bad request. A conversation going on records the mode it goes on under through its own door, which knows Ask
 /// Daoris's records alone. A host of its own, so the default workspace's conversation is this class's alone.
 /// </summary>
@@ -62,7 +62,7 @@ public sealed class HelpModeDoorHostTests(LocalHost host) : IClassFixture<LocalH
         Assert.Equal(400, (await host.PostAsync($"/api/sessions/{id}/help-mode", new { })).Status);
         Assert.Equal(404, (await host.PostAsync("/api/sessions/nothere/help-mode", new { mode = "full" })).Status);
 
-        // 🔴 This machine's own (D47 §4): a caller off it is answered no mode.
+        // 🔴 This machine's own: a caller off it is answered no mode.
         var off = (await host.GetAsync("/api/sessions?includeClosed=true", DaorisHost.OffMachine)).Json.EnumerateArray()
             .Single(row => row.GetProperty("id").GetString() == id);
         Assert.False(off.TryGetProperty("helpMode", out _));

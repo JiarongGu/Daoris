@@ -7,14 +7,14 @@ using static Daoris.Knowledge.JsonFields;
 namespace Daoris.Knowledge;
 
 /// <summary>
-/// Exactly what a pass read (XAGENT1c, D155 point 1; the second agent design §1): a base and a tip in one repository, and
+/// Exactly what a pass read: a base and a tip in one repository, and
 /// the commits between, each by its full id as the driver read them from git.
 /// </summary>
 public sealed record OpinionCandidate(string Repository, string Base, string Tip, IReadOnlyList<string> Commits);
 
 /// <summary>
 /// Who read it (design §3.4): the door the walk chose, its product and maker as declared, how independent it is, and the
-/// account it ran as. Daoris's own record of the choice, never the reviewer's word about itself (D24).
+/// account it ran as. Daoris's own record of the choice, never the reviewer's word about itself.
 /// </summary>
 /// <param name="Label">One of <see cref="Opinions.Labels"/>.</param>
 public sealed record OpinionReviewer(string Door, string Label)
@@ -30,7 +30,7 @@ public sealed record OpinionReviewer(string Door, string Label)
 }
 
 /// <summary>
-/// What the driver asks when it starts a pass (XAGENT1c; design §4–§6.2): the occasion, the pass, the session whose work it
+/// What the driver asks when it starts a pass: the occasion, the pass, the session whose work it
 /// reads, the candidate, the reviewer, what it read alike, the posture that held, the rule's minutes, and the reviewer's own
 /// tree, a clone at the candidate (§5.1).
 /// </summary>
@@ -50,7 +50,7 @@ public sealed record OpinionAsk(
     /// <summary>The families that wrote the candidate (design §3.4), as the driver read them.</summary>
     public IReadOnlyList<string> Families { get; init; } = [];
 
-    /// <summary>The harness version the reviewer's spawn observed, for its session record (D49 §4).</summary>
+    /// <summary>The harness version the reviewer's spawn observed, for its session record.</summary>
     public string? DoorVersion { get; init; }
 }
 
@@ -67,7 +67,7 @@ public sealed record OpinionFinding(string Weight, string Where, string Claim, s
     /// <summary>Its number in the pass, from 1, in the order said: what an answer names it by.</summary>
     public int Number { get; init; }
 
-    /// <summary>A diagnosis, or a change proposed as text or a patch; null where none was given. The working session applies its own.</summary>
+    /// <summary>A diagnosis, or a change proposed as text or a patch; null where none is given. The working session applies its own.</summary>
     public string? Proposal { get; init; }
 }
 
@@ -91,7 +91,7 @@ public sealed record OpinionHanded(string Session, string Word, DateTimeOffset A
 {
     /// <summary>
     /// The record they were handed to first, where a hand-over ended it before it answered and they were handed again, once, to its line's
-    /// newest record (CHATFLOW1e, the chat-flow design §6.1 (e)); null for a first hand.
+    /// newest record; null for a first hand.
     /// </summary>
     public string? From { get; init; }
 }
@@ -114,8 +114,8 @@ public sealed record OpinionAnswer(int Finding, string Said, DateTimeOffset At)
 }
 
 /// <summary>
-/// A second opinion on the record (XAGENT1c, D155 point 11; design §6.2): one pass by one reviewer over one candidate, kept by
-/// the local host beside the session records and answered only on this machine (D47 §4). Never a quest operation: its
+/// A second opinion on the record: one pass by one reviewer over one candidate, kept by
+/// the local host beside the session records and answered only on this machine. Never a quest operation: its
 /// candidate is this machine's commits until they land, and its reviewer names an account.
 /// </summary>
 public sealed record Opinion(
@@ -160,7 +160,7 @@ public sealed record Opinion(
 public sealed record OpinionStanding(Opinion Opinion, string State, string? Why);
 
 /// <summary>
-/// The shapes, words and bounds of a second opinion on the record (XAGENT1c), each judged here once for every door and the
+/// The shapes, words and bounds of a second opinion on the record, each judged here once for every door and the
 /// store's own columns.
 /// </summary>
 public static class Opinions
@@ -262,13 +262,13 @@ public static class Opinions
     public const string OutOfTime = "out-of-time";
 
     /// <summary>
-    /// An account's limit ended its session (LIMITRESUME1h, D206 design §3.8): its record's <c>limited</c> flag, which the driver's gate
+    /// An account's limit ended its session: its record's <c>limited</c> flag, which the driver's gate
     /// reads as a cool-off and asks again after the account's reset.
     /// </summary>
     public const string Limited = "limited";
 
     /// <summary>
-    /// Its reviewer's provider kept failing through the retry's bound (AGENTERRORS1d, D210 point 8): the driver's gate reads it as
+    /// Its reviewer's provider kept failing through the retry's bound: the driver's gate reads it as
     /// unavailable with this code and no <c>Until</c>, so only the person's press asks again.
     /// </summary>
     public const string Transient = "transient";
@@ -276,7 +276,7 @@ public static class Opinions
     /// <summary>The code of the line the driver writes on a pass's end where its provider kept failing, spelled as the driver's <c>PeerNoteCodes.OpinionTransient</c>.</summary>
     public const string TransientCode = "opinion.transient";
 
-    /// <summary>The rule's fewest minutes for one pass, as its twins hold it (XAGENT1a).</summary>
+    /// <summary>The rule's fewest minutes for one pass, as its twins hold it.</summary>
     public const int FewestMinutes = 5;
 
     /// <summary>The rule's most minutes for one pass.</summary>
@@ -291,7 +291,7 @@ public static class Opinions
     /// <summary>The longest a claim may be, and a consequence.</summary>
     public const int ClaimLimit = 300;
 
-    /// <summary>The longest a reproduction or its reasoning may be, and what was read, its limits and a rejection's evidence.</summary>
+    /// <summary>The longest a reproduction or its reasoning may be, and what is read, its limits and a rejection's evidence.</summary>
     public const int ReproduceLimit = 600;
 
     /// <summary>The longest a proposal may be.</summary>
@@ -428,7 +428,7 @@ public static class Opinions
         return null;
     }
 
-    /// <summary>The answer standing for <paramref name="finding"/>: the latest said, or null where none was.</summary>
+    /// <summary>The answer standing for <paramref name="finding"/>: the latest said, or null where none is.</summary>
     public static OpinionAnswer? AnswerTo(Opinion opinion, int finding) =>
         opinion.Answers.LastOrDefault(answer => answer.Finding == finding);
 

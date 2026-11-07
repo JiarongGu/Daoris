@@ -4,7 +4,7 @@ using Daoris.Knowledge;
 namespace Daoris.Service.Tests;
 
 /// <summary>
-/// ONEWAY1t (D177 points 1, 2, 4 and 7): a meeting is a kind of brainstorm, asked of the one desk. It writes the request, the round's
+/// A meeting is a kind of brainstorm, asked of the one desk. It writes the request, the round's
 /// send and the stop under <c>brainstorms/meetings/&lt;id&gt;/</c> as the driver's <c>MeetingFiles</c> reads them, and keeps the same id.
 /// </summary>
 public sealed class MeetingDeskTests : IDisposable

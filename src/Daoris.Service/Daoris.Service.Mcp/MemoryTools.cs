@@ -5,15 +5,15 @@ using ModelContextProtocol.Server;
 namespace Daoris.Knowledge.Mcp;
 
 /// <summary>
-/// A repository's memory as a session meets it (KNOWCENTRAL2b, 2d; the memory coordinator design §1, §2): <c>memory_search</c> and
+/// A repository's memory as a session meets it (the memory coordinator design §1, §2): <c>memory_search</c> and
 /// <c>memory_get</c> read, <c>memory_write</c> and <c>memory_end</c> change the caller's own repository's, and <c>memory_propose</c> asks
-/// an entry's owner, as a repository's session, an intake (as its ask), Ask Daoris or a person's own agent in a repository (KNOWCENTRAL2e2;
-/// <see cref="MemoryCaller.Proposer"/>), the last three changing no memory. Every door answers from the repositories the registry places in the caller's workspace (<see cref="MemoryScope"/>),
-/// and every engine is opened with no reinforcement, so a read changes nothing; another repository's memory is read through its view
-/// (KNOWCENTRAL2g), which asks the workspace again before it reads an entry. A change is kept <c>staged</c> under its session, seen by
+/// an entry's owner, as a repository's session, an intake (as its ask), Ask Daoris or a person's own agent in a repository
+/// (<see cref="MemoryCaller.Proposer"/>), the last three changing no memory. Every door answers from the repositories the registry places in the caller's workspace (<see cref="MemoryScope"/>),
+/// and every engine is opened with no reinforcement, so a read changes nothing; another repository's memory is read through its view,
+/// which asks the workspace again before it reads an entry. A change is kept <c>staged</c> under its session, seen by
 /// that session and a session continuing it alone, until the session's commit point releases it; no tool here calls an engine's write.
 /// What a named session reads is kept in its read set, and its next search or get opens with the entries its line read that moved since,
-/// each told once (KNOWCENTRAL2f).
+/// each told once.
 /// </summary>
 /// <param name="service">The registry each call reads its workspace's repositories from.</param>
 /// <param name="ambient">An unnamed caller's workspace, from where it runs.</param>
@@ -106,7 +106,7 @@ public sealed class MemoryTools(
                 .Where(op => op.Change is { Kind: MemoryOpKind.End, Target: not null })
                 .ToLookup(op => new MemoryReference(op.Repository, op.Change.Target!));
 
-    /// <summary>What a hit on <paramref name="reference"/> says of an end awaiting its approver, the person until MC8; nothing where none awaits.</summary>
+    /// <summary>What a hit on <paramref name="reference"/> says of an end awaiting its approver, the person; nothing where none awaits.</summary>
     private static string Awaits(ILookup<MemoryReference, MemoryOp> awaiting, MemoryReference reference) =>
         string.Concat(awaiting[reference].Select(op => op.By is { } by
             ? $", end proposed by session `{by.Session}`, awaiting the person"
@@ -289,7 +289,7 @@ public sealed class MemoryTools(
             + "work is accepted. Nothing changes before.";
     }
 
-    /// <summary>Who makes a change, from the caller's record and the role its connector was started in (§1), at this instant.</summary>
+    /// <summary>Who makes a change, from the caller's record and the role its connector is started in (§1), at this instant.</summary>
     private MemoryAuthor Author(Session record) => new(
         record.Id, record.Workspace, record.Quest, record.Door, record.DoorVersion, intake?.Role, intake?.RoleRevision,
         (time ?? TimeProvider.System).GetUtcNow());
@@ -370,7 +370,7 @@ public sealed class MemoryTools(
 
     /// <summary>
     /// The records <paramref name="cites"/> names, cited, and the entries of other repositories' memory it names at a revision, each read
-    /// through its view and cited by reference (the design §6 B); or why one was refused.
+    /// through its view and cited by reference; or why one is refused.
     /// </summary>
     private async Task<(List<Citation> Citations, string? Refused)> CiteAsync(MemoryCaller caller, string[]? cites, CancellationToken ct)
     {
@@ -424,7 +424,7 @@ public sealed class MemoryTools(
     private DateTimeOffset Now() => (time ?? TimeProvider.System).GetUtcNow();
 
     /// <summary>
-    /// <paramref name="answer"/>, with how the named caller's proposals settled since it was last told (§4): a decline and its reason, a
+    /// <paramref name="answer"/>, with how the named caller's proposals settled since it last heard (§4): a decline and its reason, a
     /// done's handback, a target moved first, or a quest gone; each told once.
     /// </summary>
     private async Task<string> ToldAsync(MemoryCaller caller, string answer, CancellationToken ct)
@@ -501,7 +501,7 @@ public sealed record MemoryCaller(string? Workspace, IReadOnlyList<string> Membe
     /// <summary>The refusal of <paramref name="reference"/> where its repository is not in the workspace; null where it is.</summary>
     public string? Outside(MemoryReference reference) => Member(reference.Repository) is null ? Refusal(reference) : null;
 
-    /// <summary>The refusal of <paramref name="reference"/> as outside the workspace, as a view's check refused it after this call was read.</summary>
+    /// <summary>The refusal of <paramref name="reference"/> as outside the workspace, as a view's check refuses it after this call is read.</summary>
     public string Refusal(MemoryReference reference) =>
         $"Refused: `{reference}` is repository `{reference.Repository}`'s memory, and `{reference.Repository}` is not in workspace "
         + $"`{Workspace}`, whose memory alone this session reads. Nothing was done.";
@@ -562,7 +562,7 @@ public sealed class MemoryScope(KnowledgeService service, AmbientWorkspace ambie
     }
 
     /// <summary>
-    /// Who this caller's proposal travels as (KNOWCENTRAL2e2; D220), or null where it has no repository at all. A named session proposes
+    /// Who this caller's proposal travels as, or null where it has no repository at all. A named session proposes
     /// as the repository its record names when the registry places it in the workspace, as its ask where it is an intake's, and as
     /// Daoris's own sender where it is Ask Daoris's; a connector naming no session, a person's own agent, as the registered repository
     /// its directory sits in, when that repository is in the workspace it answers from.

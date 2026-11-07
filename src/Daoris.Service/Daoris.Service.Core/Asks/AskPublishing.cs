@@ -60,7 +60,7 @@ internal sealed class AskPublishing(
         // The same words in the same circle are the same ask — a retry, or a person repeating
         // themselves, is answered with what became of the first, never a second copy. 🔴 Unless the
         // person CLOSED it: they ended that one, so the same words afterwards ask anew,
-        // and the closed record stays as it was. Found asking a ticket again after its run failed. A DONE
+        // and the closed record stays unchanged. A DONE
         // ask ended as surely: its work finished, and the default list no longer shows it.
         var id = AskStore.MakeId(workspace, sentence);
         for (var again = 1; await standings.FindAsync(id, ct).ConfigureAwait(false) is { } existing; again++)
@@ -117,7 +117,7 @@ internal sealed class AskPublishing(
 
     /// <summary>
     /// A person turns an ask into a quest to <paramref name="to"/> — a proposal accepted, or a receiver
-    /// they chose themselves — or the ask's intake session does, in its own words (D65 §1b). An ask may
+    /// they chose themselves — or the ask's intake session does, in its own words. An ask may
     /// become several quests; each is recorded on it.
     /// </summary>
     /// <param name="draft">The quest's words when they are not the ask's — an intake's, which read the ticket.</param>

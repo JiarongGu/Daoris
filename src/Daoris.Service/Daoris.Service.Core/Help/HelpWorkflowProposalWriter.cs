@@ -5,13 +5,13 @@ using static Daoris.Knowledge.HelpProposalFile;
 namespace Daoris.Knowledge;
 
 /// <summary>
-/// The <c>workflow</c> kind's writer (WORKFLOW1h-a, D157, design §8.1): a whole version of a workflow, new or an edit on a
-/// base version, for a repository or a workspace, and optionally its choice there. Its <c>graph</c> is written as nested JSON (a list of
-/// <c>steps</c> is no longer proposed, WORKFLOWCLEAN1 1b), and a <c>route</c> the choice is made for, which with no graph chooses a
+/// The <c>workflow</c> kind's writer: a whole version of a workflow, new or an edit on a
+/// base version, for a repository or a workspace, and optionally its choice there. Its <c>graph</c> is written as nested JSON, and a
+/// <c>route</c> the choice is made for, which with no graph chooses a
 /// saved workflow alone. Only the shape is judged here; the editor's validation, the base's staleness and what
-/// the steps need are the driver's to judge. Changes, a kind and an import are WORKFLOW1h2's, so they are refused by name.
+/// the steps need are the driver's to judge. Changes, a kind and an import are refused by name.
 /// </summary>
-/// <remarks><c>partial</c> for its generated <see cref="WorkflowIdShape"/> alone (PART7), and declared in this one file.</remarks>
+/// <remarks><c>partial</c> for its generated <see cref="WorkflowIdShape"/> alone, and declared in this one file.</remarks>
 internal sealed partial class HelpWorkflowProposalWriter(HelpProposalFile file)
 {
     /// <summary>A workflow's id as the workflow store takes it: lower-case letters, digits and dashes, at most 40.</summary>
@@ -25,15 +25,15 @@ internal sealed partial class HelpWorkflowProposalWriter(HelpProposalFile file)
     /// <summary>
     /// Write one proposal of a workflow's whole version. <paramref name="steps"/> is the design's JSON list of step objects;
     /// <paramref name="baseVersion"/> the version an edit is made on, absent for a new workflow; <paramref name="choose"/> asks
-    /// that the scope also use this workflow. <paramref name="name"/> (WORKFLOW1h-name) is the person's words for a new workflow,
+    /// that the scope also use this workflow. <paramref name="name"/> is the person's words for a new workflow,
     /// trimmed and written only when given; the workflow store keeps a name to 60 characters (the driver's
     /// <c>WorkflowNamed.NameProblem</c>), and an edit keeps its workflow's name, so a name beside a base is refused.
     /// </summary>
     /// <remarks>
-    /// FLOWCHART2e (the flowchart design §4, §8.4): <paramref name="draft"/> is the fingerprint of the draft open in the person's editor, as the
-    /// conversation was told it. With it the proposal is a change to that draft, its whole <paramref name="graph"/>, which saves and chooses
+    /// <paramref name="draft"/> is the fingerprint of the draft open in the person's editor, as the
+    /// conversation is told it. With it the proposal is a change to that draft, its whole <paramref name="graph"/>, which saves and chooses
     /// nothing: the workflow may be none yet, and steps, a base, a choice, a route and a name are refused. The driver judges it against the
-    /// draft the conversation was told.
+    /// draft the conversation is told.
     /// </remarks>
     public (string? Id, string Message) Propose(
         string? scope, string? workflow, int? baseVersion, string? steps, bool choose,
@@ -84,13 +84,13 @@ internal sealed partial class HelpWorkflowProposalWriter(HelpProposalFile file)
             writer.WriteString("kind", "workflow");
             writer.WriteString("scope", scopeName);
             writer.WriteString("workflow", workflowId ?? "");
-            // FLOWCHART2e: the draft door's fingerprint, which the driver reads the door from.
+            // The draft door's fingerprint, which the driver reads the door from.
             if (fingerprint is not null) writer.WriteString("draft", fingerprint);
             if (workflowName is not null) writer.WriteString("name", workflowName);
             if (baseVersion is { } baseNumber) writer.WriteNumber("base", baseNumber);
             else writer.WriteNull("base");
             writer.WriteBoolean("choose", choose);
-            // FABRIC-PIPELINE1i: a version is its steps or a verification pipeline's graph, and a route with neither chooses alone.
+            // A version is its steps or a verification pipeline's graph, and a route with neither chooses alone.
             if (routeName is not null) writer.WriteString("route", routeName);
             if (hasGraph)
             {
@@ -101,7 +101,7 @@ internal sealed partial class HelpWorkflowProposalWriter(HelpProposalFile file)
     }
 
     /// <summary>
-    /// Why a route is none a proposal names (FABRIC-PIPELINE1i), or null: <c>default</c>, <c>landed</c>, or <c>kind:&lt;id&gt;</c>, a kind's id
+    /// Why a route is none a proposal names, or null: <c>default</c>, <c>landed</c>, or <c>kind:&lt;id&gt;</c>, a kind's id
     /// as the driver takes it: lower-case letters, digits and dashes, at most 24.
     /// </summary>
     private static string? RouteProblem(string route) =>

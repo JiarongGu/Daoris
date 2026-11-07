@@ -6,7 +6,7 @@ using Microsoft.AspNetCore.Http;
 namespace Daoris.Knowledge.Http;
 
 /// <summary>
-/// The process on the other end of a loopback connection (PERSONDOOR1j): the owner of the TCP row whose local port is the
+/// The process on the other end of a loopback connection: the owner of the TCP row whose local port is the
 /// connection's remote port. A session can leave its name off an ask, and the terminal names none, so the process is the only thing
 /// the host can tell askers apart by (the person-door design §4.1). Read on Windows, the desktop's own platform; elsewhere, and for any
 /// connection not loopback or not found, null: the asker is then bound as the terminal's one asker is.

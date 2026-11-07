@@ -4,11 +4,9 @@ using Microsoft.Data.Sqlite;
 namespace Daoris.Service.Tests;
 
 /// <summary>
-/// DRIFT1a (D133 §1): the person's words are the ask's record. Every sentence they give on an ask is kept
-/// on the ask verbatim, with when it was given, to which session and on which quest: the ask itself, each
-/// answer to a session that parked to ask them, and each message added to one while it ran. Before this,
-/// an answer and an added message lived only in the session they were given to, and each reached that one
-/// session (`docs/2026-10-02-ask-drift-evidence.md` §4.7).
+/// The person's words are the ask's record. Every sentence they give on an ask is kept
+/// on the ask verbatim, with when it came, to which session and on which quest: the ask itself, each
+/// answer to a session that parked to ask them, and each message added to one while it ran.
 /// </summary>
 public sealed class AskWordsTests : IAsyncLifetime
 {
@@ -92,7 +90,7 @@ public sealed class AskWordsTests : IAsyncLifetime
         return session;
     }
 
-    /// <summary>The ask's own sentence is its first word, as it was asked, given to no session.</summary>
+    /// <summary>The ask's own sentence is its first word, as asked, given to no session.</summary>
     [Fact]
     public async Task An_asks_first_word_is_its_own_sentence_and_a_new_ask_keeps_its_words_whole()
     {
@@ -108,8 +106,8 @@ public sealed class AskWordsTests : IAsyncLifetime
     }
 
     /// <summary>
-    /// An answer to a parked session is read back from the ask, verbatim, with when it was given, the
-    /// session it was given to and the quest that session worked.
+    /// An answer to a parked session is read back from the ask, verbatim, with when it came, the
+    /// session it went to and the quest that session worked.
     /// </summary>
     [Fact]
     public async Task An_answer_to_a_parked_session_is_read_back_from_the_ask()
@@ -155,8 +153,8 @@ public sealed class AskWordsTests : IAsyncLifetime
     }
 
     /// <summary>
-    /// A chain step is asked by the ask too (D65 §4), so a word given to the session verifying the work
-    /// lands on the same ask as one given to the session that built it — the case the drift lost.
+    /// A chain step is asked by the ask too, so a word given to the session verifying the work
+    /// lands on the same ask as one given to the session that built it.
     /// </summary>
     [Fact]
     public async Task A_word_given_on_a_chain_step_is_kept_on_the_same_ask()
@@ -182,7 +180,7 @@ public sealed class AskWordsTests : IAsyncLifetime
     }
 
     /// <summary>
-    /// An intake is a session on the ask with no quest yet (D65 §1b): what the person adds to it shapes
+    /// An intake is a session on the ask with no quest yet: what the person adds to it shapes
     /// every quest it publishes, so it is the ask's word too, given on no quest.
     /// </summary>
     [Fact]
@@ -223,7 +221,7 @@ public sealed class AskWordsTests : IAsyncLifetime
         Assert.Single((await _desk.FindAsync(ask.Id))!.Words);
     }
 
-    /// <summary>Words given to the session of a quest a sibling of the ask published are kept on the ask, its entry's origin (COMMS1c).</summary>
+    /// <summary>Words given to the session of a quest a sibling of the ask published are kept on the ask, its entry's origin.</summary>
     [Fact]
     public async Task Words_given_to_a_session_on_a_quest_a_sibling_published_are_kept_on_the_ask()
     {
@@ -262,7 +260,7 @@ public sealed class AskWordsTests : IAsyncLifetime
     }
 
     /// <summary>
-    /// The words are appended where they are kept, in one statement (REV3): a publish or a close written
+    /// The words are appended where they are kept, in one statement: a publish or a close written
     /// afterwards, from another process, keeps them — each writes only the columns it owns.
     /// </summary>
     [Fact]
@@ -281,7 +279,7 @@ public sealed class AskWordsTests : IAsyncLifetime
     }
 
     /// <summary>
-    /// 🔴 A store from before DRIFT1a still reads every ask it holds, its sentence as its first word. Its
+    /// 🔴 A store from before the words were kept still reads every ask it holds, its sentence as its first word. Its
     /// later words were never kept and are not back-filled, so the record says from when they are kept
     /// rather than reading as though the person said nothing more; a word given afterwards is kept.
     /// </summary>

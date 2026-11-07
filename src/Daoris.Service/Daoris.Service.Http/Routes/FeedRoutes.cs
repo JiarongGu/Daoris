@@ -4,8 +4,8 @@ using Daoris.Contracts.Feed;
 namespace Daoris.Knowledge.Http.Routes;
 
 /// <summary>
-/// A shared host is fed by desktops: records and content arrive attributed to the key that carried them (D47 §§4-6), and the quest
-/// operations they push are ordered here (D68). A local host is fed by nobody, so a door with no meaning there does not exist there.
+/// A shared host is fed by desktops: records and content arrive attributed to the key that carried them, and the quest
+/// operations they push are ordered here. A local host is fed by nobody, so a door with no meaning there does not exist there.
 /// </summary>
 public sealed class FeedRoutes(HostWiring host) : IRouteModule
 {
@@ -40,8 +40,8 @@ public sealed class FeedRoutes(HostWiring host) : IRouteModule
             return new FeedHeldResponse(request.Repository, held.Knowledge, held.CodeMap, held.Registration);
         });
 
-        // The remote's quest doors (D68, sync design §8): what it accepted after a number, in its order, and a push rebased on one, judged
-        // quest by quest through the table every machine uses. FABRIC-CLOSE1i: both answer the workspace's handshake, which machines here
+        // The remote's quest doors (sync design §8): what it accepted after a number, in its order, and a push rebased on one, judged
+        // quest by quest through the table every machine uses. Both answer the workspace's handshake, which machines here
         // have not declared they know a bound quest.
         routes.Map<ReadOperations, JsonObject>(async (request, _, ct) =>
             WireObject.Of(QuestWire.Page(await Service.Quests.OperationsSinceAsync(request.Since ?? 0, ct: ct) with
@@ -50,7 +50,7 @@ public sealed class FeedRoutes(HostWiring host) : IRouteModule
             })));
         routes.Map<PushOperations, JsonObject>(PushAsync);
 
-        // FABRIC-CLOSE1i2: a machine heard from nothing here is answered `retired: false`, so a 404 stays what a remote before the door answers.
+        // A machine heard from nothing here is answered `retired: false`.
         routes.Map<RetireQuestMachine, JsonObject>(async (request, _, ct) =>
         {
             var retired = await Service.Quests.RetireMachineAsync(request.Machine, DateTimeOffset.UtcNow, ct);
@@ -62,7 +62,7 @@ public sealed class FeedRoutes(HostWiring host) : IRouteModule
     private static string? Caller(HttpContext http) =>
         http.Items["daoris.principal"] is string caller && !string.IsNullOrWhiteSpace(caller) ? caller : null;
 
-    // The record upserts whole and is never re-judged (D47 §6). There is no transcript field to strip, because the wire has none. Only
+    // The record upserts whole and is never re-judged. There is no transcript field to strip, because the wire has none. Only
     // joined repositories' records are taken (§4). Unreachable without a key while the shared gate stamps every /api caller, and kept: a
     // gate refactor that dropped the stamp must fail here, loudly, not mirror records under an empty name.
     private async Task<Answer<FeedResponse>> FeedSessionsAsync(FeedSessions request, HttpContext http, CancellationToken ct)
@@ -78,7 +78,7 @@ public sealed class FeedRoutes(HostWiring host) : IRouteModule
         return Fed(await new SessionFeed(Service.Service, Service.Sessions).FeedAsync(origin, records, ct));
     }
 
-    // An ask's channel messages (SESSONE2d, D167 point 8), the session records' door in its shape: the words arrive cleaned and are
+    // An ask's channel messages, the session records' door in its shape: the words arrive cleaned and are
     // cleaned again on arrival (ChannelFeed).
     private async Task<Answer<FeedResponse>> FeedChannelAsync(FeedChannel request, HttpContext http, CancellationToken ct)
     {
@@ -131,14 +131,14 @@ public sealed class FeedRoutes(HostWiring host) : IRouteModule
         if (QuestWire.ReadPush(json) is not var (@base, pushed)) return Refusal.BadRequest(QuestWire.Shape);
 
         // The remote re-judges a publish as its own door would (JudgeReceived), and files it by the receiver's registration here: the push
-        // names no workspace (SYNC0a).
+        // names no workspace.
         var registered = await Service.Service.RegistryAsync(ct: ct);
         var judged = await Service.Quests.ReceiveAsync(
             @base, pushed,
             asked => Service.Exchange.JudgeReceived(asked, registered),
             asked => registered.Named(asked.To)?.InWorkspace ?? Workspaces.Default,
             ct);
-        // What the push said of its machine (FABRIC-CLOSE1i), heard whatever was kept of it, since a refused operation's build is still its own.
+        // What the push said of its machine, heard whatever is kept of it, since a refused operation's build is still its own.
         await Service.Quests.DeclaredAsync(QuestWire.Declares(json), pushed, DateTimeOffset.UtcNow, ct);
         return WireObject.Of(QuestWire.Pushed(judged with { Closure = await Service.Quests.ClosureAsync(ct) }));
     }

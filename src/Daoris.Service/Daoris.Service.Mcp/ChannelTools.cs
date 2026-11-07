@@ -6,7 +6,7 @@ using ModelContextProtocol.Server;
 namespace Daoris.Knowledge.Mcp;
 
 /// <summary>
-/// An ask's channel, as a session meets it (SESSONE2a; D167 point 7; the co-working design §2.2): <c>channel_post</c> and
+/// An ask's channel, as a session meets it (the co-working design §2.2): <c>channel_post</c> and
 /// <c>channel_read</c>, each speaking only for the session its connector names, whose record's entry names the ask. How every tool's
 /// words are written is said on <see cref="KnowledgeServer"/>.
 /// </summary>
@@ -97,8 +97,8 @@ public sealed class ChannelTools(ChannelDesk? channel = null, IntakeScope? intak
     }
 
     /// <summary>
-    /// What each message the reading line of work posted reached, per repository it addresses (COWORK1d, the message-urgency design
-    /// §7): only what Daoris observed, and never that it was obeyed.
+    /// What each message the reading line of work posted reached, per repository it addresses (the message-urgency design
+    /// §7): only what Daoris observed, and never that it is obeyed.
     /// </summary>
     private async Task ReachedAsync(Ask ask, string? entry, StringBuilder text, CancellationToken ct)
     {
@@ -144,7 +144,7 @@ public sealed class ChannelTools(ChannelDesk? channel = null, IntakeScope? intak
                 ? $"part {message.Session} of your line of work, {message.Repository} ({message.Agent}), another session's claim"
                 : $"{message.Repository} ({message.Agent}), another session's claim";
         var kind = message.Question ? (message.Open ? "question, open" : "question") : "message";
-        // COWORK1d: an urgent message says so; an ordinary one, and one from before, say nothing.
+        // An urgent message says so; an ordinary one says nothing.
         if (message.Urgent == true) kind = $"urgent {kind}";
         var to = message.Part is not null ? "to you alone" : message.To is { } addressed ? $"to {addressed}" : "to everyone";
         var re = message.Re is { } answers ? $", answering `{answers}`" : "";

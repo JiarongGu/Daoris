@@ -4,9 +4,8 @@ using Microsoft.Data.Sqlite;
 namespace Daoris.Service.Tests;
 
 /// <summary>
-/// REVIEWENV1b3 (D154's REVIEWENV1b3 note; the review environment design §1.5, §3.5): the review on the record cannot be
-/// decided by an agent or by a stale press. Each test here was seen failing on the defect a read-only review claimed, before
-/// its fix: a verdict that named no set-up approved one the person never saw, an agent's quote set `off`, a set-up said again
+/// The review on the record cannot be
+/// decided by an agent or by a stale press. Each test here guards a defect: a verdict that named no set-up approved one the person never saw, an agent's quote set `off`, a set-up said again
 /// at another address held the step on one machine and not on the next, and the late set-up door judged the wrong part of
 /// the chain.
 /// </summary>
@@ -150,7 +149,7 @@ public sealed class ReviewStepGuardTests : ReviewStepFixture
 
     /// <summary>
     /// Each set-up this machine says carries its identity, made from what it says with its local address, and the same
-    /// identity crosses the wire. A set-up a build from before kept carries none and reads back as it was; beside another, it
+    /// identity crosses the wire. A set-up kept without one carries none and reads back unchanged; beside another, it
     /// is compared by what crosses, so a local address, which the wire drops, never decides.
     /// </summary>
     [Fact]

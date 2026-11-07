@@ -3,7 +3,7 @@ using System.Text.Json;
 namespace Daoris.Knowledge;
 
 /// <summary>
-/// The person's yes to a done as it stands (DRIFT1d, D133 §4; EVID1a, D144 §6): its departure, or its evidence unread or missing. It
+/// The person's yes to a done as it stands: its departure, or its evidence unread or missing. It
 /// lets go what the done held and moves no status; a yes that loses a rebase takes the step it published with it.
 /// </summary>
 [QuestOperation("accepted", QuestOperationPhase.Log)]
@@ -23,7 +23,7 @@ internal sealed class QuestAcceptOperation : IQuestOperation
     public QuestOperation ReadPayload(QuestOperation read, JsonElement payload) => read;
 
     /// <summary>
-    /// A yes that lost takes the step it published with it, as a lost close's does (DRIFT1d), while the done stands unaccepted; one that
+    /// A yes that lost takes the step it published with it, as a lost close's does, while the done stands unaccepted; one that
     /// lost to another machine's yes leaves the step the winner published, which is the same one.
     /// </summary>
     public Task<IReadOnlyList<QuestOperation>> LostAsync(
@@ -45,7 +45,7 @@ internal sealed class QuestAcceptOperation : IQuestOperation
         var history = await tx.HistoryAsync(id).ConfigureAwait(false);
         if (QuestLog.Replay(history) is not { } quest) return new QuestMove(await tx.FindAsync(id).ConfigureAwait(false), Moved: false);
 
-        // A departure or its evidence takes a yes, and a review's hold does not (REVIEWENV1b).
+        // A departure or its evidence takes a yes, and a review's hold does not.
         var judged = new QuestOperation(id, QuestOperationKind.Accepted, tx.Machine, 0, now);
         if (!QuestLog.Applies(quest, judged)) return new QuestMove(quest, Moved: false);
 

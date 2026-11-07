@@ -5,7 +5,7 @@ using Microsoft.Data.Sqlite;
 namespace Daoris.Service.Tests;
 
 /// <summary>
-/// CONTEXTDRIVE1a (the context-counters design §2.3): the driver's line key repeats this service's walk (<see cref="Lines.WalkAsync"/>), and
+/// The driver's line key repeats this service's walk (<see cref="Lines.WalkAsync"/>), and
 /// the driver has no reference to the service, so both are held to <c>fixtures/line-counts.json</c> among the driver's tests. A row that
 /// names a service walk is made here, and the walk from its first part visits exactly the records the driver's key joins on one line.
 /// </summary>

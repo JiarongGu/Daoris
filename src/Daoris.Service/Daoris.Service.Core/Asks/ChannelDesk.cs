@@ -3,12 +3,12 @@ using Microsoft.Data.Sqlite;
 namespace Daoris.Knowledge;
 
 /// <summary>
-/// The judgement over an ask's channel (SESSONE2a; the co-working design §2): who may post, what a message may say and to whom, what a
+/// The judgement over an ask's channel: who may post, what a message may say and to whom, what a
 /// read holds, and Daoris's lines, read from the ask's quests. The store holds the messages; this decides, for the connector's two tools
 /// and the HTTP host's two doors alike.
 /// </summary>
 /// <remarks>
-/// A message asks nothing of anyone and starts nothing: it is read at a session's next look (SESSONE2b), and work stays a quest (D79).
+/// A message asks nothing of anyone and starts nothing: it is read at a session's next look, and work stays a quest.
 /// </remarks>
 public sealed class ChannelDesk(
     ChannelStore store, AskDesk asks, AskStore askStore, SessionLedger ledger, QuestStore quests, ISessionEntryFacts facts)
@@ -24,22 +24,22 @@ public sealed class ChannelDesk(
     /// <summary>A line's own channel and the messages to one part.</summary>
     public ChannelParts Parts => _parts ??= new(this, store, ledger, facts);
 
-    /// <summary>The agents outside Daoris on a channel, each a member of its own (CHANNELJOIN1).</summary>
+    /// <summary>The agents outside Daoris on a channel, each a member of its own.</summary>
     public ChannelMembers Members => new(this, store, asks);
 
-    /// <summary>The members a channel holds now and whether their channel's claims have expired (CHANNELJOIN1c).</summary>
+    /// <summary>The members a channel holds now and whether their channel's claims have expired.</summary>
     public ChannelMemberRoll Roll => new(this, store, asks, ledger);
 
-    /// <summary>A teammate's ask's channel, which the person and a session here on it post to and read (SESSONE2i).</summary>
+    /// <summary>A teammate's ask's channel, which the person and a session here on it post to and read.</summary>
     private TeammateAskChannel Teammates => new(store, StaleAsync);
 
-    /// <summary>A line's own channel as the person reads it (COMMS1k).</summary>
+    /// <summary>A line's own channel as the person reads it.</summary>
     public LineChannel Line => new(this, store);
 
     /// <summary>Post as the session the connector names: its record gives the ask (through its entry), its repository and its adapter.</summary>
     /// <param name="urgent">
-    /// The poster's level (COWORK1d, D188 point 2): urgent asks the session's next step, ordinary (the default) a natural point. Kept
-    /// urgent for at most <see cref="ChannelBounds.UrgentPerPart"/> of the part's posts; the outcome's message says what was kept.
+    /// The poster's level: urgent asks the session's next step, ordinary (the default) a natural point. Kept
+    /// urgent for at most <see cref="ChannelBounds.UrgentPerPart"/> of the part's posts; the outcome's message says what it kept.
     /// </param>
     /// <remarks>
     /// A line on no ask posts on its own channel, and a <paramref name="to"/> naming a session is to that part alone (<see cref="ChannelParts"/>).
@@ -74,11 +74,11 @@ public sealed class ChannelDesk(
     }
 
     /// <summary>
-    /// Post as the person (D167 point 7): kept on the channel by no session, and on the ask as a word of the <c>channel</c> kind (D133 §1),
+    /// Post as the person: kept on the channel by no session, and on the ask as a word of the <c>channel</c> kind,
     /// which an older build passes over as it does any kind it does not know. A person has no cap.
     /// </summary>
-    /// <param name="urgent">Their level (COWORK1d): urgent unless they asked ordinary, their default as their words' is (D188 point 2).</param>
-    /// <remarks>On a teammate's ask, one whose messages the sync mirrored here, the post is kept to travel to its holder (SESSONE2i).</remarks>
+    /// <param name="urgent">Their level: urgent unless they asked ordinary, their default as their words' is.</param>
+    /// <remarks>On a teammate's ask, one whose messages the sync mirrored here, the post is kept to travel to its holder.</remarks>
     public async Task<ChannelOutcome> PostAsPersonAsync(
         string askId, string? text, string? to, string? re, DateTimeOffset now, CancellationToken ct = default, bool urgent = true)
     {
@@ -109,8 +109,8 @@ public sealed class ChannelDesk(
     /// <summary>
     /// What the channel holds for <paramref name="entry"/>: every message and line of it, or those after <paramref name="since"/>. The
     /// unread count is against the entry's mark. <paramref name="moveMark"/> moves the mark to the newest item, as a session's read does.
-    /// Null when this machine holds no such ask and has mirrored no message of one. An ask held elsewhere (SESSONE2g) reads from the
-    /// messages the sync mirrored: this read moves no mark there (the person's moves at <see cref="MarkReadAsync"/>, NOTIFY2g), and
+    /// Null when this machine holds no such ask and has mirrored no message of one. An ask held elsewhere reads from the
+    /// messages the sync mirrored: this read moves no mark there (the person's moves at <see cref="MarkReadAsync"/>), and
     /// Daoris's lines, which come from this machine's quests, are not in it. The person's count is <see cref="Counts"/>'s.
     /// </summary>
     public async Task<ChannelRead?> ReadAsync(
@@ -134,9 +134,9 @@ public sealed class ChannelDesk(
     }
 
     /// <summary>
-    /// The asks the mirrored messages name that this machine does not hold (SESSONE2h), newest message first. No ask record is here, so a
+    /// The asks the mirrored messages name that this machine does not hold, newest message first. No ask record is here, so a
     /// title is not: the messages carry their circle, the machines they came from, and when. Unread is against the person's local mark,
-    /// counted as <see cref="Counts"/> counts the person's (NOTIFY2g); each is readable at <see cref="ReadAsync"/> by its id.
+    /// counted as <see cref="Counts"/> counts the person's; each is readable at <see cref="ReadAsync"/> by its id.
     /// </summary>
     public async Task<IReadOnlyList<ElsewhereAsk>> ElsewhereAsync(CancellationToken ct = default)
     {
@@ -158,7 +158,7 @@ public sealed class ChannelDesk(
     }
 
     /// <summary>
-    /// Whether a message counts toward an entry's unread (NOTIFY2g, D196 point 6; the notification design §2.4): for the person, only
+    /// Whether a message counts toward an entry's unread: for the person, only
     /// what an agent or a teammate wrote, never their own post on this machine; for a session's entry, every message. Daoris's lines
     /// count for a session's entry alone.
     /// </summary>
@@ -170,7 +170,7 @@ public sealed class ChannelDesk(
     /// moves. The same speaker's rules as a post: a session on an ask, and no helper or reviewer.
     /// </summary>
     /// <remarks>
-    /// 🔴 COWORK1d (the message-urgency design §6, traps 9 and 22): read from the last read, it also returns each message for its entry
+    /// 🔴 Read from the last read, it also returns each message for its entry
     /// that the entry has neither taken nor read, whatever its moment, so one mirrored late is still read. Each message for its entry
     /// that it returns, whole, is acknowledged <see cref="ChannelAcks.Read"/> before the answer reaches the agent: the agent's own call,
     /// which it makes again with <c>since</c> if the answer is lost. The mark then moves for display (<see cref="MoveEntryMarkAsync"/>).
@@ -215,7 +215,7 @@ public sealed class ChannelDesk(
     }
 
     /// <summary>
-    /// An entry's acknowledgment of messages on an ask's channel (COWORK1d, D188 point 6; the message-urgency design §6), each by its
+    /// An entry's acknowledgment of messages on an ask's channel, each by its
     /// id: a part's claim (<see cref="ChannelAcks.Taking"/>, one part's only), its letting go, a start's packet, the write and the
     /// door's word. The entry's mark then moves for display, to before the oldest message for it not yet sent, taken or read.
     /// </summary>
@@ -265,7 +265,7 @@ public sealed class ChannelDesk(
     }
 
     /// <summary>
-    /// The messages waiting for a session (COWORK1d, the design §4.2): for its entry on its ask's channel, and neither sent, taken nor read
+    /// The messages waiting for a session: for its entry on its ask's channel, and neither sent, taken nor read
     /// by it, with the ask they are on; and those to it, or on its line's own channel, its line has not settled. What the connector's
     /// answers name; none for a helper and a reviewer.
     /// </summary>
@@ -283,7 +283,7 @@ public sealed class ChannelDesk(
     }
 
     /// <summary>
-    /// What each message reached, for each repository it addresses (COWORK1d, the design §7, §8.4), by message id: a reply from that
+    /// What each message reached, for each repository it addresses, by message id: a reply from that
     /// repository answered it; else its entry's acknowledgment; else it waits, or is not reached once the ask has no quest open and no
     /// part of that entry is here (§4.2's expiry, judged as it is read and never stored, so a quest opened again makes it wait again).
     /// </summary>
@@ -336,7 +336,7 @@ public sealed class ChannelDesk(
         return receipts;
     }
 
-    /// <summary>Remove an ask's channel with the ask (D95), and the messages to one part on its origin.</summary>
+    /// <summary>Remove an ask's channel with the ask, and the messages to one part on its origin.</summary>
     public async Task ForgetAsync(string askId, CancellationToken ct = default)
     {
         await store.ForgetAsync(askId.TrimStart('#'), ct).ConfigureAwait(false);
@@ -350,14 +350,14 @@ public sealed class ChannelDesk(
         var lines = await LinesAsync(ask, ct).ConfigureAwait(false);
 
         var newest = messages.Select(m => m.At).Concat(lines.Select(l => l.At)).DefaultIfEmpty().Max();
-        // NOTIFY2g: the person's count passes over their own posts and Daoris's lines; the mark still moves through every item.
+        // The person's count passes over their own posts and Daoris's lines; the mark still moves through every item.
         var unread = messages.Count(m => Counts(m, entry) && (mark is null || m.At > mark))
                      + (entry == PersonEntry ? 0 : lines.Count(l => mark is null || l.At > mark));
         if (moveMark && (messages.Count > 0 || lines.Count > 0)) await store.MoveMarkAsync(ask.Id, entry, newest, ct).ConfigureAwait(false);
 
         var read = new ChannelRead(
             [.. messages.Where(m => from is null || m.At > from)], [.. lines.Where(l => from is null || l.At > from)], unread, mark);
-        // COWORK1d: the person reads what each message reached; an entry reads what it acknowledged, by message id, a claim whose part
+        // The person reads what each message reached; an entry reads what it acknowledged, by message id, a claim whose part
         // no longer runs read as none, so the entry's next part is handed it. The person reads the messages to one part each beside them.
         if (entry != PersonEntry)
         {
@@ -396,7 +396,7 @@ public sealed class ChannelDesk(
             .ToDictionary(row => row.Message, row => row.Ack, StringComparer.Ordinal);
 
     /// <summary>
-    /// The entry's mark, kept for display and for a driver from before (COWORK1d, the design §6): moved to the newest item before the
+    /// The entry's mark, kept for display and for a driver from before: moved to the newest item before the
     /// oldest message for the entry it has not yet had sent, taken or read, or to the newest item where none waits. Never back.
     /// </summary>
     private async Task MoveEntryMarkAsync(
@@ -443,7 +443,7 @@ public sealed class ChannelDesk(
     /// the part starts, to the moment it handed the channel over), and answer the channel as it then reads. Null when no such ask.
     /// </summary>
     /// <remarks>
-    /// NOTIFY2g (D196 point 6; the notification design §2.4): the person's mark is kept on a teammate's ask too, one this machine holds
+    /// The person's mark is kept on a teammate's ask too, one this machine holds
     /// no record of and whose messages the sync mirrored, moved to <paramref name="through"/> or to the newest mirrored message. The
     /// person's entry alone: a session's entry there is null, as an ask nowhere is. The mark is this machine's, never on the sync wire.
     /// </remarks>
@@ -506,7 +506,7 @@ public sealed class ChannelDesk(
         return [.. lines.OrderBy(line => line.At)];
     }
 
-    /// <summary>The quests that belong to the ask: asked by it (chain steps included), or whose entry's origin is it (D167 point 2).</summary>
+    /// <summary>The quests that belong to the ask: asked by it (chain steps included), or whose entry's origin is it.</summary>
     internal async Task<IReadOnlyList<Quest>> QuestsOfAsync(Ask ask, CancellationToken ct)
     {
         var origin = SessionEntries.AskOrigin(ask.Id);
@@ -526,7 +526,7 @@ public sealed class ChannelDesk(
     /// <summary>
     /// The session that speaks, its entry, the origin whose channel it speaks on, and the ask that origin names where it names one; or why it
     /// may not. Every origin has a channel: only a helper and a reviewer have none. One whose ask is not held here is answered
-    /// <see cref="ChannelRefusal.NoAsk"/> with its origin, which the post and the read take as a teammate's ask (SESSONE2i).
+    /// <see cref="ChannelRefusal.NoAsk"/> with its origin, which the post and the read take as a teammate's ask.
     /// </summary>
     internal async Task<(ChannelRefusal Refusal, Ask? Ask, Session? Session, string? Entry, string? Origin)> SpeakerAsync(string? sessionId, CancellationToken ct)
     {

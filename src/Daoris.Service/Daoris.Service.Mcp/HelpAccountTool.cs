@@ -3,7 +3,7 @@ using ModelContextProtocol.Server;
 
 namespace Daoris.Knowledge.Mcp;
 
-/// <summary>Ask Daoris's <c>agent_settings_propose</c> (HELP6): the <c>account</c> kind's tool, written by <see cref="HelpProposalBox.ProposeAgentSettings"/>.</summary>
+/// <summary>Ask Daoris's <c>agent_settings_propose</c>: the <c>account</c> kind's tool, written by <see cref="HelpProposalBox.ProposeAgentSettings"/>.</summary>
 [McpServerToolType]
 public sealed class HelpAccountTool(IntakeScope? intake = null, HelpProposalBox? help = null)
 {

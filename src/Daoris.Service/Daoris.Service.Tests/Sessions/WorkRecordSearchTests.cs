@@ -4,7 +4,7 @@ using Microsoft.Data.Sqlite;
 namespace Daoris.Service.Tests;
 
 /// <summary>
-/// KEEPSIZE1c (D195's keep-size note; the keep-size design §2.2, §7): a finished tree's record found by a word of its sessions' notes and by
+/// A finished tree's record found by a word of its sessions' notes and by
 /// a commit's subject, scoped by workspace; read whole by its id; its sessions' words gone with the session that said them, the record and
 /// the other's words left; a record kept before the index existed indexed at its first open; a no-kinds search not crowded by records.
 /// </summary>

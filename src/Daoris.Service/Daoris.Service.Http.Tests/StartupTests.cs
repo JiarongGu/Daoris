@@ -6,9 +6,9 @@ using Microsoft.Extensions.DependencyInjection;
 namespace Daoris.Service.Http.Tests;
 
 /// <summary>
-/// The startup judgement, reached through the host's real entry point (D47 §3): local trust bound beyond
+/// The startup judgement, reached through the host's real entry point: local trust bound beyond
 /// loopback does not warn, it does not start — judged on the addresses the host would actually bind,
-/// Kestrel's own endpoint configuration included (REV3). The in-memory server replaces Kestrel, so the
+/// Kestrel's own endpoint configuration included. The in-memory server replaces Kestrel, so the
 /// one host here that does start binds nothing.
 /// </summary>
 public sealed class StartupTests
@@ -58,7 +58,7 @@ public sealed class StartupTests
     }
 
     /// <summary>
-    /// The embedder's window is the deployment's statement (D123): one that cannot mean what it says does not
+    /// The embedder's window is the deployment's statement: one that cannot mean what it says does not
     /// start the host, rather than being quietly replaced by the default.
     /// </summary>
     [Fact]
@@ -82,7 +82,7 @@ public sealed class StartupTests
     }
 
     /// <summary>
-    /// The status names the host's version (WIRING1b, the this-Daoris design §3.6): the informational version the release
+    /// The status names the host's version: the informational version the release
     /// workflow stamps, as its machine log's `app.started` line says it, so This Daoris shows what the service is.
     /// </summary>
     [Fact]

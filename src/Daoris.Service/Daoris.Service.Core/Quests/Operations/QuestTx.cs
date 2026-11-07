@@ -4,14 +4,14 @@ namespace Daoris.Knowledge;
 
 /// <summary>
 /// One write on the quest store as an operation's verb reaches it: the store's doors bound to the transaction the store's own door
-/// opened, so a verb replays, judges and writes under one lock (D47 §5) and never opens a write of its own.
+/// opened, so a verb replays, judges and writes under one lock and never opens a write of its own.
 /// </summary>
 internal sealed class QuestTx(QuestStore store, SqliteTransaction transaction, CancellationToken ct)
 {
     /// <summary>The store's machine, which every operation it writes is stamped with.</summary>
     internal string Machine => store.Machine;
 
-    /// <summary>The token the write runs on: once begun, nobody cancels it (REV3).</summary>
+    /// <summary>The token the write runs on: once begun, nobody cancels it.</summary>
     internal CancellationToken Ct => ct;
 
     internal Task<Quest?> FindAsync(string id) => store.FindAsync(id, transaction, ct);
@@ -59,7 +59,7 @@ internal sealed class QuestTx(QuestStore store, SqliteTransaction transaction, C
     /// <summary>The store's clock, which a take measures its wait for the write by.</summary>
     internal TimeProvider Time => store.Time;
 
-    /// <summary>The newer version a store was stamped by, which refuses a write this build would make; null otherwise.</summary>
+    /// <summary>The newer version a store is stamped by, which refuses a write this build would make; null otherwise.</summary>
     internal int? NewerVersion => store.NewerVersion;
 
     /// <summary>A command in this write's transaction, for a table an operation keeps beside the log.</summary>

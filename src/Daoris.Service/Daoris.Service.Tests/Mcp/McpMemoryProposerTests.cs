@@ -4,7 +4,7 @@ using Daoris.Knowledge.Mcp;
 namespace Daoris.Service.Tests;
 
 /// <summary>
-/// KNOWCENTRAL2e2 (the memory coordinator design §4; D220): a proposal from an intake, Ask Daoris or a person's own agent travels as a
+/// A proposal from an intake, Ask Daoris or a person's own agent travels as a
 /// quest to the entry's owner, as a session's does, and the owner's quest says who proposed it. Each proposes as the sender its record or
 /// its place gives it, in its own workspace; a caller with no repository at all is refused; and none of them writes the owner's memory.
 /// </summary>
@@ -72,7 +72,7 @@ public sealed class McpMemoryProposerTests : McpToolsFixture
     }
 
     /// <summary>
-    /// 🔴 Ask Daoris proposes as Daoris's own sender, <c>daoris:help</c>, the place its record is kept, in the workspace it was started
+    /// 🔴 Ask Daoris proposes as Daoris's own sender, <c>daoris:help</c>, the place its record is kept, in the workspace it is started
     /// in: a second proposal from it joins the first while nobody has taken it. The owner's quest names Ask Daoris.
     /// </summary>
     [Fact]

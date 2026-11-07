@@ -80,9 +80,9 @@ public class ConvergenceTests
     }
 
     /// <summary>
-    /// 🔴 REV3: the semantic tier failing threw out of the whole call — the copies and restatements
-    /// already found were thrown away with it, and the landing view answered 500. "An embedding
-    /// exception means the semantic tier did not answer, and the lexical half carries on" (D24).
+    /// 🔴 The semantic tier failing does not throw out of the whole call: the copies and restatements
+    /// already found are kept, not thrown away with it. "An embedding
+    /// exception means the semantic tier did not answer, and the lexical half carries on".
     /// </summary>
     [Fact]
     public async Task An_embedder_that_fails_costs_the_semantic_half_and_nothing_else()
@@ -194,8 +194,8 @@ public class ConvergenceTests
     }
 
     /// <summary>
-    /// 🔴 <b>Found on the deployed application, where the index holds 965 entries.</b> The lead view's
-    /// first group was a 990-character rules TEMPLATE, a dev-conventions rule and a 326 KB pitfalls
+    /// 🔴 <b>On the deployed application, where the index holds 965 entries,</b> the lead view's
+    /// first group held a 990-character rules TEMPLATE, a dev-conventions rule and a 326 KB pitfalls
     /// document, at similarity 1.000 — because containment over token SETS, normalised by the smaller
     /// set, scores any short document of common words as fully contained in any long one. Measured
     /// across all 48 groups: 13 were this shape (vocabulary ratio ≤ 0.09, every one a tiny record
@@ -219,7 +219,7 @@ public class ConvergenceTests
             new ConvergenceOptions(MinimumSimilarity: 0.75)));
     }
 
-    /// <summary>The guard must not take the case it was written beside: a copy that GREW is still a copy.</summary>
+    /// <summary>The guard must not take the case beside it: a copy that GREW is still a copy.</summary>
     [Fact]
     public async Task A_copy_that_grew_by_a_paragraph_is_still_a_restatement()
     {
@@ -239,7 +239,7 @@ public class ConvergenceTests
     /// <summary>
     /// A chain: alpha is a restatement of beta and beta of gamma, but alpha is not one of gamma. The
     /// first seed claims its group and the chain's far end stays out. This pins the grouping the
-    /// lexical pass makes, so comparing each pair once instead of twice (POLISH3) changes nothing.
+    /// lexical pass makes, so comparing each pair once instead of twice changes nothing.
     /// </summary>
     [Fact]
     public async Task A_chain_of_restatements_groups_from_the_first_seed_and_stops_there()

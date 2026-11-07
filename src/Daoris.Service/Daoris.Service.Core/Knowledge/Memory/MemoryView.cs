@@ -14,7 +14,7 @@ public interface IMemoryReads
 }
 
 /// <summary>
-/// Another repository's memory as a reader meets it (Lyntai's MC7; the memory coordinator design §6 B, KNOWCENTRAL2g): its type has no write,
+/// Another repository's memory as a reader meets it: its type has no write,
 /// a read through it moves nothing of the owner's, and every entry is the owner's by reference. Its check is asked about an entry before
 /// <see cref="IMemoryReads.GetAsync"/> or <see cref="IMemoryReads.ExpandAsync"/> reads it, and one it refuses reads as missing; a search is
 /// not checked per entry, being of a repository the caller's workspace already shares.
@@ -58,13 +58,13 @@ public sealed class MemoryWorkspaceCheck(KnowledgeService registry, string? work
     }
 }
 
-/// <summary>Reading another repository's memory (KNOWCENTRAL2g): the words where it cannot be read, and the recheck of an entry cited.</summary>
+/// <summary>Reading another repository's memory: the words where it cannot be read, and the recheck of an entry cited.</summary>
 public static class MemoryViews
 {
     /// <summary>Why another repository's memory is not read where its engine gives no view, which a read through the engine could move.</summary>
     public const string CannotView = "cannot be read from here without moving it";
 
-    /// <summary>That <paramref name="repository"/>'s memory was not read, in a sentence.</summary>
+    /// <summary>That <paramref name="repository"/>'s memory is not read, in a sentence.</summary>
     public static string Unviewable(string repository) =>
         $"`{repository}`'s memory {CannotView}: its engine gives no read-only view, so nothing of it was read.";
 

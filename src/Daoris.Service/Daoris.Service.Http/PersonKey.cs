@@ -6,19 +6,19 @@ using Daoris.Knowledge;
 namespace Daoris.Knowledge.Http;
 
 /// <summary>
-/// The person key (PERSONDOOR1a, D156 point 1; the person-door design §2.1, §2.3): a random 256-bit value minted for each
+/// The person key: a random 256-bit value minted for each
 /// start of a local host by whoever starts it, handed on the first line of the host's standard input, and presented as
 /// <see cref="Header"/> on the doors that are the person's or the driver's (<see cref="PersonDoors"/>).
 /// </summary>
 /// <remarks>
 /// <para><b>Why the input.</b> The starter's standard input is the one channel no other process is handed: an environment
 /// is copied into every child the host or its starter makes, and on Linux any process of the account reads
-/// <c>/proc/&lt;pid&gt;/environ</c>. The shell already starts the host with its input redirected (LOG2a), so the key
+/// <c>/proc/&lt;pid&gt;/environ</c>. The shell already starts the host with its input redirected, so the key
 /// travels first on it, and <see cref="InputEndStop"/> watches what follows for its end.</para>
 ///
 /// <para><b>Asked, never assumed.</b> Only a host started with <see cref="InputVariable"/> set to <c>1</c> reads its input
-/// for a key. A host handed none keeps today's trust (design §2.1; PERSONDOOR1i makes every host enforce), and its input is
-/// never opened for this. A host that was asked and handed no key, or a line that is not one, does not start: a starter
+/// for a key. A host handed none keeps its trust (design §2.1), and its input is
+/// never opened for this. A host that is asked and handed no key, or a line that is not one, does not start: a starter
 /// that meant to gate the doors and failed must not leave them open by its mistake.</para>
 ///
 /// <para><b>What a key is</b>: 32 bytes written in base64url without padding, 43 characters, the one canonical spelling
@@ -29,7 +29,7 @@ namespace Daoris.Knowledge.Http;
 /// <para><b>Never written.</b> The host keeps the key in this object's memory only: not in a file, an environment, the
 /// machine log or an answer. A shared host reads none (design §6): its gate is minted keys.</para>
 ///
-/// <para><b>A twin</b> (<c>.claude/knowledge/twins.md</c>): the shell that mints and hands the key (PERSONDOOR1g) spells
+/// <para><b>A twin</b> (<c>.claude/knowledge/twins.md</c>): the shell that mints and hands the key spells
 /// <see cref="InputVariable"/>, <see cref="Header"/>, the key's form and the proof again, on purpose, since the artefacts
 /// share no code. <c>PersonKeyTests</c> holds the rows its tests are to match, the proof's vectors among them.</para>
 /// </remarks>
@@ -56,7 +56,7 @@ public sealed class PersonKey
         _text = Encoding.ASCII.GetBytes(text);
     }
 
-    /// <summary>Whether a value of <see cref="InputVariable"/> asks for the key: <c>1</c>, and nothing else, as LOG2a's.</summary>
+    /// <summary>Whether a value of <see cref="InputVariable"/> asks for the key: <c>1</c>, and nothing else.</summary>
     public static bool Asks(string? value) => value == "1";
 
     /// <summary>
@@ -90,7 +90,7 @@ public sealed class PersonKey
         presented is not null && CryptographicOperations.FixedTimeEquals(Encoding.UTF8.GetBytes(presented), _text);
 
     /// <summary>
-    /// Presents this key on a request the host makes of itself, in its own process (ONEWAY1n-i: a request the person confirmed), so its
+    /// Presents this key on a request the host makes of itself, in its own process (a request the person confirmed), so its
     /// gate judges it as it judges the window's. It never leaves the process.
     /// </summary>
     internal void PresentOn(IHeaderDictionary headers) => headers[Header] = Encoding.ASCII.GetString(_text);
@@ -102,7 +102,7 @@ public sealed class PersonKey
     public string Prove(string nonce) => Base64Url.EncodeToString(HMACSHA256.HashData(_secret, Encoding.UTF8.GetBytes(nonce)));
 
     /// <summary>
-    /// The key this start was handed, read once at the start (design §2.1): none and no refusal when
+    /// The key this start is handed, read once at the start (design §2.1): none and no refusal when
     /// <paramref name="asked"/> does not ask, and then <paramref name="input"/> is never called; otherwise the key on the
     /// input's first line, or the sentence the host refuses to start with.
     /// </summary>

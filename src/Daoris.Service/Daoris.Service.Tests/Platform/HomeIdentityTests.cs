@@ -3,7 +3,7 @@ using Daoris.Knowledge;
 namespace Daoris.Service.Tests;
 
 /// <summary>
-/// A home's identity (HOMEID1, the terminal RPC design §3.1): minted once as a new file only, read alike by every path to the
+/// A home's identity: minted once as a new file only, read alike by every path to the
 /// folder, never changed in place, and a file that does not read said and left as it is. The driver's <c>HomeIdentityTests</c>
 /// hold the same rows for its twin.
 /// </summary>

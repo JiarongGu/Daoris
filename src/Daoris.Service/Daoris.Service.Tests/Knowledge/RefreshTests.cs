@@ -3,9 +3,9 @@ using Daoris.Knowledge;
 namespace Daoris.Service.Tests;
 
 /// <summary>
-/// A refresh must retire what the source no longer has. Found on the platform's own Overview: a
-/// repository renamed weeks earlier was still being served with dozens of entries, because refresh
-/// replaced every repository it SAW and said nothing about the ones it did not — and absent
+/// A refresh must retire what the source no longer has. A
+/// repository renamed weeks earlier must not keep being served with dozens of entries because refresh
+/// replaces every repository it SEES and says nothing about the ones it does not — and absent
 /// repositories are exactly where the ghosts live. On the one surface whose job is telling a person
 /// what exists, a ghost is indistinguishable from a live project.
 /// </summary>
@@ -64,11 +64,11 @@ public sealed class RefreshTests
     /// readable by the next refresh, without a restart.
     /// </summary>
     /// <remarks>
-    /// The folder list was enumerated once, when the source was constructed — so `knowledge_refresh`,
-    /// whose whole promise is "re-read every repository from disk", re-read only the repositories that
-    /// existed when the process launched. A project born today was invisible until someone restarted
-    /// the host, and nothing said so: the refresh reported success and a count that looked right.
-    /// Found by the workspace rehearsal (D48), where two repositories are born mid-run.
+    /// The folder list is not enumerated once, when the source is constructed — else `knowledge_refresh`,
+    /// whose whole promise is "re-read every repository from disk", would re-read only the repositories that
+    /// existed when the process launched. A project born today would be invisible until someone restarted
+    /// the host, and nothing would say so: the refresh would report success and a count that looks right.
+    /// Two repositories can be born mid-run.
     /// </remarks>
     [Fact]
     public async Task A_repository_that_appeared_after_startup_is_read_by_the_next_refresh()

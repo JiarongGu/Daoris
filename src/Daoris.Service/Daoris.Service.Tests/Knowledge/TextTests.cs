@@ -3,9 +3,9 @@ using Daoris.Knowledge;
 namespace Daoris.Service.Tests;
 
 /// <summary>
-/// The tokeniser and the CJK segmenter, after the first real index showed every Chinese query
-/// returning the whole corpus (2026-09-23). Two defects hid behind one symptom: the two-character
-/// floor dropped the terms, and beneath it FTS5's <c>unicode61</c> keeps a run of ideographs as one
+/// The tokeniser and the CJK segmenter, against every Chinese query
+/// returning the whole corpus. Two defects hide behind one symptom: the two-character
+/// floor drops the terms, and beneath it the full-text engine's <c>unicode61</c> keeps a run of ideographs as one
 /// token, so even a kept term matched nothing. These hold each half on its own.
 /// </summary>
 public sealed class TextTests
@@ -72,10 +72,10 @@ public sealed class TextTests
     }
 
     /// <summary>
-    /// A word character is a letter or a digit, in any script — the rule FTS5's <c>unicode61</c>
+    /// A word character is a letter or a digit, in any script — the rule the full-text engine's <c>unicode61</c>
     /// applies to the same text — so fullwidth punctuation separates exactly as ASCII punctuation
-    /// does. Before, the separators were a hand-listed ASCII string, and <c>D51：会话</c> tokenised to
-    /// <c>d51：</c>, a term the index never held.
+    /// does. A hand-listed ASCII separator string would tokenise a code word before a fullwidth colon with the colon
+    /// attached, a term the index never holds.
     /// </summary>
     [Fact]
     public void Tokenize_separates_on_fullwidth_punctuation_as_it_does_on_ascii()
@@ -94,10 +94,10 @@ public sealed class TextTests
         foreach (var term in Text.Tokenize("会话")) Assert.Contains(term, body);
     }
 
-    // ── identifiers (ORIENT1f) ───────────────────────────────────────────────────────────────────
+    // ── identifiers ───────────────────────────────────────────────────────────────────
     //
     // `unicode61` keeps `ProbeLock` as one token, as it keeps a run of ideographs: a question in plain
-    // words ("probe lock") matched nothing inside it, and the decision that named the identifier was never
+    // words ("probe lock") must match inside it, and the decision that names the identifier must be
     // found by its words. An identifier is cut into its words beside itself, so it matches both ways.
 
     [Theory]

@@ -1,7 +1,7 @@
 namespace Daoris.Knowledge;
 
 /// <summary>
-/// A line's own channel as the person reads it (COMMS1k, the comms design §4.4 and §7): the messages kept on the origin of a line of work
+/// A line's own channel as the person reads it: the messages kept on the origin of a line of work
 /// that is on no ask held here, a chat's, a quest session's or a teammate's ask's, to everyone on it, to one of its repositories or to one
 /// part, oldest first, each to one part with what it reached in that part's line. It moves no mark: the person has none there, and a
 /// part's own read is <see cref="ChannelParts"/>'.

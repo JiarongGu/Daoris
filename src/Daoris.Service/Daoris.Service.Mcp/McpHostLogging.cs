@@ -4,7 +4,7 @@ using Microsoft.Extensions.Logging;
 namespace Daoris.Knowledge.Mcp;
 
 /// <summary>
-/// Where this host's framework lines go: standard error and the machine log (LOG1, D94), from warnings up.
+/// Where this host's framework lines go: standard error and the machine log, from warnings up.
 /// </summary>
 /// <remarks>
 /// One method, so the host and the tests that run its server (<c>DiscoverProbeTests</c>) log the same way.

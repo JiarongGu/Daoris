@@ -5,7 +5,7 @@ using Daoris.Knowledge;
 namespace Daoris.Service.Tests;
 
 /// <summary>
-/// BRAINSTORM1a3 (D176 points 1, 2 and 8): the local host's brainstorm door writes the request the driver's look takes, and answers
+/// The local host's brainstorm door writes the request the driver's look takes, and answers
 /// show, send, clear and list from the home's records. The files are the contract with the driver's <c>BrainstormFiles</c>, which
 /// shares no code with this desk: both are held, row for row, to one table, the driver suite's <c>fixtures/brainstorm-files.json</c>.
 /// </summary>
@@ -144,7 +144,7 @@ public sealed class BrainstormDeskTests : IDisposable
     }
 
     /// <summary>
-    /// 🔴 Send is the person's press (D176 point 2), as the driver's verb makes it: nothing to send before the look froze a packet;
+    /// 🔴 Send is the person's press, as the driver's verb makes it: nothing to send before the look freezes a packet;
     /// frozen, the send names the frozen digest; sent again it is the same brainstorm, never a second spend.
     /// </summary>
     [Fact]
@@ -175,7 +175,7 @@ public sealed class BrainstormDeskTests : IDisposable
         Assert.Contains("was already sent (running)", desk.Send(id, At).Message);
     }
 
-    /// <summary>Clear removes the records, the packet and the rooms (D176 point 8), never a running brainstorm's.</summary>
+    /// <summary>Clear removes the records, the packet and the rooms, never a running brainstorm's.</summary>
     [Fact]
     public void Clear_takes_the_records_and_the_rooms_and_never_a_running_brainstorm()
     {
@@ -224,7 +224,7 @@ public sealed class BrainstormDeskTests : IDisposable
         Assert.Null(desk.Show("zz000000"));
     }
 
-    /// <summary>BRAINSTORM-RESERVED1: `meetings` holds the meetings' records (AGENTROOM1a), so no door treats it as a brainstorm's id.</summary>
+    /// <summary>`meetings` holds the meetings' records, so no door treats it as a brainstorm's id.</summary>
     [Fact]
     public void The_reserved_id_meetings_is_no_brainstorm_and_clear_leaves_every_meeting_whole()
     {
@@ -270,7 +270,7 @@ public sealed class BrainstormDeskTests : IDisposable
         Assert.True(Directory.Exists(Folder("ab12cd34")));
     }
 
-    /// <summary>ONEWAY1t: the caller's own id names one brainstorm: asked twice the same it is kept, asked in other words it is refused.</summary>
+    /// <summary>The caller's own id names one brainstorm: asked twice the same it is kept, asked in other words it is refused.</summary>
     [Fact]
     public void A_callers_id_makes_the_ask_idempotent_and_other_words_under_it_are_refused()
     {
@@ -293,7 +293,7 @@ public sealed class BrainstormDeskTests : IDisposable
         Assert.Equal(written, File.ReadAllText(Path.Combine(Folder("daily-report"), "request.json")));
     }
 
-    /// <summary>ONEWAY1t: one id shape, the stricter of the two the writers had: a letter or digit, then letters, digits and dashes, at most 32.</summary>
+    /// <summary>One id shape, the stricter of the two the writers have: a letter or digit, then letters, digits and dashes, at most 32.</summary>
     [Fact]
     public void An_id_the_caller_names_is_a_plain_name_of_at_most_32_and_never_the_reserved_one()
     {
@@ -311,7 +311,7 @@ public sealed class BrainstormDeskTests : IDisposable
         Assert.Null(desk.Find("a_b"));
     }
 
-    /// <summary>ONEWAY1t: named sources are repository-relative paths of a named repository, at most twelve, written after the moment.</summary>
+    /// <summary>Named sources are repository-relative paths of a named repository, at most twelve, written after the moment.</summary>
     [Fact]
     public void Sources_are_written_with_the_request_and_refused_where_they_do_not_hold()
     {
@@ -341,7 +341,7 @@ public sealed class BrainstormDeskTests : IDisposable
         Assert.Equal(BrainstormRefusal.None, named.Refusal);
     }
 
-    /// <summary>ONEWAY1t: the person's stop is a file of its own the driver looks for; an ended brainstorm has nothing to stop.</summary>
+    /// <summary>The person's stop is a file of its own the driver looks for; an ended brainstorm has nothing to stop.</summary>
     [Fact]
     public void Stop_writes_its_file_unless_the_brainstorm_ended_or_is_not_there()
     {
@@ -364,7 +364,7 @@ public sealed class BrainstormDeskTests : IDisposable
         Assert.False(File.Exists(Path.Combine(Folder(id), "stop.json")));
     }
 
-    /// <summary>ONEWAY1t, 🔴 the twin: the stop and the request's sources are held to the same table the driver's reader reads.</summary>
+    /// <summary>🔴 The twin: the stop and the request's sources are held to the same table the driver's reader reads.</summary>
     [Fact]
     public void The_files_table_names_the_stop_and_the_requests_sources_as_this_desk_writes_them()
     {

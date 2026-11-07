@@ -3,7 +3,7 @@ using Daoris.Knowledge;
 namespace Daoris.Service.Tests;
 
 /// <summary>
-/// The <c>setup</c> kind's writer (LAYOUT8, D170 point 1; WORKFLOWCLEAN1 1f): a place's set-up of registered repositories, by the
+/// The <c>setup</c> kind's writer: a place's set-up of registered repositories, by the
 /// registry's names, whose adoption part is <c>daoris place … --adoption</c>; its one door is <c>place</c>.
 /// </summary>
 public sealed class HelpSetupProposalTests : HelpProposalBoxFixture
@@ -17,7 +17,7 @@ public sealed class HelpSetupProposalTests : HelpProposalBoxFixture
         Assert.Equal(
             ("setup", "place", "atlas"),
             (written.GetProperty("kind").GetString(), written.GetProperty("door").GetString(), written.GetProperty("target").GetString()));
-        // The common fields a kind without them writes null, so the workspace's door WSSETUP7 adds has its field already.
+        // The common fields a kind without them writes null, so a workspace's door has its field already.
         Assert.Equal(System.Text.Json.JsonValueKind.Null, written.GetProperty("workspace").ValueKind);
         Assert.Equal(System.Text.Json.JsonValueKind.Null, written.GetProperty("value").ValueKind);
         Assert.Equal("the person asked to include it in Daoris", written.GetProperty("why").GetString());
@@ -26,7 +26,7 @@ public sealed class HelpSetupProposalTests : HelpProposalBoxFixture
         Assert.Contains($"Proposed `#{id}`", message);
     }
 
-    /// <summary>AGENTSPLACE1k: with a place ask the door is <c>place</c>, the ask in the file's own <c>place</c>, the repository the first of its repositories.</summary>
+    /// <summary>With a place ask the door is <c>place</c>, the ask in the file's own <c>place</c>, the repository the first of its repositories.</summary>
     [Fact]
     public void A_place_ask_is_written_as_the_place_door_with_its_repositories_and_parts()
     {
@@ -48,7 +48,7 @@ public sealed class HelpSetupProposalTests : HelpProposalBoxFixture
         Assert.Contains($"Proposed `#{id}`", message);
     }
 
-    /// <summary>WORKFLOWCLEAN1 1f: the repository-alone door is gone, so a set-up that names no delivery is refused and nothing is written.</summary>
+    /// <summary>A set-up that names no delivery is refused and nothing is written.</summary>
     [Fact]
     public void A_setup_without_a_place_ask_is_refused_naming_the_preset_and_nothing_is_written()
     {

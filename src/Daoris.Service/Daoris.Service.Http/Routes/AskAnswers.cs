@@ -5,7 +5,7 @@ namespace Daoris.Knowledge.Http.Routes;
 
 /// <summary>
 /// An ask as every door answers it: the desk's outcome as the ask and its sentence, or its refusal in the desk's words, whole,
-/// including a named receiver the exchange refused, whose message already says the ask was kept and where it was proposed instead.
+/// including a named receiver the exchange refused, whose message already says the ask is kept and where it is proposed instead.
 /// </summary>
 public sealed class AskAnswers(HostWiring host)
 {

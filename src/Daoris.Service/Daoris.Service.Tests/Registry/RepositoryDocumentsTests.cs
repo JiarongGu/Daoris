@@ -3,8 +3,7 @@ using Daoris.Knowledge;
 namespace Daoris.Service.Tests;
 
 /// <summary>
-/// The service reads the records a repository declares (DOC5; D122,
-/// `docs/2026-10-01-development-documents-design.md` §2.7 and §5): the declared decisions, fixes and
+/// The service reads the records a repository declares: the declared decisions, fixes and
 /// archive before the scanner's own candidates, and the router as a document.
 /// </summary>
 /// <remarks>
@@ -49,8 +48,7 @@ public sealed class RepositoryDocumentsTests : IDisposable
     // ── the declared logs come before the candidates ───────────────────────────────────────────────
 
     /// <summary>
-    /// The row's proof: a decisions log at a path no candidate names is found. Before DOC5 the scanner
-    /// knew only its candidate names, and a log anywhere else was invisible to every search.
+    /// The row's proof: a decisions log at a path no candidate names is found, not invisible to every search.
     /// </summary>
     [Fact]
     public void A_declared_decisions_log_no_candidate_names_is_found_once()
@@ -118,9 +116,9 @@ public sealed class RepositoryDocumentsTests : IDisposable
     }
 
     /// <summary>
-    /// A declared path may be a folder (DOC3): a folder of decision records is the decisions role (§2.1),
+    /// A declared path may be a folder: a folder of decision records is the decisions role,
     /// one record per file, below it too, each read whole since its headings are the record's own parts,
-    /// and titled by its first (DOC8c).
+    /// and titled by its first.
     /// </summary>
     [Fact]
     public void A_declared_folder_is_one_record_per_file()
@@ -141,7 +139,7 @@ public sealed class RepositoryDocumentsTests : IDisposable
 
     /// <summary>
     /// One file is one place in the index. Declared for two roles, it would be read twice under the same
-    /// ids, and the store's primary key fails the whole refresh on the second (REV3).
+    /// ids, and the store's primary key fails the whole refresh on the second.
     /// </summary>
     [Fact]
     public void A_file_declared_for_two_roles_is_read_once()
@@ -207,8 +205,8 @@ public sealed class RepositoryDocumentsTests : IDisposable
 
     /// <summary>
     /// The row's third proof. A declaration the CLI refuses (exit 2, so `check` fails and `sync` refuses)
-    /// is read as undeclared, and the scanner reads its candidates exactly as it did before DOC5. It never
-    /// throws, never reads the refused path, and never guesses which of two declarations was meant.
+    /// is read as undeclared, and the scanner reads its candidates exactly as it does with no declaration. It never
+    /// throws, never reads the refused path, and never guesses which of two declarations is meant.
     /// </summary>
     [Theory]
     [InlineData("a list", """{"source":"s","packs":[],"documents":["records/choices.md"]}""")]
@@ -263,15 +261,15 @@ public sealed class RepositoryDocumentsTests : IDisposable
     // ── the twin table ─────────────────────────────────────────────────────────────────────────────
 
     /// <summary>
-    /// The roles are the CLI's, role for role and in its order (ORIENT2e2): <see cref="RepositoryDocuments.Roles"/>
+    /// The roles are the CLI's, role for role and in its order: <see cref="RepositoryDocuments.Roles"/>
     /// is a copy of <c>documents.ts</c>' <c>ROLES</c>, read here from the CLI's own file, so a role the CLI gains
-    /// fails this until the copy gains it. ORIENT2b found the copy a role short, which reads as undeclared. A merge
+    /// fails this until the copy gains it. A merge
     /// that changes only that file runs this suite: the merge tool's lane table sends it here.
     /// </summary>
     [Fact]
     public void The_roles_are_the_CLI_s_role_for_role_in_its_order()
     {
-        // By its name, in whichever module folder of the CLI's sources it sits (STRUCT5d, D166).
+        // By its name, in whichever module folder of the CLI's sources it sits.
         var source = File.ReadAllText(Directory.EnumerateFiles(Path.Combine(WorkspaceRoot(), "src", "Daoris.Cli", "src"), "documents.ts", SearchOption.AllDirectories).Single());
         var block = source[source.IndexOf("export const ROLES", StringComparison.Ordinal)..];
         block = block[..block.IndexOf("];", StringComparison.Ordinal)];
@@ -336,7 +334,7 @@ public sealed class RepositoryDocumentsTests : IDisposable
     [InlineData("the repository's root", """{"decisions":"./"}""", null, false, "")]
     [InlineData("inside the doctrine target", """{"glossary":".claude/knowledge/glossary.md"}""", null, false, "")]
     [InlineData("inside the mirror root", """{"fixes":".claude/skills/fixes.md"}""", null, true, "")]
-    // The CLI refuses the whole manifest; this side cannot know which decisions was meant, and reads the rest.
+    // The CLI refuses the whole manifest; this side cannot know which decisions to read, and reads the rest.
     [InlineData(
         "a role declared twice, which JSON would keep the last of silently", null,
         """{ "source": "s", "packs": [], "documents": { "decisions": "a.md", "backlog": "b.md", "decisions": "c.md" } }""",

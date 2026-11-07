@@ -3,7 +3,7 @@ using System.Text.Json;
 namespace Daoris.Knowledge;
 
 /// <summary>
-/// A done: its taker's, or a closure graph's close (FABRIC-CLOSE1a, §E5), which names every quest it closes on its submission and is
+/// A done: its taker's, or a closure graph's close, which names every quest it closes on its submission and is
 /// kept once under its key. A done that loses a rebase takes the follow-ups only it published with it.
 /// </summary>
 [QuestOperation("done", QuestOperationPhase.Log)]
@@ -39,25 +39,25 @@ internal sealed class QuestCloseOperation : IQuestOperation
 
     /// <summary>
     /// What this machine did on a follow-up only the lost close published goes with it: a take of it kept as a conflict naming the close,
-    /// so its session is stopped (FABRIC-CLOSE1e2).
+    /// so its session is stopped.
     /// </summary>
     public Task<IReadOnlyList<QuestOperation>> LostAsync(
         QuestTx tx, QuestOperation operation, Quest? standing, bool takeLost, QuestRebaseLosses losses) =>
         tx.ForgetFollowUpsAsync(operation.Quest, takeLost, "close");
 
     /// <summary>
-    /// The graph's close (FABRIC-CLOSE1a, §E5): every named quest Done, each on its named submission, in one write. Each quest is judged
+    /// The graph's close: every named quest Done, each on its named submission, in one write. Each quest is judged
     /// on its history replayed inside the write: bound to a closure graph, held by this machine's take, its named submission the current
     /// one, nothing holding it, and its chain's next step published from it. Any failed check writes nothing, and answers which check on
     /// which quest. Only then is Done appended to each, in the order named, with its submission's note and answers and the close's key
     /// and token as provenance.
     /// </summary>
     /// <remarks>
-    /// The key is what makes a close once (§E5 step 4). Each outcome is kept under its key, a refusal as much as a close, beside the
-    /// token and the submissions named, and never as an operation (FABRIC-CLOSE1e). The same close sent again after a timeout or a lost
+    /// The key is what makes a close once. Each outcome is kept under its key, a refusal as much as a close, beside the
+    /// token and the submissions named, and never as an operation. The same close sent again after a timeout or a lost
     /// answer is answered with that first outcome, writing nothing, though what refused it is gone since; anything else sent with that
     /// key is not that close, and is refused.
-    /// <para>The close holds its own scope before any quest's state, so no driver's filter is its only guard (FABRIC-CLOSE1v): every
+    /// <para>The close holds its own scope before any quest's state, so no driver's filter is its only guard: every
     /// quest named asks <paramref name="at"/>'s repository, is <paramref name="at"/> or one it grew from, and is bound to its graph; else
     /// the close is refused on that quest, kept under its key, and nothing is written.</para>
     /// </remarks>
@@ -169,15 +169,15 @@ internal sealed class QuestCloseOperation : IQuestOperation
     }
 
     /// <summary>
-    /// What became of a close sent with <paramref name="close"/>'s key (FABRIC-CLOSE1u; §E5 step 4), answered from what is kept under the
-    /// key, never by judging or writing a Done: the first outcome where the key was taken (a close, a refusal, or
+    /// What became of a close sent with <paramref name="close"/>'s key, answered from what is kept under the
+    /// key, never by judging or writing a Done: the first outcome where the key is taken (a close, a refusal, or
     /// <see cref="QuestCloseRefusal.KeyReused"/> where this is not that close), replayed as a send of it again would be. A key never taken
     /// is <see cref="QuestCloseRefusal.Withdrawn"/>, kept under it in the same write with the token and submissions named, so the close it
     /// names never runs: a send of it still on its way is answered that refusal.
     /// </summary>
     /// <remarks>
     /// The driver asks this of every close whose answer it does not hold, before anything else, and never sends that close again: one
-    /// never delivered was judged on evidence that may have moved since, and a key's idempotency protects an outcome already kept, not a
+    /// never delivered, judged on evidence that may have moved since, and a key's idempotency protects an outcome already kept, not a
     /// key never used. Its close is judged again on what is there now, under a new key.
     /// </remarks>
     internal async Task<QuestClosing> CloseOutcomeAsync(
@@ -201,7 +201,7 @@ internal sealed class QuestCloseOperation : IQuestOperation
     }
 
     /// <summary>
-    /// The ids of <paramref name="quest"/> and every quest it grew from (FABRIC-CLOSE1v), walked through its parents in every repository as
+    /// The ids of <paramref name="quest"/> and every quest it grew from, walked through its parents in every repository as
     /// the driver's <c>QuestClosing.Lineage</c> walks the quests this store lists: the chain a close at it may name. A parent this store does
     /// not hold ends the walk, so what lies above it is not shown to be of the chain; a parent seen twice, which no chain makes, ends it too.
     /// </summary>
@@ -218,7 +218,7 @@ internal sealed class QuestCloseOperation : IQuestOperation
     }
 
     /// <summary>
-    /// What a close named, as its record compares it (FABRIC-CLOSE1e): each quest with its submission, in the quests' order, so the same
+    /// What a close named, as its record compares it: each quest with its submission, in the quests' order, so the same
     /// close sent again names the same whatever order it lists them in.
     /// </summary>
     private static string Invocation(IReadOnlyList<(string Id, QuestOperationRef Submission)> named) =>
@@ -240,7 +240,7 @@ internal sealed class QuestCloseOperation : IQuestOperation
     /// <summary>A close's first outcome, as kept under its key: its token, what it named, how it ended and on which quest.</summary>
     private sealed record KeptClose(string Token, string Named, QuestCloseRefusal Refusal, string? On);
 
-    /// <summary>The outcome kept under <paramref name="key"/>, or null where no close was sent with it.</summary>
+    /// <summary>The outcome kept under <paramref name="key"/>, or null where no close is sent with it.</summary>
     private static async Task<KeptClose?> CloseKeptAsync(QuestTx tx, string key)
     {
         await using var command = tx.Command();
@@ -254,7 +254,7 @@ internal sealed class QuestCloseOperation : IQuestOperation
         return new KeptClose(reader.GetString(0), reader.GetString(1), refusal, reader.IsDBNull(3) ? null : reader.GetString(3));
     }
 
-    /// <summary>Keeps a close's outcome under its key (FABRIC-CLOSE1e): the store's own, never pushed or served.</summary>
+    /// <summary>Keeps a close's outcome under its key: the store's own, never pushed or served.</summary>
     private static async Task KeepCloseAsync(
         QuestTx tx, QuestClose close, string invocation, QuestCloseRefusal refusal, string? on, DateTimeOffset now)
     {

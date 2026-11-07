@@ -4,7 +4,7 @@ using Microsoft.Data.Sqlite;
 namespace Daoris.Service.Tests;
 
 /// <summary>
-/// SESSONE2a (D167 points 6 to 8; the co-working design §2.1, §2.2, §2.5 and §2.6): an ask's channel is service records, one row per
+/// An ask's channel is service records, one row per
 /// message, with a read mark per entry; Daoris's lines are read from the ask's quests and never stored; a refusal is a code.
 /// </summary>
 public sealed class ChannelTests : IAsyncLifetime
@@ -151,7 +151,7 @@ public sealed class ChannelTests : IAsyncLifetime
         Assert.Equal(ChannelRefusal.None, (await _channel.PostAsPersonAsync(ask.Id, "for all", "everyone", null, Now.AddMinutes(2))).Refusal);
     }
 
-    /// <summary>The channel and the go-ahead agree on which ask a session is on (COMMS1c): a sibling-published quest's session posts and asks on the same one.</summary>
+    /// <summary>The channel and the go-ahead agree on which ask a session is on: a sibling-published quest's session posts and asks on the same one.</summary>
     [Fact]
     public async Task The_channel_and_the_go_ahead_name_the_same_ask_for_a_sibling_published_session()
     {
@@ -200,9 +200,9 @@ public sealed class ChannelTests : IAsyncLifetime
     }
 
     /// <summary>
-    /// 🔴 COWORK1d (the message-urgency design §9, trap 10): every message kept from now says its level. A part's post is urgent on
+    /// 🔴 Every message kept says its level. A part's post is urgent on
     /// its word for at most <see cref="ChannelBounds.UrgentPerPart"/> of its posts, judged in the insert's own statement, so its
-    /// fourth urgent post is kept ordinary; an ordinary post is an explicit false, never absent, which is a message from before.
+    /// fourth urgent post is kept ordinary; an ordinary post is an explicit false, never absent.
     /// </summary>
     [Fact]
     public async Task A_parts_fourth_urgent_post_is_kept_ordinary_and_every_post_says_its_level()
@@ -239,7 +239,7 @@ public sealed class ChannelTests : IAsyncLifetime
         Assert.Null(Assert.Single(await _store.OfAsync("elsewhere1")).Urgent);
     }
 
-    // ——— COWORK1d: the entry's acknowledgments, by message id (the message-urgency design §6, §9).
+    // ——— The entry's acknowledgments, by message id.
 
     /// <summary>
     /// 🔴 Trap 21: one part of an entry claims a message, in one statement; another part of the same entry takes nothing while the
@@ -262,7 +262,7 @@ public sealed class ChannelTests : IAsyncLifetime
 
     /// <summary>
     /// 🔴 Trap 22: a message a start's packet handed partly is handed again to a new part, never to the part that had it; a receipt
-    /// never moves back, so a late <c>sent</c> leaves <c>taken</c> as it was.
+    /// never moves back, so a late <c>sent</c> leaves <c>taken</c> unchanged.
     /// </summary>
     [Fact]
     public async Task A_message_handed_partly_goes_again_to_a_new_part_and_a_receipt_never_moves_back()
@@ -418,14 +418,14 @@ public sealed class ChannelTests : IAsyncLifetime
         // A `since` reads from that moment, whatever the mark says.
         Assert.Equal([second.Id], (await _channel.ReadAsSessionAsync(session.Id, Now.AddMinutes(2)))!.Read!.Messages.Select(m => m.Id));
 
-        // The person's read counts without moving a mark (the session's message; NOTIFY2g: never their own post nor the two quests'
+        // The person's read counts without moving a mark (the session's message; never their own post nor the two quests'
         // lines), and moves it only when asked to.
         Assert.Equal(1, (await _channel.ReadAsync(ask.Id, ChannelDesk.PersonEntry, null, moveMark: false))!.Unread);
         Assert.Equal(1, (await _channel.ReadAsync(ask.Id, ChannelDesk.PersonEntry, null, moveMark: true))!.Unread);
         Assert.Equal(0, (await _channel.ReadAsync(ask.Id, ChannelDesk.PersonEntry, null, moveMark: false))!.Unread);
     }
 
-    // ——— NOTIFY2g (D196 point 6; the notification design §2.4): the person's count, and their mark on a teammate's ask.
+    // ——— The person's count, and their mark on a teammate's ask.
 
     /// <summary>A message a teammate's machine sent: <paramref name="session"/> null for that person's own post.</summary>
     private static ChannelMessage Teammates(string id, string ask, DateTimeOffset at, string? session = "b@two/s9") => new(

@@ -26,7 +26,7 @@ internal sealed class AskStandings(AskStore asks, QuestExchange exchange)
         return Stood(ask, asked, await exchange.DeletableAsync(asked, ct).ConfigureAwait(false));
     }
 
-    /// <summary>An ask as a reader is given it: as it stands, and whether it may be deleted (D95).</summary>
+    /// <summary>An ask as a reader is given it: as it stands, and whether it may be deleted.</summary>
     private static Ask Stood(Ask ask, IReadOnlyList<Quest> asked, IReadOnlySet<string> deletable) =>
         Standing(ask, asked) with { Deletable = asked.All(quest => deletable.Contains(quest.Id)) };
 
@@ -34,15 +34,15 @@ internal sealed class AskStandings(AskStore asks, QuestExchange exchange)
     /// What an ask is, read against the quests asked by it: a published ask whose every quest
     /// has closed is <see cref="AskState.Done"/>. Derived on every read and never stored, because the
     /// quests can move on another machine, and the sync that brings the move here knows nothing of
-    /// asks (D68 §2). One judgement, for every reader of an ask's state.
+    /// asks. One judgement, for every reader of an ask's state.
     /// </summary>
     /// <remarks>
-    /// A quest deleted (D95), here or on another machine, leaves the record as if the ask had never
+    /// A quest deleted, here or on another machine, leaves the record as if the ask had never
     /// become it; a published ask left with none is a proposal again, for a person to publish or close —
-    /// unless the person NAMED its receiver (<see cref="AskDesk.ByName"/>). Its routing was their
+    /// unless the person NAMED its receiver (<see cref="AskDesk.ByName"/>). Its routing is their
     /// word, so the proposal of the declarations tier is not a route for it: it stands with no quest and
     /// says so in its note, and no intake serves it — only the person publishes it again, or closes it.
-    /// A quest closed done departing from what the person required has not closed for the ask (D133 §4):
+    /// A quest closed done departing from what the person required has not closed for the ask:
     /// it waits for their yes, and an ask reading done would say they had agreed.
     /// </remarks>
     /// <param name="asked">Every quest asked by this ask — chain steps included, closed ones included.</param>
@@ -66,7 +66,7 @@ internal sealed class AskStandings(AskStore asks, QuestExchange exchange)
     }
 
     /// <summary>
-    /// What stands of an ask whose last quest was deleted, in a sentence: said by the ask's note where the
+    /// What stands of an ask whose last quest is deleted, in a sentence: said by the ask's note where the
     /// person named its receiver, and by the answer to the delete of its quest for every tier, so no door is silent about it.
     /// </summary>
     public static string NoQuestLeft(Ask ask) => ask switch

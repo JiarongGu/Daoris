@@ -6,14 +6,14 @@ using static Daoris.Knowledge.Mcp.WorkspaceScope;
 namespace Daoris.Knowledge.Mcp;
 
 /// <summary>
-/// The tools that read the index (PART10a): <c>knowledge_search</c>, <c>knowledge_get</c>, <c>knowledge_repositories</c>,
+/// The tools that read the index: <c>knowledge_search</c>, <c>knowledge_get</c>, <c>knowledge_repositories</c>,
 /// <c>knowledge_convergence</c>, <c>registry</c> and <c>knowledge_refresh</c>, over the service and the workspace scope.
 /// How every tool's words are written is said on <see cref="KnowledgeServer"/>.
 /// </summary>
 [McpServerToolType]
 public sealed class KnowledgeSearchTools(KnowledgeService service, WorkspaceScope circle)
 {
-    /// <summary>The sentence for a kind nobody has, or null when every name is one (REV3).</summary>
+    /// <summary>The sentence for a kind nobody has, or null when every name is one.</summary>
     private static string? UnknownKinds(string? kinds)
     {
         try
@@ -28,7 +28,7 @@ public sealed class KnowledgeSearchTools(KnowledgeService service, WorkspaceScop
     }
 
     /// <summary>
-    /// What an index tool reads, or the index's refusal as the tool's answer (KSCHEMA1): a newer Daoris wrote the index,
+    /// What an index tool reads, or the index's refusal as the tool's answer: a newer Daoris wrote the index,
     /// and the agent is told so in its sentence rather than handed the protocol's bare error.
     /// </summary>
     private static async Task<(T? Read, string? Refused)> FromIndexAsync<T>(Task<T> reading)
@@ -80,7 +80,7 @@ public sealed class KnowledgeSearchTools(KnowledgeService service, WorkspaceScop
         var answer = answered!;
         var hits = answer.Hits;
 
-        // 🔴 Nothing answering is not nothing matching (TIER1): an agent told "no matches" by an index
+        // 🔴 Nothing answering is not nothing matching: an agent told "no matches" by an index
         // nobody could read concludes the family never learned it.
         if (answer.Tier == "none")
         {
@@ -104,7 +104,7 @@ public sealed class KnowledgeSearchTools(KnowledgeService service, WorkspaceScop
         text.AppendLine($"{hits.Count} result(s) for \"{query}\"{Scoped(scope)}:\n");
         foreach (var hit in hits)
         {
-            // Its file and lines (ORIENT2e), so the read that follows is a range and not the file; the excerpt
+            // Its file and lines, so the read that follows is a range and not the file; the excerpt
             // says the line it starts on.
             var place = hit.Entry.Lines is { } lines ? $"{hit.Entry.RelativePath}:{lines}" : hit.Entry.RelativePath;
             text.AppendLine($"### {hit.Entry.Title}");
@@ -124,9 +124,9 @@ public sealed class KnowledgeSearchTools(KnowledgeService service, WorkspaceScop
             text.AppendLine($"More index entries matched than the {KnowledgeService.IndexEntriesUnasked} named here: "
                           + "search with kinds `index` for where things are.");
         }
-        // Which tier ANSWERED, on EVERY result and not only on an empty one (D24) — the answer's, not
-        // the configuration's (TIER1). A caller who gets results has no way to know the semantic half
-        // was absent, and will read "these are the matches" as complete rather than as
+        // Which tier ANSWERED, on EVERY result and not only on an empty one — the answer's, not
+        // the configuration's. A caller who gets results has no way to know the semantic half
+        // is absent, and will read "these are the matches" as complete rather than as
         // complete-for-word-overlap.
         if (!answer.Semantic)
         {
@@ -137,7 +137,7 @@ public sealed class KnowledgeSearchTools(KnowledgeService service, WorkspaceScop
         return text.ToString();
     }
 
-    /// <summary>Why a configured half did not answer, when one did not — said, never folded away (TIER1).</summary>
+    /// <summary>Why a configured half did not answer, when one did not — said, never folded away.</summary>
     private string DidNotAnswer(SearchAnswer answer) =>
         service.SemanticEnabled && answer.Failure is { Length: > 0 } failure ? $" ({failure}.)" : "";
 
@@ -154,15 +154,15 @@ public sealed class KnowledgeSearchTools(KnowledgeService service, WorkspaceScop
         var (entry, refusedIndex) = await FromIndexAsync(service.FindAsync(id, ct)).ConfigureAwait(false);
         if (refusedIndex is not null) return refusedIndex;
         if (entry is null) return $"No entry with id `{id}`. Ids come from `knowledge_search`.";
-        // ASKSCOPE1c: an id is no argument past the workspace a conversation is bound to.
+        // An id is no argument past the workspace a conversation is bound to.
         if (circle.Outside(entry) is { } outside) return outside;
 
-        // The same line a hit carries (KNOWFRESH1a-ii), so what a search said of its standing holds when the entry is read.
+        // The same line a hit carries, so what a search said of its standing holds when the entry is read.
         var standing = (await service.StandingsAsync([entry], ct).ConfigureAwait(false))[entry.Id].Says;
         var whole = entry.Lines is { } span ? $"{entry.RelativePath}:{span}" : entry.RelativePath;
         if (string.IsNullOrWhiteSpace(lines)) return Read(entry, whole, entry.Body);
 
-        // A range is the file's lines as a hit names them (ORIENT2e), read from the entry indexed: refused when it
+        // A range is the file's lines as a hit names them, read from the entry indexed: refused when it
         // is no range, said when it misses the entry, and the whole entry when it names no lines to cut at.
         if (LineSpan.Parse(lines) is not { } range)
         {
@@ -212,7 +212,7 @@ public sealed class KnowledgeSearchTools(KnowledgeService service, WorkspaceScop
         text.Append("| Repository | Workspace | Entries | Local | Canonical | Read |\n|---|---|---:|---:|---:|---|\n");
         foreach (var row in summary)
         {
-            // When this host read the checkout and the commit it was at (KNOWCURRENT1); blank for a fed repository.
+            // When this host read the checkout and the commit it stands at; blank for a fed repository.
             var read = row.IndexedAt is { } at
                 ? $"{at.UtcDateTime:yyyy-MM-dd HH:mm}Z{(row.IndexedCommit is { Length: > 0 } commit ? $" `{Clipped.ShortCommit(commit, 8)}`" : "")}"
                 : "";
@@ -323,7 +323,7 @@ public sealed class KnowledgeSearchTools(KnowledgeService service, WorkspaceScop
             if (entry.DependsOn.Count > 0) text.AppendLine($"- **uses:** {string.Join(", ", entry.DependsOn)}");
             if (entry.DeclaredLanes.Count > 0)
             {
-                // Its lanes (D115 §2.2): what an asker may address inside it, each by its own address.
+                // Its lanes: what an asker may address inside it, each by its own address.
                 text.AppendLine("- **lanes** — a quest to one is work for that lane's session:");
                 foreach (var lane in entry.DeclaredLanes)
                 {
@@ -334,7 +334,7 @@ public sealed class KnowledgeSearchTools(KnowledgeService service, WorkspaceScop
             }
             else
             {
-                // None: said, with what would give it some, since its own sessions read this row too (SELFASK1).
+                // None: said, with what would give it some, since its own sessions read this row too.
                 text.AppendLine($"- **lanes:** none. {QuestExchange.NoLanesWay(entry.Repository)}");
             }
 
@@ -343,7 +343,7 @@ public sealed class KnowledgeSearchTools(KnowledgeService service, WorkspaceScop
             text.AppendLine();
         }
 
-        // Registered is addressable; adopted is disciplined (D70). One that registered here without a
+        // Registered is addressable; adopted is disciplined. One that registered here without a
         // manifest can be asked, and only a session the driver starts over the protocol door answers.
         var undisciplined = registered.Where(r => !r.Adopted && r.Addressable).Select(r => r.Repository).ToList();
         if (undisciplined.Count > 0)
@@ -373,7 +373,7 @@ public sealed class KnowledgeSearchTools(KnowledgeService service, WorkspaceScop
         if (refusedIndex is not null) return refusedIndex;
         var report = refreshed!;
         var withheld = report.Withheld > 0 ? $", {report.Withheld} withheld by policy" : "";
-        // Named, never silently skipped (D48 §3): a registered checkout that has moved contributes
+        // Named, never silently skipped: a registered checkout that has moved contributes
         // nothing while the count still looks healthy — the ghost failure from the other direction.
         var absent = report.Absent.Count > 0
             ? $"\n⚠ Registered but not on disk: {string.Join(", ", report.Absent)} — moved, deleted, or "
@@ -385,7 +385,7 @@ public sealed class KnowledgeSearchTools(KnowledgeService service, WorkspaceScop
                 ? "Lexical and semantic recall are both active."
                 : "Lexical recall only — set DAORIS_EMBED_MODEL to enable semantic search, which is "
                   + "what finds two repositories that reached the same conclusion in different words.";
-        // Said, never assumed (SEM3, D123): an entry longer than the window is several vectors, and the
+        // Said, never assumed: an entry longer than the window is several vectors, and the
         // window is the deployment's statement of what its embedder takes.
         var embedded = report.Embedded is { } made
             ? $"\nEmbedded {made.Entries} entries as {made.Pieces} vectors of at most {made.Window} characters "
@@ -397,7 +397,7 @@ public sealed class KnowledgeSearchTools(KnowledgeService service, WorkspaceScop
                   var split => $"{split} longer than that were split, each part a vector of its own.",
               })
             : "";
-        // How current it is (KNOWCURRENT1): each checkout's commit as read, and when.
+        // How current it is: each checkout's commit as read, and when.
         var read = report.Read.Count > 0
             ? "\nRead: " + string.Join("; ", report.Read.Select(r =>
                 $"{r.Repository} {(r.ShortCommit is { } commit ? $"at `{commit}`" : "(no commit)")}, {r.ReadAt.UtcDateTime:yyyy-MM-dd HH:mm}Z"))

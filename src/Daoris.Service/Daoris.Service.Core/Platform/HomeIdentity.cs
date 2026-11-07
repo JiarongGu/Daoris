@@ -5,7 +5,7 @@ using System.Text.Json;
 namespace Daoris.Knowledge;
 
 /// <summary>
-/// A home's identity (HOMEID1, D171, the terminal RPC design §3.1): <c>&lt;home&gt;/home.json</c>,
+/// A home's identity: <c>&lt;home&gt;/home.json</c>,
 /// <c>{ "id": "&lt;32 lower-case hex&gt;", "minted": "&lt;ISO 8601&gt;" }</c>, which a local host answers at <c>/api/status</c>
 /// so a terminal that found an address takes it only where it is this home's service. Every path to the folder reads it alike.
 /// </summary>
@@ -24,7 +24,7 @@ public static class HomeIdentity
 
     private static readonly UTF8Encoding Utf8 = new(encoderShouldEmitUTF8Identifier: false);
 
-    /// <summary>Where a home's identity is: the home's <c>home-id</c> entry (D172, HOMELAYOUT2).</summary>
+    /// <summary>Where a home's identity is: the home's <c>home-id</c> entry.</summary>
     public static string PathIn(string home) => DaorisHome.Entry(home, HomeEntry.HomeId);
 
     /// <summary>Whether a value is an id as this file holds one: 32 lower-case hex characters.</summary>
@@ -97,7 +97,7 @@ public static class HomeIdentity
         var beside = $"{path}.{Guid.NewGuid():N}.writing";
         try
         {
-            // The home and the folder its id is in (`data/` since HOMELAYOUT3), which a new home has not made yet.
+            // The home and the folder its id is in (`data/`), which a new home has not made yet.
             Directory.CreateDirectory(Path.GetDirectoryName(path)!);
             System.IO.File.WriteAllText(beside, Minted(), Utf8);
             System.IO.File.Move(beside, path, overwrite: false);

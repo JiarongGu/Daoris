@@ -4,9 +4,9 @@ using Microsoft.Data.Sqlite;
 namespace Daoris.Service.Tests;
 
 /// <summary>
-/// The one-session-per-tree lock holds between hosts, not only within one (REV3 service F11). Every
-/// host on a machine opens the same file — the desktop's, and a connector per session — and the lock
-/// was a read followed by a write, so two opens at once could both read "free" and both write.
+/// The one-session-per-tree lock holds between hosts, not only within one. Every
+/// host on a machine opens the same file — the desktop's, and a connector per session — and a lock
+/// that is a read followed by a write lets two opens at once both read "free" and both write.
 /// </summary>
 public sealed class SessionLockAcrossHostsTests : IAsyncLifetime
 {
@@ -20,7 +20,7 @@ public sealed class SessionLockAcrossHostsTests : IAsyncLifetime
 
     public async Task InitializeAsync()
     {
-        // Unpooled, so each closes its file when it goes: nothing here clears a pool another class is opening from (FLAKE3).
+        // Unpooled, so each closes its file when it goes: nothing here clears a pool another class is opening from.
         _mine = new SqliteConnection($"Data Source={_file};Pooling=False");
         await _mine.OpenAsync();
         _theirs = new SqliteConnection($"Data Source={_file};Pooling=False");

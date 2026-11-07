@@ -8,7 +8,7 @@ namespace Daoris.Knowledge.Mcp;
 
 /// <summary>
 /// The connector's server as a session meets it: its tool classes, as the one list the host registers and the tests read,
-/// and what it says before the first search (PART10a).
+/// and what it says before the first search.
 /// </summary>
 /// <remarks>
 /// <para>Each tool class takes only the services its tools use, and the SDK builds it from the host's services for each
@@ -32,24 +32,24 @@ public static class KnowledgeServer
         typeof(RuleProposalTools),
         typeof(ReviewTools),
         typeof(GoAheadTools),
-        // A driven session's question to the person before it parks (PARKVIEW1), drawn at its conversation's end with its answers as presses.
+        // A driven session's question to the person before it parks, drawn at its conversation's end with its answers as presses.
         typeof(QuestionTools),
         typeof(HelperTools),
-        // A partner's answer for its piece (COAGENT1b), refused to every session that writes no piece.
+        // A partner's answer for its piece, refused to every session that writes no piece.
         typeof(PartnerTools),
-        // A working session's ask to go on with another agent (MIXAGENT1c), settled by the person's hand-over rule.
+        // A working session's ask to go on with another agent, settled by the person's hand-over rule.
         typeof(HandOverTools),
-        // A session's line read back from this machine's event files (SESSCTX1f): what its brief's bound left out, a page at a time.
+        // A session's line read back from this machine's event files: what its brief's bound left out, a page at a time.
         typeof(LineTools),
-        // One quest's handback read whole (HANDBACK1), by its id or its session's, in any state, from the session's own workspace.
+        // One quest's handback read whole, by its id or its session's, in any state, from the session's own workspace.
         typeof(HandbackTools),
-        // A repository's memory (KNOWCENTRAL2b): read across the session's workspace, changed in its own repository, corrected by proposal.
+        // A repository's memory: read across the session's workspace, changed in its own repository, corrected by proposal.
         typeof(MemoryTools),
         typeof(ChannelTools),
         typeof(OpinionTools),
-        // A brainstorm pass's result tools (BRAINSTORM1a2), refused to every session the driver names no brainstorm turn for.
+        // A brainstorm pass's result tools, refused to every session the driver names no brainstorm turn for.
         typeof(BrainstormTools),
-        // Ask Daoris's proposals, a class for each kind of proposal the box writes (PART10c).
+        // Ask Daoris's proposals, a class for each kind of proposal the box writes.
         typeof(HelpAccountTool),
         typeof(HelpAgentTool),
         typeof(HelpAskTool),
@@ -76,14 +76,14 @@ public static class KnowledgeServer
 
     /// <summary>
     /// The connector's host, before its services are added: its configuration read from the folder its build is in, and no
-    /// file of it watched (KNOWWALK1).
+    /// file of it watched.
     /// </summary>
     /// <remarks>
     /// The generic host's defaults take the working folder for the content root and watch it, with everything below it, for
     /// <c>appsettings.json</c> to change, and the framework's watcher walks the whole of each folder renamed anywhere beneath.
     /// A session starts its connector in its checkout, so a connector on those defaults hears every write in the checkout, its
     /// ignored trees too, and walks each folder a build, an install or an update's swap renames there, holding what it walks
-    /// against the swap's next move (the fix log's KNOWWALK1). A repository's own <c>appsettings.json</c> is that
+    /// against the swap's next move. A repository's own <c>appsettings.json</c> is that
     /// repository's, never this host's; the build's folder is where one of the connector's own would be, and nothing reloads it.
     /// </remarks>
     public static HostApplicationBuilder HostBuilder(string[] args)
@@ -106,19 +106,19 @@ public static class KnowledgeServer
     {
         builder.Services.TryAddSingleton<WorkspaceScope>();
         // Named, because the SDK's generic WithTools<T>(T target) binds the list itself as one tool object, whose methods
-        // are no tools, and the host then advertised nothing (PART10a's pin caught it).
+        // are no tools, and the host then advertises nothing.
         return builder.WithTools(toolTypes: ToolTypes);
     }
 
     /// <summary>
-    /// What a server over one checkout tells a session before its first search (ORIENT1c), or null for a
+    /// What a server over one checkout tells a session before its first search, or null for a
     /// server over a family, whose tools already say what they answer.
     /// </summary>
     /// <remarks>
-    /// <para>A workspace's own server is asked where something is and what was decided, by agents who would
+    /// <para>A workspace's own server is asked where something is and what has been decided, by agents who would
     /// otherwise search the files. They read a server's instructions with its tools, so this says what it
     /// reads, where it reads from, and which tier answers: by words only when the deployment named no model
-    /// (D24's report, given before the first answer as well as on every one).</para>
+    /// (said before the first answer as well as on every one).</para>
     ///
     /// <para>Project-agnostic, as the tools' own descriptions are: the folders are the deployment's, named
     /// back to it, and no decision of this repository is cited.</para>

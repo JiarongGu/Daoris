@@ -4,8 +4,8 @@ using ModelContextProtocol.Server;
 namespace Daoris.Knowledge.Mcp;
 
 /// <summary>
-/// Ask Daoris's <c>workflow_propose</c> (WORKFLOW1h-a): the <c>workflow</c> kind's tool, written by <see cref="HelpProposalBox.ProposeWorkflow"/>.
-/// Since FABRIC-PIPELINE1i it takes a verification pipeline's <c>graph</c> beside <c>steps</c>, and a <c>route</c> with no version.
+/// Ask Daoris's <c>workflow_propose</c>: the <c>workflow</c> kind's tool, written by <see cref="HelpProposalBox.ProposeWorkflow"/>.
+/// It takes a verification pipeline's <c>graph</c> beside <c>steps</c>, and a <c>route</c> with no version.
 /// </summary>
 [McpServerToolType]
 public sealed class HelpWorkflowTool(IntakeScope? intake = null, HelpProposalBox? help = null)

@@ -4,11 +4,11 @@ using Daoris.Knowledge;
 namespace Daoris.Service.Tests;
 
 /// <summary>
-/// A stand-in for Lyntai's engines, one per repository (KNOWCENTRAL2b), repeating the effects the memory coordinator design §6 C names:
+/// A stand-in for Lyntai's engines, one per repository, repeating the effects it names:
 /// a same-content write advances the engine and bumps the entry's revision, a repeated relation adds weight, a confirmation guarded by the
 /// revision read bumps the revision and names no confirmation, and an end is one guarded change. A recall opened to reinforce touches, co-activates and logs what
 /// it returns, as Lyntai's does by default. <see cref="State"/> reads every effect, so a read that writes anything is seen. Each engine gives
-/// a read-only view as Lyntai's MC7 does (KNOWCENTRAL2g), asking its check before it looks an entry up, unless <see cref="Views"/> is off.
+/// a read-only view as Lyntai's does, asking its check before it looks an entry up, unless <see cref="Views"/> is off.
 /// </summary>
 public sealed class StandInMemory : IMemoryEngines
 {

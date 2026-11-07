@@ -15,7 +15,7 @@ public sealed record QuestAttachmentResponse(string Name, string Sha256, long By
 /// <param name="SetUpIn">The environment a set-up step shows the chain's work in; absent on every other step.</param>
 public sealed record QuestStepWire(string? To, string? Title, string? Body, string? SetUpIn = null);
 
-/// <summary>A chain's review choice, <c>off</c>, <c>on</c> or an environment's name, and the person's words it was set on.</summary>
+/// <summary>A chain's review choice, <c>off</c>, <c>on</c> or an environment's name, and the person's words it is set on.</summary>
 public sealed record QuestReviewWire(string? Choice, string? Words = null);
 
 /// <summary>A set-up on a set-up step, answered only.</summary>
@@ -119,7 +119,7 @@ public sealed record QuestResponse(
 public sealed record QuestReopenWire(string Machine, long Sequence, QuestSubmissionRefResponse Of, string? Note, DateTimeOffset At, string? Session = null);
 
 /// <summary>A taker's submission in a closure graph, answered only; its answers are the quest's <c>Answers</c>.</summary>
-/// <param name="Commit">The commit its evidence was read at, where one was.</param>
+/// <param name="Commit">The commit its evidence is read at, where one is.</param>
 /// <param name="Session">The session its ready came from, the one a reopen of it is told to.</param>
 public sealed record QuestSubmissionWire(
     string Machine, long Sequence, DateTimeOffset At, string? Note, string? Commit = null, string? Session = null);
