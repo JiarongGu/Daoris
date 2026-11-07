@@ -81,10 +81,7 @@ public interface IGitHistory
     /// <summary>The author date of the last commit touching this path, or null if it has never been committed.</summary>
     DateTimeOffset? LastCommitDate(string relativePath);
 
-    /// <summary>
-    /// The author date of the last commit that may have changed what the path does. A commit typed <c>docs</c> or
-    /// <c>style</c> says it changed no behaviour, so the document describing the path is not made stale by it.
-    /// </summary>
+    /// <summary>The last commit that may have changed what the path does: a <c>docs</c> or <c>style</c> commit claims none.</summary>
     DateTimeOffset? LastBehaviourDate(string relativePath) => LastCommitDate(relativePath);
 
     /// <summary>What the dates were read from when it is not HEAD, in words for the verdict; null when it is HEAD.</summary>
@@ -103,7 +100,6 @@ public sealed class CommandLineGitHistory(string repositoryRoot) : IGitHistory
 
     public DateTimeOffset? LastCommitDate(string relativePath) => Logged([], relativePath);
 
-    /// <summary>A merge only joins commits already logged, and a <c>docs</c> or <c>style</c> commit claims no change of behaviour.</summary>
     public DateTimeOffset? LastBehaviourDate(string relativePath) =>
         Logged(["--no-merges", "--invert-grep", "-E", "--grep=^(docs|style)(\\(|:|!)"], relativePath);
 
