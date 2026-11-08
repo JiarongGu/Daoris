@@ -100,7 +100,7 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they start wi
    removing a role touches no running session; a continuation reads the role that takes its work now. (from D212)
 9. One door changes roles: `RoleDoor`, reached by `SET_ROLE`, `SET_ROLES`, `daoris role` and `role_propose`
    applied by the person's press. Each answers the judge's closed codes alike. A press carries the revision it read, which the catalogue's write compares with the revision its own transaction
-   reads (`RoleCatalog.WriteIn`), so two presses read at one revision cannot both write. (from D212, D228)
+   reads (`RoleCatalog.WriteIn`), so two presses read at one revision cannot both write; the terminal's verb sends the revision it planned against, and `role suggested --use` is one batch. (from D212, D228)
 10. A batch is judged whole before anything is written. A role, its staffing, its policy and a place's rules land in one
     store transaction or not at all. (from D226, D229)
 
@@ -511,7 +511,6 @@ Web: `agents/roles/*.test.ts(x)` and `agents/setup/*.test.tsx`.
 - **SETUPUX1y:** the places tree lit by default, retiring the Roles sections under Setup.
 
 - **The second review cycle's open defects** (ROLESREVIEW2i to 2q; the backlog row of that name points here), one entry each:
-  - **ROLESREVIEW2m — a role verb's presses carry no revision, and `role suggested --use` is not one batch** (driver; `RoleVerbs.cs:77,125,286`): `read: null` lets the plan's copy overwrite a role edited since (rule 9); one press per role leaves the first written when the second is refused.
   - **ROLESREVIEW2n — the publishing path surfaces store failures raw and drops a refused re-judge's code** (driver; `RoleStaffing.cs:361-369` against `:507-510`; `RoleCatalog.cs:407`): `Commit` wraps store errors in `DriverException`, `Publishing` does not; `WriteIn` throws `new DriverException(refusal.Said)`, so the second of two presses adding roles that take one work fails uncoded, not `two-roles-one-work`.
   - **ROLESREVIEW2o — a walk that throws leaves its reservation counted for ten minutes** (driver; `StartPlan.cs:305-310,329-377`, `StaffLedger.cs:240-253`): `GiveBack()` runs on refusal paths only, so a cancelled `AccountsAsync` or `LoopAsync` leaves a start counted in the weighted pick, a share and a daily budget until `ReservationLife`.
   - **ROLESREVIEW2p — an unreadable catalogue is refused with the wrong codes at an act's step and a terminal's start** (modules; `RoleActsLedger.cs:30-32`, `RoleTerminals.cs:26-29`): `Appointed()` is empty, so a queued act is withdrawn `not-granted` for good and a start answers `unknown-role`, where admission says `role-changed`.

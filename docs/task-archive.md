@@ -66,6 +66,8 @@ the per-task record. Entries preserve their original wording so the archive stay
 > **ROLESREVIEW2k** (driver): Outcome: a share's allow is written into every repository's layer in one read and one write of the person's file (`PersonFiles.EditScopes`), so a failure on a later layer leaves none written and the ask's `made: false` is true; no layer was found to fail alone by a `DriverException`, which only the file's own read raises before any layer is edited, so the write's atomicity is the fix.
 >
 > **ROLESREVIEW2l** (driver): Outcome: a say that comes back as a gateway's, timeout's or throttle's reply with no refusal (`SayAnswer.Lost`: 408, 429, 502, 503, 504) keeps the supervisor's release held to repeat under its receipt, as a thrown lost response does; a 404 and the like stay `no door`, ending the decision `unsaid`. A transport failure already threw, so only a reply that was returned needed the change.
+>
+> **ROLESREVIEW2m** (driver): Outcome: `driver role` set, remove, default and policy plan against the role's revision as the catalogue read it (the press's `revision`, and the write's `read`), so a role edited since is refused moved, not overwritten; `role suggested --use` is one `RoleDoor.ApplyAll` batch judged whole. No refusal inside the batch could be built to show its all-or-none write by a test; the batch is the door's own, pinned by its tests.
 
 ## TREEPOOL1ac — shared paths (2026-11-09)
 
