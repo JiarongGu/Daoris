@@ -138,8 +138,7 @@ export function readLock(root: string): Lock | null {
   if (typeof lock !== 'object' || lock === null || Array.isArray(lock)) {
     throw new DaorisError(`${LOCK_FILE} is not a lock — it is not a JSON object`);
   }
-  // A version this tool does not know is a lock written by another tool: read as version 1 it would be
-  // rewritten, or checked, by rules it was never written under.
+  // Read as version 1, a lock of another version would be checked and rewritten by rules it does not follow.
   if (lock.version !== LOCK_VERSION) {
     const said = lock.version === undefined ? 'no version' : `version ${JSON.stringify(lock.version)}`;
     throw new DaorisError(

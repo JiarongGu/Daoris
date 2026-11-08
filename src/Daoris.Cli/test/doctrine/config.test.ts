@@ -54,7 +54,7 @@ test('the lock is ordered ordinally, so its order is the same on every machine',
     canonVersion: '0.1.0',
     source: 's',
     entries: [entry('rules/a.md'), entry('rules/B.md')],
-    switchedOff: [{ target: 'rules/a.md', by: 'p', because: 'c' }, { target: 'rules/B.md', by: 'p', because: 'c' }],
+    switchedOff: [{ target: 'rules/a.md', by: 'p' }, { target: 'rules/B.md', by: 'p' }],
     mirrors: [{ path: 'm/a', of: 'x', sha256: 'aa' }, { path: 'm/B', of: 'x', sha256: 'aa' }],
     rooms: ['a', 'B'],
   });
@@ -131,10 +131,6 @@ test('a manifest or lock that is not JSON fails as a tool error naming the file'
   fx.cleanup();
 });
 
-/**
- * A lock of a version this tool does not know, or one with no entries, is refused where it is read: it
- * would otherwise read as a version-1 lock, or end in a bare TypeError at the first `entries.length`.
- */
 test('a lock of an unknown version, or with no entries, is refused where it is read', () => {
   const fx = makeFixture('config-lock-shape');
   const lock = (body: object) => fx.write('daoris.lock', JSON.stringify(body));

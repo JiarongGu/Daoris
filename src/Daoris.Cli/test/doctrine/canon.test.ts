@@ -62,7 +62,6 @@ test('the source directory is the target directory', () => {
   fx.cleanup();
 });
 
-/** Ordered by code unit, not by the machine's collation, so every machine plans the same sync and writes the same lock. */
 test('the selection is ordered ordinally, whatever the machine\'s locale', () => {
   const fx = seedCanon();
   fx.write('core/knowledge/a.md', 'lower\n');

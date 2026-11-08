@@ -205,7 +205,6 @@ function promotionsAll(
  */
 export function insideCanon(root: string, canonRoot: string): boolean {
   const rel = relative(resolve(root), resolve(canonRoot));
-  // The first segment, not a prefix: a folder named `..canon` is inside.
   return rel !== '' && rel.split(/[\\/]/)[0] !== '..' && !isAbsolute(rel);
 }
 
