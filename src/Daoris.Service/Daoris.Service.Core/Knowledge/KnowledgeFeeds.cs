@@ -143,6 +143,14 @@ internal sealed class KnowledgeFeeds(
             var (registration, refused) = await AdmitAsync(repository, provenance, "knowledge", ct).ConfigureAwait(false);
             if (refused is not null) return refused;
 
+            if (entries.Any(entry => entry.Kind == EntryKind.Record))
+            {
+                return new(
+                    FeedRefusal.Malformed,
+                    $"`{repository}` fed a finished tree's record, and a record is kept on the machine that made it: no feed carries one.",
+                    Entries: 0);
+            }
+
             var normalized = entries
                 .Select(entry => entry with
                 {
