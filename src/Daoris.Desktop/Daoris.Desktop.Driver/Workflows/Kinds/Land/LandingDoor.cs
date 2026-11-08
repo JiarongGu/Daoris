@@ -31,7 +31,7 @@ public sealed class LandingDoor(Func<LandPerformer> lander, Action<string>? log 
                 {
                     await lander().PerformAsync(start).ConfigureAwait(false);
                 }
-                catch (Exception error) when (error is DriverException or HttpRequestException or System.Text.Json.JsonException or IOException
+                catch (Exception error) when (error is DriverException or HttpRequestException or System.Text.Json.JsonException or Microsoft.Data.Sqlite.SqliteException or IOException
                                                   or UnauthorizedAccessException)
                 {
                     log?.Invoke($"landing  run {start.Run}: its `land` could not be tried: {error.Message.TrimEnd().TrimEnd('.')}. It is tried again at a later pass.");
