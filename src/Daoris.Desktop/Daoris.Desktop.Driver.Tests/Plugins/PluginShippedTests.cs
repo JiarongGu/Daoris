@@ -194,6 +194,10 @@ public sealed class PluginShippedTests : IDisposable
     [InlineData("1.2.0-beta.1", "1.2.0-beta.1", 0)]
     [InlineData("1.2.0+build5", "1.2.0", 0)]
     [InlineData("1.3.0-beta.1", "1.2.0", 1)]
+    [InlineData("1.2.0-beta.2", "1.2.0-beta.10", -1)]
+    [InlineData("1.2.0-beta.10", "1.2.0-beta.2", 1)]
+    [InlineData("1.2.0-beta", "1.2.0-beta.1", -1)]
+    [InlineData("1.2.0-1", "1.2.0-beta", -1)]
     public void Versions_compare_number_by_number(string left, string right, int expected) =>
         Assert.Equal(expected, PluginShipped.Compare(left, right));
 
