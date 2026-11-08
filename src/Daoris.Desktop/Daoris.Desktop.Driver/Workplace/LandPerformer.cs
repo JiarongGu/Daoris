@@ -105,7 +105,7 @@ public sealed class LandPerformer(
         if (held is not null) return Tried(entry, held.Refusal ?? LandingCode.Refused, tip, status, held);
         if (!string.Equals(tip, start.Tip, StringComparison.OrdinalIgnoreCase))
         {
-            return Tried(entry, LandingCode.Refused, tip, status, new TreeLanding(false, "the work moved since it was judged; press Accept again.") { Refusal = LandingCode.Refused });
+            return Tried(entry, LandingCode.Refused, tip, status, new TreeLanding(false, MovedWords) { Refusal = LandingCode.Refused });
         }
 
         if (uncommitted > 0) return Tried(entry, LandingCode.Uncommitted, tip, status, uncommitted: uncommitted);
@@ -142,9 +142,8 @@ public sealed class LandPerformer(
         var process = await Flows.ReadProcessAsync(home, config, world.QuestsAsync, entry.Quest, entry.Repository, entry.Workspace, ct)
             .ConfigureAwait(false);
 
-        // Landed since another way: a press that moved a chain's branch on lands it too, so its own acceptance is what is compared.
-        var since = entry.Last is { } last && last.At > entry.DueAt ? last.At : entry.DueAt;
-        if (trees.Recorded.Landing(entry.Session) is { } landing && landing.AcceptedAt(entry.Session) >= since)
+        // Landed since another way, from when the node started; an unclocked node has none, and the content proof below closes it.
+        if (run.Since is { } since && trees.Recorded.Landing(entry.Session) is { } landing && landing.AcceptedAt(entry.Session) >= since)
         {
             return (Closed(entry, LandingCode.Already, branch: landing.Branch), null);
         }
@@ -182,6 +181,11 @@ public sealed class LandPerformer(
 
         var (tip, status, uncommitted) = await ReadTreeAsync(entry.Tree, ct).ConfigureAwait(false);
         if (!LandTries.ShouldTry(entry, tip, status, await RootStatusAsync(entry, ct).ConfigureAwait(false))) return (null, null);
+
+        if (!string.Equals(tip, run.Tip, StringComparison.OrdinalIgnoreCase))
+        {
+            return (Tried(entry, LandingCode.Refused, run.Tip, status, new TreeLanding(false, MovedWords) { Refusal = LandingCode.Refused }), null);
+        }
 
         // Concluded again with nothing new, it is already on the branch its landing made: closed before the gate, behind the content proof.
         if (uncommitted == 0 && trees.Recorded.Landing(entry.Session) is { GoneAt: null } made
@@ -443,6 +447,8 @@ public sealed class LandPerformer(
         LandingCode.Undone => "its quest is no longer done, so nothing lands.",
         _ => landed?.Message ?? code,
     };
+
+    private const string MovedWords = "the work moved since it was judged; press Accept again.";
 
     /// <summary>The status a try is kept with where git could not give one.</summary>
     private const string Unreadable = "unreadable";
