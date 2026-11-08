@@ -39,8 +39,6 @@ public sealed class StartRequests(string home)
         while (!_running.TryAdd(id, mine.Task))
         {
             if (_running.TryGetValue(id, out var running)) return await running.ConfigureAwait(false);
-
-            // The runner finished between the two calls: what it kept answers, else this one is the runner.
             if (Read(id) is { } finished) return finished;
         }
 
