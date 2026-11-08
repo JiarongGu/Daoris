@@ -50,7 +50,7 @@
   "asks.record.kindNone": "No kind chosen here.",
   "asks.record.kindProposal": "The intake proposed the kind {{kind}}: {{reason}}",
   "asks.record.kindApply": "Apply",
-  "asks.compose.filesLabel": "files — kept on this machine until the ask becomes quests, then carried by each",
+  "asks.compose.filesLabel": "Files — kept on this machine until the ask becomes quests, then carried by each",
   "asks.compose.submit": "Ask",
   "asks.record.circle": "Workspace",
   "asks.record.asked": "Asked",
