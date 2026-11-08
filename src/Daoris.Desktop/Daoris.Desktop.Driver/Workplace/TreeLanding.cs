@@ -13,6 +13,9 @@ public sealed record TreeLanding(bool Landed, string Message, string? Branch = n
     /// </summary>
     public string? Refusal { get; init; }
 
+    /// <summary>The checkout's status (<see cref="LandTries.Fingerprint"/>) a <c>root-dirty</c> refusal read; null otherwise.</summary>
+    public string? RootStatus { get; init; }
+
     /// <summary>
     /// Where the landing moved a branch Daoris made on from: the commit it stood at, recorded, before this
     /// session's work fast-forwarded it. Null for a branch made new, and for every merge.

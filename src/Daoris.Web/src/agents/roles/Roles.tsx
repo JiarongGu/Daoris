@@ -177,7 +177,7 @@ export function roleSummary(t: TFunction, row: RoleRow, actor?: ActorRow | null,
 }
 
 /**
- * A role's last days as one quiet line (MODELROLE1f): starts, where they landed, and how many fell to a later choice with the walk's codes.
+ * A role's last days as one quiet line: starts, where they landed, and how many fell to a later choice with the walk's codes.
  * A log that holds fewer than seven days says its span; names and counts only, never a price.
  */
 export function useLine(t: TFunction, use: RoleUse, days: number): string {
@@ -204,11 +204,11 @@ export function useLine(t: TFunction, use: RoleUse, days: number): string {
 }
 
 /**
- * **Roles** (FOUNDATION1y-i, MODELROLE1c, COMPANYVIEW1a): every role that takes Daoris's work, a row each, the seed's and the person's:
+ * **Roles**: every role that takes Daoris's work, a row each, the seed's and the person's:
  * its name as authored, the work it takes, where, and its choices folded to one line. A row's editor holds its names, work, place and one
  * to four choices of agent, model and effort with *Move up*, *Move down* and *Remove*; *Save*, *Off* where the work allows it (intake and
  * Ask Daoris) and *Use the default* (a seeded role's record and choices given back their seed) all go out over `SET_ROLE`, the one door
- * (ONEWAY1a). *Add a role*, *Remove* and *Back to the default* are the catalogue's. A home that keeps no catalogue holds every press, and a
+ * (the one door). *Add a role*, *Remove* and *Back to the default* are the catalogue's. A home that keeps no catalogue holds every press, and a
  * shell that answers no catalogue draws no row. Under the rows, the roles Daoris suggests and each change of
  * the staffing another program made, as the driver kept it, with *Take it* and *Dismiss*. The page judges nothing: every press goes out
  * as its route takes it, and a refusal is the driver's sentence under its press.
@@ -236,11 +236,11 @@ export function RolesCard({
   /** Which roles All roles shows by where they are placed, held by the page that owns the section; with none given the card holds its own. */
   scope?: RoleScope;
   onScope?: (scope: RoleScope) => void;
-  /** One role's row alone, as the diagram's detail draws it (COMPANYVIEW1f): no card, no adding, no suggestion. */
+  /** One role's row alone, as the diagram's detail draws it: no card, no adding, no suggestion. */
   only?: string;
   /** A row's ⋯ *On the diagram*, its role chosen there. */
   onDiagram?: (role: string) => void;
-  /** The open editor, where the place that owns the section holds it (D168 point 3); with none given the card holds its own. */
+  /** The open editor, where the place that owns the section holds it; with none given the card holds its own. */
   editor?: Editing | null;
   onEditor?: (next: Editing | null) => void;
   /** The catalogue as `ROLES` answers it; null while it is read or where the read failed. */
@@ -348,7 +348,7 @@ export function RolesCard({
     // *Off* where the work allows it, for a seeded or an added role; not where it is already off.
     const mayOff = OFF_WORKS.has(now.work);
     const isOff = actor ? actor.state === 'off' : row?.choices?.length === 0;
-    // *Use the default* (ONEWAY1a, what *Clear order* became): a seeded role whose order is stored or whose record moved from its seed.
+    // *Use the default*: a seeded role whose order is stored or whose record moved from its seed.
     const mayClear = !now.isNew && !!row?.seeded && ((!!actor && actor.state !== 'before') || row.state !== 'seed');
     const at = now.isNew ? '' : now.id;
     return (

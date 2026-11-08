@@ -224,6 +224,7 @@ internal sealed class TurnKeeps(
         if (word.Level == MessageLevel.Now && steerNow?.Invoke(state.Dispatched(handed)) is { } steered)
         {
             state.Steered.Add(steered);
+            state.TheirsSteered |= word.Theirs;
             return true;
         }
 
@@ -231,6 +232,7 @@ internal sealed class TurnKeeps(
         {
             state.Steered.Add(stepped);
             state.OnWay.Add(stepped);
+            state.TheirsSteered |= word.Theirs;
             return true;
         }
 
@@ -327,7 +329,7 @@ internal sealed class TurnKeeps(
                     state.SendingBack = false;
                     if (word is not null && !state.Finishing && !state.Gone && !state.Held && state.Onward is null) state.Waiting.Insert(0, word with { Level = MessageLevel.Ordinary });
                     else word = null;
-                    start = state.Waiting.Count > 0 && !state.Pumping && !state.Limited && !state.Pressing && !state.Gone && !state.CloseHeld && !state.Held;
+                    start = state.Waiting.Count > 0 && !state.Pumping && !state.Limited && !state.Pressing && !state.Gone && !state.Finishing && !state.CloseHeld && !state.Held;
                     if (start)
                     {
                         state.Pumping = true;

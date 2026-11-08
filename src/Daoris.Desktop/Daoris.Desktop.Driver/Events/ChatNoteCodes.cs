@@ -66,6 +66,8 @@ public static class ChatNoteCodes
     // `landing.refused`.
     public static readonly NoteCode LandingRebase = new("landing.rebase", []);
 
+    public static readonly NoteCode LandingRootDirty = new("landing.root-dirty", []);
+
     // The person's Accept on a session whose tree holds uncommitted work or whose replay conflicts: the session is carried on in
     // Daoris's words, and the yes stays on it until its tree is clean. Its own codes, since the work is accepted, not refused.
     public static readonly NoteCode LandingCarriedDirty = new("landing.carried-dirty", ["paths"]);

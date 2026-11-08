@@ -12,6 +12,9 @@ public sealed record SupervisorCourseView(
     string Id, string Session, string Point, string Count, int N, string Rule, string Place, string Do, SupervisorHolder Holder,
     DateTimeOffset KeptAt, DateTimeOffset GoesOnAt, SupervisorState State, DateTimeOffset StateAt, string? Why, bool Earlier)
 {
+    /// <summary>The decision's kind as its file names it: <c>course</c>, or <c>limit</c> for a move or a wait.</summary>
+    public string Kind { get; init; } = SupervisorKinds.Course;
+
     /// <summary>
     /// A course decision read from its file and state lines (<see cref="SupervisorCourses"/> writes both), or null where the file is not one.
     /// </summary>
@@ -38,7 +41,10 @@ public sealed record SupervisorCourseView(
             return new SupervisorCourseView(
                 id, session, point, Json.Text(course, "count") ?? "", course.TryGetProperty("n", out var n) && n.TryGetInt32(out var value) ? value : 0,
                 Json.Text(course, "rule") ?? "", Json.Text(course, "place") ?? "", act, holder, kept, Moments.Read(root, "goesOnAt") ?? kept, state, at, why,
-                Earlier: true);
+                Earlier: true)
+            {
+                Kind = Json.Text(root, "kind") is SupervisorKinds.Limit ? SupervisorKinds.Limit : SupervisorKinds.Course,
+            };
         }
         catch (JsonException)
         {

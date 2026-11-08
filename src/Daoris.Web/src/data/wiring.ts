@@ -322,14 +322,16 @@ export type SupervisorRuleWire = {
 /** A place's rules written whole, with the revision they were read at (0 for a place that holds none). */
 export type SupervisorRuleSetRead = { place: string; revision: number; rules: SupervisorRuleWire[] };
 
-/** What a ruled count takes at the door: its window, its actions and its bounds. */
-export type SupervisorCountRead = { count: string; window: string; actions: string[]; least: number; most: number };
+/** What a ruled count takes at the door: its window, its actions and its bounds; `drivenRefer` where its `refer` names driven roles alone. */
+export type SupervisorCountRead = { count: string; window: string; actions: string[]; least: number; most: number; drivenRefer?: boolean };
 
 /**
  * The supervisor's rules as `ROLES` answers them; `wider` is each place's wider places before this machine as the driver's judge reads them
- * (a repository's workspace), absent from a driver without them.
+ * (a repository's workspace), absent from a driver without them; `driven` the roles taking driven work alone.
  */
-export type SupervisorRulesRead = { sets: SupervisorRuleSetRead[]; counts: SupervisorCountRead[]; wider?: Record<string, string[]> };
+export type SupervisorRulesRead = {
+  sets: SupervisorRuleSetRead[]; counts: SupervisorCountRead[]; wider?: Record<string, string[]>; driven?: string[];
+};
 
 /** A role's change as `SET_ROLE` takes it: set with its record and choices, removed, given back its seed, or every seeded role given back (`default-all`, whose id is `*`). */
 export type RoleChangePress = {

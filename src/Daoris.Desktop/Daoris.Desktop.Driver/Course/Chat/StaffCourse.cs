@@ -79,21 +79,28 @@ internal static class StaffCourse
         record.Adapter is { Length: > 0 } agent ? new StaffKey(agent, record.Asked?.NamedModel, record.Asked?.Effort.Value) : null;
 
     /// <summary>
-    /// Whether a driven line an account's limit cut off waits for the choice's own reset rather than walking the role's choices: its role's
-    /// policy says <c>wait</c> for a limit, and the <c>upTo</c> minutes after the cut-off it names have not passed. The own account's resume is
-    /// asked first either way, and the accounts of the choice's agent are still walked inside the choice.
+    /// Whether a driven line a limit cut off waits for its choice's reset rather than walking: its policy says <c>wait</c> for a limit, or a
+    /// supervisor's wait stands on the part (<see cref="SupervisorWaits"/>, for the quest's <paramref name="line"/>), until its minutes after
+    /// the cut-off pass. The own account's resume is asked first, and the choice's agent's accounts are still walked.
     /// </summary>
-    internal static LineCourse? LimitWait(StaffLedger? staff, string role, PriorSession cut, DateTimeOffset now, StaffPlace? place = null)
+    internal static LineCourse? LimitWait(StaffLedger? staff, string role, PriorSession cut, DateTimeOffset now, StaffPlace? place = null, string? line = null)
     {
         if (staff is null || CourseOf(staff, role, place ?? new(cut.Repository, cut.Workspace)) is not { } policy
-            || !policy.Moves.TryGetValue(StaffConditions.Limit, out var move) || move.Do != StaffActions.Wait) return null;
+            || !policy.Moves.TryGetValue(StaffConditions.Limit, out var move)) return null;
         var action = StaffJudge.OnCondition(policy, StaffConditions.Limit, new StaffLine(true, 0));
+        if (move.Do != StaffActions.Wait && !(line is not null && SupervisorWaits(staff, line, cut, action, now))) return null;
+        action = action with { Do = StaffActions.Wait };
         return CourseDecision.Decide(
             new CourseFacts(
                 DrivenCourse.HeadOf(cut, "Taken") with { Protocol = true }, CourseBoundary.ProcessExited,
                 Policy: new CoursePolicy(action, now, Until: now.AddYears(1), Since: cut.Updated ?? now)),
             CourseTrigger.LimitEnd);
     }
+
+    /// <summary>Whether a supervisor's wait (<see cref="StaffMoves.Wait"/>) stands on the cut part, its refer's minutes after the cut-off not passed.</summary>
+    internal static bool SupervisorWaits(StaffLedger staff, string line, PriorSession cut, StaffAction action, DateTimeOffset now) =>
+        action is { Do: StaffActions.Ask, MovesBound: false, UpTo: { } upTo } && now < (cut.Updated ?? now) + TimeSpan.FromMinutes(upTo)
+        && staff.Moves.WaitsOn(line, cut.Session);
 
     /// <summary>
     /// A limit's walk took <paramref name="taken"/>, another choice than the record <paramref name="cut"/> ran: the move is counted against

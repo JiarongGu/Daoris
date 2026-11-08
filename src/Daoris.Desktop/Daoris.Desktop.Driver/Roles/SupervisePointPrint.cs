@@ -13,7 +13,13 @@ internal static class SupervisePointPrint
         + "line to you: go on with it, or leave it to the owner; cite each reason's source.";
 
     /// <summary>What the print says of the point: its count and value, the rule, and where its course stands.</summary>
-    internal sealed record Point(string Id, string Count, string N, string Rule, string Place, string Course, string? Generation);
+    internal sealed record Point(string Id, string Count, string N, string Rule, string Place, string Course, string? Generation)
+    {
+        /// <summary>The point's decision kind, <c>course</c> or <c>limit</c>, and the acts the holder's grants cover on it, as <c>--do</c> takes them.</summary>
+        public string Kind { get; init; } = SupervisorKinds.Course;
+
+        public string Acts { get; init; } = SupervisorKinds.GoOn;
+    }
 
     /// <summary>The course decisions the instance holds on <paramref name="id"/>'s points, oldest first; null where it did not answer.</summary>
     public static async Task<IReadOnlyList<JsonElement>?> DecidedAsync(InstanceWorld instance, string id, CancellationToken ct)
@@ -32,7 +38,13 @@ internal static class SupervisePointPrint
     /// <summary>A point still waiting for the holder, as <c>SUPERVISOR_WAITING</c> lists it under its <paramref name="subject"/>.</summary>
     public static Point Waiting(JsonElement listed, SupervisorSubject subject) => new(
         subject.Id, Text(listed, "count") ?? "", Text(listed, "n") ?? "", Text(listed, "rule") ?? "", Text(listed, "place") ?? "",
-        "waiting for you to decide", Text(listed, "generation"));
+        "waiting for you to decide", Text(listed, "generation"))
+    {
+        Kind = subject.Kind,
+        Acts = listed.TryGetProperty("acts", out var acts) && acts.ValueKind == JsonValueKind.Array && acts.GetArrayLength() > 0
+            ? string.Join('|', acts.EnumerateArray().Select(act => act.GetString()))
+            : SupervisorKinds.GoOn,
+    };
 
     /// <summary>A point the supervisor decided, as <c>SESSION_SUPERVISOR</c> reads its course decision.</summary>
     public static Point Decided(JsonElement course) => new(
@@ -69,8 +81,8 @@ internal static class SupervisePointPrint
         if (point.Generation is { } generation)
         {
             print.Append($"generation: {generation}\n");
-            print.Append($"decide: daoris session supervise {id} --kind {SupervisorKinds.Course} --subject {point.Id} --generation {generation} "
-                + $"--do {SupervisorKinds.GoOn} --reason \"…\" --source \"<where>\"\n");
+            print.Append($"decide: daoris session supervise {id} --kind {point.Kind} --subject {point.Id} --generation {generation} "
+                + $"--do {point.Acts} --reason \"…\" --source \"<where>\"\n");
             print.Append(SessionsSuperviseCommand.LeaveLine);
         }
 

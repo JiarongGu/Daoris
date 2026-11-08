@@ -143,6 +143,6 @@ internal sealed class SupervisorSweeps(SupervisorBook book, MachineLog? log)
     // A decision file of any kind: its subject and the state its lines reached; null for a rule's act or a file that does not read.
     private (SupervisorSubject Subject, SupervisorState State)? Decided(string session, string id) =>
         book.Files.Earlier(session, id) is { } question ? (SupervisorSubject.Question(session, question.Question.Id), question.State)
-        : SupervisorCourseView.Read(book.Files, session, id) is { } course ? (SupervisorSubject.Point(session, course.Point), course.State)
+        : SupervisorCourseView.Read(book.Files, session, id) is { } course ? (SupervisorSubject.Point(session, course.Point, course.Kind), course.State)
         : null;
 }

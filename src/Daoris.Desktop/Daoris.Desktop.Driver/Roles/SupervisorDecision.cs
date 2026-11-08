@@ -121,6 +121,10 @@ public static class SupervisorWhy
     /// <summary>A course act names no point a person's <c>refer</c> rule holds the line at now.</summary>
     public const string NotReferred = "not-referred";
 
+    /// <summary>The person stopped the line or paused its quest (<see cref="OwnerHolds"/>); a wait on a point that is no limited end's.</summary>
+    public const string OwnerHeld = "owner-held";
+    public const string NoWait = "no-wait";
+
     // Why a decision goes stale (`supervisor.stale`).
     public const string Tampered = "tampered";
     public const string Forged = "forged";

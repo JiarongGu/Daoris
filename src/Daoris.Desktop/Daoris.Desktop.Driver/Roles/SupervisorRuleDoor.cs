@@ -60,7 +60,11 @@ public static class SupervisorRuleDoor
     /// The world a press is judged in: the catalogue's working roles, and each repository's workspace as its wider place, so a workspace's
     /// write is judged on its repositories' lines and a repository's on its workspace's rules, as the store keeps them in every process.
     /// </summary>
-    public static SupervisorRuleWorld World(string home) => new(Roles(home), Wider: new RuleWiderPlaceStore(home).Read().Of);
+    public static SupervisorRuleWorld World(string home) =>
+        new(Roles(home, _ => true), Wider: new RuleWiderPlaceStore(home).Read().Of, Driven: Driven(home));
+
+    /// <summary>The catalogue's working roles that take driven work alone (<see cref="RoleWork.Driven"/>): the roles a refer on limits or moves may name.</summary>
+    public static IReadOnlyList<string> Driven(string home) => Roles(home, takes => takes.All(work => RoleWork.Driven.Contains(work)));
 
     /// <summary>The judge's refusal of <paramref name="press"/> against the rules stored now, or null: what a door says before anything is sent.</summary>
     public static RuleRefusal? Judge(string home, SupervisorRulesPress press) =>
@@ -87,16 +91,19 @@ public static class SupervisorRuleDoor
         return said.ToString();
     }
 
-    private static IReadOnlyList<string> Roles(string home)
+    private static IReadOnlyList<string> Roles(string home, Func<IReadOnlyList<string>, bool> taking)
     {
+        RoleCatalog catalog;
         try
         {
-            return [.. RoleCatalog.ReadHome(home).Slots.Where(slot => slot.Role is { Takes.Count: > 0 }).Select(slot => slot.Id)];
+            catalog = RoleCatalog.ReadHome(home);
         }
         catch (DriverException)
         {
-            return [.. RoleCatalog.Of([]).Slots.Where(slot => slot.Role is { Takes.Count: > 0 }).Select(slot => slot.Id)];
+            catalog = RoleCatalog.Of([]);
         }
+
+        return [.. catalog.Slots.Where(slot => slot.Role is { Takes.Count: > 0 } role && taking(role.Takes)).Select(slot => slot.Id)];
     }
 
     private static SupervisorRule RuleOf(JsonElement each, string place, int index)

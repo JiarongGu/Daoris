@@ -57,6 +57,14 @@ internal static class AtomicFile
         }
     }
 
+    /// <summary>The file read whole as text, sharing deletion with a writer's move, which holds it open for a moment.</summary>
+    public static string ReadText(string path)
+    {
+        using var stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite | FileShare.Delete);
+        using var reader = new StreamReader(stream, Utf8);
+        return reader.ReadToEnd();
+    }
+
     private static string BesideOf(string path) => $"{path}.{Guid.NewGuid():N}.writing";
 
     private static bool IsBusy(Exception exception) =>

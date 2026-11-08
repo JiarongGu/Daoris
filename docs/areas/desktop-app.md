@@ -84,10 +84,12 @@ executable, started with a browser argument, is Daoris's own browser, which sess
 
 **The person's doors and their key**
 
-11. The person key is a random 256-bit value minted for each host start. The shell hands it on the host's first input
-    line and holds it in memory. It is never in a file, an environment, a URL, page storage or the log. (from D156)
-12. The page asks `PERSON_KEY` and sends `Daoris-Person` on writes only. No session ever holds the key. A host the shell
-    adopted has none, and the window says so. (from D156)
+11. The person key is a random 256-bit value minted for each host start, handed on the host's first input line and held in
+    memory; never in a file, an environment, a URL, page storage or the log. `HostSupervisor` hands one when it is given one,
+    and the shell is given none yet (PERSONDOOR1g), so the host enforces none. (from D156)
+12. The page asks `PERSON_KEY` and sends `Daoris-Person` on writes only. No session ever holds the key. `PERSON_KEY` answers
+    none until the shell mints one, and a host the shell adopted has none; the window says so, and the host's own held asks
+    are then not read into *Notifications* by the window. (from D156)
 13. Reads are open. An agent's doors are judged as an agent's. The person's doors need the key. An unclassed write is
     refused. A refusal is a 403 with a code, never a 500. (from D156)
 14. A terminal's press of a `Person` route and a request the host holds for the person are one request row in
@@ -232,7 +234,7 @@ executable, started with a browser argument, is Daoris's own browser, which sess
     (`setup/useKeptPlace.ts`). (from D221, D150)
 59. An agent's page heads in one line. Each account is one row with one act by its state. An account is read only when
     the person presses or something has run, never on a timer. (from D152, D150)
-60. Repositories lists by workspace. A repository's tabs are Details, Branches, History, Changes and Integration; a
+60. Repositories lists by workspace. A repository's tabs are Details, Branches, History, Changes, Integration and Files (the files git does not manage there, with the person's rules and permissions); a
     workspace's are Details, Branches and Workflow. Their setup and rules are the place's, in Agents → Setup. (from D150, D147)
 61. Knowledge is one place with two modes, Search (the default) and Convergence. The Map is a read-only view of the
     workspace's repositories and what moved between them, plus the code map, drawn on the canvas. The code map holds

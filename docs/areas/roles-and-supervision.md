@@ -142,12 +142,15 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they start wi
 31. A rule is *when this count reaches n here, do this*. The counts are answers alone in a row, failed sessions since
     *Try again*, failures in a row on one choice, transient tries, a quiet end, a limited end, and moves in 24 hours. (from D229)
 32. The actions are hold, ask, wait (5 to 600 minutes), next, weighted, refer and off, each count allowing its own set.
-    `refer` (ask the agent supervisor) is offered on three counts: answers alone, and the two only a driven quest has, failed
-    sessions since *Try again* (it parks as `hold` does) and failures in a row on one choice (it asks as `ask` does). Each is a
-    count whose hold sits between sessions and whose own door the supervisor's course act can go through: answers alone's mark,
-    and for the quest's two its *Try again*. On any other count the judge refuses it `do`, and no flag offers it: tries, limits and
-    moves are a conversation's counts too, and a conversation's hold is released by its person's word, which no course act may
-    speak; a quiet end has no hold to release, and its session is never ended. (from D229)
+    `refer` (ask the agent supervisor) is offered on five counts, each holding its line between sessions behind a door a
+    supervisor's act can go through: answers alone (its mark), failed sessions since *Try again* (it parks as `hold` does; the
+    quest's *Try again*), and failures in a row on one choice, a limited end and the moves bound (each asks as `ask` does; the
+    quest's one approval). Limits and moves are a conversation's counts too, whose hold is released by its person's word, which no
+    supervisor speaks, so a refer on them names roles taking driven work alone (build and design, `RoleWork.Driven`; the judge's
+    `SupervisorRuleWorld.Driven`), and one for every role or naming another is refused `do`; a refer on limits takes 5 to 600
+    minutes as `wait` does, the most a supervisor's wait holds the line. On tries and the quiet end it is refused `do`: a transient
+    hold is no supervisor's, and a quiet end has none. `ROLES` names each count's `drivenRefer` and the `driven` roles, and the
+    fold offers *Ask the supervisor* on limits and moves only to a rule naming those roles. (from D229, D233)
 33. A place is the machine, `workspace:<id>` or `repository:<id>`; a line has no place of its own, so the judge refuses
     `line:<key>` (`place`) and the chain has no line step. A failure is one thing for the quest's count and its run on
     one choice: a failed end or a cut-off, never a limit, a refused account, a choice not offered, a transient end, an
@@ -265,8 +268,9 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they start wi
 46. A supervisor decides or leaves a decision through one door: `SUPERVISOR_DECIDE { kind, subject, generation, proof, do, choice?,
     reasons }` and `SUPERVISOR_LEAVE { kind, subject, generation, proof, bound, reasons }`, both `Role`, each proved over its own
     route's bytes with the subject whole in them. The subject is the kind's typed reference, which does not change while it waits: a
-    question's `{ session, question }`, a referred point's `{ session, point }`; the door takes the question and course kinds, each a
-    row (`QuestionKind`, `CourseKind`) that lists its waiting subjects and keeps a decision against the subject as it stands. A
+    question's `{ session, question }`, a referred point's `{ session, point }`; the door takes the question, course and limit kinds,
+    each a row (`QuestionKind`, and over `ReferredPointKind` the `CourseKind` and `LimitKind`, a point's kind its count's,
+    `SupervisorRules.KindOf`) that lists its waiting subjects and keeps a decision against the subject as it stands. A
     decision's file keeps its `kind` and `subject`, and its holder is the hold's as the catalogue's record names it. On a question it
     answers a parked session's recorded question with one offered choice and one to five sourced reasons (`--do answer --choice`,
     under `question.answer`), a decide naming a question the session no longer waits on refused `question-changed`; any subject it may
@@ -301,14 +305,24 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they start wi
     makes the quest's own *Try again* (`QuestRetry.Decide`: a park's mark, or a policy's one approval, the same writes the person's press
     makes), never while its session runs, and the plan, the rules and the admission read again first. The count's judge reads the
     same hold: a supervisor's answer is refused `rule-holds` where a refer parks. A quest's *Try again* the supervisor made
-    is said on the line it acted on (`supervisor.retried`), so the person sees who released it. The decision reads back, in
+    is said on the line it acted on (`supervisor.retried`), so the person sees who released it. Failures on one choice, a limited
+    end (`limits`, at 1) and the moves bound are the limit kind's points (`SupervisorRules.LimitCounts`), answers alone and failures
+    the course kind's: the holder decides one `--kind limit --do move` (under `limit.move`, the seed's grant) or, on a limited end
+    alone, `--do wait` (under `limit.wait`; elsewhere `no-wait`), held for the window with *Overrule*, and a course decide on it is
+    `not-referred`. The look after the plan releases a move as the quest's one approval in `role_moves` (`QuestRetry.Decide`, the yes
+    *Go on now with…* writes), the limit's own carry and walk then moving the next part as for the person's yes, and a wait as a
+    `waited` row on the cut part (`StaffMoves.Wait`), which the start reads as a `wait` rule to the refer's minutes after the cut-off
+    (`StaffCourse.SupervisorWaits`), the ask the person's again past them; each is said on its line (`supervisor.moved`,
+    `supervisor.waited`). The keeping and the release of a course or limit decision read the person's own holds first
+    (`OwnerHolds`: the line's stop, the quest's pause or stop, a steward's own stop of this run passed for its hand-over alone), a
+    decide refused and a held one gone stale `owner-held`; the steward's hand-over reads the same unit. The decision reads back, in
     memory and from its files after a restart, as `SESSION_SUPERVISOR`'s `courses`: the point's count and value, the rule and its
     place, the act, the holder, when it was kept and goes on, and where it stands (held, went on, overruled, stale with why, left).
     *Details* says the newest in its *Supervisor's decision* row, and the head's card says it with *Overrule* (the person's
     `SUPERVISOR_OVERRULE`) only while it is held; both name the decision's kind (`SESSION_SUPERVISOR`'s rows carry `kind`). `sessions supervise <id>` prints a point waiting or already decided: its count,
     value, rule and place, the course as it stands, the line's course and its commits, and for a waiting point how to decide it.
-    (`SupervisorCourses`, `ReferredPoints`, `SupervisorCourseView`, `SupervisePointPrint`, `Modules/Bridge/SupervisorKinds/CourseKind.cs`,
-    `Web/work/head/SupervisorCourseCard.tsx`; from D229)
+    (`SupervisorCourses`, `ReferredPoints`, `OwnerHolds`, `SupervisorCourseView`, `SupervisePointPrint`, `Modules/Bridge/SupervisorKinds/`,
+    `Web/work/head/SupervisorCourseCard.tsx`; from D229, D233)
 49. A decision is held whole in memory for the supervisor role's window (1 to 60 minutes, 5 by default), then released in
     one conditional step that asks the admission again. Its word is `From: supervisor`, never the person's; an
     unattributable one is quarantined. (from D208, D233)

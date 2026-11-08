@@ -61,7 +61,7 @@ is under `src/Daoris.Desktop/Daoris.Desktop.Modules/`.
 **Identities**
 
 1. An identity is a host, a way (an SSH key or an HTTPS token), a label, the user the host reports and an optional
-   `commitsAs`. Several per host. `data/git-identities.json` holds no secret. (from D198)
+   `commitsAs`. Several per host. `data/git-identities.json` holds no secret. (from D198) An entry the file holds that this build does not read is kept as it stands by every write.
 2. No scope holds a list. A repository points per remote, a workspace per host, the machine may choose `own` per host, and
    a host has a default per way. Resolution is repository, workspace, machine, default; the answer names its source. (from D198)
 3. A private key lives in `profiles/git/keys/<id>/`, and an identity's tokens in `profiles/git/tokens/<id>/` (`https`, the token

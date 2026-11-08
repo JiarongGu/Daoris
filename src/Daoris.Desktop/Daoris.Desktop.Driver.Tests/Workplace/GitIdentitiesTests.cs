@@ -100,6 +100,31 @@ public sealed class GitIdentitiesTests : IDisposable
     }
 
     [Fact]
+    public void An_entry_this_build_does_not_read_is_kept_whole_when_the_set_changes()
+    {
+        var path = DaorisHome.Entry(Home, HomeEntry.GitIdentities);
+        Directory.CreateDirectory(Path.GetDirectoryName(path)!);
+        File.WriteAllText(path, """
+            { "identities": [
+              { "id": "gi-000000000001", "label": "Work", "host": "github.com", "way": "ssh" },
+              { "id": "gi-000000000002", "label": "Newer", "host": "example.invalid", "way": "passkey", "extra": { "kept": true } },
+              "a note someone left"
+            ] }
+            """);
+
+        Assert.Single(GitIdentities.Read(Home));
+        GitIdentities.Change(Home, all => [.. all, Identity("gi-000000000003", "Added", "gitlab.com")]);
+        GitIdentities.Change(Home, all => [.. all.Where(each => each.Id != "gi-000000000003")]);
+
+        Assert.Equal(["gi-000000000001"], GitIdentities.Read(Home).Select(each => each.Id));
+        var items = JsonNode.Parse(File.ReadAllText(path))!["identities"]!.AsArray();
+        Assert.Equal(3, items.Count);
+        Assert.Equal("passkey", items[1]!["way"]!.GetValue<string>());
+        Assert.True(items[1]!["extra"]!["kept"]!.GetValue<bool>());
+        Assert.Equal("a note someone left", items[2]!.GetValue<string>());
+    }
+
+    [Fact]
     public void An_identity_is_named_by_its_id_or_its_label_in_any_case()
     {
         GitIdentity[] all = [Identity("gi-000000000001", "Work", "github.com"), Identity("gi-000000000002", "Personal", "github.com")];
@@ -335,6 +360,15 @@ public sealed class GitIdentitiesTests : IDisposable
         var answer = GitIdentityUse.Resolve(Set, Pointers(json), "engine", workspace, remotes, host, GitIdentity.Ssh);
 
         Assert.Equal((served, source, passed), (answer.Served, answer.Source, answer.Passed.Count));
+    }
+
+    [Fact]
+    public void Two_spellings_of_one_host_in_the_machines_pointers_read_as_that_host_once()
+    {
+        var pointers = Pointers("""{"machineGitIdentity":{"GitHub.com":"own","github.com:22":"own"}}""");
+
+        Assert.Equal(1, pointers.Count);
+        Assert.Equal("own", GitIdentityUse.Resolve(Set, pointers, "engine", "games", ["origin"], "github.com", GitIdentity.Ssh).Served);
     }
 
     [Fact]

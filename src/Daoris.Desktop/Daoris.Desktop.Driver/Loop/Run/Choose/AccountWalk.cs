@@ -47,11 +47,11 @@ internal sealed class AccountWalk(IRunWiring wiring) : IRunStage
                                   ?? role[0].Agent;
                     limitWalks = policyMove is not null || role.Count > 1 || !string.Equals(role[0].Agent, cut.Adapter, StringComparison.OrdinalIgnoreCase);
 
-                    // A role that waits on a limit keeps the choice and waits for its accounts' reset, until its `upTo` has passed.
+                    // A role that waits on a limit, or a supervisor's wait on this part, keeps the choice until its `upTo` has passed.
                     if (limitWalks && policyMove is null && cut.Limit
                         && StaffCourse.LimitWait(
                             context.Harnesses.StaffFor(context.Home), policyRole, cut, context.Harnesses.Clock(),
-                            new StaffPlace(quest.To, start.Workspace)) is LineCourse.Wait)
+                            new StaffPlace(quest.To, start.Workspace), quest.Id) is LineCourse.Wait)
                     {
                         limitWalks = false;
                     }

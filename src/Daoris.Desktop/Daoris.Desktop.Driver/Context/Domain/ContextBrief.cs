@@ -253,7 +253,7 @@ public static class ContextBrief
             .Where(path => path.Length > 0).Distinct(StringComparer.Ordinal).Except(edited, StringComparer.Ordinal)
             .Select(path => TextBounds.Clip(path, StepLimit)).ToList();
         var opened = turn.Calls.Where(call => call.Kind is "fetch" || (call.Kind is "other" && call.Title is { } title && Navigates.IsMatch(title)))
-            .Select(call => PageOf(call.Input)).OfType<string>().Distinct(StringComparer.Ordinal).Select(page => TextBounds.Clip(page, StepLimit)).ToList();
+            .Select(call => PageOf(call.Input, tree)).OfType<string>().Distinct(StringComparer.Ordinal).Select(page => TextBounds.Clip(page, StepLimit)).ToList();
         var failed = turn.Calls.Where(call => call is { Kind: "execute", Status: "failed" })
             .Select(call => TextBounds.Clip(TextBounds.OneLine(Unrooted(call.Title ?? call.Id, tree)), StepLimit)).ToList();
         var said = new List<string>();
@@ -283,11 +283,11 @@ public static class ContextBrief
     }
 
     /// <summary>The page address a call's input names, without its user, query or fragment; null where it names no http(s) or file address.</summary>
-    private static string? PageOf(string? input)
+    private static string? PageOf(string? input, string? tree)
     {
         if (InputObject(input) is not { } root || !root.TryGetProperty("url", out var value) || value.ValueKind != JsonValueKind.String) return null;
         if (!Uri.TryCreate(value.GetString()?.Trim(), UriKind.Absolute, out var uri) || uri.Scheme is not ("http" or "https" or "file")) return null;
-        return uri.Scheme == "file" ? uri.LocalPath.Replace('\\', '/') : uri.GetLeftPart(UriPartial.Path);
+        return uri.Scheme == "file" ? Relative(uri.LocalPath, tree) : uri.GetComponents(UriComponents.SchemeAndServer | UriComponents.Path, UriFormat.UriEscaped);
     }
 
     private static JsonElement? InputObject(string? input)

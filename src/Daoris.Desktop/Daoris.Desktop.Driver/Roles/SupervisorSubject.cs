@@ -18,6 +18,7 @@ public sealed record SupervisorSubject(string Kind, string Session, string Id)
     {
         [SupervisorKinds.Question] = "question",
         [SupervisorKinds.Course] = "point",
+        [SupervisorKinds.Limit] = "point",
     };
 
     /// <summary>The kinds whose subject this build reads, in the kinds' order.</summary>
@@ -25,7 +26,7 @@ public sealed record SupervisorSubject(string Kind, string Session, string Id)
 
     public static SupervisorSubject Question(string session, string question) => new(SupervisorKinds.Question, session, question);
 
-    public static SupervisorSubject Point(string session, string point) => new(SupervisorKinds.Course, session, point);
+    public static SupervisorSubject Point(string session, string point, string kind = SupervisorKinds.Course) => new(kind, session, point);
 
     /// <summary>The name the subject's id goes by: <c>question</c> or <c>point</c>.</summary>
     public string IdName => Named[Kind];

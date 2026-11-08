@@ -4,10 +4,9 @@ using Microsoft.Data.Sqlite;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// <c>refer</c> on the counts only a driven quest has: failed sessions since
-/// <i>Try again</i> and failures in a row on one choice. The line is held as <c>hold</c> parks it and <c>ask</c> asks, and the supervisor's
-/// <c>go-on</c> is the quest's own <i>Try again</i> between sessions, through the same door the person's press is. The counts a
-/// conversation shares (tries, limits, moves) and the quiet end do not offer it.
+/// <c>refer</c> on the counts only a driven quest has: failed sessions since <i>Try again</i> and failures in a row on one choice, held as
+/// <c>hold</c> parks and <c>ask</c> asks, the supervisor's <c>go-on</c> the quest's own <i>Try again</i> between sessions, the person's door.
+/// Limits and moves offer it for driven roles alone (<see cref="SupervisorLimitCourseTests"/>); tries and the quiet end do not.
 /// </summary>
 public sealed class SupervisorQuestCourseTests : IDisposable
 {
@@ -61,12 +60,10 @@ public sealed class SupervisorQuestCourseTests : IDisposable
     [InlineData(SupervisorRules.Failures, SupervisorRules.Refer, 3, true)]
     [InlineData(SupervisorRules.FailuresOnChoice, SupervisorRules.Refer, 2, true)]
     [InlineData(SupervisorRules.Tries, SupervisorRules.Refer, 5, false)]
-    [InlineData(SupervisorRules.Limits, SupervisorRules.Refer, 1, false)]
-    [InlineData(SupervisorRules.Moves, SupervisorRules.Refer, 3, false)]
     [InlineData(SupervisorRules.Quiet, SupervisorRules.Refer, 1, false)]
-    public void Refer_is_offered_on_the_quests_own_counts_alone_and_refused_do_elsewhere(string count, string does, int at, bool offered)
+    public void Refer_is_offered_on_the_quests_own_counts_and_refused_do_where_no_hold_is_a_supervisors(string count, string does, int at, bool offered)
     {
-        var world = new SupervisorRuleWorld(["build"]);
+        var world = new SupervisorRuleWorld(["build"], Driven: ["build"]);
         var held = new SupervisorRuleSet(SupervisorRules.Machine, 1, SupervisorRuleBook.Seeded(3));
         var rules = new List<SupervisorRule>(held.Rules.Where(rule => rule.Count != count)) { Rule(count, at, does) };
 
@@ -132,7 +129,7 @@ public sealed class SupervisorQuestCourseTests : IDisposable
 
         var tried = new List<string>();
         CourseLine Line(bool running) =>
-            points.Line(_ => Last, _ => running, [Parked], quest => { tried.Add(quest); return true; });
+            points.Line(_ => Last, _ => running, [Parked], (quest, _) => { tried.Add(quest); return true; });
 
         Assert.Empty(await decisions.ReleaseCoursesAsync(Line(false), At.AddSeconds(30), [SupervisorRules.Failures]));
         Assert.Empty(await decisions.ReleaseCoursesAsync(Line(true), At.AddMinutes(2), [SupervisorRules.Failures]));
@@ -159,7 +156,7 @@ public sealed class SupervisorQuestCourseTests : IDisposable
             points.PointOf(Last, null, [Parked]), At);
 
         Assert.Equal(0, Notes(HeldNoteCodes.SupervisorRetried.Code));
-        Assert.Equal([SupervisorState.WentOn], await decisions.ReleaseCoursesAsync(points.Line(_ => Last, _ => false, [Parked], _ => true), At.AddMinutes(2), [SupervisorRules.Failures]));
+        Assert.Equal([SupervisorState.WentOn], await decisions.ReleaseCoursesAsync(points.Line(_ => Last, _ => false, [Parked], (_, _) => true), At.AddMinutes(2), [SupervisorRules.Failures]));
 
         Assert.Equal(1, Notes(HeldNoteCodes.SupervisorRetried.Code));
         Assert.Equal(0, Notes(HeldNoteCodes.AnswersSupervised.Code));
@@ -176,7 +173,7 @@ public sealed class SupervisorQuestCourseTests : IDisposable
             new SupervisorCourse("s1", act.Id, "g-1", SupervisorCourseActs.GoOn, [new SupervisorReason("Its failures were the account's.", "the quest's failed sessions in its records")], new SupervisorHolder(RoleHolders.Terminal, null)),
             points.PointOf(Last, null, [Parked]), At);
 
-        Assert.Equal([SupervisorState.Stale], await decisions.ReleaseCoursesAsync(points.Line(_ => Last, _ => false, [Parked], _ => false), At.AddMinutes(2), [SupervisorRules.Failures]));
+        Assert.Equal([SupervisorState.Stale], await decisions.ReleaseCoursesAsync(points.Line(_ => Last, _ => false, [Parked], (_, _) => false), At.AddMinutes(2), [SupervisorRules.Failures]));
         Assert.Equal(0, Notes(HeldNoteCodes.SupervisorRetried.Code));
     }
 
@@ -193,7 +190,7 @@ public sealed class SupervisorQuestCourseTests : IDisposable
 
         // The look before the plan releases answers alone's points and passes a quest's, which only the plan's look can judge.
         Assert.Empty(await decisions.ReleaseCoursesAsync(points.Line(_ => Last, _ => false), At.AddMinutes(5), [SupervisorRules.AnswersAlone]));
-        Assert.Equal([SupervisorState.WentOn], await decisions.ReleaseCoursesAsync(points.Line(_ => Last, _ => false, [Parked], _ => true), At.AddMinutes(5), [SupervisorRules.Failures]));
+        Assert.Equal([SupervisorState.WentOn], await decisions.ReleaseCoursesAsync(points.Line(_ => Last, _ => false, [Parked], (_, _) => true), At.AddMinutes(5), [SupervisorRules.Failures]));
     }
 
     [Fact]

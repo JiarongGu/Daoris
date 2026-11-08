@@ -99,7 +99,7 @@ public sealed class PartnerBox(string? home)
         try
         {
             if (!File.Exists(path)) return null;
-            using var document = JsonDocument.Parse(File.ReadAllText(path));
+            using var document = JsonDocument.Parse(AtomicFile.ReadText(path));
             return read(document.RootElement);
         }
         catch (Exception ex) when (ex is JsonException or IOException or UnauthorizedAccessException)
