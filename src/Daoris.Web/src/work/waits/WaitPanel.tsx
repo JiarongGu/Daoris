@@ -1,7 +1,6 @@
 import { type CSSProperties, type ReactNode, useLayoutEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { WAIT_PANEL, waitPanelMax } from './waitPanelHeight';
-import { dragPointer } from '../../lib/dragPointer';
 
 /** What marks a part of the panel whose waits scroll within the panel's height: the strip, and a park's ask in its box. */
 export const WAIT_PART = 'data-wait-part';
@@ -101,7 +100,14 @@ export function WaitPanel({ height, onResize, onReset, controls, children }: {
     const startY = event.clientY;
     const start = drawn();
     const move = (moved: PointerEvent) => onResize(clamp(start + (startY - moved.clientY)));
-    dragPointer(move);
+    const done = () => {
+      window.removeEventListener('pointermove', move);
+      window.removeEventListener('pointerup', done);
+      window.removeEventListener('pointercancel', done);
+    };
+    window.addEventListener('pointermove', move);
+    window.addEventListener('pointerup', done);
+    window.addEventListener('pointercancel', done);
   };
 
   // Each part's share of the height, held under the ceiling whatever is kept.

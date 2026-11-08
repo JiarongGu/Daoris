@@ -6,7 +6,6 @@ import type { Place, ViewId } from './placements';
 import { DropMark, viewEntries, ViewsMenu } from './ViewsMenu';
 import { dragProps, useViewDrop } from './viewDrag';
 import { useTabFit } from './tabFit';
-import { dragPointer } from '../../lib/dragPointer';
 
 /**
  * One tab of the output panel: the session's own console, or something it runs beside
@@ -108,7 +107,14 @@ export function OutputPanel({
     const startY = event.clientY;
     const startHeight = height;
     const move = (moved: PointerEvent) => onResize(clamp(startHeight + (startY - moved.clientY)));
-    dragPointer(move);
+    const done = () => {
+      window.removeEventListener('pointermove', move);
+      window.removeEventListener('pointerup', done);
+      window.removeEventListener('pointercancel', done);
+    };
+    window.addEventListener('pointermove', move);
+    window.addEventListener('pointerup', done);
+    window.addEventListener('pointercancel', done);
   };
 
   return (

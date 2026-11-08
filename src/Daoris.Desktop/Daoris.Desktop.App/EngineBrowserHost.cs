@@ -69,7 +69,8 @@ public sealed class EngineBrowserHost(string home) : IInAppBrowser, IBrowserCach
             if (EdgeChosen) await BringUpEdgeAsync(activate: true, CancellationToken.None).ConfigureAwait(false);
             else await BringUpAsync(background: false, activate: true, CancellationToken.None).ConfigureAwait(false);
         }
-        catch (Exception error) when (EngineBrowser.IsBringUpFailure(error))
+        catch (Exception error)
+            when (BringUpFailure.Is(error))
         {
             // A module call has no screen to say this on, and a press that does nothing reads as broken.
             MessageBox.Show(error.Message, "Daoris", MessageBoxButtons.OK, MessageBoxIcon.Warning);
@@ -93,7 +94,8 @@ public sealed class EngineBrowserHost(string home) : IInAppBrowser, IBrowserCach
             var tab = await engine.NewTabAsync(address).ConfigureAwait(false);
             await engine.ActivateAsync(tab).ConfigureAwait(false);
         }
-        catch (Exception error) when (EngineBrowser.IsBringUpFailure(error))
+        catch (Exception error)
+            when (BringUpFailure.Is(error))
         {
             // A module call has no screen to say this on, and a link that opens nothing reads as broken.
             MessageBox.Show(error.Message, "Daoris", MessageBoxButtons.OK, MessageBoxIcon.Warning);

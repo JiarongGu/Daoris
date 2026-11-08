@@ -3,7 +3,6 @@ import { useTranslation } from 'react-i18next';
 import { CountBadge, Dot, DotMark, FRAME_HELD, FrameHeld, Icon, type IconName, Tip } from '../../design/ui';
 import { CAPTION_ATTRIBUTE, CAPTION_SLOTS } from '../strip/caption';
 import { cn } from '../../lib/cn';
-import { dragPointer } from '../../lib/dragPointer';
 import { Mark } from '../../design/Mark';
 import { LIST_DOOR } from './listKeys';
 
@@ -614,7 +613,14 @@ export function Splitter({ label, value, min, max, edge, onChange, onReset }: {
     event.preventDefault();
     const startX = event.clientX;
     const move = (moved: PointerEvent) => onChange(clamp(value + (moved.clientX - startX) * outward));
-    dragPointer(move);
+    const done = () => {
+      window.removeEventListener('pointermove', move);
+      window.removeEventListener('pointerup', done);
+      window.removeEventListener('pointercancel', done);
+    };
+    window.addEventListener('pointermove', move);
+    window.addEventListener('pointerup', done);
+    window.addEventListener('pointercancel', done);
   };
 
   return (

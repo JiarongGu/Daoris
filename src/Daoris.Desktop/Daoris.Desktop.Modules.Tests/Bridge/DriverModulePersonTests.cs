@@ -188,10 +188,7 @@ public sealed class DriverModulePersonTests : DriverModuleBridge
             heard.Where(each => each.StartsWith("POST /api/confirmations", StringComparison.Ordinal)));
     }
 
-    /// <summary>
-    /// A request the client gave up on is not one the service did not get: the host holds it through the act, so the answer is
-    /// <c>unknown</c>, saying it may have been made, and never the <c>unreachable</c> that says nothing was done.
-    /// </summary>
+    /// <summary>A request the client gave up on may have been made: it is answered <c>unknown</c>, never <c>unreachable</c>.</summary>
     [Fact]
     public async Task A_service_confirmation_the_client_timed_out_on_is_not_said_to_have_done_nothing()
     {

@@ -12,9 +12,6 @@ const PLACE: Record<string, string> = { '`': 'Backquote', ',': 'Comma' };
  * (Quick Ask's L) and Shift turns ` into ~ and 1 into !.
  *
  * @remarks
- * **AltGr is not Alt**: a browser on Windows reports it as Ctrl+Alt, and where it types a letter the key is read by what it
- * says alone, never by its place, so `Ctrl+Alt` shortcuts do not swallow the letter.
- *
  * **The plus is the one key printed after a `+`** (`Ctrl++`, zoom in's second key), and it is read by what it says
  * whether Shift is held or not: a US board types it as Shift+=, another layout and the numpad without Shift.
  */
