@@ -8,20 +8,25 @@ public static class FolderMove
 {
     /// <summary>
     /// Rename the folder where both ends share a volume; else copy it, then remove the source only once every file of it
-    /// has landed.
+    /// has landed. A copy that landed is a move: a source that cannot then be removed (a file held open) stays, what could go
+    /// gone, and the move says so by returning false.
     /// </summary>
     /// <param name="copying">Whether to copy rather than rename; null reads the volumes. A test forces it.</param>
     /// <param name="copyFile">Copies one file, never over another; a test hands in one that fails.</param>
-    public static void Move(string source, string target, bool? copying = null, Action<string, string>? copyFile = null)
+    /// <param name="removeSource">Removes the copied source folder; a test hands in one that fails.</param>
+    /// <returns>Whether the source is gone.</returns>
+    public static bool Move(
+        string source, string target, bool? copying = null, Action<string, string>? copyFile = null, Action<string>? removeSource = null)
     {
         copying ??= !string.Equals(Path.GetPathRoot(source), Path.GetPathRoot(target), StringComparison.OrdinalIgnoreCase);
         if (copying is not true)
         {
             Directory.Move(source, target);
-            return;
+            return true;
         }
 
         copyFile ??= (from, to) => File.Copy(from, to, overwrite: false);
+        removeSource ??= folder => Directory.Delete(folder, recursive: true);
         var made = new List<string>();
         try
         {
@@ -43,7 +48,15 @@ public static class FolderMove
             throw;
         }
 
-        Directory.Delete(source, recursive: true);
+        try
+        {
+            removeSource(source);
+            return true;
+        }
+        catch (Exception error) when (error is IOException or UnauthorizedAccessException)
+        {
+            return false;
+        }
     }
 
     /// <summary>A folder made, noted only where this call made it, so a folder already there is never removed.</summary>

@@ -18,7 +18,7 @@ Paths below use `Drv/` for `src/Daoris.Desktop/Daoris.Desktop.Driver/` and `Mod/
 |---|---|---|
 | Launcher | `src/Daoris.Desktop/Daoris.Desktop.Launcher/Program.cs` | The root `Daoris.exe`: taskbar id, starts `app/Daoris.Desktop.exe`, runs a staged swap while nothing runs from `app/` |
 | `InstallHome` | `Mod/Update/InstallHome.cs` | Finds the install above `app/`; sets the home, the account variable once, D105's override, D63's move-in; the working folder; the window's memory |
-| `FolderMove` | `Mod/Update/FolderMove.cs` | A folder moved across volumes: renamed on one volume, else copied whole and the source removed; a failed copy removes what it made, so the target is as it was |
+| `FolderMove` | `Mod/Update/FolderMove.cs` | A folder moved across volumes: renamed on one volume, else copied whole and the source removed; a failed copy removes what it made, so the target is as it was; a copy that landed is a move even where a held file keeps the source (`Move` returns whether it went) |
 | `HomePlacing` | `Mod/Update/HomePlacing.cs` | The one-time rename of an install's entries into D172's places, journalled and recovered |
 | `DaorisHome` | `Drv/Platform/DaorisHome.cs` | The home seam: `Resolve`, `InstallOf`, `Adopt`, `Entry`, `Places`, `FolderOf`, `InstallBin`, `HomeOf` |
 | `ProgramHome` | `Drv/Platform/ProgramHome.cs` | The home a program names once at its entry (the window's and the host's): what carries no home of its own, Daoris's own git and a probe's tools, reads it, never the variable a process inherited; a unit that acts for a home (a fetch's holds, a squash's author) is handed it. `ProcessHomeCensusTests` names each library read of the variable left, with why |
@@ -268,6 +268,3 @@ drains, swaps, rolls back and refuses.
   the flat service host ended.
 - **HOMELAYOUT5**: measure, per harness, whether account homes, trees, rooms and kept files can move safely.
 - The trees' links repaired after a person moves the whole Daoris folder (the install layout design §7.4): designed, not built.
-
-- **The second review cycle's open defects** (HOMELEASE2 and FOLDERMOVE2; the backlog row of that name points here), one entry each:
-  - **FOLDERMOVE2 — a copied move-in whose source cannot be removed reads as failed** (install-home-update review): `FolderMove.Move`'s final `Directory.Delete(source)` throws on a held file after the copy landed; `InstallHome.MoveIn` says failed, `HasState` stops any retry, and the half-deleted source stays.

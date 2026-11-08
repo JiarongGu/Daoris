@@ -386,7 +386,8 @@ public static class InstallHome
             try
             {
                 var target = Path.Combine(home, name);
-                if (Directory.Exists(entry)) FolderMove.Move(entry, target);
+                // A source left behind by a held file is no failure: the state is in the home, which is what stops a retry.
+                if (Directory.Exists(entry)) _ = FolderMove.Move(entry, target);
                 else File.Move(entry, target, overwrite: false);
                 moved.Add(name);
             }
