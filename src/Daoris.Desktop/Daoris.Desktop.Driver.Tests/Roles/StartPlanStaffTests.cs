@@ -155,6 +155,18 @@ public sealed class StartPlanStaffTests : IDisposable
     }
 
     [Fact]
+    public async Task ROLESREVIEW2o_a_walk_that_throws_gives_its_reservation_back()
+    {
+        Policy("weight");
+        using var cancel = new CancellationTokenSource();
+        await cancel.CancelAsync();
+
+        await Assert.ThrowsAnyAsync<OperationCanceledException>(() => Plan().ResolveAsync(cancel.Token));
+
+        Assert.Empty(Ledger.Preview("build", "build", [new ActorEffective("cool", "m1", null, "1"), new ActorEffective("fine", "m2", null, "2")]).Facts.Reserved);
+    }
+
+    [Fact]
     public async Task A_single_choice_start_the_walk_refuses_gives_its_reservation_back()
     {
         Policy("weight");

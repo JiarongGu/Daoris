@@ -70,6 +70,8 @@ the per-task record. Entries preserve their original wording so the archive stay
 > **ROLESREVIEW2m** (driver): Outcome: `driver role` set, remove, default and policy plan against the role's revision as the catalogue read it (the press's `revision`, and the write's `read`), so a role edited since is refused moved, not overwritten; `role suggested --use` is one `RoleDoor.ApplyAll` batch judged whole. No refusal inside the batch could be built to show its all-or-none write by a test; the batch is the door's own, pinned by its tests.
 >
 > **ROLESREVIEW2n** (driver): Outcome: the staffing's one publication (`RoleStaffing.Publishing`, which `Commit` now calls) wraps a store failure in a `DriverException` as the commit did, and `RoleCatalog.WriteIn` refuses a late judge's refusal as a `RoleRefusedException` carrying its code, so the second of two presses adding roles that take one work is `two-roles-one-work`.
+>
+> **ROLESREVIEW2o** (driver): Outcome: a start plan's walk that throws (a cancelled account look or order loop) gives its policy reservation back before the exception leaves (`StartPlan.ResolveAsync`), so it no longer counts in the weighted pick, a share or a daily budget until `ReservationLife`.
 
 ## TREEPOOL1ac — shared paths (2026-11-09)
 
