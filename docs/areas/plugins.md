@@ -25,7 +25,7 @@ driver would. The Plugins view is a catalogue with a page per plugin. All plugin
 | Install | `Plugins/PluginInstall.cs` | Add, add an offer, plan and apply an update, replace, remove; every swap staged beside |
 | Source record | `Plugins/Domain/PluginSource.cs` | `.daoris-source.json` (folder, offer with digest, or package); an update's change rows |
 | Folders | `Plugins/PluginFolders.cs` | All home I/O for plugins; `Digest`, `HoldsDigest`, placeholders |
-| Offers | `Plugins/PluginOffers.cs`, `tools/desktop-publish.mjs` (`OFFERED_PLUGINS`, `layOffers`) | `app/plugin-offers/` in the install, and where each door finds it |
+| Offers | `Plugins/PluginOffers.cs`, `tools/desktop-publish/lay.mjs` (`OFFERED_PLUGINS`, `layOffers`) | `app/plugin-offers/` in the install, and where each door finds it |
 | Shipped judgement | `Plugins/Domain/PluginShipped.cs` | An offer's installed copy: `older`, `changed`, or older and unjudged |
 | Package | `Plugins/PluginPackage.cs`, `Plugins/PluginPackageFile.cs` | Reads and installs a `.nupkg` offline |
 | Kit | `Plugins/PluginKit.cs`, `PluginKitFiles.cs`, `PluginTrials.cs`, `PluginTrialProcess.cs`, `plugin-kit/*.template` | `new` and `try` |
@@ -109,7 +109,7 @@ Driver paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/`.
     area, rule 13). (from D170)
 25. What a plugin did is kept without its words: `plugin.*` lines hold names, counts, flags and times. Its words go
     to the console under `plugin:<id>` for this run. (from D119, D94)
-26. An icon is a path inside the folder to an SVG or PNG of at most 32 KiB. The page gets its bytes as a data URI,
+26. An icon is a path inside the folder to an SVG or PNG of at most 32 KiB, a PNG at most 512 px a side. The page gets its bytes as a data URI,
     drawn in an `<img>`, never a path; else a monogram on a hue hashed from the id. (from D140)
 27. The page is a catalogue: installed (refused while on, then on, then off), then Daoris's own not installed. Name,
     description and version stay as declared. No plugin adds a view or runs code in the page. (from D119, D140, D52)
@@ -125,7 +125,7 @@ Driver paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/`.
 - A manifest field: `PluginCatalog` and `PluginManifest`, the update's rows in `PluginChange.Between`, the page's `catalog.ts`.
 - Install, update, the source record: `PluginInstall`, `PluginSource`, `PluginFolders`; the route in `PluginsRoutes`,
   the terminal in `PluginCommand`.
-- Offers: `OFFERED_PLUGINS` in `tools/desktop-publish.mjs` and `PluginOffers`.
+- Offers: `OFFERED_PLUGINS` in `tools/desktop-publish/lay.mjs` and `PluginOffers`.
 - A shipped plugin's behaviour: its folder in `examples/plugins/`, its version and `changes` line, its README's
   `## What it needs`. A working plugin's kit files change in `examples/plugins/local-preview` in the same commit.
 - Tools and sign-in: `PluginTools`, `PluginToolChecks`, `PluginToolSetUp`.
@@ -148,21 +148,21 @@ example's `node --test`.
 
 ## Contradictions
 
-- D103, D140, D150 and D64's PLUGINRESERVE1 note make the CLI and the driver twin readers; D194 retired the CLI's plugin code, and the driver reads alone (`PluginCatalog.cs:27-31`). D194 reads right; stale twin comments remain (`PluginCatalog.cs:149`, `PluginManifest.cs:23`, `tools/desktop-publish/lay.mjs:20`).
-- D120 §3 and §5 move the landing plugins and `in-app-browser` to the plugins repository and pin offers to packages; the publish lays them out from this repository (`tools/desktop-publish/lay.mjs:31`, `tools/desktop-publish.mjs:372`). The code reads right.
-- D119 §2 names five states, ready and failing among them; the page draws four (`src/Daoris.Web/src/plugins/catalog.ts:199`), though `PLUGINS` answers health (`PluginsRoutes.cs:85`). The code reads right; the decision is unbuilt.
-- D119 §5 and §6 promise `PLUGIN_TEST`, `plugins test` and kept checks in `<home>/plugins/.checks/<id>.json`; none exists (`PluginsCommand.cs:27-33`, `docs/index/routes.md:124-136`). The code reads right.
+- D103, D140, D150 and D64's PLUGINRESERVE1 note make the CLI and the driver twin readers; D194 retired the CLI's plugin code, and the driver reads alone (`PluginCatalog`'s remarks). D194 reads right; stale twin comments remain (`PluginCatalog.Reserved`, `PluginManifest`'s `OwnHome`, `PLUGIN_OFFERS` in `tools/desktop-publish/lay.mjs`).
+- D120 §3 and §5 move the landing plugins and `in-app-browser` to the plugins repository and pin offers to packages; the publish lays them out from this repository (`OFFERED_PLUGINS` in `tools/desktop-publish/lay.mjs`, its `layOffers` call in `tools/desktop-publish.mjs`). The code reads right.
+- D119 §2 names five states, ready and failing among them; the page draws four (`pluginState` in `src/Daoris.Web/src/plugins/catalog.ts`), though `PLUGINS` answers health (`PluginsAsync` in `PluginsRoutes.cs`). The code reads right; the decision is unbuilt.
+- D119 §5 and §6 promise `PLUGIN_TEST`, `plugins test` and kept checks in `<home>/plugins/.checks/<id>.json`; none exists (`PluginsCommand.Usage`; the `PLUGIN*` rows of `docs/index/routes.md`). The code reads right.
 - D119 §7 refuses a go to Settings → plugins; its PLUGUI1h note keeps it as a moved place that opens Plugins. The note reads right.
 - D119 §8 says Settings keeps nothing of a plugin; D183's PLUGSET1 adds a read-only list (`settings/plugins/PluginSettings.tsx`). D183 reads right, since it sets nothing.
-- D103 names five update rows; the code compares eight (`Domain/PluginSource.cs:188`, `PluginChange.Between`). The code reads right; neither shows a change to `tools` or `icon`.
-- D101 puts the kit's New in Settings → Plugins; it is the Plugins view's (`PLUGIN_NEW`), and `PluginKit.cs:23` still says Settings. The view reads right.
-- Ask Daoris's room says a plugin with no record cannot be updated (`Knowledge/Room/HelpRoomMayPropose.cs:64-65`); D119's LANDPIN3 lets an offer's copy take the shipped one. Both hold for their door; the room offers no shipped take.
+- D103 names five update rows; the code compares eight (`PluginChange.Between` in `Domain/PluginSource.cs`). The code reads right; neither shows a change to `tools` or `icon`.
+- D101 puts the kit's New in Settings → Plugins; it is the Plugins view's (`PLUGIN_NEW`), and `PluginKit`'s remarks still say Settings. The view reads right.
+- Ask Daoris's room says a plugin with no record cannot be updated (`Knowledge/Room/HelpRoomMayPropose.cs`, the plugins sentence); D119's LANDPIN3 lets an offer's copy take the shipped one. Both hold for their door; the room offers no shipped take.
 
 ## Open
 
 - PLUGREV1: the code review's findings not yet fixed, each with its file and line (`TASKS.md`).
 - PLUGHOOK1d: ask a pull request's state again once the first pull request opens.
-- FABRIC-PERFORM1l: keep a pull request's fields in the work wire's evidence (`WorkEvidence`, `WorkWire.cs:63`).
+- FABRIC-PERFORM1l: keep a pull request's fields in the work wire's evidence (`WorkEvidence` in `WorkWire.cs`).
 - EVENTHOOK1b is built whole: the kit's entry and the ending's adapter are in, and an intake's, a helper's and a reviewer's park are
   not told (D244's note). EVENTHOOK1c's proofs through the built host are `RelayHostProcessTests` (another act's lease
   held for the whole wait, an unwritable lease, a `bin` entry at both places, two `--where` at once, a newer build laid out while a relay
