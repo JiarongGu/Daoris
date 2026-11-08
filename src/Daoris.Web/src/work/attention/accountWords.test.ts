@@ -4,6 +4,7 @@ import type { Quest } from '../../data/api';
 import { aQuest } from '../../quests/aQuest';
 import { clockOf, moment } from '../../locales/format';
 import { byTool, type ToolDoor } from '../../agents/tools';
+import { toolsOf } from '../../agents/agentsFixtures';
 import type { PushedAccountFacts, PushedNamed } from './accountWords';
 import { attentionOffers, attentionWorded, type PushedAttention } from './attention';
 
@@ -147,6 +148,19 @@ describe('a start waiting for accounts, worded', () => {
     });
     expect(row.account).toMatchObject({ noAccount: true, signsIn: true, door: 'claude-code' });
     expect(attentionOffers(row)).toEqual([{ act: 'sign-in-new' }]);
+  });
+
+  /** A harness held by a key alone has no sign-in to ask for: its start waits for a key, and no *Sign in for Daoris* is offered. */
+  it('says a key is wanted where the agent is held by a key alone', () => {
+    const dsh = door({ door: 'dsh', product: 'DeepSeek Harness', maker: 'DeepSeek', signsIn: false, takesKey: true, transport: 'protocol', profiles: [] });
+    const row = attentionWorded(
+      waiting({ id: 'wait:dsh:no-account', holding: { quests: [], asks: ['a1'] }, account: facts({ agent: 'dsh', product: 'DeepSeek Harness', door: 'dsh', signsIn: false, noAccount: true }) }),
+      { tools: toolsOf([dsh]), quests: [] }, NOW,
+    );
+
+    expect(row.detail).toBe('No Daoris account has an API key for DeepSeek Harness, so its starts wait until you set one.');
+    expect(i18n.t('work.attention.accounts.noKey', { product: 'DeepSeek Harness', lng: 'zh' })).toContain('API 密钥');
+    expect(attentionOffers(row)).toEqual([]);
   });
 });
 

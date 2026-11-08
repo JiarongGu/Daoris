@@ -59,7 +59,7 @@ internal sealed class RosterWalk(HarnessRoster roster)
 
         // 🔴 No Daoris account to run on: the start waits for the person's sign-in, before anything is
         // probed or spawned, and never runs in the person's own tool home, which a scope naming nothing never meant.
-        if (ours && order is [null]) return HarnessRoster.NoAccount(owner, [], names);
+        if (ours && order is [null]) return HarnessRoster.NoAccount(owner, [], names, roster.AgentOf(owner) is { Accounts.KeyOnly: true });
         if (picked is not null && !ownHome && Gone(owner, picked) is { } gone) return gone;
         var states = order.Select(account => roster.Before(owner, account, now, names, HarnessRoster.FactOf(known, account), offer.Model)).ToList();
 
@@ -367,7 +367,8 @@ internal sealed class RosterWalk(HarnessRoster roster)
             if (login == LoginState.Out)
             {
                 var profile = ShellWord.Of(account, ShellWord.Account);
-                var refusal = keyOnly is not null
+                var byKey = roster.AgentOf(owner) is { Accounts.KeyOnly: true };
+                var refusal = byKey
                     ? KeyOnlyWalk.Refusal(owner, AccountNames.Said(names, account), profile)
                     : $"the `{owner}` account `{AccountNames.Said(names, account)}` is not signed in, so a session would have "
                     + $"nothing to run as — `daoris agent login {owner} --account {profile}` runs "
@@ -377,7 +378,7 @@ internal sealed class RosterWalk(HarnessRoster roster)
                 {
                     Readiness = AccountReadiness.SignedOut,
                     Refusal = refusal,
-                    RefusalNote = Noted.Of(HeldNoteCodes.HeldSignedOut, refusal, ("owner", owner), ("account", account), ("profile", profile)),
+                    RefusalNote = Noted.Of(byKey ? HeldNoteCodes.HeldKeyMissing : HeldNoteCodes.HeldSignedOut, refusal, ("owner", owner), ("account", account), ("profile", profile)),
                 };
                 continue;
             }
@@ -400,7 +401,7 @@ internal sealed class RosterWalk(HarnessRoster roster)
 
             // Every Daoris account the person never named said signed out: none is signed in, so the same sentence.
             return new WalkPass(Held: ours && states.All(state => state.Readiness == AccountReadiness.SignedOut)
-                ? HarnessRoster.NoAccount(owner, RotationWords.SignedOut(states), names)
+                ? HarnessRoster.NoAccount(owner, RotationWords.SignedOut(states), names, roster.AgentOf(owner) is { Accounts.KeyOnly: true })
                 : Unready(owner, states, picked is null ? scope : null, kind, now, names));
         }
 
@@ -501,6 +502,7 @@ internal sealed class RosterWalk(HarnessRoster roster)
         var first = LineAccount.Earliest(ResetSet.Walk, states);
         // The accounts passed as not signed in are facts beside the sentence, and over a list with nothing cooling
         // each is named with its sign-in, where the first account's refusal alone names only its own.
+        var byKey = roster.AgentOf(owner) is { Accounts.KeyOnly: true };
         var signedOut = RotationWords.SignedOut(states) is { Count: > 0 } passed ? SignedOutAccounts.Of(owner, passed, names) : null;
         var held = states.Count == 1 || (first is null && signedOut is null)
             ? new HarnessSelection(states[0].Refusal)
@@ -508,13 +510,13 @@ internal sealed class RosterWalk(HarnessRoster roster)
                 Cooling = states[0].Cooling, NotReady = states[0].Readiness, SignedOut = signedOut, RefusalNote = states[0].RefusalNote,
             }
             : first is null
-                ? new HarnessSelection(RotationWords.NoneReady(owner, states, names))
+                ? new HarnessSelection(RotationWords.NoneReady(owner, states, names, byKey))
                 {
-                    SignedOut = signedOut, RefusalNote = RotationWords.NoneReadyOf(owner, states, names),
+                    SignedOut = signedOut, RefusalNote = RotationWords.NoneReadyOf(owner, states, names, byKey),
                 }
-                : new HarnessSelection(RotationWords.Wait(owner, states, roster.Zone, names))
+                : new HarnessSelection(RotationWords.Wait(owner, states, roster.Zone, names, byKey))
                 {
-                    Cooling = first, SignedOut = signedOut, RefusalNote = RotationWords.WaitOf(owner, states, roster.Zone, names),
+                    Cooling = first, SignedOut = signedOut, RefusalNote = RotationWords.WaitOf(owner, states, roster.Zone, names, byKey),
                 };
         if (held.Cooling is null || scope?.Begins is null) return held;
 

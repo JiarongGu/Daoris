@@ -173,7 +173,7 @@ describe('the machine, read once for the guide and the starters', () => {
       expect(said.includes('nothing-registered')).toBe(step.repositories === 'todo');
       expect(said.includes('helper-off')).toBe(step.helper === 'todo');
       expect(said.includes('nothing-driven')).toBe(step.repositories === 'done' && step.setUp === 'todo');
-      if (said.includes('agent-signed-out') && machine.tools.every((tool) => !tool.present || tool.accounts.every((account) => account.login === 'out'))) {
+      if ((said.includes('agent-signed-out') || said.includes('agent-no-key')) && machine.tools.every((tool) => !tool.present || tool.accounts.every((account) => account.login === 'out'))) {
         expect(step.agent).toBe('todo');
       }
     }
