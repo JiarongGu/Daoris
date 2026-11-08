@@ -321,7 +321,7 @@ public static class StewardActRows
             }
             else
             {
-                if (!world.StopHere(id, Observation.StoppedBySteward)) return new { Act = Name, Session = id, Stopped = false };
+                if (!world.StopHere(id, Observation.StoppedBySteward)) throw new RoleActRefused(StewardWhy.Ended);
                 said = "stopped";
             }
 

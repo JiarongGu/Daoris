@@ -41,7 +41,7 @@ public static class SupervisorRuleDoor
 
         if (Text(press, "change") is { } change && change != "set") throw Mixed($"`change: {change}`");
         var place = Text(press, "place") ?? throw Refused("place", "the supervisor's rules name their place: `machine`, `workspace:<id>`, or `repository:<id>`.");
-        if (!press.TryGetProperty("rulesRevision", out var revision) || !revision.TryGetInt64(out var read))
+        if (!press.TryGetProperty("rulesRevision", out var revision) || revision.ValueKind != JsonValueKind.Number || !revision.TryGetInt64(out var read))
         {
             throw Refused("revision", $"the press names no `rulesRevision`: read {place}'s rules first, then write them whole.");
         }
@@ -110,10 +110,10 @@ public static class SupervisorRuleDoor
     {
         if (each.ValueKind != JsonValueKind.Object) throw Refused("count", $"rule {index + 1} is not a rule: `{{ count, at, do }}`.");
         var count = Text(each, "count") ?? throw Refused("count", $"rule {index + 1} names no count.");
-        if (!each.TryGetProperty("at", out var at) || !at.TryGetInt32(out var threshold)) throw Refused("at", $"rule {index + 1} names no whole `at`.");
+        if (!each.TryGetProperty("at", out var at) || at.ValueKind != JsonValueKind.Number || !at.TryGetInt32(out var threshold)) throw Refused("at", $"rule {index + 1} names no whole `at`.");
         var does = Text(each, "do") ?? throw Refused("do", $"rule {index + 1} names no action.");
         int? upTo = each.TryGetProperty("upTo", out var minutes) && minutes.ValueKind != JsonValueKind.Null
-            ? minutes.TryGetInt32(out var number) ? number : throw Refused("upTo", $"rule {index + 1}'s `upTo` is not whole minutes.")
+            ? minutes.ValueKind == JsonValueKind.Number && minutes.TryGetInt32(out var number) ? number : throw Refused("upTo", $"rule {index + 1}'s `upTo` is not whole minutes.")
             : null;
         IReadOnlyList<string>? roles = null;
         if (each.TryGetProperty("roles", out var named) && named.ValueKind != JsonValueKind.Null)

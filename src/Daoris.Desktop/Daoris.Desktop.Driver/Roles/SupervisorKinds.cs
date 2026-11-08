@@ -45,6 +45,8 @@ public static class SupervisorKinds
     public static IReadOnlyList<string> ActsOf(string kind) =>
         Named.TryGetValue(kind, out var acts) ? [.. acts.Select(act => Qualified(kind, act))] : [];
 
+    public static bool IsPoint(string kind) => kind is Course or Limit;
+
     /// <summary>Whether <paramref name="kind"/> is one of the vocabulary.</summary>
     public static bool Known(string kind) => Named.ContainsKey(kind);
 
