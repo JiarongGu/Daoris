@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { join } from 'node:path';
-import { existsSync } from 'node:fs';
+import { existsSync, rmSync } from 'node:fs';
 import type { Fixture } from '../_fixture.ts';
 import { makeFixture, captureError } from '../_fixture.ts';
 import { readCanon } from '../../src/doctrine/canon.ts';
@@ -101,6 +101,51 @@ test('a canon an installed package carries inside the repository is not the cano
   assert.equal(insideCanon(root, join(root, 'node_modules', 'daoris', 'canon')), false);
   assert.equal(insideCanon(root, join(root, 'tools', 'node_modules', 'daoris', 'canon')), false);
   assert.equal(insideCanon(root, join(root, 'canon')), true);
+});
+
+/** A canon of one knowledge document and two skills, synced into a repository, for the paths that name a file. */
+function syncedFiles() {
+  const canonFx = makeFixture('up-files-canon');
+  canonFx.write('canon.json', '{"version":"0.1.0"}');
+  canonFx.write('core/knowledge/notes.md', doc('notes'));
+  canonFx.write('core/skills/alpha/SKILL.md', `---\nname: alpha\ndescription: d\n---\n\nAlpha steps.\n`);
+  canonFx.write('core/skills/beta/SKILL.md', `---\nname: beta\ndescription: d\n---\n\nBeta steps.\n`);
+  const repoFx = makeFixture('up-files-repo');
+  repoFx.write('daoris.json', JSON.stringify({ source: 's', packs: [] }));
+  const canon = readCanon(canonFx.root);
+  const manifest = readManifest(repoFx.root);
+  applySync({
+    root: repoFx.root, manifest, canonVersion: canon.version, force: false,
+    plan: planSync({ root: repoFx.root, manifest, canon, lock: null }),
+  });
+  return { canonFx, repoFx };
+}
+
+test('a name that ends two locked paths is refused naming both, not resolved to the first', () => {
+  const fx = syncedFiles();
+  fx.repoFx.write('.claude/skills/beta/SKILL.md', `${fx.repoFx.read('.claude/skills/beta/SKILL.md')}\nEdited.\n`);
+
+  const error = captureError(() => promote(fx, 'SKILL.md'));
+
+  assert.ok(error instanceof DaorisError);
+  assert.match(error.message, /skills\/alpha\/SKILL\.md/);
+  assert.match(error.message, /skills\/beta\/SKILL\.md/);
+  assert.equal(readText(join(fx.canonFx.root, 'core/skills/alpha/SKILL.md')).includes('Edited.'), false);
+  fx.canonFx.cleanup();
+  fx.repoFx.cleanup();
+});
+
+test('a locked file that is gone is said to be missing, with the sync that puts it back', () => {
+  const fx = syncedFiles();
+  rmSync(join(fx.repoFx.root, '.claude/knowledge/notes.md'));
+
+  const error = captureError(() => promote(fx, 'knowledge/notes.md'));
+
+  assert.ok(error instanceof DaorisError);
+  assert.match(error.message, /knowledge\/notes\.md is canonical here but absent/);
+  assert.match(error.message, /daoris sync/);
+  fx.canonFx.cleanup();
+  fx.repoFx.cleanup();
 });
 
 test('a local file has nothing to upstream and says so', () => {
