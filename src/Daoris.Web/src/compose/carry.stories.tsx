@@ -18,7 +18,7 @@ function Held({ start, leftOff = null, dragging = false }: {
     <div className="max-w-xl">
       <CarryFields
         carry={carry}
-        filesLabel="files — kept on this machine until it travels"
+        filesLabel="Files — kept on this machine until it travels"
         leftOff={leftOff}
         dragging={dragging}
         onLinks={(links) => setCarry({ ...carry, links })}
