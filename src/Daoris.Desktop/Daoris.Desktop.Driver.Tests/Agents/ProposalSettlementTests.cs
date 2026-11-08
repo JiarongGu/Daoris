@@ -230,4 +230,19 @@ public sealed class ProposalSettlementTests : IDisposable
 
         Assert.Equal("machine", WideningAllows.PlaceOf(change));
     }
+
+    /// <summary>A yes whose save the rules file refuses saved nothing: the proposal is not left <c>settling</c>, and the person can answer it again.</summary>
+    [Fact]
+    public void A_yes_whose_save_is_refused_leaves_the_proposal_waiting_not_settling()
+    {
+        File.WriteAllText(PermissionRules.PathOf(_home), """{ "repositories": { "engine": "x" } }""");
+        var path = Propose("p1", "add", scope: "repository", name: "engine", list: "allow", rule: "Bash(npm run build:*)");
+
+        Assert.Throws<DriverException>(() => ProposalSettlement.Settle(_home, "p1", RuleSettler.Person, yes: true, null, At));
+
+        Assert.Equal("waiting", Read(path).GetProperty("state").GetString());
+        File.WriteAllText(PermissionRules.PathOf(_home), "{}");
+        var settled = ProposalSettlement.Settle(_home, "p1", RuleSettler.Person, yes: true, null, At);
+        Assert.Equal(SettleOutcome.Settled, settled.Outcome);
+    }
 }
