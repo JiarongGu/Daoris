@@ -298,7 +298,7 @@ public sealed class PartnerProcessTests : IDisposable
     }
 
     /// <summary>
-    /// The service's doors a piece crosses, on a real loopback listener: the lead's record (a working driven session in its tree), the
+    /// The service's doors a piece crosses, on a real loopback listener: the lead's record (a driven session in its tree, working until the partner opens, then ended, which is when its answer is handed), the
     /// partner's record once opened, the host's partner door (<c>POST /api/partners</c>), the ledger's state door and the hand door that
     /// keeps the answer on the lead under the piece's key.
     /// </summary>
@@ -379,7 +379,7 @@ public sealed class PartnerProcessTests : IDisposable
                     {
                         var lead = new JsonObject
                         {
-                            ["id"] = "s1", ["quest"] = "q1", ["repository"] = "reports", ["state"] = "working", ["kind"] = "driven",
+                            ["id"] = "s1", ["quest"] = "q1", ["repository"] = "reports", ["state"] = _partner is null ? "working" : "completed", ["kind"] = "driven",
                             ["door"] = "claude-code-acp", ["tree"] = _root, ["said"] = new JsonArray([.. Words.Select(word => word.DeepClone())]),
                         };
                         var records = new JsonArray(lead);
