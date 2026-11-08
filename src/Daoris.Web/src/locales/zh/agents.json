@@ -79,7 +79,7 @@
   "agents.add.title": "添加账户",
   "agents.add.back": "要让一个账户重新登录？请用它所在的行，这样它仍是同一个账户。",
   "agents.add.new": "添加新账户",
-  "agents.add.signedIn": "已登录为 {{account}}。",
+  "agents.add.signedInJoined": "已登录为 {{account}}。它已加入 Daoris 的账户，所有工作区的工作都可以在它上面运行。",
   "agents.add.signedInUnnamed": "已登录——工具没有说明是谁。",
   "agents.add.keyAdded": "已添加 API 密钥 {{handle}}。",
   "agents.add.name": "名称",
