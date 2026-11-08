@@ -128,6 +128,9 @@ public sealed class KeyOnlyAccountTests : IDisposable
         var selection = await roster.SelectAsync("fake", Config(), null, null);
 
         Assert.False(selection.Allowed);
+        // The way on is a key, so the note is the key's, not the sign-in's the catalogue words as `agent login`.
+        Assert.Contains(selection.RefusalNote!.Parts, part => part.Code == "held.key-missing");
+        Assert.DoesNotContain(selection.RefusalNote.Parts, part => part.Code == "held.signed-out");
     }
 
     [Fact]

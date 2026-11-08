@@ -492,6 +492,8 @@ export const NOTE_CODES: Readonly<Record<string, NoteCode>> = {
   // The same wait where some accounts need the person's sign-in, named apart from those cooling.
   'held.limit-waits-sign-in': { values: ['owner', 'account', 'until', 'accounts'], why: 'cooling' },
   'held.signed-out': { values: ['owner', 'account', 'profile'] },
+  // The same for an agent held by a key alone: its way on is a key.
+  'held.key-missing': { values: ['owner', 'account', 'profile'] },
   // No Daoris account of the agent's is signed in, and its own home is never a start's.
   'held.no-account': { values: ['owner'] },
   'held.not-installed': { values: ['agent'] },

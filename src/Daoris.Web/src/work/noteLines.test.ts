@@ -759,6 +759,12 @@ describe('noteLines', () => {
       expect(noteLines(t, { parts: signedOut }, 'en')[0].text).toBe(
         "The `codex` account `a-1` is not signed in, so a session would have nothing to run as — `daoris agent login codex --account a-1` runs the agent's own sign-in into it. Daoris manages the directory and the name; the credential stays in the agent's own store.",
       );
+      // An agent held by a key alone has no sign-in: its note says the key's way, in both languages.
+      const keyless = [coded('held.key-missing', '…', { owner: 'dsh', account: 'a-1', profile: 'a-1' })];
+      expect(noteLines(t, { parts: keyless }, 'en')[0].text).toBe(
+        "The `dsh` account `a-1` has no API key its provider accepts, so a session would have nothing to run as — `daoris agent key dsh --account a-1` reads one from standard input, or Agents → the agent's page → Accounts.",
+      );
+      expect(noteLines(t, { parts: keyless }, 'zh')[0].text).toContain('daoris agent key dsh --account a-1');
       // The accounts a start waited on for their lock, each by the name the page knows.
       const locked = [coded('held.locked', '…', { owner: 'claude-code', accounts: ['account-1'] })];
       expect(noteLines(t, { parts: locked }, 'en', names)[0].text).toBe(

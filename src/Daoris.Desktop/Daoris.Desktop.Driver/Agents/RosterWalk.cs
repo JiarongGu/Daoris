@@ -367,7 +367,10 @@ internal sealed class RosterWalk(HarnessRoster roster)
             if (login == LoginState.Out)
             {
                 var profile = ShellWord.Of(account, ShellWord.Account);
-                var refusal = keyOnly is not null
+                // Said by the agent, not by whether this pass read the account: a key its provider refused after the walk asked is a key's
+                // refusal too.
+                var byKey = roster.AgentOf(owner) is { Accounts.KeyOnly: true };
+                var refusal = byKey
                     ? KeyOnlyWalk.Refusal(owner, AccountNames.Said(names, account), profile)
                     : $"the `{owner}` account `{AccountNames.Said(names, account)}` is not signed in, so a session would have "
                     + $"nothing to run as — `daoris agent login {owner} --account {profile}` runs "
@@ -377,7 +380,7 @@ internal sealed class RosterWalk(HarnessRoster roster)
                 {
                     Readiness = AccountReadiness.SignedOut,
                     Refusal = refusal,
-                    RefusalNote = Noted.Of(HeldNoteCodes.HeldSignedOut, refusal, ("owner", owner), ("account", account), ("profile", profile)),
+                    RefusalNote = Noted.Of(byKey ? HeldNoteCodes.HeldKeyMissing : HeldNoteCodes.HeldSignedOut, refusal, ("owner", owner), ("account", account), ("profile", profile)),
                 };
                 continue;
             }

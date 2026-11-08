@@ -89,6 +89,9 @@ public static class HeldNoteCodes
     public static readonly NoteCode HeldLimitWaitsSignIn = new("held.limit-waits-sign-in", ["owner", "account", "until", "accounts"]) { Why = NoteCodes.Cooling };
     public static readonly NoteCode HeldSignedOut = new("held.signed-out", ["owner", "account", "profile"]);
 
+    // The same for an agent held by a key alone: its account has no key its provider accepts, and the way on is a key, not a sign-in.
+    public static readonly NoteCode HeldKeyMissing = new("held.key-missing", ["owner", "account", "profile"]);
+
     // Every account the start could run on is locked past its patience; the accounts by id, a list.
     public static readonly NoteCode HeldLocked = new("held.locked", ["owner", "accounts"]);
 
