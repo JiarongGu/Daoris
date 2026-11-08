@@ -5,7 +5,7 @@ public sealed record FileAllowSwept(string Decision, string Text, bool Made);
 
 /// <summary>
 /// A supervisor's allow of an act an <c>ask</c> holds: judged against the person's file as it stands, written as the held act's own text
-/// into each repository's layer with the role that gave it and the decision it was kept under, and settled at the next start from what the
+/// into each repository's layer with the role that gave it and the decision that kept it, and settled at the next start from what the
 /// file holds. The write is the person's own (<see cref="PersonPermissions"/>), under the file's lock.
 /// </summary>
 public static class FileAllows
@@ -23,7 +23,7 @@ public static class FileAllows
         ask.Repositories.Count(repository => PersonPermissions.Add(home, repository, "allow", ask.Text, role, decision));
 
     /// <summary>
-    /// Every ask a decision was begun for, settled from the file: made where an allow stands under that decision in one of its repositories'
+    /// Every ask a decision has begun on, settled from the file: made where an allow stands under that decision in one of its repositories'
     /// layers, else the decision lapses and the ask waits again.
     /// </summary>
     public static IReadOnlyList<FileAllowSwept> Sweep(string home)

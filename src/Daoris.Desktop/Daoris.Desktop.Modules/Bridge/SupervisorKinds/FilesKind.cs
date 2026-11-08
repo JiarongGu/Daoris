@@ -8,7 +8,7 @@ namespace Daoris.Desktop;
 /// <c>{ repository, start, what, text }</c>. It is decided where its act reaches, under <c>files.allow-run</c>, <c>files.allow-copy</c> or
 /// <c>files.allow-share</c>: a run or a copy at its repository, a share at the narrowest place covering both repositories. An allow takes
 /// effect at its keeping: the held act's own text is written into the person's own layer of each repository the act reaches, never the
-/// machine's and never the <c>ask</c>'s pattern, with the role that gave it and the decision it was kept under. An ask naming the person
+/// machine's and never the <c>ask</c>'s pattern, with the role that gave it and the decision that kept it. An ask naming the person
 /// is listed for no supervisor; a leave keeps it for the person.
 /// </summary>
 internal sealed class FilesKind : ISupervisorKind
@@ -62,7 +62,7 @@ internal sealed class FilesKind : ISupervisorKind
         }
         catch (DriverException)
         {
-            // The person's file does not read, or no longer takes a rule here: nothing was written, and the ask waits for the person.
+            // The person's file does not read: nothing is written, and the ask waits for the person.
             FileAsks.Settle(loop.Home, decision, made: false);
             return Done(SupervisorDecided.Refused(SupervisorWhy.Reserved));
         }

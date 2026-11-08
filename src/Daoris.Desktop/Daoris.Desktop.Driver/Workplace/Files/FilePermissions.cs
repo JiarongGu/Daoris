@@ -20,7 +20,6 @@ internal static class FileActs
 
     internal static string Share(string path) => $"share({path})";
 
-    /// <summary>The suffix an <c>ask</c> carries to keep its allow the person's alone.</summary>
     internal const string Person = "@person";
 
     internal static bool Names(string pattern) => Regex.IsMatch(pattern, @"^(run|copy|share)\(.+\)(@person)?$", RegexOptions.CultureInvariant);
@@ -38,7 +37,6 @@ internal sealed record FilePermissions(IReadOnlyList<string> Deny, IReadOnlyList
     /// <summary>Who gave each allow, by its pattern, where the file names one.</summary>
     internal IReadOnlyDictionary<string, string> Makers { get; init; } = new Dictionary<string, string>();
 
-    /// <summary>The decision a supervisor's allow was kept under, by its pattern.</summary>
     internal IReadOnlyDictionary<string, string> Decisions { get; init; } = new Dictionary<string, string>();
 
     internal FilePermissions With(FilePermissions other) => new([.. Deny, .. other.Deny], [.. Ask, .. other.Ask], [.. Allow, .. other.Allow])
@@ -53,7 +51,6 @@ internal sealed record FilePermissions(IReadOnlyList<string> Deny, IReadOnlyList
         : Ask.Any(pattern => Matches(pattern, act)) ? FileVerdict.Held
         : FileVerdict.Made;
 
-    /// <summary>Whether an <c>ask</c> that matches <paramref name="act"/> names the person, so only their own press allows it.</summary>
     internal bool AskNamesPerson(string act) => Ask.Any(pattern => pattern.EndsWith(FileActs.Person, StringComparison.Ordinal) && Matches(pattern, act));
 
     private static bool Matches(string pattern, string act) =>
