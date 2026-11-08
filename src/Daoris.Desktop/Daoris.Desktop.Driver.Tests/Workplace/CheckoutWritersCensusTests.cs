@@ -62,7 +62,7 @@ public sealed partial class CheckoutWritersCensusTests
         ["PoolTakeovers.cs"] = (OwnTree, "a dead run's take undone: the kept slot detached where the take began, in the takeover's job; its new branch is deleted through the journal's act", ["switch@slot.Path"]),
         ["TreePoolFinishes.cs"] = (OwnTree, "a finished line's kept slot detached at the line's tip in place, never forced and with the repository's hooks held, in the claim's job", ["switch@slot.Path"]),
         ["PoolFinishRecoveries.cs"] = (OwnTree, "a dead run's finish settled: the kept slot detached at the line's tip again, in the takeover's job", ["switch@slot.Path"]),
-        ["TreePoolRetires.cs"] = (Refs, "a retired slot's registration unlocked in the claim's job, and git's record of its vanished folder dropped", ["worktree@site.Root", "worktree@slot.Path"]),
+        ["TreePoolRetires.cs"] = (Refs, "a retired slot's registration unlocked in the claim's job, and git's record of its vanished folder dropped", ["worktree@site.Root"]),
         ["PoolLocks.cs"] = (Refs, "a kept slot's lock changed between the pool's free and claimed reasons, in the claim's job", ["worktree@slot"]),
         ["TreeSweeps.cs"] = (Refs, "a pressed tree removed, through git's record of the trees", ["worktree@root"]),
         ["TreeStrays.cs"] = (Refs, "a stray tree's git lock let go and taken again", ["worktree@root"]),

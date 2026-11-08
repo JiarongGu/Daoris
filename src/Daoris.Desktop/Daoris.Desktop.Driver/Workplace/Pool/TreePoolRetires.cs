@@ -59,7 +59,7 @@ internal sealed class TreePoolRetires(TreePool pool, PoolSeams seams)
         await seams.ReachedAsync(TreeClaimPhases.Moving, slot.Path).ConfigureAwait(false);
 
         // Git refuses to drop a locked registration, so the pool's lock goes just before the rename and comes back where the rename is refused.
-        await git.GitAsync(slot.Path, ["worktree", "unlock", slot.Path], ct).ConfigureAwait(false);
+        await PoolLocks.UnlockAsync(git, slot.Path, ct).ConfigureAwait(false);
         try
         {
             Directory.Move(slot.Path, aside);
