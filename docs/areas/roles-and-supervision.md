@@ -250,7 +250,7 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they start wi
     appointed press names its `kind`. The steward is the catalogue's one steward. Ask Daoris may explain the supervisor, never
     overrule it. (from D233)
 42. A role held by the terminal acts once the window starts its terminal (`START_ROLE_TERMINAL`, the window's alone); unstarted
-    is `not-started`, another holder `not-staffed`, a hold the role no longer reads as `role-changed`; a catalogue that cannot be read ends no hold, which stands until it reads. Unstaffed is off. A
+    is `not-started`, another holder `not-staffed`, a hold the role no longer reads as `role-changed`; a catalogue that cannot be read ends no hold, which stands until it reads, an act's step and a terminal's start saying `role-changed` meanwhile and withdrawing no grant. Unstaffed is off. A
     supervisor decides for a place exactly where its holder is a started terminal or an agent: the holder is the person's
     per-place setting, and no build flag gates it. Held by rules alone, a place behaves as before: a `refer` point waits for
     the person. An agent-held supervisor's subjects are its own look's (`SuperviseLook`, after `course-release`), never listed
@@ -271,10 +271,10 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they start wi
     next look takes the next choice; a failed end, a timeout, a block that does not read or names another subject ends the
     subject's attempts; a block the keeping refuses is dropped (`supervisor.dropped`) and said on the subject's line, ending its attempts, but one
     dropped `role-changed` spends no choice and decides again under the role as it now stands (outcome `role-changed`); a
-    leave is final. The prompt states the reasons' bounds. With no choice ready
+    leave is final. The prompt states the reasons' bounds. With no choice ready, or every choice of its order spent (limited, transient),
     nothing starts, the person's rules stand as they acted, and the subject waits for the person, said once on its line
     (`supervisor.unavailable`) and taken once a choice is ready. The person's word on a subject ends its running turn and drops
-    its result. (from D233, D229)
+    its result, and a cancel that meets a turn already ended is no error; what was said once is forgotten when its subject stops waiting. (from D233, D229)
 43. A hold lives in memory with a generation every act carries, never the key or its hash; a restart starts nothing. A role's
     press through the door ends the holds it no longer staffs and sweeps their decisions. An agent's hold needs no press and lives
     nowhere: its generation is its role's id and revision (`AgentHold`, `agent:<role>@<revision>`), read from the catalogue at
@@ -509,7 +509,3 @@ Web: `agents/roles/*.test.ts(x)` and `agents/setup/*.test.tsx`.
   alone, so it waits on D210 carrying or answering the steward design's §4.3a.
 - **ROLEPERM1, PERSONDOOR1c-i:** permission answers through appointed actors; the role's boundary at every door.
 - **SETUPUX1y:** the places tree lit by default, retiring the Roles sections under Setup.
-
-- **The second review cycle's open defects** (ROLESREVIEW2i to 2q; the backlog row of that name points here), one entry each:
-  - **ROLESREVIEW2p — an unreadable catalogue is refused with the wrong codes at an act's step and a terminal's start** (modules; `RoleActsLedger.cs:30-32`, `RoleTerminals.cs:26-29`): `Appointed()` is empty, so a queued act is withdrawn `not-granted` for good and a start answers `unknown-role`, where admission says `role-changed`.
-  - **ROLESREVIEW2q — an agent supervisor's turns: a cancel can meet a disposed source, all choices spent says nothing, the unavailable memory never shrinks** (driver; `SupervisorRuns.cs:25,34`, `SupervisePass.cs:24,49`): `Cancel` after `Ended`'s `Dispose` throws out of the look; `left.Count == 0` returns null with nothing said, against rule 42's once-said wait; static `Unavailable` keeps sentences until a restart.

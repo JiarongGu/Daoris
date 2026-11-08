@@ -31,8 +31,15 @@ public sealed class SupervisorRuns
         var stopped = 0;
         foreach (var (_, source) in _running.Where(each => !waiting.Contains(each.Key)).ToList())
         {
-            source.Cancel();
-            stopped++;
+            try
+            {
+                source.Cancel();
+                stopped++;
+            }
+            catch (ObjectDisposedException)
+            {
+                continue;
+            }
         }
 
         return stopped;

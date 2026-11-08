@@ -72,6 +72,10 @@ the per-task record. Entries preserve their original wording so the archive stay
 > **ROLESREVIEW2n** (driver): Outcome: the staffing's one publication (`RoleStaffing.Publishing`, which `Commit` now calls) wraps a store failure in a `DriverException` as the commit did, and `RoleCatalog.WriteIn` refuses a late judge's refusal as a `RoleRefusedException` carrying its code, so the second of two presses adding roles that take one work is `two-roles-one-work`.
 >
 > **ROLESREVIEW2o** (driver): Outcome: a start plan's walk that throws (a cancelled account look or order loop) gives its policy reservation back before the exception leaves (`StartPlan.ResolveAsync`), so it no longer counts in the weighted pick, a share or a daily budget until `ReservationLife`.
+>
+> **ROLESREVIEW2p** (modules): Outcome: a catalogue that cannot be read at an act's step (`RoleActsLedger.RunAct`) or a terminal's start (`RoleTerminals.StartAsync`) is `role-changed`, as admission says it, and withdraws no queued act, where it was `not-granted` for good and `unknown-role`.
+>
+> **ROLESREVIEW2q** (driver): Outcome: a cancel that meets a turn already ended is no error (`SupervisorRuns.StopUnwaited`); a subject whose every choice was spent is said once on its line as an unavailable supervisor is (`SupervisePass`); and the said-once memory is cut to the subjects still waiting at each look (`SupervisePass.Forget`).
 
 ## TREEPOOL1ac — shared paths (2026-11-09)
 
