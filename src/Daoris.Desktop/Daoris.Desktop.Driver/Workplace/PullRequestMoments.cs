@@ -399,7 +399,6 @@ public sealed class PullRequestMoments : IAsyncDisposable
         }
         catch
         {
-            // A look that throws lost nothing it was owed: the push and the skip are asked again at the next moment.
             lock (_gate)
             {
                 if (pushed) _pushed.Add(name);

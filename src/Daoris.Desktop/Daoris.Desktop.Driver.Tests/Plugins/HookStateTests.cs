@@ -67,7 +67,6 @@ public sealed class HookStateTests
         return peer;
     }
 
-    /// <summary>A call its caller gave up on is no longer waited for: it leaves the peer's pending calls at once, not when the wire ends.</summary>
     [Fact]
     public async Task A_call_cancelled_by_its_caller_leaves_no_pending_entry()
     {

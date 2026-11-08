@@ -350,7 +350,6 @@ public sealed class RelayRun
     {
         lock (_gate)
         {
-            // Once the batch is decided, the read cancelled to stop it is no loss: it must not add a gap to what is printed.
             if (_done.Task.IsCompleted) return;
             _batch.End();
         }

@@ -35,7 +35,6 @@ public sealed class PluginCancelTests : IDisposable
     public async Task A_cancelled_trial_ends_the_plugin_s_process()
     {
         var folder = Scaffold("acme.cancelled", HookPoints.State, out var pidFile);
-        // It takes the frame and never answers it.
         var script = Path.Combine(folder, "plugin.mjs");
         var text = File.ReadAllText(script);
         const string answer = "      send({ jsonrpc: '2.0', id: frame.id, result: await answers[frame.method.slice(5)](frame.params ?? {}) });";
@@ -68,7 +67,6 @@ public sealed class PluginCancelTests : IDisposable
         Assert.True(Left(pid), "the plugin's process was left running");
     }
 
-    /// <summary>A kit plugin that writes its process id where the test reads it.</summary>
     private string Scaffold(string id, string point, out string pidFile)
     {
         var plan = PluginKit.Plan(id, [point], _scratch);

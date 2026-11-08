@@ -54,7 +54,6 @@ public sealed class PluginsCommandTests : IDisposable
         Assert.Contains(DaorisHome.Entry(_home, HomeEntry.Plugins,".data", "acme.gate"), said);
     }
 
-    /// <summary>A package-installed plugin says its package, never an empty folder.</summary>
     [Fact]
     public async Task Show_says_the_package_a_plugin_was_installed_from()
     {

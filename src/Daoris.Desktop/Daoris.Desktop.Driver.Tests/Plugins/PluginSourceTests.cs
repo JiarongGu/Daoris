@@ -51,13 +51,11 @@ public sealed class PluginSourceTests : IDisposable
 
     // ── The record, on every add door ──────────────────────────────────────────────────────────────
 
-    /// <summary>The list plans every plugin's update from one reading of the home, never one reading each.</summary>
     [Fact]
     public void A_plan_made_from_a_catalogue_already_read_reads_the_home_no_more()
     {
         PluginInstall.Add(Home, Checkout(), Reserved);
         var catalog = PluginCatalog.Load(Home, Reserved);
-        // Added after the reading: only a plan that reads the home again would find it.
         var later = Folder(Path.Combine(_root, "checkout", "later"), GateV1.Replace("acme.gate", "acme.later"), ("gate.mjs", "// v1"));
         PluginInstall.Add(Home, later, Reserved);
 

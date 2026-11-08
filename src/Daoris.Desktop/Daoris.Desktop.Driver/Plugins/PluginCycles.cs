@@ -134,7 +134,6 @@ public static class PluginCycles
             }
             catch (OperationCanceledException)
             {
-                // A cancelled cycle (the window closing) is no failed call, so no step ends the process; it is ended before the scratch under it goes.
                 cycle.Abandon();
                 throw;
             }
@@ -168,7 +167,6 @@ public static class PluginCycles
         private string Id => entry.Manifest.Id;
         private Life? _standing;
 
-        /// <summary>Ends the process a cancelled run left standing.</summary>
         public void Abandon() => _standing?.Process.Kill();
 
         private PluginTrial Trial() => new(Id, entry.Folder, entry.Manifest.Hooks?.Command ?? [], _steps, Snapshot(_said));

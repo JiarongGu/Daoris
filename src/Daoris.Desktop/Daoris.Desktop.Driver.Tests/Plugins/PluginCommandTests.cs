@@ -143,7 +143,6 @@ public sealed class PluginCommandTests : IDisposable
         Assert.Equal(["acme.gate"], PluginState.Load(Home).Disabled);
     }
 
-    /// <summary>The refusal a switched-off plugin would meet is judged only once it is on, so the word says it after the switch, never `is on` alone.</summary>
     [Fact]
     public async Task An_enable_of_a_plugin_this_build_would_refuse_says_so_after_the_switch()
     {

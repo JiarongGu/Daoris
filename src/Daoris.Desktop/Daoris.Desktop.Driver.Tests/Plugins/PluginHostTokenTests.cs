@@ -177,7 +177,6 @@ public sealed class PluginHostTokenTests : IDisposable
         Assert.DoesNotContain(said, line => line.Contains("throwaway", StringComparison.Ordinal));
     }
 
-    /// <summary>Daoris pushes to the push address, so the token is the identity serving that one, whatever the fetch side names.</summary>
     [Fact]
     public async Task The_place_is_judged_by_origins_push_address_where_a_pushurl_differs_from_the_fetch_address()
     {

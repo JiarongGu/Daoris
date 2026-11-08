@@ -111,7 +111,6 @@ public static class PluginCommand
     private static string RequireHome(PluginWorld world) =>
         world.Instance.Home ?? throw new PluginWords($"{DaorisHome.Sentence} (wanted: plugins/)");
 
-    /// <summary>A plugin's problem as a catalogue read after it was switched on has it: a name clash is judged only while a plugin is on.</summary>
     private static string? Problem(PluginCatalog catalog, string id) =>
         catalog.Plugins.FirstOrDefault(each => string.Equals(each.Manifest.Id, id, StringComparison.OrdinalIgnoreCase))?.Problem;
 

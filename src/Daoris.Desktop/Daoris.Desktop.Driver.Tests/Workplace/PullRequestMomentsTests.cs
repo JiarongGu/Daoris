@@ -256,7 +256,6 @@ public sealed class PullRequestMomentsTests : IDisposable
         Assert.Equal(["ask feature/a", "fetch tools", "ask feature/t"], _world.Order);
     }
 
-    /// <summary>A look that throws loses nothing: the push it was owed for is asked at the next moment of that repository.</summary>
     [Fact]
     public async Task A_push_whose_look_threw_is_asked_at_the_next_moment()
     {
@@ -476,7 +475,6 @@ public sealed class PullRequestMomentsTests : IDisposable
             return Task.FromResult<IReadOnlyList<RefRepository>>([.. Registry]);
         }
 
-        /// <summary>Whether the line's read throws, as a repository that cannot be looked at does.</summary>
         public bool LineThrows { get; set; }
 
         public Task<string?> LineAsync(RefRepository repository, CancellationToken ct)

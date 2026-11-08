@@ -124,10 +124,6 @@ public sealed class RelayRunTests : IDisposable
         Assert.False(File.Exists(Path.Combine(RelayRun.Subscribers(_home), $"{Environment.ProcessId}.json")), "the relay's file outlived it");
     }
 
-    /// <summary>
-    /// The read cancelled to stop a relay whose batch is already decided is no loss: it ends a connection the batch has closed on, so
-    /// no gap is said for a batch the plugin delivered whole.
-    /// </summary>
     [Fact]
     public async Task A_batch_gathered_whole_never_says_a_gap_for_the_read_that_stopping_it_cancels()
     {

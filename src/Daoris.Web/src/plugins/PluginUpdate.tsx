@@ -6,7 +6,6 @@ export type PluginSourceShown = {
   kind: 'folder' | 'offer' | 'package' | 'none' | 'unread';
   folder?: string | null;
   offer?: string | null;
-  /** The package's own words (its source, id and version), where it came from one. */
   package?: string | null;
   problem?: string | null;
 };
