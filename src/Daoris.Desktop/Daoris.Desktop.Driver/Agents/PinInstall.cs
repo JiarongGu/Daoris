@@ -45,10 +45,19 @@ internal static class PinInstall
                 : new PinPlan(PinWay.Channel, where, null, channel, null);
         }
 
-        return toolchain.Program.Package is { Length: > 0 } package
-            ? new PinPlan(PinWay.Package, where, null, null, PinMove.PackageCommand(home, harness, package, version, npm))
-            : throw new DriverException(
+        if (toolchain.Program.Package is not { Length: > 0 } package)
+        {
+            throw new DriverException(
                 "that agent declares no package, so Daoris has no sanctioned way to fetch a version "
                 + "of it. Install it with its own tooling and Daoris will find it on PATH.");
+        }
+
+        // The version is the folder's name, and what the pin points at: a tag or a range would pin a pointer npm resolved elsewhere.
+        if (!Tools.IsExactVersion(version))
+        {
+            throw new DriverException($"`{version}` is not an exact version — one to four numbers, like 1.2.3 — so nothing was installed.");
+        }
+
+        return new PinPlan(PinWay.Package, where, null, null, PinMove.PackageCommand(home, harness, package, version, npm));
     }
 }

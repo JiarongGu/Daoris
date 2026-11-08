@@ -441,6 +441,19 @@ public sealed class PermissionRulesTests : IDisposable
     /// defaults are still handed — the safe direction, since the guard is one of them.
     /// </summary>
     [Fact]
+    public void Two_keys_that_trim_to_one_scope_are_joined_and_the_first_one_s_deny_is_kept()
+    {
+        File.WriteAllText(
+            PermissionRules.PathOf(_home),
+            """{"repositories":{" engine":{"deny":["Bash(rm:*)"]},"engine":{"allow":["Read"]}}}""");
+
+        var engine = PermissionRules.Load(_home).Repositories["engine"];
+
+        Assert.Equal(["Bash(rm:*)"], engine.Deny);
+        Assert.Equal(["Read"], engine.Allow);
+    }
+
+    [Fact]
     public void A_file_that_is_not_json_reads_as_empty_says_why_and_the_defaults_still_hold()
     {
         File.WriteAllText(PermissionRules.PathOf(_home), "{ not json");

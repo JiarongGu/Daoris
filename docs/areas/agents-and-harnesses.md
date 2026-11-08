@@ -238,7 +238,10 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/Agents/` unless they s
     no model spend (Claude's `get_usage`, Codex's app server), with its source and age. (from D57, D165)
     Opening Agents starts no process for it: the page answers from the kept readings (`ACCOUNTS`, `HARNESSES`). An account is read
     anew only at a press (*Read now*, *Read again*) or where a start's walk needs its allowance, one reading (`FreshenAsync`,
-    `AskUsageAsync`) under the question's floor, and one that is not older than the floor is not asked.
+    `AskUsageAsync`) under the question's floor, and one that is not older than the floor is not asked. A week a read opened
+    with no reset and no use carries a reset the read made up; it is no account week (`AccountWindows.WeekOf`,
+    `UsageCurves.ResetMadeUp`). `windows.json`, `reads.json` and `epochs.json` are each edited under their keep lock from the read to the write,
+    as `cooling.json` is; a usage file that does not read is never saved over, and a usage record is remembered as kept only once appended.
 35. Capacity is estimated from Daoris's own turns and the readings, with weights that are dated ratios, never prices.
     Acting on the estimate waits. (from D179)
 36. A door's failure is read by one reader into four kinds, in order: limit, access, transient, fatal. It reads the door's
@@ -307,7 +310,8 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/Agents/` unless they s
     0.75 to 0.92 s, the driver's own start, with no process started. (PERF3)
 42. Agents install from their makers' channels into the home's toolchain folder. An ACP adapter is its own package with its own
     pin; the managed `claude` it runs reads `claude-code`'s pin. On Windows an agent npm installed starts as the node and script
-    its `.cmd` shim would run, never through the shim's `cmd` (`PackageStarts`). (from D57, D121)
+    its `.cmd` shim would run, never through the shim's `cmd` (`PackageStarts`). A package's pin names an exact version, as the
+    folder it installs into is named, and `PinInstall.Plan` refuses a tag or a range. (from D57, D121)
 43. A start's model and effort come from the role's choices, in the tool's own words. The protocol door carries them by
     `session/set_config_option` before the posture (a model change can move it) and the first prompt; the pipe door by `--model` and `--effort`. An
     absent value is the account default. (from D205)

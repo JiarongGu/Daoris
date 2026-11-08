@@ -111,11 +111,8 @@ public static class ProbeLock
             while (true)
             {
                 if (TryCreate(full) is { } held) return new Held(gate, held);
-                if (IsStale(full, DateTime.UtcNow))
-                {
-                    TryDelete(full);
-                    continue;
-                }
+                // Only a stale lock that is gone is tried again at once; one that cannot be deleted waits as a held one does.
+                if (IsStale(full, DateTime.UtcNow) && TryDelete(full)) continue;
 
                 if (waited.Elapsed >= bound)
                 {
@@ -150,13 +147,20 @@ public static class ProbeLock
     /// The file, created new and held open: deleted when closed, so a process that dies on Windows lets it go with its
     /// handles. Null where it is there already.
     /// </summary>
-    private static FileStream? TryCreate(string path)
+    internal static FileStream? TryCreate(string path, Action<FileStream>? stamp = null)
     {
+        FileStream? stream = null;
         try
         {
             Directory.CreateDirectory(Path.GetDirectoryName(path)!);
-            var stream = new FileStream(
+            stream = new FileStream(
                 path, FileMode.CreateNew, FileAccess.Write, FileShare.Read | FileShare.Delete, 256, FileOptions.DeleteOnClose);
+            if (stamp is not null)
+            {
+                stamp(stream);
+                return stream;
+            }
+
             var said = $"{{\"pid\":{Environment.ProcessId},\"at\":\"{DateTimeOffset.UtcNow.ToString("yyyy-MM-dd'T'HH:mm:ss'Z'", CultureInfo.InvariantCulture)}\"}}\n";
             stream.Write(Encoding.UTF8.GetBytes(said));
             stream.Flush();
@@ -164,19 +168,22 @@ public static class ProbeLock
         }
         catch (Exception error) when (error is IOException or UnauthorizedAccessException)
         {
+            stream?.Dispose();
             return null;
         }
     }
 
-    private static void TryDelete(string path)
+    private static bool TryDelete(string path)
     {
         try
         {
             File.Delete(path);
+            return true;
         }
         catch (Exception error) when (error is IOException or UnauthorizedAccessException)
         {
             // Another taker removed it first, or its holder still has it: the next try says which.
+            return !File.Exists(path);
         }
     }
 

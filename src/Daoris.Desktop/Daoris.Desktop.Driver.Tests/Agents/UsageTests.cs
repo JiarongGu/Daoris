@@ -183,5 +183,17 @@ public sealed class UsageTests : IDisposable
         Assert.Equal("{ not json at all", File.ReadAllText(DaorisHome.Entry(_home, HomeEntry.Usage)));
     }
 
+    /// <summary>A session recorded while the file does not read is not saved over it: the sessions it holds are kept for whoever repairs it.</summary>
+    [Fact]
+    public void A_session_recorded_while_the_file_does_not_read_leaves_the_file_as_it_is()
+    {
+        Directory.CreateDirectory(_home);
+        File.WriteAllText(DaorisHome.Entry(_home, HomeEntry.Usage), """[{"session":"s0001","used":5}, not json""");
+
+        Store().Record(new UsageEntry("s0002", "Game", "claude-code-acp", null, 10, 100, Now()));
+
+        Assert.Equal("""[{"session":"s0001","used":5}, not json""", File.ReadAllText(DaorisHome.Entry(_home, HomeEntry.Usage)));
+    }
+
     private static DateTimeOffset Now() => DateTimeOffset.UtcNow;
 }

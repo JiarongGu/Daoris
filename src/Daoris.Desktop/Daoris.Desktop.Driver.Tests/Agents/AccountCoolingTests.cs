@@ -217,6 +217,22 @@ public sealed class AccountCoolingTests : IDisposable
         Assert.NotNull(AccountCooling.Of(_home, "claude-code", "account-1", _now));
     }
 
+    /// <summary>The own sign-in's cool-off the file would not take, held in memory, ends with the others: read again counts it, so it ends it.</summary>
+    [Fact]
+    public void Ending_the_own_homes_ends_one_the_file_would_not_take_and_is_held_in_memory()
+    {
+        Directory.CreateDirectory(AccountCooling.PathOf(_home));
+        Assert.False(AccountCooling.Keep(_home, Entry(account: null), _now));
+        Directory.Delete(AccountCooling.PathOf(_home));
+        Assert.True(AccountCooling.Unwritten(_home, "claude-code", null));
+
+        Assert.Equal(1, AccountCooling.EndOwnHomes(_home, _now));
+
+        Assert.False(AccountCooling.Unwritten(_home, "claude-code", null));
+        Assert.Null(AccountCooling.Of(_home, "claude-code", null, _now));
+        Assert.Equal(0, AccountCooling.EndOwnHomes(_home, _now));
+    }
+
     // ——— What ends one early (§2.3): a sign-in or a key into that account.
 
     [Fact]

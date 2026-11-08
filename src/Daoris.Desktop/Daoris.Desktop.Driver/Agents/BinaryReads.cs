@@ -91,6 +91,7 @@ public static class BinaryReads
 
         lock (AccountReads.Gate)
         {
+            using var locked = KeepLock.Take(AccountReads.PathOf(home));
             var root = Load(AccountReads.PathOf(home));
             var held = Made(root, door);
             if (Key(held, Field) is { } old) held.Remove(old);

@@ -46,7 +46,15 @@ internal sealed class AcpLimitTurn(ITurnWiring wiring) : ITurnStage
     public AcpTurnLimited? Ended(Func<string, bool>? said)
     {
         string? words;
-        lock (_gate) words = _last ? _words.ToString() : null;
+        lock (_gate)
+        {
+            words = _last ? _words.ToString() : null;
+            // The turn is over: the next one's first message is its own, whatever the wire named it.
+            _words.Clear();
+            _message = null;
+            _last = false;
+        }
+
         return said is not null && words is { Length: > 0 } && said(words) ? new AcpTurnLimited(words) : null;
     }
 }

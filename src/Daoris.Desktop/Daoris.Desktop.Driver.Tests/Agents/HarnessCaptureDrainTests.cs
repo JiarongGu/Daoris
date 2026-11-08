@@ -1,0 +1,58 @@
+using System.Text.Json;
+using Daoris.Driver;
+
+namespace Daoris.Desktop.Driver.Tests;
+
+/// <summary>A structured capture drains both of the harness's pipes to their ends, whatever a reading's keeping throws.</summary>
+public sealed class HarnessCaptureDrainTests : IDisposable
+{
+    private readonly string _root = Path.Combine(TestHomes.Root, "daoris-capture-drain-" + Guid.NewGuid().ToString("N")[..8]);
+
+    public HarnessCaptureDrainTests() => Directory.CreateDirectory(_root);
+
+    public void Dispose() => Directory.Delete(_root, recursive: true);
+
+    private sealed class Refusing : IReadingSink
+    {
+        public bool Watched => false;
+
+        public void Read(WireReading reading)
+        {
+            if (reading is WireReading.Said) throw new IOException("the record refused the event");
+        }
+    }
+
+    /// <summary>A stderr that answers its end only after a moment, as a harness still writing does.</summary>
+    private sealed class Slow : StringReader
+    {
+        public Slow() : base("") { }
+
+        public bool Ended { get; private set; }
+
+        public override async ValueTask<string?> ReadLineAsync(CancellationToken ct)
+        {
+            await Task.Delay(300, ct);
+            Ended = true;
+            return null;
+        }
+    }
+
+    private static string Said(string text) => JsonSerializer.Serialize(new
+    {
+        type = "assistant",
+        message = new { id = "m-" + text, role = "assistant", content = new object[] { new { type = "text", text } } },
+    });
+
+    [Fact]
+    public async Task A_reading_the_sink_refuses_leaves_stdout_drained_and_stderr_ended_before_the_failure_is_thrown()
+    {
+        var stdout = new StringReader(string.Join('\n', Said("one"), Said("two"), Said("three")));
+        var stderr = new Slow();
+
+        await Assert.ThrowsAsync<IOException>(() => HarnessCapture.CaptureStructuredAsync(
+            stdout, stderr, Path.Combine(_root, "s1.log"), new Refusing(), new ClaudeStreamJson(), prompt: null, CancellationToken.None));
+
+        Assert.Null(stdout.ReadLine());
+        Assert.True(stderr.Ended);
+    }
+}

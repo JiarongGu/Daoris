@@ -45,9 +45,11 @@ public static class ServerPackages
     /// once, and the log says it.
     /// </summary>
     /// <param name="npm">The package manager an install runs; Tools' npm where null.</param>
+    /// <param name="publish">Moves the staged folder into its place; a test hands in one that loses the race.</param>
     /// <exception cref="DriverException">The package could not be installed, or names no program that runs.</exception>
     public static async Task<string> ScriptAsync(
-        string home, NpxCommand npx, MachineLog? log, CancellationToken ct, IReadOnlyList<string>? npm = null)
+        string home, NpxCommand npx, MachineLog? log, CancellationToken ct, IReadOnlyList<string>? npm = null,
+        Action<string, string>? publish = null)
     {
         if (Kept(home, npx) is { } kept) return kept;
 
@@ -55,7 +57,7 @@ public static class ServerPackages
         await gate.WaitAsync(ct).ConfigureAwait(false);
         try
         {
-            return Kept(home, npx) ?? await InstallAsync(home, npx, log, ct, npm).ConfigureAwait(false);
+            return Kept(home, npx) ?? await InstallAsync(home, npx, log, ct, npm, publish).ConfigureAwait(false);
         }
         finally
         {
@@ -81,7 +83,7 @@ public static class ServerPackages
     private static string? Exact(NpxCommand npx) => npx.Version is { } version && Tools.IsExactVersion(version) ? version : null;
 
     private static async Task<string> InstallAsync(
-        string home, NpxCommand npx, MachineLog? log, CancellationToken ct, IReadOnlyList<string>? npm)
+        string home, NpxCommand npx, MachineLog? log, CancellationToken ct, IReadOnlyList<string>? npm, Action<string, string>? publish)
     {
         var spec = npx.Version is null ? npx.Package : $"{npx.Package}@{npx.Version}";
         var exact = Exact(npx);
@@ -101,9 +103,17 @@ public static class ServerPackages
             if (Script(home, npx, version) is { } meanwhile) return meanwhile;
 
             var target = Folder(home, npx.Package, version);
-            // A folder there holding nothing that runs is what an interrupted move left.
-            if (Directory.Exists(target)) Directory.Delete(target, recursive: true);
-            AtomicFile.MoveFolder(staging, target);
+            try
+            {
+                (publish ?? Publish)(staging, target);
+            }
+            catch (Exception error) when (error is IOException or UnauthorizedAccessException)
+            {
+                // Another process's install landed at the move, or a leftover there is held: theirs is kept where it runs.
+                return Script(home, npx, version)
+                    ?? throw new DriverException($"`{spec}` could not be moved into place: {error.Message}");
+            }
+
             var script = Script(home, npx, version)
                 ?? throw new DriverException($"`{spec}` names no program `npx` would run");
             log?.Info(Installed, ("package", npx.Package), ("version", version), ("ms", clock.ElapsedMilliseconds));
@@ -113,6 +123,13 @@ public static class ServerPackages
         {
             Discard(staging);
         }
+    }
+
+    private static void Publish(string staging, string target)
+    {
+        // A folder there holding nothing that runs is what an interrupted move left.
+        if (Directory.Exists(target)) Directory.Delete(target, recursive: true);
+        AtomicFile.MoveFolder(staging, target);
     }
 
     /// <summary>The <c>version</c> a package's manifest names, where it names an exact one.</summary>

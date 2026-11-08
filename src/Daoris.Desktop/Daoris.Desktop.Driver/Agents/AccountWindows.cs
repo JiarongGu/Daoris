@@ -77,7 +77,10 @@ public static class AccountWindows
     {
         if (account is null) return null;
         var week = Child(Child(Child(Load(home), agent), account), Weekly);
-        return week is not null && Moment(week, "reset") is { } reset ? Next(reset, now, fixedWeek) : null;
+        if (week is null || Moment(week, "reset") is not { } reset) return null;
+        // A reset a read made up for a week not yet opened is no week: carried on, it would show as the account's for ever.
+        var used = week["used"] is JsonValue value && value.TryGetValue<double>(out var number) ? number : (double?)null;
+        return Moment(week, "seen") is { } seen && UsageCurves.ResetMadeUp(Weekly, used, reset, seen) ? null : Next(reset, now, fixedWeek);
     }
 
     /// <summary>
@@ -87,6 +90,8 @@ public static class AccountWindows
     {
         lock (Gate)
         {
+            // The file's keep lock is held from the read to the write, as cooling.json's is: another process's edit is not written over.
+            using var locked = KeepLock.Take(PathOf(home));
             var root = Load(home);
             var held = Made(Made(root, agent), account);
             var week = new JsonObject { ["reset"] = AccountCooling.Stamp(reset), ["seen"] = AccountCooling.Stamp(seen) };
@@ -115,6 +120,7 @@ public static class AccountWindows
         if (readings.Count == 0) return;
         lock (Gate)
         {
+            using var locked = KeepLock.Take(PathOf(home));
             var root = Load(home);
             var held = Made(Made(root, agent), account);
             foreach (var reading in readings)

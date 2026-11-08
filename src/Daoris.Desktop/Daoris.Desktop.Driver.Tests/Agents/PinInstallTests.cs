@@ -46,6 +46,18 @@ public sealed class PinInstallTests : IDisposable
         Assert.Equal(["stand-in-npm", "install", "--prefix", plan.Where, $"{toolchain.Program.Package}@1.2.3"], plan.Command);
     }
 
+    [Theory]
+    [InlineData("latest")]
+    [InlineData("^1.2.0")]
+    [InlineData("1.x")]
+    public void A_package_pin_of_a_tag_or_a_range_is_refused_before_npm_runs_and_pins_no_pointer(string version)
+    {
+        var refused = Assert.Throws<DriverException>(
+            () => PinInstall.Plan(Toolchain("claude-code-acp"), _home, "claude-code-acp", version, ["stand-in-npm"]));
+
+        Assert.Contains("not an exact version", refused.Message);
+    }
+
     [Fact]
     public void A_program_declaring_no_package_and_no_channel_is_refused_with_the_one_sentence()
     {

@@ -287,7 +287,7 @@ internal sealed class AcpWaits(ITurnEndWiring wiring)
                 else
                 {
                     ct.ThrowIfCancellationRequested();
-                    await CutAsync(after, cut, ct).ConfigureAwait(false);
+                    if (await CutAsync(after, cut, ct).ConfigureAwait(false) is { } stop) return stop;
                     if (!could.Result) throw wiring.StreamEnded(waited);
                 }
             }
@@ -307,16 +307,17 @@ internal sealed class AcpWaits(ITurnEndWiring wiring)
     /// The session's own wait cut, and awaited to its end, which the cut bounds since every wait in it observes the cut: only the cut's own cancellation is swallowed; any other end of it, a failure or a cancellation on another
     /// token, is the run's, thrown as it comes.
     /// </summary>
-    private static async Task CutAsync(Task after, CancellationTokenSource cut, CancellationToken ct)
+    internal static async Task<string?> CutAsync(Task<string?> after, CancellationTokenSource cut, CancellationToken ct)
     {
         await cut.CancelAsync().ConfigureAwait(false);
         try
         {
-            await after.ConfigureAwait(false);
+            return await after.ConfigureAwait(false);
         }
         catch (OperationCanceledException cancelled) when (cancelled.CancellationToken == cut.Token && !ct.IsCancellationRequested)
         {
             // The wait this cut, or the silent go-on's own wait for its answer: the quest closed, and what the agent would have said is not owed.
+            return null;
         }
     }
 
