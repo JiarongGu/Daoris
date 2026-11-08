@@ -255,11 +255,12 @@ Four run at once; the background and every git waiting outside Daoris (a remote 
 so a person's read always finds the fourth; outside-waiting gits hold at most two and count toward no repository's two; one
 repository runs at most two of the background's reads. Asks queue per repository by common directory, a person's oldest that may go
 first, else the oldest that may go; a write passes nothing queued ahead of it and nothing passes it. An ask shares an identical start
-(file, folder, arguments, variables, runner, bound) only while that start is queued, never one running. A read `GitEndable` calls
+(file, folder, arguments, variables, runner, bound) only while that start is queued with no write of its repository queued after it,
+never one running. A read `GitEndable` calls
 lock-free (a `status` with `--no-optional-locks`, a working-tree diff also told `-c diff.autoRefreshIndex=false`) is dropped while
 queued and ended while running once its askers leave; every other git, placed, runs untokened to its end or its bound. A
 `worktree remove` is admitted once the tree's lock-free reads are dropped or ended and its other gits have ended, and holds what is
-asked in the tree after it. An ask beneath any placed git takes a place that git lends, above the four, one a parent, two deep,
+asked in the tree after it, which its own git passes. An ask beneath any placed git takes a place that git lends, above the four, one a parent, two deep,
 deeper refused as `git.start.depth`: a pipe request's caller is told beneath one by its process ancestry (`PipeGitCaller`,
 `GitCallers`, read only while a git holds a place), so a push's hook and a diff's textconv or filter helper that ask the window
 never wait behind the place their own git holds. Lazy fetch is off for every read in a repository with a promisor
@@ -273,7 +274,16 @@ repository only where their configuration is one (`GitAskerContext`: the common 
 its bytes, and the folder itself where an `includeIf` is configured), so `GitFacts.SameRepository`, `RefSnapshot.TreeHeld`,
 `ListedFor` and `GitReadOnce`'s listings never answer a tree with replacements off from one with them on. A git whose kill it outlived leaves the four for a count apart
 (`git.place.apart`, `git.place.exited`), and while its repository holds one the background's asks of it are answered `stalled`. A
-bridge route's gits are a person's (`DriverModule`); the flow memos ask under the flow's token (`GitMemoAsks`). Each git is counted
+bridge route's gits are a person's (`DriverModule`); the flow memos ask under the flow's token (`GitMemoAsks`). Four censuses
+hold the classes, each run over the driver with each listed member left out in turn and with one planted omission, and red on each
+(`SourceCensus`): every field holding a git answer, with its stamp or its flow (`GitKeepersCensusTests`); every field of the trees'
+and the platform's code keeping a process, a library repository or a place, with what ends it (`GitLifetimesTests`); every file there
+that ends a process early, with what it may end (`GitEndingsCensusTests`); and every file of the driver that starts a process
+(`GitStartsCensusTests` over `GitLaunchTests`' list). `GitSchedulerProcessTests` holds the scheduler on real git: 240 gits over six
+repositories at most four places at once; a person's read placed at once while a push running its hook, a fetch waiting on its
+grant and a background diff whose textconv waits hold the rest; two commits' hooks in two partial clones reading a filtered blob
+back through the service, and four diffs' textconv helpers asking back in, each lent a place and ending 0; a removal while a status
+that locks is queued in its tree; a write's order against reads either side of it. Each git is counted
 for a flow through `GitLaunch` (`GitLaunch.Count`,
 `WorkingTree.Started`); a test counts a pass's starts at the process gate with the folder each ran in (`GitStartTally`). Measured on
 2026-11-06 on the count classes' fixtures, and held there as budgets. *Again* is the same command in the same folder asked again in the
@@ -302,7 +312,14 @@ The rows above are as the cuts of PERF1 left them (measured again on the same fi
 offer and Review, and a landing lists them twice (its judgement's, and its press's after the write). A test class's own git, each class alone with git's trace per process (`GIT_TRACE2_EVENT`) and the fixture's count
 (`DAORIS_TEST_GIT_SPAWNS`): `OfferGitCountTests` 43 starts (the fixture's 11), 3.7 s in git; `StartGitCountTests` 23, 1.8 s;
 `ViewGitCountTests` 125 (28), 7.1 s; `LandGitCountTests` 127 (7), 8.4 s; `TidyGitCountTests` 148 (19), 10.4 s; `ReviewGitCountTests` 180
-(15), 17.3 s. The other test classes that start git are not counted yet.
+(15), 17.3 s. The other test classes that start git are not counted yet. Before and after the scheduler, measured on 2026-11-09
+with the commit before it (`5cf077b03d`) in a scratch worktree, each class alone on this machine under its agents' load with
+`GIT_TRACE2_EVENT` set to a folder (`dotnet test src/Daoris.Desktop/Daoris.Desktop.Driver.Tests --no-build --filter
+FullyQualifiedName~ReviewGitCountTests`, then `~TidyGitCountTests`) and each top-level git's start and exit summed and swept:
+Review's class 203 gits either way, 26.0 s in git and at most 3 at once before, 25.9 s and 2 after; the look's tidy 113 gits, 18.9 s
+and 1 before, 21.2 s and 1 after. Their gits are asked one after another, so the bound holds none back and the scheduler costs them
+nothing measurable; `GitSchedulerProcessTests`' fan-out ran 240 gits in 69 s, never more than four placed. `createdMs` is the gate's
+own figure, read from the install's `review.read`, which git's trace cannot give.
 
 A held reader per repository does not earn its place on these figures. A view asks at most three object questions a pass, one of them
 by id, and the Git page's reads ask none once an id's answer is kept. A landing and the tidy asked more, and the starts are cut without

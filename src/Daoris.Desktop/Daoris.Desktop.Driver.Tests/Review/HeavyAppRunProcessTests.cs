@@ -5,16 +5,14 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// <c>daoris gate run</c> as built, against a stand-in of the running Daoris that runs a terminal's heavy run through the
-/// application's own half: the gate is started by the stand-in's process, never the verb's, in the verb's folder and environment,
-/// writing to the verb's own output; the verb exits with the run's code; a verb killed while its run runs ends the run; and with no
-/// Daoris to ask the verb says so and starts the gate itself.
+/// <c>daoris gate run</c> as built, against a stand-in of the running Daoris that runs a terminal's heavy run through the application's
+/// half: the gate started by the stand-in's process, never the verb's, in the verb's folder, environment and output; the verb exiting
+/// with the run's code; a killed verb ending the run; and with no Daoris to ask, the verb saying so and starting the gate itself.
 /// </summary>
 /// <remarks>
-/// The gate is a node script that writes its parent's id, which is the shell <c>cmd.exe</c> the run starts it through, and the
-/// variable handed to the verb alone, then waits for its go; the test reads which process started that shell from the system.
-/// The home is a scratch folder in the repository's gitignored <c>_fixtures/</c>, and every <c>DAORIS_</c> variable of the machine
-/// is dropped from the verb.
+/// The gate is a node script that writes its parent's id (the <c>cmd.exe</c> the run starts it through) and the variable handed to the
+/// verb alone, then waits for its go; the system says who started that shell. The home is a scratch folder in the gitignored
+/// <c>_fixtures/</c>, and every <c>DAORIS_</c> variable of the machine is dropped from the verb.
 /// </remarks>
 [Trait(Category.Name, Category.Process)]
 public sealed class HeavyAppRunProcessTests : IAsyncDisposable
@@ -51,7 +49,6 @@ public sealed class HeavyAppRunProcessTests : IAsyncDisposable
             }
             catch (InvalidOperationException)
             {
-                // Ended already.
             }
 
             verb.Dispose();

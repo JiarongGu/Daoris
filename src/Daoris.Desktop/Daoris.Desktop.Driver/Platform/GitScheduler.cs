@@ -15,8 +15,7 @@ namespace Daoris.Driver;
 /// the oldest that may go, so an ask held back by its class's cap never holds up a later local read. Within a repository a write passes nothing queued ahead of it, and nothing
 /// queued behind it passes it.</para>
 /// <para><b>A shared answer</b>: an ask takes another's only where its own start would have been that start (<see cref="GitRunAsk.Start"/>)
-/// and that start has not taken its place, nor a write of its repository been queued after it, so the answer reads a state at least as
-/// new as the ask's own start would have.</para>
+/// and that start is still queued with no write of its repository queued after it, so its answer is as new as the ask's own would be.</para>
 /// <para><b>Ending</b>: a read that takes no lock (<see cref="GitRunAsk.Endable"/>) is dropped while queued and ended while running once
 /// every asker has left. Every other git is dropped only while queued; once placed it runs untokened to its end or its bound.</para>
 /// <para><b>Re-entry</b>: an ask made beneath a placed git (<see cref="Beneath"/>, told from the caller's process ancestry by
@@ -412,7 +411,6 @@ public sealed class GitScheduler
         var first = true;
         foreach (var entry in queue)
         {
-            // An ask its tree's removal holds is no ask ahead of the removal's own git, which is queued after it.
             if (Held(entry)) continue;
             if (entry.Ask.Writes && !first) yield break;
             first = false;

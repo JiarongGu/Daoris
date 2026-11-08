@@ -4,10 +4,9 @@ namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
 /// The lifetimes class's census: every field of the git service's code (the trees' and the platform's) that keeps a process, a library
-/// repository or a git's place is listed with what ends it, so no git or handle outlives the question it was started for unsaid. Shown red
-/// on a keeper left out of the list and on a planted field holding a process.
+/// repository or a git's place is listed with what ends it, so no git or handle outlives its question unsaid. Shown red on a keeper left
+/// out of the list and on a planted field holding a process.
 /// </summary>
-/// <remarks>A library call's <c>Repository</c> is matched though none is kept yet: the library comes with GITLIB1d, one call at a time.</remarks>
 [Trait(Category.Name, Category.Census)]
 public sealed class GitLifetimesTests
 {
