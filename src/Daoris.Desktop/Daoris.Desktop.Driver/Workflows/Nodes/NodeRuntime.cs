@@ -305,12 +305,13 @@ public sealed class NodeRuntime(
             if (fresh)
             {
                 _freshAsked = false;
+                // The asks this read answers, taken before it begins: one landing while it runs is for a quest the read may not hold, so it stays owed.
+                var asks = _returned.Keys.ToHashSet(StringComparer.Ordinal);
                 var read = await look.Units(ct).ConfigureAwait(false);
                 var home = records.Home;
                 var kept = _closer is null ? null : (Func<string, NodeGraph?>)(digest => ClosureGraphs.Read(home, digest));
                 // The runs bound to graph versions, each owed a pass where a start of its chain asked one or this is the process's first look,
                 // which judges every bound run once, so a restart loses nothing.
-                var asks = _returned.Keys.ToHashSet(StringComparer.Ordinal);
                 var runs = _graphRuns.Read().Select(run => run with { Asked = _restarted || asks.Contains(run.Run) }).ToList();
                 (_governed, _choices) = (NodeGoverning.Govern(look.Config, read, look.Steps(), kept, look.Bound, runs, bindings)
                     .ToDictionary(each => each.Unit.Id, StringComparer.Ordinal), choices);
