@@ -137,10 +137,10 @@ internal sealed class RoundConsidering(PlanRound round)
             };
         }
 
-        // A first start whose declared paths meet an earlier unit's of the repository, declared or changed on its branch, waits under
-        // `overlap: wait` until that unit's integration is settled; under `warn` it starts saying so. A unit is earlier while it is
-        // taken, running, started at this look or still integrating.
-        var overlap = continuing || quest.Status != "Open" ? null : OverlapOf(quest);
+        // A first start (not a retry or carry-on, whose work is already in its tree) whose declared paths meet an earlier unit's of the
+        // repository, declared or changed on its branch, waits under `overlap: wait` until that unit's integration is settled; under
+        // `warn` it starts saying so. A unit is earlier while it is taken, running, started at this look or still integrating.
+        var overlap = into is not null || quest.Status != "Open" ? null : OverlapOf(quest);
         if (overlap is not null
             && config.LinePolicyOf(quest.To, repo.Workspace)?.Overlap == LandingIntegrate.Wait)
         {

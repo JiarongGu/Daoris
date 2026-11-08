@@ -2956,3 +2956,54 @@ I found nothing further in:
 - **§5.5 step 5’s R13-F4 sentence:** a return laying back uncommitted work writes no `unworked`, so the files stage cannot reset that restored work.
 
 No file changed, no `local/` folder read, and no builds or tests run.
+
+
+## Codex, row b's note
+
+Codex's read of §34 at `2a97214e3f`, run by the steward from outside the install, read-only; verbatim.
+
+At `2a97214e3f`, **row d’s gate is not met**.
+
+1. **The measurement is useful, but conditional.** [§34](2026-10-26-tree-pool-design.md#34-row-bs-note-measured) uses the built pool over 104 commits, with eight takes and fresh-tree comparisons. Its arithmetic checks. However, the replay overrides two installs as intermediates, loses the web’s modules, and has invalid later web builds. It builds initially and after the replay, not after every take; “per session” combines average take writes with the final build.
+
+   `TreeWrites` counts new or size/timestamp-changed files at their final size. These are logical filesystem estimates, not exact physical writes: repeated writes, transient files and writes outside the tree escape that accounting. A quiet machine would change timings and contention, not the underlying output-recopy requirement. Fixing the failed web build could change the counts. Zero refusals in eight modified takes establishes no general refusal rate.
+
+2. **Files: yes, within that experiment. Bytes: a modest reduction, not §11’s claimed saving.** Approximately 1,500 versus 27,557 files means **94.6% fewer**; 1,180 versus 1,509 MB means **21.8% fewer bytes**, against R5.2’s 64%.
+
+   `PoolClearing.ClearAsync` moves runnable outputs aside. Recreating `bin/` then writes 1,143 MB—almost the cold build’s 1,149 MB. Renaming preserves the old outputs but leaves their destinations empty.
+
+   TREEPOOL1x identifies the other problem: `prepare` produces git configuration/hooks and `docs/index/` outside dependency folders, obstructing portable installs. The modified replay still reinstalls 515 files/26 MB per take. One causal statement needs correction: **unsealed does not mean unrecorded**; the code records `"installed"` placements and can keep them. The reported `lines-own` refusals require tracing the missing placements.
+
+3. **The smallest useful changes are separate and need remeasurement.**
+
+   - **Retain validated build products at the fixed slot path.** Extend provenance/keying in row 3’s style: source inputs, dependency keys, toolchain and configuration, with sufficiently granular keys to retain unchanged products. Expose only products matching the incoming line; preserve mismatches and unreconstructible files under their originating line through the existing claim/recovery machinery. Hits must avoid copying whole output trees. Risks: incomplete keys admit stale code; coarse keys miss on every commit; retention increases disk use. Keeping only returning lines’ outputs cannot establish savings for new lines.
+   - **Separate repository setup from dependency installation**, as TREEPOOL1x proposes. Run hooks/index setup explicitly and make installs sealable. Risks: broad `--ignore-scripts` can omit required dependency builds; missing setup breaks repository tooling. This removes install churn but cannot alone fix the dominant `bin/` bytes.
+
+4. **Before row d:** revisit output retention with the owner, trace/fix TREEPOOL1x and the disappearing web install, then rerun successful equivalent builds without the benchmark override. Both makers must read the corrected evidence and the steward must find §11’s saving holds. The owner’s temporary output-clearing choice explains the miss; restrictions deliberately excluded by the owner are not findings.
+
+## Opus (independent), row b's note
+
+The independent Opus 5.5 reader's read of §34 at `2a97214e3f`, read-only; as it answered, set down by the steward.
+
+**(1) Method.** The files and bytes are sound (R5.2's counter, the pool's own acts). Five limits:
+
+- The per-session row adds a 13-commit take to a build covering the whole day, since nothing was built between takes. That overstates the compile. It does not change the bytes, because `bin/` is written whole either way.
+- The two builds are not like for like. The slot's after-day build had no web, because its `node_modules` was gone. 901 − 732 = 169 files is about the web's share (R5.2: 159), so 1,143 against 1,149 MB flatters the slot.
+- The installs ran under a person's rule the pool would not have: intermediates are never re-keyed by lockfile. So the install figures are a lower bound. The web's removal at take 26 happened under that rule, so it says nothing about the pool until traced.
+- "Deletes none" is wrong. Each take's moved-aside outputs (about 260 tops) are deleted after the line's finish.
+- 0 refusals is for a slot no process used (`-nodeReuse:false`, no test host or app ran in it). A held DLL would meet `PoolClearing.ClearAsync`'s rename. `TakeAsync` does not catch the `IOException` that rename documents, so the claim stays at `switched` under a live run (filed as TREEPOOL1y).
+
+A quiet machine would settle warm against cold, the hold (54 s, against 8.1 s for its parts read warm) and the install minutes. It would not move a file or a byte. The refusal count needs a slot that was used, not a quiet machine.
+
+**(2) §11.** On files the saving holds (about 95% fewer). On bytes it misses: 22%, less once the web is counted, against R5.2's 64%. §28.2 and §18 item 12 predicted this, and D214's round-8 note asks the question again now. It is the owner's open choice, not a defect. Two causes:
+
+- **`bin/` is moved aside at every take.** Copy-local then writes every reference into each test project again: 1,143 of the 1,180 MB. The kept `obj/` saves only the compile.
+- **The root's `prepare` writes git's shared config, its hooks and `docs/index/` outside its folder.** So the root install never seals. `docs/index/` is an output, cleared at every take, so the root is installed again at every take (R12).
+
+**(3) Smallest changes.**
+
+- **A. Keep .NET's `bin/` in the slot as a build base.** Record at let-go that it is the previous line's. The no-build runners (`desktop.mjs run`, `e2e-host.mjs`) refuse until this line builds, and copy-local copies only what changed. Risk: another runner (`dotnet test --no-build`, an exe run directly) gives another line's result. That is a wrong result, but no work is lost. Row b's byte-for-byte proof must extend to `bin/`. This is §18 item 12's yes.
+- **B. Hard-linked copy-local in development builds**, set in BUILDSTAMP1's props. R4-F2 stands, and the bytes fall to `obj/`'s. Risk: a write through a link reaches `obj/` or NuGet's cache, which is D51's reason against links.
+- **C. TREEPOOL1x.** Install the root with `npm ci --ignore-scripts`; its lockfile has no install script, while the web's has esbuild's, so the web keeps its scripts. Run the two `--install` steps once per checkout, and leave `docs/index/` to the stage's hook. Risk: a later root dependency's script is skipped unless the stage reads `hasInstallScript`.
+
+**(4) Row d.** It cannot start yet. First: the owner answers item 12 on these numbers (A, B, or §11 restated as files about 95% and bytes about 20%); TREEPOOL1x is built and the bench rerun without the person's rule, with a build per line, bytes per step and one used slot; and FOUNDATION1's row 1d-i has landed.

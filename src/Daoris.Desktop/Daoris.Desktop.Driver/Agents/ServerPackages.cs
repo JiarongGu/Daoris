@@ -10,8 +10,8 @@ namespace Daoris.Driver;
 /// package on every start behind two <c>cmd</c>s and a node of npm's own.
 /// </summary>
 /// <remarks>
-/// <para><b>An exact version is its folder.</b> A tag, a range or no version is answered by the newest version installed, and only
-/// a package with none installed asks npm, once: what the tag came to then is the folder's name.</para>
+/// <para><b>An exact version is its folder.</b> A tag or no version is answered by the newest version installed, a range by the newest
+/// inside it (one <see cref="NpmRanges"/> cannot read is answered as a tag is); only a package with none asks npm, once.</para>
 ///
 /// <para><b>Staged, then published.</b> npm installs beside the folder it becomes (<see cref="ReleaseChannels.StagingOf"/>), and the
 /// folder is moved into place only once its script is there, so a reader never takes a half-install; one start of this process
@@ -65,16 +65,17 @@ public static class ServerPackages
         }
     }
 
-    /// <summary>The script of the version installed that answers <paramref name="npx"/>: its exact version's, or the newest one's.</summary>
+    /// <summary>The script of the version installed that answers <paramref name="npx"/>: its exact version's, the newest one in its range, or the newest.</summary>
     private static string? Kept(string home, NpxCommand npx)
     {
         if (Exact(npx) is { } exact) return Script(home, npx, exact);
+        var range = npx.Version is { } written && NpmRanges.Reads(written) ? written : null;
         var versions = Path.GetDirectoryName(Folder(home, npx.Package, "0"))!;
         if (!Directory.Exists(versions)) return null;
         return Directory.EnumerateDirectories(versions)
             .Select(Path.GetFileName)
             .OfType<string>()
-            .Where(Tools.IsExactVersion)
+            .Where(version => Tools.IsExactVersion(version) && (range is null || NpmRanges.Satisfies(range, version)))
             .OrderDescending(Comparer<string>.Create(ToolResources.CompareVersions))
             .Select(version => Script(home, npx, version))
             .FirstOrDefault(script => script is not null);

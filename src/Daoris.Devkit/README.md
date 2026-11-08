@@ -5,12 +5,9 @@ from project files. [The contributor guide](../../docs/development.md) covers wo
 D26 and D27 record its configuration and distribution contracts. Build logs carry current size
 and test counts; the backlog holds open work.
 
-**The universal gates run here** (DEVKIT3, 2026-09-22): `universal` in `daoris.gates.json` and a step
-in the release workflow both run `verify --universal-only`. For a year of this file's life they did
-not — the workflow ran the devkit's own *test suite* and then each declared gate by name, and never
-the binary, so the gates configured in that file were configuration nothing read. Run by hand the
-first time, it exited 1 on eight sensitive findings and one stale document; every one was real and
-every one is fixed.
+**The universal gates run on this repository** (DEVKIT3): the `universal` gate in `daoris.gates.json` runs
+`verify --universal-only` through the repository's `tools/as-merged.mjs`, and `npm run verify`, which the release
+workflow's *Verify gate* step runs, ends with the same command and `--allow-builtins-only`.
 
 🔴 **`--universal-only` is the only form a repository can declare as a gate of its own.** Plain
 `verify` runs the declared gates after the universal ones, so a row naming it would reach itself. The
@@ -51,7 +48,7 @@ stack-specific and is *declared* by the repository rather than built in.
 | Gate | What it answers | Skips when |
 |---|---|---|
 | `sensitive` | Would this commit leak a machine path, a private name, or a credential? | never — it is the one that has to run |
-| `version` | Does one file own the version, does everything agree, and was it stamped rather than typed? | no `version.source` declared |
+| `version` | Does one file own the version, does everything agree, and was it stamped rather than typed? A version past 0.x with no entry in `docs.changelog` was typed | no `version.source` declared |
 | `docs` | Is a declared document's last commit older than its code's last change of behaviour, beyond the grace period? A merge, or a commit typed `docs` or `style`, changes no behaviour. A freshness signal, not a semantic comparison | no `docs.tracked` declared |
 | `links` | Does each relative Markdown link target resolve? Inline-code paths need a separate check | no tracked markdown |
 | `doctrine` | Has this repository's doctrine drifted? — **delegated to `daoris check`** | no `daoris.json` |
@@ -115,7 +112,7 @@ is inert data the CLI parses on every invocation, and this file names commands t
   "sensitive": { "patternsFile": "local/sensitive-patterns.txt" },
   "localInputs": ["local/allowed-hosts.txt"],
   "version":   { "source": "Directory.Build.props", "mirrors": ["src/web/package.json"] },
-  "doctrine":  { "command": "daoris" },
+  "doctrine":  { "command": "daoris", "args": [] },
   "docs": {
     "changelog": "CHANGELOG.md",
     "graceDays": 0,
@@ -138,8 +135,9 @@ rather than refusing for want of the list. A path outside `local/`, or one that 
 copied, and the tree's opening says so. A declared file the checkout lacks is said too, except the
 undeclared default, which a repository scanning with `--allow-builtins-only` never wrote.
 
-`.props`, `.csproj` and `package.json` version shapes are known, so the common case declares no
-`pattern`. A gate named in `disabled` does not run **and is printed on every run** — off because
+`doctrine.command` and `doctrine.args` say how to start the doctrine tool where it is not simply `daoris` on
+`PATH`: the gate runs `<command> <args…> check` at the repository root. `.props`, `.csproj` and `package.json`
+version shapes are known, so the common case declares no `pattern`. A gate named in `disabled` does not run **and is printed on every run** — off because
 someone wrote it down is a decision; off because nobody wired it up is an accident, and from the
 outside those look identical unless the run says so.
 
@@ -152,12 +150,19 @@ daoris-devkit verify --universal-only
                               # elsewhere. A row naming plain `verify` would reach itself.
 daoris-devkit scan            # the sensitive scan on staged changes — what the pre-commit hook runs
 daoris-devkit scan --tree     # …on every tracked file
+daoris-devkit scan --message <file>
+                              # …on a commit message — what the commit-msg hook runs
 daoris-devkit scan --history  # …on everything the repository has EVER contained
-daoris-devkit init            # write a starter daoris.gates.json
-daoris-devkit install-hooks   # write .githooks/ and point core.hooksPath at it
+daoris-devkit init            # write a starter daoris.gates.json (never over an existing one)
+daoris-devkit install-hooks   # write .githooks/ (pre-commit, commit-msg) and point core.hooksPath at it
 daoris-devkit map             # write docs/code-map.json from the project files
 daoris-devkit map --check     # exit 1 when the committed code map is not what they say
+daoris-devkit version         # print the devkit version (`help` prints the usage)
 ```
+
+`--allow-builtins-only` on `verify` or `scan` runs the sensitive scan with its structural patterns alone, where the
+private pattern list is absent, as it is on a CI runner. The devkit finds the repository by walking up from the
+working directory to the `.git` folder or file, so a hook or a subfolder can run it.
 
 ### The git it starts
 
@@ -178,7 +183,9 @@ compiler:
 - every tracked `package.json` below the root is a module named by its package, and a dependency on
   another of the repository's packages is of kind `package`.
 
-What the files do not say is left to a person and kept across runs. A summary comes from the
+The map is written to `docs/code-map.json`, or to `code-map.json` where that file is the one present, and a
+project reference to a project the repository does not track is reported as a note and not drawn. What the files
+do not say is left to a person and kept across runs. A summary comes from the
 project's own description, and where the project declares none, the line already in the map is
 kept. A dependency of any other kind, such as `http`, stays while both its ends are modules.
 
@@ -192,24 +199,24 @@ applies:
 ```
 
 The devkit shares no code with the service that reads the file, so it restates the reader's rules:
-where the file lives, one id per module, the bounds. Its tests hold them to the reader's source, and
+where the file lives, one id per module, the bounds (500 modules, 5000 dependencies). Its tests hold them to the reader's source, and
 the tool refuses rather than write a file the reader would refuse.
 
 ### `--history` is an audit, not a gate
 
 Run it at moments, not on every commit: **before making a repository public**, and after a history
-rewrite to prove the rewrite worked. It reads every reachable object, so its cost grows with the
+rewrite to prove the rewrite worked. It reads every blob and commit message in the object database, so its cost grows with the
 history — wiring it into `verify` would tax every run forever to re-check commits that were already
 checked when they were made. It is deliberately not one of the five universal gates.
 
 It exists because the other scopes cannot answer the question that matters at those moments. Deleting a
 leak edits the current checkout and leaves the copy in history untouched, and after a push there are
-copies you no longer control. It covers three things the working tree cannot: **every reachable blob**,
-**every commit message**, and **every path any file ever had** — a name can be the leak on its own, and
+copies you no longer control. It covers three things the working tree cannot: **every text blob**,
+**every commit message**, and **every path any file ever had** (binary blobs are skipped) — a name can be the leak on its own, and
 deleting a file does not delete the name it had.
 
 One `git cat-file --batch-all-objects` process streams the whole object database rather than one process
-per object; this repository audits in about two seconds.
+per object; the paths come from one `git rev-list --objects --all`.
 
 ### Acknowledging a reviewed object
 
