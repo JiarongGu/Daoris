@@ -312,4 +312,12 @@ public sealed record NodeRecord(string Unit)
 
     /// <summary>The node's newest attempt, or null.</summary>
     public NodeAttempt? Newest(string node) => Attempts.LastOrDefault(attempt => string.Equals(attempt.Node, node, StringComparison.Ordinal));
+
+    /// <summary>
+    /// Whether <paramref name="attempt"/> still waits on its retry delay: its node is failed transient on it, the one <see cref="WorkPerformer.Due"/> makes
+    /// ready. A delay an attempt kept after its node moved on (a tip moved during it) waits on nothing and is no timer.
+    /// </summary>
+    public bool RetryPending(NodeAttempt attempt) =>
+        attempt.RetryAt is not null && Statuses.GetValueOrDefault(attempt.Node) is { State: NodeStates.Failed, Transient: true } status
+        && status.Attempt == attempt.Attempt;
 }

@@ -157,7 +157,7 @@ internal sealed class NodeTelling(NodeRecordFiles records, IWorkRuntimePort port
 
             foreach (var attempt in record.Attempts)
             {
-                Due(attempt.RetryAt);
+                if (record.RetryPending(attempt)) Due(attempt.RetryAt);
                 if (attempt.State is AttemptStates.Recorded or AttemptStates.Unknown or AttemptStates.Sent) Due(attempt.AskAt);
                 if (attempt.State == AttemptStates.Sent && attempt.AskAt is null) Due(attempt.Call.DeadlineAt);
             }
