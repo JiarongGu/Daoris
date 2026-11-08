@@ -130,6 +130,10 @@ public static class SupervisorWhy
     public const string NotOffered = "not-offered";
     public const string Reserved = "reserved";
 
+    public const string Worded = "worded";
+    public const string LandingPushes = "landing-pushes";
+    public const string NoPlan = "no-plan";
+
     // Why a decision goes stale (`supervisor.stale`).
     public const string Tampered = "tampered";
     public const string Forged = "forged";

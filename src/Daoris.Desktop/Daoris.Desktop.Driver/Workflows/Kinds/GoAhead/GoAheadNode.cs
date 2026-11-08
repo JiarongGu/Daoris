@@ -25,4 +25,6 @@ public sealed class GoAheadNode : BuiltInNode, IObserves
     public override string? Title => null;
 
     public override NodeLook Look => NodeLook.You;
+
+    public override bool HoldsRun => true;
 }

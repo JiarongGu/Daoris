@@ -113,7 +113,10 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
     nodes and a plugin's nodes the run's branch at its tip, the branch its tree moved onto where the look learned it, named alike
     by binding, telling and answers; a `go-ahead` the run's ask. (from D190)
 18. The runtime is the record's one writer. A door keeps the person's word (skip, stop, send, ask again, go on, accept, changes, done, approve, reject) on the
-    record, and the next pass applies it; a run does not end while a word waits on that pass. An Accept waits for that pass, within `GraphPasses.Bound` (20 seconds), saying so beside the
+    record, and the next pass applies it; a run does not end while a word waits on that pass. A word names its author: the person's names none, a landing supervisor's names its role, its
+    decision and the attempt it was released on (`NodeWordBy`), a node taking it as `supervisor` where the person's is `person`. A
+    second word on a node is refused `worded`, but the person's replaces a supervisor's pending one, which the pass settles
+    `superseded`; the pass drops a supervisor's word whose attempt has lapsed or whose decision is not live in this run (`stale`). An Accept waits for that pass, within `GraphPasses.Bound` (20 seconds), saying so beside the
     button (`PassNote`, the press step `pass`); it never waits behind a tree's hold. A quest bound to a closure graph is closed by that graph. (from D190)
 19. A `go-ahead` holds the landing until the person's yes or their skip with words. (from D190)
 20. A conversation's run binds its graph. Its subject is the candidate the person submits, numbered past every one the run has had,

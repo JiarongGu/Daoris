@@ -83,7 +83,7 @@ public sealed class NodeRuntime(
     private NodeClosing Closing => LazyInitializer.EnsureInitialized(ref _closing, () => new NodeClosing(records, clock, _closer, () => _quests, () => _governed, () => _governed = null))!;
 
     private NodeRunKeeping Keeping => LazyInitializer.EnsureInitialized(ref _keeping, () => new NodeRunKeeping(
-        records, clock, _holdsLease, _graphRuns, _performer, () => Doors, () => Say, () => PullRequests))!;
+        records, clock, _holdsLease, _graphRuns, _performer, () => Doors, () => Say, () => PullRequests, () => Landings))!;
 
     private NodeIntegrating Integrating => LazyInitializer.EnsureInitialized(ref _integrating, () => new NodeIntegrating(
         records, clock, () => Doors.Door<IIntegrationDoor>(), () => Lines, () => _config, () => Integrated))!;
@@ -108,6 +108,8 @@ public sealed class NodeRuntime(
 
     /// <summary>A unit whose <c>line</c> has reached after its <c>integrate</c> (<c>work.integrated</c>): told once, with its repository.</summary>
     public Action<string, string>? Integrated { get; set; }
+
+    public ILandingWords? Landings { get; set; }
 
     /// <summary>Where the pull request a plugin's step opened is written on its landing: none by default, so a runtime nobody wired writes none.</summary>
     public IPullRequestRecords? PullRequests { get; set; }

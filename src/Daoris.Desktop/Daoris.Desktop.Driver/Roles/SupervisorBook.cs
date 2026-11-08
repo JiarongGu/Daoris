@@ -22,6 +22,8 @@ internal sealed class SupervisorBook(string home, MachineLog? log)
     /// <summary>Every course decision on a referred point by id (<see cref="SupervisorCourses"/>).</summary>
     public ConcurrentDictionary<string, SupervisorCourseDecision> Courses { get; } = new(StringComparer.Ordinal);
 
+    public ConcurrentDictionary<string, SupervisorLandingDecision> Landings { get; } = new(StringComparer.Ordinal);
+
     /// <summary>Subjects a decision closed as the owner's, by kind and subject, with the state that closed them, across a restart too.</summary>
     public ConcurrentDictionary<SupervisorSubject, SupervisorState> Closed { get; } = new();
 

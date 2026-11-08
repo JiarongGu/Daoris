@@ -367,7 +367,7 @@ public static class NodeLifecycle
                 return To(next with { Acceptance = Owned(worded), By = NodeSource.Person, Code = null, Transient = false, Unreconciled = null });
 
             case NodeStates.Reached:
-                if (move.Source != authority.ReachBy) return Refuse(NodeRefusal.NotAuthority);
+                if (move.Source != authority.ReachBy && !(move.Source == NodeSource.Supervisor && authority.ReachBy == NodeSource.Person)) return Refuse(NodeRefusal.NotAuthority);
                 if (Unbound(move.Attempt) is { } reachAttempt) return Refuse(reachAttempt);
                 if (move.Acceptance is not { } accepted) return Refuse(NodeRefusal.NoAcceptance);
                 if (status.Binding is not { } expected) return Refuse(NodeRefusal.NoBinding);
@@ -396,7 +396,7 @@ public static class NodeLifecycle
                 if (!authority.PersonJudges) return Refuse(NodeRefusal.NotJudged);
                 if (Unbound(move.Attempt) is { } rejectAttempt) return Refuse(rejectAttempt);
                 if (string.IsNullOrWhiteSpace(move.Words)) return Refuse(NodeRefusal.NoWords);
-                return To(next with { By = NodeSource.Person, Words = move.Words });
+                return To(next with { By = move.Source == NodeSource.Supervisor ? NodeSource.Supervisor : NodeSource.Person, Words = move.Words });
 
             case NodeStates.Skipped when move.By == NodeCause.Authority:
                 // The kind's record passes the started attempt over, for that attempt's graph and run. It is never the person's:
