@@ -272,8 +272,10 @@ public sealed class RoleVerbTests : IDisposable
         Assert.Equal(0, await Run("suggested", "--use"));
 
         var actors = DriverConfig.Load(File_).Actors;
-        foreach (var each in ActorSuggestion.Table) Assert.Equal(each.Choices, actors[each.Role]);
+        foreach (var each in ActorSuggestion.Table.Where(each => each.Role != AppointedRoles.Supervisor)) Assert.Equal(each.Choices, actors[each.Role]);
         Assert.DoesNotContain("intake", actors.Keys);
+        Assert.DoesNotContain(AppointedRoles.Supervisor, actors.Keys);
+        Assert.Contains("supervisor is left out: no agent holds it", _out.ToString());
         Assert.Equal(2, await Run("suggested", "--now"));
     }
 
