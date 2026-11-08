@@ -209,6 +209,7 @@ internal sealed class LimitMove(IExecutorWiring wiring) : IExecutor
         // The move's record, ended by its phase where the move goes no further before its hand.
         ConversationMove? record = null;
         var toWire = false;
+        ConversationMove? carriedRecord = null;
         // The move's reading, started as its prompt's write returns, which ends it in the store before the take is told over.
         var read = new TaskCompletionSource<Task>(TaskCreationOptions.RunContinuationsAsynchronously);
         var decided = false;
@@ -321,6 +322,7 @@ internal sealed class LimitMove(IExecutorWiring wiring) : IExecutor
             if (carrier is { Resumed: true })
             {
                 toWire = true;
+                carriedRecord = record;
                 return new StartedFrom(to, true, null, $"`{sessionId}` went on in its own conversation, carried to conversation `{to}` on the next account with your words.");
             }
 
@@ -415,7 +417,7 @@ internal sealed class LimitMove(IExecutorWiring wiring) : IExecutor
             if (record is not null && !toWire) await record.EndAsync().ConfigureAwait(false);
             context.GoingOn.TryRemove(sessionId, out _);
             going.TrySetResult();
-            if (decided) await TellEndedAsync(sessionId, toWire, read).ConfigureAwait(false);
+            if (decided) await TellEndedAsync(sessionId, toWire, read, carriedRecord).ConfigureAwait(false);
         }
     }
 
@@ -423,11 +425,22 @@ internal sealed class LimitMove(IExecutorWiring wiring) : IExecutor
     /// The move is over, its record ended in the store: once its reading has finished, which a door that never says it wrote
     /// bounds, the take is told over, so the words the person said while it stood and the shell held go on to the line's head.
     /// </summary>
-    internal async Task TellEndedAsync(string sessionId, bool wired, TaskCompletionSource<Task> read)
+    /// <param name="unwritten">
+    /// The record of a carried move, whose run wires it before its first prompt: where that prompt is not written within the bound, the
+    /// record is ended by its phase, its prompt known unwritten, since nothing else would end it.
+    /// </param>
+    internal async Task TellEndedAsync(string sessionId, bool wired, TaskCompletionSource<Task> read, ConversationMove? unwritten = null)
     {
-        if (wired && await Task.WhenAny(read.Task, Task.Delay(handOver.WireWait)).ConfigureAwait(false) == read.Task)
+        if (wired)
         {
-            await (await read.Task.ConfigureAwait(false)).ConfigureAwait(false);
+            if (await Task.WhenAny(read.Task, Task.Delay(handOver.WireWait)).ConfigureAwait(false) == read.Task)
+            {
+                await (await read.Task.ConfigureAwait(false)).ConfigureAwait(false);
+            }
+            else if (unwritten is not null)
+            {
+                await unwritten.EndAsync().ConfigureAwait(false);
+            }
         }
 
         handOver.Ended(sessionId);
