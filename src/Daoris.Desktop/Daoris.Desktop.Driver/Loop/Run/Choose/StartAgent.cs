@@ -21,14 +21,14 @@ internal sealed class StartAgent(IRunWiring wiring) : IRunStage
         // Its step's role, else the role its line is bound to, else the work's at its place: never the seeded Build's by default.
         state.PolicyRole = stepRole ?? RuledLine.OfQuest(context.Home, quest, start.Resumes, start.Workspace).Role;
         state.Agent = StartPlan.AgentFor(
-            Driver.StartWork(quest), context.Config, handed: handedQuest?.Agent, catalogue: wiring.CatalogueForReport(),
+            ParticipantWork.OfWeight(quest.Weight), context.Config, handed: handedQuest?.Agent, catalogue: wiring.CatalogueForReport(),
             place: Driver.PlaceOf(start), role: stepRole);
         if (handedQuest is null && start.Resumes is { } goesOnFrom)
         {
             try
             {
                 state.Agent = StartPlan.ContinuedOn(
-                    goesOnFrom, context.Config, Driver.StartWork(quest), context.Conversations.RoleOf(goesOnFrom.Session)?.Role,
+                    goesOnFrom, context.Config, ParticipantWork.OfWeight(quest.Weight), context.Conversations.RoleOf(goesOnFrom.Session)?.Role,
                     wiring.CatalogueForReport(), Driver.PlaceOf(start));
             }
             catch (DriverException error)

@@ -13,8 +13,8 @@ internal sealed class QuestWalk(string home, DriverConfig config, LoopContext co
     /// </summary>
     public IReadOnlyList<ActorEffective> Order(Consideration start, IReadOnlyList<string>? fence = null, string? handed = null, string? role = null) =>
         role is { Length: > 0 }
-            ? RoleCatalog.ReadHome(home).Order(role, Driver.StartWork(start.Quest), Driver.PlaceOf(start), config, fence, handed: handed)
-            : RoleCatalog.ReadHome(home).Order(Driver.StartWork(start.Quest), Driver.PlaceOf(start), config, fence, handed: handed);
+            ? RoleCatalog.ReadHome(home).Order(role, ParticipantWork.OfWeight(start.Quest.Weight), Driver.PlaceOf(start), config, fence, handed: handed)
+            : RoleCatalog.ReadHome(home).Order(ParticipantWork.OfWeight(start.Quest.Weight), Driver.PlaceOf(start), config, fence, handed: handed);
 
     /// <summary>
     /// A quest's start plan: Build's order for its work, its passes remembered and said under the quest, its gate the quest's own: an
@@ -37,7 +37,7 @@ internal sealed class QuestWalk(string home, DriverConfig config, LoopContext co
         }
 
         return new StartPlan(
-            Driver.StartWork(quest), config, context.Harnesses, context.Adapters, passed, catalogue: RoleCatalog.ReadHome(home), place: Driver.PlaceOf(start), role: role)
+            ParticipantWork.OfWeight(quest.Weight), config, context.Harnesses, context.Adapters, passed, catalogue: RoleCatalog.ReadHome(home), place: Driver.PlaceOf(start), role: role)
         {
             Workspace = start.Workspace,
             Kind = StartKind.Driven,
@@ -130,7 +130,7 @@ internal sealed class QuestWalk(string home, DriverConfig config, LoopContext co
         try
         {
             var catalogue = RoleCatalog.ReadHome(home);
-            return Found(catalogue, Driver.StartWork(start.Quest), start, named).Role is { } role ? (role.Id, catalogue.RevisionOf(role.Id)) : null;
+            return Found(catalogue, ParticipantWork.OfWeight(start.Quest.Weight), start, named).Role is { } role ? (role.Id, catalogue.RevisionOf(role.Id)) : null;
         }
         catch (DriverException)
         {

@@ -56,9 +56,9 @@ public sealed class StartRoleTests : IDisposable
     public void A_quest_s_weight_marks_its_work_and_a_design_start_says_whose_order_it_ran_on()
     {
         var quest = new QuestView("q1", "a", "b", "t", "body", "Open");
-        Assert.Equal("build", Daoris.Driver.Driver.StartWork(quest));
-        Assert.Equal("exact", Daoris.Driver.Driver.StartWork(quest with { Weight = "exact" }));
-        Assert.Equal("design", Daoris.Driver.Driver.StartWork(quest with { Weight = "design" }));
+        Assert.Equal("build", ParticipantWork.OfWeight(quest.Weight));
+        Assert.Equal("exact", ParticipantWork.OfWeight("exact"));
+        Assert.Equal("design", ParticipantWork.OfWeight("design"));
 
         Assert.Equal("Design work: it ran on Build's order.", RotatedOpening.DesignLine(ActorWords.Name("build")).Note);
         Assert.Equal("Design work: it ran on designer's order.", RotatedOpening.DesignLine("designer").Note);
@@ -75,10 +75,10 @@ public sealed class StartRoleTests : IDisposable
         Assert.Equal("design", answered[0].Weight);
         Assert.Null(answered[1].Weight);
 
-        var marked = Daoris.Driver.Driver.StartWork(answered[0]);
+        var marked = ParticipantWork.OfWeight(answered[0].Weight);
         Assert.Equal("design", Plan(marked, RoleCatalog.Of([]), Machine).Role);
         Assert.Equal("designer", Plan(marked, WithDesigner(scope: InEngine), InEnginePlace).Role);
-        Assert.Equal("build", Plan(Daoris.Driver.Driver.StartWork(answered[1]), WithDesigner(scope: InEngine), InEnginePlace).Role);
+        Assert.Equal("build", Plan(ParticipantWork.OfWeight(answered[1].Weight), WithDesigner(scope: InEngine), InEnginePlace).Role);
     }
 
     [Fact]

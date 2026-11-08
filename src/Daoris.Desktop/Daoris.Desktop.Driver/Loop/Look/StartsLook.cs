@@ -46,7 +46,7 @@ internal sealed class StartsLook(IStartsWiring wiring) : ILookPass
             var started = new StartBegun(
                 start.Quest.Id, null, start.Quest.To, start.Workspace,
                 StartPlan.AgentFor(
-                    Driver.StartWork(start.Quest), config, start.Resumes, new HandedQuests(wiring.Home).Read(start.Quest.Id)?.Agent,
+                    ParticipantWork.OfWeight(start.Quest.Weight), config, start.Resumes, new HandedQuests(wiring.Home).Read(start.Quest.Id)?.Agent,
                     wiring.CatalogueForReport(), Driver.PlaceOf(start)), start);
             beginning.Begin(
                 started, new StartReservation(start.Quest.Id, null, start.Quest.To, TreeGoneBackInto(start)),

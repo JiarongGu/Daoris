@@ -70,6 +70,14 @@ public static class ParticipantWork
     /// <summary>Every work, the closed set.</summary>
     public static IReadOnlyList<string> Codes { get; } = [Build, Design, Exact, Chat, AskDaoris, Intake, Help, Partner, Review, Brainstorm, Supervise];
 
+    /// <summary>The work a driven quest starts as, by the weight its publisher declared: a design, an exact build, else a build.</summary>
+    public static string OfWeight(string? weight) => weight switch
+    {
+        Design => Design,
+        Exact => Exact,
+        _ => Build,
+    };
+
     // Events' spelling of Ask Daoris's room (AskDaorisRoom, the lowest subdomain that reads it), a twin of HelpRoom.Repository, which this
     // module may not name (it sits above it), and of the service's SessionLedger.HelpRepository: each side's test holds the spelling,
     // and the participant-work table's rows read it.
