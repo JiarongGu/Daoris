@@ -298,8 +298,9 @@ the act step's held git and the pool's become the scheduler's start kinds (`Whol
 test's `ls-remote` and the version probe its asks. It is asked two ways, never two ways for one question:
 
 - **by meaning**, for the questions the engines answer: `Layout`, `Refs`, `Ref`, `MergeBase`, `IsAncestor`, `Independent`, `Count`,
-  `ChangedNames` (§5.6), and `Blob`, `Commit` (§5.5). Each question of a repository has one engine, chosen by the admission (§5.6): the
-  library or the object reader where admitted, else the scheduler running the command today's code runs (§5.9);
+  `ChangedNames` (§5.6), and `Blob`, `Commit` (§5.5). An object is the object reader's in every repository; each other question of a
+  repository has one engine, chosen by the admission (§5.6): the library where admitted, else the scheduler running the command
+  today's code runs (§5.9);
 - **by command**, for everything else (§5.8), run by the scheduler as written.
 
 The flow's memos stay its front (`GitFacts`, `RefSnapshot`, `GitReadOnce`: one answer a flow). `GitLaunch` stays the one count beneath,
@@ -316,6 +317,7 @@ Every git process Daoris starts runs through it, whichever start kind.
   run waits on what is outside Daoris (a remote act, an act that runs a hook) holds at most two, so two places always serve reads and a
   hook that asks Daoris for a read never waits behind its own act. The scheduler replaces `GitRuns`' entry at the gate, which says
   `Background` for every git, with the asker's class. Four is the start gate's figure; GITLIB1b measures six beside it on the install.
+  The bound is the process's, as the start lock is: a terminal verb reading in its own process is bounded there.
 - **Whose.** From the flow, as `GitLaunch.Within` carries a budget: a bridge route's work, held or not, and a terminal verb's are a
   person's; the loop's, a tick's and a workflow's are the background's. A merged read takes the highest class among its askers.
 - **A queue per repository.** Asks wait per repository, keyed by the common directory (`RefFiles.CommonDirOf`, the checkout lock's
@@ -338,7 +340,7 @@ Every git process Daoris starts runs through it, whichever start kind.
 One `git cat-file --batch-command` per repository, a client of the scheduler. It starts when an object is asked of a repository with
 none running, holding one place, answers every object asked of that repository while it runs, from any flow, and ends as its queue
 empties, and in any case after ten seconds, the next ask starting a fresh one: no pack, commit-graph or multi-pack index it maps
-outlives its batch (§1's hazard is git's too, while git runs).
+outlives its batch, since a held pack is git's hazard too while git runs.
 
 - **A stored file's bytes** (today's `cat-file blob` and `show <commit>:<path>`): `info` first; a blob within the asker's limit is read
   through it, and one over the limit is read for its first bytes and the reader ended rather than drained, as `GitBytesAsync` ends git
@@ -398,7 +400,7 @@ criss-cross) goes to git too, whose choice among them is its own.
 
 ### 5.7 The untracked cut, first and without either engine
 
-Review's and the offer's untracked files' patches are one start each today (`TreeDiffs.UntrackedReadAsync`, `diff --no-index`). They
+Review's untracked files' patches are one start each today (`TreeDiffs.UntrackedReadAsync`, `diff --no-index`). They
 become two starts whatever their count, in Π's place after S: the fold's paths (`UntrackedFold`, its file limit and patch budget as
 now) are added as intents (`add -N`, read from its input with `--pathspec-from-file`, so no command line bounds them) to an empty index
 of the read's own under the home (`GIT_INDEX_FILE`, as the piece keeper's, removed after; `core.splitIndex=false`, so nothing is written
@@ -455,9 +457,108 @@ Nothing the person sees differs between the two engines, since the answers are g
   --reachable`, with `GIT_ASK_YESNO` naming a stand-in that records every ask. Each exits 0, the stand-in is never asked, and once the
   lease or the batch ends no old pack, pack index or graph file remains; the same again with a commit running git's auto maintenance
   (`gc.auto=1`), as a session's does.
-- **The census**, `GitStartsCensusTests`: no git started outside the scheduler, no `LibGit2Sharp` outside `Workplace/Git/`, no read
-  handed no token but the judgements named; `ProcessStartsCensusTests`' entry for `GitRuns` moves to the scheduler, its class the
+- **The census**, `GitStartsCensusTests`: no git started outside the scheduler, no `LibGit2Sharp` outside `Workplace/Git/`, every read
+  handed its asker's token but the judgements named; `ProcessStartsCensusTests`' entry for `GitRuns` moves to the scheduler, its class the
   asker's.
 - **The install's measures.** Each row is measured on the install before and after it with `daoris git review <session> --time`, five
   opens of one session tree: the median of `review.read`'s `ms`, of its starts' `createdMs` and of `queuedMs`, and the tidy's starts a
   pass, written into the area's table. GITLIB1a to c's figures are the baseline; a library row that does not shorten them is not taken.
+
+## 6. The reads answered
+
+| Finding | Round 2 |
+|---|---|
+| **Packs held open** (Opus blocking 1, Codex 3) | A lease per flow, at most ten seconds, never across a wait on anything but git, delete shared (§5.6); the object reader ends as its queue empties (§5.5); a lease's calls exclusive across a thread switch, its disposal waiting on the call under way; proved by the hold test on Windows (§5.10) |
+| **A second path** (Opus blocking 2) | One second way, with both ends held by failing tests and said in the area's rule, since D232 deleted the register (§5.9); split and sparse indexes admitted for the questions that read no index (§5.6) |
+| **The worktree list's parity** (Opus blocking 3, Codex 1) | Kept on git (§5.8); the deletes proved still refused for the main checkout, a locked tree and a missing one (GITLIB1d) |
+| **Replace refs** (Codex 2) | Refs and the layout in the library; merge-bases, counts and names git's; the object reader is git; admission read again at every lease, so a change of state is seen at the next flow (§5.6) |
+| **Partial clones** (Codex 4, Opus) | Refs, the layout, merge-bases and counts; names where the filter keeps trees; a missing object never an absent path, asked of git, which fetches through the doors; bytes from the object reader, which fetches as git does; `FilePreview` says a fetch failed (§5.5, §5.6) |
+| Merge-base and count cases (Opus, Codex) | The parity class's rows (§5.10); several best bases go to git (§5.6) |
+| Configuration (Opus) | libgit2 pointed at the files Tools' git reads, the global file as each start is handed it (§5.6) |
+| A native fault (Opus) | The first accepted, the repeat contained by the journal (§5.6) |
+| Threads (Opus, Codex) | No binding object leaves a lease; a census (§5.6, §5.10) |
+| The parity class on Windows (Opus) | The merge's Windows run and a step in the workflow's Windows job (§5.10) |
+| The wins on the install (Opus) | `review.read`'s `ms`, `createdMs` and `queuedMs` before and after each row; a library row that does not shorten the baseline is not taken (§5.10) |
+| Large blobs (Opus) | The object reader reads a blob past its asker's limit for its first bytes and ends (§5.5) |
+| A commit's fields and bytes unmeasured (Codex) | Given to the object reader, which is git; proved by the starts it saves (GITLIB1c) |
+| Counts and ancestry are walks (Codex) | Timed on vscode in the parity class; a family slower there than one unloaded start stays git's (GITLIB1e) |
+| The Branches query (Codex) | Its listing with distances stays git's (§5.1) |
+| The native load from the published install (Codex) | The deployment rehearsal reads refs through the published driver (GITLIB1d) |
+| Byte comparisons, status parity (Codex) | Bytes compared as bytes; the status stays git's, and the untracked cut is compared by its fold (GITLIB1a) |
+| Traced starts and whole-flow figures (Opus) | Read again (§5.1) |
+
+**D147 §4.3, read again.** The start's cost: answered, its figures corrected (§5.1). Credentials, SSH and hooks: unchanged, no act
+moves. Repositories libgit2 does not open: one second way with two ends (§5.9), a partial clone admitted question by question. Worktrees:
+the list stays git's. No surprise: refs and objects as git reads them, the configuration git's files, replacements git's. Size: 2.5 MB on
+`win-x64`. The held reader's lifetime and the repack hazard, which round 1 left out: §5.5, §5.6 and §5.10.
+
+## 7. The owner's open question: Daoris's own managed git by default
+
+D121 offers a managed git (one exact version Daoris downloads and verifies, `tools.json`'s *managed*) and never switches to it. Whether
+it should be the default is the owner's to decide, and this design does not decide it. What each answer changes here:
+
+- **The person's git stays the default**, as today. The scheduler starts whatever Tools resolves, which is the agents' git too (D121
+  point 3), so Daoris's reads and the sessions' git agree. The design stands as written: the floors are checked per git in use (2.36 for
+  the object reader, beside the doors' 2.31); §5.9's second end is an event the person's own update can bring at any time, caught by
+  the scratch repository at each new git in use; CI proves the runner's git and the pinned MinGit, and the person's git is known only by
+  the machine log's line.
+- **Daoris's managed git becomes the default.** One pinned git for Daoris and every child, so the parity class and the opens census run
+  in CI against exactly the git the install runs, as GITAUTH1b runs the doors' classes; the floors always hold, so `git-too-old` never
+  fires; §5.9's second end becomes a pin Daoris moves on purpose, its census run before the move, so the library is retired by a row the
+  steward schedules and not by an update met; the system file is the managed git's own, known in advance. In exchange, the download
+  and its security updates are Daoris's to carry, and a repository the person's newer git made in a newer format reads as git's refusal
+  until the pin moves.
+- **Neither changes** the service, the scheduler, the object reader, the library's questions or its admission, which reads the
+  repository's own format whichever git made it.
+
+## 8. Rejected in round 2
+
+- **A pool closed after a minute idle** (round 1, §2.2): it never idles while sessions read (Opus blocking 1).
+- **A lease shared by every flow of a repository**: under steady reads it never closes, the same sequence.
+- **The worktree list in the library with full parity**: one start a flow saved, for the delete's one guard read through a model that is
+  not git's.
+- **Replacements ignored by both** (`GIT_NO_REPLACE_OBJECTS` on every start): Daoris's reads would show another history than the agents'
+  own git.
+- **A helper process holding the library**, to contain a fault: the start comes back, and it holds the packs between flows.
+- **Folding the untracked diff into W** (S first, then `diff HEAD` against the intents): one start more saved, for Π's order moved and
+  W's budget shared with the untracked files.
+- **One start an object kept below git 2.36**: a second way with no end Daoris controls.
+- **The service host's two reads through the desktop's service**: the host runs where no desktop does, and a scheduler there would bound
+  that process alone, as each process's does.
+- **A bound per repository with none for the process**: twenty repositories' fan-outs would run twenty gits at once.
+
+## 9. The rows
+
+GITLIB1a lands alone. GITLIB1b comes before c and d, which are apart once it is in; e and f follow d; g follows d and stays open
+until one of its ends is reached.
+
+- **GITLIB1a — the untracked cut, and one status a pass** (§5.7). Proof: the fold the cut reads equal to today's per-file reads over
+  the census's untracked files (nested, CRLF under `core.autocrlf`, binary, empty, over the file limit, past the patch budget, under a
+  filter driver, a path with spaces, one in NFD), any difference listed with its reason; `ReviewGitCountTests` and
+  `OfferGitCountTests` lowered, the untracked tail two starts whatever its count; the install's measures (§5.10), the first baseline.
+- **GITLIB1b — the service and the scheduler** (§5.3, §5.4). Every git start moved into it; `GitRuns`' runners and `HeldChild`'s git
+  callers its start kinds; `ProcessStarts`' git entry replaced; the held works and Review's speculative reads handed tokens. Proof: unit
+  tests of the places (a fan-out of a hundred held to four, a person's ask passing a full background queue, a hook-running git never
+  holding the last two places, one repository's fan-out held to two), of the merge (two askers, one start; an ask after a write in the
+  repository, its own start; a streamed read never joined) and of the ending (a queued read dropped and a running one's tree ended when
+  its askers leave; an act never); `GitStartsCensusTests` and `ProcessStartsCensusTests`; a `Process` class in which twenty reads across
+  two repositories never run more than four gits at once, read from the Git job's census (`OwnedProcesses.Census`); the install's
+  `review.read` with a tick's fan-out beside it, at four places and at six.
+- **GITLIB1c — the held object reader** (§5.5), its floor 2.36. Proof: the parity class's bytes and commit rows, a partial clone's
+  fetched blob and its failed fetch said as such; the hold test with the reader mid-batch; the object column of `LandGitCountTests`,
+  `StartGitCountTests` and `ViewGitCountTests` lowered; the install's measures, which close the baseline.
+- **GITLIB1d — the library's lease and admission, with refs and the layout** (§5.6, §5.9's rule in the area). The package in the
+  driver, its native library in the publish, the fault journal; `RefSnapshot`'s listing (ids as stored), the layout, `symbolic-ref`,
+  `rev-parse --verify`, `show-ref --exists`. Proof: the hold test on Windows; `GitAdmissionTests`, each refused case read by git and each
+  admitted one by the library, replacements and a journaled fault among them; the lease's bound, lifetime and lock by unit tests; the
+  parity class's refs and layout rows; a delete of a branch checked out in the main checkout, in a locked tree and in a tree whose
+  folder is missing still refused; the deployment rehearsal laying `git2-*.dll` and the published driver reading refs through it;
+  `ViewGitCountTests` and `TidyGitCountTests` lowered; the install's measures against the baseline.
+- **GITLIB1e — merge-bases and counts.** Every `merge-base` (two tips, `--is-ancestor`, `--independent`) and `rev-list --count` the
+  code asks. Proof: the parity class's merge-base and count rows on the census, a merge-heavy fixture and vscode, timed;
+  `ReviewGitCountTests` and `OfferGitCountTests` lowered; the install's measures.
+- **GITLIB1f — two commits' changed names.** The name-only and raw diffs of two commits, without rename detection. Proof: the parity
+  class's rows and the opens census's name-only diff over a split and a sparse index; the look's count lowered; the install's measures.
+- **GITLIB1g — the second way's ends** (§5.9). At each package upgrade the opens census, the parity class and the bench's per-read
+  times again, and what passes leaves §5.6's table with its path deleted; at the second end, the library and its admission deleted for
+  the scheduler and the object reader alone.
