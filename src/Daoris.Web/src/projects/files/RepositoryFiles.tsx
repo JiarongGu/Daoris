@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useFiles, useFilesPress, type FilesPress } from '../../bridge/repositories/files';
+import { useFiles, useFilesPress } from '../../bridge/repositories/files';
+import type { FilesPress } from './filesLook';
 import { FilesTab } from './FilesTab';
 
 /** A repository's Files tab with its reading and presses: read only while the tab draws it, the person's presses the window's. */

@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { Button, Icon, Pill, Prose, SelectField } from '../../design/ui';
 import { CheckField } from '../../design/atoms/FormControls';
 import { PageSection } from '../../work/frame/ViewMain';
-import type { FilesLook, FilesPress } from '../../bridge/repositories/files';
+import type { FilesLook, FilesPress } from './filesLook';
 
 const LISTS = ['deny', 'ask', 'allow'] as const;
 const TONE = { deny: 'declined', ask: 'open', allow: 'done' } as const;

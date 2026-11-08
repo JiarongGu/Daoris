@@ -2,7 +2,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import i18n from '../../locales/i18n';
-import type { FilesLook } from '../../bridge/repositories/files';
+import type { FilesLook } from './filesLook';
 import { FilesTab } from './FilesTab';
 
 // The Files tab draws each ignored top's effective rule, its layer and what the layers below said, the acts and the person's

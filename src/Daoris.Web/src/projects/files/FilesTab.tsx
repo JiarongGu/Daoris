@@ -2,7 +2,7 @@ import { useTranslation } from 'react-i18next';
 import { Button, Inline, Pill, Prose, SkeletonRows } from '../../design/ui';
 import { size } from '../../locales/format';
 import { PageSection } from '../../work/frame/ViewMain';
-import type { FilesAct, FilesFile, FilesLook, FilesPress } from '../../bridge/repositories/files';
+import type { FilesAct, FilesFile, FilesLook, FilesPress } from './filesLook';
 import { FilesPermissions } from './FilesPermissions';
 import { FilesRules } from './FilesRules';
 

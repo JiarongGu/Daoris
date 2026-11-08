@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { Button, Icon, Pill, Prose, SelectField } from '../../design/ui';
 import { CheckField } from '../../design/atoms/FormControls';
 import { PageSection } from '../../work/frame/ViewMain';
-import { FILES_KINDS, type FilesKind, type FilesLook, type FilesPress } from '../../bridge/repositories/files';
+import { FILES_KINDS, type FilesKind, type FilesLook, type FilesPress } from './filesLook';
 
 /**
  * **The person's own rules** for a repository's files: each with its remove, and *Add a rule* one press away. A rule goes to the end
