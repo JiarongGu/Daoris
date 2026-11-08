@@ -1,5 +1,14 @@
 # Rooms first, with an optimised fallback: a session works in place in the room it holds, and a repository without rooms gets kept trees whose ignored content is managed by class (TREEPOOL1, 2026-10-26: round 5, proposed 2026-11-07; round 6 for row 2, proposed 2026-11-07; round 7 for rows 3 and 4, proposed 2026-11-08; round 8 for every file git does not manage, proposed 2026-11-08; round 9 for the rule file and both reads of round 7, proposed 2026-11-08; round 10 for the rule file restricting nothing by default, proposed 2026-11-08; round 11 for both reads of rounds 9 and 10, proposed 2026-11-08; round 12 for both narrow reads of round 11, proposed 2026-11-08; round 13 for both confirming reads of round 12, proposed 2026-11-08)
 
+**Standing (round 16, both reads of round 15, proposed under D191, D214):** **Both makers read round 15** at `7feb03dffb`: Codex
+(y ready; z blocked on the translation; aa, ab and ac ready after it) and the independent Opus reader (ab answered; seven blocking
+findings in y, z, aa and ac); neither found committed work lost. **Round 16 is written by Claude Opus 5.5 from main at `599cbc50b7`**
+(§37) and closes each finding with its class: a slot's row is written from its disk and names no line while an undo waits, which the
+run's look retries; the rule file says its form and the first form is translated exactly but for one named construct, its paths kept a
+union and every reader of them in one form; no top is moved over a path tracked at the take's start, and a base is released only over
+what the door's own build wrote; a share counts only while it is read as a link to its place. **Rows y and z are ready to build, aa and
+ac after z, and ab runs once y, z and aa are built; row d waits on §37.5's *When*.**
+
 **Standing (round 15, both reads of round 14, proposed under D191, D214):** **Both makers read round 14** at `024cee0e28`: Codex
 (x ready; ab ready after its prerequisites; y, z, aa and ac blocked) and the independent Opus reader (x and y ready; ab ready with the
 `local/` copy present; z, aa and ac not ready); neither found committed work lost. **Round 15 is written by Claude Opus 5.5 from main at
@@ -1968,6 +1977,7 @@ confirming read of the passages §33.2 names. *(R14)* Round 14 takes D214's note
 syntax with a rule set per entry, a kept output as the previous line's build base with its guard, this repository's installs made
 sealable, a take refused `busy`, shared paths, and the bench rerun; it adds rows y, x, z, aa and ab before row d and ac after z, and the
 build order of 6a, 3, 4 (its rows a to c built), 6b stands. *(R15)* Round 15 answers both reads of round 14 (§36); the order stands.
+*(R16)* Round 16 answers both reads of round 15 (§37); the order stands.
 
 | Row | Changes | The person sees | Proof |
 |---|---|---|---|
@@ -2093,9 +2103,10 @@ place), and every row's park, placement, relink, exclusive hold and parking name
 
 ### d. ⚖ The pool wired, read only through a test's seam.
 
-- **When.** *(R15)* Waiting on rows y, z and aa built (x is); the bench rerun of row ab taken with the checkout's `local/` copy
-  present, its refusal fixed by row z or measured in the rerun, and row x's placement confirmed in it (§36.4); both makers' confirming reads of round 15 and their reads of the rerun's
-  note; the steward's finding that §11's saving holds on its numbers; and FOUNDATION1's row 1d-i having landed (above).
+- **When.** *(R16)* Waiting on rows y, z and aa built (x is); the bench rerun of row ab taken with the checkout's `local/` copy
+  present, its refusal fixed by row z, as the rerun shows, and row x's placement confirmed in it (§36.4); both makers' confirming reads
+  of the last round that answers a read (round 16, or a later one where it answers this round's reads) and their reads of the rerun's
+  note (§37.5); the steward's finding that §11's saving holds on its numbers; and FOUNDATION1's row 1d-i having landed (above).
 - **Changes.** `keptTrees` read only through the one environment variable row d names, set by the rehearsal and the tick tests alone
   *(O2-F13)*; the driven start's take as a `[RunStage]` of the `Grown` phase before `GrowTree`, its claim on `RunState` *(R4-F2)*, and the
   conversation's where `ChatStarts` chooses its tree, taking from the pool (§5.1) once the start's confirmation is settled *(O2-F15)*, else
@@ -2577,7 +2588,8 @@ slot path, answers the round-3 reader's proposed item 6 *(R4-F1)*.
 | 12 | 2026-11-08, Claude Opus 5.5, from main at `30f8e89eff`: both narrow reads of round 11 answered (§32): the mark held the other way, `unworked`, written by Daoris's making, remaking, take or return and removed before an agent or a terminal is handed the tree, a conversation's open among them, so a tree with no mark, or none that reads, is worked; an unworked tree's leftover tracked changes written back before any placement; a group's member never placed by its own key; a `toolchain` command a read in any tree; a take's set-aside held while its line's record can go on, a no-output line's as its conversation's place is; an install's write another rule names in its record, so clearing it installs the dependency again before `hand`; row 4's husky proof restated; nothing asked of the owner | both, confirming, of rows 3 and 4 (`docs/2026-10-26-tree-pool-reads.md`): the independent Opus reader at `557594b07a`, another round narrowly for row 3 on F2 and for row 4 on F1 (4 findings, 2 blocking); Codex at `f22f391b94`, its round-11 case answered and one case left, blocking for rows 3 and 4; neither found committed work lost *(R13)* | §33, every finding of both *(R13)* |
 | 13 | 2026-11-08, Claude Opus 5.5, from main at `b6908ea79c`: both confirming reads of round 12 answered (§33): a go-on into a tree a return marked removing `unworked` before its resumed turn; the files record written under one lock and the stage reading the mark again before each of its writes, stopping once a terminal has taken it, said, no visit refused; the hook owed in the record until it runs, the other writes read at every unworked stage; a worked tree's hit placed only where each dependency before it was kept or placed; a return that lays work back writing no mark (row i); §17.0's row 4 reading *installed again*; nothing asked of the owner | owed: a final confirming read by both makers, of the passages §33.2 names | — |
 | 14 | 2026-11-08, Claude Opus 5.5, from main at `0369cf64f0`: D214's note on the outputs at a take and the owner's shape for the rule file (§35): patterns in git's syntax, a rule set per entry with a kind as its default set, a kept output as the previous line's build base released by a build and read by the repository's runners (the keyed product weighed and rejected), a repository not wholly git-driven described by a `product` kind, a path reaching a tree own, copied, shared read-only or shared read-write by a link Daoris owns and unlinks first, this repository's installs sealable, a take refused `busy`, the bench rerun specified; rows y, x, z, aa, ab and ac; row d's *When* restated | both at `024cee0e28` (`docs/2026-10-26-tree-pool-reads.md`): Codex, x ready, ab ready once its prerequisites are repaired, y, z, aa and ac blocked; the independent Opus reader, x and y ready, ab ready with the `local/` copy present, z, aa and ac not ready; neither found committed work lost *(R15)* | §36, every finding of both *(R15)* |
-| 15 | 2026-11-09, Claude Opus 5.5, from main at `0435b45df4`: both reads of round 14 answered (§36): the take's undo restoring the recorded branch or detached state and tip, releasing only once restored, else the claim kept; git's cover by parent folder and case, every layer's patterns translated by one unit and proved equal per layer, the translation as the first form's one reader; the found `base` only where nothing found runs the output; the take's rules read once at the new start into its plan; a base released only by a successful build through the door, per project and configuration, `trees base` withdrawn, this repository's runners guarded with a census; the `local/` copy's refusal fixed by a top's partition in row z, extended to shares in row ac; the bench's figures stated as estimates; row d's *When* restated; nothing asked of the owner | owed: both makers' confirming read of §36 | — |
+| 15 | 2026-11-09, Claude Opus 5.5, from main at `0435b45df4`: both reads of round 14 answered (§36): the take's undo restoring the recorded branch or detached state and tip, releasing only once restored, else the claim kept; git's cover by parent folder and case, every layer's patterns translated by one unit and proved equal per layer, the translation as the first form's one reader; the found `base` only where nothing found runs the output; the take's rules read once at the new start into its plan; a base released only by a successful build through the door, per project and configuration, `trees base` withdrawn, this repository's runners guarded with a census; the `local/` copy's refusal fixed by a top's partition in row z, extended to shares in row ac; the bench's figures stated as estimates; row d's *When* restated; nothing asked of the owner | both at `7feb03dffb` (`docs/2026-10-26-tree-pool-reads.md`): Codex, y ready, z blocked on two cases of the translation, aa, ab and ac ready after it; the independent Opus reader, ab answered, seven blocking findings in y, z, aa and ac; neither found committed work lost *(R16)* | §37, every finding of both, each with its class *(R16)* |
+| 16 | 2026-11-09, Claude Opus 5.5, from main at `599cbc50b7`: both reads of round 15 answered (§37): every settled row of a slot written from its disk by one unit, naming no line while an undo waits, which the run's look retries, and no `stuck` slot keeping a branch; a return kept only from `cleared`; the rule file's `form` in the file and the translation idempotent and exact construct by construct, `P/*` the one difference kept beside case, a rule's paths a union and every reader of them through `GitPattern`; no top moved over a path tracked at the take's start; `builds` the door's one command, a base kept per declared configuration and released over exactly what the door built, the base readers' census widened; a share trusted only while read as a link to its place; row d's *When* corrected; the classes closed and three census tests; nothing asked of the owner | owed: both makers' confirming read of §37 | — |
 
 ## 22. Round 2: both reads of round 1 answered
 
@@ -4077,7 +4089,7 @@ per act:
 | at a **finish** | `finish` | `keep`, `aside` | `keep` where `take` is `keep`, `base` or `renew`; else `aside` |
 | **installed and keyed** | `install`, `key`, `toolchain`, `env`, `secret`, `caches`, `bound` | as §29.2 | dependency only |
 | **shared between repositories** (a store entry) | `across` | boolean | false |
-| **what refuses until this line builds** (§35.3; *(R15)* `refuses` names the integrated runners for the start words and enforces nothing, §36.3) | `builds`, `refuses` | command patterns | `output`: none |
+| **what refuses until this line builds** (§35.3; *(R15)* `refuses` names the integrated runners for the start words and enforces nothing, §36.3) | `builds`, `refuses` | command patterns *(R16: `builds` is the one command the door runs, the signature's, never a pattern, §37.3)* | `output`: none |
 
 `take` carries *when cleared*: `keep` is kept as it stands (a dependency by its key and record); **`base` is kept as the previous
 line's build base** (§35.3); `renew` is kept until the toolchain key moves or the slot passes its size bound, then moved aside whole
@@ -4099,7 +4111,8 @@ repository's file and the person's `files.json` are rewritten in the same chunk)
 ```
 This repository's .NET builds, kept as a base: every `bin/` but the tools', which a later entry sets `aside` *(R15: a `!` would leave
 them to the found layer, §36.2)*. (`bin/` is the signature's own pattern; the repository's file names the runners it has integrated
-with the guard, which the found layer cannot know, and restates the signature's `builds`, since a field is filled whole.)
+with the guard, which the found layer cannot know, and restates the signature's `builds`, since a field is filled whole.) *(R16: the
+entry no longer states `builds`, which the signature's one command fills, and its file says `"form": 2`, §37.2, §37.3.)*
 
 ```json
 { "kind": "output", "take": "aside",
@@ -4324,7 +4337,7 @@ finding to make.
 ### 35.9 The rows, in build order *(R14)*
 
 *(R15: §36.7 restates each row below with what round 15 changed in it, and row d's *When* with the `local/` copy's refusal and
-round 15's confirming reads added.)* Rows y, x, z, aa
+round 15's confirming reads added; R16: §37.7 and §37.5 do so for round 16.)* Rows y, x, z, aa
 and ab are filed in `TASKS.md` under TREEPOOL1, in this order; **row d's *When*** (§17.0) then read: *waiting on
 rows y, x, z and aa built and the bench rerun of row ab taken, on both makers' reads of round 14 and of the rerun's note, on the
 steward's finding that §11's saving holds on its numbers, and on FOUNDATION1's row 1d-i having landed.* Row ac does not hold row d.
@@ -4381,8 +4394,12 @@ reads the line alone).
    HEAD is `Expect` and the branch is `ExpectBranch` (or none). Only then does a take's new branch go through the journal, at
    `claim.Start` and only where it still points there, as today (`:131-135`); a return's branch is the returning line's and stays. The
    busy refusal, a failed check (`TreePoolTakes.cs:147-153`) and the takeover's `FreeAsync` (`PoolTakeovers.cs:83-99`) all call it. A
-   failed check stays `stuck` with its words, its record naming the line it was restored to, not none (`:152`'s `undoneTo: ""`).
-3. **The slot is released only once the restoration holds.** The claim advances to a new phase, `undoing`, before the undo's first git
+   failed check stays `stuck` with its words, its record naming the line it was restored to, not none (`:152`'s `undoneTo: ""`). *(R16:
+   the undo switches onto `ExpectBranch` only where its tip is still `Expect`, and a failed check it restores is released, not `stuck`,
+   §37.1.)*
+3. **The slot is released only once the restoration holds.** *(R16: the transaction entering `undoing` names no line, a step that cannot
+   restore leaves its claim at `undo-waiting` for its own run's look to retry, and a slot whose branch moved is detached at `Expect` and
+   freed, not `stuck`, §37.1.)* The claim advances to a new phase, `undoing`, before the undo's first git
    step; restored, it frees the lock and completes with no settled row, the slot as it was. **Where the restoration does not hold** (A's
    branch moved past `a1` during the claim, or is out in another checkout, or git refuses), **the claim is kept** at `undoing`, its whole
    intent in the store: the slot serves no line, a visit holds back as it does for any switching claim (`TreeClaimKinds.Switching`,
@@ -4430,7 +4447,9 @@ tops are read (`FillJudgement.cs:22`) and by `git check-ignore --no-index`.
 `UnionJoins.cs:157-162`, `:169`); git reads a pattern with no inner slash at any depth and braces literally. An upgrade renaming the
 fields alone would leave a person's `{drafts,notes}/` covering neither folder and `src/{App,Lib}/bin/` nothing, and this repository's
 root `node_modules/` (`daoris.files.json:10`, after the web's at `:7`) would cover the web's too and win as the later rule. **The
-translation** is one unit, `RuleFileFirstForm`, a pure function from the first form to git's, each construct a row of the proof's table:
+translation** is one unit, `RuleFileFirstForm`, a pure function from the first form to git's, each construct a row of the proof's table
+*(R16: the file says its form, a terminal `**` gets no `!`, each brace alternative is escaped, `P/*` is a second difference kept, and a
+rule's paths stay a union; §37.2 restates the table whole)*:
 - each pattern **anchored** with a leading `/`, the old grammar's own reading;
 - **braces expanded**, one pattern per alternative in the order written, at the pattern's place, so the order between entries holds;
 - what git reads and the old grammar read literally **escaped**: a `[` (`UnionJoins.cs:165`), a leading `!` or `#`, a trailing space;
@@ -4495,11 +4514,13 @@ over the ignored tops the judgement listed, and writes **the take's plan**: the 
 markers, and the tops to move. `ClearAsync` is given the plan and reads no rule: it moves exactly the plan's tops and leaves exactly the
 recorded `Bases`; where the toolchain key read after the switch moved, it moves the bases aside too and removes their entries and
 markers, so the record names what is left. A top the judgement passed whose rule at the new start makes it the line's own is the previous
-line's, and moves aside with the outputs. **Proof:** a slot whose last line began at a commit whose file had no `base`, taken at one whose
+line's, and moves aside with the outputs *(R16: never a top holding a path tracked at the new start, whose entries are listed again
+after the switch, §37.3, 1)*. **Proof:** a slot whose last line began at a commit whose file had no `base`, taken at one whose
 file has it: `Bases` and markers written, `bin/` left byte for byte, `ClearAsync` given the plan and no reading of rules; the toolchain
 moved: the bases aside, with no entry and no marker left.
 
-**2. A base is released only by a successful build Daoris ran** (Codex; Opus 2). Sequence closed: A leaves binaries; B changes sources; a
+**2. A base is released only by a successful build Daoris ran** (Codex; Opus 2). *(R16: only the door's own command, for a configuration
+the project declares, releasing exactly the folders that build writes; a gate's step never releases, §37.3, 2.)* Sequence closed: A leaves binaries; B changes sources; a
 restore, a failed build or an editor's design-time build writes `obj/` (or a build fails after copying into `bin/`); §35.3's signal (a)
 releases B's base on those writes; the integrated runner runs A's surviving binary. **Signal (a) is withdrawn:** a write's time cannot
 tell a successful build from a failed one, a restore or a design-time build, nor which configuration was built. **Signal (b) is the one
@@ -4598,7 +4619,8 @@ set-aside), built by row z with the copy as its one boundary (§36.4) and given 
 **boundary** lies under it: a copy the files record holds, a link the record holds (`Shares`, §35.5), or a path a `reach: read` or
 `write` entry declares, found by descending only along its pattern's literal part (before
 its first wildcard; a share pattern with none is matched against the tops alone). The partition lists entries one folder at a time along
-the way to each boundary and **never enters a link**: a recorded link is classified by its record, never listed, and one no record names
+the way to each boundary and **never enters a link**: a recorded link is classified by its record, never listed *(R16: only while it is
+read, without following it, as a link to the recorded place; else it is the line's, its record dropped, §37.4)*, and one no record names
 is refused at the judgement as foreign, as the walk of links refuses one (`WorkspaceLinks.cs:5-9`). Each boundary is classified apart (a
 copy among `Copies` while its hash holds, a share in `Shared`); each sibling on the way is sorted by the rules as a path of its own, the
 top's pattern covering it (§36.2, 1); and **a top is Daoris's own only where every entry under it is a boundary that holds** (Opus). A
@@ -4634,7 +4656,7 @@ integrated runners (§36.3, 4).
 | **ab** | the `local/` copy present, its refusal fixed by z or measured; the figures as estimates; a day replayed after aa; row x's placement confirmed (§36.4) | ready to run after y, z and aa |
 | **ac** | `TopPartition` at recorded and declared boundaries, never entering a link; `started.tree-shared` (§36.5) | ready to build, after z; does not hold d |
 
-**Row d's *When*** (§17.0) now reads: *waiting on rows y, z and aa built (x is); the bench rerun of row ab taken with the checkout's
+**Row d's *When*** (§17.0) now reads *(R16: corrected in §37.5)*: *waiting on rows y, z and aa built (x is); the bench rerun of row ab taken with the checkout's
 `local/` copy present, its refusal fixed by row z or measured in the rerun, and row x's placement confirmed in it; both makers' confirming reads of round 15 and their reads of the
 rerun's note; the steward's finding that §11's saving holds on its numbers; and FOUNDATION1's row 1d-i having landed.*
 
@@ -4722,8 +4744,8 @@ above. **Ready to build.**
 ### 37.2 TREEPOOL1z: the form said in the file, the translation exact construct by construct *(R16)*
 
 **The class.** What a pattern means depends on the form it is read in. Round 15 translated the first form without the file saying which
-form it holds (Opus 3), two of its rows were wrong (Opus 4, Codex 1) and its paths lost their union (Codex 2); and ten more readers read
-a rule's paths in the gates' grammar or as a path by its text (point 4).
+form it holds (Opus 3), two of its rows were wrong (Opus 4, Codex 1) and its paths lost their union (Codex 2); and thirteen more places read
+or write a rule's paths in the gates' grammar or as a path by its text (point 4).
 
 1. **The form is said in the file** (Opus 3). Every layer's file gains a top-level `"form"`, which each of Daoris's writers always writes
    (`FoundFiles`; `PersonFiles`, through the Files tab and the translation; this repository's file, rewritten in row z's chunk): `2` is
@@ -4751,13 +4773,14 @@ a rule's paths in the gates' grammar or as a path by its text (point 4).
 | a `**/` joined to its segment (`X**/Y`) | `XY` and `X*/**/Y` | yes |
 | a path whose last token is a literal character, a `?`, or a `*` after a character of its segment, so that no folder top (ending in `/`) matched it | followed by its `!` with a trailing `/`, so a folder of that name stays uncovered | yes |
 | a last segment that is a lone `*` after `**/` (`X/**/*`), which matched `X/` and all under it | `/X/`, no `!` | yes |
-| a last segment that is a lone `*` after a folder (`P/*`), which matched the folder top `P/` itself, by `*` matching nothing, and the files directly in it, but no folder below it | `/P/` | **no**: kept, below |
+| a path that matched a folder top without what lies under it: a last segment that is a lone `*` after a folder (`P/*`), which matched `P/` itself, by `*` matching nothing, and the files directly in it, but no folder below it; or an expanded alternative ending in `/` in a path that does not (`{bin/,obj/}`, `P/{a,}`), which matched that folder top alone | the folder, `/P/` | **no**: kept, below |
 | `share: true`, `copy: true` | `across`, `reach: "copy"`; `key`, `caches`, every other field and the `permissions` as written (point 5) | yes |
 
-**One more difference kept, chosen: `P/*`.** No git pattern covers a folder top without what lies under it, so the first form's `P/*`
-cannot be written exactly. `/P/` keeps the top it meets most, `P/` listed whole, and differs only where a folder or a deeper file under
-`P` is listed as a top of its own (`P` then holding something not ignored), which the first form left to an earlier rule. **Rejected:**
-`/P/*` with `!/P/*/`, exact on the files in `P` and losing `P/` itself, the commonest top such a path meets. The Files tab lists every
+**One more difference kept, chosen: a folder top matched without what lies under it** (`P/*`, and an alternative ending in `/`). No
+git pattern covers a folder top without what lies under it, so such a path cannot be written exactly. `/P/` keeps the top it meets
+most, `P/` listed whole, and differs only where a folder or a deeper file under `P` is listed as a top of its own (`P` then holding
+something not ignored), which the first form left to an earlier rule. **Rejected:** `/P/*` with `!/P/*/` for `P/*`, exact on the files
+in `P` and losing `P/` itself, the commonest top such a path meets; and dropping the alternative, which loses that top always. The Files tab lists every
 top whose rule changes by case or by this row (§36.2), read under both.
 3. **A rule's paths stay a union** (Codex 2). One entry's patterns are no union once one of them carries a `!`: `["scratch/", "scratch"]`
    read as one entry gives `/scratch/`, `/scratch`, `!/scratch/`, the last taking back the first. A first-form rule becomes **one entry
@@ -4792,8 +4815,8 @@ tops that holds folder and file tops at several depths, a folder listed whole an
 `*`, `{` and a trailing space, with `GitPattern` against git itself as §36.2 says. **The person's fixture** holds every sequence of both
 reads: round 14's (`{drafts,notes}/`, the root `node_modules/` after the web's, `src/{App,Lib}/bin/`, a `**` inside a segment, a `[`,
 `copy: true`, `share: true`), Codex's `scratch/**` and `["scratch/", "scratch"]` in one rule, Opus's `build/**` and `{*.js,x}`, and this
-round's `Xab**`, `X**/Y`, `P/*` and a dependency rule naming two folders and a file; every top's effective rule is equal under both
-readers, case and `P/*`'s named tops aside. A file read twice: translated once, its second read git's form; this repository's rewritten
+round's `Xab**`, `X**/Y`, `P/*`, `{bin/,obj/}` and a dependency rule naming two folders and a file; every top's effective rule is equal
+under both readers, case and the named tops of a folder matched alone aside. A file read twice: translated once, its second read git's form; this repository's rewritten
 file read as form 2, its `bin/` covering every project's (Opus 3); two readers racing on the person's file: one rewrite, one first form
 set aside; a form 3 file read as unreadable, said; the paths census red, then green. **Ready to build** (TREEPOOL1x, before it, is built).
 
@@ -4901,7 +4924,7 @@ built.
 | Class | Members, the reads' and this round's | How the rest were looked for |
 |---|---|---|
 | a record trusted over the disk | the slot's row while `undoing` (Opus 1); a return by its phase (Opus 2); a `stuck` slot keeping a branch (Opus, not blocking; and a failed check and a refused switch); the plan's tops after the switch (Opus 5); a share (Opus 7); read and sound: copies, placements, aside marks, bases | every `new SlotSettled(` under `Workplace/Pool/` (fourteen), every arm of `RecoverAsync` and `FreeAsync`, and every list of `TreeFilesState` beside the act that reads it |
-| a pattern whose meaning depends on its form | the file's form (Opus 3); a terminal `**` and a brace alternative (Opus 4, Codex 1); the union (Codex 2); `P/*`; ten readers of a rule's paths outside `FileRule.Matches` | every caller of `RoomPaths` and `UnionJoins.Glob` in the driver, every read of a `FileRule`'s `Paths`, and each construct `UnionJoins.Glob` reads against git's |
+| a pattern whose meaning depends on its form | the file's form (Opus 3); a terminal `**` and a brace alternative (Opus 4, Codex 1); the union (Codex 2); a folder top matched alone (`P/*`, an alternative ending in `/`); thirteen places reading or writing a rule's paths outside `FileRule.Matches` | every caller of `RoomPaths` and `UnionJoins.Glob` in the driver, every read of a `FileRule`'s `Paths`, and each construct `UnionJoins.Glob` reads against git's |
 | a release wider than its build | `--no-build` and a platform folder (Opus 6); a framework's, a runtime's or a publish's folder under a configuration | every way a marker is removed, and every folder a .NET build writes under `bin/` |
 | a reader of a path under a base | the product's walking-up readers (Opus, not blocking); tests reading another project's `bin/`; `daoris gate run` | every `'bin'` or `"bin"` join and `bin/Debug` string in tracked code under `src/` and `tools/` |
 
@@ -4913,7 +4936,7 @@ readers' census (§37.3, 3), each red first.
 | Row | What §37 answers | Standing |
 |---|---|---|
 | **y** | `ExpectLine`; every settled row written by `SlotStanding` from a disk read, no `stuck` slot keeping a branch; `undoing` naming no line and the look retrying its own claims at `undo-waiting`; the switch back only at `Expect`; a return kept only from `cleared`; a restored refusal released; a full move-back leaving no folder (§37.1) | ready to build |
-| **z** | the `form` field and an idempotent translation; the translation exact construct by construct, `P/*` the one difference kept beside case; a rule's paths a union; every reader of a rule's paths through `GitPattern`, with a census; `key`, `caches` and `permissions` the same in both forms (§37.2) | ready to build |
+| **z** | the `form` field and an idempotent translation; the translation exact construct by construct, a folder top matched alone (`P/*`) the one difference kept beside case; a rule's paths a union; every reader of a rule's paths through `GitPattern`, with a census; `key`, `caches` and `permissions` the same in both forms (§37.2) | ready to build |
 | **aa** | no top moved over a path tracked at the take's start; `builds` the door's one command; a base kept per declared configuration and released over exactly what the door built; the census widened with its exempt readers (§37.3) | ready to build, after z |
 | **ab** | its day after aa as §37.3 builds it; row d's *When* corrected (§37.5) | ready to run after y, z and aa |
 | **ac** | a share counted and unlinked only while it is read as a link to its place, else the line's (§37.4) | ready to build, after z; does not hold d |
