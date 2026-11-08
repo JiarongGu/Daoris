@@ -5,6 +5,12 @@ the per-task record. Entries preserve their original wording so the archive stay
 
 ---
 
+## CONVREV5, CONVREV10 and CONVREV14 — a conversation's upTo, a keep's stored copy and the brief's weights (2026-11-08)
+
+> **CONVREV5 / CONVREV10 / CONVREV14** (conversations review): Outcome: all three held as the rows said. CONVREV5 (40c7d6ec4d): the course's `Since` for a conversation could never expire (`upTo` takes 5 to 600), so it is no longer passed and `upTo` is counted from each limit judgement by `LimitRuled`; no behaviour changed, so its case pins the choice with no red (`ConversationRulesTests`). CONVREV10 (09b8962904): every keep carries a key and a keep the record never answered is tried once more under it, so the stored copy is found and held once; a duplicate now needs a record that stored the word and answered neither try (`DrivenInboxKeyTests`, failing first). CONVREV14 (cd8a159c17): one `CharWeight` weighs kana, Hangul, fullwidth forms and a surrogate pair as it weighs Han; `Searchable`'s Han test does not move (`ContextBriefWeightTests`, failing first).
+
+---
+
 ## MODELROLE1i — an exact build starts on its own role (2026-11-08)
 
 > **MODELROLE1i** (D205 §14's filed row i): Outcome: a quest weighted `exact` starts on the seeded *Exact build* role (Claude Code · `sonnet`, the account's default effort, the reference's build-exact row, the quest naming no model), read as Design is read: `Driver.StartWork` takes the weight, a home from before it reads the seed, removed its work falls to Build's, a workflow step may name it, and the opening says whose order it ran on (`opening.exact`, English and Chinese). A judgement quest keeps Design's and an unmarked one Build's. The row's wait for a batch of measurements was not kept: the weight is the publisher's to set and the person's to unset by removing the role. `sonnet[1m]` is left to the person's choice from their account's offers, since the seed cannot read an account's door. Tests: `ExactRoleTests`, the work-code theories, the service twin's fixtures and the web's note and call table. The installed proof of an exact quest on its role goes with the installed batch.
