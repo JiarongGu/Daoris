@@ -15,11 +15,7 @@ internal static class DrivenCourse
         [
             .. words.Select(word => new CourseWord(
                 word.Id ?? "",
-                word.Daoris ? CourseAuthor.Daoris
-                : word.Supervisors ? CourseAuthor.Supervisor
-                : word.By is not null ? CourseAuthor.Findings
-                : word.Helper is not null ? CourseAuthor.Helper
-                : CourseAuthor.Person,
+                BriefedMove.AuthorOf(word),
                 word.Key,
                 ended is { } end && word.At > end)),
         ];
