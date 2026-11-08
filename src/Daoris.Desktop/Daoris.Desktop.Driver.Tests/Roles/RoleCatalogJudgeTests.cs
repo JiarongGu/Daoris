@@ -56,7 +56,8 @@ public sealed class RoleCatalogJudgeTests : IDisposable
     public void An_appointed_role_is_refused_an_agent_holder_a_wrong_holder_scope_or_window_and_acts_of_two_kinds()
     {
         var steward = RoleCatalog.Seed.Single(role => role.Id == AppointedRoles.Steward);
-        Assert.Equal("appointed-not-configurable", Code(Seeded.Judge(RoleChange.Set(Supervisor("a", holder: RoleHolders.Agent)))));
+        Assert.Null(Seeded.Judge(RoleChange.Set(Supervisor("a", holder: RoleHolders.Agent))));
+        Assert.Equal("appointed-not-configurable", Code(Seeded.Judge(RoleChange.Set(steward with { Hold = steward.Hold! with { Holder = RoleHolders.Agent } }))));
         Assert.Equal("bad-record", Code(Seeded.Judge(RoleChange.Set(Supervisor("a", holder: null)))));
         Assert.Equal("bad-record", Code(Seeded.Judge(RoleChange.Set(Supervisor("a", window: 0)))));
         Assert.Equal("bad-record", Code(Seeded.Judge(RoleChange.Set(Supervisor("a", window: 61)))));

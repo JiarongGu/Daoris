@@ -18,6 +18,14 @@ public static class RoleCensus
     public static string? Check(string work, string? actor, (string Role, long Revision)? bound, Func<string, long, RoleRecord?> at)
     {
         if (actor is null) return "carries no `actor`";
+        if (work == ParticipantWork.Supervise)
+        {
+            if (bound is not { } kept) return "a supervisor's turn carries no binding to the supervisor it was started for";
+            return at(kept.Role, kept.Revision) is { Hold: var hold } && AppointedStaffing.Ordered(hold)
+                ? null
+                : $"its start kept role `{kept.Role}` at revision {kept.Revision}, which is no supervisor an agent holds";
+        }
+
         if (!ActorChoices.Ids.Contains(actor, StringComparer.Ordinal)) return $"`actor` is `{actor}`, which is not a seeded role every build reads";
         var (role, revision) = bound ?? (actor, 0L);
         if (at(role, revision) is not { } record) return $"its start kept role `{role}` at revision {revision}, which the catalogue does not hold";

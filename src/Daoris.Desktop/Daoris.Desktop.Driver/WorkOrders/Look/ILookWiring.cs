@@ -51,6 +51,12 @@ internal interface ILookWiring
     /// <summary>The supervisor's decisions on this machine's records.</summary>
     QuestionSupervisorDecisions Supervisor { get; }
 
+    /// <summary>The decision door's half an agent supervisor's look reaches; none where no agent supervisor decides.</summary>
+    ISupervisorDesk? Supervising => null;
+
+    /// <summary>An agent supervisor's attempt at <paramref name="waiting"/> started, said, or null where none starts.</summary>
+    Task<string?> Supervise(SupervisorWaiting waiting, ISupervisorDesk desk, CancellationToken ct) => Task.FromResult<string?>(null);
+
     /// <summary>What a session's waiting words are left waiting by.</summary>
     GoOnMarks Marks { get; }
 

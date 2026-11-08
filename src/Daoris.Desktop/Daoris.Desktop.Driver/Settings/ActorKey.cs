@@ -46,6 +46,11 @@ public static class ActorKey
             return MayBeOff(actor) ? null : $"{actor} cannot be off: only intake and ask-daoris have no agent; give it one to {Most} choices.";
         }
 
+        return JudgeOrder(actor, choices);
+    }
+
+    public static string? JudgeOrder(string actor, IReadOnlyList<ActorChoice> choices)
+    {
         if (choices.Count > Most) return $"{actor} takes at most {Most} choices, not {choices.Count}.";
         for (var i = 0; i < choices.Count; i++)
         {

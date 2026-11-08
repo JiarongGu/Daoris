@@ -78,6 +78,7 @@
   "settings.ai.roles.work.help": "协助",
   "settings.ai.roles.work.partner": "搭档",
   "settings.ai.roles.work.review": "第二意见",
+  "settings.ai.roles.work.supervise": "主管的决定",
   "settings.ai.roles.work.brainstorm": "头脑风暴",
   "settings.ai.roles.place.machine": "在本机",
   "settings.ai.roles.place.workspace": "在工作区 {{id}}",

@@ -152,6 +152,8 @@ public sealed class OpinionPacketTests : IDisposable
         Assert.Contains("Edit", handed.Deny);
         Assert.Contains("Write", handed.Deny);
         Assert.Contains("NotebookEdit", handed.Deny);
+        Assert.Contains("MultiEdit", handed.Deny);
+        Assert.Contains("MultiEdit", OpinionPermissions.Shape(composed, helper: true).Deny);
         foreach (var commit in PermissionRules.Defaults.Single(shipped => shipped.Id == "commit").Rules.Where(rule => rule != "Bash(cd:*)"))
         {
             Assert.DoesNotContain(commit, handed.Allow);

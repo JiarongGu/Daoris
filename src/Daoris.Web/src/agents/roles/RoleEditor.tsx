@@ -3,7 +3,7 @@ import { Button, FormField, FormGrid, FormRow, Icon, SelectField, WhyGlyph } fro
 import { Refused } from '../../work/InlineConfirm';
 import type { RoleNext } from '../../data/wiring';
 import type { SettingsChoices } from '../tools';
-import { type HoldDraft, holdReads } from './appointedHold';
+import { type HoldDraft, holdReads, ordered } from './appointedHold';
 import { HoldFields } from './HoldFields';
 import { OfferedField } from './OfferedField';
 import { HowItChooses, LimitsFold, WeightField } from './RolePolicy';
@@ -81,7 +81,8 @@ export function RoleEditor({
     onEditing((was) => ({ ...was, drafts: was.drafts.map((draft) => (draft.key === key ? { ...draft, [field]: value } : draft)) }));
   const policy = now.policy ?? null;
   const rule = policy && policy.preset !== 'first' ? 'weight' : 'order';
-  const roleWorks = now.takes.length > 0 ? now.takes : [now.work];
+  const roleWorks = now.hold ? [] : now.takes.length > 0 ? now.takes : [now.work];
+  const walks = !now.hold || ordered(now.hold);
   const policyLocked = busy || held;
   const patchDraft = (key: number, patch: Partial<PolicyFields>) =>
     onEditing((was) => ({ ...was, drafts: was.drafts.map((draft) => (draft.key === key ? { ...draft, ...patch } : draft)) }));
@@ -129,8 +130,9 @@ export function RoleEditor({
           onPreset={(preset: Preset) => onEditing((was) => withPreset(was, preset))}
         />
       )}
-      {now.hold && <HoldFields hold={now.hold} disabled={locked} onChange={(hold) => set({ hold })} />}
-      {!now.hold && <FormGrid columns={columns} floor="40rem">
+      {now.hold && <HoldFields hold={now.hold} disabled={locked} onChange={(hold) => set({ hold, ...(ordered(hold) && now.drafts.length === 0 ? { drafts: [{ key: Date.now(), agent: agents[0]?.value ?? '', model: '', effort: '' }] } : {}) })} />}
+      {now.hold && ordered(now.hold) && <p className="m-0 text-small text-ink-soft">{t('agents.setup.roles.hold.agentChoices')}</p>}
+      {walks && <FormGrid columns={columns} floor="40rem">
         <FormRow head>
           <span className="text-meta text-ink-faint">{t('settings.ai.role.field.agent')}</span>
           <span className="text-meta text-ink-faint">{t('settings.ai.role.field.model')}</span>
@@ -211,7 +213,7 @@ export function RoleEditor({
           );
         })}
       </FormGrid>}
-      {!now.hold && (
+      {walks && (
         <div className="flex flex-wrap items-center gap-2">
           <Button variant="ghost" disabled={busy || now.drafts.length >= MOST} onClick={add}>
             <Icon name="plus" size={12} />

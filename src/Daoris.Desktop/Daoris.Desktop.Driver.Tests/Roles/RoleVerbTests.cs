@@ -47,13 +47,31 @@ public sealed class RoleVerbTests : IDisposable
 
     private RoleCatalog Catalogue() => RoleCatalog.Read(DesktopStore.LocationIn(_home));
 
-    private Task<int> Run(params string[] args) => DriverChoicesCommand.RunAsync(["role", .. args], new DriverChoicesWorld
+    private Task<int> Run(params string[] args) => RunIn(false, args);
+
+    private Task<int> RunIn(bool inAgentJob, params string[] args) => DriverChoicesCommand.RunAsync(["role", .. args], new DriverChoicesWorld
     {
         Verbs = DriverChoiceVerbs.All,
         Instance = new InstanceWorld { Home = _home, Environment = _ => null, Out = _out, Error = _error, Verb = "daoris" },
         ConfigPath = File_,
         Folder = _home,
+        InAgentJob = () => inAgentJob,
     }, CancellationToken.None);
+
+    [Fact]
+    public async Task Every_write_is_refused_from_a_process_in_an_agents_job_and_acts_from_the_person_s_terminal()
+    {
+        Assert.Equal(1, await RunIn(true, "set", "gatekeeper", "--name", "Gatekeeper", "--decides", "question", "--holder", "agent", "claude opus high"));
+        Assert.Equal(1, await RunIn(true, "rules", "--place", "machine", "--set", "answers-alone=5:hold"));
+        Assert.Equal(1, await RunIn(true, "suggested", "--use"));
+        Assert.Contains("one of an agent Daoris runs", _error.ToString());
+        Assert.DoesNotContain(Catalogue().Slots, slot => slot.Id == "gatekeeper");
+
+        Assert.Equal(0, await Run("set", "gatekeeper", "--name", "Gatekeeper", "--decides", "question", "--holder", "agent", "claude opus high"));
+        Assert.Equal(RoleHolders.Agent, Catalogue().Slots.Single(slot => slot.Id == "gatekeeper").Role!.Hold!.Holder);
+        Assert.Equal([new ActorChoice("claude", "opus", "high")], DriverConfig.Load(File_).Actors["gatekeeper"]);
+        Assert.Contains("held by an agent", _out.ToString());
+    }
 
     [Fact]
     public async Task Set_adds_a_role_with_its_staffing_a_second_set_changes_it_and_remove_takes_it_out()
@@ -254,8 +272,10 @@ public sealed class RoleVerbTests : IDisposable
         Assert.Equal(0, await Run("suggested", "--use"));
 
         var actors = DriverConfig.Load(File_).Actors;
-        foreach (var each in ActorSuggestion.Table) Assert.Equal(each.Choices, actors[each.Role]);
+        foreach (var each in ActorSuggestion.Table.Where(each => each.Role != AppointedRoles.Supervisor)) Assert.Equal(each.Choices, actors[each.Role]);
         Assert.DoesNotContain("intake", actors.Keys);
+        Assert.DoesNotContain(AppointedRoles.Supervisor, actors.Keys);
+        Assert.Contains("supervisor is left out: no agent holds it", _out.ToString());
         Assert.Equal(2, await Run("suggested", "--now"));
     }
 

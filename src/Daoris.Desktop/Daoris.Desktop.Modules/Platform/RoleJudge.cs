@@ -25,7 +25,16 @@ internal sealed class RoleJudge(StandingConfirmation owner, StandingState state)
     /// </remarks>
     public DecisionAdmitted Admit(string kind, RolePlace place, string? act)
     {
-        var effective = owner.Supervising(kind, place).Role;
+        var slots = owner.Slots();
+        var effective = SupervisorResolution.Find(slots, kind, place, owner.Wider()).Role;
+        if (AppointedStaffing.Ordered(effective?.Hold))
+        {
+            // An agent's hold is its role's revision as the catalogue says it now, never a terminal's in memory.
+            if (act is not null && !SupervisorGrants.Covers(effective!, kind, act)) return DecisionAdmitted.Refused(SupervisorWhy.NotGranted);
+            var revision = slots.First(slot => slot.Id == effective!.Id).Revision;
+            return new DecisionAdmitted(AgentHold.Generation(effective!.Id, revision), null) { Window = TimeSpan.FromMinutes(effective.Hold!.Window) };
+        }
+
         lock (state.Gate)
         {
             if (effective is not { Hold.Terminal: true }) return DecisionAdmitted.Refused(SupervisorWhy.NotStaffed);
@@ -47,6 +56,14 @@ internal sealed class RoleJudge(StandingConfirmation owner, StandingState state)
         var staffed = owner.Appointed();
         var place = owner.Placed(repository);
         var effective = owner.Supervising(kind, place).Role;
+        if (AgentHold.RoleOf(generation) is { } agentRole)
+        {
+            var admitted = Admit(kind, place, null).Generation;
+            if (admitted == generation) return null;
+            var still = staffed.Any(role => role.Id == agentRole && SupervisorGrants.Decides(role, kind) && role.Scope.Covers(place));
+            return still ? SupervisorWhy.RoleChanged : SupervisorWhy.NotStaffed;
+        }
+
         lock (state.Gate)
         {
             if (effective is { Hold.Terminal: true } && state.HoldOf(effective.Id) is { } live && live.Generation == generation) return null;

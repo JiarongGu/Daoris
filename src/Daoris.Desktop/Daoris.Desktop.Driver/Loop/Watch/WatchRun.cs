@@ -478,6 +478,7 @@ internal sealed class WatchRun(
             };
         driver.Context.Supervisor = Supervisor;
         driver.Context.Roles = Roles?.Invoke();
+        driver.Context.Supervising = watch.Supervising?.Invoke();
         try
         {
             var report = await driver.TickAsync(token, failed: told =>

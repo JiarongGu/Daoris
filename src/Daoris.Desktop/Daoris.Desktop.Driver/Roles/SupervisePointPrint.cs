@@ -4,11 +4,7 @@ using System.Text.Json;
 
 namespace Daoris.Driver;
 
-/// <summary>
-/// <c>sessions supervise &lt;id&gt;</c> for a point a person's <c>refer</c> rule held a line at: the fenced print the
-/// holder reads, with the point's count, its value, the rule that referred it and the course answered or waiting, then the line's course
-/// and its branch's commits as a question's print has them. A point has no question, so the print names none and says how to decide it.
-/// </summary>
+/// <summary><c>sessions supervise &lt;id&gt;</c> for a referred point: the holder's fenced print (<see cref="SupervisorFacts"/>) and how to decide it.</summary>
 internal static class SupervisePointPrint
 {
     /// <summary>The one line the print says before its first fence: the same warning as a question's, for a point.</summary>
@@ -73,22 +69,15 @@ internal static class SupervisePointPrint
     /// <summary>The fenced print of <paramref name="point"/>, or the reason the line's record could not be read.</summary>
     public static async Task<int> PrintAsync(ISupervisorWorld world, string id, Point point, TextWriter output, CancellationToken ct)
     {
-        var record = await world.Service.RecordAsync(id, ct).ConfigureAwait(false);
-        if (record is null)
+        var fence = Convert.ToHexStringLower(RandomNumberGenerator.GetBytes(3));
+        if (await SupervisorFacts.PointAsync(world, id, point, fence, ct).ConfigureAwait(false) is not { } facts)
         {
             await output.WriteLineAsync($"sessions supervise: the record of session `{id}` could not be read; list again.").ConfigureAwait(false);
             return 1;
         }
 
-        var fence = Convert.ToHexStringLower(RandomNumberGenerator.GetBytes(3));
         var print = new StringBuilder();
-        print.Append(Header).Append('\n');
-        SessionsSuperviseCommand.Part(
-            print, fence, "the point your rule referred: Daoris's own record, not the asking agent's",
-            $"point: {point.Id}\ncount: {point.Count}\nvalue: {point.N}\nrule: {point.Rule}, the person's rule for {point.Place}, refers it\ncourse: {point.Course}");
-        var course = await LineFactsReads.Current.OfAsync(world.Service, world.Home, id, ct).ConfigureAwait(false);
-        SessionsSuperviseCommand.Part(print, fence, "the line's course: Daoris's count from its records, not the asking agent's", CountTexts.Print(course));
-        SessionsSuperviseCommand.Part(print, fence, "the branch's commits since its base: the asking agent's", await SessionsSuperviseCommand.CommitsAsync(record, ct).ConfigureAwait(false));
+        print.Append(Header).Append('\n').Append(facts);
         if (point.Generation is { } generation)
         {
             print.Append($"generation: {generation}\n");

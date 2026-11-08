@@ -40,7 +40,8 @@ internal sealed class HelpRoleProposalWriter(HelpProposalFile file)
         if (string.IsNullOrWhiteSpace(why)) return NoReason;
         if (supervisor is not null)
         {
-            var working = takes?.Count > 0 || choices?.Count > 0 || Blank(policy) is not null || policyRevision is not null
+            var ordered = supervisor.Holder == "agent";
+            var working = takes?.Count > 0 || (!ordered && (choices?.Count > 0 || Blank(policy) is not null || policyRevision is not null))
                 || rulesPlace is not null || rules is not null || rulesRevision is not null;
             if (HelpSupervisorFile.Refusal(supervisor, Blank(change), Blank(id), working) is { } unfit) return (null, $"{Capital(unfit)} Nothing was proposed.");
         }

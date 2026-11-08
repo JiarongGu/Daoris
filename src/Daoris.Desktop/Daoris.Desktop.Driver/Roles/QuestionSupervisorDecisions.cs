@@ -132,6 +132,13 @@ public sealed class QuestionSupervisorDecisions
     /// <summary>The start's sweep of the files the last run left (<see cref="SupervisorSweeps.SweepAtStart"/>).</summary>
     public IReadOnlyList<string> SweepAtStart(DateTimeOffset now) => _sweeps.SweepAtStart(now);
 
+    /// <summary>Whether <paramref name="subject"/> is closed to the person, so no list hands it to a supervisor of any holder again.</summary>
+    public bool Closed(SupervisorSubject subject) => _book.Closed.ContainsKey(subject);
+
+    public SupervisorAttempts Attempts => _book.Attempts;
+
+    public SupervisorRuns Runs { get; } = new();
+
     /// <summary>The owner's <b>Overrule</b> of a course decision (<see cref="SupervisorCourses.OverruleAsync"/>) or an answer (<see cref="SupervisorReleasing.OverruleAsync"/>).</summary>
     public async Task<SupervisorState?> OverruleAsync(
         string session, string decision, SupervisorTakeBack takeBack, DateTimeOffset now, CancellationToken ct = default) =>

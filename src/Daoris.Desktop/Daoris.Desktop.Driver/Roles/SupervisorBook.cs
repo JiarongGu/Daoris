@@ -14,6 +14,8 @@ internal sealed class SupervisorBook(string home, MachineLog? log)
     /// <summary>The files a decision is written to and read back from as history.</summary>
     public SupervisorDecisionFiles Files { get; } = new(home);
 
+    public SupervisorAttempts Attempts { get; } = new(home);
+
     /// <summary>Every live decision by id.</summary>
     public ConcurrentDictionary<string, SupervisorLiveDecision> Live { get; } = new(StringComparer.Ordinal);
 

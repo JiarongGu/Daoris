@@ -86,10 +86,10 @@ public sealed class SessionStore
         string? baseCommit = null, CancellationToken ct = default, string? ask = null, string? opinion = null,
         string? serves = null, string? from = null, string? fromWhy = null, string? fromBy = null,
         string? entryOrigin = null, string? entryPart = null, bool ownEntry = false, string? helpMode = null,
-        IReadOnlyDictionary<string, string>? access = null, string? piece = null, string? actor = null) =>
+        IReadOnlyDictionary<string, string>? access = null, string? piece = null, string? actor = null, string? decides = null) =>
         writes.CreateAsync(
             quest, repository, adapter, now, workspace, kind, doorVersion, profile, tree, baseCommit, ct, ask, opinion, serves, from,
-            fromWhy, fromBy, entryOrigin, entryPart, ownEntry, helpMode, access, piece, actor);
+            fromWhy, fromBy, entryOrigin, entryPart, ownEntry, helpMode, access, piece, actor, decides);
 
     /// <summary>Move a session and attach what the move carries; see <see cref="SessionWrites.SetStateAsync"/>.</summary>
     public Task<Session?> SetStateAsync(

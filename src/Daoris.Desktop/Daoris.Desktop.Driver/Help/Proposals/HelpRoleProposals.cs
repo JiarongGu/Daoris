@@ -117,7 +117,7 @@ internal sealed class HelpRoleProposals : IHelpProposalKind
                 {
                     var (supervisor, why) = HelpSupervisorProposals.Read(id, press, name, scope, current);
                     if (supervisor is null) return Refused(why!);
-                    if (policy is not null) return Refused($"`{id}` is an appointed role: a policy shares a working role's choices.");
+                    if (policy is not null && AppointedStaffing.JudgePolicy(supervisor, policy.Policy) is { } unordered) return Refused(unordered.Said);
                     if (!SupervisorConversion.Converted(home)) return Refused(SupervisorConversion.NotConvertedSaid);
                     change = RoleChange.Set(supervisor);
                     break;

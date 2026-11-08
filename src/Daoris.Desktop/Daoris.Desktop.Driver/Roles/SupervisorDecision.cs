@@ -150,7 +150,11 @@ public static class SupervisorBounds
 public sealed record SupervisorReason(string Says, string Source);
 
 /// <summary>Who holds the role when the decision is kept: its kind and, as a hint, the process it is started from.</summary>
-public sealed record SupervisorHolder(string Kind, string? Parent);
+public sealed record SupervisorHolder(string Kind, string? Parent)
+{
+    /// <summary>An agent's hold of it (<see cref="SupervisorHolders.OfAgent"/>); none for a terminal's.</summary>
+    public SupervisorAgentHolder? Agent { get; init; }
+}
 
 /// <summary>
 /// What a holder answers (<c>SUPERVISOR_ANSWER</c> less its proof, which the door checks): one offered label exactly and

@@ -33,8 +33,11 @@ public static class SupervisorDecisionDoor
         return Nudged(loop, await row.LeaveAsync(loop, form, HolderOf(judged), ct).ConfigureAwait(false));
     }
 
-    /// <summary>What waits for a supervisor's holder: every kind's subjects, each with its hold's generation and the acts its grants cover. Names no key.</summary>
-    public static async Task<IReadOnlyList<object>> WaitingAsync(DriverLoop loop, CancellationToken ct)
+    /// <summary>What waits for a terminal holder: every kind's subjects but an agent's, each with its generation and covered acts. Names no key.</summary>
+    public static async Task<IReadOnlyList<object>> WaitingAsync(DriverLoop loop, CancellationToken ct) =>
+        [.. (await AllWaitingAsync(loop, ct).ConfigureAwait(false)).Where(each => !AgentHold.Is(AgentSupervisorDesk.Row(each)?.Generation))];
+
+    internal static async Task<IReadOnlyList<object>> AllWaitingAsync(DriverLoop loop, CancellationToken ct)
     {
         var service = loop.Service ?? throw DriverArguments.NotReady();
         var admission = (IDecisionAdmission?)loop.Pipe?.StandingConfirmation ?? NoDecisionAdmission.Instance;
@@ -42,6 +45,21 @@ public static class SupervisorDecisionDoor
         var waiting = new List<object>();
         foreach (var row in Rows) waiting.AddRange(await row.WaitingAsync(loop, records, admission, ct).ConfigureAwait(false));
         return waiting;
+    }
+
+    /// <summary>
+    /// An agent's decide or leave through its kind's row, its grant and hold read again first since no pipe judge stands before it.
+    /// </summary>
+    internal static async Task<SupervisorDecided> AgentAsync(
+        DriverLoop loop, SupervisorSubject subject, string generation, string? act, SupervisorHolder holder, Func<ISupervisorKind, Task<SupervisorDecided>> keep)
+    {
+        if (RowOf(subject.Kind) is not { } row) return SupervisorDecided.Refused(SupervisorWhy.Form);
+        if (loop.Pipe?.StandingConfirmation is not { } judge || loop.Service is not { } service) return SupervisorDecided.Refused(SupervisorWhy.NotStaffed);
+        if (await service.RecordAsync(subject.Session, CancellationToken.None).ConfigureAwait(false) is not { Repository: { } repository }) return SupervisorDecided.Refused(SupervisorWhy.NotParked);
+        var admitted = judge.Admit(subject.Kind, judge.Placed(repository), act);
+        if (admitted.Why is { } why) return SupervisorDecided.Refused(why);
+        if (admitted.Generation != generation) return SupervisorDecided.Refused(SupervisorWhy.RoleChanged);
+        return Nudged(loop, await keep(row).ConfigureAwait(false));
     }
 
     /// <summary>

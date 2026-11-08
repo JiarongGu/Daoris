@@ -264,7 +264,7 @@ export type RoleRow = {
 };
 
 /** What an appointed role holds: kind, acts, holder (none is not staffed), a supervisor's window and its kinds (none is generic). */
-export type RoleHoldRead = { kind: 'supervisor' | 'steward'; acts: string[]; holder?: 'rules' | 'terminal' | null; window?: number; decides?: string[] };
+export type RoleHoldRead = { kind: 'supervisor' | 'steward'; acts: string[]; holder?: 'rules' | 'terminal' | 'agent' | null; window?: number; decides?: string[] };
 
 /** A kind at a place as `ROLES`' `deciders` says it: its supervisor, where set, its holder and granted acts, or why it is yours. */
 export type DeciderLine = { kind: string; role?: string | null; scope?: string | null; holder?: string | null; granted: string[]; held?: string | null };

@@ -55,16 +55,17 @@ const COLUMNS: Record<string, Column> = {
       'opinion_give', 'quest_list', 'registry',
     ],
   },
+  supervise: { only: READS },
   'brainstorm:generator': { only: ['brainstorm_give'] },
   'brainstorm:synthesizer': { only: ['brainstorm_synthesize'] },
   unplaced: { only: READS },
   unread: { only: READS },
 };
 
-/** The nine works, each with the table's columns that place it (a brainstorm is placed by its turn). */
+/** The ten works, each with the table's columns that place it (a brainstorm is placed by its turn). */
 export const WORK_COLUMNS: Readonly<Record<string, readonly string[]>> = {
   build: ['build'], design: ['design'], chat: ['chat'], intake: ['intake'], 'ask-daoris': ['ask-daoris'], help: ['help'],
-  partner: ['partner'], review: ['review'], brainstorm: ['brainstorm:generator', 'brainstorm:synthesizer'],
+  partner: ['partner'], review: ['review'], supervise: ['supervise'], brainstorm: ['brainstorm:generator', 'brainstorm:synthesizer'],
 };
 
 const served = (column: Column, tool: string) => 'only' in column ? column.only.includes(tool) : !column.allBut.includes(tool);

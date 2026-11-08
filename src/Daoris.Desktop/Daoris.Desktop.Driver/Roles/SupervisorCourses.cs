@@ -176,7 +176,7 @@ internal sealed class SupervisorCourses(SupervisorBook book, IDecisionAdmission 
         ["kind"] = course.Kind,
         ["subject"] = new JsonObject { ["session"] = course.Session, ["point"] = course.Point },
         ["session"] = course.Session,
-        ["holder"] = new JsonObject { ["kind"] = course.Holder.Kind, ["parent"] = course.Holder.Parent },
+        ["holder"] = SupervisorHolders.Node(course.Holder),
         ["generation"] = course.Generation,
         ["course"] = new JsonObject
         {

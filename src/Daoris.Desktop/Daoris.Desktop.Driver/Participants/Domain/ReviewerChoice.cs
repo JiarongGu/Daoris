@@ -297,6 +297,7 @@ public sealed record ReviewerChoice(string? Reviewer, string? Label, string? Cod
     {
         "helper" => ParticipantWork.Help,
         "partner" => ParticipantWork.Partner,
+        "supervise" => ParticipantWork.Supervise,
         _ => ParticipantWork.Review,
     };
 

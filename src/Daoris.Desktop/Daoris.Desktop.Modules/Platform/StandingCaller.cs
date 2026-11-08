@@ -28,10 +28,7 @@ public interface IStandingCaller
     StandingPlace Place(PipeClientProcess? client);
 }
 
-/// <summary>
-/// A pipe's client, held by a handle from the connection's taking for the connection's life: never a process id read again later, which may name another process. A process that would not open, or that
-/// came after the connection's taking, is unknown.
-/// </summary>
+/// <summary>A pipe's client, held by a handle from the connection's taking for its life, never by a process id read again; one that would not open, or came after the taking, is unknown.</summary>
 public sealed class PipeClientProcess : IDisposable
 {
     private PipeClientProcess(SafeProcessHandle? handle) => Handle = handle;
@@ -104,21 +101,12 @@ public sealed class PipeClientProcess : IDisposable
 }
 
 /// <summary>
-/// The judge's look at where a terminal's process stands:
-/// every job of the agents' prefix, <c>Local\daoris-agents-&lt;process id&gt;</c>, in this Windows session's namespace, found by listing it
-/// and asked by handle whether the client is in it; any <c>-open</c> event of the prefix, which a Daoris holds while one of its agents
+/// The judge's look at where a terminal's process stands: every job of the agents' prefix in this session's namespace
+/// (<see cref="ObjectNamespace"/>), asked by handle whether the client is in it; any <c>-open</c> event of the prefix, held while an agent
 /// runs uncontained; this process's own job; and every instance pipe of this session, whose server must hold a job of the prefix.
 /// </summary>
-/// <remarks>
-/// <para><b>This only ever adds a card.</b> Being in none of those jobs never makes a caller the person: the person's grant
-/// covers the press, and the jobs only take the cover from an agent. Anything it cannot tell is <see cref="StandingPlace.Untold"/>.</para>
-///
-/// <para><b>The prefix is the launcher's</b> (<c>PieceLauncher.AgentsPrefix</c> and <c>AgentJobs.NameOf</c>): a constant both
-/// sides need, kept here as <see cref="Prefix"/> with this comment naming the other copy. Where this process holds no job
-/// of the prefix, <see cref="OwnContained"/> answers false and every press asks.</para>
-///
-/// <para><b>Elevation</b>: a judge that is not elevated cannot open an elevated Daoris's job, which answers untold; safe, and said.</para>
-/// </remarks>
+/// <remarks>It only ever adds a card: being in none of those jobs never makes a caller the person, and what it cannot tell (an elevated
+/// Daoris's job among it) is <see cref="StandingPlace.Untold"/>. The prefix is the launcher's twin (<c>PieceLauncher.AgentsPrefix</c>).</remarks>
 public sealed class StandingCaller : IStandingCaller
 {
     /// <summary>What every agents' job, and its <c>-open</c> event, is named by (the launcher's twin: <c>PieceLauncher.AgentsPrefix</c>).</summary>
@@ -127,10 +115,7 @@ public sealed class StandingCaller : IStandingCaller
     /// <summary>What an uncontained agent's event adds to its process's job name.</summary>
     public const string OpenSuffix = "-open";
 
-    /// <summary>
-    /// Whether every agent this process runs is contained: its own agents' job is in the listing, and its own <c>-open</c>
-    /// event is not, which the listing already reads. Part (i) may hand a sharper one (its <c>AgentJobs.Shared.Uncontained</c>).
-    /// </summary>
+    /// <summary>Whether every agent this process runs is contained: its own agents' job is in the listing, and its <c>-open</c> event is not.</summary>
     public Func<StandingListing, bool> OwnContained { get; set; } =
         listing => listing.Jobs.Contains(Prefix + Environment.ProcessId.ToString(CultureInfo.InvariantCulture), StringComparer.OrdinalIgnoreCase);
 
@@ -175,9 +160,7 @@ public sealed class StandingCaller : IStandingCaller
         return StandingPlace.Outside;
     }
 
-    /// <summary>
-    /// The agents' job <paramref name="client"/> is in, by its name, or null where it is in none or it cannot tell: the desk's per-caller key, which keys nothing of a press's judgement.
-    /// </summary>
+    /// <summary>The agents' job <paramref name="client"/> is in, by name, or null where none or untold: the desk's per-caller key, no press's judgement.</summary>
     public string? JobOf(PipeClientProcess? client)
     {
         if (!OperatingSystem.IsWindows() || client?.Handle is not { } handle || client.Gone || List() is not { } listing) return null;
@@ -196,10 +179,7 @@ public sealed class StandingCaller : IStandingCaller
     public static StandingListing? ListSession()
     {
         if (!OperatingSystem.IsWindows()) return null;
-        int session;
-        using (var self = Process.GetCurrentProcess()) session = self.SessionId;
-        var folder = session == 0 ? @"\BaseNamedObjects" : $@"\Sessions\{session.ToString(CultureInfo.InvariantCulture)}\BaseNamedObjects";
-        return ObjectNamespace.List(folder) is { } entries
+        return ObjectNamespace.List(ObjectNamespace.SessionFolder()) is { } entries
             ? new StandingListing(
                 [.. entries.Where(entry => entry.Type == "Job" && IsJobName(entry.Name)).Select(entry => entry.Name)],
                 // An `-open` object of any type takes the cover: a job's name is no event's, and another type is still a Daoris saying so.
@@ -207,11 +187,7 @@ public sealed class StandingCaller : IStandingCaller
             : null;
     }
 
-    /// <summary>
-    /// The server process of every instance pipe of this Windows session but <paramref name="own"/>, or null where one could not be read.
-    /// A pipe's name is <c>daoris-&lt;home id&gt;-&lt;session&gt;</c> (<see cref="PipeName"/>); its server is read by a client's end, opened
-    /// and closed at once, which that instance reads as a connection that said no hello.
-    /// </summary>
+    /// <summary>The server of every instance pipe (<see cref="PipeName"/>) of this session but <paramref name="own"/>, read by a client's end opened and closed at once (a connection that said no hello); null where one did not read.</summary>
     public static IReadOnlyList<int>? InstanceServers(string? own)
     {
         if (!OperatingSystem.IsWindows()) return null;
@@ -273,122 +249,3 @@ public sealed class StandingCaller : IStandingCaller
 /// <summary>The named objects of the agents' prefix in a session's namespace: the jobs, and the <c>-open</c> events.</summary>
 public sealed record StandingListing(IReadOnlyList<string> Jobs, IReadOnlyList<string> Open);
 
-/// <summary>A folder of the object manager's namespace, listed (<c>NtOpenDirectoryObject</c>, <c>NtQueryDirectoryObject</c>).</summary>
-internal static class ObjectNamespace
-{
-    /// <summary>Each object's name and type in <paramref name="folder"/>, or null where it could not be listed whole.</summary>
-    [SupportedOSPlatform("windows")]
-    public static IReadOnlyList<(string Name, string Type)>? List(string folder)
-    {
-        var name = new UnicodeString(folder);
-        try
-        {
-            var attributes = new ObjectAttributes
-            {
-                Length = Marshal.SizeOf<ObjectAttributes>(),
-                ObjectName = name.Pointer,
-                Attributes = CaseInsensitive,
-            };
-            if (NtOpenDirectoryObject(out var directory, DirectoryQuery, ref attributes) != 0) return null;
-            using (directory)
-            {
-                var entries = new List<(string, string)>();
-                var buffer = Marshal.AllocHGlobal(BufferBytes);
-                try
-                {
-                    uint context = 0;
-                    var first = true;
-                    while (true)
-                    {
-                        var status = NtQueryDirectoryObject(directory, buffer, BufferBytes, false, first, ref context, out _);
-                        first = false;
-                        if (status == NoMoreEntries) return entries;
-                        // More entries than the buffer holds is still a success: the rest come on the next call.
-                        if (status != 0 && status != MoreEntries) return null;
-                        var size = Marshal.SizeOf<DirectoryInformation>();
-                        for (var at = buffer; ; at += size)
-                        {
-                            var entry = Marshal.PtrToStructure<DirectoryInformation>(at);
-                            if (entry.Name.Buffer == IntPtr.Zero) break;
-                            entries.Add((Text(entry.Name), Text(entry.TypeName)));
-                        }
-                    }
-                }
-                finally
-                {
-                    Marshal.FreeHGlobal(buffer);
-                }
-            }
-        }
-        finally
-        {
-            name.Dispose();
-        }
-    }
-
-    private static string Text(NativeString text) =>
-        text.Buffer == IntPtr.Zero ? "" : Marshal.PtrToStringUni(text.Buffer, text.Length / 2);
-
-    private const int BufferBytes = 64 * 1024;
-    private const uint DirectoryQuery = 0x0001;
-    private const uint CaseInsensitive = 0x40;
-    private const int MoreEntries = 0x00000105;
-    private const int NoMoreEntries = unchecked((int)0x8000001A);
-
-    [StructLayout(LayoutKind.Sequential)]
-    private struct NativeString
-    {
-        public ushort Length;
-        public ushort MaximumLength;
-        public IntPtr Buffer;
-    }
-
-    [StructLayout(LayoutKind.Sequential)]
-    private struct DirectoryInformation
-    {
-        public NativeString Name;
-        public NativeString TypeName;
-    }
-
-    [StructLayout(LayoutKind.Sequential)]
-    private struct ObjectAttributes
-    {
-        public int Length;
-        public IntPtr RootDirectory;
-        public IntPtr ObjectName;
-        public uint Attributes;
-        public IntPtr SecurityDescriptor;
-        public IntPtr SecurityQualityOfService;
-    }
-
-    /// <summary>A native counted string over memory of its own, freed once disposed.</summary>
-    private sealed class UnicodeString : IDisposable
-    {
-        private readonly IntPtr _chars;
-
-        public UnicodeString(string text)
-        {
-            _chars = Marshal.StringToHGlobalUni(text);
-            Pointer = Marshal.AllocHGlobal(Marshal.SizeOf<NativeString>());
-            Marshal.StructureToPtr(
-                new NativeString { Length = (ushort)(text.Length * 2), MaximumLength = (ushort)(text.Length * 2 + 2), Buffer = _chars },
-                Pointer, false);
-        }
-
-        public IntPtr Pointer { get; }
-
-        public void Dispose()
-        {
-            Marshal.FreeHGlobal(Pointer);
-            Marshal.FreeHGlobal(_chars);
-        }
-    }
-
-    [DllImport("ntdll.dll")]
-    private static extern int NtOpenDirectoryObject(out SafeFileHandle directory, uint access, ref ObjectAttributes attributes);
-
-    [DllImport("ntdll.dll")]
-    private static extern int NtQueryDirectoryObject(
-        SafeFileHandle directory, IntPtr buffer, int length, [MarshalAs(UnmanagedType.U1)] bool single,
-        [MarshalAs(UnmanagedType.U1)] bool restart, ref uint context, out uint returned);
-}

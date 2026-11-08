@@ -104,10 +104,11 @@ public sealed class StartPlanTests : IDisposable
         Assert.Equal(
             [
                 ("build", "build"), ("design", "design"), ("chat", "chat"), ("ask-daoris", "ask-daoris"), ("intake", "intake"), ("help", "helper"),
-                ("partner", "partner"), ("review", "opinion"), ("brainstorm", "brainstorm"),
+                ("partner", "partner"), ("review", "opinion"), ("brainstorm", "brainstorm"), ("supervise", "supervisor"),
             ],
             ParticipantWork.Codes.Select(work => (work, StartPlan.RoleOf(work))));
-        Assert.All(ParticipantWork.Codes, work => Assert.Contains(StartPlan.RoleOf(work), ActorChoices.Ids));
+        Assert.All(ParticipantWork.Codes.Where(work => work != ParticipantWork.Supervise), work => Assert.Contains(StartPlan.RoleOf(work), ActorChoices.Ids));
+        Assert.Equal(AppointedRoles.Supervisor, StartPlan.RoleOf(ParticipantWork.Supervise));
         Assert.Throws<ArgumentOutOfRangeException>(() => StartPlan.RoleOf("garden"));
 
         var plan = Plan(ParticipantWork.Design, new ActorChoice("cool", "opus", "high"), new ActorChoice("fine"));

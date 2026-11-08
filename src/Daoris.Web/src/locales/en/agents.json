@@ -330,6 +330,8 @@
   "agents.setup.roles.hold.heldBy": "Held by {{holder}}",
   "agents.setup.roles.hold.holder.rules": "your rules, then you",
   "agents.setup.roles.hold.holder.terminal": "a terminal",
+  "agents.setup.roles.hold.holder.agent": "an agent",
+  "agents.setup.roles.hold.agentChoices": "Its agent's turns walk these choices in order, one read-only turn per decision: on Claude Code held by its agent's rules and its copy, on any other agent by its copy alone. It takes no place under the cap.",
   "agents.setup.roles.hold.holder.none": "no one",
   "agents.setup.roles.hold.noActs": "no acts",
   "agents.setup.roles.hold.window_one": "a decision is held {{count}} minute for your overrule",

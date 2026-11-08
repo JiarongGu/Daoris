@@ -16,8 +16,7 @@ public sealed record SupervisorCourseView(
     public string Kind { get; init; } = SupervisorKinds.Course;
 
     /// <summary>
-    /// A course decision read from its file and state lines (<see cref="SupervisorCourses"/> writes both), or null where the file is not one:
-    /// a question's decision names a <c>question</c> and a rule's act no <c>course</c>.
+    /// A course decision read from its file and state lines (<see cref="SupervisorCourses"/> writes both), or null where the file is not one.
     /// </summary>
     internal static SupervisorCourseView? Read(SupervisorDecisionFiles files, string session, string id)
     {
@@ -29,9 +28,7 @@ public sealed record SupervisorCourseView(
             if (root.ValueKind != JsonValueKind.Object || root.TryGetProperty("question", out _)
                 || !root.TryGetProperty("course", out var course) || course.ValueKind != JsonValueKind.Object) return null;
             if (Json.Text(course, "point") is not { } point || Json.Text(course, "do") is not { } act) return null;
-            var holder = root.TryGetProperty("holder", out var held) && held.ValueKind == JsonValueKind.Object
-                ? new SupervisorHolder(Json.Text(held, "kind") ?? "", Json.Text(held, "parent"))
-                : new SupervisorHolder("", null);
+            var holder = SupervisorHolders.Read(root);
             var kept = Moments.Read(root, "keptAt") ?? DateTimeOffset.MinValue;
             var (state, at, why) = (SupervisorState.Held, kept, (string?)null);
             foreach (var line in (SupervisorDecisionFiles.Read(files.StatesOf(session, id)) ?? "").Split('\n', StringSplitOptions.RemoveEmptyEntries))

@@ -96,6 +96,15 @@ internal sealed class LoopContext(
     /// <summary>How a helper's agent is chosen, unless a test hands in a choice.</summary>
     public Func<HelperAsk, HelperRule, PriorSession, CancellationToken, Task<ReviewerChoice>>? HelperChoices { get; set; }
 
+    /// <summary>The decision door's half an agent supervisor's look reaches, the window's; none where no agent supervisor decides.</summary>
+    public ISupervisorDesk? Supervising { get; set; }
+
+    /// <summary>An agent supervisor's turn, unless a test hands its own; its choice is walked as <see cref="SupervisePass"/> walks it.</summary>
+    public Func<SuperviseRunAsk, CancellationToken, Task<SuperviseRunEnd>>? SuperviseRuns { get; set; }
+
+    /// <summary>The walk of an agent supervisor's order less its spent choices, unless a test hands its own.</summary>
+    public Func<SupervisorWaiting, IReadOnlyList<ActorEffective>, CancellationToken, Task<ReviewerChoice>>? SuperviseChoices { get; set; }
+
     /// <summary>How a piece's agent is chosen and admitted, unless a test hands in a choice: never a production start.</summary>
     public Func<PartnerAsk, PriorSession, CancellationToken, Task<ReviewerChoice>>? PartnerChoices { get; set; }
 

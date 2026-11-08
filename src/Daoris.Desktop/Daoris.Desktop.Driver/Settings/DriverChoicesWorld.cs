@@ -20,6 +20,9 @@ public sealed record DriverChoicesWorld
     /// <summary>The moment a standing answer is set, and a workflow's version saved.</summary>
     public Func<DateTimeOffset> Now { get; init; } = () => DateTimeOffset.UtcNow;
 
+    /// <summary>Whether an agents' job holds this process (<see cref="OwnAgentJob.Holds"/>), where a write of the person's roles is refused; a test hands its own.</summary>
+    public Func<bool?> InAgentJob { get; init; } = OwnAgentJob.Holds;
+
     /// <summary>
     /// The folder the terminal is in: where a file a verb names by a relative path is read and written, a cycle's, a
     /// workflow's to apply or import, and an export's.

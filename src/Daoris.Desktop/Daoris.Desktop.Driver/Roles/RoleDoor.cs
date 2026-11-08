@@ -138,9 +138,10 @@ public static class RoleDoor
                 var staffed = Staffed(catalogue, role, choices);
                 if (staffed is not null && isSeeded) seeded.Add((role.Id, staffed));
                 else if (staffed is not null) rows.Add((role.Id, staffed));
-                if (policy is not null && role.Hold is not null)
+                else if (role.Hold is not null && AppointedStaffing.Unordered(catalogue, role)) rows.Add((role.Id, null));
+                if (policy is not null && role.Hold is not null && AppointedStaffing.JudgePolicy(role, policy.Policy) is { } appointedPolicy)
                 {
-                    throw new RoleRefusedException(new RoleRefusal(StaffPolicy.Code, $"`{role.Id}` is an appointed role: a policy shares a working role's choices."));
+                    throw new RoleRefusedException(appointedPolicy);
                 }
 
                 if (policy is not null)
@@ -213,20 +214,13 @@ public static class RoleDoor
         // A place's rules are the rules' judge's, against the store (SupervisorRuleDoor.Judge), never the catalogue's.
         if (change is RoleChange.SetRules) return null;
         if (catalogue.Judge(change) is { } refused) return refused;
-        if (change is RoleChange.SetRole { Role.Hold: not null } && choices is not null)
-        {
-            return new RoleRefusal("appointed-not-configurable", $"`{change.Id}` is an appointed role: its holder holds it, never a staffing of choices.");
-        }
-
+        if (change is RoleChange.SetRole { Role: { Hold: not null } appointed }) return AppointedStaffing.Judge(catalogue, appointed, choices);
         return change is RoleChange.SetRole { Role: var role } && Staffed(catalogue, role, choices) is { } staffed ? RoleCatalog.Judge(role, staffed) : null;
     }
 
-    /// <summary>
-    /// The staffing a set writes: the choices named, else none for a new added working role (off), else what the role has; none for an
-    /// appointed role, which its holder holds.
-    /// </summary>
+    /// <summary>The staffing a set writes: the choices named, else none for a new added working role (off), else what it has; an appointed role's is <see cref="AppointedStaffing.Staffed"/>'s.</summary>
     private static IReadOnlyList<ActorChoice>? Staffed(RoleCatalog catalogue, RoleRecord role, IReadOnlyList<ActorChoice>? choices) =>
-        role.Hold is not null ? null
+        role.Hold is not null ? AppointedStaffing.Staffed(catalogue, role, choices)
         : choices ?? (ActorChoices.Ids.Contains(role.Id, StringComparer.Ordinal) || catalogue.Slots.Any(slot => slot.Id == role.Id && slot.Role is not null) ? null : []);
 
     /// <summary>

@@ -205,6 +205,13 @@ public sealed class RoleCatalog
         const string Hold = "so the starts naming it hold";
         var slot = Slots.FirstOrDefault(slot => slot.Id == role);
         if (slot is null or { State: RoleState.Removed }) return new RoleFound(null, $"No role `{role}` is in the catalogue, {Hold} until it is added: {Configured}.");
+        if (work == ParticipantWork.Supervise)
+        {
+            return slot.Role is { } supervisor && AppointedStaffing.Ordered(supervisor.Hold) && supervisor.Scope.Covers(place)
+                ? new RoleFound(supervisor, null)
+                : new RoleFound(null, $"`{role}` is no supervisor an agent holds here, {Hold}.");
+        }
+
         if (slot.Appointed || slot.Role?.Hold is not null) return new RoleFound(null, $"`{role}` is an appointed role, which holds acts and takes no work, {Hold} until they name a working role.");
         if (slot.Role is not { } found) return Unreadable(slot, "the starts naming it");
         if (!found.Scope.Covers(place))

@@ -31,6 +31,10 @@ public static class DoorPorts
         public object? AcpSessionMeta(string settingsFile, IReadOnlyList<string>? plugins = null) =>
             door.Dialect.IsKnown ? (door.Dialect.Required as IProtocolDialect)?.SessionMeta(settingsFile, plugins ?? []) : null;
 
+        /// <summary><see cref="AcpSessionMeta"/> for a session held to the person's tier, its handed file and Daoris's servers alone.</summary>
+        public object? AcpSourcesAloneMeta(string settingsFile, IReadOnlyList<string>? plugins = null) =>
+            door.Dialect.IsKnown ? (door.Dialect.Required as IProtocolDialect)?.SourcesAloneMeta(settingsFile, plugins ?? []) : null;
+
         /// <summary>How the door takes a start's servers at its spawn, or null where they ride its wire or it takes none there.</summary>
         public IServerHanding? ServerHanding() => door.Spawn.TryGet(out var spawn) ? spawn as IServerHanding : null;
 

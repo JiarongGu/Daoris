@@ -643,6 +643,17 @@ export function usedByAgent(structure: RoleStructure, tool: Pick<Tool, 'name' | 
       else used.set(index, { role: toRef(work.role), works: [work.work], from: choice.from, model: choice.model, effort: choice.effort, state: choice.state });
     }
   }
+  // A supervisor an agent holds takes no work: its turns walk its own order, each choice at its place in it.
+  for (const row of structure.roles ?? []) {
+    if (row.hold?.holder !== 'agent' || (row.state !== 'seed' && row.state !== 'set')) continue;
+    (row.choices ?? []).forEach((choice, at) => {
+      if (!names.has(choice.agent)) return;
+      const role: RoleRef = { id: row.id, name: row.name ?? { text: row.id }, scope: { kind: row.scopeKind ?? 'machine', ...(row.scopeId ? { id: row.scopeId } : {}) }, revision: row.revision };
+      used.set(`${row.id}|${at + 1}|${choice.model ?? ''}`, {
+        role, works: ['supervise'], from: String(at + 1), model: choice.model ?? undefined, effort: choice.effort ?? undefined, state: { code: 'ready' },
+      });
+    });
+  }
   return [...used.values()];
 }
 

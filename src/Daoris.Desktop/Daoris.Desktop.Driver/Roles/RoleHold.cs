@@ -91,7 +91,7 @@ public static class RoleHolders
 /// </summary>
 /// <remarks>
 /// The supervisor's rules always act first and their act stands; its holder says who answers what they leave: <c>rules</c>, no one,
-/// or <c>terminal</c>. An <c>agent</c> holder reads as the record's shape and is refused by the judge until one is built.
+/// <c>terminal</c>, or <c>agent</c>, whose turns walk the role's own order (<see cref="AppointedStaffing"/>). The steward takes no agent.
 /// </remarks>
 public sealed record RoleHold(string Kind, IReadOnlyList<string> Acts, string? Holder, int Window = RoleHold.DefaultWindow)
 {
@@ -191,14 +191,14 @@ public sealed record RoleHold(string Kind, IReadOnlyList<string> Acts, string? H
             return new("bad-record", $"`{outside}` is an act of a kind `{role.Id}` does not decide: it decides {string.Join(", ", hold.Decides)}.");
         }
 
-        if (hold.Holder == RoleHolders.Agent)
+        if (kind == AppointedRoles.Steward && hold.Holder == RoleHolders.Agent)
         {
-            return new("appointed-not-configurable", $"`{role.Id}` is held by an agent, which this build does not run yet: a terminal holds it{(kind == AppointedRoles.Supervisor ? ", or your rules alone" : "")}.");
+            return new("appointed-not-configurable", $"`{role.Id}` is the steward, which no agent holds: a terminal holds it, or no one.");
         }
 
         if (kind == AppointedRoles.Supervisor && hold.Holder is null)
         {
-            return new("bad-record", $"`{role.Id}` is a supervisor: your rules hold it, alone or with a terminal.");
+            return new("bad-record", $"`{role.Id}` is a supervisor: your rules hold it, alone, with a terminal or with an agent.");
         }
 
         if (kind == AppointedRoles.Steward && hold.Holder == RoleHolders.Rules) return new("bad-record", $"`{role.Id}` is a steward: a terminal holds it, or no one.");

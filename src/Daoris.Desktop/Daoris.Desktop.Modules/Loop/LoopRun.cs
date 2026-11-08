@@ -271,6 +271,7 @@ internal sealed class LoopRun(
             Log = log,
             Supervisor = loop.Supervisor,
             Roles = () => loop.Pipe?.StandingConfirmation is { } judge ? new RoleStarts(judge, loop.ConfigPath) : null,
+            Supervising = () => loop.Pipe?.StandingConfirmation is null ? null : new AgentSupervisorDesk(loop),
             // The first look's line-following and tidy wait for the first screen's data, so the page's git-backed pulls and harness
             // probes are not queued behind them.
             FirstScreen = FirstScreenAsync,

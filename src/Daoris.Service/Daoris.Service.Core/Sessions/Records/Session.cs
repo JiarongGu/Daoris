@@ -112,6 +112,9 @@ public sealed record Session(
     /// <remarks><b>This machine's own, as <see cref="Serves"/> is</b>: no wire carries it, and a caller off this machine is never answered it.</remarks>
     public string? Piece { get; init; }
 
+    /// <summary>The attempt a supervisor's turn decides for, read before every other mark; this machine's own, as <see cref="Serves"/> is.</summary>
+    public string? Decides { get; init; }
+
     /// <summary>
     /// The session this one continues: a conversation handed over, a quest's session carried on
     /// after a hand-over or onto another account after a limit — null for every other session, and for a record from before.

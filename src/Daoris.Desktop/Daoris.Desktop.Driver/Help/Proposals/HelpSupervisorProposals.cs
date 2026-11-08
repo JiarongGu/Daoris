@@ -53,7 +53,7 @@ internal static class HelpSupervisorProposals
         var hold = role.Hold!;
         var decides = hold.Generic ? "every decision no other supervisor here takes" : string.Join(", ", hold.Decides);
         var acts = hold.Acts.Count == 0 ? "granting no act, so it leaves every decision to you" : $"granting {string.Join(", ", hold.Acts.Select(act => $"`{act}`"))}";
-        var by = hold.Holder == RoleHolders.Terminal ? "a terminal" : "your rules, then you";
+        var by = hold.Holder switch { RoleHolders.Terminal => "a terminal", RoleHolders.Agent => "an agent, its choices in order", _ => "your rules, then you" };
         return $"Set the supervisor `{role.Id}` ({string.Join(" · ", role.Name.Texts)}): it decides {decides} {place}, held by {by}, {acts}; "
             + $"an answer is held {hold.Window} minutes for your overrule. Running work goes on.";
     }

@@ -6,7 +6,7 @@ import { Button, Card, CardHeader, Icon, Inline, Prose, SelectField, SettingList
 import { authoredEntries, authoredText, composeAuthored } from '../../locales/authored';
 import { type Answered, InlineConfirm, Refused } from '../../work/InlineConfirm';
 import type { SettingsChoices } from '../tools';
-import { holdDraftOf, holdLine, holdPress } from './appointedHold';
+import { holdDraftOf, holdLine, holdPress, ordered } from './appointedHold';
 import { type Draft, type Editing, RoleEditor } from './RoleEditor';
 import { RowMore } from './RowMore';
 import { fieldsOf, policyDraftOf, policyIsDefault, recordOf } from './staffPolicyDraft';
@@ -97,7 +97,7 @@ export function editingOfLine(
     id: line.id, isNew: false, revision: row?.revision ?? null,
     ...nameFields(row?.name, name), takes: row?.takes ?? [],
     work: row?.takes[0] ?? works[0] ?? 'build', place: row?.scopeKind ?? 'machine', placeId: row?.scopeId ?? '',
-    drafts: row?.hold ? [] : draftsOf(line, agents, key, keeps ? policy : null), ...(keeps && policy ? { policy: policyDraftOf(policy) } : {}),
+    drafts: row?.hold && row.hold.holder !== 'agent' ? [] : draftsOf(line, agents, key, keeps ? policy : null), ...(keeps && policy ? { policy: policyDraftOf(policy) } : {}),
     ...(row?.hold ? { hold: holdDraftOf(row.hold, (row.scopeKind ?? 'machine') === 'machine') } : {}),
   };
 }
@@ -323,9 +323,9 @@ export function RolesCard({
         scope: { kind: now.place, id: now.place === 'machine' ? null : now.placeId.trim() || null },
         ...(now.hold ? holdPress(now.hold) : {}),
       },
-      // An appointed role's holder holds it: it carries no choices and no policy.
-      ...(now.hold ? {} : { choices: off ? [] : now.drafts.length > 0 ? entries(now) : now.isNew ? [] : null }),
-      ...(off || now.hold ? {} : policyPress(now)),
+      // An appointed role carries choices and a policy only where an agent holds it, whose turns walk them as a working role's do.
+      ...(now.hold && !ordered(now.hold) ? {} : { choices: off ? [] : now.drafts.length > 0 ? entries(now) : now.isNew ? [] : null }),
+      ...(off || (now.hold && !ordered(now.hold)) ? {} : policyPress(now)),
     }, () => setEditing(null));
   };
   const works = (catalogue?.works ?? []).map((work) => ({ value: work, label: t(`settings.ai.roles.work.${work}`) }));

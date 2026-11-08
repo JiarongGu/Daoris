@@ -261,6 +261,9 @@ public sealed class DriverWatch(
     /// </summary>
     public Func<IRoleStarts?>? Roles { get; init; }
 
+    /// <summary>The decision door's half an agent supervisor's look reaches, asked at every look as <see cref="Roles"/> is; none decides without it.</summary>
+    public Func<ISupervisorDesk?>? Supervising { get; init; }
+
     /// <summary>What watches the home's record files (<see cref="HomeWatch"/>): the machine's watchers unless a test hands its fake.</summary>
     internal IChangeSource? Source { get; init; }
 

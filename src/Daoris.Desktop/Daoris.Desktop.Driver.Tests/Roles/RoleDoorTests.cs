@@ -52,7 +52,8 @@ public sealed class RoleDoorTests : IDisposable
 
         (RoleChange Change, IReadOnlyList<ActorChoice>? Choices, string Code)[] cases =
         [
-            (RoleChange.Set(Designer(new RoleScope(RoleScope.Workspace, "w1")) with { Id = "lead", Filled = RoleRecord.Appointed, Takes = [], Hold = new RoleHold(AppointedRoles.Supervisor, SupervisorKinds.Seeded, RoleHolders.Terminal) }), Opus, "appointed-not-configurable"),
+            (RoleChange.Set(Designer(new RoleScope(RoleScope.Workspace, "w1")) with { Id = "lead", Filled = RoleRecord.Appointed, Takes = [], Hold = new RoleHold(AppointedRoles.Supervisor, SupervisorKinds.Seeded, RoleHolders.Terminal) }), Opus, "choices"),
+            (RoleChange.Set(RoleCatalog.Seed.Single(role => role.Id == AppointedRoles.Steward)), Opus, "appointed-not-configurable"),
             (RoleChange.Set(Designer() with { Id = "lead", Filled = RoleRecord.Appointed, Takes = [], Hold = new RoleHold(AppointedRoles.Supervisor, SupervisorKinds.Seeded, RoleHolders.Terminal) }), null, "two-roles-one-work"),
             (RoleChange.Set(Designer() with { Id = "lead", Hold = new RoleHold(AppointedRoles.Supervisor, ["question.answer"], RoleHolders.Rules) }), Opus, "mixed-shape"),
             (RoleChange.Set(Designer() with { Id = "lead", Takes = ["gardening"] }), Opus, "unknown-work"),

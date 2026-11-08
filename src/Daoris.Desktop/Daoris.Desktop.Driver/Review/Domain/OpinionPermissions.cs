@@ -64,7 +64,7 @@ public static class OpinionPermissions
     /// </summary>
     private static readonly string[] Writing =
     [
-        "Edit", "Write", "NotebookEdit",
+        "Edit", "MultiEdit", "Write", "NotebookEdit",
         .. new[] { "commit", "merge", "rebase", "cherry-pick", "revert", "reset", "tag", "am", "apply", "stash", "switch", "checkout" }
             .SelectMany(act => new[] { $"Bash(git {act}:*)", $"Bash(git -* {act})", $"Bash(git -* {act} *)" }),
     ];

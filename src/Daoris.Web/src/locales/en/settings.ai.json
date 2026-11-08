@@ -78,6 +78,7 @@
   "settings.ai.roles.work.help": "helping",
   "settings.ai.roles.work.partner": "partnering",
   "settings.ai.roles.work.review": "second opinions",
+  "settings.ai.roles.work.supervise": "a supervisor's decisions",
   "settings.ai.roles.work.brainstorm": "brainstorms",
   "settings.ai.roles.place.machine": "on this machine",
   "settings.ai.roles.place.workspace": "in workspace {{id}}",
