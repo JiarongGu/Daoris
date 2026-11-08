@@ -31,17 +31,8 @@ internal sealed class TurnKeeps(
                 if (state.Finishing || state.Gone || (state.Held && !forMove)) return null;
             }
 
-            SayAnswer? said;
-            try
-            {
-                said = await door.KeepAsync(message, ct).ConfigureAwait(false);
-            }
-            catch (Exception error) when (error is HttpRequestException or DriverException or ObjectDisposedException
-                                              or System.Text.Json.JsonException
-                                              || (error is OperationCanceledException && !ct.IsCancellationRequested))
-            {
-                said = null;
-            }
+            message = Keyed(message);
+            var said = await KeepTwiceAsync(door, message, ct).ConfigureAwait(false);
 
             // The record answered the retry settled, so its word is held or went already: answered as
             // a retry of a word held, with nothing held, queued, steered, attempted or taken, and no word to read an id from.
@@ -92,6 +83,33 @@ internal sealed class TurnKeeps(
         }
     }
 
+    /// <summary>A keep with no key of its producer's gets one: a key is how the record hands back a word it stored but never answered.</summary>
+    private static ChatMessage Keyed(ChatMessage message) =>
+        message.Key is null && message.Daoris?.Key is null ? message with { Key = $"keep/{Guid.NewGuid():N}" } : message;
+
+    /// <summary>
+    /// The record's keep, asked once more under the same key when it threw or never answered, so a word it stored meanwhile is the
+    /// one held, not a second beside it. Null where both asks went unanswered.
+    /// </summary>
+    private static async Task<SayAnswer?> KeepTwiceAsync(ISaidDoor door, ChatMessage message, CancellationToken ct)
+    {
+        for (var attempt = 0; attempt < 2; attempt++)
+        {
+            try
+            {
+                return await door.KeepAsync(message, ct).ConfigureAwait(false);
+            }
+            catch (Exception error) when (error is HttpRequestException or DriverException or ObjectDisposedException
+                                              or System.Text.Json.JsonException
+                                              || (error is OperationCanceledException && !ct.IsCancellationRequested))
+            {
+                // Unanswered: asked again under the key, then held here alone by the caller.
+            }
+        }
+
+        return null;
+    }
+
     /// <summary>
     /// Take back, reword, or change the level of one word that still waits: with neither
     /// <paramref name="text"/> nor <paramref name="level"/> it is removed; with words, they replace its words where it waits, its
@@ -129,18 +147,8 @@ internal sealed class TurnKeeps(
         await state.Keeping.WaitAsync(ct).ConfigureAwait(false);
         try
         {
-            SayAnswer? said;
-            try
-            {
-                said = await door.KeepAsync(old with { Text = text, Level = level ?? old.Level, Key = null, Id = null, Kept = false }, ct)
-                    .ConfigureAwait(false);
-            }
-            catch (Exception error) when (error is HttpRequestException or DriverException or ObjectDisposedException
-                                              or System.Text.Json.JsonException
-                                              || (error is OperationCanceledException && !ct.IsCancellationRequested))
-            {
-                said = null;
-            }
+            var said = await KeepTwiceAsync(
+                door, Keyed(old with { Text = text, Level = level ?? old.Level, Key = null, Id = null, Kept = false }), ct).ConfigureAwait(false);
 
             // The record went on in its line's head meanwhile, so nothing is reworded or queued here; the word kept stays as it
             // is, on the record the open moves its words from.
