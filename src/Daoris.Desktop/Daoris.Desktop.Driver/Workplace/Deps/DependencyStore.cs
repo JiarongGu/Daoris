@@ -1,3 +1,4 @@
+using System.Runtime.ExceptionServices;
 using System.Text.Json;
 
 namespace Daoris.Driver;
@@ -62,7 +63,7 @@ internal static class DependencyStore
             var into = Path.Combine(making, Files);
             Directory.CreateDirectory(into);
             foreach (var each in manifest.Folders) Directory.CreateDirectory(Path.Combine(into, each));
-            Parallel.ForEach(manifest.Files, new ParallelOptions { MaxDegreeOfParallelism = AtOnce, CancellationToken = ct }, each =>
+            AtOnceEach(manifest.Files, ct, each =>
             {
                 var to = Path.Combine(into, each.Path);
                 File.Copy(Path.Combine(tree, folder, each.Path), to);
@@ -117,7 +118,7 @@ internal static class DependencyStore
             Directory.CreateDirectory(making);
             foreach (var each in manifest.Folders) Directory.CreateDirectory(Path.Combine(making, each));
             var top = manifest.Files.Where(each => !each.Path.Contains('/')).ToList();
-            Parallel.ForEach(manifest.Files.Except(top), new ParallelOptions { MaxDegreeOfParallelism = AtOnce, CancellationToken = ct }, each => Copy(source, making, each));
+            AtOnceEach(manifest.Files.Except(top), ct, each => Copy(source, making, each));
             ct.ThrowIfCancellationRequested();
             foreach (var link in manifest.Links)
             {
@@ -148,6 +149,19 @@ internal static class DependencyStore
         }
 
         return manifest.WrittenIn(tree, folder);
+    }
+
+    /// <summary>A parallel loop wraps a file's failure in an AggregateException, which no caller's filter for a disk's failure matches.</summary>
+    private static void AtOnceEach(IEnumerable<ManifestFile> files, CancellationToken ct, Action<ManifestFile> copy)
+    {
+        try
+        {
+            Parallel.ForEach(files, new ParallelOptions { MaxDegreeOfParallelism = AtOnce, CancellationToken = ct }, copy);
+        }
+        catch (AggregateException error) when (error.InnerExceptions.Count > 0)
+        {
+            ExceptionDispatchInfo.Capture(error.InnerExceptions[0]).Throw();
+        }
     }
 
     private static void Copy(string source, string into, ManifestFile each)
@@ -182,6 +196,7 @@ internal static class DependencyStore
     /// </summary>
     internal static IReadOnlyList<string> Evict(string home, TimeSpan days, long bytes, DateTimeOffset now)
     {
+        Sweep(home, now);
         var entries = Entries(home).OrderBy(each => each.Placed).ToList();
         var gone = new List<string>();
         var held = entries.Sum(each => each.Bytes);
@@ -194,6 +209,19 @@ internal static class DependencyStore
         }
 
         return gone;
+    }
+
+    /// <summary>A cut-off seal's making folder and a key's folder an unfinished eviction left without its manifest, which refuses that key's next seal.</summary>
+    private static void Sweep(string home, DateTimeOffset now)
+    {
+        var root = RootOf(home);
+        if (!Directory.Exists(root)) return;
+        foreach (var folder in Directory.EnumerateDirectories(root))
+        {
+            var name = Path.GetFileName(folder);
+            var left = name.StartsWith(MakingPrefix, StringComparison.Ordinal) || (!name.StartsWith('.') && !File.Exists(Path.Combine(folder, ManifestName)));
+            if (left && now - Directory.GetLastWriteTimeUtc(folder) > TimeSpan.FromDays(1)) Discard(folder);
+        }
     }
 
     /// <summary>One entry removed, its manifest first so no reader takes a half entry for a hit; false where it stays.</summary>

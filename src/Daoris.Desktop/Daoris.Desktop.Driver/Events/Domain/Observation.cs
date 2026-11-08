@@ -285,10 +285,10 @@ public static class Observation
     public static SessionConclusion Resumed(
         int exitCode, string before, string startedOn, string questStatus, string? awaitsBefore = null, string? awaitsAfter = null,
         string? turnFailed = null, bool took = false, string? lastWords = null, IReadOnlyList<string>? backgroundCut = null,
-        bool submitted = false, bool awaitsHelper = false, bool providerRefused = false) =>
+        bool submitted = false, bool awaitsHelper = false, bool providerRefused = false, string? reopenedFrom = null) =>
         startedOn is "Open" or "Taken"
-            ? Conclude(exitCode, questStatus, awaitsBefore, awaitsAfter, turnFailed, resumed: true, took, lastWords, backgroundCut: backgroundCut,
-                submitted: submitted, awaitsHelper: awaitsHelper, providerRefused: providerRefused)
+            ? Conclude(exitCode, questStatus, awaitsBefore, awaitsAfter, turnFailed, resumed: true, took, lastWords, reopenedFrom: reopenedFrom,
+                backgroundCut: backgroundCut, submitted: submitted, awaitsHelper: awaitsHelper, providerRefused: providerRefused)
             : turnFailed is not { Length: > 0 } && providerRefused
                 // Its words went on and its provider refused the turn, which never ends as the state it went on from.
                 ? SessionConclusion.Of("failed", ProviderRefusedNote(lastWords))

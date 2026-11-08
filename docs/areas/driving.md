@@ -180,7 +180,8 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they start wi
     copies the machine-local files by the effective `copy` rules. In a worked tree it only keeps, or places a hit into an
     absent folder while each earlier dependency stood and no group names it. The hand, a conversation's open, a go-on and
     a terminal's visit take the mark off first, a visit ending a running install or hook; every stage write re-reads the
-    mark under the record's lock, and a lost mark ends the stage `started.files-stopped`. Once a day the tidy's Keeping pass evicts
+    mark under the record's lock, and a lost mark ends the stage `started.files-stopped`. Once a day the tidy's Keeping pass sweeps what a cut-off copy
+    left in the store (a making folder, or a key's folder with no manifest, a day old), then evicts
     a store entry not placed or sealed in thirty days, then the least recently placed while the store holds more than 10 GB; the
     Disk space card shows the store as its `deps` kind, a rule the person does not set. (from D51, D214, D216)
 22. A tree serves one line of work and is never handed to another. A repository may declare its rooms (lanes carrying
@@ -198,7 +199,7 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they start wi
     person's rules and `permissions` through `FILES_SET`, `FILES_REMOVE` and `FILES_PERMIT` and reads the found layer again
     through `FILES_READ`, each the window's alone and refused on the pipe: an `ask` is allowed in one press, written as the
     person's `allow` with its maker, and the allow is taken back by the same route; a `files.json` that does not read refuses
-    each write and every allow, said, and is never written over. No payload carries a machine path. The found layer is written only when a repository is registered, when
+    each write and every allow, said, and is never written over; each write reads and writes the file under one lock, so two presses lose neither. No payload carries a machine path. The found layer is written only when a repository is registered, when
     its line moves past a signature, manifest, ignore or gates file or its toolchain's answers move (asked once a day), and
     when a line finishes (a removed tree's ignored tops marked `scratch`); a look that changed nothing writes nothing. A pnpm
     or npm repository's workspace members' `node_modules/` are in its root dependency's paths, read at the commit. The set-aside
