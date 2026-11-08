@@ -153,10 +153,7 @@ public sealed class MemoryDecisionTests : IAsyncLifetime
         Assert.Equal([replacer.Id], (await _machine.Memory.WaitsAsync()).Select(wait => wait.Session));
     }
 
-    /// <summary>
-    /// 🔴 A sweep's end has no session, so it is a wait of its own, one per row, naming the repository, the entry, the revision it read and its
-    /// reason; the person's decision through its row settles it, and a decided or applied one waits on nothing.
-    /// </summary>
+    /// <summary>🔴 A sweep's end has no session, so it is a wait of its own, naming its row, entry, revision and reason, until the person decides it.</summary>
     [Fact]
     public async Task A_sweep_s_awaiting_end_is_a_wait_of_its_own_until_the_person_decides_it()
     {

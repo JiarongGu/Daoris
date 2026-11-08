@@ -23,7 +23,7 @@ const at = (minutesAgo: number) => new Date(Date.now() - minutesAgo * 60_000).to
 const zh = readerIn('zh');
 const dark: Decorator = (Story) => <InTheme theme="dark"><Story /></InTheme>;
 
-/** Every act handed, as a shell's band hands them; a story reports nothing. */
+/** Every act handed; a story reports nothing. */
 const ACTS: Required<AttentionActs> = {
   publish: () => {}, retry: () => {}, answer: () => {}, trust: () => {}, acceptDeparture: () => {}, acceptRule: () => {},
   declineRule: () => {}, signIn: () => {}, signInNew: () => {}, read: () => {}, reviewed: () => {}, notYet: () => {},

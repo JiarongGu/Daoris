@@ -128,14 +128,11 @@ export type PushedAttention = {
   integration?: IntegrationWait;
 };
 
-/**
- * What memory waits on the person for: a session's ends and replacements awaiting their approval and its staged rows to keep or drop; or,
- * with `end`, one end the service's sweep wrote, which names no session and is approved or declined by its operation.
- */
-export type MemoryWait = { ends: number; replacements: number; staged: number; end?: MemoryEndWait };
-
-/** A sweep's end awaiting the person: its operation, the entry it ends at the revision the sweep read, and why. */
-export type MemoryEndWait = { op: string; repository: string; target: string; revision: number | null; reason: string | null };
+/** What memory waits on the person for: a session's ends, replacements and staged rows, or, with `end`, one end the sweep wrote, which names no session. */
+export type MemoryWait = {
+  ends: number; replacements: number; staged: number;
+  end?: { op: string; repository: string; target: string; revision: number | null; reason: string | null };
+};
 
 /**
  * An integration's wait on the owner: a candidate the line's rule held for their decide,

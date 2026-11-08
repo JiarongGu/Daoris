@@ -46,8 +46,7 @@ export type AttentionActId =
   | 'ask-again' | 'go-on'
   // A person's task's presses, each the run's node word with the person's note.
   | 'task-done' | 'task-approve' | 'task-reject'
-  // The person's word on an end the service's sweep wrote, which no session's page holds: approved or declined in its row.
-  | 'approve-end' | 'decline-end';
+  | 'approve-end' | 'decline-end'; // an end the sweep wrote, which no session's page holds, decided in its row
 
 /** The run's node word a person's task's press is (`task-done` is `done`); null for any other act. */
 export const taskActOf = (act: AttentionActId): TaskAct | null => (act.startsWith('task-') ? act.slice('task-'.length) as TaskAct : null);

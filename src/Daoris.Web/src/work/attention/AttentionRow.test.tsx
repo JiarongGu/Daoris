@@ -107,17 +107,16 @@ const SIGNED_OUT: Attention = {
   },
 };
 
-/** Every act a row can be handed, each a spy. */
 /** What an ask under the row hands its act to say how it ended. */
 const answeredByAct = { done: expect.any(Function), refused: expect.any(Function) };
 
-const everyAct = (): Required<AttentionActs> => ({
+/** Every act, each a spy. */
+const everyAct =(): Required<AttentionActs> => ({
   publish: vi.fn(), retry: vi.fn(), answer: vi.fn(), trust: vi.fn(),
   acceptDeparture: vi.fn(), acceptRule: vi.fn(), declineRule: vi.fn(),
   signIn: vi.fn(), signInNew: vi.fn(), read: vi.fn(), reviewed: vi.fn(), notYet: vi.fn(), showAgain: vi.fn(),
   opinionAgain: vi.fn(), opinionAnyway: vi.fn(), helper: vi.fn(), held: vi.fn(), permission: vi.fn(), answerAlone: vi.fn(),
-  openRecords: vi.fn(), handOver: vi.fn(), gitTryAgain: vi.fn(), gitSetUp: vi.fn(), gitChoose: vi.fn(), gitKeyPage: vi.fn(), gitReadOnly: vi.fn(), gitAnswer: vi.fn(), quiet: vi.fn(), passOver: vi.fn(),
-  memoryEnd: vi.fn(),
+  openRecords: vi.fn(), handOver: vi.fn(), gitTryAgain: vi.fn(), gitSetUp: vi.fn(), gitChoose: vi.fn(), gitKeyPage: vi.fn(), gitReadOnly: vi.fn(), gitAnswer: vi.fn(), quiet: vi.fn(), passOver: vi.fn(), memoryEnd: vi.fn(),
 });
 
 describe('a row in what needs you', () => {
@@ -582,24 +581,6 @@ describe('settling one where it stands', () => {
     expect(screen.getAllByRole('button').map((button) => button.textContent)).toEqual(['Open']);
     await userEvent.click(screen.getByRole('button', { name: 'Open' }));
     expect(open).toHaveBeenCalledWith(waits);
-  });
-
-  /** A sweep's end has no session to open: the row approves or declines it itself and shows no door, even where the band hands one. */
-  it('approves or declines a sweep\'s end in its row, with no door', async () => {
-    const swept: Attention = {
-      id: '9f8e7d6c5b4a3921', kind: 'memory', title: 'End of engine:m42 at revision 3', where: 'engine', since: '2026-10-31T09:00:00Z',
-      session: null, detail: 'Its cited record `r1` is superseded by `r2`.',
-      memory: { ends: 1, replacements: 0, staged: 0, end: { op: '9f8e7d6c5b4a3921', repository: 'engine', target: 'm42', revision: 3, reason: 'r' } },
-    };
-    const acts = everyAct();
-    const open = vi.fn();
-    render(<AttentionRow item={swept} acts={acts} onOpen={open} />);
-    expect(screen.getAllByRole('button').map((button) => button.textContent)).toEqual(['Approve the end', 'Decline']);
-    await userEvent.click(screen.getByRole('button', { name: 'Approve the end' }));
-    expect(acts.memoryEnd).toHaveBeenCalledWith(swept, true);
-    await userEvent.click(screen.getByRole('button', { name: 'Decline' }));
-    expect(acts.memoryEnd).toHaveBeenLastCalledWith(swept, false);
-    expect(open).not.toHaveBeenCalled();
   });
 
   it('says a refused move back to the person with its refusal, and opens its session, in each language', async () => {

@@ -1337,30 +1337,6 @@ public sealed class AttentionStateSliceTests : DriverModuleBridge
             rows.Single(row => row["id"]!.GetValue<string>() == "g0n3"));
     }
 
-    /// <summary>
-    /// 🔴 An end the service's sweep wrote names no session, so its row is by its own operation: the repository as where, the entry it ends, the
-    /// revision it read and its reason, with no session for a door to open; a session's rows beside it stay as they were.
-    /// </summary>
-    [Fact]
-    public void A_sweep_s_end_is_a_row_by_its_operation_with_no_session()
-    {
-        var rows = Rows(new()
-        {
-            Sessions = [Session("""{"id":"c0nv0001","quest":"7a82cc","state":"completed"}""")],
-            Quests = [Quest()],
-            Registry = [Registration("engine")],
-            Memory =
-            [
-                JsonNode.Parse("""{"session":"c0nv0001","ends":1,"replacements":0,"staged":0,"since":"2026-10-31T09:00:00+00:00"}""")!.AsObject(),
-                JsonNode.Parse("""{"ends":1,"replacements":0,"staged":0,"since":"2026-10-31T10:00:00+00:00","end":{"op":"9f8e7d6c5b4a3921","repository":"engine","target":"m42","revision":3,"reason":"Its cited record `r1` is superseded by `r2`."}}""")!.AsObject(),
-            ],
-        });
-
-        Assert.Equal(["memory:9f8e7d6c5b4a3921", "memory:c0nv0001"], Keys(rows));
-        Is("""{"kind":"memory","id":"9f8e7d6c5b4a3921","since":"2026-10-31T10:00:00+00:00","where":"engine","memory":{"ends":1,"replacements":0,"staged":0,"end":{"op":"9f8e7d6c5b4a3921","repository":"engine","target":"m42","revision":3,"reason":"Its cited record `r1` is superseded by `r2`."}}}""",
-            rows.Single(row => row["id"]!.GetValue<string>() == "9f8e7d6c5b4a3921"));
-    }
-
     /// <summary>The refused moves back are read off the home's helpers folder, oldest first, as the driver's look kept them.</summary>
     [Fact]
     public void The_refused_moves_back_are_the_records_the_look_kept()

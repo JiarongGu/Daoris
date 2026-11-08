@@ -132,7 +132,6 @@ public static class AttentionStateSlice
         ["task"] = ["run", "node", "acts", "work"],
         // What memory waits on the person for one session: ends and replacements to approve, a stopped session's staged rows.
         ["memory"] = ["ends", "replacements", "staged"],
-        // An end the sweep wrote, which names no session: its operation to decide, the entry and revision it ends, and why.
         ["memoryEnd"] = ["op", "repository", "target", "revision", "reason"],
         // An integration's wait on the owner: which (decide, superseded, card, declaration), its line and what it names; a
         // declaration's `tip` is its blob and its `state` unaccepted or changed.
