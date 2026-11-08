@@ -89,7 +89,7 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they start wi
    settled recorded by the role), each taking effect at its keeping (`AllowKind`) and kept as an allow decision (below). The `files` kind decides an act a person's `ask`
    in the rule file held at a start (`files.allow-run`, `files.allow-copy` at the repository, `files.allow-share` at the narrowest
    place covering both repositories), by writing the held act's own text, never the `ask`'s pattern, into the person's own layer
-   of each repository it reaches, never the machine's, with the role and the decision (`FilesKind`, `FileAllows`); an ask naming
+   of each repository it reaches in one write of the file (all layers or none), never the machine's, with the role and the decision (`FilesKind`, `FileAllows`); an ask naming
    the person (`run(…)@person`) is listed for no supervisor. Its `authority` grants acts as `<kind>.<act>`, only of the kinds it decides, each off on a new record; the seed
    grants `question.answer`, `course.go-on` and `limit.move`. A scope holds one generic supervisor and one per kind
    (`two-roles-one-work`); the machine's generic supervisor may not be removed, scoped away or given kinds (`may-not-be-off`).
@@ -511,7 +511,6 @@ Web: `agents/roles/*.test.ts(x)` and `agents/setup/*.test.tsx`.
 - **SETUPUX1y:** the places tree lit by default, retiring the Roles sections under Setup.
 
 - **The second review cycle's open defects** (ROLESREVIEW2i to 2q; the backlog row of that name points here), one entry each:
-  - **ROLESREVIEW2k — a share allow written to some repositories is reported as written to none** (modules; `FilesKind.cs:58-66`, `FileAllows.Give`): a later repository's `DriverException` leaves the earlier layers holding the allow while the ask settles `made: false` and waits. Unconfirmed that one layer can fail alone.
   - **ROLESREVIEW2l — a non-throwing "no door" reply to a decision's say ends it `stale` `unsaid`** (driver; `WorkOrders/SupervisorLook.cs:50`, `SupervisorReleasing.cs:66-68`): the lost-response retry covers exceptions only. Low certainty: trace when `SendAsync` returns rather than throws.
   - **ROLESREVIEW2m — a role verb's presses carry no revision, and `role suggested --use` is not one batch** (driver; `RoleVerbs.cs:77,125,286`): `read: null` lets the plan's copy overwrite a role edited since (rule 9); one press per role leaves the first written when the second is refused.
   - **ROLESREVIEW2n — the publishing path surfaces store failures raw and drops a refused re-judge's code** (driver; `RoleStaffing.cs:361-369` against `:507-510`; `RoleCatalog.cs:407`): `Commit` wraps store errors in `DriverException`, `Publishing` does not; `WriteIn` throws `new DriverException(refusal.Said)`, so the second of two presses adding roles that take one work fails uncoded, not `two-roles-one-work`.

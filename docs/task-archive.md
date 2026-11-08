@@ -62,6 +62,8 @@ the per-task record. Entries preserve their original wording so the archive stay
 > **ROLESREVIEW2i** (modules): Outcome: a leave of an allow or files subject asks the same coverage as a decide (`SupervisorDecisionDoor.CoversPlace` for a place no repository names, `Covers` for a held request's repository), so a holder of another place cannot hide a subject from the supervisor that answers it; a leave still asks no grant (`roles-and-supervision.md`, rule 46).
 >
 > **ROLESREVIEW2j** (driver): Outcome: an overruled or stale course or landing decision is refused `overruled` in the run as after a restart (the question's keeping already said so), and a course's overrule or stale release closes its subject at once, as a landing's does.
+>
+> **ROLESREVIEW2k** (driver): Outcome: a share's allow is written into every repository's layer in one read and one write of the person's file (`PersonFiles.EditScopes`), so a failure on a later layer leaves none written and the ask's `made: false` is true; no layer was found to fail alone by a `DriverException`, which only the file's own read raises before any layer is edited, so the write's atomicity is the fix.
 
 ## TREEPOOL1ac — shared paths (2026-11-09)
 
