@@ -62,8 +62,7 @@ namespace Daoris.Desktop;
 /// a request's admission <see cref="PipeAdmission"/>'s, a person's press from its reservation to its ending <see cref="PipeAsking"/>'s,
 /// <c>CANCEL</c>, <c>RESULT</c> and <c>WITHDRAW</c> <see cref="PipeTakeBacks"/>'s, the restart's <see cref="PipeRestore"/>'s, and a
 /// terminal's hold of a conversation, <c>HOLD</c> and <c>LET_GO</c>, <see cref="PipeHolding"/>'s, and a terminal's heavy run,
-/// <c>RUN_HEAVY</c> and <c>RUN_STOP</c>, <see cref="PipeHeavyRuns"/>'s. This type
-/// keeps the wire's words, the serve, the close and the run.</para>
+/// <c>RUN_HEAVY</c> and <c>RUN_STOP</c>, <see cref="PipeHeavyRuns"/>'s. This type keeps the wire's words, the serve, the close and the run.</para>
 /// </remarks>
 public sealed class InstancePipe : IDisposable
 {

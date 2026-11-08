@@ -20,7 +20,7 @@ internal sealed record StepOptions(IReadOnlyDictionary<string, string>? Environm
     /// </summary>
     public bool BelowNormal { get; init; }
 
-    /// <summary>A terminal's standard handles, handed to the step in place of this process's: a run the running Daoris runs for it.</summary>
+    /// <summary>A terminal's standard handles, handed to the step in place of this process's: a terminal's run in the running Daoris.</summary>
     public TerminalHandles? Streams { get; init; }
 }
 
@@ -34,8 +34,7 @@ internal sealed record StepOptions(IReadOnlyDictionary<string, string>? Environm
 /// the job. Joined before its first instruction, everything the gate starts is in the job, detached or not: the job allows no
 /// breakaway. A gate that cannot join is ended unrun, and the run says so: a gate the run cannot end is not one it may start.</para>
 ///
-/// <para><b>Its output is this process's own</b>, or, for a run the running Daoris runs for a terminal, that terminal's
-/// (<see cref="StepOptions.Streams"/>). The gate is handed those standard handles, so a nine-minute build streams
+/// <para><b>Its output is this process's own.</b> The gate is handed this process's standard handles, so a nine-minute build streams
 /// through as it is said, never gathered whole (<c>ChildProcess.RunAsync</c> buffers a child's output, so it is not used here). Those
 /// three handles alone are inherited, never another this process holds. Where this process has no console the gate gets one of its
 /// own with no window, so a heavy run started without one opens none on the person's screen.</para>

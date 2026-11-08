@@ -335,10 +335,7 @@ internal sealed class InstanceStandIn : IAsyncDisposable
     /// <summary><see cref="Waiting"/> as the whole of what is said: that one line.</summary>
     public static string WaitingAlone(string verb) => @"\A" + Waiting(verb) + @"\r?\n\z";
 
-    /// <summary>
-    /// The home a terminal's <c>RUN_HEAVY</c> runs on, through the application's own half (<see cref="HeavyTerminalRun"/>) in this
-    /// process, as the running Daoris runs it; null to treat it as any press.
-    /// </summary>
+    /// <summary>The home a terminal's <c>RUN_HEAVY</c> runs on, through the application's own half in this process; null for none.</summary>
     public string? HeavyHome { get; set; }
 
     private async Task RunHeavyAsync(Stream server, string id, string home, JsonElement payload, int terminal, CancellationToken held)

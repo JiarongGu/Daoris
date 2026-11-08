@@ -13,7 +13,7 @@ namespace Daoris.Desktop.Driver.Tests;
 /// </summary>
 /// <remarks>
 /// The gate is a node script that writes its parent's id, which is the shell <c>cmd.exe</c> the run starts it through, and the
-/// variable only the verb was handed, then waits for its go; the test reads which process started that shell from the system.
+/// variable handed to the verb alone, then waits for its go; the test reads which process started that shell from the system.
 /// The home is a scratch folder in the repository's gitignored <c>_fixtures/</c>, and every <c>DAORIS_</c> variable of the machine
 /// is dropped from the verb.
 /// </remarks>

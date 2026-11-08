@@ -27,20 +27,21 @@ public readonly record struct StandardHandles(long Input, long Output, long Erro
 /// started itself would. The copies are this process's to close. Windows only.
 /// </summary>
 /// <remarks>
-/// The terminal is opened to copy from by the process id its pipe connection was taken from, while the connection's own handle on it
+/// The terminal is opened to copy from by the process id its pipe connection names, while the connection's own handle on it
 /// keeps that id from being used again. Only the handles the terminal names are copied, and only from it, so it hands its gates
-/// nothing it did not hold.
+/// nothing it did not hold; and only from a terminal that holds this process's rights (<see cref="TerminalRights"/>).
 /// </remarks>
 public sealed class TerminalHandles : IDisposable
 {
     private int _closed;
 
-    private TerminalHandles(IntPtr input, IntPtr output, IntPtr error, HeavyAsker asker)
+    private TerminalHandles(IntPtr input, IntPtr output, IntPtr error, int pid, long started)
     {
         Input = input;
         Output = output;
         Error = error;
-        Asker = asker;
+        Pid = pid;
+        Started = started;
     }
 
     /// <summary>The terminal's standard input here; zero where it has none.</summary>
@@ -52,8 +53,11 @@ public sealed class TerminalHandles : IDisposable
     /// <summary>The terminal's standard error here; zero where it has none.</summary>
     public IntPtr Error { get; }
 
-    /// <summary>The terminal's process, as a heavy run's slot names it.</summary>
-    public HeavyAsker Asker { get; }
+    /// <summary>The terminal's process.</summary>
+    public int Pid { get; }
+
+    /// <summary>When the terminal's process started, in UTC ticks.</summary>
+    public long Started { get; }
 
     /// <summary>
     /// Copies of <paramref name="named"/>, taken from the process <paramref name="pid"/>; null, with <paramref name="problem"/>, where
@@ -81,6 +85,12 @@ public sealed class TerminalHandles : IDisposable
             return null;
         }
 
+        if (TerminalRights.Differ(terminal.DangerousGetHandle()) is { } differ)
+        {
+            problem = $"{differ}, so Daoris does not start its work with its own";
+            return null;
+        }
+
         var copies = new IntPtr[3];
         var values = new[] { named.Input, named.Output, named.Error };
         for (var at = 0; at < values.Length; at++)
@@ -92,7 +102,7 @@ public sealed class TerminalHandles : IDisposable
             return null;
         }
 
-        return new TerminalHandles(copies[0], copies[1], copies[2], new HeavyAsker(pid, DateTime.FromFileTimeUtc(created).Ticks));
+        return new TerminalHandles(copies[0], copies[1], copies[2], pid, DateTime.FromFileTimeUtc(created).Ticks);
     }
 
     /// <summary>A stream that writes to the terminal's standard output, for the run's own lines; null where it has none.</summary>

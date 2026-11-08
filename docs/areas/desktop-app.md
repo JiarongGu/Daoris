@@ -31,7 +31,7 @@ executable, started with a browser argument, is Daoris's own browser, which sess
 | `DriverLoop`'s parts | `Modules/Loop/LoopState.cs`, `LoopRun.cs`, `LookTold.cs`, `LoopComeUp.cs`, `LoopAddress.cs`, `HomeHold.cs`, `TickShown.cs`, `TickSignatures.cs`, `TickErrors.cs`, `AttentionTold.cs`, `OutputTold.cs`, `PipeDecisionAdmission.cs` | What the run brings up and the loop's doors read, in one state type written whole with no lock; the address and pipe named in the home under their own lock with the stop's cancel; one run per loop, declaring what it brings up in the order it is let go in reverse; what each look keeps and tells; what the come-up hears; the home's lease waited for; the tick's shapes, signatures and errors; the attention and console events; the supervisor's decisions' admission. The loop keeps one-line doors, the start and the stop (D231) |
 | `PersonRoutes` | `Modules/Bridge/Routes/PersonRoutes.cs` | `PERSON_KEY` and the person's confirmations, answered to the page |
 | `InstancePipe`, `PipeCensus`, `RouteMarks`, `PipeConfirmations` | `Modules/Platform/` | A terminal's verbs into the running Daoris; each route classed `Open`, `Person`, `Window` or `Role` by its mark, read at start |
-| `InstancePipe`'s parts | `Modules/Platform/PipeState.cs`, `PipeWaitingKeep.cs`, `PipeListener.cs`, `PipeConnection.cs`, `PipeAdmission.cs`, `PipeAsking.cs`, `PipeTakeBacks.cs`, `PipeRestore.cs`, `PipeReserved.cs`, `PipeLimits.cs`, `PipeHolding.cs`, `PipeHold.cs`, `PipeForwarding.cs` | The presses and connections under one gate; the waiting records under their own lock, never taken inside it; the listening, a connection, a request's admission, a person's press from its reservation to its ending, `CANCEL`/`RESULT`/`WITHDRAW`, the restart's restore; a terminal's hold of a conversation (`HOLD`, `LET_GO`) and the bounded forwarding of its lines. The pipe keeps the wire's words, the serve, the close and the run |
+| `InstancePipe`'s parts | `Modules/Platform/PipeState.cs`, `PipeWaitingKeep.cs`, `PipeListener.cs`, `PipeConnection.cs`, `PipeAdmission.cs`, `PipeAsking.cs`, `PipeTakeBacks.cs`, `PipeRestore.cs`, `PipeReserved.cs`, `PipeLimits.cs`, `PipeHolding.cs`, `PipeHold.cs`, `PipeForwarding.cs`, `PipeHeavyRuns.cs` | The presses and connections under one gate; the waiting records under their own lock, never taken inside it; the listening, a connection, a request's admission, a person's press from its reservation to its ending, `CANCEL`/`RESULT`/`WITHDRAW`, the restart's restore; a terminal's hold of a conversation (`HOLD`, `LET_GO`) and the bounded forwarding of its lines; a terminal's heavy run (`RUN_HEAVY`, `RUN_STOP`), held to its connection. The pipe keeps the wire's words, the serve, the close and the run |
 | `WindowsModule` | `Modules/Windows/WindowsModule.cs` | `DAORIS.WINDOWS`: `OPEN`, `OPEN_BROWSER`, `SET_THEME`, `SET_BADGE`, `SET_TITLE`, `SET_NOTICE_WORDS` |
 | Notifier | `App/SessionNotifier.cs`, `Modules/Windows/SessionBalloon.cs`, `Modules/Windows/MainWindowScopes.cs` | OS balloons in the window's language, posted to the window's thread through `WindowPost`; which window a click brings forward |
 | Taskbar | `App/TaskbarBadge.cs`, `Modules/Windows/WaitingCount.cs`, `WaitingBadge.cs` | Each main window's count on its button and in its title |
@@ -293,12 +293,23 @@ One management, `OwnedProcesses`, behind the start gate; the purposes and where 
 | The HTTP host (`HostSupervisor`) | `EndsItself` | none: it stops when its input ends | it stops itself |
 | The update's launcher, the recorded Edge | `Outlives` | none, by design | running |
 | The file manager; a terminal's shell | gate's `RunAsync` | the system's; the shell's own job from its first instruction | the shell ended |
-| A heavy run's gate, a git act's step | direct, suspended | a named job of their own | ended |
+| A heavy run's gate (`daoris gate run`, the application's own where it runs), a git act's step | direct, suspended | a named job of their own | ended |
 
 A child is joined as its start returns, so what it starts in that instant is outside the job; a start that cannot accept that starts
-suspended in a job of its own. Off Windows there are no jobs. The proof is `OwnedProcessesProcessTests` (an owner killed, its child and
-grandchild found gone, against a control held by no job) and `ProcessStartsCensusTests` (each file's purpose, the starts and kills
-outside the management with why).
+suspended in a job of its own. A terminal's `daoris gate run` is the running application's: the verb asks over the pipe (`RUN_HEAVY`,
+`HeavyAppRun`), the application runs the gates as its children under the machine's admission (`HeavyTerminalRun`), handed the
+terminal's folder, environment and its own standard handles (`TerminalHandles`, copied from the terminal's process), so the gates
+write where the terminal does, and answers the exit code; the run is held to that connection, so a verb killed or its session ended
+stops it, and the verb's Ctrl+C asks `RUN_STOP`. A terminal whose rights are not the application's (a restricted token, an app
+container, another integrity level: `TerminalRights`) is refused, so a sandbox's work never runs outside it. Where no Daoris takes
+the run, the verb says why in one line and runs it itself.
+Forwarding the gates' output over the pipe was rejected: it would reorder a gate's lines against the run's, and lose a console. Off Windows there are no jobs. The proof is `OwnedProcessesProcessTests` (an owner killed, its child and
+grandchild found gone, against a control held by no job), `ProcessStartsCensusTests` (each file's purpose, the starts and kills
+outside the management with why), `HeavyAppRunProcessTests` (a gate run's shell started by a stand-in application, never the verb,
+and ended with the verb) and `TerminalStartsCensusTests` (each console of the host that can start a process, read from the built
+program's calls, asks the running Daoris first or is listed with why it may not: the doctrine CLI, the headless loop, a measurement,
+git's reads and one tree's removal). `node tools/process-tree.mjs` reads a machine and lists each Daoris process outside the
+application's tree under what started it.
 
 The census is read once, as the application stops: `RunningProcessesLine` writes a `processes.running` line naming each purpose that
 still holds a process, by id, and nothing where none does (`RunningProcessesLineProcessTests`). The tests' own direct starts are named

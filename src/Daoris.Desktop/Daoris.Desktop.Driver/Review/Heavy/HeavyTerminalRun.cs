@@ -55,7 +55,7 @@ public static class HeavyTerminalRun
             await using var output = stream is null ? TextWriter.Null : new StreamWriter(stream, Utf8) { AutoFlush = true };
             var world = new HeavyRunWorld(home, directory, name => environment.GetValueOrDefault(name))
             {
-                Asker = handles.Asker,
+                Asker = new HeavyAsker(handles.Pid, handles.Started),
                 Environment = environment,
                 Streams = handles,
             };
