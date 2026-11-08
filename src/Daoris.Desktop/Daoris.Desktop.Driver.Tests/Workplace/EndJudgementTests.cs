@@ -295,6 +295,19 @@ public sealed class EndJudgementTests
     }
 
     [Fact]
+    public void A_session_branch_whose_content_proof_git_could_not_read_is_unknown_and_never_a_claim()
+    {
+        var session = Branch(EndRole.Session);
+
+        var unread = EndJudgement.Judge(EndCycle.NoLanding, session, Facts() with { ProofUnread = "git could not read the branch's tree" });
+        var persons = EndJudgement.Judge(EndCycle.NoLanding, session, Facts() with { ProofUnread = "x", OnPersonsBranch = true });
+
+        Assert.Equal(EndState.Unknown, unread.State);
+        Assert.Contains("git could not read the branch's tree", unread.Evidence);
+        Assert.Equal(EndState.Handed, persons.State);
+    }
+
+    [Fact]
     public void A_plugins_word_without_its_merge_commit_on_the_line_here_is_not_an_end()
     {
         var entry = Landing() with { Plugin = "forge", PullRequestState = Done() };

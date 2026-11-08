@@ -134,9 +134,11 @@ internal sealed class SetAsideKeeping(TreeContext context, TreeSetAside setAside
             if (only is not null && !only(folder)) continue;
             if (!Directory.Exists(folder))
             {
-                // Its folder went at its days, or by the person's hand: the manifest goes with it. One whose folder a removal holds in `.going`
-                // stays, its identity, until that removal ends or puts the folder back.
-                if (!Directory.Exists(GoingOf(root, folder))) Drop(file);
+                // The folder went at its days or by the person's hand, and the manifest with it; one held in `.going`, or judged within
+                // the hour (its move not yet made), stays.
+                if (Directory.Exists(GoingOf(root, folder))) continue;
+                if (SlimManifest.Read(file).Manifest is { State: SlimStates.Judged } judging && now - judging.Judged < KeepKinds.SetAsideSettle) continue;
+                Drop(file);
                 continue;
             }
 

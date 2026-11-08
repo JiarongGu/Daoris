@@ -52,11 +52,11 @@ internal sealed class SetAsideFault
     /// <summary>The process stops right after a removal's rename into <c>.going</c>, before its delete.</summary>
     public bool StopAfterRename { get; init; }
 
-    /// <summary>
-    /// The process stops inside a removal's delete, right after its first file is deleted: its record in <c>.going</c> says the delete began,
-    /// and what remains lies there for the resume.
-    /// </summary>
+    /// <summary>The process stops inside a removal's delete, right after its first file, its <c>.going</c> record saying the delete began.</summary>
     public bool StopInDelete { get; init; }
+
+    /// <summary>Run right before a tidy holds a repository's recovery refs to their retention, with the repository's root.</summary>
+    public Action<string>? BeforeRetention { get; init; }
 }
 
 /// <summary>A stop a test's flow makes (<see cref="SetAsideFault"/>): the process ends here, as a crash would.</summary>
