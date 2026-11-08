@@ -101,6 +101,32 @@ public sealed class IntegrationFormGitTests : LandedFixture
             id, "engine", "aurora", branch, tip, IntegrationRoutes.Recorded, "main", IntegrationRequester.Card, policy.Resolved(),
             new DateTimeOffset(2026, 10, 30, 9, 0, order, TimeSpan.Zero))));
 
+    /// <summary>A stop is about the line as it stands: its requests stay open, and nothing forms again from them until the line moves.</summary>
+    [Fact]
+    public async Task A_line_whose_integration_stopped_forms_nothing_again_until_the_line_moves()
+    {
+        var root = await RepositoryAsync("engine");
+        var @base = await CommitOfAsync(root, "main");
+        var a = await BranchAsync(root, "feature/a", ("a.txt", "a\n"));
+        var store = Store("run-a");
+        Queue(store, "ra", "feature/a", a, 1);
+        var claim = store.Form(new IntegrationForming("engine", "aurora", "main", @base, ["ra"])).Claim!;
+        store.End(claim, store.OpenStep(claim.Candidate)!.Id, new IntegrationStepEnd(IntegrationStepOutcomes.Stopped)
+        {
+            Said = "the line's integration stopped", Ends = IntegrationCandidateEnds.Stopped,
+        });
+
+        var stopped = await Replays(store).RunAsync(Ask(root));
+
+        Assert.Equal(IntegrationReplayRuns.Idle, stopped.Kind);
+        Assert.Null(store.StandingFor("engine", "main"));
+
+        await CommitAsync(root, "moved.txt", "moved\n", "the line moves");
+        var moved = await Replays(store).RunAsync(Ask(root));
+
+        Assert.Equal(IntegrationReplayRuns.Replayed, moved.Kind);
+    }
+
     /// <summary>
     /// Two requests admitted under different policies are not one candidate. The rule changed between them (here the overlap), so
     /// the first request's batching must not govern the second: the candidate holds the first alone, the second waits for the next.

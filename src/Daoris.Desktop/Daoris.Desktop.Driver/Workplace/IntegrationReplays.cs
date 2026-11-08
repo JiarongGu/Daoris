@@ -135,6 +135,12 @@ internal sealed class IntegrationReplays(IntegrationStore store, string treesRoo
             return new(IntegrationReplayRuns.Unread, $"git could not read where `{ask.Line}` stands ({ContentHolds.Said(err)}): nothing was formed, and it is asked again at the next look.");
         }
 
+        // A stop is about the line as it stands, and its requests stay open: formed again at the same commit, the candidate would only be stopped again.
+        if (store.LastEnded(ask.Repository, ask.Line) is { EndedWhy: IntegrationCandidateEnds.Stopped } stopped && string.Equals(stopped.Base, commit.Trim(), StringComparison.Ordinal))
+        {
+            return new(IntegrationReplayRuns.Idle, $"the integration of `{ask.Line}` stopped at {TextBounds.ShortCommit(stopped.Base, 8)}: nothing is formed again until the line moves.");
+        }
+
         // The first request's policy is the candidate's, and only requests of its epoch join it (below).
         var batch = Math.Clamp(queued[0].Policy.Batch ?? 1, 1, LandingIntegrate.MaxBatch);
         // A candidate the judge split (its members run one at a time) is followed by one of a single member.
