@@ -5,6 +5,12 @@ the per-task record. Entries preserve their original wording so the archive stay
 
 ---
 
+## CONVREV1 to CONVREV4 — a conversation's limit and transient moves count under the line, a driven word keeps its sender, a held wake is asked again (2026-11-08)
+
+> **CONVREV1 / CONVREV2 / CONVREV3 / CONVREV4** (conversations review): Outcome: all four held as the rows said, each with a regression test seen to fail first. CONVREV1 (96ab036726): `LimitMove` reads the line key once and `LimitRuled.Holds` and `Moved` count under it, as the transient move does (`LimitMoveStoreTests`). CONVREV2 (f7f063c411): `TransientMove` judges the hand-over as the take does before beginning, counts only after the begin, and supersedes the record where the bound refuses (`TransientMoveTests`). CONVREV3 (8823633dbd): `DrivenCourse.WordsOf` reads authors through `BriefedMove.AuthorOf` (`LineFactsTests`). CONVREV4 (67d544359a): a wake the go-on held off marks the stage dirty so the next look asks again at the same stamp (`LimitWaitsTests`, a hand-over's box as the seam).
+
+---
+
 ## GITREV1 and GITREV2 — the service reads what the driver moves into place, and a write keeps the identity entries it cannot read (2026-11-08)
 
 > **GITREV1 / GITREV2** (git-and-remotes review): Outcome: GITREV1 held as the row said. The service's `AtomicFile` gained `ReadText`, which shares deletion with the writer's move, and `RemoteConfig.Load` and the seven session-box and proposal readers of driver-written files use it (a test holds `remotes.json` and a box state file as Windows' move holds them; both read, where `File.ReadAllText` threw or answered "no state"). GITREV2 held: `GitIdentities.Load` now keeps each entry `Of` rejects (an unknown way, a bad id, a non-object) as it stands and `Change` writes them back after the identities, so adding or removing one identity leaves them in the file (a test with an unknown way, an extra field and a stray string).

@@ -126,10 +126,11 @@ of everything it handed, section by section.
     (from D210, D212)
 19. A conversation's line reads the supervisor's rules as a driven line does (`ConversationRules`): its episode makes its
     tries rule's number of tries; past them a `next` or `weighted` rule moves it to another choice of its role, a new part
-    handed the brief (`transient`, by `daoris`) and counted in `moves` (`TransientMove`), an `ask` or the moves rule's
+    handed the brief (`transient`, by `daoris`) and counted in `moves` under the line's key once the take would accept it and
+    the move is begun (`TransientMove`), an `ask` or the moves rule's
     bound holds it, and the seeded `hold` ends its turn `chat.transient-stopped`. Its limits rule's `wait` (within its
-    `upTo`) and `ask`, and the bound, keep it on its own account before the limit's walk (`LimitRuled`); a walk to another
-    choice is counted. Each act is said and kept as the rule's decision. (from D229)
+    `upTo`) and `ask`, and the bound, keep it on its own account before the limit's walk (`LimitRuled`), reading the moves
+    under the line's key; a walk to another choice is counted there. Each act is said and kept as the rule's decision. (from D229)
 
 **Moves between accounts and agents**
 
