@@ -362,12 +362,21 @@ internal static class GitRuns
     /// </remarks>
     internal static Task<int> ReadGitAsync(
         string root, IReadOnlyList<string> arguments, Func<ReadOnlyMemory<char>, bool> take, CancellationToken ct) =>
+        (Runs.Value is null && Answered.Value is null ? GitReadOnce.Streamed(root, arguments, take, ct) : null)
+        ?? ReadGitAsync(root, arguments, environment: null, take, ct);
+
+    /// <summary>git read as it answers, with variables of its own (Review's untracked diff names its private index by
+    /// <c>GIT_INDEX_FILE</c>): always asked of git.</summary>
+    internal static Task<int> ReadGitAsync(
+        string root, IReadOnlyList<string> arguments, IReadOnlyDictionary<string, string>? environment, Func<ReadOnlyMemory<char>, bool> take,
+        CancellationToken ct) =>
         // Through the one seam, which raises Started for this runner too (once RunGitAsync's alone).
-        (Runs.Value is null && Answered.Value is null ? GitReadOnce.Streamed(root, arguments, take, ct) : null) ?? GitLaunch.LaunchAsync(
-            GitLaunch.KindOf(arguments), arguments, GitLaunch.Budget, GitRunner.Streamed, () => ReadLaunchedAsync(root, arguments, take, ct));
+        GitLaunch.LaunchAsync(
+            GitLaunch.KindOf(arguments), arguments, GitLaunch.Budget, GitRunner.Streamed, () => ReadLaunchedAsync(root, arguments, environment, take, ct));
 
     private static async Task<int> ReadLaunchedAsync(
-        string root, IReadOnlyList<string> arguments, Func<ReadOnlyMemory<char>, bool> take, CancellationToken ct)
+        string root, IReadOnlyList<string> arguments, IReadOnlyDictionary<string, string>? environment, Func<ReadOnlyMemory<char>, bool> take,
+        CancellationToken ct)
     {
         // The run's test seam stands in for this runner too, so a census holds every answer of Review's graph.
         if (Runs.Value is { } stand)
@@ -379,6 +388,7 @@ internal static class GitRuns
 
         var (info, _) = GitStart(root, arguments, ProgramHome.Named);
         if (info is null) return -1;
+        foreach (var (name, value) in environment ?? new Dictionary<string, string>()) info.Environment[name] = value;
         try
         {
             var ask = GitStartAsks.For(info, arguments, GitRunner.Streamed, GitBounds.Of(arguments), shares: false);

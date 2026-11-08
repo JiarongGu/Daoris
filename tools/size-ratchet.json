@@ -62,7 +62,7 @@
   "src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Workplace/IntegrationFormGitTests.cs": 51656,
   "src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Workplace/IntegrationPromoteGitTests.cs": 55354,
   "src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Workplace/IntegrationStoreTests.cs": 58298,
-  "src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Workplace/ReviewGraphCensusTests.cs": 47927,
+  "src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Workplace/ReviewGraphCensusTests.cs": 46026,
   "src/Daoris.Desktop/Daoris.Desktop.Modules.Tests/Bridge/DriverModuleAccountsTests.cs": 64539,
   "src/Daoris.Desktop/Daoris.Desktop.Modules.Tests/Bridge/DriverModuleConversationTests.cs": 66531,
   "src/Daoris.Desktop/Daoris.Desktop.Modules.Tests/Bridge/DriverModuleSessionsTests.cs": 74450,

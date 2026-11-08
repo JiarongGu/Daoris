@@ -143,3 +143,26 @@ The independent Opus 5.5 reader's read of round 3 at `78aa979e6d`, read-only; as
 **Not blocking.** D228: "each object is one start meanwhile" keeps today's `cat-file blob`, `show c:p` and `log`-format parsers beside the reader's, and they never end; make that one start a `--batch` asked one question through the same parser. A reader started in a common directory not named `.git` is refused under `safe.bareRepository=explicit`: hand it `GIT_DIR`. Row a's diff against its own index is a working-tree diff: write it with `diff.autoRefreshIndex=false`, or row b's extended optional-locks census goes red on it.
 
 **Row order and row b.** a → b → c → d → e and f, g after d, is right (d needs c's derived fields). The scheduler has three gaps: (i) the person's reserved place is protected only from the background: two person-class gits waiting outside Daoris (a push running its hook, a fetch waiting up to 15 minutes on a grant) plus two background reads fill all four places, so reserve one place against every long-running class; (ii) a reader started by a person keeps the person's place for up to 10 s while background asks keep it alive, so a reader's place takes the class of the asks in it; (iii) an unended git keeps its place until it exits, so four on a hung network share stall every git: bound them, or count their places apart and say so in the machine log. Proofs to add to b: a person's read still placed when every place is held by long-running gits, and each class's longest wait; a removal while an unendable git is queued in its folder; a used read that joined a memo surviving its speculative starter's cancellation; the gate refusing a git started as `Tool`; N1 to N4.
+
+
+## Codex, round 4
+
+Codex's read of round 4 at `b997f4474c`, run by the steward from outside the install, read-only; verbatim. The findings for row b were handed to its builder.
+
+Round 4 answers most surviving round 3 findings: effective parents, newline framing, preview sizing, the named plugin route, memo cancellation, runner stops and census mutations have explicit fixes. The original two-hook re-entry sequence is answered. Held-mapping findings dissolve between questions, subject to row d’s Windows proof. Caller configuration and the version predicate remain incomplete. Proposed tests are not passing evidence.
+
+- **Wrong-state sharing — blocking (§§10.3, 14.5).** Stamping `GitReadCache` does not cover flow memos. `GitFacts.SameRepository` merges worktrees’ by-id answers; `RefSnapshot.TreeHeld` searches without caller context. In one flow, A reads a replaced commit, then B, with `core.useReplaceRefs=false`, receives A’s tree or graph answer before admission runs. That can corrupt `ContentHolds`’ deletion judgement. Smallest change: partition every memo and derived-tree lookup by repository and caller configuration context; test both worktrees within one flow.
+
+- **Lazy-fetch floor — blocking (§14.5).** “At least 2.44.1” is wrong: [2.45.0 lacks the guard](https://raw.githubusercontent.com/git/git/v2.45.0/promisor-remote.c), while [2.39.4 already contains it](https://raw.githubusercontent.com/git/git/v2.39.4/promisor-remote.c). A 2.45.0 filtered-object read therefore fetches inside an ordinary place. Use a verified capability probe, or an accurate maintenance-release predicate; test unsupported intermediate releases, not only current binaries.
+
+- **Deadlock remains possible (§14.2; `GitLaunch`’s diff kinds).** Three background diffs and one person’s diff can fill four places; their textconv/filter programs synchronously request service reads. None has an outside-waiting parent eligible to lend capacity. They wait until bounds kill the parents. Smallest change: classify helper-running reads as outside-waiting, or extend bounded lending to every scheduled parent capable of re-entry. Add this combined test.
+
+- **Person’s read starvation (§§5.4, 14.2).** The revised reservation protects an eligible local read from background/remote occupancy. Two occupied remote places can still delay a missing-blob preview’s retry. Specify selection of the oldest *eligible* ask, so a blocked remote queue head cannot obstruct a later local read. This is a latency issue, not independently blocking.
+
+- **Write order (§10.2).** W1 awaited before W2 remains ordered; unrelated flows are explicitly unordered and journaled acts retain the checkout lock. No demonstrated new write-order blocker; test those guarantees.
+
+- **Mid-write termination (§10.6).** Bounds and shutdown explicitly may kill writes; `ActRuns` preserves unknown outcomes through postconditions. Cancellation and runner stops must also exclude fetch-enabled retries and unsupported-version reads: `cat-file` arguments alone cannot establish `Endable`. Test cancellation during the nested fetch.
+
+- **Escaping starts (§§14.3–14.4).** Recognised git images are refused without places across the named purposes. No bypass is demonstrated; retain real-runner tests for variable-file routes and `HeldChild`.
+
+The dependency graph is otherwise sound: a→b→{c,d}, d→{e,f,g}. **But b enables no-lazy-fetch before c fixes `ls-tree -l`’s `BAD` preview regression.** Move that handling into b or land them atomically. Add the sequences above; require parity, deployment/Windows checks and install measurements before lowering counts.

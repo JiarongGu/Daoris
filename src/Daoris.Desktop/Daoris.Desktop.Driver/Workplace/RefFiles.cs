@@ -15,14 +15,28 @@ internal static class RefFiles
     /// </summary>
     internal static string? CommonDirOf(string folder)
     {
+        if (GitDirOf(folder) is not { } own) return null;
+        try
+        {
+            var link = Path.Combine(own, "commondir");
+            return Path.TrimEndingDirectorySeparator(File.Exists(link) ? Path.GetFullPath(File.ReadAllText(link).Trim(), own) : own);
+        }
+        catch (Exception error) when (error is IOException or UnauthorizedAccessException or ArgumentException or NotSupportedException)
+        {
+            return null;
+        }
+    }
+
+    /// <summary>A folder's own git directory, where its index lives: its <c>.git</c> directory, or the one a linked tree's <c>.git</c>
+    /// file names. Null where it cannot be read; nothing is started.</summary>
+    internal static string? GitDirOf(string folder)
+    {
         try
         {
             var dot = Path.Combine(folder, ".git");
             if (Directory.Exists(dot)) return Path.TrimEndingDirectorySeparator(Path.GetFullPath(dot));
             if (!File.Exists(dot) || File.ReadLines(dot).FirstOrDefault() is not { } first || !first.StartsWith("gitdir:", StringComparison.Ordinal)) return null;
-            var own = Path.GetFullPath(first["gitdir:".Length..].Trim(), Path.GetFullPath(folder));
-            var link = Path.Combine(own, "commondir");
-            return Path.TrimEndingDirectorySeparator(File.Exists(link) ? Path.GetFullPath(File.ReadAllText(link).Trim(), own) : own);
+            return Path.TrimEndingDirectorySeparator(Path.GetFullPath(first["gitdir:".Length..].Trim(), Path.GetFullPath(folder)));
         }
         catch (Exception error) when (error is IOException or UnauthorizedAccessException or ArgumentException or NotSupportedException)
         {

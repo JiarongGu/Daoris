@@ -4,10 +4,9 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// The proof on today's chain: Review's read of a session tree, counted
-/// through the one seam, starts <c>12 + I + M + Uᵣ</c> git before the offer, and the line's guesses and both <c>--show-toplevel</c>s
-/// besides, in today's order, each with today's arguments (<see cref="GitLaunchTests.Today"/>). Real git in scratch repositories,
-/// read through <see cref="SessionReviews"/>, the route's own code.
+/// The proof on today's chain: Review's read of a session tree, counted through the one seam, starts <c>12 + I + M</c> git before the
+/// offer (two more where an untracked file is read, whatever their count), the line's guesses and both <c>--show-toplevel</c>s besides, in
+/// today's order, each with today's arguments (<see cref="GitLaunchTests.Today"/>). Real git, read through <see cref="SessionReviews"/>.
 /// </summary>
 /// <remarks>
 /// The fixtures' origin is added after its repository, so it has no <c>refs/remotes/origin/HEAD</c>: origin's <c>HEAD</c> is read
@@ -69,16 +68,15 @@ public sealed class ReviewStartsTests : LandedFixture
     }
 
     [Fact]
-    public async Task Each_untracked_file_read_is_one_start_of_the_tail_after_status()
+    public async Task The_untracked_files_are_read_in_two_starts_of_the_tail_after_status()
     {
         var (_, trees, tree, began) = await TreeAsync();
-        await File.WriteAllTextAsync(Path.Combine(tree.Path, "a.txt"), "a\n");
-        await File.WriteAllTextAsync(Path.Combine(tree.Path, "b.txt"), "b\n");
+        for (var at = 0; at < 3; at++) await File.WriteAllTextAsync(Path.Combine(tree.Path, $"{(char)('a' + at)}.txt"), "a\n");
 
         var (review, count) = await ReadAsync(trees, tree, began);
 
-        Assert.Equal(["a.txt", "b.txt"], review!.Uncommitted!.Files.Select(file => file.Path).Order(StringComparer.Ordinal));
-        Assert.Equal(["T", "W", "S", "U", "U", "K", "P", "G2", "B1", "B2", "N1", "N2", "T", "D", "H"], Nodes(count));
+        Assert.Equal(["a.txt", "b.txt", "c.txt"], review!.Uncommitted!.Files.Select(file => file.Path).Order(StringComparer.Ordinal));
+        Assert.Equal(["T", "W", "S", "A", "U", "K", "P", "G2", "B1", "B2", "N1", "N2", "T", "D", "H"], Nodes(count));
         Assert.Equal(2, count.In(GitBudget.Untracked));
         TodaysArguments(count);
     }
@@ -145,7 +143,7 @@ public sealed class ReviewStartsTests : LandedFixture
 
     /// <summary>
     /// The argument census on the real chain: each of the review's starts reached git with exactly the arguments the census of today's
-    /// call sites lists for its node, ids and the untracked file's path aside.
+    /// call sites lists for its node, ids aside.
     /// </summary>
     private static void TodaysArguments(GitCount count)
     {
@@ -160,9 +158,5 @@ public sealed class ReviewStartsTests : LandedFixture
     }
 
     private static string[] Normal(IReadOnlyList<string> arguments) =>
-    [
-        .. arguments.Select((word, at) => at == arguments.Count - 1 && arguments.Contains("--no-index")
-            ? "<path>"
-            : Regex.Replace(word, "(?<![0-9a-zA-Z])[0-9a-f]{8,40}(?![0-9a-zA-Z])", "<id>")),
-    ];
+        [.. arguments.Select(word => Regex.Replace(word, "(?<![0-9a-zA-Z])[0-9a-f]{8,40}(?![0-9a-zA-Z])", "<id>"))];
 }
