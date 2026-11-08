@@ -256,11 +256,31 @@ internal static class HarnessCapture
     internal static async Task PumpAsync(
         TextReader reader, TextWriter file, IReadingSink sink, CancellationToken ct, Action<string>? also = null)
     {
+        // A line that cannot be kept ends nothing: a pipe nobody reads fills, and its writer blocks on the next line. The first
+        // failure is thrown once the pipe has ended.
+        Exception? failure = null;
         while (await reader.ReadLineAsync(ct).ConfigureAwait(false) is { } line)
         {
-            lock (file) file.WriteLine(line);
-            sink.Read(new WireReading.Shown(line));
-            also?.Invoke(line);
+            try
+            {
+                lock (file) file.WriteLine(line);
+                sink.Read(new WireReading.Shown(line));
+            }
+            catch (Exception error) when (error is not OperationCanceledException)
+            {
+                failure ??= error;
+            }
+
+            try
+            {
+                also?.Invoke(line);
+            }
+            catch (Exception error) when (error is not OperationCanceledException)
+            {
+                failure ??= error;
+            }
         }
+
+        if (failure is not null) System.Runtime.ExceptionServices.ExceptionDispatchInfo.Capture(failure).Throw();
     }
 }
