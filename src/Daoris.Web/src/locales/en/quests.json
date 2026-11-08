@@ -111,7 +111,7 @@
   "quests.compose.bodyLabel": "Why, and the evidence",
   "quests.compose.publish": "Publish quest",
   "quests.compose.caution": "`{{repository}}` has not declared what it owns or accepts, so this may not be its problem. Worth checking before you rely on it.",
-  "quests.compose.filesLabel": "files — kept on this machine and handed to whoever takes it here",
+  "quests.compose.filesLabel": "Files — kept on this machine and handed to whoever takes it here",
   "quests.compose.addStep": "Add a next step…",
   "quests.compose.stepLegend": "Then",
   "quests.compose.stepHint": "Published by the service when this closes done, on behalf of the same asker; a decline stops it. Write {parent} for this quest's id.",

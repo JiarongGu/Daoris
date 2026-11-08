@@ -15,8 +15,8 @@ import { ASKS, type Topology } from './topology';
 
 /** Where nothing measures the region (a unit test): the width the layers were always laid out for. */
 const FALLBACK_WIDTH = 900;
-/** What follows the drawing down to the window's foot: the legend's two lines and the off-map count, the card's padding, the status bar. */
-const BELOW = 140;
+/** What the ring leaves below the holder's top: the canvas's reserve under its viewport, its toolbar row and its padding. */
+const BELOW = 230;
 /** Zoom 25–250%: Ctrl+wheel and a pinch are continuous, and a name is the type scale's at 100%. */
 const ZOOM = { min: 0.25, max: 2.5 } as const;
 
