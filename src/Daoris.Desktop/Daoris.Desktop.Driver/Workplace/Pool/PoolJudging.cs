@@ -18,7 +18,7 @@ internal static class PoolJudging
     {
         var facts = seed with { Expected = expected };
         var none = new PoolJudged(SlotVerdict.Passed, "", SlotIgnored.None);
-        if (SlotJudgement.Judge(facts) is { Clean: false } held) return none with { Verdict = held };
+        if (Through(facts, 1) is { } held) return none with { Verdict = held };
 
         var path = slot.Path;
         if (await TreeWorktrees.EntriesAsync(site.Root, ct).ConfigureAwait(false) is not { } entries)
@@ -33,7 +33,7 @@ internal static class PoolJudging
             Lock = entry is null ? SlotLocks.Free : PoolLocks.Read(entry),
             BoundElsewhere = entry is not null && await TreeBinding.RefusalAsync(path, ct).ConfigureAwait(false) is not null,
         };
-        if (SlotJudgement.Judge(facts) is { Clean: false } listed) return none with { Verdict = listed };
+        if (Through(facts, 2) is { } listed) return none with { Verdict = listed };
 
         var context = new TreeContext(site.Home, WorkplacePlugins.Current.Wire(site.Home));
         facts = facts with { LinkUnderTrees = context.Worktrees.LinkBelowTreesRoot(path) is not null };
@@ -54,10 +54,10 @@ internal static class PoolJudging
             facts = facts with { Unread = true };
         }
 
-        if (SlotJudgement.Judge(facts) is { Clean: false } linked) return none with { Verdict = linked, Head = head };
+        if (Through(facts, 3) is { } linked) return none with { Verdict = linked, Head = head };
 
         facts = facts with { OperationHalfDone = HalfDone(path) };
-        if (SlotJudgement.Judge(facts) is { Clean: false } half) return none with { Verdict = half, Head = head };
+        if (Through(facts, 4) is { } half) return none with { Verdict = half, Head = head };
 
         IReadOnlyDictionary<string, string> status;
         try
@@ -80,6 +80,10 @@ internal static class PoolJudging
         };
         return new PoolJudged(SlotJudgement.Judge(facts), head, sorted);
     }
+
+    /// <summary>The verdict where a step up to <paramref name="step"/> failed; the later steps' facts are not read yet, so they say nothing.</summary>
+    private static SlotVerdict? Through(SlotJudgementFacts facts, int step) =>
+        SlotJudgement.Judge(facts) is { Clean: false } verdict && verdict.Step <= step ? verdict : null;
 
     /// <summary>Whether a branch, a remote branch, a tag or a ref of the pool's own holds <paramref name="commit"/> in its history.</summary>
     internal static async Task<bool> HeldByRefAsync(string folder, string commit, CancellationToken ct)

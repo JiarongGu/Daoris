@@ -29,8 +29,6 @@ internal sealed class TreeOpening(TreeContext context)
     /// since its landing. The tree grows from <paramref name="landed"/> where that branch stands, else from the line, and the
     /// opening says which and whose tree is gone. Without <paramref name="from"/>: a part grows from where its work landed.
     /// </param>
-    /// <param name="at">A folder to open at instead of one named for the branch: a kept slot's, whose folder is fixed.</param>
-    /// <param name="name">The line's name, <c>s-</c> and eight hex, where it was chosen before the open; null mints one.</param>
     public async Task<TreeOpened> OpenAsync(
         string root, string repository, string workspace, CancellationToken ct = default, string? from = null, string? landed = null,
         string? partOf = null, string? at = null, string? name = null)

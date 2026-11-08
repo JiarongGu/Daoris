@@ -6,7 +6,7 @@ namespace Daoris.Desktop.Driver.Tests;
 /// <summary>
 /// The pool's acts over real git: a slot made and let go, taken by another line with its files, refused for each kind of work it holds, its
 /// lock read by the pool's own rules, the switch made with hooks held and the repository's own hook owed to the files stage, and a line
-/// found where it was left. Each case has a scratch home and repository of its own.
+/// found in the slot it let go. Each case has a scratch home and repository of its own.
 /// </summary>
 [Trait(Category.Parallel, Category.Git)]
 public sealed class TreePoolGitTests : IDisposable
@@ -57,13 +57,14 @@ public sealed class TreePoolGitTests : IDisposable
         var slot = await fixture.LetGoAsync(pool, 1, "s-aaaa0001");
         await PlantAsync(fixture, slot, work);
         var before = await GitAsync(slot.Path, "status", "--porcelain=v1", "--ignored");
+        var branch = (await GitAsync(slot.Path, "branch", "--show-current")).Trim();
 
         var taken = await pool.TakeAsync(fixture.Take(1, "s-bbbb0001"));
 
         Assert.Contains(code, taken.Refused);
         Assert.Equal("s-aaaa0001", pool.Slot(PoolGitFixture.Workspace, PoolGitFixture.Repository, 1)!.Line);
         Assert.Null(pool.ClaimOn(PoolGitFixture.Workspace, PoolGitFixture.Repository, 1));
-        Assert.Equal("daoris/s-aaaa0001", (await GitAsync(slot.Path, "branch", "--show-current")).Trim());
+        Assert.Equal(branch, (await GitAsync(slot.Path, "branch", "--show-current")).Trim());
         Assert.Equal(before, await GitAsync(slot.Path, "status", "--porcelain=v1", "--ignored"));
         Assert.DoesNotContain("daoris/s-bbbb0001", await fixture.BranchesAsync());
     }

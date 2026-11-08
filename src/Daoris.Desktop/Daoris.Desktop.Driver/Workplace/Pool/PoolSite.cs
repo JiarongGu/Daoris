@@ -21,9 +21,9 @@ internal sealed record PoolTake(PoolSite Site, int Number, string Holder, string
     internal string Branch => $"{TreeFollows.SessionPrefix}{Line}";
 }
 
-/// <summary>What a pool act came to: the slot as it stands, or why it was not done.</summary>
-/// <param name="Refused">Why the claim was not taken or the judgement refused the slot; nothing was changed.</param>
-/// <param name="Stuck">Why the slot was left where a refusal found it; it is out of the pool until a look judges it clean.</param>
+/// <summary>What a pool act came to: the slot as it stands, or why it is not done.</summary>
+/// <param name="Refused">Why the claim is not taken or the judgement refuses the slot; nothing changes.</param>
+/// <param name="Stuck">Why the slot stays where a refusal finds it; it is out of the pool until a look judges it clean.</param>
 /// <param name="Record">The opened record's id.</param>
 internal sealed record PoolDone(KeptTree? Slot, string? Refused, string? Stuck, string? Record)
 {

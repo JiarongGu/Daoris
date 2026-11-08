@@ -2,7 +2,7 @@ namespace Daoris.Driver;
 
 /// <summary>
 /// A claim whose run is dead, taken over by the look: the run's git processes proved gone, the claim taken by one guarded update, the
-/// slot read from the disk (never the phase alone), and then freed, finished or held, by what was found. A slot a take left on its new
+/// slot read from the disk (never the phase alone), and then freed, finished or held, by what is found. A slot a take leaves on its new
 /// branch with no commit of its own is detached where the take began and that branch deleted through the journal; no step deletes a ref any
 /// other way.
 /// </summary>
@@ -104,7 +104,7 @@ internal sealed class PoolTakeovers(TreePool pool, PoolSeams seams)
 
     /// <summary>
     /// A take undone: the slot detached where the take began and the new branch deleted through the journal at that commit, its Undo
-    /// standing. Null where it was, or the claim is a return's, which leaves the slot on the returning line's branch; else why not.
+    /// standing. Null where it is done, or the claim is a return's, which leaves the slot on the returning line's branch; else why not.
     /// </summary>
     internal async Task<string?> UndoAsync(PoolSite site, PoolGit git, TreeClaim claim, CancellationToken ct)
     {

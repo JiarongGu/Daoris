@@ -21,9 +21,9 @@ internal static class PoolClearing
 
     /// <summary>
     /// The outputs at the slot's present commit, and the intermediates where <paramref name="toolchainMoved"/>, renamed into the set-aside
-    /// folder of <paramref name="from"/>, each at its own relative place. The tops moved; none where nothing was to move.
+    /// folder of <paramref name="from"/>, each at its own relative place. The tops moved; none where nothing stands to move.
     /// </summary>
-    /// <exception cref="IOException">A rename was refused, because something holds the folder.</exception>
+    /// <exception cref="IOException">A rename is refused, because something holds the folder.</exception>
     internal static async Task<IReadOnlyList<string>> ClearAsync(PoolSite site, string slot, string from, bool toolchainMoved, CancellationToken ct)
     {
         var head = await WorkingTree.HeadAsync(slot, ct).ConfigureAwait(false);

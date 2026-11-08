@@ -164,6 +164,7 @@ public sealed class TreePoolStopsGitTests : IDisposable
         var release = new TaskCompletionSource();
         var slow = _fixture.Pool("run-c", seams: new PoolSeams
         {
+            Open = PoolGitFixture.Landing().Open,
             Reached = async (phase, _) =>
             {
                 if (phase != TreeClaimPhases.Switched) return;

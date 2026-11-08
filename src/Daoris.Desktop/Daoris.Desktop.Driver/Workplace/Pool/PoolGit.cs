@@ -44,7 +44,7 @@ internal sealed class PoolGit : IDisposable
         }
     }
 
-    /// <summary>git with <paramref name="arguments"/> in <paramref name="folder"/>; the exit is -1 where it did not answer within its bound and was ended.</summary>
+    /// <summary>git with <paramref name="arguments"/> in <paramref name="folder"/>; the exit is -1 where it did not answer within its bound and its processes are ended.</summary>
     internal async Task<(int Code, string Stdout, string Stderr)> RunAsync(string folder, IReadOnlyList<string> arguments, CancellationToken ct = default)
     {
         var (info, refusal) = WorkingTree.GitStart(folder, arguments, _home);

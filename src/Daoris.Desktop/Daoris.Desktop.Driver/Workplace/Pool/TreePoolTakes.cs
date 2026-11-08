@@ -74,7 +74,7 @@ internal sealed class TreePoolTakes(TreePool pool, PoolSeams seams)
             return await FailedCheckAsync(git, fence, take, slot, failed, ct).ConfigureAwait(false);
         }
 
-        // The mark is written once the check has passed, so the files stage installs here; a slot refused before this stays as it was.
+        // The mark is written once the check has passed, so the files stage installs here; a slot refused before this stays as it stands.
         if (!inPlace) TreeFilesRecord.Mark(site.Home, slot.Path);
         pool.Advance(fence, TreeClaimPhases.Checked);
         await seams.ReachedAsync(TreeClaimPhases.Checked, slot.Path).ConfigureAwait(false);
@@ -163,7 +163,7 @@ internal sealed class TreePoolTakes(TreePool pool, PoolSeams seams)
     private async Task<SlotJudgementFacts> HoldsAsync(KeptTree slot, CancellationToken ct) =>
         (seams.Holds is { } holds ? await holds(slot, ct).ConfigureAwait(false) : new SlotJudgementFacts()) with { Claimed = false, Visited = false };
 
-    /// <summary>The commit a free slot's HEAD is expected at: where its line let it go, else where it was parked.</summary>
+    /// <summary>The commit a free slot's HEAD is expected at: where its line let it go, else where it is parked.</summary>
     private string ExpectedOf(KeptTree slot) =>
         slot.Line.Length > 0 ? pool.LastEnd(slot.Workspace, slot.Repository, slot.Line)?.Tip ?? "" : slot.Tip;
 
