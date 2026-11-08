@@ -135,12 +135,16 @@ internal sealed class TreeMerges(TreeContext context)
 
         // 🔴 The root's state, read as late as possible. A tree-state observation is a fact about a
         // moment, and the whole premise here is that somebody else may be working in this repository.
-        var (clean, detail) = await WorkingTree.CleanAsync(root, ct).ConfigureAwait(false);
+        var (clean, detail, rootStatus) = await WorkingTree.ReadCleanAsync(root, ct).ConfigureAwait(false);
         if (!clean)
         {
             return new(false,
                 $"the repository's own checkout is not clean ({detail}), and merging into somebody's "
-                + "work in flight is exactly what Daoris does not do. Deal with it there, then merge.");
+                + "work in flight is exactly what Daoris does not do. Deal with it there, then merge.")
+            {
+                Refusal = rootStatus is null ? null : LandingCode.RootDirty,
+                RootStatus = rootStatus,
+            };
         }
 
         var (_, onOut, _) = await WorkingTree.GitAsync(

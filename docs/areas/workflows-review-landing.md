@@ -213,7 +213,10 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
     goes on from it; a delivery whose every entry is a preparation its landing withdrew (a refusal made nothing) is settled withdrawn at
     the driver's look (`WithdrawnPreparations`), so it never holds an update back. (from D215, D227)
 34. A landing refused for work the session can clear carries the session on and keeps the Accept. A refusal nothing changed is not
-    tried again until the tip moves or the person presses; a try that closed at one tip says nothing of the next. (from D145, D227)
+    tried again until the tip moves or the person presses; a try that closed at one tip says nothing of the next. A refusal for the
+    repository's own checkout's uncommitted work has a code of its own (`root-dirty`) and waits on that checkout, not the session's tree
+    and not a review: it is kept with the checkout's status fingerprint and made again at the first pass where that status differs or
+    reads clean, so the landing lands with no press, and its note says it waits for the checkout to be clean. (from D145, D227)
 35. In a session tree the agent commits on the tree's branch as it goes, and never switches or pushes. The commit rule
     (`commits`) may say `ask` or `at-end`. Daoris follows a tree an agent moved anyway. (from D164)
 36. A chain's next step in the same repository starts on the step before's branch, and the chain lands on one branch, which

@@ -97,7 +97,7 @@ public sealed class LandPerformer(
         if (LandTries.Landed(entry, start.Tip)) return null;
         if (TreeFolders.TreeGone(tree)) return Tried(entry, LandingCode.Gone, start.Tip, "gone", new TreeLanding(false, Words(LandingCode.Gone, null)));
         var (tip, status, uncommitted) = await ReadTreeAsync(tree, ct).ConfigureAwait(false);
-        if (!LandTries.ShouldTry(entry, tip, status)) return null;
+        if (!LandTries.ShouldTry(entry, tip, status, await RootStatusAsync(entry, ct).ConfigureAwait(false))) return null;
         var (gate, held, _) = await GateAsync(entry, record.Id, null, tree, fresh, ct, tip: start.Tip).ConfigureAwait(false);
         if (held is not null) return Tried(entry, held.Refusal ?? LandingCode.Refused, tip, status, held);
         if (!string.Equals(tip, start.Tip, StringComparison.OrdinalIgnoreCase))
@@ -176,7 +176,7 @@ public sealed class LandPerformer(
         }
 
         var (tip, status, uncommitted) = await ReadTreeAsync(entry.Tree, ct).ConfigureAwait(false);
-        if (!LandTries.ShouldTry(entry, tip, status)) return (null, null);
+        if (!LandTries.ShouldTry(entry, tip, status, await RootStatusAsync(entry, ct).ConfigureAwait(false))) return (null, null);
 
         // Concluded again with nothing new, it is already on the branch its landing made: closed before the gate, behind the content proof.
         if (uncommitted == 0 && trees.Recorded.Landing(entry.Session) is { GoneAt: null } made
@@ -368,7 +368,7 @@ public sealed class LandPerformer(
         Tries[$"{home}\n{entry.Session}"] = new AutoTry(Now(), code)
         {
             Tip = tip,
-            Status = status,
+            Status = LandingCode.WaitsOnRoot(code) ? landed?.RootStatus : status,
             Uncommitted = uncommitted,
             Branch = made ?? (code is LandingCode.Exists or LandingCode.Completed or LandingCode.Already ? named : null),
             Commits = made is null ? null : commits,
@@ -451,6 +451,16 @@ public sealed class LandPerformer(
         if (statusCode != 0) return (tip, Unreadable, 0);
         var status = LandTries.Fingerprint(porcelain);
         return (tip, status, porcelain.Split('\n', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries).Length);
+    }
+
+    /// <summary>The checkout's status where the entry's last try waits on it; null otherwise, and where git could not say.</summary>
+    private static async Task<string?> RootStatusAsync(LandEntry entry, CancellationToken ct)
+    {
+        if (entry.Last is not { Code: var code } || !LandingCode.WaitsOnRoot(code)) return null;
+        var (commonCode, common, _) = await WorkingTree.GitAsync(entry.Tree, ["rev-parse", "--path-format=absolute", "--git-common-dir"], ct).ConfigureAwait(false);
+        if (commonCode != 0 || Path.GetDirectoryName(common.Trim()) is not { Length: > 0 } root) return null;
+        var (statusCode, porcelain, _) = await WorkingTree.GitAsync(root, ["--no-optional-locks", "status", "--porcelain"], ct).ConfigureAwait(false);
+        return statusCode == 0 ? LandTries.Fingerprint(porcelain) : null;
     }
 
     private DateTimeOffset Now() => clock?.Invoke() ?? DateTimeOffset.UtcNow;
