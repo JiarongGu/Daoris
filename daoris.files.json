@@ -3,6 +3,7 @@
   "rules": [
     { "kind": "local", "paths": ["local/"] },
     { "kind": "local", "paths": ["local/lyntai-local.props"], "copy": true },
+    { "kind": "local", "paths": ["local/shenora-local.props"], "copy": true },
     { "kind": "scratch", "paths": ["_fixtures/", "**/_fixtures/"] },
     { "kind": "dependency", "paths": ["src/Daoris.Web/node_modules/"],
       "key": ["src/Daoris.Web/package-lock.json", "src/Daoris.Web/package.json", "src/Daoris.Web/.npmrc"],

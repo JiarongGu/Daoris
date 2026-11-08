@@ -431,6 +431,7 @@ import {
 } from './ci-background.mjs';
 import { fenced, gluedLabels, records } from './doc-duplicates.mjs';
 import { isMain, renameHeld, spawnGit, stagedTree, writeAtomic } from './fsx.mjs';
+import { copyPrivateFiles, privateGateFiles } from './private-gate-files.mjs';
 import { removeWorktree } from './worktree-remove.mjs';
 import { reachRows } from './reach-rows.mjs';
 import { indexLockNote,mentionsIndexLock, readIndexLock } from './index-lock.mjs';
@@ -5561,36 +5562,6 @@ function prepareGateTree(home, commit) {
   git(path, ['checkout', '--quiet', '--detach', commit]);
   console.log(`the gate tree: moved from ${head.slice(0, 7)} to ${sha} (${GATE_TREE})`);
   return path;
-}
-
-/**
- * The private files a gate reads under `local/`, as the declaration names them: today the sensitive scan's
- * patterns file (`sensitive.patternsFile`, the devkit's default where undeclared). A path not under `local/` is not one
- * of these (a tracked file is in the tree already), and none may climb out of it.
- */
-export function privateGateFiles(home) {
-  let declared = 'local/sensitive-patterns.txt';
-  try {
-    const parsed = JSON.parse(readFileSync(join(home, 'daoris.gates.json'), 'utf8'));
-    if (typeof parsed?.sensitive?.patternsFile === 'string') declared = parsed.sensitive.patternsFile;
-  } catch {
-    // No readable declaration: the plan's own reading refuses it, with its reason.
-  }
-  const path = declared.replace(/\\/g, '/');
-  // The local Lyntai build's props (its feed path is absolute, the main checkout's), so a tree restores the same version.
-  const lyntai = 'local/lyntai-local.props';
-  return path.startsWith('local/') && !path.split('/').includes('..') ? [path, lyntai] : [lyntai];
-}
-
-/** Copies each of `files` from `home` into `tree`, refreshed on every run; returns the lines to say. */
-export function copyPrivateFiles(home, tree, files) {
-  return files.map((file) => {
-    const from = join(home, file);
-    if (!existsSync(from)) return `${file} is missing in the main checkout, so it is not copied into the gate tree: the gate that reads it answers for itself`;
-    mkdirSync(dirname(join(tree, file)), { recursive: true });
-    writeAtomic(join(tree, file), readFileSync(from));
-    return `${file}: copied into the gate tree`;
-  });
 }
 
 /** Copies the run folder at `from` over `home`'s `local/scratch/beside-<sha7>`, the newest run's logs only. */
