@@ -79,12 +79,15 @@ internal sealed class PipeAdmission(InstancePipe pipe)
         // proved holder's act outside the acts the person granted asks the person as its route's own press, the card's alone to admit.
         RoleJudgement? role = null;
         var asked = false;
+        IpcRequest? stewardsAct = null;
+        RoleJudgement? stewardsAsk = null;
         if (@class == PipeClass.Role)
         {
             role = pipe.StandingConfirmation.JudgeRole(request.Module, request.Type, request.Payload, connection.Client, connection.TakeNonce());
             if (role is { Covered: false, Asks: { } asks })
             {
                 _log.Info(StewardAsk.LogEvent, ("role", role.Role ?? ""), ("act", role.Act ?? ""), ("route", asks.Route), ("door", PipeDoor.Terminal));
+                (stewardsAct, stewardsAsk) = (request, role);
                 request = StewardAsk.Press(request, role);
                 @class = _census.Of(request.Module, request.Type, request.Payload);
                 if (@class != PipeClass.Person) return (IpcJson.Serialize(pipe.Refuse(request, RoleWhy.NotGranted, RoleRefusal(RoleWhy.NotGranted))), null);
@@ -185,7 +188,10 @@ internal sealed class PipeAdmission(InstancePipe pipe)
         }
 
         _ = connection.WriteAsync(Waits(id, why, checking: true));
-        _ = pipe.Asking.AskThenRunAsync(reserved, row, fields, why);
+        Task Card() => pipe.Asking.AskThenRunAsync(reserved, row, fields, why);
+
+        // A steward's act outside its grants is offered to the allow supervisor first; it falls to this card otherwise.
+        _ = stewardsAsk is null ? Card() : pipe.StewardAllows.RaiseAsync(reserved, Card, stewardsAct!, stewardsAsk, connection.Client);
         return (null, Held(answer));
     }
 
@@ -254,7 +260,7 @@ internal sealed class PipeAdmission(InstancePipe pipe)
     private static string Capitalized(string text) => text.Length == 0 ? text : char.ToUpperInvariant(text[0]) + text[1..];
 
     /// <summary>A role's act refused at the door, in the terminal's words, by its code. Nothing is kept.</summary>
-    private static string RoleRefusal(string? why) => why switch
+    internal static string RoleRefusal(string? why) => why switch
     {
         SupervisorWhy.NotStaffed => "No terminal holds this role: the owner staffs it with the terminal among the roles. Nothing was done.",
         RoleWhy.NotRole => "That is the owner's to do; the role does not hold it. Nothing was done.",

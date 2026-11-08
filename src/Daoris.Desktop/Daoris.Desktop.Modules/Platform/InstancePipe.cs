@@ -195,6 +195,7 @@ public sealed class InstancePipe : IDisposable
         Keep = new PipeWaitingKeep(new PipeWaiting(DaorisHome.Entry(home, HomeEntry.PipeWaiting)));
         Asking = new PipeAsking(this);
         TakeBacks = new PipeTakeBacks(this);
+        StewardAllows = new StewardAllows(this);
         Holding = new PipeHolding(this, bus);
         _admission = new PipeAdmission(this);
         _restore = new PipeRestore(this);
@@ -231,6 +232,9 @@ public sealed class InstancePipe : IDisposable
     internal PipeAsking Asking { get; }
 
     internal PipeTakeBacks TakeBacks { get; }
+
+    /// <summary>A steward's act outside its grants, offered to the allow supervisor before the person's card.</summary>
+    public StewardAllows StewardAllows { get; }
 
     /// <summary>A terminal's hold of a conversation: the window's <c>SESSION_HOLDS</c> reads it and <c>SESSION_LET_GO</c> ends one.</summary>
     public PipeHolding Holding { get; }
@@ -371,6 +375,7 @@ public sealed class InstancePipe : IDisposable
             Asking.EndReserved(each, RefuseStopping(each.Request));
         }
 
+        StewardAllows.Close();
         foreach (var (id, confirmation, line) in waiting) KeepAtClose(id, confirmation, line);
     }
 

@@ -28,6 +28,8 @@ public static class SupervisorDoor
     {
         var standing = pipe.StandingConfirmation;
         _attached = (loop, pipe);
+        var scopes = new ServiceOwnerScopes(() => loop.Service);
+        pipe.StewardAllows.Places ??= (target, ct) => StewardPlaces.OfAsync(scopes, standing, target, ct);
         standing.Tell ??= (tab, line, title) => Panel?.Tell(tab, line, title);
         standing.Close ??= tab => Panel?.Close(tab);
         standing.Ended ??= generations => _ = SweepAsync(loop, generations, CancellationToken.None);

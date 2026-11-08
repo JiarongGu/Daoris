@@ -38,17 +38,23 @@ public sealed record SupervisorSubject(string Kind, string Session, string Id)
     /// <summary>A widening a session proposed, <c>{ proposal }</c>, the allow kind's second subtype: it names no session.</summary>
     public static SupervisorSubject Proposal(string proposal) => new(SupervisorKinds.Allow, "", proposal);
 
-    /// <summary>Whether this is an allow's widening, which names a proposal and no session.</summary>
-    public bool IsProposal => Kind == SupervisorKinds.Allow && Session.Length == 0;
+    /// <summary>A steward's act outside its grants, <c>{ ask }</c>, the allow kind's third subtype: it names no session.</summary>
+    public static SupervisorSubject StewardAsk(string ask) => new(SupervisorKinds.Allow, "", ask) { IsAsk = true };
 
-    /// <summary>The name the subject's id goes by: <c>question</c>, <c>point</c>, <c>request</c> or <c>proposal</c>.</summary>
-    public string IdName => IsProposal ? "proposal" : Named[Kind];
+    /// <summary>Whether this is an allow's steward act, which names an ask and no session.</summary>
+    public bool IsAsk { get; init; }
+
+    /// <summary>Whether this is an allow's widening, which names a proposal and no session.</summary>
+    public bool IsProposal => Kind == SupervisorKinds.Allow && Session.Length == 0 && !IsAsk;
+
+    /// <summary>The name the subject's id goes by: <c>question</c>, <c>point</c>, <c>request</c>, <c>proposal</c> or <c>ask</c>.</summary>
+    public string IdName => IsAsk ? "ask" : IsProposal ? "proposal" : Named[Kind];
 
     /// <summary>The subject as the wire carries it, its fields in their order.</summary>
     public IReadOnlyDictionary<string, string> Wire()
     {
         var wire = new Dictionary<string, string>(StringComparer.Ordinal);
-        if (!IsProposal) wire["session"] = Session;
+        if (!IsProposal && !IsAsk) wire["session"] = Session;
         wire[IdName] = Id;
         if (Held is not null) wire["held"] = Held;
         return wire;
@@ -66,7 +72,11 @@ public sealed record SupervisorSubject(string Kind, string Session, string Id)
 
         if (kind == SupervisorKinds.Allow)
         {
-            if (fields.Count == 1) return Text(fields, "proposal") is { } proposal ? Proposal(proposal) : null;
+            if (fields.Count == 1)
+            {
+                return Text(fields, "proposal") is { } proposal ? Proposal(proposal) : Text(fields, "ask") is { } ask ? StewardAsk(ask) : null;
+            }
+
             return fields.Count == 3 && Text(fields, "session") is { } held && Text(fields, "request") is { } request && Text(fields, "held") is { } since
                 ? Request(held, request, since)
                 : null;

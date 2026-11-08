@@ -47,14 +47,18 @@ internal sealed class AllowKind : ISupervisorKind
             }
         }
 
+        waiting.AddRange(StewardAllowSubjects.Waiting(loop));
         return waiting;
     }
 
     public async Task<SupervisorDecided> DecideAsync(DriverLoop loop, SupervisorDecideForm form, SupervisorHolder holder, CancellationToken ct) =>
-        form.Subject.IsProposal ? Widening(loop, form, holder) : await HeldAsync(loop, form).ConfigureAwait(false);
+        form.Subject.IsAsk ? await StewardAllowSubjects.DecideAsync(loop, form).ConfigureAwait(false)
+        : form.Subject.IsProposal ? Widening(loop, form, holder)
+        : await HeldAsync(loop, form).ConfigureAwait(false);
 
     public Task<SupervisorDecided> LeaveAsync(DriverLoop loop, SupervisorLeaveForm form, SupervisorHolder holder, CancellationToken ct)
     {
+        if (form.Subject.IsAsk) return Task.FromResult(StewardAllowSubjects.Leave(loop, form));
         if (!Standing(loop, form.Subject)) return Task.FromResult(SupervisorDecided.Refused(form.Subject.IsProposal ? SupervisorWhy.Answered : SupervisorWhy.NotHeld));
         Left[Key(form.Subject)] = 0;
         return Task.FromResult(new SupervisorDecided(true, null, null, null));
@@ -64,6 +68,7 @@ internal sealed class AllowKind : ISupervisorKind
     public async Task<RolePlace?> PlaceOfAsync(DriverLoop loop, SupervisorSubject subject, CancellationToken ct)
     {
         await Task.CompletedTask;
+        if (subject.IsAsk) return loop.Pipe?.StewardAllows.Find(subject.Id)?.Place;
         if (!subject.IsProposal) return null;
         return RuleProposals.Load(loop.Home).FirstOrDefault(each => each.Id == subject.Id) is { } proposal ? Placed(loop, proposal.Change) : null;
     }
