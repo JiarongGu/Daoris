@@ -73,7 +73,10 @@ The agent's half is the canon skill `canon/packs/co-working/skills/co-working/SK
 4. The person may send all three, urgent by default; now is theirs alone. Daoris sends ordinary, or urgent for a fact that makes the
    work in flight wrong. An agent posts ordinary or urgent, never now. (from D188)
 5. Every word to a session is kept on its record's `said`, with its level, sender and producer key, before its sender is told. One
-   dispatcher per session drains it in order. A key is kept once while its word waits. (from D188, D212)
+   dispatcher per session drains it in order. A key is kept once while its word waits. The dispatcher gives every keep a key
+   (its producer's, else its own) and tries a keep the record never answered once more under it, so a word the record stored
+   before the answer was lost comes back as that stored copy, held once; held in the dispatcher's process alone only where
+   neither try is answered. (from D188, D212)
 6. Receipts show only what a door observed: held, sent, taken, read, partly handed, answered, uncertain, not reached. *Answered* means a
    reply named the word; a turn that ended after taking it is *taken, turn ended*. Answered never means obeyed. (from D188, D225)
 7. A word attempted before a restart and never confirmed is *uncertain*, and is never sent again unasked. (from D188)
@@ -130,7 +133,8 @@ The agent's half is the canon skill `canon/packs/co-working/skills/co-working/SK
 18. A claim the person passed on stays the agent's claim. Daoris's words are marked `from: daoris` and the supervisor's as the
     supervisor's; neither is ever the person's. (from D225, D188, D208)
 19. Which ask a line is on is its entry's origin: `ask:<id>`, else the publisher's origin, else `quest:<id>`; a conversation is
-    `session:<id>`. The key is written once at the open and never rewritten. (from D167, D225)
+    `session:<id>`. A quest or publisher no record holds passes to the next rule, the part a session continues among them. The key
+    is written once at the open and never rewritten. (from D167, D225)
 
 **Requests and the exchanges**
 
