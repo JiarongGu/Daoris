@@ -113,7 +113,7 @@ public sealed class SupervisorAttempts(string home)
     {
         try
         {
-            using var document = JsonDocument.Parse(File.ReadAllText(path));
+            using var document = JsonDocument.Parse(AtomicFile.ReadText(path));
             var root = document.RootElement;
             if (!root.TryGetProperty("kind", out var kind) || kind.GetString() is not { } named
                 || !root.TryGetProperty("subject", out var wire) || SupervisorSubject.Read(named, wire) is not { } subject
@@ -127,7 +127,7 @@ public sealed class SupervisorAttempts(string home)
             string? outcome = null;
             if (File.Exists(outcomePath))
             {
-                using var ended = JsonDocument.Parse(File.ReadAllText(outcomePath));
+                using var ended = JsonDocument.Parse(AtomicFile.ReadText(outcomePath));
                 outcome = ended.RootElement.TryGetProperty("outcome", out var said) ? said.GetString() : null;
             }
 
