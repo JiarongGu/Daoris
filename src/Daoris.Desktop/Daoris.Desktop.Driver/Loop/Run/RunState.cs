@@ -34,6 +34,7 @@ internal sealed class RunState : IDisposable, IAsyncDisposable
     private Slot<ResolvedAccess> _access;
     private Slot<DrivenAccess> _permissions;
     private Slot<string> _workTree;
+    private Slot<string> _workFolder;
     private Slot<WorkflowBind> _bound;
     private Slot<ReviewEnvironment?> _setUp;
 
@@ -201,6 +202,13 @@ internal sealed class RunState : IDisposable, IAsyncDisposable
     {
         get => _workTree.Get(nameof(WorkTree), "tree");
         set => _workTree.Set(value);
+    }
+
+    /// <summary>The folder the session works in, which the start's record, agent and trust open: its line's slot, else <see cref="WorkTree"/>.</summary>
+    public string WorkFolder
+    {
+        get => _workFolder.Get(nameof(WorkFolder), "tree");
+        set => _workFolder.Set(value);
     }
 
     /// <summary>The adapter the harness trust is asked of, or null where this machine does not know the agent.</summary>

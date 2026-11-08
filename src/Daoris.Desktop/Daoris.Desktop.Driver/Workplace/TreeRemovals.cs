@@ -109,7 +109,8 @@ internal sealed class TreeRemovals(TreeContext context, TreeFollows follows, Con
             // and an ignored one only this tree holds, which `git worktree remove` deletes without asking.
             // The output the repository declares counts only as the owner accepted it for integration.
             var declared = await context.ScratchAsync(root, owner.Repository, owner.Workspace, ct).ConfigureAwait(false);
-            var holds = await ContentHolds.HoldsAsync(full, root, declared, ct).ConfigureAwait(false);
+            var holds = await ContentHolds.HoldsAsync(
+                full, root, declared, ct, new LinePlaces(context.Home).SlotAt(owner.Workspace, owner.Repository, full)).ConfigureAwait(false);
             seen = holds;
             if (holds is null)
             {

@@ -354,7 +354,7 @@ internal sealed class ChatGoOn(IExecutorWiring wiring) : IExecutor
         if (adapter is null) return ContinueWhy.Of(ContinueWhy.Refused);
         // Judged with the findings counted as the word that will wait, so an ended record with nothing waiting yet is not refused for it.
         var waiting = record with { Said = [.. record.Said ?? [], new SaidWordView(null, "", DateTimeOffset.UtcNow, [], Reopens: true) { By = "findings" }] };
-        return Continuations.Judge(waiting, adapter.Id.Value, adapter.Can.Resumes, record.Profile, _context.Conversations.Read(record.Session));
+        return Continuations.Judge(waiting, adapter.Id.Value, adapter.Can.Resumes, record.Profile, _context.Conversations.Read(record.Session), home: _context.Home);
     }
 
     /// <summary>

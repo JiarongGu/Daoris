@@ -89,7 +89,7 @@ internal sealed class ChatHandOver(IExecutorWiring wiring) : IExecutor
                         HandOver.Running,
                         $"{sessionId} is {prior.State}, running in another Daoris process on this machine: hand it over there, or stop it first.")
                     : null,
-                course => Decided?.Invoke(sessionId, course), model, effort)
+                course => Decided?.Invoke(sessionId, course), model, effort, _context.Home)
             .ConfigureAwait(false);
         if (asked is not { Move: { } move, Request: { } request }) return new HandedOver(null, false, asked.Answer.Why, asked.Answer.Message);
 

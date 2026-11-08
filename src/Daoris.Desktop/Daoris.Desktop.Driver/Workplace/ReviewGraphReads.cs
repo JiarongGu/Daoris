@@ -49,7 +49,10 @@ internal static class ReviewGraphReads
         var context = trees.Context;
         // What decides the path and costs no git: the landing, the tree's folder, whose tree it is, the record's base.
         var landing = trees.Recorded.Landing(session);
-        var gone = TreeFolders.TreeGone(tree);
+        if (landing is null && await PooledBranchReviews.ReadAsync(trees, tree, baseCommit, checkoutOf, ct).ConfigureAwait(false) is { } pooled) return pooled;
+        var placed = new LinePlaces(context.Home).Of(tree);
+        if (tree is not null) tree = placed.Folder;
+        var gone = placed.Unreadable;
         var own = !gone && SessionReviews.OwnTree(trees, tree);
         var ranged = !gone && !string.IsNullOrWhiteSpace(baseCommit);
         var checkout = landing is null ? null : new Lazy<Task<string?>>(() => checkoutOf(landing.Repository, ct));

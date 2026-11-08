@@ -173,6 +173,39 @@ public sealed class ReviewGraphTodayTests : LandedFixture
         await SameAsync(trees, tree.Path, "  ");
     }
 
+    // 5b. A pooled line whose slot another line took, unlanded: its branch is read in the checkout, alike, where a gone tree reads nothing.
+    [Fact]
+    public async Task A_pooled_line_whose_slot_was_taken_reads_its_branch_in_the_checkout_alike()
+    {
+        var (root, trees, tree, began) = await TreeAsync();
+        var line = Path.GetFileName(tree.Path);
+        await GitAsync(root, "worktree", "remove", "--force", tree.Path);
+        using var pool = new PooledLines(Home, Session, "engine");
+        pool.Slot(1, line);
+        pool.LetGo(1, line);
+        pool.Take(1, "s-other");
+
+        await SameAsync(trees, tree.Path, began, checkout: root);
+
+        var review = await SessionReviews.ReadAsync(Session, tree.Path, began, trees, (_, _) => Task.FromResult<string?>(root), null, CancellationToken.None);
+        Assert.NotNull(review);
+        Assert.True(review.FromBranch);
+        Assert.True(review.TreeGone);
+        Assert.Contains("own.txt", review.Diff!.Files.Select(file => file.Path));
+        Assert.Equal($"daoris/{line}", review.TreeBranch);
+    }
+
+    [Fact]
+    public async Task A_gone_tree_whose_line_the_pool_never_held_is_refused_alike_as_before()
+    {
+        var (root, trees, tree, began) = await TreeAsync();
+        await GitAsync(root, "worktree", "remove", "--force", tree.Path);
+
+        await SameAsync(trees, tree.Path, began, checkout: root);
+
+        Assert.Null(await SessionReviews.ReadAsync(Session, tree.Path, began, trees, (_, _) => Task.FromResult<string?>(root), null, CancellationToken.None));
+    }
+
     // 6. The range's own branches.
     [Fact]
     public async Task The_ordinary_review_with_untracked_files_and_the_offer_reads_alike()

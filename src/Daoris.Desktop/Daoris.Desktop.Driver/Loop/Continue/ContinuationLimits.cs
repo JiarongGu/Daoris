@@ -26,7 +26,7 @@ internal sealed class ContinuationLimits(LoopContext context)
 
         var asIfWords = limited with { Said = [new SaidWordView(null, LimitResume.Words, DateTimeOffset.UnixEpoch, [], true) { From = DaorisWords.From }] };
         return Continuations.Judge(
-            ConversationTrees.Stands, asIfWords, adapter.Id.Value, adapter.Can.Resumes, limited.Profile, _context.Conversations.Read(limited.Session)) is null;
+            tree => ConversationTrees.Stands(_context.Home, tree), asIfWords, adapter.Id.Value, adapter.Can.Resumes, limited.Profile, _context.Conversations.Read(limited.Session)) is null;
     }
 
     /// <summary>

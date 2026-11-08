@@ -48,7 +48,7 @@ public interface IReviewTabs
 ///
 /// <para>The browser is its port (<see cref="IReviewTabs"/>), and the folders it looks at are <see cref="ReviewServed"/>'s.</para>
 /// </remarks>
-public sealed class ReviewDesk(IReviewTabs tabs)
+public sealed class ReviewDesk(IReviewTabs tabs, string? home = null)
 {
     private readonly object _gate = new();
     private IReadOnlyList<ReviewWaiting> _waiting = [];
@@ -222,12 +222,12 @@ public sealed class ReviewDesk(IReviewTabs tabs)
             return (false, $"set-up step `#{quest.Id}` was shown on another machine (`{newest.Machine}`), whose browser holds its tab.");
         }
 
-        if (tree is null || !ReviewServed.Stands(tree))
+        if (tree is null || !ReviewServed.TreeStands(home, tree, newest.At))
         {
             return (false, $"set-up step `#{quest.Id}`'s tree, which held its build, is gone, so there is no build to show again.");
         }
 
-        var (serve, why) = Plan(quest, newest, environment, tree);
+        var (serve, why) = Plan(quest, newest, environment, home is null ? tree : new LinePlaces(home).Of(tree).Folder);
         if (serve is null) return (false, $"set-up step `#{quest.Id}` is not shown again: {why}.");
 
         try

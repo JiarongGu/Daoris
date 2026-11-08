@@ -95,7 +95,10 @@ public sealed class LandPerformer(
         var entry = EntryOf(record.Id, "", start, tree);
         if (PieceLandings.Refused(record) is { } partner) return Workflow(entry, partner, line: null);
         if (LandTries.Landed(entry, start.Tip)) return null;
-        if (TreeFolders.TreeGone(tree)) return Tried(entry, LandingCode.Gone, start.Tip, "gone", new TreeLanding(false, Words(LandingCode.Gone, null)));
+        var standing = new LinePlaces(home).Of(tree);
+        // A line whose slot another line took lands once its tree is brought back, so it is neither closed nor tried now.
+        if (standing.Stand == LineStand.CanBeBroughtBack) return null;
+        if (standing.GoneForGood) return Tried(entry, LandingCode.Gone, start.Tip, "gone", new TreeLanding(false, Words(LandingCode.Gone, null)));
         var (tip, status, uncommitted) = await ReadTreeAsync(tree, ct).ConfigureAwait(false);
         if (!LandTries.ShouldTry(entry, tip, status, await RootStatusAsync(entry, ct).ConfigureAwait(false))) return null;
         var (gate, held, _) = await GateAsync(entry, record.Id, null, tree, fresh, ct, tip: start.Tip).ConfigureAwait(false);
@@ -146,7 +149,9 @@ public sealed class LandPerformer(
             return (Closed(entry, LandingCode.Already, branch: landing.Branch), null);
         }
 
-        if (TreeFolders.TreeGone(entry.Tree)) return (Closed(entry, LandingCode.Gone), null);
+        var placed = new LinePlaces(home).Of(entry.Tree);
+        if (placed.Stand == LineStand.CanBeBroughtBack) return (null, null);
+        if (placed.GoneForGood) return (Closed(entry, LandingCode.Gone), null);
 
         // A live session in the tree is using it, and a newer session on it stands for it now.
         var records = await looked.ReadAsync(ct).ConfigureAwait(false);

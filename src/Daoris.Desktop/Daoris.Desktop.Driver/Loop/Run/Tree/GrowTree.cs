@@ -128,6 +128,7 @@ internal sealed class GrowTree(IRunWiring wiring) : IRunStage
         }
 
         run.State.WorkTree = opened?.Path ?? resumedIn ?? joinedIn ?? root;
+        run.State.WorkFolder = new LinePlaces(home).Of(run.State.WorkTree).Folder;
         run.State.Tree = new TreeFound(
             entryTree, priorStands, entryStands, opened, resumedIn, joinedIn, resuming, carryingOn, answered, handsOn, inSync, oneLook);
         return null;

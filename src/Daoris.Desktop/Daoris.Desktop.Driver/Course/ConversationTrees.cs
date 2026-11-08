@@ -1,12 +1,9 @@
 namespace Daoris.Driver;
 
-/// <summary>
-/// What the disk says of the tree a conversation ran in: whether it still stands. The resume's judgement
-/// (<see cref="Continuations"/>), pure in the Domain, takes it as a value; the hand-over's judge and its take ask here. What the tree
-/// holds uncommitted is the brief's own read (<see cref="ContextBriefs"/>).
-/// </summary>
+/// <summary>What the disk and the home's pool say of the tree a conversation ran in, which the resume's judgement and the hand-over ask.</summary>
 internal static class ConversationTrees
 {
-    /// <summary>Whether <paramref name="tree"/> is still there.</summary>
-    public static bool Stands(string tree) => Directory.Exists(tree);
+    /// <summary>Whether <paramref name="tree"/> stands, or a slot can be switched back to its line; with no home the disk alone answers.</summary>
+    public static bool Stands(string? home, string tree) =>
+        home is null ? Directory.Exists(tree) : new LinePlaces(home).Of(tree).StandsOrCanBeHad;
 }

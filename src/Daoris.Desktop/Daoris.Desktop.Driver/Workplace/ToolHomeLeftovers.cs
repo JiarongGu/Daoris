@@ -118,6 +118,7 @@ public static class ToolHomeLeftovers
     {
         if (recordsJson is null) return null;
         var origins = new List<ToolOrigin>();
+        var places = new LinePlaces(home);
         try
         {
             using var document = JsonDocument.Parse(recordsJson);
@@ -129,7 +130,17 @@ public static class ToolHomeLeftovers
                 var keeps = live ? "session"
                     : string.IsNullOrWhiteSpace(Text(record, "profile")) ? ConversationKeeps(home, id)
                     : null;
-                if (Text(record, "tree") is { Length: > 0 } tree) origins.Add(new ToolOrigin(tree, "tree", keeps, id));
+                if (Text(record, "tree") is { Length: > 0 } tree)
+                {
+                    origins.Add(new ToolOrigin(tree, "tree", keeps, id));
+                    // A pooled line worked in slots, and the agent filed its project under each slot's folder, which no record names.
+                    var (workspace, repository) = places.OwnerOf(tree);
+                    if (workspace.Length > 0)
+                    {
+                        origins.AddRange(places.SlotsOf(workspace, repository, tree).Select(slot => new ToolOrigin(slot.Path, "tree", keeps, id)));
+                    }
+                }
+
                 if (Text(record, "repository") == "daoris:help") origins.Add(new ToolOrigin(KnowledgeRoomPaths.PathOf(home, Text(record, "workspace")), "help", keeps, id));
                 if (Text(record, "ask") is { Length: > 0 })
                 {

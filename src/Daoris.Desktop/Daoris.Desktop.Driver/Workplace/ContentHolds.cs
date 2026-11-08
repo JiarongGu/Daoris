@@ -391,6 +391,9 @@ internal sealed class ContentHolds(TreeContext context)
 
     private static string Short(string commit) => commit.Length > 12 ? commit[..12] : commit;
 
+    /// <summary>When the tree opened: a fresh tree's folder is made by the worktree add, a slot's folder is as old as the slot, so it is the take.</summary>
+    internal static DateTime OpenedAt(string tree, KeptTree? slot) => slot?.Since.UtcDateTime ?? Directory.GetCreationTimeUtc(tree);
+
     /// <summary>
     /// What an unforced removal of a tree would take that no commit holds, asked of git so no setting hides it:
     /// every tracked change and untracked file (<c>--untracked-files=all</c>, whatever <c>status.showUntrackedFiles</c> says),
@@ -413,7 +416,9 @@ internal sealed class ContentHolds(TreeContext context)
     /// The repository's declared output, read from the declaration the owner accepted for integration at the line's tip alone
     /// (<see cref="TreeScratch.AcceptedAsync"/>); none where nothing is accepted, which keeps what it names.
     /// </param>
-    internal static async Task<TreeHolds?> HoldsAsync(string tree, string root, IReadOnlyList<System.Text.RegularExpressions.Regex> declared, CancellationToken ct)
+    /// <param name="slot">The kept slot <paramref name="tree"/> is, where it is one: it opened when its present line took it.</param>
+    internal static async Task<TreeHolds?> HoldsAsync(
+        string tree, string root, IReadOnlyList<System.Text.RegularExpressions.Regex> declared, CancellationToken ct, KeptTree? slot = null)
     {
         var (code, porcelain, _) = await WorkingTree.GitAsync(
             tree, ["--no-optional-locks", "status", "--porcelain", "-z", "--untracked-files=all", "--ignored=matching", "--ignore-submodules=none"], ct).ConfigureAwait(false);
@@ -423,8 +428,7 @@ internal sealed class ContentHolds(TreeContext context)
         var shared = new List<string>();
         var written = new List<string>();
         var tooLarge = new List<string>();
-        // When the tree opened: its folder is made by the worktree add and nothing since recreates it.
-        var opened = Directory.GetCreationTimeUtc(tree);
+        var opened = OpenedAt(tree, slot);
         var entries = porcelain.Split('\0');
         for (var at = 0; at < entries.Length; at++)
         {
