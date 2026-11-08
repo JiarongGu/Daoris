@@ -94,4 +94,7 @@ internal sealed class FileRules
 
     /// <summary>The person's answer for one act (<see cref="FileActs"/>); every act is held while their file does not read.</summary>
     internal FileVerdict Judge(string act) => Unread is not null ? FileVerdict.Held : _permissions.Judge(act);
+
+    /// <summary>Whether the ask that holds <paramref name="act"/> names the person (<c>run(…)@person</c>): no supervisor's allow answers it.</summary>
+    internal bool NamesPerson(string act) => _permissions.AskNamesPerson(act);
 }

@@ -17,14 +17,16 @@ internal static class PersonPermissions
     /// repository's; an allow is written with <paramref name="by"/>. False where the list already held it.
     /// </summary>
     /// <exception cref="DriverException">No such list, a pattern naming none of Daoris's acts, or a file that stands and does not read.</exception>
-    internal static bool Add(string home, string? repository, string list, string rule, string? by)
+    internal static bool Add(string home, string? repository, string list, string rule, string? by, string? decision = null)
     {
         Check(list, rule);
         return PersonFiles.EditScope(home, repository, scope =>
         {
             var held = Held(scope, list);
             if (held.Any(each => Rule(each) == rule)) return 0;
-            held.Add(list == "allow" && by is { Length: > 0 } ? new JsonObject { ["rule"] = rule, ["by"] = by } : (JsonNode)rule);
+            if (list != "allow" || by is not { Length: > 0 }) held.Add(rule);
+            else if (decision is { Length: > 0 }) held.Add(new JsonObject { ["rule"] = rule, ["by"] = by, ["decision"] = decision });
+            else held.Add(new JsonObject { ["rule"] = rule, ["by"] = by });
             return 1;
         }) > 0;
     }

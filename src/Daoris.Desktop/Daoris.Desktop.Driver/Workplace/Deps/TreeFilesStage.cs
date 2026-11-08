@@ -192,16 +192,20 @@ internal sealed class TreeFilesStage(string home, string root, string tree, stri
     private async Task<bool> InstallUnlessHeldAsync(StoreDependency dependency, string key, CancellationToken ct)
     {
         var install = dependency.Rule.Install!;
-        switch (_rules!.Judge(FileActs.Run(install)))
+        var act = FileActs.Run(install);
+        switch (_rules!.Judge(act))
         {
             case FileVerdict.Denied:
+                FileAsks.Close(home, repository, FileAsk.Run, act);
                 Unplaced(dependency, DepsWhy.DeniedBy(install));
                 return false;
             case FileVerdict.Held:
+                FileAsks.Note(home, new FileAsk(repository, Moments.Write(DateTimeOffset.UtcNow), FileAsk.Run, act) { Person = _rules.NamesPerson(act) });
                 Unplaced(dependency, DepsWhy.HeldFor(install));
                 return true;
         }
 
+        FileAsks.Close(home, repository, FileAsk.Run, act);
         await InstallAsync(dependency, key, ct).ConfigureAwait(false);
         return false;
     }

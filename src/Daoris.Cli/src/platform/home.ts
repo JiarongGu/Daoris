@@ -105,6 +105,7 @@ export const HOME_ENTRIES = [
   row('permissions', 'data', 'data/permissions.json', 'permissions.json'),
   row('files', 'data', 'data/files.json', 'data/files.json'),
   row('files-found', 'data', 'data/files-found.json', 'data/files-found.json'),
+  row('files-asks', 'data', 'data/files-asks.json', 'data/files-asks.json'),
   row('rule-proposals', 'data', 'data/proposals', 'proposals'),
   row('tools', 'data', 'data/tools.json', 'tools.json'),
   row('plugin-state', 'data', 'data/plugins.json', 'plugins.json'),
