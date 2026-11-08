@@ -132,6 +132,8 @@ one job each, checked by `verify`.
 
 30. A workspace's remote is machine configuration: the home's `remotes.json`, keyed by workspace, the environment overriding.
     The repository's manifest says whether it may share (join, share knowledge); the machine says where. (from D47, D48)
+    The service reads this file, and the session boxes' files the driver writes, through `AtomicFile.ReadText`, which shares
+    deletion with the writer's move, so a read inside that move is never refused.
 31. Quests: every verb commits locally and succeeds locally. Sync is fetch, rebase and push of operations. The first push wins
     and the loser is kept as a conflict for a person. A take claims by push and awaits the remote's answer (its client gives up after 15 seconds); a take the remote does not
     answer stands unconfirmed and the next sync decides. (from D68, D69)

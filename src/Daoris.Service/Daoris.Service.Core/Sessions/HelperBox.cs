@@ -149,7 +149,7 @@ public sealed class HelperBox(string? home)
         {
             var path = PathOf(home, id, "state");
             if (!File.Exists(path)) return null;
-            using var document = JsonDocument.Parse(File.ReadAllText(path));
+            using var document = JsonDocument.Parse(AtomicFile.ReadText(path));
             var root = document.RootElement;
             string? Text(string name) =>
                 root.TryGetProperty(name, out var value) && value.ValueKind == JsonValueKind.String ? value.GetString() : null;

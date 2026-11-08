@@ -62,4 +62,23 @@ public sealed class AtomicFileTests : IDisposable
         Assert.True(kept.SequenceEqual(one) || kept.SequenceEqual(two));
         Assert.Single(Directory.GetFiles(_folder));
     }
+
+    [Fact]
+    public void A_file_is_read_as_text_while_its_move_into_place_still_holds_it()
+    {
+        if (!OperatingSystem.IsWindows()) return;
+        var path = Path.Combine(_folder, "held.json");
+        File.WriteAllBytes(path, [0xef, 0xbb, 0xbf, 0x7b, 0x7d, 0x0a]);
+
+        using (MoveHold.Take(path))
+        {
+            Assert.Equal("{}\n", AtomicFile.ReadText(path));
+        }
+    }
+
+    [Fact]
+    public void A_missing_file_is_read_as_not_found()
+    {
+        Assert.Throws<FileNotFoundException>(() => AtomicFile.ReadText(Path.Combine(_folder, "missing.json")));
+    }
 }

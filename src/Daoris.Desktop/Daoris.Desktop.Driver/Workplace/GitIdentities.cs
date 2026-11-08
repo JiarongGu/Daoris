@@ -46,7 +46,8 @@ public sealed record GitIdentity(
 /// </summary>
 /// <remarks>
 /// A file that does not read is no identity, said by <see cref="Problem"/> rather than read as empty and written over: a write refuses
-/// over a file it could not read, so nothing the person set is lost to a bad byte.
+/// over a file it could not read, so nothing the person set is lost to a bad byte. An entry this build does not read (a way or a shape
+/// of a newer build, or a hand edit) is no identity either, and is kept as it stands, after the identities, by every write.
 /// </remarks>
 public static class GitIdentities
 {
@@ -79,32 +80,34 @@ public static class GitIdentities
     /// <exception cref="DriverException">The file does not read, so nothing is written over it.</exception>
     public static IReadOnlyList<GitIdentity> Change(string home, Func<IReadOnlyList<GitIdentity>, IReadOnlyList<GitIdentity>> change)
     {
-        var (identities, problem) = Load(home);
+        var (identities, unread, problem) = Load(home);
         if (problem is not null) throw new DriverException(problem);
         var kept = change(identities);
-        Save(home, kept);
+        Save(home, kept, unread);
         return kept;
     }
 
-    private static (IReadOnlyList<GitIdentity> Identities, string? Problem) Load(string home)
+    private static (IReadOnlyList<GitIdentity> Identities, IReadOnlyList<JsonNode> Unread, string? Problem) Load(string home)
     {
         var path = DaorisHome.Entry(home, HomeEntry.GitIdentities);
-        if (!File.Exists(path)) return ([], null);
+        if (!File.Exists(path)) return ([], [], null);
         try
         {
             if (JsonNode.Parse(AtomicFile.ReadText(path)) is not JsonObject root || root["identities"] is not JsonArray list)
-                return ([], $"{path} is not a list of git identities: fix it, or move it aside to start again");
+                return ([], [], $"{path} is not a list of git identities: fix it, or move it aside to start again");
             var identities = new List<GitIdentity>();
+            var unread = new List<JsonNode>();
             foreach (var item in list)
             {
                 if (item is JsonObject each && Of(each) is { } identity) identities.Add(identity);
+                else if (item is not null) unread.Add(item.DeepClone());
             }
 
-            return (identities, null);
+            return (identities, unread, null);
         }
         catch (Exception error) when (error is IOException or UnauthorizedAccessException or JsonException)
         {
-            return ([], $"{path} does not read ({error.Message}): fix it, or move it aside to start again");
+            return ([], [], $"{path} does not read ({error.Message}): fix it, or move it aside to start again");
         }
     }
 
@@ -133,7 +136,7 @@ public static class GitIdentities
             Text(key?["type"]), Text(key?["fingerprint"]), Flag(each["readOnly"]), test, Flag(each["default"]));
     }
 
-    private static void Save(string home, IReadOnlyList<GitIdentity> identities)
+    private static void Save(string home, IReadOnlyList<GitIdentity> identities, IReadOnlyList<JsonNode> unread)
     {
         var list = new JsonArray();
         foreach (var each in identities)
@@ -162,6 +165,7 @@ public static class GitIdentities
             list.Add(item);
         }
 
+        foreach (var each in unread) list.Add(each);
         JsonFile.Write(DaorisHome.Entry(home, HomeEntry.GitIdentities), new JsonObject { ["identities"] = list });
     }
 }
