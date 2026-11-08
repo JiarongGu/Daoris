@@ -42,7 +42,6 @@ public sealed class TidyDoor(string home, Action<string>? log = null, Func<bool>
                 {
                     await (performs?.Invoke(start, CancellationToken.None) ?? PerformAsync(start, CancellationToken.None)).ConfigureAwait(false);
                 }
-                // Any fault is told: the task is discarded, so one outside these would fault with no line at all.
                 catch (Exception error)
                 {
                     log?.Invoke($"tidy  {start.Unit}: its `{start.Node.Id}` could not be tried: {error.Message.TrimEnd().TrimEnd('.')}. It is tried again at a later pass.");
@@ -91,7 +90,6 @@ public sealed class TidyDoor(string home, Action<string>? log = null, Func<bool>
                 }
                 catch (Exception writing) when (writing is IOException or UnauthorizedAccessException)
                 {
-                    // The part's own failure is what is thrown below; this one only says the parts ended so far were not kept.
                     log?.Invoke($"tidy  {start.Unit}: the parts of `{start.Branch}`'s chain ended so far could not be written ({writing.Message.TrimEnd().TrimEnd('.')}).");
                 }
 

@@ -63,7 +63,6 @@ internal sealed class NodeRunKeeping(
         if (newest.Then.Any(step => step.SetUpIn is null && string.Equals(step.To, repository, StringComparison.OrdinalIgnoreCase))) return;
         if (!Over(governed, record)) return;
 
-        // Judged again on the record the edit holds, under its lock: a skip, stop, accept or release a door kept since the read is a word the run is not over without.
         var ended = new RunEnd(newest.Id, clock());
         var (refused, kept) = records.Edit<bool>(unit, current => Over(governed, current) ? (current with { Ended = ended }, true) : (null, false));
         if (refused is not null || kept != true) return;

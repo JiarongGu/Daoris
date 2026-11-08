@@ -305,7 +305,6 @@ public sealed class NodeRuntime(
             if (fresh)
             {
                 _freshAsked = false;
-                // The asks this read answers, taken before it begins: one landing while it runs is for a quest the read may not hold, so it stays owed.
                 var asks = _returned.Keys.ToHashSet(StringComparer.Ordinal);
                 var read = await look.Units(ct).ConfigureAwait(false);
                 var home = records.Home;

@@ -31,7 +31,7 @@ area document under `docs/areas/`. Each row's earlier full text is in git at `9f
 
 - [ ] **DOCTRINECLIREV2a to 2d — the doctrine-and-CLI review's second cycle** (cli, driver, devkit): 4 defects open. → `docs/areas/doctrine-and-cli.md`, Open
 
-- [ ] **WFREVIEW3a to 3n — the workflows, review and landing review's second cycle** (driver, modules): 14 defects open. → `docs/areas/workflows-review-landing.md`, Open
+- [ ] **WFREVIEW3a, 3d, 3l and 3m — the workflows, review and landing review's second cycle** (driver, modules): 4 defects open, each on a choice. → `docs/areas/workflows-review-landing.md`, Open
 
 ## Knowledge, memory and records
 

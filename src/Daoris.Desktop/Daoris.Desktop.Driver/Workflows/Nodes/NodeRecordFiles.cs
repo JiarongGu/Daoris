@@ -30,7 +30,6 @@ public sealed class NodeRecordFiles(string home, Func<bool>? holdsLease = null)
 
     private readonly Func<bool> _holdsLease = holdsLease ?? (() => HomeLease.HeldHere(home));
 
-    /// <summary>The folder's record files, where a test names them; null lists the folder.</summary>
     internal Func<string, string[]>? Lists { get; init; }
 
     /// <summary>The home the records are under: where a closure graph a quest is bound to is kept beside them.</summary>
@@ -76,7 +75,6 @@ public sealed class NodeRecordFiles(string home, Func<bool>? holdsLease = null)
         var unreadable = new List<string>();
         foreach (var path in (Lists?.Invoke(folder) ?? Directory.GetFiles(folder, "*.json")).Order(StringComparer.Ordinal))
         {
-            // A record the history clear deleted since the listing is gone, not a file for the person to mend.
             var file = new FileInfo(path);
             if (!file.Exists) continue;
             var (written, length) = (file.LastWriteTimeUtc, file.Length);

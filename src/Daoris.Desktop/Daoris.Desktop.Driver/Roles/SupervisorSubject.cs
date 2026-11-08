@@ -34,7 +34,6 @@ public sealed record SupervisorSubject(string Kind, string Session, string Id)
     public static SupervisorSubject Landing(string session, string run, string node, int attempt) =>
         new(SupervisorKinds.Landing, session, $"{run}/{node}/{attempt}");
 
-    /// <summary>The run, node and attempt of a landing's id. A node id may hold <c>/</c>, so the run is read up to the first one and the attempt after the last.</summary>
     public (string Run, string Node, int Attempt)? LandingParts =>
         Kind == SupervisorKinds.Landing && Id.IndexOf('/') is > 0 and var first && Id.LastIndexOf('/') is var last && last > first + 1
         && int.TryParse(Id[(last + 1)..], out var number)

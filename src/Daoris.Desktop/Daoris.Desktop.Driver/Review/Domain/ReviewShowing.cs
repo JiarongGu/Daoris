@@ -15,7 +15,7 @@ public sealed record ReviewServe(string Quest, string Title, string Folder, stri
     /// <summary>The set-up it shows, as <c>machine/sequence</c>, which a verdict names; null where the set-up carries none.</summary>
     public string? SetUp { get; init; }
 
-    /// <summary>The tree the build was served from, and when its set-up was shown: a slot another line took after that no longer holds it.</summary>
+    /// <summary>The tree the build is served from, and the showing's time: a slot another line took after it no longer holds the build.</summary>
     public string? Tree { get; init; }
 
     public DateTimeOffset? Shown { get; init; }
