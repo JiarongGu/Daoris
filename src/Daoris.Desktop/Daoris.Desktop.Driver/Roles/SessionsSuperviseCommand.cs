@@ -214,6 +214,7 @@ public static class SessionsSuperviseCommand
         {
             if (SubjectOf(each) is not { } subject) continue;
             var said = subject.Kind == SupervisorKinds.Allow ? SuperviseAllows.Says(each, subject)
+                : subject.Kind == SupervisorKinds.Files ? $"allow {subject.Id} in {subject.Session}, asked at start {subject.Act?.Start}"
                 : subject.Kind != SupervisorKinds.Question
                 ? $"rule refers point {subject.Id}: {Text(each, "count")} at {Text(each, "n")}"
                 : $"question {subject.Id}  asked {Text(each, "asked")}";

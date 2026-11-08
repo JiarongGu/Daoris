@@ -62,6 +62,7 @@
   "files.view.scope.repository": "this repository",
   "files.view.givenBy": "given by {{by}}",
   "files.view.maker.person": "you",
+  "files.view.maker.role": "the supervisor {{role}}",
   "files.view.takeBackNamed": "Take back the allow {{rule}}",
   "files.view.removeNamed": "Remove {{rule}}",
   "files.view.addPermission": "Add a permission",
