@@ -71,14 +71,14 @@ internal sealed class FileRules
     /// <summary>What the rules and the floor say of <paramref name="path"/>, an ignored top or a path a rule names.</summary>
     internal EffectiveFile For(string path, FileFloorFacts floor)
     {
-        var said = _rules.Where(each => each.Rule.Matches(path)).ToList();
+        var said = _rules.Where(each => each.Rule.Matches(path, floor.IgnoreCase)).ToList();
         if (FileFloor.TrackedIn(path, floor.Tracked) is not null) return new(path, null, FileLayer.Floor, null, said) { Floor = FileFloor.Tracked };
         if (FileFloor.Held(path, floor.Repositories)) return new(path, FileKind.Repository, FileLayer.Floor, null, said) { Floor = FileFloor.Repository };
         if (said.Count == 0) return new(path, FileKind.Unknown, null, null, []);
 
         var winner = said[^1];
         var rule = winner.Rule.Filled(_signature?.Invoke(path, winner.Rule.Kind));
-        var copy = rule.Kind == FileKind.Local && rule.Copy == true;
+        var copy = rule.Kind == FileKind.Local && FileKindSets.Copies(rule);
         var settings = copy && FileFloor.IsSettings(path);
         return new(path, rule.Kind, winner.Layer, rule, said[..^1])
         {

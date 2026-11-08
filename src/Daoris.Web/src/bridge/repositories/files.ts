@@ -40,6 +40,7 @@ export const useFilesPress = (repository: string) =>
         case 'read': return call('FILES_READ', { repository }) as Promise<FilesAnswer>;
         case 'set': return call('FILES_SET', { repository, kind: press.kind, paths: press.paths, copy: press.copy, machine: press.machine }) as Promise<FilesAnswer>;
         case 'remove': return call('FILES_REMOVE', { repository, paths: press.paths, machine: press.machine }) as Promise<FilesAnswer>;
+        case 'settle': return call('FILES_SETTLE', { repository, wordings: press.wordings }) as Promise<FilesAnswer>;
         case 'permit': return call('FILES_PERMIT', { repository, act: press.change, list: press.list, rule: press.rule, machine: press.machine }) as Promise<FilesAnswer>;
       }
     },

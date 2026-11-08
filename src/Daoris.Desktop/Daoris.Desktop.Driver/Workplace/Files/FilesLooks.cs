@@ -6,9 +6,9 @@ internal sealed record FilesGathered(FoundFilesRead Found, FileReading Reading, 
     internal FileRules Rules(string repository) =>
         FileRules.Of(Found.Reading?.Rules ?? Reading.Found.Rules, Own.Rules, Person, repository, Reading.Signature);
 
-    /// <summary>The ignored tops and every path a rule names without a glob, in order.</summary>
+    /// <summary>The ignored tops and every path an entry names alone (<see cref="GitPattern.LiteralOf(FileRule, string)"/>), in order.</summary>
     internal IEnumerable<string> Paths(FileRules rules) =>
-        Reading.Tops.Concat(rules.Rules.SelectMany(each => each.Rule.Paths).Where(path => path.IndexOfAny(['*', '?', '{']) < 0))
+        Reading.Tops.Concat(rules.Rules.SelectMany(each => each.Rule.Paths.Select(path => GitPattern.LiteralOf(each.Rule, path))).OfType<string>())
             .Distinct(StringComparer.Ordinal).Order(StringComparer.Ordinal);
 }
 
@@ -57,7 +57,11 @@ public static class FilesLooks
             [Scope("machine", person.Machine), Scope("repository", person.For(repository))],
             [.. Own("machine", person.Machine), .. Own("repository", person.For(repository))],
             person.Unread,
-            [.. gathered.Found.Problems.Concat(gathered.Own.Problems).Concat(person.Problems)]);
+            [.. gathered.Found.Problems.Concat(gathered.Own.Problems).Concat(person.Problems)])
+        {
+            Kept = [.. Kept(person)],
+            FirstForm = gathered.Own.FirstForm,
+        };
     }
 
     // The analysis counted the path, so its size and its evidence stay beside a later layer's rule that took the path over.
@@ -86,7 +90,7 @@ public static class FilesLooks
         if (file.Rule is not { } rule) yield break;
         if (file.Kind == FileKind.Dependency && file.Idle is null && rule.Install is { } install) yield return Act(rules, FileActs.Run(install), file.Path);
         if (file.Copy) yield return Act(rules, FileActs.Copy(file.Path), file.Path);
-        if (file.Kind == FileKind.Dependency && rule.Share == true) yield return Act(rules, FileActs.Share(file.Path), file.Path);
+        if (file.Kind == FileKind.Dependency && rule.Across == true) yield return Act(rules, FileActs.Share(file.Path), file.Path);
     }
 
     private static FilesLookAct Act(FileRules rules, string act, string path) => new(act, path, rules.Judge(act) switch
@@ -101,7 +105,18 @@ public static class FilesLooks
         [.. scope.Permissions.Allow.Select(rule => new FilesLookAllow(rule, scope.Permissions.Makers.GetValueOrDefault(rule)))]);
 
     private static IEnumerable<FilesLookRule> Own(string name, FileScope scope) =>
-        scope.Rules.Select(rule => new FilesLookRule(name, rule.Kind.Word(), rule.Paths, rule.Copy));
+        scope.Rules.Where(rule => !rule.FirstForm).Select(rule => new FilesLookRule(name, rule.Kind.Word(), rule.Paths, rule.Reach is null ? null : FileKindSets.Copies(rule)));
+
+    /// <summary>Every path of the person's file read as written, in every scope, so any repository's page settles them all in one write.</summary>
+    private static IEnumerable<FilesLookKept> Kept(PersonFilesRead person) =>
+        new[] { ("machine", person.Machine) }.Concat(person.Repositories.Select(pair => (pair.Key, pair.Value)))
+            .SelectMany(scope => scope.Item2.Rules.Where(rule => rule.FirstForm).SelectMany(rule => rule.Paths.Where(RuleFileFirstForm.Keeps).Select(path => Kept(scope.Item1, rule, path))));
+
+    private static FilesLookKept Kept(string scope, FileRule rule, string path)
+    {
+        var (whole, files) = RuleFileFirstForm.Wordings(path);
+        return new FilesLookKept(scope, rule.Kind.Word(), path, whole, files);
+    }
 
     private static string Word(FileLayer layer) => layer.ToString().ToLowerInvariant();
 
