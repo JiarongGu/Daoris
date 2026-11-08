@@ -43,7 +43,10 @@ public sealed class ChatWordsUntakenTests : IDisposable
         context.Browsers[Id] = "the browser line";
         context.Drafts[Id] = draft;
         var attention = new AttentionWatch();
-        var words = new ChatWords(context, new ChatTold(context, context.ChatRuns), attention);
+        var told = new ChatTold(context, context.ChatRuns);
+        var process = new ProcessBriefing("the process", "mode", "source");
+        told.HoldProcess(Id, process);
+        var words = new ChatWords(context, told, attention);
 
         Assert.True(turns.Hold());
         Assert.False(words.Say(Id, "refused", out _));
@@ -59,6 +62,7 @@ public sealed class ChatWordsUntakenTests : IDisposable
         Assert.Same(brief, _took[0].Brief);
         Assert.Equal("the browser line", _took[0].Briefing);
         Assert.Same(draft, _took[0].Draft);
+        Assert.Same(process, _took[0].Process);
         Assert.Empty(context.Browsers);
         Assert.Empty(context.Drafts);
         Assert.Empty(context.Handing);

@@ -188,7 +188,11 @@ internal sealed class ChatWords(ChatContext context, ChatTold told, AttentionWat
         {
             Brief = extras.Brief, Preface = ChatMessage.Bound(preface), Briefing = extras.Browser, Draft = extras.Draft,
         };
-        return (held ? WithProcess(sessionId, composed) : composed, extras);
+        if (!held) return (composed, extras);
+
+        composed = told.With(sessionId, composed, out var give);
+        extras.Alongside(give);
+        return (composed, extras);
     }
 
     /// <summary>
