@@ -144,7 +144,7 @@ internal sealed class HelpPluginProposals : IHelpProposalKind
 
     /// <summary>
     /// An approval of what a plugin's server offers Ask Daoris, or its withdrawal, judged as the page's
-    /// press is (<see cref="HelpGrants"/>): a plugin here, switched on and sound, a server it declares for Ask Daoris (the one it
+    /// press is (<see cref="HelpGrants"/>), except that it asks a plugin switched on, where the press takes a switched-off one too: a plugin here, switched on and sound, a server it declares for Ask Daoris (the one it
     /// declares, where none is named), never one naming a generic execution tool, each write accepted one it declares,
     /// and a change from what is on file. The card names every tool, its reads and its writes apart.
     /// </summary>

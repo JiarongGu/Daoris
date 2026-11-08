@@ -107,7 +107,9 @@ Driver paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/`.
     tools; a write only as an accepted write; a generic execution tool never. A server declared through `npx` names the
     package and its version; a session is handed node and that package's script, installed once into the toolchain, never
     `npx` itself, and one that drives Daoris's browser stays under a 512 MB ceiling by a restart between calls (agents
-    area, rule 13). (from D170)
+    area, rule 13). An approval is the person's and stands while the plugin is switched off: its page and the list read
+    it (`HelpGrants.Read(withSwitchedOff)`), the page's press takes it, and a switched-off plugin's grant is handed
+    nothing. (from D170)
 25. What a plugin did is kept without its words: `plugin.*` lines hold names, counts, flags and times. Its words go
     to the console under `plugin:<id>` for this run. (from D119, D94)
 26. An icon is a path inside the folder to an SVG or PNG of at most 32 KiB, a PNG at most 512 px a side. The page gets its bytes as a data URI,
@@ -178,7 +180,6 @@ example's `node --test`.
 - No row: D119 §5's run of a plugin's own tests, and its kept trial and test results.
 
 - **The second review cycle's open defects** (PLUGREV2a to 2i; the backlog row of that name points here), one entry each:
-  - **PLUGREV2b — a switched-off plugin's approved server reads as waiting, and its Approve is refused** (driver, web, plugins): `HelpGrants.Read` (`HelpGrants.cs:71`) reads only `catalog.Contributing`, while `PLUGINS` (`PluginsRoutes.cs:47,74`) and `PluginPage.Read` (`PluginPage.cs:41-48`) list an off plugin's servers with no grant; approve a server, switch the plugin off, open its page: "waits" and a press `HelpGrants.Declared` (`:149`) refuses.
   - **PLUGREV2c — a placed plugin's refusal and failure lines carry no plugin name and its health is filed under the process key** (driver, plugins): `WorkPlugins.cs:279,357,433` pass the key `plugin\u001f<repo>\u001f<ws>` to `PluginLog`, whose `Name` shape refuses the control character, so `plugin.step` and `plugin.failed` lines have `plugin` null and `PluginHealth` never sees them; `HookSet.Refused` (`HookSet.cs:435-438`) also counts a refusal once per place. Log `PlacedWork.PluginOf(key)`.
   - **PLUGREV2d — a look can apply a stale awaited set** (driver, plugins): `HookSet.ReconcileAsync` (`HookSet.cs:131-132`) computes `_placed.Divide()` and applies it with no lock shared with `Watch` (`:405-406`); a `Watch` between the two stores the new set, then the look applies the old one, so a newly awaited place starts only at the next look. One lock around divide-and-apply, or `Watch` only records.
   - **PLUGREV2e — the teller's gaps are said two ways (D228)** (driver, plugins): `WorkEventTeller.cs:26,40-50` makes the first-place and incomplete-batch `events.missed` that `WorkEventNews.Gapped` (`WorkEventNews.cs:29-52`) also makes; both are wired in `LoopRun.cs:102-104` and `DriveConsole.cs:115-117`. The teller tells rows only, wrapped in `Gapped`; its gap asserts move to the wrapped teller.
