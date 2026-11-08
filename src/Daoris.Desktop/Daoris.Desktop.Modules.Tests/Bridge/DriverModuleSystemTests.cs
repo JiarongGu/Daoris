@@ -164,6 +164,52 @@ public sealed class DriverModuleSystemTests : DriverModuleBridge
     }
 
     /// <summary>
+    /// A window that mints its host's key hands it to the page (<c>PERSON_KEY</c>) and the modules only once the host proved it holds it;
+    /// a host that does not prove it is handed neither, and each start of the host has a key of its own.
+    /// </summary>
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public async Task A_minted_key_is_answered_to_the_page_only_once_the_host_proved_it(bool proves)
+    {
+        var (url, location) = KeyedStandIn(proves);
+        using var supervisor = new HostSupervisor(url, () => location) { Mints = true, StopWithin = TimeSpan.FromSeconds(20) };
+        var module = new DriverModule(Bus, new DriverLoop(Bus, supervisor, url));
+
+        Assert.Equal(JsonValueKind.Null, (await AnswerAsync(module, "PERSON_KEY")).GetProperty("key").ValueKind);
+        Assert.True(await supervisor.EnsureAsync(), supervisor.Trouble);
+        var first = supervisor.PersonKey;
+        var answered = (await AnswerAsync(module, "PERSON_KEY")).GetProperty("key");
+
+        Assert.NotNull(HostSupervisor.ProofOf(first!, "any"));
+        Assert.Equal(proves ? first : null, answered.GetString());
+        Assert.Equal(HostStop.Exited, supervisor.Stop());
+
+        Assert.True(await supervisor.EnsureAsync(), supervisor.Trouble);
+        Assert.NotEqual(first, supervisor.PersonKey);
+        Assert.Equal(HostStop.Exited, supervisor.Stop());
+    }
+
+    /// <summary>A host this window adopted came from another start, whose key this window never had: none is handed or answered.</summary>
+    [Fact]
+    public async Task A_host_the_window_adopted_is_handed_no_key_and_the_page_is_answered_none()
+    {
+        var (url, location) = KeyedStandIn(proves: true);
+        using var starter = new HostSupervisor(url, () => location) { Mints = true, StopWithin = TimeSpan.FromSeconds(20) };
+        Assert.True(await starter.EnsureAsync(), starter.Trouble);
+        using var adopter = new HostSupervisor(url, () => location) { Mints = true };
+
+        Assert.True(await adopter.EnsureAsync(), adopter.Trouble);
+        var module = new DriverModule(Bus, new DriverLoop(Bus, adopter, url));
+
+        Assert.Equal("adopted", adopter.Held);
+        Assert.Null(adopter.ProvedKey);
+        Assert.Equal(JsonValueKind.Null, (await AnswerAsync(module, "PERSON_KEY")).GetProperty("key").ValueKind);
+        Assert.Equal(HostStop.NotOwned, adopter.Stop());
+        Assert.Equal(HostStop.Exited, starter.Stop());
+    }
+
+    /// <summary>
     /// A stand-in for the HTTP host as the person door reads its key: asked by the variable, it reads the key on its input's
     /// first line before it listens, answers <c>proof</c> for a <c>prove</c> nonce where <paramref name="proves"/>, and stops
     /// when its input ends.

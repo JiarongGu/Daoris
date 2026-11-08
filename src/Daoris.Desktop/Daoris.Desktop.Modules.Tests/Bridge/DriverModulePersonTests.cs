@@ -263,11 +263,11 @@ public sealed class DriverModulePersonTests : DriverModuleBridge
     }
 
     /// <summary>
-    /// The page asks the shell for the person key as it loads, and keeps it in memory. The shell mints none yet,
-    /// so it answers none, and the page sends its writes without it.
+    /// The page asks the shell for the person key as it loads, and keeps it in memory. A shell that holds none (no host started
+    /// yet, or a supervisor that mints none) answers none, and the page sends its writes without it.
     /// </summary>
     [Fact]
-    public async Task The_key_the_shell_holds_for_its_host_is_none_until_the_shell_mints_one()
+    public async Task The_key_the_shell_holds_for_its_host_is_none_until_its_host_has_proved_one()
     {
         var key = await AnswerAsync(Module(), "PERSON_KEY");
 
