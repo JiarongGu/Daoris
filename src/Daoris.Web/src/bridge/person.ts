@@ -107,13 +107,7 @@ function serviceOf(told: unknown): ServiceConfirmationsTold | null {
   };
 }
 
-/**
- * What waits at the service for the person's confirmation, asked only while the page holds the
- * person key: its Confirm and Refuse take the key, and a host handed none lists none. **Told, not polled**:
- * the shell holds one wait on the service and tells every window what waits at each change (`SERVICE_CONFIRMATIONS`), so each
- * window counts the one list it is told; read as the page mounts, for a window opened mid-wait. A browser keeps the poll of the
- * service's list. `read` says whether this window has read it at all, so its first read is told apart from an arrival.
- */
+/** What waits at the service for the person's confirmation, as the shell tells it; none in a browser, which holds no key. `read`: this window has read it. */
 export function useServiceConfirmations(held: boolean): { waiting: Confirmation[]; read: boolean } {
   const { isAvailable } = useShenora();
   const client = useQueryClient();
@@ -137,14 +131,7 @@ export function useServiceConfirmations(held: boolean): { waiting: Confirmation[
     staleTime: Infinity,
     retry: false,
   });
-  const polled = useQuery({
-    queryKey: keys.serviceAsks,
-    queryFn: ({ signal }) => api.confirmations(signal),
-    enabled: held && !isAvailable,
-    refetchInterval: 5_000,
-    retry: false,
-  });
-  const list = told.data ? told.data.waiting : polled.data;
+  const list = told.data?.waiting;
   return { waiting: (list ?? []).filter((each) => each.state === 'waiting').map((each): Confirmation => ({
     source: 'service',
     id: each.id,
@@ -164,7 +151,6 @@ export function useServiceConfirmations(held: boolean): { waiting: Confirmation[
  * ground's reason and its values, or `unread` where they could not be read just now.
  */
 export function useAnswerConfirmation() {
-  const client = useQueryClient();
   return useMutation({
     mutationFn: async ({ waiting, confirm }: { waiting: Confirmation; confirm: boolean }): Promise<ConfirmationAnswer> => {
       if (waiting.source === 'pipe') {
@@ -186,9 +172,6 @@ export function useAnswerConfirmation() {
       } catch (error) {
         return { answered: false, why: null, message: (error as Error).message };
       }
-    },
-    onSettled: (_answer, _error, { waiting }) => {
-      if (waiting.source === 'service') void client.invalidateQueries({ queryKey: keys.serviceAsks });
     },
   });
 }

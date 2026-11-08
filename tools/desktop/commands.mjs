@@ -24,7 +24,7 @@ export async function attach(window = null) {
     fail('nothing to attach to — `node tools/desktop.mjs run` starts a shell with its debug port open.');
   }
 
-  const { Cdp, pickPageTarget, targetsAt } = await import('./cdp.mjs');
+  const { Cdp, pickPageTarget, targetsAt } = await import('../cdp.mjs');
   const targets = await targetsAt(state.cdpPort);
   if (!targets && state.debugPortOpen === false) {
     // `run` waited and said so; the same sentence here, rather than a guess at why.
@@ -115,7 +115,7 @@ export async function start(command, args) {
   }
 
   const real = args.includes('--real') || Boolean(install);
-  const { answersOn, freePort } = await import('./cdp.mjs');
+  const { answersOn, freePort } = await import('../cdp.mjs');
   const cdpPort = await freePort(9333);
 
   let environment = debugEnvironment(cdpPort);

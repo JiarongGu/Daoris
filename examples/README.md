@@ -26,7 +26,7 @@ diff at the end (`autonomous-development`, D37):
    explicit list (WSP2): a project nobody connected or imported is not a member, on one machine or
    many, and a registered one is addressable (D70). The manifest's `remote` declaration travels with
    the registration (D47): `join` opts the project into a team deployment, `knowledge` — a second,
-   separate declaration — feeds its indexed content too, and silence means local.
+   separate declaration, valid only beside `join` — feeds its indexed content too, and silence means local.
 
 An agent session reaches the shared index and the quests by registering the MCP server in the
 project's own `.mcp.json` — see `src/Daoris.Service/README.md` for the entry.
@@ -77,11 +77,14 @@ transcript in `_fixtures/rehearsal-logs/`:
   with the real `daoris plugin add`, holds one quest with its own sentence, is told of an ending it
   keeps in its data folder, and is switched off from a terminal — while a second plugin declares the
   harness the sessions ran on;
-- the host is killed and restarted, and **nothing is lost**.
+- the host is killed and restarted, and **nothing is lost**;
+- the rest of the driver's surface runs beside these in the same transcript: two workspaces on one machine, the registry managed from a
+  terminal, a deployment per workspace, a conversation as a session, the toolchain, the tree as the unit of exclusion, a session
+  held over the protocol door, a repository set up by its own session, and a brainstorm from a terminal.
 
 ## How it is extended
 
-`plugins/` is not a project in the family — it holds the **example plugin**, a folder with a
+`plugins/` is not a project in the family — it holds the **example plugins**, each a folder with a
 `plugin.json` that the driver reads from the home's `plugins/` once it is added
 (`docs/2026-09-23-plugin-design.md`). A plugin declares harnesses on the ACP door and may speak from
 a process of its own; no code from one ever loads into Daoris. Two hand sessions a browser:
@@ -93,7 +96,10 @@ where the person signs in once. Two open a pull request (D241): once Daoris's `p
 the git identity serving origin and running no git or CLI. Neither runs until it is installed and a place's workflow holds its step. The
 published desktop carries those two and `in-app-browser` as **Daoris's own plugins**, offered in
 Plugins and by `daoris plugin list` and never installed until a press (D103);
-`hold-by-title` is the rehearsals' fixture, and `browser` is for a machine without the shell.
+`hold-by-title` is the rehearsals' fixture, and `browser` is for a machine without the shell. Two more show a performed
+step, which the plugin kit's own scaffold is filled in from: [`plugins/local-preview`](plugins/local-preview/README.md) writes a
+temporary resource, and [`plugins/local-release`](plugins/local-release/README.md) finds, records and copies a release, as the
+shipped *Release workflow* preset names its steps.
 
 The examples are tracked in full — manifests, locks, synced doctrine — so they are readable as
 examples, not only runnable as fixtures (D39). The cost is stated in the same decision: a canon change

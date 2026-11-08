@@ -18,7 +18,7 @@ new local-preview --point work/perform` wrote every file here, and only `act()`,
   otherwise clears what was begun and answers not-started, so the redelivery makes it whole;
 - `remove()` removes the preview, and answers already-gone where it is not there.
 
-Nothing runs until a person installs it, turns it on, and a work graph names its step.
+Nothing runs until a person installs it, it is on, and a work graph names its step.
 
 A plugin is code that runs on the person's machine, as them. So it is made like any other change: in a
 repository, with its tests, reviewed as a diff. It is installed only when a person adds it.
@@ -191,12 +191,12 @@ JSON-RPC 2.0, one frame per line. Daoris calls and the plugin answers; the plugi
   Never work a path out from the working directory.
 - **Every request is answered, promptly.** A decision that is late, wrong or missing holds the quest,
   naming this plugin: the driver fails closed, because it spends real accounts. An observation that
-  fails is a line on the console. A landing has two minutes.
+  fails is a line on the console. A point waits ten seconds for its answer, and `work/state` thirty.
 - **A platform's tool on Windows is often a `.cmd` script** (npm's shims, `az`). Node cannot start one
   without cmd, and cmd reads the line a second time, so quote every argument, and refuse one holding a
-  double quote, a percent sign or a line break rather than pass it. `daoris plugin new <id> --point work/land` writes a `run()` helper that does exactly that.
-- **Nothing runs until a person says so.** An installed plugin runs once it is turned on, and a landing
-  plugin only once a workspace's landing rule names it.
+  double quote, a percent sign or a line break rather than pass it. `daoris plugin new <id> --point work/state` writes a `run()` helper that does exactly that.
+- **Nothing runs until a person says so.** An installed plugin runs until it is turned off, and a plugin that
+  performs a step only once a workflow names that step.
 
 ## The tools it runs
 
@@ -205,7 +205,7 @@ turning it on and Daoris can check them: `[]` until it runs one. Each is `{ "id"
 
 | Field | What it says |
 |---|---|
-| `id` | `git`, `node`, `pwsh`, `gh` or `az`, which Daoris knows and finds the way the person set; or any other name, found on the PATH and never downloaded |
+| `id` | `git`, `node` or `pwsh`, which Daoris knows and finds the way the person set; or any other name, found on the PATH and never downloaded |
 | `versions` | the versions it works with: `>=2.60`, `>=2.60 <3`, or one exact version. Absent is any |
 | `for` | one sentence: why the plugin runs it |
 | `ready` | at most four checks, each `{ "run": ["…"], "says": "…", "fix": "…" }`: a command whose exit 0 means ready, what that means, and the command a person runs when it is not |
@@ -233,4 +233,4 @@ reaches a network.
 ## Installing it
 
 Once it is reviewed and landed: `daoris plugin add <this folder>`, or copy the folder under the Daoris
-home's `plugins/`. Then turn it on with `daoris plugin enable local-preview` or in the Plugins place.
+home's `plugins/`. It is on once added; `daoris plugin disable local-preview` or the Plugins view turns it off, and `enable` back on.

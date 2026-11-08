@@ -8,7 +8,7 @@ public static class TidyReading
 {
     /// <summary>Whether the landing record holds what the tidy ended at <paramref name="landing"/>'s tip.</summary>
     public static bool Tidied(LandedBranch? landing) =>
-        landing?.Tidied is { } tidied && string.Equals(tidied.Tip, landing.Tip, StringComparison.OrdinalIgnoreCase);
+        landing?.Tidied is { Partly: false } tidied && string.Equals(tidied.Tip, landing.Tip, StringComparison.OrdinalIgnoreCase);
 
     internal static NodeObservation Observe(NodeReading reading)
     {

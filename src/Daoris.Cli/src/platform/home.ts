@@ -121,6 +121,7 @@ export const HOME_ENTRIES = [
   row('update', 'data', 'data/update.json', 'update.json'),
   row('knowledge', 'data', 'data/knowledge.db', 'knowledge.db'),
   row('desktop-db', 'data', 'data/desktop.db', 'data/desktop.db'),
+  row('memory', 'data', 'data/memory.db', 'memory.db'),
   row('sessions', 'data', 'data/sessions', 'sessions'),
   row('helpers', 'data', 'data/helpers', 'helpers'),
   row('partners', 'data', 'data/partners', 'partners'),

@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react';
+import { memo, type ReactNode, useMemo, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { cn } from '../../lib/cn';
 import { Menu, Tip } from '../ui';
@@ -28,6 +28,29 @@ export type SizingActs = {
   minimap?: { on: boolean; toggle: () => void } | null;
 };
 
+/** The acts as one object while what the toolbar draws of them holds, each calling the newest, so a step of a pan redraws no menu. */
+export function useStableActs(acts: SizingActs): SizingActs {
+  const latest = useRef(acts);
+  latest.current = acts;
+  const canSelect = acts.toSelection !== null;
+  const offered = acts.minimap != null;
+  const mapOn = acts.minimap?.on ?? false;
+  return useMemo(() => ({
+    zoomIn: () => latest.current.zoomIn(),
+    zoomOut: () => latest.current.zoomOut(),
+    fit: () => latest.current.fit(),
+    toSelection: canSelect ? () => latest.current.toSelection?.() : null,
+    actual: () => latest.current.actual(),
+    zoomTo: (k: number) => latest.current.zoomTo(k),
+    minimap: offered ? { on: mapOn, toggle: () => latest.current.minimap?.toggle() } : null,
+  }), [canSelect, offered, mapOn]);
+}
+
+type ToolbarProps = { tools: ReactNode; k: number; bounds: ZoomBounds; fit: string; acts: SizingActs; sizing?: boolean };
+
+const unchanged = (a: ToolbarProps, b: ToolbarProps) => Math.round(a.k * 100) === Math.round(b.k * 100)
+  && a.bounds.min === b.bounds.min && a.bounds.max === b.bounds.max && a.tools === b.tools && a.fit === b.fit && a.acts === b.acts && a.sizing === b.sizing;
+
 /**
  * **The canvas's toolbar**: above the viewport, never over the drawing, as the map's. The feature's own
  * tools, then the size, which opens the sizing menu: zoom in and out, the feature's fit, to the selection and 100% with their keys, and
@@ -35,16 +58,7 @@ export type SizingActs = {
  *
  * A molecule: every press goes out.
  */
-export function CanvasToolbar({ tools, k, bounds, fit, acts, sizing = true }: {
-  tools: ReactNode;
-  k: number;
-  bounds: ZoomBounds;
-  /** The feature's words for showing the whole. */
-  fit: string;
-  acts: SizingActs;
-  /** Whether the size and its menu are offered: not on a world fitted with zoom off. */
-  sizing?: boolean;
-}) {
+export const CanvasToolbar = memo(function CanvasToolbar({ tools, k, bounds, fit, acts, sizing = true }: ToolbarProps) {
   const { t } = useTranslation();
   const percent = Math.round(k * 100);
   return (
@@ -92,4 +106,4 @@ export function CanvasToolbar({ tools, k, bounds, fit, acts, sizing = true }: {
       </Menu.Root>}
     </div>
   );
-}
+}, unchanged);

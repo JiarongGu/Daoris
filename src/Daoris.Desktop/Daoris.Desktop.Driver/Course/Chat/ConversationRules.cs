@@ -45,7 +45,7 @@ internal sealed class ConversationRules(StaffLedger? staff, SupervisorRuleActs? 
         if (condition == StaffConditions.Limit && StaffActions.Moves(action.Do) && !action.MovesBound) return null;
         var now = (clock ?? TimeProvider.System).GetUtcNow();
         var fact = new CoursePolicy(
-            action, now, Met: StaffCourse.ChoiceOf(record, policy)?.Said, Until: until, Since: now, Approved: moved.Approved, Moves: moved.Moves);
+            action, now, Met: StaffCourse.ChoiceOf(record, policy)?.Said, Until: until, Approved: moved.Approved, Moves: moved.Moves);
         var head = new CourseHead(
             record.State, Limited: condition == StaffConditions.Limit, Role: role, Choice: record.Choice, Adapter: record.Adapter, Profile: record.Profile,
             Tree: record.Tree, Conversation: true, AskDaoris: record.HelpMode is not null, Session: record.Session, Protocol: true);

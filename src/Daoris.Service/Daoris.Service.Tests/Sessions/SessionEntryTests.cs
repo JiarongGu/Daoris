@@ -177,6 +177,16 @@ public sealed class SessionEntryTests : IAsyncLifetime
         Assert.Equal("session:s1/app", await KeyOf(facts, facts.Session("s1", quest: "forgotten")));
     }
 
+    /// <summary>A carry-on part whose quest is forgotten passes to the next rule, the part it continues, and stays on that line.</summary>
+    [Fact]
+    public async Task A_forgotten_quest_passes_a_continued_part_to_the_line_it_continues()
+    {
+        var facts = new Facts().Quest("q1", "ask #c98a7e");
+        facts.Session("s1", quest: "q1");
+
+        Assert.Equal("ask:c98a7e/app", await KeyOf(facts, facts.Session("s2", quest: "forgotten", from: "s1")));
+    }
+
     /// <summary>An intake is the ask's, read apart from its repositories: <c>ask:&lt;id&gt;/intake</c>.</summary>
     [Fact]
     public async Task An_intake_is_the_asks_own_entry()

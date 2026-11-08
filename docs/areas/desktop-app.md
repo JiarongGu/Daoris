@@ -21,7 +21,7 @@ executable, started with a browser argument, is Daoris's own browser, which sess
 | `MainForm`, `SecondaryForm` | `App/MainForm.cs`, `App/SecondaryForm.cs`, `App/SecondaryWindowHost.cs` | The frameless main window, and another main window (`main:<n>`) for a later launch; framed secondary windows (`monitor`, `session:<id>`) |
 | `DriverModule` and the route classes | `Modules/Bridge/DriverModule.cs`, `Modules/Bridge/Routes/<Domain>Routes.cs` | `DAORIS.DRIVER`: one handler class per domain, each route `[DriverRoute]`, each press `[Publishes]` |
 | Route-class helpers | `Modules/Bridge/Routes/GitRefDesk.cs`, `GitAnswers.cs`, `LinesWires.cs`, `WorkWires.cs`, `SweepWires.cs`, `TreesTidyDesk.cs`, `WorkflowAnswers.cs`, `DriverStateAnswer.cs`, `HelpScreenDoors.cs`, `HelpMachineDesk.cs`, `HelpProposalFacts.cs`, `TreesLandDesk.cs`, `LandPresses.cs`, `TreesReviewWires.cs`, `SessionsMoveDesk.cs`, `SessionsAskDesk.cs`, `SessionsWaitDesk.cs`, `SessionsRecordDesk.cs`, `SessionsGroupsDesk.cs`, `SessionsGroupsWires.cs` | A route class keeps its marks and one-line doors (so callers and the page's bridge file are unchanged); the bodies and wire shapes of git's ref acts, the lines, work and sweep answers, the clean-up and sync, the workflow answers, the driver's state, Ask Daoris's Apply doors, room judges and proposal facts, the landing press, answered once per session and held in words while it goes on (`LandPresses`), with the review and preview wires, and a session's moves, asks, waits, record and groups sit in types of their own beside it (D231) |
-| `SessionWords` and its parts | `Modules/Loop/SessionWords.cs`, `HeldWordsQueue.cs`, `HeldWordsDisk.cs`, `HeldSay.cs`, `WordsAnswer.cs`, `WordsRead.cs`, `WordsReach.cs`, `WordsQueueEdits.cs`, `WordsShown.cs` | The person's words to a session: `SessionWords` judges and says them; the words held for a record to end wait in `HeldWordsQueue` (its pump) and in the held file `HeldWordsDisk` writes whole; the record read, the reach a word would have, the take-back and move of a waiting word and the lines shown in the conversation each have a type of their own |
+| `SessionWords` and its parts | `Modules/Loop/SessionWords.cs`, `HeldWordsQueue.cs`, `HeldWordsDisk.cs`, `HeldSay.cs`, `WordsAnswer.cs`, `WordsRead.cs`, `WordsReach.cs`, `WordsQueueEdits.cs`, `WordsShown.cs` | The person's words to a session: `SessionWords` judges and says them; the words held for a record to end wait in `HeldWordsQueue` (its pump, which a failure no read expects ends with the words still held, the record's next move or the next word held starting it again) and in the held file `HeldWordsDisk` writes whole; the record read, the reach a word would have, the take-back and move of a waiting word and the lines shown in the conversation each have a type of their own |
 | `AttentionStateSlice` helpers | `Modules/Loop/AttentionWaits.cs`, `AttentionFacts.cs`, `AttentionSessionRows.cs`, `AttentionMachineRows.cs`, `AttentionJson.cs` | The waits read off files and memory, the judge's input record, and the session and machine groups of `NeedsAPerson`'s rows, in the order it judges them; the slice and `NeedsAPerson` keep their doors |
 | `StatePublisher` | `Modules/Platform/StatePublisher.cs` | Innermost middleware: `STATE_CHANGED` after a press answers; `UNDER_WAY` while presses run |
 | `StateSlices` and the 16 slices | `Modules/Platform/StateSlices.cs`, `Modules/Loop/*StateSlice.cs` | Machine state judged in .NET and pushed (`STATE_PUSH`, `STATE_MANIFEST`, `STATE_SLICE`) |
@@ -104,7 +104,9 @@ executable, started with a browser argument, is Daoris's own browser, which sess
     `GAP`. `LET_GO`, the head's *Let go of the terminal* (`SESSION_LET_GO`), the conversation's end and the connection closing
     end the hold, each told and logged `person.hold`. The host's own held asks (`PersonConfirmations`, in `src/Daoris.Service/Daoris.Service.Http/`) are bounded: five for asks naming a
     session, one more for the terminal's, two to an asker; an ask naming no session is bound by its process, read from the loopback
-    connection (`AskerProcess`, Windows), one place each, so an agent leaving its session off cannot hold both of the terminal's.
+    connection (`AskerProcess`, Windows), one place each, so an agent leaving its session off cannot hold both of the terminal's. The
+    page lists what waits at the service only where it holds the person key, as the shell tells it (`SERVICE_CONFIRMATIONS`); a browser
+    holds none, so it lists none and never polls (`useServiceConfirmations`).
     (from D156, D196, D238)
 15. A terminal's stop, finish, hold and resume with no card are the steward's acts alone: the person appoints the steward to the
     terminal and grants its acts in the window, and its terminal's press proved by the role's key makes them, and its other
@@ -193,7 +195,11 @@ executable, started with a browser argument, is Daoris's own browser, which sess
     maps keep the viewer's view; one kept under a changed graph says the selection is gone. (from D224)
 48. A placed world is HTML that CSS lays out and the canvas measures. A positioned world arrives with coordinates: past
     400 nodes only those near the view and the focused and selected are mounted, and below 4 px of `text-meta` the rest
-    are dots. One engine, Daoris's own, serves every feature, chosen by measurement over React Flow. (from D224)
+    are dots. One engine, Daoris's own, serves every feature, chosen by measurement over React Flow. A step of a pan or a zoom
+    draws again only what it changed: each card and edge is one memoized unit (`WorldNode.tsx`) held to primitive props, so a
+    new scale redraws a card only where its counter-scaled word follows it, and the toolbar draws again only when the size it
+    says, its bounds, its words or its tools change (`useStableActs`). The measured frame of 100 and 1,000 nodes holds its
+    budget with that (`measured/large.spec.ts`). (from D224)
 
 **Translation**
 

@@ -56,6 +56,22 @@ public sealed class AppointedStaffingTests : IDisposable
         Assert.Null(Row("gatekeeper"));
     }
 
+    /// <summary>Given its seed again, the seeded supervisor is held by the person's rules, as `default supervisor` leaves it: no order, no policy.</summary>
+    [Fact]
+    public void The_whole_structure_given_its_seed_leaves_a_seeded_supervisor_no_order_and_no_policy()
+    {
+        var seed = RoleCatalog.Seed.Single(role => role.Id == AppointedRoles.Supervisor);
+        var spread = Policy($$"""{"rule":"weight","choices":[{"agent":"claude","model":"opus","effort":"high","weight":3},{"agent":"claude","model":"sonnet","effort":"medium","weight":1}]}""");
+        RoleDoor.Apply(Staffing, RoleChange.Set(seed with { Hold = seed.Hold! with { Holder = RoleHolders.Agent } }), [Opus, Sonnet], policy: new RolePolicyPress(spread));
+        Assert.Equal([Opus, Sonnet], Row(AppointedRoles.Supervisor));
+
+        RoleDoor.Apply(Staffing, RoleChange.DefaultAll());
+
+        Assert.Equal(RoleHolders.Rules, RoleCatalog.Read(Staffing.Location).Slots.Single(slot => slot.Id == AppointedRoles.Supervisor).Role!.Hold!.Holder);
+        Assert.Null(Row(AppointedRoles.Supervisor));
+        Assert.Equal(StaffPolicyRead.Default, Staffing.Policy(AppointedRoles.Supervisor).State);
+    }
+
     [Fact]
     public void An_agent_held_supervisor_with_no_choice_and_choices_on_any_other_holder_are_refused_and_nothing_is_written()
     {

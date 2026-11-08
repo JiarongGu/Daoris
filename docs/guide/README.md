@@ -49,33 +49,35 @@ group.
 | `drive` | The headless loop: `drive [--once \| --until-idle] [--quiet-end <minutes>] [--share]` |
 | `events` | The work cycle's events for a session outside Daoris, through the `event-relay` plugin: `events relay --where` lays the relay's copy out and prints its command; `events relay --once` prints one batch of fixed lines and ends |
 | `gate` | A checkout's heavy gates under its repository's one slot (`gate run`), and a branch's or a commit's verification (`gate verify`) |
-| `git` | Each repository's branches and their acts (`branches`, `branch`, `tag`, `fetch`, `pick`, `revert`, `rebase`), a session's `review`, and the identities and accesses Daoris's git doors use (`identity`, `use`, `access`, `asks`, `answer`) |
+| `git` | Each repository's branches and their acts (`branches`, `branch`, `tag`, `fetch`, `push`, `stash drop`, `pick`, `revert`, `rebase`), a session's `review`, and the identities and accesses Daoris's git doors use (`identity`, `use`, `access`, `asks`, `answer`) |
 | `files` | What Daoris's trees do with each path git does not manage in a repository, by which rule |
 | `history` | What this machine keeps of finished work, and a workspace's `clear` |
 | `integrate` | A repository's integration as the window's Integration view draws it |
 | `logs` | The machine log, every source merged by time |
 | `notices` | What came to you: the presses waiting for your confirmation, what needs you, unread messages |
-| `place` | Each place's set-up and standing choices: a quick set-up (`place <repository>… --preset <id>`), a workspace's adoption (`place --workspace <name> --adoption`), `list`, `drive`/`undrive`/`hold`/`resume`, `trees`, `line`, `landing`, `work-cycle`, `across`, `standing`, `language`, `review`, `opinion`, `helpers`, `commits`, and its `access`, `heavy` gates and `checks`. A change a route takes goes to the running Daoris's window to confirm; with none running it is written here |
+| `place` | Each place's set-up and standing choices: a quick set-up (`place <repository>… --preset <id>`), a workspace's adoption (`place --workspace <name> --adoption`), `list`, `drive`/`undrive`/`hold`/`resume`, `trees`, `line`, `across`, `standing`, `language`, `review`, `opinion`, `helpers`, `commits`, and its `access`, `heavy` gates and `checks`. A change a route takes goes to the running Daoris's window to confirm; with none running it is written here |
 | `plugin` | This machine's plugins: `list`, `add`, `update`, `remove`, `enable`/`disable`, a package's `install`, the kit's `new` and `try`, a plugin's `show` and `activity`, and Ask Daoris's `approve`/`withdraw` of a server's tools |
 | `press` | How a press this terminal sent to the running Daoris ended (`press result <id>`), or taken back while it waits (`press withdraw <id>`) |
 | `quest` | A quest's acts: `pause`, `resume`, `abandon`, `delete`, `accept`, `done`, `reopen`, `go-on`, `check`, `review`, `workflow`, `clear`, `retry` |
 | `remote` | This machine's remotes, one per workspace: `list`, `add <workspace> --url … [--key …]`, `remove <workspace>`, and the sync (`remote sync [status \| dismiss \| forward]`). **Edits one file under the home** |
 | `repository` | The registry: `connect` this checkout's repository to any knowledge service (`--workspace` wires it on this machine), `register` from what each line declares, `retire`, `wire <repo> --workspace W`, `import <folder>` |
-| `role` | The role catalogue (`role [<id>]`, `set`, `remove`, `default`, `policy`) and a role holder's `brief`; the one way to set the agents each kind of work runs on, Build's, Intake's and Ask Daoris's among them (`role set <role> "<agent> [<model>\|-] [<effort>\|-]" …` or `off`) |
-| `session` | This machine's sessions: `list`, `stop`, `finish`, `decline`, `archive`, `unarchive`, `delete`, `say`, `take-back`, `reword`, `go-on-new`, `start-from`, `hand-over`, `helper`, `partner`, `handback`, a second `opinion`, and the supervisor's `supervise`; a park's answer is `say` |
-| `settings` | This machine's standing choices: `notify`, `cooloff`, `keep`, `cap`, `handover`, `brainstorms`, and the staffing copy's `actor found` on a home not converted yet |
+| `role` | The role catalogue (`role [<id>]`, `set`, `remove`, `default`, `policy`, `rules`, `suggested`) and a role holder's `brief`; the one way to set the agents each kind of work runs on, Build's, Intake's and Ask Daoris's among them (`role set <role> "<agent> [<model>\|-] [<effort>\|-]" …` or `off`) |
+| `session` | This machine's sessions: `list`, `stop`, `finish`, `decline`, `archive`, `unarchive`, `delete`, `say`, `take-back`, `reword`, `start-from`, `hand-over`, `helper`, `pass`, `partner`, `at-work`, `handback`, a second `opinion`, and the supervisor's `supervise`; a park's answer is `say` |
+| `settings` | This machine's standing choices: `notify`, `cooloff`, `quiet`, `keep`, `cap`, `handover`, `brainstorms` |
 | `space` | The free space and each kind Daoris keeps, and `space free` |
 | `steward` | The steward's holder's acts and desk, and a request any terminal may file |
 | `tool` | Which Git, Node.js, PowerShell, GitHub CLI and Azure CLI Daoris runs. **One file under the home** |
 | `trace` | One read back to the ask, from a commit, a session or a quest |
-| `tree` | This machine's session trees and the branches its landings made: `list`, `remove`, `clean`, `land`, `hand`, `state`, `sync` |
+| `tree` | This machine's session trees and the branches its landings made: `list`, `remove`, `clean`, `land`, `state`, `sync` |
 | `update` | What is staged beside the install, and installing it when idle, now, or not now |
 | `wiring` | How this Daoris is wired, Settings → This Daoris's twin |
 | `work` | Each unit of work's milestone (`state`), the attempts `held` for you, and the `recovery` refs nothing holds |
-| `workflow` | The saved workflows (`show`, `list`, `defaults`, `new`, `edit`, `apply`, `export`, `import`, `use`, `kind`), and where a run stands and your word on it (`run`, `keep`, `skip`, `stop`, `changes`) |
+| `workflow` | The saved workflows (`show`, `list`, `defaults`, `new`, `edit`, `apply`, `export`, `import`, `use`, `kind`), and where a run stands and your word on it (`run`, `keep`, `skip`, `stop`, `changes`, `done`, `approve`, `reject`, `fix`) |
 
 
 `sync` accepts `--dry-run` (print the plan, write nothing) and `--force`; both pass over a file `daoris.json` keeps.
+`init --harness <claude-code|agents>` chooses the layout it writes: `claude-code`, the default, puts knowledge and skills under
+`.claude/`; `agents` puts them under `.agents/`, mirrored for Claude Code. `analyze` and `status` accept `--json`.
 `upstream` accepts `--all` to propose every locally-edited canonical file at once. `repository connect` accepts
 `--workspace <name>`, and `agent login` accepts `--account <account>` (an account already here, by its id or its name),
 `--new [--name <name>]` and `--device-code` (Codex's device code, in place of its browser).
@@ -88,7 +90,7 @@ repository nobody ever wired is in `default`.
 
 **A workspace's sharing has two halves, and they live apart.** Whether a repository's material *may*
 leave the machine is its own `daoris.json` — tracked, reviewed, and silent by default. *Where* it would
-go is this machine's map, the home's `remotes.json`: one deployment per workspace, because a shared
+go is this machine's map, `profiles/remotes.json` beside the home: one deployment per workspace, because a shared
 deployment serves exactly one circle and refuses a registration declaring another. `daoris remote`
 edits and lists that map, and a workspace with no entry syncs nowhere — which is
 what every machine does until someone says otherwise. A key is never printed back, only its audit
@@ -96,7 +98,7 @@ prefix.
 
 **One agent, many accounts.** An agent holds one login per configuration home, so `daoris agent`
 makes accounts **named profiles**: isolated configuration directories whose *location* Daoris owns
-(`harnesses/<agent>/<profile>/` under the home), selected at spawn through the variable that agent
+(`profiles/agents/<agent>/<profile>/`, beside the home's `data/`), selected at spawn through the variable that agent
 already has. Logging in runs the agent's own flow inside one, so **Daoris never
 sees, stores or copies a sign-in**; `agent key` keeps an API key, and `agent rules` what a
 session may do (D72). By default that is Daoris's connector, through which it works its quest, says or
@@ -107,7 +109,7 @@ version it ran as. A spawn onto a missing agent, a profile nobody signed into, o
 has never been trusted in refuses **naming the action that fixes it**. `agent list` says what each account's
 agent last said of its windows, and the tool's own sign-in's once a press on its page read them (D125), each leading `read <age>:` for Daoris's own no-prompt read of the plan's usage or `said <age>:` for what a
 session reported (D165). Two sign-ins of one email in different organisations list apart, the organisation after the email
-(D125). `agent profile use` says what passes an account at a start, its limit reached, usage credits or
+(D125). `agent account use` says what passes an account at a start, its limit reached, usage credits or
 its use over its curve, and marks a reading over the scope's curve with the curve's value now (D165).
 
 **Git identities of Daoris's own** (D198). `daoris git identity add-ssh <host>` makes an SSH key in
@@ -180,13 +182,16 @@ findings are advisory and adoption still requires a read-through.
 }
 ```
 
+A manifest may also carry `harness` (the layout `init --harness` chose), `rooms`, `documents`, `kept` and `switchedOff`, set where a
+repository needs them.
+
 `daoris.lock` sits beside it, generated: one entry per materialized document, recording its pack,
 canonical path, version, and content hash — plus, for the always-loaded ones, the file whose region
 holds it — and the digest of the canon it was written from, which tells two canons of one version apart.
 Both are tracked, so a reviewer sees exactly what changed.
 
 `domain` is the repository's declaration to the family — it makes a quest addressable rather than a
-guess, and `daoris connect` refuses to register without one; `uses`, optional, is what the map draws as
+guess, and `daoris repository connect` refuses to register without one; `uses`, optional, is what the map draws as
 dependencies. `remote` is the one **disclosure**
 control: whether this repository joins a team's remote deployment (its registration, quests and
 session records become visible there), and — a second, separate declaration — whether its indexed

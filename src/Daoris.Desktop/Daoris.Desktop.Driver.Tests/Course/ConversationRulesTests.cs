@@ -102,6 +102,18 @@ public sealed class ConversationRulesTests : IDisposable
         Assert.Equal(CourseWaitWhy.PolicyWait, wait.Why);
     }
 
+    [Theory]
+    [InlineData(5)]
+    [InlineData(60)]
+    public void A_limits_wait_is_the_courses_answer_whatever_its_upTo_and_the_cap_is_left_to_the_limits_own_reading(int upTo)
+    {
+        var ruled = Rules(Ruled(Rule(SupervisorRules.Limits, 1, SupervisorRules.Wait, upTo: upTo)))
+            .Judge(Chat(), "c1", StaffConditions.Limit, until: Now.AddMinutes(90));
+
+        var wait = Assert.IsType<LineCourse.Wait>(Assert.IsType<ConversationRuled>(ruled).Course);
+        Assert.Equal(Now.AddMinutes(90), wait.Until);
+    }
+
     [Fact]
     public void A_limits_rule_that_asks_holds_the_conversation_and_one_that_moves_leaves_the_limit_its_own_walk()
     {

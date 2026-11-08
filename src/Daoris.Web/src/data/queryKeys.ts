@@ -28,9 +28,6 @@ export const keys = {
   terminalAsks: ['terminal-asks'] as const,
   /** The conversations a terminal holds over the pipe: asked as the page mounts, then kept by `SESSION_HOLDS`. */
   sessionHolds: ['session-holds'] as const,
-  /** What waits at the service for the person's confirmation: asked only while the page holds the person key. */
-  serviceAsks: ['service-asks'] as const,
-  /** The same, as the shell tells it: asked as the page mounts, then kept by `SERVICE_CONFIRMATIONS`; a browser polls. */
   serviceTold: ['service-told'] as const,
   /** Whether the host holds a person key the page does not: asked once a page holds none. */
   hostKeyed: ['host-keyed'] as const,

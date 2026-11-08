@@ -24,13 +24,17 @@ public sealed record SupervisorRuleBook(IReadOnlyList<SupervisorRuleSet> Sets)
         try
         {
             var sets = new SupervisorRuleStore(home).All();
-            return sets.Any(set => set.Place == SupervisorRules.Machine) ? new(sets) : new([.. sets, .. Seed.Sets]);
+            return new(WithSeed(sets));
         }
         catch (Exception error) when (error is DesktopStoreException or Microsoft.Data.Sqlite.SqliteException or IOException or UnauthorizedAccessException)
         {
             return Seed;
         }
     }
+
+    /// <summary><paramref name="sets"/> with the seeded machine rules where the machine's place is unwritten, as the executors read them and a write is judged.</summary>
+    public static IReadOnlyList<SupervisorRuleSet> WithSeed(IReadOnlyList<SupervisorRuleSet> sets) =>
+        sets.Any(set => set.Place == SupervisorRules.Machine) ? sets : [.. sets, .. Seed.Sets];
 
     /// <summary>A line's effective rules per count, for its role at its place.</summary>
     public IReadOnlyDictionary<string, IReadOnlyList<SupervisorRule>> For(string? role, string? repository, string? workspace) =>

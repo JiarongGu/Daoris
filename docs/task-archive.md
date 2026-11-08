@@ -5,6 +5,12 @@ the per-task record. Entries preserve their original wording so the archive stay
 
 ---
 
+## CONVREV5, CONVREV10 and CONVREV14 — a conversation's upTo, a keep's stored copy and the brief's weights (2026-11-08)
+
+> **CONVREV5 / CONVREV10 / CONVREV14** (conversations review): Outcome: all three held as the rows said. CONVREV5 (40c7d6ec4d): the course's `Since` for a conversation could never expire (`upTo` takes 5 to 600), so it is no longer passed and `upTo` is counted from each limit judgement by `LimitRuled`; no behaviour changed, so its case pins the choice with no red (`ConversationRulesTests`). CONVREV10 (8a41b48bbf): every keep carries a key and a keep the record never answered is tried once more under it, so the stored copy is found and held once; a duplicate now needs a record that stored the word and answered neither try (`DrivenInboxKeyTests`, failing first). CONVREV14 (cd8a159c17): one `CharWeight` weighs kana, Hangul, fullwidth forms and a surrogate pair as it weighs Han; `Searchable`'s Han test does not move (`ContextBriefWeightTests`, failing first).
+
+---
+
 ## MODELROLE1i — an exact build starts on its own role (2026-11-08)
 
 > **MODELROLE1i** (D205 §14's filed row i): Outcome: a quest weighted `exact` starts on the seeded *Exact build* role (Claude Code · `sonnet`, the account's default effort, the reference's build-exact row, the quest naming no model), read as Design is read: `Driver.StartWork` takes the weight, a home from before it reads the seed, removed its work falls to Build's, a workflow step may name it, and the opening says whose order it ran on (`opening.exact`, English and Chinese). A judgement quest keeps Design's and an unmarked one Build's. The row's wait for a batch of measurements was not kept: the weight is the publisher's to set and the person's to unset by removing the role. `sonnet[1m]` is left to the person's choice from their account's offers, since the seed cannot read an account's door. Tests: `ExactRoleTests`, the work-code theories, the service twin's fixtures and the web's note and call table. The installed proof of an exact quest on its role goes with the installed batch.
@@ -33,6 +39,12 @@ the per-task record. Entries preserve their original wording so the archive stay
 ## ALONEWORDS1 — the hold's words name the number the line's rule holds it at (2026-11-08)
 
 > **ALONEWORDS1** (co-working review): Outcome: held as the row said, with a regression test seen to fail first (`AnswersAloneHoldTests.The_hold_names_the_number_its_rule_holds_the_line_at_and_never_a_third`, at 2 and at 5). `AnswersAloneHold.Holds` hands the number `At` read to `AnswersAloneNotes.Held`, whose `answers.held` note now carries it as `n` (declared in `HeldNoteCodes` and `noteCodes.ts`, worded in both catalogues as the rule's bound), and to `AnswersAloneNotes.Refusal`, the sentence `GoingOnRun` answers with. Design choice the row left: a note kept before the number existed has no `n`, so the page shows its recorded English, which stays true of it; a line no rule holds now says the bound without a number. `docs/areas/driving.md` rule 29 and `docs/areas/co-working-and-messages.md` rule 24 say it.
+
+---
+
+## CONVREV13 — the service's side of a line keeps a forgotten quest's continued part on its line and reads a cut output once (2026-11-08)
+
+> **CONVREV13** (conversations review): Outcome: all three held as the row said, each with a regression test. The service's tests built once the tree held this machine's Lyntai props. (a) `SessionEntries` passes a forgotten quest to the next rule, so a carry-on part with a `from` keeps the continued part's entry (`A_forgotten_quest_passes_a_continued_part_to_the_line_it_continues`). (b) `LineOutput.Shown`, a unit of its own, reads the driver's `… (N chars)` mark and prints that length, not the cut text's (`LineOutputTests`). (c) `LineOutput` and the driver's `TextBounds.ClipCounted` cut one character short rather than through a surrogate pair (`TextBoundsTests`, `LineOutputTests`). The choice: where the cut falls before a pair, the head is 1,999 characters; the reader accepts a head of 1,999 or 2,000. The area sentences are rewritten in place.
 
 ---
 ## CONVREV11 and CONVREV12 — a refused message keeps what it was handed, and a hold leaves a reserved send-back alone (2026-11-08)
@@ -23471,3 +23483,5 @@ The 26 pointer lines of the parked file's head (the owner's reports and features
 - [x] **DRVREVIEW8 — a slim pass can drop a finished tree's manifest before its folder has moved** (driver): 2026-11-08 `SlimDue` keeps a `judged` manifest younger than the settle hour whose folder is absent, and drops an older one no move followed (`SetAsideSlimTests`, failing first).
 
 - [x] **DRVREVIEW9 — `EndJudgement` says `Claim` where git could not say** (driver): 2026-11-08 `EndFacts.ProofUnread` carries an unread content proof or branch-holders read, and a session branch with nothing else holding it is `Unknown` with git's words (`EndJudgementTests`).
+
+- [x] **ROLESREVIEW1 — defects of the roles-and-supervision code review, each a row** (driver, modules): 2026-11-08 a to h each fixed with a regression test failing first: an agent supervisor takes landing, allow and files subjects, each kind's row composing its facts (the editor refuses no grant to an agent holder); a catalogue unreadable after a role press ends no hold; a steward act is read against its grant again at its step; the role door's revision check is inside the write transaction; a landing step is listed only where it offers a covered act; a dropped block is said on the line and a `role-changed` one begins again; a rules write is judged against the seeded machine rules; a `refer` rule's holds on moves, limits and failures are pinned.

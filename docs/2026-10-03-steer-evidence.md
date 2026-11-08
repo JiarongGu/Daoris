@@ -99,6 +99,8 @@ answer would reach nobody.
 | `initialize` advertises `_meta.steering.supported: true` | `dist/index.js:37467-37470` | read |
 | `_session/steering` is serialised per session; with a live turn it calls Codex's `turn/steer` with that turn's id, else it starts a new turn | `dist/index.js:38484-38538`, `:34471-34477` | read |
 | What Codex does with `turn/steer` (between steps, or an interrupt) | Codex's own source | not read |
+| `_session/steering` reads no `idleBehavior`: with no live turn, or one that ended under the steer, it starts a detached turn and answers `startedNewTurn`, so a steer cannot be told to leave an idle session alone as the Claude adapter's `promptRequired` does (read 2026-11-08) | `dist/index.js:38516-38530`, `:38579-38593` | read |
+| Codex's own `turn/steer` is a dedicated call that appends input to the turn in flight, fails when no turn is active or the expected turn id differs, and emits no `turn/started` (its introducing change's description, read 2026-11-08); whether it waits for the next step in practice is still not seen | Codex's public repository | read, not measured |
 | No `promptQueueing` marker: `initialize` answers at `dist/index.js:37437-37480`, and the word appears nowhere in the bundle | `dist/index.js` | read |
 
 ## 6. The session, frame by frame

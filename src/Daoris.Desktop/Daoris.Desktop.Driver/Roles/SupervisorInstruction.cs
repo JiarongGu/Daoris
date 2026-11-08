@@ -10,13 +10,15 @@ namespace Daoris.Driver;
 internal static class SupervisorInstruction
 {
     /// <summary>The prompt for <paramref name="waiting"/>, or null where its subject no longer waits.</summary>
-    public static async Task<string?> ComposeAsync(ISupervisorWorld world, SupervisorWaiting waiting, CancellationToken ct)
+    public static async Task<string?> ComposeAsync(ISupervisorWorld world, ISupervisorDesk desk, SupervisorWaiting waiting, CancellationToken ct)
     {
         var fence = Convert.ToHexStringLower(RandomNumberGenerator.GetBytes(3));
         var session = waiting.Subject.Session;
-        var facts = waiting.Kind == SupervisorKinds.Course
+        var facts = SupervisorKinds.IsPoint(waiting.Kind)
             ? await PointAsync(world, waiting, fence, ct).ConfigureAwait(false)
-            : await SupervisorFacts.QuestionAsync(world, session, waiting.Subject, fence, ct).ConfigureAwait(false);
+            : waiting.Kind == SupervisorKinds.Question
+                ? await SupervisorFacts.QuestionAsync(world, session, waiting.Subject, fence, ct).ConfigureAwait(false)
+                : await desk.FactsAsync(waiting, fence, ct).ConfigureAwait(false);
         return facts is null ? null : Compose(waiting, facts);
     }
 
@@ -39,7 +41,9 @@ internal static class SupervisorInstruction
             .Append("\"reasons\": [ { \"says\": \"…\", \"source\": \"<where: a file and line, a decision, or count:<name>>\" } ] }\n")
             .Append(SupervisorBlock.Closing).Append("\n\n");
         prompt.Append("or, to leave it to the person, the same block with \"leave\": \"<bound>\" in place of \"do\" and \"choice\". ")
-            .Append("Give one to five reasons, each naming its source.\n");
+            .Append("Give one to five reasons, each naming its source: a reason's \"says\" takes at most ")
+            .Append(QuestionSupervisorDecisions.MaxSays).Append(" characters and its \"source\" at most ").Append(QuestionSupervisorDecisions.MaxSource)
+            .Append(", and a longer one is not kept.\n");
         return prompt.ToString();
     }
 

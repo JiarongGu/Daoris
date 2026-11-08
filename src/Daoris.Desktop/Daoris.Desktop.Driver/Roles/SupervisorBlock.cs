@@ -41,7 +41,14 @@ public sealed record SupervisorBlock(
                 return (null, "its block gives one to five reasons, each saying something and naming its source");
             }
 
-            return (new SupervisorBlock(kind, subject, act, Json.Text(root, "choice"), leave, reasons), null);
+            // The decision door's own rule: a choice is named exactly where the act chooses an offered label.
+            var choice = Json.Text(root, "choice");
+            if (act is not null && SupervisorDecideForm.Chooses(kind, act) != (choice is not null))
+            {
+                return (null, SupervisorDecideForm.Chooses(kind, act) ? "its answer names no `choice`" : "its block names a `choice` for an act that takes none");
+            }
+
+            return (new SupervisorBlock(kind, subject, act, choice, leave, reasons), null);
         }
         catch (JsonException)
         {

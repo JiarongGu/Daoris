@@ -32,7 +32,17 @@ public sealed record RolePolicyPress(StaffPolicy? Policy = null, string? Preset 
     /// <exception cref="RoleRefusedException">The record does not read; said.</exception>
     public static RolePolicyPress? FromPayload(JsonElement press)
     {
-        long? read = press.TryGetProperty("policyRevision", out var revision) && revision.TryGetInt64(out var number) ? number : null;
+        long? read = null;
+        if (press.TryGetProperty("policyRevision", out var revision) && revision.ValueKind != JsonValueKind.Null)
+        {
+            if (revision.ValueKind != JsonValueKind.Number || !revision.TryGetInt64(out var number))
+            {
+                throw new RoleRefusedException(new RoleRefusal(StaffPolicy.Code, "the press's `policyRevision` is not a whole number."));
+            }
+
+            read = number;
+        }
+
         if (!press.TryGetProperty("policy", out var policy)) return null;
         switch (policy.ValueKind)
         {

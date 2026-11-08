@@ -23,4 +23,19 @@ public sealed class SupervisorRuleHoldTests
         Assert.Equal(SupervisorWhy.SupervisorBound, SupervisorRuleHold.Why(atBound: true, [Failures]));
         Assert.True(new SupervisedPark("daoris", true, true, null, false, false, false) { Counts = [Failures] }.RuleHolds);
     }
+
+    [Theory]
+    [InlineData(SupervisorRules.Moves)]
+    [InlineData(SupervisorRules.Limits)]
+    [InlineData(SupervisorRules.FailuresOnChoice)]
+    [InlineData(SupervisorRules.Failures)]
+    public void ROLESREVIEW1h_a_refer_rule_at_its_number_holds_a_line_as_a_hold_rule_does(string count)
+    {
+        var refer = new CountFact(count, 3, "known", null, "records") { Watch = new CountWatch(3, SupervisorRules.Refer, "machine") };
+
+        Assert.True(SupervisorRuleHold.Holds([refer]));
+        Assert.Equal(SupervisorWhy.RuleHolds, SupervisorRuleHold.Why(atBound: false, [refer]));
+        Assert.False(SupervisorRuleHold.Holds([refer with { N = 2 }]));
+        Assert.False(SupervisorRuleHold.Holds([refer with { Watch = refer.Watch! with { Do = SupervisorRules.Wait } }]));
+    }
 }

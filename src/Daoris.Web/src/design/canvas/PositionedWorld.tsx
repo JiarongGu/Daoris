@@ -1,10 +1,10 @@
-import { type CSSProperties, type FocusEvent, type KeyboardEvent, useId } from 'react';
+import { type CSSProperties, type FocusEvent, type KeyboardEvent, useCallback, useId, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
-import { cn } from '../../lib/cn';
 import { NODE_W, type PlacedGroup } from './layoutScene';
 import { GROUP } from './sceneModel';
 import type { Tier } from './tiers';
 import type { Box, Size } from './viewMath';
+import { WorldEdge, WorldNode } from './WorldNode';
 
 // The drawing of a positioned world: what `PositionedCanvas` decided to mount, drawn at its tier. Nodes
 // and group frames are absolutely placed in world units; the paths are one SVG in the same units; a dot is the canvas layer's, not here.
@@ -27,29 +27,6 @@ export function edgePath(a: Box, b: Box): string {
   const [x1, y1, x2, y2] = [a.x + a.w / 2, a.y + a.h, b.x + b.w / 2, b.y];
   const reach = Math.max(20, Math.abs(y2 - y1) / 2);
   return `M${x1} ${y1}C${x1} ${y1 + reach} ${x2} ${y2 - reach} ${x2} ${y2}`;
-}
-
-/** Where a ray from a box's middle toward a point leaves the box. */
-function leaves(box: Box, toward: { x: number; y: number }): { x: number; y: number } {
-  const [cx, cy] = [box.x + box.w / 2, box.y + box.h / 2];
-  const [dx, dy] = [toward.x - cx, toward.y - cy];
-  if (dx === 0 && dy === 0) return { x: cx, y: cy };
-  const scale = Math.min(dx === 0 ? Infinity : box.w / 2 / Math.abs(dx), dy === 0 ? Infinity : box.h / 2 / Math.abs(dy));
-  return { x: cx + dx * scale, y: cy + dy * scale };
-}
-
-/**
- * A straight line between two group boxes, moved aside by `slot` (each direction and kind its own, so a reciprocal pair is two lines,
- * trap 16), with the middle where its count stands.
- */
-export function aggregateLine(a: Box, b: Box, slot: number): { d: string; mid: { x: number; y: number } } {
-  const [ac, bc] = [{ x: a.x + a.w / 2, y: a.y + a.h / 2 }, { x: b.x + b.w / 2, y: b.y + b.h / 2 }];
-  const [dx, dy] = [bc.x - ac.x, bc.y - ac.y];
-  const length = Math.hypot(dx, dy) || 1;
-  const [nx, ny] = [-dy / length, dx / length];
-  const [from, to] = [leaves(a, bc), leaves(b, ac)];
-  const [ox, oy] = [nx * slot, ny * slot];
-  return { d: `M${from.x + ox} ${from.y + oy}L${to.x + ox} ${to.y + oy}`, mid: { x: (from.x + to.x) / 2 + ox, y: (from.y + to.y) / 2 + oy } };
 }
 
 export function PositionedWorld({
@@ -77,6 +54,10 @@ export function PositionedWorld({
   const arrow = useId();
   // The type scale's size counter-scaled, so a chip's word is as large on screen as `text-meta` whatever the zoom.
   const word: CSSProperties = { fontSize: 11 / k, lineHeight: 1.2 };
+  const latest = useRef({ onPress, onOpen });
+  latest.current = { onPress, onOpen };
+  const press = useCallback((id: string) => latest.current.onPress(id), []);
+  const open = useCallback((group: string) => latest.current.onOpen(group), []);
   const stroke = k < 1 ? ('non-scaling-stroke' as const) : undefined;
   return (
     <div role="list" aria-label={label} className="relative" style={{ width: size.w, height: size.h }} onKeyDown={onKeyDown} onFocus={onFocus}>
@@ -99,10 +80,7 @@ export function PositionedWorld({
             <path d="M0 1 L10 5 L0 9 z" fill="currentColor" />
           </marker>
         </defs>
-        {paths.map((path) => (
-          <path key={path.id} data-flow-edge={path.id} d={path.d} fill="none" stroke="currentColor" strokeWidth={1} vectorEffect={stroke}
-            markerEnd={`url(#${arrow})`} className={path.lit ? 'text-accent' : undefined} />
-        ))}
+        {paths.map((path) => <WorldEdge key={path.id} id={path.id} d={path.d} lit={path.lit} marker={`url(#${arrow})`} stroke={stroke} />)}
         {aggregates.map((line) => (
           <path key={line.id} data-canvas-aggregate={line.id} d={line.d} fill="none" stroke="currentColor" strokeWidth={line.width} vectorEffect={stroke}
             markerEnd={`url(#${arrow})`} />
@@ -117,38 +95,14 @@ export function PositionedWorld({
       ))}
       {nodes.map((node) => {
         const card = node.id.startsWith(GROUP);
-        const fits = (node.title.length * 6.05) / k <= NODE_W - 8;
         const dense = !card && tier !== 'full';
         return (
-          <div key={node.id} role="listitem" aria-setsize={total} aria-posinset={node.at} className="absolute"
-            style={{ left: node.box.x, top: node.box.y, width: node.box.w, height: node.box.h }}>
-            <button
-              type="button"
-              data-flow-node={node.id}
-              data-tier={card ? 'card' : tier}
-              data-selected={node.selected ? '' : undefined}
-              data-dim={node.dim ? '' : undefined}
-              tabIndex={node.id === active ? 0 : -1}
-              aria-pressed={card ? undefined : node.selected}
-              aria-label={node.label ?? node.title}
-              onClick={() => (card ? onOpen(node.id.slice(GROUP.length)) : onPress(node.id))}
-              className={cn(
-                'block h-full w-full overflow-hidden rounded-card border bg-raised text-left text-ink',
-                node.selected ? 'border-accent' : 'border-line',
-                node.dim && 'opacity-40',
-                'focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-accent',
-                dense ? 'px-1 py-0.5' : 'px-2 py-1.5',
-              )}
-            >
-              {card ? (
-                <>
-                  <span className="block truncate font-medium" style={{ fontSize: 14 / k }}>{node.title}</span>
-                  <span className="block truncate text-ink-soft" style={{ fontSize: 12 / k }}>{node.sub}</span>
-                </>
-              ) : dense ? (fits ? <span className="block truncate" style={word}>{node.title}</span> : null)
-                : <span className="line-clamp-2 text-small">{node.title}</span>}
-            </button>
-          </div>
+          <WorldNode
+            key={node.id} id={node.id} title={node.title} x={node.box.x} y={node.box.y} w={node.box.w} h={node.box.h} at={node.at} total={total}
+            tier={card ? 'card' : tier} dense={dense} fits={(node.title.length * 6.05) / k <= NODE_W - 8} scale={card || dense ? k : 1}
+            selected={node.selected} dim={node.dim} tab={node.id === active} sub={node.sub} label={node.label}
+            opens={card ? node.id.slice(GROUP.length) : null} onPress={press} onOpen={open}
+          />
         );
       })}
     </div>
