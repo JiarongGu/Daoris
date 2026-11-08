@@ -69,6 +69,7 @@ internal static class Program
         // what the move did, which ran before the log had its place.
         using var log = Daoris.Driver.MachineLog.Open("desktop");
         log.WatchUnhandled();
+        UiExceptions.Watch(log);
         InstallHome.Log(home, log);
         stages.Log = log;
         var started = DateTimeOffset.UtcNow;

@@ -9,7 +9,7 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { cetFlags, relaxCetContextValidation } from './cet-relax.mjs';
 
-/** A minimal PE32+ image: one section holding a debug directory with one extended-characteristics entry. */
+/** A minimal 64-bit executable image: one section holding a debug directory with one extended-characteristics entry. */
 function image(flags) {
   const b = Buffer.alloc(0x400);
   b.writeUInt32LE(0x80, 0x3c);
