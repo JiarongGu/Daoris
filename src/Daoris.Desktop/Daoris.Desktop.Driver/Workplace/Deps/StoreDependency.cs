@@ -29,16 +29,16 @@ internal static class StoreDependencyRules
     {
         var reading = await FileAnalysis.ReadAsync(tree, commit, FileSignatures.Shipped, [], ct).ConfigureAwait(false);
         var found = FoundFiles.Read(home, repository);
-        var own = await RepositoryFilesReader.AtAsync(tree, commit, reading.Floor.Tracked, ct).ConfigureAwait(false);
+        var own = await RepositoryFilesReader.AtAsync(tree, commit, ct).ConfigureAwait(false);
         var person = PersonFiles.Read(home);
         var rules = FileRules.Of(found.Reading?.Rules ?? reading.Found.Rules, own.Rules, person, repository, reading.Signature);
-        var paths = reading.Tops.Concat(rules.Rules.SelectMany(each => each.Rule.Paths).Where(path => path.IndexOfAny(['*', '?', '{', '[']) < 0))
+        var paths = reading.Tops.Concat(rules.Rules.SelectMany(each => each.Rule.Paths.Select(path => GitPattern.LiteralOf(each.Rule, path))).OfType<string>())
             .Where(path => path.EndsWith('/'))
             .Distinct(StringComparer.Ordinal);
         var order = rules.Rules.Select(each => each.Rule).ToList();
         var each = rules.Over(paths, reading.Floor)
             .Where(file => file is { Kind: FileKind.Dependency, Idle: null, Floor: null, Rule: not null })
-            .Select(file => (Order: order.FindLastIndex(rule => rule.Matches(file.Path) && rule.Kind == FileKind.Dependency), Dependency: new StoreDependency(file.Path, file.Rule!)))
+            .Select(file => (Order: order.FindLastIndex(rule => rule.Matches(file.Path, reading.Floor.IgnoreCase) && rule.Kind == FileKind.Dependency), Dependency: new StoreDependency(file.Path, file.Rule!)))
             .OrderBy(pair => pair.Order).ThenBy(pair => pair.Dependency.Path, StringComparer.Ordinal)
             .Select(pair => pair.Dependency)
             .ToList();

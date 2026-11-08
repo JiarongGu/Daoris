@@ -47,6 +47,8 @@ public sealed class DesktopStore : IDisposable
 
     public const int GenerationVersion = 24;
 
+    public const int ClaimExpectVersion = GenerationVersion + 1;
+
     /// <summary>How long a write waits on the file's lock before it is refused, in seconds.</summary>
     private const int BusySeconds = 5;
 

@@ -43,7 +43,7 @@ public sealed class FileRulesTests
     public void A_found_rule_never_overrides_the_floor()
     {
         var rules = FileRules.Of(
-            found: [Rule(FileKind.Output, "src/cli/bin/"), Rule(FileKind.Scratch, ".claude/worktrees/"), Rule(FileKind.Local, ".claude/settings.local.json") with { Copy = true }],
+            found: [Rule(FileKind.Output, "src/cli/bin/"), Rule(FileKind.Scratch, ".claude/worktrees/"), Rule(FileKind.Local, ".claude/settings.local.json") with { Reach = "copy" }],
             repository: [], person: PersonFilesRead.Empty, name: "web");
         var floor = new FileFloorFacts(["src/cli/bin/cli.mjs"], [".claude/worktrees/"]);
 
@@ -67,7 +67,7 @@ public sealed class FileRulesTests
     {
         var rules = FileRules.Of(
             found: [],
-            repository: [Rule(FileKind.Local, "local/sensitive-patterns.txt") with { Copy = true }, Rule(FileKind.Local, ".mcp.json") with { Copy = true }],
+            repository: [Rule(FileKind.Local, "local/sensitive-patterns.txt") with { Reach = "copy" }, Rule(FileKind.Local, ".mcp.json") with { Reach = "copy" }],
             person: PersonFilesRead.Empty, name: "web");
 
         Assert.True(rules.For("local/sensitive-patterns.txt", NoFloor).Copy);
@@ -133,7 +133,7 @@ public sealed class FileRulesTests
             """);
 
         Assert.Null(person.Unread);
-        Assert.Equal(["tmp/"], Assert.Single(person.Machine.Rules).Paths);
+        Assert.Equal(["/tmp/"], Assert.Single(person.Machine.Rules).Paths);
         Assert.Equal(["run(npm *)"], person.Machine.Permissions.Ask);
         Assert.Equal(4, person.Problems.Count);
         Assert.Contains(person.Problems, problem => problem.Contains("`copy` is not a field of an `output` rule", StringComparison.Ordinal));

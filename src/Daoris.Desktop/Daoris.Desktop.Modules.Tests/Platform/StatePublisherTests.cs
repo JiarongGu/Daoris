@@ -491,6 +491,7 @@ public sealed class StatePublisherTests : DriverModuleBridge
     [InlineData("FILES_READ", "files", null)]
     [InlineData("FILES_SET", "files", null)]
     [InlineData("FILES_REMOVE", "files", null)]
+    [InlineData("FILES_SETTLE", "files", null)]
     [InlineData("FILES_PERMIT", "files", null)]
     [InlineData("GIT_STAGE", "checkouts", null)]
     [InlineData("GIT_UNSTAGE", "checkouts", null)]
