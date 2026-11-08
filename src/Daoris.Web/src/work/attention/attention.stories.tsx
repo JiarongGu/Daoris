@@ -30,6 +30,7 @@ const ACTS: Required<AttentionActs> = {
   showAgain: () => {}, opinionAgain: () => {}, opinionAnyway: () => {}, helper: () => {}, held: () => {}, permission: () => {},
   openRecords: () => {},
   answerAlone: () => {},
+  memoryEnd: () => {},
   handOver: () => {},
   gitTryAgain: () => {},
   gitSetUp: () => {},

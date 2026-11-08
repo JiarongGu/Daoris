@@ -22,7 +22,7 @@ import type { OpinionWait } from '../gates/opinion';
 import type { PermissionWait } from '../waits/PermissionAsks';
 import type { AnswerWait } from '../waits/AnswerAlone';
 import { AskOnce } from './AskOnce';
-import { AT_AN_AGENT, DOOR_ONLY, HANDLER, IN_A_CIRCLE, INTEGRATION_LABEL } from './rowRules';
+import { AT_AN_AGENT, DOOR_ONLY, HANDLER, IN_A_CIRCLE, INTEGRATION_LABEL, opensNothing } from './rowRules';
 
 /** The kinds of thing *What needs you* lists, each in one of its three groups (`ATTENTION_GROUP`). */
 export type AttentionKind =
@@ -254,6 +254,8 @@ export type AttentionActs = {
   quiet?: (item: Attention, act: 'carry-on' | 'hand-over' | 'stop' | 'leave', answered?: Answered) => void;
   /** A run's `work.requests` node passed over, with the person's words, as the run's view passes it. */
   passOver?: (item: Attention, words: string, answered: Answered, act?: 'ask-again' | 'go-on' | TaskAct) => void;
+  /** An end the sweep wrote, which names no session, approved or declined by its operation, as a session's Memory section decides one. */
+  memoryEnd?: (item: Attention, approve: boolean) => void;
 };
 
 /**
@@ -282,7 +284,7 @@ export type AttentionActs = {
  *
  * A molecule: it is handed the item, the acts and the door, and reports each press.
  */
-export function AttentionRow({ item, onOpen, onRun, acts = {}, busy = false, opened = null, below = null }: {
+export function AttentionRow({ item, onOpen: handed, onRun, acts = {}, busy = false, opened = null, below = null }: {
   item: Attention;
   onOpen?: (item: Attention) => void;
   /**
@@ -304,6 +306,7 @@ export function AttentionRow({ item, onOpen, onRun, acts = {}, busy = false, ope
   const [asking, setAsking] = useState<AttentionActId | null>(opened);
   const [words, setWords] = useState('');
   const [choice, setChoice] = useState('');
+  const onOpen = opensNothing(item) ? undefined : handed;
   const offered = attentionOffers(item).filter((offer) => acts[HANDLER[offer.act]] !== undefined);
   const doorOnly = DOOR_ONLY[item.kind];
   const where = IN_A_CIRCLE.has(item.kind) || item.circle ? t('work.attention.circle', { circle: item.where }) : item.where;
@@ -348,6 +351,7 @@ export function AttentionRow({ item, onOpen, onRun, acts = {}, busy = false, ope
     else if (act === 'git-allow' || act === 'git-refuse') acts.gitAnswer?.(item, act === 'git-allow');
     else if (act === 'quiet-hand-over') acts.quiet?.(item, 'hand-over');
     else if (act === 'quiet-leave') acts.quiet?.(item, 'leave');
+    else if (act === 'approve-end' || act === 'decline-end') acts.memoryEnd?.(item, act === 'approve-end');
   };
   const label = (act: AttentionActId, account?: string): string => {
     switch (act) {
@@ -432,6 +436,9 @@ export function AttentionRow({ item, onOpen, onRun, acts = {}, busy = false, ope
       case 'go-on': return t('workflow.run.node.goOn');
       // A person's task's presses, as its run's view says them.
       case 'task-done': case 'task-approve': case 'task-reject': return t(`workflow.run.node.${taskActOf(act)}`);
+      // The session page's own words for an end awaiting its approver.
+      case 'approve-end': return t('work.memory.approve');
+      case 'decline-end': return t('work.memory.decline');
     }
   };
 

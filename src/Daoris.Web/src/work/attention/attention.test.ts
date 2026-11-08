@@ -144,6 +144,33 @@ describe('what needs a person, worded', () => {
     }
   });
 
+  /**
+   * An end the service's sweep wrote names no session: its row names the entry and the revision it ends, says why as the sweep wrote it, is
+   * approved or declined in the row, and leads nowhere, since no session's page holds it.
+   */
+  it('words a sweep\'s end by its entry and its reason, offered its approval and decline, with no session', async () => {
+    const reason = 'Its cited record `r1` is superseded by `r2`.';
+    const pushed = row('memory', '9f8e7d6c5b4a3921', '2026-10-31T10:00:00Z', {
+      where: 'engine',
+      memory: { ends: 1, replacements: 0, staged: 0, end: { op: '9f8e7d6c5b4a3921', repository: 'engine', target: 'm42', revision: 3, reason } },
+    });
+
+    const worded = words(pushed);
+
+    expect(worded).toMatchObject({
+      id: '9f8e7d6c5b4a3921', kind: 'memory', where: 'engine', title: 'End of engine:m42 at revision 3', detail: reason, session: null,
+    });
+    expect(attentionActs(worded)).toEqual(['approve-end', 'decline-end']);
+    expect(rowRun(worded)).toBeNull();
+    expect(attentionGroup(pushed)).toBe('word');
+    await i18n.changeLanguage('zh');
+    try {
+      expect(words(pushed).title).toBe('结束 engine:m42（修订 3）');
+    } finally {
+      await i18n.changeLanguage('en');
+    }
+  });
+
   it('names a parked session by its derived identity, with the analysis it is waiting on', () => {
     const pushed = row('parked', 's1a2b3c4', '2026-09-21T10:00:00Z', { workspace: 'default', where: 'engine', note: { parts: [{ words: 'two ways forward.', by: 'agent' }] } });
 

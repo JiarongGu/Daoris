@@ -315,12 +315,12 @@ export const useSessionMemory = (session: string | null | undefined): MemoryRow[
 export type MemoryDecided = { decided: boolean; why: string | null; message: string };
 
 /**
- * The person's decision on a session's memory: an end awaiting them approved or
- * declined by its row, or the ended session's staged changes kept or dropped. A refusal is the answer, in the service's words; the
+ * The person's decision on memory: an end awaiting them approved or declined by its row, which names no session where the service's
+ * sweep wrote it, or the ended session's staged changes kept or dropped. A refusal is the answer, in the service's words; the
  * sessions are asked again by the state hub.
  */
 export const useDecideSessionMemory = () => useMutation({
-  mutationFn: async (decision: { session: string; op: string; approve: boolean } | { session: string; keep: boolean }): Promise<MemoryDecided> => {
+  mutationFn: async (decision: { session?: string; op: string; approve: boolean } | { session: string; keep: boolean }): Promise<MemoryDecided> => {
     const answer = (await call('SESSION_MEMORY_DECIDE', decision)) as { decided?: unknown; why?: unknown; message?: unknown } | null;
     return { decided: answer?.decided === true, why: word(answer?.why), message: typeof answer?.message === 'string' ? answer.message : '' };
   },
