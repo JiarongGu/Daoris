@@ -277,6 +277,33 @@ public sealed class SessionWatchTests : IDisposable
         Assert.Equal(SessionWatch.Marked, Assert.Single(steps).Step);
     }
 
+    [Fact]
+    public void Off_a_clock_that_stops_in_sleep_a_session_heard_after_the_wake_counts_quiet_from_then()
+    {
+        _watch.Clock = new QuietClock(() => _now, stopsInSleep: false);
+        using var run = Quest();
+        Run(TimeSpan.FromMinutes(2));
+
+        _now += TimeSpan.FromHours(8);
+        _watch.Heard("s1");
+
+        var steps = Run(TimeSpan.FromMinutes(12));
+        Assert.Equal(SessionWatch.Marked, Assert.Single(steps).Step);
+    }
+
+    [Fact]
+    public void Off_a_clock_that_stops_in_sleep_an_open_episode_and_the_leave_survive_a_gap_unheard()
+    {
+        _watch.Clock = new QuietClock(() => _now, stopsInSleep: false);
+        using var run = Quest();
+        Assert.Equal(SessionWatch.Marked, Assert.Single(Run(TimeSpan.FromMinutes(11))).Step);
+
+        _now += TimeSpan.FromHours(8);
+
+        Assert.Empty(_watch.Look(Job, Pace));
+        Assert.NotNull(_watch.QuietSince("s1"));
+    }
+
     // ——— Case 13: an intake.
 
     [Fact]
