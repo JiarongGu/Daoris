@@ -41,7 +41,8 @@ public sealed class InMemoryKnowledgeStore : IKnowledgeStore
 
             // Before anything here changes, so a failure there leaves this store unchanged.
             if (alongside is not null) await alongside(CancellationToken.None).ConfigureAwait(false);
-            _byRepository[repository] = [.. entries];
+            // As the file stores it, so a workspace is the same text here and there.
+            _byRepository[repository] = [.. entries.Select(entry => entry with { Workspace = Workspaces.Normalize(entry.Workspace) })];
             _readings[repository] = new IndexReading(repository, generation + 1, reading.Commit, reading.Signature, reading.Fed, reading.At);
             return true;
         }
