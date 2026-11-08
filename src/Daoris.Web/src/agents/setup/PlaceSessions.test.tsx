@@ -7,6 +7,7 @@ import { SETUP_DEFAULTS, SETUP_OWN } from '../../projects/fixtures';
 import type { RepositorySetupProps } from '../../projects/setup/RepositorySetup';
 import { LIST, PALETTE } from '../../workflow/edit/editFixtures';
 import { FULL, GATES_CHANGED, INTEGRATION_CHANGED, START, WORKSPACE } from '../../workflow/fixtures';
+import { RELEASE_GRAPH } from '../../workflow/graphFixtures';
 import { EFFECTIVE_CURRENT, EFFECTIVE_RELEASE } from '../../workflow/place/effectiveFixtures';
 import { PlaceWorkflowView, type PlaceWorkflowProps } from '../../workflow/place/PlaceWorkflowView';
 import { PlaceSessionsBodyView, PlaceWorkflowBodyView, WorkspaceLandingFolds } from './PlaceSessions';
@@ -104,6 +105,7 @@ describe("a repository place's Workflow", () => {
 
 // A workspace's Landing row is a repository's row: the followed version's land options, or the rule read under Current.
 describe("a workspace place's Landing row", () => {
+  const BRANCH_RELEASE = { ...RELEASE_GRAPH, nodes: RELEASE_GRAPH.nodes.map((node) => (node.kind === 'land' ? { ...node, options: { method: 'branch' } } : node)) };
   const editor = {
     list: LIST, palette: PALETTE, error: null, roles: [], shown: null, onShow: vi.fn(), judged: null, judging: false, onJudge: vi.fn(),
     saving: false, onSave: vi.fn(), using: false, onUse: vi.fn(), onOpen: vi.fn(),
@@ -131,7 +133,7 @@ describe("a workspace place's Landing row", () => {
     const onJudge = vi.fn();
     drawWorkspace({
       editor: { ...editor, onJudge },
-      current: { ...WORKSPACE, start: { ...START, integration: null }, effective: EFFECTIVE_RELEASE },
+      current: { ...WORKSPACE, start: { ...START, integration: null }, effective: { ...EFFECTIVE_RELEASE, graph: BRANCH_RELEASE } },
     });
 
     await userEvent.click(screen.getByRole('button', { name: 'Landing' }));

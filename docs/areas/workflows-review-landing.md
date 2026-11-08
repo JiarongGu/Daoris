@@ -247,7 +247,8 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
     card's wait), the newest version of the place's default workflow (`PlaceIntegrate`), the owner's where it has none. A failure is
     confirmed once before it is blamed; a gate that would not start (its folder missing, no job to hold it) is an unknown run, asked
     again, never a failure that blames a member. (from D215, D227, D232)
-40. A verification pipeline's `check` is Daoris's, with no agent session, never skipped. Where a repository's landed route names a
+40. A verification pipeline's `check` is Daoris's, with no agent session, never skipped. A gate that would not start (its folder
+    missing, no job to hold it) makes the check unknown, naming that gate and failing none. Where a repository's landed route names a
     verification pipeline with accepted gates, each whole look reads its line's tip and binds a run in `workflows/lines/<run>.json`
     (its `line`, and its `base`: the tip of the line's newest run with a verdict, none for the first) once the tip is past the line's
     newest run and no run of the line is in flight. A run is settled when every check reached, failed or was stopped; until then it

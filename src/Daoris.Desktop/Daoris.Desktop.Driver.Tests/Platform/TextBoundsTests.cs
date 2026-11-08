@@ -26,13 +26,16 @@ public sealed class TextBoundsTests
     public void ClipCanTrimTheEndBeforeTheMarkAndKeepSurrogatePairsWhole()
     {
         Assert.Equal("ab…", TextBounds.Clip("ab   cd", 4, trimEnd: true));
-        Assert.Equal("ab\ud83d…", TextBounds.Clip("ab😀cd", 4, keep: 3));
-        Assert.Equal("ab…", TextBounds.Clip("ab😀cd", 4, keep: 3, wholePairs: true));
+        Assert.Equal("ab…", TextBounds.Clip("ab😀cd", 4, keep: 3));
+        Assert.Equal("ab😀…", TextBounds.Clip("ab😀cd", 4, keep: 4));
+        Assert.Equal("ab…", TextBounds.Cut("ab😀cd", 3));
     }
 
     [Fact]
     public void ClipStartKeepsTheEndAndDropsTheSpaceAfterTheMark()
     {
+        Assert.Equal("…cd", TextBounds.ClipStart("ab😀cd", 3));
+        Assert.Equal("…😀cd", TextBounds.ClipStart("ab😀cd", 4));
         Assert.Equal("abc", TextBounds.ClipStart("abc", 3));
         Assert.Equal("…cd", TextBounds.ClipStart("ab cd", 3));
         Assert.Equal("…d", TextBounds.ClipStart("ab  d", 3));
@@ -53,6 +56,29 @@ public sealed class TextBoundsTests
 
         Assert.Equal("ab… (6 chars)", TextBounds.ClipCounted(text, 3));
         Assert.Equal("ab😀… (6 chars)", TextBounds.ClipCounted(text, 4));
+    }
+
+    [Fact]
+    public void ASearchSnippetNeverCutsASurrogatePairAtEitherEdge()
+    {
+        var text = "😀" + new string('x', 59) + "match" + new string('y', 59) + "😀tail";
+        var at = text.IndexOf("match", StringComparison.Ordinal);
+
+        var snippet = SessionEventText.Snippet(text, at, 5);
+
+        Assert.True(Paired(snippet), snippet);
+        Assert.Contains("match", snippet);
+    }
+
+    private static bool Paired(string text)
+    {
+        for (var i = 0; i < text.Length; i++)
+        {
+            if (char.IsHighSurrogate(text[i]) && !(i + 1 < text.Length && char.IsLowSurrogate(text[i + 1]))) return false;
+            if (char.IsLowSurrogate(text[i]) && !(i > 0 && char.IsHighSurrogate(text[i - 1]))) return false;
+        }
+
+        return true;
     }
 
     [Fact]

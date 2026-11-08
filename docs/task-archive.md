@@ -5,6 +5,10 @@ the per-task record. Entries preserve their original wording so the archive stay
 
 ---
 
+## TREEPOOL1ac — shared paths (2026-11-09)
+
+> **TREEPOOL1ac** (driver, web; §35.5, §36.5, §37.4): Outcome: `reach: read` and `write` (refused on a dependency, intermediate, cache or output entry, and never a harness's settings) link each named path into every tree to its one place in the checkout, recorded in the files record's `Shares` before the link is made and only into an absent entry, where `share(path)` is let through, git ignores the path and the place stands in no other repository (`TreeSharing`, `started.share-declined` with its `note.deps.why.share-*` reasons, a file link the machine refuses included); a share counts, and is unlinked, only while its entry reads without following as a link to its place, anything else there the line's, its record dropped and said `tree.share-lost` (`TreeShares`); `TopPartition` partitions a top at recorded and declared share boundaries without entering a link, `SlotIgnored.Shared` moved by no take or finish, a link no share holds refused as foreign; a take unlinks before its switch, a retirement and the tidy's move before theirs; `started.tree-shared` warns that a recursive delete following a link reaches the shared place; proved by `TreeSharesTests` and `TreePoolSharesGitTests` on real junctions and file links.
+
 ## FABRIC-SQUASHCHAIN1 and NODEKIT1 — built parts (2026-11-09)
 
 > **FABRIC-SQUASHCHAIN1** (driver, web; D245): Outcome: a chain's completion past its pull request is fabric steps: `monitor`, `tidy`, the keeper's proof over git, a run's passes reaching both end to end and the web's pull-request readers (BL77, `f479ed63c`; the workflows area).

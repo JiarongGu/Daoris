@@ -51,4 +51,32 @@ public sealed class WorkflowSaveRaceTests : IDisposable
         Assert.Equal([1, 2], versions.Select(each => each.Version));
         Assert.Equal(NodeGraphs.Digest(NodeGraphs.Read(competitor.ToJsonString()).Graph!), NodeGraphs.Digest(versions[^1].Graph!));
     }
+
+    /// <summary>A new workflow's first version is written only where no file stands: one a competing save made is never replaced.</summary>
+    [Fact]
+    public void A_first_version_is_not_written_over_a_file_another_save_made_meanwhile()
+    {
+        var store = WorkflowPorts.Store(_home);
+        var competitor = Integrating("steward");
+        Add(competitor);
+        var before = WorkflowStore.Load(_home, "wf")!.Read.Versions;
+
+        Assert.False(WorkflowStore.WriteIfAbsent(store, "wf", WorkflowNamed.PlanAdd(null, new WorkflowVersionAdded("wf", "Mine", "screen", At, null, Integrating("done")), []).Result!));
+
+        Assert.Equal(before.Select(each => each.Version), WorkflowStore.Load(_home, "wf")!.Read.Versions.Select(each => each.Version));
+        Assert.Equal(NodeGraphs.Digest(before[0].Graph!), NodeGraphs.Digest(WorkflowStore.Load(_home, "wf")!.Read.Versions[0].Graph!));
+        Assert.True(WorkflowStore.WriteIfAbsent(store, "other", WorkflowNamed.PlanAdd(null, new WorkflowVersionAdded("other", "Other", "screen", At, null, Integrating("done")), []).Result!));
+    }
+
+    [Fact]
+    public async Task A_saved_version_says_the_version_it_came_from_and_the_one_it_made()
+    {
+        Add(Integrating("done"));
+        Task<ChoicesRegistry> Quiet(CancellationToken _) => Task.FromResult(new ChoicesRegistry([], null));
+
+        var saved = await WorkflowOperations.SaveAsync(DriverConfig.Empty, _home, Quiet, "wf", null, null, Integrating("steward"), false, false, null, "1", null, false, At, CancellationToken.None);
+
+        Assert.True(saved.Done, saved.Message);
+        Assert.Equal("`wf` v1 → v2.", saved.Message);
+    }
 }

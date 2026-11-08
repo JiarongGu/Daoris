@@ -395,6 +395,12 @@ public sealed class HelpRoutes(DriverContext context)
             ?? throw new DriverException($"there is no proposal `#{id}` on this machine.");
         if (proposal.State != "proposed") throw new DriverException($"proposal `#{id}` is already {proposal.State}.");
 
+        // The Apply's claim: a Not now settling a card whose Apply is running would be overwritten by it, or overwrite it.
+        using var claim = HelpProposals.Claim(_loop.Home, id)
+            ?? throw new DriverException($"proposal `#{id}` is being applied already, from another window.");
+        proposal = HelpProposals.Find(_loop.Home, id) ?? proposal;
+        if (proposal.State != "proposed") throw new DriverException($"proposal `#{id}` is already {proposal.State}.");
+
         var told = HelpProposals.Dismiss(_loop.Home, proposal);
         if (told is not null && proposal.Session is { } said) _loop.Chat?.Say(said, InPersonsWords(told));
         await Task.CompletedTask.ConfigureAwait(false);

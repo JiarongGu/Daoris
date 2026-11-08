@@ -27,13 +27,13 @@ public sealed class LineEvents(string? home)
     public const string Suffix = ".events.jsonl";
 
     /// <summary>
-    /// The most one answer weighs: the brief's own provisional bound, a Han character weighing
-    /// <see cref="HanWeight"/>, so a page is never heavier than the brief it reads behind. Both move with the brief's counts.
+    /// The most one answer weighs: the brief's own provisional bound, a wide character weighing
+    /// <see cref="WideWeight"/>, so a page is never heavier than the brief it reads behind. Both move with the brief's counts.
     /// </summary>
     public const int Bound = 40_000;
 
-    /// <summary>What a Han character weighs toward the bound, as it weighs toward the brief's.</summary>
-    public const int HanWeight = 3;
+    /// <summary>What a wide character (Han, kana, Hangul, a fullwidth form) weighs toward the bound, as it weighs toward the brief's.</summary>
+    public const int WideWeight = 3;
 
     /// <summary>The most parts a line is followed back: the driver's guard against a chain no person made.</summary>
     public const int Depth = 50;
@@ -82,16 +82,23 @@ public sealed class LineEvents(string? home)
         && !id.EndsWith('.')
         && !DeviceNames.Contains(id.Split('.')[0]);
 
-    /// <summary>What a text weighs toward the bound: a Han character <see cref="HanWeight"/>, every other one.</summary>
+    /// <summary>What a text weighs toward the bound: a wide character <see cref="WideWeight"/>, every other one.</summary>
     public static int Weight(string text)
     {
         var weight = 0;
-        foreach (var c in text) weight += IsHan(c) ? HanWeight : 1;
+        foreach (var c in text) weight += CharWeight(c);
         return weight;
     }
 
-    // The basic block, extension A and the compatibility block, as the driver's brief weighs a Han character.
-    private static bool IsHan(char c) => c is (>= '一' and <= '鿿') or (>= '㐀' and <= '䶿') or (>= '豈' and <= '﫿');
+    // As the driver's brief weighs a character: Han, CJK punctuation with kana, Jamo, Hangul and the fullwidth forms each WideWeight; a
+    // surrogate pair as its two halves, 2 and 1.
+    private static int CharWeight(char c) => c switch
+    {
+        (>= '一' and <= '鿿') or (>= '㐀' and <= '䶿') or (>= '豈' and <= '﫿') or (>= '　' and <= 'ヿ')
+            or (>= 'ᄀ' and <= 'ᇿ') or (>= '㄰' and <= '㆏') or (>= '가' and <= '힯') or (>= '＀' and <= '￯') => WideWeight,
+        _ when char.IsHighSurrogate(c) => WideWeight - 1,
+        _ => 1,
+    };
 
     /// <summary>
     /// The line <paramref name="record"/> ends, oldest part first: it and, by each record's <c>from</c>, the parts it continued. A link
@@ -362,9 +369,9 @@ public sealed class LineEvents(string? home)
     {
         var used = 0;
         var end = 0;
-        while (end < text.Length && used + (IsHan(text[end]) ? HanWeight : 1) <= weight - 1)
+        while (end < text.Length && used + CharWeight(text[end]) <= weight - 1)
         {
-            used += IsHan(text[end]) ? HanWeight : 1;
+            used += CharWeight(text[end]);
             end++;
         }
 
