@@ -48,8 +48,8 @@ internal sealed class ChatWords(ChatContext context, ChatTold told, AttentionWat
     }
 
     /// <summary>
-    /// A message no turn took: what it was handed once goes back for the words said again, and the person waits on no answer to it
-    /// (<paramref name="asked"/>, what they waited on before it).
+    /// A message no turn took: what it carried once goes back for the words said again, and the person waits on no answer to it
+    /// (<paramref name="asked"/>: whether they waited on one before it).
     /// </summary>
     private void Untaken(string sessionId, ChatExtras extras, bool asked)
     {

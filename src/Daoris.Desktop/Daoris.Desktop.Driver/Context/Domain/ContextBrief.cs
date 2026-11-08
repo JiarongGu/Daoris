@@ -660,10 +660,7 @@ public static class ContextBrief
             return kept;
         }
 
-        /// <summary>
-        /// The start of a text clipped so that it weighs at most <paramref name="cap"/> once quoted, which leads each of its lines with
-        /// <c>&gt; </c>: a text of many short lines is cut by what the quote adds, never past its section's cap.
-        /// </summary>
+        /// <summary>The start of a text, at most <paramref name="cap"/> weighed once quoted, since a quote leads each line with <c>&gt; </c>.</summary>
         public string QuotedHead(string text, int cap)
         {
             var inner = cap;
@@ -673,7 +670,6 @@ public static class ContextBrief
             {
                 kept = Clip(text, inner, fromEnd: false, out cut);
                 var over = Weight(TextBounds.Quote(kept, bareBlank: false)) - cap;
-                // Each pass cuts what the quote still adds beyond the cap, and the lines that add it go with it.
                 if (over <= 0 || inner <= 0 || tries == 8) break;
                 inner = Math.Max(0, inner - over);
             }

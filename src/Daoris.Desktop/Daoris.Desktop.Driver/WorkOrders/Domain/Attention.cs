@@ -159,8 +159,8 @@ public sealed class AttentionWatch
     }
 
     /// <summary>
-    /// The person's own words went to a conversation: the turn's end they start is one they wait on. What it was before, for
-    /// <see cref="Unasked"/> where the words are not taken.
+    /// The person's own words went to a conversation: the turn's end they start is one they wait on. Whether they waited on one
+    /// already, for <see cref="Unasked"/> where no turn takes the words.
     /// </summary>
     public bool Asked(string sessionId)
     {
@@ -173,7 +173,7 @@ public sealed class AttentionWatch
         }
     }
 
-    /// <summary>The words <see cref="Asked"/> were taken by no turn: what the person waited on is what it was before them.</summary>
+    /// <summary>The words <see cref="Asked"/> reached no turn: the person waits on what they waited on before them.</summary>
     public void Unasked(string sessionId, bool before)
     {
         if (!_turns.TryGetValue(sessionId, out var turns)) return;

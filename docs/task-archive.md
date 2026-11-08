@@ -5,6 +5,10 @@ the per-task record. Entries preserve their original wording so the archive stay
 
 ---
 
+## CONVREV11 and CONVREV12 — a refused message keeps what it was handed, and a hold leaves a reserved send-back alone (2026-11-08)
+
+> **CONVREV11 / CONVREV12** (conversations review): Outcome: CONVREV11 held as the row said. A message's brief, browser line, draft, palette mark, and the start's process and standing block are taken through `ChatExtras` and given back where `Take`, `KeepAsync` or `TakeNowAsync` answer null, and `AttentionWatch.Asked` returns what it was so `Unasked` restores it (`ChatWordsUntakenTests`). CONVREV12 held in two parts: `TurnHolds.Hold` refuses while a send-back is reserved, and the reword paths of `TurnKeeps` and `InboxKeeps` catch what the first keep does (`TurnKeepEdgeTests`, each seen failing first); the third part did not hold: `ChatConclusion`'s read of the events cannot fail, since `SessionEvents.Read` answers IO failures and `LimitHeld.Of` is pure, so no failure leaves `onEnded` untold and nothing was changed there.
+
 ## GITREV1 and GITREV2 — the service reads what the driver moves into place, and a write keeps the identity entries it cannot read (2026-11-08)
 
 > **GITREV1 / GITREV2** (git-and-remotes review): Outcome: GITREV1 held as the row said. The service's `AtomicFile` gained `ReadText`, which shares deletion with the writer's move, and `RemoteConfig.Load` and the seven session-box and proposal readers of driver-written files use it (a test holds `remotes.json` and a box state file as Windows' move holds them; both read, where `File.ReadAllText` threw or answered "no state"). GITREV2 held: `GitIdentities.Load` now keeps each entry `Of` rejects (an unknown way, a bad id, a non-object) as it stands and `Change` writes them back after the identities, so adding or removing one identity leaves them in the file (a test with an unknown way, an extra field and a stray string).

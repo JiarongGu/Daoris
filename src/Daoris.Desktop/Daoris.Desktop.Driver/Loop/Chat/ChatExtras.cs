@@ -54,7 +54,7 @@ internal sealed class ChatExtras
     }
 
     /// <summary>
-    /// Give back what was taken, ahead of any a later message has been handed meanwhile: no turn took the message, so the words said again
+    /// Give back what the message took, unless a later message has taken its own meanwhile: no turn took this one, so the words said again
     /// are the ones that carry it.
     /// </summary>
     public void Restore()
