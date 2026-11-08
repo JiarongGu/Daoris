@@ -138,7 +138,7 @@ public sealed class GitSchedulerTests
         Assert.Equal(GitScheduler.Bound - 1, scheduler.Running);
         var done = await acts.WaitAsync(Soon);
         Assert.Equal([2, 2], done);
-        Assert.Equal(0, scheduler.Lent);
+        await Poll.Until(() => scheduler.Lent == 0);
         hold.SetResult();
         await Task.WhenAll(reads).WaitAsync(Soon);
     }
@@ -302,9 +302,8 @@ public sealed class GitSchedulerTests
             return Task.FromResult(1);
         }, leaves.Token);
         leaves.Cancel();
-        hold.SetResult();
-
         await Assert.ThrowsAnyAsync<OperationCanceledException>(() => write);
+        hold.SetResult();
         await blocker.WaitAsync(Soon);
         await Poll.Until(() => scheduler.Running == 0);
         Assert.False(ran);
