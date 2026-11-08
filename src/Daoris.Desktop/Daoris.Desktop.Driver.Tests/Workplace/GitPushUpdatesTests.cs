@@ -61,6 +61,21 @@ public sealed class GitPushUpdatesTests
     }
 
     [Fact]
+    public void A_remote_ref_named_beyond_ascii_is_read_as_git_writes_it_so_a_force_to_it_is_not_taken_for_a_creation()
+    {
+        var push = new GitHelperPush();
+        push.Listing();
+        var answer = Encoding.UTF8.GetBytes($"{Old} refs/heads/café\n\n");
+        var split = Encoding.UTF8.GetByteCount($"{Old} refs/heads/caf") + 1;
+        push.Feed(answer[..split], split);
+        push.Feed(answer[split..], answer.Length - split);
+
+        Assert.Equal(new Dictionary<string, string> { ["refs/heads/café"] = Old }, push.Refs);
+        var batch = GitHelperPush.Build(["push +refs/heads/work:refs/heads/café"], push.Refs!, _ => New);
+        Assert.Equal(new GitPushUpdate(Old, New, "refs/heads/café"), batch!.Updates[0]);
+    }
+
+    [Fact]
     public void Receive_packs_commands_are_read_to_their_flush_and_every_byte_read_is_kept_to_forward()
     {
         var sent = new MemoryStream();
