@@ -75,7 +75,8 @@ Driver paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/`.
     wholesale. A source inside or holding the home is refused. (from D103, D194)
 15. An update shows its plan first: version, command, points, harnesses, servers, skills, steps and resources. It
     applies only on a press or `--yes`. The installed folder is moved aside whole, the copy renamed in, `.data/<id>`
-    untouched, and nothing starts at the press. (from D103)
+    untouched, and nothing starts at the press. A rename that fails puts the installed folder back; where that fails
+    too, the refusal names the `.removing-*` folder the plugin now lies in. (from D103)
 16. A plugin from a package is never updated in place: it is removed and a newer package installed. (from D120)
 17. Offers are `app/plugin-offers/` in the install, laid out each publish from `examples/plugins/`: the GitHub and
     Azure DevOps pull-request plugins and `in-app-browser`. None installs without a press. The driver looks beside the
@@ -177,7 +178,6 @@ example's `node --test`.
 - No row: D119 §5's run of a plugin's own tests, and its kept trial and test results.
 
 - **The second review cycle's open defects** (PLUGREV2a to 2i; the backlog row of that name points here), one entry each:
-  - **PLUGREV2a — a failed rollback in an update loses the installed plugin from the catalogue** (driver, plugins): `PluginInstall.cs` Update (~299) and Replace (~359) move the folder aside, and when the swap-in throws the rollback `PluginFolders.Move(aside, target)` runs unguarded; if it throws too, a raw `IOException` leaves the plugin only under `.removing-<id>-<stamp>`, which the catalogue never reads, and staging is not forgotten. Wrap the rollback and name the aside folder in a `DriverException`; needs a move hook in `PluginFolders`.
   - **PLUGREV2b — a switched-off plugin's approved server reads as waiting, and its Approve is refused** (driver, web, plugins): `HelpGrants.Read` (`HelpGrants.cs:71`) reads only `catalog.Contributing`, while `PLUGINS` (`PluginsRoutes.cs:47,74`) and `PluginPage.Read` (`PluginPage.cs:41-48`) list an off plugin's servers with no grant; approve a server, switch the plugin off, open its page: "waits" and a press `HelpGrants.Declared` (`:149`) refuses.
   - **PLUGREV2c — a placed plugin's refusal and failure lines carry no plugin name and its health is filed under the process key** (driver, plugins): `WorkPlugins.cs:279,357,433` pass the key `plugin\u001f<repo>\u001f<ws>` to `PluginLog`, whose `Name` shape refuses the control character, so `plugin.step` and `plugin.failed` lines have `plugin` null and `PluginHealth` never sees them; `HookSet.Refused` (`HookSet.cs:435-438`) also counts a refusal once per place. Log `PlacedWork.PluginOf(key)`.
   - **PLUGREV2d — a look can apply a stale awaited set** (driver, plugins): `HookSet.ReconcileAsync` (`HookSet.cs:131-132`) computes `_placed.Divide()` and applies it with no lock shared with `Watch` (`:405-406`); a `Watch` between the two stores the new set, then the look applies the old one, so a newly awaited place starts only at the next look. One lock around divide-and-apply, or `Watch` only records.
