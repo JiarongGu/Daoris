@@ -28,7 +28,7 @@ internal static class PoolAsides
     {
         try
         {
-            return File.Exists(MarkerOf(folder)) ? File.ReadAllText(MarkerOf(folder)).Trim() : null;
+            return File.Exists(MarkerOf(folder)) ? AtomicFile.ReadText(MarkerOf(folder)).Trim() : null;
         }
         catch (Exception error) when (error is IOException or UnauthorizedAccessException)
         {

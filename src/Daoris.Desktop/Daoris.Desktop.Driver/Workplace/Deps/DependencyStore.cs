@@ -38,7 +38,7 @@ internal static class DependencyStore
         if (!File.Exists(manifest)) return null;
         try
         {
-            using var document = JsonDocument.Parse(File.ReadAllText(manifest));
+            using var document = JsonDocument.Parse(AtomicFile.ReadText(manifest));
             return DependencyManifest.FromJson(document.RootElement);
         }
         catch (Exception error) when (error is IOException or UnauthorizedAccessException or JsonException)
