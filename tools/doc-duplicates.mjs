@@ -166,8 +166,7 @@ export function fenced(text) {
  * digest that reads them and it are held to `orient-index-fixtures/decision-notes.json`.
  */
 const NOTE_LABEL = [
-  /^\*\*(As built|Built|Fixed|Read|Amended)\b/,
-  /^\*(As built|Built|Amended)\b/,
+  /^\*\*(As built|Built|Fixed|Read|Amended)\b/,  /^\*(As built|Built|Amended)\b/,
   /^\*\*?(Corrected|Measured|Landed|Proved|Proven|Probed|Reviewed|Superseded|Noted|Note|Revised|Decided|Extended|Accepted)\b.*\d{4}-\d{2}-\d{2}/,
   // A note named by its task first: `**<task>, built 2026-10-02: …**`.
   /^\*\*[^*]*\b(built|landed|amended)\b[^*]*\d{4}-\d{2}-\d{2}/,
@@ -186,6 +185,36 @@ export const isNoteLabel = (line) => NOTE_LABEL.some((form) => form.test(line));
 export function gluedLabels(text) {
   const inFence = fenced(text);
   return text.flatMap((line, i) => (i > 0 && !inFence[i] && text[i - 1].trim() !== '' && isNoteLabel(line) ? [i] : []));
+}
+
+/** The text with one blank line set before each line of `indices`, its line ending the line above's; and each set (1-based). */
+export function spaced(text, lines, indices) {
+  const glued = new Set(indices);
+  if (glued.size === 0) return { text, set: [] };
+  const out = [];
+  const set = [];
+  lines.forEach((line, i) => {
+    if (glued.has(i)) {
+      out.push(lines[i - 1].endsWith('\r') ? '\r' : '');
+      set.push({ line: out.length + 1, label: line.replace(/\r$/, '') });
+    }
+    out.push(line);
+  });
+  return { text: out.join('\n'), set };
+}
+
+/**
+ * A decision's file with one blank line set before each note's label that follows a non-blank line outside a fence,
+ * and every other byte as it stands; with each label set apart and its line once set (1-based).
+ *
+ * Two branches that each append a note to one decision both open it with a blank line. Git's union merge takes that
+ * line, the same on both sides, as common to them and keeps it once, then keeps both notes one after the other, so
+ * the second label lands straight under the first note's last line, which this check refuses. What is set apart is the
+ * check's own fact (`gluedLabels`), so the two never disagree. A CRLF file gains a CRLF blank line.
+ */
+export function setApart(text) {
+  const lines = text.split('\n');
+  return spaced(text, lines, gluedLabels(lines));
 }
 
 /** Each note label held more than once outside a fence, once, in the order first seen twice. */

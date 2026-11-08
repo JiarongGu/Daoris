@@ -13,7 +13,7 @@ import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node
 import { dirname, join } from 'node:path';
 import { after, test } from 'node:test';
 import { fileURLToPath } from 'node:url';
-import { install } from './index-hook.mjs';
+import { install, separateNotes } from './index-hook.mjs';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const scratch = join(here, '..', '_fixtures', 'index-hook-test');
@@ -188,4 +188,11 @@ test('a clone without the driver merges the decisions as plain text and conflict
   git(dir, 'checkout', '-q', 'a');
   assert.notEqual(git(dir, 'merge', '-q', '--no-edit', 'b').status, 0);
   assert.doesNotMatch(readFileSync(join(dir, 'docs', 'decisions', 'D1.md'), 'utf8'), glued);
+});
+
+test('the driver sets apart every label the check refuses glued, and nothing inside a fence', () => {
+  assert.equal(separateNotes('A.\n**Built a, built 2026-10-02**\nT.\n'), 'A.\n\n**Built a, built 2026-10-02**\nT.\n');
+  assert.equal(separateNotes('A.\r\n**Note, a**\r\n'), 'A.\r\n\r\n**Note, a**\r\n');
+  const fenced = 'A.\n```\nB.\n**Built 2026-10-02 (X).**\n```\n';
+  assert.equal(separateNotes(fenced), fenced);
 });

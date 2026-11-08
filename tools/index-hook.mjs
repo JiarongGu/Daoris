@@ -18,6 +18,7 @@
 import { chmodSync, existsSync, mkdirSync, readFileSync, rmSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { setApart } from './doc-duplicates.mjs';
 import { isMain, spawnGit, writeAtomic } from './fsx.mjs';
 import { INDEX, writeIndex } from './index-fresh.mjs';
 
@@ -106,9 +107,9 @@ export function mergeNotes([base, ours, theirs], { err, cwd, env }) {
   return 0;
 }
 
-/** Puts a blank line before each `**Note, ` line that follows a non-blank line (a union merge coalesces the two branches' blanks). */
+/** Sets apart each glued note label (a union merge coalesces the two branches' blanks), and an undated `**Note, ` line. */
 export function separateNotes(text) {
-  return text.replace(/([^\r\n])(\r?\n)(\*\*Note, )/g, '$1$2$2$3');
+  return setApart(text).text.replace(/([^\r\n])(\r?\n)(\*\*Note, )/g, '$1$2$2$3');
 }
 
 export function main(argv, { out = console.log, err = console.error, cwd = process.cwd(), env = process.env } = {}) {
