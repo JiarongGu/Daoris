@@ -21,6 +21,7 @@ the per-task record. Entries preserve their original wording so the archive stay
 > 2h (a2122031f5): the in-memory store normalizes a workspace on write, and one contract test compares every read of the two stores after the same writes (`KnowledgeStoreContractTests`).
 > 2i (4fb9bf878c): an awaiting end whose session was deleted is listed as a wait of its own, decided by its row as a sweep's is; an orphaned replacement or staged row is not (`MemoryDecisionTests`).
 > 2j (aa1dcaa440): plain words of a forgotten quest publish under the next id at every step as rule 31 says; only a request key, which has no next id, is refused as cleared (`QuestRequestKeyTests`).
+
 ## PLUGREV2 — the plugins review's second cycle (2026-11-09)
 
 > **PLUGREV2a** (driver, plugins): Outcome: an update's or replace's swap-in that fails puts the installed folder back, and a rollback that fails too is refused as a `DriverException` naming the `.removing-*` folder the plugin lies in, the stage forgotten (`PluginInstall.SwapIn`, one tail for both; a `move` hook on `PluginFolders`); proved by `PluginSourceTests`.
