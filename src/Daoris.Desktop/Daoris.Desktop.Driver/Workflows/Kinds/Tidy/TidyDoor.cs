@@ -22,7 +22,8 @@ public interface ITidyDoor : INodeDoor
 /// <param name="home">The Daoris home whose landing and session records the tidy reads and writes.</param>
 /// <param name="log">Told what a tidy came to; the machine log's line.</param>
 /// <param name="runs">Whether a tidy may begin now: not while an update drains; null always may.</param>
-public sealed class TidyDoor(string home, Action<string>? log = null, Func<bool>? runs = null) : ITidyDoor
+/// <param name="performs">The work a started tidy does, a test's seam; null is <see cref="PerformAsync"/>.</param>
+public sealed class TidyDoor(string home, Action<string>? log = null, Func<bool>? runs = null, Func<TidyStart, CancellationToken, Task>? performs = null) : ITidyDoor
 {
     private readonly ConcurrentDictionary<string, Task> _running = new(StringComparer.Ordinal);
 
@@ -39,9 +40,10 @@ public sealed class TidyDoor(string home, Action<string>? log = null, Func<bool>
             {
                 try
                 {
-                    await PerformAsync(start, CancellationToken.None).ConfigureAwait(false);
+                    await (performs?.Invoke(start, CancellationToken.None) ?? PerformAsync(start, CancellationToken.None)).ConfigureAwait(false);
                 }
-                catch (Exception error) when (error is DriverException or IOException or UnauthorizedAccessException or System.Text.Json.JsonException)
+                // Any fault is told: the task is discarded, so one outside these would fault with no line at all.
+                catch (Exception error)
                 {
                     log?.Invoke($"tidy  {start.Unit}: its `{start.Node.Id}` could not be tried: {error.Message.TrimEnd().TrimEnd('.')}. It is tried again at a later pass.");
                 }
@@ -83,7 +85,16 @@ public sealed class TidyDoor(string home, Action<string>? log = null, Func<bool>
             }
             catch (Exception) when (parts.Count > 0)
             {
-                landings.Tidied(start.Repository, start.Branch, new ChainTidied(start.Tip, DateTimeOffset.UtcNow) { Parts = parts, Partly = true });
+                try
+                {
+                    landings.Tidied(start.Repository, start.Branch, new ChainTidied(start.Tip, DateTimeOffset.UtcNow) { Parts = parts, Partly = true });
+                }
+                catch (Exception writing) when (writing is IOException or UnauthorizedAccessException)
+                {
+                    // The part's own failure is what is thrown below; this one only says the parts ended so far were not kept.
+                    log?.Invoke($"tidy  {start.Unit}: the parts of `{start.Branch}`'s chain ended so far could not be written ({writing.Message.TrimEnd().TrimEnd('.')}).");
+                }
+
                 throw;
             }
         }
