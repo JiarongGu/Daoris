@@ -76,7 +76,7 @@ internal static class DependencyCommands
         string output;
         try
         {
-            output = File.Exists(log) ? await File.ReadAllTextAsync(log, Encoding.UTF8, CancellationToken.None).ConfigureAwait(false) : "";
+            output = File.Exists(log) ? await File.ReadAllTextAsync(log, Encoding.UTF8, CancellationToken.None).ConfigureAwait(false) : ""; // read-shares: the command's own log, which its process appends to
             File.Delete(log);
         }
         catch (Exception error) when (error is IOException or UnauthorizedAccessException)
