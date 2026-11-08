@@ -4,6 +4,7 @@ import { size } from '../../locales/format';
 import { PageSection } from '../../work/frame/ViewMain';
 import type { FilesAct, FilesFile, FilesLook, FilesPress } from './filesLook';
 import { FilesPermissions } from './FilesPermissions';
+import { FilesKept } from './FilesKept';
 import { FilesRules } from './FilesRules';
 
 /** What a page hands its files section: the reading, or that it is on its way or refused, and the person's presses. */
@@ -68,7 +69,9 @@ export function FilesTab({ repository, look, reading = false, refusal = null, sa
           )}
       </PageSection>
 
+      <FilesKept look={look} onPress={onPress} />
       <FilesRules look={look} onPress={onPress} />
+      {look.firstForm && <p className="m-0 text-meta text-ink-faint">{t('files.view.firstForm', { repository })}</p>}
 
       <details open={look.acts.some((act) => act.verdict === 'held') || undefined} className="min-w-0">
         <summary className="cursor-pointer text-small text-ink-soft">{t('files.view.how')}</summary>

@@ -68,12 +68,12 @@ public sealed class PersonFilesTests : IDisposable
     {
         Hand("""{ "_why": "mine", "machine": { "permissions": { "deny": ["share(*)"] } } }""");
 
-        PersonFiles.Set(_home, "web", new FileRule(FileKind.Local, ["local/a.txt"]) { Copy = true });
+        PersonFiles.Set(_home, "web", new FileRule(FileKind.Local, ["local/a.txt"]) { Reach = "copy" });
         PersonFiles.Set(_home, null, new FileRule(FileKind.Scratch, ["tmp/"]));
         var read = PersonFiles.Read(_home);
 
         Assert.Equal(["local/a.txt"], Assert.Single(read.For("web").Rules).Paths);
-        Assert.True(read.For("WEB").Rules[0].Copy);
+        Assert.Equal("copy", read.For("WEB").Rules[0].Reach);
         Assert.Equal(["tmp/"], Assert.Single(read.Machine.Rules).Paths);
         Assert.Equal(["share(*)"], read.Machine.Permissions.Deny);
         Assert.Contains("\"_why\": \"mine\"", File.ReadAllText(PersonFiles.PathOf(_home)), StringComparison.Ordinal);

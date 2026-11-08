@@ -37,7 +37,7 @@ internal static class FoundReads
         }
 
         if (why is null) return null;
-        var kept = last?.Rules.Where(rule => rule.Kind == FileKind.Scratch && rule.Evidence.Contains(WrittenBySession)).SelectMany(rule => rule.Paths).ToList() ?? [];
+        var kept = last?.Rules.Where(rule => rule.Kind == FileKind.Scratch && rule.Evidence.Contains(WrittenBySession)).SelectMany(rule => rule.Paths.Select(path => GitPattern.LiteralOf(rule, path))).OfType<string>().ToList() ?? [];
         var reading = await FileAnalysis.ReadAsync(root, commit, FileSignatures.Shipped, kept, ct, now).ConfigureAwait(false);
         var digest = await DigestAsync(root, Commands(reading.Found.Rules), ask, ct).ConfigureAwait(false);
         FoundFiles.Write(home, repository, reading.Found with { Toolchain = digest });
@@ -53,7 +53,7 @@ internal static class FoundReads
         var changed = false;
         var rules = last.Rules.Select(rule =>
         {
-            if (rule.Kind != FileKind.Unknown || !seen.Any(path => rule.Paths.Any(top => path == top || path.StartsWith(top, StringComparison.Ordinal)))) return rule;
+            if (rule.Kind != FileKind.Unknown || !seen.Any(path => rule.Paths.Select(each => GitPattern.LiteralOf(rule, each)).OfType<string>().Any(top => path == top || path.StartsWith(top, StringComparison.Ordinal)))) return rule;
             changed = true;
             return rule with { Kind = FileKind.Scratch, Evidence = [WrittenBySession] };
         }).ToList();

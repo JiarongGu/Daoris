@@ -31,11 +31,12 @@ internal static class FoundFiles
             var entry = listed.EnumerateObject().FirstOrDefault(each => string.Equals(each.Name, repository, StringComparison.OrdinalIgnoreCase));
             if (entry.Value.ValueKind != JsonValueKind.Object) return new(null, []);
 
+            if (FileRuleFile.FormOf(document.RootElement) is not { } form) return new(null, [$"{FileRuleFile.Unknown(FileName)}; the next reading writes it again"]);
             var problems = new List<string>();
             var read = entry.Value.TryGetProperty("read", out var at) && at.ValueKind == JsonValueKind.Object ? at : default;
             var commit = read.ValueKind == JsonValueKind.Object ? Json.Text(read, "commit") ?? "" : "";
             var moment = read.ValueKind == JsonValueKind.Object && DateTimeOffset.TryParse(Json.Text(read, "at"), out var parsed) ? parsed : DateTimeOffset.MinValue;
-            var rules = FileRuleFile.Rules(entry.Value, "", problems);
+            var rules = FileRuleFile.Rules(entry.Value, "", problems, form);
             var toolchain = read.ValueKind == JsonValueKind.Object ? Json.Text(read, "toolchain") : null;
             return new(new FoundReading(commit, moment, rules, toolchain), problems);
         }
@@ -57,6 +58,11 @@ internal static class FoundFiles
         catch (JsonException)
         {
             root = [];
+        }
+
+        if (root["form"]?.GetValueKind() != JsonValueKind.Number || root["form"]!.GetValue<int>() != FileRuleFile.Form)
+        {
+            root = new JsonObject { ["form"] = FileRuleFile.Form };
         }
 
         if (root["repositories"] is not JsonObject repositories) root["repositories"] = repositories = [];

@@ -121,6 +121,24 @@ describe("a repository's Files tab", () => {
     expect(screen.getByRole('button', { name: '重新读取' })).toBeInTheDocument();
   });
 
+  it('names each path read as written with its two git wordings, and words them all in one press', async () => {
+    const onPress = vi.fn();
+    const kept = [{ scope: 'machine', kind: 'output' as const, path: 'P/*', whole: ['/P/'], files: ['/P/*', '!/P/*/'] }];
+    render(<FilesTab repository="engine" look={{ ...LOOK, kept, firstForm: true }} onPress={onPress} />);
+
+    const list = screen.getByRole('list', { name: 'Your paths read as written' });
+    expect(list).toHaveTextContent('P/*');
+    expect(list).toHaveTextContent('The folder and everything in it: /P/');
+    expect(list).toHaveTextContent('Only the files it matched, not its folders: /P/*, !/P/*/');
+    expect(screen.getByText("engine's own rule file says no form, so its paths are read in the older form, not in git's syntax.")).toBeInTheDocument();
+    const settle = screen.getByRole('button', { name: "Rewrite in git's syntax" });
+    expect(settle).toBeDisabled();
+
+    await userEvent.click(screen.getByRole('radio', { name: 'Only the files it matched, not its folders: /P/*, !/P/*/' }));
+    await userEvent.click(settle);
+    expect(onPress).toHaveBeenCalledWith({ act: 'settle', wordings: [{ scope: 'machine', path: 'P/*', whole: false }] });
+  });
+
   it('says it is on its way or why there is none', () => {
     const { rerender } = render(<FilesTab repository="engine" reading />);
     expect(screen.getByText('Reading the files git does not manage.')).toBeInTheDocument();

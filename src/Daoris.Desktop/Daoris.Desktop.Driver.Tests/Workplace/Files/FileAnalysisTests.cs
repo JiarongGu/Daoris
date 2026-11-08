@@ -48,7 +48,7 @@ public sealed class FileAnalysisTests : IDisposable
         Assert.Equal(before, Snapshot(root));
 
         var rules = FileRules.Of(reading.Found.Rules, [], PersonFilesRead.Empty, repository, reading.Signature);
-        var kinds = reading.Tops.Concat(reading.Found.Rules.SelectMany(rule => rule.Paths)).Distinct(StringComparer.Ordinal)
+        var kinds = reading.Tops.Concat(reading.Found.Rules.SelectMany(rule => rule.Paths.Select(GitPattern.LiteralOf)).OfType<string>()).Distinct(StringComparer.Ordinal)
             .ToDictionary(path => path, path => rules.For(path, reading.Floor).Kind, StringComparer.Ordinal);
         return (reading, kinds);
     }
@@ -56,7 +56,7 @@ public sealed class FileAnalysisTests : IDisposable
     private static string Snapshot(string root) => string.Join('\n', Directory.EnumerateFiles(root, "*", SearchOption.AllDirectories)
         .Order(StringComparer.Ordinal).Select(path => $"{Path.GetRelativePath(root, path)} {new FileInfo(path).Length} {File.GetLastWriteTimeUtc(path).Ticks}"));
 
-    private static FileRule Found(FileReading reading, string path) => reading.Found.Rules.Single(rule => rule.Paths.Contains(path));
+    private static FileRule Found(FileReading reading, string path) => reading.Found.Rules.Single(rule => rule.Paths.Contains("/" + path));
 
     [Fact]
     public async Task An_npm_workspace_s_dependency_is_found_beside_its_lockfile_with_its_members_and_a_stray_folder_is_unknown()
@@ -75,12 +75,12 @@ public sealed class FileAnalysisTests : IDisposable
         Assert.Equal(FileKind.Unknown, kinds["stray/"]);
         var dependency = Found(reading, "node_modules/");
         Assert.Equal("npm ci", dependency.Install);
-        Assert.Contains("packages/*/node_modules/", dependency.Paths);
+        Assert.Contains("/packages/*/node_modules/", dependency.Paths);
         Assert.Empty(dependency.Key!);
         Assert.Contains(dependency.Evidence, said => said.Contains("package-lock.json", StringComparison.Ordinal));
         Assert.Contains(dependency.Evidence, said => said.Contains("prepare", StringComparison.Ordinal));
         Assert.Equal(new FileSize(1, 1, More: false), dependency.Size);
-        Assert.DoesNotContain(reading.Found.Rules, rule => rule.Paths.Any(path => path.StartsWith("stray/", StringComparison.Ordinal) && path != "stray/"));
+        Assert.DoesNotContain(reading.Found.Rules, rule => rule.Paths.Any(path => path.StartsWith("/stray/", StringComparison.Ordinal) && path != "/stray/"));
     }
 
     [Fact]
@@ -115,7 +115,7 @@ public sealed class FileAnalysisTests : IDisposable
         var (reading, _) = await Read("pnpm-members", commit);
 
         var dependency = Found(reading, "node_modules/");
-        Assert.Equal(["node_modules/", "packages/*/node_modules/", "apps/web/node_modules/", "tools/cli/node_modules/"], dependency.Paths);
+        Assert.Equal(["/node_modules/", "/packages/*/node_modules/", "/apps/web/node_modules/", "/tools/cli/node_modules/"], dependency.Paths);
         Assert.DoesNotContain(dependency.Paths, path => path.Contains("legacy", StringComparison.Ordinal) || path.Contains("working-file-only", StringComparison.Ordinal));
     }
 
@@ -133,8 +133,8 @@ public sealed class FileAnalysisTests : IDisposable
 
         var (reading, _) = await Read("pnpm-nested", commit);
 
-        Assert.Equal(["web/node_modules/", "web/libs/*/node_modules/", "web/ui/node_modules/"], Found(reading, "web/node_modules/").Paths);
-        Assert.Equal(["plain/node_modules/"], Found(reading, "plain/node_modules/").Paths);
+        Assert.Equal(["/web/node_modules/", "/web/libs/*/node_modules/", "/web/ui/node_modules/"], Found(reading, "web/node_modules/").Paths);
+        Assert.Equal(["/plain/node_modules/"], Found(reading, "plain/node_modules/").Paths);
     }
 
     [Fact]
@@ -147,7 +147,7 @@ public sealed class FileAnalysisTests : IDisposable
 
         var (reading, _) = await Read("npm-object", commit);
 
-        Assert.Equal(["node_modules/", "apps/*/node_modules/", "tools/cli/node_modules/"], Found(reading, "node_modules/").Paths);
+        Assert.Equal(["/node_modules/", "/apps/*/node_modules/", "/tools/cli/node_modules/"], Found(reading, "node_modules/").Paths);
     }
 
     [Fact]
@@ -168,7 +168,7 @@ public sealed class FileAnalysisTests : IDisposable
         Assert.Equal(FileKind.Output, kinds["src/Api/bin/"]);
         Assert.Equal(FileKind.Output, kinds["src/Cli/bin/Debug/"]);
         Assert.Equal(["dotnet --version"], Found(reading, "src/Api/obj/").Toolchain);
-        Assert.DoesNotContain(reading.Found.Rules, rule => rule.Paths.Contains("src/Cli/bin/"));
+        Assert.DoesNotContain(reading.Found.Rules, rule => rule.Paths.Contains("/src/Cli/bin/"));
         Assert.Null(FileRules.Of([new FileRule(FileKind.Output, ["src/Cli/bin/"])], [], PersonFilesRead.Empty, "dotnet").For("src/Cli/bin/", reading.Floor).Kind);
     }
 

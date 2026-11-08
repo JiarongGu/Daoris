@@ -63,7 +63,7 @@ public sealed class FilesLookTests : IDisposable
     public void A_copy_rule_shows_its_copy_and_the_person_s_answer_to_it()
     {
         PersonPermissions.Add(_home, "web", "deny", "copy(*)", null);
-        var local = new FileRule(FileKind.Local, ["local/"]) { Copy = true };
+        var local = new FileRule(FileKind.Local, ["local/"]) { Reach = "copy" };
 
         var look = Look([local], [], "local/");
 

@@ -11,6 +11,12 @@ public sealed record FilesSetPress(string? Repository, string? Kind, IReadOnlyLi
 /// <summary>The person's own rules naming these paths, taken out.</summary>
 public sealed record FilesRemovePress(string? Repository, IReadOnlyList<string>? Paths, bool Machine = false);
 
+/// <summary>The person's wording of every path their file reads as written.</summary>
+public sealed record FilesSettlePress(string? Repository, IReadOnlyList<FilesWordingChoice>? Wordings);
+
+/// <summary>One path read as written, by its scope (<c>machine</c> or a repository's name), worded as the folder whole or its files.</summary>
+public sealed record FilesWordingChoice(string? Scope, string? Path, bool Whole);
+
 /// <summary>A permission added to a list or taken out: an allow made from an ask, or taken back.</summary>
 public sealed record FilesPermitPress(string? Repository, string? Act, string? List, string? Rule, bool Machine = false);
 
