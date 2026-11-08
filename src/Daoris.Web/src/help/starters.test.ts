@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { starters } from './starters';
 import type { Tool } from '../agents/tools';
+import i18n from '../locales/i18n';
 
 // Ask Daoris's no-agent tier — what this machine lacks, each with the screen that fixes
 // it and the terminal command that does the same. Pure: every machine is an argument.
@@ -57,6 +58,20 @@ describe('starters', () => {
     // Each account out is none signed in, whatever the tool's own home says; one in, or not known, is an account.
     expect(starters({ ...READY, tools: [tool({ ownLogin: 'in', accounts: work('out') })] })).toHaveLength(1);
     expect(starters({ ...READY, tools: [tool({ ownLogin: 'out', accounts: work('in') })] })).toEqual([]);
+  });
+
+  /** A harness held by a key alone has no sign-in to ask for: its starter says a key, and its command is `agent key`. */
+  it('names a key-only tool with no key set by the key, not a sign-in', () => {
+    const dsh = tool({
+      name: 'dsh', product: 'DeepSeek Harness', accounts: [{ name: 'account-1', home: '', login: 'out' }] as Tool['accounts'],
+      acts: { signsIn: false, takesKey: true, deviceCode: false, installs: true },
+    });
+
+    expect(starters({ ...READY, tools: [dsh] })).toEqual([expect.objectContaining({
+      id: 'agent-no-key', values: { tool: 'DeepSeek Harness' }, door: { view: 'agents', item: 'dsh', agentPart: 'accounts' },
+      command: 'daoris agent key dsh',
+    })]);
+    expect(i18n.t('help.starter.agent-no-key', { tool: 'DeepSeek Harness', lng: 'zh' })).toContain('API 密钥');
   });
 
   it('names the repositories with no line git can name, and where to set one', () => {

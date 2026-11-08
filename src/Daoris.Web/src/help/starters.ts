@@ -57,7 +57,7 @@ export type StarterDoor = {
  * it, and the terminal command that does the same where one does.
  */
 export type Starter = {
-  id: 'waiting' | 'nothing-registered' | 'nothing-driven' | 'agent-signed-out' | 'no-line' | 'helper-off';
+  id: 'waiting' | 'nothing-registered' | 'nothing-driven' | 'agent-signed-out' | 'agent-no-key' | 'no-line' | 'helper-off';
   values: Record<string, string | number>;
   door: StarterDoor;
   command?: string;
@@ -94,10 +94,13 @@ export function starters(
     // No Daoris account signed in: none, or each a definite out (an `unknown` is not a lack). The tool's own
     // sign-in does not count.
     if (tool.present && tool.accounts.every((account) => account.login === 'out')) {
+      // An agent held by a key alone has no sign-in: its account is a key set.
+      const keyOnly = tool.acts?.takesKey === true && tool.acts.signsIn !== true;
       found.push({
-        id: 'agent-signed-out', values: { tool: tool.product ?? tool.name },
-        // The agent's page, at its accounts: where an account is signed in.
-        door: { view: 'agents', item: tool.name, agentPart: 'accounts' }, command: `daoris agent login ${tool.name}`,
+        id: keyOnly ? 'agent-no-key' : 'agent-signed-out', values: { tool: tool.product ?? tool.name },
+        // The agent's page, at its accounts: where an account is signed in, or its key set.
+        door: { view: 'agents', item: tool.name, agentPart: 'accounts' },
+        command: keyOnly ? `daoris agent key ${tool.name}` : `daoris agent login ${tool.name}`,
       });
     }
   }
