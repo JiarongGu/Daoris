@@ -142,6 +142,8 @@ public static class StartNoteCodes
     // since an added role has no id the page knows.
     public static readonly NoteCode OpeningDesign = new("opening.design", ["role"]);
 
+    public static readonly NoteCode OpeningExact = new("opening.exact", ["role"]);
+
     // A start refused for its account's sign-in went on under another, which says the account it moved off.
     public static readonly NoteCode OpeningMovedOff = new("opening.moved-off", ["account"]);
 

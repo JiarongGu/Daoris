@@ -136,7 +136,7 @@ internal sealed class RunDoors(Driver driver) : IRunWiring
 
     void IRunWiring.Questions(string sessionId, QuestionSettle settled) => driver.Questions(sessionId, settled);
 
-    string? IRunWiring.DesignRoleName(Consideration start, string? named) => driver.Walk.DesignRoleName(start, named);
+    string? IRunWiring.WeightedRoleName(Consideration start, string work, string? named) => driver.Walk.WeightedRoleName(start, work, named);
 
     ConcurrentDictionary<string, string> IRunWiring.LimitResumed => driver.LimitResumed;
 

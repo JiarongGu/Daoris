@@ -62,6 +62,7 @@
   "files.view.scope.repository": "本仓库",
   "files.view.givenBy": "由{{by}}给出",
   "files.view.maker.person": "你",
+  "files.view.maker.role": "主管 {{role}}",
   "files.view.takeBackNamed": "收回对 {{rule}} 的允许",
   "files.view.removeNamed": "移除 {{rule}}",
   "files.view.addPermission": "添加权限",

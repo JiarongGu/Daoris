@@ -1,5 +1,13 @@
 namespace Daoris.Driver;
 
+/// <summary>The tops moved aside and the set-aside folder they went into.</summary>
+internal sealed record PoolMoved(IReadOnlyList<string> Tops, string? Aside)
+{
+    internal static readonly PoolMoved None = new([], null);
+
+    internal int Count => Tops.Count;
+}
+
 /// <summary>
 /// What a take does to the slot's ignored tops around its switch: Daoris's own copies of machine-local files deleted before it, so the
 /// switch never refuses a slot for a file Daoris made, and after it the runnable outputs (and the intermediates and caches where the
@@ -24,14 +32,14 @@ internal static class PoolClearing
     /// folder of <paramref name="from"/>, each at its own relative place. The tops moved; none where nothing stands to move.
     /// </summary>
     /// <exception cref="IOException">A rename is refused, because something holds the folder.</exception>
-    internal static async Task<IReadOnlyList<string>> ClearAsync(PoolSite site, string slot, string from, bool toolchainMoved, CancellationToken ct)
+    internal static async Task<PoolMoved> ClearAsync(PoolSite site, string slot, string from, bool toolchainMoved, CancellationToken ct)
     {
         var head = await WorkingTree.HeadAsync(slot, ct).ConfigureAwait(false);
-        if (head is null) return [];
+        if (head is null) return PoolMoved.None;
         var status = await FillJudgement.StatusAsync(slot, ignored: true, ct).ConfigureAwait(false);
         var sorted = await SlotIgnored.ReadAsync(site, slot, status, head, ct).ConfigureAwait(false);
         IReadOnlyList<string> moving = toolchainMoved ? [.. sorted.Outputs, .. sorted.Intermediates] : sorted.Outputs;
-        if (moving.Count == 0) return [];
+        if (moving.Count == 0) return PoolMoved.None;
 
         var aside = Path.Combine(AsideRoot(site), $"{from}-{DateTimeOffset.UtcNow.ToString(TreeSetAside.SetAsideStamp, System.Globalization.CultureInfo.InvariantCulture)}");
         foreach (var top in moving)
@@ -44,7 +52,7 @@ internal static class PoolClearing
             else if (File.Exists(source)) File.Move(source, target);
         }
 
-        return moving;
+        return new PoolMoved(moving, aside);
     }
 
     /// <summary>The folder a repository's set-aside folders are made in, beside the ones a tidy makes.</summary>

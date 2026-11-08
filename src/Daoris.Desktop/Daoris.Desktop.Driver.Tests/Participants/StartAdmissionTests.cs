@@ -15,6 +15,7 @@ public sealed class StartAdmissionTests
     [Theory]
     [InlineData(ParticipantWork.Build, true)]
     [InlineData(ParticipantWork.Design, true)]
+    [InlineData(ParticipantWork.Exact, true)]
     [InlineData(ParticipantWork.Chat, true)]
     [InlineData(ParticipantWork.Help, false)]
     [InlineData(ParticipantWork.Partner, false)]

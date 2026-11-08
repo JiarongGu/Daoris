@@ -274,6 +274,7 @@ internal sealed class StartPlan
     {
         "build" => "build",
         "design" => "design",
+        "exact" => "exact",
         "chat" => "chat",
         "ask-daoris" => "ask-daoris",
         "intake" => "intake",

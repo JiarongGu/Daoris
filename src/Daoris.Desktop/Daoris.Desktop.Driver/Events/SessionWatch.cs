@@ -382,9 +382,13 @@ public sealed class SessionWatch
         if (gap <= limit) return;
         foreach (var watched in _watched.Values)
         {
-            var heard = Volatile.Read(ref watched.HeardTicks);
-            Interlocked.CompareExchange(ref watched.HeardTicks, heard + gap.Ticks, heard);
             watched.Reads.Clear();
+            // Heard since the last look is heard after the wake, and shifted would lie in the future; the episode and leave move with it.
+            var heard = Volatile.Read(ref watched.HeardTicks);
+            if (heard >= before.Ticks) continue;
+            if (Interlocked.CompareExchange(ref watched.HeardTicks, heard + gap.Ticks, heard) != heard) continue;
+            watched.Episode?.Shift(gap.Ticks);
+            if (watched.LeftAt is { } left) watched.LeftAt = left + gap.Ticks;
         }
     }
 
@@ -587,11 +591,13 @@ public sealed class SessionWatch
     internal sealed class Episode(int number, long heardAt, DateTimeOffset since)
     {
         public int Number { get; } = number;
-        public long HeardAt { get; } = heardAt;
+        public long HeardAt { get; private set; } = heardAt;
         public DateTimeOffset Since { get; } = since;
         public bool Marked { get; set; }
         public bool Busy { get; set; }
         public bool Told { get; set; }
         public QuietRow? Row { get; set; }
+
+        public void Shift(long ticks) => HeardAt += ticks;
     }
 }

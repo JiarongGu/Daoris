@@ -5,6 +5,12 @@ the per-task record. Entries preserve their original wording so the archive stay
 
 ---
 
+## MODELROLE1i — an exact build starts on its own role (2026-11-08)
+
+> **MODELROLE1i** (D205 §14's filed row i): Outcome: a quest weighted `exact` starts on the seeded *Exact build* role (Claude Code · `sonnet`, the account's default effort, the reference's build-exact row, the quest naming no model), read as Design is read: `Driver.StartWork` takes the weight, a home from before it reads the seed, removed its work falls to Build's, a workflow step may name it, and the opening says whose order it ran on (`opening.exact`, English and Chinese). A judgement quest keeps Design's and an unmarked one Build's. The row's wait for a batch of measurements was not kept: the weight is the publisher's to set and the person's to unset by removing the role. `sonnet[1m]` is left to the person's choice from their account's offers, since the seed cannot read an account's door. Tests: `ExactRoleTests`, the work-code theories, the service twin's fixtures and the web's note and call table. The installed proof of an exact quest on its role goes with the installed batch.
+
+---
+
 ## CONVREV1 to CONVREV4 — a conversation's limit and transient moves count under the line, a driven word keeps its sender, a held wake is asked again (2026-11-08)
 
 > **CONVREV1 / CONVREV2 / CONVREV3 / CONVREV4** (conversations review): Outcome: all four held as the rows said, each with a regression test seen to fail first. CONVREV1 (96ab036726): `LimitMove` reads the line key once and `LimitRuled.Holds` and `Moved` count under it, as the transient move does (`LimitMoveStoreTests`). CONVREV2 (f7f063c411): `TransientMove` judges the hand-over as the take does before beginning, counts only after the begin, and supersedes the record where the bound refuses (`TransientMoveTests`). CONVREV3 (8823633dbd): `DrivenCourse.WordsOf` reads authors through `BriefedMove.AuthorOf` (`LineFactsTests`). CONVREV4 (67d544359a): a wake the go-on held off marks the stage dirty so the next look asks again at the same stamp (`LimitWaitsTests`, a hand-over's box as the seam).
@@ -23445,3 +23451,9 @@ The 26 pointer lines of the parked file's head (the owner's reports and features
 
   **Outcome** 2026-11-08: the window's supervisor mints a key at each start of its host, hands it on the input, and gives it to the page (`PERSON_KEY`) and the loop's clients only once the host proved it (`ProvedKey`); an adopted host or one that did not prove it is handed and answered none. The loop's clients present it to an address of this machine alone (`PersonHeader`), a choice the row left to PERSONDOOR1d: without it the host would refuse the loop's own writes. A terminal's verb that posts a person's door straight to the host is refused there until 1d and 1e. Proof: `DriverModuleSystemTests`, `PersonHeaderTests`. Detail: D156's PERSONDOOR1g note.
 - [x] **MEMSWEEPENDS1 — a sweep's awaiting end has no place the person can decide it** (service, driver, web): 2026-11-08 the sweep's sessionless end is a wait of its own (`MemoryOpWaits`, the `end` of a wait in `GET /api/memory/waits`), a `memory` row of *What needs you* by its operation with the repository as where, no door, and *Approve the end* and *Decline* in the row, which decide through `SESSION_MEMORY_DECIDE` with no session; the design chosen is a row per operation, not per repository, so each end is its own decision and the pending key keeps its meaning; each layer has its regression test.
+
+- [x] **DRVREVIEW6 — `SessionWatch.Gap` shifts a session heard after the wake** (driver): 2026-11-08 off the sleeping clock a gap shifts only a session heard before the last look, and its episode and the person's leave move with it so a later hearing still reads as after them; the row's "leave episodes and `LeftAt` alone" was not kept, because a shifted heard time over an unmoved episode ends it as "heard" (`SessionWatchTests`, both failing first).
+
+- [x] **DRVREVIEW8 — a slim pass can drop a finished tree's manifest before its folder has moved** (driver): 2026-11-08 `SlimDue` keeps a `judged` manifest younger than the settle hour whose folder is absent, and drops an older one no move followed (`SetAsideSlimTests`, failing first).
+
+- [x] **DRVREVIEW9 — `EndJudgement` says `Claim` where git could not say** (driver): 2026-11-08 `EndFacts.ProofUnread` carries an unread content proof or branch-holders read, and a session branch with nothing else holding it is `Unknown` with git's words (`EndJudgementTests`).

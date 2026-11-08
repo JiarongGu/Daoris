@@ -2,6 +2,7 @@
   "roles": [
     { "id": "build", "name": { "en": "Build", "zh": "开发" }, "work": "build", "place": "machine", "filled": "always" },
     { "id": "design", "name": { "en": "Design", "zh": "设计" }, "work": "design", "place": "machine", "filled": "always" },
+    { "id": "exact", "name": { "en": "Exact build", "zh": "精确开发" }, "work": "exact", "place": "machine", "filled": "always" },
     { "id": "intake", "name": { "en": "Intake", "zh": "受理" }, "work": "intake", "place": "machine", "filled": "always" },
     { "id": "opinion", "name": { "en": "Second opinion", "zh": "第二意见" }, "work": "review", "place": "machine", "filled": "always" },
     { "id": "helper", "name": { "en": "Helper", "zh": "助手" }, "work": "help", "place": "machine", "filled": "always" },

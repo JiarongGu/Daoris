@@ -21,6 +21,7 @@ public sealed record SupervisorSubject(string Kind, string Session, string Id)
         [SupervisorKinds.Limit] = "point",
         [SupervisorKinds.Landing] = "landing",
         [SupervisorKinds.Allow] = "request",
+        [SupervisorKinds.Files] = "text",
     };
 
     /// <summary>The kinds whose subject this build reads, in the kinds' order.</summary>
@@ -52,6 +53,13 @@ public sealed record SupervisorSubject(string Kind, string Session, string Id)
 
     public bool IsAsk { get; init; }
 
+    /// <summary>The start that met a rule file's ask, and which act it is (<c>run</c>, <c>copy</c> or <c>share</c>): a <c>files</c> subject only.</summary>
+    public (string Start, string What)? Act { get; init; }
+
+    /// <summary>A rule file's ask <c>{ repository, start, what, text }</c>: the repository is its <see cref="Session"/>, the held act's own text its id.</summary>
+    public static SupervisorSubject Ask(string repository, string start, string what, string text) =>
+        new(SupervisorKinds.Files, repository, text) { Act = (start, what) };
+
     /// <summary>Whether this is an allow's widening, which names a proposal and no session.</summary>
     public bool IsProposal => Kind == SupervisorKinds.Allow && Session.Length == 0 && !IsAsk;
 
@@ -62,6 +70,11 @@ public sealed record SupervisorSubject(string Kind, string Session, string Id)
     public IReadOnlyDictionary<string, string> Wire()
     {
         var wire = new Dictionary<string, string>(StringComparer.Ordinal);
+        if (Act is { } met)
+        {
+            return new Dictionary<string, string>(StringComparer.Ordinal) { ["repository"] = Session, ["start"] = met.Start, ["what"] = met.What, ["text"] = Id };
+        }
+
         if (!IsProposal && !IsAsk) wire["session"] = Session;
         wire[IdName] = Id;
         if (Held is not null) wire["held"] = Held;
@@ -76,6 +89,14 @@ public sealed record SupervisorSubject(string Kind, string Session, string Id)
         foreach (var property in value.EnumerateObject())
         {
             if (!fields.TryAdd(property.Name, property.Value)) return null;
+        }
+
+        if (kind == SupervisorKinds.Files)
+        {
+            return fields.Count == 4 && Text(fields, "repository") is { } repository && Text(fields, "start") is { } start
+                && Text(fields, "what") is { } what && Text(fields, "text") is { } text
+                ? Ask(repository, start, what, text)
+                : null;
         }
 
         if (kind == SupervisorKinds.Allow)

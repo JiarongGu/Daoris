@@ -22,6 +22,9 @@ internal static class PoolLocks
         : SessionLocks.SessionOf(entry.LockReason) is not null ? SlotLocks.SessionNoRecord
         : SlotLocks.Other;
 
+    internal static Task<(int Code, string Stdout, string Stderr)> UnlockAsync(PoolGit git, string slot, CancellationToken ct) =>
+        git.GitAsync(slot, ["worktree", "unlock", slot], ct);
+
     /// <summary>
     /// <paramref name="slot"/> locked with <paramref name="reason"/>, a lock of the pool's or a session's put in the new one's place; null
     /// where it is, otherwise git's words. A person's or an opening's lock is never changed.

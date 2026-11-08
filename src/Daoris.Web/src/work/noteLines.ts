@@ -280,7 +280,7 @@ export const NOTE_VALUES: Readonly<
   // A window's use projected to now, as a window's use is.
   projected: 'percent',
   now: 'text', then: 'text',
-  // The working role a design-weighted quest started on, said as its name.
+  // The working role a design- or exact-weighted quest started on, said as its name.
   role: 'text',
   // An account id is worded by the name the person gave it where the page knows it; `owner` is the agent.
   account: 'account', over: 'account', first: 'account',
@@ -333,7 +333,7 @@ export const ACCESS_AT: Readonly<Record<string, string>> = {
 const ROUTING_STANDINGS = new Set(['not-driven', 'no-lanes', 'one-at-a-time', 'open']);
 
 /** The actors' ids, each worded by its `work.role.name.*` entry, as *Details* says it. */
-const ACTOR_IDS = new Set(['build', 'design', 'intake', 'opinion', 'helper', 'partner', 'brainstorm', 'ask-daoris', 'chat']);
+const ACTOR_IDS = new Set(['build', 'design', 'exact', 'intake', 'opinion', 'helper', 'partner', 'brainstorm', 'ask-daoris', 'chat']);
 
 /**
  * One line of a note as the page shows it:

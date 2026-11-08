@@ -41,6 +41,20 @@ public static class TreeClaimPhases
     public const string Recorded = "recorded";
 
     public const string Locked = "locked";
+
+    public const string SettingAside = "setting-aside";
+
+    public const string SetAside = "set-aside";
+
+    public const string Detached = "detached";
+
+    public const string SlimJudged = "slim-judged";
+
+    public const string Moving = "moving";
+
+    public const string Moved = "moved";
+
+    public const string Dropped = "dropped";
 }
 
 /// <summary>

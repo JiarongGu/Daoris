@@ -164,10 +164,11 @@ internal sealed class OpenRecord(IRunWiring wiring) : IRunStage
             context.Harnesses.StaffFor(home).Moves.SpendApproval(quest.Id, state.PolicyRole);
         }
 
-        // A quest marked design says whose order it ran on: the role taking design, Build's while none does.
-        if (start.Resumes is null && Driver.StartWork(quest) == ParticipantWork.Design && wiring.DesignRoleName(start, state.StepRole) is { } designer)
+        // A quest marked design or exact says whose order it ran on: the role taking that work, Build's while none does.
+        var marked = Driver.StartWork(quest);
+        if (start.Resumes is null && marked is ParticipantWork.Design or ParticipantWork.Exact && wiring.WeightedRoleName(start, marked, state.StepRole) is { } weighted)
         {
-            RotatedOpening.SayDesign(context.Events, sessionId, designer);
+            RotatedOpening.SayWeighted(context.Events, sessionId, marked, weighted);
         }
 
         // Its setup in one line, after the account's, and the mode it got on its harness, after the change from the session it goes on

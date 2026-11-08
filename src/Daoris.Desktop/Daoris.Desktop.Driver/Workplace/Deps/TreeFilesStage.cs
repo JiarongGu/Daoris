@@ -88,10 +88,17 @@ internal sealed class TreeFilesStage(string home, string root, string tree, stri
         }
 
         var copied = await TreeLocalInputs.CopyAsync(root, tree, ct).ConfigureAwait(false);
+        if (copied.Copied.Count > 0) RecordCopies(copied.Copied);
         if (copied.Line() is { } line) _said.Add(line);
         foreach (var each in copied.Declined) _said.Add(each.Line());
         return Outcome();
     }
+
+    private void RecordCopies(IReadOnlyList<string> copied) => TreeFilesRecord.Change(home, tree, state => state with
+    {
+        Copies = state.Copies.Concat(copied.Select(path => KeyValuePair.Create(path, TreeCopies.HashOf(Path.Combine(tree, path)))).Where(each => each.Value is not null).Select(each => KeyValuePair.Create(each.Key, each.Value!)))
+            .GroupBy(each => each.Key, StringComparer.Ordinal).ToDictionary(group => group.Key, group => group.Last().Value, StringComparer.Ordinal),
+    });
 
     /// <summary>Every tracked change and every path git does not ignore, which only a cut-off start's own install or hook can have left, put back.</summary>
     private async Task<bool> WriteBackAsync(CancellationToken ct)
@@ -161,7 +168,7 @@ internal sealed class TreeFilesStage(string home, string root, string tree, stri
             (placement, exists) = (null, false);
         }
 
-        if (placement is not null && exists)
+        if (placement is not null && (exists || placement.Manifest is { Absent: true }))
         {
             if (placement.Manifest?.Differs(tree, dependency.Folder, dependency.Caches) is not null)
             {
@@ -192,16 +199,20 @@ internal sealed class TreeFilesStage(string home, string root, string tree, stri
     private async Task<bool> InstallUnlessHeldAsync(StoreDependency dependency, string key, CancellationToken ct)
     {
         var install = dependency.Rule.Install!;
-        switch (_rules!.Judge(FileActs.Run(install)))
+        var act = FileActs.Run(install);
+        switch (_rules!.Judge(act))
         {
             case FileVerdict.Denied:
+                FileAsks.Close(home, repository, FileAsk.Run, act);
                 Unplaced(dependency, DepsWhy.DeniedBy(install));
                 return false;
             case FileVerdict.Held:
+                FileAsks.Note(home, new FileAsk(repository, Moments.Write(DateTimeOffset.UtcNow), FileAsk.Run, act) { Person = _rules.NamesPerson(act) });
                 Unplaced(dependency, DepsWhy.HeldFor(install));
                 return true;
         }
 
+        FileAsks.Close(home, repository, FileAsk.Run, act);
         await InstallAsync(dependency, key, ct).ConfigureAwait(false);
         return false;
     }
@@ -221,7 +232,7 @@ internal sealed class TreeFilesStage(string home, string root, string tree, stri
         {
             why = DepsWhy.GroupedWith(DependencyGroups.Others(group, dependency.Path));
         }
-        else if (placement is { Installing: false } && exists && placement.Key == key
+        else if (placement is { Installing: false } && (exists || placement.Manifest is { Absent: true }) && placement.Key == key
             && placement.Manifest?.Differs(tree, dependency.Folder, dependency.Caches) is null
             && InstallWrites.CompanionsDiffer(tree, placement) is null && InstallWrites.OtherGone(tree, placement) is null)
         {
@@ -385,7 +396,7 @@ internal sealed class TreeFilesStage(string home, string root, string tree, stri
         using var visitable = CancellationTokenSource.CreateLinkedTokenSource(ct, _visited);
         try
         {
-            await WorkingTree.GitAsync(tree, ["hook", "run", "--ignore-missing", "post-checkout", "--", Zeros, head, "1"], visitable.Token).ConfigureAwait(false);
+            await WorkingTree.GitAsync(tree, ["hook", "run", "--ignore-missing", "post-checkout", "--", record.HookFrom ?? Zeros, head, "1"], visitable.Token).ConfigureAwait(false);
         }
         catch (OperationCanceledException) when (!ct.IsCancellationRequested)
         {

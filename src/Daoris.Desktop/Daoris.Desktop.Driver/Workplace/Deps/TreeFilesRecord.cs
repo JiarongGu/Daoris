@@ -39,6 +39,12 @@ internal sealed record TreeFilesState(bool Unworked, bool HookOwed, IReadOnlyLis
 
     internal IReadOnlyList<DependencyGroup> Groups { get; init; } = [];
 
+    /// <summary>Each copy of a machine-local file Daoris made, by its path and the hash it wrote.</summary>
+    internal IReadOnlyDictionary<string, string> Copies { get; init; } = new Dictionary<string, string>();
+
+    /// <summary>The commit HEAD stood at before the switch that owes the hook; null for the null id.</summary>
+    internal string? HookFrom { get; init; }
+
     internal TreePlacement? Of(string path) => Placements.FirstOrDefault(each => string.Equals(each.Path, path, StringComparison.Ordinal));
 
     internal DependencyGroup? GroupOf(string path) => Groups.FirstOrDefault(group => group.Members.Contains(path, StringComparer.Ordinal));
@@ -112,7 +118,15 @@ internal static class TreeFilesRecord
                 ? written.EnumerateArray().Select(group => new DependencyGroup(
                     [.. group.GetProperty("members").EnumerateArray().Select(member => member.GetString()!)], group.GetProperty("key").GetString()!)).ToList()
                 : [];
-            return new TreeFilesState(root.GetProperty("unworked").GetBoolean(), root.GetProperty("hookOwed").GetBoolean(), placements) { Groups = groups };
+            var copies = root.TryGetProperty("copies", out var made)
+                ? made.EnumerateObject().ToDictionary(each => each.Name, each => each.Value.GetString()!, StringComparer.Ordinal)
+                : [];
+            return new TreeFilesState(root.GetProperty("unworked").GetBoolean(), root.GetProperty("hookOwed").GetBoolean(), placements)
+            {
+                Groups = groups,
+                Copies = copies,
+                HookFrom = root.TryGetProperty("hookFrom", out var from) ? from.GetString() : null,
+            };
         }
         catch (Exception error) when (error is IOException or UnauthorizedAccessException or JsonException or InvalidOperationException
             or KeyNotFoundException)
@@ -125,10 +139,10 @@ internal static class TreeFilesRecord
     /// The tree marked unworked, its hook owed: written by the step that makes, remakes, takes or returns it. Its placements and groups
     /// stay, each read against the tree at the next stage.
     /// </summary>
-    internal static void Mark(string home, string tree)
+    internal static void Mark(string home, string tree, string? hookFrom = null)
     {
         using var held = Lock(home, tree);
-        Write(home, tree, (Read(home, tree) ?? TreeFilesState.Made) with { Unworked = true, HookOwed = true });
+        Write(home, tree, (Read(home, tree) ?? TreeFilesState.Made) with { Unworked = true, HookOwed = true, HookFrom = hookFrom });
     }
 
     /// <summary>
@@ -223,6 +237,9 @@ internal static class TreeFilesRecord
             ["members"] = new JsonArray([.. group.Members.Select(member => (JsonNode)JsonValue.Create(member))]),
             ["key"] = group.Key,
         })]);
-        AtomicFile.WriteText(path, new JsonObject { ["unworked"] = state.Unworked, ["hookOwed"] = state.HookOwed, ["placements"] = placements, ["groups"] = groups }.ToJsonString());
+        var body = new JsonObject { ["unworked"] = state.Unworked, ["hookOwed"] = state.HookOwed, ["placements"] = placements, ["groups"] = groups };
+        if (state.Copies.Count > 0) body["copies"] = new JsonObject(state.Copies.Select(each => KeyValuePair.Create(each.Key, (JsonNode?)each.Value)));
+        if (state.HookFrom is { } hookFrom) body["hookFrom"] = hookFrom;
+        AtomicFile.WriteText(path, body.ToJsonString());
     }
 }

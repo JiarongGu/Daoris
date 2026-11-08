@@ -201,6 +201,28 @@ public sealed class TidyEffectGitTests(ITestOutputHelper output) : LandedFixture
         Assert.True(overFour.Second - overOne.Second <= 3, $"the tidy judged branches the line holds none of: {overOne.Second} starts beyond the keeper with one, {overFour.Second} with four");
     }
 
+    [Fact]
+    public async Task A_retention_that_threw_is_asked_again_at_the_next_tidy_and_one_that_ran_waits_its_day()
+    {
+        var root = await RepositoryAsync("engine");
+        var trees = new SessionTrees(Home);
+        using var lease = HomeLease.TryAcquire(Home, LeaseKind.Headless, out _);
+        var asked = 0;
+
+        using (SetAsideFaults.Within(new SetAsideFault { BeforeRetention = _ => throw new IOException("the read broke") }))
+        {
+            await Assert.ThrowsAsync<IOException>(() => TidyAsync(trees, root));
+        }
+
+        using (SetAsideFaults.Within(new SetAsideFault { BeforeRetention = _ => asked++ }))
+        {
+            await TidyAsync(trees, root);
+            await TidyAsync(trees, root);
+        }
+
+        Assert.Equal(1, asked);
+    }
+
     /// <summary>
     /// The review's older squash record: a session
     /// branch from before units whose squashing landing the line holds goes at the look's tidy, on the fact the keeper keeps for it.
