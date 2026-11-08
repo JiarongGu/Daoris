@@ -51,9 +51,10 @@ public static class OpinionGate
 
         var judged = await StandingAsync(facts, reads, Of).ConfigureAwait(false);
 
-        // The review's Reviewed answers what it showed beside it: given after the disputes or the commits stood.
+        // The review's Reviewed answers what it showed beside it: given after the disputes or the commits stood, and after a recheck's findings
+        // reached the person.
         if (judged.PressAnswers && facts.Review is { State: ReviewStates.Reviewed, Verdict.At: { } reviewed }
-            && reviewed >= (judged.Answers?.At ?? judged.ToPersonAt ?? DateTimeOffset.MinValue))
+            && reviewed >= (judged.Answers?.At ?? judged.ToPersonAt ?? DateTimeOffset.MinValue) && judged.SawRecheck(reviewed))
         {
             return judged with
             {
@@ -129,7 +130,11 @@ public static class OpinionGate
                 }
 
                 disputes = OpinionDisputes.Of(answers, recheck);
-                if (recheck is { Given: true }) read = recheck.Tip;
+                if (recheck is { Given: true })
+                {
+                    read = recheck.Tip;
+                    state = state with { RecheckToPersonAt = reads.Delivered(recheck.Id).PersonAt };
+                }
             }
             else
             {

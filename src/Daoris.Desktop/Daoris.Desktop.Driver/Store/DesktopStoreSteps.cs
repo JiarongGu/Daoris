@@ -714,5 +714,11 @@ internal static class DesktopStoreSteps
               PRIMARY KEY (workspace, repository, line, at)
             );
             """)),
+
+        new(DesktopStore.GenerationVersion, PolicyWriter, write => write.Execute(
+            """
+            ALTER TABLE deliveries ADD COLUMN generation INTEGER NOT NULL DEFAULT 1;
+            CREATE UNIQUE INDEX deliveries_generation ON deliveries (unit, tip, method, target, generation);
+            """)),
     ];
 }
