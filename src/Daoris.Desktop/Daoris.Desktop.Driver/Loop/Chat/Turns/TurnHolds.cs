@@ -143,7 +143,7 @@ internal sealed class TurnHolds(TurnState state, TurnPump pump)
         {
             if (!state.Pressing) return;
             state.Pressing = false;
-            start = state.Waiting.Count > 0 && !state.Pumping && !state.Limited && !state.SendingBack && !state.Gone && !state.CloseHeld;
+            start = state.Waiting.Count > 0 && !state.Pumping && !state.Limited && !state.SendingBack && !state.Gone && !state.Finishing && !state.CloseHeld;
             if (start)
             {
                 state.Pumping = true;

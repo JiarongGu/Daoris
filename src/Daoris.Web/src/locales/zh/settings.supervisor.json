@@ -31,6 +31,7 @@
   "settings.supervisor.said": "达到 {{at}}：{{act}}",
   "settings.supervisor.saidWait": "达到 {{at}}：{{act}}，最多 {{minutes}} 分钟",
   "settings.supervisor.upTo": "最多等待",
+  "settings.supervisor.upToReferred": "主管最多可等额度恢复",
   "settings.supervisor.upToOf": "第 {{n}} 条：等待的分钟数",
   "settings.supervisor.minutes": "分钟",
   "settings.supervisor.replaces": "取代{{place}}的：{{rules}}",

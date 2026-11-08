@@ -10,7 +10,7 @@ namespace Daoris.Desktop;
 /// </summary>
 public static class SupervisorDecisionDoor
 {
-    private static readonly IReadOnlyList<ISupervisorKind> Rows = [new QuestionKind(), new CourseKind()];
+    private static readonly IReadOnlyList<ISupervisorKind> Rows = [new QuestionKind(), new CourseKind(), new LimitKind()];
 
     /// <summary>The kinds the door takes, each one row.</summary>
     public static IReadOnlyList<string> Kinds { get; } = [.. Rows.Select(row => row.Kind)];

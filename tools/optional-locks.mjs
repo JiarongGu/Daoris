@@ -14,14 +14,14 @@
  * counts the marks. A word inside a comment is not one. There is no .NET build.
  *
  * The same census reads the tools' own scripts (`tools/*.mjs`, their tests skipped), where the merge queue's runner
- * asks git of the main checkout: a stale `index.lock` there holds a green candidate's promotion. In a script an array literal is the expression, its strings in single,
- * double or plain template quotes, and `diff-index` and `diff-files` count beside `status` and `diff`: the commands that read a
- * tree and may write its index. A read of commits alone (`log`, `rev-parse`, `show`) is none.
- */
+ * asks git of the main checkout: a stale `index.lock` there holds a green candidate's promotion. In a script an array literal is
+ * the expression, its strings in single, double or plain template quotes, and `diff-index` and `diff-files` count beside `status`
+ * and `diff`: the commands that read a tree and may write its index. A read of commits alone (`log`, `rev-parse`, `show`) is none. */
 import { readdirSync, readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { isMain } from './fsx.mjs';
+import { templateEnd } from './js-template.mjs';
 import { blank } from './partials.mjs';
 
 export const DRIVER = 'src/Daoris.Desktop/Daoris.Desktop.Driver';
@@ -143,21 +143,16 @@ export function blankScript(src) {
     } else if (c === '/' && d === '*') {
       end = src.indexOf('*/', i + 2);
       end = end < 0 ? n : end + 2;
-    } else if (c === '"' || c === "'" || c === '`') {
+    } else if (c === '`') {
+      end = templateEnd(src, i);
+    } else if (c === '"' || c === "'") {
       end = i + 1;
-      let depth = 0;
       while (end < n) {
         if (src[end] === '\\') end += 2;
-        else if (c === '`' && src[end] === '$' && src[end + 1] === '{') {
-          depth++;
-          end += 2;
-        } else if (c === '`' && depth > 0 && src[end] === '}') {
-          depth--;
-          end++;
-        } else if (src[end] === c && depth === 0) {
+        else if (src[end] === c) {
           end++;
           break;
-        } else if (src[end] === '\n' && c !== '`') break;
+        } else if (src[end] === '\n') break;
         else end++;
       }
     } else if (c === '/' && !afterValue()) {

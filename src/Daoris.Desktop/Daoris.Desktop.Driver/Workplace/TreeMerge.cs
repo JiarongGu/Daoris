@@ -9,5 +9,8 @@ public sealed record TreeMerge(bool Merged, string Message)
 {
     /// <summary>A refusal's code where the merge door has one: <c>uncommitted</c>, which the Accept carries its session on for.</summary>
     public string? Refusal { get; init; }
+
+    /// <summary>The checkout's status (<see cref="LandTries.Fingerprint"/>) a <see cref="LandingCode.RootDirty"/> refusal read.</summary>
+    public string? RootStatus { get; init; }
 }
 

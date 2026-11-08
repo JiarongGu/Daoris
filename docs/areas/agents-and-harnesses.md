@@ -255,6 +255,8 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/Agents/` unless they s
     brief, a second `session.moved` saying so) and
     `session.moved` saying `carry` (`whole`, `compacted` or that code) beside `briefed`; a restart that cuts a carried move off before
     its new part runs leaves it going on in the same conversation (conversations and context, Open); else it waits showing the earliest reset.
+    A driven line whose limits rule refers holds as an ask does, and the limit supervisor's move releases it as the person's yes,
+    taking this same carry and walk, or its wait keeps the choice as a `wait` rule does (roles and supervision, rule 48).
     Measured on the install (a Sonnet session on the protocol door cut off at 155,233 tokens of a 1,000,000 window): a driven
     session starts at about 64,500 tokens and its briefed successor at 67,838, so a carry writes about 87,400 more tokens to the
     new account's cache at its first request and reads them back at each later one, about 200,000 input tokens' worth over the

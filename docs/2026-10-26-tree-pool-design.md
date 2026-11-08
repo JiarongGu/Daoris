@@ -1979,7 +1979,9 @@ makers and the steward finds §11's saving holds on its numbers (O1, §3); FOUND
 *(R4-F14)*. *(R4)* Round 4's re-cut: the auto-landing suites are gone (a run's `land` node lands, `LandPerformer`'s suites stand in their
 place), and every row's park, placement, relink, exclusive hold and parking name is withdrawn with the moves.
 
-### a. The slots named beside today's trees, and the census. Nothing is pooled.
+### a. The slots named beside today's trees, and the census. Nothing is pooled. **Built** (2026-11-08, `Workplace/Pool/`, `Workplace/Domain/`, store step 23)
+
+*Built as named, with these readings:* the visit's record is `SlotVisit`, since `TreeVisit` is row 3's terminal-visit class; the pool's tables are written through `TreePool` and `TreePoolClaims`; the census keeps its three lists in `PoolReaders` and scans by file and token; `TreeStrays`' passed-over list names `KeptTree.Prefix` beside the replay's; `KeptTreesPort` in Settings is declared and unset, and nothing in Workplace answers it yet.
 
 - **Changes** *(R4)*. `KeptTree`, `TreeClaim`, `TreeVisit`, `LineEnd` and `TreePool`'s store reads and writes, `WhereIs(line)` among them;
   `SlotChoice` and `SlotJudgement`, pure, in `Domain/`; the store's migration step (`kept_trees` with its `line`, `tip` and `bytes` and its

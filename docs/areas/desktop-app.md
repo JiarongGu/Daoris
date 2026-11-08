@@ -84,10 +84,12 @@ executable, started with a browser argument, is Daoris's own browser, which sess
 
 **The person's doors and their key**
 
-11. The person key is a random 256-bit value minted for each host start. The shell hands it on the host's first input
-    line and holds it in memory. It is never in a file, an environment, a URL, page storage or the log. (from D156)
-12. The page asks `PERSON_KEY` and sends `Daoris-Person` on writes only. No session ever holds the key. A host the shell
-    adopted has none, and the window says so. (from D156)
+11. The person key is a random 256-bit value minted for each host start, handed on the host's first input line and held in
+    memory; never in a file, an environment, a URL, page storage or the log. `HostSupervisor` hands one when it is given one,
+    and the shell is given none yet (PERSONDOOR1g), so the host enforces none. (from D156)
+12. The page asks `PERSON_KEY` and sends `Daoris-Person` on writes only. No session ever holds the key. `PERSON_KEY` answers
+    none until the shell mints one, and a host the shell adopted has none; the window says so, and the host's own held asks
+    are then not read into *Notifications* by the window. (from D156)
 13. Reads are open. An agent's doors are judged as an agent's. The person's doors need the key. An unclassed write is
     refused. A refusal is a 403 with a code, never a 500. (from D156)
 14. A terminal's press of a `Person` route and a request the host holds for the person are one request row in

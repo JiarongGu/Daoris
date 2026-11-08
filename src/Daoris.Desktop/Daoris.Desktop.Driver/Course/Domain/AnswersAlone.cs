@@ -180,6 +180,14 @@ internal static class AnswersAloneNotes
     public static SessionEvent Retried() =>
         Note(Noted.Of(HeldNoteCodes.SupervisorRetried, "The supervisor made this quest's Try again, as your rule asked it to."), []);
 
+    /// <summary>The supervisor let the quest move to another choice where the person's rule asked it to, its window past: one approval.</summary>
+    public static SessionEvent Moved() =>
+        Note(Noted.Of(HeldNoteCodes.SupervisorMoved, "The supervisor let this quest move to another choice, as your rule asked it to."), []);
+
+    /// <summary>The supervisor kept the quest waiting for its choice's reset where the person's rule asked it to, to the rule's bound.</summary>
+    public static SessionEvent Waited() =>
+        Note(Noted.Of(HeldNoteCodes.SupervisorWaited, "The supervisor kept this quest waiting for its choice's reset, as your rule asked it to."), []);
+
     /// <summary>The rule asks the supervisor, and no terminal holds it for the line's place: the answer waits for the person.</summary>
     public static SessionEvent Unreferred(IReadOnlyList<string> words) =>
         Note(Noted.Of(HeldNoteCodes.SupervisorUnreferred, "Your rule asks the supervisor; none is started for this place, so this waits for you."), words);

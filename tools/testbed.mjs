@@ -205,7 +205,7 @@ function connector(where) {
         command: host,
         // The same store the driver reads. Passed rather than defaulted, for the reason the driver
         // passes it: a session that wrote to a different database would look like it worked. The
-        // home too, because a harness spawns its servers with the environment IT was started with.
+        // home too, because a harness spawns its servers with the environment IT started with.
         env: { DAORIS_HOME: home, DAORIS_KNOWLEDGE_ROOT: root },
       },
     },

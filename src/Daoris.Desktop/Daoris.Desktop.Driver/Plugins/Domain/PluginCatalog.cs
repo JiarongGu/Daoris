@@ -374,13 +374,13 @@ public sealed class PluginCatalog : IKnowledgePlugins, IAgentPlugins, IWorkplace
             {
                 if (version.ValueKind != JsonValueKind.Number || !version.TryGetInt32(out apiVersion))
                 {
-                    return (PluginManifest.Empty(id),
+                    return (PluginManifest.Empty(folderName),
                         "`apiVersion` must be an integer — this manifest is malformed, not old.");
                 }
 
                 if (apiVersion > ApiVersion)
                 {
-                    return (PluginManifest.Empty(id) with { ApiVersion = apiVersion },
+                    return (PluginManifest.Empty(folderName) with { ApiVersion = apiVersion },
                         $"needs plugin API {apiVersion}, and this build speaks {ApiVersion} — "
                         + $"update Daoris, or use a plugin written for {ApiVersion}.");
                 }

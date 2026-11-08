@@ -218,3 +218,18 @@ test('--all holds a comment the share rule would let pass, since it has no base 
   assert.equal(checkAll(dir).problems.length, 1);
 });
 
+
+test('a template whose expression holds braces and a template of its own ends where it ends, so what follows is read as code', () => {
+  const src = [
+    'const a = `${f({ k: 1 }, `${g}`)} // not one`; // one',
+    '// two',
+    'const b = `${{ k: `}` }.k}`;',
+    '// three',
+  ].join('\n');
+  assert.deepEqual(comments(src).map((c) => [c.line, c.text]), [[1, 'one'], [2, 'two'], [4, 'three']]);
+});
+
+test('a comment inside a template expression is a comment', () => {
+  const src = 'const a = `${f({\n  // why\n  k: 1,\n})}`;\n';
+  assert.deepEqual(comments(src).map((c) => [c.line, c.text, c.whole]), [[2, 'why', true]]);
+});

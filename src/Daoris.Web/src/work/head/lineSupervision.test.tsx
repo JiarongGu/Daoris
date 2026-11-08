@@ -94,6 +94,11 @@ describe('a line’s supervision', () => {
     expect(say('overruled')).toMatch(/\. You overruled it\.$/);
     expect(say('stale', { why: 'rule-holds' })).toMatch(/\. It did not go on: your rule holds the line now\.$/);
     expect(say('left', { do: 'hold' })).toMatch(/it chose to leave it to you 2m ago\. It waits for you\.$/);
+    const limit = { kind: 'limit', count: 'limits', n: 1 } as const;
+    expect(courseRow(t, { counts: [], acts: [], courses: [course('held', limit)] }).label).toBe("Supervisor's decision on a limit or a move to another choice");
+    expect(say('held', { ...limit, do: 'move' })).toMatch(/it chose to move it to another choice 2m ago\. It goes on at .+ unless you overrule it\.$/);
+    expect(say('went-on', { ...limit, do: 'wait' })).toMatch(/it chose to wait for its choice's reset 2m ago\. It went on\.$/);
+    expect(say('stale', { ...limit, do: 'move', why: 'owner-held' })).toMatch(/It did not go on: you stopped the line or paused its quest\.$/);
     // The newest decision speaks for the line.
     const both = courseRow(t, { counts: [], acts: [], courses: [course('overruled', { id: 'd0' }), course('went-on', { id: 'd1' })] });
     expect(String(both.value)).toMatch(/It went on\.$/);

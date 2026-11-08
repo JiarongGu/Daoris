@@ -274,21 +274,26 @@ export function Canvas({
   };
   useEffect(() => () => window.clearTimeout(settle.current), []);
 
-  // The drawing is told where the view stands (what it culls by); the viewer's place is kept once the view has held still.
+  // The drawing is told where the view stands (what it culls by); the viewer's place is kept once the view has held still, or as they leave.
   const viewport0 = viewport(view.k);
   useEffect(() => {
     if (on) onView?.(view, viewport0);
   }, [on, view.x, view.y, view.k, viewport0.w, viewport0.h]);
+  const keeping = useRef<(() => void) | null>(null);
   useEffect(() => {
     if (!on || !remember || !moved.current || boxes.current.size === 0) return undefined;
-    const timer = window.setTimeout(() => {
+    const keep = () => {
+      keeping.current = null;
       keepView({
         identity: remember.identity, view: viewRef.current, selected: remember.selected ?? null,
         anchor: anchorOf(viewRef.current, viewport(viewRef.current.k), boxes.current, remember.groupOf ?? (() => null)),
       }, memoryKey(remember.feature, remember.key));
-    }, 400);
+    };
+    keeping.current = keep;
+    const timer = window.setTimeout(keep, 400);
     return () => window.clearTimeout(timer);
   }, [on, view.x, view.y, view.k, remember?.identity, remember?.selected]);
+  useEffect(() => () => keeping.current?.(), []);
   const [mapOn, setMapOn] = useState(minimapWanted);
 
   // The wheel, heard before the window's zoom: a listener of its own, since a passive React one cannot keep the page from scrolling.

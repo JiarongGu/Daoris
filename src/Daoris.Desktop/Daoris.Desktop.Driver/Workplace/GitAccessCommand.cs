@@ -186,8 +186,15 @@ public static class GitAccessCommand
         else payload["machine"] = true;
         if (edit.OneValue is { } one) payload["oneValue"] = one;
         else if (edit.Clear) payload["access"] = null;
-        else payload["access"] = (edit.Set ?? []).ToDictionary(each => each.Key, each => each.Value, StringComparer.Ordinal);
+        else payload["access"] = LastWins(edit.Set ?? []);
         return payload;
+    }
+
+    internal static Dictionary<string, string?> LastWins(IEnumerable<KeyValuePair<string, string?>> set)
+    {
+        var named = new Dictionary<string, string?>(StringComparer.Ordinal);
+        foreach (var (name, value) in set) named[name] = value;
+        return named;
     }
 
     /// <summary>A class in a phrase: its value, and where it came from.</summary>

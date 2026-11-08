@@ -13,7 +13,7 @@ public sealed class GitHelperPush
 {
     private readonly object _gate = new();
     private readonly Dictionary<string, string> _refs = new(StringComparer.Ordinal);
-    private readonly StringBuilder _line = new();
+    private readonly MemoryStream _line = new();
     private bool _listing;
     private bool _listed;
 
@@ -26,7 +26,7 @@ public sealed class GitHelperPush
         lock (_gate)
         {
             _refs.Clear();
-            _line.Clear();
+            _line.SetLength(0);
             _listing = true;
             _listed = false;
         }
@@ -42,12 +42,12 @@ public sealed class GitHelperPush
             {
                 if (buffer[index] != '\n')
                 {
-                    _line.Append((char)buffer[index]);
+                    _line.WriteByte(buffer[index]);
                     continue;
                 }
 
-                var text = _line.ToString().TrimEnd('\r');
-                _line.Clear();
+                var text = Encoding.UTF8.GetString(_line.GetBuffer(), 0, (int)_line.Length).TrimEnd('\r');
+                _line.SetLength(0);
                 if (text.Length == 0)
                 {
                     _listing = false;

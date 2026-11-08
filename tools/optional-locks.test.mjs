@@ -197,3 +197,8 @@ test('the merge tool and its helpers are among the tools read, each with a read 
     assert.ok(checkToolLocks(tools(files)).problems.length > 0, `${file} unflagged is refused`);
   }
 });
+
+test("a script's template with braces and a template inside its expression ends where it ends, so a read after it is found", () => {
+  const source = "export const a = `${{ k: `}` }.k}`;\nexport const b = ['status'];\n";
+  assert.equal(checkToolLocks(tools({ 'x.mjs': source })).problems.length, 1);
+});

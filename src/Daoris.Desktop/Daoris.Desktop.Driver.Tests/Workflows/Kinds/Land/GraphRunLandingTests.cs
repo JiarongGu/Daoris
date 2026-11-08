@@ -448,6 +448,45 @@ public sealed class GraphRunLandingTests : ReviewLandingFixture
         Assert.Equal(commit, (await GitAsync(root, "merge-base", "main", commit)).Trim());
     }
 
+    /// <summary>A landing refused for the checkout's own work is tried again only once the checkout's status differs, and lands once it is clean.</summary>
+    [Fact]
+    public async Task A_landing_refused_for_a_dirty_checkout_lands_at_the_next_pass_once_the_checkout_is_clean()
+    {
+        var (root, tree, branch) = await BoundRunAsync("""{"method":"merge"}""");
+        var commit = await HeadAsync(tree);
+        var scratch = Path.Combine(root, "scratch.txt");
+        await File.WriteAllTextAsync(scratch, "in flight\n");
+        var door = Door();
+        IEnumerable<string?> Codes() => _lines.Where(line => line.Event == "landing.auto").Select(CodeOf);
+
+        await PassAsync(root, branch, tree, door: door);
+        await door.IdleAsync();
+        Assert.Equal([LandingCode.RootDirty], Codes());
+        Assert.NotEqual(commit, (await GitAsync(root, "merge-base", "main", commit)).Trim());
+
+        // Nothing moved in the checkout: no pass tries again.
+        await PassAsync(root, branch, tree, door: door);
+        await PassAsync(root, branch, tree, door: door);
+        await door.IdleAsync();
+        Assert.Equal([LandingCode.RootDirty], Codes());
+
+        // Its status differs and it is still dirty: tried again once, and kept at the new status.
+        await File.WriteAllTextAsync(Path.Combine(root, "more.txt"), "also in flight\n");
+        await PassAsync(root, branch, tree, door: door);
+        await door.IdleAsync();
+        await PassAsync(root, branch, tree, door: door);
+        await door.IdleAsync();
+        Assert.Equal([LandingCode.RootDirty, LandingCode.RootDirty], Codes());
+
+        // Clean: the next pass lands it, with no press.
+        File.Delete(scratch);
+        File.Delete(Path.Combine(root, "more.txt"));
+        await PassAsync(root, branch, tree, door: door);
+        await door.IdleAsync();
+        Assert.Equal([LandingCode.RootDirty, LandingCode.RootDirty, LandingCode.Landed], Codes());
+        Assert.Equal(commit, (await GitAsync(root, "merge-base", "main", commit)).Trim());
+    }
+
     /// <summary>
     /// One whole pass of the runtime over the units the home's records and the stand-in service name, linked as the loop's pass reads them
     /// (<see cref="WorkUnits.Linked"/>), and what the line holds read in a unit's newest session's tree, as the loop's gates read it.

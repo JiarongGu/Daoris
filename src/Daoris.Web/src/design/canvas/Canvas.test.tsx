@@ -632,6 +632,22 @@ describe('the viewer\'s place', () => {
       vi.useRealTimers();
     }
   });
+
+  it('keeps the place of a view moved just before the viewer leaves', () => {
+    kept('older');
+    const handle = createRef<CanvasHandle>();
+    vi.useFakeTimers();
+    try {
+      const { unmount } = render(<Drawn handle={handle} remember={memory()} />);
+      act(() => handle.current!.measured(WORLD));
+      act(() => { handle.current!.setView({ x: 120, y: 80, k: 1 }); });
+      act(() => { vi.advanceTimersByTime(100); });
+      unmount();
+      expect(JSON.parse(localStorage.getItem(memoryKey('code', 'repo'))!)).toMatchObject({ view: { x: 120, y: 80, k: 1 } });
+    } finally {
+      vi.useRealTimers();
+    }
+  });
 });
 
 // A world drawn fitted with zoom off (the ring), one opened fitted and never below a floor (the layered

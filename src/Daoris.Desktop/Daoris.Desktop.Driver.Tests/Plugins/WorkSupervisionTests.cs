@@ -597,6 +597,23 @@ public sealed class WorkSupervisionTests : IDisposable
     }
 
     [Fact]
+    public async Task A_drops_resync_survives_a_changed_set_told_within_the_minute_of_the_last_resync()
+    {
+        await using var set = Set();
+        set.Watch(Awaiting(Unit()));
+        await set.ReconcileAsync(Performer(), CancellationToken.None);
+        var channel = _started[0];
+        channel.Steps!(null);
+
+        set.Watch(Awaiting(Unit(), Unit("quest/b")));
+        Assert.False(channel.Told[^1].Resync);
+        _now = _now.AddMinutes(1);
+        await set.ReconcileAsync(PluginCatalog.Load(_home), CancellationToken.None);
+
+        Assert.True(channel.Told[^1].Resync);
+    }
+
+    [Fact]
     public async Task At_most_256_events_wait_and_the_oldest_goes_first()
     {
         await using var set = Set();

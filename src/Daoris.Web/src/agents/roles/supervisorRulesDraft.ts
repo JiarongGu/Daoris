@@ -40,10 +40,18 @@ export function nextCount(counts: readonly SupervisorCountRead[], rows: readonly
 /** The action a count offers first: never `off` or `refer`, which a person chooses. */
 const firstAction = (count: SupervisorCountRead): string => count.actions.find((action) => action !== 'off' && action !== 'refer') ?? count.actions[0] ?? 'hold';
 
+export const takesMinutes = (row: Pick<RuleDraft, 'count' | 'do'>): boolean => row.do === 'wait' || (row.do === 'refer' && row.count === 'limits');
+
+/** A rule's actions: a `refer` on a count a conversation shares only for a rule naming driven roles, or one already saying it. */
+export function actionsOf(count: SupervisorCountRead, row: Pick<RuleDraft, 'do' | 'roles'>, driven: readonly string[]): string[] {
+  const drivenRule = row.roles.length > 0 && row.roles.every((role) => driven.includes(role));
+  return count.drivenRefer && !drivenRule ? count.actions.filter((action) => action !== 'refer' || row.do === 'refer') : count.actions;
+}
+
 /** A new rule on `count`: its least threshold and its first action. */
 export function blankRule(count: SupervisorCountRead, key: number): RuleDraft {
   const action = firstAction(count);
-  return { key, count: count.count, at: String(count.least), do: action, upTo: action === 'wait' ? '30' : '', roles: [] };
+  return { key, count: count.count, at: String(count.least), do: action, upTo: takesMinutes({ count: count.count, do: action }) ? '30' : '', roles: [] };
 }
 
 /** A rule moved to another count keeps what it can: its threshold held to the count's bounds, its action the count's first if it does not allow it. */
@@ -51,12 +59,12 @@ export function recount(row: RuleDraft, count: SupervisorCountRead): RuleDraft {
   const at = Number(row.at);
   const clamped = row.at !== '' && Number.isFinite(at) ? String(Math.min(count.most, Math.max(count.least, at))) : String(count.least);
   const action = count.actions.includes(row.do) ? row.do : firstAction(count);
-  return { ...row, count: count.count, at: clamped, do: action, upTo: action === 'wait' ? row.upTo || '30' : '' };
+  return { ...row, count: count.count, at: clamped, do: action, upTo: takesMinutes({ count: count.count, do: action }) ? row.upTo || '30' : '' };
 }
 
-/** A rule given another action: `wait` takes minutes, every other action none. */
+/** A rule given another action: `wait` and a `refer` on limits take minutes, every other action none. */
 export function reaction(row: RuleDraft, action: string): RuleDraft {
-  return { ...row, do: action, upTo: action === 'wait' ? row.upTo || '30' : '' };
+  return { ...row, do: action, upTo: takesMinutes({ count: row.count, do: action }) ? row.upTo || '30' : '' };
 }
 
 /** Whether the draft says what the stored set does, so *Save* has nothing to put to work. */
@@ -70,14 +78,14 @@ export function sameAsStored(draft: RulesDraft, set: SupervisorRuleSetRead | und
 
 /** Whether every rule reads as numbers the driver's judge can weigh; the judge itself stays the driver's. */
 export function readable(draft: RulesDraft): boolean {
-  return draft.rows.every((row) => /^\d+$/.test(row.at) && (row.do !== 'wait' || /^\d+$/.test(row.upTo)));
+  return draft.rows.every((row) => /^\d+$/.test(row.at) && (!takesMinutes(row) || /^\d+$/.test(row.upTo)));
 }
 
 /** The press that writes the place's rules whole against the revision read, a rule's window and place left to the door. */
 export function pressOf(draft: RulesDraft): RoleChangePress {
   const rules = draft.rows.map((row): SupervisorRuleWire => ({
     count: row.count, at: Number(row.at), do: row.do,
-    ...(row.do === 'wait' ? { upTo: Number(row.upTo) } : {}),
+    ...(takesMinutes(row) ? { upTo: Number(row.upTo) } : {}),
     ...(row.roles.length > 0 ? { roles: [...row.roles] } : {}),
   }));
   return { change: 'set', id: SUPERVISOR, place: draft.place, rules, rulesRevision: draft.revision };

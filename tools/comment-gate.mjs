@@ -17,13 +17,13 @@
  *    digits) or a history note (the words for what the code once did). The commit or the decision holds those. A comment is
  *    added where its trimmed text stands on the new side more often than on the old, so a moved or untouched comment is not.
  *
- * A comment on a code line counts for the second rule, not the first. Strings, templates, regular expressions and C#'s
- * verbatim and raw strings are not comments. A tool's or a standard's name that is capitals and digits (`UTF8`, `SHA256`) is no id.
- */
+ * A comment on a code line counts for the second rule, not the first. Strings, templates (their expressions read as code),
+ * regular expressions and C#'s verbatim and raw strings are not comments. A capitals-and-digits tool or standard name (`UTF8`) is no id. */
 import { existsSync, readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { execGit, isMain, repositoryFiles } from './fsx.mjs';
+import { templateEnd } from './js-template.mjs';
 
 const SOURCE = /\.(cs|ts|tsx|mjs|js)$/;
 const SKIPPED = /(^|\/)(bin|obj|node_modules|_fixtures|wwwroot|dist|generated|local)\//;
@@ -92,10 +92,12 @@ export function comments(src) {
       while (src[i + q] === '"') q++;
       end = src.indexOf('"'.repeat(q), i + q);
       end = end < 0 ? n : end + q;
-    } else if (c === '"' || c === "'" || c === '`' || ((c === '$' || c === '@') && /^[$@]*"/.test(src.slice(i, i + 4)))) {
+    } else if (c === '`') {
+      end = templateEnd(src, i, spans);
+    } else if (c === '"' || c === "'" || ((c === '$' || c === '@') && /^[$@]*"/.test(src.slice(i, i + 4)))) {
       let j = i;
       let verbatim = false;
-      while (src[j] !== '"' && src[j] !== "'" && src[j] !== '`') {
+      while (src[j] !== '"' && src[j] !== "'") {
         if (src[j] === '@') verbatim = true;
         j++;
       }
@@ -107,22 +109,15 @@ export function comments(src) {
         end = end < 0 ? n : end + q;
       } else {
         end = j + 1;
-        let depth = 0;
         while (end < n) {
           if (src[end] === '\\' && !verbatim) end += 2;
-          else if (quote === '`' && src[end] === '$' && src[end + 1] === '{') {
-            depth++;
-            end += 2;
-          } else if (quote === '`' && depth > 0 && src[end] === '}') {
-            depth--;
-            end++;
-          } else if (src[end] === quote && depth === 0) {
+          else if (src[end] === quote) {
             if (verbatim && src[end + 1] === quote) end += 2;
             else {
               end++;
               break;
             }
-          } else if (src[end] === '\n' && quote !== '`' && !verbatim) break;
+          } else if (src[end] === '\n' && !verbatim) break;
           else end++;
         }
       }
