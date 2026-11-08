@@ -11,7 +11,8 @@ namespace Daoris.Driver;
 /// <param name="home">The Daoris home whose journal, landing record and node records the push is kept in.</param>
 /// <param name="log">Told what a push came to; the machine log's line.</param>
 /// <param name="runs">Whether a push may begin now: not while an update drains; null always may.</param>
-public sealed class PushDoor(string home, Action<string>? log = null, Func<bool>? runs = null) : IPushDoor
+/// <param name="holdsLease">Whether this process holds the home's lease, as the node records ask it; null asks the lease itself. A test's stand-in sets it.</param>
+public sealed class PushDoor(string home, Action<string>? log = null, Func<bool>? runs = null, Func<bool>? holdsLease = null) : IPushDoor
 {
     /// <summary>The code a push the act refused fails its node with.</summary>
     public const string Refused = "push-refused";
@@ -56,6 +57,12 @@ public sealed class PushDoor(string home, Action<string>? log = null, Func<bool>
     {
         var ask = new PushAsk(start.Repository, start.Root, "branch", start.Branch, start.Tip, start.Workspace);
         var run = await GitPushActs.PushAsync(new ActRuns(new ActJournal(home)), ask, "workflow", "yes", ct).ConfigureAwait(false);
+        Settle(start, run);
+    }
+
+    /// <summary>What the act's end comes to: done is written on the landing; a refusal fails the node; any other end is said and leaves the node active.</summary>
+    internal void Settle(PushStart start, ActRun run)
+    {
         if (!run.Refused && run.Outcome == ActOutcomes.Done)
         {
             new LandedBranches(home).Pushed(start.Repository, start.Branch, start.Tip);
@@ -63,19 +70,25 @@ public sealed class PushDoor(string home, Action<string>? log = null, Func<bool>
             return;
         }
 
-        // An act that ended with no exit is unknown, never retried: the node stays active for the person's word, and only a refusal fails it.
-        if (!run.Refused) return;
+        // An end that is neither done nor refused leaves the node active for a later pass or the person's word, and only a refusal fails it.
+        if (!run.Refused)
+        {
+            log?.Invoke($"push  {start.Unit}: `{start.Node.Id}` ended {run.Outcome ?? "with no outcome"}, not done: {run.Said}");
+            return;
+        }
+
         log?.Invoke($"push  {start.Unit}: `{start.Node.Id}` was refused: {run.Said}");
         Fail(start);
     }
 
     private void Fail(PushStart start)
     {
-        var records = new NodeRecordFiles(home);
+        var records = new NodeRecordFiles(home, holdsLease);
         records.Edit<bool>(start.Unit, record =>
         {
             var status = WorkPerformer.StatusOf(record, start.Node.Id);
-            if (status.State != NodeStates.Active) return (null, false);
+            // A refusal of an earlier tip's push is not the verdict of the attempt a newer tip has since bound.
+            if (status.State != NodeStates.Active || status.Binding?.SubjectRevision is { } bound && !string.Equals(bound, start.Tip, StringComparison.Ordinal)) return (null, false);
             var moved = NodeLifecycle.Apply(start.Node, status, new NodeMove(NodeStates.Failed, NodeCause.Authority) { Source = NodeSource.Git, Attempt = status.Attempt, Code = Refused });
             return (moved.Moved ? WorkPerformer.Kept(record, moved, "push-refused", DateTimeOffset.UtcNow) : null, moved.Moved);
         });

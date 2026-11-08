@@ -146,7 +146,8 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
 25. The look is the person's verdict in a review environment; no agent or card gives it. Under a saved graph the `look` node says
     whether one is needed; the environment is still the `reviews` rule's. `SET_REVIEW required` there is refused. (from D154, D227)
 26. A second opinion is another maker's read-only reading before the landing. Its findings reach the working session once. What
-    it disputes is answered by the person's *Reviewed* or *Accept…*. Under a saved graph the `opinion` node says whether one is
+    it disputes is answered by the person's *Reviewed* or *Accept…*. A person's word at it (*Go on anyway…* and the others `OpinionPersonSaid` names) is
+    bound to the tip it covers and stands for any later ask at that tip; only a newer commit asks again. Under a saved graph the `opinion` node says whether one is
     asked, and chooses among the reviewers the place declares; with none declared it cannot start, said on its node. `SET_OPINION none` on a saved-graph place is refused.
     (from D155, D190, D227)
 27. Review's diff is a dependency graph of today's git reads, kept by no later open, taking no lock and refreshing no index in a tree
@@ -174,12 +175,14 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
     names none. (from D227)
 29. A `land`'s open options are resolved once at the bind and kept: the pattern `feature/{quest}-{slug}` and the default key where the
     pattern says `{ticket}`. A `land` names no plugin. A written option stands; no landing rule
-    is read. The plan carries `squash` for the branch form, and a session or a conversation in a tree of its own is told once, after
+    is read. The plan carries `squash` for the branch form, which only a `branch` land may set (the save refuses it on a `merge` or an
+    `integrate`; the release's migration writes it for a branch alone), and a session or a conversation in a tree of its own is told once, after
     the branch line, that its commits land as one (`ProcessWords`). (from D164, D227, D232)
 30. `merge` lands into the line. `branch` makes a new branch from the session's branch, moves no checkout, and refuses a name that
     exists. `integrate` hands it to the line's integration. (from D87, D215)
 31. Daoris pushes, as a `push` step or the person's press, through the one push act (`PushDoor`, off the pass, under the lease); the node
-    is reached when git's remote-tracking ref holds the commit and failed by the act's refusal. Daoris opens no pull request: a plugin's
+    is reached when git's remote-tracking ref holds the commit and failed by the act's refusal, and only of the attempt the refused tip
+    is bound to; an act that ends neither done nor refused is said in the machine log and leaves the node active. Daoris opens no pull request: a plugin's
     performed step does, for its platform, and the pass writes the address its completion's evidence gives (`evidence.url`) and its plugin on
     the branch's landing record (`NodeRunKeeping.KeepPullRequests`, `PullRequestRecords`), so `work/state` has an address to ask about and the
     page shows the pull request. A run whose graph holds a `<plugin>/pull-request` step no installed, switched-on plugin performs is refused at
@@ -199,7 +202,8 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
     routes by the kind of the step they leave, the raw name left as identity and as the words of a kind with none). The tidy (`TidyDoor`, off the pass, under the lease) ends each part of the
     chain, the session branch of every unit its landing carries: each part's commits kept on a recovery ref, its branch deleted through
     the journal (`JournaledDeletes`, with its Undo), one a tree has checked out left standing and ended all the same, and what it ended
-    written on the landing as `tidied` (`ChainTidied`). Nothing fails a tidy: where the request did not merge its door ends nothing. Each
+    written on the landing as `tidied` (`ChainTidied`), whole only when every part ended: a part whose door threw after earlier ones
+    ended records those as `partly`, which the keeper reads but the node does not, and the next pass goes on from them. Nothing fails a tidy: where the request did not merge its door ends nothing. Each
     kind's save rules are its own (`INodeKind.Problems`): the save refuses a `monitor` on no step, on two, after a step that reports no
     state, or with outcomes other than that step's states in their order (`monitor-watch`), a `tidy` no monitor's `when merged` way
     reaches (`tidy-merged`), and a `push` no way from a method's landing reaches or after a landing not of the `branch` method

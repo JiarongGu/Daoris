@@ -13,9 +13,15 @@ public sealed record ChainTidied(string Tip, DateTimeOffset At)
     /// <summary>Each part's session branch the tidy ended, in the order the session record lists them.</summary>
     public IReadOnlyList<TidiedPart> Parts { get; init; } = [];
 
+    /// <summary>
+    /// Whether a part's end failed after earlier parts ended, so the parts here are the ones that did and the next pass goes on from them. The
+    /// tidy is reached only by a record that is not partly (<see cref="TidyReading.Tidied"/>); the keeper reads the parts of either.
+    /// </summary>
+    public bool Partly { get; init; }
+
     /// <inheritdoc/>
     public bool Equals(ChainTidied? other) =>
-        other is not null && Tip == other.Tip && At == other.At && Parts.SequenceEqual(other.Parts);
+        other is not null && Tip == other.Tip && At == other.At && Partly == other.Partly && Parts.SequenceEqual(other.Parts);
 
     /// <inheritdoc/>
     public override int GetHashCode() => HashCode.Combine(Tip, At, Parts.Count);
@@ -61,6 +67,7 @@ internal static class ChainTidies
         writer.WriteStartObject("tidied");
         writer.WriteString("tip", tidied.Tip);
         writer.WriteString("at", Moments.Write(tidied.At));
+        if (tidied.Partly) writer.WriteBoolean("partly", true);
         writer.WriteStartArray("parts");
         foreach (var part in tidied.Parts)
         {
@@ -96,6 +103,6 @@ internal static class ChainTidies
             }
         }
 
-        return new ChainTidied(tip, at) { Parts = parts };
+        return new ChainTidied(tip, at) { Parts = parts, Partly = tidied.TryGetProperty("partly", out var partly) && partly.ValueKind == JsonValueKind.True };
     }
 }
