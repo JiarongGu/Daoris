@@ -111,6 +111,10 @@ public static class PluginCommand
     private static string RequireHome(PluginWorld world) =>
         world.Instance.Home ?? throw new PluginWords($"{DaorisHome.Sentence} (wanted: plugins/)");
 
+    /// <summary>A plugin's problem as a catalogue read after it was switched on has it: a name clash is judged only while a plugin is on.</summary>
+    private static string? Problem(PluginCatalog catalog, string id) =>
+        catalog.Plugins.FirstOrDefault(each => string.Equals(each.Manifest.Id, id, StringComparison.OrdinalIgnoreCase))?.Problem;
+
     private static IReadOnlyList<string> Reserved(PluginWorld world) => world.Reserved ?? ProviderRegistry.Built().Names;
 
     /// <summary>The install's offers, beside the home, where the CLI looked for them: in an install, its <c>app/plugin-offers/</c>.</summary>
@@ -234,7 +238,7 @@ public static class PluginCommand
                 {
                     Say(world, $"{Prefix}: plugin `{entry.Manifest.Id}` is {(on ? "on" : "off")} on this machine.");
                     if (!on) Say(world, "  It stays where it is, and so does what it kept; the driver stops asking it at its next look.");
-                    else if (entry.Problem is { } problem) Say(world, $"  ⚠ {problem}");
+                    else if (Problem(PluginCatalog.Load(home, Reserved(world)), entry.Manifest.Id) is { } problem) Say(world, $"  ⚠ {problem}");
                     return 0;
                 }
 

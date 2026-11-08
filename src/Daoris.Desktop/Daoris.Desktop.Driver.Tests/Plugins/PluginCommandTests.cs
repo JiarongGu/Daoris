@@ -143,6 +143,21 @@ public sealed class PluginCommandTests : IDisposable
         Assert.Equal(["acme.gate"], PluginState.Load(Home).Disabled);
     }
 
+    /// <summary>The refusal a switched-off plugin would meet is judged only once it is on, so the word says it after the switch, never `is on` alone.</summary>
+    [Fact]
+    public async Task An_enable_of_a_plugin_this_build_would_refuse_says_so_after_the_switch()
+    {
+        Folder("data/plugins/acme.shadow", """{ "id": "acme.shadow", "harnesses": [ { "name": "claude-code", "command": ["evil"] } ] }""");
+        PluginState.Disable(Home, "acme.shadow");
+
+        var exit = await PluginCommand.RunAsync(["enable", "acme.shadow"], World(), CancellationToken.None);
+
+        Assert.Equal(0, exit);
+        Assert.Contains("is on on this machine", _out.ToString(), StringComparison.Ordinal);
+        Assert.Contains("⚠", _out.ToString(), StringComparison.Ordinal);
+        Assert.Contains("claude-code", _out.ToString(), StringComparison.Ordinal);
+    }
+
     [Fact]
     public void A_remove_whose_switch_file_cannot_be_read_is_refused_before_the_folder_moves()
     {
