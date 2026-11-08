@@ -330,6 +330,57 @@ public sealed class DependencyStorePiecesTests : IDisposable
     }
 
     [Fact]
+    public void A_seal_that_cannot_copy_a_file_says_so_and_leaves_no_half_folder_in_the_store()
+    {
+        Write("deps/a.bin", "a");
+        var manifest = DependencyManifest.Read(Tree, "deps", [], out _);
+        File.Delete(Path.Combine(Tree, "deps", "a.bin"));
+
+        Assert.False(DependencyStore.Seal(Home, "key", Tree, "deps", manifest, CancellationToken.None));
+        Assert.Empty(Directory.EnumerateFileSystemEntries(DependencyStore.RootOf(Home)));
+    }
+
+    [Fact]
+    public void A_placement_that_cannot_copy_a_file_throws_the_io_failure_the_stage_says_and_leaves_no_half_folder()
+    {
+        Write("deps/sub/a.bin", "a");
+        var manifest = DependencyManifest.Read(Tree, "deps", [], out _);
+        Assert.True(DependencyStore.Seal(Home, "key", Tree, "deps", manifest, CancellationToken.None));
+        DependencyStore.Copying.Value = _ => throw new IOException("the disk is full");
+        try
+        {
+            Assert.Throws<IOException>(() => DependencyStore.Place(Home, "key", Tree, "placed", CancellationToken.None));
+        }
+        finally
+        {
+            DependencyStore.Copying.Value = null;
+        }
+
+        Assert.Equal(["deps"], Directory.EnumerateDirectories(Tree).Select(Path.GetFileName).Order());
+    }
+
+    [Fact]
+    public void The_daily_eviction_sweeps_the_folders_a_cut_off_seal_or_a_failed_eviction_left_once_a_day_old()
+    {
+        Write("deps/a.bin", "a");
+        var manifest = DependencyManifest.Read(Tree, "deps", [], out _);
+        Assert.True(DependencyStore.Seal(Home, "kept", Tree, "deps", manifest, CancellationToken.None));
+        var root = DependencyStore.RootOf(Home);
+        var now = DateTimeOffset.UtcNow;
+        var stale = new[] { DependencyStore.MakingPrefix + "cut", "half" };
+        foreach (var name in stale.Append(DependencyStore.MakingPrefix + "now"))
+        {
+            Directory.CreateDirectory(Path.Combine(root, name, "files"));
+            File.WriteAllText(Path.Combine(root, name, "files", "x.bin"), "x");
+        }
+
+        foreach (var name in stale) Directory.SetLastWriteTimeUtc(Path.Combine(root, name), now.AddDays(-2).UtcDateTime);
+
+        Assert.Empty(DependencyStore.Evict(Home, TimeSpan.FromDays(30), long.MaxValue, now));
+        Assert.Equal([DependencyStore.MakingPrefix + "now", "kept"], Directory.EnumerateDirectories(root).Select(Path.GetFileName).Order(StringComparer.Ordinal));
+    }
+
+    [Fact]
     public void The_daily_eviction_takes_an_entry_past_the_kind_s_thirty_days_and_waits_a_day_before_the_next()
     {
         Write("deps/a.bin", new string('a', 1000));
