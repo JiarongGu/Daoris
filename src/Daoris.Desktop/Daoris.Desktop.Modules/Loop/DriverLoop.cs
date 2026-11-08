@@ -629,9 +629,12 @@ public sealed class DriverLoop(
     /// What the person's words to a session do, whatever its state: the one judge <c>SESSION_INPUT</c> and
     /// <c>SESSION_QUEUE</c> answer by, and where words said as a session winds up wait for its record to end.
     /// </summary>
-    public SessionWords Words => LazyInitializer.EnsureInitialized(ref _words, () => new SessionWords(this));
+    public SessionWords Words => LazyInitializer.EnsureInitialized(ref _words, ref _wordsMade, ref _wordsLock, () => new SessionWords(this));
 
+    // Made once under a lock: its constructor subscribes and restores pumps, which two racing readers would each do.
     private SessionWords? _words;
+    private bool _wordsMade;
+    private object? _wordsLock;
 
     /// <summary>How often a loop waiting on another holder of the home's lease looks again.</summary>
     public TimeSpan HoldRetry { get; init; } = TimeSpan.FromSeconds(5);

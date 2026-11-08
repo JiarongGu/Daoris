@@ -199,9 +199,14 @@ public sealed class SessionWords : IDisposable
                 var reach = await ReachAsync(id, _stopping.Token).ConfigureAwait(false);
                 if (reach is not { Sent: false, Why: null }) Reached?.Invoke(id, reach);
             }
-            catch (Exception error) when (WordsRead.Unanswered(error) || error is ObjectDisposedException)
+            catch (Exception error)
             {
-                // The loop is closing, or its service went away: the next move tells it again.
+                // The loop is closing, or its service went away: the next move tells it again. Any other throw, a hearer's among them,
+                // is said and no more: it must not leave this session marked as being told, which no later move would clear.
+                if (!WordsRead.Unanswered(error) && error is not ObjectDisposedException)
+                {
+                    _loop.Log?.Error("error", ("where", "a session's reach told"), ("message", error.Message));
+                }
             }
 
             lock (_gate)
