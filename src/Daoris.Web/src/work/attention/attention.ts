@@ -550,7 +550,7 @@ export function attentionWorded(row: PushedAttention, names: AttentionNames = {}
         ...base,
         title: recorder ? named(row.session) : row.title ?? row.id,
         detail: [
-          ...(row.blocked?.unknown ?[i18n.t('work.milestone.wait.owner')] : []),
+          ...(row.blocked?.unknown && !entries.some((entry) => entry.code === 'unrecorded' || entry.code?.startsWith('unknown-')) ? [i18n.t('work.milestone.wait.owner')] : []),
           ...entries.map((entry) => i18n.t('work.milestone.cleanup.blocked', { what: entryName(i18n.t, entry), detail: entryDetail(i18n.t, entry) })),
         ].join(' '),
         session: row.session ?? null,

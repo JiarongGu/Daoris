@@ -1,6 +1,8 @@
 {
   "files.view.reading": "正在读取 git 不管理的文件。",
   "files.view.title": "git 不管理的文件",
+  "files.view.lead": "{{repository}} 文件夹中 git 不管理的内容，以及 Daoris 如何处理每个路径。添加你自己的规则即可改变某一项。",
+  "files.view.how": "Daoris 如何决定",
   "files.view.body": "{{repository}} 文件夹中 git 既不跟踪、也不视为会话成果的文件，Daoris 如何处理：决定每个路径的规则、它来自哪一层，以及它之下的各层说了什么。",
   "files.view.twin": "在终端中：`daoris files {{repository}}`",
   "files.view.read": "读取于 {{commit}}；分析上次读取于 {{found}}。",
@@ -80,7 +82,7 @@
   "files.view.pathsLabel": "路径",
   "files.view.copyLabel": "复制到每个工作树",
   "files.view.cannot.no-checkout": "这个仓库在本机上没有检出目录，所以无法读取它的文件。",
-  "files.view.cannot.unreadable": "git 无法读取这个仓库的文件。",
+  "files.view.cannot.unreadable": "git 无法读取这个仓库的文件。Daoris 从仓库自己的顶层文件夹读取：请确认 Daoris 为这个仓库保存的文件夹就是它（在“管理”中可见），或在该文件夹中运行 `git status` 查看 git 的说法。",
   "files.view.refusedPress.unread": "你的文件规则无法读取，所以没有覆盖它们：请先修复该文件，再重试。",
   "files.view.refusedPress.refused": "{{message}}",
   "files.view.refusedPress.no-checkout": "这个仓库在本机上没有检出目录，所以没有读取任何内容。",
