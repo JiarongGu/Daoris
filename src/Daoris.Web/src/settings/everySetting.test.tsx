@@ -43,19 +43,17 @@ describe('every machine setting', () => {
         <DriverCards
           facts={{ pluginsFolder: null, notify: true, coolOff: 60, quiet: 10, cap: 2 }}
           minutes={{ cooloff: settingOf('cooloff'), quiet: settingOf('quiet') }}
-          busy={{ access: false, update: false }}
+          busy={{ access: false }}
           onGo={vi.fn()}
           onNotify={vi.fn()}
           onCoolOff={vi.fn()}
           onQuiet={vi.fn()}
           onCap={vi.fn()}
           onAccess={vi.fn()}
-          onSayUpdate={vi.fn()}
         />
       </Tooltip.Provider>,
     );
 
-    // A switch's label is also its own sentence for the accessibility tree, so a label is found at least once.
     for (const setting of driver) {
       expect(screen.queryAllByText(en[`${setting.words}.label`]!).length, setting.key).toBeGreaterThan(0);
     }

@@ -76,7 +76,7 @@ export function AiJobs({ search, access, grants }: {
       <SettingList>
       <SettingRow
         label={t('settings.ai.search.label')}
-        hint={t('settings.ai.search.hint')}
+        twin={t('settings.ai.search.hint')}
         why={t('settings.ai.search.why')}
         control={search
           ? <Pill>{search.tier}</Pill>
@@ -101,7 +101,7 @@ function HelpAccess({ access, grants }: { access: HelpAccessJob; grants?: HelpGr
   return (
     <SettingRow
       label={t('settings.ai.helpMode.label')}
-      hint={t('settings.ai.helpMode.hint')}
+      twin={t('settings.ai.helpMode.hint')}
       why={t('settings.ai.helpMode.why')}
       control={<HelpModeChip selected={access.mode} busy={access.busy} onPick={access.onPick} />}
     >
