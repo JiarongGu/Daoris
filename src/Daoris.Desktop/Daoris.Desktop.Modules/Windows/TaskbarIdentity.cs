@@ -22,7 +22,7 @@ namespace Daoris.Desktop;
 /// chained start is one application to Windows. <c>TaskbarIdentityTests</c> reads both from the
 /// launcher's project and source.</para>
 ///
-/// <para>Written by the application's <c>TaskbarWindow</c> into each window's property store. Whether
+/// <para>Written by the kit's <c>TaskbarIdentity</c>, which the application's <c>TaskbarWear</c> hands this into, through each window's property store. Whether
 /// the taskbar then shows one button is seen by looking at one, not by any test here.</para>
 /// </remarks>
 /// <param name="AppId">The window's <c>System.AppUserModel.ID</c>: <see cref="Id"/>.</param>

@@ -141,22 +141,22 @@ public sealed class TaskbarIdentityTests : IDisposable
     /// <summary>
     /// Every window the application shows wears the identity, the main one and each secondary one alike,
     /// or a second window would be a second button. Held on the application's own source, because nothing
-    /// without a desktop session can hold it otherwise: applied as each handle is created (a recreated
-    /// handle loses what the old one carried), and removed as it is destroyed, which Windows requires of
-    /// a window's properties.
+    /// without a desktop session can hold it otherwise: the kit's <c>TaskbarIdentity.Wear</c> writes it as each
+    /// handle is created (a recreated handle loses what the old one carried) and removes it as it is destroyed,
+    /// which Windows requires of a window's properties, and the application writes none of that itself.
     /// </summary>
     [Fact]
-    public void Every_window_wears_it_from_its_handle_and_gives_it_back()
+    public void Every_window_wears_it_through_the_kits_identity()
     {
         var app = Path.Combine(RepositoryRoot(), "src", "Daoris.Desktop", "Daoris.Desktop.App");
 
-        Assert.Contains("TaskbarWindow.Wear(this)", File.ReadAllText(Path.Combine(app, "MainForm.cs")));
-        Assert.Contains("TaskbarWindow.Wear(this)", File.ReadAllText(Path.Combine(app, "SecondaryForm.cs")));
+        Assert.Contains("TaskbarWear.Wear(this)", File.ReadAllText(Path.Combine(app, "MainForm.cs")));
+        Assert.Contains("TaskbarWear.Wear(form)", File.ReadAllText(Path.Combine(app, "SecondaryChrome.cs")));
 
-        var window = File.ReadAllText(Path.Combine(app, "TaskbarWindow.cs"));
+        var window = File.ReadAllText(Path.Combine(app, "TaskbarWear.cs"));
         Assert.Contains("TaskbarIdentity.For(AppContext.BaseDirectory)", window);
-        Assert.Contains("HandleCreated +=", window);
-        Assert.Contains("HandleDestroyed +=", window);
+        Assert.Contains("new Shenora.Windows.TaskbarIdentity", window);
+        Assert.DoesNotContain("SHGetPropertyStoreForWindow", window);
     }
 
     /// <summary>Walk up to the workspace root — the tests run from `bin/Debug/net10.0`.</summary>

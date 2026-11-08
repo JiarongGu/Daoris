@@ -3,37 +3,14 @@ using System.Text.Json;
 namespace Daoris.Desktop.Modules.Tests;
 
 /// <summary>
-/// The one thing a browser genuinely cannot do: name a directory on this machine.
+/// The one thing a browser cannot do: name a directory on this machine. The part worth testing hardest is the one write
+/// this small module performs: editing a repository's own tracked `daoris.json` through a form.
 /// </summary>
-/// <remarks>
-/// Everything else about managing a repository is an ordinary loopback call, deliberately — so this
-/// module is small, and the part worth testing hardest is the one write it performs: editing a
-/// repository's own tracked `daoris.json` through a form.
-/// </remarks>
 public sealed class RegistryModuleTests : Bridge
 {
     private string? _picked;
-    private string? _pickedFor = "unset";
 
-    private RegistryModule Module() => new(Bus, window =>
-    {
-        _pickedFor = window;
-        return _picked;
-    });
-
-    /// <summary>The folder dialog is owned by the window whose page asked, which the page names.</summary>
-    [Theory]
-    [InlineData(null)]
-    [InlineData("main:2")]
-    [InlineData("session:a1b2c3d4")]
-    public async Task The_folder_dialog_is_handed_the_window_that_asked(string? window)
-    {
-        _picked = null;
-
-        await AnswerAsync(Module(), "PICK_FOLDER", window is null ? null : new { window });
-
-        Assert.Equal(window, _pickedFor);
-    }
+    private RegistryModule Module() => new(Bus, () => Task.FromResult(_picked));
 
     /// <summary>A checkout in this test's own scratch — never a real repository on this machine.</summary>
     private string Repository(string name, object? manifest = null)

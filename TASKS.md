@@ -118,6 +118,7 @@ area document under `docs/areas/`. Each row's earlier full text is in git at `9f
 
 ## The desktop app
 
+- [ ] **KITREQ2 — what Shenora's kit still lacks for the desktop** (app; a Shenora quest, unpublished): `TrayIcon` fixes its double-click to `ShowWindow` and adds Open and Exit, so `SessionNotifier` keeps its `NotifyIcon` (an open callback and no built-in items would let it take `ShowBalloon`); `ApplyChromeTheme` skips a framed window's caption, so `SecondaryChrome` sets it through DWM. → `docs/areas/desktop-app.md`
 - [ ] **UIREVIEW1 — every screen reviewed for its UI and UX, by the devtools** (web, app): every place is reviewed but a quest's page (the Ask drawer needs typing; a terminal's `daoris ask` is refused without the person's key) and the secondary windows (menu doors, which `click` does not open): a typing step in `tools/desktop.mjs` reaches both. Its findings are the rows below.
 - [ ] **UIFIND4 — an agent's page: the API-key form sits under *Your own sign-in*** (web, agents): *Add an API key* opens its form beneath the *Your own sign-in* heading, which is the person's terminal sign-in, not a Daoris account; the empty accounts table shows column heads over no rows; *Ways in* reads "protocol not installed" (the implementation, not what a person can do). Shot `docs/assets/uireview/agent-api-key-form.png`.
 - [ ] **UIFIND6 — an agent's sign-in says itself three times** (web, agents): the card says it twice and a toast again; *Done* on the unchanged name toasts a rename by the account's id. Shot `docs/assets/uireview/agent-signed-in.png`.
