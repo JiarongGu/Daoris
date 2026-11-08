@@ -120,7 +120,7 @@ internal static class ReviewChoices
 /// <summary>
 /// The untracked files' fold: each answer taken in <c>status</c>'s order, the
 /// patch budget spent by W's patches and each read patch, a file past it listed with no patch and counted in the truncation's words.
-/// Today's loop and the graph's window both fold through it.
+/// The chain and the graph both fold through it, as <see cref="UntrackedPatches"/> reads the files.
 /// </summary>
 internal sealed class UntrackedFold(TreeDiff tracked)
 {

@@ -261,7 +261,7 @@ read as its object), *by id* those naming an id alone.
 | A commit, a compare (first open) | 2 each | 0 | 0 | `ViewGitCountTests` |
 | The commit, switch and stash plans | 8, 5, 7 | 0, 0, 0 | 1 (0), 1 (0), 1 (0) | `ViewGitCountTests` |
 | The deletes (`GIT_DELETES`, the journal holding none) | 0 | 0 | 0 | `ViewGitCountTests` |
-| Review, a tree ahead of its line, its second open | 17 | 0 | 0 | `ReviewGitCountTests` |
+| Review, a tree ahead of its line, its second open (one untracked file, or ten) | 17 | 0 | 0 | `ReviewGitCountTests` |
 | Review, a tree the line holds by content | 18 | 0 | 1 (0) | `ReviewGitCountTests` |
 | A landed session's review | 6 | 0 | 2 (1) | `ViewGitCountTests` |
 | The Accept offer of a tree of work | 8 | 0 | 0 | `OfferGitCountTests` |
@@ -285,7 +285,11 @@ head and branch in one `status --porcelain=v2 --branch` (`TreeStatus`); Review a
 repository's files hold none (`RefFiles.Absent`: a loose or packed ref, or a reftable repository, is never called absent); a landed
 review asks the checkout's top once. The switch and stash plans (and the press that judges them) read head, branch, changed tracked paths and files in
 conflict in one `status --porcelain=v2 --branch -z` (`PlanStatus`), the stash plan hands the tip it read to the list instead of asking
-`refs/stash` again, and the commit plan reads the head's tree, parents and message in one `log` (`ActCommits.FactsAsync`). Left asked
+`refs/stash` again, and the commit plan reads the head's tree, parents and message in one `log` (`ActCommits.FactsAsync`). Review reads
+a session tree's untracked files' patches in two starts whatever their count (`UntrackedPatches`, nodes A and U after S): the files are
+added as intents (`add --intent-to-add`, the paths NUL-ended on git's input and literal) to a private index beside the tree's own
+(`GIT_INDEX_FILE`), and one `diff` of it against the tree is split by its file headers in status's order, each patch the bytes a file's
+own `diff --no-index` gave; the tree's index is never written, and the private one is removed with its lock after. Left asked
 again: a landing's line commit (3), which the promotion reads before the gates (they can run long), under the checkout's lock before
 the move, and after it as the proof the move held, and its head, because another process can move either and a landing reads afresh
 before each act; the plans' top, the stash tip and the layout (each a read their press compares by); the tree's files and the status

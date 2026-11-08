@@ -7,28 +7,19 @@ namespace Daoris.Driver;
 internal static class TreeDiffs
 {
     /// <summary>What a surface will render before a person stops reading and git on disk has the rest.</summary>
-    /// <remarks>
-    /// The console's rule, applied again: a diff has no upper size, so the bound is stated
-    /// rather than hidden. It drops whole PATCHES rather than cutting one mid-hunk — half a hunk reads
-    /// as a diff and is not one — and the file list survives intact, so the person always learns that
-    /// a file changed even when they cannot read how.
-    /// </remarks>
+    /// <remarks>A diff has no upper size, so the bound is stated, not hidden: whole patches are dropped, never one cut mid-hunk (half a
+    /// hunk reads as a diff and is not one), and the file list survives intact, so a person always learns that a file changed.</remarks>
     public const int PatchBudget = 400_000;
 
     /// <summary>The per-file cap, so one generated file cannot spend the whole budget alone.</summary>
     public const int PatchCap = 80_000;
 
-    /// <summary>
-    /// What landed in this tree since <paramref name="before"/> — the reviewable half, as a diff.
-    /// </summary>
+    /// <summary>What landed in this tree since <paramref name="before"/> — the reviewable half, as a diff.</summary>
     /// <remarks>
-    /// <para><b>Committed work only.</b> The range is `before..HEAD`, which is exactly what the
-    /// evidence string counts, so the two can never disagree about what the session did. Uncommitted
-    /// changes in the tree are deliberately not here: a chat may open on a dirty tree, so
-    /// what is uncommitted is not knowably the session's, and attributing somebody else's work in
-    /// flight to an agent is the `reaching-in` mistake in a read-only disguise. Only a session's OWN
-    /// tree, which it ran in alone, has its uncommitted work read, and apart: <see cref="UncommittedDiffAsync(string, CancellationToken)"/>.
-    /// </para>
+    /// <para><b>Committed work only.</b> The range is `before..HEAD`, exactly what the evidence string counts, so the two never
+    /// disagree about what the session did. A chat may open on a dirty tree, so what is uncommitted is not knowably the session's,
+    /// and giving somebody else's work in flight to an agent is the `reaching-in` mistake in a read-only disguise. Only a session's
+    /// OWN tree, which it ran in alone, has its uncommitted work read, and apart: <see cref="UncommittedDiffAsync(string, CancellationToken)"/>.</para>
     ///
     /// <para>Null when git cannot answer — no repository, an unknown base, a tree that has moved
     /// away. A caller says so rather than showing an empty diff, which reads as "it changed
@@ -48,7 +39,7 @@ internal static class TreeDiffs
         return await RangeAsync(root, before, $"{before}..HEAD", CommittedRest, git, ct).ConfigureAwait(false);
     }
 
-    /// <summary>The size above which an untracked file is listed with no patch: a read of one costs a git start and a page of text.</summary>
+    /// <summary>The size above which an untracked file is listed with no patch and git is not asked for one: a page of text no surface renders whole.</summary>
     public const int UntrackedPatchLimit = 200 * 1024;
 
     /// <summary>
@@ -56,17 +47,16 @@ internal static class TreeDiffs
     /// unstaged together, against <c>HEAD</c>, and each untracked file as an addition. Null where git cannot answer.
     /// </summary>
     /// <remarks>
-    /// 🔴 <b>Only for a tree the session ran in alone.</b> A conversation in the person's checkout may have opened on a dirty
-    /// tree, so what is uncommitted there is not knowably the session's and is never read through this: the caller
-    /// asks only of a tree this home made. Reads only (<c>git diff</c>, <c>git status</c>); the index is not refreshed to disk, and
-    /// no <c>index.lock</c> is taken in a tree its session may be writing in that moment.
-    /// The files are bounded as the committed list is: <see cref="PatchBudget"/> and <see cref="PatchCap"/>.
+    /// 🔴 <b>Only for a tree the session ran in alone.</b> What is uncommitted in the person's checkout is not knowably the session's;
+    /// the caller asks only of a tree this home made. The tree's own index is only read (its untracked files' intents go to a private one,
+    /// <see cref="UntrackedPatches"/>), never refreshed, and no <c>index.lock</c> is taken where its session may be writing. The files
+    /// are bounded as the committed list is: <see cref="PatchBudget"/> and <see cref="PatchCap"/>.
     /// </remarks>
     public static Task<TreeDiff?> UncommittedDiffAsync(string root, CancellationToken ct = default) =>
         UncommittedDiffAsync(root, ReadGitAsync, ct);
 
     /// <inheritdoc cref="UncommittedDiffAsync(string, CancellationToken)"/>
-    /// <param name="git">How the review reads git: the seam its tests count processes through.</param>
+    /// <param name="git">How the review reads git, its tests' seam; the untracked files' starts name a private index (<see cref="UntrackedPatches"/>).</param>
     internal static async Task<TreeDiff?> UncommittedDiffAsync(string root, GitRead git, CancellationToken ct)
     {
         if (!await IsTopLevelAsync(root, git, ct).ConfigureAwait(false)) return null;
@@ -80,18 +70,9 @@ internal static class TreeDiffs
 
         // The fold is the graph's too (ReviewChoices, UntrackedFold), so the two read the same files alike.
         var fold = new UntrackedFold(tracked);
-        foreach (var path in ReviewChoices.UntrackedPaths(status.ToString()))
-        {
-            if (fold.Spent)
-            {
-                fold.Drop(path);
-                continue;
-            }
-
-            var (patch, added) = await UntrackedReadAsync(root, path, git, ct).ConfigureAwait(false);
-            fold.Take(path, patch, added);
-        }
-
+        using var untracked = new UntrackedPatches(root, ReviewChoices.UntrackedPaths(status.ToString()), fold);
+        if (untracked.Asks && await untracked.IntentsAsync(ct).ConfigureAwait(false)) await untracked.ReadAsync(ct).ConfigureAwait(false);
+        untracked.Settle();
         return fold.End(UncommittedRest);
     }
 
@@ -101,46 +82,9 @@ internal static class TreeDiffs
     /// <summary>The status of a session's own tree, as the uncommitted read asks it (no <c>index.lock</c> taken).</summary>
     internal static readonly string[] UncommittedStatus = ["--no-optional-locks", "status", "--porcelain", "-z", "--untracked-files=all"];
 
-    /// <summary>One untracked file's read, counted in the review's untracked budget where the review asks it.</summary>
-    internal static async Task<(string? Patch, int? Added)> UntrackedReadAsync(string root, string path, GitRead git, CancellationToken ct)
-    {
-        // A review's untracked reads are counted in a budget of their own, its tail.
-        using (GitLaunch.Budget == GitBudget.Review ? GitLaunch.Within(GitBudget.Untracked) : null)
-        {
-            return await UntrackedPatchAsync(root, path, git, ct).ConfigureAwait(false);
-        }
-    }
-
-    /// <summary>An untracked file as the patch that adds it, with the lines it adds; none for a binary, an oversize or an unreadable one.</summary>
-    private static async Task<(string? Patch, int? Added)> UntrackedPatchAsync(string root, string path, GitRead git, CancellationToken ct)
-    {
-        try
-        {
-            if (new FileInfo(Path.Combine(root, path)) is { Exists: true, Length: > UntrackedPatchLimit }) return (null, null);
-        }
-        catch (Exception error) when (error is ArgumentException or NotSupportedException or PathTooLongException or IOException)
-        {
-            return (null, null);
-        }
-
-        var text = new StringBuilder();
-        var code = await git(
-            root,
-            [
-                "--no-optional-locks", "-c", "core.quotePath=false", "diff", "--no-index", "--no-color", "--no-ext-diff", "--src-prefix=a/", "--dst-prefix=b/",
-                "--", "/dev/null", path,
-            ],
-            piece => { text.Append(piece.Span); return true; },
-            ct).ConfigureAwait(false);
-        // --no-index exits 1 where the files differ, which a new file always does.
-        if (code is not (0 or 1) || text.Length == 0) return (null, null);
-
-        var patch = text.ToString();
-        if (patch.Contains("\nBinary files ", StringComparison.Ordinal) || patch.Contains("\nGIT binary patch", StringComparison.Ordinal)) return (null, null);
-
-        var added = patch.Split('\n').Count(line => line.StartsWith('+') && !line.StartsWith("+++", StringComparison.Ordinal));
-        return (patch.Length > PatchCap ? patch[..PatchCap] + "\n… this file's patch is longer than the surface renders." : patch, added);
-    }
+    /// <summary>A file's patch as a review keeps it: whole up to <see cref="PatchCap"/>, cut there with a line that says so.</summary>
+    internal static string Capped(string patch) =>
+        patch.Length > PatchCap ? patch[..PatchCap] + "\n… this file's patch is longer than the surface renders." : patch;
 
     /// <summary>
     /// What changed between two commits of the repository at <paramref name="root"/>: a landed
@@ -183,14 +127,11 @@ internal static class TreeDiffs
     /// trees git already holds: no working tree and no index is read, whatever state they are in. Null where git cannot
     /// answer (an unknown commit, git failing or not starting), which a caller says rather than showing an empty diff.</para>
     ///
-    /// <para><b>One process, not one per file.</b> A git start on a large repository costs about a second, and this read
-    /// once asked git again for each file's patch: a review of 61 files took 52.7 s on an install. Now <c>--raw</c> (the
-    /// status: <c>--name-status</c> would make git drop the counts and the patch from the same answer), <c>--numstat</c>
-    /// and <c>-p</c> come back together. With <c>-z</c> the two lists are NUL-ended fields with every path verbatim, an
-    /// empty field ends them, and the patch follows. Each file's patch starts at a <c>diff --git</c> line, which no other
-    /// line of a patch can start with (a hunk's lines start with a space, <c>+</c>, <c>-</c> or <c>\</c>), and is matched
-    /// to its file by that line exactly as git writes it for the file's paths: a part of the answer is never filed under
-    /// a file whose line it does not carry. A typechange's two halves carry the same line, and both are its file's.</para>
+    /// <para><b>One process, not one per file</b>, as a start on a large repository costs about a second: <c>--raw</c> (with
+    /// <c>--name-status</c> git drops the counts and the patch), <c>--numstat</c> and <c>-p</c> together, the lists NUL-ended under
+    /// <c>-z</c> with every path verbatim, an empty field ending them before the patch. Each file's patch starts at a
+    /// <c>diff --git</c> line, which no other line of a patch starts with, and is matched to its file by that line exactly as git
+    /// writes it for the file's paths. A typechange's two halves carry the same line, and both are its file's.</para>
     ///
     /// <para><b>A rename is git's rename.</b> With the whole range in view, git pairs a renamed file with where it came
     /// from: its patch is the rename and the lines that changed, and its counts are found under its new path. A read of the
@@ -200,8 +141,7 @@ internal static class TreeDiffs
     /// order: a patch is kept while less than <see cref="PatchBudget"/> is spent, cut at <see cref="PatchCap"/>; once the
     /// budget is spent every later file is counted, and git is stopped there rather than read to the end.</para>
     ///
-    /// <para>Internal: a commit's page and a compare read their changes through this same reader, over the range
-    /// they name, rather than through a second one. A caller proves <paramref name="root"/> is a repository's top first.</para>
+    /// <para>A commit's page and a compare read through this reader too. A caller proves <paramref name="root"/> is a repository's top first.</para>
     /// </remarks>
     internal static async Task<TreeDiff?> RangeAsync(
         string root, string before, string range, string rest, GitRead git, CancellationToken ct)
@@ -210,10 +150,9 @@ internal static class TreeDiffs
         var code = await git(
             root,
             [
-                // A diff against the working tree (`HEAD` alone, a session's uncommitted work) takes the tree's `index.lock` to
-                // write the stat data it refreshed, which a session writing there may need that moment. git's diff
-                // does so whatever `--no-optional-locks` says (2.53); `diff.autoRefreshIndex=false` keeps it from refreshing,
-                // and RangeSplit drops the files that leaves listed with nothing changed. A range of two commits reads no tree.
+                // A diff against the working tree (`HEAD` alone) takes the tree's `index.lock` to write the stat data it refreshed,
+                // whatever `--no-optional-locks` says (2.53); `diff.autoRefreshIndex=false` keeps it from refreshing, and RangeSplit
+                // drops the files that leaves listed with nothing changed. A range of two commits reads no tree.
                 "--no-optional-locks",
                 "-c", "diff.autoRefreshIndex=false",
                 // A path outside ASCII as itself on the `diff --git` line, as `-z` gives it in the lists.
@@ -480,9 +419,7 @@ internal static class TreeDiffs
             }
 
             if (patch.Length == 0) return;
-            _patches[index] = patch.Length > PatchCap
-                ? patch[..PatchCap] + "\n… this file's patch is longer than the surface renders."
-                : patch;
+            _patches[index] = Capped(patch);
             _spent += _patches[index]!.Length;
         }
     }
@@ -492,7 +429,7 @@ internal static class TreeDiffs
     /// as itself after its prefix, or in double quotes with the prefix inside them where it holds a double quote, a
     /// backslash or a control character, each escaped.
     /// </summary>
-    private static string Quoted(string prefix, string path)
+    internal static string Quoted(string prefix, string path)
     {
         var escaped = new StringBuilder(path.Length + 8);
         var any = false;
