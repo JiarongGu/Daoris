@@ -149,8 +149,7 @@ function useRunState(notify: Notify): HarnessRun {
       if (exitCode !== 0) notify(t('harness.loginNew.failed', { code: exitCode }), 'error');
       else if (!kept) notify(t('harness.loginNew.nobody'), 'error');
       else {
-        if (account) notify(t('harness.loginNew.done', { account }));
-        else notify(t('harness.loginNew.unnamed', { profile }));
+        // The step that asks its name says who signed in; a toast would say it a third time.
         const harness = runningRef.current?.split(':')[0];
         if (harness && profile) setAdded({ harness, profile, account: account ?? null, offered });
       }
