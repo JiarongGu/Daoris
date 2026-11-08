@@ -6,8 +6,8 @@
 `0435b45df4`** (§36) and takes every blocking finding inside D214's notes: the take's undo puts back the branch or detached state and the
 tip it recorded; patterns cover a top as git's do and every layer's are translated, proved equal; a base is released only by a
 successful build through Daoris's door and this repository's runners are guarded; a top is partitioned at a recorded copy or share.
-**Row y is ready to build, z after x, aa and ac after z, and ab runs once y, x, z and aa are built; row d waits on §36.7's
-*When*.**
+**Rows y and z are ready to build (x is built), aa and ac after z, and ab runs once y, z and aa are built; row d waits on
+§36.7's *When*.**
 
 **Standing (round 14, row b's note answered, proposed under D191, D214):** **Round 14 is written by Claude Opus 5.5 from main at
 `0369cf64f0`** (§35) on D214's note of 2026-11-08 and the owner's shape for the rule file: patterns in git's syntax, a rule set per entry
@@ -2093,8 +2093,8 @@ place), and every row's park, placement, relink, exclusive hold and parking name
 
 ### d. ⚖ The pool wired, read only through a test's seam.
 
-- **When.** *(R15)* Waiting on rows y, x, z and aa built; the bench rerun of row ab taken with the checkout's `local/` copy present,
-  its refusal fixed by row z or measured in the rerun (§36.4); both makers' confirming reads of round 15 and their reads of the rerun's
+- **When.** *(R15)* Waiting on rows y, z and aa built (x is); the bench rerun of row ab taken with the checkout's `local/` copy
+  present, its refusal fixed by row z or measured in the rerun, and row x's placement confirmed in it (§36.4); both makers' confirming reads of round 15 and their reads of the rerun's
   note; the steward's finding that §11's saving holds on its numbers; and FOUNDATION1's row 1d-i having landed (above).
 - **Changes.** `keptTrees` read only through the one environment variable row d names, set by the rehearsal and the tick tests alone
   *(O2-F13)*; the driven start's take as a `[RunStage]` of the `Grown` phase before `GrowTree`, its claim on `RunState` *(R4-F2)*, and the
@@ -4482,7 +4482,7 @@ as two: `bin/` at `base`, then a later `/tools/*/bin/` at `aside`.
 
 **6. The `local` kind's default at a take is `own`.** §35.1's table gave `keep`, against its own sentence that the defaults are today's
 acts: today a local top that is not Daoris's copy is the line's (`SlotIgnored.cs:29-30`) and goes aside at a finish (§10), and `keep`
-would hand one line's private files to the next. The cell is corrected in place. **Ready to build, after TREEPOOL1x.**
+would hand one line's private files to the next. The cell is corrected in place. **Ready to build** (TREEPOOL1x, before it, is built).
 
 ### 36.3 TREEPOOL1aa: a base released only by a build Daoris ran and saw succeed *(R15)*
 
@@ -4580,7 +4580,12 @@ revised in place).
 
 **4. The replayed day** is one of main after rows y, x, z and aa landed, so every replayed commit's rule file is in the new form, its
 runners guarded and its `bin/` at `base`; the control arm is one machine-layer rule, `{ "kind": "output", "paths": ["bin/"], "take":
-"aside" }`, the only person's rule the bench holds (§35.8's item 4 read so). **Ready to run once rows y, x, z and aa are built.**
+"aside" }`, the only person's rule the bench holds (§35.8's item 4 read so).
+
+**5. What row x left** (built, `1f57714c8a`; §36.6): its proof ran without npm over the real lockfiles, so the rerun confirms on the real
+repository that the root's and the CLI's `node_modules` are placed from the store at every take, not installed (§34.1's 515 files and
+26 MB a take falling to none), the root's `setup` run once per recorded key. A take that installs either is the note's finding, and row
+d does not start on it. **Ready to run once rows y, z and aa are built.**
 
 ### 36.5 TREEPOOL1ac: a top partitioned at its boundaries *(R15)*
 
@@ -4611,10 +4616,10 @@ entering a link (a seam counting the entries it lists). **Ready to build, after 
 
 ### 36.6 TREEPOOL1x, and §35.10's two questions *(R15)*
 
-**Row x** both read ready. The Opus reader's gap is taken into §35.6's rule: npm runs a git dependency's `prepare` with no
-`hasInstallScript` in its lockfile entry, so an install runs without scripts only where no entry marks `hasInstallScript` **and none
-resolves from git** (its `resolved` a `git+` URL). Codex's addition stands: its proof traces the missing placement and the web's vanished
-install (§34.5), not *unsealed* alone. Row x is being built; its row is not rewritten here. **§35.10:** the door is not a second way
+**Row x** both read ready, and it is built (`1f57714c8a`) with both readers' additions: an install runs without scripts only where no
+lockfile entry marks `hasInstallScript` **and none resolves from git**, since npm runs a git dependency's `prepare` unmarked (Opus;
+`InstallScripts`), and the web's vanished install traced to its one removal path, a group member another rule keeps no longer removed
+with its group (Codex). What it left, the placement on the real repository, is the rerun's (§36.4, 5). **§35.10:** the door is not a second way
 (§36.3, 2), and an unrefused typed `--no-build` is disclosed unmanaged shell execution, the guarantee worded for the declared,
 integrated runners (§36.3, 4).
 
@@ -4623,14 +4628,14 @@ integrated runners (§36.3, 4).
 | Row | What §36 answers | Standing |
 |---|---|---|
 | **y** | the previous branch or detached state and tip recorded and restored, released only once restored, else the claim kept at `undoing`; one undo for the refusal, a failed check and the takeover; `UnauthorizedAccessException`; the aside marked first; the `Bases` put back once aa lands (§36.1) | ready to build |
-| **x** | entries resolved from git keep their scripts (§36.6) | being built |
-| **z** | git's cover by parent folder and case; every layer's patterns translated by `RuleFileFirstForm`, equal per layer, the person's included; the translation as the first form's one reader, with its condition and row; the found `base` only where nothing found runs the output; the tools' `bin/` by a later entry; `local` at `own`; the partition's first boundary, the copy (§36.2, §36.4) | ready to build, after x |
+| **x** | entries resolved from git keep their scripts (§36.6) | built; its placement on the real repository confirmed by ab |
+| **z** | git's cover by parent folder and case; every layer's patterns translated by `RuleFileFirstForm`, equal per layer, the person's included; the translation as the first form's one reader, with its condition and row; the found `base` only where nothing found runs the output; the tools' `bin/` by a later entry; `local` at `own`; the partition's first boundary, the copy (§36.2, §36.4) | ready to build |
 | **aa** | the rules read once at the new start into the take's plan; signal (a) and `trees base` withdrawn; a release only through the door, run in the project's folder, per configuration; every runner guarded, with the census; the guarantee worded; `started.tree-base` (§36.3) | ready to build, after z |
-| **ab** | the `local/` copy present, its refusal fixed by z or measured; the figures as estimates; a day replayed after aa (§36.4) | ready to run after y, x, z and aa |
+| **ab** | the `local/` copy present, its refusal fixed by z or measured; the figures as estimates; a day replayed after aa; row x's placement confirmed (§36.4) | ready to run after y, z and aa |
 | **ac** | `TopPartition` at recorded and declared boundaries, never entering a link; `started.tree-shared` (§36.5) | ready to build, after z; does not hold d |
 
-**Row d's *When*** (§17.0) now reads: *waiting on rows y, x, z and aa built; the bench rerun of row ab taken with the checkout's `local/`
-copy present, its refusal fixed by row z or measured in the rerun; both makers' confirming reads of round 15 and their reads of the
+**Row d's *When*** (§17.0) now reads: *waiting on rows y, z and aa built (x is); the bench rerun of row ab taken with the checkout's
+`local/` copy present, its refusal fixed by row z or measured in the rerun, and row x's placement confirmed in it; both makers' confirming reads of round 15 and their reads of the
 rerun's note; the steward's finding that §11's saving holds on its numbers; and FOUNDATION1's row 1d-i having landed.*
 
 - **Revised in place** *(R15)*: the standing; §17.0's row d *When*; §21; §34's method (its figures as estimates); §35.1's sentence on
