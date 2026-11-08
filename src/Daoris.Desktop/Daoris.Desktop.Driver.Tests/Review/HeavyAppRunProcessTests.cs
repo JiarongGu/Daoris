@@ -1,5 +1,4 @@
 using System.Diagnostics;
-using System.Runtime.InteropServices;
 using System.Text;
 using Daoris.Driver;
 
@@ -189,52 +188,5 @@ public sealed class HeavyAppRunProcessTests : IAsyncDisposable
         return false;
     }
 
-    /// <summary>The process that started <paramref name="pid"/>, as the system's snapshot says; null where it no longer runs.</summary>
-    private static int? ParentOf(int pid)
-    {
-        var snapshot = CreateToolhelp32Snapshot(0x00000002, 0);
-        if (snapshot == new IntPtr(-1)) return null;
-        try
-        {
-            var entry = new ProcessEntry { Size = (uint)Marshal.SizeOf<ProcessEntry>() };
-            for (var more = Process32FirstW(snapshot, ref entry); more; more = Process32NextW(snapshot, ref entry))
-            {
-                if (entry.ProcessId == pid) return (int)entry.ParentProcessId;
-            }
-
-            return null;
-        }
-        finally
-        {
-            CloseHandle(snapshot);
-        }
-    }
-
-    [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Unicode)]
-    private struct ProcessEntry
-    {
-        public uint Size;
-        public uint Usage;
-        public uint ProcessId;
-        public IntPtr DefaultHeapId;
-        public uint ModuleId;
-        public uint Threads;
-        public uint ParentProcessId;
-        public int PriorityBase;
-        public uint Flags;
-        [MarshalAs(UnmanagedType.ByValTStr, SizeConst = 260)]
-        public string ExeFile;
-    }
-
-    [DllImport("kernel32.dll", SetLastError = true)]
-    private static extern IntPtr CreateToolhelp32Snapshot(uint flags, uint process);
-
-    [DllImport("kernel32.dll", CharSet = CharSet.Unicode, SetLastError = true)]
-    private static extern bool Process32FirstW(IntPtr snapshot, ref ProcessEntry entry);
-
-    [DllImport("kernel32.dll", CharSet = CharSet.Unicode, SetLastError = true)]
-    private static extern bool Process32NextW(IntPtr snapshot, ref ProcessEntry entry);
-
-    [DllImport("kernel32.dll", SetLastError = true)]
-    private static extern bool CloseHandle(IntPtr handle);
+    private static int? ParentOf(int pid) => ProcessParents.ParentOf(pid);
 }

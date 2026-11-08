@@ -15,7 +15,8 @@ namespace Daoris.Driver;
 /// the oldest that may go, so an ask held back by its class's cap never holds up a later local read. Within a repository a write passes nothing queued ahead of it, and nothing
 /// queued behind it passes it.</para>
 /// <para><b>A shared answer</b>: an ask takes another's only where its own start would have been that start (<see cref="GitRunAsk.Start"/>)
-/// and that start has not taken its place, so the answer reads a state at least as new as the ask's own start would have.</para>
+/// and that start has not taken its place, nor a write of its repository been queued after it, so the answer reads a state at least as
+/// new as the ask's own start would have.</para>
 /// <para><b>Ending</b>: a read that takes no lock (<see cref="GitRunAsk.Endable"/>) is dropped while queued and ended while running once
 /// every asker has left. Every other git is dropped only while queued; once placed it runs untokened to its end or its bound.</para>
 /// <para><b>Re-entry</b>: an ask made beneath a placed git (<see cref="Beneath"/>, told from the caller's process ancestry by
@@ -234,6 +235,15 @@ public sealed class GitScheduler
             _queues[entry.Ask.Repository] = queue = new LinkedList<Entry>();
         }
 
+        // A start queued before a write reads the state before it, which an ask made after the write may not take as its own.
+        if (entry.Ask.Writes)
+        {
+            foreach (var queued in queue)
+            {
+                if (StartOf(queued) is { } key && _queuedByStart.TryGetValue(key, out var held) && ReferenceEquals(held, queued)) _queuedByStart.Remove(key);
+            }
+        }
+
         entry.Node = queue.AddLast(entry);
         if (StartOf(entry) is { } start) _queuedByStart[start] = entry;
     }
@@ -402,9 +412,11 @@ public sealed class GitScheduler
         var first = true;
         foreach (var entry in queue)
         {
+            // An ask its tree's removal holds is no ask ahead of the removal's own git, which is queued after it.
+            if (Held(entry)) continue;
             if (entry.Ask.Writes && !first) yield break;
             first = false;
-            if (!Held(entry) && _places.Opens(entry.Ask, entry.Whose)) yield return entry;
+            if (_places.Opens(entry.Ask, entry.Whose)) yield return entry;
             if (entry.Ask.Writes) yield break;
         }
     }
