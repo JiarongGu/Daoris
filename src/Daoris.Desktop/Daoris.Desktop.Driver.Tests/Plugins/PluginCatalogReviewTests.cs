@@ -2,8 +2,15 @@ using Daoris.Driver;
 
 namespace Daoris.Desktop.Driver.Tests;
 
-public sealed partial class PluginCatalogTests
+public sealed class PluginCatalogReviewTests : IDisposable
 {
+    private readonly string _home = Path.Combine(TestHomes.Root, "daoris-plugins-" + Guid.NewGuid().ToString("N")[..8]);
+
+    public void Dispose()
+    {
+        if (Directory.Exists(_home)) Directory.Delete(_home, recursive: true);
+    }
+
     [Fact]
     public void A_placeholder_inside_a_longer_word_is_replaced_in_place_and_the_word_is_not_made_a_path()
     {
@@ -19,7 +26,9 @@ public sealed partial class PluginCatalogTests
     [InlineData("""{ "id": "bar", "apiVersion": "2" }""")]
     public void A_refused_version_is_a_row_under_its_folder_name_whatever_id_the_manifest_claims(string manifest)
     {
-        Plugin("foo", manifest);
+        var path = DaorisHome.Entry(_home, HomeEntry.Plugins, "foo");
+        Directory.CreateDirectory(path);
+        File.WriteAllText(Path.Combine(path, PluginCatalog.ManifestName), manifest);
 
         var entry = Assert.Single(PluginCatalog.Load(_home).Plugins);
 
