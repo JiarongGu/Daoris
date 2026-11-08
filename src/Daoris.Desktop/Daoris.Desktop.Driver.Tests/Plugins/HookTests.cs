@@ -321,10 +321,6 @@ public sealed class HookTests : IDisposable
         Assert.Equal([noise, noise], lines);
     }
 
-    /// <summary>
-    /// A write the caller gave up on is still in flight in the writer, which refuses the next one; the call after it said so as
-    /// InvalidOperationException, which no caller of the wire catches. A write abandoned at its patience is a wire that is gone.
-    /// </summary>
     [Fact]
     public async Task A_write_abandoned_at_its_patience_ends_the_wire_and_the_next_call_is_refused_by_name()
     {
@@ -340,7 +336,6 @@ public sealed class HookTests : IDisposable
         Assert.Equal(0, peer.Waiting);
     }
 
-    /// <summary>A writer that never finishes a line and refuses another while one is in flight, as a stream writer does.</summary>
     private sealed class BusyWriter : TextWriter
     {
         private int _busy;

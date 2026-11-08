@@ -295,7 +295,12 @@ public sealed class RelayRunTests : IDisposable
     {
         while (true)
         {
-            try { return await File.ReadAllTextAsync(file); }
+            try
+            {
+                // Shared for delete too: a reader without it would block the relay's own removal of the stale file.
+                await using var stream = new FileStream(file, FileMode.Open, FileAccess.Read, FileShare.ReadWrite | FileShare.Delete);
+                return await new StreamReader(stream).ReadToEndAsync();
+            }
             catch (IOException) { await Task.Delay(10); }
         }
     }

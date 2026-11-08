@@ -50,7 +50,7 @@ Driver paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/`.
 2. `apiVersion` is read before anything else; a newer one is refused naming both numbers. The hook wire's
    `protocolVersion` is 1. (from D64, D148)
 3. A broken manifest is a named problem on its row, never a crash. A harness name this build carries, or one an
-   earlier plugin declared, refuses the later plugin before anything loads, naming both. A plugin never replaces. (from D64)
+   earlier plugin declared, refuses the later plugin before anything loads, naming both; a server name declared twice in one manifest refuses that plugin. A plugin never replaces. (from D64)
 4. A problem in `icon` or `tools` never refuses the plugin; a problem in `steps` or `resources` does. (from D140, D150, D173)
 5. Off is a row in `plugins.json`, never a rename. An installed plugin is on until the person switches it off; a
    remove clears its row and leaves `.data/<id>`. (from D64, D120)
@@ -92,9 +92,9 @@ Driver paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/`.
     the attempt). A refused place has no process, and the others are served. (from D241, D242)
 18. An offer's installed copy is judged against the shipped one. Same version, other files: `changed`. Older, files
     matching the record's digest: `older`. Older, digest not matching: `changed`. Older, no digest: `older`,
-    unjudged. Newer: the person's, said nothing. A pre-release tag (`1.2.0-beta.1`) is older than the same numbers without one. (from D119)
+    unjudged. Newer: the person's, said nothing. A pre-release tag (`1.2.0-beta.1`) is older than the same numbers without one, and its dotted parts compare number by number (`beta.2` before `beta.10`). (from D119)
 19. A `changed` copy is never overwritten by an update. A copy with no record, or one that does not read, may take
-    the shipped copy (`PLUGIN_UPDATE` with `shipped: true`), which records the offer and keeps `.data/` and the switch. (from D119)
+    the shipped copy (`PLUGIN_UPDATE` with `shipped: true`), which records the offer and keeps `.data/` and the switch; the route also takes one recorded as a folder or an offer, never a package's (rule 16). (from D119)
 20. `plugins new` writes a self-contained folder (manifest with `tools: []`, `plugin.mjs`, `plugin.test.mjs`, README; `work.mjs`
     for a plugin on a work point, and for one that performs, `plugin.contract.test.mjs` and `cycle.json`) and refuses rather than overwrites. It installs nothing and scaffolds no harness. Its samples come from `HookFrames`. (from D101, D150)
 21. `plugins try` starts the plugin as the driver would, in scratch under `<home>/plugins/.trials/`, one sentence per

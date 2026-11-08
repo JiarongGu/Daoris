@@ -152,7 +152,7 @@ public sealed class RelayRun
         using (process) await process.WaitForExitAsync(ct).ConfigureAwait(false);
     }
 
-    // A file a dead relay left, its name and its pid agreeing on a process that is not alive; no other is touched.
+    // A file a dead relay left, its name and its pid agreeing on a process that is not alive or is this one (a reused pid); no other is touched.
     private static void RemoveDead(string subscribers)
     {
         foreach (var file in Directory.EnumerateFiles(subscribers, "*.json"))
@@ -164,7 +164,6 @@ public sealed class RelayRun
                 if (new FileInfo(file).Length > 1024) continue;
                 using var read = JsonDocument.Parse(AtomicFile.ReadText(file));
                 if (!read.RootElement.TryGetProperty("pid", out var named) || !named.TryGetInt32(out var said) || said != pid) continue;
-                // This process's own number is alive by definition, and its file cannot be this relay's yet: a killed relay's, its pid reused.
                 if (pid == Environment.ProcessId || !Alive(pid)) File.Delete(file);
             }
             catch (Exception error) when (error is IOException or UnauthorizedAccessException or JsonException or InvalidOperationException)
@@ -398,7 +397,6 @@ public sealed class RelayRun
                 if (holder is not { IsInstance: true } && !doubt) continue;
                 lock (_gate)
                 {
-                    // A client may have joined while the lease was read; its batch is gathered, not ended as none.
                     if (_connected) return;
                     var reason = _notContained ? "not-contained" : _refused ? "refused" : "no-client";
                     _batch.End((run, seq) => RelaySaid.NoEvents(reason, run, seq));
