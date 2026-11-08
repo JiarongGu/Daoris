@@ -18,6 +18,7 @@ Paths below use `Drv/` for `src/Daoris.Desktop/Daoris.Desktop.Driver/` and `Mod/
 |---|---|---|
 | Launcher | `src/Daoris.Desktop/Daoris.Desktop.Launcher/Program.cs` | The root `Daoris.exe`: taskbar id, starts `app/Daoris.Desktop.exe`, runs a staged swap while nothing runs from `app/` |
 | `InstallHome` | `Mod/Update/InstallHome.cs` | Finds the install above `app/`; sets the home, the account variable once, D105's override, D63's move-in; the working folder; the window's memory |
+| `FolderMove` | `Mod/Update/FolderMove.cs` | A folder moved across volumes: renamed on one volume, else copied whole and the source removed; a failed copy removes what it made, so the target is as it was |
 | `HomePlacing` | `Mod/Update/HomePlacing.cs` | The one-time rename of an install's entries into D172's places, journalled and recovered |
 | `DaorisHome` | `Drv/Platform/DaorisHome.cs` | The home seam: `Resolve`, `InstallOf`, `Adopt`, `Entry`, `Places`, `FolderOf`, `InstallBin`, `HomeOf` |
 | `ProgramHome` | `Drv/Platform/ProgramHome.cs` | The home a program names once at its entry (the window's and the host's): what carries no home of its own, Daoris's own git and a probe's tools, reads it, never the variable a process inherited; a unit that acts for a home (a fetch's holds, a squash's author) is handed it. `ProcessHomeCensusTests` names each library read of the variable left, with why |
@@ -232,7 +233,7 @@ Paths below use `Drv/` for `src/Daoris.Desktop/Daoris.Desktop.Driver/` and `Mod/
 `UpdateCommandTests`, `StartConfirmationTests`, `HeldFilesTests`, the `Tool*Tests`; `Platform/DaorisHomeTests`, `HomeLeaseTests`,
 `HomeIdentityTests`; `Store/DesktopStore*Tests`; `Install/HomeMigrationTests`;
 `Service/ServiceHostLocatorTests`; `PinnedUpdatesTests`. Modules: `Update/InstallHomeTests`,
-`HomePlacingProcessTests`, `AppWorkingFolderProcessTests`, `InstallUpdaterTests`, `UpdateRefusalRetryTests`, `UpdateModuleTests`, `UpdateRelaunchGateTests`,
+`FolderMoveTests`, `HomePlacingProcessTests`, `AppWorkingFolderProcessTests`, `InstallUpdaterTests`, `UpdateRefusalRetryTests`, `UpdateModuleTests`, `UpdateRelaunchGateTests`,
 `UpdateWatchTests`; `Windows/TaskbarIdentityTests`; `EveryModuleChildIsHandedTheToolsTests`. Service:
 `Platform/DaorisHomeTests`. CLI: `test/platform/home.test.ts`, `home-census.test.ts`, `tool-test/desktop-publish.test.ts`,
 `test/deployment-rehearsal.test.ts`.

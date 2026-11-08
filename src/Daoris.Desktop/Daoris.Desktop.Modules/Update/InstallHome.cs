@@ -391,7 +391,7 @@ public static class InstallHome
             try
             {
                 var target = Path.Combine(home, name);
-                if (Directory.Exists(entry)) MoveDirectory(entry, target);
+                if (Directory.Exists(entry)) FolderMove.Move(entry, target);
                 else File.Move(entry, target, overwrite: false);
                 moved.Add(name);
             }
@@ -402,26 +402,5 @@ public static class InstallHome
         }
 
         return (moved, failed);
-    }
-
-    /// <summary>
-    /// A move that crosses volumes — `Directory.Move` refuses one, and an install on another drive
-    /// than the profile is the ordinary case, not the odd one. Copy, then remove the source only once
-    /// every file of it has landed.
-    /// </summary>
-    private static void MoveDirectory(string source, string target)
-    {
-        if (string.Equals(Path.GetPathRoot(source), Path.GetPathRoot(target), StringComparison.OrdinalIgnoreCase))
-        {
-            Directory.Move(source, target);
-            return;
-        }
-
-        Directory.CreateDirectory(target);
-        foreach (var directory in Directory.EnumerateDirectories(source, "*", SearchOption.AllDirectories))
-            Directory.CreateDirectory(Path.Combine(target, Path.GetRelativePath(source, directory)));
-        foreach (var file in Directory.EnumerateFiles(source, "*", SearchOption.AllDirectories))
-            File.Copy(file, Path.Combine(target, Path.GetRelativePath(source, file)), overwrite: false);
-        Directory.Delete(source, recursive: true);
     }
 }
