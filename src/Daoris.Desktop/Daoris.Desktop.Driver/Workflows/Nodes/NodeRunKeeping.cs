@@ -61,10 +61,24 @@ internal sealed class NodeRunKeeping(
         if (scope.Quest?.Records.Quest is not { } newest || records.Read(unit) is not { } record || record.Ended?.Quest == newest.Id) return;
         var repository = scope.Run.Binding.Repository;
         if (newest.Then.Any(step => step.SetUpIn is null && string.Equals(step.To, repository, StringComparison.OrdinalIgnoreCase))) return;
-        if (record.Attempts.Any(attempt => attempt.State != AttemptStates.Settled || record.RetryPending(attempt))) return;
+        if (!Over(governed, record)) return;
+
+        // Judged again on the record the edit holds, under its lock: a skip, stop, accept or release a door kept since the read is a word the run is not over without.
+        var ended = new RunEnd(newest.Id, clock());
+        var (refused, kept) = records.Edit<bool>(unit, current => Over(governed, current) ? (current with { Ended = ended }, true) : (null, false));
+        if (refused is not null || kept != true) return;
+        graphRuns.Ended(scope.Run.Run, ended);
+        said.Add($"work  {unit}: its run ended at #{newest.Id}: no step of its chain is still to come here, and nothing of its graph moves again; "
+                 + "it is judged again once its chain comes back here.");
+    }
+
+    /// <summary>Whether nothing on the record is still to come: no attempt or word pending, and its graph's end settled or no node of it able to move.</summary>
+    private static bool Over(GovernedUnit governed, NodeRecord record)
+    {
+        if (record.Attempts.Any(attempt => attempt.State != AttemptStates.Settled || record.RetryPending(attempt))) return false;
         // A failure kept for the person waits on their word, which only an armed run applies, so the run is not over while one stands.
-        if (record.Attempts.Any(attempt => attempt.Resolution is null && WorkPerformer.KeptFailure(record, attempt))) return;
-        if (record.Pending.Count > 0 || record.Attempts.Any(attempt => attempt is { State: AttemptStates.Settled, Resolution: HeldResolutions.Again } && attempt.Plugin != QuestClosing.Sender)) return;
+        if (record.Attempts.Any(attempt => attempt.Resolution is null && WorkPerformer.KeptFailure(record, attempt))) return false;
+        if (record.Pending.Count > 0 || record.Attempts.Any(attempt => attempt is { State: AttemptStates.Settled, Resolution: HeldResolutions.Again } && attempt.Plugin != QuestClosing.Sender)) return false;
         var settled = !NodeStates.Live.Contains(WorkPerformer.StatusOf(record, governed.Graph.End).State)
                       || !governed.Graph.Nodes.Any(node => WorkPerformer.StatusOf(record, node.Id).State
                           is NodeStates.Ready or NodeStates.Active or NodeStates.Unknown or NodeStates.Invalidated);
@@ -73,14 +87,7 @@ internal sealed class NodeRunKeeping(
             && WorkPerformer.StatusOf(record, node.Id) is { State: NodeStates.Failed, Code: RequestOptions.DeclinedCode });
         // A review's changes wait on the work's next commit, which runs the review again, so the run is not over while they stand.
         var changes = governed.Graph.Nodes.Any(node => node.Kind == NodeKinds.Review && WorkPerformer.StatusOf(record, node.Id).State == NodeStates.Rejected);
-        if (!settled || held || changes) return;
-
-        var ended = new RunEnd(newest.Id, clock());
-        var (refused, _) = records.Edit(unit, current => (current with { Ended = ended }, true));
-        if (refused is not null) return;
-        graphRuns.Ended(scope.Run.Run, ended);
-        said.Add($"work  {unit}: its run ended at #{newest.Id}: no step of its chain is still to come here, and nothing of its graph moves again; "
-                 + "it is judged again once its chain comes back here.");
+        return settled && !held && !changes;
     }
 
     /// <summary>
