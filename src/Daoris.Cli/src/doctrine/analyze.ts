@@ -9,6 +9,7 @@ import { findRegion } from './region.ts';
 import { tierRuleBody } from './tierrender.ts';
 import { readCanon, resolveCanonRoot, resolveSelection } from './canon.ts';
 import { DEFAULT_CORE_BUDGET_BYTES, MANIFEST_FILE, lockIndex, readLock, readManifest } from './config.ts';
+import { projectBudget } from './budget.ts';
 import { isEntry, significantTokens, containment } from './twins.ts';
 import { candidateDocuments, sayCandidates } from '../layout/documents.ts';
 import {
@@ -207,27 +208,6 @@ function findTwinsAgainstCanon(
   return twins.sort((a, b) => b.score - a.score);
 }
 
-/** Bytes of always-loaded context after adopting — the number that is paid every session. */
-function projectBudget(
-  root: string, target: string, canon: Canon, selected: readonly CanonFile[],
-  existing: Survey, collisions: readonly string[],
-): { current: number; projected: number } {
-  const current = existing.rules.reduce((sum, f) => sum + f.bytes, 0);
-  const collided = new Set(collisions);
-
-  let added = 0;
-  for (const file of selected) {
-    if (!file.target.startsWith('rules/')) continue;
-    const abs = join(root, target, file.target);
-    // A collision replaces rather than adds; an existing identical file changes nothing.
-    if (existsSync(abs) && !collided.has(file.target)) continue;
-    added += Buffer.byteLength(readText(join(canon.root, file.source)), 'utf8');
-    if (existsSync(abs)) added -= statSync(abs).size;
-  }
-
-  return { current, projected: current + added };
-}
-
 export function analyze(
   { root, canon, packs, switchedOff = {}, target, budgetLimit, lock = null, harness = CLAUDE }:
   {
@@ -251,7 +231,7 @@ export function analyze(
     collisions,
     updates,
     twins: findTwinsAgainstCanon(root, target, canon, selection.files, harness),
-    budget: { ...projectBudget(root, target, canon, selection.files, existing, collisions), limit: budgetLimit },
+    budget: { ...projectBudget(root, target, harness, canon, selection.files, existing, collisions), limit: budgetLimit },
     offers: selection.offers,
     switchedOff: selection.switchedOff,
     // The records this repository seems to keep, by role: named for the session that
