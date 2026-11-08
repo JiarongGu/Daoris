@@ -31,9 +31,9 @@ internal sealed class PoolGitFixture : IDisposable
     internal PoolSite Site { get; }
 
     /// <summary>The commit the repository's first line stands at.</summary>
-    internal string Start { get; private set; } = "";
+    internal string Start { get; set; } = "";
 
-    internal static async Task<PoolGitFixture> CreateAsync()
+    internal static async Task<PoolGitFixture> CreateAsync(string? rules = null)
     {
         var fixture = new PoolGitFixture();
         var root = fixture.Root;
@@ -45,6 +45,7 @@ internal sealed class PoolGitFixture : IDisposable
         await File.WriteAllTextAsync(Path.Combine(root, "Engine.csproj"), "<Project Sdk=\"Microsoft.NET.Sdk\" />\n");
         await File.WriteAllTextAsync(Path.Combine(root, "src", "Engine.cs"), "class Engine {}\n");
         await File.WriteAllTextAsync(Path.Combine(root, ".gitignore"), "obj/\n_fixtures/\n*.log\n");
+        if (rules is not null) await File.WriteAllTextAsync(Path.Combine(root, "daoris.files.json"), rules);
         await GitAsync(root, "add", ".");
         await GitAsync(root, "commit", "--quiet", "-m", "first");
         fixture.Start = (await GitAsync(root, "rev-parse", "HEAD")).Trim();

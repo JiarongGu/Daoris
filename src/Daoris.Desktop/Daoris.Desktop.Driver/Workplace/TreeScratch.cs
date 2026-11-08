@@ -10,22 +10,15 @@ namespace Daoris.Driver;
 internal static class TreeScratch
 {
     /// <summary>
-    /// The folders a build or an install writes and writes again: an ignored path under one of these, which the
-    /// registered checkout holds too, goes with the tree unasked. Matched by any
-    /// path segment, so <c>src/app/node_modules/</c> is one. Any other shared ignored folder is looked into
-    /// (<see cref="WrittenSince"/>), since a session's own scratch (<c>devtools/.tmp</c>) lives in such a folder too.
+    /// A shared ignored path under one of these, matched by any path segment, goes with the tree unasked; any other is looked into
+    /// (<see cref="WrittenSince"/>), since a session's own scratch lives in such a folder too.
     /// </summary>
-    private static readonly HashSet<string> BuildFolders = new(StringComparer.OrdinalIgnoreCase)
-    {
-        "node_modules", "bin", "obj", "dist", "build", "out", ".angular", ".next", "coverage", "target", "__pycache__", ".venv",
-        ".gradle",
-    };
+    private static readonly HashSet<string> BuildFolders = BuildFolderList.Removal;
 
     /// <summary>
     /// The folders every build makes under these names, in any project: a path under one goes with the tree even where
     /// the checkout holds no such folder, since a tool names it, not a person. A narrower list than <see cref="BuildFolders"/>, whose
-    /// other names (<c>out</c>, <c>dist</c>, <c>build</c>, <c>target</c>) are also what a session exports into, so those go only
-    /// where the checkout builds there too.
+    /// other names (<c>out</c>, <c>dist</c>, <c>build</c>, <c>target</c>) are also what a session exports into.
     /// </summary>
     private static readonly HashSet<string> MadeFolders = new(StringComparer.OrdinalIgnoreCase) { "node_modules", "bin", "obj" };
 

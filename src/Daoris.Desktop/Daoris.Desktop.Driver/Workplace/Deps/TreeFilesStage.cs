@@ -88,10 +88,17 @@ internal sealed class TreeFilesStage(string home, string root, string tree, stri
         }
 
         var copied = await TreeLocalInputs.CopyAsync(root, tree, ct).ConfigureAwait(false);
+        if (copied.Copied.Count > 0) RecordCopies(copied.Copied);
         if (copied.Line() is { } line) _said.Add(line);
         foreach (var each in copied.Declined) _said.Add(each.Line());
         return Outcome();
     }
+
+    private void RecordCopies(IReadOnlyList<string> copied) => TreeFilesRecord.Change(home, tree, state => state with
+    {
+        Copies = state.Copies.Concat(copied.Select(path => KeyValuePair.Create(path, TreeCopies.HashOf(Path.Combine(tree, path)))).Where(each => each.Value is not null).Select(each => KeyValuePair.Create(each.Key, each.Value!)))
+            .GroupBy(each => each.Key, StringComparer.Ordinal).ToDictionary(group => group.Key, group => group.Last().Value, StringComparer.Ordinal),
+    });
 
     /// <summary>Every tracked change and every path git does not ignore, which only a cut-off start's own install or hook can have left, put back.</summary>
     private async Task<bool> WriteBackAsync(CancellationToken ct)
@@ -385,7 +392,7 @@ internal sealed class TreeFilesStage(string home, string root, string tree, stri
         using var visitable = CancellationTokenSource.CreateLinkedTokenSource(ct, _visited);
         try
         {
-            await WorkingTree.GitAsync(tree, ["hook", "run", "--ignore-missing", "post-checkout", "--", Zeros, head, "1"], visitable.Token).ConfigureAwait(false);
+            await WorkingTree.GitAsync(tree, ["hook", "run", "--ignore-missing", "post-checkout", "--", record.HookFrom ?? Zeros, head, "1"], visitable.Token).ConfigureAwait(false);
         }
         catch (OperationCanceledException) when (!ct.IsCancellationRequested)
         {

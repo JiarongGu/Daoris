@@ -37,7 +37,10 @@ internal sealed class TreePoolEnds(TreePool pool, PoolSeams seams)
             : uncommitted ? LineEndKinds.Uncommitted
             : grown is not null && grown.From == head ? LineEndKinds.NoOutput
             : LineEndKinds.Output;
-        var toolchain = seams.Toolchain is { } read ? await read(slot.Path, ct).ConfigureAwait(false) : slot.Toolchain;
+        var toolchain = seams.Toolchain is { } read ? await read(slot.Path, ct).ConfigureAwait(false) : await PoolToolchain.KeyAsync(site, slot.Path, ct).ConfigureAwait(false);
+        var bytes = sorted.Outputs.Concat(sorted.Intermediates).Concat(sorted.Own).Concat(sorted.Copies)
+            .Where(top => !top.StartsWith(BuildFolderList.Packages, StringComparison.OrdinalIgnoreCase))
+            .Sum(top => FileWalk.Of(Path.Combine(slot.Path, top.TrimEnd('/').Replace('/', Path.DirectorySeparatorChar))).Size.Bytes);
         var now = DateTimeOffset.UtcNow;
         pool.RecordEnd(new LineEnd(site.Workspace, site.Repository, slot.Line, branch, end.Session, end.Number, kind, head, now, string.Join(',', sorted.Own), toolchain, now));
         pool.Advance(fence, TreeClaimPhases.Recorded);
@@ -45,7 +48,7 @@ internal sealed class TreePoolEnds(TreePool pool, PoolSeams seams)
 
         var lockWhy = await PoolLocks.SetAsync(git, slot.Path, PoolLocks.Free, ct).ConfigureAwait(false);
         pool.Advance(fence, TreeClaimPhases.Locked);
-        pool.Complete(fence, new SlotSettled(slot.Registration, slot.Path, slot.Line, "", slot.State, slot.Said, slot.Bytes, toolchain));
+        pool.Complete(fence, new SlotSettled(slot.Registration, slot.Path, slot.Line, "", slot.State, slot.Said, bytes, toolchain));
         return new PoolDone(pool.Slot(site.Workspace, site.Repository, end.Number), null, lockWhy, null);
     }
 }
