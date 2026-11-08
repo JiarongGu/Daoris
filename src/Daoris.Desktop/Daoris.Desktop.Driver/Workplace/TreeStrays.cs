@@ -70,11 +70,11 @@ internal sealed class TreeStrays(TreeContext context, TreeSetAside setAside, Con
     internal static readonly TimeSpan Quiet = TimeSpan.FromMinutes(10);
 
     /// <summary>
-    /// What the folders start with that other flows make under a repository's trees and remove themselves, outside the repository's
-    /// hold: an opinion's copy (<see cref="OpinionTree.Prefix"/>) and a replay's tree (<see cref="BranchReplays.Prefix"/>). What a
-    /// killed pass of theirs left, the next pass of its kind moves aside (<see cref="PassLeftovers"/>).
+    /// What the folders start with that other flows own under a repository's trees: an opinion's copy (<see cref="OpinionTree.Prefix"/>)
+    /// and a replay's tree (<see cref="BranchReplays.Prefix"/>), which their passes remove (<see cref="PassLeftovers"/>), and a kept
+    /// slot (<see cref="KeptTree.Prefix"/>), which the pool reconciles.
     /// </summary>
-    private static readonly string[] OthersOwn = [PassLeftovers.OpinionCopyPrefix, BranchReplays.Prefix];
+    internal static readonly string[] OthersOwn = [PassLeftovers.OpinionCopyPrefix, BranchReplays.Prefix, KeptTree.Prefix];
 
     /// <summary>A folder judged to go: what it is, and for a cut-off opening its branch, the commit judged, its lock's reason and why.</summary>
     private sealed record Found(string Folder, string Kind, string? Branch = null, string? Tip = null, string? Reason = null, string? Clause = null)
