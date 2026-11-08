@@ -62,8 +62,14 @@ public sealed record MemoryOpResponse(
     string? Models = null, string? Approver = null, DateTimeOffset? Holds = null, string? Entry = null, long? Applied = null,
     DateTimeOffset? Settled = null, string? Carried = null, string? Answer = null, DateTimeOffset? Told = null, DateTimeOffset? Began = null);
 
-/// <summary>What a session leaves for the person in memory: ends and replacements awaiting, staged rows of a stopped session, since the oldest.</summary>
-public sealed record MemoryWaitResponse(string Session, int Ends, int Replacements, int Staged, DateTimeOffset Since);
+/// <summary>
+/// What waits on the person in memory, since the oldest: for a session, ends and replacements awaiting and the staged rows of a stopped one;
+/// for an end the sweep wrote, which has no session, <c>End</c> alone.
+/// </summary>
+public sealed record MemoryWaitResponse(string? Session, int Ends, int Replacements, int Staged, DateTimeOffset Since, MemoryEndWaitResponse? End = null);
+
+/// <summary>A sweep's end awaiting the person: the row to decide, the entry it ends at the revision it read, and why.</summary>
+public sealed record MemoryEndWaitResponse(string Op, string Repository, string Target, long? Revision, string? Reason);
 
 /// <summary>A session's memory changes as its record's page shows them.</summary>
 public sealed record SessionMemoryResponse(IReadOnlyList<MemoryOpResponse> Ops);

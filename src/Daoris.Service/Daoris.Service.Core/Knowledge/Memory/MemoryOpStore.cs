@@ -21,11 +21,13 @@ public sealed class MemoryOpStore
     private readonly ConnectionGate _db;
     private readonly MemoryOpReads _reads;
     private readonly MemoryOpChanges _changes;
+    private readonly MemoryOpWaits _waits;
 
     internal MemoryOpStore(ConnectionGate db)
     {
         _db = db;
         _reads = new(db);
+        _waits = new(db);
         _changes = new(db, ReadAllAsync, () => BetweenReads);
     }
 
@@ -183,41 +185,15 @@ public sealed class MemoryOpStore
         }, ct);
 
     /// <summary>The states of a session whose own commit point is still to come.</summary>
-    private static readonly string[] Running =
+    internal static readonly string[] Running =
         [nameof(SessionState.Queued), nameof(SessionState.Starting), nameof(SessionState.Working), nameof(SessionState.AwaitingPerson)];
 
     /// <summary>
-    /// What waits on the person, a row per session, oldest first: ends and replacements awaiting their approver, and the staged
-    /// rows of a session no longer running, which the person keeps or drops. A running session's staged rows wait for its own commit point.
+    /// What waits on the person (<see cref="MemoryOpWaits"/>): a row per session, oldest first, for ends and replacements awaiting their
+    /// approver and the staged rows of a session no longer running, which the person keeps or drops; then each end the sweep wrote, which
+    /// has no session. A running session's staged rows wait for its own commit point.
     /// </summary>
-    public Task<IReadOnlyList<MemoryWait>> WaitsAsync(CancellationToken ct = default) => _db.RunAsync<IReadOnlyList<MemoryWait>>(async () =>
-    {
-        await using var command = _db.Command();
-        command.CommandText = """
-            SELECT m.session, m.state, m.kind, MIN(m.at), COUNT(*), MIN(m.rowid)
-            FROM memory_ops m JOIN sessions s ON s.id = m.session
-            WHERE (m.state = 'awaiting' AND m.kind IN ('end', 'supersede'))
-               OR (m.state = 'staged' AND s.state NOT IN (SELECT value FROM json_each($running)))
-            GROUP BY m.session, m.state, m.kind
-            ORDER BY MIN(m.rowid)
-            """;
-        command.Parameters.AddWithValue("$running", JsonSerializer.Serialize(Running));
-        var found = new List<(string Session, MemoryWait Wait)>();
-        await using var reader = await command.ExecuteReaderAsync(ct).ConfigureAwait(false);
-        while (await reader.ReadAsync(ct).ConfigureAwait(false))
-        {
-            var (state, kind, count) = (reader.GetString(1), reader.GetString(2), (int)reader.GetInt64(4));
-            var since = Moments.ReadRequired(reader.GetString(3));
-            var wait = state == MemoryOpState.Staged ? new MemoryWait(reader.GetString(0), 0, 0, count, since)
-                : kind == MemoryOpKind.Supersede ? new MemoryWait(reader.GetString(0), 0, count, 0, since)
-                : new MemoryWait(reader.GetString(0), count, 0, 0, since);
-            found.Add((wait.Session, wait));
-        }
-
-        return [.. found.GroupBy(each => each.Session).Select(group => new MemoryWait(
-            group.Key, group.Sum(each => each.Wait.Ends), group.Sum(each => each.Wait.Replacements), group.Sum(each => each.Wait.Staged),
-            group.Min(each => each.Wait.Since)))];
-    }, ct);
+    public Task<IReadOnlyList<MemoryWait>> WaitsAsync(CancellationToken ct = default) => _db.RunAsync(() => _waits.ReadAsync(ct), ct);
 
     /// <summary>Every row <paramref name="session"/> made, in the order they were kept.</summary>
     public Task<IReadOnlyList<MemoryOp>> OfSessionAsync(string session, CancellationToken ct = default) => _db.RunAsync<IReadOnlyList<MemoryOp>>(async () =>
