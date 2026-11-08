@@ -42,6 +42,12 @@ public sealed record OpinionGateState(string State, string Repository)
     /// <summary>When they went there: a <i>Reviewed</i> given before it cannot have seen them.</summary>
     public DateTimeOffset? ToPersonAt { get; init; }
 
+    /// <summary>When a given recheck's findings went to the person; null where no recheck is read, or its delivery has not been kept yet.</summary>
+    public DateTimeOffset? RecheckToPersonAt { get; init; }
+
+    /// <summary>Whether a <i>Reviewed</i> given at <paramref name="at"/> came after the recheck's findings, where one is read, reached the person.</summary>
+    public bool SawRecheck(DateTimeOffset at) => Recheck is not { Given: true } || RecheckToPersonAt is { } reached && at >= reached;
+
     /// <summary>What waits for the person.</summary>
     public OpinionDisputes? Disputes { get; init; }
 
