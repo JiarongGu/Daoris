@@ -57,7 +57,7 @@ internal sealed class AcpPosture(
 
         // An answer that is no object names no modes (HELPMODE1a4): a resume's may be null, and a required posture fails on it too.
         if (created.ValueKind != JsonValueKind.Object
-            || !created.TryGetProperty("modes", out var modes)
+            || !created.TryGetProperty("modes", out var modes) || modes.ValueKind != JsonValueKind.Object
             || !modes.TryGetProperty("availableModes", out var available)
             || available.ValueKind != JsonValueKind.Array)
         {
@@ -68,7 +68,11 @@ internal sealed class AcpPosture(
         var offered = new HashSet<string>(StringComparer.Ordinal);
         foreach (var mode in available.EnumerateArray())
         {
-            if (mode.TryGetProperty("id", out var id) && id.GetString() is { } name) offered.Add(name);
+            if (mode.ValueKind == JsonValueKind.Object && mode.TryGetProperty("id", out var id)
+                && id.ValueKind == JsonValueKind.String && id.GetString() is { } name)
+            {
+                offered.Add(name);
+            }
         }
 
         // The adapter names its postures in order of preference, `|`-separated: the first the
@@ -83,7 +87,8 @@ internal sealed class AcpPosture(
 
         // Already there is nothing to ask for — and an agent that started in the posture is a fact
         // worth not overwriting with an identical call.
-        if (!again && modes.TryGetProperty("currentModeId", out var current) && current.GetString() == chosen)
+        if (!again && modes.TryGetProperty("currentModeId", out var current)
+            && current.ValueKind == JsonValueKind.String && current.GetString() == chosen)
         {
             return;
         }
