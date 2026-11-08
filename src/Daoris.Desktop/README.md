@@ -1242,6 +1242,9 @@ the gate plants beside it (CONNECTOR1).
 Its phase 8 runs the doctrine tool the install carries (WSSETUP2): with the install's `app/bin/` first
 on `PATH`, `daoris` by its bare name from Command Prompt, PowerShell and Git Bash where the runner has
 one, prints the canon's version, and `init`, `sync` and `check` run clean in a scratch repository.
+Its phase 9 stages a build beside the running install, holds the drain open with a working session, and watches the
+application close, the launcher swap `app/` and the new build confirm, then a build that cannot come up rolled back and one that
+fails its check refused with nothing closed.
 Everything this loop provides is what hid two of the first deployment's four defects.
 
 | command | what |
