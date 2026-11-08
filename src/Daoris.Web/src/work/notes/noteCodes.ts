@@ -82,10 +82,11 @@ export const NOTE_CODES: Readonly<Record<string, NoteCode>> = {
   'ended.handed-over': { values: ['agent'] },
   'ended.driver-closed': { values: [] },
   // An account's line. `account.cooling` is the shape notes from before carry; since, a limit's line names whose
-  // accounts and the window its reset named, or has a line of its own where it named none.
+  // accounts and the window its reset named, or has a line of its own where it named none or a model family's limit.
   'account.cooling': { values: ['until', 'why'], why: 'cooling' },
   'account.cooling-window': { values: ['until', 'why', 'owner', 'window'], why: 'cooling' },
   'account.cooling-no-window': { values: ['until', 'why', 'owner'], why: 'cooling' },
+  'account.cooling-model': { values: ['until', 'why', 'owner', 'model'], why: 'cooling' },
   'account.refused': { values: ['owner'] },
   'account.refused-own': { values: ['owner'] },
   'account.signed-out': { values: ['owner'] },
@@ -484,6 +485,7 @@ export const NOTE_CODES: Readonly<Record<string, NoteCode>> = {
   'held.cooling-account': { values: ['owner', 'account', 'until', 'why'], why: 'cooling' },
   'held.cooling-own': { values: ['owner', 'until', 'why'], why: 'cooling' },
   'held.cooling-model': { values: ['owner', 'account', 'model', 'until', 'why'], why: 'cooling' },
+  'held.cooling-model-own': { values: ['owner', 'model', 'until', 'why'], why: 'cooling' },
   'held.limit-waits': { values: ['owner', 'account', 'until'], why: 'cooling' },
   'held.limit-waits-own': { values: ['owner', 'until'], why: 'cooling' },
   // The same wait where some accounts need the person's sign-in, named apart from those cooling.

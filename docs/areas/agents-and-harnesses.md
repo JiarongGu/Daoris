@@ -227,7 +227,7 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/Agents/` unless they s
     (from D130, D165, D197)
 30. A cooling account is held first, by a file read, before any probe. A model family's cool-off holds a start whose model
     names that family as a word of its id (`opus`, `claude-opus-4-5`), or one at account default, and passes a start naming
-    another, its hold naming the family's limit (`held.cooling-model`). Every reader that knows a line's model reads it the
+    another, its hold naming the family's limit (`held.cooling-model`, and `held.cooling-model-own` for the tool's own sign-in); a record's and a conversation's note say the family is cooling, not the account (`account.cooling-model`). Every reader that knows a line's model reads it the
     same way, the model being `PriorSession.ModelOn` (the record's choice with the composer's kept change over it): a
     resume's own account, a limited line's wait and its candidate test (`LimitWaits`), the accounts the
     curve could move a conversation to (`SwitchCandidates`), a carry-on's hold and the hand-over press (`SessionCooling`, `GoOnNew`), all
