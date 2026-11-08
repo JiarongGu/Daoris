@@ -8,9 +8,8 @@ namespace Daoris.Driver;
 /// </summary>
 /// <remarks>
 /// <para><b>Beside the account, never inside it</b>: the account's directory is the tool's.
-/// Plaintext at rest, as <c>remotes.json</c>'s deployment keys and the tools' own credential files
-/// are; tracked by nothing; no HTTP surface. A person sees a key only as its
-/// <see cref="Handle"/>. The CLI's <c>keys</c> helpers are the twin, over the same file.</para>
+/// Encrypted at rest for the Windows user (<see cref="KeySeal"/>); tracked by nothing; no HTTP surface. A person
+/// sees a key only as its <see cref="Handle"/>.</para>
 /// </remarks>
 public static class HarnessKeys
 {
@@ -36,7 +35,7 @@ public static class HarnessKeys
         var keys = Read(home);
         var read = Written(keys);
         if (!keys.TryGetValue(harness, out var held)) keys[harness] = held = new(StringComparer.Ordinal);
-        held[account] = trimmed;
+        held[account] = KeySeal.Sealed(trimmed);
         Write(home, read, keys);
         Directory.CreateDirectory(HarnessSettings.ProfileHome(home, harness, account));
 
@@ -85,7 +84,7 @@ public static class HarnessKeys
         }
 
         var read = Written(keys);
-        held[named] = trimmed;
+        held[named] = KeySeal.Sealed(trimmed);
         Write(home, read, keys);
 
         // What marked it refused is cleared, none the reason the key is not kept.
@@ -105,7 +104,7 @@ public static class HarnessKeys
 
     /// <summary>The key an account is, or null for a sign-in.</summary>
     public static string? Of(string home, string harness, string profile) =>
-        Read(home).TryGetValue(harness, out var held) && held.TryGetValue(profile, out var key) ? key : null;
+        Read(home).TryGetValue(harness, out var held) && held.TryGetValue(profile, out var kept) ? KeySeal.Open(kept) : null;
 
     /// <summary>Forget an account's key. Nothing to forget is an answer.</summary>
     public static void Remove(string home, string harness, string profile)
@@ -157,7 +156,12 @@ public static class HarnessKeys
     private static void Write(string home, string read, Dictionary<string, Dictionary<string, string>> keys)
     {
         var path = DaorisHome.Entry(home, HomeEntry.Keys);
-        JsonKeeping.Save(path, File.Exists(path), read, Written(keys));
+        // Every key a write leaves is a sealed one: a key kept before the seal is sealed by the first write after it.
+        var sealedKeys = keys.ToDictionary(
+            agent => agent.Key,
+            agent => agent.Value.ToDictionary(account => account.Key, account => KeySeal.Sealed(account.Value), StringComparer.Ordinal),
+            StringComparer.Ordinal);
+        JsonKeeping.Save(path, File.Exists(path), read, Written(sealedKeys));
     }
 
     /// <summary>The keys' own shape: agent then account, each sorted.</summary>
