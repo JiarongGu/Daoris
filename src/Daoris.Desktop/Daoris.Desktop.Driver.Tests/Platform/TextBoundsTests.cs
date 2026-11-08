@@ -47,6 +47,15 @@ public sealed class TextBoundsTests
     }
 
     [Fact]
+    public void ClipCountedNeverCutsASurrogatePairInHalf()
+    {
+        var text = "ab😀cd";
+
+        Assert.Equal("ab… (6 chars)", TextBounds.ClipCounted(text, 3));
+        Assert.Equal("ab😀… (6 chars)", TextBounds.ClipCounted(text, 4));
+    }
+
+    [Fact]
     public void OneLineFoldsLineBreaksAndTrimsOrNot()
     {
         Assert.Equal("a b c", TextBounds.OneLine("  a\r\nb\nc \n"));
