@@ -236,7 +236,8 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
     gates. The line's policy is `linePolicies`, how the line is integrated; who requests and where a conflict goes are the
     `integrate` step's, the bound version's in a run and, outside one (the sweep, the steward's door, the recheck at promotion, the
     card's wait), the newest version of the place's default workflow (`PlaceIntegrate`), the owner's where it has none. A failure is
-    confirmed once before it is blamed. (from D215, D227, D232)
+    confirmed once before it is blamed; a gate that would not start (its folder missing, no job to hold it) is an unknown run, asked
+    again, never a failure that blames a member. (from D215, D227, D232)
 40. A verification pipeline's `check` is Daoris's, with no agent session, never skipped. Where a repository's landed route names a
     verification pipeline with accepted gates, each whole look reads its line's tip and binds a run in `workflows/lines/<run>.json`
     (its `line`, and its `base`: the tip of the line's newest run with a verdict, none for the first) once the tip is past the line's

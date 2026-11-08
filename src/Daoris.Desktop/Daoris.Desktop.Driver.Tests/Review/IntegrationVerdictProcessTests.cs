@@ -530,6 +530,23 @@ public sealed class IntegrationVerdictProcessTests : LandedFixture, IDisposable
         Assert.Empty(Look().Holds);
     }
 
+    /// <summary>A gate that would not start (its folder is missing) is no failure of the candidate: the run is unknown and says why, so no member is blamed and no line stops.</summary>
+    [Fact]
+    public async Task A_gate_that_would_not_start_reads_unknown_and_blames_no_member()
+    {
+        if (!OperatingSystem.IsWindows()) return;
+
+        var (root, @base, tips) = await MembersAsync(("a.txt", "a\n"), ("bad.txt", "broken\n"));
+        var ask = Ask(root, @base, tips, runner: false, declaration: """{ "gates": [ { "name": "unit", "run": "node -e 0", "cwd": "nowhere/at/all" } ] }""");
+
+        var verdict = await JudgeAsync(ask).WaitAsync(Poll.Patience);
+
+        Assert.Equal(VerdictActions.Unknown, verdict.Action);
+        Assert.Contains("would not start", verdict.Why, StringComparison.Ordinal);
+        Assert.Empty(verdict.HandedBack);
+        Assert.Empty(Look().Holds);
+    }
+
     /// <summary>
     /// A gate's log another process still holds open to write is read whole: a process started elsewhere in this one while the gate's start
     /// has the log's handle inheritable keeps a copy of it, and a read that shares no writing reads nothing, a failure signed by no line.

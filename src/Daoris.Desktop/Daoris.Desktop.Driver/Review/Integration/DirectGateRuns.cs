@@ -1,5 +1,3 @@
-using System.Text;
-
 namespace Daoris.Driver;
 
 /// <summary>
@@ -36,9 +34,20 @@ internal sealed class DirectGateRuns(IntegrationVerdictAsk ask, CandidateJob job
         var compositions = new Dictionary<string, RunnerComposition>();
         foreach (var gate in chosen)
         {
-            var (code, log) = gate.Heavy
-                ? await places.PlacedAsync($"integration gate `{gate.Name}` on {commit[..7]}", hold, inside => RunOneAsync(gate, inside)).ConfigureAwait(false)
-                : await RunOneAsync(gate, hold).ConfigureAwait(false);
+            int code;
+            string log;
+            try
+            {
+                (code, log) = gate.Heavy
+                    ? await places.PlacedAsync($"integration gate `{gate.Name}` on {commit[..7]}", hold, inside => RunOneAsync(gate, inside)).ConfigureAwait(false)
+                    : await RunOneAsync(gate, hold).ConfigureAwait(false);
+            }
+            catch (DriverException error)
+            {
+                // An environment failure is no verdict of the candidate: a gate that cannot run is never a pass and never a failure, so it is asked again.
+                return new GatesRun(RunnerStandingKind.Unknown, $"the gate '{gate.Name}' would not start: {error.Message}") { Runs = runs };
+            }
+
             var composition = Composition(gate);
             compositions[gate.Name] = new RunnerComposition(null, null, composition.Digest);
             runs.Add(new VerdictRun("run", gate.Name, code == 0 ? RunnerVerdicts.Pass : RunnerVerdicts.Fail, composition.Digest) { Exit = code, Log = log });
@@ -74,16 +83,7 @@ internal sealed class DirectGateRuns(IntegrationVerdictAsk ask, CandidateJob job
         var environment = GateEnvironment.Compose(world.Start, ask.Pass, inside).ToDictionary(each => each.Key, each => each.Value, StringComparer.OrdinalIgnoreCase);
         var directory = gate.Cwd is { Length: > 0 } relative ? Path.GetFullPath(Path.Combine(ask.Tree, relative)) : ask.Tree;
         if (ask.Drop.IsCancellationRequested) throw new OperationCanceledException(ask.Drop);
-        HeavyStep step;
-        try
-        {
-            step = HeavyStep.Start(job.Job, gate.Run, directory, new Dictionary<string, string>(), new StepOptions(environment, log));
-        }
-        catch (DriverException error)
-        {
-            await File.WriteAllTextAsync(log, $"error: the gate would not start: {error.Message}\n", new UTF8Encoding(false)).ConfigureAwait(false);
-            return (-1, log);
-        }
+        var step = HeavyStep.Start(job.Job, gate.Run, directory, new Dictionary<string, string>(), new StepOptions(environment, log));
 
         int code;
         using (step)
