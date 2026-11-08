@@ -136,6 +136,9 @@ internal sealed class LandNode : BuiltInNode, IObserves, IStarts, IMakesLanding
 
         var governed = kept.Governed;
         door.Start(new LandStart(governed.Unit.Id, governed.Run, kept.Node.Id, branch.Id, branch.Executors, governed.Watched.Repository,
-            governed.Watched.Workspace, tip, binding.GraphDigest, governed.Graph.Nodes.FirstOrDefault(each => each.Kind == NodeKinds.Review)?.Id));
+            governed.Watched.Workspace, tip, binding.GraphDigest, governed.Graph.Nodes.FirstOrDefault(each => each.Kind == NodeKinds.Review)?.Id)
+        {
+            Since = kept.Status.Since,
+        });
     }
 }

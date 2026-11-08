@@ -14,10 +14,9 @@ vi.mock('@shenora/react', () => ({
   useShenoraEvent: () => undefined,
 }));
 
-import { SettingsView } from './SettingsView';
+import { SettingsView, type SettingsSection } from './SettingsView';
 import i18n from '../locales/i18n';
 import { clockOf, dayOf, size } from '../locales/format';
-import { code } from '../test/code';
 import { DRIVER_STATE, respond, show, WIRING } from '../test/shellHarness';
 import type { SystemSpace, SystemWiring } from '../bridge/system';
 import {
@@ -40,13 +39,14 @@ const shell = (wiring: SystemWiring | ((payload?: { measure?: boolean }) => Syst
     return DRIVER_STATE;
   };
 
+let section: SettingsSection = 'space';
 const open = (onGo = vi.fn()) => {
-  show(<SettingsView notify={() => {}} section="wiring" onGo={onGo} />);
+  show(<SettingsView notify={() => {}} section={section} onGo={onGo} />);
   return onGo;
 };
-
-describe('Settings → This Daoris', () => {
+const opening = (at: SettingsSection) => {
   beforeEach(() => {
+    section = at;
     vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL) => respond(String(input))));
   });
   afterEach(async () => {
@@ -54,8 +54,12 @@ describe('Settings → This Daoris', () => {
     invoke.mockReset();
     await i18n.changeLanguage('en');
   });
+};
 
-  it('is a domain of its own, after AI features, and asks the sizes once when it opens', async () => {
+describe('Settings → Disk space: the folders', () => {
+  opening('space');
+
+  it('is a domain of its own and asks the sizes once when it opens', async () => {
     invoke.mockImplementation(shell(WIRED));
     open();
 
@@ -80,7 +84,7 @@ describe('Settings → This Daoris', () => {
     open();
     const folders = within(await screen.findByRole('region', { name: 'Folders' }));
 
-    expect(folders.getByText('D:/somewhere/Daoris')).toBeTruthy();
+    expect(folders.getByTitle('D:/somewhere/Daoris')).toBeTruthy();
     expect(folders.getByText('installed')).toBeTruthy();
     expect(folders.getByText("A terminal's daoris reads this folder.")).toBeTruthy();
     for (const name of ['Program', 'Update', 'Your settings and records', 'Sign-ins', 'Trees and kept files', 'Downloads', 'While running', 'Machine log']) {
@@ -91,8 +95,9 @@ describe('Settings → This Daoris', () => {
     expect(folders.getByText('812 B')).toBeTruthy();
     // A folder not there yet says so and shows no size.
     expect(folders.getByText('Not there yet')).toBeTruthy();
-    expect(folders.getAllByText(/measured /).length).toBeGreaterThan(0);
-    expect(folders.getByText(code('daoris wiring'))).toBeTruthy();
+    expect(folders.getAllByTitle(/^measured /).length).toBeGreaterThan(0);
+    expect(folders.getAllByRole('button', { name: 'Open folder' }).length).toBe(1 + WIRED.folders.filter((each) => each.present && each.path).length);
+    expect(folders.queryByText(/daoris wiring/)).toBeNull();
   });
 
   it('says Measuring… for each size while a walk is under way, and holds the button until it ends', async () => {
@@ -129,16 +134,27 @@ describe('Settings → This Daoris', () => {
     expect(folders.getByText('7 MB')).toBeTruthy();
   });
 
-  it('says a development run at its head, and the two notices the home carried under it', async () => {
+  it('says a development run on its home, and the two notices the home carried under it', async () => {
     invoke.mockImplementation(shell(DEVELOPMENT));
     open();
     const folders = within(await screen.findByRole('region', { name: 'Folders' }));
 
-    expect(screen.getAllByText('development run').length).toBeGreaterThan(0);
-    expect(screen.getByText(/runs from a build folder, not from an install/)).toBeTruthy();
+    expect(folders.getByText('development run')).toBeTruthy();
     expect(folders.getByText(/this install's own data folder, not D:\/somewhere\/first\/data/)).toBeTruthy();
     expect(folders.getByText(/serves a different page than this install carries/)).toBeTruthy();
     expect(folders.getByText(/names this install's data folder, which is read as this install/)).toBeTruthy();
+  });
+});
+
+describe('Settings → This Daoris', () => {
+  opening('wiring');
+
+  it('says a development run at its head, before the terminal', async () => {
+    invoke.mockImplementation(shell(DEVELOPMENT));
+    open();
+
+    expect(await screen.findByText(/runs from a build folder, not from an install/)).toBeTruthy();
+    expect(screen.queryByRole('region', { name: 'Folders' })).toBeNull();
   });
 
   it('shows the service: its address and source, who started it, whether it answers, its tier and version, its programs, the key and the remotes', async () => {
@@ -294,31 +310,6 @@ describe('Settings → This Daoris', () => {
     expect(variables.getByText('The service was already running; it knows its own')).toBeTruthy();
   });
 
-  it('shows the versions, the one not read in its own words with its door, and the update in one line', async () => {
-    invoke.mockImplementation(shell(WIRED));
-    const onGo = open();
-    const versions = within(await screen.findByRole('region', { name: 'Versions' }));
-
-    expect(versions.getByText('0.21.0 (abc1234)')).toBeTruthy();
-    expect(versions.getByText('Shenora 0.21.1')).toBeTruthy();
-    expect(versions.getByText('10.0.1')).toBeTruthy();
-    expect(versions.getByText('Settings → Tools says it')).toBeTruthy();
-    expect(await versions.findByText('Nothing is staged beside this install.')).toBeTruthy();
-    await userEvent.click(versions.getByRole('button', { name: 'Open Tools' }));
-    expect(onGo).toHaveBeenLastCalledWith({ view: 'settings', section: 'tools' });
-    await userEvent.click(versions.getByRole('button', { name: 'Open Driver' }));
-    expect(onGo).toHaveBeenLastCalledWith({ view: 'settings', section: 'driver' });
-  });
-
-  it('says what a development run does not carry, and that it is not updated', async () => {
-    invoke.mockImplementation(shell(DEVELOPMENT));
-    open();
-    const versions = within(await screen.findByRole('region', { name: 'Versions' }));
-
-    expect(versions.getAllByText('A development run has none')).toHaveLength(2);
-    expect(versions.getByText('A development run is not updated.')).toBeTruthy();
-    expect(versions.getByText('Only the window knows')).toBeTruthy();
-  });
 
   it('shows the terminal: the launchers, the PATH, what a new terminal runs, the address file and the account\'s two variables', async () => {
     invoke.mockImplementation(shell(WIRED));
@@ -400,7 +391,7 @@ describe('Settings → This Daoris', () => {
   it('offers the set-up presses and presses none of them by itself', async () => {
     invoke.mockImplementation(shell(WIRED));
     open();
-    await screen.findByRole('region', { name: 'Folders' });
+    await screen.findByRole('region', { name: 'Terminal' });
 
     const pressed = screen.getAllByRole('button').map((button) => button.textContent);
     expect(pressed).toContain('Open folder');
@@ -457,9 +448,12 @@ describe('Settings → This Daoris', () => {
     expect(card.getByText(/nothing of Daoris's is left/i)).toBeTruthy();
     expect(card.queryAllByRole('button')).toEqual([]);
   });
+});
 
-  // The Downloads row lists the agents' and tools' downloaded versions with what keeps each, then one
-  // press removes those nothing uses; the driver judges each again, and what it kept at the press is said.
+describe('Settings → Disk space: the downloads and the kinds', () => {
+  opening('space');
+
+  // The Downloads row lists each downloaded version with what keeps it; one press removes those nothing uses.
   const withDownloads = (cleared?: (versions: unknown) => unknown) =>
     async (module: string, type: string, request?: { payload?: { measure?: boolean; versions?: unknown } }) => {
       if (module === 'DAORIS.DRIVER' && type === 'SYSTEM_DOWNLOADS') return DOWNLOADS;
@@ -547,8 +541,9 @@ describe('Settings → This Daoris', () => {
 
   it('draws no card where the answer lacks it', async () => {
     invoke.mockImplementation(shell({ ...WIRED, toolHome: undefined }));
+    section = 'wiring';
     open();
-    await screen.findByRole('region', { name: 'Folders' });
+    await screen.findByRole('region', { name: 'Terminal' });
 
     expect(screen.queryByRole('region', { name: 'Left in your own tool home' })).toBeNull();
   });
@@ -1059,15 +1054,17 @@ describe('Settings → This Daoris', () => {
     expect(card.getByText(`共 ${size(1024 ** 4)}，可用 ${size(143.5 * 1024 ** 3)}`)).toBeTruthy();
   });
 
-  it('speaks 中文', async () => {
+  it('speaks 中文, and This Daoris too', async () => {
     await i18n.changeLanguage('zh');
     invoke.mockImplementation(shell(DEVELOPMENT));
     open();
-
     expect(await screen.findByRole('region', { name: '文件夹' })).toBeTruthy();
-    expect(screen.getByRole('region', { name: '服务' })).toBeTruthy();
+    expect(screen.getByText('开发运行')).toBeTruthy();
+
+    section = 'wiring';
+    open();
+    expect(await screen.findByRole('region', { name: '服务' })).toBeTruthy();
     expect(screen.getByRole('region', { name: '驱动循环' })).toBeTruthy();
-    expect(screen.getAllByText('开发运行').length).toBeGreaterThan(0);
-    for (const name of ['设置文件', '环境变量', '版本', '终端', '知识库', '日志', '留在你自己工具主目录里']) expect(screen.getByRole('region', { name })).toBeTruthy();
+    for (const name of ['设置文件', '环境变量', '终端', '知识库', '日志', '留在你自己工具主目录里']) expect(screen.getByRole('region', { name })).toBeTruthy();
   });
 });

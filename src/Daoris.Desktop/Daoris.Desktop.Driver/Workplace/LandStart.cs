@@ -18,6 +18,9 @@ public sealed record LandStart(
     string Unit, string Run, string Node, string Branch, IReadOnlyList<string> Executors, string Repository, string Workspace, string Tip, string Graph,
     string? Review)
 {
+    /// <summary>When the node started at this tip (<see cref="NodeStatus.Since"/>); null where it started unclocked.</summary>
+    public DateTimeOffset? Since { get; init; }
+
     /// <summary>Whether the landing is the person's Accept's (a review before it) rather than the standing authority's.</summary>
     public bool Reviewed => Review is not null;
 }

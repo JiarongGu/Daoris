@@ -26,7 +26,7 @@ export function WiringAddressRow({ account, busy = false, onPress }: {
   return (
     <SettingRow
       label={t('settings.daoris.label.changeAddress')}
-      hint={t('settings.daoris.setup.address.hint')}
+      twin={t('settings.daoris.setup.address.hint')}
       control={!asking && (
         <>
           <Button disabled={busy} onClick={() => { setTyped(account ?? ''); setAsking('set'); }}>{t('settings.daoris.button.addressChange')}</Button>

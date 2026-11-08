@@ -5,6 +5,9 @@ the per-task record. Entries preserve their original wording so the archive stay
 
 ---
 
+## SETTINGSUX1 and UIFIND1 — Settings grouped by what a person comes to set, its folders one list (2026-11-09)
+
+> **SETTINGSUX1 / UIFIND1** (web): Outcome: Settings has eleven domains in the order a person comes to them (Get started, Appearance, Driver, AI features, Git, Tools, Browser, Disk space, Updates, This Daoris, Machine log). Disk space holds the folders as one list (the name, the path on one line cut in the middle by `MiddlePath`, the size, one *Open folder*) and the keep rules; Updates the install's update over its versions; Driver repeats neither the home nor the update; This Daoris leads with the terminal and the service. A row's terminal twin or variable name sits in its ⓘ help (`SettingRow`'s `twin`), and the palette finds each domain by its rows' words in the reader's language (`domainSearch.test.ts`). The doors that opened the space card and the update open Disk space and Updates.
 ## DOCTRINECLI1 — the doctrine console's Ctrl+C hold and the CLI's Node floor (2026-11-09)
 
 > **DOCTRINECLI1** (driver): Outcome: `DoctrineConsole` holds Ctrl+C through `InterruptHold`, taken before the child starts and removed when it ends, and the CLI's entry refuses a Node below 22 with exit 2 (`bin/node-floor.mjs`), the floor checked once inside the CLI, never by a second process start.

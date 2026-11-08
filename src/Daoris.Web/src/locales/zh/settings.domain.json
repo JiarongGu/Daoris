@@ -6,6 +6,8 @@
   "settings.domain.tools": "工具",
   "settings.domain.git": "Git",
   "settings.domain.browser": "浏览器",
+  "settings.domain.space": "磁盘空间",
+  "settings.domain.updates": "更新",
   "settings.domain.start": "开始使用",
   "settings.domain.logs": "本机日志"
 }

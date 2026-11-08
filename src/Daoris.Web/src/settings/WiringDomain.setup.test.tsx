@@ -54,7 +54,7 @@ describe('This Daoris → set up from the page', () => {
 
   it('opens a folder by the id the read gave, never a path', async () => {
     invoke.mockImplementation(shell());
-    show(<SettingsView notify={() => {}} section="wiring" />);
+    show(<SettingsView notify={() => {}} section="space" />);
     const folders = await card(/^(Folders|文件夹)$/);
 
     await userEvent.click((await folders.findAllByRole('button', { name: 'Open folder' }))[0]!);
@@ -66,7 +66,7 @@ describe('This Daoris → set up from the page', () => {
   it('says a folder that did not open in the catalogue\'s words', async () => {
     const notify = vi.fn();
     invoke.mockImplementation(shell(INSTALLED, { done: false, changed: false, why: 'FOLDER_NOT_OPENED', message: 'English.' }));
-    show(<SettingsView notify={notify} section="wiring" />);
+    show(<SettingsView notify={notify} section="space" />);
 
     await userEvent.click((await (await card(/^(Folders|文件夹)$/)).findAllByRole('button', { name: 'Open folder' }))[0]!);
 

@@ -43,7 +43,9 @@ export const PLACE_VIEWS: readonly View[] = [
 
 // The guide is Get started, and Plugins is a place of its own. Workspace and Permissions belong to a workspace's page, and
 // are kept below.
-export const PLACE_DOMAINS: readonly SettingsSection[] = ['start', 'appearance', 'ai', 'wiring', 'driver', 'git', 'browser', 'logs'];
+export const PLACE_DOMAINS: readonly SettingsSection[] = [
+  'start', 'appearance', 'driver', 'ai', 'git', 'browser', 'space', 'updates', 'wiring', 'logs',
+];
 
 /**
  * The views a go may name one item in: Quests, whose list holds quests and asks, an ask

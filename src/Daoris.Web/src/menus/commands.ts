@@ -105,8 +105,8 @@ export type CommandState = {
   language: string;
   /** Each agent installed here, by its id and its product's name: the palette goes to each one's page. */
   agents: readonly { name: string; label: string }[];
-  /** Settings' domains this window offers, by id and their name's key: the palette opens each. */
-  domains: readonly { id: string; label: string }[];
+  /** Settings' domains this window offers, by id, their name's key and their rows' keys: the palette opens each by any of them. */
+  domains: readonly { id: string; label: string; rows?: readonly string[] }[];
   /** The mode Knowledge shows, or opens in where it is not in front: Search or Convergence. */
   knowledge: KnowledgeMode;
   /**
@@ -579,11 +579,12 @@ const FAMILIES: readonly (CommandFamily & { after: string })[] = [
     },
   },
   {
-    // Each Settings domain, the palette's alone; the machine log is Help's, so it is not here twice.
+    // Each Settings domain, the palette's alone, found by its rows' words too; the machine log is Help's, so it is not here twice.
     family: 'workspace.domain', menu: 'workspace', group: 'settings', after: 'workspace.settings',
     rows: (state, t) => state.domains.filter((domain) => domain.id !== 'logs').map((domain) => ({
       id: `workspace.domain:${domain.id}`, label: t(domain.label), title: t('command.settingsAt', { domain: t(domain.label) }),
-      icon: 'settings', paletteOnly: true, keywords: 'settings 设置', run: (doors: CommandDoors) => doors.settings(domain.id),
+      icon: 'settings', paletteOnly: true, keywords: ['settings 设置', ...(domain.rows ?? []).map((row) => t(row))].join(' '),
+      run: (doors: CommandDoors) => doors.settings(domain.id),
     })),
   },
   {

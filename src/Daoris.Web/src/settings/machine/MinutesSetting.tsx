@@ -24,7 +24,7 @@ export function MinutesSetting({ setting, held, onSet }: {
   return (
     <SettingRow
       label={t(`${words}.label`)}
-      hint={t(`${words}.terminal`)}
+      twin={t(`${words}.terminal`)}
       why={t(`${words}.body`)}
       control={(
         <span className="inline-flex items-center gap-1.5">

@@ -148,9 +148,6 @@ const none = () => {};
 // The six cards after the loop: each from the installed read and from a development run, in the other
 // theme where it has a pair, and narrow.
 
-const UPDATE = { state: 'none', staged: null, mode: null, driven: 0, turns: 0, problem: null, outcome: null, last: null } as const;
-const STAGED = { ...UPDATE, state: 'waiting', staged: { id: 'b2', version: '0.22.0' }, last: { phase: 'installed', version: '0.21.0' } } as const;
-
 /** Each settings file with what it holds, one that does not parse and one not there, and the records folded. */
 export const FilesRead: Story = { render: () => <WiringFiles files={WIRED.files} onDoor={none} />, decorators: inTheme('light') };
 
@@ -177,25 +174,22 @@ export const VariablesNarrow: Story = { render: () => <WiringVariablesCard varia
 
 /** An install's versions, Node's said by Tools, and nothing staged. */
 export const VersionsInstalled: Story = {
-  render: () => <WiringVersions versions={WIRED.versions} update={UPDATE} onTools={none} onDriver={none} />, decorators: inTheme('light'),
+  render: () => <WiringVersions versions={WIRED.versions} onTools={none} />, decorators: inTheme('light'),
 };
 
 /** The same, in dark. */
 export const VersionsInstalledDark: Story = {
-  render: () => <WiringVersions versions={WIRED.versions} update={UPDATE} onTools={none} onDriver={none} />, decorators: inTheme('dark'),
+  render: () => <WiringVersions versions={WIRED.versions} onTools={none} />, decorators: inTheme('dark'),
 };
-
-/** A build staged, and the last update installed. */
-export const VersionsStaged: Story = { render: () => <WiringVersions versions={WIRED.versions} update={STAGED} onTools={none} onDriver={none} /> };
 
 /** A development run carries no doctrine tool or driver verbs, and is not updated. */
 export const VersionsDevelopment: Story = {
-  render: () => <WiringVersions versions={DEVELOPMENT.versions} update={UPDATE} development onTools={none} onDriver={none} />,
+  render: () => <WiringVersions versions={DEVELOPMENT.versions} development onTools={none} />,
 };
 
 /** A narrow main area. */
 export const VersionsNarrow: Story = {
-  render: () => <WiringVersions versions={WIRED.versions} update={UPDATE} onTools={none} onDriver={none} />, decorators: narrow,
+  render: () => <WiringVersions versions={WIRED.versions} onTools={none} />, decorators: narrow,
 };
 
 /** Launchers there, on the account's PATH, another driver found first, and the address file taken. */
@@ -455,19 +449,24 @@ export const SpaceFreeEndedChineseHalf: Story = { render: () => space({ space: S
 // The whole domain, as `WiringDomain` composes it, in the domain's own container (R1, R6): at the three widths the frame
 // gives, in English and 中文, light and dark. `measured/settings.spec.ts` reads each row's value box against the track.
 
-const DOORS = { driver: none, tools: none, ai: none, logs: none, file: none };
+const DOORS = { driver: none, ai: none, logs: none, file: none };
 const thisDaoris = () => (
   <CardStack>
-    <WiringCards
-      wiring={WIRED}
-      update={UPDATE}
-      onMeasure={none}
-      onOpenLogFolder={none}
-      doors={DOORS}
-      space={<WiringSpace space={SPACE} onCount={none} onDownloads={none} />}
-    />
+    <WiringCards wiring={WIRED} onOpenLogFolder={none} doors={DOORS} />
   </CardStack>
 );
+
+const diskSpace = () => (
+  <CardStack>
+    <WiringFolders wiring={WIRED} onMeasure={none} onOpen={none} onDownloads={none} />
+    <WiringSpace space={SPACE} onCount={none} onDownloads={none} />
+  </CardStack>
+);
+
+export const DiskSpace: Story = { render: diskSpace, decorators: inTheme('light') };
+
+export const DiskSpaceDark: Story = { render: diskSpace, decorators: inTheme('dark') };
+export const DiskSpaceChineseNarrow: Story = { render: diskSpace, decorators: [storyWidths.narrow, chinese] };
 
 /** The whole domain at the wide main area: one label track a card, values beside their words, cards 16 px apart. */
 export const ThisDaoris: Story = { render: thisDaoris };
