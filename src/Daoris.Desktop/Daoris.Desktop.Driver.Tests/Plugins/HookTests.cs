@@ -297,6 +297,8 @@ public sealed class HookTests : IDisposable
     [InlineData("\"hello\"")]
     [InlineData("[1,2]")]
     [InlineData("""{"level":"info","msg":"a logging library's line"}""")]
+    [InlineData("""{"jsonrpc":"2.0","id":null,"error":{"code":-32700,"message":"parse error"}}""")]
+    [InlineData("""{"jsonrpc":"2.0","id":"x","result":{}}""")]
     public async Task A_json_line_that_is_not_a_frame_is_noise_and_the_wire_goes_on(string noise)
     {
         var lines = new List<string>();

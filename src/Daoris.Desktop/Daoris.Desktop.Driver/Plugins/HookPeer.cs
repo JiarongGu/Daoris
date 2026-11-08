@@ -407,11 +407,13 @@ public sealed class HookPeer(
                     continue;
                 }
 
-                // A JSON value that is not an object, and an object that is neither an answer nor
-                // a request, are not frames either. A bare `42` would throw InvalidOperationException from the
-                // property read below, which the catch does not name, and the wire would end.
+                // A JSON value that is not an object, and an object that is neither an answer nor a request, are not
+                // frames either; nor is an answer whose id is no number, such as the `null` of a JSON-RPC parse error.
+                // A bare `42` or such an id would throw InvalidOperationException from a read below, which the catch
+                // does not name, and the wire would end.
                 var hasMethod = frame.ValueKind == JsonValueKind.Object && frame.TryGetProperty("method", out _);
-                if (frame.ValueKind != JsonValueKind.Object || (!hasMethod && !frame.TryGetProperty("id", out _)))
+                if (frame.ValueKind != JsonValueKind.Object
+                    || (!hasMethod && !(frame.TryGetProperty("id", out var idValue) && idValue.ValueKind == JsonValueKind.Number)))
                 {
                     onLine?.Invoke(line);
                     continue;
