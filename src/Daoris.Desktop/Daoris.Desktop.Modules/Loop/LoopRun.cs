@@ -25,7 +25,6 @@ internal sealed class LoopRun(
 
         var homeDirectory = loop.Home;
         var key = Environment.GetEnvironmentVariable(ServiceClient.KeyVariable);
-        // Null for an adopted host and for one that did not prove its key: the clients below then write as they did, and the host refuses what is the person's.
         var person = supervisor.ProvedKey;
         // A session's end hands the service its usage history's turn lines, which its memory rows' models are read from.
         using var service = new ServiceClient(serviceUrl, key, personKey: person) { TurnLines = sessions => ServiceClient.LinesOf(UsageHistory.TurnLinesOf(homeDirectory, sessions), turn => new ServiceClient.TurnLine(turn.Seq, turn.Started, turn.Ended, turn.Model)) };

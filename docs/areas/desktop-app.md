@@ -85,11 +85,14 @@ executable, started with a browser argument, is Daoris's own browser, which sess
 **The person's doors and their key**
 
 11. The person key is a random 256-bit value minted for each host start, handed on the host's first input line and held in
-    memory; never in a file, an environment, a URL, page storage or the log. `HostSupervisor` hands one when it is given one,
-    and the shell is given none yet (PERSONDOOR1g), so the host enforces none. (from D156)
+    memory; never in a file, an environment, a URL, page storage or the log. The window's `HostSupervisor` mints one at each start of
+    the host it starts (`Mints`) and asks every readiness probe for the host's proof of it. `ProvedKey` is that key only once
+    the host proved it, and is what the loop's clients (`ServiceClient`, the index doors, the sync's local client) present as
+    `Daoris-Person` to an address of this machine, never to a remote (`PersonHeader`), so the host enforces it. (from D156)
 12. The page asks `PERSON_KEY` and sends `Daoris-Person` on writes only. No session ever holds the key. `PERSON_KEY` answers
-    none until the shell mints one, and a host the shell adopted has none; the window says so, and the host's own held asks
-    are then not read into *Notifications* by the window. (from D156)
+    the proved key, and none for a host the shell adopted or whose proof failed; the window says so, and the host's own held asks
+    are then not read into *Notifications* by the window. A terminal's verb that posts a person's door straight to the host
+    carries no key and is refused there until the verbs present one. (from D156)
 13. Reads are open. An agent's doors are judged as an agent's. The person's doors need the key. An unclassed write is
     refused. A refusal is a 403 with a code, never a 500. (from D156)
 14. A terminal's press of a `Person` route and a request the host holds for the person are one request row in

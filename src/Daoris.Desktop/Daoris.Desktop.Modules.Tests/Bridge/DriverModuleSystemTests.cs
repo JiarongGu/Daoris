@@ -190,7 +190,7 @@ public sealed class DriverModuleSystemTests : DriverModuleBridge
         Assert.Equal(HostStop.Exited, supervisor.Stop());
     }
 
-    /// <summary>A host this window adopted was started by another, which holds a key this window never had: none is minted or answered.</summary>
+    /// <summary>A host this window adopted came from another start, whose key this window never had: none is handed or answered.</summary>
     [Fact]
     public async Task A_host_the_window_adopted_is_handed_no_key_and_the_page_is_answered_none()
     {
