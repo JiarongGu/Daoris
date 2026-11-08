@@ -28,6 +28,8 @@ export type AtWorkChannel = {
   onOpen?: () => void;
   /** The person's words on a line's own channel: present only for one, which then draws a composer under its words. */
   onPost?: (post: ChannelPost, answered: ChannelAnswered) => void;
+  /** The attended session has ended, so nobody is left to read a word written: no composer is drawn. */
+  over?: boolean;
   /** The repositories a post on a line's own channel may be addressed to, as its messages name them. */
   recipients?: readonly string[];
 };
@@ -236,7 +238,7 @@ function ChannelWords({ channel, parts }: { channel: AtWorkChannel; parts: reado
           </button>
         </div>
       )}
-      {channel.onPost && <LineChannelComposer onPost={channel.onPost} recipients={channel.recipients ?? []} />}
+      {channel.onPost && !channel.over && <LineChannelComposer onPost={channel.onPost} recipients={channel.recipients ?? []} />}
     </section>
   );
 }
