@@ -113,6 +113,27 @@ public sealed class TreePoolFinishGitTests : IDisposable
     }
 
     [Fact]
+    public async Task A_write_landing_as_the_paths_are_set_aside_puts_them_back_and_keeps_the_branch()
+    {
+        var fixture = await FixtureAsync();
+        var slot = await fixture.LetGoAsync(fixture.Pool(), 1, "s-aaaa0001");
+        await WriteAsync(slot, "_fixtures/scratch.txt", "scratch\n");
+        var pool = fixture.Pool(seams: new PoolSeams
+        {
+            Reached = (phase, folder) => phase == TreeClaimPhases.SetAside ? File.WriteAllTextAsync(Path.Combine(folder, "late.txt"), "late\n") : Task.CompletedTask,
+        });
+
+        var done = await pool.FinishAsync(Finish(fixture, "s-aaaa0001"));
+
+        Assert.Contains("put back", done.Refused);
+        Assert.True(File.Exists(Path.Combine(slot.Path, "_fixtures", "scratch.txt")));
+        Assert.Contains("daoris/s-aaaa0001", await fixture.BranchesAsync());
+        Assert.Equal("s-aaaa0001", pool.Slot(PoolGitFixture.Workspace, PoolGitFixture.Repository, 1)!.Line);
+        Assert.Null(pool.ClaimOn(PoolGitFixture.Workspace, PoolGitFixture.Repository, 1));
+        Assert.Empty(Directory.EnumerateFiles(TreePoolFinishes.SetAsideRoot(fixture.Site), "*" + SlimManifest.Suffix));
+    }
+
+    [Fact]
     public async Task A_line_finished_after_its_slot_served_another_gets_its_facts_from_its_let_go_and_an_empty_folder()
     {
         var fixture = await FixtureAsync();
