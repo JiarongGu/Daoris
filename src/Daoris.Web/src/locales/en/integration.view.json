@@ -4,7 +4,7 @@
   "integration.view.body": "How work asked into {{repository}}'s line moves: the queue, the candidate being tried, what was handed back and what the line now holds.",
   "integration.view.twin": "In a terminal: `daoris integrate {{repository}}`",
   "integration.view.recheck": "Check again",
-  "integration.view.none": "Nothing is asked into this line, and nothing was integrated here yet.",
+  "integration.view.none": "Nothing is asked into this line, and nothing was integrated here yet. A quest sent to this repository, or a session's work landing on it, shows up here.",
   "integration.view.queue": "Queued",
   "integration.view.handedBack": "Handed back",
   "integration.view.superseded": "Superseded commits awaiting a disposition",

@@ -49,7 +49,7 @@
   "agents.read.failed": "the last read failed, {{when}}",
   "agents.read.again": "Read again",
   "agents.read.againTip": "Asks {{agent}} about each of Daoris's accounts, one at a time. Your own sign-in is never asked. Opening this page asks no sign-in.",
-  "agents.read.now": "Read now",
+  "agents.read.now": "Read usage",
   "agents.read.nowTip": "Reads how much each account has used from {{agent}} now, where its reading is older than a minute: no prompt, and no model request. Opening this page reads it too.",
   "agents.read.reading": "Reading…",
   "agents.page.terminal": "The same from a terminal: `daoris agent list` says each account, `daoris agent login {{agent}} --new` signs in to another, and `daoris agent profile …` sets how they are used.",

@@ -2,7 +2,7 @@
   "overview.title": "Overview",
   "overview.needs.oldest": "the oldest {{age}}",
   "overview.needs.door": "Show it in Notifications",
-  "overview.description": "Is anything sitting, and is the family healthy — the state of the thing being managed.",
+  "overview.description": "What waits on you, and how the family's repositories, quests and knowledge stand.",
   "overview.tiles.adopted.label": "Adopted repositories",
   "overview.tiles.adopted.note": "of {{total}} in the family",
   "overview.tiles.open.label": "Open quests",
