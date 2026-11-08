@@ -60,6 +60,8 @@ the per-task record. Entries preserve their original wording so the archive stay
 ## ROLESREVIEW2i to 2q — the roles and supervision review's second cycle (2026-11-09)
 
 > **ROLESREVIEW2i** (modules): Outcome: a leave of an allow or files subject asks the same coverage as a decide (`SupervisorDecisionDoor.CoversPlace` for a place no repository names, `Covers` for a held request's repository), so a holder of another place cannot hide a subject from the supervisor that answers it; a leave still asks no grant (`roles-and-supervision.md`, rule 46).
+>
+> **ROLESREVIEW2j** (driver): Outcome: an overruled or stale course or landing decision is refused `overruled` in the run as after a restart (the question's keeping already said so), and a course's overrule or stale release closes its subject at once, as a landing's does.
 
 ## TREEPOOL1ac — shared paths (2026-11-09)
 

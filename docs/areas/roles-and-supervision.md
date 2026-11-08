@@ -319,7 +319,8 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they start wi
     decision is kept beside the questions' with no `question`. A restart empties memory: the start's sweep reads every kind's decision
     files, closes a held or released one stale (`restarted`) and an admitted one interrupted, and remembers each subject final to the
     person (overruled, stale, superseded, interrupted, left) as closed by its kind and subject, so a point overruled before a restart,
-    or one whose overrule line was never written, is listed for no supervisor again and its decide is refused. An agent
+    or one whose overrule line was never written, is listed for no supervisor again and its decide is refused `overruled`; a course,
+    landing or question decision does the same in the run it goes final to the person in (a left one refuses `answered`). An agent
     supervisor's attempt (`SupervisorAttempts`) is written beside the subject's decisions before its turn starts and its outcome
     (decided, left, failed, limited, role-changed) beside it at its end, one per choice of the role's order and one at a time per subject; the
     sweep closes an attempt with no outcome failed and remembers every subject whose attempts ended as closed, so no choice is
@@ -510,7 +511,6 @@ Web: `agents/roles/*.test.ts(x)` and `agents/setup/*.test.tsx`.
 - **SETUPUX1y:** the places tree lit by default, retiring the Roles sections under Setup.
 
 - **The second review cycle's open defects** (ROLESREVIEW2i to 2q; the backlog row of that name points here), one entry each:
-  - **ROLESREVIEW2j — an overruled or stale course or landing decision is refused `answered` in the run, `overruled` after a restart** (driver; `SupervisorCourses.cs:71,79`, `SupervisorLandings.cs:29` against `SupervisorKeeping.cs:28`): a decision exists, so `Answered` is set before `ClosedWhy`; a course never calls `Close` where landings do, so `Closed(subject)` at `SupervisePass.cs:31` is false in the run.
   - **ROLESREVIEW2k — a share allow written to some repositories is reported as written to none** (modules; `FilesKind.cs:58-66`, `FileAllows.Give`): a later repository's `DriverException` leaves the earlier layers holding the allow while the ask settles `made: false` and waits. Unconfirmed that one layer can fail alone.
   - **ROLESREVIEW2l — a non-throwing "no door" reply to a decision's say ends it `stale` `unsaid`** (driver; `WorkOrders/SupervisorLook.cs:50`, `SupervisorReleasing.cs:66-68`): the lost-response retry covers exceptions only. Low certainty: trace when `SendAsync` returns rather than throws.
   - **ROLESREVIEW2m — a role verb's presses carry no revision, and `role suggested --use` is not one batch** (driver; `RoleVerbs.cs:77,125,286`): `read: null` lets the plan's copy overwrite a role edited since (rule 9); one press per role leaves the first written when the second is refused.
