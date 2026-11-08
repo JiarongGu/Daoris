@@ -160,10 +160,11 @@ internal sealed class QuestPublishing(
             return new(unquoted.Refusal, unquoted.Message, Quest: null, addressable);
         }
 
-        // A cleared quest a remote numbered is forgotten here, and its words make its id again: the
-        // remote still holds it closed and would refuse a fresh copy on every pass, so this is answered as a closed quest is.
+        // A cleared quest a remote numbered is forgotten here, and a request key makes its id again: the remote still holds
+        // it closed and would refuse a fresh copy on every pass, so this is answered as a closed quest is. Plain words have a
+        // next id (`~again<n>`), taken when the publish finds the first forgotten, so they are never refused here.
         // Where the quest simply went (no remote ever numbered it), nothing is marked and the words make it again.
-        if (await quests.ForgottenIdAsync(from, to, title, lanes, ct, request).ConfigureAwait(false) is { } cleared)
+        if (request is not null && await quests.ForgottenIdAsync(from, to, title, lanes, ct, request).ConfigureAwait(false) is { } cleared)
         {
             return new(
                 QuestPublishRefusal.Cleared,
