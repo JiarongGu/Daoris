@@ -1,10 +1,9 @@
 namespace Daoris.Desktop.Modules.Tests;
 
 /// <summary>
-/// A second launch of the executable is handed to the instance that runs by the kit's
-/// single-instance guard, and that instance opens a new main window rather than a second process starting a second loop on
-/// the same home. What is here is the hand-over's judgement — when a window opens, which name it takes, where it points —
-/// held apart from the window itself, which is WinForms and lives in the application.
+/// A second launch of the executable is handed to the instance that runs by the kit's single-instance guard, and that instance
+/// opens a new main window rather than a second process starting a second loop on the same home. What is here is the hand-over's
+/// judgement — when a window opens, which name it takes, where it points — held apart from the window, which lives in the application.
 /// </summary>
 public sealed class SecondLaunchTests
 {
@@ -144,10 +143,6 @@ public sealed class SecondLaunchTests
         Assert.Equal(known, SecondaryWindow.IsKnown(name));
         Assert.Equal(known, SecondaryWindow.IsMain(name));
     }
-
-    [Fact]
-    public void Each_main_window_has_its_own_geometry_file() =>
-        Assert.Equal("main%3A2.json", SecondaryWindow.StateFile("main:2"));
 
     /// <summary>
     /// What is run is the options themselves (<see cref="LaterLaunchTests"/>: the kit's own

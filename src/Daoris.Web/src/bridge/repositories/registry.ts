@@ -1,6 +1,5 @@
 import { useMutation } from '@tanstack/react-query';
 import { getBridge } from '@shenora/react';
-import { ownWindowName } from '../../work/window';
 
 // The registry's machine half: a folder the shell names, and a declaration written in place.
 
@@ -32,21 +31,12 @@ export type FolderInspection = {
  *
  * @remarks
  * Not a query: it opens a modal, so it happens when the person asks and never on a refetch. The
- * registering that follows is an ordinary call to the loopback host — routing it through IPC too
- * would be a second door onto the same judgement.
- *
- * It waits for as long as the dialog is open: under the bridge's default 30 seconds a person who
- * took longer would be told the call timed out while the dialog stayed up, and their pick then answered nobody.
- * An unbounded wait needs the kit's 0.19, where `Infinity` means no timer rather than one that fires at once.
+ * registering that follows is an ordinary call to the loopback host. The dialog is owned by this page's window, and the call waits
+ * for as long as it is open: under the bridge's default 30 seconds a slow pick would answer nobody.
  */
 export const usePickFolder = () =>
   useMutation({
-    mutationFn: () => {
-      // The dialog is owned by the window this page is in; the first main window names none.
-      const window = ownWindowName(globalThis.location?.search ?? '');
-      return getBridge().invoke<FolderInspection | null>('DAORIS.REGISTRY', 'PICK_FOLDER',
-        window === null ? { timeoutMs: Infinity } : { payload: { window }, timeoutMs: Infinity });
-    },
+    mutationFn: () => getBridge().invoke<FolderInspection | null>('DAORIS.REGISTRY', 'PICK_FOLDER', { timeoutMs: Infinity }),
   });
 
 /**

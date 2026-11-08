@@ -398,20 +398,4 @@ public sealed class WindowsModuleTests : Bridge
         Assert.Equal(label, WaitingBadge.Label(count));
         Assert.Equal(title, WaitingBadge.Title(count));
     }
-
-    /// <summary>
-    /// The geometry store keys on the name, and the escape that makes an address also makes a
-    /// filename — injective, because `%` is not in the alphabet an id may use.
-    /// </summary>
-    [Fact]
-    public void Each_window_name_has_its_own_geometry_file()
-    {
-        Assert.Equal("monitor.json", SecondaryWindow.StateFile("monitor"));
-        Assert.Equal("session%3Aa1b2c3d4.json", SecondaryWindow.StateFile("session:a1b2c3d4"));
-
-        // Two names a careless `-` substitution would have collided into one file.
-        Assert.NotEqual(
-            SecondaryWindow.StateFile("session:laptop/a1b2"),
-            SecondaryWindow.StateFile("session:laptop-a1b2"));
-    }
 }

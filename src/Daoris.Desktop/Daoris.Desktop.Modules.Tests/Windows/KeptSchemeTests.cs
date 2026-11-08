@@ -121,7 +121,8 @@ public sealed class KeptSchemeTests : IDisposable
         Assert.DoesNotContain("ChromePalette.For(OperatingSystemPrefersDark())", main);
         Assert.Contains("KeptScheme.StartsDark(", main);
 
-        var secondary = File.ReadAllText(SourceFiles.Find("Daoris.Desktop.App", "SecondaryForm.cs"));
+        var secondary = File.ReadAllText(SourceFiles.Find("Daoris.Desktop.App", "SecondaryWindowHost.cs"));
         Assert.DoesNotContain("MainForm.OperatingSystemPrefersDark()", secondary);
+        Assert.Contains("KeptScheme.StartsDark(", secondary);
     }
 }

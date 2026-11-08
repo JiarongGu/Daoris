@@ -44,13 +44,12 @@ public sealed record PlatformAddress(string Url);
 /// </summary>
 /// <remarks>
 /// <para>One name, three readers: the page parses it out of its own URL (<c>work/window.ts</c>), the
-/// shell navigates to the address made from it, and the geometry store writes the file named after
+/// shell navigates to the address made from it, and the kit's window host writes the geometry file named after
 /// it. Keeping the derivations in one place is what keeps those three agreeing.</para>
 ///
-/// <para><b>The escape does both jobs.</b> A name goes into a query string and into a filename, and
+/// <para><b>The alphabet is narrow.</b> A name goes into a query string and, escaped by the kit, into a filename:
 /// <see cref="Uri.EscapeDataString"/> is injective over the alphabet <see cref="IsKnown"/> permits —
-/// `%` is not in it — so two different windows can never share a geometry file. A `-` substitution
-/// would have collided `session:laptop/a1b2` with `session:laptop-a1b2`.</para>
+/// `%` is not in it — so two different windows can never share a geometry file.</para>
 /// </remarks>
 public static class SecondaryWindow
 {
@@ -103,7 +102,4 @@ public static class SecondaryWindow
         || IsMain(name)
         || (name?.StartsWith(SessionPrefix, StringComparison.Ordinal) == true
             && SessionId.IsMatch(name[SessionPrefix.Length..]));
-
-    /// <summary>The file this window's geometry is remembered in — one per name.</summary>
-    public static string StateFile(string name) => $"{Uri.EscapeDataString(name)}.json";
 }
