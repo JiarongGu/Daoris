@@ -8,21 +8,25 @@
 
 /**
  * The index past the closing quote of the template literal whose opening quote is at `start`; the end of `src` where it never closes.
- * A comment inside an expression is pushed to `comments` as `[from, to)`.
+ * A comment inside an expression is pushed to `comments` as `[from, to)`; `jsx` is the scan of an element (`jsxEnd`) where the source holds JSX.
  */
-export function templateEnd(src, start, comments = []) {
+export function templateEnd(src, start, comments = [], jsx = null) {
   let i = start + 1;
   while (i < src.length) {
     if (src[i] === '\\') i += 2;
     else if (src[i] === '`') return i + 1;
-    else if (src[i] === '$' && src[i + 1] === '{') i = expressionEnd(src, i + 2, comments);
+    else if (src[i] === '$' && src[i + 1] === '{') i = expressionEnd(src, i + 2, comments, jsx);
     else i++;
   }
   return src.length;
 }
 
-/** The index past the `}` closing the expression that starts at `from`, inside a template's `${`. */
-function expressionEnd(src, from, comments) {
+/** Whether a value starts at `i`, `last` the last significant character before it: after a value a `<` compares, and after `return` it opens an element. */
+export const opensValue = (src, i, last) =>
+  !/[\w)\]}$]/.test(last) || /\b(?:return|yield|await|case|else|of|in|typeof|void|throw)\s*$/.test(src.slice(Math.max(0, i - 8), i));
+
+/** The index past the `}` closing the expression that starts at `from`, inside a template's `${` or a JSX element's `{`. */
+export function expressionEnd(src, from, comments, jsx = null) {
   let depth = 0;
   let i = from;
   // The last significant character, 'x' after a token: a `/` after a value divides, after anything else it opens a pattern.
@@ -32,7 +36,7 @@ function expressionEnd(src, from, comments) {
     if (c === '{') depth++;
     else if (c === '}' && depth-- === 0) return i + 1;
     if (c === '`') {
-      i = templateEnd(src, i, comments);
+      i = templateEnd(src, i, comments, jsx);
       last = 'x';
     } else if (c === '"' || c === "'") {
       i++;
@@ -56,6 +60,9 @@ function expressionEnd(src, from, comments) {
         else if (src[i] === '/' && !inClass) break;
       }
       i++;
+      last = 'x';
+    } else if (c === '<' && jsx && opensValue(src, i, last) && jsx(src, i, comments) > i) {
+      i = jsx(src, i, comments);
       last = 'x';
     } else {
       if (!/\s/.test(c)) last = c;
