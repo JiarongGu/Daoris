@@ -260,7 +260,7 @@ public sealed class SupervisePassTests : IDisposable
     {
         var (driver, _, _) = Driver((_, _) =>
         {
-            Directory.Delete(DaorisHome.Entry(_home, HomeEntry.Sessions, Point.Subject.Session + QuestionSupervisorDecisions.DecisionsSuffix), recursive: true);
+            GitSeed.Discard(DaorisHome.Entry(_home, HomeEntry.Sessions, Point.Subject.Session + QuestionSupervisorDecisions.DecisionsSuffix));
             return Ended("completed", GoOn);
         });
 
