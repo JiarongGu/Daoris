@@ -108,7 +108,7 @@ public static class ContextBrief
         // Items 5, 6 and 7 fill under their own caps.
         var (state, stateLeft, planLeft) = State(line, read, clipped);
         // The outgoing agent's note in its one wording (OutgoingNote), clipped by weight first.
-        var note = line.Note?.Trim() is { Length: > 0 } said && OutgoingNote.Said(clipped.Head(said, NoteCap - 200)) is { } claim
+        var note = line.Note?.Trim() is { Length: > 0 } said && OutgoingNote.Said(clipped.QuotedHead(said, NoteCap - 200)) is { } claim
             ? "\n\n" + claim
             // A closing note asked and not written in its one turn is said absent, in the note's own section.
             : line.NoteAsked ? "\n\n" + OutgoingNote.Absent : null;
@@ -207,7 +207,7 @@ public static class ContextBrief
         {
             const string lead = "\n\nThe request, as the person first wrote it:\n\n";
             var room = OpeningCap - Weight(said.ToString()) - Weight(lead) - 80;
-            said.Append(lead).Append(TextBounds.Quote(clipped.Head(request.Text, room), bareBlank: false));
+            said.Append(lead).Append(TextBounds.Quote(clipped.QuotedHead(request.Text, room), bareBlank: false));
         }
 
         return said.ToString();
@@ -656,6 +656,24 @@ public static class ContextBrief
         public string Head(string text, int cap)
         {
             var kept = Clip(text, cap, fromEnd: false, out var cut);
+            if (cut) Count++;
+            return kept;
+        }
+
+        /// <summary>The start of a text, at most <paramref name="cap"/> weighed once quoted, since a quote leads each line with <c>&gt; </c>.</summary>
+        public string QuotedHead(string text, int cap)
+        {
+            var inner = cap;
+            string kept;
+            bool cut;
+            for (var tries = 0; ; tries++)
+            {
+                kept = Clip(text, inner, fromEnd: false, out cut);
+                var over = Weight(TextBounds.Quote(kept, bareBlank: false)) - cap;
+                if (over <= 0 || inner <= 0 || tries == 8) break;
+                inner = Math.Max(0, inner - over);
+            }
+
             if (cut) Count++;
             return kept;
         }

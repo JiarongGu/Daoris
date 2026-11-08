@@ -89,6 +89,12 @@ public sealed class ChannelMemberStore
               why          TEXT NULL
             );
             CREATE INDEX IF NOT EXISTS channel_members_origin ON channel_members (origin);
+            CREATE TABLE IF NOT EXISTS channel_member_reads (
+              member  TEXT NOT NULL,
+              message TEXT NOT NULL,
+              at      TEXT NOT NULL,
+              PRIMARY KEY (member, message)
+            );
             """;
         await command.ExecuteNonQueryAsync(ct).ConfigureAwait(false);
     }
@@ -137,6 +143,32 @@ public sealed class ChannelMemberStore
         command.Parameters.AddWithValue("$id", id);
         command.Parameters.AddWithValue("$at", Moments.Write(at));
         await command.ExecuteNonQueryAsync(ct).ConfigureAwait(false);
+    }, ct);
+
+    /// <summary>The messages a member has been handed, by id: a late arrival is told from one already read without its moment.</summary>
+    public Task<IReadOnlySet<string>> HandedAsync(string id, CancellationToken ct = default) => _db.RunAsync<IReadOnlySet<string>>(async () =>
+    {
+        await using var command = _db.Command();
+        command.CommandText = "SELECT message FROM channel_member_reads WHERE member = $id";
+        command.Parameters.AddWithValue("$id", id);
+        var handed = new HashSet<string>(StringComparer.Ordinal);
+        await using var reader = await command.ExecuteReaderAsync(ct).ConfigureAwait(false);
+        while (await reader.ReadAsync(ct).ConfigureAwait(false)) handed.Add(reader.GetString(0));
+        return handed;
+    }, ct);
+
+    /// <summary>Messages handed to a member, kept before the answer reaches it so a read it never received is made again.</summary>
+    public Task HandAsync(string id, IEnumerable<string> messages, DateTimeOffset at, CancellationToken ct = default) => _db.RunAsync(async () =>
+    {
+        foreach (var message in messages)
+        {
+            await using var command = _db.Command();
+            command.CommandText = "INSERT OR IGNORE INTO channel_member_reads (member, message, at) VALUES ($id, $message, $at)";
+            command.Parameters.AddWithValue("$id", id);
+            command.Parameters.AddWithValue("$message", message);
+            command.Parameters.AddWithValue("$at", Moments.Write(at));
+            await command.ExecuteNonQueryAsync(ct).ConfigureAwait(false);
+        }
     }, ct);
 
     /// <summary>End a membership once, with why.</summary>
@@ -242,7 +274,9 @@ public sealed class ChannelMembers(ChannelDesk desk, ChannelStore store, AskDesk
 
     /// <summary>
     /// A member's read of its channel: every message on it to everyone or a repository and, on an ask held here, Daoris's lines, after its
-    /// own mark or after <paramref name="since"/>; its mark then moves to <paramref name="now"/>. Unread is against the mark it had.
+    /// own mark or after <paramref name="since"/>; its mark then moves to <paramref name="now"/>. A message is handed by identity, once:
+    /// one that arrives behind the mark (a teammate's keeps its own moment) is still handed by the next read, and Daoris's lines go by
+    /// the mark. Unread is against what it has been handed and the mark it had.
     /// </summary>
     public async Task<ChannelReadOutcome> ReadAsync(string? id, DateTimeOffset? since, DateTimeOffset now, CancellationToken ct = default)
     {
@@ -256,9 +290,12 @@ public sealed class ChannelMembers(ChannelDesk desk, ChannelStore store, AskDesk
 
         var from = since ?? member.Read;
         bool After(DateTimeOffset at, DateTimeOffset? mark) => mark is null || at > mark;
-        var unread = messages.Count(m => After(m.At, member.Read)) + lines.Count(l => After(l.At, member.Read));
+        var handed = await Kept.HandedAsync(member.Id, ct).ConfigureAwait(false);
+        var unread = messages.Count(m => !handed.Contains(m.Id)) + lines.Count(l => After(l.At, member.Read));
+        List<ChannelMessage> returned = [.. messages.Where(m => since is null ? !handed.Contains(m.Id) : m.At > since)];
+        await Kept.HandAsync(member.Id, returned.Select(m => m.Id), now, ct).ConfigureAwait(false);
         await Kept.SeenAsync(member.Id, now, read: true, ct).ConfigureAwait(false);
-        var read = new ChannelRead([.. messages.Where(m => After(m.At, from))], [.. lines.Where(l => After(l.At, from))], unread, member.Read);
+        var read = new ChannelRead(returned, [.. lines.Where(l => After(l.At, from))], unread, member.Read);
         return new(ChannelRefusal.None, ask, read, member.Entry) { Origin = member.Origin };
     }
 

@@ -321,6 +321,13 @@ public sealed class InstallSwap(
 
             if (Now >= deadline)
             {
+                // One last read, as above: an application that confirmed since the loop's read is installed, not silent.
+                if (StagedBuild.ReadJournal(install) is { Phase: SwapPhase.Confirmed } late)
+                {
+                    Finish(late);
+                    return new SwapOutcome(SwapPhase.Installed, null, StartOld: false);
+                }
+
                 // Still running and silent: it is the application now, and the record says it never confirmed.
                 Finish(record with { Confirmed = false });
                 return new SwapOutcome(SwapPhase.Installed, "unconfirmed", StartOld: false);

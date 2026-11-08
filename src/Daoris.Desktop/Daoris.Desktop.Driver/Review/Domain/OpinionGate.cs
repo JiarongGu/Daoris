@@ -53,7 +53,7 @@ public static class OpinionGate
 
         // The review's Reviewed answers what it showed beside it: given after the disputes or the commits stood.
         if (judged.PressAnswers && facts.Review is { State: ReviewStates.Reviewed, Verdict.At: { } reviewed }
-            && reviewed >= (judged.Answers?.At ?? DateTimeOffset.MinValue))
+            && reviewed >= (judged.Answers?.At ?? judged.ToPersonAt ?? DateTimeOffset.MinValue))
         {
             return judged with
             {
@@ -114,7 +114,7 @@ public static class OpinionGate
             if (kept.Person is { } toPerson)
             {
                 disputes = OpinionDisputes.Unanswered(first);
-                state = state with { ToPerson = toPerson };
+                state = state with { ToPerson = toPerson, ToPersonAt = kept.PersonAt };
             }
             else if (kept.Answered is { } answers)
             {

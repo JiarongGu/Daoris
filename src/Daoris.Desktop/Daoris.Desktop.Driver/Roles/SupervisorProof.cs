@@ -49,6 +49,7 @@ public static class SupervisorProof
             writer.WriteStringValue(subject.Kind);
             writer.WriteStringValue(subject.Session);
             writer.WriteStringValue(subject.Id);
+            if (subject.Held is not null) writer.WriteStringValue(subject.Held);
             writer.WriteStringValue(generation);
             writer.WriteStringValue(chosen);
             if (choice is null) writer.WriteNullValue();

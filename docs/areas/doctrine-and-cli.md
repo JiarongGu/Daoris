@@ -94,7 +94,9 @@ as a pack.
     detects an edit. (from D6)
 19. The lock records each file's hash, the canon version and digest, the layout, the switched-off rows and the mirrors.
     The lock, not the manifest, says where files are: a move reads and deletes at the lock's root and writes at the
-    manifest's. (from D2, D117)
+    manifest's. A lock of another `version`, or with no `entries` list, is refused where it is read, and its lists are in
+    code-unit order, so it reads the same on every machine. A kept rule's entry names the region once its file migrates.
+    (from D2, D117)
 20. `check` is offline and reads no canon. Drift, a missing file, a stale pack, a stale index or region, and a switch the
     manifest and lock disagree on fail with exit 1. A test deletes the canon and requires a clean exit. (from D8, D71)
 21. The always-loaded budget (`coreBudgetBytes`, default 30000, 26000 here) measures the region's bytes. It reports and

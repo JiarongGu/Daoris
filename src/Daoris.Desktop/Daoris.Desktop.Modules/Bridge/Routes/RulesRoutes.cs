@@ -33,11 +33,10 @@ public sealed class RulesRoutes(DriverLoop loop)
     {
         await Task.CompletedTask;
         var action = press.Action;
-        var file = PermissionRules.Load(_loop.Home);
-        file = action switch
+        var file = PermissionChange.Change(_loop.Home, held => action switch
         {
             "add" => PermissionRules.Add(
-                file, ScopeOf(press.Scope), press.Name,
+                held, ScopeOf(press.Scope), press.Name,
                 press.List switch
                 {
                     "allow" => RuleList.Allow,
@@ -47,19 +46,17 @@ public sealed class RulesRoutes(DriverLoop loop)
                 },
                 ActField.Needs(press.Rule, "rule")),
             "remove" => PermissionRules.Remove(
-                file, ScopeOf(press.Scope), press.Name,
+                held, ScopeOf(press.Scope), press.Name,
                 ActField.Needs(press.Rule, "rule")),
             "default" => PermissionRules.SwitchDefault(
-                file, ActField.Needs(press.Id, "id"),
+                held, ActField.Needs(press.Id, "id"),
                 ActField.Needs(press.On, "on")),
             _ => throw new DriverException($"unknown rule action '{action}' — one of: add, remove, default."),
-        };
-        PermissionRules.Save(_loop.Home, file);
+        });
         return Rules(file);
     }
 
-    // The screen's half of `daoris agent rules accept|decline`: the person's answer
-    // to an agent's proposal. 🔴 The only way a widening an agent proposed ever applies.
+    // The screen's half of `daoris agent rules accept|decline`: the person's answer to an agent's proposal.
     [DriverRoute("RULE_PROPOSAL", PipeClass.Person, Drain = PipeDrain.Passes)]
     [Owner("RULE_PROPOSAL", None = OwnerNone.ActsOnNothing)]
     [GroundRead("RULE_PROPOSAL", nameof(PipeReads.RuleProposal))]
@@ -133,6 +130,7 @@ public sealed class RulesRoutes(DriverLoop loop)
             Proposed = Moments.Write(proposal.Proposed),
             Settled = Moments.Write(proposal.Settled),
             proposal.SettledBy,
+            proposal.SettledRole,
             proposal.Note,
         }).ToArray<object>();
 

@@ -8,7 +8,7 @@ public static class LandTries
 {
     /// <summary>
     /// Whether a run's work is worth a try now: its first, and a hold's at every pass; a refusal only once its tree's tip or status moved
-    /// since it, so a pass never repeats one that nothing changed; and a try that closed, only at a tip other than the one it is kept at.
+    /// since it, so a pass never repeats one that nothing changed; and a try that closed, only at a tip other than its own, or at once where what closed it (undone, gone, superseded) is read again before this asks.
     /// A refusal for the checkout's own work waits on the checkout's status alone (<paramref name="root"/>; null tries again).
     /// </summary>
     public static bool ShouldTry(LandEntry entry, string? tip, string status, string? root = null) => entry.Last switch
@@ -20,6 +20,7 @@ public static class LandTries
         // A hold, a review and a second opinion wait on the person or another agent, not on the tree, so each is read again at
         // every look.
         { Code: LandingCode.Held or LandingCode.Unreviewed or LandingCode.Opinion } => true,
+        { Code: LandingCode.Undone or LandingCode.Gone or LandingCode.Superseded } => true,
         // A `land` is started once a node and tip, so a try that closed at its tip says nothing of a later one.
         { Tip: { } at } when !string.Equals(at, tip, StringComparison.Ordinal) => true,
         _ => false,

@@ -33,7 +33,7 @@ public sealed class PushDoor(string home, Action<string>? log = null, Func<bool>
                 {
                     await PerformAsync(start, CancellationToken.None).ConfigureAwait(false);
                 }
-                catch (Exception error) when (error is DriverException or IOException or UnauthorizedAccessException or System.Text.Json.JsonException)
+                catch (Exception error) when (error is DriverException or IOException or UnauthorizedAccessException or System.Text.Json.JsonException or Microsoft.Data.Sqlite.SqliteException)
                 {
                     log?.Invoke($"push  {start.Unit}: its `{start.Node.Id}` could not be tried: {error.Message.TrimEnd().TrimEnd('.')}. It is tried again at a later pass.");
                 }

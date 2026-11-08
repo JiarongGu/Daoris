@@ -26,7 +26,7 @@ export type RuleScopeRow = { scope: RuleScopeName; name?: string; allow: string[
  */
 export type RuleProposal = {
   id: string;
-  state: 'proposed' | 'waiting' | 'applied' | 'accepted' | 'declined' | 'refused' | 'unchanged';
+  state: 'proposed' | 'waiting' | 'applied' | 'accepted' | 'declined' | 'refused' | 'unchanged' | 'settling';
   action: 'add' | 'remove' | 'default';
   scope: RuleScopeName;
   name?: string;
@@ -39,8 +39,10 @@ export type RuleProposal = {
   ask?: string;
   proposed: string;
   settled?: string;
-  /** `the driver` or `the person` — who settled it. */
+  /** `the driver`, `the person` or `the supervisor` — who settled it. */
   settledBy?: string;
+  /** The supervisor role that allowed it, when a supervisor did. */
+  settledRole?: string;
   /** The driver's own sentence, or the person's reason. */
   note?: string;
 };
@@ -61,7 +63,7 @@ const LISTS = RULE_LISTS;
 export const LIST_TONE = { allow: 'done', ask: 'open', deny: 'declined' } as const;
 /** A settled proposal's tone: what changed the rules is done, what did not is neither. */
 const SETTLED_TONE: Record<RuleProposal['state'], 'open' | 'done' | 'declined' | 'neutral'> = {
-  proposed: 'open', waiting: 'open', applied: 'done', accepted: 'done', declined: 'declined', refused: 'declined', unchanged: 'neutral',
+  proposed: 'open', waiting: 'open', applied: 'done', accepted: 'done', declined: 'declined', refused: 'declined', unchanged: 'neutral', settling: 'open',
 };
 const MACHINE = 'machine';
 
@@ -226,10 +228,23 @@ export function AgentRules({
                       <p className="m-0 mt-0.5 text-meta text-ink-faint">
                         {t('settings.rules.proposals.from', { author: proposalAuthor(proposal) })}
                         {' · '}
-                        {t(proposal.settledBy === 'the person' ? 'settings.rules.proposals.byPerson' : 'settings.rules.proposals.byDriver')}
+                        {proposal.settledBy === 'the supervisor'
+                          ? t('settings.rules.proposals.bySupervisor', { role: proposal.settledRole ?? '' })
+                          : t(proposal.settledBy === 'the person' ? 'settings.rules.proposals.byPerson' : 'settings.rules.proposals.byDriver')}
                         {/* The driver's sentence or the person's reason, verbatim. */}
                         {proposal.note ? ` — ${proposal.note}` : ''}
                       </p>
+                      {/* An allow a supervisor gave stands until the person takes it back, as they remove their own. */}
+                      {proposal.settledBy === 'the supervisor' && proposal.state === 'accepted' && proposal.action === 'add' && proposal.list === 'allow' && proposal.rule && (
+                        <Button
+                          variant="ghost"
+                          disabled={busy}
+                          aria-label={t('settings.rules.proposals.takeBackLabel', { rule: proposal.rule })}
+                          onClick={() => onRemove({ scope: proposal.scope, name: proposal.name, rule: proposal.rule! })}
+                        >
+                          {t('settings.rules.proposals.takeBack')}
+                        </Button>
+                      )}
                     </li>
                   ))}
                 </ul>

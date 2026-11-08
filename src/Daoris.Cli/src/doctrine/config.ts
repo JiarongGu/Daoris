@@ -1,6 +1,6 @@
 import { existsSync } from 'node:fs';
 import { join } from 'node:path';
-import { readText, writeTextAtomic } from '../platform/fsx.ts';
+import { compareOrdinal, readText, writeTextAtomic } from '../platform/fsx.ts';
 import { DaorisError } from '../platform/errors.ts';
 import { DEFAULT_HARNESS, resolveHarness } from '../layout/harness.ts';
 import { checkRooms, checkTarget } from '../layout/layout.ts';
@@ -133,7 +133,23 @@ export function writeManifest(root: string, manifest: Partial<Manifest>): void {
 
 export function readLock(root: string): Lock | null {
   const file = join(root, LOCK_FILE);
-  return existsSync(file) ? parseJson<Lock>(file, readText(file)) : null;
+  if (!existsSync(file)) return null;
+  const lock = parseJson<Partial<Lock> | null>(file, readText(file));
+  if (typeof lock !== 'object' || lock === null || Array.isArray(lock)) {
+    throw new DaorisError(`${LOCK_FILE} is not a lock — it is not a JSON object`);
+  }
+  // Read as version 1, a lock of another version would be checked and rewritten by rules it does not follow.
+  if (lock.version !== LOCK_VERSION) {
+    const said = lock.version === undefined ? 'no version' : `version ${JSON.stringify(lock.version)}`;
+    throw new DaorisError(
+      `${LOCK_FILE} has ${said}, and this daoris reads only version ${LOCK_VERSION} — nothing was changed.\n`
+      + `  Run the daoris that wrote it (its manifest's 'source' names it).`,
+      1);
+  }
+  if (!Array.isArray(lock.entries)) {
+    throw new DaorisError(`${LOCK_FILE} has no 'entries' list — it is damaged; 'daoris sync' writes it again`);
+  }
+  return lock as Lock;
 }
 
 /**
@@ -147,10 +163,10 @@ export function writeLock(root: string, lock: Lock): void {
     // Beside the version it qualifies; absent only in a lock written before it.
     ...(lock.canonDigest !== undefined ? { canonDigest: lock.canonDigest } : {}),
     source: lock.source,
-    entries: [...lock.entries].sort((a, b) => a.target.localeCompare(b.target)),
+    entries: [...lock.entries].sort((a, b) => compareOrdinal(a.target, b.target)),
     // Only when something is off, so a lock that switches nothing is byte-for-byte unchanged.
     ...(lock.switchedOff?.length
-      ? { switchedOff: [...lock.switchedOff].sort((a, b) => a.target.localeCompare(b.target)) }
+      ? { switchedOff: [...lock.switchedOff].sort((a, b) => compareOrdinal(a.target, b.target)) }
       : {}),
     // The same for the layout: absent means the older one, so a lock on it is unchanged.
     ...(lock.harness !== undefined ? { harness: lock.harness } : {}),
@@ -158,9 +174,9 @@ export function writeLock(root: string, lock: Lock): void {
     // Where the index is written; absent in a lock from before it, which reads as none yet.
     ...(lock.index !== undefined ? { index: lock.index } : {}),
     ...(lock.mirrors?.length
-      ? { mirrors: [...lock.mirrors].sort((a, b) => a.path.localeCompare(b.path)) }
+      ? { mirrors: [...lock.mirrors].sort((a, b) => compareOrdinal(a.path, b.path)) }
       : {}),
-    ...(lock.rooms?.length ? { rooms: [...lock.rooms].sort((a, b) => a.localeCompare(b)) } : {}),
+    ...(lock.rooms?.length ? { rooms: [...lock.rooms].sort(compareOrdinal) } : {}),
   };
   writeTextAtomic(join(root, LOCK_FILE), `${JSON.stringify(sorted, null, 2)}\n`);
 }

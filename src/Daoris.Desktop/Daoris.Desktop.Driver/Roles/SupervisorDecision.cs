@@ -21,6 +21,8 @@ public sealed record DecisionAdmitted(string? Generation, string? Why)
     /// longest; null keeps <see cref="QuestionSupervisorDecisions.Window"/>.
     /// </summary>
     public TimeSpan? Window { get; init; }
+
+    public string? Role { get; init; }
 }
 
 /// <summary>The admission where no judge is wired: no terminal holds the supervisor, so every act is refused.</summary>
@@ -124,6 +126,9 @@ public static class SupervisorWhy
     /// <summary>The person stopped the line or paused its quest (<see cref="OwnerHolds"/>); a wait on a point that is no limited end's.</summary>
     public const string OwnerHeld = "owner-held";
     public const string NoWait = "no-wait";
+    public const string NotHeld = "not-held";
+    public const string NotOffered = "not-offered";
+    public const string Reserved = "reserved";
 
     public const string LandingPushes = "landing-pushes";
     public const string NoPlan = "no-plan";

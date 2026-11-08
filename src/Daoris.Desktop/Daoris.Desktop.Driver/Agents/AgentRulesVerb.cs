@@ -62,7 +62,7 @@ internal static class AgentRulesVerb
         AgentPress Press(JsonObject payload, Func<PermissionFile, PermissionFile> edit, Func<int> said) =>
             new($"rules {verb}", AgentRoutes.Rule, false, payload, _ =>
             {
-                PermissionRules.Save(home, edit(PermissionRules.Load(home)));
+                PermissionChange.Change(home, edit);
                 return Task.FromResult<object?>(null);
             }, _ => null, _ => said());
 
@@ -116,7 +116,7 @@ internal static class AgentRulesVerb
                 Judged(() => PermissionRules.SwitchDefault(PermissionFile.Empty, id, on));
                 return new AgentPress($"rules {verb}", AgentRoutes.Rule, false, new JsonObject { ["action"] = "default", ["id"] = id, ["on"] = on }, _ =>
                 {
-                    PermissionRules.Save(home, PermissionRules.SwitchDefault(PermissionRules.Load(home), id, on));
+                    PermissionChange.Change(home, held => PermissionRules.SwitchDefault(held, id, on));
                     return Task.FromResult<object?>(null);
                 }, _ => null, _ =>
                 {

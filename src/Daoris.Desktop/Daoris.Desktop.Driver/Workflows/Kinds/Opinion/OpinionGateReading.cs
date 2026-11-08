@@ -42,7 +42,7 @@ public static class OpinionGateReading
         if (NodeObserving.NotBound(reading) is { } refused) return refused;
 
         var landed = binding.SubjectRevision is { } bound
-            ? unit.Records.Landings.Where(each => string.Equals(each.Tip, bound, StringComparison.Ordinal)).ToList()
+            ? unit.Records.Landings.Where(each => string.Equals(each.Tip, bound, StringComparison.Ordinal) || string.Equals(each.Squashed, bound, StringComparison.Ordinal)).ToList()
             : [];
         if (landed.Count > 0)
         {

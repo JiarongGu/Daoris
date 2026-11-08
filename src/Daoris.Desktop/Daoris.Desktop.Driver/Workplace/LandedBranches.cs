@@ -103,8 +103,12 @@ public sealed class LandedBranches(string home)
     public void Record(LandedBranch entry) => Edit(all => [.. all.Where(each => !Standing(each, entry.Repository, entry.Branch)), entry]);
 
     /// <summary>The pull request a plugin's <c>pull-request</c> step opened for the branch (G8), kept on its entry beside the plugin that opened it.</summary>
+    /// <remarks>A different address is a different request: the one before answered nothing for it.</remarks>
     public void PullRequested(string repository, string branch, string plugin, string address) => Edit(all =>
-        [.. all.Select(each => Standing(each, repository, branch) ? each with { Plugin = plugin, PullRequest = address } : each)]);
+        [.. all.Select(each => !Standing(each, repository, branch) ? each
+            : string.Equals(each.PullRequest, address, StringComparison.Ordinal)
+                ? each with { Plugin = plugin }
+                : each with { Plugin = plugin, PullRequest = address, PullRequestState = null, PullRequestAskFailed = null })]);
 
     /// <summary>The commit Daoris's own push act left on origin for the branch (G8), kept on its entry for the <c>push</c> node to read.</summary>
     public void Pushed(string repository, string branch, string tip) => Edit(all =>

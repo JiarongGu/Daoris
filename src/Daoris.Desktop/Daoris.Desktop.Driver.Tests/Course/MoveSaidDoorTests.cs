@@ -49,6 +49,23 @@ public sealed class MoveSaidDoorTests : IDisposable
         Assert.Equal(["w2", "w3"], lost.Words);
     }
 
+    /// <summary>A word the session took meanwhile is not lost: the take-back door's <c>taken</c> refusal is no word leaving the record unsent.</summary>
+    [Fact]
+    public async Task A_word_the_session_took_meanwhile_is_settled_with_no_lost_note()
+    {
+        var ledger = new ChatLedger();
+        ledger.Chat("s2", "ended", "claude-code-acp", _home).Say("w1", "one").Say("w2", "two");
+        var client = ledger.Client();
+        await client.AttemptAsync("s2", ["w1", "w2"]);
+        await client.TakenAsync("s2", ["w1"], by: null);
+        var door = new MoveSaidDoor(client, Events);
+
+        await door.SettleAsync("s2", ["w1", "w2"], default);
+
+        var lost = Assert.Single(Events.After("s2", 0).Events, each => each.Code == SessionEventCodes.Lost);
+        Assert.Equal(["w2"], lost.Words);
+    }
+
     [Fact]
     public async Task The_door_answers_that_a_record_cannot_be_told_where_the_service_does_not_answer_and_never_faults()
     {
