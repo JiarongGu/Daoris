@@ -10,10 +10,11 @@ internal sealed class KnowledgeFeeds(
     Func<CancellationToken, Task<IReadOnlyList<Registration>>> registered,
     Func<Registration, DateTimeOffset, CancellationToken, Task<Registration>> register,
     Action refuseNewerIndex,
-    TimeProvider time)
+    TimeProvider time,
+    SemaphoreSlim feedGate)
 {
-    /// <summary>One feed judged and written at a time: the check and the write are one step.</summary>
-    private readonly SemaphoreSlim _feedGate = new(1, 1);
+    /// <summary>One feed judged and written at a time, a retirement taking the same turn: the check and the write are one step.</summary>
+    private readonly SemaphoreSlim _feedGate = feedGate;
 
     /// <summary>
     /// A declaration arriving at a shared deployment from a checkout: the manifest at a commit,
