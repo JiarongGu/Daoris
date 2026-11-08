@@ -13,7 +13,7 @@
 import type { Harness, LockEntry, MirrorEntry, MirrorPlan } from '../doctrine/records.ts';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { digestBytes, listFiles, normalize, sha256 } from '../platform/fsx.ts';
+import { compareOrdinal, digestBytes, listFiles, normalize, sha256 } from '../platform/fsx.ts';
 import { stripHeader, withHeader } from '../doctrine/document.ts';
 import { isFile } from './layout.ts';
 
@@ -101,7 +101,7 @@ export function mirrorSources(
       content: isEntry ? withHeader(mirrorHeader(of, mirror.root, entry.canonical), stripHeader(text(file.content))) : file.content,
     });
   }
-  return sources.sort((a, b) => a.path.localeCompare(b.path));
+  return sources.sort((a, b) => compareOrdinal(a.path, b.path));
 }
 
 /** What sits at a mirror path now, as the lock would hash it, or null when nothing (or a folder) does. */

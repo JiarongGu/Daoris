@@ -1,7 +1,7 @@
 import type { Canon, CanonFile, Harness, KeepState, Manifest } from './records.ts';
 import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { digestBytes, readText } from '../platform/fsx.ts';
+import { compareOrdinal, digestBytes, readText } from '../platform/fsx.ts';
 import { findRegion } from './region.ts';
 import { tierRuleBody } from './tierrender.ts';
 
@@ -44,7 +44,7 @@ export function keepStates(
   const byTarget = new Map(selected.map((file) => [file.target, file]));
   const kept: KeepState[] = [];
   const dropped: string[] = [];
-  for (const [target, keep] of Object.entries(manifest.kept ?? {}).sort(([a], [b]) => a.localeCompare(b))) {
+  for (const [target, keep] of Object.entries(manifest.kept ?? {}).sort(([a], [b]) => compareOrdinal(a, b))) {
     const file = byTarget.get(target);
     if (!file) {
       dropped.push(target);

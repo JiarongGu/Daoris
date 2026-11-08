@@ -3,7 +3,7 @@ import type { DriftReport, Lock, Manifest } from './records.ts';
 import type { ExitCode } from '../platform/errors.ts';
 import { existsSync, readFileSync, statSync } from 'node:fs';
 import { join } from 'node:path';
-import { digestBytes, listMarkdown, readText, sha256 } from '../platform/fsx.ts';
+import { compareOrdinal, digestBytes, listMarkdown, readText, sha256 } from '../platform/fsx.ts';
 import { readLock, readManifest } from './config.ts';
 import { indexInput, rosterFromDisk } from './indexgen.ts';
 import { findRegion, hasImport, removeRegion } from './region.ts';
@@ -43,7 +43,7 @@ function largestRules(body: string, count: number): { name: string; bytes: numbe
       const text = lines.slice(start, starts[i + 1] ?? lines.length).join('\n');
       return { name, bytes: Buffer.byteLength(text, 'utf8') };
     })
-    .sort((a, b) => b.bytes - a.bytes || a.name.localeCompare(b.name))
+    .sort((a, b) => b.bytes - a.bytes || compareOrdinal(a.name, b.name))
     .slice(0, count);
 }
 
@@ -92,7 +92,7 @@ export function inspect(
   // A file the manifest keeps is this repository's own text: its difference from the lock is a decision recorded,
   // never drift, and it is named on every run as a switched-off row is.
   const keeps = manifest.kept ?? {};
-  const kept = Object.entries(keeps).sort(([a], [b]) => a.localeCompare(b)).map(([target, keep]) => ({ target, reason: keep.reason }));
+  const kept = Object.entries(keeps).sort(([a], [b]) => compareOrdinal(a, b)).map(([target, keep]) => ({ target, reason: keep.reason }));
 
   for (const entry of lock?.entries ?? []) {
     if (entry.in) {
