@@ -65,7 +65,8 @@ internal static class TestProcessStarts
         ]),
         (TestStartKind.Program,
         [
-            "Daoris.Desktop.Driver.Tests/Agents/ServerKeeperProcessTests.cs", "Daoris.Desktop.Driver.Tests/Agents/ServerStartProcessTests.cs",
+            "Daoris.Desktop.Driver.Tests/Agents/ServerKeeperProcessTests.cs", "Daoris.Desktop.Driver.Tests/Agents/ServerKeeperUtf8ProcessTests.cs",
+            "Daoris.Desktop.Driver.Tests/Agents/ServerStartProcessTests.cs",
             "Daoris.Desktop.Driver.Tests/Course/MoveClaimProcessTests.cs", "Daoris.Desktop.Driver.Tests/DriverHostTests.cs",
             "Daoris.Desktop.Driver.Tests/DriverStartFailureTests.cs", "Daoris.Desktop.Driver.Tests/Instance/HeldChatProcessTests.cs",
             "Daoris.Desktop.Driver.Tests/Install/ToolsChildProcessTests.cs", "Daoris.Desktop.Driver.Tests/Knowledge/KnowledgeConnectorStartTests.cs",

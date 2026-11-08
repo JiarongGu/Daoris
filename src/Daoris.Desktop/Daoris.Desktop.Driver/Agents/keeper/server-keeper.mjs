@@ -39,6 +39,7 @@ function start() {
   child = spawn(process.execPath, [script, ...rest], { stdio: ['pipe', 'pipe', 'inherit'], windowsHide: true });
   const mine = child;
   serverBuffer = '';
+  mine.stdout.setEncoding('utf8');
   mine.stdout.on('data', chunk => fromServer(mine, chunk));
   mine.stdin.on('error', () => {});
   mine.on('exit', code => {

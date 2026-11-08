@@ -245,7 +245,7 @@ internal static class AgentAccountUse
         var windows = new JsonObject();
         foreach (var value in given)
         {
-            var match = System.Text.RegularExpressions.Regex.Match(value, @"^([^=]+)=(\d+:\d+(?:,\d+:\d+)*)$");
+            var match = System.Text.RegularExpressions.Regex.Match(value, @"^([^=]+)=([0-9]+:[0-9]+(?:,[0-9]+:[0-9]+)*)$");
             if (!match.Success)
             {
                 throw new AgentWords($"`--curve {value}` is not a window and its points — it takes `<window>=<elapsed>:<used>,…`, each a whole "

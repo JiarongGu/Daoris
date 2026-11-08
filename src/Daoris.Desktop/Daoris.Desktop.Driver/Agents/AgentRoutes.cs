@@ -46,7 +46,7 @@ public static class AgentRoutes
             "alone: the agent's own installer, run at this terminal with its streams, writes the machine and not the home", AgentHome.Wiring),
         ("agent key <agent> [--account <account>]", null,
             "alone: the key is read from this terminal's standard input, and no press carries a key across the pipe", AgentHome.Wiring),
-        ("agent login <agent> [--new|--profile <account>] …", null,
+        ("agent login <agent> [--new|--account <account>] …", null,
             "alone: the agent's own sign-in runs at this terminal, the person answering it; its end is published under the lease", AgentHome.Wiring),
         ("agent pin <agent> <version> [--workspace <name>]", null,
             "alone: a maker's release is downloaded here, or npm installs it at this terminal; the pin is published under the lease", AgentHome.Wiring),

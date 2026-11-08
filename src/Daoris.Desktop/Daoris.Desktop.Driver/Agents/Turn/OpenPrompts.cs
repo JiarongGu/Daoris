@@ -278,7 +278,7 @@ internal sealed class OpenPrompts
         {
             var left = _prompts.Where(open => open.Words is not null && !open.Taken).ToList();
             var written = retry?.Opened == true ? left.Where(open => open.Written).ToList() : [];
-            Unreached = [.. left.Except(written).Select(open => open.Words!)];
+            Unreached = [.. left.Except(written).SelectMany(open => open.All)];
             List<IAgentWord> uncertain = [.. written.SelectMany(open => open.All).Where(word => !word.IsDaoris)];
             _prompts.Clear();
             return uncertain;
