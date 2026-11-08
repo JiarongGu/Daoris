@@ -161,8 +161,7 @@ public sealed class StandingConfirmation : IDecisionAdmission
             }
             catch (DriverException)
             {
-                // A catalogue that cannot be read staffs no role: every act and answer is refused until it reads.
-                return [];
+                return null;
             }
         };
         _terminals = new RoleTerminals(this, _state);
@@ -176,8 +175,14 @@ public sealed class StandingConfirmation : IDecisionAdmission
 
     internal TimeProvider Clock { get; }
 
-    /// <summary>The catalogue's slots as they stand now, read at each judgement, its unreadable records among them; a test hands its own.</summary>
-    public Func<IReadOnlyList<RoleSlot>> Slots { get; set; }
+    /// <summary>
+    /// The catalogue's slots as they stand now, read at each judgement, its unreadable records among them; null where the catalogue cannot be read,
+    /// which <see cref="SlotsNow"/> reads as staffing no role and a change's sweep reads as no change. A test hands its own.
+    /// </summary>
+    public Func<IReadOnlyList<RoleSlot>?> Slots { get; set; }
+
+    /// <summary>The catalogue's slots now; none where it cannot be read, so every act and answer is refused until it reads.</summary>
+    public IReadOnlyList<RoleSlot> SlotsNow() => Slots() ?? [];
 
     /// <summary>
     /// Each repository's workspace as the store keeps it for the rules in every process, read at each judgement; a map that did not read
@@ -186,12 +191,15 @@ public sealed class StandingConfirmation : IDecisionAdmission
     public Func<RuleWiderPlaces> Wider { get; set; }
 
     /// <summary>The catalogue's appointed roles that read, the supervisors and the steward, as they stand now.</summary>
-    public IReadOnlyList<RoleRecord> Appointed() => [.. Slots().Select(slot => slot.Role).OfType<RoleRecord>().Where(role => role.Hold is not null)];
+    public IReadOnlyList<RoleRecord> Appointed() => AppointedOf(SlotsNow());
+
+    internal static IReadOnlyList<RoleRecord> AppointedOf(IReadOnlyList<RoleSlot> slots) =>
+        [.. slots.Select(slot => slot.Role).OfType<RoleRecord>().Where(role => role.Hold is not null)];
 
     /// <summary>Whether a holder holds the steward: what the desk, the steward's starts and the owner's marks wait on.</summary>
     public bool StewardStaffed => AppointedRoles.StewardOf(Appointed()) is { Hold.Holder: not null };
 
-    internal SupervisorFound Supervising(string kind, RolePlace place) => SupervisorResolution.Find(Slots(), kind, place, Wider());
+    internal SupervisorFound Supervising(string kind, RolePlace place) => SupervisorResolution.Find(SlotsNow(), kind, place, Wider());
 
     internal RolePlace Placed(string repository) => new(Wider().WorkspaceOf.GetValueOrDefault(repository), repository);
 
