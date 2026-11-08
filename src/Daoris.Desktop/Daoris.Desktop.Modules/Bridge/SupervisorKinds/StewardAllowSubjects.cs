@@ -34,7 +34,6 @@ internal static class StewardAllowSubjects
         if (admitted.Generation != form.Generation) return SupervisorDecided.Refused(SupervisorWhy.RoleChanged);
         var decision = Guid.NewGuid().ToString("N")[..12];
         pipe.StewardAllows.Moved ??= (moved, to, why) => loop.Supervisor.AllowMoved(moved, to, DateTimeOffset.UtcNow, why);
-        // Kept before the act runs or its window starts, so a move of the decision always finds its record.
         void Keep(PendingAllow held) => loop.Supervisor.AllowKept(new SupervisorAllowed(
             decision, SupervisorAllowShapes.Steward, held.Id, pipe.StewardAllows.TargetOf(held) is { Kind: OwnerKinds.Session } target ? target.Name : null,
             held.Place.Repository ?? "", StewardAllowedAct.Act, admitted.Role, held.Asked.Act, holder, form.Reasons, held.LandsAt), DateTimeOffset.UtcNow);

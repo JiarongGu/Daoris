@@ -27,15 +27,13 @@ public sealed record StandingNow(IReadOnlyList<RoleHoldNow> Holds, IReadOnlyList
     /// <summary>The steward's desk, newest first: what the line shows under the role's acts.</summary>
     public IReadOnlyList<DeskRequestNow> StewardDesk { get; init; } = [];
 
-    /// <summary>The steward's <c>land</c>s a supervisor allowed that wait their window, which the pipe holds: the line says when each lands.</summary>
     public IReadOnlyList<StewardLandNow> StewardLands { get; init; } = [];
 }
 
 /// <summary>
 /// One of the steward's acts this run as the window's line reads it: its id, the act, what it acted on,
 /// when; <paramref name="Standing"/> while the owner has not acted on its target since, so its reverse press is offered; and, for a stop,
-/// <paramref name="Waiting"/> while its quest waits on a Try again, which <i>What needs you</i> shows as <i>Stopped by the steward</i>; and
-/// <paramref name="Allowed"/> where a supervisor allowed this act outside the steward's grants.
+/// <paramref name="Waiting"/> while its quest waits on a Try again, which <i>What needs you</i> shows as <i>Stopped by the steward</i>; <paramref name="Allowed"/> where a supervisor allowed it outside the grants.
 /// </summary>
 public sealed record StewardActNow(
     string Id, string Act, string? Repository, string? Quest, string? Session, DateTimeOffset At, bool Standing, bool Waiting, bool Allowed = false);

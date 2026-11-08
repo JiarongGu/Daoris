@@ -62,10 +62,30 @@ export type LandingRead = {
   earlier: boolean;
 };
 
-/** What the head and *Details* say of the supervisor on one line. */
-export type LineSupervision = { counts: LineCountRead[]; acts: RuleActRead[]; courses: CourseRead[]; landings?: LandingRead[] };
+/** The supervisor's allow, as `SESSION_SUPERVISOR` answers it: the subject it answered (`request`, `widening` or `steward`), its act and state. */
+export type AllowRead = {
+  id: string;
+  kind?: string;
+  shape: string;
+  subject: string;
+  repository: string;
+  do: string;
+  role?: string | null;
+  act?: string | null;
+  state: string;
+  why?: string | null;
+  holder?: { kind: string; parent?: string | null } | null;
+  keptAt: string;
+  goesOnAt: string;
+  stateAt: string;
+};
 
-export const NO_SUPERVISION: LineSupervision = { counts: [], acts: [], courses: [], landings: [] };
+/** What the head and *Details* say of the supervisor on one line. */
+export type LineSupervision = {
+  counts: LineCountRead[]; acts: RuleActRead[]; courses: CourseRead[]; landings?: LandingRead[]; allows?: AllowRead[];
+};
+
+export const NO_SUPERVISION: LineSupervision = { counts: [], acts: [], courses: [], landings: [], allows: [] };
 
 /** The answer read defensively: an older driver answers none of the fields. */
 export function readSupervision(answer: unknown): LineSupervision {
@@ -75,8 +95,12 @@ export function readSupervision(answer: unknown): LineSupervision {
     acts: Array.isArray(read.acts) ? read.acts : [],
     courses: Array.isArray(read.courses) ? read.courses : [],
     landings: Array.isArray(read.landings) ? read.landings : [],
+    allows: Array.isArray(read.allows) ? read.allows : [],
   };
 }
+
+export const allowSays = (t: TFunction, allow: AllowRead): string =>
+  t(`work.supervision.allow.${allow.do}`, { when: ago(allow.keptAt), defaultValue: allow.do });
 
 /** What the supervisor did with the step and when it takes effect, in one sentence. */
 export const landingSays = (t: TFunction, landing: LandingRead): string =>

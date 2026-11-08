@@ -22,7 +22,7 @@ public static class SupervisorAllowShapes
 /// <param name="Session">The session the decision is read back by, where its subject has one; none keeps it with the machine's.</param>
 /// <param name="Subject">The subject's own id: the request's, the proposal's or the steward's ask.</param>
 /// <param name="Do">The act: <c>once</c>, <c>reject</c>, <c>standing</c> or <c>steward</c>.</param>
-/// <param name="Act">The steward's act that was allowed, for the steward shape.</param>
+/// <param name="Act">The steward's act a supervisor allowed, for the steward shape.</param>
 /// <param name="LandsAt">Set for an allowed <c>land</c>, which waits the role's window before it runs; the decision is held until then.</param>
 public sealed record SupervisorAllowed(
     string Id, string Shape, string Subject, string? Session, string Repository, string Do, string? Role, string? Act, SupervisorHolder Holder,

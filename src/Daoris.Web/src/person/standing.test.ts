@@ -5,7 +5,7 @@ import { stewardReverse, stewardSetAt, type StewardActNow } from './standing';
 // run's memory, and the owner's reverse press each standing act has.
 
 const act = (id: string, kind: string, at: string, more: Partial<StewardActNow> = {}): StewardActNow => ({
-  id, act: kind, repository: null, quest: null, session: null, at, standing: true, waiting: false, ...more,
+  id, act: kind, repository: null, quest: null, session: null, at, standing: true, waiting: false, allowed: false, ...more,
 });
 
 describe("the steward's acts", () => {
