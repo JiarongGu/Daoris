@@ -115,6 +115,33 @@ public sealed class ServerStartProcessTests : IDisposable
     }
 
     /// <summary>
+    /// The version folder is taken between the check and the move: another process's install met at the move is kept, and one the
+    /// move cannot make leaves only that server out, never the session's start.
+    /// </summary>
+    [Fact]
+    public async Task An_install_the_move_loses_to_another_process_keeps_theirs_and_one_it_cannot_make_withholds_only_its_server()
+    {
+        var (npm, _) = StandInNpm();
+        var npx = NpxCommand.Read("npx", ["-y", "@acme/tickets@1.2.3"]).Command!;
+
+        var theirs = SessionServersTests.Lay(_home, "@acme/tickets", "1.2.3");
+        Directory.Delete(ServerPackages.Folder(_home, "@acme/tickets", "1.2.3"), recursive: true);
+        var kept = await ServerPackages.ScriptAsync(
+            _home, npx, null, CancellationToken.None, npm,
+            publish: (_, _) =>
+            {
+                SessionServersTests.Lay(_home, "@acme/tickets", "1.2.3");
+                throw new IOException("the folder was made meanwhile");
+            });
+        Assert.Equal(theirs, kept);
+
+        Directory.Delete(ServerPackages.Folder(_home, "@acme/tickets", "1.2.3"), recursive: true);
+        var refused = await Assert.ThrowsAsync<DriverException>(() => ServerPackages.ScriptAsync(
+            _home, npx, null, CancellationToken.None, npm, publish: (_, _) => throw new IOException("a file in it is held")));
+        Assert.Contains("held", refused.Message);
+    }
+
+    /// <summary>
     /// The server a session is handed, started as its harness starts it, from a home whose path holds a space: the process is node,
     /// and the job it is held in counts one process, so no <c>cmd</c>, <c>npx</c> or npm's node stands before it.
     /// </summary>
