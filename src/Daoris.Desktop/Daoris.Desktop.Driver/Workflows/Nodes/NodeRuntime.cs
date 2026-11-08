@@ -354,7 +354,7 @@ public sealed class NodeRuntime(
                 if (!governed.TryGetValue(unit, out var each)) continue;
                 if (NodeEvaluations.Tipped(each)) await tips.TipAsync(each.Watched.Root, each.Watched.Branch, ct).ConfigureAwait(false);
                 // A run's answer is judged on the branch its attempt is sent for, former subjects included, read once a checkout.
-                else if (each.Scope is { } scope) await tips.ReadAsync(scope.Root, [.. scope.Branches.Select(branch => branch.Subject.Artifact ?? "")], ct).ConfigureAwait(false);
+                else if (each.Scope is { } scope) await tips.ReadAsync(scope.Root, [.. scope.Branches.Select(RunScope.Standing)], ct).ConfigureAwait(false);
             }
 
             // A run's attempt is judged on the unit it is sent for, as its plugin is told it.

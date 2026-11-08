@@ -223,6 +223,12 @@ public sealed record RunScope(GraphRun Run, WorkUnit Self)
 
     public string Identity { get; init; } = "";
 
+    /// <summary>
+    /// The branch a run's work stands on, which every read of it names: the one its tree's agent moved onto where the look learned it, else
+    /// its session branch, which then does not move, so a read of it would never see the tree's work.
+    /// </summary>
+    public static string Standing(WorkUnit branch) => branch.Records.Branch?.Now ?? branch.Subject.Artifact ?? "";
+
     /// <summary>The unit a governed run is told an answer under, mapped back to it: its branches, earlier subjects included.</summary>
     public IEnumerable<string> Told => Branches.Select(branch => branch.Id).Concat(Branch is { } branch ? [branch.Id] : []).Distinct(StringComparer.Ordinal);
 
