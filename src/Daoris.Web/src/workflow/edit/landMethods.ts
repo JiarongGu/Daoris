@@ -8,8 +8,8 @@ export const tailOf = (method: string | null): readonly string[] => (method === 
 
 export const TAIL_KINDS: readonly string[] = ['integrate'];
 
-/** The options a method refuses (`LandNodes.Problem`): a merge makes no branch to name, an integrate no squash. */
-export const REFUSED: Readonly<Record<string, readonly string[]>> = { merge: ['pattern'], integrate: ['squash'] };
+/** The options a method refuses (`LandNode.Problem`): a merge makes no branch to name or squash, an integrate no squash. */
+export const REFUSED: Readonly<Record<string, readonly string[]>> = { merge: ['pattern', 'squash'], integrate: ['squash'] };
 
 /** Whether a land option means something under the method it is held beside; `method` unset leaves each to the repository's rule. */
 export function landOptionApplies(method: string | null, name: string): boolean {
