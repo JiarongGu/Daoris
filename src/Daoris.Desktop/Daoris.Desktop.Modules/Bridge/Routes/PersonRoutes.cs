@@ -46,7 +46,7 @@ public sealed class PersonRoutes(DriverLoop loop)
     // The confirmed press runs on the pipe, in its terminal's name, and publishes what it changes as it runs.
     // `source: "service"` answers one waiting at the service's door instead, where the host makes
     // the request at the Confirm: `{ answered: true }` where its door took it, else the host's code as `why` (`not-made` with the door's
-    // own sentence, `restarted`), `gone` where none, and `unreachable` where the service did not answer, nothing taken.
+    // own sentence, `restarted`), `gone` where none, and `unreachable` where the service did not answer, nothing taken, and `unknown` where the client gave up first and the host may have made it.
     [DriverRoute("PERSON_CONFIRM", PipeClass.Window)]
     [Owner("PERSON_CONFIRM", None = OwnerNone.ActsOnNothing)]
     private async Task<object?> PersonConfirmAsync(PersonConfirmPress press, CancellationToken cancellationToken)
@@ -96,10 +96,15 @@ public sealed class PersonRoutes(DriverLoop loop)
         {
             answered = await service.Confirmations.AnswerAsync(id, confirm, cancellationToken).ConfigureAwait(false);
         }
-        catch (Exception error) when (error is DriverException or HttpRequestException
-            || (error is TaskCanceledException && !cancellationToken.IsCancellationRequested))
+        catch (Exception error) when (error is DriverException or HttpRequestException)
         {
             return new PersonConfirmRefused(false, "unreachable", Away);
+        }
+        catch (TaskCanceledException) when (!cancellationToken.IsCancellationRequested)
+        {
+            // The client's own timeout: the host holds the request through the act, so it may have been made.
+            return new PersonConfirmRefused(false, "unknown",
+                "Daoris's service did not answer in time, so this may have been done; look before pressing again.");
         }
 
         return answered.Done
