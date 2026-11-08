@@ -260,7 +260,6 @@ public sealed class SupervisePassTests : IDisposable
     {
         var (driver, _, _) = Driver((_, _) =>
         {
-            // The session's decisions folder is gone by the turn's end, so its outcome has nowhere to land.
             Directory.Delete(DaorisHome.Entry(_home, HomeEntry.Sessions, Point.Subject.Session + QuestionSupervisorDecisions.DecisionsSuffix), recursive: true);
             return Ended("completed", GoOn);
         });
