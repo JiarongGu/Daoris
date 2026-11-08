@@ -115,12 +115,7 @@ public sealed class RoleVerb : ChoiceVerb
         {
             ["change"] = "set",
             ["id"] = id,
-            ["role"] = new JsonObject
-            {
-                ["name"] = JsonNode.Parse(role.Name.Json()),
-                ["takes"] = new JsonArray([.. role.Takes.Select(work => (JsonNode)JsonValue.Create(work))]),
-                ["scope"] = new JsonObject { ["kind"] = role.Scope.Kind, ["id"] = role.Scope.Id },
-            },
+            ["role"] = RolePayload(role),
             ["policy"] = policy is null ? null : JsonNode.Parse(policy.Write()),
             ["policyPreset"] = policy is null ? null : press.Preset,
             ["policyRevision"] = existing.Revision,
@@ -137,6 +132,24 @@ public sealed class RoleVerb : ChoiceVerb
             world.Instance.Out.WriteLine("  New work takes it; work already running keeps its choice.");
             return 0;
         });
+    }
+
+    private static JsonObject RolePayload(RoleRecord role)
+    {
+        var wire = new JsonObject
+        {
+            ["name"] = JsonNode.Parse(role.Name.Json()),
+            ["takes"] = new JsonArray([.. role.Takes.Select(work => (JsonNode)JsonValue.Create(work))]),
+            ["scope"] = new JsonObject { ["kind"] = role.Scope.Kind, ["id"] = role.Scope.Id },
+        };
+        if (role.Hold is not { } hold) return wire;
+        wire["filled"] = RoleRecord.Appointed;
+        wire["kind"] = hold.Kind;
+        if (hold.Decides.Count > 0) wire["decides"] = new JsonArray([.. hold.Decides.Select(kind => (JsonNode)JsonValue.Create(kind))]);
+        wire["authority"] = new JsonArray([.. hold.Acts.Select(act => (JsonNode)JsonValue.Create(act))]);
+        wire["holder"] = hold.Holder;
+        wire["window"] = hold.Window;
+        return wire;
     }
 
     private const string RulesGrammar = SupervisorRulesFlags.Grammar;
@@ -261,21 +274,7 @@ public sealed class RoleVerb : ChoiceVerb
         var payload = all ? new JsonObject { ["change"] = "default-all" } : new JsonObject { ["change"] = args[1], ["id"] = id };
         if (change is RoleChange.SetRole { Role: var role })
         {
-            payload["role"] = new JsonObject
-            {
-                ["name"] = JsonNode.Parse(role.Name.Json()),
-                ["takes"] = new JsonArray([.. role.Takes.Select(work => (JsonNode)JsonValue.Create(work))]),
-                ["scope"] = new JsonObject { ["kind"] = role.Scope.Kind, ["id"] = role.Scope.Id },
-            };
-            if (role.Hold is { } hold)
-            {
-                payload["role"]!["filled"] = RoleRecord.Appointed;
-                payload["role"]!["kind"] = hold.Kind;
-                payload["role"]!["authority"] = new JsonArray([.. hold.Acts.Select(act => (JsonNode)JsonValue.Create(act))]);
-                payload["role"]!["holder"] = hold.Holder;
-                payload["role"]!["window"] = hold.Window;
-            }
-
+            payload["role"] = RolePayload(role);
             payload["choices"] = choices is null ? null : new JsonArray([.. choices.Select(choice => (JsonNode)new JsonObject
             {
                 ["agent"] = choice.Agent, ["model"] = choice.Model, ["effort"] = choice.Effort,

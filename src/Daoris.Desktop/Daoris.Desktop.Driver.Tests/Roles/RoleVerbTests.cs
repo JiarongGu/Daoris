@@ -211,6 +211,48 @@ public sealed class RoleVerbTests : IDisposable
     }
 
     [Fact]
+    public async Task ROLESREVIEW2f_an_agent_held_supervisor_s_policy_is_sent_to_the_window_as_the_supervisor_it_is()
+    {
+        var staffing = RoleStaffing.Of(File_)!;
+        var seed = RoleCatalog.Seed.Single(role => role.Id == AppointedRoles.Supervisor);
+        RoleDoor.Apply(staffing, RoleChange.Set(seed with { Hold = seed.Hold! with { Holder = RoleHolders.Agent } }),
+            [new("claude-code-acp", "opus", "high"), new("claude-code-acp", "sonnet", "high")]);
+        var world = new DriverChoicesWorld
+        {
+            Verbs = DriverChoiceVerbs.All,
+            Instance = new InstanceWorld { Home = _home, Environment = _ => null, Out = _out, Error = _error, Verb = "daoris" },
+            ConfigPath = File_,
+            Folder = _home,
+            InAgentJob = () => false,
+        };
+
+        var plan = new RoleVerb().Plan(["role", "policy", "supervisor", "--preset", "even"], StaffingProjection.Config(staffing.Read()!), world);
+        var press = RoleDoor.ReadPress(JsonSerializer.SerializeToElement(plan.Payload));
+
+        Assert.Null(RoleDoor.Judge(RoleCatalog.Read(staffing.Location), press.Change, press.Choices));
+        Assert.Equal(AppointedRoles.Supervisor, ((RoleChange.SetRole)press.Change).Role.Hold!.Kind);
+        await Task.CompletedTask;
+    }
+
+    [Fact]
+    public void ROLESREVIEW2g_a_supervisor_of_kinds_is_sent_to_the_window_with_the_kinds_it_decides()
+    {
+        var world = new DriverChoicesWorld
+        {
+            Verbs = DriverChoiceVerbs.All,
+            Instance = new InstanceWorld { Home = _home, Environment = _ => null, Out = _out, Error = _error, Verb = "daoris" },
+            ConfigPath = File_,
+            Folder = _home,
+            InAgentJob = () => false,
+        };
+
+        var plan = new RoleVerb().Plan(["role", "set", "gatekeeper", "--name", "Gatekeeper", "--decides", "allow", "--holder", "rules"], DriverConfig.Empty, world);
+        var press = RoleDoor.ReadPress(JsonSerializer.SerializeToElement(plan.Payload));
+
+        Assert.Equal([SupervisorKinds.Allow], ((RoleChange.SetRole)press.Change).Role.Hold!.Decides);
+    }
+
+    [Fact]
     public async Task Policy_refuses_with_the_judges_sentence_a_field_not_enforced_yet_and_a_flag_that_is_not_one()
     {
         Assert.Equal(0, await Run("set", "designer", "--name", "Designer", "--takes", "design", "claude-code-acp opus high", "claude-code-acp sonnet high"));
