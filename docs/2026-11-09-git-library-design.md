@@ -511,14 +511,12 @@ it should be the default is the owner's to decide, and this design does not deci
 - **The person's git stays the default**, as today. The scheduler starts whatever Tools resolves, which is the agents' git too (D121
   point 3), so Daoris's reads and the sessions' git agree. The design stands as written: the floors are checked per git in use (the
   doors' 2.31, and the first release that reads `GIT_NO_LAZY_FETCH` for a read in a partial clone to hold an ordinary place, §14.5);
-  §5.9's second end is an event the person's own update or their
-  configuration can bring at any time, caught by the probe whenever either moves (§10.8); CI proves the runner's git and the pinned
-  MinGit, and the person's git is known only by the machine log's line.
+  §5.9's second end is an event the person's own update or their configuration can bring at any time, caught by the probe whenever
+  either moves (§10.8); CI proves the runner's git and the pinned MinGit, and the person's git is known only by the machine log's line.
 - **Daoris's managed git becomes the default.** One pinned git for Daoris and every child, so the parity class and the opens census run
   in CI against exactly the git the install runs, as GITAUTH1b runs the doors' classes; every floor always holds, so no read in a
-  partial clone takes an outside-waiting place for its git's age; §5.9's second end becomes a pin Daoris moves on purpose, its census run before
-  the move, so the library is retired by a row the
-  steward schedules and not by an update met; the system file is the managed git's own, known in advance. In exchange, the download
+  partial clone takes an outside-waiting place for its git's age; §5.9's second end becomes a pin Daoris moves on purpose, its census
+  run before the move, so the library is retired by a row the steward schedules and not by an update met; the system file is the managed git's own, known in advance. In exchange, the download
   and its security updates are Daoris's to carry, and a repository the person's newer git made in a newer format reads as git's refusal
   until the pin moves.
 - **Neither changes** the service, the scheduler, the object read, the library's questions or its admission, which reads the
