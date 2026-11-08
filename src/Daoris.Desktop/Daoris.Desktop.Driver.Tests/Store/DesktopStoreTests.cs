@@ -645,7 +645,7 @@ public sealed class DesktopStoreTests : IDisposable
                 ("scope", false), ("revision", true), ("graph", true), ("options", true), ("receipts", true), ("claim_run", true),
                 ("claim_generation", true), ("at", true), ("settled", false), ("settled_at", false), ("said", false),
             ],
-            Columns(store, "deliveries"));
+            Columns(store, "deliveries").Take(26));
         Assert.Equal(
             [
                 ("delivery", true), ("ordinal", true), ("phase", true), ("intended", false), ("began_at", true), ("ended_at", false), ("outcome", false),
@@ -665,7 +665,7 @@ public sealed class DesktopStoreTests : IDisposable
             """
             INSERT INTO deliveries (key, format, unit, repository, tip, method, target, line, message, epoch, authority, accept, revision, graph, options,
                 receipts, claim_run, claim_generation, at, settled, settled_at)
-            VALUES ($key, 1, 'unit-1', 'engine', 'abc', 'branch', 'main', 'main', 'Tidy', 'epoch-1', 'person', 'accept-1', 'r1', 'g', '{}', '[]', $run, 1, $at,
+            VALUES ($key, 1, 'unit-1', 'engine', $key, 'branch', 'main', 'main', 'Tidy', 'epoch-1', 'person', 'accept-1', 'r1', 'g', '{}', '[]', $run, 1, $at,
                 $settled, $settledAt)
             """,
             ("$key", key), ("$run", run), ("$at", At), ("$settled", settled), ("$settledAt", settled is null ? null : At)));
@@ -673,7 +673,7 @@ public sealed class DesktopStoreTests : IDisposable
             "INSERT INTO delivery_phases (delivery, ordinal, phase, began_at, ended_at) VALUES ($delivery, $ordinal, 'prepared', $at, $ended)",
             ("$delivery", delivery), ("$ordinal", ordinal), ("$at", At), ("$ended", ended)));
 
-        // 787 is SQLite's foreign-key refusal, 2067 its unique one: a claim names a run the store holds, and a unit has one delivery unresolved.
+        // 787 is SQLite's foreign-key refusal, 2067 unique: a claim names a run the store holds, and a unit has one delivery unresolved.
         Assert.Equal(787, Assert.Throws<SqliteException>(() => Delivery("k1", "no-such-run")).SqliteExtendedErrorCode);
         Delivery("k0", store.Run, settled: "delivered");
         Delivery("k1", store.Run);

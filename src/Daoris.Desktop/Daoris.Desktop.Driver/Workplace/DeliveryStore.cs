@@ -80,14 +80,16 @@ public static class DeliveryAuthorities
 
 /// <summary>
 /// What a delivery lands, frozen at its start: the unit, its repository, the bound tip, the method and the target
-/// (the key's four), the line, the expanded branch name with its ticket key, the rendered message, the plugin, and the policy epoch's reference.
+/// (what names it, with the generation), the line, the expanded branch name with its ticket key, the rendered message, the plugin, and the policy epoch's reference.
 /// </summary>
 public sealed record DeliveryIntent(
     string Unit, string Repository, string Tip, string Method, string Target, string Line, string? Branch, string? Ticket, string Message, string? Plugin,
     string Epoch)
 {
-    /// <summary>The delivery key: <see cref="DeliveryStore.KeyOf"/> of the unit, the tip, the method and the target.</summary>
-    public string Key => DeliveryStore.KeyOf(Unit, Tip, Method, Target);
+    /// <summary>Whether <paramref name="other"/> lands the same thing: the unit, the tip, the method and the target, whichever generation either is.</summary>
+    public bool Names(DeliveryIntent other) =>
+        string.Equals(Unit, other.Unit, StringComparison.Ordinal) && string.Equals(Tip, other.Tip, StringComparison.Ordinal)
+        && string.Equals(Method, other.Method, StringComparison.Ordinal) && string.Equals(Target, other.Target, StringComparison.Ordinal);
 }
 
 /// <summary>
@@ -116,6 +118,12 @@ public sealed record DeliveryRecord(
     public DateTimeOffset? SettledAt { get; init; }
 
     public string? Said { get; init; }
+
+    /// <summary>
+    /// Which delivery of its unit, tip, method and target this is: 1 for the first, and the next once the one before settles withdrawn, so
+    /// a retry is a delivery of its own and a settled row keeps its meaning.
+    /// </summary>
+    public long Generation { get; init; } = 1;
 
     /// <summary>Not settled: its unit takes no other delivery, and no rollback is allowed while it stands.</summary>
     public bool Unresolved => SettledAt is null;
@@ -185,6 +193,8 @@ public sealed class DeliveryStore(
     /// <summary>The store's step that made the family, and raised the stamp: a store before it holds no delivery.</summary>
     public const int Since = 15;
 
+    public const int GenerationSince = DesktopStore.GenerationVersion;
+
     private const int UniqueRefused = 2067;
 
     private const int PrimaryKeyRefused = 1555;
@@ -192,6 +202,12 @@ public sealed class DeliveryStore(
     private const string DeliveryColumns =
         "key, format, unit, repository, tip, method, target, line, branch, ticket, message, plugin, epoch, authority, accept, scope, revision, graph, "
         + "options, receipts, claim_run, claim_generation, at, settled, settled_at, said";
+
+    private const string WriteColumns = DeliveryColumns + ", generation";
+
+    private static string Columns(int version) => version >= GenerationSince ? DeliveryColumns + ", generation" : DeliveryColumns;
+
+    private static string Newest(int version) => version >= GenerationSince ? "at DESC, generation DESC, key" : "at DESC, key";
 
     private const string PhaseColumns = "delivery, ordinal, phase, intended, began_at, ended_at, outcome, evidence, said";
 
@@ -206,20 +222,27 @@ public sealed class DeliveryStore(
 
     /// <summary>
     /// The delivery key: a SHA-256 of the unit, the bound tip, the method and the target, lower-case hex. Each part is length-prefixed, so no
-    /// two parts joined read as another pair.
+    /// two parts joined read as another pair. A retry after a withdrawal is the next <paramref name="generation"/>, whose key reads it as well.
     /// </summary>
-    public static string KeyOf(string unit, string tip, string method, string target)
+    public static string KeyOf(string unit, string tip, string method, string target, long generation = 1)
     {
         var text = new StringBuilder();
         foreach (var part in new[] { unit, tip, method, target }) text.Append(part.Length).Append(':').Append(part);
+        if (generation > 1) text.Append("g:").Append(generation.ToString(System.Globalization.CultureInfo.InvariantCulture));
         return Convert.ToHexStringLower(SHA256.HashData(Encoding.UTF8.GetBytes(text.ToString())));
     }
 
     // ——— Reads.
 
+    /// <summary>The newest generation of the delivery <paramref name="intent"/> names (its unit, tip, method and target); null where the store holds none.</summary>
+    public DeliveryRecord? Latest(DeliveryIntent intent) =>
+        Reading(reader => reader.Query(
+            $"SELECT {Columns(reader.Version)} FROM deliveries WHERE unit = $unit AND tip = $tip AND method = $method AND target = $target ORDER BY {Newest(reader.Version)}",
+            MapDelivery, ("$unit", intent.Unit), ("$tip", intent.Tip), ("$method", intent.Method), ("$target", intent.Target)).FirstOrDefault(), null);
+
     /// <summary>A delivery by its key; null where the store holds none.</summary>
     public DeliveryRecord? Delivery(string key) =>
-        Reading(reader => reader.Query($"SELECT {DeliveryColumns} FROM deliveries WHERE key = $key", MapDelivery, ("$key", key)).FirstOrDefault(), null);
+        Reading(reader => reader.Query($"SELECT {Columns(reader.Version)} FROM deliveries WHERE key = $key", MapDelivery, ("$key", key)).FirstOrDefault(), null);
 
     /// <summary>A delivery's phase entries, in the order they were written ahead.</summary>
     public IReadOnlyList<DeliveryPhase> Phases(string key) =>
@@ -227,21 +250,21 @@ public sealed class DeliveryStore(
 
     /// <summary>Every delivery not settled, oldest first: what a restart settles by phase.</summary>
     public IReadOnlyList<DeliveryRecord> Unresolved() =>
-        Reading(reader => reader.Query($"SELECT {DeliveryColumns} FROM deliveries WHERE settled_at IS NULL ORDER BY at, key", MapDelivery), []);
+        Reading(reader => reader.Query($"SELECT {Columns(reader.Version)} FROM deliveries WHERE settled_at IS NULL ORDER BY at, key", MapDelivery), []);
 
     /// <summary>The delivery of <paramref name="unit"/> not settled, or null.</summary>
     public DeliveryRecord? UnresolvedFor(string unit) =>
-        Reading(reader => reader.Query($"SELECT {DeliveryColumns} FROM deliveries WHERE unit = $unit AND settled_at IS NULL", MapDelivery, ("$unit", unit))
+        Reading(reader => reader.Query($"SELECT {Columns(reader.Version)} FROM deliveries WHERE unit = $unit AND settled_at IS NULL", MapDelivery, ("$unit", unit))
             .FirstOrDefault(), null);
 
     /// <summary>Every delivery of <paramref name="unit"/>, newest first.</summary>
     public IReadOnlyList<DeliveryRecord> OfUnit(string unit) =>
-        Reading(reader => reader.Query($"SELECT {DeliveryColumns} FROM deliveries WHERE unit = $unit ORDER BY at DESC, key", MapDelivery, ("$unit", unit)), []);
+        Reading(reader => reader.Query($"SELECT {Columns(reader.Version)} FROM deliveries WHERE unit = $unit ORDER BY {Newest(reader.Version)}", MapDelivery, ("$unit", unit)), []);
 
     /// <summary>Every delivery of <paramref name="repository"/> bound at <paramref name="tip"/>, newest first: what an Accept carrying several sessions delivered.</summary>
     public IReadOnlyList<DeliveryRecord> At(string repository, string tip) =>
         Reading(reader => reader.Query(
-            $"SELECT {DeliveryColumns} FROM deliveries WHERE repository = $repository COLLATE NOCASE AND tip = $tip COLLATE NOCASE ORDER BY at DESC, key",
+            $"SELECT {Columns(reader.Version)} FROM deliveries WHERE repository = $repository COLLATE NOCASE AND tip = $tip COLLATE NOCASE ORDER BY {Newest(reader.Version)}",
             MapDelivery, ("$repository", repository), ("$tip", tip)), []);
 
     /// <summary>
@@ -264,15 +287,14 @@ public sealed class DeliveryStore(
     // ——— Writes, each one transaction.
 
     /// <summary>
-    /// Start the delivery of <paramref name="intent"/> under <paramref name="authorization"/>, claimed by this run at generation 1: answered the
-    /// delivery its key already names, or refused while another of its unit is not settled, nothing written; held while the start's
+    /// Start the delivery of <paramref name="intent"/> under <paramref name="authorization"/>, claimed by this run at claim generation 1: answered the
+    /// newest delivery it names (a withdrawn one is no answer: the start is the next generation of it), or refused while another of its unit is not settled, nothing written; held while the start's
     /// confirmation is not settled.
     /// </summary>
     /// <exception cref="DeliveryRefusedException">The intent or its authorization does not hold.</exception>
     public DeliveryStart Start(DeliveryIntent intent, DeliveryAuthorization authorization)
     {
-        var key = intent.Key;
-        if (Problem(intent, authorization) is { } problem) throw new DeliveryRefusedException(key, problem);
+        if (Problem(intent, authorization) is { } problem) throw new DeliveryRefusedException(KeyOf(intent.Unit, intent.Tip, intent.Method, intent.Target), problem);
 
         // The store's rollback window: a delivery begun here could be met by the build before this one.
         if (_settled() is { Is: false } waiting) return new DeliveryStart(null, null, false, null, waiting.Said ?? "the start's confirmation is not settled");
@@ -282,15 +304,20 @@ public sealed class DeliveryStore(
             using var store = Writer();
             return store.Write(Family, write =>
             {
-                if (DeliveryIn(write, key) is { } same) throw new Unwritten(Same(same));
+                var latest = LatestIn(write, intent);
+                if (latest is not null && latest.Settled != DeliverySettlements.Withdrawn) throw new Unwritten(Same(latest));
                 if (UnresolvedIn(write, intent.Unit) is { } standing) throw new Unwritten(Blocked(standing));
+                var generation = (latest?.Generation ?? 0) + 1;
+                var key = KeyOf(intent.Unit, intent.Tip, intent.Method, intent.Target, generation);
                 try
                 {
-                    Insert(write, key, intent, authorization);
+                    Insert(write, key, generation, intent, authorization);
                 }
                 catch (SqliteException error) when (error.SqliteExtendedErrorCode is UniqueRefused or PrimaryKeyRefused)
                 {
-                    throw new Unwritten(DeliveryIn(write, key) is { } found ? Same(found) : Blocked(UnresolvedIn(write, intent.Unit)!));
+                    throw new Unwritten(LatestIn(write, intent) is { } found && found.Settled != DeliverySettlements.Withdrawn
+                        ? Same(found)
+                        : Blocked(UnresolvedIn(write, intent.Unit)!));
                 }
 
                 return new DeliveryStart(DeliveryIn(write, key), new DeliveryClaim(key, Run, 1), true, null);
@@ -302,7 +329,7 @@ public sealed class DeliveryStore(
         }
 
         DeliveryStart Same(DeliveryRecord found) =>
-            new(found, found.Unresolved && !found.Held && found.ClaimRun == Run ? new DeliveryClaim(key, Run, found.ClaimGeneration) : null, false, null);
+            new(found, found.Unresolved && !found.Held && found.ClaimRun == Run ? new DeliveryClaim(found.Key, Run, found.ClaimGeneration) : null, false, null);
 
         static DeliveryStart Blocked(DeliveryRecord standing) =>
             new(standing, null, false,
@@ -474,17 +501,17 @@ public sealed class DeliveryStore(
         };
     }
 
-    private void Insert(DesktopWrite write, string key, DeliveryIntent intent, DeliveryAuthorization authorization) => write.Execute(
+    private void Insert(DesktopWrite write, string key, long generation, DeliveryIntent intent, DeliveryAuthorization authorization) => write.Execute(
         $"""
-        INSERT INTO deliveries ({DeliveryColumns})
+        INSERT INTO deliveries ({WriteColumns})
         VALUES ($key, $format, $unit, $repository, $tip, $method, $target, $line, $branch, $ticket, $message, $plugin, $epoch, $authority, $accept, $scope,
-                $revision, $graph, $options, $receipts, $run, 1, $at, NULL, NULL, NULL)
+                $revision, $graph, $options, $receipts, $run, 1, $at, NULL, NULL, NULL, $generation)
         """,
         ("$key", key), ("$format", Format), ("$unit", intent.Unit), ("$repository", intent.Repository), ("$tip", intent.Tip), ("$method", intent.Method),
         ("$target", intent.Target), ("$line", intent.Line), ("$branch", intent.Branch), ("$ticket", intent.Ticket), ("$message", intent.Message),
         ("$plugin", intent.Plugin), ("$epoch", intent.Epoch), ("$authority", authorization.Authority), ("$accept", authorization.Accept),
         ("$scope", authorization.Scope), ("$revision", authorization.Revision), ("$graph", authorization.Graph), ("$options", authorization.Options),
-        ("$receipts", authorization.Receipts), ("$run", Run), ("$at", Now()));
+        ("$receipts", authorization.Receipts), ("$run", Run), ("$at", Now()), ("$generation", generation));
 
     /// <summary>
     /// One write under the claim's check: the delivery is there, this build's shape, its run and generation the claim's, which is this store's
@@ -545,10 +572,15 @@ public sealed class DeliveryStore(
     }
 
     private static DeliveryRecord? DeliveryIn(DesktopWrite write, string key) =>
-        write.Query($"SELECT {DeliveryColumns} FROM deliveries WHERE key = $key", MapDelivery, ("$key", key)).FirstOrDefault();
+        write.Query($"SELECT {WriteColumns} FROM deliveries WHERE key = $key", MapDelivery, ("$key", key)).FirstOrDefault();
+
+    private static DeliveryRecord? LatestIn(DesktopWrite write, DeliveryIntent intent) =>
+        write.Query(
+            $"SELECT {WriteColumns} FROM deliveries WHERE unit = $unit AND tip = $tip AND method = $method AND target = $target ORDER BY {Newest(int.MaxValue)}",
+            MapDelivery, ("$unit", intent.Unit), ("$tip", intent.Tip), ("$method", intent.Method), ("$target", intent.Target)).FirstOrDefault();
 
     private static DeliveryRecord? UnresolvedIn(DesktopWrite write, string unit) =>
-        write.Query($"SELECT {DeliveryColumns} FROM deliveries WHERE unit = $unit AND settled_at IS NULL", MapDelivery, ("$unit", unit)).FirstOrDefault();
+        write.Query($"SELECT {WriteColumns} FROM deliveries WHERE unit = $unit AND settled_at IS NULL", MapDelivery, ("$unit", unit)).FirstOrDefault();
 
     private static IReadOnlyList<DeliveryPhase> PhasesIn(DesktopWrite write, string key) =>
         write.Query($"SELECT {PhaseColumns} FROM delivery_phases WHERE delivery = $key ORDER BY ordinal", MapPhase, ("$key", key));
@@ -590,6 +622,7 @@ public sealed class DeliveryStore(
             Settled = Text(row, "settled"),
             SettledAt = Moments.Read(Text(row, "settled_at")),
             Said = Text(row, "said"),
+            Generation = Enumerable.Range(0, row.FieldCount).Any(at => row.GetName(at) == "generation") ? Number(row, "generation") ?? 1 : 1,
         };
 
     private static DeliveryPhase MapPhase(SqliteDataReader row) =>
