@@ -134,6 +134,29 @@ public sealed class PipeHoldTests : Bridge
     }
 
     [Fact]
+    public async Task A_hold_card_waiting_when_the_stop_begins_answers_its_line_lost_and_the_drain_does_not_wait_on_it()
+    {
+        if (!OperatingSystem.IsWindows()) return;
+        var (pipe, client, _, services, log) = await ServeAsync();
+        using var __ = services;
+        using var ___ = log;
+        using var ____ = pipe;
+        await using var _____ = client;
+
+        var sent = await client.SendAsync(InstancePipe.Module, "HOLD", new { session = Session });
+        await UntilAsync(() => pipe.Confirmations.Now().Waiting.Any(each => each.Route == "HOLD"));
+
+        // The terminal reads its line, as one waiting on its answer does: the drain waits for the answer to be written.
+        var reading = client.AnswerAsync(sent);
+        pipe.BeginStopping();
+
+        Assert.True(pipe.Drain(TimeSpan.FromSeconds(5)));
+        Assert.Equal(InstancePipe.Lost, Code(await reading));
+        Assert.Empty(pipe.Confirmations.Now().Waiting);
+        Assert.Empty(pipe.Holding.Now().Holds);
+    }
+
+    [Fact]
     public async Task A_hold_ends_by_let_go_by_the_window_by_the_conversation_s_end_and_by_the_connection_closing_each_told_and_logged()
     {
         if (!OperatingSystem.IsWindows()) return;
