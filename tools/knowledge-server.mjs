@@ -412,7 +412,13 @@ export function relayServer({ input, output, first, start, current = () => null,
     if (isRequest(message)) {
       if (message.method === 'initialize') hello = message;
       else await look();
-      if (message.method === 'tools/call' && !absent) refresh();
+      if (message.method === 'tools/call' && !absent) {
+        try {
+          refresh();
+        } catch (error) {
+          say(`the index was not refreshed: ${error instanceof Error ? error.message : error}`);
+        }
+      }
     } else if (message?.method === 'notifications/initialized') {
       initialized = message;
     } else if (isReply(message)) {
