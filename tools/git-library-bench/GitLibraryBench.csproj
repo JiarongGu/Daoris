@@ -1,0 +1,20 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- The git library's bench (docs/2026-11-09-git-library-design.md): a git start's cost, Review's and the look's reads through
+       git's binary and through LibGit2Sharp, their parity, and what the library cannot open. Not shipped, not a gate, referenced by
+       no product project; the library is pinned here only. -->
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <AssemblyName>git-library-bench</AssemblyName>
+    <RootNamespace>GitLibraryBench</RootNamespace>
+    <InvariantGlobalization>true</InvariantGlobalization>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="LibGit2Sharp" Version="0.32.0" />
+  </ItemGroup>
+
+</Project>
