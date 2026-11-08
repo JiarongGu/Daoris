@@ -1,4 +1,4 @@
-import { render, screen, within } from '@testing-library/react';
+import { cleanup, render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import * as Tooltip from '@radix-ui/react-tooltip';
 import { afterEach, describe, expect, it, vi } from 'vitest';
@@ -6,11 +6,16 @@ import '../locales/i18n';
 import i18n from '../locales/i18n';
 import { readMachine } from '../help/machine';
 import { code } from '../test/code';
+import { AskPanel as Panel } from '../help/AskPanel';
 import { setupSteps } from '../help/setup';
+import { starters } from '../help/starters';
 import { GetStarted } from './GetStarted';
 
 // The Get started domain, drawn from props — each step in order with its state, the
 // screens that do it and the command that does the same, shown and copyable.
+
+/** The panel as the application holds it, under the one tooltip provider the page mounts. */
+const AskPanel = (props: Parameters<typeof Panel>[0]) => <Tooltip.Provider><Panel {...props} /></Tooltip.Provider>;
 
 const FRESH = setupSteps(readMachine({
   attached: true, registry: [], driver: { drivable: [], helperAgent: '' }, harnesses: [], lines: [],
@@ -40,8 +45,34 @@ const draw = (props: Partial<Parameters<typeof GetStarted>[0]> = {}) => {
 
 const step = (name: RegExp) => screen.getByRole('listitem', { name });
 
+/** The classes a door is drawn with: what makes a link, a button and a ghost three faces. */
+const faceOf = (button: HTMLElement) => button.getAttribute('class');
+
 describe('Get started', () => {
   afterEach(() => { void i18n.changeLanguage('en'); });
+
+  /**
+   * UIFIND14: a to-do step's door was a button and a done step's a ghost, and Ask Daoris's starters and its way back to this guide
+   * were two more faces. Every door is the one button, whatever the step's state, here and in the Ask Daoris panel.
+   */
+  it('draws every door one way, a done step’s as a to-do step’s and as Ask Daoris’s', () => {
+    draw({ steps: HALFWAY, helper: 'claude-code-acp' });
+    const doors = within(screen.getByRole('list', { name: 'setup steps' })).getAllByRole('button')
+      .filter((button) => /^Open /.test(button.textContent ?? ''));
+    expect(doors.length).toBeGreaterThan(2);
+    expect(within(step(/An agent/)).getAllByRole('button', { name: /^Open / })[0]).toBeDefined();
+    expect(new Set(doors.map(faceOf)).size).toBe(1);
+    cleanup();
+
+    render(
+      <Tooltip.Provider>
+        <AskPanel starters={starters({ repositories: ['engine'], drivable: [], tools: [], waiting: 0, unnamedLines: [], helper: null })}
+          helper={null} setup={{ done: 2, of: 5 }} onGo={vi.fn()} onClose={vi.fn()} />
+      </Tooltip.Provider>,
+    );
+    const asked = [...screen.getAllByRole('button', { name: /^Open / }), screen.getByRole('button', { name: /Set up Daoris step by step/ })];
+    expect(new Set([...asked.map(faceOf), faceOf(doors[0]!)]).size).toBe(1);
+  });
 
   it('lists the five steps in the order a setup goes, each with its state', () => {
     draw({ steps: HALFWAY, helper: 'claude-code-acp' });

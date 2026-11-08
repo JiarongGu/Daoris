@@ -236,7 +236,8 @@ executable, started with a browser argument, is Daoris's own browser, which sess
 **The setup guide and the views**
 
 56. A first start opens Settings → Get started while an agent with an account, Daoris's own agent or a repository is
-    missing. Each step reads its state off the machine and names its screen and its command. (from D97, D50)
+    missing. Each step reads its state off the machine and names its screen and its command. Every door to a screen, in the guide and
+    in Ask Daoris's starters and its way back to the guide, is one `StarterDoorButton`, whatever the step's state. (from D97, D50)
 57. Settings has eleven domains, each what a person comes to set, in this order: Get started; Appearance (look and
     language); Driver (how sessions run: its dials, this machine's access, the plugins' settings); AI features; Git; Tools;
     Browser; Disk space (the folders and the keep rules); Updates (the install's update, then its versions); This Daoris

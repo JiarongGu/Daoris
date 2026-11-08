@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { type SetupState, type SetupStep, setupProgress } from '../help/setup';
+import { StarterDoorButton } from '../help/StarterDoorButton';
 import type { StarterDoor } from '../help/starters';
 import { Button, Card, CheckField, CodeText, Icon, Pill, Prose } from '../design/ui';
 
@@ -140,15 +141,10 @@ export function GetStarted({ steps, reading = false, helper, atStart, onAtStart,
             {step.doors.length > 0 && (
               <div className="flex shrink-0 flex-wrap items-center gap-2">
                 {step.doors.map((door) => (
-                  <Button
-                    key={doorKey(door)}
-                    // What is left to do is the control to press; a done step's screen is still there to change.
-                    variant={step.state === 'todo' ? 'default' : 'ghost'}
-                    className="text-small whitespace-nowrap"
-                    onClick={() => onGo(door)}
-                  >
+                  // The pill says what is done; every door is drawn the same, as Ask Daoris's are.
+                  <StarterDoorButton key={doorKey(door)} onClick={() => onGo(door)}>
                     {t(`setup.door.${doorKey(door)}`)}
-                  </Button>
+                  </StarterDoorButton>
                 ))}
               </div>
             )}
