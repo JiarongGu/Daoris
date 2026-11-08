@@ -52,6 +52,23 @@ public sealed class PluginSourceTests : IDisposable
     // ── The record, on every add door ──────────────────────────────────────────────────────────────
 
     [Fact]
+    public void A_plan_made_from_a_catalogue_already_read_reads_the_home_no_more()
+    {
+        PluginInstall.Add(Home, Checkout(), Reserved);
+        var catalog = PluginCatalog.Load(Home, Reserved);
+        var later = Folder(Path.Combine(_root, "checkout", "later"), GateV1.Replace("acme.gate", "acme.later"), ("gate.mjs", "// v1"));
+        PluginInstall.Add(Home, later, Reserved);
+
+        var (known, _) = PluginInstall.PlanUpdate(Home, "acme.gate", Reserved, Offers, loaded: catalog);
+        var (unknown, refusal) = PluginInstall.PlanUpdate(Home, "acme.later", Reserved, Offers, loaded: catalog);
+
+        Assert.NotNull(known);
+        Assert.Null(unknown);
+        Assert.Contains("no plugin `acme.later`", refusal, StringComparison.Ordinal);
+        Assert.NotNull(PluginInstall.PlanUpdate(Home, "acme.later", Reserved, Offers).Plan);
+    }
+
+    [Fact]
     public void An_add_records_the_folder_it_came_from_in_the_install_and_the_catalogue_reads_past_it()
     {
         var source = Checkout();

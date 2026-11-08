@@ -50,19 +50,30 @@ public sealed record PluginShipped(string State, string Installed, string Shippe
         return order == 0 && !sameFiles() ? new(Changed, installed, shipped, changes) : null;
     }
 
-    /// <summary>Which of two versions is older: dotted numbers compared number by number, a missing part as zero; -1, 0 or 1.</summary>
+    /// <summary>
+    /// Which of two versions is older: dotted numbers compared number by number, a missing part as zero; -1, 0 or 1. A
+    /// pre-release tag (<c>-beta.1</c>) is older than the same numbers without one, and build metadata (<c>+5</c>) counts for nothing.
+    /// </summary>
     public static int Compare(string left, string right)
     {
-        static long[] Parts(string version) =>
-            [.. version.Split('.').Select(part => long.TryParse(part.Split('-', '+')[0], out var number) ? number : 0)];
-        var (a, b) = (Parts(left), Parts(right));
+        static (long[] Numbers, string Tag) Read(string version)
+        {
+            var core = version.Split('+')[0];
+            var dash = core.IndexOf('-');
+            var numbers = (dash < 0 ? core : core[..dash]).Split('.').Select(part => long.TryParse(part, out var number) ? number : 0);
+            return ([.. numbers], dash < 0 ? "" : core[(dash + 1)..]);
+        }
+
+        var ((a, tagA), (b, tagB)) = (Read(left), Read(right));
         for (var at = 0; at < Math.Max(a.Length, b.Length); at++)
         {
             var order = (at < a.Length ? a[at] : 0).CompareTo(at < b.Length ? b[at] : 0);
             if (order != 0) return Math.Sign(order);
         }
 
-        return 0;
+        if (tagA == tagB) return 0;
+        if (tagA.Length == 0) return 1;
+        return tagB.Length == 0 ? -1 : Math.Sign(string.CompareOrdinal(tagA, tagB));
     }
 
     /// <summary>The `changes` line an example's manifest text carries: its trimmed string, or null where it names none or the text does not read.</summary>

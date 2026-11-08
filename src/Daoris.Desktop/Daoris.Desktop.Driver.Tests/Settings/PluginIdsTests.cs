@@ -17,6 +17,11 @@ public sealed class PluginIdsTests
     [InlineData("-dash", false)]
     [InlineData("Upper", false)]
     [InlineData("two words", false)]
+    [InlineData("name.", false)]
+    [InlineData("con", false)]
+    [InlineData("com1", false)]
+    [InlineData("nul.txt", false)]
+    [InlineData("console", true)]
     [InlineData("trailing\n", false)]
     public void An_id_is_lowercase_letters_digits_dots_and_dashes_never_leading_with_a_dot_or_a_dash(string id, bool shaped)
     {

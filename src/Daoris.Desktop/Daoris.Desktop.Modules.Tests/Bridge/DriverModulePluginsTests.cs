@@ -131,6 +131,18 @@ public sealed class DriverModulePluginsTests : DriverModuleBridge
             Assert.Equal(Path.GetFullPath(checkout), gate.GetProperty("folder").GetString());
             Assert.Equal("none", plugins.Single(p => p.GetProperty("id").GetString() == "acme.bare").GetProperty("source").GetProperty("kind").GetString());
 
+            var boxed = DaorisHome.Entry(Home, HomeEntry.Plugins, "acme.boxed");
+            Directory.CreateDirectory(boxed);
+            File.WriteAllText(Path.Combine(boxed, "plugin.json"), """{ "id": "acme.boxed" }""");
+            PluginSource.Write(
+                boxed,
+                PluginSource.FromPackage(new PluginPackageOrigin("Acme.Bare", "2.0.0", Convert.ToBase64String(new byte[64]), Path.Combine(Home, "feed"))));
+            var packaged = (await AnswerAsync(module, "PLUGINS")).GetProperty("plugins").EnumerateArray()
+                .Single(p => p.GetProperty("id").GetString() == "acme.boxed").GetProperty("source");
+            Assert.Equal("package", packaged.GetProperty("kind").GetString());
+            Assert.Contains("package `Acme.Bare` 2.0.0", packaged.GetProperty("package").GetString());
+            Directory.Delete(boxed, recursive: true);
+
             File.WriteAllText(Path.Combine(checkout, "plugin.json"), File.ReadAllText(Path.Combine(checkout, "plugin.json")).Replace("1.0.0", "1.1.0"));
             File.WriteAllText(Path.Combine(checkout, "gate.mjs"), "// v2");
             var asked = await AnswerAsync(module, "PLUGIN_UPDATE", new { id = "acme.gate" });

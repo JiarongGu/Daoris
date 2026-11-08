@@ -133,12 +133,12 @@ public static class PluginInstall
     /// </summary>
     /// <param name="offers">The install's offers folder, where an offer's source is found; null is the one beside the home.</param>
     public static (PluginUpdatePlan? Plan, string? Refusal) PlanUpdate(
-        string home, string id, IEnumerable<string> reservedHarnesses, string? offers = null, bool shipped = false)
+        string home, string id, IEnumerable<string> reservedHarnesses, string? offers = null, bool shipped = false, PluginCatalog? loaded = null)
     {
         var reserved = reservedHarnesses.ToList();
         static (PluginUpdatePlan?, string?) Refuse(string refusal) => (null, refusal);
         if (!PluginCatalog.IsId(id.ToLowerInvariant())) return Refuse(NotAnId(id));
-        var entry = PluginCatalog.Load(home, reserved).Plugins
+        var entry = (loaded ?? PluginCatalog.Load(home, reserved)).Plugins
             .FirstOrDefault(plugin => string.Equals(Path.GetFileName(plugin.Folder), id, StringComparison.OrdinalIgnoreCase));
         if (entry is null) return Refuse($"no plugin `{id}` on this machine — `daoris plugin list` shows what there is.");
         var installed = Path.GetFileName(entry.Folder)!;

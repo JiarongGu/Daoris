@@ -84,6 +84,7 @@ describe('where a plugin came from, on its row', () => {
   it('is said in a word for each source the driver answers', () => {
     expect(sourceWord({ kind: 'offer', offer: 'in-app-browser' })).toBe('plugin.from.offer');
     expect(sourceWord({ kind: 'folder', folder: 'C:/somewhere/checkout/gate' })).toBe('plugin.from.folder');
+    expect(sourceWord({ kind: 'package', package: 'a file, package `Acme.Gate` 1.0.0' })).toBe('plugin.from.package');
     expect(sourceWord({ kind: 'none' })).toBe('plugin.from.none');
     expect(sourceWord({ kind: 'unread', problem: 'it is not JSON' })).toBe('plugin.from.unread');
     expect(sourceWord(undefined)).toBeNull();

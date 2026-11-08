@@ -348,7 +348,12 @@ public sealed class RelayRun
 
     private void End()
     {
-        lock (_gate) _batch.End();
+        lock (_gate)
+        {
+            if (_done.Task.IsCompleted) return;
+            _batch.End();
+        }
+
         Finish(true);
     }
 
