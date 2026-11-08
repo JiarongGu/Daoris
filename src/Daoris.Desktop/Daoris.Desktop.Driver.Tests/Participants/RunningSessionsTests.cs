@@ -22,6 +22,21 @@ public sealed class RunningSessionsTests
         Assert.Empty(running.Drain());
     }
 
+    /// <summary>A run's end lets go of its own session's live entry only, never a carry-on's of the same quest that replaced it.</summary>
+    [Fact]
+    public void A_runs_live_entry_is_let_go_by_its_own_session_and_not_over_the_next_runs()
+    {
+        var running = new RunningSessions();
+        var first = running.GoesLive("q1", "s1");
+        var second = running.GoesLive("q1", "s2");
+
+        first.Dispose();
+        Assert.Equal("s2", running.Live["q1"]);
+
+        second.Dispose();
+        Assert.Empty(running.Live);
+    }
+
     /// <summary>An error before the record opened fails the look, as it always did.</summary>
     [Fact]
     public async Task An_error_before_the_record_opens_fails_the_look()
