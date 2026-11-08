@@ -335,7 +335,13 @@ public sealed class NoticesStateSlice
         {
             channels = await _channels(ct).ConfigureAwait(false);
         }
-        catch (Exception error) when (error is not OperationCanceledException)
+        catch (OperationCanceledException)
+        {
+            // A read the judgement's deadline cancelled is not a read: due again, or the stale asks stand until the channels' own deadline.
+            Interlocked.Exchange(ref _asksDue, 1);
+            throw;
+        }
+        catch (Exception error)
         {
             // Said once until a read succeeds again, as a slice's own failure is.
             if (!_asksFailing) _log?.Warn("state.slice", ("slice", Name), ("partition", Messages), ("message", error.Message));
