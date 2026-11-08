@@ -385,4 +385,35 @@ public sealed class StaffPolicyDoorTests : IDisposable
         Assert.Null(RoleDoor.ReadPress(none.RootElement).Policy);
         Assert.Equal(StaffPolicy.Code, Assert.Throws<RoleRefusedException>(() => RoleDoor.ReadPress(odd.RootElement)).Code);
     }
+
+    /// <summary>A revision that is not a number is refused in the door's own words, never thrown as a JSON type error and never read as no revision.</summary>
+    [Theory]
+    [InlineData("""{ "change": "set", "id": "build", "role": { "name": "Build", "takes": ["build"] }, "policy": "even", "policyRevision": "4" }""")]
+    [InlineData("""{ "change": "set", "id": "build", "role": { "name": "Build", "takes": ["build"] }, "policy": "even", "policyRevision": 4.5 }""")]
+    public void A_policy_revision_that_is_no_whole_number_is_refused(string json)
+    {
+        using var press = JsonDocument.Parse(json);
+
+        Assert.Equal(StaffPolicy.Code, Assert.Throws<RoleRefusedException>(() => RoleDoor.ReadPress(press.RootElement)).Code);
+    }
+
+    [Theory]
+    [InlineData("""{ "change": "remove", "id": "build", "revision": "2" }""")]
+    [InlineData("""{ "change": "set", "id": "build", "role": { "name": "Build", "takes": ["build"] }, "revision": true }""")]
+    public void A_role_revision_that_is_no_whole_number_is_refused(string json)
+    {
+        using var press = JsonDocument.Parse(json);
+
+        Assert.Throws<DriverException>(() => RoleDoor.ReadPress(press.RootElement));
+    }
+
+    [Fact]
+    public void An_appointed_window_that_is_no_whole_number_is_refused_as_a_record_that_does_not_read()
+    {
+        using var press = JsonDocument.Parse("""
+            { "change": "set", "id": "watcher", "role": { "name": "Watcher", "filled": "appointed", "kind": "supervisor", "authority": [], "holder": "rules", "window": "5" } }
+            """);
+
+        Assert.Equal("bad-record", Assert.Throws<RoleRefusedException>(() => RoleDoor.ReadPress(press.RootElement)).Code);
+    }
 }

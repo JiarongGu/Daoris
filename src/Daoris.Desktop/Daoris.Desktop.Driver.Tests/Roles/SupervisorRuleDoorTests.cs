@@ -181,6 +181,9 @@ public sealed class SupervisorRuleDoorTests : IDisposable
     [InlineData("""{ "id": "supervisor", "place": "machine", "rulesRevision": 0 }""", "count")]
     [InlineData("""{ "id": "supervisor", "place": "machine", "rulesRevision": 0, "rules": [{ "count": "tries", "do": "hold" }] }""", "at")]
     [InlineData("""{ "id": "supervisor", "place": "machine", "rulesRevision": 0, "rules": [{ "count": "tries", "at": 5, "do": "hold", "roles": "build" }] }""", "roles")]
+    [InlineData("""{ "id": "supervisor", "place": "machine", "rulesRevision": "0", "rules": [] }""", "revision")]
+    [InlineData("""{ "id": "supervisor", "place": "machine", "rulesRevision": 0, "rules": [{ "count": "tries", "at": "5", "do": "hold" }] }""", "at")]
+    [InlineData("""{ "id": "supervisor", "place": "machine", "rulesRevision": 0, "rules": [{ "count": "limits", "at": 1, "do": "wait", "upTo": "30" }] }""", "upTo")]
     public void CONTEXTDRIVE1d_rules_that_do_not_read_are_refused_by_the_judge_s_code(string json, string code)
     {
         using var press = JsonDocument.Parse(json);

@@ -159,7 +159,12 @@ public sealed record RoleHold(string Kind, IReadOnlyList<string> Acts, string? H
 
         var holder = root.TryGetProperty("holder", out var held) && held.ValueKind == JsonValueKind.String ? held.GetString() : null;
         if (holder is not null && !RoleHolders.All.Contains(holder, StringComparer.Ordinal)) return (null, $"is held by `{holder}`, a holder this build does not know");
-        var window = root.TryGetProperty("window", out var minutes) && minutes.TryGetInt64(out var set) ? set : DefaultWindow;
+        long window = DefaultWindow;
+        if (root.TryGetProperty("window", out var minutes) && minutes.ValueKind != JsonValueKind.Null)
+        {
+            if (minutes.ValueKind != JsonValueKind.Number || !minutes.TryGetInt64(out window)) return (null, "`window` is not whole minutes");
+        }
+
         return InWindow(window)
             ? (new RoleHold(kind, acts, holder, (int)window) { Decides = decides }, null)
             : (null, $"holds answers {window} minutes, outside {ShortestWindow} to {LongestWindow}");

@@ -245,7 +245,13 @@ public static class RoleDoor
         if (SupervisorRuleDoor.Names(press)) return new RolePress(RoleChange.Rules(SupervisorRuleDoor.Read(press)));
         if (Text(press, "change") == "default-all") return new RolePress(RoleChange.DefaultAll());
         var id = Text(press, "id") ?? throw new DriverException("the press named no role.");
-        long? read = press.TryGetProperty("revision", out var revision) && revision.TryGetInt64(out var number) ? number : null;
+        long? read = null;
+        if (press.TryGetProperty("revision", out var revision) && revision.ValueKind != System.Text.Json.JsonValueKind.Null)
+        {
+            if (revision.ValueKind != System.Text.Json.JsonValueKind.Number || !revision.TryGetInt64(out var number)) throw new DriverException("the press's `revision` is not a whole number.");
+            read = number;
+        }
+
         switch (Text(press, "change"))
         {
             case "remove": return new RolePress(RoleChange.Remove(id), null, read);
