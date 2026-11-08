@@ -1099,9 +1099,11 @@ repository. Built on the family's desktop runtime sibling, consumed at a release
 
 Machine logging is optional even when its folder cannot be resolved (STARTLOG1, D94). If both the current and legacy log folders hold files, the process disables its logger and leaves both folders untouched; D172's refusal still applies to tools that explicitly read that entry. Preserve and resolve the duplicate before using those tools.
 
-`npm run publish:desktop -- --to <folder> --service` publishes the application (D93): `Daoris.exe`, a
+`npm run publish:desktop -- --to <folder> --service` publishes the application (D93; `--to` has no default): it
+builds only a tree the full set of gates passed, and otherwise refuses naming each gate that has not and the smallest
+`merge-branch` command that would pass it (`--force-ungated` is the person's override, and the publish says it is ungated). It writes `Daoris.exe`, a
 small launcher, at the folder's root; the application in `app/` beside its Chromium (its files listed in
-`app/shell-files.txt`, which the next publish removes before placing its own), which is Daoris's
+`app/shell-files.txt`, so the next publish removes exactly those and nothing else), which is Daoris's
 browser too (CHR8: the `app/daoris-browser/` an older publish wrote is removed by name), and both
 service hosts, each replaced whole by `service-publish`'s one recipe: the HTTP host with its bundle
 under `app/daoris-knowledge-http/`, and **the knowledge connector** under `app/daoris-knowledge/`,
@@ -1110,8 +1112,10 @@ install that carried none handed its sessions a `bin/` copy no republish refresh
 the install that found it, and it rebuilt the shared store at its own older schema); **the doctrine tool** (WSSETUP2,
 D124 §1.2), the CLI package the release packs laid out as npm lays one out in
 `app/cli/node_modules/daoris/`, with a launcher for each shell in `app/bin/` (`daoris` for Git Bash,
-`daoris.cmd` for Command Prompt and PowerShell), run on the `node` a child's `PATH` finds; the
-install's own `data/` once it has run, and an `INSTALLED.md` saying so. **Every process the driver and
+`daoris.cmd` for Command Prompt and PowerShell), which runs the desktop's own program in `app/daoris-driver/` and hands the doctrine commands
+to that package, on the `node` a child's `PATH` finds; Daoris's example plugins in `app/plugin-offers/` and the list of where each tool's versions download from, `app/resources.json`; the
+install's own `data/` once it has run, and an `INSTALLED.md` saying so. A republish into an install that carries either host, without `--service`, is refused.
+`--stage` publishes beside a running install, into `update/staged/`, for the application to install when its work allows (`--from-gated <commit>` builds the commit the full set gated). **Every process the driver and
 the modules start finds that `daoris` first** (WSSETUP3, D124 §1.3): the tools' environment puts the
 `app/bin/` beside the home ahead of the tools' folders, so a session, a conversation, a hook and the
 terminal's shells run the install's own doctrine tool by its bare name. The account's `PATH` is never
@@ -1159,7 +1163,7 @@ executable, else beside the home), each with its README's requirement lines, and
 
 **The module keeps the onion for its model and rules alone** (STRUCT3a, D166's note; flattened by FLAT1a): `Plugins/Domain` is
 the records and the rules, and does no I/O: a manifest parsed and the catalogue judged
-(`PluginCatalog`), the hook wire's words (`HookPoints`, `HookFrames`), the log's events, the health's rules, the activity's
+(`PluginCatalog`), the hook wire's frames (`HookFrames`; the points' names, `HookPoints`, are in `Knowledge/Domain/PluginVocabulary.cs`), the log's events, the health's rules, the activity's
 summary, the tools' table, the steps' and resources' (`PluginSteps`, FABRIC-UNIT1d: each step read into the `NodeDeclaration` of `Plugins/Domain/NodeDeclaration.cs` and judged by the node table's
 `Problem`, through `IPluginStepRules`), the work wire's contract and bounds (`WorkWire`, `WorkBounds`, FABRIC-PERFORM1a:
 `work.perform@1`'s messages, the 64 KB frame, 60 events a minute, the restarts' waits), and the icon's, the offer's, the source
@@ -1172,8 +1176,8 @@ asks, the landing's start (`HookChannels`), the log writer and the terminal's co
 `CheckRunner`. `PluginCatalog.Load`, `PluginIcon.Read` and `PluginSource.Read` are ordinary static members of their types (FLAT1b-i folded
 the extension blocks back): each calls `PluginFolders` for the I/O, so the type stays in `Domain/` and names no I/O token itself.
 Callers name a health state or a reading of the log through `PluginHealthRules`, and a package's type, root and extension
-through `PluginPackageRules`, where they are declared. With about twenty files at its top the module stays flat (SCOPE1c: no
-scope folders); the hooks, the kit, the package and the page are the groups to cut along if it grows.
+through `PluginPackageRules`, where they are declared. The module stays flat at about fifty files (SCOPE1c: no
+scope folders; `Relay/` holds `events relay`, which serves the `event-relay` plugin, `plugin-kit/` the templates); the hooks, the kit, the package and the page are the groups to cut along if it grows.
 
 **The kit a plugin is made with** (PLUG8, D101, the plugin design's §9) is the driver library's
 `PluginKit`: `daoris plugin new <id> --point <p>… [--in <folder>]` writes a plugin's folder
@@ -1204,7 +1208,10 @@ Ask Daoris through `HelpGrants`, as the page's `PLUGIN_ACTION` does and Ask Daor
 
 **The host answers the Plugins view** (PLUGUI1e, D119 §4.1). `PLUGINS` carries, per plugin, its `servers`, its
 `hook` (the command as its manifest writes it, and its points), `listening`, `health` (`state`, `since`, `failure`)
-from the loop's own record, and `update` (`waits`, `current`, or null with no record). `PLUGIN` {id} is
+from the loop's own record, and `update` (`waits`, `current`, or null with no record); also the `skills`, `steps`, `resources`
+and `tools` it declares, as written. `PLUGIN_TOOLS` {id} is the person's Check, which finds each declared tool and reads its readiness
+checks (nothing finds or runs a tool at a look), and `PLUGIN_TOOL_FIX` {id, tool, check} runs the manifest's own set-up or sign-in
+command for a check in a console the person sees, then reads the tool again. `PLUGIN` {id} is
 `PluginPage.Read` with the loop's health, and `PLUGIN_ACTIVITY` {id, since?} is `PluginActivity.Read` over a span
 such as `1d`, `7d` or `30d` (7 days without one); both refuse an id no longer here as `PLUGIN_UNKNOWN`.
 `PLUGIN_READ` {folder} answers what a folder's plugin would run, or the refusal as an answer, judged as Ask
