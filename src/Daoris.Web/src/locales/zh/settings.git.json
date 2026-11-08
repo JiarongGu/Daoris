@@ -9,6 +9,7 @@
   "settings.git.way.ssh": "SSH 密钥",
   "settings.git.way.https": "HTTPS 登录",
   "settings.git.sshFact": "SSH {{type}} {{fingerprint}}",
+  "settings.git.sshProgram": "运行 {{path}}",
   "settings.git.httpsFact": "HTTPS · 以令牌登录 {{user}}",
   "settings.git.defaultFor": "{{host}} 的默认身份",
   "settings.git.readOnly": "主机上只读",

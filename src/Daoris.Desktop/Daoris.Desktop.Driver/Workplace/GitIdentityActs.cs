@@ -36,37 +36,24 @@ public static partial class GitIdentityActs
     // ---- The ssh tools ----
 
     /// <summary>
-    /// The folder the OpenSSH tools an identity uses are in: beside the ssh the person chose in <c>tools.json</c>; else git's own,
-    /// in its install's <c>usr/bin</c>; else Windows'; else the first <c>ssh</c> on <c>PATH</c>.
+    /// The folder of the OpenSSH tools an identity uses: the one <see cref="Ssh"/> names, so a key is made, tested and used by one ssh.
     /// </summary>
     /// <exception cref="DriverException">No OpenSSH is found, or the chosen ssh is not OpenSSH.</exception>
-    public static string SshTools(string home)
+    public static string SshTools(string home) => Path.GetDirectoryName(Ssh(home))!;
+
+    /// <summary>
+    /// The ssh program an identity's act runs, by its full path: the git Daoris uses (the toolchain's) decides it, as
+    /// <see cref="GitSshProgram"/> says, and the door reaches the same file from the git that starts it.
+    /// </summary>
+    /// <exception cref="DriverException">No OpenSSH is found, or the chosen ssh is not OpenSSH.</exception>
+    public static string Ssh(string home)
     {
-        var (chosen, problem) = GitDoors.OpenSsh(home, name => name == "PATH" ? Environment.GetEnvironmentVariable("PATH") : null);
-        var read = Tools.Read(home);
-        if (read.Git.TryGetValue("core.sshCommand", out _))
-        {
-            if (chosen is null) throw new DriverException($"git: {problem} (ssh-not-openssh)");
-            return Path.GetDirectoryName(chosen)!;
-        }
-
-        if (Tools.Resolve(read, home, "git").File is { } git)
-        {
-            for (var folder = Path.GetDirectoryName(git); folder is not null; folder = Path.GetDirectoryName(folder))
-            {
-                if (File.Exists(Path.Combine(folder, "usr", "bin", Exe("ssh-keygen")))) return Path.Combine(folder, "usr", "bin");
-                if (Path.GetPathRoot(folder) == folder) break;
-            }
-        }
-
-        if (OperatingSystem.IsWindows())
-        {
-            var windows = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.System), "OpenSSH");
-            if (File.Exists(Path.Combine(windows, Exe("ssh-keygen")))) return windows;
-        }
-
-        if (chosen is not null) return Path.GetDirectoryName(chosen)!;
-        throw new DriverException("git: finds no OpenSSH on this machine: Git for Windows carries one (no-ssh)");
+        var (ssh, problem) = GitSshProgram.Of(
+            home, name => name == "PATH" ? Environment.GetEnvironmentVariable("PATH") : null, Tools.Resolve(home, "git").File);
+        if (ssh is not null) return ssh;
+        throw new DriverException(problem!.Contains("chose", StringComparison.Ordinal)
+            ? $"git: {problem} (ssh-not-openssh)"
+            : "git: finds no OpenSSH on this machine: Git for Windows carries one (no-ssh)");
     }
 
     private static string Exe(string name) => OperatingSystem.IsWindows() ? name + ".exe" : name;

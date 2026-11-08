@@ -30,6 +30,8 @@ export type GitIdentityShown = {
   test?: GitTestShown | null;
   lastUsed?: string | null;
   publicKey?: string | null;
+  /** SSH: the full path of the ssh program the identity's git acts run. */
+  ssh?: string | null;
   /** Whether an API token is set for the host's hosted service; the token itself is never sent here. */
   apiToken?: boolean;
   keyPage?: string | null;
@@ -164,6 +166,9 @@ export function GitIdentityRow({ identity, acts, testing = false, answer = null 
           ? t('settings.git.sshFact', { type: identity.keyType ?? '', fingerprint: identity.fingerprint ?? '' })
           : t('settings.git.httpsFact', { user: identity.user ?? '' })}
       </div>
+      {ssh && identity.ssh && (
+        <div className="min-w-0 wrap-anywhere font-mono text-meta text-ink-faint">{t('settings.git.sshProgram', { path: identity.ssh })}</div>
+      )}
       {(identity.commitsName || identity.commitsEmail) && (
         <div className="min-w-0 wrap-anywhere text-small text-ink-faint">
           {t('settings.git.commitsAs', { who: `${identity.commitsName ?? ''} <${identity.commitsEmail ?? ''}>` })}

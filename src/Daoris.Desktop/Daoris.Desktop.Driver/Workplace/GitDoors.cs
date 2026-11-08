@@ -219,7 +219,7 @@ public static class GitDoors
         string home, GitIdentity identity, SshCall call, Func<string, string?> variable, TextWriter error, string folder, GitAct act, string host,
         SshPush? pushes)
     {
-        var (ssh, problem) = OpenSsh(home, variable);
+        var (ssh, problem) = GitSshProgram.Of(home, variable);
         if (ssh is null)
         {
             GitLog.Refused(home, variable, problem!.Contains("OpenSSH", StringComparison.Ordinal) ? "own-input" : "unreached", act, null, host);
@@ -239,44 +239,6 @@ public static class GitDoors
     /// <summary>Every argument an identity's ssh is started with, in order: the door's argument table holds it.</summary>
     public static IReadOnlyList<string> IdentityArguments(string home, string id, SshCall call) =>
         [.. GitSshFiles.IdentityOptions(home, id), .. call.Options, call.Host, call.Command];
-
-    /// <summary>
-    /// The OpenSSH ssh an identity's act runs: the command the person named in <c>tools.json</c>'s
-    /// <c>git.core.sshCommand</c>, by its first word, where it is OpenSSH; else the <c>ssh</c> git's own path finds.
-    /// </summary>
-    public static (string? File, string? Problem) OpenSsh(string home, Func<string, string?> variable)
-    {
-        if (ChosenSsh(home) is { } chosen)
-        {
-            var (first, _) = FirstWord(chosen);
-            var name = Path.GetFileNameWithoutExtension(first.Replace('\\', '/').Split('/')[^1]).ToLowerInvariant();
-            if (name is not "ssh")
-                return (null, $"daoris-git-ssh: the ssh you chose ({name}) is not OpenSSH, so it cannot carry a git identity.");
-            if (Path.IsPathFullyQualified(first) && File.Exists(first)) return (first, null);
-            if (Find(first, variable("PATH")) is { } found) return (found, null);
-            return (null, $"daoris-git-ssh: the ssh you chose is not there ({first}).");
-        }
-
-        return Find("ssh", variable("PATH")) is { } ssh ? (ssh, null) : (null, "daoris-git-ssh: finds no ssh on git's PATH.");
-    }
-
-    /// <summary>The ssh command the person chose in <c>tools.json</c> (<c>git.core.sshCommand</c>), or null.</summary>
-    private static string? ChosenSsh(string home)
-    {
-        try
-        {
-            var path = DaorisHome.Entry(home, HomeEntry.Tools);
-            if (!File.Exists(path)) return null;
-            return System.Text.Json.Nodes.JsonNode.Parse(AtomicFile.ReadText(path)) is System.Text.Json.Nodes.JsonObject root
-                && root["git"] is System.Text.Json.Nodes.JsonObject git
-                && git["core.sshCommand"] is System.Text.Json.Nodes.JsonValue value && value.TryGetValue<string>(out var text)
-                && !string.IsNullOrWhiteSpace(text) ? text.Trim() : null;
-        }
-        catch (Exception failure) when (failure is IOException or UnauthorizedAccessException or System.Text.Json.JsonException or DriverException)
-        {
-            return null;
-        }
-    }
 
     /// <summary>
     /// The ssh git would have started without Daoris (today's credentials): the repository's <c>core.sshCommand</c> at

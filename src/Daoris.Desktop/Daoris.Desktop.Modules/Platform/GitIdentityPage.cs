@@ -12,6 +12,16 @@ internal static class GitIdentityPage
     {
         var identities = GitIdentities.Read(home);
         var pointers = GitIdentityUse.Read(home);
+        string? ssh = null;
+        try
+        {
+            if (identities.Any(each => each.Way == GitIdentity.Ssh)) ssh = GitIdentityActs.Ssh(home);
+        }
+        catch (DriverException)
+        {
+            // No ssh is found: the page shows none, and an SSH act says why.
+        }
+
         return new
         {
             Problem = GitIdentities.Problem(home),
@@ -26,6 +36,7 @@ internal static class GitIdentityPage
                     LastUsed = used is { } at ? Moments.Write(at) : null,
                     // Whether a token is set, never the token.
                     ApiToken = GitTokens.Has(home, each.Id, GitTokens.Api),
+                    Ssh = each.Way == GitIdentity.Ssh ? ssh : null,
                     PublicKey = each.Way == GitIdentity.Ssh ? GitKeys.PublicKey(home, each.Id) : null,
                     KeyPage = GitHosts.Known.TryGetValue(each.Host, out var known) ? known.KeyPage : null,
                     Repositories = pointers.Repository.Sum(repository => repository.Value.Count(pointer => pointer.Value == each.Id)),
