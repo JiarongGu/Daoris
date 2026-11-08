@@ -8,9 +8,8 @@ namespace Daoris.Driver;
 /// </summary>
 /// <remarks>
 /// <para><b>Beside the account, never inside it</b>: the account's directory is the tool's.
-/// Plaintext at rest, as <c>remotes.json</c>'s deployment keys and the tools' own credential files
-/// are; tracked by nothing; no HTTP surface. A person sees a key only as its
-/// <see cref="Handle"/>. The CLI's <c>keys</c> helpers are the twin, over the same file.</para>
+/// Encrypted at rest for the Windows user (<see cref="KeySeal"/>); tracked by nothing; no HTTP surface. A person
+/// sees a key only as its <see cref="Handle"/>.</para>
 /// </remarks>
 public static class HarnessKeys
 {
@@ -36,7 +35,7 @@ public static class HarnessKeys
         var keys = Read(home);
         var read = Written(keys);
         if (!keys.TryGetValue(harness, out var held)) keys[harness] = held = new(StringComparer.Ordinal);
-        held[account] = trimmed;
+        held[account] = KeySeal.Sealed(trimmed);
         Write(home, read, keys);
         Directory.CreateDirectory(HarnessSettings.ProfileHome(home, harness, account));
 
@@ -65,17 +64,25 @@ public static class HarnessKeys
     /// refusal is the caller's (<c>Harnesses.Removed</c> and <c>LookedAgain</c>). The CLI's <c>replaceKeyAccount</c> is the twin.
     /// An account not on this machine, one that is not a key, and a blank or spaced key are refused before anything is written.
     /// </summary>
-    public static string Replace(string home, string harness, string account, string key)
+    public static string Replace(string home, string harness, string account, string key, bool keyOnly = false)
     {
         var named = HarnessSettings.Profiles(home, harness).FirstOrDefault(each => string.Equals(each, account, StringComparison.Ordinal))
             ?? throw new DriverException(
                 $"`{harness}` has no account `{account}` on this machine — accounts that exist: "
                 + (HarnessSettings.Profiles(home, harness) is { Count: > 0 } accounts ? string.Join(", ", accounts) : "(none)"));
         var keys = Read(home);
-        if (!keys.TryGetValue(harness, out var held) || !held.ContainsKey(named))
+        var read = Written(keys);
+        // An agent held by a key alone has no sign-in to be: an account of it without a key is one waiting for it.
+        var held = keys.GetValueOrDefault(harness);
+        if (held is null || !held.ContainsKey(named))
         {
-            throw new DriverException(
-                $"`{named}` is not an API key account — it is a sign-in, so sign in again with `daoris agent login {harness}`.");
+            if (!keyOnly)
+            {
+                throw new DriverException(
+                    $"`{named}` is not an API key account — it is a sign-in, so sign in again with `daoris agent login {harness}`.");
+            }
+
+            if (held is null) keys[harness] = held = new(StringComparer.Ordinal);
         }
 
         var trimmed = key?.Trim() ?? "";
@@ -84,8 +91,7 @@ public static class HarnessKeys
             throw new DriverException("that is not an API key — it is blank, or has spaces in it.");
         }
 
-        var read = Written(keys);
-        held[named] = trimmed;
+        held[named] = KeySeal.Sealed(trimmed);
         Write(home, read, keys);
 
         // What marked it refused is cleared, none the reason the key is not kept.
@@ -105,7 +111,24 @@ public static class HarnessKeys
 
     /// <summary>The key an account is, or null for a sign-in.</summary>
     public static string? Of(string home, string harness, string profile) =>
-        Read(home).TryGetValue(harness, out var held) && held.TryGetValue(profile, out var key) ? key : null;
+        Read(home).TryGetValue(harness, out var held) && held.TryGetValue(profile, out var kept) ? KeySeal.Open(kept) : null;
+
+    /// <summary>
+    /// Take an account's key away and keep the account: its last reading, of that key, is forgotten, so it reads no key
+    /// until a new one is set. Nothing to take is an answer.
+    /// </summary>
+    public static void Withdraw(string home, string harness, string profile)
+    {
+        Remove(home, harness, profile);
+        try
+        {
+            AccountReads.Forget(home, harness, profile);
+        }
+        catch (Exception error) when (error is IOException or UnauthorizedAccessException)
+        {
+            // The key is gone; the next press reads the account again.
+        }
+    }
 
     /// <summary>Forget an account's key. Nothing to forget is an answer.</summary>
     public static void Remove(string home, string harness, string profile)
@@ -157,7 +180,12 @@ public static class HarnessKeys
     private static void Write(string home, string read, Dictionary<string, Dictionary<string, string>> keys)
     {
         var path = DaorisHome.Entry(home, HomeEntry.Keys);
-        JsonKeeping.Save(path, File.Exists(path), read, Written(keys));
+        // Every key a write leaves is a sealed one: a key kept before the seal is sealed by the first write after it.
+        var sealedKeys = keys.ToDictionary(
+            agent => agent.Key,
+            agent => agent.Value.ToDictionary(account => account.Key, account => KeySeal.Sealed(account.Value), StringComparer.Ordinal),
+            StringComparer.Ordinal);
+        JsonKeeping.Save(path, File.Exists(path), read, Written(sealedKeys));
     }
 
     /// <summary>The keys' own shape: agent then account, each sorted.</summary>

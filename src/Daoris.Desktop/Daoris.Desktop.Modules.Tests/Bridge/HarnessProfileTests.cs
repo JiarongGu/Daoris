@@ -366,12 +366,39 @@ public sealed class HarnessProfileTests : Bridge
         Directory.CreateDirectory(ProfileAt("claude-code", "signed-in"));
 
         Assert.Contains("takes no API key", await RefusalAsync(module, "HARNESS_ACTION",
-            new { door = "dsh", action = "key-replace", profile = "x", key = "sk-something-9999" }));
+            new { door = "codex-acp", action = "key-replace", profile = "x", key = "sk-something-9999" }));
         Assert.Contains("no account", await RefusalAsync(module, "HARNESS_ACTION",
             new { door = "claude-code", action = "key-replace", profile = "nobody", key = "sk-something-9999" }));
         Assert.Contains("not an API key account", await RefusalAsync(module, "HARNESS_ACTION",
             new { door = "claude-code", action = "key-replace", profile = "signed-in", key = "sk-something-9999" }));
         Assert.Null(HarnessKeys.Of(Home, "claude-code", "signed-in"));
+    }
+
+    /// <summary>
+    /// An agent held by a key alone (dsh): an account made with no key takes one by <c>key-replace</c>, and <c>key-remove</c> takes it
+    /// out again and keeps the account; no answer or event carries the key.
+    /// </summary>
+    [Fact]
+    public async Task A_key_is_set_into_a_keyless_dsh_account_and_removed_with_the_account_kept()
+    {
+        const string key = "sk-dsh-set-0000-wxyz";
+        var module = Module();
+        Directory.CreateDirectory(ProfileAt("dsh", "acct-00000000"));
+
+        var set = await AnswerAsync(module, "HARNESS_ACTION",
+            new { door = "dsh", action = "key-replace", profile = "acct-00000000", key });
+
+        Assert.Equal("…wxyz", set.GetProperty("key").GetString());
+        Assert.Equal(key, HarnessKeys.Of(Home, "dsh", "acct-00000000"));
+        Assert.DoesNotContain(key, set.GetRawText());
+
+        var removed = await AnswerAsync(module, "HARNESS_ACTION",
+            new { door = "dsh", action = "key-remove", profile = "acct-00000000" });
+
+        Assert.Equal("acct-00000000", removed.GetProperty("profile").GetString());
+        Assert.Null(HarnessKeys.Of(Home, "dsh", "acct-00000000"));
+        Assert.True(Directory.Exists(ProfileAt("dsh", "acct-00000000")));
+        Assert.DoesNotContain(Raised, m => JsonSerializer.Serialize(m.Payload).Contains(key));
     }
 
     /// <summary>Removing a key account removes its key with its directory.</summary>
@@ -424,10 +451,10 @@ public sealed class HarnessProfileTests : Bridge
     public async Task An_agent_that_takes_no_key_refuses_one_and_makes_nothing()
     {
         var refusal = await RefusalAsync(Module(), "HARNESS_ACTION",
-            new { door = "dsh", action = "key-add", key = "sk-something-9999" });
+            new { door = "codex-acp", action = "key-add", key = "sk-something-9999" });
 
         Assert.Contains("takes no API key", refusal);
-        Assert.Empty(HarnessSettings.Profiles(Home, "dsh"));
+        Assert.Empty(HarnessSettings.Profiles(Home, "codex"));
     }
 
     /// <summary>

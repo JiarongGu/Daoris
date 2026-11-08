@@ -4,18 +4,23 @@ namespace Daoris.Driver;
 /// dsh written on the contract: provider <c>dsh</c> with its one door of the
 /// same id on the protocol.
 /// </summary>
-/// <remarks>It has no sign-in and no login question: there is no account here to be out of.</remarks>
+/// <remarks>It has no sign-in and no login question: an account is an API key, ready by the key's presence and DeepSeek's balance read.</remarks>
 internal static class DshProvider
 {
     private const string Evidence = "dsh's declaration";
 
     private const string HomeVariable = "DSH_HOME";
 
+    private const string KeyVariable = "DEEPSEEK_API_KEY";
+
     public static Provider Registration()
     {
         // `-V, --version`, verified against the installed CLI.
         var program = new ToolSpec(
             ["dsh"], ["--version"], ["npm", "install", "-g", "@deepseek-ai/dsh"], null, "@deepseek-ai/dsh", null, null, ProbeByPresence: false);
+        var pool = new PoolFacts(
+            KeyVariable: KeyVariable, Login: null, LoginArguments: null, DeviceLoginArguments: null, LoginPorts: null,
+            SettingsFile: null, WeekFixed: false, KeyCheck: new DeepSeekBalance());
         var door = new AgentDoor(
             new DoorId("dsh"), Transport.Protocol, new DoorIdentity(null, null, null),
             Known<ToolSpec>.Absent,
@@ -37,10 +42,10 @@ internal static class DshProvider
             new ProviderIdentity("DeepSeek Harness", "DeepSeek", "DH", StandIn: false, DeclaredBy: []),
             [door],
             Known<ToolSpec>.Declared(program, Evidence),
-            Known<AccountsPart>.Declared(new AccountsPart(new AccountKey("dsh"), null, PoolFacts.None), Evidence),
+            Known<AccountsPart>.Declared(new AccountsPart(new AccountKey("dsh"), null, pool), Evidence),
             Known<TablesPart>.Absent,
             Known<UsagePart>.Absent,
-            Known<LentPart>.Declared(new LentPart(PoolFacts.None, TablesPart.None, UsagePart.None), Evidence),
+            Known<LentPart>.Declared(new LentPart(pool, TablesPart.None, UsagePart.None), Evidence),
             Known<ISettingsFile>.Absent, Known<IChildVocabulary>.Absent, Known<IRuleLanguage>.Absent, Known<ISkillLayout>.Absent,
             Known<IConversationHome>.Absent,
             Reach.Everywhere,

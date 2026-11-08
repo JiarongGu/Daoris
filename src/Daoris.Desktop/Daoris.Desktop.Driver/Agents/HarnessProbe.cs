@@ -252,6 +252,16 @@ public static class HarnessProbe
         CancellationToken ct, IReadOnlyDictionary<string, string>? account = null, string? lockPath = null,
         Func<bool>? busy = null, LoginRead kept = default, TimeSpan? patience = null)
     {
+        if (toolchain.Accounts.KeyOnly)
+        {
+            // No question to ask the tool: the key's presence, and the provider's read of it where it answers one.
+            if (account?.GetValueOrDefault(toolchain.Accounts.KeyVariable!) is not { } key) return new LoginAnswer(LoginState.Out, null, true);
+            var checkedKey = toolchain.Accounts.KeyCheck is { } check
+                ? await check.CheckAsync(key, ct).ConfigureAwait(false)
+                : LoginState.In;
+            return new LoginAnswer(checkedKey, null, true);
+        }
+
         if (toolchain.Accounts.Login is not { } question) return new LoginAnswer(LoginState.Unknown, null, false);
 
         // One status question per account at a time, in this process and across them.

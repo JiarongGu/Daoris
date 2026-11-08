@@ -351,21 +351,25 @@ internal sealed class RosterWalk(HarnessRoster roster)
                 : null;
             var asked = walk.Said.TryGetValue(account, out var answered);
             var login = asked ? answered : read?.Login ?? LoginState.Unknown;
+            var keyOnly = !asked ? KeyOnlyWalk.Reading(roster, owner, account, read) : null;
+            if (keyOnly is { } held) login = held.Login;
             var key = HarnessRoster.AccountKey(owner, account);
             // A view's read asks nothing (`asks` false): the reading stands, and the one fresh reading a refusal owes stays
             // owed to the next start that asks.
-            if (asks && login == LoginState.Out && !asked && _asking.TryAdd(key, true))
+            if (asks && (login == LoginState.Out || keyOnly?.Unread == true) && !asked && _asking.TryAdd(key, true))
             {
                 // The one fresh reading a refusal of a signed-in reading owes it, spent here whatever it answers.
                 var owed = roster._owed.TryRemove(key, out _);
-                if (owed || roster.AskAgain(owner, account, read?.At)) return new WalkPass(Ask: account, Owed: owed);
+                if (owed || keyOnly?.Unread == true || roster.AskAgain(owner, account, read?.At)) return new WalkPass(Ask: account, Owed: owed);
                 _asking.TryRemove(key, out _);
             }
 
             if (login == LoginState.Out)
             {
                 var profile = ShellWord.Of(account, ShellWord.Account);
-                var refusal = $"the `{owner}` account `{AccountNames.Said(names, account)}` is not signed in, so a session would have "
+                var refusal = keyOnly is not null
+                    ? KeyOnlyWalk.Refusal(owner, AccountNames.Said(names, account), profile)
+                    : $"the `{owner}` account `{AccountNames.Said(names, account)}` is not signed in, so a session would have "
                     + $"nothing to run as — `daoris agent login {owner} --account {profile}` runs "
                     + "the agent's own sign-in into it. Daoris manages the directory and the name; the "
                     + "credential stays in the agent's own store.";

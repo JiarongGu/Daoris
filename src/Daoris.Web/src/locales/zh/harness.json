@@ -28,7 +28,7 @@
   "harness.profile.keyLabel": "{{tool}} 的 API 密钥",
   "harness.profile.keyPlaceholder": "粘贴密钥",
   "harness.profile.keySave": "保存密钥",
-  "harness.profile.keyHint": "由 Daoris 保存在本机，会话启动时交给智能体，之后只显示最后四个字符。",
+  "harness.profile.keyHint": "由 Daoris 加密（仅当前 Windows 用户可解）保存在本机，会话启动时交给智能体，之后只显示最后四个字符。",
   "harness.profile.keyName": "API 密钥 {{handle}}",
   "harness.pin.open": "固定版本",
   "harness.login.again": "重新登录",

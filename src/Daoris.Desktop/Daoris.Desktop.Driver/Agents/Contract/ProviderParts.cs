@@ -35,9 +35,13 @@ public sealed record PoolFacts(
     IReadOnlyList<string>? DeviceLoginArguments,
     IReadOnlyList<int>? LoginPorts,
     string? SettingsFile,
-    bool WeekFixed)
+    bool WeekFixed,
+    IKeyCheck? KeyCheck = null)
 {
     public static PoolFacts None { get; } = new(null, null, null, null, null, null, false);
+
+    /// <summary>Held by an API key alone: a key variable and no sign-in.</summary>
+    public bool KeyOnly => KeyVariable is { Length: > 0 } && Login is null && LoginArguments is not { Count: > 0 };
 }
 
 /// <summary>

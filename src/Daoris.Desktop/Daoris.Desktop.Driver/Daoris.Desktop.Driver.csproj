@@ -23,6 +23,7 @@
   <ItemGroup>
     <PackageReference Include="Microsoft.Data.Sqlite" />
     <PackageReference Include="SQLitePCLRaw.bundle_e_sqlite3" />
+    <PackageReference Include="System.Security.Cryptography.ProtectedData" />
   </ItemGroup>
 
   <!-- Lyntai's agent layer (AGENTLYNTAI1, D248): taken by the driver alone and named in it by `Agents/Layer/` and the providers' folders

@@ -11,7 +11,7 @@ import type { Notify } from '../design/ui';
 import type { Answered } from '../work/InlineConfirm';
 
 /** A process action a person started on a tool: an install, an update, a pin, a sign-in, or an account removed. */
-export type HarnessRunAction = 'install' | 'update' | 'login' | 'login-new' | 'pin' | 'unpin' | 'profile-remove';
+export type HarnessRunAction = 'install' | 'update' | 'login' | 'login-new' | 'pin' | 'unpin' | 'profile-remove' | 'key-remove';
 
 /**
  * A new account a sign-in kept: which tool, its id and who signed in. It joins Daoris's accounts as it is
