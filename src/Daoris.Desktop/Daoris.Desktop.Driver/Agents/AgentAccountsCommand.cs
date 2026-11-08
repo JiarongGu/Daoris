@@ -169,7 +169,17 @@ internal static class AgentAccountsCommand
             new JsonObject { ["action"] = "profile-remove", ["door"] = owner, ["profile"] = profile },
             _ =>
             {
-                var removed = HarnessSettings.RemoveProfile(at.Home, owner, profile);
+                bool removed;
+                try
+                {
+                    removed = HarnessSettings.RemoveProfile(at.Home, owner, profile);
+                }
+                catch (Exception error) when (error is IOException or UnauthorizedAccessException)
+                {
+                    // The window's outcome for a delete that could not finish; the wiring stays.
+                    return Done(failed);
+                }
+
                 HarnessSettings.Change(
                     at.Path, read => read.WithoutAccount(owner, profile), account: new AccountChange(owner, profile, Added: false), agents: at.Agents);
                 return Done(removed);

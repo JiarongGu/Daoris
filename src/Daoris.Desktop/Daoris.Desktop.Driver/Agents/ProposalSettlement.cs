@@ -58,18 +58,29 @@ public static class ProposalSettlement
         }
 
         string? reserved = null;
-        PermissionChange.Change(home, rules =>
+        var marked = false;
+        try
         {
-            if (by.IsSupervisor && WideningAllows.Reserved(rules, proposal.Change) is { } why)
+            PermissionChange.Change(home, rules =>
             {
-                reserved = why;
-                return rules;
-            }
+                if (by.IsSupervisor && WideningAllows.Reserved(rules, proposal.Change) is { } why)
+                {
+                    reserved = why;
+                    return rules;
+                }
 
-            if (RuleProposals.Effect(rules, proposal.Change) == ChangeEffect.Nothing) return rules;
-            RuleProposals.Mark(path, ProposalState.Settling, by.Who, receipt, at, by.Role, by.Decision);
-            return RuleProposals.Apply(rules, proposal.Change);
-        });
+                if (RuleProposals.Effect(rules, proposal.Change) == ChangeEffect.Nothing) return rules;
+                RuleProposals.Mark(path, ProposalState.Settling, by.Who, receipt, at, by.Role, by.Decision);
+                marked = true;
+                return RuleProposals.Apply(rules, proposal.Change);
+            });
+        }
+        catch (Exception) when (marked)
+        {
+            // A refused save leaves nothing for a settling mark to wait on.
+            RuleProposals.Mark(path, proposal.State, "the driver", "the rules could not be written, so nothing was settled.", at);
+            throw;
+        }
         if (reserved is not null)
         {
             RuleProposals.Mark(path, ProposalState.Waiting, "the driver", "it stays for the person to decide.", at);

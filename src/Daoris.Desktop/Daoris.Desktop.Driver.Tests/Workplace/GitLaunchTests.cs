@@ -203,14 +203,14 @@ public sealed class GitLaunchTests
     /// are the seams of their own, each a start a census of its own holds (<c>ProcessStartsCensusTests</c>).
     /// </summary>
     /// <summary>The files, by name, that start a process: a git's start info (GitStart), a start handed to the gate, a child run, the runtime's start, or a git's info built by hand.</summary>
-    private static SortedSet<string> StartFiles(IEnumerable<(string File, string Source)> sources) =>
+    internal static SortedSet<string> StartFiles(IEnumerable<(string File, string Source)> sources) =>
         new(sources.Where(each => Regex.IsMatch(
                 Regex.Replace(each.Source.Replace("\r\n", "\n"), @"//[^\n]*", ""),
                 @"\bGitStart\s*\(|\bProcessStarts\.\w+\.(?:StartAsync|RunAsync)\s*\(|\bStartAsync\s*\(\s*info\b|\bChildProcess\.RunAsync\s*\(|\bProcess\.Start\b|ProcessStartInfo\s*\(\s*""git"))
             .Select(each => each.File), StringComparer.Ordinal);
 
     /// <summary>The files that may start a process, each for the seam it is (how many starts a listed file makes is not pinned).</summary>
-    private static readonly string[] StartingFiles =
+    internal static readonly string[] StartingFiles =
     [
         "ActSteps.cs", "AgentStarts.cs", "BuildAccounts.cs", "ChildProcess.cs", "CodexUsage.cs", "DoctrineStatusRead.cs",
         "GeneratedWriters.cs", "GitDoors.cs", "GitIdentityActs.cs", "HarnessActions.cs", "HarnessProbe.cs",

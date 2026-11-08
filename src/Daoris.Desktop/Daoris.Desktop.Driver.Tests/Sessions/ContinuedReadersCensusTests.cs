@@ -130,10 +130,11 @@ public sealed partial class ContinuedReadersCensusTests
         ["QuietWord.cs"] = "the watcher's word to a quiet session or about a long call: a record that went on is told nothing, as a closed inbox is, and a quiet episode is forgotten",
     };
 
-    /// <summary>The runner hands a keep on to the dispatcher that holds it, which is named above and reads the head itself.</summary>
+    /// <summary>A keep made for the dispatcher that holds it, which is named above and reads the head itself.</summary>
     private static readonly Dictionary<string, (string Calls, string Why)> Forwards = new()
     {
         ["ChatRunner.cs"] = ("_words.SayKeptAsync(", "the conversation runner's door: its keep is ChatWords's, which answers the head as ChatSaid.Head"),
+        ["KeepRetry.cs"] = ("door.KeepAsync(", "TurnKeeps's keep, asked again under its key: the answer goes back to TurnKeeps, which answers TurnKept.Head"),
     };
 
     /// <summary>Callers that reach the say door only through another named here: what they call.</summary>
@@ -148,7 +149,7 @@ public sealed partial class ContinuedReadersCensusTests
     [GeneratedRegex(@"\bWordsHead\.FollowAsync\(")]
     private static partial Regex Follow();
 
-    [GeneratedRegex(@"\.KeepOrHoldAsync\(|\bdoor\.KeepAsync\(|\bTurns\.KeepAsync\(|\.SayKeptAsync\(")]
+    [GeneratedRegex(@"\.KeepOrHoldAsync\(|\bdoor\.KeepAsync\(|\bKeepRetry\.KeepAsync\(|\bTurns\.KeepAsync\(|\.SayKeptAsync\(")]
     private static partial Regex Keep();
 
     /// <summary>The names the code gives a service client the say door is called on.</summary>

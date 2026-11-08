@@ -28,7 +28,7 @@ public sealed class GitMemoAsksTests
 
                 await Assert.ThrowsAnyAsync<OperationCanceledException>(() => started);
                 release.SetResult();
-                Assert.Equal((0, "abc\n", ""), await used.WaitAsync(TimeSpan.FromSeconds(10)));
+                Assert.Equal((0, "abc\n", ""), await used.WaitAsync(Poll.Patience));
                 lock (handed) Assert.False(Assert.Single(handed).CanBeCanceled);
             }
         }

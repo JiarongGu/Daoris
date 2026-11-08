@@ -35,8 +35,9 @@ public sealed record SupervisorSubject(string Kind, string Session, string Id)
         new(SupervisorKinds.Landing, session, $"{run}/{node}/{attempt}");
 
     public (string Run, string Node, int Attempt)? LandingParts =>
-        Kind == SupervisorKinds.Landing && Id.Split('/') is [{ Length: > 0 } run, { Length: > 0 } node, var attempt] && int.TryParse(attempt, out var number)
-            ? (run, node, number)
+        Kind == SupervisorKinds.Landing && Id.IndexOf('/') is > 0 and var first && Id.LastIndexOf('/') is var last && last > first + 1
+        && int.TryParse(Id[(last + 1)..], out var number)
+            ? (Id[..first], Id[(first + 1)..last], number)
             : null;
 
     /// <summary>The moment a held request began, so a request id a later process reuses is another subject.</summary>

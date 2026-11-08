@@ -62,6 +62,15 @@ public sealed class WorkspaceTrustTests : IDisposable
         Assert.False(ClaudeTrust.Accepted(config, @"D:\fam\engine"));
     }
 
+    [Theory]
+    [InlineData("[]")]
+    [InlineData("null")]
+    [InlineData("7")]
+    public void A_config_whose_root_is_not_an_object_is_unknown_not_a_throw(string json)
+    {
+        Assert.Null(ClaudeTrust.Accepted(Config(json), @"D:/fam/engine"));
+    }
+
     [Fact]
     public void A_workspace_recorded_as_declined_is_not_trusted()
     {

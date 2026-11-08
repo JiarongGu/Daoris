@@ -28,6 +28,9 @@ public enum FilePreviewRefusal
     /// folder, or a link, which git keeps as the link and the preview does not follow.
     /// </summary>
     NotOnBranch,
+
+    /// <summary>Read from a landed branch in a partial clone: a file filtered out of it, which its promisor did not give.</summary>
+    Unfetched,
 }
 
 /// <summary>A file as its preview shows it.</summary>
@@ -151,8 +154,8 @@ public static class FilePreview
 
     /// <summary>
     /// A file as a session's landed branch holds it, for the preview of a session whose landing tidied
-    /// its tree away: <c>git cat-file blob</c> of what the branch's tree names at that path, in the repository's own
-    /// checkout.
+    /// its tree away: one <c>cat-file --batch</c> question (<see cref="GitObjectReads"/>) of what the branch's tree names at that path,
+    /// in the repository's own checkout, its size the answer's header's.
     /// </summary>
     /// <remarks>
     /// <para><b>A read of objects, and nothing else</b>: the checkout's working tree and index are never asked, so what
@@ -192,33 +195,31 @@ public static class FilePreview
         if (asked.Refusal is not FilePreviewRefusal.None) return FilePreviewResult.Refused(asked.Refusal, entry.Branch);
         var relative = string.Join('/', asked.Segments);
 
-        // Literal, so a `*` or a `:(` in a name is that name and not a pattern.
+        // Literal, so a `*` or a `:(` in a name is that name and not a pattern. The tree alone, no size: the object's header gives it.
         var (listCode, listed, _) = await WorkingTree.GitAsync(
-            root, ["--literal-pathspecs", "ls-tree", "-l", "-z", tip, "--", relative], ct).ConfigureAwait(false);
+            root, ["--literal-pathspecs", "ls-tree", "-z", tip, "--", relative], ct).ConfigureAwait(false);
         if (listCode != 0 || Listed(listed, relative) is not { } blob) return FilePreviewResult.Refused(FilePreviewRefusal.NotOnBranch, entry.Branch);
 
-        var read = await WorkingTree.GitBytesAsync(root, ["cat-file", "blob", blob.Object], (int)Math.Min(blob.Size, Budget), ct).ConfigureAwait(false);
-        if (read is not { } bytes) return FilePreviewResult.Refused(FilePreviewRefusal.NotOnBranch, entry.Branch);
+        var read = await GitObjectReads.ReadAsync(root, blob, Budget, ct).ConfigureAwait(false);
+        if (read is not { } got) return FilePreviewResult.Refused(FilePreviewRefusal.NotOnBranch, entry.Branch);
+        if (got.Answer.Missing) return FilePreviewResult.Refused(FilePreviewRefusal.Unfetched, entry.Branch);
 
-        return new(FilePreviewRefusal.None, Decode(bytes.Bytes, bytes.Count, blob.Size, relative) with { Branch = entry.Branch }, entry.Branch);
+        var bytes = got.Bytes.AsSpan(got.Answer.Start, got.Answer.Count).ToArray();
+        return new(FilePreviewRefusal.None, Decode(bytes, bytes.Length, got.Answer.Size, relative) with { Branch = entry.Branch }, entry.Branch);
     }
 
     /// <summary>
-    /// The one file <c>git ls-tree -l -z</c> listed at exactly <paramref name="path"/> — a blob, not a link or a folder —
-    /// with its object and its size; null where it listed none.
+    /// The object of the one file <c>git ls-tree -z</c> listed at exactly <paramref name="path"/> — a blob, not a link or a folder,
+    /// told by its mode; null where it listed none.
     /// </summary>
-    internal static (string Object, long Size)? Listed(string output, string path)
+    internal static string? Listed(string output, string path)
     {
         foreach (var record in output.Split('\0', StringSplitOptions.RemoveEmptyEntries))
         {
-            // `<mode> SP <type> SP <object> SP+ <size> TAB <path>`: the size is padded, and a folder's is `-`.
             var tab = record.IndexOf('\t');
             if (tab < 0 || !string.Equals(record[(tab + 1)..], path, StringComparison.Ordinal)) continue;
             var fields = record[..tab].Split(' ', StringSplitOptions.RemoveEmptyEntries);
-            if (fields.Length != 4 || fields[1] != "blob" || fields[0] is not ("100644" or "100755")) return null;
-            return long.TryParse(fields[3], System.Globalization.NumberStyles.None, System.Globalization.CultureInfo.InvariantCulture, out var size)
-                ? (fields[2], size)
-                : null;
+            return fields.Length == 3 && fields[1] == "blob" && fields[0] is ("100644" or "100755") ? fields[2] : null;
         }
 
         return null;

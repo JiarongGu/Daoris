@@ -31,7 +31,7 @@ public sealed class KnowledgeIndex(IKnowledgeStore store, IDisclosurePolicy? dis
         IKnowledgeSource source, Func<string, string>? workspaceOf = null,
         Func<string, bool>? stillRegistered = null, CancellationToken ct = default,
         IReadOnlyList<string>? onlyRoots = null) =>
-        (await RefreshReadingAsync(source, workspaceOf, stillRegistered, onlyRoots, generations: null, readOf: null, ct)
+        (await RefreshReadingAsync(source, workspaceOf, stillRegistered, onlyRoots, generations: null, readOf: null, readRepositories: null, ct)
             .ConfigureAwait(false)).Report;
 
     /// <summary>A refresh that says which repositories it did not write.</summary>
@@ -40,10 +40,15 @@ public sealed class KnowledgeIndex(IKnowledgeStore store, IDisclosurePolicy? dis
     /// before the source. A repository written since is not written again, and is named in <c>Refused</c>.
     /// </param>
     /// <param name="readOf">The commit and root signature a repository is read at; null names none.</param>
+    /// <param name="readRepositories">
+    /// The repositories whose roots a partial reading named. One of them that read nothing is replaced with nothing: the root
+    /// moved and now has no entries, and keeping the old ones would hold them until a whole reading.
+    /// </param>
     internal async Task<(IndexReport Report, IReadOnlySet<string> Refused)> RefreshReadingAsync(
         IKnowledgeSource source, Func<string, string>? workspaceOf, Func<string, bool>? stillRegistered,
         IReadOnlyList<string>? onlyRoots, IReadOnlyDictionary<string, long>? generations,
-        Func<string, (string? Commit, RootSignature? Signature)>? readOf, CancellationToken ct)
+        Func<string, (string? Commit, RootSignature? Signature)>? readOf, IReadOnlyCollection<string>? readRepositories,
+        CancellationToken ct)
     {
         generations ??= await store.GenerationsAsync(ct).ConfigureAwait(false);
         var at = _time.GetUtcNow();
@@ -69,6 +74,18 @@ public sealed class KnowledgeIndex(IKnowledgeStore store, IDisclosurePolicy? dis
             if (!await store.ReplaceRepositoryAsync(group.Key, group.ToList(), Reading(group.Key, commit, signature), ct: ct).ConfigureAwait(false))
             {
                 refused.Add(group.Key);
+            }
+        }
+
+        if (partial && readRepositories is not null)
+        {
+            foreach (var emptied in readRepositories.Where(repository => !byRepository.Any(g => g.Key == repository)))
+            {
+                var (commit, signature) = readOf?.Invoke(emptied) ?? (null, null);
+                if (!await store.ReplaceRepositoryAsync(emptied, [], Reading(emptied, commit, signature), ct: ct).ConfigureAwait(false))
+                {
+                    refused.Add(emptied);
+                }
             }
         }
 

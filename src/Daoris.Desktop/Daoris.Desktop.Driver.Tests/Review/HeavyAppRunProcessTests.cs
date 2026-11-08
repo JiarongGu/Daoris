@@ -1,21 +1,18 @@
 using System.Diagnostics;
-using System.Runtime.InteropServices;
 using System.Text;
 using Daoris.Driver;
 
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// <c>daoris gate run</c> as built, against a stand-in of the running Daoris that runs a terminal's heavy run through the
-/// application's own half: the gate is started by the stand-in's process, never the verb's, in the verb's folder and environment,
-/// writing to the verb's own output; the verb exits with the run's code; a verb killed while its run runs ends the run; and with no
-/// Daoris to ask the verb says so and starts the gate itself.
+/// <c>daoris gate run</c> as built, against a stand-in of the running Daoris that runs a terminal's heavy run through the application's
+/// half: the gate started by the stand-in's process, never the verb's, in the verb's folder, environment and output; the verb exiting
+/// with the run's code; a killed verb ending the run; and with no Daoris to ask, the verb saying so and starting the gate itself.
 /// </summary>
 /// <remarks>
-/// The gate is a node script that writes its parent's id, which is the shell <c>cmd.exe</c> the run starts it through, and the
-/// variable handed to the verb alone, then waits for its go; the test reads which process started that shell from the system.
-/// The home is a scratch folder in the repository's gitignored <c>_fixtures/</c>, and every <c>DAORIS_</c> variable of the machine
-/// is dropped from the verb.
+/// The gate is a node script that writes its parent's id (the <c>cmd.exe</c> the run starts it through) and the variable handed to the
+/// verb alone, then waits for its go; the system says who started that shell. The home is a scratch folder in the gitignored
+/// <c>_fixtures/</c>, and every <c>DAORIS_</c> variable of the machine is dropped from the verb.
 /// </remarks>
 [Trait(Category.Name, Category.Process)]
 public sealed class HeavyAppRunProcessTests : IAsyncDisposable
@@ -52,7 +49,6 @@ public sealed class HeavyAppRunProcessTests : IAsyncDisposable
             }
             catch (InvalidOperationException)
             {
-                // Ended already.
             }
 
             verb.Dispose();
@@ -189,52 +185,5 @@ public sealed class HeavyAppRunProcessTests : IAsyncDisposable
         return false;
     }
 
-    /// <summary>The process that started <paramref name="pid"/>, as the system's snapshot says; null where it no longer runs.</summary>
-    private static int? ParentOf(int pid)
-    {
-        var snapshot = CreateToolhelp32Snapshot(0x00000002, 0);
-        if (snapshot == new IntPtr(-1)) return null;
-        try
-        {
-            var entry = new ProcessEntry { Size = (uint)Marshal.SizeOf<ProcessEntry>() };
-            for (var more = Process32FirstW(snapshot, ref entry); more; more = Process32NextW(snapshot, ref entry))
-            {
-                if (entry.ProcessId == pid) return (int)entry.ParentProcessId;
-            }
-
-            return null;
-        }
-        finally
-        {
-            CloseHandle(snapshot);
-        }
-    }
-
-    [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Unicode)]
-    private struct ProcessEntry
-    {
-        public uint Size;
-        public uint Usage;
-        public uint ProcessId;
-        public IntPtr DefaultHeapId;
-        public uint ModuleId;
-        public uint Threads;
-        public uint ParentProcessId;
-        public int PriorityBase;
-        public uint Flags;
-        [MarshalAs(UnmanagedType.ByValTStr, SizeConst = 260)]
-        public string ExeFile;
-    }
-
-    [DllImport("kernel32.dll", SetLastError = true)]
-    private static extern IntPtr CreateToolhelp32Snapshot(uint flags, uint process);
-
-    [DllImport("kernel32.dll", CharSet = CharSet.Unicode, SetLastError = true)]
-    private static extern bool Process32FirstW(IntPtr snapshot, ref ProcessEntry entry);
-
-    [DllImport("kernel32.dll", CharSet = CharSet.Unicode, SetLastError = true)]
-    private static extern bool Process32NextW(IntPtr snapshot, ref ProcessEntry entry);
-
-    [DllImport("kernel32.dll", SetLastError = true)]
-    private static extern bool CloseHandle(IntPtr handle);
+    private static int? ParentOf(int pid) => ProcessParents.ParentOf(pid);
 }

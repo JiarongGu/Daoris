@@ -30,6 +30,8 @@ public sealed class NodeRecordFiles(string home, Func<bool>? holdsLease = null)
 
     private readonly Func<bool> _holdsLease = holdsLease ?? (() => HomeLease.HeldHere(home));
 
+    internal Func<string, string[]>? Lists { get; init; }
+
     /// <summary>The home the records are under: where a closure graph a quest is bound to is kept beside them.</summary>
     public string Home => home;
 
@@ -71,9 +73,10 @@ public sealed class NodeRecordFiles(string home, Func<bool>? holdsLease = null)
         if (!Directory.Exists(folder)) return ([], []);
         var records = new List<NodeRecord>();
         var unreadable = new List<string>();
-        foreach (var path in Directory.GetFiles(folder, "*.json").Order(StringComparer.Ordinal))
+        foreach (var path in (Lists?.Invoke(folder) ?? Directory.GetFiles(folder, "*.json")).Order(StringComparer.Ordinal))
         {
             var file = new FileInfo(path);
+            if (!file.Exists) continue;
             var (written, length) = (file.LastWriteTimeUtc, file.Length);
             if (Kept.TryGetValue(path, out var kept) && kept.Written == written && kept.Length == length)
             {
@@ -90,6 +93,8 @@ public sealed class NodeRecordFiles(string home, Func<bool>? holdsLease = null)
             {
                 // Said below, as a file that does not read.
             }
+
+            if (record is null && !File.Exists(path)) continue;
 
             if (record is not null && string.Equals(Path.GetFileNameWithoutExtension(path), KeyOf(record.Unit), StringComparison.Ordinal))
             {

@@ -75,6 +75,38 @@ public sealed class PooledReadersTests : IDisposable
         Assert.True(ReviewServed.TreeStands(_lines.Home, tree, now.AddHours(-1)));
     }
 
+    private sealed class ServingTabs(ReviewServe serve) : IReviewTabs
+    {
+        public List<string> Stopped { get; } = [];
+
+        public IReadOnlyList<ReviewServe> Serving => Stopped.Count == 0 ? [serve] : [];
+
+        public Task OpenAsync(string quest, string title, CancellationToken ct = default) => Task.CompletedTask;
+
+        public Task ServeAsync(ReviewServe next, CancellationToken ct = default) => Task.CompletedTask;
+
+        public void Stop(string quest) => Stopped.Add(quest);
+    }
+
+    [Theory]
+    [InlineData(1, true)]
+    [InlineData(-1, false)]
+    public async Task A_tab_served_from_a_slot_another_line_took_after_the_showing_is_let_go_while_its_folder_still_stands(int shownHoursAgo, bool letGo)
+    {
+        _lines.Slot(1, "s-aaaa");
+        var folder = Path.Combine(_lines.SlotFolder(1), "dist");
+        Directory.CreateDirectory(folder);
+        var serve = new ReviewServe("q2", "Review #q2", folder, "http://localhost:4200", "/", "http://localhost:4200/")
+        {
+            Tree = _lines.Tree("s-aaaa"), Shown = DateTimeOffset.UtcNow.AddHours(-shownHoursAgo),
+        };
+        var tabs = new ServingTabs(serve);
+
+        await new ReviewDesk(tabs, _lines.Home).LookAsync([ReviewStandIn.Step()], (_, _) => Task.FromResult<QuestView?>(null), CancellationToken.None);
+
+        Assert.Equal(letGo ? ["q2"] : [], tabs.Stopped);
+    }
+
     [Fact]
     public void A_legacy_tree_and_a_taken_line_answer_the_disk_s_in_show_it_again()
     {

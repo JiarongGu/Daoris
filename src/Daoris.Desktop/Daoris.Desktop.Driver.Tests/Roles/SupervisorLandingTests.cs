@@ -30,6 +30,34 @@ public sealed class SupervisorLandingTests : IDisposable
 
     private QuestionSupervisorDecisions Decisions() => new(_home, new Admits("g-1")) { LandingApplied = LandingApplied.Of(_home) };
 
+    [Fact]
+    public async Task A_decision_is_live_when_its_word_is_committed_so_a_pass_between_cannot_drop_it_and_a_refused_word_leaves_it_not_live()
+    {
+        var decisions = Decisions();
+        var kept = await decisions.LandingAsync(Landing(), "reports", null, At);
+        var liveAtCommit = new List<bool>();
+
+        Assert.Equal([SupervisorState.Released], await decisions.ReleaseLandingsAsync(
+            new LandingRelease(_ => Task.FromResult<string?>(null), _ => { liveAtCommit.Add(decisions.LandingWords.Live(kept.Decision!)); return null; }), At.AddMinutes(11)));
+        Assert.Equal([true], liveAtCommit);
+
+        var refused = await decisions.LandingAsync(Landing(attempt: 2), "reports", null, At);
+        Assert.Equal([SupervisorState.Stale], await decisions.ReleaseLandingsAsync(
+            new LandingRelease(_ => Task.FromResult<string?>(null), _ => RunNodeWords.Stale), At.AddMinutes(11)));
+        Assert.False(decisions.LandingWords.Live(refused.Decision!));
+    }
+
+    [Theory]
+    [InlineData("review", 1)]
+    [InlineData("gate/review", 2)]
+    [InlineData("a/b/c", 12)]
+    public void A_landings_subject_gives_back_its_node_whether_or_not_the_id_holds_a_slash(string node, int attempt)
+    {
+        Assert.Equal(("q7", node, attempt), SupervisorSubject.Landing("s1", "q7", node, attempt).LandingParts);
+        Assert.Null(new SupervisorSubject(SupervisorKinds.Landing, "s1", "q7/review").LandingParts);
+        Assert.Null(new SupervisorSubject(SupervisorKinds.Landing, "s1", "q7//1").LandingParts);
+    }
+
     private static SupervisorLanding Landing(string act = SupervisorLandingActs.Accept, int attempt = 1, string generation = "g-1") =>
         new("s1", "q7", "review", attempt, generation, act, [new SupervisorReason("The diff is the quest's brief.", "the diff")], new SupervisorHolder(RoleHolders.Terminal, null));
 

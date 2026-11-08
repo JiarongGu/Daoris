@@ -8,6 +8,19 @@ the per-task record. Entries preserve their original wording so the archive stay
 ## TREEPOOL1aa — a kept output as the previous line's build base (2026-11-09)
 
 > **TREEPOOL1aa** (driver, tools; D214; §35.3, §36.3, §37.3, §38.2): Outcome: a take keeps a `base` top's declared configurations as the previous line's build, recorded with its producer and its rule's `builds` and marked `.daoris-base` (a base nothing builds set aside), set aside where the toolchain key moves; `daoris tree build` is the one release, building per framework (`-f`) over MSBuild's own `FileWrites` account, setting aside what that build does not own and keeping the producer, frameworks, commands, commit, exit, moment and count beside the bases (`TreeBaseRelease`); the start says the bases and their integrated runners (`started.tree-base`, `started.tree-base-unguarded`) and each trim (`tree.base-trimmed`), the gate run's admission names the unreleased bases, a marked development host is named with the door (`tree.base-host`, the window's `base-host`); eleven readers guarded and `run --real` refused under a marker, held by the census per call site (`TreeBaseGitTests`, `TreeBaseBuildsProcessTests`, `BuildAccountProcessTests`, `TreeBaseWordsTests`, `tools/tree-base.test.mjs`).
+## KNOWREV2a to KNOWREV2j — the knowledge, memory and records review's second cycle (2026-11-09)
+
+> **KNOWREV2a / 2b / 2c / 2d / 2e / 2f / 2g / 2h / 2i / 2j** (service): Outcome: all ten held against main's tip, each fixed with a regression test and a commit.
+> 2a (e0d2ef97f3): a partial reading replaces each repository whose root it read, one that now yields nothing with nothing (`PartialReadingTests`).
+> 2b (ceff6cfd9a): the scanner leaves out a file or folder it cannot read and reads the rest (`UnreadableFileTests`).
+> 2c (f2e0673ff0): the signature and the `+ uncommitted` status read one list of places, which names the declared router, index, decisions, fixes and archive paths and each room's `AGENTS.md` (`RootSignatureDeclaredTests`).
+> 2d (5dff38f9be): `ConvergenceFound` carries the embedder's failure and `knowledge_convergence` says it first, whether or not groups were found; the HTTP route still answers the groups alone (`ConvergenceFailureToolTests`).
+> 2e (863964cd32): each upsert of a registration, its provenances and its code map resolves the spelling a row already holds, so a second case conflicts with it (`RegistrationKeyCaseTests`); rows an older build already doubled stay as they are.
+> 2f (c649e3341d): `SchemaColumns.AddAsync` takes a duplicate-column error as the column being there (`SchemaColumnsTests`).
+> 2g (55da120b95): the watcher whose enabling throws is disposed with its handlers (`WatcherEnableFailureTests`, through an internal enable seam).
+> 2h (a2122031f5): the in-memory store normalizes a workspace on write, and one contract test compares every read of the two stores after the same writes (`KnowledgeStoreContractTests`).
+> 2i (4fb9bf878c): an awaiting end whose session was deleted is listed as a wait of its own, decided by its row as a sweep's is; an orphaned replacement or staged row is not (`MemoryDecisionTests`).
+> 2j (aa1dcaa440): plain words of a forgotten quest publish under the next id at every step as rule 31 says; only a request key, which has no next id, is refused as cleared (`QuestRequestKeyTests`).
 
 ## TREEPOOL1ac — shared paths (2026-11-09)
 
@@ -23581,3 +23594,14 @@ The 26 pointer lines of the parked file's head (the owner's reports and features
 - [x] **UIFIND13 — Knowledge's list is empty until a search** (web, knowledge): 2026-11-09 the list says how many entries are indexed and to type two letters (`HitList.idle.test.tsx`); shot `docs/assets/uireview/knowledge-idle.png`.
 
 - [x] **UIFIND15 — Ask Daoris's setup card says a sign-in for a key-only agent** (web, help): 2026-11-09 the machine read for the starters carried no roster sheet, so no agent was ever key-only; it carries it now and the card says `daoris agent key` (`machine.keyOnly.test.ts`, failing first). The help room's driver rows name no key row; none was added.
+
+- [x] **WFREVIEW3b — a supervisor's release is live only after its word is on the record** (driver): 2026-11-09 the decision is marked released before its word is committed, and a refused word leaves it stale (`SupervisorLandingTests`, failing first).
+- [x] **WFREVIEW3c — a landing's subject refuses a node id holding `/`** (driver): 2026-11-09 the subject reads its run up to the first `/` and its attempt after the last, so a node id keeps any it holds and persisted ids read as before; refusing `/` in a node id at the save was rejected, since it would strand graphs already saved (`SupervisorLandingTests`, failing first).
+- [x] **WFREVIEW3e — a run's `End` judges on a record read before its edit** (driver): 2026-11-09 the judgement is one function, read before the edit and again on the record the edit holds (`NodeRunEndingTests`, failing first).
+- [x] **WFREVIEW3f — a pass can drop a chain's return ask** (driver): 2026-11-09 the pass takes its asks before it reads the units, so an ask landing during the read stays owed (`NodeRunEndingTests`, failing first).
+- [x] **WFREVIEW3g — the node records' listing throws on a record deleted since it was listed** (driver): 2026-11-09 a vanished record is skipped, not listed as unreadable, since nothing is left to mend (`NodeRecordFilesTests`).
+- [x] **WFREVIEW3h — a push's pull-request look that throws still spends its minute** (driver): 2026-11-09 the minutes taken for the ask are given back when the plugin's read throws (`PullRequestMomentsTests`).
+- [x] **WFREVIEW3i — a *Reviewed* git could not check is worded as a commit that does not hold the work** (driver): 2026-11-09 it reads `Unread` with the problem the page words, and still lets nothing land (`ReviewGateTests`).
+- [x] **WFREVIEW3j — the review's serve check keeps serving a re-taken slot's build** (driver): 2026-11-09 a serve carries its tree and the showing's time, and the look lets the tab go once the slot took another line after it (`PooledReadersTests`).
+- [x] **WFREVIEW3k — the verification executor's loop ends on any exception but cancellation** (driver): 2026-11-09 a writer or callback that throws as a result is told no longer faults the loop (`HeavyExecutorFaultTests`).
+- [x] **WFREVIEW3n — a part throwing mid-tidy can lose its error** (driver): 2026-11-09 every fault of a started tidy is logged, and a failed partly write is logged beside the part's own error, which stays the one thrown (`TidyNodeTests`; the partly write's guard is not exercised, since no test makes a part throw).
