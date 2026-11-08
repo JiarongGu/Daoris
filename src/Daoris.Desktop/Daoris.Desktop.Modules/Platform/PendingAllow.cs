@@ -36,7 +36,7 @@ public sealed class PendingAllow
     /// <summary>The reservation the person's card would claim; this entry is live only while the pipe still holds it.</summary>
     internal PipeReserved Reserved { get; }
 
-    /// <summary>The steward's <c>ROLE_ACT</c> as it was sent, which an allow admits and runs.</summary>
+    /// <summary>The steward's <c>ROLE_ACT</c> as sent, which an allow admits and runs.</summary>
     internal IpcRequest Original { get; }
 
     /// <summary>What the judge answered: the role, the hold, the holder, the act.</summary>

@@ -50,7 +50,6 @@ public sealed record SupervisorSubject(string Kind, string Session, string Id)
     /// <summary>A steward's act outside its grants, <c>{ ask }</c>, the allow kind's third subtype: it names no session.</summary>
     public static SupervisorSubject StewardAsk(string ask) => new(SupervisorKinds.Allow, "", ask) { IsAsk = true };
 
-    /// <summary>Whether this is an allow's steward act, which names an ask and no session.</summary>
     public bool IsAsk { get; init; }
 
     /// <summary>Whether this is an allow's widening, which names a proposal and no session.</summary>
