@@ -294,6 +294,27 @@ public sealed class HomeLeaseTests : IDisposable
         Assert.True(File.Exists(DaorisHome.Places(_home, HomeEntry.DriverLock)[^1]));
     }
 
+    /// <summary>
+    /// 🔴 A lease judged stale is removed in one step that says what it removed: another taker's live lease, written after the
+    /// judgement, is put back, so the removal never leaves two holders.
+    /// </summary>
+    [Fact]
+    public void A_stale_leases_removal_puts_back_a_live_lease_written_after_the_judgement()
+    {
+        Plant("verb", pid: NoProcess, what: "trees sync");
+
+        var met = HomeLease.TryAcquire(_home, LeaseKind.Desktop, out var holder, what: null, judgedStale: path =>
+        {
+            File.Delete(path);
+            Plant("headless");
+        });
+
+        Assert.Null(met);
+        Assert.Equal(LeaseKind.Headless, holder!.Kind);
+        Assert.Equal(LeaseKind.Headless, HomeLease.HeldBy(_home)!.Kind);
+        Assert.Empty(Directory.GetFiles(Path.GetDirectoryName(LeaseFile)!, "*.stale"));
+    }
+
     /// <summary>A release takes away only the lease it wrote — never one another holder has written since.</summary>
     [Fact]
     public void A_release_removes_only_the_lease_it_wrote()

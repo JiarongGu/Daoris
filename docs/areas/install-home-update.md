@@ -86,7 +86,8 @@ Paths below use `Drv/` for `src/Daoris.Desktop/Daoris.Desktop.Driver/` and `Mod/
     `run/` may be cleared while Daoris is closed, and logs keep 30 days or fewer. A category is cleaned by Daoris's own acts,
     never by deleting a folder while it runs. (from D172, D195)
 18. One writer per home: `run/home.lease`. An instance holds it for its life; a verb, the first-start migration and the
-    launcher's swap hold it for their act. A stale lease never blocks. A live `driver.lock`, or a lease at the old place,
+    launcher's swap hold it for their act. A stale lease never blocks, and is removed by moving it aside and
+    judging what moved, so a lease written meanwhile is put back. A live `driver.lock`, or a lease at the old place,
     still holds the home. (from D104, D171)
 19. A home has one id, in `data/home.json`, read alike through every path to the folder. (from D171)
 20. A home with no state, on a machine whose `~/.daoris` holds state, moves it in at the first start, `bin/` excepted, and
@@ -269,5 +270,4 @@ drains, swaps, rolls back and refuses.
 - The trees' links repaired after a person moves the whole Daoris folder (the install layout design §7.4): designed, not built.
 
 - **The second review cycle's open defects** (HOMELEASE2 and FOLDERMOVE2; the backlog row of that name points here), one entry each:
-  - **HOMELEASE2 — a stale lease's removal can remove a live one** (install-home-update review): `HomeLease.TryAcquire` re-reads the stale text then deletes the path, so taker B can create its lease between taker A's read and delete, and A removes it: two holders; needs one atomic step (rename aside, judge what moved).
   - **FOLDERMOVE2 — a copied move-in whose source cannot be removed reads as failed** (install-home-update review): `FolderMove.Move`'s final `Directory.Delete(source)` throws on a held file after the copy landed; `InstallHome.MoveIn` says failed, `HasState` stops any retry, and the half-deleted source stays.

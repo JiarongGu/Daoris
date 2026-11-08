@@ -41,7 +41,7 @@ area document under `docs/areas/`. Each row's earlier full text is in git at `9f
 ## Install, home and update
 
 - [ ] **HOMELAYOUT5 — moving what D172 never moves, measured first** (ONEWAY1w, wave 5; D240 point 2): each harness's account homes, trees, rooms and kept files are moved and measured on the install with the owner's sign-in per harness, which decides how ONEWAY1w ends D172's old places. → `docs/areas/install-home-update.md`, Open
-- [ ] **HOMELEASE2 and FOLDERMOVE2 — the install-home-update review's second cycle** (install-home-update): 2 defects open. → `docs/areas/install-home-update.md`, Open
+- [ ] **HOMELEASE2 and FOLDERMOVE2 — the install-home-update review's second cycle** (install-home-update): 1 defect open. → `docs/areas/install-home-update.md`, Open
 
 ## Driving
 
