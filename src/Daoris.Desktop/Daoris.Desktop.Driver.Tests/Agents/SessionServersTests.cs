@@ -138,6 +138,19 @@ public sealed class SessionServersTests : IDisposable
         }
     }
 
+    [Fact]
+    public async Task A_range_is_answered_by_the_newest_installed_version_inside_it()
+    {
+        var inside = Lay(_home, "@playwright/mcp", "1.9.0");
+        Lay(_home, "@playwright/mcp", "1.2.0");
+        Lay(_home, "@playwright/mcp", "2.1.0");
+
+        var (handed, _, _, _) = await SessionServers.HandNotedAsync(
+            _home, [Npx("-y", "@playwright/mcp@^1")], browser: null, log: null, CancellationToken.None);
+
+        Assert.Equal([inside], Assert.Single(handed).Arguments);
+    }
+
     [Theory]
     [InlineData(new[] { "-y", "@playwright/mcp@0.0.82", "--cdp-endpoint", "x" }, "@playwright/mcp", "0.0.82", null, new[] { "--cdp-endpoint", "x" })]
     [InlineData(new[] { "--yes", "server" }, "server", null, null, new string[0])]

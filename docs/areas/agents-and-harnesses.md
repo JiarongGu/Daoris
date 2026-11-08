@@ -150,7 +150,7 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/Agents/` unless they s
     door), and `Adoption.Drives(abilities, adopted)` is the judge. Daoris's connector is always offered. A server declared through `npx` is
     handed as the whole path of node and its package's own script, so the harness starts one node: the package is installed
     once by npm `--prefix` into `cache/toolchain/<package>/<version>`, npm's cache first, and the log says so
-    (`server.installed`). A tag or a range is read at that first install; later starts take the newest version installed. A
+    (`server.installed`). A tag, or no version, is read at that first install and later starts take the newest version installed; a range takes the newest installed inside it (`NpmRanges`, the numeric forms npm reads) and asks npm once only where none is, and a range it cannot read is answered as a tag is. A
     server whose package cannot be started is not handed (`server.refused`). A server declared through `npx` that drives Daoris's browser is
     started under `server-keeper.mjs`, which starts it afresh when its working set passes 512 MB, checked every 15
     seconds and only with no call in flight; the tabs are the browser's, so a chat loses only its snapshot references: a call that names a `ref` from before the
