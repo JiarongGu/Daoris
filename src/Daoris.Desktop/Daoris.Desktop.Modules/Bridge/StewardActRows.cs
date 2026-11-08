@@ -321,7 +321,8 @@ public static class StewardActRows
             }
             else
             {
-                if (!world.StopHere(id, Observation.StoppedBySteward)) return new { Act = Name, Session = id, Stopped = false };
+                // The process ended since the gates: nothing was stopped, so nothing is recorded or said done.
+                if (!world.StopHere(id, Observation.StoppedBySteward)) throw new RoleActRefused(StewardWhy.Ended);
                 said = "stopped";
             }
 

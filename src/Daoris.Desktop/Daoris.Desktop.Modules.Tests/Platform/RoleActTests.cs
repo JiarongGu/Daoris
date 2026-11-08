@@ -224,6 +224,20 @@ public sealed class RoleActTests : IDisposable
         Assert.Equal((true, true), (stop.Standing, stop.Waiting));
     }
 
+    /// <summary>A stop that finds its process gone since the gates is refused `ended` and recorded nowhere: nothing was stopped, and none is said done.</summary>
+    [Fact]
+    public async Task A_live_stop_whose_process_ended_after_the_gates_is_refused_and_not_recorded()
+    {
+        var world = new World { Stoppable = false };
+        world.Records["s1"] = Parked("s1") with { State = "working" };
+        world.Here.Add("s1");
+        await using var served = await ServedAsync(world);
+
+        Assert.Equal((false, StewardWhy.Ended), Done(await served.ActAsync("stop", """{"id":"s1","said":true}""")));
+
+        Assert.Empty(served.Judge.StewardActsNow());
+    }
+
     /// <summary>Row 5: a resume releases only a hold the steward made this run that nothing has touched since (<c>not-own</c>).</summary>
     [Fact]
     public async Task A_resume_releases_only_the_steward_s_own_hold()
@@ -455,8 +469,12 @@ public sealed class RoleActTests : IDisposable
 
         public bool OwnTree(string? tree) => tree is not null && Root.Length > 0 && tree.StartsWith(System.IO.Path.Combine(Root, "trees"), StringComparison.OrdinalIgnoreCase);
 
+        /// <summary>False where the process ended between the act's gates and its stop: nothing was there to stop.</summary>
+        public bool Stoppable { get; set; } = true;
+
         public bool StopHere(string id, Noted note)
         {
+            if (!Stoppable) return false;
             Stopped.Add((id, note));
             return true;
         }
