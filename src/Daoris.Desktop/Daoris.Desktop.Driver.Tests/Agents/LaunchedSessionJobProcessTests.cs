@@ -101,8 +101,6 @@ public sealed class LaunchedSessionJobProcessTests : IDisposable
             // The watcher, through the driver's own read (Driver.LookIn): busy by the job's CPU over the window, never marked.
             var events = new SessionEvents(DaorisHome.Entry(home, HomeEntry.Sessions));
             var watch = SessionWatch.Of(events);
-            // A job is read from half the bound unheard and busy is known once a read a window old exists, so the bound less its half and the
-            // window is the slack a late look has before the watcher, knowing nothing yet, marks the session quiet.
             watch.Quiet = TimeSpan.FromSeconds(4);
             watch.Window = TimeSpan.FromMilliseconds(500);
             var steps = new List<QuietStep>();
