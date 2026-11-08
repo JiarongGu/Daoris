@@ -131,6 +131,7 @@ public sealed class StandingConfirmation : IDecisionAdmission
     private readonly RoleJudge _judge;
     private readonly RoleActsLedger _ledger;
     private readonly StewardRecord _steward;
+    private readonly StewardAllowedAct _allowed;
 
     /// <param name="home">The home whose catalogue and desk these are.</param>
     /// <param name="log">The machine log.</param>
@@ -166,6 +167,7 @@ public sealed class StandingConfirmation : IDecisionAdmission
         _judge = new RoleJudge(this, _state);
         _ledger = new RoleActsLedger(this, _state);
         _steward = new StewardRecord(this, _state);
+        _allowed = new StewardAllowedAct(this, _state);
     }
 
     internal MachineLog Log { get; }
@@ -274,6 +276,12 @@ public sealed class StandingConfirmation : IDecisionAdmission
 
     /// <summary>The decisions' admission: <see cref="RoleJudge.Admit"/>.</summary>
     public DecisionAdmitted Admit(string kind, RolePlace place, string? act) => _judge.Admit(kind, place, act);
+
+    /// <summary>The allow supervisor that answers a steward's act at <paramref name="place"/>, never the steward's own holder: <see cref="StewardAllowedAct.Admit"/>.</summary>
+    public DecisionAdmitted AdmitStewardAllow(RolePlace place, string? stewardHolder) => _allowed.Admit(place, stewardHolder);
+
+    /// <summary>A steward's act an allow supervisor allowed, admitted as the steward's own: <see cref="StewardAllowedAct.Allowed"/>.</summary>
+    internal RoleJudgement AdmitAllowedAct(RoleJudgement asked, JsonElement? payload, string decision) => _allowed.Allowed(asked, payload, decision);
 
     /// <summary>Whether a supervisor's hold is the effective one for a kind at a repository: <see cref="RoleJudge.Covers"/>.</summary>
     public string? Covers(string generation, string kind, string repository) => _judge.Covers(generation, kind, repository);
