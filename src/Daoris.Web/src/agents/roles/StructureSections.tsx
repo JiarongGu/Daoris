@@ -390,7 +390,7 @@ function GroupView({ structure, group, open, onToggle, doors }: {
   );
 }
 
-/** ---------------------------------------------------------------- The diagram's detail (COMPANYVIEW1f, §4) */
+/** ---------------------------------------------------------------- The diagram's detail */
 
 /** A place's answer per work, in words: what choosing it lights on the diagram. */
 function PlaceWorks({ title, works }: { title: string; works: readonly RepositoryWork[] }) {

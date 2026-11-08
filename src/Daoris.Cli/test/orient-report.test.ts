@@ -226,7 +226,7 @@ function nativeSession(tree: string) {
     call('t4', 'Search for foo', 'execute', { command: 'grep -rn "foo" src | head -5', description: 'Search for foo' }), result('t4', 'z'.repeat(50)),
     // The door names a PowerShell call `other`, by its own name: its command is what makes it the shell.
     call('t5', 'PowerShell', 'other', { command: 'Get-Content src\\a.ts -TotalCount 40' }), result('t5', 'w'.repeat(200)),
-    // A result past the record's 64 KB is cut, and the cut says how long it was.
+    // A result past the record's 64 KB is cut, and the cut states the original length.
     read('t6', 'src/big.cs'), result('t6', `${'v'.repeat(65536)}… (90000 chars)`),
     read('t7', 'docs/where/README.md'), result('t7', 'u'.repeat(500)),
     call('t8', 'knowledge_search', 'other', { query: 'where is the parser' }), result('t8', 'r'.repeat(80)),

@@ -293,7 +293,7 @@ export function writeFindings(root, record) {
     schema: 1,
     _why: 'Written by tools/merge-branch.mjs --ci (CISCOPE1d): each failure the background run found on main, keyed by test and fingerprint, matched by signature; cleared by a pass on a descendant of where it was last seen. The parent files each and fixes it forward.',
     findings: record.findings,
-    // CISCOPE1e: a failure a candidate could not place, filed as a flake for its unit's row.
+    // A failure a candidate could not place, filed as a flake for its unit's row.
     ...(Array.isArray(record.flakes) && record.flakes.length ? { flakes: record.flakes } : {}),
   }, null, 2)}\n`);
 }
