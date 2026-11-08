@@ -1,8 +1,8 @@
-import { useSayUpdate, useSystemWiring, useUpdateState } from '../bridge/shell';
-import { failure, useErrorNotify } from '../design/ui';
-import type { SettingsDomainProps } from './domains';
-import { UpdateSection } from './machine/Update';
-import { WiringVersions } from './wiring/WiringVersions';
+import { useSayUpdate, useSystemWiring, useUpdateState } from '../../bridge/shell';
+import { failure, useErrorNotify } from '../../design/ui';
+import type { SettingsDomainProps } from '../domains';
+import { UpdateSection } from './Update';
+import { WiringVersions } from '../wiring/WiringVersions';
 
 /**
  * Settings → Updates: the install's update, the query the banner reads and the same word it says, then the versions this

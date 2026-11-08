@@ -14,10 +14,10 @@ vi.mock('@shenora/react', () => ({
   useShenoraEvent: () => undefined,
 }));
 
-import { SettingsView } from './SettingsView';
-import type { SystemWiring } from '../bridge/system';
-import { DRIVER_STATE, respond, show, WIRING } from '../test/shellHarness';
-import { DEVELOPMENT, WIRED } from './wiring/wiringFixtures';
+import { SettingsView } from '../SettingsView';
+import type { SystemWiring } from '../../bridge/system';
+import { DRIVER_STATE, respond, show, WIRING } from '../../test/shellHarness';
+import { DEVELOPMENT, WIRED } from '../wiring/wiringFixtures';
 
 const NO_UPDATE = { state: 'none', staged: null, mode: null, driven: 0, turns: 0, problem: null, outcome: null, last: null };
 
