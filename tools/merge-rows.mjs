@@ -15,7 +15,7 @@
  *   changed differently a conflict. Each table stands in that text as one line, so its rows never meet the text merge.
  *
  * A table is a line starting `|` followed by a separator line (`|---|`), its body the `|` lines after; one inside a
- * fenced block (as `doc-duplicates`' `fenced` reads one) is text. A table is known across the three by the heading above it and its place under that heading, or,
+ * fenced block (as `doc-duplicates`' `fenced` reads one) is text. A table is known across the three by the heading above it and its place among the tables under headings of that text, or,
  * where a side moved or renamed it, by the base table sharing most of its row keys. Two rows with one key in a table are
  * told apart by their order.
  *
@@ -47,25 +47,27 @@ export function keyOf(row) {
 
 /**
  * A document as its text lines with each table's body replaced by one slot line, and the tables by id: the heading above
- * and the table's place under it.
+ * and the table's place among those under a heading of that text.
  */
 export function parseDocument(lines) {
   const skeleton = [];
   const tables = new Map();
   const inFence = fenced(lines);
   let heading = '';
-  let under = 0;
+  const under = new Map();
   for (let at = 0; at < lines.length; at += 1) {
     const line = lines[at];
     if (inFence[at]) { skeleton.push(line); continue; }
-    if (HEADING.test(line)) { heading = line.trim(); under = 0; skeleton.push(line); continue; }
+    if (HEADING.test(line)) { heading = line.trim(); skeleton.push(line); continue; }
     if (ROW.test(line) && at + 1 < lines.length && !inFence[at + 1] && SEPARATOR.test(lines[at + 1])) {
       skeleton.push(line, lines[at + 1]);
       at += 2;
       const rows = [];
       while (at < lines.length && !inFence[at] && ROW.test(lines[at])) rows.push(lines[at++]);
       at -= 1;
-      const id = `${heading}#${under++}`;
+      const place = under.get(heading) ?? 0;
+      under.set(heading, place + 1);
+      const id = `${heading}#${place}`;
       tables.set(id, keyed(rows));
       skeleton.push(SLOT + id);
       continue;
