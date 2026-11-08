@@ -39,6 +39,13 @@ public sealed class RunningSessions
     /// </summary>
     internal ConcurrentDictionary<string, string> Live { get; } = new(StringComparer.Ordinal);
 
+    /// <summary>Hold a quest as run by a session until the guard is disposed; only that session's entry goes, for a later run may have replaced it.</summary>
+    internal IDisposable GoesLive(string quest, string session)
+    {
+        Live[quest] = session;
+        return new Disposer(() => Live.TryRemove(new KeyValuePair<string, string>(quest, session)));
+    }
+
     // The records a run of this loop takes up with the person's words, from the look that began it until it ends.
     private readonly HashSet<string> _goingOn = new(StringComparer.OrdinalIgnoreCase);
 
