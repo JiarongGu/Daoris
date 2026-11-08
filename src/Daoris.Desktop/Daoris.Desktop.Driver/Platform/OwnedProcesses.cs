@@ -7,8 +7,7 @@ namespace Daoris.Driver;
 public enum ProcessPurpose
 {
     /// <summary>
-    /// An agent, plugin process or piece the launcher took: born in this process's agents' job, which holds it from its first instruction;
-    /// joined to nothing here.
+    /// An agent, plugin process or piece the launcher took: born in this process's agents' job from its first instruction; joined to nothing here.
     /// </summary>
     Launched,
 
@@ -26,6 +25,9 @@ public enum ProcessPurpose
 
     /// <summary>A tool's own command: an agent's install or sign-in, a plugin tool's set-up, a key made, the doctrine CLI, a server's package.</summary>
     Tool,
+
+    /// <summary>Daoris's own browser, started through the window kit and not the gate: it ends with this process, and early where its bring-up fails.</summary>
+    Browser,
 
     /// <summary>Held by no job: it outlives this process by design (the update's launcher, the Edge recorded for the next shell).</summary>
     Outlives,

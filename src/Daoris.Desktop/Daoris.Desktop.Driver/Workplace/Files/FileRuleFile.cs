@@ -70,6 +70,8 @@ internal static class FileRuleFile
         return new FileRule(kind, paths)
         {
             Install = Text(each, "install"),
+            Setup = Strings(each, "setup"),
+            Per = Per(each),
             Key = Strings(each, "key"),
             Toolchain = Strings(each, "toolchain"),
             Env = Strings(each, "env"),
@@ -89,6 +91,8 @@ internal static class FileRuleFile
     {
         var written = new JsonObject { ["kind"] = rule.Kind.Word(), ["paths"] = List(rule.Paths) };
         if (rule.Install is { } install) written["install"] = install;
+        if (rule.Setup is { } setup) written["setup"] = List(setup);
+        if (rule.Per is { } per) written["per"] = per;
         if (rule.Key is { } key) written["key"] = List(key);
         if (rule.Toolchain is { } toolchain) written["toolchain"] = List(toolchain);
         if (rule.Env is { } env) written["env"] = List(env);
@@ -109,6 +113,11 @@ internal static class FileRuleFile
         !each.TryGetProperty(name, out var value) ? null
         : value.ValueKind == JsonValueKind.String ? value.GetString()
         : throw new FormatException($"`{name}` is not a string");
+
+    private static string? Per(JsonElement each) =>
+        Text(each, "per") is not { } per ? null
+        : per is "repository" or "tree" ? per
+        : throw new FormatException("`per` is not `repository` or `tree`");
 
     private static IReadOnlyList<string>? Strings(JsonElement each, string name)
     {

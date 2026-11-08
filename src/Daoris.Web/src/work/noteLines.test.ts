@@ -4,9 +4,8 @@ import type { NotePart } from '../data/api';
 import { moment } from '../locales/format';
 import { hasNote, linesTaken, liveParts, NOTE_CODES, noteBlocks, noteLines, noteText } from './noteLines';
 
-// A session's note as the page words it: a coded part from
-// the catalogue in the reader's language with its values, someone's words as written, and what the page cannot word as
-// recorded. Pure, so every part a writer could send is an argument.
+// A session's note as the page words it: a coded part from the catalogue in the reader's language with its values,
+// someone's words as written, and what the page cannot word as recorded. Pure: every part is an argument.
 
 const t = i18n.getFixedT('en');
 const zh = i18n.getFixedT('zh');
@@ -804,7 +803,6 @@ describe('noteLines', () => {
         'Every `fake` account this start may use is cooling.',
         'A sign-in starts it: `daoris agent login fake --account a`, or Agents → the agent\'s page → Accounts.',
       ]);
-
       const picked = [coded('held.picked-ready', '…', { accounts: ['account-1', 'account-2'] }), coded('held.picked-none', '…', { agent: 'fake' })];
       expect(noteLines(t, { parts: picked }, 'en', names).map((line) => line.text)).toEqual([
         'Ready now: `Work` and `account-2`.',

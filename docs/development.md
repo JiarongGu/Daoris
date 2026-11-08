@@ -30,6 +30,14 @@ compiles `Agents/Layer/`, only while the file is there (`DaorisLyntaiLayer`); wi
 layer, which is what the CI builds. A change to the layer's reference is built both ways: with the file, then with it moved
 aside and the projects restored again.
 
+The desktop builds against Shenora's released pin (`DaorisShenoraReleased`) or against a local build of its main line (D22's note of
+2026-11-08), the same way: with the Shenora checkout beside this one (or named by the argument or `DAORIS_SHENORA_PATH`) on its `main`,
+`node tools/shenora-local.mjs [path]` packs `Shenora`, `Shenora.Windows` and `Shenora.Chromium` at one `<released>-local.<sha7>` into
+the ignored `local/shenora-feed/` and writes `local/shenora-local.props`, which the desktop's package props import; delete it to
+restore the pin. Both local-build tools write the feed and the props under the main checkout's `local/` even when run from a
+worktree (and a copy of the props into the worktree); the merge tool and the trees' rule file copy the props into gate trees and
+sessions. A fix that belongs to the desktop kit is made in Shenora by a quest, never patched over here.
+
 The web package has its own lockfile and is not an npm workspace of the root. Windows is needed
 for the desktop application and deployment rehearsal; native AOT publishing needs the target
 platform's native toolchain. The individual [component guides](README.md#guides) explain their loops.

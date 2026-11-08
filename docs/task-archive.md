@@ -8,6 +8,12 @@ the per-task record. Entries preserve their original wording so the archive stay
 ## SETTINGSUX1 and UIFIND1 — Settings grouped by what a person comes to set, its folders one list (2026-11-09)
 
 > **SETTINGSUX1 / UIFIND1** (web): Outcome: Settings has eleven domains in the order a person comes to them (Get started, Appearance, Driver, AI features, Git, Tools, Browser, Disk space, Updates, This Daoris, Machine log). Disk space holds the folders as one list (the name, the path on one line cut in the middle by `MiddlePath`, the size, one *Open folder*) and the keep rules; Updates the install's update over its versions; Driver repeats neither the home nor the update; This Daoris leads with the terminal and the service. A row's terminal twin or variable name sits in its ⓘ help (`SettingRow`'s `twin`), and the palette finds each domain by its rows' words in the reader's language (`domainSearch.test.ts`). The doors that opened the space card and the update open Disk space and Updates.
+## DOCTRINECLI1 — the doctrine console's Ctrl+C hold and the CLI's Node floor (2026-11-09)
+
+> **DOCTRINECLI1** (driver): Outcome: `DoctrineConsole` holds Ctrl+C through `InterruptHold`, taken before the child starts and removed when it ends, and the CLI's entry refuses a Node below 22 with exit 2 (`bin/node-floor.mjs`), the floor checked once inside the CLI, never by a second process start.
+## UIFIND2, UIFIND3 and UIFIND5 (2026-11-09)
+
+> **UIFIND2 / UIFIND3 / UIFIND5** (web): Outcome: the Files tab leads with its paths and the person's rules, its layers, twin, commit and acts behind one fold, and an unreadable checkout says what to check; the ring never draws taller than its card is wide, so two repositories stay in one view; a blocked clean-up row with an unknown owner says its reason once, the press first, in English and Chinese.
 
 ---
 
@@ -23533,3 +23539,5 @@ The 26 pointer lines of the parked file's head (the owner's reports and features
 - [x] **DRVREVIEW9 — `EndJudgement` says `Claim` where git could not say** (driver): 2026-11-08 `EndFacts.ProofUnread` carries an unread content proof or branch-holders read, and a session branch with nothing else holding it is `Unknown` with git's words (`EndJudgementTests`).
 
 - [x] **ROLESREVIEW1 — defects of the roles-and-supervision code review, each a row** (driver, modules): 2026-11-08 a to h each fixed with a regression test failing first: an agent supervisor takes landing, allow and files subjects, each kind's row composing its facts (the editor refuses no grant to an agent holder); a catalogue unreadable after a role press ends no hold; a steward act is read against its grant again at its step; the role door's revision check is inside the write transaction; a landing step is listed only where it offers a covered act; a dropped block is said on the line and a `role-changed` one begins again; a rules write is judged against the seeded machine rules; a `refer` rule's holds on moves, limits and failures are pinned.
+
+- [x] **TREEPOOL1x — this repository's own installs cannot be kept by the pool** (driver): 2026-11-09 a dependency rule's `setup` run once per repository after the installs (`RepositorySetup`), an `npm ci` of such a rule run without scripts where no lockfile entry has an install script or resolves from git (`InstallScripts`), this repository's two `--install` steps moved there, and a group member a build state's rule keeps no longer removed with its group (the web's vanished `node_modules`); the real repository's placement at a take is TREEPOOL1ab's rerun (`TreeSetupTests`, `InstallScriptsTests`, failing first).

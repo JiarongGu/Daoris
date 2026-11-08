@@ -5,8 +5,7 @@ import userEvent from '@testing-library/user-event';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import * as Tooltip from '@radix-ui/react-tooltip';
 
-// The Agents place in SHELL mode: the list of agents and an agent's page, its accounts with their last known
-// state and when each is read, and every act on it, over the mocked bridge.
+// The Agents place in SHELL mode: the list, an agent's page, its accounts and every act on it, over the mocked bridge.
 const { invoke, notifyReady, eventHandlers } = vi.hoisted(() => ({
   invoke: vi.fn(),
   notifyReady: vi.fn(() => Promise.resolve()),

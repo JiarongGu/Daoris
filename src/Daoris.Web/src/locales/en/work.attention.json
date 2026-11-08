@@ -78,6 +78,7 @@
   "work.attention.accounts.join": "; ",
   "work.attention.accounts.line": "{{clauses}}.",
   "work.attention.accounts.noAccount": "No Daoris account is signed in for {{product}}, so its starts wait until you sign in.",
+  "work.attention.accounts.noKey": "No Daoris account has an API key for {{product}}, so its starts wait until you set one.",
   "work.attention.held.quests": "{{count}} quest",
   "work.attention.held.quests_other": "{{count}} quests",
   "work.attention.held.intakes": "Intake for {{count}} ask",

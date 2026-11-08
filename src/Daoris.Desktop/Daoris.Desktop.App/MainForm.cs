@@ -15,17 +15,13 @@ namespace Daoris.Desktop;
 /// the page reaches the host at its loopback address.
 /// </summary>
 /// <remarks>
-/// <para><b>It is frameless, and the page's app strip IS the title bar</b>. No OS
-/// caption: the strip drags the window, double-click maximizes it, and the room it reserves at its
-/// right edge is handed to the OS as real caption buttons — which <b>this window paints</b>
+/// <para><b>It is frameless, and the page's app strip IS the title bar</b>. No OS caption: the strip drags the window, double-click
+/// maximizes it, and the room it reserves at its right edge is handed to the OS as real caption buttons, which <b>this window paints</b>
 /// (<c>NativeCaptionButtons</c>), not the page.</para>
-///
-/// <para><b><see cref="OptimizedForm.AppPlacement"/> is the truth about this window's maximize.</b> Since
-/// Shenora 0.22 the frameless maximize is the system's, so <see cref="Form.WindowState"/> reads
-/// <c>Maximized</c> too; but a window minimized from maximized reads <c>Minimized</c> there and
-/// <c>Maximized</c> in <c>AppPlacement</c>, which is what the kit's window-state stack saves and the IPC
-/// module is handed. Un-minimizing with <c>WindowState = Normal</c> brings such a window back
-/// un-maximized: <see cref="Unminimize"/> restores it to its earlier state.</para>
+/// <para><b><see cref="OptimizedForm.AppPlacement"/> is the truth about this window's maximize.</b> Since Shenora 0.22 the frameless
+/// maximize is the system's, so <see cref="Form.WindowState"/> reads <c>Maximized</c> too; but a window minimized from maximized reads
+/// <c>Minimized</c> there and <c>Maximized</c> in <c>AppPlacement</c>, which the kit's window-state stack saves and the IPC module is
+/// handed. Un-minimizing with <c>WindowState = Normal</c> brings it back un-maximized: <see cref="Unminimize"/> restores it.</para>
 /// </remarks>
 public sealed class MainForm : OptimizedForm, IReloadableWindow
 {
@@ -46,7 +42,7 @@ public sealed class MainForm : OptimizedForm, IReloadableWindow
     bool IReloadableWindow.ReloadPage()
     {
         if (_view is null || _splash is not { IsDisposed: true } || _trouble is not null) return false;
-        return Post(() =>
+        return this.Post(() =>
         {
             if (_view is not { } old || IsDisposed) return;
             var fresh = _view = new ChromiumView(_engine, _viewLog) { Dock = DockStyle.Fill, Path = old.Path };
@@ -169,8 +165,7 @@ public sealed class MainForm : OptimizedForm, IReloadableWindow
             CloseSplash = _lift.PageSaid,
         }));
 
-        // The OS notification: a session that
-        // parks while nobody is looking at this window now reaches the person. It decides nothing —
+        // The OS notification: a session that parks while nobody is looking at this window reaches the person. It decides nothing:
         // `AttentionWatch` in the driver does, so a machine with no screen answers the same question.
         // Its double-click and a balloon's click take this window back from where it is put away before showing it.
         // A balloon's click opens the main window whose workspace holds what it concerns, as the windows' records hold
@@ -215,7 +210,7 @@ public sealed class MainForm : OptimizedForm, IReloadableWindow
         // to this thread to move the window, so a late thread is a frozen bar. Looked at from the moment it is shown.
         if (watch is not null)
         {
-            Load += (_, _) => watch.Start(Post);
+            Load += (_, _) => watch.Start(work => this.Post(work));
             FormClosed += (_, _) => watch.Dispose();
         }
     }
@@ -244,7 +239,7 @@ public sealed class MainForm : OptimizedForm, IReloadableWindow
     /// Close this window for good, which ends the application, from any thread, never blocking: the update's
     /// close, and the last main window's. The kit reports a close from code as the person's, so this says it is not.
     /// </summary>
-    public void CloseForGood() => Post(() =>
+    public void CloseForGood() => this.Post(() =>
     {
         _forGood = true;
         Close();
@@ -254,7 +249,7 @@ public sealed class MainForm : OptimizedForm, IReloadableWindow
     /// Show this window again from where it is put away, from any thread, never blocking: a later launch's window.
     /// Un-minimized before it is activated, then brought forward on the OS's side too, as the tray's restore does.
     /// </summary>
-    public void TakeBack() => Post(() => Forward(this));
+    public void TakeBack() => this.Post(() => Forward(this));
 
     /// <summary>
     /// Bring <paramref name="form"/> in front of the person, on its own thread: the tray's restore, a later launch's window, and a
@@ -299,22 +294,6 @@ public sealed class MainForm : OptimizedForm, IReloadableWindow
     [return: System.Runtime.InteropServices.MarshalAs(System.Runtime.InteropServices.UnmanagedType.Bool)]
     private static extern bool SetForegroundWindow(IntPtr window);
 
-    /// <summary>Run <paramref name="action"/> on this window's thread later, or false where there is no window to run it on.</summary>
-    private bool Post(Action action)
-    {
-        if (IsDisposed || !IsHandleCreated) return false;
-        try
-        {
-            BeginInvoke(action);
-            return true;
-        }
-        catch (InvalidOperationException)
-        {
-            // The handle went between the look and the post.
-            return false;
-        }
-    }
-
     /// <summary>
     /// How much waits on the person, as the page counts it for Overview's *What needs you* (<c>SET_BADGE</c>):
     /// the taskbar button's overlay and the title's lead. On this window's thread, posted from the bridge's, which waits
@@ -324,7 +303,7 @@ public sealed class MainForm : OptimizedForm, IReloadableWindow
     {
         if (InvokeRequired)
         {
-            Post(() => ShowWaiting(count, description));
+            this.Post(() => ShowWaiting(count, description));
             return;
         }
 
@@ -344,7 +323,7 @@ public sealed class MainForm : OptimizedForm, IReloadableWindow
     {
         if (InvokeRequired)
         {
-            Post(() => ShowWorkspace(workspace));
+            this.Post(() => ShowWorkspace(workspace));
             return;
         }
 

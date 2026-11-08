@@ -53,6 +53,7 @@
   "agents.read.nowTip": "Reads how much each account has used from {{agent}} now, where its reading is older than a minute: no prompt, and no model request. Opening this page reads it too.",
   "agents.read.reading": "Reading…",
   "agents.page.terminal": "The same from a terminal: `daoris agent list` says each account, `daoris agent login {{agent}} --new` signs in to another, and `daoris agent profile …` sets how they are used.",
+  "agents.page.terminalKey": "The same from a terminal: `daoris agent list` says each account, `daoris agent key {{agent}}` adds an account from an API key read from standard input, `daoris agent key {{agent}} --account <account>` sets or replaces one's key, and `daoris agent profile …` sets how they are used.",
   "agents.page.terminalAbsent": "The same from a terminal: `daoris agent install {{agent}}`.",
   "agents.page.installedByMaker": "Daoris has no installer for {{product}}: it is installed with {{maker}}'s own tooling, and Daoris finds it once it is on this machine's PATH.",
   "agents.page.installedByMakerUnnamed": "Daoris has no installer for {{product}}: it is installed with its maker's own tooling, and Daoris finds it once it is on this machine's PATH.",

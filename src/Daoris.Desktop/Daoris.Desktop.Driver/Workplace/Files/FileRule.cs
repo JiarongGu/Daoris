@@ -11,6 +11,12 @@ internal sealed record FileRule(FileKind Kind, IReadOnlyList<string> Paths)
     /// <summary>A dependency's install, run in the folder of the manifest beside its first path.</summary>
     internal string? Install { get; init; }
 
+    /// <summary>The repository's own commands a dependency's install leaves out, run after the installs in an unworked tree.</summary>
+    internal IReadOnlyList<string>? Setup { get; init; }
+
+    /// <summary>How often <see cref="Setup"/> runs: <c>repository</c> once per recorded key, <c>tree</c> in each tree.</summary>
+    internal string? Per { get; init; }
+
     /// <summary>The tracked paths and globs that key a dependency; an empty list keys it by the commit's tree.</summary>
     internal IReadOnlyList<string>? Key { get; init; }
 
@@ -48,6 +54,8 @@ internal sealed record FileRule(FileKind Kind, IReadOnlyList<string> Paths)
     internal FileRule Filled(FileRule? signature) => signature is null || signature.Kind != Kind ? this : this with
     {
         Install = Install ?? signature.Install,
+        Setup = Setup ?? signature.Setup,
+        Per = Per ?? signature.Per,
         Key = Key ?? signature.Key,
         Toolchain = Toolchain ?? signature.Toolchain,
         Env = Env ?? signature.Env,

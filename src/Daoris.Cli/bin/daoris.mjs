@@ -7,12 +7,21 @@
 import { existsSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
+import { nodeFloorRefusal } from './node-floor.mjs';
 
 const packageRoot = dirname(dirname(fileURLToPath(import.meta.url)));
 const built = join(packageRoot, 'dist', 'cli.js');
 const entry = existsSync(built) ? built : join(packageRoot, 'src', 'cli.ts');
 
-const { runCli } = await import(pathToFileURL(entry).href);
-// The code is set, not exited with: `process.exit` straight after a service request tears the loop down while a socket is
-// closing and aborts on a libuv assertion on Windows. The loop drains instead, as the rehearsal stub's does.
-process.exitCode = await runCli(process.argv.slice(2), process.cwd());
+// The floor is asked here, before the dispatcher loads: a Node below it cannot be trusted to load the dispatcher at all, and the one
+// check holds for every way the CLI is started.
+const refusal = nodeFloorRefusal(process.versions.node);
+if (refusal !== null) {
+  console.error(refusal);
+  process.exitCode = 2;
+} else {
+  const { runCli } = await import(pathToFileURL(entry).href);
+  // The code is set, not exited with: `process.exit` straight after a service request tears the loop down while a socket is
+  // closing and aborts on a libuv assertion on Windows. The loop drains instead, as the rehearsal stub's does.
+  process.exitCode = await runCli(process.argv.slice(2), process.cwd());
+}
