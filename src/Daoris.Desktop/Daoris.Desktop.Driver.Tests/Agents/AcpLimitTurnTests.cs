@@ -73,6 +73,27 @@ public sealed class AcpLimitTurnTests
     }
 
     [Fact]
+    public async Task A_carry_on_turn_s_first_message_without_an_id_does_not_join_the_turn_before_it()
+    {
+        var read = new List<string>();
+        var agent = AcpTransientTests.Scripted((n, frame, self) =>
+        {
+            self.Push(AcpTransientTests.Said(n == 1 ? "The work is done. " : Sentence));
+            return AcpTransientTests.Answer(frame, "end_turn");
+        });
+        var carried = 0;
+        var session = new AcpSession(agent.Incoming, agent.Outgoing, _ => { })
+        {
+            LimitSaid = words => { read.Add(words); return false; },
+            CarriesOn = ct => Task.FromResult(new TurnCarry(Interlocked.Increment(ref carried) == 1, 1, "Commit your work.")),
+        };
+
+        await session.RunAsync("D:/fam/Game", "serve the report", CancellationToken.None).WaitAsync(Poll.Patience);
+
+        Assert.Equal(["The work is done. ", Sentence], read);
+    }
+
+    [Fact]
     public async Task The_sentence_followed_by_a_step_of_the_agent_s_is_no_limit()
     {
         var agent = Limited(Called);
