@@ -173,7 +173,9 @@ public static class PluginInstall
                     return Refuse($"plugin `{installed}` is not older than the {offer.Manifest.Version} this install ships, so there is nothing to take.");
             }
 
-            (source, problem, shippedFrom) = (PluginSource.FromOffer(installed), null, offer.Folder);
+            // The copy's own record is still read: a package's plugin is never taken in place, whatever the page offers.
+            (source, problem) = PluginSource.Read(entry.Folder);
+            if (source?.Package is null) (source, problem, shippedFrom) = (PluginSource.FromOffer(installed), null, offer.Folder);
         }
         else
         {

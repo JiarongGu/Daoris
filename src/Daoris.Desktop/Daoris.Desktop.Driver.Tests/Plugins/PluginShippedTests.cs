@@ -250,6 +250,22 @@ public sealed class PluginShippedTests : IDisposable
     }
 
     [Fact]
+    public void A_shipped_update_never_replaces_a_plugin_installed_from_a_package()
+    {
+        Offer();
+        var (folder, _) = Copy("1.2.0", "// old");
+        PluginSource.Write(folder, PluginSource.FromPackage(new("acme.land", "1.2.0", new string('A', 86) + "==", _root)));
+
+        var (plan, refusal) = PluginInstall.PlanUpdate(Home, "acme.land", Reserved, Offers, shipped: true);
+
+        Assert.Null(plan);
+        Assert.Contains("package", refusal);
+        Assert.Throws<DriverException>(() => PluginInstall.Update(Home, "acme.land", Reserved, Offers, shipped: true));
+        Assert.Equal("// old", File.ReadAllText(Path.Combine(folder, "land.mjs")));
+        Assert.NotNull(PluginSource.Read(folder).Source?.Package);
+    }
+
+    [Fact]
     public void A_shipped_update_for_a_plugin_this_install_does_not_offer_says_so()
     {
         Copy("1.2.0", "// old");

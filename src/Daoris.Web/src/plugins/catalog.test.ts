@@ -114,6 +114,7 @@ describe('where a plugin came from, on its row', () => {
     expect(takesShipped(plugin({ shipped: older, source: { kind: 'unread', problem: 'x' } }))).toBe(true);
     expect(takesShipped(plugin({ shipped: older, source: { kind: 'offer', offer: 'acme.gate' } }))).toBe(false);
     expect(takesShipped(plugin({ shipped: older, source: { kind: 'folder', folder: 'C:/x' } }))).toBe(false);
+    expect(takesShipped(plugin({ shipped: older, source: { kind: 'package', package: 'a file, package `Acme.Gate` 1.0.0' } }))).toBe(false);
     expect(takesShipped(plugin({ shipped: changed }))).toBe(false);
   });
 });
