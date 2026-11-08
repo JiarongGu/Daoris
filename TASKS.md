@@ -38,6 +38,8 @@ area document under `docs/areas/`. Each row's earlier full text is in git at `9f
 ## Install, home and update
 
 - [ ] **HOMELAYOUT5 — moving what D172 never moves, measured first** (ONEWAY1w, wave 5; D240 point 2): each harness's account homes, trees, rooms and kept files are moved and measured on the install with the owner's sign-in per harness, which decides how ONEWAY1w ends D172's old places. → `docs/areas/install-home-update.md`, Open
+- [ ] **HOMELEASE2 — a stale lease's removal can remove a live one** (install-home-update review, cycle 2): `HomeLease.TryAcquire` re-reads the stale text and then deletes the path (`Platform/HomeLease.cs`, the `Read(path, out _) == seen` line), so taker A may pass the read, taker B delete the stale file and create its own, and A's delete remove B's live lease, two holders; the removal needs one atomic step (rename aside, then judge what was moved).
+- [ ] **FOLDERMOVE2 — a copied move-in whose source cannot be removed reads as not moved** (install-home-update review, cycle 2): `FolderMove.Move` ends in `Directory.Delete(source, recursive: true)`; a held file there throws after the whole copy landed, `InstallHome.MoveIn` says the entry failed, the target now holds it so `HasState` stops any retry, and the half-deleted source stays beside it.
 
 ## Driving
 
