@@ -78,6 +78,8 @@ internal sealed class ChatPending
     /// <summary>What the re-ask answered where its answer is not the same session's: the replacement to open, or the wait's sentence.</summary>
     public ConversationWalk? Next { get; set; }
 
+    public Handing? Unhanded { get; set; }
+
     /// <summary>Dispatched or exhausted: refusals are not this start's any more.</summary>
     public bool Over { get; private set; }
 

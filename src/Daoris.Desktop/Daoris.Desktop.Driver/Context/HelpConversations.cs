@@ -236,7 +236,7 @@ public sealed class HelpConversations(string home)
         // Only links within this machine's same workspace count; a damaged cycle is bounded by the ids already read.
         var byId = help.ToDictionary(record => record.Id, StringComparer.Ordinal);
         var keptById = help.ToDictionary(record => record.Id, record => Read(record.Id), StringComparer.Ordinal);
-        string? Previous(string id) => keptById[id] is { Handed: Brief, From: { } from }
+        string? Previous(string id) => keptById[id] is { Handed: Brief or NotOffered, From: { } from }
             && byId.TryGetValue(from, out var previous)
             && string.Equals(previous.Workspace, byId[id].Workspace, StringComparison.OrdinalIgnoreCase) ? from : null;
         var continued = help.Select(record => Previous(record.Id)).OfType<string>().ToHashSet(StringComparer.Ordinal);

@@ -55,7 +55,7 @@ internal sealed class ChatWatch(IExecutorWiring wiring, ChatTold told, ChatConcl
             Context.Rooms.TryRemove(sessionId, out _);
             Context.Finishing.TryRemove(sessionId, out _);
             wiring.Of<HelpAccessSwap>().Forget(sessionId);
-            Context.Handing.TryRemove(sessionId, out _);
+            if (Context.Handing.TryRemove(sessionId, out var unhanded) && Context.Pending.For(sessionId) is { Over: false } owing) owing.Unhanded = unhanded;
             Context.Browsers.TryRemove(sessionId, out _);
             Context.Drafts.TryRemove(sessionId, out _);
             Context.Palettes.TryRemove(sessionId, out _);
