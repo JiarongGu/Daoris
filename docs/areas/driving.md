@@ -150,7 +150,8 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they start wi
 13. A quest held by a session in flight does not start again: one working it, or a start still opening. Each start is
     reserved (quest, tree, place under the cap) before it begins. (from D181)
 14. Under the landing rule's `overlap: wait`, a first start whose declared paths meet earlier unintegrated work in the
-    repository waits until that work is integrated. (from D215)
+    repository waits until that work is integrated. A quest that goes back into a tree (a retry or a limit carry-on of
+    an open quest) is no first start and does not wait. (from D215)
 15. Failed sessions on one quest park it at the strike count, three by default and `0` for never, derived from the
     records. Only `failed` and a stop that was not the person's count. On a home whose role rules are reached, the
     count is a seeded rule. *Try again* marks where counting restarts. (from D58, D125, D229)

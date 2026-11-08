@@ -60,6 +60,22 @@ public sealed class OverlapPlannerTests
     }
 
     [Fact]
+    public void A_carry_on_of_an_open_quest_goes_back_into_its_tree_under_wait_and_a_first_start_still_waits()
+    {
+        QuestView[] quests = [Quest("q1", "Taken", "src/frame/**"), Quest("q2", "Open", "src/frame/cap.cs")];
+        var limited = new Snapshot([], [], [])
+        {
+            LastRun = new Dictionary<string, PriorSession>(StringComparer.OrdinalIgnoreCase)
+            {
+                ["q2"] = new("s2", "D:/trees/s2", "failed") { Limit = true },
+            },
+        };
+
+        Assert.Equal(StartVerdict.Start, Plan(quests, Rule(LandingIntegrate.Wait), limited).Verdict);
+        Assert.Equal(StartVerdict.RepositoryBusy, Plan(quests, Rule(LandingIntegrate.Wait)).Verdict);
+    }
+
+    [Fact]
     public void A_done_unit_still_integrating_holds_and_a_settled_one_holds_nothing()
     {
         QuestView[] quests = [Quest("q1", "Done", "src/frame/**"), Quest("q2", "Open", "src/frame/cap.cs")];
