@@ -87,6 +87,19 @@ public sealed class SupervisorRuleStoreTests : IDisposable
         Assert.Empty(read.Rules);
     }
 
+    [Fact]
+    public void ROLESREVIEW1g_a_repository_s_write_on_a_store_with_no_machine_revision_is_judged_against_the_seeded_machine_rules()
+    {
+        var store = StoreMade();
+        Assert.False(store.Seeded());
+
+        var written = store.Write("repository:daoris", 0, Rules("repository:daoris", """[{ "id": "x", "count": "quiet", "at": 1, "do": "next" }]"""), "test", World);
+
+        Assert.Null(written.Refusal);
+        Assert.Equal(1, written.Revision);
+        Assert.Equal(0, store.Of("machine").Revision);
+    }
+
     // The store is made by the first thing that opens it for a write, as StaffMoves' is; a first write is the run that makes it.
     private SupervisorRuleStore StoreMade()
     {

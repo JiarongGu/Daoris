@@ -178,7 +178,8 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they start wi
 35. One seed serves a fresh home's first start and the release's migration: answers alone at 2, failures at 3 (the
     migration: an older home's `strikes`), tries at 5 and moves 3 a day before the next asks, for every role; the
     migration takes `strikes` out and passes a stored policy's moves over. Where the machine's place holds nothing, or the
-    store does not read, the seeded rules decide. (from D229, D232)
+    store does not read, the seeded rules decide, and a write is judged against them too (`SupervisorRuleBook.WithSeed`), so a repository's
+    rules are not refused for a machine bound every line already reads. (from D229, D232)
 36. Every executor reads the effective rules, one rule per count: the answers-alone hold, the failures that park a quest,
     the tries of a transient episode and a line's moves. A count no rule watches acts on nothing. A line's role and place
     for its rules are resolved once (`RuledLine`): the role its start was bound to while the catalogue holds it, else the
