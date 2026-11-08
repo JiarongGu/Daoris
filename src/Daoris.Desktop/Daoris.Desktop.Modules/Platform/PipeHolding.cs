@@ -132,17 +132,21 @@ public sealed class PipeHolding(InstancePipe pipe, IEventBus bus) : IDisposable
             return IpcJson.Serialize(pipe.Refuse(request, InstancePipe.Full, "As many presses as may wait for the person already do; this one was not asked."));
         }
 
-        var (shown, ended) = pipe.Confirmations.Ask(
-            place, InstancePipe.Module, "HOLD", [new PipeConfirmationField("/session", "string", session)], connection.Asker,
-            @as: new PipeAsAsked(Guid.NewGuid().ToString("N"), Hold: true));
+        // Named before it is shown, and ended below where a stop began meanwhile, which found nothing to end.
+        var cardId = Guid.NewGuid().ToString("N");
         lock (_state.Gate)
         {
-            _asking[shown.Id] = connection;
+            _asking[cardId] = connection;
         }
+
+        var (shown, ended) = pipe.Confirmations.Ask(
+            place, InstancePipe.Module, "HOLD", [new PipeConfirmationField("/session", "string", session)], connection.Asker,
+            @as: new PipeAsAsked(cardId, Hold: true));
 
         // A connection that closes while it is shown has nothing to hold for: its card is taken back. One still there is told it waits.
         if (!Open(connection)) pipe.Confirmations.Withdraw(shown.Id);
         else _ = connection.WriteAsync(Told(InstancePipe.Confirming, new { id = request.Id }));
+        if (pipe.Stopped) pipe.Confirmations.Lose(shown.Id);
         var ending = await ended.ConfigureAwait(false);
         lock (_state.Gate)
         {
@@ -201,6 +205,18 @@ public sealed class PipeHolding(InstancePipe pipe, IEventBus bus) : IDisposable
 
         foreach (var card in cards) pipe.Confirmations.Withdraw(card);
         foreach (var hold in holds) End(hold, Closed);
+    }
+
+    /// <summary>The stop's step for holds still waiting for the person: no press under way names them, so each ends <see cref="PipeConfirmationEnd.Lost"/> and its line is answered.</summary>
+    internal void CloseAsks()
+    {
+        string[] cards;
+        lock (_state.Gate)
+        {
+            cards = [.. _asking.Keys];
+        }
+
+        foreach (var card in cards) pipe.Confirmations.Lose(card);
     }
 
     /// <summary>Every hold now, as the window reads them.</summary>

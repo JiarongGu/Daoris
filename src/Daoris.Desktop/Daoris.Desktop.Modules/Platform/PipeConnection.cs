@@ -94,6 +94,13 @@ internal sealed class PipeConnection(InstancePipe pipe, NamedPipeServerStream st
             while (await NextAsync(pipe.Limits.Idle, waitWhileBusy: true).ConfigureAwait(false) is { } line)
             {
                 if (Parse(line) is not ({ } request, var key, var hold)) return;
+                // A string no reader can take (a lone surrogate escape) would throw in whatever reads it first: told, not run.
+                if (request.Payload is { } payload && !Readable(payload))
+                {
+                    await WriteAsync(IpcJson.Serialize(pipe.Refuse(request, InstancePipe.Shape, "A string in this request's payload is not valid text (a lone surrogate); nothing was run."))).ConfigureAwait(false);
+                    continue;
+                }
+
                 var (now, later) = pipe.Accept(request, key, this, hold);
                 if (now is not null)
                 {
@@ -217,6 +224,38 @@ internal sealed class PipeConnection(InstancePipe pipe, NamedPipeServerStream st
         catch (Exception error) when (error is JsonException or NotSupportedException or ArgumentException or InvalidOperationException)
         {
             return null;
+        }
+    }
+
+    /// <summary>
+    /// Whether every string and name in <paramref name="element"/> reads as text: <see cref="JsonElement.GetString"/> throws on a
+    /// lone surrogate escape, on .NET 10 as before.
+    /// </summary>
+    private static bool Readable(JsonElement element)
+    {
+        switch (element.ValueKind)
+        {
+            case JsonValueKind.String:
+                return Reads(() => element.GetString());
+            case JsonValueKind.Array:
+                return element.EnumerateArray().All(Readable);
+            case JsonValueKind.Object:
+                return element.EnumerateObject().All(property => Reads(() => property.Name) && Readable(property.Value));
+            default:
+                return true;
+        }
+
+        static bool Reads(Func<string?> read)
+        {
+            try
+            {
+                read();
+                return true;
+            }
+            catch (InvalidOperationException)
+            {
+                return false;
+            }
         }
     }
 
