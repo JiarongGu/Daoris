@@ -238,6 +238,26 @@ public sealed class GitSchedulerTests
     }
 
     [Fact]
+    public async Task A_read_asked_after_a_queued_write_never_takes_the_answer_of_an_identical_read_queued_before_it()
+    {
+        var scheduler = Scheduler(bound: 1, repository: 1);
+        var hold = new TaskCompletionSource();
+        var reference = "before";
+        var blocker = scheduler.RunAsync(Read("other"), async _ => { await hold.Task; return "held"; }, CancellationToken.None);
+        await Poll.Until(() => scheduler.Running == 1);
+
+        var read = scheduler.RunAsync(Read("r", start: "rev-parse later"), _ => Task.FromResult(reference), CancellationToken.None);
+        var write = scheduler.RunAsync(Write("r"), _ => Task.FromResult(reference = "after"), CancellationToken.None);
+        var later = Person(() => scheduler.RunAsync(Read("r", start: "rev-parse later"), _ => Task.FromResult(reference), CancellationToken.None));
+        hold.SetResult();
+
+        Assert.Equal("before", await read.WaitAsync(Soon));
+        Assert.Equal("after", await write.WaitAsync(Soon));
+        Assert.Equal("after", await later.WaitAsync(Soon));
+        await blocker;
+    }
+
+    [Fact]
     public async Task A_lock_free_read_nobody_waits_on_is_ended_and_every_other_git_runs_to_its_end()
     {
         var scheduler = Scheduler();
@@ -340,6 +360,21 @@ public sealed class GitSchedulerTests
         removal.Dispose();
         Assert.Equal("asked after", await after.WaitAsync(Soon));
         await blocker;
+    }
+
+    [Fact]
+    public async Task A_removals_own_git_queued_after_an_ask_its_removal_holds_passes_it()
+    {
+        var scheduler = Scheduler();
+        var tree = Folder("trees/two");
+        var hold = await scheduler.RemovingAsync(tree, CancellationToken.None).WaitAsync(Soon);
+        var after = scheduler.RunAsync(Read("checkout", folder: tree), _ => Task.FromResult("asked after"), CancellationToken.None);
+        var removal = Person(() => scheduler.RunAsync(Write("checkout"), _ => Task.FromResult("removed"), CancellationToken.None));
+
+        Assert.Equal("removed", await removal.WaitAsync(Soon));
+        Assert.False(after.IsCompleted);
+        hold.Dispose();
+        Assert.Equal("asked after", await after.WaitAsync(Soon));
     }
 
     [Fact]
