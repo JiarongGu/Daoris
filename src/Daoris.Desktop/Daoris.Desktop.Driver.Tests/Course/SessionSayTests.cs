@@ -77,6 +77,21 @@ public sealed class SessionSayTests
         Assert.Contains("has no door for words to a session that is not running (404)", said.Message);
     }
 
+    [Theory]
+    [InlineData(HttpStatusCode.BadGateway, true)]
+    [InlineData(HttpStatusCode.ServiceUnavailable, true)]
+    [InlineData(HttpStatusCode.GatewayTimeout, true)]
+    [InlineData(HttpStatusCode.TooManyRequests, true)]
+    [InlineData(HttpStatusCode.NotFound, false)]
+    public async Task A_reply_that_is_no_refusal_is_a_lost_response_where_the_host_was_busy_and_a_missing_door_where_it_was_not(HttpStatusCode status, bool lost)
+    {
+        using var service = new ServiceClient("http://stand-in", null, new HttpClient(new StandIn(status, "<html>busy</html>")));
+
+        var said = await service.SayAsync("s1", "hello");
+
+        Assert.Equal((false, null, lost), (said.Kept, said.Refusal, said.Lost));
+    }
+
     /// <summary>
     /// A word waiting on a record is taken back, or reworded, through the take-back door by its id; a
     /// reword's new word comes back with its new id. No text sends none.
