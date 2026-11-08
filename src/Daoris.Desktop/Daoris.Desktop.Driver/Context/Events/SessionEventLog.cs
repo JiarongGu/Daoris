@@ -30,8 +30,10 @@ public sealed class SessionEvents(string directory) : IWorkplaceEventHistory
 
     private static readonly UTF8Encoding Utf8 = new(encoderShouldEmitUTF8Identifier: false);
 
-    private readonly object _gate = new();
-    private readonly Dictionary<string, long> _latest = new(StringComparer.OrdinalIgnoreCase);
+    // Shared by every instance: callers each build their own over one folder, so a gate or a numbering of one instance's own would let two of
+    // them write the same number. The file's length says whether another writer, in this process or another, has moved the record on.
+    private static readonly object _gate = new();
+    private static readonly Dictionary<string, (long Seq, long Length)> _latest = new(StringComparer.OrdinalIgnoreCase);
 
     /// <summary>
     /// Raised for every event, after it is written. The shell turns it into its IPC event; a handler
@@ -46,10 +48,11 @@ public sealed class SessionEvents(string directory) : IWorkplaceEventHistory
         SessionEvent stamped;
         lock (_gate)
         {
-            if (!_latest.TryGetValue(sessionId, out var latest)) latest = Last(path);
+            var length = File.Exists(path) ? new FileInfo(path).Length : 0;
+            if (!_latest.TryGetValue(path, out var seen) || seen.Length != length) seen = (Last(path), length);
             stamped = SessionEventText.Bound(e) with
             {
-                Seq = latest + 1,
+                Seq = seen.Seq + 1,
                 At = e.At == default ? DateTimeOffset.UtcNow : e.At,
             };
 
@@ -61,10 +64,11 @@ public sealed class SessionEvents(string directory) : IWorkplaceEventHistory
             using (var stream = new FileStream(path, FileMode.Append, FileAccess.Write, FileShare.ReadWrite | FileShare.Delete))
             using (var writer = new StreamWriter(stream, Utf8))
             {
-                writer.Write(JsonSerializer.Serialize(stamped, SessionEventText.Json) + "\n");
+                // A last line a crash tore has no newline: the event starts its own line rather than joining it and being lost with it.
+                writer.Write((length > 0 && !EndsInNewline(path) ? "\n" : "") + JsonSerializer.Serialize(stamped, SessionEventText.Json) + "\n");
             }
 
-            _latest[sessionId] = stamped.Seq;
+            _latest[path] = (stamped.Seq, new FileInfo(path).Length);
         }
 
         try
@@ -598,8 +602,8 @@ public sealed class SessionEvents(string directory) : IWorkplaceEventHistory
         if (!SessionEventText.IsId(sessionId)) return false;
         lock (_gate)
         {
-            _latest.Remove(sessionId);
             var path = PathOf(sessionId);
+            _latest.Remove(path);
             if (!File.Exists(path)) return false;
             File.Delete(path);
             return true;
@@ -615,6 +619,14 @@ public sealed class SessionEvents(string directory) : IWorkplaceEventHistory
         }
 
         return Path.Combine(directory, $"{sessionId}.events.jsonl");
+    }
+
+    private static bool EndsInNewline(string path)
+    {
+        using var stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite | FileShare.Delete);
+        if (stream.Length == 0) return true;
+        stream.Seek(-1, SeekOrigin.End);
+        return stream.ReadByte() == '\n';
     }
 
     private static long Last(string path)
