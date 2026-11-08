@@ -80,8 +80,20 @@ internal sealed class SupervisePass(LoopContext context, Driver driver)
         }
         finally
         {
-            attempts.End(ask.Attempt, outcome, DateTimeOffset.UtcNow);
-            context.Supervisor.Runs.Ended(subject);
+            // The turn is freed even where its outcome cannot be written (the session's folder gone, a full disk): an attempt with no
+            // outcome is closed failed at the bound, but a subject left running would hold its whole line until a restart.
+            try
+            {
+                attempts.End(ask.Attempt, outcome, DateTimeOffset.UtcNow);
+            }
+            catch (Exception error) when (error is IOException or UnauthorizedAccessException)
+            {
+                context.Log?.Warn("supervisor.attempt-failed", ("role", ask.Waiting.Role), ("why", error.GetType().Name));
+            }
+            finally
+            {
+                context.Supervisor.Runs.Ended(subject);
+            }
         }
     }
 
