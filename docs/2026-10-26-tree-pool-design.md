@@ -4387,9 +4387,12 @@ reads the line alone).
    branch moved past `a1` during the claim, or is out in another checkout, or git refuses), **the claim is kept** at `undoing`, its whole
    intent in the store: the slot serves no line, a visit holds back as it does for any switching claim (`TreeClaimKinds.Switching`,
    `TreeClaim.cs:19`), the next start opens a tree of its own (§5.1 step 5), and a later run's takeover (`TreePoolClaims.cs:55-67`)
-   reads the disk first and runs the same undo. **Rejected:** settling it `stuck` as a failed check does today, since a stuck slot whose
-   record names A answers A's folder while its files are B's, which is the sequence itself, and only a person clears it, where a kept
-   claim's recorded intent lets the takeover finish the restoration.
+   reads the disk first and runs the same undo. Where that cannot restore it either, the takeover settles the slot `stuck`, said, its
+   record naming **no** line, so no reader takes its folder for A's (A then reads as a line that can be brought back,
+   `LinePlaces.cs:27-29`); `FreeAsync`'s *neither* case (`PoolTakeovers.cs:106-110`) names no line for the same reason. **Rejected:**
+   settling it `stuck` at once, as a failed check does today, since a stuck slot whose record names A answers A's folder while its
+   files are B's, which is the sequence itself, and only a person clears it, where a kept claim's recorded intent lets the takeover
+   finish a restoration that failed for a passing reason (a lock, A's branch out in another checkout for a while).
 4. **The clearing is atomic and refuses `busy`** (§35.7), catching `UnauthorizedAccessException` beside `IOException`, since a file
    top's `File.Move` throws either (Opus); on a refused rename it moves back what it moved, in reverse, and returns the held top.
 5. **The aside folder is marked before the first rename** (Opus): `ClearAsync` takes the previous line and writes `PoolAsides.Mark`
@@ -4405,8 +4408,9 @@ tips**, `a1` ≠ `b0`: (i) a slot let go on A's branch at `a1`, a file in `bin/`
 branch gone through the journal, no claim, the lock free, and `LinePlaces.Of` answering A's slot at `a1`; (ii) the same over a slot
 detached at `a1` (A finished): detached at `a1` again; (iii) a return refused the same way, its branch kept; (iv) the hold met at the
 `Switched` seam (`seams.ReachedAsync`, `TreePoolTakes.cs:68`) and the run cut off: the takeover restoring the same way; (v) A's branch
-moved during the claim: the claim kept at `undoing`, the slot not offered, a visit held back, and a later run's takeover restoring it;
-(vi) a second held top refusing the move back: the folder marked A's before the first rename and held for A; (vii) a read-only file top
+out in another checkout during the claim: the claim kept at `undoing`, the slot not offered, a visit held back, and once that checkout
+lets it go a later run's takeover restoring it; A's branch moved past `a1` instead: that takeover settling the slot `stuck` with no line
+named and `LinePlaces.Of` answering A as one that can be brought back; (vi) a second held top refusing the move back: the folder marked A's before the first rename and held for A; (vii) a read-only file top
 refusing with `UnauthorizedAccessException`: the same refusal. **Ready to build.**
 
 ### 36.2 TREEPOOL1z: matched as git matches, and the first form translated *(R15)*
@@ -4438,14 +4442,13 @@ translation** is one unit, `RuleFileFirstForm`, a pure function from the first f
 
 **The one difference kept, chosen: case.** Where `core.ignorecase` holds, `bin/` now covers `Bin/`, which no translation can withhold. It
 is git's own reading, which D214's note asks for, and on such a file system the two are one name; the Files tab lists every top whose
-rule changes by case alone.
+rule changes by case alone (`GitPattern` read with and without the setting).
 
 **The layers.** The found layer is written again by the analysis, in the new form (Opus). This repository's `daoris.files.json` is
-rewritten in the row's chunk. The person's `data/files.json` is rewritten by its one writer the first time the new reader reads it, under
-its lock, only once it has been read both ways and every top of every repository the home knows (its checkouts and slots) found given the
-same effective rule, case aside; its first form is kept beside it, set aside, since the file is the person's. A file that differs is
-left in its first form, read through the translation, and the difference said on the Files tab. Another repository's tracked file is
-that repository's: read through the translation, never written. **Proof:** the table of every construct above, the old reader and the
+rewritten in the row's chunk. The person's `data/files.json` is rewritten through the translation by its one writer the first time the
+new reader reads it, under its lock, its first form kept beside it, set aside, since the file is the person's. Another repository's
+tracked file is that repository's: read through the translation, never written. The translation's exactness is the proof's, not a
+reading both ways at run time, since the old matcher is gone by then. **Proof:** the table of every construct above, the old reader and the
 translation through `GitPattern` agreeing over a table of tops; and for each layer (this repository's file, and a fixture person's file
 holding `{drafts,notes}/`, `node_modules/`, `src/{App,Lib}/bin/`, a `**` inside a segment, a `[`, `copy: true` and `share: true`) the
 effective rule of every top of a fixture repository equal under both readers, case aside; the person's file rewritten once, its first
@@ -4523,8 +4526,9 @@ tree Daoris did not take. The marker names the previous line and the guard's sen
 one release operation, the door's: so signal (b) is not a second way, the answer both readers gave §35.10's first question.
 
 **3. Every runner that reads `bin/` without building is guarded** (Opus 3). This repository's runners read the marker through one
-helper, `tools/tree-base.mjs`, called where a path under a base is resolved to run or read: `targetExe()` (`tools/desktop/session.mjs:25`,
-through `assemblyExe`, `tools/desktop/executables.mjs:17`) behind `run` and `restart` (`tools/desktop.mjs:79-82`) and `shot` (`:96-98`);
+helper, `tools/tree-base.mjs`, called where a path under a base is resolved to run or read: the callers of `targetExe()`
+(`tools/desktop/session.mjs:25`, through `assemblyExe`, `tools/desktop/executables.mjs:17`) behind `run` and `restart`
+(`tools/desktop.mjs:79-82`) and `shot` (`:96-98`);
 the MCP host `start` resolves (`tools/desktop/commands.mjs:162`); proof-kit's four paths (`tools/proof-kit.mjs:19`, `:22`, `:26`, `:48`);
 the family rehearsal's (`tools/family-rehearsal.mjs:41`) and the e2e host's (`src/Daoris.Web/scripts/e2e-host.mjs:15`). It is never
 called where a path is resolved to find or stop a process (`kill`, `tools/desktop.mjs:84-85`), which stops what runs whatever built it.
@@ -4585,8 +4589,9 @@ runners guarded and its `bin/` at `base`; the control arm is one machine-layer r
 hiding the share and refusing the take; and `local/rules/`, under the top `local/`, matches nothing at all.
 
 **The rule: one unit, `TopPartition`, read by every act that takes tops** (the judgement, the take's plan and clearing, a finish's
-set-aside). A top is partitioned where a **boundary** lies under it: a copy the files record holds (row z), a link the record holds
-(`Shares`, §35.5), or a path a `reach: read` or `write` entry declares, found by descending only along its pattern's literal part (before
+set-aside), built by row z with the copy as its one boundary (§36.4) and given the shares by row ac. A top is partitioned where a
+**boundary** lies under it: a copy the files record holds, a link the record holds (`Shares`, §35.5), or a path a `reach: read` or
+`write` entry declares, found by descending only along its pattern's literal part (before
 its first wildcard; a share pattern with none is matched against the tops alone). The partition lists entries one folder at a time along
 the way to each boundary and **never enters a link**: a recorded link is classified by its record, never listed, and one no record names
 is refused at the judgement as foreign, as the walk of links refuses one (`WorkspaceLinks.cs:5-9`). Each boundary is classified apart (a
