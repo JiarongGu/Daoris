@@ -58,7 +58,7 @@ public sealed class FeedGateTests : IAsyncLifetime
                 await release.Task;
                 return await _service.RegisterAsync(declared, now, ct);
             },
-            () => { }, TimeProvider.System);
+            () => { }, TimeProvider.System, new SemaphoreSlim(1, 1));
 
         var withdrawing = feeds.RegisterFedAsync(Declared(shares: false), From("aaaa1111bbbb2222", "2026-09-20T09:00:00Z"), Now, default);
         await registering.Task;

@@ -26,6 +26,7 @@ export function useMachine(): { machine: Machine; settled: boolean } {
     registry: registry.data,
     driver: driver.data,
     harnesses: Array.isArray(roster.data?.harnesses) ? roster.data.harnesses : [],
+    agents: roster.data?.agents,
     sessions: sessions.data,
     lines: Array.isArray(lines.data?.lines) ? lines.data.lines : [],
   });

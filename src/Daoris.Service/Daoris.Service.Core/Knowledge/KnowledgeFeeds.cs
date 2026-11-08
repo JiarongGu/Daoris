@@ -10,10 +10,11 @@ internal sealed class KnowledgeFeeds(
     Func<CancellationToken, Task<IReadOnlyList<Registration>>> registered,
     Func<Registration, DateTimeOffset, CancellationToken, Task<Registration>> register,
     Action refuseNewerIndex,
-    TimeProvider time)
+    TimeProvider time,
+    SemaphoreSlim feedGate)
 {
-    /// <summary>One feed judged and written at a time: the check and the write are one step.</summary>
-    private readonly SemaphoreSlim _feedGate = new(1, 1);
+    /// <summary>One feed judged and written at a time, a retirement taking the same turn: the check and the write are one step.</summary>
+    private readonly SemaphoreSlim _feedGate = feedGate;
 
     /// <summary>
     /// A declaration arriving at a shared deployment from a checkout: the manifest at a commit,
@@ -142,6 +143,14 @@ internal sealed class KnowledgeFeeds(
         {
             var (registration, refused) = await AdmitAsync(repository, provenance, "knowledge", ct).ConfigureAwait(false);
             if (refused is not null) return refused;
+
+            if (entries.Any(entry => entry.Kind == EntryKind.Record))
+            {
+                return new(
+                    FeedRefusal.Malformed,
+                    $"`{repository}` fed a finished tree's record, and a record is kept on the machine that made it: no feed carries one.",
+                    Entries: 0);
+            }
 
             var normalized = entries
                 .Select(entry => entry with

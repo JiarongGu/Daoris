@@ -38,7 +38,7 @@ public sealed record CallLineage(string Door)
     /// What an id is here: a letter or digit, then letters, digits and <c>_ . : -</c>, at most 128 in all. A harness's ids are
     /// (<c>toolu_…</c>, a UUID, a hex agent id); a path, which has a separator, never is.
     /// </summary>
-    private static readonly Regex IdShape = new("^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$", RegexOptions.CultureInvariant);
+    private static readonly Regex IdShape = new(@"\A[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}\z", RegexOptions.CultureInvariant);
 
     /// <summary>Claude Code's id of the call.</summary>
     public string? ToolUse { get; init; }
