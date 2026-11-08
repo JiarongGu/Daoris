@@ -9,6 +9,29 @@ internal sealed class RunConclusion(
 {
     public async Task<StartRun> ConcludeAsync(int? exitCode, AcpUsage? used, string? turnFailed, HarnessEnding ended, CancellationToken ct)
     {
+        var reserved = new List<StartReservation>();
+        try
+        {
+            return await ConcludeReservingAsync(exitCode, used, turnFailed, ended, reserved, ct).ConfigureAwait(false);
+        }
+        catch
+        {
+            // The reservation is the start's move to another account, which a conclusion that throws never reaches: nothing else lets it go.
+            foreach (var held in reserved) wiring.Context.Runs.Release(held);
+            throw;
+        }
+    }
+
+    private async Task<StartRun> ConcludeReservingAsync(
+        int? exitCode, AcpUsage? used, string? turnFailed, HarnessEnding ended, List<StartReservation> reserved, CancellationToken ct)
+    {
+        bool Reserve(StartReservation moving)
+        {
+            if (!wiring.Context.Runs.TryReserve(moving)) return false;
+            reserved.Add(moving);
+            return true;
+        }
+
         var context = wiring.Context;
         var service = context.Service;
         var state = run.State;
@@ -98,7 +121,7 @@ internal sealed class RunConclusion(
             ? selection.Profile : null;
         // The quest is reserved again before this record fails, so a look between this end and the next run's open plans nothing for it;
         // the caller lets it go when that run has opened or come to nothing. Not reserved, it is not moved.
-        if (signedOutOn is not null && !context.Runs.TryReserve(wiring.MovingReservation(start))) signedOutOn = null;
+        if (signedOutOn is not null && !Reserve(wiring.MovingReservation(start))) signedOutOn = null;
         // The pipe door refused the model its choice named on a silent turn, so the account's reading is kept and the part ends with its
         // line, no strike; the next look starts what the walk then answers.
         var refusedModel = wiring.ModelRefused(conclusion, adapter.Id.Value, selection, target.Asked?.NamedModel, ended, sessionId);
@@ -109,7 +132,7 @@ internal sealed class RunConclusion(
         (string Agent, string Model)? modelRefusedOn = null;
         if ((notOffered || modelRefused) && stop is null && run.MovedOff is null && run.MovedOffModel is null && start.Resumes is null
             && (ended.NotOffered?.Value ?? target.Asked?.NamedModel) is { Length: > 0 } refusedValue
-            && context.Runs.TryReserve(wiring.MovingReservation(start)))
+            && Reserve(wiring.MovingReservation(start)))
         {
             modelRefusedOn = (adapter.Id.Value, refusedValue);
         }
