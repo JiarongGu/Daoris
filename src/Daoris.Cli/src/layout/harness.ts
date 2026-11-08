@@ -123,8 +123,8 @@ export const DEFAULT_HARNESS = 'claude-code';
  * failure this whole seam exists to prevent.
  */
 export function resolveHarness(id: string = DEFAULT_HARNESS): Harness {
-  // Own members only: `constructor` and `toString` are on every object and are no layout.
-  if (Object.hasOwn(HARNESSES, id)) return HARNESSES[id]!;
+  const harness = Object.hasOwn(HARNESSES, id) ? HARNESSES[id] : undefined;
+  if (harness) return harness;
 
   const known = Object.keys(HARNESSES).join(', ');
   const detected = UNSUPPORTED_SIGNALS.find((s) => s.id === id);

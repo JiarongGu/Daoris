@@ -181,10 +181,6 @@ const printed = (repoFx: Fixture, canonFx: Fixture): string => {
   return out.join('\n').replace(/\s+/g, ' ');
 };
 
-/**
- * A manifest that is there and cannot be read is not a repository that never adopted: analysing it as a fresh adoption
- * would project the default layout over a repository that chose another, and say nothing of why.
- */
 test('a manifest that exists and cannot be read is refused, not read as no adoption', () => {
   const canonFx = seedCanon();
   const repoFx = makeFixture('analyze-bad-manifest');

@@ -169,11 +169,10 @@ export function writeRegion(text: string, name: string, body: string): string {
     return [...lead, ...block, ''].join(eol);
   }
 
-  // The lines outside keep their own `\r`: only the region takes the file's majority ending.
+  // The lines outside keep their own `\r`; only the region takes the majority ending, and none when it ends the file.
   const lines = text.split('\n');
   const after = lines.slice(found.close);
   const own = eol === '\r\n' ? '\r' : '';
-  // The last block line ends the file when nothing follows, and has no ending of its own then.
   const written = block.map((line, at) => (at === block.length - 1 && after.length === 0 ? line : `${line}${own}`));
   return [...lines.slice(0, found.open - 1), ...written, ...after].join('\n');
 }
@@ -198,7 +197,6 @@ export function removeRegion(text: string, name: string): string | null {
   const kept = [...lines.slice(0, found.open - 1), ...lines.slice(found.close)];
   while (kept.length && kept[kept.length - 1]!.trim() === '') kept.pop();
   if (!kept.length) return null;
-  // The file ends in its own ending, written once: the last line's `\r` is the ending's half.
   kept[kept.length - 1] = kept[kept.length - 1]!.replace(/\r$/, '');
   return `${kept.join('\n')}${eol}`;
 }

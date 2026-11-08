@@ -99,10 +99,6 @@ public sealed class VersionGate : IGate
         _ => null,
     };
 
-    /// <summary>
-    /// Whether the text names exactly this version: not as the middle of a longer one (1.2.30, 11.2.3, 1.2.3.4) nor as the
-    /// release a pre-release suffix belongs to (1.2.3-beta).
-    /// </summary>
     private static bool Mentions(string text, string version) =>
         Regex.IsMatch(text, $@"(?<![0-9.]){Regex.Escape(version)}(?![0-9A-Za-z]|-[0-9A-Za-z]|\.[0-9])");
 

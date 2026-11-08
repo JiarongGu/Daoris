@@ -139,10 +139,6 @@ public sealed class GateRunnerTests : IDisposable
         Assert.Contains("exited 3", report.Results.Single().Detail);
     }
 
-    /// <summary>
-    /// A gate that cannot start is a failed gate with its reason, like one that throws: a working folder
-    /// that is not there made the start throw out of the run, and the report with it.
-    /// </summary>
     [Fact]
     public void A_declared_gate_that_cannot_start_fails_the_run_naming_why()
     {

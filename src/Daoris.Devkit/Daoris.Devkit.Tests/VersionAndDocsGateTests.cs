@@ -64,10 +64,6 @@ public sealed class VersionAndDocsGateTests : IDisposable
         Assert.Contains("written by hand", result.Detail);
     }
 
-    /// <summary>
-    /// A heading for 1.2.30 or 11.2.3 is no entry for 1.2.3: a substring match let a hand-bump pass whenever a
-    /// longer version happened to contain it.
-    /// </summary>
     [Theory]
     [InlineData("## 1.2.30\n")]
     [InlineData("## 11.2.3\n")]
