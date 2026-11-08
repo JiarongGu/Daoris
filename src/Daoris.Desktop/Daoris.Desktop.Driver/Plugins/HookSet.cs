@@ -378,9 +378,13 @@ public sealed class HookSet(
                 }
             }
 
+            WorkEventPoint? told;
+            lock (_eventsGate) told = _events?.Point;
             foreach (var (key, held) in stopping)
             {
                 if (held.Work) _work.Stopped(key);
+                // Its queue and teller go with the process: kept, the teller would tell the dead channel and refuse the next start its place.
+                if (told is not null) await told.LeaveAsync(key).ConfigureAwait(false);
                 await held.Channel.DisposeAsync().ConfigureAwait(false);
             }
 

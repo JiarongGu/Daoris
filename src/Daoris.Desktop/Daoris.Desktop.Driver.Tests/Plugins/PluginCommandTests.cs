@@ -144,6 +144,19 @@ public sealed class PluginCommandTests : IDisposable
     }
 
     [Fact]
+    public void A_remove_whose_switch_file_cannot_be_read_is_refused_before_the_folder_moves()
+    {
+        var folder = Folder("data/plugins/acme.gate", Gate);
+        File.WriteAllText(DaorisHome.Entry(Home, HomeEntry.PluginState), "{ not json");
+        var before = Snapshot();
+
+        Assert.Throws<DriverException>(() => PluginInstall.Remove(Home, "acme.gate"));
+
+        Assert.True(Directory.Exists(folder));
+        Assert.Equal(before, Snapshot());
+    }
+
+    [Fact]
     public void The_operation_s_refusals_are_coded_by_the_library_s_one_table()
     {
         var unknown = Assert.Throws<PluginRefusal>(() => PluginInstall.Remove(Home, "acme.nobody"));
