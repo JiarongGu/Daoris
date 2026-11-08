@@ -122,6 +122,8 @@ public static class AgentsCommand
 
         try
         {
+            AgentVerbFlags.Refuse(verb, args);
+
             // A read of the kept reading, said here, `--again` asking each agent anew: no lease, and from a session's terminal too.
             if (verb == "list") return await AgentListCommand.RunAsync(world, again: args.Contains("--again", StringComparer.Ordinal), ct).ConfigureAwait(false);
 
