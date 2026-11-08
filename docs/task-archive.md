@@ -68,6 +68,8 @@ the per-task record. Entries preserve their original wording so the archive stay
 > **ROLESREVIEW2l** (driver): Outcome: a say that comes back as a gateway's, timeout's or throttle's reply with no refusal (`SayAnswer.Lost`: 408, 429, 502, 503, 504) keeps the supervisor's release held to repeat under its receipt, as a thrown lost response does; a 404 and the like stay `no door`, ending the decision `unsaid`. A transport failure already threw, so only a reply that was returned needed the change.
 >
 > **ROLESREVIEW2m** (driver): Outcome: `driver role` set, remove, default and policy plan against the role's revision as the catalogue read it (the press's `revision`, and the write's `read`), so a role edited since is refused moved, not overwritten; `role suggested --use` is one `RoleDoor.ApplyAll` batch judged whole. No refusal inside the batch could be built to show its all-or-none write by a test; the batch is the door's own, pinned by its tests.
+>
+> **ROLESREVIEW2n** (driver): Outcome: the staffing's one publication (`RoleStaffing.Publishing`, which `Commit` now calls) wraps a store failure in a `DriverException` as the commit did, and `RoleCatalog.WriteIn` refuses a late judge's refusal as a `RoleRefusedException` carrying its code, so the second of two presses adding roles that take one work is `two-roles-one-work`.
 
 ## TREEPOOL1ac — shared paths (2026-11-09)
 

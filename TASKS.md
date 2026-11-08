@@ -92,7 +92,7 @@ area document under `docs/areas/`. Each row's earlier full text is in git at `9f
 - [ ] **SUPERVISOR2 — supervisors staffed through the actor system, generic or of a kind** (driver, modules, service, web; D233's note of 2026-11-08): left, row c's bench scorecards (waiting on SUPERVISOR1d), the week fold and each choice's posture on the editor; row e's decision record for a leave and the verb's print of an allow; row g's held `copy` and `share` (the stage gates only `run`) and the verb's `files` subject; row h. → `docs/2026-11-08-supervisor-kinds-design.md` §9
 - [ ] **TERMTRUST1 — a terminal's standing confirmation for stop, finish, hold and resume** (driver, modules, service, web; D201): left the home's `standing-grant` step, its row and the `standing-confirmation` home entry, ending when the owner's install finds no grant file; **TERMTRUST1b**, closing a quest as done, is the steward's `done` act (STEWARDROLE1d), a route act the person grants. → `docs/2026-10-23-terminal-trust-design.md` §8, §9
 - [ ] **CONFIRMWAIT1 — a terminal's request for the Confirm waits until the person answers** (modules, web, driver; D156): left the installed proof across a real restart and an hour's wait (the parent's). → `docs/2026-10-24-confirm-wait-design.md`
-- [ ] **ROLESREVIEW2i to 2q — the roles and supervision review's second cycle** (driver, modules): 4 defects open. → `docs/areas/roles-and-supervision.md`, Open
+- [ ] **ROLESREVIEW2i to 2q — the roles and supervision review's second cycle** (driver, modules): 3 defects open. → `docs/areas/roles-and-supervision.md`, Open
 
 ## Workflows, review and landing
 

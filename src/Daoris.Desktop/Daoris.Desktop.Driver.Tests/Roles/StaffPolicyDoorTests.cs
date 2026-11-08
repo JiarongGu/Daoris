@@ -209,7 +209,7 @@ public sealed class StaffPolicyDoorTests : IDisposable
         var killed = Make(() => throw new IOException("the kill"));
         var night = Role("build") with { Id = "night", Takes = [RoleWork.Chat], Scope = new RoleScope(RoleScope.Workspace, "w2") };
 
-        Assert.Throws<IOException>(() => RoleDoor.Apply(killed, RoleChange.Set(night), [Sonnet, Opus], null, new RolePolicyPress(Policy("order", [(Sonnet, ""), (Opus, "")]))));
+        Assert.Throws<DriverException>(() => RoleDoor.Apply(killed, RoleChange.Set(night), [Sonnet, Opus], null, new RolePolicyPress(Policy("order", [(Sonnet, ""), (Opus, "")]))));
 
         Assert.Equal(before, Snapshot());
         Assert.DoesNotContain(Catalogue().Slots, slot => slot.Id == "night");
