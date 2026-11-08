@@ -18,6 +18,7 @@ let starting = false;
 let initialize = null;
 let initialized = null;
 const inflight = new Set();
+const retired = new WeakSet();
 const waiting = [];
 let clientBuffer = '';
 let serverBuffer = '';
@@ -43,7 +44,7 @@ function start() {
   mine.stdout.on('data', chunk => fromServer(mine, chunk));
   mine.stdin.on('error', () => {});
   mine.on('exit', code => {
-    if (mine === child && !starting) process.exit(code ?? 1);
+    if (mine === child && !retired.has(mine)) process.exit(code ?? 1);
   });
 }
 
@@ -77,6 +78,7 @@ function fromClient(line) {
   const message = parse(line);
   if (message?.method === 'initialize') initialize = line;
   else if (message?.method === 'notifications/initialized') initialized = line;
+  else if (message?.method === 'notifications/cancelled') inflight.delete(message.params?.requestId);
   if (message && message.method !== undefined && message.id !== undefined) inflight.add(message.id);
   if (starting) waiting.push(line);
   else toServer(line);
@@ -116,6 +118,7 @@ function answerRefreshed(message) {
 async function restart() {
   starting = true;
   const old = child;
+  retired.add(old);
   old.kill();
   await new Promise(done => (old.exitCode === null && old.signalCode === null ? old.once('exit', done) : done()));
   start();

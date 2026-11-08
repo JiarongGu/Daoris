@@ -210,12 +210,22 @@ public static class RuleProposals
             {
                 case ChangeEffect.Narrows:
                     var applied = false;
-                    PermissionChange.Change(home, held =>
+                    try
                     {
-                        if (Effect(held, proposal.Change) != ChangeEffect.Narrows) return held;
-                        applied = true;
-                        return Apply(held, proposal.Change);
-                    });
+                        PermissionChange.Change(home, held =>
+                        {
+                            if (Effect(held, proposal.Change) != ChangeEffect.Narrows) return held;
+                            applied = true;
+                            return Apply(held, proposal.Change);
+                        });
+                    }
+                    catch (DriverException refused)
+                    {
+                        // A file the keeping will not write over (a scope that is no object) is the person's to mend; the proposal stays.
+                        said.Retry($"rules  #{proposal.Id} not settled: {refused.Message}");
+                        break;
+                    }
+
                     if (!applied) break;
                     Mark(path, ProposalState.Applied, "the driver", "it narrows what agents may do, so it applied at once.", at);
                     said.Progress($"rules  applied #{proposal.Id} from {Author(proposal)}: {Describe(proposal.Change)} — it narrows.");

@@ -20,6 +20,9 @@ internal sealed class AcpWire(TextWriter outgoing, Action<string> say, Func<bool
 
     private int _nextId;
 
+    /// <summary>What <see cref="Fail"/> faulted the requests with, which a request made after it is faulted with too.</summary>
+    private Exception? _failed;
+
     /// <summary>The lock every frame is written under: also what a judgement of the run's end is taken under.</summary>
     public SemaphoreSlim WriteLock { get; } = new(1, 1);
 
@@ -147,6 +150,14 @@ internal sealed class AcpWire(TextWriter outgoing, Action<string> say, Func<bool
 
         _pending[id] = waiting;
 
+        // Registered, then looked for: `Fail` sets its error before it walks the requests, so a request made after the walk sees the error here.
+        if (Volatile.Read(ref _failed) is { } failure)
+        {
+            _answered.TryRemove(id, out _);
+            _pending.TryRemove(id, out _);
+            throw failure;
+        }
+
         try
         {
             await SendAsync(
@@ -218,6 +229,7 @@ internal sealed class AcpWire(TextWriter outgoing, Action<string> say, Func<bool
     /// <summary>Fault everything still awaiting an answer that will never come.</summary>
     public void Fail(Exception error)
     {
+        Interlocked.CompareExchange(ref _failed, error, null);
         _answered.Clear();
         foreach (var key in _pending.Keys)
         {

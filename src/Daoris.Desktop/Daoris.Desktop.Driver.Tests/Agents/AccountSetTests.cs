@@ -305,6 +305,21 @@ public sealed class AccountSetTests : IDisposable
         Assert.Contains(lines, line => line.Contains("\"accounts.pooled\"") && line.Contains("\"held\":true"));
     }
 
+    /// <summary>A file the keeping refuses to write over (a key twice in one object) never stops the come-up: it is said and left.</summary>
+    [Fact]
+    public void A_come_up_the_keeping_refuses_is_said_and_never_thrown()
+    {
+        Signed("a", "b");
+        Raw("""{ "rotation": { "claude-code": ["b"] }, "rotation": { "claude-code": ["b"] } }""");
+        var log = new MachineLog(_home, "driver-test");
+
+        Assert.True(HarnessSettings.FoldNow(File_, log));
+
+        log.Dispose();
+        var lines = Directory.EnumerateFiles(DaorisHome.Entry(_home, HomeEntry.Logs)).SelectMany(File.ReadAllLines).ToList();
+        Assert.Contains(lines, line => line.Contains("\"accounts.pooled\"") && line.Contains("twice"));
+    }
+
     /// <summary>The folder the install held: a start whose path carried an unexpanded <c>$a</c> left it beside the agents.</summary>
     private const string Stray = "claude-code$a";
 

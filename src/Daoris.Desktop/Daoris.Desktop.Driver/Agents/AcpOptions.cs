@@ -171,7 +171,7 @@ internal sealed class AcpOptions(
                     touched.Add(category);
                     set = true;
                 }
-                catch (DriverException refused)
+                catch (AcpRefusal refused)
                 {
                     say($"[{category} `{wanted}` was not set: {refused.Message}]");
                     if (judged) refusal = new ModelRefusal(category, wanted, listed ? AgentOffers.RefusedCode : AgentOffers.NotOffered);

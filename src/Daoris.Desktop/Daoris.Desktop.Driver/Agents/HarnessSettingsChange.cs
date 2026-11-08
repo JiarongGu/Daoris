@@ -117,6 +117,13 @@ internal static class HarnessSettingsChange
             (log ?? MachineLog.None).Warn("accounts.pooled", ("held", true), ("refusal", error.Message));
             return false;
         }
+        catch (DriverException error)
+        {
+            // A file the keeping refuses to write over is the person's to mend, as one that does not read is: said once, never the
+            // look's failure. Every reader reads the projection meanwhile, and the next change of the file folds.
+            (log ?? MachineLog.None).Warn("accounts.pooled", ("held", false), ("refusal", error.Message));
+            return true;
+        }
     }
 
     /// <summary>

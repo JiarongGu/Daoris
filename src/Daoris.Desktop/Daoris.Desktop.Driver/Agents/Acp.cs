@@ -356,7 +356,19 @@ public sealed class AcpSession(
     public IReadOnlyList<IAgentWord> Unreached => _open.Unreached;
 
     /// <summary>End what the session runs beside itself, saying so. Idempotent, and never throws.</summary>
-    private Task EndStreamsAsync() => _beside?.EndAllAsync() ?? Task.CompletedTask;
+    private async Task EndStreamsAsync()
+    {
+        if (_beside is null) return;
+        try
+        {
+            await _beside.EndAllAsync().ConfigureAwait(false);
+        }
+        catch (Exception error) when (error is not OperationCanceledException)
+        {
+            // A sink that refuses the endings must not turn a finished run into a failed one, or leave the requests awaited for the timeout.
+            onLine($"[ending what ran beside the session failed: {error.Message}]");
+        }
+    }
 
     /// <summary>Open the session a conversation lives in: everything before the first prompt, done once (<see cref="AcpOpening"/>).</summary>
     /// <remarks>
@@ -511,9 +523,9 @@ public sealed class AcpSession(
             answer = await RequestAsync("_session/async_task/stop", new { sessionId = _sessionId, asyncTaskId }, ct)
                 .ConfigureAwait(false);
         }
-        catch (Exception error) when (error is IOException or ObjectDisposedException)
+        catch (Exception error) when (error is IOException or ObjectDisposedException or (DriverException and not AcpRefusal))
         {
-            // An agent that has exited stopped nothing.
+            // An agent that has exited stopped nothing, whether its stream ended with the stop pending or the write found it closed.
             return false;
         }
 
