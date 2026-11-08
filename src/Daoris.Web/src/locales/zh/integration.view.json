@@ -4,7 +4,7 @@
   "integration.view.body": "请求并入 {{repository}} 主线的工作如何推进：队列、正在尝试的候选、被打回的，以及主线现在包含的。",
   "integration.view.twin": "在终端中：`daoris integrate {{repository}}`",
   "integration.view.recheck": "重新检查",
-  "integration.view.none": "没有请求并入这条主线的工作，这里也还没有集成过。",
+  "integration.view.none": "没有请求并入这条主线的工作，这里也还没有集成过。发给这个仓库的委托，或某个会话并入它的工作，会显示在这里。",
   "integration.view.queue": "排队中",
   "integration.view.handedBack": "已打回",
   "integration.view.superseded": "等待处置的已被取代的提交",
