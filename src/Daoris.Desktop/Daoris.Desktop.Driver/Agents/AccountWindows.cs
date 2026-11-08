@@ -90,6 +90,8 @@ public static class AccountWindows
     {
         lock (Gate)
         {
+            // The file's keep lock is held from the read to the write, as cooling.json's is: another process's edit is not written over.
+            using var locked = KeepLock.Take(PathOf(home));
             var root = Load(home);
             var held = Made(Made(root, agent), account);
             var week = new JsonObject { ["reset"] = AccountCooling.Stamp(reset), ["seen"] = AccountCooling.Stamp(seen) };
@@ -118,6 +120,7 @@ public static class AccountWindows
         if (readings.Count == 0) return;
         lock (Gate)
         {
+            using var locked = KeepLock.Take(PathOf(home));
             var root = Load(home);
             var held = Made(Made(root, agent), account);
             foreach (var reading in readings)

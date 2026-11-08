@@ -146,6 +146,8 @@ public static class UsageHistory
             {
                 var path = DaorisHome.Entry(home, HomeEntry.UsageHistory, EpochsFile);
                 if (!File.Exists(path)) return;
+                // The file's keep lock is held from the read to the write, as cooling.json's is: another process's edit is not written over.
+                using var locked = KeepLock.Take(path);
                 var (root, unreadable) = AccountFileNodes.Read(path);
                 if (unreadable || Child(Child(root, agent), account) is not { } entry) return;
 
@@ -258,6 +260,7 @@ public static class UsageHistory
     private static int? EpochOf(string home, string agent, string account, string? plan, DateTimeOffset at)
     {
         var path = DaorisHome.Entry(home, HomeEntry.UsageHistory, EpochsFile);
+        using var locked = KeepLock.Take(path);
         var (root, unreadable) = AccountFileNodes.Read(path);
         if (unreadable) return null;
 

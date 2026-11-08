@@ -72,6 +72,8 @@ public static class AccountReads
     {
         lock (Gate)
         {
+            // The file's keep lock is held from the read to the write, as cooling.json's is: another process's edit is not written over.
+            using var locked = KeepLock.Take(PathOf(home));
             var root = Load(home);
             var held = Made(root, agent);
             var parent = account is null ? held : Made(held, AccountsKey);
@@ -89,6 +91,7 @@ public static class AccountReads
     {
         lock (Gate)
         {
+            using var locked = KeepLock.Take(PathOf(home));
             var root = Load(home);
             if (Child(Child(root, agent), AccountsKey) is not { } named || Key(named, account) is not { } key) return;
             named.Remove(key);
