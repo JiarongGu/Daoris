@@ -2,7 +2,7 @@
 
 A Daoris plugin that **speaks**: a process of its own, which the Daoris driver starts and asks at
 `work/perform` (and `work/watch`), over JSON-RPC 2.0 on its stdin and stdout. It was made by Daoris's
-plugin kit (`daoris plugin new local-release --points work/perform`); what it does is what
+plugin kit (`daoris plugin new local-release --point work/perform`); what it does is what
 `plugin.mjs` does. Its wire, the rules a plugin is held to, the tools it runs and the stand-in world are
 those of [local-preview](../local-preview/README.md), which this folder is built the same way as.
 
@@ -12,7 +12,8 @@ those of [local-preview](../local-preview/README.md), which this folder is built
 
 ## The tail
 
-A workflow that publishes ends in these steps, after the work has landed (`cycle.json` names it):
+A workflow that publishes ends in these steps, after the work has landed. The shipped *Release workflow* preset (`release`) is that graph, with a
+`check` before the review and a merge into the line; with no release pending it ends at the line:
 
 ```
 land -> line -> find -> release -> publish
@@ -51,7 +52,7 @@ package.
 - Each attempt makes one **temporary** resource, `local-release/resource@1` `<invocation>` (its staging
   folder), which Daoris removes through `work/cleanup`, once; asked again it is `already-gone`. Cleanup
   leaves what was recorded and published.
-- It touches nothing outside `DAORIS_PLUGIN_DATA`, runs no tool, and never pushes (D87): "publish" here is
+- It touches nothing outside `DAORIS_PLUGIN_DATA`, runs no tool, and never pushes: "publish" here is
   a copy into its own registry folder, and a tag is a name in a file.
 
 ## The data folder
@@ -74,7 +75,7 @@ package.
 | `work.mjs` | the kit's half of working: the journal and the work points; written by the kit, not by hand |
 | `plugin.test.mjs`, `plugin.contract.test.mjs` | the kit's wire and contract tests, in the stand-in world |
 | `release.test.mjs` | the tail on its real folders, with no world |
-| `cycle.json` | the cycle `daoris plugin try --cycle` drives it through, and the tail |
+| `cycle.json` | the cycle `daoris plugin try --cycle` drives: the `publish` step, given the release reference it takes. Its `tail` field names the order above and nothing reads it |
 
 ## Testing it
 
@@ -85,5 +86,5 @@ daoris plugin try <this folder> --cycle cycle.json
 
 ## Installing it
 
-Once it is reviewed and landed: `daoris plugin add <this folder>`, then `daoris plugin enable local-release`
-or the Plugins place.
+Once it is reviewed and landed: `daoris plugin add <this folder>`, it is on once added (`daoris plugin disable local-release`
+or the Plugins view turns it off), and a workflow names its steps, as the *Release workflow* preset does.
