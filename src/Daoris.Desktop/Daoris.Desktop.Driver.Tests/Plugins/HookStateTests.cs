@@ -67,6 +67,22 @@ public sealed class HookStateTests
         return peer;
     }
 
+    /// <summary>A call its caller gave up on is no longer waited for: it leaves the peer's pending calls at once, not when the wire ends.</summary>
+    [Fact]
+    public async Task A_call_cancelled_by_its_caller_leaves_no_pending_entry()
+    {
+        var plugin = new FakePlugin(frame => Method(frame) == "initialize"
+            ? Ok(frame, """{"protocolVersion":1,"points":["work/state"]}""")
+            : null);
+        var peer = new HookPeer(plugin.Incoming, plugin.Outgoing, "acme.silent", patience: Poll.Patience);
+        await peer.InitializeAsync("h", "d", [HookPoints.State], CancellationToken.None);
+        using var gone = new CancellationTokenSource(TimeSpan.FromMilliseconds(100));
+
+        await Assert.ThrowsAnyAsync<OperationCanceledException>(() => peer.StateAsync(new { }, gone.Token));
+
+        Assert.Equal(0, peer.Waiting);
+    }
+
     // ——— a point this build lacks (design §4 rule 3)
 
     /// <summary>
