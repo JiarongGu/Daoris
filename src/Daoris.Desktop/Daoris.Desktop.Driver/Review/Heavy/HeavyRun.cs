@@ -32,8 +32,20 @@ public sealed record HeavyRunWorld(string Home, string Directory, Func<string, s
     /// <summary>How the run waits for the machine's admission.</summary>
     public AdmissionWaiting Admission { get; init; } = AdmissionWaiting.Default;
 
+    /// <summary>Whom the slot names as holding or waiting: this process, unless the run is a terminal's run in the running Daoris.</summary>
+    public HeavyAsker Asker { get; init; } = HeavyAsker.ThisProcess();
+
+    /// <summary>The whole environment the gates start in, with the run's own variables over it; null for this process's.</summary>
+    public IReadOnlyDictionary<string, string>? Environment { get; init; }
+
+    /// <summary>The standard handles the gates are handed; null for this process's own.</summary>
+    public TerminalHandles? Streams { get; init; }
+
+    /// <summary>How each gate is started: as this process's own unless the world names an environment or handles.</summary>
+    internal StepOptions? Steps => Environment is null && Streams is null ? null : new StepOptions(Environment) { Streams = Streams };
+
     /// <summary>This process's: its folder and its environment.</summary>
-    public static HeavyRunWorld OfThisProcess(string home) => new(home, Environment.CurrentDirectory, Environment.GetEnvironmentVariable);
+    public static HeavyRunWorld OfThisProcess(string home) => new(home, System.Environment.CurrentDirectory, System.Environment.GetEnvironmentVariable);
 }
 
 /// <summary>What a run hands its gates: the slot it holds, and the gates running, outermost first.</summary>
@@ -254,17 +266,17 @@ public static class HeavyRun
             }
 
             output.WriteLine($"run-heavy: inside the heavy run that holds `{repository}`'s slot, so this one runs in it without waiting.");
-            return await RunGatesAsync(checkout, choice.Gates, key, outer.Gates, Job(null), output, ct).ConfigureAwait(false);
+            return await RunGatesAsync(checkout, choice.Gates, key, outer.Gates, Job(null), output, ct, steps: world.Steps).ConfigureAwait(false);
         }
 
         var session = world.Variable(IntakeRoom.SessionVariable) is { Length: > 0 } ofSession ? ofSession : null;
-        var started = ThisProcessStarted();
+        var (pid, started) = world.Asker;
         HeavySlot? slot;
         try
         {
             // While it waits it says so beside the slot, for the page to say who waits behind whom.
             // A session's run (its tree read from git's lock) never waits behind a verification.
-            var waiter = new HeavyWaiter(Environment.ProcessId, started, checkout, DateTimeOffset.UtcNow, session);
+            var waiter = new HeavyWaiter(pid, started, checkout, DateTimeOffset.UtcNow, session);
             var sessions = SessionLocks.HolderOf(checkout) is not null;
             slot = await HeavySlot.TakeUnlessAsync(
                 world.Home, key, repository, output, ct, world.Waiting, waiter, sessions ? holder => holder.Run is not null : null).ConfigureAwait(false);
@@ -294,7 +306,7 @@ public static class HeavyRun
             var named = OperatingSystem.IsWindows() ? $"Local\\daoris-heavy-{Guid.NewGuid():N}" : null;
             var job = Job(named);
             var holder = new HeavyHolder(
-                Environment.ProcessId, started, checkout, [.. choice.Gates.Select(gate => gate.Name)], DateTimeOffset.UtcNow, session, named);
+                pid, started, checkout, [.. choice.Gates.Select(gate => gate.Name)], DateTimeOffset.UtcNow, session, named);
             try
             {
                 slot.Keep(holder);
@@ -339,7 +351,7 @@ public static class HeavyRun
 
             using (hold)
             {
-                return await RunGatesAsync(checkout, choice.Gates, key, [], job, output, ct, Keep, Inside(hold)).ConfigureAwait(false);
+                return await RunGatesAsync(checkout, choice.Gates, key, [], job, output, ct, Keep, Inside(hold), steps: world.Steps).ConfigureAwait(false);
             }
         }
     }
@@ -396,7 +408,7 @@ public static class HeavyRun
         {
             var job = Job(OperatingSystem.IsWindows() ? $"Local\\daoris-heavy-{Guid.NewGuid():N}" : null);
             return await RunGatesAsync(
-                checkout ?? folder, [new HeavyGate("command", line, null, true)], "", [], job, output, ct, null, Inside(hold), folder).ConfigureAwait(false);
+                checkout ?? folder, [new HeavyGate("command", line, null, true)], "", [], job, output, ct, null, Inside(hold), folder, world.Steps).ConfigureAwait(false);
         }
     }
 
@@ -458,7 +470,8 @@ public static class HeavyRun
     /// </summary>
     private static async Task<int> RunGatesAsync(
         string checkout, IReadOnlyList<HeavyGate> gates, string key, IReadOnlyList<string> running, ProcessJob? job, TextWriter output,
-        CancellationToken ct, Action<Func<HeavyHolder, HeavyHolder>>? keep = null, IReadOnlyDictionary<string, string>? extra = null, string? root = null)
+        CancellationToken ct, Action<Func<HeavyHolder, HeavyHolder>>? keep = null, IReadOnlyDictionary<string, string>? extra = null, string? root = null,
+        StepOptions? steps = null)
     {
         var ran = Stopwatch.StartNew();
         HeavyGate? current = null;
@@ -488,7 +501,7 @@ public static class HeavyRun
                 var gateAt = at;
                 var gateName = current.Name;
                 keep?.Invoke(holder => holder with { Now = new HeavyGateNow(gateName, gateAt, DateTimeOffset.UtcNow) });
-                step = HeavyStep.Start(job, bound.Run, folder, added);
+                step = HeavyStep.Start(job, bound.Run, folder, added, steps);
                 var code = await step.ExitAsync(ct).ConfigureAwait(false);
                 step.Dispose();
                 step = null;
@@ -557,11 +570,5 @@ public static class HeavyRun
         {
             throw new DriverException($"the run before this one left its job, {job}, which could not be opened to end what it holds ({error.Message}); nothing ran.");
         }
-    }
-
-    private static long ThisProcessStarted()
-    {
-        using var self = Process.GetCurrentProcess();
-        return self.StartTime.ToUniversalTime().Ticks;
     }
 }

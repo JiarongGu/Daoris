@@ -19,6 +19,9 @@ internal sealed record StepOptions(IReadOnlyDictionary<string, string>? Environm
     /// never a job's limit, so a runner may still raise a clock-bound lane of its own.
     /// </summary>
     public bool BelowNormal { get; init; }
+
+    /// <summary>A terminal's standard handles, handed to the step in place of this process's: a run the running Daoris runs for it.</summary>
+    public TerminalHandles? Streams { get; init; }
 }
 
 /// <summary>
@@ -31,7 +34,8 @@ internal sealed record StepOptions(IReadOnlyDictionary<string, string>? Environm
 /// the job. Joined before its first instruction, everything the gate starts is in the job, detached or not: the job allows no
 /// breakaway. A gate that cannot join is ended unrun, and the run says so: a gate the run cannot end is not one it may start.</para>
 ///
-/// <para><b>Its output is this process's own.</b> The gate is handed this process's standard handles, so a nine-minute build streams
+/// <para><b>Its output is this process's own</b>, or, for a run the running Daoris runs for a terminal, that terminal's
+/// (<see cref="StepOptions.Streams"/>). The gate is handed those standard handles, so a nine-minute build streams
 /// through as it is said, never gathered whole (<c>ChildProcess.RunAsync</c> buffers a child's output, so it is not used here). Those
 /// three handles alone are inherited, never another this process holds. Where this process has no console the gate gets one of its
 /// own with no window, so a heavy run started without one opens none on the person's screen.</para>
@@ -169,6 +173,12 @@ internal sealed class HeavyStep : IDisposable
                 startup.StartupInfo.StdOutput = copy;
                 startup.StartupInfo.StdError = copy;
             }
+            else if (options?.Streams is { } streams)
+            {
+                startup.StartupInfo.StdInput = Duplicated(streams.Input, inherited);
+                startup.StartupInfo.StdOutput = Duplicated(streams.Output, inherited);
+                startup.StartupInfo.StdError = Duplicated(streams.Error, inherited);
+            }
             else
             {
                 startup.StartupInfo.StdInput = Inheritable(StdInput, inherited);
@@ -252,6 +262,7 @@ internal sealed class HeavyStep : IDisposable
     /// <summary>An inheritable copy of a handle of this process's, kept in <paramref name="made"/> to close once the step has it; none where it would not copy.</summary>
     private static IntPtr Duplicated(IntPtr own, List<IntPtr> made)
     {
+        if (own == IntPtr.Zero) return IntPtr.Zero;
         var self = GetCurrentProcess();
         if (!DuplicateHandle(self, own, self, out var copy, 0, true, DuplicateSameAccess)) return IntPtr.Zero;
         made.Add(copy);

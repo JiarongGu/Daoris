@@ -70,6 +70,7 @@ internal static class TestProcessStarts
             "Daoris.Desktop.Driver.Tests/Agents/ServerStartProcessTests.cs",
             "Daoris.Desktop.Driver.Tests/Course/MoveClaimProcessTests.cs", "Daoris.Desktop.Driver.Tests/DriverHostTests.cs",
             "Daoris.Desktop.Driver.Tests/DriverStartFailureTests.cs", "Daoris.Desktop.Driver.Tests/Instance/HeldChatProcessTests.cs",
+            "Daoris.Desktop.Driver.Tests/Review/HeavyAppRunProcessTests.cs",
             "Daoris.Desktop.Driver.Tests/Install/ToolsChildProcessTests.cs", "Daoris.Desktop.Driver.Tests/Knowledge/KnowledgeConnectorStartTests.cs",
             "Daoris.Desktop.Driver.Tests/Participants/LineageHookProcessTests.cs", "Daoris.Desktop.Driver.Tests/Platform/DriverProgramWordsProcessTests.cs",
             "Daoris.Desktop.Driver.Tests/Platform/HomeLeaseProcessTests.cs", "Daoris.Desktop.Driver.Tests/Platform/PieceLauncherProcessTests.cs",
