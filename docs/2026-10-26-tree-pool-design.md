@@ -4553,7 +4553,7 @@ helper, `tools/tree-base.mjs`, called where a path under a base is resolved to r
 the MCP host `start` resolves (`tools/desktop/commands.mjs:162`); proof-kit's four paths (`tools/proof-kit.mjs:19`, `:22`, `:26`, `:48`);
 the family rehearsal's (`tools/family-rehearsal.mjs:41`) and the e2e host's (`src/Daoris.Web/scripts/e2e-host.mjs:15`). It is never
 called where a path is resolved to find or stop a process (`kill`, `tools/desktop.mjs:84-85`), which stops what runs whatever built it.
-**The census**, `tools/tree-base.test.mjs`: every tracked script under `tools/` and `src/Daoris.Web/scripts/` whose text resolves a path
+**The census**, `tools/tree-base.test.mjs` *(R17: per call site, not per file, §38.2, 7)*: every tracked script under `tools/` and `src/Daoris.Web/scripts/` whose text resolves a path
 under a `bin/` (a `'bin', 'Debug'` or `'Release'` join, a `bin/Debug` string, an `assemblyExe` call) imports the helper or stands in the
 test's list of exempt readers with its reason: the merge tool, whose `--no-build` (`tools/merge-branch.mjs:630`) runs in its own gate
 tree on the build its fast half made in the same run (§11). Red first: today none is guarded. This repository's `bin/` entry names these
@@ -4849,7 +4849,8 @@ build wrote (Opus 6); and the census of a base's readers, which left the product
      file and the `Directory.Build.props` files above it, Debug and Release where none names it. Every other folder under the base top (a
      platform's, `bin/x64/`; an undeclared configuration's) is set aside at the take as an `aside` output. A configuration named only by a
      condition or an import beyond those files reads as undeclared and is set aside, costing a build, never a wrong release.
-   - **The door releases exactly the folders its build writes.** It runs `builds` for a declared configuration in the project's folder;
+   - *(R17: replaced: a release names its producer and covers exactly the files its build owns by the build's own account, every
+     other entry set aside, §38.2.)* **The door releases exactly the folders its build writes.** It runs `builds` for a declared configuration in the project's folder;
      on exit 0 it reads, by the SDK's evaluation in the tree (`-getProperty:TargetDir`, once for each framework the project builds), the
      folders that build writes, and releases those alone. Every other entry under the configuration's folder (a framework the project no
      longer builds, a runtime's folder from a build it did not run) and every folder inside a released one that holds a `*.deps.json` of
@@ -4862,7 +4863,8 @@ build wrote (Opus 6); and the census of a base's readers, which left the product
    switch the disk holds `a1`'s files, not `b0`'s.
 3. **Every release path, and every reader of a base.** The door is now the one release: signal (a) and the gate's step are withdrawn,
    `tools/desktop.mjs build` builds through the door (`tools/desktop/commands.mjs:84`), and neither a key that holds, the toolchain's
-   move (which sets the base aside) nor row y's undo (which puts the record back) releases. **The census** (§36.3, 3) widens from
+   move (which sets the base aside) nor row y's undo (which puts the record back) releases. *(R17: the census is per call site, by two
+   shapes, with today's sites named; the walking-up readers are guarded in the product, not exempt, §38.2.)* **The census** (§36.3, 3) widens from
    `tools/` and `src/Daoris.Web/scripts/` to tracked C# under `src/`, and names its exempt readers with their reasons: **the product's
    walking-up readers** (`ServiceHostLocator.cs:80-97`, `KnowledgeConnector.cs:190-197`), which `run` passes the hosts by name
    (`DAORIS_HTTP_HOST`, `DAORIS_MCP_HOST`, `tools/desktop/environment.mjs:145-149`) from paths the helper checks
@@ -5068,3 +5070,103 @@ pattern that opens with `!`, nor for a K word, so the dependencies' paths (`Stor
 **The person's real file** is not copied into the corpus, which would put a machine's own paths into the repository. It is read where it
 lives, by the Files tab once row z lands, which names its K rules and lists the tops whose rule differs by case (§36.2); the steward reads
 that on the install before the person settles any. **Ready to build** (TREEPOOL1x, before it, is built).
+
+### 38.2 TREEPOOL1aa: a release is its producer's, over the files its build owns *(R17)*
+
+**The class: a file under a released folder that the release's build does not own.** §37.3, 2 released the folders the door's build
+writes, read by `TargetDir`, and set aside only a folder inside one holding a `*.deps.json` of its own. Codex's sequence is one member:
+A builds `Old.csproj`, B replaces it with `New.csproj` in the same folder, both writing `bin/Debug/net10.0/`, and B's release covers
+`Old.exe`, which a guarded runner then starts as B's. The others: the same replacement made in B's line after the take, or earlier in
+A's own history, which no comparison of two commits sees; a package, a content item or an assembly name the project has dropped; a
+framework or a runtime the build no longer targets; a `publish/` beside its output. A list of them is the table that misses one, so the
+release is stated by what its build owns.
+
+1. **A release names its producer, bound at the build the door ran**: the project file it built (repository-relative), the
+   configuration and the framework, beside §36.3, 2's command, folder, commit, exit and moment. The door builds the one project file
+   beside the base top, in a configuration the project declares (§37.3, 2), once for each framework it builds (`-f`, the frameworks read
+   by the SDK's evaluation in the tree). A base top beside more than one project file has no one producer, and the take sets it aside,
+   said.
+2. **The build's own account.** The door's run of `builds` asks MSBuild, in the same run, for the build's `FileWrites` and
+   `FileWritesShareable` items (the signature's command with `-t:Build -getItem:FileWrites -getItem:FileWritesShareable`, which MSBuild
+   reports after the targets ran): every file the build wrote or found up to date under its output and intermediate folders, the
+   references copied beside it among them. It is the list MSBuild's own incremental clean trusts with deletion: at each build it deletes
+   from the output folder what its previous build listed and this one does not, so a list short of a file the build owns would have
+   MSBuild delete that file on a build with nothing to do. It is the build's report on the run the door saw exit 0, not a file under
+   `obj/` read afterwards, so §36.3, 2's rejection of those stands.
+3. **Released: exactly the account's files under the base.** On exit 0, every other entry under the configuration's folder (`Old.exe`,
+   `Old.dll` and `Old.deps.json`; a dropped package's assembly; a framework's or a runtime's folder the build did not target; a
+   `publish/`) is set aside with the previous line's before the marker goes, said (`tree.base-trimmed`, in both languages, naming the
+   producer and the count), so the folder released holds only what its producer's build owns. A base under which the account names
+   nothing, its producer writing elsewhere, is set aside whole and its entry removed. This replaces §37.3, 2's third point; its first two
+   stand (`builds` the door's one command; a base kept per declared configuration).
+4. **Unmeasured, with a stop.** That `-getItem` reports a build's items after its targets, and that the account is whole on a build with
+   nothing to do, are read from MSBuild's documented switch and its incremental clean, not measured here. Row aa's first commit is the
+   fixture that shows both; where either fails, the row stops and says so, and no release is made by the folder.
+
+**Rejected:** binding the base to its producer at the take and setting it aside where the producer changed (Codex's smallest change),
+which closes a project replaced across the take but not one replaced in the line after it or earlier in the previous line's history,
+nor a dropped reference, and costs a whole build where the account sets aside only the other producer's files; setting the
+configuration's folder aside before every door build, exact and losing the saving the base exists for (§34: the next build copies every
+assembly again); a release by `TargetDir`, a directory (§37.3, 2); and the build's file list under `obj/`, written on paths other than
+success (§36.3, 2).
+
+**The readers, by call site** (Opus B3, and not blocking, 3 and 4).
+
+5. **The product's walking-up readers are guarded in the product** (Opus B3). `ServiceHostLocator.Candidates` and
+   `KnowledgeConnector.Ranked` offer a workspace build only after walking up to `daoris.json` (`ServiceHostLocator.cs:80-97`,
+   `KnowledgeConnector.cs:190-197`), a path only development takes, since an install has no workspace above it. Each passes over a
+   workspace candidate under a standing marker, read from the candidate's folder up to the workspace's top by the driver's own reader of
+   the marker, the unit row aa writes them with; the next candidate is tried, and where none is left, the window's words for a missing
+   host and the session's for a missing connector say the build here is the previous line's and what releases it (`tree.base-host`, in
+   both languages). So the app run from a slot's build reads no base however it is started: `run --real` on a home with no installed
+   hosts (Opus's sequence); a scratch `run` whose MCP host is not built, `commands.mjs:162` passing `''`, which the locator reads as no
+   path; the family rehearsal's driver, which leaves both hosts to the walk (`family-rehearsal.mjs:44-45`); and the app started by hand.
+   **Rejected:** `start` asking about both hosts wherever its environment names neither (Opus's change), which repeats the locator's
+   order in the tool, a second way to choose a host, refuses a `--real` run whose installed hosts the locator would have chosen, and
+   leaves every other start of the app to the walk.
+6. **One integrated builder, and every guarded reader's builder builds through it** (Opus, not blocking, 4). A guarded reader refuses
+   until the door releases, so the builds this repository's scripts run before they read go through the door where a marker stands: one
+   helper, `build(project, configuration)` in `tools/tree-base.mjs`, runs `daoris driver trees build <path>` where a marker stands under
+   the project's output and the plain build where none does. `tools/desktop.mjs build` builds the MCP host too (it builds the web, the
+   HTTP host, the app and the driver host, `commands.mjs:83-89`, while `run` reads the MCP host at `:162`), every one through the helper;
+   `test:web:e2e` builds the HTTP host through it (`package.json:26` runs `dotnet build`, after which `e2e-host.mjs` would refuse); so do
+   the family rehearsal's builds in place (`family-rehearsal.mjs:395`, `:766`); and proof-kit's words name `npm run desktop -- build` for
+   the MCP host too (`proof-kit.mjs:126`). The census pairs each guarded site with the builder that runs before it or that its words
+   name, and fails where that builder does not build the site's project through the helper. **Rejected:** each script finding the marker
+   and calling the door its own way, four copies of one rule.
+7. **The census, per call** (Opus, not blocking, 3). `tools/tree-base.test.mjs` reads the tracked code of `tools/` and `src/` (`.mjs`,
+   `.js`, `.ts`, `.cs`, `.ps1`) and the `package.json` scripts, and lists every **site** that reads a build output: **(R1)** a path
+   joined with a `bin` part followed by a configuration (a `Debug` or `Release` literal in either case, or any expression), a string
+   holding `bin/Debug` or `bin/Release`, or a call of a resolver that makes one (`assemblyExe`, `targetExe`, `ownBuilt`); **(R2)** outside
+   tests and comments, a `--no-build`. A site is keyed by its file, its enclosing function or binding and its call's text, never its
+   line, so four calls in one file are four sites (`commands.mjs:100`, `:159`, `:162`, `:164`) and guarding one passes none of the
+   others. Each is **guarded**, its path passed through `tools/tree-base.mjs` or, in the product, the marker's reader, or **exempt** with
+   one reason the test checks against the code; a site in neither list fails, and so does a list entry no site matches. Red first: no
+   site is guarded today. The census as the code stands:
+
+| Sites | What they read | Standing, and how the test checks it |
+|---|---|---|
+| `tools/desktop/commands.mjs` `start`: `:100` the app, `:159` the HTTP host, `:162` the MCP host, `:164` the driver program | what `run` starts and hands the app | guarded, four sites |
+| `tools/proof-kit.mjs`: the HTTP host (`:19-21`), the driver (`:22-24`; `:26` is a file in its folder), the MCP host (`:48-50`) | what the proof runs | guarded, three sites |
+| `tools/family-rehearsal.mjs:41`; `src/Daoris.Web/scripts/e2e-host.mjs:14-16` | the HTTP host each runs | guarded |
+| `ServiceHostLocator.cs:94`; `KnowledgeConnector.cs:195` | the app's development hosts | guarded in the product (point 5) |
+| `tools/desktop.mjs` `kill` (`:85`) and `shot` (`:97`); `commands.mjs` `build` (`:73`) and `doctor` (`:207`, `:208`) | a process found by its path; whether a build is there | exempt, **finds**: the value reaches only `applicationsAt`, `running`, `commandLinesAt`, `ago` or a test of being there; `shot` photographs the window `run` started |
+| `executables.mjs:39` (`assemblyExe`), `session.mjs:25` (`targetExe`), `rehearsal-kit.mjs:68` (`ownBuilt`) | — | exempt, **resolver**: the site is the resolver's own body, and its calls are the sites |
+| `family-rehearsal.mjs:48`, `:50`, `:5978`; `deployment-rehearsal.mjs:1562`; `rehearsal-kit.test.mjs:80` | each rehearsal's own build | exempt, **own output**: the root is `ownBuildRoot`'s, under `_fixtures/`, a `scratch` path never kept as a base, built by the same run with `--artifacts-path` |
+| `knowledge-server.mjs:183` (`homeBins`); `GitSshProgram.cs:41` | a home's `bin/`; Git for Windows' `usr/bin/` | exempt, **no output**: the root is a home or a tool's install |
+| `BuiltApplication.cs:19`; `DriverHostTests.cs:232`, `PieceLauncherProcessTests.cs:32`, `PartnerProcessTests.cs:66`, `OwnedProcessesProcessTests.cs:25`, `GitDoorsLaid.cs:13` | another project's build, read by a test | exempt, **referenced**: the test's project references that project (`Daoris.Desktop.Modules.Tests.csproj:24`; `Daoris.Desktop.Driver.Tests.csproj:22`, `:32`, `:35`, `:29`), so the build that runs the test wrote it; read from the project file |
+| `TaskbarIdentityTests.cs:78`, `DesktopPageTests.cs:39`, `:47`, `ContentProofLossTests.cs:350`, `:374`, `:449`, `KnowledgeConnectorTests.cs:187`, `ServiceHostLocatorTests.cs:235`; `src/Daoris.Cli/test/desktop-tool.test.ts:349-372`, `deployment-rehearsal.test.ts:337` | a stand-in tree, or a path compared | exempt, **fixture**: the root is bound under the test's own scratch, or the value reaches only an assertion |
+| `tools/merge-branch.mjs` `noBuildCommand` (`:631`), `rerunCommand` (`:2486`) | a gate's tests, unbuilt | exempt, **merge tool**: run in its own gate tree on the build its fast half made in the same run (§11), never in a slot |
+| `merge-branch.mjs:4365`; `FileAnalysis.cs:258` | the flag in a sentence; other repositories' scripts, read as runner evidence (§29.4) | exempt, **text**: runs nothing |
+
+   `GitDoorsLaid.cs:13` is a reader §37.3, 3's list left out, which the census finds. `daoris gate run` (`Review/Heavy/HeavyRun.cs:7-21`)
+   runs the command it is given and holds no site; it refuses nothing, its admission line naming the bases unreleased (§37.3, 3).
+
+**Proof**, beside §37.3's: Codex's fixture twice, the replacement at `b0` and in B's line after the take: B's door build releasing
+`New`'s files, `Old.exe`, `Old.dll` and `Old.deps.json` set aside and said, a runner naming `Old.exe` finding nothing; the same
+replacement made earlier in A's line; a package reference B drops, its assembly set aside; a build with nothing to do releasing what the
+one that compiled released, the account whole; a project of two frameworks released per framework; a `publish/` and a `linux-x64/` set
+aside; a base beside two project files set aside at the take. `run --real` on a home with no installed hosts and a marker under each
+host's build: the app offered neither, said; a scratch `run` after `build`: no refusal, the MCP host built through the door; the census
+red at its eleven guarded sites and at a new unlisted site, green once guarded, red again at a list entry no site matches; the pairing
+red at a `build` without the MCP host. **Ready to build, after TREEPOOL1z.**
