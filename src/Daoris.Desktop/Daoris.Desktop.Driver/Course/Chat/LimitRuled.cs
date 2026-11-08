@@ -22,7 +22,7 @@ internal static class LimitRuled
         int n;
         switch (ruled.Course)
         {
-            // The rule waits at most its upTo: an account back later than that is walked past now, as the rule's walk would at its end.
+            // The rule waits at most its upTo from this judgement (the course holds no window for a conversation): an account back later is walked past now.
             case LineCourse.Wait { Why: CourseWaitWhy.PolicyWait } wait when ruled.Action.UpTo is not { } minutes || wait.Until <= now.AddMinutes(minutes):
                 (count, does, n) = (SupervisorRules.Limits, SupervisorRules.Wait, 1);
                 break;

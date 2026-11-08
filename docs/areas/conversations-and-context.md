@@ -129,7 +129,8 @@ of everything it handed, section by section.
     handed the brief (`transient`, by `daoris`) and counted in `moves` under the line's key once the take would accept it and
     the move is begun (`TransientMove`), an `ask` or the moves rule's
     bound holds it, and the seeded `hold` ends its turn `chat.transient-stopped`. Its limits rule's `wait` (within its
-    `upTo`) and `ask`, and the bound, keep it on its own account before the limit's walk (`LimitRuled`), reading the moves
+    `upTo`, which `LimitRuled` counts from each limit's judgement: a repeated limit is a new cool-off, and the course holds no
+    window of its own for a conversation) and `ask`, and the bound, keep it on its own account before the limit's walk (`LimitRuled`), reading the moves
     under the line's key; a walk to another choice is counted there. Each act is said and kept as the rule's decision. (from D229)
 
 **Moves between accounts and agents**
