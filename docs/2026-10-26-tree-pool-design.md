@@ -5030,7 +5030,7 @@ F and C are disjoint (F's tail holds no D and no W) and K is what neither is, so
 whole, is written part by part: a literal as itself, escaped with `\` where git reads it (`*`, `?`, `[` and each trailing space; a
 leading `!` or `#` cannot arise once anchored, and a `\` is refused, `RoomPaths.cs:48`); S as `*` and Q as `?`; a W opening a part as
 `**/`; a W joined to the part before it as two patterns, without it and with `*/**/` in its place (`X**/Y`: `XY`, `X*/**/Y`); a D as
-two, `*` and `*/**/*` (`X**Y`: `X*Y`, `X*/**/*Y`), so a word with n joined tokens gives 2^n patterns, all in its word's entry; then a
+two, `*` and `*/**/*` (`X**Y`: `X*Y`, `X*/**/*Y`), so a word with n of these two gives 2^n patterns, all in its word's entry; then a
 leading `/`. Every row of §37.2's table is one of these cases, and the two it missed (Opus B2) fall out of them.
 
 **A kept word is read as written** (Codex's change, chosen). `RuleFileFirstForm` leaves a K word untranslated: it stands at its rule's
