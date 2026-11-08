@@ -120,7 +120,7 @@ public sealed class GitSchedulerTests
                 return await scheduler.RunAsync(Outside(repository), async _ =>
                 {
                     if (Interlocked.Increment(ref placed) == 2) lent.SetResult();
-                    await lent.Task;
+                    await hold.Task;
                     return 1;
                 }, CancellationToken.None) + 1;
             }
@@ -136,10 +136,10 @@ public sealed class GitSchedulerTests
 
         Assert.Equal(2, scheduler.Lent);
         Assert.Equal(GitScheduler.Bound - 1, scheduler.Running);
+        hold.SetResult();
         var done = await acts.WaitAsync(Soon);
         Assert.Equal([2, 2], done);
         await Poll.Until(() => scheduler.Lent == 0);
-        hold.SetResult();
         await Task.WhenAll(reads).WaitAsync(Soon);
     }
 
