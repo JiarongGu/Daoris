@@ -44,7 +44,6 @@ export function readMachine(answers: {
   /** The driver's standing state. The adapters are `""` for none: the bridge leaves a null out. */
   driver?: { drivable?: readonly string[]; helperAgent?: string; intakeAgent?: string };
   harnesses?: readonly ToolDoor[];
-  /** The roster's sheet, which says what an agent's account takes: a sign-in, or a key alone. */
   agents?: readonly AgentSheet[];
   sessions?: readonly Pick<Session, 'state' | 'said'>[];
   lines?: readonly RepositoryLine[];

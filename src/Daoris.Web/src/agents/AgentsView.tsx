@@ -509,7 +509,6 @@ function AgentsMain({ tool, adapter, notify, part, onAnchored, onOpenPlugin, say
       const account = answering.profile;
       const current = tool.accounts.find((each) => each.name === account)?.displayName?.trim() || null;
       const wanted = name.trim() || null;
-      // The name as the step offered it is how the account already reads: keeping it renames nothing.
       const offered = (answering.offered !== undefined ? answering.offered : answering.who)?.trim() || null;
       told((async () => {
         if (wanted !== current && wanted !== offered) await rename(account, wanted);

@@ -34,7 +34,6 @@ export function useSideViews({ view, lists, notify, attached, askSetup, agentsMo
     chosen: lists.pane('plugins').chosen,
     onChoose: (item) => lists.choose('plugins', item),
     notify,
-    // Ask Daoris answers only where an agent is named for it: with none, the press would open a room that cannot reply.
     onAsk: attached && driver.data?.helperAgent ? askSetup : undefined,
   });
 

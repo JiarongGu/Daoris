@@ -46,7 +46,7 @@ describe("a card whose Confirm makes a terminal's hold", () => {
     ['zh', '一个终端请求开始一段对话：'],
   ])('says it starts a conversation, never "with your words" over none, when the start carries no words (%s)', async (language, head) => {
     await i18n.changeLanguage(language);
-    draw([{ ...START, fields: [START.fields[0]!], named: [START.named[0]!] }]);
+    draw([{ ...START, fields: [START.fields[0]!], named: [START.named![0]!] }]);
     expect(screen.getByText(head)).toBeInTheDocument();
     expect(screen.queryByText(/your words|你的话/)).toBeNull();
   });

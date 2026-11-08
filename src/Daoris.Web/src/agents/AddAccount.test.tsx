@@ -47,6 +47,7 @@ describe('a new account’s last step', () => {
     await i18n.changeLanguage('en');
     asking({ name: FRESH, home: `h/${FRESH}`, login: 'in', account: 'spare@example.invalid', read: READ }, 'spare@example.invalid');
     const step = screen.getByRole('region', { name: 'Add an account' });
+    expect(step.textContent).not.toContain('spare@example.invalid joined');
     expect(step.textContent).toContain("Signed in as spare@example.invalid. It joined Daoris's accounts: every workspace's work may run on it.");
     expect(screen.getByRole('textbox')).toBeTruthy();
     expect(screen.getAllByRole('button').filter((button) => step.contains(button)).map((button) => button.textContent)).toEqual(['Done']);

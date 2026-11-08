@@ -142,14 +142,11 @@ function useRunState(notify: Notify): HarnessRun {
       notify(problem, 'error');
       return;
     }
-    // Another account: kept only when the sign-in finished, and named by who signed in. It joins Daoris's accounts
-    // as it is made, every workspace's work may run on it, which the agent's page says
-    // where it asks its name; no account is ever nowhere.
+    // Another account: kept only when the sign-in finished; the page's step says who signed in and asks its name.
     if (action === 'login-new') {
       if (exitCode !== 0) notify(t('harness.loginNew.failed', { code: exitCode }), 'error');
       else if (!kept) notify(t('harness.loginNew.nobody'), 'error');
       else {
-        // The step that asks its name says who signed in; a toast would say it a third time.
         const harness = runningRef.current?.split(':')[0];
         if (harness && profile) setAdded({ harness, profile, account: account ?? null, offered });
       }
