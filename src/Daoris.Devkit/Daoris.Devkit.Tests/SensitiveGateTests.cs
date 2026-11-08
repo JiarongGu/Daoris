@@ -227,6 +227,24 @@ public sealed class SensitiveGateTests : IDisposable
         Assert.True(clean.Passed, clean.Detail);
     }
 
+    /// <summary>
+    /// 🔴 A UTF-16 file with a byte-order mark (Windows PowerShell's <c>&gt;</c> writes one) holds a NUL beside every ASCII
+    /// character yet is text: it is decoded and scanned, not skipped as binary.
+    /// </summary>
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public void A_utf16_file_with_a_byte_order_mark_is_read_not_skipped(bool littleEndian)
+    {
+        var encoding = new System.Text.UnicodeEncoding(bigEndian: !littleEndian, byteOrderMark: true);
+        _fx.WriteBytes("notes.md", [.. encoding.GetPreamble(), .. encoding.GetBytes($"see {WindowsHomePath()}\n")]);
+        _fx.Write("local/sensitive-patterns.txt", "# none");
+
+        var result = new SensitiveGate(ScanScope.Tree, new FakeGit("notes.md")).Run(Context());
+
+        Assert.False(result.Passed, result.Detail);
+    }
+
     /// <summary>A binary file is not text and scanning it produces noise, not findings.</summary>
     [Fact]
     public void Binary_files_are_skipped()

@@ -41,6 +41,10 @@ the per-task record. Entries preserve their original wording so the archive stay
 > **PLUGREV2h** (driver, plugins): Outcome: `PluginCatalog.Signature` (the hook set keeps its own) and `LandingPlugins`'s `patience` parameter, `DefaultPatience` and its default start lambda deleted with their assertions; an occasion's asks start through the injected start or `StartProcessAsync` alone, and `LandingPatience.Plugin` is read direct.
 >
 > **PLUGREV2i** (driver, plugins): Outcome: the plugins tests that could not fail now can: the host-token tests read the token in the starting flow after the start (`PlacedWorkTests`, `PluginHostTokenTests`; both fail with `HookSet`'s `finally` removed); the package traversal case names three distinct escape paths; the "starts nothing" checks run the hook's script once as an ES module to prove it writes its mark, then read the mark's absence after a second (`HookMarks`); the always-true `NotNull` is gone; the 4 KB frame cases send a valid frame padded to and one byte past the bound.
+## DOCTRINECLIREV2 — the doctrine-and-CLI review's second cycle, fixed defects (2026-11-09)
+
+> **DOCTRINECLIREV2c** (devkit): Outcome: the sensitive gate's tree scope reads a file with a UTF-16 byte-order mark as text (`SensitiveGate.IsBinary`), so a leak in a file Windows PowerShell's `>` wrote is found; proved by `SensitiveGateTests`. The staged scope's share stays open as DOCTRINECLIREV2c2.
+
 ## HOMELEASE2 and FOLDERMOVE2 — the install-home-update review's second cycle (2026-11-09)
 
 > **HOMELEASE2** (install-home-update): Outcome: a lease judged stale is moved aside in one step and judged by what moved (`HomeLease.RemoveStale`), a lease that is not what was judged stale put back, so a taker's lease written between another's read and removal is never removed; proved by `HomeLeaseTests`.
