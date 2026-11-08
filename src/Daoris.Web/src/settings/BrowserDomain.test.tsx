@@ -2,7 +2,6 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 
-// The Browser domain in SHELL mode.
 
 const { invoke, notifyReady, eventHandlers } = vi.hoisted(() => ({
   invoke: vi.fn(),
@@ -21,7 +20,6 @@ vi.mock('@shenora/react', () => ({
 }));
 
 import { SettingsView } from './SettingsView';
-import { code } from '../test/code';
 import { DRIVER_STATE, respond, serviceCalls, show } from '../test/shellHarness';
 
 /**
@@ -108,7 +106,7 @@ describe('the browser domain', () => {
 
     // A shell that sends no `links` is the system's, as a link always is.
     expect(await screen.findByRole('radio', { name: "System browser" })).toHaveAttribute('aria-checked', 'true');
-    expect(screen.getByText(code(/daoris browser links system\|daoris/))).toBeTruthy();
+    expect(screen.getByRole('note', { name: /daoris browser links system\|daoris/ })).toBeTruthy();
     await userEvent.click(screen.getByRole('radio', { name: "Daoris's browser" }));
 
     expect(invoke).toHaveBeenCalledWith('DAORIS.BROWSER', 'SET_LINKS', { payload: { links: 'daoris' } });

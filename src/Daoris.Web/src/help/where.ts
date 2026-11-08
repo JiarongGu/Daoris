@@ -92,7 +92,7 @@ const MODES: Record<KnowledgeMode, string> = { search: 'Search', convergence: 'C
 // The guide is Get started, and Plugins is a place, named among the views.
 const DOMAINS: Record<SettingsSection, string> = {
   start: 'Get started', appearance: 'Appearance', ai: 'AI features', wiring: 'This Daoris', driver: 'Driver', tools: 'Tools', git: 'Git',
-  browser: 'Browser', logs: 'Machine log',
+  browser: 'Browser', space: 'Disk space', updates: 'Updates', logs: 'Machine log',
 };
 
 /** The attended session as the preface names it — or null when none is attended, or it is not in the list. */

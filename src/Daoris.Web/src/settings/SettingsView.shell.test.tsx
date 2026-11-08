@@ -46,11 +46,11 @@ describe('the domain list, in a shell', () => {
     show(<SettingsView notify={() => {}} section="driver" onSection={onSection} />);
 
     const domains = await screen.findByRole('navigation', { name: 'Settings domains' });
-    await waitFor(() => expect(within(domains).getAllByRole('button')).toHaveLength(9));
+    await waitFor(() => expect(within(domains).getAllByRole('button')).toHaveLength(11));
     expect(within(domains).getByRole('button', { name: 'Driver' })).toHaveAttribute('aria-current', 'page');
-    // The programs Daoris runs beside its agents follow the driver, git's identities follow them, and Agents is a place of its own.
+    // Daoris's own AI follows the driver, git's identities follow it, and Agents is a place of its own.
     const names = within(domains).getAllByRole('button').map((button) => button.textContent);
-    expect(names.slice(names.indexOf('Driver'), names.indexOf('Driver') + 3)).toEqual(['Driver', 'Tools', 'Git']);
+    expect(names.slice(names.indexOf('Driver'), names.indexOf('Driver') + 3)).toEqual(['Driver', 'AI features', 'Git']);
     expect(names).not.toContain('Agents');
     // Workspace and Permissions left for a workspace's page and a repository's, and Plugins for its
     // place.
@@ -59,8 +59,8 @@ describe('the domain list, in a shell', () => {
     expect(names).not.toContain('Plugins');
     // The setup guide leads, named Get started again since Setup names a repository's tab.
     expect(within(domains).getAllByRole('button')[0]?.textContent).toBe('Get started');
-    // Daoris's browser and the machine log are a machine's domains, last in the list.
-    expect(within(domains).getAllByRole('button').slice(-2).map((button) => button.textContent)).toEqual(['Browser', 'Machine log']);
+    // The disk, the updates, the wiring and the machine log are a machine's domains, last in the list.
+    expect(within(domains).getAllByRole('button').slice(-4).map((button) => button.textContent)).toEqual(['Disk space', 'Updates', 'This Daoris', 'Machine log']);
     expect(await screen.findByRole('checkbox', { name: 'Announce what needs you or ended' })).toBeTruthy();
     // The main area's header names the domain, and a card alone in it does not say it again.
     const main = screen.getByRole('main');
@@ -81,7 +81,7 @@ describe('the domain list, in a shell', () => {
     show(<SettingsView notify={() => {}} section="driver" />);
 
     const domains = await screen.findByRole('navigation', { name: 'Settings domains' });
-    await waitFor(() => expect(within(domains).getAllByRole('button')).toHaveLength(9));
+    await waitFor(() => expect(within(domains).getAllByRole('button')).toHaveLength(11));
     expect(screen.queryByText(/on the desktop, where the machine is/)).toBeNull();
   });
 });

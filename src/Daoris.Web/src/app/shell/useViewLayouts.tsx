@@ -1,7 +1,7 @@
 import type * as React from 'react';
 import { OverviewView } from '../../overview/OverviewView';
 import { MapView } from '../../map/MapView';
-import { useSettingsLayout, type SettingsAnchor } from '../../settings/SettingsView';
+import { useSettingsLayout, type SettingsAnchor, type SettingsSection } from '../../settings/SettingsView';
 import { type ViewLayout } from '../../work/frame/ViewFrame';
 import { ViewMain } from '../../work/frame/ViewMain';
 import { type View } from '../../menus/commands';
@@ -18,8 +18,8 @@ import { type RefreshResponse } from '../../data/generated/service';
 
 export function useViewLayouts({ notify, settingsSection, chooseSettings, settingsAnchor, setSettingsAnchor, settingsGitHost, setSettingsGitHost, go, attached, askSetup, driving, openInWork, plugins, quests, projects, knowledge, agents, t, openings, setSearchAsked, open, askQuickly, openBrowser, copyText, view, openQuest, presses, showNotifications, onRefresh, refresh, mapCode }: {
   notify: Notify;
-  settingsSection: "git" | "start" | "appearance" | "ai" | "wiring" | "driver" | "tools" | "browser" | "logs";
-  chooseSettings: (section: "git" | "start" | "appearance" | "ai" | "wiring" | "driver" | "tools" | "browser" | "logs") => void;
+  settingsSection: SettingsSection;
+  chooseSettings: (section: SettingsSection) => void;
   settingsAnchor: SettingsAnchor | null;
   setSettingsAnchor: React.Dispatch<React.SetStateAction<SettingsAnchor | null>>;
   settingsGitHost: string | null;

@@ -1,20 +1,16 @@
-import { type ComponentProps, useState } from 'react';
+import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Button, Card, CardStack, CheckField, Icon, PathText, SectionTitle, SettingList, SettingRow, WhyGlyph } from '../design/ui';
+import { Button, Card, CardStack, CheckField, Icon, MiddlePath, SectionTitle, SettingList, SettingRow, WhyGlyph } from '../design/ui';
 import type { StarterDoor } from '../help/starters';
-import type { UpdateState } from '../update/UpdateBanner';
 import type { Answered } from '../work/InlineConfirm';
 import type { PluginShown } from '../plugins/catalog';
 import { PluginSettings } from './plugins/PluginSettings';
 import { type MinutesDeclared, MinutesSetting } from './machine/MinutesSetting';
 import { type AccessEdit, type AccessLevel, AccessRows, resolveAccess } from './repository/Access';
 import { type GitAccessEdit, type GitAccessLevel, GitAccessRows, resolveGitAccess } from './repository/GitAccess';
-import { UpdateSection } from './machine/Update';
 
-/** What the Driver domain shows, as the shell's state answers it; a field a shell does not answer is absent. */
+/** What Agents and sessions shows, as the shell's state answers it; a field a shell does not answer is absent. */
 export type DriverFacts = {
-  /** Where this machine's Daoris lives; none while the shell has not answered. */
-  home?: string | null;
   /** Where plugins are looked for; none where the answer has none, and the row is absent. */
   pluginsFolder: string | null;
   /** The installed plugins, for the Plugins section; none where the answer has none or before it answers, and the section is absent. */
@@ -30,21 +26,19 @@ export type DriverFacts = {
   machineAccess?: AccessLevel | null;
   /** This machine's git access as set; absent where the answer lacks it. */
   machineGitAccess?: GitAccessLevel | null;
-  /** The install's update. */
-  update?: UpdateState;
 };
 
 /**
- * The Driver domain's cards, drawn from the shell's facts: where this machine's Daoris lives, the driver's dials
- * over `driver.json`, this machine's sessions' access and the install's update. `DriverDomain` holds the hooks and hands
+ * Agents and sessions' cards, drawn from the shell's facts: the driver's dials over `driver.json` with where plugins are
+ * looked for, this machine's sessions' access, and the plugins' settings. `DriverDomain` holds the hooks and hands
  * the facts here; a story hands a fixture, so the domain is drawn at the frame's widths.
  * A molecule: every state by props, every press out.
  */
-export function DriverCards({ facts, minutes, busy, onGo, onNotify, onCoolOff, onQuiet, onCap, onAccess, onGitAccess, onSayUpdate }: {
+export function DriverCards({ facts, minutes, busy, onGo, onNotify, onCoolOff, onQuiet, onCap, onAccess, onGitAccess }: {
   facts: DriverFacts;
   /** The two settings held in minutes as the driver's list declares them, which the domain reads from the list. */
   minutes: { cooloff: MinutesDeclared; quiet: MinutesDeclared };
-  busy: { access: boolean; update: boolean; gitAccess?: boolean };
+  busy: { access: boolean; gitAccess?: boolean };
   onGo: (door: StarterDoor) => void;
   onNotify: (on: boolean) => void;
   /** A cool-off in minutes the person typed and left: whole, one or more, and not the one held. */
@@ -56,11 +50,9 @@ export function DriverCards({ facts, minutes, busy, onGo, onNotify, onCoolOff, o
   onAccess: (edit: AccessEdit, answered?: Answered) => void;
   /** A change to this machine's git access, a loosening confirmed in its row first. */
   onGitAccess?: (edit: GitAccessEdit, answered?: Answered) => void;
-  onSayUpdate: ComponentProps<typeof UpdateSection>['onSay'];
 }) {
   const { t } = useTranslation();
-  // The cap as typed, held as text while it is being typed: a number input mid-edit passes through the empty string,
-  // and writing it straight to the config would be refused while the person is still reaching for a digit.
+  // The cap held as text while typed: a number input mid-edit passes through the empty string, which the config refuses.
   const [cap, setCap] = useState<string | null>(null);
 
   return (
@@ -74,41 +66,11 @@ export function DriverCards({ facts, minutes, busy, onGo, onNotify, onCoolOff, o
           person is most likely to have come here to change. */}
       <Card>
         <SettingList>
-          {/* Where this machine's Daoris lives, the card's first row; the home's page is This Daoris,
-              and this row is its door. */}
-          {facts.home && (
-            <SettingRow
-              label={t('settings.home.label')}
-              hint={t('settings.daoris.door')}
-              control={(
-                <>
-                  <PathText path={facts.home} className="text-small text-ink-soft" />
-                  <Button onClick={() => onGo({ view: 'settings', section: 'wiring' })}>{t('settings.daoris.button.here')}</Button>
-                </>
-              )}
-            />
-          )}
-          {facts.pluginsFolder && (
-            <SettingRow
-              label={t('plugin.folder')}
-              hint={t('settings.pluginsFolder.hint')}
-              why={t('plugin.body')}
-              control={(
-                <>
-                  <PathText path={facts.pluginsFolder} className="text-small text-ink-faint" />
-                  <Button onClick={() => onGo({ view: 'plugins' })}>
-                    <Icon name="plug" size={14} />
-                    {t('settings.pluginsFolder.open')}
-                  </Button>
-                </>
-              )}
-            />
-          )}
           {/* The switch says what it governs beside its value, as full access does, and
               what it never governs: a terminal's press, whose terminal waits on the person, and what Notifications lists. */}
           <SettingRow
             label={t('settings.notify.label')}
-            hint={t('settings.notify.terminal')}
+            twin={t('settings.notify.terminal')}
             why={t('settings.notify.body')}
             control={<CheckField hideLabel checked={facts.notify} onChange={onNotify} label={t('settings.notify.label')} />}
           >
@@ -133,7 +95,7 @@ export function DriverCards({ facts, minutes, busy, onGo, onNotify, onCoolOff, o
           {typeof facts.cap === 'number' && (
             <SettingRow
               label={t('settings.cap.label')}
-              hint={t('settings.cap.terminal')}
+              twin={t('settings.cap.terminal')}
               why={t('settings.cap.body')}
               control={(
                 <input
@@ -143,8 +105,7 @@ export function DriverCards({ facts, minutes, busy, onGo, onNotify, onCoolOff, o
                   value={cap ?? String(facts.cap)}
                   onChange={(event) => setCap(event.target.value)}
                   onBlur={() => {
-                    // As the cool-off: passing through is not a write, and under one is the driver's refusal, so a value
-                    // under one, not whole, or the one it holds puts the held value back.
+                    // As the cool-off: a value under one, not whole, or the one held puts the held value back.
                     const held = facts.cap ?? 2;
                     const value = cap === null || cap.trim() === '' ? held : Number(cap);
                     setCap(null);
@@ -156,12 +117,25 @@ export function DriverCards({ facts, minutes, busy, onGo, onNotify, onCoolOff, o
               )}
             />
           )}
+
+          {facts.pluginsFolder && (
+            <SettingRow
+              label={t('plugin.folder')}
+              twin={t('settings.pluginsFolder.hint')}
+              why={t('plugin.body')}
+              control={(
+                <>
+                  <MiddlePath path={facts.pluginsFolder} />
+                  <Button onClick={() => onGo({ view: 'plugins' })}>
+                    <Icon name="plug" size={14} />
+                    {t('settings.pluginsFolder.open')}
+                  </Button>
+                </>
+              )}
+            />
+          )}
         </SettingList>
       </Card>
-
-      {/* Each installed plugin with what it holds set, beside the folder they are looked for
-          in: read only, each a door to its page, where its settings are changed. */}
-      {facts.plugins && <PluginSettings plugins={facts.plugins} onOpen={(id) => onGo({ view: 'plugins', item: id })} />}
 
       {/* This machine's sessions' access: the level under every workspace's and repository's, whose
           own are on their Setup tabs. Here because it is the machine's, as the driver's dials are, and offered where the shell
@@ -201,10 +175,9 @@ export function DriverCards({ facts, minutes, busy, onGo, onNotify, onCoolOff, o
         </Card>
       )}
 
-      {/* The install's update: the banner, its other door on the screen, is gone once dismissed, and this
-          stands. Here because the update is the application's own, as the home above is, and holds the driver's starts
-          while it drains. A word the shell refuses is said in its sentence; one it takes is shown by the row itself. */}
-      <UpdateSection update={facts.update} busy={busy.update} onSay={onSayUpdate} />
+      {/* Each installed plugin with what it holds set, under the folder they are looked for
+          in: read only, each a door to its page, where its settings are changed. */}
+      {facts.plugins && <PluginSettings plugins={facts.plugins} onOpen={(id) => onGo({ view: 'plugins', item: id })} />}
     </CardStack>
   );
 }

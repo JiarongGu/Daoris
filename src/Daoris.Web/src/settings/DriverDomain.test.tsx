@@ -19,7 +19,10 @@ vi.mock('@shenora/react', async () => ({
   },
 }));
 
+import type { ComponentProps } from 'react';
 import { SettingsView } from './SettingsView';
+
+const Settings = SettingsView;
 
 /** The page has drawn and the driver's state has been asked and answered: what the answer leaves out is then known to be absent. */
 const driverRead = async () => {
@@ -43,21 +46,16 @@ describe('the driver domain', () => {
     invoke.mockReset();
   });
 
-  /**
-   * Where this machine's Daoris lives, and what the start did about it. The notice rides the
-   * STATE rather than only the one-time event, because the page subscribes after the host answers
-   * and a toast raised before that reached nobody — measured on the first migrated start.
-   */
-  it('shows where this machine\'s Daoris lives, and what establishing it did', async () => {
+  /** Where this machine's Daoris lives is Disk space's first row alone: Driver repeats it nowhere. */
+  it('says nothing of where this machine\'s Daoris lives, which Disk space shows', async () => {
     invoke.mockImplementation(async (module: string) => (module === 'DAORIS.DRIVER'
-      ? {
-        ...DRIVER_STATE,
-        home: 'D:/somewhere/Daoris/data',
-      }
+      ? { ...DRIVER_STATE, home: 'D:/somewhere/Daoris/data' }
       : WIRING));
     show(<SettingsView notify={() => {}} section="driver" />);
+    await driverRead();
 
-    expect(await screen.findByText('D:/somewhere/Daoris/data')).toBeTruthy();
+    expect(screen.queryByText('D:/somewhere/Daoris/data')).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Open This Daoris' })).toBeNull();
   });
 
   /**
@@ -132,7 +130,7 @@ describe('the driver domain', () => {
   it("offers no sessions' access where the answer lacks it", async () => {
     invoke.mockImplementation(async (module: string) => (module === 'DAORIS.DRIVER' ? { ...DRIVER_STATE, home: 'D:/somewhere/Daoris/data' } : WIRING));
     show(<SettingsView notify={() => {}} section="driver" />);
-    expect(await screen.findByText('D:/somewhere/Daoris/data')).toBeTruthy();
+    await driverRead();
     expect(screen.queryByRole('region', { name: "Sessions' access" })).toBeNull();
   });
 
@@ -147,11 +145,10 @@ describe('the driver domain', () => {
     const onGo = vi.fn();
     show(<SettingsView notify={() => {}} section="driver" onGo={onGo} />);
 
-    expect(await screen.findByText('D:/somewhere/Daoris/data/plugins')).toBeTruthy();
-    // Under the home, whose fact it is.
-    const labels = screen.getAllByText(/^(Daoris home|Plugins folder)$/).map((label) => label.textContent);
-    expect(labels).toEqual(['Daoris home', 'Plugins folder']);
-    expect(screen.getByText(code('daoris plugin list'))).toBeTruthy();
+    // On one line, whole on hover; its terminal twin is in its help, never under its label.
+    expect(await screen.findByTitle('D:/somewhere/Daoris/data/plugins')).toBeTruthy();
+    expect(screen.getByRole('note', { name: /daoris plugin list/ })).toBeTruthy();
+    expect(screen.queryByText(code('daoris plugin list'))).toBeNull();
 
     await userEvent.click(screen.getByRole('button', { name: 'Open Plugins' }));
     expect(onGo).toHaveBeenCalledWith({ view: 'plugins' });
@@ -182,24 +179,6 @@ describe('the driver domain', () => {
 
     await userEvent.click(plugins.getByRole('button', { name: "Open In-app browser's page" }));
     expect(onGo).toHaveBeenCalledWith({ view: 'plugins', item: 'in-app-browser' });
-  });
-
-  /**
-   * Where the home lives moved to Settings → This Daoris, and Driver keeps a row whose
-   * control is the door to it.
-   */
-  it('keeps the Daoris home as a door to This Daoris', async () => {
-    const home = 'D:/somewhere/Daoris/data';
-    const driver = { ...DRIVER_STATE, home };
-    invoke.mockImplementation(async (module: string, type: string) => (module !== 'DAORIS.DRIVER' ? WIRING
-      : type === 'SYSTEM_WIRING' ? { schema: 1 } : driver));
-    const onGo = vi.fn();
-    show(<SettingsView notify={() => {}} section="driver" onGo={onGo} />);
-
-    await userEvent.click(await screen.findByRole('button', { name: 'Open This Daoris' }));
-    expect(onGo).toHaveBeenCalledWith({ view: 'settings', section: 'wiring' });
-    // The notices went to the page the door opens.
-    expect(screen.queryByText(/moved in from/)).toBeNull();
   });
 
   it('says nothing about the home on a shell that has never heard of one', async () => {
@@ -346,7 +325,7 @@ describe('the driver domain', () => {
     // Found by its loaded STATE rather than by its label, because the switch renders before the
     // machine has answered and its default is on — a bare label query would pass either way.
     const check = await screen.findByRole('checkbox', { checked: true });
-    expect(screen.getByText(code(/daoris settings notify on\|off/))).toBeTruthy();
+    expect(screen.getByRole('note', { name: /daoris settings notify on\|off/ })).toBeTruthy();
 
     await userEvent.click(check);
     expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'SET_NOTIFY', { payload: { notify: false } });
@@ -391,12 +370,17 @@ describe('the driver domain', () => {
   });
 });
 
+/** Settings opened on Updates, where the install's update is. */
+const OnUpdates = (props: ComponentProps<typeof Settings>) => <Settings {...props} section="updates" />;
+
 /**
- * The install's update in the application's own domain, read from `DAORIS.UPDATE` · `STATE` and
+ * The install's update on Settings → Updates, read from `DAORIS.UPDATE` · `STATE` and
  * said with `SET`. The banner is the screen's other door and is gone once dismissed; this row stands: what is staged, the
  * drain and what it waits on, how the last swap ended, and the three words the terminal's `daoris update` takes.
  */
-describe("the driver domain: the install's update", () => {
+describe("Updates: the install's update", () => {
+  // Each `show` below opens Updates, whatever section it names.
+  const SettingsView = OnUpdates;
   const STAGED = { id: '20261003T120000Z-ab12cd34', version: '0.0.1', commit: 'abc1234', at: '2026-10-03T12:00:00Z' };
   const update = (extra: object) => ({
     state: 'none', staged: null, mode: null, driven: 0, turns: 0, problem: null, outcome: null, last: null, ...extra,
@@ -424,7 +408,7 @@ describe("the driver domain: the install's update", () => {
     const row = await section();
 
     expect(await row.findByText('Nothing is staged beside this install.')).toBeTruthy();
-    expect(row.getByText(code(/daoris update --when-idle/))).toBeTruthy();
+    expect(row.getByRole('note', { name: /daoris update --when-idle/ })).toBeTruthy();
     for (const word of ['Update when idle', 'Update now', 'Not now']) expect(row.queryByRole('button', { name: word })).toBeNull();
     // No swap to tell of: no row for one.
     expect(row.queryByText('Last update')).toBeNull();
