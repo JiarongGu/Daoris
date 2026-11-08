@@ -5,6 +5,10 @@ the per-task record. Entries preserve their original wording so the archive stay
 
 ---
 
+## GITREV1 and GITREV2 — the service reads what the driver moves into place, and a write keeps the identity entries it cannot read (2026-11-08)
+
+> **GITREV1 / GITREV2** (git-and-remotes review): Outcome: GITREV1 held as the row said. The service's `AtomicFile` gained `ReadText`, which shares deletion with the writer's move, and `RemoteConfig.Load` and the seven session-box and proposal readers of driver-written files use it (a test holds `remotes.json` and a box state file as Windows' move holds them; both read, where `File.ReadAllText` threw or answered "no state"). GITREV2 held: `GitIdentities.Load` now keeps each entry `Of` rejects (an unknown way, a bad id, a non-object) as it stands and `Change` writes them back after the identities, so adding or removing one identity leaves them in the file (a test with an unknown way, an extra field and a stray string).
+
 ## COMMENTGATE1 (the gate) — a changed file's comments do not grow and name no row (2026-11-07)
 
 > **COMMENTGATE1** (D235, the gate half): Outcome: `tools/comment-gate.mjs` with its `node --test` file and the `comments` gate in `daoris.gates.json`; it reads the change from git and refuses a changed file whose comment-only share rises, and an added comment that names a row id, a decision number or a history word. It refused fixtures adding a `D99` and a row id and passed a change that only removes comments. The pass that strips the existing ones stays on the backlog row.

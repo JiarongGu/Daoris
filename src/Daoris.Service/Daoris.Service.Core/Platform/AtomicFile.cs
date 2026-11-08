@@ -14,7 +14,7 @@ namespace Daoris.Knowledge;
 /// number of times. A missing folder or file is not busy and throws at once.</para>
 ///
 /// <para>It does not make the folder, and it does not fix line endings: the caller owns both. Text is written as BOM-less
-/// UTF-8, and read back through <see cref="ReadText"/>. Reflection-free, like <see cref="JsonFields"/>: nothing may stop working under AOT. The driver keeps a helper of
+/// UTF-8. Reflection-free, like <see cref="JsonFields"/>: nothing may stop working under AOT. The driver keeps a helper of
 /// its own; the two projects do not reference each other.</para>
 /// </remarks>
 internal static class AtomicFile
@@ -57,13 +57,7 @@ internal static class AtomicFile
         }
     }
 
-    /// <summary>
-    /// A file these writes keep, read whole as text, sharing its writing and deletion with a writer. Windows' move holds the file
-    /// it has put in place open for deletion until it closes, so a plain <c>File.ReadAllText</c> in that moment is refused with a
-    /// sharing violation: a file another process writes this way is read here, never plainly. A byte order mark is not part of the text.
-    /// </summary>
-    /// <exception cref="FileNotFoundException">No file is there.</exception>
-    /// <exception cref="IOException">It could not be read.</exception>
+    /// <summary>The file read whole as text, sharing deletion with a writer's move, which holds it open for a moment.</summary>
     public static string ReadText(string path)
     {
         using var stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite | FileShare.Delete);
