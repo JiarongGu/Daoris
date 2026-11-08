@@ -111,11 +111,24 @@ public static class QuestLog
     /// </summary>
     public static QuestClaim Claim(IEnumerable<QuestOperation> history, string machine)
     {
+        Quest? quest = null;
         var claim = QuestClaim.None;
-        foreach (var operation in history.Where(operation => operation.Machine == machine))
+        var taken = false;
+        foreach (var operation in history)
         {
-            if (operation.Kind == QuestOperationKind.Taken) return operation.Number is null ? QuestClaim.Unconfirmed : QuestClaim.Held;
-            if (operation is { Kind: QuestOperationKind.Conflict, Attempted: QuestStatus.Taken }) claim = QuestClaim.Lost;
+            // A publish that applies begins the quest anew, after a delete: a take an earlier generation held is not this one's.
+            // A take that lost stays lost, since one that lost to the delete lands on no quest, before the publish.
+            if (operation.Kind == QuestOperationKind.Published && Applies(quest, operation) && taken) (claim, taken) = (QuestClaim.None, false);
+            if (Applies(quest, operation)) quest = Step(quest, operation);
+            if (operation.Machine != machine || taken) continue;
+            if (operation.Kind == QuestOperationKind.Taken)
+            {
+                (claim, taken) = (operation.Number is null ? QuestClaim.Unconfirmed : QuestClaim.Held, true);
+            }
+            else if (operation is { Kind: QuestOperationKind.Conflict, Attempted: QuestStatus.Taken })
+            {
+                claim = QuestClaim.Lost;
+            }
         }
 
         return claim;

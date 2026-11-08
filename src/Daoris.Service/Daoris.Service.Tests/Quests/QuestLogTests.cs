@@ -374,6 +374,32 @@ public sealed class QuestLogTests : IAsyncLifetime
     }
 
     /// <summary>
+    /// A claim is read from the quest's latest generation: where a removed quest is published again under the same id, a take
+    /// of the earlier one is not this machine's hold on the new one, so its second take losing reads lost.
+    /// </summary>
+    [Fact]
+    public void A_claim_reads_the_quest_as_last_published_not_the_one_a_delete_ended()
+    {
+        QuestOperation As(string machine, long sequence, QuestOperationKind kind, QuestStatus? attempted = null, long? number = null) =>
+            new("q1", kind, machine, sequence, Now.AddHours(sequence), Attempted: attempted, Number: number);
+
+        var history = new[]
+        {
+            Op(0, QuestOperationKind.Published, published: Asked),
+            As("m2", 1, QuestOperationKind.Taken, number: 10),
+            As("m2", 2, QuestOperationKind.Done),
+            Op(3, QuestOperationKind.Deleted),
+            Op(4, QuestOperationKind.Published, published: Asked),
+            As("m3", 5, QuestOperationKind.Taken),
+            As("m2", 6, QuestOperationKind.Conflict, QuestStatus.Taken),
+        };
+
+        Assert.Equal(QuestClaim.Lost, QuestLog.Claim(history, "m2"));
+        Assert.Equal(QuestClaim.Unconfirmed, QuestLog.Claim(history, "m3"));
+        Assert.Equal(QuestClaim.Held, QuestLog.Claim(history[..3], "m2"));
+    }
+
+    /// <summary>
     /// Somebody's work is never deleted: a delete does not apply to a taken quest, whichever machine's history it came from. A closed
     /// quest is removed only by the closed quest's remover, whose tombstone then applies.
     /// </summary>
