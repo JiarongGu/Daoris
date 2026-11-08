@@ -7,7 +7,7 @@ import { makeFixture, captureError } from '../_fixture.ts';
 import { readCanon } from '../../src/doctrine/canon.ts';
 import { readManifest, readLock } from '../../src/doctrine/config.ts';
 import { planSync, applySync } from '../../src/doctrine/materialize.ts';
-import { upstreamFile, upstreamAll } from '../../src/doctrine/upstream.ts';
+import { insideCanon, upstreamFile, upstreamAll } from '../../src/doctrine/upstream.ts';
 import { readText } from '../../src/platform/fsx.ts';
 import { DaorisError } from '../../src/platform/errors.ts';
 
@@ -87,6 +87,13 @@ test('a target-dir-prefixed path resolves too', () => {
   assert.equal(promote(fx, '.claude/rules/sensitive-info.md').target, 'rules/sensitive-info.md');
   fx.canonFx.cleanup();
   fx.repoFx.cleanup();
+});
+
+test('a canon in a folder whose name begins with two dots is inside the repository, and one beside it is not', () => {
+  const root = join(process.cwd(), 'repo');
+  assert.equal(insideCanon(root, join(root, '..canon')), true);
+  assert.equal(insideCanon(root, join(root, '..', 'canon')), false);
+  assert.equal(insideCanon(root, root), false);
 });
 
 test('a local file has nothing to upstream and says so', () => {
