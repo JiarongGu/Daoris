@@ -98,12 +98,12 @@ area document under `docs/areas/`. Each row's earlier full text is in git at `9f
 ## Co-working and messages
 
 
-- [ ] **COMMS1 — communication and co-working made solid** (driver, service, web; D225): a to m are built (**m**, the doctrine, is in the co-working skill). Left: **n** the installed proof (with SESSONE1c-look). → `docs/2026-11-02-comms-design.md` §10; `docs/areas/co-working-and-messages.md`, Open
-- [ ] **COWORKUX1 — co-workers shown and driven like sessions** (web, driver, modules): the head's *Co-workers*, *Bring in another agent…*, a member's thread with *Back to lead*, *Ask again…* quoting the earlier answer and *Pass to the lead* are built, and so are the terminal's `sessions helper --after --to-me` and `sessions pass`, Ask Daoris's `session` proposals for the helper and pass doors, the dialog's *Write a piece* and *Second opinion*, and the glossary's *co-worker* and *lead* (BL81). *Work alongside* is a sentence with no press (the design runs a second request alongside by itself), and Ask Daoris's helper and pass doors have their web card. Left: row i, the lead's wait on its own partner (waits on Q9). → `docs/areas/co-working-and-messages.md`, Open
-- [ ] **CHANNELJOIN1 — an agent the owner runs outside Daoris joins a channel** (with COMMS1k; designed, D244 and its notes): CJ-A to CJ-D are built. Left: the installed look. → `docs/2026-11-06-event-channel-design.md` §5, §7
+- [ ] **COMMS1 — communication and co-working made solid** (driver, service, web; D225): left **n** the installed proof (with SESSONE1c-look). → `docs/2026-11-02-comms-design.md` §10; `docs/areas/co-working-and-messages.md`, Open
+- [ ] **COWORKUX1 — co-workers shown and driven like sessions** (web, driver, modules): left row i, the lead's wait on its own partner (waits on Q9). → `docs/areas/co-working-and-messages.md`, Open
+- [ ] **CHANNELJOIN1 — an agent the owner runs outside Daoris joins a channel** (with COMMS1k; designed, D244 and its notes): left the installed look. → `docs/2026-11-06-event-channel-design.md` §5, §7
 - [ ] **MSG1 — next-step words on every door** (ONEWAY1g; COMMS1n): **MSG1h** Codex's and **MSG1i** the native door's next-step words, each built only after STEER3's measured turn (D188 point 3), so in the spend sitting; MSG1h's steer must meet that `codex-acp` honours no `idleBehavior` (a steer with no live turn starts one, `startedNewTurn`); **MSG1j** the installed message canary, with COMMS1n. → `docs/areas/co-working-and-messages.md`, Open
 - [ ] **STEER3 — other steering measured** (ONEWAY1g): Codex's `turn/steer` and Claude Code's stream-json input are measured before a level uses them. → `docs/areas/co-working-and-messages.md`, Open
-- [ ] **COWORKVIEW1 — co-working seen and routed on the Fabric** (driver, service, web; D173): row a's rest is rule 1's measure on the install, the stories measured in a browser and the person's first (22); routing rows b to e are built; **f** is parked behind BRAINSTORM1d and AGENTROOM1b. → `docs/2026-10-24-cowork-view-design.md`
+- [ ] **COWORKVIEW1 — co-working seen and routed on the Fabric** (driver, service, web; D173): left row a's rest, rule 1's measure on the install, the stories measured in a browser and the person's first (22); **f** is parked behind BRAINSTORM1d and AGENTROOM1b. → `docs/2026-10-24-cowork-view-design.md`
 
 ## Git and remotes
 
