@@ -179,5 +179,3 @@ example's `node --test`.
 - No row: PLUGUI1f, the ready and failing states on the page from the loop's health.
 - No row: D119 §5's run of a plugin's own tests, and its kept trial and test results.
 
-- **The second review cycle's open defects** (PLUGREV2a to 2i; the backlog row of that name points here), one entry each:
-  - **PLUGREV2i — plugins tests that cannot fail** (driver, plugins): `Assert.Null(HookProcess.HostToken.Value)` after an awaited call (`PlacedWorkTests.cs:113`, `PluginHostTokenTests.cs:133`; an `AsyncLocal` set in an async method never flows back, so deleting `HookSet`'s `finally` (`:257-261`) keeps them green); `PluginPackageTests.cs:155-156` asserts one path twice and the stage is under `Home/plugins`, not `_root`; the "starts nothing" checks (`PluginInstallTests.cs:120`, `PluginSourceTests.cs:400`, `PluginPackageTests.cs:298`) read a mark file right after a synchronous call; `PluginPackageTests.cs:243-244`'s `else Assert.NotNull(read)` is always true; the 4 KB frame cases (`RelayBatchTests.cs:59`, `RelayRunTests.cs:219`) send non-JSON, refused at any bound.

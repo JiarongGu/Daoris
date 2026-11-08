@@ -152,8 +152,10 @@ public sealed class PluginPackageTests : IDisposable
 
         PluginPackage.Install(Home, file, Reserved);
 
+        // Beside the stage, which is under the home's plugins folder, and above it: where `../` from a part's name would land.
+        Assert.False(File.Exists(Path.Combine(Plugins, "outside.txt")));
+        Assert.False(File.Exists(Path.Combine(Path.GetDirectoryName(Plugins)!, "outside.txt")));
         Assert.False(File.Exists(Path.Combine(_root, "outside.txt")));
-        Assert.False(File.Exists(Path.Combine(Feed, "..", "outside.txt")));
         Assert.False(Directory.Exists(Path.Combine(Installed("acme.gate"), "tools")));
     }
 
@@ -234,14 +236,13 @@ public sealed class PluginPackageTests : IDisposable
             _ => throw new ArgumentException(name),
         };
 
-        var (read, refusal) = PluginPackage.Read(file);
+        var (_, refusal) = PluginPackage.Read(file);
         var thrown = Assert.Throws<DriverException>(() => PluginPackage.Install(Home, file, Reserved));
 
         Assert.True(thrown.Message.Contains(says, StringComparison.Ordinal), $"{name}: {thrown.Message}");
         Assert.EndsWith("Nothing was installed.", thrown.Message);
         // What a read alone can see, it refuses too: the stage's own checks come after extracting.
         if (refusal is not null) Assert.True(refusal.Contains(says, StringComparison.Ordinal), $"{name}: {refusal}");
-        else Assert.NotNull(read);
         Assert.Empty(Directory.Exists(Plugins) ? Directory.GetFileSystemEntries(Plugins) : []);
         Assert.False(File.Exists(Path.Combine(_root, "evil.txt")));
         Assert.False(File.Exists(Path.Combine(Home, "evil.txt")));
@@ -301,12 +302,15 @@ public sealed class PluginPackageTests : IDisposable
         var file = Package(entries:
         [
             ("plugin/plugin.json", """{ "id": "acme.marks", "version": "1.0.0", "hooks": { "command": ["node", "${plugin}/hook.mjs"], "points": ["session/ended"] } }"""),
-            ("plugin/hook.mjs", $"require('fs').writeFileSync({JsonSerializer.Serialize(mark)}, 'ran');"),
+            ("plugin/hook.mjs", HookMarks.Script(mark)),
         ]);
+        var control = Path.Combine(_root, "control.mjs");
+        File.WriteAllText(control, HookMarks.Script(mark));
+        HookMarks.Prove(control, mark);
 
         PluginPackage.Install(Home, file, Reserved);
 
-        Assert.False(File.Exists(mark));
+        HookMarks.AssertNone(mark);
     }
 
     // ── The terminal's door: `daoris plugin install <file.nupkg>` (§6.4) ──────────────────────

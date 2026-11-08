@@ -427,10 +427,11 @@ public sealed class PluginSourceTests : IDisposable
         var mark = Path.Combine(_root, "ran.txt");
         Folder(Path.Combine(Offers, "acme.marks"),
             """{ "id": "acme.marks", "hooks": { "command": ["node", "${plugin}/hook.mjs"], "points": ["session/ended"] } }""",
-            ("hook.mjs", $"require('fs').writeFileSync({JsonSerializer.Serialize(mark)}, 'ran');"));
+            ("hook.mjs", HookMarks.Script(mark)));
+        HookMarks.Prove(Path.Combine(Offers, "acme.marks", "hook.mjs"), mark);
 
         PluginInstall.AddOffer(Home, Offers, "acme.marks", Reserved);
 
-        Assert.False(File.Exists(mark));
+        HookMarks.AssertNone(mark);
     }
 }

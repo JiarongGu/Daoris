@@ -23,6 +23,8 @@ public sealed class PluginHostTokenTests : IDisposable
         GitSeed.Discard(_root);
     }
 
+    private readonly List<string?> _afterStart = [];
+
     private string Home => Path.Combine(_root, "data");
 
     private GitIdentity Serving(bool apiToken = true)
@@ -130,7 +132,9 @@ public sealed class PluginHostTokenTests : IDisposable
         var (tokens, _) = await LookAsync();
 
         Assert.Equal([Secret], tokens);
-        Assert.Null(HookProcess.HostToken.Value);
+        // What the caller sees is no test of it (a value set in an async method never flows back): the flow after the start does.
+        Assert.NotEmpty(_afterStart);
+        Assert.All(_afterStart, Assert.Null);
     }
 
     [Fact]
@@ -217,7 +221,12 @@ public sealed class PluginHostTokenTests : IDisposable
                 tokens.Add(HookProcess.HostToken.Value);
                 return Task.FromException<IHookChannel>(new DriverException("stub: stops here"));
             },
-            say: (_, line) => said.Add(line),
+            say: (_, line) =>
+            {
+                said.Add(line);
+                // Said after the start, in the same flow: where the set's finally cleared the token, none is left to a later start.
+                _afterStart.Add(HookProcess.HostToken.Value);
+            },
             holdsHome: () => true,
             hostToken: (_, place, _) => Task.FromResult(PluginHostToken.Hand(Home, place.Repository, place.Workspace, Origin)));
         set.Watch(new Dictionary<string, IReadOnlyList<WatchedUnit>>

@@ -38,6 +38,8 @@ the per-task record. Entries preserve their original wording so the archive stay
 > **PLUGREV2g** (driver, plugins): Outcome: the relay's stdout bound is said as 54 lines, the gap, 50 events, their count, an ending's own line and the watermark (said, not folded into the count line, which would have changed what a relay prints); `RelayBatchTests` holds the case that ends through a second client and through the pipe.
 >
 > **PLUGREV2h** (driver, plugins): Outcome: `PluginCatalog.Signature` (the hook set keeps its own) and `LandingPlugins`'s `patience` parameter, `DefaultPatience` and its default start lambda deleted with their assertions; an occasion's asks start through the injected start or `StartProcessAsync` alone, and `LandingPatience.Plugin` is read direct.
+>
+> **PLUGREV2i** (driver, plugins): Outcome: the plugins tests that could not fail now can: the host-token tests read the token in the starting flow after the start (`PlacedWorkTests`, `PluginHostTokenTests`; both fail with `HookSet`'s `finally` removed); the package traversal case names three distinct escape paths; the "starts nothing" checks run the hook's script once as an ES module to prove it writes its mark, then read the mark's absence after a second (`HookMarks`); the always-true `NotNull` is gone; the 4 KB frame cases send a valid frame padded to and one byte past the bound.
 
 ## TREEPOOL1ac — shared paths (2026-11-09)
 

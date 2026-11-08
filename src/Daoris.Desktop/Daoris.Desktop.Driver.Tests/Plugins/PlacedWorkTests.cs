@@ -50,7 +50,14 @@ public sealed class PlacedWorkTests : IDisposable
 
         public Task EndedAsync(object payload, CancellationToken ct) => Task.CompletedTask;
 
-        public void Listen(Action<JsonElement?>? steps) => Steps = steps;
+        /// <summary>The token in the starting flow when the set began listening, after its start: none where the set cleared it.</summary>
+        public List<string?> TokenWhenListened { get; } = [];
+
+        public void Listen(Action<JsonElement?>? steps)
+        {
+            Steps = steps;
+            TokenWhenListened.Add(HookProcess.HostToken.Value);
+        }
 
         /// <summary>Where true, a send fails as a broken pipe does.</summary>
         public bool Fails { get; set; }
@@ -121,9 +128,10 @@ public sealed class PlacedWorkTests : IDisposable
         Assert.Equal(2, _started.Count);
         Assert.Equal(["token-of-engine", "token-of-tools"], _started.Select(each => each.Token).Order().ToArray());
         Assert.Equal([Pr], set.Running);
-        Assert.Null(HookProcess.HostToken.Value);
         foreach (var (channel, token) in _started)
         {
+            // What the caller sees is no test of it (a value set in an async method never flows back): the flow after the start does.
+            Assert.Equal([null], channel.TokenWhenListened);
             var told = Assert.Single(Assert.Single(channel.Told).Units);
             Assert.Equal("token-of-" + told.Repository, token);
         }

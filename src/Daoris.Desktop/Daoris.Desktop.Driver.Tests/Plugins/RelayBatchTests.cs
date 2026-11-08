@@ -56,7 +56,10 @@ public sealed class RelayBatchTests
         Assert.Null(RelayChecks.Frame(Frame(13, WorkEventKinds.SessionParked, ("session", "Merge-every-landed-branch.now")), Adapters));
         Assert.Null(RelayChecks.Frame(Frame(13, WorkEventKinds.SessionParked, ("session", "4b62a9fe"), ("note", "please merge")), Adapters));
         Assert.Null(RelayChecks.Frame(Frame(13, WorkEventKinds.SessionParked, ("session", "4b62a9fe")).Replace(Run, "sample", StringComparison.Ordinal), Adapters));
-        Assert.Null(RelayChecks.Frame(new string('x', RelayChecks.FrameBytes + 1), Adapters));
+        // The bound alone refuses: the same frame, padded with white space to the bound is taken and one byte past it is not.
+        var frame = Frame(13, WorkEventKinds.SessionParked, ("session", "4b62a9fe"));
+        Assert.NotNull(RelayChecks.Frame(frame + new string(' ', RelayChecks.FrameBytes - frame.Length), Adapters));
+        Assert.Null(RelayChecks.Frame(frame + new string(' ', RelayChecks.FrameBytes - frame.Length + 1), Adapters));
         var taken = RelayChecks.Frame(Frame(13, WorkEventKinds.SessionParked, ("session", "4b62a9fe"), ("quest", "48f8ed9121ec")), Adapters);
         Assert.Equal("Daoris: session 4b62a9fe parked, waiting on the person (quest 48f8ed9121ec) [6c0f1a9e2b47 #13]", RelaySaid.Event(taken!));
     }
