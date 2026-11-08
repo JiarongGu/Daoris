@@ -78,10 +78,17 @@ internal sealed class TransientMove(IExecutorWiring wiring) : IExecutor
         // Where the role holds no other choice the rule has nowhere to move it: the turn's end stands, and the person's word goes on in it.
         if (rules.Others(prior, ruled.Role, config).FirstOrDefault() is not { } next) return ruled.Course;
         var from = StaffCourse.ChoiceOf(prior, ruled.Policy)?.Text;
-        if (!rules.Counted(ruled, sessionId, StaffConditions.Transient, from)) return ruled.Course;
-
+        // The take judges what it is handed again, so a move it would refuse (another model of the agent the record already runs on, with no
+        // account of its own) is not begun, and a move is counted only once it is begun: neither leaves a count for a move that never happened.
+        if ((await HandOver.JudgeAsync(context.Service, handOver.AccountsOf, sessionId, next.Agent, null, ct).ConfigureAwait(false)).Refused is not null) return ruled.Course;
         var begun = await Moves.BeginAsync(Decision(sessionId, next), ct).ConfigureAwait(false);
         if (begun.Move is not { } record) return ruled.Course;
+        if (!rules.Counted(ruled, sessionId, StaffConditions.Transient, from))
+        {
+            record.Superseded();
+            return ruled.Course;
+        }
+
         rules.Said(ruled, sessionId, SupervisorRules.Tries, ruled.Action.Do, ruled.Action.After ?? tries, "episode");
         context.Harnesses.StaffFor(context.Home).MarkNotAnswering(adapter);
         var asked = new HandOverRequest(next.Agent, null, HandOverWhy.Transient, HandOverBy.Daoris, DateTimeOffset.UtcNow, next.Model, next.Effort);
