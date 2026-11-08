@@ -10,7 +10,7 @@ internal sealed class TurnHolds(TurnState state, TurnPump pump)
     /// <summary>
     /// Hold the turns for a hand-over's take, never mid-turn: true where no turn runs and no
     /// word waits, and from then on a word takes nothing (<see cref="Take"/> is null) until <see cref="Release"/>. False where a
-    /// turn runs or a word waits, whose turn ends first; or where the conversation is finishing or gone.
+    /// turn runs, a word waits or a send-back is reserved, whose turn ends first; or where the conversation is finishing or gone.
     /// </summary>
     /// <remarks>
     /// Asked and set under the turns' own lock, so a word said as a move begins either started its turn first, and the move waits
@@ -25,7 +25,8 @@ internal sealed class TurnHolds(TurnState state, TurnPump pump)
     {
         lock (state.Gate)
         {
-            if (state.Pumping || state.Holding is not null || state.Waiting.Count > 0 || state.Finishing || state.Gone || state.Held) return false;
+            if (state.Pumping || state.Holding is not null || state.Waiting.Count > 0 || state.Finishing || state.Gone || state.Held
+                || state.SendingBack) return false;
             state.Held = true;
             state.KeepsHeld = keeps;
             return true;
