@@ -17,7 +17,7 @@ internal static class GitSessionAccessVerb
     {
         var record = set.Count == 0
             ? GitSessionAccess.Read(home, session) ?? throw new DriverException($"no running session {session} holds git access here.")
-            : GitSessionAccess.Tighten(home, session, set.ToDictionary(each => each.Key, each => each.Value ?? "", StringComparer.Ordinal));
+            : GitSessionAccess.Tighten(home, session, GitAccessCommand.LastWins(set).ToDictionary(each => each.Key, each => each.Value ?? "", StringComparer.Ordinal));
         if (json)
         {
             output.WriteLine(JsonSerializer.Serialize(record.Classes.Select(each => new { each.Class, each.Value, each.Source }), JsonOptions));
