@@ -61,6 +61,48 @@ public sealed class TurnKeepEdgeTests
         turns.Gone();
     }
 
+    /// <summary>
+    /// A keep the record stored but never answered is asked again under its key, so the stored copy is the word held and taken once:
+    /// held with no id beside a stored copy, a restart or a go-on carried the word a second time.
+    /// </summary>
+    [Fact]
+    public async Task A_keyless_keep_unanswered_after_the_record_stored_it_is_taken_once_under_the_stored_copy()
+    {
+        var taken = new List<ChatMessage>();
+        var turns = new ChatTurns(
+            ready: () => Task.FromResult(true), take: (message, sent) => { taken.Add(message); sent(); return Task.CompletedTask; },
+            interrupt: () => Task.CompletedTask, changed: _ => { });
+        var calls = 0;
+        var record = new StandInSaid { Answering = _ => ++calls == 1 ? throw new HttpRequestException("timed out") : Task.CompletedTask };
+
+        var kept = await turns.KeepAsync(record, new ChatMessage("use the older bridge", []), default);
+
+        Assert.Equal("w1", kept!.Word);
+        await Poll.Until(() => taken.Count > 0, () => "the word was never taken");
+        Assert.Equal("w1", taken[0].Id);
+        Assert.True(taken[0].Kept);
+        Assert.DoesNotContain("w2", record.Ids.Concat(record.TakenOff));
+        turns.Gone();
+    }
+
+    /// <summary>A reword whose keep the record stored and never answered is asked again, so the new words wait once.</summary>
+    [Fact]
+    public async Task A_reword_unanswered_after_the_record_stored_it_waits_once_under_the_stored_copy()
+    {
+        var turns = Waiting();
+        var calls = 0;
+        var record = new StandInSaid { Answering = word => word.Text == "reworded" && ++calls == 1 ? throw new HttpRequestException("timed out") : Task.CompletedTask };
+        var kept = await turns.KeepAsync(record, new ChatMessage("first", []), default);
+
+        Assert.Equal(QueueEdit.Done, await turns.EditQueuedAsync(kept!.Word!, "reworded"));
+
+        var waiting = Assert.Single(turns.State.Queued);
+        Assert.True(waiting.Kept);
+        Assert.Equal(["reworded"], record.Said.Where(word => word.Text == "reworded").Select(word => word.Text));
+        Assert.Equal(waiting.Id, record.Said.Single(word => word.Text == "reworded").Id);
+        turns.Gone();
+    }
+
     /// <summary>The same reword on a driven session's inbox.</summary>
     [Theory]
     [InlineData(typeof(ObjectDisposedException))]

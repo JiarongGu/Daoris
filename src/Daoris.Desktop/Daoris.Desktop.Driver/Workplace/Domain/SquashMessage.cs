@@ -46,7 +46,7 @@ public static class SquashMessage
         var said = TextBounds.Fold(title);
         if (said.Length == 0 && commits.Count > 0) said = TextBounds.Fold(commits[0].Subject);
         if (said.Length == 0) said = $"Work from session {session}";
-        return TextBounds.Clip(said, SubjectLimit, keep: SubjectLimit - 1, trimEnd: true, wholePairs: true);
+        return TextBounds.Clip(said, SubjectLimit, keep: SubjectLimit - 1, trimEnd: true);
     }
 
     /// <summary>

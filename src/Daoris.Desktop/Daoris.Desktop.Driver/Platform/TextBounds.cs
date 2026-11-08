@@ -16,19 +16,19 @@ public static class TextBounds
     /// <summary>
     /// <paramref name="text"/> as it is when it fits <paramref name="limit"/>; else its first <paramref name="keep"/>
     /// characters (the limit when not given: a caller whose mark must fit inside the limit keeps three fewer) and the
-    /// mark. <paramref name="trimEnd"/> drops the space before the mark; <paramref name="wholePairs"/> never cuts a
-    /// surrogate pair in half.
+    /// mark. <paramref name="trimEnd"/> drops the space before the mark. A surrogate pair is never cut in half, so the head
+    /// may be one character shorter than <paramref name="keep"/>.
     /// </summary>
-    public static string Clip(string text, int limit, int? keep = null, bool trimEnd = false, bool wholePairs = false) =>
-        text.Length <= limit ? text : Cut(text, keep ?? limit, trimEnd, wholePairs);
+    public static string Clip(string text, int limit, int? keep = null, bool trimEnd = false) =>
+        text.Length <= limit ? text : Cut(text, keep ?? limit, trimEnd);
 
     /// <summary>
     /// The first <paramref name="keep"/> characters and the mark, whether or not the text is longer: for the caller whose own
     /// test decided that it is cut (a line that ran past its bound while it is read).
     /// </summary>
-    public static string Cut(string text, int keep, bool trimEnd = false, bool wholePairs = false)
+    public static string Cut(string text, int keep, bool trimEnd = false)
     {
-        var end = wholePairs && keep > 0 && keep <= text.Length && char.IsHighSurrogate(text[keep - 1]) ? keep - 1 : keep;
+        var end = keep > 0 && keep <= text.Length && char.IsHighSurrogate(text[keep - 1]) ? keep - 1 : keep;
         var head = text[..end];
         return (trimEnd ? head.TrimEnd() : head) + Ellipsis;
     }
@@ -44,8 +44,14 @@ public static class TextBounds
     /// The end of<paramref name="text"/> when it is longer than <paramref name="limit"/>: the mark, then the last
     /// <paramref name="limit"/> characters without the space they may open with (the last words, not the first).
     /// </summary>
-    public static string ClipStart(string text, int limit) =>
-        text.Length <= limit ? text : Ellipsis + text[^limit..].TrimStart();
+    public static string ClipStart(string text, int limit)
+    {
+        if (text.Length <= limit) return text;
+        var start = text.Length - limit;
+        // Never the second half of a surrogate pair.
+        if (start > 0 && char.IsLowSurrogate(text[start])) start++;
+        return Ellipsis + text[start..].TrimStart();
+    }
 
     /// <summary>
     /// A field cut to a limit, saying its full length, never silently shortened and never through a surrogate pair; null stays null.

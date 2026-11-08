@@ -133,6 +133,31 @@ public sealed class StartWithTests : IDisposable
         Assert.Equal(1, runs);
     }
 
+    /// <summary>A retry racing the first start's end is answered, never thrown at.</summary>
+    [Fact]
+    public async Task A_retry_racing_the_first_starts_end_is_never_thrown_at()
+    {
+        var requests = new StartRequests(_home);
+        var failures = new List<Exception>();
+
+        await Task.WhenAll(Enumerable.Range(0, 8).Select(_ => Task.Run(async () =>
+        {
+            for (var i = 0; i < 3000; i++)
+            {
+                try
+                {
+                    await requests.RunAsync("req-race", () => Task.FromResult(new StartedFrom(null, false, null, "no checkout.")));
+                }
+                catch (Exception error)
+                {
+                    lock (failures) failures.Add(error);
+                }
+            }
+        })));
+
+        Assert.Empty(failures);
+    }
+
     /// <summary>A retry after it finished is answered from the file, whatever else the retry says, even by a new table.</summary>
     [Fact]
     public async Task A_retry_after_it_finished_answers_the_original_from_its_file()

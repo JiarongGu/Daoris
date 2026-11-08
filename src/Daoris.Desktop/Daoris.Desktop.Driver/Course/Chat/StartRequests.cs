@@ -36,7 +36,11 @@ public sealed class StartRequests(string home)
         if (Read(id) is { } kept) return kept;
 
         var mine = new TaskCompletionSource<StartedFrom>(TaskCreationOptions.RunContinuationsAsynchronously);
-        if (!_running.TryAdd(id, mine.Task)) return await _running[id].ConfigureAwait(false);
+        while (!_running.TryAdd(id, mine.Task))
+        {
+            if (_running.TryGetValue(id, out var running)) return await running.ConfigureAwait(false);
+            if (Read(id) is { } finished) return finished;
+        }
 
         try
         {
