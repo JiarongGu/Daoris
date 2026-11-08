@@ -240,8 +240,8 @@ internal static class BacklogMerge
         if (line.Length == 0) return PathOf(null);
         var tab = line.IndexOf('\t');
         if (tab < 0 || line[..tab].Split(' ') is not [_, "blob", var blob]) return null;
-        var (read, text, _) = await WorkingTree.GitAsync(place, ["cat-file", "blob", blob], ct).ConfigureAwait(false);
-        return read == 0 ? PathOf(text) : null;
+        var text = await GitObjectReads.TextAsync(place, blob, ct).ConfigureAwait(false);
+        return text is not null ? PathOf(text) : null;
     }
 
     /// <summary>
@@ -255,8 +255,8 @@ internal static class BacklogMerge
         var (found, sha, _) = await WorkingTree.GitAsync(place, ["rev-parse", "--verify", "--quiet", $"{source}:{GeneratedWriters.DeclarationFile}"], ct)
             .ConfigureAwait(false);
         if (found != 0) return new Declared(backlog, []);
-        var (read, text, _) = await WorkingTree.GitAsync(place, ["cat-file", "blob", sha.Trim()], ct).ConfigureAwait(false);
-        return new Declared(backlog, [.. (read == 0 ? RowTablesOf(text) : []).Where(table => table != backlog)]);
+        var text = await GitObjectReads.TextAsync(place, sha.Trim(), ct).ConfigureAwait(false);
+        return new Declared(backlog, [.. (text is not null ? RowTablesOf(text) : []).Where(table => table != backlog)]);
     }
 
     /// <summary>
@@ -271,8 +271,8 @@ internal static class BacklogMerge
         var texts = new List<string>(3);
         foreach (var side in new[] { @base, ours, theirs })
         {
-            var (code, text, _) = await WorkingTree.GitAsync(root, ["cat-file", "blob", $"{side}:{path}"], ct).ConfigureAwait(false);
-            if (code != 0) return null;
+            var text = await GitObjectReads.TextAsync(root, GitObjectName.At(side, path), ct).ConfigureAwait(false);
+            if (text is null) return null;
             texts.Add(text);
         }
 
@@ -358,8 +358,8 @@ internal static class BacklogMerge
             var texts = new List<string>(3);
             foreach (var stage in new[] { "1", "2", "3" })
             {
-                var (read, text, _) = await WorkingTree.GitAsync(tree, ["cat-file", "blob", stages[stage].Blob], ct).ConfigureAwait(false);
-                if (read != 0) return false;
+                var text = await GitObjectReads.TextAsync(tree, stages[stage].Blob, ct).ConfigureAwait(false);
+                if (text is null) return false;
                 texts.Add(text);
             }
 

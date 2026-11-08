@@ -76,10 +76,12 @@ public static class IntegrationAcceptance
     /// <summary>The text of the declaration at <paramref name="blob"/>, for the person to read before accepting it; null for <see cref="None"/> or one git cannot give.</summary>
     public static async Task<string?> TextAsync(string root, string blob, CancellationToken ct = default)
     {
-        if (blob == None || !IntegrationGatesKey.IsAcceptance(blob)) return null;
-        return await WorkingTree.GitBytesAsync(root, ["cat-file", "blob", blob], TextLimit, ct).ConfigureAwait(false) is { } read
-            ? Encoding.UTF8.GetString(read.Bytes, 0, read.Count)
-            : null;
+        if (blob == None || !IntegrationGatesKey.IsAcceptance(blob))
+        {
+            return null;
+        }
+
+        return await GitObjectReads.TextAsync(root, blob, TextLimit, ct).ConfigureAwait(false);
     }
 
     /// <summary>

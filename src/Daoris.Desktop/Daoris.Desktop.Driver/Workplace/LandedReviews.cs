@@ -95,8 +95,10 @@ internal sealed class LandedReviews(TreeContext context)
     /// <summary>Whether a gone branch's work reads on the line: the proof on the commit the landing made it at, while git holds it.</summary>
     private async Task<LandedReads> ReadsAsync(string root, LandedBranch entry, CancellationToken ct)
     {
-        var (held, _, _) = await WorkingTree.GitAsync(root, ["cat-file", "-e", $"{entry.Tip}^{{commit}}"], ct).ConfigureAwait(false);
-        if (held != 0) return new(LandedReads.CommitsGone, null, [], null);
+        if (await GitObjectReads.InfoAsync(root, $"{entry.Tip}^{{commit}}", ct).ConfigureAwait(false) is not { Missing: false })
+        {
+            return new(LandedReads.CommitsGone, null, [], null);
+        }
 
         var line = (await context.LineAsync(root, entry.Repository, RemoteTarget.Workspace(entry.Workspace), ct).ConfigureAwait(false)).Branch ?? entry.Line;
         var proof = await LandedProofs.ProveAsync(root, entry.Tip, line, await LandedProofs.LineFormsAsync(root, line, ct).ConfigureAwait(false), ct).ConfigureAwait(false);

@@ -14,8 +14,8 @@ internal static class FileGit
     /// <summary>A tracked file's text at <paramref name="commit"/>, or null where the commit holds none.</summary>
     internal static async Task<string?> ShowAsync(string root, string commit, string path, CancellationToken ct)
     {
-        var (code, stdout, _) = await WorkingTree.GitAsync(root, ["--no-optional-locks", "cat-file", "blob", $"{commit}:{path}"], ct).ConfigureAwait(false);
-        return code == 0 ? stdout : null;
+        var name = GitObjectName.At(commit, path);
+        return await GitObjectReads.TextAsync(root, name, ct).ConfigureAwait(false);
     }
 
     /// <summary>The paths that differ between two commits, by name alone; null where git cannot say (a commit it no longer holds).</summary>

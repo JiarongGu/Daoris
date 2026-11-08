@@ -29,8 +29,8 @@ internal static class InstallScripts
             }
 
             var lock_ = dependency.Runs.Length == 0 ? "package-lock.json" : dependency.Runs + "/package-lock.json";
-            var (code, text, _) = await WorkingTree.GitAsync(tree, ["show", $"{commit}:{lock_}"], ct).ConfigureAwait(false);
-            var install = Rewritten(Ci, code == 0 ? text : null);
+            var text = await GitObjectReads.TextAsync(tree, GitObjectName.At(commit, lock_), ct).ConfigureAwait(false);
+            var install = Rewritten(Ci, text);
             applied.Add(dependency with { Rule = dependency.Rule with { Install = install } });
         }
 
