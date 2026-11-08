@@ -13,10 +13,10 @@ const SIBLING_PROPS = ['local/lyntai-local.props', 'local/shenora-local.props'];
  * patterns file (`sensitive.patternsFile`, the devkit's default where undeclared), and the sibling builds' props. A path not
  * under `local/` is not one of these (a tracked file is in the tree already), and none may climb out of it.
  */
-export function privateGateFiles(home) {
+export function privateGateFiles(checkout) {
   let declared = 'local/sensitive-patterns.txt';
   try {
-    const parsed = JSON.parse(readFileSync(join(home, 'daoris.gates.json'), 'utf8'));
+    const parsed = JSON.parse(readFileSync(join(checkout, 'daoris.gates.json'), 'utf8'));
     if (typeof parsed?.sensitive?.patternsFile === 'string') declared = parsed.sensitive.patternsFile;
   } catch {
     // No readable declaration: the plan's own reading refuses it, with its reason.
@@ -25,10 +25,10 @@ export function privateGateFiles(home) {
   return path.startsWith('local/') && !path.split('/').includes('..') ? [path, ...SIBLING_PROPS] : [...SIBLING_PROPS];
 }
 
-/** Copies each of `files` from `home` into `tree`, refreshed on every run; returns the lines to say. */
-export function copyPrivateFiles(home, tree, files) {
+/** Copies each of `files` from `checkout` into `tree`, refreshed on every run; returns the lines to say. */
+export function copyPrivateFiles(checkout, tree, files) {
   return files.map((file) => {
-    const from = join(home, file);
+    const from = join(checkout, file);
     if (!existsSync(from)) return `${file} is missing in the main checkout, so it is not copied into the gate tree: the gate that reads it answers for itself`;
     mkdirSync(dirname(join(tree, file)), { recursive: true });
     writeAtomic(join(tree, file), readFileSync(from));
