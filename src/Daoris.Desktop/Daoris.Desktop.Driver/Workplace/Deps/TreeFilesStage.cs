@@ -161,7 +161,7 @@ internal sealed class TreeFilesStage(string home, string root, string tree, stri
             (placement, exists) = (null, false);
         }
 
-        if (placement is not null && exists)
+        if (placement is not null && (exists || placement.Manifest is { Absent: true }))
         {
             if (placement.Manifest?.Differs(tree, dependency.Folder, dependency.Caches) is not null)
             {
@@ -221,7 +221,7 @@ internal sealed class TreeFilesStage(string home, string root, string tree, stri
         {
             why = DepsWhy.GroupedWith(DependencyGroups.Others(group, dependency.Path));
         }
-        else if (placement is { Installing: false } && exists && placement.Key == key
+        else if (placement is { Installing: false } && (exists || placement.Manifest is { Absent: true }) && placement.Key == key
             && placement.Manifest?.Differs(tree, dependency.Folder, dependency.Caches) is null
             && InstallWrites.CompanionsDiffer(tree, placement) is null && InstallWrites.OtherGone(tree, placement) is null)
         {
