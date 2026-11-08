@@ -211,3 +211,13 @@ test('two branches that each edited one router row merge with each row once (a s
   assert.match(again, /\| `y\.md` \| Accepted \(D2\) \| Y1 \|/);
   assert.match(again, /C guide, revised/);
 });
+
+test('two tables under headings of the same text are two tables, each kept with its own rows', () => {
+  const doc = lines(
+    '## Notes', '', '| File | Purpose |', '|---|---|', '| `a.md` | A |', '',
+    '## Notes', '', '| File | Purpose |', '|---|---|', '| `b.md` | B |', '',
+  );
+  const merged = mergeRows(doc, doc, doc);
+  assert.equal(merged.conflicts, 0);
+  assert.equal(merged.text, doc);
+});

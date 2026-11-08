@@ -428,11 +428,13 @@ public sealed class WorkRecordStore : IWorkRecordSearch
                     SELECT workspace, repository, folder, snippet(work_records_fts, 4, '', '', '...', 24)
                     FROM work_records_fts
                     WHERE work_records_fts MATCH $match AND ($workspace IS NULL OR workspace = $workspace COLLATE NOCASE)
+                      AND ($repositories IS NULL OR repository COLLATE NOCASE IN (SELECT value FROM json_each($repositories)))
                     ORDER BY bm25(work_records_fts)
                     LIMIT 200
                     """;
                 read.Parameters.AddWithValue("$match", match);
                 read.Parameters.AddWithValue("$workspace", (object?)query.Workspace ?? DBNull.Value);
+                read.Parameters.AddWithValue("$repositories", query.Repositories is null ? DBNull.Value : JsonSerializer.Serialize(query.Repositories));
                 await using var rows = await read.ExecuteReaderAsync(ct).ConfigureAwait(false);
                 while (await rows.ReadAsync(ct).ConfigureAwait(false))
                 {
@@ -445,7 +447,6 @@ public sealed class WorkRecordStore : IWorkRecordSearch
             var seen = new HashSet<(string, string, string)>();
             foreach (var (workspace, repository, folder, excerpt) in found)
             {
-                if (query.Repositories is not null && !query.Repositories.Contains(repository)) continue;
                 if (!seen.Add((workspace, repository, folder)) || await FindInsideAsync(workspace, repository, folder, ct).ConfigureAwait(false) is not { } record) continue;
                 hits.Add(new KnowledgeHit(Entry(record), 1.0 / (hits.Count + 1), excerpt));
             }
@@ -568,11 +569,6 @@ public sealed class WorkRecordStore : IWorkRecordSearch
         await prune.ExecuteNonQueryAsync(ct).ConfigureAwait(false);
     }
 
-    /// <summary>
-    /// The records no session names in <paramref name="workspace"/>, kept at or before <paramref name="through"/>, gone (§2.2: a record with
-    /// no session is history, taken by a clear of history by its own <c>at</c>, within the clear's range); how many went. Run inside the
-    /// clear's transaction. Nothing where the tables are not this build's.
-    /// </summary>
     /// <summary>
     /// The records no session names, kept at or before <paramref name="before"/>, gone: history's age applied to their own <c>at</c>, needing
     /// no session to be cleared beside them (Codex's read of the branch, finding 8); in <paramref name="workspace"/> alone where one is named.

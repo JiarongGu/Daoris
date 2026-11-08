@@ -69,6 +69,8 @@ public sealed class CodeMapTests : IDisposable
     [Theory]
     [InlineData("not json", "not JSON")]
     [InlineData("""{ "version": 2, "modules": [], "dependencies": [] }""", "version 2")]
+    [InlineData("""{ "version": 1.5, "modules": [], "dependencies": [] }""", "version 0")]
+    [InlineData("""{ "version": 3000000000, "modules": [], "dependencies": [] }""", "version 0")]
     [InlineData("""{ "version": 1, "modules": [{ "id": "a", "path": "a", "summary": "" }, { "id": "a", "path": "b", "summary": "" }], "dependencies": [] }""", "`a` twice")]
     [InlineData("""{ "version": 1, "modules": [{ "id": "a", "path": "a", "summary": "" }], "dependencies": [{ "from": "a", "to": "ghost", "kind": "imports" }] }""", "`ghost`")]
     [InlineData("""{ "version": 1, "modules": [{ "id": "a", "path": "C:/work/a", "summary": "" }], "dependencies": [] }""", "repository-relative")]

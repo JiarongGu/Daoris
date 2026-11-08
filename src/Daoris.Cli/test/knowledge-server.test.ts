@@ -326,13 +326,14 @@ function fakeServer(build: string, { mode = 'answers' }: { mode?: 'answers' | 'e
 }
 
 /** A session's side of the relay: what it sends, and each line it is answered with. */
-function session(options: { current: () => string | null; start?: (entry: string) => FakeServer; first?: string }) {
+function session(options: { current: () => string | null; start?: (entry: string) => FakeServer; first?: string; refresh?: () => void }) {
   const input = new PassThrough();
   const output = new PassThrough();
   const lines: Reply[] = [];
   createInterface({ input: output, crlfDelay: Infinity }).on('line', (line) => lines.push(JSON.parse(line) as Reply));
   const servers = new Map<string, FakeServer>();
   const started: string[] = [];
+  const said: string[] = [];
   const start = options.start ?? ((entry: string) => {
     const server = fakeServer(entry);
     servers.set(entry, server);
@@ -348,6 +349,8 @@ function session(options: { current: () => string | null; start?: (entry: string
     },
     current: options.current,
     unstarted: (error) => `the knowledge server could not start (${error.message})`,
+    say: (line) => said.push(line),
+    ...(options.refresh ? { refresh: options.refresh } : {}),
   });
   const send = (message: Record<string, unknown>) => input.write(`${JSON.stringify({ jsonrpc: '2.0', ...message })}\n`);
   const call = (id: number, name = 'knowledge_search') => send({ id, method: 'tools/call', params: { name } });
@@ -365,8 +368,20 @@ function session(options: { current: () => string | null; start?: (entry: string
     send({ method: 'notifications/initialized' });
     await answered(1);
   };
-  return { input, lines, servers, started, relay, send, call, answered, text, hello };
+  return { input, lines, servers, started, said, relay, send, call, answered, text, hello };
 }
+
+test('a refresh that fails is said and the request is passed on, as are the ones after it', async () => {
+  const s = session({ current: () => 'b1', refresh: () => { throw new Error('index-head is held'); } });
+  await s.hello();
+  s.call(2);
+  assert.equal(s.text(await s.answered(2)), 'answered by b1');
+  s.call(3);
+  assert.equal(s.text(await s.answered(3)), 'answered by b1');
+  assert.ok(s.said.some((line) => /index-head is held/.test(line)));
+  s.input.end();
+  assert.equal(await s.relay.done, 0);
+});
 
 test('a session moves onto the build made after its server started, at its next request, and never sees the handshake again', async () => {
   let current = 'b1';
@@ -494,6 +509,22 @@ test('the digest moves with the host\'s sources, and not with its tests, the oth
 
   fx.write('src/Daoris.Service/Daoris.Service.Core/Thing.cs', 'class Thing { int y; }\n');
   assert.notEqual(tool.sourceDigest(checkout), first);
+  fx.cleanup();
+});
+
+test('the digest moves with the contracts project the host compiles and with the tree\'s own build settings', () => {
+  const fx = makeFixture('knowledge-server-digest-contracts');
+  const checkout = serviceTree(fx);
+  fx.write('src/Daoris.Contracts/Quest.cs', 'class Quest {}\n');
+  fx.write('Directory.Build.props', '<Project />\n');
+  const first = tool.sourceDigest(checkout);
+
+  fx.write('src/Daoris.Contracts/Quest.cs', 'class Quest { int z; }\n');
+  const second = tool.sourceDigest(checkout);
+  assert.notEqual(second, first);
+
+  fx.write('Directory.Build.props', '<Project><PropertyGroup /></Project>\n');
+  assert.notEqual(tool.sourceDigest(checkout), second);
   fx.cleanup();
 });
 

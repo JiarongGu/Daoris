@@ -87,8 +87,8 @@ public static class CodeMapReader
             var root = document.RootElement;
             if (root.ValueKind != JsonValueKind.Object) return (null, $"`{file}` is not a JSON object.");
 
-            var version = root.TryGetProperty("version", out var v) && v.ValueKind == JsonValueKind.Number
-                ? v.GetInt32()
+            var version = root.TryGetProperty("version", out var v) && v.ValueKind == JsonValueKind.Number && v.TryGetInt32(out var number)
+                ? number
                 : 0;
             if (version != 1)
             {
