@@ -203,7 +203,10 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they start wi
     an editor's settings are never copied. The person's `deny`, `allow` and `ask` over `run`, `copy` and `share` are empty by
     default; a `files.json` that does not read holds every act as an ask and is never written over. `daoris files` and the repository
     page's Files tab show each path's rule, its layer, the layers below it, its evidence and size, the acts the rules would
-    make with the person's answer to each, and a `copy`'s readers (every session in a tree it is copied to). The page sets the
+    make with the person's answer to each, and a `copy`'s readers (every session in a tree it is copied to). The tab leads with
+    the paths and the person's own rules; how the layers decide, the terminal's twin, the reading's commit and the acts sit
+    behind one fold, open where an act is held. A repository whose checkout git cannot read is told what to check, never only
+    that it cannot. The page sets the
     person's rules and `permissions` through `FILES_SET`, `FILES_REMOVE` and `FILES_PERMIT` and reads the found layer again
     through `FILES_READ`, each the window's alone and refused on the pipe: an `ask` is allowed in one press, written as the
     person's `allow` with its maker, and the allow is taken back by the same route. An `ask` that holds a start's `run` is kept in

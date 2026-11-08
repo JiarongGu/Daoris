@@ -43,6 +43,9 @@ internal static class DoctrineConsole
         Tools.Hand(info, home);
         info.Environment[CommandWords.HandedVariable] = "driver";
 
+        // Ctrl+C reaches node too, which ends its command: held from before the start until the child ends, this process waits for that.
+        using var hold = InterruptHold.Take();
+
         Process? process;
         try
         {
@@ -62,8 +65,6 @@ internal static class DoctrineConsole
 
         using (process)
         {
-            // Ctrl+C reaches node too, which ends its command; this process waits for that end rather than ending first.
-            Console.CancelKeyPress += (_, press) => press.Cancel = true;
             await process.WaitForExitAsync().ConfigureAwait(false);
             return process.ExitCode is 0 or 1 or 2 ? process.ExitCode : 2;
         }
