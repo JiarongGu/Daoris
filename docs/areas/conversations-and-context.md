@@ -200,7 +200,9 @@ of everything it handed, section by section.
     `spawn/<session>.standing/block.md`, and one line points to it. (from D230)
 37. A conversation's first message carries the browser line, the process in a tree of its
     own, where the person is (bounded), an open workflow draft, the person's words, then the block. A hand-over's first
-    message is the brief, Daoris's briefing and the browser line. (from D162, D163, D164, D230)
+    message is the brief, Daoris's briefing and the browser line. The brief, the browser line and the draft are consumed
+    only by a message a turn takes: one refused (finishing, held, gone) gives them back to the words said again, and the
+    person waits on no answer to it. (from D162, D163, D164, D230)
 38. A session is listed only the tools its kind may call: the core 18 plus its kind's. Ask Daoris gets every tool but the turns and the memory changes. A Claude
     session runs with auto-memory and synced skills, plugins and connectors off. No account home is written. (from D230)
 
