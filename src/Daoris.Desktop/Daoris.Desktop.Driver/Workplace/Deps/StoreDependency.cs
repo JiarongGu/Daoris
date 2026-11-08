@@ -16,7 +16,7 @@ internal sealed record StoreDependency(string Path, FileRule Rule)
 }
 
 /// <summary>The dependencies of a tree in rule order, and the rules they were read from.</summary>
-internal sealed record StoreDependencies(IReadOnlyList<StoreDependency> Each, FileRules Rules, IReadOnlyList<string> Problems);
+internal sealed record StoreDependencies(IReadOnlyList<StoreDependency> Each, FileRules Rules, IReadOnlyList<string> Problems, FileFloorFacts Floor);
 
 /// <summary>
 /// The effective <c>dependency</c> rules of a tree at its commit (row 6a's layers: the found one, the repository's at the commit, the
@@ -42,6 +42,6 @@ internal static class StoreDependencyRules
             .OrderBy(pair => pair.Order).ThenBy(pair => pair.Dependency.Path, StringComparer.Ordinal)
             .Select(pair => pair.Dependency)
             .ToList();
-        return new StoreDependencies(each, rules, [.. found.Problems, .. own.Problems, .. person.Problems]);
+        return new StoreDependencies(each, rules, [.. found.Problems, .. own.Problems, .. person.Problems], reading.Floor);
     }
 }

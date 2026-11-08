@@ -61,7 +61,7 @@ internal static class SessionLocks
         if (await EntryAsync(tree, ct).ConfigureAwait(false) is not { } entry) return $"git lists no tree at {tree}";
         if (entry.Locked)
         {
-            if (entry.LockReason == Reason(session) || SessionOf(entry.LockReason) is null) return null;
+            if (entry.LockReason == Reason(session) || (SessionOf(entry.LockReason) is null && !PoolLocks.IsOwn(entry.LockReason))) return null;
             var (unlocked, _, unlockErr) = await WorkingTree.GitAsync(tree, ["worktree", "unlock", entry.Path], ct).ConfigureAwait(false);
             if (unlocked != 0) return FirstLine(unlockErr);
         }
@@ -115,7 +115,14 @@ internal static class SessionLocks
         {
             if (busy.Contains(Normal(entry.Path))) continue;
             var (code, _, _) = await WorkingTree.GitAsync(root, ["worktree", "unlock", entry.Path], CancellationToken.None).ConfigureAwait(false);
-            if (code == 0) let.Add(entry.Path);
+            if (code != 0) continue;
+            let.Add(entry.Path);
+
+            // A kept slot goes back to the pool's free reason rather than to no lock at all.
+            if (Path.GetFileName(entry.Path).StartsWith(KeptTree.Prefix, StringComparison.Ordinal))
+            {
+                await WorkingTree.GitAsync(root, ["worktree", "lock", "--reason", PoolLocks.Free, entry.Path], CancellationToken.None).ConfigureAwait(false);
+            }
         }
 
         return let;

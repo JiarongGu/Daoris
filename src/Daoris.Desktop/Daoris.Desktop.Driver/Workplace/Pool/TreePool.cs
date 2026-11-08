@@ -136,6 +136,36 @@ public sealed class TreePool(
             ("$toolchain", end.Toolchain), ("$at", Moments.Write(end.At))));
     }
 
+    // ——— Over git. Each act is a claim's phases in a unit of its own; nothing outside tests calls them yet.
+
+    /// <summary>The seams the acts below call out through; a test sets its own.</summary>
+    internal PoolSeams Seams { get; set; } = new();
+
+    internal Task<PoolDone> MakeAsync(PoolMake make, CancellationToken ct = default) => new TreePoolMakes(this, Seams).MakeAsync(make, ct);
+
+    internal Task<PoolDone> TakeAsync(PoolTake take, CancellationToken ct = default) => new TreePoolTakes(this, Seams).TakeAsync(take, ct);
+
+    /// <summary>A returning line's slot: a take with <see cref="PoolTake.Returns"/>.</summary>
+    internal Task<PoolDone> ReturnAsync(PoolTake take, CancellationToken ct = default) => TakeAsync(take with { Returns = true }, ct);
+
+    internal Task<PoolDone> EndAsync(PoolEnd end, CancellationToken ct = default) => new TreePoolEnds(this, Seams).EndAsync(end, ct);
+
+    /// <summary>The look's takeover of a dead run's claim on a slot, settled by what the disk shows.</summary>
+    internal Task<PoolDone> RecoverAsync(PoolSite site, int number, CancellationToken ct = default) => new PoolTakeovers(this, Seams).RecoverAsync(site, number, ct);
+
+    /// <summary>Admit a terminal or a served build; the visitor is let go with <see cref="LetGo"/>.</summary>
+    internal Task<string?> VisitAsync(string workspace, string repository, int number, string visitKind, string visitor) =>
+        Task.FromResult(Visit(workspace, repository, number, visitKind, visitor));
+
+    /// <summary>The judgement of a slot as the choice reads it before any claim: whether it may be taken for another line.</summary>
+    internal async Task<SlotVerdict> JudgeAsync(PoolSite site, int number, CancellationToken ct = default)
+    {
+        if (Slot(site.Workspace, site.Repository, number) is not { } slot) return new(1, SlotJudgement.Held, "the pool has no such slot");
+        var seed = Seams.Holds is { } holds ? await holds(slot, ct).ConfigureAwait(false) : new SlotJudgementFacts { Claimed = ClaimOn(site.Workspace, site.Repository, number) is not null };
+        var expected = slot.Line.Length > 0 ? LastEnd(site.Workspace, site.Repository, slot.Line)?.Tip ?? "" : slot.Tip;
+        return (await PoolJudging.JudgeAsync(site, slot, seed, expected, ct).ConfigureAwait(false)).Verdict;
+    }
+
     // ——— The store.
 
     internal DesktopStore Open() =>
