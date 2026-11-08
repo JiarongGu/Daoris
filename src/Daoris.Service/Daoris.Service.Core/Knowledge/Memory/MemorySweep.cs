@@ -51,8 +51,11 @@ public sealed class MemorySweep(MemoryOpStore ops, IMemoryEngines engines, Knowl
     /// <summary>How long a confirmation stands before its entry is due again.</summary>
     public TimeSpan RecheckAfter { get; init; } = TimeSpan.FromDays(1);
 
-    /// <summary>The most entries one repository's sweep reads.</summary>
+    /// <summary>The most rechecks one repository's sweep writes.</summary>
     public int Limit { get; init; } = 50;
+
+    /// <summary>The most due entries one repository's sweep asks its engine for.</summary>
+    public int MaxReads { get; init; } = 1000;
 
     /// <summary>One sweep at <paramref name="now"/>.</summary>
     /// <returns>How many rechecks it wrote.</returns>
@@ -65,16 +68,34 @@ public sealed class MemorySweep(MemoryOpStore ops, IMemoryEngines engines, Knowl
             var repository = row.Repository;
             if (engines.Open(repository, MemoryReinforcement.None) is not { } engine) continue;
             var scope = new MemoryWorkspaceCheck(knowledge, row.InWorkspace);
-            foreach (var due in await engine.DueAsync(now - RecheckAfter, Limit, ct).ConfigureAwait(false))
-            {
-                if (await RecheckAsync(repository, due, scope, ct).ConfigureAwait(false) is not { } recheck) continue;
-                var kind = recheck.Holds ? MemoryOpKind.Confirm : MemoryOpKind.End;
-                if (!pending.Contains((repository, due.Id, kind))) rechecks.Add(recheck);
-            }
+            await SweepAsync(repository, engine, scope, now, pending, rechecks, ct).ConfigureAwait(false);
         }
 
         if (rechecks.Count > 0) await ops.SweepAsync(rechecks, now, ct).ConfigureAwait(false);
         return rechecks.Count;
+    }
+
+    // The engine pages nothing and keeps an entry that writes nothing at its front, so the ask doubles instead.
+    private async Task SweepAsync(
+        string repository, IMemoryEngine engine, IMemoryViewCheck scope, DateTimeOffset now, IReadOnlySet<(string Repository, string Target, string Kind)> pending,
+        List<MemoryRecheck> rechecks, CancellationToken ct)
+    {
+        var read = new HashSet<string>(StringComparer.Ordinal);
+        var written = 0;
+        for (var asked = Math.Min(Limit, MaxReads); asked > 0; asked = Math.Min(asked * 2, MaxReads))
+        {
+            var dues = await engine.DueAsync(now - RecheckAfter, asked, ct).ConfigureAwait(false);
+            foreach (var due in dues.Where(due => read.Add(due.Id)))
+            {
+                if (await RecheckAsync(repository, due, scope, ct).ConfigureAwait(false) is not { } recheck) continue;
+                var kind = recheck.Holds ? MemoryOpKind.Confirm : MemoryOpKind.End;
+                if (pending.Contains((repository, due.Id, kind))) continue;
+                rechecks.Add(recheck);
+                if (++written >= Limit) return;
+            }
+
+            if (dues.Count < asked || asked >= MaxReads) return;
+        }
     }
 
     private async Task<MemoryRecheck?> RecheckAsync(string repository, MemoryDue due, IMemoryViewCheck scope, CancellationToken ct)

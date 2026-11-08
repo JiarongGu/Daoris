@@ -269,4 +269,47 @@ public sealed class CitationRecheckTests : IAsyncLifetime
         Assert.Equal((MemoryOpKind.End, fails.Id, fails.Revision), (end.Change.Kind, end.Change.Target, end.Change.Revision));
         Assert.Contains("D70", end.Change.Text);
     }
+
+    /// <summary>🔴 Entries that write nothing stay at the engine's front, and the sweep still reaches the one behind them.</summary>
+    [Fact]
+    public async Task The_sweep_reaches_an_entry_behind_a_limit_of_inconclusive_ones()
+    {
+        var service = await ServeAsync(GitProbe);
+        await using var machine = await MemoryMachine.OpenAsync("memory-sweep-limit");
+        var gone = MemoryCitations.Of([new Citation("served:docs/decisions/D99.md", null, "aaaa1111", false, "digest")])!;
+        var holds = MemoryCitations.Of([Cited(await service.CiteAsync(Opening))])!;
+        var queue = new DueQueue([new("stuck-1", 1, gone), new("stuck-2", 1, gone), new("behind", 1, holds)]);
+        var sweep = new MemorySweep(machine.Memory, new Only("served", queue), service) { Limit = 2 };
+
+        var written = await sweep.RunAsync(DateTimeOffset.UtcNow);
+
+        Assert.Equal(1, written);
+        var confirm = Assert.Single(await machine.Memory.ListAsync(MemoryOpState.Ready));
+        Assert.Equal((MemoryOpKind.Confirm, "behind"), (confirm.Change.Kind, confirm.Change.Target));
+    }
+
+    private sealed class Only(string repository, IMemoryEngine engine) : IMemoryEngines
+    {
+        public IMemoryEngine? Open(string name, MemoryReinforcement reinforceOn) => name == repository ? engine : null;
+    }
+
+    private sealed class DueQueue(IReadOnlyList<MemoryDue> due) : IMemoryEngine
+    {
+        public Task<IReadOnlyList<MemoryDue>> DueAsync(DateTimeOffset since, int limit, CancellationToken ct = default) =>
+            Task.FromResult<IReadOnlyList<MemoryDue>>([.. due.Take(limit)]);
+
+        public Task<IReadOnlyList<MemoryEntry>> SearchAsync(string query, int limit, CancellationToken ct = default) => throw new NotSupportedException();
+
+        public Task<MemoryEntry?> GetAsync(string id, CancellationToken ct = default) => throw new NotSupportedException();
+
+        public Task<IReadOnlyList<MemoryRelated>> ExpandAsync(string id, CancellationToken ct = default) => throw new NotSupportedException();
+
+        public Task<MemoryEntry> RememberAsync(string text, CancellationToken ct = default, string? key = null, string? recheck = null) => throw new NotSupportedException();
+
+        public Task<MemoryLink> RelateAsync(string from, string to, string kind, CancellationToken ct = default, string? key = null) => throw new NotSupportedException();
+
+        public Task<MemoryEntry?> ConfirmAsync(string id, long revision, CancellationToken ct = default, string? key = null) => throw new NotSupportedException();
+
+        public Task<MemoryEntry?> EndAsync(string id, long revision, string reason, CancellationToken ct = default, string? key = null) => throw new NotSupportedException();
+    }
 }
