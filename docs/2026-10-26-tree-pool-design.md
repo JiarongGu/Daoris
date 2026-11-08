@@ -2057,7 +2057,7 @@ place), and every row's park, placement, relink, exclusive hold and parking name
   - **Measured, written in the row's note, read before row d:** a warm build against a cold one in one slot, over the line's own day of
     commits; how long a take holds the start's shared hold; how often a switch is refused.
 
-### c. ⚖ The sites that meet a gone tree learn that a slot can come back; the opened moment; a taken line's review. Inert until d.
+### c. ⚖ The sites that meet a gone tree learn that a slot can come back; the opened moment; a taken line's review. Inert until d. **Built** (2026-11-08, `Workplace/Pool/LinePlaces.cs`; the census's other row c entries, the in-use sets, the branch-from-folder readers and the remaining folder readers, are left)
 
 - **Changes** *(R4)*. Every folder-reader of a record's tree that §3.2 lists asks `TreePool.WhereIs(line)` and opens the slot it answers,
   which answers the record's own path while no pool is on: `RunState`'s line path beside `WorkTree`, read by `OpenRecord`, `HandToSession` and

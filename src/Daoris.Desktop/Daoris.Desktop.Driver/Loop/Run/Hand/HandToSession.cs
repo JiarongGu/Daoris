@@ -29,6 +29,7 @@ internal sealed class HandToSession(IRunWiring wiring) : IRunStage
         var (opened, joinedIn, entryTree, carryingOn, answered, handsOn, inSync) = (tree.Opened, tree.JoinedIn, tree.EntryTree, tree.CarryingOn, tree.Answered, tree.HandsOn, tree.InSync);
         var (sessionId, keyed, fenced, continues) = (state.Opened.SessionId, state.Opened.Keyed, state.Opened.Fenced, state.Opened.Continues);
         var (carry, workTree, runBound, setUp) = (state.Carry, state.WorkTree, state.Bound, state.SetUp);
+        var folder = state.WorkFolder;
         var prior = carryingOn ? start.Resumes : null;
         if (await CutLimitPart.BehindAsync(context, prior, ct).ConfigureAwait(false) is { } ended)
         {
@@ -87,7 +88,7 @@ internal sealed class HandToSession(IRunWiring wiring) : IRunStage
                 ? null
                 : await ContextBriefs.ComposeAsync(
                     service, context.Events, home, prior.Session, continues?.Why ?? HandOverWhy.CarryOn, conversation: false, note: handedNote,
-                    config: config, tree: workTree, ct: ct).ConfigureAwait(false);
+                    config: config, tree: folder, ct: ct).ConfigureAwait(false);
             if (prior is not null && continues is not null && conversation is not null) wiring.SayCarried(prior, sessionId, agent, selection.Profile, continues.Why, conversation);
             if (prior is not null && continues is not null && brief is not null)
             {
@@ -126,7 +127,7 @@ internal sealed class HandToSession(IRunWiring wiring) : IRunStage
             var heavy = HeavyTold.Hand(workTree, home, quest.To, checks, adapter.Can.TakesSettings);
             var checksKept = SessionChecks.Hold(home, sessionId, checks, CallBound.MinutesOf(process));
             using var checksHeld = new Disposer(() => SessionChecks.LetGo(checksKept));
-            var asking = await StartTargets.WithAskWordsAsync(SessionTarget.ForQuest(quest, workTree, service.BaseUrl), sessionId, service, ct).ConfigureAwait(false);
+            var asking = await StartTargets.WithAskWordsAsync(SessionTarget.ForQuest(quest, folder, service.BaseUrl), sessionId, service, ct).ConfigureAwait(false);
             // A carry-on's moved words are taken once its first prompt is written, and the take is what keeps the person's among them on
             // the ask this instruction reads, so the instruction is handed them here, as the take will have kept them.
             if (delivering is not null && movedBy is not null && movedOn is { Count: > 0 } && asking.Words is AskWords askRead)
@@ -168,7 +169,7 @@ internal sealed class HandToSession(IRunWiring wiring) : IRunStage
                 // quest and finish the work rather than build it again.
                 Retried = carryingOn && start.CarriesWork is > 0 ? start.Resumes!.Note ?? "it ended before closing the quest." : null,
                 // A further part gone into its session's tree is told what the part before it left uncommitted there.
-                InFlight = carryingOn || joinedIn is not null ? await WorkingTree.UncommittedAsync(workTree, ct: ct).ConfigureAwait(false) : [],
+                InFlight = carryingOn || joinedIn is not null ? await WorkingTree.UncommittedAsync(folder, ct: ct).ConfigureAwait(false) : [],
                 // The harness the part before it ran on and the models its door reported, so a carry-on of another maker credits what that
                 // part left uncommitted.
                 LeftBy = carryingOn ? wiring.LeftBy(start.Resumes!) : null,
@@ -181,7 +182,7 @@ internal sealed class HandToSession(IRunWiring wiring) : IRunStage
                     rewritten: GitWiring.DoorPath(home, GitWiring.RemoteHelper) is not null,
                     origin: GitWiring.DoorPath(home, GitWiring.RemoteHelper) is null
                         ? null
-                        : await GitRemotes.AddressOf(workTree, "origin", ct: ct).ConfigureAwait(false),
+                        : await GitRemotes.AddressOf(folder, "origin", ct: ct).ConfigureAwait(false),
                     older: await GitWiring.OlderAsync(home, ct).ConfigureAwait(false)),
                 // What its files stage kept, placed or installed, so it skips the install that would delete them.
                 Dependencies = state.Files.Told,
@@ -276,7 +277,7 @@ internal sealed class HandToSession(IRunWiring wiring) : IRunStage
 
             LimitCarried.Withdraw(context, adapter, selection, workTree, conversation!);
             var fallback = await ContextBriefs.ComposeAsync(
-                service, context.Events, home, prior!.Session, continues!.Why, conversation: false, note: handedNote, config: config, tree: workTree, ct: ct)
+                service, context.Events, home, prior!.Session, continues!.Why, conversation: false, note: handedNote, config: config, tree: folder, ct: ct)
                 .ConfigureAwait(false);
             wiring.SayMoved(prior, sessionId, agent, selection.Profile, continues.Why, fallback, LimitCarry.Refused);
             var briefed = target with { Brief = fallback, Course = null, Block = target.Block! with { Memory = fallback.Memory } };
@@ -304,7 +305,7 @@ internal sealed class HandToSession(IRunWiring wiring) : IRunStage
                 // went through, where it went through one.
                 var blockFolder = TargetPrompt.Filed(TargetPrompt.ForStart(held, context.Adapters, adapter)) ? StandingBlocks.FolderOf(home, sessionId) : null;
                 var ruled = wiring.HandRules(
-                    adapter, spawn, sessionId, start.Workspace, quest.To, workTree, held.AttachmentsDirectory, across: across, plugins: skillPlugins,
+                    adapter, spawn, sessionId, start.Workspace, quest.To, folder, held.AttachmentsDirectory, across: across, plugins: skillPlugins,
                     continued: blockFolder is null ? composed?.Kept : [.. composed?.Kept ?? [], blockFolder], heavy: heavy);
                 return (spawn, notice, served, ruled, new Disposer(() => SpawnFiles.RemoveFolder(skills)));
             }

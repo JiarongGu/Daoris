@@ -27,4 +27,10 @@ public sealed record LineWhere(string Folder, LineStand Stand, KeptTree? Slot)
 
     /// <summary>Whether it stands, or can be had: what a go-on asks before it brings the tree back.</summary>
     public bool StandsOrCanBeHad => Stand != LineStand.Gone;
+
+    /// <summary>Whether no folder holds the tree now, or the one that does is empty: nothing there for a review to read.</summary>
+    public bool Unreadable => !Stands || TreeFolders.TreeGone(Folder);
+
+    /// <summary>Whether the tree is gone for good: no folder and no slot to bring back, or a folder with nothing in it (<see cref="TreeFolders.TreeGone"/>).</summary>
+    public bool GoneForGood => Stand == LineStand.Gone || (Stands && TreeFolders.TreeGone(Folder));
 }

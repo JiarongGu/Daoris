@@ -191,7 +191,7 @@ internal sealed class ChatStarts(IExecutorWiring wiring, ChatTold told)
         // A tree of the conversation's own, when asked for, per conversation or as the repository's standing choice. Grown before the record,
         // like every refusal above this line. Its repository's trees are held from here until the record is open, as a driven start holds
         // them, so bringing the repository up to date does not rebase the tree under it.
-        if (tree is not null && !Directory.Exists(tree))
+        if (tree is not null && !ConversationTrees.Stands(home, tree))
         {
             return new(null, "the tree the conversation ran in is gone, so there is nothing for a new one to go on in.");
         }

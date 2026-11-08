@@ -140,7 +140,7 @@ internal sealed class CurveMove(IExecutorWiring wiring) : IExecutor
 
         // What the hand-over's own ask judged before it kept a box (no such session, a conversation that went on, an account not the agent's,
         // a tree gone): refused here the same way, quietly, before anything is decided.
-        var (refused, _) = await HandOver.JudgeAsync(_context.Service, _handOver.AccountsOf, sessionId, agent, to, ct).ConfigureAwait(false);
+        var (refused, _) = await HandOver.JudgeAsync(_context.Service, _handOver.AccountsOf, sessionId, agent, to, ct, _context.Home).ConfigureAwait(false);
         if (refused is not null) return choice;
 
         // The move is decided in the store, and no box is written beside it.

@@ -83,8 +83,16 @@ public static partial class ReviewServed
         return full;
     }
 
-    /// <summary>Whether a tree or a build's folder still stands on this machine.</summary>
+    /// <summary>Whether a build's folder still stands on this machine.</summary>
     public static bool Stands(string folder) => Directory.Exists(folder);
+
+    /// <summary>Whether the tree a set-up showed from still holds its build: it stands, and its slot did not take its line after the showing.</summary>
+    public static bool TreeStands(string? home, string tree, DateTimeOffset? shown)
+    {
+        if (home is null) return Stands(tree);
+        var where = new LinePlaces(home).Of(tree);
+        return where.Stands && !(where.Slot is { } slot && shown is { } at && slot.Since > at);
+    }
 
     /// <summary>The first part of a build's <c>index.html</c> in <paramref name="folder"/>, where its <c>&lt;base&gt;</c> is; null where there is none.</summary>
     public static string? IndexHead(string folder)

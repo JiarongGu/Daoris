@@ -125,7 +125,10 @@ public static class SessionReviews
     {
         // This machine's landing of the session, standing or a trace: where its work went.
         var landing = trees.Recorded.Landing(session);
-        var gone = TreeFolders.TreeGone(tree);
+        if (landing is null && await PooledBranchReviews.ReadAsync(trees, tree, baseCommit, checkoutOf, ct).ConfigureAwait(false) is { } pooled) return pooled;
+        var placed = new LinePlaces(trees.Context.Home).Of(tree);
+        if (tree is not null) tree = placed.Folder;
+        var gone = placed.Unreadable;
 
         // What the session's OWN tree holds that no commit does, read apart; never for a conversation in
         // the person's checkout, whose uncommitted work is not knowably the session's.

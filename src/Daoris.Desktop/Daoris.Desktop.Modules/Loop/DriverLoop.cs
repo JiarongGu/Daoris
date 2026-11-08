@@ -40,7 +40,7 @@ public sealed class DriverLoop(
     /// The review's showing in Daoris's browser: one for the shell's life, handed to every look's
     /// driver, read by the strip's chip and pressed by its *Show it again*. Null where this loop carries no browser.
     /// </summary>
-    public ReviewDesk? Reviews { get; } = reviews is null ? null : new ReviewDesk(reviews);
+    public ReviewDesk? Reviews { get; } = reviews is null ? null : new ReviewDesk(reviews, HomeOfChoices());
 
     /// <summary>
     /// The shell's word on Daoris's own browser for clearing its caches: its browser host, handed as the

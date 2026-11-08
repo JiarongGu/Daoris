@@ -68,6 +68,7 @@ public sealed class DriverRunPartsTests : IDisposable
         Assert.Contains("written by the account stage", Assert.Throws<InvalidOperationException>(() => state.CarriedModel(null)).Message);
         Assert.Contains("written by the access stage", Assert.Throws<InvalidOperationException>(() => state.Permissions).Message);
         Assert.Contains("written by the tree stage", Assert.Throws<InvalidOperationException>(() => state.WorkTree).Message);
+        Assert.Contains("written by the tree stage", Assert.Throws<InvalidOperationException>(() => state.WorkFolder).Message);
         Assert.Contains("written by the tree stage", Assert.Throws<InvalidOperationException>(() => state.Tree).Message);
         Assert.Contains("written by the tree stage", Assert.Throws<InvalidOperationException>(() => state.Starting).Message);
         Assert.Contains("written by the open stage", Assert.Throws<InvalidOperationException>(() => state.Opened).Message);

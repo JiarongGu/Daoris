@@ -73,9 +73,10 @@ internal sealed class TreeFollows(TreeContext context)
     internal async Task<string?> BranchNowAsync(string tree, CancellationToken ct = default)
     {
         if (BranchOfTree(tree) is not { } layout) return null;
-        if (Directory.Exists(tree) && await WorkingTree.IsTopLevelAsync(tree, ct).ConfigureAwait(false))
+        var folder = new LinePlaces(context.Home).Of(tree).Folder;
+        if (Directory.Exists(folder) && await WorkingTree.IsTopLevelAsync(folder, ct).ConfigureAwait(false))
         {
-            return await OwnBranchOfAsync(tree, ct).ConfigureAwait(false) ?? layout.Branch;
+            return await OwnBranchOfAsync(folder, ct).ConfigureAwait(false) ?? layout.Branch;
         }
 
         // A removed branch's trace keeps where its tree went, so it is still known once the tree is gone.
@@ -98,13 +99,15 @@ internal sealed class TreeFollows(TreeContext context)
         var folders = context.TreesRoots.Select(trees => Path.Combine(trees, workspace, repository)).Where(Directory.Exists).ToList();
         if (folders.Count == 0) return;
         var listed = root is null || refs is null ? null : await TreeWorktrees.EntriesAsync(root, ct, refs).ConfigureAwait(false);
+        // A pooled line's branch is learned from the slot it holds, where its folder shows only the slot's number.
+        var held = new LinePlaces(context.Home).Held(workspace, repository).Select(slot => (Folder: slot.Path, Layout: SessionPrefix + slot.Line));
+        var places = folders.SelectMany(Directory.EnumerateDirectories).Select(each => (Folder: each, Layout: SessionPrefix + Path.GetFileName(each))).Concat(held);
         try
         {
-            foreach (var tree in folders.SelectMany(Directory.EnumerateDirectories))
+            foreach (var (tree, layout) in places)
             {
                 // A linked tree's `.git` is a file; a folder with none is a leftover, which git would answer for the repository above.
                 if (!File.Exists(Path.Combine(tree, ".git"))) continue;
-                var layout = SessionPrefix + Path.GetFileName(tree);
                 // The standing entry, else the trace the tidy left of a removed branch whose tree lives on.
                 if (context.Grown.Following(repository, layout) is not { } entry) continue;
                 string? now;

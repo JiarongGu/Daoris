@@ -14,10 +14,11 @@ internal static class PartsHanded
         LoopContext context, EntryParts entry, string? joinedIn, string? entryTree, TreeOpened? opened, string repository, CancellationToken ct)
     {
         var earlier = new List<EarlierPart>();
+        var places = new LinePlaces(context.Home);
         foreach (var part in entry.Parts)
         {
             var named = earlier.Count < TargetPrompt.PartsShown;
-            var tree = named && part.Tree is { Length: > 0 } path && Directory.Exists(path) ? path : null;
+            var tree = named && part.Tree is { Length: > 0 } path && places.Of(path).Stands ? path : null;
             var branch = tree is not null
                 ? await context.Trees.BranchNowAsync(tree, ct).ConfigureAwait(false) ?? $"daoris/{TreeName(tree)}"
                 : named && context.Trees.Recorded.Landing(part.Session) is { GoneAt: null } landing

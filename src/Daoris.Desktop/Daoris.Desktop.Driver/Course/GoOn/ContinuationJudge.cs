@@ -9,9 +9,10 @@ public static class ContinuationJudge
 {
     extension(Continuations)
     {
-        /// <summary>Null where the record resumes; else the first reason it does not, its tree asked of the disk.</summary>
+        /// <summary>Null where the record resumes; else the first reason it does not, its tree asked of the disk and of the home's pool.</summary>
         public static ContinueReason? Judge(
-            PriorSession park, string adapter, bool doorResumes, string? profile, HarnessConversation? kept, ContinueReason? account = null) =>
-            Continuations.Judge(ConversationTrees.Stands, park, adapter, doorResumes, profile, kept, account);
+            PriorSession park, string adapter, bool doorResumes, string? profile, HarnessConversation? kept, ContinueReason? account = null,
+            string? home = null) =>
+            Continuations.Judge(tree => ConversationTrees.Stands(home, tree), park, adapter, doorResumes, profile, kept, account);
     }
 }

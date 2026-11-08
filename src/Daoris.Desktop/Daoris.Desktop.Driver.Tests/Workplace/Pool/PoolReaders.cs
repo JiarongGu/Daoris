@@ -1,18 +1,9 @@
 namespace Daoris.Desktop.Driver.Tests;
 
-/// <summary>
-/// A site of the census: a file under the desktop's sources, a pattern its text holds, the row that moves it and what it reads there.
-/// </summary>
-/// <param name="File">The file's path under <c>src/Daoris.Desktop</c>, with forward slashes.</param>
-/// <param name="Token">A regular expression the file's text matches while the site stands.</param>
-/// <param name="Row">The pool's row that moves the site to ask the pool where a line is.</param>
-/// <param name="Reads">What it reads there.</param>
+/// <summary>A site of the census: a file under the desktop's sources, a regular expression its text matches while the site stands, the row that moves it and what it reads there.</summary>
 internal sealed record PoolReader(string File, string Token, string Row, string Reads);
 
-/// <summary>
-/// The three lists the census holds, each reader named with its row. All are <i>not yet moved</i>: a row that moves one takes it out of
-/// its list or marks it moved, and a site that is in no list fails the census.
-/// </summary>
+/// <summary>The three lists the census holds, each reader named with its row: a row that moves one takes it out, and a site in no list fails.</summary>
 internal static class PoolReaders
 {
     private const string Driver = "Daoris.Desktop.Driver/";
@@ -22,32 +13,14 @@ internal static class PoolReaders
     /// <summary>Readers that open a record's tree as a folder: a pooled line's record names a line, so each asks the pool where it stands.</summary>
     internal static IReadOnlyList<PoolReader> OpenAsFolder { get; } =
     [
-        new(Driver + "Loop/Run/RunState.cs", @"public string WorkTree", "c", "the run's tree, which the start's record, agent and trust read as a folder"),
-        new(Driver + "Loop/Run/Open/OpenRecord.cs", @"state\.WorkTree", "c", "the tree the record opens with"),
-        new(Driver + "Loop/Run/Hand/HandToSession.cs", @"state\.WorkTree", "c", "the tree the agent is handed"),
-        new(Driver + "Loop/Run/Trust/TrustAsk.cs", @"run\.State\.WorkTree", "c", "the tree the agent's trust is asked for"),
-        new(Driver + "Loop/Chat/ChatStarts.cs", @"!Directory\.Exists\(tree\)", "c", "the conversation's tree, found or made again"),
-        new(Driver + "Course/ConversationTrees.cs", @"Directory\.Exists\(tree\)", "c", "whether a conversation's tree stands, or can be brought back"),
-        new(Driver + "Course/Domain/Continuation.cs", @"treeStands\(tree\)", "c", "whether words going on have a tree to go on in"),
-        new(Driver + "Loop/DriverContinuations.cs", @"park\.Tree", "c", "the tree a parked line goes on in"),
-        new(Driver + "Course/Chat/BriefedMove.cs", @"ConversationTrees\.Stands", "c", "the tree a briefed move goes on in"),
-        new(Driver + "Course/Chat/LimitMove.cs", @"prior\.Tree", "c", "the tree a limit move goes on in"),
-        new(Driver + "Loop/Helpers/HelperSettling.cs", @"CaptureAsync\(asker\.Tree", "c", "the asker's HEAD and status, its own in a slot, which the helper wait holds"),
-        new(Driver + "Workplace/ToolHomeLeftovers.cs", @"ProjectFolders", "c", "a slot's project folder in an agent's home, gone only with the slot"),
         new(Driver + "Workplace/TreeReturns.cs", @"Directory\.Exists\(full\)", "e", "TREEGONE1's test of a gone tree and its remake"),
-        new(Driver + "Workplace/TreeFollows.cs", @"LearnTreesAsync", "c", "the branch a line's folder shows at each tidy pass"),
         new(Driver + "Workplace/SessionLocks.cs", @"HolderOf\(tree\)", "b", "the lock of the tree a session holds"),
         new(Driver + "Workplace/TreeSetAside.cs", @"Directory\.Exists\(tree\)", "d", "the tidy's set-aside of a finished line's tree"),
         new(Driver + "Workplace/TreeSweeps.cs", @"Directory\.Exists\(tree\)", "d", "the sweep's read of a finished line's tree"),
         new(Driver + "Workplace/TreeRemovals.cs", @"Directory\.Exists\(full\)", "d", "the person's press removing a tree"),
         new(Driver + "Workplace/SystemSpace.cs", @"HomeEntry\.Trees", "d", "the Disk space card's reading of the trees folder"),
-        new(Driver + "Workplace/ContentHolds.cs", @"Directory\.GetCreationTimeUtc\(tree\)", "c", "when the tree was opened, for a slot the moment its present line took it"),
-        new(Driver + "Workplace/LandPerformer.cs", @"TreeFolders\.TreeGone", "e", "the landing's two gone reads"),
-        new(Driver + "Workplace/SessionReviews.cs", @"TreeFolders\.TreeGone", "c", "a session's review of a tree that may be gone"),
         new(Driver + "Review/ReviewDesk.cs", @"ServeAsync", "e", "the review served from a tree, and Show it again"),
         new(Modules + "Windows/TerminalModule.cs", @"TreeVisit\.Take", "d", "the terminal opened in a tree"),
-        new(Driver + "Loop/Run/Tree/GrowTree.cs", @"BranchNowAsync\(parentTree", "c", "a chain's branch now, asked of the parent's tree"),
-        new(Driver + "Loop/Session/PartsHanded.cs", @"BranchNowAsync\(tree", "c", "a part's branch now, asked of its tree"),
         .. FolderGoneReaders,
     ];
 
@@ -104,6 +77,7 @@ internal static class PoolReaders
     internal static IReadOnlyDictionary<string, string> NotSites { get; } = new Dictionary<string, string>
     {
         [Driver + "Plugins/Relay/RelayCopy.cs"] = "its in-use is a marker file in a copy's folder",
+        [Driver + "Workplace/Pool/LineWhere.cs"] = "the answer every reader asks, which tests the folder it names",
     };
 
     /// <summary>The signal of each list: a file whose text matches it is a site and is listed.</summary>
@@ -126,7 +100,6 @@ internal static class PoolReaders
         new(Driver + "Workplace/HistoryClearing.cs", FolderGone, "c", "the history clearing's walk of a tree"),
         new(Driver + "Workplace/KnowledgeWorkplaceReads.cs", FolderGone, "c", "the knowledge server's reads of a tree"),
         new(Driver + "Workplace/OnlyHereProof.cs", FolderGone, "c", "the proof that work is only in a tree"),
-        new(Driver + "Workplace/ReviewGraphReads.cs", FolderGone, "c", "the review graph's read of a tree"),
         new(Driver + "Workplace/SessionDeletion.cs", FolderGone, "c", "a deleted session's tree"),
         new(Driver + "Workplace/TreeFolders.cs", @"static class TreeFolders", "c", "the folder test itself"),
         new(Driver + "Workplace/TreeWorkReads.cs", FolderGone, "c", "the reads of a tree's work"),

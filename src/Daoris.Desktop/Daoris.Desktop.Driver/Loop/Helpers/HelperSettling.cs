@@ -11,7 +11,8 @@ internal sealed class HelperSettling(DriverHelpers owner, LoopContext context)
     internal async Task<LookLine> RunHelperAsync(HelperAsk ask, PriorSession asker, HelperRule rule, HelperFiles files, CancellationToken ct)
     {
         string? tip = null, root = null;
-        if (asker.Tree is { Length: > 0 } tree) (tip, root) = await owner.ReadTreeAsync(tree, ct).ConfigureAwait(false);
+        var folder = asker.Tree is { Length: > 0 } named ? new LinePlaces(_context.Home).Of(named).Folder : null;
+        if (folder is not null) (tip, root) = await owner.ReadTreeAsync(folder, ct).ConfigureAwait(false);
         if (tip is null || root is null)
         {
             return await owner.RefuseAsync(ask, HelperWhy.Unreadable, null, files, ct).ConfigureAwait(false);
@@ -34,7 +35,7 @@ internal sealed class HelperSettling(DriverHelpers owner, LoopContext context)
 
         // The asker's work in progress, captured whole with its manifest at this
         // turn boundary, or refused in its code; its manifest kept before the helper starts, and its commit the copy's.
-        var read = await owner.CaptureAsync(asker.Tree!, ct).ConfigureAwait(false);
+        var read = await owner.CaptureAsync(folder!, ct).ConfigureAwait(false);
         if (read.Captured is not { } capture)
         {
             return await owner.RefuseAsync(ask, read.Code ?? HelperWhy.Unreadable, null, files, ct, read.Detail).ConfigureAwait(false);

@@ -27,7 +27,7 @@ internal sealed class OpenRecord(IRunWiring wiring) : IRunStage
         using var restarting = answerKept ? TreeLock.TryStarting(home, start.Root!) : null;
         if (answerKept && restarting is null) return run.Hold(HeldWords.Holding(quest.To, TreeLock.HolderOf(home, start.Root!)).Why);
 
-        var before = await WorkingTree.HeadAsync(workTree, ct).ConfigureAwait(false);
+        var before = await WorkingTree.HeadAsync(state.WorkFolder, ct).ConfigureAwait(false);
 
         // The session this start continues, why and who asked: the one the quest is handed over from, or one a limit cut off when this
         // runs on another account; every other carry-on names its link too, `retry` where its resume fell back.

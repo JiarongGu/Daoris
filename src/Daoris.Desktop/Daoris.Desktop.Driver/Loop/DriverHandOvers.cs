@@ -312,7 +312,7 @@ internal sealed class DriverHandOvers(LoopContext context, Func<ConversationMove
             // The rule's verdict, `go`, is the consent the course reads as a fact; the door keeps the judging.
             var asked = (await HandOver.AskAsync(
                 service, moves, AccountsOf, session, agent, null, HandOverWhy.Agent, HandOverBy.Agent, DateTimeOffset.UtcNow, ct,
-                HandOver.ConsentOf(verdict), model: approved?.Model, effort: approved?.Effort).ConfigureAwait(false)).Answer;
+                HandOver.ConsentOf(verdict), model: approved?.Model, effort: approved?.Effort, home: _context.Home).ConfigureAwait(false)).Answer;
             (kept, message, code) = (asked.Kept, asked.Message, asked.Why);
         }
 
@@ -438,7 +438,7 @@ internal sealed class DriverHandOvers(LoopContext context, Func<ConversationMove
         var (refused, _) = IsQuest(record)
             ? await QuestHandOver.JudgeAsync(
                 _context.Service, Drives, record.Session, agent, null, ct, agentAsk: true, consent: HandOver.ConsentOf(HandOverAskVerdict.Go(agent))).ConfigureAwait(false)
-            : await HandOver.JudgeAsync(_context.Service, AccountsOf, record.Session, agent, null, ct).ConfigureAwait(false);
+            : await HandOver.JudgeAsync(_context.Service, AccountsOf, record.Session, agent, null, ct, _context.Home).ConfigureAwait(false);
         return refused;
     }
 

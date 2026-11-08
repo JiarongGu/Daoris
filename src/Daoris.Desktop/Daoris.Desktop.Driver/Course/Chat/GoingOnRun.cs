@@ -87,7 +87,7 @@ internal sealed class GoingOnRun(IExecutorWiring wiring, ChatGoOn owner)
         var kept = _context.Conversations.Read(sessionId);
         var why = adapter is null
             ? ContinueWhy.Of(ContinueWhy.Refused)
-            : Continuations.Judge(record, adapter.Id.Value, adapter.Can.Resumes, record.Profile, kept);
+            : Continuations.Judge(record, adapter.Id.Value, adapter.Can.Resumes, record.Profile, kept, home: _context.Home);
         if (why is not null || adapter is null || kept is null)
         {
             var reason = why ?? ContinueWhy.Of(ContinueWhy.Unkept);
@@ -149,7 +149,7 @@ internal sealed class GoingOnRun(IExecutorWiring wiring, ChatGoOn owner)
         if (resume.Elsewhere is { } elsewhere) return owner.CannotGoOn(record, elsewhere, adapter.Id.Value);
         var selection = resume.Selection;
         if (!selection.Allowed) return owner.Held(sessionId, HeldWords.Refused(selection));
-        if (Continuations.Judge(record, adapter.Id.Value, adapter.Can.Resumes, selection.Profile, kept) is { } account)
+        if (Continuations.Judge(record, adapter.Id.Value, adapter.Can.Resumes, selection.Profile, kept, home: _context.Home) is { } account)
         {
             return owner.CannotGoOn(record, account, adapter.Id.Value);
         }
@@ -272,7 +272,7 @@ internal sealed class GoingOnRun(IExecutorWiring wiring, ChatGoOn owner)
         if (resume.Elsewhere is { } elsewhere) return owner.CannotGoOn(record, elsewhere, adapter.Id.Value);
         var selection = resume.Selection;
         if (!selection.Allowed) return owner.Held(sessionId, HeldWords.Refused(selection));
-        if (Continuations.Judge(record, adapter.Id.Value, adapter.Can.Resumes, selection.Profile, kept) is { } account)
+        if (Continuations.Judge(record, adapter.Id.Value, adapter.Can.Resumes, selection.Profile, kept, home: _context.Home) is { } account)
         {
             return owner.CannotGoOn(record, account, adapter.Id.Value);
         }

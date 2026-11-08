@@ -11,8 +11,9 @@ public sealed class LinePlaces(string home)
     private readonly TreePool _pool = new(home);
 
     /// <summary>Where the tree a record names is, read from the record's path alone; a path outside the home's trees is the disk's.</summary>
-    public LineWhere Of(string tree)
+    public LineWhere Of(string? tree)
     {
+        if (string.IsNullOrWhiteSpace(tree)) return new(tree ?? "", LineStand.Gone, null);
         var (workspace, repository) = OwnerOf(tree);
         return workspace.Length == 0 ? Disk(tree) : Of(workspace, repository, tree);
     }
@@ -28,6 +29,15 @@ public sealed class LinePlaces(string home)
             ? new(tree, LineStand.CanBeBroughtBack, null)
             : new(tree, LineStand.Gone, null);
     }
+
+    /// <summary>The slots of a repository that serve a line now.</summary>
+    public IReadOnlyList<KeptTree> Held(string workspace, string repository) => [.. _pool.Slots(workspace, repository).Where(each => each.Held)];
+
+    /// <summary>The kept slot whose folder is <paramref name="folder"/>, or null for any other folder.</summary>
+    public KeptTree? SlotAt(string workspace, string repository, string folder) =>
+        KeptTree.IsSlotFolder(folder)
+            ? _pool.Slots(workspace, repository).FirstOrDefault(each => TreeGit.SamePath(each.Path, folder))
+            : null;
 
     /// <summary>The slots a line has worked in, the present one first: where an agent filed what it kept by folder.</summary>
     public IReadOnlyList<KeptTree> SlotsOf(string workspace, string repository, string tree)
@@ -46,7 +56,16 @@ public sealed class LinePlaces(string home)
     /// <summary>A tree's workspace and repository from the layout the home chose, or empty for a path outside it.</summary>
     public (string Workspace, string Repository) OwnerOf(string tree)
     {
-        var full = Path.GetFullPath(tree);
+        string full;
+        try
+        {
+            full = Path.GetFullPath(tree);
+        }
+        catch (Exception error) when (error is ArgumentException or NotSupportedException or PathTooLongException)
+        {
+            return ("", "");
+        }
+
         foreach (var root in DaorisHome.Places(home, HomeEntry.Trees))
         {
             var top = Path.TrimEndingDirectorySeparator(Path.GetFullPath(root)) + Path.DirectorySeparatorChar;

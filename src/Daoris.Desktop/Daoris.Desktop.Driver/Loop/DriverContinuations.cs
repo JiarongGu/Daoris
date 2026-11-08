@@ -152,7 +152,7 @@ internal sealed class DriverContinuations(LoopContext context, Driver driver)
         var why = adapter is null
             ? null
             : Continuations.Judge(
-                tree => treeStands && ConversationTrees.Stands(tree), park, adapter.Id.Value, adapter.Can.Resumes, selection.Profile, kept, account);
+                tree => treeStands && ConversationTrees.Stands(home, tree), park, adapter.Id.Value, adapter.Can.Resumes, selection.Profile, kept, account);
         var course = DrivenCourse.GoOn(
             park, quest.Status, why?.Code ?? (adapter is not null && kept is null ? ContinueWhy.Unkept : null), agentGone: adapter is null);
         _driver.Decided?.Invoke(course);

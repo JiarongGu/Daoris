@@ -12,7 +12,7 @@ internal static class TrustAsk
     public static StartRun? Untrusted(IRunWiring wiring, RunRound run, HarnessSelection chosen)
     {
         var quest = run.Quest;
-        var workTree = run.State.WorkTree;
+        var workTree = run.State.WorkFolder;
         if (run.State.Preflight is not { } preflight
             || preflight.Home is not { TrustFile: { Length: > 0 } trustFile } home
             || wiring.HandedConnector(preflight, run.Start.Workspace, quest.To, "quest_respond"))

@@ -130,9 +130,9 @@ public static class HandOver
         ServiceClient service, ConversationMoves moves, Func<string, IReadOnlyList<string>?> accountsOf, string id, string agent, string? account,
         string why, string askedBy, DateTimeOffset now, CancellationToken ct = default, CourseRules? consent = null,
         CourseBoundary boundary = CourseBoundary.BetweenTurns, Func<PriorSession, HandOverAnswer?>? before = null, Action<LineCourse>? decided = null,
-        string? model = null, string? effort = null)
+        string? model = null, string? effort = null, string? home = null)
     {
-        var judged = await JudgedAsync(service, accountsOf, id, agent, account, ct, askedBy, why, consent, boundary, decided).ConfigureAwait(false);
+        var judged = await JudgedAsync(service, accountsOf, id, agent, account, ct, askedBy, why, consent, boundary, decided, home).ConfigureAwait(false);
         if (judged.Refused is not null) return new HandOverAsked(judged.Refused, null, null);
         if (before?.Invoke(judged.Prior!) is { } held) return new HandOverAsked(held, null, null);
 
@@ -166,9 +166,9 @@ public static class HandOver
     /// </summary>
     internal static async Task<(HandOverAnswer? Refused, PriorSession? Prior)> JudgeAsync(
         ServiceClient service, Func<string, IReadOnlyList<string>?> accountsOf, string id, string agent, string? account,
-        CancellationToken ct = default)
+        CancellationToken ct = default, string? home = null)
     {
-        var judged = await JudgedAsync(service, accountsOf, id, agent, account, ct).ConfigureAwait(false);
+        var judged = await JudgedAsync(service, accountsOf, id, agent, account, ct, home: home).ConfigureAwait(false);
         return (judged.Refused, judged.Prior);
     }
 
@@ -186,7 +186,7 @@ public static class HandOver
     internal static async Task<HandOverJudged> JudgedAsync(
         ServiceClient service, Func<string, IReadOnlyList<string>?> accountsOf, string id, string agent, string? account,
         CancellationToken ct = default, string askedBy = HandOverBy.Person, string why = HandOverWhy.Press, CourseRules? consent = null,
-        CourseBoundary boundary = CourseBoundary.BetweenTurns, Action<LineCourse>? decided = null)
+        CourseBoundary boundary = CourseBoundary.BetweenTurns, Action<LineCourse>? decided = null, string? home = null)
     {
         var json = await service.SessionRecordsJsonAsync(ct).ConfigureAwait(false);
         var record = SessionRecords.Parse(json).FirstOrDefault(each => string.Equals(each.Id, id, StringComparison.Ordinal));
@@ -200,7 +200,7 @@ public static class HandOver
         var conversation = record.Kind == "chat" && record.Quest is null;
 
         // The tree is a fact only where it stands; a session that never goes on is refused first, so its tree is not looked for.
-        var tree = conversation && never is null && prior?.Tree is { Length: > 0 } held && ConversationTrees.Stands(held) ? held : null;
+        var tree = conversation && never is null && prior?.Tree is { Length: > 0 } held && ConversationTrees.Stands(home, held) ? held : null;
         var facts = new CourseFacts(
             new CourseHead(
                 record.State, Adapter: prior?.Adapter, Profile: prior?.Profile, Tree: tree, Conversation: conversation,
@@ -331,7 +331,7 @@ public static class HandOverTake
         Func<PriorSession, HandOverRequest, ContinuedFrom, MoveWords?, CancellationToken, Task<ChatStart>> start, Func<string, ChatMessage, Task<bool>> say,
         CancellationToken ct = default, SwitchChoice.MoveTo? moved = null, ClosingNote? closing = null, string? opens = null)
     {
-        var (refused, prior) = await HandOver.JudgeAsync(service, accountsOf, id, ask.Agent, ask.Account, ct).ConfigureAwait(false);
+        var (refused, prior) = await HandOver.JudgeAsync(service, accountsOf, id, ask.Agent, ask.Account, ct, home).ConfigureAwait(false);
         if (refused is not null) return new HandedOver(null, false, refused.Why, refused.Message);
 
         var from = prior!.Adapter ?? "its agent";

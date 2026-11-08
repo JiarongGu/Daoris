@@ -140,7 +140,7 @@ internal sealed class BriefedMove(IExecutorWiring wiring) : IExecutor
         }
 
         var waiting = (record?.Waiting ?? []).Select(word => new CourseWord(word.Id ?? "", AuthorOf(word), word.Key)).ToList();
-        var tree = record?.Tree is { Length: > 0 } held && ConversationTrees.Stands(held) ? held : null;
+        var tree = record?.Tree is { Length: > 0 } held && ConversationTrees.Stands(context.Home, held) ? held : null;
         var pinned = record is not null && context.Conversations.PickedOn(sessionId, record.Profile);
         var help = WordsNever.IsHelp(listed);
         var facts = new CourseFacts(
@@ -258,7 +258,7 @@ internal sealed class BriefedMove(IExecutorWiring wiring) : IExecutor
         var facts = new CourseFacts(
             new CourseHead(
                 record.State, Role: actor, Choice: record.Choice, Adapter: record.Adapter, Profile: record.Profile,
-                Tree: record.Tree is { Length: > 0 } held && ConversationTrees.Stands(held) ? held : null, Conversation: true, AskDaoris: isHelp,
+                Tree: record.Tree is { Length: > 0 } held && ConversationTrees.Stands(context.Home, held) ? held : null, Conversation: true, AskDaoris: isHelp,
                 NotOffered: true, Waiting: [.. record.Waiting.Select(word => new CourseWord(word.Id ?? "", AuthorOf(word), word.Key))], Session: sessionId),
             CourseBoundary.ProcessExited);
         var course = CourseDecision.Decide(facts, CourseTrigger.WordsKept);

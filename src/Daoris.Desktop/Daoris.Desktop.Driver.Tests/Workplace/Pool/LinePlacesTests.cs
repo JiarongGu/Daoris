@@ -3,7 +3,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// Where a record's tree is opened: a line in a slot is opened at the slot, a legacy tree at its own path, a line whose slot was taken
+/// Where a record's tree is opened: a line in a slot is opened at the slot, a legacy tree at its own path, a line whose slot another line took
 /// can be brought back, and a path the pool never heard of is gone with its folder.
 /// </summary>
 public sealed class LinePlacesTests : IDisposable
@@ -64,13 +64,42 @@ public sealed class LinePlacesTests : IDisposable
     }
 
     [Fact]
+    public void A_landing_closes_a_line_gone_for_good_and_waits_for_one_a_slot_can_be_brought_back_to()
+    {
+        _lines.Slot(1, "s-aaaa");
+        _lines.LetGo(1, "s-aaaa");
+        _lines.Take(1, "s-bbbb");
+        Directory.CreateDirectory(_lines.Tree("s-empty"));
+        var places = new LinePlaces(_lines.Home);
+
+        Assert.False(places.Of(_lines.Tree("s-aaaa")).GoneForGood);
+        Assert.True(places.Of(_lines.Tree("s-aaaa")).Unreadable);
+        Assert.True(places.Of(_lines.Tree("s-never")).GoneForGood);
+        Assert.True(places.Of(_lines.Tree("s-empty")).GoneForGood);
+        Assert.True(places.Of(null).GoneForGood);
+        Assert.False(places.Of(_lines.SlotFolder(1)).GoneForGood);
+    }
+
+    [Fact]
+    public void The_slot_a_folder_is_and_the_slots_that_serve_a_line_are_found_by_the_store()
+    {
+        _lines.Slot(1, "s-aaaa");
+        _lines.Slot(2);
+        var places = new LinePlaces(_lines.Home);
+
+        Assert.Equal(1, places.SlotAt(_lines.Workspace, _lines.Repository, _lines.SlotFolder(1))!.Number);
+        Assert.Null(places.SlotAt(_lines.Workspace, _lines.Repository, _lines.Tree("s-aaaa")));
+        Assert.Equal([1], places.Held(_lines.Workspace, _lines.Repository).Select(each => each.Number));
+    }
+
+    [Fact]
     public void The_slots_a_line_worked_in_are_listed_the_present_one_first()
     {
         _lines.Slot(1, "s-aaaa");
         _lines.LetGo(1, "s-aaaa");
         _lines.Slot(2, "s-aaaa");
 
-        var slots = new LinePlaces(_lines.Home).SlotsOf(PooledLines.Workspace, PooledLines.Repository, _lines.Tree("s-aaaa"));
+        var slots = new LinePlaces(_lines.Home).SlotsOf(_lines.Workspace, _lines.Repository,_lines.Tree("s-aaaa"));
 
         Assert.Equal([2, 1], slots.Select(each => each.Number));
     }
