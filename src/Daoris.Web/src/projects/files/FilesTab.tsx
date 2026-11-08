@@ -43,16 +43,7 @@ export function FilesTab({ repository, look, reading = false, refusal = null, sa
     <div className="grid min-w-0 gap-5">
       <section className="grid min-w-0 gap-1.5">
         <h2 className="m-0 text-title font-semibold text-ink">{t('files.view.title')}</h2>
-        <Prose className="text-small"><Inline text={t('files.view.body', { repository })} /></Prose>
-        <p className="m-0 text-meta text-ink-faint"><Inline text={t('files.view.twin', { repository })} /></p>
-        <p className="m-0 text-meta text-ink-faint">
-          {look.foundCommit ? t('files.view.read', { commit: look.commit, found: look.foundCommit }) : t('files.view.neverRead', { commit: look.commit })}
-        </p>
-        {onPress && (
-          <div>
-            <Button variant="ghost" className="border border-line px-2.5 py-0.5 text-small" onClick={() => onPress({ act: 'read' })}>{t('files.view.readAgain')}</Button>
-          </div>
-        )}
+        <Prose className="text-small"><Inline text={t('files.view.lead', { repository })} /></Prose>
       </section>
 
       {look.unread && (
@@ -77,8 +68,24 @@ export function FilesTab({ repository, look, reading = false, refusal = null, sa
           )}
       </PageSection>
 
-      <FilesPermissions look={look} onPress={onPress} />
       <FilesRules look={look} onPress={onPress} />
+
+      <details open={look.acts.some((act) => act.verdict === 'held') || undefined} className="min-w-0">
+        <summary className="cursor-pointer text-small text-ink-soft">{t('files.view.how')}</summary>
+        <div className="mt-2 grid min-w-0 gap-3">
+          <Prose className="text-small"><Inline text={t('files.view.body', { repository })} /></Prose>
+          <p className="m-0 text-meta text-ink-faint"><Inline text={t('files.view.twin', { repository })} /></p>
+          <p className="m-0 text-meta text-ink-faint">
+            {look.foundCommit ? t('files.view.read', { commit: look.commit, found: look.foundCommit }) : t('files.view.neverRead', { commit: look.commit })}
+          </p>
+          {onPress && (
+            <div>
+              <Button variant="ghost" className="border border-line px-2.5 py-0.5 text-small" onClick={() => onPress({ act: 'read' })}>{t('files.view.readAgain')}</Button>
+            </div>
+          )}
+          <FilesPermissions look={look} onPress={onPress} />
+        </div>
+      </details>
     </div>
   );
 }

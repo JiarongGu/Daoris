@@ -209,7 +209,7 @@ export function fitRadius(
   const most = Math.max(tall === undefined ? FULL : MOST, floor);
   for (let radius = most; radius > floor; radius -= 4) {
     const frame = frameMap(topology, ringAt(topology, radius), words);
-    if (frame.width <= room && (tall === undefined || frame.height <= tall)) return radius;
+    if (frame.width <= room && (tall === undefined || frame.height <= Math.min(tall, Math.max(room, 2 * FULL)))) return radius;
   }
   return floor;
 }

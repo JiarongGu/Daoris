@@ -1,6 +1,8 @@
 {
   "files.view.reading": "Reading the files git does not manage.",
   "files.view.title": "Files git does not manage",
+  "files.view.lead": "What git leaves out of {{repository}}'s folder, and what Daoris does with each path. Add a rule of your own to change one.",
+  "files.view.how": "How Daoris decides",
   "files.view.body": "What Daoris does with the files in {{repository}}'s folder that git neither tracks nor holds as a session's work: the rule that decides each path, the layer it came from and what the layers below it said.",
   "files.view.twin": "In a terminal: `daoris files {{repository}}`",
   "files.view.read": "Read at {{commit}}; the analysis last read it at {{found}}.",
@@ -80,7 +82,7 @@
   "files.view.pathsLabel": "Paths",
   "files.view.copyLabel": "Copy into each tree",
   "files.view.cannot.no-checkout": "This repository has no checkout on this machine, so its files cannot be read.",
-  "files.view.cannot.unreadable": "Git could not read this repository's files.",
+  "files.view.cannot.unreadable": "Git could not read this repository's files. Daoris reads them from the repository's own top folder: check that the folder it holds for this repository is that folder (Manage shows it), or run `git status` there to see what git says.",
   "files.view.refusedPress.unread": "Your file rules do not read, so nothing was written over them: fix the file, then try again.",
   "files.view.refusedPress.refused": "{{message}}",
   "files.view.refusedPress.no-checkout": "This repository has no checkout on this machine, so nothing was read.",
