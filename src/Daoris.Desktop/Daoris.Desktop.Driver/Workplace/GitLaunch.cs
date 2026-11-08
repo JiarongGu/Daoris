@@ -19,10 +19,7 @@ public enum GitRunner
     Held,
 }
 
-/// <summary>
-/// What a git start reads, by its command: what part two's effect policy will decide a
-/// read's flags by. In part one the kind is counted and never changes an argument.
-/// </summary>
+/// <summary>What a git start reads, by its command: what an effect policy would decide a read's flags by; counted, never changing an argument.</summary>
 public enum GitKind
 {
     /// <summary>Names and layout: <c>rev-parse</c>, <c>symbolic-ref</c>, <c>show-ref</c>, <c>for-each-ref</c>, <c>config</c>, <c>var</c>, <c>worktree list</c>.</summary>
@@ -34,7 +31,7 @@ public enum GitKind
     /// <summary>The working tree's state: <c>status</c>.</summary>
     Status,
 
-    /// <summary>A diff against the working tree (<c>diff HEAD</c>): the tree's clean filters and textconv run.</summary>
+    /// <summary>A diff against the working tree (<c>diff HEAD</c>, or an index's against the tree): the tree's clean filters and textconv run.</summary>
     WorktreeDiff,
 
     /// <summary>A diff of the index (<c>diff --cached</c>).</summary>
@@ -42,9 +39,6 @@ public enum GitKind
 
     /// <summary>A diff of two objects (<c>a..b</c>, or two ids), a <c>show</c> or a <c>log -p</c>: textconv runs.</summary>
     ObjectDiff,
-
-    /// <summary>An untracked file as an addition (<c>diff --no-index</c>): the clean filter and textconv run.</summary>
-    UntrackedDiff,
 
     /// <summary><c>merge-tree --write-tree</c>: a configured merge driver runs.</summary>
     MergeTree,
@@ -71,7 +65,7 @@ public enum GitBudget
     /// <summary>Review's own chain: the uncommitted diff, the range and its line, the committed diff, the branch.</summary>
     Review,
 
-    /// <summary>The untracked files' reads, one each, while the patch budget is unspent.</summary>
+    /// <summary>The untracked files' patches: their intents into a private index and its diff, two starts whatever their count.</summary>
     Untracked,
 
     /// <summary>A landed or gone session's review: <c>LandedReviews</c>' and <c>LandedProofs</c>' reads.</summary>
@@ -97,7 +91,7 @@ internal sealed class GitLaunched(GitRunner runner, GitKind kind, string node, G
     public GitKind Kind { get; } = kind;
 
     /// <summary>The review's node (the design's P1.2: <c>T</c>, <c>P</c>, <c>K</c>, <c>E</c>, <c>G1</c>-<c>G3</c>, <c>B1</c>, <c>B2</c>,
-    /// <c>N1</c>, <c>N2</c>, <c>I</c>, <c>M</c>, <c>D</c>, <c>W</c>, <c>S</c>, <c>U</c>, <c>H</c>) where the start is the review's, else its subcommand.</summary>
+    /// <c>N1</c>, <c>N2</c>, <c>I</c>, <c>M</c>, <c>D</c>, <c>W</c>, <c>S</c>, <c>A</c>, <c>U</c>, <c>H</c>) where the start is the review's, else its subcommand.</summary>
     public string Node { get; } = node;
 
     public GitBudget Budget { get; } = budget;
@@ -248,7 +242,6 @@ internal static class GitLaunch
 
     private static GitKind DiffKind(string[] rest)
     {
-        if (rest.Contains("--no-index")) return GitKind.UntrackedDiff;
         if (rest.Contains("--cached") || rest.Contains("--staged")) return GitKind.IndexDiff;
         var paths = Array.IndexOf(rest, "--");
         var revisions = (paths < 0 ? rest : rest[..paths]).Where(word => !word.StartsWith('-')).ToArray();
@@ -283,12 +276,9 @@ internal static class GitLaunch
             ["merge-tree", "--write-tree", ..] => "M",
             ["status", ..] => "S", // optional-locks: a pattern over a start's command, which starts nothing
             ["symbolic-ref", "--short", "-q", "HEAD"] => "H",
-            ["diff", ..] => KindOf(arguments) switch // optional-locks: a pattern over a start's command, which starts nothing
-            {
-                GitKind.UntrackedDiff => "U",
-                GitKind.WorktreeDiff => "W",
-                _ => "D",
-            },
+            ["add", ..] when budget == GitBudget.Untracked => "A",
+            ["diff", ..] when budget == GitBudget.Untracked => "U", // optional-locks: a pattern over a start's command, which starts nothing
+            ["diff", ..] => KindOf(arguments) == GitKind.WorktreeDiff ? "W" : "D", // optional-locks: a pattern over a start's command, which starts nothing
             _ => command[0],
         };
     }

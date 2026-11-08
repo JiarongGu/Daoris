@@ -128,7 +128,7 @@ public sealed class ReviewGraphTodayTests : LandedFixture
         await SameAsync(trees, empty, "abc1234");
     }
 
-    // 3. A tree outside this home: no W, S or U, no range start, the committed review and H, no offer.
+    // 3. A tree outside this home: no W, S, A or U, no range start, the committed review and H, no offer.
     [Fact]
     public async Task A_tree_outside_this_home_reads_alike()
     {
@@ -139,7 +139,7 @@ public sealed class ReviewGraphTodayTests : LandedFixture
 
         var count = await SameAsync(new SessionTrees(Home), root, began);
 
-        Assert.DoesNotContain(count.Starts, start => start.Node is "W" or "S" or "U" or "P" or "K");
+        Assert.DoesNotContain(count.Starts, start => start.Node is "W" or "S" or "A" or "U" or "P" or "K");
     }
 
     // 4. W's T not top: a folder under the trees that is no repository of its own (git walks up).
