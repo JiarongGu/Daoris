@@ -128,7 +128,16 @@ public static class PluginCycles
             PluginFolders.Make(told);
             PluginFolders.Make(data);
             var cycle = new Cycle(new PluginEntry(manifest, full, data, Enabled: true, problem), told, scratch, fixture, home);
-            return await cycle.RunAsync(ct).ConfigureAwait(false);
+            try
+            {
+                return await cycle.RunAsync(ct).ConfigureAwait(false);
+            }
+            catch (OperationCanceledException)
+            {
+                // A cancelled cycle (the window closing) is no failed call, so no step ends the process; it is ended before the scratch under it goes.
+                cycle.Abandon();
+                throw;
+            }
         }
         finally
         {
@@ -157,6 +166,10 @@ public static class PluginCycles
         private readonly List<string> _noise = [];
         private readonly string _world = Path.Combine(scratch, "world.json");
         private string Id => entry.Manifest.Id;
+        private Life? _standing;
+
+        /// <summary>Ends the process a cancelled run left standing.</summary>
+        public void Abandon() => _standing?.Process.Kill();
 
         private PluginTrial Trial() => new(Id, entry.Folder, entry.Manifest.Hooks?.Command ?? [], _steps, Snapshot(_said));
 
@@ -365,6 +378,7 @@ public static class PluginCycles
             }
 
             var life = new Life(process, entry, Id, line => { lock (_noise) _noise.Add(line); }, line => { lock (_said) _said.Add(line); });
+            _standing = life;
             var name = generation == 1 ? "handshake" : "handshake again";
             try
             {
@@ -399,6 +413,7 @@ public static class PluginCycles
         /// <summary>Told to go; and, unless <paramref name="silently"/>, the shutdown and stdout said as a trial says them.</summary>
         private async Task<PluginTrial> EndAsync(Life life, bool silently = false)
         {
+            _standing = null;
             await life.Peer.DisposeAsync().ConfigureAwait(false);
             var left = await life.Process.ExitedAsync(HookProcess.Grace).ConfigureAwait(false);
             if (!left) life.Process.Kill();
