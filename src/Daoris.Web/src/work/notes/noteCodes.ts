@@ -122,6 +122,7 @@ export const NOTE_CODES: Readonly<Record<string, NoteCode>> = {
   'started.deps-left': { values: ['path', 'why'], why: 'deps' },
   // An install that changed git's own hooks or configuration for the repository, named.
   'started.deps-common': { values: ['path', 'changed'] },
+  'started.setup-failed': { values: ['path', 'command', 'why'] },
   'started.files-waiting': { values: ['count', 'repository'] },
   'started.files-unread': { values: ['repository', 'why'] },
   'started.files-stopped': { values: [] },

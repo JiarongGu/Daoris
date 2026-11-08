@@ -81,6 +81,7 @@
   "note.started.deps-unplaced": "`{{path}}` was not placed: {{why}}.",
   "note.started.deps-left": "`{{path}}` is left as this line's own: {{why}}.",
   "note.started.deps-common": "`{{path}}`'s install changed git's own files for this repository: {{changed}}.",
+  "note.started.setup-failed": "`{{path}}`'s setup `{{command}}` failed: {{why}}.",
   "note.deps.why.changed": "its work changed it",
   "note.deps.why.companion": "`{{file}}`, which its install wrote beside it, changed",
   "note.deps.why.unplaced": "Daoris did not place it",

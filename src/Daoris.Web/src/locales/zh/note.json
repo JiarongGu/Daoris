@@ -81,6 +81,7 @@
   "note.started.deps-unplaced": "未放置 `{{path}}`：{{why}}。",
   "note.started.deps-left": "`{{path}}` 保留为这条工作线自己的：{{why}}。",
   "note.started.deps-common": "`{{path}}` 的安装改动了这个仓库 git 自己的文件：{{changed}}。",
+  "note.started.setup-failed": "`{{path}}` 的准备命令 `{{command}}` 失败：{{why}}。",
   "note.deps.why.changed": "它的工作改动了它",
   "note.deps.why.companion": "它的安装在旁边写下的 `{{file}}` 已改变",
   "note.deps.why.unplaced": "它不是 Daoris 放置的",
