@@ -5,6 +5,12 @@ the per-task record. Entries preserve their original wording so the archive stay
 
 ---
 
+## FABRIC-SQUASHCHAIN1 and NODEKIT1 — built parts (2026-11-09)
+
+> **FABRIC-SQUASHCHAIN1** (driver, web; D245): Outcome: a chain's completion past its pull request is fabric steps: `monitor`, `tidy`, the keeper's proof over git, a run's passes reaching both end to end and the web's pull-request readers (BL77, `f479ed63c`; the workflows area).
+>
+> **NODEKIT1** (driver, modules, web; D247): Outcome: every node kind is one folder under `Workflows/Kinds/<Kind>/` registered with `[NodeKind]`, the shared tables gone; the kit, the person's task and approval, the page's kinds generated from the kit and the run view are built (`docs/areas/workflows-review-landing.md`).
+
 ## WFREVIEW1 — the code review of the workflows, review and landing area (2026-11-09)
 
 > **WFREVIEW1** (driver): Outcome: a *Reviewed* given before a recheck's findings reached the person answers nothing (the recheck's delivery time is kept beside it, `OpinionGateState.RecheckToPersonAt`), and a delivery is keyed by a generation as well, so a landing retried after its delivery settled withdrawn starts the next generation with its own phases written ahead (store step 24).
