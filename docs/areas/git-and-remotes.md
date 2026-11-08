@@ -290,7 +290,21 @@ again: a landing's line commit (3), which the promotion reads before the gates (
 the move, and after it as the proof the move held, and its head, because another process can move either and a landing reads afresh
 before each act; the plans' top, the stash tip and the layout (each a read their press compares by); the tree's files and the status
 Review reads for its own diff. A held reader would still cost its lifetime, the repack hazard and the version
-floor (the git-app design §4.3), for at most 9 starts of a merge press's 39.
+floor (the git-app design §4.3), for at most 9 starts of a merge press's 39, and Review asks it nothing.
+
+A start's cost, and LibGit2Sharp beside it, measured on 2026-11-09 by `tools/git-library-bench`, which no product project references:
+`dotnet build tools/git-library-bench -c Release`, then from the root `tools/git-library-bench/bin/Release/net10.0/git-library-bench.exe`
+with `starts`, `setup --name <n> --source <repo>`, `reads --name <n>`, `threads --name <n>`, `parity` or `opens`, its fixtures under
+`_fixtures/gitlib`. On this machine under its agents' load a `rev-parse HEAD` start costs 0.6 to 0.75 s at the median one at a time,
+1.7 s with every core busy and 12.9 s when twenty start at once under that load, 9.8 s of it in `Process.Start`, while the command's own
+work is about 4 ms. Review of a session tree on a clone of this repository is 25 starts and 11.2 s through git, 0.8 s in process with
+the repository held; the look over six trees 23 starts and 9.7 s against 0.55 s. On vscode (6,358 refs, 170,823 commits) the library
+loses: Review 25.1 s against 19.6 s, its walk of the commits no branch holds 20.4 s against 1.1 s and twenty commits' patches 3.7 s
+against 1.4 s, while a ref, a merge-base, the counts or two trees' file names stay under 55 ms against a second a start. Its answers
+equal git's for refs, the worktree list, history, two commits' diffs, eol and ident attributes, ignore case, and a detached or linked
+tree's status and untracked files; they differ in a rename's similarity score, wherever a filter driver runs, under sparse checkout, and
+on a path past 260 characters in a deep tree, where its status fails. It refuses reftable and SHA-256, and a split or sparse index's
+status. What follows is proposed in `docs/2026-11-09-git-library-design.md`.
 
 ## Where a change goes
 
