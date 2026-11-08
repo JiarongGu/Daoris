@@ -139,7 +139,13 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/Agents/` unless they s
     server missing is refused naming it). The protocol door's open (`session/new`, `session/resume`) reads that plan's servers; the
     door's own carrier (`IServerHanding`) is asked the same plan once: Claude Code's native door writes its `.mcp.json` layout under the
     home (`--mcp-config`, the name `ClaudeServers.FileSuffix`), removed with the session; a door with no carrier at its spawn (every door but Claude Code's native one: Codex, dsh, the stand-ins, a plugin's) is written
-    nothing. No start leaves the agent's own servers out, so the plan has no exclusion and no door states an ability for one. A native door drives an adopted repository by its own
+    nothing. No start leaves the agent's own servers out, so the plan has no exclusion and no door states an ability for one, but a
+    supervisor's turn: its rules (`SessionRules.Hand` with `supervise`, `SupervisePermissions`) are the reviewer's shape with the shell
+    tools denied whole and none of the reviewer's git reading, the tree guard handed whatever the person's defaults say, and on Claude
+    Code the spawn held to the person's tier and its handed file and to Daoris's servers alone (`HandSourcesAlone`:
+    `--setting-sources user --strict-mcp-config`; on the protocol door `SourcesAloneMeta`, `settingSources: ["user"]` and
+    `strictMcpConfig: true` beside `settings`), so the copy's settings, hooks and servers and the account's own servers and its
+    plugins' are not its own (measured on both doors by `tools/supervise-containment-probe.mjs`). A native door drives an adopted repository by its own
     `.mcp.json` only where its servers inherit its environment (`ServersInherit`, Claude Code's native door and every undeclared native
     door), and `Adoption.Drives(abilities, adopted)` is the judge. Daoris's connector is always offered. A server declared through `npx` is
     handed as the whole path of node and its package's own script, so the harness starts one node: the package is installed
