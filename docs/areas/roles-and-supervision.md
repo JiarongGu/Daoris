@@ -268,9 +268,10 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they start wi
 46. A supervisor decides or leaves a decision through one door: `SUPERVISOR_DECIDE { kind, subject, generation, proof, do, choice?,
     reasons }` and `SUPERVISOR_LEAVE { kind, subject, generation, proof, bound, reasons }`, both `Role`, each proved over its own
     route's bytes with the subject whole in them. The subject is the kind's typed reference, which does not change while it waits: a
-    question's `{ session, question }`, a referred point's `{ session, point }`; the door takes the question, course and limit kinds,
-    each a row (`QuestionKind`, and over `ReferredPointKind` the `CourseKind` and `LimitKind`, a point's kind its count's,
-    `SupervisorRules.KindOf`) that lists its waiting subjects and keeps a decision against the subject as it stands. A
+    question's `{ session, question }`, a referred point's `{ session, point }`, a landing's `{ session, landing }` (`landing` names
+    the run, the node and the attempt it waits on, the session the run's work); the door takes the question, course, limit and
+    landing kinds, each a row (`QuestionKind`, over `ReferredPointKind` the `CourseKind` and `LimitKind`, a point's kind its count's,
+    `SupervisorRules.KindOf`, and `LandingKind`) that lists its waiting subjects and keeps a decision against the subject as it stands. A
     decision's file keeps its `kind` and `subject`, and its holder is the hold's as the catalogue's record names it. On a question it
     answers a parked session's recorded question with one offered choice and one to five sourced reasons (`--do answer --choice`,
     under `question.answer`), a decide naming a question the session no longer waits on refused `question-changed`; any subject it may
@@ -325,7 +326,19 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they start wi
     `Web/work/head/SupervisorCourseCard.tsx`; from D229, D233)
 49. A decision is held whole in memory for the supervisor role's window (1 to 60 minutes, 5 by default), then released in
     one conditional step that asks the admission again. Its word is `From: supervisor`, never the person's; an
-    unattributable one is quarantined. (from D208, D233)
+    unattributable one is quarantined. A landing is the same window with *Overrule*: the supervisor's `accept` of a `review` step,
+    or `approve` or `reject` of a `human` approval (`LandingSteps`, the kit saying which kinds offer which acts and which hold a run
+    for the person alone), is kept against the step as it waits on that attempt, refused `answered` once it has moved,
+    `go-ahead-open` on a run a `go-ahead` holds, `landing-pushes` where the landing's plan names a plugin that pushes, and
+    `owner-held` on a line the person stopped or whose quest they paused (`LandingJudge`). The look after the courses
+    (`LandingReleaseLook`) reads the step, the admission and `OwnerHolds` again and keeps the node's own word on the run's
+    record through `RunNodeWords.Word`, carrying its author (`NodeWordBy`: role and decision) and attempt; the decision is live,
+    `released`, until the node pass applies the word as the supervisor's (`went-on`) or drops it `stale` where the attempt has
+    moved or the decision is not live in this run. A person's word on the node replaces a supervisor's pending one and the
+    decision moves `superseded`. A restart empties memory, so the first pass drops a word it left, and the start's sweep records a
+    decision whose word the record shows applied as made and closes the rest stale. The head's card says *The supervisor
+    accepted this; it lands at 14:10.* with *Overrule* while it is held (`SupervisorLandingCard`, `SESSION_SUPERVISOR`'s `landings`).
+    (from D208, D233)
 50. The owner's own words supersede a supervisor's decision; *Overrule* takes it back until the move to working admits
     it. (from D208)
 51. The steward, scoped to this Daoris, makes the acts its role's `authority` lists of eighteen with no card: drive, undrive,

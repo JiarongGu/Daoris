@@ -45,10 +45,27 @@ export type CourseRead = {
   earlier: boolean;
 };
 
-/** What the head and *Details* say of the supervisor on one line. */
-export type LineSupervision = { counts: LineCountRead[]; acts: RuleActRead[]; courses: CourseRead[] };
+/** The supervisor's decision on a step of the line's run waiting for the person's press, as `SESSION_SUPERVISOR` answers it. */
+export type LandingRead = {
+  id: string;
+  kind?: string;
+  run: string;
+  node: string;
+  attempt: number;
+  do: string;
+  state: string;
+  why?: string | null;
+  holder?: { kind: string; parent?: string | null } | null;
+  keptAt: string;
+  goesOnAt: string;
+  stateAt: string;
+  earlier: boolean;
+};
 
-export const NO_SUPERVISION: LineSupervision = { counts: [], acts: [], courses: [] };
+/** What the head and *Details* say of the supervisor on one line. */
+export type LineSupervision = { counts: LineCountRead[]; acts: RuleActRead[]; courses: CourseRead[]; landings?: LandingRead[] };
+
+export const NO_SUPERVISION: LineSupervision = { counts: [], acts: [], courses: [], landings: [] };
 
 /** The answer read defensively: an older driver answers none of the fields. */
 export function readSupervision(answer: unknown): LineSupervision {
@@ -57,8 +74,13 @@ export function readSupervision(answer: unknown): LineSupervision {
     counts: Array.isArray(read.counts) ? read.counts : [],
     acts: Array.isArray(read.acts) ? read.acts : [],
     courses: Array.isArray(read.courses) ? read.courses : [],
+    landings: Array.isArray(read.landings) ? read.landings : [],
   };
 }
+
+/** What the supervisor did with the step and when it takes effect, in one sentence. */
+export const landingSays = (t: TFunction, landing: LandingRead): string =>
+  t(`work.supervision.landing.${landing.do}`, { at: stamp(landing.goesOnAt), defaultValue: landing.do });
 
 /** A rule's place in the person's words: this Daoris, a line, or the repository or workspace by its name. */
 export function placeWord(t: TFunction, place: string): string {

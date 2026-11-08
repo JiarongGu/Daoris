@@ -58,7 +58,6 @@ internal sealed class WatchNodes
         // Where the pull request a plugin's step opened is written on its landing.
         nodes.PullRequests = new PullRequestRecords(home);
 
-        // A landing supervisor's word on a node is applied only while its decision is live in this run.
         nodes.Landings = watch.Supervisor.LandingWords;
 
         // The heavy executor a check is handed to; its answer asks a pass, which reconciles it.

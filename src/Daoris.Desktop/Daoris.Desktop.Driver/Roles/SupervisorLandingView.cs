@@ -3,7 +3,7 @@ using System.Text.Json;
 namespace Daoris.Driver;
 
 /// <summary>
-/// A landing decision as the page and the start's sweep read it: the step and attempt it was about, the act, who held it, when, and where
+/// A landing decision as the page and the start's sweep read it: the step and attempt it is about, the act, who held it, when, and where
 /// it stands. Codes and moments alone, never a sentence.
 /// </summary>
 /// <param name="Earlier">Whether it is read from its file as history: a restart empties memory, which alone decides.</param>

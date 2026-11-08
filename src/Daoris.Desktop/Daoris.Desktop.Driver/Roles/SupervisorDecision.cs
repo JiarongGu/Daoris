@@ -125,10 +125,7 @@ public static class SupervisorWhy
     public const string OwnerHeld = "owner-held";
     public const string NoWait = "no-wait";
 
-    /// <summary>The landing's plan names a plugin that pushes the branch to a remote, which no supervisor releases.</summary>
     public const string LandingPushes = "landing-pushes";
-
-    /// <summary>The landing's plan could not be read, so it is not known to push nothing.</summary>
     public const string NoPlan = "no-plan";
 
     // Why a decision goes stale (`supervisor.stale`).

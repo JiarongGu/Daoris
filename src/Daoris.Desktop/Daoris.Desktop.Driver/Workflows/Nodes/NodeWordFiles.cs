@@ -3,8 +3,8 @@ using System.Text.Json;
 namespace Daoris.Driver;
 
 /// <summary>
-/// A word waiting on a run's record as the file spells it. The person's names no author; a supervisor's names its role, its decision and
-/// the attempt it was released on, and the person's that took one's place names the decision it replaced.
+/// A word waiting on a run's record, written only while one waits and read whole with an act this build applies. The person's names no
+/// author; a supervisor's names its role, its decision and its attempt, and the person's that took one's place names the decision replaced.
 /// </summary>
 internal static class NodeWordFiles
 {

@@ -247,7 +247,6 @@ public sealed class NodeRecordFiles(string home, Func<bool>? holdsLease = null)
             writer.WriteEndObject();
         }
 
-        // The person's words on a run's nodes not applied yet, written only while one waits.
         if (record.Pending.Count > 0)
         {
             writer.WriteStartArray("pending");
@@ -522,7 +521,6 @@ public sealed class NodeRecordFiles(string home, Func<bool>? holdsLease = null)
                 ended = new RunEnd(quest, endedAt);
             }
 
-            // The person's words not applied yet, absent wherever none waits; present, each reads whole, its act one this build applies.
             var pending = new List<NodeWord>();
             if (root.TryGetProperty("pending", out var words))
             {

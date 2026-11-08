@@ -5,7 +5,6 @@ namespace Daoris.Driver;
 /// with memory, and the start's sweep of the files left by the last run. Each move is made under its session's lock in the
 /// <see cref="SupervisorBook"/>; this type holds no state of its own.
 /// </summary>
-/// <param name="landed">Whether a landing decision's word stands applied on its run's record (<see cref="SupervisorLandings.Applied"/>), which the start's sweep reads first.</param>
 internal sealed class SupervisorSweeps(SupervisorBook book, MachineLog? log, Func<SupervisorLandingView, bool>? landed = null)
 {
     /// <summary>
@@ -116,7 +115,6 @@ internal sealed class SupervisorSweeps(SupervisorBook book, MachineLog? log, Fun
                 if (book.Live.ContainsKey(id) || book.Courses.ContainsKey(id) || book.Landings.ContainsKey(id) || Decided(session, id) is not { } earlier) continue;
                 var closed = earlier.State switch
                 {
-                    // A word the pass applied before the restart is the decision made, not one the restart closed.
                     SupervisorState.Released when earlier.Made => SupervisorState.WentOn,
                     SupervisorState.Held or SupervisorState.Released => SupervisorState.Stale,
                     SupervisorState.Admitted => SupervisorState.Interrupted,

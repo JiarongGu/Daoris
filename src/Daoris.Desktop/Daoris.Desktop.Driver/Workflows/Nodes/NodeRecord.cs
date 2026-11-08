@@ -251,7 +251,7 @@ public sealed record NodeWord(string Node, string Act, string? Words, DateTimeOf
     /// <summary>The landing supervisor whose word it is; null for the person's.</summary>
     public NodeWordBy? By { get; init; }
 
-    /// <summary>The attempt a supervisor's word was released on, which the pass holds it to; null for the person's.</summary>
+    /// <summary>The attempt a supervisor's word is released on, which the pass holds it to; null for the person's.</summary>
     public int? Attempt { get; init; }
 
     /// <summary>The supervisor's decision this person's word took the place of, which the pass settles <c>superseded</c>.</summary>

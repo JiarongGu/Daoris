@@ -109,7 +109,6 @@ public sealed class NodeRuntime(
     /// <summary>A unit whose <c>line</c> has reached after its <c>integrate</c> (<c>work.integrated</c>): told once, with its repository.</summary>
     public Action<string, string>? Integrated { get; set; }
 
-    /// <summary>The landing supervisor's decisions the pass asks about a supervisor's word: none by default, so such a word is dropped, never applied.</summary>
     public ILandingWords? Landings { get; set; }
 
     /// <summary>Where the pull request a plugin's step opened is written on its landing: none by default, so a runtime nobody wired writes none.</summary>

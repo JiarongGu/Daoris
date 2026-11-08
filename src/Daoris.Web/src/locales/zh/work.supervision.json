@@ -29,6 +29,10 @@
   "work.supervision.why.answered": "这个节点已另行处理",
   "work.supervision.why.owner-held": "你停下了这条线或暂缓了它的委托",
   "work.supervision.why.role-changed": "主管的角色变了",
-  "work.supervision.overrule": "否决",
+  "work.supervision.landing.title": "主管对这一步的决定",
+  "work.supervision.landing.accept": "主管已采纳这项工作；将于 {{at}} 落地。",
+  "work.supervision.landing.approve": "主管已批准这一步；将于 {{at}} 继续。",
+  "work.supervision.landing.reject": "主管已驳回这一步；将于 {{at}} 退回。",
+  "work.supervision.overrule":"否决",
   "work.supervision.overruleRefused": "它已经继续了，无法否决。"
 }

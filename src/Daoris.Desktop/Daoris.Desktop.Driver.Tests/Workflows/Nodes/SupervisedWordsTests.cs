@@ -126,7 +126,7 @@ public sealed class SupervisedWordsTests : NodeRunFixture
 
         Assert.Equal(RunNodeWords.Stale, Supervisor(NodeWordActs.Approve, attempt: attempt + 1).Refused);
 
-        // The word as the record keeps it from a time the step was on another attempt.
+        // The word as the record keeps it from a time the step stood on another attempt.
         var (refused, _) = Files.Edit(RunUnit, record => (record with
         {
             Pending = [new NodeWord("sign", NodeWordActs.Approve, null, _now) { By = Gatekeeper, Attempt = attempt + 1 }],

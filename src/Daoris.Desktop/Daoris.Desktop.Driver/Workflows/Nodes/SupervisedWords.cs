@@ -2,7 +2,7 @@ namespace Daoris.Driver;
 
 /// <summary>
 /// What a landing supervisor's word on a node asks of the record it waits on: no second word beside one, the person's taking its place,
-/// and the pass dropping it where the attempt it was released on or the decision that released it no longer stands.
+/// and the pass dropping it where the attempt it names or the decision that released it no longer stands.
 /// </summary>
 internal static class SupervisedWords
 {
@@ -40,6 +40,6 @@ public interface ILandingWords
     /// <summary>Whether the decision is released and live in this run: its window past, its word kept, nothing since closing it.</summary>
     bool Live(string decision);
 
-    /// <summary>The decision's word was applied (<c>went-on</c>), dropped (<c>stale</c>), or taken the place of by the person's (<c>superseded</c>).</summary>
+    /// <summary>The decision's word is applied (<c>went-on</c>), dropped (<c>stale</c>), or replaced by the person's (<c>superseded</c>).</summary>
     void Settled(string decision, SupervisorState to, string? why);
 }
