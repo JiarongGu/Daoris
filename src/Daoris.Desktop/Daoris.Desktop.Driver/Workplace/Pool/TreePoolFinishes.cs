@@ -38,9 +38,14 @@ internal sealed class TreePoolFinishes(TreePool pool, PoolSeams seams)
         if (slot is null) return await FinishedAsync(site, finish, end, branch, keep, aside, manifest, [], slot: null, ct).ConfigureAwait(false);
 
         var head = await WorkingTree.HeadAsync(slot.Path, ct).ConfigureAwait(false) ?? "";
+        var standing = await WorkingTree.BranchAsync(slot.Path, ct).ConfigureAwait(false) ?? "";
         var job = PoolGit.NewJobName();
-        var claimed = pool.Claim(new TreeClaimOpening(site.Workspace, site.Repository, slot.Number, TreeClaimKinds.Finish, finish.Holder, finish.Line, branch, end.Tip, head, job));
-        if (claimed.Fence is not { } fence) return PoolDone.Not(claimed.Refused ?? "the slot is claimed");
+        var claimed = pool.Claim(new TreeClaimOpening(site.Workspace, site.Repository, slot.Number, TreeClaimKinds.Finish, finish.Holder, finish.Line, branch, end.Tip, head, job)
+        {
+            ExpectBranch = standing,
+            ExpectLine = slot.Line,
+        });
+        if (claimed is not { Claim: { } claim, Fence: { } fence }) return PoolDone.Not(claimed.Refused ?? "the slot is claimed");
 
         using var git = PoolGit.Create(site.Home, job);
         if (git is null)
@@ -115,7 +120,7 @@ internal sealed class TreePoolFinishes(TreePool pool, PoolSeams seams)
         pool.Advance(fence, TreeClaimPhases.Detached);
         await seams.ReachedAsync(TreeClaimPhases.Detached, slot.Path).ConfigureAwait(false);
         await PoolLocks.SetAsync(git, slot.Path, PoolLocks.Free, ct).ConfigureAwait(false);
-        pool.Complete(fence, new SlotSettled(slot.Registration, slot.Path, "", end.Tip, KeptStates.Kept, "", slot.Bytes, slot.Toolchain));
+        pool.Complete(fence, await new SlotStanding(slot, claim).ReadAsync(ct).ConfigureAwait(false));
         return await FinishedAsync(site, finish, end, branch, keep, aside, manifest, own, slot, ct).ConfigureAwait(false);
     }
 

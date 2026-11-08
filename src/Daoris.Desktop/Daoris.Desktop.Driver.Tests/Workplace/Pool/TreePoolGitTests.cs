@@ -136,7 +136,7 @@ public sealed class TreePoolGitTests : IDisposable
     }
 
     [Fact]
-    public async Task A_write_planted_after_the_judgement_fails_the_check_the_slot_is_stuck_and_no_record_opens()
+    public async Task A_write_planted_after_the_judgement_fails_the_check_the_slot_is_put_back_and_released_and_no_record_opens()
     {
         var fixture = await FixtureAsync();
         var opened = 0;
@@ -146,13 +146,16 @@ public sealed class TreePoolGitTests : IDisposable
             BeforeSwitch = folder => File.WriteAllTextAsync(Path.Combine(folder, "planted.txt"), "late\n"),
         });
         var slot = await fixture.LetGoAsync(fixture.Pool(), 1, "s-aaaa0001");
+        var tip = (await GitAsync(slot.Path, "rev-parse", "HEAD")).Trim();
 
         var taken = await pool.TakeAsync(fixture.Take(1, "s-bbbb0001"));
 
-        Assert.Contains(SlotJudgement.Changed, taken.Stuck);
+        Assert.Contains(SlotJudgement.Changed, taken.Refused);
+        Assert.Null(taken.Stuck);
         Assert.Equal(0, opened);
         var row = pool.Slot(PoolGitFixture.Workspace, PoolGitFixture.Repository, 1)!;
-        Assert.Equal(KeptStates.Stuck, row.State);
+        Assert.Equal(("s-aaaa0001", KeptStates.Kept), (row.Line, row.State));
+        Assert.Equal(("daoris/s-aaaa0001", tip), ((await GitAsync(slot.Path, "branch", "--show-current")).Trim(), (await GitAsync(slot.Path, "rev-parse", "HEAD")).Trim()));
         Assert.Null(pool.ClaimOn(PoolGitFixture.Workspace, PoolGitFixture.Repository, 1));
         Assert.DoesNotContain("daoris/s-bbbb0001", await fixture.BranchesAsync());
         Assert.Equal(PoolLocks.Free, LockReasonAsync(slot.Path));

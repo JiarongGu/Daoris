@@ -714,5 +714,11 @@ internal static class DesktopStoreSteps
               PRIMARY KEY (workspace, repository, line, at)
             );
             """)),
+
+        new(24, PolicyWriter, write => write.Execute(
+            """
+            ALTER TABLE tree_claims ADD COLUMN expect_branch TEXT NOT NULL DEFAULT '';
+            ALTER TABLE tree_claims ADD COLUMN expect_line TEXT NOT NULL DEFAULT '';
+            """)),
     ];
 }

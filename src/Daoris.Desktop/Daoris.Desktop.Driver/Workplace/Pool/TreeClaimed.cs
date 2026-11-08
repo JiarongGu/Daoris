@@ -12,6 +12,10 @@ public sealed record TreeClaimOpening(
     public string Phase { get; init; } = TreeClaimPhases.Judged;
 
     public bool InPlace { get; init; }
+
+    public string ExpectBranch { get; init; } = "";
+
+    public string ExpectLine { get; init; } = "";
 }
 
 /// <summary>The answer to a claim or a takeover: the claim and its fence, or why the slot is not claimed.</summary>

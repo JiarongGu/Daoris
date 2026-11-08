@@ -29,6 +29,8 @@ public sealed class TreePool(
     /// <summary>The store's step that made the tables: a store before it holds none.</summary>
     public const int Since = 23;
 
+    public const int ExpectSince = 24;
+
     private readonly Func<StoreSettled> _settled = settled ?? StartConfirmation.Read;
 
     private readonly TimeProvider _clock = clock ?? TimeProvider.System;
@@ -62,21 +64,21 @@ public sealed class TreePool(
     public TreeClaim? ClaimOn(string workspace, string repository, int number) =>
         Reading(reader => reader.Query(
             $"SELECT {TreePoolRows.ClaimColumns} FROM tree_claims WHERE workspace = $workspace AND repository = $repository AND number = $number",
-            TreePoolRows.Claim, ("$workspace", workspace), ("$repository", repository), ("$number", number)).FirstOrDefault(), null);
+            TreePoolRows.Claim, ("$workspace", workspace), ("$repository", repository), ("$number", number)).FirstOrDefault(), null, ExpectSince);
 
-    /// <summary>The claim in flight for a line, or null.</summary>
+    /// <summary>The claim in flight for a line, or the one whose undo puts a slot back on it; null where none names it.</summary>
     public TreeClaim? ClaimOf(string workspace, string repository, string line) =>
         line.Length == 0
             ? null
             : Reading(reader => reader.Query(
-                $"SELECT {TreePoolRows.ClaimColumns} FROM tree_claims WHERE workspace = $workspace AND repository = $repository AND line = $line",
-                TreePoolRows.Claim, ("$workspace", workspace), ("$repository", repository), ("$line", line)).FirstOrDefault(), null);
+                $"SELECT {TreePoolRows.ClaimColumns} FROM tree_claims WHERE workspace = $workspace AND repository = $repository AND {TreePoolRows.NamesLine} ORDER BY line <> $line",
+                TreePoolRows.Claim, ("$workspace", workspace), ("$repository", repository), ("$line", line)).FirstOrDefault(), null, ExpectSince);
 
     /// <summary>Every claim in flight in a repository, by slot.</summary>
     public IReadOnlyList<TreeClaim> Claims(string workspace, string repository) =>
         Reading(reader => reader.Query(
             $"SELECT {TreePoolRows.ClaimColumns} FROM tree_claims WHERE workspace = $workspace AND repository = $repository ORDER BY number", TreePoolRows.Claim,
-            ("$workspace", workspace), ("$repository", repository)), []);
+            ("$workspace", workspace), ("$repository", repository)), [], ExpectSince);
 
     /// <summary>The terminals and served builds in a slot.</summary>
     public IReadOnlyList<SlotVisit> Visits(string workspace, string repository, int number) =>
@@ -105,6 +107,9 @@ public sealed class TreePool(
     /// <summary>Write the phase the claim's next effect begins or the last one reached, with the open's key or the record it made.</summary>
     public void Advance(ClaimFence fence, string phase, string? opens = null, string? record = null) =>
         new TreePoolClaims(this).Advance(fence, phase, opens, record);
+
+    /// <summary>Write the claim's undo begun and the slot's row naming no line, in one transaction.</summary>
+    public void Undoing(ClaimFence fence) => new TreePoolClaims(this).Undoing(fence);
 
     /// <summary>End the claim, leaving the slot's row as <paramref name="settled"/> says (or untouched, for null), in one transaction.</summary>
     public void Complete(ClaimFence fence, SlotSettled? settled) => new TreePoolClaims(this).Complete(fence, settled);
@@ -177,10 +182,10 @@ public sealed class TreePool(
 
     internal string Now() => Moments.Write(_clock.GetUtcNow());
 
-    /// <summary>A read of a store that holds the tables, or <paramref name="none"/> where the home has no store or one from before them.</summary>
-    private T Reading<T>(Func<DesktopStoreReader, T> read, T none)
+    /// <summary>A read of a store past <paramref name="since"/>, or <paramref name="none"/> where the home has no store or one from before it.</summary>
+    private T Reading<T>(Func<DesktopStoreReader, T> read, T none, int since = Since)
     {
         using var reader = DesktopStoreReader.Open(DesktopStore.LocationIn(home));
-        return reader is { Version: >= Since } ? read(reader) : none;
+        return reader is not null && reader.Version >= since ? read(reader) : none;
     }
 }

@@ -55,6 +55,15 @@ public static class TreeClaimPhases
     public const string Moved = "moved";
 
     public const string Dropped = "dropped";
+
+    public const string Undoing = "undoing";
+
+    public const string UndoWaiting = "undo-waiting";
+
+    public static IReadOnlyList<string> ClearedOn { get; } = [Cleared, Checked, OpeningRecord, Opened];
+
+    /// <summary>The phases of an undo under way, the slot's row naming no line, the waiting one taken by its own run's look.</summary>
+    public static IReadOnlyList<string> Restoring { get; } = [Undoing, UndoWaiting];
 }
 
 /// <summary>
@@ -70,4 +79,11 @@ public static class TreeClaimPhases
 /// <param name="ClaimRun">The store run that holds the claim.</param>
 public sealed record TreeClaim(
     string Workspace, string Repository, int Number, string Kind, string Holder, string Line, string Branch, string Start, string Expect,
-    string Opens, string Job, string Record, string Phase, string ClaimRun, long ClaimGeneration, DateTimeOffset At);
+    string Opens, string Job, string Record, string Phase, string ClaimRun, long ClaimGeneration, DateTimeOffset At)
+{
+    /// <summary>The branch the slot stood on as the claim found it; empty where detached.</summary>
+    public string ExpectBranch { get; init; } = "";
+
+    /// <summary>The line the slot's row named as the claim found it; empty where it served none.</summary>
+    public string ExpectLine { get; init; } = "";
+}
