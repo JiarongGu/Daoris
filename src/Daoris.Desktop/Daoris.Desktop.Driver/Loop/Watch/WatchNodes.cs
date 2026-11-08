@@ -59,6 +59,7 @@ internal sealed class WatchNodes
         nodes.PullRequests = new PullRequestRecords(home);
 
         nodes.Landings = watch.Supervisor.LandingWords;
+        watch.Supervisor.LandingApplied = LandingApplied.Of(home);
 
         // The heavy executor a check is handed to; its answer asks a pass, which reconciles it.
         _executor = new HeavyExecutor(home, new VerifyWorld

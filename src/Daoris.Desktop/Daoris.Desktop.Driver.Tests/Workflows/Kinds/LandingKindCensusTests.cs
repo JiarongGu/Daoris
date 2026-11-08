@@ -11,8 +11,8 @@ public sealed class LandingKindCensusTests
 {
     private static readonly string[] Landing =
     [
-        "Roles/LandingSteps.cs", "Roles/LandingJudge.cs", "Roles/SupervisorLandings.cs", "Roles/SupervisorLandingDecisions.cs",
-        "Roles/SupervisorLandingView.cs", "Workflows/Nodes/SupervisedWords.cs", "Loop/Look/LandingReleaseLook.cs",
+        "Workflows/Nodes/LandingSteps.cs", "Workflows/Nodes/LandingJudge.cs", "Workflows/Nodes/LandingApplied.cs", "Roles/SupervisorLandings.cs",
+        "Roles/SupervisorLandingDecisions.cs", "Roles/SupervisorLandingView.cs", "Workflows/Nodes/SupervisedWords.cs", "Loop/Look/LandingReleaseLook.cs",
     ];
 
     [Fact]
@@ -41,7 +41,6 @@ public sealed class LandingKindCensusTests
         foreach (var (kind, act) in offered)
         {
             Assert.True(NodeKit.Of(kind) is IPressed pressed && pressed.Takes.Contains(act), $"{kind} takes no `{act}` as its own press");
-            Assert.Equal(act, SupervisorLandingActs.WordOf(act));
         }
     }
 

@@ -25,7 +25,7 @@ internal sealed class LandingReleaseLook(ILookWiring wiring) : ILookPass
         }
 
         string? Word(SupervisorLandingDue due) => RunNodeWords.Word(
-            records, due.Run, due.Node, SupervisorLandingActs.WordOf(due.Do) ?? due.Do,
+            records, due.Run, due.Node, due.Do,
             due.Do == SupervisorLandingActs.Reject ? due.Words : null, by: new NodeWordBy(due.Generation, due.Id), attempt: due.Attempt).Refused;
 
         if (await wiring.Supervisor.ReleaseLandingsAsync(new LandingRelease(Why, Word), DateTimeOffset.UtcNow, ct).ConfigureAwait(false) is { Count: > 0 })

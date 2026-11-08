@@ -7,15 +7,6 @@ public static class SupervisorLandingActs
     public const string Approve = "approve";
     public const string Reject = "reject";
     public const string Hold = "hold";
-
-    /// <summary>The word on the node an act is, in the node's own press door; none for a leave.</summary>
-    public static string? WordOf(string act) => act switch
-    {
-        Accept => NodeWordActs.Accept,
-        Approve => NodeWordActs.Approve,
-        Reject => NodeWordActs.Reject,
-        _ => null,
-    };
 }
 
 /// <summary>What a holder decides on a landing step: an act its grants cover, or a leave as a <c>hold</c> with its bound.</summary>

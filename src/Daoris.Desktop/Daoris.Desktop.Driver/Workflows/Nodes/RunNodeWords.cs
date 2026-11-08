@@ -76,7 +76,7 @@ public static class RunNodeWords
     public const string Ended = "ended";
 
     /// <summary>The node already holds a word of the person's that the next pass has not applied yet.</summary>
-    public const string Worded = "worded";
+    public const string Worded = SupervisorWhy.Worded;
 
     /// <summary>A supervisor's word on an attempt the node has left, or whose decision is not live in this run: dropped, the step the person's.</summary>
     public const string Stale = "stale";

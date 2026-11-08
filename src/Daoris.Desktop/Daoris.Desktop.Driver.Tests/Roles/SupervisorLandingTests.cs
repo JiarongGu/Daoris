@@ -28,7 +28,7 @@ public sealed class SupervisorLandingTests : IDisposable
             generation is null ? DecisionAdmitted.Refused(SupervisorWhy.NotStaffed) : new(generation, null) { Window = TimeSpan.FromMinutes(10) };
     }
 
-    private QuestionSupervisorDecisions Decisions() => new(_home, new Admits("g-1"));
+    private QuestionSupervisorDecisions Decisions() => new(_home, new Admits("g-1")) { LandingApplied = LandingApplied.Of(_home) };
 
     private static SupervisorLanding Landing(string act = SupervisorLandingActs.Accept, int attempt = 1, string generation = "g-1") =>
         new("s1", "q7", "review", attempt, generation, act, [new SupervisorReason("The diff is the quest's brief.", "the diff")], new SupervisorHolder(RoleHolders.Terminal, null));

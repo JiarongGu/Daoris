@@ -11,7 +11,7 @@ namespace Daoris.Driver;
 /// door. The decision is live while released; a restart empties memory, so the word the record keeps outlives it and the pass drops it.
 /// Kept in the <see cref="SupervisorBook"/> under the work session's lock and written beside that session's other decisions.
 /// </summary>
-internal sealed class SupervisorLandings(SupervisorBook book, IDecisionAdmission admission, string home, MachineLog? log) : ILandingWords
+internal sealed class SupervisorLandings(SupervisorBook book, IDecisionAdmission admission, MachineLog? log) : ILandingWords
 {
     /// <summary>Keep <paramref name="landing"/>, or refuse it keeping nothing; <paramref name="refused"/> is what the step itself already refuses.</summary>
     public Task<SupervisorKept> KeepAsync(SupervisorLanding landing, string repository, string? refused, DateTimeOffset now, CancellationToken ct = default) =>
@@ -72,7 +72,7 @@ internal sealed class SupervisorLandings(SupervisorBook book, IDecisionAdmission
                 var why = admitted.Why is null && admitted.Generation == due.Generation
                     ? await line.Why(handed).ConfigureAwait(false) ?? line.Word(handed)
                     : SupervisorWhy.RoleChanged;
-                var to = why is null ? SupervisorState.Released : why == RunNodeWords.Worded ? SupervisorState.Superseded : SupervisorState.Stale;
+                var to = why is null ? SupervisorState.Released : why == SupervisorWhy.Worded ? SupervisorState.Superseded : SupervisorState.Stale;
                 Append(due, to, now, to == SupervisorState.Stale ? why : null);
                 if (to != SupervisorState.Released) Close(due, to);
                 log?.Info(to == SupervisorState.Released ? "supervisor.released" : $"supervisor.{SupervisorStates.Spell(to)}", ("session", due.Session), ("run", due.Run), ("node", due.Node));
@@ -130,13 +130,10 @@ internal sealed class SupervisorLandings(SupervisorBook book, IDecisionAdmission
         return [.. views.OrderBy(view => view.KeptAt).ThenBy(view => view.Id, StringComparer.Ordinal)];
     }
 
-    /// <summary>
-    /// A word a supervisor's release kept on the run's record before a restart and the pass applied: the step stands reached or rejected by the
-    /// supervisor on that attempt.
-    /// </summary>
-    public bool Applied(SupervisorLandingView view) =>
-        new NodeRecordFiles(home, () => false).Read(RunUnits.IdOf(view.Run)) is { } record
-        && record.Statuses.GetValueOrDefault(view.Node) is { By: NodeSource.Supervisor, Attempt: var attempt } && attempt == view.Attempt;
+    /// <summary>Whether a decision's word stands applied on its run's record, which the start's sweep reads before it closes the decision.</summary>
+    public Func<SupervisorLandingView, bool>? Landed { get; set; }
+
+    public bool Applied(SupervisorLandingView view) => Landed?.Invoke(view) == true;
 
     private static readonly string[] LandingActs = [SupervisorLandingActs.Accept, SupervisorLandingActs.Approve, SupervisorLandingActs.Reject];
 

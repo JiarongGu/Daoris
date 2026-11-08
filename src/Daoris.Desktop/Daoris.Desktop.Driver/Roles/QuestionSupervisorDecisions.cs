@@ -60,7 +60,7 @@ public sealed class QuestionSupervisorDecisions
         _book = new SupervisorBook(home, log);
         _keeping = new SupervisorKeeping(_book, admission, log);
         _releasing = new SupervisorReleasing(_book, admission, log);
-        _landings = new SupervisorLandings(_book, admission, home, log);
+        _landings = new SupervisorLandings(_book, admission, log);
         _sweeps = new SupervisorSweeps(_book, log, _landings.Applied);
         _tickets = new SupervisorTickets(_book, admission);
         _reads = new SupervisorReads(_book);
@@ -100,6 +100,13 @@ public sealed class QuestionSupervisorDecisions
 
     /// <summary>The landing decisions as the node pass asks them whether a supervisor's word is live in this run.</summary>
     public ILandingWords LandingWords => _landings;
+
+    /// <summary>Whether a landing decision's word stands applied on its run's record: set by the node runtime's wiring, read by the start's sweep.</summary>
+    public Func<SupervisorLandingView, bool>? LandingApplied
+    {
+        get => _landings.Landed;
+        set => _landings.Landed = value;
+    }
 
     /// <summary>Whether a referred point waits for the holder (<see cref="SupervisorCourses.Waits"/>).</summary>
     public bool Refers(string session, string point, string kind = SupervisorKinds.Course) => _courses.Waits(session, point, kind);
