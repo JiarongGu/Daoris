@@ -133,6 +133,10 @@ export const NOTE_CODES: Readonly<Record<string, NoteCode>> = {
   'started.local-missing': { values: ['input'] },
   'started.local-refused': { values: ['input'] },
   'started.local-failed': { values: ['input'] },
+  // The paths linked into a tree to one place every tree uses, why one is not, and a share whose link the line replaced.
+  'started.tree-shared': { values: ['shared'] },
+  'started.share-declined': { values: ['path', 'why'], why: 'deps' },
+  'tree.share-lost': { values: ['path'] },
   'tree.remade': { values: ['branch'] },
   'tree.gone': { values: ['branch'] },
   'tree.fresh': { values: ['branch'] },

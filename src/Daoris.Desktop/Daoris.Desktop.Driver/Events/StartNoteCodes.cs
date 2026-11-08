@@ -43,6 +43,11 @@ public static class StartNoteCodes
     public static readonly NoteCode StartedLocalRefused = new("started.local-refused", ["input"]);
     public static readonly NoteCode StartedLocalFailed = new("started.local-failed", ["input"]);
 
+    // The paths linked into a tree to one place every tree uses, why one is not, and a share whose link the line replaced.
+    public static readonly NoteCode StartedTreeShared = new("started.tree-shared", ["shared"]);
+    public static readonly NoteCode StartedShareDeclined = new("started.share-declined", ["path", "why"]) { Why = NoteCodes.Deps };
+    public static readonly NoteCode TreeShareLost = new("tree.share-lost", ["path"]);
+
     // A session's tree asked for before it goes on: made again on its branch, gone with its branch, or not made.
     public static readonly NoteCode TreeRemade = new("tree.remade", ["branch"]);
     public static readonly NoteCode TreeGone = new("tree.gone", ["branch"]);

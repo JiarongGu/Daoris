@@ -1,7 +1,7 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// A slot let go for good: judged clean inside its claim, its whole folder renamed into the set-aside folders with a manifest written
+/// A slot let go for good: judged clean inside its claim, its shares unlinked, its whole folder renamed into the set-aside folders with a manifest written
 /// before the move, then git's record of the vanished path dropped and the slot's row removed. A rename something holds open is
 /// <c>busy</c>: the slot stays, its lock put back.
 /// </summary>
@@ -37,6 +37,13 @@ internal sealed class TreePoolRetires(TreePool pool, PoolSeams seams)
             await PoolLocks.SetAsync(git, slot.Path, PoolLocks.Free, ct).ConfigureAwait(false);
             pool.Complete(fence, null);
             return PoolDone.Not($"{judged.Verdict.Code}: {judged.Verdict.Why}");
+        }
+
+        if (TreeShares.Unlink(site.Home, slot.Path) is { } linked)
+        {
+            await PoolLocks.SetAsync(git, slot.Path, PoolLocks.Free, ct).ConfigureAwait(false);
+            pool.Complete(fence, null);
+            return PoolDone.Not($"busy: {linked}, so the slot stays");
         }
 
         var aside = Path.Combine(TreePoolFinishes.SetAsideRoot(site), $"{Path.GetFileName(slot.Path)}-{DateTimeOffset.UtcNow.ToString(TreeSetAside.SetAsideStamp, System.Globalization.CultureInfo.InvariantCulture)}");

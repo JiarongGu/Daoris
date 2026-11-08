@@ -65,10 +65,12 @@ internal static class FileRuleFile
     private static FileRule Rule(JsonElement each)
     {
         var (kind, paths) = Head(each, GitPattern.Unfit, FileKindSets.Fields);
+        var reach = Word(each, "reach", FileKindSets.Reaches);
+        if (FileKindSets.Unshared(kind, reach) is { } unshared) throw new FormatException(unshared);
         return Fields(each, kind, paths) with
         {
             Across = Flag(each, "across"),
-            Reach = Word(each, "reach", FileKindSets.Reaches),
+            Reach = reach,
             Take = Word(each, "take", FileKindSets.Takes),
             Finish = Word(each, "finish", FileKindSets.Finishes),
         };
