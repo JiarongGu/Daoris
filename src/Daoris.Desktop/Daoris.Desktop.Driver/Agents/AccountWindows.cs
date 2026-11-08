@@ -77,7 +77,10 @@ public static class AccountWindows
     {
         if (account is null) return null;
         var week = Child(Child(Child(Load(home), agent), account), Weekly);
-        return week is not null && Moment(week, "reset") is { } reset ? Next(reset, now, fixedWeek) : null;
+        if (week is null || Moment(week, "reset") is not { } reset) return null;
+        // A reset a read made up for a week not yet opened is no week: carried on, it would show as the account's for ever.
+        var used = week["used"] is JsonValue value && value.TryGetValue<double>(out var number) ? number : (double?)null;
+        return Moment(week, "seen") is { } seen && UsageCurves.ResetMadeUp(Weekly, used, reset, seen) ? null : Next(reset, now, fixedWeek);
     }
 
     /// <summary>

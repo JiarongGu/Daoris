@@ -34,6 +34,10 @@ public static class UsageCurves
     // accounts' answer carries each scope's curve in effect (`AccountsRoutes`).
     private const int WeeklyLead = 20, WeeklyKnee = 95, WeeklyEnd = 100;
 
+    /// <summary>Whether a window kept as read at <paramref name="seen"/> with <paramref name="used"/> and <paramref name="reset"/> has the reset a read made up.</summary>
+    public static bool ResetMadeUp(string window, double? used, DateTimeOffset reset, DateTimeOffset seen) =>
+        used == 0 && Length(window) is { } length && reset - seen >= length - MadeUp;
+
     /// <summary>A window's length, or null for a window this build does not know.</summary>
     public static TimeSpan? Length(string window) => window switch
     {
@@ -160,7 +164,7 @@ public static class UsageCurves
         if (said?.Of(AccountWindows.Weekly) is not { Used: { } used } week) return null;
         var left = week.Reset - now;
         if (left <= TimeSpan.Zero || left > LastDay || week.Seen < said.Seen) return null;
-        if (used == 0 && Length(week.Window) is { } length && week.Reset - week.Seen >= length - MadeUp) return null;
+        if (ResetMadeUp(week.Window, used, week.Reset, week.Seen)) return null;
         if (Value(use, week.Window, week.Reset, now) is not { } curve) return null;
         var room = curve - used * 100;
 

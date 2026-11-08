@@ -222,6 +222,21 @@ public sealed class AccountWindowsTests : IDisposable
     }
 
     [Fact]
+    public void A_weekly_reset_a_read_made_up_for_a_week_not_yet_opened_is_no_week_and_is_not_carried()
+    {
+        var made = new[] { new WindowReading("weekly", 0, Said.AddDays(7)) };
+        AccountWindows.Said(_home, "claude-code", "account-1", made, Said, "s1", AccountWindows.SourceRead);
+
+        Assert.Null(AccountWindows.WeekOf(_home, "claude-code", "account-1", Said, fixedWeek: true));
+        Assert.Null(AccountWindows.WeekOf(_home, "claude-code", "account-1", Said.AddDays(8), fixedWeek: true));
+
+        // The same zero with a reset the maker said, far from a week on, is a week all unused.
+        var said = new[] { new WindowReading("weekly", 0, Said.AddHours(100)) };
+        AccountWindows.Said(_home, "claude-code", "account-2", said, Said, "s1", AccountWindows.SourceRead);
+        Assert.Equal(Said.AddHours(100), AccountWindows.WeekOf(_home, "claude-code", "account-2", Said, fixedWeek: true));
+    }
+
+    [Fact]
     public void A_weekly_limit_told_after_a_reading_replaces_the_week_and_says_no_use()
     {
         AccountWindows.Said(_home, "claude-code", "account-1", Frame(0.88, 0.14), Said, "s1");
