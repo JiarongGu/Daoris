@@ -1,15 +1,14 @@
 namespace Daoris.Knowledge;
 
 /// <summary>
-/// What a convergence pass found, and why its semantic half did not run where it was configured and failed: an empty answer
-/// from a down endpoint is not "nothing converges".
+/// What a convergence pass found, and the failure of its semantic half where one ran and failed: an empty answer from a
+/// down endpoint is not "nothing converges".
 /// </summary>
 /// <param name="Candidates">The groups, strongest method first.</param>
-/// <param name="SemanticFailure">The embedder's failure, or null where the pass ran or none was configured.</param>
+/// <param name="SemanticFailure">The embedder's failure, or null.</param>
 public sealed class ConvergenceFound(IReadOnlyList<ConvergenceCandidate> Candidates, string? SemanticFailure = null)
     : IReadOnlyList<ConvergenceCandidate>
 {
-    /// <summary>The embedder's failure, or null where the pass ran or none was configured.</summary>
     public string? SemanticFailure { get; } = SemanticFailure;
 
     public int Count => Candidates.Count;

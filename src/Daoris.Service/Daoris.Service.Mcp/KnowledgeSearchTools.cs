@@ -248,7 +248,6 @@ public sealed class KnowledgeSearchTools(KnowledgeService service, WorkspaceScop
         if (refusedIndex is not null) return refusedIndex;
         var candidates = found!;
 
-        // A semantic pass that failed says so first: its silence is not a finding.
         var failed = candidates.SemanticFailure is { Length: > 0 } failure
             ? $"_The semantic comparison did not run ({failure.TrimEnd('.')}.), so only copies and restatements are shown._\n\n"
             : "";

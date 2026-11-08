@@ -80,13 +80,9 @@ public static class UncommittedRecords
         }
     }
 
-    /// <summary>The documents' roles the scan reads, whose declared path may lie outside the folders it always walks.</summary>
     private static readonly string[] DeclaredRoles = ["router", "index", "decisions", "fixes", "archive"];
 
-    /// <summary>
-    /// The root's record folders and files that exist, as the scan names them: repository-relative with forward slashes, each once.
-    /// The declared documents the scan reads and each declared room's instructions are among them, wherever they lie.
-    /// </summary>
+    /// <summary>The root's record folders and files that exist, as the scan names them: repository-relative with forward slashes, each once.</summary>
     internal static IReadOnlyList<string> Folders(string root, string? documents, string? index)
     {
         var layout = RepositoryLayout.Of(root, DaorisLock.Read(root));

@@ -1,7 +1,7 @@
 namespace Daoris.Knowledge;
 
 /// <summary>
-/// The waits the memory log keeps for no session: an end the sweep wrote, or one whose session was deleted, which has no session to
+/// The waits the memory log keeps for no session: an end the sweep wrote, or one whose session is gone, which has no session to
 /// join a row of, so each is a wait of its own, kept by its operation, the entry it ends and why.
 /// </summary>
 internal sealed class MemoryOpWaits(ConnectionGate db)

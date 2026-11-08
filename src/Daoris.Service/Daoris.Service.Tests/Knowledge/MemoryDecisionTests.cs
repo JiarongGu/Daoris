@@ -180,7 +180,7 @@ public sealed class MemoryDecisionTests : IAsyncLifetime
         Assert.Equal([ender.Id], (await _machine.Memory.WaitsAsync()).Select(wait => wait.Session));
     }
 
-    /// <summary>🔴 An end whose session was deleted still awaits the person, so it is a wait of its own, decided through its row as a sweep's is.</summary>
+    /// <summary>🔴 An end whose session is deleted still awaits the person, so it is a wait of its own, decided through its row as a sweep's is.</summary>
     [Fact]
     public async Task A_deleted_sessions_awaiting_end_is_still_a_wait_until_the_person_decides_it()
     {

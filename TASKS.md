@@ -35,8 +35,6 @@ area document under `docs/areas/`. Each row's earlier full text is in git at `9f
 
 ## Knowledge, memory and records
 
-- [ ] **KNOWREV2a to 2j — the knowledge, memory and records review's second cycle** (service): 10 defects open. → `docs/areas/knowledge-memory-records.md`, Open
-
 - [ ] **KNOWCENTRAL2 — the memory coordinator built** (service, connector, driver, web; D220): left **2i**, the installed measurement, which also looks for repeated or conflicting entries about one fact (PROFILEFIX1's re-open condition). → `docs/2026-10-31-memory-coordinator-design.md` §8
 
 

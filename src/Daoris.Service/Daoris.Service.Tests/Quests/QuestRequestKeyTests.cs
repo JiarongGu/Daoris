@@ -151,10 +151,7 @@ public sealed class QuestRequestKeyTests : IAsyncLifetime
         Assert.Equal(QuestPublishRefusal.Cleared, (await Ask("run-a/ask-engine/1")).Refusal);
     }
 
-    /// <summary>
-    /// Plain words have a next id, so a forgotten first quest's words publish as <c>~again1</c> and a forgotten <c>~again1</c>'s as
-    /// <c>~again2</c>, one answer at every step; only a key, which has no next id, is refused as cleared.
-    /// </summary>
+    /// <summary>Forgotten plain words publish under the next id at every step; only a key, with no next id, is refused.</summary>
     [Fact]
     public async Task Forgotten_plain_words_publish_under_the_next_id_at_every_step()
     {
