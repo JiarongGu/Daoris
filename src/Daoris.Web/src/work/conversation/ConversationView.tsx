@@ -162,7 +162,8 @@ export function ConversationView({
   // is exactly what empty means: told otherwise, a fresh chat would read that its door carries only text
   // and a parked pipe chat would read "Nothing said yet".
   if (turns.length === 0) {
-    const sentence = structured && chat
+    // A chat on a door not known to carry only text (`structured` undefined) is told by what it is: nothing said.
+    const sentence = structured !== false && chat
       ? t(live ? 'work.conversation.nothingYet' : 'work.conversation.nothingSaid')
       : t('work.conversation.textOnly');
     return <p className="m-0 mt-2 text-small text-ink-faint">{sentence}</p>;
