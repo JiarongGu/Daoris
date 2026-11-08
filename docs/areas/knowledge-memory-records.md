@@ -125,7 +125,8 @@ one job each, checked by `verify`.
 27. Only the service applies. A row is marked `applying` in one transaction and settled in another; a keyed receipt settles it
     after a crash. An outcome no receipt names is held for the person, never replayed. (from D220)
 28. An entry cites records by id, lines, commit and digest. The sweep rechecks them: holding writes a confirmation, failing an
-    awaiting end. An entry is shown as current only when it was read again and every citation held. (from D220)
+    awaiting end. A repository's sweep asks the engine for more due entries, doubling up to 1,000, until it has written 50, so entries
+    that write nothing (inconclusive, amended, an end pending) do not hold back those behind them. An entry is shown as current only when it was read again and every citation held. (from D220)
 29. Another repository's memory is read only through its view, the caller's workspace checked again at each read. (from D220)
 
 **The remote**
