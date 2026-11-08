@@ -5,7 +5,7 @@ using System.Text.Json.Nodes;
 namespace Daoris.Driver;
 
 /// <summary>
-/// One row of This Daoris's <i>Disk space</i> card: a kind a person decides about
+/// One row of the <i>Disk space</i> card of Settings → Disk space: a kind a person decides about
 /// together, its rule in words, and whose rule it is where it is not Daoris's. A kind whose rule runs here names its <see cref="KeepKind"/>.
 /// </summary>
 /// <param name="Id">Its id: the card's row, the catalogue's <c>settings.daoris.space.kind.*</c> and the terminal's word.</param>
@@ -340,7 +340,7 @@ public sealed record SpaceWorld(string Home)
 }
 
 /// <summary>
-/// This Daoris's <i>Disk space</i> read: <c>SYSTEM_SPACE</c>'s answer and
+/// Settings → Disk space's read: <c>SYSTEM_SPACE</c>'s answer and
 /// <c>daoris space</c>'s, one reader. The free space of the Daoris folder's volume; each kind's size with when it is counted, its
 /// rule, its next and its last clean; and the run lock's holder, a run under way or one a crash cut short. It walks nothing: sizes are
 /// the kinds' last walks (<see cref="SpaceSizes"/>), and a kind never counted says so. It changes nothing.

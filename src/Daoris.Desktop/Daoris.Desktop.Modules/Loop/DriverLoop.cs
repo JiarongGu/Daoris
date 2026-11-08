@@ -244,7 +244,7 @@ public sealed class DriverLoop(
 
     /// <summary>
     /// How <see cref="Home"/> stands to the account's DAORIS_HOME, a <see cref="Desktop.HomeAccount"/> value: the
-    /// same folder, overridden by this install's own, or named for this start alone. Settings → Driver's home hint
+    /// same folder, overridden by this install's own, or named for this start alone. Settings → This Daoris's terminal row
     /// reads it to say whether a terminal's daoris reads this folder, where it read the notice's English before —
     /// and a start named for itself alone has no notice at all.
     /// </summary>

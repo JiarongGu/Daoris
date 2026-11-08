@@ -100,7 +100,7 @@ public sealed class UpdateModuleTests : Bridge
 
     /// <summary>
     /// After *Dismiss*, <c>STATE</c> still answers the last swap as <c>last</c>, the
-    /// journal's record, so Settings → Driver says what the terminal's plain <c>daoris update</c> says.
+    /// journal's record, so Settings → Updates says what the terminal's plain <c>daoris update</c> says.
     /// </summary>
     [Fact]
     public async Task State_after_Dismiss_still_answers_the_last_swap()

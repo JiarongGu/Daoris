@@ -54,7 +54,7 @@ internal static class HelpDoorRowsMachine
             "`daoris git use <repository> [--remote <name>] <identity>|--clear`, `daoris git use --workspace <workspace> --host <host> <identity>|--clear`",
             new HelpDoorAsk.Proposes("setting", "git-use", "and never sets one up or chooses your own sign-ins")),
         // How long each kind Daoris keeps is kept, Ask Daoris's `setting` kind's `keep`.
-        ("set how long Daoris keeps set-aside trees, unused downloads, the machine log or finished work's records", "Settings → This Daoris → Disk space → Change…",
+        ("set how long Daoris keeps set-aside trees, unused downloads, the machine log or finished work's records", "Settings → Disk space → a kind's Change…",
             "`daoris settings keep <kind> <rule>`"),
         ("bound how many sessions run at once", "Settings → Driver → Sessions at once on this machine", "`daoris settings cap <n>`"),
         ("say so when a session parks", "Settings → Driver", "`daoris settings notify on|off`"),

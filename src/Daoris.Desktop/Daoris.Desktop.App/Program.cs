@@ -286,7 +286,7 @@ internal static class Program
         builder.Services.AddIpcModule<WindowsModule>();
         // The page's own report into the machine log: what is used and what fails on the
         // screen, taken only as the catalogue names it — the module is where no word gets through. And
-        // Settings → Logs reading it back, with the file manager for Open the folder: the kit's
+        // Settings → Machine log reading it back, with the file manager for Open the folder: the kit's
         // shell launcher, which `UseWindows` registers, opened only on the folder the module names.
         builder.Services.AddSingleton<OpenFolder>(sp =>
             folder => sp.GetRequiredService<IShellLauncher>().OpenDirectory(folder));
