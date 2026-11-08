@@ -41,9 +41,10 @@ export function useWidth(element: RefObject<HTMLElement | null>): number | undef
 }
 
 /**
- * How tall a drawing may be: the window's height below the element's top, less `reserve` for what
- * follows it in the view (a legend, the page's foot). Followed as the window resizes, so a map grows
- * and gives way with it. `undefined` where nothing measures it, as `useWidth` is.
+ * How tall a drawing may be: the height below the element's top to the bottom of the frame region it is drawn in
+ * (the main area ends above the bottom panel, so a drawing sized to the window runs under it), else the window's, less
+ * `reserve` for what follows it in the view (a legend, the page's foot). Followed as the window and the region resize,
+ * so a map grows and gives way with it. `undefined` where nothing measures it, as `useWidth` is.
  */
 export function useTall(element: RefObject<HTMLElement | null>, reserve: number): number | undefined {
   const [tall, setTall] = useState<number | undefined>(undefined);
@@ -51,15 +52,23 @@ export function useTall(element: RefObject<HTMLElement | null>, reserve: number)
   useEffect(() => {
     const target = element.current;
     if (!target || typeof window === 'undefined') return undefined;
+    const region = target.closest<HTMLElement>('[data-region]');
     const measure = () => {
       const top = target.getBoundingClientRect().top;
-      const room = window.innerHeight - top - reserve;
+      const shown = region?.getBoundingClientRect();
+      const bottom = shown && shown.height > 0 ? shown.bottom : window.innerHeight;
+      const room = bottom - top - reserve;
       // jsdom lays nothing out and has a zero-height window: that is no measure at all.
       setTall(window.innerHeight > 0 && room > 0 ? room : undefined);
     };
     measure();
     window.addEventListener('resize', measure);
-    return () => window.removeEventListener('resize', measure);
+    const observer = region && typeof ResizeObserver !== 'undefined' ? new ResizeObserver(measure) : null;
+    if (region) observer?.observe(region);
+    return () => {
+      window.removeEventListener('resize', measure);
+      observer?.disconnect();
+    };
   }, [element, reserve]);
 
   return tall;
