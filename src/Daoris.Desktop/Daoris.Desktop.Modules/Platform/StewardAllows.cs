@@ -94,7 +94,7 @@ public sealed class StewardAllows(InstancePipe pipe)
 
     /// <summary>
     /// The supervisor's allow: settled once, then the act admitted as the steward's own (the owner's marks read first) and run. A
-    /// <c>land</c> is held for <paramref name="window"/> first, still the pending entry. Null where kept, else why it was not.
+    /// <c>land</c> is held for <paramref name="window"/> first, still the pending entry. Null where kept, else why not.
     /// </summary>
     public async Task<string?> AllowAsync(string ask, string decision, TimeSpan window)
     {
@@ -130,10 +130,10 @@ public sealed class StewardAllows(InstancePipe pipe)
         return null;
     }
 
-    /// <summary>The supervisor's leave: the request falls to the person's card. False where it was settled already.</summary>
+    /// <summary>The supervisor's leave: the request falls to the person's card. False where something settled it first.</summary>
     public bool Leave(string ask) => Fall(ask, PendingAllowState.Pending);
 
-    /// <summary>The person's overrule of an allowed <c>land</c> held for its window: the person's card follows. False where it was settled already.</summary>
+    /// <summary>The person's overrule of an allowed <c>land</c> held for its window: the person's card follows. False where something settled it first.</summary>
     public bool Overrule(string ask) => Fall(ask, PendingAllowState.Holding);
 
     private bool Fall(string ask, PendingAllowState from)

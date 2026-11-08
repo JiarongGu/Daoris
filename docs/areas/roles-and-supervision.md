@@ -279,7 +279,9 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they start wi
     leave to the owner with a bound (`--leave`, under no grant). The holder's verb is `sessions supervise <session> --kind <kind>
     --subject <id> --generation <g> --do <act> [--choice <label>]`, or `--leave <bound>` in place of `--do`; `SUPERVISOR_WAITING` lists
     every kind's subjects, `{ kind, subject, repository, generation, acts }`, with the kind's acts the grants cover there, and a subject
-    whose supervisor covers none, or whose hold is an agent's, is not listed. (from D208, D233)
+    whose supervisor covers none, or whose hold is an agent's, is not listed. An `allow` is listed in three shapes (a held request
+    `{ session, request, held }`, a widening `{ proposal }`, a steward's act `{ ask }`) and the verb's `<id>` is the session for the
+    first and the subject's own id for the others; it sends the subject whole as the listing names it. (from D208, D233)
 47. It never answers a go-ahead, a sign-in, an access widening, spending, a deletion, a question the repository says to
     ask the person, a preference, an unrecorded or contradicting one, or one that directs it. (from D208)
 48. It is also refused on a question the agent marked the owner's, past the answers-alone bound, and where a person's
@@ -349,9 +351,16 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they start wi
     touched, releases them as the steward's own role release. The update acts (`StewardUpdateAct`) say the install's own
     word (`update.requested`, door `steward`); the pipe has no person's route for an update, so outside the granted acts
     they are refused `not-granted`, never asked. The person grants and takes back each act in the role editor, read at every act. A proved
-    holder's act outside them asks the person as its row's person's route (`StewardAsk`, `role.asked`), a card in
-    *Notifications*, and confirmed it is the person's own press; a process that does not prove the key is refused, nothing
-    asked. Everything else is never a role's act. (from D201, D209, D233)
+    holder's act outside them that asks (`StewardAsk`, `role.asked`) is first an `allow` subject `{ ask }` at its target's
+    place, read as `ActAsync` reads it (`StewardPlaces`): one pending entry on the press's reservation (`StewardAllows`,
+    `PendingAllow`), settled once by the first of the allow supervisor's `allow.steward` (the act admitted once as the steward's
+    own, `owner-set` read first, logged `by: steward` naming the decision; an allowed `land` held for the supervisor's window
+    and still the entry through it), its leave, ten minutes from the raise, the person's overrule of a held `land`, each of
+    which falls to the card, or the steward's withdrawal, which answers `withdrawn` with no card. A target that does not
+    resolve, no supervisor there, or a supervisor whose terminal's holder is the steward's own goes to the card at once. The card
+    is the act's row's person's route, in *Notifications*, and confirmed it is the person's own press; a process that does not
+    prove the key is refused, nothing asked. Everything else is never a role's act. The held `land`'s person's *Overrule* has
+    no route yet (`StewardAllows.Overrule`). (from D201, D209, D233)
 52. What the owner does to a repository, a quest or a session makes it the owner's for the run (`owner-set`). Every
     release the steward writes is kept in `roleReleases`, `by: steward`. (from D209)
 
