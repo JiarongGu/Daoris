@@ -88,7 +88,7 @@ public sealed class PluginsRoutes(DriverContext context)
                     plugin.Data,
                     // Where it came from: what an Update re-reads, or why there is none.
                     Source = SourceOf(plugin.Folder),
-                    Update = UpdateOf(plugin, reserved),
+                    Update = UpdateOf(plugin, reserved, catalog),
                     // A copy of one of the install's own plugins that is older than the one it ships, or changed from it.
                     Shipped = ShippedOf(plugin, offered),
                 };
@@ -572,10 +572,10 @@ public sealed class PluginsRoutes(DriverContext context)
     /// in the rows it compares, <c>current</c> when it declares the same, and null with no record that reads, or a
     /// source an update would refuse. A plugin with no record is not asked, so the list reads one file for it.
     /// </summary>
-    private string? UpdateOf(PluginEntry plugin, IEnumerable<string> reserved)
+    private string? UpdateOf(PluginEntry plugin, IEnumerable<string> reserved, PluginCatalog catalog)
     {
         if (PluginSource.Read(plugin.Folder).Source is null) return null;
-        var (plan, _) = PluginInstall.PlanUpdate(_loop.Home, plugin.Manifest.Id, reserved, OffersFolder);
+        var (plan, _) = PluginInstall.PlanUpdate(_loop.Home, plugin.Manifest.Id, reserved, OffersFolder, loaded: catalog);
         return plan is null ? null : plan.Changes.Count > 0 ? "waits" : "current";
     }
 
