@@ -14,7 +14,7 @@ internal static class SupervisorInstruction
     {
         var fence = Convert.ToHexStringLower(RandomNumberGenerator.GetBytes(3));
         var session = waiting.Subject.Session;
-        var facts = waiting.Kind == SupervisorKinds.Course
+        var facts = SupervisorKinds.IsPoint(waiting.Kind)
             ? await PointAsync(world, waiting, fence, ct).ConfigureAwait(false)
             : await SupervisorFacts.QuestionAsync(world, session, waiting.Subject, fence, ct).ConfigureAwait(false);
         return facts is null ? null : Compose(waiting, facts);

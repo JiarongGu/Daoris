@@ -38,7 +38,7 @@ internal sealed class AgentSupervisorDesk(DriverLoop loop) : ISupervisorDesk
             : [];
         return new SupervisorWaiting(kind, subject, Json.Text(row, "Repository") ?? "", generation, acts)
         {
-            Point = kind == SupervisorKinds.Course
+            Point = SupervisorKinds.IsPoint(kind)
                 ? (Json.Text(row, "Count") ?? "", row.TryGetProperty("N", out var n) ? n.ToString() : "", Json.Text(row, "Rule") ?? "", Json.Text(row, "Place") ?? "")
                 : null,
         };

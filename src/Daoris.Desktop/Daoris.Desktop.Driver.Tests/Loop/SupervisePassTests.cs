@@ -104,6 +104,25 @@ public sealed class SupervisePassTests : IDisposable
         Assert.Null(await new SupervisePass(driver.Context, driver).StartAsync(Point, desk, default));
     }
 
+    /// <summary>The limit kind's points are referred points as the course kind's are, so an agent holding `limit.move` is handed one's facts and takes its turn.</summary>
+    [Fact]
+    public async Task A_limit_point_is_handed_the_point_s_facts_and_takes_a_turn()
+    {
+        var limit = new SupervisorWaiting(
+            SupervisorKinds.Limit, SupervisorSubject.Point("s1", "p-1", SupervisorKinds.Limit), "reports", "agent:supervisor@0", ["move"])
+        {
+            Point = ("limits", "1", "r1", "machine"),
+        };
+        var (driver, asked, _) = Driver((_, _) => Ended("completed", GoOn.Replace("\"course\"", "\"limit\"", StringComparison.Ordinal).Replace("go-on", "move", StringComparison.Ordinal)));
+        var desk = new Desk();
+
+        Assert.NotNull(await new SupervisePass(driver.Context, driver).StartAsync(limit, desk, default));
+        await Until(() => driver.Context.Supervisor.Attempts.Of(limit.Subject).LastOrDefault()?.Outcome is not null);
+
+        Assert.Contains("count: limits", Assert.Single(asked).Prompt);
+        Assert.Equal("move", Assert.Single(desk.Kept).Block.Do);
+    }
+
     [Fact]
     public async Task A_leave_is_a_decision_and_final()
     {
