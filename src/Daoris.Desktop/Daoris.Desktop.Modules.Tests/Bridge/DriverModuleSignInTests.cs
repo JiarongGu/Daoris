@@ -24,7 +24,7 @@ public sealed class DriverModuleSignInTests : DriverModuleBridge
     [InlineData("claude-code", true, true, false)]
     [InlineData("claude-code-acp", true, true, false)]
     [InlineData("codex-acp", true, false, true)]
-    [InlineData("dsh", false, false, false)]
+    [InlineData("dsh", false, true, false)]
     public void Each_door_signs_in_and_takes_a_key_as_its_agent_does(string door, bool signsIn, bool takesKey, bool deviceCode)
     {
         var acts = AgentsRoutes.AccountActs(new HarnessRoster(ProviderRegistry.Built(), HarnessSettingsPath), door);
