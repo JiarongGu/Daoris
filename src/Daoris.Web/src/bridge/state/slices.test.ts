@@ -102,6 +102,24 @@ describe('a pushed slice (PUSH1a)', () => {
     expect(client.getQueryData(KEY)).toEqual({ a: 2, b: 4 });
   });
 
+  it('reads again at once a delta heard before its baseline that does not fit it, instead of waiting for a manifest', async () => {
+    let answer: (value: unknown) => void = () => {};
+    invoke.mockImplementationOnce(() => new Promise((resolve) => { answer = resolve; }));
+    invoke.mockImplementationOnce(async () => snapshot(7, 1));
+    const client = new QueryClient();
+    const store = pushedOf(client);
+    store.register(spec);
+    const asking = store.resync('test');
+
+    store.heard(push('a', 8, { more: true }, { baseSeq: 7 }));
+    answer(snapshot(2, 1));
+    await asking;
+    await store.asking('test');
+
+    expect(reads()).toBe(2);
+    expect(client.getQueryData(KEY)).toEqual({ a: 7, b: 1 });
+  });
+
   it('repairs a dropped final update when the manifest names a newer number: the partition is read again once', async () => {
     const { store, held } = await window(snapshot(1, 1), snapshot(2, 1));
 
