@@ -286,10 +286,6 @@ public sealed class MoveBoxImportsTests : IDisposable
         Assert.False(File.Exists(DesktopStore.LocationIn(_home)));
     }
 
-    /// <summary>
-    /// A box that parses but names a blank id (a destination or a said word of only whitespace) is the store's <c>ArgumentException</c>, not a
-    /// busy store: read as unread, left as evidence, so it holds neither the pass nor the boxes behind it.
-    /// </summary>
     [Theory]
     [InlineData(" ", new string[0])]
     [InlineData("s2", new[] { " " })]

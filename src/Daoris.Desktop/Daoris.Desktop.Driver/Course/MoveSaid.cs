@@ -91,8 +91,7 @@ public sealed class MoveSaidDoor(ServiceClient service, SessionEvents? events) :
         {
             try
             {
-                // Taken back, as the come-up's uncertain settlement takes an attempted word: no session is known to have taken it. A `taken`
-                // refusal is no loss: the session took the word, or its record runs again and still holds it for the next reading.
+                // Only a done take-back is a loss: `taken` is a word the session took, or a record that runs again and still holds it.
                 if (await service.TakeBackAsync(record, word, text: null, ct).ConfigureAwait(false) is { Done: true }) gone.Add(word);
             }
             catch (Exception error) when (Unanswered(error, ct))

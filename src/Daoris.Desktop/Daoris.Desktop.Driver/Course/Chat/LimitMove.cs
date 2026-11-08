@@ -425,10 +425,7 @@ internal sealed class LimitMove(IExecutorWiring wiring) : IExecutor
     /// The move is over, its record ended in the store: once its reading has finished, which a door that never says it wrote
     /// bounds, the take is told over, so the words the person said while it stood and the shell held go on to the line's head.
     /// </summary>
-    /// <param name="unwritten">
-    /// The record of a carried move, whose run wires it before its first prompt: where that prompt is not written within the bound, the
-    /// record is ended by its phase, its prompt known unwritten, since nothing else would end it.
-    /// </param>
+    /// <param name="unwritten">A carried move's record, wired before its run's first prompt: ended by its phase where that prompt is not written within the bound.</param>
     internal async Task TellEndedAsync(string sessionId, bool wired, TaskCompletionSource<Task> read, ConversationMove? unwritten = null)
     {
         if (wired)
