@@ -20,6 +20,8 @@ public static class LandTries
         // A hold, a review and a second opinion wait on the person or another agent, not on the tree, so each is read again at
         // every look.
         { Code: LandingCode.Held or LandingCode.Unreviewed or LandingCode.Opinion } => true,
+        // Closed for what the pass reads again before it asks: if it reaches here, what closed it no longer holds.
+        { Code: LandingCode.Undone or LandingCode.Gone or LandingCode.Superseded } => true,
         // A `land` is started once a node and tip, so a try that closed at its tip says nothing of a later one.
         { Tip: { } at } when !string.Equals(at, tip, StringComparison.Ordinal) => true,
         _ => false,
