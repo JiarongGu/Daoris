@@ -19,11 +19,6 @@ import { useTabFit } from './tabFit';
  */
 export type DockTab = ViewId | 'preview';
 
-/**
- * The dock's scrolling body. A drawing in it that is taller than the dock gets a scrollbar, which takes its width from the
- * pane, so a chart placed by that width would flip between top to bottom and the list on each side of the bar and draw its
- * edges past the pane (UIFIND12): the bar's width is held always.
- */
 export const DOCK_BODY = 'flex min-h-0 flex-1 flex-col overflow-y-auto [scrollbar-gutter:stable]';
 
 /** A file's preview as the dock's tab: its name, its path for the tip, and its own ×. */

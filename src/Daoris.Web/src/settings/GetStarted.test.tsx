@@ -45,16 +45,11 @@ const draw = (props: Partial<Parameters<typeof GetStarted>[0]> = {}) => {
 
 const step = (name: RegExp) => screen.getByRole('listitem', { name });
 
-/** The classes a door is drawn with: what makes a link, a button and a ghost three faces. */
 const faceOf = (button: HTMLElement) => button.getAttribute('class');
 
 describe('Get started', () => {
   afterEach(() => { void i18n.changeLanguage('en'); });
 
-  /**
-   * UIFIND14: a to-do step's door was a button and a done step's a ghost, and Ask Daoris's starters and its way back to this guide
-   * were two more faces. Every door is the one button, whatever the step's state, here and in the Ask Daoris panel.
-   */
   it('draws every door one way, a done step’s as a to-do step’s and as Ask Daoris’s', () => {
     draw({ steps: HALFWAY, helper: 'claude-code-acp' });
     const doors = within(screen.getByRole('list', { name: 'setup steps' })).getAllByRole('button')

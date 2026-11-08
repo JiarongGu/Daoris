@@ -239,7 +239,7 @@ describe('the page’s map of a note’s codes, held to both writers', () => {
   /** Why a piece is refused, held or uncertain is a reason family of its own, held key for key. */
   it('words every reason a piece was refused, held or uncertain', () => {
     const partner = reasons('Partner');
-    expect(partner.length).toBe(18);
+    expect(partner.length).toBe(19);
     const page = Object.values(PARTNER_REASONS).map(({ key, values }) => ({ key, values: [...values] }));
     const byKey = (a: { key: string }, b: { key: string }) => a.key.localeCompare(b.key);
     expect(page.sort(byKey)).toEqual([...partner].sort(byKey));

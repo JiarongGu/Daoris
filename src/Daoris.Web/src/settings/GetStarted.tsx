@@ -110,9 +110,7 @@ export function GetStarted({ steps, reading = false, helper, atStart, onAtStart,
             aria-label={`${number}. ${title}`}
             className="flex scroll-mt-3 flex-wrap items-start justify-between gap-x-6 gap-y-2 border-t border-line py-3 first:border-t-0 first:pt-0 last:pb-0"
           >
-            {/* Wrapping, not a fixed grid: beside a side bar the card is narrow, and a
-                grid squeezed both columns until a command broke mid-word and a door's label took two lines.
-                Here the doors drop under the text when there is no room beside it. */}
+            {/* Wrapping, not a fixed grid, which beside a side bar broke a command mid-word: the doors drop under the text. */}
             <div className="min-w-[min(18rem,100%)] flex-1">
               <div className="flex flex-wrap items-center gap-2 text-body">
                 <span className="tabular-nums text-ink-faint">{number}.</span>
@@ -141,7 +139,6 @@ export function GetStarted({ steps, reading = false, helper, atStart, onAtStart,
             {step.doors.length > 0 && (
               <div className="flex shrink-0 flex-wrap items-center gap-2">
                 {step.doors.map((door) => (
-                  // The pill says what is done; every door is drawn the same, as Ask Daoris's are.
                   <StarterDoorButton key={doorKey(door)} onClick={() => onGo(door)}>
                     {t(`setup.door.${doorKey(door)}`)}
                   </StarterDoorButton>

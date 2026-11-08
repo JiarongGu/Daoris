@@ -45,7 +45,6 @@ const books: Record<string, Record<string, ComponentType>> = {
   quest: composeStories(quest) as unknown as Record<string, ComponentType>,
   // A session's states: the return on its lane, the outcomes as one node.
   session: composeStories(session) as unknown as Record<string, ComponentType>,
-  // A session's Timeline in the side bar: its states chart within the pane at the dock's widths.
   sidebar: sideBarTimeline as unknown as Record<string, ComponentType>,
   // A session's parts: a fork and a retry, an asked part from a faint node, the landing plan as a dashed node.
   parts: composeStories(parts) as unknown as Record<string, ComponentType>,

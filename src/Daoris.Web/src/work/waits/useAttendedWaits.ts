@@ -84,7 +84,6 @@ export function useAttendedWaits({
   // The pieces it asked other agents to write: this machine's own files, so only for its own record. A
   // session working in a tree of its own leads them, driven or a conversation; a partner, a helper, a reviewer or an intake leads none.
   const leads = Boolean(attended && here && leadsPieces(attended));
-  // The ask itself is offered while it runs: an ended session has no running work to receive a piece.
   const takes = Boolean(attended && here && takesPartner(attended));
   const partnerPieces = useSessionPartners(attended && here ? attended.id : null);
   // Its agent's own ask to hand it over: this machine's own files, so only for its own record.

@@ -394,7 +394,7 @@ public static class SessionStates
 
     /// <summary>
     /// Whether a record's state is one of the five endings (the page's <c>SESSION_ACTIVE</c> complement): an empty or unknown
-    /// state is not read as ended, so a record from before the field stays as it was.
+    /// state is never read as ended.
     /// </summary>
     public static bool IsEnded(string? state) => Endings.Contains(state, StringComparer.OrdinalIgnoreCase);
 }

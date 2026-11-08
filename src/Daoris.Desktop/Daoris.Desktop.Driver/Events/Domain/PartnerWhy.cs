@@ -6,7 +6,6 @@ public static class PartnerWhy
     /// <summary>The asker is a partner, a helper, a reviewer, an intake, Ask Daoris's conversation or a brainstorm pass.</summary>
     public const string AskerUnfit = "asker-unfit";
 
-    /// <summary>The asking session has ended: no running work is there to receive the piece.</summary>
     public const string AskerEnded = "asker-ended";
 
     /// <summary>The asking session is not on this machine's record.</summary>

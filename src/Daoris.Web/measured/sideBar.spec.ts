@@ -1,10 +1,9 @@
 import { expect, test } from '@playwright/test';
 
-// A session's Timeline in the side bar, drawn at the widths the dock gives it and measured (UIFIND12): its states chart's edges
-// stay inside the pane, and the placement holds still. The dock scrolls, and a classic scrollbar takes its width from the pane
-// once the drawing is taller than the dock, so the chart was placed by a width the bar then took back, and flipped between top to
-// bottom and the list with its edges past the pane. The story is `measured/sideBarTimeline.tsx`; classic scrollbars are
-// the headless browser's own to hide, so they are kept.
+// A session's Timeline in the side bar, drawn at the widths the dock gives it and measured: its states chart's edges stay inside
+// the pane, and the placement holds still. The dock scrolls, and a classic scrollbar takes its width from the pane once the drawing
+// is taller than the dock, so a chart placed by a width the bar then takes back flips between top to bottom and the list with its
+// edges past the pane. The story is `measured/sideBarTimeline.tsx`; classic scrollbars are kept, which the headless browser hides.
 // `npm --prefix src/Daoris.Web run e2e:measured -- --grep sidebar/`.
 
 test.use({ launchOptions: { ignoreDefaultArgs: ['--hide-scrollbars'] } });

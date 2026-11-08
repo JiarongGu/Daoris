@@ -2,7 +2,7 @@ import type { Session } from '../src/data/api';
 import { DOCK_BODY } from '../src/work/frame/RightDock';
 import { SessionTimeline } from '../src/work/head/SessionTimeline';
 
-// A session's Timeline in the side bar, drawn at the widths the dock gives it, a frame each (UIFIND12): its states chart's edges
+// A session's Timeline in the side bar, drawn at the width the dock gives it: its states chart's edges
 // stay inside the pane. The page's own gutters wrap the view, as the dock's pane has them.
 
 const SESSION: Session = {

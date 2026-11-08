@@ -211,7 +211,7 @@ describe('the acts a session is offered', () => {
     for (const other of others) expect(offeredActs({ session: { ...chat, ...other }, root: ROOT }, 'header')).not.toContain('askPiece');
   });
 
-  /** An ended session has no running work to receive a piece, so the driver's judge refuses it and the head never offers it (UIFIND7). */
+  /** An ended session has no running work to receive a piece, so the driver's judge refuses it and the head never offers it. */
   it('offers no piece’s ask to a session that has ended, while its helper’s ask and its review stay', () => {
     for (const state of ['completed', 'declined', 'stood-down', 'failed', 'stopped'] as const) {
       const ended = session({ quest: null, kind: 'chat', state, tree: TREE });
