@@ -60,6 +60,7 @@ internal static class TestProcessStarts
             "Daoris.Desktop.Driver.Tests/Workplace/TreeGuardTests.cs", "Daoris.Desktop.Driver.Tests/Workplace/Pool/TreePoolStopsGitTests.cs",
             "Daoris.Desktop.Modules.Tests/Bridge/DriverModuleConversationProcessTests.cs", "Daoris.Desktop.Modules.Tests/Bridge/DriverModuleDriverTests.cs",
             "Daoris.Desktop.Modules.Tests/Bridge/DriverModuleSessionQuietTests.cs", "Daoris.Desktop.Modules.Tests/Bridge/ReleaseStandIn.cs",
+            "Daoris.Desktop.Modules.Tests/Browser/ProcessBrowserChildTests.cs",
             "Daoris.Desktop.Modules.Tests/Loop/AtWorkProcessTests.cs", "Daoris.Desktop.Modules.Tests/Platform/StandingCallerTests.cs",
             "Daoris.Desktop.Modules.Tests/Update/AppWorkingFolderProcessTests.cs", "Daoris.Desktop.Modules.Tests/Update/HomePlacingProcessTests.cs",
         ]),

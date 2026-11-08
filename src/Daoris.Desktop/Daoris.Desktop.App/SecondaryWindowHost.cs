@@ -43,15 +43,13 @@ public sealed class SecondaryWindowHost(
 {
 
     /// <summary>
-    /// Every name asked for so far. <see cref="SecondaryWindows"/> answers whether a name is open but
-    /// does not enumerate, so the names have to be remembered to be reported — and one whose window
-    /// has since been closed simply drops out of <see cref="Opened"/>.
+    /// Every name asked for so far: <see cref="SecondaryWindows"/> answers whether a name is open but does not enumerate, so
+    /// the names are remembered to be reported, and one whose window has since closed drops out of <see cref="Opened"/>.
     /// </summary>
     private readonly HashSet<string> _asked = new(StringComparer.Ordinal);
 
     /// <summary>
-    /// Each open window's form, by name, so its page can tell it the theme. Removed as the
-    /// form closes, so a closed window is never told anything.
+    /// Each open window's form, by name, so its page can tell it the theme; removed as it closes, so a closed window is never told anything.
     /// </summary>
     private readonly Dictionary<string, SecondaryForm> _forms = new(StringComparer.Ordinal);
 
@@ -99,18 +97,7 @@ public sealed class SecondaryWindowHost(
         if (!SecondaryWindow.IsMain(name)) return false;
         SecondaryForm? form;
         lock (_forms) _forms.TryGetValue(name, out form);
-        if (form is null || form.IsDisposed || !form.IsHandleCreated) return false;
-        try
-        {
-            // 🔴 BeginInvoke, never Invoke: the click arrives on the first main window's thread, and this window runs its own pump.
-            form.BeginInvoke(() => MainForm.Forward(form));
-            return true;
-        }
-        catch (InvalidOperationException)
-        {
-            // The handle went between the look and the post.
-            return false;
-        }
+        return form is not null && form.Post(() => MainForm.Forward(form));
     }
 
     /// <summary>The workspace the page of the main window opened under <paramref name="name"/> holds, worn in its title. Any thread.</summary>
@@ -149,8 +136,7 @@ public sealed class SecondaryWindowHost(
                 }
                 // The main window last in front is the one a notification about nobody's workspace opens.
                 if (scopes is not null && SecondaryWindow.IsMain(name)) form.Activated += (_, _) => scopes.CameForward(name);
-                // Counted once it is on the screen, since only a window that loaded is ever told closed: one whose making
-                // failed would otherwise keep a put-away first main window hidden with nothing else open.
+                // Counted once on the screen: only a window that loaded is told closed, and one that failed would keep a put-away first main window hidden.
                 form.Load += (_, _) =>
                 {
                     mains?.Opened(name);
@@ -164,8 +150,7 @@ public sealed class SecondaryWindowHost(
                         if (_forms.TryGetValue(name, out var held) && ReferenceEquals(held, form)) _forms.Remove(name);
                     }
 
-                    // Its count and its workspace go with it: one opened again under its name wears and holds nothing until its page
-                    // tells it.
+                    // Its count and workspace go with it: one opened again under its name holds nothing until its page tells it.
                     waiting?.Closed(name);
                     scopes?.Closed(name);
                     // The last main window closing, the first put away, ends the application.
@@ -196,12 +181,11 @@ public sealed class SecondaryWindowHost(
     {
         SecondaryForm? form;
         lock (_forms) _forms.TryGetValue(name, out form);
-        if (form is null || form.IsDisposed || !form.IsHandleCreated) return false;
+        if (form is null) return false;
 
-        // 🔴 BeginInvoke, never Invoke: this arrives on the IPC thread, and the window runs its own
+        // 🔴 Posted, never Invoked: this arrives on the IPC thread, and the window runs its own
         // pump — a blocking marshal is the deadlock this class's remarks warn about.
-        form.BeginInvoke(() => form.FollowPage(dark));
-        return true;
+        return form.Post(() => form.FollowPage(dark));
     }
 
     public IReadOnlyList<string> Opened

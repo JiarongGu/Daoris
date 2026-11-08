@@ -954,7 +954,7 @@ describe('the groups', () => {
     }
   });
 
-  /** An owner nothing records is said once, by the entry's own code, with the press that removes it. */
+  /** An owner nothing records is said once, by the entry's own code, the press that removes it first. */
   it('words an unknown owner by its code once, in each language, with the press that removes it', async () => {
     const orphan = row('work', 'unknown-branch:engine/daoris/orphan', null, {
       where: 'engine', session: null, title: 'daoris/orphan',
@@ -970,14 +970,13 @@ describe('the groups', () => {
     const item = words(orphan);
     expect(item).toMatchObject({ title: 'daoris/orphan', session: null });
     expect(item.detail).toBe(
-      'Nothing records whose work this is, so nothing of it is cleaned up. '
-      + 'Blocked: session branch daoris/orphan, Daoris did not record daoris/orphan, so nothing of it is cleaned up: Discard branch… '
-      + 'in the session branches on its workspace’s Branches removes it');
+      'Blocked: session branch daoris/orphan, press Discard branch… in the session branches on its workspace’s Branches to remove it; '
+      + 'Daoris did not record it, so nothing else cleans it up');
 
     await i18n.changeLanguage('zh');
     try {
       expect(words(orphan).detail).toBe(
-        '没有任何记录说明这是谁的工作，所以它的内容都不会被清理。 受阻：会话分支 daoris/orphan，Daoris 没有记录 daoris/orphan，所以它的内容都不会被清理：在它所在工作区的“分支”中，按会话分支列表里的“丢弃分支…”即可移除');
+        '受阻：会话分支 daoris/orphan，在它所在工作区的“分支”中，按会话分支列表里的“丢弃分支…”即可移除；Daoris 没有记录它，所以不会有别的清理动作处理它');
     } finally {
       await i18n.changeLanguage('en');
     }
@@ -1016,15 +1015,14 @@ describe('the groups', () => {
     expect(entryDetail(i18n.t, { detail: 'as recorded' })).toBe('as recorded');
   });
 
-  /** An unrecorded daoris/* branch says its owner first, then its entry worded by its code; the one rule for any such record. */
-  it('words an unrecorded daoris branch as an unknown owner, then its entry', () => {
+  it('words an unrecorded daoris branch by its entry alone, with no owner sentence before it', () => {
     const item = words(row('work', 'unknown-branch:engine/daoris/orphan', null, {
       where: 'engine', session: null, title: 'daoris/orphan',
       blocked: { unknown: true, entries: [{ kind: 'session-branch', resource: 'daoris/orphan', code: 'unrecorded', facts: { branch: 'daoris/orphan' }, detail: 'as recorded' }] },
     }));
 
     expect(item).toMatchObject({ title: 'daoris/orphan', where: 'engine', session: null });
-    expect(item.detail).toContain('Nothing records whose work this is');
+    expect(item.detail).not.toContain('Nothing records whose work this is');
     expect(item.detail).not.toContain('as recorded');
   });
 
