@@ -15,6 +15,11 @@ public sealed record ReviewServe(string Quest, string Title, string Folder, stri
     /// <summary>The set-up it shows, as <c>machine/sequence</c>, which a verdict names; null where the set-up carries none.</summary>
     public string? SetUp { get; init; }
 
+    /// <summary>The tree the build was served from, and when its set-up was shown: a slot another line took after that no longer holds it.</summary>
+    public string? Tree { get; init; }
+
+    public DateTimeOffset? Shown { get; init; }
+
     /// <summary>
     /// The one pattern the tab's requests are held at, in CDP's <c>Fetch</c> wildcard: the address and the base, anything below.
     /// A request outside it, the app's calls to the development environment's data among them, goes where it would go for the

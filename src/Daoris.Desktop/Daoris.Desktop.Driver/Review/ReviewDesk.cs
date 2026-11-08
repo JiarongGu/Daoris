@@ -115,6 +115,7 @@ public sealed class ReviewDesk(IReviewTabs tabs, string? home = null)
             return $"its build is not served to its tab: {why}.";
         }
 
+        serve = serve with { Tree = tree };
         try
         {
             await tabs.ServeAsync(serve, ct).ConfigureAwait(false);
@@ -160,7 +161,8 @@ public sealed class ReviewDesk(IReviewTabs tabs, string? home = null)
             var why = quest is null ? "its quest is gone from this machine's service"
                 : quest.Status == "Declined" ? "it was declined"
                 : answered is { } verdict ? $"you said `{verdict}`"
-                : !ReviewServed.Stands(serve.Folder) ? "the tree that held its build is gone"
+                : !ReviewServed.Stands(serve.Folder) || (serve.Tree is { } tree && !ReviewServed.TreeStands(home, tree, serve.Shown))
+                    ? "the tree that held its build is gone, or another line took its place since"
                 : null;
             if (why is null) continue;
 
@@ -230,6 +232,7 @@ public sealed class ReviewDesk(IReviewTabs tabs, string? home = null)
         var (serve, why) = Plan(quest, newest, environment, home is null ? tree : new LinePlaces(home).Of(tree).Folder);
         if (serve is null) return (false, $"set-up step `#{quest.Id}` is not shown again: {why}.");
 
+        serve = serve with { Tree = tree };
         try
         {
             await tabs.ServeAsync(serve, ct).ConfigureAwait(false);
@@ -261,7 +264,7 @@ public sealed class ReviewDesk(IReviewTabs tabs, string? home = null)
         var @base = ReviewServed.BaseOf(html, address);
         return (new ReviewServe(quest.Id, TabTitle(quest.Id), folder, address, @base, ReviewServed.LookUnder(address, @base, setUp.Look))
         {
-            SetUp = ReviewServed.Reference(setUp),
+            SetUp = ReviewServed.Reference(setUp), Shown = setUp.At,
         }, "");
     }
 
