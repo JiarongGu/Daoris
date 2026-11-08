@@ -25,4 +25,7 @@ public sealed class GoAheadNode : BuiltInNode, IObserves
     public override string? Title => null;
 
     public override NodeLook Look => NodeLook.You;
+
+    /// <summary>A go-ahead authorizes the act it names, which only the person gives.</summary>
+    public override bool HoldsRun => true;
 }

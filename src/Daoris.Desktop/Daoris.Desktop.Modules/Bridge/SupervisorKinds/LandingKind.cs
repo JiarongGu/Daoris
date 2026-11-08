@@ -59,22 +59,11 @@ internal sealed class LandingKind : ISupervisorKind
         if (SupervisorDecisionDoor.Covers(loop, keeping.Generation, Kind, repository) is { } uncovered) return SupervisorDecided.Refused(uncovered);
         var landing = new SupervisorLanding(
             keeping.Subject.Session, parts.Run, parts.Node, parts.Attempt, keeping.Generation, keeping.Do, keeping.Reasons, keeping.Holder, keeping.Bound);
-        var left = keeping.Do == SupervisorLandingActs.Hold;
-        var refused = await RefusedAsync(loop, record, parts, keeping.Do, left, ct).ConfigureAwait(false);
+        var refused = await LandingJudge.RefusedAsync(
+            LandingSteps.Find(loop.Home, parts.Run, parts.Node, parts.Attempt), keeping.Do, OwnerHolds.Holds(record, loop.Look.Latest),
+            () => PushesAsync(loop, record.Session, ct)).ConfigureAwait(false);
         var kept = await loop.Supervisor.LandingAsync(landing, repository, refused, DateTimeOffset.UtcNow, ct).ConfigureAwait(false);
         return SupervisorDecided.Of(kept, SupervisorWhy.NotReferred);
-    }
-
-    // What the step itself refuses, read again now: it still waits on the attempt, no go-ahead holds the run, and for a release the person
-    // has not held the line and the landing's plan pushes nothing.
-    private static async Task<string?> RefusedAsync(DriverLoop loop, PriorSession record, (string Run, string Node, int Attempt) parts, string act, bool left, CancellationToken ct)
-    {
-        if (LandingSteps.Find(loop.Home, parts.Run, parts.Node, parts.Attempt) is not { } step) return SupervisorWhy.Answered;
-        if (step.GoAheadOpen) return SupervisorWhy.GoAheadOpen;
-        if (left) return null;
-        if (!step.Acts.Contains(act)) return SupervisorWhy.NotReferred;
-        if (OwnerHolds.Holds(record, loop.Look.Latest)) return SupervisorWhy.OwnerHeld;
-        return await PushesAsync(loop, record.Session, ct).ConfigureAwait(false);
     }
 
     // The landing's plan, read through the landing's own route: a plugin it names pushes the branch once made, and a plan that cannot be read is no plan that pushes nothing.

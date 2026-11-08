@@ -27,6 +27,9 @@ internal sealed class ReviewNode : BuiltInNode, IObserves, IPressed
     /// <summary>The person's Accept, a gate before every landing as the look is.</summary>
     public override LandingGuard Guard => LandingGuard.Before;
 
+    /// <summary>A landing supervisor's Accept, with no changes and no words.</summary>
+    public override IReadOnlyList<string> LandingActs(NodeDeclaration node) => [NodeWordActs.Accept];
+
     /// <summary>Reached by the person's Accept, read from the landing it made as a <c>land</c>'s reach is.</summary>
     public NodeObservation Observe(NodeReading reading) => LandReading.Observe(reading,NodeSource.Person);
 

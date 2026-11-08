@@ -261,9 +261,7 @@ public static class NodeLifecycle
             new(NodeStates.Ready, NodeStates.Active, daoris, "it starts: observing, dispatching, offering the task, or waiting"),
             new(NodeStates.Active, NodeStates.Reached, authority, "accepted, bound evidence"),
             new(NodeStates.Active, NodeStates.Failed, authority, "an authoritative negative outcome; silence and a deadline never count"),
-            new(NodeStates.Active, NodeStates.Rejected, person, "a person's rejection, with a reason, on a node a person may judge"),
-            new(NodeStates.Active, NodeStates.Rejected, NodeCause.Supervisor, "the landing supervisor's rejection, on a node a person may judge"),
-            new(NodeStates.Active, NodeStates.Unknown, daoris, "the outcome cannot be established now"),
+            new(NodeStates.Active, NodeStates.Rejected, person, "a person's rejection, with a reason, on a node a person may judge"),            new(NodeStates.Active, NodeStates.Unknown, daoris, "the outcome cannot be established now"),
             new(NodeStates.Unknown, NodeStates.Active, daoris, "reconciliation says it is running, or never started"),
             new(NodeStates.Unknown, NodeStates.Reached, authority, "reconciliation establishes the outcome"),
             new(NodeStates.Unknown, NodeStates.Failed, authority, "reconciliation establishes the outcome"),
@@ -397,7 +395,7 @@ public static class NodeLifecycle
                 if (!authority.PersonJudges) return Refuse(NodeRefusal.NotJudged);
                 if (Unbound(move.Attempt) is { } rejectAttempt) return Refuse(rejectAttempt);
                 if (string.IsNullOrWhiteSpace(move.Words)) return Refuse(NodeRefusal.NoWords);
-                return To(next with { By = move.By == NodeCause.Supervisor ? NodeSource.Supervisor : NodeSource.Person, Words = move.Words });
+                return To(next with { By = move.Source == NodeSource.Supervisor ? NodeSource.Supervisor : NodeSource.Person, Words = move.Words });
 
             case NodeStates.Skipped when move.By == NodeCause.Authority:
                 // The kind's record passes the started attempt over, for that attempt's graph and run. It is never the person's:

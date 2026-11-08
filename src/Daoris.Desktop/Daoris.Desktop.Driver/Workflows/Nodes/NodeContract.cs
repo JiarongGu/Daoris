@@ -168,9 +168,6 @@ public static class NodeCause
 
     /// <summary>The person, at their doors: a rejection, a skip, a stop, a new attempt.</summary>
     public const string Person = "person";
-
-    /// <summary>A landing supervisor's rejection of an approval, released as the person's is and held to the same table.</summary>
-    public const string Supervisor = "supervisor";
 }
 
 /// <summary>

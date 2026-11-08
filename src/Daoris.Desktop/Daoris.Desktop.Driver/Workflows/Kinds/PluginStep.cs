@@ -45,6 +45,10 @@ public record PluginStep : INodeKind, IStarts
 
     public bool EndsByTheLine => false;
 
+    public bool HoldsRun => false;
+
+    public IReadOnlyList<string> LandingActs(NodeDeclaration node) => [];
+
     /// <summary>None: its door is its plugin's port, the runtime's own.</summary>
     INodeDoor? IStarts.Door(NodeDoorWiring wiring) => null;
 

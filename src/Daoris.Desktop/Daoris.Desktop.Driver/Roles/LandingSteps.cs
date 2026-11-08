@@ -21,11 +21,11 @@ public static class LandingSteps
         {
             if (run.Ended is not null || run.Binding.Problem is not null || run.Version.Graph is not { } graph) continue;
             if (records.Read(run.Unit) is not { } record) continue;
-            var open = graph.Nodes.Any(node => node.Kind == NodeKinds.GoAhead && WorkPerformer.StatusOf(record, node.Id).State == NodeStates.Active);
+            var open = graph.Nodes.Any(node => NodeKit.Of(node.Kind)?.HoldsRun == true && WorkPerformer.StatusOf(record, node.Id).State == NodeStates.Active);
             foreach (var node in graph.Nodes)
             {
                 var status = WorkPerformer.StatusOf(record, node.Id);
-                if (status.State != NodeStates.Active || ActsOf(node) is not { Count: > 0 } acts) continue;
+                if (status.State != NodeStates.Active || NodeKit.Of(node.Kind)?.LandingActs(node) is not { Count: > 0 } acts) continue;
                 steps.Add(new LandingStep(run.Run, node.Id, status.Attempt, run.Binding.Repository, acts) { GoAheadOpen = open });
             }
         }
@@ -36,12 +36,4 @@ public static class LandingSteps
     /// <summary>The step of <paramref name="run"/> named by the decision's subject, if it still waits on that attempt.</summary>
     public static LandingStep? Find(string home, string run, string node, int attempt) =>
         Waiting(home).FirstOrDefault(step => step.Run == run && step.Node == node && step.Attempt == attempt);
-
-    /// <summary>The landing acts <paramref name="node"/> offers: a review's Accept, an approval's two; none for any other node, a task among them.</summary>
-    private static IReadOnlyList<string> ActsOf(NodeDeclaration node) => node.Kind switch
-    {
-        NodeKinds.Review => [SupervisorLandingActs.Accept],
-        NodeKinds.Human when HumanNode.Presses(node).Contains(NodeWordActs.Approve) => [SupervisorLandingActs.Approve, SupervisorLandingActs.Reject],
-        _ => [],
-    };
 }

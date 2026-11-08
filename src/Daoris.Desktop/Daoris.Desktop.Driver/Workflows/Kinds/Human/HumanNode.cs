@@ -31,6 +31,10 @@ internal sealed class HumanNode : BuiltInNode, IObserves, IPressed
 
     public override string? Title => "Your task";
 
+    /// <summary>A landing supervisor's Approve and Reject of an approval; a task a person does by hand is theirs alone.</summary>
+    public override IReadOnlyList<string> LandingActs(NodeDeclaration node) =>
+        node.Outcomes.SequenceEqual(Approval) ? [NodeWordActs.Approve, NodeWordActs.Reject] : [];
+
     public override NodeLook Look => NodeLook.You;
 
     /// <summary>Begun on a run alone, as a go-ahead is: the run then waits on the person. On a unit it waits ready.</summary>
@@ -52,7 +56,7 @@ internal sealed class HumanNode : BuiltInNode, IObserves, IPressed
     /// rejects it on that attempt with their note, as a review's changes do, and the graph's <c>rejected</c> wire routes it.
     /// </summary>
     public NodeMove? Move(NodeDeclaration node, NodeWord word, NodeStatus status, NodeScope scope) => word.Act == NodeWordActs.Reject
-        ? new NodeMove(NodeStates.Rejected, word.Cause) { Attempt = status.Attempt, Words = word.Words }
+        ? new NodeMove(NodeStates.Rejected, NodeCause.Person) { Source = word.Source, Attempt = status.Attempt, Words = word.Words }
         : new NodeMove(NodeStates.Reached, NodeCause.Authority)
         {
             Source = word.Source, Attempt = status.Attempt, Acceptance = status.Binding is { } bound ? bound with { Outcome = Outcome(node, word.Act) } : null,
