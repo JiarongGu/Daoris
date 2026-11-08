@@ -110,6 +110,7 @@
   "projects.tab.changes": "Changes",
   "projects.tab.setup": "Setup",
   "projects.tab.integration": "Integration",
+  "projects.tab.files": "Files",
   "projects.tab.workflow": "Workflow",
   "projects.git.reading.branches": "Reading {{repository}}'s branches…",
   "projects.git.reading.history": "Reading {{repository}}'s history…",

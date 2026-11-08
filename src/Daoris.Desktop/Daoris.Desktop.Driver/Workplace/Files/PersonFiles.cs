@@ -109,7 +109,6 @@ internal static class PersonFiles
         return edit(rules);
     });
 
-    /// <summary>The same write over one scope's whole object (its rules and its permissions), by the same lock-free rename.</summary>
     internal static int EditScope(string home, string? repository, Func<JsonObject, int> edit)
     {
         var path = PathOf(home);

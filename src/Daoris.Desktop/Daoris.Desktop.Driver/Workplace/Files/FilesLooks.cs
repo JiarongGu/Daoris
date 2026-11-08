@@ -67,10 +67,19 @@ public static class FilesLooks
         var size = said.Select(rule => rule.Size).FirstOrDefault(found => found is not null);
         var evidence = said.Select(rule => rule.Evidence).FirstOrDefault(found => found.Count > 0) ?? [];
         return new FilesLookFile(
-            file.Path, file.Kind?.Word(), file.Layer is { } layer ? Word(layer) : null, file.Floor, file.Copy, file.Idle,
+            file.Path, file.Kind?.Word(), file.Layer is { } layer ? Word(layer) : null, FloorCode(file.Floor), file.Copy, file.Idle is null ? null : "no-install",
             size?.Files, size?.Bytes, size?.More ?? false, evidence,
             [.. file.Below.Select(each => new FilesLookBelow(Word(each.Layer), each.Rule.Kind.Word()))]);
     }
+
+    // The floor's sentences are the terminal's; the page words each by its code.
+    private static string? FloorCode(string? floor) => floor switch
+    {
+        FileFloor.Tracked => "tracked",
+        FileFloor.Repository => "repository",
+        FileFloor.NeverCopied => "never-copied",
+        _ => null,
+    };
 
     private static IEnumerable<FilesLookAct> Acts(FileRules rules, EffectiveFile file)
     {

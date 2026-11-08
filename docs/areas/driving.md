@@ -92,6 +92,7 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they start wi
 | `TreeLocalInputs` | `Workplace/` | Copy the machine-local files the effective `copy` rules name into a tree |
 | `LaneRooms`, `RoomCheck`, `RoomCheckReport`, `RoomPaths` | `Workplace/` | The rooms the lanes file declares, read and checked with the repository's rule file: claim groups by build closure, crossings, refusals |
 | `FileRules`, `FileRuleFile`, `RepositoryFilesReader`, `PersonFiles`, `FoundFiles`, `FilePermissions`, `FileFloor` | `Workplace/Files/` | The rule file's one format, its four layers and the floor, each path's effective rule, the person's permissions; `FilesCommand` is `daoris files` |
+| `FilesLooks`, `FilesLook`, `FilesEdits`, `PersonPermissions` | `Workplace/Files/` | The rule file composed for the page (`FILES`), and the person's rules and permissions written, an allow with its maker, by one validation the terminal's verb and the window's routes (`Bridge/Routes/FilesRoutes.cs`) share |
 | `FileAnalysis`, `FileSignatures`, `FileGit`, `FileWalk`, `WorkspaceMembers` | `Workplace/Files/` | The analysis that writes the found layer from git's view, bounded walks, the shipped signatures, the workspace members a manifest names and the tracked scripts |
 | `FoundReads` | `Workplace/Files/` | When the found layer is written: a repository's registration, its line's move past a file the analysis reads, its toolchain's move, a line's finish; registration following and the tree's removal call it |
 | `RoomsProposal` | `Knowledge/` | The words the set-up's brief and Ask Daoris's room both say to ask a repository with no rooms or classes to propose them |
@@ -189,8 +190,13 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they start wi
     `data/files.json`, its `machine` rules then the repository's. The floor is read over all: a tracked path is git's, a top
     that is or holds another repository, a linked worktree or a bare repository's shape is `repository`, and a harness's or
     an editor's settings are never copied. The person's `deny`, `allow` and `ask` over `run`, `copy` and `share` are empty by
-    default; a `files.json` that does not read holds every act as an ask and is never written over. `daoris files` shows each
-    path's rule and its layer; nothing yet acts on them. The found layer is written only when a repository is registered, when
+    default; a `files.json` that does not read holds every act as an ask and is never written over. `daoris files` and the repository
+    page's Files tab show each path's rule, its layer, the layers below it, its evidence and size, the acts the rules would
+    make with the person's answer to each, and a `copy`'s readers (every session in a tree it is copied to). The page sets the
+    person's rules and `permissions` through `FILES_SET`, `FILES_REMOVE` and `FILES_PERMIT` and reads the found layer again
+    through `FILES_READ`, each the window's alone and refused on the pipe: an `ask` is allowed in one press, written as the
+    person's `allow` with its maker, and the allow is taken back by the same route; a `files.json` that does not read refuses
+    each write and every allow, said, and is never written over. No payload carries a machine path. The found layer is written only when a repository is registered, when
     its line moves past a signature, manifest, ignore or gates file or its toolchain's answers move (asked once a day), and
     when a line finishes (a removed tree's ignored tops marked `scratch`); a look that changed nothing writes nothing. A pnpm
     or npm repository's workspace members' `node_modules/` are in its root dependency's paths, read at the commit. The set-aside
@@ -346,7 +352,7 @@ look and the run, the lazily built parts and the settables, and grows by a one-l
 | transient failures | `Agents/TransientRetry.cs` | `Loop/TransientRetryTickTests` |
 | opening, following or removing a tree | a class over `TreeContext` in `Workplace/`, wired in `SessionTrees`' front | `Workplace/SessionTreesTests`, `Workplace/FreshTreeTests`, `Workplace/Deps/DependencyStoreTests`, `Workplace/Deps/DependencyGroupsTests`, `Workplace/TreeLocalInputsTests`, `Workplace/TreeReturnsTests` |
 | a room's declaration, or the room check | `Workplace/LaneRooms.cs`, `RoomCheck.cs`; the conventions in canon's `rooms-and-classes` | `Workplace/LaneRoomsTests`, `RoomCheckTests`, `RoomsDeclaredCensusTests` (this repository's own) |
-| a rule file's layer, the floor, the permissions or the analysis | `Workplace/Files/`; the signatures in `Defaults/file-signatures.json` | `Workplace/Files/FileRulesTests`, `PersonFilesTests`, `RepositoryFilesTests`, `FileAnalysisTests` (Process, git: a fixture per toolchain) |
+| a rule file's layer, the floor, the permissions or the analysis | `Workplace/Files/`; the signatures in `Defaults/file-signatures.json` | `Workplace/Files/FileRulesTests`, `PersonFilesTests`, `FilesLookTests`, `RepositoryFilesTests`, `FileAnalysisTests` (Process, git: a fixture per toolchain) |
 | the tidy and branch ends | `Workplace/EndJudgement.cs`, `Workplace/TreeSetAside.cs`, `Workplace/AutoTidies.cs` | `Workplace/EndJudgementTests`, `Workplace/EndJudgementGitTests`, `Workplace/BranchTidyingTests`, `Workplace/TreeScratchTests`, `Workplace/TidyGitCountTests` |
 | a rule every door shares | `Service/Quests/QuestExchange.cs`, `Service/Sessions/SessionLedger.cs` (with the ledger's parts above), `Service/Asks/AskDesk.cs` (with the desk's parts above) | `Quests/QuestExchangeTests`, `Quests/QuestMovesTests`, `Quests/QuestDeleteTests`, `Quests/QuestHandbackTests`, `Sessions/SessionLedgerTests`, `Sessions/SessionLockAcrossHostsTests`, `Asks/AskDeskTests`, `Remote/QuestSyncTests` |
 | intakes | `Loop/DriverIntakes.cs`, `WorkOrders/IntakeRoom.cs`, `WorkOrders/IntakeKinds.cs` | `WorkOrders/IntakeTests`, `WorkOrders/IntakeRoutingTests`, `WorkOrders/IntakePromptGoldenTests`, service `Asks/IntakeTests` |

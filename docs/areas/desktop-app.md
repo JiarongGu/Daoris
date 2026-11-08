@@ -232,7 +232,7 @@ executable, started with a browser argument, is Daoris's own browser, which sess
     (`setup/useKeptPlace.ts`). (from D221, D150)
 59. An agent's page heads in one line. Each account is one row with one act by its state. An account is read only when
     the person presses or something has run, never on a timer. (from D152, D150)
-60. Repositories lists by workspace. A repository's tabs are Details, Branches, History, Changes and Integration; a
+60. Repositories lists by workspace. A repository's tabs are Details, Branches, History, Changes, Integration and Files (the files git does not manage there, with the person's rules and permissions); a
     workspace's are Details, Branches and Workflow. Their setup and rules are the place's, in Agents → Setup. (from D150, D147)
 61. Knowledge is one place with two modes, Search (the default) and Convergence. The Map is a read-only view of the
     workspace's repositories and what moved between them, plus the code map, drawn on the canvas. The code map holds

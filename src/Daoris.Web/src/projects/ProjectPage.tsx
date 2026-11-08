@@ -49,7 +49,7 @@ function Fact({ label, children }: { label: string; children: ReactNode }) {
  * - **A page never prints a machine path it is answered**: a checkout here is a mark, never its folder.
  */
 export function ProjectPage({
-  registration, counts, line, unlanded = 0, here, drivable, held, branches, history, changes, integration, tab = 'details', onTab,
+  registration, counts, line, unlanded = 0, here, drivable, held, branches, history, changes, integration, files, tab = 'details', onTab,
   onManage, onOpenCode, onOpenSetup, heavy,
 }: {
   /** Open its page in the Agents place's Setup mode, where its Setup is. */
@@ -86,6 +86,8 @@ export function ProjectPage({
   changes?: ReactNode;
   /** Its Integration tab's body: a shell's, read only while it shows. Absent, there is no Integration tab. */
   integration?: ReactNode;
+  /** Its Files tab's body, the files git does not manage: a shell's, read only while it shows. Absent, there is no Files tab. */
+  files?: ReactNode;
   /** The tab shown, its holder's to remember; Details where it is not handed. */
   tab?: ProjectTab;
   onTab?: (tab: ProjectTab) => void;
@@ -245,12 +247,13 @@ export function ProjectPage({
   // A remembered tab on a page handed no body for it (Branches or History where no shell answers) shows Details, never a tab
   // with no panel.
   const bodiless = (tab === 'branches' && !branches) || (tab === 'history' && !history)
-    || (tab === 'changes' && !changes) || (tab === 'integration' && !integration);
+    || (tab === 'changes' && !changes) || (tab === 'integration' && !integration)
+    || (tab === 'files' && !files);
   const shown: ProjectTab = bodiless ? 'details' : tab;
 
   return (
     <ViewMain header={head} menu={menu}>
-      {onTab && (branches || history || changes || integration)
+      {onTab && (branches || history || changes || integration || files)
         ? (
           <PageTabs<ProjectTab>
             label={t('projects.tab.list', { repository })}
@@ -260,6 +263,7 @@ export function ProjectPage({
               ...(history ? [{ id: 'history' as const, label: t('projects.tab.history') }] : []),
               ...(changes ? [{ id: 'changes' as const, label: t('projects.tab.changes') }] : []),
               ...(integration ? [{ id: 'integration' as const, label: t('projects.tab.integration') }] : []),
+              ...(files ? [{ id: 'files' as const, label: t('projects.tab.files') }] : []),
             ]}
             chosen={shown}
             onChoose={onTab}
@@ -272,7 +276,9 @@ export function ProjectPage({
                   ? changes
                   : shown === 'integration'
                     ? integration
-                    : details}
+                    : shown === 'files'
+                      ? files
+                      : details}
           </PageTabs>
         )
         : details}

@@ -8,6 +8,7 @@
 // and is re-exported by nothing.
 export * from './agents/accounts';
 export * from './repositories/across';
+export * from './repositories/files';
 export * from './agents/agents';
 export * from './sessions/asks';
 export * from './sessions/atWork';

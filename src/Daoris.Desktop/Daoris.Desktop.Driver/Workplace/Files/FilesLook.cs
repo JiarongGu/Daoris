@@ -5,8 +5,8 @@ public sealed record FilesLookBelow(string Layer, string Kind);
 
 /// <summary>
 /// One path git does not manage as the page shows it: its effective rule's kind and the layer that decided (both null where git
-/// tracks it or no rule names it), the floor's sentence where the floor decided, whether a copy is made, why a dependency acts on
-/// nothing, what the analysis counted and saw, and the layers below. Never a machine path: every path is the repository's own.
+/// tracks it or no rule names it), the floor's code where the floor decided, whether a copy is made, a code for why a dependency acts
+/// on nothing, what the analysis counted and saw, and the layers below. Never a machine path: every path is the repository's own.
 /// </summary>
 public sealed record FilesLookFile(
     string Path, string? Kind, string? Layer, string? Floor, bool Copy, string? Idle, long? Files, long? Bytes, bool More,

@@ -37,6 +37,7 @@ const answer = <T,>(value: T | null, refusal: string | null = null) => ({
   value, refusal, problem: refusal ? 'git said no' : null, commands: ['git log --graph --date-order main'], remembered: false,
 });
 
+const TABS = ['Details', 'Branches', 'History', 'Integration', 'Files'];
 const asked = (type: string) => invoke.mock.calls.filter(([, called]) => called === type);
 
 describe("a repository's Branches and History tabs", () => {
@@ -83,7 +84,7 @@ describe("a repository's Branches and History tabs", () => {
     answering();
     show(<ProjectsView notify={() => {}} />);
     const page = await chooseRepository('engine');
-    expect((await within(page).findAllByRole('tab')).map((tab) => tab.textContent)).toEqual(['Details', 'Branches', 'History', 'Integration']);
+    expect((await within(page).findAllByRole('tab')).map((tab) => tab.textContent)).toEqual(TABS);
     expect(asked('GIT_BRANCHES')).toEqual([]);
 
     await userEvent.click(within(page).getByRole('tab', { name: 'Branches' }));
@@ -603,7 +604,7 @@ describe("a repository's Changes tab and the switch behind it (GITAPP2b)", () =>
     show(<ProjectsView notify={() => {}} />);
     const page = await chooseRepository('engine');
 
-    expect(within(page).getAllByRole('tab').map((tab) => tab.textContent)).toEqual(['Details', 'Branches', 'History', 'Integration']);
+    expect(within(page).getAllByRole('tab').map((tab) => tab.textContent)).toEqual(TABS);
     expect(asked('GIT_CHANGES')).toEqual([]);
   });
 
@@ -611,7 +612,7 @@ describe("a repository's Changes tab and the switch behind it (GITAPP2b)", () =>
     answering(switchOn);
     show(<ProjectsView notify={() => {}} />);
     const page = await chooseRepository('engine');
-    expect(within(page).getAllByRole('tab').map((tab) => tab.textContent)).toEqual(['Details', 'Branches', 'History', 'Changes', 'Integration']);
+    expect(within(page).getAllByRole('tab').map((tab) => tab.textContent)).toEqual(TABS.toSpliced(3, 0, 'Changes'));
     expect(asked('GIT_CHANGES')).toEqual([]);
 
     await userEvent.click(within(page).getByRole('tab', { name: 'Changes' }));

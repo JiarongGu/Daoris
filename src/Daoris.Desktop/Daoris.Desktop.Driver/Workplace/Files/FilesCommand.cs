@@ -1,11 +1,8 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// <c>daoris files &lt;repository&gt;</c>: what the rule file's layers say of each path git does not manage in a repository's
-/// checkout, each top's effective rule, the layer that decided and what the layers below it said, read at its line's tip.
-/// <c>read</c> reads the repository again and writes its found layer; <c>set</c> and <c>remove</c> edit the person's layer. Nothing
-/// here copies, installs, clears or stores anything, and nothing in a tree is written. The three writes are the person's, refused
-/// from a session's terminal.
+/// <c>daoris files &lt;repository&gt;</c>: each path git does not manage with its effective rule, the layer that decided and what
+/// the layers below said, at its line's tip. Nothing in a tree is written; the three writes are the person's, refused from a session.
 /// </summary>
 [CommandGroup("files", Whole = true)]
 public static class FilesCommand
