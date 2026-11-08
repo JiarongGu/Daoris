@@ -2,8 +2,9 @@ namespace Daoris.Driver.Host;
 
 /// <summary>
 /// A repository's heavy gates from a terminal:<c>daoris gate run [--gate &lt;name&gt;]</c>,
-/// run in a checkout. The words, the slot and the run are the library's (<see cref="HeavyRun"/>); this hands it the home, this
-/// process's folder and environment, and Ctrl+C as its stop.
+/// run in a checkout. The words, the slot and the run are the library's (<see cref="HeavyRun"/>); this asks the running Daoris to run
+/// them as its own (<see cref="HeavyAppRun"/>), and where none takes them runs them here, handing the run the home, this process's
+/// folder and environment; Ctrl+C is the run's stop either way.
 /// </summary>
 internal static class HeavyConsole
 {
@@ -29,14 +30,24 @@ internal static class HeavyConsole
 
         // Ctrl+C stops the run, never this process outright: what the gates started is ended and waited for, then the slot is let go.
         using var stopping = new CancellationTokenSource();
+        Action interrupt = stopping.Cancel;
         ConsoleCancelEventHandler stop = (_, press) =>
         {
             press.Cancel = true;
-            stopping.Cancel();
+            interrupt();
         };
         Console.CancelKeyPress += stop;
         try
         {
+            // The running Daoris runs it as its own where it takes it, and this only waits; Ctrl+C then asks it to stop.
+            IDisposable Hook(Action told)
+            {
+                interrupt = told;
+                return new Unhooked(() => interrupt = stopping.Cancel);
+            }
+
+            var asked = await HeavyAppRun.AskAsync(args, HeavyTerminal.OfThisProcess(), InstanceHost.World(home, "run-heavy"), Hook).ConfigureAwait(false);
+            if (asked is { } exit) return exit;
             return await HeavyRun.RunAsync(ask, HeavyRunWorld.OfThisProcess(home), Console.Out, stopping.Token).ConfigureAwait(false);
         }
         catch (Exception error) when (error is IOException or UnauthorizedAccessException)
@@ -48,5 +59,10 @@ internal static class HeavyConsole
         {
             Console.CancelKeyPress -= stop;
         }
+    }
+
+    private sealed class Unhooked(Action undo) : IDisposable
+    {
+        public void Dispose() => undo();
     }
 }

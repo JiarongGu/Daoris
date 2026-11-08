@@ -5,6 +5,7 @@ using System.Security.Principal;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Nodes;
+using Daoris.Driver;
 
 namespace Daoris.Desktop.Driver.Tests;
 
@@ -204,6 +205,8 @@ internal sealed class InstanceStandIn : IAsyncDisposable
 
     private async Task ConverseAsync(NamedPipeServerStream server)
     {
+        // A heavy run is held to the connection that asked it, as the pipe holds one: the connection's end stops it.
+        using var connection = CancellationTokenSource.CreateLinkedTokenSource(_stop.Token);
         try
         {
             using var reader = new StreamReader(server, Utf8, leaveOpen: true);
@@ -247,6 +250,12 @@ internal sealed class InstanceStandIn : IAsyncDisposable
                         "ended" => Success(id, new { state = "ended", answer = JsonNode.Parse(Ending(asked)) }),
                         _ => Success(id, new { state = Withdraw }),
                     });
+                    continue;
+                }
+
+                if (module == "DAORIS.PIPE" && type == HeavyTerminalRun.Type && HeavyHome is { } heavyHome && ClientOf(server) is { } terminal)
+                {
+                    _ = RunHeavyAsync(server, id, heavyHome, request.GetProperty("payload"), terminal, connection.Token);
                     continue;
                 }
 
@@ -307,6 +316,7 @@ internal sealed class InstanceStandIn : IAsyncDisposable
         }
         finally
         {
+            await connection.CancelAsync();
             await server.DisposeAsync();
         }
     }
@@ -324,6 +334,28 @@ internal sealed class InstanceStandIn : IAsyncDisposable
 
     /// <summary><see cref="Waiting"/> as the whole of what is said: that one line.</summary>
     public static string WaitingAlone(string verb) => @"\A" + Waiting(verb) + @"\r?\n\z";
+
+    /// <summary>The home a terminal's <c>RUN_HEAVY</c> runs on, through the application's own half in this process; null for none.</summary>
+    public string? HeavyHome { get; set; }
+
+    private async Task RunHeavyAsync(Stream server, string id, string home, JsonElement payload, int terminal, CancellationToken held)
+    {
+        var answer = await HeavyTerminalRun.RunAsync(home, payload, terminal, held);
+        try
+        {
+            await WriteAsync(server, answer.Exit is { } exit ? Success(id, new { exit }) : Refusal(id, answer.Refused!, null));
+        }
+        catch (Exception error) when (error is IOException or ObjectDisposedException)
+        {
+            // The terminal has gone, which is what stopped the run.
+        }
+    }
+
+    private static int? ClientOf(NamedPipeServerStream server) =>
+        OperatingSystem.IsWindows() && GetNamedPipeClientProcessId(server.SafePipeHandle, out var pid) ? (int)pid : null;
+
+    [System.Runtime.InteropServices.DllImport("kernel32.dll", SetLastError = true)]
+    private static extern bool GetNamedPipeClientProcessId(Microsoft.Win32.SafeHandles.SafePipeHandle pipe, out uint pid);
 
     private static string Success(string id, object? data) =>
         JsonSerializer.Serialize(new { category = "ipc", id, success = true, data });

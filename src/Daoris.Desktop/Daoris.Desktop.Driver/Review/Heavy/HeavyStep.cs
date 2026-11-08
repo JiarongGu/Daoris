@@ -19,6 +19,9 @@ internal sealed record StepOptions(IReadOnlyDictionary<string, string>? Environm
     /// never a job's limit, so a runner may still raise a clock-bound lane of its own.
     /// </summary>
     public bool BelowNormal { get; init; }
+
+    /// <summary>A terminal's standard handles, handed to the step in place of this process's: a terminal's run in the running Daoris.</summary>
+    public TerminalHandles? Streams { get; init; }
 }
 
 /// <summary>
@@ -169,6 +172,12 @@ internal sealed class HeavyStep : IDisposable
                 startup.StartupInfo.StdOutput = copy;
                 startup.StartupInfo.StdError = copy;
             }
+            else if (options?.Streams is { } streams)
+            {
+                startup.StartupInfo.StdInput = Duplicated(streams.Input, inherited);
+                startup.StartupInfo.StdOutput = Duplicated(streams.Output, inherited);
+                startup.StartupInfo.StdError = Duplicated(streams.Error, inherited);
+            }
             else
             {
                 startup.StartupInfo.StdInput = Inheritable(StdInput, inherited);
@@ -252,6 +261,7 @@ internal sealed class HeavyStep : IDisposable
     /// <summary>An inheritable copy of a handle of this process's, kept in <paramref name="made"/> to close once the step has it; none where it would not copy.</summary>
     private static IntPtr Duplicated(IntPtr own, List<IntPtr> made)
     {
+        if (own == IntPtr.Zero) return IntPtr.Zero;
         var self = GetCurrentProcess();
         if (!DuplicateHandle(self, own, self, out var copy, 0, true, DuplicateSameAccess)) return IntPtr.Zero;
         made.Add(copy);
