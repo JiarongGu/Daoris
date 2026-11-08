@@ -19,7 +19,6 @@ public static class StartNoteCodes
     public static readonly NoteCode StartedDepsLeft = new("started.deps-left", ["path", "why"]) { Why = NoteCodes.Deps };
     // An install that changed git's own hooks or configuration for the repository, named.
     public static readonly NoteCode StartedDepsCommon = new("started.deps-common", ["path", "changed"]);
-    // A rule's setup command that failed, with its first error.
     public static readonly NoteCode StartedSetupFailed = new("started.setup-failed", ["path", "command", "why"]);
     public static readonly NoteCode StartedFilesWaiting = new("started.files-waiting", ["count", "repository"]);
     public static readonly NoteCode StartedFilesUnread = new("started.files-unread", ["repository", "why"]);

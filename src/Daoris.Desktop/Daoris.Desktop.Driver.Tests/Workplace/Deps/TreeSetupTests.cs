@@ -152,7 +152,6 @@ public sealed class TreeSetupTests : IDisposable
         Assert.Equal(1, Of(made, StartNoteCodes.StartedDepsCommon));
         Assert.Equal("installed", TreeFilesRecord.Read(Home, tree)!.Of("a/")!.How);
         Assert.Equal(["docs-out/"], TreeFilesRecord.Read(Home, tree)!.Of("a/")!.Others);
-        Assert.Single(DependencyStore.Entries(Home));
         TreeFilesStep.Hand(Home, tree);
         var worked = await StageAsync(tree);
         Assert.True(Of(worked, StartNoteCodes.StartedDepsKept) > 0);

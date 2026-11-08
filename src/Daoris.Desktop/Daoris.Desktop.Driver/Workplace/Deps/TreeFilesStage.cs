@@ -149,7 +149,6 @@ internal sealed class TreeFilesStage(string home, string root, string tree, stri
             {
                 if (KeptByAnotherRule(member))
                 {
-                    // Its rule is another kind's now: the folder is that rule's, and nothing here would install it again.
                     if (!TreeFilesRecord.WhileUnworked(home, tree, state => state.Without(member))) return false;
                     continue;
                 }
@@ -165,7 +164,7 @@ internal sealed class TreeFilesStage(string home, string root, string tree, stri
     }
 
     private bool KeptByAnotherRule(string path) =>
-        _order.All(each => each.Path != path) && _rules!.Rules.Any(each => each.Rule.Kind != FileKind.Dependency && each.Rule.Matches(path));
+        _order.All(each => each.Path != path) && _rules!.Rules.LastOrDefault(each => each.Rule.Matches(path)) is { Rule.Kind: FileKind.Intermediate or FileKind.Cache };
 
     /// <summary>One dependency in an unworked tree; true where a restriction holds its install for an allow.</summary>
     private async Task<bool> UnworkedAsync(StoreDependency dependency, string key, CancellationToken ct)
