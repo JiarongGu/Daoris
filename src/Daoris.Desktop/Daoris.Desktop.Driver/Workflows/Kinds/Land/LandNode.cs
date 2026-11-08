@@ -87,7 +87,6 @@ internal sealed class LandNode : BuiltInNode, IObserves, IStarts, IMakesLanding
         if (node.Options.TryGetValue("squash", out var squash))
         {
             if (NodeOptions.Value(squash) is not bool on) return "squash";
-            // Only a branch is squashed: a merge keeps its commits and an integrate's way is the line's, so the landing would ignore it.
             if (on && method is LandNodes.Integrate or LandNodes.Merge) return "squash";
         }
 

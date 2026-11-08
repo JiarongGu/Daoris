@@ -24,7 +24,6 @@ internal sealed class KeyedSayService : HttpMessageHandler
 
     private int _faults;
 
-    /// <summary>How many says <see cref="SayFault"/> failed.</summary>
     public int Faults => Volatile.Read(ref _faults);
 
     private readonly Dictionary<string, string> _settled = [];

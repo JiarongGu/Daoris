@@ -3,7 +3,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// What a push act's end comes to on the node: a refusal fails the attempt the push was started for and no other, and an end that is
+/// What a push act's end comes to on the node: a refusal fails the attempt its push started for and no other, and an end that is
 /// neither done nor refused is said, with the node left active.
 /// </summary>
 public sealed class PushDoorTests : IDisposable

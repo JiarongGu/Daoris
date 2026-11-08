@@ -107,13 +107,7 @@ function serviceOf(told: unknown): ServiceConfirmationsTold | null {
   };
 }
 
-/**
- * What waits at the service for the person's confirmation, asked only while the page holds the
- * person key: its Confirm and Refuse take the key, and a host handed none lists none. **Told, not polled**:
- * the shell holds one wait on the service and tells every window what waits at each change (`SERVICE_CONFIRMATIONS`), so each
- * window counts the one list it is told; read as the page mounts, for a window opened mid-wait. A browser holds no key and
- * lists none, since a card it could not answer is never drawn. `read` says whether this window has read it at all, so its first read is told apart from an arrival.
- */
+/** What waits at the service for the person's confirmation, as the shell tells it; none in a browser, which holds no key. `read`: this window has read it. */
 export function useServiceConfirmations(held: boolean): { waiting: Confirmation[]; read: boolean } {
   const { isAvailable } = useShenora();
   const client = useQueryClient();

@@ -1,13 +1,12 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// The gates' runs of a repository that declares no runner: each declared
-/// gate's own <c>run</c> command, whole, as a step in the integration tree, in the candidate's job, composed with the gate environment, its
+/// The gates' runs of a repository that declares no runner: each declared gate's own <c>run</c> command, whole, as a step in the integration tree, in the candidate's job, composed with the gate environment, its
 /// exit its verdict; a probe being the gate run again. A failure names no test (the output is not read for tests), so it is signed by its
 /// step, and the merge tool's rule for a gate that names no test judges it. The caller is its own runner here, so the composition digest is
 /// built by <see cref="GateComposition"/>, the twin of the tool's.
 /// </summary>
-/// <remarks>The commands and the gates are the accepted blob's, never the tree's. A heavy gate takes a place in the admission, and a light one none.</remarks>
+/// <remarks>The commands and the gates are the accepted blob's, never the tree's. A gate that would not start is an unknown run, never a failure. A heavy gate takes a place in the admission, and a light one none.</remarks>
 internal sealed class DirectGateRuns(IntegrationVerdictAsk ask, CandidateJob job, Places places, IntegrationWorld world) : IGateRuns
 {
     private int _runs;
@@ -44,7 +43,6 @@ internal sealed class DirectGateRuns(IntegrationVerdictAsk ask, CandidateJob job
             }
             catch (DriverException error)
             {
-                // An environment failure is no verdict of the candidate: a gate that cannot run is never a pass and never a failure, so it is asked again.
                 return new GatesRun(RunnerStandingKind.Unknown, $"the gate '{gate.Name}' would not start: {error.Message}") { Runs = runs };
             }
 

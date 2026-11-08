@@ -5,7 +5,7 @@ namespace Daoris.Driver;
 
 /// <summary>
 /// What a run's <c>tidy</c> ended of a landing's chain, kept on the landing record as <c>tidied</c>: the landing's tip it ended
-/// the chain at, when, and each part. The keeper and the press read it for a part a squashing chain carried, and judge that part no more.
+/// the chain at, when, and each part; <c>Partly</c> where a part's end failed after earlier ones, which the node reads as not done and the next pass goes on from. The keeper and the press read it for a part a squashing chain carried, and judge that part no more.
 /// </summary>
 /// <param name="Tip">The landing's tip its pull request merged at, which the <c>tidy</c> node is reached on.</param>
 public sealed record ChainTidied(string Tip, DateTimeOffset At)
@@ -13,10 +13,6 @@ public sealed record ChainTidied(string Tip, DateTimeOffset At)
     /// <summary>Each part's session branch the tidy ended, in the order the session record lists them.</summary>
     public IReadOnlyList<TidiedPart> Parts { get; init; } = [];
 
-    /// <summary>
-    /// Whether a part's end failed after earlier parts ended, so the parts here are the ones that did and the next pass goes on from them. The
-    /// tidy is reached only by a record that is not partly (<see cref="TidyReading.Tidied"/>); the keeper reads the parts of either.
-    /// </summary>
     public bool Partly { get; init; }
 
     /// <inheritdoc/>
