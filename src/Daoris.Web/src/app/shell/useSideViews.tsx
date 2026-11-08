@@ -5,6 +5,7 @@ import { PlaceSessions, PlaceWorkflow } from '../../agents/setup/PlaceSessions';
 import { PlaceSetUpPanel } from '../../agents/setup/PlaceSetUpPanel';
 import { placeIdOf } from '../../agents/setup/setupTreeModel';
 import { useSay } from '../../bridge/sessions/conversation';
+import { useDriver } from '../../bridge/shell';
 import { type View } from '../../menus/commands';
 import { usePluginsView } from '../../plugins/PluginsView';
 import { useAgentsView } from '../../agents/AgentsView';
@@ -27,12 +28,14 @@ export function useSideViews({ view, lists, notify, attached, askSetup, agentsMo
 }) {
   // The Plugins view: held on every view, so what its pages hold — a trial's report, an update's
   // plan — stays while Daoris is open; it asks the driver for nothing until it is in front.
+  const driver = useDriver();
   const plugins = usePluginsView({
     active: view === 'plugins',
     chosen: lists.pane('plugins').chosen,
     onChoose: (item) => lists.choose('plugins', item),
     notify,
-    onAsk: attached ? askSetup : undefined,
+    // Ask Daoris answers only where an agent is named for it: with none, the press would open a room that cannot reply.
+    onAsk: attached && driver.data?.helperAgent ? askSetup : undefined,
   });
 
   // The Agents place: held on every view, as Plugins is; it reads the roster the frame holds and the

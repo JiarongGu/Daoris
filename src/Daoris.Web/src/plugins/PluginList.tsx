@@ -122,7 +122,7 @@ function CatalogueRow({ icon, name, version, quiet = false, word, gives, meta, u
       <span className="mt-0.5 shrink-0">{icon}</span>
       <span className="min-w-0 flex-1">
         <span className="flex min-w-0 items-baseline gap-2">
-          <span className={cn('min-w-0 truncate text-body font-medium', quiet ? 'text-ink-soft' : 'text-ink')}>{name}</span>
+          <span className={cn('min-w-0 text-body font-medium [overflow-wrap:anywhere]', quiet ? 'text-ink-soft' : 'text-ink')}>{name}</span>
           {version && <span className="shrink-0 font-mono text-meta text-ink-faint">{version}</span>}
           {word && <span className="ml-auto shrink-0">{word}</span>}
         </span>
