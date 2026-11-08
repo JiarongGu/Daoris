@@ -135,10 +135,7 @@ public sealed class LogModule(
         _ => null,
     };
 
-    /// <summary>
-    /// A string value's text, or null where it is none: a lone surrogate escape makes <see cref="JsonElement.GetString"/> throw, and a
-    /// report is never refused for what it holds, so the value is dropped as one of the wrong kind is.
-    /// </summary>
+    /// <summary>A string value's text, or null where a lone surrogate escape makes <see cref="JsonElement.GetString"/> throw: dropped as a wrong kind is.</summary>
     private static string? Text(JsonElement value)
     {
         try

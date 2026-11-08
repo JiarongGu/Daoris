@@ -132,7 +132,7 @@ public sealed class PipeHolding(InstancePipe pipe, IEventBus bus) : IDisposable
             return IpcJson.Serialize(pipe.Refuse(request, InstancePipe.Full, "As many presses as may wait for the person already do; this one was not asked."));
         }
 
-        // Named before it is shown, so a stop or a closing connection that comes as it is entered finds it.
+        // Named before it is shown, and ended below where a stop began meanwhile, which found nothing to end.
         var cardId = Guid.NewGuid().ToString("N");
         lock (_state.Gate)
         {
@@ -146,7 +146,6 @@ public sealed class PipeHolding(InstancePipe pipe, IEventBus bus) : IDisposable
         // A connection that closes while it is shown has nothing to hold for: its card is taken back. One still there is told it waits.
         if (!Open(connection)) pipe.Confirmations.Withdraw(shown.Id);
         else _ = connection.WriteAsync(Told(InstancePipe.Confirming, new { id = request.Id }));
-        // A stop that began before the card was shown did not find it to end.
         if (pipe.Stopped) pipe.Confirmations.Lose(shown.Id);
         var ending = await ended.ConfigureAwait(false);
         lock (_state.Gate)
@@ -208,11 +207,7 @@ public sealed class PipeHolding(InstancePipe pipe, IEventBus bus) : IDisposable
         foreach (var hold in holds) End(hold, Closed);
     }
 
-    /// <summary>
-    /// The stop's step for the holds still waiting for the person: each card ends <see cref="PipeConfirmationEnd.Lost"/>, so its line
-    /// is answered at once. Such a card is no press under way (<see cref="PipeState.WaitingFor"/> names none), so the close's other
-    /// step does not reach it, and its line would keep the drain waiting its whole bound.
-    /// </summary>
+    /// <summary>The stop's step for holds still waiting for the person: no press under way names them, so each ends <see cref="PipeConfirmationEnd.Lost"/> and its line is answered.</summary>
     internal void CloseAsks()
     {
         string[] cards;

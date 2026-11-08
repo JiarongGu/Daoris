@@ -1,3 +1,6 @@
+using System.Text.Json;
+using System.Text.Json.Nodes;
+
 namespace Daoris.Driver;
 
 /// <summary>
@@ -399,5 +402,63 @@ public sealed class SessionHomeFiles(string home, Action<string, bool>? remover 
             failed.Add(path);
             return (false, Math.Max(0, before - HistoryBytes.Of(path)));
         }
+    }
+}
+
+/// <summary>
+/// The words a shell holds for a session winding up, kept across a restart: <c>&lt;home&gt;/sessions/held-words.json</c>,
+/// written whole by the shell's <c>SessionWords</c>. The driver library reads its place from here, and takes a cleared or
+/// deleted session's entries out of it, since a word held for a record that is gone has nothing to reach.
+/// </summary>
+public static class HeldWordsFile
+{
+    public const string FileName = "held-words.json";
+
+    public static string PathOf(string home) => DaorisHome.Entry(home, HomeEntry.Sessions, FileName);
+
+    /// <summary>Drop a session's held words, through the queue that owns the file where this process has one (<see cref="HeldWordsHolders"/>).</summary>
+    public static IReadOnlyCollection<string> Forget(string home, IReadOnlyCollection<string> sessions) =>
+        HeldWordsHolders.Of(home) is { } holder ? holder.Forget(sessions) : ForgetInFile(home, sessions);
+
+    /// <summary>
+    /// Drop every entry held for one of <paramref name="sessions"/>, keeping the rest as written; the file is removed once it holds
+    /// none, as its writer removes it. The sessions dropped come back; a file that does not read holds nothing to drop.
+    /// </summary>
+    private static IReadOnlyCollection<string> ForgetInFile(string home, IReadOnlyCollection<string> sessions)
+    {
+        var path = PathOf(home);
+        if (!File.Exists(path)) return [];
+        JsonObject? root;
+        try
+        {
+            root = JsonNode.Parse(AtomicFile.ReadText(path)) as JsonObject;
+        }
+        catch (JsonException)
+        {
+            return [];
+        }
+
+        if (root?["held"] is not JsonArray held) return [];
+        var named = new HashSet<string>(sessions, StringComparer.OrdinalIgnoreCase);
+        var dropped = new HashSet<string>(StringComparer.Ordinal);
+        foreach (var entry in held.ToList())
+        {
+            if (entry is JsonObject word && word["session"] is JsonValue value && value.TryGetValue<string>(out var session)
+                && named.Contains(session))
+            {
+                held.Remove(entry);
+                dropped.Add(sessions.First(id => string.Equals(id, session, StringComparison.OrdinalIgnoreCase)));
+            }
+        }
+
+        if (dropped.Count == 0) return [];
+        if (held.Count == 0)
+        {
+            File.Delete(path);
+            return dropped;
+        }
+
+        JsonFile.Write(path, root);
+        return dropped;
     }
 }

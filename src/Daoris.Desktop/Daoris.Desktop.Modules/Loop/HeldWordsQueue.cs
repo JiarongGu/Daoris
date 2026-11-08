@@ -5,9 +5,7 @@ namespace Daoris.Desktop;
 /// <summary>
 /// The words held for a record to end, in the order said, and the pump that tries them each time the record moves or a slow look
 /// passes until the record keeps them all. They are written to the held file as each is held or leaves, so a restart in that moment
-/// does not lose them (<see cref="HeldWordsDisk"/>); the next shell reads them back as it starts. The queue owns that file in this
-/// process: a session's words leave it only through <see cref="Forget"/>, which drops them from memory and writes the file from it,
-/// so a later save never brings one back.
+/// does not lose them (<see cref="HeldWordsDisk"/>); the next shell reads them back as it starts. Words leave that file only through <see cref="Forget"/>.
 /// </summary>
 internal sealed class HeldWordsQueue(SessionWords owner, DriverLoop loop, WordsShown shown, CancellationToken stopping) : IHeldWordsHolder, IDisposable
 {
@@ -256,10 +254,7 @@ internal sealed class HeldWordsQueue(SessionWords owner, DriverLoop loop, WordsS
         }
     }
 
-    /// <summary>
-    /// The first word held for this record, kept or refused for good, off the queue and the file; nothing where its words were
-    /// forgotten while it was being said.
-    /// </summary>
+    /// <summary>The first word held for this record, kept or refused for good, off the queue and the file; nothing where <see cref="Forget"/> took it first.</summary>
     private void Taken(Waiting waiting)
     {
         lock (_gate)
@@ -269,10 +264,7 @@ internal sealed class HeldWordsQueue(SessionWords owner, DriverLoop loop, WordsS
         }
     }
 
-    /// <summary>
-    /// Every word held for one of <paramref name="sessions"/>, off the queue and the file together: a deleted or cleared session has
-    /// nothing for them to reach. The sessions that held any come back.
-    /// </summary>
+    /// <summary>Every word held for one of <paramref name="sessions"/>, off the queue and the file together; the sessions that held any come back.</summary>
     public IReadOnlyCollection<string> Forget(IReadOnlyCollection<string> sessions)
     {
         var dropped = new List<string>();
@@ -307,7 +299,7 @@ internal sealed class HeldWordsQueue(SessionWords owner, DriverLoop loop, WordsS
     /// </summary>
     public void Restore()
     {
-        _holding = HeldWordsFile.Holding(loop.Home, this);
+        _holding = HeldWordsHolders.Hold(loop.Home, this);
         List<(string Session, HeldSay Word)> held;
         try
         {

@@ -213,11 +213,7 @@ public sealed class LogModuleTests : Bridge
         Assert.DoesNotContain(lines, line => line.Contains("c174e909", StringComparison.Ordinal) || line.Contains("secret", StringComparison.Ordinal));
     }
 
-    /// <summary>
-    /// A lone surrogate escape is no text: <c>JsonElement.GetString()</c> throws on it (.NET 10 included), so a value holding one is
-    /// dropped as a value of the wrong kind is, the rest of the line kept, and a report naming such an event is no event. The writer
-    /// is the other half: a lone surrogate already in a string is written as U+FFFD, never thrown on.
-    /// </summary>
+    /// <summary>A lone surrogate escape is no text (<c>GetString()</c> throws on it, on .NET 10 too): its value is dropped, the rest of the line kept.</summary>
     [Fact]
     public async Task A_lone_surrogate_escape_in_a_report_drops_that_value_and_never_refuses_the_report()
     {
