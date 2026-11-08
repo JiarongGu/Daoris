@@ -19,7 +19,7 @@ export function WiringTerminalLine({ facts, onCopy }: { facts: TerminalFacts; on
   return (
     <SettingRow
       label={t('settings.daoris.label.terminalLine')}
-      hint={t('settings.daoris.setup.line.hint')}
+      twin={t('settings.daoris.setup.line.hint')}
       control={<Button onClick={() => onCopy(line)} disabled={line === ''}>{t('settings.daoris.button.copyLine')}</Button>}
     >
       <div className="grid gap-1.5">

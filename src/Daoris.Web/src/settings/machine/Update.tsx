@@ -23,7 +23,7 @@ const WORD_VARIANT = { 'when-idle': 'default', now: 'primary', 'not-now': 'ghost
  * door, is gone once dismissed. `daoris update` is the terminal's door to the same request.
  *
  * @remarks
- * A molecule: drawn from props, so every state is reachable without a shell; the Driver domain holds
+ * A molecule: drawn from props, so every state is reachable without a shell; the Updates domain holds
  * the hooks. It says the banner's sentences where they are the same fact — a swap's ending and each check's reason — so
  * the two doors never word one thing twice. Nothing until the shell answers.
  *
@@ -81,7 +81,7 @@ export function UpdateSection({ update, busy = false, onSay }: {
         <SettingList>
           <SettingRow
             label={t('settings.update.staged')}
-            hint={t('settings.update.terminal')}
+            twin={t('settings.update.terminal')}
             why={t('settings.update.why')}
             control={words.length > 0 && words.map((word) => (
               <Button key={word} variant={WORD_VARIANT[word]} disabled={busy} onClick={() => onSay(word)}>

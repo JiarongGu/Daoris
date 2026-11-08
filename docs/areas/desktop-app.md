@@ -232,8 +232,15 @@ executable, started with a browser argument, is Daoris's own browser, which sess
 
 56. A first start opens Settings → Get started while an agent with an account, Daoris's own agent or a repository is
     missing. Each step reads its state off the machine and names its screen and its command. (from D97, D50)
-57. Settings has nine domains: Get started, Appearance, AI features, This Daoris, Driver, Tools, Git, Browser, Machine
-    log. A domain is a `<Name>Domain.tsx` and one row in `settings/domains.ts`. (from D150, D75) This Daoris reads the wiring and
+57. Settings has eleven domains, each what a person comes to set, in this order: Get started; Appearance (look and
+    language); Driver (how sessions run: its dials, this machine's access, the plugins' settings); AI features; Git; Tools;
+    Browser; Disk space (the folders and the keep rules); Updates (the install's update, then its versions); This Daoris
+    (the terminal, the service and the facts behind them); Machine log. A domain is a `<Name>Domain.tsx` and one row in
+    `settings/domains.ts`, which names the rows the palette finds the domain by, each row's words in the reader's language.
+    A row's label column holds its name and one line: a terminal twin or a variable name is in its ⓘ help (`SettingRow`'s
+    `twin`), never under the label. Disk space's folders are one list, a row each: the name, the path on one line cut in the
+    middle (`MiddlePath`, whole on hover and copy), the size and one *Open folder*; the home is shown there alone.
+    (from D150, D75) This Daoris reads the wiring and
     sets it up from the page (WIRING1e): *Open* on a folder or file row by its id, *Put on my PATH* / *Remove from my PATH* on the
     account's `PATH` alone, *Copy a terminal line* (the page's clipboard, for PowerShell, Command Prompt or Git Bash) and *Change the
     service's address* (the account's `DAORIS_SERVICE_URL`, this machine's addresses only), each said first inside its row, each

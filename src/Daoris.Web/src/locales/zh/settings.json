@@ -24,7 +24,6 @@
   "settings.plugins.server.waits": "未为问道衍批准",
   "settings.plugins.server.changed": "批准后已改动：需要再次批准",
   "settings.plugins.server.refused": "不交给问道衍",
-  "settings.home.label": "Daoris 主目录",
   "settings.notify.body": "没有人应该守着驱动看。本机可以在事情发生时告诉你：会话停下来问你事情、有工具调用等你回答、回复了你的话，或在你没要求的情况下结束；委托因失败的会话挂起；一次启动在等待账户。你自己造成的结束永远不说，因为把你刚按下的事再说一遍，只会让人学会不看通知。",
   "settings.notify.label": "提醒等你处理和已结束的事",
   "settings.notify.terminal": "也可用 `daoris settings notify on|off`——同一个文件，两道门；没有屏幕的机器会改在它的控制台上说。",

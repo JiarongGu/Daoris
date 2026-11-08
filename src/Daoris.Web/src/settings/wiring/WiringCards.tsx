@@ -1,8 +1,6 @@
 import type { ReactNode } from 'react';
 import type { SystemWiring } from '../../data/wiring';
-import type { UpdateState } from '../../update/UpdateBanner';
 import { WiringFiles } from './WiringFiles';
-import { WiringFolders } from './WiringFolders';
 import { WiringHead } from './WiringHead';
 import { WiringKnowledge } from './WiringKnowledge';
 import { WiringLogs } from './WiringLogs';
@@ -11,12 +9,10 @@ import { WiringService } from './WiringService';
 import { WiringTerminal } from './WiringTerminal';
 import { WiringToolHome } from './WiringToolHome';
 import { WiringVariablesCard } from './WiringVariables';
-import { WiringVersions } from './WiringVersions';
 
 /** Where This Daoris's doors lead, each named by the row that holds it; the domain knows the places. */
 export type WiringDoors = {
   driver: () => void;
-  tools: () => void;
   ai: () => void;
   logs: () => void;
   /** A settings file's door, by the word the read names its place with. */
@@ -24,49 +20,27 @@ export type WiringDoors = {
 };
 
 /**
- * Settings → This Daoris's cards, in the order the page shows them, drawn from the
- * shell's one answer. The domain (`WiringDomain`) holds the hooks and hands the answer here; a story hands a fixture, so
- * the whole domain is drawn at the frame's widths. A molecule: every state by props.
- */
-export function WiringCards({
-  wiring, update, busy = false, onMeasure, onOpenLogFolder, doors, downloads, onDownloads, space, onOpen, terminalSetup, addressSetup,
-}: {
-  /** *Open* on a folder or file row, by the id the read gave. */
+ * Settings → This Daoris's cards in the page's order: what a person sets here first (the terminal, the service), then what
+ * stands behind them. A molecule: `WiringDomain` holds the hooks, and a story hands a fixture. */
+export function WiringCards({ wiring, onOpenLogFolder, doors, onOpen, terminalSetup, addressSetup }: {
+  /** *Open* on a file row, by the id the read gave. */
   onOpen?: (id: string) => void;
   /** The Terminal card's set-up rows: *Put on my PATH* and *Copy a terminal line*. */
   terminalSetup?: ReactNode;
   /** The Service card's *Change the service's address*. */
   addressSetup?: ReactNode;
   wiring: SystemWiring;
-  /** The install's update, the shell's own state: the Versions card's line. */
-  update?: UpdateState;
-  busy?: boolean;
-  onMeasure: () => void;
   onOpenLogFolder: () => void;
   doors: WiringDoors;
-  /** The Downloads row's clearing, open, and the press that opens it. */
-  downloads?: ReactNode;
-  onDownloads?: () => void;
-  /** The Disk space card, after Folders: the domain draws it from its own read (`WiringSpace`). */
-  space?: ReactNode;
 }) {
   return (
     <>
       <WiringHead kind={wiring.folder.kind} />
-      <WiringFolders wiring={wiring} busy={busy} onMeasure={onMeasure} downloads={downloads} onDownloads={onDownloads} onOpen={onOpen} />
-      {space}
+      <WiringTerminal terminal={wiring.terminal} variables={wiring.variables} setup={terminalSetup} />
       <WiringService wiring={wiring} setup={addressSetup} />
-      <WiringLoop loop={wiring.loop} onDriver={doors.driver} />
       <WiringFiles files={wiring.files} onDoor={doors.file} onOpen={onOpen} />
       <WiringVariablesCard variables={wiring.variables} />
-      <WiringVersions
-        versions={wiring.versions}
-        update={update}
-        development={wiring.folder.kind === 'development'}
-        onTools={doors.tools}
-        onDriver={doors.driver}
-      />
-      <WiringTerminal terminal={wiring.terminal} variables={wiring.variables} setup={terminalSetup} />
+      <WiringLoop loop={wiring.loop} onDriver={doors.driver} />
       <WiringKnowledge knowledge={wiring.knowledge} tier={wiring.service.tier} tierWhy={wiring.service.tierWhy} onAi={doors.ai} />
       <WiringLogs logs={wiring.logs} onOpenFolder={onOpenLogFolder} onLog={doors.logs} />
       {wiring.toolHome && <WiringToolHome toolHome={wiring.toolHome} measuring={wiring.measuring} />}

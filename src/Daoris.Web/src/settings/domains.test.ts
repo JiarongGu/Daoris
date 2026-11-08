@@ -47,11 +47,15 @@ describe('the Settings registry', () => {
   /**
    * A setting lives on the thing it is about: Agents left for its place, Workspace and Permissions for a
    * workspace's page and a repository's, and Plugins for its place, its folder's row to Driver.
-   * What stays is the machine's or the person's: seven domains.
+   * What stays is the machine's or the person's, grouped by what a person comes to set.
    */
-  it('holds what is the machine\'s or the person\'s: eight domains, no agent, workspace, permissions or plugins domain', () => {
+  it('holds what is the machine\'s or the person\'s, by what a person comes to set: no agent, workspace, permissions or plugins domain', () => {
     expect(SETTINGS_DOMAINS.map((domain) => domain.id)).toEqual([
-      'start', 'appearance', 'ai', 'wiring', 'driver', 'tools', 'git', 'browser', 'logs',
+      'start', 'appearance', 'driver', 'ai', 'git', 'tools', 'browser', 'space', 'updates', 'wiring', 'logs',
+    ]);
+    expect(SETTINGS_DOMAINS.map((domain) => en[domain.label])).toEqual([
+      'Get started', 'Appearance', 'Driver', 'AI features', 'Git', 'Tools', 'Browser', 'Disk space', 'Updates',
+      'This Daoris', 'Machine log',
     ]);
     for (const gone of ['Workspace', 'Permissions', 'Agents', 'Plugins']) {
       expect(Object.keys(files)).not.toContain(`./${gone}Domain.tsx`);

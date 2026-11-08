@@ -44,10 +44,14 @@ export function SettingList({ id, className, children }: { id?: string; classNam
   );
 }
 
-export function SettingRow({ label, hint, why, control, children }: {
-  label: ReactNode; hint?: ReactNode; why?: string; control?: ReactNode; children?: ReactNode;
+export function SettingRow({ label, hint, why, twin, control, children }: {
+  label: ReactNode; hint?: ReactNode; why?: string;
+  /** The setting's other way in (a terminal command, a variable), said in the ⓘ after its why, as plain text. */
+  twin?: string;
+  control?: ReactNode; children?: ReactNode;
 }) {
   const listed = useContext(SettingListContext);
+  const help = [why, twin?.replaceAll('`', '')].filter(Boolean).join(' ');
   const cells = (
     <>
       {/* 🔴 The label's cell keeps a floor, and the value gives way to it. With `minmax(0,1fr)` a path as the control
@@ -56,7 +60,7 @@ export function SettingRow({ label, hint, why, control, children }: {
       <div data-setting-label="" className="min-w-[12rem]">
         <div className="flex items-center gap-1.5 text-body font-medium text-ink">
           <span>{label}</span>
-          {why && <WhyGlyph why={why} />}
+          {help && <WhyGlyph why={help} />}
         </div>
         {/* The hint takes the track's width and sets none of it (`contain-inline-size`): the track is the widest LABEL
             of the card, and a hint is a sentence, which would have widened every track to the cap (seen in the measured

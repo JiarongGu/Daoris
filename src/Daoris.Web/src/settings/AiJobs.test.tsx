@@ -24,12 +24,10 @@ describe('AI features', () => {
     expect(screen.getByText(LEXICAL.note!)).toBeInTheDocument();
     // How to change it: the service's environment, read when it starts — never a control that
     // pretends to set it.
-    // Each variable is code, as every other row's terminal door is.
-    expect(screen.getByText('DAORIS_EMBED_MODEL').tagName).toBe('CODE');
-    expect(screen.getByText('DAORIS_EMBED_URL').tagName).toBe('CODE');
-    // The window a long entry is embedded in pieces by is the deployment's too.
-    expect(screen.getByText('DAORIS_EMBED_WINDOW').tagName).toBe('CODE');
-    expect(screen.getByText(/restart/)).toBeInTheDocument();
+    // The variables (model, endpoint, the window a long entry is cut by) are in the row's help, never under its label.
+    const help = screen.getByRole('note', { name: /DAORIS_EMBED_MODEL/ });
+    for (const name of ['DAORIS_EMBED_URL', 'DAORIS_EMBED_WINDOW', 'restart']) expect(help.getAttribute('aria-label')).toContain(name);
+    expect(screen.queryByText(/DAORIS_EMBED_URL/)).toBeNull();
   });
 
   it('claims no tier before the service has said one', () => {
