@@ -16,7 +16,7 @@ internal static class ParityFixture
     public static async Task<ParityLayout> MakeAsync(GitBinary git, string scratch)
     {
         var top = Path.Combine(scratch, "parity");
-        if (Directory.Exists(top)) Directory.Delete(top, recursive: true);
+        Fixtures.Delete(top);
         var root = Path.Combine(top, "repo");
         Directory.CreateDirectory(root);
         async Task<string> Git(string folder, params string[] arguments) => await Fixtures.MustAsync(git, folder, arguments);

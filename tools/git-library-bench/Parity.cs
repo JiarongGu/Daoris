@@ -64,11 +64,14 @@ internal static class Parity
                 Same($"{name}: branch", [(await Git(path, "symbolic-ref", "--short", "-q", "HEAD")).Trim()],
                     [tree.Info.IsHeadDetached ? "" : tree.Head.FriendlyName]);
                 Same($"{name}: status, untracked all", GitStatus(await Git(path, "--no-optional-locks", "status", "--porcelain", "-z", "--untracked-files=all")),
-                    LibraryStatus(tree.RetrieveStatus(new StatusOptions { IncludeUntracked = true, RecurseUntrackedDirs = true, DetectRenamesInIndex = true, DetectRenamesInWorkDir = false })));
+                    LibraryStatus(tree.RetrieveStatus(new StatusOptions
+                    {
+                        IncludeUntracked = true, RecurseUntrackedDirs = true, IncludeIgnored = false, DetectRenamesInIndex = true, DetectRenamesInWorkDir = false,
+                    })));
                 Same($"{name}: status, ignored", GitStatus(await Git(path, "--no-optional-locks", "status", "--porcelain", "-z", "--untracked-files=all", "--ignored=traditional")).Where(each => each.StartsWith("!!", StringComparison.Ordinal)),
                     LibraryStatus(tree.RetrieveStatus(new StatusOptions { IncludeUntracked = true, RecurseUntrackedDirs = true, IncludeIgnored = true, RecurseIgnoredDirs = true })).Where(each => each.StartsWith("!!", StringComparison.Ordinal)));
                 Same($"{name}: status, head and branch (changed count)", [$"{Lines(await Git(path, "--no-optional-locks", "status", "--porcelain=v2", "--branch")).Count(each => !each.StartsWith('#'))}"],
-                    [$"{tree.RetrieveStatus(new StatusOptions { IncludeUntracked = true, RecurseUntrackedDirs = false }).Count()}"]);
+                    [$"{tree.RetrieveStatus(new StatusOptions { IncludeUntracked = true, RecurseUntrackedDirs = false, IncludeIgnored = false }).Count()}"]);
                 await DiffAsync(git, $"{name}: uncommitted diff", path, "HEAD", tree, tree.Head.Tip.Tree, null);
                 var untracked = ReviewReads.Untracked(await Git(path, "--no-optional-locks", "status", "--porcelain", "-z", "--untracked-files=all")).ToArray();
                 if (untracked.Length > 0)
@@ -94,24 +97,43 @@ internal static class Parity
         using var patch = to is null
             ? repository.Diff.Compare<Patch>(from, DiffTargets.Index | DiffTargets.WorkingDirectory, null, null, options)
             : repository.Diff.Compare<Patch>(from, to, options);
+        // The binding's diff against the working tree carries each untracked file as an addition, which git's does not; the census
+        // holds those against git's untracked patches below.
+        var untracked = to is null
+            ? repository.RetrieveStatus(new StatusOptions { IncludeUntracked = true, RecurseUntrackedDirs = true, IncludeIgnored = false }).Untracked
+                .Select(each => Slash(each.FilePath)).ToHashSet(StringComparer.Ordinal)
+            : [];
+        var entries = patch.Where(each => !untracked.Contains(Slash(each.Path))).ToList();
+        var numstat = Lines((await git.RunAsync(folder, ["--no-optional-locks", "-c", "diff.autoRefreshIndex=false", "-c", "core.quotePath=false", "diff", "-M", "--numstat", range])).Output);
         var raw = (await git.RunAsync(folder, ["--no-optional-locks", "-c", "diff.autoRefreshIndex=false", "diff", "-M", "-z", "--raw", range])).Output.Split('\0');
+        // A file whose stat alone changed is listed by git's raw list against the working tree, and has no counts; Daoris's reader
+        // drops it, and so does the census.
+        var counted = numstat.Select(each => each.Split('\t')[^1]).ToHashSet(StringComparer.Ordinal);
+        var statOnly = to is null
+            ? raw.Where((each, index) => index > 0 && raw[index - 1].StartsWith(':') && raw[index - 1].EndsWith(" M", StringComparison.Ordinal) && !counted.Contains(each))
+                .ToHashSet(StringComparer.Ordinal)
+            : [];
         var files = new List<string>();
         for (var index = 0; index + 1 < raw.Length; index++)
         {
             if (!raw[index].StartsWith(':')) continue;
             var status = raw[index].Split(' ')[^1][..1];
-            files.Add(status is "R" or "C" ? $"{status} {raw[index + 1]} -> {raw[index + 2]}" : $"{status} {raw[index + 1]}");
+            if (!(status is "M" && statOnly.Contains(raw[index + 1])))
+            {
+                files.Add(status is "R" or "C" ? $"{status} {raw[index + 1]} -> {raw[index + 2]}" : $"{status} {raw[index + 1]}");
+            }
+
             index += status is "R" or "C" ? 2 : 1;
         }
 
-        Same($"{name}: files", files, [.. patch.Select(each => each.Status is ChangeKind.Renamed or ChangeKind.Copied
+        Same($"{name}: files", files, [.. entries.Select(each => each.Status is ChangeKind.Renamed or ChangeKind.Copied
             ? $"{Letter(each.Status)} {Slash(each.OldPath)} -> {Slash(each.Path)}" : $"{Letter(each.Status)} {Slash(each.Path)}")]);
-        var numstat = (await git.RunAsync(folder, ["--no-optional-locks", "-c", "diff.autoRefreshIndex=false", "diff", "-M", "--numstat", range])).Output;
-        Same($"{name}: counts", Lines(numstat).Select(each => string.Join(' ', each.Split('\t')[..2])),
-            [.. patch.Select(each => each.IsBinaryComparison ? "- -" : $"{each.LinesAdded} {each.LinesDeleted}")]);
+        Same($"{name}: counts", numstat.Where(each => !statOnly.Contains(each.Split('\t')[^1])).Select(each => string.Join(' ', each.Split('\t')[..2])),
+            [.. entries.Select(each => each.IsBinaryComparison ? "- -" : $"{each.LinesAdded} {each.LinesDeleted}")]);
         var text = (await git.RunAsync(folder, ["--no-optional-locks", "-c", "diff.autoRefreshIndex=false", "-c", "core.quotePath=false", "diff",
             "--no-color", "--no-ext-diff", "--src-prefix=a/", "--dst-prefix=b/", "-M", range])).Output;
-        Same($"{name}: patches", Patches(text), [.. patch.Select(each => each.Patch)]);
+        Same($"{name}: patches", Patches(text).Where(each => !statOnly.Any(path => each.StartsWith($"diff --git a/{path} b/{path}\n", StringComparison.Ordinal) && !each.Contains("\n@@", StringComparison.Ordinal))),
+            [.. entries.Select(each => each.Patch)]);
     }
 
     private static List<string> Patches(string text)
@@ -119,6 +141,7 @@ internal static class Parity
         var parts = new List<string>();
         foreach (var piece in ("\n" + text).Split("\ndiff --git ", StringSplitOptions.RemoveEmptyEntries))
         {
+            if (string.IsNullOrWhiteSpace(piece)) continue;
             var part = "diff --git " + piece;
             parts.Add(part.EndsWith('\n') ? part : part + "\n");
         }

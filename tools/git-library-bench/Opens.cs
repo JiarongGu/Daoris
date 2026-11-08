@@ -16,7 +16,7 @@ internal static class Opens
         var source = Path.Combine(scratch, "parity", "repo");
         if (!Directory.Exists(source)) await ParityFixture.MakeAsync(git, scratch);
         var top = Path.Combine(scratch, "opens");
-        if (Directory.Exists(top)) Directory.Delete(top, recursive: true);
+        Fixtures.Delete(top);
         Directory.CreateDirectory(top);
         async Task<(int Code, string Output)> Git(string folder, params string[] arguments)
         {
@@ -96,6 +96,8 @@ internal static class Opens
 
     private static async Task ProbeAsync(GitBinary git, Case each)
     {
+        // The library reads first: git fetches a partial clone's missing objects as it reads them, after which the library finds them.
+        var library = Library(each.Folder, each.File);
         var head = await git.RunAsync(each.Folder, ["rev-parse", "HEAD"]);
         var status = await git.RunAsync(each.Folder, ["--no-optional-locks", "status", "--porcelain"]);
         var blob = await git.RunAsync(each.Folder, ["cat-file", "-p", $"HEAD:{each.File}"]);
@@ -103,7 +105,7 @@ internal static class Opens
         string Said(int code) => code == 0 ? "read" : $"exit {code}";
         Console.WriteLine($"{each.Name}:");
         Console.WriteLine($"  git: head {Said(head.Code)}, status {Said(status.Code)}, a file {Said(blob.Code)}, the last commit's diff {Said(diff.Code)}");
-        Console.WriteLine($"  library: {Library(each.Folder, each.File)}");
+        Console.WriteLine($"  library: {library}");
         if (each.Extension is { } extension && !Opened(each.Folder))
         {
             GlobalSettings.SetExtensions(extension);

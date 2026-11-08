@@ -50,7 +50,7 @@ internal static class LookReads
         foreach (var path in layout.Trees)
         {
             var tree = open(path);
-            var changed = tree.RetrieveStatus(new StatusOptions { IncludeUntracked = true, RecurseUntrackedDirs = false }).Count();
+            var changed = tree.RetrieveStatus(new StatusOptions { IncludeUntracked = true, RecurseUntrackedDirs = false, IncludeIgnored = false }).Count();
             _ = (changed, tree.Head.FriendlyName);
             var tip = root.Lookup<Commit>(tree.Head.Tip.Id);
             _ = root.ObjectDatabase.FindMergeBase(tip, line);

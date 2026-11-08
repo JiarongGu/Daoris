@@ -121,7 +121,7 @@ internal static class ReviewReads
             using var patch = repository.Diff.Compare<Patch>(baseCommit.Tree, head.Tree, compare);
             return patch.Content.Length;
         });
-        Ask("status, head and branch", () => (repository.RetrieveStatus(new StatusOptions { IncludeUntracked = true, RecurseUntrackedDirs = false }).Count(),
+        Ask("status, head and branch", () => (repository.RetrieveStatus(new StatusOptions { IncludeUntracked = true, RecurseUntrackedDirs = false, IncludeIgnored = false }).Count(),
             repository.Head.Tip?.Sha, repository.Head.FriendlyName));
         Ask("commits no branch holds", () => repository.Commits.QueryBy(new CommitFilter
         {

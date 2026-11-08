@@ -30,7 +30,7 @@ internal static class Threads
         GC.Collect();
         var before = Process.GetCurrentProcess().PrivateMemorySize64;
         var held = Enumerable.Range(0, 20).Select(_ => new Repository(layout.Review)).ToList();
-        foreach (var repository in held) _ = repository.RetrieveStatus(new StatusOptions { IncludeUntracked = true }).Count();
+        foreach (var repository in held) _ = repository.RetrieveStatus(new StatusOptions { IncludeUntracked = true, IncludeIgnored = false }).Count();
         var after = Process.GetCurrentProcess().PrivateMemorySize64;
         Console.WriteLine($"  twenty repositories held, each having read its status: {(after - before) / 20 / 1024} KiB of private memory each");
         foreach (var repository in held) repository.Dispose();

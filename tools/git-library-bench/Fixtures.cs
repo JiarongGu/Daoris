@@ -76,6 +76,14 @@ internal static class Fixtures
         }
     }
 
+    /// <summary>Delete a fixture folder whole; git writes its objects read-only, which a plain recursive delete refuses on Windows.</summary>
+    public static void Delete(string folder)
+    {
+        if (!Directory.Exists(folder)) return;
+        foreach (var file in Directory.EnumerateFiles(folder, "*", SearchOption.AllDirectories)) File.SetAttributes(file, FileAttributes.Normal);
+        Directory.Delete(folder, recursive: true);
+    }
+
     public static async Task<string> MustAsync(GitBinary git, string folder, IReadOnlyList<string> arguments)
     {
         var (code, output, _) = await git.RunAsync(folder, arguments);
