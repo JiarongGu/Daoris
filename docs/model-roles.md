@@ -10,8 +10,8 @@ Reviewed **2026-10-25**.
 **Settled-design builds on Sonnet (the owner's decision, 2026-10-25).** Building a row whose design is settled, UI and more than
 one lane included, is Claude Sonnet 5.5's work at high effort, with Opus 5.5 as the fallback where Sonnet cannot start; writing a
 design, answering its reads and deciding stay with Opus 5.5 at high. The install's *Build* actor was set to that order by the
-owner's press the same day (D205 point 8). Daoris has no actor yet that tells a design or decision quest from a build (MODELROLE1l),
-so until it does, design rounds and their reads run on the steward's own Opus agents and another maker's, and the install is
+owner's press the same day (D205 point 8). The Design role (MODELROLE1l) takes a quest marked design and Exact build (MODELROLE1i) one marked exact; until the
+install carries them, design rounds and their reads run on the steward's own Opus agents and another maker's, and the install is
 handed settled-design rows only. The trial below is promoted by this decision, and its measure goes on from MODELROLE1e onward.
 
 **The tier rule (the owner's direction, 2026-10-24).** A lower tier takes a role wherever a measurement shows the role's result

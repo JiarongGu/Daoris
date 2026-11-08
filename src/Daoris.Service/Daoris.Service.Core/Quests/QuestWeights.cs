@@ -9,7 +9,7 @@ public static class QuestWeights
     /// <summary>Design or decision work: a start takes the role taking the <c>design</c> capability, else Build's.</summary>
     public const string Design = "design";
 
-    /// <summary>The build that must be exact. Kept and carried; no start reads it yet.</summary>
+    /// <summary>A build whose pack names the change: a start takes the role taking <c>exact</c>, else Build's.</summary>
     public const string Exact = "exact";
 
     /// <summary>

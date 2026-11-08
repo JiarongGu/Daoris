@@ -28,7 +28,7 @@ public static class StartAdmission
         new(record.Teammate, record.Kind, record.Repository, record.Ask, record.Serves, record.Piece, record.Opinion, record.Decides);
 
     /// <summary>Whether a session of <paramref name="work"/> may ask for a co-worker: a working session's alone, driven or a conversation.</summary>
-    public static bool AsksCoWorker(string? work) => work is ParticipantWork.Build or ParticipantWork.Design or ParticipantWork.Chat;
+    public static bool AsksCoWorker(string? work) => work is ParticipantWork.Build or ParticipantWork.Design or ParticipantWork.Exact or ParticipantWork.Chat;
 
     /// <summary>
     /// Why a session may not ask for a helper, or null where its work may. The refusal names the mark the doors named it by before,

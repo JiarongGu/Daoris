@@ -21,7 +21,7 @@ describe('what a work may call', () => {
   it('names a column of the service table for each work, brainstorm for its two turns', () => {
     const used = Object.keys(fixture.columns).filter((name) => !['unplaced', 'unread'].includes(name));
     expect(Object.values(WORK_COLUMNS).flat().sort()).toEqual(used.sort());
-    expect(Object.keys(WORK_COLUMNS)).toHaveLength(10);
+    expect(Object.keys(WORK_COLUMNS)).toHaveLength(11);
   });
 
   it.each(Object.entries(WORK_COLUMNS))('shows %s exactly the tools its column serves', (work, columns) => {

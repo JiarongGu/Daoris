@@ -26,7 +26,7 @@ public sealed record ActorEffective(string Agent, string? Model, string? Effort,
 /// </remarks>
 public static class ActorChoices
 {
-    /// <summary>The nine actors' wire ids, in the screen's order: the settings' <see cref="ActorKey.Ids"/>.</summary>
+    /// <summary>The ten actors' wire ids, in the screen's order: the settings' <see cref="ActorKey.Ids"/>.</summary>
     public static IReadOnlyList<string> Ids => ActorKey.Ids;
 
     /// <summary>The most choices an actor holds: the most voices a brainstorm takes (<c>BrainstormDesk.MostAgents</c>).</summary>
@@ -44,11 +44,14 @@ public static class ActorChoices
     /// </summary>
     public static string BuildAgent(DriverConfig config) => ActorKey.FirstAgent("build", config) ?? DefaultAgent;
 
-    /// <summary>The six roles with an order of their own: each holds a written order, never <i>as before</i>.</summary>
-    public static IReadOnlyList<string> Ordered { get; } = ["build", "design", "chat", "brainstorm", "intake", "ask-daoris"];
+    /// <summary>The seven roles with an order of their own: each holds a written order, never <i>as before</i>.</summary>
+    public static IReadOnlyList<string> Ordered { get; } = ["build", "design", "exact", "chat", "brainstorm", "intake", "ask-daoris"];
 
     /// <summary>The model and effort Design runs on where nothing else is set: judgement is its work (<c>docs/model-roles.md</c>, build-judgement).</summary>
     public static ActorChoice DesignSeed { get; } = new(DefaultAgent, "opus", "high");
+
+    /// <summary>The model Exact build runs on where nothing else is set: the reference's build-exact row, at the account's default effort.</summary>
+    public static ActorChoice ExactSeed { get; } = new(DefaultAgent, "sonnet");
 
     /// <summary>
     /// A role's seed: the written order a fresh home starts with and the role door's <c>default</c> writes, what a home with none
@@ -58,6 +61,7 @@ public static class ActorChoices
     {
         "build" or "chat" or "brainstorm" => [new ActorChoice(DefaultAgent)],
         "design" => [DesignSeed],
+        "exact" => [ExactSeed],
         "intake" or "ask-daoris" => [],
         _ => null,
     };

@@ -28,12 +28,12 @@ public sealed record RoutingStanding(string Standing, IReadOnlyList<string> Lane
     }
 
     /// <summary>
-    /// The standing to tell a record of <paramref name="work"/>, or null: told to <c>build</c>, <c>design</c> and <c>chat</c> alone, the works
+    /// The standing to tell a record of <paramref name="work"/>, or null: told to <c>build</c>, <c>design</c>, <c>exact</c> and <c>chat</c> alone, the works
     /// that may publish to their own repository's lanes (the connector refuses the serving works the quest tools), and nothing for a
     /// repository the registry does not name.
     /// </summary>
     public static RoutingStanding? Told(string? work, DriverConfig config, RepoView? repository) =>
-        repository is not null && work is ParticipantWork.Build or ParticipantWork.Design or ParticipantWork.Chat
+        repository is not null && work is ParticipantWork.Build or ParticipantWork.Design or ParticipantWork.Exact or ParticipantWork.Chat
             ? Of(config, repository)
             : null;
 }

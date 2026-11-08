@@ -40,6 +40,9 @@ public static class ParticipantWork
     /// <summary>A driven quest's session of design or decision work: admitted and called as <see cref="Build"/>, read as it from the marks.</summary>
     public const string Design = "design";
 
+    /// <summary>A driven quest's session of a build its publisher marked exact: admitted and called as <see cref="Build"/>, read as it from the marks.</summary>
+    public const string Exact = "exact";
+
     /// <summary>A conversation the person holds.</summary>
     public const string Chat = "chat";
 
@@ -65,7 +68,7 @@ public static class ParticipantWork
     public const string Supervise = "supervise";
 
     /// <summary>Every work, the closed set.</summary>
-    public static IReadOnlyList<string> Codes { get; } = [Build, Design, Chat, AskDaoris, Intake, Help, Partner, Review, Brainstorm, Supervise];
+    public static IReadOnlyList<string> Codes { get; } = [Build, Design, Exact, Chat, AskDaoris, Intake, Help, Partner, Review, Brainstorm, Supervise];
 
     // Events' spelling of Ask Daoris's room (AskDaorisRoom, the lowest subdomain that reads it), a twin of HelpRoom.Repository, which this
     // module may not name (it sits above it), and of the service's SessionLedger.HelpRepository: each side's test holds the spelling,
@@ -89,7 +92,7 @@ public static class ParticipantWork
     /// <c>partner</c> and <c>review</c> do, what the driver starts for itself; <c>chat</c>, <c>ask-daoris</c> and <c>brainstorm</c> do not,
     /// and a record with no work here holds no place.
     /// </summary>
-    public static bool HoldsSlot(string? work) => work is Build or Design or Intake or Help or Partner or Review;
+    public static bool HoldsSlot(string? work) => work is Build or Design or Exact or Intake or Help or Partner or Review;
 
     private static bool Marked(string? mark) => !string.IsNullOrEmpty(mark);
 }

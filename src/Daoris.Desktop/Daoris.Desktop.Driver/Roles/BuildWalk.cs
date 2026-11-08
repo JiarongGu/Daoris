@@ -7,6 +7,7 @@ public static class ActorWords
     {
         "build" => "Build",
         "design" => "Design",
+        "exact" => "Exact build",
         "intake" => "Intake",
         "opinion" => "Second opinion",
         "helper" => "Helper",

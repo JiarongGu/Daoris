@@ -267,7 +267,7 @@ export function buildStructure(input: StructureInput): Structure {
     const found = workAt(scoped, work);
     const role = found?.role ? toRef(found.role) : null;
     const roleRow = role ? structure.roles.find((each) => each.id === role.id) : undefined;
-    const takesBuilding = work === 'design' && role !== null && roleRow !== undefined && !roleRow.takes.includes('design');
+    const takesBuilding = (work === 'design' || work === 'exact') && role !== null && roleRow !== undefined && !roleRow.takes.includes(work);
     // Beneath the scope: every other place for this machine, a workspace's repositories for a workspace.
     const own = structure.places.filter((place) => (filters.workspace === null
       ? place.workspace !== undefined || place.repository !== undefined

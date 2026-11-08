@@ -4,6 +4,7 @@
   "works": {
     "build": { "holdsSlot": true },
     "design": { "holdsSlot": true },
+    "exact": { "holdsSlot": true },
     "chat": { "holdsSlot": false },
     "ask-daoris": { "holdsSlot": false },
     "intake": { "holdsSlot": true },

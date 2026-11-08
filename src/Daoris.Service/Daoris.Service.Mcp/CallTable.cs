@@ -148,7 +148,7 @@ public static class CallTable
             { Work: ParticipantWork.AskDaoris } => Ordinary(name, askDaoris: true) ?? Unowned(name, "Ask Daoris"),
             { Work: ParticipantWork.Help } => Serving(name) ?? Channelled(name) ?? Ordinary(name) ?? Outside(name, Helping, "a helper"),
             { Work: ParticipantWork.Intake } => Ordinary(name) ?? Unowned(name, "an intake") ?? Outside(name, Intaking, "an intake"),
-            { Work: ParticipantWork.Build or ParticipantWork.Design } => Ordinary(name) ?? Outside(name, Working, "a quest's session"),
+            { Work: ParticipantWork.Build or ParticipantWork.Design or ParticipantWork.Exact } => Ordinary(name) ?? Outside(name, Working, "a quest's session"),
             { Work: ParticipantWork.Chat } => Ordinary(name) ?? Outside(name, Conversing, "a conversation"),
             _ => Unknown(name, kind),
         };

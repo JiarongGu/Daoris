@@ -27,9 +27,9 @@ export type PolicyDraft = {
 /** A conversation's work refuses a limit that waits or asks (`StaffCapabilities.Unenforced`). */
 export const conversational = (works: readonly string[]): boolean => works.some((work) => work === 'chat' || work === 'ask-daoris');
 
-/** The works a choice may be given: the role's, and design where it takes build. */
+/** The works a choice may be given: the role's, and design and exact where it takes build. */
 export function worksOf(takes: readonly string[]): string[] {
-  return takes.includes('build') && !takes.includes('design') ? [...takes, 'design'] : [...takes];
+  return takes.includes('build') ? [...takes, ...['design', 'exact'].filter((work) => !takes.includes(work))] : [...takes];
 }
 
 const same = (entry: StaffPolicyChoice, agent: string, model: string, effort: string) =>
