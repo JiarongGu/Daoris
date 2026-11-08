@@ -399,8 +399,8 @@ public sealed class HomeLease : IDisposable
     }
 
     /// <summary>
-    /// Moved aside in one step, then judged by what moved: a read and a delete leave room for another taker to write its lease
-    /// between them, which the delete would take. A lease that is not what was judged stale is put back, never over another.
+    /// Moved aside in one step, then judged by what moved: a read then a delete leaves room for another taker to write its lease
+    /// between them, which the delete would take. A lease other than the one judged stale is put back, never over another.
     /// </summary>
     private static void RemoveStale(string path, string seen)
     {
@@ -421,7 +421,7 @@ public sealed class HomeLease : IDisposable
         }
         catch (Exception error) when (error is IOException or UnauthorizedAccessException)
         {
-            // A third taker wrote at the path while the lease was aside, so it is not put back; the taker's own release checks what the file says.
+            // A third taker wrote at the path meanwhile, so nothing is put back; a release checks what the file says.
         }
         finally
         {

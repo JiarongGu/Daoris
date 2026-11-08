@@ -32,7 +32,7 @@ as a pack.
 | Region text and index | `src/Daoris.Cli/src/doctrine/tierrender.ts`, `indexgen.ts`, `document.ts` | The rules table, the on-demand rows, *Where things are*, and `<target>/INDEX.md`; frontmatter and the provenance header |
 | Documents | `src/Daoris.Cli/src/layout/documents.ts` | The roles a manifest may bind in `documents`, and their checks |
 | Layouts | `src/Daoris.Cli/src/layout/harness.ts`, `layout.ts`, `mirror.ts`, `rooms.ts`, `links.ts` | The `claude-code` and `agents` descriptors, the lock's layout, the skills mirror, rooms, links |
-| Adoption reads | `src/Daoris.Cli/src/doctrine/analyze.ts`, `twins.ts`, `lineendings.ts` | `analyze` (what adopting would do), `doctor` (look-alike documents), the LF pin |
+| Adoption reads | `src/Daoris.Cli/src/doctrine/analyze.ts`, `budget.ts`, `twins.ts`, `lineendings.ts` | `analyze` (what adopting would do, its budget projection in `budget.ts`), `doctor` (look-alike documents), the LF pin |
 | The canon | `canon/core/`, `canon/packs/*/`, `canon/canon.json`, `canon/CHANGELOG.md` | The doctrine itself, its version and why each version changed |
 | Command tree | `Daoris.Desktop.Driver/Platform/CommandGroupAttribute.cs`, `CommandWords.cs`, `Loop/CommandTree.cs` | Each group's mark on its command, the groups collected at start, the router, and the carried CLI's path |
 | Doctrine hand-back | `Daoris.Desktop.Driver.Host/DoctrineConsole.cs` | Runs a word no group owns through the CLI an install carries, marked `DAORIS_HANDED=driver`; the CLI's usage at the end of `daoris help` |
@@ -145,7 +145,9 @@ as a pack.
 32. Two layouts, chosen by `harness`: `claude-code` (the default; knowledge and skills under `.claude/`) and `agents`
     (under `.agents/`, with a `.claude/skills/` mirror the lock measures like any copy). Other harnesses are detected and
     reported, never generated; an unknown name, one named like a member of `Object` included, is a tool error. `analyze`
-    reads a manifest that is there, and one it cannot read is refused, not taken for no adoption. (from D23, D117)
+    reads a manifest that is there, and one it cannot read is refused, not taken for no adoption. Its budget projection
+    (`budget.ts`) measures the region's body, as `inspect` does, beside the repository's own rule files, and a selected
+    rule the region already holds adds only its change in size. (from D23, D117)
 33. A room is a folder with its own `AGENTS.md`, declared in `rooms`. `sync` keeps its `CLAUDE.md` pointer and never writes
     its text; a declared room with no text fails. (from D117)
 34. A repository binds roles to paths in `documents`. The brief and a room take only a word ceiling. `check` fails on a fact
@@ -179,6 +181,9 @@ as a pack.
     declared ones, and stops at the first failure. A skipped gate says skipped; a disabled gate is printed every run.
     A declared gate that cannot start (a folder that is not there) fails with its reason, and the history audit fails when
     `git cat-file` could not read an object, so it never reports nothing found about what it did not read. (from D20)
+    The `links` gate checks the links a document writes, not those it quotes in a fenced block or a code span; it reads
+    a fence through the service's `MarkdownFence`, compiled into the devkit rather than a fifth reader with a table of its
+    own (D228). The `sensitive` gate's tree scope reads a file with a UTF-16 byte-order mark as text.
 42. Gates are declared in `daoris.gates.json`, which the CLI never reads. Its `devkit` field pins the toolkit version,
     checked before any gate runs. A file that is no JSON object, or a `graceDays` that is no whole number, is refused naming
     the file. Its `trees` names the classes of the repository's ignored files (dependencies,
@@ -211,8 +216,9 @@ as a pack.
 52. The driver registers a repository from `daoris.json` and `daoris.lanes.json` read on its line, after a line moves, at
     start, and on `daoris repository register`. A lane's `builds` and `room`, and a laneless group's `room`, declare the
     repository's rooms; the registration sends none of them. (from D34, D124, D214)
-53. A place page offers the reconcile where `daoris status --json` says the canon moved or a keep reopened. The press is
-    the person's (`RECONCILE_PLAN`, `RECONCILE_APPLY`). (from D230)
+53. A place page offers the reconcile where `daoris status --json` says the canon moved or a keep reopened, a core file kept
+    with no text (`absentCore`) counting as reopened as `reconcile` lists it. The press is the person's (`RECONCILE_PLAN`,
+    `RECONCILE_APPLY`). (from D230)
 
 ## Where a change goes
 
@@ -298,8 +304,5 @@ No backlog row holds any of these; each is named only in the decision shown.
   get no safe-work rules until measured (`SetupPress`' summary; D122 point 6).
 - The newer-lock refusal cannot fire until a release moves the canon version past 0.0.1 (`newerLock` in `lockversion.ts`).
 
-- **The second review cycle's open defects** (DOCTRINECLIREV2a to 2d; the backlog row of that name points here), one entry each:
-  - **DOCTRINECLIREV2a — `analyze`'s budget projection counts the canon's rules again in a repository that already carries them** (cli; `doctrine/analyze.ts:211-228`): `current` sums the files under `<target>/rules/` and a rule's body now lives in the region, so on an adopted repository `rules/` is empty, `current` is 0 and `projected` adds every selected rule's bytes whether or not the region holds it. Not fixed: the honest figure needs the region's measure (`inspect`'s `coreBytes`) and a decision on what the projection means once adopted.
-  - **DOCTRINECLIREV2b — a keep with no text for a core file is no reopened keep to the place page** (driver, cli; `Setup/Domain/DoctrineStatus.cs:77` against `doctrine/reconcile.ts:75`): `reconcile` lists a kept core file with `absentCore` as an item and `sync` refuses it, but `status --json` marks it `reopened: false`, so `Offers` is false and the page never offers the reconcile that would name it. Not fixed: a field of `status --json` and its C# reader change together, and whether the page should offer it is the owner's reading of rule 53.
+- **The second review cycle's open defects** (DOCTRINECLIREV2c2; the backlog row of that name points here), one entry each:
   - **DOCTRINECLIREV2c2 — the sensitive gate's staged scope still skips a UTF-16 file** (devkit; `SensitiveGate.cs`, `CommandLineGit.StagedText`): the tree scope reads a file with a UTF-16 byte-order mark as text, but the staged scope reads `git show :path` as text already decoded as UTF-8 and skips one holding a NUL. Waits on a choice: `IGit` returning the index's bytes (a contract of the seam its tests fake) so the gate decodes the same way in both scopes.
-  - **DOCTRINECLIREV2d — the links gate checks links a document quotes inside a fenced block or a code span** (devkit; `LinksGate.cs:34,54`): the pattern runs over the whole text, so a document that shows `[x](docs/missing.md)` as an example fails the gate for a link nobody follows. Not fixed: skipping fences and spans means the CLI's `markdownFence` read for a third reader and its fixture table (`test/fixtures/fence-cases.json`).

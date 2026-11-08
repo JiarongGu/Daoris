@@ -37,10 +37,6 @@ public sealed class FolderMoveTests : IDisposable
         Assert.False(Directory.Exists(source));
     }
 
-    /// <summary>
-    /// 🔴 The copy landed whole, so the move is done: a source file held open costs the source's removal, never the move,
-    /// which would read as failed and be left with a half-deleted source and a target that stops any retry.
-    /// </summary>
     [Fact]
     public void A_source_that_cannot_be_removed_after_the_copy_landed_is_still_a_move()
     {

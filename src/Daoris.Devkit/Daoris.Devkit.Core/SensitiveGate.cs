@@ -204,8 +204,7 @@ public sealed class SensitiveGate(
     }
 
     /// <summary>
-    /// A NUL byte in the first block means binary, which is the same test git itself uses; a UTF-16 byte-order mark
-    /// says text, whose every ASCII character holds a NUL (Windows PowerShell's <c>&gt;</c> writes one).
+    /// A NUL byte in the first block means binary, git's own test, unless a UTF-16 byte-order mark says text (each ASCII character holds a NUL).
     /// </summary>
     private static bool IsBinary(string file)
     {

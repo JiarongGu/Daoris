@@ -16,15 +16,12 @@ import {
   DEFAULT_HARNESS, HARNESSES, harnessVerdict, tierNames, verifyHarnessContract,
 } from '../layout/harness.ts';
 
-// Pre-adoption there is no manifest to resolve a harness from, so this command reads the DEFAULT
-// harness's descriptor — one definition, not a constant quietly asserting one harness's conventions
-// as universal (the exact scatter the descriptor seam retired).
+// Pre-adoption there is no manifest to resolve a harness from, so this reads the DEFAULT harness's descriptor.
 const CLAUDE = HARNESSES[DEFAULT_HARNESS]!;
 const DEFAULT_TARGET = CLAUDE.defaultTarget;
 const TIERS = tierNames(CLAUDE);
-// An older repository has a generated roster in its rules directory. `analyze` runs
-// on repositories that never adopted AND on ones that did, so it skips that name rather than
-// counting a generated file as doctrine somebody wrote.
+// An older repository has a generated roster in its rules directory, which is skipped rather than
+// counted as doctrine somebody wrote.
 const INDEX_FILE = 'RULES_INDEX.md';
 
 /**

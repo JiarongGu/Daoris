@@ -294,10 +294,7 @@ public sealed class HomeLeaseTests : IDisposable
         Assert.True(File.Exists(DaorisHome.Places(_home, HomeEntry.DriverLock)[^1]));
     }
 
-    /// <summary>
-    /// 🔴 A lease judged stale is removed in one step that says what it removed: another taker's live lease, written after the
-    /// judgement, is put back, so the removal never leaves two holders.
-    /// </summary>
+    /// <summary>🔴 A live lease another taker writes after the stale judgement is put back, so the removal never leaves two holders.</summary>
     [Fact]
     public void A_stale_leases_removal_puts_back_a_live_lease_written_after_the_judgement()
     {

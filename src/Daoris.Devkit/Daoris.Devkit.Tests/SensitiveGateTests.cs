@@ -227,10 +227,7 @@ public sealed class SensitiveGateTests : IDisposable
         Assert.True(clean.Passed, clean.Detail);
     }
 
-    /// <summary>
-    /// 🔴 A UTF-16 file with a byte-order mark (Windows PowerShell's <c>&gt;</c> writes one) holds a NUL beside every ASCII
-    /// character yet is text: it is decoded and scanned, not skipped as binary.
-    /// </summary>
+    /// <summary>🔴 A UTF-16 file with a byte-order mark holds a NUL beside every ASCII character yet is text: scanned, not skipped as binary.</summary>
     [Theory]
     [InlineData(true)]
     [InlineData(false)]

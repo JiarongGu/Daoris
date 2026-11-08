@@ -38,10 +38,7 @@ public sealed record DoctrineStatus
 
     public int Retired { get; init; }
 
-    /// <summary>
-    /// How many of the repository's keeps <c>reconcile</c> lists as reopened: the canon's file moved past since they were judged,
-    /// or a core file kept with no text here (<c>absentCore</c>).
-    /// </summary>
+    /// <summary>How many keeps <c>reconcile</c> lists as reopened: the canon's file moved past them, or a core file is kept with no text.</summary>
     public int Reopened { get; init; }
 
     /// <summary>The version of the newer canon that wrote the lock, which the tool never rolls back; null where none did.</summary>

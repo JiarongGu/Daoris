@@ -43,7 +43,13 @@ the per-task record. Entries preserve their original wording so the archive stay
 > **PLUGREV2i** (driver, plugins): Outcome: the plugins tests that could not fail now can: the host-token tests read the token in the starting flow after the start (`PlacedWorkTests`, `PluginHostTokenTests`; both fail with `HookSet`'s `finally` removed); the package traversal case names three distinct escape paths; the "starts nothing" checks run the hook's script once as an ES module to prove it writes its mark, then read the mark's absence after a second (`HookMarks`); the always-true `NotNull` is gone; the 4 KB frame cases send a valid frame padded to and one byte past the bound.
 ## DOCTRINECLIREV2 — the doctrine-and-CLI review's second cycle, fixed defects (2026-11-09)
 
+> **DOCTRINECLIREV2a** (cli): Outcome: `analyze`'s budget projection (`budget.ts`, moved out of `analyze.ts`) measures the region's body beside the repository's own rule files, and a selected rule the region already holds adds only the change in its size, so an adopted repository no longer shows its rules counted again; proved by `analyze.test.ts`.
+
+> **DOCTRINECLIREV2b** (driver): Outcome: `DoctrineStatus.Reopened` counts a core file kept with no text (`absentCore`, a field `status --json` already carries) beside a keep the canon moved past, so the place page offers the reconcile that names it; the choice, a reader-only change that leaves `status --json` and the CLI as they are, rejects a new `reopened: true` from the tool; proved by `DoctrineStatusTests`.
+
 > **DOCTRINECLIREV2c** (devkit): Outcome: the sensitive gate's tree scope reads a file with a UTF-16 byte-order mark as text (`SensitiveGate.IsBinary`), so a leak in a file Windows PowerShell's `>` wrote is found; proved by `SensitiveGateTests`. The staged scope's share stays open as DOCTRINECLIREV2c2.
+
+> **DOCTRINECLIREV2d** (devkit): Outcome: the links gate no longer checks links a document quotes in a fenced block or a code span (`LinkText`), reading fences through the service's `MarkdownFence` compiled into the devkit, so there is no fifth fence reader or second table; proved by `LinksGateTests`.
 
 ## HOMELEASE2 and FOLDERMOVE2 — the install-home-update review's second cycle (2026-11-09)
 
