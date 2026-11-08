@@ -1,3 +1,4 @@
+using System.Text.Json;
 using Microsoft.Data.Sqlite;
 using Daoris.Driver;
 
@@ -183,6 +184,72 @@ public sealed class RoleVerbTests : IDisposable
         Assert.Equal(StaffRules.Order, staffing.Policy("designer").Policy!.Rule);
         Assert.Equal(0, await Run("policy", "designer", "--clear"));
         Assert.Equal(StaffPolicyRead.Default, staffing.Policy("designer").State);
+    }
+
+    [Fact]
+    public async Task ROLESREVIEW2e_a_preset_typed_with_flags_is_sent_to_the_window_with_the_flags_as_typed()
+    {
+        Assert.Equal(0, await Run("set", "designer", "--name", "Designer", "--takes", "design", "claude-code-acp opus high", "claude-code-acp sonnet high"));
+        var staffing = RoleStaffing.Of(File_)!;
+        var world = new DriverChoicesWorld
+        {
+            Verbs = DriverChoiceVerbs.All,
+            Instance = new InstanceWorld { Home = _home, Environment = _ => null, Out = _out, Error = _error, Verb = "daoris" },
+            ConfigPath = File_,
+            Folder = _home,
+            InAgentJob = () => false,
+        };
+
+        var before = StaffingProjection.Config(staffing.Read()!);
+        var plan = new RoleVerb().Plan(["role", "policy", "designer", "--preset", "weighted", "--weight", "1=5"], before, world);
+        var sent = RoleDoor.ReadPress(JsonSerializer.SerializeToElement(plan.Payload)).Policy!;
+        var (resolved, refused) = sent.Resolved(before.Actors["designer"], null);
+
+        Assert.Null(refused);
+        Assert.Equal(5, resolved!.Choices[0].Weight);
+        Assert.Equal("weighted", sent.Preset);
+    }
+
+    [Fact]
+    public async Task ROLESREVIEW2f_an_agent_held_supervisor_s_policy_is_sent_to_the_window_as_the_supervisor_it_is()
+    {
+        var staffing = RoleStaffing.Of(File_)!;
+        var seed = RoleCatalog.Seed.Single(role => role.Id == AppointedRoles.Supervisor);
+        RoleDoor.Apply(staffing, RoleChange.Set(seed with { Hold = seed.Hold! with { Holder = RoleHolders.Agent } }),
+            [new("claude-code-acp", "opus", "high"), new("claude-code-acp", "sonnet", "high")]);
+        var world = new DriverChoicesWorld
+        {
+            Verbs = DriverChoiceVerbs.All,
+            Instance = new InstanceWorld { Home = _home, Environment = _ => null, Out = _out, Error = _error, Verb = "daoris" },
+            ConfigPath = File_,
+            Folder = _home,
+            InAgentJob = () => false,
+        };
+
+        var plan = new RoleVerb().Plan(["role", "policy", "supervisor", "--preset", "even"], StaffingProjection.Config(staffing.Read()!), world);
+        var press = RoleDoor.ReadPress(JsonSerializer.SerializeToElement(plan.Payload));
+
+        Assert.Null(RoleDoor.Judge(RoleCatalog.Read(staffing.Location), press.Change, press.Choices));
+        Assert.Equal(AppointedRoles.Supervisor, ((RoleChange.SetRole)press.Change).Role.Hold!.Kind);
+        await Task.CompletedTask;
+    }
+
+    [Fact]
+    public void ROLESREVIEW2g_a_supervisor_of_kinds_is_sent_to_the_window_with_the_kinds_it_decides()
+    {
+        var world = new DriverChoicesWorld
+        {
+            Verbs = DriverChoiceVerbs.All,
+            Instance = new InstanceWorld { Home = _home, Environment = _ => null, Out = _out, Error = _error, Verb = "daoris" },
+            ConfigPath = File_,
+            Folder = _home,
+            InAgentJob = () => false,
+        };
+
+        var plan = new RoleVerb().Plan(["role", "set", "gatekeeper", "--name", "Gatekeeper", "--decides", "allow", "--holder", "rules"], DriverConfig.Empty, world);
+        var press = RoleDoor.ReadPress(JsonSerializer.SerializeToElement(plan.Payload));
+
+        Assert.Equal([SupervisorKinds.Allow], ((RoleChange.SetRole)press.Change).Role.Hold!.Decides);
     }
 
     [Fact]

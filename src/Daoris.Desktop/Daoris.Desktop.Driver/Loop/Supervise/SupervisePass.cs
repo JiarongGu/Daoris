@@ -80,8 +80,19 @@ internal sealed class SupervisePass(LoopContext context, Driver driver)
         }
         finally
         {
-            attempts.End(ask.Attempt, outcome, DateTimeOffset.UtcNow);
-            context.Supervisor.Runs.Ended(subject);
+            // A subject left running because its outcome would not write would hold its whole line until a restart.
+            try
+            {
+                attempts.End(ask.Attempt, outcome, DateTimeOffset.UtcNow);
+            }
+            catch (Exception error) when (error is IOException or UnauthorizedAccessException)
+            {
+                context.Log?.Warn("supervisor.attempt-failed", ("role", ask.Waiting.Role), ("why", error.GetType().Name));
+            }
+            finally
+            {
+                context.Supervisor.Runs.Ended(subject);
+            }
         }
     }
 
