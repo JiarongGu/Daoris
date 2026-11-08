@@ -145,7 +145,7 @@ public sealed class RuleProposalBox(string? home)
         {
             try
             {
-                if (JsonFields.ParseObject(File.ReadAllText(path)) is not { } root) continue;
+                if (JsonFields.ParseObject(AtomicFile.ReadText(path)) is not { } root) continue;
                 var by = root.TryGetProperty("by", out var named) ? named : default;
                 notes.Add(new RuleProposalNote(
                     Path.GetFileNameWithoutExtension(path),

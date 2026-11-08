@@ -116,7 +116,7 @@ public sealed class HandOverAskBox(string? home)
         {
             var path = PathOf(home, session, AskSuffix);
             if (!File.Exists(path)) return null;
-            using var document = JsonDocument.Parse(File.ReadAllText(path));
+            using var document = JsonDocument.Parse(AtomicFile.ReadText(path));
             var root = document.RootElement;
             string? Text(string name) =>
                 root.TryGetProperty(name, out var value) && value.ValueKind == JsonValueKind.String ? value.GetString() : null;
@@ -137,7 +137,7 @@ public sealed class HandOverAskBox(string? home)
         {
             var path = PathOf(home, session, StateSuffix);
             if (!File.Exists(path)) return null;
-            using var document = JsonDocument.Parse(File.ReadAllText(path));
+            using var document = JsonDocument.Parse(AtomicFile.ReadText(path));
             var root = document.RootElement;
             string? Text(string name) =>
                 root.TryGetProperty(name, out var value) && value.ValueKind == JsonValueKind.String ? value.GetString() : null;
