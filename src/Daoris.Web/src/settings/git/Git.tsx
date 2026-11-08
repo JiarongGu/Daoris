@@ -30,7 +30,6 @@ export type GitIdentityShown = {
   test?: GitTestShown | null;
   lastUsed?: string | null;
   publicKey?: string | null;
-  /** SSH: the full path of the ssh program the identity's git acts run. */
   ssh?: string | null;
   /** Whether an API token is set for the host's hosted service; the token itself is never sent here. */
   apiToken?: boolean;

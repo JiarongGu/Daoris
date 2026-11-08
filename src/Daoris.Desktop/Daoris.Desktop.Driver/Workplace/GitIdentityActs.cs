@@ -35,17 +35,9 @@ public static partial class GitIdentityActs
 
     // ---- The ssh tools ----
 
-    /// <summary>
-    /// The folder of the OpenSSH tools an identity uses: the one <see cref="Ssh"/> names, so a key is made, tested and used by one ssh.
-    /// </summary>
-    /// <exception cref="DriverException">No OpenSSH is found, or the chosen ssh is not OpenSSH.</exception>
     public static string SshTools(string home) => Path.GetDirectoryName(Ssh(home))!;
 
-    /// <summary>
-    /// The ssh program an identity's act runs, by its full path: the git Daoris uses (the toolchain's) decides it, as
-    /// <see cref="GitSshProgram"/> says, and the door reaches the same file from the git that starts it.
-    /// </summary>
-    /// <exception cref="DriverException">No OpenSSH is found, or the chosen ssh is not OpenSSH.</exception>
+    /// <summary>The ssh an identity's act runs, by its full path, as <see cref="GitSshProgram"/> decides it from the toolchain's git.</summary>
     public static string Ssh(string home)
     {
         var (ssh, problem) = GitSshProgram.Of(

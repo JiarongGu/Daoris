@@ -210,11 +210,7 @@ public static class GitDoors
         return names;
     }
 
-    /// <summary>
-    /// An identity's act: the ssh the person chose, else git's own, started by its absolute path with Daoris's options
-    /// first, the identity's key alone, no agent and Daoris's known hosts checked strictly; then git's <c>-p</c>, <c>-4</c>, <c>-6</c> and
-    /// <c>SendEnv</c>. A chosen ssh that is not OpenSSH cannot carry an identity, and is refused naming it.
-    /// </summary>
+    /// <summary>An identity's act: <see cref="GitSshProgram"/>'s ssh by its full path, Daoris's options first, then git's own.</summary>
     private static int IdentitySsh(
         string home, GitIdentity identity, SshCall call, Func<string, string?> variable, TextWriter error, string folder, GitAct act, string host,
         SshPush? pushes)
