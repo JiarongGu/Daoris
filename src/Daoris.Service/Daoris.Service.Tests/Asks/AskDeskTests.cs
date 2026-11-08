@@ -295,6 +295,20 @@ public sealed class AskDeskTests : IAsyncLifetime
     }
 
     [Fact]
+    public async Task A_second_close_is_refused_and_the_first_reason_stands()
+    {
+        var asked = await _desk.AskAsync(new AskRequest("work", Sentence), Now);
+        await _desk.CloseAsync(asked.Ask!.Id, "Handled on a call.", Now);
+
+        var again = await _desk.CloseAsync(asked.Ask.Id, "Another reason.", Now.AddMinutes(1));
+
+        Assert.Equal(AskRefusal.Closed, again.Refusal);
+        Assert.Contains("Handled on a call.", again.Message);
+        Assert.Equal("Handled on a call.", again.Ask!.Note);
+        Assert.Equal("Handled on a call.", (await _desk.FindAsync(asked.Ask.Id))!.Note);
+    }
+
+    [Fact]
     public async Task Publishing_an_ask_that_does_not_exist_is_refused()
     {
         Assert.Equal(AskRefusal.NotFound, (await _desk.PublishAsync("zzzzzz", "media-api", Now)).Refusal);

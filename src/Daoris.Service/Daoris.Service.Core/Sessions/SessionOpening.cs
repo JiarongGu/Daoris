@@ -439,6 +439,13 @@ internal sealed class SessionOpening(
             return new(SessionOpenRefusal.TakenElsewhere, elsewhere, Session: null);
         }
 
+        // A resume goes back to its taker's take as a carry-on does, with no record here to read the rest from: only whose take it is.
+        if (resumes && await AnotherMachinesTakeAsync(quest, "the take is theirs, so it is not resumed here over it.", ct).ConfigureAwait(false)
+            is { } resumedElsewhere)
+        {
+            return new(SessionOpenRefusal.TakenElsewhere, resumedElsewhere, Session: null);
+        }
+
         // The same resolution as a chat's, through the same registry, for the same reason: two doors
         // onto one tree must agree about which tree that is.
         var holding = Trees.Normalize(tree) ?? Trees.Normalize(await holders.RootOfAsync(quest.To, ct).ConfigureAwait(false));
@@ -489,20 +496,27 @@ internal sealed class SessionOpening(
     /// </remarks>
     private async Task<string?> TakenElsewhereAsync(Quest quest, Session last, bool tookHere, bool broughtForward, CancellationToken ct)
     {
+        var over = $"the take is theirs, so session `{last.Id}` is not carried on over it.";
+        if (await AnotherMachinesTakeAsync(quest, over, ct).ConfigureAwait(false) is { } another) return another;
+
         var take = (await quests.HistoryAsync(quest.Id, ct).ConfigureAwait(false))
             .LastOrDefault(operation => operation.Kind == QuestOperationKind.Taken);
         if (take is null) return null;
 
-        var over = $"the take is theirs, so session `{last.Id}` is not carried on over it.";
-        if (!string.Equals(take.Machine, quests.Machine, StringComparison.Ordinal))
-        {
-            return await sessions.LastTeammateForQuestAsync(quest.Id, ct).ConfigureAwait(false) is { } teammate
-                ? $"Quest `#{quest.Id}` is taken on `{teammate.Origin}`, by session `{teammate.Id}`: {over}"
-                : $"Quest `#{quest.Id}` is taken on another machine: {over}";
-        }
-
         return !tookHere && !broughtForward && take.At > last.Updated
             ? $"Quest `#{quest.Id}` was taken here after session `{last.Id}` ended, by a chat or by work outside Daoris: {over}"
             : null;
+    }
+
+    /// <summary>The refusal's sentence when the quest's last take is another machine's, ending in <paramref name="over"/>, else null.</summary>
+    private async Task<string?> AnotherMachinesTakeAsync(Quest quest, string over, CancellationToken ct)
+    {
+        var take = (await quests.HistoryAsync(quest.Id, ct).ConfigureAwait(false))
+            .LastOrDefault(operation => operation.Kind == QuestOperationKind.Taken);
+        if (take is null || string.Equals(take.Machine, quests.Machine, StringComparison.Ordinal)) return null;
+
+        return await sessions.LastTeammateForQuestAsync(quest.Id, ct).ConfigureAwait(false) is { } teammate
+            ? $"Quest `#{quest.Id}` is taken on `{teammate.Origin}`, by session `{teammate.Id}`: {over}"
+            : $"Quest `#{quest.Id}` is taken on another machine: {over}";
     }
 }
