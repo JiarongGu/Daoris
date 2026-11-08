@@ -296,7 +296,7 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they start wi
     decision's file keeps its `kind` and `subject`, and its holder is the hold's as the catalogue's record names it. On a question it
     answers a parked session's recorded question with one offered choice and one to five sourced reasons (`--do answer --choice`,
     under `question.answer`), a decide naming a question the session no longer waits on refused `question-changed`; any subject it may
-    leave to the owner with a bound (`--leave`, under no grant). The holder's verb is `sessions supervise <session> --kind <kind>
+    leave to the owner with a bound (`--leave`, under no grant, but only by the hold that answers its place: another place's holder is refused, as a decide is). The holder's verb is `sessions supervise <session> --kind <kind>
     --subject <id> --generation <g> --do <act> [--choice <label>]`, or `--leave <bound>` in place of `--do`; `SUPERVISOR_WAITING` lists
     every kind's subjects, `{ kind, subject, repository, generation, acts }`, with the kind's acts the grants cover there, and a subject
     whose supervisor covers none, or whose hold is an agent's, is not listed. An `allow` is listed in three shapes (a held request
@@ -510,7 +510,6 @@ Web: `agents/roles/*.test.ts(x)` and `agents/setup/*.test.tsx`.
 - **SETUPUX1y:** the places tree lit by default, retiring the Roles sections under Setup.
 
 - **The second review cycle's open defects** (ROLESREVIEW2i to 2q; the backlog row of that name points here), one entry each:
-  - **ROLESREVIEW2i — a leave of an allow or files subject skips the coverage check** (modules; `AllowKind.cs:88-94`, `FilesKind.cs:75-79`; the other kinds call `SupervisorDecisionDoor.Covers`): repository A's holder leaves a held request in repository B, whose own supervisor covers it; the static `Left` map hides it from B's supervisor until a restart. Rule 46 says a leave asks no grant: decide whether it still asks coverage.
   - **ROLESREVIEW2j — an overruled or stale course or landing decision is refused `answered` in the run, `overruled` after a restart** (driver; `SupervisorCourses.cs:71,79`, `SupervisorLandings.cs:29` against `SupervisorKeeping.cs:28`): a decision exists, so `Answered` is set before `ClosedWhy`; a course never calls `Close` where landings do, so `Closed(subject)` at `SupervisePass.cs:31` is false in the run.
   - **ROLESREVIEW2k — a share allow written to some repositories is reported as written to none** (modules; `FilesKind.cs:58-66`, `FileAllows.Give`): a later repository's `DriverException` leaves the earlier layers holding the allow while the ask settles `made: false` and waits. Unconfirmed that one layer can fail alone.
   - **ROLESREVIEW2l — a non-throwing "no door" reply to a decision's say ends it `stale` `unsaid`** (driver; `WorkOrders/SupervisorLook.cs:50`, `SupervisorReleasing.cs:66-68`): the lost-response retry covers exceptions only. Low certainty: trace when `SendAsync` returns rather than throws.
