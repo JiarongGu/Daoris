@@ -240,6 +240,9 @@ executable, started with a browser argument, is Daoris's own browser, which sess
     A row's label column holds its name and one line: a terminal twin or a variable name is in its ⓘ help (`SettingRow`'s
     `twin`), never under the label. Disk space's folders are one list, a row each: the name, the path on one line cut in the
     middle (`MiddlePath`, whole on hover and copy), the size and one *Open folder*; the home is shown there alone.
+    A text of the driver or the service that names a Settings place says the domain's catalogue name (*Settings → Disk space*,
+    *Settings → Updates*, *Settings → Machine log*) and never one domain inside another; `HelpRoomSettingsPlacesTests` holds it
+    against `domains.ts`.
     (from D150, D75) This Daoris reads the wiring and
     sets it up from the page (WIRING1e): *Open* on a folder or file row by its id, *Put on my PATH* / *Remove from my PATH* on the
     account's `PATH` alone, *Copy a terminal line* (the page's clipboard, for PowerShell, Command Prompt or Git Bash) and *Change the

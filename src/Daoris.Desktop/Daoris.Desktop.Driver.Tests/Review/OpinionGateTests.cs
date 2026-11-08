@@ -416,6 +416,30 @@ public sealed class OpinionGateTests
     }
 
     [Fact]
+    public async Task A_reviewed_given_before_a_rechecks_findings_reached_the_person_does_not_answer_them()
+    {
+        var world = new World();
+        world.Opinions["o1"] = Opinion(weights: [OpinionViews.Must]);
+        world.Delivered["o1"] = new OpinionDelivered(null, null, Answers(Fixed, (OpinionViews.Must, OpinionViews.Fixed))) { Recheck = "o2" };
+        world.Opinions["o2"] = Opinion("o2", tip: Fixed, pass: "recheck", weights: [OpinionViews.Must]);
+        ReviewGateState Reviewed(DateTimeOffset at) => new(ReviewStates.Reviewed, new ReviewDecision(ReviewLevels.Repository, "local"))
+        {
+            Verdict = new QuestReviewVerdictView(ReviewVerdicts.Reviewed) { At = at, Words = "reads right" },
+        };
+
+        // The recheck's findings reach the person at 10:30, after the answers (9:40): a Reviewed before that saw only the answers.
+        var arrived = Answered.AddMinutes(50);
+        var unkept = await JudgeAsync(Facts(Rule(), Fixed) with { Asks = [AskOf("o1")], Review = Reviewed(arrived.AddMinutes(1)) }, world);
+        world.Delivered["o2"] = new OpinionDelivered(OpinionToPerson.Recheck, arrived, null);
+        var before = await JudgeAsync(Facts(Rule(), Fixed) with { Asks = [AskOf("o1")], Review = Reviewed(arrived.AddMinutes(-5)) }, world);
+        var after = await JudgeAsync(Facts(Rule(), Fixed) with { Asks = [AskOf("o1")], Review = Reviewed(arrived.AddMinutes(1)) }, world);
+
+        Assert.Equal(OpinionGateStates.Disputed, unkept.State);
+        Assert.Equal(OpinionGateStates.Disputed, before.State);
+        Assert.Equal((OpinionGateStates.Answered, true), (after.State, after.LetsGo));
+    }
+
+    [Fact]
     public async Task A_press_answers_only_the_gate_it_drew_and_the_gates_order_is_the_opinion_then_the_look()
     {
         var world = new World();
