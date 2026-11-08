@@ -503,6 +503,7 @@ public sealed class KnowledgeService(
             readsRegisteredRoots && registry is not null ? wiring.ContainsKey : null,
             onlyRoots, generations,
             repository => readAt.TryGetValue(repository, out var read) ? read : (null, null),
+            onlyRoots is null ? null : readAt.Keys,
             ct).ConfigureAwait(false);
 
         // A root whose write is refused keeps no reading here, so its next use reads it again.
