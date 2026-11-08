@@ -291,7 +291,7 @@ internal static class NodeGoverning
         };
 
         var (declared, dispatchable, observable) = Declare(graph, steps);
-        var watched = new WatchedUnit(repository, binding.Workspace, root, branch is null ? "" : RunScope.Standing(branch), "", null, null, [])
+        var watched = new WatchedUnit(repository, binding.Workspace, root, branch is null ? "" : RunBranches.Standing(branch), "", null, null, [])
         {
             Unit = branch?.Id ?? run.Unit, Identity = identity,
         };

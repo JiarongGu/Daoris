@@ -66,7 +66,7 @@ internal sealed class NodeTelling(NodeRecordFiles records, IWorkRuntimePort port
     private WatchedUnit BranchFrame(GovernedUnit governed, WorkUnit branch, PassTips tips)
     {
         var scope = governed.Scope!;
-        var name = RunScope.Standing(branch);
+        var name = RunBranches.Standing(branch);
         var tip = tips.Known(scope.Root, name) ?? _tipsTold.GetValueOrDefault(branch.Id) ?? branch.Subject.Revision ?? "";
         return new WatchedUnit(governed.Watched.Repository, governed.Watched.Workspace, scope.Root, name, tip, null, null, [])
         {
@@ -134,7 +134,7 @@ internal sealed class NodeTelling(NodeRecordFiles records, IWorkRuntimePort port
         foreach (var each in governed)
         {
             if (TipOf(each, tips) is { } tip) tipsTold[each.Unit.Id] = tip;
-            if (each.Scope is { Branch: { } branch } scope && (tips.Known(scope.Root, RunScope.Standing(branch)) ?? _tipsTold.GetValueOrDefault(branch.Id)) is { } read) tipsTold[branch.Id] = read;
+            if (each.Scope is { Branch: { } branch } scope && (tips.Known(scope.Root, RunBranches.Standing(branch)) ?? _tipsTold.GetValueOrDefault(branch.Id)) is { } read) tipsTold[branch.Id] = read;
             if (records.Read(each.Unit.Id) is not { } record) continue;
             foreach (var id in each.Dispatchable.Concat(each.Observable))
             {

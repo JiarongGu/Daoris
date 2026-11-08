@@ -26,7 +26,6 @@ internal sealed class WorkReceipting(
         {
             var fresh = resources.Where(resource => record.Of(attempt.Plugin, resource.Schema, resource.Id) is null).ToList();
             if (fresh.Count == 0) return (null, null);
-            // A receipt whose cleanup settled owes nothing: it counts against no bound, and the oldest of them go as new ones are taken.
             var owing = record.Receipts.Count(receipt => !receipt.Settled);
             if (owing + fresh.Count > ResourceRecord.ReceiptsKept) return (null, TooManyResources);
             var taken = fresh.Select(resource => new ResourceReceipt(

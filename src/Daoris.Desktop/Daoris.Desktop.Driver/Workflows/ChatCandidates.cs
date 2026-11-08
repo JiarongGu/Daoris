@@ -76,7 +76,6 @@ public static class ChatCandidates
         lock (Gate)
         {
             var file = Read(home, run);
-            // The branch only decides what a press supersedes: a number is never given twice in a run, so an ended run is not read as unchanged.
             List<ChatCandidate> all = file is { } kept && string.Equals(kept.Branch, branch, StringComparison.Ordinal) ? [.. kept.Candidates] : [];
             var highest = file?.Candidates.Select(each => each.Number).DefaultIfEmpty(0).Max() ?? 0;
             ChatCandidate candidate;

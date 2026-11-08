@@ -47,7 +47,7 @@ public sealed class WorkflowReadFailuresTests : IDisposable
         Assert.Contains("role catalogue cannot be read", bound.Failed);
     }
 
-    /// <summary>A pushed landing's pull-request step dropped for want of a named plugin is said with the version it was saved in.</summary>
+    /// <summary>A pushed landing's pull-request step dropped for want of a named plugin is said by the migration, naming the workflow.</summary>
     [Fact]
     public void A_dropped_pull_request_step_is_said_by_the_migration()
     {

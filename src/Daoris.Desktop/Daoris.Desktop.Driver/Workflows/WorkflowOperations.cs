@@ -353,7 +353,6 @@ public static class WorkflowOperations
 
             var scopes = ScopesOf(choices, id);
             var reach = await AppendReachAsync(choices, home, registry, id, planAgainst, scopes, ct).ConfigureAwait(false);
-            // The reach awaited the registry, a window in which another save may have written the number this one planned: read again before judging or writing.
             const string Changed = "changed while this save was judged: read it again and make the change against its newest version. Nothing was written.";
             if (!WorkflowStore.NewestIs(WorkflowPorts.Store(home), id, newest.Version)) return Refuse("stale", $"`{id}` {Changed}");
 

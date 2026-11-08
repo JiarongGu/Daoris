@@ -308,7 +308,6 @@ public sealed class NodeRuntime(
                 var kept = _closer is null ? null : (Func<string, NodeGraph?>)(digest => ClosureGraphs.Read(home, digest));
                 // The runs bound to graph versions, each owed a pass where a start of its chain asked one or this is the process's first look,
                 // which judges every bound run once, so a restart loses nothing.
-                // Only the asks read here are taken off below: one that lands while the pass governs waits for the next.
                 var asks = _returned.Keys.ToHashSet(StringComparer.Ordinal);
                 var runs = _graphRuns.Read().Select(run => run with { Asked = _restarted || asks.Contains(run.Run) }).ToList();
                 (_governed, _choices) = (NodeGoverning.Govern(look.Config, read, look.Steps(), kept, look.Bound, runs, bindings)
@@ -356,7 +355,7 @@ public sealed class NodeRuntime(
                 if (!governed.TryGetValue(unit, out var each)) continue;
                 if (NodeEvaluations.Tipped(each)) await tips.TipAsync(each.Watched.Root, each.Watched.Branch, ct).ConfigureAwait(false);
                 // A run's answer is judged on the branch its attempt is sent for, former subjects included, read once a checkout.
-                else if (each.Scope is { } scope) await tips.ReadAsync(scope.Root, [.. scope.Branches.Select(RunScope.Standing)], ct).ConfigureAwait(false);
+                else if (each.Scope is { } scope) await tips.ReadAsync(scope.Root, [.. scope.Branches.Select(RunBranches.Standing)], ct).ConfigureAwait(false);
             }
 
             // A run's attempt is judged on the unit it is sent for, as its plugin is told it.
