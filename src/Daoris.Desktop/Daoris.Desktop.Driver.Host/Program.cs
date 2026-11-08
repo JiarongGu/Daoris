@@ -555,7 +555,7 @@ try
             freeArgs, SpaceFreeWorld.OfThisTerminal(freeHome, log), Daoris.Driver.Host.InstanceHost.World(freeHome, "daoris"), closing.Token);
     }
 
-    // The disk space from a terminal: This Daoris's Disk space card is the other door to the same reader.
+    // The disk space from a terminal: Settings → Disk space is the other door to the same reader.
     // Reads only, and needs no service: each kind's size is this process's walk, `--measure`'s.
     if (args is ["space", .. var spaceArgs])
     {
@@ -565,7 +565,7 @@ try
         return exit;
     }
 
-    // The machine log from a terminal: Settings → Logs is the other door to the same reading.
+    // The machine log from a terminal: Settings → Machine log is the other door to the same reading.
     if (args is ["logs", .. var logsArgs])
     {
         return Daoris.Driver.Host.LogsConsole.Run(logsArgs);
