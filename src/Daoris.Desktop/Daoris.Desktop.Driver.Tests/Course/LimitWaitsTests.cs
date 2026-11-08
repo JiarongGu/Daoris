@@ -143,10 +143,7 @@ public sealed class LimitWaitsTests : IDisposable
         };
     }
 
-    /// <summary>
-    /// 🔴 A wake the conversation could not take on (its go-on answers held, here by a hand-over's box an older build left) leaves it held for
-    /// the next look, which asks again though nothing the stage reads has changed, and goes on once what held it is gone.
-    /// </summary>
+    /// <summary>🔴 A wake the go-on held off (here by an older build's hand-over box) is asked again at the next look, the stamp unchanged.</summary>
     [Fact]
     public async Task A_wake_that_answered_held_is_asked_again_at_the_next_look_at_the_same_stamp()
     {

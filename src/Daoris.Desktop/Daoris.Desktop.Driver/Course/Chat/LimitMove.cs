@@ -144,7 +144,6 @@ internal sealed class LimitMove(IExecutorWiring wiring) : IExecutor
         // An account the person picked is never moved off, at a limit as at a go-on: its conversation waits
         // for it, its words with it, and the look's stage wakes it at that account's reset.
         var picked = context.Conversations.PickedOn(sessionId, prior.Profile);
-        // Its moves are counted under its line's key, which a second part shares with its first, as a transient move counts them.
         var line = LineKeys.Of(sessionId, ServiceClient.ReadRecords(json)).Key;
         // The line's limits rule's wait or ask, or its moves bound, keeps it on its own account before any walk.
         if (!picked && LimitRuled.Holds(context, wiring.Of<LimitWaits>(), Rules ??= ConversationRules.Of(context), prior, sessionId, line, chat, ranOn) is { } ruled)
