@@ -248,16 +248,20 @@ public sealed class KnowledgeSearchTools(KnowledgeService service, WorkspaceScop
         if (refusedIndex is not null) return refusedIndex;
         var candidates = found!;
 
+        // A semantic pass that failed says so first: its silence is not a finding.
+        var failed = candidates.SemanticFailure is { Length: > 0 } failure
+            ? $"_The semantic comparison did not run ({failure.TrimEnd('.')}.), so only copies and restatements are shown._\n\n"
+            : "";
         if (candidates.Count == 0)
         {
-            return $"Nothing converges above {minimumSimilarity:0.00}{Scoped(scope)}. Lower the threshold to see "
+            return failed + $"Nothing converges above {minimumSimilarity:0.00}{Scoped(scope)}. Lower the threshold to see "
                  + "weaker overlaps — the right value depends on the comparison in use, so it is worth "
                  + "sweeping rather than trusting a default.";
         }
 
         // Hardest finding first: a convergence is the one nobody could have made by reading file
         // names, and ordering by score alone would bury it under the copies.
-        var text = new StringBuilder($"A prompt to look, not a merge —{Scoped(scope)}.\n\n");
+        var text = new StringBuilder($"A prompt to look, not a merge —{Scoped(scope)}.\n\n{failed}");
         foreach (var group in candidates.GroupBy(c => c.Method).OrderByDescending(g => g.Key))
         {
             text.AppendLine($"## {Heading(group.Key)} ({group.Count()})");

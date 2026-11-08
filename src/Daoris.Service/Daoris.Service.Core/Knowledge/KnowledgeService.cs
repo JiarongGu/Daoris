@@ -255,7 +255,7 @@ public sealed class KnowledgeService(
     /// restatements; with one it also finds convergence. A feature that returned nothing without an
     /// optional dependency would have made that dependency mandatory in all but name.
     /// </remarks>
-    public async Task<IReadOnlyList<ConvergenceCandidate>> FindConvergenceAsync(
+    public async Task<ConvergenceFound> FindConvergenceAsync(
         ConvergenceOptions? options = null, CancellationToken ct = default)
     {
         RefuseNewerIndex();

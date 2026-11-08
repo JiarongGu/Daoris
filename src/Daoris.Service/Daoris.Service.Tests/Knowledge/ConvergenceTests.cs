@@ -102,6 +102,17 @@ public class ConvergenceTests
             .FindAsync(new ConvergenceOptions(MinimumSimilarity: 0.5));
 
         Assert.Equal(ConvergenceMethod.Identical, Assert.Single(found).Method);
+        Assert.Contains("does not support embeddings", found.SemanticFailure);
+    }
+
+    [Fact]
+    public async Task A_pass_that_ran_names_no_failure()
+    {
+        var store = new InMemoryKnowledgeStore();
+        await store.ReplaceRepositoryAsync("alpha", [Entry("alpha", "shot", "Keep captures small.")]);
+        await store.ReplaceRepositoryAsync("beta", [Entry("beta", "capture", "Keep captures small.")]);
+
+        Assert.Null((await new ConvergenceDetector(store).FindAsync()).SemanticFailure);
     }
 
     /// <summary>An endpoint started without embeddings: the verdict beside empty vectors, as the real one answers.</summary>
