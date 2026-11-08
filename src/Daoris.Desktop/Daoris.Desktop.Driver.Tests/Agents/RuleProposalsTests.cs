@@ -144,6 +144,22 @@ public sealed class RuleProposalsTests : IDisposable
         Assert.Equal("C:/somewhere/engine", settled.GetProperty("by").GetProperty("folder").GetString());
     }
 
+    /// <summary>A proposal whose file names another id than its name is settled by its name, and the proposals after it still are.</summary>
+    [Fact]
+    public void A_proposal_whose_id_differs_from_its_file_s_name_does_not_stop_the_later_ones_settling()
+    {
+        var odd = Proposal("p0000001", "add", scope: "repository", name: "engine", list: "deny", rule: "Bash(rm:*)");
+        var node = JsonNode.Parse(File.ReadAllText(odd))!.AsObject();
+        node["id"] = "elsewhere";
+        File.WriteAllText(odd, node.ToJsonString());
+        var later = Proposal("p0000002", "add", scope: "repository", name: "engine", list: "deny", rule: "Bash(curl:*)");
+
+        RuleProposals.Settle(_home, At);
+
+        Assert.Equal("applied", Read(odd).GetProperty("state").GetString());
+        Assert.Equal("applied", Read(later).GetProperty("state").GetString());
+    }
+
     /// <summary>
     /// Over a rules file the driver could not read, even a narrowing would have been
     /// written as the whole file, dropping every rule the person had. Nothing is settled, the file is

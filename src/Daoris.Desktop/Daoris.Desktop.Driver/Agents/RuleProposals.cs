@@ -317,7 +317,10 @@ public static class RuleProposals
         try
         {
             if (JsonNode.Parse(AtomicFile.ReadText(path)) is not JsonObject root) return null;
-            if (Json.Trimmed(root["id"]) is not { } id || root["change"] is not JsonObject change) return null;
+            if (root["change"] is not JsonObject change) return null;
+
+            // The file's name is what every path to it is built from, so it is the proposal's id whatever the file says of itself.
+            var id = Path.GetFileNameWithoutExtension(path);
 
             var by = root["by"] as JsonObject;
             var settled = root["settled"] as JsonObject;

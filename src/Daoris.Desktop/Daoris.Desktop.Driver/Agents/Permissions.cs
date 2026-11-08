@@ -485,7 +485,9 @@ public static class PermissionRules
         foreach (var (key, value) in named)
         {
             var lists = Lists(value);
-            if (!string.IsNullOrWhiteSpace(key) && !lists.IsEmpty) scopes[key.Trim()] = lists;
+            if (string.IsNullOrWhiteSpace(key) || lists.IsEmpty) continue;
+            // Two keys that trim to one name are one scope: the later never replaces the first's deny.
+            scopes[key.Trim()] = scopes.TryGetValue(key.Trim(), out var held) ? held.Joined(lists) : lists;
         }
 
         return scopes;
