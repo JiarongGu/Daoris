@@ -1,7 +1,7 @@
 namespace Daoris.Driver.Host;
 
 /// <summary>
-/// The session trees, from a terminal: `daoris tree [list | remove &lt;path&gt; [--force] | clean | land | state | sync]`.
+/// The session trees, from a terminal: `daoris tree [list | remove &lt;path&gt; [--force] | clean | land | state | sync | build &lt;path&gt;]`.
 /// </summary>
 /// <remarks>
 /// <para><b>Why here and not in the `daoris` CLI.</b> The tree lifecycle is git spawned against real
@@ -128,6 +128,12 @@ internal static class TreesConsole
             // other door, and --workspace takes that workspace's checkouts alone, as the tab does. The
             // checkouts and the sessions in use are the service's. It takes the repositories holding Daoris's branches:
             // --all takes every one, and a repository named is taken.
+            case ["build", var named]:
+                return await TreeBaseBuilds.BuildAsync(home, named, Console.Out, Console.Error).ConfigureAwait(false);
+
+            case ["build", ..]:
+                return Usage("`build` takes one path: a kept base, the project folder beside it, or a file under it.");
+
             case ["sync", ..]:
             {
                 if (TreesCommand.Read(args, out var problem) is not { } ask) return Usage(problem);

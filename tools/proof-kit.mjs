@@ -14,14 +14,15 @@ import { setTimeout as sleep } from 'node:timers/promises';
 import { homeEntry } from '../src/Daoris.Cli/src/platform/home.ts';
 import { execGit } from './fsx.mjs';
 import { capture, makeChecker, openTranscript } from './rehearsal-kit.mjs';
+import { guarded } from './tree-base.mjs';
 export const repoRoot = dirname(dirname(fileURLToPath(import.meta.url)));
 export const cliBin = join(repoRoot, 'src', 'Daoris.Cli', 'bin', 'daoris.mjs');
-const httpDll = join(
+const httpDll = guarded(join(
   repoRoot, 'src', 'Daoris.Service', 'Daoris.Service.Http',
-  'bin', 'Debug', 'net10.0', 'daoris-knowledge-http.dll');
-const driverDll = join(
+  'bin', 'Debug', 'net10.0', 'daoris-knowledge-http.dll'));
+const driverDll = guarded(join(
   repoRoot, 'src', 'Daoris.Desktop', 'Daoris.Desktop.Driver.Host',
-  'bin', 'Debug', 'net10.0', 'daoris-driver.dll');
+  'bin', 'Debug', 'net10.0', 'daoris-driver.dll'));
 // The apphost the build writes beside it, which `daoris agent which` is asked through.
 const driverExe = join(dirname(driverDll), process.platform === 'win32' ? 'daoris-driver.exe' : 'daoris-driver');
 
@@ -45,9 +46,9 @@ export function agentWhich(agent) {
 // The connector a session publishes and proposes through. The driver finds it by walking up from its
 // own binary to this workspace's build (`KnowledgeConnector.Candidates`), so without it a session has
 // no voice, and a run would prove nothing about the one thing it exists to prove.
-const mcpHost = join(
+const mcpHost = guarded(join(
   repoRoot, 'src', 'Daoris.Service', 'Daoris.Service.Mcp',
-  'bin', 'Debug', 'net10.0', process.platform === 'win32' ? 'daoris-knowledge.exe' : 'daoris-knowledge');
+  'bin', 'Debug', 'net10.0', process.platform === 'win32' ? 'daoris-knowledge.exe' : 'daoris-knowledge'));
 
 /** The harness every proof drives: Claude Code over the protocol door. */
 export const ADAPTER = 'claude-code-acp';
@@ -123,7 +124,7 @@ export function openProof(name, { label, port }) {
 
     if (connector) {
       const connectorBuilt = ready('the connector (the MCP host) is built', existsSync(mcpHost), connector);
-      if (!connectorBuilt) needs('the MCP host', 'dotnet build src/Daoris.Service/Daoris.Service.Mcp');
+      if (!connectorBuilt) needs('the MCP host', 'npm run desktop -- build');
     }
 
     const claude = present('claude-code', 'claude');

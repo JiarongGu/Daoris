@@ -9,7 +9,7 @@ namespace Daoris.Desktop.Driver.Tests;
 /// </summary>
 public sealed class GitSchedulerTests
 {
-    private static readonly TimeSpan Soon = TimeSpan.FromSeconds(10);
+    private static readonly TimeSpan Soon = Poll.Patience;
 
     private static GitScheduler Scheduler(int bound = 4, int outside = 2, int repository = 2, List<string>? said = null) =>
         new(bound, outside, repository) { Said = (said is null ? (_, _) => { } : (each, _) => { lock (said) said.Add(each); }) };

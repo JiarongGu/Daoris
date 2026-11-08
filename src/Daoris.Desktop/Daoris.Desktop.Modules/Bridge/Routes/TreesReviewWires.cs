@@ -184,6 +184,10 @@ public static class TreesReviewWires
                 $"`{path}` is not a file on `{read.Branch}`, the branch this session's work landed on: it was deleted or moved "
                 + "there, or it is a folder or a link.",
                 [.. named, ("branch", read.Branch ?? "")]),
+            { Refusal: FilePreviewRefusal.Unfetched } => throw Refusals.Because(
+                Refusals.PreviewUnfetched,
+                $"`{path}` is a file on `{read.Branch}`, but this clone left its contents on the remote, which did not give them when asked.",
+                [.. named, ("branch", read.Branch ?? "")]),
             { Refusal: FilePreviewRefusal.Outside } => throw Refusals.Because(
                 Refusals.PreviewOutsideTree,
                 $"`{path}` is outside this session's tree, so the preview does not read it.",

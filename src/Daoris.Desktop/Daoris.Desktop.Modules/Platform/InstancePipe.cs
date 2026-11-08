@@ -245,6 +245,9 @@ public sealed class InstancePipe : IDisposable
 
     internal IMessageDispatcher Dispatcher { get; }
 
+    /// <summary>Where a request's caller's parents are read, so a hook's or a helper's gits take the place their git lends (<see cref="PipeGitCaller"/>).</summary>
+    internal IProcessTable Processes { get; init; } = new SystemProcesses();
+
     internal string Home { get; }
 
     internal MachineLog Log { get; }
@@ -620,6 +623,7 @@ public sealed class InstancePipe : IDisposable
             {
                 IpcResponse response;
                 using (role is not null ? PipeDoor.EnterRole(role, client) : PipeDoor.Enter(client))
+                using (PipeGitCaller.Enter(Processes, client, Environment.ProcessId))
                 {
                     response = await Dispatcher.DispatchAsync(request, Lifetime.Token).ConfigureAwait(false);
                 }

@@ -26,10 +26,11 @@ internal static class GitStartAsks
         var repository = RefFiles.CommonDirOf(folder) is { } common ? Path.GetFullPath(common) : folder;
         GitPlace.Known(info.FileName);
         var writes = RefSnapshot.MayWrite(arguments);
-        return new GitRunAsk(folder, repository, WaitOf(arguments, writes))
+        var fetches = WaitOf(arguments, writes) is GitWait.Read && GitLazyFetch.Fetches(info, folder);
+        return new GitRunAsk(folder, repository, fetches ? GitWait.Outside : WaitOf(arguments, writes))
         {
             Start = shares && runner == GitRunner.Whole ? Key(info, runner, bound) : null,
-            Endable = runner != GitRunner.Held && GitEndable.Of(arguments),
+            Endable = runner != GitRunner.Held && !fetches && GitEndable.Of(arguments),
             Writes = writes,
             Removes = Removed(folder, arguments),
         };

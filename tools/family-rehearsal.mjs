@@ -28,6 +28,7 @@ import {
   rehearsalRun, restartBetweenRequests, takePorts, waitFor,
 } from './rehearsal-kit.mjs';
 import { declareStubTwo, stubTwoListed } from './stub-two.mjs';
+import { buildCommand, guarded } from './tree-base.mjs';
 import {
   SETUP_RULES, SETUP_TITLE, readEvents, readFollowed, readPlace, readRegister, readWorkspaceSetup, withFirstOnPath,
   writeDoctrineLauncher,
@@ -41,9 +42,9 @@ const httpProject = join(repoRoot, 'src', 'Daoris.Service', 'Daoris.Service.Http
 const httpDll = join(httpProject, 'bin', 'Debug', 'net10.0', 'daoris-knowledge-http.dll');
 const driverProject = join(repoRoot, 'src', 'Daoris.Desktop', 'Daoris.Desktop.Driver.Host');
 const connectorProject = join(repoRoot, 'src', 'Daoris.Service', 'Daoris.Service.Mcp');
-// This rehearsal runs beside the driver's git half, which builds into and runs from the desktop projects' own folders,
-// so the driver host is built into an output of this rehearsal's own. The HTTP host and the connector stay where the driver
-// finds a development build (ServiceHostLocator, KnowledgeConnector): the service's folders, which no git half builds.
+// It runs beside the driver's git half, which builds in the desktop projects, so the driver host is
+// built into this rehearsal's own output. The HTTP host and the connector stay where the driver finds a development
+// build (ServiceHostLocator, KnowledgeConnector), which no git half builds.
 const ownOutput = ownBuildRoot(repoRoot, 'family');
 const driverDll = ownBuilt(ownOutput, driverProject, 'daoris-driver.dll');
 // The apphost the same build writes beside the DLL: the program a checkout's `daoris …` is handed to.
@@ -266,7 +267,7 @@ async function startServer(env, base) {
     return null;
   }
 
-  const child = spawn('dotnet', [httpDll], {
+  const child = spawn('dotnet', [guarded(httpDll)], {
     cwd: repoRoot,
     stdio: 'ignore',
     windowsHide: true,
@@ -392,7 +393,7 @@ mkdirSync(scratch, { recursive: true });
 // nothing may dirty the tracked tree.
 for (const name of EXAMPLES) copyTree(join(examplesRoot, name), join(family, name));
 
-const build = run(`dotnet build "${httpProject}"`, repoRoot);
+const build = run(buildCommand(httpProject), repoRoot);
 check('the HTTP host builds', build.code === 0, build.out.split('\n').slice(-4).join('\n'));
 check('the host answers /api/status', await startHost());
 // On the Chromium it ships, the desktop's page lives on its engine's app origin and reaches this

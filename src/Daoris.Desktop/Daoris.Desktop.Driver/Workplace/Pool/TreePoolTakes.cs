@@ -1,7 +1,7 @@
 namespace Daoris.Driver;
 
 /// <summary>A free slot taken for a new line (<c>take</c>) or switched to a returning one (<c>return</c>), every step a phase of its claim and every
-/// git a process of the claim's job. The slot is judged inside the claim, Daoris's copies are deleted, the switch is made in place with the
+/// git a process of the claim's job. The slot is judged inside the claim, Daoris's copies are deleted and its shares unlinked, the switch is made in place with the
 /// repository's hooks held and never forced, the outputs are moved aside, and the check passes before the keyed open of the line's record is
 /// requested. The claim records the branch, commit and line the slot stood at; a refusal after the switch (a switch git refuses, a top held
 /// at the clearing, a check that fails) runs the one undo, <see cref="PoolUndo"/>, which puts the slot back there before it is released.</summary>
@@ -54,8 +54,12 @@ internal sealed class TreePoolTakes(TreePool pool, PoolSeams seams)
         var toolchain = slot.Toolchain;
         if (!inPlace)
         {
+            var from = previous.Length > 0 ? previous : Path.GetFileName(slot.Path);
+            var plan = await TakePlans.WriteAsync(site, git, slot.Path, new TakeFacts(take.Start, from, previous, head, job, DateTimeOffset.UtcNow), judged.Ignored, ct)
+                .ConfigureAwait(false);
             if (seams.BeforeSwitch is { } planted) await planted(slot.Path).ConfigureAwait(false);
             PoolClearing.DeleteCopies(slot.Path, judged.Ignored.Copies);
+            if (TreeShares.Unlink(site.Home, slot.Path) is { } linked) return await UndoneAsync(git, fence, take, $"busy: {linked}", ct).ConfigureAwait(false);
 
             var hooks = TreeOpenings.HooksHeld(site.Home);
             var (switched, _, said) = await git.GitAsync(
@@ -69,8 +73,7 @@ internal sealed class TreePoolTakes(TreePool pool, PoolSeams seams)
 
             toolchain = seams.Toolchain is { } read ? await read(slot.Path, ct).ConfigureAwait(false) : await PoolToolchain.KeyAsync(site, slot.Path, ct).ConfigureAwait(false);
             var renew = slot.Bytes > (seams.RenewBytes ?? PoolLimits.RenewBytes);
-            var from = previous.Length > 0 ? previous : Path.GetFileName(slot.Path);
-            var moved = await PoolClearing.ClearAsync(site, slot.Path, from, previous, (slot.Toolchain.Length > 0 && toolchain != slot.Toolchain) || renew, seams.Renaming, ct)
+            var moved = await PoolClearing.ClearAsync(site, slot.Path, plan, previous, (slot.Toolchain.Length > 0 && toolchain != slot.Toolchain) || renew, seams.Renaming, ct)
                 .ConfigureAwait(false);
             if (moved.Held is { } held) return await UndoneAsync(git, fence, take, $"busy: {held} is held by a running process", ct).ConfigureAwait(false);
             pool.Advance(fence, TreeClaimPhases.Cleared);

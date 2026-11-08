@@ -11,10 +11,11 @@ import { fileURLToPath } from 'node:url';
 const webRoot = dirname(dirname(fileURLToPath(import.meta.url)));
 const repoRoot = dirname(dirname(webRoot));
 const { copyTree } = await import(`file://${join(repoRoot, 'tools', 'fsx.mjs')}`);
-const dll = join(
+const { guarded } = await import(`file://${join(repoRoot, 'tools', 'tree-base.mjs')}`);
+const dll = guarded(join(
   repoRoot, 'src', 'Daoris.Service', 'Daoris.Service.Http', 'bin', 'Debug', 'net10.0',
   'daoris-knowledge-http.dll',
-);
+));
 const scratch = join(repoRoot, '_fixtures', 'web-e2e');
 const family = join(scratch, 'family');
 

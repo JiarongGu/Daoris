@@ -348,6 +348,9 @@ public sealed class HelpConversations(string home)
         var to = Math.Min(end, at + length + half);
         if (from > start && text.IndexOf(' ', from, at - from) is >= 0 and var space) from = space + 1;
         if (to < end && text.LastIndexOf(' ', to - 1, to - (at + length)) is >= 0 and var last) to = last;
+        // With no space to cut at, never half a surrogate pair.
+        if (from > start && char.IsLowSurrogate(text[from])) from++;
+        if (to < end && char.IsHighSurrogate(text[to - 1])) to--;
         return $"{(from > start ? "…" : "")}{text[from..to]}{(to < end ? "…" : "")}";
     }
 
