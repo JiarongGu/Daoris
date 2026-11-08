@@ -147,7 +147,8 @@ executable, started with a browser argument, is Daoris's own browser, which sess
 25. One list pane on every view: a header with ＋ and ⋯, per-view resize, a 56 px strip when closed, Ctrl+B. Its closing,
     width, chosen item and filters are remembered per view. (from D118)
 26. The side bar and panel hold movable views: *Notifications*, Timeline, Review, Workflow, At work and Ask Daoris on
-    the right, Console and Terminal in the panel, until the viewer moves them. (from D118, D196, D96)
+    the right, Console and Terminal in the panel, until the viewer moves them. The side bar's body holds its scrollbar's width always
+    (`DOCK_BODY`), since a chart placed by the pane's width flips when a scrollbar comes with its drawing and takes that width back. (from D118, D196, D96)
 27. A page is one column. `ViewMain` caps nothing, no block keeps a measure of its own, and the main area lays out by
     its own width, never the viewport's. A cap, if ever set, is one `em` value on `ViewMain`. (from D141, D118)
 28. The menus are *Workspace · Edit · View · Go · Run · Terminal · Help*. One table, `menus/commands.ts`, names every
