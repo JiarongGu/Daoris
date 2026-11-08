@@ -129,6 +129,10 @@ public sealed class HelpGrantsTests : IDisposable
     [InlineData("eval")]
     [InlineData("powershell-exec")]
     [InlineData("terminal_input")]
+    [InlineData("shell2")]
+    [InlineData("exec1")]
+    [InlineData("runcommand")]
+    [InlineData("shellexec")]
     public void A_generic_execution_tool_is_refused_for_ask_daoris_with_a_reason_and_cannot_be_approved(string tool)
     {
         var catalog = Tickets(allow: $$"""["search", "{{tool}}"]""");

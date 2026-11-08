@@ -38,7 +38,7 @@ public static class HelpGrants
     /// <summary>It names a generic execution tool, so it is never handed to Ask Daoris.</summary>
     public const string Refused = "refused";
 
-    /// <summary>The words of a tool's name that make it a generic execution tool, its name split at case, <c>_</c> and <c>-</c>.</summary>
+    /// <summary>The words of a tool's name that make it a generic execution tool, its name split at case, <c>_</c> and <c>-</c>, a trailing number dropped, and several words run together read as each.</summary>
     private static readonly HashSet<string> Running = new(StringComparer.Ordinal)
     {
         "shell", "bash", "sh", "zsh", "fish", "cmd", "powershell", "pwsh", "exec", "execute", "eval", "evaluate", "terminal",
@@ -47,11 +47,16 @@ public static class HelpGrants
 
     private static readonly Regex Words = new("[A-Z]?[a-z0-9]+|[A-Z]+(?![a-z])", RegexOptions.CultureInvariant);
 
+    /// <summary>Whether a word is one of the running words or several run together (<c>runcommand</c>, <c>shellexec</c>); a trailing number is no part of it.</summary>
+    private static bool RunsCommands(string word) =>
+        word.Length > 0 && Running.Any(part => word.StartsWith(part, StringComparison.Ordinal)
+            && (word.Length == part.Length || RunsCommands(word[part.Length..])));
+
     /// <summary>Why a server is never handed to Ask Daoris, or null: a tool it names runs commands, judged by the tool's name.</summary>
     public static string? Refusal(PluginServer server)
     {
         var running = server.Allow.Concat(server.Writes).FirstOrDefault(tool =>
-            Words.Matches(tool).Any(word => Running.Contains(word.Value.ToLowerInvariant())));
+            Words.Matches(tool).Any(word => RunsCommands(word.Value.ToLowerInvariant().TrimEnd('0', '1', '2', '3', '4', '5', '6', '7', '8', '9'))));
         return running is null
             ? null
             : $"its tool `{running}` runs commands, by its name, and Ask Daoris is never handed one that does (HELP4, D170): a shell, a "
