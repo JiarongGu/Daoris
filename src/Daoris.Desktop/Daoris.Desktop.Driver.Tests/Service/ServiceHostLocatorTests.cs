@@ -236,6 +236,24 @@ public sealed class ServiceHostLocatorTests : IDisposable
         Assert.Equal(project, dev.WorkingDirectory);
     }
 
+    /// <summary>A workspace build under a kept base's marker is the previous line's build, never offered until the door releases it.</summary>
+    [Fact]
+    public void A_workspace_build_under_a_standing_base_marker_is_passed_over()
+    {
+        var workspace = Path.Combine(_root, "workspace");
+        var deep = Path.Combine(workspace, "src", "Daoris.Desktop", "app", "bin");
+        Directory.CreateDirectory(deep);
+        File.WriteAllText(Path.Combine(workspace, "daoris.json"), "{}");
+        var debug = Path.Combine(workspace, "src", "Daoris.Service", "Daoris.Service.Http", "bin", "Debug");
+        Directory.CreateDirectory(debug);
+        File.WriteAllText(Path.Combine(debug, BaseMarker.FileName), """{ "from": "s-aaaa0001", "says": "the previous line's" }""");
+
+        var candidates = ServiceHostLocator.Candidates(null, home: null, deep).Select(c => c.Executable).ToList();
+
+        Assert.DoesNotContain(Path.Combine(debug, "net10.0", ServiceHostLocator.ExecutableName), candidates);
+        Assert.Contains(candidates, c => c.Contains(Path.Combine("bin", "Release"), StringComparison.Ordinal));
+    }
+
     [Fact]
     public void No_workspace_means_no_dev_candidates_and_no_crash()
     {

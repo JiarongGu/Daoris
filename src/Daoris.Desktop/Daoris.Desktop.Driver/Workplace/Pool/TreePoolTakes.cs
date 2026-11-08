@@ -54,6 +54,9 @@ internal sealed class TreePoolTakes(TreePool pool, PoolSeams seams)
         var toolchain = slot.Toolchain;
         if (!inPlace)
         {
+            var from = previous.Length > 0 ? previous : Path.GetFileName(slot.Path);
+            var plan = await TakePlans.WriteAsync(site, git, slot.Path, new TakeFacts(take.Start, from, previous, head, job, DateTimeOffset.UtcNow), judged.Ignored, ct)
+                .ConfigureAwait(false);
             if (seams.BeforeSwitch is { } planted) await planted(slot.Path).ConfigureAwait(false);
             PoolClearing.DeleteCopies(slot.Path, judged.Ignored.Copies);
             if (TreeShares.Unlink(site.Home, slot.Path) is { } linked) return await UndoneAsync(git, fence, take, $"busy: {linked}", ct).ConfigureAwait(false);
@@ -70,8 +73,7 @@ internal sealed class TreePoolTakes(TreePool pool, PoolSeams seams)
 
             toolchain = seams.Toolchain is { } read ? await read(slot.Path, ct).ConfigureAwait(false) : await PoolToolchain.KeyAsync(site, slot.Path, ct).ConfigureAwait(false);
             var renew = slot.Bytes > (seams.RenewBytes ?? PoolLimits.RenewBytes);
-            var from = previous.Length > 0 ? previous : Path.GetFileName(slot.Path);
-            var moved = await PoolClearing.ClearAsync(site, slot.Path, from, previous, (slot.Toolchain.Length > 0 && toolchain != slot.Toolchain) || renew, seams.Renaming, ct)
+            var moved = await PoolClearing.ClearAsync(site, slot.Path, plan, previous, (slot.Toolchain.Length > 0 && toolchain != slot.Toolchain) || renew, seams.Renaming, ct)
                 .ConfigureAwait(false);
             if (moved.Held is { } held) return await UndoneAsync(git, fence, take, $"busy: {held} is held by a running process", ct).ConfigureAwait(false);
             pool.Advance(fence, TreeClaimPhases.Cleared);

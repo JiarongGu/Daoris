@@ -192,7 +192,8 @@ public static class KnowledgeConnector
             var project = Path.Combine(workspace, "src", "Daoris.Service", "Daoris.Service.Mcp");
             foreach (var flavour in new[] { "Debug", "Release" })
             {
-                candidates.Add(Path.Combine(project, "bin", flavour, "net10.0", ExecutableName));
+                var built = Path.Combine(project, "bin", flavour, "net10.0", ExecutableName);
+                if (BaseMarker.Above(built) is null) candidates.Add(built);
             }
         }
 

@@ -11,6 +11,7 @@ import { PAGE_IDENTITY, isShell } from './page.mjs';
 import { assemblyExe, awaitDebugPort, closedPortReport, engineLogOf, installedExe } from './executables.mjs';
 import { CLEARED, debugEnvironment, installEnvironment, scratchEnvironment, scratchPlan } from './environment.mjs';
 import { repoRoot, scratchRoot } from './paths.mjs';
+import { build as buildProject, guarded } from '../tree-base.mjs';
 
 /**
  * Attach to one of the running shell's pages, having first established that it IS the shell.
@@ -81,12 +82,13 @@ export async function build(args) {
   // The order is the dependency order and is not cosmetic: the platform builds INTO the host's
   // wwwroot, so a host built before the bundle serves the previous one, and the shell shows it.
   run('npm', ['--prefix', WEB, 'run', 'build'], { shell: true });
-  run('dotnet', ['build', HTTP_PROJECT, '-c', configuration]);
+  buildProject(HTTP_PROJECT, configuration, { runner: run });
   // Daoris's browser is this same application started with the browser's argument, so
   // there is no second project to build.
-  run('dotnet', ['build', DESKTOP_PROJECT, '-c', configuration]);
+  buildProject(DESKTOP_PROJECT, configuration, { runner: run });
   // The driver's program a scratch run's `daoris …` is handed to: its apphost, named by the run's environment.
-  run('dotnet', ['build', DRIVER_HOST_PROJECT, '-c', configuration]);
+  buildProject(DRIVER_HOST_PROJECT, configuration, { runner: run });
+  buildProject(MCP_PROJECT, configuration, { runner: run });
   console.log('\nbuilt — `node tools/desktop.mjs run` to look at it.');
 }
 
@@ -97,7 +99,7 @@ export async function start(command, args) {
      What this adds is the debug port, and it adds it AT LAUNCH through the environment: the shipped
      application still exposes nothing. */
   const install = takeInstall(args);
-  const exe = install ? installedExe(install) : assemblyExe(DESKTOP_PROJECT);
+  const exe = install ? installedExe(install) : guarded(assemblyExe(DESKTOP_PROJECT));
   if (install && !exe) {
     fail(`no \`${LAUNCHER}\` at the root of \`${install}\` — that is not an install.\n`
       + '  Point --install at the folder you published to (the one holding the launcher, `app/`\n'
@@ -156,12 +158,12 @@ export async function start(command, args) {
     // Plugins place shows them here too. None is installed by this.
     layOffers(join(repoRoot, 'examples', 'plugins'), plan.root);
 
-    const httpHost = assemblyExe(HTTP_PROJECT);
+    const httpHost = guarded(assemblyExe(HTTP_PROJECT));
     if (!httpHost) fail('the service host is not built — `node tools/desktop.mjs build`.');
     // Optional: a run without it drives, and a session simply has no connector.
-    const mcpHost = assemblyExe(MCP_PROJECT) ?? '';
+    const mcpHost = guarded(assemblyExe(MCP_PROJECT)) ?? '';
     // Optional too: a run without it is the window, and its terminal's `daoris …` says where the program is.
-    const driverProgram = assemblyExe(DRIVER_HOST_PROJECT) ?? '';
+    const driverProgram = guarded(assemblyExe(DRIVER_HOST_PROJECT)) ?? '';
 
     serviceUrl = `http://127.0.0.1:${await freePort(5188)}`;
     environment = scratchEnvironment({ home, family, serviceUrl, httpHost, mcpHost, cdpPort, driverProgram });

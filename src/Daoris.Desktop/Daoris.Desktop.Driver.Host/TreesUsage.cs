@@ -14,7 +14,10 @@ internal static class TreesUsage
         Console.Error.WriteLine("                           | hand <session|branch> [--repository <name>] [--plugin <id>] [--plan]");
         Console.Error.WriteLine("                           | state [--entries]");
         Console.Error.WriteLine("                           | state <session|branch> [--repository <name>]");
-        Console.Error.WriteLine("                           | sync [--repository <name>] [--workspace <name>] [--all] [--yes]]");
+        Console.Error.WriteLine("                           | sync [--repository <name>] [--workspace <name>] [--all] [--yes]");
+        Console.Error.WriteLine("                           | build <path>]");
+        Console.Error.WriteLine("  build releases a kept output that is the previous line's build: it builds its project, sets aside what");
+        Console.Error.WriteLine("  that build does not own, and removes the marker the runners refuse by; a failed build releases nothing.");
         Console.Error.WriteLine("  A session's worktree (D51). Removal refuses while the tree holds");
         Console.Error.WriteLine("  uncommitted changes or work no branch of yours holds; --force means it.");
         Console.Error.WriteLine("  A session or its branch removes a failed or superseded attempt's branch,");
