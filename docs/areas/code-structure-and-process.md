@@ -68,7 +68,7 @@ finishes first and the whole set runs once.
    read off the driver's kit and its registrations, whose declaring files the hash covers. The generator builds into
    `_fixtures/contracts-build/` (`--artifacts-path`), never the contracts' or the modules' own `obj/`, so a web gate's pre-script
    builds beside the service's and the desktop's gates. Its runs take turns under `_fixtures/contracts-build.lock`
-   (`tools/run-lock.mjs`, stale once its process is gone or it is 15 minutes old), and one that waited reads the files again and builds nothing fresh. `api.ts` sends a declared
+   (`tools/run-lock.mjs`, stale once its process is gone or it is 15 minutes old; a stale one is removed under a reclaim lock beside it, judged again once held), and one that waited reads the files again and builds nothing fresh. `api.ts` sends a declared
    route as `send(name, request)`. The quest doors are `QuestRoutes` (the reads, the publish and the respond, on both hosts) and
    `QuestPersonRoutes` (a local host's person and driver doors: the close, the set-up and review doors, the workflow choice, a
    conflict's dismissal and a delete); the ask doors, a local host's alone, are `AskRoutes`, which answer through `AskAnswers` and
