@@ -121,7 +121,8 @@ public sealed class RoleVerb : ChoiceVerb
                 ["takes"] = new JsonArray([.. role.Takes.Select(work => (JsonNode)JsonValue.Create(work))]),
                 ["scope"] = new JsonObject { ["kind"] = role.Scope.Kind, ["id"] = role.Scope.Id },
             },
-            ["policy"] = policy is null ? null : press.Preset is { } preset ? preset : JsonNode.Parse(policy.Write()),
+            ["policy"] = policy is null ? null : JsonNode.Parse(policy.Write()),
+            ["policyPreset"] = policy is null ? null : press.Preset,
             ["policyRevision"] = existing.Revision,
         };
         return new(Word, ChoiceRoutes.Role, payload, _ =>

@@ -27,7 +27,7 @@ public static class StaffCapabilities
 public sealed record RolePolicyPress(StaffPolicy? Policy = null, string? Preset = null, bool Clear = false, long? Read = null)
 {
     /// <summary>
-    /// The press's <c>policy</c> (a preset's name, a record, or null to clear) and <c>policyRevision</c>; null where it carries neither.
+    /// The press's <c>policy</c> (a preset's name, a record, its preset named in <c>policyPreset</c>, or null to clear) and <c>policyRevision</c>; null where it carries neither.
     /// </summary>
     /// <exception cref="RoleRefusedException">The record does not read; said.</exception>
     public static RolePolicyPress? FromPayload(JsonElement press)
@@ -50,7 +50,9 @@ public sealed record RolePolicyPress(StaffPolicy? Policy = null, string? Preset 
             case JsonValueKind.String: return new RolePolicyPress(Preset: policy.GetString(), Read: read);
             case JsonValueKind.Object:
                 var (parsed, refused) = StaffPolicy.Parse(policy.GetRawText());
-                return parsed is null ? throw new RoleRefusedException(refused!) : new RolePolicyPress(parsed, Read: read);
+                return parsed is null
+                    ? throw new RoleRefusedException(refused!)
+                    : new RolePolicyPress(parsed, press.TryGetProperty("policyPreset", out var named) && named.ValueKind == JsonValueKind.String ? named.GetString() : null, Read: read);
             default:
                 throw new RoleRefusedException(new RoleRefusal(StaffPolicy.Code, "a role's policy is a preset's name, a record, or null to go back to the order."));
         }
