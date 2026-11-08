@@ -8,7 +8,7 @@ import { parseFrontmatter, renderCanonFile } from './document.ts';
 import { findRegion } from './region.ts';
 import { tierRuleBody } from './tierrender.ts';
 import { readCanon, resolveCanonRoot, resolveSelection } from './canon.ts';
-import { DEFAULT_CORE_BUDGET_BYTES, lockIndex, readLock, readManifest } from './config.ts';
+import { DEFAULT_CORE_BUDGET_BYTES, MANIFEST_FILE, lockIndex, readLock, readManifest } from './config.ts';
 import { isEntry, significantTokens, containment } from './twins.ts';
 import { candidateDocuments, sayCandidates } from '../layout/documents.ts';
 import {
@@ -267,13 +267,9 @@ export function analyze(
 export function commandAnalyze({ root, argv, write, packageRoot }: CommandArgs): ExitCode {
   const canon = readCanon(resolveCanonRoot(packageRoot));
 
-  // Works with or without a manifest: before adoption there is none, which is the point.
-  let manifest = null;
-  try {
-    manifest = readManifest(root);
-  } catch {
-    manifest = null;
-  }
+  // Works with or without a manifest: before adoption there is none, which is the point. One that is there and
+  // unreadable is refused by `readManifest`, naming what is wrong, and is not read as no adoption.
+  const manifest = existsSync(join(root, MANIFEST_FILE)) ? readManifest(root) : null;
 
   const target = manifest?.target ?? DEFAULT_TARGET;
   const budgetLimit = manifest?.coreBudgetBytes ?? DEFAULT_CORE_BUDGET_BYTES;
