@@ -47,6 +47,10 @@ public static class StartNoteCodes
     public static readonly NoteCode StartedTreeShared = new("started.tree-shared", ["shared"]);
     public static readonly NoteCode StartedShareDeclined = new("started.share-declined", ["path", "why"]) { Why = NoteCodes.Deps };
     public static readonly NoteCode TreeShareLost = new("tree.share-lost", ["path"]);
+    public static readonly NoteCode StartedTreeBase = new("started.tree-base", ["bases", "runners"]);
+    public static readonly NoteCode StartedTreeBaseUnguarded = new("started.tree-base-unguarded", ["bases"]);
+    public static readonly NoteCode TreeBaseTrimmed = new("tree.base-trimmed", ["path", "project", "count"]);
+    public static readonly NoteCode TreeBaseHost = new("tree.base-host", ["path"]);
 
     // A session's tree asked for before it goes on: made again on its branch, gone with its branch, or not made.
     public static readonly NoteCode TreeRemade = new("tree.remade", ["branch"]);

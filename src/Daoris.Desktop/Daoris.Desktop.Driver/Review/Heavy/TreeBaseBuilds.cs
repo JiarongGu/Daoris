@@ -46,18 +46,30 @@ public static class TreeBaseBuilds
 
         var head = (await WorkingTree.HeadAsync(tree, ct).ConfigureAwait(false)) ?? "";
         var exit = 0;
-        foreach (var producer in bases.GroupBy(each => (each.Project, each.Configuration)))
+        foreach (var producer in bases.GroupBy(each => (each.Project, each.Configuration, each.Builds)))
         {
-            var (project, configuration) = producer.Key;
-            var command = $"dotnet {string.Join(' ', BuildAccounts.Words(Path.GetFileName(project), configuration))}";
+            var (project, configuration, builds) = producer.Key;
+            if (builds.Length == 0)
+            {
+                foreach (var kept in producer)
+                {
+                    var (count, _) = BaseTrim.Trim(tree, kept, new HashSet<string>());
+                    TreeBases.Release(home, tree, kept, new TreeBaseRelease(kept.Path, project, configuration, [], [], head, 0, DateTimeOffset.UtcNow, count));
+                    output.WriteLine($"trees: {kept.Path}'s record names no build that releases it, so it was set aside whole with {Line(kept)}'s and is no base.");
+                }
+
+                continue;
+            }
+
             BuildAccount account;
             using (var hold = await MachineAdmission.TakeAsync(home, new AdmissionRequest($"the build of {project} -c {configuration}") { Tree = tree }, output, ct).ConfigureAwait(false))
             {
                 var inside = hold.IsInside ? null : new Dictionary<string, string> { [MachineAdmission.InsideVariable] = hold.Id };
                 var projectFolder = Path.GetDirectoryName(Path.Combine(tree, project.Replace('/', Path.DirectorySeparatorChar)))!;
-                account = await BuildAccounts.RunAsync(projectFolder, Path.GetFileName(project), configuration, inside, ct).ConfigureAwait(false);
+                account = await BuildAccounts.RunAsync(projectFolder, Path.GetFileName(project), configuration, builds, inside, ct).ConfigureAwait(false);
             }
 
+            var command = account.Commands.Count > 0 ? string.Join("`, `", account.Commands) : $"{builds} (the SDK's evaluation)";
             if (account.Exit != 0)
             {
                 error.WriteLine($"trees: `{command}` exited {account.Exit} in {Shown(FolderOf(project))}, so nothing is released: {Tail(account.Said)}");
@@ -68,7 +80,7 @@ public static class TreeBaseBuilds
             foreach (var kept in producer)
             {
                 var (count, whole) = BaseTrim.Trim(tree, kept, account.Files);
-                TreeBases.Release(home, tree, kept);
+                TreeBases.Release(home, tree, kept, new TreeBaseRelease(kept.Path, project, configuration, account.Frameworks, account.Commands, head, 0, DateTimeOffset.UtcNow, count));
                 output.WriteLine(whole
                     ? $"trees: {kept.Path} holds nothing {project} -c {configuration} builds, so it was set aside whole with {Line(kept)}'s and is no base."
                     : $"trees: {kept.Path} released, built by {project} -c {configuration} at {Short(head)} (`{command}`, exit 0); "

@@ -5,6 +5,9 @@ the per-task record. Entries preserve their original wording so the archive stay
 
 ---
 
+## TREEPOOL1aa — a kept output as the previous line's build base (2026-11-09)
+
+> **TREEPOOL1aa** (driver, tools; D214; §35.3, §36.3, §37.3, §38.2): Outcome: a take keeps a `base` top's declared configurations as the previous line's build, recorded with its producer and its rule's `builds` and marked `.daoris-base` (a base nothing builds set aside), set aside where the toolchain key moves; `daoris tree build` is the one release, building per framework (`-f`) over MSBuild's own `FileWrites` account, setting aside what that build does not own and keeping the producer, frameworks, commands, commit, exit, moment and count beside the bases (`TreeBaseRelease`); the start says the bases and their integrated runners (`started.tree-base`, `started.tree-base-unguarded`) and each trim (`tree.base-trimmed`), the gate run's admission names the unreleased bases, a marked development host is named with the door (`tree.base-host`, the window's `base-host`); eleven readers guarded and `run --real` refused under a marker, held by the census per call site (`TreeBaseGitTests`, `TreeBaseBuildsProcessTests`, `BuildAccountProcessTests`, `TreeBaseWordsTests`, `tools/tree-base.test.mjs`).
 ## KNOWREV2a to KNOWREV2j — the knowledge, memory and records review's second cycle (2026-11-09)
 
 > **KNOWREV2a / 2b / 2c / 2d / 2e / 2f / 2g / 2h / 2i / 2j** (service): Outcome: all ten held against main's tip, each fixed with a regression test and a commit.

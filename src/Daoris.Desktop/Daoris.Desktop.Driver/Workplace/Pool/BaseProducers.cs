@@ -4,7 +4,10 @@ using System.Xml.Linq;
 namespace Daoris.Driver;
 
 /// <summary>A base top's producer at a commit: the one project file beside it and the configurations it declares; null with why where it has none.</summary>
-internal sealed record BaseProducer(string? Project, IReadOnlyList<string> Configurations, string? Why);
+internal sealed record BaseProducer(string? Project, IReadOnlyList<string> Configurations, string? Why)
+{
+    internal string Builds { get; init; } = "";
+}
 
 /// <summary>
 /// What the take's plan reads of a <c>base</c> top's producer from git's objects at the new start (the tree-pool design §37.3, 2, §38.2,

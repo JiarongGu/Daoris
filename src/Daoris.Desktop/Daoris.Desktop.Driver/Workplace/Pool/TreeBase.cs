@@ -20,6 +20,8 @@ internal sealed record TreeBase(string Path, string From, string Commit, DateTim
     /// <summary>The set-aside folder of the take that kept it, which the entries its release trims join.</summary>
     internal string Aside { get; init; } = "";
 
+    internal string Builds { get; init; } = "";
+
     internal static IReadOnlyList<TreeBase> FromJson(JsonElement root) =>
         root.TryGetProperty("bases", out var bases) ? [.. bases.EnumerateArray().Select(One)] : [];
 
@@ -32,6 +34,7 @@ internal sealed record TreeBase(string Path, string From, string Commit, DateTim
         Job = each.TryGetProperty("job", out var job) ? job.GetString()! : "",
         Was = each.TryGetProperty("was", out var was) ? One(was) : null,
         Aside = each.TryGetProperty("aside", out var aside) ? aside.GetString()! : "",
+        Builds = each.TryGetProperty("builds", out var builds) ? builds.GetString()! : "",
     };
 
     private static JsonObject Written(TreeBase each)
@@ -43,6 +46,7 @@ internal sealed record TreeBase(string Path, string From, string Commit, DateTim
         };
         if (each.Job.Length > 0) written["job"] = each.Job;
         if (each.Aside.Length > 0) written["aside"] = each.Aside;
+        if (each.Builds.Length > 0) written["builds"] = each.Builds;
         if (each.Was is { } was) written["was"] = Written(was with { Was = null, Job = "" });
         return written;
     }

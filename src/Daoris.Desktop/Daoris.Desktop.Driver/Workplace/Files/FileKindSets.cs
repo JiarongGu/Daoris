@@ -14,6 +14,8 @@ internal static class FileKindSets
 
     internal static readonly string[] Finishes = ["keep", "aside"];
 
+    private const string SkipsBuild = "--no-build";
+
     /// <summary>The fields every kind takes in git's form, beside <c>kind</c> and <c>paths</c>.</summary>
     private static readonly string[] Acts = ["reach", "take", "finish"];
 
@@ -22,8 +24,17 @@ internal static class FileKindSets
     {
         FileKind.Dependency => [.. Acts, "install", "setup", "per", "key", "toolchain", "env", "secret", "caches", "bound", "across"],
         FileKind.Intermediate or FileKind.Cache => [.. Acts, "toolchain"],
+        FileKind.Output => [.. Acts, "builds", "refuses"],
         _ => Acts,
     };
+
+    /// <summary>Why an output's <c>builds</c> cannot be the door's one command, a build of each configuration it names; null where it can.</summary>
+    internal static string? Unbuildable(string builds) =>
+        builds.Split(' ', StringSplitOptions.RemoveEmptyEntries).Contains(SkipsBuild, StringComparer.Ordinal)
+            ? $"`builds` holds `{SkipsBuild}`, which skips the build the door's release stands on"
+            : !builds.Contains("{configuration}", StringComparison.Ordinal)
+                ? "`builds` names no `{configuration}`, which the door fills with each configuration it builds"
+                : null;
 
     /// <summary>
     /// What a take does with a kind's paths where no rule says: a dependency kept by its key and record, an intermediate or a cache

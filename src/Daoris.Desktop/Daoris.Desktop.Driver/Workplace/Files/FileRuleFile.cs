@@ -67,12 +67,16 @@ internal static class FileRuleFile
         var (kind, paths) = Head(each, GitPattern.Unfit, FileKindSets.Fields);
         var reach = Word(each, "reach", FileKindSets.Reaches);
         if (FileKindSets.Unshared(kind, reach) is { } unshared) throw new FormatException(unshared);
+        var builds = Text(each, "builds");
+        if (builds is not null && FileKindSets.Unbuildable(builds) is { } unbuildable) throw new FormatException(unbuildable);
         return Fields(each, kind, paths) with
         {
             Across = Flag(each, "across"),
             Reach = reach,
             Take = Word(each, "take", FileKindSets.Takes),
             Finish = Word(each, "finish", FileKindSets.Finishes),
+            Builds = builds,
+            Refuses = Strings(each, "refuses"),
         };
     }
 
@@ -133,6 +137,8 @@ internal static class FileRuleFile
         if (rule.Caches is { } caches) written["caches"] = List(caches);
         if (rule.Bound is { } bound) written["bound"] = bound;
         if (rule.Across is { } across) written["across"] = across;
+        if (rule.Builds is { } builds) written["builds"] = builds;
+        if (rule.Refuses is { } refuses) written["refuses"] = List(refuses);
         if (rule.Evidence.Count > 0) written["evidence"] = List(rule.Evidence);
         if (rule.Other is { } other) written["other"] = other.Word();
         if (rule.Size is { } size) written["size"] = new JsonObject { ["files"] = size.Files, ["bytes"] = size.Bytes, ["more"] = size.More };

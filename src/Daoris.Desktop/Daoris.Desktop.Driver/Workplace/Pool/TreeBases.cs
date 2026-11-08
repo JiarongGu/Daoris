@@ -44,10 +44,14 @@ internal static class TreeBases
         foreach (var added in own.Where(each => each.Was is null)) BaseMarker.Remove(slot, added.Path);
     }
 
-    /// <summary>One base released: the record lets it go first, then its marker goes.</summary>
-    internal static void Release(string home, string slot, TreeBase released)
+    /// <summary>One base released: the record lets it go and keeps what the door did in the same write, then its marker goes.</summary>
+    internal static void Release(string home, string slot, TreeBase released, TreeBaseRelease done)
     {
-        TreeFilesRecord.Change(home, slot, state => state with { Bases = [.. state.Bases.Where(each => each.Path != released.Path)] });
+        TreeFilesRecord.Change(home, slot, state => state with
+        {
+            Bases = [.. state.Bases.Where(each => each.Path != released.Path)],
+            Released = [.. state.Released.Where(each => each.Path != done.Path), done],
+        });
         BaseMarker.Remove(slot, released.Path);
     }
 
