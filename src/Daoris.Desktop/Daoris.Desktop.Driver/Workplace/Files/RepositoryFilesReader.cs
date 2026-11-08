@@ -34,11 +34,12 @@ internal static class RepositoryFilesReader
     }
 
     /// <summary>The layer at <paramref name="commit"/>, read from git's objects in <paramref name="root"/>.</summary>
-    internal static async Task<RepositoryFilesRead> AtAsync(string root, string commit, CancellationToken ct)
-    {
-        var tracked = await FileGit.TrackedAsync(root, commit, ct).ConfigureAwait(false);
-        return Read(await FileGit.ShowAsync(root, commit, FileName, ct).ConfigureAwait(false), tracked);
-    }
+    internal static async Task<RepositoryFilesRead> AtAsync(string root, string commit, CancellationToken ct) =>
+        await AtAsync(root, commit, await FileGit.TrackedAsync(root, commit, ct).ConfigureAwait(false), ct).ConfigureAwait(false);
+
+    /// <summary>The layer at <paramref name="commit"/> over the paths a caller already read git tracks there, which are not asked again.</summary>
+    internal static async Task<RepositoryFilesRead> AtAsync(string root, string commit, IReadOnlyCollection<string> tracked, CancellationToken ct) =>
+        Read(await FileGit.ShowAsync(root, commit, FileName, ct).ConfigureAwait(false), tracked);
 
     private static List<FileRule> Judged(List<(int Number, FileRule Rule)> rules, IReadOnlyCollection<string> tracked, List<string> problems)
     {
