@@ -42,8 +42,16 @@ internal sealed class AcpReader(ITurnReadWiring wiring, AcpWire wire)
         }
         finally
         {
-            // What it ran beside itself ends with it, said before the console closes.
-            await wiring.EndStreamsAsync().ConfigureAwait(false);
+            try
+            {
+                // What it ran beside itself ends with it, said before the console closes.
+                await wiring.EndStreamsAsync().ConfigureAwait(false);
+            }
+            catch (Exception error) when (error is not OperationCanceledException)
+            {
+                // A sink that refuses the endings must not leave the requests awaited for the timeout: what follows is the reader's own.
+                wiring.Say($"[ending what ran beside the session failed: {error.Message}]");
+            }
 
             // An agent's last words before its stream ended are the ones a person reads the console for.
             wiring.Console.Dispose();
