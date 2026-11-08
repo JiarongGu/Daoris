@@ -307,6 +307,14 @@ describe('the drawing\'s frame (UX5 U44)', () => {
     expect(fitRadius(three, 1500, words)).toBeCloseTo(204);
   });
 
+  it('never draws a ring taller than the card is wide, so two repositories stay in one view', () => {
+    const two = buildTopology([repo('engine'), repo('game')], [], [], []);
+    const radius = fitRadius(two, 560, words, 1000);
+    const frame = frameMap(two, layoutRing(two.nodes.map((n) => n.id), 600, radius), words);
+
+    expect(frame.height).toBeLessThanOrEqual(560);
+  });
+
   it('never packs nodes closer than they can be told apart, and a large family keeps its spacing', () => {
     expect(fitRadius(three, 100, words)).toBe(110);
     const many = buildTopology(Array.from({ length: 16 }, (_, i) => repo(`r${i}`)), [], [], []);

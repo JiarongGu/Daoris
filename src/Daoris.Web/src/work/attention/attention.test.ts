@@ -954,7 +954,7 @@ describe('the groups', () => {
     }
   });
 
-  /** An owner nothing records is said once, by the entry's own code, with the press that removes it. */
+  /** An owner nothing records is said once, by the entry's own code, the press that removes it first. */
   it('words an unknown owner by its code once, in each language, with the press that removes it', async () => {
     const orphan = row('work', 'unknown-branch:engine/daoris/orphan', null, {
       where: 'engine', session: null, title: 'daoris/orphan',
@@ -1015,8 +1015,7 @@ describe('the groups', () => {
     expect(entryDetail(i18n.t, { detail: 'as recorded' })).toBe('as recorded');
   });
 
-  /** An unrecorded daoris/* branch says its owner first, then its entry worded by its code; the one rule for any such record. */
-  it('words an unrecorded daoris branch as an unknown owner, then its entry', () => {
+  it('words an unrecorded daoris branch by its entry alone, with no owner sentence before it', () => {
     const item = words(row('work', 'unknown-branch:engine/daoris/orphan', null, {
       where: 'engine', session: null, title: 'daoris/orphan',
       blocked: { unknown: true, entries: [{ kind: 'session-branch', resource: 'daoris/orphan', code: 'unrecorded', facts: { branch: 'daoris/orphan' }, detail: 'as recorded' }] },
