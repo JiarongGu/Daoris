@@ -78,7 +78,7 @@ public static class UsageHistory
     private static readonly string[] Logs = [ReadingsLog, TurnsLog];
 
     /// <summary>How many readings' keys each home's history remembers, to write an exact duplicate once.</summary>
-    private const int Remembered = 4096;
+    private const int RememberedMost = 4096;
 
     private static readonly JsonWriterOptions Options = new() { Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping };
 
@@ -116,13 +116,15 @@ public static class UsageHistory
             lock (Gate)
             {
                 var folder = FolderOf(home);
-                var fresh = plain.Where(window => Remember(folder, KeyOf(from, window))).ToList();
+                var fresh = plain.Where(window => !Remembered(folder, KeyOf(from, window))).ToList();
                 if (fresh.Count == 0) return;
 
                 Directory.CreateDirectory(folder);
                 var plan = Word(from.Plan);
                 var epoch = EpochOf(home, from.Agent, from.Account, plan, from.Seen);
                 Append(home, ReadingsLog, [.. fresh.Select(window => Reading(from, window, epoch, plan, now))], now, cap);
+                // Only what was appended is remembered: a write that failed is tried again with the next reading of it.
+                foreach (var window in fresh) Remember(folder, KeyOf(from, window));
             }
         }
         catch (Exception error) when (error is IOException or UnauthorizedAccessException)
@@ -193,12 +195,14 @@ public static class UsageHistory
             lock (Gate)
             {
                 var folder = FolderOf(home);
-                if (!Remember(folder, string.Join('\n', TurnsLog, turn.Session, turn.Seq.ToString(CultureInfo.InvariantCulture)))) return;
+                var key = string.Join('\n', TurnsLog, turn.Session, turn.Seq.ToString(CultureInfo.InvariantCulture));
+                if (Remembered(folder, key)) return;
 
                 Directory.CreateDirectory(folder);
                 var bound = binding is { Agent: not null, Account: not null } ? binding : null;
                 var epoch = bound is null ? null : EpochOf(home, bound.Agent!, bound.Account!, null, turn.Ended);
                 Append(home, TurnsLog, [TurnLine(binding, bound, turn, epoch, now)], now, cap);
+                Remember(folder, key);
             }
         }
         catch (Exception error) when (error is IOException or UnauthorizedAccessException)
@@ -433,19 +437,28 @@ public static class UsageHistory
         })]));
     }
 
-    /// <summary>Whether the month's file already ends in a <c>full</c> record.</summary>
+    /// <summary>Whether the month's file already ends in a <c>full</c> record, the gaps a prune said after it set aside.</summary>
     private static bool MarkedFull(string home, string current)
     {
         var path = DaorisHome.Entry(home, HomeEntry.UsageHistory, current);
         if (!File.Exists(path)) return false;
         using var stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite | FileShare.Delete);
-        var length = Math.Min(stream.Length, 512);
-        stream.Seek(-length, SeekOrigin.End);
-        var tail = new byte[length];
-        stream.ReadExactly(tail);
-        var text = Utf8.GetString(tail).TrimEnd('\n');
-        var last = text[(text.LastIndexOf('\n') + 1)..];
-        return last.Contains("\"kind\":\"full\"", StringComparison.Ordinal);
+        for (var length = Math.Min(stream.Length, 512L); ; length = Math.Min(stream.Length, length * 4))
+        {
+            stream.Seek(-length, SeekOrigin.End);
+            var tail = new byte[length];
+            stream.ReadExactly(tail);
+            var lines = Utf8.GetString(tail).TrimEnd('\n').Split('\n');
+            // The first line of a tail that does not reach the file's start may be cut, so it is read only once the tail does.
+            var whole = length == stream.Length;
+            for (var at = lines.Length - 1; at >= (whole ? 0 : 1); at--)
+            {
+                if (lines[at].Contains("\"kind\":\"gap\"", StringComparison.Ordinal)) continue;
+                return lines[at].Contains("\"kind\":\"full\"", StringComparison.Ordinal);
+            }
+
+            if (whole) return false;
+        }
     }
 
     /// <summary>One of the log's gap records per reason, from the oldest month pruned to the end of the newest, never past now.</summary>
@@ -658,8 +671,11 @@ public static class UsageHistory
         string.Join('\n', from.Agent, from.Account, window.Window, window.Scope ?? "", from.Source,
             from.Seen.UtcTicks.ToString(CultureInfo.InvariantCulture));
 
-    /// <summary>Whether this reading is new to the home's history, remembering it if so.</summary>
-    private static bool Remember(string folder, string key)
+    /// <summary>Whether this reading was kept already in this process.</summary>
+    private static bool Remembered(string folder, string key) => Recent.TryGetValue(folder, out var recent) && recent.Keys.Contains(key);
+
+    /// <summary>Remember a reading as kept.</summary>
+    private static void Remember(string folder, string key)
     {
         if (!Recent.TryGetValue(folder, out var recent))
         {
@@ -667,10 +683,9 @@ public static class UsageHistory
             Recent[folder] = recent;
         }
 
-        if (!recent.Keys.Add(key)) return false;
+        if (!recent.Keys.Add(key)) return;
         recent.Order.Enqueue(key);
-        if (recent.Order.Count > Remembered) recent.Keys.Remove(recent.Order.Dequeue());
-        return true;
+        if (recent.Order.Count > RememberedMost) recent.Keys.Remove(recent.Order.Dequeue());
     }
 
 }

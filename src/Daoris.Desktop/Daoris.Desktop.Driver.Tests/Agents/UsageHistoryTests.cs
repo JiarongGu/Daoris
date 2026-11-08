@@ -260,6 +260,35 @@ public sealed class UsageHistoryTests : IDisposable
             Assert.Single(read.Gaps), new GapComparer());
     }
 
+    [Fact]
+    public void A_prune_after_the_full_marker_does_not_have_the_next_write_mark_the_month_full_again()
+    {
+        Directory.CreateDirectory(UsageHistory.FolderOf(_home));
+        File.WriteAllText(Segment("readings-2026-10.jsonl"), new string('x', 900) + "\n");
+        File.WriteAllText(Segment("readings-2026-05.jsonl"), "x\n");
+        UsageHistory.Kept(_home, From(), [Week], Now, cap: 1000);
+
+        // Another month ages out while the month is full: its gap is said after the marker, which still stands.
+        File.WriteAllText(Segment("readings-2026-04.jsonl"), "x\n");
+        UsageHistory.Kept(_home, From(seen: Now.AddMinutes(1)), [Week], Now.AddMinutes(1), cap: 1000);
+        UsageHistory.Kept(_home, From(seen: Now.AddMinutes(2)), [Week], Now.AddMinutes(2), cap: 1000);
+
+        Assert.Single(Lines(), line => line.Contains("\"kind\":\"full\"", StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public void A_reading_whose_append_failed_is_kept_when_it_is_read_again_and_not_remembered_as_kept()
+    {
+        // A folder where the month's file goes: the append cannot be made.
+        Directory.CreateDirectory(Segment("readings-2026-10.jsonl"));
+        Keep(From(), Week);
+        Directory.Delete(Segment("readings-2026-10.jsonl"));
+
+        Keep(From(), Week);
+
+        Assert.Single(UsageHistory.Read(_home).Readings);
+    }
+
     // ——— Never a reason to fail.
 
     [Fact]
