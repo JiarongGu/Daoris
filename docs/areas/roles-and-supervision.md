@@ -378,7 +378,8 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they start wi
     person's), its log says `by: steward`, and its unpause, only of a pause the steward made this run and the owner has not
     touched, releases them as the steward's own role release. The update acts (`StewardUpdateAct`) say the install's own
     word (`update.requested`, door `steward`); the pipe has no person's route for an update, so outside the granted acts
-    they are refused `not-granted`, never asked. The person grants and takes back each act in the role editor, read at every act. A proved
+    they are refused `not-granted`, never asked. The person grants and takes back each act in the role editor, read at every act, and again at the act's step under its gates
+    (`RoleActsLedger.RunAct`): an act taken back while it queued is refused `not-granted`. A proved
     holder's act outside them that asks (`StewardAsk`, `role.asked`) is first an `allow` subject `{ ask }` at its target's
     place, read as `ActAsync` reads it (`StewardPlaces`): one pending entry on the press's reservation (`StewardAllows`,
     `PendingAllow`), settled once by the first of the allow supervisor's `allow.steward` (the act admitted once as the steward's
