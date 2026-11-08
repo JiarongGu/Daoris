@@ -32,7 +32,7 @@ of everything it handed, section by section.
 | `ChatReplacement` | `Course/Chat/ChatReplacement.cs` | A start whose agent refused the model at its open: the re-ask, and the replacement opened with its words once the refused run let go |
 | `ChatTurns` | `Loop/Chat/ChatTurns.cs` | A conversation's turn queue: holds, limit waits, edits, stops; the one door of its parts |
 | `TurnState` | `Loop/Chat/Turns/TurnState.cs` | The turns' state under its one gate: what it guards, the keep's lock before it, what a race would break |
-| `TurnPump`, `TurnTakes`, `TurnKeeps`, `TurnHolds`, `TurnStops` | `Loop/Chat/Turns/` | The one pump; a word's take at its level; the keeps on the record, edits, press and send-back; the holds; the stops |
+| `TurnPump`, `TurnTakes`, `TurnKeeps`, `KeepRetry`, `TurnHolds`, `TurnStops` | `Loop/Chat/Turns/` | The one pump; a word's take at its level; the keeps on the record, edits, press and send-back, each keep under a key and asked twice before it is held here alone (`KeepRetry`, so a word the record stored but never answered is held once); the holds; the stops |
 | `ProtocolChat`, `NativeChat` | `Loop/Chat/` | A conversation's transport on each door: the protocol session's turns, steers, retries and stop; the native wire's stdin line per turn and its interrupt |
 | `ChatOptions` | `Loop/Chat/ChatOptions.cs` | A conversation's model and effort as its agent offers them, the person's change of either (never the mode), and the change as last kept |
 | `ChatWords` | `Loop/Chat/ChatWords.cs` | The words said to a live conversation: the person's (framed, kept on the record, at a level or at *now*), Daoris's own, a composed message and the workflow draft it carries |
@@ -189,7 +189,8 @@ of everything it handed, section by section.
 33. It never hands the agent's thoughts, a tool call's output (but the last failed check's, bounded), a model's summary, an
     account's name, or anything from a harness's store. A page a turn opened is named by its address without user, query or
     fragment, a file page relative to the tree. (from D189)
-34. `line_read` pages one part at a time, by part id, under the brief's bound. A working session may call it; a reviewer and a
+34. `line_read` pages one part at a time, by part id, under the brief's bound, weighed as the brief weighs (`LineEvents.Weight`
+    is `ContextBrief.CharWeight`'s twin). A working session may call it; a reviewer and a
     helper may not. It carries no counts. A tool's output the driver cut is shown with the length its own mark gives, and no cut
     on either side splits a surrogate pair. (from D189, D229)
 
