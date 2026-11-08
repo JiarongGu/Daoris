@@ -4760,7 +4760,8 @@ or write a rule's paths in the gates' grammar or as a path by its text (point 4)
    expression (`RoomPaths.Declared`, `RoomPaths.cs:22`, through `UnionJoins.Glob`, `UnionJoins.cs:127-170`); git's covers a top where it
    or a folder above it matches (§36.2, 1). Each first-form path is read as the old reader read it: a trailing `/` gains `**`, then its
    braces are expanded as `Glob` reads them (the first `}` after a `{`, alternatives split at `,`, each literal, `:157-162`; several
-   groups as their product), each result a path of its own in the order written. Each is then written:
+   groups as their product), each result a path of its own in the order written. Each is then written *(R17: the table is derived
+   from `Glob`'s own tokens by a total partition in §38.1, which finds the two rows it missed and reads `P/*` as written)*:
 
 | First form, as the old reader reads it | Git's form | Exact |
 |---|---|---|
@@ -4776,6 +4777,7 @@ or write a rule's paths in the gates' grammar or as a path by its text (point 4)
 | a path that matched a folder top without what lies under it: a last segment that is a lone `*` after a folder (`P/*`), which matched `P/` itself, by `*` matching nothing, and the files directly in it, but no folder below it; or an expanded alternative ending in `/` in a path that does not (`{bin/,obj/}`, `P/{a,}`), which matched that folder top alone | the folder, `/P/` | **no**: kept, below |
 | `share: true`, `copy: true` | `across`, `reach: "copy"`; `key`, `caches`, every other field and the `permissions` as written (point 5) | yes |
 
+*(R17: withdrawn, as the broadening Codex's read shows; such a word is read as written until the person words it, §38.1.)*
 **One more difference kept, chosen: a folder top matched without what lies under it** (`P/*`, and an alternative ending in `/`). No
 git pattern covers a folder top without what lies under it, so such a path cannot be written exactly. `/P/` keeps the top it meets
 most, `P/` listed whole, and differs only where a folder or a deeper file under `P` is listed as a top of its own (`P` then holding
@@ -4816,7 +4818,7 @@ tops that holds folder and file tops at several depths, a folder listed whole an
 reads: round 14's (`{drafts,notes}/`, the root `node_modules/` after the web's, `src/{App,Lib}/bin/`, a `**` inside a segment, a `[`,
 `copy: true`, `share: true`), Codex's `scratch/**` and `["scratch/", "scratch"]` in one rule, Opus's `build/**` and `{*.js,x}`, and this
 round's `Xab**`, `X**/Y`, `P/*`, `{bin/,obj/}` and a dependency rule naming two folders and a file; every top's effective rule is equal
-under both readers, case and the named tops of a folder matched alone aside. A file read twice: translated once, its second read git's form; this repository's rewritten
+under both readers, case and the named tops of a folder matched alone aside *(R17: case alone, the proof generated, §38.1)*. A file read twice: translated once, its second read git's form; this repository's rewritten
 file read as form 2, its `bin/` covering every project's (Opus 3); two readers racing on the person's file: one rewrite, one first form
 set aside; a form 3 file read as unreadable, said; the paths census red, then green. **Ready to build** (TREEPOOL1x, before it, is built).
 
@@ -4950,3 +4952,119 @@ readers' census (§37.3, 3), each red first.
   3); keys in the gates' grammar (§37.2, 5); a top listed again only where a tracked path meets it (§37.3, 1); configurations read as
   text and outputs by the SDK at the door (§37.3, 2); `daoris gate run` refusing nothing (§37.3, 3). None asks the owner for more.
 - **Owed:** both makers' confirming read of §37, which holds row d and none of the rows above.
+
+## 38. Round 17: rows z and aa, each closed by a proof that lists no members *(R17)*
+
+*Written 2026-11-09 by Claude Opus 5.5, from main at `5008192916`, on both makers' reads of §37 at `cc1db1d83b`
+(`docs/2026-10-26-tree-pool-reads.md`, *Codex, round 16* and *Opus (independent), round 16*), for rows z and aa alone: row y is being
+built with its findings, and ab and ac are read answered. Nothing was built, run or measured; the code is cited as it stands; no `local/`
+folder was read.*
+
+**The reads, for these two rows.** Codex: z broadens a person's rule where it writes `P/*` as `/P/`; aa releases `TargetDir`, a
+directory, over another project's binaries. The independent Opus reader: B2, a trailing `**/` and a lone `*` with no row in §37.2's
+table; B3, `run --real` reaching the walking-up readers; and, not blocking, an empty first entry, `LiteralOf` on a `!`, a census counted
+per file, and `build` leaving the MCP host unbuilt. **Why the method changes.** Rounds 14 to 16 each closed a class by a list someone
+wrote (a table of constructs, the cases of a release, the readers of a base), and each next read found the member the list left out
+(the reads' last paragraph, round 16). So this round lists no members. Row z's translation is derived from the scan the old reader runs,
+its words sorted by a partition total by construction, and its exactness shown by a test generated over the grammar; row aa's release is
+stated by its producer and the build's own account of what it owns, and its readers are the call sites a census finds. What a later read
+can still find is a step of a proof that is wrong, which is a failing case of the test that step names, not a row to add.
+
+### 38.1 TREEPOOL1z: the first form translated from its own grammar *(R17)*
+
+**The grammar, read from the code.** A first-form path is one `RoomPaths.Unfit` passes (`RoomPaths.cs:45-53`: not empty, no `\`, no
+leading `/` nor `:`, no `..`, no empty or `.` part once a trailing `/` is trimmed); `Declared` adds `**` to one ending in `/` (`:22`);
+and `UnionJoins.Glob` reads the result left to right as six tokens, each by one branch (`UnionJoins.cs:127-170`), its expression
+anchored at both ends (`:169`) and matched against a top's whole text, a folder top ending in `/`. Nothing else is read:
+
+| Token | Read at | As | Can match nothing |
+|---|---|---|---|
+| `**/` | `:135-142` | `(?:.*/)?`, whole folders or none (W) | yes |
+| `**` not followed by `/` | `:143-146` | `.*`, across folders (D) | yes |
+| `*` | `:148-151` | `[^/]*` (S) | yes |
+| `?` | `:153-156` | `[^/]` (Q) | no |
+| `{` with a `}` after it, to the first one | `:157-162` | one of its alternatives, split at `,`, each literal (`*`, `?`, `/`, `[` and `{` among them), one of them possibly empty | expanded below |
+| any other character, a `{` with no `}` after it among them | `:163-166` | itself (a `[`, `]`, `!`, `#`, `,`, `}` or a space) | no |
+
+**Words.** A path's braces are expanded, their product in the order written, into *words*: sequences of literal characters and the
+four wildcards W, D, S and Q, a brace's characters all literal. A word holding a leading `/`, or an empty, `.` or `..` part, which only
+a brace can make (`{,/}a`, `a/{/,}b`), matches no top git lists and is dropped. A path's set is its words' union, a rule's its paths'.
+
+**What git's form can state.** An entry covers a folder top only with everything under it (§36.2, 1: the first level whose last match
+is positive covers the top and all beneath it), so every entry's cover is *closed*, holding with a folder top every top under it, and
+so is every union of entries. A first-form set is stated exactly only where it is closed; one that holds a folder top without all under
+it is stated by no entries of its rule, nor by restating after them the rule a top beneath would fall to, which is another layer's at
+another commit. Codex's `P/*` is such a set: `P/` and the files directly in it, not `P/deep/`.
+
+**The partition, total by construction.** A word's *tail* is its longest suffix of tokens that can match nothing (W, D and S); its
+*head* is the token before the tail, a literal or a Q, or there is none. Each word is exactly one of:
+
+- **F, files only**: the tail is S's alone, or empty, and the head is not a literal `/`. No string it matches ends in `/`, so it
+  matches file tops only, a closed set. Written: its patterns, then each again with a trailing `/` after a `!`, in an entry of its own
+  (§37.2, 3): `scratch`, `a*`, `X?`, `{*.js,x}`, one file, and a lone `*` (Opus B2), `/*` then `!/*/`.
+- **C, closed by its tail**: the tail holds a D, or a W with an S after it. Such a tail matches every string, so the word's set is its
+  head-part's followed by anything, a closed set. Written in the rule's first entry, with no `!`: where the head is a literal `/`, the
+  head-part without it as a folder (`X/`, `X/**`, `X/**/*`, `**/_fixtures/`, `src/**/obj/`, and a trailing `**/`, so `logs/**/` is
+  `/logs/`, Opus B2); where the head is another literal or a Q, the head-part with a `*` after it (`Xab**` is `/Xab*`); with no head,
+  `/*`, every top (`**`, `**/*`).
+- **K, kept**: every other word: a head `/` with a tail of S's alone or none (`P/*`, `*/*`, a brace alternative ending in `/`:
+  `{bin/,obj/}`, `P/{a,}`'s `P/`), or a tail of W's and S's with no S after its last W (`X**/{a,}`'s `X**/`, read `X(?:.*/)?`). Each
+  matches a folder top, and its tail does not reach under it. Most are not closed; one closed by a D before its head (`X**{/}*`) is K
+  all the same, which costs it only what K costs, below.
+
+F and C are disjoint (F's tail holds no D and no W) and K is what neither is, so every word has one class. A head-part, and an F word
+whole, is written part by part: a literal as itself, escaped with `\` where git reads it (`*`, `?`, `[` and each trailing space; a
+leading `!` or `#` cannot arise once anchored, and a `\` is refused, `RoomPaths.cs:48`); S as `*` and Q as `?`; a W opening a part as
+`**/`; a W joined to the part before it as two patterns, without it and with `*/**/` in its place (`X**/Y`: `XY`, `X*/**/Y`); a D as
+two, `*` and `*/**/*` (`X**Y`: `X*Y`, `X*/**/*Y`), so a word with n joined tokens gives 2^n patterns, all in its word's entry; then a
+leading `/`. Every row of §37.2's table is one of these cases, and the two it missed (Opus B2) fall out of them.
+
+**A kept word is read as written** (Codex's change, chosen). `RuleFileFirstForm` leaves a K word untranslated: it stands at its rule's
+place in the reading, beside the rule's translated entries, and `GitPattern` answers it by the first form's own matcher
+(`RoomPaths.Declared` over the top, as today), so every reader still reads through `GitPattern` and §37.2, 4's census stands. Its rule
+covers what it covered, at every layer and commit: Codex's `P/deep/` stays `local`. **The person's file is rewritten in form 2 only once
+no rule of it holds a K word.** While one does, the file stays as written and is read exactly, and the Files tab names each such rule,
+the tops it meets today in each repository the home knows, and what each wording git can state would do with them (`/P/`: `P/` and
+everything in it; `/P/*` with `!/P/*/`: the files directly in it, not `P/`); the person's choice of one, or their own wording, is the
+write that rewrites the file under its lock, and an edit of another rule through the tab asks for that choice in the same write, the
+tab writing form 2 only. A repository's tracked file, and any file read at an older commit, is read through the translation and never
+written, so its K words are read as written until that repository rewrites its file, which the tab says. **This repository's file
+holds no K word** (`daoris.files.json:4-17` are F and C words), so its rewrite in row z's chunk is exact. The kept reading ends with the
+first form's reader, by §36.2, 3's condition, of which the person's file rewritten is one: the Files tab's count now includes the
+person's unsettled rules, and row d's last commit deletes the reader where that count reads none.
+
+**Rejected:** `/P/` for `P/*` (§37.2, 2), the broadening Codex's sequence shows; `/P/*` with `!/P/*/`, a narrowing that hands `P/` to an
+earlier rule, no less a change; an exact expansion into several entries, which cannot exist, every entry's cover being closed; a field
+of form 2 holding a first-form path, a second way to write a path in the new form (D228), by which the person's file would never leave
+the old grammar; the whole file read as unreadable, which drops every rule of the person's for one; and a table of constructs, which
+rounds 14 to 16 wrote and each next read found short.
+
+**The two smaller points** (Opus, not blocking, 2). A rule with no C word has no first entry, its F entries standing alone, and no entry
+is ever empty, so the reader's *names no paths* (`FileRuleFile.cs:58`) meets none; this repository's two copy rules
+(`daoris.files.json:5-6`) are one F word each, so each is one entry, its pattern and its `!`. `GitPattern.LiteralOf` names nothing for a
+pattern that opens with `!`, nor for a K word, so the dependencies' paths (`StoreDependency.cs:35`) and the Files tab's
+(`FilesLooks.cs:11`) never read `!/x/` as a folder; a K word's text always holds a `*` or a `{`, which both readers pass over today.
+
+**The proof, generated.** `RuleFileFirstFormCorpusTests` (driver), red first at Opus's B2 words and Codex's `P/*`:
+
+- **The patterns**: every path of up to three tokens over the grammar, each with and without a trailing `/`, filtered by `Unfit`, from
+  the literals `a` and `/`, the wildcards `**/`, `**`, `*` and `?`, a `[`, a space, an unclosed `{`, and the brace groups `{a,}`,
+  `{a,b/}`, `{*,a}` and `{a/,b/}` (empty, holding a `/`, holding a wildcard, ending in `/`), their count asserted so a corpus that
+  shrinks fails; the words named in this section and in both reads (`logs/**/`, `*`, `P/*`, `X**/{a,}`, `X**{/}*`, Codex's `scratch/**`
+  and `["scratch/", "scratch"]`, Opus's `build/**` and `{*.js,x}`); every rule of this repository's file as it stands before the
+  rewrite; §37.2's person's fixture with this round's words added; and the shipped signatures' paths in their first form, against whose
+  translation their rewrite in git's syntax is asserted equal.
+- **The tops**: every path of one to three parts drawn from `a`, `b`, `aa`, `ab`, a fresh `q` and the names the patterns' literals spell
+  (`[`, `a `, `*a`), each as a file top and as a folder top, so a folder listed whole and the same folder listed beneath it, as a path
+  tracked inside makes git list it, both stand; git's cover reads a top by its own folders (§36.2, 1).
+- **Asserted**: (i) every word in exactly one class, by an exhaustive switch over its tail and head; (ii) for every pattern, every top's
+  cover equal under `RoomPaths.Declared` and under the translation read by `GitPattern`, `core.ignorecase` false; (iii) for every
+  ordered pair of one representative pattern of each class and ending, as one rule and as two rules of different kinds, every top's
+  effective rule equal under both, the union and the order; (iv) the same for this repository's file and the person's fixture over a
+  fixture repository's tops, no K word in the repository's, and with `core.ignorecase` true the tops that differ differing only by case;
+  (v) each named word in its named class, so a partition a code change moves is seen. §36.2, 1's oracle runs git itself over the
+  translated patterns of a sample, as a process test.
+
+**The person's real file** is not copied into the corpus, which would put a machine's own paths into the repository. It is read where it
+lives, by the Files tab once row z lands, which names its K rules and lists the tops whose rule differs by case (§36.2); the steward reads
+that on the install before the person settles any. **Ready to build** (TREEPOOL1x, before it, is built).
