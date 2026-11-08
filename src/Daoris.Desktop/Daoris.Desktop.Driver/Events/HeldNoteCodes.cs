@@ -20,6 +20,10 @@ public static class HeldNoteCodes
     // The same, on a quest its failures parked or its failed choice asked about: the supervisor made the quest's own *Try again*.
     public static readonly NoteCode SupervisorRetried = new("supervisor.retried", []);
 
+    // A limited end, the moves bound or a failed choice asked about: the supervisor let it move to another choice, or wait for the reset.
+    public static readonly NoteCode SupervisorMoved = new("supervisor.moved", []);
+    public static readonly NoteCode SupervisorWaited = new("supervisor.waited", []);
+
     // ——— A rule of the person's acted on the line: the count it reads (`counted`, a name) and what it stood at, the rule's bound, its place
     // and its act. Its own value names, since `count` and `at` are a number and a moment on every other note.
     public static readonly NoteCode SupervisorRule = new("supervisor.rule", ["counted", "n", "bound", "place", "do"]);

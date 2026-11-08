@@ -38,14 +38,17 @@ public sealed class ReferredPoints(string home, ISessionEvents events, GoOnMarks
         new(record.Repository ?? "", Open(record.Session, plan), counts)
         {
             Passed = [.. new SupervisorRuleActs(home).Of(record.Session).Where(act => act.Rule.Do == SupervisorRules.Refer).Select(act => act.Id)],
+            OwnerHeld = OwnerHolds.Holds(record, plan),
         };
 
     /// <summary>
-    /// Why <paramref name="point"/> does not take the supervisor's go-on: <c>answered</c> where it is not open (the person or another
-    /// door released it, or a later hold took its place), <c>rule-holds</c> where the line's rule does not refer it; null where it takes it.
+    /// Why <paramref name="point"/> does not take the supervisor's act: <c>owner-held</c> where the person stopped the line or paused its
+    /// quest, <c>answered</c> where it is not open (the person or another door released it, or a later hold took its place),
+    /// <c>rule-holds</c> where the line's rule does not refer it; null where it takes it.
     /// </summary>
     public string? Why(PriorSession? record, string session, string point, IReadOnlyList<Consideration>? plan = null)
     {
+        if (OwnerHolds.Holds(record, plan)) return SupervisorWhy.OwnerHeld;
         if (Open(session, plan) is not { } open || open.Id != point) return SupervisorWhy.Answered;
         var effective = RuledLine.Of(home, record).In(rules ?? SupervisorRuleBook.Read(home));
         var refers = open.Rule.Count == SupervisorRules.AnswersAlone
@@ -64,31 +67,42 @@ public sealed class ReferredPoints(string home, ISessionEvents events, GoOnMarks
     }
 
     /// <summary>
-    /// The quest's door as the supervisor goes through it: its own <i>Try again</i> (<paramref name="retry"/>, true where it
-    /// went through), and where it did, the note on the line that says who released it.
+    /// The quest's door as the supervisor goes through it for <paramref name="act"/>: its own <i>Try again</i> for a go-on, its one approval
+    /// for a move, its wait for the choice's reset (<paramref name="release"/>, true where it went through), and where it did, the note on
+    /// the line that says who released it.
     /// </summary>
-    private bool TryAgain(string session, Func<string, bool>? retry, IReadOnlyList<Consideration>? plan)
+    private bool Release(string session, string act, Func<string, string, bool>? release, IReadOnlyList<Consideration>? plan)
     {
-        if (retry is null || Open(session, plan) is not { } open || !retry(open.Line)) return false;
-        events.Keep(session, AnswersAloneNotes.Retried(), say: null);
+        if (release is null || Open(session, plan) is not { } open || !release(open.Line, act)) return false;
+        events.Keep(session, act switch
+        {
+            SupervisorKinds.Move => AnswersAloneNotes.Moved(),
+            SupervisorLimitActs.Wait => AnswersAloneNotes.Waited(),
+            _ => AnswersAloneNotes.Retried(),
+        }, say: null);
         return true;
     }
 
     /// <summary>
     /// The release side, each record read by <paramref name="recordOf"/> and its run by <paramref name="running"/>. Given the planner's
-    /// <paramref name="plan"/> and the quest's own <paramref name="retry"/> (its <i>Try again</i>, true where it went through), a quest's point is
-    /// released through that door; without them only answers alone's is.
+    /// <paramref name="plan"/> and the quest's own <paramref name="release"/> (its door for a quest and an act, true where it went through),
+    /// a quest's point is released through that door; without them only answers alone's is.
     /// </summary>
     public CourseLine Line(
-        Func<string, PriorSession?> recordOf, Func<string, bool> running, IReadOnlyList<Consideration>? plan = null, Func<string, bool>? retry = null) =>
+        Func<string, PriorSession?> recordOf, Func<string, bool> running, IReadOnlyList<Consideration>? plan = null,
+        Func<string, string, bool>? release = null) =>
         new(
             (session, point) => Why(recordOf(session), session, point, plan), running,
-            session => marks.Read(session) is { Why: GoOnMarks.AnswersAlone } ? GoOn(session) : TryAgain(session, retry, plan));
+            (session, act) => marks.Read(session) is { Why: GoOnMarks.AnswersAlone } ? GoOn(session) : Release(session, act, release, plan));
 
-    // The plan holds the quest the act is on, on the session it acted on: parked by its failed sessions, or asking at that part's end.
+    // The plan holds the quest the act is on, on the session it acted on: parked by its failed sessions, held by the moves bound, or asking
+    // at that part's end.
     private static bool Holds(IReadOnlyList<Consideration> plan, RuleActed act, string session) =>
         plan.Any(held => string.Equals(held.Quest.Id, act.Line, StringComparison.OrdinalIgnoreCase)
-            && (act.Rule.Count == SupervisorRules.Failures
-                ? held is { Verdict: StartVerdict.Exhausted } && held.LastSession == session
-                : held is { Verdict: StartVerdict.PolicyHeld, Said.Code: SittingFact.PolicyAsk } && held.HeldBy?.Session == session));
+            && act.Rule.Count switch
+            {
+                SupervisorRules.Failures => held is { Verdict: StartVerdict.Exhausted } && held.LastSession == session,
+                SupervisorRules.Moves => held is { Verdict: StartVerdict.PolicyHeld, Said.Code: SittingFact.MovesBound } && held.HeldBy?.Session == session,
+                _ => held is { Verdict: StartVerdict.PolicyHeld, Said.Code: SittingFact.PolicyAsk } && held.HeldBy?.Session == session,
+            });
 }

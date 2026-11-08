@@ -385,6 +385,8 @@ export const NOTE_CODES: Readonly<Record<string, NoteCode>> = {
   'answers.supervised': { values: [] },
   // The same on a quest its failures parked or its failed choice asked about: the supervisor made the quest's own *Try again*.
   'supervisor.retried': { values: [] },
+  'supervisor.moved': { values: [] },
+  'supervisor.waited': { values: [] },
   // A rule of the person's acted on the line: the count and what it stood at, the rule's number, its place and its act.
   'supervisor.rule': { values: ['counted', 'n', 'bound', 'place', 'do'] },
   'supervisor.unreferred': { values: [] },

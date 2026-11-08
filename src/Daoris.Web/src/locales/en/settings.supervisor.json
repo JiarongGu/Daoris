@@ -31,6 +31,7 @@
   "settings.supervisor.said": "at {{at}}: {{act}}",
   "settings.supervisor.saidWait": "at {{at}}: {{act}} up to {{minutes}} minutes",
   "settings.supervisor.upTo": "Waits for at most",
+  "settings.supervisor.upToReferred": "The supervisor may wait for the reset at most",
   "settings.supervisor.upToOf": "Rule {{n}}: minutes it waits",
   "settings.supervisor.minutes": "minutes",
   "settings.supervisor.replaces": "Replaces {{place}}'s: {{rules}}",

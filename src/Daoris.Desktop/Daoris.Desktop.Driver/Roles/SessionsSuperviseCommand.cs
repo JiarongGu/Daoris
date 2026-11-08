@@ -213,7 +213,7 @@ public static class SessionsSuperviseCommand
         foreach (var each in waiting)
         {
             if (SubjectOf(each) is not { } subject) continue;
-            var said = subject.Kind == SupervisorKinds.Course
+            var said = subject.Kind != SupervisorKinds.Question
                 ? $"rule refers point {subject.Id}: {Text(each, "count")} at {Text(each, "n")}"
                 : $"question {subject.Id}  asked {Text(each, "asked")}";
             await output.WriteLineAsync(
@@ -245,7 +245,7 @@ public static class SessionsSuperviseCommand
             return 1;
         }
 
-        if (subject.Kind == SupervisorKinds.Course)
+        if (subject.Kind != SupervisorKinds.Question)
         {
             return await SupervisePointPrint.PrintAsync(world, id, SupervisePointPrint.Waiting(listed, subject), output, ct).ConfigureAwait(false);
         }

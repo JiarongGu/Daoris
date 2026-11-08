@@ -11,7 +11,7 @@ namespace Daoris.Driver;
 /// <param name="Window">The count's window.</param>
 /// <param name="At">The threshold.</param>
 /// <param name="Do">The action.</param>
-/// <param name="UpTo">For <c>wait</c>, the most minutes it waits; none for any other action.</param>
+/// <param name="UpTo">For <c>wait</c>, the most minutes it waits; for a <c>refer</c> on limits, the most a supervisor's wait holds the line; none for any other.</param>
 /// <param name="Place"><c>machine</c>, <c>workspace:id</c>, <c>repository:id</c> or <c>line:key</c>.</param>
 /// <param name="Roles">The working roles whose lines it watches; none is every role.</param>
 public sealed record SupervisorRule(
@@ -34,10 +34,12 @@ public sealed record RuleRefusal(string Code, string Message, string? Place = nu
 /// <param name="Roles">The catalogue's working role ids.</param>
 /// <param name="Known">Whether a place is one Daoris drives (a line on this machine); none accepts every well-formed place.</param>
 /// <param name="Wider">The places a place's lines also read, narrow to wide and before the machine; none names only the place itself.</param>
+/// <param name="Driven">The working roles that take driven work alone (<see cref="RoleWork.Driven"/>), whose lines are never a conversation's.</param>
 public sealed record SupervisorRuleWorld(
     IReadOnlyList<string> Roles,
     Func<string, bool>? Known = null,
-    Func<string, IReadOnlyList<string>>? Wider = null);
+    Func<string, IReadOnlyList<string>>? Wider = null,
+    IReadOnlyList<string>? Driven = null);
 
 /// <summary>
 /// The rule supervisor's pure half: the judge of a write, the effective rules of a line and the act
@@ -81,10 +83,10 @@ public static class SupervisorRules
     public static IReadOnlyList<string> Codes { get; } =
         ["count", "window", "at", "do", "upTo", "place", "roles", "ladder", "moves-unbounded", "tries-unbounded", "revision"];
 
-    // The actions each count allows; `off` is every ruled count's but tries'. `refer` is offered where the agent supervisor's course act
-    // can release the hold between sessions through the count's own door: answers alone's, and the two counts only a driven quest has,
-    // whose door is the quest's *Try again*. Tries, limits and moves are a conversation's too, held for its person's word, which no
-    // course act speaks; a quiet end has no hold.
+    // The actions each count allows; `off` is every ruled count's but tries'. `refer` is offered where a supervisor's act can release the
+    // hold between sessions through the count's own door: answers alone's mark, and on a driven quest its *Try again* or its one approval.
+    // Limits and moves are a conversation's too, whose hold is released by its person's word, which no supervisor speaks, so a refer on
+    // them names driven roles alone (`DrivenRefers`). Tries hold no line a supervisor may release; a quiet end has no hold.
     private static readonly IReadOnlyDictionary<string, string[]> Allowed = new Dictionary<string, string[]>(StringComparer.Ordinal)
     {
         [AnswersAlone] = [Hold, Refer, Off],
@@ -92,9 +94,12 @@ public static class SupervisorRules
         [FailuresOnChoice] = [Ask, Next, Weighted, Refer, Off],
         [Tries] = [Hold, Ask, Next, Weighted],
         [Quiet] = [Next, Weighted, Off],
-        [Limits] = [Ask, Wait, Next, Weighted, Off],
-        [Moves] = [Ask, Off],
+        [Limits] = [Ask, Wait, Next, Weighted, Refer, Off],
+        [Moves] = [Ask, Refer, Off],
     };
+
+    /// <summary>The counts a conversation's line shares, whose <c>refer</c> names driven roles alone.</summary>
+    public static IReadOnlyList<string> DrivenRefers { get; } = [Limits, Moves];
 
     /// <summary>
     /// The places a line's rules come from, narrow to wide, ending at the machine: its repository's, its workspace's. A line has no place of its
@@ -217,17 +222,30 @@ public static class SupervisorRules
         }
 
         if (!Allowed[rule.Count].Contains(rule.Do)) return Refuse("do", $"{rule.Count} does not allow `{rule.Do}`.");
-        if (rule.Do == Wait ? rule.UpTo is not (>= 5 and <= 600) : rule.UpTo is not null)
+        if (rule.Do == Refer && DrivenRefers.Contains(rule.Count)
+            && (rule.Roles is null || rule.Roles.Any(role => world.Driven?.Contains(role) != true)))
         {
-            return Refuse("upTo", rule.Do == Wait ? "wait takes 5 to 600 minutes." : "only wait takes upTo.");
+            return Refuse("do", $"a refer on {rule.Count} names driven roles alone: a conversation's line waits for its person's word, which no supervisor speaks.");
+        }
+
+        if (TakesMinutes(rule) ? rule.UpTo is not (>= 5 and <= 600) : rule.UpTo is not null)
+        {
+            return Refuse("upTo", TakesMinutes(rule) ? $"{rule.Do} takes 5 to 600 minutes." : "only wait, and a refer on limits, take upTo.");
         }
 
         var (low, high) = Bounds(rule.Count);
         return rule.At < low || rule.At > high ? Refuse("at", $"{rule.Count} takes {low} to {high}.") : null;
     }
 
-    /// <summary>The counts only a driven quest has and whose <c>refer</c> its <i>Try again</i> releases: the failed sessions that park it, and the failures on one choice that ask.</summary>
-    public static IReadOnlyList<string> QuestCounts { get; } = [Failures, FailuresOnChoice];
+    /// <summary>The counts whose <c>refer</c> holds a driven quest between sessions, released through its own door after the plan.</summary>
+    public static IReadOnlyList<string> QuestCounts { get; } = [Failures, FailuresOnChoice, Limits, Moves];
+
+    /// <summary>The counts a <c>limit</c> decision takes: a move to another choice, or a wait for the choice's reset; the rest are the <c>course</c> kind's.</summary>
+    public static IReadOnlyList<string> LimitCounts { get; } = [FailuresOnChoice, Limits, Moves];
+
+    public static string KindOf(string count) => LimitCounts.Contains(count) ? SupervisorKinds.Limit : SupervisorKinds.Course;
+
+    private static bool TakesMinutes(SupervisorRule rule) => rule.Do == Wait || (rule.Do == Refer && rule.Count == Limits);
 
     /// <summary>The actions <paramref name="count"/> allows.</summary>
     public static IReadOnlyList<string> Actions(string count) => Allowed.TryGetValue(count, out var actions) ? actions : [];

@@ -75,11 +75,11 @@ public sealed record SupervisorRuleBook(IReadOnlyList<SupervisorRuleSet> Sets)
     {
         var moves = new Dictionary<string, StaffMove>(StringComparer.Ordinal);
         if (First(effective, SupervisorRules.Tries) is { Do: not SupervisorRules.Hold } tries) moves[StaffConditions.Transient] = new(tries.Do, tries.At);
-        // A refer asks as ask does: the quest waits at the part's end, for the person's yes or the supervisor's go-on, both one approval.
-        if (First(effective, SupervisorRules.FailuresOnChoice) is { } failed) moves[StaffConditions.Failed] = new(failed.Do == SupervisorRules.Refer ? StaffActions.Ask : failed.Do, failed.At);
+        // A refer asks as ask does: the quest waits at the part's end, for the person's yes or the supervisor's move, both one approval.
+        if (First(effective, SupervisorRules.FailuresOnChoice) is { } failed) moves[StaffConditions.Failed] = new(Asking(failed.Do), failed.At);
         if (First(effective, SupervisorRules.Quiet) is { } quiet) moves[StaffConditions.Quiet] = new(quiet.Do);
-        if (First(effective, SupervisorRules.Limits) is { } limit) moves[StaffConditions.Limit] = new(limit.Do, UpTo: limit.UpTo);
-        int? most = First(effective, SupervisorRules.Moves) is { Do: SupervisorRules.Ask } bound ? bound.At : null;
+        if (First(effective, SupervisorRules.Limits) is { } limit) moves[StaffConditions.Limit] = new(Asking(limit.Do), UpTo: limit.UpTo);
+        int? most = First(effective, SupervisorRules.Moves) is { Do: SupervisorRules.Ask or SupervisorRules.Refer } bound ? bound.At : null;
         if (applied is null && moves.Count == 0) return null;
         return applied is null
             ? new StaffPolicy(StaffRules.Order, [], moves, most)
@@ -134,6 +134,8 @@ public sealed record SupervisorRuleBook(IReadOnlyList<SupervisorRuleSet> Sets)
     // The rule a count's executor acts on: the lowest `at` of its ladder, where a later step can only be reached past it.
     private static SupervisorRule? First(IReadOnlyDictionary<string, IReadOnlyList<SupervisorRule>> effective, string count) =>
         effective.TryGetValue(count, out var rules) ? rules.Where(rule => rule.Do != SupervisorRules.Off).MinBy(rule => rule.At) : null;
+
+    private static string Asking(string does) => does == SupervisorRules.Refer ? StaffActions.Ask : does;
 
     private static int? Lowest(IReadOnlyDictionary<string, IReadOnlyList<SupervisorRule>> effective, string count, params string[] does) =>
         effective.TryGetValue(count, out var rules) && rules.Where(rule => does.Contains(rule.Do)).Select(rule => (int?)rule.At).Min() is { } at ? at : null;

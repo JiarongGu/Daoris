@@ -40,6 +40,9 @@ public sealed class StaffMoves(string home, Func<StoreSettled>? settled = null, 
     /// <summary>A yes closed at the start it released, which moved nothing.</summary>
     public const string Spent = "spent";
 
+    /// <summary>A supervisor's wait on a limited end: the part it names waits for its choice's reset, to its rule's bound, and moves nothing.</summary>
+    public const string Waited = "waited";
+
     /// <summary>How long a move counts against the bound.</summary>
     public static readonly TimeSpan Window = TimeSpan.FromHours(24);
 
@@ -117,6 +120,20 @@ public sealed class StaffMoves(string home, Func<StoreSettled>? settled = null, 
 
     /// <summary>The person's yes to <paramref name="line"/>'s policy ask or bound: one move released. False where the store would not take it.</summary>
     public bool Approve(string line, string role) => Write(line, role, Approval, null, null, null, null, null);
+
+    /// <summary>A supervisor's wait on the part a limit cut the line off at, a later limit a new ask; false where the store would not take it.</summary>
+    public bool Wait(string line, string role, string session) => Write(line, role, Waited, session, null, null, StaffConditions.Limit, null);
+
+    /// <summary>Whether a supervisor's wait stands on <paramref name="session"/>, <paramref name="line"/>'s part a limit cut off; false before the table.</summary>
+    public bool WaitsOn(string line, string session)
+    {
+        using var store = DesktopStoreReader.Open(Location);
+        if (store is null || store.Version < Step) return false;
+        return store.Query(
+            "SELECT id FROM role_moves WHERE line = $line AND kind = $kind AND session = $session AND at >= $since",
+            row => row.GetInt64(0), ("$line", line), ("$kind", Waited), ("$session", session),
+            ("$since", StaffJson.Moment(Clock.GetUtcNow() - Window))).Count > 0;
+    }
 
     /// <summary>
     /// The move each line's last part ended on, which the planner carries the line on by: a move decided at a part's end names that part's

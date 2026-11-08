@@ -108,7 +108,7 @@ internal sealed class SessionsWaitDesk(DriverContext context)
     internal static object SupervisorCourseRow(SupervisorCourseView view) => new
     {
         view.Id,
-        Kind = SupervisorKinds.Course,
+        view.Kind,
         view.Point,
         view.Count,
         view.N,

@@ -12,19 +12,33 @@ public static class SupervisorCourseActs
 
     /// <summary>Every course act; none ends, stops or moves a session.</summary>
     public static IReadOnlyList<string> All { get; } = [GoOn, Hold];
+
+    public static IReadOnlyList<string> Of(string kind) => kind == SupervisorKinds.Limit ? SupervisorLimitActs.All : All;
 }
 
-/// <summary>What a holder decides on a referred point: a decide's go-on, or a leave as a <c>hold</c> with its bound.</summary>
+/// <summary>A limit decision's acts: one move to another choice, a wait for the choice's reset, or its leave; neither moves a session mid-turn.</summary>
+public static class SupervisorLimitActs
+{
+    public const string Move = SupervisorKinds.Move;
+    public const string Wait = "wait";
+
+    public static IReadOnlyList<string> All { get; } = [Move, Wait, SupervisorCourseActs.Hold];
+}
+
+/// <summary>What a holder decides on a referred point: a decide's go-on, move or wait, or a leave as a <c>hold</c> with its bound.</summary>
 public sealed record SupervisorCourse(
     string Session, string Point, string Generation, string Do, IReadOnlyList<SupervisorReason> Reasons, SupervisorHolder Holder, string? Bound = null)
 {
-    public SupervisorSubject Subject => SupervisorSubject.Point(Session, Point);
+    public string Kind { get; init; } = SupervisorKinds.Course;
+
+    public SupervisorSubject Subject => SupervisorSubject.Point(Session, Point, Kind);
 }
 
 /// <summary>A course decision as memory keeps it: one per referred point, held for the window, then gone on or closed.</summary>
 internal sealed class SupervisorCourseDecision
 {
     public required string Id { get; init; }
+    public required string Kind { get; init; }
     public required string Session { get; init; }
     public required string Repository { get; init; }
     public required string Point { get; init; }
@@ -65,7 +79,7 @@ internal sealed class SupervisorCourses(SupervisorBook book, IDecisionAdmission 
             refused ??= book.ClosedWhy(course.Subject);
             // One point is asked once: a question decision of the holder still moving on the line answers for it first.
             if (refused is null && book.Live.Values.Any(each => each.Session == course.Session && !SupervisorStates.Final(each.State))) refused = SupervisorWhy.Answered;
-            var admitted = admission.Admit(SupervisorKinds.Course, new RolePlace(Repository: point.Repository), course.Do == SupervisorCourseActs.GoOn ? SupervisorKinds.GoOn : null);
+            var admitted = admission.Admit(course.Kind, new RolePlace(Repository: point.Repository), course.Do == SupervisorCourseActs.Hold ? null : course.Do);
             refused ??= admitted.Why ?? (admitted.Generation != course.Generation ? SupervisorWhy.RoleChanged : null);
             if (refused is not null)
             {
@@ -78,14 +92,14 @@ internal sealed class SupervisorCourses(SupervisorBook book, IDecisionAdmission 
             var goesOnAt = left ? now : now + QuestionSupervisorDecisions.WindowOf(admitted);
             var decision = new SupervisorCourseDecision
             {
-                Id = id, Session = course.Session, Repository = point.Repository, Point = course.Point, Count = point.Open!.Rule.Count, Do = course.Do, Generation = course.Generation,
+                Id = id, Kind = course.Kind, Session = course.Session, Repository = point.Repository, Point = course.Point, Count = point.Open!.Rule.Count, Do = course.Do, Generation = course.Generation,
                 GoesOnAt = goesOnAt, State = left ? SupervisorState.Left : SupervisorState.Held,
             };
             Directory.CreateDirectory(book.Files.FolderOf(course.Session));
             AtomicFile.WriteText(book.Files.FileOf(course.Session, id), Json(id, course, point, now, goesOnAt));
             Append(decision, decision.State, now, why: null);
             book.Courses[id] = decision;
-            log?.Info(left ? "supervisor.left" : "supervisor.course", ("session", course.Session), ("point", course.Point), ("do", course.Do));
+            log?.Info(left ? "supervisor.left" : "supervisor.course", ("session", course.Session), ("point", course.Point), ("kind", course.Kind), ("do", course.Do));
             return Task.FromResult(new SupervisorKept(true, id, left ? null : goesOnAt, null));
         }, ct);
 
@@ -104,10 +118,10 @@ internal sealed class SupervisorCourses(SupervisorBook book, IDecisionAdmission 
             var reached = await book.UnderAsync(due.Session, () =>
             {
                 if (due.State != SupervisorState.Held) return Task.FromResult<SupervisorState?>(null);
-                var admitted = admission.Admit(SupervisorKinds.Course, new RolePlace(Repository: due.Repository), SupervisorKinds.GoOn);
+                var admitted = admission.Admit(due.Kind, new RolePlace(Repository: due.Repository), due.Do);
                 var why = admitted.Why is null && admitted.Generation == due.Generation ? line.Why(due.Session, due.Point) : SupervisorWhy.RoleChanged;
                 if (why is null && line.Running(due.Session)) return Task.FromResult<SupervisorState?>(null);
-                if (why is null && !line.GoOn(due.Session)) why = SupervisorWhy.Answered;
+                if (why is null && !line.GoOn(due.Session, due.Do)) why = SupervisorWhy.Answered;
                 var to = why is null ? SupervisorState.WentOn : SupervisorState.Stale;
                 Append(due, to, now, why);
                 if (why is null) log?.Info("supervisor.went-on", ("session", due.Session), ("point", due.Point));
@@ -130,21 +144,24 @@ internal sealed class SupervisorCourses(SupervisorBook book, IDecisionAdmission 
         }, ct);
 
     /// <summary>Whether <paramref name="point"/> waits for the holder: no course decision on it, and no question decision moving on the line.</summary>
-    public bool Waits(string session, string point) =>
+    public bool Waits(string session, string point, string kind = SupervisorKinds.Course) =>
         !book.Courses.Values.Any(each => each.Session == session && each.Point == point)
-        && !book.Closed.ContainsKey(SupervisorSubject.Point(session, point))
+        && !book.Closed.ContainsKey(SupervisorSubject.Point(session, point, kind))
         && !book.Live.Values.Any(each => each.Session == session && !SupervisorStates.Final(each.State));
 
     /// <summary>The soonest moment a held go-on is due, across every session.</summary>
     public DateTimeOffset? NextGoesOn() =>
         book.Courses.Values.Where(each => each.State == SupervisorState.Held).Select(each => (DateTimeOffset?)each.GoesOnAt).Min();
 
-    // The act, its reasons as an answer's, and the point the one open: one the line has passed is answered, one it never reached not referred.
+    // A point the line has passed is answered, one it never reached or of another kind not referred, and a wait only a limited end's.
     private static string? Judge(SupervisorCourse course, ReferredPoint point) =>
-        SupervisorKeeping.Refused(course.Reasons, SupervisorCourseActs.All.Contains(course.Do, StringComparer.Ordinal), point.Counts)
-        ?? (point.Open is { } open && open.Id == course.Point ? null
-            : point.Passed.Contains(course.Point, StringComparer.Ordinal) ? SupervisorWhy.Answered
-            : SupervisorWhy.NotReferred);
+        SupervisorKeeping.Refused(course.Reasons, SupervisorCourseActs.Of(course.Kind).Contains(course.Do, StringComparer.Ordinal), point.Counts)
+        ?? (point.OwnerHeld && course.Do != SupervisorCourseActs.Hold ? SupervisorWhy.OwnerHeld : null)
+        ?? (point.Open is not { } open || open.Id != course.Point
+            ? point.Passed.Contains(course.Point, StringComparer.Ordinal) ? SupervisorWhy.Answered : SupervisorWhy.NotReferred
+            : SupervisorRules.KindOf(open.Rule.Count) != course.Kind ? SupervisorWhy.NotReferred
+            : course.Do == SupervisorLimitActs.Wait && open.Rule is not { Count: SupervisorRules.Limits, UpTo: not null } ? SupervisorWhy.NoWait
+            : null);
 
     private void Append(SupervisorCourseDecision decision, SupervisorState to, DateTimeOffset at, string? why)
     {
@@ -156,7 +173,7 @@ internal sealed class SupervisorCourses(SupervisorBook book, IDecisionAdmission 
     private static string Json(string id, SupervisorCourse course, ReferredPoint point, DateTimeOffset now, DateTimeOffset goesOnAt) => new JsonObject
     {
         ["id"] = id,
-        ["kind"] = SupervisorKinds.Course,
+        ["kind"] = course.Kind,
         ["subject"] = new JsonObject { ["session"] = course.Session, ["point"] = course.Point },
         ["session"] = course.Session,
         ["holder"] = new JsonObject { ["kind"] = course.Holder.Kind, ["parent"] = course.Holder.Parent },
