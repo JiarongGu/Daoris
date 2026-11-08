@@ -68,6 +68,8 @@ internal sealed class PoolSeams
     /// <summary>Called after the judgement and before the switch, with the slot's folder; a test plants a write there.</summary>
     internal Func<string, Task>? BeforeSwitch { get; init; }
 
+    internal Func<string, string, Task>? Renaming { get; init; }
+
     internal async Task ReachedAsync(string phase, string folder)
     {
         if (Reached is { } reached) await reached(phase, folder).ConfigureAwait(false);

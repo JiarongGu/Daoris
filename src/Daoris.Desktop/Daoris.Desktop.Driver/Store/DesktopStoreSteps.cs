@@ -720,5 +720,11 @@ internal static class DesktopStoreSteps
             ALTER TABLE deliveries ADD COLUMN generation INTEGER NOT NULL DEFAULT 1;
             CREATE UNIQUE INDEX deliveries_generation ON deliveries (unit, tip, method, target, generation);
             """)),
+
+        new(TreePool.ExpectSince, PolicyWriter, write => write.Execute(
+            """
+            ALTER TABLE tree_claims ADD COLUMN expect_branch TEXT NOT NULL DEFAULT '';
+            ALTER TABLE tree_claims ADD COLUMN expect_line TEXT NOT NULL DEFAULT '';
+            """)),
     ];
 }
