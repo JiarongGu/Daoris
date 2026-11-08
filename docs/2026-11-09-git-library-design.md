@@ -6,8 +6,9 @@ every act that needs it. D147 §4.3, the built-in-git design §4.3 and the git-a
 cost about 100 ms; §3 answers each reason. Measured on 2026-11-09 with `tools/git-library-bench` (§1), on this machine as the agents
 load it (600 to 650 processes, 22 cores), from the code at `1cd07efab3`.
 
-**In brief.** The library wins wherever the answer is small and loses where git's own work is large. A start costs 0.6 to 0.75 s here,
-1.7 s with every core busy and 13 s at the median when twenty start under that load, against a few milliseconds of git's work, and the
+**In brief.** The library wins wherever the answer is small and loses where git's own work is large. A start costs 0.2 to 0.6 s here,
+up to 1.7 s with every core busy and 6.6 to 13 s at the median when twenty start under that load, against a few milliseconds of git's
+work, and the
 library answers a ref, a merge-base, the counts or two trees' file names in under a millisecond to 55 ms. But on vscode (21,000 files,
 170,000 commits, 6,358 refs) its walk of the commits no branch holds takes 20.4 s against git's 1.1 s, its patches of twenty commits
 3.7 s against 1.4 s, and its status of a deep tree fails on a long path; there a whole Review is 25 s in process against 19.6 s through
@@ -26,20 +27,21 @@ changed files, one deleted and ten untracked. How to run it is in the area, *Git
 
 ### 1.1 A start
 
-Twenty `git rev-parse HEAD` in this checkout; git's own time is its trace2 `exit` event's `t_abs`, which counts from git's `main`.
+Twenty `git rev-parse HEAD` in this checkout, run twice an hour apart as the agents' load moved (first / second); git's own time is its
+trace2 `exit` event's `t_abs`, which counts from git's `main`. Medians, the largest start after it.
 
-| Starts | All twenty | A start, median (max) | `Process.Start` | git's own | Outside git |
+| Starts | All twenty | A start | `Process.Start` | git's own | Outside git |
 |---|---|---|---|---|---|
-| `git --version`, one at a time | 9.1 s | 442 ms (678) | 68 ms | 172 ms | 272 ms |
-| one at a time | 14.2 to 20.1 s | 585 to 750 ms (2.7 s) | 229 to 272 ms | 141 ms | 461 ms |
-| twenty at once | 2.7 s | 1.5 s (2.5 s) | 1.1 s | 162 ms | 1.4 s |
-| one at a time, every core busy | 39.1 s | 1.7 s (3.3 s) | 483 ms | 191 ms | 1.5 s |
-| twenty at once, every core busy | 21.9 s | 12.9 s (21.2 s) | 9.8 s | 179 ms | 12.7 s |
+| `git --version`, one at a time | 9.1 / 9.3 s | 442 / 401 ms | 68 / 59 ms | 172 / 146 ms | 272 / 293 ms |
+| one at a time | 14.2 / 5.0 s | 585 / 228 ms (2.7 s) | 229 / 20 ms | 141 / 99 ms | 461 / 107 ms |
+| twenty at once | 2.7 / 1.7 s | 1.5 / 1.4 s | 1.1 / 1.2 s | 162 / 131 ms | 1.4 / 1.3 s |
+| one at a time, every core busy | 39.1 / 9.9 s | 1.7 s / 461 ms | 483 / 124 ms | 191 / 118 ms | 1.5 s / 344 ms |
+| twenty at once, every core busy | 21.9 / 32.5 s | 12.9 / 6.6 s (32.3 s) | 9.8 / 4.4 s | 179 / 156 ms | 12.7 / 6.4 s |
 
-git's own time is mostly not the command: its performance trace puts `rev-parse`'s work at about 4 ms, after about 24 ms of setup and
-30 to 35 ms in which Git for Windows' trace walks the process list (`windows/ancestry`, paid only while tracing). Under load the start
-is the cost, and most of it is `Process.Start` itself, waiting on process creation: the install's `createdMs` of 5.5 s a start is the
-same thing.
+git's own time is mostly not the command: the trace splits it into 41 to 56 ms of setup before its `start` event, 52 to 92 ms in which
+Git for Windows' trace walks the process list (`windows/ancestry`, paid only while tracing), and 1.6 to 8 ms of `rev-parse`'s work.
+Under load the start is the cost, and most of it is `Process.Start` itself, waiting on process creation: the install's `createdMs` of
+5.5 s a start is the same thing.
 
 ### 1.2 Review and the look, both ways
 
@@ -113,7 +115,8 @@ LibGit2Sharp 0.32.0 carries libgit2 1.8.6; nothing newer is packaged.
 The install ships `win-x64` only: `git2-5853918.dll` is 2.0 MB and `LibGit2Sharp.dll` 0.5 MB (the other runtimes are 1.2 to 2.7 MB each).
 The binaries carry threads, HTTPS and SSH. A repository opens in 5 to 6 ms warm (27 to 32 ms the first time) and holds 3.1 MB of
 private memory after a status on this repository, 12 MB on vscode. libgit2 shares no object between threads, so a repository is one
-thread's at a time; four Reviews on four threads, a repository each, took 0.93 s against 1.13 s for one, eight 1.4 s.
+thread's at a time. Reviews on threads of their own, a repository each: on this repository one 1.13 s, four 0.93 s, eight 1.4 s; on
+vscode one 30.4 s, four 35.8 s, eight 47.6 s, the walk's CPU shared.
 
 ## 2. The design
 
@@ -192,8 +195,8 @@ starts as they are. The count tests hold both columns as budgets.
 
 ## 3. D147 §4.3's reasons, answered
 
-1. **"The start it saves is not the cost."** For a small answer it is: 0.6 to 0.75 s a start here, 1.7 s with cores busy, 13 s median
-   twenty at once under that load, against a command's few milliseconds; the install's log says 5.5 s a start. Parallelism does not hide
+1. **"The start it saves is not the cost."** For a small answer it is: 0.2 to 0.6 s a start here, up to 1.7 s with cores busy, 6.6 to
+   13 s median twenty at once under that load, against a command's few milliseconds; the install's log says 5.5 s a start. Parallelism does not hide
    it, as the creation serialises. For a walk or a patch git's work is the cost, and it stays git's.
 2. **"Credentials and SSH are git's."** Unchanged: no remote act moves, and the reader opens no transport (the binaries now carry SSH,
    which Daoris does not use).

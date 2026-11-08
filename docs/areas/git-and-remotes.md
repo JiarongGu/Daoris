@@ -295,9 +295,9 @@ floor (the git-app design §4.3), for at most 9 starts of a merge press's 39, an
 A start's cost, and LibGit2Sharp beside it, measured on 2026-11-09 by `tools/git-library-bench`, which no product project references:
 `dotnet build tools/git-library-bench -c Release`, then from the root `tools/git-library-bench/bin/Release/net10.0/git-library-bench.exe`
 with `starts`, `setup --name <n> --source <repo>`, `reads --name <n>`, `threads --name <n>`, `parity` or `opens`, its fixtures under
-`_fixtures/gitlib`. On this machine under its agents' load a `rev-parse HEAD` start costs 0.6 to 0.75 s at the median one at a time,
-1.7 s with every core busy and 12.9 s when twenty start at once under that load, 9.8 s of it in `Process.Start`, while the command's own
-work is about 4 ms. Review of a session tree on a clone of this repository is 25 starts and 11.2 s through git, 0.8 s in process with
+`_fixtures/gitlib`. On this machine under its agents' load a `rev-parse HEAD` start costs 0.2 to 0.6 s at the median one at a time
+(two runs), up to 1.7 s with every core busy and 6.6 to 12.9 s when twenty start at once under that load, most of it in `Process.Start`,
+while the command's own work is 2 to 8 ms. Review of a session tree on a clone of this repository is 25 starts and 11.2 s through git, 0.8 s in process with
 the repository held; the look over six trees 23 starts and 9.7 s against 0.55 s. On vscode (6,358 refs, 170,823 commits) the library
 loses: Review 25.1 s against 19.6 s, its walk of the commits no branch holds 20.4 s against 1.1 s and twenty commits' patches 3.7 s
 against 1.4 s, while a ref, a merge-base, the counts or two trees' file names stay under 55 ms against a second a start. Its answers
