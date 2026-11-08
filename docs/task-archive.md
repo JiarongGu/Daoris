@@ -23541,3 +23541,17 @@ The 26 pointer lines of the parked file's head (the owner's reports and features
 - [x] **ROLESREVIEW1 — defects of the roles-and-supervision code review, each a row** (driver, modules): 2026-11-08 a to h each fixed with a regression test failing first: an agent supervisor takes landing, allow and files subjects, each kind's row composing its facts (the editor refuses no grant to an agent holder); a catalogue unreadable after a role press ends no hold; a steward act is read against its grant again at its step; the role door's revision check is inside the write transaction; a landing step is listed only where it offers a covered act; a dropped block is said on the line and a `role-changed` one begins again; a rules write is judged against the seeded machine rules; a `refer` rule's holds on moves, limits and failures are pinned.
 
 - [x] **TREEPOOL1x — this repository's own installs cannot be kept by the pool** (driver): 2026-11-09 a dependency rule's `setup` run once per repository after the installs (`RepositorySetup`), an `npm ci` of such a rule run without scripts where no lockfile entry has an install script or resolves from git (`InstallScripts`), this repository's two `--install` steps moved there, and a group member a build state's rule keeps no longer removed with its group (the web's vanished `node_modules`); the real repository's placement at a take is TREEPOOL1ab's rerun (`TreeSetupTests`, `InstallScriptsTests`, failing first).
+
+- [x] **UIFIND6 — an agent's sign-in says itself three times** (web, agents): 2026-11-09 the sign-in's end toasts nothing and its card says who signed in once, with the joining; *Done* on the offered name renames nothing and toasts nothing (`AgentsView.signedIn.test.tsx`).
+
+- [x] **UIFIND8 — *At work* offers the channel to an ended session** (web, work): 2026-11-09 a line's own channel draws no composer once the attended session has ended (`AtWorkChannel.over.test.tsx`).
+
+- [x] **UIFIND9 — a terminal's start card says "with your words:" over no words** (web, person): 2026-11-09 the act reads *start a conversation*, the words their own row where there are any (`ConfirmationsHold.test.tsx`).
+
+- [x] **UIFIND10 — the Ask drawer's subtitle and twin** (web, asks): 2026-11-09 the subtitle is in the body face and the terminal twin stands at the form's foot (`AskComposer.layout.test.tsx`).
+
+- [x] **UIFIND11 — Plugins offers Ask Daoris with no agent, and cuts each name** (web, plugins): 2026-11-09 *Ask Daoris for a plugin* stands only where the driver names an Ask Daoris agent, and a name wraps whole (`PluginList.names.test.tsx`); shot `plugins.png` shows both.
+
+- [x] **UIFIND13 — Knowledge's list is empty until a search** (web, knowledge): 2026-11-09 the list says how many entries are indexed and to type two letters (`HitList.idle.test.tsx`); shot `knowledge-zh.png` is now drawn in English.
+
+- [x] **UIFIND15 — Ask Daoris's setup card says a sign-in for a key-only agent** (web, help): 2026-11-09 the machine read for the starters carried no roster sheet, so no agent was ever key-only; it carries it now and the card says `daoris agent key` (`machine.keyOnly.test.ts`, failing first). The help room's driver rows name no key row; none was added.
