@@ -42,6 +42,7 @@ const helpServersOf = (raw: unknown): HelpServerShown[] =>
       state: STATES.includes(server.state as typeof STATES[number]) ? server.state : 'waits',
       accepted: list<string>(server.accepted),
       refusal: typeof server.refusal === 'string' ? server.refusal : null,
+      changed: server.changed === true,
     }));
 
 /** The skills a plugin hands, each with who it goes to; none where the answer has none. */

@@ -144,7 +144,7 @@ public static class PluginInstall
         var installed = Path.GetFileName(entry.Folder)!;
 
         // The person's press to take the install's own copy of an example they hold an older copy of, whatever record
-        // the copy has or lacks. A copy whose files they changed is never overwritten, and one not older is never taken back.
+        // the copy has or lacks, a package's never taken in place. A copy whose files they changed is never overwritten, and one not older is never taken back.
         PluginSource? source;
         string? problem;
         string? shippedFrom = null;
@@ -173,7 +173,8 @@ public static class PluginInstall
                     return Refuse($"plugin `{installed}` is not older than the {offer.Manifest.Version} this install ships, so there is nothing to take.");
             }
 
-            (source, problem, shippedFrom) = (PluginSource.FromOffer(installed), null, offer.Folder);
+            (source, problem) = PluginSource.Read(entry.Folder);
+            if (source?.Package is null) (source, problem, shippedFrom) = (PluginSource.FromOffer(installed), null, offer.Folder);
         }
         else
         {
