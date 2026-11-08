@@ -24,7 +24,6 @@
   "settings.plugins.server.waits": "not approved for Ask Daoris",
   "settings.plugins.server.changed": "changed since you approved it: asks again",
   "settings.plugins.server.refused": "refused for Ask Daoris",
-  "settings.home.label": "Daoris home",
   "settings.notify.body": "Nobody should have to watch a driver. This machine can tell you as it happens: a session stops to ask you something, holds a tool call for your answer, answers your words, or ends without you asking; a quest parks on its failed sessions; a start waits for an account. Never for an ending you caused, because a notice about what you just pressed is one you learn to dismiss unread.",
   "settings.notify.label": "Announce what needs you or ended",
   "settings.notify.terminal": "Also `daoris settings notify on|off` — one file, either door; a machine with no screen says it on its console.",

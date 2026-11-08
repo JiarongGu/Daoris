@@ -2,7 +2,7 @@ import type * as React from 'react';
 import { type NotificationsAt } from '../../notifications/NotificationsView';
 import { type AttentionDoors } from '../../work/attention/AttentionBand';
 import { type OpenPart } from '../opener';
-import { type SettingsAnchor } from '../../settings/SettingsView';
+import { type SettingsAnchor, type SettingsSection } from '../../settings/SettingsView';
 import { type Attention } from '../../work/attention/AttentionRow';
 import { type FrameIntent, type View } from '../../menus/commands';
 
@@ -14,7 +14,7 @@ export function useAttentionDoors({ attached, openInWork, openAsk, openQuest, op
   open: (target: View, item?: string | null | undefined, part?: OpenPart | undefined) => void;
   setWorkIntent: React.Dispatch<React.SetStateAction<FrameIntent | null>>;
   showNotifications: (at?: Omit<NotificationsAt, "n"> | undefined) => void;
-  openSettings: (section: "driver" | "wiring" | "git" | "start" | "appearance" | "ai" | "tools" | "browser" | "logs", anchor?: SettingsAnchor | undefined) => void;
+  openSettings: (section: SettingsSection, anchor?: SettingsAnchor | undefined) => void;
 }) {
   // Each row's door: where its record is, beside the acts the row settles in place.
   const attentionDoors: AttentionDoors = {
@@ -106,7 +106,7 @@ export function useAttentionDoors({ attached, openInWork, openAsk, openQuest, op
     ...(attached ? { confirmation: (item: Attention) => showNotifications({ press: item.id }) } : {}),
     // A volume still below its free-space floor opens This Daoris's *Disk space* card, where *Free up space…* lists what else
     // could go before anything does. A shell's alone: the disk is the machine's.
-    ...(attached ? { space: () => openSettings('wiring', 'daoris-space') } : {}),
+    ...(attached ? { space: () => openSettings('space', 'daoris-space') } : {}),
     // A unit only the clean-up's press settles opens the workspace's Branches, where the session branches' list and
     // its presses are; a held attempt's presses are on its row. An unknown owner's branch named for a session the page holds opens that
     // session, whose page discards it too. A shell's alone.

@@ -69,8 +69,8 @@ describe('AI features on Settings', () => {
 
     expect(await screen.findByText('lexical only')).toBeTruthy();
     expect(screen.getByText(STATUS.note)).toBeTruthy();
-    // The variable is code, as every row's terminal door is.
-    expect(screen.getByText('DAORIS_EMBED_MODEL').tagName).toBe('CODE');
+    // The variable is in the row's help, as every row's terminal door is.
+    expect(screen.getByRole('note', { name: /DAORIS_EMBED_MODEL/ })).toBeTruthy();
   });
 
   /** The roles moved to the Agents place: one line here, with a door, and no role's editor or press. */

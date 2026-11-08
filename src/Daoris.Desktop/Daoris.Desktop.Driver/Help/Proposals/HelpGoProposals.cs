@@ -337,8 +337,9 @@ public static class HelpPlaces
 
     public static readonly IReadOnlyList<(string Id, string Name)> Domains =
     [
-        ("start", "Get started"), ("appearance", "Appearance"), ("ai", "AI features"), ("wiring", "This Daoris"),
-        ("driver", "Driver"), ("git", "Git"), ("browser", "Browser"), ("logs", "Machine log"),
+        ("start", "Get started"), ("appearance", "Appearance"), ("driver", "Driver"), ("ai", "AI features"),
+        ("git", "Git"), ("browser", "Browser"), ("space", "Disk space"), ("updates", "Updates"), ("wiring", "This Daoris"),
+        ("logs", "Machine log"),
     ];
 
     /// <summary>The parts, each within a view (Sessions, Quests, Repositories, Knowledge, Agents) or a Settings domain.</summary>

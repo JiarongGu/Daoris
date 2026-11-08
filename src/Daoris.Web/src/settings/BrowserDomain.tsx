@@ -119,7 +119,7 @@ export function BrowserDomain({ notify, drivers, onAttend }: {
         <SettingList>
         <SettingRow
           label={t('settings.browser.links.label')}
-          hint={t('settings.browser.links.hint')}
+          twin={t('settings.browser.links.hint')}
           why={t('settings.browser.links.why')}
           control={data && (
             <Segmented
