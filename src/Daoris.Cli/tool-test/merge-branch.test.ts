@@ -10,20 +10,15 @@ import { makeFixture, PATIENCE } from '../test/_fixture.ts';
 import { folderSet } from './support/folder-set.ts';
 
 /**
- * The parent's one merge tool (`docs/2026-09-30-parallel-development-design.md` §3 rule 6). It
- * stands in for gate chains typed by hand, one of which lost a rehearsal's reason, and for a batch that skipped
- * the .NET suites as "web only" while two C# tests read the web's catalogues. So the plan is read from
- * the declared set. A merge runs the gates its paths can reach, and the tests of the lane
- * table below hold it to what each suite reads and each rehearsal runs, so that lesson stays a test; the
- * full set is still owed before a stage.
+ * The parent's one merge tool (`docs/2026-09-30-parallel-development-design.md` §3 rule 6). The plan is read from
+ * the declared set: a merge runs the gates its paths can reach, and the lane table's tests hold it to what each suite
+ * reads and each rehearsal runs. The full set is still owed before a stage.
  *
  * 🔴 The end-to-end tests below run the tool in a scratch repository of their own, and assert that it is
- * its own repository before the first run: git walks UP, and a merge tool that found the repository
- * this suite sits in would merge into it.
+ * its own repository before the first run: git walks UP, and a tool that found the repository this suite sits in would merge into it.
  */
 
-// The census of test units reads this file's strings as the lane table's data, not as reads: it names nearly every
-// path the table places. What it does read is declared.
+// The census of test units reads this file's strings as the lane table's data, not as reads; what it does read is declared.
 // test-map: strings name paths as data
 // reaches: * — the lane table's tests hold it to every tracked file and lane, so any file added or moved can fail them
 // reaches: src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/fixtures/backlog-merges.json — the driver's twin reads the table row for row
@@ -320,8 +315,6 @@ const tool = await import(
   gateTreeVerdict: (facts: GateTreeFacts, options?: { atMerge?: boolean }) => { remove: boolean; why: string; said?: string };
   staleDependencies: (tree: string) => string[];
   stampDependencies: (tree: string, folder: string) => void;
-  privateGateFiles: (home: string) => string[];
-  copyPrivateFiles: (home: string, tree: string, files: string[]) => string[];
   keepGateLogs: (tree: string, home: string, sha: string) => boolean;
   rescueGateLogs: (tree: string, home: string) => string[];
   /** A full set beside the merges is a guest: below normal priority, its own build servers, stopped when main moves on. */
@@ -877,38 +870,6 @@ test('a taken-over lock whose at does not parse ends nothing', () => {
   const taken = tool.takeGateLock(fx.root, { commit: 'b'.repeat(40), alive: () => false, end: (pid: number) => { calls.push(pid); return []; }, endStrays: () => { calls.push(-1); return []; } });
   assert.deepEqual(calls, []);
   assert.deepEqual(taken.stale?.ended, []);
-  fx.cleanup();
-});
-
-test('the private files a gate reads come from the declaration, only under local/; a copy is refreshed and a missing source says so (GATEWT1b)', () => {
-  const fx = makeFixture('merge-branch-private-files');
-  const home = join(fx.root, 'home');
-  const tree = join(fx.root, 'tree');
-  mkdirSync(join(home, 'local'), { recursive: true });
-  mkdirSync(tree, { recursive: true });
-  const declare = (sensitive?: unknown) => writeFileSync(join(home, 'daoris.gates.json'), JSON.stringify({ gates: [{ name: 'a', run: 'x' }], ...(sensitive ? { sensitive } : {}) }));
-
-  declare();
-  const lyntai = 'local/lyntai-local.props';
-  const shenora = 'local/shenora-local.props';
-  declare();
-  assert.deepEqual(tool.privateGateFiles(home), ['local/sensitive-patterns.txt', lyntai, shenora], 'the default, and the local Lyntai and Shenora builds\' props (LYNTAILOCAL1)');
-  declare({ patternsFile: 'local/own.txt' });
-  assert.deepEqual(tool.privateGateFiles(home), ['local/own.txt', lyntai, shenora]);
-  declare({ patternsFile: 'private/patterns.txt' });
-  assert.deepEqual(tool.privateGateFiles(home), [lyntai, shenora], 'not under local/: nothing copied');
-  declare({ patternsFile: 'local/../secret.txt' });
-  assert.deepEqual(tool.privateGateFiles(home), [lyntai, shenora], 'no way out of local/');
-
-  const files = ['local/sensitive-patterns.txt'];
-  assert.match(tool.copyPrivateFiles(home, tree, files).join('\n'), /local\/sensitive-patterns\.txt.*missing/);
-  assert.equal(existsSync(join(tree, files[0]!)), false);
-  writeFileSync(join(home, files[0]!), 'one\n');
-  assert.match(tool.copyPrivateFiles(home, tree, files).join('\n'), /copied/);
-  assert.equal(readFileSync(join(tree, files[0]!), 'utf8'), 'one\n');
-  writeFileSync(join(home, files[0]!), 'two\n');
-  tool.copyPrivateFiles(home, tree, files);
-  assert.equal(readFileSync(join(tree, files[0]!), 'utf8'), 'two\n', 'refreshed on every run');
   fx.cleanup();
 });
 

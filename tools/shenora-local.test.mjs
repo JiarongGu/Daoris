@@ -9,7 +9,7 @@ import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node
 import { dirname, join } from 'node:path';
 import { after, test } from 'node:test';
 import { fileURLToPath } from 'node:url';
-import { copyPrivateFiles, privateGateFiles } from './merge-branch.mjs';
+import { copyPrivateFiles, privateGateFiles } from './private-gate-files.mjs';
 import { buildLocal, releasedVersion } from './shenora-local.mjs';
 
 const here = dirname(fileURLToPath(import.meta.url));
