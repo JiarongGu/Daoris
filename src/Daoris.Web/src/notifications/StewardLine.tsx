@@ -2,8 +2,10 @@ import { useId, useState } from 'react';
 import type { TFunction } from 'i18next';
 import { useTranslation } from 'react-i18next';
 import { Button } from '../design/ui';
-import { clockOf } from '../locales/format';
-import { type DeskRequestNow, type StandingConfirmationNow, type StewardActNow, stewardActKnown, stewardReverse } from '../person/standing';
+import { clockOf, stamp } from '../locales/format';
+import {
+  type DeskRequestNow, type StandingConfirmationNow, type StewardActNow, type StewardLandNow, stewardActKnown, stewardReverse,
+} from '../person/standing';
 import { Refused } from '../work/InlineConfirm';
 
 /** An act's target in words: its repository, or its quest and session, as the act names them. */
@@ -28,9 +30,28 @@ function ActLine({ act, busy, onReverse }: { act: StewardActNow; busy: boolean; 
         <span className="text-ink-soft">{targetOf(t, act)}</span>
         <time dateTime={act.at} className="text-ink-faint">{clockOf(act.at, undefined, i18n.language)}</time>
         <span className="text-ink-faint">{t('notifications.steward.mark')}</span>
+        {act.allowed && <span data-steward-allowed="" className="text-ink-faint">{t('notifications.steward.allowed')}</span>}
       </span>
       {press && (
         <Button variant="ghost" disabled={busy} onClick={() => onReverse(act)}>{t(`notifications.steward.reverse.${press}`)}</Button>
+      )}
+    </li>
+  );
+}
+
+/** A landing a supervisor allowed, waiting its window: what it lands, when, and *Overrule* while the window lasts. */
+function LandLine({ land, busy, onOverrule }: { land: StewardLandNow; busy: boolean; onOverrule?: (land: StewardLandNow) => void }) {
+  const { t } = useTranslation();
+  const target = land.session ? t('notifications.steward.target.sessionOnly', { session: land.session }) : (land.repository ?? land.quest ?? '');
+  return (
+    <li data-steward-land={land.ask} className="flex flex-wrap items-center justify-between gap-2 text-small">
+      <span className="min-w-0 text-ink-soft">{t('notifications.steward.land.says', { target, at: stamp(land.landsAt) })}</span>
+      {onOverrule && land.session && (
+        <Button
+          disabled={busy} aria-label={t('notifications.steward.land.overruleLabel', { target })} onClick={() => onOverrule(land)}
+        >
+          {t('notifications.steward.land.overrule')}
+        </Button>
       )}
     </li>
   );
@@ -77,7 +98,7 @@ function DeskLine({ request }: { request: DeskRequestNow }) {
  *
  * A molecule: drawn from props; the application holds the presses.
  */
-export function StewardLine({ standing, busy = false, refused = null, onReverse }: {
+export function StewardLine({ standing, busy = false, refused = null, onReverse, onOverrule }: {
   standing: StandingConfirmationNow | null;
   /** A press of the line on its way. */
   busy?: boolean;
@@ -85,6 +106,8 @@ export function StewardLine({ standing, busy = false, refused = null, onReverse 
   refused?: string | null;
   /** The owner's reverse press for this act, the route `stewardReverse` names. */
   onReverse: (act: StewardActNow) => void;
+  /** The person's *Overrule* of an allowed landing inside its window; absent where nothing can send it. */
+  onOverrule?: (land: StewardLandNow) => void;
 }) {
   const { t } = useTranslation();
   const [open, setOpen] = useState(false);
@@ -94,7 +117,8 @@ export function StewardLine({ standing, busy = false, refused = null, onReverse 
   const held = standing.holds.some((each) => each.kind === 'steward');
   const acts = standing.stewardActs;
   const desk = standing.stewardDesk;
-  if (!held && acts.length === 0 && desk.length === 0) return null;
+  const lands = standing.stewardLands;
+  if (!held && acts.length === 0 && desk.length === 0 && lands.length === 0) return null;
   const deskWaiting = desk.filter((each) => each.state === 'open').length;
   const waiting = acts.filter((each) => each.act === 'stop' && each.waiting && stewardReverse(each) === 'retry');
   const said = held ? t('notifications.steward.line', { count: acts.length }) : t('notifications.steward.lineOff', { count: acts.length });
@@ -120,6 +144,11 @@ export function StewardLine({ standing, busy = false, refused = null, onReverse 
             ))}
           </ul>
         </div>
+      )}
+      {lands.length > 0 && (
+        <ul aria-label={t('notifications.steward.land.list')} className="m-0 grid list-none gap-1 p-0">
+          {lands.map((each) => <LandLine key={each.ask} land={each} busy={busy} onOverrule={onOverrule} />)}
+        </ul>
       )}
       {open && (
         <ul id={`${id}-acts`} aria-label={t('notifications.steward.list')} className="m-0 grid list-none gap-1 p-0">

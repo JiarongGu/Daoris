@@ -33,6 +33,10 @@
   "work.supervision.landing.accept": "主管已采纳这项工作；将于 {{at}} 落地。",
   "work.supervision.landing.approve": "主管已批准这一步；将于 {{at}} 继续。",
   "work.supervision.landing.reject": "主管已驳回这一步；将于 {{at}} 退回。",
+  "work.supervision.allow.title": "主管对被搁置的工具调用的答复",
+  "work.supervision.allow.once": "主管已允许这一次（{{when}}）：该调用继续。",
+  "work.supervision.allow.reject": "主管已拒绝这一次（{{when}}）：智能体会得知，并在没有它的情况下继续。",
+  "work.supervision.kind.allow": "一项允许",
   "work.supervision.overrule":"否决",
   "work.supervision.overruleRefused": "它已经继续了，无法否决。"
 }

@@ -62,21 +62,50 @@ public sealed class StewardAllows(InstancePipe pipe)
         return true;
     }
 
-    private async Task<RolePlace?> PlaceAsync(IpcRequest original, RoleJudgement asked, CancellationToken ct)
+    private async Task<RolePlace?> PlaceAsync(IpcRequest original, RoleJudgement asked, CancellationToken ct) =>
+        Places is { } places && TargetOf(original, asked) is { } target ? await places(target, ct).ConfigureAwait(false) : null;
+
+    /// <summary>What a steward's act acts on, as its row reads its form; null where the form is none.</summary>
+    private RoleScope? TargetOf(IpcRequest original, RoleJudgement asked) =>
+        RoleActForm.Read(original.Payload) is { } form && pipe.StandingConfirmation.TableOf(asked.Role ?? "").TryGetValue(form.Act, out var row)
+            ? new RoleScope(row.TargetKind, row.Target(form.Form))
+            : null;
+
+    /// <summary>What the request's act acts on.</summary>
+    internal RoleScope? TargetOf(PendingAllow entry) => TargetOf(entry.Original, entry.Asked);
+
+    /// <summary>The allowed <c>land</c>s held for their window now, soonest first: what the steward's line says and offers <i>Overrule</i> on.</summary>
+    public IReadOnlyList<StewardLandNow> Lands()
     {
-        if (Places is not { } places || RoleActForm.Read(original.Payload) is not { } form) return null;
-        if (!pipe.StandingConfirmation.TableOf(asked.Role ?? "").TryGetValue(form.Act, out var row)) return null;
-        return await places(new RoleScope(row.TargetKind, row.Target(form.Form)), ct).ConfigureAwait(false);
+        lock (State.Gate)
+        {
+            return
+            [
+                .. State.StewardAsks.Values.Where(each => each.State == PendingAllowState.Holding && each.LandsAt is not null && Live(each)).OrderBy(each => each.LandsAt)
+                    .Select(each => LandOf(each, TargetOf(each))),
+            ];
+        }
     }
+
+    private static StewardLandNow LandOf(PendingAllow entry, RoleScope? target) => new(
+        entry.Id, entry.Asked.Act ?? "", target?.Kind == OwnerKinds.Repository ? target.Name : null, target?.Kind == OwnerKinds.Quest ? target.Name : null,
+        target?.Kind == OwnerKinds.Session ? target.Name : null, entry.LandsAt!.Value);
 
     /// <summary>The requests waiting for a supervisor now, oldest first; one the pipe no longer holds is forgotten.</summary>
     public IReadOnlyList<PendingAllow> Waiting()
     {
+        List<PendingAllow> gone;
+        IReadOnlyList<PendingAllow> waiting;
         lock (State.Gate)
         {
-            foreach (var gone in State.StewardAsks.Values.Where(each => !Live(each)).ToList()) State.StewardAsks.Remove(gone.Id);
-            return [.. State.StewardAsks.Values.Where(each => each.State == PendingAllowState.Pending).OrderBy(each => each.Raised)];
+            gone = [.. State.StewardAsks.Values.Where(each => !Live(each))];
+            foreach (var each in gone) State.StewardAsks.Remove(each.Id);
+            waiting = [.. State.StewardAsks.Values.Where(each => each.State == PendingAllowState.Pending).OrderBy(each => each.Raised)];
         }
+
+        // A land the steward withdrew inside its window leaves its decision stale, said outside the gate.
+        foreach (var each in gone.Where(each => each.State == PendingAllowState.Holding && each.Decision is not null)) Moved?.Invoke(each.Decision!, SupervisorState.Stale, "withdrawn");
+        return waiting;
     }
 
     /// <summary>A request still held, waiting or an allowed <c>land</c> in its window; null where something settled it.</summary>
@@ -96,7 +125,7 @@ public sealed class StewardAllows(InstancePipe pipe)
     /// The supervisor's allow: settled once, then the act admitted as the steward's own (the owner's marks read first) and run. A
     /// <c>land</c> is held for <paramref name="window"/> first, still the pending entry. Null where kept, else why not.
     /// </summary>
-    public async Task<string?> AllowAsync(string ask, string decision, TimeSpan window)
+    public async Task<string?> AllowAsync(string ask, string decision, TimeSpan window, Action<PendingAllow>? kept = null)
     {
         PendingAllow entry;
         var hold = false;
@@ -119,6 +148,7 @@ public sealed class StewardAllows(InstancePipe pipe)
         }
 
         entry.Clock.Cancel();
+        kept?.Invoke(entry);
         if (!hold)
         {
             RunAllowed(entry, decision);
@@ -136,6 +166,9 @@ public sealed class StewardAllows(InstancePipe pipe)
     /// <summary>The person's overrule of an allowed <c>land</c> held for its window: the person's card follows. False where something settled it first.</summary>
     public bool Overrule(string ask) => Fall(ask, PendingAllowState.Holding);
 
+    /// <summary>Told where an allowing decision ends up, for its record: <c>overruled</c>, <c>went-on</c> where the window ran out, or <c>stale</c> where the steward withdrew.</summary>
+    public Action<string, SupervisorState, string?>? Moved { get; set; }
+
     private bool Fall(string ask, PendingAllowState from)
     {
         PendingAllow entry;
@@ -146,6 +179,7 @@ public sealed class StewardAllows(InstancePipe pipe)
         }
 
         entry.Clock.Cancel();
+        if (from == PendingAllowState.Holding && entry.Decision is { } decision) Moved?.Invoke(decision, SupervisorState.Overruled, null);
         _ = entry.Card();
         return true;
     }
@@ -176,13 +210,22 @@ public sealed class StewardAllows(InstancePipe pipe)
             return;
         }
 
+        bool withdrawn;
         lock (State.Gate)
         {
-            if (!State.StewardAsks.TryGetValue(entry.Id, out var held) || !ReferenceEquals(held, entry) || !Live(entry) || entry.State != PendingAllowState.Holding) return;
-            State.Reserved.Remove(entry.Original.Id);
+            if (!State.StewardAsks.TryGetValue(entry.Id, out var held) || !ReferenceEquals(held, entry) || entry.State != PendingAllowState.Holding) return;
+            withdrawn = !Live(entry);
+            if (!withdrawn) State.Reserved.Remove(entry.Original.Id);
             State.StewardAsks.Remove(entry.Id);
         }
 
+        if (withdrawn)
+        {
+            Moved?.Invoke(entry.Decision ?? "", SupervisorState.Stale, "withdrawn");
+            return;
+        }
+
+        Moved?.Invoke(entry.Decision ?? "", SupervisorState.WentOn, null);
         RunAllowed(entry, entry.Decision ?? "");
     }
 

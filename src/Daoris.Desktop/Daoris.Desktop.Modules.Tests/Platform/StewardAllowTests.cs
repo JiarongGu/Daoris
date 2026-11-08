@@ -62,7 +62,8 @@ public sealed class StewardAllowTests : DriverModuleBridge
 
     /// <param name="share">That the allow supervisor's terminal is the steward's own, one holder holding both.</param>
     /// <param name="act">The steward's act the table names; <c>land</c> to test the held landing.</param>
-    private async Task<Stand> OpenAsync(bool share = false, string act = RoleKit.Probe.Named, CatalogueScope? scope = null)
+    /// <param name="targetKind">What the act's first field names; a session for a <c>land</c>.</param>
+    private async Task<Stand> OpenAsync(bool share = false, string act = RoleKit.Probe.Named, CatalogueScope? scope = null, string targetKind = OwnerKinds.Repository)
     {
         var loop = Loop();
         var module = new DriverModule(Bus, loop) { OwnerScopes = new OwnerSetTests.Scopes() };
@@ -72,7 +73,7 @@ public sealed class StewardAllowTests : DriverModuleBridge
         services.UseMessageDispatcher((_, _) => { });
         var provider = services.BuildServiceProvider();
         await loop.ComeUpAsync(new ServiceClient("http://stand-in", null, new HttpClient(new Service())));
-        var probe = new RoleKit.Probe { PersonRoute = "SET_HOLD", Form = ["repository", "held"] };
+        var probe = new RoleKit.Probe { PersonRoute = "SET_HOLD", Form = ["repository", "held"], TargetKind = targetKind };
         var log = new MachineLog(Home, "desktop");
         var judge = new StandingConfirmation(Home, log, new StandingConfirmationTests.Placed(StandingPlace.Outside), walk: new StandingConfirmationTests.Walked())
         {
@@ -267,6 +268,34 @@ public sealed class StewardAllowTests : DriverModuleBridge
     }
 
     [Fact]
+    public async Task A_supervisor_hold_moved_onto_the_stewards_holder_after_the_raise_is_no_longer_offered_the_act_and_its_allow_is_refused()
+    {
+        if (!OperatingSystem.IsWindows()) return;
+        using var stand = await OpenAsync();
+        var (client, _) = await SendActAsync(stand);
+        await using var connected = client;
+        var listed = await AskedAsync(stand);
+
+        var holds = stand.Judge.Now().Holds;
+        var supervising = holds.Single(each => each.Role == Supervisor).Holder;
+        var steward = holds.Single(each => each.Role == AppointedRoles.Steward).Holder;
+        Assert.NotEqual(steward, supervising);
+        stand.Judge.HolderEnded($"t-{supervising}");
+        // Added to a living holder, so the key it proves by is that holder's own.
+        var (moved, _) = RoleKit.Start(stand.Judge, new HoldRequest(Supervisor, steward));
+        Assert.True(moved.Answer.Done, moved.Answer.Message);
+
+        var waiting = await AnswerAsync(stand.Module, "SUPERVISOR_WAITING");
+        Assert.DoesNotContain(waiting.GetProperty("waiting").EnumerateArray(), each => each.GetProperty("kind").GetString() == SupervisorKinds.Allow);
+        var refused = await SupervisorSendAsync(stand, "SUPERVISOR_DECIDE", nonce =>
+            new SupervisorDecideForm(SupervisorSubject.StewardAsk(AskOf(listed)), RoleKit.GenerationOf(stand.Judge, AppointedRoles.Supervisor), "", "steward", null, Reasons)
+                .Proved(stand.StewardKey, nonce).Payload());
+        Assert.False(refused.GetProperty("kept").GetBoolean(), refused.GetRawText());
+        Assert.Equal(SupervisorWhy.NotGranted, refused.GetProperty("why").GetString());
+        Assert.Equal(0, stand.Probe.Ran);
+    }
+
+    [Fact]
     public async Task A_target_that_names_no_place_goes_to_the_persons_card()
     {
         if (!OperatingSystem.IsWindows()) return;
@@ -353,5 +382,97 @@ public sealed class StewardAllowTests : DriverModuleBridge
         Assert.Equal(0, stand.Probe.Ran);
         Assert.Empty(stand.Pipe.Confirmations.Now().Waiting);
         Assert.Equal(InstancePipe.Withdrawn, (await client.AnswerAsync(id)).GetProperty("error").GetProperty("code").GetString());
+    }
+
+    private static SupervisorAllowView OnlyAllow(Stand stand, string session) => Assert.Single(stand.Loop.Supervisor.AllowsOf(session));
+
+    private async Task UntilStateAsync(Stand stand, string session, SupervisorState state) =>
+        await UntilAsync(() => stand.Loop.Supervisor.AllowsOf(session).Any(each => each.State == state), () => $"the allow never reached {state}");
+
+    [Fact]
+    public async Task An_allowed_act_is_kept_as_a_decision_and_the_stewards_line_says_a_supervisor_allowed_it()
+    {
+        if (!OperatingSystem.IsWindows()) return;
+        using var stand = await OpenAsync();
+        stand.Probe.Inside = run =>
+        {
+            run.Judge.StewardDid(run.Id, StewardActNames.Hold, repository: "engine");
+            return Task.CompletedTask;
+        };
+        var (client, id) = await SendActAsync(stand);
+        await using var connected = client;
+        var listed = await AskedAsync(stand);
+
+        var kept = await AllowAsync(stand, AskOf(listed), GenerationOf(listed));
+        Assert.True((await client.AnswerAsync(id)).GetProperty("data").GetProperty("done").GetBoolean());
+
+        var act = Assert.Single(stand.Judge.StewardActsNow());
+        Assert.True(act.Allowed);
+        var file = Path.Combine(DaorisHome.Entry(Home, HomeEntry.Sessions, SupervisorAllows.Machine + QuestionSupervisorDecisions.DecisionsSuffix), kept.GetProperty("decision").GetString() + ".json");
+        Assert.Contains("\"shape\": \"steward\"", File.ReadAllText(file));
+    }
+
+    [Fact]
+    public async Task An_allowed_land_is_kept_held_and_listed_for_the_window_then_went_on_when_it_lands()
+    {
+        if (!OperatingSystem.IsWindows()) return;
+        using var stand = await OpenAsync(act: StewardActNames.Land, targetKind: OwnerKinds.Session);
+        stand.Pipe.StewardAllows.Window = TimeSpan.FromMilliseconds(500);
+        var (client, _) = await SendActAsync(stand, StewardActNames.Land);
+        await using var connected = client;
+        var listed = await AskedAsync(stand);
+        Assert.True((await AllowAsync(stand, AskOf(listed), GenerationOf(listed))).GetProperty("kept").GetBoolean());
+
+        var held = OnlyAllow(stand, "engine");
+        var lands = (await AnswerAsync(stand.Module, "STEWARD_LANDS")).GetProperty("lands").EnumerateArray().ToList();
+        Assert.Equal((SupervisorState.Held, "land", SupervisorAllowShapes.Steward), (held.State, held.Act, held.Shape));
+        var row = Assert.Single(lands);
+        Assert.Equal(("engine", AskOf(listed)), (row.GetProperty("session").GetString(), row.GetProperty("ask").GetString()));
+        Assert.Equal(held.GoesOnAt, row.GetProperty("landsAt").GetDateTimeOffset());
+
+        await UntilStateAsync(stand, "engine", SupervisorState.WentOn);
+        Assert.Empty(stand.Pipe.StewardAllows.Lands());
+    }
+
+    [Fact]
+    public async Task The_persons_overrule_hands_an_allowed_land_to_their_card_and_closes_the_decision_overruled_and_a_stray_session_overrules_nothing()
+    {
+        if (!OperatingSystem.IsWindows()) return;
+        using var stand = await OpenAsync(act: StewardActNames.Land, targetKind: OwnerKinds.Session);
+        stand.Pipe.StewardAllows.Window = TimeSpan.FromMinutes(5);
+        var (client, _) = await SendActAsync(stand, StewardActNames.Land);
+        await using var connected = client;
+        var listed = await AskedAsync(stand);
+        Assert.True((await AllowAsync(stand, AskOf(listed), GenerationOf(listed))).GetProperty("kept").GetBoolean());
+
+        var stray = await AnswerAsync(stand.Module, "STEWARD_LAND_OVERRULE", new { ask = AskOf(listed), session = "other" });
+        Assert.False(stray.GetProperty("done").GetBoolean());
+        Assert.Equal(SupervisorState.Held, OnlyAllow(stand, "engine").State);
+
+        var overruled = await AnswerAsync(stand.Module, "STEWARD_LAND_OVERRULE", new { ask = AskOf(listed), session = "engine" });
+
+        Assert.True(overruled.GetProperty("done").GetBoolean());
+        await UntilAsync(() => stand.Pipe.Confirmations.Now().Waiting.Count == 1, () => "the card did not follow the overrule");
+        Assert.Equal(SupervisorState.Overruled, OnlyAllow(stand, "engine").State);
+        Assert.Equal(0, stand.Probe.Ran);
+        Assert.False((await AnswerAsync(stand.Module, "STEWARD_LAND_OVERRULE", new { ask = AskOf(listed), session = "engine" })).GetProperty("done").GetBoolean());
+    }
+
+    [Fact]
+    public async Task An_allowed_land_the_steward_withdraws_inside_its_window_closes_the_decision_stale()
+    {
+        if (!OperatingSystem.IsWindows()) return;
+        using var stand = await OpenAsync(act: StewardActNames.Land, targetKind: OwnerKinds.Session);
+        stand.Pipe.StewardAllows.Window = TimeSpan.FromMilliseconds(600);
+        var (client, id) = await SendActAsync(stand, StewardActNames.Land);
+        await using var connected = client;
+        var listed = await AskedAsync(stand);
+        Assert.True((await AllowAsync(stand, AskOf(listed), GenerationOf(listed))).GetProperty("kept").GetBoolean());
+
+        await client.AnswerAsync(await client.SendAsync(InstancePipe.Module, "WITHDRAW", new { id, key = client.KeyOf(id) }));
+        await UntilStateAsync(stand, "engine", SupervisorState.Stale);
+
+        Assert.Equal("withdrawn", OnlyAllow(stand, "engine").Why);
+        Assert.Equal(0, stand.Probe.Ran);
     }
 }

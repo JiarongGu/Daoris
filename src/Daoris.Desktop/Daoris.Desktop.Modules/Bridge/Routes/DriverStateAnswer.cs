@@ -43,7 +43,7 @@ internal static class DriverStateAnswer
             // The person's standing confirmation as This Daoris's row and the line in
             // Notifications read it: offered, on, the presses granted and built, since, a record not honoured, its count this run, and
             // the holds a terminal made under it. None where this shell serves no pipe.
-            StandingConfirmation = loop.Pipe?.StandingConfirmation.Now(),
+            StandingConfirmation = loop.Pipe is { } pipe ? pipe.StandingConfirmation.Now() with { StewardLands = pipe.StewardAllows.Lands() } : null,
             config.Trees,
             config.Cap,
             config.PollSeconds,

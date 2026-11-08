@@ -4,7 +4,7 @@ import { api, holdPersonKey, type ServiceConfirmation } from '../data/api';
 import { keys } from '../data/queries';
 import type { Confirmation, ConfirmationAnswer, ConfirmationField, ConfirmationNamed } from '../person/Confirmations';
 import {
-  type DeskRequestNow, type HolderNow, type RoleHoldNow, type RoleTerminalAnswer, type StandingConfirmationNow, type StewardActNow,
+  type DeskRequestNow, type HolderNow, type RoleHoldNow, type RoleTerminalAnswer, type StandingConfirmationNow, type StewardActNow, type StewardLandNow,
 } from '../person/standing';
 import { call, confirmBound } from './call';
 
@@ -224,7 +224,22 @@ export function standingOf(raw: unknown): StandingConfirmationNow | null {
     stewardActs: stewardActsOf(shaped.stewardActs),
     // A missing desk reads as empty.
     stewardDesk: stewardDeskOf(shaped.stewardDesk),
+    stewardLands: stewardLandsOf(shaped.stewardLands),
   };
+}
+
+/** The allowed lands waiting their window, each read field by field; one with no id, act, session or time is left out. */
+function stewardLandsOf(raw: unknown): StewardLandNow[] {
+  if (!Array.isArray(raw)) return [];
+  return raw.flatMap((each): StewardLandNow[] => {
+    if (typeof each !== 'object' || each === null) return [];
+    const shaped = each as Record<string, unknown>;
+    const ask = text(shaped.ask);
+    const act = text(shaped.act);
+    const landsAt = text(shaped.landsAt);
+    if (ask === null || act === null || landsAt === null) return [];
+    return [{ ask, act, landsAt, repository: text(shaped.repository), quest: text(shaped.quest), session: text(shaped.session) }];
+  });
 }
 
 const text = (value: unknown): string | null => (typeof value === 'string' && value.length > 0 ? value : null);
@@ -268,6 +283,7 @@ function stewardActsOf(raw: unknown): StewardActNow[] {
       session: text(shaped.session),
       standing: shaped.standing === true,
       waiting: shaped.waiting === true,
+      allowed: shaped.allowed === true,
     }];
   });
 }

@@ -82,6 +82,7 @@ internal sealed class SessionsWaitDesk(DriverContext context)
             Decisions = _loop.Supervisor.History(press.Id).Select(SupervisorDecisionRow).ToList(),
             Courses = _loop.Supervisor.CoursesOf(press.Id).Select(SupervisorCourseRow).ToList(),
             Landings = _loop.Supervisor.LandingsOf(press.Id).Select(SupervisorLandingRow).ToList(),
+            Allows = _loop.Supervisor.AllowsOf(press.Id).Select(SupervisorAllowRow).ToList(),
             Counts = SessionCountsWire.Counts(facts),
             Acts = SessionCountsWire.Acts(facts),
         };
@@ -103,6 +104,25 @@ internal sealed class SessionsWaitDesk(DriverContext context)
         GoesOnAt = Moments.Write(view.GoesOnAt),
         StateAt = Moments.Write(view.StateAt),
         view.Earlier,
+    };
+
+    /// <summary>One allow decision as the page reads it: which subject it answered, the act and where it stands, no sentence.</summary>
+    internal static object SupervisorAllowRow(SupervisorAllowView view) => new
+    {
+        view.Id,
+        Kind = SupervisorKinds.Allow,
+        view.Shape,
+        view.Subject,
+        view.Repository,
+        view.Do,
+        view.Role,
+        view.Act,
+        Holder = new { view.Holder.Kind, view.Holder.Parent },
+        State = SupervisorStates.Spell(view.State),
+        view.Why,
+        KeptAt = Moments.Write(view.KeptAt),
+        GoesOnAt = Moments.Write(view.GoesOnAt),
+        StateAt = Moments.Write(view.StateAt),
     };
 
     /// <summary>One landing decision as the page reads it: the step and attempt, the act and where it stands, no sentence.</summary>

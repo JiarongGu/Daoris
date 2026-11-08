@@ -52,9 +52,9 @@ internal sealed class AllowKind : ISupervisorKind
     }
 
     public async Task<SupervisorDecided> DecideAsync(DriverLoop loop, SupervisorDecideForm form, SupervisorHolder holder, CancellationToken ct) =>
-        form.Subject.IsAsk ? await StewardAllowSubjects.DecideAsync(loop, form).ConfigureAwait(false)
+        form.Subject.IsAsk ? await StewardAllowSubjects.DecideAsync(loop, form, holder).ConfigureAwait(false)
         : form.Subject.IsProposal ? Widening(loop, form, holder)
-        : await HeldAsync(loop, form).ConfigureAwait(false);
+        : await HeldAsync(loop, form, holder).ConfigureAwait(false);
 
     public Task<SupervisorDecided> LeaveAsync(DriverLoop loop, SupervisorLeaveForm form, SupervisorHolder holder, CancellationToken ct)
     {
@@ -77,7 +77,7 @@ internal sealed class AllowKind : ISupervisorKind
         ? RuleProposals.Load(loop.Home).Any(each => each.Id == subject.Id && each.State == ProposalState.Waiting)
         : HeldPermissions.Of(loop.Events).Held(subject.Session).Any(each => each.Request == subject.Id && Moments.Write(each.Since) == subject.Held);
 
-    private async Task<SupervisorDecided> HeldAsync(DriverLoop loop, SupervisorDecideForm form)
+    private async Task<SupervisorDecided> HeldAsync(DriverLoop loop, SupervisorDecideForm form, SupervisorHolder holder)
     {
         var subject = form.Subject;
         if (form.Do is not ("once" or "reject")) return SupervisorDecided.Refused(SupervisorWhy.NotOffered);
@@ -98,9 +98,12 @@ internal sealed class AllowKind : ISupervisorKind
         }
 
         // Whoever answers first ends it; the other finds it unheld.
-        return held.Answer(subject.Session, subject.Id, option).Answered
-            ? new SupervisorDecided(true, Guid.NewGuid().ToString("N")[..12], null, null)
-            : SupervisorDecided.Refused(SupervisorWhy.NotHeld);
+        if (!held.Answer(subject.Session, subject.Id, option).Answered) return SupervisorDecided.Refused(SupervisorWhy.NotHeld);
+        var decision = Guid.NewGuid().ToString("N")[..12];
+        var role = loop.Pipe?.StandingConfirmation is { } judge ? judge.Admit(Kind, judge.Placed(repository), form.Do).Role : null;
+        loop.Supervisor.AllowKept(new SupervisorAllowed(
+            decision, SupervisorAllowShapes.Request, subject.Id, subject.Session, repository, form.Do, role, null, holder, form.Reasons), DateTimeOffset.UtcNow);
+        return new SupervisorDecided(true, decision, null, null);
     }
 
     private SupervisorDecided Widening(DriverLoop loop, SupervisorDecideForm form, SupervisorHolder holder)
@@ -121,7 +124,10 @@ internal sealed class AllowKind : ISupervisorKind
         var role = admitted.Role ?? "supervisor";
         var receipt = string.Join(" ", form.Reasons.Select(reason => $"{reason.Says} ({reason.Source})"));
         var settled = ProposalSettlement.Settle(loop.Home, proposal.Id, RuleSettler.Supervisor(role, decision), form.Do == "standing", receipt, DateTimeOffset.UtcNow);
-        return settled.Outcome == SettleOutcome.Settled ? new SupervisorDecided(true, decision, null, null) : SupervisorDecided.Refused(settled.Why ?? SupervisorWhy.Reserved);
+        if (settled.Outcome != SettleOutcome.Settled) return SupervisorDecided.Refused(settled.Why ?? SupervisorWhy.Reserved);
+        loop.Supervisor.AllowKept(new SupervisorAllowed(
+            decision, SupervisorAllowShapes.Widening, proposal.Id, proposal.Session, place.Repository ?? "", form.Do, role, null, holder, form.Reasons), DateTimeOffset.UtcNow);
+        return new SupervisorDecided(true, decision, null, null);
     }
 
     // The rules as they stand, for a widening a supervisor may not decide; null where it may. A rule that cannot be read is no one's to allow.
