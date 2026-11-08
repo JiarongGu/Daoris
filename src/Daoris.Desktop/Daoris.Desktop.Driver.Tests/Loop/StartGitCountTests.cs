@@ -89,7 +89,7 @@ public sealed class StartGitCountTests : IDisposable
         Assert.True(before.Count(each => each.Contains("symbolic-ref --short refs/remotes/origin/HEAD", StringComparison.Ordinal)) <= 1, report);
         // The line guessed once, before the tree is made. One spelling per ref fact: the line's commit read after the tree is
         // made is the same command, asked again past the `worktree add` that made a branch.
-        var made = before.FindIndex(each => each.StartsWith("git worktree add", StringComparison.Ordinal));
+        var made = before.FindIndex(each => each.Contains(" worktree add ", StringComparison.Ordinal));
         Assert.True(made > 0, report);
         Assert.True(before.Take(made).Count(each => each == "git rev-parse --verify --quiet refs/heads/main^{commit}") <= 1, report);
         // No fact is asked twice: the same command never repeats unless a git that may move a ref ran between its two askings (`rev-parse
@@ -106,13 +106,12 @@ public sealed class StartGitCountTests : IDisposable
         Assert.True(before.Count <= Ceiling, report);
     }
 
-    // What the ceiling allows: the line is guessed once, its guess is not checked again, and a fresh tree's `merge-base` and `log`
-    // against itself are not asked. A fresh tree lists the checkout's lockfiles once (`git ls-files … package-lock.json …`) to copy
-    // its dependencies, one start that saves the session a whole `npm ci`. The session locks its tree in its own name once its record
-    // is open, reading the tree's lock (`git worktree list --porcelain`) and taking it (`git worktree lock --reason daoris session …`),
-    // so no merge tool prunes it. An opening asks the tree it made for its working root once (`git rev-parse --show-toplevel`), so a
-    // tree git binds to another checkout is let go of before a session starts in it.
-    private const int Ceiling = 15;
+    // What the ceiling allows: the line is guessed once, and a fresh tree's `merge-base` and `log` against itself are not asked. The
+    // opening asks the checkout and the tree each for a working root (two folders, two facts), makes the tree with its hooks held and
+    // lets the opening lock go; the session locks its tree once its record is open. The files stage reads the rules once (tracked
+    // names, ignored tops, linked worktrees, the two rule files), writes back what a cut-off start left (`status`) and runs the owed
+    // `post-checkout` hook. The rest are the start's reads of the tree's layout and line.
+    private const int Ceiling = 21;
 
     private void Git(params string[] arguments)
     {

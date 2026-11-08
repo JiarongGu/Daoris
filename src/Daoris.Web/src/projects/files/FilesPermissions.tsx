@@ -60,7 +60,7 @@ export function FilesPermissions({ look, onPress }: { look: FilesLook; onPress?:
                   <span className="min-w-0 flex-1 font-mono [overflow-wrap:anywhere]">{one.rule}</span>
                   <span className="text-meta text-ink-faint">
                     {one.scope === 'machine' ? t('files.view.scope.machine') : t('files.view.scope.repository')}
-                    {one.list === 'allow' && one.by ? ` · ${t('files.view.givenBy', { by: t(`files.view.maker.${one.by}`, { defaultValue: one.by }) })}` : ''}
+                    {one.list === 'allow' && one.by ? ` · ${t('files.view.givenBy', { by: one.by === 'person' ? t('files.view.maker.person') : t('files.view.maker.role', { role: one.by }) })}` : ''}
                   </span>
                   {onPress && (
                     <Button

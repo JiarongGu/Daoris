@@ -21,8 +21,8 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they start wi
 | `RoleHold`, `AppointedRoles`, `RoleHolders` | `Roles/RoleHold.cs` | The appointed shape: kind, acts, holder, the supervisor's window; the kinds' act vocabularies; its judge |
 | `AppointedStaffing`, `AgentHold` | `Roles/AppointedStaffing.cs`, `Roles/AgentHold.cs` | An agent-held supervisor's order and policy at the door; its generation by role and revision |
 | The agent's turn | `Loop/Look/SuperviseLook.cs`, `Loop/Supervise/SupervisePass.cs`, `Loop/Supervise/SuperviseTurn.cs`, `Roles/SupervisorInstruction.cs`, `Roles/SupervisorFacts.cs`, `Roles/SupervisorBlock.cs`, `Roles/SupervisorHolders.cs`, `Roles/SupervisorRuns.cs`, `Roles/ISupervisorDesk.cs`, `Modules/Bridge/AgentSupervisorDesk.cs`, `Participants/Supervise/SuperviseDoors.cs`, `Review/Domain/SupervisePermissions.cs`, `Service/Daoris.Service.Core/Sessions/SuperviseDesk.cs` | The look's pass, one attempt and its turn, the prompt and the facts it shares with the print, the answer's block, the agent's holder on a decision, the running turns, the decision door's half the look reaches, the record's open on either side, the turn's rules |
-| `RoleRecord`, `RoleWork`, `RoleScope` | `Roles/RoleRecords.cs` | A role's record; the nine works; machine, workspace or repository scope |
-| The seed | `Defaults/roles.json` | The nine seeded roles, machine-wide; Design's order is `ActorChoices.DesignSeed` |
+| `RoleRecord`, `RoleWork`, `RoleScope` | `Roles/RoleRecords.cs` | A role's record; the ten works; machine, workspace or repository scope |
+| The seed | `Defaults/roles.json` | The ten seeded roles, machine-wide; Design's order is `ActorChoices.DesignSeed`, Exact build's `ActorChoices.ExactSeed` |
 | `RoleDoor` | `Roles/RoleDoor.cs` | The person's one door: judges a press, then writes role, staffing, policy and rules in one transaction |
 | `RoleVerb` | `Roles/RoleVerbs.cs` | `daoris role` and `role set/remove/default/policy/rules/supervisor/suggested` |
 | `RoleStaffing` | `Roles/RoleStaffing.cs` | `role_staffing` in the desktop store: import, the one writer |
@@ -58,13 +58,18 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they start wi
 1. A role is a record of the role catalogue in the desktop store, in one of two shapes. A working role: a name (authored
    text), the works it takes, a scope, and a staffing. An appointed role: a name, its kind (supervisor or steward), the acts it
    holds of that kind's vocabulary, a scope, its holder, and the supervisor's window. A role carries no doors of its own. (from D212, D222, D233)
-2. The works are build, design, chat, ask-daoris, intake, help, partner, review and brainstorm. A record's work is read
-   from its marks by one rule, never stored. Design falls to the role that takes build when none takes design. (from D212)
-3. Nine roles are seeded: build, design, intake, opinion, helper, partner, brainstorm, ask-daoris and chat, machine-wide.
+2. The works are build, design, exact, chat, ask-daoris, intake, help, partner, review and brainstorm. A record's work is read
+   from its marks by one rule, never stored. Design and exact fall to the role that takes build when none takes them. (from D212)
+3. Ten roles are seeded: build, design, exact, intake, opinion, helper, partner, brainstorm, ask-daoris and chat, machine-wide.
    An id reads as its seed until the store holds a record of it, so an upgrade writes nothing. Design takes design work
    (a quest its publisher or the intake marked so) on Claude Code · `opus` · high, the reference's judgement row, the quest
    naming no model; a home from before it reads that seed for it, and a workflow step may name it. Removed, design work
-   falls to Build's. A seeded role is edited, restored and removed by the one door; no suggestion adds it. (from D205, D212)
+   falls to Build's. Exact build takes exact work (a quest its publisher marked `weight: exact`, the pack naming the change)
+   on Claude Code · `sonnet` at the account's default effort, the reference's build-exact row, the quest naming no model; a
+   longer window (`sonnet[1m]`) is the person's to choose from their account's offers. It is read as Design is: a home from
+   before it reads its seed, a workflow step may name it, removed its work falls to Build's, and a start says whose order it ran
+   on. A quest marked neither keeps Build's. A seeded role is edited, restored and removed by the one door; no suggestion adds
+   it. (from D205, D212)
 4. The most specific scope's role takes a work: repository, then workspace, then machine. At most one role takes a work
    in one scope (`two-roles-one-work`). (from D212)
 5. Only Intake and Ask Daoris may be off. A work that may not be off keeps a role on the machine (`may-not-be-off`). A
@@ -80,7 +85,11 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they start wi
    `course`, `limit`, `allow`, `files`, `landing`); none makes it its scope's generic supervisor, which answers what no kind
    takes there. The `allow` kind decides a permission request held in the asking mode at its session's repository (`allow.once`,
    `allow.reject`, ended through the hold's own end) and a widening at its rule's reach (`allow.standing`, `allow.reject`,
-   settled recorded by the role), each taking effect at its keeping (`AllowKind`). Its `authority` grants acts as `<kind>.<act>`, only of the kinds it decides, each off on a new record; the seed
+   settled recorded by the role), each taking effect at its keeping (`AllowKind`). The `files` kind decides an act a person's `ask`
+   in the rule file held at a start (`files.allow-run`, `files.allow-copy` at the repository, `files.allow-share` at the narrowest
+   place covering both repositories), by writing the held act's own text, never the `ask`'s pattern, into the person's own layer
+   of each repository it reaches, never the machine's, with the role and the decision (`FilesKind`, `FileAllows`); an ask naming
+   the person (`run(…)@person`) is listed for no supervisor. Its `authority` grants acts as `<kind>.<act>`, only of the kinds it decides, each off on a new record; the seed
    grants `question.answer`, `course.go-on` and `limit.move`. A scope holds one generic supervisor and one per kind
    (`two-roles-one-work`); the machine's generic supervisor may not be removed, scoped away or given kinds (`may-not-be-off`).
    The role door writes no supervisor record before the home's `supervisor-kinds` migration step is recorded (`not-converted`);
@@ -465,7 +474,7 @@ Web: `agents/roles/*.test.ts(x)` and `agents/setup/*.test.tsx`.
 - **CONTEXTDRIVE1l, m:** the installed proof. The hooks' coverage rows owed at CONTEXTDRIVE1g are not written: the every-door
   census that would hold them was retired with the door-only-where-wanted rule (D233 point 1), so no test names a hook.
 - **STAFFPOLICY1h/i:** selection by measurement; the installed proof.
-- **MODELROLE1l/e2:** built; the installed proof of a design quest on Design is in the installed batch, the partner's real-process
+- **MODELROLE1l/e2/i:** built; the installed proof of a design quest on Design, and of an exact one on Exact build, is in the installed batch, the partner's real-process
   case goes with COAGENT1. D233 choice 5 removes Ask Daoris's Accept and hand-over proposals, not the hand-over doors a person or
   an agent presses, so the hand-over's model stands; the four fenced roles are edited in the one role editor.
 - **SUPERVISOR1a-i (rest):** the author sweep test, the page's mark with *Overrule* on a question's answer (a referred point's

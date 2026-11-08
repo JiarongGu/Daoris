@@ -60,6 +60,7 @@ internal sealed class RosterWalk(HarnessRoster roster)
         // 🔴 No Daoris account to run on: the start waits for the person's sign-in, before anything is
         // probed or spawned, and never runs in the person's own tool home, which a scope naming nothing never meant.
         if (ours && order is [null]) return HarnessRoster.NoAccount(owner, [], names);
+        if (picked is not null && !ownHome && Gone(owner, picked) is { } gone) return gone;
         var states = order.Select(account => roster.Before(owner, account, now, names, HarnessRoster.FactOf(known, account), offer.Model)).ToList();
 
         // 🔴 A cooling account is held FIRST, by a file read, before any probe: a start on a
@@ -405,6 +406,29 @@ internal sealed class RosterWalk(HarnessRoster roster)
             // Counted from here on as one of this account's sessions, so the next start chosen before the next look spreads.
             Number = counts ? roster.Chose(owner, states[at].Account!) : 0,
         };
+    }
+
+    /// <summary>
+    /// The refusal of a pick whose account folder is not on this machine, where a start would spawn against a configuration home that
+    /// does not exist. The person's pick is never moved, so it is refused; a handed account that is gone is passed by
+    /// <see cref="RosterSelection.SelectHandedAsync"/>, which walks on within the agent's accounts. Null where the account is here.
+    /// </summary>
+    private HarnessSelection? Gone(string owner, string account)
+    {
+        IReadOnlyCollection<string> here;
+        try
+        {
+            here = HarnessSettings.Profiles(roster.Home, owner);
+        }
+        catch (DriverException)
+        {
+            return null;
+        }
+
+        if (here.Contains(account, StringComparer.OrdinalIgnoreCase)) return null;
+        return new HarnessSelection(
+            $"the `{owner}` account `{account}` is not on this machine — its folder is gone, so nothing starts on it. "
+            + "`daoris agent account list` shows the accounts there are.");
     }
 
     /// <summary>

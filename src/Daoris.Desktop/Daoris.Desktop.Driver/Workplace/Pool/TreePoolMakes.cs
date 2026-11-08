@@ -14,6 +14,11 @@ internal sealed class TreePoolMakes(TreePool pool, PoolSeams seams)
     {
         var site = make.Site;
         var branch = $"{TreeFollows.SessionPrefix}{make.Line}";
+        if (await PoolSubmodules.TrackedAsync(site.Root, "HEAD", ct).ConfigureAwait(false) is { } submodule)
+        {
+            return PoolDone.Not($"the repository tracks a submodule ({submodule}), and a repository with one is never pooled");
+        }
+
         var job = PoolGit.NewJobName();
         var claimed = pool.Claim(new TreeClaimOpening(site.Workspace, site.Repository, make.Number, TreeClaimKinds.Make, make.Holder, make.Line, branch, "", "", job)
         {

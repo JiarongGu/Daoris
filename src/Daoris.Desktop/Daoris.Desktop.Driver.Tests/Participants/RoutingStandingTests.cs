@@ -76,6 +76,7 @@ public sealed class RoutingStandingTests
     [Theory]
     [InlineData(ParticipantWork.Build, true)]
     [InlineData(ParticipantWork.Design, true)]
+    [InlineData(ParticipantWork.Exact, true)]
     [InlineData(ParticipantWork.Chat, true)]
     [InlineData(ParticipantWork.Help, false)]
     [InlineData(ParticipantWork.Partner, false)]
@@ -96,7 +97,7 @@ public sealed class RoutingStandingTests
     {
         var tells = ParticipantWork.Codes.Where(work => RoutingStanding.Told(work, Config(true, true), Repository(Lanes)) is not null);
 
-        Assert.Equal([ParticipantWork.Build, ParticipantWork.Design, ParticipantWork.Chat], tells);
+        Assert.Equal([ParticipantWork.Build, ParticipantWork.Design, ParticipantWork.Exact, ParticipantWork.Chat], tells);
     }
 
     [Fact]

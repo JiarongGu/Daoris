@@ -18,7 +18,7 @@ internal sealed record RuledLine(string Role, string? Repository, string? Worksp
 
     /// <summary>A driven quest's line: its last record where one ran, at the quest's repository and its registered <paramref name="workspace"/>.</summary>
     public static RuledLine OfQuest(string? home, QuestView quest, PriorSession? record, string? workspace) =>
-        Of(home, record, quest.To, workspace, string.Equals(quest.Weight, ParticipantWork.Design, StringComparison.Ordinal) ? RoleWork.Design : RoleWork.Build);
+        Of(home, record, quest.To, workspace, Driver.StartWork(quest));
 
     /// <summary>
     /// The line <paramref name="record"/> goes on from. A first start, with no record, is at <paramref name="repository"/> and
@@ -33,11 +33,11 @@ internal sealed record RuledLine(string Role, string? Repository, string? Worksp
         return new(RoleOf(home, record, work ?? WorkOf(record), at, circle), at, circle);
     }
 
-    /// <summary>The work a record's line does: Ask Daoris's, a conversation's, else a driven line's, design where its seeded role is Design's.</summary>
+    /// <summary>The work a record's line does: Ask Daoris's, a conversation's, else a driven line's, design or exact where its seeded role is theirs.</summary>
     public static string WorkOf(PriorSession? record) =>
         record?.HelpMode is not null ? RoleWork.AskDaoris
         : record?.Kind == SessionKinds.Chat ? RoleWork.Chat
-        : string.Equals(record?.Actor, RoleWork.Design, StringComparison.Ordinal) ? RoleWork.Design
+        : record?.Actor is RoleWork.Design or RoleWork.Exact ? record.Actor
         : RoleWork.Build;
 
     // A driven record's `actor` is the seeded role's id, so an added role is read from the start's binding or the catalogue, never from it.

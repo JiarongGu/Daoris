@@ -168,11 +168,10 @@ internal sealed class AutoTidies(
     private bool RetentionDue(string repository)
     {
         var key = $"{Path.GetFullPath(context.Home)}|{repository}";
-        var now = context.Clock();
-        if (Retained.TryGetValue(key, out var last) && now - last < TimeSpan.FromDays(1)) return false;
-        Retained[key] = now;
-        return true;
+        return !(Retained.TryGetValue(key, out var last) && context.Clock() - last < TimeSpan.FromDays(1));
     }
+
+    private void Retention(string repository) => Retained[$"{Path.GetFullPath(context.Home)}|{repository}"] = context.Clock();
 
     private async Task<TidyPass> TidyAloneAsync(
         string root, string repository, string? workspace, Func<CancellationToken, Task<IReadOnlySet<string>>> inUse, CancellationToken ct)
@@ -211,9 +210,11 @@ internal sealed class AutoTidies(
             await cleanups.MarkAbsentAsync(root, repository, line, ct, refs).ConfigureAwait(false);
             if (RetentionDue(repository))
             {
+                SetAsideFaults.Current?.BeforeRetention?.Invoke(root);
                 recovered = await RecoveryRetention.TidyAsync(
                     root, repository, RecoveryRetention.Made(context.Recorded.Entries(), repository), context.Clock(), ct,
                     RecoveryKeeps.Recorded(context.Home, repository)).ConfigureAwait(false);
+                Retention(repository);
             }
         }
 

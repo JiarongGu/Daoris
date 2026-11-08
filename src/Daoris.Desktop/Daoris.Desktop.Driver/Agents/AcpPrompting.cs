@@ -203,10 +203,13 @@ internal sealed class AcpPrompting(ITurnPromptWiring wiring)
             _cancelAsked = false;
 
             // The turn that took the words ended, their receipt `ended`: what Daoris saw, never an answer; and only where the words were
-            // taken here.
-            if (wiring.Open.Took(open) && stopReason == "end_turn" && open.Words?.Id is { } word)
+            // taken here. A try carries several held words in one prompt, and each is receipted.
+            if (wiring.Open.Took(open) && stopReason == "end_turn")
             {
-                wiring.Emit(new SessionEvent { Kind = SessionEventKind.Receipt, Id = word, Receipt = Receipts.Ended });
+                foreach (var words in open.All)
+                {
+                    if (words.Id is { } word) wiring.Emit(new SessionEvent { Kind = SessionEventKind.Receipt, Id = word, Receipt = Receipts.Ended });
+                }
             }
         }
         else

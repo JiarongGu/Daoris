@@ -100,6 +100,7 @@ internal static class DependencyStore
     {
         if (Hit(home, key) is not { } manifest) return null;
         var entry = EntryOf(home, key);
+        if (manifest.Absent) return Path.Exists(Path.Combine(tree, folder)) ? null : manifest;
         var source = Path.Combine(entry, Files);
         foreach (var each in manifest.Files)
         {

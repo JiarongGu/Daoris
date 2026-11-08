@@ -332,6 +332,29 @@ public sealed class SetAsideSlimTests : IDisposable
         Assert.Equal(["node_modules"], Assert.Single(Pass(folder, TimeSpan.FromHours(27)).Slims).Removed);
     }
 
+    /// <summary>
+    /// 🔴 A pass between a finished tree's <c>judged</c> manifest and its move keeps the manifest, one no move followed goes after the hour.
+    /// </summary>
+    [Fact]
+    public void A_finished_manifest_judged_before_its_folder_has_moved_is_kept_through_the_hour()
+    {
+        var folder = Aside("s-19", Package);
+        TreeSetAside.DeleteNeverFollowing(folder);
+        var finished = new FinishedTree(
+            MovedOf(folder), "default", "s-19", "main", "abc123", null, null, new FinishedHold("none", null, null), null, new FinishedLeft([], 0, false), Whole: false);
+        new SlimManifest(SlimStates.Judged, MovedOf(folder).AddSeconds(-1), null, "engine", "daoris/s-19", [new SlimPath("node_modules", SlimStates.Pending)])
+            {
+                Finished = finished,
+            }
+            .Write(SlimManifest.PathFor(folder));
+
+        Pass(folder, TimeSpan.FromMinutes(10));
+        Assert.Equal(SlimStates.Judged, Read(folder).State);
+
+        Pass(folder, TimeSpan.FromHours(2));
+        Assert.False(File.Exists(SlimManifest.PathFor(folder)));
+    }
+
     /// <summary>The folder's line in the trees' list, which the work inventory and <c>work state</c> read, names what it dropped.</summary>
     [Fact]
     public async Task The_list_names_the_package_folders_a_folder_dropped()

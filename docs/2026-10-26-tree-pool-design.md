@@ -1999,7 +1999,7 @@ place), and every row's park, placement, relink, exclusive hold and parking name
   *(R4-F8)*; `SlotChoice` and `SlotJudgement` over every row of §5.1 and §5.2; the census passing, and failing on each kind of planted site;
   `StructureTests` with no new census edge. Row a settles the shapes; the lifecycle's proof is row b's (C1, §4).
 
-### b. ⚖ Taking, returning, finishing, ending and retiring a slot over git, unwired. **Partly built** (2026-11-08: make, take, return, end, the judgement over git, the lock reasons and the takeover; the finish, the retirement, the size bound's renewal and the Windows `Process` class are left)
+### b. ⚖ Taking, returning, finishing, ending and retiring a slot over git, unwired. **Built** (2026-11-08; the three measurements its Proof asks for are not taken)
 
 - **Changes** *(R4)*. `TreePool.MakeAsync`, `TakeAsync`, `ReturnAsync`, `FinishAsync`, `EndAsync`, `RetireAsync` and `VisitAsync`, each with
   its phases and its takeover (§2.3), its job made as an act's is and its takeover fenced by generation *(R4-F8)*; the judgement's git reads,

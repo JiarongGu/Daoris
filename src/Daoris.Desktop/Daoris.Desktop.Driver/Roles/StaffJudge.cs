@@ -153,8 +153,9 @@ public static class StaffJudge
         }
 
         var entries = order.Select((entry, index) => new Entry(entry, index, policy.Of(StaffKey.Of(entry)) ?? new StaffChoice(StaffKey.Of(entry)))).ToList();
-        var designNamed = entries.Any(each => each.Choice.Takes?.Contains(RoleWork.Design, StringComparer.Ordinal) == true);
-        var served = entries.Where(each => Serves(each.Choice, work, designNamed)).ToList();
+        var fallsToBuild = work is RoleWork.Design or RoleWork.Exact;
+        var named = entries.Any(each => each.Choice.Takes?.Contains(work, StringComparer.Ordinal) == true);
+        var served = entries.Where(each => Serves(each.Choice, work, fallsToBuild && !named)).ToList();
         var left = entries.Where(each => !served.Contains(each)).ToList();
 
         var window = facts.Window.Count > Window ? facts.Window.Skip(facts.Window.Count - Window).ToList() : facts.Window;
@@ -279,10 +280,10 @@ public static class StaffJudge
     private static bool Own(string from) =>
         int.TryParse(from, NumberStyles.None, CultureInfo.InvariantCulture, out var number) && number >= 1 && number <= ActorChoices.Most;
 
-    private static bool Serves(StaffChoice choice, string work, bool designNamed) =>
+    private static bool Serves(StaffChoice choice, string work, bool fallsToBuild) =>
         choice.Takes is not { } takes
         || takes.Contains(work, StringComparer.Ordinal)
-        || (work == RoleWork.Design && !designNamed && takes.Contains(RoleWork.Build, StringComparer.Ordinal));
+        || (fallsToBuild && takes.Contains(RoleWork.Build, StringComparer.Ordinal));
 
     private static string? OverBudget(Entry each, StaffFacts facts)
     {

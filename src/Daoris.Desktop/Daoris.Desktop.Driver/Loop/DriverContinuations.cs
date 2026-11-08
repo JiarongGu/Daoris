@@ -395,11 +395,9 @@ internal sealed class DriverContinuations(LoopContext context, Driver driver)
 
             onOpened();
             var openedAt = DateTimeOffset.UtcNow;
-            // The park's question is over as its record goes on, so a press another
-            // window still shows it with is refused as changed at once; one the disk keeps is logged.
+            // The park's question is over as its record goes on, so a press another window shows it with is refused at once.
             _driver.Questions(sessionId, new QuestionFiles(_context.Home).Clear(sessionId));
-            _context.Runs.Live[quest.Id] = sessionId;
-            using var live = new Disposer(() => _context.Runs.Live.TryRemove(quest.Id, out var _));
+            using var live = _context.Runs.GoesLive(quest.Id, sessionId);
 
             var (run, refusedWhy) = await _driver.Holds.HoldAsync(
                 park.Actor ?? "build", adapter, info, target, sessionId, transcript, workTree, Driver.JoinNotices(harnessNotice, browserNotice), rules, handed,

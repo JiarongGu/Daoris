@@ -191,7 +191,7 @@ public sealed class RoleCatalog
                 : new RoleFound(null, $"Two roles take `{work}` in one scope ({string.Join(", ", best.Select(role => $"`{role.Id}`"))}), so its starts hold until one is removed.");
         }
 
-        return work == RoleWork.Design ? RoleFor(RoleWork.Build, place) : new RoleFound(null, NoRole(work));
+        return work is RoleWork.Design or RoleWork.Exact ? RoleFor(RoleWork.Build, place) : new RoleFound(null, NoRole(work));
     }
 
     /// <summary>
@@ -219,7 +219,7 @@ public sealed class RoleCatalog
             return new RoleFound(null, $"The role `{role}` does not work here: its scope is the {found.Scope.Kind} `{found.Scope.Id}`, {Hold} until it is scoped here: {Configured}.");
         }
 
-        var takes = found.Takes.Contains(work, StringComparer.Ordinal) || (work == RoleWork.Design && found.Takes.Contains(RoleWork.Build, StringComparer.Ordinal));
+        var takes = found.Takes.Contains(work, StringComparer.Ordinal) || (work is RoleWork.Design or RoleWork.Exact && found.Takes.Contains(RoleWork.Build, StringComparer.Ordinal));
         return takes ? new RoleFound(found, null) : new RoleFound(null, $"The role `{role}` does not take `{work}`, {Hold} until it does: {Configured}.");
     }
 
@@ -333,7 +333,7 @@ public sealed class RoleCatalog
         }
 
         // An unreadable seeded id is left to the person's next edit of it, so it is not counted as uncovered here.
-        foreach (var work in RoleWork.Codes.Where(work => work != RoleWork.Design && !ActorChoices.MayBeOff(StartPlan.RoleOf(work))))
+        foreach (var work in RoleWork.Codes.Where(work => work is not (RoleWork.Design or RoleWork.Exact) && !ActorChoices.MayBeOff(StartPlan.RoleOf(work))))
         {
             if (after.Any(slot => slot.State == RoleState.Unreadable && slot.Id == StartPlan.RoleOf(work))) continue;
             if (!after.Any(slot => slot.Role is { } role && role.Scope.Rank == 0 && role.Takes.Contains(work, StringComparer.Ordinal)))

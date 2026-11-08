@@ -360,9 +360,13 @@ public sealed class Driver(
         }
     }
 
-    /// <summary>The work a quest's start is: design where its publisher or the intake marked its weight so, else build.</summary>
-    internal static string StartWork(QuestView quest) =>
-        string.Equals(quest.Weight, ParticipantWork.Design, StringComparison.Ordinal) ? ParticipantWork.Design : ParticipantWork.Build;
+    /// <summary>The work a quest's start is: design or exact where its publisher or the intake marked its weight so, else build.</summary>
+    internal static string StartWork(QuestView quest) => quest.Weight switch
+    {
+        ParticipantWork.Design => ParticipantWork.Design,
+        ParticipantWork.Exact => ParticipantWork.Exact,
+        _ => ParticipantWork.Build,
+    };
 
     /// <summary>Where a quest's start is, by which a scoped role is found: its circle and the repository it is asked of.</summary>
     internal static RolePlace PlaceOf(Consideration start) => new(start.Workspace, start.Quest.To);

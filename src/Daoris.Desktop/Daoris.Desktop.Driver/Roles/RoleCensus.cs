@@ -29,7 +29,7 @@ public static class RoleCensus
         if (!ActorChoices.Ids.Contains(actor, StringComparer.Ordinal)) return $"`actor` is `{actor}`, which is not a seeded role every build reads";
         var (role, revision) = bound ?? (actor, 0L);
         if (at(role, revision) is not { } record) return $"its start kept role `{role}` at revision {revision}, which the catalogue does not hold";
-        return record.Takes.Contains(work, StringComparer.Ordinal) || (work == RoleWork.Build && record.Takes.Contains(RoleWork.Design, StringComparer.Ordinal))
+        return record.Takes.Contains(work, StringComparer.Ordinal) || (work == RoleWork.Build && record.Takes.Any(taken => taken is RoleWork.Design or RoleWork.Exact))
             ? null
             : $"role `{role}` at revision {revision} does not take `{work}`";
     }

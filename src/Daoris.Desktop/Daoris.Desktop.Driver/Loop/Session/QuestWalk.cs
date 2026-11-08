@@ -138,12 +138,12 @@ internal sealed class QuestWalk(string home, DriverConfig config, LoopContext co
         }
     }
 
-    /// <summary>The name of the role a design quest's start took, as its opening says it; null where the catalogue will not read.</summary>
-    public string? DesignRoleName(Consideration start, string? named)
+    /// <summary>The name of the role a design or exact quest's start of <paramref name="work"/> took, as its opening says it; null where the catalogue will not read.</summary>
+    public string? WeightedRoleName(Consideration start, string work, string? named)
     {
         try
         {
-            return Found(RoleCatalog.ReadHome(home), ParticipantWork.Design, start, named).Role is { } role
+            return Found(RoleCatalog.ReadHome(home), work, start, named).Role is { } role
                 ? ActorChoices.Ids.Contains(role.Id, StringComparer.Ordinal) ? ActorWords.Name(role.Id) : role.Name.In("en")
                 : null;
         }

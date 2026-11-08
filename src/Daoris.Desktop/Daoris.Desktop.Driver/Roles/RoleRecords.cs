@@ -12,6 +12,7 @@ public static class RoleWork
 {
     public const string Build = "build";
     public const string Design = "design";
+    public const string Exact = "exact";
     public const string Chat = "chat";
     public const string AskDaoris = "ask-daoris";
     public const string Intake = "intake";
@@ -21,9 +22,9 @@ public static class RoleWork
     public const string Brainstorm = "brainstorm";
 
     /// <summary>Every work, the closed set, in the participant's order.</summary>
-    public static IReadOnlyList<string> Codes { get; } = [Build, Design, Chat, AskDaoris, Intake, Help, Partner, Review, Brainstorm];
+    public static IReadOnlyList<string> Codes { get; } = [Build, Design, Exact, Chat, AskDaoris, Intake, Help, Partner, Review, Brainstorm];
 
-    public static IReadOnlyList<string> Driven { get; } = [Build, Design];
+    public static IReadOnlyList<string> Driven { get; } = [Build, Design, Exact];
 }
 
 /// <summary>Where a role works: the machine, a workspace or a repository, the most specific scope's role taking a work there.</summary>
