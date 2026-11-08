@@ -3007,3 +3007,58 @@ A quiet machine would settle warm against cold, the hold (54 s, against 8.1 s fo
 - **C. TREEPOOL1x.** Install the root with `npm ci --ignore-scripts`; its lockfile has no install script, while the web's has esbuild's, so the web keeps its scripts. Run the two `--install` steps once per checkout, and leave `docs/index/` to the stage's hook. Risk: a later root dependency's script is skipped unless the stage reads `hasInstallScript`.
 
 **(4) Row d.** It cannot start yet. First: the owner answers item 12 on these numbers (A, B, or §11 restated as files about 95% and bytes about 20%); TREEPOOL1x is built and the bench rerun without the person's rule, with a build per line, bytes per step and one used slot; and FOUNDATION1's row 1d-i has landed.
+
+
+## Codex, round 14
+
+Codex's read of §35 at `024cee0e28`, run by the steward from outside the install, read-only; verbatim.
+
+- **TREEPOOL1x — Ready.** §35.6 separates repository setup from sealable dependency installation and preserves required package scripts through the lockfile check. Its specified proof must include the missing-placement and disappearing-web-install traces; “unsealed” alone does not explain either.
+
+- **TREEPOOL1y — Blocked.** §35.7’s rollback cites `PoolTakeovers.UndoAsync`, but that helper detaches at `claim.Start`, the **incoming** commit, and does nothing for a return (`PoolTakeovers.cs:121–135`). Sequence: slot serves A; take switches to B at a different tip; clearing encounters a held output; undo then release leaves the slot recorded as A while its tracked files are B’s. `LinePlaces` can consequently answer B’s folder as A’s. **Smallest change:** record and restore the previous branch/detached state and expected tip; release only after restoration succeeds, otherwise retain a recoverable held claim. Test different tips.
+
+- **TREEPOOL1z — Blocked on migration.** §35.1 migrates field names and promises equivalent patterns for this repository, but does not specify equivalent conversion of the person’s pattern grammar. Today `FileRule.Matches` uses `RoomPaths.Declared`, whose glob supports brace alternatives; git does not. Sequence: a person’s `{drafts,notes}/` rule covers both folders; upgrade renames fields but retains the pattern; neither folder matches afterward, dropping that rule. Root-relative patterns also acquire broader meanings without anchoring. **Smallest change:** version and translate every existing layer’s patterns as well as fields, preserving order and permissions; prove equivalence for the person’s rules before removing the old reader.
+
+- **TREEPOOL1aa — Blocked.** §35.3, signal (a), equates any later write under the output or neighboring `renew` top with a build. Sequence: A leaves binaries; B changes sources; restore or a failed build writes `obj/`; the guard releases B’s base; the integrated runner executes A’s surviving binary. This is stale output accepted through the promised guard, independent of shell bypasses. **Smallest change:** release only against successful build evidence covering the particular output, project and configuration; retain signal (b) for successful builds that write nothing. Timestamp changes alone cannot establish that evidence.
+
+- **TREEPOOL1ab — Ready after its prerequisites are repaired.** §35.8 supplies the missing per-line builds, equivalent arms, successful web coverage and used-slot contention. Report the counter’s logical file-change estimates accurately; they are not physical write totals.
+
+- **TREEPOOL1ac — Blocked on the matching boundary.** §35.1 retains ignored-top-only matching, while §35.5 permits descendant shares. Sequence: a recorded share is `settings/shared/`; a subsequent ignore rule collapses git’s report to `settings/`; `SlotIgnored.ReadAsync` classifies that parent as `Own`, concealing the share and treating its presence as line-owned material. **Smallest change:** partition ignored tops at declared/recorded share boundaries, without traversing link targets; classify shared descendants separately and preserve ordinary siblings.
+
+For §35.10: **Signal (b) is not a second way** if builders and runners consult one provenance state and one release operation.
+
+**A directly typed `--no-build` bypass is acceptable as disclosed unmanaged shell execution**, with D214’s refusal guarantee stated precisely for the declared, integrated runners.
+
+**Row d’s new When is right as a prerequisite gate, but remains unmet.** Keep the corrected rows, both makers’ nonblocking reads, rerun evidence on both shapes, the steward’s saving finding and FOUNDATION1’s keyed open; ac need not hold d.
+
+## Opus (independent), round 14
+
+The independent Opus 5.5 reader's read of §35 at `024cee0e28`, read-only; as it answered, set down by the steward. Two rows are ready, one is ready with an addition to its runs, and three are not.
+
+**TREEPOOL1y: ready.** Three small changes. Catch `UnauthorizedAccessException` as well as `IOException`, because a file top's `File.Move` can throw either. Mark the aside folder as the previous line's before the first rename, so a move-back that itself fails leaves the moved tops held for that line and not unmarked. Once 1aa lands, the undo also removes the `Bases` entries and markers its claim wrote.
+
+**TREEPOOL1x: ready.** One gap for the generic rule: npm runs a git dependency's `prepare`, and the lockfile marks it with no `hasInstallScript`. So the split must also require that no entry resolves from git.
+
+**TREEPOOL1z: not ready.**
+
+1. *A pattern differs from git* (§35.1 *Patterns*; the proof table). Git never takes a path back under an excluded parent folder; a matcher that tests each top by the last match does. Sequence: entry `["out/", "!out/keep/"]`, and `out/` holds a tracked file, so git lists `out/keep/` as its own top. Git calls it covered; `GitPattern` does not. Git here also matches case-insensitively (`core.ignorecase`). Change: a pattern covers a top when it matches the top or any folder above it, and a `!` cannot take back anything under a covered folder. Add both cases to the table.
+2. *The migration changes or drops a person's rule* (§35.1, the last paragraph of *A rule set per entry*). The old grammar anchors every path at the top and expands `{a,b}` (`RoomPaths.cs:22`). Git syntax lets a pattern with no inner slash match at any depth and reads braces literally. Sequence: a person's `node_modules/`, meant for the root, now also matches the web's and wins as the later rule; `src/{App,Lib}/bin/` matches nothing. Change: the same upgrade that renames `copy` and `share` rewrites each pattern in the person's file (adds the leading `/`, expands braces). Run the analysis again, and extend the before-and-after equality proof to the person's layer.
+3. *A kept base read without a guard* (§35.2 *Per signature*). `refuses` enforces nothing, and a script the analysis finds does not read the marker. Sequence: a .NET repository's script runs `bin/Debug/App.exe`; line A builds, B takes the slot, edits, runs the script, and reads A's app as its own result. Change: the found layer writes `base` only where no found script runs that output without building, else `aside`.
+
+Not blocking: `!tools/*/bin/` does not give the tools' folders `aside`; they fall through to the found layer's `base`, so add a later `aside` entry for them. The repository layer is read at the slot's HEAD (`StoreDependency.cs:32`); older commits of this repository carry `copy: true`, so once the old reading is deleted, a line at such a commit loses that copy.
+
+**TREEPOOL1aa: not ready.**
+
+1. *The base is read stale* (§35.3 *What the slot records*). `Bases` is written from the judgement at the previous HEAD; `ClearAsync` sorts again at the new HEAD (`PoolClearing.cs:40`). Sequence: 1aa lands `bin/` as `base`; a slot's last line began before that; the next take records no base, and clearing leaves `bin/` with no marker. `desktop.mjs run` then runs A's build as B's. Change: in the claim, read the rules once at the new start from git's objects, and have `ClearAsync` leave exactly the recorded `Bases`.
+2. *Signal (a) releases on a failed build.* A restore, a failed compile or an editor's design-time build writes the renew top beside it, `obj/`, and leaves `bin/` untouched. Sequence: B's code does not compile, `dotnet build` fails, the base is released, and the runner runs A's `bin/`. Change: count writes under the base top only.
+3. *Runners missed.* `tools/proof-kit.mjs:24,50`, and `desktop.mjs shot` and `restart` (through `targetExe()`), run `bin/` without building. Change: guard at `targetExe()` and at proof-kit's paths, plus a census test of the tools that read `bin/Debug`.
+
+Not blocking: `trees build` runs `dotnet build` at the root, which has no project or solution file, so signal (b) never releases here. Run it in the top's project folder.
+
+**TREEPOOL1ab: ready, but run with the checkout's `local/` copy present.** That copy lies inside the top `local/`, which `--ignored=matching` lists whole (`FillJudgement.cs:22`). `TreeCopies.IsOwn` keys the file, not the top, so `local/` sorts as the line's own and every take of this repository's slots is refused `lines-own`. The bench never met this because its clone had no `local/`.
+
+**TREEPOOL1ac: not ready**, from the same root: §35.1 never matches a path inside a top, so `local/rules/` matches nothing, and the link would make `local/` the line's own. Change: `SlotIgnored` looks inside a top that holds a recorded copy or link, and calls the top Daoris's own only where every entry is one. Not blocking: the start words should say that a recursive delete following a junction reaches the place (Windows PowerShell 5.1's `Remove-Item`, or git as D51 measured).
+
+**§35.10's questions.** Signal (b)'s verb is not a second way: the marker asks whether a base is released, and the verb releases it in the case signal (a) cannot see, as long as it is the one Daoris door that runs and records a build. An unrefused typed `--no-build` is acceptable: Daoris holds no shell, the result is wrong but no work is lost, and a person who wants it refused adds a deny rule in the harness. It is not acceptable for scripts the analysis found (1z.3), and `refuses` should drive the start words so the field does something.
+
+**Row d's *When*** is right, with one prerequisite added: the `local/` copy's refusal fixed, or measured in the rerun; otherwise the steward's finding rests on a bench that never met it.
