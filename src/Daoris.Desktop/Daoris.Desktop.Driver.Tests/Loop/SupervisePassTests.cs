@@ -166,6 +166,40 @@ public sealed class SupervisePassTests : IDisposable
     }
 
     [Fact]
+    public async Task ROLESREVIEW1f_a_dropped_block_is_said_on_the_line()
+    {
+        var (driver, _, _) = Driver((_, _) => Ended("completed", GoOn));
+
+        await new SupervisePass(driver.Context, driver).StartAsync(Point, new Desk(SupervisorWhy.Form), default);
+        await Until(() => Last(driver)?.Outcome is not null);
+
+        Assert.Equal(SupervisorAttemptOutcomes.Failed, Last(driver)!.Outcome);
+        Assert.Contains(driver.Context.Events.After("s1", 0).Events, e => e.Kind == SessionEventKind.Note && e.Text!.Contains("not kept (form)", StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public async Task ROLESREVIEW1f_a_block_dropped_for_a_role_change_spends_no_choice_and_the_subject_begins_again()
+    {
+        var (driver, asked, _) = Driver((_, _) => Ended("completed", GoOn));
+
+        await new SupervisePass(driver.Context, driver).StartAsync(Point, new Desk(SupervisorWhy.RoleChanged), default);
+        await Until(() => Last(driver)?.Outcome is not null);
+
+        Assert.Equal(SupervisorAttemptOutcomes.RoleChanged, Last(driver)!.Outcome);
+        Assert.False(driver.Context.Supervisor.Attempts.Ended(Point.Subject));
+        Assert.Empty(driver.Context.Supervisor.Attempts.Spent(Point.Subject));
+        Assert.Contains(driver.Context.Events.After("s1", 0).Events, e => e.Kind == SessionEventKind.Note && e.Text!.Contains("role changed", StringComparison.Ordinal));
+
+        var desk = new Desk();
+        Assert.NotNull(await new SupervisePass(driver.Context, driver).StartAsync(Point, desk, default));
+        await Until(() => driver.Context.Supervisor.Attempts.Of(Point.Subject).Count == 2 && Last(driver)!.Outcome is not null);
+
+        Assert.Equal([1, 1], asked.Select(ask => ask.Attempt.Choice));
+        Assert.Equal(SupervisorAttemptOutcomes.Decided, Last(driver)!.Outcome);
+        Assert.Single(desk.Kept);
+    }
+
+    [Fact]
     public async Task A_limited_end_is_a_pass_and_the_next_attempt_takes_the_next_choice()
     {
         var turns = 0;

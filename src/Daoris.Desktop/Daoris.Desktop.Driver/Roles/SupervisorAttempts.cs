@@ -17,6 +17,9 @@ public static class SupervisorAttemptOutcomes
 
     /// <summary>A limited or transient end: a pass of the walk, the next attempt taking the next choice.</summary>
     public const string Limited = "limited";
+
+    /// <summary>The role changed while the turn ran, so its block was dropped at the keeping: no choice is spent and the subject begins again under the role as it now stands.</summary>
+    public const string RoleChanged = "role-changed";
 }
 
 /// <summary>One attempt at a subject: its id, the subject, the choice of the role's order it ran on, when it started, and how it ended.</summary>
@@ -65,8 +68,9 @@ public sealed class SupervisorAttempts(string home)
     /// <summary>Whether <paramref name="subject"/>'s attempts have ended, so it is the person's.</summary>
     public bool Ended(SupervisorSubject subject) => Of(subject).Any(each => each.Outcome is SupervisorAttemptOutcomes.Decided or SupervisorAttemptOutcomes.Left or SupervisorAttemptOutcomes.Failed);
 
-    /// <summary>The choices <paramref name="subject"/>'s attempts ran on, each once.</summary>
-    public IReadOnlyList<int> Spent(SupervisorSubject subject) => [.. Of(subject).Select(each => each.Choice).Distinct().Order()];
+    /// <summary>The choices <paramref name="subject"/>'s attempts ran on, each once; an attempt a role change dropped spent none, its order being the old role's.</summary>
+    public IReadOnlyList<int> Spent(SupervisorSubject subject) =>
+        [.. Of(subject).Where(each => each.Outcome != SupervisorAttemptOutcomes.RoleChanged).Select(each => each.Choice).Distinct().Order()];
 
     /// <summary>The start's closure: every attempt with no outcome closed failed, its subject returned, since none runs after a restart.</summary>
     public IReadOnlyList<SupervisorSubject> CloseUnended(DateTimeOffset now) => Close(now, _ => true);

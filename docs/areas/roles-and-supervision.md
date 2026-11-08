@@ -267,7 +267,9 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they start wi
     kind's row by the decision door (`AgentSupervisorDesk`), its grant and hold read again first, the decision keeping the
     agent's holder (role, revision, choice, tier that ran, posture, session, tokens). A limited or transient end is a pass and the
     next look takes the next choice; a failed end, a timeout, a block that does not read or names another subject ends the
-    subject's attempts; a block the keeping refuses is dropped (`supervisor.dropped`); a leave is final. With no choice ready
+    subject's attempts; a block the keeping refuses is dropped (`supervisor.dropped`) and said on the subject's line, ending its attempts, but one
+    dropped `role-changed` spends no choice and decides again under the role as it now stands (outcome `role-changed`); a
+    leave is final. The prompt states the reasons' bounds. With no choice ready
     nothing starts, the person's rules stand as they acted, and the subject waits for the person, said once on its line
     (`supervisor.unavailable`) and taken once a choice is ready. The person's word on a subject ends its running turn and drops
     its result. (from D233, D229)
@@ -317,7 +319,7 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they start wi
     person (overruled, stale, superseded, interrupted, left) as closed by its kind and subject, so a point overruled before a restart,
     or one whose overrule line was never written, is listed for no supervisor again and its decide is refused. An agent
     supervisor's attempt (`SupervisorAttempts`) is written beside the subject's decisions before its turn starts and its outcome
-    (decided, left, failed, limited) beside it at its end, one per choice of the role's order and one at a time per subject; the
+    (decided, left, failed, limited, role-changed) beside it at its end, one per choice of the role's order and one at a time per subject; the
     sweep closes an attempt with no outcome failed and remembers every subject whose attempts ended as closed, so no choice is
     spent on it again.
     A quest's point is its rule's act on the quest's last session while the planner's verdicts hold it there, parked (`failures`)

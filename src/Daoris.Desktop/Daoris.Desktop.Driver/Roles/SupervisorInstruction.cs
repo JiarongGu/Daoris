@@ -39,7 +39,9 @@ internal static class SupervisorInstruction
             .Append("\"reasons\": [ { \"says\": \"…\", \"source\": \"<where: a file and line, a decision, or count:<name>>\" } ] }\n")
             .Append(SupervisorBlock.Closing).Append("\n\n");
         prompt.Append("or, to leave it to the person, the same block with \"leave\": \"<bound>\" in place of \"do\" and \"choice\". ")
-            .Append("Give one to five reasons, each naming its source.\n");
+            .Append("Give one to five reasons, each naming its source: a reason's \"says\" takes at most ")
+            .Append(QuestionSupervisorDecisions.MaxSays).Append(" characters and its \"source\" at most ").Append(QuestionSupervisorDecisions.MaxSource)
+            .Append(", and a longer one is not kept.\n");
         return prompt.ToString();
     }
 
