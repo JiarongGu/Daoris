@@ -17,9 +17,6 @@ internal static class ReviewReads
         "--no-color", "--no-ext-diff", "--src-prefix=a/", "--dst-prefix=b/", "-M", "-z", "--raw", "--numstat", "-p",
     ];
 
-    /// <summary>The untracked files Review reads a patch of, one start each, past which this bench stops asking.</summary>
-    public const int UntrackedCap = 20;
-
     /// <summary>One Review through the binary: the time of each start, in order.</summary>
     public static async Task<List<(string Ask, double Ms)>> BinaryAsync(GitBinary git, Layout layout)
     {
@@ -28,9 +25,12 @@ internal static class ReviewReads
         var line = (await Fixtures.MustAsync(git, tree, ["rev-parse", layout.Line])).Trim();
         var times = new List<(string, double)>();
 
-        async Task<string> Ask(string name, params string[] arguments)
+        async Task<string> Ask(string name, params string[] arguments) => await Private(name, null, null, arguments);
+
+        async Task<string> Private(string name, string? index, string? input, params string[] arguments)
         {
-            var (_, output, sample) = await git.RunAsync(tree, arguments);
+            var variables = index is null ? null : new Dictionary<string, string> { ["GIT_INDEX_FILE"] = index, ["GIT_LITERAL_PATHSPECS"] = "1" };
+            var (_, output, sample) = await git.RunAsync(tree, arguments, variables: variables, input: input);
             times.Add((name, sample.WallMs));
             return output;
         }
@@ -45,10 +45,22 @@ internal static class ReviewReads
         await Ask("merge-base with the line", "merge-base", "HEAD", layout.Line);
         await Ask("behind the line", "rev-list", "--count", layout.Line, "--not", "HEAD");
         await Ask("ahead of the line", "rev-list", "--count", "HEAD", "--not", layout.Line);
-        foreach (var path in Untracked(status).Take(UntrackedCap))
+        // The untracked files' patches in two starts, as Daoris's UntrackedPatches reads them: intents into a private index, then its diff.
+        var untracked = Untracked(status).ToArray();
+        if (untracked.Length > 0)
         {
-            await Ask("an untracked file's patch", "--no-optional-locks", "-c", "core.quotePath=false", "diff", "--no-index", "--no-color", "--no-ext-diff",
-                "--src-prefix=a/", "--dst-prefix=b/", "--", "/dev/null", path);
+            var index = Path.Combine((await Fixtures.MustAsync(git, tree, ["rev-parse", "--absolute-git-dir"])).Trim(), $"index.bench-{Guid.NewGuid():N}");
+            try
+            {
+                await Private("the untracked files' intents", index, string.Concat(untracked.Select(path => path + "\0")),
+                    "-c", "core.splitIndex=false", "add", "--intent-to-add", "--pathspec-from-file=-", "--pathspec-file-nul");
+                await Private("the untracked files' patches", index, null, "--no-optional-locks", "-c", "diff.autoRefreshIndex=false", "-c", "core.quotePath=false",
+                    "diff", "--no-color", "--no-ext-diff", "-O/dev/null", "--src-prefix=a/", "--dst-prefix=b/");
+            }
+            finally
+            {
+                File.Delete(index);
+            }
         }
 
         await Ask("committed diff", [.. Diff, $"{layout.Base}..HEAD"]);
@@ -117,7 +129,7 @@ internal static class ReviewReads
         Ask("merge-base with the line", () => repository.ObjectDatabase.FindMergeBase(head, line)?.Sha);
         Ask("ahead and behind the line", () => repository.ObjectDatabase.CalculateHistoryDivergence(head, line) is var divergence
             ? (divergence.AheadBy, divergence.BehindBy) : default);
-        var untracked = status?.Untracked.Select(entry => entry.FilePath).Take(UntrackedCap).ToArray() ?? [];
+        var untracked = status?.Untracked.Select(entry => entry.FilePath).ToArray() ?? [];
         if (untracked.Length > 0)
         {
             Ask("the untracked files' patches", () =>

@@ -170,7 +170,7 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they start wi
     update's close or the quiet end (`SessionReads.IsFailure`). For each count the most specific place
     holding a rule decides, with no layering. Rules naming the role beat those naming none; `off` ends inheritance. A
     repository's workspace is its wider place at the judge in every process as at the lines: the look keeps the registry's
-    in the store (`repository_workspaces`, the store's step 21) and the judge reads it there; `ROLES` answers each place's wider places,
+    in the store (`repository_workspaces`, the store's step 21; a registry that lists no repository leaves it as it was, one whose repositories name no workspace empties it) and the judge reads it there; `ROLES` answers each place's wider places,
     and the fold draws what a place's rules replace and inherit along that chain, for each role's lines. (from D229)
 34. A write is refused where any place's effective set has no tries rule, a move with no moves rule, or failures on one
     choice acting at or past failures, and where two rules on one count at the place would apply to one line (`ladder`:

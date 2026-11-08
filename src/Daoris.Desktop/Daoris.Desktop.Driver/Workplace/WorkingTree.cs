@@ -348,9 +348,6 @@ public static class WorkingTree
 
     internal static Task<TreeDiff?> UncommittedDiffAsync(string root, GitRead git, CancellationToken ct) => TreeDiffs.UncommittedDiffAsync(root, git, ct);
 
-    internal static Task<(string? Patch, int? Added)> UntrackedReadAsync(string root, string path, GitRead git, CancellationToken ct) =>
-        TreeDiffs.UntrackedReadAsync(root, path, git, ct);
-
     public static Task<TreeDiff?> DiffBetweenAsync(string root, string from, string to, CancellationToken ct = default) => TreeDiffs.DiffBetweenAsync(root, from, to, ct);
 
     internal static Task<TreeDiff?> DiffBetweenAsync(string root, string from, string to, GitRead git, CancellationToken ct) =>
@@ -511,6 +508,11 @@ public static class WorkingTree
 
     internal static Task<int> ReadGitAsync(string root, IReadOnlyList<string> arguments, Func<ReadOnlyMemory<char>, bool> take, CancellationToken ct) =>
         GitRuns.ReadGitAsync(root, arguments, take, ct);
+
+    internal static Task<int> ReadGitAsync(
+        string root, IReadOnlyList<string> arguments, IReadOnlyDictionary<string, string> environment, Func<ReadOnlyMemory<char>, bool> take,
+        CancellationToken ct) =>
+        GitRuns.ReadGitAsync(root, arguments, environment, take, ct);
 
     /// <summary>
     /// How a review reads git: <c>take</c> is handed git's answer as it comes and answers false once it has what

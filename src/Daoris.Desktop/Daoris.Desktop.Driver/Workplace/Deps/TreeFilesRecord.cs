@@ -42,6 +42,12 @@ internal sealed record TreeFilesState(bool Unworked, bool HookOwed, IReadOnlyLis
     /// <summary>Each copy of a machine-local file Daoris made, by its path and the hash it wrote.</summary>
     internal IReadOnlyDictionary<string, string> Copies { get; init; } = new Dictionary<string, string>();
 
+    /// <summary>Each link Daoris made to a shared place (<see cref="TreeShares"/>), trusted only while it still reads as that link.</summary>
+    internal IReadOnlyList<TreeShare> Shares { get; init; } = [];
+
+    /// <summary>The paths whose share the record dropped, their entry no longer reading as its link, until the files stage says so.</summary>
+    internal IReadOnlyList<string> Lost { get; init; } = [];
+
     /// <summary>The commit HEAD stood at before the switch that owes the hook; null for the null id.</summary>
     internal string? HookFrom { get; init; }
 
@@ -127,6 +133,11 @@ internal static class TreeFilesRecord
             {
                 Groups = groups,
                 Copies = copies,
+                Shares = root.TryGetProperty("shares", out var shares)
+                    ? [.. shares.EnumerateArray().Select(share => new TreeShare(
+                        share.GetProperty("path").GetString()!, share.GetProperty("place").GetString()!, share.GetProperty("reach").GetString()!))]
+                    : [],
+                Lost = root.TryGetProperty("lost", out var lost) ? [.. lost.EnumerateArray().Select(each => each.GetString()!)] : [],
                 HookFrom = root.TryGetProperty("hookFrom", out var from) ? from.GetString() : null,
                 Bases = TreeBase.FromJson(root),
             };
@@ -242,6 +253,12 @@ internal static class TreeFilesRecord
         })]);
         var body = new JsonObject { ["unworked"] = state.Unworked, ["hookOwed"] = state.HookOwed, ["placements"] = placements, ["groups"] = groups };
         if (state.Copies.Count > 0) body["copies"] = new JsonObject(state.Copies.Select(each => KeyValuePair.Create(each.Key, (JsonNode?)each.Value)));
+        if (state.Shares.Count > 0)
+        {
+            body["shares"] = new JsonArray([.. state.Shares.Select(share => (JsonNode)new JsonObject { ["path"] = share.Path, ["place"] = share.Place, ["reach"] = share.Reach })]);
+        }
+
+        if (state.Lost.Count > 0) body["lost"] = new JsonArray([.. state.Lost.Select(each => (JsonNode)JsonValue.Create(each))]);
         if (state.HookFrom is { } hookFrom) body["hookFrom"] = hookFrom;
         if (state.Bases.Count > 0) body["bases"] = TreeBase.ToJson(state.Bases);
         AtomicFile.WriteText(path, body.ToJsonString());

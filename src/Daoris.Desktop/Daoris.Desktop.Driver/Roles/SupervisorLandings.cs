@@ -20,11 +20,13 @@ internal sealed class SupervisorLandings(SupervisorBook book, IDecisionAdmission
             var subject = landing.Subject;
             if (book.Landings.Values.FirstOrDefault(each => each.Subject == subject) is { } decided)
             {
-                refused ??= SupervisorWhy.Answered;
-                if (decided.Do == landing.Do && decided.Generation == landing.Generation && decided.State is SupervisorState.Held or SupervisorState.Left)
+                if (refused is null && decided.Do == landing.Do && decided.Generation == landing.Generation
+                    && decided.State is SupervisorState.Held or SupervisorState.Left)
                 {
                     return Task.FromResult(new SupervisorKept(true, decided.Id, decided.State == SupervisorState.Held ? decided.GoesOnAt : null, null));
                 }
+
+                refused ??= SupervisorWhy.Answered;
             }
 
             refused ??= book.ClosedWhy(subject);

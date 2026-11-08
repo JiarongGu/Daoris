@@ -63,6 +63,18 @@ public static class SupervisorRuleDoor
     public static SupervisorRuleWorld World(string home) =>
         new(Roles(home, _ => true), Wider: new RuleWiderPlaceStore(home).Read().Of, Driven: Driven(home));
 
+    /// <summary><see cref="World(string)"/> with the working roles <paramref name="setting"/> a press writes beside the rules, as the catalogue will hold them.</summary>
+    public static SupervisorRuleWorld World(string home, IEnumerable<RoleRecord> setting)
+    {
+        var read = World(home);
+        var working = setting.Where(role => role.Hold is null && role.Takes.Count > 0).ToList();
+        return read with
+        {
+            Roles = [.. read.Roles.Union(working.Select(role => role.Id), StringComparer.Ordinal)],
+            Driven = [.. (read.Driven ?? []).Union(working.Where(role => role.Takes.All(work => RoleWork.Driven.Contains(work))).Select(role => role.Id), StringComparer.Ordinal)],
+        };
+    }
+
     /// <summary>The catalogue's working roles that take driven work alone (<see cref="RoleWork.Driven"/>): the roles a refer on limits or moves may name.</summary>
     public static IReadOnlyList<string> Driven(string home) => Roles(home, takes => takes.All(work => RoleWork.Driven.Contains(work)));
 

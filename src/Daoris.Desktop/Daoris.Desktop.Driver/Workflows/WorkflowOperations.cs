@@ -332,7 +332,11 @@ public static class WorkflowOperations
                     made = "the page";
                 }
 
-                if (!plan) WorkflowPorts.Store(home).Write(id, planned.Plan.Result!);
+                if (!plan && !WorkflowStore.WriteIfAbsent(WorkflowPorts.Store(home), id, planned.Plan.Result!))
+                {
+                    return Refuse("stale", $"`{id}` was saved by another save while this one was made, so this one would have replaced it. Nothing was written.");
+                }
+
                 return new(id, true, null, $"`{id}` v1, a new workflow, from {made}.", planned.Plan.Version, !plan, false, [], []);
             }
 
@@ -365,7 +369,7 @@ public static class WorkflowOperations
             }
 
             if (!plan && !WorkflowStore.WriteIfNewest(WorkflowPorts.Store(home), id, newest.Version, planAgainst.Plan.Result!)) return Refuse("stale", $"`{id}` {Changed}");
-            return new(id, true, null, $"`{id}` v{version.Version} →v{planAgainst.Plan.Version}.", planAgainst.Plan.Version, !plan, true, scopes, reach.Rows);
+            return new(id, true, null, $"`{id}` v{version.Version} → v{planAgainst.Plan.Version}.", planAgainst.Plan.Version, !plan, true, scopes, reach.Rows);
         }
         catch (ChoiceWords refused)
         {

@@ -1,6 +1,6 @@
 namespace Daoris.Driver;
 
-/// <summary>A slot's ignored tops sorted by each effective rule's <c>take</c>, a top holding a recorded copy by its <see cref="TopPartition"/>.</summary>
+/// <summary>A slot's ignored tops sorted by each effective rule's <c>take</c>, a top holding a copy or a share by its <see cref="TopPartition"/>, a share only while it holds.</summary>
 internal sealed record SlotIgnored(
     IReadOnlyList<string> Kept, IReadOnlyList<string> Outputs, IReadOnlyList<string> Intermediates, IReadOnlyList<string> Copies, IReadOnlyList<string> Own)
 {
@@ -8,7 +8,9 @@ internal sealed record SlotIgnored(
 
     internal IReadOnlyList<string> Based { get; init; } = [];
 
-    internal IReadOnlyList<string> Pooled => [.. Kept, .. Outputs, .. Intermediates, .. Based, .. Copies];
+    internal IReadOnlyList<string> Shared { get; init; } = [];
+
+    internal IReadOnlyList<string> Pooled => [.. Kept, .. Outputs, .. Intermediates, .. Based, .. Copies, .. Shared];
 
     internal enum Sort
     {
@@ -26,13 +28,21 @@ internal sealed record SlotIgnored(
         if (ignored.Count == 0) return None;
 
         var rules = await StoreDependencyRules.ReadAsync(site.Home, slot, site.Repository, head, ct).ConfigureAwait(false);
+        var holding = TreeShares.Holding(site.Home, slot).Select(share => share.Path).ToHashSet(StringComparer.Ordinal);
         var record = TreeFilesRecord.Read(site.Home, slot);
-        List<string> kept = [], outputs = [], intermediates = [], based = [], copies = [], own = [];
+        var declared = rules.Rules.Rules.Select(each => each.Rule).Where(rule => !rule.FirstForm && FileKindSets.Shares(rule))
+            .SelectMany(rule => rule.Paths.Select(pattern => GitPattern.LiteralOf(rule, pattern))).OfType<string>().ToList();
+        List<string> kept = [], outputs = [], intermediates = [], based = [], copies = [], shared = [], own = [];
         foreach (var top in ignored)
         {
-            if (TopPartition.Of(record, slot, top) is { } parts)
+            if (holding.Contains(top) || holding.Contains(top + "/"))
+            {
+                shared.Add(holding.Contains(top) ? top : top + "/");
+            }
+            else if (TopPartition.Of(record, slot, top, declared) is { } parts)
             {
                 copies.AddRange(parts.Copies);
+                shared.AddRange(parts.Shares);
                 foreach (var other in parts.Others) Add(other);
             }
             else
@@ -41,7 +51,7 @@ internal sealed record SlotIgnored(
             }
         }
 
-        return new SlotIgnored(kept, outputs, intermediates, copies, own) { Based = based };
+        return new SlotIgnored(kept, outputs, intermediates, copies, own) { Based = based, Shared = shared };
 
         void Add(string path) => (SortOf(rules, record, slot, path) switch
         {

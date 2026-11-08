@@ -41,6 +41,7 @@ public sealed partial class CheckoutWritersCensusTests
         ["IntegrationReplays.cs"] = (OwnTree, "the line's integration tree: made and removed through git's record of it, merged and committed in, put back at a commit by reset, clean and checkout", ["checkout@?", "clean@?", "commit@tree", "merge@tree", "reset@?", "worktree@ask.Root"]),
         ["IntegrationResolves.cs"] = (OwnTree, "a conflict resolved in the line's integration tree", ["add@tree", "checkout@tree", "rm@tree"]),
         ["OpinionTree.cs"] = (OwnTree, "a second opinion's own copy, detached at the tip judged", ["checkout@?"]),
+        ["UntrackedPatches.cs"] = (OwnTree, "Review's read of a session's own tree: its untracked files added as intents to a private index (GIT_INDEX_FILE) beside the tree's own, never that index, removed with its lock after", ["add@_root"]),
 
         // Refs no checkout has out, each from the tip judged or refused by git itself, and git's record of the trees.
         ["BranchReplays.cs"] = (Refs, "a branch replayed in its own tree or one made for it (D109 §2), moved from the tip judged while no checkout has it out", ["add@tree", "checkout@tree", "rebase@tree", "rm@tree", "switch@tree", "update-ref@root", "worktree@root"]),

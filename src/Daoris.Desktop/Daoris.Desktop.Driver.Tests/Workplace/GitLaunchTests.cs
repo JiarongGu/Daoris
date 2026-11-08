@@ -37,11 +37,15 @@ public sealed class GitLaunchTests
         { Range("HEAD"), GitKind.WorktreeDiff, "W" },
         { ["--no-optional-locks", "status", "--porcelain", "-z", "--untracked-files=all"], GitKind.Status, "S" },
         {
+            ["-c", "core.splitIndex=false", "add", "--intent-to-add", "--pathspec-from-file=-", "--pathspec-file-nul"],
+            GitKind.Other, "A"
+        },
+        {
             [
-                "--no-optional-locks", "-c", "core.quotePath=false", "diff", "--no-index", "--no-color", "--no-ext-diff", "--src-prefix=a/",
-                "--dst-prefix=b/", "--", "/dev/null", "new.txt",
+                "--no-optional-locks", "-c", "diff.autoRefreshIndex=false", "-c", "core.quotePath=false", "diff", "--no-color", "--no-ext-diff",
+                "-O/dev/null", "--src-prefix=a/", "--dst-prefix=b/",
             ],
-            GitKind.UntrackedDiff, "U"
+            GitKind.WorktreeDiff, "U"
         },
         { ["symbolic-ref", "--short", "-q", "HEAD"], GitKind.Layout, "H" },
     };
@@ -58,7 +62,7 @@ public sealed class GitLaunchTests
     public void Each_of_todays_review_commands_is_classed_by_its_kind_and_named_by_its_node(string[] arguments, GitKind kind, string node)
     {
         Assert.Equal(kind, GitLaunch.KindOf(arguments));
-        Assert.Equal(node, GitLaunch.NodeOf(arguments, node == "U" ? GitBudget.Untracked : GitBudget.Review));
+        Assert.Equal(node, GitLaunch.NodeOf(arguments, node is "A" or "U" ? GitBudget.Untracked : GitBudget.Review));
         // Outside the review's budgets a start is named by its subcommand: the offer's own `status` is no review's S.
         Assert.Equal(GitLaunch.Command(arguments)[0], GitLaunch.NodeOf(arguments, GitBudget.Offer));
     }

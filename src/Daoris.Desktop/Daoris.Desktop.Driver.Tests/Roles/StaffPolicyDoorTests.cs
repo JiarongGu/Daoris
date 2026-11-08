@@ -215,6 +215,17 @@ public sealed class StaffPolicyDoorTests : IDisposable
         Assert.DoesNotContain(Catalogue().Slots, slot => slot.Id == "night");
     }
 
+    [Fact]
+    public void ROLESREVIEW2c_a_new_role_set_with_a_preset_has_its_moves_judged_beside_the_role_the_press_adds()
+    {
+        var night = Role("build") with { Id = "night", Takes = [RoleWork.Build], Scope = new RoleScope(RoleScope.Workspace, "w2") };
+
+        RoleDoor.Apply(Staffing, RoleChange.Set(night), [Sonnet, Opus], null, new RolePolicyPress(Preset: "even"));
+
+        Assert.Equal(StaffRules.Weight, Staffing.Policy("night").Policy!.Rule);
+        Assert.Contains(new SupervisorRuleStore(_home).All(), place => place.Rules.Any(rule => rule.Roles?.Contains("night") == true));
+    }
+
     [Theory]
     [InlineData("""{"limit":"ask"}""", "")]
     [InlineData("""{"limit":{"do":"wait"}}""", "")]

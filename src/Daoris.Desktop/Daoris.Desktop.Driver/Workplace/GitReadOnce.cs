@@ -35,11 +35,13 @@ internal sealed class GitReadOnce
 
     private static GitReadOnce? Live => Current.Value is { _closed: false } once ? once : null;
 
-    /// <summary>Until disposed, this flow asks each question of git once. Within a flow that already does, this is that one's.</summary>
-    internal static IDisposable Within()
+    private CancellationToken _flow;
+
+    /// <summary>Until disposed, this flow asks each question of git once, under <paramref name="flow"/>. Within a flow that already does, this is that one's.</summary>
+    internal static IDisposable Within(CancellationToken flow = default)
     {
         if (Live is not null) return Nothing.Instance;
-        var once = new GitReadOnce();
+        var once = new GitReadOnce { _flow = flow };
         Current.Value = once;
         return new Ending(once);
     }
@@ -49,7 +51,7 @@ internal sealed class GitReadOnce
     /// flow keeps none, and the caller asks git as before.
     /// </summary>
     internal static Task<(int Code, string Stdout, string Stderr)>? Asked(
-        string root, IReadOnlyList<string> arguments, Func<Task<(int Code, string Stdout, string Stderr)>> ask, CancellationToken ct)
+        string root, IReadOnlyList<string> arguments, Func<CancellationToken, Task<(int Code, string Stdout, string Stderr)>> ask, CancellationToken ct)
     {
         if (Live is not { } once) return null;
         if (RefSnapshot.MayWrite(arguments))
@@ -59,9 +61,10 @@ internal sealed class GitReadOnce
         }
 
         var folder = GitFacts.Folder(root);
-        if (PartOf(arguments) is var part and >= 0) return once.LayoutAsync(root, folder, part, ask, ct);
-        if (BranchCommit(arguments) is { } reference) return once.CommitAsync(root, folder, arguments, reference, ask, ct);
-        return once.AskAsync(Key(folder, arguments), ask);
+        var flow = GitMemoAsks.Under(ask, once._flow);
+        if (PartOf(arguments) is var part and >= 0) return GitMemoAsks.Joined(once.LayoutAsync(root, folder, part, flow, ct), ct);
+        if (BranchCommit(arguments) is { } reference) return GitMemoAsks.Joined(once.CommitAsync(root, folder, arguments, reference, flow, ct), ct);
+        return GitMemoAsks.Joined(once.AskAsync(Key(folder, arguments), flow), ct);
     }
 
     /// <summary>

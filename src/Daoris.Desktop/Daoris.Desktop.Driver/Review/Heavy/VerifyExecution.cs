@@ -116,8 +116,21 @@ internal sealed class VerifyExecution(string home, VerifySend send, CandidateJob
                 var index = at;
                 keep(holder => holder with { Gates = [.. gates.Select(each => each.Name)], Now = new HeavyGateNow(gate.Name, index, DateTimeOffset.UtcNow) });
                 var wall = Stopwatch.StartNew();
-                int? exit = Directory.Exists(folder) ? await StepAsync(gate.Run, folder, [gate.Name], new Dictionary<string, string>(), log, gate.Clock, ct).ConfigureAwait(false) : Missing(log, gate);
                 var rest = gates.Skip(at + 1).Select(each => new VerifyGate(each.Name, RunnerVerdicts.NotRun));
+                int? exit;
+                try
+                {
+                    exit = Directory.Exists(folder) ? await StepAsync(gate.Run, folder, [gate.Name], new Dictionary<string, string>(), log, gate.Clock, ct).ConfigureAwait(false) : Missing(log, gate);
+                }
+                catch (DriverException error)
+                {
+                    return new VerifyResult(send.Invocation, send.Commit, VerifyVerdicts.Unknown, $"the gate '{gate.Name}' would not start: {error.Message}",
+                        [.. ran, new VerifyGate(gate.Name, RunnerVerdicts.Ended) { Log = log, WallSeconds = wall.Elapsed.TotalSeconds }, .. rest, .. kept])
+                    {
+                        Declaration = send.Accepted,
+                    };
+                }
+
                 if (exit is null) return Ended([.. ran, new VerifyGate(gate.Name, RunnerVerdicts.Ended) { Log = log, WallSeconds = wall.Elapsed.TotalSeconds }, .. rest, .. kept]);
                 ran.Add(new VerifyGate(gate.Name, exit == 0 ? RunnerVerdicts.Pass : RunnerVerdicts.Fail, exit) { Log = log, WallSeconds = wall.Elapsed.TotalSeconds });
                 if (exit == 0) continue;
@@ -194,7 +207,7 @@ internal sealed class VerifyExecution(string home, VerifySend send, CandidateJob
             catch (DriverException error)
             {
                 await File.WriteAllTextAsync(log, $"error: it would not start: {error.Message}\n", new UTF8Encoding(false), CancellationToken.None).ConfigureAwait(false);
-                return -1;
+                throw new DriverException(error.Message);
             }
 
             using (step)
@@ -223,10 +236,11 @@ internal sealed class VerifyExecution(string home, VerifySend send, CandidateJob
     private VerifyResult Ended(IReadOnlyList<VerifyGate> gates) =>
         new(send.Invocation, send.Commit, VerifyVerdicts.Unknown, "it was ended before its verdict", gates) { Declaration = send.Accepted };
 
-    private static int Missing(string log, DeclaredGate gate)
+    private static int? Missing(string log, DeclaredGate gate)
     {
-        File.WriteAllText(log, $"error: `{gate.Name}`'s cwd, {gate.Cwd}, is no folder of the verification tree\n", new UTF8Encoding(false));
-        return -1;
+        var why = $"`{gate.Name}`'s cwd, {gate.Cwd}, is no folder of the verification tree";
+        File.WriteAllText(log, $"error: {why}\n", new UTF8Encoding(false));
+        throw new DriverException(why);
     }
 
     private static string? ReadText(string path)

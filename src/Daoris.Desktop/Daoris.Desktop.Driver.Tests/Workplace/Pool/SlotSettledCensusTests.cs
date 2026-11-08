@@ -40,7 +40,7 @@ public sealed partial class SlotSettledCensusTests
     {
         ["Workplace/Pool/TreePoolTakes.cs"] = (4, "no job, a lock refused and a judgement refused, each before the switch; a make whose open never landed, whose folder goes"),
         ["Workplace/Pool/PoolTakeovers.cs"] = (2, "an end, which switches nothing; a make whose open never landed, whose folder goes"),
-        ["Workplace/Pool/TreePoolRetires.cs"] = (5, "a retirement refused before its rename, which leaves the folder where it was"),
+        ["Workplace/Pool/TreePoolRetires.cs"] = (6, "a retirement refused before its rename, a share's link that would not go among them, which leaves the folder where it was"),
         ["Workplace/Pool/TreePoolFinishes.cs"] = (3, "no job and a lock refused before anything moved; a release once what moved is put back"),
         ["Workplace/Pool/PoolFinishRecoveries.cs"] = (2, "a finish stopped before it moved anything or with what moved put back; a retirement stopped before its rename"),
         ["Workplace/Pool/TreePoolEnds.cs"] = (1, "an end with no job, before anything is read"),

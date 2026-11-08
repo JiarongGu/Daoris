@@ -182,6 +182,31 @@ public sealed class HeavyExecutorProcessTests : IAsyncLifetime
     }
 
     [Fact]
+    public async Task A_gate_that_would_not_start_makes_the_check_unknown_not_a_failure_blaming_it()
+    {
+        var engine = await RepositoryAsync("engine", new
+        {
+            gates = new object[]
+            {
+                new { name = "unit", run = Node(At("gate.mjs"), "a", _folder, "exit-0"), heavy = true },
+                new { name = "suite", run = "exit 0", cwd = "nowhere", heavy = true },
+                new { name = "e2e", run = "exit 0", heavy = true },
+            },
+        });
+        var executor = Executor();
+
+        await executor.SendAsync(Send("v-0000000000000001", "i-a", engine));
+        var result = await SettledAsync("v-0000000000000001", "i-a");
+
+        Assert.Equal(VerifyVerdicts.Unknown, result.Verdict);
+        Assert.Null(result.Failed);
+        Assert.Contains("suite", result.Why);
+        Assert.Equal(["unit", "suite", "e2e"], result.Gates.Select(gate => gate.Name));
+        Assert.Equal(["pass", "ended", "not-run"], result.Gates.Select(gate => gate.Verdict));
+        Assert.Contains("nowhere", File.ReadAllText(result.Gates[1].Log!));
+    }
+
+    [Fact]
     public async Task A_runner_that_answers_by_file_is_read_gate_by_gate_and_handed_its_inputs_alone()
     {
         var engine = await RepositoryAsync("engine", new

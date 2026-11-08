@@ -256,6 +256,21 @@ public sealed class SupervisePassTests : IDisposable
     }
 
     [Fact]
+    public async Task ROLESREVIEW2a_an_outcome_that_cannot_be_written_still_frees_the_subject_and_its_line()
+    {
+        var (driver, _, _) = Driver((_, _) =>
+        {
+            GitSeed.Discard(DaorisHome.Entry(_home, HomeEntry.Sessions, Point.Subject.Session + QuestionSupervisorDecisions.DecisionsSuffix));
+            return Ended("completed", GoOn);
+        });
+
+        await new SupervisePass(driver.Context, driver).StartAsync(Point, new Desk(), default);
+        await Until(() => !driver.Context.Supervisor.Runs.Running(Point.Subject));
+
+        Assert.DoesNotContain(Point.Subject.Session, driver.Context.Supervisor.Runs.Lines);
+    }
+
+    [Fact]
     public async Task The_person_s_word_ends_a_running_turn_and_drops_its_result()
     {
         var (driver, _, _) = Driver(async (_, ct) =>

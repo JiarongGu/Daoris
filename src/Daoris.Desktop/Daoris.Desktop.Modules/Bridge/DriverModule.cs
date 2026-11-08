@@ -188,6 +188,7 @@ public sealed class DriverModule : ModuleBase
     protected override async Task<object?> RouteMessageAsync(
         IpcRequest request, IModuleContext context, CancellationToken cancellationToken)
     {
+        using var person = GitScheduler.AsPerson();
         try
         {
             return await RouteAsync(request, cancellationToken);

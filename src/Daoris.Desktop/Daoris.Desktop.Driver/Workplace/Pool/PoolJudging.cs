@@ -5,7 +5,7 @@ internal sealed record PoolJudged(SlotVerdict Verdict, string Head, SlotIgnored 
 
 /// <summary>
 /// The git and disk reads behind <see cref="SlotJudgement"/>: git's list and binding of the slot, its lock, the links and repositories
-/// below it, a half-done operation, the status sorted by the effective rules, and where HEAD stands against where its line let it go.
+/// below it (a share's link Daoris's own while it still leads to its place, any other link foreign), a half-done operation, the status sorted by the effective rules, and where HEAD stands against where its line let it go.
 /// Each stage reads only what the step before it let through, and the first that fails answers; nothing is reset to make a slot pass.
 /// </summary>
 internal static class PoolJudging
@@ -46,7 +46,7 @@ internal static class PoolJudging
             facts = facts with
             {
                 RepositoryInside = nested.Count > 0,
-                LinksNotRecorded = (await WorkspaceLinks.UnaccountedAsync(path, links, ct).ConfigureAwait(false)).Count,
+                LinksNotRecorded = (await WorkspaceLinks.UnaccountedAsync(path, TreeShares.Unshared(site.Home, path, links), ct).ConfigureAwait(false)).Count,
             };
         }
         catch (Exception error) when (error is IOException or UnauthorizedAccessException)
