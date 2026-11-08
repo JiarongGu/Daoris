@@ -14,12 +14,12 @@ public sealed class PersonRoutes(DriverLoop loop)
     private readonly DriverLoop _loop = loop;
 
     // The key the shell minted for the host it started, answered to the page alone (the census classes it the window's,
-    // so the pipe never answers it), which keeps it in memory and sends it on every write. This shell mints no key
-    // and holds none for a host it adopted, so it answers none and the page writes without one.
+    // so the pipe never answers it), which keeps it in memory and sends it on every write. Answered only once the host
+    // proved it holds it; none for a host the shell adopted or whose proof failed, so the page writes without one.
     [DriverRoute("PERSON_KEY", PipeClass.Window)]
     [Owner("PERSON_KEY", None = OwnerNone.NamesNothing)]
     private Task<object?> PersonKeyAsync(NoPayload _, CancellationToken cancellationToken) =>
-        Task.FromResult<object?>(new PersonKey(null));
+        Task.FromResult<object?>(new PersonKey(_loop.Host.ProvedKey));
 
     // What waits for the window, read whole as the `CONFIRMATIONS` event tells it, for a window that opens or reloads while one
     // waits. None where this shell serves no pipe.

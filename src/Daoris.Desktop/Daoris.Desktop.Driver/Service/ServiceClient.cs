@@ -47,8 +47,8 @@ public sealed class ServiceClient : IDisposable, IQuestClosePort, IClosureBindPo
     }
 
     /// <summary>A client over HTTP to the host at <paramref name="baseUrl"/>, with its key; a test may hand its own HTTP client.</summary>
-    public ServiceClient(string baseUrl, string? key, HttpClient? http = null)
-        : this(new ServiceHttp(baseUrl, key, http))
+    public ServiceClient(string baseUrl, string? key, HttpClient? http = null, string? personKey = null)
+        : this(new ServiceHttp(baseUrl, key, http, personKey))
     {
     }
 

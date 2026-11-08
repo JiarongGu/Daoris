@@ -12,7 +12,8 @@ public sealed class ServiceHttp : IServiceDoors
     private readonly HttpClient _http;
 
     /// <param name="http">A test's client, the key set on it as the bearer; null makes the driver's own.</param>
-    public ServiceHttp(string baseUrl, string? key, HttpClient? http = null)
+    /// <param name="personKey">The person key the shell minted for its host, presented to an address of this machine alone (<see cref="PersonHeader"/>).</param>
+    public ServiceHttp(string baseUrl, string? key, HttpClient? http = null, string? personKey = null)
     {
         BaseUrl = baseUrl.TrimEnd('/');
         _http = http ?? DriverHttp.Client(key);
@@ -21,6 +22,8 @@ public sealed class ServiceHttp : IServiceDoors
         {
             _http.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", key);
         }
+
+        PersonHeader.Present(_http, BaseUrl, personKey);
     }
 
     /// <summary>The refusal for no service at all, where nothing else is looked for.</summary>
