@@ -3,10 +3,9 @@ using System.Text.RegularExpressions;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// Every system file or folder picker the desktop opens is shown by <c>Pickers</c>, on its owner window's own thread (a
-/// single-threaded apartment with its pump, which every window's thread is), and a process that shows one survives what a
-/// shell extension does under its right-click menu. A source scan, as <see cref="ProcessStartsCensusTests"/>: the next
-/// picker written elsewhere will not know to.
+/// Every system picker the desktop opens is the kit's (<c>IFileDialogs</c>), every window thread's exception reaches the machine log
+/// through the kit's sink, and the launcher keeps the kit's relaxed context validation. A source scan, as
+/// <see cref="ProcessStartsCensusTests"/>: the next picker written here will not know to use the kit's.
 /// </summary>
 [Trait(Category.Name, Category.Census)]
 public sealed class PickerCensusTests
@@ -17,50 +16,46 @@ public sealed class PickerCensusTests
     private static readonly Regex Picker = new(@"\b(OpenFileDialog|SaveFileDialog|FolderBrowserDialog|IFileOpenDialog|IFileSaveDialog|IFileDialog|GetOpenFileName|GetSaveFileName|SHBrowseForFolder)\b");
 
     [Fact]
-    public void Every_picker_is_shown_by_Pickers()
+    public void No_source_shows_a_system_picker_of_its_own()
     {
         var found = Projects
-            .SelectMany(project => SourceFiles.All(project, "*.cs").Select(path => (Project: project, Path: path)))
-            .Where(each => Picker.IsMatch(Regex.Replace(File.ReadAllText(each.Path), @"//[^\n]*", "")))
-            .Select(each => Path.GetFileName(each.Path))
+            .SelectMany(project => SourceFiles.All(project, "*.cs"))
+            .Where(path => Picker.IsMatch(Regex.Replace(File.ReadAllText(path), @"//[^\n]*", "")))
+            .Select(Path.GetFileName)
             .Distinct()
             .Order(StringComparer.Ordinal)
             .ToList();
 
-        Assert.Equal(["Pickers.cs"], found);
+        Assert.Empty(found);
     }
 
     [Fact]
-    public void Pickers_show_a_dialog_only_on_the_owner_window_s_thread()
+    public void Every_picker_is_the_kits_dialog_through_the_two_doors_the_page_has()
     {
-        var source = File.ReadAllText(SourceFiles.Find("Daoris.Desktop.App", "Pickers.cs"));
+        var main = File.ReadAllText(SourceFiles.Find("Daoris.Desktop.App", "Program.cs"));
 
-        Assert.Equal(2, Regex.Matches(source, @"\bShowDialog\(owner\)").Count);
-        Assert.Equal(2, Regex.Matches(source, @"if \(owner\.InvokeRequired\) return \(string\?\)owner\.Invoke\(").Count);
-        Assert.DoesNotContain("ShowDialog()", source);
-        Assert.DoesNotContain("Task.Run", source);
-        Assert.DoesNotContain("new Thread", source);
+        Assert.Equal(1, Regex.Matches(main, @"\.OpenFileAsync\(").Count);
+        Assert.Equal(1, Regex.Matches(main, @"\.OpenFolderAsync\(").Count);
     }
 
     [Fact]
-    public void Every_window_thread_is_a_single_threaded_apartment_and_its_exceptions_are_caught()
+    public void Every_window_thread_is_a_single_threaded_apartment_and_its_exceptions_reach_the_log_through_the_kits_sink()
     {
         var main = File.ReadAllText(SourceFiles.Find("Daoris.Desktop.App", "Program.cs"));
         Assert.Matches(@"\[STAThread\]\s+private static void Main", main);
-        Assert.Contains("UiExceptions.Watch(log);", main);
-
-        var watch = File.ReadAllText(SourceFiles.Find("Daoris.Desktop.App", "UiExceptions.cs"));
-        Assert.Contains("SetUnhandledExceptionMode(UnhandledExceptionMode.CatchException)", watch);
-        Assert.Contains("Application.ThreadException +=", watch);
+        Assert.Contains("OnUnhandledException = report =>", main);
+        Assert.Contains("ShowCrashDialog = false", main);
+        Assert.Contains("UnhandledExceptionSource.UiThread", main);
+        Assert.DoesNotContain("Application.ThreadException", main);
     }
 
     [Fact]
-    public void The_launcher_is_laid_out_with_its_context_validation_relaxed_by_a_build_and_a_publish()
+    public void The_launcher_keeps_the_kits_relaxed_context_validation()
     {
         var project = File.ReadAllText(Path.Combine(SourceFiles.Project("Daoris.Desktop.App"), "Daoris.Desktop.App.csproj"));
 
-        Assert.Equal(2, Regex.Matches(project, @"tools\\cet-relax\.mjs").Count);
-        Assert.Contains("AfterTargets=\"ShenoraChromiumLayout\"", project);
-        Assert.Contains("AfterTargets=\"ShenoraChromiumPublishLayout\"", project);
+        Assert.DoesNotContain("ShenoraChromiumRelaxContextIp", project);
+        Assert.DoesNotContain("cet-relax", project);
+        Assert.DoesNotContain("<Exec", project);
     }
 }

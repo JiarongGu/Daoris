@@ -462,6 +462,11 @@ public sealed class InstallUpdater(
             lock (_gate) _applying = false;
             throw;
         }
+        catch (Exception error) when (error is IOException or UnauthorizedAccessException or InvalidOperationException)
+        {
+            // A start the runtime refused is a launcher that would not start: said, and the presses let go, not held for a close that never comes.
+            started = false;
+        }
 
         if (!started)
         {

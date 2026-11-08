@@ -5,7 +5,6 @@ import type {
 } from '../../settings/Tools';
 import { call, toolLookBound } from '../call';
 import { askHeld, isPending } from '../state/held';
-import { ownWindowName } from '../../work/window';
 
 // The programs Daoris runs beside its agents: how each is run, a version downloaded and followed, a
 // delete, the resource locations, and what a switch of git changes. The same `tools.json` the terminal's
@@ -172,17 +171,10 @@ export const useToolGit = (target: GitTarget | null) => {
   });
 };
 
-/**
- * *Browse…*: the system's file picker. It waits for as long as the dialog is open, as the folder picker does;
- * `file` absent is the person cancelling, and `can: false` a window with no picker.
- */
+/** *Browse…*: the system's file picker, owned by this page's window; `file` absent is the person cancelling, `can: false` a window with no picker. */
 export const useToolPick = () =>
   useMutation({
-    mutationFn: (title: string) => {
-      // The dialog is owned by the window this page is in; the first main window names none.
-      const window = ownWindowName(globalThis.location?.search ?? '');
-      return call('TOOLS_PICK', window === null ? { title } : { title, window }, { timeoutMs: Infinity }) as Promise<{ can: boolean; file?: string | null }>;
-    },
+    mutationFn: (title: string) => call('TOOLS_PICK', { title }, { timeoutMs: Infinity }) as Promise<{ can: boolean; file?: string | null }>,
   });
 
 /** A tool's action ended (§3.6): the list is asked again, and the handler says how it ended. */

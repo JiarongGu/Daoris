@@ -416,12 +416,15 @@ public static class HeldWordsFile
 
     public static string PathOf(string home) => DaorisHome.Entry(home, HomeEntry.Sessions, FileName);
 
+    /// <summary>Drop a session's held words, through the queue that owns the file where this process has one (<see cref="HeldWordsHolders"/>).</summary>
+    public static IReadOnlyCollection<string> Forget(string home, IReadOnlyCollection<string> sessions) =>
+        HeldWordsHolders.Of(home) is { } holder ? holder.Forget(sessions) : ForgetInFile(home, sessions);
+
     /// <summary>
-    /// Drop every entry held for one of <paramref name="sessions"/>, keeping the rest as written; the file is removed once it
-    /// holds none, as its writer removes it. The sessions whose words were dropped come back; a file that does not read holds
-    /// nothing to drop.
+    /// Drop every entry held for one of <paramref name="sessions"/>, keeping the rest as written; the file is removed once it holds
+    /// none, as its writer removes it. The sessions dropped come back; a file that does not read holds nothing to drop.
     /// </summary>
-    public static IReadOnlyCollection<string> Forget(string home, IReadOnlyCollection<string> sessions)
+    private static IReadOnlyCollection<string> ForgetInFile(string home, IReadOnlyCollection<string> sessions)
     {
         var path = PathOf(home);
         if (!File.Exists(path)) return [];

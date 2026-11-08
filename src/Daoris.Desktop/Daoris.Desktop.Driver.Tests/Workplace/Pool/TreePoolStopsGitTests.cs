@@ -39,17 +39,19 @@ public sealed class TreePoolStopsGitTests : IDisposable
     [InlineData(TreeClaimPhases.Switched)]
     [InlineData(TreeClaimPhases.Cleared)]
     [InlineData(TreeClaimPhases.Checked)]
-    public async Task A_take_stopped_after_its_switch_and_before_any_open_is_detached_and_its_branch_deleted_through_the_journal(string phase)
+    public async Task A_take_stopped_after_its_switch_and_before_any_open_is_put_back_on_the_previous_lines_branch_and_its_own_deleted_through_the_journal(string phase)
     {
         var (fixture, slot) = await StoppedTakeAsync(phase);
+        var tip = Looker(fixture).LastEnd(PoolGitFixture.Workspace, PoolGitFixture.Repository, "s-aaaa0001")!.Tip;
+        Assert.NotEqual(fixture.Start, tip);
 
         var recovered = await Looker(fixture).RecoverAsync(fixture.Site, 1);
 
         Assert.True(recovered.Ok, recovered.Refused ?? recovered.Stuck);
         var row = Looker(fixture).Slot(PoolGitFixture.Workspace, PoolGitFixture.Repository, 1)!;
-        Assert.Equal(("", fixture.Start, KeptStates.Kept), (row.Line, row.Tip, row.State));
+        Assert.Equal(("s-aaaa0001", KeptStates.Kept), (row.Line, row.State));
         Assert.DoesNotContain("daoris/s-bbbb0001", await fixture.BranchesAsync());
-        Assert.Equal("", (await GitAsync(slot.Path, "branch", "--show-current")).Trim());
+        Assert.Equal(("daoris/s-aaaa0001", tip), ((await GitAsync(slot.Path, "branch", "--show-current")).Trim(), (await GitAsync(slot.Path, "rev-parse", "HEAD")).Trim()));
         Assert.Null(Looker(fixture).ClaimOn(PoolGitFixture.Workspace, PoolGitFixture.Repository, 1));
         Assert.Null(Looker(fixture).WhereIs(PoolGitFixture.Workspace, PoolGitFixture.Repository, "s-bbbb0001"));
         Assert.True(Directory.EnumerateFiles(Path.Combine(fixture.Home, "work"), "*", SearchOption.AllDirectories).Any(), "the journal kept the delete's act");

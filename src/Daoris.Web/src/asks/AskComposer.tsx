@@ -84,7 +84,7 @@ export function AskComposer({
   const circle = fixed ?? draft.circle;
   const ready = askReady(draft, circle, busy);
   const used = characters(draft.short ?? '');
-  const meta = <span className="font-mono text-meta text-ink-faint">{t('asks.compose.meta')}</span>;
+  const meta = <span className="text-meta text-ink-faint">{t('asks.compose.meta')}</span>;
 
   // 🔴 A machine with no repository holds no circle. The form offered an empty choice of one, and a
   // sentence written in full could never be sent: seen on the installed window. So it says so instead.
@@ -199,8 +199,6 @@ export function AskComposer({
             className="min-h-[1.9rem] rounded-control border border-line-strong bg-raised px-2.5 py-1.5 text-body text-ink"
           />
         )}
-        {/* The terminal's way to the same choice. */}
-        <p className="m-0 text-meta text-ink-faint [overflow-wrap:anywhere]"><Inline text={t('asks.compose.reviewTwin')} /></p>
         <CarryFields
           carry={draft}
           filesLabel={t('asks.compose.filesLabel')}
@@ -211,6 +209,8 @@ export function AskComposer({
           onAttach={carry.attach}
           onRemove={carry.remove}
         />
+        {/* The terminal's way to the review choice, at the foot with the rest of the form's asides. */}
+        <p className="m-0 text-meta text-ink-faint [overflow-wrap:anywhere]"><Inline text={t('asks.compose.reviewTwin')} /></p>
       </form>
     </Drawer>
   );

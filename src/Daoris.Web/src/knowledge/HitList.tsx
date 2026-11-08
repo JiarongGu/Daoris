@@ -53,8 +53,10 @@ export type HitsAnswer =
  *   answering is said apart from nothing matching.
  */
 export function HitList({
-  query, onQuery, localOnly, onLocalOnly, answer, marked, semantic, chosen, onChoose, onConverge,
+  query, onQuery, localOnly, onLocalOnly, answer, marked, semantic, chosen, onChoose, onConverge, indexed,
 }: {
+  /** How many entries the index holds, said before anything is typed; absent where it is not known. */
+  indexed?: number | undefined;
   query: string;
   onQuery: (query: string) => void;
   localOnly: boolean;
@@ -101,6 +103,12 @@ export function HitList({
             dozen copies of one rule and calls that a corpus. */}
         <CheckField checked={localOnly} onChange={onLocalOnly} label={t('search.localOnly')} className="px-1 text-small" />
       </div>
+
+      {answer.state === 'idle' && (
+        <p className="m-0 px-3 py-3 text-small text-ink-soft">
+          {indexed ? t('search.idle', { count: indexed }) : t('search.idleNone')}
+        </p>
+      )}
 
       {answer.state === 'first' && (
         <>

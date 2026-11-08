@@ -17,9 +17,15 @@ internal sealed class TreePoolEnds(TreePool pool, PoolSeams seams)
 
         var branch = $"{TreeFollows.SessionPrefix}{slot.Line}";
         var head = await WorkingTree.HeadAsync(slot.Path, ct).ConfigureAwait(false) ?? "";
+        var standing = await WorkingTree.BranchAsync(slot.Path, ct).ConfigureAwait(false) ?? "";
         var job = PoolGit.NewJobName();
-        var claimed = pool.Claim(new TreeClaimOpening(site.Workspace, site.Repository, end.Number, TreeClaimKinds.End, end.Holder, slot.Line, branch, "", head, job) { InPlace = true });
-        if (claimed.Fence is not { } fence) return PoolDone.Not(claimed.Refused ?? "the slot is claimed");
+        var claimed = pool.Claim(new TreeClaimOpening(site.Workspace, site.Repository, end.Number, TreeClaimKinds.End, end.Holder, slot.Line, branch, "", head, job)
+        {
+            InPlace = true,
+            ExpectBranch = standing,
+            ExpectLine = slot.Line,
+        });
+        if (claimed is not { Claim: { } claim, Fence: { } fence }) return PoolDone.Not(claimed.Refused ?? "the slot is claimed");
 
         using var git = PoolGit.Create(site.Home, job);
         if (git is null)
@@ -28,7 +34,7 @@ internal sealed class TreePoolEnds(TreePool pool, PoolSeams seams)
             return PoolDone.Not("there is no job to hold the claim's git in, so the pool is not offered here");
         }
 
-        var onBranch = await WorkingTree.BranchAsync(slot.Path, ct).ConfigureAwait(false) == branch;
+        var onBranch = standing == branch;
         var status = await FillJudgement.StatusAsync(slot.Path, ignored: true, ct).ConfigureAwait(false);
         var sorted = head.Length == 0 ? SlotIgnored.None : await SlotIgnored.ReadAsync(site, slot.Path, status, head, ct).ConfigureAwait(false);
         var uncommitted = status.Any(each => each.Value != "!!");
@@ -48,7 +54,7 @@ internal sealed class TreePoolEnds(TreePool pool, PoolSeams seams)
 
         var lockWhy = await PoolLocks.SetAsync(git, slot.Path, PoolLocks.Free, ct).ConfigureAwait(false);
         pool.Advance(fence, TreeClaimPhases.Locked);
-        pool.Complete(fence, new SlotSettled(slot.Registration, slot.Path, slot.Line, "", slot.State, slot.Said, bytes, toolchain));
+        pool.Complete(fence, await new SlotStanding(slot, claim) { Made = true, State = slot.State, Said = slot.Said, Bytes = bytes, Toolchain = toolchain }.ReadAsync(ct).ConfigureAwait(false));
         return new PoolDone(pool.Slot(site.Workspace, site.Repository, end.Number), null, lockWhy, null);
     }
 }

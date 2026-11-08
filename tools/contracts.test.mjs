@@ -115,3 +115,32 @@ test('a lock left by a run that died is taken at once, and the files are built',
     rmSync(root, { recursive: true, force: true });
   }
 });
+
+const LOCAL_PACKS = [
+  { props: 'lyntai-local.props', version: 'DaorisLyntaiVersion', feed: 'lyntai-feed', stand: '3.5.3-local.abc1234' },
+  { props: 'shenora-local.props', version: 'DaorisShenoraVersion', feed: 'shenora-feed', stand: '0.25.0-local.abc1234' },
+];
+
+test('LYNTAILOCAL1: the generator restores against the local sibling packs the desktop imports, its Lyntai and its Shenora', () => {
+  const fixtures = join(REPO, '_fixtures', 'contracts-local');
+  const written = LOCAL_PACKS.map((pack) => join(REPO, 'local', pack.props));
+  const had = written.map((file) => (existsSync(file) ? readFileSync(file) : null));
+  const evaluate = () => {
+    const run = spawnSync('dotnet', ['msbuild', join(REPO, 'tools', 'contracts', 'ContractsGen.csproj'), '-getProperty:RestoreAdditionalProjectSources',
+      ...LOCAL_PACKS.map((pack) => `-getProperty:${pack.version}`)], { encoding: 'utf8', windowsHide: true });
+    assert.equal(run.status, 0, run.stdout + run.stderr);
+    return JSON.parse(run.stdout).Properties;
+  };
+  try {
+    mkdirSync(join(REPO, 'local'), { recursive: true });
+    LOCAL_PACKS.forEach((pack, at) => writeFileSync(written[at], `<Project><PropertyGroup><${pack.version}>${pack.stand}</${pack.version}>`
+      + `<RestoreAdditionalProjectSources>$(RestoreAdditionalProjectSources);${join(fixtures, pack.feed).replaceAll('\\', '/')}</RestoreAdditionalProjectSources></PropertyGroup></Project>`));
+    const seen = evaluate();
+    for (const pack of LOCAL_PACKS) {
+      assert.equal(seen[pack.version], pack.stand, `${pack.version} is the local pack's`);
+      assert.ok(String(seen.RestoreAdditionalProjectSources).includes(`contracts-local/${pack.feed}`), `${pack.feed} is a restore source`);
+    }
+  } finally {
+    written.forEach((file, at) => (had[at] === null ? rmSync(file, { force: true }) : writeFileSync(file, had[at])));
+  }
+});

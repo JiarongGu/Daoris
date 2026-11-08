@@ -25,7 +25,9 @@ internal sealed class TreePoolClaims(TreePool owner)
 
                 if (opening.Line.Length > 0 && ClaimOfLineIn(write, opening.Workspace, opening.Repository, opening.Line) is { } onLine)
                 {
-                    throw Refused($"the line has a {onLine.Kind} claim in flight on slot {onLine.Number}");
+                    throw Refused(onLine.Line == opening.Line
+                        ? $"the line has a {onLine.Kind} claim in flight on slot {onLine.Number}"
+                        : $"the line waits for slot {onLine.Number} to be put back on it");
                 }
 
                 if (!opening.InPlace && TreeClaimKinds.Switching.Contains(opening.Kind) && LiveVisitIn(write, opening) is { } visit)
@@ -34,10 +36,14 @@ internal sealed class TreePoolClaims(TreePool owner)
                 }
 
                 write.Execute(
-                    $"INSERT INTO tree_claims ({TreePoolRows.ClaimColumns}) VALUES ($workspace, $repository, $number, $kind, $holder, $line, $branch, $start, $expect, '', $job, '', $phase, $run, 1, $at)",
+                    $"""
+                    INSERT INTO tree_claims ({TreePoolRows.ClaimColumns})
+                    VALUES ($workspace, $repository, $number, $kind, $holder, $line, $branch, $start, $expect, '', $job, '', $phase, $run, 1, $at, $expectBranch, $expectLine)
+                    """,
                     ("$workspace", opening.Workspace), ("$repository", opening.Repository), ("$number", opening.Number), ("$kind", opening.Kind),
                     ("$holder", opening.Holder), ("$line", opening.Line), ("$branch", opening.Branch), ("$start", opening.Start),
-                    ("$expect", opening.Expect), ("$job", opening.Job), ("$phase", opening.Phase), ("$run", owner.Run), ("$at", owner.Now()));
+                    ("$expect", opening.Expect), ("$job", opening.Job), ("$phase", opening.Phase), ("$run", owner.Run), ("$at", owner.Now()),
+                    ("$expectBranch", opening.ExpectBranch), ("$expectLine", opening.ExpectLine));
                 var claim = ClaimIn(write, opening.Workspace, opening.Repository, opening.Number)!;
                 return new TreeClaimed(claim, FenceOf(claim), null);
             });
@@ -49,8 +55,8 @@ internal sealed class TreePoolClaims(TreePool owner)
     }
 
     /// <summary>
-    /// Take a claim whose run is dead by the lease's test, in one guarded update that writes this run and raises the generation: refused,
-    /// nothing written, where the claim is gone, is this run's own, moved past <paramref name="generation"/>, or its run lives or cannot be told dead.
+    /// Take a claim whose run is dead, or this run's own whose undo waits, in one guarded update that raises the generation: refused, nothing
+    /// written, where it is gone, this run's own step, moved past <paramref name="generation"/>, or its run lives or cannot be told dead.
     /// </summary>
     public TreeClaimed TakeOver(string workspace, string repository, int number, long generation)
     {
@@ -60,11 +66,12 @@ internal sealed class TreePoolClaims(TreePool owner)
             return store.Write(Family, write =>
             {
                 var found = ClaimIn(write, workspace, repository, number) ?? throw Refused("the pool holds no such claim");
-                if (string.Equals(found.ClaimRun, owner.Run, StringComparison.Ordinal)) throw Refused("it is this run's own");
+                var own = string.Equals(found.ClaimRun, owner.Run, StringComparison.Ordinal);
+                if (own && found.Phase != TreeClaimPhases.UndoWaiting) throw Refused("it is this run's own");
                 if (found.ClaimGeneration != generation) throw Refused("another looker took it first");
 
                 // A run the store holds no row of cannot be told dead, so it holds, as a start that cannot be read does.
-                if (RunIn(write, found.ClaimRun) is not { } holder || owner.Alive(holder)) throw Refused("the Daoris process that runs it still runs");
+                if (!own && (RunIn(write, found.ClaimRun) is not { } holder || owner.Alive(holder))) throw Refused("the Daoris process that runs it still runs");
                 var taken = write.Execute(
                     """
                     UPDATE tree_claims SET claim_run = $mine, claim_generation = claim_generation + 1
@@ -83,12 +90,13 @@ internal sealed class TreePoolClaims(TreePool owner)
         }
     }
 
-    public void Advance(ClaimFence fence, string phase, string? opens, string? record)
+    public void Advance(ClaimFence fence, string phase, string? opens, string? record, Action<DesktopWrite>? also = null)
     {
         using var store = owner.Open();
         store.Write(Family, write =>
         {
             Fenced(write, fence);
+            also?.Invoke(write);
             var changed = write.Execute(
                 """
                 UPDATE tree_claims SET phase = $phase, opens = COALESCE($opens, opens), record = COALESCE($record, record)
@@ -98,6 +106,13 @@ internal sealed class TreePoolClaims(TreePool owner)
                 ("$number", fence.Number), ("$run", fence.Run), ("$generation", fence.Generation));
             if (changed != 1) throw new TreePoolRefusedException("the claim's row changed under the write");
         });
+    }
+
+    public void Undoing(ClaimFence fence)
+    {
+        Advance(fence, TreeClaimPhases.Undoing, null, null, write => write.Execute(
+            "UPDATE kept_trees SET line = '' WHERE workspace = $workspace AND repository = $repository AND number = $number",
+            ("$workspace", fence.Workspace), ("$repository", fence.Repository), ("$number", fence.Number)));
     }
 
     public void Complete(ClaimFence fence, SlotSettled? settled)
@@ -224,7 +239,7 @@ internal sealed class TreePoolClaims(TreePool owner)
 
     private static TreeClaim? ClaimOfLineIn(DesktopWrite write, string workspace, string repository, string line) =>
         write.Query(
-            $"SELECT {TreePoolRows.ClaimColumns} FROM tree_claims WHERE workspace = $workspace AND repository = $repository AND line = $line",
+            $"SELECT {TreePoolRows.ClaimColumns} FROM tree_claims WHERE workspace = $workspace AND repository = $repository AND {TreePoolRows.NamesLine}",
             TreePoolRows.Claim, ("$workspace", workspace), ("$repository", repository), ("$line", line)).FirstOrDefault();
 
     private static StoreRun? RunIn(DesktopWrite write, string run) =>

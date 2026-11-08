@@ -96,7 +96,8 @@ export function WiringFolders({ wiring, busy = false, onMeasure, downloads, onDo
               name={t(`settings.daoris.label.folder.${each.id}`)}
               path={each.path}
               why={each.pathWhy}
-              size={<Size folder={each} measuring={measuring} />}
+              // A folder with no path has said why in the path's column: its size is not asked again.
+              size={each.path ? <Size folder={each} measuring={measuring} /> : null}
               open={opener(each.id, each.present && Boolean(each.path))}
             >
               {(each.old.length > 0 || (each.id === 'cache' && each.present && (downloads || onDownloads))) && (

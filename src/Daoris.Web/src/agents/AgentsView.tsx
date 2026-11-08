@@ -509,8 +509,9 @@ function AgentsMain({ tool, adapter, notify, part, onAnchored, onOpenPlugin, say
       const account = answering.profile;
       const current = tool.accounts.find((each) => each.name === account)?.displayName?.trim() || null;
       const wanted = name.trim() || null;
+      const offered = (answering.offered !== undefined ? answering.offered : answering.who)?.trim() || null;
       told((async () => {
-        if (wanted !== current) await rename(account, wanted);
+        if (wanted !== current && wanted !== offered) await rename(account, wanted);
         answering.settle();
       })(), answered);
     },

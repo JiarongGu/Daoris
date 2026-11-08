@@ -1,11 +1,7 @@
 namespace Daoris.Driver;
 
-/// <summary>
-/// A claim whose run is dead, taken over by the look: the run's git processes proved gone, the claim taken by one guarded update, the
-/// slot read from the disk (never the phase alone), and then freed, finished or held, by what is found. A slot a take leaves on its new
-/// branch with no commit of its own is detached where the take began and that branch deleted through the journal; no step deletes a ref any
-/// other way.
-/// </summary>
+/// <summary>A dead run's claim, or this run's own whose undo waits, taken over by the look: its git processes ended, the claim taken by one guarded update, the
+/// slot read from the disk (never the phase alone) and settled; a take or a return is put back by <see cref="PoolUndo"/>, every row written by <see cref="SlotStanding"/>.</summary>
 internal sealed class PoolTakeovers(TreePool pool, PoolSeams seams)
 {
     /// <summary>Take a dead run's claim on slot <paramref name="number"/> and settle it; refused, nothing changed, where it is not the look's to take.</summary>
@@ -30,11 +26,9 @@ internal sealed class PoolTakeovers(TreePool pool, PoolSeams seams)
 
         if (claim.Kind is TreeClaimKinds.Finish or TreeClaimKinds.Retire && slot is not null)
         {
-            if (GitLockFile(slot.Path) is { } held && Directory.Exists(slot.Path))
+            if (SlotStanding.GitLockFile(slot.Path) is { } held && Directory.Exists(slot.Path))
             {
-                var why = $"git's lock file {held} is there; the slot is held until a person removes it";
-                pool.Complete(fence, new SlotSettled(slot.Registration, slot.Path, slot.Line, await HeadOf(slot, ct).ConfigureAwait(false), KeptStates.Stuck, why, slot.Bytes, slot.Toolchain));
-                return new PoolDone(pool.Slot(site.Workspace, site.Repository, number), null, why, null);
+                return await LockedAsync(site, git, claim, fence, slot, held, ct).ConfigureAwait(false);
             }
 
             return await new PoolFinishRecoveries(pool, seams).RecoverAsync(site, git, claim, fence, ct).ConfigureAwait(false);
@@ -46,12 +40,7 @@ internal sealed class PoolTakeovers(TreePool pool, PoolSeams seams)
         }
 
         if (slot is null) return await RecoverMakeAsync(site, git, claim, fence, ct).ConfigureAwait(false);
-        if (GitLockFile(slot.Path) is { } lockFile)
-        {
-            var why = $"git's lock file {lockFile} is there; the slot is held until a person removes it";
-            pool.Complete(fence, new SlotSettled(slot.Registration, slot.Path, slot.Line, await HeadOf(slot, ct).ConfigureAwait(false), KeptStates.Stuck, why, slot.Bytes, slot.Toolchain));
-            return new PoolDone(pool.Slot(site.Workspace, site.Repository, number), null, why, null);
-        }
+        if (SlotStanding.GitLockFile(slot.Path) is { } lockFile) return await LockedAsync(site, git, claim, fence, slot, lockFile, ct).ConfigureAwait(false);
 
         if (claim.Phase is TreeClaimPhases.OpeningRecord or TreeClaimPhases.Opened && seams.Opened is { } asked)
         {
@@ -60,7 +49,7 @@ internal sealed class PoolTakeovers(TreePool pool, PoolSeams seams)
             if (answer == PoolOpens.Landed)
             {
                 await PoolLocks.SetAsync(git, slot.Path, PoolLocks.Free, ct).ConfigureAwait(false);
-                pool.Complete(fence, new SlotSettled(slot.Registration, slot.Path, claim.Line, "", KeptStates.Kept, "", slot.Bytes, slot.Toolchain));
+                pool.Complete(fence, await new SlotStanding(slot, claim) { Made = true }.ReadAsync(ct).ConfigureAwait(false));
                 return new PoolDone(pool.Slot(site.Workspace, site.Repository, number), null, null, record);
             }
         }
@@ -68,71 +57,44 @@ internal sealed class PoolTakeovers(TreePool pool, PoolSeams seams)
         return await FreeAsync(site, git, claim, fence, ct).ConfigureAwait(false);
     }
 
-    /// <summary>The slot read from the disk and put back to a free state, the claim ended: undone, kept as the return left it, or <c>stuck</c> where its HEAD is at neither place.</summary>
+    /// <summary>The slot read from the disk and settled: a return kept as the returning line's where it switched nothing or from its clearing on, a take's
+    /// slot at a commit of its own branch's <c>stuck</c>, and every other put back by the one undo, which a slot already put back passes through.</summary>
     internal async Task<PoolDone> FreeAsync(PoolSite site, PoolGit git, TreeClaim claim, ClaimFence fence, CancellationToken ct)
     {
         var slot = pool.Slot(claim.Workspace, claim.Repository, claim.Number)!;
-        var branch = await WorkingTree.BranchAsync(slot.Path, ct).ConfigureAwait(false);
+        var branch = await WorkingTree.BranchAsync(slot.Path, ct).ConfigureAwait(false) ?? "";
         var head = await WorkingTree.HeadAsync(slot.Path, ct).ConfigureAwait(false) ?? "";
-        SlotSettled settled;
-        string? stuck = null;
-        if (branch == claim.Branch && claim.Kind == TreeClaimKinds.Return)
-        {
-            settled = new SlotSettled(slot.Registration, slot.Path, claim.Line, "", KeptStates.Kept, "", slot.Bytes, slot.Toolchain);
-        }
-        else if (branch == claim.Branch)
-        {
-            if (head != await FileGit.CommitAsync(slot.Path, claim.Start, ct).ConfigureAwait(false))
-            {
-                stuck = $"{claim.Branch} has a commit of its own, so the slot was left on it";
-                settled = new SlotSettled(slot.Registration, slot.Path, slot.Line, head, KeptStates.Stuck, stuck, slot.Bytes, slot.Toolchain);
-            }
-            else if (await UndoAsync(site, git, claim, ct).ConfigureAwait(false) is { } failed)
-            {
-                stuck = failed;
-                settled = new SlotSettled(slot.Registration, slot.Path, slot.Line, head, KeptStates.Stuck, failed, slot.Bytes, slot.Toolchain);
-            }
-            else
-            {
-                settled = new SlotSettled(slot.Registration, slot.Path, "", head, KeptStates.Kept, "", slot.Bytes, slot.Toolchain);
-            }
-        }
-        else if (head == claim.Expect)
+        var restoring = TreeClaimPhases.Restoring.Contains(claim.Phase);
+        if (claim.Kind == TreeClaimKinds.Return && branch == claim.Branch && !restoring && (claim.ExpectBranch == claim.Branch || TreeClaimPhases.ClearedOn.Contains(claim.Phase)))
         {
             await PoolLocks.SetAsync(git, slot.Path, PoolLocks.Free, ct).ConfigureAwait(false);
-            pool.Complete(fence, null);
-            return new PoolDone(slot, null, null, null);
-        }
-        else
-        {
-            stuck = "its HEAD is at neither where the claim began nor where it was switching to";
-            settled = new SlotSettled(slot.Registration, slot.Path, slot.Line, head, KeptStates.Stuck, stuck, slot.Bytes, slot.Toolchain);
+            pool.Complete(fence, await new SlotStanding(slot, claim) { Made = true }.ReadAsync(ct).ConfigureAwait(false));
+            return new PoolDone(pool.Slot(claim.Workspace, claim.Repository, claim.Number), null, null, null);
         }
 
-        await PoolLocks.SetAsync(git, slot.Path, PoolLocks.Free, ct).ConfigureAwait(false);
-        pool.Complete(fence, settled);
-        return new PoolDone(pool.Slot(claim.Workspace, claim.Repository, claim.Number), null, stuck, null);
+        var start = await FileGit.CommitAsync(slot.Path, claim.Start, ct).ConfigureAwait(false);
+        if (claim.Kind == TreeClaimKinds.Take && branch == claim.Branch && head != start)
+        {
+            return await StuckAsync(site, git, claim, fence, slot, $"{claim.Branch} has a commit of its own, so the slot was left at it", ct).ConfigureAwait(false);
+        }
+
+        if (!restoring && head != claim.Expect && head != start)
+        {
+            return await StuckAsync(site, git, claim, fence, slot, "its HEAD is at neither where the claim began nor where it was switching to", ct).ConfigureAwait(false);
+        }
+
+        return await new PoolUndo(pool, seams).UndoAsync(site, git, claim, fence, null, ct).ConfigureAwait(false);
     }
 
-    /// <summary>
-    /// A take undone: the slot detached where the take began and the new branch deleted through the journal at that commit, its Undo
-    /// standing. Null where it is done, or the claim is a return's, which leaves the slot on the returning line's branch; else why not.
-    /// </summary>
-    internal async Task<string?> UndoAsync(PoolSite site, PoolGit git, TreeClaim claim, CancellationToken ct)
-    {
-        if (claim.Kind != TreeClaimKinds.Take) return null;
-        var slot = pool.Slot(claim.Workspace, claim.Repository, claim.Number)!;
-        var home = site.Home;
-        var hooks = TreeOpenings.HooksHeld(home);
-        var start = await FileGit.CommitAsync(slot.Path, claim.Start, ct).ConfigureAwait(false);
-        var (code, _, err) = await git.GitAsync(slot.Path, [.. hooks, "switch", "--detach", start], ct).ConfigureAwait(false);
-        if (code != 0) return $"git would not detach the slot: {TreeGit.FirstLine(err)}";
+    private async Task<PoolDone> LockedAsync(PoolSite site, PoolGit git, TreeClaim claim, ClaimFence fence, KeptTree slot, string lockFile, CancellationToken ct) =>
+        await StuckAsync(site, git, claim, fence, slot, $"git's lock file {lockFile} is there; the slot is held until a person removes it", ct).ConfigureAwait(false);
 
-        var (stands, tip, _) = await WorkingTree.GitAsync(slot.Path, ["rev-parse", "--verify", "--quiet", $"refs/heads/{claim.Branch}"], ct).ConfigureAwait(false);
-        if (stands != 0) return null;
-        if (tip.Trim() != start) return $"{claim.Branch} moved on, so it was kept";
-        var deleted = await JournaledDeletes.DeleteAsync(home, site.Root, claim.Repository, claim.Branch, start, [], _ => Task.FromResult<string?>(null)).ConfigureAwait(false);
-        return deleted.Kept is { } kept ? $"{claim.Branch} was kept: {kept}" : null;
+    private async Task<PoolDone> StuckAsync(PoolSite site, PoolGit git, TreeClaim claim, ClaimFence fence, KeptTree slot, string why, CancellationToken ct)
+    {
+        var settled = await new SlotStanding(slot, claim).StuckAsync(site, git, why, ct).ConfigureAwait(false);
+        await PoolLocks.SetAsync(git, slot.Path, PoolLocks.Free, ct).ConfigureAwait(false);
+        pool.Complete(fence, settled);
+        return new PoolDone(pool.Slot(claim.Workspace, claim.Repository, claim.Number), null, settled.Said, null);
     }
 
     private async Task<PoolDone> RecoverMakeAsync(PoolSite site, PoolGit git, TreeClaim claim, ClaimFence fence, CancellationToken ct)
@@ -145,7 +107,8 @@ internal sealed class PoolTakeovers(TreePool pool, PoolSeams seams)
             if (answer == PoolOpens.Landed && Directory.Exists(folder))
             {
                 await PoolLocks.SetAsync(git, folder, PoolLocks.Free, ct).ConfigureAwait(false);
-                pool.Complete(fence, new SlotSettled(Path.GetFileName(folder), folder, claim.Line, "", KeptStates.Kept, "", 0, ""));
+                var made = new KeptTree(site.Workspace, site.Repository, claim.Number, Path.GetFileName(folder), folder, "", "", KeptStates.Kept, "", DateTimeOffset.UtcNow, 0, "");
+                pool.Complete(fence, await new SlotStanding(made, claim) { Made = true }.ReadAsync(ct).ConfigureAwait(false));
                 return new PoolDone(pool.Slot(site.Workspace, site.Repository, claim.Number), null, null, record);
             }
         }
@@ -155,9 +118,4 @@ internal sealed class PoolTakeovers(TreePool pool, PoolSeams seams)
         pool.Complete(fence, null);
         return new PoolDone(null, null, null, null);
     }
-
-    private static string? GitLockFile(string slot) =>
-        GitBranches.GitDirectory(slot) is { } git ? new[] { "index.lock", "HEAD.lock" }.FirstOrDefault(name => File.Exists(Path.Combine(git, name))) : null;
-
-    private static async Task<string> HeadOf(KeptTree slot, CancellationToken ct) => await WorkingTree.HeadAsync(slot.Path, ct).ConfigureAwait(false) ?? slot.Tip;
 }
