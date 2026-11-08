@@ -497,6 +497,22 @@ test('the digest moves with the host\'s sources, and not with its tests, the oth
   fx.cleanup();
 });
 
+test('the digest moves with the contracts project the host compiles and with the tree\'s own build settings', () => {
+  const fx = makeFixture('knowledge-server-digest-contracts');
+  const checkout = serviceTree(fx);
+  fx.write('src/Daoris.Contracts/Quest.cs', 'class Quest {}\n');
+  fx.write('Directory.Build.props', '<Project />\n');
+  const first = tool.sourceDigest(checkout);
+
+  fx.write('src/Daoris.Contracts/Quest.cs', 'class Quest { int z; }\n');
+  const second = tool.sourceDigest(checkout);
+  assert.notEqual(second, first);
+
+  fx.write('Directory.Build.props', '<Project><PropertyGroup /></Project>\n');
+  assert.notEqual(tool.sourceDigest(checkout), second);
+  fx.cleanup();
+});
+
 test('a build is owed with none, and when the sources moved; not when the last one was built from them', () => {
   const fx = makeFixture('knowledge-server-plan');
   const checkout = withBuild(fx, 'main', undefined, 'same');
