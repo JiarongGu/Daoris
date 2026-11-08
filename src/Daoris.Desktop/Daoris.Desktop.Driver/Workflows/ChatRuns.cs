@@ -155,7 +155,7 @@ public static class ChatRuns
             var wrote = WorkflowRunBindings.Bind(home, binding);
             return new(wrote ? binding : WorkflowRunBindings.Read(home, run) ?? binding) { Wrote = wrote };
         }
-        catch (Exception error) when (error is IOException or UnauthorizedAccessException)
+        catch (Exception error) when (error is IOException or UnauthorizedAccessException or DriverException)
         {
             return new(null, Failed: error.Message.TrimEnd().TrimEnd('.'));
         }
