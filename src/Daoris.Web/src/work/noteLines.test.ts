@@ -757,7 +757,7 @@ describe('noteLines', () => {
       );
       const signedOut = [coded('held.signed-out', '…', { owner: 'codex', account: 'a-1', profile: 'a-1' })];
       expect(noteLines(t, { parts: signedOut }, 'en')[0].text).toBe(
-        "The `codex` account `a-1` is not signed in, so a session would have nothing to run as — `daoris agent login codex --profile a-1` runs the agent's own sign-in into it. Daoris manages the directory and the name; the credential stays in the agent's own store.",
+        "The `codex` account `a-1` is not signed in, so a session would have nothing to run as — `daoris agent login codex --account a-1` runs the agent's own sign-in into it. Daoris manages the directory and the name; the credential stays in the agent's own store.",
       );
       // The accounts a start waited on for their lock, each by the name the page knows.
       const locked = [coded('held.locked', '…', { owner: 'claude-code', accounts: ['account-1'] })];
@@ -788,7 +788,7 @@ describe('noteLines', () => {
         coded('held.clause-signed-out', '…', { account: 'account-3' }),
         coded('held.clause-ready', '…', { account: 'account-4' }),
         coded('held.wait-first', '…', { account: 'account-1', until, why: 'stated' }),
-        coded('held.sign-in-sooner', '…', { logins: ['daoris agent login fake --profile account-3', 'daoris agent login fake --profile "my team"'] }),
+        coded('held.sign-in-sooner', '…', { logins: ['daoris agent login fake --account account-3', 'daoris agent login fake --account "my team"'] }),
       ];
       expect(noteLines(t, { parts: wait }, 'en', names).map((line) => line.text)).toEqual([
         'No `fake` account this start may use is ready.',
@@ -797,12 +797,12 @@ describe('noteLines', () => {
         '`Spare` is not signed in.',
         '`account-4` is ready.',
         `The first to be ready is \`Work\`, at ${at} (the agent said so). Daoris starts nothing on them until then.`,
-        'A sign-in starts it sooner: `daoris agent login fake --profile account-3` and `daoris agent login fake --profile "my team"`, or Agents → the agent\'s page → Accounts.',
+        'A sign-in starts it sooner: `daoris agent login fake --account account-3` and `daoris agent login fake --account "my team"`, or Agents → the agent\'s page → Accounts.',
       ]);
-      const every = [coded('held.wait-every', '…', { agent: 'fake' }), coded('held.sign-in', '…', { logins: ['daoris agent login fake --profile a'] })];
+      const every = [coded('held.wait-every', '…', { agent: 'fake' }), coded('held.sign-in', '…', { logins: ['daoris agent login fake --account a'] })];
       expect(noteLines(t, { parts: every }, 'en').map((line) => line.text)).toEqual([
         'Every `fake` account this start may use is cooling.',
-        'A sign-in starts it: `daoris agent login fake --profile a`, or Agents → the agent\'s page → Accounts.',
+        'A sign-in starts it: `daoris agent login fake --account a`, or Agents → the agent\'s page → Accounts.',
       ]);
 
       const picked = [coded('held.picked-ready', '…', { accounts: ['account-1', 'account-2'] }), coded('held.picked-none', '…', { agent: 'fake' })];

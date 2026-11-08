@@ -26,9 +26,9 @@ internal static class RequirementsPrompt
         {
             shown++;
             text.Append($"\n- Requirement {shown}:\n\n")
-                .Append(TextBounds.Quote(requirement.Quote, indent: "  "))
+                .Append(QuoteOf(requirement))
                 .Append("\n\n  Check: ")
-                .Append(requirement.Check.ReplaceLineEndings("\n").Replace("\n", "\n  ", StringComparison.Ordinal))
+                .Append(CheckOf(requirement))
                 .Append('\n')
                 .Append(Evidence(requirement));
         }
@@ -77,9 +77,14 @@ internal static class RequirementsPrompt
         return $"\n  Evidence: {string.Join(" ", said)}\n";
     }
 
+    private static string QuoteOf(QuestRequirementView requirement) => TextBounds.Quote(requirement.Quote, indent: "  ");
+
+    private static string CheckOf(QuestRequirementView requirement) =>
+        requirement.Check.ReplaceLineEndings("\n").Replace("\n", "\n  ", StringComparison.Ordinal);
+
     /// <summary>
     /// How many requirements an instruction quotes whole by <see cref="RequirementsLimit"/>: the first always, then each while
-    /// its words, check and evidence fit beside those before it. The instruction and its account count by this one
+    /// its words, check and evidence fit beside those before it, counted as they render. The instruction and its account count by this one
     /// rule.
     /// </summary>
     internal static int RequirementsShown(IReadOnlyList<QuestRequirementView> requirements)
@@ -88,7 +93,7 @@ internal static class RequirementsPrompt
         var shown = 0;
         foreach (var requirement in requirements)
         {
-            var cost = requirement.Quote.Length + requirement.Check.Length + requirement.Evidence.Sum(item => item.Named.Length);
+            var cost = QuoteOf(requirement).Length + CheckOf(requirement).Length + requirement.Evidence.Sum(item => item.Named.Length);
             if (shown > 0 && used + cost > TargetPrompt.RequirementsLimit) break;
             used += cost;
             shown++;

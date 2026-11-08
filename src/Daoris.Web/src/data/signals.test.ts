@@ -243,7 +243,7 @@ describe('sittingSentence', () => {
    * `signedOut`; English is the driver's own sentence, which says the same.
    */
   it('says the accounts not signed in and the sign-in for each, beside a wait and with none cooling', async () => {
-    const reason = 'no `claude-code` account this start may use is ready: … A sign-in starts it sooner: `daoris agent login claude-code --profile account-2`, or Settings → Agents.';
+    const reason = 'no `claude-code` account this start may use is ready: … A sign-in starts it sooner: `daoris agent login claude-code --account account-2`, or Settings → Agents.';
     const signedOut = { agent: 'claude-code', accounts: ['account-2', 'account-3'] };
     const beside: Consideration = {
       ...sits('Blocked', reason), signedOut,
@@ -259,14 +259,14 @@ describe('sittingSentence', () => {
     const waits = sittingSentence(beside);
     expect(waits).toContain('claude-code 的账户 account-1');
     expect(waits).toContain('account-2、account-3 未登录');
-    expect(waits).toContain('`daoris agent login claude-code --profile account-2`');
-    expect(waits).toContain('`daoris agent login claude-code --profile account-3`');
+    expect(waits).toContain('`daoris agent login claude-code --account account-2`');
+    expect(waits).toContain('`daoris agent login claude-code --account account-3`');
     // The Agents place, not Settings → Agents.
     expect(waits).toContain('「智能体」');
     expect(waits).not.toContain('设置 → 智能体');
     const none = sittingSentence(alone);
     expect(none).toContain('account-2、account-3 未登录');
-    expect(none).toContain('`daoris agent login claude-code --profile account-3`');
+    expect(none).toContain('`daoris agent login claude-code --account account-3`');
     expect(none).not.toContain('冷却至');
   });
 
@@ -290,7 +290,7 @@ describe('sittingSentence', () => {
     expect(said).toContain('claude-code 的账户 work');
     expect(said).not.toContain('acct-3f9c1a2b');
     expect(said).toContain('personal、acct-77aa00ff 未登录');
-    expect(said).toContain('`daoris agent login claude-code --profile account-2`');
+    expect(said).toContain('`daoris agent login claude-code --account account-2`');
     expect(sittingSentence({ ...named, waitsFor: undefined })).toContain('personal、acct-77aa00ff 未登录');
   });
 
@@ -321,9 +321,9 @@ describe('sittingSentence', () => {
 
     await i18n.changeLanguage('zh');
     const said = sittingSentence(signedOut);
-    expect(said).toContain('`daoris agent login claude-code --profile <account>`');
-    expect(said).toContain('`daoris agent login claude-code --profile "my lab"`');
-    expect(said).toContain('`daoris agent login claude-code --profile account-2`');
+    expect(said).toContain('`daoris agent login claude-code --account <account>`');
+    expect(said).toContain('`daoris agent login claude-code --account "my lab"`');
+    expect(said).toContain('`daoris agent login claude-code --account account-2`');
     // The accounts are said as they are; only the command is spelled.
     expect(said).toContain('R&D、my lab、account-2 未登录');
   });

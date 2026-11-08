@@ -229,7 +229,7 @@ public sealed class VerbLeasesTests
     // holds none at its top, taking the lease itself to publish.
     [InlineData("agent install claude-code")]
     [InlineData("agent login claude-code --new")]
-    [InlineData("agent login codex --profile work --join aurora --device-code")]
+    [InlineData("agent login codex --account work --device-code")]
     [InlineData("agent key claude-code")]
     [InlineData("agent key claude-code --account work")]
     // A pin downloads or installs holding nothing and takes the lease to publish; an unpinned update writes the machine.
