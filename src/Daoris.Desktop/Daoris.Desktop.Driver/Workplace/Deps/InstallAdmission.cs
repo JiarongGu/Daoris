@@ -71,7 +71,7 @@ internal static class InstallAdmission
 
     private static string RecordOf(string home, string repository) => DaorisHome.Entry(home, HomeEntry.TreeFiles, $"common.{Short(repository)}.json");
 
-    private static string Short(string text) => Convert.ToHexStringLower(SHA256.HashData(Encoding.UTF8.GetBytes(text)))[..16];
+    internal static string Short(string text) => Convert.ToHexStringLower(SHA256.HashData(Encoding.UTF8.GetBytes(text)))[..16];
 
     private sealed class Held(List<IDisposable> holds) : IDisposable
     {

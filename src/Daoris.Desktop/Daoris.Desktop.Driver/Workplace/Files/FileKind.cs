@@ -28,7 +28,7 @@ internal static class FileKinds
     /// <summary>A kind's own fields; every kind also takes the found layer's <c>evidence</c>, <c>other</c> and <c>size</c>.</summary>
     internal static IReadOnlyList<string> Fields(FileKind kind) => kind switch
     {
-        FileKind.Dependency => ["install", "key", "toolchain", "env", "secret", "caches", "bound", "share"],
+        FileKind.Dependency => ["install", "setup", "per", "key", "toolchain", "env", "secret", "caches", "bound", "share"],
         FileKind.Intermediate or FileKind.Cache => ["toolchain"],
         FileKind.Local => ["copy"],
         _ => [],
