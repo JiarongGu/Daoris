@@ -14,7 +14,8 @@ namespace Daoris.Driver;
 /// this shape would add more than it took away.</para>
 ///
 /// <para><b>One gate per store, not per instance</b>: a store is made anew for each press, so the caller passes its own static
-/// gate. Reading takes no gate; a file that does not read is no record, and is only written over by an edit.</para>
+/// gate. Reading takes no gate; a file that does not parse is no record, and is only written over by an edit, while one that cannot
+/// be opened (another process holds it) fails the edit with the IO error and is left as it is.</para>
 /// </remarks>
 /// <param name="gate">The store's static lock: one writer at a time in this process.</param>
 /// <param name="array">The name of the array property in the file.</param>
@@ -34,12 +35,25 @@ internal sealed class RecordList<T>(
     {
         try
         {
+            return ReadOrThrow(path);
+        }
+        catch (Exception error) when (error is IOException or UnauthorizedAccessException)
+        {
+            return [];
+        }
+    }
+
+    /// <summary>The entries as <see cref="Read"/> has them, but a file that could not be opened says so: its content is unknown, not none.</summary>
+    private IReadOnlyList<T> ReadOrThrow(string path)
+    {
+        try
+        {
             if (!File.Exists(path)) return [];
             using var document = JsonDocument.Parse(AtomicFile.ReadText(path));
             if (!document.RootElement.TryGetProperty(array, out var entries) || entries.ValueKind != JsonValueKind.Array) return [];
             return [.. entries.EnumerateArray().Select(read).OfType<T>()];
         }
-        catch (Exception error) when (error is JsonException or IOException or UnauthorizedAccessException or InvalidOperationException)
+        catch (Exception error) when (error is JsonException or InvalidOperationException or FileNotFoundException or DirectoryNotFoundException)
         {
             return [];
         }
@@ -61,7 +75,8 @@ internal sealed class RecordList<T>(
         lock (gate)
         {
             using var held = across is null ? null : RecordLock.Take(across);
-            var changed = change(Read(path));
+            // A file that cannot be opened is not an empty list: writing over it would lose every entry it holds.
+            var changed = change(ReadOrThrow(path));
             Write(path, bound is null ? changed : bound(changed));
         }
     }
