@@ -132,6 +132,12 @@ export function heldTitle(holding: { quests: readonly string[]; asks: readonly s
     : i18n.t('work.attention.held.both', { quests: counted, count: holding.asks.length });
 }
 
+/** Whether the agent is held by an API key alone, so what its accounts lack is a key, never a sign-in. */
+function heldByKey(tools: readonly Tool[] | undefined, agent: string): boolean {
+  const acts = tools?.find((each) => each.name === agent)?.acts;
+  return acts?.takesKey === true && acts.signsIn !== true;
+}
+
 /**
  * An account's row worded: a start waiting for accounts, named by what it holds, its line saying the accounts
  * that would serve it as last known with each one's read time, or that no Daoris account is signed in; a signed-out
@@ -149,7 +155,7 @@ export function accountRowWorded(row: PushedAttention, names: AttentionNames, no
       circle: row.wholeWorkspace === true,
       // No account to name where none is signed in: the hold says so itself, once, as the driver does.
       detail: account.noAccount && account.named.length === 0
-        ? i18n.t('work.attention.accounts.noAccount', { product: account.product })
+        ? i18n.t(heldByKey(names.tools, account.agent) ? 'work.attention.accounts.noKey' : 'work.attention.accounts.noAccount', { product: account.product })
         : whyLine(account.named, now),
     };
   }

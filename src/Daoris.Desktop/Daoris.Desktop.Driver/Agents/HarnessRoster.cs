@@ -294,8 +294,9 @@ public sealed class HarnessRoster(ProviderRegistry adapters, string? settingsPat
 
     internal RotationScope Walked(RotationScope scope, string owner, AccountAgent toolchain) => Selecting.Walked(scope, owner, toolchain);
 
-    internal static HarnessSelection NoAccount(string owner, IReadOnlyList<string> signedOut, IReadOnlyDictionary<string, string> names)
-        => RosterSelection.NoAccount(owner, signedOut, names);
+    internal static HarnessSelection NoAccount(
+        string owner, IReadOnlyList<string> signedOut, IReadOnlyDictionary<string, string> names, bool byKey = false)
+        => RosterSelection.NoAccount(owner, signedOut, names, byKey);
 
     internal Task<HarnessSelection> WalkAsync(string adapter, DriverConfig config, string? workspace, string? chosen, StartKind kind, bool counts, bool ownHome, CancellationToken ct, OfferAsk? offer = null, bool asks = true)
         => Walking.WalkAsync(adapter, config, workspace, chosen, kind, counts, ownHome, ct, offer, asks);

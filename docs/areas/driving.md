@@ -175,10 +175,14 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they start wi
     `open` and before `hand` (and the same step in a conversation's open and a go-on), is the one way a tree gets its
     dependencies: in an unworked tree it writes back what a cut-off start left, then keeps, places from the store
     (`work/deps/<key>`, copied, never linked) or installs each effective `dependency` rule in rule order, the install under
-    its key's lock, the repository's only where the rule's last install wrote git's common folder, and the machine's
+    its key's lock (an `npm ci` of a rule that declares `setup` runs `--ignore-scripts` where its lockfile marks no
+    `hasInstallScript` and resolves nothing from git, so the repository's own scripts never keep it unsealed), the repository's only where the rule's last install wrote git's common folder, and the machine's
     admission; it seals only a fresh install that wrote nothing beside its folder, changed no earlier placement, named
     no tree path or secret and left no link outside; it records an unsealed install's companions and other writes, groups
-    an install with each earlier placement it changed, runs the owed hook, installs again what lost an other write, and
+    an install with each earlier placement it changed (a group whose member is now another kind's path drops that member's
+    record and leaves its folder), runs the owed hook, installs again what lost an other write, runs each rule's `setup`
+    commands (`per: repository` once per key of the commands, the manifest's scripts and the files they name, kept in the
+    home; `per: tree` in each tree; a failure said `started.setup-failed`), and
     copies the machine-local files by the effective `copy` rules. In a worked tree it only keeps, or places a hit into an
     absent folder while each earlier dependency stood and no group names it. The hand, a conversation's open, a go-on and
     a terminal's visit take the mark off first, a visit ending a running install or hook; every stage write re-reads the

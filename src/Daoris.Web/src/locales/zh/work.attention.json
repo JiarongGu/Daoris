@@ -78,6 +78,7 @@
   "work.attention.accounts.join": "；",
   "work.attention.accounts.line": "{{clauses}}。",
   "work.attention.accounts.noAccount": "没有为 {{product}} 登录任何 Daoris 账户，它的启动要等你登录后才会开始。",
+  "work.attention.accounts.noKey": "没有任何 Daoris 账户为 {{product}} 设置了 API 密钥，因此它的启动会等到你设置一个密钥后再开始。",
   "work.attention.held.quests": "{{count}} 个委托",
   "work.attention.held.quests_other": "{{count}} 个委托",
   "work.attention.held.intakes": "{{count}} 个需求的受理会话",

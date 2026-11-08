@@ -84,6 +84,7 @@ internal sealed class TreeFilesStage(string home, string root, string tree, stri
         {
             if (!await HookAsync(head, ct).ConfigureAwait(false)) return Stop();
             if (!await OthersAsync(ct).ConfigureAwait(false)) return Stop();
+            if (!await RepositorySetup.RunAsync(home, repository, tree, head, deps.Each, _said, ct, _visited).ConfigureAwait(false)) return Stop();
             if (!TreeFilesRecord.Holding(home, tree, () => { })) return Stop();
         }
 
@@ -146,6 +147,12 @@ internal sealed class TreeFilesStage(string home, string root, string tree, stri
             if (!unworked) continue;
             foreach (var member in group.Members)
             {
+                if (KeptByAnotherRule(member))
+                {
+                    if (!TreeFilesRecord.WhileUnworked(home, tree, state => state.Without(member))) return false;
+                    continue;
+                }
+
                 _installOnly.Add(member);
                 if (!Remove(member)) return false;
             }
@@ -155,6 +162,9 @@ internal sealed class TreeFilesStage(string home, string root, string tree, stri
 
         return true;
     }
+
+    private bool KeptByAnotherRule(string path) =>
+        _order.All(each => each.Path != path) && _rules!.Rules.LastOrDefault(each => each.Rule.Matches(path)) is { Rule.Kind: FileKind.Intermediate or FileKind.Cache };
 
     /// <summary>One dependency in an unworked tree; true where a restriction holds its install for an allow.</summary>
     private async Task<bool> UnworkedAsync(StoreDependency dependency, string key, CancellationToken ct)
