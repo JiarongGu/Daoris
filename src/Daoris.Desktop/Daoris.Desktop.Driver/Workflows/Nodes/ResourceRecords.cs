@@ -83,7 +83,7 @@ public sealed record ResourceReceipt(
 /// <param name="Unit">The unit (<see cref="WorkUnit.Id"/>).</param>
 public sealed record ResourceRecord(string Unit)
 {
-    /// <summary>How many receipts one unit keeps at most: a completion that would pass it is held.</summary>
+    /// <summary>How many receipts one unit keeps at most, settled ones aside: a completion that would pass it with receipts still owing is held.</summary>
     public const int ReceiptsKept = 32;
 
     public IReadOnlyList<ResourceReceipt> Receipts { get; init; } = [];
