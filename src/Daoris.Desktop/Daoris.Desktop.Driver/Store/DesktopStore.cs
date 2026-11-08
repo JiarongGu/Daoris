@@ -47,6 +47,9 @@ public sealed class DesktopStore : IDisposable
 
     public const int GenerationVersion = 24;
 
+    /// <summary>The step that gives a kept tree's claim the branch and line it expects back.</summary>
+    public const int ClaimExpectVersion = GenerationVersion + 1;
+
     /// <summary>How long a write waits on the file's lock before it is refused, in seconds.</summary>
     private const int BusySeconds = 5;
 

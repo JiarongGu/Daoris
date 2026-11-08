@@ -721,7 +721,7 @@ internal static class DesktopStoreSteps
             CREATE UNIQUE INDEX deliveries_generation ON deliveries (unit, tip, method, target, generation);
             """)),
 
-        new(TreePool.ExpectSince, PolicyWriter, write => write.Execute(
+        new(DesktopStore.ClaimExpectVersion, PolicyWriter, write => write.Execute(
             """
             ALTER TABLE tree_claims ADD COLUMN expect_branch TEXT NOT NULL DEFAULT '';
             ALTER TABLE tree_claims ADD COLUMN expect_line TEXT NOT NULL DEFAULT '';
