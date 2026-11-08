@@ -30,6 +30,8 @@ the per-task record. Entries preserve their original wording so the archive stay
 > **PLUGREV2c** (driver, plugins): Outcome: a placed plugin's `plugin.step` and `plugin.failed` lines carry its id (`WorkPlugins` logs `PlacedWork.PluginOf(key)`, so `PluginHealth` sees the failure under the plugin), and `HookSet.Refused` counts one refusal at the first place that holds a state, not once per place; proved by `PlacedWorkTests`.
 >
 > **PLUGREV2d** (driver, plugins): Outcome: a look and `Watch` divide the awaited set and apply it through `PlacedWork.Apply`, one lock around both, so a look never applies a set older than one `Watch` stored (the rejected alternative, `Watch` only recording, would have delayed an awaited place's start to the next look); proved by `PlacedWorkTests`.
+>
+> **PLUGREV2e** (driver, plugins): Outcome: `WorkEventTeller` tells rows alone and keeps its cursor in memory (no clock, no gap), and `LoopRun` and `DriveConsole` wrap it in `WorkEventNews.Gapped`, the one place that says the first-place and incomplete-batch `events.missed`; proved by `WorkEventTellerTests` (the bare teller and the wrapped one).
 
 ## TREEPOOL1ac — shared paths (2026-11-09)
 
