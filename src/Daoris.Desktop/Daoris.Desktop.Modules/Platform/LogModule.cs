@@ -7,7 +7,7 @@ namespace Daoris.Desktop;
 
 /// <summary>
 /// The page and the machine log: its report into the log — what is used, and what fails, on
-/// the screen — and Settings → Logs, the screen's door to reading it.
+/// the screen — and Settings → Machine log, the screen's door to reading it.
 /// </summary>
 /// <remarks>
 /// <para><b><c>EVENT</c></b> carries <c>{ event, data }</c>. The answer is always nothing: the report is
