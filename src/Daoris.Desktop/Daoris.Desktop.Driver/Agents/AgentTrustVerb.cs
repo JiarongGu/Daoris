@@ -8,7 +8,7 @@ namespace Daoris.Driver;
 internal static class AgentTrustVerb
 {
     /// <summary>
-    /// <c>trust &lt;agent&gt; &lt;folder&gt; [--profile &lt;account&gt;] --yes</c>: the agent's trust in a folder, asked, then written on
+    /// <c>trust &lt;agent&gt; &lt;folder&gt; [--account &lt;account&gt;] --yes</c>: the agent's trust in a folder, asked, then written on
     /// the person's word. Without <c>--yes</c> the question is the command: it names the folder, each account's file and what
     /// trusting means, grants nothing, and exits 1. The account is the one named; with none named, every account of Daoris's for the
     /// agent, each in its own file (one set serves every workspace, so a folder trusted for Daoris is trusted
