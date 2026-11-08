@@ -352,7 +352,7 @@ public sealed class SessionWords : IDisposable
 
         // Kept as a conversation keeps what is attached, so the names on the record name files that exist.
         var kept = files.Count > 0 ? ChatFiles.Keep(_loop.Home, id, files) : [];
-        var word = new HeldSay(text, [.. kept.Select(file => file.Name)], door, choice, key, level, question);
+        var word = new HeldSay(text, [.. kept.Select(file => file.Name)], door, choice, key ?? PressKey(), level, question);
         // A host whose marks keep the moving open and the head keeps the word on the record the
         // move leaves, which its open moves, or refuses it naming the head; a host without them, today's hold.
         var keeps = await KeepsAsync(ct).ConfigureAwait(false);

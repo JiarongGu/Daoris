@@ -155,13 +155,31 @@ public sealed class RefusalLogTests : Bridge
         var lines = Lines();
         Assert.Equal(
             [
-                """{"code":"DRIVER_REFUSED","request":"DAORIS.DRIVER.HARNESS_ACTION","action":"login-new","door":"codex-acp"}""",
-                """{"code":"DRIVER_REFUSED","request":"DAORIS.DRIVER.HARNESS_ACTION","action":"key-add","door":"claude-code"}""",
-                """{"code":"DRIVER_REFUSED","request":"DAORIS.DRIVER.HARNESS_INPUT","action":"login","door":"claude-code"}""",
-                """{"code":"DRIVER_REFUSED","request":"DAORIS.DRIVER.HARNESS_CANCEL","action":"other","door":"other"}""",
+                """{"code":"DRIVER_REFUSED","request":"DAORIS.DRIVER.HARNESS_ACTION","action":"login-new","agent":"codex-acp"}""",
+                """{"code":"DRIVER_REFUSED","request":"DAORIS.DRIVER.HARNESS_ACTION","action":"key-add","agent":"claude-code"}""",
+                """{"code":"DRIVER_REFUSED","request":"DAORIS.DRIVER.HARNESS_INPUT","action":"login","agent":"claude-code"}""",
+                """{"code":"DRIVER_REFUSED","request":"DAORIS.DRIVER.HARNESS_CANCEL","action":"other","agent":"other"}""",
                 """{"code":"DRIVER_REFUSED","request":"DAORIS.DRIVER.START_CHAT"}""",
             ],
             lines.Select(line => line.GetProperty("data").GetRawText()));
+    }
+
+    [Fact]
+    public void A_terminals_refused_harness_action_says_its_agent_and_its_door_under_names_of_their_own()
+    {
+        var request = new IpcRequest
+        {
+            Id = "a",
+            Module = "DAORIS.DRIVER",
+            Type = "HARNESS_ACTION",
+            Payload = JsonSerializer.SerializeToElement(new { door = "claude-code", action = "login" }),
+        };
+
+        var said = RefusalLog.Said(request, "DRIVER_REFUSED", door: PipeDoor.Terminal);
+
+        Assert.Equal(said.Count, said.Select(pair => pair.Key).Distinct().Count());
+        Assert.Contains(("agent", (object?)"claude-code"), said);
+        Assert.Contains(("door", (object?)"terminal"), said);
     }
 
     [Fact]

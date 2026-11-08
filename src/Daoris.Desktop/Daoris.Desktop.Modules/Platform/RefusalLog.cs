@@ -45,18 +45,24 @@ public static class RefusalLog
         var code = response is null ? IpcErrorCodes.NoHandler : response.Success ? null : response.Error?.Code;
         if (code is null || code == IpcErrorCodes.OperationCancelled) return;
 
+        log.Write(Ours.Contains(code) ? "info" : "warn", "refused", Said(request, code, PipeDoor.Now));
+    }
+
+    /// <summary>A refused request's line fields, each named once: a line is one object, and a field said twice reads as its last.</summary>
+    public static IReadOnlyList<(string Key, object? Value)> Said(IpcRequest request, string code, string? door)
+    {
         List<(string, object?)> said = [("code", code), ("request", $"{request.Module}.{request.Type}")];
         // A harness action's refusal says which action on which agent, so a refused sign-in is told from a refused
         // install: each a word of a fixed list read from the request, never its other fields (a name, a key, a pasted code).
         if (request.Module == "DAORIS.DRIVER" && request.Type is "HARNESS_ACTION" or "HARNESS_INPUT" or "HARNESS_CANCEL")
         {
             said.Add(("action", Word(request, "action", word => AgentActions.Words.Contains(word, StringComparer.Ordinal))));
-            said.Add(("door", Word(request, "door", Agent.IsMatch)));
+            said.Add(("agent", Word(request, "door", Agent.IsMatch)));
         }
 
         // A request that came over the pipe is said as the terminal's; the page's own stay unmarked.
-        if (PipeDoor.Now is { } door) said.Add(("door", door));
-        log.Write(Ours.Contains(code) ? "info" : "warn", "refused", said);
+        if (door is not null) said.Add(("door", door));
+        return said;
     }
 
     /// <summary>What an agent's id may be in a line: an identifier, never a phrase or a path.</summary>

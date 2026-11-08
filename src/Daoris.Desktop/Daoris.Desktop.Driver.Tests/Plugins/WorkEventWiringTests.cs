@@ -101,6 +101,28 @@ public sealed class WorkEventWiringTests : IDisposable
     }
 
     [Fact]
+    public async Task A_plugin_stopped_by_an_update_and_started_again_is_told_the_events_that_follow_by_its_new_process()
+    {
+        var channels = new List<EventChannel>();
+        await using var set = new HookSet(_home, start: (_, _, _) =>
+        {
+            var channel = new EventChannel([HookPoints.Event]);
+            channels.Add(channel);
+            return Task.FromResult<IHookChannel>(channel);
+        }, log: _log, holdsHome: () => true, clock: () => _now);
+        var catalog = Catalog(("acme.relay", [HookPoints.Event]));
+        await set.ReconcileAsync(catalog, CancellationToken.None);
+
+        Assert.True(await set.StopAsync("acme.relay"));
+        await set.ReconcileAsync(catalog, CancellationToken.None);
+        set.Tell(Parked("4b62a9fe"));
+
+        Assert.Equal(2, channels.Count);
+        Assert.Single(await channels[1].HeardAsync(1));
+        Assert.Empty(channels[0].Frames);
+    }
+
+    [Fact]
     public async Task An_event_whose_required_field_fails_is_told_as_missed_in_its_place_and_logged_by_its_kind_and_field_alone()
     {
         var channel = new EventChannel([HookPoints.Event]);

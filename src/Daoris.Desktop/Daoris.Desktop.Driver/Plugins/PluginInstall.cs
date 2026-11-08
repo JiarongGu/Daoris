@@ -379,6 +379,7 @@ public static class PluginInstall
         var entry = PluginCatalog.Load(home).Plugins.FirstOrDefault(plugin => string.Equals(plugin.Manifest.Id, id, StringComparison.OrdinalIgnoreCase))
             ?? throw new PluginRefusal(PluginRefusal.Unknown, $"no plugin `{id}` on this machine.", ("id", id));
 
+        PluginState.Editable(home); // before the move: a switch file that cannot be edited would refuse the row's clearing after the folder is gone
         // 🔴 Moved aside WHOLE, then deleted: on Windows a running hook holds its folder, and a recursive delete takes every file it
         // can before failing, stranding a plugin with no manifest.
         var aside = Path.Combine(Path.GetDirectoryName(entry.Folder)!, $".removing-{entry.Manifest.Id}-{Guid.NewGuid():N}");
