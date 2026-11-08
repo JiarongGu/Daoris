@@ -7,7 +7,7 @@ namespace Daoris.Driver;
 /// overwritten; a take's own branch then goes through the journal where it still points at its start. The slot is released, its row
 /// written by <see cref="SlotStanding"/>, once it reads back so and binds to no other checkout. Where the branch is checked out in another
 /// checkout, which passes, the claim waits at <c>undo-waiting</c> for its run's look; anything else that keeps it from going back settles
-/// the slot <c>stuck</c>, naming no line.
+/// the slot <c>stuck</c>, detached where it stands and naming no line, and a take's own branch still goes through the journal.
 /// </summary>
 internal sealed class PoolUndo(TreePool pool, PoolSeams seams)
 {
@@ -61,8 +61,9 @@ internal sealed class PoolUndo(TreePool pool, PoolSeams seams)
 
         if (onto.Length > 0 && await CheckedOutAtAsync(site, slot, onto, ct).ConfigureAwait(false) is { } there) return (Put.Waits, $"{onto} is checked out at {there}");
         var hooks = TreeOpenings.HooksHeld(site.Home);
-        string[] arguments = onto.Length > 0 ? [.. hooks, "switch", "--no-overwrite-ignore", onto] : [.. hooks, "switch", "--detach", "--no-overwrite-ignore", claim.Expect];
-        var (code, _, err) = await git.GitAsync(slot.Path, arguments, ct).ConfigureAwait(false);
+        var (code, _, err) = onto.Length > 0
+            ? await git.GitAsync(slot.Path, [.. hooks, "switch", "--no-overwrite-ignore", onto], ct).ConfigureAwait(false)
+            : await git.GitAsync(slot.Path, [.. hooks, "switch", "--detach", "--no-overwrite-ignore", claim.Expect], ct).ConfigureAwait(false);
         if (code != 0) return (Put.Refused, $"git would not put the slot back: {TreeGit.FirstLine(err)}");
         return await StandsAsync(slot, onto, claim.Expect, ct).ConfigureAwait(false) ? (put, "") : (Put.Refused, "the slot did not read back where the claim found it");
     }
@@ -81,8 +82,9 @@ internal sealed class PoolUndo(TreePool pool, PoolSeams seams)
 
     private async Task<PoolDone> StuckAsync(PoolSite site, PoolGit git, TreeClaim claim, ClaimFence fence, KeptTree slot, string why, CancellationToken ct)
     {
-        await PoolLocks.SetAsync(git, slot.Path, PoolLocks.Free, ct).ConfigureAwait(false);
         var settled = await new SlotStanding(slot, claim).StuckAsync(site, git, why, ct).ConfigureAwait(false);
+        if (claim.Kind == TreeClaimKinds.Take && await DeleteOwnBranchAsync(site, claim, slot, ct).ConfigureAwait(false) is { } kept) settled = settled with { Said = $"{settled.Said}; {kept}" };
+        await PoolLocks.SetAsync(git, slot.Path, PoolLocks.Free, ct).ConfigureAwait(false);
         pool.Complete(fence, settled);
         return new PoolDone(pool.Slot(claim.Workspace, claim.Repository, claim.Number), null, settled.Said, null);
     }
