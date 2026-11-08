@@ -267,3 +267,7 @@ drains, swaps, rolls back and refuses.
   the flat service host ended.
 - **HOMELAYOUT5**: measure, per harness, whether account homes, trees, rooms and kept files can move safely.
 - The trees' links repaired after a person moves the whole Daoris folder (the install layout design §7.4): designed, not built.
+
+- **The second review cycle's open defects** (HOMELEASE2 and FOLDERMOVE2; the backlog row of that name points here), one entry each:
+  - **HOMELEASE2 — a stale lease's removal can remove a live one** (install-home-update review): `HomeLease.TryAcquire` re-reads the stale text then deletes the path, so taker B can create its lease between taker A's read and delete, and A removes it: two holders; needs one atomic step (rename aside, judge what moved).
+  - **FOLDERMOVE2 — a copied move-in whose source cannot be removed reads as failed** (install-home-update review): `FolderMove.Move`'s final `Directory.Delete(source)` throws on a held file after the copy landed; `InstallHome.MoveIn` says failed, `HasState` stops any retry, and the half-deleted source stays.
