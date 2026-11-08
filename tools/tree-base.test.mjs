@@ -185,6 +185,6 @@ test('the one builder builds through the door where a marker stands under the co
   const runner = (command, words) => ran.push([command, ...words].join(' '));
   build(project, 'Debug', { runner });
   build(project, 'Release', { runner });
-  assert.deepEqual(ran, [`daoris driver trees build ${join(project, 'bin', 'Debug')}`, `dotnet build ${project} -c Release`]);
+  assert.deepEqual(ran, [`daoris tree build ${join(project, 'bin', 'Debug')}`, `dotnet build ${project} -c Release`]);
   assert.equal(existsSync(join(project, 'bin', 'Debug', MARKER)), true);
 });

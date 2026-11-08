@@ -1,7 +1,7 @@
 /**
  * The guard of a kept build base (the tree-pool design §36.3, 3, §38.2, 6-7): a runner that reads a build output without building
  * reads `.daoris-base` in the folders from the one it reads up to the checkout's top, and refuses with the marker's sentence while
- * one stands; the door, `daoris driver trees build <path>`, is the one release. `build` is the one integrated builder: it builds a
+ * one stands; the door, `daoris tree build <path>`, is the one release. `build` is the one integrated builder: it builds a
  * project through the door where a marker stands under the configuration's output, and plainly where none does.
  *
  *   node tools/tree-base.mjs build <project folder> [--configuration Debug|Release]
@@ -43,14 +43,14 @@ export function guarded(path, { refuse = refuseAndExit } = {}) {
 /** The one integrated builder: the door where a marker stands under the project's configuration folder, else `dotnet build`. */
 export function build(project, configuration = 'Debug', { runner = runOrExit } = {}) {
   const output = join(project, 'bin', configuration);
-  if (existsSync(join(output, MARKER))) return runner('daoris', ['driver', 'trees', 'build', output], { shell: process.platform === 'win32' });
+  if (existsSync(join(output, MARKER))) return runner('daoris', ['tree', 'build', output], { shell: process.platform === 'win32' });
   return runner('dotnet', ['build', project, '-c', configuration]);
 }
 
 /** What `build` runs, as one command line, for a runner that takes one. */
 export function buildCommand(project, configuration = 'Debug') {
   const output = join(project, 'bin', configuration);
-  return existsSync(join(output, MARKER)) ? `daoris driver trees build "${output}"` : `dotnet build "${project}" -c ${configuration}`;
+  return existsSync(join(output, MARKER)) ? `daoris tree build "${output}"` : `dotnet build "${project}" -c ${configuration}`;
 }
 
 /** The census's sites: every call that reads a build output, in the tracked code of `tools/` and `src/` and the root scripts. */
@@ -116,7 +116,7 @@ function readMarker(marker) {
     const { from, says } = JSON.parse(readFileSync(marker, 'utf8'));
     return { from: from ?? '', says: says ?? '' };
   } catch {
-    return { from: '', says: "this output is the previous line's build; run `daoris driver trees build` first" };
+    return { from: '', says: "this output is the previous line's build; run `daoris tree build` first" };
   }
 }
 

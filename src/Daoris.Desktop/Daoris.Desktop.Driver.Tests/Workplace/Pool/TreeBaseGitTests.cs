@@ -72,7 +72,7 @@ public sealed class TreeBaseGitTests : IDisposable
             bases.Select(each => (each.Path, each.From, each.Commit, each.Project, each.Configuration)).Order());
         var standing = BaseMarker.Above(Path.Combine(slot.Path, "bin", "Debug", "net10.0", "Engine.dll"));
         Assert.Equal("s-aaaa0001", standing?.From);
-        Assert.Contains("daoris driver trees build bin/Debug", standing!.Says);
+        Assert.Contains("daoris tree build bin/Debug", standing!.Says);
         Assert.Null(BaseMarker.Above(Path.Combine(slot.Path, "work.txt")));
         Assert.Equal("", (await GitAsync(slot.Path, "status", "--porcelain")).Trim());
     }

@@ -18,7 +18,7 @@ public static class BaseMarker
 
     /// <summary>The guard's sentence for the base folder <paramref name="relative"/> (repository-relative).</summary>
     public static string Says(string relative) =>
-        $"this output is the previous line's build; run `daoris driver trees build {relative.TrimEnd('/')}` first";
+        $"this output is the previous line's build; run `daoris tree build {relative.TrimEnd('/')}` first";
 
     internal static void Write(string slot, string relative, string from)
     {
@@ -59,7 +59,7 @@ public static class BaseMarker
         catch (Exception error) when (error is IOException or UnauthorizedAccessException or JsonException or KeyNotFoundException or InvalidOperationException)
         {
             // A marker that does not read still stands: it refuses with the sentence every marker says.
-            return new BaseStanding(folder, "", "this output is the previous line's build; run `daoris driver trees build` first");
+            return new BaseStanding(folder, "", "this output is the previous line's build; run `daoris tree build` first");
         }
     }
 

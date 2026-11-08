@@ -1,7 +1,7 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// The one release of a kept base, <c>daoris driver trees build &lt;path&gt;</c> (the tree-pool design §36.3, 2, §37.3, 2, §38.2): for each
+/// The one release of a kept base, <c>daoris tree build &lt;path&gt;</c> (the tree-pool design §36.3, 2, §37.3, 2, §38.2): for each
 /// base the record names at or under the path, or holding it, its producer is built by the door's one command in the project's folder,
 /// under the machine's admission as a heavy step; on exit 0 every entry under the base its build's account does not own is set aside,
 /// said, the record lets the base go and then its marker goes. Any other exit releases nothing. A marker the record no longer names is

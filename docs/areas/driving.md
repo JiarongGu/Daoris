@@ -228,7 +228,7 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they start wi
     line's build base, each recorded in the tree's files record (`TreeBase`: its folder, the line, the commit, the moment, the
     producer) and marked `.daoris-base` (`BaseMarker`), every other entry under it set aside, and a top beside no project file or
     several set aside whole; the clearing moves exactly the plan's tops, the bases too where the toolchain moved, and the undo takes
-    back the bases its claim wrote (`TreeBases`). A base is released only by `daoris driver trees build <path>` (`TreeBaseBuilds`),
+    back the bases its claim wrote (`TreeBases`). A base is released only by `daoris tree build <path>` (`TreeBaseBuilds`),
     which builds its producer with `dotnet build -c <configuration>` in the project's folder under the machine's admission, asks
     MSBuild in that run for its `FileWrites` and `FileWritesShareable` items (`BuildAccounts`, held whole on a build with nothing to
     do by `BuildAccountProcessTests`), sets aside with the previous line's every entry under the base that account does not name
