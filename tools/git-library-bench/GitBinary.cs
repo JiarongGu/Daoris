@@ -55,7 +55,8 @@ internal sealed class GitBinary
 
     /// <summary>One start in <paramref name="folder"/>: exit code, stdout, and the sample; <paramref name="trace"/> names git's trace file.</summary>
     public async Task<(int Code, string Output, StartSample Sample)> RunAsync(
-        string folder, IReadOnlyList<string> arguments, string? trace = null, CancellationToken ct = default)
+        string folder, IReadOnlyList<string> arguments, string? trace = null, CancellationToken ct = default,
+        IReadOnlyDictionary<string, string>? variables = null, string? input = null)
     {
         var info = new ProcessStartInfo
         {
@@ -75,12 +76,20 @@ internal sealed class GitBinary
         info.Environment["GIT_TERMINAL_PROMPT"] = "0";
         info.Environment.Remove("GIT_TRACE2_EVENT");
         if (trace is not null) info.Environment["GIT_TRACE2_EVENT"] = trace;
+        foreach (var (name, value) in variables ?? new Dictionary<string, string>()) info.Environment[name] = value;
+        info.RedirectStandardInput = input is not null;
+        info.StandardInputEncoding = input is null ? null : new UTF8Encoding(encoderShouldEmitUTF8Identifier: false);
 
         var wall = Stopwatch.StartNew();
         using var process = new Process { StartInfo = info };
         var create = Stopwatch.StartNew();
         process.Start();
         create.Stop();
+        if (input is not null)
+        {
+            await process.StandardInput.WriteAsync(input).ConfigureAwait(false);
+            process.StandardInput.Close();
+        }
         var output = process.StandardOutput.ReadToEndAsync(ct);
         var error = process.StandardError.ReadToEndAsync(ct);
         await process.WaitForExitAsync(ct).ConfigureAwait(false);

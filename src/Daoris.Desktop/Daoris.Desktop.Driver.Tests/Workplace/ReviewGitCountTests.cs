@@ -32,6 +32,22 @@ public sealed class ReviewGitCountTests(ITestOutputHelper output) : BranchTidyin
     }
 
     [Fact]
+    public async Task Ten_untracked_files_cost_the_starts_one_does()
+    {
+        var root = await RepositoryAsync("engine");
+        var trees = new SessionTrees(_home);
+        var tree = await trees.OpenAsync(root, "engine", "default");
+        var baseCommit = (await GitAsync(tree.Path, "rev-parse", "HEAD")).Trim();
+        await CommitAsync(tree.Path, "part.txt", "part\n", "the work");
+        for (var at = 0; at < 10; at++) await File.WriteAllTextAsync(Path.Combine(tree.Path, $"loose-{at}.txt"), $"not committed {at}\n");
+
+        var (review, starts) = await WarmReviewAsync(trees, tree.Path, baseCommit);
+
+        Assert.Equal(10, review!.Uncommitted!.Files.Count(file => file.Patch is not null));
+        Assert.True(starts.Count <= SmallCeiling, Report(starts));
+    }
+
+    [Fact]
     public async Task A_tree_the_line_holds_by_content_is_reviewed_in_few_git_starts()
     {
         var root = await RepositoryAsync("engine");

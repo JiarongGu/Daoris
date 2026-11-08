@@ -89,15 +89,28 @@ internal sealed class SupervisorDecisionFiles(string home)
             var (state, at, why, word) = (SupervisorState.Held, kept, (string?)null, (string?)null);
             foreach (var line in (Read(StatesOf(session, id)) ?? "").Split('\n', StringSplitOptions.RemoveEmptyEntries))
             {
-                using var each = JsonDocument.Parse(line);
-                if (SupervisorStates.Parse(Json.Text(each.RootElement, "state")) is not { } said) continue;
-                (state, at, why) = (said, Moments.Read(each.RootElement, "at") ?? at, Json.Text(each.RootElement, "why"));
-                word = Json.Text(each.RootElement, "word") ?? word;
+                if (StateOf(line) is not { } each) continue;
+                if (SupervisorStates.Parse(Json.Text(each, "state")) is not { } said) continue;
+                (state, at, why) = (said, Moments.Read(each, "at") ?? at, Json.Text(each, "why"));
+                word = Json.Text(each, "word") ?? word;
             }
 
             return new SupervisorDecisionView(
                 id, session, question, choice, reasons, holder, Json.Text(root, "appointment") ?? "", kept,
                 Moments.Read(root, "goesOnAt") ?? kept, state, at, why, word, Earlier: true, bound);
+        }
+        catch (JsonException)
+        {
+            return null;
+        }
+    }
+
+    private static JsonElement? StateOf(string line)
+    {
+        try
+        {
+            using var document = JsonDocument.Parse(line);
+            return document.RootElement.Clone();
         }
         catch (JsonException)
         {

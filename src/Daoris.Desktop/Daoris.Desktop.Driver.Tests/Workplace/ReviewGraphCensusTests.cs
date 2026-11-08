@@ -1,4 +1,3 @@
-using System.Collections.Concurrent;
 using System.Text.Json;
 using Daoris.Driver;
 
@@ -10,7 +9,6 @@ namespace Daoris.Desktop.Driver.Tests;
 /// the test releases it. Released a round at a time, each of the review's nodes must start in the round its generated depth names
 /// (none before its needs answered, none later than they answered), no two Π reads may run together, the answer must be today's chain's on
 /// the same world, and the commands the chain's but for the graph's wasted speculative starts and the shared <c>--show-toplevel</c>.
-/// The untracked window's held cases are held at w = 1 and w = 4.
 /// </summary>
 [Trait(Category.Name, Category.Census)]
 public sealed class ReviewGraphCensusTests : IDisposable
@@ -31,8 +29,9 @@ public sealed class ReviewGraphCensusTests : IDisposable
         _home = Path.Combine(_scratch, "daoris-home");
         Directory.CreateDirectory(_home);
         _tree = Path.Combine(DaorisHome.Entry(_home, HomeEntry.Trees), "games", "engine", Session);
-        Directory.CreateDirectory(_tree);
-        File.WriteAllText(Path.Combine(_tree, "own.txt"), "mine\n");
+        // A git directory the untracked read's private index is named in, and the untracked files the worlds list.
+        Directory.CreateDirectory(Path.Combine(_tree, ".git"));
+        foreach (var name in new[] { "own.txt", "u0.txt", "u1.txt" }) File.WriteAllText(Path.Combine(_tree, name), "mine\n");
     }
 
     public void Dispose()
@@ -87,8 +86,11 @@ public sealed class ReviewGraphCensusTests : IDisposable
                 return (0, $"daoris/{Session}\n", "");
             case ["status", ..]:
                 return world.SFails ? (128, "", "fatal") : (0, string.Concat(Enumerable.Range(0, world.Untracked).Select(at => $"?? u{at}.txt\0")), "");
-            case ["diff", ..] when arguments.Contains("--no-index"):
-                return (1, $"diff --git a/{arguments[^1]} b/{arguments[^1]}\nnew file mode 100644\n--- /dev/null\n+++ b/{arguments[^1]}\n@@ -0,0 +1 @@\n+one\n", "");
+            case ["add", "--intent-to-add", ..]:
+                return (0, "", "");
+            case ["diff", ..] when arguments.Contains("-O/dev/null"):
+                return (0, string.Concat(Enumerable.Range(0, world.Untracked)
+                    .Select(at => $"diff --git a/u{at}.txt b/u{at}.txt\nnew file mode 100644\n--- /dev/null\n+++ b/u{at}.txt\n@@ -0,0 +1 @@\n+one\n")), "");
             case ["diff", .., "HEAD"]:
                 return world.WFails ? (128, "", "fatal") : (0, "", "");
             case ["diff", ..]:
@@ -998,49 +1000,10 @@ public sealed class ReviewGraphCensusTests : IDisposable
         var ceiling = await CensusAsync(new World(Line: "master", RecordHeld: false, Grown: "held", Bases: "both", Incomparable: true));
         Assert.Equal((6, 18), (ceiling.Depth, Started(ceiling)));
 
-        var dirtyOnly = await CensusAsync(new World(Untracked: 1), baseCommit: null);
-        Assert.Equal((4, 5), (dirtyOnly.Depth, Started(dirtyOnly)));
+        // The untracked tail: S, then A and U whatever the count.
+        var dirtyOnly = await CensusAsync(new World(Untracked: 2), baseCommit: null);
+        Assert.Equal((5, 6), (dirtyOnly.Depth, Started(dirtyOnly)));
     }
 
     private static int Started(ReviewGraph graph) => graph.Nodes.Count(node => node.Order >= 0);
-
-    // The untracked window's held cases, at w = 1 and w = 4.
-    [Theory]
-    [InlineData(1)]
-    [InlineData(4)]
-    public async Task The_window_holds_its_slots_until_the_fold_passes_and_wastes_at_most_w_less_one(int window)
-    {
-        var paths = Enumerable.Range(0, 8).Select(at => $"u{at}.txt").ToArray();
-        var started = new ConcurrentDictionary<string, TaskCompletionSource<(string?, int?)>>();
-        Task<(string? Patch, int? Added)> Read(string path, CancellationToken ct)
-        {
-            var answer = new TaskCompletionSource<(string?, int?)>(TaskCreationOptions.RunContinuationsAsynchronously);
-            ct.Register(() => answer.TrySetCanceled(ct));
-            started[path] = answer;
-            return answer.Task;
-        }
-
-        // The first held while later ones complete: no slot is given back until the fold passes the first.
-        var fold = new UntrackedFold(new TreeDiff([], null, "HEAD"));
-        var folding = UntrackedWindow.FoldAsync(paths, fold, window, Read, CancellationToken.None);
-        Assert.Equal(window, started.Count);
-        foreach (var later in started.Keys.Where(path => path != "u0.txt")) started[later].TrySetResult(("+later\n", 1));
-        await Task.Delay(20);
-        Assert.Equal(window, started.Count);
-
-        // The fold reaching the budget mid-window: what started ahead is stopped, wasted, and listed with no patch.
-        started["u0.txt"].TrySetResult((new string('+', WorkingTree.PatchBudget), 1));
-        var wasted = await folding;
-        Assert.Equal(window - 1, wasted);
-        Assert.True(wasted <= window - 1);
-        var answer = fold.End(WorkingTree.UncommittedRest);
-        Assert.Equal(paths, answer.Files.Select(file => file.Path));
-        Assert.Equal(1, answer.Files.Count(file => file.Patch is not null));
-
-        // W spending the whole budget: no untracked read starts at all.
-        started.Clear();
-        var spent = new UntrackedFold(new TreeDiff([new DiffFile("own.txt", "modified", 1, 0, new string('+', WorkingTree.PatchBudget))], null, "HEAD"));
-        Assert.Equal(0, await UntrackedWindow.FoldAsync(paths, spent, window, Read, CancellationToken.None));
-        Assert.Empty(started);
-    }
 }

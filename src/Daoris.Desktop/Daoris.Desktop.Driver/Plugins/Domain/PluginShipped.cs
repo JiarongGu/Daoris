@@ -73,7 +73,20 @@ public sealed record PluginShipped(string State, string Installed, string Shippe
 
         if (tagA == tagB) return 0;
         if (tagA.Length == 0) return 1;
-        return tagB.Length == 0 ? -1 : Math.Sign(string.CompareOrdinal(tagA, tagB));
+        return tagB.Length == 0 ? -1 : CompareTags(tagA.Split('.'), tagB.Split('.'));
+    }
+
+    // A pre-release's dotted parts, as semver orders them: numbers by value and before words, a shorter run that matches so far first.
+    private static int CompareTags(string[] a, string[] b)
+    {
+        for (var at = 0; at < Math.Min(a.Length, b.Length); at++)
+        {
+            var (numberA, numberB) = (long.TryParse(a[at], out var x), long.TryParse(b[at], out var y));
+            var order = numberA && numberB ? x.CompareTo(y) : numberA ? -1 : numberB ? 1 : string.CompareOrdinal(a[at], b[at]);
+            if (order != 0) return Math.Sign(order);
+        }
+
+        return a.Length.CompareTo(b.Length);
     }
 
     /// <summary>The `changes` line an example's manifest text carries: its trimmed string, or null where it names none or the text does not read.</summary>

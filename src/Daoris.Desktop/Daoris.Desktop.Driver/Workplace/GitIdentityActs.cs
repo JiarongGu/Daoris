@@ -432,6 +432,18 @@ public static partial class GitIdentityActs
         if (home is null) Tools.Hand(info);
         else Tools.Hand(info, home);
         adjust(info);
+        if (!GitPlace.IsGit(info.FileName) || GitPlace.Current is not null) return await StartedAsync(info, file, input, drain).ConfigureAwait(false);
+        // An identity's test reaches its host as the person does: a person's git that waits outside Daoris, placed as one.
+        var at = Path.GetFullPath(folder);
+        using (GitScheduler.AsPerson())
+        {
+            return await GitScheduler.Shared.RunAsync(
+                new GitRunAsk(at, at, GitWait.Outside), _ => StartedAsync(info, file, input, drain), CancellationToken.None).ConfigureAwait(false);
+        }
+    }
+
+    private static async Task<GitToolRun> StartedAsync(ProcessStartInfo info, string file, string? input, bool drain)
+    {
         using var process = await ProcessStarts.Shared.StartAsync(info, ProcessPurpose.Tool, StartClass.Person, CancellationToken.None).ConfigureAwait(false)
             ?? throw new DriverException($"git: {Path.GetFileName(file)} did not start (no-ssh)");
         // A secret goes in on the standard input and nowhere else; a program's answer that may carry one is drained unread.

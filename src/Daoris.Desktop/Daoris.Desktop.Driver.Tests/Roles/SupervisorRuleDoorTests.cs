@@ -55,6 +55,18 @@ public sealed class SupervisorRuleDoorTests : IDisposable
     }
 
     [Fact]
+    public void ROLESREVIEW2d_a_workspace_taken_from_the_last_repository_that_had_one_is_no_longer_its_wider_place()
+    {
+        Assert.True(SupervisorRuleBook.SeedFresh(_home, () => StoreSettled.Yes));
+        var places = new RuleWiderPlaceStore(_home, () => StoreSettled.Yes);
+        Assert.True(places.Keep([("engine", "w1"), ("atlas", null)]));
+
+        Assert.True(places.Keep([("engine", null), ("atlas", null)]));
+
+        Assert.Empty(places.Read().WorkspaceOf);
+    }
+
+    [Fact]
     public void CONTEXTDRIVE1r_a_repository_s_chain_is_read_from_the_store_in_every_process_and_answered_in_ROLES()
     {
         Assert.True(SupervisorRuleBook.SeedFresh(_home, () => StoreSettled.Yes));

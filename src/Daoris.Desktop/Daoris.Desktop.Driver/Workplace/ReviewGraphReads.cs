@@ -9,7 +9,7 @@ namespace Daoris.Driver;
 /// </summary>
 /// <remarks>
 /// <para>🔴 <b>Π, the reads that can run a configured program, are one chain in today's order</b>, one at a time and never
-/// speculative: W → S → U₁ … Uᵣ → M → D → the landed review's range → the offer, each where today's chain would ask it. A textconv,
+/// speculative: W → S → A → U → M → D → the landed review's range → the offer, each where today's chain would ask it. A textconv,
 /// a clean filter or a merge driver is a process with state git does not see, so asking it earlier, beside another or needlessly could
 /// change an answer. The rest (T, P, K, E, K′, G1-G3, B1, B2, N↑, N↓, I, H, the landed review's ref reads) read refs and
 /// the commit graph only, and run at once and ahead; a speculative one only where its command is the one today's chain runs if the
@@ -20,20 +20,14 @@ namespace Daoris.Driver;
 /// </remarks>
 internal static class ReviewGraphReads
 {
-    /// <summary>
-    /// The untracked window: files started ahead of the fold. 1, since each untracked read runs the clean filter and
-    /// textconv (Π); wider only where the context shows no program applies to the untracked paths.
-    /// </summary>
-    internal const int Window = 1;
-
     /// <summary>The review of <paramref name="session"/>, as <see cref="SessionReviews"/>' chain answers it, read as a graph.</summary>
     internal static async Task<SessionReview?> ReadAsync(
         ReviewGraph graph, string session, string? tree, string? baseCommit, SessionTrees trees,
-        Func<string, CancellationToken, Task<string?>> checkoutOf, CancellationToken ct, int window = Window)
+        Func<string, CancellationToken, Task<string?>> checkoutOf, CancellationToken ct)
     {
         try
         {
-            return await ReadCoreAsync(graph, session, tree, baseCommit, trees, checkoutOf, ct, window).ConfigureAwait(false);
+            return await ReadCoreAsync(graph, session, tree, baseCommit, trees, checkoutOf, ct).ConfigureAwait(false);
         }
         finally
         {
@@ -44,7 +38,7 @@ internal static class ReviewGraphReads
 
     private static async Task<SessionReview?> ReadCoreAsync(
         ReviewGraph graph, string session, string? tree, string? baseCommit, SessionTrees trees,
-        Func<string, CancellationToken, Task<string?>> checkoutOf, CancellationToken ct, int window)
+        Func<string, CancellationToken, Task<string?>> checkoutOf, CancellationToken ct)
     {
         var context = trees.Context;
         // What decides the path and costs no git: the landing, the tree's folder, whose tree it is, the record's base.
@@ -71,7 +65,7 @@ internal static class ReviewGraphReads
         var standing = ranged && landing is not null ? graph.Track(StandingAsync(graph, context, checkout!, landing, ct)) : null;
 
         // Π, in today's order: the uncommitted part first, never for a tree that is not this home's own.
-        var dirty = own ? await UncommittedAsync(graph, tree!, top, window, ct).ConfigureAwait(false) : null;
+        var dirty = own ? await UncommittedAsync(graph, tree!, top, ct).ConfigureAwait(false) : null;
 
         if (ranged)
         {
@@ -148,11 +142,11 @@ internal static class ReviewGraphReads
             .ConfigureAwait(false);
 
     /// <summary>
-    /// W → S → the untracked window (<c>UncommittedDiffAsync</c>'s reads, WorkingTree.cs:326-370), each in Π: null where T says no top,
-    /// W fails or S fails, and then no window opens.
+    /// W → S → A → U (<c>UncommittedDiffAsync</c>'s reads), each in Π: null where T says no top, W fails or S fails, and then no
+    /// untracked file is read. A adds the untracked files as intents to a private index, which U's diff reads (<see cref="UntrackedPatches"/>).
     /// </summary>
     private static async Task<TreeDiff?> UncommittedAsync(
-        ReviewGraph graph, string tree, (ReviewRead Node, Task<bool> Answer) top, int window, CancellationToken ct)
+        ReviewGraph graph, string tree, (ReviewRead Node, Task<bool> Answer) top, CancellationToken ct)
     {
         if (!await top.Answer.ConfigureAwait(false)) return null;
         var tracked = await graph.ProgramAsync(
@@ -170,14 +164,13 @@ internal static class ReviewGraphReads
         if (code != 0) return null;
 
         var fold = new UntrackedFold(tracked);
-        await UntrackedWindow.FoldAsync(
-            ReviewChoices.UntrackedPaths(status), fold, window,
-            // At w = 1 each read is Π, after the one before; a wider window (part two's) reads beside each other after S.
-            (path, token) => window <= 1
-                ? graph.ProgramAsync("U", [], () => WorkingTree.UntrackedReadAsync(tree, path, WorkingTree.ReadGitAsync, token), GitBudget.Untracked)
-                : graph.Run("U", [graph.Nodes.Last(node => node.Name == "S")], () => WorkingTree.UntrackedReadAsync(tree, path, WorkingTree.ReadGitAsync, token),
-                    budget: GitBudget.Untracked).Answer,
-            ct).ConfigureAwait(false);
+        using var untracked = new UntrackedPatches(tree, ReviewChoices.UntrackedPaths(status), fold);
+        if (untracked.Asks && await graph.ProgramAsync("A", [], () => untracked.IntentsAsync(ct), GitBudget.Untracked).ConfigureAwait(false))
+        {
+            await graph.ProgramAsync("U", [], () => untracked.ReadAsync(ct), GitBudget.Untracked).ConfigureAwait(false);
+        }
+
+        untracked.Settle();
         return fold.End(WorkingTree.UncommittedRest);
     }
 
@@ -441,67 +434,5 @@ internal static class ReviewGraphReads
         master.Node.Use(true);
         var masterCode = (await master.Answer.ConfigureAwait(false)).Code;
         return (ReviewChoices.Guess(originCode, originOut, mainCode, masterCode), master.Node);
-    }
-}
-
-/// <summary>
-/// The untracked window: opened only after W and S answered; at most <c>w</c> files started
-/// and not yet folded, a slot given back only as the ordered fold passes a file; stopped by the fold once the budget is spent, each
-/// file started ahead of it then stopped and counted wasted. At w = 1 it is today's loop exactly.
-/// </summary>
-internal static class UntrackedWindow
-{
-    /// <summary>Fold <paramref name="paths"/> in order through <paramref name="fold"/>, reading at most <paramref name="window"/> ahead.</summary>
-    /// <returns>The reads started ahead of the fold and stopped unused: the wasted ones, at most w − 1.</returns>
-    internal static async Task<int> FoldAsync(
-        IReadOnlyList<string> paths, UntrackedFold fold, int window,
-        Func<string, CancellationToken, Task<(string? Patch, int? Added)>> read, CancellationToken ct)
-    {
-        using var stop = CancellationTokenSource.CreateLinkedTokenSource(ct);
-        var ahead = new Queue<(string Path, Task<(string? Patch, int? Added)> Read)>();
-        var next = 0;
-        var wasted = 0;
-        for (var at = 0; at < paths.Count; at++)
-        {
-            // Fill the window up to w files started and not yet folded, while the budget is unspent.
-            while (!fold.Spent && ahead.Count < Math.Max(1, window) && next < paths.Count)
-            {
-                var path = paths[next++];
-                ahead.Enqueue((path, read(path, stop.Token)));
-            }
-
-            if (ahead.Count == 0)
-            {
-                // The budget is spent: every later file is listed with no read.
-                fold.Drop(paths[at]);
-                continue;
-            }
-
-            var (taken, answer) = ahead.Dequeue();
-            var (patch, added) = await answer.ConfigureAwait(false);
-            fold.Take(taken, patch, added);
-            if (!fold.Spent || ahead.Count == 0) continue;
-
-            // The fold reached the budget: each read started ahead of it is stopped and counted wasted; its file is listed with no patch.
-            await stop.CancelAsync().ConfigureAwait(false);
-            foreach (var (path, started) in ahead)
-            {
-                wasted++;
-                try
-                {
-                    await started.ConfigureAwait(false);
-                }
-                catch (OperationCanceledException) when (!ct.IsCancellationRequested)
-                {
-                }
-
-                fold.Drop(path);
-                at++;
-            }
-
-            ahead.Clear();
-        }
-
-        return wasted;
     }
 }

@@ -271,6 +271,40 @@ public sealed class RelayRunTests : IDisposable
         Assert.True(File.Exists(Path.Combine(subscribers, $"{parent}.json")));
     }
 
+    [Fact]
+    public async Task A_file_a_killed_relay_left_under_this_ones_pid_is_taken_over_not_a_refusal_to_start()
+    {
+        var file = Path.Combine(RelayRun.Subscribers(_home), $"{Environment.ProcessId}.json");
+        File.WriteAllText(file, $$"""{"pipe":"stale","pid":{{Environment.ProcessId}}}""");
+
+        var relay = Start(World(), since: $"{Run}:7");
+        var until = DateTime.UtcNow + Poll.Patience;
+        while (!relay.IsCompleted && JsonDocument.Parse(await ReadHeldAsync(file)).RootElement.GetProperty("pipe").GetString() == "stale")
+        {
+            Assert.True(DateTime.UtcNow < until, "the relay never replaced the file");
+            await Task.Delay(20);
+        }
+
+        Assert.False(relay.IsCompleted, "the relay stopped at its start");
+        await _clock.WaitDueAsync(TimeSpan.FromMinutes(15));
+        _clock.Advance(TimeSpan.FromMinutes(15));
+        Assert.Equal(0, (await relay).Code);
+    }
+
+    private static async Task<string> ReadHeldAsync(string file)
+    {
+        while (true)
+        {
+            try
+            {
+                // Shared for delete too: a reader without it would block the relay's own removal of the stale file.
+                await using var stream = new FileStream(file, FileMode.Open, FileAccess.Read, FileShare.ReadWrite | FileShare.Delete);
+                return await new StreamReader(stream).ReadToEndAsync();
+            }
+            catch (IOException) { await Task.Delay(10); }
+        }
+    }
+
     /// <summary>A clock that stands still until the test moves it, its timers fired as it passes them.</summary>
     private sealed class ManualClock : TimeProvider
     {

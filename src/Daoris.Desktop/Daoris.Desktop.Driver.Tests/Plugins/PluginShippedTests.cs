@@ -194,6 +194,10 @@ public sealed class PluginShippedTests : IDisposable
     [InlineData("1.2.0-beta.1", "1.2.0-beta.1", 0)]
     [InlineData("1.2.0+build5", "1.2.0", 0)]
     [InlineData("1.3.0-beta.1", "1.2.0", 1)]
+    [InlineData("1.2.0-beta.2", "1.2.0-beta.10", -1)]
+    [InlineData("1.2.0-beta.10", "1.2.0-beta.2", 1)]
+    [InlineData("1.2.0-beta", "1.2.0-beta.1", -1)]
+    [InlineData("1.2.0-1", "1.2.0-beta", -1)]
     public void Versions_compare_number_by_number(string left, string right, int expected) =>
         Assert.Equal(expected, PluginShipped.Compare(left, right));
 
@@ -243,6 +247,22 @@ public sealed class PluginShippedTests : IDisposable
         Assert.Contains("changed", refusal);
         Assert.Throws<DriverException>(() => PluginInstall.Update(Home, "acme.land", Reserved, Offers, shipped: true));
         Assert.Equal("// shipped, and then edited by hand", File.ReadAllText(Path.Combine(folder, "land.mjs")));
+    }
+
+    [Fact]
+    public void A_shipped_update_never_replaces_a_plugin_installed_from_a_package()
+    {
+        Offer();
+        var (folder, _) = Copy("1.2.0", "// old");
+        PluginSource.Write(folder, PluginSource.FromPackage(new("acme.land", "1.2.0", new string('A', 86) + "==", _root)));
+
+        var (plan, refusal) = PluginInstall.PlanUpdate(Home, "acme.land", Reserved, Offers, shipped: true);
+
+        Assert.Null(plan);
+        Assert.Contains("package", refusal);
+        Assert.Throws<DriverException>(() => PluginInstall.Update(Home, "acme.land", Reserved, Offers, shipped: true));
+        Assert.Equal("// old", File.ReadAllText(Path.Combine(folder, "land.mjs")));
+        Assert.NotNull(PluginSource.Read(folder).Source?.Package);
     }
 
     [Fact]

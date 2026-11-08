@@ -49,6 +49,13 @@ internal sealed class PoolGit : IDisposable
     {
         var (info, refusal) = WorkingTree.GitStart(folder, arguments, _home);
         if (info is null) return (-1, "", $"git could not be started ({refusal})");
+        // Placed as every git is; a claim's git runs to its bound once placed, whoever stops waiting.
+        var ask = GitStartAsks.For(info, arguments, GitRunner.Held, Bound, shares: false);
+        return await GitScheduler.Shared.RunAsync(ask, _ => PlacedAsync(info), ct).ConfigureAwait(false);
+    }
+
+    private async Task<(int Code, string Stdout, string Stderr)> PlacedAsync(System.Diagnostics.ProcessStartInfo info)
+    {
         HeldChild child;
         try
         {

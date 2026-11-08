@@ -74,6 +74,19 @@ public sealed class SupervisorLandingTests : IDisposable
     }
 
     [Fact]
+    public async Task ROLESREVIEW2b_a_retry_of_a_held_decision_is_refused_where_the_step_now_refuses_it()
+    {
+        var decisions = Decisions();
+        var kept = await decisions.LandingAsync(Landing(), "reports", null, At);
+
+        Assert.Equal(kept.Decision, (await decisions.LandingAsync(Landing(), "reports", null, At.AddMinutes(1))).Decision);
+        var retried = await decisions.LandingAsync(Landing(), "reports", SupervisorWhy.OwnerHeld, At.AddMinutes(2));
+
+        Assert.False(retried.Kept);
+        Assert.Equal(SupervisorWhy.OwnerHeld, retried.Why);
+    }
+
+    [Fact]
     public async Task The_persons_overrule_inside_the_window_keeps_the_step_theirs_and_nothing_is_released_nor_decided_again()
     {
         var decisions = Decisions();

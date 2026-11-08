@@ -53,6 +53,15 @@ internal sealed class HeldChild : IDisposable
     public static HeldChild Start(ProcessJob job, ProcessStartInfo info, bool input)
     {
         if (!OperatingSystem.IsWindows()) throw new DriverException("there is no job to hold the step's processes in off Windows, so it was not run.");
+        try
+        {
+            GitPlace.Admit(info, ProcessPurpose.Git);
+        }
+        catch (GitStartRefusedException refused)
+        {
+            throw new DriverException(refused.Message);
+        }
+
         var stdin = new AnonymousPipeServerStream(PipeDirection.Out, HandleInheritability.Inheritable);
         var stdout = new AnonymousPipeServerStream(PipeDirection.In, HandleInheritability.Inheritable);
         var stderr = new AnonymousPipeServerStream(PipeDirection.In, HandleInheritability.Inheritable);
@@ -99,6 +108,7 @@ internal sealed class HeldChild : IDisposable
             stdout.DisposeLocalCopyOfClientHandle();
             stderr.DisposeLocalCopyOfClientHandle();
             if (!input) stdin.Dispose();
+            GitPlace.Current?.Bind(made.ProcessId);
             var started = GetProcessTimes(made.Process, out var creation, out _, out _, out _) ? DateTime.FromFileTimeUtc(creation).Ticks : DateTime.UtcNow.Ticks;
             return new HeldChild(made.Process, made.Thread, made.ProcessId, started, stdin, stdout, stderr);
         }

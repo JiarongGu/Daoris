@@ -180,7 +180,9 @@ public static class RoleDoor
         var roled = batch.Where(each => each.Change is not RoleChange.SetRules).ToList();
         var changes = roled.Select(each => each.Change).ToList();
         var reads = roled.Select(each => each.Read).ToList();
-        var world = ruled.Count > 0 || presetRules.Count > 0 ? SupervisorRuleDoor.World(staffing.Ledger.Home) : null;
+        var world = ruled.Count > 0 || presetRules.Count > 0
+            ? SupervisorRuleDoor.World(staffing.Ledger.Home, changes.OfType<RoleChange.SetRole>().Select(set => set.Role))
+            : null;
         void Also(DesktopWrite write)
         {
             var written = new Queue<long>(RoleCatalog.WriteIn(write, changes, reads));

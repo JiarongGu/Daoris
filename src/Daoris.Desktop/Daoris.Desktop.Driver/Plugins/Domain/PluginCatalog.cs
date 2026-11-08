@@ -394,7 +394,7 @@ public sealed class PluginCatalog : IKnowledgePlugins, IAgentPlugins, IWorkplace
 
             if (!string.Equals(id, folderName, StringComparison.Ordinal))
             {
-                return (PluginManifest.Empty(id),
+                return (PluginManifest.Empty(folderName),
                     $"`id` is `{id}` but the folder is `{folderName}` — a plugin's folder is its id.");
             }
 
@@ -469,6 +469,11 @@ public sealed class PluginCatalog : IKnowledgePlugins, IAgentPlugins, IWorkplace
                     {
                         return (PluginManifest.Empty(id),
                             "a declared server needs a `name` — lowercase letters, digits, dots and dashes; it is what the agent calls it.");
+                    }
+
+                    if (servers.Any(declared => declared.Name == name))
+                    {
+                        return (PluginManifest.Empty(id), $"server `{name}` is declared twice.");
                     }
 
                     var command = Strings(row, "command", expanded);
