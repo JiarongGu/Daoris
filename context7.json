@@ -37,6 +37,6 @@
     "Put the repository's own knowledge and skills under `.claude/knowledge/` and `.claude/skills/` at names the canon does not use; `sync` never touches them and indexes them as `(local)`.",
     "Never pass `sync --force` to get past a refusal: it overwrites a file you edited, one written before adopting, or one you improved that the canon retires. Read the files it names.",
     "Pin the package (`npx daoris@<version>`): the canon ships inside it, so the pin is the doctrine's version, and the manifest's `source` records it.",
-    "A change another repository owns is a quest to it, never an edit from here. Fill in `domain` in `daoris.json` first: `daoris connect` refuses a repository without one."
+    "A change another repository owns is a quest to it, never an edit from here. Fill in `domain` in `daoris.json` first: `daoris repository connect` refuses a repository without one."
   ]
 }
