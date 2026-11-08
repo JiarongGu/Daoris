@@ -128,6 +128,7 @@ public sealed class GateDeclaration
 
         using var document = Parse(file);
         var root = document.RootElement;
+        if (root.ValueKind != JsonValueKind.Object) throw new DevkitException($"{FileName} is not a JSON object");
 
         return new GateDeclaration
         {
@@ -218,12 +219,19 @@ public sealed class GateDeclaration
         return new DocsOptions(String(element, "changelog"), tracked, Int(element, "graceDays") ?? 0);
     }
 
-    private static int? Int(JsonElement element, string name) =>
-        element.ValueKind == JsonValueKind.Object
-        && element.TryGetProperty(name, out var value)
-        && value.ValueKind == JsonValueKind.Number
-            ? value.GetInt32()
-            : null;
+    private static int? Int(JsonElement element, string name)
+    {
+        if (element.ValueKind != JsonValueKind.Object
+            || !element.TryGetProperty(name, out var value)
+            || value.ValueKind != JsonValueKind.Number)
+        {
+            return null;
+        }
+
+        return value.TryGetInt32(out var whole)
+            ? whole
+            : throw new DevkitException($"{FileName}: '{name}' is {value.GetRawText()}, and must be a whole number");
+    }
 
     private static string? String(JsonElement element, string name) =>
         element.ValueKind == JsonValueKind.Object

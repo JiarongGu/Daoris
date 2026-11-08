@@ -91,6 +91,8 @@ public sealed class CommandLineGitObjects(string repositoryRoot) : IGitObjects
         using var process = System.Diagnostics.Process.Start(GitStart.Past(start))
             ?? throw new DevkitException("could not start git cat-file");
 
+        // Read as it runs, so a full pipe cannot stall git: what it says of an object it cannot read is the only sign of it.
+        var said = process.StandardError.ReadToEndAsync();
         var stream = process.StandardOutput.BaseStream;
         while (true)
         {
@@ -121,6 +123,13 @@ public sealed class CommandLineGitObjects(string repositoryRoot) : IGitObjects
         }
 
         process.WaitForExit();
+
+        // git goes on past an object it cannot unpack and exits 0: its stderr is the only sign of one unread.
+        var problem = said.Result.Trim();
+        if (process.ExitCode != 0 || problem.Length > 0)
+        {
+            throw new DevkitException($"git cat-file could not read every object, so the audit is incomplete: {problem}");
+        }
     }
 
     /// <summary>One ASCII line, byte at a time — the only way to stop exactly at the content.</summary>

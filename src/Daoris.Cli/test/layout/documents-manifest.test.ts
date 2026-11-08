@@ -62,6 +62,7 @@ const REFUSED_ROWS: { name: string; documents?: unknown; raw?: string; harness?:
   { name: 'a ceiling alone on the index, which takes a path', documents: { index: { words: 100 } }, says: /documents\.index has no path/ },
   { name: 'a tier the index already lists', documents: { knowledge: 'docs/notes' }, says: /'knowledge', which the index lists from \.claude\/knowledge\/ — it is not declared here/ },
   { name: 'a skill, the same', documents: { skill: 'x' }, says: /'skill', which the index lists from \.claude\/skills\/ — it is not declared here/ },
+  { name: 'a role named like a member of Object', documents: { constructor: 'ROADMAP.md' }, says: /'constructor', which is not a role daoris knows/ },
   { name: 'a path on the brief', documents: { brief: 'BRIEF.md' }, says: /documents\.brief takes a ceiling and no path/ },
   { name: 'a path on the room', documents: { room: { path: 'src', words: 600 } }, says: /documents\.room takes a ceiling and no path/ },
   { name: 'a number for a path', documents: { decisions: 7 }, says: /documents\.decisions is 7 — a document is its path, or \{ "path": "<path>", "words": <ceiling> \}/ },

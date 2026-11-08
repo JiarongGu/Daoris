@@ -30,6 +30,32 @@ public sealed class GateDeclarationTests : IDisposable
         Assert.Contains(GateDeclaration.FileName, error.Message);
     }
 
+    /// <summary>A declaration that is JSON but no object is the same hand-edit mistake, and is named the same way.</summary>
+    [Theory]
+    [InlineData("[]")]
+    [InlineData("null")]
+    [InlineData("\"gates\"")]
+    public void A_declaration_that_is_not_an_object_names_the_file(string json)
+    {
+        WriteDeclaration(json);
+
+        var error = Assert.Throws<DevkitException>(() => GateDeclaration.Read(_fx.Path));
+
+        Assert.Contains(GateDeclaration.FileName, error.Message);
+    }
+
+    [Theory]
+    [InlineData("1.5")]
+    [InlineData("1e12")]
+    public void A_grace_period_that_is_no_whole_number_of_days_is_refused_naming_the_field(string days)
+    {
+        WriteDeclaration($$"""{ "docs": { "graceDays": {{days}} } }""");
+
+        var error = Assert.Throws<DevkitException>(() => GateDeclaration.Read(_fx.Path));
+
+        Assert.Contains("graceDays", error.Message);
+    }
+
     [Fact]
     public void An_empty_declaration_is_valid_and_every_section_defaults()
     {

@@ -7,6 +7,7 @@ import { readManifest, readLock } from '../../src/doctrine/config.ts';
 import { planSync, applySync } from '../../src/doctrine/materialize.ts';
 import type { Lock } from '../../src/doctrine/records.ts';
 import { analyze, commandAnalyze } from '../../src/doctrine/analyze.ts';
+import { DaorisError } from '../../src/platform/errors.ts';
 
 const doc = (name: string, body = 'Body.') =>
   `---\nname: ${name}\napplies_when: w\nenforces: e\n---\n\n${body}\n`;
@@ -179,6 +180,23 @@ const printed = (repoFx: Fixture, canonFx: Fixture): string => {
   delete process.env.DAORIS_CANON;
   return out.join('\n').replace(/\s+/g, ' ');
 };
+
+test('a manifest that exists and cannot be read is refused, not read as no adoption', () => {
+  const canonFx = seedCanon();
+  const repoFx = makeFixture('analyze-bad-manifest');
+  repoFx.write('daoris.json', '{ not json');
+  process.env.DAORIS_CANON = canonFx.root;
+  try {
+    assert.throws(
+      () => commandAnalyze({ root: repoFx.root, argv: [], write: () => {}, packageRoot: '' }),
+      (error: Error) => error instanceof DaorisError && /daoris.json is not valid JSON/.test(error.message),
+    );
+  } finally {
+    delete process.env.DAORIS_CANON;
+    canonFx.cleanup();
+    repoFx.cleanup();
+  }
+});
 
 /**
  * The verdict a person adopting reads before anything else: the
