@@ -88,10 +88,16 @@ public static class LandingCode
     /// </summary>
     public const string CarryBound = "carry-bound";
 
+    /// <summary>The repository's own checkout holds uncommitted work: tried again once its status differs, and no review waits.</summary>
+    public const string RootDirty = "root-dirty";
+
     /// <summary>Whether a try with this code closes its entry; the rest wait for a change, a release or the person's press.</summary>
     public static bool Closes(string code) =>
-        code is not (Held or Uncommitted or Exists or Completed or Refused or Unreviewed or Opinion or CarriedOn);
+        code is not (Held or Uncommitted or Exists or Completed or Refused or Unreviewed or Opinion or CarriedOn or RootDirty);
 
     /// <summary>Whether a try with this code is tried again only once its tree's tip or status moves.</summary>
     public static bool OnChange(string code) => code is Uncommitted or Exists or Completed or Refused or CarriedOn;
+
+    /// <summary>Whether a try with this code is tried again only once the checkout's status differs from the kept one.</summary>
+    public static bool WaitsOnRoot(string code) => code is RootDirty;
 }

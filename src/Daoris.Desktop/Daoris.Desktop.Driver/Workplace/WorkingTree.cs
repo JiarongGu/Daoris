@@ -172,16 +172,26 @@ public static class WorkingTree
     /// <summary>Clean means: a git repository, with nothing uncommitted.</summary>
     public static async Task<(bool Clean, string Detail)> CleanAsync(string root, CancellationToken ct = default)
     {
+        var read = await ReadCleanAsync(root, ct).ConfigureAwait(false);
+        return (read.Clean, read.Detail);
+    }
+
+    /// <summary><see cref="CleanAsync"/>'s answer with the fingerprint of the status git listed, null where clean or unread.</summary>
+    internal readonly record struct CleanRead(bool Clean, string Detail, string? Fingerprint);
+
+    /// <summary><see cref="CleanAsync"/> with the status's fingerprint.</summary>
+    internal static async Task<CleanRead> ReadCleanAsync(string root, CancellationToken ct = default)
+    {
         var (code, stdout, stderr) = await GitAsync(root, ["--no-optional-locks", "status", "--porcelain"], ct).ConfigureAwait(false);
         if (code != 0)
         {
-            return (false, $"not a spawnable tree — git status failed: {FirstLine(stderr)}");
+            return new(false, $"not a spawnable tree — git status failed: {FirstLine(stderr)}", null);
         }
 
         return string.IsNullOrWhiteSpace(stdout)
-            ? (true, "clean")
-            : (false, $"the working tree has uncommitted changes ({stdout.Trim().Split('\n').Length} paths) — "
-                      + "somebody's work in flight; the driver holds rather than entangling a session with it.");
+            ? new(true, "clean", null)
+            : new(false, $"the working tree has uncommitted changes ({stdout.Trim().Split('\n').Length} paths) — "
+                         + "somebody's work in flight; the driver holds rather than entangling a session with it.", LandTries.Fingerprint(stdout));
     }
 
     /// <summary>

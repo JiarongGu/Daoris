@@ -9,10 +9,12 @@ public static class LandTries
     /// <summary>
     /// Whether a run's work is worth a try now: its first, and a hold's at every pass; a refusal only once its tree's tip or status moved
     /// since it, so a pass never repeats one that nothing changed; and a try that closed, only at a tip other than the one it is kept at.
+    /// A refusal for the checkout's own work waits on the checkout's status alone (<paramref name="root"/>; null tries again).
     /// </summary>
-    public static bool ShouldTry(LandEntry entry, string? tip, string status) => entry.Last switch
+    public static bool ShouldTry(LandEntry entry, string? tip, string status, string? root = null) => entry.Last switch
     {
         null => true,
+        { Code: var code } last when LandingCode.WaitsOnRoot(code) => root is null || !string.Equals(last.Status, root, StringComparison.Ordinal),
         { Code: var code } last when LandingCode.OnChange(code) =>
             !string.Equals(last.Tip, tip, StringComparison.Ordinal) || !string.Equals(last.Status, status, StringComparison.Ordinal),
         // A hold, a review and a second opinion wait on the person or another agent, not on the tree, so each is read again at
@@ -58,7 +60,7 @@ public static class LandTryNotes
     /// <summary>Whether a try with this code is said in the conversation; the closings without a landing stay the due list's and the log's.</summary>
     public static bool Says(string code) => code is LandingCode.Landed or LandingCode.Advanced or LandingCode.Nothing
         or LandingCode.Held or LandingCode.Uncommitted or LandingCode.Exists or LandingCode.Completed or LandingCode.Refused
-        or LandingCode.Unreviewed or LandingCode.Opinion or LandingCode.CarriedOn or LandingCode.CarryBound;
+        or LandingCode.Unreviewed or LandingCode.Opinion or LandingCode.CarriedOn or LandingCode.CarryBound or LandingCode.RootDirty;
 
     /// <summary>
     /// The note for one try: its lead-in by its code, then the landing's sentence where there is a landing to say it.
@@ -117,6 +119,9 @@ public static class LandTryNotes
             LandingCode.Opinion => Noted.Of(ChatNoteCodes.LandingOpinion,
                 "not accepted automatically: its work waits for a second opinion before it lands, as follows. It lands at the first "
                 + "look once the opinion is settled, or you go on without one."),
+            LandingCode.RootDirty => Noted.Of(ChatNoteCodes.LandingRootDirty,
+                "not accepted automatically: the repository's own checkout holds uncommitted work, and Daoris does not merge into work in flight, "
+                + "as follows. It lands at the first look after the checkout is clean; no review is waiting on you."),
             LandingCode.Refused when rebaseTold => Noted.Of(ChatNoteCodes.LandingRebase,
                 "not accepted automatically: replaying its work onto the line conflicts, so its session was asked to rebase in its own tree, "
                 + "as follows. It lands at the first look after its tree changes."),
