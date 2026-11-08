@@ -121,7 +121,7 @@ public sealed class ServerStartProcessTests : IDisposable
         var npx = NpxCommand.Read("npx", ["-y", "@acme/tickets@1.2.3"]).Command!;
 
         var theirs = SessionServersTests.Lay(_home, "@acme/tickets", "1.2.3");
-        Directory.Delete(ServerPackages.Folder(_home, "@acme/tickets", "1.2.3"), recursive: true);
+        GitSeed.Discard(ServerPackages.Folder(_home, "@acme/tickets", "1.2.3"));
         var kept = await ServerPackages.ScriptAsync(
             _home, npx, null, CancellationToken.None, npm,
             publish: (_, _) =>
@@ -131,7 +131,7 @@ public sealed class ServerStartProcessTests : IDisposable
             });
         Assert.Equal(theirs, kept);
 
-        Directory.Delete(ServerPackages.Folder(_home, "@acme/tickets", "1.2.3"), recursive: true);
+        GitSeed.Discard(ServerPackages.Folder(_home, "@acme/tickets", "1.2.3"));
         var refused = await Assert.ThrowsAsync<DriverException>(() => ServerPackages.ScriptAsync(
             _home, npx, null, CancellationToken.None, npm, publish: (_, _) => throw new IOException("a file in it is held")));
         Assert.Contains("held", refused.Message);

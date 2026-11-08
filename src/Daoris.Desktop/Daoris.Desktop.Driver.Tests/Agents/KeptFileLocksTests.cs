@@ -33,7 +33,7 @@ public sealed class KeptFileLocksTests : IDisposable
             Assert.Equal(before, read());
         }
 
-        await writing.WaitAsync(TimeSpan.FromSeconds(20));
+        await writing.WaitAsync(Poll.Patience);
         Assert.NotEqual(before, read());
     }
 

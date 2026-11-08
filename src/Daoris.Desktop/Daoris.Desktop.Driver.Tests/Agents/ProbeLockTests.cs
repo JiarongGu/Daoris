@@ -62,7 +62,7 @@ public sealed class ProbeLockTests : IDisposable
         {
             File.SetLastWriteTimeUtc(path, DateTime.UtcNow.AddHours(-1));
 
-            var taken = await Task.Run(() => ProbeLock.TakeAsync(path, TimeSpan.FromMilliseconds(300))).WaitAsync(TimeSpan.FromSeconds(20));
+            var taken = await Task.Run(() => ProbeLock.TakeAsync(path, TimeSpan.FromMilliseconds(300))).WaitAsync(Poll.Patience);
 
             Assert.Null(taken);
         }
