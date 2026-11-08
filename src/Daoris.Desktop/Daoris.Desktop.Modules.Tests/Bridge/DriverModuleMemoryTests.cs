@@ -69,6 +69,23 @@ public sealed class DriverModuleMemoryTests : DriverModuleBridge
             service.Sent.Where(sent => sent.Contains("memory", StringComparison.Ordinal)));
     }
 
+    /// <summary>🔴 An end the sweep wrote names no session, so its decision names only its row: approved or declined through the same door, a session never sent.</summary>
+    [Fact]
+    public async Task SESSION_MEMORY_DECIDE_decides_a_sweeps_end_by_its_row_alone()
+    {
+        var (module, service) = await UpAsync(new StandIn(request => request.RequestUri!.AbsolutePath switch
+        {
+            "/api/memory/o9/decide" => (HttpStatusCode.OK, """{"message":"The end `o9` is declined.","op":null,"moved":0}"""),
+            _ => null,
+        }));
+
+        var declined = await AnswerAsync(module, "SESSION_MEMORY_DECIDE", new { op = "o9", approve = false });
+
+        Assert.True(declined.GetProperty("decided").GetBoolean());
+        Assert.Contains("declined", declined.GetProperty("message").GetString());
+        Assert.Equal(["""POST /api/memory/o9/decide {"approve":false}"""], service.Sent.Where(sent => sent.Contains("memory", StringComparison.Ordinal)));
+    }
+
     private sealed class StandIn(Func<HttpRequestMessage, (HttpStatusCode Status, string Body)?> answer) : HttpMessageHandler
     {
         public List<string> Requests { get; } = [];

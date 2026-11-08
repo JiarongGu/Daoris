@@ -45,7 +45,8 @@ export type AttentionActId =
   // A run's own declined request, asked again or gone on without, each the run's node word.
   | 'ask-again' | 'go-on'
   // A person's task's presses, each the run's node word with the person's note.
-  | 'task-done' | 'task-approve' | 'task-reject';
+  | 'task-done' | 'task-approve' | 'task-reject'
+  | 'approve-end' | 'decline-end'; // an end the sweep wrote, which no session's page holds, decided in its row
 
 /** The run's node word a person's task's press is (`task-done` is `done`); null for any other act. */
 export const taskActOf = (act: AttentionActId): TaskAct | null => (act.startsWith('task-') ? act.slice('task-'.length) as TaskAct : null);
@@ -202,6 +203,8 @@ export function attentionOffers(item: Attention): AttentionOffer[] {
     // *End and carry on* for a quiet quest session alone, never a busy one; *Hand
     // over…* for a quest session; *Stop…* and *Leave it running* for every one, an intake's among them.
     case 'quiet': return item.quiet ? quietOffers(item.quiet) : [];
+    // A session's memory is decided on its page, where each row's words are read first; a sweep's end has no page, so its row decides it.
+    case 'memory': return item.memory?.end ? plain('approve-end', 'decline-end') : [];
     default: return [];
   }
 }

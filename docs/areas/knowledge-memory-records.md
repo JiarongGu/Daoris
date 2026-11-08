@@ -42,7 +42,7 @@ one job each, checked by `verify`.
 | `CallTable`, `SessionWorks` | `Mcp/CallTable.cs` (`Refusal` 121-144), `Mcp/RoleFilter.cs` | What each kind of work is served; filters `tools/list` and every call |
 | Call guards | `Mcp/CallLineageFilter.cs`, `ArgumentFilter.cs`, `WaitingFilter.cs` | Lineage proof, missing arguments, the waiting line |
 | Call keys | `Core/Sessions/CallLineage.cs`, `Core/Sessions/CallKeys/` | A call's `_meta` lineage read by one ordered list of agents' keys, one file per agent (Claude Code's first, so a call carrying both is read as its); the list is held to the driver census's `service.callKeys` twin |
-| `MemoryOpStore` | `Core/Knowledge/Memory/MemoryOpStore.cs` | `memory_ops` in `knowledge.db`: the log of record of every memory change; its read sets are `MemoryOpReads`, its changes since a cursor `MemoryOpChanges`, its rows' types `Memory/Records/` |
+| `MemoryOpStore` | `Core/Knowledge/Memory/MemoryOpStore.cs` | `memory_ops` in `knowledge.db`: the log of record of every memory change; its read sets are `MemoryOpReads`, its changes since a cursor `MemoryOpChanges`, the waits no session holds `MemoryOpWaits`, its rows' types `Memory/Records/` |
 | `LyntaiMemory`, `MemoryEngine` | `Core/Knowledge/Memory/` | One engine per repository over `memory.db`, and its read-only view for others |
 | `MemoryApplier`, `MemoryCoordinator` | `Core/Knowledge/Memory/` | Applies released rows, recovers at start, paces the sweep |
 | `MemorySweep`, `MemoryPresenter`, `MemoryView` | `Core/Knowledge/Memory/` | Rechecks citations, shows an entry as current only when checked, reads another repository's memory |
@@ -126,7 +126,10 @@ one job each, checked by `verify`.
     after a crash. An outcome no receipt names is held for the person, never replayed. (from D220)
 28. An entry cites records by id, lines, commit and digest. The sweep rechecks them: holding writes a confirmation, failing an
     awaiting end. A repository's sweep asks the engine for more due entries, doubling up to 1,000, until it has written 50, so entries
-    that write nothing (inconclusive, amended, an end pending) do not hold back those behind them. An entry is shown as current only when it was read again and every citation held. (from D220)
+    that write nothing (inconclusive, amended, an end pending) do not hold back those behind them. An entry is shown as current only when it was read again and every citation held. The sweep's end names no
+    session, so the waits list it as a wait of its own (`GET /api/memory/waits`, the `end` of a wait with no session: its operation,
+    repository, entry, revision and reason), *What needs you* shows it as a `memory` row by that operation with no door, and the
+    person approves or declines it in the row through the decision by operation, which names no session. (from D220)
 29. Another repository's memory is read only through its view, the caller's workspace checked again at each read. (from D220)
 
 **The remote**

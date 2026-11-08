@@ -25,7 +25,9 @@ public sealed class SessionStoreRoutes(HostWiring host) : IRouteModule
         routes.Map<ListMemoryWaits, MemoryWaitsResponse>(async (_, http, ct) =>
             !host.MachineLocal(http) ? Answer<MemoryWaitsResponse>.Else(StatusCodes.Status404NotFound, null)
             : new MemoryWaitsResponse([.. (await Service.Sessions.Memory.WaitsAsync(ct))
-                .Select(wait => new MemoryWaitResponse(wait.Session, wait.Ends, wait.Replacements, wait.Staged, wait.Since))]));
+                .Select(wait => new MemoryWaitResponse(
+                    wait.Session, wait.Ends, wait.Replacements, wait.Staged, wait.Since,
+                    wait.End is { } end ? new MemoryEndWaitResponse(end.Op, end.Repository, end.Target, end.Revision, end.Reason) : null))]));
         routes.Map<ReadLineMemory, MemoryReadResponse>(ReadLineMemoryAsync);
         routes.Map<DecideMemory, MemoryDecisionResponse>(async (request, http, ct) =>
             !host.MachineLocal(http) ? Answer<MemoryDecisionResponse>.Else(StatusCodes.Status404NotFound, null)

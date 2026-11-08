@@ -59,8 +59,13 @@ internal sealed class SessionsRecordDesk(DriverContext context)
     {
         var (session, op, approve, keep) = press;
         var yes = op is { Length: > 0 } ? approve : keep;
+        if (op is not { Length: > 0 } && string.IsNullOrEmpty(session))
+        {
+            return new { Decided = false, Why = "refused", Message = "A keep or a drop names the session whose staged changes it moves." };
+        }
+
         var service = _loop.Service ?? throw NotReady();
-        var (decided, message) = await service.DecideMemoryAsync(session, op, yes, cancellationToken).ConfigureAwait(false);
+        var (decided, message) = await service.DecideMemoryAsync(session ?? "", op, yes, cancellationToken).ConfigureAwait(false);
         return new { Decided = decided, Why = decided ? null : "refused", Message = message };
     }
 }

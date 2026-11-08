@@ -87,8 +87,8 @@ export function useAttentionDoors({ attached, openInWork, openAsk, openQuest, op
     // alone: the record is this machine's driver's.
     ...(attached ? { 'helper-ended': (item: Attention) => open('sessions', item.session ?? item.id) } : {}),
     // A session whose memory waits on the person opens that session, whose Memory section carries the decisions. A shell's
-    // alone: the service's rows are read by this machine's driver.
-    ...(attached ? { memory: (item: Attention) => open('sessions', item.session ?? item.id) } : {}),
+    // alone: the service's rows are read by this machine's driver. A sweep's end names no session and shows no door: its row decides it.
+    ...(attached ? { memory: (item: Attention) => { if (item.session) open('sessions', item.session); } } : {}),
     // An integration's wait on the owner opens its repository's Integration tab, where its decide, its answer or its request
     // is pressed beside the candidate and its steps. A shell's alone: the integration record is this machine's driver's.
     // A declaration owed acceptance opens the repository's Setup instead, where Line and landing holds the Integration declaration to read and accept.

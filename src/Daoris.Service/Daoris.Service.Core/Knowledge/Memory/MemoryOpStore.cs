@@ -21,11 +21,13 @@ public sealed class MemoryOpStore
     private readonly ConnectionGate _db;
     private readonly MemoryOpReads _reads;
     private readonly MemoryOpChanges _changes;
+    private readonly MemoryOpWaits _waits;
 
     internal MemoryOpStore(ConnectionGate db)
     {
         _db = db;
         _reads = new(db);
+        _waits = new(db);
         _changes = new(db, ReadAllAsync, () => BetweenReads);
     }
 
@@ -187,8 +189,8 @@ public sealed class MemoryOpStore
         [nameof(SessionState.Queued), nameof(SessionState.Starting), nameof(SessionState.Working), nameof(SessionState.AwaitingPerson)];
 
     /// <summary>
-    /// What waits on the person, a row per session, oldest first: ends and replacements awaiting their approver, and the staged
-    /// rows of a session no longer running, which the person keeps or drops. A running session's staged rows wait for its own commit point.
+    /// What waits on the person: a row per session, oldest first, for ends and replacements awaiting their approver and the staged
+    /// rows of a stopped session, then each end the sweep wrote, which has no session. A running session's rows wait for its commit point.
     /// </summary>
     public Task<IReadOnlyList<MemoryWait>> WaitsAsync(CancellationToken ct = default) => _db.RunAsync<IReadOnlyList<MemoryWait>>(async () =>
     {
@@ -211,12 +213,14 @@ public sealed class MemoryOpStore
             var wait = state == MemoryOpState.Staged ? new MemoryWait(reader.GetString(0), 0, 0, count, since)
                 : kind == MemoryOpKind.Supersede ? new MemoryWait(reader.GetString(0), 0, count, 0, since)
                 : new MemoryWait(reader.GetString(0), count, 0, 0, since);
-            found.Add((wait.Session, wait));
+            found.Add((reader.GetString(0), wait));
         }
 
-        return [.. found.GroupBy(each => each.Session).Select(group => new MemoryWait(
+        var waits = found.GroupBy(each => each.Session).Select(group => new MemoryWait(
             group.Key, group.Sum(each => each.Wait.Ends), group.Sum(each => each.Wait.Replacements), group.Sum(each => each.Wait.Staged),
-            group.Min(each => each.Wait.Since)))];
+            group.Min(each => each.Wait.Since))).ToList();
+        waits.AddRange(await _waits.SweepsAsync(ct).ConfigureAwait(false));
+        return waits;
     }, ct);
 
     /// <summary>Every row <paramref name="session"/> made, in the order they were kept.</summary>

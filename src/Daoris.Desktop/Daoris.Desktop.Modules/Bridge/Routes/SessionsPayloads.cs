@@ -46,8 +46,8 @@ public sealed record SessionSupervisor(string Id);
 
 public sealed record SupervisorOverrule(string Id, string Decision);
 
-/// <summary>An <c>op</c> is approved or not by <c>Approve</c>; none keeps or drops the ended session's staged changes by <c>Keep</c>.</summary>
-public sealed record SessionMemoryDecide(string Session, string? Op, bool Approve = false, bool Keep = false);
+/// <summary>An <c>op</c> is approved or not by <c>Approve</c>, a sweep's end with no session; none keeps or drops the ended <c>Session</c>'s staged changes by <c>Keep</c>.</summary>
+public sealed record SessionMemoryDecide(string? Session, string? Op, bool Approve = false, bool Keep = false);
 
 public sealed record SessionDelete(string Id, bool Said = false, bool Help = false);
 

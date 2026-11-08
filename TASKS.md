@@ -36,7 +36,6 @@ area document under `docs/areas/`. Each row's earlier full text is in git at `9f
 
 - [ ] **KNOWCENTRAL2 — the memory coordinator built** (service, connector, driver, web; D220): 2a to 2h and 2j are built; **2i**, the installed measurement, also looks for repeated or conflicting entries about one fact (PROFILEFIX1's re-open condition). → `docs/2026-10-31-memory-coordinator-design.md` §8
 
-- [ ] **MEMSWEEPENDS1 — a sweep's awaiting end has no place the person can decide it** (service, web; found by the knowledge-memory-records code review): `MemoryOpStore.SweepAsync` writes a failed citation as an `awaiting` end with no session (`By: null`, `MemoryOpStore.cs:364`), and `WaitsAsync` (`:193-220`) joins `memory_ops` to `sessions` on `m.session`, so the row is in no wait; the page decides through a session's memory (`SessionStoreRoutes.cs:25-33`, `useAttendedRecord.ts`), which a sessionless row has none of. Sequence: a cited record is superseded, the sweep writes the end, hits say "awaiting the person" (`MemoryTools.cs:113`), nothing lists it, and its pending key (`PendingAsync`) stops the sweep writing another for that entry. Needs a surface for rows of no session (a wait row keyed by the repository), so a design choice before a fix.
 
 ## Install, home and update
 

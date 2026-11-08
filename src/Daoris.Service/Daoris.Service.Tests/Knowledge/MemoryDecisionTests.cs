@@ -153,6 +153,33 @@ public sealed class MemoryDecisionTests : IAsyncLifetime
         Assert.Equal([replacer.Id], (await _machine.Memory.WaitsAsync()).Select(wait => wait.Session));
     }
 
+    /// <summary>🔴 A sweep's end has no session, so it is a wait of its own, naming its row, entry, revision and reason, until the person decides it.</summary>
+    [Fact]
+    public async Task A_sweep_s_awaiting_end_is_a_wait_of_its_own_until_the_person_decides_it()
+    {
+        var map = await Owner.RememberAsync("The map is drawn in tiles.");
+        var pixels = await Owner.RememberAsync("Tiles are sixteen pixels.");
+        await _machine.Memory.SweepAsync(
+            [new MemoryRecheck("Owner", map.Id, map.Revision, Holds: false, "Its cited record `r1` is superseded by `r2`."),
+             new MemoryRecheck("Owner", pixels.Id, pixels.Revision, Holds: false, "Its cited record `r3` is superseded by `r4`.")], Now);
+        var (ender, _) = await AwaitingAsync(await Owner.RememberAsync("The legend sits under the map."));
+
+        var waits = await _machine.Memory.WaitsAsync();
+
+        Assert.Equal([ender.Id, null, null], waits.Select(wait => wait.Session));
+        var ends = waits.Where(wait => wait.Session is null).Select(wait => wait.End!).ToList();
+        Assert.Equal(
+            [("Owner", map.Id, (long?)map.Revision, "Its cited record `r1` is superseded by `r2`."),
+             ("Owner", pixels.Id, (long?)pixels.Revision, "Its cited record `r3` is superseded by `r4`.")],
+            ends.Select(end => (end.Repository, end.Target, end.Revision, end.Reason)));
+        Assert.All(waits.Where(wait => wait.Session is null), wait => Assert.Equal((1, 0, 0), (wait.Ends, wait.Replacements, wait.Staged)));
+
+        await Desk.DecideAsync(ends[0].Op, session: null, approve: false, Now.AddMinutes(3));
+        await Desk.DecideAsync(ends[1].Op, session: null, approve: true, Now.AddMinutes(3));
+
+        Assert.Equal([ender.Id], (await _machine.Memory.WaitsAsync()).Select(wait => wait.Session));
+    }
+
     /// <summary>
     /// 🔴 While an end awaits, a hit on its entry says who proposed it and that it awaits the person, in a search and a read;
     /// once decided, the hit says nothing of it.
