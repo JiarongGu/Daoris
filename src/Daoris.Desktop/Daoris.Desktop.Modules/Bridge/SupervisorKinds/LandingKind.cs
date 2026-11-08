@@ -42,6 +42,15 @@ internal sealed class LandingKind : ISupervisorKind
         return Task.FromResult<IReadOnlyList<object>>(waiting);
     }
 
+    public async Task<string?> FactsAsync(DriverLoop loop, SupervisorSubject subject, string fence, CancellationToken ct)
+    {
+        if (subject.LandingParts is not { } parts || loop.Service is not { } service) return null;
+        if (LandingSteps.Find(loop.Home, parts.Run, parts.Node, parts.Attempt) is not { GoAheadOpen: false } step) return null;
+        var recorded = $"run: {step.Run}\nstep: {step.Node}, attempt {step.Attempt}\nrepository: {step.Repository}\nit waits for a press: {string.Join(", ", step.Acts)}";
+        return await SupervisorKindFacts.ComposeAsync(
+            service, loop.Home, subject.Session, fence, [("the step a landing waits on: Daoris's own record, not the asking agent's", recorded)], ct).ConfigureAwait(false);
+    }
+
     /// <summary>The newest part of the run's work in the step's repository: the session whose line the landing waits on.</summary>
     internal static PriorSession? SessionOf(IReadOnlyList<PriorSession> records, LandingStep step) =>
         records.LastOrDefault(record => !record.Teammate && string.Equals(record.Quest, step.Run, StringComparison.Ordinal)

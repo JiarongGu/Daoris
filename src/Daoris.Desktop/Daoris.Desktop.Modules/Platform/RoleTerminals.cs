@@ -130,8 +130,7 @@ internal sealed class RoleTerminals(StandingConfirmation owner, StandingState st
     /// <summary>
     /// The catalogue changed (a role's press through the role door): every hold whose role no longer reads as held by the terminal, or
     /// as the kind it is started as, ended in one mutation step, its admitted acts, pending operations and bindings cancelled; a holder
-    /// left holding nothing goes, its tab told so. A catalogue that cannot be read now ends nothing: the holds stand until it reads and says
-    /// what changed. Its generations are answered for the caller to sweep after this step.
+    /// left holding nothing goes, its tab told so; a catalogue that cannot be read ends none. Its generations are answered for the caller to sweep after this step.
     /// </summary>
     public IReadOnlyList<string> RolesChanged()
     {

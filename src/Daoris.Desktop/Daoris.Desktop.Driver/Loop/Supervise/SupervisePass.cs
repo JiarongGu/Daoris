@@ -53,7 +53,7 @@ internal sealed class SupervisePass(LoopContext context, Driver driver)
         Unavailable.TryRemove(subject, out _);
         var number = order.ToList().IndexOf(entry) + 1;
         var world = new LookSupervisorWorld(context.Service, context.Home, context.Config);
-        if (await SupervisorInstruction.ComposeAsync(world, waiting, ct).ConfigureAwait(false) is not { } prompt) return null;
+        if (await SupervisorInstruction.ComposeAsync(world, desk, waiting, ct).ConfigureAwait(false) is not { } prompt) return null;
         if (attempts.Begin(subject, number < 1 ? spent.Count + 1 : number, DateTimeOffset.UtcNow) is not { } attempt) return null;
         if (runs.Start(subject, ct) is not { } source) return null;
 

@@ -392,12 +392,8 @@ public sealed class RoleCatalog
         return store.Write("roles", write => WriteIn(write, changes));
     }
 
-    /// <summary>
-    /// <see cref="WriteAll"/> inside a transaction the caller holds, so a role, its staffing and its policy are published in one.
-    /// <paramref name="reads"/> holds the revision each change was read at, in order (null for one made against none), compared here against the
-    /// revision the transaction reads, so two presses read at one revision cannot both write.
-    /// </summary>
-    /// <exception cref="DriverException">The first change the judge refused, or one whose role moved since it was read; the caller's transaction rolls back.</exception>
+    /// <summary><see cref="WriteAll"/> inside a transaction the caller holds, so a role, its staffing and its policy are published in one; <paramref name="reads"/> holds each change's read revision, compared with the transaction's own.</summary>
+    /// <exception cref="DriverException">The first change the judge refused or whose role moved since read; the caller's transaction rolls back.</exception>
     public static IReadOnlyList<long> WriteIn(DesktopWrite write, IReadOnlyList<RoleChange> changes, IReadOnlyList<long?>? reads = null)
     {
         {

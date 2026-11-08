@@ -5,7 +5,7 @@ namespace Daoris.Desktop;
 /// <summary>
 /// One kind of decision as the supervisor's door takes it: its waiting subjects by their typed references, its keeping of a decide or a
 /// leave against the subject as it stands, and so its release through the subject's own door. Each kind is one row of
-/// <see cref="SupervisorDecisionDoor"/>, registered once.
+/// <see cref="SupervisorDecisionDoor"/>, registered once; a row that lists landing, allow or files subjects composes their facts for an agent supervisor.
 /// </summary>
 internal interface ISupervisorKind
 {
@@ -20,6 +20,8 @@ internal interface ISupervisorKind
 
     /// <summary>The holder's leaving its subject to the owner, kept as <c>left</c>, or refused keeping nothing.</summary>
     Task<SupervisorDecided> LeaveAsync(DriverLoop loop, SupervisorLeaveForm form, SupervisorHolder holder, CancellationToken ct);
+
+    Task<string?> FactsAsync(DriverLoop loop, SupervisorSubject subject, string fence, CancellationToken ct) => Task.FromResult<string?>(null);
 
     Task<RolePlace?> PlaceOfAsync(DriverLoop loop, SupervisorSubject subject, CancellationToken ct) => Task.FromResult<RolePlace?>(null);
 }

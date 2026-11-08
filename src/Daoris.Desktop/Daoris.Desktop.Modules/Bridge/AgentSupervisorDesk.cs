@@ -13,6 +13,9 @@ internal sealed class AgentSupervisorDesk(DriverLoop loop) : ISupervisorDesk
         [.. (await SupervisorDecisionDoor.AllWaitingAsync(loop, ct).ConfigureAwait(false)).Select(Row).OfType<SupervisorWaiting>()
             .Where(each => AgentHold.Is(each.Generation))];
 
+    public Task<string?> FactsAsync(SupervisorWaiting waiting, string fence, CancellationToken ct) =>
+        SupervisorDecisionDoor.FactsAsync(loop, waiting, fence, ct);
+
     public async Task<SupervisorBlockKept> KeepAsync(SupervisorWaiting waiting, SupervisorBlock block, SupervisorHolder holder, CancellationToken ct)
     {
         var decided = block.Leave is { } bound

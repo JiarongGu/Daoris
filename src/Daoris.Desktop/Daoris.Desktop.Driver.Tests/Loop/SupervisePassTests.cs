@@ -24,11 +24,13 @@ public sealed class SupervisePassTests : IDisposable
         GitSeed.Discard(_home);
     }
 
-    private sealed class Desk(string? refuse = null) : ISupervisorDesk
+    private sealed class Desk(string? refuse = null, string? facts = "") : ISupervisorDesk
     {
         public List<(SupervisorBlock Block, SupervisorHolder Holder)> Kept { get; } = [];
 
         public Task<IReadOnlyList<SupervisorWaiting>> WaitingAsync(CancellationToken ct) => Task.FromResult<IReadOnlyList<SupervisorWaiting>>([Point]);
+
+        public Task<string?> FactsAsync(SupervisorWaiting waiting, string fence, CancellationToken ct) => Task.FromResult(facts);
 
         public Task<SupervisorBlockKept> KeepAsync(SupervisorWaiting waiting, SupervisorBlock block, SupervisorHolder holder, CancellationToken ct)
         {
@@ -102,6 +104,20 @@ public sealed class SupervisePassTests : IDisposable
         Assert.Contains("answers-alone", asked[0].Prompt);
         Assert.Contains(SupervisorBlock.Opening, asked[0].Prompt);
         Assert.Null(await new SupervisePass(driver.Context, driver).StartAsync(Point, desk, default));
+    }
+
+    [Fact]
+    public async Task ROLESREVIEW1a_a_files_subject_takes_a_turn_handed_the_facts_its_kind_composed_and_none_where_it_no_longer_waits()
+    {
+        var files = new SupervisorWaiting(SupervisorKinds.Files, SupervisorSubject.Ask("engine", "2026-11-09T09:00:00Z", "run(npm ci)", "npm ci"), "engine", "agent:supervisor@0", ["allow-run"]);
+        var (driver, asked, _) = Driver((_, _) => Ended("completed", Leave));
+
+        Assert.Null(await new SupervisePass(driver.Context, driver).StartAsync(files, new Desk(facts: null), default));
+        Assert.Empty(asked);
+
+        Assert.NotNull(await new SupervisePass(driver.Context, driver).StartAsync(files, new Desk(facts: "act: run(npm ci)"), default));
+        await Until(() => asked.Count > 0);
+        Assert.Contains("act: run(npm ci)", Assert.Single(asked).Prompt);
     }
 
     [Fact]

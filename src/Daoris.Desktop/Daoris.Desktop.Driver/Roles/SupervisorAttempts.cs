@@ -3,7 +3,7 @@ using System.Text.Json;
 
 namespace Daoris.Driver;
 
-/// <summary>How an agent supervisor's attempt ended.</summary>
+/// <summary>How an agent supervisor's attempt ended; <c>role-changed</c> spends no choice and ends no attempts: the role changed under the turn, so the subject decides again.</summary>
 public static class SupervisorAttemptOutcomes
 {
     /// <summary>Its block kept as a decision.</summary>
@@ -18,7 +18,6 @@ public static class SupervisorAttemptOutcomes
     /// <summary>A limited or transient end: a pass of the walk, the next attempt taking the next choice.</summary>
     public const string Limited = "limited";
 
-    /// <summary>The role changed while the turn ran, so its block was dropped at the keeping: no choice is spent and the subject begins again under the role as it now stands.</summary>
     public const string RoleChanged = "role-changed";
 }
 
@@ -68,7 +67,7 @@ public sealed class SupervisorAttempts(string home)
     /// <summary>Whether <paramref name="subject"/>'s attempts have ended, so it is the person's.</summary>
     public bool Ended(SupervisorSubject subject) => Of(subject).Any(each => each.Outcome is SupervisorAttemptOutcomes.Decided or SupervisorAttemptOutcomes.Left or SupervisorAttemptOutcomes.Failed);
 
-    /// <summary>The choices <paramref name="subject"/>'s attempts ran on, each once; an attempt a role change dropped spent none, its order being the old role's.</summary>
+    /// <summary>The choices <paramref name="subject"/>'s attempts ran on, each once.</summary>
     public IReadOnlyList<int> Spent(SupervisorSubject subject) =>
         [.. Of(subject).Where(each => each.Outcome != SupervisorAttemptOutcomes.RoleChanged).Select(each => each.Choice).Distinct().Order()];
 

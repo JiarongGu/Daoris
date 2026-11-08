@@ -25,5 +25,8 @@ public interface ISupervisorDesk
 {
     Task<IReadOnlyList<SupervisorWaiting>> WaitingAsync(CancellationToken ct);
 
+    /// <summary>The facts of a landing, allow or files subject, fenced under <paramref name="fence"/> by its kind's row; null where it no longer waits.</summary>
+    Task<string?> FactsAsync(SupervisorWaiting waiting, string fence, CancellationToken ct);
+
     Task<SupervisorBlockKept> KeepAsync(SupervisorWaiting waiting, SupervisorBlock block, SupervisorHolder holder, CancellationToken ct);
 }

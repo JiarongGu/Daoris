@@ -32,10 +32,7 @@ public sealed record SupervisorRuleBook(IReadOnlyList<SupervisorRuleSet> Sets)
         }
     }
 
-    /// <summary>
-    /// <paramref name="sets"/> with the seeded machine rules added where the machine's place was never written: the sets the executors read, and so the
-    /// sets a write is judged against, so a repository's rules are not refused for a machine bound every line already reads.
-    /// </summary>
+    /// <summary><paramref name="sets"/> with the seeded machine rules where the machine's place is unwritten, as the executors read them and a write is judged.</summary>
     public static IReadOnlyList<SupervisorRuleSet> WithSeed(IReadOnlyList<SupervisorRuleSet> sets) =>
         sets.Any(set => set.Place == SupervisorRules.Machine) ? sets : [.. sets, .. Seed.Sets];
 

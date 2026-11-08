@@ -90,7 +90,6 @@ public sealed class RoleCatalogTests : IDisposable
         var second = RoleCatalog.Seed[0] with { Name = AuthoredText.Of("Second") };
         using var store = DesktopStore.Open(db, StoreProcess.Options(() => StoreSettled.Yes));
 
-        // Two presses read at revision 0: the first writes, and the second finds the revision moved inside its own transaction.
         Assert.Equal([1L], store.Write("roles", write => RoleCatalog.WriteIn(write, [RoleChange.Set(first)], [0L])));
         var refused = Assert.Throws<DriverException>(() => store.Write("roles", write => RoleCatalog.WriteIn(write, [RoleChange.Set(second)], [0L])));
 

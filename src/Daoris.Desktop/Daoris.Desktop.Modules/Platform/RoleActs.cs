@@ -172,7 +172,7 @@ internal sealed class RoleActsMemory
         }
     }
 
-    /// <summary>The role and act an admitted act was admitted as, or null where no act has the id.</summary>
+    /// <summary>The role and act an admitted act carries, or null where no act has the id.</summary>
     public (string Role, string Act)? ActOf(string id) => _acts.TryGetValue(id, out var act) ? (act.Role, act.Act) : null;
 
     /// <summary>An admitted act withdrawn at its gates' step, since its grant no longer covers it: cancelled, never run.</summary>

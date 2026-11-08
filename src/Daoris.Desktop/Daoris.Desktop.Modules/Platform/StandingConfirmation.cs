@@ -175,10 +175,7 @@ public sealed class StandingConfirmation : IDecisionAdmission
 
     internal TimeProvider Clock { get; }
 
-    /// <summary>
-    /// The catalogue's slots as they stand now, read at each judgement, its unreadable records among them; null where the catalogue cannot be read,
-    /// which <see cref="SlotsNow"/> reads as staffing no role and a change's sweep reads as no change. A test hands its own.
-    /// </summary>
+    /// <summary>The catalogue's slots as they stand now, read at each judgement, its unreadable records among them; null where it cannot be read; a test hands its own.</summary>
     public Func<IReadOnlyList<RoleSlot>?> Slots { get; set; }
 
     /// <summary>The catalogue's slots now; none where it cannot be read, so every act and answer is refused until it reads.</summary>
