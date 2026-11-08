@@ -58,6 +58,9 @@ internal sealed class WatchNodes
         // Where the pull request a plugin's step opened is written on its landing.
         nodes.PullRequests = new PullRequestRecords(home);
 
+        nodes.Landings = watch.Supervisor.LandingWords;
+        watch.Supervisor.LandingApplied = LandingApplied.Of(home);
+
         // The heavy executor a check is handed to; its answer asks a pass, which reconciles it.
         _executor = new HeavyExecutor(home, new VerifyWorld
         {

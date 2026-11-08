@@ -39,6 +39,9 @@ public sealed class QuietSettingTests : IDisposable
     [InlineData("""{ "quietMinutes": 4 }""", null)]
     [InlineData("""{ "quietMinutes": 121 }""", null)]
     [InlineData("""{ "quietMinutes": "soon" }""", null)]
+    [InlineData("""{ "quietMinutes": 15.5 }""", null)]
+    [InlineData("""{ "quietMinutes": 1e1 }""", null)]
+    [InlineData("""{ "quietMinutes": 99999999999 }""", null)]
     [InlineData("""{ "timeoutMinutes": 90 }""", null)]
     [InlineData("{}", null)]
     public void The_file_is_read_only_in_its_bounds_and_anything_else_is_the_default(string json, int? minutes)

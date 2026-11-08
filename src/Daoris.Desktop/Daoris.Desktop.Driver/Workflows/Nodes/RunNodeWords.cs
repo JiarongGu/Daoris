@@ -76,7 +76,10 @@ public static class RunNodeWords
     public const string Ended = "ended";
 
     /// <summary>The node already holds a word of the person's that the next pass has not applied yet.</summary>
-    public const string Worded = "worded";
+    public const string Worded = SupervisorWhy.Worded;
+
+    /// <summary>A supervisor's word on an attempt the node has left, or whose decision is not live in this run: dropped, the step the person's.</summary>
+    public const string Stale = "stale";
 
     /// <summary>
     /// The stop of an <c>integrate</c> whose member the integration record says promoted: nothing reverses the line,
@@ -94,7 +97,8 @@ public static class RunNodeWords
     /// (<see cref="Promoted"/>). Null where the caller reads none, and nothing is refused on a guess.
     /// </param>
     public static NodeWorded Word(
-        NodeRecordFiles records, string run, string node, string act, string? words, Func<DateTimeOffset>? clock = null, IReadOnlySet<string>? promoted = null)
+        NodeRecordFiles records, string run, string node, string act, string? words, Func<DateTimeOffset>? clock = null, IReadOnlySet<string>? promoted = null,
+        NodeWordBy? by = null, int? attempt = null)
     {
         run = run.Trim().TrimStart('#');
         words = string.IsNullOrWhiteSpace(words) ? null : words.Trim();
@@ -110,9 +114,12 @@ public static class RunNodeWords
         var (refused, result) = records.Edit(bound.Unit, record =>
         {
             if (record.Ended is { } ended) return (null, Refuse(Ended) with { Detail = ended.Quest });
-            if (record.Pending.Any(each => each.Node == node)) return (null, Refuse(Worded));
+            var standing = record.Pending.FirstOrDefault(each => each.Node == node);
+            if (SupervisedWords.Refused(standing, by) is { } held) return (null, Refuse(held));
             if (act == NodeWordActs.Stop && promoted?.Contains(node) == true) return (null, Refuse(Promoted));
             var status = WorkPerformer.StatusOf(record, node);
+            if (by is not null && attempt != status.Attempt) return (null, Refuse(Stale) with { State = status.State });
+            var word = new NodeWord(node, act, words, now) { By = by, Attempt = attempt, Supersedes = SupervisedWords.Replaced(standing, by) };
             if (act == NodeWordActs.Send)
             {
                 if (!Offers(declared, status, NodeWordActs.Send)) return (null, Refuse(NotSendable) with { State = status.State });
@@ -120,11 +127,11 @@ public static class RunNodeWords
             else
             {
                 if (Waited.Contains(act) && !Offers(declared, status, act)) return (null, Refuse(NotWaiting) with { State = status.State });
-                var judged = NodeLifecycle.Apply(declared, status, Move(declared, new NodeWord(node, act, words, now), new NodeScope(digest, bound.Run), status));
+                var judged = NodeLifecycle.Apply(declared, status, Move(declared, word, new NodeScope(digest, bound.Run), status));
                 if (!judged.Moved) return (null, Refuse(judged.Refused!) with { State = status.State });
             }
 
-            return (record with { Pending = [.. record.Pending, new NodeWord(node, act, words, now)] }, new NodeWorded(run, node, act, null));
+            return (record with { Pending = [.. record.Pending.Where(each => each.Node != node), word] }, new NodeWorded(run, node, act, null));
         });
         return refused is null ? result! : Refuse(refused);
     }
@@ -153,7 +160,8 @@ public static class RunNodeWords
     /// </summary>
     /// <returns>The record after them, null where none waited; and each word with why it is not applied, or null where it is.</returns>
     public static (NodeRecord? Next, IReadOnlyList<(NodeWord Word, string? Refused)> Applied) Apply(
-        NodeRecord record, IReadOnlyDictionary<string, NodeDeclaration> declared, NodeScope scope, DateTimeOffset now, IReadOnlySet<string>? promoted = null)
+        NodeRecord record, IReadOnlyDictionary<string, NodeDeclaration> declared, NodeScope scope, DateTimeOffset now, IReadOnlySet<string>? promoted = null,
+        ILandingWords? landings = null)
     {
         if (record.Pending.Count == 0) return (null, []);
         var next = record;
@@ -174,6 +182,12 @@ public static class RunNodeWords
             }
 
             var standing = WorkPerformer.StatusOf(next, node.Id);
+            if (SupervisedWords.Dropped(word, standing, landings) is { } dropped)
+            {
+                applied.Add((word, dropped));
+                continue;
+            }
+
             if (word.Act == NodeWordActs.Send)
             {
                 if (!Offers(node, standing, NodeWordActs.Send))
@@ -200,7 +214,7 @@ public static class RunNodeWords
                 continue;
             }
 
-            next = WorkPerformer.Kept(next, moved, "person-" + word.Act, now);
+            next = WorkPerformer.Kept(next, moved, word.Source + "-" + word.Act, now);
             applied.Add((word, null));
         }
 
@@ -281,7 +295,11 @@ public static class RunNodeWords
     };
 
     /// <summary>What the pass says of a word it applies, or why one is not applied, on the run's unit.</summary>
-    public static string AppliedSaid(string unit, NodeWord word, string? refused) => refused is null
-        ? $"work  {unit}: your {word.Act} of `{word.Node}` is applied{(word.Words is null ? "" : ", with your words")}."
-        : $"work  {unit}: your {word.Act} of `{word.Node}` was not applied ({refused}): it moved before Daoris's look came, so say again what it should do.";
+    public static string AppliedSaid(string unit, NodeWord word, string? refused) => (word.By is null, refused) switch
+    {
+        (true, null) => $"work  {unit}: your {word.Act} of `{word.Node}` is applied{(word.Words is null ? "" : ", with your words")}.",
+        (false, null) => $"work  {unit}: the supervisor's {word.Act} of `{word.Node}` is applied.",
+        (false, _) => $"work  {unit}: the supervisor's {word.Act} of `{word.Node}` was not applied ({refused}): the step waits for you.",
+        _ => $"work  {unit}: your {word.Act} of `{word.Node}` was not applied ({refused}): it moved before Daoris's look came, so say again what it should do.",
+    };
 }

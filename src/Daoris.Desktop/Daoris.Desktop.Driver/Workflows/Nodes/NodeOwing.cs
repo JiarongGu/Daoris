@@ -64,7 +64,7 @@ internal sealed class NodeOwing(NodeRecordFiles records, Func<IIntegrationDoor?>
                 .Where(status => status is { State: NodeStates.Active, Binding: { } binding } && binding.Observes == branch.Id)
                 .Select(status => status!.Binding!.SubjectRevision).OfType<string>().ToList();
             if (bound.Count == 0) return false;
-            var moved = await tips.TipAsync(scope.Root, branch.Subject.Artifact ?? "", ct).ConfigureAwait(false);
+            var moved = await tips.TipAsync(scope.Root, RunBranches.Standing(branch), ct).ConfigureAwait(false);
             return moved is not null && bound.Any(revision => !string.Equals(revision, moved, StringComparison.Ordinal));
         }
 

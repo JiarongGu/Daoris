@@ -33,6 +33,37 @@ public sealed class PersonFilesTests : IDisposable
     }
 
     [Fact]
+    public async Task A_write_waits_for_another_edit_of_the_file_so_neither_is_lost()
+    {
+        var lockPath = RecordLock.PathOf(_home, PersonFiles.LockName);
+        var waiting = new TaskCompletionSource();
+        void Waits(string path)
+        {
+            if (path == lockPath) waiting.TrySetResult();
+        }
+
+        RecordLock.Waiting += Waits;
+        try
+        {
+            Task write;
+            using (RecordLock.Take(lockPath))
+            {
+                write = Task.Run(() => PersonFiles.Set(_home, "web", new FileRule(FileKind.Local, ["local/a.txt"])));
+                await Task.WhenAny(waiting.Task, Task.Delay(TimeSpan.FromSeconds(5)));
+                Assert.True(waiting.Task.IsCompleted, "the write did not wait for the lock another edit holds");
+            }
+
+            await write;
+        }
+        finally
+        {
+            RecordLock.Waiting -= Waits;
+        }
+
+        Assert.Single(PersonFiles.Read(_home).For("web").Rules);
+    }
+
+    [Fact]
     public void A_set_and_a_remove_write_the_person_s_layer_and_keep_what_a_hand_wrote()
     {
         Hand("""{ "_why": "mine", "machine": { "permissions": { "deny": ["share(*)"] } } }""");

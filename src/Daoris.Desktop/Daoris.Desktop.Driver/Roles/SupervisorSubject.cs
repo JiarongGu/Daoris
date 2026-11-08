@@ -19,6 +19,7 @@ public sealed record SupervisorSubject(string Kind, string Session, string Id)
         [SupervisorKinds.Question] = "question",
         [SupervisorKinds.Course] = "point",
         [SupervisorKinds.Limit] = "point",
+        [SupervisorKinds.Landing] = "landing",
         [SupervisorKinds.Allow] = "request",
     };
 
@@ -28,6 +29,14 @@ public sealed record SupervisorSubject(string Kind, string Session, string Id)
     public static SupervisorSubject Question(string session, string question) => new(SupervisorKinds.Question, session, question);
 
     public static SupervisorSubject Point(string session, string point, string kind = SupervisorKinds.Course) => new(kind, session, point);
+
+    public static SupervisorSubject Landing(string session, string run, string node, int attempt) =>
+        new(SupervisorKinds.Landing, session, $"{run}/{node}/{attempt}");
+
+    public (string Run, string Node, int Attempt)? LandingParts =>
+        Kind == SupervisorKinds.Landing && Id.Split('/') is [{ Length: > 0 } run, { Length: > 0 } node, var attempt] && int.TryParse(attempt, out var number)
+            ? (run, node, number)
+            : null;
 
     /// <summary>The moment a held request began, so a request id a later process reuses is another subject.</summary>
     public string? Held { get; init; }
@@ -47,7 +56,7 @@ public sealed record SupervisorSubject(string Kind, string Session, string Id)
     /// <summary>Whether this is an allow's widening, which names a proposal and no session.</summary>
     public bool IsProposal => Kind == SupervisorKinds.Allow && Session.Length == 0 && !IsAsk;
 
-    /// <summary>The name the subject's id goes by: <c>question</c>, <c>point</c>, <c>request</c>, <c>proposal</c> or <c>ask</c>.</summary>
+    /// <summary>The name the subject's id goes by: <c>question</c>, <c>point</c>, <c>landing</c>, <c>request</c>, <c>proposal</c> or <c>ask</c>.</summary>
     public string IdName => IsAsk ? "ask" : IsProposal ? "proposal" : Named[Kind];
 
     /// <summary>The subject as the wire carries it, its fields in their order.</summary>

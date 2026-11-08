@@ -52,6 +52,7 @@ public sealed class QuestionSupervisorDecisions
     private readonly SupervisorTickets _tickets;
     private readonly SupervisorReads _reads;
     private readonly SupervisorCourses _courses;
+    private readonly SupervisorLandings _landings;
     private readonly IDecisionAdmission _admission;
 
     public QuestionSupervisorDecisions(string home, IDecisionAdmission admission, MachineLog? log = null)
@@ -59,7 +60,8 @@ public sealed class QuestionSupervisorDecisions
         _book = new SupervisorBook(home, log);
         _keeping = new SupervisorKeeping(_book, admission, log);
         _releasing = new SupervisorReleasing(_book, admission, log);
-        _sweeps = new SupervisorSweeps(_book, log);
+        _landings = new SupervisorLandings(_book, admission, log);
+        _sweeps = new SupervisorSweeps(_book, log, _landings.Applied);
         _tickets = new SupervisorTickets(_book, admission);
         _reads = new SupervisorReads(_book);
         _courses = new SupervisorCourses(_book, admission, log);
@@ -81,6 +83,30 @@ public sealed class QuestionSupervisorDecisions
     public Task<IReadOnlyList<SupervisorState>> ReleaseCoursesAsync(
         CourseLine line, DateTimeOffset now, IReadOnlyCollection<string>? counts = null, CancellationToken ct = default) =>
         _courses.ReleaseAsync(line, now, counts, ct);
+
+    /// <summary>Keep a landing decision on a run's step (<see cref="SupervisorLandings.KeepAsync"/>); <paramref name="refused"/> is what the step itself refuses.</summary>
+    public Task<SupervisorKept> LandingAsync(SupervisorLanding landing, string repository, string? refused, DateTimeOffset now, CancellationToken ct = default) =>
+        _landings.KeepAsync(landing, repository, refused, now, ct);
+
+    /// <summary>Release each held landing decision whose moment came (<see cref="SupervisorLandings.ReleaseAsync"/>).</summary>
+    public Task<IReadOnlyList<SupervisorState>> ReleaseLandingsAsync(LandingRelease line, DateTimeOffset now, CancellationToken ct = default) =>
+        _landings.ReleaseAsync(line, now, ct);
+
+    /// <summary>A session's landing decisions as the page reads them (<see cref="SupervisorLandings.LandingsOf"/>).</summary>
+    public IReadOnlyList<SupervisorLandingView> LandingsOf(string session) => _landings.LandingsOf(session);
+
+    /// <summary>Whether a landing step waits for the holder (<see cref="SupervisorLandings.Waits"/>).</summary>
+    public bool Refers(SupervisorSubject landing) => _landings.Waits(landing);
+
+    /// <summary>The landing decisions as the node pass asks them whether a supervisor's word is live in this run.</summary>
+    public ILandingWords LandingWords => _landings;
+
+    /// <summary>Whether a landing decision's word stands applied on its run's record: set by the node runtime's wiring, read by the start's sweep.</summary>
+    public Func<SupervisorLandingView, bool>? LandingApplied
+    {
+        get => _landings.Landed;
+        set => _landings.Landed = value;
+    }
 
     /// <summary>Whether a referred point waits for the holder (<see cref="SupervisorCourses.Waits"/>).</summary>
     public bool Refers(string session, string point, string kind = SupervisorKinds.Course) => _courses.Waits(session, point, kind);
@@ -143,6 +169,7 @@ public sealed class QuestionSupervisorDecisions
     public async Task<SupervisorState?> OverruleAsync(
         string session, string decision, SupervisorTakeBack takeBack, DateTimeOffset now, CancellationToken ct = default) =>
         await _courses.OverruleAsync(session, decision, now, ct).ConfigureAwait(false)
+        ?? await _landings.OverruleAsync(session, decision, now, ct).ConfigureAwait(false)
         ?? await _releasing.OverruleAsync(session, decision, takeBack, now, ct).ConfigureAwait(false);
 
     /// <summary>The owner's words named a question (<see cref="SupervisorReleasing.SupersedeAsync"/>).</summary>
@@ -182,7 +209,7 @@ public sealed class QuestionSupervisorDecisions
     public DateTimeOffset? HeldUntil(string session) => _reads.HeldUntil(session);
 
     /// <summary>The soonest moment a held decision or go-on goes on, across every session (<see cref="SupervisorReads.NextGoesOn"/>).</summary>
-    public DateTimeOffset? NextGoesOn() => new[] { _reads.NextGoesOn(), _courses.NextGoesOn() }.Min();
+    public DateTimeOffset? NextGoesOn() => new[] { _reads.NextGoesOn(), _courses.NextGoesOn(), _landings.NextGoesOn() }.Min();
 
     /// <summary>The sessions a held decision holds now (<see cref="SupervisorReads.HeldSessions"/>).</summary>
     public IReadOnlySet<string> HeldSessions() => _reads.HeldSessions();

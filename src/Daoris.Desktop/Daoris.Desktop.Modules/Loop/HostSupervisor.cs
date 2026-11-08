@@ -76,11 +76,24 @@ public sealed partial class HostSupervisor(string serviceUrl, Func<HostLocation?
     public const string PersonKeyOnInput = "DAORIS_PERSON_KEY_ON_INPUT";
 
     /// <summary>
-    /// The person key handed to the host this supervisor starts: 32 bytes in base64url
-    /// without padding, written on the first line of its input and never anywhere else. Null hands none, and the host keeps
-    /// today's trust. An adopted host is handed nothing.
+    /// The person key handed to the host this supervisor starts: 32 bytes in base64url without padding, written on the first
+    /// line of its input and never anywhere else. Null hands none, and the host keeps today's trust.
     /// </summary>
-    public string? PersonKey { get; init; }
+    public string? PersonKey
+    {
+        get => _key;
+        init => _key = value;
+    }
+
+    private string? _key;
+
+    /// <summary>Whether each start mints its own key, since one from an earlier start is worth nothing to the next.</summary>
+    public bool Mints { get; init; }
+
+    /// <summary>The key the page and the clients present, once the host proved it holds it; null for an adopted host or one that did not, which are handed nothing.</summary>
+    public string? ProvedKey => Proved == true ? _key : null;
+
+    public static string MintKey() => Base64Url.EncodeToString(RandomNumberGenerator.GetBytes(32));
 
     /// <summary>
     /// Whether the host this supervisor started proved it holds <see cref="PersonKey"/>:
@@ -165,6 +178,7 @@ public sealed partial class HostSupervisor(string serviceUrl, Func<HostLocation?
             return false;
         }
 
+        if (Mints) _key = MintKey();
         try
         {
             // Through the start gate, as every start of the desktop's is; held by no job: it stops itself when its

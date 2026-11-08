@@ -247,18 +247,12 @@ public sealed class NodeRecordFiles(string home, Func<bool>? holdsLease = null)
             writer.WriteEndObject();
         }
 
-        // The person's words on a run's nodes not applied yet, written only while one waits.
         if (record.Pending.Count > 0)
         {
             writer.WriteStartArray("pending");
             foreach (var word in record.Pending)
             {
-                writer.WriteStartObject();
-                writer.WriteString("node", word.Node);
-                writer.WriteString("act", word.Act);
-                if (word.Words is { } words) writer.WriteString("words", words);
-                writer.WriteString("at", Moments.Write(word.At));
-                writer.WriteEndObject();
+                NodeWordFiles.Write(writer, word);
             }
 
             writer.WriteEndArray();
@@ -527,21 +521,14 @@ public sealed class NodeRecordFiles(string home, Func<bool>? holdsLease = null)
                 ended = new RunEnd(quest, endedAt);
             }
 
-            // The person's words not applied yet, absent wherever none waits; present, each reads whole, its act one this build applies.
             var pending = new List<NodeWord>();
             if (root.TryGetProperty("pending", out var words))
             {
                 if (words.ValueKind != JsonValueKind.Array) return null;
                 foreach (var each in words.EnumerateArray())
                 {
-                    if (each.ValueKind != JsonValueKind.Object || Text(each, "node") is not { } node || Text(each, "act") is not { } act
-                        || !NodeWordActs.All.Contains(act, StringComparer.Ordinal) || Moments.Read(each, "at") is not { } at
-                        || (each.TryGetProperty("words", out var said) && said.ValueKind != JsonValueKind.String))
-                    {
-                        return null;
-                    }
-
-                    pending.Add(new NodeWord(node, act, Text(each, "words"), at));
+                    if (NodeWordFiles.Read(each) is not { } word) return null;
+                    pending.Add(word);
                 }
             }
 

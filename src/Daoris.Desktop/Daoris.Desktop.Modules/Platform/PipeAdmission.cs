@@ -190,7 +190,6 @@ internal sealed class PipeAdmission(InstancePipe pipe)
         _ = connection.WriteAsync(Waits(id, why, checking: true));
         Task Card() => pipe.Asking.AskThenRunAsync(reserved, row, fields, why);
 
-        // A steward's act outside its grants is offered to the allow supervisor first; it falls to this card otherwise.
         _ = stewardsAsk is null ? Card() : pipe.StewardAllows.RaiseAsync(reserved, Card, stewardsAct!, stewardsAsk, connection.Client);
         return (null, Held(answer));
     }

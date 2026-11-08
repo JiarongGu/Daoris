@@ -326,6 +326,7 @@ public sealed class ObservationTests
                  {
                      Observation.Conclude(0, "Taken", took: true, lastWords: Asked, reopenedFrom: "q1"),
                      Observation.Conclude(0, "Taken", resumed: true, reopenedFrom: "q1"),
+                     Observation.Resumed(0, "awaiting-person", "Taken", "Taken", took: true, reopenedFrom: "q1"),
                      Observation.Conclude(0, "Taken", reopenedFrom: "q1"),
                  })
         {

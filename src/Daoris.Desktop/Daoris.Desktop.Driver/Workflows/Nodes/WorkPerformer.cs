@@ -106,7 +106,7 @@ public sealed class WorkPerformer(NodeRecordFiles records, IWorkPerformPort port
     public const string PartStop = "part-stop";
 
     /// <summary>
-    /// A completion naming more resources than its unit's record keeps (<see cref="ResourceRecord.ReceiptsKept"/>): none
+    /// A completion naming more resources than its unit's record keeps owing (<see cref="ResourceRecord.ReceiptsKept"/>): none
     /// of them is taken, and the attempt is held for the person, since what it made could not be accounted for.
     /// </summary>
     public const string TooManyResources = "too-many-resources";

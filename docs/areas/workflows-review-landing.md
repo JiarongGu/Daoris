@@ -110,12 +110,17 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
 16. One engine: a run bound to a graph version is the node runtime's. A run bound to anything else is held, its problem said.
     (from D190, D227, D232)
 17. A graph run is the unit `run:<run>` of its own node record. `claimed` observes the chain's quests; the gates, the landing's
-    nodes and a plugin's nodes the run's branch at its tip; a `go-ahead` the run's ask. (from D190)
+    nodes and a plugin's nodes the run's branch at its tip, the branch its tree moved onto where the look learned it, named alike
+    by binding, telling and answers; a `go-ahead` the run's ask. (from D190)
 18. The runtime is the record's one writer. A door keeps the person's word (skip, stop, send, ask again, go on, accept, changes, done, approve, reject) on the
-    record, and the next pass applies it. An Accept waits for that pass, within `GraphPasses.Bound` (20 seconds), saying so beside the
+    record, and the next pass applies it; a run does not end while a word waits on that pass. A word names its author: the person's names none, a landing supervisor's names its role, its
+    decision and the attempt it was released on (`NodeWordBy`), a node taking it as `supervisor` where the person's is `person`. A
+    second word on a node is refused `worded`, but the person's replaces a supervisor's pending one, which the pass settles
+    `superseded`; the pass drops a supervisor's word whose attempt has lapsed or whose decision is not live in this run (`stale`). An Accept waits for that pass, within `GraphPasses.Bound` (20 seconds), saying so beside the
     button (`PassNote`, the press step `pass`); it never waits behind a tree's hold. A quest bound to a closure graph is closed by that graph. (from D190)
 19. A `go-ahead` holds the landing until the person's yes or their skip with words. (from D190)
-20. A conversation's run binds its graph. Its subject is the candidate the person submits; a newer submission lapses it. A graph
+20. A conversation's run binds its graph. Its subject is the candidate the person submits, numbered past every one the run has had,
+    whatever branch it was on; a newer submission lapses it. A graph
     holding `quest.close` holds a conversation's press. (from D227)
 21. On a place that follows a saved workflow, a session's checks are `claimed.checks` on the graph; a `place checks` write is
     refused; elsewhere they are the repository's rule. A conversation's run view names the checks its executions are held to, read

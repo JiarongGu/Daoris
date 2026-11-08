@@ -141,7 +141,7 @@ internal static class Program
         // The host begun now, so its cold start runs beside Chromium's, which the kit's runner
         // starts before the loop: the loop takes this start rather than beginning its own after it. Only by the launch holding the
         // claim, since the single-instance guard runs later, inside the runner; a later launch handed over begins nothing.
-        var supervisor = new HostSupervisor(serviceUrl) { Stages = stages };
+        var supervisor = new HostSupervisor(serviceUrl) { Stages = stages, Mints = true };
         using var hostClaim = HostStartClaim.Take(serviceUrl);
         if (hostClaim.Held) supervisor.Begin();
         var bundle = new PlatformBundle(located is null ? null : DesktopPage.BundleOf(located));

@@ -79,7 +79,7 @@ public sealed class StewardAllows(InstancePipe pipe)
         }
     }
 
-    /// <summary>A request still held, waiting or an allowed <c>land</c> in its window; null where it was settled.</summary>
+    /// <summary>A request still held, waiting or an allowed <c>land</c> in its window; null where something settled it.</summary>
     public PendingAllow? Find(string ask)
     {
         lock (State.Gate)

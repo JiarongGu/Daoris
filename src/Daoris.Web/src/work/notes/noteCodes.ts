@@ -393,7 +393,7 @@ export const NOTE_CODES: Readonly<Record<string, NoteCode>> = {
   'partner.working': { values: ['session'] },
   // The answers-alone bound: a third answer in a row with nobody between held for the person, by the agent that
   // answered; their *Go on with this answer*, which counts as their word; their *Not now*.
-  'answers.held': { values: ['agent'] },
+  'answers.held': { values: ['agent', 'n'] },
   'answers.passed': { values: [] },
   'answers.kept': { values: [] },
   // A rule that asks the supervisor: the supervisor let the answer go on, or none is started for the place and it waits for the person.
