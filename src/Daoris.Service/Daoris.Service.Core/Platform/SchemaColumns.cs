@@ -1,3 +1,5 @@
+using Microsoft.Data.Sqlite;
+
 namespace Daoris.Knowledge;
 
 /// <summary>
@@ -27,8 +29,24 @@ internal static class SchemaColumns
         ConnectionGate db, string table, string column, string definition, CancellationToken ct)
     {
         if (await HasAsync(db, table, column, ct).ConfigureAwait(false)) return;
+        await AddAsync(db, table, definition, ct).ConfigureAwait(false);
+    }
+
+    /// <summary>
+    /// The alter, where another connection opening the same new file may have added the column since the check: the check and
+    /// the alter are not one transaction, and that connection's column is the one wanted.
+    /// </summary>
+    public static async Task AddAsync(ConnectionGate db, string table, string definition, CancellationToken ct)
+    {
         await using var alter = db.Command();
         alter.CommandText = $"ALTER TABLE {table} ADD COLUMN {definition}";
-        await alter.ExecuteNonQueryAsync(ct).ConfigureAwait(false);
+        try
+        {
+            await alter.ExecuteNonQueryAsync(ct).ConfigureAwait(false);
+        }
+        catch (SqliteException error) when (error.Message.Contains("duplicate column name", StringComparison.OrdinalIgnoreCase))
+        {
+            // Added by the other open between the check and here.
+        }
     }
 }

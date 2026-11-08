@@ -401,8 +401,8 @@ public sealed class QuestStore
 
     /// <summary>
     /// The id these words would publish under, when this machine forgot that quest; null when it did
-    /// not. The exchange asks it before a publish, so the same words asked again are refused here rather than making a fresh
-    /// quest the remote, which still holds the closed one, refuses for good.
+    /// not. The exchange asks it before a publish that carries a request key, which has no next id, so the same key asked again is refused
+    /// here rather than making a fresh quest the remote, which still holds the closed one, refuses for good.
     /// </summary>
     internal async Task<string?> ForgottenIdAsync(
         string from, string to, string title, IReadOnlyList<string>? lanes, CancellationToken ct, string? request = null)

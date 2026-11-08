@@ -255,7 +255,7 @@ public sealed class KnowledgeService(
     /// restatements; with one it also finds convergence. A feature that returned nothing without an
     /// optional dependency would have made that dependency mandatory in all but name.
     /// </remarks>
-    public async Task<IReadOnlyList<ConvergenceCandidate>> FindConvergenceAsync(
+    public async Task<ConvergenceFound> FindConvergenceAsync(
         ConvergenceOptions? options = null, CancellationToken ct = default)
     {
         RefuseNewerIndex();
@@ -503,6 +503,7 @@ public sealed class KnowledgeService(
             readsRegisteredRoots && registry is not null ? wiring.ContainsKey : null,
             onlyRoots, generations,
             repository => readAt.TryGetValue(repository, out var read) ? read : (null, null),
+            onlyRoots is null ? null : readAt.Keys,
             ct).ConfigureAwait(false);
 
         // A root whose write is refused keeps no reading here, so its next use reads it again.

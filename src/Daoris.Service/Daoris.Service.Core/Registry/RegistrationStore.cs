@@ -212,7 +212,7 @@ public sealed class RegistrationStore
         command.Transaction = transaction;
         command.CommandText = $"""
             INSERT INTO registrations (repository, summary, owns, accepts, packs, updated, root, joined, shares_knowledge, workspace, adopted, default_branch, uses, lanes)
-            VALUES ($repository, $summary, $owns, $accepts, $packs, $updated, $root, $joined, $shares,
+            VALUES ({RegistrationKey.Held("registrations")}, $summary, $owns, $accepts, $packs, $updated, $root, $joined, $shares,
                     COALESCE($workspace, '{Workspaces.Default}'), $adopted, $default_branch, $uses, $lanes)
             ON CONFLICT (repository) DO UPDATE SET
               summary = $summary, owns = $owns, accepts = $accepts, packs = $packs, updated = $updated, uses = $uses,
@@ -310,9 +310,9 @@ public sealed class RegistrationStore
         string repository, string? file, string? body, FeedProvenance provenance, CancellationToken ct = default) => _db.RunAsync(async () =>
     {
         await using var command = _db.Command();
-        command.CommandText = """
+        command.CommandText = $"""
             INSERT INTO fed_code_maps (repository, file, body, commit_id, committed_at, branch, origin, digest)
-            VALUES ($repository, $file, $body, $commit, $committed_at, $branch, $origin, $digest)
+            VALUES ({RegistrationKey.Held("fed_code_maps")},$file, $body, $commit, $committed_at, $branch, $origin, $digest)
             ON CONFLICT (repository) DO UPDATE SET
               file = $file, body = $body, commit_id = $commit, committed_at = $committed_at,
               branch = $branch, origin = $origin, digest = $digest
@@ -392,9 +392,9 @@ public sealed class RegistrationStore
         string repository, FeedProvenance provenance, CancellationToken ct = default) => _db.RunAsync(async () =>
     {
         await using var command = _db.Command();
-        command.CommandText = """
+        command.CommandText = $"""
             INSERT INTO feed_provenance (repository, commit_id, committed_at, branch, origin, digest)
-            VALUES ($repository, $commit, $committed_at, $branch, $origin, $digest)
+            VALUES ({RegistrationKey.Held("feed_provenance")},$commit, $committed_at, $branch, $origin, $digest)
             ON CONFLICT (repository) DO UPDATE SET
               commit_id = $commit, committed_at = $committed_at, branch = $branch, origin = $origin,
               digest = $digest
@@ -426,9 +426,9 @@ public sealed class RegistrationStore
         string repository, FeedProvenance provenance, CancellationToken ct = default) => _db.RunAsync(async () =>
     {
         await using var command = _db.Command();
-        command.CommandText = """
+        command.CommandText = $"""
             INSERT INTO registration_provenance (repository, commit_id, committed_at, branch, origin, digest)
-            VALUES ($repository, $commit, $committed_at, $branch, $origin, $digest)
+            VALUES ({RegistrationKey.Held("registration_provenance")},$commit, $committed_at, $branch, $origin, $digest)
             ON CONFLICT (repository) DO UPDATE SET
               commit_id = $commit, committed_at = $committed_at, branch = $branch, origin = $origin,
               digest = $digest

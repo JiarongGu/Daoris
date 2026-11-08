@@ -5,6 +5,20 @@ the per-task record. Entries preserve their original wording so the archive stay
 
 ---
 
+## KNOWREV2a to KNOWREV2j — the knowledge, memory and records review's second cycle (2026-11-09)
+
+> **KNOWREV2a / 2b / 2c / 2d / 2e / 2f / 2g / 2h / 2i / 2j** (service): Outcome: all ten held against main's tip, each fixed with a regression test and a commit.
+> 2a (e0d2ef97f3): a partial reading replaces each repository whose root it read, one that now yields nothing with nothing (`PartialReadingTests`).
+> 2b (ceff6cfd9a): the scanner leaves out a file or folder it cannot read and reads the rest (`UnreadableFileTests`).
+> 2c (f2e0673ff0): the signature and the `+ uncommitted` status read one list of places, which names the declared router, index, decisions, fixes and archive paths and each room's `AGENTS.md` (`RootSignatureDeclaredTests`).
+> 2d (5dff38f9be): `ConvergenceFound` carries the embedder's failure and `knowledge_convergence` says it first, whether or not groups were found; the HTTP route still answers the groups alone (`ConvergenceFailureToolTests`).
+> 2e (863964cd32): each upsert of a registration, its provenances and its code map resolves the spelling a row already holds, so a second case conflicts with it (`RegistrationKeyCaseTests`); rows an older build already doubled stay as they are.
+> 2f (c649e3341d): `SchemaColumns.AddAsync` takes a duplicate-column error as the column being there (`SchemaColumnsTests`).
+> 2g (55da120b95): the watcher whose enabling throws is disposed with its handlers (`WatcherEnableFailureTests`, through an internal enable seam).
+> 2h (a2122031f5): the in-memory store normalizes a workspace on write, and one contract test compares every read of the two stores after the same writes (`KnowledgeStoreContractTests`).
+> 2i (4fb9bf878c): an awaiting end whose session was deleted is listed as a wait of its own, decided by its row as a sweep's is; an orphaned replacement or staged row is not (`MemoryDecisionTests`).
+> 2j (aa1dcaa440): plain words of a forgotten quest publish under the next id at every step as rule 31 says; only a request key, which has no next id, is refused as cleared (`QuestRequestKeyTests`).
+
 ## TREEPOOL1ac — shared paths (2026-11-09)
 
 > **TREEPOOL1ac** (driver, web; §35.5, §36.5, §37.4): Outcome: `reach: read` and `write` (refused on a dependency, intermediate, cache or output entry, and never a harness's settings) link each named path into every tree to its one place in the checkout, recorded in the files record's `Shares` before the link is made and only into an absent entry, where `share(path)` is let through, git ignores the path and the place stands in no other repository (`TreeSharing`, `started.share-declined` with its `note.deps.why.share-*` reasons, a file link the machine refuses included); a share counts, and is unlinked, only while its entry reads without following as a link to its place, anything else there the line's, its record dropped and said `tree.share-lost` (`TreeShares`); `TopPartition` partitions a top at recorded and declared share boundaries without entering a link, `SlotIgnored.Shared` moved by no take or finish, a link no share holds refused as foreign; a take unlinks before its switch, a retirement and the tidy's move before theirs; `started.tree-shared` warns that a recursive delete following a link reaches the shared place; proved by `TreeSharesTests` and `TreePoolSharesGitTests` on real junctions and file links.
