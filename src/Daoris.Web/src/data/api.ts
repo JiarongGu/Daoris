@@ -389,9 +389,10 @@ async function wrote(path: string, body: unknown, method: 'POST' | 'DELETE'): Pr
   let response = await write(path, body, method);
   // A key from an earlier start of the host is refused `stale`. The shell is asked again and
   // the write sent once more with the key it holds now; a second refusal is the host's sentence, said as every refusal is.
-  if (response.status === 403 && personKey !== null) {
+  // A page left holding none by one failed ask is refused `person-only`, and asks again for the same reason.
+  if (response.status === 403 && (personKey !== null || askKey !== null)) {
     const refused = await response.clone().json().catch(() => null);
-    if (refused?.code === 'stale') {
+    if (refused?.code === 'stale' || (personKey === null && refused?.code === 'person-only')) {
       personKey = await askedKey();
       response = await write(path, body, method);
     }
