@@ -188,6 +188,28 @@ public sealed class DriverModulePersonTests : DriverModuleBridge
             heard.Where(each => each.StartsWith("POST /api/confirmations", StringComparison.Ordinal)));
     }
 
+    /// <summary>A request the client gave up on may have been made: it is answered <c>unknown</c>, never <c>unreachable</c>.</summary>
+    [Fact]
+    public async Task A_service_confirmation_the_client_timed_out_on_is_not_said_to_have_done_nothing()
+    {
+        var loop = Loop();
+        var module = new DriverModule(Bus, loop);
+        await loop.ComeUpAsync(new Daoris.Driver.ServiceClient("http://stand-in", null, new HttpClient(new TimesOut())));
+
+        var answer = await AnswerAsync(module, "PERSON_CONFIRM", new { id = "h1", confirm = true, source = "service" });
+
+        Assert.False(answer.GetProperty("answered").GetBoolean());
+        Assert.Equal("unknown", answer.GetProperty("why").GetString());
+        Assert.DoesNotContain("nothing was done", answer.GetProperty("message").GetString());
+    }
+
+    /// <summary>A service whose request outlasts the client's own timeout.</summary>
+    private sealed class TimesOut : HttpMessageHandler
+    {
+        protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken ct) =>
+            throw new TaskCanceledException("The request was canceled due to the configured HttpClient.Timeout.");
+    }
+
     /// <summary>A service standing in: each request answered as the test says.</summary>
     private sealed class StandIn(Func<HttpRequestMessage, (System.Net.HttpStatusCode Status, string Body)> answer) : HttpMessageHandler
     {

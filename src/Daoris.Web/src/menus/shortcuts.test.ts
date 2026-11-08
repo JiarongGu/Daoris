@@ -22,6 +22,17 @@ describe('a key, read as its menu prints it', () => {
     expect(isPress(press('F6', { shift: true }), 'Shift+F6')).toBe(true);
   });
 
+  /** AltGr is Ctrl+Alt to a browser on Windows; where it types a letter the press is the letter's, not the shortcut's. */
+  it('leaves a press AltGr types a letter with to the field, matching its place only where AltGr is not held', () => {
+    const altGr = (key: string, code: string) => ({
+      ...press(key, { ctrl: true, alt: true }, code), getModifierState: (name: string) => name === 'AltGraph',
+    });
+    expect(isPress(altGr('ł', 'KeyB'), 'Ctrl+Alt+B')).toBe(false);
+    expect(frameShortcut(altGr('ł', 'KeyI'))).toBeNull();
+    expect(isPress(altGr('b', 'KeyB'), 'Ctrl+Alt+B')).toBe(true);
+    expect(isPress({ ...press('ł', { ctrl: true, alt: true }, 'KeyB'), getModifierState: () => false }, 'Ctrl+Alt+B')).toBe(true);
+  });
+
   it('needs every modifier it names and no other', () => {
     expect(isPress(press('b', { ctrl: true, shift: true }), 'Ctrl+B')).toBe(false);
     expect(isPress(press('F6', { ctrl: true }), 'F6')).toBe(false);

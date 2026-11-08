@@ -616,9 +616,11 @@ export function Splitter({ label, value, min, max, edge, onChange, onReset }: {
     const done = () => {
       window.removeEventListener('pointermove', move);
       window.removeEventListener('pointerup', done);
+      window.removeEventListener('pointercancel', done);
     };
     window.addEventListener('pointermove', move);
     window.addEventListener('pointerup', done);
+    window.addEventListener('pointercancel', done);
   };
 
   return (

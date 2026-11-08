@@ -110,9 +110,11 @@ export function OutputPanel({
     const done = () => {
       window.removeEventListener('pointermove', move);
       window.removeEventListener('pointerup', done);
+      window.removeEventListener('pointercancel', done);
     };
     window.addEventListener('pointermove', move);
     window.addEventListener('pointerup', done);
+    window.addEventListener('pointercancel', done);
   };
 
   return (

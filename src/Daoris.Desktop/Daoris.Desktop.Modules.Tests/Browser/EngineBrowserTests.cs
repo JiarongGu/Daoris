@@ -40,6 +40,20 @@ public sealed class EngineBrowserTests : Bridge
         Assert.Equal(plain, EngineBrowserOptions.Parse(plain.ToArguments(), out _));
     }
 
+    /// <summary>A refused or timed-out port is the browser not coming up, as Daoris's own words about it are.</summary>
+    [Fact]
+    public void A_port_that_refuses_or_times_out_is_a_failure_to_come_up_and_a_defect_is_not()
+    {
+        Assert.True(BringUpFailure.Is(new InvalidOperationException("stopped as it started")));
+        Assert.True(BringUpFailure.Is(new TimeoutException("opened no window")));
+        Assert.True(BringUpFailure.Is(new HttpRequestException("refused")));
+        Assert.True(BringUpFailure.Is(new TaskCanceledException("timed out")));
+        Assert.True(BringUpFailure.Is(new System.Net.WebSockets.WebSocketException("dropped")));
+
+        Assert.False(BringUpFailure.Is(new NullReferenceException()));
+        Assert.False(BringUpFailure.Is(new IOException()));
+    }
+
     /// <summary>
     /// The application is the browser only when its first argument says so. First, so an engine
     /// process (`--type=`, which Chromium starts from the same executable) is never taken for it, and

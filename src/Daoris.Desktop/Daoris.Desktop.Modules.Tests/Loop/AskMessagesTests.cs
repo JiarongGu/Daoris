@@ -242,6 +242,33 @@ public sealed class AskMessagesTests : DriverModuleBridge
         Assert.Equal(4, _reads);
     }
 
+    /// <summary>A read the judgement's deadline cancelled is not a read: the next judgement asks again, and does not serve the stale asks until the channels' deadline.</summary>
+    [Fact]
+    public async Task A_read_a_timeout_cancelled_is_asked_again_at_the_next_judgement()
+    {
+        Channel("a1", 1);
+        var notices = Notices();
+        await notices.Slice.JudgeAsync();
+        Assert.Equal(1, Messages(notices)["a1"]!["unread"]!.GetValue<int>());
+
+        Channel("a1", 5);
+        notices.ChannelsMoved();
+        _failing = new OperationCanceledException("the judgement's deadline");
+        try
+        {
+            await notices.Slice.JudgeAsync();
+        }
+        catch (OperationCanceledException)
+        {
+            // The deadline's own: said by the worker, which judges again at its next wake.
+        }
+
+        _failing = null;
+        await notices.Slice.JudgeAsync();
+
+        Assert.Equal(5, Messages(notices)["a1"]!["unread"]!.GetValue<int>());
+    }
+
     /// <summary>An ask whose channel moved is pushed as that key alone.</summary>
     [Fact]
     public async Task A_moved_ask_is_pushed_alone()
