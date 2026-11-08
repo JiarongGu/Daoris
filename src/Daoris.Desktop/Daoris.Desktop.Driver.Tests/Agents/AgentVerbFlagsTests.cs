@@ -67,6 +67,26 @@ public sealed class AgentVerbFlagsTests : IDisposable
         Assert.Empty(Directory.GetFileSystemEntries(Folder));
     }
 
+    /// <summary>A typo of a scope flag (<c>--repo</c> for <c>--repository</c>) made a rule reach every session on the machine, and a pin the machine's.</summary>
+    [Theory]
+    [InlineData("rules", "allow", "Bash(git push:*)", "--repo", "engine")]
+    [InlineData("unpin", "claude-code", "--workspce", "aurora")]
+    [InlineData("pin", "claude-code", "1.2.3", "--workspce", "aurora")]
+    [InlineData("update", "claude-code", "--workspce", "aurora")]
+    [InlineData("which", "claude-code", "--workspce", "aurora")]
+    [InlineData("install", "claude-code", "--workspce", "aurora")]
+    [InlineData("list", "--bogus")]
+    [InlineData("profile", "remove", "claude-code", "work", "--force")]
+    public async Task A_flag_the_other_verbs_do_not_take_is_refused_and_nothing_is_done(params string[] words)
+    {
+        var exit = await AgentsCommand.RunAsync(words, World(), CancellationToken.None);
+
+        Assert.Equal(2, exit);
+        Assert.Contains($"is not a flag of `agent {words[0]}`", _error.ToString());
+        Assert.False(File.Exists(PermissionRules.PathOf(Home)), "a rule was written");
+        Assert.True(Directory.Exists(HarnessSettings.ProfileHome(Home, "claude-code", "work")), "an account was removed");
+    }
+
     [Fact]
     public async Task The_flags_a_verb_takes_are_still_read()
     {
