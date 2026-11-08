@@ -211,7 +211,7 @@ public sealed class GitScheduler
         }
 
         entry.Node = queue.AddLast(entry);
-        if (entry.Ask.Start is { } start) _queuedByStart[start] = entry;
+        if (StartOf(entry) is { } start) _queuedByStart[start] = entry;
     }
 
     /// <summary>The ask's run, in its first asker's flow (its seams, counts and timing), once it is placed.</summary>
@@ -393,7 +393,7 @@ public sealed class GitScheduler
         if (entry.Node is not { List: { } queue } node) return false;
         queue.Remove(node);
         entry.Node = null;
-        if (entry.Ask.Start is { } start && _queuedByStart.TryGetValue(start, out var held) && ReferenceEquals(held, entry)) _queuedByStart.Remove(start);
+        if (StartOf(entry) is { } start && _queuedByStart.TryGetValue(start, out var held) && ReferenceEquals(held, entry)) _queuedByStart.Remove(start);
         if (queue.Count == 0) _queues.Remove(entry.Ask.Repository);
         return true;
     }
@@ -465,6 +465,8 @@ public sealed class GitScheduler
             || a.StartsWith(b + Path.DirectorySeparatorChar, StringComparison.OrdinalIgnoreCase)
             || a.StartsWith(b + Path.AltDirectorySeparatorChar, StringComparison.OrdinalIgnoreCase);
     }
+
+    private static string? StartOf(Entry entry) => entry.Ask.Start;
 
     private static string NameOf(string repository) => Path.GetFileName(Path.TrimEndingDirectorySeparator(repository));
 
