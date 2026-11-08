@@ -96,6 +96,20 @@ public sealed class RecordListTests : IDisposable
     }
 
     [Fact]
+    public void An_edit_never_writes_over_a_file_that_could_not_be_opened()
+    {
+        var list = Make();
+        list.Edit(PathOf, all => [.. all, new Item("a")]);
+
+        using (new FileStream(PathOf, FileMode.Open, FileAccess.ReadWrite, FileShare.None))
+        {
+            Assert.ThrowsAny<IOException>(() => list.Edit(PathOf, all => [.. all, new Item("b")]));
+        }
+
+        Assert.Equal(["a"], list.Read(PathOf).Select(item => item.Name));
+    }
+
+    [Fact]
     public void Writers_in_parallel_drop_none_of_each_other()
     {
         var list = Make();

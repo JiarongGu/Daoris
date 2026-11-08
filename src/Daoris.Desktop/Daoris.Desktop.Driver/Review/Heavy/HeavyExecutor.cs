@@ -46,6 +46,9 @@ public sealed class HeavyExecutor(string home, VerifyWorld? world = null) : IAsy
     private readonly long _started = ThisProcessStarted();
     private Queued? _running;
     private Task? _loop;
+
+    /// <summary>Called once an attempt's slots are held and before it leaves the queue: a test's place to stage the person's stop there.</summary>
+    internal Action? SlotsTaken { get; set; }
     private int _order;
 
     private sealed class Queued(VerifySend send, int order, DateTimeOffset since)
@@ -188,7 +191,16 @@ public sealed class HeavyExecutor(string home, VerifyWorld? world = null) : IAsy
             (VerifySlot Home, HeavySlot Repository)? slots = null;
             foreach (var each in due)
             {
-                slots = TryTake(each);
+                try
+                {
+                    slots = TryTake(each);
+                }
+                catch (Exception error) when (error is not OperationCanceledException)
+                {
+                    Unrunnable(each, error);
+                    continue;
+                }
+
                 if (slots is not null)
                 {
                     next = each;
@@ -202,15 +214,30 @@ public sealed class HeavyExecutor(string home, VerifyWorld? world = null) : IAsy
                 continue;
             }
 
+            SlotsTaken?.Invoke();
+
+            // A stop between taking the slots and here has taken the attempt off the queue and settled it: it is not run as well.
+            bool taken;
             lock (_gate)
             {
-                _queue.Remove(next);
-                _running = next;
+                taken = _queue.Remove(next);
+                if (taken) _running = next;
+            }
+
+            if (!taken)
+            {
+                slots!.Value.Repository.Dispose();
+                slots.Value.Home.Dispose();
+                continue;
             }
 
             try
             {
                 await RunAsync(next, slots!.Value.Home, slots.Value.Repository).ConfigureAwait(false);
+            }
+            catch (OperationCanceledException) when (_ends.IsCancellationRequested)
+            {
+                return; // The driver ends: no result, so its restart sends the same attempt again.
             }
             finally
             {
@@ -229,6 +256,14 @@ public sealed class HeavyExecutor(string home, VerifyWorld? world = null) : IAsy
         if (waiting) waits.Add(Task.Delay(_world.Poll, _ends.Token));
         if (busy is { } at && at - _world.Clock.GetUtcNow() is var until && until > TimeSpan.Zero) waits.Add(Task.Delay(until, _world.Clock, _ends.Token));
         await Task.WhenAny(waits).ConfigureAwait(false);
+    }
+
+    /// <summary>An attempt whose slots could not be taken: off the queue and answered <i>unknown</i>, so the loop goes on and no look reads it as running.</summary>
+    private void Unrunnable(Queued queued, Exception error)
+    {
+        lock (_gate) _queue.Remove(queued);
+        VerifySlot.Forget(home, queued.Send.Invocation);
+        Settle(queued.Send, Unknown(queued.Send, $"the verification could not be started ({error.Message})"));
     }
 
     /// <summary>The home's slot, then the repository's, each tried without waiting; one not free lets the other go and says what holds it.</summary>
@@ -250,7 +285,17 @@ public sealed class HeavyExecutor(string home, VerifyWorld? world = null) : IAsy
             return null;
         }
 
-        var repository = HeavySlot.TryTake(home, key);
+        HeavySlot? repository;
+        try
+        {
+            repository = HeavySlot.TryTake(home, key);
+        }
+        catch
+        {
+            homeSlot.Dispose();
+            throw;
+        }
+
         if (repository is null)
         {
             homeSlot.Dispose();
@@ -330,6 +375,11 @@ public sealed class HeavyExecutor(string home, VerifyWorld? world = null) : IAsy
         catch (Exception error) when (error is IOException or UnauthorizedAccessException)
         {
             result = Unknown(send, $"the verification could not be kept ({error.Message})");
+        }
+        catch (Exception error) when (error is not OperationCanceledException)
+        {
+            // A job that cannot be opened, a bound the clock cannot count: answered, never left for every later look to read as running.
+            result = Unknown(send, $"the verification could not be run ({error.Message})");
         }
         finally
         {
