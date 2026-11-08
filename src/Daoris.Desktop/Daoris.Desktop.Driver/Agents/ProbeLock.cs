@@ -147,7 +147,6 @@ public static class ProbeLock
     /// The file, created new and held open: deleted when closed, so a process that dies on Windows lets it go with its
     /// handles. Null where it is there already.
     /// </summary>
-    /// <param name="stamp">Writes the holder's mark; a test hands in one that fails.</param>
     internal static FileStream? TryCreate(string path, Action<FileStream>? stamp = null)
     {
         FileStream? stream = null;
@@ -169,13 +168,11 @@ public static class ProbeLock
         }
         catch (Exception error) when (error is IOException or UnauthorizedAccessException)
         {
-            // A stream left open would hold a lock file no one owns until the process ends.
             stream?.Dispose();
             return null;
         }
     }
 
-    /// <summary>Whether the file is gone: false where its holder still has it.</summary>
     private static bool TryDelete(string path)
     {
         try

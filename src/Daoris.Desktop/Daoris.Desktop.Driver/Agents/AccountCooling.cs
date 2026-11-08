@@ -256,7 +256,7 @@ public static class AccountCooling
         }
         catch (Exception error) when (unkept && error is IOException or UnauthorizedAccessException)
         {
-            // The file would not take it before either: the memory was all there was.
+            // The file would not take it before either: nothing else held it.
         }
 
         return ended;

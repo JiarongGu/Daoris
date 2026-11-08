@@ -123,7 +123,6 @@ public static class UsageHistory
                 var plan = Word(from.Plan);
                 var epoch = EpochOf(home, from.Agent, from.Account, plan, from.Seen);
                 Append(home, ReadingsLog, [.. fresh.Select(window => Reading(from, window, epoch, plan, now))], now, cap);
-                // Only what was appended is remembered: a write that failed is tried again with the next reading of it.
                 foreach (var window in fresh) Remember(folder, KeyOf(from, window));
             }
         }
@@ -146,7 +145,6 @@ public static class UsageHistory
             {
                 var path = DaorisHome.Entry(home, HomeEntry.UsageHistory, EpochsFile);
                 if (!File.Exists(path)) return;
-                // The file's keep lock is held from the read to the write, as cooling.json's is: another process's edit is not written over.
                 using var locked = KeepLock.Take(path);
                 var (root, unreadable) = AccountFileNodes.Read(path);
                 if (unreadable || Child(Child(root, agent), account) is not { } entry) return;
@@ -674,10 +672,9 @@ public static class UsageHistory
         string.Join('\n', from.Agent, from.Account, window.Window, window.Scope ?? "", from.Source,
             from.Seen.UtcTicks.ToString(CultureInfo.InvariantCulture));
 
-    /// <summary>Whether this reading was kept already in this process.</summary>
+    /// <summary>Whether the reading is among those kept in this process.</summary>
     private static bool Remembered(string folder, string key) => Recent.TryGetValue(folder, out var recent) && recent.Keys.Contains(key);
 
-    /// <summary>Remember a reading as kept.</summary>
     private static void Remember(string folder, string key)
     {
         if (!Recent.TryGetValue(folder, out var recent))

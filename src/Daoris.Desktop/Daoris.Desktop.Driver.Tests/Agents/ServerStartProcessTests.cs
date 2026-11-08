@@ -114,10 +114,6 @@ public sealed class ServerStartProcessTests : IDisposable
         Assert.False(Directory.Exists(ServerPackages.Folder(_home, "@acme/tickets", "1.2.3")));
     }
 
-    /// <summary>
-    /// The version folder is taken between the check and the move: another process's install met at the move is kept, and one the
-    /// move cannot make leaves only that server out, never the session's start.
-    /// </summary>
     [Fact]
     public async Task An_install_the_move_loses_to_another_process_keeps_theirs_and_one_it_cannot_make_withholds_only_its_server()
     {

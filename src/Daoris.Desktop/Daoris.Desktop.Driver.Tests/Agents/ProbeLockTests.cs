@@ -68,7 +68,6 @@ public sealed class ProbeLockTests : IDisposable
         }
     }
 
-    /// <summary>A holder's mark that cannot be written leaves no open stream holding the lock file.</summary>
     [Fact]
     public void A_lock_whose_mark_cannot_be_written_is_not_left_held_open()
     {
