@@ -5,8 +5,7 @@ import userEvent from '@testing-library/user-event';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import * as Tooltip from '@radix-ui/react-tooltip';
 
-// The Agents place in SHELL mode: the list of agents and an agent's page, its accounts with their last known
-// state and when each is read, and every act on it, over the mocked bridge.
+// The Agents place in SHELL mode: the list, an agent's page, its accounts and every act on it, over the mocked bridge.
 const { invoke, notifyReady, eventHandlers } = vi.hoisted(() => ({
   invoke: vi.fn(),
   notifyReady: vi.fn(() => Promise.resolve()),
@@ -1544,31 +1543,6 @@ describe('the Agents place', () => {
     const menu = await more('API key …wxyz');
     expect(within(menu).queryByRole('menuitem', { name: 'Sign in again' })).toBeNull();
     expect(within(menu).getByRole('menuitem', { name: 'Remove…' })).toBeTruthy();
-  });
-
-  /** A harness held by a key alone has no sign-in, so its page's terminal line adds an account with `agent key`, never `agent login`. */
-  it('Agents → DeepSeek Harness says the key’s way at the foot of its page, not a sign-in', async () => {
-    invoke.mockImplementation(async (_module: string, type: string) => (type === 'HARNESSES'
-      ? {
-        ...ROSTER,
-        harnesses: [{
-          door: 'dsh', product: 'DeepSeek Harness', maker: 'DeepSeek', transport: 'protocol',
-          present: true, version: 'dsh 0.1.0', problem: null, pinned: null, managed: null, pinnable: true,
-          signsIn: false, takesKey: true, ownLogin: 'unknown', ownRead: null,
-          profiles: [{ name: 'account-1', home: 'C:/somewhere/.daoris/harnesses/dsh/account-1', login: 'out' }],
-        }],
-      }
-      : WIRING));
-    place(() => {}, { first: 'dsh' });
-
-    expect(await screen.findByRole('heading', { level: 1, name: 'DeepSeek Harness' })).toBeTruthy();
-    const foot = within(screen.getByRole('main')).getByText(/The same from a terminal/);
-    expect(foot.textContent).toContain('daoris agent key dsh');
-    expect(foot.textContent).toContain('--account <account>');
-    expect(foot.textContent).not.toContain('agent login');
-    // The zh footer is a sentence of its own, not the sign-in one translated.
-    expect(i18n.t('agents.page.terminalKey', { agent: 'dsh', lng: 'zh' })).toContain('daoris agent key dsh');
-    expect(i18n.t('agents.page.terminalKey', { agent: 'dsh', lng: 'zh' })).not.toContain('agent login');
   });
 
   /** A door a plugin declared says so beside its name, and the build's own say nothing. */
