@@ -193,6 +193,24 @@ public sealed class ContextBriefTests
     }
 
     [Fact]
+    public void A_page_opened_names_neither_its_user_nor_a_machine_path()
+    {
+        var brief = ContextBrief.Compose(Line(Part(
+            "c0nv0001",
+            Asked("Look into the report."),
+            Call("t1", "Fetch", kind: "fetch", input: """{"url":"https://reader:hunter2@example.test/page"}"""),
+            Call("t2", "browser_navigate", kind: "other", input: $$"""{"url":"file:///{{Tree}}/docs/a.html"}"""),
+            Call("t3", "browser_navigate", kind: "other", input: """{"url":"file:///Y:/elsewhere/b.html"}"""),
+            Said("Looked."), Ended())));
+
+        var text = Folded(brief);
+        Assert.Contains("It opened `https://example.test/page`, `docs/a.html` and `b.html`.", text);
+        Assert.DoesNotContain("hunter2", brief.Text);
+        Assert.DoesNotContain("X:/daoris", brief.Text);
+        Assert.DoesNotContain("Y:", brief.Text);
+    }
+
+    [Fact]
     public void A_turn_with_edits_and_reads_names_both_and_a_file_it_edited_is_not_named_as_read()
     {
         var brief = ContextBrief.Compose(Line(Part(
