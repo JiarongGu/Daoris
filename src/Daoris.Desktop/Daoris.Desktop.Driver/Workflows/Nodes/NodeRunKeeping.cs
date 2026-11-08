@@ -63,6 +63,8 @@ internal sealed class NodeRunKeeping(
         if (record.Attempts.Any(attempt => attempt.State != AttemptStates.Settled || record.RetryPending(attempt))) return;
         // A failure kept for the person waits on their word, which only an armed run applies, so the run is not over while one stands.
         if (record.Attempts.Any(attempt => attempt.Resolution is null && WorkPerformer.KeptFailure(record, attempt))) return;
+        // A word kept after this pass applied its words (a skip or stop, or a new attempt asked for) is applied by the next pass, which an ended run never takes.
+        if (record.Pending.Count > 0 || record.Attempts.Any(attempt => attempt is { State: AttemptStates.Settled, Resolution: HeldResolutions.Again } && attempt.Plugin != QuestClosing.Sender)) return;
         var settled = !NodeStates.Live.Contains(WorkPerformer.StatusOf(record, governed.Graph.End).State)
                       || !governed.Graph.Nodes.Any(node => WorkPerformer.StatusOf(record, node.Id).State
                           is NodeStates.Ready or NodeStates.Active or NodeStates.Unknown or NodeStates.Invalidated);

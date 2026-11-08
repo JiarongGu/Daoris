@@ -308,11 +308,13 @@ public sealed class NodeRuntime(
                 var kept = _closer is null ? null : (Func<string, NodeGraph?>)(digest => ClosureGraphs.Read(home, digest));
                 // The runs bound to graph versions, each owed a pass where a start of its chain asked one or this is the process's first look,
                 // which judges every bound run once, so a restart loses nothing.
-                var runs = _graphRuns.Read().Select(run => run with { Asked = _restarted || _returned.ContainsKey(run.Run) }).ToList();
+                // Only the asks read here are taken off below: one that lands while the pass governs waits for the next.
+                var asks = _returned.Keys.ToHashSet(StringComparer.Ordinal);
+                var runs = _graphRuns.Read().Select(run => run with { Asked = _restarted || asks.Contains(run.Run) }).ToList();
                 (_governed, _choices) = (NodeGoverning.Govern(look.Config, read, look.Steps(), kept, look.Bound, runs, bindings)
                     .ToDictionary(each => each.Unit.Id, StringComparer.Ordinal), choices);
                 _restarted = false;
-                foreach (var run in runs) _returned.TryRemove(run.Run, out _);
+                foreach (var run in asks) _returned.TryRemove(run, out _);
                 _byTold = NodeEvaluations.ByTold(_governed.Values);
                 bindings.AddRange(Owing.LeftBefore(_governed.Values));
                 _quests = NodeGoverning.Quests(read);
