@@ -114,6 +114,22 @@ public sealed class IntegrationLooksTests : IDisposable
     }
 
     [Fact]
+    public void A_member_held_for_the_owner_whose_candidate_ended_is_a_held_head_and_not_a_queued_one()
+    {
+        var store = Store();
+        Assert.Null(store.Add(Request("r1", "feature/a", "unit-a")));
+        var claim = store.Form(new IntegrationForming("engine", "aurora", "main", Line, ["r1"])).Claim!;
+        store.End(claim, store.OpenStep(claim.Candidate)!.Id, new IntegrationStepEnd(IntegrationStepOutcomes.Done)
+        {
+            Members = [new IntegrationMemberChange("r1", IntegrationMemberStates.Held) { Said = "it conflicts in a.txt", Ends = true }],
+            Ends = IntegrationCandidateEnds.Empty,
+        });
+
+        Assert.Empty(IntegrationLooks.Of(store, "engine").Queue);
+        Assert.Equal(IntegrationHeads.Held, IntegrationLooks.HeadOf(store, "unit-a")!.State);
+    }
+
+    [Fact]
     public void A_dropped_and_a_settled_request_leave_the_queue_for_the_history_the_head_reads()
     {
         var store = Store();

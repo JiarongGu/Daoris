@@ -142,8 +142,10 @@ public static class IntegrationLooks
             }, request.Line);
         }
 
-        if (store.MemberOf(request.Id) is not { Stands: true } member) return new IntegrationHead(IntegrationHeads.Queued, request.Line);
-        if (member.State == IntegrationMemberStates.Held) return new IntegrationHead(IntegrationHeads.Held, request.Line);
+        // A held member waits for the owner, though its candidate ended and ended it: the queue leaves it out (`IntegrationStore.Queued`).
+        var latest = store.MemberOf(request.Id);
+        if (latest is { State: IntegrationMemberStates.Held }) return new IntegrationHead(IntegrationHeads.Held, request.Line);
+        if (latest is not { Stands: true } member) return new IntegrationHead(IntegrationHeads.Queued, request.Line);
         var step = AtOf(store, member.Candidate);
         // A candidate the policy held for a decide holds each of its members with it.
         if (step == IntegrationStepNames.Judge && store.Steps(member.Candidate).LastOrDefault() is { Outcome: IntegrationStepOutcomes.Held })
