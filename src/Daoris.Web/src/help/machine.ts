@@ -1,6 +1,6 @@
 import type { Session } from '../data/api';
 import type { RepositoryLine } from '../settings/repository/Lines';
-import { byTool, type Tool, type ToolDoor } from '../agents/tools';
+import { type AgentSheet, byTool, type Tool, type ToolDoor } from '../agents/tools';
 import { answeredPark } from '../design/ui';
 
 /**
@@ -44,6 +44,8 @@ export function readMachine(answers: {
   /** The driver's standing state. The adapters are `""` for none: the bridge leaves a null out. */
   driver?: { drivable?: readonly string[]; helperAgent?: string; intakeAgent?: string };
   harnesses?: readonly ToolDoor[];
+  /** The roster's sheet, which says what an agent's account takes: a sign-in, or a key alone. */
+  agents?: readonly AgentSheet[];
   sessions?: readonly Pick<Session, 'state' | 'said'>[];
   lines?: readonly RepositoryLine[];
 }): Machine {
@@ -59,7 +61,7 @@ export function readMachine(answers: {
     attached: true,
     repositories,
     drivable,
-    tools: byTool(answers.harnesses ?? []),
+    tools: byTool(answers.harnesses ?? [], answers.agents),
     waiting: (answers.sessions ?? []).filter((session) => session.state === 'awaiting-person' && !answeredPark(session)).length,
     unnamedLines: (answers.lines ?? [])
       .filter((line) => !line.notReadYet && line.source === 'none' && drivable.includes(line.repository))
