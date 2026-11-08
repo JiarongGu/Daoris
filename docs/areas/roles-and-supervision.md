@@ -258,7 +258,10 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they start wi
     however it ends, bounded by ten minutes, taking no place under the cap. Its record opens through `POST /api/supervise`,
     marked `decides` with the attempt (the `supervise` work) and `serves` with the subject's session; its prompt
     (`SupervisorInstruction`) hands the same facts as the holder's print, one composer (`SupervisorFacts`) serving both, the acts
-    its grants cover and the bounds. Its answer is the one fenced block of its last message (`SupervisorBlock`), kept through its
+    its grants cover and the bounds; an agent takes the question kind's subjects and the points of the course and limit kinds
+    (`SupervisorKinds.IsPoint`), and the landing, allow and files kinds' subjects start no turn yet. Its answer is the one fenced
+    block of its last message (`SupervisorBlock`), which names a `choice` exactly where the act chooses a label, as the door's form
+    does, and is kept through its
     kind's row by the decision door (`AgentSupervisorDesk`), its grant and hold read again first, the decision keeping the
     agent's holder (role, revision, choice, tier that ran, posture, session, tokens). A limited or transient end is a pass and the
     next look takes the next choice; a failed end, a timeout, a block that does not read or names another subject ends the

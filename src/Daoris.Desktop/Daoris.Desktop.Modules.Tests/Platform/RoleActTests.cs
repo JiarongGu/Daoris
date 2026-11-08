@@ -224,7 +224,6 @@ public sealed class RoleActTests : IDisposable
         Assert.Equal((true, true), (stop.Standing, stop.Waiting));
     }
 
-    /// <summary>A stop that finds its process gone since the gates is refused `ended` and recorded nowhere: nothing was stopped, and none is said done.</summary>
     [Fact]
     public async Task A_live_stop_whose_process_ended_after_the_gates_is_refused_and_not_recorded()
     {
@@ -469,7 +468,6 @@ public sealed class RoleActTests : IDisposable
 
         public bool OwnTree(string? tree) => tree is not null && Root.Length > 0 && tree.StartsWith(System.IO.Path.Combine(Root, "trees"), StringComparison.OrdinalIgnoreCase);
 
-        /// <summary>False where the process ended between the act's gates and its stop: nothing was there to stop.</summary>
         public bool Stoppable { get; set; } = true;
 
         public bool StopHere(string id, Noted note)

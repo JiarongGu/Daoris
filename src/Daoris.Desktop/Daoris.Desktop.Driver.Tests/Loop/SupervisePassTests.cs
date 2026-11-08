@@ -104,7 +104,6 @@ public sealed class SupervisePassTests : IDisposable
         Assert.Null(await new SupervisePass(driver.Context, driver).StartAsync(Point, desk, default));
     }
 
-    /// <summary>The limit kind's points are referred points as the course kind's are, so an agent holding `limit.move` is handed one's facts and takes its turn.</summary>
     [Fact]
     public async Task A_limit_point_is_handed_the_point_s_facts_and_takes_a_turn()
     {
