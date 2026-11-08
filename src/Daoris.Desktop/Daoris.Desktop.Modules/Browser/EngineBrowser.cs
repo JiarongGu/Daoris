@@ -43,6 +43,14 @@ public static class EngineBrowser
         arguments.Count > 0 && string.Equals(arguments[0], Argument, StringComparison.Ordinal);
 
     /// <summary>
+    /// Whether <paramref name="error"/> is the browser failing to come up or answer, which the person is told in a message box: its own
+    /// words, the engine's port refusing or timing out (an HTTP failure, a call that outlasted its wait) and the websocket dropping.
+    /// Any other is a defect, left to the machine log.
+    /// </summary>
+    public static bool IsBringUpFailure(Exception error) =>
+        error is InvalidOperationException or TimeoutException or HttpRequestException or WebSocketException or TaskCanceledException;
+
+    /// <summary>
     /// Its profile, under the home. Not the WebView2 window's `browser/profile`: a different
     /// engine's files, and the person signs in here once more.
     /// </summary>

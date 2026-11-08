@@ -41,6 +41,23 @@ public sealed class EngineBrowserTests : Bridge
     }
 
     /// <summary>
+    /// A press on <i>open browser</i> and a link opened in it are told the same failures: a port that refuses or does not answer in
+    /// time (an HTTP failure, a cancelled call, a websocket) is the browser not coming up, as Daoris's own words about it are.
+    /// </summary>
+    [Fact]
+    public void A_port_that_refuses_or_times_out_is_a_failure_to_come_up_and_a_defect_is_not()
+    {
+        Assert.True(EngineBrowser.IsBringUpFailure(new InvalidOperationException("stopped as it started")));
+        Assert.True(EngineBrowser.IsBringUpFailure(new TimeoutException("opened no window")));
+        Assert.True(EngineBrowser.IsBringUpFailure(new HttpRequestException("refused")));
+        Assert.True(EngineBrowser.IsBringUpFailure(new TaskCanceledException("timed out")));
+        Assert.True(EngineBrowser.IsBringUpFailure(new System.Net.WebSockets.WebSocketException("dropped")));
+
+        Assert.False(EngineBrowser.IsBringUpFailure(new NullReferenceException()));
+        Assert.False(EngineBrowser.IsBringUpFailure(new IOException()));
+    }
+
+    /// <summary>
     /// The application is the browser only when its first argument says so. First, so an engine
     /// process (`--type=`, which Chromium starts from the same executable) is never taken for it, and
     /// the window's own start is never taken for it either.
