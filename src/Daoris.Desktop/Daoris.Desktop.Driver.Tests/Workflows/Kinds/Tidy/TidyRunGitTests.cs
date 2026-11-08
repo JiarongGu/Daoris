@@ -141,6 +141,25 @@ public sealed class TidyRunGitTests : ReviewLandingFixture
     }
 
     [Fact]
+    public async Task A_chain_tidied_in_part_keeps_the_part_it_ended_when_the_next_pass_finds_its_branch_gone_and_is_whole_only_then()
+    {
+        var chain = await ChainAsync(PullRequestStates.Completed);
+        var landings = new LandedBranches(_home);
+        var ended = new TidiedPart(chain.Part.Branch, chain.Tip) { KeptOn = "refs/daoris/discarded/earlier", Act = "act-1" };
+        landings.Tidied("engine", "feature/q1-fix", new ChainTidied(chain.Tip, DateTimeOffset.UtcNow) { Parts = [ended], Partly = true });
+        Assert.False(TidyReading.Tidied(landings.Of("engine", "feature/q1-fix")));
+        await GitAsync(chain.Root, "update-ref", "-d", $"refs/heads/{chain.Part.Branch}");
+
+        await new TidyDoor(_home).PerformAsync(
+            new TidyStart("run:q1", new NodeDeclaration("tidy", NodeKinds.Tidy, 1, NodeReach.Performed), "engine", "default", chain.Root, "feature/q1-fix", chain.Tip), CancellationToken.None);
+
+        var tidied = landings.Of("engine", "feature/q1-fix")!.Tidied!;
+        Assert.False(tidied.Partly);
+        Assert.Equal(ended, Assert.Single(tidied.Parts));
+        Assert.True(TidyReading.Tidied(landings.Of("engine", "feature/q1-fix")));
+    }
+
+    [Fact]
     public async Task A_request_closed_without_merging_reaches_the_monitor_routes_to_the_persons_task_and_ends_nothing()
     {
         var chain = await ChainAsync(PullRequestStates.Abandoned);

@@ -45,23 +45,37 @@ internal sealed class HeldWordsQueue(SessionWords owner, DriverLoop loop, WordsS
     public void Wake(string session)
     {
         TaskCompletionSource? told = null;
+        Waiting? idle = null;
         lock (_gate)
         {
             if (_waiting.TryGetValue(session, out var waiting))
             {
                 told = waiting.Moved;
                 waiting.Moved = Signal();
+                // Words held with no pump running (one a failure nothing read ended) are tried again at this move.
+                if (!waiting.Pumping && waiting.Words.Count > 0) idle = waiting;
             }
         }
 
         told?.TrySetResult();
+        if (idle is not null)
+        {
+            var now = Signal();
+            now.SetResult();
+            StartPump(session, idle, now);
+        }
+
         owner.Tell(session);
     }
 
     public void StartPump(string id, Waiting waiting, TaskCompletionSource moved)
     {
-        if (waiting.Pumping) return;
-        waiting.Pumping = true;
+        lock (_gate)
+        {
+            if (waiting.Pumping) return;
+            waiting.Pumping = true;
+        }
+
         _ = Task.Run(() => PumpAsync(id, waiting, moved));
     }
 
@@ -133,9 +147,15 @@ internal sealed class HeldWordsQueue(SessionWords owner, DriverLoop loop, WordsS
 
                     if (waiting.Words.Count == 0)
                     {
-                        waiting.Pumping = false;
+                        EndPump(waiting);
                         return;
                     }
+                }
+                catch
+                {
+                    // Whatever ends the pump with words held lets the record's next move, or the next word held, start it again.
+                    EndPump(waiting);
+                    throw;
                 }
                 finally
                 {
@@ -147,6 +167,11 @@ internal sealed class HeldWordsQueue(SessionWords owner, DriverLoop loop, WordsS
         {
             // The loop is closing: what is held stays in its file for the next shell to try.
         }
+    }
+
+    private void EndPump(Waiting waiting)
+    {
+        lock (_gate) waiting.Pumping = false;
     }
 
     /// <summary>
