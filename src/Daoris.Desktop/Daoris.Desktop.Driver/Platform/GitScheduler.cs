@@ -18,9 +18,10 @@ namespace Daoris.Driver;
 /// and that start has not taken its place, so the answer reads a state at least as new as the ask's own start would have.</para>
 /// <para><b>Ending</b>: a read that takes no lock (<see cref="GitRunAsk.Endable"/>) is dropped while queued and ended while running once
 /// every asker has left. Every other git is dropped only while queued; once placed it runs untokened to its end or its bound.</para>
-/// <para><b>Re-entry</b>: an ask made beneath a git waiting outside Daoris (<see cref="Beneath"/>: a hook of a push asking a read) is
-/// placed at once in a place that git lends, above the bound and counted toward none of its caps, one at a time for each parent, to a
-/// depth of two; deeper is refused as <c>git.start.depth</c>. So no act waits on a place its own git holds.</para>
+/// <para><b>Re-entry</b>: an ask made beneath a placed git (<see cref="Beneath"/>, told from the caller's process ancestry by
+/// <see cref="GitCallers"/>: a hook of a push asking a read, a diff's textconv helper asking the window) is placed at once in a place
+/// that git lends, above the bound and counted toward none of its caps, one at a time for each parent, to a depth of two; deeper is
+/// refused as <c>git.start.depth</c>. So no git waits on a place its own descendant needs.</para>
 /// <para><b>A git that outlived its kill</b> leaves the bound and every class's count for a count apart, said as <c>git.place.apart</c>
 /// and again at its exit; while its repository holds one, the background's asks of it are answered at once as git's failure
 /// (<c>stalled</c>), and a person's are placed as asked. So hung gits stall their own repositories alone.</para>
@@ -79,14 +80,37 @@ public sealed class GitScheduler
     }
 
     /// <summary>
-    /// Until disposed, the gits this flow asks descend from the git in <paramref name="place"/>: a hook's ask of a git waiting outside
-    /// Daoris, placed in a place that git lends. Null, or a place that waits on nothing outside, lends none.
+    /// Until disposed, the gits this flow asks descend from the git in <paramref name="place"/>: a hook's ask, or a textconv or filter
+    /// helper's, placed in a place that git lends, since that git cannot end before its descendant is answered. Null lends none.
     /// </summary>
     internal static IDisposable Beneath(GitPlace? place)
     {
         var before = s_beneath.Value;
         s_beneath.Value = place;
         return new Restore(() => s_beneath.Value = before);
+    }
+
+    /// <summary>The place of a running git among <paramref name="ancestors"/> (a caller's parents, nearest first); null where none is one's.</summary>
+    internal GitPlace? PlaceOf(IReadOnlyList<int> ancestors)
+    {
+        lock (_gate)
+        {
+            foreach (var id in ancestors)
+            {
+                if (_running.FirstOrDefault(entry => entry.Place?.Runs(id) == true) is { } held) return held.Place;
+            }
+        }
+
+        return null;
+    }
+
+    /// <summary>Whether any git holds a place now: no caller is beneath one otherwise, so its ancestry is not read.</summary>
+    internal bool Any
+    {
+        get
+        {
+            lock (_gate) return _running.Count > 0;
+        }
     }
 
     /// <summary>Tell <paramref name="timed"/> how long each git this flow asks waited in its queue, in <see cref="Stopwatch"/> ticks, until disposed.</summary>
@@ -149,7 +173,7 @@ public sealed class GitScheduler
 
     private async Task<T> AskAsync<T>(GitRunAsk ask, Func<CancellationToken, Task<T>> run, CancellationToken ct)
     {
-        var parent = s_beneath.Value is { Wait: GitWait.Outside } beneath ? beneath : null;
+        var parent = s_beneath.Value;
         if (parent is { Depth: >= LentDepth })
         {
             Said("git.start.depth", [("depth", parent.Depth + 1)]);
