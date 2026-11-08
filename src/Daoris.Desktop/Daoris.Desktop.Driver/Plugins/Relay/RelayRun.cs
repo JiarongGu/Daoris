@@ -164,7 +164,8 @@ public sealed class RelayRun
                 if (new FileInfo(file).Length > 1024) continue;
                 using var read = JsonDocument.Parse(AtomicFile.ReadText(file));
                 if (!read.RootElement.TryGetProperty("pid", out var named) || !named.TryGetInt32(out var said) || said != pid) continue;
-                if (!Alive(pid)) File.Delete(file);
+                // This process's own number is alive by definition, and its file cannot be this relay's yet: a killed relay's, its pid reused.
+                if (pid == Environment.ProcessId || !Alive(pid)) File.Delete(file);
             }
             catch (Exception error) when (error is IOException or UnauthorizedAccessException or JsonException or InvalidOperationException)
             {
