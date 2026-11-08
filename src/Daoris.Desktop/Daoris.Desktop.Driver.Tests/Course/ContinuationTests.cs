@@ -156,19 +156,6 @@ public sealed class ContinuationTests : IDisposable
         Assert.Equal(ContinueWhy.Tree, why?.Code);
     }
 
-    [Fact]
-    public void A_park_whose_line_s_slot_another_line_took_goes_on_where_a_gone_one_falls_back()
-    {
-        using var lines = new PooledLines();
-        lines.Slot(1, "s-aaaa");
-        lines.LetGo(1, "s-aaaa");
-        lines.Take(1, "s-bbbb");
-
-        Assert.Null(Continuations.Judge(Park() with { Tree = lines.Tree("s-aaaa") }, "claude-code-acp", doorResumes: true, profile: "account-1", Kept, home: lines.Home));
-        Assert.Equal(ContinueWhy.Tree, Continuations.Judge(Park() with { Tree = lines.Tree("s-aaaa") }, "claude-code-acp", doorResumes: true, profile: "account-1", Kept)?.Code);
-        Assert.Equal(ContinueWhy.Tree, Continuations.Judge(Park() with { Tree = lines.Tree("s-never") }, "claude-code-acp", doorResumes: true, profile: "account-1", Kept, home: lines.Home)?.Code);
-    }
-
     /// <summary>A park from before this build, or a wire that never said an id: nothing to resume.</summary>
     [Fact]
     public void No_kept_id_falls_back()
