@@ -148,6 +148,12 @@ public sealed class TreePool(
     /// <summary>A returning line's slot: a take with <see cref="PoolTake.Returns"/>.</summary>
     internal Task<PoolDone> ReturnAsync(PoolTake take, CancellationToken ct = default) => TakeAsync(take with { Returns = true }, ct);
 
+    /// <summary>A line's finish: its own ignored paths set aside with its record, its slot detached at its tip, its branch deleted through the journal.</summary>
+    internal Task<PoolDone> FinishAsync(PoolFinish finish, CancellationToken ct = default) => new TreePoolFinishes(this, Seams).FinishAsync(finish, ct);
+
+    /// <summary>A slot let go for good: its folder moved aside whole, git's record of it dropped, its row removed.</summary>
+    internal Task<PoolDone> RetireAsync(PoolSite site, int number, string holder, CancellationToken ct = default) => new TreePoolRetires(this, Seams).RetireAsync(site, number, holder, ct);
+
     internal Task<PoolDone> EndAsync(PoolEnd end, CancellationToken ct = default) => new TreePoolEnds(this, Seams).EndAsync(end, ct);
 
     /// <summary>The look's takeover of a dead run's claim on a slot, settled by what the disk shows.</summary>

@@ -60,6 +60,9 @@ internal sealed class PoolSeams
     /// <summary>The key of the rules' <c>toolchain</c> outputs in a tree; empty where none are read.</summary>
     internal Func<string, CancellationToken, Task<string>>? Toolchain { get; init; }
 
+    /// <summary>The bytes of a slot's ignored paths outside <c>node_modules</c> past which its builds are renewed at the next take; null reads <see cref="PoolLimits.RenewBytes"/>.</summary>
+    internal long? RenewBytes { get; init; }
+
     /// <summary>Called with the phase an act has reached and its slot's folder; a test stops an act there by throwing.</summary>
     internal Func<string, string, Task>? Reached { get; init; }
 

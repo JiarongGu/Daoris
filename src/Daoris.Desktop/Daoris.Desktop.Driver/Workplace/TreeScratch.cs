@@ -15,11 +15,7 @@ internal static class TreeScratch
     /// path segment, so <c>src/app/node_modules/</c> is one. Any other shared ignored folder is looked into
     /// (<see cref="WrittenSince"/>), since a session's own scratch (<c>devtools/.tmp</c>) lives in such a folder too.
     /// </summary>
-    private static readonly HashSet<string> BuildFolders = new(StringComparer.OrdinalIgnoreCase)
-    {
-        "node_modules", "bin", "obj", "dist", "build", "out", ".angular", ".next", "coverage", "target", "__pycache__", ".venv",
-        ".gradle",
-    };
+    private static readonly HashSet<string> BuildFolders = BuildFolderList.Removal;
 
     /// <summary>
     /// The folders every build makes under these names, in any project: a path under one goes with the tree even where

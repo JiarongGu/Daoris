@@ -1,5 +1,3 @@
-using System.Security.Cryptography;
-
 namespace Daoris.Driver;
 
 /// <summary>
@@ -32,7 +30,7 @@ internal sealed record SlotIgnored(
                 FileKind.Dependency when record?.Of(top) is { Installing: false } || IsCompanion(record, top) => kept,
                 FileKind.Output => outputs,
                 FileKind.Intermediate or FileKind.Cache => intermediates,
-                FileKind.Local when file.Copy && SameAsCheckout(site.Root, slot, top) => copies,
+                FileKind.Local when TreeCopies.IsOwn(record, slot, top) => copies,
                 _ => own,
             };
             list.Add(top);
@@ -43,19 +41,4 @@ internal sealed record SlotIgnored(
 
     private static bool IsCompanion(TreeFilesState? record, string top) =>
         record is not null && record.Placements.Any(each => each.Companions.Any(companion => string.Equals(companion.Path, top, StringComparison.Ordinal)));
-
-    private static bool SameAsCheckout(string checkout, string slot, string top)
-    {
-        var source = Path.Combine(checkout, top);
-        var copy = Path.Combine(slot, top);
-        if (!File.Exists(source) || !File.Exists(copy)) return false;
-        try
-        {
-            return SHA256.HashData(File.ReadAllBytes(source)).AsSpan().SequenceEqual(SHA256.HashData(File.ReadAllBytes(copy)));
-        }
-        catch (Exception error) when (error is IOException or UnauthorizedAccessException)
-        {
-            return false;
-        }
-    }
 }

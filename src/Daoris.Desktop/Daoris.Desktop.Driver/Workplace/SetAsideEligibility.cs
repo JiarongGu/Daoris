@@ -29,6 +29,9 @@ public static class SetAsideClass
     /// leftover, a folder from before this build, or one whose ref is dropped by hand: its days, as built.
     /// </summary>
     public const string Unmarked = "unmarked";
+
+    /// <summary>A folder a take set aside from a line that may come back, held as that line's own until the line finishes; no days and no size limit take it.</summary>
+    public const string Line = "line";
 }
 
 /// <summary>
@@ -68,6 +71,7 @@ internal sealed record SetAsideEligibility(string Class, DateTimeOffset Threshol
         if (manifest is null && problem is not null) return new(SetAsideClass.Unread, moved, null, false, null);
         if (manifest?.Finished is not { } finished)
         {
+            if (PoolAsides.Holds(folder)) return new(SetAsideClass.Line, moved, null, false, manifest);
             return new(SetAsideClass.Unmarked, moved, moved + days, false, manifest);
         }
 
