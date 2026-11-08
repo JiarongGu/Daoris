@@ -367,6 +367,7 @@ public sealed record HomeEntry(string Name, HomeCategory Category, string New, s
     public static readonly HomeEntry Knowledge = new("knowledge", HomeCategory.Data, "data/knowledge.db", "knowledge.db");
     // The desktop's own store, a database of the machine's, opened by the driver library alone; its old place is its new one.
     public static readonly HomeEntry DesktopDb = new("desktop-db", HomeCategory.Data, "data/desktop.db", "data/desktop.db");
+    public static readonly HomeEntry Memory = new("memory", HomeCategory.Data, "data/memory.db", "memory.db");
     public static readonly HomeEntry Sessions = new("sessions", HomeCategory.Data, "data/sessions", "sessions");
     public static readonly HomeEntry Helpers = new("helpers", HomeCategory.Data, "data/helpers", "helpers");
     public static readonly HomeEntry Partners = new("partners", HomeCategory.Data, "data/partners", "partners");
@@ -468,7 +469,7 @@ public sealed record HomeEntry(string Name, HomeCategory Category, string New, s
     [
         DriverConfig, Harnesses, Accounts, Cooling, Windows, Reads, Permissions, Files, FilesFound, FilesAsks, RuleProposals, Tools, PluginState, Plugins,
         PluginApprovals, Usage,
-        Landings, SessionBranches, LinesMoved, OverlapsTold, RegistryFollowed, Abandoned, Update, Knowledge, DesktopDb, Sessions, Helpers, Partners, Handed, Setup,
+        Landings, SessionBranches, LinesMoved, OverlapsTold, RegistryFollowed, Abandoned, Update, Knowledge, DesktopDb, Memory, Sessions, Helpers, Partners, Handed, Setup,
         Workflows, HelpProposals, ConfiguredAccess, OpinionGates, OpinionDues, BrowserSettings, BrowserFavorites, HomeId, Brainstorms,
         UsageHistory, Keeping, Notices, GitIdentities, StandingConfirmation, AgentOffers, PipeWaiting, ActFiles, PlaceReceipts, StewardDesk,
         LastBuild, Migration, Salvage,
