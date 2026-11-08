@@ -319,9 +319,22 @@ public sealed class StateSlice
             if (wake.When is null || wake.When(message.Payload)) Wake();
             return Task.CompletedTask;
         })).ToList();
-        heard.AddRange(Hears.Select(hear => hear(Wake)));
         try
         {
+            // A hearer that cannot watch what it watches is said and left, never the slice's end: the slice is still judged at every
+            // other wake and each period, where a throw here ended it unjudged for the process's life.
+            foreach (var hear in Hears)
+            {
+                try
+                {
+                    heard.Add(hear(Wake));
+                }
+                catch (Exception error) when (!ct.IsCancellationRequested)
+                {
+                    Failed?.Invoke(error);
+                }
+            }
+
             var clock = Stopwatch.StartNew();
             var due = ManifestEvery;
             await SurvivingAsync(JudgeAsync, ct).ConfigureAwait(false);

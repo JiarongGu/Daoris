@@ -41,7 +41,7 @@ internal static class FoundFiles
         }
         catch (Exception error) when (error is JsonException or IOException or UnauthorizedAccessException)
         {
-            return new(null, [$"{FileName} does not read ({error.Message}); the next reading writes it again"]);
+            return new(null, [$"{FileName} does not read ({(error is JsonException ? error.Message : error.GetType().Name)}); the next reading writes it again"]);
         }
     }
 

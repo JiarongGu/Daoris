@@ -72,6 +72,24 @@ describe('the person key (PERSONDOOR1f)', () => {
     expect(carried(fetcher)).toEqual([{ method: 'POST', key: KEY }, { method: 'POST', key: NEW }]);
   });
 
+  it("is asked again on a later write after one failed ask left the page holding none", async () => {
+    let asked = 0;
+    await holdPersonKey(async () => { if (asked++ === 1) throw new Error('NO_ROUTE'); return asked === 1 ? KEY : NEW; });
+    const only = "Only the person can give a review's verdict, and this call carried no key of theirs. Nothing was kept.";
+    const stale = 'This call carried a key from an earlier start of this service, and each start has its own. Nothing was kept.';
+    const fetcher = vi.fn()
+      .mockResolvedValueOnce(Response.json({ error: stale, code: 'stale' }, { status: 403 }))
+      .mockResolvedValueOnce(Response.json({ error: only, code: 'person-only' }, { status: 403 }))
+      .mockResolvedValueOnce(Response.json({ error: only, code: 'person-only' }, { status: 403 }))
+      .mockResolvedValueOnce(kept());
+    vi.stubGlobal('fetch', fetcher);
+
+    await expect(api.reviewQuest('q2', 'skipped', null, null)).rejects.toMatchObject({ code: 'person-only' });
+    await api.reviewQuest('q2', 'skipped', null, null);
+
+    expect(carried(fetcher).at(-1)).toEqual({ method: 'POST', key: NEW });
+  });
+
   it("says a second stale, and the person's door refused, in the host's own sentence with its code", async () => {
     await holdPersonKey(async () => KEY);
     const stale = 'This call carried a key from an earlier start of this service, and each start has its own. Nothing was kept.';

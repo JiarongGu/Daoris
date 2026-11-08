@@ -127,7 +127,7 @@ public sealed class BrainstormBox(BrainstormScope scope)
         {
             var path = Path.Combine(room, file);
             if (!File.Exists(path)) return null;
-            using var document = JsonDocument.Parse(File.ReadAllText(path));
+            using var document = JsonDocument.Parse(AtomicFile.ReadText(path));
             if (document.RootElement.ValueKind != JsonValueKind.Object || !document.RootElement.TryGetProperty(list, out var items)
                 || items.ValueKind != JsonValueKind.Array)
             {
@@ -146,7 +146,7 @@ public sealed class BrainstormBox(BrainstormScope scope)
     {
         try
         {
-            return File.Exists(path) ? File.ReadAllText(path) : null;
+            return File.Exists(path) ? AtomicFile.ReadText(path) : null;
         }
         catch (Exception error) when (error is IOException or UnauthorizedAccessException)
         {

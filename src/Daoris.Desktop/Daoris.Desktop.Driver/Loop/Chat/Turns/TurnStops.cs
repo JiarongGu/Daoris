@@ -98,7 +98,18 @@ internal sealed class TurnStops(TurnState state, Func<Task> interrupt)
             state.Publish();
         }
 
-        if (stop is not null) await SendStopAsync(stop).ConfigureAwait(false);
+        if (stop is not null)
+        {
+            try
+            {
+                await SendStopAsync(stop).ConfigureAwait(false);
+            }
+            catch (Exception error) when (error is IOException or ObjectDisposedException or InvalidOperationException)
+            {
+                // The agent is gone and its turn with it; the words already withdrawn still go back to the person.
+            }
+        }
+
         // The words a conversation goes on with are not handed back: the page never listed them, and they stay on
         // the record, which takes them off only once they go. Nor is a helper's answer: it is no word of the
         // person's to put back in the composer, and it stays on the record for a later turn. Nor is Daoris's own word:

@@ -1,7 +1,7 @@
 import { COMMANDS, type CommandEntry } from './commands';
 
 /** What a key handler is handed: the key, where it is, and the modifiers held. */
-export type Pressed = Pick<KeyboardEvent, 'key' | 'code' | 'ctrlKey' | 'shiftKey' | 'altKey' | 'metaKey'>;
+export type Pressed = Pick<KeyboardEvent, 'key' | 'code' | 'ctrlKey' | 'shiftKey' | 'altKey' | 'metaKey'> & Partial<Pick<KeyboardEvent, 'getModifierState'>>;
 
 /** The place each printed key stands at, for the keys whose `key` Shift or a layout changes. */
 const PLACE: Record<string, string> = { '`': 'Backquote', ',': 'Comma' };
@@ -24,10 +24,11 @@ export function isPress(event: Pressed, combo: string): boolean {
   if (!plus && event.shiftKey !== mods.has('Shift')) return false;
   if (event.altKey !== mods.has('Alt')) return false;
 
+  const byPlace = !event.getModifierState?.('AltGraph');
   if (/^F\d{1,2}$/.test(key)) return event.key === key;
-  if (/^[A-Z]$/.test(key)) return event.key.toLowerCase() === key.toLowerCase() || event.code === `Key${key}`;
-  if (/^\d$/.test(key)) return event.key === key || event.code === `Digit${key}`;
-  return event.key === key || event.code === PLACE[key];
+  if (/^[A-Z]$/.test(key)) return event.key.toLowerCase() === key.toLowerCase() || (byPlace && event.code === `Key${key}`);
+  if (/^\d$/.test(key)) return event.key === key || (byPlace && event.code === `Digit${key}`);
+  return event.key === key || (byPlace && event.code === PLACE[key]);
 }
 
 /**

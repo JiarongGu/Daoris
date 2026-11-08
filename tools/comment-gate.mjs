@@ -23,6 +23,7 @@ import { existsSync, readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { execGit, isMain, repositoryFiles } from './fsx.mjs';
+import { jsxEnd } from './js-jsx.mjs';
 import { templateEnd } from './js-template.mjs';
 
 const SOURCE = /\.(cs|ts|tsx|mjs|js)$/;
@@ -40,9 +41,8 @@ const HISTORY = /\b(?:was|used to|formerly|previously)\b/gi;
 
 /**
  * The comments of `src`, one entry per line that carries one: `{ line, text, whole, ranges }`, `text` the comment's words on that
- * line, `whole` true where nothing else is on the line and `ranges` the `[from, to)` columns the comment spans there.
- */
-export function comments(src) {
+ * line, `whole` true where nothing else is on the line and `ranges` the `[from, to)` columns it spans there; `jsx` reads element text as no comment. */
+export function comments(src, { jsx = false } = {}) {
   const found = [];
   const lines = src.split(/\r?\n/);
   const starts = [];
@@ -93,7 +93,7 @@ export function comments(src) {
       end = src.indexOf('"'.repeat(q), i + q);
       end = end < 0 ? n : end + q;
     } else if (c === '`') {
-      end = templateEnd(src, i, spans);
+      end = templateEnd(src, i, spans, jsx ? jsxEnd : null);
     } else if (c === '"' || c === "'" || ((c === '$' || c === '@') && /^[$@]*"/.test(src.slice(i, i + 4)))) {
       let j = i;
       let verbatim = false;
@@ -121,6 +121,9 @@ export function comments(src) {
           else end++;
         }
       }
+    } else if (c === '<' && jsx && !afterValue()) {
+      end = jsxEnd(src, i, spans);
+      if (end <= i) end = -1;
     } else if (c === '/' && !afterValue()) {
       end = i + 1;
       let inClass = false;
@@ -165,17 +168,17 @@ export function comments(src) {
 }
 
 /** `{ comment, total }`: the comment lines and the non-blank lines of `src`. */
-export function share(src) {
+export function share(src, options) {
   const total = src.split(/\r?\n/).filter((l) => l.trim() !== '').length;
-  return { comment: comments(src).filter((c) => c.whole).length, total };
+  return { comment: comments(src, options).filter((c) => c.whole).length, total };
 }
 
 /** The comments `after` adds to `before`: those whose text stands more often after than before. */
-export function added(before, after) {
+export function added(before, after, options) {
   const seen = new Map();
-  for (const { text } of comments(before)) if (text) seen.set(text, (seen.get(text) ?? 0) + 1);
+  for (const { text } of comments(before, options)) if (text) seen.set(text, (seen.get(text) ?? 0) + 1);
   const fresh = [];
-  for (const c of comments(after)) {
+  for (const c of comments(after, options)) {
     if (!c.text) continue;
     const left = seen.get(c.text) ?? 0;
     if (left > 0) seen.set(c.text, left - 1);
@@ -196,15 +199,16 @@ export function namings(text) {
 /** The breaches of one file: `before` is its old text, or null where it is new. */
 export function judge(path, before, after) {
   const problems = [];
+  const options = { jsx: path.endsWith('.tsx') || path.endsWith('.tsx.template') };
   if (before !== null) {
-    const was = share(before);
-    const now = share(after);
+    const was = share(before, options);
+    const now = share(after, options);
     if (now.comment * was.total > was.comment * now.total) {
       const pct = (s) => `${((100 * s.comment) / Math.max(1, s.total)).toFixed(1)}%`;
       problems.push(`${path}: comments rose from ${pct(was)} (${was.comment}/${was.total}) to ${pct(now)} (${now.comment}/${now.total}) of its lines: take comments out of this file, or add less`);
     }
   }
-  for (const { line, text } of added(before ?? '', after)) {
+  for (const { line, text } of added(before ?? '', after, options)) {
     for (const [kind, word] of namings(text)) {
       problems.push(`${path}:${line}: a comment names ${kind} (${word}): the commit or the decision holds that, so say only why the code is as it is`);
     }

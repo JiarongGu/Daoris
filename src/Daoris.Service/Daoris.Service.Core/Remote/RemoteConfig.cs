@@ -69,7 +69,7 @@ public sealed record RemoteConfig(string Url, string Key)
 
         // A file that will not parse is a file that names no remote. The sync loop, not this reader, is
         // where "you configured a remote and it does not work" gets said out loud.
-        if (ParseObject(File.ReadAllText(path)) is not { } root) return map;
+        if (ParseObject(AtomicFile.ReadText(path)) is not { } root) return map;
 
         foreach (var entry in root.EnumerateObject())
         {

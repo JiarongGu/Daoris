@@ -39,6 +39,18 @@ public sealed class RemoteConfigTests : IDisposable
     }
 
     [Fact]
+    public void A_file_the_driver_has_just_moved_into_place_is_read_while_the_move_still_holds_it()
+    {
+        if (!OperatingSystem.IsWindows()) return;
+        File.WriteAllText(ConfigPath, """{ "aurora": { "url": "https://aurora.example.com", "key": "dk_aurorakey" } }""");
+
+        using (MoveHold.Take(ConfigPath))
+        {
+            Assert.Equal("dk_aurorakey", RemoteConfig.Load(Env(), ConfigPath)["aurora"].Key);
+        }
+    }
+
+    [Fact]
     public void The_file_names_a_remote_per_workspace()
     {
         File.WriteAllText(ConfigPath, """

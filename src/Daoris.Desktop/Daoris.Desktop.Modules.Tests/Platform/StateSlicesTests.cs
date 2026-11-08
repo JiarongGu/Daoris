@@ -524,6 +524,34 @@ public sealed class StateSlicesTests
         Assert.Equal(1, stopped);
     }
 
+    /// <summary>A hearer that cannot watch what it watches is said and left: the slice is judged, and the hearers before it are let go at the stop.</summary>
+    [Fact]
+    public async Task A_hearer_that_throws_is_said_and_the_slice_is_judged_all_the_same()
+    {
+        var failures = new List<Exception>();
+        var stopped = 0;
+        var slice = new StateSlice("test", _bus, _ => Task.FromResult<IReadOnlyList<SliceJudged>?>(Judged()), "e1")
+        {
+            ManifestEvery = TimeSpan.FromHours(1),
+            Failed = failures.Add,
+            Hears =
+            [
+                _ => new Stop(() => Interlocked.Increment(ref stopped)),
+                _ => throw new IOException("cannot watch the folder"),
+            ],
+        };
+
+        using var stop = new CancellationTokenSource();
+        var running = slice.RunAsync(stop.Token);
+        await UntilAsync(() => slice.Judgements == 1);
+
+        Assert.Equal("a@1:ready,b@1:ready", Versions(slice.Snapshot()));
+        Assert.Single(failures);
+        await stop.CancelAsync();
+        await running;
+        Assert.Equal(1, stopped);
+    }
+
     private sealed class Stop(Action stop) : IDisposable
     {
         public void Dispose() => stop();

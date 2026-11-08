@@ -233,3 +233,20 @@ test('a comment inside a template expression is a comment', () => {
   const src = 'const a = `${f({\n  // why\n  k: 1,\n})}`;\n';
   assert.deepEqual(comments(src).map((c) => [c.line, c.text, c.whole]), [[2, 'why', true]]);
 });
+
+test('the text of a JSX element is not code: a URL in it is no comment and what follows on the line is still read', () => {
+  const src = [
+    "const a = <pre className=\"m-0\">  downloading https://github.com/x/… (11.8 MB)</pre>; // one",
+    "const b = <p>it's {n > 1 ? <b>// not one</b> : null}</p>; // two",
+    'const c = <a href="https://x.test/" {...rest}>{/* three */}</a>;',
+    'const d = (<><i /> // not one</>);',
+    'const e = x < y && f<string>(z) / 2; // four',
+  ].join('\n');
+  assert.deepEqual(comments(src, { jsx: true }).map((c) => [c.line, c.text]), [[1, 'one'], [2, 'two'], [3, 'three'], [5, 'four']]);
+});
+
+test('a file is read as JSX where it is a tsx one, and its element text is judged by no naming rule', () => {
+  const src = 'export const a = <pre>downloading https://github.com/ was here</pre>;\n';
+  assert.deepEqual(judge('src/Tools.stories.tsx', null, src), []);
+  assert.equal(judge('src/Tools.ts', null, src).length, 1);
+});

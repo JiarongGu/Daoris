@@ -63,7 +63,7 @@ of everything it handed, section by section.
 | `StandingBlock`, `StandingBlocks` | `Context/Domain/StandingBlock.cs`, `Context/StandingBlocks.cs` | The standing block (pure), and the facts a start reads for it |
 | `InstructionAccounting`, `HandedSections` | `Context/InstructionAccounting.cs`, `Events/Domain/HandedCodes.cs` | The account of what a session was handed; page `work/conversation/HandedAccount.tsx` |
 | `LineKeys`, `LineCounts`, `LineCountsRead`, `CountTexts` | `Course/Domain/`, `Course/LineCountsRead.cs`, `Roles/Domain/CountTexts.cs` | A line's key, its counts, and Daoris's words for them |
-| `SessionEventLog`, `TranscriptFile` | `Context/Events/`, `Context/TranscriptFile.cs` | A session's events and verbatim transcript, kept on the machine |
+| `SessionEventLog`, `TranscriptFile` | `Context/Events/`, `Context/TranscriptFile.cs` | A session's events and verbatim transcript, kept on the machine; every writer of a record, whichever instance, shares one gate and numbers from the record's own length and last line |
 | `HelpConversations` | `Context/HelpConversations.cs` | Ask Daoris's history: names, pins, what a conversation started from and was handed |
 | `HelpRoom`, `HelpMode`, `HelpProposals` | `Help/` | Ask Daoris's room, access mode and proposals |
 | `HelpFacts`, `HelpTreeFacts`, `HelpWorkFacts`, `HelpRoomCatchUp` | `Knowledge/HelpFacts.cs`, `HelpTreeFacts.cs`, `HelpWorkFacts.cs`, `HelpWorkRecords.cs`, `HelpTreesRecords.cs`, `HelpRoomCatchUp.cs` | The room's facts: topics, wakes and registration in the hub, the sessions' trees and the work's and clean-up's parts each in their own type, their records and the room's catch-up apart |
@@ -184,7 +184,8 @@ of everything it handed, section by section.
 32. Its bound is 40,000 weight, with a Han character weighing 3. Each section has a cap. Past the bound, the oldest turn and
     then the oldest word drop. It is kept as the new part's first event, with its account. (from D189)
 33. It never hands the agent's thoughts, a tool call's output (but the last failed check's, bounded), a model's summary, an
-    account's name, or anything from a harness's store. (from D189)
+    account's name, or anything from a harness's store. A page a turn opened is named by its address without user, query or
+    fragment, a file page relative to the tree. (from D189)
 34. `line_read` pages one part at a time, by part id, under the brief's bound. A working session may call it; a reviewer and a
     helper may not. It carries no counts. (from D189, D229)
 

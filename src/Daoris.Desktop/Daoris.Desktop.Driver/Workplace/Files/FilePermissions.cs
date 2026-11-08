@@ -32,7 +32,13 @@ internal sealed record FilePermissions(IReadOnlyList<string> Deny, IReadOnlyList
 {
     internal static readonly FilePermissions None = new([], [], []);
 
-    internal FilePermissions With(FilePermissions other) => new([.. Deny, .. other.Deny], [.. Ask, .. other.Ask], [.. Allow, .. other.Allow]);
+    /// <summary>Who gave each allow, by its pattern, where the file names one.</summary>
+    internal IReadOnlyDictionary<string, string> Makers { get; init; } = new Dictionary<string, string>();
+
+    internal FilePermissions With(FilePermissions other) => new([.. Deny, .. other.Deny], [.. Ask, .. other.Ask], [.. Allow, .. other.Allow])
+    {
+        Makers = Makers.Concat(other.Makers).GroupBy(pair => pair.Key).ToDictionary(group => group.Key, group => group.Last().Value),
+    };
 
     internal FileVerdict Judge(string act) =>
         Deny.Any(pattern => Matches(pattern, act)) ? FileVerdict.Denied
@@ -56,6 +62,8 @@ internal sealed record FilePermissions(IReadOnlyList<string> Deny, IReadOnlyList
             return None;
         }
 
+        var makers = new Dictionary<string, string>();
+
         List<string> Patterns(string name)
         {
             if (!lists.TryGetProperty(name, out var listed)) return [];
@@ -71,13 +79,20 @@ internal sealed record FilePermissions(IReadOnlyList<string> Deny, IReadOnlyList
                 var pattern = each.ValueKind == JsonValueKind.String ? each.GetString()
                     : each.ValueKind == JsonValueKind.Object ? Json.Text(each, "rule")
                     : null;
-                if (pattern is not null && FileActs.Names(pattern)) patterns.Add(pattern);
+                if (pattern is not null && FileActs.Names(pattern))
+                {
+                    patterns.Add(pattern);
+                    if (name == "allow" && each.ValueKind == JsonValueKind.Object && Json.Text(each, "by") is { Length: > 0 } maker) makers[pattern] = maker;
+                }
                 else problems.Add($"{where}permissions.{name}: '{pattern ?? each.GetRawText()}' names no run(…), copy(…) or share(…)");
             }
 
             return patterns;
         }
 
-        return new(Patterns("deny"), Patterns("ask"), Patterns("allow"));
+        var deny = Patterns("deny");
+        var ask = Patterns("ask");
+        var allow = Patterns("allow");
+        return new(deny, ask, allow) { Makers = makers };
     }
 }

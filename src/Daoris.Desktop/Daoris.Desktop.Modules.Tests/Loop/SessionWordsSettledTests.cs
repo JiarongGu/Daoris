@@ -167,4 +167,24 @@ public sealed class SessionWordsSettledTests : DriverModuleBridge
         Assert.Equal(0, service.Kept("c2"));
         Assert.Empty(service.Added());
     }
+
+    /// <summary>A hearer of a session's reach that throws is not the end of that session's telling: the next move tells it again.</summary>
+    [Fact]
+    public async Task A_reach_hearer_that_throws_does_not_end_the_telling_for_that_session()
+    {
+        var service = new KeyedSayService { Records = Records(Chat("c1", "completed")) };
+        var loop = await UpAsync(service);
+        var heard = 0;
+        loop.Words.Reached += (_, _) =>
+        {
+            if (Interlocked.Increment(ref heard) == 1) throw new InvalidOperationException("a hearer failed");
+        };
+
+        loop.Words.Tell("c1");
+        await UntilAsync(() => Volatile.Read(ref heard) == 1);
+        await Task.Delay(100);
+        loop.Words.Tell("c1");
+
+        await UntilAsync(() => Volatile.Read(ref heard) >= 2);
+    }
 }

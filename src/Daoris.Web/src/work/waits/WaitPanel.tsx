@@ -103,9 +103,11 @@ export function WaitPanel({ height, onResize, onReset, controls, children }: {
     const done = () => {
       window.removeEventListener('pointermove', move);
       window.removeEventListener('pointerup', done);
+      window.removeEventListener('pointercancel', done);
     };
     window.addEventListener('pointermove', move);
     window.addEventListener('pointerup', done);
+    window.addEventListener('pointercancel', done);
   };
 
   // Each part's share of the height, held under the ceiling whatever is kept.

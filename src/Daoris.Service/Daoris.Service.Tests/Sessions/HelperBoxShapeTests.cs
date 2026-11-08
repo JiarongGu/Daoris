@@ -18,6 +18,20 @@ public sealed class HelperBoxShapeTests : IDisposable
         try { Directory.Delete(_home, recursive: true); } catch (IOException) { } catch (UnauthorizedAccessException) { }
     }
 
+    /// <summary>A state file the driver has just moved into place reads while the move still holds it, rather than as no state.</summary>
+    [Fact]
+    public void A_state_file_the_driver_has_just_moved_into_place_reads_while_the_move_still_holds_it()
+    {
+        if (!OperatingSystem.IsWindows()) return;
+        var path = DaorisHome.Entry(_home, HomeEntry.Helpers, "d1b2c3d4.state.json");
+        File.WriteAllText(path, "{ \"id\": \"d1b2c3d4\", \"state\": \"answered\" }");
+
+        using (MoveHold.Take(path))
+        {
+            Assert.Equal("answered", HelperBox.ReadState(_home, "d1b2c3d4")?.State);
+        }
+    }
+
     /// <summary>
     /// The state the driver writes (indented, `code` and `helper` null where unset, then its own `lastWords`, `handed`, `agent` and
     /// `words`) reads here as the five fields the box knows; a state named outside its five is no state.

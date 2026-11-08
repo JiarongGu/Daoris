@@ -369,7 +369,7 @@ public sealed class BrainstormDesk(string? home)
     {
         try
         {
-            return File.Exists(path) ? File.ReadAllText(path) : null;
+            return File.Exists(path) ? AtomicFile.ReadText(path) : null;
         }
         catch (Exception error) when (error is IOException or UnauthorizedAccessException)
         {

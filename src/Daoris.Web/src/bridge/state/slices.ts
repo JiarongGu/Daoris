@@ -50,6 +50,8 @@ type Slice = {
   /** What is heard before the baseline, applied after it where newer. */
   waiting: Push[];
   asking: Promise<void> | null;
+  /** Whether a push applied while the baseline installed did not fit it: read again once that read settles. */
+  reread: boolean;
 };
 
 const named = (value: unknown): value is string => typeof value === 'string' && value.length > 0;
@@ -121,7 +123,7 @@ class Pushed {
   /** Read a slice pushed from now: what is heard of it is kept until its snapshot answers. */
   register(spec: SliceSpec) {
     if (!this.slices.has(spec.name)) {
-      this.slices.set(spec.name, { spec, mode: 'unknown', epoch: null, partitions: new Map(), judged: false, waiting: [], asking: null });
+      this.slices.set(spec.name, { spec, mode: 'unknown', epoch: null, partitions: new Map(), judged: false, waiting: [], asking: null, reread: false });
     }
   }
 
@@ -220,6 +222,10 @@ class Pushed {
     slice.asking = asking.finally(() => {
       slice.asking = null;
       this.told();
+      if (slice.reread) {
+        slice.reread = false;
+        void this.resync(name);
+      }
     });
     // A live slice read again is resyncing from now, which its readers draw (`usePushedResyncing`).
     if (slice.mode === 'live') this.told();
@@ -250,10 +256,16 @@ class Pushed {
     this.write(slice);
   }
 
+  /** Read `slice` again whole: now, or once the read in flight settles, whose own answer a push heard before it may not fit. */
+  private readAgain(slice: Slice) {
+    if (slice.asking) slice.reread = true;
+    else void this.resync(slice.spec.name);
+  }
+
   /** Whether `push` changed what is held: an older or equal number never does, however late it came. */
   private apply(slice: Slice, push: Push): boolean {
     if (push.epoch !== slice.epoch) {
-      void this.resync(slice.spec.name);
+      this.readAgain(slice);
       return false;
     }
     const held = slice.partitions.get(push.partition);
@@ -265,7 +277,7 @@ class Pushed {
     }
     // A delta needs its base: a missed one, or a slice that pushes none, is read again whole.
     if (!held || held.seq !== push.baseSeq || held.status !== READY || !slice.spec.merge) {
-      void this.resync(slice.spec.name);
+      this.readAgain(slice);
       return false;
     }
     slice.partitions.set(push.partition, { seq: push.seq, status: push.status, data: slice.spec.merge(held.data, push.data, push.removed) });
