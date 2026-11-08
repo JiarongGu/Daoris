@@ -120,7 +120,14 @@ public sealed class QuietWord : IDisposable
             return false;
         }
 
-        _told[step.Episode] = kept.Said?.Word?.Id;
+        var id = kept.Said?.Word?.Id;
+        // An over step or the run's end that landed during the keep removed the entry and found no id to take off: take the word off here.
+        if (!_told.TryUpdate(step.Episode, id, null))
+        {
+            if (id is not null && _door is not null) await _door.TakeOffAsync([id], ct).ConfigureAwait(false);
+            return false;
+        }
+
         _watch.MarkTold(_session, step.Episode);
         return true;
     }

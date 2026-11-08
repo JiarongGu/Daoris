@@ -23,6 +23,7 @@ public sealed class WindowCensusTests
         ["STATE_SLICE"] = "a pushed slice's snapshot, held by its owner",
         ["UNDER_WAY"] = "the presses under way, held by the publisher",
         ["STEWARD_ACTS"] = "the steward's live generation and this run's acts, held by the standing confirmation's judge (STEWARDROLE1b)",
+        ["STEWARD_LANDS"] = "the steward's lands a supervisor allowed that wait their window, held by the pipe's steward allows (SUPERVISOR2e)",
         ["STEWARD_DESK"] = "the steward's desk this run, held by the standing confirmation's judge (STEWARDROLE1c)",
         ["SESSION_HOLDS"] = "the terminal holds the pipe keeps, read whole from memory (RPC1g1)",
         ["SESSION_LET_GO"] = "the pipe's hold of one conversation, ended in memory (RPC1g1)",

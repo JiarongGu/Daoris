@@ -165,7 +165,7 @@ internal sealed class OpenRecord(IRunWiring wiring) : IRunStage
         }
 
         // A quest marked design or exact says whose order it ran on: the role taking that work, Build's while none does.
-        var marked = Driver.StartWork(quest);
+        var marked = ParticipantWork.OfWeight(quest.Weight);
         if (start.Resumes is null && marked is ParticipantWork.Design or ParticipantWork.Exact && wiring.WeightedRoleName(start, marked, state.StepRole) is { } weighted)
         {
             RotatedOpening.SayWeighted(context.Events, sessionId, marked, weighted);

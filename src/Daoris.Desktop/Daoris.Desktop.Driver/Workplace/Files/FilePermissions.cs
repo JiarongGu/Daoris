@@ -20,7 +20,9 @@ internal static class FileActs
 
     internal static string Share(string path) => $"share({path})";
 
-    internal static bool Names(string pattern) => Regex.IsMatch(pattern, @"^(run|copy|share)\(.+\)$", RegexOptions.CultureInvariant);
+    internal const string Person = "@person";
+
+    internal static bool Names(string pattern) => Regex.IsMatch(pattern, @"^(run|copy|share)\(.+\)(@person)?$", RegexOptions.CultureInvariant);
 }
 
 /// <summary>
@@ -35,9 +37,12 @@ internal sealed record FilePermissions(IReadOnlyList<string> Deny, IReadOnlyList
     /// <summary>Who gave each allow, by its pattern, where the file names one.</summary>
     internal IReadOnlyDictionary<string, string> Makers { get; init; } = new Dictionary<string, string>();
 
+    internal IReadOnlyDictionary<string, string> Decisions { get; init; } = new Dictionary<string, string>();
+
     internal FilePermissions With(FilePermissions other) => new([.. Deny, .. other.Deny], [.. Ask, .. other.Ask], [.. Allow, .. other.Allow])
     {
         Makers = Makers.Concat(other.Makers).GroupBy(pair => pair.Key).ToDictionary(group => group.Key, group => group.Last().Value),
+        Decisions = Decisions.Concat(other.Decisions).GroupBy(pair => pair.Key).ToDictionary(group => group.Key, group => group.Last().Value),
     };
 
     internal FileVerdict Judge(string act) =>
@@ -46,8 +51,11 @@ internal sealed record FilePermissions(IReadOnlyList<string> Deny, IReadOnlyList
         : Ask.Any(pattern => Matches(pattern, act)) ? FileVerdict.Held
         : FileVerdict.Made;
 
+    internal bool AskNamesPerson(string act) => Ask.Any(pattern => pattern.EndsWith(FileActs.Person, StringComparison.Ordinal) && Matches(pattern, act));
+
     private static bool Matches(string pattern, string act) =>
-        Regex.IsMatch(act, "^" + string.Join(".*", pattern.Split('*').Select(Regex.Escape)) + "$", RegexOptions.CultureInvariant);
+        Regex.IsMatch(act, "^" + string.Join(".*", (pattern.EndsWith(FileActs.Person, StringComparison.Ordinal) ? pattern[..^FileActs.Person.Length] : pattern)
+            .Split('*').Select(Regex.Escape)) + "$", RegexOptions.CultureInvariant);
 
     /// <summary>
     /// <paramref name="scope"/>'s <c>permissions</c>: each list's patterns, an allow also an object naming its <c>rule</c> and who gave it;
@@ -63,6 +71,7 @@ internal sealed record FilePermissions(IReadOnlyList<string> Deny, IReadOnlyList
         }
 
         var makers = new Dictionary<string, string>();
+        var decisions = new Dictionary<string, string>();
 
         List<string> Patterns(string name)
         {
@@ -83,6 +92,7 @@ internal sealed record FilePermissions(IReadOnlyList<string> Deny, IReadOnlyList
                 {
                     patterns.Add(pattern);
                     if (name == "allow" && each.ValueKind == JsonValueKind.Object && Json.Text(each, "by") is { Length: > 0 } maker) makers[pattern] = maker;
+                    if (name == "allow" && each.ValueKind == JsonValueKind.Object && Json.Text(each, "decision") is { Length: > 0 } decision) decisions[pattern] = decision;
                 }
                 else problems.Add($"{where}permissions.{name}: '{pattern ?? each.GetRawText()}' names no run(…), copy(…) or share(…)");
             }
@@ -93,6 +103,6 @@ internal sealed record FilePermissions(IReadOnlyList<string> Deny, IReadOnlyList
         var deny = Patterns("deny");
         var ask = Patterns("ask");
         var allow = Patterns("allow");
-        return new(deny, ask, allow) { Makers = makers };
+        return new(deny, ask, allow) { Makers = makers, Decisions = decisions };
     }
 }

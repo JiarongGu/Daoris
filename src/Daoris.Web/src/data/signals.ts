@@ -237,7 +237,7 @@ export function sittingSentence(sitting: Consideration): string {
   const signIn = signedOut ? {
     accounts: signedOut.accounts.map((id, at) => signedOut.names?.[at]?.trim() || id).join(i18n.t('work.sitting.signedOutJoin')),
     // Each a command a person pastes, so the id is spelled for a shell.
-    logins: signedOut.accounts.map((name) => `\`daoris agent login ${signedOut.agent} --profile ${shellWord(name, '<account>')}\``)
+    logins: signedOut.accounts.map((name) => `\`daoris agent login ${signedOut.agent} --account ${shellWord(name, '<account>')}\``)
       .join(i18n.t('work.sitting.signedOutJoin')),
   } : null;
   if (sitting.verdict === 'Blocked' && sitting.waitsFor) {

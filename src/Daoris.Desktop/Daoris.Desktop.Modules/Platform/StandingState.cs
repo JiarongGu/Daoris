@@ -42,6 +42,8 @@ internal sealed class StandingState
     // What each of the steward's acts did this run. Memory alone: a restart forgets it.
     public List<StewardDoneAct> StewardDone { get; } = [];
 
+    public Dictionary<string, string> AllowedActs { get; } = new(StringComparer.Ordinal);
+
     /// <summary>A role a living holder holds this run: its catalogue id, its kind, the generation drawn at its start, its holder.</summary>
     public sealed record Hold(string Role, string Kind, string Generation, string Holder, DateTimeOffset Since);
 

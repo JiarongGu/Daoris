@@ -18,13 +18,13 @@ vi.mock('@shenora/react', async () => ({
 
 import i18n from '../locales/i18n';
 import { clockOf } from '../locales/format';
-import type { DeskRequestNow, RoleHoldNow, StandingConfirmationNow, StewardActNow } from '../person/standing';
+import type { DeskRequestNow, RoleHoldNow, StandingConfirmationNow, StewardActNow, StewardLandNow } from '../person/standing';
 import { NotificationsStanding } from './NotificationsStanding';
 import { StewardLine } from './StewardLine';
 
 const STEWARD: RoleHoldNow = { role: 'steward', kind: 'steward', holder: 'h1', since: '2026-10-25T09:00:00Z', answers: 0 };
 const act = (id: string, kind: string, at: string, more: Partial<StewardActNow> = {}): StewardActNow => ({
-  id, act: kind, repository: null, quest: null, session: null, at, standing: true, waiting: false, ...more,
+  id, act: kind, repository: null, quest: null, session: null, at, standing: true, waiting: false, allowed: false, ...more,
 });
 /** This run's acts, newest first, as the shell sends them. */
 const ACTS: StewardActNow[] = [
@@ -38,8 +38,10 @@ const ACTS: StewardActNow[] = [
   act('a1', 'drive', '2026-10-25T10:01:00Z', { repository: 'engine' }),
 ];
 const STANDING: StandingConfirmationNow = {
-  holds: [STEWARD], holders: [], stewardActs: ACTS, stewardDesk: [],
+  holds: [STEWARD], holders: [], stewardActs: ACTS, stewardDesk: [], stewardLands: [],
 };
+/** A landing a supervisor allowed, waiting its window. */
+const LAND: StewardLandNow = { ask: 'k1', act: 'land', repository: null, quest: null, session: 's9', landsAt: '2026-10-25T10:20:00Z' };
 /** The steward's desk this run, newest first: one waiting, one declined with a reason, one answered by an act. */
 const DESK: DeskRequestNow[] = [
   {
@@ -282,6 +284,47 @@ describe("Notifications' steward line", () => {
       ['SET_HOLD', { repository: 'atlas', held: true }],
       ['RETRY_QUEST', { quest: 'q1' }],
     ]));
+  });
+
+  it.each([
+    ['en', 'A supervisor allowed it', /^A supervisor allowed the steward to land session s9; it lands at .+\.$/, 'Overrule the landing of session s9'],
+    ['zh', '由主管允许', /^主管已允许管家落地 会话 s9；将于 .+ 落地。$/, '否决 会话 s9 的落地'],
+  ])('says which act a supervisor allowed and offers Overrule on an allowed landing waiting its window (%s)', async (language, mark, says, overrule) => {
+    await i18n.changeLanguage(language);
+    const onOverrule = vi.fn();
+    render(
+      <StewardLine
+        standing={{ ...STANDING, stewardActs: [act('a9', 'delete', '2026-10-25T10:09:00Z', { quest: 'q4', allowed: true }), ...ACTS], stewardLands: [LAND] }}
+        onReverse={vi.fn()} onOverrule={onOverrule}
+      />);
+
+    await userEvent.click(screen.getAllByRole('button').find((each) => each.getAttribute('aria-expanded') === 'false')!);
+    const marked = within(screen.getByRole('list', { name: language === 'en' ? "The steward's acts" : '管家的操作' })).getAllByText(mark);
+    expect(marked).toHaveLength(1);
+    expect(screen.getByText(says)).toBeInTheDocument();
+    await userEvent.click(screen.getByRole('button', { name: overrule }));
+    expect(onOverrule).toHaveBeenCalledExactlyOnceWith(LAND);
+  });
+
+  it('draws the landing a supervisor allowed even where the steward made no act, and no Overrule where nothing can press it', () => {
+    render(<StewardLine standing={{ ...STANDING, holds: [], stewardActs: [], stewardLands: [LAND] }} onReverse={vi.fn()} />);
+    expect(screen.getByText(/^A supervisor allowed the steward to land session s9; it lands at .+\.$/)).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /^Overrule/ })).toBeNull();
+  });
+
+  it('sends the Overrule of an allowed landing with its request and its session, and says so when the window had closed', async () => {
+    const state = { drivable: [], holds: [], trees: [], running: [], standingConfirmation: { ...STANDING, stewardLands: [LAND] } };
+    invoke.mockImplementation(async (_module: string, type: string) => (type === 'STEWARD_LAND_OVERRULE' ? { done: false } : state));
+    const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    render(
+      <QueryClientProvider client={client}>
+        <NotificationsStanding notify={() => {}} />
+      </QueryClientProvider>);
+
+    await userEvent.click(await screen.findByRole('button', { name: 'Overrule the landing of session s9' }));
+
+    await vi.waitFor(() => expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'STEWARD_LAND_OVERRULE', { payload: { ask: 'k1', session: 's9' } }));
+    expect(await screen.findByText('It already landed or was withdrawn, so it cannot be overruled.')).toBeInTheDocument();
   });
 
   it('sends Resume for a standing hold', async () => {

@@ -345,6 +345,7 @@ internal sealed class WatchRun(
             // The decisions an earlier run left closed before this first look's carry-ons, held
             // and released ones stale and admitted ones interrupted; their waiting words the look takes back.
             Supervisor.SweepAtStart(DateTimeOffset.UtcNow);
+            FileAllowSweep.AtStart(Home, Log);
             // A loop that died with a carry-on's move standing is taken up here, at the slot
             // where uncertain words are settled and before it, so the move says the `lost` note of a word it moved and never sent, and the
             // carry-ons the look plans are no longer held by it. Through a driver's holder, whose scope is the lease holder's.

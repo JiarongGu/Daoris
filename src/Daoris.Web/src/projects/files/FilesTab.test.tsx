@@ -70,6 +70,20 @@ describe("a repository's Files tab", () => {
     expect(onPress).toHaveBeenLastCalledWith({ act: 'permit', change: 'remove', list: 'allow', rule: 'share(*)', machine: false });
   });
 
+  it("says a supervisor gave an allow, by its role, in both languages, and takes it back like the person's own", async () => {
+    const onPress = vi.fn();
+    const given: FilesLook = { ...LOOK, permissions: [{ scope: 'repository', deny: [], ask: ['run(npm *)'], allow: [{ rule: 'run(npm ci)', by: 'supervisor-files' }] }] };
+    render(<FilesTab repository="engine" look={given} onPress={onPress} />);
+
+    const row = within(screen.getByRole('list', { name: 'Your permissions' })).getByText('run(npm ci)').closest('li')!;
+    expect(row).toHaveTextContent('given by the supervisor supervisor-files');
+    await userEvent.click(within(row).getByRole('button', { name: 'Take back the allow run(npm ci)' }));
+    expect(onPress).toHaveBeenLastCalledWith({ act: 'permit', change: 'remove', list: 'allow', rule: 'run(npm ci)', machine: false });
+
+    await i18n.changeLanguage('zh');
+    expect(row).toHaveTextContent('由主管 supervisor-files给出');
+  });
+
   it("adds and removes the person's own rules, and reads again", async () => {
     const onPress = vi.fn();
     render(<FilesTab repository="engine" look={LOOK} onPress={onPress} />);

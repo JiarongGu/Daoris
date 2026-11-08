@@ -14,7 +14,7 @@ const inTheme = (theme: 'light' | 'dark') => [(Story: () => ReactElement) => <In
 const minutesAgo = (count: number) => new Date(Date.now() - count * 60_000).toISOString();
 const STEWARD: RoleHoldNow = { role: 'steward', kind: 'steward', holder: 'h1', since: minutesAgo(90), answers: 0 };
 const act = (id: string, kind: string, at: number, more: Partial<StewardActNow> = {}): StewardActNow => ({
-  id, act: kind, repository: null, quest: null, session: null, at: minutesAgo(at), standing: true, waiting: false, ...more,
+  id, act: kind, repository: null, quest: null, session: null, at: minutesAgo(at), standing: true, waiting: false, allowed: false, ...more,
 });
 const ACTS: StewardActNow[] = [
   act('a4', 'stop', 2, { quest: '7a82cc', session: 's1a2b3c4', waiting: true }),
@@ -37,7 +37,7 @@ const DESK: DeskRequestNow[] = [
   },
 ];
 const STANDING: StandingConfirmationNow = {
-  holds: [STEWARD], holders: [], stewardActs: ACTS, stewardDesk: DESK,
+  holds: [STEWARD], holders: [], stewardActs: ACTS, stewardDesk: DESK, stewardLands: [],
 };
 
 const meta = {

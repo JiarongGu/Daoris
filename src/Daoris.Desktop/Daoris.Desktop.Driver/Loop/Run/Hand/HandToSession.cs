@@ -31,16 +31,16 @@ internal sealed class HandToSession(IRunWiring wiring) : IRunStage
         var (carry, workTree, runBound, setUp) = (state.Carry, state.WorkTree, state.Bound, state.SetUp);
         var folder = state.WorkFolder;
         var prior = carryingOn ? start.Resumes : null;
-        if (await CutLimitPart.BehindAsync(context, prior, ct).ConfigureAwait(false) is { } ended)
-        {
-            prior = ended;
-            continues = continues is null ? null : continues with { Session = ended.Session, Why = HandOverWhy.Limit };
-        }
-
         var refusedHanded = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
         var endings = new RunEndings(wiring, run, sessionId, agent, workTree, state.Opened.LocksTree);
         try
         {
+            if (await CutLimitPart.BehindAsync(context, prior, ct).ConfigureAwait(false) is { } ended)
+            {
+                prior = ended;
+                continues = continues is null ? null : continues with { Session = ended.Session, Why = HandOverWhy.Limit };
+            }
+
             if (context.Trees.Holds(workTree)) TreeFilesStep.Hand(home, workTree);
 
             // The words a session could not go on with went to this one: off that record by their ids, kept on the ask by the service, so
@@ -252,12 +252,10 @@ internal sealed class HandToSession(IRunWiring wiring) : IRunStage
             var transcript = DaorisHome.Entry(home, HomeEntry.Sessions, $"{sessionId}.log");
             Directory.CreateDirectory(Path.GetDirectoryName(transcript)!);
 
-            // The protocol door carries the servers on the wire below; a pipe-door harness that takes a file at spawn is handed one under
-            // Daoris's home, and the file goes when the session does.
+            // The protocol door carries the servers on the wire; a pipe-door harness that takes a file at spawn gets one that goes with the session.
             context.Hooks?.Log.Served(context.Catalog, sessionId, servers);
             var connectors = ConnectorPlans.For(sessionId, start.Workspace, servers);
-            context.Runs.Live[quest.Id] = sessionId;
-            using var live = new Disposer(() => context.Runs.Live.TryRemove(quest.Id, out var _));
+            using var live = context.Runs.GoesLive(quest.Id, sessionId);
 
             var conclusion = new RunConclusion(wiring, run, endings, adapter, target, transcript);
 

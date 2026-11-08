@@ -200,7 +200,11 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they start wi
     make with the person's answer to each, and a `copy`'s readers (every session in a tree it is copied to). The page sets the
     person's rules and `permissions` through `FILES_SET`, `FILES_REMOVE` and `FILES_PERMIT` and reads the found layer again
     through `FILES_READ`, each the window's alone and refused on the pipe: an `ask` is allowed in one press, written as the
-    person's `allow` with its maker, and the allow is taken back by the same route; a `files.json` that does not read refuses
+    person's `allow` with its maker, and the allow is taken back by the same route. An `ask` that holds a start's `run` is kept in
+    `data/files-asks.json` (`FileAsks`) under the start that first met it, for the repository's supervisor of the `files` kind
+    (roles area rule 7): its allow is written by `FileAllows` into the repository's own layer with `by` the role and the
+    decision, and the start's sweep records the decision made where that allow stands, else the ask waits again; a
+    `files.json` that does not read refuses
     each write and every allow, said, and is never written over; each write reads and writes the file under one lock, so two presses lose neither. No payload carries a machine path. The found layer is written only when a repository is registered, when
     its line moves past a signature, manifest, ignore or gates file or its toolchain's answers move (asked once a day), and
     when a line finishes (a removed tree's ignored tops marked `scratch`); a look that changed nothing writes nothing. A pnpm
@@ -259,7 +263,7 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they start wi
     origin `HEAD` is read from git's file (`WorkingTree.DefaultBranchAsync`), and the branches by date are kept while the repository's
     counted refs stand (`BranchesByDate`), which a session's own commits do not move. The nodes stage over three hundred runs,
     five live, is no git where nothing moved and about half a second where it was two (the pass's per-run work: a run's record
-    is read once while its file stands as it was, `NodeRecordFiles.Settled`; a workflow file once per stamp for all the runs
+    is read once while its file stands as it was, `NodeRecordFiles.Settled`, by its own read and by the list of every record alike; a workflow file once per stamp for all the runs
     bound to it, `StampedWorkflows`; the quests' chains and the units' links are indexed once a read, `QuestChains`,
     `NodeGoverning`'s `RunReads`), held by `LookWorkBenchProcessTests`. (from D68, D181)
 31. A working session has no time limit: a driven run, a resumed run, a go-on and an intake wait for their exit. Only a

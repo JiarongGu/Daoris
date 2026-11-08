@@ -43,6 +43,8 @@ internal static class RoleKit
 
         public string Target(JsonElement form) => form.EnumerateObject().First().Value.GetString()!;
 
+        public string TargetKind { get; init; } = OwnerKinds.Repository;
+
         public async Task<object?> RunAsync(RoleActRun run, CancellationToken ct)
         {
             Ran++;

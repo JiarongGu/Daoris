@@ -129,7 +129,7 @@ internal sealed class StewardRecord(StandingConfirmation owner, StandingState st
                 var waiting = done.Act == StewardActNames.Stop && standing
                               && !state.StewardDone.Skip(at + 1).Any(later => later.Act == StewardActNames.Retry
                                                                               && string.Equals(later.Quest, done.Quest, StringComparison.OrdinalIgnoreCase));
-                acts.Add(new StewardActNow(done.Id, done.Act, done.Repository, done.Quest, done.Session, done.At, standing, waiting));
+                acts.Add(new StewardActNow(done.Id, done.Act, done.Repository, done.Quest, done.Session, done.At, standing, waiting, state.AllowedActs.ContainsKey(done.Id)));
             }
 
             return acts;

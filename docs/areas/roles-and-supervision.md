@@ -41,6 +41,7 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they start wi
 | `QuestionSupervisorDecisions`, `SupervisorWhy`, `SupervisorBounds` | `Roles/QuestionSupervisorDecisions.cs`, `Roles/SupervisorDecision.cs` | The agent supervisor's decisions in memory, its lifecycle, refusals and bounds; the class keeps one-line doors |
 | `SupervisorCourses`, `ReferredPoint`, `ReferredPoints`, `SupervisorCourseView`, `SupervisePointPrint` | `Roles/SupervisorCourses.cs`, `Roles/ReferredPoint.cs`, `WorkOrders/ReferredPoints.cs` (it reads Course's go-on marks and the planner's considerations), `Roles/SupervisorCourseView.cs`, `Roles/SupervisePointPrint.cs` | A `refer` point's course decision kept, held, released or overruled; the open point (answers alone's mark, or a quest's parked or asking verdict), the line's earlier points (`Passed`) and its release door; the decision read back from memory and its files (`SupervisorReads.CoursesOf`); the holder's print of a point. A quest's go-on is released by `CourseReleaseLook` (`Loop/Look/`) |
 | `SupervisorDecisionDoor`, `ISupervisorKind`, `QuestionKind`, `CourseKind`, `SupervisedParks`, `SupervisorSubject`, `SupervisorDecideForm`, `SupervisorLeaveForm` | `Modules/Bridge/SupervisorDecisionDoor.cs`, `Modules/Bridge/SupervisorKinds/`, `Modules/Bridge/Routes/SupervisorDecisionRoutes.cs`, `Roles/SupervisorSubject.cs`, `Roles/SupervisorDecisionForms.cs` | The supervisor's one decision door: `SUPERVISOR_DECIDE`, `SUPERVISOR_LEAVE` and `SUPERVISOR_WAITING`; each kind one row with its waiting subjects, its keeping and so its release; the question kind's park read; the typed subject per kind; the two exact forms the proof is over |
+| `SupervisorAllows`, `SupervisorAllowView`, `StewardAllows`, `StewardLandRoutes`, `SupervisorAllowCard` | `Roles/SupervisorAllows.cs`, `Roles/SupervisorAllowView.cs`, `Modules/Platform/StewardAllows.cs`, `Modules/Bridge/Routes/StewardLandRoutes.cs`, `Web/work/head/SupervisorAllowCard.tsx` | The allow decisions kept, moved and read back as `SESSION_SUPERVISOR`'s `allows`; the steward's request waiting for the allow supervisor and its allowed `land` in its window with the person's *Overrule* |
 | `SupervisorBook`, `SupervisorDecisionFiles`, `SupervisorKeeping`, `SupervisorReleasing`, `SupervisorSweeps`, `SupervisorTickets`, `SupervisorReads`, `SupervisorAttempts` | `Roles/Supervisor*.cs` | The decisions' shared memory (live decisions, session locks, closed questions) and its one move in the book; the files, keeping, releasing, sweeps, tickets and reads each reach it and keep no state; an agent supervisor's attempts beside the decisions |
 | `SessionsSuperviseCommand`, `SupervisorQuarantine`, `HolderKey` | `Roles/SessionsSuperviseCommand.cs`, `Roles/SupervisorQuarantine.cs`, `Roles/HolderKey.cs`, `Roles/SupervisorProof.cs` | The holder's verb; unattributed words taken back; the key and the role terminal's verbs; the proof |
 | `StandingConfirmation` | `Modules/Platform/StandingConfirmation.cs` | The roles' terminals this run: holds, generations, holders; the act judge over the catalogue. The doors; the memory is `StandingState`'s under its one lock, which `RoleTerminals` (starts, catalogue changes, a holder's end), `RoleJudge` (the role method, the decisions' admission), `RoleActsLedger` (acts, operations, the owner's marks) and `StewardRecord` (the steward's acts this run) reach |
@@ -85,7 +86,11 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they start wi
    `course`, `limit`, `allow`, `files`, `landing`); none makes it its scope's generic supervisor, which answers what no kind
    takes there. The `allow` kind decides a permission request held in the asking mode at its session's repository (`allow.once`,
    `allow.reject`, ended through the hold's own end) and a widening at its rule's reach (`allow.standing`, `allow.reject`,
-   settled recorded by the role), each taking effect at its keeping (`AllowKind`). Its `authority` grants acts as `<kind>.<act>`, only of the kinds it decides, each off on a new record; the seed
+   settled recorded by the role), each taking effect at its keeping (`AllowKind`) and kept as an allow decision (below). The `files` kind decides an act a person's `ask`
+   in the rule file held at a start (`files.allow-run`, `files.allow-copy` at the repository, `files.allow-share` at the narrowest
+   place covering both repositories), by writing the held act's own text, never the `ask`'s pattern, into the person's own layer
+   of each repository it reaches, never the machine's, with the role and the decision (`FilesKind`, `FileAllows`); an ask naming
+   the person (`run(…)@person`) is listed for no supervisor. Its `authority` grants acts as `<kind>.<act>`, only of the kinds it decides, each off on a new record; the seed
    grants `question.answer`, `course.go-on` and `limit.move`. A scope holds one generic supervisor and one per kind
    (`two-roles-one-work`); the machine's generic supervisor may not be removed, scoped away or given kinds (`may-not-be-off`).
    The role door writes no supervisor record before the home's `supervisor-kinds` migration step is recorded (`not-converted`);
@@ -377,8 +382,17 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they start wi
     which falls to the card, or the steward's withdrawal, which answers `withdrawn` with no card. A target that does not
     resolve, no supervisor there, or a supervisor whose terminal's holder is the steward's own goes to the card at once. The card
     is the act's row's person's route, in *Notifications*, and confirmed it is the person's own press; a process that does not
-    prove the key is refused, nothing asked. Everything else is never a role's act. The held `land`'s person's *Overrule* has
-    no route yet (`StewardAllows.Overrule`). (from D201, D209, D233)
+    prove the key is refused, nothing asked. Everything else is never a role's act. The held `land` is the steward's line in
+    *Notifications* saying when it lands (`STATE`'s `stewardLands`, `STEWARD_LANDS`), with the person's *Overrule*
+    (`STEWARD_LAND_OVERRULE { ask, session }`, the window's alone, marking the session the land names as the owner's; refused as
+    `done: false` where the window ended, the steward withdrew it or the session is not the land's), which hands it to the card
+    (`StewardAllows.Overrule`); an act a supervisor allowed says so on its line (`stewardActs`' `allowed`). Each allow a supervisor
+    takes, of a held request, a widening or a steward's act, is kept as an allow decision (`SupervisorAllows`): a file beside the
+    session's other decisions (the proposing session's for a widening, the land's session for a land, else the machine's), `went-on`
+    at its keeping, and for an allowed `land` `held` until it lands (`went-on`), is overruled, or the steward withdraws it
+    (`stale`, `withdrawn`); the start's sweep closes a held one `stale`. It reads back as `SESSION_SUPERVISOR`'s `allows`, and the
+    line's card says *The supervisor allowed this once* (or refused it) for a held request, with no *Overrule*
+    (`SupervisorAllowCard`). (from D201, D209, D233)
 52. What the owner does to a repository, a quest or a session makes it the owner's for the run (`owner-set`). Every
     release the steward writes is kept in `roleReleases`, `by: steward`. (from D209)
 

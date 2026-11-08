@@ -33,6 +33,10 @@
   "work.supervision.landing.accept": "The supervisor accepted this; it lands at {{at}}.",
   "work.supervision.landing.approve": "The supervisor approved this; it goes on at {{at}}.",
   "work.supervision.landing.reject": "The supervisor rejected this; it goes back at {{at}}.",
+  "work.supervision.allow.title": "The supervisor's answer to a held tool call",
+  "work.supervision.allow.once": "The supervisor allowed this once, {{when}}: the call went on.",
+  "work.supervision.allow.reject": "The supervisor refused this once, {{when}}: the agent was told, and went on without it.",
+  "work.supervision.kind.allow": "an allow",
   "work.supervision.overrule": "Overrule",
   "work.supervision.overruleRefused": "It already went on, so it cannot be overruled."
 }

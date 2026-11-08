@@ -207,7 +207,8 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/Agents/` unless they s
     `account-N` keeps its name as its id); removing it deletes the folder. An API key is an account
     too: kept machine-local, handed in the tool's own variable, shown only by its last four characters. (from D66, D67)
 27. Each agent's accounts are one set serving every workspace, with one order and one set of use settings. There are no
-    machine or workspace lists. The person's pick at a start is the one exception. (from D197)
+    machine or workspace lists. The person's pick at a start is the one exception, and a pick whose folder is gone is refused,
+    never moved; a handed quest's named account that is gone walks on within the agent's accounts. (from D197)
 28. The person's own sign-in is outside the set. Daoris never signs it in or out, never asks it anything and never starts work
     in it. (from D197, D175)
 29. The walk: under `goal` (the default) a near account goes last, then the most room in the tightest window the account's

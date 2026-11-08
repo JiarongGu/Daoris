@@ -14,6 +14,21 @@ export type StandingConfirmationNow = {
   stewardActs: StewardActNow[];
   /** The steward's desk this run, newest first, from Daoris's memory: what the line shows under its acts. */
   stewardDesk: DeskRequestNow[];
+  /** The steward's lands a supervisor allowed that wait their window, soonest first: the line says when each lands and offers *Overrule*. */
+  stewardLands: StewardLandNow[];
+};
+
+/**
+ * A `land` of the steward's that a supervisor allowed and that waits its window, as `STATE`'s `standingConfirmation.stewardLands` says
+ * it: the request's id, what it acts on and when it lands. *Overrule* names the request and its session.
+ */
+export type StewardLandNow = {
+  ask: string;
+  act: string;
+  repository: string | null;
+  quest: string | null;
+  session: string | null;
+  landsAt: string;
 };
 
 /**
@@ -37,7 +52,7 @@ export type DeskRequestNow = {
 /**
  * One act the steward made this run, as `STATE`'s `standingConfirmation.stewardActs` says it: its id, the act, its target (a repository, or a quest and its session), when, whether it still stands (the owner has
  * not acted on that target since, so the owner's reverse press is offered), and, for a stop, whether its quest still waits on a
- * *Try again*.
+ * *Try again*; and whether a supervisor allowed it outside the steward's grants.
  */
 export type StewardActNow = {
   id: string;
@@ -48,6 +63,7 @@ export type StewardActNow = {
   at: string;
   standing: boolean;
   waiting: boolean;
+  allowed: boolean;
 };
 
 /** The acts a steward's line and ask have words for (and a repository's workflow); a later build's is said by its name. */

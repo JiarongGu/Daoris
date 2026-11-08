@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { useOverruleSupervisor } from '../../bridge/sessions/supervision';
 import type { LineSupervision } from './lineSupervision';
 import { SupervisorCourseCard } from './SupervisorCourseCard';
+import { SupervisorAllowCard } from './SupervisorAllowCard';
 import { SupervisorLandingCard } from './SupervisorLandingCard';
 
 /** The newest decision the supervisor made on `session`'s referred points or on its run's waiting step, with *Overrule* where this machine holds the record. */
@@ -23,6 +24,7 @@ export function SessionSupervisorCourse({ session, supervision, here }: { sessio
         busy={overrule.isPending}
         said={said}
       />
+      <SupervisorAllowCard allow={supervision.allows?.filter((each) => each.shape === 'request').at(-1) ?? null} />
       <SupervisorLandingCard
         landing={supervision.landings?.at(-1) ?? null}
         onOverrule={here ? (decision) => void press(decision) : undefined}

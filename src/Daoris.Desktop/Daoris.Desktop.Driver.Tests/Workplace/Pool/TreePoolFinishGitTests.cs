@@ -170,7 +170,7 @@ public sealed class TreePoolFinishGitTests : IDisposable
 
         Assert.True(taken.Ok, taken.Refused ?? taken.Stuck);
         Assert.False(Directory.Exists(Path.Combine(slot.Path, "obj")));
-        var aside = Directory.EnumerateDirectories(Path.Combine(fixture.Home, "work", "trees", ".tidied", PoolGitFixture.Workspace, PoolGitFixture.Repository)).Single();
+        var aside = Directory.EnumerateDirectories(Path.Combine(DaorisHome.Entry(fixture.Home, HomeEntry.Trees), ".tidied", PoolGitFixture.Workspace, PoolGitFixture.Repository)).Single();
         Assert.Equal("s-aaaa0001", PoolAsides.LineOf(aside));
         Assert.Equal(SetAsideClass.Line, SetAsideEligibility.Of(aside, DateTimeOffset.UtcNow.AddDays(-90), TimeSpan.FromDays(1), false).Class);
         PoolAsides.RecordGoes = _ => false;
@@ -182,7 +182,7 @@ public sealed class TreePoolFinishGitTests : IDisposable
         Assert.True(done.Ok, done.Refused ?? done.Stuck);
         Assert.False(Directory.Exists(aside));
         Assert.False(File.Exists(PoolAsides.MarkerOf(aside)));
-        var finished = Directory.EnumerateDirectories(Path.Combine(fixture.Home, "work", "trees", ".tidied", PoolGitFixture.Workspace, PoolGitFixture.Repository)).Single();
+        var finished = Directory.EnumerateDirectories(Path.Combine(DaorisHome.Entry(fixture.Home, HomeEntry.Trees), ".tidied", PoolGitFixture.Workspace, PoolGitFixture.Repository)).Single();
         Assert.True(File.Exists(Path.Combine(finished, "obj", "Engine.dll")));
     }
 
@@ -246,7 +246,7 @@ public sealed class TreePoolFinishGitTests : IDisposable
         Assert.Null(pool.ClaimOn(PoolGitFixture.Workspace, PoolGitFixture.Repository, 1));
         Assert.False(Directory.Exists(slot.Path));
         Assert.DoesNotContain(Path.GetFileName(slot.Path), await GitAsync(fixture.Root, "worktree", "list", "--porcelain"));
-        var aside = Directory.EnumerateDirectories(Path.Combine(fixture.Home, "work", "trees", ".tidied", PoolGitFixture.Workspace, PoolGitFixture.Repository)).Single();
+        var aside = Directory.EnumerateDirectories(Path.Combine(DaorisHome.Entry(fixture.Home, HomeEntry.Trees), ".tidied", PoolGitFixture.Workspace, PoolGitFixture.Repository)).Single();
         Assert.True(File.Exists(Path.Combine(aside, "work.txt")));
         Assert.True(File.Exists(SlimManifest.PathFor(aside)));
         Assert.Contains("daoris/s-aaaa0001", await fixture.BranchesAsync());

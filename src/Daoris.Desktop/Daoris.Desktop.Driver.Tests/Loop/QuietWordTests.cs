@@ -71,6 +71,28 @@ public sealed class QuietWordTests : IDisposable
         Assert.Empty(word.Told);
     }
 
+    /// <summary>An episode that ends while its word is being kept has the word taken off where the keep returns, so no turn after the quiet gets it.</summary>
+    [Fact]
+    public async Task An_episode_that_ends_while_its_word_is_being_kept_has_the_word_taken_off_when_the_keep_returns()
+    {
+        var release = new TaskCompletionSource();
+        var said = new StandInSaid { Answering = _ => release.Task };
+        using var run = _watch.Watch("s1", new WatchedRun(SessionWatch.Quest, "q1", "claude-code"));
+        using var word = QuietWord.Tell(_watch, "s1", new DrivenInbox(_ => { }), said)!;
+
+        Run(SessionWatch.DefaultQuiet + Pace);
+        await Settled(() => said.Said.Count > 0);
+        var kept = said.Said.Single().Id!;
+        _watch.Heard("s1");
+        Run(Pace);
+        release.SetResult();
+
+        await Settled(() => said.TakenOff.Count > 0);
+        Assert.Equal([kept], said.TakenOff);
+        Assert.Empty(said.Said);
+        Assert.Empty(word.Told);
+    }
+
     [Fact]
     public async Task SESSWATCH1b_an_intake_is_marked_and_told_nothing_and_a_run_s_end_takes_its_waiting_word_off()
     {

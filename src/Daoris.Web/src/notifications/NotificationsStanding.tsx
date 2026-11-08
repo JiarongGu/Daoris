@@ -3,8 +3,9 @@ import { useTranslation } from 'react-i18next';
 import {
   retryNotice, standingOf, useDriver, useRetryQuest, useSetDrivable, useSetHold, useSetTrees,
 } from '../bridge/shell';
+import { useOverruleStewardLand } from '../bridge/stewardLand';
 import { failure, type Notify } from '../design/ui';
-import { type StewardActNow, stewardReverse } from '../person/standing';
+import { type StewardActNow, type StewardLandNow, stewardReverse } from '../person/standing';
 import { StewardLine } from './StewardLine';
 
 /**
@@ -20,7 +21,17 @@ export function NotificationsStanding({ notify }: { notify: Notify }) {
   const setTrees = useSetTrees();
   const setHold = useSetHold();
   const retry = useRetryQuest();
+  const overruleLand = useOverruleStewardLand();
   const [stewardRefused, setStewardRefused] = useState<string | null>(null);
+  /** The person's *Overrule* of an allowed land: it does not land and their own card follows; said when the window had already closed. */
+  const overrule = (land: StewardLandNow) => {
+    if (land.session === null) return;
+    setStewardRefused(null);
+    overruleLand.mutate({ ask: land.ask, session: land.session }, {
+      onSuccess: (done) => { if (!done) setStewardRefused(t('notifications.steward.land.closed')); },
+      onError: failure(notify),
+    });
+  };
   /** The owner's own reverse press for a steward's act (§5.4), recorded as theirs by its ordinary route. */
   const reverse = (act: StewardActNow) => {
     const press = stewardReverse(act);
@@ -40,7 +51,9 @@ export function NotificationsStanding({ notify }: { notify: Notify }) {
       <StewardLine
         standing={standing}
         refused={stewardRefused}
+        busy={overruleLand.isPending}
         onReverse={reverse}
+        onOverrule={overrule}
       />
     </>
   );
