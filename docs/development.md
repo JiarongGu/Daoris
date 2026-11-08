@@ -23,8 +23,8 @@ rather than merging them.
 The service and the driver build against Lyntai's released pins, or against a local build of its main line (D22's note, D248). With
 the Lyntai checkout beside this one (or named by the argument or `DAORIS_LYNTAI_PATH`), check out its `master` and run
 `node tools/lyntai-local.mjs [path]`: it packs the tip into the ignored `local/lyntai-feed/` and writes `local/lyntai-local.props`,
-and reruns do nothing while the tip is packed. The service's and the desktop's package props import that file; delete it to
-restore the released pins. The merge tool copies it into its gate trees; copy
+and reruns do nothing while the tip is packed. The service's, the desktop's and the contracts generator's package props import that
+file (the generator restores the desktop modules' graph, so it restores the same packs); delete it to restore the released pins. The merge tool copies it into its gate trees; copy
 the main checkout's into a worktree that builds the layer. Lyntai's agent layer is only in the local build, so the driver references it, and
 compiles `Agents/Layer/`, only while the file is there (`DaorisLyntaiLayer`); without it the driver builds as it did before the
 layer, which is what the CI builds. A change to the layer's reference is built both ways: with the file, then with it moved
@@ -33,7 +33,7 @@ aside and the projects restored again.
 The desktop builds against Shenora's released pin (`DaorisShenoraReleased`) or against a local build of its main line (D22's note of
 2026-11-08), the same way: with the Shenora checkout beside this one (or named by the argument or `DAORIS_SHENORA_PATH`) on its `main`,
 `node tools/shenora-local.mjs [path]` packs `Shenora`, `Shenora.Windows` and `Shenora.Chromium` at one `<released>-local.<sha7>` into
-the ignored `local/shenora-feed/` and writes `local/shenora-local.props`, which the desktop's package props import; delete it to
+the ignored `local/shenora-feed/` and writes `local/shenora-local.props`, which the desktop's and the contracts generator's package props import; delete it to
 restore the pin. Both local-build tools write the feed and the props under the main checkout's `local/` even when run from a
 worktree (and a copy of the props into the worktree); the merge tool and the trees' rule file copy the props into gate trees and
 sessions. A fix that belongs to the desktop kit is made in Shenora by a quest, never patched over here.

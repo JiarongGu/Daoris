@@ -1,0 +1,12 @@
+<Project>
+
+  <!-- The generator takes no package of its own, but it restores the desktop modules' whole graph, whose Lyntai and Shenora come from the
+       desktop's central versions. A restore takes its sources from the project it starts at, so this one imports the same ignored files
+       as src/Daoris.Desktop/Directory.Packages.props (tools/lyntai-local.mjs, tools/shenora-local.mjs write them) and restores the
+       local packs the desktop builds against; without them the released pins stand. -->
+  <Import Project="$(MSBuildThisFileDirectory)../../local/lyntai-local.props"
+          Condition="Exists('$(MSBuildThisFileDirectory)../../local/lyntai-local.props')" />
+  <Import Project="$(MSBuildThisFileDirectory)../../local/shenora-local.props"
+          Condition="Exists('$(MSBuildThisFileDirectory)../../local/shenora-local.props')" />
+
+</Project>
