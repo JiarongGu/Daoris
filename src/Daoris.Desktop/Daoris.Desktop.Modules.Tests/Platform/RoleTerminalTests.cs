@@ -239,6 +239,17 @@ public sealed class RoleTerminalTests : Bridge
         Assert.Equal([generation], TurnOff(standing));
     }
 
+    /// <summary>A start while the catalogue cannot be read is refused as admission refuses a hold it cannot place, <c>role-changed</c>, not as an unknown role.</summary>
+    [Fact]
+    public void ROLESREVIEW2p_a_start_while_the_catalogue_is_unreadable_is_role_changed()
+    {
+        var standing = Staffed();
+        standing.Slots = () => null;
+
+        Assert.Equal(SupervisorWhy.RoleChanged, standing.Start(new HoldRequest(AppointedRoles.Supervisor), StandingConfirmationTests.Opened).Answer.Why);
+        Assert.Empty(standing.Now().Holds!);
+    }
+
     /// <summary>
     /// A role's change raced against a keeping, a release and an admission. The judge's step ends first and the sweep follows
     /// under each decision's lock: no lock taken in reverse, nothing deadlocks, and nothing is kept, released or admitted under the dead
