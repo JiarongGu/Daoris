@@ -257,6 +257,7 @@ holds remaining work (D127/D159). Paths are relative to this file. Historical do
 |`2026-11-08-supervisor-kinds-design.md`|Proposed design: SUPERVISOR2, supervisors of a kind (D233)
 |`2026-11-08-supervisor-kinds-reads.md`|Reads: SUPERVISOR2
 |`2026-11-09-git-library-design.md`|Proposed design: GITLIB1, git reads in process
+|`2026-11-09-git-library-reads.md`|Reads: GITLIB1
 
 ## UI, browser, tools and plugin contracts
 
