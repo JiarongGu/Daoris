@@ -25,7 +25,7 @@ public sealed class LimitWaitsTests : IDisposable
 
     private readonly string _root;
 
-    private readonly DateTimeOffset _now = DateTimeOffset.UtcNow;
+    private DateTimeOffset _now = DateTimeOffset.UtcNow;
 
     public LimitWaitsTests()
     {
@@ -141,6 +141,30 @@ public sealed class LimitWaitsTests : IDisposable
 
             return Task.CompletedTask;
         };
+    }
+
+    /// <summary>
+    /// 🔴 A wake the conversation could not take on (its go-on answers held, here by a hand-over's box an older build left) leaves it held for
+    /// the next look, which asks again though nothing the stage reads has changed, and goes on once what held it is gone.
+    /// </summary>
+    [Fact]
+    public async Task A_wake_that_answered_held_is_asked_again_at_the_next_look_at_the_same_stamp()
+    {
+        var ledger = HeldEnded(1);
+        Cooling("account-2", _now.AddDays(1));
+        Assert.True(AccountCooling.End(_home, "stub", "account-1", _now));
+        var (runner, _, client) = Runner(ledger);
+        using var r = runner;
+        using var c = client;
+        var config = Config();
+        var box = new HandOverBox(_home);
+        box.Write("c1", new HandOverRequest("acp-stub", null, HandOverWhy.Press, HandOverBy.Person, _now));
+
+        var held = Assert.Single(await runner.WakeLimitsAsync(config));
+        Assert.Null(held.SessionId);
+        box.Clear("c1");
+
+        Assert.Single(await runner.WakeLimitsAsync(config));
     }
 
     /// <summary>
