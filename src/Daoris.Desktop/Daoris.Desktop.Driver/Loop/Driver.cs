@@ -94,10 +94,7 @@ public sealed class Driver(
     /// <summary>The review's showing in Daoris's browser, shared across looks as the browser is; null where no shell carries one.</summary>
     public ReviewDesk? Reviews { get; init; }
 
-    /// <summary>
-    /// The driver's file, read again at a running driven session's turn's end: the look's config is the file as that look read it,
-    /// and a session outlives its look. The watch's; null for a one-look run and a gate's.
-    /// </summary>
+    /// <summary>The driver's file, read again at a session's turn's end since a session outlives its look; null for a one-look run.</summary>
     public string? ConfigPath { get; init; }
 
     internal static string BroughtForwardTold(ForwardTake forward) =>
@@ -360,13 +357,6 @@ public sealed class Driver(
         }
     }
 
-    /// <summary>The work a quest's start is: design or exact where its publisher or the intake marked its weight so, else build.</summary>
-    internal static string StartWork(QuestView quest) => quest.Weight switch
-    {
-        ParticipantWork.Design => ParticipantWork.Design,
-        ParticipantWork.Exact => ParticipantWork.Exact,
-        _ => ParticipantWork.Build,
-    };
 
     /// <summary>Where a quest's start is, by which a scoped role is found: its circle and the repository it is asked of.</summary>
     internal static RolePlace PlaceOf(Consideration start) => new(start.Workspace, start.Quest.To);

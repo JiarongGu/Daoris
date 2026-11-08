@@ -2408,6 +2408,7 @@
         "daoris: the roles that take this machine's work",
         "  build       Build · takes build on the machine · its staffing's order (the seed)",
         "  design      Design · takes design on the machine · its staffing's order (the seed)",
+        "  exact       Exact build · takes exact on the machine · its staffing's order (the seed)",
         "  intake      Intake · takes intake on the machine · its staffing's order (the seed)",
         "  opinion     Second opinion · takes review on the machine · its staffing's order (the seed)",
         "  helper      Helper · takes help on the machine · its staffing's order (the seed)",

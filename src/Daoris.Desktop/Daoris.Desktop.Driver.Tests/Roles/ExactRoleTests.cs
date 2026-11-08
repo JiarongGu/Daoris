@@ -63,9 +63,9 @@ public sealed class ExactRoleTests
     public void A_quest_s_weight_marks_its_work_and_an_exact_start_says_whose_order_it_ran_on()
     {
         var quest = new QuestView("q1", "a", "b", "t", "body", "Open");
-        Assert.Equal("exact", Daoris.Driver.Driver.StartWork(quest with { Weight = "exact" }));
-        Assert.Equal("design", Daoris.Driver.Driver.StartWork(quest with { Weight = "design" }));
-        Assert.Equal("build", Daoris.Driver.Driver.StartWork(quest));
+        Assert.Equal("exact", ParticipantWork.OfWeight("exact"));
+        Assert.Equal("design", ParticipantWork.OfWeight("design"));
+        Assert.Equal("build", ParticipantWork.OfWeight(quest.Weight));
 
         Assert.Equal("Exact build: it ran on Exact build's order.", RotatedOpening.ExactLine(ActorWords.Name("exact")).Note);
         Assert.Equal("Exact build: it ran on Build's order.", RotatedOpening.ExactLine(ActorWords.Name("build")).Note);

@@ -18,7 +18,7 @@ internal sealed record RuledLine(string Role, string? Repository, string? Worksp
 
     /// <summary>A driven quest's line: its last record where one ran, at the quest's repository and its registered <paramref name="workspace"/>.</summary>
     public static RuledLine OfQuest(string? home, QuestView quest, PriorSession? record, string? workspace) =>
-        Of(home, record, quest.To, workspace, Driver.StartWork(quest));
+        Of(home, record, quest.To, workspace, ParticipantWork.OfWeight(quest.Weight));
 
     /// <summary>
     /// The line <paramref name="record"/> goes on from. A first start, with no record, is at <paramref name="repository"/> and
