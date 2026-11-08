@@ -153,7 +153,7 @@ area document under `docs/areas/`. Each row's earlier full text is in git at `9f
 - [ ] **EVENTHOOK1 — the work cycle's events reach an outside agent's session by a plugin, pushed, never polled** (driver, plugins, service; D173; FOUNDATION1's row n): the steward still polls the install in a shell loop. Left: **1a**'s M9 and M10 (`docs/2026-11-06-event-hook-measurements.md`) and **1c**'s steps 2 and 3 across real elevations, both unmeasured with UAC off, so open on a UAC machine; then **EVENTHOOK1h** the installed proof. → `docs/2026-10-24-event-hook-design.md` §7, §9
 - [ ] **EVENTHOOK1e — a relay that lives for the session** (designed, D244; after 1h's two weeks of use): **1e-i** measured in a probe session (M2 to M4 with M2a, M5L, M8; M6, M7, M7b, M7c), M11 read from 1h's record; then at most one of **1e-ii** the inbox (a token held in memory and sent only to the session's own pipe; a refused batch folded into one gap line) or **1e-iii** the relay's own channel form behind a front. → `docs/2026-11-06-event-channel-design.md` §4, §7 (EV-C to EV-E)
 
-- [ ] **PLUGREV2a to 2i — the plugins review's second cycle** (driver, web, plugins): 7 defects open. → `docs/areas/plugins.md`, Open
+- [ ] **PLUGREV2a to 2i — the plugins review's second cycle** (driver, web, plugins): 5 defects open. → `docs/areas/plugins.md`, Open
 
 ## Code structure and the process
 

@@ -149,6 +149,36 @@ public sealed class PlacedWorkTests : IDisposable
         Assert.Equal((Pr, WorkRefusals.Stale), (Text(line, "plugin"), Text(line, "code")));
     }
 
+    /// <summary>
+    /// A look and a <c>Watch</c> each divide the awaited set and apply it: the one that divided first applies first, so a process is never
+    /// left told a set older than the one held. The first apply is held open while a second divides a newer set.
+    /// </summary>
+    [Fact]
+    public async Task A_division_of_the_awaited_set_is_applied_before_the_next_is_divided()
+    {
+        var placed = new PlacedWork();
+        var applied = new List<string>();
+        string Branch(IReadOnlyDictionary<string, IReadOnlyList<WatchedUnit>> told) => Assert.Single(Assert.Single(told).Value).Branch;
+        using var entered = new ManualResetEventSlim();
+        using var release = new ManualResetEventSlim();
+
+        placed.Await(Awaiting(Unit("engine", "u1") with { Branch = "quest/old" }));
+        var first = Task.Run(() => placed.Apply(told =>
+        {
+            entered.Set();
+            release.Wait();
+            lock (applied) applied.Add(Branch(told));
+        }));
+        entered.Wait();
+        placed.Await(Awaiting(Unit("engine", "u1") with { Branch = "quest/new" }));
+        var second = Task.Run(() => placed.Apply(told => { lock (applied) applied.Add(Branch(told)); }));
+        await Task.WhenAny(second, Task.Delay(200));
+        release.Set();
+        await Task.WhenAll(first, second);
+
+        Assert.Equal(["quest/old", "quest/new"], applied);
+    }
+
     /// <summary>A watch frame that did not reach a place's process is a failure of the plugin, which its health sees.</summary>
     [Fact]
     public async Task A_watch_that_failed_to_reach_a_place_is_a_failed_line_naming_the_plugin()

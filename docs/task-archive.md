@@ -28,6 +28,8 @@ the per-task record. Entries preserve their original wording so the archive stay
 > **PLUGREV2b** (driver, web, plugins): Outcome: a sound plugin switched off keeps its approval on its page and in the list (`HelpGrants.Read(withSwitchedOff)`, its grants marked `Off` and handed nothing), and the page's press approves one (`HelpGrants.Declared` takes a sound plugin, on or off); the Ask Daoris proposal still asks a plugin switched on; proved by `HelpGrantsTests` and `PluginPageTests`.
 >
 > **PLUGREV2c** (driver, plugins): Outcome: a placed plugin's `plugin.step` and `plugin.failed` lines carry its id (`WorkPlugins` logs `PlacedWork.PluginOf(key)`, so `PluginHealth` sees the failure under the plugin), and `HookSet.Refused` counts one refusal at the first place that holds a state, not once per place; proved by `PlacedWorkTests`.
+>
+> **PLUGREV2d** (driver, plugins): Outcome: a look and `Watch` divide the awaited set and apply it through `PlacedWork.Apply`, one lock around both, so a look never applies a set older than one `Watch` stored (the rejected alternative, `Watch` only recording, would have delayed an awaited place's start to the next look); proved by `PlacedWorkTests`.
 
 ## TREEPOOL1ac — shared paths (2026-11-09)
 
