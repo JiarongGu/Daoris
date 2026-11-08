@@ -3256,6 +3256,8 @@ test("a .NET gate's component is the first two folders of the project its comman
   assert.equal(tool.dotnetComponent('node tools/as-merged.mjs dotnet run --project src/Daoris.Devkit/Daoris.Devkit.Cli -- verify --universal-only'), 'src/Daoris.Devkit');
   assert.equal(tool.dotnetComponent('node tools/orient-index.mjs && node tools/as-merged.mjs dotnet run --project src/Daoris.Devkit/Daoris.Devkit.Cli -- verify --universal-only'), 'src/Daoris.Devkit');
   assert.equal(tool.dotnetComponent('dotnet build "src\\Daoris.Service\\Daoris.Service.Http"'), 'src/Daoris.Service');
+  // The integrated builder builds the project it names, through the base's door where a marker stands.
+  assert.equal(tool.dotnetComponent('node tools/tree-base.mjs build src/Daoris.Service/Daoris.Service.Http'), 'src/Daoris.Service');
   assert.equal(tool.dotnetComponent('dotnet build-server shutdown'), null);
   assert.equal(tool.dotnetComponent('dotnet test'), null);
   assert.equal(tool.dotnetComponent('npm run test:web'), null);
@@ -3803,7 +3805,8 @@ test('the release rehearsal stages nothing a desktop test reads: they read the C
   assert.ok(sources.length >= 100, 'the desktop sources left src/Daoris.Desktop');
   let read = 0;
   for (const path of sources) {
-    const text = readFileSync(join(repoRoot, path), 'utf8');
+    // A raw string is a fixture's text, never a path read: the rule file's corpus quotes this repository's own rules.
+    const text = readFileSync(join(repoRoot, path), 'utf8').replace(/"""[\s\S]*?"""/g, '""');
     // The install's own CLI is no package of this checkout; the one test running this checkout's bin is a modules Process test, never beside a pack.
     assert.ok(path.endsWith('Bridge/ReconcileStatusProcessTests.cs') || !/Daoris\.Cli"[^;]*daoris\.mjs/.test(text), `${path} names the CLI's bin, which prefers a staged dist/`);
     for (const match of text.matchAll(/Daoris\.Cli"\s*,\s*"([^"]+)"|Daoris\.Cli[\\/]+([^\\/\s"`'<]+)/g)) {
@@ -3906,7 +3909,7 @@ test("this repository's web gate runs its unit tests as a light gate of its own,
   assert.equal(scripts['test:web:unit'], 'npm --prefix src/Daoris.Web run test');
   assert.equal(web.run, 'npm run test:web:e2e');
   assert.equal(scripts['test:web:e2e'],
-    'npm --prefix src/Daoris.Web run build && dotnet build src/Daoris.Service/Daoris.Service.Http && npm --prefix src/Daoris.Web run e2e');
+    'npm --prefix src/Daoris.Web run build && node tools/tree-base.mjs build src/Daoris.Service/Daoris.Service.Http && npm --prefix src/Daoris.Web run e2e');
   // A person's whole web run is both, its unit tests first.
   assert.equal(scripts['test:web'], 'npm run test:web:unit && npm run test:web:e2e');
   const schedule = tool.laneSchedule(repoPlan, { scripts });

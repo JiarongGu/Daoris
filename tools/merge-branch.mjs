@@ -538,12 +538,13 @@ export const isHeavyGate = (gate) => !isProcessLane(gate)
   && (/^npm run (verify|test:web)\b/.test(gate.run.trim()) || /^dotnet test\b/.test(gate.run.trim()));
 
 /**
- * The component a `dotnet test|build|run|publish` command builds: the first two folders of the project it
- * names (`src/Daoris.Desktop`), or null when it names none. A project references only projects of its own component
- * (a test holds it), so gates of two components never build one project.
+ * The component a `dotnet test|build|run|publish` command builds, or `node tools/tree-base.mjs build`, which builds the
+ * project it names: the first two folders of the project (`src/Daoris.Desktop`), or null when it names none. A project
+ * references only projects of its own component (a test holds it), so gates of two components never build one project.
  */
 export function dotnetComponent(run) {
-  const command = run.trim().replace(/^node tools\/orient-index\.mjs\s+&&\s+/, '').replace(/^node tools\/as-merged\.mjs\s+/, '');
+  const command = run.trim().replace(/^node tools\/orient-index\.mjs\s+&&\s+/, '').replace(/^node tools\/as-merged\.mjs\s+/, '')
+    .replace(/^node tools\/tree-base\.mjs\s+(?=build\s)/, 'dotnet ');
   const verb = /^dotnet\s+(?:test|build|run|publish)(?=\s|$)(.*)$/.exec(command);
   if (!verb) return null;
   const args = verb[1].trim().split(/\s+/).filter(Boolean);
@@ -1111,7 +1112,7 @@ export const REACH = Object.freeze([
   {
     paths: [
       'tools/merge-branch.mjs', 'tools/doc-duplicates.mjs', 'tools/process-reach.mjs', 'tools/test-map.mjs', 'tools/test-recall.mjs',
-      'tools/merge-queue.mjs', 'src/Daoris.Cli/tool-test/**', 'src/Daoris.Cli/test/_fixture.ts',
+      'tools/merge-queue.mjs', 'tools/private-gate-files.mjs', 'src/Daoris.Cli/tool-test/**', 'src/Daoris.Cli/test/_fixture.ts',
     ],
     gates: ['tool-tests'],
     why: "the merge tool's, the publisher's and the set-up kit's tests, which `tool-tests` runs and verify does not (GATESLIM1): the merge tool and what it imports (the Process census, PROCREACH1, among them), the census of every test unit with its failure reader and recall (CISCOPE1c), the merge queue and the admission record (CISCOPE1e), the tests, and the fixture they share",
@@ -1160,6 +1161,11 @@ export const REACH = Object.freeze([
     paths: ['tools/processes.mjs'],
     gates: ['tool-tests', 'deployment', 'rehearse-family', 'rehearse'],
     why: "what the publish imports (the rule above), and what the rehearsals' kit ends a timed-out command's leftovers with, so all three rehearsals (FAMILYFAIL1)",
+  },
+  {
+    paths: ['tools/tree-base.mjs'],
+    gates: ['deployment', 'rehearse-family', 'web'],
+    why: "the kept build base's guard and builder (TREEPOOL1): the desktop tool the deployment rehearsal drives and the family rehearsal import it, and the web gate's script builds the HTTP host through it; its own test runs in verify",
   },
   { paths: ['tools/deployment-rehearsal.mjs', 'tools/desktop.mjs', 'tools/desktop/**'], gates: ['deployment'], why: 'the deployment rehearsal and what it imports' },
   { paths: ['src/Daoris.Devkit/**'], gates: ['devkit'], why: 'its own suite; it is also the universal gates and the code map, which every merge runs' },
