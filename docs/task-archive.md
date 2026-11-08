@@ -5,6 +5,12 @@ the per-task record. Entries preserve their original wording so the archive stay
 
 ---
 
+## TASKS.md condensed, Consolidation section — SCOPEVERIFY1, MERGETOOL1 and DOCTRINECLI1's built accounts (2026-11-08)
+
+> **SCOPEVERIFY1 / MERGETOOL1 / DOCTRINECLI1** (backlog budget): Outcome: the rows keep what is left and lose what was built. SCOPEVERIFY1's run 12 on `bb912f3537` (2026-11-07) went green on every light gate, service-process and the rehearsal; fixed on main were the service's `KnowledgeStandingTests` (awaited past the search's own wait) and web-unit's two reds (the steward land act's Chinese word, a supervision fixture's clock). MERGETOOL1's batch 1031g runner that sat idle 80 minutes and the 204 scratch folders (3.5 GB) removed by hand on 2026-11-05 are the evidence in `docs/FIX-LOG.md`. The earlier full text is at `0369cf64f0:TASKS.md`.
+
+---
+
 ## DRVREVIEW7 and DRVREVIEW10's two fixed items — the planner's overlap wait, a second close and a resume over another machine's take (2026-11-08)
 
 > **DRVREVIEW7 / DRVREVIEW10** (driving review): Outcome: DRVREVIEW7 (7b2ae2d1af): a quest that goes back into a tree (`into` set: a retry or limit carry-on of an Open quest) is no first start, so `overlap: wait` holds it behind nothing. DRVREVIEW10's close (0e40520d2b): a second close of a closed ask is refused as `Closed` and the first reason stands, as a publish on a closed ask is refused. Its resume (227c2509ce): a resume of a Taken quest asks whether the last take is another machine's, through the part a carry-on uses, and is refused as `TakenElsewhere`. The park's clearing of kept words stays open in DRVREVIEW10 as an owner's reading.
