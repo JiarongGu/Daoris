@@ -100,8 +100,9 @@ The agent's half is the canon skill `canon/packs/co-working/skills/co-working/SK
     join <ask>` or `--line <session>`, the pipe's `CHANNEL_JOIN`) waits for the person's Confirm and is refused `inside` before any card
     from a process in an agents' job; the Confirm presses the person's `POST /api/channel/members`. At most 3 members hold a channel and 8
     the machine (`too-many`). A member reads and posts under its own id (`o` and seven hex) at the agent-class doors
-    `GET`/`POST /api/channel/members/{id}/messages` and leaves at `…/leave` (with the person's key, their *Remove*); its mark is its
-    record's last read. It names no part (`bad-part`); one never admitted or gone is `not-member`, its record and its messages' poster
+    `GET`/`POST /api/channel/members/{id}/messages` and leaves at `…/leave` (with the person's key, their *Remove*); its record's last
+    read moves Daoris's lines, and each message is handed once by id (`channel_member_reads`), so one mirrored behind the mark is still
+    handed; a read with `since` hands by moment. It names no part (`bad-part`); one never admitted or gone is `not-member`, its record and its messages' poster
     kept. Each join and leave journals a `member` row of the channel's family. The person's page lists a line's members from the
     driver-class `GET /api/channel/members` (the ids it holds are their only names, so never open), each with whether its channel's
     claims are spent: its ask has no quest open, no part of its line is active here and no helper a part asked still runs, judged as read and never stored. The look

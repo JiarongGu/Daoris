@@ -187,6 +187,32 @@ public sealed class ChannelMembersTests : IAsyncLifetime
         Assert.Null(await _channel.Parts.WaitingAsync(member.Id));
     }
 
+    /// <summary>🔴 A teammate's message mirrored after a read keeps its older moment, and is still handed by the next read.</summary>
+    [Fact]
+    public async Task A_member_is_handed_a_message_that_arrives_behind_its_mark()
+    {
+        await _store.MirrorAsync(new ChannelMessage("m1", "abc123", "work", Now, null, null, null, null, null, null, false, "first", Origin: "machine-b"));
+        var member = (await JoinAsync(ask: "abc123")).Member!;
+        Assert.Equal(["first"], (await _channel.Members.ReadAsync(member.Id, null, Now.AddMinutes(2))).Read!.Messages.Select(m => m.Text));
+
+        await _store.MirrorAsync(new ChannelMessage("m2", "abc123", "work", Now.AddMinutes(1), null, null, null, null, null, null, false, "late", Origin: "machine-b"));
+
+        Assert.Equal(["late"], (await _channel.Members.ReadAsync(member.Id, null, Now.AddMinutes(3))).Read!.Messages.Select(m => m.Text));
+        Assert.Empty((await _channel.Members.ReadAsync(member.Id, null, Now.AddMinutes(4))).Read!.Messages);
+    }
+
+    [Fact]
+    public async Task A_member_of_a_line_is_handed_a_post_kept_after_a_read_that_its_moment_precedes()
+    {
+        var chat = (await _ledger.OpenChatAsync("reports", "stub", Now, tree: Path.Combine(_root, "trees", "chat"))).Session!;
+        var member = (await JoinAsync(line: chat.Id)).Member!;
+        Assert.Empty((await _channel.Members.ReadAsync(member.Id, null, Now.AddMinutes(3))).Read!.Messages);
+
+        await _channel.PostAsSessionAsync(chat.Id, "kept late", null, null, false, Now.AddMinutes(1));
+
+        Assert.Equal(["kept late"], (await _channel.Members.ReadAsync(member.Id, null, Now.AddMinutes(4))).Read!.Messages.Select(m => m.Text));
+    }
+
     /// <summary>On a line on no ask, the member speaks on the line's own channel, kept apart and never travelling, under its own id.</summary>
     [Fact]
     public async Task CHANNELJOIN1a_a_member_of_a_lines_own_channel_posts_there_under_its_id()
