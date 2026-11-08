@@ -488,6 +488,10 @@ public sealed class AcpSession(
         {
             await NotifyAsync("session/cancel", new { sessionId = _sessionId }).ConfigureAwait(false);
         }
+        catch (Exception error) when (error is IOException or ObjectDisposedException)
+        {
+            // An agent that has exited has nothing left to stop: its stdin is the closed thing.
+        }
         finally
         {
             await TurnStages.Of<AcpPermission>().ReleaseHeldAsync(PermissionWhy.Cancelled).ConfigureAwait(false);
@@ -501,8 +505,18 @@ public sealed class AcpSession(
     public async Task<bool> StopTaskAsync(string asyncTaskId, CancellationToken ct)
     {
         if (_sessionId is null) return false;
-        var answer = await RequestAsync("_session/async_task/stop", new { sessionId = _sessionId, asyncTaskId }, ct)
-            .ConfigureAwait(false);
+        JsonElement answer;
+        try
+        {
+            answer = await RequestAsync("_session/async_task/stop", new { sessionId = _sessionId, asyncTaskId }, ct)
+                .ConfigureAwait(false);
+        }
+        catch (Exception error) when (error is IOException or ObjectDisposedException)
+        {
+            // An agent that has exited stopped nothing.
+            return false;
+        }
+
         return answer.ValueKind == JsonValueKind.Object
             && answer.TryGetProperty("stopped", out var stopped)
             && stopped.ValueKind == JsonValueKind.True;
@@ -526,9 +540,9 @@ public sealed class AcpSession(
             await RequestAsync("session/close", new { sessionId = _sessionId }, closing.Token)
                 .ConfigureAwait(false);
         }
-        catch (Exception error) when (error is DriverException or OperationCanceledException)
+        catch (Exception error) when (error is DriverException or OperationCanceledException or IOException or ObjectDisposedException)
         {
-            // Best-effort by construction: the conversation is over either way.
+            // Best-effort by construction: the conversation is over either way, and a closed stdin is an agent already gone.
         }
     }
 
