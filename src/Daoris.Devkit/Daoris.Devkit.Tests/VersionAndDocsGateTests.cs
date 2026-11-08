@@ -64,6 +64,43 @@ public sealed class VersionAndDocsGateTests : IDisposable
         Assert.Contains("written by hand", result.Detail);
     }
 
+    /// <summary>
+    /// A heading for 1.2.30 or 11.2.3 is no entry for 1.2.3: a substring match let a hand-bump pass whenever a
+    /// longer version happened to contain it.
+    /// </summary>
+    [Theory]
+    [InlineData("## 1.2.30\n")]
+    [InlineData("## 11.2.3\n")]
+    [InlineData("## 1.2.3-beta\n- not this\n## 1.2.4\n")]
+    [InlineData("## 1.2.3.4\n")]
+    public void A_longer_version_that_contains_the_source_version_is_no_changelog_entry(string changelog)
+    {
+        _fx.Write("Directory.Build.props", "<Project><VersionPrefix>1.2.3</VersionPrefix></Project>");
+        _fx.Write("CHANGELOG.md", $"# Changelog\n\n{changelog}");
+
+        var result = RunVersion(
+            new VersionOptions("Directory.Build.props"), new DocsOptions(Changelog: "CHANGELOG.md"));
+
+        Assert.False(result.Passed);
+        Assert.Contains("written by hand", result.Detail);
+    }
+
+    [Theory]
+    [InlineData("## 1.2.3\n")]
+    [InlineData("## [1.2.3] - 2026-11-09\n")]
+    [InlineData("Released 1.2.3.\n")]
+    [InlineData("## v1.2.3 (2026-11-09)\n")]
+    public void An_entry_for_the_version_is_found_however_it_is_headed(string changelog)
+    {
+        _fx.Write("Directory.Build.props", "<Project><VersionPrefix>1.2.3</VersionPrefix></Project>");
+        _fx.Write("CHANGELOG.md", $"# Changelog\n\n{changelog}");
+
+        var result = RunVersion(
+            new VersionOptions("Directory.Build.props"), new DocsOptions(Changelog: "CHANGELOG.md"));
+
+        Assert.True(result.Passed, result.Detail);
+    }
+
     /// <summary>0.x is development. A version that is not yet a claim cannot be a false one.</summary>
     [Fact]
     public void A_pre_release_version_is_not_held_to_the_changelog()

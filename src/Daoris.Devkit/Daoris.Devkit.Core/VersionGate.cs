@@ -68,7 +68,7 @@ public sealed class VersionGate : IGate
         {
             var file = context.Path(changelog);
             if (!File.Exists(file)) problems.Add($"{changelog}: declared as the changelog but does not exist");
-            else if (!File.ReadAllText(file).Contains(version, StringComparison.Ordinal))
+            else if (!Mentions(File.ReadAllText(file), version))
             {
                 problems.Add(
                     $"{changelog} has no entry for {version}. The release tooling stamps the version and its "
@@ -98,6 +98,13 @@ public sealed class VersionGate : IGate
             => @"""version""\s*:\s*""([^""]+)""",
         _ => null,
     };
+
+    /// <summary>
+    /// Whether the text names exactly this version: not as the middle of a longer one (1.2.30, 11.2.3, 1.2.3.4) nor as the
+    /// release a pre-release suffix belongs to (1.2.3-beta).
+    /// </summary>
+    private static bool Mentions(string text, string version) =>
+        Regex.IsMatch(text, $@"(?<![0-9.]){Regex.Escape(version)}(?![0-9A-Za-z]|-[0-9A-Za-z]|\.[0-9])");
 
     private static string? Capture(string text, string pattern)
     {
