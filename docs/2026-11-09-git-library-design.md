@@ -6,7 +6,7 @@ them per repository, identical reads in flight each start their own git, and a r
 service in .NET that every Daoris git read and act passes, so git is never started any other way. §10 to §13 are round 3: they answer
 both makers' reads of round 2 (`docs/2026-11-09-git-library-reads.md`) by the four classes their findings belong to, each finding
 placed in §11. Rounds 1 (§1 to §4) and 2 (§5, §6, §8, §9) are kept as history: their measures stand, and their design and rows are
-superseded where §10 to §13 differ. §7, the owner's open question, is current. The code was read at `aa5ef4ff3b`; nothing in the
+superseded where §10 to §13 differ. §7, the owner's open question, is current. The code was read at `be0f0e7c55`; nothing in the
 product changed.
 
 **In brief.** One service, `GitService`, is the only way Daoris's desktop starts git: a census and the start gate refuse any other,
@@ -591,7 +591,7 @@ names the classes, their members and how the members were searched; §10.2 to §
 | **An act ended mid-write** | A token ending any git, and a working-tree `diff` that locks the index whatever `--no-optional-locks` says (Opus B4). *Found:* two more such diffs (`BranchReplays.cs:521`, `IntegrationReplays.cs:574`) beside `WorkOverlaps.cs:44`; every other way a git ends early: its kind's bound, the reader's ends, a removal, the Git job's end with Daoris | Only a git `RefSnapshot.MayWrite` calls a read and that takes no lock is handed a token; every other runs untokened once started (§10.6) | The optional-locks census extended to a working-tree diff; `GitEndingsCensusTests`: every early end listed with what it may end; the predicate run over every start the count classes record |
 | **A door that escapes the one service** | The Tools page's two git starts through `ToolQuestions` (Opus B6); the service host's two reads, kept out with their condition (both). *Found:* `GitVersions`' `--version` and `ToolsCommand`'s `tool use … file`, both through `ToolQuestions`; the programs Daoris starts that start git themselves (the devkit, gates, generators, plugin hooks, a heavy run's gate, a person's found command, the terminal's shell, the agents) | `ToolQuestions` asks no git; the start gate and `HeldChild` refuse a git's image holding no place of the scheduler's (§10.7) | `GitStartsCensusTests`: a source census and the gate's refusal at run time; a `Process` class driving each door through the scheduler |
 
-**How the members were searched.** In the code at `aa5ef4ff3b`, class by class, not in the reads. For the first: every field in the
+**How the members were searched.** In the code at `be0f0e7c55`, class by class, not in the reads. For the first: every field in the
 driver typed with a git answer (the `(int Code, string Stdout, string Stderr)` tasks of `GitFacts`, `RefSnapshot` and `GitReadOnce`),
 every cache of answers (`GitReadCache`), every join of work under way (`RouteFlights`, `HeldAnswers`) and each holder round 2 adds
 (the reader, the lease, the probe), each read against every input git reads for its answer: the refs, the configuration at each
@@ -756,7 +756,7 @@ ends it, and a source census refuses a `Repository` or a git `Process` held in a
 ### 10.7 Every git through one door
 
 The door is the desktop's process (the driver, the modules, the app): `GitService` is the only way it starts git, and every start is
-one of the scheduler's kinds. The starts in the code at `aa5ef4ff3b`, each placed:
+one of the scheduler's kinds. The starts in the code at `be0f0e7c55`, each placed:
 
 | Where git starts | Through the service as |
 |---|---|
