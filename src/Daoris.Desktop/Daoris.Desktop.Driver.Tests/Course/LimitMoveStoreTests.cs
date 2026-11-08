@@ -327,6 +327,35 @@ public sealed class LimitMoveStoreTests : IDisposable
     }
 
     /// <summary>
+    /// 🔴 A conversation's moves are counted under its line's key, not its part's id: a second part whose line already made the moves rule's
+    /// bound of moves is held for the person at its limit, where counted by part it would read none and walk on.
+    /// </summary>
+    [Fact]
+    public async Task A_limit_on_a_second_part_reads_the_moves_its_line_made_under_the_lines_key()
+    {
+        var staffing = new RoleStaffing(_home, () => StoreSettled.Yes);
+        Assert.True(staffing.ImportFile().How is StaffingImported.Done or StaffingImported.Already);
+        var rules = new SupervisorRuleStore(_home);
+        var bound = new SupervisorRule("chat-moves", SupervisorRules.Moves, SupervisorRules.Windows[SupervisorRules.Moves], 1, SupervisorRules.Ask, null, SupervisorRules.Machine, [RoleWork.Chat]);
+        Assert.True(rules.Write(
+            SupervisorRules.Machine, rules.Of(SupervisorRules.Machine).Revision, [.. SupervisorRuleBook.Seeded(3), new SupervisorRule("chat-limits", SupervisorRules.Limits, SupervisorRules.Windows[SupervisorRules.Limits], 1, SupervisorRules.Next, null, SupervisorRules.Machine, [RoleWork.Chat]), bound],
+            SupervisorRuleBook.SeedDoor, SupervisorRuleDoor.World(_home)).Stored);
+        Assert.True(new StaffLedger(_home, () => StoreSettled.Yes).Moves.Record("c0", RoleWork.Chat, "c0", StaffConditions.Limit, SupervisorRules.Next, "talk"));
+        var world = Live(opens: 2);
+        using var c = world.Client;
+        world.Ledger.Edit("c1", record =>
+        {
+            record["from"] = "c0";
+            record["actor"] = RoleWork.Chat;
+        });
+
+        var moved = await world.Limit.MoveAsync("c1", Config(), null);
+
+        Assert.Null(moved!.SessionId);
+        Assert.Empty(world.Ledger.Opened);
+    }
+
+    /// <summary>
     /// 🔴 A record that is the destination of another live run's standing move takes no move of its own (§3.1's <c>Never</c>, §3.3): the store
     /// answers that move, nothing is written for the record, no open is asked, and its turns are left as they were.
     /// </summary>
