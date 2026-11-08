@@ -1,5 +1,6 @@
 using System.Text.Json;
 using System.Text.RegularExpressions;
+using Daoris.Desktop.Driver.Tests;
 using Daoris.Driver;
 
 namespace Daoris.Driver.Tests;
@@ -9,6 +10,7 @@ namespace Daoris.Driver.Tests;
 /// the English catalogue names them: a text naming a domain the page does not have, or by a name it no longer carries, sends a
 /// person to nothing.
 /// </summary>
+[Trait(Category.Name, Category.Census)]
 public sealed partial class HelpRoomSettingsPlacesTests
 {
     private static readonly string Root = Root_();
