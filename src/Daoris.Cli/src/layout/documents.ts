@@ -99,7 +99,7 @@ export function checkDocuments(raw: unknown, text: string, target: string, harne
     // The present records `tools/doc-current.mjs` reads are declared beside the roles and are no document.
     if (role === PRESENT) continue;
     const name = `daoris.json's documents.${role}`;
-    const tier = TIER_ROLES[role];
+    const tier = Object.hasOwn(TIER_ROLES, role) ? TIER_ROLES[role] : undefined;
     if (tier !== undefined) {
       const dir = harness.tiers[tier]?.dir ?? tier;
       throw new DaorisError(
