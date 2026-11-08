@@ -59,8 +59,20 @@ public static class HomeMigration
         var record = DaorisHome.Entry(home, HomeEntry.Migration);
         if (Done(record) is { } done && steps.All(step => done.Contains(step.Name))) return new(Name, [], []);
 
-        using var lease = HomeLease.TryAcquire(home, LeaseKind.Migration, out var holder, "migration")
-            ?? (holder is { Kind: LeaseKind.Swap } ? null : HomeLease.Await(home, LeaseKind.Migration, "migration", leaseWait ?? HomeLease.Wait, out holder));
+        HomeLease? lease;
+        LeaseHolder? holder;
+        try
+        {
+            lease = HomeLease.TryAcquire(home, LeaseKind.Migration, out holder, "migration")
+                ?? (holder is { Kind: LeaseKind.Swap } ? null : HomeLease.Await(home, LeaseKind.Migration, "migration", leaseWait ?? HomeLease.Wait, out holder));
+        }
+        catch (HomeLeaseException)
+        {
+            // A lease that changed under every attempt is a holder in doubt, not a start that ends: the next start converts.
+            return new(Name, [], [], "the home's lease could not be taken, so it was not converted; the next start converts it");
+        }
+
+        using var held = lease;
         if (lease is null)
         {
             return holder is { Kind: LeaseKind.Swap }

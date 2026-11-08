@@ -164,6 +164,20 @@ public sealed class HomeMigrationTests : IDisposable
         Assert.False(File.Exists(DaorisHome.Entry(_home, HomeEntry.Migration)));
     }
 
+    /// <summary>A lease that cannot be taken (a folder stands in the lease file's place) is a start that says it was held, not one that dies.</summary>
+    [Fact]
+    public void A_lease_that_cannot_be_taken_is_held_by_doubt_and_the_next_start_converts()
+    {
+        Directory.CreateDirectory(DaorisHome.Entry(_home, HomeEntry.HomeLease));
+
+        var migrated = HomeMigration.Run(_home, leaseWait: TimeSpan.Zero);
+
+        Assert.NotNull(migrated.Held);
+        Assert.DoesNotContain(_home, migrated.Held);
+        Assert.Empty(migrated.Ran);
+        Assert.False(File.Exists(DaorisHome.Entry(_home, HomeEntry.Migration)));
+    }
+
     [Fact]
     public async Task A_home_the_launchers_swap_holds_is_converted_once_the_swap_lets_go()
     {
