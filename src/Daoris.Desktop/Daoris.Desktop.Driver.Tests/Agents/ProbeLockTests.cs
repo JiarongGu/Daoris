@@ -52,6 +52,33 @@ public sealed class ProbeLockTests : IDisposable
         Assert.False(Directory.Exists(Path.Combine(_home, "elsewhere", "harnesses")));
     }
 
+    /// <summary>A stale lock whose file cannot be deleted is waited on as a held one is: the patience bounds the take, which spins on nothing.</summary>
+    [Fact]
+    public async Task A_stale_lock_that_cannot_be_deleted_is_waited_on_within_the_patience_and_not_spun_on()
+    {
+        var path = ProbeLock.PathOf(_home, "claude-code", "account-1");
+        Directory.CreateDirectory(Path.GetDirectoryName(path)!);
+        await using (var holder = new FileStream(path, FileMode.CreateNew, FileAccess.Write, FileShare.None))
+        {
+            File.SetLastWriteTimeUtc(path, DateTime.UtcNow.AddHours(-1));
+
+            var taken = await Task.Run(() => ProbeLock.TakeAsync(path, TimeSpan.FromMilliseconds(300))).WaitAsync(TimeSpan.FromSeconds(20));
+
+            Assert.Null(taken);
+        }
+    }
+
+    /// <summary>A holder's mark that cannot be written leaves no open stream holding the lock file.</summary>
+    [Fact]
+    public void A_lock_whose_mark_cannot_be_written_is_not_left_held_open()
+    {
+        var path = ProbeLock.PathOf(_home, "claude-code", "account-2");
+
+        Assert.Null(ProbeLock.TryCreate(path, _ => throw new IOException("the disk refused the mark")));
+
+        Assert.False(File.Exists(path));
+    }
+
     /// <summary>When a lock file is taken for a holder that died, by its age in seconds: the twin's <c>STALE_ROWS</c> reads these.</summary>
     [Theory]
     [InlineData(0, false)]
