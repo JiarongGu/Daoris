@@ -369,7 +369,7 @@ public sealed class RefSnapshotTests
             return Task.FromResult(answer);
         }
 
-        return RefSnapshot.Asked(root, arguments, Start) ?? Start();
+        return RefSnapshot.Asked(root, arguments, _ => Start(), CancellationToken.None) ?? Start();
     }
 
     /// <summary>
@@ -459,8 +459,8 @@ public sealed class RefSnapshotTests
             return Task.FromException<(int, string, string)>(new InvalidOperationException("no git"));
         }
 
-        await Assert.ThrowsAsync<InvalidOperationException>(() => RefSnapshot.Asked(Root, ByIds[2], Throws)!);
-        await Assert.ThrowsAsync<InvalidOperationException>(() => RefSnapshot.Asked(Root, ByIds[2], Throws)!);
+        await Assert.ThrowsAsync<InvalidOperationException>(() => RefSnapshot.Asked(Root, ByIds[2], _ => Throws(), CancellationToken.None)!);
+        await Assert.ThrowsAsync<InvalidOperationException>(() => RefSnapshot.Asked(Root, ByIds[2], _ => Throws(), CancellationToken.None)!);
         Assert.Equal(2, thrown);
 
         asked.Clear();
@@ -517,9 +517,9 @@ public sealed class RefSnapshotTests
 
         await JudgeAsync();
         Assert.Single(asked);
-        Assert.Null(RefSnapshot.Asked(Root, ByIds[0], () => Task.FromResult((0, "", ""))));
+        Assert.Null(RefSnapshot.Asked(Root, ByIds[0], _ => Task.FromResult((0, "", "")), CancellationToken.None));
 
         RefSnapshot.Take(_ => Task.FromResult(_output));
-        Assert.Null(RefSnapshot.Asked(Root, ByIds[0], () => Task.FromResult((0, "", ""))));
+        Assert.Null(RefSnapshot.Asked(Root, ByIds[0], _ => Task.FromResult((0, "", "")), CancellationToken.None));
     }
 }

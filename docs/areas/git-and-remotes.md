@@ -47,6 +47,7 @@ is under `src/Daoris.Desktop/Daoris.Desktop.Modules/`.
 | Every delete | `JournaledDeletes.cs`, `ContentHolds.DeleteJudgedAsync` | A delete a door of Daoris's judged, or forced, as the journal's `ref.delete` act pressed by `daoris`, undone by `GIT_REF_UNDO`; where the door's rule keeps the commits, the recovery ref is made in the delete's own transaction, its record names it, and the Undo takes it back |
 | Every keep | `RecoveryKeeps.cs`, `RecoveryCensus.cs`, `RecoveryWorks.cs` | A recovery ref's one naming; a keep that deletes nothing as one `ref.keep` act; each ref a journal record names, dated from its act; the census of the refs no record names; what an unheld ref's work is to the repository's line |
 | The deletes' list | `DeletedBranches.cs`, `GIT_DELETES`, `projects/git/DeletedRefs.tsx` | Every done `ref.delete` act of a repository from the journal alone, each with its Undo open or shut (undone, name stands again, commit gone), under the Branches tab in en and zh |
+| The git scheduler | `Platform/GitScheduler.cs`, `Platform/GitPlaces.cs`, `Platform/GitPlace.cs`, `Platform/GitRunAsk.cs`, `Workplace/Git/GitStartAsks.cs`, `Workplace/Git/GitEndable.cs`, `Workplace/Git/GitMemoAsks.cs` | The one door every git of Daoris's passes: places for the run, a queue per repository, an identical queued start shared, a lock-free read nobody waits on ended, a removal admitted, re-entries lent a place, an outlived git counted apart; the gate refusing a git's image with no place |
 | Reads | `GitReads*.cs`, `GitBranches*.cs`, `GitLaunch.cs`, `GitReadCache.cs` | The page's git reads through Tools' git, cached by commit id |
 | Line fetch, bring up to date | `TreeRefs.cs`, `TreeSync.cs` | `fetch origin <line>` past the doors and holds; ff-only, replay, delete what merged |
 | Landing plugin wire | `Plugins/LandingPlugins.cs` | Whether a plugin performs pull-request steps (`ProblemOf`, its manifest speaking on `work/perform`), and `work/state` asks |
@@ -246,7 +247,23 @@ is under `src/Daoris.Desktop/Daoris.Desktop.Modules/`.
 
 ## Git's starts, counted
 
-Every git of Daoris's own reads starts through `GitRuns` and `GitLaunch`, which count it for a flow (`GitLaunch.Count`,
+Every git Daoris's desktop starts runs in a place of `GitScheduler`'s: `GitRuns`' three runners, an act's held step and a pool
+claim's git (`Held`), an identity's `ls-remote` (a person's, waiting outside Daoris), and every question of a git's file through
+`ChildProcess` (the Tools page's version and system configuration, `daoris tool use git`, the version probe, a plugin's declared git
+and its checks); the start gate and `HeldChild` refuse a git's image holding no place at every purpose, said as `git.start.outside`.
+Four run at once; the background and every git waiting outside Daoris (a remote act, an act that may run a hook) hold three together,
+so a person's read always finds the fourth; outside-waiting gits hold at most two and count toward no repository's two; one
+repository runs at most two of the background's reads. Asks queue per repository by common directory, a person's oldest that may go
+first, else the oldest that may go; a write passes nothing queued ahead of it and nothing passes it. An ask shares an identical start
+(file, folder, arguments, variables, runner, bound) only while that start is queued, never one running. A read `GitEndable` calls
+lock-free (a `status` with `--no-optional-locks`, a working-tree diff also told `-c diff.autoRefreshIndex=false`) is dropped while
+queued and ended while running once its askers leave; every other git, placed, runs untokened to its end or its bound. A
+`worktree remove` is admitted once the tree's lock-free reads are dropped or ended and its other gits have ended, and holds what is
+asked in the tree after it. An ask beneath a git waiting outside Daoris (`GitScheduler.Beneath`) takes a place that git lends, above
+the four, one a parent, two deep, deeper refused as `git.start.depth`. A git whose kill it outlived leaves the four for a count apart
+(`git.place.apart`, `git.place.exited`), and while its repository holds one the background's asks of it are answered `stalled`. A
+bridge route's gits are a person's (`DriverModule`); the flow memos ask under the flow's token (`GitMemoAsks`). Each git is counted
+for a flow through `GitLaunch` (`GitLaunch.Count`,
 `WorkingTree.Started`); a test counts a pass's starts at the process gate with the folder each ran in (`GitStartTally`). Measured on
 2026-11-06 on the count classes' fixtures, and held there as budgets. *Again* is the same command in the same folder asked again in the
 pass with no write between; *object* is what one held `git cat-file --batch` of the repository could answer instead (a name or an id

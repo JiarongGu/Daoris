@@ -399,45 +399,51 @@ internal sealed class ActLaunch(ActJournal journal, ActClaim claim, ProcessJob j
                 foreach (var (name, value) in environment) info.Environment[name] = value;
             }
 
-            HeldChild child;
-            try
-            {
-                child = HeldChild.Start(job, info, input is not null);
-            }
-            catch (DriverException error)
-            {
-                return new Ran(null, "", "", false, error.Message);
-            }
-
-            try
-            {
-                if (limits.Seam is { } beforePid) await beforePid(ActSeams.BeforePid, ordinal).ConfigureAwait(false);
-                journal.Launched(claim, ordinal, child.Pid, child.Started);
-                child.Resume();
-                var writing = child.WriteAsync(input);
-                if (limits.Seam is { } afterLaunch) await afterLaunch(ActSeams.AfterLaunch, ordinal).ConfigureAwait(false);
-                var step = journal.Steps(claim.Act).Single(each => each.Ordinal == ordinal);
-                var left = (step.Deadline ?? DateTimeOffset.UtcNow) - journal.Clock.GetUtcNow();
-                var (exit, stdout, stderr) = await child.ExitAsync(left > TimeSpan.Zero ? left : TimeSpan.Zero).ConfigureAwait(false);
-                if (exit is not null)
-                {
-                    await writing.ConfigureAwait(false);
-                    return new Ran(exit, stdout, stderr, false, "");
-                }
-
-                (limits.Ending ?? (each => each.Terminate()))(job);
-                var emptied = await job.WaitEmptyAsync(limits.ExitBound).ConfigureAwait(false);
-                return emptied
-                    ? new Ran(null, "", "", false, $"git did not answer within its bound, and its processes were ended; its postconditions decide")
-                    : new Ran(null, "", "", true, $"git did not answer within its bound, and its processes (pid {child.Pid}) did not end when stopped");
-            }
-            finally
-            {
-                child.Dispose();
-                RefSnapshot.Ran(arguments);
-                GitFacts.Ran(arguments);
-            }
+            var ask = GitStartAsks.For(info, arguments, GitRunner.Held, TimeSpan.Zero, shares: false);
+            return await GitScheduler.Shared.RunAsync(ask, _ => PlacedAsync(info, ordinal, arguments, input), CancellationToken.None).ConfigureAwait(false);
         });
+
+    private async Task<Ran> PlacedAsync(System.Diagnostics.ProcessStartInfo info, int ordinal, IReadOnlyList<string> arguments, string? input)
+    {
+        HeldChild child;
+        try
+        {
+            child = HeldChild.Start(job, info, input is not null);
+        }
+        catch (DriverException error)
+        {
+            return new Ran(null, "", "", false, error.Message);
+        }
+
+        try
+        {
+            if (limits.Seam is { } beforePid) await beforePid(ActSeams.BeforePid, ordinal).ConfigureAwait(false);
+            journal.Launched(claim, ordinal, child.Pid, child.Started);
+            child.Resume();
+            var writing = child.WriteAsync(input);
+            if (limits.Seam is { } afterLaunch) await afterLaunch(ActSeams.AfterLaunch, ordinal).ConfigureAwait(false);
+            var step = journal.Steps(claim.Act).Single(each => each.Ordinal == ordinal);
+            var left = (step.Deadline ?? DateTimeOffset.UtcNow) - journal.Clock.GetUtcNow();
+            var (exit, stdout, stderr) = await child.ExitAsync(left > TimeSpan.Zero ? left : TimeSpan.Zero).ConfigureAwait(false);
+            if (exit is not null)
+            {
+                await writing.ConfigureAwait(false);
+                return new Ran(exit, stdout, stderr, false, "");
+            }
+
+            (limits.Ending ?? (each => each.Terminate()))(job);
+            var emptied = await job.WaitEmptyAsync(limits.ExitBound).ConfigureAwait(false);
+            return emptied
+                ? new Ran(null, "", "", false, $"git did not answer within its bound, and its processes were ended; its postconditions decide")
+                : new Ran(null, "", "", true, $"git did not answer within its bound, and its processes (pid {child.Pid}) did not end when stopped");
+        }
+        finally
+        {
+            child.Dispose();
+            RefSnapshot.Ran(arguments);
+            GitFacts.Ran(arguments);
+        }
+    }
 }
 
 /// <summary>The index's entries for some paths, as <c>ls-files -s -z</c> lists them, from the index or another index file.</summary>

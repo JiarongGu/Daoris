@@ -92,13 +92,13 @@ internal sealed class RefSnapshot
     /// asked again, never read as "no".</para>
     /// </remarks>
     internal static Task<(int Code, string Stdout, string Stderr)>? Asked(
-        string root, IReadOnlyList<string> arguments, Func<Task<(int Code, string Stdout, string Stderr)>> ask)
+        string root, IReadOnlyList<string> arguments, Func<CancellationToken, Task<(int Code, string Stdout, string Stderr)>> ask, CancellationToken ct)
     {
         if (Held.Value is not { Length: > 0 } held || !(GitFacts.ById(arguments) || RefsListing(arguments) || Layout(arguments))) return null;
         var folder = GitFacts.Folder(root);
         for (var at = held.Length - 1; at >= 0; at--)
         {
-            if (held[at]._root == folder) return held[at].AskAsync(arguments, ask);
+            if (held[at]._root == folder) return GitMemoAsks.Joined(held[at].AskAsync(arguments, GitMemoAsks.Under(ask, CancellationToken.None)), ct);
         }
 
         return null;

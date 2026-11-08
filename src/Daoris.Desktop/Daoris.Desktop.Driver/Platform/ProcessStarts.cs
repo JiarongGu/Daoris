@@ -118,15 +118,19 @@ public sealed class ProcessStarts
     /// way it is seen through, since a process abandoned as it started would run on unowned. The runtime's refusal to start is
     /// thrown as it threw it.
     /// </summary>
+    /// <exception cref="GitStartRefusedException">A git's image started in no place of the git scheduler's.</exception>
     public Task<Process?> StartAsync(ProcessStartInfo info, ProcessPurpose purpose, StartClass whose, CancellationToken ct)
     {
+        GitPlace.Admit(info, purpose);
+        var place = GitPlace.Current;
         var start = s_within.Value ?? _start;
         return RunAsync(() =>
         {
             var process = start(info);
             OwnedProcesses.Shared.Take(process, purpose);
+            if (process is not null) place?.Bind(process);
             return process;
-        }, whose, ct);
+        }, place?.Whose ?? whose, ct);
     }
 
     /// <summary>

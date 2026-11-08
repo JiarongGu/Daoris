@@ -56,6 +56,15 @@ public static class ChildProcess
     internal static async Task<ChildRun> RunAsync(
         ProcessStartInfo info, TimeSpan patience, CancellationToken ct, string? input, ProcessStarts starts)
     {
+        // A question of a git's file (its version, its system configuration, a plugin's check of it) is a git like any other: placed
+        // by the scheduler, never started beside it, and run to its patience once placed.
+        if (GitPlace.Current is null && GitPlace.IsGit(info.FileName))
+        {
+            var folder = Path.GetFullPath(string.IsNullOrEmpty(info.WorkingDirectory) ? "." : info.WorkingDirectory);
+            return await GitScheduler.Shared.RunAsync(
+                new GitRunAsk(folder, folder, GitWait.Read), token => RunAsync(info, patience, token, input, starts), ct).ConfigureAwait(false);
+        }
+
         Process? process;
         try
         {
