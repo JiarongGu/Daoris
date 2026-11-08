@@ -101,7 +101,6 @@ public sealed class RecordListTests : IDisposable
         var list = Make();
         list.Edit(PathOf, all => [.. all, new Item("a")]);
 
-        // Held by another reader or writer: the file says nothing of what it holds, so nothing is written over it.
         using (new FileStream(PathOf, FileMode.Open, FileAccess.ReadWrite, FileShare.None))
         {
             Assert.ThrowsAny<IOException>(() => list.Edit(PathOf, all => [.. all, new Item("b")]));

@@ -39,7 +39,7 @@ public sealed record OpinionGateState(string State, string Repository)
     /// <summary>Why the findings go to the person instead of the working session, a code.</summary>
     public string? ToPerson { get; init; }
 
-    /// <summary>When they went there, where it was kept: a <i>Reviewed</i> given before it cannot have seen them.</summary>
+    /// <summary>When they went there: a <i>Reviewed</i> given before it cannot have seen them.</summary>
     public DateTimeOffset? ToPersonAt { get; init; }
 
     /// <summary>What waits for the person.</summary>
