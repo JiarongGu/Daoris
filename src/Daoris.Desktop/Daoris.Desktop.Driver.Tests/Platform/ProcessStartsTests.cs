@@ -18,7 +18,7 @@ public sealed class ProcessStartsTests
     [ThreadStatic]
     private static bool t_calling;
 
-    private static ProcessStartInfo Info() => new("git") { UseShellExecute = false };
+    private static ProcessStartInfo Info() => new("probe") { UseShellExecute = false };
 
     // The clock a stage's span reads, in milliseconds, moved by hand so a wait's length is the test's to say.
     private long _now;
