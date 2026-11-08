@@ -49,6 +49,12 @@ internal sealed record FileRule(FileKind Kind, IReadOnlyList<string> Paths)
     /// <summary>A dependency's store entry shared across repositories.</summary>
     internal bool? Across { get; init; }
 
+    /// <summary>An output's one build command, run by the door in its project's folder for each configuration it names as <c>{configuration}</c>.</summary>
+    internal string? Builds { get; init; }
+
+    /// <summary>The runners the repository integrated with a base's guard, named in the start's words; nothing here enforces them.</summary>
+    internal IReadOnlyList<string>? Refuses { get; init; }
+
     internal IReadOnlyList<string> Evidence { get; init; } = [];
 
     /// <summary>The kind a weaker source said, shown beside the one written.</summary>
@@ -74,6 +80,8 @@ internal sealed record FileRule(FileKind Kind, IReadOnlyList<string> Paths)
         Reach = Reach ?? signature.Reach,
         Take = Take ?? signature.Take,
         Finish = Finish ?? signature.Finish,
+        Builds = Builds ?? signature.Builds,
+        Refuses = Refuses ?? signature.Refuses,
     };
 }
 

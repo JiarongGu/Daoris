@@ -171,6 +171,13 @@ public sealed partial class HostSupervisor(string serviceUrl, Func<HostLocation?
 
         var location = Locate();
 
+        if (location is null && locate is null && BaseHosts.PassedOver(AppContext.BaseDirectory, ServiceHostLocator.Project) is { } marked)
+        {
+            Trouble = BaseHosts.Said(marked).Note;
+            Last = Last! with { Why = BaseHosts.Why };
+            return false;
+        }
+
         if (location is null)
         {
             Trouble = NoHost(serviceUrl);

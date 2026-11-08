@@ -37,6 +37,13 @@ internal static class TakePlans
                     intermediates.Add(top);
                     break;
                 case SlotIgnored.Sort.Based when top.EndsWith('/'):
+                    if (rules.Rules.For(top, rules.Floor).Rule?.Builds is not { } builds)
+                    {
+                        outputs.Add(top);
+                        said.Add($"{top} is a base no build releases, its rule and its signature naming no `builds`, so it was set aside");
+                        break;
+                    }
+
                     var producer = await BaseProducers.ReadAsync(git, slot, facts.Start, top, ct).ConfigureAwait(false);
                     if (producer.Project is null)
                     {
@@ -45,7 +52,7 @@ internal static class TakePlans
                         break;
                     }
 
-                    Divide(slot, top, producer, record, facts with { Aside = aside }, outputs, bases);
+                    Divide(slot, top, producer with { Builds = builds }, record, facts with { Aside = aside }, outputs, bases);
                     break;
                 default:
                     outputs.Add(top);
@@ -76,7 +83,7 @@ internal static class TakePlans
 
             bases.Add(new TreeBase(path, facts.Previous, facts.Head, facts.At, producer.Project!, name)
             {
-                Job = facts.Job, Aside = facts.Aside, Was = record?.Bases.FirstOrDefault(each => each.Path == path),
+                Job = facts.Job, Aside = facts.Aside, Builds = producer.Builds, Was = record?.Bases.FirstOrDefault(each => each.Path == path),
             });
         }
     }

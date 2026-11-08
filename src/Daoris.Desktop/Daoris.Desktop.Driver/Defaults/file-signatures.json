@@ -38,7 +38,7 @@
       "toolchain": ".NET", "signature": ["*.csproj", "*.fsproj", "*.vbproj"],
       "rules": [
         { "kind": "intermediate", "paths": ["/obj/"], "toolchain": ["dotnet --version"] },
-        { "kind": "output", "paths": ["/bin/"] }
+        { "kind": "output", "paths": ["/bin/"], "builds": "dotnet build -c {configuration}" }
       ]
     },
     {

@@ -341,7 +341,9 @@ public static class HeavyRun
     {
         try
         {
-            return await MachineAdmission.TakeAsync(world.Home, request, output, ct, world.Admission, variable: world.Variable).ConfigureAwait(false);
+            var hold = await MachineAdmission.TakeAsync(world.Home, request, output, ct, world.Admission, variable: world.Variable).ConfigureAwait(false);
+            if (request.Tree is { } tree && UnreleasedBases.Line(world.Home, tree) is { } unreleased) output.WriteLine(unreleased);
+            return hold;
         }
         catch (Exception error) when (error is IOException or UnauthorizedAccessException)
         {

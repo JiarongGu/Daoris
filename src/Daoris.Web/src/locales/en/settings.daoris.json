@@ -236,6 +236,7 @@
   "settings.daoris.why.no-answer": "Did not answer",
   "settings.daoris.why.foreign": "Another install's service answered",
   "settings.daoris.why.no-host": "No host program was found",
+  "settings.daoris.why.base-host": "The host's development build here is the previous line's; `daoris tree build` on it releases it",
   "settings.daoris.why.unstartable": "The host could not be started",
   "settings.daoris.why.exited": "The host ended",
   "settings.daoris.why.never-answered": "Never answered",
