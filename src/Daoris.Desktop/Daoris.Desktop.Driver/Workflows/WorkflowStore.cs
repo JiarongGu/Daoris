@@ -67,6 +67,17 @@ public static class WorkflowStore
     internal static bool NewestIs(IWorkflowStore store, string id, int version) =>
         store.Load(id) is { File: not null, Read.Problem: null } now && now.Read.Versions[^1].Version == version;
 
+    /// <summary>Writes <paramref name="file"/> as the workflow's first version where the store holds no file for <paramref name="id"/>; false, nothing written, where one has appeared.</summary>
+    internal static bool WriteIfAbsent(IWorkflowStore store, string id, JsonNode file)
+    {
+        lock (Writing)
+        {
+            if (store.Load(id) is not null) return false;
+            store.Write(id, file);
+            return true;
+        }
+    }
+
     /// <summary>Writes <paramref name="file"/> where the workflow's newest version is still <paramref name="version"/>; false, nothing written, where it is not.</summary>
     internal static bool WriteIfNewest(IWorkflowStore store, string id, int version, JsonNode file)
     {

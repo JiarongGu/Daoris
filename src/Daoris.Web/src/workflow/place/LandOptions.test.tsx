@@ -15,14 +15,16 @@ afterEach(async () => {
   await act(async () => { await i18n.changeLanguage('en'); });
 });
 
-const squashed = () => graphOf(setOption(draftOf(MERGE_GRAPH), 'landing', 'squash', true));
+const BRANCH_GRAPH = { ...MERGE_GRAPH, nodes: MERGE_GRAPH.nodes.map((node) => (node.kind === 'land' ? { ...node, options: { method: 'branch' } } : node)) };
+
+const squashed = () => graphOf(setOption(draftOf(BRANCH_GRAPH), 'landing', 'squash', true));
 
 const draw = (more: Partial<Parameters<typeof LandOptions>[0]> = {}) => {
   const onJudge = vi.fn();
   const onSave = vi.fn(async (_ask: unknown) => ({ ...APPEND, written: true, version: 3 }));
   const view = render(
     <LandOptions
-      palette={PALETTE} roles={ROLES} graph={MERGE_GRAPH} workflow={{ id: 'docs-release', version: 2 }}
+      palette={PALETTE} roles={ROLES} graph={BRANCH_GRAPH} workflow={{ id: 'docs-release', version: 2 }}
       judged={null} judgedOf={null} onJudge={onJudge} saving={false} onSave={onSave} {...more}
     />,
   );
@@ -30,6 +32,12 @@ const draw = (more: Partial<Parameters<typeof LandOptions>[0]> = {}) => {
 };
 
 describe('the Landing row under a saved version', () => {
+  it('offers no squash under a merge, which the driver refuses it on', () => {
+    draw({ graph: MERGE_GRAPH });
+
+    expect(screen.queryByRole('checkbox', { name: /one commit/ })).toBeNull();
+  });
+
   it("is the land step's options, and a change is judged as the version's next", async () => {
     const { onJudge } = draw();
 

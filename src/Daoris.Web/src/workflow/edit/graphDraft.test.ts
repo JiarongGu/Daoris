@@ -537,7 +537,9 @@ describe('a landing method brings its tail, in one change (SETUPUX1r)', () => {
     expect(optionOf(land, 'squash')).toBeUndefined();
     expect(optionOf(land, 'pattern')).toBe('x/{quest}');
     const onMerge = setLandMethod(PALETTE, withOptions, 'landing', 'merge').draft.nodes.find((node) => node.id === 'landing')!;
-    expect([optionOf(onMerge, 'pattern'), optionOf(onMerge, 'squash')]).toEqual([undefined, true]);
+    expect([optionOf(onMerge, 'pattern'), optionOf(onMerge, 'squash')]).toEqual([undefined, undefined]);
+    const onBranch = setLandMethod(PALETTE, withOptions, 'landing', 'branch').draft.nodes.find((node) => node.id === 'landing')!;
+    expect([optionOf(onBranch, 'pattern'), optionOf(onBranch, 'squash')]).toEqual(['x/{quest}', true]);
   });
 
   it.each(SHIPPED.filter((each) => each.graph.nodes.some((node) => node.kind === 'land')).map((each) => [each.id] as const))(
