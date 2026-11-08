@@ -139,8 +139,7 @@ public sealed partial class AgentsTextTests
                 foreach (Match id in Drawn().Matches(text)) known.Add(id.Value);
             }
 
-            // So is a fold's receipt's (drawn at random, as an account's is), read inside `pooled` alone; its moment
-            // is a settling moment like a proposal's, `<at>`.
+            // So is a fold's receipt's, drawn at random and read inside `pooled` alone; its moment is a settling one, `<at>`.
             foreach (var file in row.GetProperty("before").EnumerateObject()) known.UnionWith(Receipts(file.Value.GetString()!));
 
             string Spelled(string text)
@@ -233,10 +232,7 @@ public sealed partial class AgentsTextTests
     [GeneratedRegex("(\"at\": ?)\"\\d{4}-\\d\\d-\\d\\dT[^\"]*\"")]
     private static partial Regex Settled();
 
-    /// <summary>
-    /// A key as <see cref="KeySeal"/> keeps it, sealed for this user and different at each sealing: the table spells it by the key it
-    /// opens to, <c>&lt;sealed sk-…&gt;</c>, so a key kept unsealed is no match.
-    /// </summary>
+    /// <summary>A kept key, sealed anew each time, is spelled by the key it opens to, <c>&lt;sealed sk-…&gt;</c>: an unsealed one matches none.</summary>
     private static string Opened(string text) => SealedKey().Replace(text, kept => $"<sealed {KeySeal.Open(kept.Value) ?? "?"}>");
 
     [GeneratedRegex(KeySeal.Prefix + "[A-Za-z0-9+/=]+")]
