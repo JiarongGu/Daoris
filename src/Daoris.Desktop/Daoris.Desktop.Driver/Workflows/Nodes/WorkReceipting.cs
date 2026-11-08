@@ -26,12 +26,15 @@ internal sealed class WorkReceipting(
         {
             var fresh = resources.Where(resource => record.Of(attempt.Plugin, resource.Schema, resource.Id) is null).ToList();
             if (fresh.Count == 0) return (null, null);
-            if (record.Receipts.Count + fresh.Count > ResourceRecord.ReceiptsKept) return (null, TooManyResources);
+            var owing = record.Receipts.Count(receipt => !receipt.Settled);
+            if (owing + fresh.Count > ResourceRecord.ReceiptsKept) return (null, TooManyResources);
             var taken = fresh.Select(resource => new ResourceReceipt(
                 Random("r-", 12), attempt.Plugin, resource.Schema, resource.Id,
                 declared.FirstOrDefault(each => each.Schema == resource.Schema)?.Role ?? ResourceReceipt.Undeclared,
                 attempt.Node, attempt.Attempt, attempt.Call.Invocation, at) { Superseded = superseded });
-            return (record with { Receipts = [.. record.Receipts, .. taken] }, null);
+            var dropped = record.Receipts.Where(receipt => receipt.Settled).Take(Math.Max(0, record.Receipts.Count + fresh.Count - ResourceRecord.ReceiptsKept)).ToList();
+            var kept = record.Receipts.Where(receipt => !dropped.Contains(receipt));
+            return (record with { Receipts = [.. kept, .. taken] }, null);
         });
         if ((refused ?? code) is not { } why) return null;
         if (why == TooManyResources && unsettled)

@@ -7,7 +7,8 @@ namespace Daoris.Driver;
 /// <param name="say">The say door a run's work is told what its steps sent back through: the session, the words and the key.</param>
 internal sealed class NodeRunKeeping(
     NodeRecordFiles records, Func<DateTimeOffset> clock, Func<bool> holdsLease, GraphRuns graphRuns, WorkPerformer performer,
-    Func<NodeDoors> doors, Func<Func<string, string, string, CancellationToken, Task<SayAnswer>>?> say, Func<IPullRequestRecords?> pullRequests)
+    Func<NodeDoors> doors, Func<Func<string, string, string, CancellationToken, Task<SayAnswer>>?> say, Func<IPullRequestRecords?> pullRequests,
+    Func<ILandingWords?> landings)
 {
     /// <summary>
     /// A run's active nodes after its rounds, each handed to its kind to start on its door off the pass (<see cref="IStarts.Keep"/>): the
@@ -60,9 +61,10 @@ internal sealed class NodeRunKeeping(
         if (scope.Quest?.Records.Quest is not { } newest || records.Read(unit) is not { } record || record.Ended?.Quest == newest.Id) return;
         var repository = scope.Run.Binding.Repository;
         if (newest.Then.Any(step => step.SetUpIn is null && string.Equals(step.To, repository, StringComparison.OrdinalIgnoreCase))) return;
-        if (record.Attempts.Any(attempt => attempt.State != AttemptStates.Settled || attempt.RetryAt is not null)) return;
+        if (record.Attempts.Any(attempt => attempt.State != AttemptStates.Settled || record.RetryPending(attempt))) return;
         // A failure kept for the person waits on their word, which only an armed run applies, so the run is not over while one stands.
         if (record.Attempts.Any(attempt => attempt.Resolution is null && WorkPerformer.KeptFailure(record, attempt))) return;
+        if (record.Pending.Count > 0 || record.Attempts.Any(attempt => attempt is { State: AttemptStates.Settled, Resolution: HeldResolutions.Again } && attempt.Plugin != QuestClosing.Sender)) return;
         var settled = !NodeStates.Live.Contains(WorkPerformer.StatusOf(record, governed.Graph.End).State)
                       || !governed.Graph.Nodes.Any(node => WorkPerformer.StatusOf(record, node.Id).State
                           is NodeStates.Ready or NodeStates.Active or NodeStates.Unknown or NodeStates.Invalidated);
@@ -111,8 +113,10 @@ internal sealed class NodeRunKeeping(
             var promoted = doors().Door<IIntegrationDoor>() is { } door &&pending.Pending.Any(word => word.Act == NodeWordActs.Stop && each.Declared.GetValueOrDefault(word.Node)?.Kind == NodeKinds.Integrate)
                 ? await IntegrateNodes.PromotedAsync(door, pending, ct).ConfigureAwait(false)
                 : null;
-            var (refused, applied) = records.Edit(unit, record => RunNodeWords.Apply(record, each.Declared, scope, now, promoted));
+            var landed = landings();
+            var (refused, applied) = records.Edit(unit, record => RunNodeWords.Apply(record, each.Declared, scope, now, promoted, landed));
             if (refused is not null) continue;
+            SupervisedWords.Settle(landed, applied!);
             foreach (var (word, code) in applied!)
             {
                 done.Add(new WorkPerformed(unit, word.Node, code is null ? PerformedWhat.Resolved : PerformedWhat.Refused, code ?? word.Act));

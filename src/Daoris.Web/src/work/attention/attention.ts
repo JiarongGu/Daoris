@@ -159,8 +159,8 @@ export function rowRun(item: Attention): { session?: string | null; quest?: stri
     case 'review': return { session: item.id };
     // The session that would have parked, its move back to the person refused.
     case 'helper-ended': return { session: item.session ?? item.id };
-    // The session whose memory waits.
-    case 'memory': return { session: item.session ?? item.id };
+    // The session whose memory waits; a sweep's end has none.
+    case 'memory': return item.memory?.end ? null : { session: item.session ?? item.id };
     // The work's act waits on the person's go-ahead, asked by the session the row names.
     case 'go-ahead': return item.session ? { session: item.session } : null;
     // The look waits on the person: the set-up step's session, else the step's newest here.
@@ -449,9 +449,19 @@ export function attentionWorded(row: PushedAttention, names: AttentionNames = {}
         session: row.session ?? row.id,
         ...(row.quest ? { quest: row.quest } : {}),
       };
-    // The session as Sessions names it, and what waits, counted by the kind of wait.
+    // The session as Sessions names it, and what waits, counted by the kind of wait; a sweep's end the entry and revision it ends, and
+    // the reason as the sweep wrote it, a value passed through, never re-worded.
     case 'memory': {
       const wait = row.memory ?? { ends: 0, replacements: 0, staged: 0 };
+      if (wait.end) {
+        return {
+          ...base,
+          title: i18n.t('work.memory.end', { target: `${wait.end.repository}:${wait.end.target}`, revision: wait.end.revision ?? '?' }),
+          detail: wait.end.reason,
+          session: null,
+          memory: wait,
+        };
+      }
       return {
         ...base,
         title: named(row.session ?? row.id),

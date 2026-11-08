@@ -32,7 +32,7 @@ internal sealed class RoleJudge(StandingConfirmation owner, StandingState state)
             // An agent's hold is its role's revision as the catalogue says it now, never a terminal's in memory.
             if (act is not null && !SupervisorGrants.Covers(effective!, kind, act)) return DecisionAdmitted.Refused(SupervisorWhy.NotGranted);
             var revision = slots.First(slot => slot.Id == effective!.Id).Revision;
-            return new DecisionAdmitted(AgentHold.Generation(effective!.Id, revision), null) { Window = TimeSpan.FromMinutes(effective.Hold!.Window) };
+            return new DecisionAdmitted(AgentHold.Generation(effective!.Id, revision), null) { Window = TimeSpan.FromMinutes(effective.Hold!.Window), Role = effective.Id };
         }
 
         lock (state.Gate)
@@ -40,7 +40,7 @@ internal sealed class RoleJudge(StandingConfirmation owner, StandingState state)
             if (effective is not { Hold.Terminal: true }) return DecisionAdmitted.Refused(SupervisorWhy.NotStaffed);
             if (act is not null && !SupervisorGrants.Covers(effective, kind, act)) return DecisionAdmitted.Refused(SupervisorWhy.NotGranted);
             return state.HoldOf(effective.Id) is { } hold
-                ? new DecisionAdmitted(hold.Generation, null) { Window = TimeSpan.FromMinutes(effective.Hold!.Window) }
+                ? new DecisionAdmitted(hold.Generation, null) { Window = TimeSpan.FromMinutes(effective.Hold!.Window), Role = effective.Id }
                 : DecisionAdmitted.Refused(SupervisorWhy.NotStarted);
         }
     }
@@ -186,7 +186,7 @@ internal sealed class RoleJudge(StandingConfirmation owner, StandingState state)
         if (!owner.TableOf(role).TryGetValue(act.Act, out var row)) return RoleJudgement.Refused(RoleWhy.NotRole);
         // The desk's decline changes nothing of Daoris's controls, so every steward may make it.
         var desk = role == AppointedRoles.Steward && StewardActs.Desk.Contains(act.Act, StringComparer.Ordinal);
-        if (!desk && !grant.Acts.Contains(act.Act, StringComparer.Ordinal)) return StewardAsk.Outside(row, act, holding.Id, roles);
+        if (!desk && !grant.Acts.Contains(act.Act, StringComparer.Ordinal)) return StewardAsk.Outside(row, act, holding.Id, roles, held.Generation);
 
         if (!row.IsForm(act.Form)) return RoleJudgement.Refused(SupervisorWhy.Form);
 

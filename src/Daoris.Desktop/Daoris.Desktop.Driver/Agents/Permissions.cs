@@ -330,7 +330,7 @@ public static class PermissionRules
     /// empty read, and writing it would drop every rule the file had. The CLI refuses the same edit. Or the file there now does not read,
     /// holds a key twice, or makes a scope this edit changes something other than an object.
     /// </exception>
-    public static void Save(string home, PermissionFile file)
+    public static void Save(string home, PermissionFile file, bool holding = false)
     {
         if (file.Problem is not null)
         {
@@ -341,7 +341,8 @@ public static class PermissionRules
 
         // The home and the folder the rules are in (`data/`), which a new home has not made yet.
         Directory.CreateDirectory(Path.GetDirectoryName(Path.GetFullPath(PathOf(home)))!);
-        if (file.Understood is { } understood) JsonKeeping.Save(PathOf(home), file.Found, understood, Written(file));
+        if (file.Understood is { } understood && holding) JsonKeeping.SaveHolding(PathOf(home), file.Found, understood, Written(file));
+        else if (file.Understood is { } kept) JsonKeeping.Save(PathOf(home), file.Found, kept, Written(file));
         else JsonFile.Write(PathOf(home), Root(file));
     }
 

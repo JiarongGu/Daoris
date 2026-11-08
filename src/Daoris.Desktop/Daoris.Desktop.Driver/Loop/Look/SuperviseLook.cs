@@ -5,7 +5,7 @@ namespace Daoris.Driver;
 /// per choice of its role's order and one at a time per line; a turn whose subject no longer waits ended, its result dropped; an
 /// attempt past its bound closed failed. A subject closed to the person, or whose attempts ended, is never attempted again.
 /// </summary>
-[LookPass("supervise", LookPhase.Planned, "course-release")]
+[LookPass("supervise", LookPhase.Planned, "landing-release")]
 internal sealed class SuperviseLook(ILookWiring wiring) : ILookPass
 {
     public async Task RunAsync(LookRound round, CancellationToken ct)

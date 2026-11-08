@@ -511,4 +511,90 @@ public sealed class SessionsSuperviseTests : IAsyncLifetime
         Assert.Equal(1, exit);
         Assert.Contains("no question of session `s1` waits for the supervisor", said, StringComparison.Ordinal);
     }
+
+    private static readonly object[] AllowRows =
+    [
+        new { kind = "allow", subject = new { session = "s1", request = "r1", held = "2026-11-08T10:00:00Z" }, repository = "engine", generation = "g-a", acts = new[] { "once", "reject" } },
+        new { kind = "allow", subject = new { proposal = "p1" }, repository = "", generation = "g-b", acts = new[] { "standing", "reject" } },
+        new { kind = "allow", subject = new { ask = "k1" }, repository = "engine", generation = "g-c", acts = new[] { "steward" }, act = "land" },
+    ];
+
+    /// <summary>The allow kind's three shapes are listed beside the questions, each in Daoris's own words and with the id the verb takes.</summary>
+    [Fact]
+    public async Task The_listing_names_each_allow_shape_and_the_id_its_decision_takes()
+    {
+        if (!OperatingSystem.IsWindows()) return;
+        _standIn = new InstanceStandIn(_pipe, _id) { Respond = (type, _) => type == SupervisorRoutes.Waiting ? new { waiting = AllowRows } : null };
+        using var running = RunningAddress.Write(_home, "http://localhost:5177", _pipe);
+
+        var (exit, said) = await RunAsync(["supervise"], Instance());
+
+        Assert.Equal(0, exit);
+        Assert.Contains("s1  engine  allow permission request r1  generation g-a  (decide with --kind allow --subject r1 --do once|reject", said, StringComparison.Ordinal);
+        Assert.Contains("-    allow widening p1  generation g-b  (decide with --kind allow --subject p1 --do standing|reject", said, StringComparison.Ordinal);
+        Assert.Contains("-  engine  allow the steward's land k1  generation g-c  (decide with --kind allow --subject k1 --do steward", said, StringComparison.Ordinal);
+    }
+
+    /// <summary>A decision on a widening and on a steward's act is sent with the subject as the listing names it, proved over it whole.</summary>
+    [Theory]
+    [InlineData("p1", "g-b", "standing", "proposal")]
+    [InlineData("k1", "g-c", "steward", "ask")]
+    public async Task An_allow_that_names_no_session_is_decided_by_its_own_id_with_its_subject_whole(string subjectId, string generation, string act, string field)
+    {
+        if (!OperatingSystem.IsWindows()) return;
+        _standIn = new InstanceStandIn(_pipe, _id)
+        {
+            Respond = (type, _) => type == SupervisorRoutes.Waiting ? new { waiting = AllowRows } : new { kept = true, decision = "d1" },
+        };
+        using var running = RunningAddress.Write(_home, "http://localhost:5177", _pipe);
+        string[] args = ["supervise", subjectId, "--kind", "allow", "--subject", subjectId, "--generation", generation, "--do", act, "--reason", "It only holds.", "--source", "the title"];
+
+        var (exit, said) = await RunAsync(args, Instance(_ => true));
+
+        Assert.Equal(0, exit);
+        var press = Assert.Single(_standIn.Presses, each => each.GetProperty("type").GetString() == SupervisorRoutes.Decide);
+        var payload = press.GetProperty("payload");
+        Assert.Equal([field], payload.GetProperty("subject").EnumerateObject().Select(each => each.Name));
+        var subject = field == "ask" ? SupervisorSubject.StewardAsk(subjectId) : SupervisorSubject.Proposal(subjectId);
+        Assert.True(SupervisorProof.Verify(HolderKey.Hash(Key)!, _standIn.Nonce,
+            SupervisorProof.Canonical(SupervisorRoutes.Decide, subject, generation, act, null, [new SupervisorReason("It only holds.", "the title")]),
+            payload.GetProperty("proof").GetString()));
+        Assert.Contains("kept as decision d1", said, StringComparison.Ordinal);
+    }
+
+    /// <summary>A held request is named by its session, and its subject carries the moment it began.</summary>
+    [Fact]
+    public async Task A_held_request_is_decided_by_its_session_with_the_moment_it_was_held()
+    {
+        if (!OperatingSystem.IsWindows()) return;
+        _standIn = new InstanceStandIn(_pipe, _id)
+        {
+            Respond = (type, _) => type == SupervisorRoutes.Waiting ? new { waiting = AllowRows } : new { kept = true, decision = "d1" },
+        };
+        using var running = RunningAddress.Write(_home, "http://localhost:5177", _pipe);
+
+        var (exit, _) = await RunAsync(
+            ["supervise", "s1", "--kind", "allow", "--subject", "r1", "--generation", "g-a", "--do", "once", "--reason", "It only reads.", "--source", "the title"], Instance(_ => true));
+
+        Assert.Equal(0, exit);
+        var payload = Assert.Single(_standIn.Presses, each => each.GetProperty("type").GetString() == SupervisorRoutes.Decide).GetProperty("payload");
+        Assert.Equal(["session", "request", "held"], payload.GetProperty("subject").EnumerateObject().Select(each => each.Name));
+        Assert.NotNull(SupervisorActs.Read(SupervisorRoutes.Decide, payload));
+    }
+
+    /// <summary>An allow that is not listed is not sent: the verb says to list again.</summary>
+    [Fact]
+    public async Task An_allow_the_listing_does_not_name_is_not_sent()
+    {
+        if (!OperatingSystem.IsWindows()) return;
+        _standIn = new InstanceStandIn(_pipe, _id) { Respond = (type, _) => type == SupervisorRoutes.Waiting ? new { waiting = AllowRows } : null };
+        using var running = RunningAddress.Write(_home, "http://localhost:5177", _pipe);
+
+        var (exit, said) = await RunAsync(
+            ["supervise", "p9", "--kind", "allow", "--subject", "p9", "--generation", "g-b", "--do", "standing", "--reason", "x", "--source", "y"], Instance(_ => true));
+
+        Assert.Equal(1, exit);
+        Assert.Contains("no allow `p9` waits", said, StringComparison.Ordinal);
+        Assert.DoesNotContain(_standIn.Presses, each => each.GetProperty("type").GetString() == SupervisorRoutes.Decide);
+    }
 }

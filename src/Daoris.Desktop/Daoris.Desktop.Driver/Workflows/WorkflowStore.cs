@@ -49,11 +49,32 @@ public static class WorkflowStore
     public static int Add(IWorkflowStore store, IWorkflowRunStore runs, WorkflowVersionAdded add, IReadOnlyCollection<int>? kept = null)
     {
         if (WorkflowNamed.IdProblem(add.Id) is { } idProblem) throw new DriverException(idProblem);
-        var found = store.Load(add.Id);
-        if (found is { File: null }) throw new DriverException($"nothing was written: the workflow's file cannot be read — {found.Read.Problem}");
-        var plan = WorkflowNamed.PlanAdd(found?.File, add, kept ?? runs.KeptVersions(add.Id));
-        if (plan.Problem is not null) throw new DriverException(plan.Problem);
-        store.Write(add.Id, plan.Result!);
-        return plan.Version!.Value;
+        lock (Writing)
+        {
+            var found = store.Load(add.Id);
+            if (found is { File: null }) throw new DriverException($"nothing was written: the workflow's file cannot be read — {found.Read.Problem}");
+            var plan = WorkflowNamed.PlanAdd(found?.File, add, kept ?? runs.KeptVersions(add.Id));
+            if (plan.Problem is not null) throw new DriverException(plan.Problem);
+            store.Write(add.Id, plan.Result!);
+            return plan.Version!.Value;
+        }
+    }
+
+    /// <summary>Held from a workflow's read to its write: two saves of one workflow never plan the same number.</summary>
+    internal static readonly object Writing = new();
+
+    /// <summary>Whether <paramref name="id"/>'s newest saved version is still <paramref name="version"/>, the one a save planned against.</summary>
+    internal static bool NewestIs(IWorkflowStore store, string id, int version) =>
+        store.Load(id) is { File: not null, Read.Problem: null } now && now.Read.Versions[^1].Version == version;
+
+    /// <summary>Writes <paramref name="file"/> where the workflow's newest version is still <paramref name="version"/>; false, nothing written, where it is not.</summary>
+    internal static bool WriteIfNewest(IWorkflowStore store, string id, int version, JsonNode file)
+    {
+        lock (Writing)
+        {
+            if (!NewestIs(store, id, version)) return false;
+            store.Write(id, file);
+            return true;
+        }
     }
 }

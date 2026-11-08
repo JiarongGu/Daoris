@@ -64,7 +64,11 @@ export const HANDLER: Record<AttentionActId, keyof AttentionActs> = {
   'task-done': 'passOver',
   'task-approve': 'passOver',
   'task-reject': 'passOver',
+  'approve-end': 'memoryEnd',
+  'decline-end': 'memoryEnd',
 };
+
+export const opensNothing = (item: Attention): boolean => item.kind === 'memory' && Boolean(item.memory?.end);
 
 /** The kinds that wait in a circle rather than in a repository. */
 export const IN_A_CIRCLE: ReadonlySet<Attention['kind']> = new Set(['proposal', 'intake']);

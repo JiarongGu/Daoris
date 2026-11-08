@@ -39,6 +39,9 @@ internal sealed class PipeState
     /// <summary>Each press whose grounds are being read before its card, by its request's id.</summary>
     public Dictionary<string, PipeReserved> Reserved { get; } = new(StringComparer.Ordinal);
 
+    /// <summary>A steward's request waiting for the allow supervisor, by its ask's id (<see cref="StewardAllows"/>): one entry per press.</summary>
+    public Dictionary<string, PendingAllow> StewardAsks { get; } = new(StringComparer.Ordinal);
+
     /// <summary>Each conversation a connection holds, by the conversation's id (<see cref="PipeHolding"/>).</summary>
     public Dictionary<string, PipeHold> Holds { get; } = new(StringComparer.Ordinal);
 

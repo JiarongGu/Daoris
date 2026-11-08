@@ -27,6 +27,8 @@ internal sealed class ReviewNode : BuiltInNode, IObserves, IPressed
     /// <summary>The person's Accept, a gate before every landing as the look is.</summary>
     public override LandingGuard Guard => LandingGuard.Before;
 
+    public override IReadOnlyList<string> LandingActs(NodeDeclaration node) => [NodeWordActs.Accept];
+
     /// <summary>Reached by the person's Accept, read from the landing it made as a <c>land</c>'s reach is.</summary>
     public NodeObservation Observe(NodeReading reading) => LandReading.Observe(reading,NodeSource.Person);
 
@@ -43,6 +45,6 @@ internal sealed class ReviewNode : BuiltInNode, IObserves, IPressed
     /// changes its rejection on that attempt, with their words, which the table needs.
     /// </summary>
     public NodeMove? Move(NodeDeclaration node, NodeWord word, NodeStatus status, NodeScope scope) => word.Act == NodeWordActs.Accept
-        ? new NodeMove(NodeStates.Reached, NodeCause.Authority) { Source = NodeSource.Person, Attempt = status.Attempt, Acceptance = status.Binding }
+        ? new NodeMove(NodeStates.Reached, NodeCause.Authority) { Source = word.Source, Attempt = status.Attempt, Acceptance = status.Binding }
         : new NodeMove(NodeStates.Rejected, NodeCause.Person) { Attempt = status.Attempt, Words = word.Words };
 }

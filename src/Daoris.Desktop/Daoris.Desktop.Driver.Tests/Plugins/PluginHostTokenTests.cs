@@ -20,7 +20,7 @@ public sealed class PluginHostTokenTests : IDisposable
 
     public void Dispose()
     {
-        try { Directory.Delete(_root, recursive: true); } catch (IOException) { } catch (UnauthorizedAccessException) { }
+        GitSeed.Discard(_root);
     }
 
     private string Home => Path.Combine(_root, "data");
@@ -175,6 +175,28 @@ public sealed class PluginHostTokenTests : IDisposable
         Assert.Empty(tokens);
         Assert.Contains(said, line => line.Contains("no API token", StringComparison.Ordinal));
         Assert.DoesNotContain(said, line => line.Contains("throwaway", StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public async Task The_place_is_judged_by_origins_push_address_where_a_pushurl_differs_from_the_fetch_address()
+    {
+        Serving();
+        var checkout = Path.Combine(_root, "checkout");
+        Directory.CreateDirectory(checkout);
+        foreach (var arguments in new[]
+        {
+            new[] { "init", "-q" },
+            ["remote", "add", "origin", "https://elsewhere.example.invalid/acme/app.git"],
+            ["remote", "set-url", "--push", "origin", Origin],
+        })
+        {
+            Assert.Equal(0, (await WorkingTree.GitAsync(checkout, arguments, CancellationToken.None)).Code);
+        }
+
+        var hand = await PlaceHostTokens.For(Home)(Plugin(), new WorkPlace("app", "work", checkout), CancellationToken.None);
+
+        Assert.Null(hand.Refusal);
+        Assert.Equal(Secret, hand.Token);
     }
 
     /// <summary>One look of a hook set that holds the home, a plugin with a pull-request step awaited at the place <c>work</c>: what started with what token, and what the log says.</summary>

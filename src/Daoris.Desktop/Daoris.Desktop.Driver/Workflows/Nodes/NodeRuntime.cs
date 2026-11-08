@@ -83,7 +83,7 @@ public sealed class NodeRuntime(
     private NodeClosing Closing => LazyInitializer.EnsureInitialized(ref _closing, () => new NodeClosing(records, clock, _closer, () => _quests, () => _governed, () => _governed = null))!;
 
     private NodeRunKeeping Keeping => LazyInitializer.EnsureInitialized(ref _keeping, () => new NodeRunKeeping(
-        records, clock, _holdsLease, _graphRuns, _performer, () => Doors, () => Say, () => PullRequests))!;
+        records, clock, _holdsLease, _graphRuns, _performer, () => Doors, () => Say, () => PullRequests, () => Landings))!;
 
     private NodeIntegrating Integrating => LazyInitializer.EnsureInitialized(ref _integrating, () => new NodeIntegrating(
         records, clock, () => Doors.Door<IIntegrationDoor>(), () => Lines, () => _config, () => Integrated))!;
@@ -108,6 +108,8 @@ public sealed class NodeRuntime(
 
     /// <summary>A unit whose <c>line</c> has reached after its <c>integrate</c> (<c>work.integrated</c>): told once, with its repository.</summary>
     public Action<string, string>? Integrated { get; set; }
+
+    public ILandingWords? Landings { get; set; }
 
     /// <summary>Where the pull request a plugin's step opened is written on its landing: none by default, so a runtime nobody wired writes none.</summary>
     public IPullRequestRecords? PullRequests { get; set; }
@@ -308,11 +310,12 @@ public sealed class NodeRuntime(
                 var kept = _closer is null ? null : (Func<string, NodeGraph?>)(digest => ClosureGraphs.Read(home, digest));
                 // The runs bound to graph versions, each owed a pass where a start of its chain asked one or this is the process's first look,
                 // which judges every bound run once, so a restart loses nothing.
-                var runs = _graphRuns.Read().Select(run => run with { Asked = _restarted || _returned.ContainsKey(run.Run) }).ToList();
+                var asks = _returned.Keys.ToHashSet(StringComparer.Ordinal);
+                var runs = _graphRuns.Read().Select(run => run with { Asked = _restarted || asks.Contains(run.Run) }).ToList();
                 (_governed, _choices) = (NodeGoverning.Govern(look.Config, read, look.Steps(), kept, look.Bound, runs, bindings)
                     .ToDictionary(each => each.Unit.Id, StringComparer.Ordinal), choices);
                 _restarted = false;
-                foreach (var run in runs) _returned.TryRemove(run.Run, out _);
+                foreach (var run in asks) _returned.TryRemove(run, out _);
                 _byTold = NodeEvaluations.ByTold(_governed.Values);
                 bindings.AddRange(Owing.LeftBefore(_governed.Values));
                 _quests = NodeGoverning.Quests(read);
@@ -354,7 +357,7 @@ public sealed class NodeRuntime(
                 if (!governed.TryGetValue(unit, out var each)) continue;
                 if (NodeEvaluations.Tipped(each)) await tips.TipAsync(each.Watched.Root, each.Watched.Branch, ct).ConfigureAwait(false);
                 // A run's answer is judged on the branch its attempt is sent for, former subjects included, read once a checkout.
-                else if (each.Scope is { } scope) await tips.ReadAsync(scope.Root, [.. scope.Branches.Select(branch => branch.Subject.Artifact ?? "")], ct).ConfigureAwait(false);
+                else if (each.Scope is { } scope) await tips.ReadAsync(scope.Root, [.. scope.Branches.Select(RunBranches.Standing)], ct).ConfigureAwait(false);
             }
 
             // A run's attempt is judged on the unit it is sent for, as its plugin is told it.

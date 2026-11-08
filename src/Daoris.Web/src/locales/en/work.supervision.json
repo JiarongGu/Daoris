@@ -29,6 +29,10 @@
   "work.supervision.why.answered": "the point was settled some other way",
   "work.supervision.why.owner-held": "you stopped the line or paused its quest",
   "work.supervision.why.role-changed": "the supervisor's role changed",
+  "work.supervision.landing.title": "The supervisor's decision on this step",
+  "work.supervision.landing.accept": "The supervisor accepted this; it lands at {{at}}.",
+  "work.supervision.landing.approve": "The supervisor approved this; it goes on at {{at}}.",
+  "work.supervision.landing.reject": "The supervisor rejected this; it goes back at {{at}}.",
   "work.supervision.overrule": "Overrule",
   "work.supervision.overruleRefused": "It already went on, so it cannot be overruled."
 }

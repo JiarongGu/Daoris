@@ -246,7 +246,20 @@ public static class NodeWordActs
 /// <param name="Act">One of <see cref="NodeWordActs"/>.</param>
 /// <param name="Words">The person's words: a skip's, which it needs, or a stop's where given.</param>
 /// <param name="At">When the person gave it.</param>
-public sealed record NodeWord(string Node, string Act, string? Words, DateTimeOffset At);
+public sealed record NodeWord(string Node, string Act, string? Words, DateTimeOffset At)
+{
+    /// <summary>The landing supervisor whose word it is; null for the person's.</summary>
+    public NodeWordBy? By { get; init; }
+
+    /// <summary>The attempt a supervisor's word is released on, which the pass holds it to; null for the person's.</summary>
+    public int? Attempt { get; init; }
+
+    /// <summary>The supervisor's decision this person's word took the place of, which the pass settles <c>superseded</c>.</summary>
+    public string? Supersedes { get; init; }
+
+    /// <summary>The source its move carries to the node: the person's, or the landing supervisor's.</summary>
+    public string Source => By is null ? NodeSource.Person : NodeSource.Supervisor;
+}
 
 /// <summary>
 /// The repair a review's Accept carries: the work could not land at the tip the person accepted (its tree held
@@ -312,4 +325,12 @@ public sealed record NodeRecord(string Unit)
 
     /// <summary>The node's newest attempt, or null.</summary>
     public NodeAttempt? Newest(string node) => Attempts.LastOrDefault(attempt => string.Equals(attempt.Node, node, StringComparison.Ordinal));
+
+    /// <summary>
+    /// Whether <paramref name="attempt"/> still waits on its retry delay: its node is failed transient on it, the one <see cref="WorkPerformer.Due"/> makes
+    /// ready. A delay an attempt kept after its node moved on (a tip moved during it) waits on nothing and is no timer.
+    /// </summary>
+    public bool RetryPending(NodeAttempt attempt) =>
+        attempt.RetryAt is not null && Statuses.GetValueOrDefault(attempt.Node) is { State: NodeStates.Failed, Transient: true } status
+        && status.Attempt == attempt.Attempt;
 }

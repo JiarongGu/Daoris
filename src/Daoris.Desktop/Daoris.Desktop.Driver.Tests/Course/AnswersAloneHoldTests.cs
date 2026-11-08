@@ -121,6 +121,30 @@ public sealed class AnswersAloneHoldTests : IDisposable
         Assert.Equal(["w10", "w9"], Marks.Read("s1")!.Said.Order(StringComparer.Ordinal));
     }
 
+    /// <summary>The hold's words give the rule's number, never a fixed "third": the note carries it and the go-on's refusal says it.</summary>
+    [Theory]
+    [InlineData(2)]
+    [InlineData(5)]
+    public void The_hold_names_the_number_its_rule_holds_the_line_at_and_never_a_third(int bound)
+    {
+        GoneOn("s1", bound);
+        var rule = new SupervisorRule("aa", SupervisorRules.AnswersAlone, "in-a-row", bound, SupervisorRules.Hold, null, SupervisorRules.Machine, null);
+        var hold = new AnswersAloneHold(Events, Marks, Admissions, new SupervisorRuleBook([new SupervisorRuleSet(SupervisorRules.Machine, 1, [rule])]));
+        var asker = Asker(said: [Answer("w9")]);
+        int? heard = null;
+
+        Assert.True(hold.Holds(asker, Records(asker, HelperRecord), At, heldAt: at => heard = at));
+
+        Assert.Equal(bound, heard);
+        var held = Assert.Single(Notes("s1", HeldNoteCodes.AnswersHeld.Code));
+        Assert.Equal(bound.ToString(), held.Parts![0].Value("n")?.ToString());
+        Assert.DoesNotContain("third", held.Text);
+        Assert.Contains(bound.ToString(), held.Text);
+        var refusal = AnswersAloneNotes.Refusal("s1", heard);
+        Assert.DoesNotContain("third", refusal);
+        Assert.Contains(bound.ToString(), refusal);
+    }
+
     [Fact]
     public void A_second_answer_alone_goes_on_unmarked()
     {

@@ -168,6 +168,29 @@ public sealed class ResourceCleanupTests : IDisposable
         Assert.Equal(AttemptStates.Held, Nodes.Read(Unit)!.Invoked(invocation)!.State);
     }
 
+    /// <summary>Receipts whose cleanup settled count against no bound: a long-lived unit's later completion is taken, and the settled ones it passes are dropped.</summary>
+    [Fact]
+    public async Task A_completion_after_the_receipts_bound_of_settled_ones_is_taken_and_the_oldest_settled_are_dropped()
+    {
+        var performer = Performer();
+        var invocation = await StartAsync(performer);
+        Resources.Write(new ResourceRecord(Unit)
+        {
+            Receipts = [.. Enumerable.Range(0, ResourceRecord.ReceiptsKept).Select(at =>
+                new ResourceReceipt($"r-{at}", Plugin, Preview, $"old-{at}", PluginResourceRoles.Temporary, "deploy", 1, "i-old", _now)
+                {
+                    Cleanup = new ResourceCleanup(CleanupStates.Settled, $"k-{at}", _now, 0) { Disposition = CleanupDispositions.Removed, SettledAt = _now },
+                })],
+        });
+
+        var heard = performer.Hear([Heard(invocation, Reached(new WorkResource(Preview, "p-new")))], Of, Watched);
+
+        Assert.Equal(PerformedWhat.Applied, Assert.Single(heard).What);
+        var kept = Receipts();
+        Assert.Equal(ResourceRecord.ReceiptsKept, kept.Count);
+        Assert.Equal(("p-new", "old-1"), (kept[^1].Resource, kept[0].Resource));
+    }
+
     /// <summary>A reconciliation's answer gives its receipts as a completion does.</summary>
     [Fact]
     public async Task A_reconciliations_resources_are_taken_as_receipts()

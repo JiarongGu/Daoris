@@ -111,8 +111,27 @@ internal static class AttentionSessionRows
 
         // A session whose memory changes wait on the person: an end or a replacement for its
         // approver, or a stopped session's staged rows for Keep or Drop. One row by the session, a door to its page's Memory section.
+        // An end the service's sweep wrote has no session: its row is by its operation, the repository as where, with no door, and the person
+        // approves or declines it in the row, since no session's page holds it.
         foreach (var wait in facts.Memory)
         {
+            if (wait["end"] is JsonObject end && Text(end, "op") is { } op)
+            {
+                var swept = Row("memory", op, Truthy(wait, "since"));
+                swept["where"] = Text(end, "repository") ?? "";
+                swept["memory"] = new JsonObject
+                {
+                    ["ends"] = 1, ["replacements"] = 0, ["staged"] = 0,
+                    ["end"] = new JsonObject
+                    {
+                        ["op"] = op, ["repository"] = Text(end, "repository"), ["target"] = Text(end, "target"),
+                        ["revision"] = end["revision"]?.DeepClone(), ["reason"] = Text(end, "reason"),
+                    },
+                };
+                rows.Add(swept);
+                continue;
+            }
+
             var record = sessions.GetValueOrDefault(Text(wait, "session") ?? "");
             var row = Row("memory", Text(wait, "session"), Truthy(wait, "since"), sessionScope(Text(wait, "session")));
             row["where"] = Text(record, "repository") ?? "";

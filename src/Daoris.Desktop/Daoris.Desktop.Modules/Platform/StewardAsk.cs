@@ -17,9 +17,12 @@ internal static class StewardAsk
     public const string LogEvent = "role.asked";
 
     /// <summary>The judgement of an act the role's acts do not name: one that asks where its row names a person's route, else <c>not-granted</c>.</summary>
-    public static RoleJudgement Outside(IRoleAct row, RoleActForm act, string holder, IReadOnlyList<string> roles) =>
+    public static RoleJudgement Outside(IRoleAct row, RoleActForm act, string holder, IReadOnlyList<string> roles, string generation) =>
         row.PersonRoute is { } route && row.IsForm(act.Form)
-            ? new RoleJudgement(false, RoleWhy.NotGranted, act.Role, Holder: holder, Act: act.Act, Roles: roles) { Asks = (route, act.Form.Clone()) }
+            ? new RoleJudgement(false, RoleWhy.NotGranted, act.Role, Generation: generation, Holder: holder, Act: act.Act, Roles: roles)
+            {
+                Asks = (route, act.Form.Clone()),
+            }
             : RoleJudgement.Refused(RoleWhy.NotGranted);
 
     /// <summary>The person's press an act that asks is sent on as: the same id and module, its route and its form.</summary>

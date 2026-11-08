@@ -27,6 +27,9 @@ public enum ProposalState
 
     /// <summary>The rules already said it.</summary>
     Unchanged,
+
+    /// <summary>A yes is saved into the rules and not yet marked; found so, it is never saved again.</summary>
+    Settling,
 }
 
 /// <summary>Whether a change lets agents do less, more, or the same.</summary>
@@ -54,6 +57,10 @@ public sealed record RuleProposal(
     public string? SettledBy { get; init; }
 
     public string? Note { get; init; }
+
+    public string? SettledRole { get; init; }
+
+    public string? SettledDecision { get; init; }
 }
 
 /// <summary>
@@ -163,6 +170,14 @@ public static class RuleProposals
     public static IReadOnlyList<string> Settle(string home, DateTimeOffset at, LookSaid? look = null)
     {
         var said = new LookLines(look ?? LookSaid.None, "rules");
+        foreach (var settling in Load(home).Where(p => p.State == ProposalState.Settling))
+        {
+            if (ProposalSettlement.Recover(home, settling.Id, at) is { Outcome: SettleOutcome.Returned })
+            {
+                said.Wait($"rules  #{settling.Id} waits for you: {Author(settling)} proposes {Describe(settling.Change)} — the rules no longer say what a yes had saved.");
+            }
+        }
+
         foreach (var proposal in Load(home).Where(p => p.State == ProposalState.Proposed).Reverse())
         {
             var path = PathOf(home, proposal.Id);
@@ -183,7 +198,6 @@ public static class RuleProposals
             try
             {
                 effect = Effect(rules, proposal.Change);
-                if (effect == ChangeEffect.Narrows) rules = Apply(rules, proposal.Change);
             }
             catch (DriverException refused)
             {
@@ -195,7 +209,14 @@ public static class RuleProposals
             switch (effect)
             {
                 case ChangeEffect.Narrows:
-                    PermissionRules.Save(home, rules);
+                    var applied = false;
+                    PermissionChange.Change(home, held =>
+                    {
+                        if (Effect(held, proposal.Change) != ChangeEffect.Narrows) return held;
+                        applied = true;
+                        return Apply(held, proposal.Change);
+                    });
+                    if (!applied) break;
                     Mark(path, ProposalState.Applied, "the driver", "it narrows what agents may do, so it applied at once.", at);
                     said.Progress($"rules  applied #{proposal.Id} from {Author(proposal)}: {Describe(proposal.Change)} — it narrows.");
                     break;
@@ -217,19 +238,8 @@ public static class RuleProposals
     /// the change whatever it does, a no changes nothing. Only a proposal not yet settled is answered.
     /// </summary>
     /// <exception cref="DriverException">No such proposal, one already settled, or one the rules cannot take.</exception>
-    public static RuleProposal Answer(string home, string id, bool accept, string? note, DateTimeOffset at)
-    {
-        var proposal = Open(home, id);
-        var path = PathOf(home, id.Trim().TrimStart('#'));
-        if (accept)
-        {
-            PermissionRules.Save(home, Apply(PermissionRules.Load(home), proposal.Change));
-        }
-
-        var state = accept ? ProposalState.Accepted : ProposalState.Declined;
-        Mark(path, state, "the person", string.IsNullOrWhiteSpace(note) ? null : note.Trim(), at);
-        return proposal with { State = state, Settled = at, SettledBy = "the person", Note = note };
-    }
+    public static RuleProposal Answer(string home, string id, bool accept, string? note, DateTimeOffset at) =>
+        ProposalSettlement.Settle(home, id, RuleSettler.Person, accept, string.IsNullOrWhiteSpace(note) ? null : note.Trim(), at).Proposal;
 
     /// <summary>
     /// A proposal not yet settled, read from its file: what the person answers, and what <c>daoris agent rules accept|decline</c> says
@@ -275,13 +285,13 @@ public static class RuleProposals
         var session => proposal.Ask is { } ask ? $"session {session} (ask #{ask})" : $"session {session}",
     };
 
-    private static string Rule(ProposedChange change) =>
+    internal static string Rule(ProposedChange change) =>
         change.Rule is { Length: > 0 } rule && PermissionRules.Refusal(rule) is null
             ? rule
             : throw new DriverException(PermissionRules.Refusal(change.Rule ?? "") ?? "a rule is needed.");
 
     /// <summary>Which list of the change's own scope already holds the rule, if any.</summary>
-    private static RuleList? Sits(PermissionFile file, ProposedChange change, string rule)
+    internal static RuleList? Sits(PermissionFile file, ProposedChange change, string rule)
     {
         var lists = change.Scope switch
         {
@@ -300,9 +310,9 @@ public static class RuleProposals
             ? scopes.FirstOrDefault(pair => string.Equals(pair.Key.Trim(), name.Trim(), StringComparison.OrdinalIgnoreCase)).Value ?? RuleLists.Empty
             : throw new DriverException($"a {(change.Scope == RuleScope.Workspace ? "workspace" : "repository")} scope names the one it reaches.");
 
-    private static string PathOf(string home, string id) => DaorisHome.Entry(home, HomeEntry.RuleProposals, $"{id}.json");
+    internal static string PathOf(string home, string id) => DaorisHome.Entry(home, HomeEntry.RuleProposals, $"{id}.json");
 
-    private static RuleProposal? Parse(string path)
+    internal static RuleProposal? Parse(string path)
     {
         try
         {
@@ -343,6 +353,8 @@ public static class RuleProposals
                 Settled = Moments.Read(settled?["at"]),
                 SettledBy = Json.Trimmed(settled?["by"]),
                 Note = Json.Trimmed(settled?["note"]),
+                SettledRole = Json.Trimmed(settled?["role"]),
+                SettledDecision = Json.Trimmed(settled?["decision"]),
             };
         }
         catch (Exception error) when (error is JsonException or IOException or UnauthorizedAccessException)
@@ -352,11 +364,14 @@ public static class RuleProposals
     }
 
     /// <summary>Rewrite the file's state and settling, keeping every other key the session wrote.</summary>
-    private static void Mark(string path, ProposalState state, string by, string? note, DateTimeOffset at)
+    internal static void Mark(string path, ProposalState state, string by, string? note, DateTimeOffset at, string? role = null, string? decision = null)
     {
         var root = JsonNode.Parse(AtomicFile.ReadText(path)) as JsonObject ?? [];
         root["state"] = state.ToString().ToLowerInvariant();
-        root["settled"] = new JsonObject { ["at"] = Moments.Write(at), ["by"] = by, ["note"] = note };
+        var settled = new JsonObject { ["at"] = Moments.Write(at), ["by"] = by, ["note"] = note };
+        if (role is not null) settled["role"] = role;
+        if (decision is not null) settled["decision"] = decision;
+        root["settled"] = settled;
 
         JsonFile.Write(path, root);
     }

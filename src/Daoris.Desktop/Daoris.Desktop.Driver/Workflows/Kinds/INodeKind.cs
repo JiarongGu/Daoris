@@ -65,4 +65,10 @@ public interface INodeKind
 
     /// <summary>Whether an end of it is at or before the line: a cleanup waits for no such end.</summary>
     bool EndsByTheLine { get; }
+
+    /// <summary>Whether a run waiting on it is held for the person alone, as a go-ahead holds it: no supervisor decides a step of such a run.</summary>
+    bool HoldsRun { get; }
+
+    /// <summary>The acts a landing supervisor may make on <paramref name="node"/> while it waits for the person's press, unqualified; none for a kind it never decides.</summary>
+    IReadOnlyList<string> LandingActs(NodeDeclaration node);
 }

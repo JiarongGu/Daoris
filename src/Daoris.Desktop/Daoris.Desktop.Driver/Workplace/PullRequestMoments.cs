@@ -384,14 +384,33 @@ public sealed class PullRequestMoments : IAsyncDisposable
     private async Task<int> RefsAsync(string name, CancellationToken ct)
     {
         // A push, or a moment skipped while the repository is held: asked as a push is, fetched where the minute allows.
-        bool pushed;
+        bool pushed, wasOwed;
         DateTimeOffset? pending;
         lock (_gate)
         {
-            pushed = _pushed.Remove(name) | _owed.Remove(name);
+            pushed = _pushed.Remove(name);
+            wasOwed = _owed.Remove(name);
             pending = _moved.TryGetValue(name, out var since) ? since : null;
         }
 
+        try
+        {
+            return await AskedAsync(name, pushed | wasOwed, pending, ct).ConfigureAwait(false);
+        }
+        catch
+        {
+            lock (_gate)
+            {
+                if (pushed) _pushed.Add(name);
+                if (wasOwed) _owed.Add(name);
+            }
+
+            throw;
+        }
+    }
+
+    private async Task<int> AskedAsync(string name, bool pushed, DateTimeOffset? pending, CancellationToken ct)
+    {
         var open = Concerning(name);
         if (open.Count == 0)
         {

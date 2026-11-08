@@ -6,6 +6,7 @@ import {
   retryNotice, useApproveHelper, useAttention, useDeclineHelper, useHarnesses, useNudge, useRefreshHarnesses,
   useOpenWorkRecords, useResolveHeld, useRetryQuest, useTrustFolder, useAnswerPermission, useAnswerAlone, useApproveHandOver,
   useDeclineHandOver, useGitAnswer, useGitIdentity, useGitTryAgain, useQuietCarryOn, useQuietLeave, useRunNodeWord, useStopSession,
+  useDecideSessionMemory,
 } from '../../bridge/shell';
 import { permissionSaid } from '../waits/PermissionAsks';
 import { answerAloneSaid } from '../waits/AnswerAlone';
@@ -109,6 +110,7 @@ function Band({ doors, notify, onSessions, onRun, inView }: {
   const declineHandOver = useDeclineHandOver();
   const answerPermission = useAnswerPermission();
   const answerAlone = useAnswerAlone();
+  const decideMemory = useDecideSessionMemory();
   const resolveHeld = useResolveHeld();
   const openRecords = useOpenWorkRecords();
   const gitTryAgain = useGitTryAgain();
@@ -378,6 +380,13 @@ function Band({ doors, notify, onSessions, onRun, inView }: {
         if (answer.answered) notify(t(goOn ? 'work.wait.answer.wentOn' : 'work.wait.answer.kept'));
         else notify(answerAloneSaid(t, answer.why, answer.message), 'error');
       });
+    },
+    // An end the sweep wrote, which no session's page holds, decided by its row as the Memory section decides one: the service's
+    // words said back, a refusal in the error's tone.
+    memoryEnd: (item, approve) => {
+      const op = item.memory?.end?.op;
+      if (!op) return;
+      run(item, () => decideMemory.mutateAsync({ op, approve }), (answer) => notify(answer.message, answer.decided ? undefined : 'error'));
     },
     // The agent's own sign-in through its account-owning door, as its page starts it: its end is said wherever the
     // person is, and the roster read again then, which reads that account.

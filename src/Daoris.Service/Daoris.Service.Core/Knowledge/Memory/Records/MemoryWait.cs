@@ -1,4 +1,4 @@
 namespace Daoris.Knowledge;
 
-/// <summary>What a session leaves for the person in memory: ends and replacements awaiting, staged rows of a stopped session, since the oldest.</summary>
-public sealed record MemoryWait(string Session, int Ends, int Replacements, int Staged, DateTimeOffset Since);
+/// <summary>What waits on the person in memory, since the oldest: a session's ends, replacements and staged rows, or, by <paramref name="End"/>, one end the sweep wrote.</summary>
+public sealed record MemoryWait(string? Session, int Ends, int Replacements, int Staged, DateTimeOffset Since, MemoryEndWait? End = null);

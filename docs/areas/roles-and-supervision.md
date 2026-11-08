@@ -78,7 +78,9 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they start wi
    role's but for works, its preset writing no rules; one with no choice, and choices on a supervisor held by rules or the
    terminal, are refused `choices`, and moving the holder off the agent deletes the row in the same transaction. A supervisor's `decides` names the kinds of decision it answers (`SupervisorKinds`: `question`,
    `course`, `limit`, `allow`, `files`, `landing`); none makes it its scope's generic supervisor, which answers what no kind
-   takes there. Its `authority` grants acts as `<kind>.<act>`, only of the kinds it decides, each off on a new record; the seed
+   takes there. The `allow` kind decides a permission request held in the asking mode at its session's repository (`allow.once`,
+   `allow.reject`, ended through the hold's own end) and a widening at its rule's reach (`allow.standing`, `allow.reject`,
+   settled recorded by the role), each taking effect at its keeping (`AllowKind`). Its `authority` grants acts as `<kind>.<act>`, only of the kinds it decides, each off on a new record; the seed
    grants `question.answer`, `course.go-on` and `limit.move`. A scope holds one generic supervisor and one per kind
    (`two-roles-one-work`); the machine's generic supervisor may not be removed, scoped away or given kinds (`may-not-be-off`).
    The role door writes no supervisor record before the home's `supervisor-kinds` migration step is recorded (`not-converted`);
@@ -268,16 +270,19 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they start wi
 46. A supervisor decides or leaves a decision through one door: `SUPERVISOR_DECIDE { kind, subject, generation, proof, do, choice?,
     reasons }` and `SUPERVISOR_LEAVE { kind, subject, generation, proof, bound, reasons }`, both `Role`, each proved over its own
     route's bytes with the subject whole in them. The subject is the kind's typed reference, which does not change while it waits: a
-    question's `{ session, question }`, a referred point's `{ session, point }`; the door takes the question, course and limit kinds,
-    each a row (`QuestionKind`, and over `ReferredPointKind` the `CourseKind` and `LimitKind`, a point's kind its count's,
-    `SupervisorRules.KindOf`) that lists its waiting subjects and keeps a decision against the subject as it stands. A
+    question's `{ session, question }`, a referred point's `{ session, point }`, a landing's `{ session, landing }` (`landing` names
+    the run, the node and the attempt it waits on, the session the run's work); the door takes the question, course, limit and
+    landing kinds, each a row (`QuestionKind`, over `ReferredPointKind` the `CourseKind` and `LimitKind`, a point's kind its count's,
+    `SupervisorRules.KindOf`, and `LandingKind`) that lists its waiting subjects and keeps a decision against the subject as it stands. A
     decision's file keeps its `kind` and `subject`, and its holder is the hold's as the catalogue's record names it. On a question it
     answers a parked session's recorded question with one offered choice and one to five sourced reasons (`--do answer --choice`,
     under `question.answer`), a decide naming a question the session no longer waits on refused `question-changed`; any subject it may
     leave to the owner with a bound (`--leave`, under no grant). The holder's verb is `sessions supervise <session> --kind <kind>
     --subject <id> --generation <g> --do <act> [--choice <label>]`, or `--leave <bound>` in place of `--do`; `SUPERVISOR_WAITING` lists
     every kind's subjects, `{ kind, subject, repository, generation, acts }`, with the kind's acts the grants cover there, and a subject
-    whose supervisor covers none, or whose hold is an agent's, is not listed. (from D208, D233)
+    whose supervisor covers none, or whose hold is an agent's, is not listed. An `allow` is listed in three shapes (a held request
+    `{ session, request, held }`, a widening `{ proposal }`, a steward's act `{ ask }`) and the verb's `<id>` is the session for the
+    first and the subject's own id for the others; it sends the subject whole as the listing names it. (from D208, D233)
 47. It never answers a go-ahead, a sign-in, an access widening, spending, a deletion, a question the repository says to
     ask the person, a preference, an unrecorded or contradicting one, or one that directs it. (from D208)
 48. It is also refused on a question the agent marked the owner's, past the answers-alone bound, and where a person's
@@ -325,7 +330,19 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they start wi
     `Web/work/head/SupervisorCourseCard.tsx`; from D229, D233)
 49. A decision is held whole in memory for the supervisor role's window (1 to 60 minutes, 5 by default), then released in
     one conditional step that asks the admission again. Its word is `From: supervisor`, never the person's; an
-    unattributable one is quarantined. (from D208, D233)
+    unattributable one is quarantined. A landing is the same window with *Overrule*: the supervisor's `accept` of a `review` step,
+    or `approve` or `reject` of a `human` approval (`LandingSteps`, the kit saying which kinds offer which acts and which hold a run
+    for the person alone), is kept against the step as it waits on that attempt, refused `answered` once it has moved,
+    `go-ahead-open` on a run a `go-ahead` holds, `landing-pushes` where the landing's plan names a plugin that pushes, and
+    `owner-held` on a line the person stopped or whose quest they paused (`LandingJudge`). The look after the courses
+    (`LandingReleaseLook`) reads the step, the admission and `OwnerHolds` again and keeps the node's own word on the run's
+    record through `RunNodeWords.Word`, carrying its author (`NodeWordBy`: role and decision) and attempt; the decision is live,
+    `released`, until the node pass applies the word as the supervisor's (`went-on`) or drops it `stale` where the attempt has
+    moved or the decision is not live in this run. A person's word on the node replaces a supervisor's pending one and the
+    decision moves `superseded`. A restart empties memory, so the first pass drops a word it left, and the start's sweep records a
+    decision whose word the record shows applied as made and closes the rest stale. The head's card says *The supervisor
+    accepted this; it lands at 14:10.* with *Overrule* while it is held (`SupervisorLandingCard`, `SESSION_SUPERVISOR`'s `landings`).
+    (from D208, D233)
 50. The owner's own words supersede a supervisor's decision; *Overrule* takes it back until the move to working admits
     it. (from D208)
 51. The steward, scoped to this Daoris, makes the acts its role's `authority` lists of eighteen with no card: drive, undrive,
@@ -347,9 +364,16 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they start wi
     touched, releases them as the steward's own role release. The update acts (`StewardUpdateAct`) say the install's own
     word (`update.requested`, door `steward`); the pipe has no person's route for an update, so outside the granted acts
     they are refused `not-granted`, never asked. The person grants and takes back each act in the role editor, read at every act. A proved
-    holder's act outside them asks the person as its row's person's route (`StewardAsk`, `role.asked`), a card in
-    *Notifications*, and confirmed it is the person's own press; a process that does not prove the key is refused, nothing
-    asked. Everything else is never a role's act. (from D201, D209, D233)
+    holder's act outside them that asks (`StewardAsk`, `role.asked`) is first an `allow` subject `{ ask }` at its target's
+    place, read as `ActAsync` reads it (`StewardPlaces`): one pending entry on the press's reservation (`StewardAllows`,
+    `PendingAllow`), settled once by the first of the allow supervisor's `allow.steward` (the act admitted once as the steward's
+    own, `owner-set` read first, logged `by: steward` naming the decision; an allowed `land` held for the supervisor's window
+    and still the entry through it), its leave, ten minutes from the raise, the person's overrule of a held `land`, each of
+    which falls to the card, or the steward's withdrawal, which answers `withdrawn` with no card. A target that does not
+    resolve, no supervisor there, or a supervisor whose terminal's holder is the steward's own goes to the card at once. The card
+    is the act's row's person's route, in *Notifications*, and confirmed it is the person's own press; a process that does not
+    prove the key is refused, nothing asked. Everything else is never a role's act. The held `land`'s person's *Overrule* has
+    no route yet (`StewardAllows.Overrule`). (from D201, D209, D233)
 52. What the owner does to a repository, a quest or a session makes it the owner's for the run (`owner-set`). Every
     release the steward writes is kept in `roleReleases`, `by: steward`. (from D209)
 

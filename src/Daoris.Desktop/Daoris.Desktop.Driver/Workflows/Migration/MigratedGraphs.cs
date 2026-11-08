@@ -160,10 +160,10 @@ public static class MigratedGraphs
     /// tail the graph already holds, the pattern kept, the key written where the pattern says <c>{ticket}</c>, a <c>review</c> before it where the
     /// press is the person's. Ids are kept.
     /// </summary>
-    /// <returns>The graph, or null with why the version is left.</returns>
-    public static JsonObject? LiftHanded(JsonObject source, HandedResolution resolution, out string? refusal)
+    /// <returns>The graph, or null with why the version is left; <paramref name="said"/> is what its conversion of a pushed landing says.</returns>
+    public static JsonObject? LiftHanded(JsonObject source, HandedResolution resolution, out string? refusal, out string? said)
     {
-        refusal = null;
+        (refusal, said) = (null, null);
         var graph = (JsonObject)source.DeepClone();
         var nodes = graph["nodes"]!.AsArray();
         var handed = nodes.FirstOrDefault(node => (string?)node!["kind"] == Handed)?.AsObject();
@@ -198,13 +198,13 @@ public static class MigratedGraphs
         handed["reach"] = "performed";
         handed["options"] = land;
         if (accept == "you") WithReview(graph, (string)handed["id"]!);
-        return PushedGraphs.Convert(graph, out _) ?? graph;
+        return PushedGraphs.Convert(graph, out said) ?? graph;
     }
 
     /// <summary>A <c>land</c> saved with an <c>accept</c> (held, never landing): the option taken off, and the person's <c>review</c> before it.</summary>
-    public static JsonObject? LiftLandAccept(JsonObject source, out string? refusal)
+    public static JsonObject? LiftLandAccept(JsonObject source, out string? refusal, out string? said)
     {
-        refusal = null;
+        (refusal, said) = (null, null);
         var graph = (JsonObject)source.DeepClone();
         var land = graph["nodes"]!.AsArray().FirstOrDefault(node => (string?)node!["kind"] == NodeKinds.Land)?.AsObject();
         if (land?["options"] is not JsonObject options || options[Accept] is null)
@@ -222,7 +222,7 @@ public static class MigratedGraphs
         // An `automatic` one never landed, so the person's review lowers nothing.
         options.Remove(Accept);
         WithReview(graph, (string)land["id"]!);
-        return PushedGraphs.Convert(graph, out _) ?? graph;
+        return PushedGraphs.Convert(graph, out said) ?? graph;
     }
 
     /// <summary>The person's <c>review</c> wired in before <paramref name="landId"/>, where none stands: from what led in, a gate keeping its own wire to the landing.</summary>

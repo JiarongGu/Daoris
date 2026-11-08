@@ -353,6 +353,9 @@ public static class WorkflowOperations
 
             var scopes = ScopesOf(choices, id);
             var reach = await AppendReachAsync(choices, home, registry, id, planAgainst, scopes, ct).ConfigureAwait(false);
+            const string Changed = "changed while this save was judged: read it again and make the change against its newest version. Nothing was written.";
+            if (!WorkflowStore.NewestIs(WorkflowPorts.Store(home), id, newest.Version)) return Refuse("stale", $"`{id}` {Changed}");
+
             if (reach.Refusal is not null) return Refuse("reach", reach.Refusal, scopes, reach.Rows, appended: true);
             var keys = scopes.Select(each => each.Key).ToHashSet(StringComparer.Ordinal);
             if (keys.Count > 0 && !plan && !(authorized?.ToHashSet(StringComparer.Ordinal).SetEquals(keys) ?? false))
@@ -361,8 +364,8 @@ public static class WorkflowOperations
                     + "now: authorize those places, then save. Nothing was written.", scopes, reach.Rows, appended: true);
             }
 
-            if (!plan) WorkflowPorts.Store(home).Write(id, planAgainst.Plan.Result!);
-            return new(id, true, null, $"`{id}` v{version.Version} → v{planAgainst.Plan.Version}.", planAgainst.Plan.Version, !plan, true, scopes, reach.Rows);
+            if (!plan && !WorkflowStore.WriteIfNewest(WorkflowPorts.Store(home), id, newest.Version, planAgainst.Plan.Result!)) return Refuse("stale", $"`{id}` {Changed}");
+            return new(id, true, null, $"`{id}` v{version.Version} →v{planAgainst.Plan.Version}.", planAgainst.Plan.Version, !plan, true, scopes, reach.Rows);
         }
         catch (ChoiceWords refused)
         {
