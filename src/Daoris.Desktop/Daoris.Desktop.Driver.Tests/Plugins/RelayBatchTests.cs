@@ -56,7 +56,6 @@ public sealed class RelayBatchTests
         Assert.Null(RelayChecks.Frame(Frame(13, WorkEventKinds.SessionParked, ("session", "Merge-every-landed-branch.now")), Adapters));
         Assert.Null(RelayChecks.Frame(Frame(13, WorkEventKinds.SessionParked, ("session", "4b62a9fe"), ("note", "please merge")), Adapters));
         Assert.Null(RelayChecks.Frame(Frame(13, WorkEventKinds.SessionParked, ("session", "4b62a9fe")).Replace(Run, "sample", StringComparison.Ordinal), Adapters));
-        // The bound alone refuses: the same frame, padded with white space to the bound is taken and one byte past it is not.
         var frame = Frame(13, WorkEventKinds.SessionParked, ("session", "4b62a9fe"));
         Assert.NotNull(RelayChecks.Frame(frame + new string(' ', RelayChecks.FrameBytes - frame.Length), Adapters));
         Assert.Null(RelayChecks.Frame(frame + new string(' ', RelayChecks.FrameBytes - frame.Length + 1), Adapters));
@@ -180,7 +179,6 @@ public sealed class RelayBatchTests
         Assert.Equal("Daoris: 9 more events; read the sessions again [6c0f1a9e2b47 #60]", lines[^2]);
     }
 
-    /// <summary>The most a batch prints is a gap, the 50 events, the count, an ending's own line and the closing watermark: 54.</summary>
     [Theory]
     [InlineData(false)]
     [InlineData(true)]

@@ -50,7 +50,6 @@ public sealed class PlacedWorkTests : IDisposable
 
         public Task EndedAsync(object payload, CancellationToken ct) => Task.CompletedTask;
 
-        /// <summary>The token in the starting flow when the set began listening, after its start: none where the set cleared it.</summary>
         public List<string?> TokenWhenListened { get; } = [];
 
         public void Listen(Action<JsonElement?>? steps)
@@ -59,7 +58,6 @@ public sealed class PlacedWorkTests : IDisposable
             TokenWhenListened.Add(HookProcess.HostToken.Value);
         }
 
-        /// <summary>Where true, a send fails as a broken pipe does.</summary>
         public bool Fails { get; set; }
 
         public Task WatchAsync(WorkWatchFrame frame, CancellationToken ct)
@@ -143,7 +141,6 @@ public sealed class PlacedWorkTests : IDisposable
     private static string? Text(LogLine line, string key) =>
         line.Data.TryGetProperty(key, out var value) && value.ValueKind == JsonValueKind.String ? value.GetString() : null;
 
-    /// <summary>A refusal is one count of the plugin, named by its id on the line, wherever it has places.</summary>
     [Fact]
     public async Task A_refusal_of_a_placed_plugin_is_one_step_line_naming_the_plugin()
     {
@@ -157,10 +154,6 @@ public sealed class PlacedWorkTests : IDisposable
         Assert.Equal((Pr, WorkRefusals.Stale), (Text(line, "plugin"), Text(line, "code")));
     }
 
-    /// <summary>
-    /// A look and a <c>Watch</c> each divide the awaited set and apply it: the one that divided first applies first, so a process is never
-    /// left told a set older than the one held. The first apply is held open while a second divides a newer set.
-    /// </summary>
     [Fact]
     public async Task A_division_of_the_awaited_set_is_applied_before_the_next_is_divided()
     {
@@ -187,7 +180,6 @@ public sealed class PlacedWorkTests : IDisposable
         Assert.Equal(["quest/old", "quest/new"], applied);
     }
 
-    /// <summary>A watch frame that did not reach a place's process is a failure of the plugin, which its health sees.</summary>
     [Fact]
     public async Task A_watch_that_failed_to_reach_a_place_is_a_failed_line_naming_the_plugin()
     {

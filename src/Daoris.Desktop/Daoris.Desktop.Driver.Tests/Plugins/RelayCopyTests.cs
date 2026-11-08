@@ -66,11 +66,7 @@ public sealed class RelayCopyTests : IDisposable
         }
     }
 
-    /// <summary>
-    /// A relay that holds its in-use file in the gap between the removal's check and its rename (a rename ignores an open file off Windows)
-    /// is found at the exclusive re-open of the renamed folder, which is never deleted: it goes back to its name, or where a rename cannot
-    /// (Windows refuses one over an open file) stays under its removal name whole.
-    /// </summary>
+    /// <summary>A relay that opens its in-use file in the removal's gap keeps the build, back at its name or, where a rename cannot, whole under its removal name.</summary>
     [Fact]
     public void A_build_a_relay_opened_in_the_gap_before_the_rename_is_not_deleted()
     {

@@ -101,10 +101,7 @@ internal sealed class PlacedWork
         }
     }
 
-    /// <summary>
-    /// <see cref="Divide"/> and <paramref name="apply"/> as one step: a look and a <c>Watch</c> each divide the set held and apply it, and
-    /// the one that divided first applies first, so the process is never left told a set older than the one held.
-    /// </summary>
+    /// <summary><see cref="Divide"/> and <paramref name="apply"/> as one step, so the one that divided first applies first and no process is left told an older set.</summary>
     public void Apply(Action<IReadOnlyDictionary<string, IReadOnlyList<WatchedUnit>>> apply)
     {
         lock (_applying) apply(Divide());

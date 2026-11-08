@@ -6,8 +6,7 @@ namespace Daoris.Driver;
 /// </summary>
 /// <remarks>
 /// <para><b>No kept cursor</b>: an event is a wake, never a replay, so the teller's place is its memory and a restart begins at the
-/// journal's newest position. It tells rows alone: the gap that place is, and each batch whose history is incomplete, is told once by
-/// <see cref="WorkEventNews.Gapped"/>, which wraps it.</para>
+/// journal's newest position; its gaps are <see cref="WorkEventNews.Gapped"/>'s, which wraps it.</para>
 /// <para>Its sink never waits, so it is the first of its feed's tellers.</para>
 /// </remarks>
 /// <param name="tell">Where each event goes, in order.</param>
@@ -19,7 +18,6 @@ public sealed class WorkEventTeller(Action<WorkEvent> tell)
     /// <summary>The feed's teller: its batches told, its place loaded from and kept in memory.</summary>
     public JournalTeller Teller => new(TellAsync, Load, Keep);
 
-    /// <summary>A batch's quest moves.</summary>
     public Task TellAsync(JournalBatch batch)
     {
         foreach (var row in batch.Rows)

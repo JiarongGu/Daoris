@@ -152,7 +152,6 @@ public sealed class PluginPackageTests : IDisposable
 
         PluginPackage.Install(Home, file, Reserved);
 
-        // Beside the stage, which is under the home's plugins folder, and above it: where `../` from a part's name would land.
         Assert.False(File.Exists(Path.Combine(Plugins, "outside.txt")));
         Assert.False(File.Exists(Path.Combine(Path.GetDirectoryName(Plugins)!, "outside.txt")));
         Assert.False(File.Exists(Path.Combine(_root, "outside.txt")));

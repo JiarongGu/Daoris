@@ -492,8 +492,6 @@ public sealed class PluginCatalogTests : IDisposable
         Assert.True(adapters.AgentNamed("boxed-agent")!.Home.StartsInOwnHome);
     }
 
-    // ——— Servers: what a plugin hands every session, beside the knowledge host.
-
     [Fact]
     public void Servers_are_read_with_the_placeholder_expanded_and_offered_as_the_wire_names_them()
     {

@@ -298,11 +298,7 @@ public static class PluginInstall
         return plan;
     }
 
-    /// <summary>
-    /// The copy renamed into the installed one's place, which <paramref name="aside"/> holds. A rename that fails puts the installed
-    /// folder back; where that fails too, the refusal names <paramref name="aside"/>, the one folder the plugin now lies in, which
-    /// the catalogue never reads.
-    /// </summary>
+    /// <summary>The copy renamed into place; a rename that fails puts <paramref name="aside"/> back, and a rollback that fails too names it as where the plugin lies.</summary>
     private static void SwapIn(string staging, string target, string aside, string id, string verb, Action<string, string>? move)
     {
         try
@@ -372,8 +368,6 @@ public static class PluginInstall
         }
 
         SwapIn(staging, target, aside, manifest.Id, "replaced", move);
-
-        // A dot-folder is never read as a plugin, so one that cannot be deleted now is nobody's.
         PluginFolders.Forget(aside);
         return manifest;
     }

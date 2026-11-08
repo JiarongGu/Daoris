@@ -132,7 +132,6 @@ public sealed class PluginHostTokenTests : IDisposable
         var (tokens, _) = await LookAsync();
 
         Assert.Equal([Secret], tokens);
-        // What the caller sees is no test of it (a value set in an async method never flows back): the flow after the start does.
         Assert.NotEmpty(_afterStart);
         Assert.All(_afterStart, Assert.Null);
     }
@@ -224,7 +223,6 @@ public sealed class PluginHostTokenTests : IDisposable
             say: (_, line) =>
             {
                 said.Add(line);
-                // Said after the start, in the same flow: where the set's finally cleared the token, none is left to a later start.
                 _afterStart.Add(HookProcess.HostToken.Value);
             },
             holdsHome: () => true,

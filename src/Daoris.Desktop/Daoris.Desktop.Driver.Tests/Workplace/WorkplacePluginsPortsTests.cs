@@ -27,8 +27,6 @@ public sealed class WorkplacePluginsPortsTests : IDisposable
         File.WriteAllText(Path.Combine(folder, "plugin.json"), manifest);
     }
 
-    // ——— The lower vocabulary
-
     [Fact]
     public void The_lower_patience_and_door_words_are_the_values_the_higher_names_alias()
     {

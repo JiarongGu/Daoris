@@ -63,11 +63,7 @@ public static class HelpGrants
               + "command runner or an eval would let it change anything with nobody's press.";
     }
 
-    /// <summary>
-    /// Every server the contributing plugins declare for Ask Daoris, each with the person's approval as it stands. With
-    /// <paramref name="withSwitchedOff"/>, a sound plugin that is switched off is read too, its grants marked
-    /// <see cref="HelpGrant.Off"/> and handed nothing, so a page says the approval the person made.
-    /// </summary>
+    /// <summary>Every server the contributing plugins declare for Ask Daoris, each with its approval; <paramref name="withSwitchedOff"/> adds a sound plugin's switched off, grants marked <see cref="HelpGrant.Off"/>.</summary>
     public static HelpGrantSet Read(string home, PluginCatalog catalog, bool withSwitchedOff = false)
     {
         var approvals = Approvals(home) ?? [];
@@ -146,10 +142,7 @@ public static class HelpGrants
         Save(home, found: true, approvals, [.. approvals.Where(each => !Same(each, plugin, server))]);
     }
 
-    /// <summary>
-    /// The sound plugin, switched on or off, and its server declared for Ask Daoris, as an approval names them: an approval is the
-    /// person's and stands while the plugin is off, where <see cref="HelpGrantSet"/> hands nothing of it.
-    /// </summary>
+    /// <summary>The sound plugin, on or off (an approval stands while it is off), and its server declared for Ask Daoris, as an approval names them.</summary>
     /// <exception cref="DriverException">No such plugin here, sound, offering Ask Daoris that server.</exception>
     internal static (PluginEntry Entry, PluginServer Server) Declared(PluginCatalog catalog, string plugin, string server)
     {
@@ -279,7 +272,6 @@ public sealed record HelpGrant(string Plugin, PluginServer Server, string State,
     /// </summary>
     public bool Changed { get; init; }
 
-    /// <summary>Its plugin is switched off: read for a page (<see cref="HelpGrants.Read"/>), and handed nothing.</summary>
     public bool Off { get; init; }
 }
 
