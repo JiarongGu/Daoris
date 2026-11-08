@@ -133,7 +133,24 @@ export function writeManifest(root: string, manifest: Partial<Manifest>): void {
 
 export function readLock(root: string): Lock | null {
   const file = join(root, LOCK_FILE);
-  return existsSync(file) ? parseJson<Lock>(file, readText(file)) : null;
+  if (!existsSync(file)) return null;
+  const lock = parseJson<Partial<Lock> | null>(file, readText(file));
+  if (typeof lock !== 'object' || lock === null || Array.isArray(lock)) {
+    throw new DaorisError(`${LOCK_FILE} is not a lock — it is not a JSON object`);
+  }
+  // A version this tool does not know is a lock written by another tool: read as version 1 it would be
+  // rewritten, or checked, by rules it was never written under.
+  if (lock.version !== LOCK_VERSION) {
+    const said = lock.version === undefined ? 'no version' : `version ${JSON.stringify(lock.version)}`;
+    throw new DaorisError(
+      `${LOCK_FILE} has ${said}, and this daoris reads only version ${LOCK_VERSION} — nothing was changed.\n`
+      + `  Run the daoris that wrote it (its manifest's 'source' names it).`,
+      1);
+  }
+  if (!Array.isArray(lock.entries)) {
+    throw new DaorisError(`${LOCK_FILE} has no 'entries' list — it is damaged; 'daoris sync' writes it again`);
+  }
+  return lock as Lock;
 }
 
 /**

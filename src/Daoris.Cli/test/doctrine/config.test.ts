@@ -112,6 +112,34 @@ test('a manifest or lock that is not JSON fails as a tool error naming the file'
   fx.cleanup();
 });
 
+/**
+ * A lock of a version this tool does not know, or one with no entries, is refused where it is read: it
+ * would otherwise read as a version-1 lock, or end in a bare TypeError at the first `entries.length`.
+ */
+test('a lock of an unknown version, or with no entries, is refused where it is read', () => {
+  const fx = makeFixture('config-lock-shape');
+  const lock = (body: object) => fx.write('daoris.lock', JSON.stringify(body));
+
+  lock({ version: 2, canonVersion: '0.0.1', source: 's', entries: [] });
+  const unknown = captureError(() => readLock(fx.root));
+  assert.ok(unknown instanceof DaorisError);
+  assert.equal(unknown.exitCode, 1);
+  assert.match(unknown.message, /version 2/);
+
+  lock({ canonVersion: '0.0.1', source: 's', entries: [] });
+  assert.match(String(captureError(() => readLock(fx.root))?.message), /no version/);
+
+  lock({ version: 1, canonVersion: '0.0.1', source: 's' });
+  const noEntries = captureError(() => readLock(fx.root));
+  assert.ok(noEntries instanceof DaorisError);
+  assert.equal(noEntries.exitCode, 2);
+  assert.match(noEntries.message, /entries/);
+
+  fx.write('daoris.lock', '[]');
+  assert.ok(captureError(() => readLock(fx.root)) instanceof DaorisError);
+  fx.cleanup();
+});
+
 test('writeManifest produces re-readable JSON', () => {
   const fx = makeFixture('config-write');
   writeManifest(fx.root, { source: 's', packs: ['p'], target: '.claude', coreBudgetBytes: 100 });
