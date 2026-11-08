@@ -487,6 +487,11 @@ public sealed class StatePublisherTests : DriverModuleBridge
     [InlineData("GIT_CHANGES", "", null)]
     [InlineData("GIT_HUNKS", "", null)]
     // A person's stage, unstage and Undo move the checkout's index, which the Changes tab reads.
+    [InlineData("FILES", "", null)]
+    [InlineData("FILES_READ", "files", null)]
+    [InlineData("FILES_SET", "files", null)]
+    [InlineData("FILES_REMOVE", "files", null)]
+    [InlineData("FILES_PERMIT", "files", null)]
     [InlineData("GIT_STAGE", "checkouts", null)]
     [InlineData("GIT_UNSTAGE", "checkouts", null)]
     [InlineData("GIT_UNDO", "checkouts", null)]
@@ -693,7 +698,7 @@ public sealed class StatePublisherTests : DriverModuleBridge
     public void Every_scope_has_its_word_on_the_wire_in_its_declared_order() =>
         Assert.Equal(
             "sessions,landing,diff,sweep,treesSync,lines,quests,asks,driver,rules,history,sync,registry,plugins,harnesses,"
-            + "tools,help,browser,wiring,notices,repositories,integration,atWork,checkouts",
+            + "tools,help,browser,wiring,notices,repositories,integration,atWork,checkouts,files",
             string.Join(",", StatePublisher.Names((StateScopes)~0)));
 
     /// <summary>

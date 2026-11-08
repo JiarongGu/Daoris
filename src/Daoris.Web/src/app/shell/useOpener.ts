@@ -1,7 +1,7 @@
 import type * as React from 'react';
 import { type Compose, type OpenGroup, type Opening, type OpenPart, opening as plannedOpening, placeOpening } from '../opener';
 import { DEFAULT_WORKSPACE, workspaceOf } from '../../data/workspaces';
-import { type WorkspaceSection } from '../../projects/tabs';
+import { type ProjectTab, type WorkspaceSection } from '../../projects/tabs';
 import { type SettingsAnchor, type SettingsSection } from '../../settings/SettingsView';
 import { type View } from '../../menus/commands';
 import { store } from '../../lib/stored';
@@ -30,7 +30,7 @@ export function useOpener({ machineRegistry, chooseKnowledgeMode, agentsModes, l
   setCompose: React.Dispatch<React.SetStateAction<(Compose & { id: number; }) | null>>;
   setAddRequested: React.Dispatch<React.SetStateAction<boolean>>;
   setImportRequested: React.Dispatch<React.SetStateAction<boolean>>;
-  chooseProjectTab: (next: "branches" | "details" | "history" | "changes" | "integration") => void;
+  chooseProjectTab: (next: ProjectTab) => void;
   setBranchAsked: React.Dispatch<React.SetStateAction<{ repository: string; branch: string; } | null>>;
   chooseWorkspaceTab: (next: "branches" | "workflow" | "details") => void;
   setWorkspaceSection: React.Dispatch<React.SetStateAction<WorkspaceSection | null>>;

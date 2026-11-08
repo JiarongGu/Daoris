@@ -67,6 +67,7 @@ const scopes = new Map<string, (sessions: string[] | null) => QueryKey[]>([
   ['atWork', () => [AT_WORK]],
   // A checkout's index moved by a person's stage, unstage or Undo, which the Changes tab reads again.
   ['checkouts', () => [['git', 'changes']]],
+  ['files', () => [['files']]],
 ]);
 
 const words = (value: unknown): string[] =>

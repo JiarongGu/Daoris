@@ -1,11 +1,8 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// <c>daoris files &lt;repository&gt;</c>: what the rule file's layers say of each path git does not manage in a repository's
-/// checkout, each top's effective rule, the layer that decided and what the layers below it said, read at its line's tip.
-/// <c>read</c> reads the repository again and writes its found layer; <c>set</c> and <c>remove</c> edit the person's layer. Nothing
-/// here copies, installs, clears or stores anything, and nothing in a tree is written. The three writes are the person's, refused
-/// from a session's terminal.
+/// <c>daoris files &lt;repository&gt;</c>: each path git does not manage with its effective rule, the layer that decided and what
+/// the layers below said, at its line's tip. Nothing in a tree is written; the three writes are the person's, refused from a session.
 /// </summary>
 [CommandGroup("files", Whole = true)]
 public static class FilesCommand
@@ -38,28 +35,22 @@ public static class FilesCommand
         var machine = words.Remove("--machine");
         try
         {
-            var line = await CanonicalLine.ResolveAsync(root, repository, null, DriverConfig.Load(DriverConfig.ResolvePath()), ct).ConfigureAwait(false);
-            var commit = await FileGit.CommitAsync(root, line.Branch ?? "HEAD", ct).ConfigureAwait(false);
+            var commit = await FilesLooks.CommitAsync(root, repository, DriverConfig.Load(DriverConfig.ResolvePath()), ct).ConfigureAwait(false);
             switch (verb)
             {
                 case null:
                     break;
                 case "read":
-                    var reading = await FileAnalysis.ReadAsync(root, commit, FileSignatures.Shipped, [], ct).ConfigureAwait(false);
-                    FoundFiles.Write(home, repository, reading.Found);
-                    output.WriteLine($"daoris: `{repository}` read again at {Short(commit)}: {reading.Found.Rules.Count} found rules written.");
+                    var written = await FilesLooks.ReadAgainAsync(home, root, repository, commit, ct).ConfigureAwait(false);
+                    output.WriteLine($"daoris: `{repository}` read again at {Short(commit)}: {written} found rules written.");
                     break;
-                case "set" when words.Count >= 2 && FileKinds.Of(words[0]) is { } kind:
+                case "set" when words.Count >= 2 && FileKinds.Of(words[0]) is not null:
                     var copy = words.Remove("--copy") ? true : words.Remove("--no-copy") ? false : (bool?)null;
-                    var rule = new FileRule(kind, [.. words.Skip(1)]) { Copy = copy };
-                    if (rule.Paths.Count == 0) throw new DriverException("`set` takes a kind and at least one path.");
-                    if (rule.Paths.Select(RoomPaths.Unfit).FirstOrDefault(why => why is not null) is { } unfit) throw new DriverException($"a path {unfit}.");
-                    if (copy is not null && kind != FileKind.Local) throw new DriverException("only a `local` rule takes --copy or --no-copy.");
-                    PersonFiles.Set(home, machine ? null : repository, rule);
-                    output.WriteLine($"daoris: {(machine ? "this machine's" : $"`{repository}`'s")} rules end with {kind.Word()} {string.Join(", ", rule.Paths)}.");
+                    var kind = FilesEdits.Set(home, repository, machine, words[0], [.. words.Skip(1)], copy);
+                    output.WriteLine($"daoris: {(machine ? "this machine's" : $"`{repository}`'s")} rules end with {kind} {string.Join(", ", words.Skip(1))}.");
                     break;
                 case "remove" when words.Count >= 1:
-                    var removed = words.Sum(path => PersonFiles.Remove(home, machine ? null : repository, path));
+                    var removed = FilesEdits.Remove(home, repository, machine, words);
                     output.WriteLine($"daoris: {removed} of your rules named {string.Join(", ", words)}; {(removed == 0 ? "nothing was written" : "each lost it")}.");
                     break;
                 default:
@@ -80,13 +71,10 @@ public static class FilesCommand
     /// <summary>Every layer read for <paramref name="repository"/>, and each path's effective rule in a line of its own.</summary>
     internal static async Task<IReadOnlyList<string>> SaidAsync(string home, string root, string repository, string commit, CancellationToken ct)
     {
-        var reading = await FileAnalysis.ReadAsync(root, commit, FileSignatures.Shipped, [], ct).ConfigureAwait(false);
-        var found = FoundFiles.Read(home, repository);
-        var own = await RepositoryFilesReader.AtAsync(root, commit, ct).ConfigureAwait(false);
-        var person = PersonFiles.Read(home);
-        var rules = FileRules.Of(found.Reading?.Rules ?? reading.Found.Rules, own.Rules, person, repository, reading.Signature);
-        var paths = reading.Tops.Concat(rules.Rules.SelectMany(each => each.Rule.Paths).Where(path => path.IndexOfAny(['*', '?', '{']) < 0))
-            .Distinct(StringComparer.Ordinal).Order(StringComparer.Ordinal);
+        var gathered = await FilesLooks.GatherAsync(home, root, repository, commit, ct).ConfigureAwait(false);
+        var (found, reading, own, person) = (gathered.Found, gathered.Reading, gathered.Own, gathered.Person);
+        var rules = gathered.Rules(repository);
+        var paths = gathered.Paths(rules);
 
         List<string> said =
         [
