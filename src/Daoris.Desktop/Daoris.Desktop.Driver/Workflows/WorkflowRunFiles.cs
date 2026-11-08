@@ -15,6 +15,8 @@ public sealed class WorkflowRunFiles(string home) : IWorkflowRunStore
     private static readonly System.Collections.Concurrent.ConcurrentDictionary<string, (DateTime Written, long Length, WorkflowRunBinding Binding)> Kept =
         new(StringComparer.OrdinalIgnoreCase);
 
+    internal Action<string>? BoundTested { get; init; }
+
     /// <summary>Whether a run is bound here.</summary>
     public bool Bound(string run) => WorkflowRunBindings.IsRunId(run) && File.Exists(WorkflowRunBindings.PathOf(home, run));
 
@@ -26,11 +28,12 @@ public sealed class WorkflowRunFiles(string home) : IWorkflowRunStore
     {
         if (!Bound(run)) return null;
         var path = WorkflowRunBindings.PathOf(home, run);
-        var file = new FileInfo(path);
-        var (written, length) = (file.LastWriteTimeUtc, file.Length);
-        if (Kept.TryGetValue(path, out var kept) && kept.Written == written && kept.Length == length) return kept.Binding;
+        BoundTested?.Invoke(path);
         try
         {
+            var file = new FileInfo(path);
+            var (written, length) = (file.LastWriteTimeUtc, file.Length);
+            if (Kept.TryGetValue(path, out var kept) && kept.Written == written && kept.Length == length) return kept.Binding;
             var binding = Parse(AtomicFile.ReadText(path));
             // A younger file could be written again within the clock grain, to the same stamp and length.
             if (binding is not null && DateTime.UtcNow - written > NodeRecordFiles.Settled) Kept[path] = (written, length, binding);

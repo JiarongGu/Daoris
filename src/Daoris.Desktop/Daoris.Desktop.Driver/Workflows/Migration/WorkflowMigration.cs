@@ -34,7 +34,7 @@ public static class WorkflowMigration
         var said = new List<string>();
         var at = PlannedWorkflows.At;
 
-        bool Planned(string id, string name, string why, JsonObject graph, WorkflowFrom? from)
+        bool Planned(string id, string name, string why, JsonObject graph, WorkflowFrom? from, string? note = null)
         {
             var found = store.Load(id);
             try
@@ -45,6 +45,7 @@ public static class WorkflowMigration
                 store.Write(id, planned.Plan.Result!);
                 if (!saved.Contains(id)) saved.Add(id);
                 said.Add($"`{id}` v{planned.Next!.Version}: {why}");
+                if (note is not null) said.Add($"`{id}`: {note}");
                 return true;
             }
             catch (ChoiceWords refused)
@@ -65,7 +66,7 @@ public static class WorkflowMigration
             if (ShapeOf(found, newest) is not { } shape || GraphOf(found, newest) is not { } source) continue;
             if (shape == "land-accept")
             {
-                if (MigratedGraphs.LiftLandAccept(source, out var why) is { } lifted) Planned(found.Id, read.Name!, "the `accept` is a review before the land", lifted, null);
+                if (MigratedGraphs.LiftLandAccept(source, out var why, out var note) is { } lifted) Planned(found.Id, read.Name!, "the `accept` is a review before the land", lifted, null, note);
                 else said.Add($"`{found.Id}` v{newest.Version} is left as it is: {why}");
                 continue;
             }
@@ -73,32 +74,32 @@ public static class WorkflowMigration
             var choosers = Choosing(places, found.Id);
             var resolutions = choosers.Count == 0 ? [(Place: "", Resolution: HandedResolution.Default, IsWorkspace: false)]
                 : choosers.Select(each => (each.Place, Resolution: HandedResolution.Of(each), each.IsWorkspace)).ToList();
-            var groups = new List<(JsonObject Graph, List<(string Place, bool IsWorkspace)> Places)>();
+            var groups = new List<(JsonObject Graph, List<(string Place, bool IsWorkspace)> Places, string? Note)>();
             var refused = false;
             foreach (var each in resolutions)
             {
-                var lifted = MigratedGraphs.LiftHanded(source, each.Resolution, out var why);
+                var lifted = MigratedGraphs.LiftHanded(source, each.Resolution, out var why, out var note);
                 if (lifted is null) { said.Add($"`{found.Id}` v{newest.Version} is left as it is: {why}"); refused = true; break; }
                 var text = lifted.ToJsonString();
                 var group = groups.FirstOrDefault(known => known.Graph.ToJsonString() == text);
-                if (group.Graph is null) groups.Add((lifted, [(each.Place, each.IsWorkspace)]));
+                if (group.Graph is null) groups.Add((lifted, [(each.Place, each.IsWorkspace)], note));
                 else group.Places.Add((each.Place, each.IsWorkspace));
             }
 
             if (refused) continue;
             for (var index = 0; index < groups.Count; index++)
             {
-                var (graph, chosen) = groups[index];
+                var (graph, chosen, note) = groups[index];
                 if (index == 0)
                 {
-                    Planned(found.Id, read.Name!, "its `handed` is a `land`", graph, null);
+                    Planned(found.Id, read.Name!, "its `handed` is a `land`", graph, null, note);
                     continue;
                 }
 
                 var names = chosen.Where(place => place.Place.Length > 0).Select(place => place.Place).ToList();
                 var id = Unique(store, $"{found.Id}-{Slug(chosen[0].Place)}");
                 var name = Cut($"{read.Name} ({chosen[0].Place})", 60);
-                if (!Planned(id, name, $"`{found.Id}` lands differently where {string.Join(", ", names.Select(n => $"`{n}`"))} follow it, so they take a workflow of their own", graph, null)) continue;
+                if (!Planned(id, name, $"`{found.Id}` lands differently where {string.Join(", ", names.Select(n => $"`{n}`"))} follow it, so they take a workflow of their own", graph, null, note)) continue;
                 foreach (var place in chosen) config = WorkflowSelection.Apply(config, Use(id, place.Place, place.IsWorkspace));
             }
         }

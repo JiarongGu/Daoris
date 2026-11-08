@@ -139,20 +139,20 @@ public sealed class WorkflowMigrationTests : IDisposable
             """)!;
         var merge = new MigratedPlace("docs", false, "default", new MigratedRule(LandingForm.Merge, null, null, true, null, false, null, null), true, false, false, false, null, false, false, "old");
 
-        var lifted = MigratedGraphs.LiftHanded(graph, HandedResolution.Of(merge), out var refusal)!;
+        var lifted = MigratedGraphs.LiftHanded(graph, HandedResolution.Of(merge), out var refusal, out _)!;
 
         Assert.Null(refusal);
         Assert.Equal("merge", lifted["nodes"]!.AsArray().Single(node => (string?)node!["kind"] == NodeKinds.Land)!["options"]!["method"]!.ToString());
         Assert.Contains(lifted["nodes"]!.AsArray(), node => (string?)node!["kind"] == NodeKinds.Review);
         // The same under a branch rule that accepts automatically is a branch with no review.
         var branch = merge with { Rule = new MigratedRule(LandingForm.Branch, null, null, true, null, false, null, null) };
-        var auto = MigratedGraphs.LiftHanded(graph, HandedResolution.Of(branch), out _)!;
+        var auto = MigratedGraphs.LiftHanded(graph, HandedResolution.Of(branch), out _, out _)!;
         Assert.DoesNotContain(auto["nodes"]!.AsArray(), node => (string?)node!["kind"] == NodeKinds.Review);
         Assert.Equal("branch", auto["nodes"]!.AsArray().Single(node => (string?)node!["kind"] == NodeKinds.Land)!["options"]!["method"]!.ToString());
         // A merge written with no press never ran, so it is left, not lowered.
         var written = (JsonObject)graph.DeepClone();
         written["nodes"]!.AsArray()[1]!["options"] = new JsonObject { ["form"] = "merge", ["accept"] = "automatic" };
-        Assert.Null(MigratedGraphs.LiftHanded(written, HandedResolution.Default, out var kept));
+        Assert.Null(MigratedGraphs.LiftHanded(written, HandedResolution.Default, out var kept, out _));
         Assert.Contains("never ran", kept);
     }
 
