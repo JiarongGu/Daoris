@@ -122,6 +122,7 @@ export const NOTE_CODES: Readonly<Record<string, NoteCode>> = {
   'started.deps-left': { values: ['path', 'why'], why: 'deps' },
   // An install that changed git's own hooks or configuration for the repository, named.
   'started.deps-common': { values: ['path', 'changed'] },
+  'started.setup-failed': { values: ['path', 'command', 'why'] },
   'started.files-waiting': { values: ['count', 'repository'] },
   'started.files-unread': { values: ['repository', 'why'] },
   'started.files-stopped': { values: [] },
@@ -491,8 +492,10 @@ export const NOTE_CODES: Readonly<Record<string, NoteCode>> = {
   // The same wait where some accounts need the person's sign-in, named apart from those cooling.
   'held.limit-waits-sign-in': { values: ['owner', 'account', 'until', 'accounts'], why: 'cooling' },
   'held.signed-out': { values: ['owner', 'account', 'profile'] },
+  'held.key-missing': { values: ['owner', 'account', 'profile'] },
   // No Daoris account of the agent's is signed in, and its own home is never a start's.
   'held.no-account': { values: ['owner'] },
+  'held.no-key': { values: ['owner'] },
   'held.not-installed': { values: ['agent'] },
   'held.pin-not-installed': { values: ['agent', 'version'] },
   // The roster's other refusals: a wait over a list is its lead, a clause for each account, the first reset and
@@ -506,6 +509,8 @@ export const NOTE_CODES: Readonly<Record<string, NoteCode>> = {
   'held.wait-first': { values: ['account', 'until', 'why'], why: 'cooling' },
   'held.sign-in-sooner': { values: ['logins'] },
   'held.sign-in': { values: ['logins'] },
+  'held.key-sooner': { values: ['logins'] },
+  'held.key': { values: ['logins'] },
   'held.picked-ready': { values: ['accounts'] },
   'held.picked-none': { values: ['agent'] },
   'held.refused-account': { values: ['owner', 'account'] },

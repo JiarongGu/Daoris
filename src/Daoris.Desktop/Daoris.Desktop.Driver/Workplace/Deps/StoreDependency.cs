@@ -42,6 +42,7 @@ internal static class StoreDependencyRules
             .OrderBy(pair => pair.Order).ThenBy(pair => pair.Dependency.Path, StringComparer.Ordinal)
             .Select(pair => pair.Dependency)
             .ToList();
+        each = [.. await InstallScripts.ApplyAsync(tree, commit, each, ct).ConfigureAwait(false)];
         return new StoreDependencies(each, rules, [.. found.Problems, .. own.Problems, .. person.Problems], reading.Floor);
     }
 }

@@ -301,9 +301,10 @@ internal sealed class RosterSelection(HarnessRoster roster)
     /// for a sign-in naming the accounts it passed signed out, none where the agent has none, so a look reports it as a wait and
     /// says it once.
     /// </summary>
-    internal static HarnessSelection NoAccount(string owner, IReadOnlyList<string> signedOut, IReadOnlyDictionary<string, string> names)
+    internal static HarnessSelection NoAccount(
+        string owner, IReadOnlyList<string> signedOut, IReadOnlyDictionary<string, string> names, bool byKey = false)
     {
-        var note = RotationWords.NoAccountOf(owner);
+        var note = RotationWords.NoAccountOf(owner, byKey);
         return new HarnessSelection(note.Note) { SignedOut = SignedOutAccounts.Of(owner, signedOut, names) with { NoAccount = true }, RefusalNote = note };
     }
 }

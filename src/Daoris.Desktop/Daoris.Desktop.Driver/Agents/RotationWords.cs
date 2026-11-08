@@ -25,7 +25,8 @@ public static class RotationWords
     /// </summary>
     /// <param name="names">The owner's names by id, read as the wait is said; null says each by its id.</param>
     public static string Wait(
-        string agent, IReadOnlyList<AccountState> states, TimeZoneInfo zone, IReadOnlyDictionary<string, string>? names = null)
+        string agent, IReadOnlyList<AccountState> states, TimeZoneInfo zone, IReadOnlyDictionary<string, string>? names = null,
+        bool byKey = false)
     {
         var first = LineAccount.Earliest(ResetSet.Walk, states)!;
         var when = $"the first ready, `{(first.Account is { } account ? AccountNames.Said(names, account) : null)}`, at "
@@ -34,7 +35,7 @@ public static class RotationWords
             ? $"every `{agent}` account this start may use is cooling"
             : $"no `{agent}` account this start may use is ready: {string.Join(", ", states.Select(state => Clause(state, zone, names)))}";
         // An account not signed in waits for a person, never for the reset, so its sign-in is said beside the wait.
-        return $"{every}; {when}. Daoris starts nothing on them until then." + SignIn(agent, SignedOut(states), "A sign-in starts it sooner");
+        return $"{every}; {when}. Daoris starts nothing on them until then." + SignIn(agent, SignedOut(states), byKey ? "A key starts it sooner" : "A sign-in starts it sooner", byKey);
     }
 
     /// <summary>
@@ -43,7 +44,8 @@ public static class RotationWords
     /// has no id (the tool's own sign-in), which a clause cannot say: the sentence then keeps its words.
     /// </summary>
     public static Noted? WaitOf(
-        string agent, IReadOnlyList<AccountState> states, TimeZoneInfo zone, IReadOnlyDictionary<string, string>? names = null)
+        string agent, IReadOnlyList<AccountState> states, TimeZoneInfo zone, IReadOnlyDictionary<string, string>? names = null,
+        bool byKey = false)
     {
         var first = LineAccount.Earliest(ResetSet.Walk, states)!;
         if (first.Account is not { } firstAccount) return null;
@@ -58,7 +60,9 @@ public static class RotationWords
                    + $"{CoolingWords.Why(first)}. Daoris starts nothing on them until then.";
         var wait = lead.Then("; ", Noted.Of(
             HeldNoteCodes.HeldWaitFirst, said, ("account", firstAccount), ("until", NoteCodes.Moment(first.Until)), ("why", CoolingWhy.Of(first))));
-        return SignInOf(wait, agent, SignedOut(states), "A sign-in starts it sooner", HeldNoteCodes.HeldSignInSooner);
+        return byKey
+            ? SignInOf(wait, agent, SignedOut(states), "A key starts it sooner", HeldNoteCodes.HeldKeySooner, byKey)
+            : SignInOf(wait, agent, SignedOut(states), "A sign-in starts it sooner", HeldNoteCodes.HeldSignInSooner);
     }
 
     /// <summary>
@@ -66,15 +70,20 @@ public static class RotationWords
     /// by itself, so each account is named with why, and every one not signed in with its sign-in.
     /// </summary>
     /// <param name="names">The owner's names by id, read as the hold is said; null says each by its id.</param>
-    public static string NoneReady(string agent, IReadOnlyList<AccountState> states, IReadOnlyDictionary<string, string>? names = null) =>
+    public static string NoneReady(
+        string agent, IReadOnlyList<AccountState> states, IReadOnlyDictionary<string, string>? names = null, bool byKey = false) =>
         $"no `{agent}` account this start may use is ready: {string.Join(", ", states.Select(state => Clause(state, TimeZoneInfo.Utc, names)))}."
-        + SignIn(agent, SignedOut(states), "A sign-in starts it");
+        + SignIn(agent, SignedOut(states), byKey ? "A key starts it" : "A sign-in starts it", byKey);
 
     /// <summary><see cref="NoneReady"/> by code, its English the same to the byte; null where an account has no id.</summary>
-    public static Noted? NoneReadyOf(string agent, IReadOnlyList<AccountState> states, IReadOnlyDictionary<string, string>? names = null)
+    public static Noted? NoneReadyOf(
+        string agent, IReadOnlyList<AccountState> states, IReadOnlyDictionary<string, string>? names = null, bool byKey = false)
     {
         var none = ClausesOf(HeldNoteCodes.HeldWaitSome, $"no `{agent}` account this start may use is ready:", agent, states, TimeZoneInfo.Utc, names);
-        return none is null ? null : SignInOf(none.Then("."), agent, SignedOut(states), "A sign-in starts it", HeldNoteCodes.HeldSignIn);
+        if (none is null) return null;
+        return byKey
+            ? SignInOf(none.Then("."), agent, SignedOut(states), "A key starts it", HeldNoteCodes.HeldKey, byKey)
+            : SignInOf(none.Then("."), agent, SignedOut(states), "A sign-in starts it", HeldNoteCodes.HeldSignIn);
     }
 
     /// <summary>The lead, then each account's clause joined as the English joins them; null where an account has no id.</summary>
@@ -101,22 +110,32 @@ public static class RotationWords
     }
 
     /// <summary><see cref="SignIn"/> as a line after <paramref name="wait"/>: each command is a value of its list.</summary>
-    internal static Noted SignInOf(Noted wait, string agent, IReadOnlyList<string> accounts, string lead, NoteCode code) => accounts.Count == 0
+    internal static Noted SignInOf(
+        Noted wait, string agent, IReadOnlyList<string> accounts, string lead, NoteCode code, bool byKey = false) => accounts.Count == 0
         ? wait
         : wait.Then(" ", Noted.Of(
-            code, SignIn(agent, accounts, lead)[1..],
-            ("logins", (IReadOnlyList<string>)[.. accounts.Select(account => $"daoris agent login {agent} --account {ShellWord.Of(account, ShellWord.Account)}")])));
+            code, SignIn(agent, accounts, lead, byKey)[1..],
+            ("logins", (IReadOnlyList<string>)[.. accounts.Select(account => $"daoris agent {Verb(byKey)} {agent} --account {ShellWord.Of(account, ShellWord.Account)}")])));
+
+    /// <summary>The terminal verb that gets an account going: an agent held by a key alone has no sign-in, so its verb is <c>key</c>.</summary>
+    private static string Verb(bool byKey) => byKey ? "key" : "login";
 
     /// <summary>
     /// A start whose scope names no account, with no Daoris account of the agent's signed in: it waits
     /// for the person's sign-in, said once as any wait is said, and never falls back to the person's own tool home. One
     /// coded line, the agent its value; both doors to a sign-in named, the window's and the terminal's.
     /// </summary>
-    public static Noted NoAccountOf(string agent) => Noted.Of(
-        HeldNoteCodes.HeldNoAccount,
-        $"No `{agent}` account of Daoris's own is signed in, and Daoris never starts its sessions in your own `{agent}` sign-in — "
-        + $"sign one in for Daoris on the agent's page under Agents, or with `daoris agent login {agent} --new`. The start waits until then.",
-        ("owner", agent));
+    public static Noted NoAccountOf(string agent, bool byKey = false) => byKey
+        ? Noted.Of(
+            HeldNoteCodes.HeldNoKey,
+            $"No `{agent}` account of Daoris's own has an API key, and Daoris never starts its sessions in your own `{agent}` sign-in — "
+            + $"set one for Daoris on the agent's page under Agents, or with `daoris agent key {agent}`, which reads it from standard input. The start waits until then.",
+            ("owner", agent))
+        : Noted.Of(
+            HeldNoteCodes.HeldNoAccount,
+            $"No `{agent}` account of Daoris's own is signed in, and Daoris never starts its sessions in your own `{agent}` sign-in — "
+            + $"sign one in for Daoris on the agent's page under Agents, or with `daoris agent login {agent} --new`. The start waits until then.",
+            ("owner", agent));
 
     /// <summary>The accounts of a walk not signed in, in the order it tried them.</summary>
     public static IReadOnlyList<string> SignedOut(IReadOnlyList<AccountState> states) =>
@@ -127,9 +146,9 @@ public static class RotationWords
     /// each account, and the screen's, the agent's page in the Agents place. Empty where none is.
     /// Each id is spelled for any shell.
     /// </summary>
-    private static string SignIn(string agent, IReadOnlyList<string> accounts, string lead) => accounts.Count == 0
+    private static string SignIn(string agent, IReadOnlyList<string> accounts, string lead, bool byKey = false) => accounts.Count == 0
         ? ""
-        : $" {lead}: {string.Join(", ", accounts.Select(account => $"`daoris agent login {agent} --account {ShellWord.Of(account, ShellWord.Account)}`"))}, "
+        : $" {lead}: {string.Join(", ", accounts.Select(account => $"`daoris agent {Verb(byKey)} {agent} --account {ShellWord.Of(account, ShellWord.Account)}`"))}, "
           + "or Agents → the agent's page → Accounts.";
 
     /// <summary>

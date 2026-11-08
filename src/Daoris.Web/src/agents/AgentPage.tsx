@@ -543,8 +543,8 @@ export function AgentPage({
       <p className="m-0 mt-8 border-t border-line pt-3 text-meta text-ink-faint">
         {/* An agent Daoris has no installer for is installed with its maker's own tooling, so no `daoris agent install`. */}
         <Inline text={t(
-          tool.present ? 'agents.page.terminal'
-            : !installs ? (tool.maker ? 'agents.page.installedByMaker' : 'agents.page.installedByMakerUnnamed')
+          tool.present ? (keyOnly ? 'agents.page.terminalKey' : 'agents.page.terminal')
+            :!installs ? (tool.maker ? 'agents.page.installedByMaker' : 'agents.page.installedByMakerUnnamed')
               : 'agents.page.terminalAbsent',
           { agent: tool.name, product, maker: tool.maker },
         )} />
