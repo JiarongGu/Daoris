@@ -83,6 +83,23 @@ public sealed class RoleCatalogTests : IDisposable
     }
 
     [Fact]
+    public void ROLESREVIEW1d_a_press_read_at_a_revision_the_transaction_finds_moved_writes_nothing()
+    {
+        var db = DesktopStore.LocationIn(_home);
+        var first = RoleCatalog.Seed[0] with { Name = AuthoredText.Of("First") };
+        var second = RoleCatalog.Seed[0] with { Name = AuthoredText.Of("Second") };
+        using var store = DesktopStore.Open(db, StoreProcess.Options(() => StoreSettled.Yes));
+
+        // Two presses read at revision 0: the first writes, and the second finds the revision moved inside its own transaction.
+        Assert.Equal([1L], store.Write("roles", write => RoleCatalog.WriteIn(write, [RoleChange.Set(first)], [0L])));
+        var refused = Assert.Throws<DriverException>(() => store.Write("roles", write => RoleCatalog.WriteIn(write, [RoleChange.Set(second)], [0L])));
+
+        Assert.Contains("changed since it was read (revision 0, now 1)", refused.Message);
+        Assert.Equal("First", RoleCatalog.Read(db).Slots.First(slot => slot.Id == first.Id).Role!.Name.In("en"));
+        Assert.Equal([2L], store.Write("roles", write => RoleCatalog.WriteIn(write, [RoleChange.Set(second)], [1L])));
+    }
+
+    [Fact]
     public void The_seed_reproduces_today_s_every_start_case()
     {
         var catalog = RoleCatalog.Of([]);

@@ -99,7 +99,8 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they start wi
 8. A start keeps its role and the role's revision on its binding, and a census holds the two to the work. Changing or
    removing a role touches no running session; a continuation reads the role that takes its work now. (from D212)
 9. One door changes roles: `RoleDoor`, reached by `SET_ROLE`, `SET_ROLES`, `daoris role` and `role_propose`
-   applied by the person's press. Each answers the judge's closed codes alike. A press carries the revision it read. (from D212, D228)
+   applied by the person's press. Each answers the judge's closed codes alike. A press carries the revision it read, which the catalogue's write compares with the revision its own transaction
+   reads (`RoleCatalog.WriteIn`), so two presses read at one revision cannot both write. (from D212, D228)
 10. A batch is judged whole before anything is written. A role, its staffing, its policy and a place's rules land in one
     store transaction or not at all. (from D226, D229)
 
