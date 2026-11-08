@@ -282,7 +282,7 @@
   "note.helper.person-asked": "你请了一位助手看这个会话的工作；它的回答会作为这个会话的下一轮。",
   "note.helper.limited": "助手 {{agent}} 在回答之前用尽了账户额度，而这个会话已不再等它，因此不会再次运行它；它的账户将于 {{until}} 重新可用。",
   "note.helper.limited-no-reset": "助手 {{agent}} 在回答之前用尽了账户额度，而这个会话已不再等它，因此不会再次运行它。",
-  "note.answers.held": "{{agent}} 的回答在等你：它会让这项工作在无人参与的情况下第三次继续。",
+  "note.answers.held": "{{agent}} 的回答在等你：这项工作仅靠回答继续，已达你的规则上限（连续 {{n}} 次），其间无人参与。",
   "note.answers.passed": "你选择了带着这个回答继续。",
   "note.answers.kept": "你保留了这个回答：它只会随你的话一起继续。",
   "note.answers.supervised": "按你的规则，主管让这个回答继续了。",

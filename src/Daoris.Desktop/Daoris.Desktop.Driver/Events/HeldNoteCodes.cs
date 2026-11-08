@@ -6,9 +6,9 @@ public static class HeldNoteCodes
     // An attempt refused by the same kind of limit (`hit`) just after its account's cool-off ended.
     public static readonly NoteCode LimitNotLifted = new("limit.not-lifted", ["hit"]);
 
-    // ——— The answers-alone bound: a third answer in a row with nobody between held for the person, by the agent that answered; their
-    // *Go on with this answer*, which counts as their word; their *Not now*, which keeps the answer for them.
-    public static readonly NoteCode AnswersHeld = new("answers.held", ["agent"]);
+    // ——— The answers-alone bound: an answer past the line's rule (`n`, its number, absent where none holds it) held for the person, by
+    // the agent that answered; their *Go on with this answer*, which counts as their word; their *Not now*, which keeps the answer.
+    public static readonly NoteCode AnswersHeld = new("answers.held", ["agent", "n"]);
     public static readonly NoteCode AnswersPassed = new("answers.passed", []);
     public static readonly NoteCode AnswersKept = new("answers.kept", []);
 

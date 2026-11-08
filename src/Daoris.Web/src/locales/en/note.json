@@ -282,7 +282,7 @@
   "note.helper.person-asked": "You asked a helper about this session's work; its answer comes as this session's next turn.",
   "note.helper.limited": "Helper {{agent}} hit its account's limit before it answered, and this session no longer waits on it, so it is not run again; its account is ready again at {{until}}.",
   "note.helper.limited-no-reset": "Helper {{agent}} hit its account's limit before it answered, and this session no longer waits on it, so it is not run again.",
-  "note.answers.held": "{{agent}}'s answer waits for you: it would take this work on a third time with nobody between.",
+  "note.answers.held": "{{agent}}'s answer waits for you: this work has gone on by answers alone up to your rule's bound ({{n}} in a row), with nobody between.",
   "note.answers.passed": "You let this answer go on.",
   "note.answers.kept": "You kept this answer: it goes on only with your words.",
   "note.answers.supervised": "The supervisor let this answer go on, as your rule asked it to.",

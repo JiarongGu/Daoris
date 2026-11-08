@@ -162,11 +162,17 @@ public sealed record AloneStep(string Kind, string Part, long Seq, DateTimeOffse
 /// </summary>
 internal static class AnswersAloneNotes
 {
-    /// <summary>The answers wait for the person: going on with them would be the third time in a row with nobody between.</summary>
-    public static SessionEvent Held(string agent, IReadOnlyList<string> words) => Note(Noted.Of(
+    /// <summary>The answers wait for the person: going on would pass the rule's number, carried as <c>n</c>; none where no rule holds the line.</summary>
+    public static SessionEvent Held(string agent, IReadOnlyList<string> words, int? bound) => Note(Noted.Of(
         HeldNoteCodes.AnswersHeld,
-        $"{agent}'s answer waits for you: it would take this work on a third time with nobody between.",
-        ("agent", agent)), words);
+        $"{agent}'s answer waits for you: this work has gone on by answers alone up to {Bound(bound)}, with nobody between.",
+        ("agent", agent), ("n", bound)), words);
+
+    /// <summary>The refusal to an ended conversation's go-on, in the words of <see cref="Held"/>.</summary>
+    public static string Refusal(string session, int? bound) =>
+        $"conversation `{session}`'s answer waits for you: it would take its work on past {Bound(bound)} by answers alone, with nobody between.";
+
+    private static string Bound(int? bound) => bound is { } n ? $"your rule's bound ({n} in a row)" : "your rule's bound";
 
     /// <summary>The person let the answer go on (<em>Go on with this answer</em>): their word on the line.</summary>
     public static SessionEvent Passed(IReadOnlyList<string> words) =>
