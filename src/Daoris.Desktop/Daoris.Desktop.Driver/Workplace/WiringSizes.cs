@@ -1,37 +1,26 @@
 using System.Collections.Concurrent;
 using System.Diagnostics;
-using System.Text.RegularExpressions;
 
 namespace Daoris.Driver;
 
-/// <summary>How far a walk may go before it answers what it counted (the second opinion's point 3).</summary>
-/// <param name="Files">The most files it counts.</param>
-/// <param name="Time">The longest it walks.</param>
+/// <summary>How far a walk may go before it answers what it counted: the most files, the longest time.</summary>
 public sealed record WiringBudget(int Files, TimeSpan Time)
 {
-    /// <summary>Enough for an owner's folder of many trees, and bounded where one holds more.</summary>
     public static WiringBudget Default { get; } = new(400_000, TimeSpan.FromSeconds(60));
 }
 
-/// <summary>
-/// One kind's places walked (<see cref="WiringSizes.MeasurePlaces"/>): their bytes and files, why the walk stopped short or read only
-/// part (<c>budget</c>, <c>cancelled</c> or <c>unreadable</c>; null where whole), and each group's bytes where groups were asked.
-/// </summary>
+/// <summary>One kind's places walked (<see cref="WiringSizes.MeasurePlaces"/>): bytes, files, why it stopped short (null where whole), each group's bytes.</summary>
 public sealed record PlacesMeasure(long Bytes, int Files, string? Partial, IReadOnlyDictionary<string, long> Groups);
 
 /// <summary>One measure of a Daoris folder: each entry's bytes, each name its table does not hold, and each top folder walked whole.</summary>
 public sealed class SizeReading
 {
-    /// <summary>When the walk ended.</summary>
     public required DateTimeOffset Measured { get; init; }
 
-    /// <summary>Whether the walk stopped short: what it counted is still answered, and <see cref="Why"/> says why.</summary>
     public required bool Partial { get; init; }
 
-    /// <summary><c>budget</c> or <c>cancelled</c> for a partial walk; null for a whole one.</summary>
     public string? Why { get; init; }
 
-    /// <summary>How many files were counted.</summary>
     public required int Counted { get; init; }
 
     /// <summary>Each entry of the table, by name, and its bytes where it is found (its new place or its old one).</summary>
@@ -144,7 +133,7 @@ public sealed class WiringSizes
         string home, string? root, WiringBudget budget, CancellationToken cancellationToken, IReadOnlyList<ToolFolder>? tool = null)
     {
         var walk = new Walk(budget, cancellationToken);
-        var patterns = Patterns();
+        var patterns = WiringPlaces.Of(home);
         var entries = new Dictionary<string, long>(StringComparer.Ordinal);
         var leftOver = new Dictionary<string, long>(StringComparer.OrdinalIgnoreCase);
         var folders = new Dictionary<string, long>(StringComparer.Ordinal);
@@ -153,11 +142,11 @@ public sealed class WiringSizes
         // The home, each file given to the entry that holds it, or to its top name.
         walk.Files(home, (parts, bytes) =>
         {
-            if (Holder(patterns, parts) is { } entry) entries[entry] = entries.GetValueOrDefault(entry) + bytes;
+            if (WiringPlaces.Holder(patterns, parts) is { } entry) entries[entry] = entries.GetValueOrDefault(entry) + bytes;
             else leftOver[parts[0]] = leftOver.GetValueOrDefault(parts[0]) + bytes;
         }, parts =>
         {
-            unreadable.Add(parts.Length == 0 ? "home" : Holder(patterns, parts) ?? $"leftOver:{parts[0]}");
+            unreadable.Add(parts.Length == 0 ? "home" : WiringPlaces.Holder(patterns, parts) ?? $"leftOver:{parts[0]}");
         });
 
         // The Daoris folder's other top folders, each whole.
@@ -267,74 +256,6 @@ public sealed class WiringSizes
         }
 
         return new(bytes, walk.Counted, walk.Stopped ?? (failed ? "unreadable" : null), groups);
-    }
-
-    /// <summary>Whether a name at the home's top is held by an entry of the table: a name that is not is left over.</summary>
-    public static bool Held(string name) => Patterns().Any(pattern => pattern.Parts[0].IsMatch(name));
-
-    /// <summary>One place of an entry, its parts each a match for one name, to be compared by how closely each names it.</summary>
-    private sealed record Pattern(string Entry, Regex[] Parts, int[] Ranks);
-
-    private static IReadOnlyList<Pattern>? _patterns;
-
-    /// <summary>Every place of every entry of the table, new and old; an entry known by the names it holds, each of them.</summary>
-    private static IReadOnlyList<Pattern> Patterns() => _patterns ??= [.. Build()];
-
-    private static IEnumerable<Pattern> Build()
-    {
-        foreach (var entry in HomeEntry.Table)
-        {
-            foreach (var place in new[] { entry.New, entry.Old }.Distinct(StringComparer.Ordinal))
-            {
-                var places = place.Length == 0 ? entry.Holds : [place];
-                foreach (var each in places)
-                {
-                    yield return Of(entry.Name, each);
-                    // A database's journal and its write-ahead log are the database's.
-                    if (each.EndsWith(".db", StringComparison.Ordinal))
-                    {
-                        foreach (var beside in new[] { "-wal", "-shm", "-journal" }) yield return Of(entry.Name, each + beside);
-                    }
-                }
-            }
-        }
-    }
-
-    private static Pattern Of(string entry, string place)
-    {
-        var parts = place.Split('/', StringSplitOptions.RemoveEmptyEntries);
-        var options = OperatingSystem.IsWindows() ? RegexOptions.IgnoreCase | RegexOptions.CultureInvariant : RegexOptions.CultureInvariant;
-        return new Pattern(
-            entry,
-            [.. parts.Select(part => new Regex("^" + Regex.Escape(part).Replace(@"\*", ".*", StringComparison.Ordinal) + "$", options))],
-            [.. parts.Select(part => part == "*" ? 1 : part.Contains('*') ? 2 : 3)]);
-    }
-
-    /// <summary>The entry whose place matches the most closely: compared part by part, a named part above a partial one above a <c>*</c>, any above none.</summary>
-    private static string? Holder(IReadOnlyList<Pattern> patterns, string[] parts)
-    {
-        Pattern? best = null;
-        foreach (var pattern in patterns)
-        {
-            if (pattern.Parts.Length > parts.Length) continue;
-            var matches = true;
-            for (var at = 0; at < pattern.Parts.Length && matches; at++) matches = pattern.Parts[at].IsMatch(parts[at]);
-            if (matches && (best is null || Closer(pattern, best))) best = pattern;
-        }
-
-        return best?.Entry;
-    }
-
-    private static bool Closer(Pattern pattern, Pattern than)
-    {
-        for (var at = 0; at < Math.Max(pattern.Ranks.Length, than.Ranks.Length); at++)
-        {
-            var a = at < pattern.Ranks.Length ? pattern.Ranks[at] : 0;
-            var b = at < than.Ranks.Length ? than.Ranks[at] : 0;
-            if (a != b) return a > b;
-        }
-
-        return false;
     }
 
     private static string Key(string home)
