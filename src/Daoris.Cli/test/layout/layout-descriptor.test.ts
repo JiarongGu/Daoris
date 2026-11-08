@@ -169,8 +169,8 @@ test('a claude-code lock carries no layout fields; an agents lock carries harnes
   const lock = fresh.lock();
   assert.equal(lock.harness, 'agents');
   assert.equal(lock.target, '.agents');
-  // Sorted as the entries are, so the lock diffs cleanly in review.
-  assert.deepEqual(lock.mirrors!.map((m) => m.path), ['.claude/skills/finder/run.sh', '.claude/skills/finder/SKILL.md']);
+  // Sorted as the entries are, by code unit, so the lock diffs cleanly in review and reads the same on every machine.
+  assert.deepEqual(lock.mirrors!.map((m) => m.path), ['.claude/skills/finder/SKILL.md', '.claude/skills/finder/run.sh']);
   const entry = lock.mirrors!.find((m) => m.path === '.claude/skills/finder/SKILL.md')!;
   assert.equal(entry.of, '.agents/skills/finder/SKILL.md');
   assert.match(entry.sha256, /^[0-9a-f]{64}$/);

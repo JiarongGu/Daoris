@@ -47,6 +47,25 @@ test('the lock round-trips with entries sorted by target', () => {
   fx.cleanup();
 });
 
+test('the lock is ordered ordinally, so its order is the same on every machine', () => {
+  const fx = makeFixture('config-lock-ordinal');
+  const entry = (target: string) => ({ pack: 'core', source: `core/${target}`, target, canonVersion: '0.1.0', sha256: 'aa' });
+  writeLock(fx.root, {
+    canonVersion: '0.1.0',
+    source: 's',
+    entries: [entry('rules/a.md'), entry('rules/B.md')],
+    switchedOff: [{ target: 'rules/a.md', by: 'p', because: 'c' }, { target: 'rules/B.md', by: 'p', because: 'c' }],
+    mirrors: [{ path: 'm/a', of: 'x', sha256: 'aa' }, { path: 'm/B', of: 'x', sha256: 'aa' }],
+    rooms: ['a', 'B'],
+  });
+  const lock = readLock(fx.root)!;
+  assert.deepEqual(lock.entries.map((e) => e.target), ['rules/B.md', 'rules/a.md']);
+  assert.deepEqual(lock.switchedOff!.map((e) => e.target), ['rules/B.md', 'rules/a.md']);
+  assert.deepEqual(lock.mirrors!.map((e) => e.path), ['m/B', 'm/a']);
+  assert.deepEqual(lock.rooms, ['B', 'a']);
+  fx.cleanup();
+});
+
 test('an absent lock reads as null, and lockIndex keys by target', () => {
   const fx = makeFixture('config-nolock');
   assert.equal(readLock(fx.root), null);
