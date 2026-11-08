@@ -26,6 +26,9 @@ public sealed class InstallUpdaterTests : Bridge
     private int _closed;
 
     private bool _launches = true;
+
+    // What the launcher's start throws, where a test makes it.
+    private Exception? _launchError;
     private string? _closingBuild;
 
     // The updater's clock, which a test moves; the machine log's stays at Now.
@@ -48,6 +51,7 @@ public sealed class InstallUpdaterTests : Bridge
         relaunch: _ =>
         {
             _relaunched++;
+            if (_launchError is { } error) throw error;
             return Task.FromResult(_launches);
         },
         close: () => { Assert.NotNull(_closingBuild); _closed++; },
@@ -295,6 +299,27 @@ public sealed class InstallUpdaterTests : Bridge
         Assert.Equal(1, _relaunched);
         Assert.Equal(0, _closed);
         Assert.False(updater.Draining);
+    }
+
+    /// <summary>
+    /// A start the runtime refuses with an error other than a missing launcher (a handle it cannot own, an argument it
+    /// rejects) leaves nothing closing: the presses it held are let go and the refusal is said, not an application held
+    /// in <i>applying</i> for good.
+    /// </summary>
+    [Fact]
+    public async Task A_launcher_start_that_throws_refuses_the_update_and_lets_the_presses_go()
+    {
+        Stage("b1");
+        _launchError = new InvalidOperationException("no file name");
+        using var updater = Updater();
+
+        var refused = await updater.LookAsync();
+
+        Assert.Equal(UpdateStates.Refused, refused.State);
+        Assert.Equal("launcher", refused.Problem?.Code);
+        Assert.False(updater.Applying);
+        Assert.False(updater.Draining);
+        Assert.Equal(0, _closed);
     }
 
     [Fact]
