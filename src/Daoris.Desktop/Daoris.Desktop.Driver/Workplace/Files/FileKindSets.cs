@@ -8,7 +8,7 @@ namespace Daoris.Driver;
 /// </summary>
 internal static class FileKindSets
 {
-    internal static readonly string[] Reaches = ["tree", "copy"];
+    internal static readonly string[] Reaches = ["tree", "copy", "read", "write"];
 
     internal static readonly string[] Takes = ["keep", "base", "renew", "aside", "own"];
 
@@ -45,4 +45,12 @@ internal static class FileKindSets
 
     /// <summary>Whether a rule copies its paths into each tree from the checkout.</summary>
     internal static bool Copies(FileRule rule) => rule.Reach == "copy";
+
+    internal static bool Shares(FileRule rule) => rule.Reach is "read" or "write";
+
+    /// <summary>Why a kind may not share its paths, or null: what its producer rewrites would write the checkout's one place.</summary>
+    internal static string? Unshared(FileKind kind, string? reach) =>
+        reach is "read" or "write" && kind is FileKind.Dependency or FileKind.Intermediate or FileKind.Cache or FileKind.Output
+            ? $"`reach: {reach}` shares one place every tree uses, and {FileKinds.Article(kind)} `{kind.Word()}` is rewritten by what makes it"
+            : null;
 }

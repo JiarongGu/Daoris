@@ -181,6 +181,13 @@ internal sealed class TreeSetAside(TreeContext context)
                 manifest = Judged(named, repository, branch, slim);
             }
 
+            // A set-aside folder holding a share's link would let a hand's recursive delete of it reach the shared place.
+            if (TreeShares.Unlink(context.Home, tree) is { } linked)
+            {
+                Forget(manifest);
+                return (false, null, TidyKept.Busy, linked);
+            }
+
             SetAsideFaults.Current?.BeforeMove?.Invoke(tree);
             var moved = MoveFolderAside(tree, workspace, repository, "its tree", "its folder", named);
             if (moved.Code is { } kept)

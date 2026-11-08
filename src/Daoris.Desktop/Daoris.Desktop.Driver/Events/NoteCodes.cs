@@ -255,6 +255,14 @@ public static class NoteCodes
         new(DepsWhy.LinkOut, ["link"], "note.deps.why.link-out"),
         new(DepsWhy.HeldBefore, ["file"], "note.deps.why.held-ignored"),
         new(DepsWhy.Group, ["with"], "note.deps.why.group"),
+        new(ShareWhy.Pattern, [], "note.deps.why.share-pattern"),
+        new(ShareWhy.Absent, [], "note.deps.why.share-absent"),
+        new(ShareWhy.Unignored, [], "note.deps.why.share-unignored"),
+        new(ShareWhy.Repository, [], "note.deps.why.share-repository"),
+        new(ShareWhy.PlaceLink, [], "note.deps.why.share-place-link"),
+        new(ShareWhy.Standing, [], "note.deps.why.share-standing"),
+        new(ShareWhy.FileLink, [], "note.deps.why.share-file-link"),
+        new(ShareWhy.Failed, ["tail"], "note.deps.why.share-failed"),
     ]);
 
     /// <summary>Why an agent's ask to hand its session over came to nothing (<see cref="HandOverAskWhy"/>): the page's <c>note.handover.why.*</c>.</summary>
