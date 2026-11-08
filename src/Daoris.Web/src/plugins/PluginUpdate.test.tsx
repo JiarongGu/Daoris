@@ -27,6 +27,12 @@ describe('where an installed plugin came from', () => {
     expect(screen.getByText(/it is not a JSON object/)).toBeInTheDocument();
   });
 
+  it('names the package a plugin was installed from, never an empty folder', () => {
+    render(<PluginSourceLine source={{ kind: 'package', package: 'a file, package `Acme.Gate` 1.0.0' }} />);
+
+    expect(screen.getByText(/Installed from a package/)).toHaveTextContent('Acme.Gate');
+  });
+
   it('says nothing where the answer lacks it', () => {
     const { container } = render(<PluginSourceLine source={undefined} />);
     expect(container).toBeEmptyDOMElement();

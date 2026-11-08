@@ -471,15 +471,16 @@ public sealed class PluginsRoutes(DriverContext context)
         };
     }
 
-    /// <summary>Where an installed plugin came from, for its row: a folder, an offer, none recorded, or a record that does not read.</summary>
+    /// <summary>Where an installed plugin came from, for its row: a folder, an offer, a package, none recorded, or a record that does not read.</summary>
     private static object SourceOf(string installFolder)
     {
         var (source, problem) = PluginSource.Read(installFolder);
         return new
         {
-            Kind = problem is not null ? "unread" : source is null ? "none" : source.Offer is not null ? "offer" : "folder",
+            Kind = problem is not null ? "unread" : source is null ? "none" : source.Package is not null ? "package" : source.Offer is not null ? "offer" : "folder",
             Folder = source?.Folder,
             Offer = source?.Offer,
+            Package = source?.Package is null ? null : source.Said,
             Problem = problem,
         };
     }
