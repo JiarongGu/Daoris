@@ -47,14 +47,22 @@ internal sealed class ChatTold(ChatContext context, ChatRunBinds chatRuns)
     /// The start's process, maker and standing block, consumed by the first ordinary or handed-over message: a hand-over's block says the
     /// memory its brief hands on.
     /// </summary>
-    public ChatMessage With(string sessionId, ChatMessage message)
+    public ChatMessage With(string sessionId, ChatMessage message) => With(sessionId, message, out _);
+
+    /// <inheritdoc cref="With(string, ChatMessage)"/>
+    /// <param name="restore">Gives back what the message took, for a message no turn takes.</param>
+    public ChatMessage With(string sessionId, ChatMessage message, out Action restore)
     {
+        restore = () => { };
         if (_block.TryRemove(sessionId, out var block))
         {
             message = message with { Block = StandingBlock.Compose(block with { Memory = message.Brief?.Memory ?? [] }) };
+            restore += () => _block.TryAdd(sessionId, block);
         }
 
-        return _process.TryRemove(sessionId, out var told) ? message with { Process = told } : message;
+        if (!_process.TryRemove(sessionId, out var told)) return message;
+        restore += () => _process.TryAdd(sessionId, told);
+        return message with { Process = told };
     }
 
     /// <summary>

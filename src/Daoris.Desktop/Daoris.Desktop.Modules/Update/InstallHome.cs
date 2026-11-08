@@ -352,10 +352,8 @@ public static class InstallHome
             .Any(name => name is not null && !Runtime.Contains(name));
 
     /// <summary>
-    /// The move, under the home's lease: taken for the move alone, so no verb acting
-    /// alone writes beside it, and waited for up to <paramref name="within"/> where another act holds it; still held then,
-    /// nothing moves, and the holder is said as what could not move and why. Judged again under the lease, since another start
-    /// may have moved it meanwhile.
+    /// The move, under the home's lease, waited for up to <paramref name="within"/>; still held then, nothing moves and the
+    /// holder is said. Judged again under the lease, since another start may have moved it meanwhile.
     /// </summary>
     private static (List<string> Moved, List<string> Failed) Migrate(string legacy, string home, TimeSpan within)
     {
@@ -373,10 +371,7 @@ public static class InstallHome
         }
     }
 
-    /// <summary>
-    /// Move a legacy profile directory's state in — every entry but the ones that stay — one by one,
-    /// so a file something still holds open costs that file and not the start.
-    /// </summary>
+    /// <summary>Move a legacy profile's state in, but what stays, one entry at a time: a file held open costs that file, not the start.</summary>
     private static (List<string> Moved, List<string> Failed) MoveIn(string legacy, string home)
     {
         var moved = new List<string>();
@@ -391,7 +386,7 @@ public static class InstallHome
             try
             {
                 var target = Path.Combine(home, name);
-                if (Directory.Exists(entry)) MoveDirectory(entry, target);
+                if (Directory.Exists(entry)) FolderMove.Move(entry, target);
                 else File.Move(entry, target, overwrite: false);
                 moved.Add(name);
             }
@@ -402,26 +397,5 @@ public static class InstallHome
         }
 
         return (moved, failed);
-    }
-
-    /// <summary>
-    /// A move that crosses volumes — `Directory.Move` refuses one, and an install on another drive
-    /// than the profile is the ordinary case, not the odd one. Copy, then remove the source only once
-    /// every file of it has landed.
-    /// </summary>
-    private static void MoveDirectory(string source, string target)
-    {
-        if (string.Equals(Path.GetPathRoot(source), Path.GetPathRoot(target), StringComparison.OrdinalIgnoreCase))
-        {
-            Directory.Move(source, target);
-            return;
-        }
-
-        Directory.CreateDirectory(target);
-        foreach (var directory in Directory.EnumerateDirectories(source, "*", SearchOption.AllDirectories))
-            Directory.CreateDirectory(Path.Combine(target, Path.GetRelativePath(source, directory)));
-        foreach (var file in Directory.EnumerateFiles(source, "*", SearchOption.AllDirectories))
-            File.Copy(file, Path.Combine(target, Path.GetRelativePath(source, file)), overwrite: false);
-        Directory.Delete(source, recursive: true);
     }
 }

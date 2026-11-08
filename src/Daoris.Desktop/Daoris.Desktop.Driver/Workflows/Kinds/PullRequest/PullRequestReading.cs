@@ -17,7 +17,11 @@ public static class PullRequestReading
     public static readonly IReadOnlyList<string> States = [Merged, Closed];
 
     /// <summary>Whether the landing's pull request merged, a squash merge included: the plugin answered it completed.</summary>
-    public static bool IsMerged(LandedBranch landing) => landing.PullRequestState is { State: PullRequestStates.Completed };
+    public static bool IsMerged(LandedBranch landing) => landing.PullRequestState is { State: PullRequestStates.Completed } && !MergedElsewhere(landing);
+
+    /// <summary>Whether the request completed into a branch other than the line the work grew from, which proves nothing of the line (<see cref="PullRequestProof"/>'s <c>other-target</c>).</summary>
+    private static bool MergedElsewhere(LandedBranch landing) =>
+        landing.PullRequestState?.Target is { } target && landing.Line is { } line && !string.Equals(target, line, StringComparison.Ordinal);
 
     /// <summary>The state of the pull request of the branch unit the reading is on, read from its landing.</summary>
     public static NodeWatched Read(NodeReading reading)
@@ -36,6 +40,11 @@ public static class PullRequestReading
         if (landing is null) return new(null, "nothing was landed yet");
         if (landing.PullRequest is not { } address) return new(null, $"no pull request was opened for `{landing.Branch}` yet");
         var settled = new NodeWatched(null, "") { Revision = landing.Tip, Record = LandedBranches.FileName, Artifact = landing.Branch };
+        if (landing.PullRequestState is { State: PullRequestStates.Completed } && MergedElsewhere(landing))
+        {
+            return new(null, $"{address} completed into `{landing.PullRequestState.Target}`, not the line, so nothing of it is on the line yet");
+        }
+
         return landing.PullRequestState?.State switch
         {
             PullRequestStates.Completed => settled with

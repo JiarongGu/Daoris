@@ -86,6 +86,17 @@ public sealed class LookNodeTests
         Assert.Null(Seen(Landed(tip: "tip-0", review: new LandingReview(ReviewVerdicts.Reviewed, "preview", "q2") { Commit = "tip-0" })).Move);
     }
 
+    [Fact]
+    public void A_squash_landing_of_the_bound_commit_keeps_its_review_as_the_landing_of_it_does()
+    {
+        var look = Node(NodeKinds.Look);
+        var squashed = Landed(tip: "tip-squash", review: new LandingReview(ReviewVerdicts.Reviewed, "preview", "q2") { Commit = Tip, At = Then }) with { Squashed = Tip };
+
+        var seen = Applied(look, Reads.Look(Branch(squashed), look, Binding(NodeKinds.Look), Gate(ReviewStates.Shown)));
+
+        Assert.Equal((NodeStates.Reached, NodeSource.Person), (seen.Status.State, seen.Status.By));
+    }
+
     /// <summary>The person's words a run's look is skipped with, or their skip waits to apply, are read from the run's record.</summary>
     [Fact]
     public void A_skipped_looks_words_are_read_from_the_record_or_the_skip_waiting_on_it()

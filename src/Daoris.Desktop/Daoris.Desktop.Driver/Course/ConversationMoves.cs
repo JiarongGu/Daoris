@@ -176,7 +176,7 @@ public sealed class ConversationMoves
             Again.TryRemove((store, id), out _);
             if (Store.Read(id) is { Stands: true } move && string.Equals(move.ClaimRun, Store.Run, StringComparison.Ordinal))
             {
-                await Settle(() => ReadAsync(new MoveClaim(id, move.ClaimRun, move.ClaimGeneration), ct)).ConfigureAwait(false);
+                if (!await Settle(() => ReadAsync(new MoveClaim(id, move.ClaimRun, move.ClaimGeneration), ct)).ConfigureAwait(false)) KeepAgain(id);
             }
         }
 
@@ -339,23 +339,28 @@ public sealed class ConversationMoves
                 Store.Hold(claim, MoveHoldWhy.Undelivered);
                 return read with { Move = await Resolve.ReadAsync(claim, ct).ConfigureAwait(false), Outcome = MoveDeliveryOutcome.Held };
             case MoveDeliveryOutcome.Unread:
-                Again[(Store.Location, claim.Move)] = 0;
+                KeepAgain(claim.Move);
                 return read;
             default:
                 return read;
         }
     }
 
-    /// <summary>A move's settling, which a store that will not take it now, or a claim that moved, leaves for the next look.</summary>
-    private static async Task Settle(Func<Task> settle)
+    /// <summary>The move kept to read at the next look: its read did not finish.</summary>
+    internal void KeepAgain(long move) => Again[(Store.Location, move)] = 0;
+
+    /// <summary>A move's settling, which a store that will not take it now, or a claim that moved, leaves for the next look: false where it did.</summary>
+    private static async Task<bool> Settle(Func<Task> settle)
     {
         try
         {
             await settle().ConfigureAwait(false);
+            return true;
         }
         catch (Exception error) when (error is DriverException or SqliteException)
         {
             // The store would not take it now, or another run holds it: the next look reads it again.
+            return false;
         }
     }
 
@@ -468,7 +473,8 @@ internal sealed class ConversationMove(ConversationMoves moves, MoveClaim claim)
         }
         catch (Exception error) when (error is DriverException or SqliteException)
         {
-            // The store would not take it now: a move standing past its write is said quiet, and taken up once this run ends.
+            // The store would not take it now: kept to read at the next look; a move standing past its write is said quiet, and taken up once this run ends.
+            moves.KeepAgain(claim.Move);
         }
     }
 

@@ -126,10 +126,11 @@ of everything it handed, section by section.
     (from D210, D212)
 19. A conversation's line reads the supervisor's rules as a driven line does (`ConversationRules`): its episode makes its
     tries rule's number of tries; past them a `next` or `weighted` rule moves it to another choice of its role, a new part
-    handed the brief (`transient`, by `daoris`) and counted in `moves` (`TransientMove`), an `ask` or the moves rule's
+    handed the brief (`transient`, by `daoris`) and counted in `moves` under the line's key once the take would accept it and
+    the move is begun (`TransientMove`), an `ask` or the moves rule's
     bound holds it, and the seeded `hold` ends its turn `chat.transient-stopped`. Its limits rule's `wait` (within its
-    `upTo`) and `ask`, and the bound, keep it on its own account before the limit's walk (`LimitRuled`); a walk to another
-    choice is counted. Each act is said and kept as the rule's decision. (from D229)
+    `upTo`) and `ask`, and the bound, keep it on its own account before the limit's walk (`LimitRuled`), reading the moves
+    under the line's key; a walk to another choice is counted there. Each act is said and kept as the rule's decision. (from D229)
 
 **Moves between accounts and agents**
 
@@ -199,7 +200,9 @@ of everything it handed, section by section.
     `spawn/<session>.standing/block.md`, and one line points to it. (from D230)
 37. A conversation's first message carries the browser line, the process in a tree of its
     own, where the person is (bounded), an open workflow draft, the person's words, then the block. A hand-over's first
-    message is the brief, Daoris's briefing and the browser line. (from D162, D163, D164, D230)
+    message is the brief, Daoris's briefing and the browser line. The brief, the browser line and the draft are consumed
+    only by a message a turn takes: one refused (finishing, held, gone) gives them back to the words said again, and the
+    person waits on no answer to it. (from D162, D163, D164, D230)
 38. A session is listed only the tools its kind may call: the core 18 plus its kind's. Ask Daoris gets every tool but the turns and the memory changes. A Claude
     session runs with auto-memory and synced skills, plugins and connectors off. No account home is written. (from D230)
 

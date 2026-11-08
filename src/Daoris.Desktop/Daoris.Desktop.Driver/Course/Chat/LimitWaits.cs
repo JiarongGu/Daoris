@@ -230,7 +230,13 @@ internal sealed class LimitWaits(IExecutorWiring wiring) : IExecutor
 
             _held.TryRemove(session, out _);
             // Its account refused again: a new cool-off, which the stamp hears, holds it once more.
-            if (start.SessionId is null && await WaitsAgainAsync(session, ct).ConfigureAwait(false)) _held[session] = 0;
+            if (start.SessionId is null && await WaitsAgainAsync(session, ct).ConfigureAwait(false))
+            {
+                // What held the wake off (a hand-over's box, a config) moves no stamp, so the next look asks again, as for an older build's box.
+                _held[session] = 0;
+                _dirty = true;
+            }
+
             return (start, null);
         }
 

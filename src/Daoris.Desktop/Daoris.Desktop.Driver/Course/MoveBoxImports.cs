@@ -125,6 +125,11 @@ public abstract class MoveBoxImport(string home, MoveStore store) : IMoveBoxImpo
                         return Held(found.Skip(at).ToList(), why!) with { Imported = imported, Behind = behind, Unread = unread };
                 }
             }
+            catch (ArgumentException)
+            {
+                // A box that parses but names a blank id is the store's refusal of the box, not of the store: evidence, like a box that does not read.
+                unread++;
+            }
             catch (Exception error) when (error is DesktopStoreException or SqliteException)
             {
                 return Held(found.Skip(at).ToList(), error.Message) with { Imported = imported, Behind = behind, Unread = unread };

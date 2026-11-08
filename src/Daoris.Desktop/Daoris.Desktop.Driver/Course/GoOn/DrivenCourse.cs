@@ -1,7 +1,6 @@
 namespace Daoris.Driver;
 
-// The driven lines' paths decide through CourseDecision.Decide, as the conversations' do. The executors (the driver's start, the planner,
-// the hand-over door) keep their readings and put them in as facts; this reads them into CourseFacts and says the course's answer, which the executor then acts on in its own words.
+// The driven lines' paths decide through CourseDecision.Decide, as the conversations' do: the executors put their readings in as facts and act on the answer in their own words.
 
 /// <summary>The facts a driven line's paths hand the course, and the answers it gives them.</summary>
 internal static class DrivenCourse
@@ -15,11 +14,7 @@ internal static class DrivenCourse
         [
             .. words.Select(word => new CourseWord(
                 word.Id ?? "",
-                word.Daoris ? CourseAuthor.Daoris
-                : word.Supervisors ? CourseAuthor.Supervisor
-                : word.By is not null ? CourseAuthor.Findings
-                : word.Helper is not null ? CourseAuthor.Helper
-                : CourseAuthor.Person,
+                BriefedMove.AuthorOf(word),
                 word.Key,
                 ended is { } end && word.At > end)),
         ];
@@ -101,8 +96,7 @@ internal static class DrivenCourse
     }
 
     /// <summary>
-    /// A second opinion's findings sent back to the working session: a solicited answer, which no teammate's record,
-    /// intake or stood-down take is ever handed, and which a record that takes them goes on with.
+    /// A second opinion's findings sent back to the working session: a solicited answer no teammate's record, intake or stood-down take is handed.
     /// </summary>
     internal static LineCourse SendBack(PriorSession record, Action<LineCourse>? decided)
     {
@@ -127,8 +121,8 @@ internal static class DrivenCourse
             CourseTrigger.TransientPastBound);
 
     /// <summary>
-    /// What follows a record that ended failed or quiet, once a role's policy has met the condition: the carry-on's decision with
-    /// the policy's fact. Today's answer (a plain carry-on) comes back as anything but a move or a policy hold, and the caller leaves it to the planner.
+    /// What follows a record that ended failed or quiet, once a role's policy has met the condition: the carry-on's decision with the
+    /// policy's fact; a plain carry-on comes back as anything but a move or a policy hold, left to the planner.
     /// </summary>
     internal static LineCourse PolicyEnd(PriorSession record, string questStatus, CoursePolicy policy) =>
         CourseDecision.Decide(new CourseFacts(HeadOf(record, questStatus), CourseBoundary.ProcessExited, Policy: policy), CourseTrigger.CarryOn);

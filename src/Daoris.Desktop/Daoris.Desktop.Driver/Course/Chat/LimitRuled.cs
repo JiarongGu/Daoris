@@ -10,13 +10,13 @@ internal static class LimitRuled
 {
     /// <summary>
     /// Whether the rules keep <paramref name="sessionId"/> on its own account: waiting there as a picked account's conversation does, the rule's
-    /// act said and kept; null where the walk goes on as it always did.
+    /// act said and kept; null where the walk goes on as it always did. Its moves are read under <paramref name="line"/>, its line's key.
     /// </summary>
     public static StartedFrom? Holds(
-        ChatContext context, LimitWaits waits, ConversationRules rules, PriorSession prior, string sessionId, ITurnedChat chat, string ranOn)
+        ChatContext context, LimitWaits waits, ConversationRules rules, PriorSession prior, string sessionId, string line, ITurnedChat chat, string ranOn)
     {
         var until = context.Harnesses.CoolingOf(ranOn, prior.Profile, prior.ModelOn(ranOn))?.Until;
-        if (rules.Judge(prior, sessionId, StaffConditions.Limit, until) is not { } ruled) return null;
+        if (rules.Judge(prior, line, StaffConditions.Limit, until) is not { } ruled) return null;
         var now = context.Harnesses.Clock();
         string count, does;
         int n;

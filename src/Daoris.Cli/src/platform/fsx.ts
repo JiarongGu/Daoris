@@ -87,6 +87,11 @@ export function writeJsonTextAtomic(path: string, text: string): void {
   writeTextAtomic(path, text);
 }
 
+/** Strings by code unit, never by the machine's collation: what a lock or a plan lists in order reads the same on every machine. */
+export function compareOrdinal(a: string, b: string): number {
+  return a < b ? -1 : a > b ? 1 : 0;
+}
+
 export function sha256(text: string): string {
   return createHash('sha256').update(normalize(text), 'utf8').digest('hex');
 }

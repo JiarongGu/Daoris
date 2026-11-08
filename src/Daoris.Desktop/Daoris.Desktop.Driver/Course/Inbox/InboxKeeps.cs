@@ -59,7 +59,8 @@ internal sealed class InboxKeeps(InboxState state)
                 said = await door.KeepAsync(old with { Text = text, Level = level ?? old.Level, Key = null, Id = null, Kept = false }, ct)
                     .ConfigureAwait(false);
             }
-            catch (Exception error) when (error is HttpRequestException or DriverException
+            catch (Exception error) when (error is HttpRequestException or DriverException or ObjectDisposedException
+                                              or System.Text.Json.JsonException
                                               || (error is OperationCanceledException && !ct.IsCancellationRequested))
             {
                 said = new SayAnswer(false, error.Message);
