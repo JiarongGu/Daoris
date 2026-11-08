@@ -32,7 +32,7 @@ area document under `docs/areas/`. Each row's earlier full text is in git at `9f
 
 ## Knowledge, memory and records
 
-- [ ] **KNOWCENTRAL2 — the memory coordinator built** (service, connector, driver, web; D220): 2a to 2h and 2j are built; **2i**, the installed measurement, also looks for repeated or conflicting entries about one fact (PROFILEFIX1's re-open condition). → `docs/2026-10-31-memory-coordinator-design.md` §8
+- [ ] **KNOWCENTRAL2 — the memory coordinator built** (service, connector, driver, web; D220): left **2i**, the installed measurement, which also looks for repeated or conflicting entries about one fact (PROFILEFIX1's re-open condition). → `docs/2026-10-31-memory-coordinator-design.md` §8
 
 
 ## Install, home and update
@@ -49,7 +49,7 @@ area document under `docs/areas/`. Each row's earlier full text is in git at `9f
 ## Conversations and context
 
 - [ ] **SESSCTX1 — Daoris manages a session's context** (driver, modules, web-shell; D189): **SESSCTX1a** resume and a fresh part measured on each door, in HELPMODE1a3's spend sitting; then **SESSCTX1e** *Go on fresh*, re-cut as a hand-over to the same agent and account (`daoris session hand-over`, ONEWAY1j), lifting `HandOver.SameAgent`'s refusal. → `docs/2026-10-20-session-context-design.md` §6; `docs/areas/conversations-and-context.md`, Open
-- [ ] **RPC1g — a terminal's conversation is the running Daoris's** (driver host, modules; D238): g1 to g4 are built. Left: **g5** seen on the install. → `docs/2026-11-06-terminal-conversation-design.md` §6
+- [ ] **RPC1g — a terminal's conversation is the running Daoris's** (driver host, modules; D238): left **g5**, seen on the install. → `docs/2026-11-06-terminal-conversation-design.md` §6
 
 ## Agents and harnesses
 
