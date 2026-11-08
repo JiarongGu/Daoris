@@ -93,7 +93,7 @@
   "src/Daoris.Web/src/help/AskDaoris.test.tsx": 111018,
   "src/Daoris.Web/src/help/ProposalCard.test.tsx": 42696,
   "src/Daoris.Web/src/locales/names.test.ts": 41639,
-  "src/Daoris.Web/src/projects/ProjectsView.git.test.tsx": 81629,
+  "src/Daoris.Web/src/projects/ProjectsView.git.test.tsx": 81534,
   "src/Daoris.Web/src/projects/ProjectsView.test.tsx": 78607,
   "src/Daoris.Web/src/projects/setup/RepositorySetup.test.tsx": 47539,
   "src/Daoris.Web/src/quests/QuestsView.test.tsx": 76003,

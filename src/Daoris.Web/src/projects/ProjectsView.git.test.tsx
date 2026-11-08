@@ -97,7 +97,6 @@ describe("a repository's Branches and History tabs", () => {
   });
 
   it("names a session's branch by its session's title, joined on the page", async () => {
-    // The branch's session is one the service lists, on a quest it lists: the rail's rule names it by the quest.
     const [line, physics, ...rest] = GIT_BRANCHES_ENGINE.branches;
     const named = { ...physics!, session: { ...physics!.session!, session: 's1a2b3c4', quest: 'abc123' } };
     const repositories = [{ ...ENGINE_LIST.repositories[0]!, branches: [line!, named, ...rest] }];
@@ -612,7 +611,7 @@ describe("a repository's Changes tab and the switch behind it (GITAPP2b)", () =>
     answering(switchOn);
     show(<ProjectsView notify={() => {}} />);
     const page = await chooseRepository('engine');
-    expect(within(page).getAllByRole('tab').map((tab) => tab.textContent)).toEqual(TABS.toSpliced(3, 0, 'Changes'));
+    expect(within(page).getAllByRole('tab').map((tab) => tab.textContent)).toEqual([...TABS.slice(0, 3), 'Changes', ...TABS.slice(3)]);
     expect(asked('GIT_CHANGES')).toEqual([]);
 
     await userEvent.click(within(page).getByRole('tab', { name: 'Changes' }));
