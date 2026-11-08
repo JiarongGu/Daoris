@@ -99,12 +99,6 @@ public sealed class PluginCatalog : IKnowledgePlugins, IAgentPlugins, IWorkplace
     /// <summary>The ones the host drives: enabled and sound.</summary>
     public IReadOnlyList<PluginEntry> Contributing { get; }
 
-    /// <summary>
-    /// What the set of contributing plugins IS — equal between two loads when nothing a plugin
-    /// contributes has changed, so a loop can tell an edit between ticks from the same catalogue again.
-    /// </summary>
-    public string Signature { get; }
-
     /// <summary>A machine with no plugins: what a reader that is handed none judges against.</summary>
     public static PluginCatalog None { get; } = new([]);
 
@@ -112,11 +106,6 @@ public sealed class PluginCatalog : IKnowledgePlugins, IAgentPlugins, IWorkplace
     {
         Plugins = plugins;
         Contributing = plugins.Where(p => p.Contributes).ToList();
-        Signature = string.Join("\n", Contributing.Select(p =>
-            $"{p.Manifest.Id}\t{p.Manifest.Version}\t{p.Folder}\t"
-            + string.Join(",", p.Manifest.Harnesses.Select(h => h.Name))
-            + "\t" + (p.Manifest.Hooks is { } hooks ? string.Join(" ", hooks.Command) + "|" + string.Join(",", hooks.Points) : "")
-            + "\t" + string.Join(",", p.Manifest.Servers.Select(s => s.Name))));
     }
 
     /// <summary>
