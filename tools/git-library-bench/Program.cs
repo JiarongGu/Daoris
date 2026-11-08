@@ -115,6 +115,7 @@ static async Task ReadsAsync(GitBinary git, Layout layout, int passes)
     Report.Row("the look in process, cold", [coldLook]);
     Report.Row("the look in process, opened for each look", reopenedLook);
     Report.Row("the look in process, repositories held", [.. heldLook.Skip(1)]);
+    foreach (var failure in ReviewReads.Failures) Console.WriteLine($"  the library refused: {failure}");
 }
 
 static double LookOnce(Layout layout)

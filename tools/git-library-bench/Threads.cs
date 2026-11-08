@@ -45,5 +45,7 @@ internal static class Threads
             })));
             Console.WriteLine($"  {width} Reviews at once, a repository each: {Report.Ms(clock.Elapsed.TotalMilliseconds)}");
         }
+
+        foreach (var failure in ReviewReads.Failures) Console.WriteLine($"  the library refused: {failure}");
     }
 }

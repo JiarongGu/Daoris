@@ -70,19 +70,30 @@ internal static class ReviewReads
         }
     }
 
+    /// <summary>What the library refused in a Review, each said once however many passes asked it.</summary>
+    public static HashSet<string> Failures { get; } = [];
+
     /// <summary>One Review in process, over <paramref name="repository"/> (held or opened for it): the time of each read, in order.</summary>
     public static List<(string Ask, double Ms)> Library(Repository repository, Layout layout)
     {
         var times = new List<(string, double)>();
         var clock = new Stopwatch();
 
-        T Ask<T>(string name, Func<T> read)
+        T? Ask<T>(string name, Func<T> read)
         {
             clock.Restart();
-            var answer = read();
-            clock.Stop();
-            times.Add((name, clock.Elapsed.TotalMilliseconds));
-            return answer;
+            try
+            {
+                var answer = read();
+                times.Add((name, clock.Elapsed.TotalMilliseconds));
+                return answer;
+            }
+            catch (LibGit2SharpException error)
+            {
+                times.Add((name, clock.Elapsed.TotalMilliseconds));
+                Failures.Add($"{name}: {error.Message}");
+                return default;
+            }
         }
 
         var compare = new CompareOptions { Similarity = SimilarityOptions.Renames, IndentHeuristic = true };
@@ -106,7 +117,7 @@ internal static class ReviewReads
         Ask("merge-base with the line", () => repository.ObjectDatabase.FindMergeBase(head, line)?.Sha);
         Ask("ahead and behind the line", () => repository.ObjectDatabase.CalculateHistoryDivergence(head, line) is var divergence
             ? (divergence.AheadBy, divergence.BehindBy) : default);
-        var untracked = status.Untracked.Select(entry => entry.FilePath).Take(UntrackedCap).ToArray();
+        var untracked = status?.Untracked.Select(entry => entry.FilePath).Take(UntrackedCap).ToArray() ?? [];
         if (untracked.Length > 0)
         {
             Ask("the untracked files' patches", () =>
