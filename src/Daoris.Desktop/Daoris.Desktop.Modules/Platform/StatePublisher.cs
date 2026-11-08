@@ -91,6 +91,9 @@ public enum StateScopes
 
     /// <summary>A checkout's index, which the Changes tab reads: moved by a person's stage, unstage or Undo.</summary>
     Checkouts = 1 << 24,
+
+    /// <summary>A repository's files git does not manage as the rule file's layers say them: moved by the person's rules and permissions.</summary>
+    Files = 1 << 25,
 }
 
 /// <summary>

@@ -375,6 +375,11 @@ public sealed class PipeCensusTests
     // The window is never a holder; a terminal lets go of its own hold by the pipe's LET_GO.
     [InlineData("DAORIS.DRIVER", "SESSION_HOLDS", PipeClass.Window)]
     [InlineData("DAORIS.DRIVER", "SESSION_LET_GO", PipeClass.Window)]
+    [InlineData("DAORIS.DRIVER", "FILES", PipeClass.Window)]
+    [InlineData("DAORIS.DRIVER", "FILES_READ", PipeClass.Window)]
+    [InlineData("DAORIS.DRIVER", "FILES_SET", PipeClass.Window)]
+    [InlineData("DAORIS.DRIVER", "FILES_REMOVE", PipeClass.Window)]
+    [InlineData("DAORIS.DRIVER", "FILES_PERMIT", PipeClass.Window)]
     [InlineData("DAORIS.DRIVER", "PERSON_KEY", PipeClass.Window)]
     // Nor what waits at the service's door as the window is told it; the service's own list stays its own door's.
     [InlineData("DAORIS.DRIVER", "SERVICE_CONFIRMATIONS", PipeClass.Window)]

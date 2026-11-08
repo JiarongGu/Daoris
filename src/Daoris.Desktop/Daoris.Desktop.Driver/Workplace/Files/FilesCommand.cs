@@ -47,17 +47,13 @@ public static class FilesCommand
                     var written = await FilesLooks.ReadAgainAsync(home, root, repository, commit, ct).ConfigureAwait(false);
                     output.WriteLine($"daoris: `{repository}` read again at {Short(commit)}: {written} found rules written.");
                     break;
-                case "set" when words.Count >= 2 && FileKinds.Of(words[0]) is { } kind:
+                case "set" when words.Count >= 2 && FileKinds.Of(words[0]) is not null:
                     var copy = words.Remove("--copy") ? true : words.Remove("--no-copy") ? false : (bool?)null;
-                    var rule = new FileRule(kind, [.. words.Skip(1)]) { Copy = copy };
-                    if (rule.Paths.Count == 0) throw new DriverException("`set` takes a kind and at least one path.");
-                    if (rule.Paths.Select(RoomPaths.Unfit).FirstOrDefault(why => why is not null) is { } unfit) throw new DriverException($"a path {unfit}.");
-                    if (copy is not null && kind != FileKind.Local) throw new DriverException("only a `local` rule takes --copy or --no-copy.");
-                    PersonFiles.Set(home, machine ? null : repository, rule);
-                    output.WriteLine($"daoris: {(machine ? "this machine's" : $"`{repository}`'s")} rules end with {kind.Word()} {string.Join(", ", rule.Paths)}.");
+                    var kind = FilesEdits.Set(home, repository, machine, words[0], [.. words.Skip(1)], copy);
+                    output.WriteLine($"daoris: {(machine ? "this machine's" : $"`{repository}`'s")} rules end with {kind} {string.Join(", ", words.Skip(1))}.");
                     break;
                 case "remove" when words.Count >= 1:
-                    var removed = words.Sum(path => PersonFiles.Remove(home, machine ? null : repository, path));
+                    var removed = FilesEdits.Remove(home, repository, machine, words);
                     output.WriteLine($"daoris: {removed} of your rules named {string.Join(", ", words)}; {(removed == 0 ? "nothing was written" : "each lost it")}.");
                     break;
                 default:
