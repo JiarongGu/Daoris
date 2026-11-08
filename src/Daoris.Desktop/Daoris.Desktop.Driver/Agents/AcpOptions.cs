@@ -171,7 +171,8 @@ internal sealed class AcpOptions(
                     touched.Add(category);
                     set = true;
                 }
-                catch (DriverException refused)
+                // Only the agent's own refusal: a stream that ended with the set pending refused nothing, and ends the open.
+                catch (AcpRefusal refused)
                 {
                     say($"[{category} `{wanted}` was not set: {refused.Message}]");
                     if (judged) refusal = new ModelRefusal(category, wanted, listed ? AgentOffers.RefusedCode : AgentOffers.NotOffered);
