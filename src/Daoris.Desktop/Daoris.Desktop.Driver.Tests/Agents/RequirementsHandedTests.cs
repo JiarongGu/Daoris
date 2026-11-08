@@ -116,6 +116,23 @@ public sealed class RequirementsHandedTests
         Assert.Equal(heavy.Length, TargetPrompt.RequirementsShown([.. heavy.Select(each => each with { Evidence = [] })]));
     }
 
+    /// <summary>
+    /// AGENTREV5: the bound counts a quote and a check as they render, each line behind its indent, so a quote of many short lines
+    /// does not pass it several times over.
+    /// </summary>
+    [Fact]
+    public void The_bound_counts_the_quote_and_check_as_they_render_line_by_line()
+    {
+        var lines = string.Join("\n", Enumerable.Repeat("a", 1000));
+        var many = Enumerable.Range(1, 4).Select(_ => new QuestRequirementView(lines, lines)).ToArray();
+
+        var shown = TargetPrompt.RequirementsShown(many);
+
+        Assert.Equal(1, shown);
+        var prompt = TargetPrompt.Compose(Target(many));
+        Assert.Contains("Requirements 2 to 4 are left out", prompt);
+    }
+
     /// <summary>A quest with no requirements reads exactly as it did: nothing is said of requirements or answers.</summary>
     [Fact]
     public void A_quest_with_no_requirements_reads_as_it_did()
