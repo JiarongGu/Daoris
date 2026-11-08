@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using System.Runtime.ExceptionServices;
 using System.Text.Json;
 
 namespace Daoris.Driver;
@@ -147,7 +148,7 @@ internal static class HarnessCapture
             beside?.Read(reading);
         }
 
-        while (await stdout.ReadLineAsync(ct).ConfigureAwait(false) is { } line)
+        void Take(string line)
         {
             // Each line is read once into its frame, which every reader of it takes.
             var frame = NativeFrame.Of(line);
@@ -166,7 +167,7 @@ internal static class HarnessCapture
                 }
             }
 
-            if (beside?.Take(frame) == true) continue;
+            if (beside?.Take(frame) == true) return;
             var mapped = mapper.Read(frame);
             if (own is not null)
             {
@@ -215,10 +216,34 @@ internal static class HarnessCapture
             }
         }
 
-        // Said while the transcript is still open: what it left running ended with it. Then the ends only an update said, its notification
-        // never written: the run's ending reads them, and a stream the close already ended keeps its words.
-        if (beside is not null) await beside.EndAllAsync().ConfigureAwait(false);
-        foreach (var ended in tasks.Close()) Work(ended);
+        // A line that cannot be kept is the first failure, thrown once both pipes are read to their ends: a child that is not drained
+        // blocks on a full pipe, and the stderr pump writes to the transcript only while it is open.
+        ExceptionDispatchInfo? failure = null;
+        try
+        {
+            while (await stdout.ReadLineAsync(ct).ConfigureAwait(false) is { } line)
+            {
+                try
+                {
+                    Take(line);
+                }
+                catch (Exception error) when (error is not OperationCanceledException)
+                {
+                    failure ??= ExceptionDispatchInfo.Capture(error);
+                }
+            }
+
+            // Said while the transcript is still open: what it left running ended with it. Then the ends only an update said, its notification
+            // never written: the run's ending reads them, and a stream the close already ended keeps its words.
+            if (beside is not null) await beside.EndAllAsync().ConfigureAwait(false);
+            foreach (var ended in tasks.Close()) Work(ended);
+        }
+        finally
+        {
+            await Task.WhenAny(errors).ConfigureAwait(false);
+        }
+
+        failure?.Throw();
         await errors.ConfigureAwait(false);
         return mapper.Usage;
     }
