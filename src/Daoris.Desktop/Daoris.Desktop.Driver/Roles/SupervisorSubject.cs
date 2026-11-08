@@ -19,6 +19,7 @@ public sealed record SupervisorSubject(string Kind, string Session, string Id)
         [SupervisorKinds.Question] = "question",
         [SupervisorKinds.Course] = "point",
         [SupervisorKinds.Limit] = "point",
+        [SupervisorKinds.Allow] = "request",
     };
 
     /// <summary>The kinds whose subject this build reads, in the kinds' order.</summary>
@@ -28,13 +29,32 @@ public sealed record SupervisorSubject(string Kind, string Session, string Id)
 
     public static SupervisorSubject Point(string session, string point, string kind = SupervisorKinds.Course) => new(kind, session, point);
 
-    /// <summary>The name the subject's id goes by: <c>question</c> or <c>point</c>.</summary>
-    public string IdName => Named[Kind];
+    /// <summary>The moment a held request began, so a request id a later process reuses is another subject.</summary>
+    public string? Held { get; init; }
+
+    /// <summary>A held permission request <c>{ session, request, held }</c>, the allow kind's first subtype.</summary>
+    public static SupervisorSubject Request(string session, string request, string held) => new(SupervisorKinds.Allow, session, request) { Held = held };
+
+    /// <summary>A widening a session proposed, <c>{ proposal }</c>, the allow kind's second subtype: it names no session.</summary>
+    public static SupervisorSubject Proposal(string proposal) => new(SupervisorKinds.Allow, "", proposal);
+
+    /// <summary>Whether this is an allow's widening, which names a proposal and no session.</summary>
+    public bool IsProposal => Kind == SupervisorKinds.Allow && Session.Length == 0;
+
+    /// <summary>The name the subject's id goes by: <c>question</c>, <c>point</c>, <c>request</c> or <c>proposal</c>.</summary>
+    public string IdName => IsProposal ? "proposal" : Named[Kind];
 
     /// <summary>The subject as the wire carries it, its fields in their order.</summary>
-    public IReadOnlyDictionary<string, string> Wire() => new Dictionary<string, string>(StringComparer.Ordinal) { ["session"] = Session, [IdName] = Id };
+    public IReadOnlyDictionary<string, string> Wire()
+    {
+        var wire = new Dictionary<string, string>(StringComparer.Ordinal);
+        if (!IsProposal) wire["session"] = Session;
+        wire[IdName] = Id;
+        if (Held is not null) wire["held"] = Held;
+        return wire;
+    }
 
-    /// <summary>The subject of <paramref name="kind"/> that <paramref name="value"/> is, exactly its two fields; null for anything more or less.</summary>
+    /// <summary>The subject of <paramref name="kind"/> that <paramref name="value"/> is, exactly its fields; null for anything more or less.</summary>
     public static SupervisorSubject? Read(string kind, JsonElement value)
     {
         if (!Named.TryGetValue(kind, out var idName) || value.ValueKind != JsonValueKind.Object) return null;
@@ -42,6 +62,14 @@ public sealed record SupervisorSubject(string Kind, string Session, string Id)
         foreach (var property in value.EnumerateObject())
         {
             if (!fields.TryAdd(property.Name, property.Value)) return null;
+        }
+
+        if (kind == SupervisorKinds.Allow)
+        {
+            if (fields.Count == 1) return Text(fields, "proposal") is { } proposal ? Proposal(proposal) : null;
+            return fields.Count == 3 && Text(fields, "session") is { } held && Text(fields, "request") is { } request && Text(fields, "held") is { } since
+                ? Request(held, request, since)
+                : null;
         }
 
         return fields.Count == 2 && Text(fields, "session") is { } session && Text(fields, idName) is { } id ? new(kind, session, id) : null;

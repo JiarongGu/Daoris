@@ -20,6 +20,8 @@ internal interface ISupervisorKind
 
     /// <summary>The holder's leaving its subject to the owner, kept as <c>left</c>, or refused keeping nothing.</summary>
     Task<SupervisorDecided> LeaveAsync(DriverLoop loop, SupervisorLeaveForm form, SupervisorHolder holder, CancellationToken ct);
+
+    Task<RolePlace?> PlaceOfAsync(DriverLoop loop, SupervisorSubject subject, CancellationToken ct) => Task.FromResult<RolePlace?>(null);
 }
 
 /// <summary>

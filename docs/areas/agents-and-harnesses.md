@@ -181,7 +181,13 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/Agents/` unless they s
     are handed none, and nothing is translated until measured. Such a harness (Codex) holds none of the person's denies: its
     standing block and the access setup say so, and the git doors judge its push, force and delete. (from D72, D213, D233)
 20. A session may propose a rule change with `permission_propose`. A narrowing applies at the next look; a widening waits for
-    the person's yes. Every change records who made it. (from D74)
+    the person's yes, or for the yes of an allow supervisor at its rule's reach (a default's switch at the machine). A proposal
+    settles once whoever answers (`ProposalSettlement.Settle`: the person's press and verb, a supervisor's keeping): the rules
+    change under the proposal's lock, marked `settling` before the save and settled after it, and one found `settling` is never
+    saved again but settled where the rules already say it, else returned to the person. A widening that moves the person's deny,
+    switches off a denying default, or (while `no-publish` is on) lets a publish through (`PublishForms`) stays the person's
+    (`WideningAllows`). Every writer of the rule file reads, decides and saves under its one lock (`PermissionChange.Change`).
+    Every change records who made it. (from D74)
 21. A driven session runs in its harness's own judged mode: `auto`, else `acceptEdits`, on Claude's protocol door; `acceptEdits`
     on its pipe; `agent` on Codex; `workspace-write` through dsh's environment. (from D81, D53)
 22. Full access (`bypassPermissions`, `agent-full-access`) and the asking mode (`default`, `workspace-write`) are used only by the

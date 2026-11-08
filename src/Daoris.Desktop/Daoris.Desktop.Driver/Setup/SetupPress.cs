@@ -248,19 +248,21 @@ public static class SetupPress
         }
 
         // The rule first, so the session the next look starts is handed it: a session cannot ask for one.
-        var file = PermissionRules.Load(home);
-        var held = file.Repositories
-            .Where(pair => string.Equals(pair.Key.Trim(), plan.Repository, StringComparison.OrdinalIgnoreCase))
-            .SelectMany(pair => pair.Value.Allow)
-            .ToHashSet(StringComparer.Ordinal);
-        var added = SetupPressRules.RulesOf(plan).Where(rule => !held.Contains(rule)).ToList();
-        PermissionRules.Save(home, added.Aggregate(file, (rules, rule) => PermissionRules.Add(rules, RuleScope.Repository, plan.Repository, RuleList.Allow, rule)));
+        var added = new List<string>();
+        PermissionChange.Change(home, file =>
+        {
+            var held = file.Repositories
+                .Where(pair => string.Equals(pair.Key.Trim(), plan.Repository, StringComparison.OrdinalIgnoreCase))
+                .SelectMany(pair => pair.Value.Allow)
+                .ToHashSet(StringComparer.Ordinal);
+            added.AddRange(SetupPressRules.RulesOf(plan).Where(rule => !held.Contains(rule)));
+            return added.Aggregate(file, (rules, rule) => PermissionRules.Add(rules, RuleScope.Repository, plan.Repository, RuleList.Allow, rule));
+        });
 
         var asked = await PublishAsync(plan, world, home, ct).ConfigureAwait(false);
         if (asked.Published) return asked with { Added = added };
 
-        var after = PermissionRules.Load(home);
-        PermissionRules.Save(home, added.Aggregate(after, (rules, rule) => PermissionRules.Remove(rules, RuleScope.Repository, plan.Repository, rule)));
+        PermissionChange.Change(home, after => added.Aggregate(after, (rules, rule) => PermissionRules.Remove(rules, RuleScope.Repository, plan.Repository, rule)));
         return asked;
     }
 
