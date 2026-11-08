@@ -33,6 +33,8 @@ internal static class PersonFiles
 {
     internal const string FileName = "files.json";
 
+    internal const string LockName = "person-files";
+
     internal static string PathOf(string home) => DaorisHome.Entry(home, HomeEntry.Files);
 
     internal static PersonFilesRead Read(string home)
@@ -112,6 +114,7 @@ internal static class PersonFiles
     internal static int EditScope(string home, string? repository, Func<JsonObject, int> edit)
     {
         var path = PathOf(home);
+        using var held = RecordLock.Take(RecordLock.PathOf(home, LockName));
         JsonObject root = [];
         if (File.Exists(path))
         {
