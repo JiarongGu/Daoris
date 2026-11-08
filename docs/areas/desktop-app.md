@@ -193,7 +193,11 @@ executable, started with a browser argument, is Daoris's own browser, which sess
     maps keep the viewer's view; one kept under a changed graph says the selection is gone. (from D224)
 48. A placed world is HTML that CSS lays out and the canvas measures. A positioned world arrives with coordinates: past
     400 nodes only those near the view and the focused and selected are mounted, and below 4 px of `text-meta` the rest
-    are dots. One engine, Daoris's own, serves every feature, chosen by measurement over React Flow. (from D224)
+    are dots. One engine, Daoris's own, serves every feature, chosen by measurement over React Flow. A step of a pan or a zoom
+    draws again only what it changed: each card and edge is one memoized unit (`WorldNode.tsx`) held to primitive props, so a
+    new scale redraws a card only where its counter-scaled word follows it, and the toolbar draws again only when the size it
+    says, its bounds, its words or its tools change (`useStableActs`). The measured frame of 100 and 1,000 nodes holds its
+    budget with that (`measured/large.spec.ts`). (from D224)
 
 **Translation**
 
