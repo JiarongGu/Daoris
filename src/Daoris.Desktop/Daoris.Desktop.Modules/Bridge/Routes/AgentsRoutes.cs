@@ -395,7 +395,8 @@ public sealed class AgentsRoutes(DriverContext context)
             }
 
             var replaced = HarnessKeys.Replace(
-                _loop.Harnesses.Home, owner, Named(press.Profile), ActField.Needs(press.Key, "key"));
+                _loop.Harnesses.Home, owner, Named(press.Profile), ActField.Needs(press.Key, "key"),
+                keyOnly: _loop.Harnesses.AccountAgentOf(harness)?.Accounts.KeyOnly == true);
             // The roster's own memory of the account: its last word and what it is owed, forgotten as a removal forgets them.
             _loop.Harnesses.Removed(owner, replaced);
             await ChangedAsync(_loop, harness, action, config, cancellationToken);
@@ -404,6 +405,16 @@ public sealed class AgentsRoutes(DriverContext context)
                 Door = harness, Action = action, ExitCode = 0, Profile = replaced,
                 Key = HarnessKeys.Handle(HarnessKeys.Of(_loop.Harnesses.Home, owner, replaced)!),
             };
+        }
+
+        // The key out of an account that stays: it reads no key until a new one is set. The terminal's twin is `agent key --remove`.
+        if (action == "key-remove")
+        {
+            var kept = Named(press.Profile);
+            HarnessKeys.Withdraw(_loop.Harnesses.Home, owner, kept);
+            _loop.Harnesses.Removed(owner, kept);
+            await ChangedAsync(_loop, harness, action, config, cancellationToken);
+            return new { Door = harness, Action = action, ExitCode = 0, Profile = kept };
         }
 
         // An account's name, the person's word, kept beside it by its id, so every list, default, reading and

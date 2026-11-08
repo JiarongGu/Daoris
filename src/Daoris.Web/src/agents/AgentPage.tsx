@@ -59,6 +59,8 @@ export type AgentActs = {
   onAddKey: (key: string, answered: Answered) => void;
   /** A new key put into the account a refused key's row names, keeping its name and lists, told back to its field. */
   onReplaceKey: (account: string, key: string, answered: Answered) => void;
+  /** The key taken out of an account of an agent held by a key alone; the account stays and reads no key. */
+  onRemoveKey: (account: string, answered: Answered) => void;
   /** A sign-in to the account a row names, by its id. */
   onSignIn: (account: string) => void;
   /** *Try now*: an account's cool-off ended early. */
@@ -158,6 +160,8 @@ export function AgentPage({
   const lead = tool.lead ?? tool.name;
   const signsIn = tool.acts?.signsIn === true;
   const takesKey = tool.acts?.takesKey === true;
+  // Held by a key alone: no sign-in to be, so an account is a key set or no key.
+  const keyOnly = takesKey && !signsIn;
   const installs = tool.acts?.installs === true;
   const product = tool.product ?? tool.name;
   // The set's one scope, every workspace's: its order, how it is used and its next start.
@@ -385,6 +389,13 @@ export function AgentPage({
         ? [{ id: 'settings', label: t('agents.account.settings'), onSelect: () => { setOpen((was) => new Set([...was, 'settings' as const])); askSettings(name); } }]
         : []),
       { id: 'rename', label: t('agents.account.rename'), disabled: busy, onSelect: () => askRename(name) },
+      // An agent held by a key alone: its key is set, replaced or taken out here, and the account stays.
+      ...(keyOnly
+        ? [{ id: 'setKey', label: t(account.key ? 'agents.account.replaceKey' : 'agents.account.setKey'), disabled: busy, onSelect: () => askReplace(name) }]
+        : []),
+      ...(keyOnly && account.key
+        ? [{ id: 'removeKey', label: t('agents.account.removeKey'), disabled: busy, onSelect: () => acts.onRemoveKey(name, answered('key', name, () => {})) }]
+        : []),
       ...(signsIn && !account.key && state.state !== 'out'
         ? [{ id: 'signIn', label: t('harness.login.again'), disabled: busy || !tool.present, onSelect: () => acts.onSignIn(name) }]
         : []),
@@ -417,6 +428,11 @@ export function AgentPage({
         };
       // A key its provider refused: a key field on its own row, which puts the new key into the same account
       // (`key-replace`), keeping its name and its place in the order.
+      case 'setKey':
+        return {
+          label: t('agents.act.setKey'), ariaLabel: t('agents.act.setKeyFor', { account: label }), loud: act.loud,
+          onPress: () => askReplace(id), disabled: busy,
+        };
       case 'newKey':
         return {
           label: t('agents.act.newKey'), ariaLabel: t('agents.act.newKeyFor', { account: label }), loud: act.loud,
@@ -444,7 +460,7 @@ export function AgentPage({
         key={account.home}
         name={name}
         label={label}
-        who={accountWho(account, tool)}
+        who={keyOnly ? (account.key ? t('agents.key.set', { handle: account.key }) : t('agents.key.none')) : accountWho(account, tool)}
         id={account.name}
         home={account.home}
         state={state}

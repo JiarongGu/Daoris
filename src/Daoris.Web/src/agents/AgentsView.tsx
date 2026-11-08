@@ -494,6 +494,8 @@ function AgentsMain({ tool, adapter, notify, part, onAnchored, onOpenPlugin, say
     onReplaceKey: (account, key, answered) => told(
       act.mutateAsync({ door: door, action: 'key-replace', profile: account, key }), answered,
     ),
+    // The key out of an account that stays, which then reads no key.
+    onRemoveKey: (account, answered) => run(door, 'key-remove', account, undefined, answered),
     onSignIn: (account) => run(door, 'login', account),
     onTryNow: (account, label) => accountUse.mutate(
       { door: door, action: 'ready', profile: account },

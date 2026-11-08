@@ -35,9 +35,16 @@ public sealed record PoolFacts(
     IReadOnlyList<string>? DeviceLoginArguments,
     IReadOnlyList<int>? LoginPorts,
     string? SettingsFile,
-    bool WeekFixed)
+    bool WeekFixed,
+    IKeyCheck? KeyCheck = null)
 {
     public static PoolFacts None { get; } = new(null, null, null, null, null, null, false);
+
+    /// <summary>
+    /// Whether an account of this agent is held by its API key alone: it has a key variable and no sign-in, so a key's presence is its
+    /// readiness (<see cref="KeyCheck"/> refines it where the provider answers one).
+    /// </summary>
+    public bool KeyOnly => KeyVariable is { Length: > 0 } && Login is null && LoginArguments is not { Count: > 0 };
 }
 
 /// <summary>

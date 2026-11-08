@@ -394,7 +394,7 @@ export function nextStartSaid(
 }
 
 /** The one act a row's state asks for: its name, and whether it is loud, which is where it holds work. */
-export type AccountAct = { act: 'signIn' | 'read' | 'tryNow' | 'newKey'; loud: boolean };
+export type AccountAct = { act: 'signIn' | 'read' | 'tryNow' | 'newKey' | 'setKey'; loud: boolean };
 
 /**
  * An account's one act by its state: *Sign in* when signed out, *Read* (that account alone) when unknown, *Try
@@ -406,7 +406,11 @@ export function accountAct(
   state: AccountState, agent: { signsIn: boolean; present: boolean; takesKey?: boolean },
 ): AccountAct | null {
   switch (state.state) {
-    case 'out': return agent.signsIn && agent.present ? { act: 'signIn', loud: state.holdsWork } : null;
+    case 'out':
+      if (!agent.present) return null;
+      // An agent held by a key alone has no sign-in: its signed-out account is one with no key.
+      if (agent.signsIn) return { act: 'signIn', loud: state.holdsWork };
+      return agent.takesKey ? { act: 'setKey', loud: state.holdsWork } : null;
     case 'refused': return agent.takesKey && agent.present ? { act: 'newKey', loud: state.holdsWork } : null;
     case 'unknown': return agent.present ? { act: 'read', loud: state.holdsWork } : null;
     case 'cooling': return { act: 'tryNow', loud: false };

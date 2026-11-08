@@ -423,6 +423,11 @@ describe('the one act an account’s state asks for (D152 §4)', () => {
     expect(accountAct(state('cooling'), { signsIn: true, present: true })).toEqual({ act: 'tryNow', loud: false });
   });
 
+  it('is Set key for a signed-out account of an agent held by a key alone, which has no sign-in', () => {
+    expect(accountAct(state('out'), { signsIn: false, present: true, takesKey: true })).toEqual({ act: 'setKey', loud: true });
+    expect(accountAct(state('out'), { signsIn: false, present: true })).toBeNull();
+  });
+
   /** *Use in a workspace…* goes, since every account runs for every workspace. */
   it('is none for a signed-in account or a key: every account serves every workspace', () => {
     expect(accountAct(state('in'), { signsIn: true, present: true })).toBeNull();

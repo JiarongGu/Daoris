@@ -64,17 +64,25 @@ public static class HarnessKeys
     /// refusal is the caller's (<c>Harnesses.Removed</c> and <c>LookedAgain</c>). The CLI's <c>replaceKeyAccount</c> is the twin.
     /// An account not on this machine, one that is not a key, and a blank or spaced key are refused before anything is written.
     /// </summary>
-    public static string Replace(string home, string harness, string account, string key)
+    public static string Replace(string home, string harness, string account, string key, bool keyOnly = false)
     {
         var named = HarnessSettings.Profiles(home, harness).FirstOrDefault(each => string.Equals(each, account, StringComparison.Ordinal))
             ?? throw new DriverException(
                 $"`{harness}` has no account `{account}` on this machine — accounts that exist: "
                 + (HarnessSettings.Profiles(home, harness) is { Count: > 0 } accounts ? string.Join(", ", accounts) : "(none)"));
         var keys = Read(home);
-        if (!keys.TryGetValue(harness, out var held) || !held.ContainsKey(named))
+        var read = Written(keys);
+        // An agent held by a key alone has no sign-in to be: an account of it without a key is one waiting for it.
+        var held = keys.GetValueOrDefault(harness);
+        if (held is null || !held.ContainsKey(named))
         {
-            throw new DriverException(
-                $"`{named}` is not an API key account — it is a sign-in, so sign in again with `daoris agent login {harness}`.");
+            if (!keyOnly)
+            {
+                throw new DriverException(
+                    $"`{named}` is not an API key account — it is a sign-in, so sign in again with `daoris agent login {harness}`.");
+            }
+
+            if (held is null) keys[harness] = held = new(StringComparer.Ordinal);
         }
 
         var trimmed = key?.Trim() ?? "";
@@ -83,7 +91,6 @@ public static class HarnessKeys
             throw new DriverException("that is not an API key — it is blank, or has spaces in it.");
         }
 
-        var read = Written(keys);
         held[named] = KeySeal.Sealed(trimmed);
         Write(home, read, keys);
 
@@ -105,6 +112,23 @@ public static class HarnessKeys
     /// <summary>The key an account is, or null for a sign-in.</summary>
     public static string? Of(string home, string harness, string profile) =>
         Read(home).TryGetValue(harness, out var held) && held.TryGetValue(profile, out var kept) ? KeySeal.Open(kept) : null;
+
+    /// <summary>
+    /// Take an account's key away and keep the account: its last reading, which was of that key, is forgotten, so it reads no key
+    /// until a new one is set. Nothing to take is an answer.
+    /// </summary>
+    public static void Withdraw(string home, string harness, string profile)
+    {
+        Remove(home, harness, profile);
+        try
+        {
+            AccountReads.Forget(home, harness, profile);
+        }
+        catch (Exception error) when (error is IOException or UnauthorizedAccessException)
+        {
+            // The key is gone; the next press reads the account again.
+        }
+    }
 
     /// <summary>Forget an account's key. Nothing to forget is an answer.</summary>
     public static void Remove(string home, string harness, string profile)

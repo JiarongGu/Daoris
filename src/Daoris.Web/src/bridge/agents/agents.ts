@@ -155,7 +155,7 @@ export const useHarnessAction = () =>
   useMutation({
     mutationFn: (action: {
       door: string;
-      action: 'install' | 'update' | 'login' | 'login-new' | 'key-add' | 'key-replace' | 'pin' | 'unpin'
+      action: 'install' | 'update' | 'login' | 'login-new' | 'key-add' | 'key-replace' | 'key-remove' | 'pin' | 'unpin'
       | 'profile-add' | 'profile-remove' | 'profile-rename';
       profile?: string;
       /** An account's name — `profile-rename` only; its own id, or none, clears it. */

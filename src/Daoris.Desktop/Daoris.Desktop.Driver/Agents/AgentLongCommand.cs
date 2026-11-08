@@ -92,7 +92,8 @@ internal static class AgentLongCommand
     }
 
     /// <summary>
-    /// <c>key &lt;agent&gt; [--account &lt;account&gt;]</c>: an account that is an API key, the key read from
+    /// <c>key &lt;agent&gt; [--account &lt;account&gt; [--remove]]</c>: an account that is an API key (<c>--remove</c> takes the key out
+    /// and keeps the account, reading no stdin), the key read from
     /// standard input and never an argument, which is in the process list and the shell's history. A door's key is its owner's account.
     /// With <c>--account</c>, a new key into an account that is a key, by its id or its name: its id stays, so its name, lists and
     /// defaults stand. Every check that needs no key is made before the key is read; the key's account is then written under the home's
@@ -121,6 +122,8 @@ internal static class AgentLongCommand
             throw new AgentWords($"`{name}` takes no API key from Daoris — sign in with its own login instead.");
         }
 
+        // An agent held by a key alone has no sign-in: its account without a key waits for one.
+        var keyOnly = roster.AccountAgentOf(name)?.Accounts.KeyOnly == true;
         string? account = null;
         if (replacing is not null)
         {
@@ -132,11 +135,23 @@ internal static class AgentLongCommand
                     + (accounts.Count > 0 ? string.Join(", ", accounts) : "(none)"));
             }
 
-            if (HarnessKeys.Of(home, owner, account) is null)
+            if (!keyOnly && HarnessKeys.Of(home, owner, account) is null)
             {
                 throw new AgentWords(
                     $"`{account}` is not an API key account — it is a sign-in, so sign in again with `daoris agent login {owner}`.");
             }
+        }
+
+        if (args.Contains("--remove", StringComparer.Ordinal))
+        {
+            if (account is null) throw new AgentWords("`--remove` takes the key out of an account: name it with `--account`.");
+            using (await HomeLease.ForPublicationAsync(home, "daoris agent key", _ => { }, ct, world.Waiting, world.Now).ConfigureAwait(false))
+            {
+                HarnessKeys.Withdraw(home, owner, account);
+            }
+
+            Say($"{Prefix}: `{owner}` account `{account}` has no key now; the account stays, and reads no key until `daoris agent key {owner} --account {ShellWord.Of(account, "<account>")}` sets one.");
+            return 0;
         }
 
         string key;
@@ -162,7 +177,7 @@ internal static class AgentLongCommand
                     $"{Prefix}: waiting for {holder.Named} to let this home go; the key is written then, and Ctrl+C stops."),
                 ct, world.Waiting, world.Now).ConfigureAwait(false))
             {
-                account = account is null ? HarnessKeys.Add(home, owner, key) : HarnessKeys.Replace(home, owner, account, key);
+                account = account is null ? HarnessKeys.Add(home, owner, key) : HarnessKeys.Replace(home, owner, account, key, keyOnly);
             }
         }
         catch (OperationCanceledException) when (ct.IsCancellationRequested)

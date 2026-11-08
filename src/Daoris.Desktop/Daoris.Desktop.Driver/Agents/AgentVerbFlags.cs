@@ -11,7 +11,7 @@ internal static class AgentVerbFlags
     {
         ["login"] = ["--account", "--new", "--name", "--device-code"],
         ["trust"] = ["--account", "--yes", "--dry-run"],
-        ["key"] = ["--account"],
+        ["key"] = ["--account", "--remove"],
         ["settings"] = ["--account", "--for"],
     };
 

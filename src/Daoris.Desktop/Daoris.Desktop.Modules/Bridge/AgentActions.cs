@@ -59,7 +59,7 @@ public sealed class AgentActions(IEventBus events, DriverLoop loop)
     /// </summary>
     internal static readonly IReadOnlyList<string> Words =
     [
-        "install", "update", "login", "login-new", "key-add", "key-replace", "pin", "unpin",
+        "install", "update", "login", "login-new", "key-add", "key-replace", "key-remove", "pin", "unpin",
         "profile-add", "profile-remove", "profile-default", "profile-rename", "profile-join",
     ];
 
