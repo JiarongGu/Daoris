@@ -29,6 +29,8 @@ public sealed class SupervisorBlockTests
     [InlineData("<<< supervisor decision\n{ \"kind\": \"question\", \"subject\": { \"session\": \"s1\", \"question\": \"q1\" }, \"leave\": \"whenever\", \"reasons\": [ { \"says\": \"x\", \"source\": \"y\" } ] }\n>>>")]
     [InlineData("<<< supervisor decision\n{ \"kind\": \"question\", \"subject\": { \"session\": \"s1\", \"question\": \"q1\" }, \"do\": \"answer\", \"reasons\": [] }\n>>>")]
     [InlineData("<<< supervisor decision\n{ \"kind\": \"weather\", \"subject\": { \"session\": \"s1\" }, \"do\": \"answer\", \"reasons\": [ { \"says\": \"x\", \"source\": \"y\" } ] }\n>>>")]
+    [InlineData("<<< supervisor decision\n{ \"kind\": \"question\", \"subject\": { \"session\": \"s1\", \"question\": \"q1\" }, \"do\": \"answer\", \"reasons\": [ { \"says\": \"x\", \"source\": \"y\" } ] }\n>>>")]
+    [InlineData("<<< supervisor decision\n{ \"kind\": \"course\", \"subject\": { \"session\": \"s1\", \"point\": \"p1\" }, \"do\": \"go-on\", \"choice\": \"Keep\", \"reasons\": [ { \"says\": \"x\", \"source\": \"y\" } ] }\n>>>")]
     [InlineData("<<< supervisor decision\n{ not a form\n>>>")]
     [InlineData("<<< supervisor decision\n{ \"kind\": \"question\" }")]
     public void A_block_that_does_not_read_is_none_and_says_why(string message)
