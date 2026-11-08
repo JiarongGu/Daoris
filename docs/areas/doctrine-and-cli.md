@@ -154,7 +154,9 @@ as a pack.
 37. Each program hands the other a word it does not own, once: `DAORIS_HANDED` names who handed it. The CLI refuses a
     non-doctrine word the program handed, exit 2; the program refuses, with its usage and exit 2, a word no group owns that
     the CLI handed. An install's `app/bin/daoris` runs the program, which runs a word no group owns through the CLI in
-    `app/cli/` on the tools' Node.js (22 or later), and says so where none is carried. (from D124, D194)
+    `app/cli/` on the tools' Node.js, and says so where none is carried; Ctrl+C is held off it from before the child starts
+    until the child ends (`InterruptHold`). The CLI's own entry (`bin/node-floor.mjs`, before the dispatcher loads) refuses a
+    Node below 22, exit 2, as `engines` and the set-up's `NodeRefusal` hold it. (from D124, D194)
 38. No CLI module touches the network. The one spawn is the seam's `startChild`, and nothing a doctrine command reaches can
     spawn. The package has no runtime dependencies. (from D8, D33)
 39. Exit codes are 0 clean, 1 policy failure, 2 tool error. A failure nobody anticipated is 2, said in one line.
