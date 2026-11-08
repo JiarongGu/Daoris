@@ -1999,7 +1999,7 @@ place), and every row's park, placement, relink, exclusive hold and parking name
   *(R4-F8)*; `SlotChoice` and `SlotJudgement` over every row of §5.1 and §5.2; the census passing, and failing on each kind of planted site;
   `StructureTests` with no new census edge. Row a settles the shapes; the lifecycle's proof is row b's (C1, §4).
 
-### b. ⚖ Taking, returning, finishing, ending and retiring a slot over git, unwired. **Built** (2026-11-08; the three measurements its Proof asks for are not taken)
+### b. ⚖ Taking, returning, finishing, ending and retiring a slot over git, unwired. **Built** (2026-11-08; the three measurements its Proof asks for are in §34)
 
 - **Changes** *(R4)*. `TreePool.MakeAsync`, `TakeAsync`, `ReturnAsync`, `FinishAsync`, `EndAsync`, `RetireAsync` and `VisitAsync`, each with
   its phases and its takeover (§2.3), its job made as an act's is and its takeover fenced by generation *(R4-F8)*; the judgement's git reads,
@@ -2074,7 +2074,8 @@ place), and every row's park, placement, relink, exclusive hold and parking name
 
 ### d. ⚖ The pool wired, read only through a test's seam.
 
-- **When.** After row b's note is read and FOUNDATION1's row 1d-i has landed (above).
+- **When.** Waiting on both makers' reads of row b's note (§34), whose numbers the steward then finds the saving holds on or not; and on
+  FOUNDATION1's row 1d-i having landed (above).
 - **Changes.** `keptTrees` read only through the one environment variable row d names, set by the rehearsal and the tick tests alone
   *(O2-F13)*; the driven start's take as a `[RunStage]` of the `Grown` phase before `GrowTree`, its claim on `RunState` *(R4-F2)*, and the
   conversation's where `ChatStarts` chooses its tree, taking from the pool (§5.1) once the start's confirmation is settled *(O2-F15)*, else
@@ -3893,3 +3894,120 @@ mark; and §10's set-aside read from the record, a no-output line's among them.
   paragraph, its step 4, its paragraph after step 6 and its worked-tree paragraph; §30.1's floor 4 sentence marked *(R13-F2)*; R5.6's
   round-11 group bullet's last sentence; and §5.5 step 5's sentence marked *(R13-F4)*. Row 3 first; each ⚖ row is built once both find
   nothing blocking in it.
+
+## 34. Row b's note: measured
+
+*Taken 2026-11-08 by Claude Opus 5.5, on this machine (Windows 11, NTFS, .NET SDK 10.0.402, git 2.53, Node 24.19), with the built pool's
+own code (rows 3, 4a, 4b, 4c) driven by `TreePoolDayBenchProcessTests` (`TREEPOOL_BENCH`, `_fixtures/treepool-bench/`; it does nothing unless
+that variable names a scratch folder). The sections below are the five measurements §17.0's row b asks for and the saving §11 claims;
+nothing in the pool was changed.*
+
+**Method.** A scratch clone of this repository, one kept slot, and the first-parent commits of main from the one that added
+`daoris.files.json` (the rule file is read at the line's tip, so an older tip reads the floor alone) to the day's last: **104 commits over
+13.3 hours**. Line 0 is made at the first commit and built cold; each later line is *taken* at every 13th commit (8 takes), its files
+stage run as a start runs it, its work committed, its slot let go (`EndAsync`) and its line finished (`FinishAsync`, which sets the build's
+`_fixtures/` aside). Files and bytes are counted from the file system as R5.2 counts them; a path that vanishes from the slot is *moved
+aside* (a take moves the outputs aside, never deletes them), not deleted. A fresh tree is today's open (`TreeOpening`) and its files stage,
+for the first, middle and last commit, then its removal. The builds are the two desktop test projects, `tools/contracts.mjs` and the web's
+`npm run build`.
+
+**The machine's load while it ran.** Not quiet: other sessions built, tested and ran git on it throughout. A sampler read the machine every
+20 seconds: from the start of the run, **mean CPU 69% (100% for long stretches), 75 dotnet, node, git and editor processes at once on
+average**. The same fresh checkout took 10.6 to 17.5 s and the same install 86 to 180 s from one tree to the next, so **every time below is
+a loaded machine's, to within a factor of two or three; the files and bytes are exact and are what the saving is read from.**
+
+### 34.1 What a take writes, against a fresh tree
+
+| | Fresh tree, today (open, then its install) | A take of the kept slot |
+|---|---|---|
+| Tracked files | the open: 8,653 to 8,925 files, 101 to 103 MB, 10.6 to 17.5 s | the switch, per take at 13 commits' interval: 85 to 674 files (mean 247), 1.7 to 15.3 MB (mean 6.5 MB); **8 takes: 1,976 files, 51.6 MB** (R5.2: 2,034 files and 37.3 MB for one switch over the whole day) |
+| Outputs | none yet | moved aside at each take: 258 to 262 paths, 777 at the first (the cold build's) |
+| The files stage | 17,727 to 17,731 files, 257 MB, 86 to 180 s (the installs) | **515 files, 26 MB, 45 to 188 s at every take** (the CLI's `node_modules` installed again), 4,119 files and 208 MB over the 8 |
+| The build | cold: 901 files, 1,149 MB | after the day: **732 files, 1,143 MB** |
+| The removal | 26,380 to 27,557 files deleted, 8.9 to 21 s | none |
+| **Per session** | **27,557 files and 1,509 MB written, as many deleted** (the last commit, built) | **about 1,500 files and 1,180 MB** (a take 762 files and 32.5 MB, plus the build) |
+
+**Files: the saving holds.** A take writes 95% fewer files per session (about 1,500 against 27,557) and deletes none. **Bytes: it holds
+far less than R5.2 found.** 1.18 GB against 1.51 GB is 22% fewer, not 64%: the build a take is followed by writes 1,143 MB, the same as a
+cold one (R5.2: 489 MB). The cause is the pool's own rule (§11, *R4-F2*): a take moves `bin/` aside at every take, so the next build copies
+every assembly into each test project's `bin/` again, and that copy is 1,143 of the 1,180 MB. The bytes a take writes itself are 6.5 MB
+mean, 32.5 MB with its stage.
+
+**The bytes the slot holds.** `kept_trees.bytes` (ignored bytes outside `node_modules`) read 97.3 MB after the last take, with `bin/` moved
+aside; the installs add 257 MB; a built line holds about 1.13 GB more until its take. Nothing came near §11's 4 GB bound.
+
+### 34.2 What the take's namespace read costs
+
+The judgement (`TreePool.JudgeAsync`) timed before each of the 8 takes: **median 8.9 s, mean 12.4 s, range 4.8 to 41.8 s**. Its reads timed
+apart afterwards, mean over the 8 (warm; their sum 8.1 s): the ignored tops sorted by the effective rules **5.5 s**, the walk of links 0.7 s,
+the nested-repository walk 0.4 s, the worktree list 0.4 s, `status --ignored` 0.4 s, `ls-files -v` 0.3 s, the refs holding HEAD 0.3 s.
+**Two thirds is `SlotIgnored.ReadAsync`**, which reads the rule files from git's objects and sorts the ignored tops (the machine's load
+multiplies a process start, and it starts the most). The take runs the judgement inside its claim, so these are in §34.4's hold.
+
+### 34.3 A warm build against a cold one
+
+In the kept slot, built cold at line 0, then after 8 takes over the day, then again with nothing changed; and a fresh tree built cold at
+the day's last commit, later in the run and under less load:
+
+| | Slot, cold (line 0) | Slot, after the day | Slot, nothing changed | Fresh tree, cold (last commit) |
+|---|---|---|---|---|
+| Driver tests | 194 s | 97 s | 25 s | 101 s |
+| Modules tests | 195 s | 28 s | 11 s | 22 s |
+| Contracts generation | 221 s | 143 s | 10 s | 99 s |
+| Web `npm run build` | 706 s | **not valid** | **not valid** | 190 s |
+| Written | 901 files, 1,135 MB | 732 files, 1,143 MB | 5 files, 4.3 MB | 901 files, 1,149 MB |
+
+**The times do not separate the two.** The slot's cold build ran at 100% load and the fresh tree's at less, so a warm build at 97 s
+against a fresh cold at 101 s (the driver's) says nothing either way; as the 2026-11-07 figure of §11 said, a quiet machine is needed, and
+this one had none. What the table does show: nothing changed is 46 s for the three .NET steps; **a build after a day's switch compiles
+and copies as much as a cold one** (1,143 MB against 1,149 MB written) once the take has moved `bin/` aside; **the web's build is not
+incremental** (`tsc --noEmit` runs whole), as §11 found, so it saves nothing. **The web figure after the day is not valid**: the stage
+after the take at the 26th commit removed the web's `node_modules` (17,069 files) and did not install it again (the person's rule that
+held it for this measurement is §34.5's), so the type check failed on missing modules.
+
+### 34.4 The start's shared hold
+
+A take runs inside the start's shared hold up to the keyed open, and holds its slot's git lock (the pool's claimed reason) from its claim to
+its end. Per take: **mean 54 s, median 42 s, range 28 to 134 s** on this load, a fresh open being 10.6 to 17.5 s. The phases, first take
+then the median of the rest: the claim and the judgement 45.6 s and 12 s; the switch 14.5 s and 1.4 s; clearing (moving the outputs aside)
+42 s and 14 s; the check 27 s and 8.2 s; the open's request 0.05 s. The files stage runs after the open, outside the hold, 45 to 188 s. **A
+take holds the start's hold three to four times as long as today's open does**, and what lengthens it is the judgement, the clearing and
+the check, not the switch. No lock beyond the start's hold and the slot's git lock is taken.
+
+### 34.5 How often a switch is refused
+
+Of the 8 takes in this replay, **none was refused and none was stuck**; no switch met a held file. The path to those 8 was not clear, and
+the refusals before it are the finding:
+
+- **Every take was refused `lines-own` while this repository's installs were the line's own**: the files stage installs the root's, the web's
+  and the CLI's `node_modules` and seals none (the root's `prepare` script writes git's `config` and hooks and `docs/index/` outside the
+  folders, so each reads *installed in this tree and not stored*), and a dependency without a placement record is the line's own, which a
+  take refuses. 3 of 3 takes. The run above held the two installs as intermediates by a person's rule so that a take could
+  be measured; **that is not how the pool would run**.
+- **The tip before the rule file was read as the floor**, with the same result for every `node_modules`: a slot whose last line began
+  before `daoris.files.json` existed is refused by the next take. 3 of 3.
+- **A line ended and not finished refused the next take** (`lines-own: _fixtures/`): the contracts generator writes `_fixtures/` in any
+  tree that built the web, and a scratch path is the line's own, set aside only at a finish. 4 of 4. A finished line is not refused.
+- **The stage after a take at the 26th commit removed the web's `node_modules`** where the repository's `daoris.files.json` had changed
+  since the slot's first line, and installed none again under the person's rule. Not traced further here.
+
+These are filed as TASKS.md's TREEPOOL1x. The refusals that were the pool working as designed (an unplaced dependency, a scratch path, an
+unread rule) all say so in their words.
+
+### 34.6 Whether §11's saving holds
+
+On these numbers, **partly**:
+
+1. *The checkout and the install.* The checkout holds: the tracked files written fall from 8.7k to 247 a take, the removal's 27k deletions
+   go. **The install does not hold for this repository**: nothing is sealed and the CLI's `node_modules` is installed at every take (515
+   files, 26 MB, 45 to 188 s), so the install's saving (R5.2: 17k files, 254 MB, "none") is 97% of files and 90% of bytes, not 100%, and
+   costs a minute or three a take.
+2. *The first .NET build.* §11 said a take saves most of it. **By bytes it saves none** (1,143 MB against 1,149 MB), because the take moves
+   `bin/` aside; by time the machine could not say. What a kept `obj/` saves is the compile, and a build with nothing changed is 46 s.
+3. *The size bound.* Held with room (97.3 MB, bound 4 GB).
+4. *The cost of the take.* The hold is 28 to 134 s against an open's 10 to 18 s, on a loaded machine, two thirds judgement and clearing.
+
+**For the steward:** the saving of files (95% fewer a session) holds; the saving of bytes (22% here, 64% in R5.2) does not hold with
+`bin/` moved aside at every take, and §11's choice (R4-F2) is what costs it; the installs of this repository are not kept until
+TREEPOOL1x. Row d starts only once both makers have read this note and the steward finds the saving holds on these numbers. A quiet
+machine would settle the build's times; it would not change the files or bytes.

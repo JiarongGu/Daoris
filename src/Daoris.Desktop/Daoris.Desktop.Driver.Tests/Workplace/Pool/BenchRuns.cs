@@ -26,7 +26,7 @@ internal sealed class BenchRuns(string log, Action<string> echo)
             lock (tail)
             {
                 tail.AppendLine(line);
-                if (tail.Length > 4000) tail.Remove(0, tail.Length - 2000);
+                if (tail.Length > 8000) tail.Remove(0, tail.Length - 4000);
             }
         }
 
@@ -37,7 +37,7 @@ internal sealed class BenchRuns(string log, Action<string> echo)
         await child.WaitForExitAsync();
         watch.Stop();
         var said = tail.ToString().Trim();
-        if (child.ExitCode != 0) Say($"  ! {file} {string.Join(' ', arguments)} exited {child.ExitCode}: {said[^Math.Min(600, said.Length)..]}");
+        if (child.ExitCode != 0) Say($"  ! {file} {string.Join(' ', arguments)} exited {child.ExitCode}: {said[^Math.Min(1800, said.Length)..]}");
         return (watch.Elapsed.TotalSeconds, child.ExitCode);
     }
 }

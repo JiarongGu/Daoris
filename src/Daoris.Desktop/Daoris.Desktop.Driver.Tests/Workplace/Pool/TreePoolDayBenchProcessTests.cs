@@ -3,7 +3,7 @@ using Xunit.Abstractions;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// The measurements TREEPOOL1's row b asks of the built pool, taken on a working machine over a day of a repository's main
+/// The measurements the tree pool's design asks of the built pool before it is wired, taken on a working machine over a day of a repository's main
 /// (<see cref="TreePoolDayBench"/>). It does nothing unless <c>TREEPOOL_BENCH</c> names a scratch folder under
 /// <c>_fixtures/treepool-bench/</c> holding <c>day.txt</c>, the day's commits newest first; <c>TREEPOOL_BENCH_STRIDE</c> and
 /// <c>TREEPOOL_BENCH_BUILDS</c> set the replay's step and whether the builds are timed. The names carry no <c>DAORIS_</c> prefix, which the
