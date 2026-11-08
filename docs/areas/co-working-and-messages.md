@@ -275,7 +275,7 @@ and `universal`. The twin fixtures (`senders.json`, `participant-work.json`, `he
 
 ## Open
 
-- **STEER3**: measure Codex's `turn/steer` and Claude Code's stream-json input before a level uses them. **MSG1h**, **MSG1i**: next-step words on Codex and on the native door.
+- **STEER3**: measure Codex's `turn/steer` and Claude Code's stream-json input before a level uses them. **MSG1h**, **MSG1i**: next-step words on Codex and on the native door, each after its measured turn (D188 point 3) and so in the spend sitting. MSG1h's design must meet that `codex-acp` honours no `idleBehavior`: a steer that finds no live turn starts one (`docs/2026-10-03-steer-evidence.md` §5), so the door steers only while a turn it prompted is live and treats `startedNewTurn` as a turn nobody asked for.
 - **COWORKUX1** (row i): the lead's wait on its own partner.
 - The lead's own `partner_ask` has no row.
 - **CHANNELJOIN1** (`docs/2026-11-06-event-channel-design.md` §5; built: the member in the service and its doors, the join under the
