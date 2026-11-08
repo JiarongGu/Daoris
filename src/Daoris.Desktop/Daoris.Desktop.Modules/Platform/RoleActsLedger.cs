@@ -27,7 +27,6 @@ internal sealed class RoleActsLedger(StandingConfirmation owner, StandingState s
                 return RoleWhy.OwnerSet;
             }
 
-            // An act a supervisor allowed once was never in the grants: its allow is its warrant.
             if (!state.AllowedActs.ContainsKey(id) && state.Acts.ActOf(id) is { } admitted && !StillGranted(staffed, admitted.Role, admitted.Act))
             {
                 state.Acts.Withdraw(id);

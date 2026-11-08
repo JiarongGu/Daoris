@@ -1250,7 +1250,7 @@ export const REACH = Object.freeze([
   {
     paths: ['src/Daoris.Service/Daoris.Service.Tests/fixtures/call-table.json'],
     gates: ['service', 'driver', 'web-unit'],
-    why: "the service's McpRoleFilterTests, the driver's SuperviseContainmentTests and the page's callTable.test.ts read the call layer's table (FOUNDATION1r, COMPANYVIEW1i)",
+    why: "McpRoleFilterTests, SuperviseContainmentTests and callTable.test.ts read the call layer's table",
   },
   // The participant's work table sits among the service's tests, and the driver's twin and the page's identity read it too.
   {
