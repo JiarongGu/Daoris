@@ -34,6 +34,18 @@ public sealed class LinksGateTests : IDisposable
         Assert.Contains("docs/design.md", result.Detail);
     }
 
+    /// <summary>A link cannot hold a space, so a file named with one is linked as `%20`, and is the file the link means.</summary>
+    [Fact]
+    public void A_percent_encoded_link_resolves_to_the_file_it_names()
+    {
+        _fx.Write("docs/the design.md", "the design");
+        _fx.Write("README.md", "see [the design](docs/the%20design.md)");
+
+        var result = Run("README.md", "docs/the design.md");
+
+        Assert.True(result.Passed, result.Detail);
+    }
+
     [Fact]
     public void Links_that_resolve_pass_and_the_count_is_reported()
     {
