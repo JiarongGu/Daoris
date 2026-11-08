@@ -1,19 +1,15 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// The ignored tops of a slot sorted by the effective rules at its commit: what the slot keeps (a dependency whose placement record
-/// holds), what a take moves aside (runnable outputs, and intermediates and caches where the toolchain moved), Daoris's own copies of
-/// machine-local files, and the line's own, which nothing here may take.
+/// A slot's ignored tops sorted by the effective rules: what it keeps, what a take moves aside, Daoris's own copies, and the line's own.
 /// </summary>
 internal sealed record SlotIgnored(
     IReadOnlyList<string> Kept, IReadOnlyList<string> Outputs, IReadOnlyList<string> Intermediates, IReadOnlyList<string> Copies, IReadOnlyList<string> Own)
 {
     internal static readonly SlotIgnored None = new([], [], [], [], []);
 
-    /// <summary>Every ignored top the rules and the floor leave to the slot or to Daoris, none of the line's own.</summary>
     internal IReadOnlyList<string> Pooled => [.. Kept, .. Outputs, .. Intermediates, .. Copies];
 
-    /// <summary>The tops of <paramref name="status"/>'s ignored paths, sorted at the slot's present commit.</summary>
     internal static async Task<SlotIgnored> ReadAsync(PoolSite site, string slot, IReadOnlyDictionary<string, string> status, string head, CancellationToken ct)
     {
         var ignored = status.Where(each => each.Value == "!!").Select(each => each.Key).ToList();

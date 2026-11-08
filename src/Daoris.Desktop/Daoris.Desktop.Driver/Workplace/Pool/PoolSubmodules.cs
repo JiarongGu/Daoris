@@ -2,7 +2,7 @@ namespace Daoris.Driver;
 
 /// <summary>
 /// Whether a commit tracks a submodule. A switch between commits that track different submodule commits leaves the submodule's checkout
-/// where it was, which no judgement can read as clean, so a repository that tracks one is never pooled.
+/// where it stands, which no judgement can read as clean, so a repository that tracks one is never pooled.
 /// </summary>
 internal static class PoolSubmodules
 {

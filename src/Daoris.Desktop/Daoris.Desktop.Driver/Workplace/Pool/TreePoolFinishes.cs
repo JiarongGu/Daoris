@@ -192,7 +192,7 @@ internal sealed class TreePoolFinishes(TreePool pool, PoolSeams seams)
         }
     }
 
-    /// <summary>What was moved renamed back into the slot, whole; a top something stands at again stays aside.</summary>
+    /// <summary>The tops renamed back into the slot, whole; a top something stands at again stays aside.</summary>
     internal static void PutBack(string slot, string aside, IReadOnlyList<string> tops)
     {
         foreach (var top in tops)

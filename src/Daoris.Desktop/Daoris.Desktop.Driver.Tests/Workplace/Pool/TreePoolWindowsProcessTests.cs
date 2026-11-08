@@ -5,7 +5,7 @@ namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
 /// What Windows does to the pool, over real git and real file handles: a switch refused by a file something holds open leaves the slot
-/// <c>stuck</c>, a retirement's rename refused by a handle is <c>busy</c> and the slot stays as it was, a tracked path of 250 characters is
+/// <c>stuck</c>, a retirement's rename refused by a handle is <c>busy</c> and the slot stays, a tracked path of 250 characters is
 /// switched in, and a repository that tracks a submodule is never pooled.
 /// </summary>
 [Trait(Category.Name, Category.Process)]

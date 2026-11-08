@@ -94,7 +94,6 @@ internal sealed class TreeFilesStage(string home, string root, string tree, stri
         return Outcome();
     }
 
-    /// <summary>Each copy made, by the hash of the bytes written, so a take deletes only a file that is still Daoris's own.</summary>
     private void RecordCopies(IReadOnlyList<string> copied) => TreeFilesRecord.Change(home, tree, state => state with
     {
         Copies = state.Copies.Concat(copied.Select(path => KeyValuePair.Create(path, TreeCopies.HashOf(Path.Combine(tree, path)))).Where(each => each.Value is not null).Select(each => KeyValuePair.Create(each.Key, each.Value!)))

@@ -3,7 +3,7 @@ namespace Daoris.Driver;
 /// <summary>
 /// A slot let go for good: judged clean inside its claim, its whole folder renamed into the set-aside folders with a manifest written
 /// before the move, then git's record of the vanished path dropped and the slot's row removed. A rename something holds open is
-/// <c>busy</c>: the slot is as it was, its lock put back.
+/// <c>busy</c>: the slot stays, its lock put back.
 /// </summary>
 internal sealed class TreePoolRetires(TreePool pool, PoolSeams seams)
 {
