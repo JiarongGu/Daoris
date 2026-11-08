@@ -127,7 +127,7 @@ public sealed record DownloadJudge(Func<DownloadUses> Uses, Func<DateTimeOffset>
 /// <summary>
 /// Clearing downloads: the versions the agents and the tools downloaded into <c>cache/</c> that nothing uses, LISTED
 /// first with what keeps each of the rest, then removed by the person's press (listed, pressed, each judged again right
-/// before it goes). The screen's half is Settings → This Daoris's <i>Downloads</i> row. It is the downloads' one act:
+/// before it goes). The screen's half is Settings → Disk space's <i>Downloads</i> row. It is the downloads' one act:
 /// the look's rule (<see cref="DownloadKeeping"/>) and Tools' delete of one version
 /// (<see cref="ToolInstall.DeleteAsync"/>) remove through it too.
 /// </summary>

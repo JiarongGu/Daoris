@@ -84,7 +84,10 @@ public sealed class DeliveryStoreTests : IDisposable
         var key = DeliveryStore.KeyOf("unit-1", "tip", "branch", "main");
 
         Assert.Matches("^[0-9a-f]{64}$", key);
-        Assert.Equal(key, (Intent("tip") with { Message = "another message", Line = "release", Plugin = "forge", Epoch = "epoch-8", Branch = null }).Key);
+        var started = Store("run-a").Start(Intent("tip") with { Message = "another message", Line = "release", Plugin = "forge", Epoch = "epoch-8", Branch = null }, Accepted());
+        Assert.Equal(key, started.Claim!.Key);
+        Assert.NotEqual(key, DeliveryStore.KeyOf("unit-1", "tip", "branch", "main", generation: 2));
+        Assert.NotEqual(DeliveryStore.KeyOf("unit-1", "tip", "branch", "main", generation: 3), DeliveryStore.KeyOf("unit-1", "tip", "branch", "main", generation: 2));
         Assert.Equal(4, new[]
         {
             DeliveryStore.KeyOf("unit-2", "tip", "branch", "main"), DeliveryStore.KeyOf("unit-1", "tip2", "branch", "main"),

@@ -111,7 +111,7 @@ internal static class HelpDoorRowsActs
         new("install the build staged beside this install: when its work allows (nothing new starts, and once no driven session "
             + "runs Daoris closes and starts again on it), now (Daoris closes at once, ending what runs as a close does), or not "
             + "now (it stays staged, for that build only); plain `update` says what is staged and how the last update ended",
-            "the update banner, and Settings → Driver → Update: *Update when idle*, *Update now*, *Not now*",
+            "the update banner, and Settings → Updates: *Update when idle*, *Update now*, *Not now*",
             "`daoris update --when-idle|--now|--cancel`, `daoris update`",
             new HelpDoorAsk.Never("an update is your act on the application")),
         ("start a task", "Quests → Ask", "`daoris ask --workspace <name> \"…\"`"),

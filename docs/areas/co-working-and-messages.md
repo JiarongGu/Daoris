@@ -209,7 +209,8 @@ The agent's half is the canon skill `canon/packs/co-working/skills/co-working/SK
 43. A meeting's next round goes only by the person's press, its packet refreshed under a new digest. A meeting talks: no checkout, no
     publishing, no write. (from D177)
 44. The service's brainstorm desk is the one writer of a request, a send and a stop for both kinds. The driver's verbs press it, and
-    with no service they say so and exit 1. (from D176, D177)
+    with no service they say so and exit 1. A send is refused (`state`) for a brainstorm or meeting stopped or ended unsent, as it is
+    for one with no packet; only one already sent is answered as sent. (from D176, D177)
 
 ***At work*, *What needs you* and the steward desk**
 

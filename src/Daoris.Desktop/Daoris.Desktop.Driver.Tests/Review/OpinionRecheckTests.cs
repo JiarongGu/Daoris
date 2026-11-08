@@ -169,6 +169,24 @@ public sealed class OpinionRecheckTests : IDisposable
         Assert.Empty(host.Said("s1"));
     }
 
+    /// <summary>The moment a recheck's findings reach the person is kept beside the recheck once, as a first pass's is.</summary>
+    [Fact]
+    public async Task A_rechecks_delivery_to_the_person_is_timed_once_beside_the_recheck()
+    {
+        var (host, git, tip, _, head) = Answered();
+        host.Opinion("op2", "s1", weights: ["must"], pass: "recheck", rechecks: "op1", tip: head, @base: tip);
+        var driver = Driver(host, git);
+        var before = DateTimeOffset.UtcNow;
+
+        await driver.DeliverAsync("op2", AskedAt(tip));
+        var kept = new OpinionDeliveries(_home).Read("op2");
+        await driver.DeliverAsync("op2", AskedAt(tip));
+
+        Assert.Equal(OpinionToPerson.Recheck, kept.Person);
+        Assert.True(kept.PersonAt >= before);
+        Assert.Equal(kept.PersonAt, new OpinionDeliveries(_home).Read("op2").PersonAt);
+    }
+
     /// <summary>
     /// The recheck judges its reviewer against every maker the line ran on.
     /// s1 went on with Claude Code from s0, cut off by its limit on Codex, so Codex reading it again is the work's own family, never

@@ -56,6 +56,35 @@ public sealed class FolderMoveTests : IDisposable
     }
 
     [Fact]
+    public void A_file_that_fails_part_way_leaves_no_partial_file_behind()
+    {
+        var source = Source();
+        var target = Path.Combine(_root, "target");
+
+        Assert.Throws<IOException>(() => FolderMove.Move(source, target, copying: true, copyFile: (from, to) =>
+        {
+            File.WriteAllText(to, "par");
+            throw new IOException("disk full");
+        }));
+
+        Assert.False(Directory.Exists(target));
+        Assert.True(File.Exists(Path.Combine(source, "a.txt")));
+    }
+
+    [Fact]
+    public void A_file_already_at_the_target_is_never_removed_by_a_failed_copy()
+    {
+        var source = Source();
+        var target = Path.Combine(_root, "target");
+        Directory.CreateDirectory(target);
+        File.WriteAllText(Path.Combine(target, "a.txt"), "kept");
+
+        Assert.Throws<IOException>(() => FolderMove.Move(source, target, copying: true));
+
+        Assert.Equal("kept", File.ReadAllText(Path.Combine(target, "a.txt")));
+    }
+
+    [Fact]
     public void A_failed_copy_into_a_folder_that_was_there_removes_only_what_it_made()
     {
         var source = Source();
