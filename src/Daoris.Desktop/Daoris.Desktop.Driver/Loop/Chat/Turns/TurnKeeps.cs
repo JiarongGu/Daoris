@@ -12,10 +12,9 @@ internal sealed class TurnKeeps(
 {
     /// <summary>
     /// Keep a word on the conversation's record first, then take it as <see cref="Take"/> or, at <c>now</c>,
-    /// <see cref="TakeNowAsync"/> takes it, under the record's id. One keep at
-    /// a time: two said at once wait in the order the record kept them. A record that will not keep it, or does not answer,
-    /// leaves it waiting here alone, as before. Null, keeping nothing, once nothing more is heard (finishing, held for a hand-over's
-    /// take, or gone): such words must not land on a record that is ending.
+    /// <see cref="TakeNowAsync"/> takes it, under the record's id. One keep at a time: two said at once wait in the order the record
+    /// kept them. A record that will not keep it, or does not answer twice, leaves it waiting here alone. Null, keeping nothing, once
+    /// nothing more is heard (finishing, held for a hand-over's take, or gone).
     /// </summary>
     public async Task<TurnKept?> KeepAsync(ISaidDoor door, ChatMessage message, CancellationToken ct)
     {
@@ -31,16 +30,14 @@ internal sealed class TurnKeeps(
                 if (state.Finishing || state.Gone || (state.Held && !forMove)) return null;
             }
 
-            message = Keyed(message);
-            var said = await KeepTwiceAsync(door, message, ct).ConfigureAwait(false);
+            message = KeepRetry.Keyed(message);
+            var said = await KeepRetry.KeepAsync(door, message, ct).ConfigureAwait(false);
 
-            // The record answered the retry settled, so its word is held or went already: answered as
-            // a retry of a word held, with nothing held, queued, steered, attempted or taken, and no word to read an id from.
+            // The record answered the retry settled: its word is held or went already, so nothing is held, queued, steered or taken.
             if (said is { Settled: not null }) return new TurnKept(TurnReach.TurnEnd, null) { Settled = true };
 
-            // The record is no longer its line's head, which the answer names. Never the fallback
-            // below, the word as it is said, held here alone as for a host with no record door: nothing is queued, steered, attempted or written
-            // on this door, and the caller says the word at the head.
+            // The record is no longer its line's head, which the answer names. Never the fallback below: nothing is queued, steered,
+            // attempted or written on this door, and the caller says the word at the head.
             if (said is { Head: { } head }) return new TurnKept(TurnReach.TurnEnd, null) { Head = head };
 
             var id = said is { Kept: true, Word.Id: { } kept } ? kept : null;
@@ -83,41 +80,12 @@ internal sealed class TurnKeeps(
         }
     }
 
-    /// <summary>A keep with no key of its producer's gets one: a key is how the record hands back a word it stored but never answered.</summary>
-    private static ChatMessage Keyed(ChatMessage message) =>
-        message.Key is null && message.Daoris?.Key is null ? message with { Key = $"keep/{Guid.NewGuid():N}" } : message;
-
-    /// <summary>
-    /// The record's keep, asked once more under the same key when it threw or never answered, so a word it stored meanwhile is the
-    /// one held, not a second beside it. Null where both asks went unanswered.
-    /// </summary>
-    private static async Task<SayAnswer?> KeepTwiceAsync(ISaidDoor door, ChatMessage message, CancellationToken ct)
-    {
-        for (var attempt = 0; attempt < 2; attempt++)
-        {
-            try
-            {
-                return await door.KeepAsync(message, ct).ConfigureAwait(false);
-            }
-            catch (Exception error) when (error is HttpRequestException or DriverException or ObjectDisposedException
-                                              or System.Text.Json.JsonException
-                                              || (error is OperationCanceledException && !ct.IsCancellationRequested))
-            {
-                // Unanswered: asked again under the key, then held here alone by the caller.
-            }
-        }
-
-        return null;
-    }
-
     /// <summary>
     /// Take back, reword, or change the level of one word that still waits: with neither
     /// <paramref name="text"/> nor <paramref name="level"/> it is removed; with words, they replace its words where it waits, its
     /// place and its files kept, under a new id; with a level, it keeps its id and asks to reach the agent then. Raised while a turn
-    /// is on the wire whose door takes words at its next step, it goes into that turn as a word said now would,
-    /// steered past what waits where it is <c>now</c> and the agent steers. The word taken while the door opens is still the
-    /// queue's. <see cref="QueueEdit.Taken"/> where a turn took it already. A conversation's queued words are in no record until
-    /// taken, so nothing is written.
+    /// is on the wire whose door takes words at its next step, it goes into that turn as a word said now would, steered past what
+    /// waits where it is <c>now</c> and the agent steers. <see cref="QueueEdit.Taken"/> where a turn took it already.
     /// </summary>
     public QueueEdit EditQueued(string id, string? text, MessageLevel? level = null)
     {
@@ -147,8 +115,8 @@ internal sealed class TurnKeeps(
         await state.Keeping.WaitAsync(ct).ConfigureAwait(false);
         try
         {
-            var said = await KeepTwiceAsync(
-                door, Keyed(old with { Text = text, Level = level ?? old.Level, Key = null, Id = null, Kept = false }), ct).ConfigureAwait(false);
+            var said = await KeepRetry.KeepAsync(
+                door, KeepRetry.Keyed(old with { Text = text, Level = level ?? old.Level, Key = null, Id = null, Kept = false }), ct).ConfigureAwait(false);
 
             // The record went on in its line's head meanwhile, so nothing is reworded or queued here; the word kept stays as it
             // is, on the record the open moves its words from.
@@ -255,9 +223,7 @@ internal sealed class TurnKeeps(
     /// starting no turn, until <see cref="Pressed"/>. Taken after any word whose keeping is in flight has been kept and reached the queue, so a
     /// word the person sent before the press is never overtaken by it.
     /// </summary>
-    /// <remarks>
-    /// Not <see cref="Hold"/>, under which a word is dropped: the press keeps every word the person says while it lands.
-    /// </remarks>
+    /// <remarks>Not <see cref="Hold"/>, under which a word is dropped: the press keeps every word the person says while it lands.</remarks>
     public async Task<PressHold> PressAsync(CancellationToken ct = default)
     {
         await state.Keeping.WaitAsync(ct).ConfigureAwait(false);
