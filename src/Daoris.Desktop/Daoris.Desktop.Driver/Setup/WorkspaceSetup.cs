@@ -154,13 +154,16 @@ public static class WorkspaceSetup
     public static WorkspaceSetupOutcome Write(
         string home, string workspace, IReadOnlyList<string> order, int atOnce, int pilot, DateTimeOffset now)
     {
-        var file = PermissionRules.Load(home);
-        var held = file.Workspaces
-            .Where(pair => Same(pair.Key, workspace))
-            .SelectMany(pair => pair.Value.Allow)
-            .ToHashSet(StringComparer.Ordinal);
-        var added = SetupPressRules.Rules.Where(rule => !held.Contains(rule)).ToList();
-        PermissionRules.Save(home, added.Aggregate(file, (rules, rule) => PermissionRules.Add(rules, RuleScope.Workspace, workspace, RuleList.Allow, rule)));
+        var added = new List<string>();
+        PermissionChange.Change(home, file =>
+        {
+            var held = file.Workspaces
+                .Where(pair => Same(pair.Key, workspace))
+                .SelectMany(pair => pair.Value.Allow)
+                .ToHashSet(StringComparer.Ordinal);
+            added.AddRange(SetupPressRules.Rules.Where(rule => !held.Contains(rule)));
+            return added.Aggregate(file, (rules, rule) => PermissionRules.Add(rules, RuleScope.Workspace, workspace, RuleList.Allow, rule));
+        });
 
         var plan = new WorkspaceSetupPlan(workspace, order, atOnce, pilot) { Created = now };
         try
@@ -169,8 +172,7 @@ public static class WorkspaceSetup
         }
         catch (Exception error) when (error is IOException or UnauthorizedAccessException)
         {
-            var after = PermissionRules.Load(home);
-            PermissionRules.Save(home, added.Aggregate(after, (rules, rule) => PermissionRules.Remove(rules, RuleScope.Workspace, workspace, rule)));
+            PermissionChange.Change(home, after => added.Aggregate(after, (rules, rule) => PermissionRules.Remove(rules, RuleScope.Workspace, workspace, rule)));
             return new WorkspaceSetupOutcome(false, $"the plan could not be written under the home: {error.Message}", null, []);
         }
 
