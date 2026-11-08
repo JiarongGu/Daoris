@@ -318,6 +318,46 @@ public sealed class AcpTransientTests
         Assert.Equal((1, TimeSpan.Zero), (retry.Episode!.Tries, retry.Episode.Waited));
     }
 
+    /// <summary>
+    /// AGENTREV4: a try that carries several held words in one prompt ends well, and each word is receipted <c>ended</c>, not the first
+    /// alone.
+    /// </summary>
+    [Fact]
+    public async Task Each_word_a_try_carries_is_receipted_ended_when_it_ends_well()
+    {
+        var clock = new MovedClock();
+        var events = new List<SessionEvent>();
+        var go = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var agent = Scripted((n, frame, self) =>
+        {
+            if (n != 1) return Answer(frame, "end_turn");
+            _ = Task.Run(async () =>
+            {
+                await go.Task;
+                self.Push(Failed(frame));
+            });
+            return null;
+        });
+        var told = new Told();
+        var inbox = new DrivenInbox(_ => { });
+        var taken = new List<string>();
+        var session = new AcpSession(agent.Incoming, agent.Outgoing, _ => { }, onEvent: e => { lock (events) events.Add(e); });
+
+        var run = session.RunAsync(
+            "D:/fam/Game", "serve the report", CancellationToken.None, inbox: inbox, asked: words => { lock (taken) taken.Add(words.Id!); },
+            retry: Retry(clock, told));
+        await Poll.Until(() => agent.Prompts.Count == 1, () => "the first prompt never went", Poll.Patience);
+        Assert.True(inbox.Hold(new ChatMessage("use port 9090", []) { Level = MessageLevel.Ordinary }));
+        Assert.True(inbox.Hold(new ChatMessage("and log it", []) { Level = MessageLevel.Ordinary }));
+        go.SetResult();
+        await run.WaitAsync(Poll.Patience);
+
+        Assert.Contains(agent.Prompts, prompt => prompt.Contains("use port 9090") && prompt.Contains("and log it"));
+        string[] ended;
+        lock (events) ended = [.. events.Where(e => e.Kind == SessionEventKind.Receipt && e.Receipt == Receipts.Ended).Select(e => e.Id!)];
+        Assert.Equal(["said-1", "said-2"], ended);
+    }
+
     /// <summary>The owner's check: a quest done before the try sends no try, and the run closes as at a turn's end.</summary>
     [Fact]
     public async Task No_try_goes_where_the_owner_s_check_says_no_more_turn_is_wanted()
