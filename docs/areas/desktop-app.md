@@ -104,7 +104,12 @@ executable, started with a browser argument, is Daoris's own browser, which sess
     binds that one connection to that one conversation, in memory alone. The connection's words in the verb's form, turn stops
     and finish for it then run with no card, and the pipe forwards it the conversation's lines, events and end, bounded, with a
     `GAP`. `LET_GO`, the head's *Let go of the terminal* (`SESSION_LET_GO`), the conversation's end and the connection closing
-    end the hold, each told and logged `person.hold`. The host's own held asks (`PersonConfirmations`, in `src/Daoris.Service/Daoris.Service.Http/`) are bounded: five for asks naming a
+    end the hold, each told and logged `person.hold`. A `HOLD` card still waiting when the stop begins is no press under way, so
+    the stop ends it lost on its own step (`PipeHolding.CloseAsks`): its line is answered, and the drain does not wait out its bound
+    on it. A lone surrogate escape is no text (`JsonElement.GetString()` throws on it, on .NET 10 too): a line holding one in its id
+    or key is no request and closes its connection, as any such line does; one in a string or name of its payload is refused `shape`
+    under its id before any card, the connection kept (`PipeConnection`); and a page report to the log drops the value holding one,
+    the rest of its line kept (`LogModule`). The log's writer writes a lone surrogate already in a string as U+FFFD. The host's own held asks (`PersonConfirmations`, in `src/Daoris.Service/Daoris.Service.Http/`) are bounded: five for asks naming a
     session, one more for the terminal's, two to an asker; an ask naming no session is bound by its process, read from the loopback
     connection (`AskerProcess`, Windows), one place each, so an agent leaving its session off cannot hold both of the terminal's. The
     page lists what waits at the service only where it holds the person key, as the shell tells it (`SERVICE_CONFIRMATIONS`); a browser

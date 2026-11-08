@@ -107,7 +107,7 @@ public sealed class LogModule(
     {
         if (payload is not { ValueKind: JsonValueKind.Object } report
             || !report.TryGetProperty("event", out var named) || named.ValueKind != JsonValueKind.String
-            || !Catalogue.TryGetValue(named.GetString()!, out var entry))
+            || Text(named) is not { } eventName || !Catalogue.TryGetValue(eventName, out var entry))
         {
             return;
         }
@@ -122,18 +122,34 @@ public sealed class LogModule(
             }
         }
 
-        log.Write(entry.Level, named.GetString()!, kept);
+        log.Write(entry.Level, eventName, kept);
     }
 
     /// <summary>The value as the log may hold it, or null when it is not of its field's kind.</summary>
     private static object? Keep(JsonElement value, Kind kind) => kind switch
     {
-        Kind.Name when value.ValueKind == JsonValueKind.String && value.GetString() is { } name && Identifier.IsMatch(name) => Cut(name),
-        Kind.Text when value.ValueKind == JsonValueKind.String => Cut(value.GetString()!),
+        Kind.Name when value.ValueKind == JsonValueKind.String && Text(value) is { } name && Identifier.IsMatch(name) => Cut(name),
+        Kind.Text when value.ValueKind == JsonValueKind.String && Text(value) is { } text => Cut(text),
         Kind.Count when value.ValueKind == JsonValueKind.Number && value.TryGetInt64(out var count) && count >= 0 => count,
         Kind.Flag when value.ValueKind is JsonValueKind.True or JsonValueKind.False => value.GetBoolean(),
         _ => null,
     };
+
+    /// <summary>
+    /// A string value's text, or null where it is none: a lone surrogate escape makes <see cref="JsonElement.GetString"/> throw, and a
+    /// report is never refused for what it holds, so the value is dropped as one of the wrong kind is.
+    /// </summary>
+    private static string? Text(JsonElement value)
+    {
+        try
+        {
+            return value.GetString();
+        }
+        catch (InvalidOperationException)
+        {
+            return null;
+        }
+    }
 
     private static string Cut(string text) => TextBounds.Clip(text, MaxText);
 
@@ -155,7 +171,7 @@ public sealed class LogModule(
         var named = PayloadHelper.GetOptionalValue<string>(payload, "event") is { Length: > 0 } wanted ? wanted : null;
         // A list of events, and one workspace as the driver writes it (trimmed) and the page holds it (without case).
         var ofEvents = payload is { ValueKind: JsonValueKind.Object } body && body.TryGetProperty("events", out var list) && list.ValueKind == JsonValueKind.Array
-            ? list.EnumerateArray().Where(item => item.ValueKind == JsonValueKind.String).Select(item => item.GetString()!).ToHashSet(StringComparer.Ordinal)
+            ? list.EnumerateArray().Where(item => item.ValueKind == JsonValueKind.String).Select(Text).OfType<string>().ToHashSet(StringComparer.Ordinal)
             : null;
         var workspace = PayloadHelper.GetOptionalValue<string>(payload, "workspace") is { Length: > 0 } space ? space.Trim() : null;
         var limit = PayloadHelper.GetOptionalValue<int>(payload, "limit") is > 0 and var asked
