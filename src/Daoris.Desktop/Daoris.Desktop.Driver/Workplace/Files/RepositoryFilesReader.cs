@@ -37,6 +37,11 @@ internal static class RepositoryFilesReader
     internal static async Task<RepositoryFilesRead> AtAsync(string root, string commit, CancellationToken ct)
     {
         var tracked = await FileGit.TrackedAsync(root, commit, ct).ConfigureAwait(false);
+        return await AtAsync(root, commit, tracked, ct).ConfigureAwait(false);
+    }
+
+    internal static async Task<RepositoryFilesRead> AtAsync(string root, string commit, IReadOnlyCollection<string> tracked, CancellationToken ct)
+    {
         return Read(await FileGit.ShowAsync(root, commit, FileName, ct).ConfigureAwait(false), tracked);
     }
 

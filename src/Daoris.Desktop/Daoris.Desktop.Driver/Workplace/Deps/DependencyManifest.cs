@@ -17,7 +17,10 @@ internal sealed record ManifestLink(string Path, string Target, bool Folder);
 /// </summary>
 internal sealed record DependencyManifest(IReadOnlyList<ManifestFile> Files, IReadOnlyList<string> Folders, IReadOnlyList<ManifestLink> Links)
 {
-    internal static readonly DependencyManifest Empty = new([], [], []);
+    /// <summary>The record of a path its install left absent, as a package manager hoisting a workspace member's packages does: it holds while the path stays absent.</summary>
+    internal static readonly DependencyManifest Missing = new([], [], []) { Absent = true };
+
+    internal bool Absent { get; init; }
 
     internal long Bytes => Files.Sum(each => each.Size);
 
@@ -29,6 +32,7 @@ internal sealed record DependencyManifest(IReadOnlyList<ManifestFile> Files, IRe
     {
         outside = null;
         var top = Path.Combine(tree, folder);
+        if (!Directory.Exists(top)) return Missing;
         var files = new List<ManifestFile>();
         var folders = new List<string>();
         var links = new List<ManifestLink>();
@@ -77,6 +81,7 @@ internal sealed record DependencyManifest(IReadOnlyList<ManifestFile> Files, IRe
     internal string? Differs(string tree, string folder, IReadOnlyList<string> caches)
     {
         var top = Path.Combine(tree, folder);
+        if (Absent) return Path.Exists(top) ? "its folder appeared" : null;
         if (!Directory.Exists(top) || new DirectoryInfo(top).Attributes.HasFlag(FileAttributes.ReparsePoint)) return "its folder is gone";
         var files = Files.ToDictionary(each => each.Path, StringComparer.Ordinal);
         var folders = new HashSet<string>(Folders, StringComparer.Ordinal);
@@ -135,12 +140,17 @@ internal sealed record DependencyManifest(IReadOnlyList<ManifestFile> Files, IRe
         return Convert.ToHexStringLower(SHA256.HashData(stream));
     }
 
-    internal JsonObject ToJson() => new()
+    internal JsonObject ToJson()
     {
-        ["files"] = new JsonArray([.. Files.Select(each => (JsonNode)new JsonArray(each.Path, each.Size, each.Hash, each.Written))]),
-        ["folders"] = new JsonArray([.. Folders.Select(each => (JsonNode)JsonValue.Create(each)!)]),
-        ["links"] = new JsonArray([.. Links.Select(each => (JsonNode)new JsonArray(each.Path, each.Target, each.Folder))]),
-    };
+        var written = new JsonObject
+        {
+            ["files"] = new JsonArray([.. Files.Select(each => (JsonNode)new JsonArray(each.Path, each.Size, each.Hash, each.Written))]),
+            ["folders"] = new JsonArray([.. Folders.Select(each => (JsonNode)JsonValue.Create(each)!)]),
+            ["links"] = new JsonArray([.. Links.Select(each => (JsonNode)new JsonArray(each.Path, each.Target, each.Folder))]),
+        };
+        if (Absent) written["absent"] = true;
+        return written;
+    }
 
     /// <summary>A manifest read back; null where it does not read, which no placement or entry is then trusted on.</summary>
     internal static DependencyManifest? FromJson(JsonElement json)
@@ -150,7 +160,10 @@ internal sealed record DependencyManifest(IReadOnlyList<ManifestFile> Files, IRe
             return new(
                 [.. json.GetProperty("files").EnumerateArray().Select(each => new ManifestFile(each[0].GetString()!, each[1].GetInt64(), each[2].GetString()!, each[3].GetInt64()))],
                 [.. json.GetProperty("folders").EnumerateArray().Select(each => each.GetString()!)],
-                [.. json.GetProperty("links").EnumerateArray().Select(each => new ManifestLink(each[0].GetString()!, each[1].GetString()!, each[2].GetBoolean()))]);
+                [.. json.GetProperty("links").EnumerateArray().Select(each => new ManifestLink(each[0].GetString()!, each[1].GetString()!, each[2].GetBoolean()))])
+            {
+                Absent = json.TryGetProperty("absent", out var absent) && absent.GetBoolean(),
+            };
         }
         catch (Exception error) when (error is InvalidOperationException or KeyNotFoundException or IndexOutOfRangeException or FormatException)
         {

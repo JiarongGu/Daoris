@@ -29,7 +29,7 @@ internal static class StoreDependencyRules
     {
         var reading = await FileAnalysis.ReadAsync(tree, commit, FileSignatures.Shipped, [], ct).ConfigureAwait(false);
         var found = FoundFiles.Read(home, repository);
-        var own = await RepositoryFilesReader.AtAsync(tree, commit, ct).ConfigureAwait(false);
+        var own = await RepositoryFilesReader.AtAsync(tree, commit, reading.Floor.Tracked, ct).ConfigureAwait(false);
         var person = PersonFiles.Read(home);
         var rules = FileRules.Of(found.Reading?.Rules ?? reading.Found.Rules, own.Rules, person, repository, reading.Signature);
         var paths = reading.Tops.Concat(rules.Rules.SelectMany(each => each.Rule.Paths).Where(path => path.IndexOfAny(['*', '?', '{', '[']) < 0))
