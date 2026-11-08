@@ -234,15 +234,31 @@ public static class AccountCooling
     {
         var ended = Read(home, now).Count(entry => entry.Account is null);
         if (ended == 0) return 0;
-        Edit(home, now, root =>
+        // One held in memory ends too, as it does in End: Read counts it, so what is counted is what ends.
+        var here = Path.GetFullPath(home).ToUpperInvariant();
+        var unkept = false;
+        foreach (var (key, _) in Unkept)
         {
-            foreach (var (_, agent) in root)
-            {
-                if (agent is JsonObject held && Key(held, "") is { } own) held.Remove(own);
-            }
+            if (key.Home == here && key.Account.Length == 0) unkept |= Unkept.TryRemove(key, out _);
+        }
 
-            return true;
-        });
+        try
+        {
+            Edit(home, now, root =>
+            {
+                foreach (var (_, agent) in root)
+                {
+                    if (agent is JsonObject held && Key(held, "") is { } own) held.Remove(own);
+                }
+
+                return true;
+            });
+        }
+        catch (Exception error) when (unkept && error is IOException or UnauthorizedAccessException)
+        {
+            // The file would not take it before either: the memory was all there was.
+        }
+
         return ended;
     }
 
