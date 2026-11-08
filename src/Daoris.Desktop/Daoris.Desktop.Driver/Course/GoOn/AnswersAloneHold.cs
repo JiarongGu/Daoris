@@ -58,7 +58,8 @@ public sealed class AnswersAloneHold(
         words ??= record.Waiting;
         if (record.Teammate || !SessionEventText.IsLocalId(record.Session) || words.Count == 0 || !words.All(AnswersAlone.Solicited)) return false;
         if (Admission(record, records, words) is not { Admitted: false } refused) return false;
-        heldAt?.Invoke(At(record.Session, records));
+        var bound = At(record.Session, records);
+        heldAt?.Invoke(bound);
 
         // Every answer waiting on it, those handed under another ask included: going on with any of them alone would be the same third.
         var answers = record.Waiting.Concat(words).Where(AnswersAlone.Solicited).Select(word => word.Id).OfType<string>()
@@ -71,7 +72,7 @@ public sealed class AnswersAloneHold(
         marks.Mark(record.Session, answers, GoOnMarks.AnswersAlone, at, agent);
         // A line already waiting is one hold: a new answer joins the mark, and the hold is said and kept once.
         if (held is not null) return true;
-        events.Keep(record.Session, AnswersAloneNotes.Held(agent, answers), say: null);
+        events.Keep(record.Session, AnswersAloneNotes.Held(agent, answers, bound), say: null);
         if (Acted(record, records, refused.Count, at) is { Do: SupervisorRules.Refer } && referable?.Invoke(record.Repository) == false)
         {
             events.Keep(record.Session, AnswersAloneNotes.Unreferred(answers), say: null);
