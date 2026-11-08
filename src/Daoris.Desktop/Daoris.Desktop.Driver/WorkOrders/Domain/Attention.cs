@@ -158,11 +158,26 @@ public sealed class AttentionWatch
         return !said;
     }
 
-    /// <summary>The person's own words went to a conversation: the turn's end they start is one they wait on.</summary>
-    public void Asked(string sessionId)
+    /// <summary>
+    /// The person's own words went to a conversation: the turn's end they start is one they wait on. What it was before, for
+    /// <see cref="Unasked"/> where the words are not taken.
+    /// </summary>
+    public bool Asked(string sessionId)
     {
         var turns = _turns.GetOrAdd(sessionId, _ => new Turns());
-        lock (turns) turns.Asked = true;
+        lock (turns)
+        {
+            var before = turns.Asked;
+            turns.Asked = true;
+            return before;
+        }
+    }
+
+    /// <summary>The words <see cref="Asked"/> were taken by no turn: what the person waited on is what it was before them.</summary>
+    public void Unasked(string sessionId, bool before)
+    {
+        if (!_turns.TryGetValue(sessionId, out var turns)) return;
+        lock (turns) turns.Asked = before;
     }
 
     /// <summary>The person stopped a conversation's turn: the end it comes to is their press, never an answer.</summary>

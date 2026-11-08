@@ -22,14 +22,16 @@ internal sealed class ChatWords(ChatContext context, ChatTold told, AttentionWat
     {
         reaches = null;
         sessionId = context.Pending.Current(sessionId);
-        var said = Compose(sessionId, message, files, preface) with { Level = level };
+        var (composed, extras) = Compose(sessionId, message, files, preface);
+        var said = composed with { Level = level };
 
         if (context.Turned.TryGetValue(sessionId, out var chat))
         {
             // Before it is taken, so even a turn that ends at once is the answer the person waits on.
-            answers.Asked(sessionId);
+            var asked = answers.Asked(sessionId);
             var reach = chat.Turns.Take(said);
             reaches = Spelled(reach);
+            if (reach is null) Untaken(sessionId, extras, asked);
             return reach is not null;
         }
 
@@ -40,7 +42,19 @@ internal sealed class ChatWords(ChatContext context, ChatTold told, AttentionWat
             return true;
         }
 
-        return SendText(sessionId, said);
+        if (SendText(sessionId, said)) return true;
+        extras.Restore();
+        return false;
+    }
+
+    /// <summary>
+    /// A message no turn took: what it was handed once goes back for the words said again, and the person waits on no answer to it
+    /// (<paramref name="asked"/>, what they waited on before it).
+    /// </summary>
+    private void Untaken(string sessionId, ChatExtras extras, bool asked)
+    {
+        extras.Restore();
+        answers.Unasked(sessionId, asked);
     }
 
     /// <summary>
@@ -56,8 +70,10 @@ internal sealed class ChatWords(ChatContext context, ChatTold told, AttentionWat
         if (context.Turned.TryGetValue(sessionId, out var chat))
         {
             // As the person's words are: the answer to it is one the person waits on.
-            answers.Asked(sessionId);
-            return chat.Turns.Take(said) is not null;
+            var asked = answers.Asked(sessionId);
+            if (chat.Turns.Take(said) is not null) return true;
+            answers.Unasked(sessionId, asked);
+            return false;
         }
 
         return SendText(sessionId, said);
@@ -87,9 +103,22 @@ internal sealed class ChatWords(ChatContext context, ChatTold told, AttentionWat
             return Say(sessionId, message, out var reaches, files, preface, level) ? new ChatSaid(reaches, null) : null;
         }
 
-        var said = Compose(sessionId, message, files, preface) with { Level = level, Key = key };
-        answers.Asked(sessionId);
-        var kept = await chat.Turns.KeepAsync(new SaidDoor(context.Service, sessionId), said, ct).ConfigureAwait(false);
+        var (composed, extras) = Compose(sessionId, message, files, preface);
+        var said = composed with { Level = level, Key = key };
+        var asked = answers.Asked(sessionId);
+        TurnKept? kept;
+        try
+        {
+            kept = await chat.Turns.KeepAsync(new SaidDoor(context.Service, sessionId), said, ct).ConfigureAwait(false);
+        }
+        catch (Exception)
+        {
+            // A keep that never answered took nothing: said again, the words carry what they were handed.
+            Untaken(sessionId, extras, asked);
+            throw;
+        }
+
+        if (kept is null) Untaken(sessionId, extras, asked);
         return kept switch
         {
             null => null,
@@ -112,15 +141,19 @@ internal sealed class ChatWords(ChatContext context, ChatTold told, AttentionWat
         string sessionId, string message, IReadOnlyList<ChatUpload>? files = null, string? preface = null)
     {
         sessionId = context.Pending.Current(sessionId);
-        var said = Compose(sessionId, message, files, preface);
+        var (said, extras) = Compose(sessionId, message, files, preface);
         if (context.Turned.TryGetValue(sessionId, out var chat))
         {
             // Before it is taken: the stopped turn's end is no answer while these words wait.
-            answers.Asked(sessionId);
-            return await chat.Turns.TakeNowAsync(said).ConfigureAwait(false);
+            var asked = answers.Asked(sessionId);
+            var now = await chat.Turns.TakeNowAsync(said).ConfigureAwait(false);
+            if (now is null) Untaken(sessionId, extras, asked);
+            return now;
         }
 
-        return SendText(sessionId, said) ? new SentNow(null, Now: false, SendNowWhy.NoInterrupt) : null;
+        if (SendText(sessionId, said)) return new SentNow(null, Now: false, SendNowWhy.NoInterrupt);
+        extras.Restore();
+        return null;
     }
 
     /// <summary>
@@ -145,27 +178,17 @@ internal sealed class ChatWords(ChatContext context, ChatTold told, AttentionWat
     /// The person's message as a live chat's door takes it: the files kept for this conversation, and the preface, the briefing and the process
     /// it is handed once, ahead of its first words. Nothing is kept for a chat nothing here holds.
     /// </summary>
-    private ChatMessage Compose(string sessionId, string message, IReadOnlyList<ChatUpload>? files, string? preface)
+    private (ChatMessage Message, ChatExtras Extras) Compose(string sessionId, string message, IReadOnlyList<ChatUpload>? files, string? preface)
     {
         var held = context.Turned.ContainsKey(sessionId) || context.Talking.ContainsKey(sessionId);
         IReadOnlyList<KeptFile> kept = held && files is { Count: > 0 } ? ChatFiles.Keep(context.Home, sessionId, files) : [];
         // A conversation started from an earlier one is handed Daoris's brief of that one's line with the person's first message.
-        var brief = held && context.Handing.TryRemove(sessionId, out var handed) ? handed.Brief : null;
-        var briefing = held && context.Browsers.TryRemove(sessionId, out var browserLine) ? browserLine : null;
+        var extras = held ? ChatExtras.Take(context, sessionId) : ChatExtras.None(context, sessionId);
         var composed = new ChatMessage(message, kept)
         {
-            Brief = brief, Preface = ChatMessage.Bound(preface), Briefing = briefing, Draft = held ? DraftOf(sessionId) : null,
+            Brief = extras.Brief, Preface = ChatMessage.Bound(preface), Briefing = extras.Browser, Draft = extras.Draft,
         };
-        return held ? WithProcess(sessionId, composed) : composed;
-    }
-
-    private WorkflowDraftTold? DraftOf(string sessionId)
-    {
-        if (!context.Drafts.TryRemove(sessionId, out var draft)) return null;
-        if (draft.Palette is not { } palette) return draft;
-        var told = context.Palettes.TryGetValue(sessionId, out var digest) && digest == palette.Digest;
-        context.Palettes[sessionId] = palette.Digest;
-        return told ? draft with { Palette = palette with { Text = null } } : draft;
+        return (held ? WithProcess(sessionId, composed) : composed, extras);
     }
 
     /// <summary>
