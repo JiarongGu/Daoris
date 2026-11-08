@@ -58,7 +58,7 @@ public sealed record TreesTaken(IReadOnlyList<(string Repository, string? Worksp
 /// workspace by: the driver cannot reference the modules. Both are held to one table,
 /// <c>Daoris.Desktop.Driver.Tests/fixtures/checkout-scope.json</c>; <c>TreesCommandTests</c> reads it row for row.</para>
 /// </remarks>
-[CommandGroup("tree", "list", "remove", "clean", "land", "state", "sync")]
+[CommandGroup("tree", "list", "remove", "clean", "land", "state", "sync", "build")]
 public static class TreesCommand
 {
     /// <summary>What the words after <c>trees</c> ask of a look, or null with what is wrong with them.</summary>

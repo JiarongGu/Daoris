@@ -32,22 +32,21 @@ internal static class PoolClearing
     }
 
     /// <summary>
-    /// The outputs at the slot's present commit, and the intermediates where <paramref name="toolchainMoved"/>, renamed into the set-aside
-    /// folder of <paramref name="from"/>, each at its own relative place, the folder marked as <paramref name="line"/>'s before the first
-    /// rename. A rename refused, because something holds the top, moves back what moved, in reverse, and answers the top held: a full
-    /// move-back leaves no folder and no mark, and one that left a top keeps both, so the folder is held for the line and gathered at its finish.
+    /// Exactly the plan's tops moved, reading no rule (its outputs, its listed-again entries, and where <paramref name="toolchainMoved"/> its intermediates and bases),
+    /// into its set-aside folder marked as <paramref name="line"/>'s first, a base under a moved top forgotten with its marker. A rename refused, because something holds
+    /// the top, moves back what moved, in reverse, and answers the top held: a full move-back leaves no folder and no mark, and one that
+    /// left a top keeps both, so the folder is held for the line and gathered at its finish.
     /// </summary>
     /// <param name="renaming">Called before each rename, forward and back.</param>
-    internal static async Task<PoolMoved> ClearAsync(PoolSite site, string slot, string from, string line, bool toolchainMoved, Func<string, string, Task>? renaming, CancellationToken ct)
+    internal static async Task<PoolMoved> ClearAsync(PoolSite site, string slot, TakePlan plan, string line, bool toolchainMoved, Func<string, string, Task>? renaming, CancellationToken ct)
     {
-        var head = await WorkingTree.HeadAsync(slot, ct).ConfigureAwait(false);
-        if (head is null) return PoolMoved.None;
-        var status = await FillJudgement.StatusAsync(slot, ignored: true, ct).ConfigureAwait(false);
-        var sorted = await SlotIgnored.ReadAsync(site, slot, status, head, ct).ConfigureAwait(false);
-        IReadOnlyList<string> moving = toolchainMoved ? [.. sorted.Outputs, .. sorted.Intermediates] : sorted.Outputs;
+        var relisted = await PlanRelisting.MovingAsync(site.Home, slot, plan, toolchainMoved, ct).ConfigureAwait(false);
+        IReadOnlyList<string> moving = toolchainMoved
+            ? [.. plan.Outputs, .. plan.Intermediates, .. plan.Bases.Select(each => each.Path), .. relisted]
+            : [.. plan.Outputs, .. relisted];
         if (moving.Count == 0) return PoolMoved.None;
 
-        var aside = Path.Combine(AsideRoot(site), $"{from}-{DateTimeOffset.UtcNow.ToString(TreeSetAside.SetAsideStamp, System.Globalization.CultureInfo.InvariantCulture)}");
+        var aside = plan.Aside;
         if (line.Length > 0)
         {
             Directory.CreateDirectory(AsideRoot(site));
@@ -71,6 +70,7 @@ internal static class PoolClearing
             }
         }
 
+        TreeBases.Forget(site.Home, slot, aside, moving);
         return new PoolMoved(moving, aside);
     }
 
@@ -113,6 +113,6 @@ internal static class PoolClearing
     }
 
     /// <summary>The folder a repository's set-aside folders are made in, beside the ones a tidy makes.</summary>
-    private static string AsideRoot(PoolSite site) =>
+    internal static string AsideRoot(PoolSite site) =>
         Path.Combine(DaorisHome.Entry(site.Home, HomeEntry.Trees), TreeSetAside.SetAsideFolder, site.Workspace, site.Repository);
 }

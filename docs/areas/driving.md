@@ -206,8 +206,25 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they start wi
     a folder without what lies under it (`P/*`), which is read as written. The person's file is rewritten in git's form once none
     of its paths is read as written, its first form set aside beside it; until then the Files tab names each such path with its
     two wordings, one press words them all, and no other edit is written. A slot's ignored tops are sorted by each rule's `take`,
-    a `base` set aside with the outputs until a build can release it, and a top holding a recorded copy is partitioned: the copy
-    is Daoris's own while its hash holds, and every other entry under it is sorted as a path of its own. The floor is read over all: a tracked path is git's, a top
+    and a top holding a recorded copy is partitioned: the copy is Daoris's own while its hash holds, and every other entry under it
+    is sorted as a path of its own. A take reads its plan once, in its claim before the switch, from the rules at its start
+    (`TakePlans`): a top inside which the start tracks a path is listed again after the switch and sorted entry by entry, never moved
+    whole (`PlanRelisting`); a `base` top beside one project file keeps the folders of the configurations that project declares
+    (`BaseProducers`: its own `Configurations`, else the nearest `Directory.Build.props`'s, else Debug and Release) as the previous
+    line's build base, each recorded in the tree's files record (`TreeBase`: its folder, the line, the commit, the moment, the
+    producer) and marked `.daoris-base` (`BaseMarker`), every other entry under it set aside, and a top beside no project file or
+    several set aside whole; the clearing moves exactly the plan's tops, the bases too where the toolchain moved, and the undo takes
+    back the bases its claim wrote (`TreeBases`). A base is released only by `daoris driver trees build <path>` (`TreeBaseBuilds`),
+    which builds its producer with `dotnet build -c <configuration>` in the project's folder under the machine's admission, asks
+    MSBuild in that run for its `FileWrites` and `FileWritesShareable` items (`BuildAccounts`, held whole on a build with nothing to
+    do by `BuildAccountProcessTests`), sets aside with the previous line's every entry under the base that account does not name
+    (`BaseTrim`), and lets the record go before the marker; any other exit releases nothing, and a restore, a gate's step or a
+    `--no-build` never comes to it. The runners this repository integrates refuse a path under a standing marker through
+    `tools/tree-base.mjs` (`run`'s and `restart`'s four hosts, proof-kit's three paths, the family rehearsal's and the e2e host's
+    HTTP host), every builder before them builds through its `build` (`tools/desktop.mjs build`, the MCP host among them, and
+    `test:web:e2e`), the product's walking-up locators (`ServiceHostLocator`, `KnowledgeConnector`) pass over a marked
+    workspace build, and `tools/tree-base.test.mjs` holds every site of the tracked code that reads a build output guarded or exempt
+    for a reason it checks. A command typed into a shell is unmanaged and refused by none of them. The floor is read over all: a tracked path is git's, a top
     that is or holds another repository, a linked worktree or a bare repository's shape is `repository`, and a harness's or
     an editor's settings are never copied. The person's `deny`, `allow` and `ask` over `run`, `copy` and `share` are empty by
     default; a `files.json` that does not read holds every act as an ask and is never written over. `daoris files` and the repository

@@ -90,9 +90,9 @@ public static class ServiceHostLocator
             var project = Path.Combine(directory.FullName, "src", "Daoris.Service", "Daoris.Service.Http");
             foreach (var flavour in new[] { "Debug", "Release" })
             {
-                candidates.Add(new(
-                    Path.Combine(project, "bin", flavour, "net10.0", ExecutableName),
-                    project));
+                var built = Path.Combine(project, "bin", flavour, "net10.0", ExecutableName);
+                if (BaseMarker.Above(built) is not null) continue;
+                candidates.Add(new(built, project));
             }
         }
 

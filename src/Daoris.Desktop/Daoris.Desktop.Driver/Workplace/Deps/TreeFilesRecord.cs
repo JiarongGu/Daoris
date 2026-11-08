@@ -45,6 +45,8 @@ internal sealed record TreeFilesState(bool Unworked, bool HookOwed, IReadOnlyLis
     /// <summary>The commit HEAD stood at before the switch that owes the hook; null for the null id.</summary>
     internal string? HookFrom { get; init; }
 
+    internal IReadOnlyList<TreeBase> Bases { get; init; } = [];
+
     internal TreePlacement? Of(string path) => Placements.FirstOrDefault(each => string.Equals(each.Path, path, StringComparison.Ordinal));
 
     internal DependencyGroup? GroupOf(string path) => Groups.FirstOrDefault(group => group.Members.Contains(path, StringComparer.Ordinal));
@@ -126,6 +128,7 @@ internal static class TreeFilesRecord
                 Groups = groups,
                 Copies = copies,
                 HookFrom = root.TryGetProperty("hookFrom", out var from) ? from.GetString() : null,
+                Bases = TreeBase.FromJson(root),
             };
         }
         catch (Exception error) when (error is IOException or UnauthorizedAccessException or JsonException or InvalidOperationException
@@ -240,6 +243,7 @@ internal static class TreeFilesRecord
         var body = new JsonObject { ["unworked"] = state.Unworked, ["hookOwed"] = state.HookOwed, ["placements"] = placements, ["groups"] = groups };
         if (state.Copies.Count > 0) body["copies"] = new JsonObject(state.Copies.Select(each => KeyValuePair.Create(each.Key, (JsonNode?)each.Value)));
         if (state.HookFrom is { } hookFrom) body["hookFrom"] = hookFrom;
+        if (state.Bases.Count > 0) body["bases"] = TreeBase.ToJson(state.Bases);
         AtomicFile.WriteText(path, body.ToJsonString());
     }
 }

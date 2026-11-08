@@ -37,6 +37,7 @@ internal sealed class PoolUndo(TreePool pool, PoolSeams seams)
             if (put == Put.Refused) return await StuckAsync(site, git, claim, fence, slot, Words(why, said), ct).ConfigureAwait(false);
             if (await ReleaseRefusalAsync(slot, put, ct).ConfigureAwait(false) is { } held) return await StuckAsync(site, git, claim, fence, slot, Words(why, held), ct).ConfigureAwait(false);
 
+            TreeBases.Undo(site.Home, slot.Path, claim.Job);
             var kept = claim.Kind == TreeClaimKinds.Take ? await DeleteOwnBranchAsync(site, claim, slot, ct).ConfigureAwait(false) : null;
             await PoolLocks.SetAsync(git, slot.Path, PoolLocks.Free, ct).ConfigureAwait(false);
             pool.Complete(fence, await new SlotStanding(slot, claim).ReadAsync(ct).ConfigureAwait(false));
