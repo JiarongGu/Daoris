@@ -58,12 +58,12 @@ public static class ActorOpenings
         }
 
         /// <summary>
-        /// Where a quest marked design started, whose order it ran on: the role taking <c>design</c> by its name,
+        /// Where a quest marked design or exact started, whose order it ran on: the role taking <paramref name="work"/> by its name,
         /// or Build while none does; kept in the local conversation's record beside the opening, like the actor line.
         /// </summary>
-        internal static void SayDesign(ISessionEvents events, string sessionId, string role)
+        internal static void SayWeighted(ISessionEvents events, string sessionId, string work, string role)
         {
-            var line = RotatedOpening.DesignLine(role);
+            var line = work == ParticipantWork.Exact ? RotatedOpening.ExactLine(role) : RotatedOpening.DesignLine(role);
             events.Keep(sessionId, new SessionEvent { Kind = SessionEventKind.Note, Text = line.Note, Parts = line.Parts }, say: null);
         }
 
@@ -90,6 +90,8 @@ public static class ActorOpenings
         }
 
         internal static Noted DesignLine(string role) => Noted.Of(StartNoteCodes.OpeningDesign, $"Design work: it ran on {role}'s order.", ("role", role));
+
+        internal static Noted ExactLine(string role) => Noted.Of(StartNoteCodes.OpeningExact, $"Exact build: it ran on {role}'s order.", ("role", role));
 
         /// <summary>
         /// <c>Ran as Build's choice 2, claude-code-acp · sonnet: choice 1, claude-code-acp · opus: …</c>, by code; null where the

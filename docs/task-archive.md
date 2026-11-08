@@ -5,6 +5,12 @@ the per-task record. Entries preserve their original wording so the archive stay
 
 ---
 
+## MODELROLE1i — an exact build starts on its own role (2026-11-08)
+
+> **MODELROLE1i** (D205 §14's filed row i): Outcome: a quest weighted `exact` starts on the seeded *Exact build* role (Claude Code · `sonnet`, the account's default effort, the reference's build-exact row, the quest naming no model), read as Design is read: `Driver.StartWork` takes the weight, a home from before it reads the seed, removed its work falls to Build's, a workflow step may name it, and the opening says whose order it ran on (`opening.exact`, English and Chinese). A judgement quest keeps Design's and an unmarked one Build's. The row's wait for a batch of measurements was not kept: the weight is the publisher's to set and the person's to unset by removing the role. `sonnet[1m]` is left to the person's choice from their account's offers, since the seed cannot read an account's door. Tests: `ExactRoleTests`, the work-code theories, the service twin's fixtures and the web's note and call table. The installed proof of an exact quest on its role goes with the installed batch.
+
+---
+
 ## CONVREV1 to CONVREV4 — a conversation's limit and transient moves count under the line, a driven word keeps its sender, a held wake is asked again (2026-11-08)
 
 > **CONVREV1 / CONVREV2 / CONVREV3 / CONVREV4** (conversations review): Outcome: all four held as the rows said, each with a regression test seen to fail first. CONVREV1 (96ab036726): `LimitMove` reads the line key once and `LimitRuled.Holds` and `Moved` count under it, as the transient move does (`LimitMoveStoreTests`). CONVREV2 (f7f063c411): `TransientMove` judges the hand-over as the take does before beginning, counts only after the begin, and supersedes the record where the bound refuses (`TransientMoveTests`). CONVREV3 (8823633dbd): `DrivenCourse.WordsOf` reads authors through `BriefedMove.AuthorOf` (`LineFactsTests`). CONVREV4 (67d544359a): a wake the go-on held off marks the stage dirty so the next look asks again at the same stamp (`LimitWaitsTests`, a hand-over's box as the seam).

@@ -62,6 +62,13 @@ public static partial class ActorSuggestion
 
         // The seeded Design role runs the reference's judgement row, so a change to it moves the seed with it.
         if (judgement is not null && ActorChoices.DesignSeed != judgement) found.Add($"design's seed is {ActorChoices.DesignSeed.Said}, the reference says {judgement.Said}.");
+
+        // The seeded Exact build role runs the build-exact row, whose effort `default` is the account's: no effort is passed.
+        if (Read("build-exact") is { } exact && ActorChoices.ExactSeed != exact with { Effort = exact.Effort == "default" ? null : exact.Effort })
+        {
+            found.Add($"exact's seed is {ActorChoices.ExactSeed.Said}, the reference says {exact.Said}.");
+        }
+
         return found;
     }
 

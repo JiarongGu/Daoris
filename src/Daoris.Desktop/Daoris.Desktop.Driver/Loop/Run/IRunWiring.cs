@@ -148,8 +148,8 @@ internal interface IRunWiring
     /// <summary>A park's question the disk would not let go at a run's opening or conclusion, logged.</summary>
     void Questions(string sessionId, QuestionSettle settled);
 
-    /// <summary>The name of the role a design quest's start took, as its opening says it; null where the catalogue will not read.</summary>
-    string? DesignRoleName(Consideration start, string? named);
+    /// <summary>The name of the role a design or exact quest's start of <paramref name="work"/> took, as its opening says it; null where the catalogue will not read.</summary>
+    string? WeightedRoleName(Consideration start, string work, string? named);
 
     /// <summary>The lines resumed in their own conversation on a limit's word, by quest, which the look says once it sees the line go on.</summary>
     System.Collections.Concurrent.ConcurrentDictionary<string, string> LimitResumed { get; }

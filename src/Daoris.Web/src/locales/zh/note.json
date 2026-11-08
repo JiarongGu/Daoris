@@ -206,6 +206,7 @@
   "note.opening.chosen": "{{actor}}的策略选择了这一项：{{said}}。",
   "note.opening.moved-choice": "已从{{from}}改用其他选择：{{said}}。",
   "note.opening.design": "设计工作：按{{role}}的顺序运行。",
+  "note.opening.exact": "精确开发：按{{role}}的顺序运行。",
   "note.opening.moved-off": "同一次启动移到了这里：`{{account}}` 因登录被拒而拒绝了它。",
   "note.opening.moved-off-model": "同一次启动移到了这里：`{{agent}}` 在它运行的账户上拒绝了 `{{model}}`。",
   "note.chat.workflow": "这个对话的工作遵循 `{{owner}}` 选定的工作流 `{{workflow}}` v{{version}}。",

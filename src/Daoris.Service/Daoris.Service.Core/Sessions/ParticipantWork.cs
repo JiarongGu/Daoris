@@ -15,8 +15,8 @@ namespace Daoris.Knowledge;
 /// <see cref="Intake"/>; the Ask Daoris repository is <see cref="AskDaoris"/>; a chat is <see cref="Chat"/>; otherwise <see cref="Build"/>. A
 /// co-worker is a relation, <c>serves</c>, never a work of its own: a partner's marks are a helper's with a piece. An
 /// empty mark is none, as an absent one is.</para>
-/// <para><see cref="Design"/> and <see cref="Brainstorm"/> are in the closed set and read from no marks: a quest's session of design or
-/// decision work is built, admitted and read as <see cref="Build"/>, and a brainstorm's pass has no record.</para>
+/// <para><see cref="Design"/>, <see cref="Exact"/> and <see cref="Brainstorm"/> are in the closed set and read from no marks: a quest's session of design,
+/// decision or exact work is built, admitted and read as <see cref="Build"/>, and a brainstorm's pass has no record.</para>
 /// </remarks>
 public static class ParticipantWork
 {
@@ -25,6 +25,9 @@ public static class ParticipantWork
 
     /// <summary>A driven quest's session of design or decision work: admitted and called exactly as <see cref="Build"/>, read as it from the marks.</summary>
     public const string Design = "design";
+
+    /// <summary>A driven quest's session of a build its publisher marked exact: admitted and called exactly as <see cref="Build"/>, read as it from the marks.</summary>
+    public const string Exact = "exact";
 
     /// <summary>A conversation the person holds.</summary>
     public const string Chat = "chat";
@@ -51,7 +54,7 @@ public static class ParticipantWork
     /// <summary>A supervisor's one read-only turn, told by the attempt it decides for, before every other mark.</summary>
     public const string Supervise = "supervise";
 
-    public static IReadOnlyList<string> Codes { get; } = [Build, Design, Chat, AskDaoris, Intake, Help, Partner, Review, Brainstorm, Supervise];
+    public static IReadOnlyList<string> Codes { get; } = [Build, Design, Exact, Chat, AskDaoris, Intake, Help, Partner, Review, Brainstorm, Supervise];
 
     /// <summary>
     /// The work <paramref name="session"/> is opened for, from its marks; null where it has none here, another machine's record.

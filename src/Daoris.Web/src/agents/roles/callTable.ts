@@ -33,6 +33,7 @@ const without = (tools: readonly string[], left: readonly string[]) => tools.fil
 const COLUMNS: Record<string, Column> = {
   build: { only: [...CORE, ...WORKING] },
   design: { only: [...CORE, ...WORKING] },
+  exact: { only: [...CORE, ...WORKING] },
   chat: { only: [...CORE, ...CONVERSING] },
   // Neither works in a repository of its own, so neither has a helper to ask.
   intake: { only: without(CORE, [...MEMORY_CHANGES, 'helper_ask']) },
@@ -62,9 +63,9 @@ const COLUMNS: Record<string, Column> = {
   unread: { only: READS },
 };
 
-/** The ten works, each with the table's columns that place it (a brainstorm is placed by its turn). */
+/** The eleven works, each with the table's columns that place it (a brainstorm is placed by its turn). */
 export const WORK_COLUMNS: Readonly<Record<string, readonly string[]>> = {
-  build: ['build'], design: ['design'], chat: ['chat'], intake: ['intake'], 'ask-daoris': ['ask-daoris'], help: ['help'],
+  build: ['build'], design: ['design'], exact: ['exact'], chat: ['chat'], intake: ['intake'], 'ask-daoris': ['ask-daoris'], help: ['help'],
   partner: ['partner'], review: ['review'], supervise: ['supervise'], brainstorm: ['brainstorm:generator', 'brainstorm:synthesizer'],
 };
 

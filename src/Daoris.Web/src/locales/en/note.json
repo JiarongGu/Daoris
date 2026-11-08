@@ -206,6 +206,7 @@
   "note.opening.chosen": "{{actor}}'s policy chose this: {{said}}.",
   "note.opening.moved-choice": "Moved here from {{from}}: {{said}}.",
   "note.opening.design": "Design work: it ran on {{role}}'s order.",
+  "note.opening.exact": "Exact build: it ran on {{role}}'s order.",
   "note.opening.moved-off": "The same start moved here: `{{account}}` refused it for its sign-in.",
   "note.opening.moved-off-model": "The same start moved here: `{{agent}}` refused `{{model}}` on the account it ran on.",
   "note.chat.workflow": "This conversation's work follows `{{workflow}}` v{{version}}, the workflow `{{owner}}` chose.",

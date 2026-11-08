@@ -252,11 +252,15 @@ public sealed record StaffPolicy(string Rule, IReadOnlyList<StaffChoice> Choices
         return null;
     }
 
-    /// <summary>The works a choice may take: the role's, and design where it takes build, as a design step falls to build's role.</summary>
+    /// <summary>The works a choice may take: the role's, and design and exact where it takes build, as a design or exact step falls to build's role.</summary>
     private static HashSet<string> Works(RoleRecord role)
     {
         var works = new HashSet<string>(role.Takes, StringComparer.Ordinal);
-        if (works.Contains(RoleWork.Build)) works.Add(RoleWork.Design);
+        if (works.Contains(RoleWork.Build))
+        {
+            works.Add(RoleWork.Design);
+            works.Add(RoleWork.Exact);
+        }
         return works;
     }
 

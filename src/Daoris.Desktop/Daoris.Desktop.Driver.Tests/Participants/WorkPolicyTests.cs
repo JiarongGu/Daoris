@@ -90,6 +90,7 @@ public sealed class WorkPolicyTests
     [Theory]
     [InlineData(ParticipantWork.Build)]
     [InlineData(ParticipantWork.Design)]
+    [InlineData(ParticipantWork.Exact)]
     [InlineData(ParticipantWork.Chat)]
     public void A_working_sessions_policy_carries_the_hand_overs_consent(string work)
     {

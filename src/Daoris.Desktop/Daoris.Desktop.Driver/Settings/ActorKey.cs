@@ -16,8 +16,8 @@ public sealed record ActorChoice(string Agent, string? Model = null, string? Eff
 /// </summary>
 public static class ActorKey
 {
-    /// <summary>The nine actors' wire ids, in the screen's order.</summary>
-    public static IReadOnlyList<string> Ids { get; } = ["build", "design", "intake", "opinion", "helper", "partner", "brainstorm", "ask-daoris", "chat"];
+    /// <summary>The ten actors' wire ids, in the screen's order.</summary>
+    public static IReadOnlyList<string> Ids { get; } = ["build", "design", "exact", "intake", "opinion", "helper", "partner", "brainstorm", "ask-daoris", "chat"];
 
     /// <summary>The most choices an actor holds: the most voices a brainstorm takes (<c>BrainstormDesk.MostAgents</c>).</summary>
     public const int Most = 4;

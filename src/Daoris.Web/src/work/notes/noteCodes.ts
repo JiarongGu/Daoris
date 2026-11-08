@@ -272,6 +272,7 @@ export const NOTE_CODES: Readonly<Record<string, NoteCode>> = {
   'opening.moved-choice': { values: ['from', 'said'] },
   // A quest marked design ran on the order of the role taking design, Build's while none does; the role's name as written.
   'opening.design': { values: ['role'] },
+  'opening.exact': { values: ['role'] },
   // The account a start is refused for its sign-in and moved off, as named.
   'opening.moved-off': { values: ['account'] },
   // The agent and the model a start is refused and moved off; the account is not named.
