@@ -5,6 +5,21 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-11-08 - The canvas drew every card again on each zoom step and its toolbar on every frame
+
+- **Symptom:** `large/Hundred` and `large/Thousand` of `measured/large.spec.ts` failed their frame budget in CI when run alone after the other
+  gates (p95 32.8 ms against 25.05 and 54.3 against 49.95); the smaller graph was further over than the larger.
+- **Root cause:** the spec's own tree held the cost from the start: `PositionedWorld` (fe8a209fe4) drew every mounted card and edge as inline
+  elements, and `PositionedCanvas` hands it a new scene when the snapped frame key changes (a zoom step crosses an eighth of an octave), so
+  on 12 of the gesture's 120 frames all 100 cards were built and reconciled, about 13 ms each in the page's development build; those 10% of
+  frames are above the 95th percentile by themselves, so the figure sat on the machine's load. `CanvasToolbar` (2a3bc11dfb) was drawn again
+  on every frame, since `Canvas` passes it a new `acts` object each render, for a percentage that changes on zoom frames only. No commit
+  between 58c8861cc8, where the spec first exists, and the tip changed the figure: both measured within load's spread beside each other.
+- **Fix:** each card and edge is a memoized unit of primitive props (`WorldNode.tsx`), and the toolbar takes stable acts and draws again
+  only when what it shows changes (`useStableActs`).
+- **Verify:** the profile's script time per frame fell from 10.5 to 7.8 ms at 100 nodes; `PositionedWorld.test.tsx` red first (nine card
+  draws where three, three where one), `CanvasToolbar.test.tsx`; the spec alone: Hundred 21.3 ms, Thousand 33.2 ms.
+
 ## 2026-11-08 - The review graph's equality test failed on the kept branch listing (SCOPEVERIFY1)
 
 - **Symptom:** twelve of `ReviewGraphTodayTests`' twenty cases failed on main: "today's chain ran `git for-each-ref --sort=-committerdate ...`,

@@ -5,7 +5,7 @@ import {
 import { cn } from '../../lib/cn';
 import { isComposing } from '../../lib/composing';
 import { useTall } from '../useWidth';
-import { CanvasToolbar, type SizingActs } from './CanvasToolbar';
+import { CanvasToolbar, type SizingActs, useStableActs } from './CanvasToolbar';
 import { boxSelect, worldRect } from './gesture';
 import { Minimap } from './Minimap';
 import { minimapWanted, rememberMinimap, wantsMinimap } from './minimapRule';
@@ -434,7 +434,7 @@ export function Canvas({
   };
   const offered = minimap !== null && world !== null && wantsMinimap(world, { w: width ?? 0, h: cap });
   const middle = (): Point => ({ x: (width ?? 0) / 2, y: heightAt(viewRef.current.k) / 2 });
-  const acts: SizingActs = {
+  const sizing: SizingActs = {
     zoomIn: () => commit(zoomAbout(viewRef.current, viewRef.current.k * 1.25, middle(), bounds)),
     zoomOut: () => commit(zoomAbout(viewRef.current, viewRef.current.k / 1.25, middle(), bounds)),
     fit: fitAll,
@@ -443,6 +443,7 @@ export function Canvas({
     zoomTo: (k) => commit(zoomAbout(viewRef.current, k, middle(), bounds)),
     minimap: offered ? { on: mapOn, toggle: () => { setMapOn(!mapOn); rememberMinimap(!mapOn); } } : null,
   };
+  const acts = useStableActs(sizing);
 
   const onKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
     if (!on || isComposing(event)) return;
