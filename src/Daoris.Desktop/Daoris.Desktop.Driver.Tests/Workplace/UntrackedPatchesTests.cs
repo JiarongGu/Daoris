@@ -24,14 +24,18 @@ public sealed class UntrackedPatchesTests : LandedFixture
     public async Task Each_untracked_files_patch_is_todays_byte_for_byte_in_two_starts()
     {
         var (tree, gitDir) = await TreeAsync();
-        // A tracked file a glob of `[br].txt` would match: read literally, only the untracked one is.
+        // A tracked file a glob of `[br].txt` would match: read literally, only the untracked one is. A clean filter and a textconv run.
         await CommitAsync(tree, "b.txt", "tracked\n", "a file a glob would find");
+        await CommitAsync(tree, ".gitattributes", "*.up filter=upper\n*.tc diff=marked\n", "programs for two kinds");
+        await GitAsync(tree, "config", "filter.upper.clean", "tr a-z A-Z");
+        await GitAsync(tree, "config", "diff.marked.textconv", "sed s/^/marked:/");
+        await GitAsync(tree, "config", "core.autocrlf", "true");
         var names = new List<string>
         {
             "text.txt", "a file.txt", "名前.txt", "café.txt", "[br].txt", "-dash.txt", "empty.txt", "nest/deep/n.txt", "crlf.txt",
-            "nonl.txt", "bin.dat", "big.txt", "sub/inner.txt",
+            "nonl.txt", "bin.dat", "big.txt", "sub/inner.txt", "shout.up", "shown.tc",
         };
-        if (!OperatingSystem.IsWindows()) names.AddRange(["*star.txt", ":colon.txt", "q\"uote.txt"]);
+        if (!OperatingSystem.IsWindows()) names.AddRange(["*star.txt", "?q.txt", ":colon.txt", "q\"uote.txt", "new\nline.txt"]);
         foreach (var name in names)
         {
             Directory.CreateDirectory(Path.GetDirectoryName(Path.Combine(tree, name))!);
@@ -52,6 +56,8 @@ public sealed class UntrackedPatchesTests : LandedFixture
 
         Assert.Equal(JsonSerializer.Serialize(await TodayAsync(tree)), JsonSerializer.Serialize(read));
         Assert.Contains(read!.Files, file => file.Path == "text.txt" && file.Patch is not null && file.Added == 2);
+        Assert.Contains(read.Files, file => file.Path == "shout.up" && file.Patch!.Contains("+THE FILE SHOUT.UP", StringComparison.Ordinal));
+        Assert.Contains(read.Files, file => file.Path == "shown.tc" && file.Patch!.Contains("+marked:the file", StringComparison.Ordinal));
         Assert.DoesNotContain(read.Files, file => file.Path == "b.txt");
         Assert.Equal(2, count.In(GitBudget.Untracked));
         Assert.Equal(bytes, await File.ReadAllBytesAsync(index));
@@ -92,6 +98,23 @@ public sealed class UntrackedPatchesTests : LandedFixture
 
         Assert.Equal(JsonSerializer.Serialize(await TodayAsync(tree)), JsonSerializer.Serialize(read));
         Assert.Equal(["a.txt"], read!.Files.Where(file => file.Patch is not null).Select(file => file.Path));
+        AssertNothingLeft(gitDir);
+    }
+
+    [Fact]
+    public async Task A_read_its_caller_ended_leaves_no_private_index()
+    {
+        var (tree, gitDir) = await TreeAsync();
+        await File.WriteAllTextAsync(Path.Combine(tree, "a.txt"), "read\n");
+        using var ended = new CancellationTokenSource();
+        using (var untracked = new UntrackedPatches(tree, ["a.txt"], new UntrackedFold(new TreeDiff([], null, "HEAD"))))
+        {
+            Assert.True(await untracked.IntentsAsync(CancellationToken.None));
+            Assert.Contains(Directory.EnumerateFiles(gitDir).Select(Path.GetFileName), name => name!.StartsWith("index.daoris-review-", StringComparison.Ordinal));
+            await ended.CancelAsync();
+            await Assert.ThrowsAnyAsync<OperationCanceledException>(() => untracked.ReadAsync(ended.Token));
+        }
+
         AssertNothingLeft(gitDir);
     }
 
