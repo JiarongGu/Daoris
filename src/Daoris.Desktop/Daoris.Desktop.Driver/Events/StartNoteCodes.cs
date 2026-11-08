@@ -10,8 +10,23 @@ public static class StartNoteCodes
     public static readonly NoteCode StartedTree = new("started.tree", ["branch", "basedOn"]);
     public static readonly NoteCode StartedTreeUnrecorded = new("started.tree-unrecorded", []);
 
-    // A tree its checkout's dependencies were copied into (`started.tree` stays as recorded); and why a project's were not, each
-    // reason its own line, after the opening.
+    // What the files stage did with each dependency and the tree's other files, a line each, after the record opens.
+    public static readonly NoteCode StartedDepsKept = new("started.deps-kept", ["path"]);
+    public static readonly NoteCode StartedDepsPlaced = new("started.deps-placed", ["path", "install"]);
+    public static readonly NoteCode StartedDepsInstalled = new("started.deps-installed", ["path", "install"]);
+    public static readonly NoteCode StartedDepsUnstored = new("started.deps-unstored", ["path", "why"]) { Why = NoteCodes.Deps };
+    public static readonly NoteCode StartedDepsUnplaced = new("started.deps-unplaced", ["path", "why"]) { Why = NoteCodes.Deps };
+    public static readonly NoteCode StartedDepsLeft = new("started.deps-left", ["path", "why"]) { Why = NoteCodes.Deps };
+    // An install that changed git's own hooks or configuration for the repository, named.
+    public static readonly NoteCode StartedDepsCommon = new("started.deps-common", ["path", "changed"]);
+    public static readonly NoteCode StartedFilesWaiting = new("started.files-waiting", ["count", "repository"]);
+    public static readonly NoteCode StartedFilesUnread = new("started.files-unread", ["repository", "why"]);
+    public static readonly NoteCode StartedFilesStopped = new("started.files-stopped", []);
+    public static readonly NoteCode StartedFilesWrittenBack = new("started.files-written-back", ["written"]);
+    public static readonly NoteCode StartedFilesFailed = new("started.files-failed", ["why"]);
+
+    // Written by openings that copied the checkout's dependencies before the store replaced the copy, and read while those
+    // sessions' records stand; nothing writes them now.
     public static readonly NoteCode StartedTreeCopied = new("started.tree-copied", ["branch", "basedOn", "copied"]);
     public static readonly NoteCode StartedUncopiedManager = new("started.uncopied-manager", ["modules"]);
     public static readonly NoteCode StartedUncopiedMoved = new("started.uncopied-moved", ["modules"]);

@@ -29,7 +29,7 @@ public sealed class TreeLeftoversTests : IDisposable
         var emptyOutside = parts.Skip(level).Aggregate(outside, Path.Combine);
         Directory.CreateDirectory(emptyOutside);
         Directory.CreateDirectory(Path.GetDirectoryName(link)!);
-        TreeDependencies.Link(link, outside);
+        DependencyLinks.Link(link, outside);
         var ordinary = Path.Combine(trees.TreesRoot, "ordinary", "engine", "s-empty");
         if (level > 0) Directory.CreateDirectory(ordinary);
 

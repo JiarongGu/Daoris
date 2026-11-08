@@ -61,7 +61,7 @@ public sealed record PluginState(IReadOnlyList<string> Disabled)
     }
 
     /// <exception cref="DriverException">The file could not be read, so an edit would rewrite it whole.</exception>
-    private static PluginState Editable(string home) =>
+    internal static PluginState Editable(string home) =>
         Load(home) is { Problem: { } problem }
             ? throw new DriverException(
                 $"{problem}, so this was not changed — writing it now would switch back on every plugin "

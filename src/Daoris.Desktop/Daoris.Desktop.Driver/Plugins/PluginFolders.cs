@@ -276,8 +276,11 @@ internal static class PluginFolders
 
         var install = Path.TrimEndingDirectorySeparator(Path.GetFullPath(folder));
         var kept = data ?? Path.Combine(Path.GetDirectoryName(install)!, PluginCatalog.DataFolder, Path.GetFileName(install));
-        return Path.GetFullPath(text
+        var replaced = text
             .Replace(PluginCatalog.Placeholder, install, StringComparison.Ordinal)
-            .Replace(PluginCatalog.DataPlaceholder, kept, StringComparison.Ordinal));
+            .Replace(PluginCatalog.DataPlaceholder, kept, StringComparison.Ordinal);
+        return text.StartsWith(PluginCatalog.Placeholder, StringComparison.Ordinal) || text.StartsWith(PluginCatalog.DataPlaceholder, StringComparison.Ordinal)
+            ? Path.GetFullPath(replaced)
+            : replaced;
     }
 }

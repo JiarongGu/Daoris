@@ -134,7 +134,14 @@ public sealed class HookProcess : IHookChannel
     {
         var info = StartInfo(plugin, home);
         var hooks = plugin.Manifest.Hooks!;
-        Directory.CreateDirectory(plugin.Data);
+        try
+        {
+            Directory.CreateDirectory(plugin.Data);
+        }
+        catch (Exception error) when (error is IOException or UnauthorizedAccessException)
+        {
+            throw new DriverException($"plugin `{plugin.Manifest.Id}`'s data folder could not be made: {error.Message}");
+        }
 
         Process process;
         try

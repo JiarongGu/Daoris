@@ -58,6 +58,7 @@ public sealed class SystemSpaceTests : IDisposable
         Write(Path.Combine(engine, "Default", "Cookies"), 5);
         Write(Path.Combine(DaorisHome.Entry(_home, HomeEntry.Sessions), "s-1.events.jsonl"), 40);
         Write(Path.Combine(_home, "webview2", "EBWebView", "x"), 9);
+        Write(Path.Combine(DependencyStore.EntryOf(_home, "k1"), "files", "a.js"), 20);
         // Three bytes that read as choices: a file that does not read is the policy that keeps the most.
         File.WriteAllText(Write(DaorisHome.Entry(_home, HomeEntry.DriverConfig), 3), "{}\n");
     }
@@ -73,7 +74,7 @@ public sealed class SystemSpaceTests : IDisposable
 
         Assert.Equal(1, (int)space["schema"]!);
         Assert.Equal(
-            ["set-aside", "downloads", "browser-cache", "logs", "history", "trees", "sign-ins", "left-over", "rest"],
+            ["set-aside", "downloads", "deps", "browser-cache", "logs", "history", "trees", "sign-ins", "left-over", "rest"],
             space["kinds"]!.AsArray().Select(kind => (string?)kind!["id"]));
         Assert.All(space["kinds"]!.AsArray(), kind =>
         {
@@ -107,7 +108,7 @@ public sealed class SystemSpaceTests : IDisposable
         var bytes = SpaceKinds.Table.ToDictionary(kind => kind.Id, kind => (long?)KindOf(space, kind.Id)["bytes"]);
         Assert.Equal(new Dictionary<string, long?>
         {
-            ["set-aside"] = 2000, ["downloads"] = 300, ["browser-cache"] = 70, ["logs"] = 50, ["history"] = 40, ["trees"] = 1000,
+            ["set-aside"] = 2000, ["downloads"] = 300, ["deps"] = 20, ["browser-cache"] = 70, ["logs"] = 50, ["history"] = 40, ["trees"] = 1000,
             ["sign-ins"] = 5, ["left-over"] = 9, ["rest"] = 3,
         }, bytes);
         Assert.All(space["kinds"]!.AsArray(), kind =>
@@ -200,6 +201,25 @@ public sealed class SystemSpaceTests : IDisposable
         Assert.Equal((2, 75L), ((int)next["count"]!, (long)next["bytes"]!));
     }
 
+    /// <summary>The dependency store's next is its entries placed longest ago, gone thirty days after their last placement.</summary>
+    [Fact]
+    public void The_deps_next_is_the_least_recently_placed_entries_at_thirty_days()
+    {
+        foreach (var (key, day, bytes) in new[] { ("old", 1, 50), ("same", 1, 25), ("new", 5, 80) })
+        {
+            var tree = Path.Combine(_home, "tree-" + key);
+            Write(Path.Combine(tree, "deps", "a.js"), bytes);
+            var manifest = DependencyManifest.Read(tree, "deps", [], out _);
+            Assert.True(DependencyStore.Seal(_home, key, tree, "deps", manifest, CancellationToken.None));
+            File.SetLastWriteTimeUtc(Path.Combine(DependencyStore.EntryOf(_home, key), "placed"), new DateTime(2026, 10, day, 6, 0, 0, DateTimeKind.Utc));
+        }
+
+        var next = KindOf(SystemSpace.Read(World()), "deps")["next"]!;
+
+        Assert.Equal(new DateTimeOffset(2026, 10, 31, 6, 0, 0, TimeSpan.Zero), DateTimeOffset.Parse((string)next["at"]!, System.Globalization.CultureInfo.InvariantCulture));
+        Assert.Equal((2, 75L), ((int)next["count"]!, (long)next["bytes"]!));
+    }
+
     /// <summary>§4.1, §9: each rule the card shows already runs, in its words' fields, each at its default where the person set none.</summary>
     [Fact]
     public void Each_kinds_rule_is_the_one_that_runs()
@@ -209,6 +229,7 @@ public sealed class SystemSpaceTests : IDisposable
 
         Assert.Equal(("days", "14", "false", "true"), (Rule("set-aside", "kind"), Rule("set-aside", "days"), Rule("set-aside", "whole"), Rule("set-aside", "default")));
         Assert.Equal(("days", "30", "true"), (Rule("logs", "kind"), Rule("logs", "days"), Rule("logs", "default")));
+        Assert.Equal(("days", "30", "10", "true"), (Rule("deps", "kind"), Rule("deps", "days"), Rule("deps", "gb"), Rule("deps", "default")));
         Assert.Equal("press", Rule("history", "kind"));
         Assert.Equal("proof", Rule("trees", "kind"));
         Assert.Equal(("own", "browser"), (Rule("browser-cache", "kind"), Rule("browser-cache", "whose")));

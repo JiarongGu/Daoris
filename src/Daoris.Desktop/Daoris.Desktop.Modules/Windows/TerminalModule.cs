@@ -199,6 +199,15 @@ public sealed class TerminalModule : ModuleBase, IDisposable
         var environment = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
         if (home is not null) environment[DaorisHome.Variable] = home;
 
+        // A visit to one of Daoris's trees hands it on, so the files stage there stops before anything of its own writes beside the person.
+        if (home is not null && !TreeVisit.Take(home, directory))
+        {
+            throw Refusals.Because(
+                Refusals.TerminalNotStarted,
+                "Daoris could not record that this tree is handed to a terminal, so it opened none there.",
+                ("shell", shell.Id), ("problem", "the tree's files record could not be written"));
+        }
+
         var open = new Open($"t{Guid.NewGuid():N}"[..9]);
         // The relay and the table entry come before the shell: a shell that prints and ends at once is
         // heard and told as surely as one that runs for an hour.

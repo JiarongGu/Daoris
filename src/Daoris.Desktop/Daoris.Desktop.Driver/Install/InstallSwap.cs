@@ -334,9 +334,9 @@ public sealed class InstallSwap(
             var source = Full(from);
             var target = Full(to);
             Directory.CreateDirectory(Path.GetDirectoryName(target)!);
-            MoveHeld(source, target);
             moves.Add(new SwapMove(from, to));
             Journal(record with { Moves = moves.ToList() });
+            MoveHeld(source, target);
         }
     }
 

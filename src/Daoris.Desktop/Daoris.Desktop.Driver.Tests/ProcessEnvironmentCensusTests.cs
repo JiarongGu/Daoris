@@ -35,6 +35,7 @@ public sealed class ProcessEnvironmentCensusTests
         ["Review/HeavyToolsProcessTests.cs"] = ("the product resolves the heavy tools on the process's PATH, and the stand-ins it finds are put first on it", null),
         ["Agents/SpawnInheritedTests.cs"] = ("what a spawn inherits of the process's environment is its subject: the variables are planted there", null),
         ["Agents/ProviderConformanceCases.cs"] = ("the conformance cases of what a spawn inherits plant each provider's variables and the run's home in the process", "Agents/ProviderConformanceEnvironmentTests.cs"),
+        ["Workplace/Deps/DependencyStoreTests.cs"] = ("a variable a dependency's `env` names, and one it does not, are planted in the process to show which reaches the key and the install", null),
         ["Plugins/PluginHostTokenTests.cs"] = ("the token a plugin's start passes on is read from the process's environment", null),
         ["Review/IntegrationRunnerCallTests.cs"] = ("a variable of the process's is planted to show the runner's gate environment leaves it out", null),
         ["Roles/SessionsCommandRoleTerminalTests.cs"] = ("the role key a terminal command holds is read from the process's environment", null),

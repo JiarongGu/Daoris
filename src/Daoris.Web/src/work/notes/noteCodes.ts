@@ -3,7 +3,7 @@
  * the step that chose a conversation's account (`note.opening.why.*`), or whose words a resumed conversation goes on
  * with (`note.resumed.why.*`), or why the person's words never reached it (`note.words.why.*`).
  */
-type Why = 'continue' | 'cooling' | 'opening' | 'resumed' | 'unreached' | 'handed' | 'helper' | 'handover' | 'partner';
+type Why = 'continue' | 'cooling' | 'opening' | 'resumed' | 'unreached' | 'handed' | 'helper' | 'handover' | 'partner' | 'deps';
 
 /**
  * A code the page words: the values its sentence says, its key where it is not `note.<code>`, the reasons a `why` names, and
@@ -112,6 +112,20 @@ export const NOTE_CODES: Readonly<Record<string, NoteCode>> = {
   'started.uncopied-link': { values: ['modules'] },
   'started.uncopied-unignored': { values: ['modules'] },
   'started.uncopied-failed': { values: ['modules'] },
+  // What the files stage did with each dependency and the tree's other files, after the record opens.
+  'started.deps-kept': { values: ['path'] },
+  'started.deps-placed': { values: ['path', 'install'] },
+  'started.deps-installed': { values: ['path', 'install'] },
+  'started.deps-unstored': { values: ['path', 'why'], why: 'deps' },
+  'started.deps-unplaced': { values: ['path', 'why'], why: 'deps' },
+  'started.deps-left': { values: ['path', 'why'], why: 'deps' },
+  // An install that changed git's own hooks or configuration for the repository, named.
+  'started.deps-common': { values: ['path', 'changed'] },
+  'started.files-waiting': { values: ['count', 'repository'] },
+  'started.files-unread': { values: ['repository', 'why'] },
+  'started.files-stopped': { values: [] },
+  'started.files-written-back': { values: ['written'] },
+  'started.files-failed': { values: ['why'] },
   // The machine-local files a repository's gates read, copied into its tree read-only, and why a declared one is not.
   'started.local-copied': { values: ['inputs'] },
   'started.local-missing': { values: ['input'] },

@@ -24,7 +24,6 @@
   "src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Course/LineCourseTests.cs": 59941,
   "src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Events/NoteCodesTests.cs": 44784,
   "src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Help/Proposals/HelpSettingProposalsTests.cs": 43142,
-  "src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Install/StagedBuildTests.cs": 41650,
   "src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Install/ToolInstallTests.cs": 41838,
   "src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Install/ToolResourcesTests.cs": 41082,
   "src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Knowledge/HelpFactsTests.cs": 65630,

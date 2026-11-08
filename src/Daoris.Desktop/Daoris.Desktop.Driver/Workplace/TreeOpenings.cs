@@ -24,6 +24,8 @@ internal static class TreeOpenings
     /// <summary>The reason an opening's lock gives, which <c>git worktree list</c> shows a person: Daoris, and which of its processes.</summary>
     internal static string LockReason(int process) => Opening + process.ToString(CultureInfo.InvariantCulture) + ")";
 
+    internal static string[] HooksHeld(string home) => ["-c", $"core.hooksPath={DaorisHome.Entry(home, HomeEntry.TreeFiles, "no-hooks").Replace('\\', '/')}"];
+
     /// <summary>The process an opening's lock names; null where the reason is no opening's.</summary>
     internal static int? OpenerOf(string? reason) =>
         reason is { } said && said.StartsWith(Opening, StringComparison.Ordinal) && said.EndsWith(')')

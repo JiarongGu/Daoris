@@ -9,7 +9,7 @@ namespace Daoris.Desktop.Driver.Tests;
 /// the host that drives whatever is there and names no plugin. These rows are the rules' one home.
 /// </summary>
 [Trait(Category.Name, Category.Census)]
-public sealed class PluginCatalogTests : IDisposable
+public sealed partial class PluginCatalogTests : IDisposable
 {
     private readonly string _home = Path.Combine(
         TestHomes.Root, "daoris-plugins-" + Guid.NewGuid().ToString("N")[..8]);

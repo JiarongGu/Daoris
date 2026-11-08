@@ -643,4 +643,23 @@ public sealed class HookTests : IDisposable
             lock (lines) return lines.Contains(line);
         }
     }
+
+    [Fact]
+    public async Task A_data_folder_that_cannot_be_made_is_a_start_refused_naming_the_plugin()
+    {
+        var folder = DaorisHome.Entry(_home, HomeEntry.Plugins, "acme.gate");
+        Directory.CreateDirectory(folder);
+        File.WriteAllText(Path.Combine(folder, "plugin.json"), """
+            { "id": "acme.gate", "hooks": { "command": ["node", "${plugin}/hooks.mjs"], "points": ["quest/consider"] } }
+            """);
+        var plugin = PluginCatalog.Load(_home).Plugins.Single();
+        Directory.CreateDirectory(Path.GetDirectoryName(plugin.Data)!);
+        File.WriteAllText(plugin.Data, "a file where the folder goes");
+
+        var error = await Assert.ThrowsAsync<DriverException>(() =>
+            HookProcess.StartAsync(plugin, _home, _ => { }, CancellationToken.None));
+
+        Assert.Contains("acme.gate", error.Message);
+        Assert.Contains("data folder", error.Message);
+    }
 }

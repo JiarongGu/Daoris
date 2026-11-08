@@ -40,6 +40,8 @@ internal sealed class HandToSession(IRunWiring wiring) : IRunStage
         var endings = new RunEndings(wiring, run, sessionId, agent, workTree, state.Opened.LocksTree);
         try
         {
+            if (context.Trees.Holds(workTree)) TreeFilesStep.Hand(home, workTree);
+
             // The words a session could not go on with went to this one: off that record by their ids, kept on the ask by the service, so
             // this start's instruction reads them among the person's words; and said in that session's conversation, where the person
             // wrote them. Where the open moved them, off this one by theirs, each shown here under its id and its files copied here first.
@@ -170,7 +172,6 @@ internal sealed class HandToSession(IRunWiring wiring) : IRunStage
                 // The harness the part before it ran on and the models its door reported, so a carry-on of another maker credits what that
                 // part left uncommitted.
                 LeftBy = carryingOn ? wiring.LeftBy(start.Resumes!) : null,
-                // What its start did against the line in the tree it goes on in.
                 InSync = inSync?.Told,
                 // Its repository's remotes Daoris holds, so it does not try them: read after its start's own fetch. And, where the remote
                 // helper is laid out for it, what `git remote -v` shows under the rewrite; or, on a git older than the doors need, that its
@@ -182,15 +183,8 @@ internal sealed class HandToSession(IRunWiring wiring) : IRunStage
                         ? null
                         : await GitRemotes.AddressOf(workTree, "origin", ct: ct).ConfigureAwait(false),
                     older: await GitWiring.OlderAsync(home, ct).ConfigureAwait(false)),
-                // What its tree's open copied of the checkout's dependencies, so it skips the `npm ci` that would delete them. And what a
-                // tree made again copied the same way, where the session goes on in one.
-                Dependencies = opened?.Dependencies ?? (tree.PriorStands?.Told, tree.EntryStands?.Told) switch
-                {
-                    ({ } remadePrior, { } remadeEntry) => $"{remadePrior} {remadeEntry}",
-                    ({ } remadePrior, _) => remadePrior,
-                    (_, { } remadeEntry) => remadeEntry,
-                    _ => null,
-                },
+                // What its files stage kept, placed or installed, so it skips the install that would delete them.
+                Dependencies = state.Files.Told,
                 // Its repository's heavy gates, once at its end through `run-heavy`, where its PATH finds the verb, under its run's checks.
                 Heavy = heavy.Words,
                 GrewFrom = opened?.GrewFrom,

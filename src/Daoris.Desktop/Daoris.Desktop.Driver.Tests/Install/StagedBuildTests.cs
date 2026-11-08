@@ -11,25 +11,9 @@ namespace Daoris.Desktop.Driver.Tests;
 /// Real folders in a scratch install, with the application's start and liveness handed in: nothing here starts a process.
 /// The launcher compiles the same <see cref="StagedBuild"/> source, so what is held here is what it runs.
 /// </remarks>
-public sealed class StagedBuildTests : IDisposable
+public sealed class StagedBuildTests : ScratchInstall
 {
     private static readonly DateTimeOffset Start = new(2026, 10, 8, 12, 0, 0, TimeSpan.Zero);
-
-    private readonly string _install = Path.Combine(TestHomes.Root, "daoris-staged-" + Guid.NewGuid().ToString("N")[..8]);
-
-    public StagedBuildTests()
-    {
-        Write("INSTALLED.md", "# Daoris — installed desktop\nold\n");
-        Write("Daoris.exe", "old launcher");
-        Write("app/Daoris.Desktop.exe", "old application");
-        Write("app/Daoris.Desktop.App.dll", "old library");
-        Write("data/driver.json", "{ \"drivable\": [] }\n");
-    }
-
-    public void Dispose()
-    {
-        try { Directory.Delete(_install, recursive: true); } catch (IOException) { } catch (UnauthorizedAccessException) { }
-    }
 
     // ——— The check.
 
@@ -278,8 +262,7 @@ public sealed class StagedBuildTests : IDisposable
     [Fact]
     public void A_file_held_in_app_past_the_wait_rolls_the_swap_back_busy_with_nothing_changed_and_the_hold_journalled()
     {
-        // Only Windows refuses to move a folder holding an open file; elsewhere the rename succeeds, so there is nothing
-        // to hold here.
+        // Only Windows refuses to move a folder holding an open file: elsewhere there is nothing to hold.
         if (!OperatingSystem.IsWindows()) return;
         Stage();
         var now = Start;
@@ -332,9 +315,7 @@ public sealed class StagedBuildTests : IDisposable
         Assert.Contains(hold.Holders!, journal.Detail);
     }
 
-    /// <summary>
-    /// A hold that gives way still names what held it, found at the first refusal.
-    /// </summary>
+    /// <summary>A hold that gives way still names what held it, found at the first refusal.</summary>
     [Fact]
     public void A_hold_that_gave_way_still_names_what_held_it()
     {
@@ -359,8 +340,7 @@ public sealed class StagedBuildTests : IDisposable
         held.Dispose();
 
         Assert.Equal(SwapPhase.Installed, outcome.Phase);
-        // The hold on `app` is the case's own; another step's brief, unnamed hold (the staged folder moving in, refused for a moment
-        // by a scanner or a builder on a loaded machine) is not what it is about, so it is picked out by the move it held.
+        // Another step's brief hold (a scanner's, on a loaded machine) is not this case's: it is picked out by the move it held.
         var hold = Assert.Single(StagedBuild.ReadJournal(_install)!.Holds!, entry => entry.From == "app");
         Assert.True(hold.Released);
         Assert.Equal("app/Daoris.Desktop.App.dll", hold.Held);
@@ -423,8 +403,7 @@ public sealed class StagedBuildTests : IDisposable
         if (!OperatingSystem.IsWindows()) return;
         Stage();
 
-        // Let go by the swap's own clock, as the longer hold below is: a thread-pool task's delay can starve past the whole wait
-        // on a loaded machine, and the swap rolls back.
+        // Let go by the swap's own clock: a starved pool's delay can pass the whole wait on a loaded machine.
         var held = new FileStream(Path.Combine(_install, "app", "Daoris.Desktop.App.dll"), FileMode.Open, FileAccess.Read, FileShare.None);
         var now = Start;
         SwapOutcome outcome;
@@ -667,8 +646,7 @@ public sealed class StagedBuildTests : IDisposable
         StagedBuild.WriteJournal(_install, new SwapRecord(SwapPhase.Started, "b1", "0.0.1", null, Start, []));
 
         var reader = new FileStream(StagedBuild.JournalOf(_install), FileMode.Open, FileAccess.Read, FileShare.Read);
-        // On a thread of its own, not the pool's: a loaded run's starved pool can let the reader go past the write's four seconds of
-        // retries, which is the pool's wait, not the journal's.
+        // Its own thread: a starved pool could hold the reader past the write's four seconds of retries.
         var letGo = Task.Factory.StartNew(() =>
         {
             Thread.Sleep(150);
@@ -874,75 +852,7 @@ public sealed class StagedBuildTests : IDisposable
         Assert.False(StagedBuild.IsStaged(_install));
         Assert.Equal("b0", StagedBuild.ReadJournal(_install)!.Id);
     }
-
-    private void AssertTheBuildBefore()
-    {
-        Assert.Equal("old launcher", Read("Daoris.exe"));
-        Assert.Equal("old application", Read("app/Daoris.Desktop.exe"));
-        Assert.Equal("old library", Read("app/Daoris.Desktop.App.dll"));
-        Assert.Equal("# Daoris — installed desktop\nold\n", Read("INSTALLED.md"));
-        Assert.Equal("{ \"drivable\": [] }\n", Read("data/driver.json"));
-    }
-
-    /// <summary>A build staged as the publish stages one: the four files every build carries, and its manifest.</summary>
-    private void Stage()
-    {
-        Write("update/staged/INSTALLED.md", "# Daoris — installed desktop\nnew\n");
-        Write("update/staged/Daoris.exe", "new launcher");
-        Write("update/staged/app/Daoris.Desktop.exe", "new application");
-        Write("update/staged/app/Daoris.Desktop.App.dll", "new library");
-        Manifest();
-    }
-
-    /// <summary>The manifest of whatever the staged folder holds now, as the publish writes it.</summary>
-    private void Manifest()
-    {
-        var staged = Path.Combine(_install, "update", "staged");
-        var files = new JsonArray();
-        foreach (var full in Directory.EnumerateFiles(staged, "*", SearchOption.AllDirectories).Order(StringComparer.Ordinal))
-        {
-            var relative = Path.GetRelativePath(staged, full).Replace(Path.DirectorySeparatorChar, '/');
-            if (relative == "build.json") continue;
-            files.Add(new JsonObject
-            {
-                ["path"] = relative,
-                ["size"] = new FileInfo(full).Length,
-                ["sha256"] = StagedBuild.Sha256Of(full),
-            });
-        }
-
-        File.WriteAllText(Path.Combine(staged, "build.json"), new JsonObject
-        {
-            ["schema"] = 1,
-            ["id"] = "b1",
-            ["version"] = "0.0.1",
-            ["commit"] = "abc1234",
-            ["at"] = "2026-10-03T12:00:00Z",
-            ["files"] = files,
-        }.ToJsonString());
-    }
-
-    private string Staged(string relative) => Path.Combine(_install, "update", "staged", relative.Replace('/', Path.DirectorySeparatorChar));
-
-    /// <summary>Whether a full path a move is handed is this install-relative one.</summary>
-    private bool Is(string full, string relative) =>
-        string.Equals(full, Path.Combine(_install, relative.Replace('/', Path.DirectorySeparatorChar)), StringComparison.OrdinalIgnoreCase);
-
-    /// <summary>What Windows answers a move of a folder a scanner holds a file in: access denied.</summary>
-    private static UnauthorizedAccessException Refused() => new("Access to the path is denied.");
-
-    private string Read(string relative) => File.ReadAllText(Path.Combine(_install, relative.Replace('/', Path.DirectorySeparatorChar)));
-
-    private void Write(string relative, string text)
-    {
-        var path = Path.Combine(_install, relative.Replace('/', Path.DirectorySeparatorChar));
-        Directory.CreateDirectory(Path.GetDirectoryName(path)!);
-        File.WriteAllText(path, text);
-    }
 }
-
-/// <summary>Thrown by a test's sleep to stop a swap where a launcher would have died: waiting for its application.</summary>
-internal sealed class Stop : Exception;
 
 internal static class InstallSwapTestExtensions
 {

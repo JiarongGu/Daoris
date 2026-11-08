@@ -86,16 +86,19 @@ export function refuseWhatForceCannot(plan: SyncPlan): void {
       1);
   }
   // A kept file stays where it is, and a move would leave it behind its layout: the move waits for the keep.
-  if (plan.layout.from.target !== plan.layout.to.target) {
-    const moving = plan.writes.filter((write) => write.kept && !write.in).map((write) => write.target);
-    if (moving.length) {
-      throw new DaorisError(
-        `the move to ${plan.layout.to.target}/ would carry ${moving.length} kept file(s): ${moving.join(', ')}\n`
-        + "  the move waits for each: adopt the canon's text, or copy yours aside as this repository's own document, then\n"
-        + "  take the keep out of daoris.json's kept and 'daoris sync'",
-        1);
-    }
+  const moving = keptInMove(plan);
+  if (moving.length) {
+    throw new DaorisError(
+      `the move to ${plan.layout.to.target}/ would carry ${moving.length} kept file(s): ${moving.join(', ')}\n`
+      + "  the move waits for each: adopt the canon's text, or copy yours aside as this repository's own document, then\n"
+      + "  take the keep out of daoris.json's kept and 'daoris sync'",
+      1);
   }
+}
+
+export function keptInMove(plan: SyncPlan): string[] {
+  if (plan.layout.from.target === plan.layout.to.target) return [];
+  return plan.writes.filter((write) => write.kept && !write.in).map((write) => write.target);
 }
 
 export function applySync(

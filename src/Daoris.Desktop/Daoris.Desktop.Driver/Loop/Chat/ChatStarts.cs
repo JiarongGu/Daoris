@@ -303,12 +303,20 @@ internal sealed class ChatStarts(IExecutorWiring wiring, ChatTold told)
         // Its run binds here, the record being its line's first in the tree it grew, and the landing it is told is planned with the process its
         // run is bound to, so it is told the landing its press makes. A chat run whose process names a second opinion is handed the tool that
         // answers its findings from its spawn.
+        // The files step after its record, only in a tree of Daoris's, never the checkout a conversation may open in.
+        var ours = root is not null && new SessionTrees(home).Holds(workTree);
+        var files = ours
+            ? await TreeFilesStep.RunAsync(
+                home, root!, workTree, known.Repository,
+                line => context.Events.Keep(sessionId, new SessionEvent { Kind = SessionEventKind.Note, Text = line.Note, Parts = line.Parts.Count > 0 ? line.Parts : null }, say: null),
+                ct).ConfigureAwait(false)
+            : TreeFilesOutcome.None;
         var answers = false;
         if (opened is not null)
         {
             var bound = context.ChatRuns.Opened(sessionId, known.Repository, known.Workspace, config);
             answers = ChatRunBinds.AnswersFindings(bound);
-            told.HoldProcess(sessionId, await told.ProcessAsync(opened.Path, sessionId, config, known, opened.Dependencies, agent, ct, bound).ConfigureAwait(false));
+            told.HoldProcess(sessionId, await told.ProcessAsync(opened.Path, sessionId, config, known, files.Told, agent, ct, bound).ConfigureAwait(false));
         }
         else if (from is not null)
         {
@@ -326,6 +334,8 @@ internal sealed class ChatStarts(IExecutorWiring wiring, ChatTold told)
         ChatStart? started = null;
         try
         {
+            // The conversation's own step before its first turn: the tree's unworked mark off.
+            if (ours) TreeFilesStep.Hand(home, workTree);
             var placed = wiring.RepositoryPlace(config, snapshot.Repositories, known, repository, workTree, continued, answers);
             started = carries is not null
                 ? await carries.RunAsync(sessionId, message, agent, config, placed, onEnded, keyed?.Moved ?? [], ct).ConfigureAwait(false)

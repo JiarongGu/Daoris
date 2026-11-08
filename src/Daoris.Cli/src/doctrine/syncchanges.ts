@@ -7,7 +7,7 @@ import { significantTokens, containment } from './twins.ts';
 import { isSwitchedOff, resolveSelection } from './canon.ts';
 import { lockIndex } from './config.ts';
 import { spanBody } from './tierrender.ts';
-import { resolveHarness } from '../layout/harness.ts';
+import { lockLayout } from '../layout/layout.ts';
 
 /**
  * A canonical file renamed upstream arrives as a delete plus an add, which loses
@@ -58,7 +58,7 @@ export function detectRenames(
 /**
  * What actually changed in the doctrine since this repo last synced.
  *
- * Computed from the lock and the shipped canon, so it needs no network and no
+ * Computed from the lock and the shipped canon, read where the lock says the files are, so it needs no network and no
  * version control — the lock already records a per-file hash, which is a better
  * marker than "commits since last run" because it survives a shallow clone.
  *
@@ -77,7 +77,8 @@ export function planChanges(
   const added: string[] = [];
   const changed: string[] = [];
 
-  const harness = manifest.harnessDescriptor ?? resolveHarness(manifest.harness);
+  const was = lockLayout(root, lock, manifest);
+  const harness = was.harness;
   const keeps = manifest.kept ?? {};
 
   for (const file of selected) {
@@ -99,7 +100,7 @@ export function planChanges(
       continue;
     }
 
-    const abs = join(root, manifest.target, file.target);
+    const abs = join(root, was.target, file.target);
     if (!existsSync(abs)) continue;
     const onDisk = readText(abs);
     if (sha256(onDisk) !== entry.sha256) continue;
