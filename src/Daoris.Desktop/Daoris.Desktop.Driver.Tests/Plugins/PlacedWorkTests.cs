@@ -18,10 +18,17 @@ public sealed class PlacedWorkTests : IDisposable
     private readonly List<(WorkChannel Channel, string? Token)> _started = [];
     private readonly List<string> _said = [];
 
-    public PlacedWorkTests() => Directory.CreateDirectory(_home);
+    private readonly MachineLog _log;
+
+    public PlacedWorkTests()
+    {
+        Directory.CreateDirectory(_home);
+        _log = new MachineLog(_home, "desktop", () => _now);
+    }
 
     public void Dispose()
     {
+        _log.Dispose();
         try { Directory.Delete(_home, recursive: true); } catch (IOException) { } catch (UnauthorizedAccessException) { }
     }
 
@@ -45,8 +52,12 @@ public sealed class PlacedWorkTests : IDisposable
 
         public void Listen(Action<JsonElement?>? steps) => Steps = steps;
 
+        /// <summary>Where true, a send fails as a broken pipe does.</summary>
+        public bool Fails { get; set; }
+
         public Task WatchAsync(WorkWatchFrame frame, CancellationToken ct)
         {
+            if (Fails) return Task.FromException(new DriverException("the pipe broke"));
             lock (Told) Told.Add(frame);
             return Task.CompletedTask;
         }
@@ -66,7 +77,7 @@ public sealed class PlacedWorkTests : IDisposable
 
     private HookSet Set(Func<PluginEntry, WorkPlace, CancellationToken, Task<HostTokenHand>>? hand)
     {
-        return new HookSet(_home, say: (_, line) => _said.Add(line), holdsHome: () => true, clock: () => _now, hostToken: hand, start: (_, _, _) =>
+        return new HookSet(_home, say: (_, line) => _said.Add(line), holdsHome: () => true, clock: () => _now, hostToken: hand, log: _log, start: (_, _, _) =>
         {
             var channel = new WorkChannel();
             _started.Add((channel, HookProcess.HostToken.Value));
@@ -116,6 +127,42 @@ public sealed class PlacedWorkTests : IDisposable
             var told = Assert.Single(Assert.Single(channel.Told).Units);
             Assert.Equal("token-of-" + told.Repository, token);
         }
+    }
+
+    private List<LogLine> Lines(string @event) =>
+        [.. MachineLogReader.Read(DaorisHome.Entry(_home, HomeEntry.Logs), new LogFilter()).Lines.Where(line => line.Event == @event)];
+
+    private static string? Text(LogLine line, string key) =>
+        line.Data.TryGetProperty(key, out var value) && value.ValueKind == JsonValueKind.String ? value.GetString() : null;
+
+    /// <summary>A refusal is one count of the plugin, named by its id on the line, wherever it has places.</summary>
+    [Fact]
+    public async Task A_refusal_of_a_placed_plugin_is_one_step_line_naming_the_plugin()
+    {
+        await using var set = Set(Tokens());
+        set.Watch(Awaiting(Unit("engine", "u1"), Unit("tools", "u2")));
+        await set.ReconcileAsync(Catalog(), CancellationToken.None);
+
+        set.Refused(Pr, WorkRefusals.Stale);
+
+        var line = Assert.Single(Lines(PluginEvents.Step));
+        Assert.Equal((Pr, WorkRefusals.Stale), (Text(line, "plugin"), Text(line, "code")));
+    }
+
+    /// <summary>A watch frame that did not reach a place's process is a failure of the plugin, which its health sees.</summary>
+    [Fact]
+    public async Task A_watch_that_failed_to_reach_a_place_is_a_failed_line_naming_the_plugin()
+    {
+        await using var set = Set(Tokens());
+        set.Watch(Awaiting(Unit("engine", "u1")));
+        await set.ReconcileAsync(Catalog(), CancellationToken.None);
+        _started[0].Channel.Fails = true;
+
+        set.Watch(Awaiting(Unit("engine", "u1"), Unit("engine", "u3")));
+
+        for (var wait = 0; wait < 200 && Lines(PluginEvents.Failed).Count == 0; wait++) await Task.Delay(10);
+        var line = Assert.Single(Lines(PluginEvents.Failed));
+        Assert.Equal((Pr, HookPoints.Watch), (Text(line, "plugin"), Text(line, "where")));
     }
 
     [Fact]

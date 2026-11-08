@@ -434,7 +434,11 @@ public sealed class HookSet(
     /// </summary>
     public void Refused(string plugin, string code)
     {
-        foreach (var key in _placed.KeysOf(plugin)) _work.Refused(key, code);
+        // One refusal is one count: the first place this supervision holds takes it, never each place.
+        foreach (var key in _placed.KeysOf(plugin))
+        {
+            if (_work.Refused(key, code)) break;
+        }
     }
 
     /// <summary>The generation of the plugin's work process while one is up and listened to, else null; of a placed plugin, one of its places'.</summary>

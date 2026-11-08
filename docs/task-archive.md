@@ -26,6 +26,8 @@ the per-task record. Entries preserve their original wording so the archive stay
 > **PLUGREV2a** (driver, plugins): Outcome: an update's or replace's swap-in that fails puts the installed folder back, and a rollback that fails too is refused as a `DriverException` naming the `.removing-*` folder the plugin lies in, the stage forgotten (`PluginInstall.SwapIn`, one tail for both; a `move` hook on `PluginFolders`); proved by `PluginSourceTests`.
 >
 > **PLUGREV2b** (driver, web, plugins): Outcome: a sound plugin switched off keeps its approval on its page and in the list (`HelpGrants.Read(withSwitchedOff)`, its grants marked `Off` and handed nothing), and the page's press approves one (`HelpGrants.Declared` takes a sound plugin, on or off); the Ask Daoris proposal still asks a plugin switched on; proved by `HelpGrantsTests` and `PluginPageTests`.
+>
+> **PLUGREV2c** (driver, plugins): Outcome: a placed plugin's `plugin.step` and `plugin.failed` lines carry its id (`WorkPlugins` logs `PlacedWork.PluginOf(key)`, so `PluginHealth` sees the failure under the plugin), and `HookSet.Refused` counts one refusal at the first place that holds a state, not once per place; proved by `PlacedWorkTests`.
 
 ## TREEPOOL1ac — shared paths (2026-11-09)
 
