@@ -49,7 +49,7 @@
   "settings.rules.proposals.earlier": "更早的提议（{{count}}）",
   "settings.rules.proposals.byPerson": "由你处理",
   "settings.rules.proposals.byDriver": "由驱动处理",
-  "settings.rules.proposals.bySupervisor": "由监督者 {{role}} 允许",
+  "settings.rules.proposals.bySupervisor": "由主管 {{role}} 允许",
   "settings.rules.proposals.takeBack": "收回",
   "settings.rules.proposals.takeBackLabel": "收回对 {{rule}} 的允许",
   "settings.rules.proposals.state.settling": "处理中",
