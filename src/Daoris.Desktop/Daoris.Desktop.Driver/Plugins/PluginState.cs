@@ -14,10 +14,10 @@ public sealed record PluginState(IReadOnlyList<string> Disabled)
 
     public static PluginState Load(string home)
     {
-        if (PluginFolders.TextIfThere(PathIn(home)) is not { } text) return new([]);
-
         try
         {
+            if (PluginFolders.TextIfThere(PathIn(home)) is not { } text) return new([]);
+
             using var document = JsonDocument.Parse(text);
             var disabled = new List<string>();
             if (document.RootElement.ValueKind == JsonValueKind.Object
@@ -32,9 +32,9 @@ public sealed record PluginState(IReadOnlyList<string> Disabled)
 
             return new(disabled);
         }
-        catch (JsonException error)
+        catch (Exception error) when (error is JsonException or IOException or UnauthorizedAccessException)
         {
-            // An unreadable state file disables nothing: the safe direction is the plugin the person
+            // An unreadable state file, torn or held by another process, disables nothing: the safe direction is the plugin the person
             // installed still running. An edit over it is refused rather than rewriting it whole.
             return new([]) { Problem = $"{FileName} could not be read ({error.Message})" };
         }

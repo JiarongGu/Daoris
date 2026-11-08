@@ -277,6 +277,21 @@ public sealed class PluginCatalogTests : IDisposable
         Assert.Equal(held, File.ReadAllText(file));
     }
 
+    [Fact]
+    public void A_state_file_that_cannot_be_opened_is_a_problem_and_disables_nothing_never_a_throw()
+    {
+        Directory.CreateDirectory(_home);
+        var file = DaorisHome.Entry(_home, HomeEntry.PluginState);
+        File.WriteAllText(file, """{ "disabled": ["acme.noisy"] }""");
+        using var held = new FileStream(file, FileMode.Open, FileAccess.Read, FileShare.None);
+
+        var read = PluginState.Load(_home);
+
+        Assert.Empty(read.Disabled);
+        Assert.Contains("could not be read", read.Problem);
+        Assert.Throws<DriverException>(() => PluginState.Disable(_home, "acme.agent"));
+    }
+
     /// <summary>
     /// The host knows what a plugin claims before anything of it loads: a name this build already
     /// carries is refused naming both sides, and the plugin contributes nothing.
