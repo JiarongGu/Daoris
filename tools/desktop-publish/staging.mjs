@@ -144,12 +144,12 @@ export function unstage(install) {
   rmSync(join(install, ...STAGED), { recursive: true, force: true });
 }
 
-/** The names the last publish recorded in `app/shell-files.txt`, or none. */
+/** The names the last publish recorded in `app/shell-files.txt`, or none; a path is no name, since each is removed under `app/`. */
 export function recordedShellFiles(install) {
   const record = join(install, ...SHELL_FILES);
-  return existsSync(record)
-    ? readFileSync(record, 'utf8').split('\n').map((line) => line.trim()).filter(Boolean)
-    : [];
+  if (!existsSync(record)) return [];
+  const lines = readFileSync(record, 'utf8').split('\n').map((line) => line.trim());
+  return lines.filter((name) => /^[^\\/:]+$/.test(name) && name !== '.' && name !== '..');
 }
 
 /**
