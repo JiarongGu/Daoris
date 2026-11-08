@@ -5,6 +5,10 @@ the per-task record. Entries preserve their original wording so the archive stay
 
 ---
 
+## CONVREV6 to CONVREV9 — a move's end, its read, its box and its lost note hold what they name (2026-11-08)
+
+> **CONVREV6 / CONVREV7 / CONVREV8 / CONVREV9** (conversation-moves review): Outcome: all four held as the rows said. CONVREV6: `LimitMove.TellEndedAsync` takes the record of a carried move and ends it by its phase when the wire bound passes with no reading (`LimitMoveCarriedEndTests`; the carried run's own death is the process half's, not run here). CONVREV7: `ConversationMoves.KeepAgain` keeps a move whose sweep read or first live read failed at the store, so the next look reads it (`ConversationMovesReadAgainTests`, a store file marked read-only). CONVREV8: `MoveBoxImport.Import` counts a box naming a blank id as unread, left as evidence, instead of throwing at every look (`MoveBoxImportsTests`). CONVREV9: `MoveSaidDoor.SettleAsync` notes lost only the words a take-back answers done; a `taken` answer is no loss (`MoveSaidDoorTests`).
+
 ## GITREV1 and GITREV2 — the service reads what the driver moves into place, and a write keeps the identity entries it cannot read (2026-11-08)
 
 > **GITREV1 / GITREV2** (git-and-remotes review): Outcome: GITREV1 held as the row said. The service's `AtomicFile` gained `ReadText`, which shares deletion with the writer's move, and `RemoteConfig.Load` and the seven session-box and proposal readers of driver-written files use it (a test holds `remotes.json` and a box state file as Windows' move holds them; both read, where `File.ReadAllText` threw or answered "no state"). GITREV2 held: `GitIdentities.Load` now keeps each entry `Of` rejects (an unknown way, a bad id, a non-object) as it stands and `Change` writes them back after the identities, so adding or removing one identity leaves them in the file (a test with an unknown way, an extra field and a stray string).
