@@ -8,7 +8,7 @@
         "claude-code": { "provider": "claude-code", "owner": "claude-code", "accountAgent": "claude-code", "reportingDoor": "claude-code", "limits": true, "signIn": true, "windows": true, "usage": true, "login": true, "keyVariable": "ANTHROPIC_API_KEY", "settingsFile": "settings.json", "homeVariable": "CLAUDE_CONFIG_DIR", "trustFile": ".claude.json" },
         "claude-code-acp": { "provider": "claude-code", "owner": "claude-code", "accountAgent": "claude-code", "reportingDoor": "claude-code", "limits": true, "signIn": true, "windows": true, "usage": true, "login": true, "keyVariable": "ANTHROPIC_API_KEY", "settingsFile": "settings.json", "homeVariable": "CLAUDE_CONFIG_DIR", "trustFile": ".claude.json" },
         "codex-acp": { "provider": "codex", "owner": "codex", "accountAgent": "codex", "reportingDoor": "codex-acp", "limits": true, "usage": true, "login": true, "homeVariable": "CODEX_HOME" },
-        "dsh": { "provider": "dsh", "owner": "dsh", "accountAgent": "dsh", "reportingDoor": "dsh", "homeVariable": "DSH_HOME" },
+        "dsh": { "provider": "dsh", "owner": "dsh", "accountAgent": "dsh", "reportingDoor": "dsh", "keyVariable": "DEEPSEEK_API_KEY", "homeVariable": "DSH_HOME" },
         "stub": { "provider": "stub", "owner": "stub", "accountAgent": "stub", "reportingDoor": "stub", "limits": true, "signIn": true, "windows": true, "login": true, "homeVariable": "DAORIS_STUB_CONFIG_DIR", "ownHome": true },
         "acp-stub": { "provider": "stub", "owner": "stub", "accountAgent": "stub", "reportingDoor": "stub", "limits": true, "signIn": true, "windows": true, "login": true, "homeVariable": "DAORIS_STUB_CONFIG_DIR", "ownHome": true }
       },
@@ -32,7 +32,7 @@
         "p-claude": { "provider": "claude-code", "owner": "claude-code", "accountAgent": "claude-code", "reportingDoor": "claude-code", "limits": true, "signIn": true, "windows": true, "usage": true, "login": true, "keyVariable": "ANTHROPIC_API_KEY", "settingsFile": "settings.json", "homeVariable": "P_HOME" },
         "p-claude-bare": { "provider": "claude-code", "owner": "claude-code", "accountAgent": "claude-code", "reportingDoor": "claude-code", "limits": true, "signIn": true, "windows": true, "usage": true, "login": true, "keyVariable": "ANTHROPIC_API_KEY", "settingsFile": "settings.json" },
         "p-stub": { "provider": "stub", "owner": "stub", "accountAgent": "stub", "reportingDoor": "stub", "limits": true, "signIn": true, "windows": true, "login": true },
-        "p-dsh": { "provider": "dsh", "owner": "dsh", "accountAgent": "dsh", "reportingDoor": "dsh", "homeVariable": "P_DSH_HOME", "ownHome": true }
+        "p-dsh": { "provider": "dsh", "owner": "dsh", "accountAgent": "dsh", "reportingDoor": "dsh", "keyVariable": "DEEPSEEK_API_KEY", "homeVariable": "P_DSH_HOME", "ownHome": true }
       },
       "pools": {
         "claude-code": { "providers": ["claude-code"], "doors": ["claude-code", "claude-code-acp", "p-claude", "p-claude-bare"] },
