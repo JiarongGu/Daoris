@@ -189,6 +189,7 @@ internal static class GitRuns
         // are ChildProcess's. The caller's own cancellation leaves the ask and throws.
         try
         {
+            await GitLazyFetch.PrepareAsync(info, arguments, ct).ConfigureAwait(false);
             var ask = GitStartAsks.For(info, arguments, GitRunner.Whole, bound, shares: input is null);
             var run = await GitScheduler.Shared.RunAsync(ask, token => input is null
                 ? ChildProcess.RunAsync(info, bound, token, closeInput: false)
@@ -234,20 +235,32 @@ internal static class GitRuns
     /// </remarks>
     internal static Task<(byte[] Bytes, int Count)?> GitBytesAsync(
         string root, IReadOnlyList<string> arguments, int limit, CancellationToken ct) =>
+        GitBytesAsync(root, arguments, limit, input: null, ct);
+
+    /// <summary>The same, git reading <paramref name="input"/> first: <c>cat-file --batch</c> asked its one question.</summary>
+    internal static Task<(byte[] Bytes, int Count)?> GitBytesAsync(
+        string root, IReadOnlyList<string> arguments, int limit, string? input, CancellationToken ct) =>
         // Through the one seam, which raises Started for this runner too (once RunGitAsync's alone).
         GitLaunch.LaunchAsync(
-            GitLaunch.KindOf(arguments), arguments, GitLaunch.Budget, GitRunner.Bytes, () => BytesLaunchedAsync(root, arguments, limit, ct));
+            GitLaunch.KindOf(arguments), arguments, GitLaunch.Budget, GitRunner.Bytes, () => BytesLaunchedAsync(root, arguments, limit, input, ct));
 
     private static async Task<(byte[] Bytes, int Count)?> BytesLaunchedAsync(
-        string root, IReadOnlyList<string> arguments, int limit, CancellationToken ct)
+        string root, IReadOnlyList<string> arguments, int limit, string? input, CancellationToken ct)
     {
         // The blob is read as bytes off the stream beneath; git's own words on the error stream are UTF-8.
         var (info, _) = GitStart(root, arguments, ProgramHome.Named);
         if (info is null) return null;
+        if (input is not null)
+        {
+            info.RedirectStandardInput = true;
+            info.StandardInputEncoding = new UTF8Encoding(encoderShouldEmitUTF8Identifier: false);
+        }
+
         try
         {
+            await GitLazyFetch.PrepareAsync(info, arguments, ct).ConfigureAwait(false);
             var ask = GitStartAsks.For(info, arguments, GitRunner.Bytes, GitBounds.Of(arguments), shares: false);
-            return await GitScheduler.Shared.RunAsync(ask, token => BytesPlacedAsync(info, arguments, limit, token), ct).ConfigureAwait(false);
+            return await GitScheduler.Shared.RunAsync(ask, token => BytesPlacedAsync(info, arguments, limit, input, token), ct).ConfigureAwait(false);
         }
         catch (GitUnplacedException)
         {
@@ -256,7 +269,7 @@ internal static class GitRuns
     }
 
     private static async Task<(byte[] Bytes, int Count)?> BytesPlacedAsync(
-        ProcessStartInfo info, IReadOnlyList<string> arguments, int limit, CancellationToken ct)
+        ProcessStartInfo info, IReadOnlyList<string> arguments, int limit, string? input, CancellationToken ct)
     {
         Process? process = null;
         Task<string>? stderr = null;
@@ -268,6 +281,12 @@ internal static class GitRuns
                       ?? throw new DriverException("git did not start");
             within.CancelAfter(GitBounds.Of(arguments));
             using var ending = Ending(within.Token, process);
+            if (input is not null)
+            {
+                await process.StandardInput.WriteAsync(input.AsMemory(), within.Token).ConfigureAwait(false);
+                process.StandardInput.Close();
+            }
+
             stderr = process.StandardError.ReadToEndAsync(within.Token);
             var buffer = new byte[Math.Max(0, limit)];
             var count = 0;
@@ -391,6 +410,7 @@ internal static class GitRuns
         foreach (var (name, value) in environment ?? new Dictionary<string, string>()) info.Environment[name] = value;
         try
         {
+            await GitLazyFetch.PrepareAsync(info, arguments, ct).ConfigureAwait(false);
             var ask = GitStartAsks.For(info, arguments, GitRunner.Streamed, GitBounds.Of(arguments), shares: false);
             return await GitScheduler.Shared.RunAsync(ask, token => ReadPlacedAsync(info, arguments, take, token), ct).ConfigureAwait(false);
         }

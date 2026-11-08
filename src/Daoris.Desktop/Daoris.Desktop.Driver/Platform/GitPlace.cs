@@ -27,7 +27,7 @@ internal sealed class GitPlace
     /// <summary>Whose the git is, for its start at the gate: the highest class among its askers at its placing.</summary>
     internal StartClass Whose { get; }
 
-    /// <summary>What its run waits on: a place of an outside-waiting git lends one to the gits its hooks ask.</summary>
+    /// <summary>What its run waits on: an outside-waiting git (a remote act, an act running a hook) counts toward the outside class.</summary>
     internal GitWait Wait { get; }
 
     /// <summary>0 for a run place; one more than its parent's for a place a parent lent.</summary>
@@ -72,13 +72,29 @@ internal sealed class GitPlace
             return;
         }
 
+        lock (_gate) _pids.Add(pid);
         Bind(() => HasExited(own), () => own.WaitForExitAsync());
+    }
+
+    private readonly List<int> _pids = [];
+
+    /// <summary>Whether <paramref name="pid"/> is a process started in this place that has not exited.</summary>
+    internal bool Runs(int pid)
+    {
+        lock (_gate) return _pids.Contains(pid) && !Exited;
     }
 
     /// <summary>The test seam's binding: an exit read and awaited, with no process.</summary>
     internal void Bind(Func<bool> exited, Func<Task> exit)
     {
         lock (_gate) _exits.Add((exited, exit));
+    }
+
+    /// <summary>The test seam's binding of a process by its id alone: a caller beneath <paramref name="pid"/> is beneath this place.</summary>
+    internal void Bind(int pid, Func<bool> exited, Func<Task> exit)
+    {
+        lock (_gate) _pids.Add(pid);
+        Bind(exited, exit);
     }
 
     /// <summary>Whether every process started in the place has exited.</summary>

@@ -87,13 +87,14 @@ internal sealed class GitFacts
     /// <summary>
     /// <paramref name="folder"/> is a working tree of the repository whose checkout is <paramref name="commonDir"/>'s parent (read
     /// once, as git's `--git-common-dir`): a question about refs and commits asked in either is one question. A common dir that is
-    /// not a checkout's `.git` pairs nothing.
+    /// not a checkout's `.git` pairs nothing, nor does a tree reading another configuration (<see cref="GitAskerContext"/>).
     /// </summary>
     internal static void SameRepository(string folder, string commonDir)
     {
         if (Live is not { } facts) return;
         var dir = Path.TrimEndingDirectorySeparator(commonDir.Trim());
         if (!string.Equals(Path.GetFileName(dir), ".git", StringComparison.Ordinal) || Path.GetDirectoryName(dir) is not { } checkout) return;
+        if (!GitAskerContext.Same(folder, checkout)) return;
         var (tree, root) = (Folder(folder), Folder(checkout));
         lock (facts._gate)
         {

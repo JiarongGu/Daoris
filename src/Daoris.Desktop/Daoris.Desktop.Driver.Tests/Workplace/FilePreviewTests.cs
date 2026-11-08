@@ -277,22 +277,23 @@ public sealed class FilePreviewTests : IDisposable
 
     // ——— a file as a landed branch holds it: git's listing, read without git
 
-    /// <summary>The one blob listed at exactly the path asked, with its object and its size, padded as git pads it.</summary>
+    /// <summary>The one blob listed at exactly the path asked, by its object: its size is the object read's, never the listing's.</summary>
     [Fact]
-    public void A_listed_file_on_the_branch_is_its_object_and_its_size()
+    public void A_listed_file_on_the_branch_is_its_object()
     {
-        const string output = "100644 blob 3b18e512dba79e4c8300dd08aeb37f8e728b8dad      12\tsrc/chunk.ts\0";
+        const string output = "100644 blob 3b18e512dba79e4c8300dd08aeb37f8e728b8dad\tsrc/chunk.ts\0";
 
-        Assert.Equal(("3b18e512dba79e4c8300dd08aeb37f8e728b8dad", 12L), FilePreview.Listed(output, "src/chunk.ts"));
-        Assert.Equal(("abcd", 7L), FilePreview.Listed("100755 blob abcd 7\trun.sh\0", "run.sh"));
+        Assert.Equal("3b18e512dba79e4c8300dd08aeb37f8e728b8dad", FilePreview.Listed(output, "src/chunk.ts"));
+        Assert.Equal("abcd", FilePreview.Listed("100755 blob abcd\trun.sh\0", "run.sh"));
     }
 
-    /// <summary>A folder, a link, a submodule and a path git did not list are not a file the branch holds.</summary>
+    /// <summary>A folder, a link, a submodule, a path git did not list, and a listing with sizes (whose filtered blob's is <c>BAD</c>) are not a file the branch holds.</summary>
     [Theory]
-    [InlineData("040000 tree 3b18e512dba79e4c8300dd08aeb37f8e728b8dad       -\tsrc\0", "src")]
-    [InlineData("120000 blob 3b18e512dba79e4c8300dd08aeb37f8e728b8dad      18\tlinked\0", "linked")]
-    [InlineData("160000 commit 3b18e512dba79e4c8300dd08aeb37f8e728b8dad       -\tvendor/lib\0", "vendor/lib")]
-    [InlineData("100644 blob 3b18e512dba79e4c8300dd08aeb37f8e728b8dad      12\tsrc/chunk.ts\0", "src/Chunk.ts")]
+    [InlineData("040000 tree 3b18e512dba79e4c8300dd08aeb37f8e728b8dad\tsrc\0", "src")]
+    [InlineData("120000 blob 3b18e512dba79e4c8300dd08aeb37f8e728b8dad\tlinked\0", "linked")]
+    [InlineData("160000 commit 3b18e512dba79e4c8300dd08aeb37f8e728b8dad\tvendor/lib\0", "vendor/lib")]
+    [InlineData("100644 blob 3b18e512dba79e4c8300dd08aeb37f8e728b8dad\tsrc/chunk.ts\0", "src/Chunk.ts")]
+    [InlineData("100644 blob 3b18e512dba79e4c8300dd08aeb37f8e728b8dad     BAD\tsrc/chunk.ts\0", "src/chunk.ts")]
     [InlineData("", "src/chunk.ts")]
     public void A_folder_a_link_or_an_unlisted_path_is_not_a_file_on_the_branch(string output, string path) =>
         Assert.Null(FilePreview.Listed(output, path));

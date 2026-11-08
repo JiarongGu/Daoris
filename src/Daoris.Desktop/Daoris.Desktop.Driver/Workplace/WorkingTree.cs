@@ -506,6 +506,10 @@ public static class WorkingTree
     internal static Task<(byte[] Bytes, int Count)?> GitBytesAsync(string root, IReadOnlyList<string> arguments, int limit, CancellationToken ct) =>
         GitRuns.GitBytesAsync(root, arguments, limit, ct);
 
+    /// <summary>The same, git reading <paramref name="input"/> first: <c>cat-file --batch</c> asked its one question.</summary>
+    internal static Task<(byte[] Bytes, int Count)?> GitBytesAsync(string root, IReadOnlyList<string> arguments, int limit, string input, CancellationToken ct) =>
+        GitRuns.GitBytesAsync(root, arguments, limit, input, ct);
+
     internal static Task<int> ReadGitAsync(string root, IReadOnlyList<string> arguments, Func<ReadOnlyMemory<char>, bool> take, CancellationToken ct) =>
         GitRuns.ReadGitAsync(root, arguments, take, ct);
 
