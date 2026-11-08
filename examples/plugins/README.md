@@ -1,6 +1,7 @@
 # Example plugins
 
-Tracked plugins a person can read, copy and install. Each folder is a plugin with its own README and `node --test`.
+Tracked plugins a person can read, copy and install. Each folder is a plugin with its own README. The pull-request and `local-*` plugins carry `node --test` tests; `hold-by-title`
+is proved by the family rehearsal, and the two browsers are a manifest alone.
 
 | Folder | What it shows |
 |---|---|

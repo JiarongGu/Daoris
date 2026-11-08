@@ -11,7 +11,8 @@ Tracked here as an example, it does nothing on its own. It runs only when **both
 
 1. you installed it: `daoris plugin add examples/plugins/azure-devops-pull-request` (or copied the folder under the Daoris home's
    `plugins/`), and it is not switched off;
-2. a place's workflow holds its step, after a `push`: *land* (branch), *push*, *azure-devops-pull-request/pull-request*.
+2. a place's workflow holds its step, after a `push`: *land* (branch), *push*, *azure-devops-pull-request/pull-request*. No shipped preset names it (the *Hosted merge workflow* preset holds
+   GitHub's step): add the step to a workflow of your own after its *push*.
 
 ## What it does
 
@@ -45,7 +46,7 @@ the branch stands at or under the commit the pull request merged. A reading that
 The API call carries `DAORIS_HOST_TOKEN`: the API token (a personal access token, sent as Basic's password) of the git identity
 serving `origin`, handed to this one process by the driver and to no other. The plugin is not started where no identity serves
 `origin`, the identity is read only on its host, git access denies Write, or the identity has no API token (set one in the identity's
-page, or `git identity token`). The token is never logged or written, and is sent only to the API. `DAORIS_HOST_API` names another
+page, or `daoris git identity token <identity> --kind api --token-stdin`). The token is never logged or written, and is sent only to the API. `DAORIS_HOST_API` names another
 base address in place of `https://dev.azure.com`, as the test's stand-in does.
 
 ## What it needs

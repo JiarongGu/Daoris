@@ -6,7 +6,8 @@ by `npm run rehearse:family`.
 
 What to look at:
 
-- `daoris.json` — the manifest, with the **`domain`** declaration that makes this project addressable.
+- `daoris.json` — the manifest, with the **`domain`** declaration that makes this project addressable and `uses`, which
+  names `engine`, the repository it asks.
 - `.claude/knowledge/world-streaming.md` — the local knowledge document the family rehearsal finds by
   **searching the shared index from outside this repository** ("chunk hydration"), which is the
   knowledge layer's whole job.
