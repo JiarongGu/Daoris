@@ -137,6 +137,8 @@ public sealed class QuestionSupervisorDecisions
 
     public SupervisorAttempts Attempts => _book.Attempts;
 
+    public SupervisorRuns Runs { get; } = new();
+
     /// <summary>The owner's <b>Overrule</b> of a course decision (<see cref="SupervisorCourses.OverruleAsync"/>) or an answer (<see cref="SupervisorReleasing.OverruleAsync"/>).</summary>
     public async Task<SupervisorState?> OverruleAsync(
         string session, string decision, SupervisorTakeBack takeBack, DateTimeOffset now, CancellationToken ct = default) =>

@@ -20,17 +20,19 @@ export const ACTS: Readonly<Record<RoleHoldRead['kind'], readonly string[]>> = {
   steward: ['drive', 'undrive', 'trees', 'hold', 'resume', 'stop', 'finish', 'retry', 'workflow', 'pause', 'unpause', 'done', 'delete', 'updatenow', 'updatecancel', 'land', 'clean', 'handover', 'setup'],
 };
 
-/** The holders a kind takes: the supervisor's rules alone or with a terminal, the steward's terminal; none is a role not staffed. */
+/** The holders a kind takes: the supervisor's rules alone, with a terminal or with an agent, the steward's terminal; none is a role not staffed. */
 export const HOLDERS: Readonly<Record<RoleHoldRead['kind'], readonly HoldDraft['holder'][]>> = {
-  supervisor: ['rules', 'terminal'],
+  supervisor: ['rules', 'terminal', 'agent'],
   steward: ['none', 'terminal'],
 };
+
+export const ordered = (hold: Pick<HoldDraft, 'kind' | 'holder'>): boolean => hold.kind === 'supervisor' && hold.holder === 'agent';
 
 /** The bounds of the supervisor's window, in minutes. */
 export const WINDOW_BOUNDS = { least: 1, most: 60 } as const;
 
 /** An appointed role's hold as the editor keeps it; `fixed`, the machine's generic supervisor, keeps every kind for the person's rules. */
-export type HoldDraft = { kind: RoleHoldRead['kind']; acts: string[]; holder: 'rules' | 'terminal' | 'none'; window: string; decides: string[]; fixed?: boolean };
+export type HoldDraft = { kind: RoleHoldRead['kind']; acts: string[]; holder: 'rules' | 'terminal' | 'agent' | 'none'; window: string; decides: string[]; fixed?: boolean };
 
 /** The draft an appointed role's editor opens with, placed on the machine or elsewhere. */
 export const holdDraftOf = (hold: RoleHoldRead, onMachine = false): HoldDraft => ({

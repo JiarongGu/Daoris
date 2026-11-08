@@ -304,7 +304,7 @@ public sealed class HelpRoleProposalsTests : HelpProposalsFixture, IDisposable
         Assert.Contains("is no act of the supervisor's", Refused("cook", """{ "kind": "supervisor", "name": "C", "decides": ["allow"], "authority": ["allow.fry"], "holder": "rules" """ + Scope + "}"));
         Assert.Contains("held by an agent", Refused("cook", """{ "kind": "supervisor", "name": "C", "decides": ["landing"], "holder": "agent" """ + Scope + "}"));
         Assert.Contains("held from 1 to 60 minutes", Refused("cook", """{ "kind": "supervisor", "name": "C", "decides": ["landing"], "window": 99 """ + Scope + "}"));
-        Assert.Contains("never a staffing of choices", Refused("cook", """{ "kind": "supervisor", "name": "C", "decides": ["landing"], "choices": [{ "agent": "claude-code" }] """ + Scope + "}"));
+        Assert.Contains("walks no choices", Refused("cook", """{ "kind": "supervisor", "name": "C", "decides": ["landing"], "choices": [{ "agent": "claude-code" }] """ + Scope + "}"));
         Assert.Contains("takes no work", Refused("cook", """{ "kind": "supervisor", "name": "C", "decides": ["landing"], "takes": ["build"] """ + Scope + "}"));
         Assert.Contains("a supervisor's alone", Refused("cook", """{ "kind": "steward", "name": "C", "decides": ["landing"] """ + Scope + "}"));
         Assert.Contains("allow", Refused("cook", """{ "kind": "supervisor", "name": "C", "decides": ["allow"] """ + Scope + "}"));

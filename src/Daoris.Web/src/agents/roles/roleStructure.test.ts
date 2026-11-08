@@ -336,4 +336,18 @@ describe('usedByAgent', () => {
     expect(used.map((each) => each.role.id)).toEqual(expect.arrayContaining(['build', 'chat', 'ask-daoris']));
     expect(usedByAgent(STRUCTURE, TOOLS.find((tool) => tool.name === 'codex')!).map((each) => each.role.id)).toEqual(['build', 'review']);
   });
+
+  it('names a supervisor an agent holds at each of its choices that uses the agent, and none another holder holds', () => {
+    const claude = TOOLS.find((tool) => tool.name === 'claude-code')!;
+    const held = (holder: 'agent' | 'terminal') => ({
+      id: 'gatekeeper', state: 'set' as const, seeded: false, name: 'Gatekeeper', takes: [], scopeKind: 'repository', scopeId: 'engine', revision: 4,
+      choices: [{ agent: 'codex', model: 'gpt-6.1-sol' }, { agent: 'claude-code', model: 'opus', effort: 'high' }],
+      hold: { kind: 'supervisor' as const, acts: [], holder, window: 5, decides: ['question'] },
+    });
+
+    const used = usedByAgent({ ...STRUCTURE, roles: [...STRUCTURE.roles, held('agent')] }, claude).filter((each) => each.role.id === 'gatekeeper');
+
+    expect(used.map((each) => [each.works, each.from, each.model])).toEqual([[['supervise'], '2', 'opus']]);
+    expect(usedByAgent({ ...STRUCTURE, roles: [...STRUCTURE.roles, held('terminal')] }, claude).some((each) => each.role.id === 'gatekeeper')).toBe(false);
+  });
 });

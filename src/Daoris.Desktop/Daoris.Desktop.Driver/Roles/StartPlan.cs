@@ -281,6 +281,7 @@ internal sealed class StartPlan
         "partner" => "partner",
         "review" => "opinion",
         "brainstorm" => "brainstorm",
+        "supervise" => "supervisor",
         _ => throw new ArgumentOutOfRangeException(nameof(work), work, "no work of that name: a start's work is one of the participant's work codes"),
     };
 

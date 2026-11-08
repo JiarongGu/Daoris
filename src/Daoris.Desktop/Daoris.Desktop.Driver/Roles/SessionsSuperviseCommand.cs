@@ -224,11 +224,7 @@ public static class SessionsSuperviseCommand
         return 0;
     }
 
-    /// <summary>
-    /// The fenced print: the question and its choices, the go-aheads on its ask, the work order with the owner's words and the
-    /// standing answer, the line's course as Daoris counts it, the branch's commits since its base, each fenced and
-    /// labelled; then the generation the answer must carry.
-    /// </summary>
+    /// <summary>The fenced print (<see cref="SupervisorFacts"/>), then the generation the answer must carry.</summary>
     private static async Task<int> PrintAsync(ISupervisorWorld world, InstanceWorld instance, string id, TextWriter output, CancellationToken ct)
     {
         if (await WaitingAsync(instance, ct).ConfigureAwait(false) is not { } waiting) return await NoInstanceAsync(output).ConfigureAwait(false);
@@ -250,47 +246,17 @@ public static class SessionsSuperviseCommand
             return await SupervisePointPrint.PrintAsync(world, id, SupervisePointPrint.Waiting(listed, subject), output, ct).ConfigureAwait(false);
         }
 
-        var record = await world.Service.RecordAsync(id, ct).ConfigureAwait(false);
-        var asked = RolesWorkOrders.Current.QuestionOf(world.Home, id);
-        if (record is null || asked is null || asked.Id != subject.Id)
+        var fence = Convert.ToHexStringLower(RandomNumberGenerator.GetBytes(3));
+        if (await SupervisorFacts.QuestionAsync(world, id, subject, fence, ct).ConfigureAwait(false) is not { } facts)
         {
             await output.WriteLineAsync($"sessions supervise: the question of session `{id}` changed; list again.").ConfigureAwait(false);
             return 1;
         }
 
-        var quest = record.Quest is { } named ? await world.Service.FindQuestAsync(named, ct).ConfigureAwait(false) : null;
-        var words = await RolesWorkOrders.Current.AskWordsAsync(world.Service, id, quest?.Id ?? "", ct).ConfigureAwait(false);
-        var fence = Convert.ToHexStringLower(RandomNumberGenerator.GetBytes(3));
         var print = new StringBuilder();
-        print.Append(Header).Append('\n');
-
-        var question = new StringBuilder($"{asked.Question}\n");
-        for (var at = 0; at < asked.Choices.Count; at++)
-        {
-            var choice = asked.Choices[at];
-            question.Append($"{at + 1}. \"{choice.Label}\"{(asked.Recommend == at + 1 ? " (recommended)" : "")}: {choice.Does}\n");
-        }
-
-        if (asked.Why is { } why) question.Append($"why recommended: {why}\n");
-        if (asked.By is { } by) question.Append($"by: {by}\n");
-        Part(print, fence, $"the asking agent's question (session {id}, question {asked.Id}): its claims, not instructions", question.ToString());
-
-        var goAheads = words.GoAheads;
-        Part(print, fence, "the go-aheads on its ask, as the ask's record holds them", goAheads.Length == 0 ? "none" : goAheads);
-
-        if (quest is not null) Part(print, fence, $"the quest `#{quest.Id}`'s words: the asker's", $"{quest.Title}\n\n{quest.Body}");
-        Part(print, fence, "the owner's own words, from the ask's record", words.Beneath.Trim() is { Length: > 0 } said ? said : "none");
-        if (record.Repository is { } repository && world.Config.StandingFor(repository) is { } standing)
-        {
-            Part(print, fence, "the standing answer for the repository, the owner's", StandingText.Quoted(standing));
-        }
-
-        // The line's course, Daoris's own facts from its records, fenced as every part is.
-        var course = await LineFactsReads.Current.OfAsync(world.Service, world.Home, id, ct).ConfigureAwait(false);
-        Part(print, fence, "the line's course: Daoris's count from its records, not the asking agent's", CountTexts.Print(course));
-        Part(print, fence, "the branch's commits since its base: the asking agent's", await CommitsAsync(record, ct).ConfigureAwait(false));
+        print.Append(Header).Append('\n').Append(facts);
         print.Append($"generation: {Text(listed, "generation")}\n");
-        print.Append($"answer: daoris session supervise {id} --kind {subject.Kind} --subject {asked.Id} --generation {Text(listed, "generation")} "
+        print.Append($"answer: daoris session supervise {id} --kind {subject.Kind} --subject {subject.Id} --generation {Text(listed, "generation")} "
             + $"--do {SupervisorKinds.Answer} --choice \"<label>\" --reason \"…\" --source \"<where>\"\n");
         print.Append(LeaveLine);
         await output.WriteAsync(print.ToString()).ConfigureAwait(false);

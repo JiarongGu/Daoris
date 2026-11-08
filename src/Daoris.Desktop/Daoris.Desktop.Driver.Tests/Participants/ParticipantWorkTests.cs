@@ -84,7 +84,7 @@ public sealed class ParticipantWorkTests
             Assert.All(row.Disagrees.Values, decision => Assert.Contains(decision, table.Decisions));
         }
 
-        Assert.Equal(["partner-drawn"], table.Rows.SelectMany(row => row.Disagrees.Where(each => each.Key == "drawn")).Select(each => each.Value).Distinct());
+        Assert.Equal(["partner-drawn", "supervise-drawn"], table.Rows.SelectMany(row => row.Disagrees.Where(each => each.Key == "drawn")).Select(each => each.Value).Distinct());
     }
 
     /// <summary>
@@ -151,9 +151,19 @@ public sealed class ParticipantWorkTests
         Assert.Equal(ParticipantWork.Chat, (await chats.Client().RecordAsync("c2"))!.Work);
     }
 
-    private sealed record Marks(bool Mirror, string? Kind, string? Repository, string? Ask, string? Serves, string? Piece, string? Opinion)
+    private sealed record Marks(bool Mirror, string? Kind, string? Repository, string? Ask, string? Serves, string? Piece, string? Opinion, string? Decides = null)
     {
-        public WorkMarks Value => new(Mirror, Kind, Repository, Ask, Serves, Piece, Opinion);
+        public WorkMarks Value => new(Mirror, Kind, Repository, Ask, Serves, Piece, Opinion, Decides);
+    }
+
+    [Fact]
+    public void A_supervisor_s_turn_takes_no_place_under_the_cap_whatever_it_serves()
+    {
+        var turn = new SessionView("s1", "engine", "working") { Kind = "chat", Serves = "a1b2c3d4", Decides = "a-1b2c3d4e5f6" };
+
+        Assert.False(ActiveSessions.HoldsSlot(turn));
+        Assert.False(ActiveSessions.HoldsSlot("chat", "engine", null, "a1b2c3d4", null, "a-1b2c3d4e5f6"));
+        Assert.True(ActiveSessions.HoldsSlot(turn with { Decides = null }));
     }
 
     private sealed record Answers(bool HoldsSlot, string Drawn, bool ConnectorPartner, bool Help)

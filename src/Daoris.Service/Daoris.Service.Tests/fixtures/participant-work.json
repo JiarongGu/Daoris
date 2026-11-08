@@ -10,12 +10,15 @@
     "help": { "holdsSlot": true },
     "partner": { "holdsSlot": true },
     "review": { "holdsSlot": true },
-    "brainstorm": { "holdsSlot": false }
+    "brainstorm": { "holdsSlot": false },
+    "supervise": { "holdsSlot": false }
   },
 
   "decisions": {
     "partner-drawn": "D203 point 1, accepted: a co-worker is a relation, never a work of its own, and a partner is drawn as a partner, in a string of its own (work.identity.partner, D203 point 9). Today identity.ts draws any serves as a helper. Only the drawing changes: isHelper, which keeps a helper's record to one turn with no box (WorkFrame's oneTurn) and offers it no act that takes words (acts.ts), reads serves alone and refuses a partner exactly as it does today, on a host that sends work and on one that sends none (X4-1.3, X4-2.1).",
-    "mirror-slot": "A mirror is another machine's record and holds no slot here, which is the work's table. ActiveSessions.HoldsSlot is told no mirror by its callers, who count this machine's own records, so it keeps answering as it did (O4-9: a disagreement other than the partner's moves no reader in this row)."
+    "supervise-slot": "SUPERVISOR2c: a supervisor's turn decides for work already under the cap and waiting on it, so it takes no place there, or a full cap's running session would wait on its own allow; `decides` is read before every other mark, so its `serves` makes it no helper.",
+    "supervise-drawn": "SUPERVISOR2c: a supervisor's turn is drawn as one (work.identity.supervise), never as the helper its `serves` would read as on a host that sends no work.",
+    "mirror-slot":"A mirror is another machine's record and holds no slot here, which is the work's table. ActiveSessions.HoldsSlot is told no mirror by its callers, who count this machine's own records, so it keeps answering as it did (O4-9: a disagreement other than the partner's moves no reader in this row)."
   },
 
   "rows": [
@@ -90,6 +93,14 @@
       "today": { "holdsSlot": true, "drawn": "helper", "connectorPartner": true, "help": false },
       "byWork": { "holdsSlot": true, "drawn": "partner", "connectorPartner": true, "help": false },
       "disagrees": { "drawn": "partner-drawn" }
+    },
+    {
+      "name": "a supervisor's turn that serves the session it decides for",
+      "marks": { "mirror": false, "kind": "chat", "repository": "engine", "ask": null, "serves": "a1b2c3d4", "piece": null, "opinion": null, "decides": "a-1b2c3d4e5f6" },
+      "work": "supervise",
+      "today": { "holdsSlot": true, "drawn": "helper", "connectorPartner": false, "help": false },
+      "byWork": { "holdsSlot": false, "drawn": "supervise", "connectorPartner": false, "help": false },
+      "disagrees": { "holdsSlot": "supervise-slot", "drawn": "supervise-drawn" }
     },
     {
       "name": "a piece with no lead is no partner",

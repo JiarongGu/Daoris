@@ -68,6 +68,12 @@ public sealed class RoleVerb : ChoiceVerb
                     continue;
                 }
 
+                if (slot.Role.Hold is not null && !AppointedStaffing.Ordered(slot.Role.Hold))
+                {
+                    said.WriteLine($"  {each.Role} is left out: no agent holds it, so it walks no choices.");
+                    continue;
+                }
+
                 RoleDoor.Apply(staffing, RoleChange.Set(slot.Role), each.Choices);
                 set.Add(each.Role);
             }

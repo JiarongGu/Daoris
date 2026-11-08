@@ -165,7 +165,7 @@ describe('a session title', () => {
  * (`byWork`), and the decision for every difference. Only a partner's drawing changes, in a string of its own.
  */
 describe('a record drawn by its work (FOUNDATION1c)', () => {
-  type Marks = { mirror: boolean; kind: string | null; repository: string | null; ask: string | null; serves: string | null; piece: string | null; opinion: string | null };
+  type Marks = { mirror: boolean; kind: string | null; repository: string | null; ask: string | null; serves: string | null; piece: string | null; opinion: string | null; decides?: string | null };
   type Answers = { holdsSlot: boolean; drawn: string; connectorPartner: boolean; help: boolean };
   type Row = { name: string; marks: Marks; work: string | null; today: Answers; byWork: Answers; disagrees: Record<string, string> };
   const TABLE = JSON.parse(readFileSync(join(process.cwd(), '..', 'Daoris.Service', 'Daoris.Service.Tests', 'fixtures', 'participant-work.json'), 'utf8')) as {
@@ -178,6 +178,7 @@ describe('a record drawn by its work (FOUNDATION1c)', () => {
     opinion: () => i18n.t('opinion.session.title'),
     helper: () => i18n.t('work.identity.helper'),
     partner: () => i18n.t('work.identity.partner'),
+    supervise: () => i18n.t('work.identity.supervise'),
     help: () => i18n.t('help.title'),
     conversation: () => i18n.t('work.identity.conversation'),
     session: () => i18n.t('work.identity.session'),
@@ -202,16 +203,16 @@ describe('a record drawn by its work (FOUNDATION1c)', () => {
       expect(sessionTitle(recordOf(row.marks, row.work))).toBe(titled(row, row.byWork.drawn));
     });
 
-  it('names every difference between the two drawings and decides it: only a partner’s drawing changes', () => {
+  it('names every difference between the two drawings and decides it: a partner’s and a supervisor’s turn’s drawings change', () => {
+    const decided: Record<string, string> = {
+      partner: 'partner-drawn', supervise: 'supervise-drawn',
+    };
     for (const row of TABLE.rows) {
       const differs = row.today.drawn !== row.byWork.drawn;
       expect(Object.keys(row.disagrees).includes('drawn'), row.name).toBe(differs);
-      if (differs) {
-        expect(row.disagrees.drawn).toBe('partner-drawn');
-        expect(row.work).toBe('partner');
-      }
+      if (differs) expect(row.disagrees.drawn).toBe(decided[row.work ?? '']);
     }
-    expect(Object.keys(TABLE.decisions)).toContain('partner-drawn');
+    expect(Object.keys(TABLE.decisions)).toEqual(expect.arrayContaining(Object.values(decided)));
   });
 
   /**

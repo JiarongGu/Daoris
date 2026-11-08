@@ -51,6 +51,9 @@ public interface ISpawn
     /// <summary>Hands a pipe-door spawn its rules file; nothing by default.</summary>
     void HandSettings(ProcessStartInfo info, string settingsFile) { }
 
+    /// <summary>Holds a pipe-door spawn to the person's tier, its handed file and Daoris's servers, none of its folder's; nothing by default.</summary>
+    void HandSourcesAlone(ProcessStartInfo info) { }
+
     /// <summary>Hands a pipe-door spawn the harness plugins composed for it; nothing by default.</summary>
     void HandPlugins(ProcessStartInfo info, IReadOnlyList<string> plugins) { }
 }
@@ -82,6 +85,8 @@ public interface IProtocolDialect : IDialect
 {
     /// <summary>What <c>session/new</c> carries to take the rules file and the plugins composed for the session; null sends no <c>_meta</c>.</summary>
     object? SessionMeta(string settingsFile, IReadOnlyList<string> plugins) => null;
+
+    object? SourcesAloneMeta(string settingsFile, IReadOnlyList<string> plugins) => SessionMeta(settingsFile, plugins);
 }
 
 /// <summary>How an account's windows are asked between turns: the program, the command, the answers recorded and the freshness.</summary>

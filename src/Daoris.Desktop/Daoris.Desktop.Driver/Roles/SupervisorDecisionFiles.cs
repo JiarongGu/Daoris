@@ -84,9 +84,7 @@ internal sealed class SupervisorDecisionFiles(string home)
             var reasons = Json.Items(root, "reasons")
                 .Select(reason => new SupervisorReason(Json.Text(reason, "says") ?? "", Json.Text(reason, "source") ?? ""))
                 .ToList();
-            var holder = root.TryGetProperty("holder", out var held) && held.ValueKind == JsonValueKind.Object
-                ? new SupervisorHolder(Json.Text(held, "kind") ?? "", Json.Text(held, "parent"))
-                : new SupervisorHolder("", null);
+            var holder = SupervisorHolders.Read(root);
             var kept = Moments.Read(root, "keptAt") ?? DateTimeOffset.MinValue;
             var (state, at, why, word) = (SupervisorState.Held, kept, (string?)null, (string?)null);
             foreach (var line in (Read(StatesOf(session, id)) ?? "").Split('\n', StringSplitOptions.RemoveEmptyEntries))
@@ -107,10 +105,7 @@ internal sealed class SupervisorDecisionFiles(string home)
         }
     }
 
-    /// <summary>
-    /// A decision's file: an answer's names its <paramref name="choice"/>, a defer's its <paramref name="bound"/>; the counts
-    /// its holder is handed beside the question's snapshot, where the keeping reads them.
-    /// </summary>
+    /// <summary>A decision's file: an answer's names its <paramref name="choice"/>, a defer's its <paramref name="bound"/>, beside the counts handed to its holder.</summary>
     public static string DecisionJson(
         string id, string session, string? choice, string? bound, IReadOnlyList<SupervisorReason> reasons, SupervisorHolder holder,
         ParkQuestion question, string generation, DateTimeOffset kept, DateTimeOffset goesOn, IReadOnlyList<CountFact>? counts) => Written(writer =>
@@ -170,10 +165,7 @@ internal sealed class SupervisorDecisionFiles(string home)
             writer.WriteEndArray();
         }
 
-        writer.WriteStartObject("holder");
-        writer.WriteString("kind", holder.Kind);
-        if (holder.Parent is not null) writer.WriteString("parent", holder.Parent);
-        writer.WriteEndObject();
+        SupervisorHolders.Write(writer, holder);
         writer.WriteString("appointment", generation);
         writer.WriteString("keptAt", Moments.Write(kept));
         writer.WriteString("goesOnAt", Moments.Write(goesOn));

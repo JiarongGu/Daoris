@@ -334,7 +334,8 @@ public static class NeedsAPerson
         .. facts.Sessions
             .Where(session => Text(session, "id") is { Length: > 0 } id && !Elsewhere(id) && Active.Contains(Text(session, "state") ?? "")
                 && ActiveSessions.HoldsSlot(
-                    Text(session, "kind"), Text(session, "repository"), Text(session, "ask"), Text(session, "serves"), Text(session, "opinion")))
+                    Text(session, "kind"), Text(session, "repository"), Text(session, "ask"), Text(session, "serves"), Text(session, "opinion"),
+                    Text(session, "decides")))
             .Select(session => ($"session:{Text(session, "id")}", new JsonObject { ["workspace"] = Text(session, "workspace") ?? "default" })),
     ];
 

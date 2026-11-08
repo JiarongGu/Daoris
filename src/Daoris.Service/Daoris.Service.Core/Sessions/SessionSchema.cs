@@ -140,6 +140,7 @@ internal static class SessionSchema
         // The piece a partner's record writes. This machine's own, as `serves` is, and a record from
         // before says none.
         await SchemaColumns.EnsureAsync(db, "sessions", "piece", "piece TEXT NULL", ct).ConfigureAwait(false);
+        await SchemaColumns.EnsureAsync(db, "sessions", "decides", "decides TEXT NULL", ct).ConfigureAwait(false);
 
         // The session a record continues, why and who asked. This machine's own, as `opinion` is,
         // and a record from before says none. `from_session`, since FROM is SQL's own word (as `limited`).

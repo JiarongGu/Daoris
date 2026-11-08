@@ -330,6 +330,8 @@
   "agents.setup.roles.hold.heldBy": "担任者：{{holder}}",
   "agents.setup.roles.hold.holder.rules": "你的规则，再由你决定",
   "agents.setup.roles.hold.holder.terminal": "终端",
+  "agents.setup.roles.hold.holder.agent": "智能体",
+  "agents.setup.roles.hold.agentChoices": "它的智能体按顺序使用这些选择，每个决定一次只读的回合：在 Claude Code 上由该智能体的规则和副本约束，在其他智能体上只由副本约束。它不占用并发上限的名额。",
   "agents.setup.roles.hold.holder.none": "无人",
   "agents.setup.roles.hold.noActs": "无权限动作",
   "agents.setup.roles.hold.window_one": "决定会保留 {{count}} 分钟，供你否决",

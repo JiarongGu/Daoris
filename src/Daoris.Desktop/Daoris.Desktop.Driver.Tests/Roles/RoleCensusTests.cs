@@ -26,10 +26,17 @@ public sealed class RoleCensusTests : IDisposable
     [Fact]
     public void Every_seeded_work_s_record_is_held_to_its_own_seeded_role()
     {
-        foreach (var work in ParticipantWork.Codes.Where(work => work != ParticipantWork.Design))
+        foreach (var work in ParticipantWork.Codes.Where(work => work is not (ParticipantWork.Design or ParticipantWork.Supervise)))
         {
             Assert.Null(RoleCensus.Check(work, StartPlan.RoleOf(work), null, Seeded));
         }
+
+        var gatekeeper = new RoleRecord("gatekeeper", AuthoredText.Of("Gatekeeper"), RoleRecord.Appointed, [], RoleScope.Everywhere,
+            new RoleHold(AppointedRoles.Supervisor, [], RoleHolders.Agent) { Decides = [SupervisorKinds.Question] });
+        RoleRecord? Held(string id, long revision) => id == "gatekeeper" && revision == 4 ? gatekeeper : revision == 5 ? gatekeeper with { Hold = gatekeeper.Hold! with { Holder = RoleHolders.Terminal } } : null;
+        Assert.Null(RoleCensus.Check(ParticipantWork.Supervise, "gatekeeper", ("gatekeeper", 4), Held));
+        Assert.NotNull(RoleCensus.Check(ParticipantWork.Supervise, "gatekeeper", ("gatekeeper", 5), Held));
+        Assert.NotNull(RoleCensus.Check(ParticipantWork.Supervise, "gatekeeper", null, Held));
 
         Assert.NotNull(RoleCensus.Check(ParticipantWork.Build, "intake", null, Seeded));
         Assert.NotNull(RoleCensus.Check(ParticipantWork.Build, null, null, Seeded));

@@ -20,9 +20,12 @@ public static class StartAdmission
     /// <summary>The asker is Ask Daoris's conversation.</summary>
     public const string AskDaoris = "ask-daoris";
 
+    /// <summary>The asker is a supervisor's one read-only turn, which decides alone.</summary>
+    public const string Supervisor = "supervisor";
+
     /// <summary>The marks a record the service answered carries, as the work's rule reads them.</summary>
     public static WorkMarks Marks(PriorSession record) =>
-        new(record.Teammate, record.Kind, record.Repository, record.Ask, record.Serves, record.Piece, record.Opinion);
+        new(record.Teammate, record.Kind, record.Repository, record.Ask, record.Serves, record.Piece, record.Opinion, record.Decides);
 
     /// <summary>Whether a session of <paramref name="work"/> may ask for a co-worker: a working session's alone, driven or a conversation.</summary>
     public static bool AsksCoWorker(string? work) => work is ParticipantWork.Build or ParticipantWork.Design or ParticipantWork.Chat;
@@ -39,7 +42,8 @@ public static class StartAdmission
     {
         var work = ParticipantWork.Of(marks with { Mirror = false });
         if (AsksCoWorker(work) && marks.Serves is null && marks.Opinion is null) return null;
-        return marks.Serves is not null ? Helper : marks.Opinion is not null ? Reviewer : work == ParticipantWork.Intake ? Intake : AskDaoris;
+        return work == ParticipantWork.Supervise ? Supervisor
+            : marks.Serves is not null ? Helper : marks.Opinion is not null ? Reviewer : work == ParticipantWork.Intake ? Intake : AskDaoris;
     }
 
     /// <summary>

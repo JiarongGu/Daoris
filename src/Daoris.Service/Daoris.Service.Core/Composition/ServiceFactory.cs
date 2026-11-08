@@ -195,6 +195,9 @@ public sealed record ComposedService(
     /// <summary>A partner's record: a local host's door, idempotent by the piece; a shared host's refuses.</summary>
     public PartnerDesk Partners { get; init; } = null!;
 
+    /// <summary>A supervisor's turn's record: a local host's door; a shared host's refuses.</summary>
+    public SuperviseDesk Supervising { get; init; } = null!;
+
     /// <summary>An ask's channel: the messages beside the asks they are on. Composed on every host; only a local host maps its doors.</summary>
     public ChannelDesk Channel { get; init; } = null!;
 
@@ -433,6 +436,7 @@ public static class ServiceFactory
             Memory = mode == ServiceMode.Local ? LyntaiMemory.Beside(options.DatabasePath) : null,
             Helpers = new HelperDesk(sessions, local: mode == ServiceMode.Local),
             Partners = new PartnerDesk(sessions, local: mode == ServiceMode.Local),
+            Supervising = new SuperviseDesk(sessions, local: mode == ServiceMode.Local),
         };
     }
 

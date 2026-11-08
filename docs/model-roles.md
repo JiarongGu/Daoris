@@ -35,6 +35,7 @@ seen where its alias now means Haiku 5.5 points at the protocol adapter's own bu
 | **review** | reads a finished branch or a design against the code, read-only | another maker (below), else Claude Opus 5.5 | high | An independent reader finds what the author's model shares (D155) |
 | **decide-support** | a different opinion on a decision, a design, a choice between shapes, the backlog's order | another maker (below) | high | The owner, 2026-10-16: used on one's own initiative, not as a fixed step |
 | **help** | Ask Daoris's room | the person's choice (D89, D98) | the person's | The person's account and taste |
+| **supervise** | an agent supervisor's one read-only decision under its role's grants | Claude Opus 5.5, as build-judgement | high | Judgement is the work, as Design's is; the suggested choices' supervisor row reads the build-judgement row |
 
 ## Another maker
 

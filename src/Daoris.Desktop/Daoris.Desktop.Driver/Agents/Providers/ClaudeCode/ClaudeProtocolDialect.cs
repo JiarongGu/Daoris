@@ -21,4 +21,20 @@ internal sealed class ClaudeProtocolDialect : IProtocolDialect
                 options = new { settings = settingsFile, plugins = plugins.Select(path => new { type = "local", path }).ToArray() },
             },
         };
+
+    /// <summary>
+    /// The options with <c>settingSources: ["user"]</c> and <c>strictMcpConfig: true</c>, which the adapter spreads over its own list
+    /// as the holder's terminal's flags are on the pipe door: the folder's settings, hooks and servers are not the session's.
+    /// </summary>
+    public object? SourcesAloneMeta(string settingsFile, IReadOnlyList<string> plugins) => new
+    {
+        claudeCode = new
+        {
+            options = new
+            {
+                settings = settingsFile, settingSources = new[] { "user" }, strictMcpConfig = true,
+                plugins = plugins.Select(path => new { type = "local", path }).ToArray(),
+            },
+        },
+    };
 }

@@ -19,7 +19,22 @@ public sealed class ParticipantRoutes(HostWiring host) : IRouteModule
         routes.Map<HandHelper, HelperActionResponse>(HandHelperAsync);
         routes.Map<OpenPartner, HelperActionResponse>(OpenPartnerAsync);
         routes.Map<HandPartner, HelperActionResponse>(HandPartnerAsync);
+        routes.Map<OpenSupervise, HelperActionResponse>(OpenSuperviseAsync);
     }
+
+    private async Task<Answer<HelperActionResponse>> OpenSuperviseAsync(OpenSupervise request, HttpContext http, CancellationToken ct) =>
+        host.MachineLocal(http)
+            ? await ReplyAsync(
+                await Service.Supervising.OpenAsync(
+                    new SuperviseOpen(
+                        request.Decides ?? "", request.Role ?? "", request.Repository ?? "", request.Workspace, request.Serves,
+                        request.Door ?? "", request.Tree ?? "")
+                    {
+                        Account = request.Account, DoorVersion = request.DoorVersion,
+                    },
+                    DateTimeOffset.UtcNow, ct),
+                http)
+            : OffMachine;
 
     private async Task<Answer<HelperActionResponse>> OpenHelperAsync(OpenHelper request, HttpContext http, CancellationToken ct) =>
         host.MachineLocal(http)

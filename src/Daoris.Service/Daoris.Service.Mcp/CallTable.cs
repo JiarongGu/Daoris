@@ -61,6 +61,15 @@ public static class CallTable
 
     private static readonly HashSet<string> Reviewer = new(ReviewerServed, StringComparer.Ordinal);
 
+    /// <summary>What a supervisor's turn is served: the reads alone, since it decides in its last message (the driver's <c>SupervisePermissions.Offered</c>).</summary>
+    public static IReadOnlyList<string> SupervisorServed { get; } =
+    [
+        "handback_read", "knowledge_convergence", "knowledge_get", "knowledge_repositories", "knowledge_search", "line_read", "memory_get",
+        "memory_search", "quest_list", "registry",
+    ];
+
+    private static readonly HashSet<string> Supervising = new(SupervisorServed, StringComparer.Ordinal);
+
     /// <summary>
     /// What every session working in a repository is served (CONTEXTONE1d2): the knowledge and its memory, quests, its line, the
     /// registry, a helper's ask, the ask's channel and the handbacks, less what its work is refused below.
@@ -134,6 +143,8 @@ public static class CallTable
             { Work: ParticipantWork.Partner } => Partner.Contains(name) ? null : Forbidden(Words.Partner(name)),
             // §7 row 11: a reviewer is served what its handed rules offer, on every door.
             { Work: ParticipantWork.Review } => Reviewer.Contains(name) ? null : Forbidden(Words.Reviewer(name)),
+            { Work: ParticipantWork.Supervise } => Supervising.Contains(name) ? null : Forbidden(
+                $"`{name}` is not served to a supervisor's turn: it reads, and decides in its last message alone. Nothing was done."),
             { Work: ParticipantWork.AskDaoris } => Ordinary(name, askDaoris: true) ?? Unowned(name, "Ask Daoris"),
             { Work: ParticipantWork.Help } => Serving(name) ?? Channelled(name) ?? Ordinary(name) ?? Outside(name, Helping, "a helper"),
             { Work: ParticipantWork.Intake } => Ordinary(name) ?? Unowned(name, "an intake") ?? Outside(name, Intaking, "an intake"),

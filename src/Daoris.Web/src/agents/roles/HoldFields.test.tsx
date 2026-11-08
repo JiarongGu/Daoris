@@ -14,6 +14,29 @@ describe("the role editor's appointed fields", () => {
     await i18n.changeLanguage('en');
   });
 
+  it('offers a supervisor an agent holder beside its rules and a terminal, and the steward none, in English and Chinese', async () => {
+    const onChange = vi.fn();
+    const { unmount } = render(<HoldFields hold={GATEKEEPER} disabled={false} onChange={onChange} />);
+    const open = async () => {
+      screen.getAllByRole('combobox')[0]!.focus();
+      await userEvent.keyboard('{Enter}');
+    };
+    await open();
+    expect((await screen.findAllByRole('option')).map((option) => option.textContent)).toEqual(['your rules, then you', 'a terminal', 'an agent']);
+    await userEvent.click(screen.getByRole('option', { name: 'an agent' }));
+    expect(onChange).toHaveBeenCalledWith({ ...GATEKEEPER, holder: 'agent' });
+    unmount();
+
+    await i18n.changeLanguage('zh');
+    const { unmount: gone } = render(<HoldFields hold={{ ...GATEKEEPER, holder: 'agent' }} disabled={false} onChange={vi.fn()} />);
+    await open();
+    expect(await screen.findByRole('option', { name: '智能体' })).toBeInTheDocument();
+    gone();
+    render(<HoldFields hold={STEWARD} disabled={false} onChange={vi.fn()} />);
+    await open();
+    expect((await screen.findAllByRole('option')).map((option) => option.textContent)).not.toContain('智能体');
+  });
+
   it("offers the steward's hand-over as an act the person grants, worded in English and Chinese", async () => {
     const onChange = vi.fn();
     const { unmount } = render(<HoldFields hold={STEWARD} disabled={false} onChange={onChange} />);

@@ -18,6 +18,19 @@ public sealed record OpenHelper(
     public static string Path => "/api/helpers";
 }
 
+/// <summary>
+/// The driver opens a supervisor's turn's record: a chat on no quest marked with the attempt it decides for, at the subject's repository
+/// or the machine's, serving the session the subject waits on where it names one, bound to its supervisor role.
+/// </summary>
+public sealed record OpenSupervise(
+    string? Decides, string? Role, string? Repository, string? Workspace, string? Serves, string? Door, string? Tree,
+    string? Account = null, string? DoorVersion = null)
+    : IRoute<HelperActionResponse>
+{
+    public static string Method => "POST";
+    public static string Path => "/api/supervise";
+}
+
 /// <summary>A helper's answer, handed to the session it serves as a word marked as the helper's, once.</summary>
 /// <param name="Text">Daoris's words around the helper's claim.</param>
 /// <param name="Running">The driver that runs a working driven asker hands an urgent ask's answer for its run's next step.</param>
@@ -53,6 +66,7 @@ public sealed record HandPartner(string Partner, string? Text, bool? Settled = n
 [JsonSerializable(typeof(OpenHelper))]
 [JsonSerializable(typeof(HandHelper))]
 [JsonSerializable(typeof(OpenPartner))]
+[JsonSerializable(typeof(OpenSupervise))]
 [JsonSerializable(typeof(HandPartner))]
 [JsonSerializable(typeof(HelperActionResponse))]
 internal sealed partial class ParticipantJson : JsonSerializerContext;

@@ -61,6 +61,8 @@ export function sessionTitle(session: Session, quest?: Quest | null, opening?: s
   // A partner's record serves a lead as a helper's does, so a host before the work draws it a helper; one that sends the work draws it
   // a partner.
   if (isPartner(session)) return i18n.t('work.identity.partner');
+  // A supervisor's turn serves the session it decides for, so a host before the work draws it a helper too.
+  if (isSupervise(session)) return i18n.t('work.identity.supervise');
   // So is a helper's: it answers another session's one question, and its rail row says whose.
   if (isHelper(session)) return i18n.t('work.identity.helper');
   if (isHelp(session) && !opening) return i18n.t('help.title');
@@ -89,6 +91,9 @@ export const isHelper = (session: Session): boolean => !session.opinion && Boole
  * no act it is not offered now.
  */
 export const isPartner = (session: Session): boolean => session.work === 'partner';
+
+/** Whether a session is a supervisor's one read-only turn, as the host's work says. */
+export const isSupervise = (session: Session): boolean => session.work === 'supervise';
 
 /**
  * The sessions a record names as its own: the one it continues (`from`) and the one

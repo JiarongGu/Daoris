@@ -112,6 +112,14 @@ internal sealed class ClaudeCodeSpawn : ISpawn, IServerHanding
         info.ArgumentList.Add(settingsFile);
     }
 
+    /// <summary><c>--setting-sources user</c> and <c>--strict-mcp-config</c>, as the holder's terminal starts.</summary>
+    public void HandSourcesAlone(ProcessStartInfo info)
+    {
+        info.ArgumentList.Add("--setting-sources");
+        info.ArgumentList.Add("user");
+        info.ArgumentList.Add("--strict-mcp-config");
+    }
+
     /// <summary>
     /// <c>--plugin-dir &lt;path&gt;</c>, one per plugin a spawn composed, measured in an untrusted folder with a fresh
     /// configuration directory: each plugin's skills load, named <c>&lt;plugin&gt;:&lt;skill&gt;</c>.

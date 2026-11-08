@@ -25,6 +25,7 @@ public static partial class ActorSuggestion
         new("helper", [new ActorChoice(ActorChoices.DefaultAgent, "opus", "high")]),
         new("partner", [new ActorChoice(ActorChoices.DefaultAgent, "opus", "high")]),
         new("brainstorm", [new ActorChoice(ActorChoices.DefaultAgent, "opus", "high")]),
+        new("supervisor", [new ActorChoice(ActorChoices.DefaultAgent, "opus", "high")]),
     ];
 
     /// <summary>The table with each choice of an agent the machine has not set up left out, and a role left with none left out whole; null <paramref name="setUp"/> leaves nothing out.</summary>

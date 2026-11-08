@@ -13,8 +13,9 @@ namespace Daoris.Driver;
 /// <param name="Serves">The session a helper or a partner works for.</param>
 /// <param name="Piece">The piece a partner writes, kept only beside <paramref name="Serves"/>.</param>
 /// <param name="Opinion">The second opinion a reviewer reads for.</param>
+/// <param name="Decides">The attempt a supervisor's turn decides for.</param>
 public readonly record struct WorkMarks(
-    bool Mirror, string? Kind, string? Repository, string? Ask, string? Serves, string? Piece, string? Opinion);
+    bool Mirror, string? Kind, string? Repository, string? Ask, string? Serves, string? Piece, string? Opinion, string? Decides = null);
 
 /// <summary>
 /// The participant's work: the capability a record is opened for, one closed code read
@@ -60,8 +61,11 @@ public static class ParticipantWork
     /// <summary>A brainstorm's pass, which keeps no record: no marks read it.</summary>
     public const string Brainstorm = "brainstorm";
 
+    /// <summary>A supervisor's one read-only turn, told by the attempt it decides for before every other mark; no place under the cap.</summary>
+    public const string Supervise = "supervise";
+
     /// <summary>Every work, the closed set.</summary>
-    public static IReadOnlyList<string> Codes { get; } = [Build, Design, Chat, AskDaoris, Intake, Help, Partner, Review, Brainstorm];
+    public static IReadOnlyList<string> Codes { get; } = [Build, Design, Chat, AskDaoris, Intake, Help, Partner, Review, Brainstorm, Supervise];
 
     // Events' spelling of Ask Daoris's room (AskDaorisRoom, the lowest subdomain that reads it), a twin of HelpRoom.Repository, which this
     // module may not name (it sits above it), and of the service's SessionLedger.HelpRepository: each side's test holds the spelling,
@@ -72,6 +76,7 @@ public static class ParticipantWork
     public static string? Of(WorkMarks marks)
     {
         if (marks.Mirror) return null;
+        if (Marked(marks.Decides)) return Supervise;
         if (Marked(marks.Opinion)) return Review;
         if (Marked(marks.Serves)) return Marked(marks.Piece) ? Partner : Help;
         if (Marked(marks.Ask)) return Intake;

@@ -48,7 +48,10 @@ public static class ParticipantWork
     public const string Brainstorm = "brainstorm";
 
     /// <summary>Every work, the closed set.</summary>
-    public static IReadOnlyList<string> Codes { get; } = [Build, Design, Chat, AskDaoris, Intake, Help, Partner, Review, Brainstorm];
+    /// <summary>A supervisor's one read-only turn, told by the attempt it decides for, before every other mark.</summary>
+    public const string Supervise = "supervise";
+
+    public static IReadOnlyList<string> Codes { get; } = [Build, Design, Chat, AskDaoris, Intake, Help, Partner, Review, Brainstorm, Supervise];
 
     /// <summary>
     /// The work <paramref name="session"/> is opened for, from its marks; null where it has none here, another machine's record.
@@ -56,6 +59,7 @@ public static class ParticipantWork
     public static string? Of(Session session)
     {
         if (session.Origin is not null) return null;
+        if (Marked(session.Decides)) return Supervise;
         if (Marked(session.Opinion)) return Review;
         if (Marked(session.Serves)) return Marked(session.Piece) ? Partner : Help;
         if (Marked(session.Ask)) return Intake;
