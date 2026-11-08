@@ -28,11 +28,11 @@ one job each, checked by `verify`.
 | Ingest | `Core/Knowledge/Ingest/` | Splits files: `DecisionNotes`, `IndexSections`, `IndexRows`, `MarkdownSections`, `MarkdownFence`, `EntryPieces` |
 | `KnowledgeIndex`, `DisclosurePolicy` | `Core/Knowledge/` | Writes a source into the store, withholding at ingest what may not leave |
 | `SqliteKnowledgeStore` | `Core/Knowledge/Store/SqliteKnowledgeStore.cs` | `knowledge.db` with FTS5; `InMemoryKnowledgeStore` is its test twin |
-| Search | `Core/Knowledge/Search/` | `SqliteKnowledgeSearch` (BM25), `SemanticKnowledgeSearch`, `HybridKnowledgeSearch` (rank fusion), `ConvergenceDetector` |
+| Search | `Core/Knowledge/Search/` | `SqliteKnowledgeSearch` (BM25), `LexicalKnowledgeSearch` (term overlap over any store), `SemanticKnowledgeSearch`, `HybridKnowledgeSearch` (rank fusion), `ConvergenceDetector` |
 | Freshness | `Core/Knowledge/Store/` | `CheckoutFreshness` (watch), `RootSignature` (per root), `UncommittedRecords` (git status), `NewerIndexException` |
 | `EntryStanding`, `Citation` | `Core/Knowledge/` | The `standing:` line of a hit; a record cited by id, lines, commit and digest |
 | `Registry`, `RegistrationStore`, `RegistryImport` | `Core/Registry/` | Registrations pushed by `connect` and persisted; a folder scan only proposes |
-| `AmbientWorkspace`, `WorkspaceScope` | `Core/Registry/`, `Mcp/WorkspaceScope.cs` | Which workspace a call answers from |
+| `AmbientWorkspace`, `WorkspaceScope` | `Core/Registry/AmbientWorkspace.cs`, `Mcp/WorkspaceScope.cs` | Which workspace a call answers from |
 | Feed | `Core/Knowledge/Feed/` | `FeedOrder` and `FeedDigest` (both in `FeedOrder.cs`), `CodeMap`, `CodeMapWire`: what a remote is fed and how it is ordered |
 | Connector host | `Mcp/Program.cs`, `Mcp/KnowledgeServer.cs` | The stdio MCP server; `ToolTypes` is the one list of tool classes |
 | HTTP knowledge reads | `src/Daoris.Contracts/Knowledge/KnowledgeContracts.cs`, the HTTP host's `Routes/KnowledgeRoutes.cs` | Status, protocol, repositories, search (its tier in `x-daoris-tier`), entry, entries and convergence, each declared once as its request record; the driver sends the records, and the page sends them by name with its generated types (`data/api.ts`) |
@@ -69,7 +69,7 @@ one job each, checked by `verify`.
    another. An index entry is a heading's prose, a table row or a list item. A record is a finished tree's, on the local host only.
    (from D134, D151, D195)
 7. Every entry keeps its lines. A hit names `path:first-last`; `knowledge_get` reads an entry whole or a range. A search that names
-   no kinds answers at most two index entries. (from D151)
+   no kinds answers at most two index entries and three records. (from D151)
 8. Ranking is BM25 over FTS5. With an embedder, meaning is fused with words by reciprocal rank. A long entry is embedded in pieces
    the deployment's window bounds. With no model, every answer says it matched on words only. (from D24, D123, D151)
 9. Disclosure applies at ingest. In shared mode a repository's local entries leave only when its manifest joins and shares
@@ -104,11 +104,11 @@ one job each, checked by `verify`.
     memory changes and `helper_ask`, which an intake is refused too: neither works in a repository of its own. A partner, a reviewer and a brainstorm voice get their handed rows. A session that cannot be placed gets
     the reads. (from D212, D230)
 19. `tools/list` names only what the table serves, and a refused call answers a sentence and a closed code before the tool
-    runs. `McpRoleFilterTests` holds the table to `fixtures/call-table.json`. (from D212, D230)
+    runs. `McpRoleFilterTests` holds the table to the tests' `fixtures/call-table.json`. (from D212, D230)
 20. A connector that names no session (a person's own agent) is not filtered by the table. (from D212)
 21. A tool other than a read runs only for a caller whose lineage proves a root; a child may publish a plain quest and nothing
     else. A missing argument is answered from the tool's schema; argument values are never logged. (from D173)
-22. Every answer ends with one line of what waits on the ask's channel, except `channel_read`'s own. (from D188)
+22. An answer ends with one line of what waits on the ask's channel when a message waits that no line named yet, except `channel_read`'s own. (from D188)
 
 **Memory**
 
@@ -118,7 +118,7 @@ one job each, checked by `verify`.
     and a reviewer are refused; a reader asks the owner with `memory_propose`, which travels as a quest and joins one still
     untaken. (from D220)
 25. Every change is a `memory_ops` row: `staged` by its session, released at the session's commit point (a landing's record, or
-    a main-tree session's completion), then `ready` or `awaiting`, `applying`, and `applied`, `stale` or `held`. Nothing staged
+    a main-tree session's completion), then `ready` or `awaiting`, `applying`, and `applied`, `stale` or `held`; a proposal never applies and ends `answered`, `declined`, `stale` or `dropped`. Nothing staged
     applies by itself; a stopped session's rows wait for the person's Keep or Drop. (from D220)
 26. An end or a replacement waits for an approver other than its proposer. Until a second opinion may approve, that is the
     person. (from D220)
@@ -136,8 +136,8 @@ one job each, checked by `verify`.
     and the loser is kept as a conflict for a person. A take claims by push and awaits the remote's answer (its client gives up after 15 seconds); a take the remote does not
     answer stands unconfirmed and the next sync decides. (from D68, D69)
     A quest id is twelve characters only: no lookup reads the six-character width. A closed (Done or Declined) quest is removed
-    by one remover, `Core/Quests/QuestClosedRemoval.cs`: tombstoned with a `deleted` operation where it may have travelled (the delete applies to
-    an open or a closed quest, never a taken one), simply gone where it never left. The home migration's `closed-quests` step
+    by one remover, `Core/Quests/QuestClosedRemoval.cs`: tombstoned with a `deleted` operation where it may have travelled, simply gone where it never left;
+    it removes no open or taken quest, and the person's delete of an open one (`QuestDeleteOperation`) writes the same tombstone. The home migration's `closed-quests` step
     clears the closed six-character quests the same way; an open one stays until it closes. A quest's id derives from its
     sender, receiver, title, lanes, workflow request key and parent. The same plain words published while that quest is open or
     taken are a retry: the answer is that quest, said, and nothing is written. Published after it closed (done or declined), or
@@ -192,7 +192,7 @@ one job each, checked by `verify`.
 `ArgumentFilterTests`, `McpMemoryToolsTests`, `McpMemoryProposalTests`); `Registry/` (`RepositoryScannerTests`,
 `RegistrationStoreTests`, `RepositoryLayoutTests`, `RepositoryDocumentsTests`); `Remote/` (`QuestSyncTests`, `SessionSyncTests`,
 `ChannelSyncTests`, `CodeMapSyncTests`, `HttpRemoteTests`, `RemoteConfigTests`). Tools: `orient-index.test.mjs`,
-`doc-current.test.mjs`, `index-hook.test.mjs`, `merge-rows.test.mjs`, and the CLI's `test/knowledge-server.test.ts`.
+`doc-current.test.mjs`, `index-hook.test.mjs`, `merge-rows.test.mjs`, and the CLI's `src/Daoris.Cli/test/knowledge-server.test.ts`.
 The web: `src/Daoris.Web/src/knowledge/*.test.tsx`, `work/head/SessionMemory.test.tsx`.
 
 **Gates that bite** (`daoris.gates.json`): `service` (`dotnet test src/Daoris.Service`, its `Process` category apart);
@@ -209,10 +209,10 @@ Knowledge view and session memory; `deployment` for the shared host.
 2. D134 point 3 (union per file, a merge driver rejected) and D151's rejected merge driver vs `.gitattributes:39` (`merge=rows`)
    and `:45` (`merge=notes`), installed by `npm ci`. The code reads right.
 3. Two ways set apart a glued decision note: the `notes` driver (`tools/index-hook.mjs:14-16`) and `setApart` in
-   `tools/merge-branch.mjs:1866` (D106's MERGEJOIN1 note). D228 allows one; the driver is the newer.
+   `tools/merge-branch.mjs:1851` (D106's MERGEJOIN1 note). D228 allows one; the driver is the newer.
 4. D134 point 2 (no index of the decisions, hand-kept or generated) vs the generated digest `docs/index/decisions.md` (its own
    ORIENT1b note). The code reads right.
-5. D106 (`docs/README.md` and `docs/DECISIONS.md` merge by union) vs `.gitattributes:28-39` (the router by rows, the page not
+5. D106 (`docs/README.md` and `docs/DECISIONS.md` merge by union) vs `.gitattributes:30-39` (the router by rows, the page not
    union). The code reads right.
 6. D47 (a quest has one home; its verbs write through or fail) vs D68 (every verb commits locally; fetch, rebase, push) and
    `Core/Remote/Remote.cs:10-20`. D68 reads right.
