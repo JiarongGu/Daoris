@@ -94,10 +94,10 @@ public static class ClaudeTrust
     {
         if (!File.Exists(configPath)) return null;
 
-        JsonElement root;
+        JsonDocument document;
         try
         {
-            root = JsonDocument.Parse(AtomicFile.ReadText(configPath)).RootElement;
+            document = JsonDocument.Parse(AtomicFile.ReadText(configPath));
         }
         catch (JsonException)
         {
@@ -105,7 +105,11 @@ public static class ClaudeTrust
             return null;
         }
 
-        if (!root.TryGetProperty("projects", out var projects)
+        using var _ = document;
+        var root = document.RootElement;
+        // TryGetProperty throws on a root that is not an object.
+        if (root.ValueKind != JsonValueKind.Object
+            || !root.TryGetProperty("projects", out var projects)
             || projects.ValueKind != JsonValueKind.Object)
         {
             return null;
