@@ -166,6 +166,9 @@ internal sealed record EndFacts(string? Line)
     /// <summary>Whether a branch of the person's (not a form of the line) holds every commit; null where git could not say.</summary>
     public bool? OnPersonsBranch { get; init; }
 
+    /// <summary>Why git could not read the content proof or the branches that hold the tip; null where both were read.</summary>
+    public string? ProofUnread { get; init; }
+
     /// <summary>The landing branch of a completed pull request that carried the tip, line and merge commit confirmed here.</summary>
     public string? Carrier { get; init; }
 
@@ -331,6 +334,7 @@ internal static class EndJudgement
         }
 
         if (!facts.Ancestry.Read) return new(EndState.Unknown, null, null, "git could not read the line, so whether it holds the branch is not said");
+        if (facts.ProofUnread is { } unread) return new(EndState.Unknown, null, null, unread);
         return new(EndState.Claim, null, null, subject.Claimed
             ? "its agent said it is done, which is a claim, not an end: the line does not hold it"
             : "nothing was handed on and the line does not hold it");
@@ -399,10 +403,14 @@ internal static class EndJudgement
         }
 
         var content = await ContentHolds.HeldByContentAsync(root, subject.Tip, line, notHolders, ct, refs).ConfigureAwait(false);
-        // A proof git could not read (`Unread`) is never a hold, so it never ends the work by content; a later row
-        // may carry it as the judgement's unknown.
+        // A proof git could not read (`Unread`) is never a hold, so it never ends the work by content; it is carried as unknown.
         if (content.Hold is { } hold) facts = facts with { Content = Held.At(hold.Where) };
-        return facts with { OnPersonsBranch = await UnheldTips.HeldAsync(root, subject.Tip, refs, ct).ConfigureAwait(false) };
+        var onPersons = await UnheldTips.HeldAsync(root, subject.Tip, refs, ct).ConfigureAwait(false);
+        return facts with
+        {
+            OnPersonsBranch = onPersons,
+            ProofUnread = content.Unread ?? (onPersons is null ? "git could not say whether a branch of the person's holds it, so nothing is said" : null),
+        };
     }
 
     /// <summary>
