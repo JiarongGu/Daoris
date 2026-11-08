@@ -28,6 +28,18 @@ internal sealed class PoolTakeovers(TreePool pool, PoolSeams seams)
             return new PoolDone(slot, null, null, null);
         }
 
+        if (claim.Kind is TreeClaimKinds.Finish or TreeClaimKinds.Retire && slot is not null)
+        {
+            if (GitLockFile(slot.Path) is { } held && Directory.Exists(slot.Path))
+            {
+                var why = $"git's lock file {held} is there; the slot is held until a person removes it";
+                pool.Complete(fence, new SlotSettled(slot.Registration, slot.Path, slot.Line, await HeadOf(slot, ct).ConfigureAwait(false), KeptStates.Stuck, why, slot.Bytes, slot.Toolchain));
+                return new PoolDone(pool.Slot(site.Workspace, site.Repository, number), null, why, null);
+            }
+
+            return await new PoolFinishRecoveries(pool, seams).RecoverAsync(site, git, claim, fence, ct).ConfigureAwait(false);
+        }
+
         if (claim.Kind is not (TreeClaimKinds.Take or TreeClaimKinds.Return or TreeClaimKinds.Make))
         {
             return PoolDone.Not($"a {claim.Kind} claim is not settled by this build, so it is held");

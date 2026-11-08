@@ -13,6 +13,11 @@ internal sealed class TreePoolTakes(TreePool pool, PoolSeams seams)
         var site = take.Site;
         if (pool.Slot(site.Workspace, site.Repository, take.Number) is not { State: KeptStates.Kept } slot) return PoolDone.Not("the pool has no kept slot with that number");
 
+        if (await PoolSubmodules.TrackedAsync(site.Root, take.Start, ct).ConfigureAwait(false) is { } submodule)
+        {
+            return PoolDone.Not($"the start tracks a submodule ({submodule}), and a repository with one is never pooled");
+        }
+
         var head = await WorkingTree.HeadAsync(slot.Path, ct).ConfigureAwait(false) ?? "";
         var inPlace = take.Returns && slot.Line == take.Line && await WorkingTree.BranchAsync(slot.Path, ct).ConfigureAwait(false) == take.Branch;
         var job = PoolGit.NewJobName();
@@ -62,9 +67,11 @@ internal sealed class TreePoolTakes(TreePool pool, PoolSeams seams)
             pool.Advance(fence, TreeClaimPhases.Switched);
             await seams.ReachedAsync(TreeClaimPhases.Switched, slot.Path).ConfigureAwait(false);
 
-            toolchain = seams.Toolchain is { } read ? await read(slot.Path, ct).ConfigureAwait(false) : slot.Toolchain;
-            await PoolClearing.ClearAsync(site, slot.Path, previous.Length > 0 ? previous : Path.GetFileName(slot.Path), slot.Toolchain.Length > 0 && toolchain != slot.Toolchain, ct)
+            toolchain = seams.Toolchain is { } read ? await read(slot.Path, ct).ConfigureAwait(false) : await PoolToolchain.KeyAsync(site, slot.Path, ct).ConfigureAwait(false);
+            var renew = slot.Bytes > (seams.RenewBytes ?? PoolLimits.RenewBytes);
+            var moved = await PoolClearing.ClearAsync(site, slot.Path, previous.Length > 0 ? previous : Path.GetFileName(slot.Path), (slot.Toolchain.Length > 0 && toolchain != slot.Toolchain) || renew, ct)
                 .ConfigureAwait(false);
+            if (moved.Aside is { } aside && previous.Length > 0) PoolAsides.Mark(aside, previous);
             pool.Advance(fence, TreeClaimPhases.Cleared);
             await seams.ReachedAsync(TreeClaimPhases.Cleared, slot.Path).ConfigureAwait(false);
         }
@@ -75,7 +82,7 @@ internal sealed class TreePoolTakes(TreePool pool, PoolSeams seams)
         }
 
         // The mark is written once the check has passed, so the files stage installs here; a slot refused before this stays as it stands.
-        if (!inPlace) TreeFilesRecord.Mark(site.Home, slot.Path);
+        if (!inPlace) TreeFilesRecord.Mark(site.Home, slot.Path, head.Length > 0 ? head : null);
         pool.Advance(fence, TreeClaimPhases.Checked);
         await seams.ReachedAsync(TreeClaimPhases.Checked, slot.Path).ConfigureAwait(false);
 
