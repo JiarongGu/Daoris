@@ -6,31 +6,20 @@ using Shenora.Chromium;
 namespace Daoris.Desktop;
 
 /// <summary>
-/// `daoris-browser`: Daoris's own browser on the engine it ships. It is this
-/// application's own executable started with <see cref="EngineBrowser.Argument"/> first, run as a browser
-/// by the kit's <see cref="ChromiumBrowserProcess"/>, so an install carries one Chromium. It holds no
-/// control and no Daoris page. It prepares its profile under the home, opens the engine's own Chromium
-/// window over its own debug port, and ends when its last window closes or the shell does.
+/// `daoris-browser`: Daoris's own browser on the engine it ships. It is this application's own executable started with
+/// <see cref="EngineBrowser.Argument"/> first, run as a browser by the kit's <see cref="ChromiumBrowserProcess"/>. It holds no
+/// control and no Daoris page: it prepares its profile under the home, opens the engine's own window over its debug port, and ends
+/// when its last window closes or the shell does.
 /// </summary>
 /// <remarks>
-/// <para><b>Decided before anything else in <c>Main</c>.</b> The kit starts Chromium as the app is
-/// composed, and a process runs one Chromium, the window's or the browser's. Nothing here composes the
-/// app, reads the install's home, or opens the window's log.</para>
-///
-/// <para><b>Why a window made over CDP.</b> The engine gives a window with its own tabs, history and
-/// devtools only to a target made that way (`docs/2026-09-28-chromium-embedding-evidence.md` §2), and
-/// an agent's tabs land in it too. So the first window is made the same way an agent's is, in the
-/// background when a session asked for it.</para>
-///
-/// <para><b>The port it is given is the kit's relay</b>: it passes everything through
-/// and announces a new tab as a <c>page</c> from the start, so an agent's browser MCP can open tabs.</para>
-///
-/// <para><b>Every task started here and not awaited is observed</b>: the machine log's
-/// <c>Observe</c> writes its failure as a line saying where, since an exception nobody awaits is
-/// rethrown by the finalizer. A source test holds the rule for the next task written here.</para>
-///
-/// <para><b>Nothing under the user profile</b>: with no profile folder it refuses, rather than
-/// let the engine pick a folder of its own.</para>
+/// <para><b>Decided before anything else in <c>Main</c></b>: a process runs one Chromium, the window's or the browser's, so nothing here
+/// composes the app, reads the install's home, or opens the window's log. With no profile folder it refuses, rather than let the engine
+/// pick one under the user profile.</para>
+/// <para><b>The first window is made over CDP</b>, as an agent's is (`docs/2026-09-28-chromium-embedding-evidence.md` §2): only a target
+/// made that way gets its own tabs, history and devtools. The port it is given is the kit's relay, which announces a new tab as a
+/// <c>page</c> from the start, so an agent's browser MCP can open tabs.</para>
+/// <para><b>Every task started here and not awaited is observed</b>: the machine log's <c>Observe</c> writes its failure as a line saying
+/// where, since an exception nobody awaits is rethrown by the finalizer. A source test holds the rule.</para>
 /// </remarks>
 internal static class BrowserProcess
 {
@@ -43,8 +32,7 @@ internal static class BrowserProcess
     /// <summary>Run this process as the browser, on the calling (main, STA) thread, and answer its exit code.</summary>
     public static int Run(string[] args)
     {
-        // The machine log: this process's start, stop and every exception nothing caught, in
-        // a file of its own beside the shell's. The home is the shell's, handed down in the environment.
+        // The machine log: this process's start, stop and uncaught exceptions, in a file beside the shell's, in the shell's home.
         using var log = Daoris.Driver.MachineLog.Open("browser");
         log.WatchUnhandled();
 
@@ -56,14 +44,12 @@ internal static class BrowserProcess
             return 2;
         }
 
-        // Fired by the two watchers below, never here once Chromium has returned, when there is no window
-        // left to close. Not disposed: a watcher may still hold it then, and a source that holds no timer
-        // has nothing to free before the process ends.
+        // Fired by the two watchers below; not disposed, since a watcher may still hold it, and it holds no timer to free.
         var stop = new CancellationTokenSource();
         if (options.Parent is { } parent && !WatchShell(parent, stop, log)) return 0; // the shell that asked has gone
 
         Directory.CreateDirectory(options.Profile);
-        Prepare(options.Profile);
+        Prepare(options.Profile, log);
 
         var started = DateTimeOffset.UtcNow;
         log.Info("app.started");
@@ -115,8 +101,7 @@ internal static class BrowserProcess
             return false;
         }
 
-        // Observed like every task started here; a watch that fails is written, and the browser's
-        // windows stay the person's to close.
+        // Observed like every task here; a watch that fails is written, and the windows stay the person's to close.
         _ = log.Observe(Task.Run(async () =>
         {
             using (shell)
@@ -144,13 +129,9 @@ internal static class BrowserProcess
     }
 
     /// <summary>
-    /// The engine's own window, made over its port once the port answers (<see cref="EngineCdp.FirstWindowAsync"/>).
-    /// Cancelled when the shell or the engine went first; any failure is its caller's to observe.
+    /// The engine's own window, made over its port once the port answers (<see cref="EngineCdp.FirstWindowAsync"/>), cancelled when the shell
+    /// or the engine went first. 🔴 It lets every exception through: one left to fault a task nobody holds is seen only by the finalizer.
     /// </summary>
-    /// <remarks>
-    /// 🔴 It lets every exception through, none caught here: one left to fault a task nobody holds is seen
-    /// only by the finalizer, so the caller observes all of it.
-    /// </remarks>
     private static async Task FirstWindowAsync(EngineBrowserOptions options, CancellationToken ct)
     {
         using var engine = new EngineCdp(options.Port);
@@ -160,53 +141,10 @@ internal static class BrowserProcess
     /// <summary>
     /// Before the engine reads its profile: Daoris's favorites become its folder on the bookmarks bar
     /// and other software's Chrome extensions are refused or offered as the settings say.
-    /// Each file that cannot be read is left as it is, and the browser starts regardless.
+    /// A file another program holds is read as absent and said once in the log, and the browser starts regardless.
     /// </summary>
-    private static void Prepare(string profile)
-    {
-        var home = EngineBrowser.HomeOf(profile);
-        Directory.CreateDirectory(EngineBrowser.ProfileDirectory(profile));
-        var record = EngineProfile.ReadRecord(ReadText(EngineProfile.RecordPath(profile)));
-        var preferences = ReadText(EngineProfile.PreferencesPath(profile));
-        var preferencesBefore = preferences;
-
-        var favorites = BrowserFavorites.Read(home);
-        if (favorites.Problem is null
-            && EngineProfile.WithFavorites(ReadText(EngineProfile.BookmarksPath(profile)), favorites.Favorites, DateTimeOffset.UtcNow)
-                is var (bookmarks, created))
-        {
-            Daoris.Driver.AtomicFile.WriteText(EngineProfile.BookmarksPath(profile), bookmarks);
-
-            // Once, when its folder first appears: a bar that is hidden shows nothing Daoris put there.
-            // After that the bar is the person's to hide.
-            if (created && !record.BarShown && EngineProfile.ShowBar(preferences) is { } shown)
-            {
-                preferences = shown;
-                record = record with { BarShown = true };
-            }
-        }
-
-        if (BrowserSettings.Read(home).Extensions == ExtensionsSetting.Refuse)
-        {
-            if (EngineProfile.Refuse(preferences, ExternalExtensions.Registered(), record.Refused) is var (refusing, refused))
-            {
-                preferences = refusing;
-                record = record with { Refused = refused };
-            }
-        }
-        else if (record.Refused.Count > 0 && EngineProfile.Offer(preferences, record.Refused) is { } offering)
-        {
-            preferences = offering;
-            record = record with { Refused = [] };
-        }
-
-        if (preferences is not null && preferences != preferencesBefore)
-        {
-            Daoris.Driver.AtomicFile.WriteText(EngineProfile.PreferencesPath(profile), preferences);
-        }
-
-        Daoris.Driver.AtomicFile.WriteText(EngineProfile.RecordPath(profile), EngineProfile.WriteRecord(record));
-    }
-
-    private static string? ReadText(string path) => File.Exists(path) ? File.ReadAllText(path) : null;
+    private static void Prepare(string profile, Daoris.Driver.MachineLog log) =>
+        EngineProfilePrepare.Run(
+            profile, ExternalExtensions.Registered, DateTimeOffset.UtcNow,
+            file => log.Warn("browser.file.unread", ("file", file)));
 }

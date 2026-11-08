@@ -1,4 +1,3 @@
-using System.ComponentModel;
 using System.Diagnostics;
 using Daoris.Driver;
 using Shenora.Chromium;
@@ -16,19 +15,14 @@ namespace Daoris.Desktop;
 /// its process (`docs/2026-09-28-chromium-embedding-evidence.md` §1), so the port lives in that
 /// process and this one, which holds the bridge, has none.</para>
 ///
-/// <para><b>This executable, started through the kit</b>. The browser is the application
-/// started with <see cref="EngineBrowser.Argument"/>, so every build carries it, and it is started with
-/// <see cref="ChromiumBrowserProcess.Start"/>, never <c>Process.Start</c>: the latter hands the child every
-/// handle inheritable at that moment, a pipe end of Chromium's among them, and a browser that outlives
-/// the app by design then kept the app from finishing its exit.</para>
-///
-/// <para><b>It lives and dies with the shell.</b> The browser is started with this process's id and
-/// closes its windows when this process ends, as the shell's own window did. One port for the shell's
-/// life, so a browser the person closed and a session reopens answers where the last one did.</para>
-///
-/// <para><b>Focus is Windows' decision.</b> An agent's first connection asks for the first window in the
-/// background, and the person's press asks for it in front. Measured both ways: Windows' own foreground
-/// rules decided, not the ask.</para>
+/// <para><b>This executable, started through the kit</b>: the application started with <see cref="EngineBrowser.Argument"/>, by
+/// <see cref="ChromiumBrowserProcess.Start"/>, never <c>Process.Start</c>, which hands the child every handle inheritable at that
+/// moment (a pipe end of Chromium's among them) and kept the app from finishing its exit.</para>
+/// <para><b>It lives and dies with the shell.</b> It is started with this process's id and closes its windows when this process ends, and
+/// is joined to the browser job as it starts, so a crash ends it too. One port for the shell's life, so a reopened browser answers where the
+/// last one did.</para>
+/// <para><b>Focus is Windows' decision.</b> An agent's first connection asks for the first window in the background, the person's press in
+/// front; measured both ways, Windows' own foreground rules decided, not the ask.</para>
 ///
 /// <para><b>Handed at a start, brought up at a connection.</b> A session is handed
 /// <see cref="EndpointAsync"/>'s port, held by the shell for its life, and the browser comes up when something
@@ -50,7 +44,10 @@ public sealed class EngineBrowserHost(string home) : IInAppBrowser, IBrowserCach
     private readonly object _frontMade = new();
 
     private readonly SemaphoreSlim _gate = new(1, 1);
-    private Process? _process;
+    private EngineBringUp? _bringUp;
+
+    /// <summary>Whether the first window of the start being made is asked for in the background: set under the gate, read as the process starts.</summary>
+    private bool _background;
 
     /// <summary>How often Edge's session cookies are read while it runs: its closing is the person's, and unannounced.</summary>
     private static readonly TimeSpan KeepEvery = TimeSpan.FromSeconds(30);
@@ -140,16 +137,15 @@ public sealed class EngineBrowserHost(string home) : IInAppBrowser, IBrowserCach
     }
 
     /// <summary>
-    /// The browser's caches cleared while it is not running: its start gate held through the clear, so
-    /// no browser starts meanwhile, and nothing run where the browser this host started still runs. The clear itself checks the profile's
-    /// lock too, for a browser this host did not start.
+    /// The browser's caches cleared while it is not running: its start gate held through the clear, so no browser starts meanwhile,
+    /// and nothing run where the browser this host started still runs. The clear checks the profile's lock too, for one it did not start.
     /// </summary>
     public async Task<T?> WhileStoppedAsync<T>(Func<T> clear, CancellationToken ct) where T : class
     {
         await _gate.WaitAsync(ct).ConfigureAwait(false);
         try
         {
-            if (_process is { HasExited: false }) return null;
+            if (_bringUp is { Running: true }) return null;
             return await Task.Run(clear, ct).ConfigureAwait(false);
         }
         finally
@@ -163,53 +159,39 @@ public sealed class EngineBrowserHost(string home) : IInAppBrowser, IBrowserCach
         await _gate.WaitAsync(ct).ConfigureAwait(false);
         try
         {
-            using var engine = new EngineCdp(_port);
-            if (_process is { HasExited: false } running)
-            {
-                if (await engine.PagesAsync(ct).ConfigureAwait(false) is { Count: > 0 } pages)
-                {
-                    if (activate) await engine.ActivateAsync(pages[0], ct).ConfigureAwait(false);
-                    return;
-                }
-
-                // Its last window closed a moment ago and it is on its way out: let it go, then start
-                // again, rather than ask a closing engine for a window.
-                await running.WaitForExitAsync(ct).WaitAsync(Going, ct).ConfigureAwait(false);
-            }
-
-            // No browser runs here, and the gate is held, so a cache over its limit is cleared before the engine opens it.
-            _ = await Task.Run(() => BrowserCacheStart.Check(home), ct).ConfigureAwait(false);
-            var options = new EngineBrowserOptions(EngineBrowser.ProfileFolder(home), _port, Environment.ProcessId, background);
-            try
-            {
-                _process = ChromiumBrowserProcess.Start(options.ToArguments());
-            }
-            catch (Win32Exception error)
-            {
-                throw new InvalidOperationException($"Daoris's browser did not start: {error.Message}", error);
-            }
-
-            var deadline = DateTime.UtcNow + BringUpLimit;
-            while (DateTime.UtcNow < deadline)
-            {
-                if (_process.HasExited)
-                {
-                    throw new InvalidOperationException(
-                        $"Daoris's browser stopped as it started (exit {_process.ExitCode}). "
-                        + $"Its log is {EngineBrowser.LogName} in {options.Profile}.");
-                }
-
-                if (await engine.PagesAsync(ct).ConfigureAwait(false) is { Count: > 0 }) return;
-                await Task.Delay(100, ct).ConfigureAwait(false);
-            }
-
-            throw new TimeoutException($"Daoris's browser opened no window within {BringUpLimit.TotalSeconds:0} seconds.");
+            _background = background;
+            await BringUp.EnsureAsync(activate, ct).ConfigureAwait(false);
         }
         finally
         {
             _gate.Release();
         }
     }
+
+    /// <summary>
+    /// The one bring-up, made at its first use: its process joins the app's job (<see cref="ProcessBrowserChild"/>) and ends where it fails.
+    /// </summary>
+    private EngineBringUp BringUp => _bringUp ??= new EngineBringUp(
+        start: () =>
+        {
+            var options = new EngineBrowserOptions(EngineBrowser.ProfileFolder(home), _port, Environment.ProcessId, _background);
+            return new ProcessBrowserChild(ChromiumBrowserProcess.Start(options.ToArguments()), OwnedProcesses.Shared);
+        },
+        windowOpen: async ct =>
+        {
+            using var engine = new EngineCdp(_port);
+            return await engine.PagesAsync(ct).ConfigureAwait(false) is { Count: > 0 };
+        },
+        bringForward: async ct =>
+        {
+            using var engine = new EngineCdp(_port);
+            if (await engine.PagesAsync(ct).ConfigureAwait(false) is { Count: > 0 } pages) await engine.ActivateAsync(pages[0], ct).ConfigureAwait(false);
+        },
+        exitHint: $"Its log is {EngineBrowser.LogName} in {EngineBrowser.ProfileFolder(home)}.",
+        BringUpLimit,
+        Going,
+        // No browser runs here, and the gate is held, so a cache over its limit is cleared before the engine opens it.
+        beforeStart: ct => Task.Run(() => BrowserCacheStart.Check(home), ct));
 
     /// <summary>
     /// The person's Edge: the one Daoris started before when it still answers as an Edge, or a
