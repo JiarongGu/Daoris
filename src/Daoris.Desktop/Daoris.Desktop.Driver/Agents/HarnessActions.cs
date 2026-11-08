@@ -277,8 +277,39 @@ public static class HarnessActions
         }
 
         var (l, r) = (left.Groups[4], right.Groups[4]);
-        if (l.Success == r.Success) return l.Success ? string.CompareOrdinal(l.Value, r.Value) : 0;
+        if (l.Success == r.Success) return l.Success ? ComparePrereleases(l.Value, r.Value) : 0;
         return l.Success ? -1 : 1;
+    }
+
+    /// <summary>
+    /// Two prerelease suffixes by semver's precedence: dot-separated identifiers one by one, digits as numbers (so <c>alpha.10</c> is
+    /// newer than <c>alpha.9</c>) and below any word, and a suffix that is a prefix of the other the older.
+    /// </summary>
+    private static int ComparePrereleases(string a, string b)
+    {
+        string[] left = a.Split('.'), right = b.Split('.');
+        for (var at = 0; at < Math.Min(left.Length, right.Length); at++)
+        {
+            var (x, y) = (left[at], right[at]);
+            var (xDigits, yDigits) = (x.All(char.IsAsciiDigit), y.All(char.IsAsciiDigit));
+            var difference = (xDigits, yDigits) switch
+            {
+                (true, true) => NumberOrder(x, y),
+                (true, false) => -1,
+                (false, true) => 1,
+                _ => string.CompareOrdinal(x, y),
+            };
+            if (difference != 0) return Math.Sign(difference);
+        }
+
+        return left.Length.CompareTo(right.Length);
+    }
+
+    private static int NumberOrder(string x, string y)
+    {
+        // Digit strings, as the release's own numbers are, so one too long for any integer type orders rather than throws.
+        (x, y) = (x.TrimStart('0'), y.TrimStart('0'));
+        return x.Length != y.Length ? x.Length.CompareTo(y.Length) : string.CompareOrdinal(x, y);
     }
 
     /// <summary>
