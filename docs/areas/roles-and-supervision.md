@@ -287,7 +287,7 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they start wi
     route's bytes with the subject whole in them. The subject is the kind's typed reference, which does not change while it waits: a
     question's `{ session, question }`, a referred point's `{ session, point }`, a landing's `{ session, landing }` (`landing` names
     the run, the node and the attempt it waits on, the session the run's work); the door takes the question, course, limit and
-    landing kinds, each a row (`QuestionKind`, over `ReferredPointKind` the `CourseKind` and `LimitKind`, a point's kind its count's,
+    landing kinds, each a row (a landing step is listed only where it offers an act the supervisor's grants cover; `QuestionKind`, over `ReferredPointKind` the `CourseKind` and `LimitKind`, a point's kind its count's,
     `SupervisorRules.KindOf`, and `LandingKind`) that lists its waiting subjects and keeps a decision against the subject as it stands. A
     decision's file keeps its `kind` and `subject`, and its holder is the hold's as the catalogue's record names it. On a question it
     answers a parked session's recorded question with one offered choice and one to five sourced reasons (`--do answer --choice`,

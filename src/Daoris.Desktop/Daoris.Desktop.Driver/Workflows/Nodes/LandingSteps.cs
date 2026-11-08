@@ -7,6 +7,9 @@ public sealed record LandingStep(string Run, string Node, int Attempt, string Re
 {
     /// <summary>The run's nodes that hold it for the person alone, a go-ahead among them: no supervisor decides a step of a run one holds.</summary>
     public bool GoAheadOpen { get; init; }
+
+    /// <summary>The acts of <paramref name="covered"/>, a supervisor's grants, that this step offers; none where the step takes none of them.</summary>
+    public IReadOnlyList<string> Offered(IReadOnlyList<string> covered) => [.. covered.Where(Acts.Contains)];
 }
 
 /// <summary>The steps of the home's runs a landing supervisor may decide, read from the runs' node records as the pass reads them.</summary>
