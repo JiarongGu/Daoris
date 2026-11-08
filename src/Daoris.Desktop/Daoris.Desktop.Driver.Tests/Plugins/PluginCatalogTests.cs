@@ -133,6 +133,29 @@ public sealed class PluginCatalogTests : IDisposable
     }
 
     [Fact]
+    public void A_refused_folder_keeps_its_own_name_as_its_id_so_it_never_stands_for_the_plugin_whose_id_it_claims()
+    {
+        Plugin("one", """{ "id": "two" }""");
+        Plugin("two", """{ "id": "two" }""");
+
+        var catalog = PluginCatalog.Load(_home);
+
+        Assert.Equal(["one", "two"], catalog.Plugins.Select(plugin => plugin.Manifest.Id));
+        Assert.Null(catalog.Plugins.Single(plugin => plugin.Manifest.Id == "two").Problem);
+    }
+
+    [Fact]
+    public void A_server_declared_twice_in_one_manifest_refuses_the_plugin()
+    {
+        Plugin("twice", """{ "id": "twice", "servers": [ { "name": "x", "command": ["a"] }, { "name": "x", "command": ["b"] } ] }""");
+
+        var entry = Assert.Single(PluginCatalog.Load(_home).Plugins);
+
+        Assert.Equal("server `x` is declared twice.", entry.Problem);
+        Assert.Empty(entry.Manifest.Servers);
+    }
+
+    [Fact]
     public void An_id_is_lowercase_letters_digits_dots_and_dashes_and_nothing_that_could_escape_a_folder()
     {
         Plugin("Bad Name", """{ "id": "Bad Name" }""");
