@@ -5,6 +5,12 @@ the per-task record. Entries preserve their original wording so the archive stay
 
 ---
 
+## DRVREVIEW7 and DRVREVIEW10's two fixed items — the planner's overlap wait, a second close and a resume over another machine's take (2026-11-08)
+
+> **DRVREVIEW7 / DRVREVIEW10** (driving review): Outcome: DRVREVIEW7 (7b2ae2d1af): a quest that goes back into a tree (`into` set: a retry or limit carry-on of an Open quest) is no first start, so `overlap: wait` holds it behind nothing. DRVREVIEW10's close (0e40520d2b): a second close of a closed ask is refused as `Closed` and the first reason stands, as a publish on a closed ask is refused. Its resume (227c2509ce): a resume of a Taken quest asks whether the last take is another machine's, through the part a carry-on uses, and is refused as `TakenElsewhere`. The park's clearing of kept words stays open in DRVREVIEW10 as an owner's reading.
+
+---
+
 ## CONVREV5, CONVREV10 and CONVREV14 — a conversation's upTo, a keep's stored copy and the brief's weights (2026-11-08)
 
 > **CONVREV5 / CONVREV10 / CONVREV14** (conversations review): Outcome: all three held as the rows said. CONVREV5 (40c7d6ec4d): the course's `Since` for a conversation could never expire (`upTo` takes 5 to 600), so it is no longer passed and `upTo` is counted from each limit judgement by `LimitRuled`; no behaviour changed, so its case pins the choice with no red (`ConversationRulesTests`). CONVREV10 (8a41b48bbf): every keep carries a key and a keep the record never answered is tried once more under it, so the stored copy is found and held once; a duplicate now needs a record that stored the word and answered neither try (`DrivenInboxKeyTests`, failing first). CONVREV14 (cd8a159c17): one `CharWeight` weighs kana, Hangul, fullwidth forms and a surrogate pair as it weighs Han; `Searchable`'s Han test does not move (`ContextBriefWeightTests`, failing first).
