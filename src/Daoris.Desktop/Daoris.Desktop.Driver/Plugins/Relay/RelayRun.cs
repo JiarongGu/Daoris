@@ -398,6 +398,8 @@ public sealed class RelayRun
                 if (holder is not { IsInstance: true } && !doubt) continue;
                 lock (_gate)
                 {
+                    // A client may have joined while the lease was read; its batch is gathered, not ended as none.
+                    if (_connected) return;
                     var reason = _notContained ? "not-contained" : _refused ? "refused" : "no-client";
                     _batch.End((run, seq) => RelaySaid.NoEvents(reason, run, seq));
                 }
