@@ -31,7 +31,7 @@ internal sealed class TreeOpening(TreeContext context)
     /// </param>
     public async Task<TreeOpened> OpenAsync(
         string root, string repository, string workspace, CancellationToken ct = default, string? from = null, string? landed = null,
-        string? partOf = null)
+        string? partOf = null, string? at = null, string? name = null)
     {
         // The root must BE the top of its own working tree — proven, not assumed. Git resolves a
         // repository by walking UP from wherever it is asked, so a root that is not one (a
@@ -110,9 +110,9 @@ internal sealed class TreeOpening(TreeContext context)
             }
         }
 
-        var name = $"s-{Guid.NewGuid().ToString("N")[..8]}";
+        name ??= $"s-{Guid.NewGuid().ToString("N")[..8]}";
         var branch = $"daoris/{name}";
-        var path = Path.Combine(TreesRoot, workspace, repository, name);
+        var path = at ?? Path.Combine(TreesRoot, workspace, repository, name);
         Directory.CreateDirectory(Path.GetDirectoryName(path)!);
         // A folder there before the add is never this open's to delete.
         var ours = !Directory.Exists(path);

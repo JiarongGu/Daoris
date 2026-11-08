@@ -35,6 +35,9 @@ public sealed record KeptTree(
     /// <summary>The folder of slot <paramref name="number"/> under a repository's trees folder.</summary>
     public static string FolderIn(string repositoryTrees, int number) => System.IO.Path.Combine(repositoryTrees, $"{Prefix}{number}");
 
+    /// <summary>Whether <paramref name="folder"/> is named as a slot's folder is.</summary>
+    public static bool IsSlotFolder(string folder) => System.IO.Path.GetFileName(folder).StartsWith(Prefix, StringComparison.Ordinal);
+
     /// <summary>Whether a line has the slot.</summary>
     public bool Held => Line.Length > 0;
 }

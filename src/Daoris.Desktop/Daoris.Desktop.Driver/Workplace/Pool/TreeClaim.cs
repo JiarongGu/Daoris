@@ -37,6 +37,10 @@ public static class TreeClaimPhases
     public const string OpeningRecord = "opening-record";
 
     public const string Opened = "opened";
+
+    public const string Recorded = "recorded";
+
+    public const string Locked = "locked";
 }
 
 /// <summary>
