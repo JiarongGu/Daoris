@@ -224,10 +224,6 @@ public sealed class StagedBuildTests : ScratchInstall
         Assert.False(journal.Told);
     }
 
-    /// <summary>
-    /// The application confirms after the wait's last journal read and before the launcher gives up: the launcher reads the
-    /// journal once more, as it does when the process has ended, so the confirmed record is finished and not written over.
-    /// </summary>
     [Fact]
     public void An_application_that_confirms_as_the_wait_ends_is_installed_confirmed_and_told()
     {

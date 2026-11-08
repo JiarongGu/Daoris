@@ -352,10 +352,8 @@ public static class InstallHome
             .Any(name => name is not null && !Runtime.Contains(name));
 
     /// <summary>
-    /// The move, under the home's lease: taken for the move alone, so no verb acting
-    /// alone writes beside it, and waited for up to <paramref name="within"/> where another act holds it; still held then,
-    /// nothing moves, and the holder is said as what could not move and why. Judged again under the lease, since another start
-    /// may have moved it meanwhile.
+    /// The move, under the home's lease, waited for up to <paramref name="within"/>; still held then, nothing moves and the
+    /// holder is said. Judged again under the lease, since another start may have moved it meanwhile.
     /// </summary>
     private static (List<string> Moved, List<string> Failed) Migrate(string legacy, string home, TimeSpan within)
     {
@@ -373,10 +371,7 @@ public static class InstallHome
         }
     }
 
-    /// <summary>
-    /// Move a legacy profile directory's state in — every entry but the ones that stay — one by one,
-    /// so a file something still holds open costs that file and not the start.
-    /// </summary>
+    /// <summary>Move a legacy profile's state in, but what stays, one entry at a time: a file held open costs that file, not the start.</summary>
     private static (List<string> Moved, List<string> Failed) MoveIn(string legacy, string home)
     {
         var moved = new List<string>();

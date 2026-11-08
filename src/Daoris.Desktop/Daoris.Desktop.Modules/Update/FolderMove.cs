@@ -46,7 +46,7 @@ public static class FolderMove
         Directory.Delete(source, recursive: true);
     }
 
-    /// <summary>A folder made, and noted only where this call made it, so a folder that was there is never removed.</summary>
+    /// <summary>A folder made, noted only where this call made it, so a folder already there is never removed.</summary>
     private static void Make(string folder, List<string> made)
     {
         var missing = new Stack<string>();

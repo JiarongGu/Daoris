@@ -4,7 +4,7 @@ namespace Daoris.Desktop.Modules.Tests;
 
 /// <summary>
 /// A folder moved by copying (the cross-volume case, forced here) lands whole or not at all: a failed file leaves the source
-/// whole and the target as it was, so the move is tried again.
+/// whole and the target as it stood before, so the move is tried again.
 /// </summary>
 public sealed class FolderMoveTests : IDisposable
 {
