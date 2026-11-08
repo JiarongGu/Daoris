@@ -338,6 +338,15 @@ public sealed class GitIdentitiesTests : IDisposable
     }
 
     [Fact]
+    public void Two_spellings_of_one_host_in_the_machines_pointers_read_as_that_host_once()
+    {
+        var pointers = Pointers("""{"machineGitIdentity":{"GitHub.com":"own","github.com:22":"own"}}""");
+
+        Assert.Equal(1, pointers.Count);
+        Assert.Equal("own", GitIdentityUse.Resolve(Set, pointers, "engine", "games", ["origin"], "github.com", GitIdentity.Ssh).Served);
+    }
+
+    [Fact]
     public void A_folder_no_repository_Daoris_knows_resolves_by_the_machines_steps_alone()
     {
         var pointers = Pointers("""{"gitIdentity":{"engine":{"origin":"gi-00000000000a"}},"workspaceGitIdentity":{"games":{"github.com":"gi-00000000000a"}}}""");

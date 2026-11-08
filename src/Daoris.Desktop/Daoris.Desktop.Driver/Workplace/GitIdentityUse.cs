@@ -114,8 +114,8 @@ public static class GitIdentityUse
             return kept;
         }
 
-        var machine = Flat(root[MachineKey]).Where(each => each.Value == Own)
-            .ToDictionary(each => GitHosts.Canonical(each.Key), each => each.Value, StringComparer.Ordinal);
+        var machine = new Dictionary<string, string>(StringComparer.Ordinal);
+        foreach (var (host, value) in Flat(root[MachineKey]).Where(each => each.Value == Own)) machine[GitHosts.Canonical(host)] = value;
         return new Pointers(Nested(root[RepositoryKey]), Nested(root[WorkspaceKey]), machine);
     }
 
