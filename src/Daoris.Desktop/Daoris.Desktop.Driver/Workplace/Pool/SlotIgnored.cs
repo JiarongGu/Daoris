@@ -1,7 +1,9 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// A slot's ignored tops sorted by the effective rules: what it keeps, what a take moves aside, Daoris's own copies, and the line's own.
+/// A slot's ignored tops sorted by what each effective rule's <c>take</c> says (<see cref="FileKindSets"/>): what it keeps, what a
+/// take moves aside, what it renews, Daoris's own copies, and the line's own. A top holding a recorded copy is partitioned
+/// (<see cref="TopPartition"/>) and each entry under it sorted as a path of its own.
 /// </summary>
 internal sealed record SlotIgnored(
     IReadOnlyList<string> Kept, IReadOnlyList<string> Outputs, IReadOnlyList<string> Intermediates, IReadOnlyList<string> Copies, IReadOnlyList<string> Own)
@@ -20,19 +22,34 @@ internal sealed record SlotIgnored(
         List<string> kept = [], outputs = [], intermediates = [], copies = [], own = [];
         foreach (var top in ignored)
         {
-            var file = rules.Rules.For(top, rules.Floor);
-            var list = file.Kind switch
+            if (TopPartition.Of(record, slot, top) is { } parts)
             {
-                FileKind.Dependency when record?.Of(top) is { Installing: false } || IsCompanion(record, top) => kept,
-                FileKind.Output => outputs,
-                FileKind.Intermediate or FileKind.Cache => intermediates,
-                FileKind.Local when TreeCopies.IsOwn(record, slot, top) => copies,
-                _ => own,
-            };
-            list.Add(top);
+                copies.AddRange(parts.Copies);
+                foreach (var other in parts.Others) Sort(other);
+            }
+            else
+            {
+                Sort(top);
+            }
         }
 
         return new SlotIgnored(kept, outputs, intermediates, copies, own);
+
+        void Sort(string path)
+        {
+            var file = rules.Rules.For(path, rules.Floor);
+            var take = file.Rule is { } rule ? FileKindSets.TakeOf(rule) : "own";
+            var list = (file.Kind, take) switch
+            {
+                (FileKind.Dependency, "keep") => record?.Of(path) is { Installing: false } || IsCompanion(record, path) ? kept : own,
+                (_, "keep") => kept,
+                (_, "renew") => intermediates,
+                (_, "aside" or "base") => outputs,
+                (FileKind.Local, _) when TreeCopies.IsOwn(record, slot, path) => copies,
+                _ => own,
+            };
+            list.Add(path);
+        }
     }
 
     private static bool IsCompanion(TreeFilesState? record, string top) =>

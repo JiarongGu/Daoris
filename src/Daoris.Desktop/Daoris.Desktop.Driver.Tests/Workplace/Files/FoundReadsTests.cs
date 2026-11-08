@@ -77,7 +77,7 @@ public sealed class FoundReadsTests : IDisposable
         var written = Layer();
         var reading = FoundFiles.Read(Home, "repo").Reading!;
         Assert.Equal(commit, reading.Commit);
-        Assert.Equal(FileKind.Unknown, reading.Rules.Single(rule => rule.Paths.Contains("stray/")).Kind);
+        Assert.Equal(FileKind.Unknown, reading.Rules.Single(rule => rule.Paths.Contains("/stray/")).Kind);
         Assert.NotNull(reading.Toolchain);
 
         await Task.Delay(30);
@@ -139,7 +139,7 @@ public sealed class FoundReadsTests : IDisposable
         await Look(commit, TimeSpan.Zero);
 
         Assert.True(FoundReads.Finished(Home, "repo", ["stray/notes.txt"]));
-        var rule = FoundFiles.Read(Home, "repo").Reading!.Rules.Single(each => each.Paths.Contains("stray/"));
+        var rule = FoundFiles.Read(Home, "repo").Reading!.Rules.Single(each => each.Paths.Contains("/stray/"));
         Assert.Equal(FileKind.Scratch, rule.Kind);
         Assert.Equal([FoundReads.WrittenBySession], rule.Evidence);
         var written = Layer();
@@ -150,7 +150,7 @@ public sealed class FoundReadsTests : IDisposable
 
         Write("package-lock.json", """{ "lockfileVersion": 3, "packages": { "": {}, "node_modules/x": {} } }""");
         await Look(await Commit(), TimeSpan.FromHours(1));
-        Assert.Equal(FileKind.Scratch, FoundFiles.Read(Home, "repo").Reading!.Rules.Single(each => each.Paths.Contains("stray/")).Kind);
+        Assert.Equal(FileKind.Scratch, FoundFiles.Read(Home, "repo").Reading!.Rules.Single(each => each.Paths.Contains("/stray/")).Kind);
     }
 
     [Fact]

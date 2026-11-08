@@ -29,6 +29,13 @@ internal static class FileGit
     internal static async Task<IReadOnlyList<string>> IgnoredTopsAsync(string root, CancellationToken ct) =>
         Split(await Ask(root, ["ls-files", "--others", "--ignored", "--exclude-standard", "--directory", "-z"], ct).ConfigureAwait(false));
 
+    /// <summary>The checkout's <c>core.ignorecase</c>: whether git matches its ignore patterns without regard to case.</summary>
+    internal static async Task<bool> IgnoresCaseAsync(string root, CancellationToken ct)
+    {
+        var (code, stdout, _) = await WorkingTree.GitAsync(root, ["--no-optional-locks", "config", "--bool", "core.ignorecase"], ct).ConfigureAwait(false);
+        return code == 0 && stdout.Trim() == "true";
+    }
+
     /// <summary>Each linked worktree git lists, by its full path.</summary>
     internal static async Task<IReadOnlyList<string>> WorktreesAsync(string root, CancellationToken ct) =>
         [.. (await Ask(root, ["worktree", "list", "--porcelain"], ct).ConfigureAwait(false)).ReplaceLineEndings("\n").Split('\n')

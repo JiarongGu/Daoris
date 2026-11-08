@@ -1,3 +1,5 @@
+using Daoris.Driver;
+
 namespace Daoris.Desktop;
 
 // The payloads of FilesRoutes, each named for its route. Every one names the repository by its <c>Repository</c>.
@@ -10,6 +12,9 @@ public sealed record FilesSetPress(string? Repository, string? Kind, IReadOnlyLi
 
 /// <summary>The person's own rules naming these paths, taken out.</summary>
 public sealed record FilesRemovePress(string? Repository, IReadOnlyList<string>? Paths, bool Machine = false);
+
+/// <summary>The person's wording of every path their file reads as written, each by its scope and path: the folder whole, or its files.</summary>
+public sealed record FilesSettlePress(string? Repository, IReadOnlyList<FilesWording>? Wordings);
 
 /// <summary>A permission added to a list or taken out: an allow made from an ask, or taken back.</summary>
 public sealed record FilesPermitPress(string? Repository, string? Act, string? List, string? Rule, bool Machine = false);

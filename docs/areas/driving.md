@@ -93,7 +93,7 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they start wi
 | `SlotChoice`, `SlotJudgement` | `Workplace/Domain/` | The pure choice of a slot for a start (six choices in order) and the pure six-step judgement of whether a slot is safe to take; `KeptTreesPort` in `Settings/` is the unset port the workplace will answer |
 | `TreeLocalInputs` | `Workplace/` | Copy the machine-local files the effective `copy` rules name into a tree |
 | `LaneRooms`, `RoomCheck`, `RoomCheckReport`, `RoomPaths` | `Workplace/` | The rooms the lanes file declares, read and checked with the repository's rule file: claim groups by build closure, crossings, refusals |
-| `FileRules`, `FileRuleFile`, `RepositoryFilesReader`, `PersonFiles`, `FoundFiles`, `FilePermissions`, `FileFloor` | `Workplace/Files/` | The rule file's one format, its four layers and the floor, each path's effective rule, the person's permissions; `FilesCommand` is `daoris files` |
+| `FileRules`, `FileRuleFile`, `GitPattern`, `RuleFileFirstForm`, `FileKindSets`, `RepositoryFilesReader`, `PersonFiles`, `PersonFilesForm`, `FoundFiles`, `FilePermissions`, `FileFloor` | `Workplace/Files/` | The rule file's one format in git's syntax, the first form's translation, its four layers and the floor, each path's effective rule, the person's permissions; `FilesCommand` is `daoris files` |
 | `FilesLooks`, `FilesLook`, `FilesEdits`, `PersonPermissions` | `Workplace/Files/` | The rule file composed for the page (`FILES`), and the person's rules and permissions written, an allow with its maker, by one validation the terminal's verb and the window's routes (`Bridge/Routes/FilesRoutes.cs`) share |
 | `FileAnalysis`, `FileSignatures`, `FileGit`, `FileWalk`, `WorkspaceMembers` | `Workplace/Files/` | The analysis that writes the found layer from git's view, bounded walks, the shipped signatures, the workspace members a manifest names and the tracked scripts |
 | `FoundReads` | `Workplace/Files/` | When the found layer is written: a repository's registration, its line's move past a file the analysis reads, its toolchain's move, a line's finish; registration following and the tree's removal call it |
@@ -183,7 +183,7 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they start wi
     record and leaves its folder), runs the owed hook, installs again what lost an other write, runs each rule's `setup`
     commands (`per: repository` once per key of the commands, the manifest's scripts and the files they name, kept in the
     home; `per: tree` in each tree; a failure said `started.setup-failed`), and
-    copies the machine-local files by the effective `copy` rules. In a worked tree it only keeps, or places a hit into an
+    copies the machine-local files by the effective `reach: copy` rules. In a worked tree it only keeps, or places a hit into an
     absent folder while each earlier dependency stood and no group names it. The hand, a conversation's open, a go-on and
     a terminal's visit take the mark off first, a visit ending a running install or hook; every stage write re-reads the
     mark under the record's lock, and a lost mark ends the stage `started.files-stopped`. Once a day the tidy's Keeping pass sweeps what a cut-off copy
@@ -198,11 +198,20 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they start wi
     match deciding within one: the analysis's found layer (`data/files-found.json`, git's view, the walks, the local and
     toolchain signatures of `Defaults/file-signatures.json` and the tracked scripts, read at the commit and writing nothing in
     a tree), the repository's tracked `daoris.files.json` read from git's objects at the line's tip, and the person's
-    `data/files.json`, its `machine` rules then the repository's. The floor is read over all: a tracked path is git's, a top
+    `data/files.json`, its `machine` rules then the repository's. Each layer's file says `"form": 2`, which every writer writes:
+    its entries are git's ignore patterns, each with a rule set per act (`reach`, `take`, `finish`, a dependency's `across`), a
+    kind naming the defaults an entry leaves out (`FileKindSets`), and an entry covers a top as git's ignore does (the top or a
+    folder above it, case by the checkout's `core.ignorecase`, no `!` taking back under a covered folder). A file without `form`
+    is the first form, read through `RuleFileFirstForm`: each of its words is stated exactly in git's syntax but one that matches
+    a folder without what lies under it (`P/*`), which is read as written. The person's file is rewritten in git's form once none
+    of its paths is read as written, its first form set aside beside it; until then the Files tab names each such path with its
+    two wordings, one press words them all, and no other edit is written. A slot's ignored tops are sorted by each rule's `take`,
+    a `base` set aside with the outputs until a build can release it, and a top holding a recorded copy is partitioned: the copy
+    is Daoris's own while its hash holds, and every other entry under it is sorted as a path of its own. The floor is read over all: a tracked path is git's, a top
     that is or holds another repository, a linked worktree or a bare repository's shape is `repository`, and a harness's or
     an editor's settings are never copied. The person's `deny`, `allow` and `ask` over `run`, `copy` and `share` are empty by
     default; a `files.json` that does not read holds every act as an ask and is never written over. `daoris files` and the repository
-    page's Files tab show each path's rule, its layer, the layers below it, its evidence and size, the acts the rules would
+    page's Files tab (`FILES_SETTLE` words the paths read as written) show each path's rule, its layer, the layers below it, its evidence and size, the acts the rules would
     make with the person's answer to each, and a `copy`'s readers (every session in a tree it is copied to). The tab leads with
     the paths and the person's own rules; how the layers decide, the terminal's twin, the reading's commit and the acts sit
     behind one fold, open where an act is held. A repository whose checkout git cannot read is told what to check, never only

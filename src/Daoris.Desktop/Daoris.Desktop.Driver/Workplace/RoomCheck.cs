@@ -16,7 +16,7 @@ internal static class RoomCheck
 
     /// <summary>The check of a lanes file's and a rule file's texts (null for a file the repository lacks) over its tracked paths.</summary>
     internal static RoomCheckReport Of(string? lanes, string? files, IReadOnlyList<string> tracked) =>
-        Run(LaneRooms.Read(lanes), RepositoryFilesReader.Read(files, tracked), tracked);
+        Run(LaneRooms.Read(lanes), RepositoryFilesReader.Read(files), tracked);
 
     internal static RoomCheckReport Run(LaneRoomsRead read, RepositoryFilesRead files, IReadOnlyList<string> tracked)
     {
@@ -50,7 +50,7 @@ internal static class RoomCheck
                 if (matched.Count == 0)
                 {
                     untracked.Add((i, verb, path));
-                    if (!files.Rules.SelectMany(rule => rule.Paths).Any(declared => RoomPaths.Meet(declared, path)))
+                    if (!files.Rules.Any(entry => GitPattern.Meets(entry, path)))
                     {
                         problems.Add(verb == "reads"
                             ? $"room {rooms[i].Id} reads {path}, which no tracked file or declared output is"

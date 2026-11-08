@@ -3,9 +3,8 @@ using System.Text.Json;
 namespace Daoris.Driver;
 
 /// <summary>
-/// The repository's own layer, its tracked <c>daoris.files.json</c>, read and judged: each rule in the rule file's one format, a rule
-/// reaching a path git tracks refused alone, since a tracked path is git's, and a dependency refused where a later rule of the layer
-/// takes one of its paths, its paths being one install's unit. The rest still read.
+/// The repository's own layer, its tracked <c>daoris.files.json</c>, read and judged: each entry in the rule file's one format, and a
+/// dependency refused where a later rule of the layer takes one of its paths, its paths being one install's unit. The rest still read.
 /// </summary>
 /// <remarks>Read from git's objects at the commit the checkout's line stands at (<see cref="AtAsync"/>), never a working file or a
 /// branch's: what Daoris does to the next line is never one branch's say.</remarks>
@@ -13,8 +12,8 @@ internal static class RepositoryFilesReader
 {
     internal const string FileName = "daoris.files.json";
 
-    /// <summary>The rules <paramref name="text"/> states against <paramref name="tracked"/>, git's tracked paths; null text is no file.</summary>
-    internal static RepositoryFilesRead Read(string? text, IReadOnlyCollection<string> tracked)
+    /// <summary>The rules <paramref name="text"/> states; null text is no file.</summary>
+    internal static RepositoryFilesRead Read(string? text)
     {
         if (text is null) return RepositoryFilesRead.None;
         try
@@ -23,9 +22,10 @@ internal static class RepositoryFilesReader
             var root = document.RootElement;
             if (root.ValueKind != JsonValueKind.Object) return RepositoryFilesRead.None with { Problems = [$"{FileName} is not a JSON object"] };
 
+            if (FileRuleFile.FormOf(root) is not { } form) return RepositoryFilesRead.None with { Problems = [FileRuleFile.Unknown(FileName)] };
             var problems = new List<string>();
-            var numbered = FileRuleFile.Numbered(root, "", problems);
-            return new RepositoryFilesRead(Judged(numbered, tracked, problems), problems);
+            var numbered = FileRuleFile.Numbered(root, "", problems, form);
+            return new RepositoryFilesRead(Judged(numbered, problems), problems) { FirstForm = form != FileRuleFile.Form };
         }
         catch (JsonException)
         {
@@ -34,33 +34,26 @@ internal static class RepositoryFilesReader
     }
 
     /// <summary>The layer at <paramref name="commit"/>, read from git's objects in <paramref name="root"/>.</summary>
-    internal static async Task<RepositoryFilesRead> AtAsync(string root, string commit, CancellationToken ct)
-    {
-        var tracked = await FileGit.TrackedAsync(root, commit, ct).ConfigureAwait(false);
-        return await AtAsync(root, commit, tracked, ct).ConfigureAwait(false);
-    }
+    internal static async Task<RepositoryFilesRead> AtAsync(string root, string commit, CancellationToken ct) =>
+        Read(await FileGit.ShowAsync(root, commit, FileName, ct).ConfigureAwait(false));
 
-    internal static async Task<RepositoryFilesRead> AtAsync(string root, string commit, IReadOnlyCollection<string> tracked, CancellationToken ct)
-    {
-        return Read(await FileGit.ShowAsync(root, commit, FileName, ct).ConfigureAwait(false), tracked);
-    }
-
-    private static List<FileRule> Judged(List<(int Number, FileRule Rule)> rules, IReadOnlyCollection<string> tracked, List<string> problems)
+    /// <summary>
+    /// The entries kept: a dependency's refused where a later rule's entry meets it, its paths being one install's unit. A pattern
+    /// that reaches a tracked path is git's to cover; the floor keeps the tracked path at the match.
+    /// </summary>
+    private static List<FileRule> Judged(List<(int Number, FileRule Rule)> rules, List<string> problems)
     {
         var kept = new List<FileRule>();
         for (var i = 0; i < rules.Count; i++)
         {
             var (number, rule) = rules[i];
-            var refusal = rule.Paths.Select(path => FileFloor.TrackedIn(path, tracked) is { } held ? $"rules[{number}]: '{path}' holds {held}, which git tracks" : null)
-                .FirstOrDefault(said => said is not null);
-            if (refusal is null && rule.Kind == FileKind.Dependency
-                && rule.Paths.FirstOrDefault(path => rules.Skip(i + 1).Any(later => later.Rule.Paths.Any(other => RoomPaths.Meet(path, other)))) is { } taken)
+            if (rule.Kind == FileKind.Dependency && rules.Skip(i + 1).Any(later => later.Number != number && GitPattern.Meet(rule, later.Rule)))
             {
-                refusal = $"rules[{number}]: '{taken}' is the dependency's path a later rule takes too, so it acts on nothing";
+                problems.Add($"rules[{number}]: '{rule.Paths[0]}' is the dependency's path a later rule takes too, so it acts on nothing");
+                continue;
             }
 
-            if (refusal is null) kept.Add(rule);
-            else problems.Add(refusal);
+            kept.Add(rule);
         }
 
         return kept;
@@ -71,4 +64,7 @@ internal static class RepositoryFilesReader
 internal sealed record RepositoryFilesRead(IReadOnlyList<FileRule> Rules, IReadOnlyList<string> Problems)
 {
     internal static readonly RepositoryFilesRead None = new([], []);
+
+    /// <summary>Whether the file says no form and is read as the first form, which the Files tab says.</summary>
+    internal bool FirstForm { get; init; }
 }

@@ -33,18 +33,18 @@ public sealed class RoomsDeclaredCensusTests(ITestOutputHelper output)
     public void This_repositorys_rule_file_reads_clean_with_the_web_s_dependency_before_the_root_s()
     {
         var checkout = GitSeed.RepoRoot();
-        var read = RepositoryFilesReader.Read(File.ReadAllText(Path.Combine(checkout, RepositoryFilesReader.FileName)), Tracked(checkout));
+        var read = RepositoryFilesReader.Read(File.ReadAllText(Path.Combine(checkout, RepositoryFilesReader.FileName)));
 
         Assert.Empty(read.Problems);
         Assert.Equal(
-            [FileKind.Local, FileKind.Local, FileKind.Local, FileKind.Scratch, FileKind.Dependency, FileKind.Dependency, FileKind.Intermediate, FileKind.Output],
+            [FileKind.Local, FileKind.Local, FileKind.Local, FileKind.Scratch, FileKind.Dependency, FileKind.Dependency, FileKind.Intermediate, FileKind.Output, FileKind.Output, FileKind.Output],
             read.Rules.Select(rule => rule.Kind));
-        Assert.Equal(["local/lyntai-local.props"], read.Rules[1].Paths);
-        Assert.True(read.Rules[1].Copy);
-        Assert.Equal(["local/shenora-local.props"], read.Rules[2].Paths);
-        Assert.True(read.Rules[2].Copy);
-        Assert.Equal(["src/Daoris.Web/node_modules/"], read.Rules[4].Paths);
-        Assert.Equal(["node_modules/"], read.Rules[5].Paths);
+        Assert.Equal(["/local/lyntai-local.props", "!/local/lyntai-local.props/"], read.Rules[1].Paths);
+        Assert.Equal("copy", read.Rules[1].Reach);
+        Assert.Equal(["/local/shenora-local.props", "!/local/shenora-local.props/"], read.Rules[2].Paths);
+        Assert.Equal("copy", read.Rules[2].Reach);
+        Assert.Equal(["/src/Daoris.Web/node_modules/"], read.Rules[4].Paths);
+        Assert.Equal(["/node_modules/"], read.Rules[5].Paths);
         Assert.DoesNotContain("trees", File.ReadAllText(Path.Combine(checkout, GeneratedWriters.DeclarationFile)).Split('"'));
     }
 

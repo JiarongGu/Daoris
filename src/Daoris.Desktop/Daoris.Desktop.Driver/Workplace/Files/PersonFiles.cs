@@ -20,6 +20,12 @@ internal sealed record PersonFilesRead(FileScope Machine, IReadOnlyDictionary<st
     /// <summary>Why the file stands and does not read, or null. Its defaults restrict nothing, so read as empty it would drop every restriction the person set.</summary>
     internal string? Unread { get; init; }
 
+    /// <summary>Whether the file says no form and is read as the first form.</summary>
+    internal bool FirstForm { get; init; }
+
+    /// <summary>Whether any scope holds a path git's syntax cannot state, read as written until the person words it.</summary>
+    internal bool Keeps => Machine.Rules.Concat(Repositories.Values.SelectMany(scope => scope.Rules)).Any(rule => rule.FirstForm);
+
     internal FileScope For(string repository) =>
         Repositories.FirstOrDefault(pair => string.Equals(pair.Key, repository, StringComparison.OrdinalIgnoreCase)).Value ?? FileScope.Empty;
 }
@@ -43,7 +49,8 @@ internal static class PersonFiles
         if (!File.Exists(path)) return PersonFilesRead.Empty;
         try
         {
-            return Parse(AtomicFile.ReadText(path));
+            var read = Parse(AtomicFile.ReadText(path));
+            return PersonFilesForm.Due(read) && PersonFilesForm.Rewrite(home) ? Parse(AtomicFile.ReadText(path)) : read;
         }
         catch (Exception error) when (error is IOException or UnauthorizedAccessException)
         {
@@ -59,15 +66,16 @@ internal static class PersonFiles
             var root = document.RootElement;
             if (root.ValueKind != JsonValueKind.Object) return PersonFilesRead.Empty with { Unread = $"{FileName} is not a JSON object" };
 
+            if (FileRuleFile.FormOf(root) is not { } form) return PersonFilesRead.Empty with { Unread = FileRuleFile.Unknown(FileName) };
             var problems = new List<string>();
-            var machine = root.TryGetProperty("machine", out var own) ? Scope(own, "machine.", problems) : FileScope.Empty;
+            var machine = root.TryGetProperty("machine", out var own) ? Scope(own, "machine.", problems, form) : FileScope.Empty;
             var repositories = new Dictionary<string, FileScope>(StringComparer.OrdinalIgnoreCase);
             if (root.TryGetProperty("repositories", out var listed) && listed.ValueKind == JsonValueKind.Object)
             {
-                foreach (var each in listed.EnumerateObject()) repositories[each.Name] = Scope(each.Value, $"repositories.{each.Name}.", problems);
+                foreach (var each in listed.EnumerateObject()) repositories[each.Name] = Scope(each.Value, $"repositories.{each.Name}.", problems, form);
             }
 
-            return new PersonFilesRead(machine, repositories, problems);
+            return new PersonFilesRead(machine, repositories, problems) { FirstForm = form != FileRuleFile.Form };
         }
         catch (JsonException error)
         {
@@ -75,8 +83,8 @@ internal static class PersonFiles
         }
     }
 
-    private static FileScope Scope(JsonElement scope, string where, List<string> problems) =>
-        new(FileRuleFile.Rules(scope, where, problems), FilePermissions.Read(scope, where, problems));
+    private static FileScope Scope(JsonElement scope, string where, List<string> problems, int form) =>
+        new(FileRuleFile.Rules(scope, where, problems, form), FilePermissions.Read(scope, where, problems));
 
     /// <summary>A rule added at the end of the machine's rules (<paramref name="repository"/> null) or the repository's, so it wins there.</summary>
     /// <exception cref="DriverException">The file stands and does not read.</exception>
@@ -115,15 +123,18 @@ internal static class PersonFiles
     {
         var path = PathOf(home);
         using var held = RecordLock.Take(RecordLock.PathOf(home, LockName));
-        JsonObject root = [];
+        JsonObject root = new() { ["form"] = FileRuleFile.Form };
         if (File.Exists(path))
         {
-            if (Read(home).Unread is { } why)
+            var text = AtomicFile.ReadText(path);
+            var read = Parse(text);
+            if (read.Unread is { } why)
             {
                 throw new DriverException($"{FileName} does not read ({why}), so nothing was written over it: fix the file or remove it, then make the change again.");
             }
 
-            root = JsonNode.Parse(AtomicFile.ReadText(path).TrimStart('﻿')) as JsonObject ?? [];
+            root = JsonNode.Parse(text.TrimStart('﻿')) as JsonObject ?? [];
+            if (read.FirstForm) root = PersonFilesForm.Translated(root, read);
         }
 
         var scope = repository is null ? Child(root, "machine") : Child(Child(root, "repositories"), repository);

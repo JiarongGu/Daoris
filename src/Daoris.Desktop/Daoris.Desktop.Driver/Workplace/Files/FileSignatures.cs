@@ -50,12 +50,13 @@ internal sealed class FileSignatures
         var root = document.RootElement;
         var problems = new List<string>();
         var rows = new List<SignatureRow>();
+        var form = FileRuleFile.FormOf(root) ?? throw new FormatException(FileRuleFile.Unknown("the file signatures"));
         foreach (var row in root.GetProperty("rows").EnumerateArray())
         {
             var name = Json.Text(row, "toolchain") ?? "";
             rows.Add(new SignatureRow(
                 name, Json.Strings(row, "signature"), Json.Text(row, "manifest"), Json.Flag(row, "workspaces"), Json.Strings(row, "readsNothing"),
-                FileRuleFile.Rules(row, $"{name}.", problems), Json.Text(row, "workspaceFile")));
+                FileRuleFile.Rules(row, $"{name}.", problems, form), Json.Text(row, "workspaceFile")));
         }
 
         if (problems.Count > 0) throw new FormatException($"the file signatures do not read: {string.Join("; ", problems)}");
@@ -95,9 +96,10 @@ internal sealed class FileSignatures
             : UnionJoins.Glob(pattern).IsMatch(name));
     }
 
+    /// <summary>A signature's rule moved to the folder of the file that signed it: each anchored pattern anchored at that folder.</summary>
     private static FileRule Beside(FileRule rule, string folder) => folder.Length == 0 ? rule : rule with
     {
-        Paths = [.. rule.Paths.Select(path => folder + path)],
+        Paths = [.. rule.Paths.Select(path => path.StartsWith("!/", StringComparison.Ordinal) ? "!/" + folder + path[2..] : "/" + folder + path.TrimStart('/'))],
         Key = rule.Key is { } key ? [.. key.Select(path => folder + path)] : null,
     };
 }

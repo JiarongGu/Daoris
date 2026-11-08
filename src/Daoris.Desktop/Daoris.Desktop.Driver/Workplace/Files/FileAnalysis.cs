@@ -36,7 +36,7 @@ internal static partial class FileAnalysis
             var walk = walks[top];
             var worktree = worktrees.Count(path => path.StartsWith(top, StringComparison.Ordinal));
             if (!walk.Holds && worktree == 0) continue;
-            found[top] = new FileRule(FileKind.Repository, [top])
+            found[top] = new FileRule(FileKind.Repository, Top(top))
             {
                 Evidence = [walk.Repository ? "a repository at its top" : worktree > 0 ? $"holds {Count(worktree, "linked worktree")}" : $"holds {Count(walk.Nested, "repository", "repositories")}"],
             };
@@ -44,12 +44,12 @@ internal static partial class FileAnalysis
 
         foreach (var top in tops.Where(top => !found.ContainsKey(top)))
         {
-            if (signatures.LocalOf(top) is { } pattern) found[top] = new FileRule(FileKind.Local, [top]) { Evidence = [$"a local signature, `{pattern}`"], Size = walks[top].Size };
+            if (signatures.LocalOf(top) is { } pattern) found[top] = new FileRule(FileKind.Local, Top(top)) { Evidence = [$"a local signature, `{pattern}`"], Size = walks[top].Size };
         }
 
         foreach (var input in LocalInputs(gates).Where(input => !known.Contains(input) && !FileFloor.IsSettings(input)))
         {
-            found[input] = new FileRule(FileKind.Local, [input]) { Copy = true, Evidence = ["read by a gate: the gates file names it"] };
+            found[input] = new FileRule(FileKind.Local, Top(input)) { Reach = "copy", Evidence = ["read by a gate: the gates file names it"] };
         }
 
         var hits = signatures.Over(tracked);
@@ -59,17 +59,21 @@ internal static partial class FileAnalysis
         foreach (var top in tops.Where(top => !found.ContainsKey(top)))
         {
             found[top] = observed.Contains(top, StringComparer.Ordinal)
-                ? new FileRule(FileKind.Scratch, [top]) { Evidence = ["written by a session"], Size = walks[top].Size }
-                : new FileRule(FileKind.Unknown, [top]) { Size = walks[top].Size };
+                ? new FileRule(FileKind.Scratch, Top(top)) { Evidence = ["written by a session"], Size = walks[top].Size }
+                : new FileRule(FileKind.Unknown, Top(top)) { Size = walks[top].Size };
         }
 
         var rules = found.Values.OrderBy(rule => rule.Kind == FileKind.Dependency ? rule.Key is { Count: 0 } ? 1 : 0 : 2)
             .ThenBy(rule => rule.Paths[0], StringComparer.Ordinal).ToList();
-        FileRule? Signature(string path, FileKind kind) => hits.LastOrDefault(hit => hit.Rule.Kind == kind && hit.Rule.Matches(path))?.Rule;
+        var ignoreCase = await FileGit.IgnoresCaseAsync(root, ct).ConfigureAwait(false);
+        FileRule? Signature(string path, FileKind kind) => hits.LastOrDefault(hit => hit.Rule.Kind == kind && hit.Rule.Matches(path, ignoreCase))?.Rule;
         return new FileReading(
             new FoundReading(commit, at ?? DateTimeOffset.UtcNow, rules), tops,
-            new FileFloorFacts(known, [.. found.Values.Where(rule => rule.Kind == FileKind.Repository).Select(rule => rule.Paths[0])]), Signature);
+            new FileFloorFacts(known, [.. found.Where(pair => pair.Value.Kind == FileKind.Repository).Select(pair => pair.Key)]) { IgnoreCase = ignoreCase }, Signature);
     }
+
+    /// <summary>A top as the found layer writes it: the pattern that names it alone.</summary>
+    private static IReadOnlyList<string> Top(string top) => [GitPattern.Anchored(top)];
 
     /// <summary>
     /// The signatures' rules over the tops: a dependency beside its signature whether or not it stands yet, with its workspace
@@ -85,20 +89,18 @@ internal static partial class FileAnalysis
         {
             if (hit.Rule.Kind != FileKind.Dependency)
             {
-                foreach (var path in hit.Rule.Paths)
+                foreach (var path in hit.Rule.Paths.Where(path => !path.StartsWith('!')))
                 {
-                    var test = RoomPaths.Declared(path);
-                    foreach (var top in tops.Where(top => test.IsMatch(top) && !found.ContainsKey(top)))
+                    foreach (var top in tops.Where(top => !found.ContainsKey(top) && GitPattern.Covers([path, .. hit.Rule.Paths.Where(each => each.StartsWith('!'))], top, false)))
                     {
-                        found[top] = hit.Rule with { Paths = [top], Evidence = [$"beside {hit.File}, by the {hit.Row.Toolchain} signature"], Size = walks[top].Size };
+                        found[top] = hit.Rule with { Paths = Top(top), Evidence = [$"beside {hit.File}, by the {hit.Row.Toolchain} signature"], Size = walks[top].Size };
                     }
                 }
 
                 continue;
             }
 
-            var folder = hit.Rule.Paths[0];
-            if (found.ContainsKey(folder) || FileFloor.TrackedIn(folder, tracked) is not null) continue;
+            if (GitPattern.LiteralOf(hit.Rule.Paths[0]) is not { } folder || found.ContainsKey(folder) || FileFloor.TrackedIn(folder, tracked) is not null) continue;
             var rule = hit.Rule with { Evidence = [$"beside {hit.File}, by the {hit.Row.Toolchain} signature"], Size = walks.GetValueOrDefault(folder)?.Size };
             if (hit.Row.Manifest is { } manifestName && await FileGit.ShowAsync(root, commit, hit.Folder + manifestName, ct).ConfigureAwait(false) is { } manifest)
             {
@@ -162,15 +164,15 @@ internal static partial class FileAnalysis
             var writers = said.Where(line => Writes().IsMatch(line.Line)).Select(line => line.File).Distinct(StringComparer.Ordinal).ToList();
             if (writers.FirstOrDefault(file => Stepped(file, gates, lifecycle)) is { } step)
             {
-                found[top] = new FileRule(FileKind.Output, [top]) { Evidence = [$"written by {step}, a step a gate, a hook or a lifecycle script runs"] };
+                found[top] = new FileRule(FileKind.Output, Top(top)) { Evidence = [$"written by {step}, a step a gate, a hook or a lifecycle script runs"] };
             }
             else if (writers.Count > 0)
             {
-                found[top] = new FileRule(FileKind.Scratch, [top]) { Evidence = [$"written by {writers[0]}, which no gate, hook or lifecycle script runs"] };
+                found[top] = new FileRule(FileKind.Scratch, Top(top)) { Evidence = [$"written by {writers[0]}, which no gate, hook or lifecycle script runs"] };
             }
             else
             {
-                found[top] = new FileRule(FileKind.Unknown, [top]) { Evidence = [$"named by {said[0].File}, which only reads it"] };
+                found[top] = new FileRule(FileKind.Unknown, Top(top)) { Evidence = [$"named by {said[0].File}, which only reads it"] };
             }
         }
     }

@@ -74,6 +74,16 @@ public sealed class FilesRoutes(DriverLoop loop)
     private Task<object?> FilesRemoveAsync(FilesRemovePress press, CancellationToken cancellationToken) => Written(press.Repository, repository =>
         FilesEdits.Remove(_loop.Home, repository, press.Machine, press.Paths ?? []) > 0);
 
+    // The person's file rewritten in git's syntax, every path it reads as written worded as the person chose, in one write.
+    [DriverRoute("FILES_SETTLE", PipeClass.Window)]
+    [Owner("FILES_SETTLE", Repository = "repository")]
+    [Publishes("FILES_SETTLE", StateScopes.Files)]
+    private Task<object?> FilesSettleAsync(FilesSettlePress press, CancellationToken cancellationToken) => Written(press.Repository, _ =>
+    {
+        FilesEdits.Settle(_loop.Home, press.Wordings ?? []);
+        return true;
+    });
+
     // A permission added or taken out: the one press that allows what an ask holds writes the person's allow with its maker, and
     // taking it back removes it. Refused while the person's file does not read, so no allow is made over a restriction unseen.
     [DriverRoute("FILES_PERMIT", PipeClass.Window)]
