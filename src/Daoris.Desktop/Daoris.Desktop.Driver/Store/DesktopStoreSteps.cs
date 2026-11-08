@@ -646,5 +646,73 @@ internal static class DesktopStoreSteps
             DROP TABLE role_staffing_found;
             DROP TABLE role_staffing_projection;
             """)),
+
+        // The kept slots, Workplace's: which slots a repository's pool has and the line each serves, the one claim in flight on a slot, the
+        // terminals and served builds in it, and each let-go of a line. New tables an older build never opens, so the stamp stays where it is.
+        // A line is empty while a slot is detached and while a claim ends or retires no line, so each unique line index holds only named lines.
+        new(23, PolicyWriter, write => write.Execute(
+            """
+            CREATE TABLE kept_trees (
+              workspace    TEXT NOT NULL,
+              repository   TEXT NOT NULL,
+              number       INTEGER NOT NULL,
+              registration TEXT NOT NULL,
+              path         TEXT NOT NULL,
+              line         TEXT NOT NULL,
+              tip          TEXT NOT NULL,
+              state        TEXT NOT NULL,
+              said         TEXT NOT NULL,
+              since        TEXT NOT NULL,
+              bytes        INTEGER NOT NULL,
+              toolchain    TEXT NOT NULL,
+              PRIMARY KEY (workspace, repository, number)
+            );
+            CREATE UNIQUE INDEX kept_trees_line ON kept_trees (workspace, repository, line) WHERE line <> '';
+            CREATE TABLE tree_claims (
+              workspace        TEXT NOT NULL,
+              repository       TEXT NOT NULL,
+              number           INTEGER NOT NULL,
+              kind             TEXT NOT NULL,
+              holder           TEXT NOT NULL,
+              line             TEXT NOT NULL,
+              branch           TEXT NOT NULL,
+              start            TEXT NOT NULL,
+              expect           TEXT NOT NULL,
+              opens            TEXT NOT NULL,
+              job              TEXT NOT NULL,
+              record           TEXT NOT NULL,
+              phase            TEXT NOT NULL,
+              claim_run        TEXT NOT NULL REFERENCES store_runs (run),
+              claim_generation INTEGER NOT NULL,
+              at               TEXT NOT NULL,
+              PRIMARY KEY (workspace, repository, number)
+            );
+            CREATE UNIQUE INDEX tree_claims_line ON tree_claims (workspace, repository, line) WHERE line <> '';
+            CREATE TABLE tree_visits (
+              workspace  TEXT NOT NULL,
+              repository TEXT NOT NULL,
+              number     INTEGER NOT NULL,
+              kind       TEXT NOT NULL,
+              visitor    TEXT NOT NULL,
+              run        TEXT NOT NULL REFERENCES store_runs (run),
+              at         TEXT NOT NULL,
+              PRIMARY KEY (workspace, repository, number, visitor)
+            );
+            CREATE TABLE line_ends (
+              workspace  TEXT NOT NULL,
+              repository TEXT NOT NULL,
+              line       TEXT NOT NULL,
+              branch     TEXT NOT NULL,
+              session    TEXT NOT NULL,
+              number     INTEGER NOT NULL,
+              kind       TEXT NOT NULL,
+              tip        TEXT NOT NULL,
+              read       TEXT NOT NULL,
+              "left"     TEXT NOT NULL,
+              toolchain  TEXT NOT NULL,
+              at         TEXT NOT NULL,
+              PRIMARY KEY (workspace, repository, line, at)
+            );
+            """)),
     ];
 }
