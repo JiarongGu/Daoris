@@ -10,6 +10,7 @@
  * for one reason this test checks against the code; a site in neither list fails, and so does an entry no site matches.
  */
 import assert from 'node:assert/strict';
+import { execFileSync } from 'node:child_process';
 import { existsSync, mkdirSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { after, test } from 'node:test';
@@ -37,6 +38,15 @@ const REASONS = {
   'merge tool': (site) => site.file === 'tools/merge-branch.mjs' && site.shape === 'R2' && !/out\.push\(/.test(site.statement),
   text: (site) => /out\.push\(|new\(\$@"|\/--no-build\//.test(site.statement),
 };
+
+/** The one tracked file of this name under the driver's tests, at any depth, so a move into a module folder edits no entry. */
+function driverTestFile(name) {
+  const project = 'src/Daoris.Desktop/Daoris.Desktop.Driver.Tests';
+  const found = execFileSync('git', ['ls-files', '--', project], { cwd: root, encoding: 'utf8', windowsHide: true })
+    .split('\n').filter((path) => path.slice(path.lastIndexOf('/') + 1) === name);
+  assert.equal(found.length, 1, `${name} is under ${project} ${found.length} times`);
+  return found[0];
+}
 
 /** Every site of the tree as it stands, by file and the text its statement holds; an empty text takes every site of a test file. */
 const CENSUS = [
@@ -68,7 +78,7 @@ const CENSUS = [
   { file: 'src/Daoris.Desktop/Daoris.Desktop.Driver/Platform/DaorisHome.cs', text: 'new("bin"', why: 'no output' },
   { file: 'src/Daoris.Service/Daoris.Service.Core/Platform/DaorisHome.cs', text: 'new("bin"', why: 'no output' },
   { file: 'src/Daoris.Desktop/Daoris.Desktop.Modules.Tests/Browser/BuiltApplication.cs', text: '', why: 'referenced', project: 'Daoris.Desktop.App' },
-  { file: 'src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/DriverHostTests.cs', text: '', why: 'referenced', project: 'Daoris.Desktop.Driver.Host' },
+  { file: driverTestFile('DriverHostTests.cs'), text: '', why: 'referenced', project: 'Daoris.Desktop.Driver.Host' },
   { file: 'src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Platform/PieceLauncherProcessTests.cs', text: '', why: 'referenced', project: 'Daoris.Desktop.PieceStart' },
   { file: 'src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Loop/PartnerProcessTests.cs', text: '', why: 'referenced', project: 'Daoris.Desktop.PieceStart' },
   { file: 'src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Platform/OwnedProcessesProcessTests.cs', text: '', why: 'referenced', project: 'Daoris.Desktop.OwnerStandIn' },
