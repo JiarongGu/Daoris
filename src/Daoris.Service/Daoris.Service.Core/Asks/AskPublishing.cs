@@ -187,6 +187,12 @@ internal sealed class AskPublishing(
         var ask = await asks.FindAsync(id, ct).ConfigureAwait(false);
         if (ask is null) return new(AskRefusal.NotFound, $"No ask `#{id.TrimStart('#')}`.", Ask: null);
 
+        // A close is final: the reason it was written with is what became of the ask, and a later close does not rewrite it.
+        if (ask.State == AskState.Closed)
+        {
+            return new(AskRefusal.Closed, $"Ask `#{ask.Id}` is already closed ({ask.Note}) — its reason stands.", ask);
+        }
+
         await asks.RecordClosedAsync(ask.Id, reason.Trim(), now, ct).ConfigureAwait(false);
         var closed = await standings.FindAsync(ask.Id, ct).ConfigureAwait(false) ?? ask;
         return new(AskRefusal.None, $"Ask `#{ask.Id}` is closed: {closed.Note}", closed);
