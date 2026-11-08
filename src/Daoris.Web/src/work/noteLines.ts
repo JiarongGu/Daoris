@@ -299,8 +299,9 @@ export const NOTE_VALUES: Readonly<
   copied: 'names', modules: 'text',
   // The machine-local files a tree's open copied from its checkout, each as code, and one it did not copy.
   inputs: 'names', input: 'text',
-  // A dependency's folder and its install, what the files stage put back, and git's own files an install changed, each as code.
-  path: 'text', install: 'text', written: 'names', changed: 'names',
+  // A dependency's folder, its install and its rule's setup command, what the files stage put back, and git's own files an
+  // install changed, each as code.
+  path: 'text', install: 'text', command: 'text', written: 'names', changed: 'names',
   why: 'why',
   cooling: 'cooling',
   window: 'window',
