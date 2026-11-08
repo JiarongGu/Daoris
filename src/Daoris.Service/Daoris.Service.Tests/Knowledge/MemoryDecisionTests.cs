@@ -180,6 +180,22 @@ public sealed class MemoryDecisionTests : IAsyncLifetime
         Assert.Equal([ender.Id], (await _machine.Memory.WaitsAsync()).Select(wait => wait.Session));
     }
 
+    /// <summary>🔴 An end whose session was deleted still awaits the person, so it is a wait of its own, decided through its row as a sweep's is.</summary>
+    [Fact]
+    public async Task A_deleted_sessions_awaiting_end_is_still_a_wait_until_the_person_decides_it()
+    {
+        var map = await Owner.RememberAsync("The map is drawn in tiles.");
+        var (ender, end) = await AwaitingAsync(map);
+        await _machine.Sessions.DeleteAsync(ender.Id);
+
+        var waits = await _machine.Memory.WaitsAsync();
+
+        var wait = Assert.Single(waits);
+        Assert.Equal((null, end.Id, 1), (wait.Session, wait.End!.Op, wait.Ends));
+        await Desk.DecideAsync(end.Id, session: null, approve: false, Now.AddMinutes(5));
+        Assert.Empty(await _machine.Memory.WaitsAsync());
+    }
+
     /// <summary>
     /// 🔴 While an end awaits, a hit on its entry says who proposed it and that it awaits the person, in a search and a read;
     /// once decided, the hit says nothing of it.

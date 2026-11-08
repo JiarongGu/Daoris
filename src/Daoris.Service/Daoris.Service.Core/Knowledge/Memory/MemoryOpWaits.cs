@@ -1,18 +1,19 @@
 namespace Daoris.Knowledge;
 
 /// <summary>
-/// The waits the memory log keeps for no session: an end the sweep wrote, which has no session to join a row of, so each is a wait of its
-/// own, kept by its operation, the entry it ends and why.
+/// The waits the memory log keeps for no session: an end the sweep wrote, or one whose session was deleted, which has no session to
+/// join a row of, so each is a wait of its own, kept by its operation, the entry it ends and why.
 /// </summary>
 internal sealed class MemoryOpWaits(ConnectionGate db)
 {
-    /// <summary>Each awaiting end the sweep wrote, oldest first.</summary>
+    /// <summary>Each awaiting end the sweep wrote, or whose session is gone, oldest first.</summary>
     public async Task<IReadOnlyList<MemoryWait>> SweepsAsync(CancellationToken ct)
     {
         await using var command = db.Command();
         command.CommandText = """
             SELECT id, repository, target, revision, text, at FROM memory_ops
-            WHERE state = 'awaiting' AND kind = 'end' AND session IS NULL AND target IS NOT NULL
+            WHERE state = 'awaiting' AND kind = 'end' AND target IS NOT NULL
+              AND (session IS NULL OR (carried IS NULL AND session NOT IN (SELECT id FROM sessions)))
             ORDER BY rowid
             """;
         var waits = new List<MemoryWait>();
