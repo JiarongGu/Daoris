@@ -1,10 +1,9 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// The supervisor's go-on on a quest's referred point, released after the plan: the
-/// counts only a driven quest has, parked by its failed sessions or asking at a part's end, are read from the planner's verdicts, so each
-/// held go-on whose moment came is released through the quest's own door, its <i>Try again</i>, between sessions. The same judgement the
-/// person's press makes (<see cref="QuestRetry.Decide"/>), written as it is: a park's mark, or a policy's one approval.
+/// The supervisor's go-on, move or wait on a quest's referred point, released after the plan through the quest's own door, its points read
+/// from the planner's verdicts: a go-on and a move are the judgement the person's press makes (<see cref="QuestRetry.Decide"/>), a park's
+/// mark or a policy's one approval; a wait is the cut part's wait for its choice's reset (<see cref="StaffMoves.Wait"/>).
 /// </summary>
 [LookPass("course-release", LookPhase.Planned, "rule-acts")]
 internal sealed class CourseReleaseLook(ILookWiring wiring) : ILookPass
@@ -15,8 +14,14 @@ internal sealed class CourseReleaseLook(ILookWiring wiring) : ILookPass
         var snapshot = round.State.Snapshot;
         var path = DriverConfig.ResolvePath(wiring.Home);
         var points = ReferredPoints.For(wiring.Home, wiring.Events, wiring.Marks);
-        bool Retry(string quest)
+        bool Release(string quest, string act)
         {
+            if (act == SupervisorLimitActs.Wait)
+            {
+                return plan.FirstOrDefault(each => string.Equals(each.Quest.Id, quest, StringComparison.OrdinalIgnoreCase)) is { Verdict: StartVerdict.PolicyHeld, HeldBy: { Limit: true } cut }
+                       && new StaffMoves(wiring.Home).Wait(quest, cut.Actor ?? RoleWork.Build, cut.Session);
+            }
+
             try
             {
                 var decision = QuestRetry.Decide(quest, plan);
@@ -31,10 +36,10 @@ internal sealed class CourseReleaseLook(ILookWiring wiring) : ILookPass
 
         var line = points.Line(
             session => snapshot.LastRun.Values.FirstOrDefault(record => record.Session == session),
-            session => snapshot.LastRun.Values.FirstOrDefault(record => record.Session == session)?.Running == true, plan, Retry);
+            session => snapshot.LastRun.Values.FirstOrDefault(record => record.Session == session)?.Running == true, plan, Release);
         if (await wiring.Supervisor.ReleaseCoursesAsync(line, DateTimeOffset.UtcNow, SupervisorRules.QuestCounts, ct).ConfigureAwait(false) is { Count: > 0 })
         {
-            round.Events.Add("supervisor went on with a quest its rule referred: its Try again, between sessions.");
+            round.Events.Add("supervisor released a quest its rule referred through the quest's own door, between sessions.");
         }
     }
 }

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { SupervisorRulesRead } from '../../data/wiring';
-import { blankRule, chainOf, draftOf, inheritedFrom, nextCount, pressOf, readable, reaction, recount, replaced, rulesOfRole, sameAsStored, setOf } from './supervisorRulesDraft';
+import { actionsOf, blankRule, chainOf, draftOf, inheritedFrom, nextCount, pressOf, readable, reaction, recount, replaced, rulesOfRole, sameAsStored, setOf } from './supervisorRulesDraft';
 
 // The supervisor's rules as the editor holds them, and the press that writes a place's set whole.
 
@@ -32,6 +32,22 @@ describe('The supervisor rules draft', () => {
       change: 'set', id: 'supervisor', place: 'machine', rulesRevision: 3,
       rules: [{ count: 'answers-alone', at: 2, do: 'hold' }, { count: 'failures', at: 3, do: 'hold' }, { count: 'limits', at: 1, do: 'wait', upTo: 30, roles: ['build'] }],
     });
+  });
+
+  it('offers Ask the supervisor on limits and moves only for a rule naming driven roles, and a limit\'s refer takes minutes', () => {
+    const limits = { count: 'limits', window: 'this-end', actions: ['ask', 'wait', 'next', 'weighted', 'refer', 'off'], least: 1, most: 1, drivenRefer: true };
+    const driven = ['build', 'design'];
+
+    expect(actionsOf(limits, { do: 'ask', roles: [] }, driven)).not.toContain('refer');
+    expect(actionsOf(limits, { do: 'ask', roles: ['chat'] }, driven)).not.toContain('refer');
+    expect(actionsOf(limits, { do: 'ask', roles: ['build'] }, driven)).toContain('refer');
+    expect(actionsOf(limits, { do: 'refer', roles: [] }, driven)).toContain('refer');
+    expect(actionsOf(READ.counts[0]!, { do: 'hold', roles: [] }, driven)).toContain('refer');
+
+    const referred = reaction({ key: 1, count: 'limits', at: '1', do: 'ask', upTo: '', roles: ['build'] }, 'refer');
+    expect(referred.upTo).toBe('30');
+    expect(pressOf({ place: 'machine', revision: 3, rows: [referred] }).rules).toEqual([{ count: 'limits', at: 1, do: 'refer', upTo: 30, roles: ['build'] }]);
+    expect(reaction({ ...referred, count: 'moves' }, 'refer').upTo).toBe('');
   });
 
   it("keeps a rule's roles whole: a rule set at the terminal for two roles writes back for both when another rule is saved", () => {

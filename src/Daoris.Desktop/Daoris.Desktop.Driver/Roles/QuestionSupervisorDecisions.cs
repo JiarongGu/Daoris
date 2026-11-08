@@ -83,7 +83,7 @@ public sealed class QuestionSupervisorDecisions
         _courses.ReleaseAsync(line, now, counts, ct);
 
     /// <summary>Whether a referred point waits for the holder (<see cref="SupervisorCourses.Waits"/>).</summary>
-    public bool Refers(string session, string point) => _courses.Waits(session, point);
+    public bool Refers(string session, string point, string kind = SupervisorKinds.Course) => _courses.Waits(session, point, kind);
 
     /// <summary>Run <paramref name="body"/> under <paramref name="session"/>'s decision lock.</summary>
     public Task<T> UnderAsync<T>(string session, Func<Task<T>> body, CancellationToken ct = default) => _book.UnderAsync(session, body, ct);

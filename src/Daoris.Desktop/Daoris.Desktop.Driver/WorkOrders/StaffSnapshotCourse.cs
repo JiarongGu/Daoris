@@ -124,17 +124,17 @@ internal static class StaffSnapshotCourse
         if (staff is null) return snapshot;
         snapshot = snapshot with { FailuresAt = FailuresAt(staff, snapshot) };
         var (_, holds) = Look(staff, snapshot, config, now, write: false);
-        var limit = LimitHolds(staff, snapshot);
+        var limit = LimitHolds(staff, snapshot, now);
         return holds.Count == 0 && limit.Count == 0
             ? snapshot
             : snapshot with { PolicyHolds = holds.Concat(limit).ToDictionary(pair => pair.Key, pair => pair.Value, StringComparer.OrdinalIgnoreCase) };
     }
 
     /// <summary>
-    /// The quests an account's limit cut off whose role's policy holds them for the person's yes: an <c>ask</c> on a limit, or the
-    /// bound of moves a limit's move would pass. The same typed hold a transient end leaves; a yes (one approval) lets the line walk.
+    /// The quests a limit cut off whose policy holds them for the person's yes: an <c>ask</c> on a limit, or the moves bound a limit's move
+    /// would pass. A yes (one approval) lets the line walk; a supervisor's wait on the part lets it wait to its rule's minutes.
     /// </summary>
-    internal static IReadOnlyDictionary<string, string> LimitHolds(StaffLedger? staff, Snapshot snapshot)
+    internal static IReadOnlyDictionary<string, string> LimitHolds(StaffLedger? staff, Snapshot snapshot, DateTimeOffset now)
     {
         var holds = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
         if (staff is null) return holds;
@@ -146,7 +146,10 @@ internal static class StaffSnapshotCourse
             if (StaffCourse.CourseOf(staff, line.Role, line.Place) is not { } policy || !policy.Moves.ContainsKey(StaffConditions.Limit)) continue;
             var moved = staff.Moves.Of(quest.Id);
             var action = StaffJudge.OnCondition(policy, StaffConditions.Limit, new StaffLine(true, moved.Moves));
-            if (action.Do == StaffActions.Ask && !moved.Approved) holds[quest.Id] = action.MovesBound ? HoldMovesBound : HoldAsk;
+            if (action.Do == StaffActions.Ask && !moved.Approved && !StaffCourse.SupervisorWaits(staff, quest.Id, last, action, now))
+            {
+                holds[quest.Id] = action.MovesBound ? HoldMovesBound : HoldAsk;
+            }
         }
 
         return holds;

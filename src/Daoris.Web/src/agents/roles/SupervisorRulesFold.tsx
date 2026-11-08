@@ -7,7 +7,8 @@ import { list } from '../../locales/format';
 import { type Answered, Refused } from '../../work/InlineConfirm';
 import { NumberField } from './RolePolicy';
 import {
-  blankRule, draftOf, inheritedFrom, MACHINE, nextCount, pressOf, readable, reaction, recount, replaced, type RuleDraft, rowOf, sameAsStored, setOf,
+  actionsOf, blankRule, draftOf, inheritedFrom, MACHINE, nextCount, pressOf, readable, reaction, recount, replaced, type RuleDraft, rowOf, sameAsStored,
+  setOf, takesMinutes,
 } from './supervisorRulesDraft';
 
 const ANY = '';
@@ -16,7 +17,7 @@ const COLUMNS = ['name', 'number', 'name', 'short', 'acts'] as const;
 /** A rule in the person's words, as the inherited lines and the *replaces* line say it. */
 export function ruleSaid(t: TFunction, rule: Pick<SupervisorRuleWire, 'at' | 'do' | 'upTo'>): string {
   const act = t(`settings.supervisor.act.${rule.do}`);
-  return rule.do === 'wait' && rule.upTo ? t('settings.supervisor.saidWait', { at: rule.at, act, minutes: rule.upTo }) : t('settings.supervisor.said', { at: rule.at, act });
+  return rule.upTo ? t('settings.supervisor.saidWait', { at: rule.at, act, minutes: rule.upTo }) : t('settings.supervisor.said', { at: rule.at, act });
 }
 
 /** A wider place in the person's words: this machine, or a workspace or repository by its name. */
@@ -122,7 +123,7 @@ export function SupervisorRulesFold({ place, placeName, read, roles, busy, refus
                   <SelectField
                     value={row.do} disabled={locked} ariaLabel={t('settings.supervisor.doOf', { n })}
                     onChange={(action) => patch(row.key, (was) => reaction(was, action))}
-                    options={(count?.actions ?? [row.do]).map((action) => ({ value: action, label: t(`settings.supervisor.act.${action}`) }))}
+                    options={(count ? actionsOf(count, row, read.driven ?? []) : [row.do]).map((action) => ({ value: action, label: t(`settings.supervisor.act.${action}`) }))}
                   />
                 </FormField>
                 <FormField label={t('settings.supervisor.field.for')} when="stacked">
@@ -144,11 +145,11 @@ export function SupervisorRulesFold({ place, placeName, read, roles, busy, refus
                     <Icon name="x" size={12} />
                   </Button>
                 </span>
-                {(row.do === 'wait' || replacing.length > 0 || row.count === 'failures-on-choice' || row.count === 'tries') && (
+                {(takesMinutes(row) || replacing.length > 0 || row.count === 'failures-on-choice' || row.count === 'tries') && (
                   <span className="col-span-full grid gap-1 text-small text-ink-faint">
-                    {row.do === 'wait' && (
+                    {takesMinutes(row) && (
                       <span className="inline-flex flex-wrap items-center gap-1 text-ink-soft">
-                        {t('settings.supervisor.upTo')}
+                        {t(row.do === 'refer' ? 'settings.supervisor.upToReferred' : 'settings.supervisor.upTo')}
                         <NumberField value={row.upTo} label={t('settings.supervisor.upToOf', { n })} width="w-16" onChange={(upTo) => patch(row.key, (was) => ({ ...was, upTo }))} />
                         {t('settings.supervisor.minutes')}
                       </span>

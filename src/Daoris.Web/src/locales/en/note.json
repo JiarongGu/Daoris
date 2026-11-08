@@ -286,6 +286,8 @@
   "note.answers.kept": "You kept this answer: it goes on only with your words.",
   "note.answers.supervised": "The supervisor let this answer go on, as your rule asked it to.",
   "note.supervisor.retried": "The supervisor made this quest's Try again, as your rule asked it to.",
+  "note.supervisor.moved": "The supervisor let this quest move to another choice, as your rule asked it to.",
+  "note.supervisor.waited": "The supervisor kept this quest waiting for its choice's reset, as your rule asked it to.",
   "note.supervisor.unreferred": "Your rule asks the supervisor; none is started for this place, so this waits for you.",
   "note.supervisor.rule": "Your rule for {{place}} acted on this line: {{counted}} stood at {{n}}, and the rule says {{do}} at {{bound}}.",
   "note.helper.why.off": "the rule for helpers is off for this repository",

@@ -286,6 +286,8 @@
   "note.answers.kept": "你保留了这个回答：它只会随你的话一起继续。",
   "note.answers.supervised": "按你的规则，主管让这个回答继续了。",
   "note.supervisor.retried": "按你的规则，主管为这个委托点了“重试”。",
+  "note.supervisor.moved": "按你的规则，主管让这个委托改用其他选择。",
+  "note.supervisor.waited": "按你的规则，主管让这个委托等它的选择额度恢复。",
   "note.supervisor.unreferred": "你的规则请主管判断，但这个位置没有启动主管，所以这里在等你。",
   "note.supervisor.rule": "你为 {{place}} 设的规则在这条线上起了作用：{{counted}} 已到 {{n}}，规则在 {{bound}} 时执行 {{do}}。",
   "note.helper.why.off": "这个仓库的助手规则已关闭",

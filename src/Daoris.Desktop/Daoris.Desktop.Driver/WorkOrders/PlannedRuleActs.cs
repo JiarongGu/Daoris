@@ -39,11 +39,14 @@ internal static class PlannedRuleActs
                 case { Verdict: StartVerdict.PolicyHeld, Said.Code: SittingFact.PolicyAsk, HeldBy: { } ended } when StaffSnapshotCourse.FailedStrike(ended):
                     Add(held.Quest, SupervisorRules.FailuresOnChoice, rule => rule.Do == SupervisorRules.Refer, snapshot.FailedRuns.GetValueOrDefault(held.Quest.Id), "start", ended.Session);
                     break;
+                case { Verdict: StartVerdict.PolicyHeld, Said.Code: SittingFact.PolicyAsk, HeldBy: { Limit: true } ended }:
+                    Add(held.Quest, SupervisorRules.Limits, rule => rule.Do == SupervisorRules.Refer, 1, "start", ended.Session);
+                    break;
                 case { Verdict: StartVerdict.TransientHeld, HeldBy: { } ended }:
                     Add(held.Quest, SupervisorRules.Tries, rule => rule.Do == SupervisorRules.Hold, LineCounts.TriesOf(ended), "episode", ended.Session);
                     break;
                 case { Verdict: StartVerdict.PolicyHeld, Said.Code: SittingFact.MovesBound, HeldBy: { } ended }:
-                    Add(held.Quest, SupervisorRules.Moves, rule => rule.Do == SupervisorRules.Ask, movesOf(held.Quest.Id), "start", ended.Session);
+                    Add(held.Quest, SupervisorRules.Moves, rule => rule.Do is SupervisorRules.Ask or SupervisorRules.Refer, movesOf(held.Quest.Id), "start", ended.Session);
                     break;
             }
         }

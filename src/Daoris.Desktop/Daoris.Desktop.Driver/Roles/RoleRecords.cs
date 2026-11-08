@@ -22,6 +22,8 @@ public static class RoleWork
 
     /// <summary>Every work, the closed set, in the participant's order.</summary>
     public static IReadOnlyList<string> Codes { get; } = [Build, Design, Chat, AskDaoris, Intake, Help, Partner, Review, Brainstorm];
+
+    public static IReadOnlyList<string> Driven { get; } = [Build, Design];
 }
 
 /// <summary>Where a role works: the machine, a workspace or a repository, the most specific scope's role taking a work there.</summary>
