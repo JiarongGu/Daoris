@@ -33,7 +33,6 @@ internal sealed class PoolGitFixture : IDisposable
     /// <summary>The commit the repository's first line stands at.</summary>
     internal string Start { get; set; } = "";
 
-    /// <param name="rules">The repository's own rule file, tracked from the first commit; null tracks none.</param>
     internal static async Task<PoolGitFixture> CreateAsync(string? rules = null)
     {
         var fixture = new PoolGitFixture();
