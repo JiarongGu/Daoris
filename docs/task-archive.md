@@ -32,6 +32,8 @@ the per-task record. Entries preserve their original wording so the archive stay
 > **PLUGREV2d** (driver, plugins): Outcome: a look and `Watch` divide the awaited set and apply it through `PlacedWork.Apply`, one lock around both, so a look never applies a set older than one `Watch` stored (the rejected alternative, `Watch` only recording, would have delayed an awaited place's start to the next look); proved by `PlacedWorkTests`.
 >
 > **PLUGREV2e** (driver, plugins): Outcome: `WorkEventTeller` tells rows alone and keeps its cursor in memory (no clock, no gap), and `LoopRun` and `DriveConsole` wrap it in `WorkEventNews.Gapped`, the one place that says the first-place and incomplete-batch `events.missed`; proved by `WorkEventTellerTests` (the bare teller and the wrapped one).
+>
+> **PLUGREV2f** (driver, plugins): Outcome: `RelayCopy` removes a build only after its `in-use` file opens alone a second time in the renamed folder (`Unheld`, also the check before a leftover `.removing-*` is deleted); a build a relay opened in the gap goes back to its name, or where a rename cannot (Windows over an open file) stays under its removal name whole; proved by `RelayCopyTests`.
 
 ## TREEPOOL1ac — shared paths (2026-11-09)
 
