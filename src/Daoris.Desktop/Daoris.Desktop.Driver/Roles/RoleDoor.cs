@@ -163,7 +163,15 @@ public static class RoleDoor
                 if (!isSeeded && change is not RoleChange.DefaultAllRoles) rows.Add((change.Id, null));
                 // A seeded role given its seed is given its seed's staffing too: a written order, or its caller's rule.
                 if (change is RoleChange.DefaultRole && isSeeded) seeded.Add((change.Id, ActorChoices.Seed(change.Id)));
-                if (change is RoleChange.DefaultAllRoles) seeded.AddRange(ActorChoices.Ids.Select(id => (id, ActorChoices.Seed(id))));
+                if (change is RoleChange.DefaultAllRoles)
+                {
+                    seeded.AddRange(ActorChoices.Ids.Select(id => (id, ActorChoices.Seed(id))));
+                    // The seeded appointed roles are the seed's again, held by rules: an agent's order and policy go as `default <id>` takes them.
+                    var appointed = RoleCatalog.Seed.Where(role => role.Hold is not null).Select(role => role.Id).ToList();
+                    rows.AddRange(appointed.Select(id => (id, (IReadOnlyList<ActorChoice>?)null)));
+                    cleared.AddRange(appointed);
+                }
+
                 cleared.AddRange(change is RoleChange.DefaultAllRoles ? ActorChoices.Ids : [change.Id]);
             }
         }
