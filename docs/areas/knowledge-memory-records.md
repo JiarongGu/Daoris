@@ -66,8 +66,9 @@ one job each, checked by `verify`.
 5. The lock decides provenance. Canonical entries are the same everywhere and never feed; local entries are what differs.
    (from D5, D21)
 6. Kinds are rule, knowledge, skill, decision, fix, task outcome, index and record. A decision is one entry and each dated note
-   another. An index entry is a heading's prose, a table row or a list item. A record is a finished tree's, on the local host only.
-   (from D134, D151, D195)
+   another. An index entry is a heading's prose, a table row or a list item. A record is a finished tree's, on the local host only:
+   no feed carries one, and a feed naming the kind is refused whole. A search naming repositories narrows to them before it
+   ranks, records included. (from D134, D151, D195)
 7. Every entry keeps its lines. A hit names `path:first-last`; `knowledge_get` reads an entry whole or a range. A search that names
    no kinds answers at most two index entries and three records. (from D151)
 8. Ranking is BM25 over FTS5. With an embedder, meaning is fused with words by reciprocal rank. A long entry is embedded in pieces
@@ -152,7 +153,8 @@ one job each, checked by `verify`.
 32. Records sync, processes never. Session records, channel messages and code maps travel keyed by origin and id, a feed taken
     whole or refused whole. Only local knowledge feeds, replacing that repository's entries. No wire carries a root, a
     transcript or private content. A feed is admitted, ordered and written inside one gate, so one queued behind a declaration
-    that stopped sharing is refused. (from D47)
+    that stopped sharing is refused; a retirement takes the same gate, so a feed admitted before it leaves no provenance behind
+    it. (from D47)
 33. Two trust shapes: local trusts the loopback and binds nothing else; shared gates every route with minted per-person,
     per-machine, expiring keys, stored as a hash. (from D47)
 
@@ -214,8 +216,10 @@ Knowledge view and session memory; `deployment` for the shared host.
    (ignored, written per checkout). The code reads right.
 2. D134 point 3 (union per file, a merge driver rejected) and D151's rejected merge driver vs `.gitattributes:39` (`merge=rows`)
    and `:45` (`merge=notes`), installed by `npm ci`. The code reads right.
-3. Two ways set apart a glued decision note: the `notes` driver (`tools/index-hook.mjs:14-16`) and `setApart` in
-   `tools/merge-branch.mjs:1851` (D106's MERGEJOIN1 note). D228 allows one; the driver is the newer.
+3. The `notes` driver (`tools/index-hook.mjs`) and the merge tool both set a glued decision note apart with `setApart`
+   (`tools/doc-duplicates.mjs`), but the driver also sets apart an undated `**Note, ` line, which `NOTE_LABEL` and its other
+   readers (the service's `DecisionNotes`, the digest) do not take for a label, and the driver's own `UnionJoins` is a third
+   copy of the rule. D228 allows one.
 4. D134 point 2 (no index of the decisions, hand-kept or generated) vs the generated digest `docs/index/decisions.md` (its own
    ORIENT1b note). The code reads right.
 5. D106 (`docs/README.md` and `docs/DECISIONS.md` merge by union) vs `.gitattributes:30-39` (the router by rows, the page not
@@ -237,6 +241,7 @@ Knowledge view and session memory; `deployment` for the shared host.
 
 ## Open
 
+- **KNOWREV2a to KNOWREV2j** — the second code review's defects filed in `TASKS.md`: a partial reading's empty root, an unreadable file stopping every reading, the signature's missing folders, a swallowed convergence failure, case-sensitive registration keys, the open-time `ALTER` race, an undisposed watcher, the store twin's differences, memory rows of a deleted session, and a forgotten quest's two answers.
 - **KNOWCENTRAL2i** — the installed measurement of the memory coordinator, looking also for conflicting entries about one fact
   (PROFILEFIX1's re-open condition).
 - **KNOWCENTRAL1** (next round) — retirement through decay, which upkeep a model takes alone, a memory shared across repositories.

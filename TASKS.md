@@ -32,6 +32,17 @@ area document under `docs/areas/`. Each row's earlier full text is in git at `9f
 
 ## Knowledge, memory and records
 
+- [ ] **KNOWREV2a — a partial reading keeps a root that now yields nothing** (service; `Knowledge/KnowledgeIndex.cs:56-84`): a moved root whose repository reads zero entries is never replaced, and its new signature is kept, so its old entries stay until a whole reading.
+- [ ] **KNOWREV2b — one unreadable file or folder stops every reading** (service; `Registry/RepositoryScanner.cs:270-277,598-603`): a denied folder or a file an editor holds throws, nothing below `RefreshReadingAsync` catches it, so repositories A and C are not read while B is.
+- [ ] **KNOWREV2c — a root's signature and uncommitted answer miss declared folders** (service; `Store/RootSignature.cs:56`, `UncommittedRecords.cs:90`): a declared decisions or fixes path outside `docs/`, or a room's `AGENTS.md`, edited uncommitted moves no signature and shows no `+ uncommitted`.
+- [ ] **KNOWREV2d — a failed semantic convergence pass says nothing converges** (service; `Search/ConvergenceDetector.cs:102-116`): `FindAsync` swallows the embedder's failure and the tool names its tier from `SemanticEnabled`, so a down endpoint reads as "Nothing converges above 0.82".
+- [ ] **KNOWREV2e — registration keys are case-sensitive, the identity is not** (service; `Registry/RegistrationStore.cs:44,214`): `Foo` then `foo` makes two rows (no `COLLATE NOCASE` on the key) and `ProvenanceAsync` reads the older.
+- [ ] **KNOWREV2f — two connectors opening a fresh store can race on `ALTER TABLE`** (service; `Registry/RegistrationStore.cs:122-146`, `Platform/SchemaColumns.cs:29-33`): check and alter are not one transaction, so the second's `duplicate column name` fails its open.
+- [ ] **KNOWREV2g — a watcher that cannot be enabled is never disposed** (service; `Store/CheckoutFreshness.cs:316-361`): `EnableRaisingEvents` throwing `IOException` (inotify's limit) is swallowed with the watcher and its handlers left to the finalizer.
+- [ ] **KNOWREV2h — the in-memory store and SQLite disagree** (service; `Store/InMemoryKnowledgeStore.cs:44`, `SqliteKnowledgeStore.cs:350`): the twin keeps a workspace as given, SQLite normalizes it, and `KnowledgeStoreContractTests` covers neither (nor restamp, held reads, find, count).
+- [ ] **KNOWREV2i — a deleted session's memory rows are never shown as waiting** (service; `Knowledge/Memory/MemoryOpStore.cs:200`, `Sessions/SessionWrites.cs:348`): `WaitsAsync` joins `sessions` and a delete leaves `memory_ops`, so an awaiting end vanishes from the waits while `memory_search` still says it awaits the person.
+- [ ] **KNOWREV2j — the words of a forgotten quest have two answers** (service; `Quests/QuestPublishing.cs:166-172`, `Quests/Operations/QuestPublishOperation.cs:117-127`): a forgotten first id is refused `Cleared`, a forgotten `~again1` publishes as `~again2`; rule 31 says the second.
+
 - [ ] **KNOWCENTRAL2 — the memory coordinator built** (service, connector, driver, web; D220): left **2i**, the installed measurement, which also looks for repeated or conflicting entries about one fact (PROFILEFIX1's re-open condition). → `docs/2026-10-31-memory-coordinator-design.md` §8
 
 
