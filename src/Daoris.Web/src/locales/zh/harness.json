@@ -38,8 +38,6 @@
   "harness.own": "本机自己的",
   "harness.login.done": "{{profile}} 已登录——会话可以以它运行。",
   "harness.login.failed": "登录未完成（工具以 {{code}} 退出）。原因见它的输出。",
-  "harness.loginNew.done": "已登录为 {{account}}——会话可以以它运行。",
-  "harness.loginNew.unnamed": "已登录——工具没有说明是谁，所以这个账户列为 {{profile}}。",
   "harness.loginNew.nobody": "没有账户登录，所以什么也没有保留。",
   "harness.loginNew.failed": "登录未完成（工具以 {{code}} 退出），所以什么也没有保留。原因见它的输出。",
   "harness.login.action": "登录",

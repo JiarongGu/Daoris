@@ -1,6 +1,7 @@
 using System.Globalization;
 using System.Text.Json;
 using Daoris.Driver;
+using Shenora.Core.Ipc;
 
 namespace Daoris.Desktop.Modules.Tests;
 
@@ -210,6 +211,38 @@ public sealed class LogModuleTests : Bridge
             "data":{"where":"render","message":"boom","view":"window:monitor"}}
             """, lines[2]);
         Assert.DoesNotContain(lines, line => line.Contains("c174e909", StringComparison.Ordinal) || line.Contains("secret", StringComparison.Ordinal));
+    }
+
+    /// <summary>A lone surrogate escape is no text (<c>GetString()</c> throws on it, on .NET 10 too): its value is dropped, the rest of the line kept.</summary>
+    [Fact]
+    public async Task A_lone_surrogate_escape_in_a_report_drops_that_value_and_never_refuses_the_report()
+    {
+        using var log = Log();
+        var module = new LogModule(log);
+        using var payload = JsonDocument.Parse("""{"event":"page.error","data":{"where":"window","message":"a\ud800b","view":"x\udc00"}}""");
+        using var unnamed = JsonDocument.Parse("""{"event":"view.\ud800","data":{"view":"sessions"}}""");
+
+        foreach (var sent in new[] { payload, unnamed })
+        {
+            var response = await module.HandleMessageAsync(
+                new IpcRequest { Id = "lone0001", Module = module.ModuleName, Type = "EVENT", Payload = sent.RootElement.Clone() }, CancellationToken.None);
+            Assert.True(response.Success, $"{response.Error?.Code}: {response.Error?.Message}");
+        }
+
+        Assert.EndsWith("""
+            "event":"page.error","data":{"where":"window"}}
+            """, Assert.Single(Lines()));
+    }
+
+    [Fact]
+    public void A_lone_surrogate_in_a_string_already_is_written_as_the_replacement_character()
+    {
+        using var log = Log();
+
+        log.Write("info", "view.opened", [("view", "a\ud800b")]);
+
+        using var line = JsonDocument.Parse(Assert.Single(Lines()));
+        Assert.Equal("a" + char.ConvertFromUtf32(0xFFFD) + "b", line.RootElement.GetProperty("data").GetProperty("view").GetString());
     }
 
     /// <summary>A payload that is no event is no line and no failure: the page's report never breaks the page.</summary>

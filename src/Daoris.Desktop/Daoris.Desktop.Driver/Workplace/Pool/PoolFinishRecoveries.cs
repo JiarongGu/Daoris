@@ -39,7 +39,7 @@ internal sealed class PoolFinishRecoveries(TreePool pool, PoolSeams seams)
         }
 
         await PoolLocks.SetAsync(git, slot.Path, PoolLocks.Free, ct).ConfigureAwait(false);
-        pool.Complete(fence, new SlotSettled(slot.Registration, slot.Path, "", claim.Start, KeptStates.Kept, "", slot.Bytes, slot.Toolchain));
+        pool.Complete(fence, await new SlotStanding(slot, claim).ReadAsync(ct).ConfigureAwait(false));
         if (pool.LastEnd(claim.Workspace, claim.Repository, claim.Line) is not { } end || finished is null) return new PoolDone(pool.Slot(claim.Workspace, claim.Repository, claim.Number), null, null, null);
 
         var (keep, _) = await RecoveryKeeps.NameAsync(site.Root, claim.Branch, claim.Start, ct).ConfigureAwait(false);

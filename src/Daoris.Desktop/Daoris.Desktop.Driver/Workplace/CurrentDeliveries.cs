@@ -86,12 +86,14 @@ internal static class CurrentDeliveries
                 // Its own key under a run that stopped, or another of its unit not settled: settled by phase, before any new start.
                 var settled = await reconciler.BeforeStartAsync(intent.Unit, ct).ConfigureAwait(false);
                 if (settled is null) continue;
-                var mine = string.Equals(settled.Key, intent.Key, StringComparison.Ordinal);
+                var mine = store.Delivery(settled.Key) is { } record && record.Intent.Names(intent);
                 switch (settled.Standing)
                 {
                     case DeliveryStandings.Delivered or DeliveryStandings.Settled:
-                        if (mine) return Observed(store.Delivery(intent.Key));
-                        continue;
+                        if (!mine) continue;
+                        var latest = store.Latest(intent);
+                        if (latest is { Settled: DeliverySettlements.Withdrawn }) continue;
+                        return Observed(latest);
                     case DeliveryStandings.GoesOn when mine && settled.Claim is { } taken:
                         return (Live(taken), null);
                     case DeliveryStandings.GoesOn or DeliveryStandings.Plugin when !mine && settled.Claim is { } earlier:

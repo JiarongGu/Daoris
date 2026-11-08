@@ -380,6 +380,7 @@ public sealed class InstancePipe : IDisposable
         }
 
         StewardAllows.Close();
+        Holding.CloseAsks();
         foreach (var (id, confirmation, line) in waiting) KeepAtClose(id, confirmation, line);
     }
 

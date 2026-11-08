@@ -113,7 +113,7 @@ public sealed class TreePoolTests : IDisposable
     {
         var step = Assert.Single(DesktopStore.Steps, each => each.Version == TreePool.Since);
         Assert.Equal(DesktopStore.PolicyWriter, step.Writer);
-        Assert.Equal(DesktopStore.Steps.Count, TreePool.Since);
+        Assert.True(TreePool.ExpectSince > TreePool.Since);
 
         using var store = DesktopStore.Open(DesktopStore.LocationIn(_home), new DesktopStoreOptions { Settled = () => StoreSettled.Yes });
         foreach (var table in new[] { "kept_trees", "tree_claims", "tree_visits", "line_ends" })
@@ -137,7 +137,7 @@ public sealed class TreePoolTests : IDisposable
         IReadOnlyList<StoreMigration> Steps(bool fail) =>
         [
             .. DesktopStore.Steps.Select(step => step.Version == TreePool.Since && fail ? step with { Apply = write => { step.Apply(write); if (interrupted == 1) throw new IOException("killed"); } } : step),
-            new(TreePool.Since + 1, DesktopStore.PolicyWriter, write =>
+            new(DesktopStore.Steps.Count + 1, DesktopStore.PolicyWriter, write =>
             {
                 write.Execute("CREATE TABLE after_pool (x TEXT)");
                 if (fail && interrupted == 2) throw new IOException("killed");
@@ -157,11 +157,40 @@ public sealed class TreePoolTests : IDisposable
             Assert.DoesNotContain("after_pool", names);
             using var version = inspect.CreateCommand();
             version.CommandText = "SELECT version FROM store_version";
-            Assert.Equal(interrupted == 2 ? (long)TreePool.Since : TreePool.Since - 1L, Convert.ToInt64(version.ExecuteScalar()));
+            Assert.Equal(interrupted == 2 ? (long)DesktopStore.Steps.Count : TreePool.Since - 1L, Convert.ToInt64(version.ExecuteScalar()));
         }
 
         using var again = DesktopStore.Open(at, new DesktopStoreOptions { Steps = Steps(fail: false), Settled = () => StoreSettled.Yes });
-        Assert.Equal(TreePool.Since + 1, again.Stamp.Version);
+        Assert.Equal(DesktopStore.Steps.Count + 1, again.Stamp.Version);
+    }
+
+    [Fact]
+    public void The_claims_record_of_where_the_slot_stood_is_the_last_step_and_a_claim_written_before_it_reads_as_detached_serving_no_line()
+    {
+        var step = Assert.Single(DesktopStore.Steps, each => each.Version == TreePool.ExpectSince);
+        Assert.Equal(DesktopStore.PolicyWriter, step.Writer);
+        Assert.Equal(TreePool.ExpectSince, DesktopStore.Steps.Count);
+
+        using var store = DesktopStore.Open(DesktopStore.LocationIn(_home), new DesktopStoreOptions { Settled = () => StoreSettled.Yes });
+        var columns = store.Query("SELECT name, \"notnull\", dflt_value FROM pragma_table_info('tree_claims')", row => (row.GetString(0), row.GetInt64(1), row.IsDBNull(2) ? null : row.GetString(2)));
+        Assert.Contains(("expect_branch", 1L, "''"), columns);
+        Assert.Contains(("expect_line", 1L, "''"), columns);
+    }
+
+    [Fact]
+    public void A_claim_records_the_branch_and_the_line_the_slot_stood_on_and_holds_that_line_while_it_waits_to_be_put_back()
+    {
+        var pool = Pool("run-a");
+        Made(pool, 1);
+        Made(pool, 2);
+        var claimed = pool.Claim(Opening(1, TreeClaimKinds.Take, "s-2222") with { ExpectBranch = "daoris/s-1111", ExpectLine = "s-1111" });
+        Assert.Equal(("daoris/s-1111", "s-1111"), (claimed.Claim!.ExpectBranch, claimed.Claim.ExpectLine));
+        Assert.Null(pool.ClaimOf(Workspace, Repository, "s-1111"));
+
+        pool.Undoing(claimed.Fence!);
+
+        Assert.Equal(1, pool.ClaimOf(Workspace, Repository, "s-1111")?.Number);
+        Assert.Contains("line", pool.Claim(Opening(2, TreeClaimKinds.Return, "s-1111")).Refused);
     }
 
     [Fact]

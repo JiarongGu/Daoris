@@ -5,7 +5,7 @@ namespace Daoris.Driver.Host;
 /// [--event &lt;name&gt;] [--level &lt;warn|error&gt;] [--json]`.
 /// </summary>
 /// <remarks>
-/// <para><b>The terminal's door</b>; Settings → Logs is the screen's. Both read through
+/// <para><b>The terminal's door</b>; Settings → Machine log is the screen's. Both read through
 /// <see cref="MachineLogReader"/>, so a filter means the same at each.</para>
 ///
 /// <para>Every source's lines, merged by time and oldest first, as a log is read top to bottom; with

@@ -500,10 +500,10 @@ public sealed class ToolsRoutes(DriverContext context)
     // *Browse…*: the system's file picker, which the application hands in. Null is the person cancelling.
     [DriverRoute("TOOLS_PICK", PipeClass.Window)]
     [Owner("TOOLS_PICK", None = OwnerNone.NamesNothing)]
-    private object? ToolsPick(ToolsPickRead press) =>
+    private async Task<object?> ToolsPickAsync(ToolsPickRead press, CancellationToken cancellationToken) =>
         _pickFile is null
             ? new { Can = false, File = (string?)null }
-            : new { Can = true, File = _pickFile(press.Title, press.Window) };
+            : new { Can = true, File = await _pickFile(press.Title) };
 
     /// <summary>
     /// A download or a use, started through the driver's actions and answered once it has started; a version

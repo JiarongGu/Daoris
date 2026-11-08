@@ -1,11 +1,10 @@
 namespace Daoris.Driver;
 
-/// <summary>
-/// A free slot taken for a new line (<c>take</c>) or switched to a returning one (<c>return</c>), every step a phase of its claim and every
+/// <summary>A free slot taken for a new line (<c>take</c>) or switched to a returning one (<c>return</c>), every step a phase of its claim and every
 /// git a process of the claim's job. The slot is judged inside the claim, Daoris's copies are deleted, the switch is made in place with the
 /// repository's hooks held and never forced, the outputs are moved aside, and the check passes before the keyed open of the line's record is
-/// requested. A refusal in this process frees the slot as a takeover would; a slot that cannot be freed is left <c>stuck</c>, said.
-/// </summary>
+/// requested. The claim records the branch, commit and line the slot stood at; a refusal after the switch (a switch git refuses, a top held
+/// at the clearing, a check that fails) runs the one undo, <see cref="PoolUndo"/>, which puts the slot back there before it is released.</summary>
 internal sealed class TreePoolTakes(TreePool pool, PoolSeams seams)
 {
     internal async Task<PoolDone> TakeAsync(PoolTake take, CancellationToken ct)
@@ -19,11 +18,12 @@ internal sealed class TreePoolTakes(TreePool pool, PoolSeams seams)
         }
 
         var head = await WorkingTree.HeadAsync(slot.Path, ct).ConfigureAwait(false) ?? "";
-        var inPlace = take.Returns && slot.Line == take.Line && await WorkingTree.BranchAsync(slot.Path, ct).ConfigureAwait(false) == take.Branch;
+        var branch = await WorkingTree.BranchAsync(slot.Path, ct).ConfigureAwait(false) ?? "";
+        var inPlace = take.Returns && slot.Line == take.Line && branch == take.Branch;
         var job = PoolGit.NewJobName();
         var claimed = pool.Claim(new TreeClaimOpening(
             site.Workspace, site.Repository, take.Number, take.Returns ? TreeClaimKinds.Return : TreeClaimKinds.Take, take.Holder, take.Line, take.Branch, take.Start,
-            head, job) { InPlace = inPlace });
+            head, job) { InPlace = inPlace, ExpectBranch = branch, ExpectLine = slot.Line });
         if (claimed.Fence is not { } fence) return PoolDone.Not(claimed.Refused ?? "the slot is claimed");
 
         using var git = PoolGit.Create(site.Home, job);
@@ -61,7 +61,7 @@ internal sealed class TreePoolTakes(TreePool pool, PoolSeams seams)
             var (switched, _, said) = await git.GitAsync(
                 slot.Path, take.Returns ? [.. hooks, "switch", "--no-overwrite-ignore", take.Branch] : [.. hooks, "switch", "--no-overwrite-ignore", "-c", take.Branch, take.Start], ct)
                 .ConfigureAwait(false);
-            if (switched != 0) return await StuckAsync(git, fence, slot, TreeGit.FirstLine(said), ct).ConfigureAwait(false);
+            if (switched != 0) return await UndoneAsync(git, fence, take, TreeGit.FirstLine(said), ct).ConfigureAwait(false);
             if (!take.Returns) RecordGrown(take);
 
             pool.Advance(fence, TreeClaimPhases.Switched);
@@ -69,16 +69,17 @@ internal sealed class TreePoolTakes(TreePool pool, PoolSeams seams)
 
             toolchain = seams.Toolchain is { } read ? await read(slot.Path, ct).ConfigureAwait(false) : await PoolToolchain.KeyAsync(site, slot.Path, ct).ConfigureAwait(false);
             var renew = slot.Bytes > (seams.RenewBytes ?? PoolLimits.RenewBytes);
-            var moved = await PoolClearing.ClearAsync(site, slot.Path, previous.Length > 0 ? previous : Path.GetFileName(slot.Path), (slot.Toolchain.Length > 0 && toolchain != slot.Toolchain) || renew, ct)
+            var from = previous.Length > 0 ? previous : Path.GetFileName(slot.Path);
+            var moved = await PoolClearing.ClearAsync(site, slot.Path, from, previous, (slot.Toolchain.Length > 0 && toolchain != slot.Toolchain) || renew, seams.Renaming, ct)
                 .ConfigureAwait(false);
-            if (moved.Aside is { } aside && previous.Length > 0) PoolAsides.Mark(aside, previous);
+            if (moved.Held is { } held) return await UndoneAsync(git, fence, take, $"busy: {held} is held by a running process", ct).ConfigureAwait(false);
             pool.Advance(fence, TreeClaimPhases.Cleared);
             await seams.ReachedAsync(TreeClaimPhases.Cleared, slot.Path).ConfigureAwait(false);
         }
 
         if (await CheckAsync(site, slot, take.Branch, inPlace ? null : take.Start, strict: !inPlace, ct).ConfigureAwait(false) is { } failed)
         {
-            return await FailedCheckAsync(git, fence, take, slot, failed, ct).ConfigureAwait(false);
+            return await UndoneAsync(git, fence, take, failed, ct).ConfigureAwait(false);
         }
 
         // The mark is written once the check has passed, so the files stage installs here; a slot refused before this stays as it stands.
@@ -115,7 +116,7 @@ internal sealed class TreePoolTakes(TreePool pool, PoolSeams seams)
 
         pool.Advance(fence, TreeClaimPhases.Opened, record: record);
         var locked = session.Length > 0 ? await SessionLocks.HoldAsync(slot.Path, session, ct).ConfigureAwait(false) : await PoolLocks.SetAsync(git, slot.Path, PoolLocks.Free, ct).ConfigureAwait(false);
-        pool.Complete(fence, new SlotSettled(slot.Registration, slot.Path, line, "", KeptStates.Kept, locked ?? "", slot.Bytes, toolchain));
+        pool.Complete(fence, await new SlotStanding(slot, claim) { Made = true, Said = locked ?? "", Toolchain = toolchain }.ReadAsync(ct).ConfigureAwait(false));
         return new PoolDone(pool.Slot(site.Workspace, site.Repository, slot.Number), null, null, record);
     }
 
@@ -143,23 +144,9 @@ internal sealed class TreePoolTakes(TreePool pool, PoolSeams seams)
         return judged.Verdict.Clean ? null : $"{judged.Verdict.Code}: {judged.Verdict.Why}";
     }
 
-    /// <summary>A check that failed: the take undone as a takeover would, the slot marked <c>stuck</c> with the check's words, no record opened.</summary>
-    private async Task<PoolDone> FailedCheckAsync(PoolGit git, ClaimFence fence, PoolTake take, KeptTree slot, string failed, CancellationToken ct)
-    {
-        var claim = pool.ClaimOn(take.Site.Workspace, take.Site.Repository, slot.Number)!;
-        var undone = await new PoolTakeovers(pool, seams).UndoAsync(take.Site, git, claim, ct).ConfigureAwait(false);
-        var why = undone is null ? failed : $"{failed}; {undone}";
-        return await StuckAsync(git, fence, slot, why, ct, undoneTo: take.Returns ? take.Line : "").ConfigureAwait(false);
-    }
-
-    /// <summary>The slot left where the refusal found it, <c>stuck</c> and said, its free lock put back, the claim ended.</summary>
-    private async Task<PoolDone> StuckAsync(PoolGit git, ClaimFence fence, KeptTree slot, string why, CancellationToken ct, string? undoneTo = null)
-    {
-        var head = await WorkingTree.HeadAsync(slot.Path, ct).ConfigureAwait(false) ?? slot.Tip;
-        await PoolLocks.SetAsync(git, slot.Path, PoolLocks.Free, ct).ConfigureAwait(false);
-        pool.Complete(fence, new SlotSettled(slot.Registration, slot.Path, undoneTo ?? slot.Line, head, KeptStates.Stuck, why, slot.Bytes, slot.Toolchain));
-        return new PoolDone(pool.Slot(slot.Workspace, slot.Repository, slot.Number), null, why, null);
-    }
+    /// <summary>A refusal after the switch: the one undo puts the slot back as the claim found it and answers with <paramref name="why"/>.</summary>
+    private Task<PoolDone> UndoneAsync(PoolGit git, ClaimFence fence, PoolTake take, string why, CancellationToken ct) =>
+        new PoolUndo(pool, seams).UndoAsync(take.Site, git, pool.ClaimOn(take.Site.Workspace, take.Site.Repository, take.Number)!, fence, why, ct);
 
     private async Task ReleaseAsync(PoolGit git, ClaimFence fence, KeptTree slot, CancellationToken ct)
     {

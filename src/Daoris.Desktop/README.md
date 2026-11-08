@@ -982,8 +982,8 @@ them is an HTTP route. A session's *record* is on the host; its console, events 
   splash on its first screen's queries (`isFirstScreen` in `splash.ts`), the global quiet its fallback.
 - **Each main window's taskbar button counts what waits on the person in its workspace** (NOTIFY1b, D126's note;
   NOTIFY2c, D196): each main window's page tells its own frame its *What needs you* count over `DAORIS.WINDOWS
-  SET_BADGE`, another main window by its name, and that window wears it as its button's overlay (`TaskbarBadge`, a
-  number on a circle drawn at run time through `ITaskbarList3`, *9+* past nine, put back on each
+  SET_BADGE`, another main window by its name, and that window wears it as its button's overlay (the kit's `TaskbarOverlay`, a
+  number on a circle, *9+* past nine as `WaitingBadge.Label` says, put back on each
   `TaskbarButtonCreated`) and in its title, `(3) Daoris (道衍) — games`, the taskbar's hover and Alt-Tab's label. What it
   says is `WaitingBadge`'s, and what each window wears `WaitingCount`'s, in the modules where they are tested; a utility
   window's page never sends it. Each count carries the order its page told it in, kept per window, and the module never

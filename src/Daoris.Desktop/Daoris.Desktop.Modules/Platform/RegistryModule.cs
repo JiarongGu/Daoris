@@ -37,10 +37,9 @@ public sealed class RegistryModule(IEventBus events, PickFolder pickFolder) : Mo
         switch (request.Type)
         {
             // Null is the person cancelling the dialog, which is an answer and not an error. The dialog is owned by the window
-            // whose page asked, which it names; a page that names none is the first main window's.
+            // whose page asked, which the kit reads from the request.
             case "PICK_FOLDER":
-                return Task.FromResult<object?>(
-                    pickFolder(PayloadHelper.GetOptionalValue<string>(request.Payload, "window")) is { } folder ? Inspect(folder) : null);
+                return PickFolderAsync();
 
             // The person editing their own tracked file through a form instead of a text editor.
             // The manifest is inert data, not doctrine — and doctrine stays unwritable
@@ -66,6 +65,8 @@ public sealed class RegistryModule(IEventBus events, PickFolder pickFolder) : Mo
     /// work cannot be reviewed as a diff — worth saying out loud at the moment of adding, not
     /// discovering at the moment of driving.
     /// </remarks>
+    private async Task<object?> PickFolderAsync() => await pickFolder() is { } folder ? Inspect(folder) : null;
+
     private static object Inspect(string path)
     {
         var manifest = Path.Combine(path, "daoris.json");

@@ -20,7 +20,7 @@ public sealed record UpdateOutcome(string Phase, string? Build, string? Version,
 /// <param name="Mode">The mode that holds for the staged build (<see cref="UpdateMode"/>), or null when none is staged.</param>
 /// <param name="Outcome">The last swap, said once at the start after it and kept until the banner's *Dismiss*.</param>
 /// <param name="Last">
-/// The last swap as the journal records it, told or not, on every state: what Settings → Driver's row says
+/// The last swap as the journal records it, told or not, on every state: what Settings → Updates' *Last update* row says
 /// and the terminal's plain <c>daoris update</c> says. Null with no journal, and while a swap is under way.
 /// </param>
 /// <param name="Since">
@@ -461,6 +461,11 @@ public sealed class InstallUpdater(
         {
             lock (_gate) _applying = false;
             throw;
+        }
+        catch (Exception error) when (error is IOException or UnauthorizedAccessException or InvalidOperationException)
+        {
+            // A start the runtime refused is a launcher that would not start: said, and the presses let go, not held for a close that never comes.
+            started = false;
         }
 
         if (!started)

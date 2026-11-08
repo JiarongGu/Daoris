@@ -270,6 +270,15 @@ public sealed class BrainstormDesk(string? home)
                 $"Brainstorm `{id}` has no packet yet: Daoris freezes it at its next look, and you read it before it goes.", brainstorm);
         }
 
+        // The driver ends a frozen brainstorm with a stop on file as stopped before it reads a send, so a send written then spends nothing.
+        var stopped = brainstorm.State == Frozen && File.Exists(PathOf(id, "stop.json"));
+        if (stopped || brainstorm is { State: Ended, Sent: null })
+        {
+            return new(BrainstormRefusal.State, stopped || brainstorm.Code == "stopped"
+                ? $"Brainstorm `{id}` was stopped: nothing goes to any agent."
+                : $"Brainstorm `{id}` ended ({brainstorm.Code ?? "without a document"}) before it was sent: nothing goes to any agent.", brainstorm);
+        }
+
         if (brainstorm is not { State: Frozen, Packet: { } digest })
         {
             return new(BrainstormRefusal.None, $"Brainstorm `{id}` was already sent ({brainstorm.State}).", brainstorm);

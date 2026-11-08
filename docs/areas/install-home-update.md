@@ -135,7 +135,7 @@ Paths below use `Drv/` for `src/Daoris.Desktop/Daoris.Desktop.Driver/` and `Mod/
 33. `publish:desktop -- --to <folder>` has no default folder. It writes only its own names (`Daoris.exe`, `app`, `data`,
     `INSTALLED.md`, `update`). It refuses a non-empty folder with no marker; `--beside` writes next to other things, never over
     one of its names. (from D60, D93)
-34. A republish removes exactly what `app/shell-files.txt` lists and the retired names, then places its own. A publish into an
+34. A republish removes exactly what `app/shell-files.txt` lists (a line naming a path, not one name, is no entry) and the retired names, then places its own. A publish into an
     install carrying a service host, without `--service`, is refused. (from D93)
 35. It publishes only a tree the full gate set passed, unless the folder is under `_fixtures/` or `--force-ungated` is given,
     which it says. `--stage --from-gated <commit>` builds the gate tree's commit under its lock. (from D115, D180)

@@ -33,14 +33,14 @@ public sealed class DriverLoopFocusTests : Bridge
         var app = Path.Combine(RepositoryRoot(), "src", "Daoris.Desktop", "Daoris.Desktop.App");
         var first = File.ReadAllText(Path.Combine(app, "MainForm.cs"));
         var host = File.ReadAllText(Path.Combine(app, "SecondaryWindowHost.cs"));
-        var form = File.ReadAllText(Path.Combine(app, "SecondaryForm.cs"));
+        var chrome = File.ReadAllText(Path.Combine(app, "SecondaryChrome.cs"));
         var program = File.ReadAllText(Path.Combine(app, "Program.cs"));
 
         Assert.Equal(1, Count(first, "Activated += (_, _) => _driver.Focused();"));
         Assert.Equal(1, Count(host, ".Focused()"));
-        Assert.Contains("if (focused is not null && SecondaryWindow.IsMain(name)) form.Activated += (_, _) => focused.Focused();", host);
+        Assert.Contains("if (_focused is not null && main) form.Activated += (_, _) => _focused.Focused();", host);
         Assert.Contains("DriverLoop? focused = null", host);
-        Assert.DoesNotContain(".Focused()", form);
+        Assert.DoesNotContain(".Focused()", chrome);
         Assert.Contains("builder.Services.AddSingleton<SecondaryWindowHost>();", program);
     }
 

@@ -445,11 +445,10 @@ describe('the Agents place', () => {
       });
     });
 
-    expect(notify).toHaveBeenCalledWith('Signed in as someone@example.invalid — sessions can run as it.');
+    expect(notify).not.toHaveBeenCalled();
     await waitFor(() => expect(screen.queryByText('Signing in to another Claude Code account')).toBeNull());
     const asking = screen.getByRole('region', { name: 'Add an account' });
-    expect(within(asking).getByText('Signed in as someone@example.invalid.')).toBeTruthy();
-    expect(within(asking).getByText("someone@example.invalid joined Daoris's accounts: every workspace's work may run on it.")).toBeTruthy();
+    expect(within(asking).getByText("Signed in as someone@example.invalid. It joined Daoris's accounts: every workspace's work may run on it.")).toBeTruthy();
     expect((within(asking).getByRole('textbox', { name: /Its name/ }) as HTMLInputElement).value).toBe('someone@example.invalid');
     expect(within(asking).queryByRole('checkbox')).toBeNull();
     expect(within(asking).queryByRole('button', { name: 'Not now' })).toBeNull();
@@ -791,7 +790,7 @@ describe('the Agents place', () => {
       });
     });
 
-    expect(notify).toHaveBeenCalledWith('Signed in — the tool did not say who, so the account is listed as acct-5e6f7a8b.');
+    expect(notify).not.toHaveBeenCalled();
     const asking = await screen.findByRole('region', { name: 'Add an account' });
     expect(within(asking).getByText('Signed in — the tool did not say who.')).toBeTruthy();
     expect(within(asking).getByText("acct-5e6f7a8b joined Daoris's accounts: every workspace's work may run on it.")).toBeTruthy();
@@ -844,7 +843,8 @@ describe('the Agents place', () => {
         door: 'codex-acp', action: 'login-new', profile: 'acct-5e6f7a8b', exitCode: 0, problem: null, account: null, kept: true, places: [],
       });
     });
-    expect(notify).toHaveBeenCalledTimes(1);
+    expect(notify).not.toHaveBeenCalled();
+    expect(await screen.findByRole('region', { name: 'Add an account' })).toBeTruthy();
   });
 
   it('Agents → Codex offers its device code where the browser sign-in was refused for its held port', async () => {

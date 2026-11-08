@@ -8,7 +8,10 @@ internal static class TreePoolRows
     internal const string KeptColumns = "workspace, repository, number, registration, path, line, tip, state, said, since, bytes, toolchain";
 
     internal const string ClaimColumns =
-        "workspace, repository, number, kind, holder, line, branch, start, expect, opens, job, record, phase, claim_run, claim_generation, at";
+        "workspace, repository, number, kind, holder, line, branch, start, expect, opens, job, record, phase, claim_run, claim_generation, at, expect_branch, expect_line";
+
+    internal const string NamesLine =
+        $"(line = $line OR (expect_line = $line AND phase IN ('{TreeClaimPhases.Undoing}', '{TreeClaimPhases.UndoWaiting}')))";
 
     internal const string VisitColumns = "workspace, repository, number, kind, visitor, run, at";
 
@@ -21,7 +24,11 @@ internal static class TreePoolRows
     internal static TreeClaim Claim(SqliteDataReader row) =>
         new(row.GetString(0), row.GetString(1), row.GetInt32(2), row.GetString(3), row.GetString(4), row.GetString(5), row.GetString(6),
             row.GetString(7), row.GetString(8), row.GetString(9), row.GetString(10), row.GetString(11), row.GetString(12), row.GetString(13),
-            row.GetInt64(14), Moment(row, 15));
+            row.GetInt64(14), Moment(row, 15))
+        {
+            ExpectBranch = row.GetString(16),
+            ExpectLine = row.GetString(17),
+        };
 
     internal static SlotVisit Visit(SqliteDataReader row) =>
         new(row.GetString(0), row.GetString(1), row.GetInt32(2), row.GetString(3), row.GetString(4), row.GetString(5), Moment(row, 6));

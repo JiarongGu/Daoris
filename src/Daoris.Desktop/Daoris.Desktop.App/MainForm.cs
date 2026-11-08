@@ -60,7 +60,7 @@ public sealed class MainForm : OptimizedForm, IReloadableWindow
     private readonly DriverLoop _driver;
     private readonly HostSupervisor _supervisor;
     private readonly SessionNotifier _notifier;
-    private readonly TaskbarBadge _badge;
+    private readonly TaskbarOverlay _badge;
     private readonly Daoris.Driver.MachineLog _log;
     // When the splash comes down: the page's word that its first screen has its data, or the bound.
     private readonly SplashLift _lift;
@@ -120,20 +120,9 @@ public sealed class MainForm : OptimizedForm, IReloadableWindow
         // waits on the person it leads with the count (ShowWaiting).
         Text = WaitingBadge.Title(0);
 
-        // One taskbar button for a pinned Daoris: an install's window names Daoris's
-        // id and a relaunch command that starts the root launcher, so it groups under the person's pin
-        // and a pin made from it survives a republish. A workspace build wears nothing.
-        TaskbarWindow.Wear(this);
-
-        // And on that button, how much waits on the person: put back each time Explorer makes the
-        // button, which it says with a message of its own, so a restarted taskbar still counts.
-        _badge = new TaskbarBadge(this);
-        _badge.Wear(_palette);
-        WndProcHook = message =>
-        {
-            if (TaskbarBadge.ButtonCreated != 0 && message.Msg == TaskbarBadge.ButtonCreated) _badge.Apply();
-            return null;
-        };
+        // One taskbar button for a pinned Daoris, and on it how much waits on the person (a workspace build wears no identity).
+        TaskbarWear.Wear(this);
+        _badge = new TaskbarOverlay(this).Wear(_palette);
 
         // It also fixes the tray: `SessionNotifier` reads `window.Icon ?? SystemIcons.Application`,
         // so every balloon this app raised wore a generic Windows glyph until now.
@@ -309,7 +298,7 @@ public sealed class MainForm : OptimizedForm, IReloadableWindow
 
         _waitingCount = count;
         Text = WaitingBadge.Title(count, _workspace);
-        _badge.Show(count, description);
+        _badge.ShowWaiting(count, description);
     }
 
     private int _waitingCount;
@@ -498,6 +487,4 @@ public sealed class MainForm : OptimizedForm, IReloadableWindow
         Controls.Add(_trouble);
         _trouble.BringToFront();
     }
-
-    // The folder and file pickers are `Pickers`', owned by the window whose page asked, not this one's alone.
 }
