@@ -150,7 +150,7 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/Agents/` unless they s
     door), and `Adoption.Drives(abilities, adopted)` is the judge. Daoris's connector is always offered. A server declared through `npx` is
     handed as the whole path of node and its package's own script, so the harness starts one node: the package is installed
     once by npm `--prefix` into `cache/toolchain/<package>/<version>`, npm's cache first, and the log says so
-    (`server.installed`). A tag or a range is read at that first install; later starts take the newest version installed. A
+    (`server.installed`). A tag, or no version, is read at that first install and later starts take the newest version installed; a range takes the newest installed inside it (`NpmRanges`, the numeric forms npm reads) and asks npm once only where none is, and a range it cannot read is answered as a tag is. A
     server whose package cannot be started is not handed (`server.refused`). A server declared through `npx` that drives Daoris's browser is
     started under `server-keeper.mjs`, which starts it afresh when its working set passes 512 MB, checked every 15
     seconds and only with no call in flight; the tabs are the browser's, so a chat loses only its snapshot references: a call that names a `ref` from before the
@@ -227,7 +227,7 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/Agents/` unless they s
     (from D130, D165, D197)
 30. A cooling account is held first, by a file read, before any probe. A model family's cool-off holds a start whose model
     names that family as a word of its id (`opus`, `claude-opus-4-5`), or one at account default, and passes a start naming
-    another, its hold naming the family's limit (`held.cooling-model`). Every reader that knows a line's model reads it the
+    another, its hold naming the family's limit (`held.cooling-model`, and `held.cooling-model-own` for the tool's own sign-in); a record's and a conversation's note say the family is cooling, not the account (`account.cooling-model`). Every reader that knows a line's model reads it the
     same way, the model being `PriorSession.ModelOn` (the record's choice with the composer's kept change over it): a
     resume's own account, a limited line's wait and its candidate test (`LimitWaits`), the accounts the
     curve could move a conversation to (`SwitchCandidates`), a carry-on's hold and the hand-over press (`SessionCooling`, `GoOnNew`), all

@@ -27,8 +27,8 @@ public sealed class ServerStartProcessTests : IDisposable
     private static ServerEntry Npx(string name, params string[] arguments) => new(name, "npx", arguments, new Dictionary<string, string>());
 
     /// <summary>
-    /// npm's stand-in: <c>install --prefix &lt;folder&gt; … &lt;package&gt;[@version]</c> lays the package there, at its exact version or at
-    /// 2.0.0 for a tag, its one program <c>cli.js</c>, and counts its run in <c>runs.txt</c> beside it.
+    /// npm's stand-in: <c>install --prefix &lt;folder&gt; … &lt;package&gt;[@version]</c> lays the package there, at its exact version, at
+    /// <c>N.5.0</c> for <c>^N</c>, or at 2.0.0 for a tag, its one program <c>cli.js</c>, and counts its run in <c>runs.txt</c> beside it.
     /// </summary>
     private (IReadOnlyList<string> Npm, string Runs) StandInNpm()
     {
@@ -41,7 +41,8 @@ public sealed class ServerStartProcessTests : IDisposable
             const spec = argv[argv.length - 1];
             const at = spec.lastIndexOf('@');
             const [name, written] = at > 0 ? [spec.slice(0, at), spec.slice(at + 1)] : [spec, 'latest'];
-            const version = /^\d+\.\d+\.\d+$/.test(written) ? written : '2.0.0';
+            const caret = /^\^(\d+)$/.exec(written);
+            const version = /^\d+\.\d+\.\d+$/.test(written) ? written : caret ? caret[1] + '.5.0' : '2.0.0';
             const folder = join(prefix, 'node_modules', ...name.split('/'));
             mkdirSync(folder, { recursive: true });
             writeFileSync(join(folder, 'package.json'), JSON.stringify({ name, version, bin: { tickets: 'cli.js' } }));
@@ -96,6 +97,24 @@ public sealed class ServerStartProcessTests : IDisposable
         }
 
         Assert.Equal(["@acme/tickets@latest"], File.ReadAllLines(runs));
+    }
+
+    [Fact]
+    public async Task A_range_no_installed_version_is_inside_asks_npm_once_where_a_tag_would_not()
+    {
+        var (npm, runs) = StandInNpm();
+        SessionServersTests.Lay(_home, "@acme/tickets", "3.0.0");
+        var server = Npx("tickets", "-y", "@acme/tickets@^1");
+
+        foreach (var _ in new[] { 1, 2 })
+        {
+            var handed = Assert.Single(await SessionServers.DirectAsync(_home, [server], null, CancellationToken.None, npm));
+            Assert.Equal(
+                [Path.Combine(ServerPackages.Folder(_home, "@acme/tickets", "1.5.0"), "node_modules", "@acme", "tickets", "cli.js")],
+                handed.Arguments);
+        }
+
+        Assert.Equal(["@acme/tickets@^1"], File.ReadAllLines(runs));
     }
 
     [Fact]

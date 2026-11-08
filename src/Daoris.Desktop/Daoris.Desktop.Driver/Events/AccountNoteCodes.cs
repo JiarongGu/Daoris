@@ -9,6 +9,7 @@ public static class AccountNoteCodes
     public static readonly NoteCode AccountCooling = new("account.cooling", ["until", "why"]) { Why = NoteCodes.Cooling };
     public static readonly NoteCode AccountCoolingWindow = new("account.cooling-window", ["until", "why", "owner", "window"]) { Why = NoteCodes.Cooling };
     public static readonly NoteCode AccountCoolingNoWindow = new("account.cooling-no-window", ["until", "why", "owner"]) { Why = NoteCodes.Cooling };
+    public static readonly NoteCode AccountCoolingModel = new("account.cooling-model", ["until", "why", "owner", "model"]) { Why = NoteCodes.Cooling };
     public static readonly NoteCode AccountRefused = new("account.refused", ["owner"]);
     public static readonly NoteCode AccountRefusedOwn = new("account.refused-own", ["owner"]);
     public static readonly NoteCode AccountSignedOut = new("account.signed-out", ["owner"]);

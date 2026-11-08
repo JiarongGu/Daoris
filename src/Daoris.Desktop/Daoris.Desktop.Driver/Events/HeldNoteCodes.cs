@@ -79,6 +79,7 @@ public static class HeldNoteCodes
     public static readonly NoteCode HeldCoolingOwn = new("held.cooling-own", ["owner", "until", "why"]) { Why = NoteCodes.Cooling };
     // A model family's limit on a named account: a start asking another family still runs on it.
     public static readonly NoteCode HeldCoolingModel = new("held.cooling-model", ["owner", "account", "model", "until", "why"]) { Why = NoteCodes.Cooling };
+    public static readonly NoteCode HeldCoolingModelOwn = new("held.cooling-model-own", ["owner", "model", "until", "why"]) { Why = NoteCodes.Cooling };
 
     // A line a limit cut off, every account it may run on at its limit, goes on by itself once the earliest is ready.
     public static readonly NoteCode HeldLimitWaits = new("held.limit-waits", ["owner", "account", "until"]) { Why = NoteCodes.Cooling };

@@ -5,6 +5,12 @@ the per-task record. Entries preserve their original wording so the archive stay
 
 ---
 
+## DRVREVIEW7 and DRVREVIEW10's two fixed items — the planner's overlap wait, a second close and a resume over another machine's take (2026-11-08)
+
+> **DRVREVIEW7 / DRVREVIEW10** (driving review): Outcome: DRVREVIEW7 (7b2ae2d1af): a quest that goes back into a tree (`into` set: a retry or limit carry-on of an Open quest) is no first start, so `overlap: wait` holds it behind nothing. DRVREVIEW10's close (0e40520d2b): a second close of a closed ask is refused as `Closed` and the first reason stands, as a publish on a closed ask is refused. Its resume (227c2509ce): a resume of a Taken quest asks whether the last take is another machine's, through the part a carry-on uses, and is refused as `TakenElsewhere`. The park's clearing of kept words stays open in DRVREVIEW10 as an owner's reading.
+
+---
+
 ## CONVREV5, CONVREV10 and CONVREV14 — a conversation's upTo, a keep's stored copy and the brief's weights (2026-11-08)
 
 > **CONVREV5 / CONVREV10 / CONVREV14** (conversations review): Outcome: all three held as the rows said. CONVREV5 (40c7d6ec4d): the course's `Since` for a conversation could never expire (`upTo` takes 5 to 600), so it is no longer passed and `upTo` is counted from each limit judgement by `LimitRuled`; no behaviour changed, so its case pins the choice with no red (`ConversationRulesTests`). CONVREV10 (8a41b48bbf): every keep carries a key and a keep the record never answered is tried once more under it, so the stored copy is found and held once; a duplicate now needs a record that stored the word and answered neither try (`DrivenInboxKeyTests`, failing first). CONVREV14 (cd8a159c17): one `CharWeight` weighs kana, Hangul, fullwidth forms and a surrogate pair as it weighs Han; `Searchable`'s Han test does not move (`ContextBriefWeightTests`, failing first).
@@ -24,6 +30,12 @@ the per-task record. Entries preserve their original wording so the archive stay
 ## DRVREVIEW1 to DRVREVIEW5 — the driving review's first five defects (2026-11-08)
 
 > **DRVREVIEW1 / DRVREVIEW2 / DRVREVIEW3 / DRVREVIEW4 / DRVREVIEW5** (driving code review): Outcome: all five held as the rows said, each with a regression test seen to fail first. DRVREVIEW1 (3c414c433e): `QuestLog.Claim` folds the whole history and drops a held take at a publish that applies after a delete, and `ClaimAsync` reads the whole history; the log does hold two generations (`A_delete_ends_an_open_quest_and_a_publish_after_it_asks_again`), and a take lost to the delete stays lost (`QuestLogTests`). DRVREVIEW2 (137d1fed84): `RunConclusion` releases what it reserved when it throws (`MovingReservationFaultTickTests`, a service refusing the first move to failed). DRVREVIEW3 (0927a0c80a): `CutLimitPart.BehindAsync` runs inside `HandToSession`'s try (`CutLimitPartFaultTickTests`, a refused poll of the kept records). DRVREVIEW4 (d5d0899103): `QuietWord.TellAsync` updates its entry only where it still stands and takes the word off where it does not (`QuietWordTests`, the stand-in's `Answering` hold as the seam). DRVREVIEW5 (0927a0c80a): `RunningSessions.GoesLive` removes the session's own `Live` entry, for the hand and the continuation both (`RunningSessionsTests`).
+
+## AGENTREV3 and AGENTREV9 (l) — a model family's limit worded as the family's, and a range answered inside itself (2026-11-08)
+
+> **AGENTREV3 / AGENTREV9** (agents review): Outcome: AGENTREV3 (c3389b2ba1): `CoolingWords.Note` and `Conversation` say a model family's limit as the family's (reached its `opus` limit, nothing that asks for `opus` starts on it) by the code `account.cooling-model`, and `HoldOf` for the tool's own sign-in with a family says it by `held.cooling-model-own`, in both catalogues, `noteCodes.ts` and the page's tests (`ModelCoolingTests`, `noteLines.model.test.ts`); the account-wide lines and codes are unchanged. AGENTREV9 (l) (08a262df7e): `ServerPackages.Kept` answers a range `NpmRanges` reads with the newest installed version inside it and asks npm once only where none is; a tag, no version and a range it cannot read keep the newest installed (`NpmRangesTests`, `SessionServersTests`, `ServerStartProcessTests`).
+
+---
 
 ## AGENTREV6 to AGENTREV9 (a to k) — a server's install race, an own-home cool-off kept in memory, a made-up week, and the agents review's unreproduced hazards (2026-11-08)
 
