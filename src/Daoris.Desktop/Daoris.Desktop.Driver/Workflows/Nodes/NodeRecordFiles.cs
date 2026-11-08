@@ -73,6 +73,14 @@ public sealed class NodeRecordFiles(string home, Func<bool>? holdsLease = null)
         var unreadable = new List<string>();
         foreach (var path in Directory.GetFiles(folder, "*.json").Order(StringComparer.Ordinal))
         {
+            var file = new FileInfo(path);
+            var (written, length) = (file.LastWriteTimeUtc, file.Length);
+            if (Kept.TryGetValue(path, out var kept) && kept.Written == written && kept.Length == length)
+            {
+                records.Add(kept.Record);
+                continue;
+            }
+
             NodeRecord? record = null;
             try
             {
@@ -83,7 +91,11 @@ public sealed class NodeRecordFiles(string home, Func<bool>? holdsLease = null)
                 // Said below, as a file that does not read.
             }
 
-            if (record is not null && string.Equals(Path.GetFileNameWithoutExtension(path), KeyOf(record.Unit), StringComparison.Ordinal)) records.Add(record);
+            if (record is not null && string.Equals(Path.GetFileNameWithoutExtension(path), KeyOf(record.Unit), StringComparison.Ordinal))
+            {
+                records.Add(record);
+                if (DateTime.UtcNow - written > Settled) Kept[path] = (written, length, record);
+            }
             else unreadable.Add(Path.GetFileName(path));
         }
 

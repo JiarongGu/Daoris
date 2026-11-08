@@ -257,7 +257,7 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they start wi
     origin `HEAD` is read from git's file (`WorkingTree.DefaultBranchAsync`), and the branches by date are kept while the repository's
     counted refs stand (`BranchesByDate`), which a session's own commits do not move. The nodes stage over three hundred runs,
     five live, is no git where nothing moved and about half a second where it was two (the pass's per-run work: a run's record
-    is read once while its file stands as it was, `NodeRecordFiles.Settled`; a workflow file once per stamp for all the runs
+    is read once while its file stands as it was, `NodeRecordFiles.Settled`, by its own read and by the list of every record alike; a workflow file once per stamp for all the runs
     bound to it, `StampedWorkflows`; the quests' chains and the units' links are indexed once a read, `QuestChains`,
     `NodeGoverning`'s `RunReads`), held by `LookWorkBenchProcessTests`. (from D68, D181)
 31. A working session has no time limit: a driven run, a resumed run, a go-on and an intake wait for their exit. Only a
