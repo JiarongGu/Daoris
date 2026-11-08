@@ -5579,7 +5579,8 @@ export function privateGateFiles(home) {
   const path = declared.replace(/\\/g, '/');
   // The local Lyntai build's props (its feed path is absolute, the main checkout's), so a tree restores the same version.
   const lyntai = 'local/lyntai-local.props';
-  return path.startsWith('local/') && !path.split('/').includes('..') ? [path, lyntai] : [lyntai];
+  const shenora = 'local/shenora-local.props';
+  return path.startsWith('local/') && !path.split('/').includes('..') ? [path, lyntai, shenora] : [lyntai, shenora];
 }
 
 /** Copies each of `files` from `home` into `tree`, refreshed on every run; returns the lines to say. */

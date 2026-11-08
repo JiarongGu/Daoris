@@ -890,14 +890,15 @@ test('the private files a gate reads come from the declaration, only under local
 
   declare();
   const lyntai = 'local/lyntai-local.props';
+  const shenora = 'local/shenora-local.props';
   declare();
-  assert.deepEqual(tool.privateGateFiles(home), ['local/sensitive-patterns.txt', lyntai], 'the default, and the local Lyntai build\'s props (LYNTAILOCAL1)');
+  assert.deepEqual(tool.privateGateFiles(home), ['local/sensitive-patterns.txt', lyntai, shenora], 'the default, and the local Lyntai and Shenora builds\' props (LYNTAILOCAL1)');
   declare({ patternsFile: 'local/own.txt' });
-  assert.deepEqual(tool.privateGateFiles(home), ['local/own.txt', lyntai]);
+  assert.deepEqual(tool.privateGateFiles(home), ['local/own.txt', lyntai, shenora]);
   declare({ patternsFile: 'private/patterns.txt' });
-  assert.deepEqual(tool.privateGateFiles(home), [lyntai], 'not under local/: nothing copied');
+  assert.deepEqual(tool.privateGateFiles(home), [lyntai, shenora], 'not under local/: nothing copied');
   declare({ patternsFile: 'local/../secret.txt' });
-  assert.deepEqual(tool.privateGateFiles(home), [lyntai], 'no way out of local/');
+  assert.deepEqual(tool.privateGateFiles(home), [lyntai, shenora], 'no way out of local/');
 
   const files = ['local/sensitive-patterns.txt'];
   assert.match(tool.copyPrivateFiles(home, tree, files).join('\n'), /local\/sensitive-patterns\.txt.*missing/);
