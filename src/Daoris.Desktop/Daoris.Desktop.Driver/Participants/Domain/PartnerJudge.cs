@@ -9,13 +9,14 @@ public static class PartnerJudge
     /// <summary>
     /// Why the piece is refused before anything is chosen or reserved, by its code; null where it may go on. The lead is a working
     /// session of this machine's: no partner, helper or reviewer (each carries <c>serves</c> or <c>opinion</c>), no intake, no Ask Daoris
-    /// conversation and no brainstorm pass, with a tree to grow from; the piece is not blank and within its bound; each path stays inside
+    /// conversation and no brainstorm pass, with a tree to grow from, and not ended; the piece is not blank and within its bound; each path stays inside
     /// the repository; the base names a commit.
     /// </summary>
     public static string? Refusal(PartnerAsk ask, PriorSession? lead)
     {
         if (lead is null) return PartnerWhy.AskerGone;
         if (!StartAdmission.LeadsPiece(StartAdmission.Marks(lead), lead.HelpMode, lead.Tree)) return PartnerWhy.AskerUnfit;
+        if (SessionStates.IsEnded(lead.State)) return PartnerWhy.AskerEnded;
 
         if (string.IsNullOrWhiteSpace(ask.Piece) || ask.Piece.Length > PartnerAsk.PieceLimit) return PartnerWhy.Blank;
         if (ask.Paths.Any(path => !Inside(path))) return PartnerWhy.PathOutside;

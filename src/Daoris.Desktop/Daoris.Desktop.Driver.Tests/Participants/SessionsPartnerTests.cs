@@ -117,6 +117,7 @@ public sealed class SessionsPartnerTests : IDisposable
     [InlineData("reviewer", PartnerAskWhy.Unfit, "cannot lead a piece")]
     [InlineData("intake", PartnerAskWhy.Unfit, "cannot lead a piece")]
     [InlineData("no-tree", PartnerAskWhy.Unfit, "cannot lead a piece")]
+    [InlineData("ended", PartnerAskWhy.Ended, "has ended")]
     [InlineData("no-commit", PartnerAskWhy.NoCommit, "has no commit")]
     public async Task A_session_that_cannot_lead_a_piece_is_refused_and_nothing_is_written(string row, string why, string says)
     {
@@ -128,6 +129,7 @@ public sealed class SessionsPartnerTests : IDisposable
                 case "reviewer": host.Set("s1", "opinion", "o1"); break;
                 case "intake": host.Set("s1", "ask", "a9"); break;
                 case "no-tree": host.Set("s1", "tree", null); break;
+                case "ended": host.Set("s1", "state", "completed"); break;
             }
         }, head: row == "no-commit" ? null : Head);
         if (row == "gone") world = world with { Service = new OpinionStandIn().Client() };

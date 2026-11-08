@@ -164,7 +164,7 @@ describe('the acts a session is offered', () => {
   it('offers a conversation of this machine its hand-over after its stop, working or not, and no other session', () => {
     const chat = session({ quest: null, kind: 'chat', state: 'completed', tree: TREE });
     expect(offeredActs({ session: chat, root: ROOT }, 'header'))
-      .toEqual(['handOver', 'askHelper', 'askPiece', 'review', 'openFolder', 'terminal', 'detach', 'copy']);
+      .toEqual(['handOver', 'askHelper', 'review', 'openFolder', 'terminal', 'detach', 'copy']);
     expect(offeredActs({ session: { ...chat, state: 'working' }, root: ROOT }, 'header').slice(0, 2)).toEqual(['stop', 'handOver']);
     // Not a quest's session, an intake, Ask Daoris's, nor a teammate's: each has its own door or none.
     expect(offeredActs({ session: session(), root: ROOT }, 'row')).not.toContain('handOver');
@@ -209,6 +209,17 @@ describe('the acts a session is offered', () => {
       { repository: 'daoris:help' }, { id: 'person@machine-b/c1' }, { tree: null },
     ];
     for (const other of others) expect(offeredActs({ session: { ...chat, ...other }, root: ROOT }, 'header')).not.toContain('askPiece');
+  });
+
+  /** An ended session has no running work to receive a piece, so the driver's judge refuses it and the head never offers it (UIFIND7). */
+  it('offers no piece’s ask to a session that has ended, while its helper’s ask and its review stay', () => {
+    for (const state of ['completed', 'declined', 'stood-down', 'failed', 'stopped'] as const) {
+      const ended = session({ quest: null, kind: 'chat', state, tree: TREE });
+      const acts = offeredActs({ session: ended, root: ROOT }, 'header');
+      expect(acts).not.toContain('askPiece');
+      expect(acts).toContain('askHelper');
+      expect(acts).toContain('review');
+    }
   });
 
   /** A helper's and a reviewer's records are refused words and resume, so no act takes any. */

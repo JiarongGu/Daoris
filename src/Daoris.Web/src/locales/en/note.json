@@ -332,6 +332,7 @@
   "note.partner.kept": "The piece's work was not taken into the repository: {{why}}. Its copy is kept for you.",
   "note.partner.working": "This session is a partner working one piece for session {{session}}, in a clone of its own.",
   "note.partner.why.asker-unfit": "the session that asked cannot lead a piece",
+  "note.partner.why.asker-ended": "the session that asked has ended, and no running work is there to receive a piece",
   "note.partner.why.asker-gone": "the session that asked is not on this machine",
   "note.partner.why.blank": "the piece is blank",
   "note.partner.why.path-outside": "a path it names leads outside the repository",

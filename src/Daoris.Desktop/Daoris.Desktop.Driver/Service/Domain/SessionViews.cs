@@ -389,6 +389,14 @@ public static class SessionStates
 
     public static bool IsParked(string? state) =>
         string.Equals(state, AwaitingPerson, StringComparison.OrdinalIgnoreCase);
+
+    private static readonly string[] Endings = ["completed", "declined", "stood-down", "failed", "stopped"];
+
+    /// <summary>
+    /// Whether a record's state is one of the five endings (the page's <c>SESSION_ACTIVE</c> complement): an empty or unknown
+    /// state is not read as ended, so a record from before the field stays as it was.
+    /// </summary>
+    public static bool IsEnded(string? state) => Endings.Contains(state, StringComparer.OrdinalIgnoreCase);
 }
 
 /// <summary>

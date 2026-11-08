@@ -165,7 +165,7 @@ The agent's half is the canon skill `canon/packs/co-working/skills/co-working/SK
     (`ended.awaits-helper`), held and unparked; the answer reopens it once. A helper ending with no answer brings it to the person. (from D203)
 31. A partner writes one piece in a clone with no remote, at the asked commit. Daoris reads its files and writes one frozen commit; the
     piece lands only when the lead merges it. At most two pieces are open per lead. A lead is a session working in a tree of its own,
-    driven or a conversation (`StartAdmission.LeadsPiece`, the page's `leadsPieces`); a conversation hears a piece's answer as a turn
+    driven or a conversation (`StartAdmission.LeadsPiece`, the page's `leadsPieces`), and not ended: `PartnerJudge` and the person's ask refuse an ended lead (`asker-ended`, `ended`), and the page offers the ask only while the lead runs (`takesPartner`); a conversation hears a piece's answer as a turn
     of its own between its turns, queued behind a turn in flight, as a helper's answer is. Only the person asks one today. A handed piece is
     taken in when the look first reads its commit as an ancestor of the lead's tree's branch (recorded with the lead's commit, never
     unset; a cherry-pick is not that), and not taken in when the lead's record completed without it. Where the lead's tree is gone,
