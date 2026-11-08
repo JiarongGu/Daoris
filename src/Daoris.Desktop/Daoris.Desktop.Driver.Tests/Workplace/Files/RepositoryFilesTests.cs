@@ -2,10 +2,7 @@ using Daoris.Driver;
 
 namespace Daoris.Desktop.Driver.Tests;
 
-/// <summary>
-/// The repository's own layer, <c>daoris.files.json</c>, read and judged: a rule reaching a path git tracks is refused alone, as is a
-/// dependency whose path a later rule of the layer takes, and the rest still read; no file is no rule.
-/// </summary>
+/// <summary>The repository's own layer read: a dependency whose path a later rule takes is refused alone, the rest read; no file is no rule.</summary>
 public sealed class RepositoryFilesTests
 {
     [Fact]

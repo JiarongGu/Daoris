@@ -4,36 +4,28 @@ using System.Text.Json.Nodes;
 namespace Daoris.Driver;
 
 /// <summary>
-/// The rule file's one format, read and written for every layer: an object whose <c>form</c> says the form it is written in and whose
-/// <c>rules</c> is a list read in order, each entry a <c>kind</c>, its <c>paths</c> in git's ignore syntax and its rule set, a key
-/// opening with <c>_</c> the file's own note. A file without <c>form</c> is the first form, its paths in the gates' grammar, read
-/// through <see cref="RuleFileFirstForm"/>; every writer writes <see cref="Form"/>. An entry that does not read is refused alone and
-/// said, and the rest still read, since a layer's other entries mean what they say without it.
+/// The rule file's one format for every layer: its <c>form</c>, and <c>rules</c> read in order, each entry a <c>kind</c>, its
+/// <c>paths</c> in git's syntax and its rule set; a file without <c>form</c> is read through <see cref="RuleFileFirstForm"/>. An
+/// entry that does not read is refused alone and said, since a layer's other entries mean what they say without it.
 /// </summary>
 internal static class FileRuleFile
 {
-    /// <summary>Git's syntax with a rule set per entry, the form every writer writes.</summary>
     internal const int Form = 2;
 
     private static readonly string[] Shared = ["kind", "paths", "evidence", "other", "size"];
 
-    /// <summary>The form <paramref name="root"/> says: 1 where it says none, <see cref="Form"/>, or null for one this reader does not know.</summary>
     internal static int? FormOf(JsonElement root) =>
         root.ValueKind != JsonValueKind.Object || !root.TryGetProperty("form", out var form) ? 1
         : form.ValueKind == JsonValueKind.Number && form.TryGetInt32(out var number) && number == Form ? Form
         : null;
 
-    /// <summary>Why a file whose form this reader does not know is read as unreadable.</summary>
     internal static string Unknown(string file) => $"{file} is written in a form this Daoris does not read (it reads form {Form}, and a file that says none)";
 
     /// <summary>The rules of <paramref name="scope"/>'s <c>rules</c>, each problem named from <paramref name="where"/>.</summary>
     internal static List<FileRule> Rules(JsonElement scope, string where, List<string> problems, int form) =>
         [.. Numbered(scope, where, problems, form).Select(each => each.Rule)];
 
-    /// <summary>
-    /// As <see cref="Rules"/>, each entry with the place of the rule it was read from, so a later judgement names the rule a person
-    /// reads there; a first-form rule gives each of its entries in git's form that one place.
-    /// </summary>
+    /// <summary>As <see cref="Rules"/>, each entry with its rule's place in the list, which a first-form rule's entries share.</summary>
     internal static List<(int Number, FileRule Rule)> Numbered(JsonElement scope, string where, List<string> problems, int form)
     {
         if (scope.ValueKind != JsonValueKind.Object || !scope.TryGetProperty("rules", out var listed)) return [];
@@ -62,7 +54,6 @@ internal static class FileRuleFile
         return rules;
     }
 
-    /// <summary>A first-form rule as that form wrote it, its <c>share</c> read as <c>across</c> and its <c>copy</c> as <c>reach</c>.</summary>
     /// <exception cref="FormatException">The rule does not read, with why.</exception>
     internal static FileRule FirstFormRule(JsonElement each)
     {
@@ -71,7 +62,6 @@ internal static class FileRuleFile
         return Fields(each, kind, paths) with { Across = Flag(each, "share"), Reach = copy is { } copied ? copied ? "copy" : "tree" : null };
     }
 
-    /// <exception cref="FormatException">The entry does not read, with why.</exception>
     private static FileRule Rule(JsonElement each)
     {
         var (kind, paths) = Head(each, GitPattern.Unfit, FileKindSets.Fields);
@@ -125,7 +115,6 @@ internal static class FileRuleFile
         Size = Size(each),
     };
 
-    /// <summary>An entry as the file writes it in git's form: its kind and paths first, then each field it states.</summary>
     internal static JsonObject Written(FileRule rule)
     {
         var written = new JsonObject { ["kind"] = rule.Kind.Word(), ["paths"] = List(rule.Paths) };

@@ -1,10 +1,6 @@
 namespace Daoris.Driver;
 
-/// <summary>
-/// A slot's ignored tops sorted by what each effective rule's <c>take</c> says (<see cref="FileKindSets"/>): what it keeps, what a
-/// take moves aside, what it renews, Daoris's own copies, and the line's own. A top holding a recorded copy is partitioned
-/// (<see cref="TopPartition"/>) and each entry under it sorted as a path of its own.
-/// </summary>
+/// <summary>A slot's ignored tops sorted by each effective rule's <c>take</c>, a top holding a recorded copy by its <see cref="TopPartition"/>.</summary>
 internal sealed record SlotIgnored(
     IReadOnlyList<string> Kept, IReadOnlyList<string> Outputs, IReadOnlyList<string> Intermediates, IReadOnlyList<string> Copies, IReadOnlyList<string> Own)
 {

@@ -96,7 +96,6 @@ internal sealed class FileSignatures
             : UnionJoins.Glob(pattern).IsMatch(name));
     }
 
-    /// <summary>A signature's rule moved to the folder of the file that signed it: each anchored pattern anchored at that folder.</summary>
     private static FileRule Beside(FileRule rule, string folder) => folder.Length == 0 ? rule : rule with
     {
         Paths = [.. rule.Paths.Select(path => path.StartsWith("!/", StringComparison.Ordinal) ? "!/" + folder + path[2..] : "/" + folder + path.TrimStart('/'))],

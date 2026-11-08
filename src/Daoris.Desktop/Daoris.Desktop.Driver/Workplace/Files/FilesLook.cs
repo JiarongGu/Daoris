@@ -24,11 +24,7 @@ public sealed record FilesLookPermissions(string Scope, IReadOnlyList<string> De
 /// <summary>One entry of the person's own, in the machine's scope or the repository's.</summary>
 public sealed record FilesLookRule(string Scope, string Kind, IReadOnlyList<string> Paths, bool? Copy);
 
-/// <summary>
-/// A path of the person's file, in any scope (<c>machine</c> or a repository's name), that git's syntax cannot state, read as written
-/// until the person words it, and the two wordings git can state for it: <see cref="Whole"/> covers each folder it matched and
-/// everything in it, <see cref="Files"/> only the files it matched directly, its folders not.
-/// </summary>
+/// <summary>A path of the person's file git's syntax cannot state, read as written, with its two git wordings.</summary>
 public sealed record FilesLookKept(string Scope, string Kind, string Path, IReadOnlyList<string> Whole, IReadOnlyList<string> Files);
 
 /// <summary>

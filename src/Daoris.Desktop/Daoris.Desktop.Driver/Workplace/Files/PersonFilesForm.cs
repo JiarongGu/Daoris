@@ -18,7 +18,7 @@ internal static class PersonFilesForm
     /// <summary>Whether a first-form file translates exactly and whole, so its reader rewrites it.</summary>
     internal static bool Due(PersonFilesRead read) => read is { FirstForm: true, Unread: null, Keeps: false, Problems.Count: 0 };
 
-    /// <summary>The file rewritten in git's form where it is still due under the lock; true where it was written.</summary>
+    /// <summary>The file rewritten in git's form where it is still due under the lock; true where it wrote.</summary>
     internal static bool Rewrite(string home)
     {
         try

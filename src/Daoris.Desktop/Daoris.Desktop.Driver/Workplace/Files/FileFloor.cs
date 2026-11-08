@@ -6,7 +6,6 @@ namespace Daoris.Driver;
 /// </summary>
 internal sealed record FileFloorFacts(IReadOnlyCollection<string> Tracked, IReadOnlyCollection<string> Repositories)
 {
-    /// <summary>The checkout's <c>core.ignorecase</c>, read once with its tops: whether a pattern matches a top by case, as git does.</summary>
     internal bool IgnoreCase { get; init; }
 }
 

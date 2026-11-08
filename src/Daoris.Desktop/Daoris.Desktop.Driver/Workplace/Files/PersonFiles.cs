@@ -20,10 +20,8 @@ internal sealed record PersonFilesRead(FileScope Machine, IReadOnlyDictionary<st
     /// <summary>Why the file stands and does not read, or null. Its defaults restrict nothing, so read as empty it would drop every restriction the person set.</summary>
     internal string? Unread { get; init; }
 
-    /// <summary>Whether the file says no form and is read as the first form.</summary>
     internal bool FirstForm { get; init; }
 
-    /// <summary>Whether any scope holds a path git's syntax cannot state, read as written until the person words it.</summary>
     internal bool Keeps => Machine.Rules.Concat(Repositories.Values.SelectMany(scope => scope.Rules)).Any(rule => rule.FirstForm);
 
     internal FileScope For(string repository) =>

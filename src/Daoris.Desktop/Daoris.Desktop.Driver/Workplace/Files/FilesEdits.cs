@@ -10,11 +10,8 @@ public static class FilesEdits
     /// <summary>Why the person's file stands and does not read, or null; nothing is written, and no allow made, while it is said.</summary>
     public static string? Unread(string home) => PersonFiles.Read(home).Unread;
 
-    /// <summary>
-    /// An entry of <paramref name="kind"/> over <paramref name="paths"/>, each a top of the repository written as the pattern that names
-    /// it alone (<see cref="GitPattern.Anchored"/>), added at the end of the machine's rules or the repository's, so it wins there.
-    /// </summary>
-    /// <param name="copy">Only a <c>local</c> rule takes it: <c>reach</c> <c>copy</c>, or <c>tree</c>.</param>
+    /// <summary>An entry of <paramref name="kind"/> over <paramref name="paths"/>, each a top written anchored, added last so it wins.</summary>
+    /// <param name="copy">Only a <c>local</c> rule takes it.</param>
     /// <returns>The kind's word.</returns>
     public static string Set(string home, string repository, bool machine, string kind, IReadOnlyList<string> paths, bool? copy)
     {
@@ -31,10 +28,6 @@ public static class FilesEdits
     public static int Remove(string home, string repository, bool machine, IReadOnlyList<string> paths) =>
         paths.Sum(path => PersonFiles.Remove(home, machine ? null : repository, path) + (path.StartsWith('/') ? 0 : PersonFiles.Remove(home, machine ? null : repository, GitPattern.Anchored(path))));
 
-    /// <summary>
-    /// The person's file rewritten in git's syntax with each path it reads as written worded as the person chose, every such path
-    /// in one write.
-    /// </summary>
     public static void Settle(string home, IReadOnlyList<FilesWording> wordings) => PersonFilesForm.Settle(home, wordings);
 
     /// <summary>

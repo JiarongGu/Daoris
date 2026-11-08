@@ -2,10 +2,7 @@ using System.Text.Json;
 
 namespace Daoris.Driver;
 
-/// <summary>
-/// The repository's own layer, its tracked <c>daoris.files.json</c>, read and judged: each entry in the rule file's one format, and a
-/// dependency refused where a later rule of the layer takes one of its paths, its paths being one install's unit. The rest still read.
-/// </summary>
+/// <summary>The repository's own layer, its tracked <c>daoris.files.json</c>: a dependency a later rule's entry meets is refused, the rest read.</summary>
 /// <remarks>Read from git's objects at the commit the checkout's line stands at (<see cref="AtAsync"/>), never a working file or a
 /// branch's: what Daoris does to the next line is never one branch's say.</remarks>
 internal static class RepositoryFilesReader
@@ -37,10 +34,6 @@ internal static class RepositoryFilesReader
     internal static async Task<RepositoryFilesRead> AtAsync(string root, string commit, CancellationToken ct) =>
         Read(await FileGit.ShowAsync(root, commit, FileName, ct).ConfigureAwait(false));
 
-    /// <summary>
-    /// The entries kept: a dependency's refused where a later rule's entry meets it, its paths being one install's unit. A pattern
-    /// that reaches a tracked path is git's to cover; the floor keeps the tracked path at the match.
-    /// </summary>
     private static List<FileRule> Judged(List<(int Number, FileRule Rule)> rules, List<string> problems)
     {
         var kept = new List<FileRule>();
@@ -65,6 +58,5 @@ internal sealed record RepositoryFilesRead(IReadOnlyList<FileRule> Rules, IReadO
 {
     internal static readonly RepositoryFilesRead None = new([], []);
 
-    /// <summary>Whether the file says no form and is read as the first form, which the Files tab says.</summary>
     internal bool FirstForm { get; init; }
 }

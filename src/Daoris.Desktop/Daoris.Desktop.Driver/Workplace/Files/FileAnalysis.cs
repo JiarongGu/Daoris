@@ -72,7 +72,6 @@ internal static partial class FileAnalysis
             new FileFloorFacts(known, [.. found.Where(pair => pair.Value.Kind == FileKind.Repository).Select(pair => pair.Key)]) { IgnoreCase = ignoreCase }, Signature);
     }
 
-    /// <summary>A top as the found layer writes it: the pattern that names it alone.</summary>
     private static IReadOnlyList<string> Top(string top) => [GitPattern.Anchored(top)];
 
     /// <summary>

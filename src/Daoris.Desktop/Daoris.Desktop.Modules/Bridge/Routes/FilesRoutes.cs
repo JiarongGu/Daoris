@@ -80,7 +80,7 @@ public sealed class FilesRoutes(DriverLoop loop)
     [Publishes("FILES_SETTLE", StateScopes.Files)]
     private Task<object?> FilesSettleAsync(FilesSettlePress press, CancellationToken cancellationToken) => Written(press.Repository, _ =>
     {
-        FilesEdits.Settle(_loop.Home, press.Wordings ?? []);
+        FilesEdits.Settle(_loop.Home, [.. (press.Wordings ?? []).Select(each => new FilesWording(ActField.Needs(each.Scope, "scope"), ActField.Needs(each.Path, "path"), each.Whole))]);
         return true;
     });
 

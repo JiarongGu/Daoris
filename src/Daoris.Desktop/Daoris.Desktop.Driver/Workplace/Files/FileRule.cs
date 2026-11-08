@@ -8,10 +8,7 @@ namespace Daoris.Driver;
 /// <param name="Paths">Git's ignore patterns, read by <see cref="GitPattern"/>; a first-form entry's paths as that form wrote them.</param>
 internal sealed record FileRule(FileKind Kind, IReadOnlyList<string> Paths)
 {
-    /// <summary>
-    /// Whether the paths are first-form paths no git pattern states, read by the first form's own matcher until the file that holds
-    /// them is worded again (<see cref="RuleFileFirstForm"/>).
-    /// </summary>
+    /// <summary>Whether the paths are first-form paths no git pattern states, read by the first form's own matcher.</summary>
     internal bool FirstForm { get; init; }
 
     /// <summary>How the paths reach a tree: <c>tree</c>, or <c>copy</c> from the checkout, read-only.</summary>
@@ -20,7 +17,6 @@ internal sealed record FileRule(FileKind Kind, IReadOnlyList<string> Paths)
     /// <summary>What a take does with the paths (<see cref="FileKindSets.Takes"/>).</summary>
     internal string? Take { get; init; }
 
-    /// <summary>What a finish does with the paths: <c>keep</c> or <c>aside</c>.</summary>
     internal string? Finish { get; init; }
 
     /// <summary>A dependency's install, run in the folder of the manifest beside its first path.</summary>
