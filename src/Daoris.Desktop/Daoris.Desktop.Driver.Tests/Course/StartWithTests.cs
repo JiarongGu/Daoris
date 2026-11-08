@@ -133,10 +133,7 @@ public sealed class StartWithTests : IDisposable
         Assert.Equal(1, runs);
     }
 
-    /// <summary>
-    /// A retry that finds the first start running as the first finishes is answered, never thrown at: the first's entry may be gone by the time
-    /// the retry reads it.
-    /// </summary>
+    /// <summary>A retry racing the first start's end is answered, never thrown at.</summary>
     [Fact]
     public async Task A_retry_racing_the_first_starts_end_is_never_thrown_at()
     {

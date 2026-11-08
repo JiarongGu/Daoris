@@ -158,10 +158,7 @@ public sealed class McpLineToolTests : McpToolsFixture
         Assert.Contains("50,011 characters", cut);
     }
 
-    /// <summary>
-    /// 🔴 The bound weighs kana, Hangul, fullwidth forms and an emoji's surrogate pair as the brief does (three each, the pair's halves two and
-    /// one), by a count that does not call the service's own weight: a page of them is never heavier than the brief it reads behind.
-    /// </summary>
+    /// <summary>🔴 Kana, Hangul, fullwidth forms and an emoji weigh three each, counted apart from the service's own weight.</summary>
     [Fact]
     public async Task An_answer_of_kana_and_emoji_is_bounded_by_the_briefs_weights()
     {
