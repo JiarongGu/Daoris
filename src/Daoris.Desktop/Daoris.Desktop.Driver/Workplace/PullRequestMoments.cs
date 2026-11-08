@@ -499,7 +499,19 @@ public sealed class PullRequestMoments : IAsyncDisposable
         due = [.. due.Where(entry => PullRequestMinute.TryTake(_home, entry, asking))];
         if (due.Count == 0) return 0;
 
-        if (await _world.AskAsync(repository, due, ct).ConfigureAwait(false) > 0) _world.Judge(repository);
+        int completed;
+        try
+        {
+            completed = await _world.AskAsync(repository, due, ct).ConfigureAwait(false);
+        }
+        catch
+        {
+            // Nothing went out, so the minutes taken above are given back with the flags RefsAsync restores, which the next wake asks.
+            foreach (var entry in due) PullRequestMinute.Release(_home, entry, asking);
+            throw;
+        }
+
+        if (completed > 0) _world.Judge(repository);
         return due.Count;
     }
 
