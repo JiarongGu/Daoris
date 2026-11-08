@@ -9,7 +9,7 @@ namespace Daoris.Desktop.Driver.Tests;
 /// </summary>
 /// <remarks>
 /// <b>A twin</b> (<c>.claude/knowledge/twins.md</c>): the page's <c>hostBounds</c> in <c>bridge/call.ts</c> spells the
-/// driver's <see cref="SyncBounds"/>, <see cref="LandingPlugins.DefaultPatience"/> and <see cref="ToolInstall.LookBound"/>
+/// driver's <see cref="SyncBounds"/>, <see cref="LandingPatience.Plugin"/> and <see cref="ToolInstall.LookBound"/>
 /// again, and each row here holds one
 /// number against the other. The page gave up after its bridge's default 30 seconds while the host fetched for
 /// minutes, and answered nobody: a bound changed on one side only is that defect again.

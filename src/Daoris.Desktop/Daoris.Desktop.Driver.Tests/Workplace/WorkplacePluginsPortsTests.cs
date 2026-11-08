@@ -27,13 +27,10 @@ public sealed class WorkplacePluginsPortsTests : IDisposable
         File.WriteAllText(Path.Combine(folder, "plugin.json"), manifest);
     }
 
-    // ——— The lower vocabulary
-
     [Fact]
     public void The_lower_patience_and_door_words_are_the_values_the_higher_names_alias()
     {
         Assert.Equal(TimeSpan.FromMinutes(2), LandingPatience.Plugin);
-        Assert.Equal(LandingPatience.Plugin, LandingPlugins.DefaultPatience);
         Assert.Equal(LandingPatience.Plugin + TimeSpan.FromMinutes(3), LandingHolds.Wait);
         Assert.Equal(("screen", "terminal"), (WorkplaceDoors.Screen, WorkplaceDoors.Terminal));
         Assert.Equal((WorkplaceDoors.Screen, WorkplaceDoors.Terminal), (PluginEvents.Screen, PluginEvents.Terminal));

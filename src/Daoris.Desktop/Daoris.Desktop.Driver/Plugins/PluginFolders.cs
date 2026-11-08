@@ -124,10 +124,10 @@ internal static class PluginFolders
     public static void Make(string folder) => Directory.CreateDirectory(folder);
 
     /// <summary>A staged folder renamed into its place, as every folder Daoris owns is (<see cref="AtomicFile.MoveFolder"/>).</summary>
-    public static void MoveInto(string staging, string target) => AtomicFile.MoveFolder(staging, target);
+    public static void MoveInto(string staging, string target, Action<string, string>? move = null) => AtomicFile.MoveFolder(staging, target, move: move);
 
-    /// <summary>A folder moved whole; it throws where something holds it open.</summary>
-    public static void Move(string from, string to) => Directory.Move(from, to);
+    /// <summary>A folder moved whole; it throws where something holds it open. A test hands in <paramref name="move"/> to refuse.</summary>
+    public static void Move(string from, string to, Action<string, string>? move = null) => (move ?? Directory.Move)(from, to);
 
     /// <summary>A folder deleted where it can be: a dot-folder left behind is never read as a plugin, so one that cannot be is nobody's.</summary>
     public static void Forget(string folder)
