@@ -239,8 +239,11 @@ public sealed class ReviewGateTests
         // The set-up step is reviewed, so a skip there is refused: the skip goes on the chain's work.
         Assert.Contains("`daoris quest review q1 skip", gate.Says);
 
-        // Git that cannot say holds nothing either.
-        Assert.Equal(ReviewStates.NotHeld, (await Judge(ReviewGate.Decide([Quest("q1"), step], "web-app", null, null), holds: null)).State);
+        // Git that cannot say holds nothing either, and says so rather than that the commit does not hold the work.
+        var unchecked_ = await Judge(ReviewGate.Decide([Quest("q1"), step], "web-app", null, null), holds: null);
+        Assert.False(unchecked_.LetsGo);
+        Assert.Equal(ReviewStates.Unread, unchecked_.State);
+        Assert.Contains("git could not check whether", unchecked_.Says);
     }
 
     [Fact]

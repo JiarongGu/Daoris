@@ -298,15 +298,22 @@ public static class ReviewGate
 
         // The newest set-up the person reviewed, and whether its commit holds what would land.
         var reviewed = step.SetUps.LastOrDefault(setUp => VerdictOn(step, setUp, ReviewVerdicts.Reviewed) is not null);
-        if (reviewed is not null && tip is not null && await holds(reviewed.Commit).ConfigureAwait(false) == true)
+        var held = reviewed is not null && tip is not null ? await holds(reviewed.Commit).ConfigureAwait(false) : false;
+        if (held == true)
         {
-            return new(ReviewStates.Reviewed, decision) { SetUp = reviewed, Verdict = VerdictOn(step, reviewed, ReviewVerdicts.Reviewed), Tip = tip };
+            return new(ReviewStates.Reviewed, decision) { SetUp = reviewed, Verdict = VerdictOn(step, reviewed!, ReviewVerdicts.Reviewed), Tip = tip };
         }
 
         var newest = step.SetUps[^1];
         if (VerdictOn(step, newest, ReviewVerdicts.NotYet) is { } notYet && !ReferenceEquals(reviewed, newest))
         {
             return new(ReviewStates.NotYet, decision) { SetUp = newest, Verdict = notYet, Tip = tip };
+        }
+
+        // Git that could not check is not a commit that fails to hold the work: the refusal is the same, its cause is not.
+        if (held is null && ReferenceEquals(reviewed, newest))
+        {
+            return new(ReviewStates.Unread, decision) { Tip = tip, Problem = $"git could not check whether `{Short(reviewed!.Commit)}`, where you reviewed it, holds `{Short(tip!)}`" };
         }
 
         return ReferenceEquals(reviewed, newest)

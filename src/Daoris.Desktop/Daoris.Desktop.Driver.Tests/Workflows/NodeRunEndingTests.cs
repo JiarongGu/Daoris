@@ -79,6 +79,33 @@ public sealed class NodeRunEndingTests : NodeRunFixture
         Assert.Equal(RunId, Files.Read(RunUnit)!.Ended?.Quest);
     }
 
+    /// <summary>A word a door keeps between the end's read of the record and its edit is judged by the edit: the run is not ended over it.</summary>
+    [Fact]
+    public async Task A_word_kept_between_the_ends_read_and_its_edit_holds_the_runs_end()
+    {
+        BoundTo(ClaimedThenHanded);
+        var b1 = RunHome.Branch("unit-b1", "daoris/s1", Opened, [RunId], RunHome.Landing("unit-b1", "feature/q7", Tip1, _now, RunId));
+        _branchTips["daoris/s1"] = Tip1;
+        _units = [RunHome.QuestUnit(RunHome.Quest(RunId, "Done")), b1];
+        var kept = false;
+        // The end takes its moment after its read and before its edit: a door's word lands there.
+        var runtime = new NodeRuntime(Files, _port, () =>
+        {
+            if (!kept && new System.Diagnostics.StackTrace().GetFrames().Any(frame => frame.GetMethod()?.DeclaringType?.Name == nameof(NodeRunKeeping) && frame.GetMethod()?.Name == "End"))
+            {
+                kept = true;
+                Files.Edit(RunUnit, record => (record with { Pending = [new NodeWord("handed", NodeWordActs.Skip, "later", _now)] }, true));
+            }
+
+            return _now;
+        }, () => true);
+
+        await RunPassAsync(runtime);
+
+        Assert.True(kept);
+        Assert.Null(Files.Read(RunUnit)!.Ended);
+    }
+
     private const string ClaimedThenDeploy = """
         {"schemaVersion":2,"entries":["claimed"],"end":"handed",
          "nodes":[{"id":"claimed","kind":"claimed","version":1,"reach":"observed"},{"id":"deploy","kind":"acme.deploy/deploy","version":1,"reach":"performed"},
@@ -141,6 +168,39 @@ public sealed class NodeRunEndingTests : NodeRunFixture
         Assert.True(landed);
 
         // The chain went to another repository and came back here, as the ask says.
+        _units = [RunHome.QuestUnit(RunHome.Quest(RunId, "Done")), RunHome.QuestUnit(RunHome.Quest("q8", "Done", parent: RunId, to: "other")),
+            RunHome.QuestUnit(RunHome.Quest("q9", parent: "q8")), b1];
+        var next = await RunPassAsync(runtime, whole: false);
+
+        Assert.True(next.Armed);
+        Assert.Contains(RunUnit, next.Evaluated);
+    }
+
+    /// <summary>An ask landing while the pass reads the units is for the next pass: the units read began before its quest, so the pass never took it off.</summary>
+    [Fact]
+    public async Task A_return_landing_while_the_pass_reads_the_units_is_kept_for_the_next_pass()
+    {
+        BoundTo(ClaimedThenHanded);
+        var b1 = RunHome.Branch("unit-b1", "daoris/s1", Opened, [RunId], RunHome.Landing("unit-b1", "feature/q7", Tip1, _now, RunId));
+        _branchTips["daoris/s1"] = Tip1;
+        _units = [RunHome.QuestUnit(RunHome.Quest(RunId, "Done")), b1];
+        var runtime = Runtime();
+        await RunPassAsync(runtime);
+        Assert.Equal(RunId, Files.Read(RunUnit)!.Ended?.Quest);
+
+        runtime = Runtime();
+        var look = RunLook();
+        var landed = false;
+        await runtime.PassAsync(look with
+        {
+            Units = ct =>
+            {
+                landed |= runtime.Return(RunId);
+                return look.Units(ct);
+            },
+        }, CancellationToken.None);
+        Assert.True(landed);
+
         _units = [RunHome.QuestUnit(RunHome.Quest(RunId, "Done")), RunHome.QuestUnit(RunHome.Quest("q8", "Done", parent: RunId, to: "other")),
             RunHome.QuestUnit(RunHome.Quest("q9", parent: "q8")), b1];
         var next = await RunPassAsync(runtime, whole: false);

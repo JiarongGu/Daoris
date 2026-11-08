@@ -310,6 +310,19 @@ public sealed class NodeRecordFilesTests : IDisposable
         Assert.Single(Files().All().Unreadable);
     }
 
+    [Fact]
+    public void A_record_deleted_between_the_listing_and_its_stat_is_gone_not_unreadable_and_the_others_still_read()
+    {
+        Files().Write(new NodeRecord(Unit));
+        var kept = NodeRecordFiles.PathOf(_home, Unit);
+        var vanished = NodeRecordFiles.PathOf(_home, "quest:q-gone");
+
+        var (records, unreadable) = new NodeRecordFiles(_home, () => true) { Lists = _ => [vanished, kept] }.All();
+
+        Assert.Equal([Unit], records.Select(each => each.Unit));
+        Assert.Empty(unreadable);
+    }
+
     /// <summary>
     /// A record that does not read is listed for the person, by its file and the unit its text still names under that
     /// file's key; one that is not JSON names no unit, a record that reads is never listed, and a unit picked lists its own alone. The

@@ -275,6 +275,26 @@ public sealed class PullRequestMomentsTests : IDisposable
         Assert.Equal(["feature/a"], _world.Asked);
     }
 
+    /// <summary>A push whose plugin read threw gives its minute back with its flags, so the next wake inside the minute asks it.</summary>
+    [Fact]
+    public async Task A_push_whose_plugin_read_threw_is_asked_at_the_next_moment_inside_the_minute()
+    {
+        _world.Entries.Add(Landing("engine", "feature/a"));
+        _world.Registry.Add(Repository("engine"));
+        _world.FetchedAt["engine"] = _now.AddSeconds(-20);
+        await using var moments = await Opened();
+
+        _world.AskThrows = true;
+        PullRequestMoments.Pushed(_home, "engine");
+        await Step(moments);
+        Assert.Empty(_world.Asked);
+
+        _world.AskThrows = false;
+        PullRequestMoments.Moved(_home, Repository("engine"));
+        await Step(moments);
+        Assert.Equal(["feature/a"], _world.Asked);
+    }
+
     /// <summary>
     /// The window's focus while a pull request is open: each repository with one is fetched once and asked, a repository with none is
     /// neither, and the registry is read once.
@@ -502,8 +522,11 @@ public sealed class PullRequestMomentsTests : IDisposable
             return Task.FromResult(Failing);
         }
 
+        public bool AskThrows { get; set; }
+
         public Task<int> AskAsync(RefRepository repository, IReadOnlyList<LandedBranch> entries, CancellationToken ct)
         {
+            if (AskThrows) throw new InvalidOperationException("the plugin's read failed");
             var completed = 0;
             foreach (var entry in entries)
             {
