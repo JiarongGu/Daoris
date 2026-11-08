@@ -224,6 +224,7 @@ internal sealed class TurnKeeps(
         if (word.Level == MessageLevel.Now && steerNow?.Invoke(state.Dispatched(handed)) is { } steered)
         {
             state.Steered.Add(steered);
+            state.TheirsSteered |= word.Theirs;
             return true;
         }
 
@@ -231,6 +232,7 @@ internal sealed class TurnKeeps(
         {
             state.Steered.Add(stepped);
             state.OnWay.Add(stepped);
+            state.TheirsSteered |= word.Theirs;
             return true;
         }
 
