@@ -45,7 +45,7 @@ internal static class PersonFiles
         }
         catch (Exception error) when (error is IOException or UnauthorizedAccessException)
         {
-            return PersonFilesRead.Empty with { Unread = error.Message };
+            return PersonFilesRead.Empty with { Unread = $"{FileName} could not be opened ({error.GetType().Name})" };
         }
     }
 
@@ -103,7 +103,14 @@ internal static class PersonFiles
     });
 
     /// <summary>Written beside and renamed over, BOM-less and LF, keeping every key a hand or a newer build wrote.</summary>
-    private static int Edit(string home, string? repository, Func<JsonArray, int> edit)
+    private static int Edit(string home, string? repository, Func<JsonArray, int> edit) => EditScope(home, repository, scope =>
+    {
+        if (scope["rules"] is not JsonArray rules) scope["rules"] = rules = [];
+        return edit(rules);
+    });
+
+    /// <summary>The same write over one scope's whole object (its rules and its permissions), by the same lock-free rename.</summary>
+    internal static int EditScope(string home, string? repository, Func<JsonObject, int> edit)
     {
         var path = PathOf(home);
         JsonObject root = [];
@@ -118,8 +125,7 @@ internal static class PersonFiles
         }
 
         var scope = repository is null ? Child(root, "machine") : Child(Child(root, "repositories"), repository);
-        if (scope["rules"] is not JsonArray rules) scope["rules"] = rules = [];
-        var changed = edit(rules);
+        var changed = edit(scope);
         if (changed == 0) return 0;
         Directory.CreateDirectory(Path.GetDirectoryName(path)!);
         AtomicFile.WriteText(path, root.ToJsonString(new JsonSerializerOptions { WriteIndented = true }).ReplaceLineEndings("\n") + "\n");
