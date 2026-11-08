@@ -57,6 +57,24 @@ public sealed class HeavyExecutorFaultTests : IAsyncLifetime
     }
 
     [Fact]
+    public async Task A_callback_that_throws_when_a_result_is_told_does_not_end_the_loop()
+    {
+        var told = 0;
+        var executor = _executor = new HeavyExecutor(Home, new VerifyWorld
+        {
+            Poll = TimeSpan.FromMilliseconds(50),
+            Answered = (_, _) => { if (Interlocked.Increment(ref told) == 1) throw new InvalidOperationException("the runtime's ask failed"); },
+        });
+        var checkout = Checkout("engine");
+        await executor.SendAsync(new VerifySend("r1", "i1", "engine", checkout, "c1", null) { Bound = TimeSpan.FromDays(60) });
+        await SettledAsync("r1", "i1");
+
+        await executor.SendAsync(new VerifySend("r2", "i2", "engine", checkout, "c2", null) { Bound = TimeSpan.FromDays(60) });
+        Assert.Equal(VerifyVerdicts.Unknown, (await SettledAsync("r2", "i2")).Verdict);
+        Assert.True(executor.Answered("i2"));
+    }
+
+    [Fact]
     public async Task A_stop_between_the_slots_and_the_queue_is_not_run_as_well()
     {
         var executor = Executor();
