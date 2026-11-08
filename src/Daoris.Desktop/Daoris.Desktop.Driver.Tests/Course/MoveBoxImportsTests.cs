@@ -286,6 +286,27 @@ public sealed class MoveBoxImportsTests : IDisposable
         Assert.False(File.Exists(DesktopStore.LocationIn(_home)));
     }
 
+    /// <summary>
+    /// A box that parses but names a blank id (a destination or a said word of only whitespace) is the store's <c>ArgumentException</c>, not a
+    /// busy store: read as unread, left as evidence, so it holds neither the pass nor the boxes behind it.
+    /// </summary>
+    [Theory]
+    [InlineData(" ", new string[0])]
+    [InlineData("s2", new[] { " " })]
+    public void A_limit_box_that_names_a_blank_id_is_unread_and_does_not_hold_the_boxes_behind_it(string to, string[] said)
+    {
+        new LimitBoxes(_home).Write("s1", new LimitMoveBox(HandOverWhy.Limit, 4, 9, said, to, Moved: true));
+        new LimitBoxes(_home).Write("s2", new LimitMoveBox(HandOverWhy.Limit, 4, 9, []));
+        var store = Store();
+
+        var pass = Limits(store).Import();
+
+        Assert.Null(pass.Held);
+        Assert.Equal(1, pass.Unread);
+        Assert.Equal(["s2"], pass.Imported.Select(move => move.Left));
+        Assert.True(File.Exists(LimitPath("s1")));
+    }
+
     [Fact]
     public void A_home_with_no_box_makes_no_store()
     {
