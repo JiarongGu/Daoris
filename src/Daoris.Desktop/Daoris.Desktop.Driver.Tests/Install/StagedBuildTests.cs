@@ -224,6 +224,39 @@ public sealed class StagedBuildTests : ScratchInstall
         Assert.False(journal.Told);
     }
 
+    /// <summary>
+    /// The application confirms after the wait's last journal read and before the launcher gives up: the launcher reads the
+    /// journal once more, as it does when the process has ended, so the confirmed record is finished and not written over.
+    /// </summary>
+    [Fact]
+    public void An_application_that_confirms_as_the_wait_ends_is_installed_confirmed_and_told()
+    {
+        Stage();
+        var now = new DateTimeOffset(2026, 10, 3, 12, 0, 0, TimeSpan.Zero);
+        var swap = new InstallSwap(
+            _install,
+            start: _ => 4242,
+            alive: pid =>
+            {
+                Assert.True(StagedBuild.Confirm(_install, pid));
+                return true;
+            },
+            clock: () => now,
+            sleep: span => now += span)
+        {
+            ConfirmWithin = TimeSpan.Zero,
+        };
+
+        var outcome = swap.Run([]);
+
+        Assert.Equal(SwapPhase.Installed, outcome.Phase);
+        Assert.Null(outcome.Reason);
+        var journal = StagedBuild.ReadJournal(_install)!;
+        Assert.Equal(SwapPhase.Installed, journal.Phase);
+        Assert.True(journal.Confirmed);
+        Assert.True(journal.Told);
+    }
+
     [Fact]
     public void A_build_the_launcher_s_check_refuses_moves_nothing_of_the_install_and_is_moved_aside()
     {
