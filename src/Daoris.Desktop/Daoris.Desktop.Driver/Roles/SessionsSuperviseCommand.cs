@@ -177,7 +177,7 @@ public static class SessionsSuperviseCommand
     /// whose <c>at</c> is not before its first ask, within the instance's wait; an answer with no <c>at</c>, from an instance before the
     /// field, is taken as it comes. Null where the instance did not answer.
     /// </summary>
-    private static async Task<IReadOnlyList<JsonElement>?> WaitingAsync(InstanceWorld instance, CancellationToken ct)
+    internal static async Task<IReadOnlyList<JsonElement>?> WaitingAsync(InstanceWorld instance, CancellationToken ct)
     {
         var asked = DateTimeOffset.UtcNow.AddSeconds(-1);
         var until = DateTimeOffset.UtcNow + instance.Within;
@@ -213,11 +213,12 @@ public static class SessionsSuperviseCommand
         foreach (var each in waiting)
         {
             if (SubjectOf(each) is not { } subject) continue;
-            var said = subject.Kind != SupervisorKinds.Question
+            var said = subject.Kind == SupervisorKinds.Allow ? SuperviseAllows.Says(each, subject)
+                : subject.Kind != SupervisorKinds.Question
                 ? $"rule refers point {subject.Id}: {Text(each, "count")} at {Text(each, "n")}"
                 : $"question {subject.Id}  asked {Text(each, "asked")}";
             await output.WriteLineAsync(
-                $"{subject.Session}  {Text(each, "repository")}  {said}  generation {Text(each, "generation")}  "
+                $"{SuperviseAllows.Who(subject)}  {Text(each, "repository")}  {said}  generation {Text(each, "generation")}  "
                 + $"(decide with --kind {subject.Kind} --subject {subject.Id} --do {Acts(each)}, or --leave <bound>)").ConfigureAwait(false);
         }
 
@@ -228,7 +229,7 @@ public static class SessionsSuperviseCommand
     private static async Task<int> PrintAsync(ISupervisorWorld world, InstanceWorld instance, string id, TextWriter output, CancellationToken ct)
     {
         if (await WaitingAsync(instance, ct).ConfigureAwait(false) is not { } waiting) return await NoInstanceAsync(output).ConfigureAwait(false);
-        if (waiting.Where(each => SubjectOf(each)?.Session == id).Select(each => (JsonElement?)each).FirstOrDefault() is not { } listed
+        if (waiting.Where(each => SubjectOf(each) is { } named && SuperviseAllows.Names(named, id)).Select(each => (JsonElement?)each).FirstOrDefault() is not { } listed
             || SubjectOf(listed) is not { } subject)
         {
             // No question and no point waits: a point the supervisor already decided is still printed, with its course as it stands.
@@ -241,6 +242,7 @@ public static class SessionsSuperviseCommand
             return 1;
         }
 
+        if (subject.Kind == SupervisorKinds.Allow) return await SuperviseAllows.PrintAsync(listed, subject, id, output).ConfigureAwait(false);
         if (subject.Kind != SupervisorKinds.Question)
         {
             return await SupervisePointPrint.PrintAsync(world, id, SupervisePointPrint.Waiting(listed, subject), output, ct).ConfigureAwait(false);
@@ -325,7 +327,19 @@ public static class SessionsSuperviseCommand
         }
 
         // The decision, or the leave as the role's second act, each proved over its own route's canonical bytes, the subject whole in them.
+        // An allow names its shape (a held request, a widening, a steward's act) as the listing says it, never by a session id alone.
         var subject = new SupervisorSubject(draft.Kind, id, draft.Subject);
+        if (draft.Kind == SupervisorKinds.Allow)
+        {
+            if (await SuperviseAllows.FindAsync(instance, id, draft.Subject, ct).ConfigureAwait(false) is not { } listed)
+            {
+                await output.WriteLineAsync($"sessions supervise: no allow `{draft.Subject}` waits for the supervisor; list again.").ConfigureAwait(false);
+                return 1;
+            }
+
+            subject = listed;
+        }
+
         var route = draft.Bound is null ? Decide : Leave;
         string proof;
         object payload;
