@@ -85,4 +85,13 @@ public sealed class OverlapPlannerTests
     {
         Assert.Equal(StartVerdict.Start, Plan([Quest("q1", "Taken", "src/**"), Quest("q2", "Open")], Rule(LandingIntegrate.Wait)).Verdict);
     }
+
+    [Fact]
+    public void A_glob_of_root_files_meets_no_folders_glob_and_one_that_crosses_folders_does()
+    {
+        Assert.Empty(PathOverlap.Meet(["*.md"], ["docs/**"], []));
+        Assert.Empty(PathOverlap.Meet(["docs/**"], ["*.md"], []));
+        Assert.Equal(["**/*.md"], PathOverlap.Meet(["**/*.md"], ["docs/**"], []));
+        Assert.Equal(["*.md"], PathOverlap.Meet(["*.md"], ["README.*"], []));
+    }
 }

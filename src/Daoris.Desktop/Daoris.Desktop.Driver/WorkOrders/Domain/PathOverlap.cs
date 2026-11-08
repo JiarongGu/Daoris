@@ -28,8 +28,11 @@ public static class PathOverlap
     {
         if (KindPaths.Matches(one, other) || KindPaths.Matches(other, one)) return true;
         var (a, b) = (Folder(one), Folder(other));
+        if ((RootFiles(one) && b.Length > 0) || (RootFiles(other) && a.Length > 0)) return false;
         return (Wild(one) || Wild(other)) && (a.StartsWith(b, StringComparison.Ordinal) || b.StartsWith(a, StringComparison.Ordinal));
     }
+
+    private static bool RootFiles(string glob) => !glob.Contains('/') && !glob.Contains("**", StringComparison.Ordinal);
 
     private static bool Wild(string glob) => glob.IndexOfAny(['*', '?', '{', '[']) >= 0;
 
