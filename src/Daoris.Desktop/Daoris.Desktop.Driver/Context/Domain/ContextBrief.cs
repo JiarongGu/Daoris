@@ -23,7 +23,7 @@ namespace Daoris.Driver;
 /// (an instruction, an earlier brief, its own words to a session), a summary any model wrote, or a machine path beyond where the
 /// person's attachments lie: a file a call touched is named relative to the tree.</para>
 ///
-/// <para><b>Its bound</b> is <see cref="Bound"/>, a Han character weighing <see cref="HanWeight"/>, both provisional until
+/// <para><b>Its bound</b> is <see cref="Bound"/>, a wide character weighing <see cref="WideWeight"/>, both provisional until
 /// briefs are counted on each harness. Each section fills under its own cap and every item is clipped on its own, each cut said;
 /// the words keep the newest under <see cref="WordsCap"/>, the turns the newest under what the rest leave, at least
 /// <see cref="TurnsFloor"/>. The caps choose what is kept, not where it stands: the brief reads in the conversation's order.</para>
@@ -33,8 +33,8 @@ public static class ContextBrief
     /// <summary>The most a brief weighs: about 11,000 tokens at 3.6 characters a token, provisional.</summary>
     public const int Bound = 40_000;
 
-    /// <summary>What a Han character weighs toward the bound, provisional and on the safe side until measured.</summary>
-    public const int HanWeight = 3;
+    /// <summary>What a Han, kana, Hangul or fullwidth character, or an emoji, weighs toward the bound, provisional and on the safe side until measured.</summary>
+    public const int WideWeight = 3;
 
     /// <summary>The opening and the request.</summary>
     public const int OpeningCap = 4_000;
@@ -87,16 +87,23 @@ public static class ContextBrief
     /// <summary>The most files read, and pages opened, a turn's line names: the rest are counted.</summary>
     private const int ReadsNamed = 20;
 
-    /// <summary>What a text weighs toward the bound: a Han character <see cref="HanWeight"/>, every other one.</summary>
+    /// <summary>What a text weighs toward the bound: a wide character <see cref="WideWeight"/>, every other one.</summary>
     public static int Weight(string text)
     {
         var weight = 0;
-        foreach (var c in text) weight += IsHan(c) ? HanWeight : 1;
+        foreach (var c in text) weight += CharWeight(c);
         return weight;
     }
 
-    // The basic block, extension A and the compatibility block, as a search weighs a Han character (SessionEventText.Searchable).
-    private static bool IsHan(char c) => c is (>= '一' and <= '鿿') or (>= '㐀' and <= '䶿') or (>= '豈' and <= '﫿');
+    // Han, CJK punctuation with kana, Jamo, Hangul and the fullwidth forms each weigh WideWeight; a surrogate pair (emoji, the rarer Han) as
+    // its two halves, 2 and 1. Search's own Han test (SessionEventText.Searchable) answers another question and stays as it is.
+    private static int CharWeight(char c) => c switch
+    {
+        (>= '一' and <= '鿿') or (>= '㐀' and <= '䶿') or (>= '豈' and <= '﫿') or (>= '　' and <= 'ヿ')
+            or (>= 'ᄀ' and <= 'ᇿ') or (>= '㄰' and <= '㆏') or (>= '가' and <= '힯') or (>= '＀' and <= '￯') => WideWeight,
+        _ when char.IsHighSurrogate(c) => WideWeight - 1,
+        _ => 1,
+    };
 
     /// <summary>The brief of <paramref name="line"/>, in Daoris's one English, with its account.</summary>
     public static ComposedBrief Compose(BriefLine line)
@@ -704,7 +711,7 @@ public static class ContextBrief
             for (var i = 0; i < text.Length; i++)
             {
                 var c = text[fromEnd ? text.Length - 1 - i : i];
-                weight += IsHan(c) ? HanWeight : 1;
+                weight += CharWeight(c);
                 if (weight > cap) break;
                 count++;
             }
