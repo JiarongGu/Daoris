@@ -70,7 +70,7 @@ Driver paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/`.
     here, and the recorded tip is the source commit or its ancestor. No answer removes nothing; a failure never
     overwrites a kept answer. (from D148)
 13. Every install door writes `.daoris-source.json` into the staged copy before the swap: `{folder}`,
-    `{offer, digest}` or `{package, version, sha512, source}`. No record is said, never guessed; an unreadable one is named. (from D103, D119, D120)
+    `{offer, digest}` or `{package, version, sha512, source}`. No record is said, never guessed; an unreadable one is named; the list, the page and `plugin show` say the source by its kind: folder, offer, package, none or unread. (from D103, D119, D120)
 14. The window's add adds and never replaces. Only the terminal's `daoris plugin add` replaces an installed plugin,
     wholesale. A source inside or holding the home is refused. (from D103, D194)
 15. An update shows its plan first: version, command, points, harnesses, servers, skills, steps and resources. It
@@ -92,7 +92,7 @@ Driver paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/`.
     the attempt). A refused place has no process, and the others are served. (from D241, D242)
 18. An offer's installed copy is judged against the shipped one. Same version, other files: `changed`. Older, files
     matching the record's digest: `older`. Older, digest not matching: `changed`. Older, no digest: `older`,
-    unjudged. Newer: the person's, said nothing. (from D119)
+    unjudged. Newer: the person's, said nothing. A pre-release tag (`1.2.0-beta.1`) is older than the same numbers without one. (from D119)
 19. A `changed` copy is never overwritten by an update. A copy with no record, or one that does not read, may take
     the shipped copy (`PLUGIN_UPDATE` with `shipped: true`), which records the offer and keeps `.data/` and the switch. (from D119)
 20. `plugins new` writes a self-contained folder (manifest with `tools: []`, `plugin.mjs`, `plugin.test.mjs`, README; `work.mjs`
@@ -160,7 +160,6 @@ example's `node --test`.
 
 ## Open
 
-- PLUGREV1: the code review's findings not yet fixed, each with its file and line (`TASKS.md`).
 - PLUGHOOK1d: ask a pull request's state again once the first pull request opens.
 - FABRIC-PERFORM1l: keep a pull request's fields in the work wire's evidence (`WorkEvidence` in `WorkWire.cs`).
 - EVENTHOOK1b is built whole: the kit's entry and the ending's adapter are in, and an intake's, a helper's and a reviewer's park are

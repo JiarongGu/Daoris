@@ -7,6 +7,9 @@ namespace Daoris.Driver;
 /// </summary>
 public static class PermissionChange
 {
+    /// <summary>A test's other writer, run once the next change has read the rules and cleared before it runs.</summary>
+    internal static readonly AsyncLocal<Action?> AfterRead = new();
+
     /// <param name="edit">The change, from the rules as read under the lock; it may throw to refuse it, nothing written.</param>
     /// <param name="read">Called once the rules are read, before the edit: a test's other writer, held off by the lock.</param>
     /// <param name="within">How long to wait for the lock; its default where none is given.</param>
@@ -18,6 +21,9 @@ public static class PermissionChange
         using var held = KeepLock.Take(PermissionRules.PathOf(home), within);
         var rules = PermissionRules.Load(home);
         read?.Invoke();
+        var seam = AfterRead.Value;
+        AfterRead.Value = null;
+        seam?.Invoke();
         var changed = edit(rules);
         PermissionRules.Save(home, changed, holding: true);
         return changed;

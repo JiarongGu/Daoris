@@ -54,6 +54,19 @@ public sealed class PluginsCommandTests : IDisposable
         Assert.Contains(DaorisHome.Entry(_home, HomeEntry.Plugins,".data", "acme.gate"), said);
     }
 
+    [Fact]
+    public async Task Show_says_the_package_a_plugin_was_installed_from()
+    {
+        PluginSource.Write(
+            DaorisHome.Entry(_home, HomeEntry.Plugins, "acme.gate"),
+            PluginSource.FromPackage(new PluginPackageOrigin("Acme.Gate", "1.0.0", Convert.ToBase64String(new byte[64]), Path.Combine(_home, "feed"))));
+
+        var (_, said) = await Run("show", "acme.gate");
+
+        Assert.Contains("package `Acme.Gate` 1.0.0", said);
+        Assert.DoesNotContain("a folder:", said);
+    }
+
     /// <summary>
     /// A plugin on the work wire: ready says who starts it and when, and unsound says what waits on it, never that
     /// nothing does or that it runs nothing itself.

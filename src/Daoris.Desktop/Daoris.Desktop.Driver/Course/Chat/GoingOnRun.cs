@@ -35,9 +35,10 @@ internal sealed class GoingOnRun(IExecutorWiring wiring, ChatGoOn owner)
         // mark is cleared; a word of theirs, or their *Go on with this answer*, lets them go.
         var lines = ServiceClient.ReadRecords(json);
         var hold = AnswersAloneHold.For(_context.Events, _context.Marks, _context.Home);
-        if (hold.Holds(record, lines, DateTimeOffset.UtcNow, heldAt: at => owner.Decide(record, alone: at)))
+        int? heldAt = null;
+        if (hold.Holds(record, lines, DateTimeOffset.UtcNow, heldAt: at => { heldAt = at; owner.Decide(record, alone: at); }))
         {
-            return new(null, $"conversation `{sessionId}`'s answer waits for you: it would take its work on a third time with nobody between.");
+            return new(null, AnswersAloneNotes.Refusal(sessionId, heldAt));
         }
 
         // The person wrote to it, so it stays in view whatever comes of it, and an earlier mark of words it could

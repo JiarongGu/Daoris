@@ -15,6 +15,7 @@ public sealed class RemoteSyncSet : IDisposable
     private readonly Func<IReadOnlyDictionary<string, RemoteTarget>>? _load;
     private readonly string _localUrl = "";
     private readonly string? _localKey;
+    private readonly string? _personKey;
     private readonly HttpMessageHandler? _handler;
     private readonly Dictionary<string, (RemoteTarget Target, RemoteSync Sync)> _watched =
         new(StringComparer.OrdinalIgnoreCase);
@@ -25,10 +26,11 @@ public sealed class RemoteSyncSet : IDisposable
 
     private RemoteSyncSet(
         string localUrl, string? localKey, Func<IReadOnlyDictionary<string, RemoteTarget>> load,
-        HttpMessageHandler? handler)
+        HttpMessageHandler? handler, string? personKey)
     {
         _localUrl = localUrl;
         _localKey = localKey;
+        _personKey = personKey;
         _load = load;
         _handler = handler;
         _syncs = [];
@@ -43,8 +45,9 @@ public sealed class RemoteSyncSet : IDisposable
     /// The local key arrives from the caller, which has already read it for its own client: a second
     /// ambient environment read here would be a hidden input the caller cannot see or test.
     /// </remarks>
-    public static RemoteSyncSet FromEnvironment(string localUrl, string? localKey) =>
-        Watching(localUrl, localKey, RemoteTarget.Load);
+    /// <param name="personKey">The person key the shell minted for its host, which the local client presents to a host of this machine's (<see cref="PersonHeader"/>).</param>
+    public static RemoteSyncSet FromEnvironment(string localUrl, string? localKey, string? personKey = null) =>
+        Watching(localUrl, localKey, RemoteTarget.Load, personKey: personKey);
 
     /// <summary>
     /// A set that reads the map it is given on every pass: a circle wired since the last pass syncs
@@ -58,8 +61,8 @@ public sealed class RemoteSyncSet : IDisposable
     /// <param name="handler">The test seam, as on <see cref="RemoteSync"/>.</param>
     public static RemoteSyncSet Watching(
         string localUrl, string? localKey, Func<IReadOnlyDictionary<string, RemoteTarget>> load,
-        HttpMessageHandler? handler = null) =>
-        new(localUrl, localKey, load, handler);
+        HttpMessageHandler? handler = null, string? personKey = null) =>
+        new(localUrl, localKey, load, handler, personKey);
 
     /// <summary>The circles this machine syncs as of the last pass — what the driver announces.</summary>
     public IReadOnlyList<string> Workspaces => _syncs.Select(sync => sync.Workspace).ToList();
@@ -80,7 +83,7 @@ public sealed class RemoteSyncSet : IDisposable
         {
             if (_watched.TryGetValue(name, out var held) && held.Target == target) continue;
             if (held.Sync is not null) held.Sync.Dispose();
-            _watched[name] = (target, new RemoteSync(_localUrl, _localKey, name, target, _handler));
+            _watched[name] = (target, new RemoteSync(_localUrl, _localKey, name, target, _handler, _personKey));
         }
 
         _syncs = _watched
@@ -185,12 +188,13 @@ public sealed class RemoteSync : IDisposable
     /// Production callers pass none. `ServiceClient` has the same seam for the same reason.</param>
     public RemoteSync(
         string localUrl, string? localKey, string workspace, RemoteTarget target,
-        HttpMessageHandler? handler = null)
+        HttpMessageHandler? handler = null, string? personKey = null)
     {
         _localBase = localUrl.TrimEnd('/');
         _remoteBase = target.Url;
         _workspace = RemoteTarget.Workspace(workspace);
         _local = DriverHttp.Client(localKey, handler);
+        PersonHeader.Present(_local, _localBase, personKey);
         _remote = DriverHttp.Client(target.Key, handler);
     }
 

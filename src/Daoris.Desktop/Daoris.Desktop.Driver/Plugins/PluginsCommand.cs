@@ -353,6 +353,7 @@ public static class PluginsCommand
         {
             "folder" => $"a folder: {source.Folder}",
             "offer" => $"Daoris's own plugins (`{source.Offer}`)",
+            "package" => $"a package: {source.Package}",
             "unread" => $"its record does not read: {source.Problem}",
             _ => "no record of where it came from — `daoris plugin add <folder>` replaces it and records one",
         };

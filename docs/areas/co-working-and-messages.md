@@ -143,7 +143,8 @@ The agent's half is the canon skill `canon/packs/co-working/skills/co-working/SK
 23. A solicited answer may extend or reopen its asker's run once per ask. Go-ons by answers alone are counted durably, one admission
     per line; the person's or Daoris's word resets the count. (from D188, D225)
 24. The count is a fact, not a limit. The line's answers-alone rule decides, seeded as *hold after 2 in a row* at the machine's place,
-    which the person may move or turn off; a supervisor may read it. (from D225, D229)
+    which the person may move or turn off; a supervisor may read it. The hold's words say the number the line is held at (`answers.held`'s
+    `n`), so a rule at 5 is never told a third. (from D225, D229)
 25. A hand-over's brief says what the line waits on, and that is the successor's to take. (from D225, D163)
 26. A go-ahead the person approved on an ask covers the same act from every session the ask's entry holds. (from D225)
 

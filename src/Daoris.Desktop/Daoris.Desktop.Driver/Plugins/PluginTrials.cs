@@ -173,6 +173,12 @@ public static class PluginTrials
 
         using (process)
         {
+            // A cancelled trial (the window closing) is no failed call, so no step ends the process; it is ended here, before the scratch under it goes.
+            var ended = false;
+            using var endsIfCut = new Disposer(() =>
+            {
+                if (!ended) process.Kill();
+            });
             var stderr = RelayAsync(process.Error, line => { lock (said) said.Add(line); });
             var noise = new List<string>();
             // Read under the bound the driver reads it under: read whole, a long answer would pass here and be lost there.
@@ -258,6 +264,7 @@ public static class PluginTrials
             }
 
             await EndAsync(alive, process, () => peer.DisposeAsync().AsTask(), HookProcess.Grace, steps).ConfigureAwait(false);
+            ended = true;
 
             var heard = Snapshot(noise);
             if (shook || heard.Count > 0)

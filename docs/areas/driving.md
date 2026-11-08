@@ -219,7 +219,8 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they start wi
 28. The person's words reach a session in any state: at its next step where its door takes words during a turn, else
     at its turn's end, else by reopening its ended record. The only move out of an ended state is back to working
     with words waiting. (from D137, D188)
-29. Answers alone that would take a line on a third time in a row wait for the person. (from D188, D229)
+29. Answers alone that would take a line on past its answers-alone rule's number in a row wait for the person; the hold's note and an
+    ended conversation's refusal name that number, the one the hold judged at, never a fixed count. (from D188, D229)
 
 ### The look, timeouts and limits
 

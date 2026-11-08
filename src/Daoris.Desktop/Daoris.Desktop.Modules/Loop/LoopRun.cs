@@ -25,14 +25,15 @@ internal sealed class LoopRun(
 
         var homeDirectory = loop.Home;
         var key = Environment.GetEnvironmentVariable(ServiceClient.KeyVariable);
+        var person = supervisor.ProvedKey;
         // A session's end hands the service its usage history's turn lines, which its memory rows' models are read from.
-        using var service = new ServiceClient(serviceUrl, key) { TurnLines = sessions => ServiceClient.LinesOf(UsageHistory.TurnLinesOf(homeDirectory, sessions), turn => new ServiceClient.TurnLine(turn.Seq, turn.Started, turn.Ended, turn.Model)) };
+        using var service = new ServiceClient(serviceUrl, key, personKey: person) { TurnLines = sessions => ServiceClient.LinesOf(UsageHistory.TurnLinesOf(homeDirectory, sessions), turn => new ServiceClient.TurnLine(turn.Seq, turn.Started, turn.Ended, turn.Model)) };
         // The service's doors for the one read the client does not carry: the repositories' index sizes.
-        using var doors = new ServiceHttp(service.BaseUrl, key);
+        using var doors = new ServiceHttp(service.BaseUrl, key, personKey: person);
         // After the client and before the chat runner, so it hears the runner's closing moves and lets go before the client does.
         using var sessionLog = log is null ? null : new SessionLog(log, service, loop.Events);
         // The machine's remotes, one per workspace that has one, riding the looks as in the headless host. Absence is silent and local.
-        using var sync = RemoteSyncSet.FromEnvironment(service.BaseUrl, key);
+        using var sync = RemoteSyncSet.FromEnvironment(service.BaseUrl, key, person);
         shared.Sync = sync;
         // Each pass's end, a look's or *Sync now*'s, asks the sync slice to read where each circle stands again.
         sync.Passed += loop.HeardPass;

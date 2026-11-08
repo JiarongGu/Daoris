@@ -125,9 +125,10 @@ public static class PluginPage
         var (plan, refusal) = PluginInstall.PlanUpdate(
             home, entry.Manifest.Id, ProviderRegistry.Built().Names, offers ?? PluginOffers.FolderFor(home, AppContext.BaseDirectory));
         return new(
-            source.Offer is not null ? "offer" : "folder", source.Folder, source.Offer, null,
+            source.Package is not null ? "package" : source.Offer is not null ? "offer" : "folder", source.Folder, source.Offer, null,
             plan is null ? null : plan.Changes.Count > 0 ? "waits" : "current",
             plan?.Changes ?? [],
-            refusal);
+            refusal,
+            source.Package is null ? null : source.Said);
     }
 }

@@ -246,6 +246,7 @@ export const stripOrder = (groups: PluginGroups): PluginShown[] => groups.instal
 const SOURCE_WORD: Record<PluginSourceShown['kind'], string> = {
   offer: 'plugin.from.offer',
   folder: 'plugin.from.folder',
+  package: 'plugin.from.package',
   none: 'plugin.from.none',
   unread: 'plugin.from.unread',
 };

@@ -53,11 +53,11 @@ public sealed record PageRule(string Scope, string Name, string? Pattern);
 public sealed record PageLanding(IReadOnlyList<PageRule> Rules, string? Problem);
 
 /// <summary>
-/// Where it came from: <c>folder</c>, <c>offer</c>, <c>none</c> or <c>unread</c>; whether an update
+/// Where it came from: <c>folder</c>, <c>offer</c>, <c>package</c> (<paramref name="Package"/> says which), <c>none</c> or <c>unread</c>; whether an update
 /// <c>waits</c> or it is <c>current</c> (null where it cannot be told), what would change, and an update's refusal.
 /// </summary>
 public sealed record PageSource(
-    string Kind, string? Folder, string? Offer, string? Problem, string? Update, IReadOnlyList<PluginChange> Changes, string? Refusal);
+    string Kind, string? Folder, string? Offer, string? Problem, string? Update, IReadOnlyList<PluginChange> Changes, string? Refusal, string? Package = null);
 
 /// <summary>What a plugin keeps: its data folder, whether it exists, its files and bytes counted up to a bound, and its newest change.</summary>
 /// <param name="More">Whether the count stopped at its bound: the files and bytes are then at least this many.</param>

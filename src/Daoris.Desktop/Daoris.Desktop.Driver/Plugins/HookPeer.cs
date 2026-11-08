@@ -191,6 +191,9 @@ public sealed class HookPeer(
 
     public IReadOnlyList<string> Capabilities { get; private set; } = [];
 
+    /// <summary>The calls sent and not yet answered.</summary>
+    internal int Waiting => _pending.Count;
+
     public void Listen(Action<JsonElement?>? steps) => _steps = steps;
 
     /// <summary>The awaited set: its answer is waited for, as an observation's is, and never read.</summary>
@@ -285,6 +288,12 @@ public sealed class HookPeer(
         var id = Interlocked.Increment(ref _nextId);
         var waiting = new TaskCompletionSource<JsonElement>(TaskCreationOptions.RunContinuationsAsynchronously);
         _pending[id] = waiting;
+        // The wire's end fails what is pending after it stops being alive, so a call registered across that moment asks again here.
+        if (!_alive)
+        {
+            _pending.TryRemove(id, out _);
+            throw Marked($"plugin `{plugin}` is not running.", PluginEvents.Exited);
+        }
 
         var frame = new JsonObject { ["jsonrpc"] = "2.0", ["id"] = id, ["method"] = method };
         if (parameters is not null) frame["params"] = JsonSerializer.SerializeToNode(parameters);
@@ -300,6 +309,11 @@ public sealed class HookPeer(
         {
             _pending.TryRemove(id, out _);
             throw Marked($"plugin `{plugin}` did not answer `{method}` within {waits.TotalSeconds:0}s.", PluginEvents.Late);
+        }
+        catch (OperationCanceledException)
+        {
+            _pending.TryRemove(id, out _);
+            throw;
         }
         catch (IOException error)
         {

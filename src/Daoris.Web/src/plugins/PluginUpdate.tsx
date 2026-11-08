@@ -1,11 +1,12 @@
 import { useTranslation } from 'react-i18next';
 import { Button, Inline, PathText } from '../design/ui';
 
-/** Where an installed plugin came from: a folder, the install's offer, no record, or one that does not read. */
+/** Where an installed plugin came from: a folder, the install's offer, a package, no record, or one that does not read. */
 export type PluginSourceShown = {
-  kind: 'folder' | 'offer' | 'none' | 'unread';
+  kind: 'folder' | 'offer' | 'package' | 'none' | 'unread';
   folder?: string | null;
   offer?: string | null;
+  package?: string | null;
   problem?: string | null;
 };
 
@@ -27,7 +28,7 @@ export const updatable = (source?: PluginSourceShown | null): boolean => source?
 
 /**
  * Where an installed plugin came from, under its row: the folder it is added from, the install's
- * offer, or no record — said, never guessed — or the driver's sentence for a record that does not read.
+ * offer, its package, or no record — said, never guessed — or the driver's sentence for a record that does not read.
  */
 export function PluginSourceLine({ source }: { source?: PluginSourceShown | null }) {
   const { t } = useTranslation();
@@ -40,6 +41,8 @@ export function PluginSourceLine({ source }: { source?: PluginSourceShown | null
       );
     case 'offer':
       return <span>{t('plugin.source.offer')}</span>;
+    case 'package':
+      return <span>{t('plugin.source.package')} <Inline text={source.package ?? ''} /></span>;
     case 'unread':
       return <span><Inline text={t('plugin.source.unread', { problem: source.problem ?? '' })} /></span>;
     default:

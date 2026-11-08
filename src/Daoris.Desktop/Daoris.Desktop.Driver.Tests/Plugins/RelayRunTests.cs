@@ -125,6 +125,25 @@ public sealed class RelayRunTests : IDisposable
     }
 
     [Fact]
+    public async Task A_batch_gathered_whole_never_says_a_gap_for_the_read_that_stopping_it_cancels()
+    {
+        for (var round = 0; round < 40; round++)
+        {
+            var relay = Start(World(), since: $"{Run}:4");
+            await using var plugin = await ConnectAsync(First(4));
+            await SendAsync(plugin, Parked(5));
+            await _clock.WaitDueAsync(TimeSpan.FromSeconds(30));
+            _clock.Advance(TimeSpan.FromSeconds(30));
+
+            var ran = await relay;
+
+            Assert.Equal(
+                [$"Daoris: session 4b62a9fe parked, waiting on the person [{Run} #5]", $"Daoris: read up to [{Run} #5]"],
+                ran.Out);
+        }
+    }
+
+    [Fact]
     public async Task No_watermark_says_the_gap_at_the_first_line_and_another_build_its_update_line()
     {
         var gap = Start(World());

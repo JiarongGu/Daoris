@@ -11,6 +11,6 @@ public static class PluginIds
 {
     private static readonly Regex Shape = new(@"^[a-z0-9][a-z0-9.-]*\z", RegexOptions.CultureInvariant);
 
-    /// <summary>Whether a name has a plugin id's shape: lowercase letters, digits, dots and dashes, never leading with a dot or a dash.</summary>
-    public static bool IsId(string id) => Shape.IsMatch(id);
+    /// <summary>Whether a name has a plugin id's shape and is one the disk keeps as written, since it names the plugin's folder.</summary>
+    public static bool IsId(string id) => Shape.IsMatch(id) && SafeNames.IsFolderId(id);
 }
