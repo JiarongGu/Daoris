@@ -78,6 +78,16 @@ public sealed class RouteModulesTests(LocalHost host) : IClassFixture<LocalHost>
     }
 
     [Fact]
+    public async Task A_json_request_that_sends_no_bytes_binds_as_naming_nothing()
+    {
+        var done = await host.SendAsync("POST", "/api/quests/nosuchquest/done", DaorisHost.Loopback, json: "");
+        Assert.Equal(404, done.Status);
+
+        var missing = await host.SendAsync("POST", "/api/quests/nosuchquest/respond", DaorisHost.Loopback, json: "");
+        Assert.Equal((400, ""), (missing.Status, missing.Body));
+    }
+
+    [Fact]
     public async Task A_body_that_is_not_json_is_415_and_a_door_that_binds_none_never_reads_it()
     {
         var plain = await SendTextAsync("/api/quests/nosuchquest/respond", "action=take");

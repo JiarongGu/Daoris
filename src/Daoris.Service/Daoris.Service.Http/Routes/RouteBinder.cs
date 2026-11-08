@@ -100,7 +100,11 @@ internal static class RouteBinder
         if (!http.Request.HasJsonContentType()) return (null, StatusCodes.Status415UnsupportedMediaType);
         try
         {
-            return await JsonNode.ParseAsync(http.Request.Body, cancellationToken: http.RequestAborted) switch
+            using var bytes = new MemoryStream();
+            await http.Request.Body.CopyToAsync(bytes, http.RequestAborted);
+            if (bytes.Length == 0) return (null, 0);
+            bytes.Position = 0;
+            return await JsonNode.ParseAsync(bytes, cancellationToken: http.RequestAborted) switch
             {
                 null => (null, 0),
                 JsonObject body => (body, 0),

@@ -53,3 +53,31 @@ test('a live run\'s lock is waited on; a stale one is taken; a release leaves a 
   withRunLock(lock, () => writeFileSync(lock, said(8)));
   assert.equal(readFileSync(lock, 'utf8'), said(8), 'a release removed a lock it did not write');
 }));
+
+test('a stale lock is reclaimed by one run at a time: a run waits while another reclaims, and judges again after it', () => scratch((lock) => {
+  const guard = `${lock}.reclaim`;
+  writeFileSync(lock, said(7));
+  writeFileSync(guard, said(8));
+  const lives = { 7: false, 8: true, 9: true };
+  let waits = 0;
+  const pause = () => {
+    waits += 1;
+    if (waits === 1) {
+      writeFileSync(lock, said(9));
+      rmSync(guard);
+    } else {
+      assert.equal(readFileSync(lock, 'utf8'), said(9), 'a live run\'s lock was removed as the dead one\'s');
+      lives[9] = false;
+    }
+  };
+  assert.equal(withRunLock(lock, () => 'mine', { lives: (pid) => lives[pid] ?? pid === process.pid, now: () => NOW, pause }), 'mine');
+  assert.equal(waits, 2);
+  assert.equal(existsSync(guard), false, 'the reclaim was left held');
+}));
+
+test('a reclaim whose run is gone holds nothing', () => scratch((lock) => {
+  writeFileSync(lock, said(7));
+  writeFileSync(`${lock}.reclaim`, said(8));
+  assert.equal(withRunLock(lock, () => 'mine', { lives: (pid) => pid === process.pid, now: () => NOW, pause: () => assert.fail('waited on a dead run') }), 'mine');
+  assert.equal(existsSync(`${lock}.reclaim`), false);
+}));
