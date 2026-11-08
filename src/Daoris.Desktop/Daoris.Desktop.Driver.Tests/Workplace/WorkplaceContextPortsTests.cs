@@ -116,7 +116,7 @@ public sealed class WorkplaceContextPortsTests : IDisposable
     }
 
     [Fact]
-    public void Null_removal_keeps_the_original_file_only_path_without_resetting_an_unsupplied_records_cache()
+    public void Null_removal_deletes_the_file_alone_and_the_next_word_is_numbered_from_the_record_that_is_left()
     {
         var record = Open();
         record.Keep("s1", Word(), null);
@@ -124,7 +124,7 @@ public sealed class WorkplaceContextPortsTests : IDisposable
         var removed = new SessionHomeFiles(_home).Remove(["s1"], null);
         Assert.Contains(SessionHomeFiles.Conversation, removed.Went["s1"]);
         record.Keep("s1", Word(), null);
-        Assert.Equal(3, Assert.Single(record.ReadAll("s1")).Seq);
+        Assert.Equal(1, Assert.Single(record.ReadAll("s1")).Seq);
     }
 
     [Fact]

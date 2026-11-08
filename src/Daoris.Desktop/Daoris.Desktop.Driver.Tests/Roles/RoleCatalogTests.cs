@@ -31,9 +31,9 @@ public sealed class RoleCatalogTests : IDisposable
         ActorChoices.With(StaffedRoles.Config("claude"), actor, choices);
 
     [Fact]
-    public void The_catalogue_s_work_vocabulary_is_the_participant_s_work_codes()
+    public void The_catalogue_s_work_vocabulary_is_the_participant_s_work_codes_but_the_supervisor_s()
     {
-        Assert.Equal(ParticipantWork.Codes, RoleWork.Codes);
+        Assert.Equal(ParticipantWork.Codes.Where(work => work != ParticipantWork.Supervise), RoleWork.Codes);
     }
 
     [Fact]
@@ -47,7 +47,7 @@ public sealed class RoleCatalogTests : IDisposable
         Assert.Equal(ActorChoices.Ids, RoleCatalog.Seed.Where(role => role.Filled == RoleRecord.Always).Select(role => role.Id));
         Assert.Equal(
             [("build", "build"), ("design", "design"), ("chat", "chat"), ("ask-daoris", "ask-daoris"), ("intake", "intake"), ("help", "helper"), ("partner", "partner"), ("review", "opinion"), ("brainstorm", "brainstorm")],
-            ParticipantWork.Codes.Select(work => (work, catalog.RoleFor(work, Machine).Role!.Id)));
+            RoleWork.Codes.Select(work => (work, catalog.RoleFor(work, Machine).Role!.Id)));
         Assert.Equal(["design"], RoleCatalog.Seed.Where(role => role.Takes.Contains(ParticipantWork.Design)).Select(role => role.Id));
     }
 
@@ -97,7 +97,7 @@ public sealed class RoleCatalogTests : IDisposable
 
         foreach (var config in configs)
         {
-            foreach (var work in ParticipantWork.Codes)
+            foreach (var work in RoleWork.Codes)
             {
                 var role = StartPlan.RoleOf(work);
                 Assert.Equal(ActorChoices.Effective(role, config), catalog.Order(work, Machine, config));
@@ -166,7 +166,7 @@ public sealed class RoleCatalogTests : IDisposable
         var inWorkspace = new StoredRole("designer", "set", """{"id":"designer","scope":{"kind":"workspace","id":"w1"}}""", 1);
         var catalog = RoleCatalog.Of([inWorkspace]);
 
-        foreach (var work in ParticipantWork.Codes)
+        foreach (var work in RoleWork.Codes)
         {
             var held = catalog.RoleFor(work, InWorkspace);
             Assert.Null(held.Role);
@@ -176,7 +176,7 @@ public sealed class RoleCatalogTests : IDisposable
         }
 
         var everywhere = RoleCatalog.Of([new("designer", "set", "{", 1)]);
-        Assert.All(ParticipantWork.Codes, work => Assert.NotNull(everywhere.RoleFor(work, Machine).Held));
+        Assert.All(RoleWork.Codes, work => Assert.NotNull(everywhere.RoleFor(work, Machine).Held));
 
         var read = RoleCatalog.Of([Stored(Working("designer", ParticipantWork.Design, new RoleScope(RoleScope.Workspace, "w1")))]);
         Assert.Equal("designer", read.RoleFor(ParticipantWork.Design, InWorkspace).Role!.Id);

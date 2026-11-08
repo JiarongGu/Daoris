@@ -32,7 +32,7 @@ public sealed class RoleCatalogStartTests : IDisposable
 
     private static void SameAsToday(RoleCatalog catalog, RolePlace place, DriverConfig config)
     {
-        foreach (var work in ParticipantWork.Codes)
+        foreach (var work in RoleWork.Codes)
         {
             var plan = Today(work, config);
             var found = catalog.RoleFor(work, place);
@@ -57,7 +57,7 @@ public sealed class RoleCatalogStartTests : IDisposable
         var inside = new RolePlace(Workspace: "w1");
         Assert.Equal("designer", catalog.RoleFor(ParticipantWork.Design, inside).Role!.Id);
         Assert.Equal([new ActorEffective("opus-agent", "opus", "high", "1")], catalog.Order(ParticipantWork.Design, inside, config));
-        Assert.All(ParticipantWork.Codes.Where(work => work != ParticipantWork.Design), work => Assert.Equal(Today(work, config).Order, catalog.Order(work, inside, config)));
+        Assert.All(RoleWork.Codes.Where(work => work != ParticipantWork.Design), work => Assert.Equal(Today(work, config).Order, catalog.Order(work, inside, config)));
         Assert.Equal("design", Today(ParticipantWork.Design, config).Role);
     }
 
