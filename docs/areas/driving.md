@@ -157,7 +157,8 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they start wi
     count is a seeded rule. *Try again* marks where counting restarts. (from D58, D125, D229)
 16. A person's stop holds the quest here until they release it. A pause holds an ask's or quest's work here until
     *Resume*. Another machine may still take an open one. Neither is a strike. (from D126, D132)
-17. A taken quest whose take is not this machine's sits. Nothing carries it on here. (from D80, D178)
+17. A taken quest whose take is not this machine's sits. Nothing carries it on or resumes it here; the ledger refuses the
+    open as `TakenElsewhere`. (from D80, D178)
 18. At each start the plugins are asked first, and a hold names the plugin. A start held at spawn (a dirty root, a
     harness absent or signed out, a tree that would not grow, trust not given) reports its sentence as the quest's
     reason. (from D64, D73)
