@@ -9,6 +9,7 @@
   "settings.git.way.ssh": "SSH key",
   "settings.git.way.https": "HTTPS sign-in",
   "settings.git.sshFact": "SSH {{type}} {{fingerprint}}",
+  "settings.git.sshProgram": "Runs {{path}}",
   "settings.git.httpsFact": "HTTPS · signed in with a token as {{user}}",
   "settings.git.defaultFor": "Default for {{host}}",
   "settings.git.readOnly": "read only",

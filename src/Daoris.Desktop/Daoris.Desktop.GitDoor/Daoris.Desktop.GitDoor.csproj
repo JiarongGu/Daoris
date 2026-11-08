@@ -45,6 +45,7 @@
     <Compile Include="..\Daoris.Desktop.Driver\Workplace\GitIdentityUse.cs" Link="GitIdentityUse.cs" />
     <Compile Include="..\Daoris.Desktop.Driver\Workplace\GitFolders.cs" Link="GitFolders.cs" />
     <Compile Include="..\Daoris.Desktop.Driver\Workplace\GitSshFiles.cs" Link="GitSshFiles.cs" />
+    <Compile Include="..\Daoris.Desktop.Driver\Workplace\GitSshProgram.cs" Link="GitSshProgram.cs" />
     <Compile Include="..\Daoris.Desktop.Driver\Workplace\GitMoved.cs" Link="GitMoved.cs" />
     <!-- An identity's HTTPS act: the credential door's answer and none of the person's other inputs (D241 point 6, §4.3), the identity's
          token read from `profiles/git/tokens/<id>/`, whose folder is made limited to the person's account. -->

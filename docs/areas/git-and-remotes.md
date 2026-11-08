@@ -25,7 +25,7 @@ is under `src/Daoris.Desktop/Daoris.Desktop.Modules/`.
 | The doors | `GitDoors.cs`, `GitCredentialDoor.cs`, `src/Daoris.Desktop/Daoris.Desktop.GitDoor/Program.cs` | `daoris-git-ssh.exe`, `git-remote-daoris.exe` and `git-credential-daoris.exe`: class each act by its remote command, judge it, apply the identity; the third answers an identity's token to git for its own host |
 | Which repository, which address | `GitFolders.cs`, `GitRemotes.cs`, `GitRemoteRows.cs` | The repository from the act's folder; the one address reader; Setup's remote rows and what serves each |
 | Identities and pointers | `GitIdentities.cs`, `GitIdentityUse.cs` | `data/git-identities.json`; `gitIdentity`, `workspaceGitIdentity`, `machineGitIdentity` in `driver.json`; resolution with its source |
-| Identity acts | `GitIdentityActs.cs`, `GitIdentityHttps.cs`, `GitIdentityTokens.cs`, `GitSshFiles.cs`, `GitHostKeys.cs` | Generate or import a key, add an HTTPS identity with its token and test it, set or clear an API token, Daoris's `ssh_config` and `known_hosts`, host-key compare |
+| Identity acts | `GitIdentityActs.cs`, `GitIdentityHttps.cs`, `GitIdentityTokens.cs`, `GitSshFiles.cs`, `GitSshProgram.cs`, `GitHostKeys.cs` | Generate or import a key, add an HTTPS identity with its token and test it, set or clear an API token, Daoris's `ssh_config` and `known_hosts`, host-key compare |
 | Secrets at rest | `GitTokens.cs`, `GitPrivateFolder.cs`, `GitKeys` in `GitIdentities.cs` | `profiles/git/tokens/<id>/` (`https`, `api`) beside `profiles/git/keys/<id>/`, each folder made limited to the person's account before a byte is written |
 | Identity verbs | `GitIdentityCommand.cs` | `daoris git identity` and `git use`; a widening pressed through the running window |
 | Author | `GitAuthor.cs` | The `commitsAs` of origin's identity on a session's or Daoris's commit |
@@ -71,7 +71,10 @@ is under `src/Daoris.Desktop/Daoris.Desktop.Modules/`.
 4. A host key is trusted only at the person's press, after a compare with the host's published keys. Host keys live in
    `profiles/git/known_hosts`. (from D198, D73)
 5. The person's `~/.ssh`, ssh agent and ssh configuration are never read or written. The ssh door gives its ssh
-   `-F profiles/git/ssh_config`. The one read of the person's own is a key file the person names to import. (from D198)
+   `-F profiles/git/ssh_config`. The one read of the person's own is a key file the person names to import.
+   An identity's act, its key generation and its test run one ssh program by its full path (`GitSshProgram`): the OpenSSH the
+   person chose in `tools.json`, else the `usr/bin/ssh` of the Git for Windows the act's git belongs to (so its key formats and
+   `known_hosts` agree with that git's), else the first `ssh` on `PATH`; Settings → Git shows it on each SSH identity. (from D198)
 6. A commit Daoris or a session makes carries origin's identity's `commitsAs` only where the repository names no author.
    Authorship is apart from authentication. (from D198)
 
