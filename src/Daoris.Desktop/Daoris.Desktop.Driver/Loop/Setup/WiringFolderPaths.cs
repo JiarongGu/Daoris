@@ -1,7 +1,7 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// What *Open* in Settings → This Daoris opens: the folder a folder row or a file row's id names, as
+/// What *Open* in Settings → Disk space and Settings → This Daoris opens: the folder a folder row or a file row's id names, as
 /// this Daoris runs. The page sends the id the read gave it and never a path, so a page, or anything speaking as one, cannot have the
 /// file manager opened on a place Daoris does not keep.
 /// </summary>

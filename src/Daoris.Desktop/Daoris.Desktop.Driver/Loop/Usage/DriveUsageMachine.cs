@@ -6,7 +6,7 @@ internal static class DriveUsageMachine
     public const string Text =
         """
           space [--json] [--measure]
-              the free space and each kind Daoris keeps, This Daoris's Disk space twin: its size and when it was
+              the free space and each kind Daoris keeps, Settings → Disk space's twin: its size and when it was
               counted, its rule, when it next goes and when it was last cleaned. --measure counts each kind first,
               each within its own bound. Reads only; removes nothing.
           space free [--kind <id>]... [--early <group>]... [--yes]

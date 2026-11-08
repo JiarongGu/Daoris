@@ -375,8 +375,8 @@ public static class HelpPlaces
 
     /// <summary>
     /// The retired places a go may still name, each with the place it is now: Search and Convergence
-    /// are Knowledge's modes, and Settings → Plugins is the Plugins place. Settings → Workspace
-    /// and Permissions are in a workspace's page, each retired spelling with its part a row of its
+    /// are Knowledge's modes, and the Plugins domain is the Plugins place. The Workspace
+    /// and Permissions domains are in a workspace's page, each retired spelling with its part a row of its
     /// own, and Permissions alone what agents may do; a part no row names is refused. The room lists none of them, and a go
     /// still spelled so, kept in an earlier conversation or sent by a service that lists it, lands where it went.
     /// </summary>

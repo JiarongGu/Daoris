@@ -29,7 +29,7 @@ public sealed class TreePool(
     /// <summary>The store's step that made the tables: a store before it holds none.</summary>
     public const int Since = 23;
 
-    public const int ExpectSince = 24;
+    public const int ExpectSince = DesktopStore.GenerationVersion + 1;
 
     private readonly Func<StoreSettled> _settled = settled ?? StartConfirmation.Read;
 

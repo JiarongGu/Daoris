@@ -51,7 +51,7 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
 | Branch naming and notes | `Workplace/BranchPatterns.cs`, `Workplace/LandingNotes.cs`, `Plugins/LandingPlugins.cs` | A `land`'s pattern, ticket key, slug and chain subject; the conversation's notes of a press and a part left out; whether a named plugin performs pull-request steps (`LandingPlugins.ProblemOf`) |
 | Line policy | `Settings/LinePolicyKey.cs` | `linePolicies` and `workspaceLinePolicies` read, written and judged |
 | Tree landing | `Workplace/SessionTrees.cs`, `Workplace/TreeLands.cs` | The merge, the branch and the squash; the plan and its refusals, each read from the run's bound `land`. `TreeLands` is the front: `TreeLandPlans` says the plan before the press, `TreeMerges` is the merge form, `TreeBranches` the branch form and a chain's advance, `LandingPress` the landing itself, `LandingSayings` the words; a landing's records (`LandingSubject`, `LandingPlan`, `TreeLanding`, `SweepItem` and the rest) each sit in a file of their own beside them. `SessionTrees` keeps one-line doors; opening a tree is `TreeOpening`, reading where the trees stand `TreeListings` |
-| Delivery record | `Workplace/DeliveryStore.cs`, `DeliveryReconciler.cs`, `CurrentDeliveries.cs` | Each landing's phases written ahead, settled after a restart |
+| Delivery record | `Workplace/DeliveryStore.cs`, `DeliveryReconciler.cs`, `CurrentDeliveries.cs` | Each landing's phases written ahead, settled after a restart; a delivery is keyed by its unit, tip, method, target and generation (`DeliveryStore.KeyOf`, `Latest`) |
 | Landed branches, pull requests | `Workplace/LandedBranches.cs`, `PullRequestAsks.cs`, `PullRequestStates.cs`, `PullRequestBounds.cs`, `BranchTidying.cs` | `landings.json` (`LandedBranchJson` writes and reads it by hand), a pull request's state from its plugin, the look's tidy (`TidyHolders` the trees sessions hold, `TidyKeeping` what the look keeps beside the branches; `BranchTidying` keeps their doors and the saying) |
 | Integration | `Workflows/Kinds/Integrate/IntegrateStart.cs`, `Workflows/IntegrationTransport.cs`, `Workflows/PlaceIntegrates.cs`, `Workplace/PlaceIntegrate.cs`, `Workplace/IntegrationRequests.cs`, `IntegrationStore.cs`, `IntegrationLines.cs`, `Review/Integration/` | One request door, one run per line, its gates and judgement; `PlaceIntegrate` (read from the saved workflows by `PlaceIntegrates`) the place's requester outside a run; the store's step keeping is `IntegrationStepKeeping` and its row reading `IntegrationRows` |
 | Landing gate | `Review/SessionTreeGates.cs`, `Workflows/Domain/GraphGate.cs`, `GraphGates.cs`, `WorkflowGate.cs` | Whether work may land now, read once per decision and handed to every door |
@@ -146,7 +146,9 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
 25. The look is the person's verdict in a review environment; no agent or card gives it. Under a saved graph the `look` node says
     whether one is needed; the environment is still the `reviews` rule's. `SET_REVIEW required` there is refused. (from D154, D227)
 26. A second opinion is another maker's read-only reading before the landing. Its findings reach the working session once. What
-    it disputes is answered by the person's *Reviewed* or *Accept…*. A person's word at it (*Go on anyway…* and the others `OpinionPersonSaid` names) is
+    it disputes is answered by the person's *Reviewed* or *Accept…*, given after the answers or the findings went to the person and after a recheck's findings reached them: that
+    time is kept beside the recheck as the first pass's is (`OpinionDeliveries.ToPerson`, `OpinionGateState.RecheckToPersonAt`), and a *Reviewed*
+    given before it, or while none is kept, answers nothing. A person's word at it (*Go on anyway…* and the others `OpinionPersonSaid` names) is
     bound to the tip it covers and stands for any later ask at that tip; only a newer commit asks again. Under a saved graph the `opinion` node says whether one is
     asked, and chooses among the reviewers the place declares; with none declared it cannot start, said on its node. `SET_OPINION none` on a saved-graph place is refused.
     (from D155, D190, D227)
@@ -221,7 +223,10 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
 33. Each delivery's phases are written ahead of their effects: prepared, ref written, recorded, plugin dispatched, plugin answered.
     A restart settles it phase by phase. A preparation cut by a stop is read withdrawn, no checkout needed, and its unit's next landing
     goes on from it; a delivery whose every entry is a preparation its landing withdrew (a refusal made nothing) is settled withdrawn at
-    the driver's look (`WithdrawnPreparations`), so it never holds an update back. (from D215, D227)
+    the driver's look (`WithdrawnPreparations`), so it never holds an update back. A delivery is keyed by its unit, tip, method, target and
+    generation, the first generation's key being the four alone: a settled row keeps its meaning for every reader, and a retry of a landing
+    whose delivery was settled withdrawn starts the next generation, with its own phases written ahead, while a delivered or stopped one is
+    still the answer its key gives. The current reader of a unit's delivery reads its newest generation (`DeliveryStore.Latest`, `OfUnit`). (from D215, D227)
 34. A landing refused for work the session can clear carries the session on and keeps the Accept. A refusal nothing changed is not
     tried again until the tip moves or the person presses; a try that closed at one tip says nothing of the next. A refusal for the
     repository's own checkout's uncommitted work has a code of its own (`root-dirty`) and waits on that checkout, not the session's tree

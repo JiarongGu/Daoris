@@ -37,7 +37,7 @@ public sealed record HomeEstablished(
 
 /// <summary>
 /// How the home this process runs on stands to the account's <c>DAORIS_HOME</c>, which is the folder a terminal's
-/// <c>daoris</c> reads — what Settings → Driver's home hint says of a terminal, from a field rather than
+/// <c>daoris</c> reads — what Settings → This Daoris's terminal row says of a terminal, from a field rather than
 /// from the notice's English.
 /// </summary>
 /// <remarks>

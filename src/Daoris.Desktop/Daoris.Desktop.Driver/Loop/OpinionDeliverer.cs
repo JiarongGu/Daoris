@@ -68,6 +68,7 @@ internal sealed class OpinionDeliverer(LoopContext context, DriverOpinions opini
         // A recheck's findings go to the person, never back to the working session by themselves.
         if (!view.First)
         {
+            Deliveries.ToPerson(view.Id, OpinionToPerson.Recheck, DateTimeOffset.UtcNow);
             return new OpinionDelivery(
                 view.Id, OpinionDeliveryStates.ToPerson,
                 $"to-person  {named}, the recheck: {Plural(view.Findings!.Count, "finding")} of its own, and "

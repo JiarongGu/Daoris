@@ -5,9 +5,26 @@ the per-task record. Entries preserve their original wording so the archive stay
 
 ---
 
+## FABRIC-SQUASHCHAIN1 and NODEKIT1 — built parts (2026-11-09)
+
+> **FABRIC-SQUASHCHAIN1** (driver, web; D245): Outcome: a chain's completion past its pull request is fabric steps: `monitor`, `tidy`, the keeper's proof over git, a run's passes reaching both end to end and the web's pull-request readers (BL77, `f479ed63c`; the workflows area).
+>
+> **NODEKIT1** (driver, modules, web; D247): Outcome: every node kind is one folder under `Workflows/Kinds/<Kind>/` registered with `[NodeKind]`, the shared tables gone; the kit, the person's task and approval, the page's kinds generated from the kit and the run view are built (`docs/areas/workflows-review-landing.md`).
+
+## WFREVIEW1 — the code review of the workflows, review and landing area (2026-11-09)
+
+> **WFREVIEW1** (driver): Outcome: a *Reviewed* given before a recheck's findings reached the person answers nothing (the recheck's delivery time is kept beside it, `OpinionGateState.RecheckToPersonAt`), and a delivery is keyed by a generation as well, so a landing retried after its delivery settled withdrawn starts the next generation with its own phases written ahead (store step 24).
+
 ## SETTINGSUX1 and UIFIND1 — Settings grouped by what a person comes to set, its folders one list (2026-11-09)
 
 > **SETTINGSUX1 / UIFIND1** (web): Outcome: Settings has eleven domains in the order a person comes to them (Get started, Appearance, Driver, AI features, Git, Tools, Browser, Disk space, Updates, This Daoris, Machine log). Disk space holds the folders as one list (the name, the path on one line cut in the middle by `MiddlePath`, the size, one *Open folder*) and the keep rules; Updates the install's update over its versions; Driver repeats neither the home nor the update; This Daoris leads with the terminal and the service. A row's terminal twin or variable name sits in its ⓘ help (`SettingRow`'s `twin`), and the palette finds each domain by its rows' words in the reader's language (`domainSearch.test.ts`). The doors that opened the space card and the update open Disk space and Updates.
+
+## DESKTOPREV1 — the desktop-app code review's last three defects (2026-11-09)
+
+> **DESKTOPREV1** (modules, driver): Outcome: (6) a `HOLD` card waiting at close was in no `WaitingFor` entry, so the close skipped it, its line stayed unanswered and `Drain` sat out its whole bound; `PipeHolding.CloseAsks` now ends it lost on the stop's own step. (7) `JsonElement.GetString()` throws on a lone surrogate escape on .NET 10 (the claim that it answers U+FFFD was wrong): a payload string made `Accept` throw out of `RunAsync` and a report's text made `LogModule.Take` answer `UNKNOWN_ERROR`, so the pipe now refuses such a payload `shape` under its id (an id or key holding one still closes as no request), the log report drops that value, and `Utf8JsonWriter` writing a lone surrogate as U+FFFD is pinned. (9) the queue owns the held file: `HeldWordsFile.Forget` asks the queue (`IHeldWordsHolder`) to drop a deleted session's words from memory and file together, and edits the file in place only where the process has no queue.
+
+---
+
 ## DOCTRINECLI1 — the doctrine console's Ctrl+C hold and the CLI's Node floor (2026-11-09)
 
 > **DOCTRINECLI1** (driver): Outcome: `DoctrineConsole` holds Ctrl+C through `InterruptHold`, taken before the child starts and removed when it ends, and the CLI's entry refuses a Node below 22 with exit 2 (`bin/node-floor.mjs`), the floor checked once inside the CLI, never by a second process start.
