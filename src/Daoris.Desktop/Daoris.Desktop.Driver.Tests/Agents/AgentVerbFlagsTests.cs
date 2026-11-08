@@ -3,8 +3,8 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// AGENTREV1: <c>login</c>, <c>trust</c>, <c>key</c> and <c>settings</c> refuse a flag they do not take, as <c>account use</c> does,
-/// where they once dropped it: <c>--profile work</c> signed the order's first account in, and trusted a folder for every account.
+/// <c>login</c>, <c>trust</c>, <c>key</c> and <c>settings</c> refuse a flag they do not take, as <c>account use</c> does: a dropped
+/// <c>--profile work</c> would sign the order's first account in, or trust a folder for every account.
 /// </summary>
 public sealed class AgentVerbFlagsTests : IDisposable
 {

@@ -3,7 +3,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// AGENTREV2: an account a pick or a hand-over names whose folder is gone is not run on: a start spawned against a configuration home
+/// An account a pick or a hand-over names whose folder is gone is not run on: a start would spawn against a configuration home
 /// that does not exist. The person's pick is refused, never moved to another account; a handed quest's account walks on within the
 /// agent's accounts, as it does where the account is cooling or signed out.
 /// </summary>

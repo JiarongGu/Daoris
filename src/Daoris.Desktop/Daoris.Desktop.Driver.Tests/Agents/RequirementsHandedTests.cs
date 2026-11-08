@@ -116,10 +116,6 @@ public sealed class RequirementsHandedTests
         Assert.Equal(heavy.Length, TargetPrompt.RequirementsShown([.. heavy.Select(each => each with { Evidence = [] })]));
     }
 
-    /// <summary>
-    /// AGENTREV5: the bound counts a quote and a check as they render, each line behind its indent, so a quote of many short lines
-    /// does not pass it several times over.
-    /// </summary>
     [Fact]
     public void The_bound_counts_the_quote_and_check_as_they_render_line_by_line()
     {

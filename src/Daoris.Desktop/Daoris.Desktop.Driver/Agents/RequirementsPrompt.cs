@@ -77,10 +77,8 @@ internal static class RequirementsPrompt
         return $"\n  Evidence: {string.Join(" ", said)}\n";
     }
 
-    /// <summary>The person's words as the instruction quotes them: each line behind its indent and marker.</summary>
     private static string QuoteOf(QuestRequirementView requirement) => TextBounds.Quote(requirement.Quote, indent: "  ");
 
-    /// <summary>The check as the instruction says it: each line after the first indented under its label.</summary>
     private static string CheckOf(QuestRequirementView requirement) =>
         requirement.Check.ReplaceLineEndings("\n").Replace("\n", "\n  ", StringComparison.Ordinal);
 
