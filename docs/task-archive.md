@@ -34,6 +34,8 @@ the per-task record. Entries preserve their original wording so the archive stay
 > **PLUGREV2e** (driver, plugins): Outcome: `WorkEventTeller` tells rows alone and keeps its cursor in memory (no clock, no gap), and `LoopRun` and `DriveConsole` wrap it in `WorkEventNews.Gapped`, the one place that says the first-place and incomplete-batch `events.missed`; proved by `WorkEventTellerTests` (the bare teller and the wrapped one).
 >
 > **PLUGREV2f** (driver, plugins): Outcome: `RelayCopy` removes a build only after its `in-use` file opens alone a second time in the renamed folder (`Unheld`, also the check before a leftover `.removing-*` is deleted); a build a relay opened in the gap goes back to its name, or where a rename cannot (Windows over an open file) stays under its removal name whole; proved by `RelayCopyTests`.
+>
+> **PLUGREV2g** (driver, plugins): Outcome: the relay's stdout bound is said as 54 lines, the gap, 50 events, their count, an ending's own line and the watermark (said, not folded into the count line, which would have changed what a relay prints); `RelayBatchTests` holds the case that ends through a second client and through the pipe.
 
 ## TREEPOOL1ac — shared paths (2026-11-09)
 
