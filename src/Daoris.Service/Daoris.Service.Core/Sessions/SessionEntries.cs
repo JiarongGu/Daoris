@@ -96,7 +96,6 @@ public static class SessionEntries
         var itself = $"quest:{quest.Id}";
         if (!seen.Add($"q:{quest.Id}")) return itself;
 
-        // Rule 2: a quest a conversation took joins that conversation's line, so its later parts stay in it.
         if (await facts.ChatTookAsync(quest.Id, ct).ConfigureAwait(false) is { } chat && !seen.Contains($"s:{chat.Id}"))
         {
             return await OriginAsync(chat, facts, seen, ct).ConfigureAwait(false);

@@ -48,11 +48,15 @@ public static class TextBounds
         text.Length <= limit ? text : Ellipsis + text[^limit..].TrimStart();
 
     /// <summary>
-    /// A field cut to a limit, saying its full length, never silently shortened; null stays null.
+    /// A field cut to a limit, saying its full length, never silently shortened and never through a surrogate pair; null stays null.
     /// </summary>
     [return: NotNullIfNotNull(nameof(text))]
-    public static string? ClipCounted(string? text, int limit) =>
-        text is null || text.Length <= limit ? text : $"{text[..limit]}{Ellipsis} ({text.Length} chars)";
+    public static string? ClipCounted(string? text, int limit)
+    {
+        if (text is null || text.Length <= limit) return text;
+        var end = limit > 0 && char.IsHighSurrogate(text[limit - 1]) ? limit - 1 : limit;
+        return $"{text[..end]}{Ellipsis} ({text.Length} chars)";
+    }
 
     /// <summary>
     /// Line breaks of every kind as one space each, and (unless <paramref name="trim"/> is false) none at either end.
