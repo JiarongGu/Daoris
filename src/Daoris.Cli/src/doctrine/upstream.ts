@@ -201,11 +201,13 @@ function promotionsAll(
 
 /**
  * Whether this is the canon's own checkout: the canon this tool reads sits inside the repository. Only there does
- * `upstream` write; anywhere else the canon is an installed package's copy, or another repository's checkout.
+ * `upstream` write; anywhere else the canon is an installed package's copy, or another repository's checkout. A package
+ * installed in the repository's own `node_modules` is a copy too, and a write into it would be lost with the next install.
  */
 export function insideCanon(root: string, canonRoot: string): boolean {
   const rel = relative(resolve(root), resolve(canonRoot));
-  return rel !== '' && rel.split(/[\\/]/)[0] !== '..' && !isAbsolute(rel);
+  const parts = rel.split(/[\\/]/);
+  return rel !== '' && parts[0] !== '..' && !isAbsolute(rel) && !parts.includes('node_modules');
 }
 
 /**

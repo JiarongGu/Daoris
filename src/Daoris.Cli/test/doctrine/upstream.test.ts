@@ -96,6 +96,13 @@ test('a canon in a folder whose name begins with two dots is inside the reposito
   assert.equal(insideCanon(root, root), false);
 });
 
+test('a canon an installed package carries inside the repository is not the canon\'s checkout', () => {
+  const root = join(process.cwd(), 'repo');
+  assert.equal(insideCanon(root, join(root, 'node_modules', 'daoris', 'canon')), false);
+  assert.equal(insideCanon(root, join(root, 'tools', 'node_modules', 'daoris', 'canon')), false);
+  assert.equal(insideCanon(root, join(root, 'canon')), true);
+});
+
 test('a local file has nothing to upstream and says so', () => {
   const fx = synced();
   const error = captureError(() => promote(fx, 'rules/house-style.md'));
