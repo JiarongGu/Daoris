@@ -190,7 +190,8 @@ of everything it handed, section by section.
     account's name, or anything from a harness's store. A page a turn opened is named by its address without user, query or
     fragment, a file page relative to the tree. (from D189)
 34. `line_read` pages one part at a time, by part id, under the brief's bound. A working session may call it; a reviewer and a
-    helper may not. It carries no counts. (from D189, D229)
+    helper may not. It carries no counts. A tool's output the driver cut is shown with the length its own mark gives, and no cut
+    on either side splits a surrogate pair. (from D189, D229)
 
 **What a session is told at its start**
 

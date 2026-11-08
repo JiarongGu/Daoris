@@ -133,7 +133,8 @@ The agent's half is the canon skill `canon/packs/co-working/skills/co-working/SK
 18. A claim the person passed on stays the agent's claim. Daoris's words are marked `from: daoris` and the supervisor's as the
     supervisor's; neither is ever the person's. (from D225, D188, D208)
 19. Which ask a line is on is its entry's origin: `ask:<id>`, else the publisher's origin, else `quest:<id>`; a conversation is
-    `session:<id>`. The key is written once at the open and never rewritten. (from D167, D225)
+    `session:<id>`. A quest or publisher no record holds passes to the next rule, the part a session continues among them. The key
+    is written once at the open and never rewritten. (from D167, D225)
 
 **Requests and the exchanges**
 
