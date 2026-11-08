@@ -12,6 +12,7 @@ internal static partial class PoolCensusScan
     internal static IReadOnlyDictionary<string, string> MayBuildSlotFolders { get; } = new Dictionary<string, string>
     {
         ["Daoris.Desktop.Driver/Workplace/Pool/KeptTree.cs"] = "the one place a slot's folder is built from its number",
+        ["Daoris.Desktop.Driver/Workplace/Pool/PoolSite.cs"] = "the pool's act names a repository's slot folder through its site",
         ["Daoris.Desktop.Driver/Workplace/TreeStrays.cs"] = "the strays pass a slot's folder over by its prefix",
     };
 

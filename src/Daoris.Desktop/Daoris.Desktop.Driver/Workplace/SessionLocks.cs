@@ -119,7 +119,7 @@ internal static class SessionLocks
             let.Add(entry.Path);
 
             // A kept slot goes back to the pool's free reason rather than to no lock at all.
-            if (Path.GetFileName(entry.Path).StartsWith(KeptTree.Prefix, StringComparison.Ordinal))
+            if (KeptTree.IsSlotFolder(entry.Path))
             {
                 await WorkingTree.GitAsync(root, ["worktree", "lock", "--reason", PoolLocks.Free, entry.Path], CancellationToken.None).ConfigureAwait(false);
             }

@@ -38,11 +38,11 @@ internal static class PoolLocks
         {
             if (entry.LockReason == reason) return null;
             if (Read(entry) == SlotLocks.Other) return $"the slot is locked for another reason ({entry.LockReason})";
-            var (unlocked, _, unlockErr) = await git.RunAsync(slot, ["worktree", "unlock", entry.Path], ct).ConfigureAwait(false);
+            var (unlocked, _, unlockErr) = await git.GitAsync(slot, ["worktree", "unlock", entry.Path], ct).ConfigureAwait(false);
             if (unlocked != 0) return TreeGit.FirstLine(unlockErr);
         }
 
-        var (code, _, err) = await git.RunAsync(slot, ["worktree", "lock", "--reason", reason, entry.Path], ct).ConfigureAwait(false);
+        var (code, _, err) = await git.GitAsync(slot, ["worktree", "lock", "--reason", reason, entry.Path], ct).ConfigureAwait(false);
         return code == 0 ? null : TreeGit.FirstLine(err);
     }
 }

@@ -8,6 +8,7 @@ namespace Daoris.Desktop.Driver.Tests;
 /// lock read by the pool's own rules, the switch made with hooks held and the repository's own hook owed to the files stage, and a line
 /// found in the slot it let go. Each case has a scratch home and repository of its own.
 /// </summary>
+[Trait(Category.Name, Category.Process)]
 [Trait(Category.Parallel, Category.Git)]
 public sealed class TreePoolGitTests : IDisposable
 {

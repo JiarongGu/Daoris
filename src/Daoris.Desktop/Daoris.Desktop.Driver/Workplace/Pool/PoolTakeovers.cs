@@ -113,7 +113,7 @@ internal sealed class PoolTakeovers(TreePool pool, PoolSeams seams)
         var home = site.Home;
         var hooks = TreeOpenings.HooksHeld(home);
         var start = await FileGit.CommitAsync(slot.Path, claim.Start, ct).ConfigureAwait(false);
-        var (code, _, err) = await git.RunAsync(slot.Path, [.. hooks, "switch", "--detach", start], ct).ConfigureAwait(false);
+        var (code, _, err) = await git.GitAsync(slot.Path, [.. hooks, "switch", "--detach", start], ct).ConfigureAwait(false);
         if (code != 0) return $"git would not detach the slot: {TreeGit.FirstLine(err)}";
 
         var (stands, tip, _) = await WorkingTree.GitAsync(slot.Path, ["rev-parse", "--verify", "--quiet", $"refs/heads/{claim.Branch}"], ct).ConfigureAwait(false);

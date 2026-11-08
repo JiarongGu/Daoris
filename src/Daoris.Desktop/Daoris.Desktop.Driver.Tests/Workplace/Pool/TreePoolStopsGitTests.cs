@@ -8,6 +8,7 @@ namespace Daoris.Desktop.Driver.Tests;
 /// The pool's acts stopped at each boundary, as a killed process leaves them: a second pool under a run of its own, the first dead, takes
 /// the claim over and reads the disk, never the phase alone. Each case ends in a state the next look reads right, and no record names a slot.
 /// </summary>
+[Trait(Category.Name, Category.Process)]
 [Trait(Category.Parallel, Category.Git)]
 public sealed class TreePoolStopsGitTests : IDisposable
 {

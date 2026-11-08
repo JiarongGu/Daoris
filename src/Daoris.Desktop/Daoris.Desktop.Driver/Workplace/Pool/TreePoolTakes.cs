@@ -53,7 +53,7 @@ internal sealed class TreePoolTakes(TreePool pool, PoolSeams seams)
             PoolClearing.DeleteCopies(slot.Path, judged.Ignored.Copies);
 
             var hooks = TreeOpenings.HooksHeld(site.Home);
-            var (switched, _, said) = await git.RunAsync(
+            var (switched, _, said) = await git.GitAsync(
                 slot.Path, take.Returns ? [.. hooks, "switch", "--no-overwrite-ignore", take.Branch] : [.. hooks, "switch", "--no-overwrite-ignore", "-c", take.Branch, take.Start], ct)
                 .ConfigureAwait(false);
             if (switched != 0) return await StuckAsync(git, fence, slot, TreeGit.FirstLine(said), ct).ConfigureAwait(false);
@@ -63,7 +63,7 @@ internal sealed class TreePoolTakes(TreePool pool, PoolSeams seams)
             await seams.ReachedAsync(TreeClaimPhases.Switched, slot.Path).ConfigureAwait(false);
 
             toolchain = seams.Toolchain is { } read ? await read(slot.Path, ct).ConfigureAwait(false) : slot.Toolchain;
-            await PoolClearing.ClearAsync(site, slot.Path, previous.Length > 0 ? previous : $"{KeptTree.Prefix}{slot.Number}", slot.Toolchain.Length > 0 && toolchain != slot.Toolchain, ct)
+            await PoolClearing.ClearAsync(site, slot.Path, previous.Length > 0 ? previous : Path.GetFileName(slot.Path), slot.Toolchain.Length > 0 && toolchain != slot.Toolchain, ct)
                 .ConfigureAwait(false);
             pool.Advance(fence, TreeClaimPhases.Cleared);
             await seams.ReachedAsync(TreeClaimPhases.Cleared, slot.Path).ConfigureAwait(false);
