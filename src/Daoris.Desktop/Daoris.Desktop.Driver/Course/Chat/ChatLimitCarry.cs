@@ -176,7 +176,8 @@ internal sealed class ChatLimitCarry(
         return started;
     }
 
-    private void Withdraw()
+    /// <summary>The copy taken out of the new account's home: by the move too, where its start came back before this run was handed anything.</summary>
+    public void Withdraw()
     {
         if (selection.ProfileHome is { Length: > 0 } home && prior.Tree is { Length: > 0 } tree)
         {

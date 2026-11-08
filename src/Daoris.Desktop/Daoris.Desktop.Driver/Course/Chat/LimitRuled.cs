@@ -2,7 +2,7 @@ namespace Daoris.Driver;
 
 /// <summary>
 /// A conversation's limit as its line's rules read it: read by
-/// <see cref="LimitMove"/> before its walk. The limits rule's <c>wait</c> keeps it on its own account until that account is back, where that
+/// <see cref="LimitMove"/> and its ended move before their walks. The limits rule's <c>wait</c> keeps it on its own account until that account is back, where that
 /// is within the rule's <c>upTo</c>; its <c>ask</c>, and the moves rule's bound, keep it there for the person, whose hand-over or next word
 /// goes on. A move to another choice the walk then makes is counted in <c>moves</c>.
 /// </summary>
@@ -11,9 +11,10 @@ internal static class LimitRuled
     /// <summary>
     /// Whether the rules keep <paramref name="sessionId"/> on its own account: waiting there as a picked account's conversation does, the rule's
     /// act said and kept; null where the walk goes on as it always did. Its moves are read under <paramref name="line"/>, its line's key.
+    /// An ended conversation has no <paramref name="chat"/> to wait: the wake's look already holds it.
     /// </summary>
     public static StartedFrom? Holds(
-        ChatContext context, LimitWaits waits, ConversationRules rules, PriorSession prior, string sessionId, string line, ITurnedChat chat, string ranOn)
+        ChatContext context, LimitWaits waits, ConversationRules rules, PriorSession prior, string sessionId, string line, ITurnedChat? chat, string ranOn)
     {
         var until = context.Harnesses.CoolingOf(ranOn, prior.Profile, prior.ModelOn(ranOn))?.Until;
         if (rules.Judge(prior, line, StaffConditions.Limit, until) is not { } ruled) return null;
@@ -36,7 +37,7 @@ internal static class LimitRuled
                 return null;
         }
 
-        if (!chat.Turns.Limited) waits.Wait(sessionId, chat, ranOn, prior.Profile, prior.ModelOn(ranOn));
+        if (chat is { Turns.Limited: false }) waits.Wait(sessionId, chat, ranOn, prior.Profile, prior.ModelOn(ranOn));
         rules.Said(ruled, sessionId, count, does, n, "limit");
         return new StartedFrom(null, false, null, $"`{sessionId}`'s rule on {count} says {does}, so it waits on `{prior.Profile}`.");
     }
