@@ -54,7 +54,6 @@ public sealed class AgentKeyVerbTests : IDisposable
         Assert.Equal(Key, HarnessKeys.Of(Home, "dsh", account));
         Assert.DoesNotContain(Key, _out + _error.ToString());
         Assert.DoesNotContain(Key, File.ReadAllText(DaorisHome.Entry(Home, HomeEntry.Keys)));
-        // The verb that put an account in a list is gone: the account is one of the agent's set already.
         Assert.DoesNotContain("account join", _out.ToString());
     }
 

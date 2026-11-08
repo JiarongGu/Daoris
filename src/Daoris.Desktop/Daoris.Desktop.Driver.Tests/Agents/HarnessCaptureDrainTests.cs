@@ -75,7 +75,6 @@ public sealed class HarnessCaptureDrainTests : IDisposable
         await Assert.ThrowsAsync<IOException>(() => HarnessCapture.PumpAsync(
             stderr, TextWriter.Null, new RefusingLines(), CancellationToken.None, also: told.Add));
 
-        // A pipe nobody reads fills, and its writer blocks on the next line.
         Assert.Null(stderr.ReadLine());
         Assert.Equal(["one", "two", "three"], told);
     }

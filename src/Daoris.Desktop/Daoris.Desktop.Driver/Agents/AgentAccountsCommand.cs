@@ -176,7 +176,7 @@ internal static class AgentAccountsCommand
                 }
                 catch (Exception error) when (error is IOException or UnauthorizedAccessException)
                 {
-                    // Said as the window says a delete it could not finish; the wiring is left as it was.
+                    // The window's outcome for a delete that could not finish; the wiring stays.
                     return Done(failed);
                 }
 

@@ -182,9 +182,7 @@ internal sealed class RosterSelection(HarnessRoster roster)
         if (answer is LineAnswer.Resume)
         {
             // Ready before any probe: asked for by name, as a pick is; a record that began in the tool's own home goes on there, as a
-            // harness keeps a conversation in the home it began in, where every new start takes a Daoris account. The record's model
-            // is the walk's too, so a family's cool-off that is not the line's does not hold it; an account that refuses the model is
-            // the rule's own case above, which the walk's offers must not judge again.
+            // harness keeps a conversation in the home it began in, where every new start takes a Daoris account.
             var asked = await ChooseAsync(adapter, config, workspace, chosen: named, kind, counts: true, ct, own: named is null, model: unoffered ? null : model).ConfigureAwait(false);
             if (asked is not { Allowed: false, NotReady: AccountReadiness.SignedOut }) return new ResumeChoice(asked, NextHold.Ready) { Answer = answer };
 

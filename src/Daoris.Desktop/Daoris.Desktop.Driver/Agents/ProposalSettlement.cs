@@ -77,8 +77,7 @@ public static class ProposalSettlement
         }
         catch (Exception) when (marked)
         {
-            // The save was refused, so nothing was written for the mark to be waiting on: a proposal left settling would be refused a
-            // second answer and returned to the person by the next look as one whose rules no longer say it.
+            // A refused save leaves nothing for a settling mark to wait on.
             RuleProposals.Mark(path, proposal.State, "the driver", "the rules could not be written, so nothing was settled.", at);
             throw;
         }

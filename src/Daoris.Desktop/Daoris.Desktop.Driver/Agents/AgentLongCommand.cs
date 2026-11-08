@@ -157,8 +157,7 @@ internal static class AgentLongCommand
         string key;
         try
         {
-            // To the end of the input: a pipe's end, or the person's end of input at a console. Ctrl+C stops the wait for it: the
-            // console's reader reads synchronously, so it reads on a thread of its own, left to end with the process.
+            // To the end of the input; Ctrl+C stops the wait, and the console's synchronous reader is left to end with the process on its own thread.
             var read = Task.Run(() => world.Instance.In.ReadToEndAsync(ct), CancellationToken.None);
             key = (await read.WaitAsync(ct).ConfigureAwait(false)).Trim();
         }

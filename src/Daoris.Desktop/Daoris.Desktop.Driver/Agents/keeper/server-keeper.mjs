@@ -43,8 +43,6 @@ function start() {
   mine.stdout.setEncoding('utf8');
   mine.stdout.on('data', chunk => fromServer(mine, chunk));
   mine.stdin.on('error', () => {});
-  // A server that ends is the keeper's end, but for the one the keeper itself retired: a replacement that dies while it is being
-  // initialized would otherwise leave the replay's answer, and every call waiting on it, for ever.
   mine.on('exit', code => {
     if (mine === child && !retired.has(mine)) process.exit(code ?? 1);
   });
@@ -80,7 +78,6 @@ function fromClient(line) {
   const message = parse(line);
   if (message?.method === 'initialize') initialize = line;
   else if (message?.method === 'notifications/initialized') initialized = line;
-  // A call the client gave up on may never be answered, and one left in flight would stop every later restart.
   else if (message?.method === 'notifications/cancelled') inflight.delete(message.params?.requestId);
   if (message && message.method !== undefined && message.id !== undefined) inflight.add(message.id);
   if (starting) waiting.push(line);

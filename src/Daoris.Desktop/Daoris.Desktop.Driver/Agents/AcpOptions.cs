@@ -171,7 +171,6 @@ internal sealed class AcpOptions(
                     touched.Add(category);
                     set = true;
                 }
-                // Only the agent's own refusal: a stream that ended with the set pending refused nothing, and ends the open.
                 catch (AcpRefusal refused)
                 {
                     say($"[{category} `{wanted}` was not set: {refused.Message}]");

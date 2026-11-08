@@ -42,7 +42,6 @@ internal sealed class AcpReader(ITurnReadWiring wiring, AcpWire wire)
         }
         finally
         {
-            // What it ran beside itself ends with it, said before the console closes.
             await wiring.EndStreamsAsync().ConfigureAwait(false);
 
             // An agent's last words before its stream ended are the ones a person reads the console for.

@@ -231,7 +231,6 @@ public sealed class ProposalSettlementTests : IDisposable
         Assert.Equal("machine", WideningAllows.PlaceOf(change));
     }
 
-    /// <summary>A yes whose save the rules file refuses saved nothing: the proposal is not left <c>settling</c>, and the person can answer it again.</summary>
     [Fact]
     public void A_yes_whose_save_is_refused_leaves_the_proposal_waiting_not_settling()
     {
