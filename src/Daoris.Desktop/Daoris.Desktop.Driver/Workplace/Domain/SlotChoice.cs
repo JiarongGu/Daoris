@@ -64,7 +64,7 @@ public sealed record SlotCandidate(int Number, string Line)
     /// <summary>Its line has a start due this look or a claim in flight.</summary>
     public bool LineBusy { get; init; }
 
-    /// <summary>The moment its last line's base commit was made, newest first among detached slots.</summary>
+    /// <summary>The moment of its last line's base commit, newest first among detached slots.</summary>
     public DateTimeOffset? BaseAt { get; init; }
 
     /// <summary>The moment its line let it go, longest ago first among slots that may come back.</summary>
