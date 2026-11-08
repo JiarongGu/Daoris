@@ -43,7 +43,7 @@ describe('an allow a supervisor gave', () => {
     await show();
 
     const row = screen.getByRole('listitem', { name: /p0000003/ });
-    expect(within(row).getByText(/由监督者 allow-keeper 允许/)).toBeTruthy();
+    expect(within(row).getByText(/由主管 allow-keeper 允许/)).toBeTruthy();
     expect(within(row).getByRole('button', { name: '收回对 Bash(npm run build:*) 的允许' })).toBeTruthy();
   });
 

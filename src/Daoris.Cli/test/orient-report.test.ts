@@ -502,7 +502,7 @@ test('the record\'s spellings it reads are the driver\'s: the tool event, its fi
   assert.match(events, /public IReadOnlyList<ToolContent>\? Content \{ get; init; \}/);
   assert.match(events, /JsonNamingPolicy\.CamelCase/);
   // The cut's spelling is the one helper's: `TextBounds.ClipCounted`, which both fields' cuts call.
-  assert.match(readFileSync(driverFile('TextBounds.cs'), 'utf8'), /\$"\{text\[\.\.limit\]\}\{Ellipsis\} \(\{text\.Length\} chars\)"/);
+  assert.match(readFileSync(driverFile('TextBounds.cs'), 'utf8'), /\$"\{text\[\.\.end\]\}\{Ellipsis\} \(\{text\.Length\} chars\)"/);
   assert.match(events, /TextBounds\.ClipCounted\(text, limit\)/);
   assert.match(readFileSync(driverFile('AcpRender.cs'), 'utf8'), /TextBounds\.ClipCounted\(raw, 400\)/);
   // Only the Bash family is the native door's `execute`: a PowerShell call is `other`, which is why its command decides.

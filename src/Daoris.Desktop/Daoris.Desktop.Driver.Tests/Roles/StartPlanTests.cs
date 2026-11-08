@@ -103,7 +103,7 @@ public sealed class StartPlanTests : IDisposable
     {
         Assert.Equal(
             [
-                ("build", "build"), ("design", "design"), ("chat", "chat"), ("ask-daoris", "ask-daoris"), ("intake", "intake"), ("help", "helper"),
+                ("build", "build"), ("design", "design"), ("exact", "exact"), ("chat", "chat"), ("ask-daoris", "ask-daoris"), ("intake", "intake"), ("help", "helper"),
                 ("partner", "partner"), ("review", "opinion"), ("brainstorm", "brainstorm"), ("supervise", "supervisor"),
             ],
             ParticipantWork.Codes.Select(work => (work, StartPlan.RoleOf(work))));

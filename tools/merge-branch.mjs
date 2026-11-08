@@ -1249,8 +1249,8 @@ export const REACH = Object.freeze([
   // The call layer's table sits among the service's tests, and the page's read-only copy is held to it cell for cell.
   {
     paths: ['src/Daoris.Service/Daoris.Service.Tests/fixtures/call-table.json'],
-    gates: ['service', 'web-unit'],
-    why: "the service's McpRoleFilterTests and the page's callTable.test.ts read the call layer's table (FOUNDATION1r, COMPANYVIEW1i)",
+    gates: ['service', 'driver', 'web-unit'],
+    why: "McpRoleFilterTests, SuperviseContainmentTests and callTable.test.ts read the call layer's table",
   },
   // The participant's work table sits among the service's tests, and the driver's twin and the page's identity read it too.
   {
