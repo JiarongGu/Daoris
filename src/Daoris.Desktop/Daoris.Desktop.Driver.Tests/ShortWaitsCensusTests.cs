@@ -95,6 +95,8 @@ public sealed class ShortWaitsCensusTests
         ($"{Driver}/Workflows/GraphPressTests.cs: WaitAsync(TimeSpan.FromMinutes(1))", "the product's own timeout argument on its pass asks, not a wait of the test's: its answer is read after the pass is done"),
         ($"{Driver}/Workplace/RefWatchProcessTests.cs: TimeSpan Within", "an elapsed-time bound that states the claim: a judgement begun within a second of git's exit"),
         ($"{Driver}/Workplace/SetAsideSlimTests.cs: TimeSpan Budget", "an input: the budget the keep's set-aside is handed"),
+        ($"{Modules}/Browser/EngineBringUpTests.cs: TimeSpan Going", "an input: how long a browser whose last window closed is waited for, short so that one that will not go runs it out"),
+        ($"{Modules}/Browser/EngineBringUpTests.cs: TimeSpan Limit", "an input: how long a started browser is given to show a window, short so that one that shows none runs it out"),
         ($"{Modules}/Loop/SessionReadsBenchProcessTests.cs: TimeSpan WaitingBudget", "an elapsed-time bound that states the claim: the words waiting on three thousand ended chats read from one parse of the list"),
     ];
 
