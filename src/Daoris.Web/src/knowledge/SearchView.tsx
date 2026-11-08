@@ -4,7 +4,7 @@ import { sentence } from '../locales/format';
 import { EntryMainNotice, EntryPage } from './EntryPage';
 import { HitList, type HitsAnswer } from './HitList';
 import { answeredBy, readingOf, searchFilters } from './records';
-import { useEntry, useSearch } from '../data/queries';
+import { useEntry, useRepositories, useSearch } from '../data/queries';
 import { page } from '../data/results';
 import { type Notify, useErrorNotify } from '../design/ui';
 import { useDebounced } from '../lib/useDebounced';
@@ -60,6 +60,9 @@ export function useSearchView({ active, chosen, onChoose, filters: kept, onFilte
   // The last answer is held while a newer search is on its way, so the list never jumps.
   const hits = useSearch(debounced, localOnly, { enabled: active, holding: true });
   const read = useEntry(chosen, active);
+  // The count the status bar shows, read once more from the same query.
+  const repositories = useRepositories();
+  const indexed = (repositories.data ?? []).reduce((sum, repository) => sum + repository.total, 0);
   useErrorNotify(active ? hits.error ?? read.error : null, notify);
 
   // The service caps; the client asks for one more than it shows, so "there are more" is a fact.
@@ -107,6 +110,7 @@ export function useSearchView({ active, chosen, onChoose, filters: kept, onFilte
           chosen={chosen}
           onChoose={onChoose}
           onConverge={onConverge}
+          indexed={indexed}
         />
       ),
     },

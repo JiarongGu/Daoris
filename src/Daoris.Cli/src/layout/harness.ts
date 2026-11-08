@@ -123,7 +123,7 @@ export const DEFAULT_HARNESS = 'claude-code';
  * failure this whole seam exists to prevent.
  */
 export function resolveHarness(id: string = DEFAULT_HARNESS): Harness {
-  const harness = HARNESSES[id];
+  const harness = Object.hasOwn(HARNESSES, id) ? HARNESSES[id] : undefined;
   if (harness) return harness;
 
   const known = Object.keys(HARNESSES).join(', ');

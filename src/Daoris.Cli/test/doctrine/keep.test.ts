@@ -9,7 +9,7 @@ import { commandStatus } from '../../src/doctrine/commands.ts';
 import { readCanon } from '../../src/doctrine/canon.ts';
 import { commandSync } from '../../src/doctrine/materialize.ts';
 import { commandCheck } from '../../src/doctrine/drift.ts';
-import { canonFileDigest } from '../../src/doctrine/keep.ts';
+import { canonFileDigest, keepStates } from '../../src/doctrine/keep.ts';
 import { DaorisError } from '../../src/platform/errors.ts';
 
 /**
@@ -211,4 +211,17 @@ test('a keep with no reason, or no digest, is refused at the manifest', () => {
   }
 
   fx.done();
+});
+
+test('the keeps are listed in code-unit order, whatever the machine collates by', () => {
+  const canon = makeFixture('keep-order-canon');
+  canon.write('core/knowledge/a.md', doc('a'));
+  canon.write('core/knowledge/B.md', doc('B'));
+  const files = ['a', 'B'].map((name) => ({ pack: 'core', source: `core/knowledge/${name}.md`, target: `knowledge/${name}.md` }));
+  const kept = Object.fromEntries(files.map((file) => [file.target, { reason: 'r', canon: 'f'.repeat(64) }]));
+
+  const read = keepStates({ kept }, { root: canon.root }, files, () => true);
+
+  assert.deepEqual(read.kept.map((keep) => keep.target), ['knowledge/B.md', 'knowledge/a.md']);
+  canon.cleanup();
 });

@@ -111,14 +111,17 @@ export function NameAccount({
           onDone({ name: name.trim() });
         }}
       >
-        {lead !== undefined
-          ? <p className="m-0 text-body text-ink">{lead}</p>
-          : signedIn !== undefined && (
-            <p className="m-0 text-body text-ink">
-              {signedIn ? t('agents.add.signedIn', { account: signedIn }) : t('agents.add.signedInUnnamed')}
-            </p>
+        {/* Who signed in is said once, with the joining, so the account's name is not read twice. */}
+        {lead === undefined && signedIn
+          ? <p className="m-0 text-body text-ink">{t('agents.add.signedInJoined', { account: signedIn })}</p>
+          : (
+            <>
+              {lead !== undefined
+                ? <p className="m-0 text-body text-ink">{lead}</p>
+                : signedIn !== undefined && <p className="m-0 text-body text-ink">{t('agents.add.signedInUnnamed')}</p>}
+              <p className="m-0 text-body text-ink">{t('agents.add.joined', { account: called })}</p>
+            </>
           )}
-        <p className="m-0 text-body text-ink">{t('agents.add.joined', { account: called })}</p>
         <label className="flex flex-wrap items-center gap-x-3 gap-y-1">
           <span className="text-body font-medium text-ink">{t('agents.add.name')}</span>
           <input

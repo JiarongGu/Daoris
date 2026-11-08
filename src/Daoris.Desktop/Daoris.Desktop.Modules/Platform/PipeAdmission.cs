@@ -28,6 +28,7 @@ internal sealed class PipeAdmission(InstancePipe pipe)
         {
             // A hold of a conversation already open waits for the person's Confirm, as a press does.
             if (request.Type == "HOLD") return (null, pipe.Holding.AskAsync(request, connection));
+            if (request.Type == HeavyTerminalRun.Type) return (null, pipe.HeavyRuns.RunAsync(request, connection));
             return (IpcJson.Serialize(request.Type switch
             {
                 "HELLO" => pipe.Hello(request, connection),
@@ -35,6 +36,7 @@ internal sealed class PipeAdmission(InstancePipe pipe)
                 "RESULT" => pipe.TakeBacks.Result(request),
                 "WITHDRAW" => pipe.TakeBacks.Withdraw(request),
                 "LET_GO" => pipe.Holding.LetGoOf(request, connection),
+                HeavyTerminalRun.StopType => pipe.HeavyRuns.Stop(request, connection),
                 _ => IpcResponse.CreateError(request.Id, IpcErrorCodes.NoRoute, null, $"the pipe has no route {request.Type}."),
             }), null);
         }

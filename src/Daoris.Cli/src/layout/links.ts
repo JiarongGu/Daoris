@@ -12,6 +12,7 @@
 import type { LinkProblem } from '../doctrine/records.ts';
 import { existsSync, lstatSync, readFileSync } from 'node:fs';
 import { join, posix } from 'node:path';
+import { compareOrdinal } from '../platform/fsx.ts';
 
 /** What a path is on disk, without following it. */
 type Kind = 'link' | 'folder' | 'file' | 'none';
@@ -95,7 +96,7 @@ export function linkProblems(
   for (const rel of [...files, ...pairs]) if (look(rel) === 'link') flag(rel, 'link');
   for (const rel of pairs) if (look(rel) === 'file' && heldAsText(root, rel)) flag(rel, 'text');
 
-  return [...found.values()].sort((a, b) => a.path.localeCompare(b.path));
+  return [...found.values()].sort((a, b) => compareOrdinal(a.path, b.path));
 }
 
 /** What a person is told about one. */

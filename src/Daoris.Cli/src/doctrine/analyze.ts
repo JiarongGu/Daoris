@@ -8,7 +8,7 @@ import { parseFrontmatter, renderCanonFile } from './document.ts';
 import { findRegion } from './region.ts';
 import { tierRuleBody } from './tierrender.ts';
 import { readCanon, resolveCanonRoot, resolveSelection } from './canon.ts';
-import { DEFAULT_CORE_BUDGET_BYTES, lockIndex, readLock, readManifest } from './config.ts';
+import { DEFAULT_CORE_BUDGET_BYTES, MANIFEST_FILE, lockIndex, readLock, readManifest } from './config.ts';
 import { isEntry, significantTokens, containment } from './twins.ts';
 import { candidateDocuments, sayCandidates } from '../layout/documents.ts';
 import {
@@ -267,21 +267,15 @@ export function analyze(
 export function commandAnalyze({ root, argv, write, packageRoot }: CommandArgs): ExitCode {
   const canon = readCanon(resolveCanonRoot(packageRoot));
 
-  // Works with or without a manifest: before adoption there is none, which is the point.
-  let manifest = null;
-  try {
-    manifest = readManifest(root);
-  } catch {
-    manifest = null;
-  }
+  // None before adoption, which is the point; one that is there and unreadable is `readManifest`'s refusal.
+  const manifest = existsSync(join(root, MANIFEST_FILE)) ? readManifest(root) : null;
 
   const target = manifest?.target ?? DEFAULT_TARGET;
   const budgetLimit = manifest?.coreBudgetBytes ?? DEFAULT_CORE_BUDGET_BYTES;
   const requested = argv.filter((arg) => !arg.startsWith('--'));
   const packs = requested.length ? requested : (manifest?.packs ?? []);
-  // Confirmations belong to the manifest's own pack list: packs named on the command line are a
-  // "what if", and a confirmation naming a pack the what-if leaves out would refuse a question it
-  // is no part of.
+  // Confirmations belong to the manifest's own pack list: packs named on the command line are a "what if", which a
+  // confirmation naming a pack it leaves out would refuse.
   const switchedOff = requested.length ? {} : (manifest?.switchedOff ?? {});
 
   const report = analyze({
@@ -313,10 +307,9 @@ export function commandAnalyze({ root, argv, write, packageRoot }: CommandArgs):
   }
   if (others.length) {
     write(`  ALSO SEEN       ${others.map((h) => `${h.name} (${h.evidence.join(', ')})`).join('; ')}`);
-    // 🔴 The always-loaded tier is a region in `AGENTS.md`, so a
-    // repository already on that convention is not blind to what daoris writes — that file is
-    // exactly where the largest tier lands. Only the on-demand tiers stay out of its reach, and
-    // saying so is the difference between a warning and a wrong one.
+    // 🔴 The always-loaded tier is a region in `AGENTS.md`, so a repository already on that convention is not blind to
+    // what daoris writes there. Only the on-demand tiers stay out of its reach, and saying so is the difference between a
+    // warning and a wrong one.
     const region = CLAUDE.tiers.rules?.region?.file;
     if (region && others.some((h) => h.evidence.includes(region))) {
       write('                  daoris does not generate those layouts — but the always-loaded');

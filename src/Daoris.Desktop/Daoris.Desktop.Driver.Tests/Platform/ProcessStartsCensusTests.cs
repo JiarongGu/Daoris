@@ -39,8 +39,8 @@ public sealed class ProcessStartsCensusTests
         ["Daoris.Desktop.Launcher/Program.cs"] = "the launcher is a program of its own, with no window and no bridge: it starts the application once and exits",
         ["Daoris.Desktop.Driver/Platform/PseudoConsole.cs"] = "a terminal's shell under a pseudo-console, which .NET cannot start: "
             + "CreateProcessW, declared and called once; the terminal module runs that start through the gate's RunAsync",
-        ["Daoris.Desktop.Driver/Review/Heavy/HeavyStep.cs"] = "a heavy run's gate (HEAVYRUN1a), in the verb's own process, "
-            + "not the desktop's: CreateProcessW, declared and called once, so the gate starts suspended and joins the run's "
+        ["Daoris.Desktop.Driver/Review/Heavy/HeavyStep.cs"] = "a heavy run's gate (HEAVYRUN1a), in the running application for the terminal "
+            + "that asked it, else in the verb's own process: CreateProcessW, declared and called once, so the gate starts suspended and joins the run's "
             + "kill-on-close job before it can start a child of its own; and /bin/sh off Windows, where no job holds it",
         ["Daoris.Desktop.Driver/Platform/HeldChild.cs"] = "a git act's effect step (GITAPP2a): CreateProcessW, declared and called once, so its git starts "
             + "suspended, joins the act's named kill-on-close job, and runs only once its id is journaled; none off Windows",

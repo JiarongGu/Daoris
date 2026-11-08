@@ -61,7 +61,7 @@ export const INDEX = 'docs/index';
 /** The project built, the assembly it makes, and the projects its build reads from. */
 export const PROJECT = 'src/Daoris.Service/Daoris.Service.Mcp';
 export const ENTRY = 'daoris-knowledge.dll';
-const SOURCES = ['Daoris.Service.Core', 'Daoris.Service.Shared', 'Daoris.Service.Mcp'];
+const SOURCES = ['Daoris.Service.Core', 'Daoris.Service.Shared', 'Daoris.Service.Mcp', '../Daoris.Contracts'];
 const SOURCE_FILES = /\.(cs|csproj|props|targets)$/;
 /** How many builds stay: a running session may still load from one a merge has replaced. */
 const KEEP = 3;
@@ -412,7 +412,13 @@ export function relayServer({ input, output, first, start, current = () => null,
     if (isRequest(message)) {
       if (message.method === 'initialize') hello = message;
       else await look();
-      if (message.method === 'tools/call' && !absent) refresh();
+      if (message.method === 'tools/call' && !absent) {
+        try {
+          refresh();
+        } catch (error) {
+          say(`the index was not refreshed: ${error instanceof Error ? error.message : error}`);
+        }
+      }
     } else if (message?.method === 'notifications/initialized') {
       initialized = message;
     } else if (isReply(message)) {
@@ -508,7 +514,7 @@ export function sourceDigest(checkout) {
     }
   };
   for (const project of SOURCES) walk(join(service, project), project);
-  for (const name of ['Directory.Build.props', 'Directory.Packages.props']) {
+  for (const name of ['Directory.Build.props', 'Directory.Packages.props', '../../Directory.Build.props']) {
     if (existsSync(join(service, name))) files.push(`/${name}`);
   }
   const hash = createHash('sha256');

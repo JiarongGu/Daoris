@@ -2,7 +2,7 @@ namespace Daoris.Knowledge;
 
 /// <summary>Writes the registry: a registration kept, moved between workspaces, or taken off the map.</summary>
 internal sealed class KnowledgeRegistrar(
-    IKnowledgeStore store, Registry? registry, RegistrationStore? registrations, TimeProvider time, Action refuseNewerIndex)
+    IKnowledgeStore store, Registry? registry, RegistrationStore? registrations, TimeProvider time, Action refuseNewerIndex, SemaphoreSlim feedGate)
 {
     /// <summary>
     /// Take a repository off the map.
@@ -19,20 +19,28 @@ internal sealed class KnowledgeRegistrar(
         // Refused whole over an index a newer Daoris wrote: the registration alone would go, and the index
         // would keep serving what is taken off the map.
         refuseNewerIndex();
-        var stored = registrations is not null
-            && await registrations.DeleteAsync(repository, ct).ConfigureAwait(false);
-        var known = registry?.Retire(repository) ?? false;
-
-        // 🔴 Its entries go with it. "They leave on the next refresh" holds only for a host that
-        // refreshes — a fed deployment never does, so it would serve a retired repository's knowledge to
-        // every keyed caller for as long as it runs. It reads no source, so it always writes, moving the generation a
-        // refresh begun before it read.
-        if (stored || known)
+        await feedGate.WaitAsync(ct).ConfigureAwait(false);
+        try
         {
-            await store.ReplaceRepositoryAsync(repository, [], ReadingWrite.Taken(time.GetUtcNow()), ct: ct).ConfigureAwait(false);
-        }
+            var stored = registrations is not null
+                && await registrations.DeleteAsync(repository, ct).ConfigureAwait(false);
+            var known = registry?.Retire(repository) ?? false;
 
-        return stored || known;
+            // 🔴 Its entries go with it. "They leave on the next refresh" holds only for a host that
+            // refreshes — a fed deployment never does, so it would serve a retired repository's knowledge to
+            // every keyed caller for as long as it runs. It reads no source, so it always writes, moving the generation a
+            // refresh begun before it read.
+            if (stored || known)
+            {
+                await store.ReplaceRepositoryAsync(repository, [], ReadingWrite.Taken(time.GetUtcNow()), ct: ct).ConfigureAwait(false);
+            }
+
+            return stored || known;
+        }
+        finally
+        {
+            feedGate.Release();
+        }
     }
 
     /// <summary>

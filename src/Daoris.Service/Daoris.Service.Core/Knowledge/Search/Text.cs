@@ -402,7 +402,7 @@ public static partial class Text
     /// </summary>
     public static (string Text, int First) ReadDocumentAt(string path)
     {
-        var text = File.ReadAllText(path).TrimStart('﻿').ReplaceLineEndings("\n");
+        var text = File.ReadAllText(path).TrimStart('﻿').Replace("\r\n", "\n", StringComparison.Ordinal);
         var lead = text.Length - text.TrimStart().Length;
         return (text.Trim(), 1 + text.AsSpan(0, lead).Count('\n'));
     }

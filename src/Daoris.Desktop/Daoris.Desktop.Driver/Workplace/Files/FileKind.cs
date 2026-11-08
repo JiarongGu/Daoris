@@ -17,7 +17,7 @@ internal enum FileKind
     Unknown,
 }
 
-/// <summary>The kinds' words in the rule file, and the fields each takes beside <c>kind</c> and <c>paths</c>.</summary>
+/// <summary>The kinds' words in the rule file, and the fields each took in the first form beside <c>kind</c> and <c>paths</c>.</summary>
 internal static class FileKinds
 {
     internal static string Word(this FileKind kind) => kind.ToString().ToLowerInvariant();
@@ -25,7 +25,7 @@ internal static class FileKinds
     internal static FileKind? Of(string? word) =>
         Enum.GetValues<FileKind>().Cast<FileKind?>().FirstOrDefault(kind => kind!.Value.Word() == word);
 
-    /// <summary>A kind's own fields; every kind also takes the found layer's <c>evidence</c>, <c>other</c> and <c>size</c>.</summary>
+    /// <summary>A kind's own fields in the first form, which git's form names by <see cref="FileKindSets.Fields"/>.</summary>
     internal static IReadOnlyList<string> Fields(FileKind kind) => kind switch
     {
         FileKind.Dependency => ["install", "setup", "per", "key", "toolchain", "env", "secret", "caches", "bound", "share"],

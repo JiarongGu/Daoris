@@ -21,14 +21,24 @@ public sealed record FilesLookAllow(string Rule, string? By);
 /// <summary>One scope of the person's permissions, the machine's or the repository's.</summary>
 public sealed record FilesLookPermissions(string Scope, IReadOnlyList<string> Deny, IReadOnlyList<string> Ask, IReadOnlyList<FilesLookAllow> Allow);
 
-/// <summary>One rule of the person's own, in the machine's scope or the repository's.</summary>
+/// <summary>One entry of the person's own, in the machine's scope or the repository's.</summary>
 public sealed record FilesLookRule(string Scope, string Kind, IReadOnlyList<string> Paths, bool? Copy);
+
+/// <summary>A path of the person's file git's syntax cannot state, read as written, with its two git wordings.</summary>
+public sealed record FilesLookKept(string Scope, string Kind, string Path, IReadOnlyList<string> Whole, IReadOnlyList<string> Files);
 
 /// <summary>
 /// A repository's rule file read whole for the page (row 6b): each path's effective rule, the acts and the person's answers, the
-/// person's rules and permissions, and what does not read. <see cref="Unread"/> is why the person's file stands and does not read.
+/// person's rules and permissions, and what does not read. <see cref="Unread"/> is why the person's file stands and does not read;
+/// <see cref="Kept"/> the person's paths read as written until worded in git's syntax, and <see cref="FirstForm"/> whether the
+/// repository's own file says no form and is read as the first form.
 /// </summary>
 public sealed record FilesLook(
     string Repository, string Commit, string? FoundCommit, DateTimeOffset? FoundAt,
     IReadOnlyList<FilesLookFile> Files, IReadOnlyList<FilesLookAct> Acts, IReadOnlyList<FilesLookPermissions> Permissions,
-    IReadOnlyList<FilesLookRule> Rules, string? Unread, IReadOnlyList<string> Problems);
+    IReadOnlyList<FilesLookRule> Rules, string? Unread, IReadOnlyList<string> Problems)
+{
+    public IReadOnlyList<FilesLookKept> Kept { get; init; } = [];
+
+    public bool FirstForm { get; init; }
+}

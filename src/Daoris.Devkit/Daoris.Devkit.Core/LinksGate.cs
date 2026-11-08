@@ -57,8 +57,7 @@ public sealed class LinksGate(IGit git) : IGate
                 if (!IsCheckable(target)) continue;
 
                 checked_++;
-                var resolved = Path.GetFullPath(Path.Combine(directory, target.Replace('/', Path.DirectorySeparatorChar)));
-                if (!File.Exists(resolved) && !Directory.Exists(resolved))
+                if (!Exists(directory, target) && !Exists(directory, Decoded(target)))
                 {
                     problems.Add($"{document}: '{target}' does not exist");
                 }
@@ -68,6 +67,25 @@ public sealed class LinksGate(IGit git) : IGate
         return problems.Count == 0
             ? GateResult.Pass(Name, $"{checked_} link(s) across {documents.Count} document(s)")
             : GateResult.Fail(Name, string.Join('\n', problems));
+    }
+
+    private static bool Exists(string directory, string target)
+    {
+        var resolved = Path.GetFullPath(Path.Combine(directory, target.Replace('/', Path.DirectorySeparatorChar)));
+        return File.Exists(resolved) || Directory.Exists(resolved);
+    }
+
+    /// <summary>The path a link spells with `%20` for a space and the like; as written where it holds a bad escape.</summary>
+    private static string Decoded(string target)
+    {
+        try
+        {
+            return Uri.UnescapeDataString(target);
+        }
+        catch (UriFormatException)
+        {
+            return target;
+        }
     }
 
     /// <summary>A relative path to something on disk — not a URL, an anchor, or an absolute path.</summary>
