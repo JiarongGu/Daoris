@@ -113,6 +113,48 @@ public sealed class ModelCoolingTests : IDisposable
         Assert.Equal(("opus", "account-1", "fake"), (held.RefusalNote.Parts[0].Value("model"), held.RefusalNote.Parts[0].Value("account"), held.RefusalNote.Parts[0].Value("owner")));
     }
 
+    [Fact]
+    public void A_record_s_and_a_conversation_s_note_say_the_family_is_cooling_not_the_whole_account_and_by_a_code_of_its_own()
+    {
+        var note = CoolingWords.NoteOf(Entry(), Zone);
+        var conversation = CoolingWords.ConversationOf(Entry(), Zone);
+        var when = $"Oct 3, 16:02 ({Zone.Id}), as the agent said";
+
+        Assert.Equal(
+            $"The `fake` account it ran on reached its `opus` limit and is cooling for `opus` until {when}, and nothing that asks for `opus` starts on it until then.",
+            note.Note);
+        Assert.Equal(
+            $"The `fake` account this conversation runs on reached its `opus` limit and is cooling for `opus` until {when}, and nothing new that asks for `opus` starts on it until then.",
+            conversation.Note);
+        Assert.Equal(note.Note, CoolingWords.Note(Entry(), Zone));
+        Assert.Equal(conversation.Note, CoolingWords.Conversation(Entry(), Zone));
+        foreach (var line in new[] { note, conversation })
+        {
+            Assert.Equal("account.cooling-model", line.Parts[0].Code);
+            Assert.Equal(["until", "why", "owner", "model"], line.Parts[0].Values.Select(value => value.Key));
+            Assert.Equal(("fake", "opus"), ((string?)line.Parts[0].Value("owner"), (string?)line.Parts[0].Value("model")));
+            Assert.DoesNotContain("account-1", line.Note);
+        }
+
+        // An account-wide limit keeps its sentences and codes.
+        Assert.Equal("account.cooling-window", CoolingWords.NoteOf(Entry(model: null), Zone).Parts[0].Code);
+        Assert.Contains("nothing starts on it", CoolingWords.Note(Entry(model: null), Zone));
+    }
+
+    [Fact]
+    public void The_tool_s_own_sign_in_cooling_for_a_family_holds_only_that_family_and_says_so_by_its_own_code()
+    {
+        var held = CoolingWords.HoldOf(Entry() with { Account = null }, Zone);
+
+        Assert.Equal("held.cooling-model-own", held.Parts[0].Code);
+        Assert.Equal(["owner", "model", "until", "why"], held.Parts[0].Values.Select(value => value.Key));
+        Assert.StartsWith(
+            $"`fake`'s own sign-in reached its `opus` limit and is cooling for `opus` until Oct 3, 16:02 ({Zone.Id}), as the agent said. "
+            + "Daoris starts nothing on it that asks for `opus` until then.",
+            held.Note);
+        Assert.Equal("waits.read-again", held.Parts[^1].Code);
+    }
+
     // ——— What cools a model.
 
     [Fact]

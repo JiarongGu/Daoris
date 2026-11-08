@@ -2089,9 +2089,9 @@ describe('how accounts are used', () => {
     // Nothing is asked as the page opens.
     expect(readsOf()).toEqual([]);
 
-    await userEvent.click(screen.getByRole('button', { name: 'Read now' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Read usage' }));
     await waitFor(() => expect(readsOf()).toEqual([['DAORIS.DRIVER', 'ACCOUNTS_READ', { payload: { door: 'claude-code' } }]]));
-    // Never the sign-ins' read, which only *Read again* asks.
+    // Never the sign-ins' read, *Read again*'s.
     expect(invoke).not.toHaveBeenCalledWith('DAORIS.DRIVER', 'HARNESSES_REFRESH', expect.anything());
   });
 
@@ -2107,14 +2107,14 @@ describe('how accounts are used', () => {
     const { unmount } = place();
 
     expect(await within(await screen.findByRole('listitem', { name: 'personal' })).findByText(/its curve allows 90% now/)).toBeTruthy();
-    expect(screen.getByRole('button', { name: 'Read now' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Read usage' })).toBeTruthy();
     expect(invoke).not.toHaveBeenCalledWith('DAORIS.DRIVER', 'ACCOUNTS_READ', expect.anything());
     unmount();
 
     invoke.mockImplementation(answer(ROSTER, ACCOUNTS));
     place();
     await screen.findByRole('listitem', { name: 'personal' });
-    expect(screen.queryByRole('button', { name: 'Read now' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Read usage' })).toBeNull();
     expect(invoke).not.toHaveBeenCalledWith('DAORIS.DRIVER', 'ACCOUNTS_READ', expect.anything());
   });
 

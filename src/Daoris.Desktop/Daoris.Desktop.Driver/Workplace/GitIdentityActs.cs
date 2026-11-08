@@ -35,7 +35,15 @@ public static partial class GitIdentityActs
 
     // ---- The ssh tools ----
 
-    public static string SshTools(string home) => Path.GetDirectoryName(Ssh(home))!;
+    public static string SshTools(string home)
+    {
+        var beside = Path.GetDirectoryName(Ssh(home))!;
+        if (File.Exists(Path.Combine(beside, Exe("ssh-keygen")))) return beside;
+        var windows = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.System), "OpenSSH");
+        if (OperatingSystem.IsWindows() && File.Exists(Path.Combine(windows, Exe("ssh-keygen")))) return windows;
+        if (GitDoors.Find("ssh-keygen", Environment.GetEnvironmentVariable("PATH")) is { } keygen) return Path.GetDirectoryName(keygen)!;
+        throw new DriverException("git: finds no ssh-keygen on this machine: Git for Windows carries one (no-ssh)");
+    }
 
     /// <summary>The ssh an identity's act runs, by its full path, as <see cref="GitSshProgram"/> decides it from the toolchain's git.</summary>
     public static string Ssh(string home)
@@ -164,7 +172,7 @@ public static partial class GitIdentityActs
         List<string> arguments = [.. GitSshFiles.IdentityOptions(home, identity.Id), "-o", "ConnectTimeout=15", "-T"];
         if (port is not null) arguments.AddRange(["-p", port]);
         arguments.Add("git@" + host);
-        var run = await Runner(Path.Combine(tools, Exe("ssh")), arguments, home).WaitAsync(TestBound, ct).ConfigureAwait(false);
+        var run = await Runner(Ssh(home), arguments, home).WaitAsync(TestBound, ct).ConfigureAwait(false);
         var answer = Greeting(run);
         if (answer.Result == "host-changed")
         {

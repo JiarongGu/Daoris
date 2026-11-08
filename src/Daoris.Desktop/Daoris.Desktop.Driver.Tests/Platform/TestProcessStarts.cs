@@ -92,6 +92,7 @@ internal static class TestProcessStarts
         [
             "Daoris.Desktop.Driver.Tests/Knowledge/HelpCheckoutsGitTests.cs", "Daoris.Desktop.Driver.Tests/Plugins/RelayCopyTests.cs",
             "Daoris.Desktop.Driver.Tests/Workplace/FilePreviewLinkTests.cs", "Daoris.Desktop.Driver.Tests/Workplace/SpaceFloorTests.cs",
+            "Daoris.Desktop.Driver.Tests/Workplace/Pool/BenchRuns.cs",
         ]),
         (TestStartKind.Counted,
         [

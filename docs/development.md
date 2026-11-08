@@ -20,10 +20,11 @@ runs `node tools/merge-rows.mjs --install`; ROUTERMERGE1). A clone whose depende
 once; worktrees share it. Without it git merges `docs/README.md` as plain text, which conflicts on two neighbouring rows
 rather than merging them.
 
-Until Lyntai's next release the service and the driver build against a local build of its main line (D22's note, D248). With
-the Lyntai checkout beside this one, check out its `master` and run `node tools/lyntai-local.mjs [path]`: it packs the tip into
-the ignored `local/lyntai-feed/` and writes `local/lyntai-local.props`, and reruns do nothing while the tip is packed. Both
-trees' package props import that file; delete it to restore the released pins. The merge tool copies it into its gate trees; copy
+The service and the driver build against Lyntai's released pins, or against a local build of its main line (D22's note, D248). With
+the Lyntai checkout beside this one (or named by the argument or `DAORIS_LYNTAI_PATH`), check out its `master` and run
+`node tools/lyntai-local.mjs [path]`: it packs the tip into the ignored `local/lyntai-feed/` and writes `local/lyntai-local.props`,
+and reruns do nothing while the tip is packed. The service's and the desktop's package props import that file; delete it to
+restore the released pins. The merge tool copies it into its gate trees; copy
 the main checkout's into a worktree that builds the layer. Lyntai's agent layer is only in the local build, so the driver references it, and
 compiles `Agents/Layer/`, only while the file is there (`DaorisLyntaiLayer`); without it the driver builds as it did before the
 layer, which is what the CI builds. A change to the layer's reference is built both ways: with the file, then with it moved
@@ -47,7 +48,7 @@ contains only disposable generated material, and reject reparse points. Preserve
 backups and evidence still needed by the task.
 
 Agent worktrees and what they leave go by the merge tool's prune, which every merge runs and
-`node tools/merge-branch.mjs --prune [--plan]` runs alone; its rules are the tool header's GATE2. A
+`node tools/merge-branch.mjs --prune [--plan]` runs alone; its rules are the tool header's *The prune*. A
 merged worktree with no change and nothing under `local/` but logs and scratch is removed, the agent
 harness's lock lifted when no running process names its folder and nothing in it was written for two
 hours (a worker's shell shows on no command line). A folder under `.claude/worktrees/`
@@ -59,8 +60,7 @@ A worktree with no commit of its own counts as merged. So the prune removes it, 
 `local/scratch/` with it, even while a worker still uses it, and the agent harness removes a worker's
 isolated worktree when it ends without a tracked change. A docs-only or read-only dispatch whose product
 is scratch (a brief, a proposal, a read's answer) writes it under the main checkout's
-`local/scratch/`, or commits it early; otherwise it is lost with the worktree (2026-10-22, COAGENT1's
-design, twice).
+`local/scratch/`, or commits it early; otherwise it is lost with the worktree.
 
 Use literal targets and one shell throughout; verify absence afterward. If execution is rejected,
 record the action and exact reason, leave the task open, and resolve the actual permission setting
@@ -72,8 +72,8 @@ same review path. Do not substitute another deletion API, wrapper or shell to ev
 `npm run verify` is the baseline check, not a substitute for testing a component you changed. Its
 exact steps are in `package.json`; the component gates are in `daoris.gates.json`. Run focused checks
 during the task and the complete reached set before recording completion. `npm run quick` is a builder's
-fast set before a hand-back: the index and the page's generated types written, the CLI's types, the doctrine check and the size, partial,
-transitional-marker and optional-lock censuses.
+fast set before a hand-back: the index written, the page's generated types written and checked, the CLI's types, the doctrine
+check, the size, partial and optional-lock censuses and the comment gate's change mode.
 
 | Change | Additional verification |
 |---|---|
@@ -128,24 +128,23 @@ actions refuse the agent's binary from PATH where the home lies under `_fixtures
 started, and `node tools/live-logins.mjs` finds a test that names a real login command or lets an agent's command fall back to PATH.
 
 A branch that runs only its own classes still owes the censuses that read every source, since no merge runs them
-before the CI beside: each is quick, and on 2026-10-20 each failed a full set its branch never ran. Run the ones a
-change can reach before handing it back:
+before the CI beside: each is quick. Run the ones a change can reach before handing it back:
 
 | A change that… | The census to run |
 |---|---|
-| makes a page test read a file outside the page (a C# source, a fixture) | `node --test src/Daoris.Cli/tool-test/merge-branch.test.ts --test-name-pattern SESSDEL1c` (read a C# source through `src/test/driverSource.ts`, and name it in `tools/merge-branch.mjs`'s MOD9e row) |
+| makes a page test read a file outside the page (a C# source, a fixture) | `node --test src/Daoris.Cli/tool-test/merge-branch.test.ts --test-name-pattern SESSDEL1c` (read a C# source through `src/Daoris.Web/src/test/driverSource.ts`, and name it in `tools/merge-branch.mjs`'s MOD9e row) |
 | adds or renames a CLI verb | `node --test src/Daoris.Cli/test/cli/cli-usage.test.ts` (the refusals fixture) |
 | names a `DAORIS_` variable in a source | `dotnet test src/Daoris.Desktop/Daoris.Desktop.Driver.Tests --filter FullyQualifiedName~SystemWiringTests` |
 | joins a home path in a test or a source | `node --test src/Daoris.Cli/test/platform/home-census.test.ts` (ask `DaorisHome.Entry` or `homeEntry`) |
 | opens a listener in a test | `dotnet test src/Daoris.Desktop/Daoris.Desktop.Driver.Tests --filter FullyQualifiedName~LoopbackListensTests` |
 | writes a string that names a workspace, or a `partial` class | `node --test src/Daoris.Cli/test/one-word.test.ts`, and `node tools/partials.mjs` |
 | reads or writes a file in the driver | `node tools/read-shares.mjs` (read a file `AtomicFile` writes through `AtomicFile.ReadText`, `ReadBytes` or `OpenRead`) |
-| changes a component's code on a later day than its README last changed (a path `daoris.gates.json`'s `docs.tracked` says that README describes) | `dotnet run --project src/Daoris.Devkit/Daoris.Devkit.Cli -- verify --universal-only`, its `docs` line (the universal gate's documents check, `DocsGate`, compares the day of each side's last commit with no grace, so commit the README's update describing the change on the branch) |
+| changes a component's code more than `docs.graceDays` (seven) days after its README last changed (a path `daoris.gates.json`'s `docs.tracked` says that README describes) | `dotnet run --project src/Daoris.Devkit/Daoris.Devkit.Cli -- verify --universal-only`, its `docs` line (the universal gate's documents check, `DocsGate`, compares the day of each side's last commit, a code commit of type `docs` or `style` not counting, so commit the README's update describing the change on the branch) |
 | moves, splits or renames a driver, host or modules file that says a word to the service under a key (`SayAsync(…, key: …)`), hands a helper's or a partner's answer, or keeps a word through the dispatchers' door | `dotnet test src/Daoris.Desktop/Daoris.Desktop.Driver.Tests --filter FullyQualifiedName~SettledReadersCensusTests` (the census names each reader by its file name with how it reads a settled answer: move or add its entry in `First` or `AsKept` with the code) |
 | moves, splits or renames a driver file that reads a session's marks (its participant work) | `dotnet test` with `--filter FullyQualifiedName~ParticipantWorkReadersTests` in `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests`, `src/Daoris.Desktop/Daoris.Desktop.Modules.Tests` and `src/Daoris.Service/Daoris.Service.Tests` (the shared `src/Daoris.Service/Daoris.Service.Tests/fixtures/participant-work-readers.json` keys each reader by its path: move its entry with the code) |
 | adds a driver test that roots scratch under `_fixtures` | `dotnet test src/Daoris.Desktop/Daoris.Desktop.Driver.Tests --filter FullyQualifiedName~GitSeedTests.No_test_deletes` (remove scratch with `GitSeed.Remove` or `GitSeed.Discard`, never `Directory.Delete`, and find the root with `GitSeed.RepoRoot()`) |
 | asks git for a `status` or a `diff` in the driver or in a tool (the merge tool and its helpers) | `node tools/optional-locks.mjs` (pass `--no-optional-locks` before the command, so a read takes no `index.lock` in a session's tree or the main checkout) |
-| touches a source file (`.cs`, `.ts`, `.tsx`, `.mjs`, `.js`) | `node tools/comment-gate.mjs` (its comment share does not rise, and an added comment names no row id, decision number, or `was`, `used to`, `formerly`, `previously`; `--tip <branch>` reads a merge's diff; `--all` holds every source file to the naming rule, and `verify` runs it; `quick` runs the change mode) |
+| touches a source file (`.cs`, `.ts`, `.tsx`, `.mjs`, `.js`) | `node tools/comment-gate.mjs` (its comment share does not rise, and an added comment names no row id, decision number, or `was`, `used to`, `formerly`, `previously`; `--tip <branch>` reads a merge's diff; `--all` holds every source file to the naming rule, and `verify` runs it; `quick` and the `comments` gate run the change mode) |
 | names an agent's command, a login, or a driver config's `commands` in a test | `node tools/live-logins.mjs` (a script or a stub at a path, never the agent's binary from PATH) |
 | adds a wait, a bound or a timeout to a TypeScript test (`src/Daoris.Cli/test`, `tool-test`, `tools/*.test.mjs`) | `node tools/test-patience.mjs` (a wait on a signal reads `PATIENCE` from `src/Daoris.Cli/test/_fixture.ts`; a short one that is a claim, a staging delay or a product input marks its line `// patience: claim\|staging\|input — why`; TESTPATIENCE3) |
 | gives a driver or modules test a fixed wait or a private bound shorter than two minutes (`WaitAsync(TimeSpan.From…)`, `TimeSpan Bound = TimeSpan.From…`) | `dotnet test src/Daoris.Desktop/Daoris.Desktop.Driver.Tests --filter FullyQualifiedName~ShortWaitsCensusTests` (a wait on a signal reads `Poll.Patience`; a bound that is the claim, a window of nothing, a staging delay or an input the product honours is listed in the census with its reason) |
@@ -194,7 +193,7 @@ once the heavy light gates (the CLI, .NET and web suites) have ended, so its tim
 suite loading the CPU (GATEORDER1). A Process half runs `--no-build` when its fast half passed in the
 same run on the same tree (GATEBUILD1). The release, family and deployment rehearsals run beside the git half, one after
 the other, and every other Process-lane gate alone (REHLANE1, REHLANE2, REHLANE2b); the web gate's vitests are a light gate of their own, `web-unit`, beside the
-service suite (WEBSPLIT1), and the measured-box check (`web-measured`: the flowchart's and the setting rows' stories in Chromium) is another that builds none (FLOWCHART1e). The driver's Process half runs eight classes at once (PROCPAR1), and its
+service suite (WEBSPLIT1), and the measured-box check (`web-measured`: the specs under `src/Daoris.Web/measured/`, the page's stories laid out and measured in Chromium) is another that builds none (FLOWCHART1e). The driver's Process half runs eight classes at once (PROCPAR1), and its
 slowest classes print by their own times beside the half's wall. Before a heavy gate (a suite that builds .NET or the
 page, a Process half, a rehearsal) the tool reads the machine's free commit and free physical memory, and waits, up to
 ten minutes, while either is below the gate's need (its class's, or `"memoryGb"` on the gate in `daoris.gates.json`); a gate
@@ -205,9 +204,9 @@ while one runs, and a run of main's tip ends the gates it is running, each with 
 newer tip exists (CIPRIO1c), recorded as superseded and never as passed; a Ctrl+C ends its trees the same way. A stage requires that full verdict. The merge tool normally runs selected gates; a merge receipt alone does not
 prove the long gates ran. Read D115 and the tool's usage before changing queue/merge behavior.
 
-A branch now lands through the merge queue, which waits on a scoped run in a tree of its own (*How a merge goes now*,
-below). `<branch>` alone is still the merge in place, which follows. It runs the blocking checks alone by default: the universal gates (with the sensitive scan), the code map, the
-index check and the census of test units' check (`test-map`, below), and the web's typecheck (`web-types`, `npm run typecheck:web`, about a minute) when its paths reach the
+A branch lands through the merge queue, which waits on a scoped run in a tree of its own (*How a merge goes*,
+below). `<branch>` alone is the merge in place, which follows. It runs the blocking checks alone by default: the universal gates (the index
+regenerated, the sensitive scan), the code map and the census of test units' check (`test-map`, below), and the web's typecheck (`web-types`, `npm run typecheck:web`, about a minute) when its paths reach the
 page's sources or its compiler's configuration: two sides that each typecheck may not together (MERGETSC1); and, where
 its paths reach the page's sources or its test configuration, the web's design and structure checks (`web-rules`, `npm
 run check:web-rules`: the design, structure, provider-census, presentational and page-measure tests alone, a minute or two), which a story or a
@@ -239,13 +238,13 @@ A run killed outright leaves its logs in the tree; the next run keeps them there
 
 ### Work the local install builds
 
-The install's driven sessions build rows of this repository in their own trees. Four practices keep one line of work in one
-place (learned 2026-10-23 and 24, LIMITGOON1, LIMITRESUME1d and REVIEWLANDED1):
+The install's driven sessions build rows of this repository in their own trees. Six practices keep one line of work in one
+place (LIMITGOON1, LIMITRESUME1d and REVIEWLANDED1):
 
-- **A stuck session is resumed in place,** never re-published as a new quest. Answer its park, resume it (`sessions say`,
+- **A stuck session is resumed in place,** never re-published as a new quest. Answer its park, resume it (`session say`,
   `chat --session`), or let its quest go on. A new quest for the same work opens a second tree, and both must later rebase onto
   whichever lands first.
-- **Land through Daoris's own `trees land`.** A squash done beside it, such as one to correct a commit's attribution, is read
+- **Land through Daoris's own `tree land`.** A squash done beside it, such as one to correct a commit's attribution, is read
   as its sessions' work by content (SQUASHSEEN1, D102's note), so those sessions are not reopened to rebase. Only a squash
   whose merge would conflict outside the backlog and the generated files is still unseen.
 - **Publish a quest that builds on another row only once that row's landing is committed.** A session's tree starts from
@@ -253,15 +252,13 @@ place (learned 2026-10-23 and 24, LIMITGOON1, LIMITRESUME1d and REVIEWLANDED1):
   whether to merge the unreviewed branch.
 - **A router row both sides changed is a conflict, not a row twice.** `docs/README.md` merges row by row through
   `tools/merge-rows.mjs` (ROUTERMERGE1, `.gitattributes`): a landing whose branch changed a router row that `main` changed
-  too stops on that row, marked, and a branch still carrying a row `main` has since replaced leaves `main`'s. It merged by
-  union until then, which left both rows with no conflict (four designs' rows twice in one afternoon on 2026-10-24). A
+  too stops on that row, marked, and a branch still carrying a row `main` has since replaced leaves `main`'s. A
   clone without the driver configured merges the file as text (see *Prepare the workspace*); a branch cut from such a
   merge can still carry a row twice, so run `node --test test/doc-duplicates.test.ts` in `src/Daoris.Cli` before committing
   a merge, and drop the older row.
 - **A quest whose start failed on an account goes on by itself.** When a session fails at its start because its account refused it
   (an expired sign-in, a limit), Daoris carries its quest on once an account is ready; publishing the quest again makes a second
-  session doing the same work. On 2026-10-24 three quests were published again after such failures and each ran twice; only one of
-  each was landed. Read the quest's sessions before publishing anything again.
+  session doing the same work, and only one of the two lands. Read the quest's sessions before publishing anything again.
 - **A landing is done when Daoris says so.** After committing a session's landing, `daoris tree land <session>
   --plan` must answer that its branch holds nothing `main` does not. Where it lists commits, `main` lacks them: a session
   told to rebase after its landing may have made new ones, and they are work to land, not a stale row. Work on `main` as a
@@ -272,7 +269,7 @@ place (learned 2026-10-23 and 24, LIMITGOON1, LIMITRESUME1d and REVIEWLANDED1):
 
 ### The CI between releases
 
-**How a merge goes now** (CISCOPE1e, D207's design §4). A branch lands through the queue, in three steps and this order:
+**How a merge goes** (CISCOPE1e, D207's design §4). A branch lands through the queue, in three steps and this order:
 
 1. **The records commit, on the branch.** What the merge carries beyond the branch's own work: a finished row moved from
    `TASKS.md` to the archive with one outcome line, a row left open rewritten in place and kept inside the backlog's
@@ -366,10 +363,10 @@ dropped) the runner's log gains a `census` line: how many processes have a comma
 `.claude/worktrees/` or `_fixtures/` and a parent that is gone, with the first three, and none stopped. A test stand-in that waits on
 a file takes its test's pid or a bound of `Poll.Patience`.
 
-`local/admission.json` is the admission record both runners will share (§5.1): the scoped tier's state, and reservations
+`local/admission.json` is the admission record both runners are to share (§5.1): the scoped tier's state, and reservations
 released only on a read of their job that finds it empty. The scoped runner writes its tier there. The background run does not
-yet read it, and gates run in no job object yet (CISCOPE1e2). The scoped runner runs at normal priority with build servers of
-its own. The CI's watch still gates every promoted tip, and the stage's rules are CISCOPE1d's.
+read it, and gates run in no job object (CISCOPE1e2). The scoped runner runs at normal priority with build servers of
+its own. The CI's watch gates every promoted tip, and the stage's rules are CISCOPE1d's.
 
 **The machine's heavy-run admission** (HEAVYQUEUE1) is a second record, in the Daoris home, not the repository: `locks/admission/admission.json`
 (`DAORIS_HOME`, the home's `locks` entry), which the queue's heavy gates (`memoryNeed` above 0), its failure probes and a driven session's
@@ -481,7 +478,7 @@ Each run appends its **receipt** to `local/ci-runs.jsonl` as it ends: the commit
 whether it finished, and each gate's verdict with the kind that gave it.
 
 A plain run, and each run of the watch, owes the family and deployment rehearsals to a stage (CIFAST1, D180's CIFAST1
-note). They were 14 to 23 and 14 to 22 minutes of a 45 to 75 minute run. Such a run never starts them. One without a pass
+note). They take 14 to 23 and 14 to 22 minutes of a 45 to 75 minute run. Such a run never starts them. One without a pass
 that stands is `owed` in the status (its top-level `owed`, the gate's state `owed`) and in the record, neither failed nor
 passed, and the run is green on the rest. A run therefore waits about as long as the git half. `--ci --stage [<commit>]` is
 the stage's path. On the commit to stage it runs both rehearsals, one after the other, with whatever else its verdicts
@@ -590,7 +587,7 @@ dotnet run --project src/Daoris.Devkit/Daoris.Devkit.Cli -- map
 
 `docs/index/` is ignored and never committed. `npm ci` installs `post-checkout` and `post-merge` hooks (`tools/index-hook.mjs`) that write it after git moves a branch's work tree, a new worktree included, and writes it where none stands; `DAORIS_INDEX_HOOK=0` skips them, and a detached checkout is skipped. The knowledge server writes the served checkout's again before a tool call once its `HEAD` has moved (`tools/index-fresh.mjs`). The same `npm ci` sets the `notes` merge driver (named in `.gitattributes`), which puts a blank line before a `**Note, ` line glued to the line above inside the merge of two branches' notes; a clone without the driver conflicts there rather than gluing.
 
-Moving files: `node tools/move-files.mjs [--plan] from=to ... --expect-moved N --expect-rewritten N` (or `--moves file.json`)
+Moving files: `node tools/move-files.mjs [--plan] from=to ... --expect-moved N --expect-rewritten N [--expect-files N]` (or `--moves file.json`)
 runs `git mv`, respells every relative import of the moved files and in them, and checks that each still resolves.
 
 Only run `map` when project metadata changed; `map --check` verifies freshness. `sync` preserves the

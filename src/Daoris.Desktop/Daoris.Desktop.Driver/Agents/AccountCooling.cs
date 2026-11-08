@@ -417,25 +417,39 @@ public static class CoolingWords
                 [("account", scoped), ("model", model), .. facts]);
         }
 
+        if (entry is { Account: null, Model: { } ownModel })
+        {
+            return Noted.Of(
+                HeldNoteCodes.HeldCoolingModelOwn,
+                $"{Who(entry, names)} reached its `{ownModel}` limit and is cooling for `{ownModel}` until {When(entry.Until, zone)}, {Why(entry)}. "
+                + $"Daoris starts nothing on it that asks for `{ownModel}` until then.",
+                [facts[0], ("model", ownModel), .. facts[1..]]).Then(" ", ReadAgain);
+        }
+
         var said = $"{Who(entry, names)} is cooling until {When(entry.Until, zone)}, {Why(entry)}. Daoris starts nothing on it until then.";
         if (entry.Account is { } account) return Noted.Of(HeldNoteCodes.HeldCoolingAccount, said, [("account", account), .. facts]);
 
-        // The own home holds whoever last signed in at the person's terminal, and the roster's refresh ends its
-        // cool-off, since Daoris cannot see that sign-in change. Opening the Agents place asks nothing,
-        // so the refresh is its Read again.
-        return Noted.Of(HeldNoteCodes.HeldCoolingOwn, said, facts).Then(" ", Noted.Of(
-            HeldNoteCodes.WaitsReadAgain,
-            "If you have signed in to another account at your own terminal since, press Read again under Agents → the agent's page → Accounts."));
+        return Noted.Of(HeldNoteCodes.HeldCoolingOwn, said, facts).Then(" ", ReadAgain);
     }
+
+    /// <summary>
+    /// The own home holds whoever last signed in at the person's terminal, and the roster's refresh ends its cool-off, since
+    /// Daoris cannot see that sign-in change. Opening the Agents place asks nothing, so the refresh is its Read again.
+    /// </summary>
+    private static Noted ReadAgain { get; } = Noted.Of(
+        HeldNoteCodes.WaitsReadAgain,
+        "If you have signed in to another account at your own terminal since, press Read again under Agents → the agent's page → Accounts.");
 
     /// <summary>
     /// What the refused session's record adds to its note: whose accounts they are, the kind of limit where its reset named
     /// one, until when, and why. 🔴 It names no account, its own included: the note travels to another machine, and
     /// its scrubber elides only the record's own profile name. The owner is the agent, which names none.
     /// </summary>
-    public static string Note(CoolingEntry entry, TimeZoneInfo zone) =>
-        $"The `{entry.Agent}` account it ran on {Reached(entry)}is cooling until {When(entry.Until, zone)}, {Why(entry)}, and "
-        + "nothing starts on it until then.";
+    public static string Note(CoolingEntry entry, TimeZoneInfo zone) => FamilyOf(entry) is { } family
+        ? $"The `{entry.Agent}` account it ran on reached its `{family}` limit and is cooling for `{family}` until {When(entry.Until, zone)}, "
+            + $"{Why(entry)}, and nothing that asks for `{family}` starts on it until then."
+        : $"The `{entry.Agent}` account it ran on {Reached(entry)}is cooling until {When(entry.Until, zone)}, {Why(entry)}, and "
+            + "nothing starts on it until then.";
 
     /// <summary>
     /// <see cref="Note"/> with its code: until when as a moment the page formats in the
@@ -445,9 +459,11 @@ public static class CoolingWords
     public static Noted NoteOf(CoolingEntry entry, TimeZoneInfo zone) => Coded(entry, Note(entry, zone));
 
     /// <summary>What a conversation whose turn is refused is told in its record; the conversation goes on.</summary>
-    public static string Conversation(CoolingEntry entry, TimeZoneInfo zone) =>
-        $"The `{entry.Agent}` account this conversation runs on {Reached(entry)}is cooling until {When(entry.Until, zone)}, "
-        + $"{Why(entry)}, and nothing new starts on it until then.";
+    public static string Conversation(CoolingEntry entry, TimeZoneInfo zone) => FamilyOf(entry) is { } family
+        ? $"The `{entry.Agent}` account this conversation runs on reached its `{family}` limit and is cooling for `{family}` until "
+            + $"{When(entry.Until, zone)}, {Why(entry)}, and nothing new that asks for `{family}` starts on it until then."
+        : $"The `{entry.Agent}` account this conversation runs on {Reached(entry)}is cooling until {When(entry.Until, zone)}, "
+            + $"{Why(entry)}, and nothing new starts on it until then.";
 
     /// <summary>
     /// <see cref="Conversation"/> with the code a session record's cooling line carries (<see cref="NoteOf"/>), so the page words a conversation's cooling in the reader's language as it words a record's. Its English is
@@ -456,15 +472,24 @@ public static class CoolingWords
     public static Noted ConversationOf(CoolingEntry entry, TimeZoneInfo zone) => Coded(entry, Conversation(entry, zone));
 
     /// <summary>
-    /// The cooling line by its code: <c>account.cooling-window</c> with the window its reset named, else
-    /// <c>account.cooling-no-window</c>, since a line whose entry says a value the part lacks is shown as recorded. Never
+    /// The cooling line by its code: <c>account.cooling-model</c> for a model family's limit, else <c>account.cooling-window</c>
+    /// with the window its reset named, else <c>account.cooling-no-window</c>, since a line whose entry says a value the part lacks is shown as recorded. Never
     /// <c>account.cooling</c>, which only earlier-written notes carry.
     /// </summary>
-    private static Noted Coded(CoolingEntry entry, string text) => WindowOf(entry) is { } window
-        ? Noted.Of(AccountNoteCodes.AccountCoolingWindow, text,
-            ("until", NoteCodes.Moment(entry.Until)), ("why", CoolingWhy.Of(entry)), ("owner", entry.Agent), ("window", window))
-        : Noted.Of(AccountNoteCodes.AccountCoolingNoWindow, text,
-            ("until", NoteCodes.Moment(entry.Until)), ("why", CoolingWhy.Of(entry)), ("owner", entry.Agent));
+    private static Noted Coded(CoolingEntry entry, string text)
+    {
+        (string Name, object? Value)[] facts = [("until", NoteCodes.Moment(entry.Until)), ("why", CoolingWhy.Of(entry)), ("owner", entry.Agent)];
+        if (FamilyOf(entry) is { } family) return Noted.Of(AccountNoteCodes.AccountCoolingModel, text, [.. facts, ("model", family)]);
+        return WindowOf(entry) is { } window
+            ? Noted.Of(AccountNoteCodes.AccountCoolingWindow, text, [.. facts, ("window", window)])
+            : Noted.Of(AccountNoteCodes.AccountCoolingNoWindow, text, facts);
+    }
+
+    /// <summary>
+    /// The model family a limit is scoped to, a word out of the agent's sentence, bounded as the window is: a family's limit holds
+    /// only a start asking that family, and its line says so rather than the whole account's.
+    /// </summary>
+    private static string? FamilyOf(CoolingEntry entry) => AccountLine.Bounded(entry.Model);
 
     /// <summary>The kind of limit, as its reset named it (<i>hit its weekly limit and </i>), or nothing where it named none.</summary>
     private static string Reached(CoolingEntry entry) => WindowOf(entry) is { } window ? $"hit its {window} limit and " : "";
