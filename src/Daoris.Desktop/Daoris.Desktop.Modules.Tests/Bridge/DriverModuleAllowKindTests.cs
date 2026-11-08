@@ -138,6 +138,10 @@ public sealed class DriverModuleAllowKindTests : DriverModuleBridge
         Assert.True(kept.GetProperty("kept").GetBoolean(), kept.GetRawText());
         Assert.Equal("allow", (await ended).Chosen!.Id);
         Assert.False(HeldPermissions.Of(door.Loop.Events).Answer("s1", "r1", "allow").Answered);
+        var recorded = Assert.Single(door.Loop.Supervisor.AllowsOf("s1"));
+        Assert.Equal(
+            (kept.GetProperty("decision").GetString(), SupervisorAllowShapes.Request, "r1", "once", Supervisor, SupervisorState.WentOn),
+            (recorded.Id, recorded.Shape, recorded.Subject, recorded.Do, recorded.Role, recorded.State));
     }
 
     [Fact]
@@ -153,9 +157,11 @@ public sealed class DriverModuleAllowKindTests : DriverModuleBridge
         Assert.Equal((false, SupervisorWhy.NotOffered), (standing.GetProperty("kept").GetBoolean(), standing.GetProperty("why").GetString()));
         Assert.Equal((false, SupervisorWhy.NotHeld), (other.GetProperty("kept").GetBoolean(), other.GetProperty("why").GetString()));
         Assert.False(ended.IsCompleted);
+        Assert.Empty(door.Loop.Supervisor.AllowsOf("s1"));
 
         Assert.True((await DecideAsync(door, subject, generation, "reject")).GetProperty("kept").GetBoolean());
         Assert.Equal("no", (await ended).Chosen!.Id);
+        Assert.Equal("reject", Assert.Single(door.Loop.Supervisor.AllowsOf("s1")).Do);
     }
 
     [Fact]
@@ -194,10 +200,15 @@ public sealed class DriverModuleAllowKindTests : DriverModuleBridge
         Assert.Equal(["Bash(npm run build:*)"], PermissionRules.Load(Home).Repositories["engine"].Allow);
         var settled = JsonDocument.Parse(File.ReadAllText(path)).RootElement.GetProperty("settled");
         Assert.Equal(("the supervisor", Supervisor), (settled.GetProperty("by").GetString(), settled.GetProperty("role").GetString()));
+        var recorded = Assert.Single(door.Loop.Supervisor.AllowsOf("s1"));
+        Assert.Equal(
+            (settled.GetProperty("decision").GetString(), SupervisorAllowShapes.Widening, "p1", "standing", Supervisor, "engine"),
+            (recorded.Id, recorded.Shape, recorded.Subject, recorded.Do, recorded.Role, recorded.Repository));
 
         var denied = await DecideAsync(door, SupervisorSubject.Proposal("p2"), generation, "standing");
         Assert.Equal((false, WideningAllows.RemovesDeny), (denied.GetProperty("kept").GetBoolean(), denied.GetProperty("why").GetString()));
         Assert.DoesNotContain(PermissionRules.Load(Home).Machine.Allow, rule => rule == "Bash(rm:*)");
+        Assert.Single(door.Loop.Supervisor.AllowsOf("s1"));
     }
 
     [Fact]

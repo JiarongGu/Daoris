@@ -53,6 +53,7 @@ public sealed class QuestionSupervisorDecisions
     private readonly SupervisorReads _reads;
     private readonly SupervisorCourses _courses;
     private readonly SupervisorLandings _landings;
+    private readonly SupervisorAllows _allows;
     private readonly IDecisionAdmission _admission;
 
     public QuestionSupervisorDecisions(string home, IDecisionAdmission admission, MachineLog? log = null)
@@ -65,6 +66,7 @@ public sealed class QuestionSupervisorDecisions
         _tickets = new SupervisorTickets(_book, admission);
         _reads = new SupervisorReads(_book);
         _courses = new SupervisorCourses(_book, admission, log);
+        _allows = new SupervisorAllows(_book.Files, log);
         _admission = admission;
     }
 
@@ -94,6 +96,15 @@ public sealed class QuestionSupervisorDecisions
 
     /// <summary>A session's landing decisions as the page reads them (<see cref="SupervisorLandings.LandingsOf"/>).</summary>
     public IReadOnlyList<SupervisorLandingView> LandingsOf(string session) => _landings.LandingsOf(session);
+
+    /// <summary>Keep an allow decision (<see cref="SupervisorAllows.Keep"/>).</summary>
+    public void AllowKept(SupervisorAllowed allow, DateTimeOffset now) => _allows.Keep(allow, now);
+
+    /// <summary>Move a held allow decision on (<see cref="SupervisorAllows.Move"/>).</summary>
+    public void AllowMoved(string decision, SupervisorState to, DateTimeOffset now, string? why = null) => _allows.Move(decision, to, now, why);
+
+    /// <summary>A session's allow decisions as the page reads them (<see cref="SupervisorAllows.AllowsOf"/>).</summary>
+    public IReadOnlyList<SupervisorAllowView> AllowsOf(string session) => _allows.AllowsOf(session);
 
     /// <summary>Whether a landing step waits for the holder (<see cref="SupervisorLandings.Waits"/>).</summary>
     public bool Refers(SupervisorSubject landing) => _landings.Waits(landing);
@@ -156,7 +167,11 @@ public sealed class QuestionSupervisorDecisions
         _sweeps.CompareAsync(session, takeBack, now, ct);
 
     /// <summary>The start's sweep of the files the last run left (<see cref="SupervisorSweeps.SweepAtStart"/>).</summary>
-    public IReadOnlyList<string> SweepAtStart(DateTimeOffset now) => _sweeps.SweepAtStart(now);
+    public IReadOnlyList<string> SweepAtStart(DateTimeOffset now)
+    {
+        _allows.SweepAtStart(now);
+        return _sweeps.SweepAtStart(now);
+    }
 
     /// <summary>Whether <paramref name="subject"/> is closed to the person, so no list hands it to a supervisor of any holder again.</summary>
     public bool Closed(SupervisorSubject subject) => _book.Closed.ContainsKey(subject);

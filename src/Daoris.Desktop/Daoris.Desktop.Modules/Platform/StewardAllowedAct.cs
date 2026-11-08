@@ -51,6 +51,7 @@ internal sealed class StewardAllowedAct(StandingConfirmation owner, StandingStat
             var target = new RoleScope(row.TargetKind, row.Target(form.Form));
             if (state.OwnerHolds(target)) return RoleJudgement.Refused(RoleWhy.OwnerSet);
             var admitted = state.Acts.Admit(role, form.Act, generation, holder, target.Name, target.Kind);
+            state.AllowedActs[admitted] = decision;
             state.Answers[generation] = state.Answers.GetValueOrDefault(generation) + 1;
             judged = new RoleJudgement(true, null, role, null, generation, holder, form.Act, admitted, asked.Roles);
         }
