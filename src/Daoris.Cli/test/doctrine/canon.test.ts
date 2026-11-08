@@ -62,6 +62,15 @@ test('the source directory is the target directory', () => {
   fx.cleanup();
 });
 
+test('the selection is ordered ordinally, whatever the machine\'s locale', () => {
+  const fx = seedCanon();
+  fx.write('core/knowledge/a.md', 'lower\n');
+  fx.write('core/knowledge/B.md', 'upper\n');
+  const targets = resolveSelection(readCanon(fx.root), []).files.map((f) => f.target);
+  assert.deepEqual(targets.slice(0, 2), ['knowledge/B.md', 'knowledge/a.md']);
+  fx.cleanup();
+});
+
 /**
  * Core is laid out exactly like a pack, so the tier is the directory there too
  * and one code path reads both.

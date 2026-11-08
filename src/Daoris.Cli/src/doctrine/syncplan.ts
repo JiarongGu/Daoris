@@ -107,11 +107,12 @@ export function planSync(
       }
       const { meta } = parseFrontmatter(body, []);
 
-      // Kept: the region is rebuilt with this repository's own text of the rule, and its lock entry is carried
-      // unchanged. A kept rule with no text here writes nothing; for a core rule that is refused, by `keepStates` below.
+      // Kept: the region is rebuilt with this repository's text of the rule, its lock entry carried as a span where it still
+      // names a file (the migration below deletes it). With no text here nothing is written; for a core rule `keepStates` refuses.
       if (keep) {
         if (onDisk !== null) {
-          const was = entry ?? { pack: file.pack, source: file.source, target: file.target, canonVersion: canon.version, sha256: sha256(onDisk), in: region.file };
+          const fresh = { pack: file.pack, source: file.source, target: file.target, canonVersion: canon.version, sha256: sha256(onDisk), in: region.file };
+          const was = entry?.in ? entry : { ...fresh, ...(entry ? { canonVersion: entry.canonVersion } : {}) };
           writes.push({ ...file, content: onDisk, sha256: was.sha256, state: 'unchanged', in: region.file, ...(meta ? { meta } : {}), kept: was });
         }
         continue;

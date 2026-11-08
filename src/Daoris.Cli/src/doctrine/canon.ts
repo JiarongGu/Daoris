@@ -1,6 +1,6 @@
 import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { digestBytes, listFiles, listMarkdown, readText, sha256 } from '../platform/fsx.ts';
+import { compareOrdinal, digestBytes, listFiles, listMarkdown, readText, sha256 } from '../platform/fsx.ts';
 import { DaorisError } from '../platform/errors.ts';
 import type { Canon, CanonFile, CoreSwitch, Pack, Selection } from './records.ts';
 
@@ -262,7 +262,7 @@ export function resolveSelection(
     }
   }
 
-  const byTarget = (a: { target: string }, b: { target: string }) => a.target.localeCompare(b.target);
+  const byTarget = (a: { target: string }, b: { target: string }) => compareOrdinal(a.target, b.target);
   return {
     files: packs.flatMap((pack) => pack.files).filter((file) => !off(file)).sort(byTarget),
     switchedOff: switchedOff.sort(byTarget),
