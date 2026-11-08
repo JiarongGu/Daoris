@@ -492,10 +492,10 @@ export const NOTE_CODES: Readonly<Record<string, NoteCode>> = {
   // The same wait where some accounts need the person's sign-in, named apart from those cooling.
   'held.limit-waits-sign-in': { values: ['owner', 'account', 'until', 'accounts'], why: 'cooling' },
   'held.signed-out': { values: ['owner', 'account', 'profile'] },
-  // The same for an agent held by a key alone: its way on is a key.
   'held.key-missing': { values: ['owner', 'account', 'profile'] },
   // No Daoris account of the agent's is signed in, and its own home is never a start's.
   'held.no-account': { values: ['owner'] },
+  'held.no-key': { values: ['owner'] },
   'held.not-installed': { values: ['agent'] },
   'held.pin-not-installed': { values: ['agent', 'version'] },
   // The roster's other refusals: a wait over a list is its lead, a clause for each account, the first reset and
@@ -509,6 +509,8 @@ export const NOTE_CODES: Readonly<Record<string, NoteCode>> = {
   'held.wait-first': { values: ['account', 'until', 'why'], why: 'cooling' },
   'held.sign-in-sooner': { values: ['logins'] },
   'held.sign-in': { values: ['logins'] },
+  'held.key-sooner': { values: ['logins'] },
+  'held.key': { values: ['logins'] },
   'held.picked-ready': { values: ['accounts'] },
   'held.picked-none': { values: ['agent'] },
   'held.refused-account': { values: ['owner', 'account'] },

@@ -213,7 +213,9 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/Agents/` unless they s
     checked once by the provider's own cheap read (`IKeyCheck`; dsh's is DeepSeek's balance read, 401 and 403 refusing the key, any
     other answer or none no reading) and the reading kept; a refused key reads signed out, and the walk passes it as it passes a
     signed-out account. Its key is set into an account that has none (`agent key <agent> --account`, the window's *Set key…*), or
-    taken out of one that stays (`--remove`, *Remove key*). (from D66, D67)
+    taken out of one that stays (`--remove`, *Remove key*). Every place that tells the person how to add or mend such an account says the key's way and
+    never a sign-in: its page's terminal line, its starter, the walk's notes (`held.key-missing`, `held.no-key`, `held.key-sooner`, `held.key`) and
+    the attention card's no-account line; a sign-in agent keeps its own words. (from D66, D67)
 27. Each agent's accounts are one set serving every workspace, with one order and one set of use settings. There are no
     machine or workspace lists. The person's pick at a start is the one exception, and a pick whose folder is gone is refused,
     never moved; a handed quest's named account that is gone walks on within the agent's accounts. (from D197)

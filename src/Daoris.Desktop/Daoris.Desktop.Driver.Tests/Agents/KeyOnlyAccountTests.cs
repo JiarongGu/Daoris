@@ -134,6 +134,42 @@ public sealed class KeyOnlyAccountTests : IDisposable
     }
 
     [Fact]
+    public async Task A_key_only_agent_with_no_account_is_held_for_a_key_and_names_the_key_verb()
+    {
+        if (!OperatingSystem.IsWindows()) return;
+        var roster = Roster(new DeepSeekBalance(new Answering(HttpStatusCode.OK)));
+
+        var selection = await roster.SelectAsync("fake", Config(), null, null);
+
+        Assert.False(selection.Allowed);
+        Assert.Equal("held.no-key", Assert.Single(selection.RefusalNote!.Parts).Code);
+        Assert.Contains("daoris agent key fake", selection.Refusal);
+        Assert.DoesNotContain("agent login", selection.Refusal);
+    }
+
+    [Fact]
+    public async Task A_list_of_accounts_with_no_key_is_held_with_the_key_verb_for_each()
+    {
+        if (!OperatingSystem.IsWindows()) return;
+        var roster = Roster(new DeepSeekBalance(new Answering(HttpStatusCode.OK)));
+        string[] bare = ["acct-00000001", "acct-00000002"];
+        foreach (var account in bare)
+        {
+            Directory.CreateDirectory(HarnessSettings.ProfileHome(_home, "fake", account));
+            HarnessSettings.Placed(HarnessSettings.ResolvePath(_home), "fake", account);
+        }
+
+        HarnessSettings.Change(DaorisHome.Entry(_home, HomeEntry.Harnesses), read => read.WithRotation("fake", [.. bare]));
+
+        var selection = await roster.SelectAsync("fake", Config(), null, null);
+
+        Assert.False(selection.Allowed);
+        Assert.Contains(selection.RefusalNote!.Parts, part => part.Code == "held.key");
+        Assert.Contains("daoris agent key fake --account acct-00000001", selection.Refusal);
+        Assert.DoesNotContain("agent login", selection.Refusal);
+    }
+
+    [Fact]
     public void Dsh_declares_the_variable_its_provider_reads_and_a_balance_read()
     {
         var dsh = ProviderRegistry.Built().AgentNamed("dsh")!;

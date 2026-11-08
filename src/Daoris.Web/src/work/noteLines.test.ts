@@ -810,6 +810,17 @@ describe('noteLines', () => {
         'Every `fake` account this start may use is cooling.',
         'A sign-in starts it: `daoris agent login fake --account a`, or Agents → the agent\'s page → Accounts.',
       ]);
+      const keyed = [
+        coded('held.no-key', '…', { owner: 'dsh' }),
+        coded('held.key-sooner', '…', { logins: ['daoris agent key dsh --account a'] }),
+        coded('held.key', '…', { logins: ['daoris agent key dsh --account a'] }),
+      ];
+      expect(noteLines(t, { parts: keyed }, 'en').map((line) => line.text)).toEqual([
+        "No `dsh` account of Daoris's own has an API key, and Daoris never starts its sessions in your own `dsh` sign-in — set one for Daoris on the agent's page under Agents, or with `daoris agent key dsh`, which reads it from standard input. The start waits until then.",
+        "A key starts it sooner: `daoris agent key dsh --account a`, or Agents → the agent's page → Accounts.",
+        "A key starts it: `daoris agent key dsh --account a`, or Agents → the agent's page → Accounts.",
+      ]);
+      for (const line of noteLines(t, { parts: keyed }, 'zh')) expect(line.text).toContain('agent key dsh');
 
       const picked = [coded('held.picked-ready', '…', { accounts: ['account-1', 'account-2'] }), coded('held.picked-none', '…', { agent: 'fake' })];
       expect(noteLines(t, { parts: picked }, 'en', names).map((line) => line.text)).toEqual([

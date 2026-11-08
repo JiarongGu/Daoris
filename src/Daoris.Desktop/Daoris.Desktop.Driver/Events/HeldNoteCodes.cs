@@ -97,6 +97,7 @@ public static class HeldNoteCodes
 
     // No Daoris account of the agent's is signed in, and its own home is never a start's.
     public static readonly NoteCode HeldNoAccount = new("held.no-account", ["owner"]);
+    public static readonly NoteCode HeldNoKey = new("held.no-key", ["owner"]);
     public static readonly NoteCode HeldNotInstalled = new("held.not-installed", ["agent"]);
     public static readonly NoteCode HeldPinNotInstalled = new("held.pin-not-installed", ["agent", "version"]);
 
@@ -114,6 +115,9 @@ public static class HeldNoteCodes
     public static readonly NoteCode HeldWaitFirst = new("held.wait-first", ["account", "until", "why"]) { Why = NoteCodes.Cooling };
     public static readonly NoteCode HeldSignInSooner = new("held.sign-in-sooner", ["logins"]);
     public static readonly NoteCode HeldSignIn = new("held.sign-in", ["logins"]);
+    // The same two for an agent held by a key alone: each command sets one account's key.
+    public static readonly NoteCode HeldKeySooner = new("held.key-sooner", ["logins"]);
+    public static readonly NoteCode HeldKey = new("held.key", ["logins"]);
     public static readonly NoteCode HeldPickedReady = new("held.picked-ready", ["accounts"]);
     public static readonly NoteCode HeldPickedNone = new("held.picked-none", ["agent"]);
     public static readonly NoteCode HeldRefusedAccount = new("held.refused-account", ["owner", "account"]);
