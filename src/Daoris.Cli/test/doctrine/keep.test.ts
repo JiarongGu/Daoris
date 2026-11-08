@@ -1,9 +1,10 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { rmSync } from 'node:fs';
+import { existsSync, rmSync } from 'node:fs';
 import { join } from 'node:path';
 import { captureError, makeFixture, type Fixture } from '../_fixture.ts';
-import { readLock } from '../../src/doctrine/config.ts';
+import { readLock, writeLock } from '../../src/doctrine/config.ts';
+import { sha256 } from '../../src/platform/fsx.ts';
 import { commandStatus } from '../../src/doctrine/commands.ts';
 import { readCanon } from '../../src/doctrine/canon.ts';
 import { commandSync } from '../../src/doctrine/materialize.ts';
@@ -132,6 +133,26 @@ test('a kept rule in the region: sync rebuilds the region with this repository\'
   assert.equal(sync(fx.repo, '--force').code, 0);
   assert.match(fx.repo.rule('core/core/rules/sensitive-info.md') ?? '', /never a machine path, nor a host name/);
   assert.equal(check(fx.repo).code, 0);
+
+  fx.done();
+});
+
+test('a kept rule the lock still names as a file: its old file goes with the migration and the lock names the region', () => {
+  const fx = adopter('keep-span-migrate');
+  const lock = readLock(fx.repo.root)!;
+  const rule = lock.entries.find((e) => e.target === 'rules/sensitive-info.md')!;
+  const old = 'a file this rule was carried in before spans\n';
+  fx.repo.write('.claude/rules/sensitive-info.md', old);
+  const { in: _span, ...asFile } = rule;
+  writeLock(fx.repo.root, { ...lock, entries: lock.entries.map((e) => (e === rule ? { ...asFile, sha256: sha256(old) } : e)) });
+  keep(fx.repo, { 'rules/sensitive-info.md': { reason: 'host names are private here', canon: digestOf(fx.canon, 'core/rules/sensitive-info.md') } });
+
+  assert.equal(sync(fx.repo).code, 0);
+  assert.equal(existsSync(join(fx.repo.root, '.claude/rules/sensitive-info.md')), false, 'the migrated file is deleted');
+  const entry = readLock(fx.repo.root)!.entries.find((e) => e.target === 'rules/sensitive-info.md')!;
+  assert.equal(entry.in, 'AGENTS.md', 'the lock no longer names a file that is gone');
+  const checked = check(fx.repo);
+  assert.equal(checked.code, 0, checked.text);
 
   fx.done();
 });

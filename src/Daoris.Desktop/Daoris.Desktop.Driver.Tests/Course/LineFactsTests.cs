@@ -76,6 +76,19 @@ public sealed class LineFactsTests : IDisposable
         Assert.Equal([new LinePartFact("s1", null)], unread.Parts);
     }
 
+    /// <summary>A waiting word another agent passed on, or one of an unknown origin, is no person's word on the driven path, as on the conversations'.</summary>
+    [Theory]
+    [InlineData("agent", CourseAuthor.Helper)]
+    [InlineData("elsewhere", CourseAuthor.Helper)]
+    [InlineData(null, CourseAuthor.Person)]
+    public void A_waiting_word_is_attributed_to_its_sender_not_taken_for_the_person_s(string? from, CourseAuthor author)
+    {
+        var word = new SaidWordView("w1", "Carry on.", At, [], false) { From = from };
+        var record = new PriorSession("s1", "trees/default/engine/s-1", "ended") { Said = [word] };
+
+        Assert.Equal(author, Assert.Single(DrivenCourse.WordsOf(record)).Author);
+    }
+
     /// <summary>A go-on and a start read the facts on their way: an answer that is no list of records is the service not answering, never a throw.</summary>
     [Theory]
     [InlineData("not json")]

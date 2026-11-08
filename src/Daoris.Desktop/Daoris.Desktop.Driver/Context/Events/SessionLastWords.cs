@@ -36,7 +36,12 @@ internal static class SessionLastWords
         IReadOnlyList<string> lines;
         try
         {
-            lines = [.. File.ReadLines(transcript).TakeLast(200)];
+            // Shared with the writer, which holds the transcript open while the session runs.
+            using var stream = new FileStream(transcript, FileMode.Open, FileAccess.Read, FileShare.ReadWrite | FileShare.Delete);
+            using var reader = new StreamReader(stream);
+            List<string> read = [];
+            while (reader.ReadLine() is { } line) read.Add(line);
+            lines = [.. read.TakeLast(200)];
         }
         catch (Exception error) when (error is IOException or UnauthorizedAccessException)
         {

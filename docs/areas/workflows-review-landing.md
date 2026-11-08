@@ -186,8 +186,9 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
     `tidy`, which the shipped pull-request delivery holds whole. A `monitor` watches the one step wired straight into it by `after`
     through that step's own state reading (`IWatchable`, which a pull-request step declares: `PullRequestReading`), and is reached with
     the state as its outcome (`NodeSource.Watched`); open or unanswered it is pending, and it never fails. A pull request reports `merged`
-    once the answer the opening plugin gave through `work/state` (asked at D148's moments) says completed, a squash read as merged, and
-    `closed` once it says abandoned. The monitor declares those outcomes in the file, and the shipped delivery wires `when merged` to the
+    once the answer the opening plugin gave through `work/state` (asked at D148's moments) says completed into the line the work grew
+    from (a completion into another branch is no merge, as the content proof's `other-target` has it), a squash read as merged, and
+    `closed` once it says abandoned; a pull request kept anew on the same landing starts with no answer. The monitor declares those outcomes in the file, and the shipped delivery wires `when merged` to the
     `tidy` and `when closed` to a person's task (`human`); the page says those outcomes, and the task's `done` and `approved`, in its own words
     (`workflow.outcome.<kind>.<outcome>`, read by the editor's rows, ways and causes, the chart's ports and edges and the run view's outcome line and
     routes by the kind of the step they leave, the raw name left as identity and as the words of a kind with none). The tidy (`TidyDoor`, off the pass, under the lease) ends each part of the

@@ -398,6 +398,24 @@ public sealed class OpinionGateTests
     }
 
     [Fact]
+    public async Task A_reviewed_given_before_the_findings_reached_the_person_does_not_answer_them()
+    {
+        var world = new World();
+        world.Opinions["o1"] = Opinion(weights: [OpinionViews.Must]);
+        world.Delivered["o1"] = new OpinionDelivered(ContinueWhy.StoodDown, Asked.AddMinutes(30), null);
+        ReviewGateState Reviewed(DateTimeOffset at) => new(ReviewStates.Reviewed, new ReviewDecision(ReviewLevels.Repository, "local"))
+        {
+            Verdict = new QuestReviewVerdictView(ReviewVerdicts.Reviewed) { At = at, Words = "reads right" },
+        };
+
+        var before = await JudgeAsync(Facts(Rule(recheck: false)) with { Asks = [AskOf("o1")], Review = Reviewed(Asked.AddMinutes(10)) }, world);
+        var after = await JudgeAsync(Facts(Rule(recheck: false)) with { Asks = [AskOf("o1")], Review = Reviewed(Asked.AddMinutes(31)) }, world);
+
+        Assert.Equal(OpinionGateStates.Disputed, before.State);
+        Assert.Equal(OpinionGateStates.Answered, after.State);
+    }
+
+    [Fact]
     public async Task A_press_answers_only_the_gate_it_drew_and_the_gates_order_is_the_opinion_then_the_look()
     {
         var world = new World();

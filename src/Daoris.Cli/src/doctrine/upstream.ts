@@ -205,7 +205,7 @@ function promotionsAll(
  */
 export function insideCanon(root: string, canonRoot: string): boolean {
   const rel = relative(resolve(root), resolve(canonRoot));
-  return rel !== '' && !rel.startsWith('..') && !isAbsolute(rel);
+  return rel !== '' && rel.split(/[\\/]/)[0] !== '..' && !isAbsolute(rel);
 }
 
 /**
