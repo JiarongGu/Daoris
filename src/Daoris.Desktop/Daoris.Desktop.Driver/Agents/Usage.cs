@@ -109,7 +109,9 @@ public sealed class SessionUsage(string home)
 
     private void Keep(UsageEntry entry)
     {
-        var held = Load().ToList();
+        // A file that exists and does not read is not an empty one: a record saved over it would replace up to `Retained` sessions with one.
+        var (held, unreadable) = LoadFile();
+        if (unreadable) return;
         var at = held.FindIndex(
             e => string.Equals(e.Session, entry.Session, StringComparison.OrdinalIgnoreCase));
 
@@ -135,14 +137,16 @@ public sealed class SessionUsage(string home)
     /// crash, and never overwritten by the act of reading it. Usage is an observation and losing it
     /// costs nothing, which is the same reading the driver's own wiring files take.
     /// </summary>
-    private List<UsageEntry> Load()
+    private List<UsageEntry> Load() => LoadFile().Entries;
+
+    private (List<UsageEntry> Entries, bool Unreadable) LoadFile()
     {
-        if (!File.Exists(_path)) return [];
+        if (!File.Exists(_path)) return ([], false);
 
         try
         {
             using var document = JsonDocument.Parse(AtomicFile.ReadText(_path));
-            if (document.RootElement.ValueKind != JsonValueKind.Array) return [];
+            if (document.RootElement.ValueKind != JsonValueKind.Array) return ([], true);
 
             var entries = new List<UsageEntry>();
             foreach (var row in document.RootElement.EnumerateArray())
@@ -150,12 +154,12 @@ public sealed class SessionUsage(string home)
                 if (Read(row) is { } entry) entries.Add(entry);
             }
 
-            return entries;
+            return (entries, false);
         }
         catch (Exception error)
             when (error is JsonException or IOException or UnauthorizedAccessException)
         {
-            return [];
+            return ([], true);
         }
     }
 
