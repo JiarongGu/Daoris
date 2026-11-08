@@ -523,9 +523,9 @@ public sealed class AcpSession(
             answer = await RequestAsync("_session/async_task/stop", new { sessionId = _sessionId, asyncTaskId }, ct)
                 .ConfigureAwait(false);
         }
-        catch (Exception error) when (error is IOException or ObjectDisposedException)
+        catch (Exception error) when (error is IOException or ObjectDisposedException or (DriverException and not AcpRefusal))
         {
-            // An agent that has exited stopped nothing.
+            // An agent that has exited stopped nothing, whether its stream ended with the stop pending or the write found it closed.
             return false;
         }
 
