@@ -451,10 +451,10 @@ public sealed class HarnessProfileTests : Bridge
     public async Task An_agent_that_takes_no_key_refuses_one_and_makes_nothing()
     {
         var refusal = await RefusalAsync(Module(), "HARNESS_ACTION",
-            new { door = "dsh", action = "key-add", key = "sk-something-9999" });
+            new { door = "codex-acp", action = "key-add", key = "sk-something-9999" });
 
         Assert.Contains("takes no API key", refusal);
-        Assert.Empty(HarnessSettings.Profiles(Home, "dsh"));
+        Assert.Empty(HarnessSettings.Profiles(Home, "codex"));
     }
 
     /// <summary>

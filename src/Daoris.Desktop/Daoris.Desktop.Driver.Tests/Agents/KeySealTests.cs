@@ -3,7 +3,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// A key is kept encrypted for the Windows user it was typed by: <c>keys.json</c> holds no key a reader of the file could use,
+/// A key is kept encrypted for the Windows user who typed it: <c>keys.json</c> holds no key a reader of the file could use,
 /// and no other file of the home does either.
 /// </summary>
 public sealed class KeySealTests : IDisposable

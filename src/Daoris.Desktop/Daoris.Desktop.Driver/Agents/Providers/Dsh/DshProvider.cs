@@ -18,8 +18,6 @@ internal static class DshProvider
         // `-V, --version`, verified against the installed CLI.
         var program = new ToolSpec(
             ["dsh"], ["--version"], ["npm", "install", "-g", "@deepseek-ai/dsh"], null, "@deepseek-ai/dsh", null, null, ProbeByPresence: false);
-        // An account here is a key alone: dsh's DeepSeek route reads `DEEPSEEK_API_KEY` per request, the inherited environment ahead of
-        // every file of its home (`@deepseek-ai/dsh-llm-deepseek-api-key`, `@deepseek-ai/dsh-credentials-local`, 0.2.2-rc.1).
         var pool = new PoolFacts(
             KeyVariable: KeyVariable, Login: null, LoginArguments: null, DeviceLoginArguments: null, LoginPorts: null,
             SettingsFile: null, WeekFixed: false, KeyCheck: new DeepSeekBalance());

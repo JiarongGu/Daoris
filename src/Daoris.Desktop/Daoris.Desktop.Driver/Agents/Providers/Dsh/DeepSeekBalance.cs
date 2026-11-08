@@ -8,10 +8,7 @@ namespace Daoris.Driver;
 /// 200 is a key accepted, 401 and 403 are the key refused (dsh's own transport reads those two as its <c>AUTH</c>), and anything else,
 /// or no answer, is not a reading.
 /// </summary>
-/// <remarks>
-/// The endpoint is DeepSeek's public API at <c>https://api.deepseek.com</c>, the base dsh's own DeepSeek transport defaults to
-/// (<c>@deepseek-ai/dsh-llm-deepseek</c>); that it answers 401 to an unauthenticated call was checked, a call with a real key was not.
-/// </remarks>
+/// <remarks>The base is the one dsh's DeepSeek transport defaults to (<c>@deepseek-ai/dsh-llm-deepseek</c>).</remarks>
 internal sealed class DeepSeekBalance(HttpMessageHandler? handler = null) : IKeyCheck
 {
     private static readonly Uri Balance = new("https://api.deepseek.com/user/balance");

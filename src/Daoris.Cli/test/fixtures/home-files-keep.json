@@ -86,15 +86,15 @@
     "keys.json": [
       "{",
       "  \"claude-code\": {",
-      "    \"account-1\": \"sk-one\",",
+      "    \"account-1\": \"dpapi1:one\",",
       "    \"note\": 7,",
-      "    \"account-2\": \"sk-two\"",
+      "    \"account-2\": \"dpapi1:two\"",
       "  },",
       "  \"later\": {",
       "    \"kept\": true",
       "  },",
       "  \"codex\": {",
-      "    \"account-1\": \"sk-three\"",
+      "    \"account-1\": \"dpapi1:three\"",
       "  },",
       "  \"ratio\": 1.50",
       "}"
@@ -364,9 +364,9 @@
       "name": "keys: an account's key replaced changes that key alone, an agent's own unknown key and the file's kept as written",
       "file": "keys.json",
       "only": "driver",
-      "edit": { "op": "key-replace", "agent": "claude-code", "account": "account-1", "key": "sk-new" },
+      "edit": { "op": "key-replace", "agent": "claude-code", "account": "account-1", "key": "dpapi1:new" },
       "changes": [
-        { "from": ["    \"account-1\": \"sk-one\","], "to": ["    \"account-1\": \"sk-new\","] }
+        { "from": ["    \"account-1\": \"dpapi1:one\","], "to": ["    \"account-1\": \"dpapi1:new\","] }
       ]
     },
     {
@@ -374,9 +374,9 @@
       "file": "keys.json",
       "only": "driver",
       "crlf": true,
-      "edit": { "op": "key-replace", "agent": "claude-code", "account": "account-2", "key": "sk-new" },
+      "edit": { "op": "key-replace", "agent": "claude-code", "account": "account-2", "key": "dpapi1:new" },
       "changes": [
-        { "from": ["    \"account-2\": \"sk-two\""], "to": ["    \"account-2\": \"sk-new\""] }
+        { "from": ["    \"account-2\": \"dpapi1:two\""], "to": ["    \"account-2\": \"dpapi1:new\""] }
       ]
     },
     {
@@ -386,7 +386,7 @@
       "start": [
         { "from": ["  \"ratio\": 1.50"], "to": ["  \"ratio\": 1.50,"] }
       ],
-      "edit": { "op": "key-add", "agent": "claude-code", "key": "sk-four" },
+      "edit": { "op": "key-add", "agent": "claude-code", "key": "dpapi1:four" },
       "refused": "Fix it, or delete it to start from nothing",
       "changes": [
         { "from": ["  \"ratio\": 1.50"], "to": ["  \"ratio\": 1.50,"] }

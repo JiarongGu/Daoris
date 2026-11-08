@@ -2,7 +2,7 @@ namespace Daoris.Driver;
 
 /// <summary>
 /// What a start's walk reads of an account held by an API key alone, with no question to ask the tool: no key reads signed out at once,
-/// by a file read; a key the provider can check and nobody has yet is owed one cheap read; any other reading stands as it was kept.
+/// by a file read; a key the provider can check and nobody has yet is owed one cheap read; any other reading kept stands.
 /// </summary>
 internal static class KeyOnlyWalk
 {

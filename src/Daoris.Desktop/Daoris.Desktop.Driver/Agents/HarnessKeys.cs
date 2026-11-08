@@ -114,7 +114,7 @@ public static class HarnessKeys
         Read(home).TryGetValue(harness, out var held) && held.TryGetValue(profile, out var kept) ? KeySeal.Open(kept) : null;
 
     /// <summary>
-    /// Take an account's key away and keep the account: its last reading, which was of that key, is forgotten, so it reads no key
+    /// Take an account's key away and keep the account: its last reading, of that key, is forgotten, so it reads no key
     /// until a new one is set. Nothing to take is an answer.
     /// </summary>
     public static void Withdraw(string home, string harness, string profile)
