@@ -21,7 +21,7 @@ internal sealed class LandingKind : ISupervisorKind
     public Task<SupervisorDecided> LeaveAsync(DriverLoop loop, SupervisorLeaveForm form, SupervisorHolder holder, CancellationToken ct) =>
         KeepAsync(loop, new Keeping(form.Subject, form.Generation, SupervisorLandingActs.Hold, form.Reasons, holder, form.Bound), ct);
 
-    /// <summary>The steps of runs here waiting for a press a landing supervisor makes and no decision answers yet, in a repository whose supervisor's hold covers an act of them.</summary>
+    /// <summary>The steps of runs here waiting for a press a landing supervisor makes and no decision answers yet, in a repository whose supervisor's hold covers an act the step offers.</summary>
     public Task<IReadOnlyList<object>> WaitingAsync(DriverLoop loop, IReadOnlyList<PriorSession> records, IDecisionAdmission admission, CancellationToken ct)
     {
         var waiting = new List<object>();
@@ -29,16 +29,26 @@ internal sealed class LandingKind : ISupervisorKind
         {
             if (step.GoAheadOpen || SessionOf(records, step) is not { } session) continue;
             if (SupervisorDecisionDoor.Covered(admission, Kind, new RolePlace(Repository: step.Repository)) is not { } covered) continue;
+            if (step.Offered(covered.Acts) is not { Count: > 0 } acts) continue;
             var subject = SupervisorSubject.Landing(session.Session, step.Run, step.Node, step.Attempt);
             if (!loop.Supervisor.Refers(subject)) continue;
             waiting.Add(new
             {
                 Kind, Subject = subject.Wire(), Repository = step.Repository, step.Run, step.Node, step.Attempt, covered.Generation,
-                Acts = covered.Acts.Where(step.Acts.Contains).ToList(),
+                Acts = acts,
             });
         }
 
         return Task.FromResult<IReadOnlyList<object>>(waiting);
+    }
+
+    public async Task<string?> FactsAsync(DriverLoop loop, SupervisorSubject subject, string fence, CancellationToken ct)
+    {
+        if (subject.LandingParts is not { } parts || loop.Service is not { } service) return null;
+        if (LandingSteps.Find(loop.Home, parts.Run, parts.Node, parts.Attempt) is not { GoAheadOpen: false } step) return null;
+        var recorded = $"run: {step.Run}\nstep: {step.Node}, attempt {step.Attempt}\nrepository: {step.Repository}\nit waits for a press: {string.Join(", ", step.Acts)}";
+        return await SupervisorKindFacts.ComposeAsync(
+            service, loop.Home, subject.Session, fence, [("the step a landing waits on: Daoris's own record, not the asking agent's", recorded)], ct).ConfigureAwait(false);
     }
 
     /// <summary>The newest part of the run's work in the step's repository: the session whose line the landing waits on.</summary>

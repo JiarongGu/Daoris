@@ -141,6 +141,25 @@ public sealed class DriverModuleFilesKindTests : DriverModuleBridge
     }
 
     [Fact]
+    public async Task ROLESREVIEW1a_an_agent_supervisor_is_handed_the_facts_of_a_held_ask_until_it_is_answered()
+    {
+        if (!OperatingSystem.IsWindows()) return;
+        PersonPermissions.Add(Home, null, "ask", "run(npm *)", null);
+        using var door = await OpenAsync();
+        var ask = Held("engine", "run(npm ci)");
+        var waiting = new SupervisorWaiting(SupervisorKinds.Files, Subject(ask), "engine", Generation(door, ask), ["allow-run"]);
+
+        var facts = await SupervisorDecisionDoor.FactsAsync(door.Loop, waiting, "f1", default);
+
+        Assert.Contains("run(npm ci)", facts);
+        Assert.Contains("repositories: engine", facts);
+        Assert.Contains("<<< the act Daoris held at a start, as Daoris recorded it · f1 >>>", facts);
+
+        Assert.True((await DecideAsync(door, ask, Generation(door, ask))).GetProperty("kept").GetBoolean());
+        Assert.Null(await SupervisorDecisionDoor.FactsAsync(door.Loop, waiting, "f1", default));
+    }
+
+    [Fact]
     public async Task A_share_decided_at_the_workspace_covering_both_repositories_is_allowed_in_both_layers_and_one_outside_it_is_not_listed()
     {
         if (!OperatingSystem.IsWindows()) return;

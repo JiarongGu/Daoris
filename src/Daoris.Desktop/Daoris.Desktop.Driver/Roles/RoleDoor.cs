@@ -120,8 +120,7 @@ public static class RoleDoor
 
             if (read is { } seen && catalogue.RevisionOf(change.Id) != seen)
             {
-                throw new DriverException(
-                    $"the role `{change.Id}` changed since it was read (revision {seen}, now {catalogue.RevisionOf(change.Id)}), so nothing was written; read it again.");
+                throw RoleCatalog.Moved(change.Id, seen, catalogue.RevisionOf(change.Id));
             }
 
             if (Judge(judged, change, choices) is { } refused) throw new RoleRefusedException(refused);
@@ -178,11 +177,13 @@ public static class RoleDoor
 
         if (rows.Count > 0 && held is null) throw RoleStaffing.NotInStore();
         IReadOnlyList<long> revisions = [];
-        var changes = batch.Select(each => each.Change).Where(change => change is not RoleChange.SetRules).ToList();
+        var roled = batch.Where(each => each.Change is not RoleChange.SetRules).ToList();
+        var changes = roled.Select(each => each.Change).ToList();
+        var reads = roled.Select(each => each.Read).ToList();
         var world = ruled.Count > 0 || presetRules.Count > 0 ? SupervisorRuleDoor.World(staffing.Ledger.Home) : null;
         void Also(DesktopWrite write)
         {
-            var written = new Queue<long>(RoleCatalog.WriteIn(write, changes));
+            var written = new Queue<long>(RoleCatalog.WriteIn(write, changes, reads));
             if (changes.Count > 0) write.Moved("roles");
             var rulesWritten = new Queue<long>(ruled.Select(rules => SupervisorRuleStore.WriteIn(write, rules.Place, rules.Read, rules.Rules, door, world!)));
             revisions = [.. batch.Select(each => each.Change is RoleChange.SetRules ? rulesWritten.Dequeue() : written.Dequeue())];

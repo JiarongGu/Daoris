@@ -222,6 +222,23 @@ public sealed class RoleTerminalTests : Bridge
         Assert.Equal([live], standing.RolesChanged());
     }
 
+    /// <summary>A catalogue that cannot be read after a role's press says nothing changed: the holds stand, and end only when it reads and a role has changed.</summary>
+    [Fact]
+    public void ROLESREVIEW1b_an_unreadable_catalogue_ends_no_hold()
+    {
+        var standing = Staffed();
+        Start(standing);
+        var generation = GenerationOf(standing);
+        var readable = standing.Slots;
+
+        standing.Slots = () => null;
+        Assert.Empty(standing.RolesChanged());
+
+        standing.Slots = readable;
+        Assert.Equal(generation, GenerationOf(standing));
+        Assert.Equal([generation], TurnOff(standing));
+    }
+
     /// <summary>
     /// A role's change raced against a keeping, a release and an admission. The judge's step ends first and the sweep follows
     /// under each decision's lock: no lock taken in reverse, nothing deadlocks, and nothing is kept, released or admitted under the dead

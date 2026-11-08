@@ -53,7 +53,7 @@ internal sealed class SupervisePass(LoopContext context, Driver driver)
         Unavailable.TryRemove(subject, out _);
         var number = order.ToList().IndexOf(entry) + 1;
         var world = new LookSupervisorWorld(context.Service, context.Home, context.Config);
-        if (await SupervisorInstruction.ComposeAsync(world, waiting, ct).ConfigureAwait(false) is not { } prompt) return null;
+        if (await SupervisorInstruction.ComposeAsync(world, desk, waiting, ct).ConfigureAwait(false) is not { } prompt) return null;
         if (attempts.Begin(subject, number < 1 ? spent.Count + 1 : number, DateTimeOffset.UtcNow) is not { } attempt) return null;
         if (runs.Start(subject, ct) is not { } source) return null;
 
@@ -112,6 +112,13 @@ internal sealed class SupervisePass(LoopContext context, Driver driver)
         if (!kept.Kept)
         {
             log?.Info("supervisor.dropped", ("role", waiting.Role), ("why", kept.Why ?? ""));
+            if (kept.Why == SupervisorWhy.RoleChanged)
+            {
+                Said(waiting.Subject.Session, "The supervisor's role changed while it was deciding, so it decides this again.");
+                return SupervisorAttemptOutcomes.RoleChanged;
+            }
+
+            Said(waiting.Subject.Session, $"The supervisor's decision was not kept ({kept.Why}), so it waits for you.");
             return SupervisorAttemptOutcomes.Failed;
         }
 

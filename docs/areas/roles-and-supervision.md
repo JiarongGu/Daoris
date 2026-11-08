@@ -99,7 +99,8 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they start wi
 8. A start keeps its role and the role's revision on its binding, and a census holds the two to the work. Changing or
    removing a role touches no running session; a continuation reads the role that takes its work now. (from D212)
 9. One door changes roles: `RoleDoor`, reached by `SET_ROLE`, `SET_ROLES`, `daoris role` and `role_propose`
-   applied by the person's press. Each answers the judge's closed codes alike. A press carries the revision it read. (from D212, D228)
+   applied by the person's press. Each answers the judge's closed codes alike. A press carries the revision it read, which the catalogue's write compares with the revision its own transaction
+   reads (`RoleCatalog.WriteIn`), so two presses read at one revision cannot both write. (from D212, D228)
 10. A batch is judged whole before anything is written. A role, its staffing, its policy and a place's rules land in one
     store transaction or not at all. (from D226, D229)
 
@@ -178,7 +179,8 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they start wi
 35. One seed serves a fresh home's first start and the release's migration: answers alone at 2, failures at 3 (the
     migration: an older home's `strikes`), tries at 5 and moves 3 a day before the next asks, for every role; the
     migration takes `strikes` out and passes a stored policy's moves over. Where the machine's place holds nothing, or the
-    store does not read, the seeded rules decide. (from D229, D232)
+    store does not read, the seeded rules decide, and a write is judged against them too (`SupervisorRuleBook.WithSeed`), so a repository's
+    rules are not refused for a machine bound every line already reads. (from D229, D232)
 36. Every executor reads the effective rules, one rule per count: the answers-alone hold, the failures that park a quest,
     the tries of a transient episode and a line's moves. A count no rule watches acts on nothing. A line's role and place
     for its rules are resolved once (`RuledLine`): the role its start was bound to while the catalogue holds it, else the
@@ -248,7 +250,7 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they start wi
     appointed press names its `kind`. The steward is the catalogue's one steward. Ask Daoris may explain the supervisor, never
     overrule it. (from D233)
 42. A role held by the terminal acts once the window starts its terminal (`START_ROLE_TERMINAL`, the window's alone); unstarted
-    is `not-started`, another holder `not-staffed`, a hold the role no longer reads as `role-changed`. Unstaffed is off. A
+    is `not-started`, another holder `not-staffed`, a hold the role no longer reads as `role-changed`; a catalogue that cannot be read ends no hold, which stands until it reads. Unstaffed is off. A
     supervisor decides for a place exactly where its holder is a started terminal or an agent: the holder is the person's
     per-place setting, and no build flag gates it. Held by rules alone, a place behaves as before: a `refer` point waits for
     the person. An agent-held supervisor's subjects are its own look's (`SuperviseLook`, after `course-release`), never listed
@@ -259,13 +261,17 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they start wi
     marked `decides` with the attempt (the `supervise` work) and `serves` with the subject's session; its prompt
     (`SupervisorInstruction`) hands the same facts as the holder's print, one composer (`SupervisorFacts`) serving both, the acts
     its grants cover and the bounds; an agent takes the question kind's subjects and the points of the course and limit kinds
-    (`SupervisorKinds.IsPoint`), and the landing, allow and files kinds' subjects start no turn yet. Its answer is the one fenced
+    (`SupervisorKinds.IsPoint`), and the landing, allow and files kinds' subjects, whose facts each kind's row composes (`ISupervisorKind.FactsAsync` over
+    `SupervisorKindFacts`, read through `AgentSupervisorDesk`) with the line's course and commits, so an agent supervisor answers
+    every kind it is granted and the editor refuses none of them to an agent holder. Its answer is the one fenced
     block of its last message (`SupervisorBlock`), which names a `choice` exactly where the act chooses a label, as the door's form
     does, and is kept through its
     kind's row by the decision door (`AgentSupervisorDesk`), its grant and hold read again first, the decision keeping the
     agent's holder (role, revision, choice, tier that ran, posture, session, tokens). A limited or transient end is a pass and the
     next look takes the next choice; a failed end, a timeout, a block that does not read or names another subject ends the
-    subject's attempts; a block the keeping refuses is dropped (`supervisor.dropped`); a leave is final. With no choice ready
+    subject's attempts; a block the keeping refuses is dropped (`supervisor.dropped`) and said on the subject's line, ending its attempts, but one
+    dropped `role-changed` spends no choice and decides again under the role as it now stands (outcome `role-changed`); a
+    leave is final. The prompt states the reasons' bounds. With no choice ready
     nothing starts, the person's rules stand as they acted, and the subject waits for the person, said once on its line
     (`supervisor.unavailable`) and taken once a choice is ready. The person's word on a subject ends its running turn and drops
     its result. (from D233, D229)
@@ -285,7 +291,7 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they start wi
     route's bytes with the subject whole in them. The subject is the kind's typed reference, which does not change while it waits: a
     question's `{ session, question }`, a referred point's `{ session, point }`, a landing's `{ session, landing }` (`landing` names
     the run, the node and the attempt it waits on, the session the run's work); the door takes the question, course, limit and
-    landing kinds, each a row (`QuestionKind`, over `ReferredPointKind` the `CourseKind` and `LimitKind`, a point's kind its count's,
+    landing kinds, each a row (a landing step is listed only where it offers an act the supervisor's grants cover; `QuestionKind`, over `ReferredPointKind` the `CourseKind` and `LimitKind`, a point's kind its count's,
     `SupervisorRules.KindOf`, and `LandingKind`) that lists its waiting subjects and keeps a decision against the subject as it stands. A
     decision's file keeps its `kind` and `subject`, and its holder is the hold's as the catalogue's record names it. On a question it
     answers a parked session's recorded question with one offered choice and one to five sourced reasons (`--do answer --choice`,
@@ -315,7 +321,7 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they start wi
     person (overruled, stale, superseded, interrupted, left) as closed by its kind and subject, so a point overruled before a restart,
     or one whose overrule line was never written, is listed for no supervisor again and its decide is refused. An agent
     supervisor's attempt (`SupervisorAttempts`) is written beside the subject's decisions before its turn starts and its outcome
-    (decided, left, failed, limited) beside it at its end, one per choice of the role's order and one at a time per subject; the
+    (decided, left, failed, limited, role-changed) beside it at its end, one per choice of the role's order and one at a time per subject; the
     sweep closes an attempt with no outcome failed and remembers every subject whose attempts ended as closed, so no choice is
     spent on it again.
     A quest's point is its rule's act on the quest's last session while the planner's verdicts hold it there, parked (`failures`)
@@ -376,7 +382,8 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they start wi
     person's), its log says `by: steward`, and its unpause, only of a pause the steward made this run and the owner has not
     touched, releases them as the steward's own role release. The update acts (`StewardUpdateAct`) say the install's own
     word (`update.requested`, door `steward`); the pipe has no person's route for an update, so outside the granted acts
-    they are refused `not-granted`, never asked. The person grants and takes back each act in the role editor, read at every act. A proved
+    they are refused `not-granted`, never asked. The person grants and takes back each act in the role editor, read at every act, and again at the act's step under its gates
+    (`RoleActsLedger.RunAct`): an act taken back while it queued is refused `not-granted`. A proved
     holder's act outside them that asks (`StewardAsk`, `role.asked`) is first an `allow` subject `{ ask }` at its target's
     place, read as `ActAsync` reads it (`StewardPlaces`): one pending entry on the press's reservation (`StewardAllows`,
     `PendingAllow`), settled once by the first of the allow supervisor's `allow.steward` (the act admitted once as the steward's

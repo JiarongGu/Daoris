@@ -25,7 +25,7 @@ internal sealed class RoleJudge(StandingConfirmation owner, StandingState state)
     /// </remarks>
     public DecisionAdmitted Admit(string kind, RolePlace place, string? act)
     {
-        var slots = owner.Slots();
+        var slots = owner.SlotsNow();
         var effective = SupervisorResolution.Find(slots, kind, place, owner.Wider()).Role;
         if (AppointedStaffing.Ordered(effective?.Hold))
         {

@@ -69,6 +69,10 @@ public sealed class RoleCatalog
 
     private RoleCatalog(IReadOnlyList<RoleSlot> slots) => Slots = slots;
 
+    /// <summary>The refusal of a press made against a revision its role has moved past.</summary>
+    internal static DriverException Moved(string id, long seen, long now) =>
+        new($"the role `{id}` changed since it was read (revision {seen}, now {now}), so nothing was written; read it again.");
+
     /// <summary>The revision of <paramref name="id"/>'s record as the catalogue reads it; 0 for the seed and for an id it does not hold.</summary>
     public long RevisionOf(string id) => Slots.FirstOrDefault(slot => slot.Id == id)?.Revision ?? 0;
 
@@ -388,16 +392,18 @@ public sealed class RoleCatalog
         return store.Write("roles", write => WriteIn(write, changes));
     }
 
-    /// <summary><see cref="WriteAll"/> inside a transaction the caller holds, so a role, its staffing and its policy are published in one.</summary>
-    /// <exception cref="DriverException">The first change the judge refused; the caller's transaction rolls back.</exception>
-    public static IReadOnlyList<long> WriteIn(DesktopWrite write, IReadOnlyList<RoleChange> changes)
+    /// <summary><see cref="WriteAll"/> inside a transaction the caller holds, so a role, its staffing and its policy are published in one; <paramref name="reads"/> holds each change's read revision, compared with the transaction's own.</summary>
+    /// <exception cref="DriverException">The first change the judge refused or whose role moved since read; the caller's transaction rolls back.</exception>
+    public static IReadOnlyList<long> WriteIn(DesktopWrite write, IReadOnlyList<RoleChange> changes, IReadOnlyList<long?>? reads = null)
     {
         {
             var revisions = new List<long>();
             RoleCatalog Current() => Of(write.Query("SELECT id, state, record, revision FROM roles", row => new StoredRole(row.GetString(0), row.GetString(1), row.GetString(2), row.GetInt64(3))));
-            foreach (var asked in changes)
+            for (var index = 0; index < changes.Count; index++)
             {
+                var asked = changes[index];
                 var current = Current();
+                if (reads?[index] is { } seen && current.RevisionOf(asked.Id) != seen) throw Moved(asked.Id, seen, current.RevisionOf(asked.Id));
                 if (current.Judge(asked) is { } refusal) throw new DriverException(refusal.Said);
 
                 // The whole structure's default is each seeded role not already the seed's, one revision apiece; 0 where none moved.
