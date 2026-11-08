@@ -338,7 +338,18 @@ public sealed class HookPeer(
         {
             // One frame per line, written as a line: the same call the ACP wire makes, so a fake that
             // stands in for a plugin sees exactly what a process would.
-            await outgoing.WriteLineAsync(frame.ToJsonString()).WaitAsync(ct).ConfigureAwait(false);
+            var write = outgoing.WriteLineAsync(frame.ToJsonString());
+            try
+            {
+                await write.WaitAsync(ct).ConfigureAwait(false);
+            }
+            catch (OperationCanceledException) when (!write.IsCompleted)
+            {
+                // The writer still holds the abandoned line and refuses the next with InvalidOperationException: the wire is gone.
+                _alive = false;
+                throw;
+            }
+
             await outgoing.FlushAsync(ct).ConfigureAwait(false);
         }
         finally

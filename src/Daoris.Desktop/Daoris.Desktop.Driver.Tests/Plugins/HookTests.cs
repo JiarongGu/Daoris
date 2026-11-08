@@ -321,6 +321,38 @@ public sealed class HookTests : IDisposable
         Assert.Equal([noise, noise], lines);
     }
 
+    /// <summary>
+    /// A write the caller gave up on is still in flight in the writer, which refuses the next one; the call after it said so as
+    /// InvalidOperationException, which no caller of the wire catches. A write abandoned at its patience is a wire that is gone.
+    /// </summary>
+    [Fact]
+    public async Task A_write_abandoned_at_its_patience_ends_the_wire_and_the_next_call_is_refused_by_name()
+    {
+        var writer = new BusyWriter();
+        var peer = new HookPeer(new FakePlugin((_, _) => null).Incoming, writer, "acme.gate", patience: TimeSpan.FromMilliseconds(100));
+
+        var late = await Assert.ThrowsAsync<DriverException>(() => peer.ConsiderAsync(new { }, CancellationToken.None));
+        var next = await Assert.ThrowsAsync<DriverException>(() => peer.ConsiderAsync(new { }, CancellationToken.None));
+
+        Assert.Equal(PluginEvents.Late, PluginFailures.KindOf(late, "none"));
+        Assert.Equal(PluginEvents.Exited, PluginFailures.KindOf(next, "none"));
+        Assert.False(peer.Alive);
+        Assert.Equal(0, peer.Waiting);
+    }
+
+    /// <summary>A writer that never finishes a line and refuses another while one is in flight, as a stream writer does.</summary>
+    private sealed class BusyWriter : TextWriter
+    {
+        private int _busy;
+
+        public override Encoding Encoding => Encoding.UTF8;
+
+        public override Task WriteLineAsync(string? value) =>
+            Interlocked.Exchange(ref _busy, 1) == 1
+                ? throw new InvalidOperationException("The stream is currently in use by a previous operation on the stream.")
+                : new TaskCompletionSource().Task;
+    }
+
     // ——— the set
 
     private sealed class FakeChannel(IReadOnlyList<string> points, Func<object, HookDecision>? consider = null, Action<object>? ended = null)
