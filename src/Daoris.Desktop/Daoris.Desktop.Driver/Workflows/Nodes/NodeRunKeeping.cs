@@ -7,7 +7,8 @@ namespace Daoris.Driver;
 /// <param name="say">The say door a run's work is told what its steps sent back through: the session, the words and the key.</param>
 internal sealed class NodeRunKeeping(
     NodeRecordFiles records, Func<DateTimeOffset> clock, Func<bool> holdsLease, GraphRuns graphRuns, WorkPerformer performer,
-    Func<NodeDoors> doors, Func<Func<string, string, string, CancellationToken, Task<SayAnswer>>?> say, Func<IPullRequestRecords?> pullRequests)
+    Func<NodeDoors> doors, Func<Func<string, string, string, CancellationToken, Task<SayAnswer>>?> say, Func<IPullRequestRecords?> pullRequests,
+    Func<ILandingWords?> landings)
 {
     /// <summary>
     /// A run's active nodes after its rounds, each handed to its kind to start on its door off the pass (<see cref="IStarts.Keep"/>): the
@@ -111,8 +112,10 @@ internal sealed class NodeRunKeeping(
             var promoted = doors().Door<IIntegrationDoor>() is { } door &&pending.Pending.Any(word => word.Act == NodeWordActs.Stop && each.Declared.GetValueOrDefault(word.Node)?.Kind == NodeKinds.Integrate)
                 ? await IntegrateNodes.PromotedAsync(door, pending, ct).ConfigureAwait(false)
                 : null;
-            var (refused, applied) = records.Edit(unit, record => RunNodeWords.Apply(record, each.Declared, scope, now, promoted));
+            var landed = landings();
+            var (refused, applied) = records.Edit(unit, record => RunNodeWords.Apply(record, each.Declared, scope, now, promoted, landed));
             if (refused is not null) continue;
+            SupervisedWords.Settle(landed, applied!);
             foreach (var (word, code) in applied!)
             {
                 done.Add(new WorkPerformed(unit, word.Node, code is null ? PerformedWhat.Resolved : PerformedWhat.Refused, code ?? word.Act));

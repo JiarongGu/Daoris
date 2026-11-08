@@ -52,10 +52,10 @@ internal sealed class HumanNode : BuiltInNode, IObserves, IPressed
     /// rejects it on that attempt with their note, as a review's changes do, and the graph's <c>rejected</c> wire routes it.
     /// </summary>
     public NodeMove? Move(NodeDeclaration node, NodeWord word, NodeStatus status, NodeScope scope) => word.Act == NodeWordActs.Reject
-        ? new NodeMove(NodeStates.Rejected, NodeCause.Person) { Attempt = status.Attempt, Words = word.Words }
+        ? new NodeMove(NodeStates.Rejected, word.Cause) { Attempt = status.Attempt, Words = word.Words }
         : new NodeMove(NodeStates.Reached, NodeCause.Authority)
         {
-            Source = NodeSource.Person, Attempt = status.Attempt, Acceptance = status.Binding is { } bound ? bound with { Outcome = Outcome(node, word.Act) } : null,
+            Source = word.Source, Attempt = status.Attempt, Acceptance = status.Binding is { } bound ? bound with { Outcome = Outcome(node, word.Act) } : null,
             Words = word.Words,
         };
 

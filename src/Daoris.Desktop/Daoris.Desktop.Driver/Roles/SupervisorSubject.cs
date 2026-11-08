@@ -19,6 +19,7 @@ public sealed record SupervisorSubject(string Kind, string Session, string Id)
         [SupervisorKinds.Question] = "question",
         [SupervisorKinds.Course] = "point",
         [SupervisorKinds.Limit] = "point",
+        [SupervisorKinds.Landing] = "landing",
     };
 
     /// <summary>The kinds whose subject this build reads, in the kinds' order.</summary>
@@ -28,7 +29,20 @@ public sealed record SupervisorSubject(string Kind, string Session, string Id)
 
     public static SupervisorSubject Point(string session, string point, string kind = SupervisorKinds.Course) => new(kind, session, point);
 
-    /// <summary>The name the subject's id goes by: <c>question</c> or <c>point</c>.</summary>
+    /// <summary>
+    /// A landing: the step <paramref name="node"/> of <paramref name="run"/> waiting on <paramref name="attempt"/>, on the run's work
+    /// <paramref name="session"/>, whose folder keeps its decisions.
+    /// </summary>
+    public static SupervisorSubject Landing(string session, string run, string node, int attempt) =>
+        new(SupervisorKinds.Landing, session, $"{run}/{node}/{attempt}");
+
+    /// <summary>The run, node and attempt a landing's id names; null where it is not a landing's or does not read.</summary>
+    public (string Run, string Node, int Attempt)? LandingParts =>
+        Kind == SupervisorKinds.Landing && Id.Split('/') is [{ Length: > 0 } run, { Length: > 0 } node, var attempt] && int.TryParse(attempt, out var number)
+            ? (run, node, number)
+            : null;
+
+    /// <summary>The name the subject's id goes by: <c>question</c>, <c>point</c> or <c>landing</c>.</summary>
     public string IdName => Named[Kind];
 
     /// <summary>The subject as the wire carries it, its fields in their order.</summary>

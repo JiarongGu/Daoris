@@ -246,7 +246,23 @@ public static class NodeWordActs
 /// <param name="Act">One of <see cref="NodeWordActs"/>.</param>
 /// <param name="Words">The person's words: a skip's, which it needs, or a stop's where given.</param>
 /// <param name="At">When the person gave it.</param>
-public sealed record NodeWord(string Node, string Act, string? Words, DateTimeOffset At);
+public sealed record NodeWord(string Node, string Act, string? Words, DateTimeOffset At)
+{
+    /// <summary>The landing supervisor whose word it is; null for the person's.</summary>
+    public NodeWordBy? By { get; init; }
+
+    /// <summary>The attempt a supervisor's word was released on, which the pass holds it to; null for the person's.</summary>
+    public int? Attempt { get; init; }
+
+    /// <summary>The supervisor's decision this person's word took the place of, which the pass settles <c>superseded</c>.</summary>
+    public string? Supersedes { get; init; }
+
+    /// <summary>The source its move reaches the node with: the person's, or the landing supervisor's.</summary>
+    public string Source => By is null ? NodeSource.Person : NodeSource.Supervisor;
+
+    /// <summary>The cause its move is made under: the person's, or the landing supervisor's.</summary>
+    public string Cause => By is null ? NodeCause.Person : NodeCause.Supervisor;
+}
 
 /// <summary>
 /// The repair a review's Accept carries: the work could not land at the tip the person accepted (its tree held

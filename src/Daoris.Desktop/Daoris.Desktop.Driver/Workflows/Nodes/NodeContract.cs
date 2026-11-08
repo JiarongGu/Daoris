@@ -168,6 +168,9 @@ public static class NodeCause
 
     /// <summary>The person, at their doors: a rejection, a skip, a stop, a new attempt.</summary>
     public const string Person = "person";
+
+    /// <summary>A landing supervisor's rejection of an approval, released as the person's is and held to the same table.</summary>
+    public const string Supervisor = "supervisor";
 }
 
 /// <summary>
@@ -184,6 +187,9 @@ public static class NodeSource
 
     /// <summary>The person, at their doors: an approval, <i>reviewed</i>, a yes.</summary>
     public const string Person = "person";
+
+    /// <summary>The landing supervisor the person appointed, whose Accept or Approve reaches a node a person's press reaches.</summary>
+    public const string Supervisor = "supervisor";
 
     /// <summary>A commitment's receipt, or its owner's decline.</summary>
     public const string Commitment = "commitment";

@@ -5,7 +5,8 @@ namespace Daoris.Driver;
 /// with memory, and the start's sweep of the files left by the last run. Each move is made under its session's lock in the
 /// <see cref="SupervisorBook"/>; this type holds no state of its own.
 /// </summary>
-internal sealed class SupervisorSweeps(SupervisorBook book, MachineLog? log)
+/// <param name="landed">Whether a landing decision's word stands applied on its run's record (<see cref="SupervisorLandings.Applied"/>), which the start's sweep reads first.</param>
+internal sealed class SupervisorSweeps(SupervisorBook book, MachineLog? log, Func<SupervisorLandingView, bool>? landed = null)
 {
     /// <summary>
     /// A revoke's or a replacing appointment's sweep: every held or released decision of the session goes stale, and the word of
@@ -112,9 +113,11 @@ internal sealed class SupervisorSweeps(SupervisorBook book, MachineLog? log)
             foreach (var file in Directory.EnumerateFiles(folder, "*.json"))
             {
                 var id = Path.GetFileNameWithoutExtension(file);
-                if (book.Live.ContainsKey(id) || book.Courses.ContainsKey(id) || Decided(session, id) is not { } earlier) continue;
+                if (book.Live.ContainsKey(id) || book.Courses.ContainsKey(id) || book.Landings.ContainsKey(id) || Decided(session, id) is not { } earlier) continue;
                 var closed = earlier.State switch
                 {
+                    // A word the pass applied before the restart is the decision made, not one the restart closed.
+                    SupervisorState.Released when earlier.Made => SupervisorState.WentOn,
                     SupervisorState.Held or SupervisorState.Released => SupervisorState.Stale,
                     SupervisorState.Admitted => SupervisorState.Interrupted,
                     _ => (SupervisorState?)null,
@@ -124,7 +127,8 @@ internal sealed class SupervisorSweeps(SupervisorBook book, MachineLog? log)
                     SupervisorDecisionFiles.TryAppend(
                         book.Files.StatesOf(session, id),
                         SupervisorDecisionFiles.StateLine(to, now, to == SupervisorState.Stale ? SupervisorWhy.Restarted : null, null));
-                    log?.Info(to == SupervisorState.Stale ? "supervisor.stale" : "supervisor.interrupted", ("why", SupervisorWhy.Restarted));
+                    if (to == SupervisorState.WentOn) log?.Info("supervisor.went-on", ("session", session));
+                    else log?.Info(to == SupervisorState.Stale ? "supervisor.stale" : "supervisor.interrupted", ("why", SupervisorWhy.Restarted));
                     if (!swept.Contains(session)) swept.Add(session);
                 }
 
@@ -141,8 +145,9 @@ internal sealed class SupervisorSweeps(SupervisorBook book, MachineLog? log)
     }
 
     // A decision file of any kind: its subject and the state its lines reached; null for a rule's act or a file that does not read.
-    private (SupervisorSubject Subject, SupervisorState State)? Decided(string session, string id) =>
-        book.Files.Earlier(session, id) is { } question ? (SupervisorSubject.Question(session, question.Question.Id), question.State)
-        : SupervisorCourseView.Read(book.Files, session, id) is { } course ? (SupervisorSubject.Point(session, course.Point, course.Kind), course.State)
+    private (SupervisorSubject Subject, SupervisorState State, bool Made)? Decided(string session, string id) =>
+        book.Files.Earlier(session, id) is { } question ? (SupervisorSubject.Question(session, question.Question.Id), question.State, false)
+        : SupervisorCourseView.Read(book.Files, session, id) is { } course ? (SupervisorSubject.Point(session, course.Point, course.Kind), course.State, false)
+        : SupervisorLandingView.Read(book.Files, session, id) is { } landing ? (landing.Subject, landing.State, landed?.Invoke(landing) == true)
         : null;
 }
