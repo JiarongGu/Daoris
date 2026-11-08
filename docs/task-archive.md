@@ -20,6 +20,7 @@ the per-task record. Entries preserve their original wording so the archive stay
 ## UPDATEREAD1 — the swap's last read, the migration's lease in doubt, a move-in's half copy (2026-11-08)
 
 > **UPDATEREAD1** (install-home-update review): Outcome: all three held as the row said. (a) `InstallSwap.Run`'s deadline branch reads the journal once more, as the `alive` branch does, so an application that confirmed meanwhile is installed confirmed and told (35e0d2b512). (b) `HomeMigration.Run` answers a lease that changed under every attempt (`HomeLeaseException`) as held by doubt, `home.migration-held`, and the next start converts (716130ea5e). (c) The cross-volume copy of D63's move-in is `FolderMove`, which removes what a failed copy made and nothing that was there before, so `HasState` stays false and the move-in is tried again (feb7ce1321); ONEWAY1w's removal of the move-in takes the unit with it.
+
 ## MEMSWEEPLIMIT1 and MEMBERMARK1 — the sweep reaches past entries that write nothing, and a member is handed each message once (2026-11-08)
 
 > **MEMSWEEPLIMIT1** (service; knowledge-memory-records review): Outcome: held as the row said. `MemorySweep` asks the engine for `Limit` due entries and, while it has written fewer than `Limit` rechecks and the engine answers all it was asked, asks again for double (up to `MaxReads`, 1,000), skipping the entries already read; no change at Lyntai's seam. Past 1,000 entries that all write nothing, the rest wait. Test: `CitationRecheckTests.The_sweep_reaches_an_entry_behind_a_limit_of_inconclusive_ones`.
