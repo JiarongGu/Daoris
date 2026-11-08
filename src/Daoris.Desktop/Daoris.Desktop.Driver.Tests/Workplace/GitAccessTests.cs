@@ -402,6 +402,19 @@ public sealed class GitAccessTests : IDisposable
     }
 
     [Fact]
+    public void A_class_named_twice_on_the_command_line_is_taken_as_its_last_value_pressed_and_applied_alike()
+    {
+        var (code, _, error) = Run(true, "", "access", "--machine", "write=deny", "write=allow");
+        Assert.True(code == 0, error);
+        Assert.Equal("""{"machine":true,"access":{"write":"allow"}}""", Assert.Single(_pressed).Payload);
+
+        GitSessionAccess.Begin(Home, "s7", "engine", "Games");
+        var (sessionCode, _, sessionError) = Run(false, "", "access", "--session", "s7", "write=ask", "write=deny");
+        Assert.True(sessionCode == 0, sessionError);
+        Assert.Equal("deny", GitSessionAccess.Read(Home, "s7")!.Classes.Single(each => each.Class == "write").Value);
+    }
+
+    [Fact]
     public void Git_asks_lists_the_go_aheads_that_wait()
     {
         Assert.Contains("no git go-ahead waits", Run(false, "", "asks").Out);
