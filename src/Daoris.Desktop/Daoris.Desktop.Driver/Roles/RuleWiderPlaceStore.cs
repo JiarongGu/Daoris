@@ -43,8 +43,9 @@ public sealed class RuleWiderPlaceStore(string home, Func<StoreSettled>? settled
     /// <returns>Whether the kept map moved.</returns>
     public bool Keep(IEnumerable<(string Repository, string? Workspace)> registered)
     {
-        var map = RuleWiderPlaces.From(registered).WorkspaceOf;
-        if (map.Count == 0 || Same(Read().WorkspaceOf, map)) return false;
+        var listed = registered.ToList();
+        var map = RuleWiderPlaces.From(listed).WorkspaceOf;
+        if (listed.Count == 0 || Same(Read().WorkspaceOf, map)) return false;
         lock (_gate)
         {
             try
