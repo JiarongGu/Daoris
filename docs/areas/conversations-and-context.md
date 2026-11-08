@@ -183,7 +183,8 @@ of everything it handed, section by section.
 31. Its sections: the request as first written; every word taken (the person's verbatim, others' as claims); each turn's
     last message and one line of what it did; the plan; uncommitted paths and commits; the last failed check; attachments;
     the outgoing agent's note; the entry's other parts; the line's course; what was left out. (from D189, D163, D229)
-32. Its bound is 40,000 weight, with a Han character weighing 3. Each section has a cap. Past the bound, the oldest turn and
+32. Its bound is 40,000 weight, with a Han, kana, Hangul or fullwidth character, or a surrogate pair, weighing 3 (search's own Han
+    test is a different question and stays as it is). Each section has a cap. Past the bound, the oldest turn and
     then the oldest word drop. It is kept as the new part's first event, with its account. (from D189)
 33. It never hands the agent's thoughts, a tool call's output (but the last failed check's, bounded), a model's summary, an
     account's name, or anything from a harness's store. A page a turn opened is named by its address without user, query or
