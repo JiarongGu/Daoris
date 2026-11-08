@@ -570,6 +570,14 @@ describe('the splitter', () => {
     fireEvent.doubleClick(handle);
     expect(reset).toHaveBeenCalledOnce();
   });
+
+  it('stops following where the browser cancels the press', () => {
+    const { change, handle } = edge();
+    fireEvent.pointerDown(handle, { clientX: 100, button: 0 });
+    fireEvent(window, new Event('pointercancel'));
+    fireEvent.pointerMove(window, { clientX: 400 });
+    expect(change).not.toHaveBeenCalled();
+  });
 });
 
 describe('the output panel', () => {
