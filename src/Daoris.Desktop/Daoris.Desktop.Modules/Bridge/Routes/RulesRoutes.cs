@@ -56,8 +56,7 @@ public sealed class RulesRoutes(DriverLoop loop)
         return Rules(file);
     }
 
-    // The screen's half of `daoris agent rules accept|decline`: the person's answer
-    // to an agent's proposal. 🔴 The only way a widening an agent proposed ever applies.
+    // The screen's half of `daoris agent rules accept|decline`: the person's answer to an agent's proposal.
     [DriverRoute("RULE_PROPOSAL", PipeClass.Person, Drain = PipeDrain.Passes)]
     [Owner("RULE_PROPOSAL", None = OwnerNone.ActsOnNothing)]
     [GroundRead("RULE_PROPOSAL", nameof(PipeReads.RuleProposal))]
@@ -131,6 +130,7 @@ public sealed class RulesRoutes(DriverLoop loop)
             Proposed = Moments.Write(proposal.Proposed),
             Settled = Moments.Write(proposal.Settled),
             proposal.SettledBy,
+            proposal.SettledRole,
             proposal.Note,
         }).ToArray<object>();
 

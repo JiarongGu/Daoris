@@ -10,7 +10,7 @@ namespace Daoris.Desktop;
 /// </summary>
 public static class SupervisorDecisionDoor
 {
-    private static readonly IReadOnlyList<ISupervisorKind> Rows = [new QuestionKind(), new CourseKind(), new LimitKind()];
+    private static readonly IReadOnlyList<ISupervisorKind> Rows = [new QuestionKind(), new CourseKind(), new LimitKind(), new AllowKind()];
 
     /// <summary>The kinds the door takes, each one row.</summary>
     public static IReadOnlyList<string> Kinds { get; } = [.. Rows.Select(row => row.Kind)];
@@ -55,8 +55,14 @@ public static class SupervisorDecisionDoor
     {
         if (RowOf(subject.Kind) is not { } row) return SupervisorDecided.Refused(SupervisorWhy.Form);
         if (loop.Pipe?.StandingConfirmation is not { } judge || loop.Service is not { } service) return SupervisorDecided.Refused(SupervisorWhy.NotStaffed);
-        if (await service.RecordAsync(subject.Session, CancellationToken.None).ConfigureAwait(false) is not { Repository: { } repository }) return SupervisorDecided.Refused(SupervisorWhy.NotParked);
-        var admitted = judge.Admit(subject.Kind, judge.Placed(repository), act);
+        var place = await row.PlaceOfAsync(loop, subject, CancellationToken.None).ConfigureAwait(false);
+        if (place is null)
+        {
+            if (await service.RecordAsync(subject.Session, CancellationToken.None).ConfigureAwait(false) is not { Repository: { } repository }) return SupervisorDecided.Refused(SupervisorWhy.NotParked);
+            place = judge.Placed(repository);
+        }
+
+        var admitted = judge.Admit(subject.Kind, place.Value, act);
         if (admitted.Why is { } why) return SupervisorDecided.Refused(why);
         if (admitted.Generation != generation) return SupervisorDecided.Refused(SupervisorWhy.RoleChanged);
         return Nudged(loop, await keep(row).ConfigureAwait(false));

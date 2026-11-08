@@ -28,7 +28,7 @@ public enum ProposalState
     /// <summary>The rules already said it.</summary>
     Unchanged,
 
-    /// <summary>A yes was saved into the rules and the mark of it not yet made; found so, it is never saved again.</summary>
+    /// <summary>A yes is saved into the rules and not yet marked; found so, it is never saved again.</summary>
     Settling,
 }
 
@@ -58,7 +58,6 @@ public sealed record RuleProposal(
 
     public string? Note { get; init; }
 
-    /// <summary>The supervisor role and decision a supervisor's settlement names; none for the person's.</summary>
     public string? SettledRole { get; init; }
 
     public string? SettledDecision { get; init; }
@@ -210,7 +209,6 @@ public static class RuleProposals
             switch (effect)
             {
                 case ChangeEffect.Narrows:
-                    // Judged again under the rule file's lock: an edit made since the read above may have changed what this does.
                     var applied = false;
                     PermissionChange.Change(home, held =>
                     {

@@ -330,7 +330,6 @@ public static class PermissionRules
     /// empty read, and writing it would drop every rule the file had. The CLI refuses the same edit. Or the file there now does not read,
     /// holds a key twice, or makes a scope this edit changes something other than an object.
     /// </exception>
-    /// <param name="holding">The caller holds the file's keep lock over its own read (<see cref="PermissionChange"/>), so the save takes none.</param>
     public static void Save(string home, PermissionFile file, bool holding = false)
     {
         if (file.Problem is not null)

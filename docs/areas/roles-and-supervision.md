@@ -78,7 +78,9 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they start wi
    role's but for works, its preset writing no rules; one with no choice, and choices on a supervisor held by rules or the
    terminal, are refused `choices`, and moving the holder off the agent deletes the row in the same transaction. A supervisor's `decides` names the kinds of decision it answers (`SupervisorKinds`: `question`,
    `course`, `limit`, `allow`, `files`, `landing`); none makes it its scope's generic supervisor, which answers what no kind
-   takes there. Its `authority` grants acts as `<kind>.<act>`, only of the kinds it decides, each off on a new record; the seed
+   takes there. The `allow` kind decides a permission request held in the asking mode at its session's repository (`allow.once`,
+   `allow.reject`, ended through the hold's own end) and a widening at its rule's reach (`allow.standing`, `allow.reject`,
+   settled recorded by the role), each taking effect at its keeping (`AllowKind`). Its `authority` grants acts as `<kind>.<act>`, only of the kinds it decides, each off on a new record; the seed
    grants `question.answer`, `course.go-on` and `limit.move`. A scope holds one generic supervisor and one per kind
    (`two-roles-one-work`); the machine's generic supervisor may not be removed, scoped away or given kinds (`may-not-be-off`).
    The role door writes no supervisor record before the home's `supervisor-kinds` migration step is recorded (`not-converted`);

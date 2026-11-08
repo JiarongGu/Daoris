@@ -1,6 +1,6 @@
 namespace Daoris.Driver;
 
-/// <summary>Who settles a proposal: the person, or a supervisor's role with the decision its yes was.</summary>
+/// <summary>Who settles a proposal: the person, or a supervisor's role with the decision that gave its yes.</summary>
 public sealed record RuleSettler(string Who, string? Role = null, string? Decision = null)
 {
     public static RuleSettler Person { get; } = new("the person");

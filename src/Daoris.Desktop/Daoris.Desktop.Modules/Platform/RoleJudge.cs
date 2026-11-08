@@ -32,7 +32,7 @@ internal sealed class RoleJudge(StandingConfirmation owner, StandingState state)
             // An agent's hold is its role's revision as the catalogue says it now, never a terminal's in memory.
             if (act is not null && !SupervisorGrants.Covers(effective!, kind, act)) return DecisionAdmitted.Refused(SupervisorWhy.NotGranted);
             var revision = slots.First(slot => slot.Id == effective!.Id).Revision;
-            return new DecisionAdmitted(AgentHold.Generation(effective!.Id, revision), null) { Window = TimeSpan.FromMinutes(effective.Hold!.Window) };
+            return new DecisionAdmitted(AgentHold.Generation(effective!.Id, revision), null) { Window = TimeSpan.FromMinutes(effective.Hold!.Window), Role = effective.Id };
         }
 
         lock (state.Gate)
@@ -40,7 +40,7 @@ internal sealed class RoleJudge(StandingConfirmation owner, StandingState state)
             if (effective is not { Hold.Terminal: true }) return DecisionAdmitted.Refused(SupervisorWhy.NotStaffed);
             if (act is not null && !SupervisorGrants.Covers(effective, kind, act)) return DecisionAdmitted.Refused(SupervisorWhy.NotGranted);
             return state.HoldOf(effective.Id) is { } hold
-                ? new DecisionAdmitted(hold.Generation, null) { Window = TimeSpan.FromMinutes(effective.Hold!.Window) }
+                ? new DecisionAdmitted(hold.Generation, null) { Window = TimeSpan.FromMinutes(effective.Hold!.Window), Role = effective.Id }
                 : DecisionAdmitted.Refused(SupervisorWhy.NotStarted);
         }
     }
