@@ -31,7 +31,6 @@ public static class FolderMove
             foreach (var file in Directory.EnumerateFiles(source, "*", SearchOption.AllDirectories))
             {
                 var to = Path.Combine(target, Path.GetRelativePath(source, file));
-                // Noted before the copy, where nothing is at its place: a copy that fails part way leaves what it wrote.
                 if (!File.Exists(to)) made.Add(to);
                 copyFile(file, to);
             }
