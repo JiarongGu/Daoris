@@ -64,12 +64,28 @@ public sealed class TidyDoor(string home, Action<string>? log = null, Func<bool>
     {
         var landings = new LandedBranches(home);
         if (landings.Of(start.Repository, start.Branch) is not { } landing || !string.Equals(landing.Tip, start.Tip, StringComparison.OrdinalIgnoreCase)) return;
-        if (!PullRequestReading.IsMerged(landing) || landing.Tidied?.Tip == start.Tip) return;
+        if (!PullRequestReading.IsMerged(landing) || TidyReading.Tidied(landing)) return;
         var trees = await TreeWorktrees.WorktreesAsync(start.Root, ct).ConfigureAwait(false);
+        // The parts an earlier pass ended before one failed stand: their branches are gone now, so ending them again would leave them out.
+        var before = landing.Tidied is { Partly: true } partly && string.Equals(partly.Tip, start.Tip, StringComparison.OrdinalIgnoreCase) ? partly.Parts : [];
         var parts = new List<TidiedPart>();
         foreach (var branch in PartsOf(landing))
         {
-            if (await EndAsync(start, branch, trees, ct).ConfigureAwait(false) is { } part) parts.Add(part);
+            if (before.FirstOrDefault(each => each.Branch == branch) is { } ended)
+            {
+                parts.Add(ended);
+                continue;
+            }
+
+            try
+            {
+                if (await EndAsync(start, branch, trees, ct).ConfigureAwait(false) is { } part) parts.Add(part);
+            }
+            catch (Exception) when (parts.Count > 0)
+            {
+                landings.Tidied(start.Repository, start.Branch, new ChainTidied(start.Tip, DateTimeOffset.UtcNow) { Parts = parts, Partly = true });
+                throw;
+            }
         }
 
         landings.Tidied(start.Repository, start.Branch, new ChainTidied(start.Tip, DateTimeOffset.UtcNow) { Parts = parts });

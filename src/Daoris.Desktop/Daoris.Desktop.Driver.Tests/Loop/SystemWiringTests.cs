@@ -239,7 +239,7 @@ public sealed class SystemWiringTests : IDisposable
     [InlineData("helper", false)]
     [InlineData("xhelp-alpha", false)]
     public void A_named_workspace_s_help_room_is_held_by_the_table_and_a_look_alike_is_not(string name, bool held) =>
-        Assert.Equal(held, WiringSizes.Held(name));
+        Assert.Equal(held, WiringPlaces.Held(Path.Combine(TestHomes.Root, "plain-home"), name));
 
     [Fact]
     public void A_walk_past_its_budget_or_cancelled_answers_what_it_counted_and_says_so()

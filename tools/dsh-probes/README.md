@@ -1,14 +1,14 @@
 # dsh probes — the instruments behind `docs/2026-09-21-dsh-evaluation.md`
 
-Four small Node scripts, zero dependencies, kept so the evaluation is reproducible and so ACP1 has a
-seed: the ACP client here is the mirror of the stub ACP agent the family rehearsal will need. None of
-them is a gate, none runs a model, and none is shipped.
+Four small Node scripts, zero dependencies, kept so the evaluation is reproducible. The ACP client here
+is also what the later protocol evidence ran (`docs/2026-09-22-acp3-probe-evidence.md`,
+`docs/2026-10-01-entry-point-evidence.md`). None of them is a gate, none runs a model, and none is shipped.
 
 | Script | What it is |
 |---|---|
 | `mock-llm.mjs` | A scripted OpenAI-compatible chat-completions server. Each agent-loop request consumes one step of a plan (a tool call by name pattern, or a final text); tool-less auxiliary requests (session titles, compaction) are answered without consuming a step; every request's model, tool roster, message tail and extra fields are logged. It also records, and refuses, requests on an Anthropic-style `/messages` route, which is what dsh's official DeepSeek adapter speaks |
 | `acp-client.mjs` | A minimal Agent Client Protocol client over an agent's stdio: `initialize`, `session/new`, `session/prompt` (or `--no-prompt`), `session/list`, `session/close`; answers `session/request_permission` by policy (`--permission allow|reject`); logs every frame in both directions as JSONL |
-| `read-dsh-session.mjs` | Decodes a dsh session log (`session.vN.jsonl[.zstd]` — one zstd frame per flush) into one line per event, using Node's own `zlib` |
+| `read-dsh-session.mjs` | Decodes a dsh session log (`session.vN.jsonl[.zstd]` — one zstd frame per flush) into one line per event, using Node's own `zlib`; `--full` prints each event whole |
 | `hook-deny-push.mjs` | A Claude Code `PreToolUse` command hook that refuses a shell command containing `git push`, by the structured `permissionDecision: deny` form; `HOOK_BLOCK_BY_EXIT_CODE=1` switches to the exit-2 form, which the evaluation showed does **not** block under a Windows PowerShell 5.1 executor |
 
 ## Reproducing a probe

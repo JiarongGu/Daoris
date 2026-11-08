@@ -68,7 +68,7 @@ public static class SupervisorRuleDoor
 
     /// <summary>The judge's refusal of <paramref name="press"/> against the rules stored now, or null: what a door says before anything is sent.</summary>
     public static RuleRefusal? Judge(string home, SupervisorRulesPress press) =>
-        SupervisorRules.Judge(press.Place, press.Read, press.Rules, new SupervisorRuleStore(home).All(), World(home));
+        SupervisorRules.Judge(press.Place, press.Read, press.Rules, SupervisorRuleBook.WithSeed(new SupervisorRuleStore(home).All()), World(home));
 
     /// <summary>The rules as a press carries them, a rule's place and window left to the door.</summary>
     public static JsonArray Wire(IReadOnlyList<SupervisorRule> rules) =>

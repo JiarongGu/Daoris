@@ -38,7 +38,7 @@ internal static class SupervisorFacts
             SessionsSuperviseCommand.Part(print, fence, "the standing answer for the repository, the owner's", StandingText.Quoted(standing));
         }
 
-        await CourseAsync(world, id, record, fence, print, ct).ConfigureAwait(false);
+        await CourseAsync(world.Service, world.Home, id, record, fence, print, ct).ConfigureAwait(false);
         return print.ToString();
     }
 
@@ -50,13 +50,13 @@ internal static class SupervisorFacts
         SessionsSuperviseCommand.Part(
             print, fence, "the point your rule referred: Daoris's own record, not the asking agent's",
             $"point: {point.Id}\ncount: {point.Count}\nvalue: {point.N}\nrule: {point.Rule}, the person's rule for {point.Place}, refers it\ncourse: {point.Course}");
-        await CourseAsync(world, id, record, fence, print, ct).ConfigureAwait(false);
+        await CourseAsync(world.Service, world.Home, id, record, fence, print, ct).ConfigureAwait(false);
         return print.ToString();
     }
 
-    private static async Task CourseAsync(ISupervisorWorld world, string id, PriorSession record, string fence, StringBuilder print, CancellationToken ct)
+    internal static async Task CourseAsync(ServiceClient service, string home, string id, PriorSession record, string fence, StringBuilder print, CancellationToken ct)
     {
-        var course = await LineFactsReads.Current.OfAsync(world.Service, world.Home, id, ct).ConfigureAwait(false);
+        var course = await LineFactsReads.Current.OfAsync(service, home, id, ct).ConfigureAwait(false);
         SessionsSuperviseCommand.Part(print, fence, "the line's course: Daoris's count from its records, not the asking agent's", CountTexts.Print(course));
         SessionsSuperviseCommand.Part(print, fence, "the branch's commits since its base: the asking agent's", await SessionsSuperviseCommand.CommitsAsync(record, ct).ConfigureAwait(false));
     }

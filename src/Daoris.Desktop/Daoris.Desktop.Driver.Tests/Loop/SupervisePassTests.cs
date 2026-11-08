@@ -24,11 +24,13 @@ public sealed class SupervisePassTests : IDisposable
         GitSeed.Discard(_home);
     }
 
-    private sealed class Desk(string? refuse = null) : ISupervisorDesk
+    private sealed class Desk(string? refuse = null, string? facts = "") : ISupervisorDesk
     {
         public List<(SupervisorBlock Block, SupervisorHolder Holder)> Kept { get; } = [];
 
         public Task<IReadOnlyList<SupervisorWaiting>> WaitingAsync(CancellationToken ct) => Task.FromResult<IReadOnlyList<SupervisorWaiting>>([Point]);
+
+        public Task<string?> FactsAsync(SupervisorWaiting waiting, string fence, CancellationToken ct) => Task.FromResult(facts);
 
         public Task<SupervisorBlockKept> KeepAsync(SupervisorWaiting waiting, SupervisorBlock block, SupervisorHolder holder, CancellationToken ct)
         {
@@ -105,6 +107,20 @@ public sealed class SupervisePassTests : IDisposable
     }
 
     [Fact]
+    public async Task ROLESREVIEW1a_a_files_subject_takes_a_turn_handed_the_facts_its_kind_composed_and_none_where_it_no_longer_waits()
+    {
+        var files = new SupervisorWaiting(SupervisorKinds.Files, SupervisorSubject.Ask("engine", "2026-11-09T09:00:00Z", "run(npm ci)", "npm ci"), "engine", "agent:supervisor@0", ["allow-run"]);
+        var (driver, asked, _) = Driver((_, _) => Ended("completed", Leave));
+
+        Assert.Null(await new SupervisePass(driver.Context, driver).StartAsync(files, new Desk(facts: null), default));
+        Assert.Empty(asked);
+
+        Assert.NotNull(await new SupervisePass(driver.Context, driver).StartAsync(files, new Desk(facts: "act: run(npm ci)"), default));
+        await Until(() => asked.Count > 0);
+        Assert.Contains("act: run(npm ci)", Assert.Single(asked).Prompt);
+    }
+
+    [Fact]
     public async Task A_limit_point_is_handed_the_point_s_facts_and_takes_a_turn()
     {
         var limit = new SupervisorWaiting(
@@ -163,6 +179,40 @@ public sealed class SupervisePassTests : IDisposable
 
         Assert.Equal(SupervisorAttemptOutcomes.Failed, Last(driver)!.Outcome);
         Assert.Empty(desk.Kept);
+    }
+
+    [Fact]
+    public async Task ROLESREVIEW1f_a_dropped_block_is_said_on_the_line()
+    {
+        var (driver, _, _) = Driver((_, _) => Ended("completed", GoOn));
+
+        await new SupervisePass(driver.Context, driver).StartAsync(Point, new Desk(SupervisorWhy.Form), default);
+        await Until(() => Last(driver)?.Outcome is not null);
+
+        Assert.Equal(SupervisorAttemptOutcomes.Failed, Last(driver)!.Outcome);
+        Assert.Contains(driver.Context.Events.After("s1", 0).Events, e => e.Kind == SessionEventKind.Note && e.Text!.Contains("not kept (form)", StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public async Task ROLESREVIEW1f_a_block_dropped_for_a_role_change_spends_no_choice_and_the_subject_begins_again()
+    {
+        var (driver, asked, _) = Driver((_, _) => Ended("completed", GoOn));
+
+        await new SupervisePass(driver.Context, driver).StartAsync(Point, new Desk(SupervisorWhy.RoleChanged), default);
+        await Until(() => Last(driver)?.Outcome is not null);
+
+        Assert.Equal(SupervisorAttemptOutcomes.RoleChanged, Last(driver)!.Outcome);
+        Assert.False(driver.Context.Supervisor.Attempts.Ended(Point.Subject));
+        Assert.Empty(driver.Context.Supervisor.Attempts.Spent(Point.Subject));
+        Assert.Contains(driver.Context.Events.After("s1", 0).Events, e => e.Kind == SessionEventKind.Note && e.Text!.Contains("role changed", StringComparison.Ordinal));
+
+        var desk = new Desk();
+        Assert.NotNull(await new SupervisePass(driver.Context, driver).StartAsync(Point, desk, default));
+        await Until(() => driver.Context.Supervisor.Attempts.Of(Point.Subject).Count == 2 && Last(driver)!.Outcome is not null);
+
+        Assert.Equal([1, 1], asked.Select(ask => ask.Attempt.Choice));
+        Assert.Equal(SupervisorAttemptOutcomes.Decided, Last(driver)!.Outcome);
+        Assert.Single(desk.Kept);
     }
 
     [Fact]

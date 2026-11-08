@@ -11,7 +11,8 @@ daoris plugin list                                   # what it declares and spea
 daoris plugin disable hold-by-title                  # a row in plugins.json, never a rename
 ```
 
-Or from the Machine view's Plugins card, which edits the same folder and the same file.
+Or from the Plugins view, which edits the same folder and the same file; only the terminal's `add` replaces
+an installed plugin, the window's never does.
 
 ## What it does
 

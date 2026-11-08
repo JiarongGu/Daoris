@@ -322,13 +322,7 @@ public sealed class LineEvents(string? home)
             case "tool":
                 if (entry.Locations is { Count: > 0 } where) body.Add($"files: {string.Join(", ", where)}");
                 if (entry.Input is { Length: > 0 } input) body.Add($"input: {input}");
-                if (entry.Output is { Length: > 0 } output)
-                {
-                    body.Add(output.Length > OutputLimit
-                        ? $"output: {output[..OutputLimit]}… ({output.Length.ToString("N0", CultureInfo.InvariantCulture)} characters in all)"
-                        : $"output: {output}");
-                }
-
+                if (entry.Output is { Length: > 0 } output) body.Add($"output: {LineOutput.Shown(output)}");
                 break;
             case "plan":
                 body.AddRange((entry.Steps ?? []).Select(step => step.Status is { } status ? $"- [{status}] {step.Content}" : $"- {step.Content}"));
@@ -344,7 +338,6 @@ public sealed class LineEvents(string? home)
     /// </summary>
     internal static string Who(LineEntry entry) => entry.Kind switch
     {
-        // Read from the event's own mark, never as the person's nor Daoris's.
         "user" when entry.Mark == "supervisor" => "the supervisor, on the owner's behalf",
         "user" when entry.Origin is null or "person" => entry.Mark == "channel" ? "the person, on the ask's channel" : "the person",
         "user" => entry.Mark switch
@@ -475,7 +468,6 @@ public sealed class LineEvents(string? home)
         }
         catch (JsonException)
         {
-            // A torn or foreign line costs itself, never the line's reading around it.
             return null;
         }
     }

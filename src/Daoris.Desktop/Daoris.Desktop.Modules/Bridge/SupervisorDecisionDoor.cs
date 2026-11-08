@@ -47,6 +47,9 @@ public static class SupervisorDecisionDoor
         return waiting;
     }
 
+    public static Task<string?> FactsAsync(DriverLoop loop, SupervisorWaiting waiting, string fence, CancellationToken ct) =>
+        RowOf(waiting.Kind) is { } row ? row.FactsAsync(loop, waiting.Subject, fence, ct) : Task.FromResult<string?>(null);
+
     /// <summary>
     /// An agent's decide or leave through its kind's row, its grant and hold read again first since no pipe judge stands before it.
     /// </summary>

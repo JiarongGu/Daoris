@@ -76,11 +76,9 @@ public static class SessionEntries
         if (session.Serves is not null || session.Opinion is not null) return own;
         if (!seen.Add($"s:{session.Id}")) return own;
 
-        if (session.Quest is { } questId)
+        if (session.Quest is { } questId && await facts.QuestAsync(questId, ct).ConfigureAwait(false) is { } quest)
         {
-            return await facts.QuestAsync(questId, ct).ConfigureAwait(false) is { } quest
-                ? await OriginOfQuestAsync(quest, facts, seen, ct).ConfigureAwait(false)
-                : own;
+            return await OriginOfQuestAsync(quest, facts, seen, ct).ConfigureAwait(false);
         }
 
         if (session.From is { } from && await facts.SessionAsync(from, ct).ConfigureAwait(false) is { } continued)
@@ -98,7 +96,6 @@ public static class SessionEntries
         var itself = $"quest:{quest.Id}";
         if (!seen.Add($"q:{quest.Id}")) return itself;
 
-        // Rule 2: a quest a conversation took joins that conversation's line, so its later parts stay in it.
         if (await facts.ChatTookAsync(quest.Id, ct).ConfigureAwait(false) is { } chat && !seen.Contains($"s:{chat.Id}"))
         {
             return await OriginAsync(chat, facts, seen, ct).ConfigureAwait(false);

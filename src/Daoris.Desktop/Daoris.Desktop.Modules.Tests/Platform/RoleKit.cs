@@ -84,7 +84,7 @@ internal static class RoleKit
     /// </summary>
     public static StandingConfirmation Staff(this StandingConfirmation standing, params RoleRecord[] roles)
     {
-        var now = standing.Slots().Where(each => roles.All(role => role.Id != each.Id)).Concat(roles.Select(Slot)).ToList();
+        var now = standing.SlotsNow().Where(each => roles.All(role => role.Id != each.Id)).Concat(roles.Select(Slot)).ToList();
         standing.Slots = () => now;
         return standing;
     }

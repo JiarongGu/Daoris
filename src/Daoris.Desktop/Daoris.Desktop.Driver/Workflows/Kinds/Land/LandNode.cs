@@ -52,7 +52,7 @@ internal sealed class LandNode : BuiltInNode, IObserves, IStarts, IMakesLanding
 
     /// <summary>
     /// The first option that does not hold, by its name, or null: each held to its choices, and the method's own refusals (a pattern on a merge,
-    /// a squash of an integrate). Where the graph's other nodes must stand is the graph's rules'.
+    /// a squash of an integrate or a merge). Where the graph's other nodes must stand is the graph's rules'.
     /// </summary>
     public override string? Problem(NodeDeclaration node)
     {
@@ -87,7 +87,7 @@ internal sealed class LandNode : BuiltInNode, IObserves, IStarts, IMakesLanding
         if (node.Options.TryGetValue("squash", out var squash))
         {
             if (NodeOptions.Value(squash) is not bool on) return "squash";
-            if (on && method == LandNodes.Integrate) return "squash";
+            if (on && method is LandNodes.Integrate or LandNodes.Merge) return "squash";
         }
 
         return node.Options.ContainsKey("message") && !(LandNodes.Written(node, "message") is { } message && LandNodes.MessageProblem(message) is null) ? "message" : null;

@@ -15,7 +15,7 @@ Rules for working in a repository that adopted Daoris:
 - Put the repository's own knowledge and skills under `.claude/knowledge/` and `.claude/skills/` at names the canon does not use; `sync` never touches them and indexes them as `(local)`.
 - Never pass `sync --force` to get past a refusal: it overwrites a file you edited, one written before adopting, or one you improved that the canon retires. Read the files it names.
 - Pin the package (`npx daoris@<version>`): the canon ships inside it, so the pin is the doctrine's version, and the manifest's `source` records it.
-- A change another repository owns is a quest to it, never an edit from here. Fill in `domain` in `daoris.json` first: `daoris connect` refuses a repository without one.
+- A change another repository owns is a quest to it, never an edit from here. Fill in `domain` in `daoris.json` first: `daoris repository connect` refuses a repository without one.
 <!-- agent-rules:end -->
 
 ## Docs
@@ -30,7 +30,7 @@ Rules for working in a repository that adopted Daoris:
 
 - [The core rules](https://github.com/JiarongGu/Daoris/tree/main/canon/core/rules): what every adopting repository's agents always load
 - [The core knowledge](https://github.com/JiarongGu/Daoris/tree/main/canon/core/knowledge): documents read on demand, each saying when it applies
-- [The core skills](https://github.com/JiarongGu/Daoris/tree/main/canon/core/skills): procedures invoked by name, such as `doc-loader` and `post-feature`
+- [The core skills](https://github.com/JiarongGu/Daoris/tree/main/canon/core/skills): procedures invoked by name, such as `change` and `set-up-documents`
 - [The packs](https://github.com/JiarongGu/Daoris/tree/main/canon/packs): stack-specific doctrine a manifest names in `packs`
 
 ## Examples

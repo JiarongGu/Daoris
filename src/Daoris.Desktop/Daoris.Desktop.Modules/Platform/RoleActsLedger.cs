@@ -13,10 +13,12 @@ internal sealed class RoleActsLedger(StandingConfirmation owner, StandingState s
     /// <summary>
     /// Under the act's gates: the act still <c>admitted</c> (no revoke and no owner's mark cancelled it), its holder's hash
     /// present and its generation live, and its target not <c>owner-set</c>, moved to <c>running</c>; null where it may run, else
-    /// <c>owner-set</c> or <c>role-changed</c>.
+    /// <c>owner-set</c> or <c>role-changed</c>; and <c>not-granted</c> where the role's authority as the catalogue says now no longer lists the act, since
+    /// a grant is read at every act and an act may have queued behind its gates while the person took it away.
     /// </summary>
     public string? RunAct(string id)
     {
+        var staffed = owner.Appointed();
         lock (state.Gate)
         {
             if (state.Acts.TargetOf(id) is { } target && state.OwnerHolds(target))
@@ -25,10 +27,21 @@ internal sealed class RoleActsLedger(StandingConfirmation owner, StandingState s
                 return RoleWhy.OwnerSet;
             }
 
+            if (state.Acts.ActOf(id) is { } admitted && !StillGranted(staffed, admitted.Role, admitted.Act))
+            {
+                state.Acts.Withdraw(id);
+                return RoleWhy.NotGranted;
+            }
+
             if (state.Acts.Run(id, state.Live)) return null;
             return state.Acts.CancelledByOwner(id) ? RoleWhy.OwnerSet : SupervisorWhy.RoleChanged;
         }
     }
+
+    // The desk's decline is every steward's, as at admission.
+    private static bool StillGranted(IReadOnlyList<RoleRecord> staffed, string role, string act) =>
+        (role == AppointedRoles.Steward && StewardActs.Desk.Contains(act, StringComparer.Ordinal))
+        || staffed.FirstOrDefault(each => each.Id == role) is { Hold: { } hold } && hold.Acts.Contains(act, StringComparer.Ordinal);
 
     /// <summary>The admitted act's target, which its gates are taken for; null where no act has the id.</summary>
     public RoleScope? ActTarget(string id)

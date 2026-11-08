@@ -230,7 +230,7 @@ public static class SystemWiring
             return rows;
         }
 
-        foreach (var (name, path) in found.Where(each => !WiringSizes.Held(each.Name)).OrderBy(each => each.Name, StringComparer.OrdinalIgnoreCase))
+        foreach (var (name, path) in found.Where(each => !WiringPlaces.Held(home, each.Name)).OrderBy(each => each.Name, StringComparer.OrdinalIgnoreCase))
         {
             rows.Add(new JsonObject
             {

@@ -19,6 +19,13 @@ internal sealed class KeyedSayService : HttpMessageHandler
 
     public Func<string, bool> Winding { get; init; } = _ => false;
 
+    /// <summary>What a say throws while set, as a stand-in for a failure the shell's reads do not expect; null answers as the service does.</summary>
+    public Exception? SayFault { get; set; }
+
+    private int _faults;
+
+    public int Faults => Volatile.Read(ref _faults);
+
     private readonly Dictionary<string, string> _settled = [];
 
     /// <summary>
@@ -73,6 +80,12 @@ internal sealed class KeyedSayService : HttpMessageHandler
         var path = request.RequestUri!.AbsolutePath;
         var body = request.Content is null ? "" : await request.Content.ReadAsStringAsync(ct);
         var parts = path.Split('/', StringSplitOptions.RemoveEmptyEntries);
+        if (SayFault is { } fault && request.Method == HttpMethod.Post && parts is ["api", "sessions", _, "say"])
+        {
+            Interlocked.Increment(ref _faults);
+            throw fault;
+        }
+
         var (status, answer) = (request.Method.Method, parts) switch
         {
             ("GET", ["api", "sessions"]) => (HttpStatusCode.OK, Records),

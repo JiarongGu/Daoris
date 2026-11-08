@@ -435,8 +435,6 @@ export const api = {
    */
   hostHoldsAKey: async (signal?: AbortSignal): Promise<boolean> =>
     typeof (await send('ReadStatus', { prove: nonce() }, signal)).answer.proof === 'string',
-  /** What waits at the service for the person's confirmation: a read, whatever key the page holds. */
-  confirmations: async (signal?: AbortSignal) => (await send('ListConfirmations', {}, signal)).answer,
   /**
    * The person's Confirm or Refuse of one, a door of theirs alone, which takes the key `post` sends. At a Confirm the host makes the
    * request: one its door refused is a 409 with that door's sentence, said as every refusal is.

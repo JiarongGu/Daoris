@@ -74,7 +74,7 @@ public sealed class SupervisorRuleStore(string home, Func<StoreSettled>? settled
     {
         if (!Has(write)) throw new DriverException("this home's store is not yet at the version that keeps the supervisor's rules, so nothing was saved; try again after the next start.");
         var now = (clock ?? TimeProvider.System).GetUtcNow().UtcDateTime.ToString("yyyy-MM-dd'T'HH:mm:ss.fff'Z'", CultureInfo.InvariantCulture);
-        var held = Sets(write.Query(RulesSql, RuleOf), write.Query(RevisionsSql, row => (row.GetString(0), row.GetInt64(1))));
+        var held = SupervisorRuleBook.WithSeed(Sets(write.Query(RulesSql, RuleOf), write.Query(RevisionsSql, row => (row.GetString(0), row.GetInt64(1)))));
         if (SupervisorRules.Judge(place, revision, rules, held, world) is { } refusal) throw new RuleRefusedException(refusal);
         var next = revision + 1;
         write.Execute("DELETE FROM supervisor_rules WHERE place = $place", ("$place", place));

@@ -221,22 +221,25 @@ public sealed class DrivenInbox : IAgentInbox
     /// service yet (<paramref name="door"/> null), one that refuses a running record, a record that refuses it
     /// for any reason, or one that does not answer. Words said to a session this process runs are never lost to a record that will not
     /// keep them; a restart loses only those. Never <see cref="InboxKeep.Refused"/>. A record that is no longer its line's head
-    /// answers <see cref="InboxKeep.Continued"/>, never held here: the caller says the word at the head.
+    /// answers <see cref="InboxKeep.Continued"/>, never held here: the caller says the word at the head. A keep with no key of its producer's gets
+    /// one and is tried again under it when unanswered, since the key is how a record hands back a copy it stored: held once.
     /// </summary>
     public async Task<InboxKept> KeepOrHoldAsync(ISaidDoor? door, ChatMessage message, CancellationToken ct)
     {
-        if (door is not null)
+        if (message.Key is null && message.Daoris?.Key is null) message = message with { Key = $"keep/{Guid.NewGuid():N}" };
+        for (var attempt = 0; door is not null && attempt < 2; attempt++)
         {
             try
             {
                 var kept = await KeepAsync(door, message, ct).ConfigureAwait(false);
                 if (kept.Outcome != InboxKeep.Refused) return kept;
+                break;
             }
             catch (Exception error) when (error is HttpRequestException or DriverException or ObjectDisposedException
                                               or System.Text.Json.JsonException
                                               || (error is OperationCanceledException && !ct.IsCancellationRequested))
             {
-                // Unanswered: held here alone, below.
+                // Unanswered: tried once more under the same key, then held here alone, below.
             }
         }
 
