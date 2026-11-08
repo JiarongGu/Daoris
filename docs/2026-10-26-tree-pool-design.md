@@ -4711,7 +4711,7 @@ one names none where the undo now restores a line (`PoolTakeovers.cs:97`), and t
    back onto the branch the undo waits to switch onto, and the next look that restores or frees the slot ends the hold; the repository's
    page says why the slot waits (`tree.kept-restoring`, in both languages). **The undo switches onto `ExpectBranch` only where its tip
    is still `Expect`** (Opus, not blocking): where the tip moved or the branch is gone, the undo detaches at `Expect` instead and the
-   slot, read clean, is freed serving no line, a parked slot whose ignored files are the previous line's outputs and nothing of its own
+   slot, read clean, is freed serving no line (else settled `stuck` as point 2 says), a parked slot whose ignored files are the previous line's outputs and nothing of its own
    (the judgement passed before the switch, so nothing of the line's own was there); where the branch is out in a checkout no record
    names, the claim waits, since that passes. **Rejected:** switching onto the moved branch and settling `stuck`, which keeps A's branch
    checked out in a slot out of the pool, so A could be brought back nowhere; and settling a freeable slot `stuck`, which only a person
