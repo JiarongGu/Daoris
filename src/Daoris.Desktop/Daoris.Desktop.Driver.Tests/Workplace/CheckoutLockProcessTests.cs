@@ -245,7 +245,7 @@ public sealed class CheckoutLockProcessTests : TreeSyncFixture
 
     /// <summary>
     /// 🔴 A holder that dies holding the checkout lets go with its process: the handle is the lock, so nothing stale is left to wait out,
-    /// and the next writer takes it at once.
+    /// and the next writer takes it once the file is free, which it is a moment after the exit is signalled, not at it.
     /// </summary>
     [Fact]
     public async Task A_holder_that_dies_holding_the_checkout_lets_go_of_it()
@@ -257,9 +257,12 @@ public sealed class CheckoutLockProcessTests : TreeSyncFixture
 
         await other.DieAsync();
 
-        using var writing = TreeLock.TryWriting(Home, root, "engine", TreeLock.Updating);
-        Assert.NotNull(writing);
-        Assert.Equal(TreeLock.Updating, TreeLock.HolderOf(Home, root));
+        TreeLock? writing = null;
+        await Poll.Until(() => (writing = TreeLock.TryWriting(Home, root, "engine", TreeLock.Updating)) is not null, () => "the dead holder's lock is never let go");
+        using (writing)
+        {
+            Assert.Equal(TreeLock.Updating, TreeLock.HolderOf(Home, root));
+        }
     }
 
     /// <summary>
