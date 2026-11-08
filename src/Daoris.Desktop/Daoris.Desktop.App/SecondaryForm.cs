@@ -15,12 +15,10 @@ namespace Daoris.Desktop;
 /// is what a utility should wear. Another main window is frameless as the main one is
 /// (<see cref="Options"/> has why it can be).</para>
 ///
-/// <para><b>Its page on the same engine, the same dispatcher and the same bus</b>: a
-/// <c>ChromiumView</c> bridges its page's IPC itself, on this window's own thread. Requests go to the same
-/// modules the main window talks to, and every event emitted on the bus reaches every page — which is
-/// how a second window watches the same live console without the driver keeping a second buffer (the
-/// buffer holds no cursor, so a reader is a position and not a registration). Its page's window
-/// commands act on this window, not the main one.</para>
+/// <para><b>Its page on the same engine, the same dispatcher and the same bus</b>: a <c>ChromiumView</c> bridges its page's IPC on this
+/// window's own thread, to the same modules the main window talks to. Every event on the bus reaches every page, so a second window
+/// watches the same live console with no second buffer (a reader is a position, not a registration). Its page's window commands act on
+/// this window, not the main one.</para>
 /// </remarks>
 public sealed class SecondaryForm : OptimizedForm, IReloadableWindow
 {
@@ -35,30 +33,21 @@ public sealed class SecondaryForm : OptimizedForm, IReloadableWindow
 
     /// <summary>
     /// The tray's reload: the page this window shows is opened again, on this window's thread. The kit's browser
-    /// exposes no reload, so the view is made again on the same path (see <c>MainForm</c>'s).
-    /// </summary>
+    /// exposes no reload, so the view is made again on the same path (see <c>MainForm</c>'s).</summary>
     bool IReloadableWindow.ReloadPage()
     {
-        if (_failed || IsDisposed || !IsHandleCreated) return false;
-        try
+        if (_failed) return false;
+        return this.Post(() =>
         {
-            BeginInvoke(() =>
-            {
-                if (IsDisposed || _failed) return;
-                var old = _view;
-                var fresh = _view = new ChromiumView(_engine, _viewLog) { Dock = DockStyle.Fill, Path = old.Path };
-                Controls.Remove(old);
-                old.Dispose();
-                Controls.Add(fresh);
-            });
-            return true;
-        }
-        catch (InvalidOperationException)
-        {
-            // The handle went between the look and the post.
-            return false;
-        }
+            if (IsDisposed || _failed) return;
+            var old = _view;
+            var fresh = _view = new ChromiumView(_engine, _viewLog) { Dock = DockStyle.Fill, Path = old.Path };
+            Controls.Remove(old);
+            old.Dispose();
+            Controls.Add(fresh);
+        });
     }
+
     private readonly Microsoft.Win32.UserPreferenceChangedEventHandler _themeChanged;
     private readonly Func<bool> _startsDark;
     private readonly bool _main;
@@ -94,14 +83,12 @@ public sealed class SecondaryForm : OptimizedForm, IReloadableWindow
             CaptionButtonColors = MainForm.CaptionColors(ChromePalette.For(startsDark()));
         }
 
-        // The main window's taskbar identity, or this window would be a button of its
-        // own beside the main one's, grouped by the executable the main one no longer is.
+        // The main window's taskbar identity, or this would be a button beside the main one's, grouped by the executable it no longer is.
         TaskbarWindow.Wear(this);
         WindowName = name;
 
-        // And, for another main window, its own workspace's count on its own button: the host tells it what its page
-        // told (`SecondaryWindowHost.ShowWaiting`), and the button's overlay is put back each time Explorer makes the button, as
-        // the main window's is.
+        // For another main window, its own workspace's count on its own button (`SecondaryWindowHost.ShowWaiting`), put back each
+        // time Explorer makes the button, as the main window's is.
         if (_main)
         {
             _badge = new TaskbarBadge(this);
@@ -113,27 +100,22 @@ public sealed class SecondaryForm : OptimizedForm, IReloadableWindow
             };
         }
 
-        // The viewer's held choice, or the OS theme at System, until the page says which one it is in
-        // (`FollowPage`, over `DAORIS.WINDOWS`). Shenora's window commands route a second window's
-        // `SET_THEME` nowhere, so the page tells this form by its name instead. Before it has spoken — the moments
-        // while the page comes up — that is the best guess, and a person on System who switches their OS theme
-        // with the page not yet up still gets a matching title bar.
+        // The viewer's held choice, or the OS theme at System, until the page says which one it is in (`FollowPage`, over
+        // `DAORIS.WINDOWS`): Shenora's window commands route a second window's `SET_THEME` nowhere, so the page tells this form by its name.
+        // A person on System who switches their OS theme before the page is up still gets a matching title bar.
         _themeChanged = (_, changed) =>
         {
             if (changed.Category != Microsoft.Win32.UserPreferenceCategory.General) return;
-            // Once the page has said, it decides: it pushes again when the OS changes and its choice
-            // is the system's, and an explicit choice must not be undone by the OS turning.
+            // Once the page has said, it decides, and pushes again when the OS changes: an explicit choice is never undone by the OS.
             if (_pageSaid) return;
-            // BeginInvoke, never Invoke: this arrives on the system-events thread and every window
+            // Posted, never Invoked: this arrives on the system-events thread and every window
             // here runs its own pump — a blocking marshal is the deadlock the framework warns about.
-            if (IsDisposed || !IsHandleCreated) return;
-            BeginInvoke(() => Theme(_startsDark()));
+            this.Post(() => Theme(_startsDark()));
         };
         Microsoft.Win32.SystemEvents.UserPreferenceChanged += _themeChanged;
 
-        // The same bytes the main window shows, with one query parameter saying which window this is —
-        // a route into one bundle, never a second frontend. Its browser opens as the
-        // view's handle is created, on this window's own thread.
+        // The same bytes the main window shows, with one query parameter saying which window this is: a route into one bundle, never
+        // a second frontend. Its browser opens as the view's handle is created, on this window's own thread.
         _engine = engine;
         _viewLog = log;
         _view = new ChromiumView(engine, log) { Dock = DockStyle.Fill, Path = page };
@@ -168,16 +150,7 @@ public sealed class SecondaryForm : OptimizedForm, IReloadableWindow
         if (_badge is null || IsDisposed) return;
         if (InvokeRequired)
         {
-            if (!IsHandleCreated) return;
-            try
-            {
-                BeginInvoke(() => ShowWaiting(count, description));
-            }
-            catch (InvalidOperationException)
-            {
-                // The handle went between the look and the post.
-            }
-
+            this.Post(() => ShowWaiting(count, description));
             return;
         }
 
@@ -198,16 +171,7 @@ public sealed class SecondaryForm : OptimizedForm, IReloadableWindow
         if (!_main || IsDisposed) return;
         if (InvokeRequired)
         {
-            if (!IsHandleCreated) return;
-            try
-            {
-                BeginInvoke(() => ShowWorkspace(workspace));
-            }
-            catch (InvalidOperationException)
-            {
-                // The handle went between the look and the post.
-            }
-
+            this.Post(() => ShowWorkspace(workspace));
             return;
         }
 

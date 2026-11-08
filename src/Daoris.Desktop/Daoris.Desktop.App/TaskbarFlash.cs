@@ -3,8 +3,7 @@ using System.Runtime.InteropServices;
 namespace Daoris.Desktop;
 
 /// <summary>
-/// A main window's taskbar button lit while a terminal's press waits unshown, and stopped.
-/// Which window and when is <see cref="PressFlash"/>'s judgement, tested in the modules; this is the shell call alone.
+/// A main window's taskbar button lit while a terminal's press waits unshown, and stopped: the shell call alone (<see cref="PressFlash"/> judges).
 /// </summary>
 /// <remarks>
 /// <c>FLASHW_TRAY | FLASHW_TIMERNOFG</c>: the button alone, never the caption, lit until the window comes to the foreground, which
@@ -20,27 +19,19 @@ internal static class TaskbarFlash
     /// <summary>Light <paramref name="form"/>'s taskbar button, or stop it, from any thread.</summary>
     public static void Set(Form? form, bool on)
     {
-        if (form is null || form.IsDisposed || !form.IsHandleCreated) return;
-        try
+        form?.Post(() =>
         {
-            form.BeginInvoke(() =>
+            if (form.IsDisposed || !form.IsHandleCreated) return;
+            var info = new FlashInfo
             {
-                if (form.IsDisposed || !form.IsHandleCreated) return;
-                var info = new FlashInfo
-                {
-                    Size = (uint)Marshal.SizeOf<FlashInfo>(),
-                    Window = form.Handle,
-                    Flags = on ? FLASHW_TRAY | FLASHW_TIMERNOFG : FLASHW_STOP,
-                    Count = 0,
-                    Timeout = 0,
-                };
-                FlashWindowEx(ref info);
-            });
-        }
-        catch (InvalidOperationException)
-        {
-            // The handle went between the look and the post: nothing to light.
-        }
+                Size = (uint)Marshal.SizeOf<FlashInfo>(),
+                Window = form.Handle,
+                Flags = on ? FLASHW_TRAY | FLASHW_TIMERNOFG : FLASHW_STOP,
+                Count = 0,
+                Timeout = 0,
+            };
+            FlashWindowEx(ref info);
+        });
     }
 
     [StructLayout(LayoutKind.Sequential)]

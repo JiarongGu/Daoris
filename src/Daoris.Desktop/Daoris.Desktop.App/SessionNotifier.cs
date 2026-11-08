@@ -25,9 +25,8 @@ public delegate bool BringForward(string window);
 /// balloon is not. This is delivery, and only delivery.</para>
 ///
 /// <para><b>It is quiet while the person is looking.</b> The same event reaches the page over the
-/// bridge, which raises the platform's own toast — so an OS balloon on top of that would be the same
-/// news twice. One of this application's windows in the foreground is the test, because that is what "they are
-/// already looking" actually means.</para>
+/// bridge, which raises the platform's own toast, so an OS balloon on top would be the same news twice. One of this application's
+/// windows in the foreground is the test, because that is what "they are already looking" means.</para>
 ///
 /// <para>🔴 <b>The icon has to be visible for a balloon to show at all</b>, so Daoris now has a tray
 /// icon. It is not close-to-tray: this window still closes when it is closed, and changing that
@@ -153,8 +152,7 @@ public sealed class SessionNotifier : IDisposable
     /// <summary>One balloon, on the window's thread, unless a window is already in front.</summary>
     private void Balloon(BalloonFacts facts, string? session, string? quest)
     {
-        if (_window.IsDisposed || !_window.IsHandleCreated) return;
-        _window.BeginInvoke(() =>
+        _window.Post(() =>
         {
             // Quiet while they are already looking — the page's own toast has it.
             if (IsLookingAtIt()) return;
