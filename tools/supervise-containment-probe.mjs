@@ -36,9 +36,9 @@ function rooms(door) {
   const root = join(scratch, door);
   rmSync(root, { recursive: true, force: true });
   const copy = join(root, 'copy');
-  const home = join(root, 'home');
+  const decoy = join(root, 'home');
   mkdirSync(join(copy, '.claude'), { recursive: true });
-  mkdirSync(home, { recursive: true });
+  mkdirSync(decoy, { recursive: true });
   execFileSync('git', ['init', '-q', '-b', 'main'], { cwd: copy, windowsHide: true });
   const marker = join(root, 'hook-ran.txt');
   writeFileSync(join(copy, 'README.md'), '# A supervisor\'s copy\n');
@@ -55,7 +55,7 @@ function rooms(door) {
   }, null, 2));
   const connector = join(root, 'connector.json');
   writeFileSync(connector, JSON.stringify({ mcpServers: {} }));
-  return { copy, home, marker, handed, connector, permissions: join(home, 'permissions.json') };
+  return { copy, decoy, marker, handed, connector, permissions: join(decoy, 'permissions.json') };
 }
 
 const prompt = (permissions) =>

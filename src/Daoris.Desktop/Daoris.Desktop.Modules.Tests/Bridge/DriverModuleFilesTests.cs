@@ -13,7 +13,7 @@ namespace Daoris.Desktop.Modules.Tests;
 /// </summary>
 public sealed class DriverModuleFilesTests : DriverModuleBridge
 {
-    private string FilesFile => Path.Combine(Home, "data", "files.json");
+    private string FilesFile => DaorisHome.Entry(Home, HomeEntry.Files);
 
     [Fact]
     public async Task A_rule_set_and_an_allow_pressed_are_written_with_their_maker_and_taken_back_by_their_presses()
