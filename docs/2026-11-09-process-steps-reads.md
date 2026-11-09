@@ -149,3 +149,58 @@ The independent Opus 5.5 reader's read of round 3 at `fd2c1421c6`, read-only; as
 **Not blocking.** `exists` refuses an existing `release` branch, against §3's release promotion. Release's `behind` goes back past `review`, so the person is asked again each time the line moves. A `merge` into a branch must write the landing provenance the node route reads (`IntegrationRequests.cs:128-158,255-260`). The conversion opens the desktop store, which `StoreNamesStep` upgrades, so "reads nothing another step writes" is false. What `conflicted` does when the request branch's delete fails and the branch is kept is not said.
 
 **Rows.** a to j ordered right (g before h, i and j placed right). Proofs missing: a, compound backlog rows; d, another run's promotion and a tree update while a hand-off is open; e, the operation's landing written and the head waiting, a branch target checked out, a completed one; h, a pre-h request closing after the upgrade, the binding's `Land` mapped, every `NodeKinds.Land` reader named.
+
+
+## Codex, round 4
+
+Codex's read of round 4 at `b62716d462`, run by the steward from outside the install, read-only; verbatim.
+
+**Another round is needed.** The generic kinds and workflow-level landing composition follow the direction. Round 4 answers the named round 3 sequences in design, but leaves ownership and request-correlation gaps.
+
+The individual answers are:
+
+- **Codex 1:** §12’s proven delivery end permits a new generation without rewriting the delivered row.
+- **Codex 2:** §16 converts retained bindings, including ended runs that can reopen.
+- **Codex 3:** §16 covers stopped, invalidated and unknown nodes, preserving Stop and reconciling unsettled attempts separately.
+- **Codex 4:** §12 brings delete, creation Undo, rename, rename Undo and opening Undo through one release.
+- **N3/N6:** §14 holds the head before readiness and assigns the operation’s landing and settlement to its `merge`.
+- **N5:** §13 separates a tree hand-off from repository-wide journal acts.
+- **N7:** §16 backfills waiting attempts’ invocations onto pre-upgrade requests.
+- **N8:** §15 retains branch occupancy, provenance, movement and completion checks.
+- **N9:** §13 assigns one commit asker per tree.
+
+These are design answers, not demonstrated proofs.
+
+Two blocking gaps remain:
+
+1. **Ownership can change after release approval — §§12,18; `WorkflowRunStart.BindOneAsync`, `RefTransaction`.** A remover obtains a release for branch P at W; a start then binds an open run to unchanged P; the remover deletes P successfully because git verifies W, not ownership. The new run loses its work ref and waits for manual repair. A recovery ref preserves commits but does not preserve the run’s operation. **Smallest change:** hold one shared exclusion across the ownership read and removal, and require binding/reopening to participate. Prove both interleavings in f, including restart recovery.
+
+2. **Adopting an existing open request needs durable correlation — §2.10; `IntegrateStart.AnswerAsync`, `IntegrationStore.FindByKey`.** The door may adopt an open request for the same unit/tip that another attempt or the card created. Its asking invocation remains another’s or absent. After that request closes, a restart searches by the adopting attempt’s invocation; closed requests another attempt asked are forbidden, so reconciliation loses the request and fresh admission can fail because the line already holds the work. §16 fixes this at upgrade only. **Smallest change:** persist the adopted request ID on the attempt before relying on it; reconcile by that ID. Preserve the request’s original requester and authority. Add adoption–closure–restart proofs to h.
+
+**Would every census go red? No.**
+
+- Records: a’s compound-backlog fixture addresses the known leak; the rule and post-check must expand compound IDs on **every row**, not just archive lines.
+- Conversion: recursive fields and enum coverage catch omitted members/states; captured-home residue and reads catch exercised paths only. §18 correctly admits uncaptured record kinds escape.
+- Selection: deleting old symbols makes their readers compile-fail; the source census catches its planted selectors, but helper-based first-move selection escapes.
+- Removal: typed staging and caller coverage catch the named bypasses; they do not catch the ownership race.
+- Say, target-rebind, kit, door and journal-deadline checks can reject their declared omissions. The orphan-write census establishes a surviving caller, not that execution reaches it.
+
+**Rows a–j remain dependency-ordered correctly.** Their proof plan now includes the prior missing sequences, but needs the two additional proofs above. Installed evidence remains i’s separate obligation; j correctly follows D232’s next shape-changing release.
+
+## Opus (independent), round 4
+
+The independent Opus 5.5 reader's read of round 4 against the code at `b62716d462`, read-only; as it answered, set down by the steward. Verdict: a round 5; three new blocking findings, past the two Codex found.
+
+**Round 3's findings.** Codex 1 answered by §12's end rows and next generation; Codex 2 in §16; Codex 3 in §16 keyed by `NodeStates.All`; Codex 4 by the release inside `RefTransaction`, its census leaking (below). N5 answered for the journal, one remover still ignoring the hand-off (B3). N6 answered for the head, a member's `merge` unguarded (B2). N7 answered but for Codex's adoption id. N8: the refusals kept, but `completed` now loops (B1). N9 mostly: `SessionWaits.CarriesOn(accepted: CarriedAccepts…)` (`Loop/DriverContinuations.cs:418-421`) still decides who asks, and h does not delete it.
+
+**A planted member each census misses.** The records post-check: none found. `BranchRemovalCensusTests`: `update-ref --stdin` fed a hand-built `delete refs/heads/x` line (the shape of `RecoveryDropping.cs:95`); a hand-made `ActStepPlan(Ref, {"input": …})`, which `ActSteps.cs:91-101` runs as given; part 3 checks who calls, not the `by` passed, so a listed caller passing another run's step passes. `ActJournalCensusTests`: an act with bounded steps whose `After` callback waits on a session turn (`ActRuns.cs:195` runs it with the act open and the checkout held). The residue census: `carried-accepts.json`, which names neither `land` nor a digest. `MoveSelectionCensusTests`: `Nodes.Single(n => n.Id == "landing")`, since the conversion keeps the `land`'s id on the `merge`. The orphan-write census checks that a caller exists in source, not that it is reached.
+
+**Blocking.**
+
+- **B1. A chain's completed branch loops with no remover** (§15, §2.2, §12; `LandingAdvance.cs:31-50`, `GitRefActs.cs:210-213`, `TreeSync.cs:276`, `IntegrationPromotes.cs:528`). Sequence, *Integrated*: step 1's `merge` fast-forwards P to C1 and R1 is admitted; step 2's quest keeps the run open; R1 promotes, and the integration's tidy of P is refused since an open run governs P; step 2 rebases onto P (`onto: target`, P exists), its `merge` fails `completed` to the person's task; the task's `done` returns, the `rebase` lands on P again, `completed` again. Nothing can remove P: the person's delete refuses a branch a landing made, *Bring up to date* and the look's sweep are refused by the release. The same when a pull request completes before the next step. Change: `completed` a routed outcome; the `merge`, as the run's own step, ends P through the release (recovery ref, end row) and goes `back` to its `rebase`, which then reads the line.
+- **B2. A together member lands alone** (§14, §2.6; `TreeLands.cs:141-152`, `TogetherPress.cs:229-279`). Sequence: a member's `rebase` has reached C_m and its `check` runs (*Release*), or its `merge` is not yet admitted; the person presses Together; the press's guards pass (no request open, the landing records hold C_m, the press compares the member's tree tip); `TogetherBinding` is read only at `rebase`'s start and the `merge`'s judgement has no member check, and it takes the git lock, not the tree's landing hold the press takes; C_m lands alone, the head replays it again, and the member is both delivered and brought-into. Today the landing refuses a bound tree under its landing hold, at the effect. Change: the `merge`'s judgement reads `TogetherBinding.Of(work)` under the member tree's landing hold and withdraws; the press refuses a member whose `rebase` has reached while its `merge` has not settled.
+- **B3. The person's discard removes a reserved tree, losing the resolution** (§13, §2.4; `TreeTidies.cs:68-71`, `TreeRemovals.cs:53-70`). Sequence: a resolver's turn ends mid-edit with its hand-off open; the person discards the session; `TreeRemovals` checks the landing hold, the tree lock, `TogetherGuard` and the active sessions, not the holders or the hand-off; `worktree remove --force` drops the staged resolution before §2.4 point 4 writes it to the edits ref; the release keeps the branch and the hand-off row stays open on a tree that is gone. Change: `TreeRemovals` reads `TreeHandOffs.Of(tree)` under its landing hold, or the hand-off holds that landing hold for its life.
+
+**Not blocking.** `TogetherSettle.Decide` (`TogetherSettle.cs:45-55`) reads a request closed `behind` on a moved line as uncertain, so the members stay bound after a restart between the close and the `merge`'s read (and a pre-h together request h's replay closes `behind`): read an unpromoted close as unmade. §2.6 gives no outcome when a `merge`'s line request is closed by the steward's drop or decide. `TidyHolders` reads only the service (`:62-83`), so reading `TreeHandOffs` needs the home. The resolver's own turn must be exempt from *a session's start in that tree waits*.
+
+**Rows.** a to j ordered right. Proofs missing: f, B1's chain with its first step completed; c and e, a member whose `rebase` reached before the press; d, a discard while a hand-off is open.

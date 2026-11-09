@@ -354,7 +354,7 @@ internal sealed class HandToSession(IRunWiring wiring) : IRunStage
                 // its quest still wants a turn, against the quest as this start is planned.
                 transientWanted: retryCt => TransientRetries.WantedAsync(service, quest.Id, sessionId, quest.Status, quest.Awaits, retryCt),
                 conclude: (exitCode, used, turnFailed, ended) =>
-                    ask is not null && endings.StoppedFirst is null && CarriedResumeRefused.Of(ask, adapter, exitCode) is { } refusal
+                    ask is not null && context.Processes.StopMade(sessionId) is null && CarriedResumeRefused.Of(ask, adapter, exitCode) is { } refusal
                         ? Task.FromException<StartRun>(new CarriedResumeRefused(refusal))
                         : conclusion.ConcludeAsync(exitCode, used, turnFailed, ended, ct)).ConfigureAwait(false);
         }

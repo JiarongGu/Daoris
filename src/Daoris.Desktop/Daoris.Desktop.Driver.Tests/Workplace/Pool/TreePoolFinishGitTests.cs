@@ -161,6 +161,30 @@ public sealed class TreePoolFinishGitTests : IDisposable
     }
 
     [Fact]
+    public async Task A_put_back_that_leaves_a_top_aside_keeps_the_manifest_that_holds_it()
+    {
+        var fixture = await FixtureAsync();
+        var slot = await fixture.LetGoAsync(fixture.Pool(), 1, "s-aaaa0001");
+        await WriteAsync(slot, "_fixtures/scratch.txt", "scratch\n");
+        var pool = fixture.Pool(seams: new PoolSeams
+        {
+            Reached = (phase, folder) => phase == TreeClaimPhases.SetAside ? WriteStandIn(folder) : Task.CompletedTask,
+        });
+
+        var done = await pool.FinishAsync(Finish(fixture, "s-aaaa0001"));
+
+        Assert.Contains("put back", done.Refused);
+        var manifest = Assert.Single(Directory.EnumerateFiles(TreePoolFinishes.SetAsideRoot(fixture.Site), "*" + SlimManifest.Suffix));
+        Assert.True(File.Exists(Path.Combine(SlimManifest.FolderOf(manifest)!, "_fixtures", "scratch.txt")));
+    }
+
+    private static Task WriteStandIn(string folder)
+    {
+        Directory.CreateDirectory(Path.Combine(folder, "_fixtures"));
+        return File.WriteAllTextAsync(Path.Combine(folder, "_fixtures", "again.txt"), "again\n");
+    }
+
+    [Fact]
     public async Task A_line_finished_after_its_slot_served_another_gets_its_facts_from_its_let_go_and_an_empty_folder()
     {
         var fixture = await FixtureAsync();

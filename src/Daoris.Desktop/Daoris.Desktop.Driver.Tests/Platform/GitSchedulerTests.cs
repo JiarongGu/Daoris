@@ -380,6 +380,30 @@ public sealed class GitSchedulerTests
     }
 
     [Fact]
+    public async Task A_removal_waits_for_the_git_making_its_tree_and_holds_one_asked_to_make_it_after()
+    {
+        var scheduler = Scheduler();
+        var tree = Folder("trees/made");
+        var adding = new TaskCompletionSource();
+        var made = scheduler.RunAsync(Write("checkout") with { Makes = tree }, async _ =>
+        {
+            await adding.Task;
+            return "made";
+        }, CancellationToken.None);
+        await Poll.Until(() => scheduler.Running == 1);
+        var removing = scheduler.RemovingAsync(tree, CancellationToken.None);
+        var again = scheduler.RunAsync(Write("other") with { Makes = tree }, _ => Task.FromResult("made again"), CancellationToken.None);
+
+        Assert.False(removing.IsCompleted);
+        adding.SetResult();
+        Assert.Equal("made", await made.WaitAsync(Soon));
+        var removal = await removing.WaitAsync(Soon);
+        Assert.False(again.IsCompleted);
+        removal.Dispose();
+        Assert.Equal("made again", await again.WaitAsync(Soon));
+    }
+
+    [Fact]
     public async Task A_git_that_outlived_its_kill_is_counted_apart_and_its_repositorys_background_asks_are_answered_stalled()
     {
         var said = new List<string>();

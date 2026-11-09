@@ -78,8 +78,12 @@ public sealed class OverlapPlannerTests
     [Fact]
     public void A_done_unit_still_integrating_holds_and_a_settled_one_holds_nothing()
     {
-        QuestView[] quests = [Quest("q1", "Done", "src/frame/**"), Quest("q2", "Open", "src/frame/cap.cs")];
-        var integrating = new Snapshot([], [], []) { Integrating = new HashSet<string>(StringComparer.OrdinalIgnoreCase) { "q1" } };
+        QuestView[] quests = [Quest("q2", "Open", "src/frame/cap.cs")];
+        var integrating = new Snapshot([], [], [])
+        {
+            Integrating = new HashSet<string>(StringComparer.OrdinalIgnoreCase) { "q1" },
+            IntegratingQuests = [Quest("q1", "Done", "src/frame/**")],
+        };
 
         Assert.Equal(StartVerdict.RepositoryBusy, Plan(quests, Rule(LandingIntegrate.Wait), integrating).Verdict);
         Assert.Equal(StartVerdict.Start, Plan(quests, Rule(LandingIntegrate.Wait)).Verdict);

@@ -368,8 +368,8 @@ public sealed class SessionTreesTests : IDisposable
     }
 
     /// <summary>
-    /// An open cut off while git is still adding its tree, the branch made and the tree checked out, leaves nothing.
-    /// The open holds the repository's hooks, so a smudge filter that waits holds git in its checkout while the open is cancelled.
+    /// An open cut off while git is still adding its tree, the branch made and the tree checked out, leaves nothing: the add, a write
+    /// the scheduler never ends, is waited out by the undo's removal, as a smudge filter's mark at its end shows.
     /// </summary>
     [Fact]
     public async Task An_open_cancelled_while_git_is_still_adding_its_tree_leaves_nothing()
@@ -380,7 +380,8 @@ public sealed class SessionTreesTests : IDisposable
         await GitAsync(root, "add", ".");
         await GitAsync(root, "commit", "-m", "held");
         var ran = Path.Combine(_scratch, "smudge-ran");
-        await GitAsync(root, "config", "filter.held.smudge", $"echo ran > '{ran.Replace('\\', '/')}'; sleep 120; cat");
+        var ended = Path.Combine(_scratch, "smudge-ended");
+        await GitAsync(root, "config", "filter.held.smudge", $"echo ran > '{ran.Replace('\\', '/')}'; sleep 3; cat; echo ended > '{ended.Replace('\\', '/')}'");
         using var closing = new CancellationTokenSource();
 
         var opening = new SessionTrees(_home).OpenAsync(root, "engine", "aurora", closing.Token);
@@ -389,6 +390,7 @@ public sealed class SessionTreesTests : IDisposable
         await closing.CancelAsync();
 
         await Assert.ThrowsAnyAsync<OperationCanceledException>(() => opening);
+        Assert.True(File.Exists(ended), "the open's undo ran while git was still adding its tree");
         await AssertNothingLeftAsync(root);
     }
 

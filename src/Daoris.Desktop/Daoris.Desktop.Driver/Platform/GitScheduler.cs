@@ -457,7 +457,7 @@ public sealed class GitScheduler
     }
 
     // An ask in a folder whose removal began before the ask waits until the removal has ended.
-    private bool Held(Entry entry) => _removing.Any(removal => removal.Order < entry.Order && Inside(entry.Ask.Folder, removal.Folder));
+    private bool Held(Entry entry) => _removing.Any(removal => removal.Order < entry.Order && Within(entry.Ask, removal.Folder));
 
     private bool Dequeue(Entry entry)
     {
@@ -471,8 +471,8 @@ public sealed class GitScheduler
 
     /// <summary>
     /// Admit the removal of <paramref name="folder"/>: the endable reads inside it dropped while queued and ended while running, their
-    /// askers told the tree is going; every other git inside it, queued or running, waited for; and each ask inside it made after this
-    /// held until the returned hold is disposed.
+    /// askers told the tree is going; every other git inside it or making it (<see cref="GitRunAsk.Makes"/>), queued or running, waited
+    /// for; and each such ask made after this held until the returned hold is disposed.
     /// </summary>
     internal async Task<IDisposable> RemovingAsync(string folder, CancellationToken ct)
     {
@@ -484,13 +484,13 @@ public sealed class GitScheduler
         {
             removal = new Removal(folder, ++_order);
             _removing.Add(removal);
-            foreach (var entry in _queues.Values.SelectMany(queue => queue).Where(each => Inside(each.Ask.Folder, folder)).ToList())
+            foreach (var entry in _queues.Values.SelectMany(queue => queue).Where(each => Within(each.Ask, folder)).ToList())
             {
                 if (entry.Ask.Endable && Dequeue(entry)) dropped.Add(entry);
                 else waits.Add(entry.Result.Task);
             }
 
-            foreach (var entry in _running.Where(each => Inside(each.Ask.Folder, folder)))
+            foreach (var entry in _running.Where(each => Within(each.Ask, folder)))
             {
                 if (entry.Ask.Endable) ended.Add(entry);
                 waits.Add(entry.Result.Task);
@@ -527,6 +527,8 @@ public sealed class GitScheduler
 
         return hold;
     }
+
+    private static bool Within(GitRunAsk ask, string tree) => Inside(ask.Folder, tree) || ask.Makes is { } made && Inside(made, tree);
 
     private static bool Inside(string folder, string removed)
     {
