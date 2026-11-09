@@ -214,6 +214,7 @@ export const HOME_ENTRIES = [
   row('git-library', 'run', 'run/git/library.json', 'run/git/library.json'),
   row('git-home', 'run', 'run/git/home', 'run/git/home'),
   row('git-sessions', 'run', 'run/git/sessions', 'run/git/sessions'),
+  row('clock-mark', 'run', 'run/clock.mark', 'run/clock.mark'),
   row('logs', 'logs', 'logs', 'logs'),
 ] as const;
 

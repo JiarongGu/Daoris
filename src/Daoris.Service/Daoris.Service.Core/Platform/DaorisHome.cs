@@ -436,6 +436,7 @@ public sealed record HomeEntry(string Name, HomeCategory Category, string New, s
     public static readonly HomeEntry GitLibrary = new("git-library", HomeCategory.Run, "run/git/library.json", "run/git/library.json");
     public static readonly HomeEntry GitHome = new("git-home", HomeCategory.Run, "run/git/home", "run/git/home");
     public static readonly HomeEntry GitSessions = new("git-sessions", HomeCategory.Run, "run/git/sessions", "run/git/sessions");
+    public static readonly HomeEntry ClockMark = new("clock-mark", HomeCategory.Run, "run/clock.mark", "run/clock.mark");
     public static readonly HomeEntry Logs = new("logs", HomeCategory.Logs, "logs", "logs");
 
     /// <summary>Every entry, in the table's order, which the twins hold in the same order.</summary>
@@ -453,7 +454,7 @@ public sealed record HomeEntry(string Name, HomeCategory Category, string New, s
         Deps, TreeFiles,
         Toolchain, ToolVersions, Bin,
         HomeLease, DriverLock, Running, Locks, Spawn, Starts, Hooks, Probing, SessionPids, Requests, EdgeRecord, Pipe, HomeMove,
-        GitHeld, GitGrants, GitUsed, GitAsks, GitCheckouts, GitLibrary, GitHome, GitSessions, Logs,
+        GitHeld, GitGrants, GitUsed, GitAsks, GitCheckouts, GitLibrary, GitHome, GitSessions, ClockMark, Logs,
     ];
 
     /// <summary>The entry of this name, or null where the table holds none.</summary>

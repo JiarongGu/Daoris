@@ -188,12 +188,15 @@ public sealed record GitResolved(string Revision, string Commit);
 /// reader. A graph page, a file's history and a blame are one each.</para>
 ///
 /// <para>🔴 <b>A ref is never a key</b>. Every read is asked of whole commit ids, and anything else is refused
-/// before git is asked: a ref is resolved first, by the list or <see cref="ResolveAsync"/>, which is never kept. An answer
-/// named only by ids cannot change, so it is kept under the repository's git directory, the ids, the path and the page. Two
-/// reads are never kept, since what they answer moves: the branches holding a commit, and a name's commit.</para>
+/// before git is asked: a ref is resolved first, by the list or <see cref="ResolveAsync"/>, which is never kept. An answer git
+/// reads from the objects alone is kept under the asker's stamp (<see cref="GitStamp"/>), the repository's git directory, the
+/// ids and the page, and only where the stamp's fence held across the read: a graph page, a commit's own fields and a compare's
+/// commits.</para>
 ///
-/// <para><b>What is not kept.</b> An answer git did not give (a fetch may bring the commit), and anything read from a shallow
-/// repository, whose history moves when it is deepened. Each is found with no process.</para>
+/// <para><b>What is not kept.</b> What reads the asking tree's attributes as well as the objects: a commit's changes and a compare's,
+/// a file's history and a blame, each asked at every ask. What moves: the branches holding a commit, and a name's commit. An
+/// answer git did not give (a fetch may bring the commit), and anything read from a shallow repository, whose history moves when
+/// it is deepened.</para>
 ///
 /// <para>🔴 <b>git walks up</b>: a root with no <c>.git</c> of its own is refused before git is asked, found on disk as the
 /// list finds it (<see cref="GitBranches.GitDirectory"/>). <b>Nothing is written</b>, in the repository or anywhere.</para>
@@ -225,6 +228,7 @@ public sealed class GitReads
     public const string EmptyTreeSha256 = "6ef19b41225c5369f1c104d45d8d85efa9b057b53b14b4b9b939dd74decc5321";
 
     private readonly WorkingTree.GitRead _git;
+    private readonly GitReadCache _cache;
 
     /// <summary>The reads through the git the agents run, keeping their answers in <paramref name="cache"/>, or in one of their own.</summary>
     public GitReads(GitReadCache? cache = null)
@@ -235,12 +239,12 @@ public sealed class GitReads
     /// <param name="git">How git is read: the seam the tests count processes through, as the review's are.</param>
     internal GitReads(GitReadCache cache, WorkingTree.GitRead git)
     {
-        Cache = cache;
+        _cache = cache;
         _git = git;
     }
 
     /// <summary>What the reads keep.</summary>
-    public GitReadCache Cache { get; }
+    public GitReadCache Cache => _cache;
 
     /// <summary>A whole commit id: 40 hex digits in a repository of SHA-1, 64 in one of SHA-256.</summary>
     public static bool IsWholeId(string? text) => text is { Length: 40 or 64 } && text.All(char.IsAsciiHexDigit);
@@ -272,6 +276,7 @@ public sealed class GitReads
         if (Repository.Of(root) is not { } repository) return Refused<GitGraphPage>(GitReadRefusal.NotTop, NotTop(root));
 
         return await AnsweredAsync(
+                root,
                 repository,
                 Key(repository, ["graph", sinceParted ? "parted" : "tips", Number(page), .. named]),
                 async () =>
@@ -283,7 +288,8 @@ public sealed class GitReads
                 },
                 _ => [GitFormats.GraphCommand(named, sinceParted)],
                 $"git could not walk the history from {string.Join(", ", named.Select(GitFormats.Short))} here: this repository may not hold "
-                + "every commit named, or git did not start.")
+                + "every commit named, or git did not start.",
+                ct)
             .ConfigureAwait(false);
     }
 
@@ -297,25 +303,31 @@ public sealed class GitReads
         var id = Lower(commit);
         if (Repository.Of(root) is not { } repository) return Refused<GitCommitDetail>(GitReadRefusal.NotTop, NotTop(root));
 
-        return await AnsweredAsync(
+        var unanswered = $"git could not read commit {GitFormats.Short(id)} here: this repository may not hold it, or git did not start.";
+        var fields = await AnsweredAsync(
+                root,
                 repository,
                 Key(repository, "commit", id),
                 async () =>
                 {
                     var (code, text) = await WholeAsync(root, GitFormats.CommitArguments(id), ct).ConfigureAwait(false);
-                    if (code != 0 || GitFormats.ParseCommit(text) is not { } detail || !Same(detail.Commit, id)) return null;
-
-                    var against = detail.Against ?? (id.Length == 64 ? EmptyTreeSha256 : EmptyTree);
-                    var rest = detail.Against is null
-                        ? $"`git show {GitFormats.Short(id)}` in the repository's checkout has all of it."
-                        : $"`git diff {GitFormats.Short(against)} {GitFormats.Short(id)}` in the repository's checkout has all of it.";
-                    var changes = await WorkingTree.RangeAsync(root, against, $"{against}..{id}", rest, _git, ct).ConfigureAwait(false);
-                    return changes is null ? null : detail with { Changes = changes };
+                    return code != 0 || GitFormats.ParseCommit(text) is not { } detail || !Same(detail.Commit, id) ? null : detail;
                 },
                 // Unanswered, its parents are not known, so only its fields' command is said.
                 detail => detail is null ? [GitFormats.CommitCommands(id, against: null)[0]] : GitFormats.CommitCommands(id, detail.Against),
-                $"git could not read commit {GitFormats.Short(id)} here: this repository may not hold it, or git did not start.")
+                unanswered,
+                ct)
             .ConfigureAwait(false);
+        if (fields.Value is not { } read) return fields;
+
+        var against = read.Against ?? (id.Length == 64 ? EmptyTreeSha256 : EmptyTree);
+        var rest = read.Against is null
+            ? $"`git show {GitFormats.Short(id)}` in the repository's checkout has all of it."
+            : $"`git diff {GitFormats.Short(against)} {GitFormats.Short(id)}` in the repository's checkout has all of it.";
+        var changes = await WorkingTree.RangeAsync(root, against, $"{against}..{id}", rest, _git, ct).ConfigureAwait(false);
+        return changes is null
+            ? new(null, GitReadRefusal.NotAnswered, unanswered) { Commands = fields.Commands }
+            : fields with { Value = read with { Changes = changes } };
     }
 
     /// <summary>
@@ -331,7 +343,8 @@ public sealed class GitReads
         if (Repository.Of(root) is not { } repository) return Refused<GitFileHistory>(GitReadRefusal.NotTop, NotTop(root));
 
         return await AnsweredAsync(
-                repository,
+                root,
+                repository with { Remembers = false },
                 Key(repository, "history", id, Number(page), path),
                 async () =>
                 {
@@ -346,7 +359,8 @@ public sealed class GitReads
                 },
                 _ => [GitFormats.HistoryCommand(id, path)],
                 $"git could not read the history of {path} at {GitFormats.Short(id)} here: this repository may not hold the commit, "
-                + "or git did not start.")
+                + "or git did not start.",
+                ct)
             .ConfigureAwait(false);
     }
 
@@ -363,7 +377,8 @@ public sealed class GitReads
         if (Repository.Of(root) is not { } repository) return Refused<GitBlame>(GitReadRefusal.NotTop, NotTop(root));
 
         return await AnsweredAsync(
-                repository,
+                root,
+                repository with { Remembers = false },
                 Key(repository, "blame", id, path),
                 async () =>
                 {
@@ -373,7 +388,8 @@ public sealed class GitReads
                 },
                 _ => [GitFormats.BlameCommand(id, path)],
                 $"git could not blame {path} at {GitFormats.Short(id)} here: the commit may hold no file there, this repository may not "
-                + "hold the commit, or git did not start.")
+                + "hold the commit, or git did not start.",
+                ct)
             .ConfigureAwait(false);
     }
 
@@ -388,27 +404,32 @@ public sealed class GitReads
         var (a, b) = (Lower(left), Lower(right));
         if (Repository.Of(root) is not { } repository) return Refused<GitCompare>(GitReadRefusal.NotTop, NotTop(root));
 
-        return await AnsweredAsync(
+        var unanswered = $"git could not compare {GitFormats.Short(a)} with {GitFormats.Short(b)} here: this repository may not hold both, or git did not start.";
+        var listed = await AnsweredAsync(
+                root,
                 repository,
-                Key(repository, "compare", everything ? "everything" : "parted", a, b),
+                Key(repository, "compare", a, b),
                 async () =>
                 {
                     var (code, text) = await WholeAsync(root, GitFormats.CompareArguments(a, b), ct).ConfigureAwait(false);
                     if (code != 0) return null;
                     var commits = GitFormats.ParseListed(text, marked: true);
-
-                    var range = everything ? $"{a}..{b}" : $"{a}...{b}";
-                    var changes = await WorkingTree.RangeAsync(
-                            root, a, range, $"`git diff {GitFormats.Short(a)}{(everything ? ".." : "...")}{GitFormats.Short(b)}` in the repository's checkout has all of it.",
-                            _git, ct)
-                        .ConfigureAwait(false);
-                    return changes is null
-                        ? null
-                        : new GitCompare(a, b, everything) { Commits = [.. commits.Take(CompareCommits)], More = commits.Count > CompareCommits, Changes = changes };
+                    return new GitCompare(a, b, everything) { Commits = [.. commits.Take(CompareCommits)], More = commits.Count > CompareCommits };
                 },
                 _ => GitFormats.CompareCommands(a, b, everything),
-                $"git could not compare {GitFormats.Short(a)} with {GitFormats.Short(b)} here: this repository may not hold both, or git did not start.")
+                unanswered,
+                ct)
             .ConfigureAwait(false);
+        if (listed.Value is not { } compare) return listed;
+
+        var range = everything ? $"{a}..{b}" : $"{a}...{b}";
+        var changes = await WorkingTree.RangeAsync(
+                root, a, range, $"`git diff {GitFormats.Short(a)}{(everything ? ".." : "...")}{GitFormats.Short(b)}` in the repository's checkout has all of it.",
+                _git, ct)
+            .ConfigureAwait(false);
+        return changes is null
+            ? new(null, GitReadRefusal.NotAnswered, unanswered) { Commands = GitFormats.CompareCommands(a, b, everything) }
+            : listed with { Value = compare with { Everything = everything, Changes = changes }, Commands = GitFormats.CompareCommands(a, b, everything) };
     }
 
     /// <summary>The local branches and origin's whose history holds <paramref name="commit"/>: one call, never kept.</summary>
@@ -459,22 +480,21 @@ public sealed class GitReads
     }
 
     /// <summary>
-    /// The answer kept under <paramref name="key"/>, or the read's, kept where it answered and the repository is not shallow.
-    /// The commands are the value's, so a kept answer names the same commands a fresh one does.
+    /// The answer kept under <paramref name="key"/> and <paramref name="root"/>'s stamp, or the read's, kept where it answered, the
+    /// repository is not shallow and the stamp's fence held across the read. The commands are the value's, so a kept answer names the
+    /// same commands a fresh one does.
     /// </summary>
     private async Task<GitAnswer<T>> AnsweredAsync<T>(
-        Repository repository, string key, Func<Task<T?>> read, Func<T?, IReadOnlyList<string>> commands, string unanswered) where T : class
+        string root, Repository repository, string key, Func<Task<T?>> read, Func<T?, IReadOnlyList<string>> commands, string unanswered,
+        CancellationToken ct) where T : class
     {
-        if (repository.Remembers && Cache.TryGet<T>(key, out var kept))
-        {
-            return new(kept, GitReadRefusal.None, null) { Commands = commands(kept), Remembered = true };
-        }
-
-        var value = await read().ConfigureAwait(false);
-        if (value is null) return new(null, GitReadRefusal.NotAnswered, unanswered) { Commands = commands(null) };
-
-        if (repository.Remembers) Cache.Keep(key, value, GitReadWeight.Of(value));
-        return new(value, GitReadRefusal.None, null) { Commands = commands(value) };
+        var stamp = repository.Remembers ? await GitStamp.OfAsync(root, ct).ConfigureAwait(false) : null;
+        var (value, kept) = stamp is null
+            ? (await read().ConfigureAwait(false), false)
+            : await _cache.AskAsync(stamp, key, read, GitReadWeight.Of).ConfigureAwait(false);
+        return value is null
+            ? new(null, GitReadRefusal.NotAnswered, unanswered) { Commands = commands(null) }
+            : new(value, GitReadRefusal.None, null) { Commands = commands(value), Remembered = kept };
     }
 
     /// <summary>git's whole answer, through the review's reader, for a call whose answer its own <c>--max-count</c> bounds.</summary>
