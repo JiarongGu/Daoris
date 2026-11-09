@@ -248,14 +248,14 @@ public sealed class LandBacklogLandingTests : LandedFixture
         var root = await RepositoryAsync("engine");
         Directory.CreateDirectory(Path.Combine(root, "docs"));
         await File.WriteAllTextAsync(Path.Combine(root, ".gitattributes"), "docs/task-archive.md merge=union\n");
-        await File.WriteAllTextAsync(Path.Combine(root, "docs", "task-archive.md"), Archive);
+        await CommitAsync(root, Path.Combine("docs", "task-archive.md"), Archive, "the archive");
         await CommitAsync(root, "TASKS.md", Day, "the backlog");
         var trees = new SessionTrees(Home);
         var tree = await trees.OpenAsync(root, "engine", "aurora");
         await File.WriteAllTextAsync(Path.Combine(tree.Path, "work.txt"), "the work\n");
-        await File.WriteAllTextAsync(Path.Combine(tree.Path, "docs", "task-archive.md"), Archive + "- **A2** (2026-11-09): two.\n- **A3** (2026-11-09): three.\n");
+        await CommitAsync(tree.Path, Path.Combine("docs", "task-archive.md"), Archive + "- **A2** (2026-11-09): two.\n- **A3** (2026-11-09): three.\n", "the work's archive");
         await CommitAsync(tree.Path, "TASKS.md", Day.Replace("- [ ] **A2** two.\n- [ ] **A3** three.\n", ""), "the work, A2 and A3 archived");
-        await File.WriteAllTextAsync(Path.Combine(root, "docs", "task-archive.md"), Archive + "- **A5** (2026-11-09): five.\n");
+        await CommitAsync(root, Path.Combine("docs", "task-archive.md"), Archive + "- **A5** (2026-11-09): five.\n", "the line's archive");
         var lined = Day.Replace("one: its evidence here.", "one: its evidence in the area.").Replace("**A2** two.\n", "**A2** two.\n- [ ] **B1** filed.\n")
             .Replace("- [ ] **A5** five.\n", "- [ ] **C1** filed too.\n");
         await CommitAsync(root, "TASKS.md", lined, "the line's day");
