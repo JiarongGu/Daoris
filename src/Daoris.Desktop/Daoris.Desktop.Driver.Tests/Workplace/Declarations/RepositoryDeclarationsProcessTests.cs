@@ -157,6 +157,21 @@ public sealed class RepositoryDeclarationsProcessTests : LandedFixture
     }
 
     [Fact]
+    public async Task A_kept_tracked_list_is_not_answered_once_a_replacement_stands()
+    {
+        using var _ = Settled();
+        var root = await RepositoryAsync("tracked-kept");
+        var first = await HeadAsync(root);
+        await CommitAsync(root, $"{Guid.NewGuid():N}.txt", "more\n", "more");
+        var tip = await HeadAsync(root);
+        Assert.Equal(3, (await RepositoryDeclarations.TrackedAsync(root, tip, None)).Count);
+
+        await GitAsync(root, "replace", tip, first);
+
+        Assert.Equal(2, (await RepositoryDeclarations.TrackedAsync(root, tip, None)).Count);
+    }
+
+    [Fact]
     public async Task Two_trees_of_one_repository_share_its_facts_and_two_files_of_one_content_share_a_parse()
     {
         using var _ = Settled();
