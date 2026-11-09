@@ -101,9 +101,9 @@ public sealed class HistorySyncTests : IAsyncLifetime
     /// A shared quest finished on A after a failed try on B, every move and record of it carried both ways: what a team's
     /// workspace holds of finished work.
     /// </summary>
-    private async Task<(Quest Quest, Session Mine, Session Theirs)> FinishedOnBothAsync(string title = "Shared work")
+    private async Task<(Quest Quest, Session Mine, Session Theirs)> FinishedOnBothAsync(string title = "Shared work", string? request = null)
     {
-        var quest = await _a.Quests.PublishAsync("Asker", "Federated", title, "why", Now);
+        var quest = await _a.Quests.PublishAsync("Asker", "Federated", title, "why", Now, request: request);
         await SyncAsync(_a);
         await SyncAsync(_b);
         var theirs = await _b.Sessions.CreateAsync(quest.Id, "Federated", "stub", Now.AddMinutes(1));
@@ -267,30 +267,37 @@ public sealed class HistorySyncTests : IAsyncLifetime
     }
 
     /// <summary>
-    /// The same words make the same id. Where the quest is forgotten, the remote still holds it closed and would refuse
-    /// a fresh copy on every pass, so the publish is refused in a closed quest's words and nothing is written. Where it
-    /// simply went, as after a delete, the same words make it again.
+    /// A request key makes the same id again. Where its quest is forgotten, the remote still holds it closed and would refuse
+    /// a fresh copy on every pass, so the publish is refused in a closed quest's words and nothing is written. Plain words of
+    /// a forgotten quest are a new ask under the next id; where the quest simply went, as after a delete, they make it again.
     /// </summary>
     [Fact]
-    public async Task The_same_words_asked_again_are_refused_where_the_quest_was_forgotten_and_ask_again_where_it_went()
+    public async Task A_key_asked_again_is_refused_where_its_quest_was_forgotten_and_plain_words_ask_again()
     {
-        var (quest, _, _) = await FinishedOnBothAsync("Asked once");
-        await _a.Desk.ClearAsync([Unit(quest)], Now.AddHours(1));
+        const string key = "run-1/ask-federated/1";
+        var (keyed, _, _) = await FinishedOnBothAsync("Asked once", key);
+        var (plain, _, _) = await FinishedOnBothAsync("Asked in plain words");
+        await _a.Desk.ClearAsync([Unit(keyed), Unit(plain)], Now.AddHours(1));
         var local = await _a.Quests.PublishAsync("Asker", "Homebody", "Asked here alone", "why", Now);
         await _a.Quests.MoveAsync(local.Id, QuestStatus.Taken, null, Now.AddMinutes(1));
         await _a.Quests.MoveAsync(local.Id, QuestStatus.Declined, "Not now.", Now.AddMinutes(2));
         Assert.Empty(Assert.Single(await _a.Desk.ClearAsync([Unit(local)], Now.AddHours(1))).Unit.Forgotten);
         var exchange = new QuestExchange(_service, _a.Quests, new OneRemote(Remote(_a.Key)), files: null, _a.Sessions);
 
-        var refused = await exchange.PublishAsync("Asker", "Federated", "Asked once", "Asked again.", Now.AddHours(2));
+        var refused = await exchange.PublishAsync(
+            new QuestAsk("Asker", "Federated", "Asked once", "Asked again.") { Request = key }, Now.AddHours(2));
+        var next = await exchange.PublishAsync("Asker", "Federated", "Asked in plain words", "Asked again.", Now.AddHours(2));
         var again = await exchange.PublishAsync("Asker", "Homebody", "Asked here alone", "Asked again.", Now.AddHours(2));
 
         Assert.Equal(QuestPublishRefusal.Cleared, refused.Refusal);
         Assert.Equal(
-            $"Quest `#{quest.Id}` was cleared from this machine; the remote for `default` holds it closed. A new ask is a new title.",
+            $"Quest `#{keyed.Id}` was cleared from this machine; the remote for `default` holds it closed. A new ask is a new title.",
             refused.Message);
-        Assert.Null(await _a.Quests.FindAsync(quest.Id));
-        Assert.DoesNotContain(await _a.Quests.PendingAsync(Workspaces.Default, _ => true), operation => operation.Quest == quest.Id);
+        Assert.Null(await _a.Quests.FindAsync(keyed.Id));
+        Assert.DoesNotContain(await _a.Quests.PendingAsync(Workspaces.Default, _ => true), operation => operation.Quest == keyed.Id);
+        Assert.Equal(QuestPublishRefusal.None, next.Refusal);
+        Assert.NotEqual(plain.Id, next.Quest!.Id);
+        Assert.Equal(QuestStatus.Open, next.Quest.Status);
         Assert.Equal(QuestPublishRefusal.None, again.Refusal);
         Assert.Equal((local.Id, QuestStatus.Open), (again.Quest!.Id, again.Quest.Status));
     }
