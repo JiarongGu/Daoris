@@ -7,7 +7,7 @@ namespace Daoris.Driver;
 /// palette offers it, so no saved graph holds one until the composition does.
 /// </summary>
 [NodeKind(NodeKinds.Rebase, NodeGroup.Landing, NodeKinds.Line, Arriving = true)]
-internal sealed class RebaseNode : BuiltInNode, IObserves, IStarts, ITargets
+internal sealed class RebaseNode : BuiltInNode, IObserves, IStarts, ITargets, IReadsSteps
 {
     /// <summary>The input it replays and the outputs it carries.</summary>
     public const string Work = "work";
@@ -48,10 +48,34 @@ internal sealed class RebaseNode : BuiltInNode, IObserves, IStarts, ITargets
     public NodeObservation Observe(NodeReading reading) => RebaseReading.Observe(reading);
 
     /// <summary>Its door, which replays off the pass under the loop's lease and drain rules.</summary>
-    public INodeDoor? Door(NodeDoorWiring wiring) => new RebaseDoor(wiring.Home, said => wiring.Say("rebase.run", said), wiring.MayStart);
+    public INodeDoor? Door(NodeDoorWiring wiring) =>
+        new RebaseDoor(wiring.Home, said => wiring.Say("rebase.run", said), wiring.MayStart) { Turning = wiring.Turning };
 
-    /// <summary>Begun in the pass once its work is still; while it is not, it stays ready, its wait said (<see cref="RebaseWaits"/>).</summary>
-    public Task<WorkPerformed?> StartAsync(NodeStarting starting, CancellationToken ct) => Task.FromResult<WorkPerformed?>(starting.Begin());
+    public Task<NodeGitReads> ReadAsync(GovernedUnit governed, string home, NodeGitReads reads, CancellationToken ct) => RebaseReads.ReadAsync(governed, home, reads, ct);
+
+    public void Release(string home, string run) => new RebaseRecords(home).Release(run);
+
+    /// <summary>
+    /// Begun in the pass once its work is still; while it is not, it stays ready, its wait said (<see cref="RebaseWaits"/>, read by its door). With
+    /// no door it stays ready, as nothing would perform it.
+    /// </summary>
+    public async Task<WorkPerformed?> StartAsync(NodeStarting starting, CancellationToken ct)
+    {
+        if (starting.Performer.Doors.Door<IRebaseDoor>(Row.Kind) is not { } door || starting.Governed.Scope?.Branch is not { Records.Branch: { } grown }
+            || (starting.Start.Move.Acceptance?.SubjectRevision ?? starting.Tip) is not { } tip)
+        {
+            return null;
+        }
+
+        var watched = starting.Governed.Watched;
+        if (await door.WaitsAsync(new RebaseWork(watched.Root, watched.Repository, watched.Workspace, grown.Branch, tip), ct).ConfigureAwait(false) is { } waits)
+        {
+            starting.Said.Add($"rebase  {starting.Governed.Unit.Id}: `{starting.Node.Id}` stays ready. {waits}");
+            return null;
+        }
+
+        return starting.Begin();
+    }
 
     /// <summary>A run's active <c>rebase</c> handed to its door once per node, attempt and tip, at the target's tip it is bound to.</summary>
     public void Keep(NodeKept kept)

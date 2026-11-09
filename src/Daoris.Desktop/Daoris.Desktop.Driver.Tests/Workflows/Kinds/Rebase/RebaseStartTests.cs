@@ -16,7 +16,11 @@ public sealed class RebaseStartTests
     private static TogetherOperation Operation(string phase, string? checkedAt = null) =>
         new("t-1", "engine", new TogetherHead("main", "s-40", HeadTree, "feature/head", "h0"),
             [new TogetherMember("s-41", Tree, "feature/member", "b0", "m1"), new TogetherMember("s-42", "C:/trees/default/engine/s-42", "feature/other", "b0", "o1")],
-            phase, DateTimeOffset.UnixEpoch) { Checked = checkedAt };
+            phase, DateTimeOffset.UnixEpoch)
+        {
+            Checked = checkedAt,
+            Attempt = phase == TogetherPhase.Landed ? new TogetherAttempt(TogetherForms.Merge, "main", null, "h1", DateTimeOffset.UnixEpoch) : null,
+        };
 
     [Theory]
     [InlineData(TogetherPhase.Asked)]

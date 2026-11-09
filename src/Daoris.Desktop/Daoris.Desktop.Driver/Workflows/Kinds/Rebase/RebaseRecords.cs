@@ -47,6 +47,15 @@ public sealed class RebaseRecords(string home)
     /// <summary>The attempt of <paramref name="node"/> numbered <paramref name="attempt"/>, null where none is written.</summary>
     public RebaseAttempt? Of(string run, string node, int attempt) => Of(run).LastOrDefault(each => each.Node == node && each.Attempt == attempt);
 
+    /// <summary>The run's attempts let go of, at its settled end; nothing where none is written.</summary>
+    public void Release(string run)
+    {
+        lock (Gate)
+        {
+            File.Delete(PathOf(run));
+        }
+    }
+
     /// <summary>Writes <paramref name="made"/>, replacing an earlier one of the same attempt.</summary>
     public void Write(RebaseAttempt made)
     {

@@ -17,10 +17,8 @@ public static class DeliveryReaches
 public sealed record DeliveryReached(string Unit, string How, string? Delivery, string Said);
 
 /// <summary>
-/// The reach of a unit's <c>land</c>: one Accept carrying several sessions is
-/// one delivery, the head's unit's. Each member is reached as brought into it once the operation that brought them together has landed, read
-/// from that operation, the inclusion record of every form; while the operation is open the member is bound to it and starts no delivery of
-/// its own, so there is no second fence.
+/// The reach of a unit's <c>land</c>: one Accept carrying several sessions is one delivery, the head's. A member is brought into it once its
+/// operation landed, and bound while it is open (<see cref="TogetherBinding.Including"/>), so there is no second fence.
 /// </summary>
 public static class DeliveryReach
 {
@@ -44,25 +42,21 @@ public static class DeliveryReach
                 $"whether `{unit}` is being brought together with other sessions could not be read ({error.Message}), so it starts no delivery now");
         }
 
-        foreach (var operation in operations.Where(each => each.Members.Any(member => Is(member, unit))).OrderByDescending(each => each.Since))
+        if (TogetherBinding.Including(operations, member => Is(member, unit)) is not { } operation) return null;
+        if (operation.IsOpen)
         {
-            if (operation.IsOpen)
-            {
-                return new(unit, DeliveryReaches.Bound, null,
-                    $"`{unit}` is being brought together with another session's work (operation {operation.Id}, {operation.Phase}): its head's Accept "
-                    + "delivers it, so it starts no delivery of its own");
-            }
-
-            if (operation.Phase != TogetherPhase.Landed || operation.Attempt is not { } attempt) continue;
-            var member = operation.Members.First(each => Is(each, unit));
-            var head = store.At(operation.Repository, attempt.Pinned).FirstOrDefault(each => each.Settled == DeliverySettlements.Delivered);
-            var into = attempt.Form == TogetherForms.Merge ? $"the line `{attempt.Target}`" : $"`{attempt.Target}`";
-            return new(unit, DeliveryReaches.BroughtInto, head?.Key,
-                $"`{unit}`'s work at {Short(member.Tip)} was brought into {into} by operation {operation.Id}"
-                + (head is null ? "" : $", in delivery {head.Key[..12]} of `{head.Intent.Unit}`"));
+            return new(unit, DeliveryReaches.Bound, null,
+                $"`{unit}` is being brought together with another session's work (operation {operation.Id}, {operation.Phase}): its head's Accept "
+                + "delivers it, so it starts no delivery of its own");
         }
 
-        return null;
+        var attempt = operation.Attempt!;
+        var member = operation.Members.First(each => Is(each, unit));
+        var head = store.At(operation.Repository, attempt.Pinned).FirstOrDefault(each => each.Settled == DeliverySettlements.Delivered);
+        var into = attempt.Form == TogetherForms.Merge ? $"the line `{attempt.Target}`" : $"`{attempt.Target}`";
+        return new(unit, DeliveryReaches.BroughtInto, head?.Key,
+            $"`{unit}`'s work at {Short(member.Tip)} was brought into {into} by operation {operation.Id}"
+            + (head is null ? "" : $", in delivery {head.Key[..12]} of `{head.Intent.Unit}`"));
     }
 
     private static bool Is(TogetherMember member, string unit) => string.Equals(member.Unit, unit, StringComparison.Ordinal);

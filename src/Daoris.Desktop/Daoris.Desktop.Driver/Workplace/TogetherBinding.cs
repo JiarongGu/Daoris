@@ -47,14 +47,14 @@ public static class TogetherBinding
     /// <summary>The hold <paramref name="operations"/> have on the work, the newest open operation's; null where none holds it.</summary>
     public static TogetherHold? Of(IReadOnlyList<TogetherOperation> operations, string repository, string branch, string tree, string tip)
     {
-        foreach (var operation in operations.Where(each => each.IsOpen && Same(each.Repository, repository)).OrderByDescending(each => each.Since))
+        var mine = operations.Where(each => Same(each.Repository, repository)).ToList();
+        if (Including(mine, member => IsMember(member, branch, tree)) is { IsOpen: true } bound)
         {
-            if (operation.Members.Any(member => IsMember(member, branch, tree)))
-            {
-                var head = operation.Head.Record;
-                return new(TogetherHolds.Member, operation, $"Waits for `{head}`'s Accept, which brings this work in with it");
-            }
+            return new(TogetherHolds.Member, bound, $"Waits for `{bound.Head.Record}`'s Accept, which brings this work in with it");
+        }
 
+        foreach (var operation in mine.Where(each => each.IsOpen).OrderByDescending(each => each.Since))
+        {
             if (tree.Length == 0 || !TogetherOperation.SameTree(operation.Head.Tree, tree)) continue;
             var members = string.Join(" and ", operation.Members.Select(member => $"`{member.Session}`"));
             return operation.Phase switch
@@ -77,10 +77,17 @@ public static class TogetherBinding
     /// replay gave them. Null where no landed operation brought it in.
     /// </summary>
     public static string? BroughtIn(IReadOnlyList<TogetherOperation> operations, string repository, string branch, string tree) =>
-        operations.Where(each => each.Phase == TogetherPhase.Landed && Same(each.Repository, repository))
+        Including(operations.Where(each => Same(each.Repository, repository)), member => IsMember(member, branch, tree)) is { IsOpen: false } landed
+            ? landed.Members.First(member => IsMember(member, branch, tree)).Tip
+            : null;
+
+    /// <summary>
+    /// The newest operation that binds a member <paramref name="member"/> matches, open, or brought it in, landed with its attempt; null where
+    /// none. The one read of a member's operation: the step's start, the inclusion record and a delivery's reach (<see cref="DeliveryReach"/>).
+    /// </summary>
+    public static TogetherOperation? Including(IEnumerable<TogetherOperation> operations, Func<TogetherMember, bool> member) =>
+        operations.Where(each => each.Members.Any(member) && (each.IsOpen || each is { Phase: TogetherPhase.Landed, Attempt: not null }))
             .OrderByDescending(each => each.Since)
-            .SelectMany(each => each.Members.Where(member => IsMember(member, branch, tree)))
-            .Select(member => member.Tip)
             .FirstOrDefault();
 
     private static bool IsMember(TogetherMember member, string branch, string tree) =>

@@ -10,6 +10,9 @@ public interface IRebaseDoor : INodeDoor
 {
     /// <summary>Starts the replay off the pass, once per run, node and attempt; false where one runs already or none may begin now.</summary>
     bool Start(RebaseStart start);
+
+    /// <summary>Why the work may not be replayed now, said (<see cref="RebaseWaits"/>); null where it is still.</summary>
+    Task<string?> WaitsAsync(RebaseWork work, CancellationToken ct);
 }
 
 /// <summary>
@@ -24,6 +27,18 @@ public interface IRebaseDoor : INodeDoor
 public sealed class RebaseDoor(string home, Action<string>? log = null, Func<bool>? runs = null) : IRebaseDoor
 {
     private readonly ConcurrentDictionary<string, Task> _running = new(StringComparer.Ordinal);
+
+    /// <summary>The trees a session runs a turn or waits in; null reads none, so no turn holds a replay.</summary>
+    public Func<CancellationToken, Task<IReadOnlySet<string>>>? Turning { get; init; }
+
+    /// <inheritdoc/>
+    public async Task<string?> WaitsAsync(RebaseWork work, CancellationToken ct)
+    {
+        var tree = TreeOf(work);
+        var turning = tree is not null && Turning is not null
+            && (await Turning(ct).ConfigureAwait(false)).Any(each => TogetherOperation.SameTree(each, tree));
+        return RebaseWaits.Of(turning, TogetherBinding.Of(home, work.Repository, work.Branch, tree ?? "", work.Tip));
+    }
 
     /// <inheritdoc/>
     public bool Start(RebaseStart start)

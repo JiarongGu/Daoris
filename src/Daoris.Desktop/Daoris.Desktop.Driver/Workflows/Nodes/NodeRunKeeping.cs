@@ -75,7 +75,7 @@ internal sealed class NodeRunKeeping(
     public async Task ReleaseStepsAsync(GovernedUnit governed, RunScope scope, CancellationToken ct)
     {
         if (!holdsLease() || records.Read(governed.Unit.Id) is not { } record || !StepRefs.Releases(record) || scope.Root.Length == 0) return;
-        await StepRefs.ReleaseAsync(scope.Root, scope.Run.Run, ct).ConfigureAwait(false);
+        if ((await StepRefs.ReleaseAsync(scope.Root, scope.Run.Run, ct).ConfigureAwait(false)).Done) NodeStepReads.Release(records.Home, scope.Run.Run);
     }
 
     /// <summary>Whether nothing on the record is still to come: no attempt or word pending, and its graph's end settled or no node of it able to move.</summary>

@@ -209,7 +209,10 @@ public sealed class RebaseReplayGitTests : LandedFixture
         TogetherOperation[] landed =
         [
             new("t-1", "engine", new TogetherHead("main", "s-head", Path.Combine(Scratch, "head"), "feature/head", bound),
-                [new TogetherMember("s-member", tree.Path, tree.Branch, tree.BasedOn, bound)], TogetherPhase.Landed, DateTimeOffset.UtcNow),
+                [new TogetherMember("s-member", tree.Path, tree.Branch, tree.BasedOn, bound)], TogetherPhase.Landed, DateTimeOffset.UtcNow)
+            {
+                Attempt = new TogetherAttempt(TogetherForms.Merge, "main", null, bound, DateTimeOffset.UtcNow),
+            },
         ];
         var held = TogetherBinding.BroughtIn(landed, "engine", tree.Branch, tree.Path);
         Assert.Equal(bound, held);
