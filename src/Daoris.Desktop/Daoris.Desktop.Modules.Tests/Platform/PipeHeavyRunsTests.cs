@@ -87,6 +87,36 @@ public sealed class PipeHeavyRunsTests : Bridge
         Assert.Contains("run-heavy: stopped while `command` ran", Text(said));
     }
 
+    [Fact]
+    public async Task An_id_a_run_of_this_connection_already_holds_is_refused_and_its_stop_still_reaches_the_first()
+    {
+        if (!OperatingSystem.IsWindows()) return;
+        var (pipe, client, services, log) = await ServeAsync();
+        using var _ = services;
+        using var __ = log;
+        using var ___ = pipe;
+        await using var ____ = client;
+        using var output = new AnonymousPipeServerStream(PipeDirection.In);
+        var said = new StringBuilder();
+        var reading = Read(output, said);
+
+        var run = await client.SendAsync(InstancePipe.Module, HeavyTerminalRun.Type, Payload(output, "ping", "-n", "60", "127.0.0.1"));
+        await UntilAsync(() => Text(said).Contains("run-heavy: `command`: ping"));
+        await client.SendAsync(InstancePipe.Module, HeavyTerminalRun.Type, Payload(output, "cmd", "/c", "echo", "second"), id: run);
+        var refused = await client.AnswerAsync(run);
+        Assert.False(refused.GetProperty("success").GetBoolean(), refused.GetRawText());
+        Assert.Equal(InstancePipe.IdTaken, refused.GetProperty("error").GetProperty("code").GetString());
+
+        var stop = await client.AnswerAsync(await client.SendAsync(InstancePipe.Module, HeavyTerminalRun.StopType, new { id = run }));
+        Assert.True(stop.GetProperty("success").GetBoolean(), stop.GetRawText());
+        var answer = await client.AnswerAsync(run);
+        output.DisposeLocalCopyOfClientHandle();
+        await reading;
+
+        Assert.Equal(1, answer.GetProperty("data").GetProperty("exit").GetInt32());
+        Assert.DoesNotContain("second", Text(said));
+    }
+
     /// <summary>A run of <paramref name="command"/> as a heavy run's own command, from the scratch home, writing to <paramref name="output"/>.</summary>
     private object Payload(AnonymousPipeServerStream output, params string[] command)
     {
