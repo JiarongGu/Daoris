@@ -120,6 +120,31 @@ public sealed class BranchTidyingFolderTests : BranchTidyingFixture
         Assert.StartsWith(Removed(landed), Assert.Single(free), StringComparison.Ordinal);
     }
 
+    /// <summary>A tree whose rename is refused is still in use: its shared links stand and its record still holds them.</summary>
+    [Fact]
+    public async Task A_tree_whose_move_is_refused_keeps_its_shared_links()
+    {
+        if (!OperatingSystem.IsWindows()) return;
+
+        var root = await RepositoryAsync("engine");
+        var landed = await LandedTreeAsync(new SessionTrees(_home), root);
+        _ledger.Register("engine", root);
+        var share = new TreeShare("build/shared/", Path.Combine(root, "build"), "write");
+        TreeFilesRecord.Mark(_home, landed.Path);
+        TreeShares.Make(landed.Path, share);
+        TreeFilesRecord.Change(_home, landed.Path, state => state with { Shares = [share] });
+        using var log = Log();
+        var tidying = new BranchTidying(_home) { Pace = TimeSpan.Zero };
+
+        using (new FileStream(Path.Combine(landed.Path, "README.md"), FileMode.Open, FileAccess.Read, FileShare.Read))
+        {
+            await tidying.LookAsync(_ledger.Client(), log, _closing.Token).WaitAsync(Bound);
+        }
+
+        Assert.Equal(TreeShareStanding.Holds, TreeShares.Standing(landed.Path, share));
+        Assert.Equal([share.Path], TreeFilesRecord.Read(_home, landed.Path)!.Shares.Select(each => each.Path));
+    }
+
     /// <summary>
     /// A branch on the line by content keeps its commits on a ref of their own before its tree's folder moves; where
     /// something holds the folder open the branch stays, and that ref is let go with the attempt, as the press's refused removal

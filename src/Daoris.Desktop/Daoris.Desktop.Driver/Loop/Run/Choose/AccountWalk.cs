@@ -180,14 +180,12 @@ internal sealed class AccountWalk(IRunWiring wiring) : IRunStage
                 return run.Hold(waits.Note) with { Cooling = earliest, SignedOut = selection.SignedOut };
             }
 
-            // A cooling account's hold carries its cool-off and the accounts it passed not signed in, so the look says the wait once
-            // and a screen shows both the wait and the sign-in.
+            // The hold carries the cool-off and the accounts passed not signed in, so a screen shows both the wait and the sign-in.
             return run.Hold(selection.Refusal!) with { Cooling = selection.Cooling, SignedOut = selection.SignedOut };
         }
 
         if (run.MovedOff is not null && string.Equals(selection.Profile, run.MovedOff, StringComparison.OrdinalIgnoreCase))
         {
-            context.Harnesses.Release(selection.Number);
             return run.Hold("the walk gave the account that was refused for its sign-in, and no other is free");
         }
 

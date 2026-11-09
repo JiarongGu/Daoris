@@ -18,12 +18,10 @@ internal sealed class RunBinding(IRunWiring wiring) : IRunStage
             return run.Hold(runBound.Why!);
         }
 
-        // The walk took the role its run's bind would name; a bind that named another since holds the start, its count given back, and
-        // the next look walks the role the run is bound to.
+        // A bind that names another role than the walk took holds the start, and the next look walks the role the run is bound to.
         if (runBound.Binding?.RoleOf(NodeKinds.Claimed)?.Role is var boundRole && !string.Equals(boundRole, run.State.StepRole, StringComparison.Ordinal))
         {
             await run.Fresh.LetGoAsync().ConfigureAwait(false);
-            wiring.Context.Harnesses.Release(run.State.Selection.Number);
             var taker = boundRole is null ? "its work's own role" : $"the role `{boundRole}`";
             return run.Hold($"its run was bound as it started, its work step taken by {taker}, which it did not walk, so it starts on that role at the next look.");
         }

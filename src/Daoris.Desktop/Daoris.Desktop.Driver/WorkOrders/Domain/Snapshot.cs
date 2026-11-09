@@ -152,6 +152,9 @@ public sealed record Snapshot(
     /// <summary>The quests whose integration request is open in the integration record: a done unit holds an overlapping start until its request is settled. Absent is none.</summary>
     public IReadOnlySet<string> Integrating { get; init; } = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 
+    /// <summary>The integrating quests <see cref="Quests"/> lacks, a done unit being on no open list (<see cref="IntegratingQuests"/>). Absent is none.</summary>
+    public IReadOnlyList<QuestView> IntegratingQuests { get; init; } = [];
+
     /// <summary>
     /// The sessions a supervisor's decision holds, read from the decisions' memory at each look (<see cref="SupervisorQuarantine.DecideAsync"/>):
     /// while one is <c>held</c> and no word of the owner's waits, the record is held whatever else waits, so a helper's answer or

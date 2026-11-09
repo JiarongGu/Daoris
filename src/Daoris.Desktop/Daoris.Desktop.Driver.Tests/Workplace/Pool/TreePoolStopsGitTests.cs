@@ -70,6 +70,23 @@ public sealed class TreePoolStopsGitTests : IDisposable
     }
 
     [Fact]
+    public async Task A_take_that_throws_leaves_its_claim_to_its_own_runs_look_which_puts_the_slot_back()
+    {
+        _fixture = await PoolGitFixture.CreateAsync();
+        var slot = await _fixture.LetGoAsync(_fixture.Pool(), 1, "s-aaaa0001");
+        var seams = new PoolSeams { BeforeSwitch = _ => throw new IOException("a process holds a copy open") };
+        await Assert.ThrowsAsync<IOException>(() => _fixture.Pool(seams: seams).TakeAsync(_fixture.Take(1, "s-bbbb0001")));
+        Assert.NotNull(_fixture.Pool().ClaimOn(PoolGitFixture.Workspace, PoolGitFixture.Repository, 1));
+
+        var recovered = await _fixture.Pool().RecoverAsync(_fixture.Site, 1);
+
+        Assert.True(recovered.Ok, recovered.Refused ?? recovered.Stuck);
+        Assert.Null(_fixture.Pool().ClaimOn(PoolGitFixture.Workspace, PoolGitFixture.Repository, 1));
+        Assert.Equal("s-aaaa0001", _fixture.Pool().Slot(PoolGitFixture.Workspace, PoolGitFixture.Repository, 1)!.Line);
+        Assert.Equal("daoris/s-aaaa0001", (await GitAsync(slot.Path, "branch", "--show-current")).Trim());
+    }
+
+    [Fact]
     public async Task A_live_runs_claim_is_never_taken_over()
     {
         var (fixture, _) = await StoppedTakeAsync(TreeClaimPhases.Switched);

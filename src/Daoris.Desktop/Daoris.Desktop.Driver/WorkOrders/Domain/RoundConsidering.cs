@@ -263,6 +263,8 @@ internal sealed class RoundConsidering(PlanRound round)
                             && string.Equals(other.To, quest.To, StringComparison.OrdinalIgnoreCase)
                             && (other.Status == "Taken" || snapshot.Integrating.Contains(other.Id)
                                 || snapshot.Active.Any(s => string.Equals(s.Quest, other.Id, StringComparison.OrdinalIgnoreCase))))
+            .Concat(snapshot.IntegratingQuests.Where(other => string.Equals(other.To, quest.To, StringComparison.OrdinalIgnoreCase)
+                                                              && !string.Equals(other.Id, quest.Id, StringComparison.OrdinalIgnoreCase)))
             .Concat(round.StartsThisLook.Where(other => string.Equals(other.To, quest.To, StringComparison.OrdinalIgnoreCase)));
         foreach (var other in earlier)
         {
