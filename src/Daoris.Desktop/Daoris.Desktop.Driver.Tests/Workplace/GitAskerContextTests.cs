@@ -46,7 +46,7 @@ public sealed class GitAskerContextTests : LandedFixture
             Assert.Equal(own, second.Stdout.Trim());
         }
 
-        Assert.False(GitAskerContext.Same(a, b));
+        Assert.False(GitStamp.SameContext(a, b));
     }
 
     [Fact]

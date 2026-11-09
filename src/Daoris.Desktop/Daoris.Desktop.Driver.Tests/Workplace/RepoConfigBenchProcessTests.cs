@@ -75,7 +75,8 @@ public sealed class RepoConfigBenchProcessTests(ITestOutputHelper output)
         {
             foreach (var file in Declarations) _ = new FileInfo(Path.Combine(target.Root, file)) is { Exists: true } info ? info.LastWriteTimeUtc.Ticks ^ info.Length : 0;
         })),
-        ("stamp: the asking tree's context (`GitAskerContext`)", Sync(target => GitAskerContext.Of(target.Root))),
+        ("stamp: the asking tree's context (`GitStamp.ContextOf`)", Sync(target => GitStamp.ContextOf(target.Root))),
+        ("stamp: the whole stamp and its fence (`GitStamp`)", async target => _ = await GitStamp.OfAsync(target.Root, CancellationToken.None)),
         ("stamp: the refs' version (`CountedRefs`)", Sync(target =>
         {
             if (RefFiles.CommonDirOf(target.Root) is { } common) CountedRefs.Read(common);
