@@ -5,6 +5,20 @@ the per-task record. Entries preserve their original wording so the archive stay
 
 ---
 
+## CODESTRREV2a to 2e — the code-structure review's second cycle, merge-tool defects fixed (2026-11-09)
+
+> **CODESTRREV2a** (tools): Outcome: the verdict store's lock (`holdingLock`, now `tools/merge-branch/locks.mjs` over `withRunLock`) is taken over only once its run is gone or it is 30 seconds old and is let go only while it still says what its run wrote, so a live holder is no longer robbed after 10 seconds; the choice rejected a wait-then-steal bound (the defect itself) for a longer wait on a hung run, which ends at the stale bound. Test: `tool-test/merge-branch/locks.test.ts`.
+
+> **CODESTRREV2b** (tools): Outcome: `takeGateLock` puts its lock in place complete (`putComplete`: written beside, linked in), so a second run never reads it empty and removes it; the CI watch's lock, which had the same create-then-write shape, takes the same path. Test: `locks.test.ts`.
+
+> **CODESTRREV2c** (tools): Outcome: `treeDrift`, `laneReport`, `branchChanges` and the scoped and reform reads of a change's paths all go through `diffPaths` (`-z`, `--no-renames`; `tools/merge-branch/paths.mjs`), so a non-ASCII path is placed by the lane table and no longer makes every verdict stale. Test: `tool-test/merge-branch/paths.test.ts`.
+
+> **CODESTRREV2d** (tools): Outcome: `enqueueVerb` asks `isInside(local/, file)`, which refuses another drive and the folder itself and takes a name that merely starts with two dots. Test: `paths.test.ts`.
+
+> **CODESTRREV2e** (tools): Outcome: the `canon/canon.json` row names `service`, `rehearse` and `rehearse-family` beside the driver's readers, so it reaches every gate `canon/**` does. Test: `reach-table.test.ts`.
+
+---
+
 ## DRVREVIEW second cycle — the driving review's second cycle (2026-11-09)
 
 > **The driving review, second cycle** (driving code review): Outcome: three defects fixed, each with a regression test seen to fail first, and thirteen filed as DRVREVIEW11 to DRVREVIEW23 with their evidence. A start that throws or is cancelled after its record opens and before the hand (the lock of its tree, the files stage) ends that record, failed or stopped as the driver closes, and lets its tree lock go (60760fb823, `StartFaultBeforeHandTickTests`). A steered word the agent hands back is held without the key it left the record under, so re-saying it is not answered as already kept (3d7bf518ce, `DrivenInboxKeyTests`). A removal or press that git would refuse for the tree's lock takes no link off the tree first (3777c7612b, `TreeLinkRemovalTests`). The service tests do not build on this tree (`LyntaiMemory.cs` names a Lyntai type the restored package lacks), so the service rows were found by reading and filed without a test.
@@ -23692,3 +23706,4 @@ The 26 pointer lines of the parked file's head (the owner's reports and features
 - [x] **WFREVIEW3n — a part throwing mid-tidy can lose its error** (driver): 2026-11-09 every fault of a started tidy is logged, and a failed partly write is logged beside the part's own error, which stays the one thrown (`TidyNodeTests`; the partly write's guard is not exercised, since no test makes a part throw).
 
 - [x] **GITLIB1a to GITLIB1d — the untracked cut, the scheduler, one object question, the library for refs** (driver, modules): 2026-11-09 Review's untracked files in two starts whatever their count (ten files 25 starts and 10.5 s to 17 and 4.2 s); one scheduler every Daoris git passes (four running, a person's read always placed, a queue per repository, shared queued starts, only lock-free reads ended, hooks and helpers lent places, the gate refusing an unplaced git), its four censuses proved by mutation and its Process class on real git; every object read one `cat-file --batch` question through one parser; the refs' one listing through LibGit2Sharp per call, admitted per question, with parity and Windows hold tests (`GitSchedulerTests`, `GitSchedulerProcessTests`, `GitObjectReadsTests`, `GitLibraryRefsTests`, `GitLibraryHoldTests`).
+- [x] **GITLIB1e to GITLIB1g — merge-bases and counts, two commits' changed names, the second way's ends held** (driver): 2026-11-09 every plain `merge-base` (two commits, `--is-ancestor`, `--independent`), `rev-list --count` and two commits' `diff --name-only --no-renames` answered by LibGit2Sharp per call where admitted, a criss-cross's base and every refused case git's, equal to git's on every parity case; Review 16 to 10 starts, the offer 5 to 3, the tidy's six trees 17 to 5, a landed review 5 to 3, a squash landing 22 to 19, a merge landing 36 to 32; each refusal held by a case that fails the day the library reads it as git does, and the library's retirement by a git in use or pinned that makes reftable or SHA-256 by default (`GitLibraryWalksTests`, `GitLibraryNamesTests`, `GitLibraryEndsTests`).

@@ -64,10 +64,10 @@ public sealed class ReviewGitCountTests(ITestOutputHelper output) : BranchTidyin
         Assert.True(starts.Count <= HeldCeiling, Report(starts));
     }
 
-    // The starts that remain are the offer's own judgement of the tree's commits, one question of each; the two counts ask
-    // again without origin's line where it is missing.
-    private const int SmallCeiling = 16;
-    private const int HeldCeiling = 17;
+    // The starts that remain are the tree's own reads and the offer's judgement of its commits; the merge-bases, the counts and
+    // the range's names are the library's. One more where another class lets go the branches' date listing kept since the first open.
+    private const int SmallCeiling = 11;
+    private const int HeldCeiling = 12;
 
     private string Report(List<string> starts)
     {
