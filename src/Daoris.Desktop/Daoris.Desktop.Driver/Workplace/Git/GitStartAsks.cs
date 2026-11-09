@@ -9,26 +9,20 @@ namespace Daoris.Driver;
 /// </summary>
 internal static class GitStartAsks
 {
-    // Writes that reach no remote and run no hook: they wait on the repository's files alone.
-    private static readonly HashSet<string> Local = new(StringComparer.Ordinal)
-    {
-        "update-index", "read-tree", "write-tree", "hash-object", "mktree", "commit-tree", "mktag", "add", "rm", "mv", "apply", "config",
-        "init", "unpack-objects", "prune", "repack", "pack-refs", "multi-pack-index", "commit-graph",
-    };
-
     // The options of `worktree add` whose value is the next word.
     private static readonly HashSet<string> AddValued = new(StringComparer.Ordinal) { "-b", "-B", "--reason" };
 
     /// <summary>
-    /// The ask of <paramref name="info"/>, git started with <paramref name="arguments"/> by <paramref name="runner"/> under
-    /// <paramref name="bound"/>; <paramref name="shares"/> where an identical start's answer may stand for its own.
+    /// The ask of <paramref name="info"/>, git started with <paramref name="arguments"/> and <paramref name="input"/> by <paramref name="runner"/>
+    /// under <paramref name="bound"/>; <paramref name="shares"/> where an identical start's answer may stand for its own.
     /// </summary>
-    internal static GitRunAsk For(ProcessStartInfo info, IReadOnlyList<string> arguments, GitRunner runner, TimeSpan bound, bool shares)
+    internal static GitRunAsk For(ProcessStartInfo info, IReadOnlyList<string> arguments, GitRunner runner, TimeSpan bound, bool shares, string? input = null)
     {
         var folder = Path.GetFullPath(string.IsNullOrEmpty(info.WorkingDirectory) ? "." : info.WorkingDirectory);
         var repository = RefFiles.CommonDirOf(folder) is { } common ? Path.GetFullPath(common) : folder;
         GitPlace.Known(info.FileName);
-        var writes = RefSnapshot.MayWrite(arguments);
+        var read = GitCommands.Read(folder, arguments, input);
+        var writes = read.Class != GitClass.Read;
         var fetches = WaitOf(arguments, writes) is GitWait.Read && GitLazyFetch.Fetches(info, folder);
         return new GitRunAsk(folder, repository, fetches ? GitWait.Outside : WaitOf(arguments, writes))
         {
@@ -37,6 +31,8 @@ internal static class GitStartAsks
             Writes = writes,
             Removes = Removed(folder, arguments),
             Makes = Made(folder, arguments),
+            Input = input,
+            Command = read,
         };
     }
 
@@ -46,7 +42,7 @@ internal static class GitStartAsks
         var command = GitLaunch.Command(arguments);
         if (command.Count == 0) return writes ? GitWait.Outside : GitWait.Read;
         if (command[0] == "ls-remote") return GitWait.Outside;
-        if (!writes || Local.Contains(command[0])) return GitWait.Read;
+        if (!writes || GitCommands.IsLocal(command[0])) return GitWait.Read;
         return command is ["worktree", "remove" or "prune" or "lock" or "unlock" or "move", ..] ? GitWait.Read : GitWait.Outside;
     }
 

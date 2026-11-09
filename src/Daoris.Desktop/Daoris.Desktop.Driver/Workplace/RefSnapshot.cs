@@ -1,25 +1,16 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// One checkout's branches and origin's copies of them, read with one git start: where each points, what it points
-/// at, and its upstream. A judgement takes one of these and hands it to the reads that ask (an optional
-/// parameter, null asking git), so a judgement reads a repository's refs once rather than a branch's tip, a form of the
-/// line or an upstream one at a time. Its working trees, which branch each
-/// holds, are one more start kept the same way, not asked by each part of a judgement in turn. And what git answered the
-/// judgement of commits by their ids is kept with them (<see cref="Asked"/>), so the same <c>diff</c> and
-/// <c>merge-base --is-ancestor</c> pair is not asked per branch.
+/// One checkout's branches and origin's copies of them (where each points, what it points at, its upstream), its working trees, and
+/// what git answered of commits by their ids (<see cref="Asked"/>), each read with one start and handed to the reads of a judgement
+/// that ask (null asking git), so a judgement reads a repository's refs once.
 /// </summary>
 /// <remarks>
-/// <para>🔴 <b>Never stale across a write.</b> It is read at its first question, not when taken, so one taken before a fetch is
-/// read after it; and every git this flow starts that may move a ref or an upstream (<see cref="MayWrite"/>) drops each snapshot
-/// the flow holds, through <see cref="WorkingTree"/>'s one runner, so the next question reads again. A write in a flow beside
-/// it drops nothing of it: that is news from another moment, as the person's own git is, and what guards against it is what
-/// always did, the judgement again right before an act and the delete only at the commit judged.</para>
-/// <para><b>It answers only what git would.</b> A revision that is not a full name under <c>refs/heads/</c> or
-/// <c>refs/remotes/origin/</c>, a name only case tells from one it holds (git finds a loose ref so named on a disk blind to
-/// case), a commit asked of a ref that is no commit, an upstream asked of a branch it does not hold (its configuration may
-/// outlive it), and everything where its own read failed, it does not answer: git is asked, as before.</para>
-/// <para>Take it in an <c>async</c> method, at the start of a judgement: the flow holds it until that method returns.</para>
+/// <para>🔴 <b>Never stale across a write.</b> It is read at its first question, not when taken; every git this flow starts that may
+/// write (<see cref="GitCommands.Writes"/>) drops each snapshot the flow holds, so the next question reads again. A write in a flow
+/// beside it drops nothing: the judgement again right before an act, and the delete only at the commit judged, guard against it.</para>
+/// <para><b>It answers only what git would</b>: a name outside its two prefixes or only case tells apart, a commit of a ref that is none,
+/// an upstream it does not hold and a failed read are asked of git. Take it at the start of an <c>async</c> judgement.</para>
 /// </remarks>
 internal sealed class RefSnapshot
 {
@@ -219,44 +210,7 @@ internal sealed class RefSnapshot
     /// <summary>What <see cref="WorkingTree"/>'s runner calls after each git it ran: a write drops this flow's snapshots.</summary>
     internal static void Ran(IReadOnlyList<string> arguments)
     {
-        if (MayWrite(arguments)) Wrote();
-    }
-
-    /// <summary>
-    /// Whether a git may move a ref or an upstream: every command but the reads named here, so a command this does not know
-    /// costs a read again and never a stale answer.
-    /// </summary>
-    internal static bool MayWrite(IReadOnlyList<string> arguments)
-    {
-        var at = 0;
-        // git's own options before the command: `-c name=value`, `-C path`, `--no-pager`.
-        while (at < arguments.Count && arguments[at].StartsWith('-'))
-        {
-            at += arguments[at] is "-c" or "-C" ? 2 : 1;
-        }
-
-        if (at >= arguments.Count) return true;
-        var rest = arguments.Skip(at + 1).ToList();
-        return arguments[at] switch
-        {
-            "rev-parse" or "for-each-ref" or "merge-base" or "rev-list" or "diff" or "log" or "show" or "status" or "cat-file"
-                or "ls-files" or "ls-tree" or "show-ref" or "name-rev" or "describe" or "blame" or "check-ignore" or "check-attr"
-                or "cherry" or "ls-remote" or "version" => false,
-            "worktree" => rest.FirstOrDefault() != "list",
-            "branch" => !rest.Any(ListsBranches) || rest.Any(MovesBranches),
-            "symbolic-ref" => rest.Any(each => each is "-d" or "--delete" or "-m") || rest.Count(each => !each.StartsWith('-')) != 1,
-            "config" => !rest.Any(each => each is "--get" or "--get-all" or "--get-regexp" or "--get-urlmatch" or "--list" or "-l"),
-            "remote" => rest.FirstOrDefault() is not ("get-url" or "-v"),
-            _ => true,
-        };
-
-        static bool ListsBranches(string each) =>
-            each is "--list" or "-l" or "--contains" or "--no-contains" or "--merged" or "--no-merged" or "--points-at" or "--show-current";
-
-        static bool MovesBranches(string each) =>
-            each is "-d" or "-D" or "--delete" or "-m" or "-M" or "--move" or "-c" or "-C" or "--copy" or "-f" or "--force"
-                or "-u" or "--unset-upstream" or "-t" or "--track" or "--no-track" or "--edit-description" or "--create-reflog"
-            || each.StartsWith("--set-upstream-to", StringComparison.Ordinal) || each.StartsWith("--track=", StringComparison.Ordinal);
+        if (GitCommands.Writes(arguments)) Wrote();
     }
 
     /// <summary>

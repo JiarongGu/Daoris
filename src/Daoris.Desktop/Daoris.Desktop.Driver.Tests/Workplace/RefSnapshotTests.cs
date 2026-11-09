@@ -260,7 +260,7 @@ public sealed class RefSnapshotTests
     [InlineData("an-unknown-verb", true)]
     [InlineData("", true)]
     public void A_git_that_may_move_a_ref_or_an_upstream_is_a_write(string command, bool writes) =>
-        Assert.Equal(writes, RefSnapshot.MayWrite(command.Split(' ', StringSplitOptions.RemoveEmptyEntries)));
+        Assert.Equal(writes, GitCommands.Writes(command.Split(' ', StringSplitOptions.RemoveEmptyEntries)));
 
     [Fact]
     public async Task The_reads_handed_one_start_no_git_where_it_holds_the_answer()

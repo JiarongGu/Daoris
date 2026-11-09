@@ -161,6 +161,7 @@ public sealed class GitScheduler
     internal async Task<T> RunAsync<T>(GitRunAsk ask, Func<CancellationToken, Task<T>> run, CancellationToken ct)
     {
         ct.ThrowIfCancellationRequested();
+        GitStartGate.Check(ask);
         IDisposable? removal = ask.Removes is { } removes ? await RemovingAsync(removes, ct).ConfigureAwait(false) : null;
         try
         {
