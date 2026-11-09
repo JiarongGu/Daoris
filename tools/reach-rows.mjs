@@ -54,9 +54,6 @@ const privateGateFiles = () => ({
   why: "what the merge tool imports to copy the private gate files, which its tests hold; the local packs' own tests import it too, in verify",
 });
 
-/**
- * The rows, in REACH's order: a provider's declaration's files, its own sources, the stamped version and the stamp's settings,
- * the kept base's guard and the private gate files' copier.
- */
+/** The rows, in REACH's order: a provider's files, its sources, the stamped version, the stamp's settings, the base's guard and the copier. */
 export const reachRows = (driverReaders) =>
   [declarations(driverReaders), sources(driverReaders), canonVersion(driverReaders), rootBuild(driverReaders), treeBase(), privateGateFiles()];

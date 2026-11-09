@@ -39,7 +39,6 @@ const REASONS = {
   text: (site) => /out\.push\(|new\(\$@"|\/--no-build\//.test(site.statement),
 };
 
-/** The one tracked file of this name under the driver's tests, at any depth, so a move into a module folder edits no entry. */
 function driverTestFile(name) {
   const project = 'src/Daoris.Desktop/Daoris.Desktop.Driver.Tests';
   const found = execFileSync('git', ['ls-files', '--', project], { cwd: root, encoding: 'utf8', windowsHide: true })

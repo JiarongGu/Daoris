@@ -77,10 +77,7 @@ public sealed partial class HelpRoomSettingsPlacesTests
         Assert.Empty(wrong);
     }
 
-    /// <summary>
-    /// The desktop's and the service's own code, each desktop project by name so a merge changing one runs this census, and the
-    /// help room's goldens: not a test, which says what a text must not.
-    /// </summary>
+    /// <summary>The desktop's projects by name, the service's own code and the help room's goldens: not a test, which says what a text must not.</summary>
     private static IEnumerable<string> Texts()
     {
         IEnumerable<string> desktop =

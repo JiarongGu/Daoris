@@ -228,10 +228,7 @@ public sealed class GitScheduler
         }
     }
 
-    /// <summary>
-    /// An ask still waiting for its place, said to the stage whose work asked it as the start gate's wait is (<see cref="ProcessStarts.Queued"/>),
-    /// until it is placed, dropped or this asker leaves; the answer's wait after it says which.
-    /// </summary>
+    /// <summary>An ask waiting for its place, said to its stage's queue as the start gate's wait is, until placed, dropped or left.</summary>
     private async Task QueuedAsync(Entry entry, CancellationToken ct)
     {
         lock (_gate)
