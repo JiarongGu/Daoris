@@ -33,12 +33,15 @@ internal static class GitLibrary
     internal static async Task<T?> AskAsync<T>(string folder, GitLibraryQuestion question, Func<GitLibraryCall, T?> call, CancellationToken ct)
         where T : class
     {
-        if (GitLibraryAdmission.RefusalOf(folder, question) is not null) return null;
-        if (RefFiles.GitDirOf(folder) is not { } gitDir || RefFiles.CommonDirOf(folder) is not { } commonDir) return null;
+        if (GitLibraryAdmission.RefusalOf(folder, question) is { } refusal) return Fell<T>(folder, refusal);
+        if (RefFiles.GitDirOf(folder) is not { } gitDir || RefFiles.CommonDirOf(folder) is not { } commonDir) return Fell<T>(folder, GitLibraryAdmission.NoRepository);
         await s_calls.WaitAsync(ct).ConfigureAwait(false);
         try
         {
-            return await Task.Run(() => Call(folder, gitDir, commonDir, call), ct).ConfigureAwait(false);
+            var (answer, why) = await Task.Run(() => Call(folder, gitDir, commonDir, call), ct).ConfigureAwait(false);
+            if (answer is null) return Fell<T>(folder, why ?? GitLibraryJournal.Unanswered);
+            GitLibraryJournal.Answered(folder);
+            return answer;
         }
         finally
         {
@@ -46,19 +49,26 @@ internal static class GitLibrary
         }
     }
 
-    private static T? Call<T>(string folder, string gitDir, string commonDir, Func<GitLibraryCall, T?> call)
+    private static T? Fell<T>(string folder, string reason)
         where T : class
     {
-        if (!s_settled.Value) return null;
+        GitLibraryJournal.Fell(folder, reason);
+        return null;
+    }
+
+    private static (T? Answer, string? Why) Call<T>(string folder, string gitDir, string commonDir, Func<GitLibraryCall, T?> call)
+        where T : class
+    {
+        if (!s_settled.Value) return (null, GitLibraryJournal.Native);
         Interlocked.Increment(ref s_open);
         try
         {
             using var repository = new Repository(folder);
-            return call(new GitLibraryCall(repository, gitDir, commonDir));
+            return (call(new GitLibraryCall(repository, gitDir, commonDir)), null);
         }
         catch (Exception error) when (error is LibGit2SharpException or IOException or UnauthorizedAccessException)
         {
-            return null;
+            return (null, GitLibraryJournal.Failed);
         }
         finally
         {
