@@ -139,21 +139,49 @@ internal sealed class ReplaySettles(TreeContext context, PassLeftovers leftovers
 
         var aside = Path.Combine(trees, $"{BranchReplays.Prefix}{Guid.NewGuid().ToString("N")[..8]}");
         Directory.CreateDirectory(trees);
-        var (added, _, addErr) = await WorkingTree.GitAsync(
-            root, ["worktree", "add", "--quiet", "--detach", "--lock", "--reason", PassLeftovers.HeldBy(Environment.ProcessId), aside, at], ct)
-            .ConfigureAwait(false);
-        if (added != 0) return (null, $"Daoris could not make a tree to replay it in: {Failure(addErr)}");
-
-        // Where the repository's configuration binds its linked trees to another checkout, a rebase in this one would
-        // rewrite that checkout's files, so nothing is replayed. This tree is Daoris's own, made a moment ago and holding nothing, so it goes
-        // as every replay's own tree goes: git's removal names it by its record, never through it.
-        if (await TreeBinding.RefusalAsync(aside, ct).ConfigureAwait(false) is { } bound)
+        try
         {
-            await CloseAsideAsync(root, aside).ConfigureAwait(false);
-            return (null, $"Daoris let go of the tree it made to replay it in, unused: {bound}.");
+            var (added, _, addErr) = await WorkingTree.GitAsync(
+                root, ["worktree", "add", "--quiet", "--detach", "--lock", "--reason", PassLeftovers.HeldBy(Environment.ProcessId), aside, at], ct)
+                .ConfigureAwait(false);
+            if (added != 0) return (null, $"Daoris could not make a tree to replay it in: {Failure(addErr)}");
+
+            // Where the repository's configuration binds its linked trees to another checkout, a rebase in this one would
+            // rewrite that checkout's files, so nothing is replayed. This tree is Daoris's own, made a moment ago and holding nothing, so it goes
+            // as every replay's own tree goes: git's removal names it by its record, never through it.
+            if (await TreeBinding.RefusalAsync(aside, ct).ConfigureAwait(false) is { } bound)
+            {
+                await CloseAsideAsync(root, aside).ConfigureAwait(false);
+                return (null, $"Daoris let go of the tree it made to replay it in, unused: {bound}.");
+            }
+
+            return (aside, "");
+        }
+        catch (OperationCanceledException)
+        {
+            // A stop while the tree is being made comes before the replay's own close, so the tree goes here, half made or whole.
+            await DropAsync(root, aside).ConfigureAwait(false);
+            throw;
+        }
+    }
+
+    /// <summary>A tree a stop cut in the making: removed by its record, and its folder and record gone where git had not finished either.</summary>
+    private static async Task DropAsync(string root, string aside)
+    {
+        await CloseAsideAsync(root, aside).ConfigureAwait(false);
+        if (Directory.Exists(aside))
+        {
+            try
+            {
+                Directory.Delete(aside, recursive: true);
+            }
+            catch (Exception error) when (error is IOException or UnauthorizedAccessException)
+            {
+                // A folder held a moment longer is the next replay's leftover to clear, by its prefix.
+            }
         }
 
-        return (aside, "");
+        await WorkingTree.GitAsync(root, ["worktree", "prune"], CancellationToken.None).ConfigureAwait(false);
     }
 
     /// <summary>

@@ -172,9 +172,11 @@ public sealed class RebaseReplayGitTests : LandedFixture
         Assert.Equal(["TASKS.md"], fourth.Stop!.Paths);
     }
 
-    /// <summary>A stop while git replays: the replay is cut, and the tree of its own it made is gone.</summary>
-    [Fact]
-    public async Task A_stop_mid_replay_leaves_no_tree_of_its_own()
+    /// <summary>A stop while the tree of its own is being made, and one while git replays in it: either way the tree is gone.</summary>
+    [Theory]
+    [InlineData(300)]
+    [InlineData(3000)]
+    public async Task A_stop_mid_replay_leaves_no_tree_of_its_own(int after)
     {
         var root = await RepositoryAsync("engine");
         var tree = await new SessionTrees(Home).OpenAsync(root, "engine", "aurora");
@@ -183,10 +185,10 @@ public sealed class RebaseReplayGitTests : LandedFixture
         var hooks = (await GitAsync(root, "rev-parse", "--git-path", "hooks")).Trim();
         Directory.CreateDirectory(Path.Combine(root, hooks));
         await File.WriteAllTextAsync(Path.Combine(root, hooks, "pre-rebase"), "#!/bin/sh\nsleep 30\n");
-        using var stop = new CancellationTokenSource(TimeSpan.FromSeconds(3));
-
         var work = await WorkAsync(root, tree);
         var line = await LineAsync(root);
+        using var stop = new CancellationTokenSource(TimeSpan.FromMilliseconds(after));
+
         await Record.ExceptionAsync(() => Replay.ReplayAsync(work, tree.Path, line, [], stop.Token));
 
         Assert.Equal(2, await TreesAsync(root));
