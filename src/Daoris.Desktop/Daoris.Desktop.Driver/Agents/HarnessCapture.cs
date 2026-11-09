@@ -58,15 +58,24 @@ internal static class HarnessCapture
         TextReader stdout, TextReader stderr, string transcript, IReadingSink sink, CancellationToken ct, string? preamble = null)
     {
         await using var file = AgentContext.Current.OpenTranscript(transcript, append: false);
+        ExceptionDispatchInfo? failure = null;
         if (preamble is { Length: > 0 })
         {
-            lock (file) file.WriteLine(preamble);
-            sink.Read(new WireReading.Shown(preamble));
+            try
+            {
+                lock (file) file.WriteLine(preamble);
+                sink.Read(new WireReading.Shown(preamble));
+            }
+            catch (Exception error) when (error is not OperationCanceledException)
+            {
+                failure = ExceptionDispatchInfo.Capture(error);
+            }
         }
 
         var said = PumpAsync(stdout, file, sink, ct);
         var errors = PumpAsync(stderr, file, sink, ct);
         await Task.WhenAll(said, errors).ConfigureAwait(false);
+        failure?.Throw();
     }
 
     /// <summary>
@@ -123,12 +132,22 @@ internal static class HarnessCapture
 
         void Event(SessionEvent e) => sink.Read(new WireReading.Said(e));
 
-        if (preamble is { Length: > 0 }) Line(preamble);
-        foreach (var opening in opened ?? (prompt is null ? [] : Opening(prompt, personSaid, account, handed)))
+        // A line that cannot be kept is the first failure, thrown once both pipes are read to their ends: a child that is not drained
+        // blocks on a full pipe, and the stderr pump writes to the transcript only while it is open.
+        ExceptionDispatchInfo? failure = null;
+        try
         {
-            // The driver's own first line is the transcript's too; the person's answer is the conversation's alone.
-            if (opening.Kind == SessionEventKind.Note && opening.Text is { } note) Line(note);
-            Event(opening);
+            if (preamble is { Length: > 0 }) Line(preamble);
+            foreach (var opening in opened ?? (prompt is null ? [] : Opening(prompt, personSaid, account, handed)))
+            {
+                // The driver's own first line is the transcript's too; the person's answer is the conversation's alone.
+                if (opening.Kind == SessionEventKind.Note && opening.Text is { } note) Line(note);
+                Event(opening);
+            }
+        }
+        catch (Exception error) when (error is not OperationCanceledException)
+        {
+            failure = ExceptionDispatchInfo.Capture(error);
         }
 
         var errors = PumpAsync(stderr, file, sink, ct, also: own is null ? null : own.Said);
@@ -216,9 +235,6 @@ internal static class HarnessCapture
             }
         }
 
-        // A line that cannot be kept is the first failure, thrown once both pipes are read to their ends: a child that is not drained
-        // blocks on a full pipe, and the stderr pump writes to the transcript only while it is open.
-        ExceptionDispatchInfo? failure = null;
         try
         {
             while (await stdout.ReadLineAsync(ct).ConfigureAwait(false) is { } line)
