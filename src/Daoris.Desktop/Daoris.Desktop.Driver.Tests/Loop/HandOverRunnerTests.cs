@@ -107,4 +107,28 @@ public sealed class HandOverRunnerTests : IDisposable
         var plain = (await client.RecordAsync("c2"))!;
         Assert.Equal(((string?)null, (string?)null, (string?)null), (plain.From, plain.FromWhy, plain.FromBy));
     }
+
+    /// <summary>A start cut off between its record's open and its run concludes the record failed, never leaving it queued.</summary>
+    [Fact]
+    public async Task A_start_cancelled_after_its_record_opened_concludes_it_failed()
+    {
+        var ledger = new ChatLedger().Register("engine", _root);
+        using var runner = Runner(ledger);
+        using var cancel = new CancellationTokenSource();
+        ledger.BeforeRequest = (_, _) =>
+        {
+            if (ledger.Count > 0 && !cancel.IsCancellationRequested)
+            {
+                cancel.Cancel();
+                cancel.Token.ThrowIfCancellationRequested();
+            }
+
+            return Task.CompletedTask;
+        };
+
+        await Assert.ThrowsAnyAsync<OperationCanceledException>(() => runner.StartAsync(
+            "engine", "other", DriverConfig.Empty, ct: cancel.Token, tree: _root, from: new ContinuedFrom("c0nv0001", HandOverWhy.Near, HandOverBy.Daoris)));
+
+        Assert.Equal("failed", ledger.State("c1"));
+    }
 }
