@@ -18,7 +18,7 @@ public sealed class OwnedProcessesProcessTests
         + "{detached:true,stdio:'ignore',windowsHide:true});g.unref();console.log(g.pid);setTimeout(()=>{},120000)";
 
     /// <summary>The stand-in's build beside this test's own.</summary>
-    private static string OwnerStandIn()
+    internal static string OwnerStandIn()
     {
         var build = new DirectoryInfo(AppContext.BaseDirectory.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar));
         var desktop = build.Parent!.Parent!.Parent!.Parent!.FullName;
