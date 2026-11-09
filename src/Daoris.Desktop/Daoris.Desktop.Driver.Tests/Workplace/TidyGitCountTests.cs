@@ -44,18 +44,12 @@ public sealed class TidyGitCountTests(ITestOutputHelper output) : BranchTidyingF
         Assert.True(many.Count <= Ceiling, report);
     }
 
-    // The end's judgement of a branch's own commits: where it left the line, which is also whether the line holds its tip, its
-    // tree, and the files it changed. What no branch of the person's holds is one walk of every session branch, not a start a branch
-    // (separate starts for the line's ancestry, the tree, where it left the line, its files, and its commits no person's branch holds would be 5 a branch),
-    // where it left the line and its files the library's.
+    // The end's judgement of a branch's own commits: where it left the line and the files it changed, both the library's, and what
+    // no branch of the person's holds, one walk of every session branch (separate starts would be 5 a branch).
     private const int PerBranch = 0;
 
-    // On six trees, asking per tree takes 57 git starts and the one list 38: each tree's branch asked of the tree, the checkout's top and its trees
-    // asked by each stage, the session branches listed again, and every branch listed by date and each pair's files compared both ways
-    // per branch. Measured 26, two trees 14, with the checkout's trees listed twice, by the stages and by the judgement; 20, two trees
-    // 12, with each branch's tree the refs' one listing's (`%(tree)`), no start a branch; 17, two trees 9, with that listing the library's;
-    // 5 either way with each branch's merge-base and files the library's, and 6 where the branches' date listing kept across looks
-    // was let go by another class between the two.
+    // Six trees or two, each branch's tree, base and files the library's; one more where the date listing a look keeps is let go
+    // by another class between the two looks.
     private const int Ceiling = 6;
 
     private static bool Dated(string start) => start == string.Join(' ', BranchesByDate.Ask);

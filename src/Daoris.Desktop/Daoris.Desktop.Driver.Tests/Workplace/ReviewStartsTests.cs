@@ -4,10 +4,9 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// The proof on today's chain: Review's read of a session tree, counted through the one seam, starts <c>7 + M</c> git before the
-/// offer (two more where an untracked file is read, whatever their count), the line's guesses and both <c>--show-toplevel</c>s besides, in
-/// today's order, each with today's arguments (<see cref="GitLaunchTests.Today"/>); its merge-bases and counts (K, B1, B2, I, N1, N2)
-/// are the library's and start none. Real git, read through <see cref="SessionReviews"/>.
+/// Review's read of a session tree on today's chain starts <c>7 + M</c> git before the offer (two more for untracked files, whatever
+/// their count), the line's guesses and both <c>--show-toplevel</c>s besides, in today's order and arguments (<see cref="GitLaunchTests.Today"/>);
+/// its merge-bases and counts (K, B1, B2, I, N1, N2) are the library's. Real git, read through <see cref="SessionReviews"/>.
 /// </summary>
 /// <remarks>
 /// The fixtures' origin is added after its repository, so it has no <c>refs/remotes/origin/HEAD</c>: origin's <c>HEAD</c> is read

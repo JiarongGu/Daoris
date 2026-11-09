@@ -123,7 +123,6 @@ public sealed class LandGitCountTests : IDisposable
     {
         var root = await RepositoryAsync("engine");
         var sha = (await GitAsync(root, "rev-parse", "HEAD")).Trim();
-        // Every base, which the library leaves git's, so each ask the table does not answer is a start.
         string[] ask = ["merge-base", "--all", sha, sha];
         var starts = new List<string>();
         Task child;

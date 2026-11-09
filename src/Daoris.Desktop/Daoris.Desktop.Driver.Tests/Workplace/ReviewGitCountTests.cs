@@ -65,7 +65,7 @@ public sealed class ReviewGitCountTests(ITestOutputHelper output) : BranchTidyin
     }
 
     // The starts that remain are the tree's own reads and the offer's judgement of its commits; the merge-bases, the counts and
-    // the range's names are the library's. One more where the branches' date listing kept since the first open was let go.
+    // the range's names are the library's. One more where another class lets go the branches' date listing kept since the first open.
     private const int SmallCeiling = 11;
     private const int HeldCeiling = 12;
 
