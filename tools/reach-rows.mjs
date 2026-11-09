@@ -40,6 +40,23 @@ const rootBuild = (driverReaders) => ({
   why: "every .NET project builds with it, each tree's settings importing it: the desktop's, the service's and the devkit's suites, the headless host the family rehearsal drives, and the deployed shell, whose publish stamps the commit (BUILDSTAMP1)",
 });
 
-/** The rows, in REACH's order: a provider's declaration's files, its own sources, the stamped version and the stamp's settings. */
+/** The kept build base's guard and builder, which the tools that build a project or read its output import or run. */
+const treeBase = () => ({
+  paths: ['tools/tree-base.mjs'],
+  gates: ['deployment', 'rehearse-family', 'web'],
+  why: "the kept build base's guard and builder: the desktop tool the deployment rehearsal drives and the family rehearsal import it, and the web gate's script builds the HTTP host through it; its own test runs in verify",
+});
+
+/** What the merge tool imports to copy a checkout's private gate files into a tree it gates. */
+const privateGateFiles = () => ({
+  paths: ['tools/private-gate-files.mjs'],
+  gates: ['tool-tests'],
+  why: "what the merge tool imports to copy the private gate files, which its tests hold; the local packs' own tests import it too, in verify",
+});
+
+/**
+ * The rows, in REACH's order: a provider's declaration's files, its own sources, the stamped version and the stamp's settings,
+ * the kept base's guard and the private gate files' copier.
+ */
 export const reachRows = (driverReaders) =>
-  [declarations(driverReaders), sources(driverReaders), canonVersion(driverReaders), rootBuild(driverReaders)];
+  [declarations(driverReaders), sources(driverReaders), canonVersion(driverReaders), rootBuild(driverReaders), treeBase(), privateGateFiles()];
