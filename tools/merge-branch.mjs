@@ -423,7 +423,7 @@ import { removeWorktree } from './worktree-remove.mjs';
 import { indexLockNote,mentionsIndexLock, readIndexLock } from './index-lock.mjs';
 import { admissionLines, createAdmission, lookAt } from './machine-admission.mjs';
 import { censusOf, classesReached, halfOf, reachSettings, repository, withSettings } from './process-reach.mjs';
-import { endOrphans, endStranded, endStrandedUnder, processList } from './processes.mjs';
+import { endOrphans, endStrandedUnder, processList } from './processes.mjs';
 import { gateSignature, readTrx, signatureKey, signatureOf } from './test-failures.mjs';
 import {
   IN_THE_LINE, MERGE_QUEUE, MERGE_QUEUE_LOG, RUNNER_ACK_MS, SCOPE_TREE, appendScopeRun, appendSighting, candidateOutcome, censusLine, censusTrees, confirmReadings, confirmStep, dropQueued, enqueue,
@@ -4028,7 +4028,7 @@ function holderSaid(held) {
  * gate tree's folder, their parent gone). `holder` names the run; a refusal is `busy`, which the CI watch reads
  * as a tree to wait for, never a failure.
  */
-export function takeGateLock(home, { commit, holder = 'full', alive = pidAlive, now = nowIso, end = endOrphans, endStrays = endStranded } = {}) {
+export function takeGateLock(home, { commit, holder = 'full', alive = pidAlive, now = nowIso, end = endOrphans, endStrays = endStrandedUnder } = {}) {
   const file = join(home, GATE_TREE_LOCK);
   mkdirSync(dirname(file), { recursive: true });
   let stale = null;
