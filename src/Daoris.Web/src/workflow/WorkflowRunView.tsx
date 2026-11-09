@@ -15,6 +15,7 @@ import { whySaid } from './routeSaid';
 import { addedSaid, chatChecksSaid, graphSaid, noRunSaid, placeSaid, requestSaid, runSaid, stateSaid, stepWord } from './runSaid';
 import { stepTitle } from './said';
 import { CheckHeld } from './CheckHeld';
+import { StepWait } from './wait/StepWait';
 import { type RunMarks, WorkflowChart } from './WorkflowChart';
 import { WorkflowHold } from './WorkflowHold';
 
@@ -212,6 +213,7 @@ function StepMark({ run, step, here, doors, control, pill = true, onNodeWord, on
             { line: step.integration.line, step: step.integration.step ?? '', defaultValue: `${step.integration.state} · ${step.integration.line}` })}
         </p>
       )}
+      <StepWait step={step} />
       {quoted && <p className="m-0 text-small text-ink">{t('workflow.run.quoted', { words: quoted })}</p>}
       {added && <p className="m-0 text-meta text-ink-faint">{added}</p>}
       {/* The person's skip and stop of a graph run's node, wherever the driver's table takes them, and a word kept. */}

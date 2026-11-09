@@ -11,7 +11,7 @@ public sealed class LandingDoorFaultTests
     {
         var said = new List<string>();
         var door = new LandingDoor(() => throw new SqliteException("database is locked", 5), said.Add);
-        var start = new LandStart("unit", "run", "land", "branch", ["s1"], "engine", "aurora", "tip", "graph", null);
+        var start = new LandStart("unit", "run", "land", "branch", ["s1"], "engine", "aurora", "tip", "graph", null) { Authority = StepAuthority.OfDoor("run", "land", 1) };
 
         Assert.True(door.Start(start));
         await door.IdleAsync();

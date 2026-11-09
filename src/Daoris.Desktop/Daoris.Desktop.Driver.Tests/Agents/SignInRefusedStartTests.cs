@@ -611,7 +611,7 @@ public sealed class SignInRefusedStartTests : IDisposable
     private async Task<string> RefusedAsync(ServiceClient service, HarnessRoster roster, bool accountLine = true)
     {
         _ledger.Publish("q1", "engine");
-        var (id, _) = await service.OpenSessionAsync("q1", "acp-stub", null, "account-1", Path.Combine(_home, "engine"), null);
+        var (id, _) = await HeldOpens.OpenAsync(service, _home, "q1", "acp-stub", "account-1", Path.Combine(_home, "engine"));
         await service.AdvanceAsync(id!, "working");
         var failed = Observation.Conclude(0, "Open", turnFailed: Refusal);
         var concluded = accountLine

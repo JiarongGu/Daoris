@@ -107,6 +107,12 @@ public static class NodeKinds
     public const string Tidy = "tidy";
 
     public const string Rebase = "rebase";
+
+    /// <summary>A problem a step could not settle, handed to whoever the workflow names, bounded per stop, and returned to its rebase.</summary>
+    public const string Resolve = "resolve";
+
+    /// <summary>A commit moved onto a target ref by a declared method, and nothing else.</summary>
+    public const string Merge = "merge";
 }
 
 /// <summary>

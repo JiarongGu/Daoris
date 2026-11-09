@@ -52,7 +52,8 @@ public sealed class RebaseRecords(string home)
     {
         lock (Gate)
         {
-            File.Delete(PathOf(run));
+            var path = PathOf(run);
+            if (File.Exists(path)) File.Delete(path);
         }
     }
 

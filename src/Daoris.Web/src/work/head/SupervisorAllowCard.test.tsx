@@ -21,6 +21,8 @@ describe('the supervisor’s allow card', () => {
     ['en', 'reject', "The supervisor's answer to a held tool call", 'The supervisor refused this once, 2m ago: the agent was told, and went on without it.'],
     ['zh', 'once', '主管对被搁置的工具调用的答复', '主管已允许这一次（2 分钟前）：该调用继续。'],
     ['zh', 'reject', '主管对被搁置的工具调用的答复', '主管已拒绝这一次（2 分钟前）：智能体会得知，并在没有它的情况下继续。'],
+    ['en', 'leave', "The supervisor's answer to a held tool call", 'The supervisor left this to you, 2m ago: the call still waits for you.'],
+    ['zh', 'leave', '主管对被搁置的工具调用的答复', '主管已交给你处理（2 分钟前）：该调用仍在等你决定。'],
   ])('says what the supervisor did with the held call and when, with no Overrule (%s, %s)', async (language, act, title, says) => {
     await i18n.changeLanguage(language);
     render(<SupervisorAllowCard allow={allow({ do: act })} />);

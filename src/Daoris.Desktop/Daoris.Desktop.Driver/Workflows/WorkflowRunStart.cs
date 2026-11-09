@@ -93,15 +93,15 @@ public static class WorkflowRunStart
     /// </summary>
     public static Task<WorkflowBind> AtStartAsync(
         WorkflowStarted start, IWorkflowStartWorld world, string home, DriverConfig config, IReadOnlyList<WorkflowPlugin> plugins,
-        Func<DateTimeOffset> now, CancellationToken ct) =>
-        AtStartAsync(start, world, WorkflowPorts.Store(home), WorkflowPorts.Runs(home), config, plugins, now, ct, () => RoleCatalog.ReadHome(home));
+        Func<DateTimeOffset> now, StartHold hold, CancellationToken ct) =>
+        BindOneAsync(start, world, WorkflowPorts.Store(home), WorkflowPorts.Runs(home), config, plugins, now, new Every(), () => RoleCatalog.ReadHome(home), hold, ct);
 
     /// <summary>The start's bind through the ports.</summary>
     /// <param name="roles">The role catalogue a step's role is judged by; null judges by the seed's.</param>
     public static Task<WorkflowBind> AtStartAsync(
         WorkflowStarted start, IWorkflowStartWorld world, IWorkflowStore store, IWorkflowRunStore runs, DriverConfig config,
         IReadOnlyList<WorkflowPlugin> plugins, Func<DateTimeOffset> now, CancellationToken ct, Func<RoleCatalog>? roles = null) =>
-        BindOneAsync(start, world, store, runs, config, plugins, now, new Every(), roles, ct);
+        BindOneAsync(start, world, store, runs, config, plugins, now, new Every(), roles, null, ct);
 
     /// <summary>
     /// The binding a start's bind would come to now, written nowhere: its run's kept binding, or the one its first start would
@@ -135,7 +135,7 @@ public static class WorkflowRunStart
     /// </summary>
     private static async Task<WorkflowBind> BindOneAsync(
         WorkflowStarted start, IWorkflowStartWorld world, IWorkflowStore store, IWorkflowRunStore runs, DriverConfig config,
-        IReadOnlyList<WorkflowPlugin> plugins, Func<DateTimeOffset> now, Every every, Func<RoleCatalog>? roles, CancellationToken ct)
+        IReadOnlyList<WorkflowPlugin> plugins, Func<DateTimeOffset> now, Every every, Func<RoleCatalog>? roles, StartHold? hold, CancellationToken ct)
     {
         var quest = start.Quest;
         string? run = null;
@@ -147,6 +147,7 @@ public static class WorkflowRunStart
             if (runs.Bound(run)) return Kept(quest, runs, run);
 
             var binding = await PlanAsync(start, run, world, store, config, plugins, now, every, roles, ct).ConfigureAwait(false);
+            hold?.Assert("a run's bind");
             if (!runs.Bind(binding))
             {
                 // Another start of the run bound it first, between the look above and this write: its

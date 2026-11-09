@@ -60,7 +60,7 @@ public sealed class TidyNodeTests : IDisposable
         var tidy = new NodeDeclaration("tidy", NodeKinds.Tidy, 1, NodeReach.Performed);
         var door = new TidyDoor(_home);
 
-        Assert.True(door.Start(new TidyStart("run:q1", tidy, "engine", "default", _home, "feature/q1-fix", "c0ffee00")));
+        Assert.True(door.Start(new TidyStart("run:q1", tidy, "engine", "default", _home, "feature/q1-fix", "c0ffee00") { Authority = StepAuthority.OfDoor("q1", tidy.Id, 1) }));
         await door.IdleAsync();
 
         Assert.Null(landings.Of("engine", "feature/q1-fix")!.Tidied);
@@ -73,7 +73,7 @@ public sealed class TidyNodeTests : IDisposable
         var said = new List<string>();
         var door = new TidyDoor(_home, said.Add, performs: (_, _) => throw new InvalidOperationException("git gave an answer nothing expected"));
         var tidy = new NodeDeclaration("tidy", NodeKinds.Tidy, 1, NodeReach.Performed);
-        var start = new TidyStart("run:q1", tidy, "engine", "default", _home, "feature/q1-fix", "c0ffee00");
+        var start = new TidyStart("run:q1", tidy, "engine", "default", _home, "feature/q1-fix", "c0ffee00") { Authority = StepAuthority.OfDoor("q1", tidy.Id, 1) };
 
         Assert.True(door.Start(start));
         await door.IdleAsync();

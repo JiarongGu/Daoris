@@ -67,7 +67,7 @@ public sealed class AccountRotationHoldTests : IDisposable
     private async Task CutOffAsync(ServiceClient service)
     {
         _ledger.Publish("q1", "engine");
-        var (id, _) = await service.OpenSessionAsync("q1", "stub", null, "account-1", Path.Combine(_home, "engine"), null);
+        var (id, _) = await HeldOpens.OpenAsync(service, _home, "q1", "stub", "account-1", Path.Combine(_home, "engine"));
         await service.AdvanceAsync(id!, "working");
         _ledger.Move("q1", "Taken");
         await service.AdvanceAsync(id!, "failed", note: "the agent's turn failed with the quest still taken.", limit: true);

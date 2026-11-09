@@ -183,6 +183,20 @@ public sealed class DeclarationKernelTests : IDisposable
     }
 
     [Fact]
+    public void A_rule_made_with_a_default_array_is_refused_and_a_left_out_list_stays_null()
+    {
+        var rule = new FileRule(FileKind.Dependency, ["deps/"]) { Key = [] };
+
+        Assert.Throws<ArgumentException>(() => new FileRule(FileKind.Output, default));
+        Assert.Throws<ArgumentException>(() => rule with { Paths = default });
+        Assert.Throws<ArgumentException>(() => rule with { Key = default(System.Collections.Immutable.ImmutableArray<string>) });
+        Assert.Throws<ArgumentException>(() => rule with { Evidence = default });
+        Assert.Equal(0, rule.Key!.Value.Length);
+        Assert.Null((rule with { Key = null }).Key);
+        Assert.Empty(rule.Evidence);
+    }
+
+    [Fact]
     public void Each_kind_is_bounded_alone_dropping_its_least_recently_used()
     {
         var bound = new DeclarationBound("test", budget: 300, largest: 150);

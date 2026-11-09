@@ -78,6 +78,60 @@ public sealed class FileAsksStageTests : IDisposable
         Assert.NotEqual(ask.Start, Assert.Single(FileAsks.Read(Home)).Start);
     }
 
+    private IEnumerable<string> Codes(TreeFilesOutcome outcome) => outcome.Said.SelectMany(each => each.Parts).Select(part => part.Code);
+
+    private async Task DeclareInputAsync()
+    {
+        await File.WriteAllTextAsync(Path.Combine(Root, ".gitignore"), "deps/\nlocal/\n");
+        await GitAsync(Root, "commit", "-qam", "ignore local");
+        await File.WriteAllTextAsync(Path.Combine(Root, "daoris.gates.json"), """{ "localInputs": ["local/notes.txt"] }""");
+        Directory.CreateDirectory(Path.Combine(Root, "local"));
+        await File.WriteAllTextAsync(Path.Combine(Root, "local", "notes.txt"), "private");
+    }
+
+    [Fact]
+    public async Task A_held_copy_is_not_made_and_is_kept_as_an_ask_made_at_the_next_start_once_allowed_and_asked_again_when_the_allow_is_taken_back()
+    {
+        await MakeAsync();
+        await DeclareInputAsync();
+        PersonPermissions.Add(Home, null, "ask", "copy(*)", null);
+
+        var first = await StageAsync("t1");
+
+        Assert.Contains(StartNoteCodes.StartedLocalHeld.Code, Codes(first));
+        Assert.False(File.Exists(Path.Combine(Trees["t1"], "local", "notes.txt")));
+        var ask = Assert.Single(FileAsks.Read(Home), each => each.What == FileAsk.Copy);
+        Assert.Equal(("engine", "copy(local/notes.txt)", false), (ask.Repository, ask.Text, ask.Person));
+
+        FileAllows.Give(Home, ask, "supervisor", "d1");
+        FileAsks.Settle(Home, "d1", made: true);
+        var second = await StageAsync("t2");
+
+        Assert.Contains(StartNoteCodes.StartedLocalCopied.Code, Codes(second));
+        Assert.True(File.Exists(Path.Combine(Trees["t2"], "local", "notes.txt")));
+        Assert.DoesNotContain(FileAsks.Read(Home), each => each.What == FileAsk.Copy);
+
+        PersonPermissions.Remove(Home, "engine", "allow", "copy(local/notes.txt)");
+        await StageAsync("t3");
+
+        Assert.False(File.Exists(Path.Combine(Trees["t3"], "local", "notes.txt")));
+        Assert.Single(FileAsks.Read(Home), each => each.What == FileAsk.Copy);
+    }
+
+    [Fact]
+    public async Task A_denied_copy_is_not_made_and_leaves_no_ask()
+    {
+        await MakeAsync();
+        await DeclareInputAsync();
+        PersonPermissions.Add(Home, null, "deny", "copy(local/*)", null);
+
+        var first = await StageAsync("t1");
+
+        Assert.Contains(StartNoteCodes.StartedLocalDenied.Code, Codes(first));
+        Assert.False(File.Exists(Path.Combine(Trees["t1"], "local", "notes.txt")));
+        Assert.Empty(FileAsks.Read(Home));
+    }
+
     [Fact]
     public async Task An_ask_naming_the_person_is_kept_so_and_is_not_run()
     {

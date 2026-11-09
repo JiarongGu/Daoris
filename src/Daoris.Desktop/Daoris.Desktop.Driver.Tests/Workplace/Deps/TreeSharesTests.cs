@@ -100,6 +100,28 @@ public sealed class TreeSharesTests : IDisposable
     }
 
     [Fact]
+    public async Task A_held_share_is_not_linked_and_is_kept_as_an_ask_linked_at_the_next_start_once_allowed()
+    {
+        await MakeAsync();
+        PersonPermissions.Add(Home, null, "ask", "share(local/rules/)", null);
+
+        var first = await StageAsync("t1");
+
+        Assert.DoesNotContain("local/rules/", Shared("t1"));
+        Assert.Contains("local/frozen/", Shared("t1"));
+        Assert.NotNull(WhyOf(first, "local/rules/"));
+        var ask = Assert.Single(FileAsks.Read(Home));
+        Assert.Equal(("engine", FileAsk.Share, "share(local/rules/)"), (ask.Repository, ask.What, ask.Text));
+
+        FileAllows.Give(Home, ask, "supervisor", "d1");
+        FileAsks.Settle(Home, "d1", made: true);
+        await StageAsync("t2");
+
+        Assert.Contains("local/rules/", Shared("t2"));
+        Assert.Empty(FileAsks.Read(Home));
+    }
+
+    [Fact]
     public async Task A_read_only_share_takes_no_write_of_Daoris_s_own_and_the_session_is_told_its_own_shell_still_can()
     {
         await MakeAsync(gates: """{ "localInputs": ["local/frozen/x.txt"] }""");

@@ -78,35 +78,35 @@ internal static class TreeLocalInputs
     /// The checkout's declared inputs copied into <paramref name="tree"/>, a tree of <paramref name="root"/> git has just checked out:
     /// git says which it ignores there, and <see cref="Copy"/> does the rest. A cancel stops it and takes back what it copied.
     /// </summary>
-    internal static async Task<LocalCopy> CopyAsync(string root, string tree, CancellationToken ct)
+    internal static async Task<LocalCopy> CopyAsync(string root, string tree, Func<string, FileVerdict> permit, CancellationToken ct)
     {
         var declared = Declared(root);
         if (declared.Count == 0) return LocalCopy.None;
         var asked = declared.Where(input => Candidate(root, input)).Select(input => input.Path).ToList();
-        if (asked.Count == 0) return Copy(root, tree, declared, _ => false, null, ct);
+        if (asked.Count == 0) return Copy(root, tree, declared, _ => false, permit, null, ct);
 
         // 🔴 git takes `-z` only with `--stdin`: the paths go in there.
         var (code, said, err) = await WorkingTree.GitAsync(tree, ["check-ignore", "--stdin", "-z"], string.Concat(asked.Select(path => path + "\0")), ct)
             .ConfigureAwait(false);
         if (code is not (0 or 1))
         {
-            return Copy(root, tree, declared, _ => false, $"git could not say whether it ignores it: {err.Trim().Split('\n')[0].Trim()}", ct);
+            return Copy(root, tree, declared, _ => false, permit, $"git could not say whether it ignores it: {err.Trim().Split('\n')[0].Trim()}", ct);
         }
 
         var ignored = said.Split('\0', StringSplitOptions.RemoveEmptyEntries).ToHashSet(PathComparer);
-        return await Task.Run(() => Copy(root, tree, declared, ignored.Contains, null, ct), ct).ConfigureAwait(false);
+        return await Task.Run(() => Copy(root, tree, declared, ignored.Contains, permit, null, ct), ct).ConfigureAwait(false);
     }
 
-    /// <summary>The gate and the copy, git's word on what it ignores in the tree handed in.</summary>
+    /// <summary>The gate and the copy, git's word on what it ignores in the tree handed in; the person's permissions are not asked.</summary>
     internal static LocalCopy Reuse(string root, string tree, Func<string, bool> ignored, CancellationToken ct) =>
-        Copy(root, tree, Declared(root), ignored, null, ct);
+        Copy(root, tree, Declared(root), ignored, _ => FileVerdict.Made, null, ct);
 
     /// <summary>
     /// Each input judged and copied, or why not; where git could not say what it ignores (<paramref name="unsaid"/>), each the
     /// checkout holds copies nothing and says git's words.
     /// </summary>
     private static LocalCopy Copy(
-        string root, string tree, IReadOnlyList<LocalInput> declared, Func<string, bool> ignored, string? unsaid, CancellationToken ct)
+        string root, string tree, IReadOnlyList<LocalInput> declared, Func<string, bool> ignored, Func<string, FileVerdict> permit, string? unsaid, CancellationToken ct)
     {
         if (declared.Count == 0) return LocalCopy.None;
         root = Path.GetFullPath(root);
@@ -141,6 +141,12 @@ internal static class TreeLocalInputs
                 if (!ignored(input.Path) || LinkOnTheWay(tree, final))
                 {
                     declined.Add(new(input.Path, LocalUncopiedWhy.Refused));
+                    continue;
+                }
+
+                if (permit(input.Path) is var verdict and not FileVerdict.Made)
+                {
+                    declined.Add(new(input.Path, verdict == FileVerdict.Denied ? LocalUncopiedWhy.Denied : LocalUncopiedWhy.Held));
                     continue;
                 }
 
@@ -289,6 +295,11 @@ internal sealed record LocalUncopied(string Input, string Why, string? Detail = 
             LocalUncopiedWhy.Refused => Noted.Of(
                 StartNoteCodes.StartedLocalRefused,
                 $"`{Input}` was not copied: Daoris copies into a tree only a file under `local/` that git ignores there, and this is not one.", input),
+            LocalUncopiedWhy.Held => Noted.Of(
+                StartNoteCodes.StartedLocalHeld,
+                $"`{Input}` was not copied: an `ask` in your permissions holds this copy for an allow, which the next start reads.", input),
+            LocalUncopiedWhy.Denied => Noted.Of(
+                StartNoteCodes.StartedLocalDenied, $"`{Input}` was not copied: your permissions deny this copy.", input),
             _ when Detail is { Length: > 0 } said => Noted.Of(
                     StartNoteCodes.StartedLocalFailed, $"`{Input}` was not copied from your checkout: the copy failed ({said}).", input)
                 .Also(NotePart.Said(said, NoteBy.Program)),
@@ -308,4 +319,10 @@ internal static class LocalUncopiedWhy
 
     /// <summary>The copy failed, or git could not say whether it ignores it.</summary>
     public const string Failed = "failed";
+
+    /// <summary>An <c>ask</c> in the person's permissions holds it for an allow.</summary>
+    public const string Held = "held";
+
+    /// <summary>A <c>deny</c> in the person's permissions matches it.</summary>
+    public const string Denied = "denied";
 }

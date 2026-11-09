@@ -23,6 +23,7 @@ public sealed class RulePathsCensusTests
         "Files/FileAnalysis.cs:hit.Rule.Paths.Where(path => !path.StartsWith('!'))", "Deps/WorkspaceOrder.cs:Rule.Paths.Count: > 1",
         "Declarations/RuleFileKind.cs:DeclarationBound.Texts(rule.Paths)",
         "BacklogMerge.cs:Lines.FirstOrDefault(rule => rule.Paths == path)", "IntegrationDeclaration.cs:Select(rule => rule.Paths)",
+        "Deps/WorkspaceOrder.cs:Rule.Paths.Length: > 1", "Declarations/RuleFileKind.cs:DeclarationBound.Texts(rule.Paths)",
     ];
 
     [Fact]

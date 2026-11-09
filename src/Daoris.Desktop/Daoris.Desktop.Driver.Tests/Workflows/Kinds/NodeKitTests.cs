@@ -44,14 +44,14 @@ public sealed class NodeKitTests
                 "claimed",
                 "review", "look", "go-ahead", "human",
                 "check", "opinion", "work.requests", "quest.holds", "content.holds",
-                "land", "integrate", "push", "*/pull-request", "monitor", "tidy", "line", "rebase",
+                "land", "integrate", "push", "*/pull-request", "monitor", "tidy", "line", "rebase", "resolve", "merge",
                 "request", "wait.unit", "quest.close", "all", "stop",
             ],
             order.Select(part => part.Name));
         Assert.Equal(
             [
                 NodeGroup.Work, .. Enumerable.Repeat(NodeGroup.You, 4), .. Enumerable.Repeat(NodeGroup.Checks, 5),
-                .. Enumerable.Repeat(NodeGroup.Landing, 8), .. Enumerable.Repeat(NodeGroup.Others, 5),
+                .. Enumerable.Repeat(NodeGroup.Git, 10), .. Enumerable.Repeat(NodeGroup.Others, 5),
             ],
             order.Select(part => (NodeGroup)part.Phase));
 
@@ -65,17 +65,17 @@ public sealed class NodeKitTests
     {
         Assert.Equal(
             "the part land is declared twice, by PluginStep and PluginStep",
-            Assert.Throws<PartOrderException>(() => PartOrder.Of([Declared("land", NodeGroup.Landing), Declared("land", NodeGroup.Landing)])).Message);
+            Assert.Throws<PartOrderException>(() => PartOrder.Of([Declared("land", NodeGroup.Git), Declared("land", NodeGroup.Git)])).Message);
         Assert.Equal(
             "the part push comes after deploy, which is no part",
-            Assert.Throws<PartOrderException>(() => PartOrder.Of([Declared("push", NodeGroup.Landing, "deploy")])).Message);
+            Assert.Throws<PartOrderException>(() => PartOrder.Of([Declared("push", NodeGroup.Git, "deploy")])).Message);
         Assert.Equal(
-            "the part claimed runs in Work and comes after land, which runs later, in Landing",
-            Assert.Throws<PartOrderException>(() => PartOrder.Of([Declared("claimed", NodeGroup.Work, "land"), Declared("land", NodeGroup.Landing)])).Message);
+            "the part claimed runs in Work and comes after land, which runs later, in Git",
+            Assert.Throws<PartOrderException>(() => PartOrder.Of([Declared("claimed", NodeGroup.Work, "land"), Declared("land", NodeGroup.Git)])).Message);
         Assert.Equal(
             "the parts land → push → land come after each other, so none of them can run first",
             Assert.Throws<PartOrderException>(() => PartOrder.Of(
-                [Declared("land", NodeGroup.Landing, "push"), Declared("push", NodeGroup.Landing, "land")])).Message);
+                [Declared("land", NodeGroup.Git, "push"), Declared("push", NodeGroup.Git, "land")])).Message);
     }
 
     [Fact]

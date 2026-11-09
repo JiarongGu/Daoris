@@ -61,7 +61,7 @@ public sealed class ContinuedChoiceTests : IDisposable
     private async Task<string> CutOffOnTheSecondChoiceAsync(ServiceClient service)
     {
         _ledger.Publish("q1", "engine");
-        var (id, _) = await service.OpenSessionAsync("q1", "second", null, "account-1", Path.Combine(_home, "engine"), null);
+        var (id, _) = await HeldOpens.OpenAsync(service, _home, "q1", "second", "account-1", Path.Combine(_home, "engine"));
         await service.KeepActorAsync(id!, "2", new ActorEffective("second", "sonnet", null, "2").Asked);
         await service.AdvanceAsync(id!, "working");
         _ledger.Move("q1", "Taken");

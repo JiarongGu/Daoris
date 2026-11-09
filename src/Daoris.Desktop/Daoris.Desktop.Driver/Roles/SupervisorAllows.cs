@@ -16,17 +16,25 @@ public static class SupervisorAllowShapes
 
     /// <summary>A steward's act outside its grants.</summary>
     public const string Steward = "steward";
+
+    public const string Files = "files";
+}
+
+public static class SupervisorAllowActs
+{
+    public const string Leave = "leave";
 }
 
 /// <summary>An allow decision to keep: what it answered, its act, and who took it.</summary>
 /// <param name="Session">The session the decision is read back by, where its subject has one; none keeps it with the machine's.</param>
-/// <param name="Subject">The subject's own id: the request's, the proposal's or the steward's ask.</param>
-/// <param name="Do">The act: <c>once</c>, <c>reject</c>, <c>standing</c> or <c>steward</c>.</param>
-/// <param name="Act">The steward's act a supervisor allowed, for the steward shape.</param>
+/// <param name="Subject">The subject's own id: the request's, the proposal's, the steward's ask or a rule file's held act.</param>
+/// <param name="Do">The act: <c>once</c>, <c>reject</c>, <c>standing</c>, <c>steward</c> or <c>leave</c>.</param>
+/// <param name="Act">The steward's act a supervisor allowed, or the kind of act a files ask held.</param>
 /// <param name="LandsAt">Set for an allowed <c>land</c>, which waits the role's window before it runs; the decision is held until then.</param>
+/// <param name="Bound">Set for a leave, which is <c>left</c> at its keeping.</param>
 public sealed record SupervisorAllowed(
     string Id, string Shape, string Subject, string? Session, string Repository, string Do, string? Role, string? Act, SupervisorHolder Holder,
-    IReadOnlyList<SupervisorReason> Reasons, DateTimeOffset? LandsAt = null);
+    IReadOnlyList<SupervisorReason> Reasons, DateTimeOffset? LandsAt = null, string? Bound = null);
 
 /// <summary>
 /// The allow supervisor's decision record: each allow taken, whether of a held request, a widening or a steward's act, written once as a
@@ -49,9 +57,9 @@ internal sealed class SupervisorAllows(SupervisorDecisionFiles files, MachineLog
         var held = allow.LandsAt is not null;
         Directory.CreateDirectory(files.FolderOf(folder));
         AtomicFile.WriteText(files.FileOf(folder, allow.Id), Json(allow, now));
-        Append(folder, allow.Id, held ? SupervisorState.Held : SupervisorState.WentOn, now, null);
+        Append(folder, allow.Id, allow.Bound is not null ? SupervisorState.Left : held ? SupervisorState.Held : SupervisorState.WentOn, now, null);
         if (held) _held[allow.Id] = folder;
-        log?.Info("supervisor.allowed", ("shape", allow.Shape), ("do", allow.Do));
+        log?.Info(allow.Bound is null ? "supervisor.allowed" : "supervisor.left", ("shape", allow.Shape), ("do", allow.Do));
     }
 
     /// <summary>Move a held decision of this run on to where it ended up; one already past <c>held</c> stays as it is.</summary>
@@ -95,12 +103,13 @@ internal sealed class SupervisorAllows(SupervisorDecisionFiles files, MachineLog
     private static string Json(SupervisorAllowed allow, DateTimeOffset now) => new JsonObject
     {
         ["id"] = allow.Id,
-        ["kind"] = SupervisorKinds.Allow,
+        ["kind"] = allow.Shape == SupervisorAllowShapes.Files ? SupervisorKinds.Files : SupervisorKinds.Allow,
         ["session"] = allow.Session,
         ["holder"] = SupervisorHolders.Node(allow.Holder),
         ["allow"] = new JsonObject
         {
             ["shape"] = allow.Shape, ["subject"] = allow.Subject, ["repository"] = allow.Repository, ["do"] = allow.Do, ["role"] = allow.Role, ["act"] = allow.Act,
+            ["bound"] = allow.Bound,
         },
         ["reasons"] = new JsonArray([.. allow.Reasons.Select(reason => (JsonNode)new JsonObject { ["says"] = reason.Says, ["source"] = reason.Source })]),
         ["keptAt"] = now.ToUniversalTime().ToString("O", CultureInfo.InvariantCulture),

@@ -22,7 +22,7 @@ public sealed class FilesLookTests : IDisposable
     private FilesLook Look(IReadOnlyList<FileRule> found, IReadOnlyList<FileRule> own, params string[] tops)
     {
         var reading = new FileReading(new FoundReading("abc", DateTimeOffset.UnixEpoch, found), tops, new FileFloorFacts([], []), (_, _) => null);
-        var gathered = new FilesGathered(new FoundFilesRead(new FoundReading("abc1234567890", DateTimeOffset.UnixEpoch, found), []), reading, new RepositoryFilesRead(own, []), PersonFiles.Read(_home));
+        var gathered = new FilesGathered(new FoundFilesRead(new FoundReading("abc1234567890", DateTimeOffset.UnixEpoch, found), []), reading, new RepositoryFilesRead([.. own], []), PersonFiles.Read(_home));
         return FilesLooks.Compose("web", "def1234567890", gathered);
     }
 
@@ -38,7 +38,7 @@ public sealed class FilesLookTests : IDisposable
         Assert.Equal([("found", "dependency"), ("repository", "output")], file.Below.Select(each => (each.Layer, each.Kind)));
         Assert.Equal(("def1234567", "abc1234567"), (look.Commit, look.FoundCommit));
         Assert.Equal(120, file.Files);
-        Assert.Equal(["beside package-lock.json"], file.Evidence);
+        Assert.Equal<string>(["beside package-lock.json"], file.Evidence);
     }
 
     [Fact]

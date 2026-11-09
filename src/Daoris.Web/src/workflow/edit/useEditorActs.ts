@@ -10,6 +10,7 @@ import { isHoldKind } from '../graphFlow';
 import { type GraphProblem, type WorkflowPaletteAnswer, type WorkflowSaveAnswer, type WorkflowSaveAsk } from './answers';
 import { draftFlow } from './EditCanvas';
 import { carriedSaid, plain, rowSaid, stepTitle } from './editWords';
+import { gitTail } from './gitTail';
 import { canInsertOn, type Carried, type Clip, commit, connect, copySteps, duplicateStep, type GraphDraft, type History, type InsertAt, insertStep, joinOf, movePlan, pasteSteps, redo, removeStep, type StepChoice, targetsOf, undo, type WayRowKey, type GraphJson } from './graphDraft';
 import { type Confirming } from './Inspector';
 import { type ChangeRow, changeSaid, changeStep, MARK_SIGN, withChanges } from './ChangeList';
@@ -137,9 +138,20 @@ export function useEditorActs({ draft, t, i18n, palette, setHistory, setHeard, s
     const at = picker;
     setPicker(null);
     if (!at) return;
-    const made = insertStep(palette, draft, choice, at);
-    if (made.draft === draft) return;
-    change(made.draft, carried(t('workflow.edit.said.added', { step: stepTitle(t, i18n, palette, choice) }), made.draft, made.carried, [made.id]));
+    const inserted = insertStep(palette, draft, choice, at);
+    if (inserted.draft === draft) return;
+    const tailed = gitTail(palette, inserted.draft, inserted.id);
+    const made = { ...inserted, draft: tailed.draft };
+    const titled = (id: string | null | undefined) => {
+      const node = made.draft.nodes.find((each) => each.id === id);
+      return node ? stepTitle(t, i18n, palette, node) : id ?? '';
+    };
+    const behind = made.draft.wires.find((wire) => wire.kind === 'back' && wire.from === made.id && wire.on === 'behind');
+    const tail = tailed.tail === 'rebase' && tailed.steps.length === 2
+      ? t('workflow.edit.said.gitTail.rebase', { resolve: titled(tailed.steps[0]), task: titled(tailed.steps[1]) })
+      : tailed.tail === 'merge' && behind ? t('workflow.edit.said.gitTail.merge', { rebase: titled(behind.to) }) : null;
+    const added = t('workflow.edit.said.added', { step: stepTitle(t, i18n, palette, choice) });
+    change(made.draft, carried(tail ? `${added} ${tail}` : added, made.draft, made.carried, [made.id, ...tailed.steps]));
     setDrawer(false);
     setChosen(made.id);
     focusOn(made.id);

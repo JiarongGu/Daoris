@@ -251,6 +251,32 @@ export const GRAPH_RUN_DECIDED = run([
 });
 
 /**
+ * A run of the Git kinds, drawn before the cut-over offers them: its rebase stopped `conflicted`, and its resolution waits on the session to
+ * settle the stop's files, said under the step with its try and its bound; the merge after it not reached.
+ */
+export const GRAPH_RUN_RESOLVING = run([
+  at(nodeCell('work', 'work', 'agent', 'agent'), 'done', 'reached', { node: 'claimed', on: 'quest', quest: 'q1' }),
+  at(nodeCell('rebase', 'rebase', 'automatic', 'daoris'), 'done', 'reached', { node: 'rebase', on: 'branch', branch: BRANCH, commit: COMMIT }),
+  at(nodeCell('resolve', 'resolve', 'automatic', 'daoris', null, { resolver: 'session' }), 'working', 'active', {
+    node: 'resolve', on: 'branch', branch: BRANCH, session: 's1', acts: ['stop'],
+    wait: { code: 'session', values: { files: '`src/a.cs` (2 hunks)', count: '1', of: '3' }, since: '2026-11-09T14:32:00Z', until: '2026-11-09T15:02:00Z' },
+  }),
+  at(nodeCell('landing', 'merge', 'automatic', 'daoris', null, { method: 'merge' }), 'not-reached', 'blocked', { node: 'merge' }),
+], {
+  at: 'resolve',
+  workflow: { version: 'gph-7e1d3c5b9a2f4e6d', startHolds: [], limits: {}, id: 'dev-line', boundVersion: 1 },
+  graph: {
+    run: 'q1', entries: ['work'], end: 'landing',
+    wires: [
+      { from: 'work', to: 'rebase', kind: 'after' }, { from: 'rebase', to: 'landing', kind: 'when', outcome: 'ready' },
+      { from: 'rebase', to: 'resolve', kind: 'when', outcome: 'conflicted' }, { from: 'rebase', to: 'resolve', kind: 'when', outcome: 'uncommitted' },
+    ],
+    backs: [{ from: 'resolve', to: 'rebase', on: 'resolved' }, { from: 'landing', to: 'rebase', on: 'behind' }],
+    quest: 'q1', branch: BRANCH, judged: true, unread: false, ended: null, notTaken: [], outcomes: { rebase: 'conflicted' },
+  },
+});
+
+/**
  * The same run when the find came to `release`: the release is recorded and copied, and the run finished there, with the
  * find saying its outcome and the route it took.
  */

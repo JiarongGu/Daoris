@@ -7,11 +7,11 @@ internal static class StartBinding
     /// A start's bind of its run before its take: Workflows' use case over the loop's service, home, choices
     /// and plugins. A binding it made is kept for the next look's bind to say.
     /// </summary>
-    public static async Task<WorkflowBind> AtStartAsync(LoopContext context, QuestView quest, string? workspace, CancellationToken ct)
+    public static async Task<WorkflowBind> AtStartAsync(LoopContext context, QuestView quest, string? workspace, StartHold hold, CancellationToken ct)
     {
         var bound = await WorkflowRunStart.AtStartAsync(
                 new WorkflowStarted(quest, workspace), new StartWorld(context.Service), context.Home, context.Config,
-                WorkflowSteps.PluginsOf(context.Catalog), () => DateTimeOffset.UtcNow, ct)
+                WorkflowSteps.PluginsOf(context.Catalog), () => DateTimeOffset.UtcNow, hold, ct)
             .ConfigureAwait(false);
         if (bound.Came == WorkflowBindCame.Bound) context.Runs.Bound(bound);
         return bound;

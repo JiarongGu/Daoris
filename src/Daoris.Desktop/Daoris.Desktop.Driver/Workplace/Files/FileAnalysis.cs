@@ -1,3 +1,4 @@
+using System.Collections.Immutable;
 using System.Text.Json;
 using System.Text.RegularExpressions;
 
@@ -63,7 +64,7 @@ internal static partial class FileAnalysis
                 : new FileRule(FileKind.Unknown, Top(top)) { Size = walks[top].Size };
         }
 
-        var rules = found.Values.OrderBy(rule => rule.Kind == FileKind.Dependency ? rule.Key is { Count: 0 } ? 1 : 0 : 2)
+        var rules = found.Values.OrderBy(rule => rule.Kind == FileKind.Dependency ? rule.Key is { Length: 0 } ? 1 : 0 : 2)
             .ThenBy(rule => rule.Paths[0], StringComparer.Ordinal).ToList();
         var ignoreCase = await FileGit.IgnoresCaseAsync(root, ct).ConfigureAwait(false);
         FileRule? Signature(string path, FileKind kind) => hits.LastOrDefault(hit => hit.Rule.Kind == kind && hit.Rule.Matches(path, ignoreCase))?.Rule;
@@ -72,7 +73,7 @@ internal static partial class FileAnalysis
             new FileFloorFacts(known, [.. found.Where(pair => pair.Value.Kind == FileKind.Repository).Select(pair => pair.Key)]) { IgnoreCase = ignoreCase }, Signature);
     }
 
-    private static IReadOnlyList<string> Top(string top) => [GitPattern.Anchored(top)];
+    private static ImmutableArray<string> Top(string top) => [GitPattern.Anchored(top)];
 
     /// <summary>
     /// The signatures' rules over the tops: a dependency beside its signature whether or not it stands yet, with its workspace
@@ -121,7 +122,7 @@ internal static partial class FileAnalysis
                 rule = WithMembers(rule, hit.Folder, WorkspaceMembers.OfPnpm(workspace));
             }
 
-            if (rule.Key is not { Count: 0 } && await FileGit.ShowAsync(root, commit, hit.File, ct).ConfigureAwait(false) is { } lockfile
+            if (rule.Key is not { Length: 0 } && await FileGit.ShowAsync(root, commit, hit.File, ct).ConfigureAwait(false) is { } lockfile
                 && InstallScript(lockfile, hit.Row.ReadsNothing) is { } package)
             {
                 rule = rule with { Key = [], Evidence = [.. rule.Evidence, $"{hit.File} marks `{package}`'s own install script, so the commit's tree keys it"] };

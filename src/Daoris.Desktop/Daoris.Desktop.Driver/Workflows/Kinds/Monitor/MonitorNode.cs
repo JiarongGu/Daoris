@@ -5,7 +5,7 @@ namespace Daoris.Driver;
 /// step reports as its outcome, so the graph routes on it with <c>when</c> wires. Its outcomes are its watched step's states, written in the file:
 /// a pull request's <c>merged</c> and <c>closed</c>, the one step that reports a state today.
 /// </summary>
-[NodeKind(NodeKinds.Monitor, NodeGroup.Landing, "*/pull-request")]
+[NodeKind(NodeKinds.Monitor, NodeGroup.Git, "*/pull-request")]
 internal sealed class MonitorNode : BuiltInNode, IObserves
 {
     /// <summary>Reached by the watched step's state, and nothing fails it. Never skipped, since a skip would read as a state; the person's door is the stop.</summary>

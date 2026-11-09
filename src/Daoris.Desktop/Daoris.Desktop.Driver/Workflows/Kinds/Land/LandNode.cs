@@ -4,7 +4,7 @@ namespace Daoris.Driver;
 /// The unit's landing as a step Daoris performs, 落地: the graph's one landing, by its method's options
 /// (<see cref="LandNodes"/>). It takes no <c>accept</c>: it starts once its wires hold, and the person's Accept is a <c>review</c>'s.
 /// </summary>
-[NodeKind(NodeKinds.Land, NodeGroup.Landing)]
+[NodeKind(NodeKinds.Land, NodeGroup.Git)]
 internal sealed class LandNode : BuiltInNode, IObserves, IStarts, IMakesLanding
 {
     /// <summary>
@@ -138,7 +138,7 @@ internal sealed class LandNode : BuiltInNode, IObserves, IStarts, IMakesLanding
         door.Start(new LandStart(governed.Unit.Id, governed.Run, kept.Node.Id, branch.Id, branch.Executors, governed.Watched.Repository,
             governed.Watched.Workspace, tip, binding.GraphDigest, governed.Graph.Nodes.FirstOrDefault(each => each.Kind == NodeKinds.Review)?.Id)
         {
-            Since = kept.Status.Since,
+            Since = kept.Status.Since, Authority = kept.Authority,
         });
     }
 }

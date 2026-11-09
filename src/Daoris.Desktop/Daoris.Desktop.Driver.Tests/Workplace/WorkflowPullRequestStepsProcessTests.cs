@@ -137,7 +137,7 @@ public sealed class WorkflowPullRequestStepsProcessTests : IClassFixture<GitSshH
 
         // The push node's door: the person's push act, bound to this one ref and commit, which origin hears once.
         var door = new PushDoor(Home);
-        Assert.True(door.Start(new PushStart("run:q1", node, "engine", "default", Work, "work/fix", tip)));
+        Assert.True(door.Start(new PushStart("run:q1", node, "engine", "default", Work, "work/fix", tip) { Authority = StepAuthority.OfDoor("q1", node.Id, 1) }));
         await door.IdleAsync();
 
         var (exit, remote, _) = await Run(Git(Bare, "rev-parse", "--verify", "--quiet", "refs/heads/work/fix"));
