@@ -88,6 +88,18 @@ public sealed class AgentVerbFlagsTests : IDisposable
     }
 
     [Theory]
+    [InlineData("--workspace")]
+    [InlineData("--repository")]
+    public async Task A_default_is_refused_a_scope_it_does_not_have_and_nothing_is_switched(string flag)
+    {
+        var exit = await AgentsCommand.RunAsync(["rules", "default", "tree-guard", "off", flag, "aurora"], World(), CancellationToken.None);
+
+        Assert.Equal(2, exit);
+        Assert.Contains("machine's", _error.ToString());
+        Assert.False(File.Exists(PermissionRules.PathOf(Home)), "a default was switched");
+    }
+
+    [Theory]
     [InlineData("unknown agent profile verb 'join'", "profile", "join", "claude-code", "account-3", "--machine")]
     [InlineData("unknown rules verb 'grant'", "rules", "grant", "Bash(git push:*)", "--repo", "engine")]
     public async Task An_unknown_verb_is_refused_before_a_flag_it_carries(string says, params string[] words)
