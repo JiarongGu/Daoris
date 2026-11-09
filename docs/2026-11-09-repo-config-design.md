@@ -1,10 +1,11 @@
 # A repository's Daoris configuration read once and indexed (REPOCONFIG1)
 
-**Round 2, proposed for both makers' reads before a decision is written** (2026-11-09). The owner finds reading a repository's
+**Round 3, proposed for both makers' reads before a decision is written** (2026-11-09). The owner finds reading a repository's
 Daoris configuration slow and wants it read once and better indexed. Round 1 (§0 to §5) measured every reader (§1, §2, §3) and
 proposed one store every reader passes (§4) and the rows that build it (§5). Both makers read it ([the reads](2026-11-09-repo-config-reads.md))
 and found seventeen blocking sequences and thirteen readers it missed; round 2 (§6 to §17) answers them by class, and supersedes
-round 1 where it differs. Driver paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/`. It builds on GITLIB1
+round 1 where it differs. Both read round 2 and found seven more and a leak in each census; round 3 (§18 to §28) closes them by
+construction, and supersedes round 2 where it differs. Driver paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/`. It builds on GITLIB1
 ([its design](2026-11-09-git-library-design.md)): the stamp it designed (its §10.3 and §14.5), which round 2 builds first, and its one
 object read (`GitObjectReads`).
 
@@ -601,7 +602,7 @@ reading the machine's tools, not a repository's configuration, so they stay and 
 
 ## 17. The rows
 
-*Supersede §5's.* REPOCONFIG1a lands first; b and c follow a and are apart; d follows b and c; e follows b. In every row each moved
+*Superseded by round 3's rows, §28.* *Supersede §5's.* REPOCONFIG1a lands first; b and c follow a and are apart; d follows b and c; e follows b. In every row each moved
 reader's existing tests pass unchanged before a count is lowered, and the bench is run before and after it: the bench measures, the
 tests assert.
 
@@ -645,3 +646,331 @@ tests assert.
   store), the toolchain digest's processes counted apart.
 
 Nothing was measured anew for round 2, and nothing in the product changed.
+
+## Round 3
+
+*Supersedes round 2 where it differs: §7's admission and its saved stamp by §19 and §20; §8's answers and what is kept by §21; §11's and
+§13.3's censuses by §23; §12's search key and its row d target by §22; §13.3's `WorkflowHomeTopic` exemption by §24; §14.1's one bound
+and §14.2's stamp column by §19 and §25; §17 by §28.*
+
+Both makers read round 2 ([the reads](2026-11-09-repo-config-reads.md), *Codex, round 2* and *Opus (independent), round 2*). Here
+Codex's five blocking gaps are **C1** to **C5**, Opus's two are **B1** and **B2**, the leaks each found in a census are *the leaks*, and
+the points that did not block are **N1** to **N6**. Round 3 closes each by a construction a member not yet found cannot pass, and shows
+each census red on a member planted where round 2's census was green. Written from the code at `bdef71a3e2`.
+
+## 18. In short
+
+- **A commit's facts are proven by their own bytes** (C1, C2). The store admits an entry, an absence or a blob only where the commit,
+  its trees and the blob hash to their ids within the read, and looks one up only where no replacement can be in force, judged from
+  the ref files alone. Its facts then rest on no stamp, so a stamp that does not bind its start, or returns to what it was, cannot
+  carry a wrong one. A holder whose answer its bytes do not prove admits under a fence of stats read before and after (§19).
+- **The stamp's files are git's to name** (the leaks). Its candidates are every level git reads and every include named, present or
+  absent; git's own list of the files it read is the test's oracle (§20).
+- **What is kept is a function of its key; a read's failure is a function of nothing** (B1, C5). A kind's parse takes its bytes alone,
+  so `driver.json`'s kept kind is its parse and the staffing is laid over it at each ask; the gates file's syntax is shared and each
+  view keeps its own validation (§21).
+- **The script search is asked fresh** (C3): its attribute inputs are git's, not a key's (§22).
+- **Each census over-approximates and has a run-time half keyed by what is read, never by who reads** (C4, B2, the leaks): names and
+  sinks followed to a fixed point over the semantic model; git starts by path and by object id; declaration files held so any other
+  open fails; keepers by what an answer flows into; parses by their run-time object graph (§23). The members it finds are each moved
+  or exempt (§24).
+
+## 19. A commit's facts, proven by their bytes
+
+Round 2 kept a commit's entries and blobs under the stamp read before the start. A stamp read before does not bind the start (C2), and a
+hit by id answers whatever the stamp would now say (C1). Round 3 makes the store's facts about a commit independent of the stamp:
+
+- **The listing hashes what it reads.** The store's listing at commit `C` is one start of `cat-file --batch` fed `C`, `C^{tree}` and,
+  for a declaration below the top, each folder on its way (`C:<folder>`). It is admitted only where the commit's bytes hash to `C`, the
+  tree's to the id the commit's bytes name, and each folder's to the id its parent's entry names; the entries (name, mode, id) and an
+  absence are read from those hashed trees, in the repository's hash. A blob is admitted only where its bytes hash to its id. Every
+  id-keyed thing the store keeps or saves (an entry, a verified absence, a blob's bytes) is admitted so and no other way: a fact proven
+  by its bytes is a fact of the object store, true in every tree and context where git answers an object with its own bytes. The
+  listing replaces round 2's `ls-tree` and costs its one start.
+- **Looked up only where no replacement can be in force.** A replacement is the one way git answers an id with other bytes; grafts and
+  `shallow` move a commit's parents, never its tree. `GitReplacements.CanBeInForce(common)` holds where a file stands under
+  `refs/replace/` at any depth, a `packed-refs` line names a ref under it, `GIT_REPLACE_REF_BASE` is set, or the refs are a reftable. Read
+  from the files at each ask, it is `GitLibraryAdmission`'s judgement today, lifted to one member both read (D228). It reads no
+  configuration: `core.useReplaceRefs=false` and `GIT_NO_REPLACE_OBJECTS` can only turn a replacement off, so leaving them out can send to
+  git an ask the store could have answered, never answer one git would answer otherwise, and no configuration file it misses can make
+  it wrong. While it holds, the store's id-keyed parts are passed through, with no lookup and no admission in memory or saved, and the
+  reader takes git's answer, as today (C1). The parse by `ContentKey` stays shared: it is keyed by the bytes themselves.
+- **A mismatch is git's answer, kept by its bytes alone.** Bytes that do not hash to their id (a replacement added during the read) answer
+  the ask as git gave them: present, with their `ContentKey` and no `BlobId`, and nothing id-keyed admitted. That is §7's *answers its
+  ask*; §8's *unread* for a mismatch goes (§21).
+- **Add a replacement, read, remove it** (C2). No replacement stands at the ask; a session adds `C → C'` before the listing's start; git
+  answers `C'`'s bytes for `C`; the replacement is removed. `C'`'s bytes do not hash to `C`, so nothing is admitted, and the reader had
+  git's answer of that moment; a restart finds no row. A blob replaced the same way fails its own hash.
+- **Saved rows carry no stamp.** `declaration_at` (§14.2) loses its stamp digest. A row is read where no replacement can be in force at the
+  ask, so a replacement made while the desktop is down sends the cold start's ask to git, and `core.useReplaceRefs=false` set while it is
+  down leaves a row that is still the object's fact. A blob row is hashed against its id at its load, as in round 2.
+
+**A holder whose answer its bytes do not prove admits under a fence.** The tracked list (`ls-tree -r`, which hands back no tree's bytes),
+ignore-case and GITLIB1's `GitReadCache` cannot hash their answers to an id. Each reads a fence before its start and again after it: the
+stats (length, write time, the file's id and change time) of every input its answer rests on, and for an input absent, of its nearest
+folder. The answer is admitted only where the two fences are equal and settled, each write time at least 2 s before the first fence was
+read on that volume's clock (§9, N2 in §25). A change that returns an input's content to what it was does not return its stats: a rewrite
+moves the file's write time and id, an add and a remove move the folder's. The tracked list's inputs are the replacement gate's files
+alone (a commit's tree moves with nothing else, and `-z` output reads no configuration), so it is kept by commit and shared by every tree
+of the repository; ignore-case's are the stamp's (§20); `GitReadCache`'s are its stamp's.
+
+## 20. The stamp's files, named by git
+
+After §19 no store fact about a commit rests on the stamp; it keys `GitReadCache`'s answers and ignore-case. Round 2 listed its
+configuration files and tested the ones it listed, so a file at a level it did not list, or one absent at the first stamp, moved nothing
+(the leaks: Git for Windows' `ProgramData` file, which `GitLibrary.cs:74` already points libgit2 away from, and an include created later).
+
+- **The candidates are git's levels and every include named, present or absent.** A `FileStamp` for each file git would read for the
+  asking folder: the system file (the git in use's, or `GIT_CONFIG_SYSTEM`; none under `GIT_CONFIG_NOSYSTEM`); on Windows the `ProgramData`
+  file read before it; the global file as a start is handed it (`GitGlobalFile.Hand`'s, else the person's own and the XDG file); the
+  repository's `config`; the tree's `config.worktree`; and each file an `include.path` or `includeIf.*.path` names in a present candidate,
+  resolved as git resolves it (relative to the including file, `~` expanded) and followed into its own includes. An absent candidate is
+  stamped absent, so its creation moves the stamp. A conditional's inputs are stamped whether it matches now or not (`gitdir:` the asking
+  folder, `onbranch:` the tree's `HEAD`).
+- **Git is the oracle.** `GitStampTests` runs `git config --list --show-origin --show-scope --includes` in the asking folder of each fixture
+  after each change, and is red where git names a file that is not a candidate, and where a file git names was created, changed or
+  removed and the stamp did not move. It runs against each git Daoris starts (the pinned MinGit and the runner's), so a level is found by
+  that git's own answer rather than by a list. Planted, each green under round 2: the `ProgramData` file created after the first stamp;
+  the system file under `GIT_CONFIG_SYSTEM` created after it; an include target absent at the first stamp, then created; an include inside
+  that include; an `includeIf "gitdir:…"` that a tree added later matches.
+- **The variables** stay §7's, read from the process and from each start's handed set.
+
+## 21. What is kept is a function of its key
+
+One rule replaces §8's lists of what is kept: **the store keeps a value only where it is a function of the key it is kept under; a read's
+failure is a function of nothing, so it is never kept.** Three things follow.
+
+- **A kind's parse takes its bytes alone.** Every kind is an `IDeclarationKind<T>` whose one member parses the content's bytes, and the
+  kinds census (§23) is red on a parse that reaches anything but its argument. `DriverConfigDisk.Load` is not such a function (B1): it
+  lays `RoleStaffingPort.Fill` over the file, reading the desktop store's `role_staffing` through a port and keeping the file's staffing
+  where that store throws (`RoleStaffingPort.cs:57`), and it sets `SourceFile`, which `Save` compares to choose an edit over a whole write
+  (`DriverConfigDisk.cs:80`). The kept kind is `DriverConfigReader.Parse(text)` alone; `DriverConfig.Load` lays `SourceFile` and `Fill`
+  over the kept parse at each ask. So the staffing is read at every load, as now; a fallback answers its own load and is kept for none;
+  and two homes of equal bytes share the parse and never each other's `SourceFile`.
+- **The gates file: one syntax, each view's validation its own** (C5). The kind is the file's syntax: valid JSON as an immutable element
+  (a cloned `JsonElement`), or its syntax problem with its line and byte. Each view (§13.1's parsers) validates its own part over it and
+  answers its own value or its own problem's words, as its parser does now: valid heavy gates beside a malformed `integration.by` stay
+  the heavy view's, as `HeavyGates.Read` reads them, while the integration view refuses, as `IntegrationDeclaration.Read` does. A view's
+  problem is a function of the content, so it is kept as its value is. Parity is a table: each of today's parsers is run over every
+  `daoris.gates.json` blob in this repository's history, the tests' fixtures and the mixed-validity fixtures, its outcome (a value, or a
+  problem's words) recorded, and each view is equal to it cell by cell before that parser is deleted. The mixed-validity fixtures: valid
+  gates beside a malformed `integration.by`; a gate with no `run` beside a valid `integration`; one gate's `heavy` not a boolean; a
+  malformed writer, a malformed local input and a malformed row-table rule, each beside valid gates; a file that is not JSON; a valid file
+  with keys no view reads.
+- **The three answers, restated.** *Present*: the content (its `ContentKey` and size), at a commit the entry (mode, type, and the `BlobId`
+  §19 proved), the kind's parse, and each view asked. *Absent*: at a commit, a hashed tree holding no entry by the name (§19); on disk, a
+  stat that finds no file in a folder that stands, kept for none (its stat is its check). *Unread*: the read failed (a start failed, the
+  blob missing after the one fetching ask, a size past the reader's limit, a read ended short, an IO error, the folder gone), kept for
+  none in memory or saved. Bytes git answered that are not their id's (§19), and bytes read while their stat moved or was racy (§9), are
+  present and answer their ask, kept by their `ContentKey` alone.
+
+## 22. The script search, asked fresh
+
+`git grep -I` (`FileGit.LinesAsync`) judges a file binary by its `diff` attribute (C3), and git reads that attribute from the asking tree's
+working `.gitattributes` (the index where a file is missing), `info/attributes`, `core.attributesFile` or its XDG default, and the system
+attributes file, `GIT_ATTR_NOSYSTEM` deciding the last. Two trees of one commit, one list of tops and one of pathspecs can then answer two
+searches (one marks a writer script `-diff`), and an edit of an attribute file moves the answer. A key of those inputs would be a second
+list beside git's, red only where a test thought of each. Running at `--attr-source=<commit>` reads the commit's in-tree attributes in
+place of the tree's, which changes the answer, and still reads `info/attributes` and the global and system files. So the search is one
+start of every analysis with a name to search for, kept by nothing, and §12's row for it goes; with no name, nothing starts, as now.
+
+**Row d's target, restated.** Warm, the files stage and the Files page each ask the tree for its ignored tops, its worktrees and the
+search: **three starts on this repository, two where the tree has no ignored top to look for**, from 11 and 10. A new commit adds its
+tracked list and its declarations' listing, a new content its blob, a new stamp its ignore-case: one start each.
+
+## 23. The censuses, each sound by construction
+
+Round 2's censuses each named what they looked for, so a member outside the names passed (C4, B2, the leaks): a name handed to a helper or
+returned by a property, a read by id after a whole listing, a cache typed `object`, a `List` behind a read-only interface. Round 3's each
+over-approximate, follow every value the semantic model can follow until nothing changes, are red on an edge they cannot follow, and have
+a run-time half keyed by what is read: a path, an object id, a held file.
+
+**The source half** (`DeclarationReadersCensusTests`), over the driver's and the modules' semantic models with Roslyn:
+
+- **Names, to a fixed point.** A *name* is a declaration's literal or constant (constant-folded, so `"daoris." + "gates.json"` is one) and
+  every value made from a name by `Path.Combine`, `Path.Join`, concatenation, interpolation or formatting. A local, field, property,
+  parameter, method's return, collection or delegate bears a name where any name is assigned, returned, passed, added or captured into it;
+  a parameter where any call site in the sources passes one; an interface member where any implementation's does. So a path helper
+  (`PersonFiles.PathOf`, `DriverConfig.ResolvePath`) is found by what it returns, not listed. The set is iterated until it stops growing.
+- **Sinks, summarised the same way.** A sink is a member of the file system's types (`File`, `Directory`, `FileInfo`, `DirectoryInfo`,
+  `FileStream`, a reader or writer opened on a path, `File.OpenHandle`, `RandomAccess`, `AtomicFile`), a stat (existence, length, a time,
+  attributes), a git argument list or batch question, or a JSON parse. A method one of whose parameters reaches a sink is a sink in that
+  parameter, and a delegate made from a sink is a sink, found in the same fixed point.
+- **Red** where a name reaches a sink outside the store's folder and the exemptions (§13.3, §24); where a JSON parse's input comes from a
+  git start's output outside the store (after row b every committed JSON the driver reads is the store's, the analysis's manifests among
+  them, so only parses of git's own output formats are exempt, each named); and where a sink is reached through an edge the model cannot
+  follow (`dynamic`, reflection, a delegate from outside the sources).
+
+**The run-time halves**, over the starts and reads the count tests and the bench's flows make:
+
+- **Git, by path and by id** (`DeclarationGitCensusTests`). A start the store did not build is red where its arguments or batch questions
+  name a declaration's path, or name an object id a declaration's entry holds at any commit the run's starts named. The census lists those
+  entries after the run, through the store's own listing, so the order of the reads does not matter.
+- **Files, held** (`DeclarationFileCensusTests`). Over the bench's read flows, every declaration file of their fixtures (the checkouts',
+  the trees', the home's) is held open with no sharing; the store's one disk reader reads through the held handles, and any other open of
+  one, by any API, helper or library, throws a sharing violation, which the census sees at its first chance
+  (`AppDomain.FirstChanceException`) even where the reader swallows it. The fixtures' files are aged and their indexes refreshed first,
+  so git's own status opens none of them.
+
+**The other censuses:**
+
+- **Keepers** (`DeclarationKeepersCensusTests`). An *answer* is a value a store member returns, and every value the fixed point makes from
+  one. Red on an answer written into a static field, an instance field outside its constructor, an element of a collection a field holds,
+  a `??=` target or a `Lazy<>`, whatever the field's type; and in a type that asks the store, red on every field and `??=` the fixed point
+  does not prove answer-free, that proof being its only clearance.
+- **Parses** (`DeclarationParsesCensusTests`). Round 2's check of declared types stays, and the run-time object graph is added: each kind
+  and view made from the bench's files, every fixture and every historical blob is walked by reflection over its values' run-time types,
+  red on any object outside a set of immutable types (strings, primitives, enums, `ImmutableArray<>`, `FrozenDictionary<,>`,
+  `FrozenSet<>`, a compiled `Regex`, a cloned `JsonElement` as one leaf, and records whose fields are read-only and hold such values), and
+  red on a member null or empty in every graph walked, which no walk judged.
+- **Views and kinds** (`DeclarationViewsCensusTests`). A view's computation and a kind's parse are followed through every call they reach,
+  an interface call to every implementation in the sources; red where any member reached touches a sink, the clock, the environment, a
+  port, static mutable state, `DriverConfig` or a home layer's reader. At run time a view reads contents through a handle that answers only
+  the content keys its key record holds and throws on any other.
+- **The stamp** (`GitStampTests`): git as the oracle (§20).
+
+| Census | Red on, each planted where round 2's census was green |
+|---|---|
+| Readers, source | a helper taking the path: `Read(DeclarationNames.Gates)` with `Read(path)` calling `File.ReadAllText` in another file (`UnionJoins.ShowAsync`'s shape, and `LoopGrounds`' `Hash`); a property returning the name, read through an interface: `File.Exists(Path.Combine(tree, review.GatesFile))` (`ContextBriefs`'); a path method into a stat helper: `HomeWrites.Stamp(DriverConfig.ResolvePath(home))` (`LimitWaits`'); `FileGit.ShowAsync(root, commit, GeneratedWriters.DeclarationFile)` (`FileAnalysis`'); a delegate made from `File.ReadAllText`; a name split across two literals |
+| Readers, git | `ls-tree -r` of the whole tree, then `cat-file` of the manifest's id (`LayoutGit`'s shape) |
+| Readers, files | a name built from data at run time, no constant of it in the sources, opened through a stream in a helper whose `catch` swallows the error |
+| Keepers | an `IReadOnlyList<Regex>` made from the gates view by a helper and held in a record a field's dictionary keeps (`TreeReadMemo.Kept.Declared`'s shape); an `object` field set from a view; a `??=` of a hash of a store answer (`TreeReadMemo.Home`'s); a static `ConcurrentDictionary<string, object>` in a type that never asks the store, filled with an answer handed to it |
+| Parses | an `IReadOnlyList<string>` backed by a `List<string>` at run time (`FileRule.Paths`' and `RepositoryFilesRead.Rules`' shape); an array behind an `IReadOnlyList<>` |
+| Views and kinds | a view whose helper in another file calls `PersonFiles.Read`; a kind whose parse calls `RoleStaffingPort.Fill` (`DriverConfigDisk.Load`'s shape); a view asking its contents for a key its record does not hold |
+| Stamp | §20's five planted files |
+
+Each is also red on each exemption left out in turn, `SourceCensus.Problems` saying a member missed and a member gone, as round 2's.
+
+## 24. The members found, each moved or exempt
+
+The rules of §23, run over the code by hand at this round's commit, find these beside §13's:
+
+| Member | What it does | Its place |
+|---|---|---|
+| `ContextBriefs.Gates` (`Context/Events/ContextBriefs.cs:210`) | an existence check of the tree's gates file through `ContextReview.Current.GatesFile`, then `DeclaredGates` | moved (c): the store's tree ask, whose *absent* is the check |
+| `LimitWaits.Stamp` (`Course/Chat/LimitWaits.cs:395`) | `driver.json` stamped by length and write time, deciding a skip at `:90` | moved (c): the content key of the `DriverConfig` it is handed, which the store answered under §9's rule |
+| `TreeReadMemo.Home` (`Workplace/TreeReadMemo.cs:278`) | `driver.json`'s bytes hashed through `trees.ConfigPath`, kept by `??=` | moved (c): the store's content key, asked each pass, kept nowhere |
+| `HomeWatch.ForDriver`'s config topic (`Events/HomeWatch.cs:159`) and any other topic's part over a declaration | the file stamped by length and write time for the bus | moved (c): a part's stamp is the store's version of the file |
+| `WorkflowHomeTopic` | each workflow stamped by length and write time for its topic | moved (c), its §13.3 exemption withdrawn: a stamp that decides a publish is a version of the file |
+| `LoopGrounds` (`Modules/Loop/LoopGrounds.cs:231`) | the checkout's manifest hashed through a helper for a pipe write's grounds | moved (c): the store's content key of it |
+| `UnionJoins` (`Workplace/UnionJoins.cs:245`) | the manifest at `declaredAt` through its own `ShowAsync` | moved (b); its `.gitattributes` read stays its own |
+| `FileAnalysis.ReadAsync` (`Workplace/Files/FileAnalysis.cs:31`) | the gates at the commit through `FileGit.ShowAsync` | moved (b) as a commit ask, with the manifests, lockfiles and workspace files; its keeping is d's |
+| `LayoutGit` (`Workplace/LayoutGit.cs:35`, `:44`) | the whole tree listed, then each wanted blob read by id | moved (b): the declarations' entries and texts from the store, the rest its own |
+| `DirectGateRuns` (`Review/Integration/DirectGateRuns.cs:16`), `IntegrationJudging` (`:59`) | the accepted text they are handed, parsed by `DeclaredGates.Read` | named in §13.1 (N1): the gates kind's views over the handed text's content key (b) |
+| `RemoteSync` (`Service/RemoteSync.cs:309`) | git's status of the checkout's manifest (`UnmodifiedAsync`) | exempt: git's judgement of the file, reading no content of the store's (§9) |
+
+## 25. The points that did not block
+
+- **N1.** `DirectGateRuns.cs:16` and `IntegrationJudging.cs:59` join §13.1's readers of the gates file (§24).
+- **N2, the volume's clock.** §9 compares a write time with `H`, this machine's clock, which on a share whose clock lags and whose times are
+  coarse trusts a racy stat. `H` is the volume's clock: this machine's on a local fixed volume; elsewhere (a network drive, a UNC path) the
+  write time of a mark the store touches on that volume after reading `s1`, in the asking tree's git directory beside git's own index, as
+  git compares an entry with its index file's write time. Where no mark can be written, no stat on that volume is trusted and each ask
+  hashes the bytes (1.4 ms for this repository's four). §19's fences read the same clock.
+- **N3, the indexes weighed.** The checkout and home entries (a path's `FileStamp`, `H` and content key), the commit listings, the parsed
+  `packed-refs` and the stamps' per-file and per-folder stats are weighed as §14.1 weighs the rest.
+- **N4, a bound per kind.** Each kind has its own bound and its own least-recently-used order, so one never evicts another: declarations'
+  bytes, parses and views 16 MB; tracked lists 24 MB (this repository's 9,201 paths are about 1.4 MB), none kept past a quarter of it; the
+  indexes and stamps 4 MB. The admission test counts each.
+- **N5, the found layer in the view's key.** `StoreDependency` and `FilesLooks` take `found.Reading?.Rules ?? reading.Found.Rules`, so a
+  tree's effective rules are keyed by the found layer's content key where one is on file, and by the tree's analysis key where none is.
+- **N6, row e's count.** After §19 no saved row rests on the stamp, so the cold follow asks git nothing for its system configuration's path;
+  where another of the bench's flows asks it (once a git in use and process), that start is counted apart.
+
+## 26. The reads answered (round 3)
+
+| Finding | Answer | Section |
+|---|---|---|
+| **C1** Blob hits bypass the replacement checks | No lookup and no admission of anything id-keyed, in memory or saved, while a replacement can be in force, judged from the ref files; a mismatch is git's answer, kept by its `ContentKey` alone, so §7 and §8 agree | §19, §21; rows a, e |
+| **C2** A stamp captured before does not bind the read | A commit's facts admitted only from bytes hashing to their ids within the read, resting on no stamp; any other holder under a fence of stats before and after, which a change returning the content does not return | §19; rows a, e |
+| **C3** The search's key omits attributes | Asked fresh at every analysis; row d's target three starts, two with no ignored top | §22; row d |
+| **C4** No general guarantee that a missed member fails | Names and sinks to a fixed point; red on an edge not followed; run-time halves by path, id and held file; keepers by where an answer flows; parses by the run-time graph | §23; rows a, d |
+| **C5** Whole-file unread against per-view validation | One shared syntax, each view's validation and problem its own and kept; the parity table and the mixed-validity fixtures before any parser goes | §21; row b |
+| **B1** `driver.json`'s load is not a function of its bytes | The kept kind is `DriverConfigReader.Parse` alone; `SourceFile` and `Fill` at each ask; a kind's parse census-held to its bytes | §21, §23; rows a, c |
+| **B2** Second ways of reading survive | Names through calls and returns to a fixed point; the helper and the property planted; ids from the store's listings at run time; each member found moved, `RemoteSync.cs:309` exempt | §23, §24; rows c, d |
+| **The leaks**: the source half (`LoopGrounds`, `UnionJoins`, `FileAnalysis` through `FileGit.ShowAsync`) | Helpers summarised as sinks; each moved | §23, §24 |
+| **The leaks**: the run-time half (`LayoutGit`'s listing then `cat-file`) | Red on a declaration's object id, not only its path | §23 |
+| **The leaks**: keepers (`TreeReadMemo.Kept.Declared`) | Red on an answer in any field or `??=`, whatever its type; in a type that asks the store, on every field not proven answer-free | §23 |
+| **The leaks**: parses (`FileRule.Paths`, `RepositoryFilesRead.Rules`) | The run-time object graph walked against immutable types | §23 |
+| **The leaks**: the stamp (`ProgramData`'s file, includes absent at first) | Every level and include a candidate, present or absent; git's own list as the oracle | §20; row a |
+| **N1** to **N6** | Named in §13.1; the volume's clock by a mark; the indexes weighed; a bound per kind; the found layer or the analysis in the key; the stamp's ask counted apart | §24, §25 |
+| **The rows** (both) | c's censuses move to d, after every reader has moved; `IDeclarationView`, the kinds and the censuses that hold each move in a; the sequences added | §28 |
+
+## 27. Rejected in round 3
+
+- **The stamp read before a start as its admission's proof** (round 2's): it does not bind the start, and a change that returns leaves it
+  equal (C2).
+- **A digest compared before and after as the fence**: an add and a remove return it; stats move forward.
+- **The stamp's digest on every saved row** (round 2's): once a row is proven by its bytes, a digest refuses only rows still true, and the
+  gate is what the cold start must read.
+- **A replacement judged with the configuration** (round 2's `Replaced`): a second reader of git's configuration for a gate whose
+  configuration-blind answer costs, at worst, a start where a replacement stands.
+- **The search keyed by its attribute inputs, or run at `--attr-source`** (§22).
+- **A parse with a problem as unread** (round 2's): it changes a view's answer where its own part is valid (C5).
+- **Every field of a type that asks the store red with no clearance**: a memo of something else beside a store ask (a tree's walk) would
+  each need an exemption; the proof that no answer reaches a field is the clearance.
+- **A census of named members** (round 2's): it fails only on the members it names.
+- **A file-open hook for the run-time half** (a file-system seam every reader takes, or the system's file events): the first is a second
+  way to open a file, the second needs elevation; a held handle makes every other route fail by itself.
+- **c after b** (the other order the reads allowed): b and c touch apart readers and can run beside each other; only the readers'
+  censuses need both, so they move to d.
+
+## 28. The rows
+
+*Supersede §17's.* REPOCONFIG1a lands first; b and c follow a and are apart; d follows b and c, and carries the readers' censuses,
+since they are red on any reader not yet moved; e follows b. In every row each moved reader's existing tests pass unchanged before a count
+is lowered, and the bench is run before and after it: the bench measures, the tests assert.
+
+- **a. The stamp, the gate, the kernel, and the censuses that hold each move.** First GITLIB1's stamp (§7, §20): `GitStamp` with every
+  candidate, `GitAskerContext` folded into it, `GitReadCache`'s key carrying it and its admission under the fence (§19); and
+  `GitReplacements.CanBeInForce`, lifted from the library's admission, which reads it. Proof: `GitAskerContextTests`' sequences,
+  `GitReadCacheTests` and the flow memos' tests unchanged; `GitStampTests` with git as the oracle and §20's five planted files, the
+  `ProgramData` file created after the first stamp among them, and a same-length rewrite of each file inside the clock's grain; a
+  replacement added, a graph read, the replacement removed, the answer refused by its fence; `GitKeepersCensusTests` naming the stamp.
+  Then the kernel: `FileStamp` under §9 and the volume's clock; `ContentKey` and `BlobId`; the hashed listing; `TipOf`; the checkout and
+  home index; the three answers (§21); `IDeclarationKind` and `IDeclarationView` with the contents handle; each of today's parsers moved
+  behind its kind unchanged; a bound per kind. Proof: §17's unit tests of each key and each invalidation, and §19's: a blob kept in memory,
+  a replacement of it added, the next ask answered with git's bytes; a commit, its tree and a folder each replaced in turn, nothing
+  admitted; `refs/replace/` present beside `core.useReplaceRefs=false`, passed through; a replacement of a commit added after the gate and
+  removed after the listing, nothing admitted; a tracked list read across an add and a remove of a replacement, refused by its fence; a
+  share's clock lagging by a seam, its racy stat hashed again; the weights against the allocations. With them the censuses that hold each
+  later move: `DeclarationKeepersCensusTests`, `DeclarationParsesCensusTests` (declared types and the run-time graph) and
+  `DeclarationViewsCensusTests` (views and kinds), each red on §23's planted members. The bench's store rows: a warm checkout ask at its
+  stat, a warm commit or tip ask at no start and under 2 ms.
+- **b. The gates file's one parse, and the commit readers.** `GatesDeclaration` as §21's syntax with each view's own validation; the parity
+  table over every gates blob in this repository's history, the tests' fixtures and §21's mixed-validity fixtures, each parser deleted only
+  once its column is equal. Then §10's tip and commit rows and §24's commit members moved (`UnionJoins`, `FileAnalysis`'s commit asks,
+  `LayoutGit`'s declarations, `DirectGateRuns`, `IntegrationJudging`); `TreeReadMemo.Kept.Declared`, `BacklogMerge`'s `_declared` and
+  `TogetherChecks`' memo removed. Proof: each moved reader's tests unchanged; the mixed-validity fixtures, each view answering its parser's
+  cell; the line moving during a replay; a link of identical bytes refused; the offline partial clone's follow said, nothing kept, read once
+  its promisor answers; a missing commit said unread, not absent; an oversize manifest said, never parsed as a prefix; `TogetherAccepts`
+  with a tag shadowing its line. Then `LandGitCountTests`, `TidyGitCountTests` and `StartGitCountTests` lowered; the bench's line and commit
+  rows at one listing a new commit and one read a new content.
+- **c. The checkout and home readers, and the writers.** §10's tree, checkout and home rows, §11's listings, §13.2's writers and §24's
+  checkout and home members (`ContextBriefs`, `LimitWaits`, `TreeReadMemo.Home`, `HomeWatch`'s parts, `WorkflowHomeTopic`, `LoopGrounds`);
+  `StampedWorkflows` removed; `DriverConfig` as §21's kind over frozen collections, `SourceFile` and `Fill` laid at each ask. Proof: each
+  moved reader's tests unchanged; B1's three sequences (`role_staffing` changed with `driver.json` untouched, the next load answering the
+  new actors; the staffing store throwing once, that load answering the file's staffing and the next the store's; two homes of equal bytes
+  sharing one parse, each load and save carrying its own `SourceFile`); an in-place write of the same length inside the clock's grain, asked
+  again at 3 s, reading the new content; a child process writing the person's layer, read at the next ask; a write during the read kept for
+  none; a malformed gates file said, then fixed in place and read; a workflow written by another process listed and its topic published;
+  an index file in one of two trees with one manifest found in that tree alone; `core.autocrlf=true`, the manifest still unmodified. The
+  bench's checkout and home rows at a stat each.
+- **d. The views, the analysis's kept parts, and the readers' censuses.** §11's views with their key tests and N5's key; §12's parts as §19
+  and §22 restate them (the tracked list by commit under its fence, ignore-case by the stamp, the search fresh); `FilesLooks` naming its
+  line's ref in full. Then, every reader having moved, `DeclarationReadersCensusTests`, `DeclarationGitCensusTests` and
+  `DeclarationFileCensusTests` with their exemptions. Proof: the analysis's, the files stage's and the Files page's tests unchanged; two
+  repositories sharing three ids and differing in personal rules, two views; an ignored output added at an unchanged `HEAD`, and tree B's
+  new top, each judged `Output`; two trees of one commit, one marking a writer script `-diff`, each judged as git judges it; a
+  `core.ignorecase` change moving the stamp; each census red on §23's planted members, B2's helper and property among them, and on each
+  exemption left out. The bench's files-stage and Files page rows warm at three starts, two where the tree has no ignored top, from 11
+  and 10.
+- **e. Saved.** §14.2's tables without the stamp's digest, the bound at admission and the trim. Proof, the misses first: a replacement made
+  while the desktop is down, the cold start's ask passed through to git; a blob saved, a replacement of it made while the desktop is down,
+  the cold start answering git's bytes; a replacement added, a commit read and the replacement removed, then a restart, no row; the
+  promisor down, nothing saved, and saved once it answers; a blob row whose bytes do not hash to its id refused at its load; a fill past
+  the bound within it after every insert, each kind counted; the trim. Then the hits: the bench's follow over 20 repositories run twice
+  with the driver made again between, 0 git starts the second time where no line moved (the top from its files, the tips from the refs'
+  files, listings and blobs from the store), the toolchain digest's processes and any stamp ask counted apart.
+
+Nothing was measured anew for round 3, and nothing in the product changed.
