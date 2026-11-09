@@ -45,6 +45,7 @@ internal static class DeclarationListing
 
         var id = tree;
         ImmutableDictionary<string, DeclarationEntry>? entries = null;
+        var reached = false;
         for (var at = 1; at < answers.Count; at++)
         {
             var (answer, bytes) = answers[at];
@@ -53,13 +54,19 @@ internal static class DeclarationListing
             if (!GitObjectHash.Proves("tree", listed, id) || Entries(listed, commit.Length / 2) is not { } read) return new Listed(null, null, Unproven: true);
             entries = read;
             admitted.Add((new TreeKey(id), entries, DeclarationBound.Entry + Weigh(entries)));
-            if (at == answers.Count - 1) break;
+            if (at == answers.Count - 1)
+            {
+                reached = true;
+                break;
+            }
+
             if (!entries.TryGetValue(folders[at - 1], out var folder) || folder.Type != "tree") break;
             id = folder.Id;
         }
 
         foreach (var (key, value, weight) in admitted) DeclarationBound.Indexes.Keep(key, value, weight);
-        return Kept(commit, folders) ?? new Listed(null, null, Unproven: false);
+        // A listing too heavy to keep, or let go beside this call, is the read's own: what the walk reached is the answer.
+        return Kept(commit, folders) ?? new Listed(reached ? entries : null, null, Unproven: false);
     }
 
     /// <summary>The entries of a tree's bytes, its ids <paramref name="idLength"/> bytes long; null where they are not a tree's.</summary>

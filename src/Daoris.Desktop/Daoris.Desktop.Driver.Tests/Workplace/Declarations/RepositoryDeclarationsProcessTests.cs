@@ -260,6 +260,36 @@ public sealed class RepositoryDeclarationsProcessTests : LandedFixture
         return id;
     }
 
+    [Fact]
+    public async Task A_folder_too_heavy_to_keep_is_still_listed_for_the_file_it_holds()
+    {
+        using var _ = Settled();
+        var root = await RepositoryAsync("heavy");
+        var blob = await BlobAsync(root, "{ \"heavy\": 1 }\n");
+        var rows = string.Concat(Enumerable.Range(0, 20000).Select(at => $"100644 blob {blob}\tfile-{at:D6}.txt\n")) + $"100644 blob {blob}\t{DeclarationNames.Gates}\n";
+        var tree = (await WithInputAsync(root, rows, "mktree")).Trim();
+        var commit = (await WithInputAsync(root, "heavy\n", "commit-tree", tree)).Trim();
+
+        var answer = await RepositoryDeclarations.AtAsync(root, commit, DeclarationNames.Gates, None);
+
+        Assert.Equal(new BlobId(blob), Assert.IsType<DeclarationAnswer.Present>(answer).Content!.Id);
+        Assert.IsType<DeclarationAnswer.Absent>(await RepositoryDeclarations.AtAsync(root, commit, DeclarationNames.Lanes, None));
+    }
+
+    private static async Task<string> WithInputAsync(string root, string input, params string[] arguments)
+    {
+        var info = new ProcessStartInfo { FileName = "git", WorkingDirectory = root, RedirectStandardInput = true, RedirectStandardOutput = true, RedirectStandardError = true };
+        foreach (var argument in new[] { "-c", "user.email=fixture@example.test", "-c", "user.name=Fixture" }.Concat(arguments)) info.ArgumentList.Add(argument);
+        using var process = Process.Start(TestGit.Past(info))!;
+        var stdout = process.StandardOutput.ReadToEndAsync();
+        var stderr = process.StandardError.ReadToEndAsync();
+        await process.StandardInput.WriteAsync(input);
+        process.StandardInput.Close();
+        await process.WaitForExitAsync();
+        Assert.True(process.ExitCode == 0, await stderr);
+        return await stdout;
+    }
+
     private static Task<string> HeadAsync(string root) => RevAsync(root, "HEAD");
 
     private static async Task<string> RevAsync(string root, string revision) => (await GitAsync(root, "rev-parse", revision)).Trim();
