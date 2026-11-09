@@ -1,0 +1,13 @@
+# The desktop tree's one .editorconfig (REPOCONFIG1, the design's §57). A use of a symbol BannedSymbols.txt lists is an error in every
+# file but the store's folder, the home's table and each allowance row's file, one section each. DeclarationBoundaryTests holds the
+# sections to its table and is red on any other way the error is quieted. It is the root, so no file above the tree reaches its build.
+root = true
+
+[*.cs]
+dotnet_diagnostic.RS0030.severity = error
+
+[Daoris.Desktop.Driver/Workplace/Declarations/**]
+dotnet_diagnostic.RS0030.severity = none
+
+[Daoris.Desktop.Driver/Platform/DaorisHome.cs]
+dotnet_diagnostic.RS0030.severity = none
