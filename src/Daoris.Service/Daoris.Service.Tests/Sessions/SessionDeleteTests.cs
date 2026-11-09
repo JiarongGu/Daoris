@@ -197,10 +197,7 @@ public sealed class SessionDeleteTests : IAsyncLifetime
         Assert.Contains("`nope1234`", outcome.Message);
     }
 
-    /// <summary>
-    /// A record another continues is a link of its line: deleting it would leave the later record's `from` pointing at nothing and
-    /// make the earlier one the line's head again, where the person's words go. Only the line's last record may go.
-    /// </summary>
+    /// <summary>A record another continues is a link of its line: only the line's last record may go.</summary>
     [Fact]
     public async Task A_middle_record_of_a_line_is_refused()
     {

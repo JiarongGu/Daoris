@@ -22,9 +22,8 @@ internal sealed class QuestCache(QuestStore store)
     /// <summary>
     /// A source reopened by an older build has a row that keeps no reopen, though its log holds one no submission
     /// answered since. Those taken quests are replayed from the log, which reads it, so the driver tells it from one not yet ready.
-    /// A step its source's reopen reached holds a reopen too, and a step that went on after it holds no reopen of its own for any
-    /// replay to set, so only a replay that sets one is written; once written a source's row keeps its reopen, so no later open
-    /// selects it again.
+    /// A step its source's reopen reached, or one that went on after it, keeps no reopen of its own for a replay to set, so only a
+    /// replay that sets one is written; once written a source's row keeps its reopen, so no later open selects it again.
     /// </summary>
     private Task RecacheUnkeptReopensAsync(CancellationToken ct) =>
         RecacheAsync(
@@ -51,10 +50,7 @@ internal sealed class QuestCache(QuestStore store)
     private Task RecacheClosedAwaitsAsync(CancellationToken ct) =>
         RecacheAsync("SELECT id FROM quests WHERE status IN ('Done', 'Declined') AND awaits IS NOT NULL", ct);
 
-    /// <summary>
-    /// Replays the rows <paramref name="stale"/> selects. A selector that matches rows the replay cannot change names the
-    /// change it looks for in <paramref name="changes"/>: the rows are replayed outside the write, which opens only for one it holds.
-    /// </summary>
+    /// <summary>Replays the rows <paramref name="stale"/> selects; with <paramref name="changes"/> the write opens only for a replay it holds.</summary>
     private async Task RecacheAsync(string stale, CancellationToken ct, Func<Quest, bool>? changes = null)
     {
         await using (var probe = _db.Command())

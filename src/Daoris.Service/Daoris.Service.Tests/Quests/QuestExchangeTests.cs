@@ -97,10 +97,7 @@ public sealed class QuestExchangeTests : IAsyncLifetime
         Assert.DoesNotContain("has not declared", outcome.Message);
     }
 
-    /// <summary>
-    /// The registry matches a name without regard to case, so the quest is kept under the registered spelling: the
-    /// receiver's queue is read by that spelling, and `Quiet` and `quiet` are one repository, so one open quest.
-    /// </summary>
+    /// <summary>The registry ignores case, so a quest is kept under the registered spelling the receiver's queue is read by.</summary>
     [Fact]
     public async Task A_receiver_typed_in_another_case_is_kept_as_registered()
     {

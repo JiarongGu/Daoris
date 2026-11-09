@@ -260,9 +260,8 @@ internal static class QuestSchema
                 """, ct).ConfigureAwait(false);
         }
 
-        // A store from before the mark starts it at the highest sequence its own machine holds in the log, which
-        // is what every number so far is one past. Nothing changes for a store that never removed anything; one that
-        // removes rows after the upgrade cannot take the sequence back.
+        // A store from before the mark starts it at the highest sequence its own machine holds in the log, which every
+        // number so far is one past, so a removal after the upgrade cannot take the sequence back.
         if (!await SchemaColumns.HasAsync(db, "quest_machine", "sequence", ct).ConfigureAwait(false))
         {
             await SchemaColumns.ApplyAsync(db, """

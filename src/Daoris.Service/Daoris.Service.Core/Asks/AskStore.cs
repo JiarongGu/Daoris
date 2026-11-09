@@ -207,16 +207,11 @@ public sealed class AskStore
                     $"{Workspaces.Normalize(workspace)}:{sentence.Trim()}" + (again == 0 ? "" : $"#again{again}"))))[..6]
             .ToLowerInvariant();
 
-    /// <summary>
-    /// Keep a new ask. Insert only: false where the id is already an ask, whose row is left as it stands. Two identical asks
-    /// that finish at once are one, and a whole-row write from the later one's stale read would undo what a door did to the first
-    /// (its state, its quests, the intake bound to it); every later change is a door of its own.
-    /// </summary>
+    /// <summary>Keep a new ask by insert only: false where the id holds one, whose row stays as it is, since a later whole-row write from a stale read would undo what a door did to it.</summary>
     public Task<bool> InsertAsync(Ask ask, CancellationToken ct = default) => _db.RunAsync<bool>(async () =>
     {
         await using var command = _db.Command();
-        // The review choices are written with a new ask, from its composer, and only appended after. The kind and workflow
-        // choices likewise.
+        // The review, kind and workflow choices are written with a new ask and only appended after.
         command.CommandText = """
             INSERT INTO asks (id, workspace, sentence, state, tier, asked, updated, asker, note, links, attachments, proposal, quests, intake, review_choices, workflow_choices, short_title, paths)
             VALUES ($id, $workspace, $sentence, $state, $tier, $asked, $updated, $asker, $note, $links, $attachments, $proposal, $quests, $intake, $reviewChoices, $workflowChoices, $short, $paths)

@@ -68,8 +68,7 @@ internal sealed class QuestPublishing(
                 Quest: null, addressable);
         }
 
-        // The registry matched the name without regard to case; every key below reads the registered spelling.
-        to = target.Repository;
+        to = target.Repository; // the registry ignored case; every key below reads the registered spelling
 
         if (!Workspaces.Same(target.InWorkspace, home))
         {

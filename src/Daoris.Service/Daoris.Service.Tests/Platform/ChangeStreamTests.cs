@@ -182,9 +182,8 @@ public sealed class ChangeStreamTests : IAsyncLifetime
     private static readonly Ask Asked =new("a5c0de", Workspaces.Default, "Make the bridge faster", AskState.Open, "declarations", Now, Now);
 
     /// <summary>
-    /// The asks family moves on every write an ask takes, each path its own (an agent's
-    /// connector makes most of them from its own process): asked, saved whole again, published, closed, served by an intake, a word,
-    /// each list appended to, the go-aheads decided, and deleted. Every one names the asks family alone.
+    /// The asks family alone moves on every write an ask takes, each path its own (an agent's connector makes most of them from its
+    /// own process): asked, published, closed, served by an intake, a word, each list appended to, the go-aheads decided, deleted.
     /// </summary>
     [Theory]
     [InlineData("asked")]

@@ -110,9 +110,7 @@ public sealed class SessionStore
     /// <summary>The newest of this machine's records continuing a session; see <see cref="SessionReads.ContinuedByAsync"/>.</summary>
     public Task<Session?> ContinuedByAsync(string id, CancellationToken ct = default) => reads.ContinuedByAsync(id, ct);
 
-    /// <summary>The sessions this machine's records continue; see <see cref="SessionReads.ContinuedIdsAsync"/>.</summary>
     public Task<IReadOnlySet<string>> ContinuedIdsAsync(CancellationToken ct = default) => reads.ContinuedIdsAsync(ct);
-
     /// <summary>The record a quest's publisher names; see <see cref="SessionReads.FindOrMirrorAsync"/>.</summary>
     public Task<Session?> FindOrMirrorAsync(string id, CancellationToken ct = default) => reads.FindOrMirrorAsync(id, ct);
 

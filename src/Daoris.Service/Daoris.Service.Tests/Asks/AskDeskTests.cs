@@ -239,7 +239,6 @@ public sealed class AskDeskTests : IAsyncLifetime
         Assert.Single(await _desk.ListAsync("work"));
     }
 
-    /// <summary>The circle's remotes, which does a thing once the moment the publish asks them: what lands while an ask is still being made.</summary>
     private sealed class LandingRemotes(Func<Task> landing) : IRemotes
     {
         private bool _landed;
@@ -253,11 +252,7 @@ public sealed class AskDeskTests : IAsyncLifetime
         }
     }
 
-    /// <summary>
-    /// 🔴 Two identical asks that finish at once are one ask: the later one, past its check for a repeat, finds the first kept and
-    /// an intake bound to it, and leaves that row as it stands, answering with what became of it. A whole-row write from the stale read
-    /// would put its state back and unbind the intake. The quest the later one published is the first's too.
-    /// </summary>
+    /// <summary>🔴 An ask that finishes after an identical one is kept and given an intake leaves that row as it stands, and its quest joins it.</summary>
     [Fact]
     public async Task An_identical_ask_that_finishes_after_the_first_was_taken_up_leaves_it_as_it_stands()
     {

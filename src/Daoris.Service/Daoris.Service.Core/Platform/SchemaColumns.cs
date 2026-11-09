@@ -32,11 +32,7 @@ internal static class SchemaColumns
         await AddAsync(db, table, definition, ct).ConfigureAwait(false);
     }
 
-    /// <summary>
-    /// A column's alter and the statements that fill it, or a rebuild's copy, drop and rename, as one step: a crash or a failure between
-    /// them leaves the store as it was, so the next open does the whole upgrade again. Each statement alone is its own commit, and a
-    /// column found without its backfill is skipped by every later open.
-    /// </summary>
+    /// <summary>An upgrade's statements as one transaction: a failure between an alter and its backfill leaves the store unchanged, not a column every later open skips.</summary>
     public static Task ApplyAsync(ConnectionGate db, string script, CancellationToken ct) =>
         db.InTransactionAsync(async (transaction, inside) =>
         {

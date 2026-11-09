@@ -115,11 +115,7 @@ internal sealed class AskPublishing(
         return new(AskRefusal.None, $"Asked as `#{id}` in `{workspace}` — {Describe(proposed)}", proposed);
     }
 
-    /// <summary>
-    /// Keeps a new ask by insert only, and answers null when it is kept. An identical ask that finished first holds the id: its row is
-    /// not written over, since a door may have moved it since the check (an intake bound, a quest published), and this ask is answered
-    /// as the check answers a repeat, with what became of the first. A quest this one published goes to that ask's list.
-    /// </summary>
+    /// <summary>Keeps a new ask by insert only: null when kept, else the repeat's answer for the identical ask that holds the id, which a door may have moved since the check.</summary>
     private async Task<AskOutcome?> LostAsync(Ask ask, string? quest, string workspace, DateTimeOffset now, CancellationToken ct)
     {
         if (await asks.InsertAsync(ask, ct).ConfigureAwait(false)) return null;

@@ -527,8 +527,7 @@ public sealed class EventJournalTests : IAsyncLifetime
     }
 
     /// <summary>
-    /// An ask kept is a row, and each move of its state after it; a close that changes only its note, a word, a list appended to, an intake
-    /// bound and a delete journal nothing. The row carries the state on either side and the scope, never the sentence, a note or a word.
+    /// An ask kept is a row, and each move of its state; a note-only close, a word, an appended list, an intake bound and a delete journal nothing, and no row carries the sentence, a note or a word.
     /// </summary>
     [Fact]
     public async Task Each_move_of_an_asks_state_is_one_row_and_a_same_state_or_note_only_write_journals_nothing()

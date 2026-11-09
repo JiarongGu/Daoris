@@ -435,11 +435,10 @@ public sealed class SaidSettledMeasureTests : IDisposable
     /// <summary>
     /// The head walk's landing limit, prepared on a scratch service: the say door's p50 and p95 on each branch of the walk, and the walk's
     /// own beside them, each timed alone on the same record just before the say, so the walk's share of the door is read from one file.
-    /// The walk is code and no schema, so there is no door without it to pair with. The branches are
-    /// a chat with no successor (one probe on <c>sessions_from</c>), a driven part with no successor (a second, its quest's last run
-    /// here, on <c>sessions_quest</c>), and a chain of three parts said to at its first (refused <c>Continued</c> with two hops) and at its
-    /// head. The limit itself is the install's, which the parent measures: this run prepares it and
-    /// says its figures. Held to <c>DAORIS_MEASURE_SAID=head</c>; <c>DAORIS_MEASURE_PAIRS</c> sets the rounds (400 by default).
+    /// The walk is code and no schema, so there is no door without it to pair with. The branches are a chat with no successor (one
+    /// probe on <c>sessions_from</c>), a driven part with no successor (a second, its quest's last run here, on <c>sessions_quest</c>),
+    /// and a chain of three parts said to at its first (refused <c>Continued</c> with two hops) and at its head. The limit is the
+    /// install's, which the parent measures. Held to <c>DAORIS_MEASURE_SAID=head</c>; <c>DAORIS_MEASURE_PAIRS</c> sets the rounds.
     /// </summary>
     [Fact]
     public async Task The_say_door_and_the_head_walk_are_measured_on_each_branch()

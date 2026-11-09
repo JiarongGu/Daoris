@@ -125,7 +125,6 @@ public sealed class QuestDeleteTests : IAsyncLifetime
         Assert.Equal(QuestStatus.Taken, (await _quests.FindAsync(quest.Id))!.Status);
     }
 
-    /// <summary>The circle's remotes, which does a thing the moment the delete asks them: what lands between its look and its write.</summary>
     private sealed class LandingRemotes(Func<Task> landing) : IRemotes
     {
         public IRemote? For(string workspace)
@@ -135,10 +134,7 @@ public sealed class QuestDeleteTests : IAsyncLifetime
         }
     }
 
-    /// <summary>
-    /// 🔴 What stands on a quest is judged again inside the delete's own write: a session started for it after the look keeps it, where
-    /// a write that re-checked only that it is open would delete it, leaving the session's record naming nothing.
-    /// </summary>
+    /// <summary>🔴 A session started for a quest after the delete's look keeps it: what stands on it is judged again inside the write.</summary>
     [Fact]
     public async Task A_session_started_after_the_look_keeps_the_quest()
     {
