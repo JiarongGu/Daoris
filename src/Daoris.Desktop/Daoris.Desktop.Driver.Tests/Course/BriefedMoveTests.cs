@@ -239,6 +239,28 @@ public sealed class BriefedMoveTests : IDisposable
     }
 
     /// <summary>
+    /// 🔴 A conversation's go-on reads its own account for the model its record carries: a sonnet chat on an account in its opus-only
+    /// cool-off is not held by it, as <c>EndedLimitMove</c>'s own ask never was.
+    /// </summary>
+    [Fact]
+    public async Task A_sonnet_conversations_go_on_is_not_held_by_its_accounts_opus_week()
+    {
+        var config = Config();
+        var (runner, ledger, client, _) = Runner();
+        using var r = runner;
+        using var c = client;
+        Waiting(ledger, "c1", "account-1");
+        await client.TryKeepActorAsync("c1", null, "1", new ActorEffective("acp-stub", "sonnet", null, "1").Asked);
+        var now = DateTimeOffset.UtcNow;
+        AccountCooling.Cool(_home, new CoolingEntry("stub", "account-1", now.AddDays(4), Stated: true, "weekly", now, null, Model: "opus"), now);
+
+        var record = (await client.RecordAsync("c1"))!;
+        var resume = await runner.GoOn.SwitchableAsync(record, "acp-stub", config, null, CancellationToken.None);
+
+        Assert.False(resume.Waits || resume.Switched, $"the go-on answered {resume.Answer}");
+    }
+
+    /// <summary>
     /// An unpicked conversation's new part walks as it did: the press moves it off its cooling account to the ready one, keeps no pick, and its
     /// next go-on walks its agent's accounts.
     /// </summary>

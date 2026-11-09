@@ -498,7 +498,7 @@ internal sealed class ChatGoOn(IExecutorWiring wiring) : IExecutor
         _context.Harnesses.ResumeAsync(
             adapter, config, workspace, record.Profile, StartKind.Conversation, ct: ct,
             line: LineKind.Conversation(carries: record.Waiting.Any(word => word.Persons)),
-            picked: _context.Conversations.PickedOn(record.Session, record.Profile));
+            picked: _context.Conversations.PickedOn(record.Session, record.Profile), model: record.ModelOn(adapter));
 
     /// <summary>
     /// What the limits stage's wake of an ended conversation whose words wait for a cooling account reads: where another
