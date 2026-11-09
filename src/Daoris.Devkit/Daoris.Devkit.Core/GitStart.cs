@@ -30,6 +30,14 @@ public static class GitStart
         return Process.Run(Past(Process.Captured(git, arguments, workingDirectory, environment)));
     }
 
+    /// <summary>Run git as <see cref="Run"/> does and return stdout as the bytes git wrote, undecoded.</summary>
+    public static (int ExitCode, byte[] Output, string Error) RunBytes(IReadOnlyList<string> arguments, string workingDirectory)
+    {
+        if (System() is { } git) return Process.RunBytes(Past(Process.Captured(git, arguments, workingDirectory)));
+        var (file, resolved) = Process.Resolve("git", arguments);
+        return Process.RunBytes(Process.Captured(file, resolved, workingDirectory));
+    }
+
     /// <summary>
     /// Point <paramref name="info"/> at the system's git, past the launcher, where it names <c>git</c> bare. Called after
     /// the start's own variables are set: the launcher reads <c>HOME</c> and <c>PATH</c> from the environment it is

@@ -41,6 +41,21 @@ public static class Process
         return new ProcessOutput(process.ExitCode, output.Result, error.Result);
     }
 
+    /// <summary>Run a start <see cref="Captured"/> made, returning stdout as the bytes it wrote and stderr as text.</summary>
+    public static (int ExitCode, byte[] Output, string Error) RunBytes(ProcessStartInfo start)
+    {
+        using var process = System.Diagnostics.Process.Start(start)
+            ?? throw new DevkitException($"could not start '{start.FileName}'");
+
+        var output = new MemoryStream();
+        var copy = process.StandardOutput.BaseStream.CopyToAsync(output);
+        var error = process.StandardError.ReadToEndAsync();
+        process.WaitForExit();
+        copy.Wait();
+
+        return (process.ExitCode, output.ToArray(), error.Result);
+    }
+
     /// <summary>A start of <paramref name="file"/> as named, both streams captured as UTF-8.</summary>
     /// <param name="environment">Variables set for this child alone, over the devkit's own.</param>
     public static ProcessStartInfo Captured(
@@ -76,7 +91,7 @@ public static class Process
     /// Through `cmd.exe` an argument is re-read by `cmd`, so one carrying its metacharacters is refused
     /// rather than passed.
     /// </remarks>
-    private static (string File, IReadOnlyList<string> Arguments) Resolve(string file, IReadOnlyList<string> arguments)
+    internal static (string File, IReadOnlyList<string> Arguments) Resolve(string file, IReadOnlyList<string> arguments)
     {
         if (Locate(file) is not { } candidate) return (file, arguments);
         if (!IsCommandScript(candidate)) return (candidate, arguments);

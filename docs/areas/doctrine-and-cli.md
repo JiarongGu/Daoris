@@ -183,7 +183,10 @@ as a pack.
     `git cat-file` could not read an object, so it never reports nothing found about what it did not read. (from D20)
     The `links` gate checks the links a document writes, not those it quotes in a fenced block or a code span; it reads
     a fence through the service's `MarkdownFence`, compiled into the devkit rather than a fifth reader with a table of its
-    own (D228). The `sensitive` gate's tree scope reads a file with a UTF-16 byte-order mark as text.
+    own (D228). The `sensitive` gate reads a file in either scope as bytes and decodes it one way: binary where a NUL is in
+    the first 8,000 bytes, unless a UTF-16 byte-order mark says text. The staged scope's bytes come from the `IGit` seam's
+    `StagedBytes` (`git show :path`, undecoded), a choice that rejected the seam returning text, which left the decoding
+    to `Process`'s own byte-order sniffing and tested the whole content for a NUL where the tree scope tests a block.
 42. Gates are declared in `daoris.gates.json`, which the CLI never reads. Its `devkit` field pins the toolkit version,
     checked before any gate runs. A file that is no JSON object, or a `graceDays` that is no whole number, is refused naming
     the file. Its `trees` names the classes of the repository's ignored files (dependencies,
@@ -304,5 +307,3 @@ No backlog row holds any of these; each is named only in the decision shown.
   get no safe-work rules until measured (`SetupPress`' summary; D122 point 6).
 - The newer-lock refusal cannot fire until a release moves the canon version past 0.0.1 (`newerLock` in `lockversion.ts`).
 
-- **The second review cycle's open defects** (DOCTRINECLIREV2c2; the backlog row of that name points here), one entry each:
-  - **DOCTRINECLIREV2c2 — the sensitive gate's staged scope still skips a UTF-16 file** (devkit; `SensitiveGate.cs`, `CommandLineGit.StagedText`): the tree scope reads a file with a UTF-16 byte-order mark as text, but the staged scope reads `git show :path` as text already decoded as UTF-8 and skips one holding a NUL. Waits on a choice: `IGit` returning the index's bytes (a contract of the seam its tests fake) so the gate decodes the same way in both scopes.
