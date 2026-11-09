@@ -27,6 +27,8 @@ internal static partial class HostEnvironment
     [ModuleInitializer]
     internal static void Set()
     {
+        // Read before the removal below takes the switch out with the rest of Daoris's variables.
+        var pinned = PinnedLeg.Apply();
         // The goldens' write switch is the suite's own, never Daoris's, so it is the one kept.
         foreach (var name in Environment.GetEnvironmentVariables().Keys.Cast<string>()
                      .Where(name => Removed().IsMatch(name) && !string.Equals(name, GoldenWriteSwitch, StringComparison.OrdinalIgnoreCase))
@@ -37,6 +39,7 @@ internal static partial class HostEnvironment
 
         Directory.CreateDirectory(Home);
         Environment.SetEnvironmentVariable(DaorisHome.Variable, Home);
+        if (pinned is not null) Environment.SetEnvironmentVariable("PATH", pinned + Path.PathSeparator + Environment.GetEnvironmentVariable("PATH"));
         AppDomain.CurrentDomain.ProcessExit += (_, _) =>
         {
             try { Directory.Delete(Home, recursive: true); } catch (IOException) { } catch (UnauthorizedAccessException) { }

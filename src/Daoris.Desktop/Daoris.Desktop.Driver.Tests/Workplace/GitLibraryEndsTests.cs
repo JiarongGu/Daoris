@@ -14,7 +14,7 @@ namespace Daoris.Desktop.Driver.Tests;
 [Trait(Category.Parallel, Category.Git)]
 public sealed class GitLibraryEndsTests : LandedFixture
 {
-    [Fact]
+    [GitLegFact]
     public async Task A_replacement_is_git_s_for_every_question_while_the_library_reads_it_otherwise()
     {
         var root = await BuildRepositoryAsync("replaced");
@@ -52,7 +52,7 @@ public sealed class GitLibraryEndsTests : LandedFixture
         Assert.Equal(GitLibraryAdmission.Replacements, GitLibraryAdmission.RefusalOf(root, GitLibraryQuestion.Walks));
     }
 
-    [Fact]
+    [GitLegFact]
     public async Task Reftable_sha256_and_an_unknown_extension_are_git_s_while_the_library_cannot_read_them()
     {
         var reftable = Path.Combine(Scratch, "reftable");
@@ -84,7 +84,7 @@ public sealed class GitLibraryEndsTests : LandedFixture
         Ends("an unknown extension", "every question", UnadmittedListing(unknown) is null && Unadmitted(unknown, "rev-list", "--count", "HEAD") is null);
     }
 
-    [Fact]
+    [GitLegFact]
     public async Task The_git_in_use_and_the_pinned_git_make_neither_reftable_nor_sha256_repositories_by_default()
     {
         var scratch = Path.Combine(Scratch, "defaults");
@@ -100,6 +100,18 @@ public sealed class GitLibraryEndsTests : LandedFixture
         Assert.NotEmpty(pinned);
         Assert.All(pinned, version => Assert.True(
             System.Version.Parse(version).Major < 3, $"the built-in list pins git {version}, which makes reftable and SHA-256 repositories by default: retire the library (GITLIB1g)"));
+    }
+
+    [GitLegFact]
+    public void The_leg_runs_the_git_it_names()
+    {
+        var git = TestGit.InUse;
+        Assert.NotNull(git);
+        var pinned = Path.GetFullPath(Path.Combine(WorkspaceRoot.Folder, "_fixtures", "pinned-mingit")) + Path.DirectorySeparatorChar;
+        var inPin = Path.GetFullPath(git).StartsWith(pinned, StringComparison.OrdinalIgnoreCase);
+        Assert.True(
+            inPin == PinnedLeg.Requested,
+            $"the git a fixture starts is {git}: the {(PinnedLeg.Requested ? "pinned" : "runner's")} leg must run the {(PinnedLeg.Requested ? "pinned MinGit" : "runner's git")}");
     }
 
     private static void Ends(string refusal, string question, bool held) =>

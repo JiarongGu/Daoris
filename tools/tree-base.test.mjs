@@ -15,6 +15,7 @@ import { cpSync, existsSync, mkdirSync, readdirSync, readFileSync, rmSync, write
 import { dirname, join } from 'node:path';
 import { after, test } from 'node:test';
 import { fileURLToPath } from 'node:url';
+import { PATIENCE } from '../src/Daoris.Cli/test/_fixture.ts';
 import { MARKER, baseAbove, build, guarded, sites } from './tree-base.mjs';
 
 const root = dirname(dirname(fileURLToPath(import.meta.url)));
@@ -35,7 +36,7 @@ const REASONS = {
   'no output': (site) => /homeEntry\(|homeBins\(|homePlaces\(|"usr", "bin"|managed, "bin"|new\("bin"|'cache', 'bin'|'home', 'bin'|"app", "bin"/.test(site.statement),
   referenced: (site, _text, entry) => referenced(site.file, entry.project),
   fixture: (site) => TEST.test(site.file),
-  'merge tool': (site) => site.file === 'tools/merge-branch.mjs' && site.shape === 'R2' && !/out\.push\(/.test(site.statement),
+  'merge tool': (site) => /^tools\/merge-branch(?:\.mjs$|\/)/.test(site.file) && site.shape === 'R2' && !/out\.push\(/.test(site.statement),
   text: (site) => /out\.push\(|new\(\$@"|\/--no-build\/|const string \w+ = "--no-build";/.test(site.statement),
 };
 
@@ -85,12 +86,15 @@ const CENSUS = [
   ...[
     'src/Daoris.Cli/test/deployment-rehearsal.test.ts', 'src/Daoris.Cli/test/desktop-tool.test.ts', 'src/Daoris.Cli/test/platform/home-census.test.ts',
     'src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Knowledge/KnowledgeConnectorTests.cs',
+    'src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Review/Heavy/UnreleasedBasesTests.cs',
     'src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Service/ServiceHostLocatorTests.cs',
     'src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Workplace/ContentProofLossTests.cs',
+    'src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Workplace/Deps/TreeBaseWordsTests.cs',
     'src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Workplace/Files/FileAnalysisTests.cs',
     'src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Workplace/Files/RuleFileFormTests.cs',
     'src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Workplace/GitDoorsTests.cs',
     'src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Workplace/GitHoldsProcessTests.cs',
+    'src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Workplace/Pool/BenchShapes.cs',
     'src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Workplace/Pool/BuildAccountProcessTests.cs',
     'src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Workplace/Pool/TreeBaseGitTests.cs',
     'src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Workplace/Pool/TreeBaseBuildsProcessTests.cs',
@@ -99,7 +103,7 @@ const CENSUS = [
     'src/Daoris.Desktop/Daoris.Desktop.Modules.Tests/Windows/TaskbarIdentityTests.cs',
     'tools/tree-base.test.mjs',
   ].map((file) => ({ file, text: '', why: 'fixture' })),
-  { file: 'tools/merge-branch.mjs', text: 'export const noBuildCommand', why: 'merge tool' },
+  { file: 'tools/merge-branch/plan.mjs', text: 'export const noBuildCommand', why: 'merge tool' },
   { file: 'tools/merge-branch.mjs', text: 'export const rerunCommand', why: 'merge tool' },
   { file: 'tools/merge-branch.mjs', text: 'out.push(', why: 'text' },
   { file: 'src/Daoris.Desktop/Daoris.Desktop.Driver/Workplace/Files/FileAnalysis.cs', text: '--no-build|', why: 'text' },
@@ -216,7 +220,7 @@ test('`run --real` is refused while a marker stands over the shell it would star
 
   const home = join(checkout, 'home');
   const ran = spawnSync(process.execPath, [join(checkout, 'tools', 'desktop.mjs'), 'run', '--real'], {
-    cwd: checkout, encoding: 'utf8', env: { ...process.env, DAORIS_HOME: home }, timeout: 60_000,
+    cwd: checkout, encoding: 'utf8', env: { ...process.env, DAORIS_HOME: home }, timeout: PATIENCE, windowsHide: true,
   });
 
   assert.equal(ran.status, 1, `${ran.stdout}${ran.stderr}`);

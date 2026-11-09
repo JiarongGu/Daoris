@@ -19,15 +19,15 @@ test('a merge runs the baseline and what each changed path can reach, but the lo
     ['the web shell', ['src/Daoris.Web/src/App.tsx'], [...BASE, 'web-types', 'web-rules', 'service', 'driver', 'modules', 'web', 'web-unit']],
     ["the web's settings", ['src/Daoris.Web/src/settings/DriverDomain.tsx'], [...BASE, 'web-types', 'web-rules', 'service', 'driver', 'modules', 'web', 'web-unit']],
     ['the driver', ['src/Daoris.Desktop/Daoris.Desktop.Driver/Driver.cs'],
-      [...BASE, 'driver', 'modules', 'censuses', 'driver-process', 'driver-process-git', 'modules-process', 'rehearse-family', 'deployment']],
+      [...BASE, 'driver', 'modules', 'censuses', 'driver-process', 'driver-process-git', 'driver-process-git-pinned', 'modules-process', 'rehearse-family', 'deployment']],
     ['ServiceHostLocator', ['src/Daoris.Desktop/Daoris.Desktop.Driver/ServiceHostLocator.cs'],
-      [...BASE, 'driver', 'modules', 'censuses', 'driver-process', 'driver-process-git', 'modules-process', 'rehearse-family', 'deployment']],
+      [...BASE, 'driver', 'modules', 'censuses', 'driver-process', 'driver-process-git', 'driver-process-git-pinned', 'modules-process', 'rehearse-family', 'deployment']],
     // The page's twin vitests parse these driver sources' declarations, so a change to one runs the web gate's unit
     // run as well, and not its build.
     ...PAGE_PARSED.map((path): [string, string[], string[]] => [`${path.split('/').at(-1)}, which a page twin parses`, [path],
-      [...BASE, 'driver', 'modules', 'censuses', 'driver-process', 'driver-process-git', 'modules-process', 'rehearse-family', 'web-unit', 'deployment']]),
+      [...BASE, 'driver', 'modules', 'censuses', 'driver-process', 'driver-process-git', 'driver-process-git-pinned', 'modules-process', 'rehearse-family', 'web-unit', 'deployment']]),
     // The driver's Process classes run in two halves, the git-only ones four at once and the rest eight at once.
-    ["the driver's tests", ['src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/LandingTests.cs'], [...BASE, 'driver', 'censuses', 'driver-process', 'driver-process-git']],
+    ["the driver's tests", ['src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/LandingTests.cs'], [...BASE, 'driver', 'censuses', 'driver-process', 'driver-process-git', 'driver-process-git-pinned']],
     // A browser test is the web gate's alone; no .NET suite reads it (the test below holds that).
     ['a browser test', ['src/Daoris.Web/e2e/platform.spec.ts'], [...BASE, 'web']],
     // What the measured-box check draws reaches its gate beside the web shell's; its own specs and config reach it alone.
@@ -87,7 +87,7 @@ test('a merge runs the baseline and what each changed path can reach, but the lo
     // The brainstorm files' table, which the service's brainstorm desk reads too.
     ["the brainstorm files' table", ['src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/fixtures/brainstorm-files.json'], [...BASE, 'service', 'driver']],
     ["the brainstorm posture", ['src/Daoris.Desktop/Daoris.Desktop.Driver/WorkOrders/Domain/BrainstormPermissions.cs'],
-      [...BASE, 'service', 'driver', 'modules', 'censuses', 'driver-process', 'driver-process-git', 'modules-process', 'rehearse-family', 'deployment']],
+      [...BASE, 'service', 'driver', 'modules', 'censuses', 'driver-process', 'driver-process-git', 'driver-process-git-pinned', 'modules-process', 'rehearse-family', 'deployment']],
     ["the service's tests", ['src/Daoris.Service/Daoris.Service.Tests/HistoryDeskTests.cs'], [...BASE, 'service', 'service-process']],
     // The fence table sits among the CLI's fixtures, and the driver's SelfDescription twin and the service's MarkdownFence twin read it too.
     ['the fence table', ['src/Daoris.Cli/test/fixtures/fence-cases.json'], [...BASE, 'service', 'driver']],
@@ -103,7 +103,7 @@ test('a merge runs the baseline and what each changed path can reach, but the lo
       'src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/fixtures/driver-config-keeps.json',
       'src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/fixtures/workflow-graph-versions.json',
       'src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/fixtures/graph-problems.json',
-    ], [...BASE, 'driver', 'driver-process', 'driver-process-git']],
+    ], [...BASE, 'driver', 'driver-process', 'driver-process-git', 'driver-process-git-pinned']],
     // The bytes an edit of each other home file a door edits writes sit among the CLI's fixtures, and the driver's
     // HomeFilesKeepTests reads them too, as the service's RemoteConfigKeepTests its remotes.json rows' reads and
     // the modules' BrowserSettingsTests browser/settings.json's.
@@ -121,13 +121,13 @@ test('a merge runs the baseline and what each changed path can reach, but the lo
     ["the stand-ins' reader", ['tools/stand-ins.mjs'], [...BASE, 'tool-tests', 'rehearse-family']],
     ...['provider.json', 'pending.json', 'Program/agent.mjs'].map((file): [string, string[], string[]] => [
       `a provider's ${file}`, [`src/Daoris.Desktop/Daoris.Desktop.Driver/Agents/Providers/Stub/${file}`],
-      [...BASE, 'driver', 'modules', 'driver-process', 'driver-process-git', 'modules-process', 'rehearse-family', 'tool-tests', 'deployment'],
+      [...BASE, 'driver', 'modules', 'driver-process', 'driver-process-git', 'driver-process-git-pinned', 'modules-process', 'rehearse-family', 'tool-tests', 'deployment'],
     ]),
     // The tools' provider census runs the contracts' generator, which reads each provider's own sources and the registry's reader.
     ['a provider\'s vocabulary source', ['src/Daoris.Desktop/Daoris.Desktop.Driver/Agents/Providers/Codex/CodexProvider.cs'],
-      [...BASE, 'driver', 'modules', 'censuses', 'driver-process', 'driver-process-git', 'modules-process', 'rehearse-family', 'tool-tests', 'deployment']],
+      [...BASE, 'driver', 'modules', 'censuses', 'driver-process', 'driver-process-git', 'driver-process-git-pinned', 'modules-process', 'rehearse-family', 'tool-tests', 'deployment']],
     ['the provider vocabulary reader', ['src/Daoris.Desktop/Daoris.Desktop.Driver/Agents/Registry/ProviderVocabulary.cs'],
-      [...BASE, 'driver', 'modules', 'censuses', 'driver-process', 'driver-process-git', 'modules-process', 'rehearse-family', 'tool-tests', 'deployment']],
+      [...BASE, 'driver', 'modules', 'censuses', 'driver-process', 'driver-process-git', 'driver-process-git-pinned', 'modules-process', 'rehearse-family', 'tool-tests', 'deployment']],
     ['release tooling', ['tools/release-rehearsal.mjs'], [...BASE, 'rehearse']],
     ['the CLI',['src/Daoris.Cli/src/platform/args.ts'], [...BASE, 'driver', 'rehearse', 'rehearse-family', 'web', 'deployment']],
     // The driver's DriverProgramWordsProcessTests runs the CLI's entry, dispatcher, driver row and seam under node.

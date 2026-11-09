@@ -65,7 +65,7 @@ const refusal = (fn: () => unknown): Error => {
 
 const run = (fx: Fixture, plan: unknown, ...flags: string[]) => {
   fx.write('moves.json', JSON.stringify(plan));
-  return spawnSync(process.execPath, [TOOL, '--moves', 'moves.json', '--root', fx.root, ...flags], { encoding: 'utf8' });
+  return spawnSync(process.execPath, [TOOL, '--moves', 'moves.json', '--root', fx.root, ...flags], { encoding: 'utf8', windowsHide: true });
 };
 
 test('a move takes its statements with their comments, byte for byte, and each side imports what it then reads', async () => {
@@ -221,7 +221,7 @@ test("a test is named by its title, and a type it reads is imported as a type, s
       '',
     ].join('\n'));
     assert.equal(fx.read('t.test.ts'), "import { test } from 'node:test';\n\n// The file is held to a census.\n\ntest('stays', () => {});\n");
-    const ran = spawnSync(process.execPath, ['--test', join(fx.root, 'moved', 'one.test.ts')], { encoding: 'utf8' });
+    const ran = spawnSync(process.execPath, ['--test', join(fx.root, 'moved', 'one.test.ts')], { encoding: 'utf8', windowsHide: true });
     assert.equal(ran.status, 0, ran.stdout + ran.stderr);
   } finally {
     fx.cleanup();

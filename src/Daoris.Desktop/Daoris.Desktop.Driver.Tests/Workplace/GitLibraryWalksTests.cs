@@ -19,7 +19,7 @@ public sealed class GitLibraryWalksTests : LandedFixture
         ["GIT_COMMITTER_DATE"] = "2026-11-09T12:00:00Z",
     };
 
-    [Fact]
+    [GitLegFact]
     public async Task Merge_bases_ancestry_and_counts_are_git_s_in_the_checkout_and_a_linked_tree()
     {
         var (root, _) = await RepositoryWithOriginAsync("walks");
@@ -54,7 +54,7 @@ public sealed class GitLibraryWalksTests : LandedFixture
         }
     }
 
-    [Fact]
+    [GitLegFact]
     public async Task A_criss_cross_whose_two_bases_share_a_second_is_git_s_and_its_other_reads_the_library_s()
     {
         var root = await BuildRepositoryAsync("criss");
@@ -80,7 +80,7 @@ public sealed class GitLibraryWalksTests : LandedFixture
         await SameAsync(root, "rev-list", "--count", "a", "--not", "b");
     }
 
-    [Fact]
+    [GitLegFact]
     public async Task A_shallow_boundary_is_read_as_git_reads_it_before_and_after_a_deepen()
     {
         var source = await BuildRepositoryAsync("deep");
@@ -103,7 +103,7 @@ public sealed class GitLibraryWalksTests : LandedFixture
         }
     }
 
-    [Fact]
+    [GitLegFact]
     public async Task A_graft_is_read_as_git_reads_it()
     {
         var root = await BuildRepositoryAsync("grafted");
@@ -119,7 +119,7 @@ public sealed class GitLibraryWalksTests : LandedFixture
         await SameAsync(root, "diff", "--name-only", "-z", "--no-renames", first, "HEAD");
     }
 
-    [Fact]
+    [GitLegFact]
     public async Task A_read_under_a_test_s_stand_in_runner_is_the_stand_in_s()
     {
         var root = await BuildRepositoryAsync("stood");

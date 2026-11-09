@@ -434,7 +434,12 @@ dates, subjects and distances are the commits') stay git's. This second way has 
 reads it as git does (GITLIB1g deletes that refusal and its path to git), and a case fails the day the git in use, or a git the
 built-in list pins (3.0 or past), makes reftable or SHA-256 repositories by default (GITLIB1g retires the library and its admission
 for the scheduler alone). `GitLibraryWalksTests`, `GitLibraryNamesTests` and `GitLibraryRefsTests` hold each answer equal to git's,
-value for value, and each read the library leaves to git answered through one start. `GitLibraryHoldTests` holds the call's hold on
+value for value, and each read the library leaves to git answered through one start. These classes, `GitLibraryFormatsTests`,
+`GitLibraryCountedTests` and `GitLibraryEndsTests` run twice: on the runner's git in `driver-process-git`, and on the MinGit the built-in
+list pins in `driver-process-git-pinned` (`git.pinned.process.runsettings`, which sets `DAORIS_PINNED_GIT_LEG` for the test host). The host
+fetches the pin into the repository's own `_fixtures/` (`PinnedMinGit`) and puts it first on `PATH`, so the product's starts and the
+fixtures' are both that git (`GitLibraryEndsTests` fails a leg that ran another). Where the pin cannot be had (no pin for the platform, a
+fetch that fails) every `[GitLegFact]` of the leg is skipped with that reason and never run on another git. `GitLibraryHoldTests` holds the call's hold on
 Windows: `repack -ad`, `gc --prune=now`, `commit-graph write` and `multi-pack-index write` under library reads every ten milliseconds
 exit 0, leave no old pack and never ask the `GIT_ASK_YESNO` stand-in, which is first seen asked where a pack is held open. The
 `win-x64` publish lays the native `git2-*.dll` beside the driver, and the deployment rehearsal asks for it (`driverProblems`).

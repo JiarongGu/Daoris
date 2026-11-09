@@ -11,7 +11,7 @@ namespace Daoris.Desktop.Driver.Tests;
 [Trait(Category.Parallel, Category.Git)]
 public sealed class GitLibraryFormatsTests : LandedFixture
 {
-    [Fact]
+    [GitLegFact]
     public async Task A_default_repository_is_sha1_and_files_and_is_read_once_until_its_configuration_moves()
     {
         var root = await BuildRepositoryAsync("formats-default");
@@ -29,7 +29,7 @@ public sealed class GitLibraryFormatsTests : LandedFixture
         Assert.Equal(before + 2, GitLibraryFormats.Reads);
     }
 
-    [Fact]
+    [GitLegFact]
     public async Task A_sha256_repository_is_git_s_for_every_question_and_the_library_never_opens_it()
     {
         var root = Path.Combine(Scratch, "formats-sha256");
@@ -53,7 +53,7 @@ public sealed class GitLibraryFormatsTests : LandedFixture
         Assert.Equal(1, GitLibraryJournal.Of(root)!.Reasons[GitLibraryAdmission.Sha256]);
     }
 
-    [Fact]
+    [GitLegFact]
     public async Task A_repository_whose_configuration_names_reftable_is_git_s_though_it_holds_no_reftable_folder_yet()
     {
         var root = await BuildRepositoryAsync("formats-reftable");
@@ -64,7 +64,7 @@ public sealed class GitLibraryFormatsTests : LandedFixture
         Assert.Equal(GitLibraryAdmission.Reftable, GitLibraryAdmission.RefusalOf(root, GitLibraryQuestion.Refs));
     }
 
-    [Fact]
+    [GitLegFact]
     public async Task A_format_the_probe_does_not_know_is_refused_by_its_own_word()
     {
         var root = await BuildRepositoryAsync("formats-unknown");
