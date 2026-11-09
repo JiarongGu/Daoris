@@ -177,7 +177,7 @@ internal static class AcpProtocol
     internal static JsonElement? TypedFailure(JsonElement result)
     {
         if (result.ValueKind != JsonValueKind.Object || !result.TryGetProperty("_meta", out var meta)
-            || !meta.TryGetProperty("jetbrains", out var jetbrains) || jetbrains.ValueKind != JsonValueKind.Object
+            || meta.ValueKind != JsonValueKind.Object || !meta.TryGetProperty("jetbrains", out var jetbrains) || jetbrains.ValueKind != JsonValueKind.Object
             || !jetbrains.TryGetProperty("air", out var air) || air.ValueKind != JsonValueKind.Object
             || !air.TryGetProperty("sessionFailure", out var failure) || failure.ValueKind != JsonValueKind.Object
             || Json.Text(failure, "severity") != "error" || Json.Text(failure, "category") is not { Length: > 0 } category)

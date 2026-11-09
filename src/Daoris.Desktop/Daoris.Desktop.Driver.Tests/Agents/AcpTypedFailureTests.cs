@@ -71,6 +71,17 @@ public sealed class AcpTypedFailureTests
         Assert.All(new[] { "claude-code-acp", "acp-stub", "dsh" }, name => Assert.NotEqual(true, Built.AgentNamed(name)?.Tables.ErrorWords?.TypedFailures));
     }
 
+    [Theory]
+    [InlineData("""{"stopReason":"end_turn","_meta":null}""")]
+    [InlineData("""{"stopReason":"end_turn","_meta":"x"}""")]
+    [InlineData("""{"stopReason":"end_turn","_meta":[1]}""")]
+    public void An_answer_whose_meta_is_not_an_object_is_no_failure_and_throws_nothing(string result)
+    {
+        using var document = JsonDocument.Parse(result);
+
+        Assert.Null(AcpProtocol.TypedFailure(document.RootElement));
+    }
+
     /// <summary>
     /// 🔴 The install's capacity failure, typed: the turn fails transient, so the run waits and tries again in the SAME session on the retry
     /// schedule, and the person's word said meanwhile is held and goes with the try, beside a go-on that carries the provider's words as
