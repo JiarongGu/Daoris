@@ -12,6 +12,8 @@ public sealed class BackgroundWaitJudgementTests : IDisposable
 {
     private readonly StandInLedger _ledger = new();
 
+    private readonly string _home = Path.Combine(WorkspaceRoot.Folder, "_fixtures", "test-homes", Guid.NewGuid().ToString("N")[..8]);
+
     public BackgroundWaitJudgementTests()
     {
         _ledger.Register("engine", "engine-root");
@@ -125,7 +127,7 @@ public sealed class BackgroundWaitJudgementTests : IDisposable
 
     private async Task<TurnCarry?> LookAsync(QuestView planned, bool resumed, string tree, Func<bool>? stopped = null)
     {
-        var look = SessionWaits.CarriesOn(_ledger.Client(), planned, tree, resumed, stopped ?? (() => false));
+        var look = SessionWaits.CarriesOn(_home, _ledger.Client(), planned, tree, resumed, stopped ?? (() => false));
         return look is null ? null : await look(CancellationToken.None);
     }
 
@@ -228,10 +230,10 @@ public sealed class BackgroundWaitJudgementTests : IDisposable
         _ledger.Move("q1", "Done");
         var tree = Tree(dirty: true);
 
-        var look = SessionWaits.CarriesOn(_ledger.Client(), Planned("Done"), tree, resumed: true, () => false, accepted: false)!;
+        var look = SessionWaits.CarriesOn(_home, _ledger.Client(), Planned("Done"), tree, resumed: true, () => false, accepted: false)!;
         Assert.True((await look(CancellationToken.None)).Dirty);
 
-        Assert.Null(SessionWaits.CarriesOn(_ledger.Client(), Planned("Done"), tree, resumed: true, () => false, accepted: true));
+        Assert.Null(SessionWaits.CarriesOn(_home, _ledger.Client(), Planned("Done"), tree, resumed: true, () => false, accepted: true));
     }
 
     /// <summary>A stopped session is never carried on, a closed quest's resume included.</summary>
@@ -249,7 +251,7 @@ public sealed class BackgroundWaitJudgementTests : IDisposable
     {
         var tree = Tree(dirty: true);
         var planned = Planned("Taken");
-        var look = SessionWaits.CarriesOn(_ledger.Client(), planned, tree, resumed: true, () => false)!;
+        var look = SessionWaits.CarriesOn(_home, _ledger.Client(), planned, tree, resumed: true, () => false)!;
 
         Assert.False((await look(CancellationToken.None)).Eligible);
         _ledger.Move("q1", "Done");

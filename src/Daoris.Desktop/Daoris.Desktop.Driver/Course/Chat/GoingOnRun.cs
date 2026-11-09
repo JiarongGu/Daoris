@@ -166,8 +166,8 @@ internal sealed class GoingOnRun(IExecutorWiring wiring, ChatGoOn owner)
         // start's own hold below, since bringing a tree up to date holds the repository's trees alone. The person's checkout is never
         // moved: a conversation in it asks nothing.
         var inSync = own ? await owner.StartInSyncAsync(record.Tree!, ct).ConfigureAwait(false) : null;
-        // One in the checkout itself holds it too, until the ledger holds it again below.
-        var startIn = StartIn.In(record.Tree!);
+        // One in the checkout itself holds it too, until the ledger holds it again below; a resolver's own going on carries its ask key.
+        var startIn = StartIn.In(record.Tree!, new TreeHandOffs(_context.Home).AskOf(record.Tree!, sessionId));
         using var starting = TreeLock.TryStarting(_context.Home, known.Root!, startIn);
         if (starting is null) return owner.Held(sessionId, TreeLock.StartHeld(_context.Home, known.Root!, startIn, known.Repository));
 

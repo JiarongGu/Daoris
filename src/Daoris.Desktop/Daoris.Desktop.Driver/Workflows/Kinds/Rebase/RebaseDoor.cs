@@ -56,7 +56,12 @@ public sealed class RebaseDoor(string home, Action<string>? log = null, Func<boo
         if (records.Of(start.Run, start.Node, start.Attempt) is { } done) return done;
         var work = start.Work;
         var tree = TreeOf(work);
-        var made = await new RebaseReplay(new SessionTrees(home).Settles).ReplayAsync(work, tree, start.Target, Held(work, tree, start.Target), ct).ConfigureAwait(false);
+        var replay = new RebaseReplay(new SessionTrees(home).Settles);
+        var resolved = records.Of(start.Run).LastOrDefault(each => each.Node == start.Node && each.Resolution is not null
+                                                                   && string.Equals(each.Tip, work.Tip, StringComparison.OrdinalIgnoreCase));
+        var made = resolved is { Resolution: { } resolution }
+            ? await ResolvedAsync(replay, work, start.Target, resolved.Onto, resolution, ct).ConfigureAwait(false)
+            : await replay.ReplayAsync(work, tree, start.Target, Held(work, tree, start.Target), ct).ConfigureAwait(false);
         var commit = made.Commit;
         if (made.Outcome == RebaseOutcomes.Ready && commit is not null
             && await StepRefs.KeepAsync(work.Root, start.Run, start.Node, start.Attempt, commit, ct).ConfigureAwait(false) is { Done: false } unkept
@@ -69,9 +74,21 @@ public sealed class RebaseDoor(string home, Action<string>? log = null, Func<boo
         {
             Commit = made.Outcome == RebaseOutcomes.Ready ? commit : null,
             StopSort = made.Stop?.Sort, PatchId = made.Stop?.PatchId, Paths = made.Stop?.Paths ?? [], StopCommit = made.StopCommit, LeftOut = made.LeftOut,
+            Uncommitted = made.Uncommitted,
         };
         records.Write(attempt);
         return attempt;
+    }
+
+    /// <summary>An earlier attempt's replay a <c>resolve</c> finished: ready where the target stands, else its stretch replayed onto the new tip.</summary>
+    private static async Task<RebaseMade> ResolvedAsync(RebaseReplay replay, RebaseWork work, RebaseTarget target, string onto, string resolution, CancellationToken ct)
+    {
+        if (string.Equals(onto, target.Tip, StringComparison.OrdinalIgnoreCase))
+        {
+            return new(RebaseOutcomes.Ready, $"Its resolution stands on `{target.Name}`'s tip.") { Commit = resolution, Onto = target.Tip };
+        }
+
+        return await replay.ReplayAsync(work with { Tip = resolution }, null, target, [onto], ct).ConfigureAwait(false);
     }
 
     /// <summary>Whether the attempt's step ref already holds <paramref name="commit"/>: a replay written again finds its ref made.</summary>

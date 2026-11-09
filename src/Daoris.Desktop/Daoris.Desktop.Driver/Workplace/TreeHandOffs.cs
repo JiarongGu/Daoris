@@ -109,6 +109,10 @@ public sealed class TreeHandOffs(string home, Func<StoreSettled>? settled = null
     /// </summary>
     public static StepAuthority AuthorityFor(TreeHandOff row) => new(row.Run, row.Node, row.Attempt, row.Ask);
 
+    /// <summary>The ask key <paramref name="session"/>'s start in <paramref name="tree"/> carries where the open row asked it; else null.</summary>
+    public string? AskOf(string tree, string session) =>
+        Of(tree) is { Phase: TreeHandOffPhases.Asked } row && string.Equals(row.Session, session, StringComparison.Ordinal) ? row.Ask : null;
+
     /// <summary>A tree's key: its full path, without a trailing separator, in one case on Windows.</summary>
     public static string KeyOf(string tree)
     {
