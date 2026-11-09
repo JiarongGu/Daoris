@@ -3,13 +3,10 @@ using Xunit.Abstractions;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// The measurements the tree pool's design asks of the built pool before it is wired, taken on a working machine over a day of a
-/// repository's main (<see cref="TreePoolDayBench"/>). It does nothing unless <c>TREEPOOL_BENCH</c> names a scratch folder, made under
-/// <c>_fixtures/treepool-bench/</c> and removed at the end, its lines written to <c>&lt;name&gt;.log</c> beside it.
-/// <c>TREEPOOL_BENCH_SHAPE</c> is <c>daoris</c> (this repository's day up to <c>TREEPOOL_BENCH_TIP</c>, main by default) or <c>web</c> (a
-/// generated web-only repository); <c>TREEPOOL_BENCH_ARM</c> is <c>base</c>, <c>aside</c> or <c>fresh</c>; <c>TREEPOOL_BENCH_STRIDE</c>
-/// is the replay's step, 13 by default; <c>TREEPOOL_BENCH_BUILDS=0</c> leaves the builds out. The names carry no <c>DAORIS_</c> prefix, which the host's environment strips. It runs alone,
-/// since its figures include times.
+/// The tree pool design's measurements over a day of a repository's main (<see cref="TreePoolDayBench"/>), only where <c>TREEPOOL_BENCH</c>
+/// names a scratch folder under <c>_fixtures/treepool-bench/</c> (removed at the end, its lines in <c>&lt;name&gt;.log</c>). <c>_SHAPE</c> is
+/// <c>daoris</c> (the day up to <c>_TIP</c>, main by default) or <c>web</c>; <c>_ARM</c> <c>base</c>, <c>aside</c> or <c>fresh</c>;
+/// <c>_STRIDE</c> 13 by default; <c>_BUILDS=0</c> builds nothing. No <c>DAORIS_</c> prefix, which the host strips. It runs alone, timed.
 /// </summary>
 [Collection(Alone.Name)]
 [Trait(Category.Name, Category.Process)]

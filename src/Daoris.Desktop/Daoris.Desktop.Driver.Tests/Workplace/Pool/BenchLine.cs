@@ -2,7 +2,7 @@ namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
 /// What one step wrote, as <see cref="TreeWrites"/> estimates it: the files new or changed at their sizes (never the bytes the disk
-/// wrote), the files gone, and the seconds it took on the machine as loaded as it was.
+/// wrote), the files gone, and the seconds it took on a machine however loaded.
 /// </summary>
 internal readonly record struct BenchStep(int Files, long Bytes, int Gone, double Seconds)
 {
