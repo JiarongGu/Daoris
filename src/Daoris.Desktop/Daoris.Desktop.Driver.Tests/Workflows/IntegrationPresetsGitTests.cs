@@ -100,8 +100,8 @@ public sealed class IntegrationPresetsGitTests : LandedFixture, IAsyncLifetime
     public async Task A_done_quest_is_integrated_into_the_line_by_the_saved_preset_run_end_to_end()
     {
         var root = await RepositoryAsync("engine");
-        await CommitAsync(root, LandedGates.File, Declaration, "the declaration");
-        var blob = (await GitAsync(root, "rev-parse", $"HEAD:{LandedGates.File}")).Trim();
+        await CommitAsync(root, DeclarationNames.Gates, Declaration, "the declaration");
+        var blob = (await GitAsync(root, "rev-parse", $"HEAD:{DeclarationNames.Gates}")).Trim();
         DriverConfig.Empty.WithLine("engine", "main")
             .WithLinePolicy("engine", new LandingIntegrate(Gates: LandingIntegrate.Declared))
             .WithIntegrationGates("engine", blob)

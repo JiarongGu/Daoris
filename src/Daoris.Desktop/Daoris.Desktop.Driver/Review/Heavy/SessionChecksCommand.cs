@@ -93,7 +93,7 @@ public static class SessionChecksCommand
     private static string Said(string? checks, string repository, bool now) => checks switch
     {
         SessionChecks.Light =>
-            $"checks: `{repository}`'s sessions {(now ? "now " : "")}run light: the gates its {HeavyGates.FileName} does not mark heavy and the "
+            $"checks: `{repository}`'s sessions {(now ? "now " : "")}run light: the gates its {DeclarationNames.Gates} does not mark heavy and the "
             + "checks a change reaches, filtered; its heavy gates are left to the verification and refused to them.",
         SessionChecks.HeavyAtEnd =>
             $"checks: `{repository}`'s sessions {(now ? "now " : "")}run the checks a change reaches while they work, and its heavy gates once, "

@@ -18,8 +18,8 @@ public sealed class RoomsDeclaredCensusTests(ITestOutputHelper output)
     {
         var checkout = GitSeed.RepoRoot();
         var report = RoomCheck.Of(
-            File.ReadAllText(Path.Combine(checkout, LineRegistration.LanesFile)),
-            File.ReadAllText(Path.Combine(checkout, RepositoryFilesReader.FileName)),
+            File.ReadAllText(Path.Combine(checkout, DeclarationNames.Lanes)),
+            File.ReadAllText(Path.Combine(checkout, DeclarationNames.Rules)),
             Tracked(checkout));
         output.WriteLine(report.Said());
 
@@ -33,7 +33,7 @@ public sealed class RoomsDeclaredCensusTests(ITestOutputHelper output)
     public void This_repositorys_rule_file_reads_clean_with_the_web_s_dependency_before_the_root_s()
     {
         var checkout = GitSeed.RepoRoot();
-        var read = RepositoryFilesReader.Read(File.ReadAllText(Path.Combine(checkout, RepositoryFilesReader.FileName)));
+        var read = RepositoryFilesReader.Read(File.ReadAllText(Path.Combine(checkout, DeclarationNames.Rules)));
 
         Assert.Empty(read.Problems);
         Assert.Equal(
@@ -45,7 +45,7 @@ public sealed class RoomsDeclaredCensusTests(ITestOutputHelper output)
         Assert.Equal("copy", read.Rules[2].Reach);
         Assert.Equal(["/src/Daoris.Web/node_modules/"], read.Rules[4].Paths);
         Assert.Equal(["/node_modules/", """/src/Daoris.Cli/node_modules/"""], read.Rules[5].Paths);
-        Assert.DoesNotContain("trees", File.ReadAllText(Path.Combine(checkout, GeneratedWriters.DeclarationFile)).Split('"'));
+        Assert.DoesNotContain("trees", File.ReadAllText(Path.Combine(checkout, DeclarationNames.Gates)).Split('"'));
     }
 
     private static IReadOnlyList<string> Tracked(string checkout)

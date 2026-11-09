@@ -292,7 +292,19 @@ commit's fields and a compare's commits under the asker's stamp, admitted only w
 one's nearest folder) read again after git answered is unchanged and settled; a commit's changes, a compare's, a file's history and
 a blame are asked at every ask, in the asking tree under its attributes. `GitReplacements.CanBeInForce` (a loose or packed
 replacement, `GIT_REPLACE_REF_BASE`, or reftable refs) is the library's admission's one judgement of a replacement, reading the
-`packed-refs` parse the stamp reads (`GitPackedRefs`, made once a content). The flow memos share an answer between two folders of one
+`packed-refs` parse the stamp reads (`GitPackedRefs`, made once a content). The declarations' store, `RepositoryDeclarations`
+(`Workplace/Declarations/`), answers a declaration present, absent or unread: a checkout's or a home's file by its `FileStamp`, its
+bytes by their `ContentKey`; a file at a commit id from the commit's listing, one `cat-file --batch` start asked the commit, its tree
+and each folder on the way, kept by id only where each object's bytes hash to it (`GitObjectHash`), and its blob kept under its
+`BlobId` only where its bytes hash to it; a blob asked by id answered only by bytes that hash to it, else *unread: replaced*; a
+commit's tracked list kept by commit under the replacement gate's `StatFence`. While `CanBeInForce` holds it asks git by path and
+admits nothing. A `DeclarationVersion` is compared by `Same` alone, an *unread* the same as none and without text; a kind's parse
+(`IDeclarationKind`, the rule file's `RuleFileKind`) and a view (`IDeclarationView`) are kept by the content keys they are made from, a
+parse naming a problem made again at each ask, and contents, tracked lists and indexes are each bounded alone (`DeclarationBound`:
+16, 24 and 4 MB). `TipOf` reads a full ref from its loose file or the `packed-refs` parse, a symbolic ref followed to five, a
+reftable's from git; `GitTreeReads` is the door for path-bearing reads, its search git's with the declarations excluded and their
+lines from the store's bytes; `DeclarationScope` says whether the store or the door asked a start. Every declaration's name is a
+read-only field of `DeclarationNames`, never a constant. The flow memos share an answer between two folders of one
 repository only where the stamp's context is one (`GitStamp.ContextOf`: the common directory, the asking tree's `config.worktree` by
 its bytes, and the folder itself where a `gitdir:` include stands), so `GitFacts.SameRepository`, `RefSnapshot.TreeHeld`,
 `ListedFor` and `GitReadOnce`'s listings never answer a tree with replacements off from one with them on. A git whose kill it outlived leaves the four for a count apart

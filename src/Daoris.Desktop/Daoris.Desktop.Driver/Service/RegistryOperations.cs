@@ -93,15 +93,15 @@ public static class RegistryConnect
                 1);
         }
 
-        var manifest = Path.Combine(root, LineRegistration.ManifestFile);
+        var manifest = Path.Combine(root, DeclarationNames.Manifest);
         if (!File.Exists(manifest))
         {
             throw new RegistryRefusal(
-                RegistryRefusal.ManifestUnreadable, $"no {LineRegistration.ManifestFile} in '{root}' — run 'daoris init' first", 2);
+                RegistryRefusal.ManifestUnreadable, $"no {DeclarationNames.Manifest} in '{root}' — run 'daoris init' first", 2);
         }
 
         var name = Path.GetFileName(root.TrimEnd('/', '\\'));
-        var lanes = Path.Combine(root, LineRegistration.LanesFile);
+        var lanes = Path.Combine(root, DeclarationNames.Lanes);
         var composed = LineRegistration.Compose(
             name, AtomicFile.ReadText(manifest), File.Exists(lanes) ? AtomicFile.ReadText(lanes) : null, root, IsLocal(service));
         if (composed.ManifestProblem is { } problem) throw new RegistryRefusal(RegistryRefusal.ManifestUnreadable, problem, 2);
@@ -124,7 +124,7 @@ public static class RegistryConnect
                 RegistryRefusal.LanesUnreadable,
                 composed.LanesProblems is [var only] && only.EndsWith("is not valid JSON", StringComparison.Ordinal)
                     ? only
-                    : $"{LineRegistration.LanesFile} cannot be read:\n{string.Join('\n', composed.LanesProblems.Select(each => $"  {each}"))}",
+                    : $"{DeclarationNames.Lanes} cannot be read:\n{string.Join('\n', composed.LanesProblems.Select(each => $"  {each}"))}",
                 1);
         }
 

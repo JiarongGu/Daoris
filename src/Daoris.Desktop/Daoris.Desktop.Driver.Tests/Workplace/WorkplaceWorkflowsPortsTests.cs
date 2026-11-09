@@ -59,8 +59,8 @@ public sealed class WorkplaceWorkflowsPortsTests : IDisposable
         Assert.True(WorkplaceRunFiles.Bound(_home, "q1"));
         Assert.Equal(WorkplaceRunFiles.Bound(_home, "q1"), WorkflowRunBindings.Bound(_home, "q1"));
         Assert.Equal("`a/b` is not a run's id.", Assert.Throws<DriverException>(() => WorkplaceRunFiles.PathOf(_home, "a/b")).Message);
-        Assert.Equal("daoris.gates.json", GeneratedWriters.DeclarationFile);
-        Assert.Equal(GeneratedWriters.DeclarationFile, LandedGates.File);
+        Assert.Equal("daoris.gates.json", DeclarationNames.Gates);
+        Assert.Contains(DeclarationNames.Gates, DeclarationNames.Repository);
     }
 
     // ——— The process facet

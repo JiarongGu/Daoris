@@ -228,7 +228,7 @@ public sealed class LoopGrounds(DriverLoop loop, InstancePipe pipe) : IPipeGroun
             case "file":
                 return Hash(Rooted(PipeGround.Text(payload, "file")));
             case "declaration":
-                return Rooted(PipeGround.Text(payload, "path")) is { } repository ? Hash(Path.Combine(repository, "daoris.json")) : "none";
+                return Rooted(PipeGround.Text(payload, "path")) is { } repository ? Hash(Path.Combine(repository, DeclarationNames.Manifest)) : "none";
             case "notices":
             {
                 if (PipeGround.Text(payload, "id") is { Length: > 0 } dismissed)

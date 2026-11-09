@@ -67,7 +67,7 @@ public sealed class RuleFileFormTests : IDisposable
     [Fact]
     public void This_repositorys_file_reads_in_gits_form_its_bin_covering_every_projects_and_the_tools_set_aside()
     {
-        var read = RepositoryFilesReader.Read(File.ReadAllText(Path.Combine(WorkspaceRoot.Folder, RepositoryFilesReader.FileName)));
+        var read = RepositoryFilesReader.Read(File.ReadAllText(Path.Combine(WorkspaceRoot.Folder, DeclarationNames.Rules)));
         Assert.Empty(read.Problems);
         Assert.False(read.FirstForm);
         var rules = FileRules.Of([], read.Rules, PersonFilesRead.Empty, "Daoris");
