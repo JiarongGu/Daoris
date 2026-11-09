@@ -20,9 +20,7 @@ public sealed class GitCeilingCensusTests
 
     private static readonly Regex Comments = new(@"//[^\n]*");
 
-    /// <summary>
-    /// The git starts a source builds when it caps none: how many, or zero where it has none or names a cap. Comments are not read.
-    /// </summary>
+    /// <summary>The git starts a source builds when it caps none: how many, or zero where it has none or names a cap. Comments are not read.</summary>
     internal static int Uncapped(string source)
     {
         var code = Comments.Replace(source.Replace("\r\n", "\n"), "");
