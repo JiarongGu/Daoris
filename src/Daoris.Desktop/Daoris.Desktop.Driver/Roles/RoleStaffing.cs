@@ -93,8 +93,17 @@ public sealed class RoleStaffing(string home, Func<StoreSettled>? settled = null
         return staffing;
     }
 
-    /// <summary>The port's read: the store's staffing as a loaded record holds it, or null before the import.</summary>
-    StaffingHeld? IRoleStaffing.Held() => Read() is { } read ? new StaffingHeld(read.Actors, read.Errors) : null;
+    /// <summary>
+    /// The port's read: the store's staffing as a loaded record holds it, or null before the import, with the family's revision read first
+    /// on the same reader, so a write between the two leaves the revision behind the staffing and the next stamp moves past it.
+    /// </summary>
+    StaffingHeld? IRoleStaffing.Held()
+    {
+        using var store = DesktopStoreReader.Open(Location);
+        if (store is null) return null;
+        var revision = store.Query("SELECT revision FROM store_revisions WHERE family = $family", row => row.GetInt64(0), ("$family", Family)).FirstOrDefault();
+        return Read(store) is { } read ? new StaffingHeld(read.Actors, read.Errors, revision) : null;
+    }
 
     /// <summary>The family's name in <c>imports</c> and <c>store_revisions</c>.</summary>
     public const string Family = "role_staffing";
@@ -147,7 +156,12 @@ public sealed class RoleStaffing(string home, Func<StoreSettled>? settled = null
     public StaffingRead? Read()
     {
         using var store = DesktopStoreReader.Open(Location);
-        if (store is null || !Imported(store)) return null;
+        return store is null ? null : Read(store);
+    }
+
+    private static StaffingRead? Read(DesktopStoreReader store)
+    {
+        if (!Imported(store)) return null;
 
         var actors = new Dictionary<string, IReadOnlyList<ActorChoice>>(StringComparer.Ordinal);
         var errors = new Dictionary<string, string>(StringComparer.Ordinal);

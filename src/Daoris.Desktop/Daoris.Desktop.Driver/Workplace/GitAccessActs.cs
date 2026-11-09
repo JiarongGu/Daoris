@@ -148,7 +148,7 @@ public static class GitAccessActs
     {
         var (key, name) = LevelOf(edit);
         var changes = Changes(edit);
-        DriverConfigFile.Change(home, root =>
+        DriverConfigWrites.Change(home, root =>
         {
             var map = key == GitAccessKeys.MachineKey ? null : root[key] as JsonObject;
             JsonObject? level = key == GitAccessKeys.MachineKey

@@ -76,20 +76,11 @@ public sealed record RetryDecision(string Quest, string Did, string? Session, Fu
 /// <summary>What a review's procedure look found: the repositories of a workspace whose checkout lacks it, and whether the look ran.</summary>
 public sealed record ReviewLooked(IReadOnlyList<string> Lacking, bool Unchecked);
 
-/// <summary>
-/// The standing choices' operations: each the judgement a route made inside its
-/// handler, taken out over the facts it judges by, so the window's route and <c>daoris</c> acting alone call one
-/// implementation. The rest of the choices are already <see cref="DriverConfig"/>'s <c>With*</c> and each rule's <c>Apply</c>; their
-/// write is <see cref="Write"/>, which the route makes through its context with the loop's nudge.
-/// </summary>
+/// <summary>The standing choices' operations, one implementation for the window's route and <c>daoris</c> acting alone; the choices are
+/// <see cref="DriverConfig"/>'s <c>With*</c> and each rule's <c>Apply</c>, written by <see cref="Write"/> with the loop's nudge.</summary>
 public static class StandingChoices
 {
-    /// <summary>A standing choice written: the file read, the change made, and saved under its lock; the choices it wrote.</summary>
+    /// <summary>A standing choice written: the file read under its lock, the change made, and saved before the lock is let go; the choices it wrote.</summary>
     /// <exception cref="DriverConfigUnreadableException">The file does not read, so nothing is written.</exception>
-    public static DriverConfig Write(string path, Func<DriverConfig, DriverConfig> change)
-    {
-        var next = change(DriverConfig.Load(path));
-        next.Save(path);
-        return next;
-    }
+    public static DriverConfig Write(string path, Func<DriverConfig, DriverConfig> change) => DriverConfigDisk.Edit(path, change);
 }

@@ -3,10 +3,10 @@ using System.Text.Json;
 namespace Daoris.Driver;
 
 /// <summary>
-/// <c>driver.json</c> read from disk and an edit written onto it as it stands, under its lock. The edit (what changed between
-/// <see cref="DriverConfig.Source"/> as read and the choices) is made onto the file read again here, under the same keep rules: written
-/// over <see cref="DriverConfig.Source"/>, a change another writer made in between would be lost, and a file that had since stopped reading
-/// would be overwritten.
+/// <c>driver.json</c> read from disk and an edit written onto it as it stands, through its one writer (<see cref="DriverConfigWrites"/>).
+/// The edit (what changed between <see cref="DriverConfig.Source"/> as read and the choices) is made onto the file the writer reads
+/// under its lock, under the same keep rules: written over <see cref="DriverConfig.Source"/>, a change another writer made in between
+/// would be lost, and a file that had since stopped reading would be overwritten.
 /// </summary>
 internal static class DriverConfigDisk
 {
@@ -21,22 +21,33 @@ internal static class DriverConfigDisk
     /// </exception>
     public static DriverConfig Load(string path)
     {
-        // A fresh home's staffing is in the store before it has a file, so a missing file is filled too.
-        if (!File.Exists(path)) return RoleStaffingPort.Fill(DriverConfig.Empty with { Source = "{}", SourceFile = Path.GetFullPath(path) }, path);
+        if (!File.Exists(path)) return Of(path, null);
 
-        string text;
+        byte[] bytes;
         try
         {
-            text = AtomicFile.ReadText(path);
+            bytes = AtomicFile.ReadBytes(path);
         }
         catch (Exception error) when (error is IOException or UnauthorizedAccessException)
         {
             throw new DriverConfigUnreadableException(path, $"{path} could not be read ({error.Message.TrimEnd('.')}).");
         }
 
+        return Of(path, BesideReads.Text(bytes), FileStamp.Hash(bytes));
+    }
+
+    /// <summary>The choices of <paramref name="text"/> (none where no file stands), the store's staffing laid over them at this ask;
+    /// <paramref name="key"/> is the bytes' content key, the text's own where the writer read the text.</summary>
+    private static DriverConfig Of(string path, string? text, string? key = null)
+    {
+        var file = Path.GetFullPath(path);
+
+        // A fresh home's staffing is in the store before it has a file, so a missing file is filled too.
+        if (text is null) return RoleStaffingPort.Fill(DriverConfig.Empty with { Source = "{}", SourceFile = file, Effective = Effective.Of("absent") }, path);
+        var effective = Effective.Of(key ?? FileStamp.Hash(System.Text.Encoding.UTF8.GetBytes(text)));
         try
         {
-            return RoleStaffingPort.Fill(DriverConfigReader.Parse(text) with { SourceFile = Path.GetFullPath(path) }, path);
+            return RoleStaffingPort.Fill(DriverConfigReader.Parse(text) with { SourceFile = file, Effective = effective }, path);
         }
         catch (JsonException error) when (error.LineNumber is { } line && error.BytePositionInLine is { } position)
         {
@@ -64,21 +75,36 @@ internal static class DriverConfigDisk
     /// Write the choices back, atomically, beside-then-rename: the watch loop re-reads the file every tick, and a torn read must never
     /// be what it finds. A file that does not read now, or holds a key twice in one object, is refused and left as it is; one that is
     /// gone is written from nothing. The edit touches only the key paths it changed (<see cref="JsonKeeping"/>): an object taken out
-    /// since is made again with only the edit's keys, and one that is no longer an object refuses it. The re-read and the rename are
-    /// made holding the file's lock (<see cref="KeepLock"/>), which the CLI's writer takes too; the lock is read again just
-    /// before the rename, and a save whose lock another writer takes is refused with nothing written.
+    /// since is made again with only the edit's keys, and one that is no longer an object refuses it. The writer reads the file and
+    /// renames holding its lock, which the CLI's writer takes too; a save whose lock another writer takes is refused with nothing written.
     /// </summary>
-    public static void Save(DriverConfig config, string path, KeepSeams? seams)
+    public static void Save(DriverConfig config, string path, KeepSeams? seams) =>
+        DriverConfigWrites.Change(path, current => Written(config, path, current), seams);
+
+    /// <summary>A standing choice written: <paramref name="change"/> made to the file as the writer reads it under its lock, so it starts
+    /// from what a second writer wrote meanwhile, and the edit written over it. The choices it wrote.</summary>
+    public static DriverConfig Edit(string path, Func<DriverConfig, DriverConfig> change)
     {
-        var file = Path.GetFullPath(path);
-        Directory.CreateDirectory(Path.GetDirectoryName(file)!);
-        using var held = KeepLock.Take(file, within: null, seams?.Clock);
+        DriverConfig? next = null;
+        DriverConfigWrites.Change(path, current =>
+        {
+            next = change(Of(path, current));
+            return Written(next, path, current);
+        });
+        return next!;
+    }
+
+    /// <summary>The choices as their reader understood <see cref="DriverConfig.Source"/>, written: what an edit is measured from.</summary>
+    public static string Understood(DriverConfig config) =>
+        DriverConfigWriter.Written(DriverConfigReader.Parse(config.Source!) with { Source = null });
+
+    private static string Written(DriverConfig config, string path, string? current)
+    {
         var same = OperatingSystem.IsWindows() ? StringComparison.OrdinalIgnoreCase : StringComparison.Ordinal;
-        string text;
         try
         {
-            text = config.Source is not null && string.Equals(config.SourceFile, file, same)
-                ? JsonKeeping.Kept(Current(path), Understood(config), DriverConfigWriter.Written(config), DriverConfig.Sets)
+            return config.Source is not null && string.Equals(config.SourceFile, Path.GetFullPath(path), same)
+                ? JsonKeeping.Kept(Current(path, current), Understood(config), DriverConfigWriter.Written(config), DriverConfig.Sets)
                 : config.ToJson();
         }
         catch (JsonEditRefusedException refused)
@@ -87,21 +113,15 @@ internal static class DriverConfigDisk
             throw new DriverConfigUnreadableException(path, $"{path} has changed under this edit: {refused.Message}, so this edit was not written. "
                 + DriverConfigUnreadableException.Remedy);
         }
-
-        held.Write(path, text, seams);
     }
 
-    /// <summary>The choices as their reader understood <see cref="DriverConfig.Source"/>, written: what an edit is measured from.</summary>
-    public static string Understood(DriverConfig config) =>
-        DriverConfigWriter.Written(DriverConfigReader.Parse(config.Source!) with { Source = null });
-
-    /// <summary>The file at <paramref name="path"/> as it stands, for an edit to be written over; <c>{}</c> where it is gone.</summary>
-    private static string Current(string path)
+    /// <summary>The file's text as it stands, for an edit to be written over; <c>{}</c> where it is gone.</summary>
+    private static string Current(string path, string? text)
     {
-        DriverConfig now;
+        if (text is null) return "{}\n";
         try
         {
-            now = Load(path);
+            Of(path, text);
         }
         catch (DriverConfigUnreadableException error)
         {
@@ -109,7 +129,6 @@ internal static class DriverConfigDisk
                 error.Path, $"{error.Message} This edit was not written: a file that does not read is never overwritten.", error.Line, error.Byte);
         }
 
-        if (now.Source is not { } text) return "{}\n";
         if (JsonKeeping.Twice(text) is { } key)
         {
             throw new DriverConfigUnreadableException(path, $"{path} holds the key `{key}` twice in one object, so an edit cannot tell which it "

@@ -23,6 +23,14 @@ public static class BesideReads
     public static string Text(string path)
     {
         using var stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite | FileShare.Delete);
+        return Decoded(stream);
+    }
+
+    /// <summary>Bytes already read, as <see cref="Text"/> reads a file: UTF-8, a leading byte-order mark taken as the mark it is.</summary>
+    public static string Text(byte[] bytes) => Decoded(new MemoryStream(bytes, writable: false));
+
+    private static string Decoded(Stream stream)
+    {
         using var reader = new StreamReader(stream, Utf8);
         return reader.ReadToEnd();
     }
