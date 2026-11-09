@@ -4,7 +4,7 @@ namespace Daoris.Driver;
 /// Daoris's own push of the branch the <c>land</c> made: performed through the push act, reached when git's remote-tracking ref
 /// holds the pushed commit.
 /// </summary>
-[NodeKind(NodeKinds.Push, NodeGroup.Landing, NodeKinds.Land)]
+[NodeKind(NodeKinds.Push, NodeGroup.Git, NodeKinds.Land)]
 internal sealed class PushNode : BuiltInNode, IObserves, IStarts, IAsksReads
 {
     public PassRead Asks => PassRead.Remote;
@@ -44,6 +44,8 @@ internal sealed class PushNode : BuiltInNode, IObserves, IStarts, IAsksReads
     public override bool ReadsTheLanding => true;
 
     public override bool EndsByTheLine => true;
+
+    public override NodeArrivals Arrives { get; } = NodeArrivals.Taking(("ref", WireValues.Ref));
 
     public NodeObservation Observe(NodeReading reading) => PushReading.Observe(reading);
 

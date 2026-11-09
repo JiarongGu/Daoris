@@ -70,6 +70,15 @@ export interface RunStep {
    * node only; none from a shell before it, or where nothing is asked.
    */
   integration?: { state: string; line: string; step?: string | null } | null;
+  wait?: RunWait | null;
+}
+
+/** A graph run's node's wait (`WorkflowRunWait`): one of its kind's `waits`, worded as `workflow.wait.<kind>.<code>` with its facts. */
+export interface RunWait {
+  code: string;
+  values?: Record<string, string> | null;
+  since?: string | null;
+  until?: string | null;
 }
 
 /** What a request inside the work is: a quest a session published, or a helper it asked (a request to an agent). */

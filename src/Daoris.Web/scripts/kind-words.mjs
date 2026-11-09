@@ -1,5 +1,5 @@
 // The words of each node kind, beside the names check: every built-in kind has a title in the editor and on a run (`workflow.edit.kind.<kind>`,
-// `workflow.step.<kind>`), and each outcome it routes on is worded (`workflow.outcome.<kind>.<outcome>`), in every language. The kinds are
+// `workflow.step.<kind>`), each outcome (`workflow.outcome.<kind>.<outcome>`) and wait (`workflow.wait.<kind>.<code>`), in every language. The kinds are
 // `NODE_KINDS` in the generated `src/data/generated/service.ts`, read off the driver's kit; the generator writes that list one kind a line
 // as JSON, so plain JavaScript reads it with no TypeScript.
 import { existsSync, readFileSync } from 'node:fs';
@@ -21,9 +21,13 @@ export function readNodeKinds(path = SERVICE) {
   return existsSync(path) ? nodeKinds(readFileSync(path, 'utf8')) : null;
 }
 
-/** The catalogue keys a kind needs words for: its two titles, and each outcome it routes on. */
+/** The catalogue keys a kind needs words for: its two titles, each outcome it routes on or that arrives, and each wait. */
 export function kindKeys(kinds) {
-  return kinds.flatMap((row) => [`workflow.edit.kind.${row.kind}`, `workflow.step.${row.kind}`, ...row.outcomes.map((outcome) => `workflow.outcome.${row.kind}.${outcome}`)]);
+  return kinds.flatMap((row) => [
+    `workflow.edit.kind.${row.kind}`, `workflow.step.${row.kind}`,
+    ...[...row.outcomes, ...(row.arrives?.outcomes ?? [])].map((outcome) => `workflow.outcome.${row.kind}.${outcome}`),
+    ...(row.waits ?? []).map((code) => `workflow.wait.${row.kind}.${code}`),
+  ]);
 }
 
 /** A finding for each key a language's catalogue leaves out or leaves blank, in the names check's shape: a fact, so `--strict` fails it. */

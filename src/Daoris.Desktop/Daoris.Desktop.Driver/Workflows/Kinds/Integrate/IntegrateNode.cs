@@ -4,7 +4,7 @@ namespace Daoris.Driver;
 /// The unit's step in the line's integration: its landed branch asked of the one request door and
 /// waited on (<see cref="IntegrateStart"/>), reached and failed by the integration record. A <c>land</c> of the method <c>integrate</c> brings it.
 /// </summary>
-[NodeKind(NodeKinds.Integrate, NodeGroup.Landing, NodeKinds.Land)]
+[NodeKind(NodeKinds.Integrate, NodeGroup.Git, NodeKinds.Land)]
 internal sealed class IntegrateNode : BuiltInNode, IStarts
 {
     /// <summary>
@@ -19,6 +19,10 @@ internal sealed class IntegrateNode : BuiltInNode, IStarts
 
     public override IReadOnlyList<NodeOptionField> Options { get; } =
         [NodeOptionFields.Choice("request", LandingIntegrate.Requests), NodeOptionFields.Choice("conflicts", LandingIntegrate.ConflictChoices)];
+
+    public override NodeArrivals Arrives { get; } = NodeArrivals.Taking(("ref", WireValues.Ref)) with { Outcomes = ["conflicted"] };
+
+    public override IReadOnlyList<string> Waits { get; } = ["candidate", "same-tip", "same-tip-bound", "decide", "hold", "branch-kept"];
 
     /// <summary>
     /// The first of its options that holds no choice of the install's, by its name: <c>request</c> is one of <see cref="LandingIntegrate.Requests"/>

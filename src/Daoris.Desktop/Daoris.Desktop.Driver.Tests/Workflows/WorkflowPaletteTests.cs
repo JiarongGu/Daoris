@@ -60,6 +60,8 @@ public sealed class WorkflowPaletteTests
         Assert.Equal([PullRequestReading.Merged, PullRequestReading.Closed], Kind(NodeKinds.Monitor).Outcomes);
         Assert.Contains(WireKinds.When, Kind(NodeKinds.Monitor).Leaves);
         Assert.All(Bare.Kinds, each => Assert.DoesNotContain(WireKinds.Wait, each.Leaves));
+        Assert.Equal(WireValues.Work, Kind(NodeKinds.Claimed).Outputs[ClaimedWork.Port]);
+        Assert.Empty(Kind(NodeKinds.Claimed).Inputs);
 
         var find = new NodeDeclaration("find", "local-release/find", 1, NodeReach.Performed)
         {

@@ -26,6 +26,12 @@ describe('the node kinds\' words', () => {
     ]);
   });
 
+  it('asks an arriving outcome for its word and each wait for its sentence, as the run view says them before they are offered', () => {
+    expect(kindKeys([{ kind: 'integrate', outcomes: [], arrives: { outcomes: ['conflicted'] }, waits: ['decide'] }])).toEqual([
+      'workflow.edit.kind.integrate', 'workflow.step.integrate', 'workflow.outcome.integrate.conflicted', 'workflow.wait.integrate.decide',
+    ]);
+  });
+
   it('finds each key a language leaves out or blank, and none it words', () => {
     const found = unwordedKinds([{ kind: 'a', outcomes: [] }], {
       en: { 'workflow.edit.kind.a': 'A', 'workflow.step.a': 'A' },

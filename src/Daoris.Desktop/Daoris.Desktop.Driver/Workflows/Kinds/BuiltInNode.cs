@@ -57,4 +57,11 @@ public abstract class BuiltInNode : INodeKind
     public virtual IReadOnlyDictionary<string, string> Inputs => NodePorts.None;
 
     public virtual IReadOnlyDictionary<string, string> Outputs => NodePorts.None;
+
+    /// <summary>Each output carried on some outcomes alone, which a step the editor adds writes on its declaration.</summary>
+    public virtual IReadOnlyDictionary<string, IReadOnlyList<string>> OutputsOn => NodeArrivals.NoneOn;
+
+    public virtual NodeArrivals Arrives => NodeArrivals.None;
+
+    public virtual IReadOnlyList<string> Waits => [];
 }
