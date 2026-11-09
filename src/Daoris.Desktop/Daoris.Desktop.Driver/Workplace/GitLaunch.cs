@@ -130,7 +130,6 @@ internal sealed class GitLaunched(GitRunner runner, GitKind kind, string node, G
 /// <param name="Ticks">The whole read, in ticks of <see cref="Stopwatch"/>, from the ask to the answer.</param>
 internal sealed record GitLibraryRead(string Question, long Ticks)
 {
-    /// <summary>The read in milliseconds.</summary>
     public double Ms => GitLaunched.Ms(Ticks);
 }
 

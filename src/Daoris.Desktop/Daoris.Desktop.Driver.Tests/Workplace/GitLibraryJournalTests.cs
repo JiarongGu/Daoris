@@ -1,10 +1,11 @@
+using System.Text.Json;
 using Daoris.Driver;
 
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// The library's journal (GITLIB1d): every refusal its admission makes and every read that fell back to git's binary is kept with its
-/// reason beside the repository it was for, and every answer it gave is counted, so the Git page lists what each repository read
+/// The library's journal: every refusal its admission makes and every read that fell back to git's binary is kept with its
+/// reason beside the repository it served, and every answer it gave is counted, so the Git page lists what each repository read
 /// through the library and through git.
 /// </summary>
 [Trait(Category.Name, Category.Process)]
@@ -75,5 +76,26 @@ public sealed class GitLibraryJournalTests : LandedFixture
         {
             ProgramHome.Named = before;
         }
+    }
+
+    [Fact]
+    public void The_git_page_lists_each_repository_by_name_with_its_counts_and_reasons_and_no_path()
+    {
+        var folder = Path.Combine(Scratch, "listed-engine");
+        GitLibraryJournal.Answered(folder);
+        GitLibraryJournal.Answered(folder);
+        GitLibraryJournal.Fell(folder, GitLibraryAdmission.Reftable);
+        GitLibraryJournal.Fell(folder, GitLibraryJournal.Unanswered);
+        GitLibraryJournal.Fell(folder, GitLibraryAdmission.Reftable);
+
+        var listed = JsonSerializer.SerializeToElement(GitLibraryJournal.Page(), new JsonSerializerOptions(JsonSerializerDefaults.Web));
+
+        var row = listed.EnumerateArray().Single(each => each.GetProperty("repository").GetString() == "listed-engine");
+        Assert.Equal((2, 3), (row.GetProperty("library").GetInt32(), row.GetProperty("git").GetInt32()));
+        Assert.Equal(
+            [("reftable", 2), ("unanswered", 1)],
+            row.GetProperty("reasons").EnumerateArray()
+                .Select(each => (each.GetProperty("reason").GetString()!, each.GetProperty("count").GetInt32())).ToArray());
+        Assert.DoesNotContain(Scratch, row.GetRawText(), StringComparison.OrdinalIgnoreCase);
     }
 }

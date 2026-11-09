@@ -4,7 +4,8 @@ import { chinese } from '../../design/storyLanguage';
 import { storyWidths } from '../../design/storyWidths';
 import { GitDefaults, GitIdentities, GitIdentityRow, GitOwn } from './Git';
 import { GitAdd } from './GitAdd';
-import { ACTS, DEPLOY, EMPTY_PAGE, PAGE, PERSONAL, UNKNOWN_HOST, WORK } from './gitFixtures';
+import { GitReads } from './GitReads';
+import { ACTS, DEPLOY, EMPTY_PAGE, PAGE, PERSONAL, READS, UNKNOWN_HOST, WORK } from './gitFixtures';
 
 // Settings → Git, in the shape the shell's `TOOLS_LIST` answers as `identities`: the
 // three cards with an SSH identity reached, an HTTPS one reached and an SSH one the host refused; the empty set; a host not yet
@@ -109,3 +110,13 @@ export const NewKeyToGiveChinese: StoryObj<typeof Add> = { render: () => <Add ad
 
 /** An HTTPS identity saved with its token in Daoris's own folder. */
 export const HttpsAdded: StoryObj<typeof Add> = { render: () => <Add added={{ ...ADDED, way: 'https', publicKey: null }} /> };
+
+const Reads = ({ reads = READS }: { reads?: typeof READS }) => <CardStack><GitReads reads={reads} /></CardStack>;
+
+export const GitReadsListing: StoryObj<typeof Reads> = { render: () => <Reads /> };
+
+export const GitReadsListingNarrow: StoryObj<typeof Reads> = { render: () => <Reads />, decorators: [storyWidths.narrow] };
+
+export const GitReadsListingChinese: StoryObj<typeof Reads> = { render: () => <Reads />, decorators: [chinese] };
+
+export const GitReadsNone: StoryObj<typeof Reads> = { render: () => <Reads reads={[]} /> };

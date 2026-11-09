@@ -6,6 +6,7 @@ import { type Answered, InlineConfirm, Refused } from '../../work/InlineConfirm'
 import {
   Button, Card, CardHeader, Dot, EmptyState, Inline, MonoWell, Pill, Prose, SelectField, SettingList, SettingRow,
 } from '../../design/ui';
+import type { GitLibraryReadShown } from './GitReads';
 
 /** The way an identity signs in: an SSH key of Daoris's own, or an HTTPS token kept beside the keys. */
 export type GitWay = 'ssh' | 'https';
@@ -48,6 +49,7 @@ export type GitPageShown = {
   hosts: string[];
   /** Each workspace's choice for a host: an identity's id, or `own`. */
   choices?: { workspace: string; host: string; value: string }[];
+  reads?: GitLibraryReadShown[];
 };
 
 /** A test's answer (§7.2 step 6): the host's keys are listed where it is not yet trusted, each against the host's published one. */

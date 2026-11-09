@@ -3,7 +3,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// GITLIB1d: the library's answers are counted in <see cref="GitLaunch"/> beside git's own starts and told apart from them, so the
+/// The library's answers are counted in <see cref="GitLaunch"/> beside git's own starts and told apart from them, so the
 /// counts the bench and the Git page show include both.
 /// </summary>
 [Trait(Category.Name, Category.Process)]

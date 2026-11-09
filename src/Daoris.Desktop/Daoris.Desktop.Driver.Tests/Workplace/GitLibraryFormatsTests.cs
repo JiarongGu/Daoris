@@ -4,7 +4,7 @@ using static Daoris.Desktop.Driver.Tests.GitLibraryParity;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// The <c>git.read.formats</c> probe (GITLIB1d): a repository's object and ref formats are read once for its configuration's stamp,
+/// The <c>git.read.formats</c> probe: a repository's object and ref formats are read once for its configuration's stamp,
 /// and a format the library cannot read is admitted to git's binary alone, so the library is never opened on it.
 /// </summary>
 [Trait(Category.Name, Category.Process)]

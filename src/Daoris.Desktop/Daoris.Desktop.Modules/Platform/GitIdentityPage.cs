@@ -48,6 +48,7 @@ internal static class GitIdentityPage
             // Each workspace's choice for a host: an identity's id or `own`, as an array so no name is a key.
             Choices = pointers.Workspace.SelectMany(workspace => workspace.Value.Select(host => new { Workspace = workspace.Key, Host = host.Key, Value = host.Value }))
                 .OrderBy(each => each.Workspace, StringComparer.Ordinal).ThenBy(each => each.Host, StringComparer.Ordinal).ToArray(),
+            Reads = GitLibraryJournal.Page(),
             Hosts = identities.Select(each => each.Host).Concat(pointers.Machine.Keys).Distinct(StringComparer.Ordinal).Order(StringComparer.Ordinal).ToArray(),
         };
     }

@@ -1,4 +1,5 @@
 import type { GitActs, GitIdentityShown, GitPageShown, GitTestAnswer } from './Git';
+import type { GitLibraryReadShown } from './GitReads';
 
 // Settings → Git in the shape the shell's `TOOLS_LIST` answers as `identities`: the stories, the organisms' tests and the
 // domain's tests draw the same machine. Neutral by convention: a host is an example's, a key a made-up one, and no path appears.
@@ -57,7 +58,15 @@ export const DEPLOY: GitIdentityShown = {
   pointedAt: [],
 };
 
-export const PAGE: GitPageShown = { identities: [WORK, PERSONAL, DEPLOY], own: ['gitlab.com'], hosts: ['dev.azure.com', 'github.com', 'gitlab.com'] };
+export const READS: GitLibraryReadShown[] = [
+  { repository: 'engine', library: 412, git: 9, reasons: [{ reason: 'unanswered', count: 7 }, { reason: 'replacements', count: 2 }], last: new Date(Date.now() - 4 * 60_000).toISOString() },
+  { repository: 'archive', library: 0, git: 131, reasons: [{ reason: 'reftable', count: 131 }], last: new Date(Date.now() - 3 * 3_600_000).toISOString() },
+  { repository: 'site', library: 58, git: 0, reasons: [], last: new Date(Date.now() - 26 * 3_600_000).toISOString() },
+];
+
+export const PAGE: GitPageShown = {
+  identities: [WORK, PERSONAL, DEPLOY], own: ['gitlab.com'], hosts: ['dev.azure.com', 'github.com', 'gitlab.com'], reads: READS,
+};
 
 export const EMPTY_PAGE: GitPageShown = { identities: [], own: [], hosts: [] };
 

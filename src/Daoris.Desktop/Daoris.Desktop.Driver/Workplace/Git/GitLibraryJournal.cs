@@ -19,9 +19,9 @@ internal sealed record GitLibraryRow(string Repository, int Library, int Git, IR
 /// so a fault the process's end would lose is not; counts follow at most every few seconds.</para>
 /// <para><b>Machine-local.</b> A repository is its checkout's git directory in the file and its folder's name everywhere it is said.</para>
 /// </remarks>
-internal static class GitLibraryJournal
+public static class GitLibraryJournal
 {
-    /// <summary>The library was asked and declined: a walk's criss-cross base, a revision or a path it leaves to git.</summary>
+    /// <summary>A question the library declined: a walk's criss-cross base, a revision or a path it leaves to git.</summary>
     internal const string Unanswered = "unanswered";
 
     /// <summary>The library threw at its open or in its call: an unreadable pack, a folder another account owns, SHA-256.</summary>
@@ -53,6 +53,17 @@ internal static class GitLibraryJournal
     {
         lock (Gate) return [.. Entries.Values.Select(entry => entry.Row()).OrderByDescending(row => row.Last).ThenBy(row => row.Repository, StringComparer.Ordinal)];
     }
+
+    /// <summary>
+    /// The Git page's listing: each repository by its folder's name with the answers the library gave, the reads that went to git and
+    /// each reason, as an array so no name is a key; never a path.
+    /// </summary>
+    public static object Page() => Read().Select(each => new
+    {
+        each.Repository, each.Library, each.Git,
+        Reasons = each.Reasons.OrderBy(reason => reason.Key, StringComparer.Ordinal).Select(reason => new { Reason = reason.Key, Count = reason.Value }).ToArray(),
+        Last = Moments.Write(each.Last),
+    }).ToArray();
 
     /// <summary>What <paramref name="home"/>'s file holds, as an earlier process kept it; none where it holds none or does not read.</summary>
     internal static IReadOnlyList<GitLibraryRow> Loaded(string home) => [.. Load(home).Values.Select(entry => entry.Row())];
