@@ -99,7 +99,7 @@ public sealed class StartGitCountTests : IDisposable
         var since = new HashSet<string>(StringComparer.Ordinal);
         foreach (var each in before)
         {
-            if (RefSnapshot.MayWrite(each["git ".Length..].Split(' '))) since.Clear();
+            if (GitCommands.Writes(each["git ".Length..].Split(' '))) since.Clear();
             else if (!since.Add(each)) repeated.Add(each);
         }
 

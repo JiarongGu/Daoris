@@ -9,7 +9,7 @@ namespace Daoris.Driver;
 /// </summary>
 /// <remarks>
 /// <para>🔴 <b>Never kept across a write.</b> Every git this flow starts that may move a ref or an upstream
-/// (<see cref="RefSnapshot.MayWrite"/>, the same list the snapshot is dropped by) drops every fact before it starts and
+/// (<see cref="GitCommands.Writes"/>, the same table the snapshot is dropped by) drops every fact before it starts and
 /// after it ends, through <see cref="WorkingTree"/>'s one runner, so what a merge, a replay, a branch made or a worktree removed
 /// changed is asked again. A step that is not git (a plugin pushing) calls <see cref="Dropped"/> itself. A write in a flow beside
 /// this one drops nothing of it, as the snapshot's remark says: the judgement again right before an act is what guards it.</para>
@@ -78,7 +78,7 @@ internal sealed class GitFacts
     /// <summary>What <see cref="WorkingTree"/>'s runner calls around each git it runs: a write drops this flow's facts.</summary>
     internal static void Ran(IReadOnlyList<string> arguments)
     {
-        if (Live is not { } facts || !RefSnapshot.MayWrite(arguments)) return;
+        if (Live is not { } facts || !GitCommands.Writes(arguments)) return;
         facts.Drop();
         // A working tree added, moved or removed changes which folders belong to a repository: the pairs are read again.
         if (Command(arguments) == "worktree") facts.Unpair();

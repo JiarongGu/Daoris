@@ -228,7 +228,7 @@ public sealed class LandGitCountTests : IDisposable
             var command = each.Split("  @ ")[0];
             var arguments = command["git ".Length..].Split(' ');
             var status = arguments[0] == "status";
-            if (RefSnapshot.MayWrite(arguments)) since.Clear();
+            if (GitCommands.Writes(arguments)) since.Clear();
             else if ((GitFacts.Kept(arguments) || status) && !command.Contains("--show-toplevel")
                      && !command.Contains("--git-common-dir") && !command.Contains("origin/HEAD") && !since.Add(status ? each : command))
             {

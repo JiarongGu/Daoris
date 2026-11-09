@@ -34,6 +34,11 @@ internal sealed record GitRunAsk(string Folder, string Repository, GitWait Wait)
 
     /// <summary>The working tree it makes (a <c>worktree add</c>): a removal of that tree waits for it as for a git inside it.</summary>
     public string? Makes { get; init; }
+
+    public string? Input { get; init; }
+
+    /// <summary>The start as <see cref="GitCommands"/> reads it, its input included, which its runner writes and the gate reads.</summary>
+    public GitCommandRead? Command { get; init; }
 }
 
 /// <summary>
