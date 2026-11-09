@@ -59,7 +59,7 @@ export const DEPLOY: GitIdentityShown = {
 };
 
 export const READS: GitLibraryReadShown[] = [
-  { repository: 'engine', library: 412, git: 9, reasons: [{ reason: 'unanswered', count: 7 }, { reason: 'replacements', count: 2 }], last: new Date(Date.now() - 4 * 60_000).toISOString() },
+  { repository: 'engine', library: 412, git: 9, reasons: [{ reason: 'unanswered', count: 7 }, { reason: 'replacements', count: 2 }, { reason: 'native-fault', count: 3 }], last: new Date(Date.now() - 4 * 60_000).toISOString() },
   { repository: 'archive', library: 0, git: 131, reasons: [{ reason: 'reftable', count: 131 }], last: new Date(Date.now() - 3 * 3_600_000).toISOString() },
   { repository: 'site', library: 58, git: 0, reasons: [], last: new Date(Date.now() - 26 * 3_600_000).toISOString() },
 ];

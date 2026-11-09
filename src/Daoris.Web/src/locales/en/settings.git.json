@@ -218,5 +218,6 @@
   "settings.git.reads.reason.configuration": "configuration the library does not read",
   "settings.git.reads.reason.unanswered": "a question the library leaves to git",
   "settings.git.reads.reason.failed": "the library could not read it",
-  "settings.git.reads.reason.native-missing": "the library is not installed"
+  "settings.git.reads.reason.native-missing": "the library is not installed",
+  "settings.git.reads.reason.native-fault": "a process ended inside the library here, so git reads until the package changes"
 }

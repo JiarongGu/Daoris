@@ -2,7 +2,8 @@
 
   <!-- A test's owner (D249), never shipped: a process that starts one command as Daoris starts its own, handed to the one management
        under a purpose, so `OwnedProcessesProcessTests` can kill an owner and find what it started gone with it. It compiles the
-       management and the job by link and references nothing, as the partner's launcher does. -->
+       management, the job and the library's lease file by link and references nothing, as the partner's launcher does; in its `lease` mode
+       it dies inside a lease for `GitLibraryFaultProcessTests`. -->
   <PropertyGroup>
     <OutputType>Exe</OutputType>
     <RootNamespace>Daoris.Desktop.OwnerStandIn</RootNamespace>
@@ -15,6 +16,7 @@
   <ItemGroup>
     <Compile Include="..\Daoris.Desktop.Driver\Platform\OwnedProcesses.cs" Link="OwnedProcesses.cs" />
     <Compile Include="..\Daoris.Desktop.Driver\Platform\ProcessJob.cs" Link="ProcessJob.cs" />
+    <Compile Include="..\Daoris.Desktop.Driver\Workplace\Git\GitLibraryLeases.cs" Link="GitLibraryLeases.cs" />
   </ItemGroup>
 
 </Project>

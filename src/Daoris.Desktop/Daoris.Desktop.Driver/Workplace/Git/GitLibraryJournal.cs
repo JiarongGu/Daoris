@@ -30,6 +30,9 @@ public static class GitLibraryJournal
     /// <summary>No native library lies beside the driver, so every question is git's.</summary>
     internal const string Native = "native-missing";
 
+    /// <summary>A process ended inside a library call here (<see cref="GitLibraryFaults"/>), so git answers while the package is the one that faulted.</summary>
+    internal const string NativeFault = "native-fault";
+
     private static readonly TimeSpan SavedAtMost = TimeSpan.FromSeconds(5);
     private static readonly Lock Gate = new();
     private static readonly Dictionary<string, Entry> Entries = new(StringComparer.OrdinalIgnoreCase);
@@ -41,6 +44,30 @@ public static class GitLibraryJournal
 
     /// <summary>One question for <paramref name="folder"/>'s repository that git answered instead, and why.</summary>
     internal static void Fell(string folder, string reason) => Record(folder, reason);
+
+    /// <summary>Journals that a process ended inside a call over <paramref name="folder"/>'s repository under <paramref name="package"/>, written at once.</summary>
+    internal static void Faulted(string folder, string package)
+    {
+        var key = KeyOf(folder);
+        lock (Gate)
+        {
+            Join(ProgramHome.Named);
+            if (!Entries.TryGetValue(key, out var entry)) Entries[key] = entry = new Entry(NameOf(key));
+            entry.Fault = package;
+            entry.Add(NativeFault);
+            if (s_home is not null) Save(s_home);
+        }
+    }
+
+    /// <summary>The package a process ended inside a call of <paramref name="folder"/>'s repository under; null where none did.</summary>
+    internal static string? FaultOf(string folder)
+    {
+        lock (Gate)
+        {
+            Join(ProgramHome.Named);
+            return Entries.TryGetValue(KeyOf(folder), out var entry) ? entry.Fault : null;
+        }
+    }
 
     /// <summary>What the journal holds for <paramref name="folder"/>'s repository; null where it has asked nothing.</summary>
     internal static GitLibraryRow? Of(string folder)
@@ -113,7 +140,7 @@ public static class GitLibraryJournal
             foreach (var each in list.OfType<JsonObject>())
             {
                 if (each["key"]?.GetValue<string>() is not { Length: > 0 } key) continue;
-                var entry = new Entry(NameOf(key)) { Library = each["library"]?.GetValue<int>() ?? 0 };
+                var entry = new Entry(NameOf(key)) { Library = each["library"]?.GetValue<int>() ?? 0, Fault = each["fault"]?.GetValue<string>() };
                 if (each["reasons"] is JsonObject reasons)
                 {
                     foreach (var (reason, count) in reasons) entry.Reasons[reason] = count?.GetValue<int>() ?? 0;
@@ -139,7 +166,7 @@ public static class GitLibraryJournal
         {
             var reasons = new JsonObject();
             foreach (var (reason, count) in entry.Reasons) reasons[reason] = count;
-            list.Add(new JsonObject { ["key"] = key, ["library"] = entry.Library, ["reasons"] = reasons, ["last"] = entry.Last.ToString("O") });
+            list.Add(new JsonObject { ["key"] = key, ["library"] = entry.Library, ["reasons"] = reasons, ["last"] = entry.Last.ToString("O"), ["fault"] = entry.Fault });
         }
 
         try
@@ -159,6 +186,9 @@ public static class GitLibraryJournal
         internal Dictionary<string, int> Reasons { get; } = new(StringComparer.Ordinal);
 
         internal DateTimeOffset Last { get; set; } = DateTimeOffset.MinValue;
+
+        /// <summary>The package a process ended inside a call of this repository under, or null.</summary>
+        internal string? Fault { get; set; }
 
         /// <summary>Counts one read; true where it is a reason this repository had none of.</summary>
         internal bool Add(string? reason)
@@ -180,6 +210,7 @@ public static class GitLibraryJournal
             Library += kept.Library;
             foreach (var (reason, count) in kept.Reasons) Reasons[reason] = Reasons.GetValueOrDefault(reason) + count;
             if (kept.Last > Last) Last = kept.Last;
+            Fault ??= kept.Fault;
         }
 
         internal GitLibraryRow Row() => new(name, Library, Reasons.Values.Sum(), new Dictionary<string, int>(Reasons), Last);
