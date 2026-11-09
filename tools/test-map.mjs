@@ -1,13 +1,7 @@
 #!/usr/bin/env node
 /**
- * The census of every test unit: its reach and its subject, for every suite (design
- * `docs/2026-10-24-ci-scope-design.md` §3).
- *
- * ## Why
- *
- * A merge is to wait on what it reaches, and that needs one map of what every test can see. The Process census
- * (`tools/process-reach.mjs`) reads it for the .NET Process halves only; the lane table (`REACH` in the merge tool) answers by
- * gate, by hand. This reads it for every suite from the sources, so a hand row becomes a check rather than a rule.
+ * The census of every test unit: its reach and its subject, for every suite (design `docs/2026-10-24-ci-scope-design.md` §3),
+ * read from the sources so the lane table's hand rows (`REACH` in the merge tool) are a check.
  *
  * ## The units
  *
@@ -47,6 +41,7 @@ import { spawnSync } from 'node:child_process';
 import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import { join, posix } from 'node:path';
 import { isMain } from './fsx.mjs';
+import { globToRegExp } from './merge-branch/lanes-file.mjs';
 import { censusOf, halfOf, pathReach } from './process-reach.mjs';
 
 // ---------------------------------------------------------------------------------------------------
@@ -95,41 +90,11 @@ export function treeOf(root, commit = null) {
 // ---------------------------------------------------------------------------------------------------
 // The suites
 
-/** A glob of the lanes file's grammar as a regular expression: `*` within a folder, `**` across, `{a,b}` either, nested. */
 export function globRegExp(glob) {
-  if (!GLOBS.has(glob)) GLOBS.set(glob, new RegExp(`^${globBody(glob)}$`));
+  if (!GLOBS.has(glob)) GLOBS.set(glob, globToRegExp(glob));
   return GLOBS.get(glob);
 }
 const GLOBS = new Map();
-function globBody(glob) {
-  let out = '';
-  for (let i = 0; i < glob.length; i += 1) {
-    const c = glob[i];
-    if (c === '*' && glob[i + 1] === '*') {
-      out += glob[i + 2] === '/' ? '(?:.*/)?' : '.*';
-      i += glob[i + 2] === '/' ? 2 : 1;
-    } else if (c === '*') out += '[^/]*';
-    else if (c === '?') out += '[^/]';
-    else if (c === '{') {
-      let depth = 0;
-      let end = i;
-      const parts = [];
-      let from = i + 1;
-      for (; end < glob.length; end += 1) {
-        if (glob[end] === '{') depth += 1;
-        else if (glob[end] === '}' && --depth === 0) break;
-        else if (glob[end] === ',' && depth === 1) {
-          parts.push(glob.slice(from, end));
-          from = end + 1;
-        }
-      }
-      parts.push(glob.slice(from, end));
-      out += `(?:${parts.map(globBody).join('|')})`;
-      i = end;
-    } else out += c.replace(/[.+^$()|[\]\\]/g, '\\$&');
-  }
-  return out;
-}
 
 /**
  * The TypeScript suites: each gate, the files its runner discovers (its own glob, as its command gives it), what a file must
