@@ -142,7 +142,7 @@ public sealed class SessionDeleteTests : IAsyncLifetime
     {
         var intake = await _sessions.CreateAsync(null, "ask #a1b2c3", "stub", Now, kind: SessionKind.Chat, ask: "a1b2c3");
         await _sessions.SetStateAsync(intake.Id, SessionState.Completed, null, null, null, Now.AddMinutes(1));
-        await _asks.SaveAsync(new Ask("a1b2c3", Workspaces.Default, "Please do it.", AskState.Published, "intake", Now, Now)
+        await _asks.InsertAsync(new Ask("a1b2c3", Workspaces.Default, "Please do it.", AskState.Published, "intake", Now, Now)
         {
             Intake = intake.Id,
         });

@@ -188,7 +188,6 @@ public sealed class ChangeStreamTests : IAsyncLifetime
     /// </summary>
     [Theory]
     [InlineData("asked")]
-    [InlineData("saved again")]
     [InlineData("published")]
     [InlineData("closed")]
     [InlineData("intake")]
@@ -201,15 +200,14 @@ public sealed class ChangeStreamTests : IAsyncLifetime
     [InlineData("deleted")]
     public async Task Every_write_to_an_ask_moves_the_asks_family_alone(string write)
     {
-        if (write != "asked") await _asks.SaveAsync(Asked);
+        if (write != "asked") await _asks.InsertAsync(Asked);
         var since = await Bootstrap();
         var waiting = _stream.WaitAsync(since, Long);
 
         var later = Now.AddMinutes(1);
         await (write switch
         {
-            "asked" => _asks.SaveAsync(Asked),
-            "saved again" => _asks.SaveAsync(Asked with { Updated = later, Note = "Narrowed to the bridge." }),
+            "asked" => _asks.InsertAsync(Asked),
             "published" => _asks.RecordPublishedAsync(Asked.Id, "q1", null, later),
             "closed" => _asks.RecordClosedAsync(Asked.Id, "Not needed now.", later),
             "intake" => _asks.RecordIntakeAsync(Asked.Id, "s1", later),
@@ -235,7 +233,7 @@ public sealed class ChangeStreamTests : IAsyncLifetime
     [Fact]
     public async Task An_older_connector_s_write_to_an_ask_moves_the_asks_family()
     {
-        await _asks.SaveAsync(Asked);
+        await _asks.InsertAsync(Asked);
         var since = await Bootstrap();
         var waiting = _stream.WaitAsync(since, Long);
 
@@ -257,7 +255,7 @@ public sealed class ChangeStreamTests : IAsyncLifetime
     [Fact]
     public async Task A_write_that_changes_no_ask_moves_no_family()
     {
-        await _asks.SaveAsync(Asked);
+        await _asks.InsertAsync(Asked);
         var since = await Bootstrap();
         var seen = _stream.Seen;
         // Held until the observer has seen a commit after every write here, then cancelled.
@@ -477,7 +475,7 @@ public sealed class ChangeStreamTests : IAsyncLifetime
         // What this machine made before: a quest, a session and a message on an ask's channel, all still to go up, and the ask.
         await _quests.PublishAsync("Asker", "Owner", "Do the work", "why", Now);
         await _sessions.CreateAsync(null, "Owner", "stub", Now, kind: SessionKind.Chat);
-        await _asks.SaveAsync(Asked);
+        await _asks.InsertAsync(Asked);
         Assert.True(await _channel.AddAsync(Message("m1", Asked.Id), 10));
 
         var since = await Bootstrap();
@@ -782,7 +780,7 @@ public sealed class ChangeStreamTests : IAsyncLifetime
     [Fact]
     public async Task Every_journalled_ledger_move_wakes_the_journal_beside_its_family_and_a_write_that_is_not_journalled_does_not()
     {
-        await _asks.SaveAsync(Asked);
+        await _asks.InsertAsync(Asked);
         var next = await Bootstrap();
 
         var asking = _stream.WaitAsync(next, Long, journal: true);

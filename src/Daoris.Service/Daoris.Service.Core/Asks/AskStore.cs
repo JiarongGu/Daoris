@@ -207,18 +207,20 @@ public sealed class AskStore
                     $"{Workspaces.Normalize(workspace)}:{sentence.Trim()}" + (again == 0 ? "" : $"#again{again}"))))[..6]
             .ToLowerInvariant();
 
-    /// <summary>Write the ask whole — insert, or replace the row this id already names.</summary>
-    public Task SaveAsync(Ask ask, CancellationToken ct = default) => _db.RunAsync(async () =>
+    /// <summary>
+    /// Keep a new ask. Insert only: false where the id is already an ask, whose row is left as it stands. Two identical asks
+    /// that finish at once are one, and a whole-row write from the later one's stale read would undo what a door did to the first
+    /// (its state, its quests, the intake bound to it); every later change is a door of its own.
+    /// </summary>
+    public Task<bool> InsertAsync(Ask ask, CancellationToken ct = default) => _db.RunAsync<bool>(async () =>
     {
         await using var command = _db.Command();
-        // The review choices are written with a new ask, from its composer, and only appended after: a later save
-        // of the whole record never drops one a door appended meanwhile. The kind and workflow choices likewise.
+        // The review choices are written with a new ask, from its composer, and only appended after. The kind and workflow
+        // choices likewise.
         command.CommandText = """
             INSERT INTO asks (id, workspace, sentence, state, tier, asked, updated, asker, note, links, attachments, proposal, quests, intake, review_choices, workflow_choices, short_title, paths)
             VALUES ($id, $workspace, $sentence, $state, $tier, $asked, $updated, $asker, $note, $links, $attachments, $proposal, $quests, $intake, $reviewChoices, $workflowChoices, $short, $paths)
-            ON CONFLICT (id) DO UPDATE SET
-              state = $state, tier = $tier, updated = $updated, note = $note,
-              links = $links, attachments = $attachments, proposal = $proposal, quests = $quests, intake = $intake
+            ON CONFLICT (id) DO NOTHING
             """;
         command.Parameters.AddWithValue("$reviewChoices", Json(ask.ReviewChoices, (w, choice) =>
         {
@@ -254,7 +256,7 @@ public sealed class AskStore
             w.WriteEndObject();
         }));
         command.Parameters.AddWithValue("$quests", Json(ask.Quests, (w, id) => w.WriteStringValue(id)));
-        await command.ExecuteNonQueryAsync(ct).ConfigureAwait(false);
+        return await command.ExecuteNonQueryAsync(ct).ConfigureAwait(false) > 0;
     }, ct);
 
     /// <summary>

@@ -17,6 +17,7 @@ public sealed class AskDeskTests : IAsyncLifetime
 
     private SqliteConnection _connection = null!;
     private QuestStore _quests = null!;
+    private AskStore _asks = null!;
     private QuestExchange _exchange = null!;
     private AskDesk _desk = null!;
     private QuestFiles _files = null!;
@@ -31,7 +32,7 @@ public sealed class AskDeskTests : IAsyncLifetime
         _connection = new SqliteConnection("Data Source=:memory:");
         await _connection.OpenAsync();
         _quests = await QuestStore.OpenAsync(_connection);
-        var asks = await AskStore.OpenAsync(_connection);
+        var asks = _asks = await AskStore.OpenAsync(_connection);
 
         var store = new InMemoryKnowledgeStore();
         var service = _service = new KnowledgeService(
@@ -236,6 +237,46 @@ public sealed class AskDeskTests : IAsyncLifetime
         Assert.Equal(first.Ask!.Id, second.Ask!.Id);
         Assert.Contains("already asked", second.Message);
         Assert.Single(await _desk.ListAsync("work"));
+    }
+
+    /// <summary>The circle's remotes, which does a thing once the moment the publish asks them: what lands while an ask is still being made.</summary>
+    private sealed class LandingRemotes(Func<Task> landing) : IRemotes
+    {
+        private bool _landed;
+
+        public IRemote? For(string workspace)
+        {
+            if (_landed) return null;
+            _landed = true;
+            landing().GetAwaiter().GetResult();
+            return null;
+        }
+    }
+
+    /// <summary>
+    /// 🔴 Two identical asks that finish at once are one ask: the later one, past its check for a repeat, finds the first kept and
+    /// an intake bound to it, and leaves that row as it stands, answering with what became of it. A whole-row write from the stale read
+    /// would put its state back and unbind the intake. The quest the later one published is the first's too.
+    /// </summary>
+    [Fact]
+    public async Task An_identical_ask_that_finishes_after_the_first_was_taken_up_leaves_it_as_it_stands()
+    {
+        string? id = null;
+        var racing = new AskDesk(
+            _service, _asks,
+            new QuestExchange(_service, _quests, new LandingRemotes(async () =>
+            {
+                id = (await _desk.AskAsync(new AskRequest("work", Sentence), Now)).Ask!.Id;
+                await _asks.RecordIntakeAsync(id, "s1", Now.AddMinutes(1));
+            }), _files),
+            _files);
+
+        var second = await racing.AskAsync(new AskRequest("work", Sentence) { To = "media-api" }, Now.AddMinutes(2));
+
+        Assert.Contains("already asked", second.Message);
+        var kept = (await _asks.FindAsync(id!))!;
+        Assert.Equal((AskState.Published, "s1"), (kept.State, kept.Intake));
+        Assert.NotNull(await _quests.FindAsync(Assert.Single(kept.Quests)));
     }
 
     /// <summary>
