@@ -3,8 +3,8 @@ using System.Security.Cryptography;
 
 namespace Daoris.Driver;
 
-/// <summary>A file's or a folder's stat: its length and write time, and whether it is a link, whose own stat does not move with its target.</summary>
-internal readonly record struct FileStat(long Length, long Written, bool Link)
+/// <summary>A file's or a folder's stat, from the one call that finds it: a reparse point of any kind is a link, whose own stat does not move with its target.</summary>
+internal readonly record struct FileStat(long Length, long Written, bool Link, bool Folder = false)
 {
     /// <summary>The stat of the file or folder at <paramref name="path"/>; null where nothing stands there.</summary>
     internal static FileStat? Of(string path)
@@ -14,7 +14,8 @@ internal readonly record struct FileStat(long Length, long Written, bool Link)
             FileSystemInfo info = new FileInfo(path);
             if (!info.Exists) info = new DirectoryInfo(path);
             if (!info.Exists) return null;
-            return new FileStat(info is FileInfo file ? file.Length : 0, info.LastWriteTimeUtc.Ticks, info.LinkTarget is not null);
+            return new FileStat(
+                info is FileInfo file ? file.Length : 0, info.LastWriteTimeUtc.Ticks, info.Attributes.HasFlag(FileAttributes.ReparsePoint), info is DirectoryInfo);
         }
         catch (Exception error) when (error is IOException or UnauthorizedAccessException or ArgumentException or NotSupportedException)
         {
@@ -33,7 +34,11 @@ internal readonly record struct FileStat(long Length, long Written, bool Link)
 }
 
 /// <summary>What one ask of a file's stamp answered: its stat, its content's SHA-256 (null where absent), and the bytes where this ask read them.</summary>
-internal sealed record FileStamped(string Path, FileStat? Stat, string? Content, byte[]? Bytes);
+internal sealed record FileStamped(string Path, FileStat? Stat, string? Content, byte[]? Bytes)
+{
+    /// <summary>The file stands and did not read: its content is one of its own, equal to nothing.</summary>
+    internal bool Unread { get; init; }
+}
 
 /// <summary>
 /// A file's content by its stat: the bytes hashed again only where the stat moved or is not trusted, so a warm ask is one stat.
@@ -57,7 +62,7 @@ internal static class FileStamp
     internal static FileStamped Of(string path, bool bytes = false)
     {
         var before = FileStat.Of(path);
-        if (before is not { } stat || Directory.Exists(path))
+        if (before is not { } stat || stat.Folder)
         {
             Kept.TryRemove(path, out _);
             return new FileStamped(path, before, null, null);
@@ -74,7 +79,7 @@ internal static class FileStamp
         catch (Exception error) when (error is IOException or UnauthorizedAccessException)
         {
             Kept.TryRemove(path, out _);
-            return new FileStamped(path, stat, "unreadable:" + Guid.NewGuid().ToString("N"), null);
+            return new FileStamped(path, stat, "unreadable:" + Guid.NewGuid().ToString("N"), null) { Unread = true };
         }
 
         var content = Convert.ToHexStringLower(SHA256.HashData(read));

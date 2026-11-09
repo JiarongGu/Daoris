@@ -24,10 +24,10 @@ internal sealed record GitLibraryFormat(string Objects, string Refs)
 internal static class GitLibraryFormats
 {
     private static readonly ConcurrentDictionary<string, (string Stamp, GitLibraryFormat Format)> Known = new(StringComparer.OrdinalIgnoreCase);
-    private static int s_reads;
+    private static readonly ConcurrentDictionary<string, int> Counts = new(StringComparer.OrdinalIgnoreCase);
 
-    /// <summary>How many times a repository's formats have been read from its files in this process.</summary>
-    internal static int Reads => Volatile.Read(ref s_reads);
+    /// <summary>How many times <paramref name="commonDir"/>'s formats have been read from its files in this process; counted for the one repository, so another's reads never move it.</summary>
+    internal static int ReadsOf(string commonDir) => Counts.GetValueOrDefault(commonDir);
 
     /// <summary><paramref name="commonDir"/>'s formats, from the answer kept for its stamp where there is one.</summary>
     internal static GitLibraryFormat Of(string commonDir)
@@ -37,7 +37,7 @@ internal static class GitLibraryFormats
         var info = new FileInfo(config);
         var stamp = info.Exists ? $"{info.Length}:{info.LastWriteTimeUtc.Ticks}:{reftable}" : $"none:{reftable}";
         if (Known.TryGetValue(commonDir, out var kept) && kept.Stamp == stamp) return kept.Format;
-        Interlocked.Increment(ref s_reads);
+        Counts.AddOrUpdate(commonDir, 1, (_, count) => count + 1);
         var format = Read(info.Exists ? File.ReadAllLines(config) : [], reftable);
         Known[commonDir] = (stamp, format);
         return format;

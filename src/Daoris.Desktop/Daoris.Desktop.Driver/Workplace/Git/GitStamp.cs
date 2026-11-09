@@ -7,8 +7,7 @@ namespace Daoris.Driver;
 /// <summary>
 /// The one stamp of what a git answer rests on, for the folder that asks: the git in use, every configuration file git would read there
 /// (present or absent), the replacements, grafts and <c>shallow</c>, and the variables that change an answer. A digest of their contents,
-/// never their write times, so it is the same after a restart where nothing moved and differs where anything did.
-/// </summary>
+/// never their write times, so it is the same after a restart where nothing moved and differs where anything did.</summary>
 /// <remarks>
 /// <para><b>The candidates are git's levels and every include named.</b> The system file (<c>GIT_CONFIG_SYSTEM</c>'s, else the one the git
 /// in use names, asked of it once a git in use; none under <c>GIT_CONFIG_NOSYSTEM</c>), on Windows the <c>ProgramData</c> file before it,
@@ -16,15 +15,11 @@ namespace Daoris.Driver;
 /// and each file an <c>include.path</c> or <c>includeIf.*.path</c> names in a present candidate, resolved as git resolves it and followed
 /// into its own includes. A conditional's inputs are stamped whether it matches now or not: the asking folder for <c>gitdir:</c>, the
 /// tree's <c>HEAD</c> for <c>onbranch:</c>.</para>
-/// <para><b>Each file is a <see cref="FileStamp"/></b>, its bytes hashed again only where its stat moved or is not trusted, so a warm
-/// stamp is stats.</para>
+/// <para><b>Each file is a <see cref="FileStamp"/></b>, so a warm stamp is stats.</para>
 /// <para><b>The context</b> is the asking tree's own part: the repository, the tree's files and the folder where a <c>gitdir:</c>
 /// include stands. Two trees of one repository share a flow memo's answer only where their contexts are equal, so a tree with
-/// <c>core.useReplaceRefs=false</c> in its <c>config.worktree</c> is never answered from another's replaced commit. It starts nothing:
-/// the system file's includes count once its path has been asked.</para>
-/// <para><b>The fence</b> is the stat of every input taken with the stamp, and for an input absent, of its nearest folder; an answer kept
-/// under the stamp is admitted only where the fence read again after git answered is equal and every write time in it is settled
-/// (<see cref="FileStat.SettledAt"/>) on its volume's clock.</para>
+/// <c>core.useReplaceRefs=false</c> in its <c>config.worktree</c> is never answered from another's replaced commit. It starts nothing.</para>
+/// <para><b>The fence</b> (<see cref="StatFence"/>) holds every input's stat, taken with the stamp.</para>
 /// </remarks>
 internal sealed class GitStamp
 {
@@ -39,9 +34,9 @@ internal sealed class GitStamp
     // The system file each git in use names, by its file and write time: asked once, since a git names one place for its life.
     private static readonly ConcurrentDictionary<string, string> SystemFiles = new(StringComparer.Ordinal);
 
-    private readonly IReadOnlyList<(string Path, FileStat? Stat)> _fence;
+    private readonly StatFence _fence;
 
-    private GitStamp(string digest, string context, IReadOnlyList<string> files, IReadOnlyList<(string Path, FileStat? Stat)> fence, bool settled)
+    private GitStamp(string digest, string context, IReadOnlyList<string> files, StatFence fence, bool settled)
     {
         Digest = digest;
         Context = context;
@@ -63,7 +58,7 @@ internal sealed class GitStamp
     public bool Settled { get; }
 
     /// <summary>Whether the fence read again now is the settled one taken with the stamp: an answer read between the two may be kept.</summary>
-    public bool Holds() => Settled && _fence.All(each => FileStat.Of(each.Path) == each.Stat);
+    public bool Holds() => Settled && _fence.Holds();
 
     /// <summary>
     /// The stamp of <paramref name="folder"/>; null where it is no repository's top. The system file's path is asked of the git in use the
@@ -133,7 +128,7 @@ internal sealed class GitStamp
             walk.Line("git", git, tree: false);
             foreach (var name in Variables.Concat(Counted(variable))) if (variable(name) is { } value) walk.Line("variable", $"{name}={value}", tree: false);
             var (packed, refs) = GitPackedRefs.Of(common);
-            walk.Fenced(packed.Path);
+            walk.Fence.Add(packed.Path);
             foreach (var line in refs.Replacements) walk.Line("packed-replace", line, tree: false);
             walk.Folder("replace", Path.Combine(common, "refs", "replace"));
             walk.File("grafts", Path.Combine(common, "info", "grafts"), tree: false);
@@ -143,7 +138,7 @@ internal sealed class GitStamp
 
         var context = $"{GitFacts.Folder(common)}\n{walk.TreeText}";
         var digest = Convert.ToHexStringLower(SHA256.HashData(Encoding.UTF8.GetBytes($"{context}\n{walk.SharedText}")));
-        return new GitStamp(digest, context, walk.Files, walk.Fence, hashShared && walk.SettledFence());
+        return new GitStamp(digest, context, walk.Files, walk.Fence, hashShared && walk.Fence.Settled());
     }
 
     private static IEnumerable<string> Counted(Func<string, string?> variable)
@@ -163,7 +158,6 @@ internal sealed class GitStamp
         private readonly StringBuilder _shared = new();
         private readonly HashSet<string> _seen = new(OperatingSystem.IsWindows() ? StringComparer.OrdinalIgnoreCase : StringComparer.Ordinal);
         private readonly List<string> _files = [];
-        private readonly List<(string Path, FileStat? Stat)> _fence = [];
 
         public bool OnBranch { get; private set; }
 
@@ -175,7 +169,7 @@ internal sealed class GitStamp
 
         public IReadOnlyList<string> Files => _files;
 
-        public IReadOnlyList<(string Path, FileStat? Stat)> Fence => _fence;
+        public StatFence Fence { get; } = new();
 
         /// <summary>A configuration file and, where it is present, each file it includes, to git's depth.</summary>
         public void Config(string role, string path, bool tree, int depth = 0)
@@ -216,15 +210,10 @@ internal sealed class GitStamp
         public void Folder(string role, string path)
         {
             var full = Path.GetFullPath(path);
-            if (!Directory.Exists(full))
-            {
-                Fenced(full);
-                return;
-            }
-
             try
             {
-                foreach (var folder in Directory.EnumerateDirectories(full, "*", SearchOption.AllDirectories).Prepend(full).Order(StringComparer.Ordinal)) Fenced(folder);
+                Fence.AddFolders(full);
+                if (!Directory.Exists(full)) return;
                 foreach (var file in Directory.EnumerateFiles(full, "*", SearchOption.AllDirectories).Order(StringComparer.Ordinal)) Note(role, file, FileStamp.Of(file), tree: false);
             }
             catch (Exception error) when (error is IOException or UnauthorizedAccessException)
@@ -235,40 +224,11 @@ internal sealed class GitStamp
 
         public void Line(string role, string text, bool tree) => (tree ? _tree : _shared).Append(role).Append('\t').Append(text).Append('\n');
 
-        /// <summary>The stat of <paramref name="path"/> in the fence, or of its nearest folder where it is absent.</summary>
-        public void Fenced(string path)
-        {
-            for (var at = path; at is { Length: > 0 }; at = Path.GetDirectoryName(at))
-            {
-                if (FileStat.Of(at) is { } stat)
-                {
-                    _fence.Add((at, stat));
-                    return;
-                }
-            }
-
-            _fence.Add((path, null));
-        }
-
-        public bool SettledFence()
-        {
-            var clocks = new Dictionary<string, DateTime?>(StringComparer.OrdinalIgnoreCase);
-            foreach (var (path, stat) in _fence)
-            {
-                if (stat is not { } held) continue;
-                var root = Path.GetPathRoot(path) ?? "";
-                if (!clocks.TryGetValue(root, out var now)) clocks[root] = now = VolumeClock.Now(path);
-                if (!held.SettledAt(now)) return false;
-            }
-
-            return true;
-        }
-
         // A tree's own file is said by its role alone, so two trees whose files hold the same bytes share a context; any other by its path.
         private void Note(string role, string path, FileStamped stamp, bool tree)
         {
             Line(role, $"{(tree && role != "include" ? "" : path)}\t{stamp.Content ?? "-"}", tree);
-            Fenced(path);
+            Fence.Add(path);
         }
 
         private string? Resolve(string named, string including)

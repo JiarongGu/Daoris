@@ -69,7 +69,7 @@ public sealed class RegistryModule(IEventBus events, PickFolder pickFolder) : Mo
 
     private static object Inspect(string path)
     {
-        var manifest = Path.Combine(path, "daoris.json");
+        var manifest = Path.Combine(path, DeclarationNames.Manifest);
         var exists = Directory.Exists(path);
         var declaration = exists && File.Exists(manifest) ? ReadDeclaration(manifest) : null;
 
@@ -110,7 +110,7 @@ public sealed class RegistryModule(IEventBus events, PickFolder pickFolder) : Mo
     /// </remarks>
     private static void WriteDeclaration(string path, JsonElement? payload)
     {
-        var manifest = Path.Combine(path, "daoris.json");
+        var manifest = Path.Combine(path, DeclarationNames.Manifest);
         if (!File.Exists(manifest))
         {
             // Adoption is the repository's own agent's job (`daoris init`, then the collision review).

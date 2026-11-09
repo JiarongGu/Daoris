@@ -7,7 +7,7 @@ namespace Daoris.Driver;
 /// </summary>
 /// <remarks>
 /// <para><b>Refused here, every question:</b> a folder that names no git directory; a format the library cannot read
-/// (<see cref="GitLibraryFormats"/>); and a replacement that can be in force (<see cref="GitReplacements"/>), which libgit2 does not read.</para>
+/// (<see cref="GitLibraryFormats"/>); a replacement that can be in force (<see cref="GitReplacements"/>), which libgit2 does not read; and a pack rewrite under way (<see cref="GitLibraryHousekeeping"/>).</para>
 /// <para><b>Refused by question:</b> for the refs, a branch or remote section in a global file git is handed; for the names, a
 /// <c>diff.orderFile</c> or <c>diff.relative</c> in the repository's, the tree's or that file, which the library would not see.
 /// Grafts and a shallow boundary it reads as git does.</para>
@@ -24,6 +24,7 @@ internal static class GitLibraryAdmission
     internal const string RefFormat = "ref-format";
     internal const string Replacements = "replacements";
     internal const string Configuration = "configuration";
+    internal const string Housekeeping = "housekeeping";
 
     /// <summary>Why <paramref name="question"/> in <paramref name="folder"/> is git's; null where the library may answer it.</summary>
     internal static string? RefusalOf(string folder, GitLibraryQuestion question)
@@ -33,6 +34,7 @@ internal static class GitLibraryAdmission
         {
             if (FormatRefusal(GitLibraryFormats.Of(common)) is { } format) return format;
             if (GitReplacements.CanBeInForce(common)) return Replacements;
+            if (GitLibraryHousekeeping.Running(common)) return Housekeeping;
             return question switch
             {
                 GitLibraryQuestion.Refs => ProgramHome.Named is { } home && Handed(home).Any(text => Names(text, "[branch", "[remote")) ? Configuration : null,

@@ -21,9 +21,6 @@ namespace Daoris.Driver;
 /// </remarks>
 internal static class BacklogMerge
 {
-    /// <summary>The manifest that declares the backlog, at the repository's root.</summary>
-    internal const string Manifest = "daoris.json";
-
     /// <summary>The backlog where the manifest names none, or where there is no manifest.</summary>
     internal const string Default = "TASKS.md";
 
@@ -243,7 +240,7 @@ internal static class BacklogMerge
     /// </summary>
     internal static async Task<string?> DeclaredAsync(string place, string source, CancellationToken ct)
     {
-        var (listed, entry, _) = await WorkingTree.GitAsync(place, ["ls-tree", "-z", source, "--", Manifest], ct).ConfigureAwait(false);
+        var (listed, entry, _) = await WorkingTree.GitAsync(place, ["ls-tree", "-z", source, "--", DeclarationNames.Manifest], ct).ConfigureAwait(false);
         if (listed != 0) return null;
         var line = entry.TrimEnd('\0');
         if (line.Length == 0) return PathOf(null);
@@ -261,7 +258,7 @@ internal static class BacklogMerge
     internal static async Task<Declared> DeclaredTablesAsync(string place, string source, CancellationToken ct)
     {
         var backlog = await DeclaredAsync(place, source, ct).ConfigureAwait(false);
-        var (found, sha, _) = await WorkingTree.GitAsync(place, ["rev-parse", "--verify", "--quiet", $"{source}:{GeneratedWriters.DeclarationFile}"], ct)
+        var (found, sha, _) = await WorkingTree.GitAsync(place, ["rev-parse", "--verify", "--quiet", $"{source}:{DeclarationNames.Gates}"], ct)
             .ConfigureAwait(false);
         if (found != 0) return new Declared(backlog, []);
         var text = await GitObjectReads.TextAsync(place, sha.Trim(), ct).ConfigureAwait(false);

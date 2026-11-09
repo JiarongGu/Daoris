@@ -19,9 +19,6 @@ namespace Daoris.Driver;
 /// </remarks>
 public static class WorkflowStore
 {
-    /// <summary>The folder under the home that holds the workflows.</summary>
-    public const string Folder = "workflows";
-
     /// <summary>The folder of a home's workflows.</summary>
     public static string FolderOf(string home) => DaorisHome.Entry(home, HomeEntry.Workflows);
 

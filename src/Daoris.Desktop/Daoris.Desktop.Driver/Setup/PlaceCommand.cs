@@ -261,7 +261,7 @@ public static class PlaceCommand
             }
 
             if (declaration.Blob == WorkflowSelection.NoGates && declaration.Acceptances.Count == 0) continue;
-            declarations.Add($"`{row.Repository}`: `{LandedGates.File}` at `{declaration.Line}` `{TextBounds.ShortCommit(declaration.Commit, 12)}`, "
+            declarations.Add($"`{row.Repository}`: `{DeclarationNames.Gates}` at `{declaration.Line}` `{TextBounds.ShortCommit(declaration.Commit, 12)}`, "
                 + (declaration.Blob == WorkflowSelection.NoGates ? "none held there" : $"blob `{TextBounds.ShortCommit(declaration.Blob, 12)}`"));
             declarations.AddRange(declaration.Acceptances.Select(acceptance => $"  {acceptance.Said} It is {acceptance.Standing} now."));
             if (declaration.Text is { } text) declarations.AddRange(text.TrimEnd().ReplaceLineEndings("\n").Split('\n').Select(line => $"    {line}"));

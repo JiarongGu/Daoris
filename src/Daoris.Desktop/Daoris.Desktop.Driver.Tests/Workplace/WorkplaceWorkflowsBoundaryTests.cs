@@ -124,7 +124,7 @@ public sealed class WorkplaceWorkflowsBoundaryTests : IDisposable
     [Fact]
     public async Task The_landed_declaration_is_one_name_at_the_top_and_a_blob_is_read_only_as_git_writes_one()
     {
-        Assert.Equal("daoris.gates.json", LandedGates.File);
+        Assert.Equal("daoris.gates.json", DeclarationNames.Gates);
         Assert.Equal("generated", GeneratedWriters.Key);
 
         // Neither reaches git: none is no blob, and a name that is not a whole blob id is not one.

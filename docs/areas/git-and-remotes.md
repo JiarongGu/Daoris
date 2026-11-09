@@ -292,7 +292,19 @@ commit's fields and a compare's commits under the asker's stamp, admitted only w
 one's nearest folder) read again after git answered is unchanged and settled; a commit's changes, a compare's, a file's history and
 a blame are asked at every ask, in the asking tree under its attributes. `GitReplacements.CanBeInForce` (a loose or packed
 replacement, `GIT_REPLACE_REF_BASE`, or reftable refs) is the library's admission's one judgement of a replacement, reading the
-`packed-refs` parse the stamp reads (`GitPackedRefs`, made once a content). The flow memos share an answer between two folders of one
+`packed-refs` parse the stamp reads (`GitPackedRefs`, made once a content). The declarations' store, `RepositoryDeclarations`
+(`Workplace/Declarations/`), answers a declaration present, absent or unread: a checkout's or a home's file by its `FileStamp`, its
+bytes by their `ContentKey`; a file at a commit id from the commit's listing, one `cat-file --batch` start asked the commit, its tree
+and each folder on the way, kept by id only where each object's bytes hash to it (`GitObjectHash`), and its blob kept under its
+`BlobId` only where its bytes hash to it; a blob asked by id answered only by bytes that hash to it, else *unread: replaced*; a
+commit's tracked list kept by commit under the replacement gate's `StatFence`. While `CanBeInForce` holds it asks git by path and
+admits nothing. A `DeclarationVersion` is compared by `Same` alone, an *unread* the same as none and without text; a kind's parse
+(`IDeclarationKind`, the rule file's `RuleFileKind`) and a view (`IDeclarationView`) are kept by the content keys they are made from, a
+parse naming a problem made again at each ask, and contents, tracked lists and indexes are each bounded alone (`DeclarationBound`:
+16, 24 and 4 MB). `TipOf` reads a full ref from its loose file or the `packed-refs` parse, a symbolic ref followed to five, a
+reftable's from git; `GitTreeReads` is the door for path-bearing reads, its search git's with the declarations excluded and their
+lines from the store's bytes; `DeclarationScope` says whether the store or the door asked a start. Every declaration's name is a
+read-only field of `DeclarationNames`, never a constant. The flow memos share an answer between two folders of one
 repository only where the stamp's context is one (`GitStamp.ContextOf`: the common directory, the asking tree's `config.worktree` by
 its bytes, and the folder itself where a `gitdir:` include stands), so `GitFacts.SameRepository`, `RefSnapshot.TreeHeld`,
 `ListedFor` and `GitReadOnce`'s listings never answer a tree with replacements off from one with them on. A git whose kill it outlived leaves the four for a count apart
@@ -394,14 +406,17 @@ zero between calls, `GitLibrary.AtOnce`), libgit2's
 global, XDG, system and program-data search paths pointed at a folder holding no file. `GitLibraryRefs` prints `for-each-ref`'s
 lines: sorted as bytes, a broken symbolic ref left out, the upstream from the common directory's `branch.` and `remote.` keys through
 the remote's first matching fetch refspec, shortened by git's strict rule. `GitLibraryAdmission` refuses, from the repository's own
-files at each question and by its class (`GitLibraryQuestion`), a folder with no git directory, a format the library cannot read and any
-replacement (loose, packed or `GIT_REPLACE_REF_BASE`) for every question, a branch or remote section in a global file git is handed for the refs, and a
+files at each question and by its class (`GitLibraryQuestion`), a folder with no git directory, a format the library cannot read, any
+replacement (loose, packed or `GIT_REPLACE_REF_BASE`) and a rewrite of the packs, the multi-pack index or the commit graph under way
+(`GitLibraryHousekeeping`: `gc.pid`, a `.tmp-` file or a `.lock` in `objects/pack`, a `.lock` in `objects/info` or `objects/info/commit-graphs`, none older
+than twelve hours; reason `housekeeping`) for every question, a branch or remote section in a global file git is handed for the refs, and a
 `diff.orderFile` or `diff.relative` in the repository's, the tree's or that global file for the names; libgit2 refuses an
 extension it does not know and another owner's folder at its open; an object a call needs that is missing refuses the call. Grafts,
 a shallow boundary (before and after a deepen), a split and a sparse index the library reads as git does. A refused question, and
 every one under a test's stand-in runner, is git's. The formats come from `GitLibraryFormats`, the `git.read.formats` probe: a repository's
 `extensions.objectformat` and `extensions.refstorage` (and a `reftable` folder) read from its own configuration with no git started, kept
-for that file's length and write time, so a converted repository is read again at its next question and an unchanged one never; only
+for that file's length and write time, so a converted repository is read again at its next question and an unchanged one never (its reads are
+counted for each common directory, `ReadsOf`, so a test asserts its own repository's reads and no neighbour class moves them); only
 SHA-1 objects in files refs are the library's, and each other format is refused by its own word (`sha256`, `reftable`, `object-format`,
 `ref-format`) before the library is opened. `GitLibraryJournal` keeps, per repository in `run/git/library.json`, each reason a question
 went to git (every admission refusal, an unreadable repository, a failed call, a call the library declined) with its count, and the
@@ -429,7 +444,10 @@ fetches the pin into the repository's own `_fixtures/` (`PinnedMinGit`) and puts
 fixtures' are both that git (`GitLibraryEndsTests` fails a leg that ran another). Where the pin cannot be had (no pin for the platform, a
 fetch that fails) every `[GitLegFact]` of the leg is skipped with that reason and never run on another git. `GitLibraryHoldTests` holds the call's hold on
 Windows: `repack -ad`, `gc --prune=now`, `commit-graph write` and `multi-pack-index write` under library reads every ten milliseconds
-exit 0, leave no old pack and never ask the `GIT_ASK_YESNO` stand-in, which is first seen asked where a pack is held open. The
+exit 0, leave no old pack and never ask the `GIT_ASK_YESNO` stand-in, which is first seen asked where a pack is held open; it counts no
+reads over a loaded minute (that is the machine's) and holds that one read was answered before git began and one ran beside each command.
+Windows refuses git's rename of a pack over one the library has mapped however it is shared, and `gc` after `repack -a` builds the pack
+of the same name, so `GitLibraryHousekeeping` (`GitLibraryHousekeepingTests`) sends the questions asked while git writes to git (D252). The
 `win-x64` publish lays the native `git2-*.dll` beside the driver, and the deployment rehearsal asks for it (`driverProblems`).
 
 A start's cost, and LibGit2Sharp beside it, measured on 2026-11-09 by `tools/git-library-bench`, which no product project references:

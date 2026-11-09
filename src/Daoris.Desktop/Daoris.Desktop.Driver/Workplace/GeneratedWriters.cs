@@ -25,9 +25,6 @@ internal static class GeneratedWriters
     /// <summary>The declaration's key in <c>daoris.gates.json</c>.</summary>
     internal const string Key = "generated";
 
-    /// <summary>The declaration's name at a repository's top.</summary>
-    internal const string DeclarationFile = "daoris.gates.json";
-
     /// <summary>One declared writer: the folder it writes, relative to the repository's top with no trailing slash, and its command line.</summary>
     internal sealed record Writer(string Folder, string Run)
     {
@@ -52,7 +49,7 @@ internal static class GeneratedWriters
         var landed = WorkplaceWorkflows.Current.AcceptedGates(config, repository, workspace);
         var integration = IntegrationAcceptance.Of(config, repository);
         if (landed is null && integration is null) return [];
-        var (found, sha, _) = await WorkingTree.GitAsync(root, ["rev-parse", "--verify", "--quiet", $"{onto}:{DeclarationFile}"], ct)
+        var (found, sha, _) = await WorkingTree.GitAsync(root, ["rev-parse", "--verify", "--quiet", $"{onto}:{DeclarationNames.Gates}"], ct)
             .ConfigureAwait(false);
         var blob = sha.Trim();
         if (found != 0 || (blob != landed && blob != integration)) return [];
