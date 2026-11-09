@@ -254,26 +254,21 @@ internal static class QuestSchema
         // brings every one of them back as history. The column that marked them goes with them.
         if (await SchemaColumns.HasAsync(db, "quests", "home", ct).ConfigureAwait(false))
         {
-            await using var drop = db.Command();
-            drop.CommandText = """
+            await SchemaColumns.ApplyAsync(db, """
                 DELETE FROM quests WHERE home IS NOT NULL;
                 ALTER TABLE quests DROP COLUMN home;
-                """;
-            await drop.ExecuteNonQueryAsync(ct).ConfigureAwait(false);
+                """, ct).ConfigureAwait(false);
         }
 
-        // A store from before the mark starts it at the highest sequence its own machine holds in the log, which
-        // is what every number so far is one past. Nothing changes for a store that never removed anything; one that
-        // removes rows after the upgrade cannot take the sequence back.
+        // A store from before the mark starts it at the highest sequence its own machine holds in the log, which every
+        // number so far is one past, so a removal after the upgrade cannot take the sequence back.
         if (!await SchemaColumns.HasAsync(db, "quest_machine", "sequence", ct).ConfigureAwait(false))
         {
-            await using var mark = db.Command();
-            mark.CommandText = """
+            await SchemaColumns.ApplyAsync(db, """
                 ALTER TABLE quest_machine ADD COLUMN sequence INTEGER NOT NULL DEFAULT 0;
                 UPDATE quest_machine SET sequence =
                   (SELECT COALESCE(MAX(sequence), 0) FROM quest_log WHERE machine = quest_machine.id);
-                """;
-            await mark.ExecuteNonQueryAsync(ct).ConfigureAwait(false);
+                """, ct).ConfigureAwait(false);
         }
 
         // After the column, which it names. The mark is moved by the statement that writes the operation, not by its

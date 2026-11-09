@@ -441,6 +441,8 @@ import {
   laneSchedule, rootScripts, reuseBuild, slug, readPlan, declaredIn, gatePlan, isStageRehearsal, isGitHalf, dotnetComponent,
 } from './merge-branch/plan.mjs';
 import { REACH } from './merge-branch/reach-table.mjs';
+import { holdingLock, putComplete } from './merge-branch/locks.mjs';
+import { diffPaths, isInside, zPaths } from './merge-branch/paths.mjs';
 export { USAGE, Refusal, parseArgs } from './merge-branch/args.mjs';
 export {
   isProcessGate, isLongGate, isProcessLane, isGitHalf, BESIDE_GIT_HALF, runsBesideGitHalf, STAGE_REHEARSALS, isStageRehearsal, isHeavyGate,
@@ -952,11 +954,10 @@ function refreshKnowledgeServer(root) {
 // A fixed gate re-runs alone
 
 /**
- * What `--rerun` runs and keeps, in the plan's order: each named gate, each chosen gate with no verdict yet
- * (one a failure stopped, or one a fix's paths now reach), and each chosen gate whose verdict a path changed
- * since reaches (`stale` maps it to those paths, none when its tree cannot be compared); every other
- * chosen gate's verdict is kept. `fresh` is the gates run for want of a verdict, and `stale` the ones run
- * again for a changed path, each with the verdict it no longer keeps.
+ * What `--rerun` runs and keeps, in the plan's order: each named gate, each chosen gate with no verdict yet, and each chosen
+ * gate whose verdict a changed path reaches (`stale` maps it to those paths, none when its tree cannot be compared); every other
+ * chosen gate's verdict is kept. `fresh` is the gates run for want of a verdict, `stale` the ones run again, each with the
+ * verdict it no longer keeps.
  */
 export function rerunPlan(plan, chosen, results, named, stale = {}) {
   const isStale = (name) => Object.hasOwn(stale, name);
@@ -978,10 +979,9 @@ const nowIso = () => new Date().toISOString().replace(/\.\d+Z$/, 'Z');
 // The verdicts record: which gate passed which tree
 
 /**
- * The checkout whose verdict store a run in `root` reads and writes: the repository's main checkout, the first
- * worktree git lists, whichever worktree the run is in (the gate tree's own run among them), or `root` itself where git
- * cannot say or the repository is bare. Verdicts are keyed by tree, so one store serves every worktree: a stage asked in
- * the gate tree and `--passed` in the main checkout read the same verdicts, each judging its own tree.
+ * The checkout whose verdict store a run in `root` reads and writes: the first worktree git lists (the main checkout),
+ * whichever worktree the run is in, or `root` itself where git cannot say or the repository is bare. Verdicts are keyed by
+ * tree, so one store serves every worktree, each judging its own tree.
  */
 const homes = new Map();
 export function verdictsHome(root) {
@@ -991,39 +991,6 @@ export function verdictsHome(root) {
     homes.set(root, first && first.path && !first.bare ? resolve(first.path) : root);
   }
   return homes.get(root);
-}
-
-/**
- * `fn` run holding a lock beside `file`, so two runs writing one store (a merge's and a full set's beside it)
- * never write over each other's verdict. A write takes milliseconds, so a lock older than `staleMs` is left by a run
- * that died, and one still held after `waitMs` is taken: a lost verdict is better than a run that never ends.
- */
-function holdingLock(file, fn, { waitMs = 10_000, staleMs = 30_000 } = {}) {
-  const lock = `${file}.lock`;
-  mkdirSync(dirname(lock), { recursive: true });
-  const started = Date.now();
-  let fd = null;
-  while (fd === null) {
-    try {
-      fd = openSync(lock, 'wx');
-    } catch (error) {
-      if (error?.code !== 'EEXIST') throw error;
-      let age = 0;
-      try {
-        age = Date.now() - statSync(lock).mtimeMs;
-      } catch {
-        continue;
-      }
-      if (age > staleMs || Date.now() - started > waitMs) rmSync(lock, { force: true });
-      else Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, 20);
-    }
-  }
-  try {
-    return fn();
-  } finally {
-    closeSync(fd);
-    rmSync(lock, { force: true });
-  }
 }
 
 /** `local/gate-verdicts.json`, or an empty record where there is none or it does not read. */
@@ -1039,9 +1006,8 @@ export function readVerdicts(root) {
 }
 
 /**
- * How many verdicts the store keeps of each gate, apart for the scoped run's (`kind` `scoped`) and every
- * other kind's, so a working day of scoped verdicts never evicts a night's or a stage's. Round 2 kept the newest 400 overall,
- * which the busiest gates' verdicts alone would fill.
+ * How many verdicts the store keeps of each gate, apart for the scoped run's (`kind` `scoped`) and every other kind's, so a
+ * working day of scoped verdicts never evicts a night's or a stage's.
  */
 export const VERDICTS_KEPT_PER_GATE = 40;
 
@@ -1131,19 +1097,16 @@ export function contentTree(root) {
 }
 
 /** The paths that differ between two trees, or null when git cannot say (a tree long gone). */
-function treeDrift(root, from, to) {
+export function treeDrift(root, from, to) {
   if (!from || !to) return null;
   if (from === to) return [];
-  const diff = git(root, ['--no-optional-locks', 'diff', '--name-only', '--no-renames', from, to], { allowFail: true });
-  return diff.status === 0 ? lines(diff.out) : null;
+  return diffPaths(git, root, [from, to], { allowFail: true });
 }
 
 /**
- * The known records the parent writes after gates, when declared in the steward's lane or as union.
- * Neither declaration may make gate policy or source a record: both come from the current checkout,
- * so trusting their patterns alone would let an edit forgive itself and untested code. A union pattern
- * names the record at the root here, where git reads a pattern with no slash at any depth: the canon's
- * own `CHANGELOG.md` merges by union too, and the package ships it.
+ * The known records the parent writes after gates, when declared in the steward's lane or as union. Neither declaration may
+ * make gate policy or source a record: both come from the current checkout, so trusting their patterns alone would let an edit
+ * forgive itself and untested code. A union pattern names the record at the root here, where git reads one with no slash at any depth.
  */
 export function recordMatcher({ lanes = [], union = [] } = {}) {
   const steward = lanes.find((lane) => lane.steward);
@@ -1155,9 +1118,8 @@ export function recordMatcher({ lanes = [], union = [] } = {}) {
 }
 
 /**
- * What a verdict is judged by against the checkout's `tree`: the paths another tree differs from it by, asked
- * of git once per tree; which of them are the records; which reach a gate, by the lane table and this repository's
- * lanes. `--passed` and `--rerun` judge by the same.
+ * What a verdict is judged by against the checkout's `tree`: the paths another tree differs by (asked of git once per
+ * tree), which of them are the records, and which reach a gate by the lane table and the lanes. `--passed` and `--rerun` judge by the same.
  */
 function standingFor(root, tree) {
   const lanes = readLanes(root)?.lanes ?? [];
@@ -3483,8 +3445,8 @@ function clearLogs(dir) {
 /** A lane's row label: its id, then its title, so a lane reads as a dispatch prompt names it. */
 const laneLabel = (lane) => `${pad(lane.id, 14)}${lane.title}`;
 
-function laneReport(root, branch) {
-  const changed = lines(git(root, ['--no-optional-locks', 'diff', '--name-only', `HEAD...${branch}`]).out);
+export function laneReport(root, branch) {
+  const changed = branchChanges(root, branch);
   const map = readLanes(root);
   const out = [`lanes: ${branch} changes ${count(changed.length, 'file')}`];
   if (!map || map.lanes.length === 0) {
@@ -3514,9 +3476,6 @@ function planLines(plan) {
 // ---------------------------------------------------------------------------------------------------
 // The verbs
 
-/** Paths from a `-z` listing: git quotes nothing there, so a name with any character comes back whole. */
-const zPaths = (text) => text.split('\0').map((path) => path.trim()).filter(Boolean);
-
 /** What the merge in place changes on main: tracked paths against HEAD, the parent's fixes included, and new files. */
 function mergeChanges(root) {
   const tracked = zPaths(git(root, ['--no-optional-locks', 'diff', '-z', '--name-only', '--no-renames', 'HEAD']).out);
@@ -3525,7 +3484,7 @@ function mergeChanges(root) {
 }
 
 /** What a branch changes since it left main: a plan's question, asked before anything is merged. */
-const branchChanges = (root, branch) => zPaths(git(root, ['--no-optional-locks', 'diff', '-z', '--name-only', '--no-renames', `HEAD...${branch}`]).out);
+const branchChanges = (root, branch) => diffPaths(git, root, [`HEAD...${branch}`]);
 
 /**
  * The gates the merge in place runs, and every gate of the plan with why it runs or is skipped. Checks and
@@ -4197,10 +4156,8 @@ export function pidAlive(pid) {
 }
 
 /**
- * The lock a full set beside the merges holds (`GATE_TREE_LOCK`, in the main checkout): its pid, the commit it gates,
- * since when, whether that process still runs, and its `holder`: `full` (a full set beside, and a lock written
- * before holders were named), `ci` (a CI run) or `stage` (`publish:desktop --from-gated`, through its build). Null when none
- * is held. A lock that does not read is no run's.
+ * The lock a full set beside the merges holds (`GATE_TREE_LOCK`, in the main checkout): its pid, the commit it gates, since when, whether
+ * that process still runs, and its `holder` (`full`, also where none is named; `ci`; `stage`, a build of `publish:desktop --from-gated`). Null when none is held.
  */
 export function readGateLock(home, alive = pidAlive) {
   let held;
@@ -4224,41 +4181,30 @@ function holderSaid(held) {
 }
 
 /**
- * The lock taken for `commit`, created only where none is (`wx`), or a refusal naming the run that holds it: one full
+ * The lock taken for `commit`, put in place complete where none is (`putComplete`), or a refusal naming the run that holds it: one full
  * set beside the merges at a time, since two would load the machine twice over and share one gate tree. A lock whose
  * process no longer runs (its window closed on it) is taken over, and returned as `stale` for the caller to say, with
- * `ended`: the pids `end` ended, the dead pid's direct children started since the lock's `at`
- * with their trees, and the processes since then naming the gate tree's folder whose parent no longer
- * runs. Only Windows ends any: elsewhere both are no-ops. `holder` names the run (`full` or `ci`); a refusal is `busy`,
- * which the CI watch reads as a tree to wait for, never a failure.
+ * `ended`: the pids `end` ended, the dead pid's direct children started since the lock's `at` with their trees, and the
+ * processes since then naming the gate tree's folder whose parent no longer runs (Windows only). `holder` names the run
+ * (`full` or `ci`); a refusal is `busy`, which the CI watch reads as a tree to wait for, never a failure.
  */
 export function takeGateLock(home, { commit, holder = 'full', alive = pidAlive, now = nowIso, end = endOrphans, endStrays = endStranded } = {}) {
   const file = join(home, GATE_TREE_LOCK);
   mkdirSync(dirname(file), { recursive: true });
   let stale = null;
   for (let attempt = 0; attempt < 3; attempt += 1) {
-    let fd;
-    try {
-      fd = openSync(file, 'wx');
-    } catch (error) {
-      if (error?.code !== 'EEXIST') throw error;
+    if (!putComplete(file, `${JSON.stringify({ pid: process.pid, commit, at: now(), holder })}\n`)) {
       const held = readGateLock(home, alive);
       if (held?.running) throw Object.assign(new Refusal(holderSaid(held)), { busy: true });
       if (held) {
-        // A run killed outright left its steps' tree running; end what its pid started since the lock's `at`.
+        // A run killed outright left its steps' tree running: end what its pid started since the lock's `at`, and the orphans found by the gate tree's folder.
         const since = Date.parse(held.at);
-        // And what its shells' orphans still run, found by the gate tree's folder in their command line.
         const ended = Number.isNaN(since) ? [] : end(held.pid, since);
         if (!Number.isNaN(since)) ended.push(...endStrays(join(home, GATE_TREE), since).filter((pid) => !ended.includes(pid)));
         stale = { pid: held.pid, commit: held.commit, at: held.at, ended };
       }
       rmSync(file, { force: true });
       continue;
-    }
-    try {
-      writeSync(fd, `${JSON.stringify({ pid: process.pid, commit, at: now(), holder })}\n`);
-    } finally {
-      closeSync(fd);
     }
     return { stale };
   }
@@ -6069,34 +6015,25 @@ function readCiWatch(home, alive = pidAlive) {
 /**
  * `--ci --watch`: the watch the parent leaves running. One per main checkout: a second says the first runs and ends, 0,
  * so starting it again is harmless; one a dead process left is taken over. It gates main's tip as it moves (`watchCi`), each run
- * `gateCi`'s, and never touches the main checkout's tree or a process it did not start: what it ends is its runs' own gates. It
- * ends on `--ci --stop` (`CI_STOP`) or a Ctrl+C, the gates it is running ended first, every finished verdict kept.
+ * `gateCi`'s, and never touches the main checkout's tree or a process it did not start. It ends on `--ci --stop` or a Ctrl+C, every finished verdict kept.
  */
 async function ciWatchVerb(root, options) {
   const home = verdictsHome(root);
   const file = join(home, CI_WATCH);
   const stopFile = join(home, CI_STOP);
   mkdirSync(dirname(file), { recursive: true });
-  let fd = null;
-  for (let attempt = 0; fd === null && attempt < 3; attempt += 1) {
-    try {
-      fd = openSync(file, 'wx');
-    } catch (error) {
-      if (error?.code !== 'EEXIST') throw error;
-      const held = readCiWatch(home);
-      if (held?.running) {
-        console.log(`merge-branch: a CI watch runs here already (pid ${held.pid}, since ${when(held.at)}): this one has nothing to do`);
-        return 0;
-      }
-      rmSync(file, { force: true });
+  let taken = false;
+  for (let attempt = 0; !taken && attempt < 3; attempt += 1) {
+    taken = putComplete(file, `${JSON.stringify({ pid: process.pid, at: nowIso() })}\n`);
+    if (taken) break;
+    const held = readCiWatch(home);
+    if (held?.running) {
+      console.log(`merge-branch: a CI watch runs here already (pid ${held.pid}, since ${when(held.at)}): this one has nothing to do`);
+      return 0;
     }
+    rmSync(file, { force: true });
   }
-  if (fd === null) throw new Refusal(`${CI_WATCH} could not be taken: another watch took it at the same moment`);
-  try {
-    writeSync(fd, `${JSON.stringify({ pid: process.pid, at: nowIso() })}\n`);
-  } finally {
-    closeSync(fd);
-  }
+  if (!taken) throw new Refusal(`${CI_WATCH} could not be taken: another watch took it at the same moment`);
   rmSync(stopFile, { force: true });
   let interrupted = false;
   const interrupt = () => { interrupted = true; };
@@ -6577,7 +6514,7 @@ function scopedChoice(home, tree, { plan, base, tip, recordsOnly = false }) {
   const treeId = contentTree(tree);
   const standing = standingFor(tree, treeId);
   const lanes = readLanes(tree)?.lanes ?? [];
-  const changed = zPaths(git(tree, ['--no-optional-locks', 'diff', '-z', '--name-only', '--no-renames', base, tip]).out);
+  const changed = diffPaths(git, tree, [base, tip]);
   const selection = selectGates(plan, changed, { lanes, gated: true });
   const reached = new Set(selection.gates.filter((entry) => entry.run || entry.reached).map((entry) => entry.gate.name));
   const verdicts = readVerdicts(home).verdicts;
@@ -6928,7 +6865,7 @@ async function queueStep(home) {
     return 'next';
   }
   if (action === 'reform') {
-    const paths = zPaths(git(home, ['--no-optional-locks', 'diff', '-z', '--name-only', '--no-renames', candidate.base, mainTip]).out);
+    const paths = diffPaths(git, home, [candidate.base, mainTip]);
     const lanes = readLanes(home)?.lanes ?? [];
     const counted = reformCount(candidate, { recordsOnlyMove: recordsOnly(paths, (path) => ruleFor(path, REACH, lanes)) });
     console.log(`${at} main moved to ${mainTip.slice(0, 7)} by a direct commit${counted.recordsOnly ? ', records only' : ''}: the candidate is formed again${counted.heldByDirect ? `, re-formed ${counted.reforms} times running: held by direct commits` : ''}`);
@@ -7219,8 +7156,7 @@ async function enqueueVerb(root, options) {
   requireQueueIgnored(home);
   const [branch] = options.branches;
   const file = resolve(root, options.messageFile);
-  const rel = relative(join(home, 'local'), file);
-  if (rel.startsWith('..') || resolve(join(home, 'local'), rel) !== file) throw new Refusal(`the message file is kept under the main checkout's local/: ${options.messageFile} is not`);
+  if (!isInside(join(home, 'local'), file)) throw new Refusal(`the message file is kept under the main checkout's local/: ${options.messageFile} is not`);
   if (!existsSync(file)) throw new Refusal(`no message file at ${options.messageFile}`);
   const message = readFileSync(file, 'utf8');
   const tip = requireBranch(home, branch);

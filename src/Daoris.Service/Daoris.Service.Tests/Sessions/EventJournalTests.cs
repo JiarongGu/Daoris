@@ -527,14 +527,12 @@ public sealed class EventJournalTests : IAsyncLifetime
     }
 
     /// <summary>
-    /// An ask kept is a row, and each move of its state after it; a whole save that changes no state, a word, a list appended to, an intake
-    /// bound and a delete journal nothing. The row carries the state on either side and the scope, never the sentence, a note or a word.
+    /// An ask kept is a row, and each move of its state; a note-only close, a word, an appended list, an intake bound and a delete journal nothing, and no row carries the sentence, a note or a word.
     /// </summary>
     [Fact]
     public async Task Each_move_of_an_asks_state_is_one_row_and_a_same_state_or_note_only_write_journals_nothing()
     {
-        await _asks.SaveAsync(Asked);
-        await _asks.SaveAsync(Asked with { Updated = Now.AddMinutes(1), Note = "A private note." });
+        await _asks.InsertAsync(Asked);
         await _asks.RecordWordAsync(Asked.Id, new AskWord(AskWordKind.Answered, "A private word.", Now, "s1"), Now);
         await _asks.RecordIntakeAsync(Asked.Id, "s1", Now.AddMinutes(2));
         await _asks.RecordPublishedAsync(Asked.Id, "q1", null, Now.AddMinutes(3));
@@ -584,7 +582,7 @@ public sealed class EventJournalTests : IAsyncLifetime
     public async Task The_families_share_one_order_of_positions()
     {
         var record = await OpenedAsync();
-        await _asks.SaveAsync(Asked);
+        await _asks.InsertAsync(Asked);
         await MoveAsync(record.Id, SessionState.Working);
         var quest = await _quests.PublishAsync("Asker", "Owner", "Title", "Body", Now, workspace: "team");
         Assert.True(await _channel.AddAsync(Posted("m1", Asked.Id), 10));
@@ -686,7 +684,7 @@ public sealed class EventJournalTests : IAsyncLifetime
                 await (await QuestStore.OpenAsync(alone)).PublishAsync("Asker", "Owner", "Title", "Body", Now);
                 break;
             case "asks":
-                await (await AskStore.OpenAsync(alone)).SaveAsync(Asked);
+                await (await AskStore.OpenAsync(alone)).InsertAsync(Asked);
                 break;
             default:
                 Assert.True(await (await ChannelStore.OpenAsync(alone)).AddAsync(Posted("m1", Asked.Id), 10));

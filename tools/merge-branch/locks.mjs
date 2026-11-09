@@ -1,0 +1,33 @@
+/**
+ * The merge tool's lock files, in a unit of their own: the verdict store's lock and the gate tree's, both held by a run and
+ * both put in place complete (`run-lock.mjs`), so no run reads one half written or removes one another run took since.
+ */
+import { randomBytes } from 'node:crypto';
+import { rmSync } from 'node:fs';
+import { putIfAbsent, withRunLock } from '../run-lock.mjs';
+
+/** How long a verdict write may hold its lock: a write takes milliseconds, so a longer one is a run that hung or died. */
+const STORE_STALE_MS = 30_000;
+
+/**
+ * `fn` run holding a lock beside `file`, so two runs writing one store (a merge's and a full set's beside it) never write over each
+ * other's verdict. A waiter waits while the holder runs and the lock is younger than `staleMs`, and takes a lock past it, so a hung
+ * run costs a wait and never a run that never ends; a lock is taken over only after a second look finds it stale, and let go
+ * only while it still says what this run wrote. `lives`, `now` and `pause` are a test's.
+ */
+export function holdingLock(file, fn, { staleMs = STORE_STALE_MS, ...clock } = {}) {
+  return withRunLock(`${file}.lock`, fn, { staleMs, ...clock });
+}
+
+/**
+ * The lock file at `path` put in place holding `text`, with no overwrite and never read empty: written beside first and linked in.
+ * Whether it is there now, which is false where another run's lock already is.
+ */
+export function putComplete(path, text) {
+  const beside = `${path}.${process.pid}.${randomBytes(4).toString('hex')}`;
+  try {
+    return putIfAbsent(path, beside, text);
+  } finally {
+    rmSync(beside, { force: true });
+  }
+}

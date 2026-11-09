@@ -23,7 +23,7 @@ public enum SessionDeleteRefusal
     /// </summary>
     ServedQuest,
 
-    /// <summary>An ask names it as its intake, or a quest is published by it.</summary>
+    /// <summary>An ask names it as its intake, a quest is published by it, or a later record of its line continues it.</summary>
     Named,
 
     /// <summary>It went up to a workspace's remote, and a session record does not travel as a deletion.</summary>
