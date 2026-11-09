@@ -85,4 +85,12 @@ public sealed class RebaseDoorTests : TestHome
 
         Assert.Empty(records.Of("q1"));
     }
+
+    [Fact]
+    public void A_run_that_never_rebased_is_let_go_of_in_a_home_with_no_rebase_records()
+    {
+        NodeStepReads.Release(Home, "q1");
+
+        Assert.Empty(new RebaseRecords(Home).Of("q1"));
+    }
 }
