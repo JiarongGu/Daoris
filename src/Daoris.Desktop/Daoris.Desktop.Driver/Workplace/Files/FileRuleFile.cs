@@ -20,7 +20,8 @@ internal static class FileRuleFile
         : form.ValueKind == JsonValueKind.Number && form.TryGetInt32(out var number) && number == Form ? Form
         : null;
 
-    internal static string Unknown(string file) => $"{file} is written in a form this Daoris does not read (it reads form {Form}, and a file that says none)";
+    internal static string Unknown(string file) =>
+        string.Create(System.Globalization.CultureInfo.InvariantCulture,$"{file} is written in a form this Daoris does not read (it reads form {Form}, and a file that says none)");
 
     /// <summary>The rules of <paramref name="scope"/>'s <c>rules</c>, each problem named from <paramref name="where"/>.</summary>
     internal static List<FileRule> Rules(JsonElement scope, string where, List<string> problems, int form) =>
@@ -48,7 +49,7 @@ internal static class FileRuleFile
             }
             catch (FormatException refused)
             {
-                problems.Add($"{where}rules[{number}]: {refused.Message}");
+                problems.Add(string.Create(System.Globalization.CultureInfo.InvariantCulture,$"{where}rules[{number}]: {refused.Message}"));
             }
         }
 

@@ -51,7 +51,7 @@ public sealed class RepositoryFilesTests
         var read = RepositoryFilesReader.Read(text);
 
         Assert.Contains(problem, read.Problems);
-        Assert.Equal(["/tmp/"], read.Rules[^1].Paths);
+        Assert.Equal<string>(["/tmp/"], read.Rules[^1].Paths);
         Assert.DoesNotContain(read.Rules, rule => rule.Paths.Contains("src/**/bin/") || rule.Kind == FileKind.Dependency);
     }
 
@@ -63,7 +63,7 @@ public sealed class RepositoryFilesTests
     {
         var read = RepositoryFilesReader.Read(text);
 
-        Assert.Equal([problem], read.Problems);
+        Assert.Equal<string>([problem], read.Problems);
         Assert.Empty(read.Rules);
     }
 }

@@ -30,7 +30,7 @@ internal sealed class StructureAnalysis
     ];
 
     /// <summary>The base library the driver compiles against: the managed assemblies of the runtime this test host runs on.</summary>
-    private static readonly Lazy<IReadOnlyList<MetadataReference>> BaseLibrary = new(() =>
+    internal static readonly Lazy<IReadOnlyList<MetadataReference>> BaseLibrary = new(() =>
     {
         var references = new List<MetadataReference>();
         foreach (var path in Directory.EnumerateFiles(RuntimeEnvironment.GetRuntimeDirectory(), "*.dll"))

@@ -96,8 +96,8 @@ internal static class RepositoryDeclarations
     internal static async Task<IReadOnlyList<string>> TrackedAsync(string root, string commit, CancellationToken ct)
     {
         using var _ = DeclarationScope.Enter(DeclarationAsker.Store);
-        if (DeclarationBound.Lists.TryGet<IReadOnlyList<string>>(new TrackedKey(commit), out var kept)) return kept;
         var common = RefFiles.CommonDirOf(root);
+        if (common is not null && !GitReplacements.CanBeInForce(common) && DeclarationBound.Lists.TryGet<IReadOnlyList<string>>(new TrackedKey(commit), out var kept)) return kept;
         var fence = new StatFence();
         if (common is not null)
         {

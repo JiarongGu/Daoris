@@ -30,4 +30,14 @@
     <Version>$([System.Text.RegularExpressions.Regex]::Match($(DaorisRelease), '"version"\s*:\s*"([^"]+)"').Groups[1].Value)</Version>
   </PropertyGroup>
 
+  <!--
+    A declaration's name is banned by symbol outside the store (REPOCONFIG1), so the compiler finds every reader that names one. Every
+    desktop project that ships carries the analyzer and the driver's one list; the tests name the store's members to prove it and do not.
+    Where a use is allowed is the one `.editorconfig` beside this file, and DeclarationBoundaryTests walks every use itself.
+  -->
+  <ItemGroup Condition="'$(IsTestProject)' != 'true'">
+    <PackageReference Include="Microsoft.CodeAnalysis.BannedApiAnalyzers" PrivateAssets="all" />
+    <AdditionalFiles Include="$(MSBuildThisFileDirectory)Daoris.Desktop.Driver/BannedSymbols.txt" Link="BannedSymbols.txt" />
+  </ItemGroup>
+
 </Project>
