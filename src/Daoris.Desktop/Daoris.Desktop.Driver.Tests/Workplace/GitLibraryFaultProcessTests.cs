@@ -143,6 +143,34 @@ public sealed class GitLibraryFaultProcessTests : LandedFixture
     }
 
     [Fact]
+    public async Task Every_question_of_a_start_finds_the_faults_the_first_one_is_still_reading()
+    {
+        var broken = await BuildRepositoryAsync("fault-settling");
+        Directory.CreateDirectory(Leases);
+        var busy = string.Concat(Enumerable.Range(0, 4000).Select(at => $"open\t{at}\tsound\nclose\t{at}\n"));
+        for (var at = 0; at < 60; at++) File.WriteAllText(Path.Combine(Leases, $"{999000 + at}-1.log"), busy);
+        File.WriteAllText(Path.Combine(Leases, "999999-1.log"), $"open\t1\t{Uri.EscapeDataString(broken)}\n");
+        var before = ProgramHome.Named;
+        ProgramHome.Named = Home;
+        try
+        {
+            using var go = new ManualResetEventSlim();
+            var asks = Enumerable.Range(0, 8).Select(_ => Task.Run(() =>
+            {
+                go.Wait();
+                return GitLibraryFaults.RefusalOf(broken);
+            })).ToList();
+            go.Set();
+
+            Assert.All(await Task.WhenAll(asks).WaitAsync(Poll.Patience), word => Assert.Equal(GitLibraryJournal.NativeFault, word));
+        }
+        finally
+        {
+            ProgramHome.Named = before;
+        }
+    }
+
+    [Fact]
     public void A_live_process_is_never_read_as_dead_inside_a_lease()
     {
         var leases = new GitLibraryLeases(Leases);

@@ -49,14 +49,14 @@ internal static class GitLibraryFaults
 
     private static void Settle(string home)
     {
+        // Held to the end, so a question that arrives while the first reads the dead processes' files waits for what they name.
         lock (Gate)
         {
             if (!Settled.Add(home)) return;
-        }
-
-        foreach (var repository in GitLibraryLeases.Left(DaorisHome.Entry(home, HomeEntry.GitLibraryLeases)))
-        {
-            GitLibraryJournal.Faulted(repository, Package);
+            foreach (var repository in GitLibraryLeases.Left(DaorisHome.Entry(home, HomeEntry.GitLibraryLeases)))
+            {
+                GitLibraryJournal.Faulted(repository, Package);
+            }
         }
     }
 
