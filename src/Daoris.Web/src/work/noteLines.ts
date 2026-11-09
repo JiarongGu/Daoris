@@ -265,7 +265,7 @@ export const NOTE_VALUES: Readonly<
   operation: 'id',
   quests: 'ids',
   servers: 'names', works: 'names',
-  option: 'text', chosen: 'text', work: 'text', state: 'bgstate', repository: 'text',
+  option: 'text', chosen: 'text', work: 'text', state: 'bgstate', repository: 'text', run: 'id', tree: 'text',
   // The call a quiet session's agent is inside, its title as the record names it.
   call: 'text',
   // Why a role's policy chose the choice that ran, the judge's sentence as written.

@@ -59,6 +59,7 @@ public sealed partial class ContinuedReadersCensusTests
         ["WatchNodes.cs"] =
         [
             (How.Follows, "the workflow runtime's word to the work about a review's changes (DECIDE1c): said at the head under the changes' key"),
+            (How.NotOn, "a run's `resolve` ask to the newest session in its tree (PROCSTEPS1d): the resolver watches that record for the ask's key and its turn, so refused `continued` the ask is untold and the tree put back, never said to a head whose turn it does not watch"),
             (How.Follows, "the integration transport's word to a session about its line's conflict (INTEGRATE1g): said at the head under the integration's key"),
         ],
         ["IntegrateRoutes.cs"] =

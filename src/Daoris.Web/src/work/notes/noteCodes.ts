@@ -48,6 +48,7 @@ export const NOTE_CODES: Readonly<Record<string, NoteCode>> = {
   'ended.declined': { values: [] },
   'ended.stood-down': { values: [] },
   'ended.source-reopened': { values: ['quest'] },
+  'ended.resolve-ask': { values: [] },
   // The native door's harness ended its own background work with its turn.
   'ended.background-cut': { values: ['works'] },
   'ended.taken-exit': { values: ['exit'] },

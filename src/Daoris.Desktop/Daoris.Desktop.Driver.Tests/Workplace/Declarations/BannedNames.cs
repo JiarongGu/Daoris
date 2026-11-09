@@ -17,7 +17,7 @@ internal sealed record BannedUse(string File, int Line, string Symbol);
 internal static class BannedNames
 {
     /// <summary>The one list, in the driver's folder, every shipping project's build reads.</summary>
-    internal static string ListFile => Path.Combine(DesktopCompilations.Desktop, "Daoris.Desktop.Driver", "BannedSymbols.txt");
+    internal static string ListFile => SourceFiles.Driver("BannedSymbols.txt");
 
     /// <summary>The documentation id of each line of a list: what stands before its message.</summary>
     internal static ImmutableArray<string> Listed(string text) =>
