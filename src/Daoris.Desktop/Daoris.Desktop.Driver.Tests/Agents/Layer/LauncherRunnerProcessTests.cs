@@ -25,13 +25,13 @@ public sealed class LauncherRunnerProcessTests : IDisposable
 
     public void Dispose() => ConformanceScratch.Remove(_scratch);
 
-    private LauncherRunner Turn(TimeSpan? patience = null) => new(
+    private LauncherRunner Turn(TimeSpan? patience = null, Action<string>? error = null, Action<string>? outside = null) => new(
         new LauncherSeat(ContainedKind.Agent, StartClass.Background, Home: null, Log: null)
         {
             Started = _started.Add,
             Heard = () => Interlocked.Increment(ref _heard),
-            Outside = line => { lock (_outside) _outside.Add(line); },
-            Error = line => { lock (_errors) _errors.Add(line); },
+            Outside = outside ?? (line => { lock (_outside) _outside.Add(line); }),
+            Error = error ?? (line => { lock (_errors) _errors.Add(line); }),
         },
         patience,
         exists: _ => true);
@@ -109,6 +109,38 @@ public sealed class LauncherRunnerProcessTests : IDisposable
         Assert.Equal(3, failed.ExitCode);
         Assert.Contains("it broke", failed.Message);
         Assert.Equal(3, runner.Exit);
+    }
+
+    [Fact]
+    public async Task A_stderr_line_that_cannot_be_kept_ends_no_read_and_is_thrown_after_the_turn_s_lines()
+    {
+        // More than a pipe holds, so a child whose stderr is no longer read blocks before it reaches its stdout.
+        var runner = Turn(error: _ => throw new InvalidOperationException("its transcript is gone"));
+        var read = new List<string>();
+
+        var failed = await Assert.ThrowsAsync<InvalidOperationException>(async () =>
+        {
+            await foreach (var line in Lines(runner, new { err = Enumerable.Repeat(new string('x', 200), 2000).ToArray(), @out = new[] { "after" } })) read.Add(line);
+        }).WaitAsync(Poll.Patience);
+
+        Assert.Equal("its transcript is gone", failed.Message);
+        Assert.Equal(["after"], read);
+    }
+
+    [Fact]
+    public async Task A_stdout_line_that_cannot_be_kept_still_yields_every_line_and_is_thrown_after_them()
+    {
+        var runner = Turn(outside: line => { if (line == "plain") throw new InvalidOperationException("its transcript is gone"); });
+        var read = new List<string>();
+
+        var failed = await Assert.ThrowsAsync<InvalidOperationException>(async () =>
+        {
+            await foreach (var line in Lines(runner, new { @out = new object[] { "plain", new { t = "text", text = "hi" } } })) read.Add(line);
+        });
+
+        Assert.Equal("its transcript is gone", failed.Message);
+        Assert.Equal(["plain", """{"t":"text","text":"hi"}"""], read);
+        Assert.Equal(0, runner.Exit);
     }
 
     [Fact]

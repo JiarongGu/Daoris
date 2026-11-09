@@ -1,6 +1,7 @@
 using System.ComponentModel;
 using System.Diagnostics;
 using System.Runtime.CompilerServices;
+using System.Runtime.ExceptionServices;
 using System.Text;
 using Lyntai.Processes;
 
@@ -116,18 +117,35 @@ internal sealed class LauncherRunner(LauncherSeat seat, TimeSpan? patience = nul
         var errors = ErrorsAsync(process);
         var writing = write(process, linked.Token);
         var ended = false;
+        ExceptionDispatchInfo? failure = null;
         try
         {
             // Read to the end of the stream, never to a token: a kill ends it, and the lines it said before are each yielded first.
             while (await process.StandardOutput.ReadLineAsync(CancellationToken.None).ConfigureAwait(false) is { } line)
             {
-                seat.Heard();
-                if (!NativeFrame.Of(line).IsObject) seat.Outside(line);
+                try
+                {
+                    seat.Heard();
+                    if (!NativeFrame.Of(line).IsObject) seat.Outside(line);
+                }
+                catch (Exception error) when (error is not OperationCanceledException)
+                {
+                    failure ??= ExceptionDispatchInfo.Capture(error);
+                }
+
                 yield return line;
             }
 
             await process.WaitForExitAsync(CancellationToken.None).ConfigureAwait(false);
-            await errors.ConfigureAwait(false);
+            try
+            {
+                await errors.ConfigureAwait(false);
+            }
+            catch (Exception error) when (error is not OperationCanceledException)
+            {
+                failure ??= ExceptionDispatchInfo.Capture(error);
+            }
+
             await writing.ConfigureAwait(false);
             ended = true;
         }
@@ -142,6 +160,7 @@ internal sealed class LauncherRunner(LauncherSeat seat, TimeSpan? patience = nul
         if (timedOut) throw new ProcessTimeoutException(command, patience!.Value);
         ct.ThrowIfCancellationRequested();
         if (process.ExitCode != 0) throw new ProcessRunException(command, process.ExitCode, Tail());
+        failure?.Throw();
     }
 
     private async Task<Process> StartAsync(
@@ -198,17 +217,29 @@ internal sealed class LauncherRunner(LauncherSeat seat, TimeSpan? patience = nul
 
     private async Task ErrorsAsync(Process process)
     {
+        // A line that cannot be kept ends nothing: a pipe nobody reads fills, and its child blocks on the next line. The first failure is
+        // thrown once the pipe has ended.
+        ExceptionDispatchInfo? failure = null;
         while (await process.StandardError.ReadLineAsync(CancellationToken.None).ConfigureAwait(false) is { } line)
         {
-            seat.Heard();
             lock (_gate)
             {
                 _tail.Enqueue(line);
                 if (_tail.Count > TailKept) _tail.Dequeue();
             }
 
-            seat.Error(line);
+            try
+            {
+                seat.Heard();
+                seat.Error(line);
+            }
+            catch (Exception error) when (error is not OperationCanceledException)
+            {
+                failure ??= ExceptionDispatchInfo.Capture(error);
+            }
         }
+
+        failure?.Throw();
     }
 
     private Func<Process, CancellationToken, Task> Fixed(string? stdin) => async (process, ct) =>
