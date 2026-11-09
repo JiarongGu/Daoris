@@ -1,11 +1,15 @@
 # Generic process steps, landing only a composition of them (PROCSTEPS1)
 
-**Proposed design, documents only** (2026-11-09). The owner's direction: a workflow's steps are each declared in one focus; a
+**Proposed design, round 2, documents only** (2026-11-09). The owner's direction: a workflow's steps are each declared in one focus; a
 step may do a lot, but today none says what it is focused on, and the landing has no rebase of its own. Then, twice: Daoris runs a
 workflow system, so the steps are generic kinds any process composes, and *landing* is a composition at the workflow level, never
-a step in code. Read with `docs/areas/workflows-review-landing.md`, the node kit design (`docs/2026-11-06-node-kit-design.md`,
-every kind one unit under `Workflows/Kinds/<Kind>/`) and the land node's design (`docs/2026-11-01-land-node-design.md`). Paths are
-under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name another root. The code was read at `2d28c2f168`.
+a step in code. Round 1 (the document at `0422e84b1b`) was read by both makers (`docs/2026-11-09-process-steps-reads.md`: Codex's
+eight blocking findings, Opus's eight); round 2 answers each in place. §9 says, per finding, the sequence it closes, its proof and
+the census or test that closes its class; §10 keeps round 1's passages that round 2 replaced. Read with
+`docs/areas/workflows-review-landing.md`, the node kit design (`docs/2026-11-06-node-kit-design.md`, every kind one unit under
+`Workflows/Kinds/<Kind>/`) and the land node's design (`docs/2026-11-01-land-node-design.md`). Paths are under
+`src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name another root. The code was read at `2d28c2f168`, and again at
+`0422e84b1b` for the findings.
 
 ## 1. What one `land` does today, and what 2026-11-09 showed
 
@@ -21,12 +25,19 @@ One performed kind, `land` (`Workflows/Kinds/Land/`), started once per node and 
    backlog and row tables by their merge base, the accepted line rules and union's joins, then proves nothing changed beyond what
    the line brought (`BeyondAsync`);
 5. writes the delivery ahead by phase (`CurrentDeliveries`, `LandAttempts`, `LandAttemptSettling`), judges the standing authority
-   again, and merges `--no-ff` in the line's integration tree, the checkout only fast-forwarded while clean (`TreeMerges`), or makes
-   or advances a branch, squashed where asked, recorded in `landings.json`;
-6. moves the session's tree and branch to what landed (`TreeLandSyncs.MoveTreeAsync`);
+   and the submission again under the tree's hold (`UnderHoldAsync`), and merges `--no-ff` in the line's integration tree, the
+   checkout only fast-forwarded while clean (`TreeMerges`), or makes or advances a branch, squashed where asked, recorded in
+   `landings.json`; a chain's later step advances the chain's branch, replaying only what neither it nor the line holds
+   (`TreeBranches`);
+6. moves the session's tree and branch to what landed (`TreeLandSyncs.MoveTreeAsync`), the move read as no new work
+   (`LandTries.Landed`);
 7. on a conflict, refuses with the rebase words and says them to the session through the say door (`RebaseTelling`), or, under
    the review's word, carries it on up to `LandCarry.Bound` times (`LandCarry`); a refusal is tried again only once the tree's tip
    or status moves (`LandTries.ShouldTry`, an in-memory table per session).
+
+Two ways sit beside it. The line's integration tells a member's session to rebase through the same `RebaseTelling`
+(`IntegrationReplays.HandBackEffectAsync`; `IntegrationDispositions`' *rebase it*), and the look's own tidy (`BranchTidying`) ends a
+session branch the line holds whatever run governs it.
 
 **What 2026-11-09 showed, by the code's path.** The backlog's rows are one line each, and the merge base settles a stop only where
 the two sides changed different lines (`BacklogMerge.ByBase`). A work that archived its row while the line rewrote that row, or
@@ -39,10 +50,17 @@ merged three by hand.
 
 Each kind is one folder under `Workflows/Kinds/<Kind>/`, its declaration `<Kind>Node.cs` marked `[NodeKind(id, group, after…)]`,
 as the node kit has every kind. Each declares its ports (inputs and outputs, with the outcomes each output is carried on), its
-options, its outcomes, its words (`workflow.step.<kind>`, `workflow.outcome.<kind>.<outcome>` in every catalogue), its door off the
-pass where it is performed, and its wait on the node's status, which the run view draws under the step and the session's card
-reads (the integrate's card wait, `IntegrationCardWait`, made the kit's). Its retries and its bound are the generic node fields,
-`retry.maxAttempts` and `timeoutSeconds`, with the kind's defaults. Each is named by what it does; none by landing.
+options with their defaults, its outcomes, its words (`workflow.step.<kind>`, `workflow.outcome.<kind>.<outcome>` in every
+catalogue, landing in the kind's own row, since the names check requires them), its door off the pass where it is performed, and
+its wait on the node's status, which the run view draws under the step and the session's card reads (the integrate's card wait,
+`IntegrationCardWait`, made the kit's). Its retries and its bound are the generic node fields, `retry.maxAttempts` and
+`timeoutSeconds`, with the kind's defaults; §2.9 says, per kind, what runs it again and what bounds that. Each is named by what it
+does; none by landing.
+
+**Arriving until the cut-over.** Rows c to f build each kind marked arriving (`[NodeKind(…, Arriving = true)]`): the palette does
+not offer it, and a person's save (an import is a save) refuses a graph holding one with its words, so no saved graph holds a kind
+beside `land` before it goes; the rows' tests bind their fixture graphs directly, as the kit's tests do. Row h deletes the mark and
+its refusal in one change, so no kind can carry it after.
 
 ### 2.1 What flows between them
 
@@ -52,12 +70,27 @@ outcomes, `UncarriedOutput`). Four value types:
 | Value | What it is |
 |---|---|
 | `work` | A run's work: its branch, its bound tip, its tree and the session that is its newest executor. The run's entry outputs it (`claimed` for a quest's run, the candidate for a conversation's), which is today's `RunSubject.Branch` given a port |
-| `commit` | A commit with the ref that keeps it: a step that makes a commit writes it on `refs/daoris/steps/<run>/<node>` through `RefTransaction`, so a later step, a restart and git's collection all find it |
-| `ref` | A ref a step moved, with the commit it moved it to (a branch a `merge` made, which a `push` takes) |
-| `problem` | What a step could not settle, structured: a conflict's stop (its commit and subject), each file with its hunks (the base's lines, the target's, the work's), what was already settled beside it; or the paths left uncommitted |
+| `commit` | A commit, the commit it was made onto (`onto`: the target's tip a rebase replayed onto, which `merge` compares the target with) and the ref that keeps it: a step that makes a commit writes it on `refs/daoris/steps/<run>/<node>/<attempt>` through `RefTransaction`, so a later step, a restart and git's collection all find it |
+| `ref` | A ref a step moved, the commit it moved it to and its producer (the node and attempt), which every reader of it is bound to (§2.8) |
+| `problem` | What a step could not settle, structured, with its producer and its stop's identity (the stopped commit's patch id and its conflicted paths), by which `resolve` counts its tries. Two kinds: a `conflict` (the stop's commit and subject, its `onto`, each file with its hunks: the base's lines, the target's, the work's; what was already settled beside it) and `uncommitted` (the paths no commit carries) |
 
-A node fed a value binds to it: a new `RunSubject.Input` replaces `Landing` and the `afterHanded` reading by place, so the nodes after
-a `rebase` bind to the commit it made, and a moved input rebinds only what it feeds.
+**Binding.** A node fed a value binds to it: a new `RunSubject.Input` replaces `Landing` and the `afterHanded` reading by place, so
+the nodes after a `rebase` bind to the commit it made, and a moved input rebinds only what it feeds. These rules are the node
+lifecycle's, so every kind keeps them:
+
+- **A target's move is bounded.** A step with a target (`rebase`, `merge`) reads the target's tip, and a move of it rebinds the step
+  only while nothing it feeds is active or reached. Once the `resolve`, `check` or `merge` it feeds has started, the line moving
+  pulls nothing from under it; a `merge`'s `behind` (§2.6) is the one way a moved target reaches back, and its own `merge` moving the
+  line never runs it again.
+- **A run's own move is its binding's revision.** A step that moves a ref its own run is bound to (`tidy`'s follow, §2.7) writes the
+  move on the run's record (the ref, from, to, the node and its attempt), and the binding reads that ref's revision as *from* while
+  it stands at *to*, so nothing fed `work` lapses because the run moved it, the review's acceptance included. This replaces
+  `LandTries.Landed`; a move on from *to* is new work, as ever.
+- **A skipped producer** feeds no `data` wire (as `skipped` already satisfies none): a node whose mandatory input only a skipped
+  producer feeds is skipped with it, its words naming the producer.
+- **Step refs** are kept until the run has ended and none of its attempts or deliveries is unsettled, and only the run's end-keeping
+  removes them (no `tidy` does, §2.7). Each attempt keeps its own, so an attempt still reading an older commit finds it after
+  `git gc`.
 
 ### 2.2 `rebase` (变基)
 
@@ -66,78 +99,106 @@ Replays a work's commits onto a target, in a tree of Daoris's own, and settles w
 | | |
 |---|---|
 | Inputs | `work` |
-| Options | `onto`: `line` (the place's line, as today; default) or a branch name; `fetch`: fetch the target first, once (default off, as the automatic landing today; the person's press fetches) |
-| Outputs | `commit`, on `ready`; `problem`, on `conflicted` and `uncommitted` |
+| Options | `onto`: `target` (default: the target of the `merge` its commit feeds, directly or through a `check`, where that target is an existing branch of this run's chain; else the line), `line`, or a branch name; `fetch`: fetch the target first, once (default off, as the automatic landing today; the person's press fetches) |
+| Outputs | `commit` (with its `onto`), on `ready`; `problem`, on `conflicted` and `uncommitted` |
 | Outcomes | `ready`: the work replayed onto the target's tip, already standing on it, or wholly held by it (the commit is then the target's tip, and the `merge` after it is `held`). `conflicted`: a stop it may not settle. `uncommitted`: the work's tree holds paths no commit carries |
+| Replays | Only what the target lacks: a commit the target holds by ancestry, or by a squash its landing record names (`Squashed`, as `TreeBranches` reads a chain today), is left out, and a work grown from the target's tip replays nothing and is `ready` at its own tip; a line that only moved replays nothing onto a standing branch of the chain, which is never rewritten |
+| Starts | Once its input binds and the work is still: no session runs a turn in the work's tree. Until then it is `ready`, not active, said "Waits for its session's turn to end", which the session's own turn bounds; no wait sits inside the step |
+| Runs again | §2.9: its `work` moved; its target moved while nothing it feeds is active or reached; a `back` wire into it; the person's *Try again*. A git error fails it, retried by `retry` (default 3) |
+| Bound | The replay's (`SyncBounds.Replay`, `GeneratedPaths.StopsAtMost` stops), each run one replay |
 | State | Active while it replays, under the repository's git lock (and through `GitService` once GITLIB1 has built it); its record keeps what it left out (commits the target holds), what it settled per file and by which rule, and the scratch tree's place until it is removed in the same attempt |
 | Words | "Rebased 3 commits onto `main`; settled `TASKS.md` by its rows (2 kept, 1 archived), `CHANGELOG.md` by union." "Could not settle `src/a.cs` (2 hunks) at `abc1234` “Add the reader”." |
-| Retries, bound | `conflicted` and `uncommitted` are outcomes, not failures: the step runs again when its input or its target moves, at a `back` wire into it, or at the person's *Try again*. A git error fails it, retried by `retry`. Its bound is the replay's (`SyncBounds.Replay`, `GeneratedPaths.StopsAtMost` stops) |
 | Never | The person's checkout, the work's branch and the session's tree: each is byte for byte as it was. It pushes nothing and moves no ref but its own step ref |
 
-It waits, said, while a session is running in the work's tree (the commit may still move). It refuses nothing for a branch on its
-remote: it rewrites no branch, so the "never rewrite a pushed branch" rule is the `tidy`'s, whose follow is the only act that would.
+It refuses nothing for a branch on its remote: it rewrites no branch, so the "never rewrite a pushed branch" rule is the `tidy`'s,
+whose follow is the only act that would. A finished attempt `resolve` wrote onto a commit the target does not hold (an
+integration's candidate, §2.4) starts once the target holds it or the request it waits on has ended, said.
 
 ### 2.3 What the rebase may settle, and what it never does
 
 **It may settle**, at each stop of the replay, a file in one of these and only these ways, each said in its words:
 
 - **Union-merged records** (`.gitattributes`: `CHANGELOG.md`, `docs/task-archive.md`, `docs/FIX-LOG.md`): git merges them; the step
-  sets apart the joins union glued (`UnionJoins`, today's) and keeps once a line union kept twice word for word, which
-  `tools/doc-duplicates.mjs` would refuse on the line.
+  sets apart the joins union glued (`UnionJoins`, today's) and keeps once a non-blank line both sides added word for word, which
+  `tools/doc-duplicates.mjs` would refuse on the line; no other repeated line is touched.
 - **Rows and notes merged by their own drivers** (`docs/README.md merge=rows`, `docs/decisions/*.md merge=notes`): git runs the
   driver the repository's setup configured (`npm ci`); where it is not configured the file conflicts as text and is not settled.
 - **Generated files** the repository marks generated: the target's copy, written again by the writers the person accepted, in a
   commit on top; a writer that fails refuses the stop (today's `GeneratedPaths`, `GeneratedWriters`). `daoris.lock` (`-merge`) is
   generated: regenerated by its writer where one is accepted, else not settled.
 - **Files of an accepted line rule**: its pattern, then its writer (today's `LineRules`).
-- **The declared backlog and row tables, by their rows' ids.** A row is a backlog line whose first bold token is an id
-  (`- [ ] **PROCSTEPS1 — …`); lines that are no row (headings, prose) merge by the merge base, line by line, as today. For each id,
-  three ways, base against the target (ours) and the work (theirs):
-  - a row only one side added, removed or rewrote takes that side;
-  - a row both sides changed to the same text, after line endings and trailing spaces, is once;
-  - **a row the work moved to the archive** (the work removed it and its own commits add a `docs/task-archive.md` line naming the id)
-    leaves the backlog, whatever the target did to it; a rewrite the target made since the base is said in the step's words with
-    its text, so a person sees what left with it, and nothing waits;
-  - **a row the target archived** (removed, and the target's archive names the id) stays out, the work's rewrite of it said the same way;
-  - **a row both rewrote** is merged word by word against the base row (`BacklogMerge.ByBase` over the row's words): two rewrites
-    that changed different words, such as a new head and a new tail, merge;
-  - a row both rewrote where the words overlap, a row the work deleted with no archive line while the target rewrote it, and one id
-    both added with different texts **truly differ**: the stop is `conflicted`, its problem naming the row's id with both texts.
-  The twin rule holds: `tools/merge-branch.mjs`'s `mergeByBase` and the driver's `BacklogMerge` change together, row for row of
-  `fixtures/backlog-merges.json`.
+- **The declared backlog and row tables, by their rows' ids**, the rule row a builds:
+  - A row is a line whose first bold token is an id (`- [ ] **PROCSTEPS1 — …`). Ids match exactly (`PROCSTEPS1` is not
+    `PROCSTEPS1a`), and an archive line's compound ids are parsed into each id they name (`WFREVIEW3a, 3d…`, `GITLIB1a to GITLIB1d`).
+    Lines that are no row merge by the merge base, line by line, and in the backlog's merge two sides' inserts at one place conflict
+    unless they are equal (`BacklogMerge.Collide` let both stand).
+  - For each id, base against the target and the work: a row only one side added, removed or rewrote takes that side; a row both
+    sides changed to the same text, after line endings and trailing spaces, is once.
+  - **A row one side archived** (removed from the backlog, its own archive adding a line that names the id) leaves the backlog only
+    where the other side added no words to it: left as the base had it, only words removed, or moved. A row the other side added
+    words to is `conflicted`, both texts in the problem.
+  - **A row both sides rewrote differently is `conflicted`**: no row's words are merged.
+  - A row one side deleted with no archive line while the other rewrote it, and one id both added with different texts, are
+    `conflicted`.
+  - **The post-check**, after every replayed commit whether git stopped or merged it clean: each id stands once in the backlog, and
+    none stands both in the backlog and newly in the archive. A result that fails it is settled by the rules above where they settle
+    it (the line moved a row the work archived, adding no words: it leaves) and is `conflicted`, naming the id, where they do not. An
+    input already holding an id twice is not settled by ids: the stop is `conflicted`.
+  - The twin rule holds: `tools/merge-branch.mjs`'s `mergeByBase` and the driver's `BacklogMerge` change together, row for row of
+    `fixtures/backlog-merges.json`.
 
 **It never**: settles a file outside those (code, configuration, any other document), so a stop with one such file is the
 problem, every file the step settled beside it applied and named; takes one side with `-X ours` or `-X theirs`; skips a commit
 (`rebase --skip`) except one git finds empty; settles a delete against an edit, a rename, a binary file or a submodule; keeps a
-replay that changed a file the target did not bring and no rule settled (`BeyondAsync`'s proof, kept); chooses one text of a row
-that truly differs, or writes both into the row; runs in the person's checkout.
+replay that changed a file the target did not bring and no rule settled (`BeyondAsync`'s proof, kept); merges a row's words,
+chooses one text of a row that truly differs, or writes both into the row; runs in the person's checkout.
 
 ### 2.4 `resolve` (解决冲突)
 
-Hands a problem a step could not settle to whoever the workflow names, with the files and hunks named, bounded, its wait said.
+Hands a problem a step could not settle to whoever the workflow names, with the files and hunks named, bounded, its wait said, and
+the tree it hands over owned from the hand-off to its return.
 
 | | |
 |---|---|
 | Inputs | `problem`, `work` |
-| Options | `resolver`: `session` (the work's newest executor, its conversation going on; default), `fresh` (a new session in a tree of Daoris's own), `person` (a task for the person); `retry.maxAttempts` (asks, default 3); `timeoutSeconds` (each ask, default 1800) |
-| Outputs | none: a conflict's resolution finishes the rebase attempt it came from (below); an uncommitted problem is resolved by the work's own new tip |
-| Outcomes | `resolved`; failed where its bound is spent, its resolver is one the person stopped, declined or stood down, or the resolution changed a file the problem did not name |
-| State | `active` with its wait: the resolver, the files, the try, since and until |
+| Options | `resolver`: `session` (the work's newest executor, its conversation going on; default), `fresh` (a new session in a tree of Daoris's own), `person` (a task for the person); `retry.maxAttempts` (asks per stop, default 3); `timeoutSeconds` (each ask, default 1800) |
+| Outputs | none: a conflict's resolution finishes an attempt of the `rebase` its `back` wire returns to (below); an `uncommitted` problem is resolved by the work's own new tip |
+| Outcomes | `resolved`; failed where a stop's bound is spent, its resolver is one the person stopped, declined or stood down, or the resolution changed a file the problem did not name |
+| Tries | Counted per stop: each stop's identity (§2.1) keeps its count on the run's record, across rebinds and restarts, so a four-stop replay asks each stop up to its bound, and a stop met again after the rebase ran again goes on from its count. An ask that ended unresolved is made again only once the work or the tree moved, or at the person's *Try again* |
+| Bound | Per stop, `retry.maxAttempts` asks of `timeoutSeconds` each; the stops are the replay's, at most `GeneratedPaths.StopsAtMost`; so the whole is bounded |
+| State | `active` with its wait: the resolver, the files, the stop's try, since and until; the hand-off's journal entry while it holds the tree |
 | Words | The ask names the target, the stop's commit, each file with its hunks and both texts of a row that truly differs, what the rebase already settled, and that only these files are to change: staged, no commit, no `rebase --continue`. The card and the run view: "Waits on its session to settle `src/a.cs` (2 hunks): try 1 of 3, until 15:02." Past the bound: "Waits on you: …" |
-| Retries, bound | Each ask is a try. At the resolver's end of turn the step reads the tree: the named files staged with no markers continue the rebase; anything else asks again. Past `retry.maxAttempts` or `timeoutSeconds` it fails, and the composition routes `failed` (a person's task in the presets) |
+| Save rule `rebase-tail` | A `resolve` returns on `resolved` by one `back` wire to the `rebase` whose work it is fed, and its `failed` reaches a step with a way on (the presets' person's task, whose `done` goes `back` to that rebase); a `rebase`'s `conflicted` and `uncommitted` reach a `resolve` |
 
-**How a conflict is handed over.** The step prepares the resolver's tree with the rebase begun and stopped at the problem's commit,
-every file the rebase settled applied and staged, only the named files left conflicted. The session's tree is used only as
-`MoveTreeAsync` uses it today: clean, on its branch at the bound tip, no session running in it, not bound to another checkout; the
-rebase there runs on a detached head, so the session's branch never moves and nothing bound to it rebinds (the review's Accept
-included). Where that tree cannot be used, `fresh` and `person` get a tree of Daoris's own. Once the resolver has staged the files,
-the step itself runs `rebase --continue`, settling each later stop by §2.3: a stop it settles goes on, a new one is the next ask.
-At the end it proves that only the named files differ from what the rebase would have made, writes the result on the rebase
-node's step ref as that attempt's finished commit, switches the tree back to its branch, and is `resolved`. A `back` wire on
-`resolved` runs the rebase again, which reads its own finished attempt: where the target has not moved it is `ready` with that
-commit; where it moved, it replays that commit's stretch onto the new tip, settling again.
+**The tree, owned through the hand-off.**
 
-An uncommitted problem asks the session to commit its paths by the repository's conventions or restore those it does not want
+1. **The hand-off is journalled** before anything is written in a tree: an act of the journal, as the deletes are, naming the tree,
+   its branch and tip, the rebase's stop, the resolver and the attempt. While it is open the tree is reserved: no landing, tidy,
+   follow, start or other step takes it (the trees' holders read the entry, as `TidyHolders` reads a session's tree).
+2. **The resolver's tree** is the session's tree only as `MoveTreeAsync` uses it today: clean, on its branch at the bound tip, no
+   session running in it, bound to no other checkout; the rebase there runs on a detached head, so the session's branch never moves
+   and nothing bound to it rebinds (the review's Accept included). Where that tree cannot be used, `fresh` and `person` get a tree of
+   Daoris's own. It is prepared with the rebase begun at the problem's `onto` and stopped at its commit, every file the rebase
+   settled applied and staged, only the named files left conflicted.
+3. **The ask.** At the resolver's end of turn the step reads the tree: the named files staged with no markers, it runs
+   `rebase --continue` itself, settling each later stop by §2.3: a stop it settles goes on, a new one is that stop's first ask.
+4. **Every end restores the same way**: resolved, a timeout, the person's stop, a declining resolver, a lapse (the run stopped or
+   superseded, its work moved by the person) and a restart that finds the entry open. In order: the resolver is stopped (its turn
+   through the session's stop door, a fresh session's process ended) and awaited until nothing runs in the tree; unless resolved,
+   the tree's state (its index and working files) is written as a commit on the node's edits ref
+   (`refs/daoris/steps/<run>/<node>/edits`); the rebase is aborted; the tree goes back to its branch at its tip, as it was handed;
+   the entry closes. Nothing is restored while the resolver may still write.
+5. **Unresolved edits are kept**: the next ask of the same stop, a try or the person's task, starts from the edits ref applied over
+   the prepared stop, and the person's task names it, so a timeout or a restart loses nothing the resolver did.
+6. **A restart** reads the open entries before anything starts, as the delivery ladder is settled by phase, and runs step 4 for each.
+
+**Resolved.** The step proves that only the named files differ from what the rebase would have made, writes the result on the
+returning rebase's step ref as the attempt the problem came from, finished, with its `onto`, and is `resolved`. The `back` wire runs
+the rebase, which reads its own finished attempt: where the target has not moved it is `ready` with that commit; where it moved, it
+replays that commit's stretch onto the new tip, settling again. No rebind can take the attempt from under the resolver, since the
+rebase rebinds on a target's move only while nothing it feeds is active (§2.1).
+
+An `uncommitted` problem asks the session to commit its paths by the repository's conventions or restore those it does not want
 (today's `LandCarry` words), and is `resolved` when the tree is clean; the work's new tip rebinds the steps that read it, as today.
 
 Asking needs no Accept, as the automatic landing's ask needs none today; a review's word, where one stands before, stays the
@@ -145,9 +206,11 @@ person's yes for the composition after it (today's carried Accept).
 
 ### 2.5 verify: the `check` kind, fed a commit
 
-Verification is `check`, and no `verify` kind is added beside it. It gains a `commit` input and passes the same commit on as its
-output on `reached`, so what moves is exactly what was verified. Its executor runs the gates its options name (`gates`, `reach`) in a
-tree at that commit, as it does for a person's verification of a commit today; `failed: ask` and its fix asks stand.
+Verification is `check`, and no `verify` kind is added beside it. It gains a `commit` input and passes the same commit, with its
+`onto`, on as its output on `reached`, so what moves is exactly what was verified. Its executor runs the gates its options name
+(`gates`, `reach`) in a tree at that commit, as it does for a person's verification of a commit today; `failed: ask` and its fix
+asks stand. While it is active or reached, its rebase does not rebind on the target's move (§2.1); a target that moved reaches back
+only through the `merge`'s `behind`, which runs the rebase and so the check again.
 
 ### 2.6 `merge` (合并)
 
@@ -156,18 +219,22 @@ Moves a commit onto a target ref by a declared method, and nothing else.
 | | |
 |---|---|
 | Inputs | `commit` |
-| Options | `method`: `merge` (a merge commit, `--no-ff`, with the repository's hooks; default), `squash` (one commit of the work's change, its message from `message`), `fast-forward` (the ref moved to the commit, which must descend from it); `target`: `line` (default) or a pattern (`feature/{quest}-{slug}`, `{ticket}` from `key`), naming a branch; `message` |
-| Outputs | `commit` (what the target now holds: the merge commit, the squash commit or the commit itself) and `ref` (the target), on `merged` and `held` |
-| Outcomes | `merged`; `held`: the target held it already, nothing made; failed `behind` (a fast-forward the target's move made impossible), `exists` (the pattern names a branch that is not this work's chain's) |
-| State | The delivery, keyed by unit, commit, method, target and generation, its phases written ahead (prepared, ref written, recorded) and settled by phase after a restart, before anything new starts (today's ladder, re-homed); a wait on the checkout's own uncommitted work (`root-dirty`, its status fingerprint, made again when it changes) |
-| Words | "Merged 3 commits into `main`." "Waits for the repository's checkout to be clean: it has uncommitted work." |
-| Retries, bound | An uncertain effect is never repeated (§3 of the land node's design stands); `behind` is a failure a composition routes `back` to its rebase |
+| Options | `method`: `merge` (a merge commit, `--no-ff`, with the repository's hooks; default), `squash` (one commit of the work's change), `fast-forward` (the ref moved to the commit); `target`: `line` (default) or a pattern (`feature/{quest}-{slug}`, `{ticket}` from `key`), naming a branch; `message` (default: the repository's merge message, today's; a squash's the work's subject with its commits listed); `retry.maxAttempts` (default 3, before the first phase only); no `timeoutSeconds`, since an effect is settled by phase, never cut |
+| Outputs | `commit` (what the target now holds: the merge commit, the squash commit or the commit itself) and `ref` (the target, with this node as producer), on `merged` and `held` |
+| Outcomes | `merged`; `held`: the target held it already, nothing made; `behind`: the target's tip is not an ancestor of the input, for every method, judged before any effect and again at the ref's write. Failed `exists` (the pattern names a branch that is not this work's chain's) |
+| The target, compared and set at once | The merge, squash or fast-forward commit is made on a detached head (in the line's integration tree, the hooks run as today), and the target ref moves in one `update-ref <target> <made> <expected>` in the delivery's `ref written` phase, `<expected>` the tip the judgement read. A target moved since fails the update, nothing is written, and the step is `behind`. Since the target's tip is an ancestor of the input, a merge commit's and a squash's tree is the input's: what lands is what was replayed and verified |
+| The judgement before the effect | Under the repository's git lock, beside the standing authority, it reads again whether its input is current, as `UnderHoldAsync` does today: the work's tip still the one the input was made from, the quest's submission the same (a closure graph's, `QuestResults.Same`), the step ref still naming the input, the run neither stopped nor superseded. One moved: nothing is written, the attempt is withdrawn (its preparation settled withdrawn), and the moved input rebinds it as any does |
+| State | The delivery, keyed by unit, commit, method, target and generation, its phases written ahead (prepared, ref written, recorded) and settled by phase after a restart, before anything new starts (today's ladder and `LandAttemptSettling`, re-homed); a wait on the checkout's own uncommitted work (`root-dirty`, its status fingerprint, made again when it changes), said and waiting on the person |
+| Words | "Merged 3 commits into `main`." "Behind `main` by 2 commits: rebasing again." "Waits for the repository's checkout to be clean: it has uncommitted work." |
+| Retries, bound | An uncertain effect is never repeated (§3 of the land node's design stands); `behind` is an outcome every composition routes `back` to the rebase its input comes from, and the save refuses a `merge` with no such way (`merge-behind`) |
 
-It is the one step that writes a shared ref: the standing automatic authority is judged again just before its first effect, the
-person's checkout is only fast-forwarded and only while clean and on the target, a branch target is recorded in `landings.json`,
-an entry's combined Accept brings its members into the head's one delivery (`TogetherOperations`), and a press that waits on a run
-waits on its `merge`. A graph may hold several, each its own delivery (a release's promotion after the line's merge). A `merge`
-into a branch target accepts `fast-forward` (creating or advancing the branch) and `squash`.
+It is the one step that writes a shared ref: the person's checkout is only fast-forwarded and only while clean and on the target, a
+branch target is recorded in `landings.json`, and a press that waits on a run waits on the attempt of its `merge` it started, so a
+`held` read later never answers it. A together operation (`TogetherOperations`) is the head's work: the operation joins its members
+into the head's branch before the head's run reaches its `rebase`, so one rebase replays them and the `merge` is the head's one
+delivery, each member's run reaching when the target holds its commits. A graph may hold several, each its own delivery (a
+release's promotion after the line's merge). A `merge` into a branch target accepts `fast-forward` (creating or advancing the
+branch) and `squash`.
 
 ### 2.7 `tidy` (整理), made generic
 
@@ -176,9 +243,16 @@ Cleans the work's tree and branches once a target holds the work.
 | | |
 |---|---|
 | Inputs | `work`; `commit` (the work as the target holds it: the rebase's commit) |
-| Options | `ends`: `follow` (the session's branch and tree moved to that commit, today's `MoveTreeAsync`; default) or `branch` (each chain part's branch ended with its recovery ref through the journal, today's `TidyDoor`) |
+| Options | `ends`: `follow` (default) or `branch`; no retries or timeout: a part that stays is read again at the next pass |
 | Outcomes | `tidied`; `partly`, with why each part stays (a session running in its tree, uncommitted work, a branch on its remote, which is never rewritten). Nothing fails it |
-| Also | Removes the run's step refs (`refs/daoris/steps/<run>/…`) once every part is ended or followed |
+| `follow` | The session's branch and tree moved to that commit (today's `MoveTreeAsync`, its conditions), the move written on the run's record as the run's own (§2.1), so nothing fed `work` lapses, the review included |
+| `branch` | Each chain part's branch ended with its recovery ref through the journal's delete (today's `TidyDoor`, `JournaledDeletes`) |
+| Step refs | Not its own: they stay until the run has ended and settled (§2.1), so a later consumer of the rebase's commit, or an unsettled attempt that reads it, finds it after a squash, a branch tidy and `git gc` |
+
+**One cleanup authority.** A branch an open run governs (its work's units, its chain's parts, a ref one of its `merge`s made) is
+that run's: the look's tidy (`BranchTidying`, reading the open runs through `TidyHolders`) takes none of them, and ends a session
+branch only once no open run governs it, behind D88's proof as today. Both delete through the one journalled delete
+(`JournaledDeletes`), so the act, its recovery ref and its Undo are one, and every caller of that delete is a named authority.
 
 Its save rule `tidy-merged` becomes `tidy-held`: a way to it passes a step that puts the work on a target (a `merge`, an
 `integrate`, a `monitor`'s `when merged`). D88's proof is read at its start, as today.
@@ -186,11 +260,41 @@ Its save rule `tidy-merged` becomes `tidy-held`: a way to it passes a step that 
 ### 2.8 The kinds around them
 
 `push` takes a `ref` input (a `merge` into a branch), replacing `land-tail`'s "after a `branch` land". `integrate` takes a `ref`
-(the request's branch a `merge` made), keeping its `request` and `conflicts`. `line` takes a `commit` and is reached when the
-line holds it. `monitor` and a plugin's `pull-request` are unchanged. The protected order reads `merge` where it read the landing
-(`opinion` and `review` before every `merge`). `IMakesLanding` becomes `IMoves`, marked by `merge`; `LandingRules` goes, since a
-reader of a move is fed by its wire and the save already refuses an unfed or uncarried input. The picker's `Landing` group becomes
-`Git`: `rebase`, `resolve`, `merge`, `push`, `tidy`, `monitor` and the plugins' steps there.
+(the request's branch a `merge` made), keeping its `request` and `conflicts`. `line` takes a `commit` and is reached when the line
+holds it. `monitor` and a plugin's `pull-request` keep their behaviour, read through their inputs. The protected order reads
+`merge` where it read the landing (`opinion` and `review` before every `merge`). `IMakesLanding` becomes `IMoves`, marked by
+`merge`; `LandingRules` goes, since a reader of a move is fed by its wire and the save already refuses an unfed or uncarried input.
+The picker's `Landing` group becomes `Git`: `rebase`, `resolve`, `merge`, `push`, `tidy`, `monitor` and the plugins' steps there.
+
+**Every reader bound to its producer.** Twelve units find the landing by kind or by place today (`IMakesLanding`,
+`RunSubject.Landing`, `RunSubjects.AfterHanded`, `RunSubjects.Placed`, `NodeEvaluations.LandNodeOf`): `NodeGoverning`,
+`NodeEvaluations`, `GraphRuns`, `IAsksReads`, `WorkflowGraphRun`, `PluginStep`, and the `tidy`, `push`, `monitor`, `line`, `land`
+and `integrate` declarations. Each reads its input instead. `PluginStep.Subject` is the value on the plugin step's declared input
+(`ref` for a `*/pull-request`; a plugin step that declares none is run-scoped, bound to the run as a `human` task is).
+`PullRequestStep.Keep` writes the address on the landing record of the ref its own input names. `NodeEvaluations.Landed` and
+`LandingOf` give way to `NodeEvaluations.InputOf(node, port)`: the value, its producer node and its attempt. With two `merge`s, a
+pull request reads the branch its wire names.
+
+**Integration's hand-over goes through `resolve`.** The `integrate` kind's `conflicts: session` hands the member back with its
+request closed, as today, and ends the run's `integrate` `conflicted` once the candidate it was handed back from has ended
+(promoted or failed), its words naming the request it conflicted with and the files; the closed request's branch is ended at the
+hand-back with its recovery ref, through the journalled delete, as the integration's own. Every preset holding an `integrate`
+wires `conflicted` `back` to its `rebase`, which replays onto a line that now holds what the member conflicted with, and a true
+conflict there is the rebase's own, handed to its `resolve`. A superseded commit's *rebase it* is the person's act on the member's
+open run's `rebase`: it runs again with that commit, read from its recovery ref, replayed after the work, so its stops are that
+run's `resolve`'s; where the run has ended it is refused with its words (answer *superseded*; the commit stays on its recovery
+ref). `RebaseTelling`, its say keys and `IntegrationReplayAsk.Say` go: no session is told to rebase its own branch.
+`conflicts: hold` holds as today.
+
+### 2.9 What runs each step again, and what bounds it
+
+| Kind | Runs again when | Bounded by |
+|---|---|---|
+| `rebase` | its `work` moved; its target moved while nothing it feeds is active or reached; a `back` wire into it (`resolve`'s `resolved`, `merge`'s `behind`, `integrate`'s `conflicted`, the person's task's `done`); *Try again*, and *rebase it* on a superseded commit (§2.8); `retry` on a git error | the moves that cause it, none of which its own downstream can cause once started; `retry` 3; the replay's bound per run |
+| `resolve` | a new stop; an unresolved ask once the work or the tree moved; *Try again* | per stop `retry.maxAttempts` asks of `timeoutSeconds`; the stops at most `GeneratedPaths.StopsAtMost`; counts kept across rebinds and restarts |
+| `check` | its commit moved (a new rebase attempt); `failed: ask`'s fix asks | its producer's moves; the fix asks' own bound |
+| `merge` | its commit moved; `retry` before the first phase | `retry` 3; never once an effect may have happened, settled by phase |
+| `tidy` | a part stayed | an ended part is never ended again (`ChainTidied`) |
 
 ## 3. Landing, a composition
 
@@ -201,7 +305,7 @@ reader of a move is fed by its wire and the save already refuses an unfed or unc
   "nodes": [
     { "id": "work", "kind": "claimed" }, { "id": "requests", "kind": "work.requests" },
     { "id": "holds", "kind": "quest.holds" }, { "id": "content", "kind": "content.holds" },
-    { "id": "rebase", "kind": "rebase", "options": { "onto": "line" } },
+    { "id": "rebase", "kind": "rebase", "options": { "onto": "target" } },
     { "id": "resolve", "kind": "resolve", "options": { "resolver": "session" }, "retry": { "maxAttempts": 3 }, "timeoutSeconds": 1800 },
     { "id": "settle", "kind": "human" },
     { "id": "landing", "kind": "merge", "options": { "method": "merge", "target": "line" } },
@@ -211,11 +315,15 @@ reader of a move is fed by its wire and the save already refuses an unfed or unc
     { "id": "a", "kind": "after", "from": "work", "to": "requests" }, { "id": "h", "kind": "after", "from": "requests", "to": "holds" },
     { "id": "i", "kind": "after", "from": "holds", "to": "content" }, { "id": "b", "kind": "after", "from": "content", "to": "rebase" },
     { "id": "r1", "kind": "when", "from": "rebase", "outcome": "ready", "to": "landing" },
-    { "id": "r3", "kind": "when", "from": "rebase", "outcome": "conflicted", "to": "resolve", "group": { "id": "stuck", "mode": "anyOf" } },
-    { "id": "r4", "kind": "when", "from": "rebase", "outcome": "uncommitted", "to": "resolve", "group": { "id": "stuck", "mode": "anyOf" } },
-    { "id": "r5", "kind": "back", "from": "resolve", "on": "resolved", "to": "rebase" },
-    { "id": "r6", "kind": "failed", "from": "resolve", "to": "settle" },
-    { "id": "c", "kind": "after", "from": "landing", "to": "line" }, { "id": "t", "kind": "after", "from": "line", "to": "tidy" },
+    { "id": "r2", "kind": "when", "from": "rebase", "outcome": "conflicted", "to": "resolve", "group": { "id": "stuck", "mode": "anyOf" } },
+    { "id": "r3", "kind": "when", "from": "rebase", "outcome": "uncommitted", "to": "resolve", "group": { "id": "stuck", "mode": "anyOf" } },
+    { "id": "r4", "kind": "back", "from": "resolve", "on": "resolved", "to": "rebase" },
+    { "id": "r5", "kind": "failed", "from": "resolve", "to": "settle" },
+    { "id": "r6", "kind": "back", "from": "settle", "on": "done", "to": "rebase" },
+    { "id": "m1", "kind": "when", "from": "landing", "outcome": "merged", "to": "line", "group": { "id": "on", "mode": "anyOf" } },
+    { "id": "m2", "kind": "when", "from": "landing", "outcome": "held", "to": "line", "group": { "id": "on", "mode": "anyOf" } },
+    { "id": "m3", "kind": "back", "from": "landing", "on": "behind", "to": "rebase" },
+    { "id": "t", "kind": "after", "from": "line", "to": "tidy" },
     { "id": "d1", "kind": "data", "from": "work.work", "to": "rebase.work" },
     { "id": "d2", "kind": "data", "from": "rebase.problem", "to": "resolve.problem" },
     { "id": "d3", "kind": "data", "from": "work.work", "to": "resolve.work" },
@@ -226,64 +334,100 @@ reader of a move is fed by its wire and the save already refuses an unfed or unc
 ```
 
 Each input has one producer: a commit flows `rebase` → `landing` → `line`, and the work from `work` to every step that reads it.
+Every way out of a stuck step leads on: `resolve` back to `rebase`, its failure to the person's task, whose `done` returns to
+`rebase`; a `merge` behind its target back to `rebase`.
 
-The other presets, each the same kinds composed and set differently:
+The other presets, each the same kinds composed and set differently; every one carries the rebase's tail (`resolve`, the person's
+task, their `back` ways) and routes its `merge`'s `behind` `back` to its `rebase`:
 
 | Preset | After the holds |
 |---|---|
 | *Merge after you accept* | `review`, then dev-line's steps from `rebase` |
 | *Merge automatically*, *Documents* | dev-line's steps (*Documents* without `work.requests`) |
 | *A branch to push* | `review` → `rebase` → `merge` (`fast-forward`, target `feature/{quest}-{slug}`) → `tidy` (`follow`) |
-| *A pull request* | `review` → `rebase` → `merge` (`fast-forward`, a pattern) → `push` → the plugin's `pull-request` → `monitor`; `when merged` → `tidy` (`branch`); `when closed` → a person's task |
-| *Integrated*, *Integrated with no press* | (`review`) → `rebase` → `merge` (`fast-forward`, a pattern) → `integrate` → `line` → `tidy` (`follow`) |
-| *Release* | `rebase` → `check` (fed the rebase's commit) → `review` → `merge` → `line` → `tidy` → the release plugin's steps |
+| *A pull request* | `review` → `rebase` → `merge` (`fast-forward`, a pattern) → `push` (fed the merge's `ref`) → the plugin's `pull-request` (fed the push's `ref`) → `monitor`; `when merged` → `tidy` (`branch`); `when closed` → a person's task |
+| *Integrated*, *Integrated with no press* | (`review`) → `rebase` → `merge` (`fast-forward`, a pattern) → `integrate` → `line` → `tidy` (`follow`); `integrate`'s `conflicted` `back` to `rebase` |
+| *Release* | `rebase` → `check` (fed the rebase's commit) → `review` → `merge` → `line` → `tidy` → the release plugin's steps; `behind` runs the rebase and the check again |
 
-Two workflows using one kind differ only by where it stands and how it is set: a chain's next step rebases `onto` the chain's
-branch where dev-line rebases onto the line; a review flow puts `review` before `rebase`, and a release puts `check` between `rebase`
-and `merge` so the commit verified is the commit moved; `merge` is a merge commit into the line in dev-line, a fast-forward onto a
-named branch for a pull request, and a release's promotion of its line to a `release` branch is a second `merge` (`fast-forward`);
-`resolve` asks the session in dev-line and a person where the workflow says `resolver: person`; `tidy` follows in dev-line and ends
-the branches once a pull request merged.
+Two workflows using one kind differ only by where it stands and how it is set: a chain's next step rebases onto the chain's branch
+(its `onto: target` reading the branch its `merge` advances) where dev-line rebases onto the line; a review flow puts `review`
+before `rebase`, and a release puts `check` between `rebase` and `merge` so the commit verified is the commit moved; `merge` is a
+merge commit into the line in dev-line, a fast-forward onto a named branch for a pull request, and a release's promotion of its
+line to a `release` branch is a second `merge` (`fast-forward`); `resolve` asks the session in dev-line and a person where the
+workflow says `resolver: person`; `tidy` follows in dev-line and ends the branches once a pull request merged.
 
 **The editor.** The picker's `Git` group offers each kind alone. Adding a `rebase` wires its `work` from the run's entry and offers its
-`resolve` tail (the `anyOf` ways, the `back` wire and the `failed` way to a person's task) in one change, as a `monitor` comes with its
-`when` ways; adding a step after a commit's producer wires its input from the nearest one on the way before it, and the inspector names
-every input and what feeds it. The chart draws each step with its own state; the run view says each step's words and its wait.
-`WorkflowPresets` (`workflow new --from`) and `SetupPresets` (which match a place by its delivery) read the composition's `merge`:
-its method and target name the delivery.
+`resolve` tail (the `anyOf` ways, the `back` wires and the `failed` way to a person's task) in one change, as a `monitor` comes with its
+`when` ways; adding a `merge` adds its `behind` way back to the rebase that feeds it; adding a step after a commit's producer wires its
+input from the nearest one on the way before it, and the inspector names every input and what feeds it. The chart draws each step
+with its own state; the run view says each step's words and its wait. `WorkflowPresets` (`workflow new --from`) and `SetupPresets`
+(which match a place by its delivery) read the composition's `merge`: its method and target name the delivery.
 
 ## 4. Where the land node's duties go
 
 | Today (`land`) | Goes to |
 |---|---|
 | Started once per node and tip, its door off the pass | Each performed kind's own door, as the kit starts every one |
-| Judging the work: a live session in the tree, the tip moved, the quest reopened, superseded | The binding (`work`'s newest executor, its bound tip, the run's reopening) and `rebase`'s wait while a session runs in the tree |
+| Judging the work: a live session in the tree, the tip moved, the quest reopened, superseded | The binding (`work`'s newest executor, its bound tip, the run's reopening), `rebase`'s start (no turn running in the tree), and `merge`'s judgement before the effect |
+| `UnderHoldAsync`, the judgement under the hold | `merge`'s judgement before the effect, beside the authority |
 | The holds, the content proof | `quest.holds`, `content.holds` (their own kinds already); the `land`'s own reading of them for an unbound process goes with it |
-| `LineHolds`, the replay aside, the settling, the proof beyond | `rebase`; the replay-and-settle unit moves into its folder and the integration's member merge (`IntegrationResolves`) and the tree's update (`TreeUpdates`) call it there |
-| The rebase words, `RebaseTelling`, `LandCarry`'s conflict and uncommitted halves | `resolve` |
+| `LineHolds`, the replay aside, the settling, the proof beyond; a chain's advance (`TreeBranches`) | `rebase` (`onto: target`, replaying only what the target lacks); the replay-and-settle unit moves into its folder and the integration's member merge (`IntegrationResolves`) and the tree's update (`TreeUpdates`) call it there |
+| The rebase words, `RebaseTelling` (the landing's and the integration's), `LandCarry`'s conflict and uncommitted halves | `resolve`; the integration's hand-back through its run's `rebase` and `resolve` (§2.8) |
 | `method`, `target`, `pattern`, `key`, `squash`, `message`; the delivery; the merge or the branch; `landings.json`; the authority before the first effect; `TogetherOperations`; `LandOutcomes` for the waiting press | `merge` |
 | The integrate method's branch | `merge` (`fast-forward`, a pattern) before `integrate` |
-| The tree following what landed; a pushed branch never rewritten | `tidy` (`follow`) |
-| `LandTries` (the in-memory tries, `ShouldTry`), `LandTryNotes` | The node lifecycle's tries per binding and each kind's own notes in the conversation |
-| `LandingRules`, `land-once`, `land-tail`, `IMakesLanding`, `RunSubject.Landing` | The data wires' own rules, `push`'s and `integrate`'s inputs, `IMoves`, `RunSubject.Input` |
+| The tree following what landed; `LandTries.Landed`; a pushed branch never rewritten | `tidy` (`follow`), its move the run's own (§2.1) |
+| `LandTries` (the in-memory tries, `ShouldTry`), `LandTryNotes` | The node lifecycle's tries per binding, `resolve`'s tries per stop, and each kind's own notes in the conversation |
+| `LandingRules`, `land-once`, `land-tail`, `IMakesLanding`, `RunSubject.Landing`, `afterHanded` | The data wires' own rules, `push`'s and `integrate`'s inputs, `IMoves`, `RunSubject.Input` and `NodeEvaluations.InputOf` |
+| (beside it) `BranchTidying`, the look's tidy | Stays, disjoint from every open run's branches (§2.7) |
 
 ## 5. A run under way at the upgrade
 
-One way, D228: the old `land` path is removed in the cut-over's row, not kept beside the kinds.
+One way, D228: the old `land` path is removed in the cut-over's row, not kept beside the kinds. The conversion is a step of the
+release's home migration (`LandConversionStep` in `Transitional/Migration/`, one entry of `HomeMigration.Steps`, after
+`PushStepsStep` and before `RunRebindsStep`, so a run with no node record rebinds to the converted version), run at the first
+start before anything reads the home. It is unpressed, as G8's `push-steps` (`PushStepsStep`)
+and `run-rebinds` (`RunRebindsStep`) are: that is the precedent against D228's press for a graph this build can no longer run,
+which would hold every run on it for good. A copy of each file it changes is kept in the salvage folder, as every step's is, the
+older versions stay in the workflow's file, and each conversion is said in the start's report.
 
-- The release migration's workflow step (`Workflows/Migration/WorkflowMigration.cs`) converts every graph holding a `land` once,
-  writing a new version of each saved workflow by the table of §3: `merge` keeps the `land`'s id, its options mapped (`method:
-  merge` to `merge`; `branch` to `fast-forward`, or `squash` where `squash` was set, with its pattern as the target; `integrate` to
-  `fast-forward` onto its pattern), and `rebase`, `resolve`, the person's task and `tidy` added around it.
-- It rebinds each run bound to a version holding a `land` to its converted version, as `RunRebindsStep` rebinds runs today: a
-  `land` reached maps to `rebase`, `merge` and `tidy` reached; one failed or never started maps to `rebase` not started, so
-  the steps judge the work afresh; the steps before the landing keep their states and bindings.
-- It runs only once the delivery store holds no unresolved delivery (the reconciler first, as the rollback window already waits),
-  so no run is converted mid-effect. An older build reads a graph holding `rebase` as an unknown kind, held whole, and a rollback is
-  refused while a step's delivery or step ref is open.
-- With it, the `land` kind leaves the kit: `NodeKinds.Land`, `Workflows/Kinds/Land/`, `LandPerformer`, `LandTries`, `RebaseTelling`,
-  the `land` half of `CurrentDeliveries`; `NodeKitTests` holds the kit with no `land`. The conversion's reading of `land` is the one
-  remnant: it stays while a home saved before that release can start, and the last row deletes it (as G8-CONVERT1 does for `push`).
+**The graphs.** Each saved workflow whose newest version holds a `land` gets a new version, appended as the save appends one
+(`WorkflowOperations.PlanGraph`), by the table of §3: `merge` keeps the `land`'s id, its options mapped (`method: merge` to `merge`;
+`branch` to `fast-forward`, or `squash` where `squash` was set, with its pattern as the target; `integrate` to `fast-forward` onto
+its pattern); `rebase`, `resolve`, the person's task and their ways are added around it, and a `tidy` (`follow`) where no `tidy`
+follows the `land`. Each added node's id is its kind's name where the graph holds none, else that name with the smallest free
+numeral (`tidy-2`), so no id is reused (`pull-request.json` holds a `tidy` already). A version the save refuses is left as it is
+and said, the editor being where it is mended.
+
+**The runs.** Each run bound to a version holding a `land`, whose workflow converted, has its run record and every unit's record
+converted, then its binding; a run that has ended is finished history and is not converted (its view draws the `land` by its raw
+name, as any unknown kind). Field by field:
+
+| What the records hold | Converted to |
+|---|---|
+| The binding | The converted version and its digest |
+| The acceptances of every node declared the same in both versions (id, kind, options, node version) | The same acceptances under the new digest (`GraphDigest`); their subject, revision, inputs, outputs and prerequisite receipts as they were, since a reader that bound the landed branch by place now binds the same branch through the `merge`'s `ref` |
+| `land` reached | `rebase` reached, its `commit` the commit the landing moved (the delivery's commit for a merge, `landings.json`'s tip for a branch, its `Squashed` for a squash); `merge` reached, outcome `merged`, its `commit` (what the target holds) and `ref` (the target) from the landing record and the delivery's settled row; an added `tidy` (`follow`) reached, the land's own follow written as the run's (§2.1). Where the records do not name these outputs, `rebase` and `merge` are not started and judged afresh: the rebase finds the work held, the `merge` is `held`, nothing moves twice |
+| `land` active | `rebase` and `merge` not started; the land's open attempts carried onto `merge` (the same id) as unreconciled attempts, which the merge's settling (`LandAttemptSettling`, re-homed) settles by their deliveries' phases before it starts anew, so an open delivery is settled once and never repeated |
+| `land` ready or blocked | `rebase` in that state, `merge` blocked |
+| `land` failed, rejected or unknown | `rebase` not started, judged afresh; the failure kept in the history |
+| `land` skipped | `rebase` and `merge` skipped, and their readers with them (§2.1) |
+| `resolve`, the person's task | Not started (off the way taken) |
+| Downstream attempts and their receipts | As they were: their node ids and attempt numbers are unchanged, so a pull request's attempt in flight and the receipts it rests on stay its own |
+| Wire firings (`Fired`) | A removed wire's dropped; each new way the mapped states took written as fired, so the evaluator fires none again |
+| Pending words | A stop of `land` onto `rebase`; a skip onto each node it became; every other node's as it was |
+| Repairs (a review Accept waiting on a carried-on session) | Dropped with the `land`, the review's acceptance kept: the new `rebase` finds the uncommitted paths and `resolve` asks, its try 1, said |
+| History, observations | Kept, the `merge`'s history gaining "converted from `land`" |
+
+**Restart-safe.** Each write is atomic, and each run's are ordered: the unit records, then the run's record with a mark naming the
+conversion (from and to version), then the binding. The conversion of a record is a function of the old record alone, so a record
+that holds the mark is not converted again and a run whose record holds it while its binding is old has its binding written only.
+The step is recorded done only after every run; one cut short runs again at the next start (HomeMigration's rule), and until then
+a run on an old version is held whole, since this build has no `land`. An older build reads a graph holding `rebase` as an unknown
+kind, held whole, and a rollback is refused while a step's delivery or step ref is open.
+
+With it, the `land` kind leaves the kit: `NodeKinds.Land`, `Workflows/Kinds/Land/` (its settling re-homed in `merge`),
+`LandPerformer`, `LandTries`, `RebaseTelling`, `LandCarry`'s halves, the `land` half of `CurrentDeliveries`; `NodeKitTests` holds the
+kit with no `land`. The conversion's reading of `land` is the one remnant: row j deletes it on a condition read, not judged.
 
 ## 6. What this rejects
 
@@ -293,55 +437,178 @@ One way, D228: the old `land` path is removed in the cut-over's row, not kept be
   could not say which waits, and the composition would be said two ways.
 - **Rebasing in the session's tree.** It moves the branch the run is bound to, rebinding the holds and the review's Accept, and it
   writes in a tree a session may be running in; the rebase runs in a tree of Daoris's own, and only `resolve` uses the session's
-  tree, detached, under `MoveTreeAsync`'s conditions.
+  tree, detached, under `MoveTreeAsync`'s conditions and its journalled hand-off.
 - **A `verify` kind beside `check`.** Two ways to run the gates on a commit.
-- **Inputs found by place** (today's `afterHanded`) **or unfed inputs defaulting to the run's work.** Each is a second way to name a
-  value a wire names; the editor draws the wires so a person composes by placing steps.
+- **Inputs found by place** (today's `afterHanded`, `RunSubjects.Placed`, the first landing node) **or unfed inputs defaulting to the
+  run's work.** Each is a second way to name a value a wire names, and with two `merge`s it reads the wrong one.
 - **For a row that truly differs: the driver choosing a side, writing both texts into the row, or landing the target's text while the
   work's waits on a record.** The first loses a rewrite unseen; the second writes the driver's words into authored content (D222) and
   a row with two heads; the third lands a backlog missing the work's own account of its row. The resolver, who wrote one side, merges it.
+- **Archive winning over the other side's added words, and a row's words merged word by word** (round 1). The first drops a
+  requirement the line added to a row the work archived; the second makes wording neither side wrote; D215's point 6 keeps a
+  conflict of meaning for a resolver.
+- **`behind` for a fast-forward only** (round 1). A merge or a squash onto a moved target is a fresh three-way merge nobody verified,
+  and it may conflict with no outcome to say so.
+- **Taking the run's end before `tidy` follows**, to keep the review from lapsing. It hides the run's own move instead of reading it,
+  and any step after the tidy would still lapse.
+- **`tidy` removing the step refs.** A later consumer or an unsettled attempt may still read the rebase's commit, which a squash and a
+  branch tidy leave on no other ref.
 - **`resolve` handing on a commit of its own.** Every step after the rebase would then take its commit from one of two producers;
   finishing the rebase's attempt keeps one producer and lets the rebase settle anything the target brought meanwhile.
+- **Tries counted per ask across every stop, reset at each rebind** (round 1). A four-stop replay always fails, and a busy line asks
+  forever.
+- **The integration's telling kept beside `resolve`.** A second hand-over, with the session rebasing its own branch, which the rebase
+  refuses for itself.
 - **Keeping bound runs on the old `land` until they end** (the land node's design kept old versions so). A run waiting on a person
-  can live for weeks, so the old performer would stay with no end; the conversion waits only for open deliveries.
+  can live for weeks, so the old performer would stay with no end; the conversion maps every state at the release's first start.
 
 ## 7. Rows, in order
 
-1. **PROCSTEPS1a, the records by their rows' ids** (driver, tools; waits on nothing): §2.3's backlog rules in `BacklogMerge` and
-   its twin `mergeByBase`, the union duplicate kept once. It serves today's landing, the integration's member merge and the tree's
-   update at once. Proof: `backlog-merges.json` rows run by both twins, one per rule; over real git, a replay whose `TASKS.md` row the
-   work archived while the line rewrote it, and one whose row both rewrote in different words, lands with no session asked
-   (`LandBacklogLandingTests`, failing first).
-2. **1b, values on the wires** (driver): `work`, `commit`, `ref`, `problem`; `claimed`'s `work` output; `RunSubject.Input`; step refs;
-   a `back` wire on an outcome. Proof: a moved input rebinds only what it feeds; a step ref survives a restart and `git gc`; an older
-   build holds such a graph whole.
-3. **1c, `rebase`** (driver): the kind, its door, the replay-and-settle unit moved into its folder with its other callers. Proof: one
-   test per outcome over real git; 2026-11-09's sequence (three works archiving their rows while the line rewrote them, landing one
-   after another) reached `ready` with no session asked; the person's checkout, the work's branch and its tree unchanged byte for
-   byte; a stop mid-replay leaves no scratch tree.
-4. **1d, `resolve`** (driver, modules): the hand-over, the continue with the settling, the proof, the card's wait. Proof: a code
-   conflict asked once with its files and hunks and resolved; a second stop asked as try 2; a records stop after it settled with no
-   ask; the bound spent failing to the person's task and said on the card; a resolution touching an unnamed file refused; a session
-   the person stopped never asked.
-5. **1e, `merge`** (driver): the methods and targets, the delivery and its ladder re-homed, the authority, `root-dirty`, the combined
-   Accept. Proof: each method onto the line and a branch; a stop at each phase ends in one delivery; a press and a pass merge once;
-   `behind` routed back to the rebase.
-6. **1f, `tidy` and `check` fed** (driver): `follow` and `branch`, `tidy-held`; `check`'s `commit` in and out. Proof: a free tree
-   follows and a running one says why it stays; a pushed branch never rewritten; a check on a rebased commit, its failure stopping the
-   `merge`.
-7. **1g, the cut-over** (driver, modules): the shipped graphs and `WorkflowPresets` recomposed, `SetupPresets` by the `merge`, the
-   conversion and rebinding of §5, the `land` kind and its performer removed, the press waiting on the `merge`, the `Git` group.
-   Proof: every shipped file judged; a home with `dev-line` runs at each `land` state converted and carried to its end; `NodeKitTests`
-   with no `land`; the census of doors that land.
-8. **1h, the editor, the chart and the run view** (web): the group, each kind's inspector and inputs, the `rebase` tail, the outcome
-   words and the waits in English and Chinese. Proof: page tests, the names check, stories at 80, 39 and 25rem in both themes.
+1. **PROCSTEPS1a, the records by their rows' ids** (driver, tools; waits on nothing; being built): §2.3's backlog rules and
+   post-check in `BacklogMerge` and its twin `mergeByBase`, union's keep-once for a non-blank line both sides added. It serves
+   today's landing, the integration's member merge and the tree's update at once. Proof: `fixtures/backlog-merges.json` rows run by
+   both twins, one per rule: an archive against a row left as the base had it, one with words removed and one moved (each leaves),
+   and against added words (`conflicted`); two different rewrites; a delete with no archive against a rewrite; one id added twice;
+   two inserts at one place, equal and not; exact ids beside a longer one; compound ids by list and by range; an input holding an id
+   twice; the post-check over a clean merge that kept an archived row. Over real git (`LandBacklogLandingTests`, failing first): a
+   replay whose row the work archived while the line moved it lands with no session asked, and one whose row the line added words
+   to stops naming the row with both texts.
+2. **1b, values on the wires** (driver): `work`, `commit` with its `onto`, `ref` with its producer, `problem` with its producer and
+   stop's identity; `claimed`'s `work` output; `RunSubject.Input`; step refs per attempt and their keeping; the bound on a target's
+   move; a run's own move as its binding's revision; a skipped producer's readers; the arriving mark. (A `back` wire on an outcome is
+   the graph's already, `NodeWires`.) Proof: a moved input rebinds only what it feeds; `RebindBoundTests`, over every kind with a
+   target, its target moved while each node it feeds is active or reached rebinds nothing, and moved while none is rebinds it; a
+   recorded own move followed by a pass lapses nothing; a step ref an attempt reads survives a restart and `git gc --prune=now`, and
+   goes at the run's settled end; an older build holds such a graph whole; a save holding an arriving kind refused.
+3. **1c, `rebase`** (driver; its words): the kind, arriving; its door; the replay-and-settle unit moved into its folder with its
+   other callers; `onto: target`; its start; its reruns. Proof: one test per outcome over real git; a chain's step 2 rebased onto the
+   chain's branch replays only its own commits and fast-forwards with the line moved meanwhile, and a squash chain the same
+   (`TreeBranches`' advance cases, run through the kind); 2026-11-09's sequence (three works archiving their rows one after another
+   while the line moved) reaches `ready` with no session asked where the line added no words to the row, and `conflicted` naming the
+   row where it did; the person's checkout, the work's branch and its tree unchanged byte for byte; a stop mid-replay leaves no
+   scratch tree; a session mid-turn holds it `ready`, said.
+4. **1d, `resolve`** (driver, modules; its words): the journalled hand-off and the reserved tree, the ask, the continue with the
+   settling, the proof, the tries per stop, the restoration, the `uncommitted` problem, `rebase-tail`, the card's wait. Proof: a code conflict asked once with its files and hunks and resolved; a four-stop replay asking each stop as its own try
+   1; a records stop after it settled with no ask; the line moving 50 times while it waits making one ask; a stop met again after a
+   rebind going on from its count; the bound spent failing to the person's task, said on the card, and that task's `done` returning
+   to the rebase; a resolution touching an unnamed file refused; a session the person stopped never asked; a timeout with the
+   resolver mid-edit, a lapse, the person's stop and a restart with the hand-off open, each ending with the resolver stopped and
+   awaited first, the tree on its branch at its tip, the edits on the edits ref and applied at the next ask, the entry closed; nothing
+   else taking the tree while it is reserved.
+5. **1e, `merge`** (driver; its words): the methods and targets; the delivery and its ladder re-homed with `LandAttemptSettling`; the
+   authority and the judgement before the effect; the target compared and set at once; `behind` and `merge-behind`; `root-dirty`; the
+   together operation; the press waiting on its attempt. Proof: each method onto the line and a branch; a stop at each phase ends in
+   one delivery; a press and a pass merge once; for each method and target, the target moved before the judgement and between it and
+   the ref's write: `behind`, nothing written, and through the evaluator back to `rebase` (and `check`, composed as the release is)
+   and on to one merge; for each currency read (the work's tip, the quest's submission, the step ref, the run stopped) moved between
+   the judgement and the effect: nothing written; a squash's and a merge commit's tree equal to the input's; a two-member together
+   operation in one delivery; a save of a `merge` with no `behind` way refused.
+6. **1f, `tidy` and `check` fed** (driver; their words): `follow` writing the run's own move, `branch`, `tidy-held`, the step refs
+   left to the run's end, the look's tidy disjoint; `check`'s `commit` in and out. Proof: a free tree follows and the pass after it
+   lapses nothing, the review's acceptance included; a running tree says why it stays; a pushed branch never rewritten; a squash run
+   with a `branch` tidy and `git gc --prune=now` between every pass finds every commit a later step or an unsettled attempt reads;
+   the look's tidy over an open run's merged branch keeps it and the run's tidy ends it; `BranchDeleteCensusTests`, the journalled
+   delete's callers exactly the named authorities; a check on a rebased commit, its failure stopping the `merge`, and a target moved
+   while it runs rebinding nothing.
+7. **1g, the editor, the chart and the run view** (web, contracts): the `Git` group, each kind's inspector and inputs, the `rebase`
+   tail and the `merge`'s `behind` way added in one change, the chart's ports and `back` ways, the run view's words and waits, in
+   English and Chinese, the generated contracts and types; drawn and tested on the arriving kinds, offered at h, so the cut-over ships
+   nothing the window cannot draw. Proof: page tests, the web typecheck, `i18n:check` and `names:check -- --strict`, stories at 80,
+   39 and 25rem in both themes.
+8. **1h, the cut-over** (driver, modules): the shipped graphs and `WorkflowPresets` recomposed by §3, `SetupPresets` by the `merge`;
+   §5's conversion; the readers bound to their producers; integration's hand-over through `resolve`; the `land` kind, its performer,
+   `LandTries`, `LandCarry`'s halves, `RebaseTelling`, `LandingRules`, `IMakesLanding` and the arriving mark with its refusal
+   removed; the press waiting on the `merge`; the area document rewritten. Proof: every shipped file judged by the save; §5's table
+   over every `land` state and every preset, a custom graph and an older bound version, each converted then passed once with nothing
+   moved: no acceptance lapses, no effect or ask repeated, every input fed; a census failing on a `NodeRecord` member the conversion
+   does not name; a pull-request run with `push` pending pushes once; an accepted review run stays accepted; a fault after each write,
+   then the step again, ends byte for byte as an uninterrupted one; the added ids distinct over every fixture; the selection census
+   (no source names `IMakesLanding`, `RunSubject.Landing`, `AfterHanded`, `LandNodeOf` or `RunSubjects.Placed`); the say census (no
+   source names `RebaseTelling` or its keys); a member handed back reaches its run's `rebase` once its candidate ended, and its
+   conflict that run's `resolve`; *rebase it* replaying the superseded commit through the open run's `rebase`, and refused for an
+   ended run; `NodeKitTests` with no `land`; the census of doors that land.
 9. **1i, the installed window** (the steward): `dev-line` on the install through a day's rows: records conflicts settled with no
-   session asked, a code conflict resolved within its bound, a restart mid-`merge`, a converted run carried.
-10. **1j, the conversion removed** (driver): once no home saved before 1g's release can start.
+   session asked, a code conflict resolved within its bound, a resolve cut by a restart and taken up again, a restart mid-`merge`, a
+   converted run carried.
+10. **1j, the conversion removed** (driver): once the oldest build an install may update from is h's release or later (the home's
+    floor, D228's ONEWAY1 note), so no home saved before h's release starts this build, `LandConversionStep` leaves
+    `HomeMigration.Steps` with its reading of `land`, with the next release that replaces the migration. Proof: a source census
+    names no `land`.
 
 ## 8. Not decided here
 
-- Recomposing the line's integration run (one run per line, fixed steps) from these kinds: its replay already calls the rebase's
-  unit after 1c, and its `conflicts` could hand to a `resolve`; the run's own shape is a later design.
+- Recomposing the line's integration run (one run per line, fixed steps) from these kinds: its replay calls the rebase's unit after
+  1c and its hand-over goes through a run's `rebase` and `resolve` after 1h; the run's own shape is a later design.
 - Whether a failing `check`'s fix ask (`failed: ask`, `VerifyFixAsks`) becomes a `resolve` of a gate's problem.
-- The look's own branch tidy (`BranchTidying`) beside a workflow's `tidy`: which one ends a session branch no workflow tidies.
+
+## 9. The reads answered
+
+Each finding, the sequence it closes, round 2's answer, its proof's row, and the census or test that closes its class.
+
+- **Codex 1, Opus B7 — the records lose or invent text.** Base row X asks for A; the work archives X; the line adds B to X: round 1
+  dropped B. Two inserts at one place both stood. A clean merge kept a row the work archived. Answer: §2.3 as row a builds it.
+  Proof: a. Class: the post-check runs over every replayed commit, so a case the per-id rules miss (a clean merge, a moved row, an
+  id twice) still fails it; one fixture row per rule, run by both twins.
+- **Codex 2, Opus B4 — what was checked is not what lands.** The rebase makes C on T; `check` passes C; the line moves to T′; a merge
+  or a squash combines C with T′, unverified. Answer: §2.6, `behind` for every method, the target compared and set at once, every
+  preset routing `behind` back through `rebase` and `check`. Proof: e. Class: the method-by-target table moved at each point, and
+  `merge-behind` refusing any graph, shipped or saved, whose `merge` has no way back.
+- **Codex 3 — a timeout leaves the tree unowned.** Answer: §2.4's journalled hand-off, reserved tree, the resolver stopped and
+  awaited before restoration, edits kept on the edits ref. Proof: d. Class: one restoration for every end (resolved, timeout, stop,
+  decline, lapse, restart), each a row of one test.
+- **Codex 4 — no way back.** A branch target moves and the merge fails with no return; `settle`'s Done leads nowhere. Answer: §3's
+  `behind` and `settle` ways, in every preset. Proof: e and h, through the evaluator. Class: `merge-behind` and `rebase-tail`, save
+  rules every graph meets.
+- **Codex 5, Opus B1 — the migration of runs under way.** `RunRebindsStep` skips runs with node records; kept nodes lapse on the old
+  digest, so the review is asked again and a pull-request run pushes again; the mapped `merge` has no outputs; an active `land` has no
+  mapping; the added `tidy` reuses `pull-request.json`'s id. Answer: §5. Proof: h. Class: the conversion table over every state and
+  graph, the pass-after-conversion test (no lapse, no repeat), the `NodeRecord` member census, and the fault after each write.
+- **Codex 6 — plugin readers select by place.** Answer: §2.8, every reader bound to its producer. Proof: h. Class: the selection
+  census over the twelve units and any later one.
+- **Codex 7 — `tidy` discards a live commit.** Rebase C, squash, branch tidy removes the step ref, a later consumer restarts after
+  collection. Answer: §2.1 and §2.7, step refs kept to the run's settled end, one per attempt. Proof: b and f. Class: `git gc` between
+  every pass of a run, every commit any step reads found.
+- **Codex 8 — two cleanup authorities.** Answer: §2.7, disjoint by the open runs, one journalled delete. Proof: f. Class:
+  `BranchDeleteCensusTests`, a new caller of the delete failing it.
+- **Opus B2 — a chain's advance loops.** Step 2's commit, rebased onto the line, does not descend from the chain's branch: `behind`,
+  back, the same commit again. Answer: §2.2's `onto: target`, replaying only what the target lacks. Proof: c. Class: `TreeBranches`'
+  advance cases run through the kind.
+- **Opus B3 — reruns unbounded.** The line moves while `resolve` waits and its tree is detached mid-rebase; the run's own `merge`
+  moves the line and the press hears nothing merged. Answer: §2.1's bound on a target's move, §2.4's restoration, the press waiting
+  on its attempt. Proof: b, d, e. Class: `RebindBoundTests` over every kind with a target; §2.9's table.
+- **Opus B5 — the judgement before the effect lost.** Answer: §2.6, the input's currency read again under the lock. Proof: e.
+  Class: each currency read moved between the judgement and the effect, one row each.
+- **Opus B6 — `tidy follow` moves its own input.** Answer: §2.1, the run's own move as its binding's revision. Proof: b and f.
+  Class: the rule is the lifecycle's, for any step that moves a ref its run is bound to.
+- **Opus B8 — a second hand-over survives.** Answer: §2.8, integration through its run's `rebase` and `resolve`, `RebaseTelling`
+  deleted in h. Proof: h. Class: the say census.
+- **Not blocking, placed.** Tries per stop, asked again only on a move: d. `settle`'s way out: h, `rebase-tail` in d. Union's
+  keep-once limited to non-blank lines both sides added, and a row the line deleted without archiving while the work rewrote it: a.
+  The together operation's members: e. G8's unpressed conversion as the precedent: §5, h. Rows c to f arriving, refused at save: b
+  and h. Each kind's words in its own row: c to f. Codex's bounds: §2.2's start (no wait inside the step), §2.6's and §2.7's defaults,
+  §2.4's tries kept across rebinds, and `resolve`'s ownership of the rebase attempt it finishes (§2.4, `rebase-tail`). The web before
+  the cut-over: g. A measurable floor for j: §7.
+
+## 10. Round 1, superseded where round 2 changes it
+
+Round 1 is the document at `0422e84b1b`; these are its passages round 2 replaced, kept as history.
+
+- §2.3, the backlog: "**a row the work moved to the archive** … leaves the backlog, whatever the target did to it; a rewrite the target
+  made since the base is said in the step's words with its text, so a person sees what left with it, and nothing waits"; "**a row both
+  rewrote** is merged word by word against the base row (`BacklogMerge.ByBase` over the row's words): two rewrites that changed
+  different words, such as a new head and a new tail, merge"; and union "keeps once a line union kept twice word for word".
+- §2.2: "It waits, said, while a session is running in the work's tree (the commit may still move)", and "the step runs again when
+  its input or its target moves", with no bound on the target's move.
+- §2.4, retries: "Each ask is a try. … Past `retry.maxAttempts` or `timeoutSeconds` it fails", the tries counted across the stops,
+  and the tree switched back at the end with no hand-off journalled, no reservation and no restoration on a timeout or a lapse.
+- §2.6: "failed `behind` (a fast-forward the target's move made impossible)", and "the standing automatic authority is judged again
+  just before its first effect", with no reading of the input's currency.
+- §2.7: "Removes the run's step refs (`refs/daoris/steps/<run>/…`) once every part is ended or followed", and the follow with no
+  reading of the run's own move.
+- §2.8: "`monitor` and a plugin's `pull-request` are unchanged", their readers left on the first landing.
+- §3: `onto: line`; the `merge` reached led on by an `after` wire; no way back on `behind`, and `settle` led nowhere.
+- §5: the conversion "runs only once the delivery store holds no unresolved delivery"; "a `land` reached maps to `rebase`, `merge` and
+  `tidy` reached; one failed or never started maps to `rebase` not started", rebinding "as `RunRebindsStep` rebinds runs today".
+- §7: the rows were a records, b wires (with a `back` wire on an outcome), c `rebase`, d `resolve`, e `merge`, f `tidy` and `check`,
+  g the cut-over, h the web, i the installed window, j the conversion removed "once no home saved before 1g's release can start".
+- §8: "The look's own branch tidy (`BranchTidying`) beside a workflow's `tidy`: which one ends a session branch no workflow tidies."
