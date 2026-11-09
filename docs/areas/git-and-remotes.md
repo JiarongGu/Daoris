@@ -379,12 +379,21 @@ zero between calls, `GitLibrary.AtOnce`), libgit2's
 global, XDG, system and program-data search paths pointed at a folder holding no file. `GitLibraryRefs` prints `for-each-ref`'s
 lines: sorted as bytes, a broken symbolic ref left out, the upstream from the common directory's `branch.` and `remote.` keys through
 the remote's first matching fetch refspec, shortened by git's strict rule. `GitLibraryAdmission` refuses, from the repository's own
-files at each question and by its class (`GitLibraryQuestion`), a folder with no git directory, reftable and any replacement (loose,
-packed or `GIT_REPLACE_REF_BASE`) for every question, a branch or remote section in a global file git is handed for the refs, and a
-`diff.orderFile` or `diff.relative` in the repository's, the tree's or that global file for the names; libgit2 refuses SHA-256, an
+files at each question and by its class (`GitLibraryQuestion`), a folder with no git directory, a format the library cannot read and any
+replacement (loose, packed or `GIT_REPLACE_REF_BASE`) for every question, a branch or remote section in a global file git is handed for the refs, and a
+`diff.orderFile` or `diff.relative` in the repository's, the tree's or that global file for the names; libgit2 refuses an
 extension it does not know and another owner's folder at its open; an object a call needs that is missing refuses the call. Grafts,
 a shallow boundary (before and after a deepen), a split and a sparse index the library reads as git does. A refused question, and
-every one under a test's stand-in runner, is git's. The worktree list, every other ref read and the Git page's branch listing (its
+every one under a test's stand-in runner, is git's. The formats come from `GitLibraryFormats`, the `git.read.formats` probe: a repository's
+`extensions.objectformat` and `extensions.refstorage` (and a `reftable` folder) read from its own configuration with no git started, kept
+for that file's length and write time, so a converted repository is read again at its next question and an unchanged one never; only
+SHA-1 objects in files refs are the library's, and each other format is refused by its own word (`sha256`, `reftable`, `object-format`,
+`ref-format`) before the library is opened. `GitLibraryJournal` keeps, per repository in `run/git/library.json`, each reason a question
+went to git (every admission refusal, an unreadable repository, a failed call, a call the library declined) with its count, and the
+answers the library gave; a reason new to a repository is written at once, counts at most every five seconds. Each answer is also a
+read in the flow's `GitLaunch.Count` (`GitCount.Reads`, beside `Starts` and never one), which `review.read` says as `reads` and `readMs`
+and the bench's times list apart from the starts. Settings → Git lists the journal as *Git reads* (`GitReads.tsx`, `TOOLS_LIST`'s
+`identities.reads`): each repository by its folder's name with the library's answers, git's, and each reason in words. The worktree list, every other ref read and the Git page's branch listing (its
 dates, subjects and distances are the commits') stay git's. This second way has two ends, each a failing test in
 `GitLibraryEndsTests`: a case for each refusal and the questions it refuses fails, naming the refusal, the day the pinned library
 reads it as git does (GITLIB1g deletes that refusal and its path to git), and a case fails the day the git in use, or a git the

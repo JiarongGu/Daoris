@@ -9,6 +9,7 @@ import {
   type GitActs, GitDefaults, GitIdentities, GitOwn, type GitTestAnswer,
 } from './Git';
 import { GitAdd } from './GitAdd';
+import { GitReads } from './GitReads';
 
 /**
  * Settings → Git: the git identities Daoris's git acts as, a host's default by way, and the
@@ -103,6 +104,7 @@ export function GitDomain({ notify, host: openHost, onClosed }: { notify: Notify
       <GitIdentities identities={page.identities} acts={acts} adding={adding} onAdd={() => setAdding(true)} />
       <GitDefaults identities={page.identities} acts={acts} onError={(said) => notify(said, 'error')} />
       <GitOwn hosts={page.own} acts={acts} knownHosts={page.hosts} />
+      <GitReads reads={page.reads ?? []} />
       {machineAccess && (
         <Card id="settings-git-access" className="scroll-mt-3">
           <CardHeader title={t('settings.git.access.machine')} />
