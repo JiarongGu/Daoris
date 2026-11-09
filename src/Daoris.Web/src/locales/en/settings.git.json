@@ -216,6 +216,7 @@
   "settings.git.reads.reason.ref-format": "a ref format the library does not know",
   "settings.git.reads.reason.replacements": "replaced objects, which git reads",
   "settings.git.reads.reason.configuration": "configuration the library does not read",
+  "settings.git.reads.reason.housekeeping": "git was rewriting its object files and their index, which the library never opens beside it",
   "settings.git.reads.reason.unanswered": "a question the library leaves to git",
   "settings.git.reads.reason.failed": "the library could not read it",
   "settings.git.reads.reason.native-missing": "the library is not installed",
