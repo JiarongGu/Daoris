@@ -3,8 +3,7 @@ namespace Daoris.Driver;
 /// <summary>
 /// A dead run's <c>finish</c> or <c>retire</c> claim, settled from its phase and the disk. A finish stopped before it moved anything is
 /// dropped, its manifest left to the set-aside's one resume rule; stopped while it moved, what moved is renamed back first; once the paths
-/// are aside its detach is done again and the rest follows. A retirement stopped before its rename leaves the slot; after it, git's record
-/// is dropped and the row removed.
+/// are aside its detach is done again and the rest follows. A retirement stopped before its rename leaves the slot, else git's record goes.
 /// </summary>
 internal sealed class PoolFinishRecoveries(TreePool pool, PoolSeams seams)
 {
@@ -22,8 +21,7 @@ internal sealed class PoolFinishRecoveries(TreePool pool, PoolSeams seams)
         {
             if (claim.Phase == TreeClaimPhases.SettingAside && aside.Length > 0)
             {
-                TreePoolFinishes.PutBack(slot.Path, aside, own);
-                SetAsideMarks.Forget(manifest);
+                TreePoolFinishes.PutBack(slot.Path, aside, own, manifest);
             }
 
             await PoolLocks.SetAsync(git, slot.Path, PoolLocks.Free, ct).ConfigureAwait(false);

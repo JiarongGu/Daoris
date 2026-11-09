@@ -72,16 +72,17 @@ internal static class TreeShares
     /// <summary>
     /// Every recorded share's link taken off as a link, each read again just before: one that holds is unlinked and its record
     /// dropped, one already absent is dropped, and anything else standing is the line's, dropped as lost and left as it stands.
-    /// Null once none is left, else why a link stays.
+    /// Null once none is left, else why a link stays. <paramref name="at"/> is where the tree's folder stands where it is not at its path.
     /// </summary>
-    internal static string? Unlink(string home, string tree)
+    internal static string? Unlink(string home, string tree, string? at = null)
     {
+        var folder = at ?? tree;
         foreach (var share in TreeFilesRecord.Read(home, tree)?.Shares ?? [])
         {
-            var standing = Standing(tree, share);
+            var standing = Standing(folder, share);
             if (standing == TreeShareStanding.Holds)
             {
-                var full = Full(tree, share.Path);
+                var full = Full(folder, share.Path);
                 try
                 {
                     if (share.Path.EndsWith('/') && OperatingSystem.IsWindows()) Directory.Delete(full, recursive: false);
@@ -98,6 +99,16 @@ internal static class TreeShares
         }
 
         return null;
+    }
+
+    /// <summary>The links of <paramref name="shares"/> an unlink took off made again, and recorded again, in the tree its folder is back at.</summary>
+    internal static void Relink(string home, string tree, IReadOnlyList<TreeShare> shares)
+    {
+        foreach (var share in shares.Where(each => Standing(tree, each) == TreeShareStanding.Absent))
+        {
+            Make(tree, share);
+            TreeFilesRecord.Change(home, tree, state => state with { Shares = [.. state.Shares.Where(kept => kept.Path != share.Path), share] });
+        }
     }
 
     /// <summary>The record with the shares at <paramref name="paths"/> dropped and <paramref name="lost"/> kept to be said.</summary>

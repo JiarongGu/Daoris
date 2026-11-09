@@ -95,3 +95,57 @@ The independent Opus 5.5 reader's read of round 2 at `fd03c57109`, read-only; as
 **Not blocking.** The carried Accept (§2.4) has no rule: the session's `uncommitted` commit lapses the review. A resolver that commits or runs `rebase --continue` itself moves HEAD and the abort drops that work: keep HEAD on the edits ref. An `integrate` waiting on a candidate held for a decide has no bound: say so.
 
 **Rows.** a–d are ordered and proved right; e proves `behind` through `check`, but `check`'s `commit` port is built in f: move it ahead of e; g must also draw what h adds (`integrate`'s `ref` and `conflicted`, `push`'s `ref`, `line`'s `commit`); h must re-home `TurnCarries` and prove the same-tip hand-back, a gate hand-back ending `failed`, and a member moved between ready and the effect; j's condition fixed as above.
+
+
+## Codex, round 3
+
+Codex's read of round 3 at `fd2c1421c6`, run by the steward from outside the install, read-only; verbatim.
+
+**Another round is needed.** The generic kinds and workflow-level landing composition follow the direction. Several guarantees remain incomplete.
+
+Round 2’s findings:
+
+- **Codex 1: answered.** Archival requires unchanged normalized text or relocation; the post-check covers clean merges too.
+- **Codex 2: answered in design.** The transitive acceptance/receipt map, scopes, firing keys and separately preserved invocation identities address the hash dependencies.
+- **Codex 3: partial.** Distinct source versions, expansion limits and refused conversions have answers, but the migration’s state and eligibility coverage remains incomplete below.
+- **Codex 4: partial.** Failed-candidate readmission is defined, but request-branch deletion still conflicts with delivery idempotence.
+- **Opus N1: answered.** Isolated requests retain promotion as the line’s one writer, with currency and authority rechecks.
+- **Opus N2: answered for its stated loop.** Closed-request adoption is removed; replay conflicts and gate hand-backs have distinct recovery.
+- **Opus N3: answered.** Bound-member waiting, inclusion-based omission and the head’s combined recheck are explicit.
+- **Opus N4: answered.** Run-owned requests produce no dispositions; *rebase it* retires.
+
+These are design answers, not demonstrated proofs.
+
+Blocking findings, with code paths relative to the driver project:
+
+1. **Deleting a request branch strands an unchanged retry.** Design §2.10 deletes it on failure. Sequence: rebase returns W; fast-forward creates branch P and settles delivery D; integration’s gates hand W back without moving the line; P is deleted; the person completes the recovery task; rebase returns W again. `Workplace/DeliveryStore.cs:307–311` returns delivered D and allocates no generation. P cannot be recreated through its completed phases; fresh integration admission finds no branch. **Smallest change:** define a new delivery generation after the owning step’s proven branch deletion, preserving D unchanged and reconciling uncertain effects first. Prove this sequence across restart in h.
+
+2. **Ended runs are not necessarily permanent history.** Design §5 excludes them. `Workflows/Nodes/NodeRunKeeping.cs:96–100` explicitly reopens a run when its chain returns; `Workflows/WorkflowRunStart.cs:147` retains its existing binding. Sequence: finish a run, upgrade without converting it, then return its chain here: it still binds the unsupported `land` graph. **Smallest change:** convert every retained binding/version that can reopen, preserving its ended marker. Add this reopening sequence to h.
+
+3. **The conversion table omits stopped and invalidated land states.** Both exist in `Workflows/Nodes/NodeContract.cs:145`. A stopped land can coexist with an independent active task, leaving the run open at upgrade. No mapping specifies how its Stop survives; treating it as fresh permits landing against that word. **Smallest change:** map both states explicitly, preserve Stop, and settle outstanding effects before restarting invalidated work. Require coverage against `NodeStates.All`.
+
+4. **The delete census still misses a deletion path.** §2.7 omits `GitRefActs`. Its `DeleteAsync:127` and creation undo at `UndoAsync:86` construct deletes directly, outside `JournaledDeletes`. Sequence: an act-created branch becomes an open run’s followed work branch; undoing that creation deletes the unchanged ref without the proposed open-run guard. **Smallest change:** put delete, undo and rename removal through the same ownership guard; census all branch-deleting transactions.
+
+The records post-check, target-rebind, selection-symbol, say-symbol, kit and door censuses can catch their declared omissions. The recursive conversion census catches omitted **fields**, not omitted states or excluded runs. The delete census would remain green on finding 4.
+
+**Rows a–j are dependency-ordered correctly**, including check before merge’s proofs, g before h, and D232’s j condition. Their proof plan needs the four sequences above; h’s completeness claim is premature.
+
+## Opus (independent), round 3
+
+The independent Opus 5.5 reader's read of round 3 at `fd2c1421c6`, read-only; as it answered, set down by the steward. Verdict: a round 4; N3 not answered, five new blocking findings, all in code round 3 had not read. Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/`.
+
+**Round 2's findings.** Codex 1 answered. Codex 2 answered for the node record (`NodeAcceptances.cs:78-114`, `WireLapsing.cs:58-61`, `WireEvaluation.cs:339`), its census too narrow. Codex 3 answered: each open digest converted, `NodeGraphs.cs:25-28`'s limits raised, a refused version recovered as a new run. Codex 4 / N2 answered in the design: adoption by invocation replaces the newest-request-in-any-state lookup (`IntegrationStore.cs:162-165`, `IntegrateStart.cs:208`), and `against` tells a promoted conflict from a failed candidate, but requests written before h carry no invocation (N7). N1 answered: the promotion's compare-and-set (`IntegrationPromotes.cs:380-418`) stays the line's one writer, the epoch loop (`IntegrationReplays.cs:155-162`) can stop before a merge request. N3 not answered (N6). N4 answered.
+
+**Would each census go red on a missed member?** The records post-check: no. `TASKS.md`'s row *WFREVIEW3a, 3d, 3l and 3m* is a compound id in the backlog, but §2.3 parses compound ids only on archive lines; the work archives 3a (the row becomes *3d, 3l and 3m*) while the line archives 3l (*3a, 3d and 3m*): each new head is added by one side, both stand, no literal id repeats and none matches an archived head, so the check passes with two rows reopening finished items. Parse every row's compound id and apply each rule per id. The conversion census: no, scoped to records a `land` writes, it misses what h newly reads (the requests' asking invocation, N7; the binding's resolved `Land`, `WorkflowRunBinding.cs:47`, written at `WorkflowRunBindings.cs:136-139`). The selection census: no; it misses the 23 sources comparing `node.Kind == NodeKinds.Land` and the readers of the bound `Landing` intent (`WorkflowProcesses.cs:118-136`, `IntegrateChoice.cs:37`, `GraphGate.cs:117`, `WorkflowGate.cs:67-76`, `TreeLandPlans`, `LandingGate`); a reader rewritten to take the first `IMoves` node stays green and reads the wrong merge in a release graph. The delete census: no; `GitRefActs.DeleteAsync` and its rename (`GitRefActs.cs:118-165`) run their own `ref.delete`, and `TreeOpenings.cs:118` deletes outside `JournaledDeletes`. The say symbols and `behind`: yes.
+
+**New blocking.**
+
+- **N5. The hand-off recorded as a journal act holds the whole repository.** `ActReconciler.cs:53` reads every unclosed act in the repository's shared git directory; one running here holds every writer (`:143-147`), one not running here is taken over and closed (`:164-177`); the promotion (`IntegrationPromotes.cs:372-375`) and the tree update (`TreeSync.cs:214`) ask it. Sequence: R1's `resolve` records its hand-off and waits 30 minutes; R2's candidate is held at its promotion throughout, or the first writer closes the reservation. Change: the hand-off its own record, read only for its tree.
+- **N6. Nothing writes the together operation's landing.** `TogetherOperations.Landing` and `Settle(Landed)` are written only at `TogetherAccepts.cs:116,151`, reached only from `LandPerformer.cs:259-262`, which h deletes. Sequence: the head's `merge` lands; the operation stays `ready`; `DeliveryReach.cs:49-55` reports every member `bound` for ever and their runs never end. The head is not a member (`:47`), so its `rebase` can start mid-join, which `LandPerformer.cs:253-257` holds today. Change: the head's `merge` writes the operation's attempt before its first phase and settles it by phase; the head's `rebase` waits until the operation is `ready`.
+- **N7. A run whose request is open at the upgrade fails.** Requests carry no key or invocation column (`IntegrationStore.cs:64-67`) and §2.10 finds closed requests by invocation only. Sequence: an open request settles after h; the reconcile finds none and withdraws the attempt (`IntegrateStart.cs:234,269-284`); the new ask is refused (`IntegrationRequests.cs:226-233` or `:411-414`); the node fails though its work is on the line. Change: the migration writes each waiting attempt's invocation onto its requests.
+- **N8. `merge` into a branch drops today's refusals.** A chain branch is advanced today only when no working tree has it checked out and its work is not already on the line (`TreeBranches.cs:320-325,362-390`); §2.6 keeps neither. Sequence: the person's checkout is on the chain's branch; `update-ref` moves it under the checkout; the person's next commit reverts the step. Change: the judgement keeps `LandingAdvance.Refusal`'s facts: a checked-out branch waits, said; a completed one fails.
+- **N9. Two askers to commit, against D228.** §4 keeps `TurnCarries` beside `resolve`'s `uncommitted`. Sequence: a finished quest's dirty tree is asked to commit up to `TurnCarry.Bound` times, then three more per stop; today's one shared limit (`TurnCarry.cs:26`) is lost, and `TurnCarries` talks to a session whose tree is mid-hand-off. Change: one asker; `TurnCarries` stands down where a `rebase` follows and reads the hand-off.
+
+**Not blocking.** `exists` refuses an existing `release` branch, against §3's release promotion. Release's `behind` goes back past `review`, so the person is asked again each time the line moves. A `merge` into a branch must write the landing provenance the node route reads (`IntegrationRequests.cs:128-158,255-260`). The conversion opens the desktop store, which `StoreNamesStep` upgrades, so "reads nothing another step writes" is false. What `conflicted` does when the request branch's delete fails and the branch is kept is not said.
+
+**Rows.** a to j ordered right (g before h, i and j placed right). Proofs missing: a, compound backlog rows; d, another run's promotion and a tree update while a hand-off is open; e, the operation's landing written and the head waiting, a branch target checked out, a completed one; h, a pre-h request closing after the upgrade, the binding's `Land` mapped, every `NodeKinds.Land` reader named.

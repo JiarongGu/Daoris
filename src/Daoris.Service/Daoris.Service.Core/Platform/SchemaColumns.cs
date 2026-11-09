@@ -32,6 +32,17 @@ internal static class SchemaColumns
         await AddAsync(db, table, definition, ct).ConfigureAwait(false);
     }
 
+    /// <summary>An upgrade's statements as one transaction: a failure between an alter and its backfill leaves the store unchanged, not a column every later open skips.</summary>
+    public static Task ApplyAsync(ConnectionGate db, string script, CancellationToken ct) =>
+        db.InTransactionAsync(async (transaction, inside) =>
+        {
+            await using var command = db.Command();
+            command.Transaction = transaction;
+            command.CommandText = script;
+            await command.ExecuteNonQueryAsync(inside).ConfigureAwait(false);
+            return true;
+        }, ct);
+
     /// <summary>
     /// The alter, where another connection opening the same new file may have added the column since the check: the check and
     /// the alter are not one transaction, and that connection's column is the one wanted.

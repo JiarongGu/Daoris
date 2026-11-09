@@ -97,6 +97,18 @@ public sealed class QuestExchangeTests : IAsyncLifetime
         Assert.DoesNotContain("has not declared", outcome.Message);
     }
 
+    /// <summary>The registry ignores case, so a quest is kept under the registered spelling the receiver's queue is read by.</summary>
+    [Fact]
+    public async Task A_receiver_typed_in_another_case_is_kept_as_registered()
+    {
+        var first = await Publish("quiet");
+        var second = await Publish("Quiet");
+
+        Assert.Equal("Quiet", first.Quest!.To);
+        Assert.Equal(first.Quest.Id, second.Quest!.Id);
+        Assert.Equal([first.Quest.Id], (await _quests.ListAsync(receiver: "Quiet")).Select(q => q.Id));
+    }
+
     /// <summary>
     /// A quest for a name nobody registered has nobody to read it — and the refusal must name who CAN
     /// be asked, because "no" with no alternative leaves the asker exactly where they started.

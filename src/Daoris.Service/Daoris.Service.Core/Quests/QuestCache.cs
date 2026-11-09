@@ -22,8 +22,8 @@ internal sealed class QuestCache(QuestStore store)
     /// <summary>
     /// A source reopened by an older build has a row that keeps no reopen, though its log holds one no submission
     /// answered since. Those taken quests are replayed from the log, which reads it, so the driver tells it from one not yet ready.
-    /// A step its source's reopen reached holds a reopen too, but no submission of its own, so it is never selected; and once
-    /// replayed a source's row keeps its reopen, so no later open selects it again.
+    /// A step its source's reopen reached, or one that went on after it, keeps no reopen of its own for a replay to set, so only a
+    /// replay that sets one is written; once written a source's row keeps its reopen, so no later open selects it again.
     /// </summary>
     private Task RecacheUnkeptReopensAsync(CancellationToken ct) =>
         RecacheAsync(
@@ -33,7 +33,7 @@ internal sealed class QuestCache(QuestStore store)
               AND EXISTS (SELECT 1 FROM quest_log WHERE quest_log.quest = quests.id AND kind = 'reopened')
               AND EXISTS (SELECT 1 FROM quest_log WHERE quest_log.quest = quests.id AND kind = 'submitted')
             """,
-            ct);
+            ct, changes: quest => quest.Reopened is not null);
 
     /// <summary>
     /// A cache written before dismissals holds conflicts without the sequence that names them,
@@ -50,13 +50,16 @@ internal sealed class QuestCache(QuestStore store)
     private Task RecacheClosedAwaitsAsync(CancellationToken ct) =>
         RecacheAsync("SELECT id FROM quests WHERE status IN ('Done', 'Declined') AND awaits IS NOT NULL", ct);
 
-    private async Task RecacheAsync(string stale,CancellationToken ct)
+    /// <summary>Replays the rows <paramref name="stale"/> selects; with <paramref name="changes"/> the write opens only for a replay it holds.</summary>
+    private async Task RecacheAsync(string stale, CancellationToken ct, Func<Quest, bool>? changes = null)
     {
         await using (var probe = _db.Command())
         {
             probe.CommandText = $"SELECT EXISTS ({stale})";
             if (Convert.ToInt32(await probe.ExecuteScalarAsync(ct).ConfigureAwait(false)) == 0) return;
         }
+
+        if (changes is not null && !await AnyChangesAsync(stale, changes, ct).ConfigureAwait(false)) return;
 
         await _db.InTransactionAsync(async (transaction, inside) =>
         {
@@ -71,7 +74,8 @@ internal sealed class QuestCache(QuestStore store)
 
             foreach (var id in ids)
             {
-                if (QuestLog.Replay(await store.HistoryAsync(id, transaction, inside).ConfigureAwait(false)) is { } quest)
+                if (QuestLog.Replay(await store.HistoryAsync(id, transaction, inside).ConfigureAwait(false)) is { } quest
+                    && (changes is null || changes(quest)))
                 {
                     await WriteAsync(quest, transaction, inside).ConfigureAwait(false);
                 }
@@ -79,6 +83,24 @@ internal sealed class QuestCache(QuestStore store)
 
             return ids.Count;
         }, ct).ConfigureAwait(false);
+    }
+
+    private async Task<bool> AnyChangesAsync(string stale, Func<Quest, bool> changes, CancellationToken ct)
+    {
+        var ids = new List<string>();
+        await using (var select = _db.Command())
+        {
+            select.CommandText = stale;
+            await using var reader = await select.ExecuteReaderAsync(ct).ConfigureAwait(false);
+            while (await reader.ReadAsync(ct).ConfigureAwait(false)) ids.Add(reader.GetString(0));
+        }
+
+        foreach (var id in ids)
+        {
+            if (QuestLog.Replay(await store.HistoryAsync(id, ct).ConfigureAwait(false)) is { } quest && changes(quest)) return true;
+        }
+
+        return false;
     }
 
     /// <summary>

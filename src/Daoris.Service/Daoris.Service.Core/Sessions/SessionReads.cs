@@ -46,6 +46,17 @@ internal sealed class SessionReads(SessionStore store)
         return await reader.ReadAsync(ct).ConfigureAwait(false) ? Read(reader) : null;
     }, ct);
 
+    /// <summary>The sessions some record of this machine's continues by <c>from</c>: each one <see cref="ContinuedByAsync"/> would answer with a record.</summary>
+    public Task<IReadOnlySet<string>> ContinuedIdsAsync(CancellationToken ct = default) => _db.RunAsync<IReadOnlySet<string>>(async () =>
+    {
+        await using var command = _db.Command();
+        command.CommandText = "SELECT DISTINCT from_session FROM sessions WHERE from_session IS NOT NULL AND origin IS NULL";
+        var continued = new HashSet<string>(StringComparer.Ordinal);
+        await using var reader = await command.ExecuteReaderAsync(ct).ConfigureAwait(false);
+        while (await reader.ReadAsync(ct).ConfigureAwait(false)) continued.Add(reader.GetString(0));
+        return continued;
+    }, ct);
+
     /// <summary>
     /// The record a quest's <c>PublishedBy</c> names: this machine's by that id, else a teammate's mirror, keyed
     /// <c>origin/id</c>, since the publisher's own machine wrote the id it knew the session by. Ids are random and 32 bits wide, so the

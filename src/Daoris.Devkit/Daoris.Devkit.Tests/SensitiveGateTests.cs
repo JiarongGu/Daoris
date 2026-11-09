@@ -35,6 +35,15 @@ public sealed class SensitiveGateTests : IDisposable
         public IReadOnlyList<string> TrackedFiles() => files;
     }
 
+    private sealed class BytesGit(string file, byte[] staged) : IGit
+    {
+        public IReadOnlyList<string> StagedFiles() => [file];
+
+        public IReadOnlyList<string> TrackedFiles() => [file];
+
+        public byte[]? StagedBytes(string path) => staged;
+    }
+
     private void Git(params string[] arguments)
     {
         var ran = Process.Run("git", arguments, _fx.Path);
@@ -240,6 +249,64 @@ public sealed class SensitiveGateTests : IDisposable
         var result = new SensitiveGate(ScanScope.Tree, new FakeGit("notes.md")).Run(Context());
 
         Assert.False(result.Passed, result.Detail);
+    }
+
+    /// <summary>🔴 The staged scope decodes the index's bytes as the tree scope decodes the file: a staged UTF-16 file with a byte-order mark is text.</summary>
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public void A_staged_utf16_file_with_a_byte_order_mark_is_read_not_skipped(bool littleEndian)
+    {
+        Git("init", "-q");
+        var encoding = new System.Text.UnicodeEncoding(bigEndian: !littleEndian, byteOrderMark: true);
+        _fx.WriteBytes("notes.md", [.. encoding.GetPreamble(), .. encoding.GetBytes($"see {WindowsHomePath()}\n")]);
+        Git("add", "notes.md");
+
+        var result = new SensitiveGate(ScanScope.Staged, new CommandLineGit(_fx.Path), allowBuiltinsOnly: true)
+            .Run(Context());
+
+        Assert.False(result.Passed, result.Detail);
+    }
+
+    /// <summary>🔴 Binary is decided on the first block of the index's bytes, as in the tree scope: a leak ahead of a late NUL is found.</summary>
+    [Fact]
+    public void A_staged_file_whose_first_block_is_text_is_scanned_whatever_follows()
+    {
+        Git("init", "-q");
+        _fx.WriteBytes("notes.md", [.. System.Text.Encoding.UTF8.GetBytes($"see {WindowsHomePath()}\n"), .. new byte[9000].Select(_ => (byte)'a'), 0]);
+        Git("add", "notes.md");
+
+        var staged = new SensitiveGate(ScanScope.Staged, new CommandLineGit(_fx.Path), allowBuiltinsOnly: true).Run(Context());
+        var tree = new SensitiveGate(ScanScope.Tree, new CommandLineGit(_fx.Path), allowBuiltinsOnly: true).Run(Context());
+
+        Assert.False(tree.Passed, tree.Detail);
+        Assert.False(staged.Passed, staged.Detail);
+    }
+
+    /// <summary>The seam hands the gate the index's bytes, and the gate decodes them: a fake that holds UTF-16 bytes is read as text.</summary>
+    [Fact]
+    public void The_staged_scope_decodes_the_bytes_the_seam_returns()
+    {
+        var encoding = new System.Text.UnicodeEncoding(bigEndian: false, byteOrderMark: true);
+        var bytes = (byte[])[.. encoding.GetPreamble(), .. encoding.GetBytes($"see {WindowsHomePath()}\n")];
+
+        var result = new SensitiveGate(ScanScope.Staged, new BytesGit("notes.md", bytes), allowBuiltinsOnly: true).Run(Context());
+
+        Assert.False(result.Passed, result.Detail);
+    }
+
+    /// <summary>A staged file with a NUL and no byte-order mark is binary, as in the tree scope.</summary>
+    [Fact]
+    public void A_staged_binary_file_is_skipped()
+    {
+        Git("init", "-q");
+        _fx.WriteBytes("blob.bin", [.. System.Text.Encoding.UTF8.GetBytes($"see {WindowsHomePath()}"), 0, 1, 2]);
+        Git("add", "blob.bin");
+
+        var result = new SensitiveGate(ScanScope.Staged, new CommandLineGit(_fx.Path), allowBuiltinsOnly: true)
+            .Run(Context());
+
+        Assert.True(result.Passed, result.Detail);
     }
 
     /// <summary>A binary file is not text and scanning it produces noise, not findings.</summary>

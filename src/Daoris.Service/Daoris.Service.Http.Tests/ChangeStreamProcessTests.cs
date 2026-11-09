@@ -98,7 +98,7 @@ public sealed class ChangeStreamProcessTests : IDisposable
             await connector.OpenAsync();
             var asks = await AskStore.OpenAsync(connector);
             var now = DateTimeOffset.UtcNow;
-            await asks.SaveAsync(new Ask("a5c0de", Workspaces.Default, "Make the bridge faster", AskState.Open, "declarations", now, now));
+            await asks.InsertAsync(new Ask("a5c0de", Workspaces.Default, "Make the bridge faster", AskState.Open, "declarations", now, now));
         }
 
         var answer = JsonDocument.Parse(await waiting.WaitAsync(Poll.Patience)).RootElement;

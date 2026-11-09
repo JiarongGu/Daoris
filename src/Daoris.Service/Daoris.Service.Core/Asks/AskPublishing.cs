@@ -96,14 +96,14 @@ internal sealed class AskPublishing(
             if (published.Quest is not null)
             {
                 var took = ask with { State = AskState.Published, Tier = AskDesk.ByName, Quests = [published.Quest.Id] };
-                await asks.SaveAsync(took, ct).ConfigureAwait(false);
+                if (await LostAsync(took, published.Quest.Id, workspace, now, ct).ConfigureAwait(false) is { } first) return first;
                 return new(AskRefusal.None, $"Asked as `#{id}` in `{workspace}`.\n\n{published.Message}", took, published.Quest);
             }
 
             // The receiver the person named could not be asked. The ask is still what they meant, so
             // it is kept — proposed by declarations, so the refusal arrives with somewhere to go.
             var kept = ask with { State = AskState.Proposed, Note = published.Message };
-            await asks.SaveAsync(kept, ct).ConfigureAwait(false);
+            if (await LostAsync(kept, null, workspace, now, ct).ConfigureAwait(false) is { } earlier) return earlier;
             return new(
                 AskRefusal.QuestRefused,
                 $"{published.Message}\n\nThe ask is kept as `#{id}` — {Describe(kept)}",
@@ -111,8 +111,18 @@ internal sealed class AskPublishing(
         }
 
         var proposed = ask with { State = AskState.Proposed };
-        await asks.SaveAsync(proposed, ct).ConfigureAwait(false);
+        if (await LostAsync(proposed, null, workspace, now, ct).ConfigureAwait(false) is { } already) return already;
         return new(AskRefusal.None, $"Asked as `#{id}` in `{workspace}` — {Describe(proposed)}", proposed);
+    }
+
+    /// <summary>Keeps a new ask by insert only: null when kept, else the repeat's answer for the identical ask that holds the id, which a door may have moved since the check.</summary>
+    private async Task<AskOutcome?> LostAsync(Ask ask, string? quest, string workspace, DateTimeOffset now, CancellationToken ct)
+    {
+        if (await asks.InsertAsync(ask, ct).ConfigureAwait(false)) return null;
+
+        if (quest is not null) await asks.RecordPublishedAsync(ask.Id, quest, tier: null, now, ct).ConfigureAwait(false);
+        var existing = await standings.FindAsync(ask.Id, ct).ConfigureAwait(false) ?? ask;
+        return new(AskRefusal.None, $"Ask `#{ask.Id}` was already asked in `{workspace}` — {Describe(existing)}", existing);
     }
 
     /// <summary>

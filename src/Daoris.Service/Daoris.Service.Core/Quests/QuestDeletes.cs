@@ -28,12 +28,23 @@ internal sealed class QuestDeletes(
         }
 
         var remote = await claims.SharedAtAsync(quest, ct).ConfigureAwait(false);
-        var deletion = await quests.DeleteAsync(quest.Id, now, travels: remote is not null, ct).ConfigureAwait(false);
+        // What stands on the quest is judged again inside the write's own transaction, so a session started for it or a quest that
+        // began waiting on it since the look keeps it, where the store alone re-checks only that it is open.
+        var (deletion, since) = await quests.Db.InTransactionAsync(async (_, inside) =>
+        {
+            if (await quests.FindAsync(quest.Id, inside).ConfigureAwait(false) is { } current
+                && await KeptAsync(current, inside).ConfigureAwait(false) is { } stands)
+            {
+                return (new QuestDeletion(current, Deleted: false), stands);
+            }
+
+            return (await quests.DeleteAsync(quest.Id, now, travels: remote is not null, inside).ConfigureAwait(false), ((string Stands, string Instead)?)null);
+        }, ct).ConfigureAwait(false);
         if (!deletion.Deleted)
         {
-            // It moved between the look and the write: the store judged it again, inside the write.
-            return deletion.Quest is { } moved && await KeptAsync(moved, ct).ConfigureAwait(false) is { } since
-                ? new(QuestDeleteRefusal.Kept, $"Quest `#{quest.Id}` {since.Stands}, so it stays. {since.Instead}", moved)
+            // It moved between the look and the write, judged again inside the write.
+            return since is { } nowKept
+                ? new(QuestDeleteRefusal.Kept, $"Quest `#{quest.Id}` {nowKept.Stands}, so it stays. {nowKept.Instead}", deletion.Quest)
                 : new(QuestDeleteRefusal.NotFound, $"No quest `#{quest.Id}`. Ids come from `quest_list`.", Quest: null);
         }
 

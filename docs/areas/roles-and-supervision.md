@@ -135,7 +135,7 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they start wi
 22. A policy is a row of `role_policy`, bound by a digest to the choices it was set for. Daoris's own writes of the choices
     re-key it. Any other writer leaves it *stale*, and the role walks its order and says so. No row means `order`. (from D226)
 23. Two rules exist. `order` is the default. `weight` is a deterministic pick over the role's last 20 new starts, ties by
-    order, two starts in one look reserved apart, a reservation given back when its walk refuses or throws; a weight is 0 to 10. (from D226)
+    order, two starts in one look reserved apart, a reservation given back when its walk refuses or throws, or its start ends before the record opens (held, refused, thrown); a weight is 0 to 10. (from D226)
 24. A choice may take only some of the role's works, hold a share of the window (1 to 99%), and keep a daily budget of
     starts or reported tokens in the machine's local day. A budget acts at a start only. (from D226)
 25. Presets fill the form and never save: *First that can run*, *Spread evenly* and *Spread by weight*; the two spreads
