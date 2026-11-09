@@ -134,7 +134,7 @@ public static class AgentOffers
             var listed = held is not null && held.Version == version;
             return new OfferReading(agent, version, account ?? OwnHome, now, listed ? held!.Models : null, listed ? held!.Efforts : null, refused)
             {
-                RefusedAt = now,
+                RefusedAt = same ? held!.RefusedAt : now,
             };
         });
 

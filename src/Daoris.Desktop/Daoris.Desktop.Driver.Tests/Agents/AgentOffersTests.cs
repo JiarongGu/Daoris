@@ -129,6 +129,17 @@ public sealed class AgentOffersTests : IDisposable
         Assert.Equal(AgentOffers.NotOffered, Judge("acct-1", "opus", at: Now + AgentOffers.Fresh - TimeSpan.FromMinutes(1)));
     }
 
+    [Fact]
+    public void A_later_refusal_does_not_hold_an_earlier_one_past_its_own_day()
+    {
+        Assert.Null(AgentOffers.Offered(_home, "claude-code-acp", "1.0.0", "acct-1", ["opus", "haiku"], null, Now));
+        Assert.Null(AgentOffers.Refused(_home, "claude-code-acp", "1.0.0", "acct-1", "opus", Now));
+        Assert.Null(AgentOffers.Refused(_home, "claude-code-acp", "1.0.0", "acct-1", "haiku", Now.AddHours(23)));
+
+        Assert.Equal(AgentOffers.RefusedCode, Judge("acct-1", "haiku", at: Now.AddHours(23)));
+        Assert.Null(Judge("acct-1", "opus", at: Now + AgentOffers.Fresh));
+    }
+
     /// <summary>A reading from an older version never replaces a newer one; the tool's own home is a key of its own.</summary>
     [Fact]
     public void An_older_version_never_replaces_a_newer_reading()
