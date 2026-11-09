@@ -311,7 +311,7 @@ read as its object), *by id* those naming an id alone.
 | A landed session's review | 6 | 0 | 2 (1) | `ViewGitCountTests` |
 | The Accept offer of a tree of work | 8 | 0 | 0 | `OfferGitCountTests` |
 | The look's tidy, six trees (two) | 18 (10) | 1 (`worktree list`, the judgement's own) | 1 (0) | `TidyGitCountTests` |
-| A session's start, to its spawn | 15 | 0 | 3 (0) | `StartGitCountTests` |
+| A session's start, to its spawn (the files stage's `core.ignorecase` among them; the landing plan's layout one start) | 21 | 0 | 3 (0) | `StartGitCountTests` |
 | A squash press's landing | 25 | 0 | 4 (1) | `LandGitCountTests` |
 | A merge press's landing | 39 | 3 (the line's commit) | 9 (0) | `LandGitCountTests` |
 

@@ -23,6 +23,8 @@ internal sealed class TreeLandPlans(TreeContext context, TreeLandSyncs syncs)
     /// </param>
     internal async Task<LandingPlan> PlanAsync(string path, LandingSubject subject, CancellationToken ct = default, IWorkplaceProcess? process = null)
     {
+        // Reads only (the remark above): the rule's common dir and the judgement's layout are one start.
+        using var once = GitReadOnce.Within();
         var plan = await PlanRuleAsync(path, subject, ct, process).ConfigureAwait(false);
         if (process?.LandingCannot is not null || plan.Target.Length == 0) return plan;
         var full = Path.GetFullPath(path);
