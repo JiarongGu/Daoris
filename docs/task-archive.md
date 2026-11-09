@@ -121,6 +121,10 @@ the per-task record. Entries preserve their original wording so the archive stay
 ## DOCTRINECLI1 — the doctrine console's Ctrl+C hold and the CLI's Node floor (2026-11-09)
 
 > **DOCTRINECLI1** (driver): Outcome: `DoctrineConsole` holds Ctrl+C through `InterruptHold`, taken before the child starts and removed when it ends, and the CLI's entry refuses a Node below 22 with exit 2 (`bin/node-floor.mjs`), the floor checked once inside the CLI, never by a second process start.
+## UIFIND4 (2026-11-09)
+
+> **UIFIND4** (web, agents): Outcome: an agent's page opens the API-key form under the Daoris accounts it adds to, above *Your own sign-in*; an agent with no account draws no column heads and says what the list is and the one press that adds the first; *Ways in* says each way in as what it gives (*command line*, *conversations*) and what to do where it is not installed, in English and Chinese.
+
 ## UIFIND2, UIFIND3 and UIFIND5 (2026-11-09)
 
 > **UIFIND2 / UIFIND3 / UIFIND5** (web): Outcome: the Files tab leads with its paths and the person's rules, its layers, twin, commit and acts behind one fold, and an unreadable checkout says what to check; the ring never draws taller than its card is wide, so two repositories stay in one view; a blocked clean-up row with an unknown owner says its reason once, the press first, in English and Chinese.

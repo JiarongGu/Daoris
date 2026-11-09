@@ -6,14 +6,13 @@ import { toolsOf } from './agentsFixtures';
 import { scopeOf, THREE } from '../settings/accounts/accountsFixtures';
 import type { AgentAccounts } from '../settings/accounts/accounts';
 import {
-  accountAct, accountLabel, accountName, accountState, accountStates, accountWho, agentRows, ownWho, doorsSummary, heldBy, nextStartSaid,
+  accountAct, accountLabel, accountName, accountState, accountStates, accountWho, agentRows, ownWho, heldBy, nextStartSaid,
   pooledLines, readLine, rulesSummary, settingsSummary, signedOutHeld, stateWhen, stateWord, usageCells, usageSummary, useSummary,
   versionOnly,
 } from './agents';
 import type { PoolReceipt } from '../settings/accounts/accounts';
 
-// The Agents place's words and facts, pure: an account's last known state with when it is read, the list's
-// rows, and each folded section's line. No bridge, so every state is an argument.
+// The Agents place's words and facts, pure, with no bridge: every state is an argument.
 
 const TEN = '2026-10-04T10:42:00.000Z';
 const NOW = new Date('2026-10-04T12:00:00.000Z');
@@ -695,15 +694,8 @@ describe('each folded section’s line', () => {
     expect(versionOnly('(not asked)')).toBe('(not asked)');
   });
 
-  it('says each way in, its version, and which one driven work starts on', () => {
-    const [tool] = byTool([claude(), { ...claude(), door: 'claude-code-acp', transport: 'protocol', accountOf: 'claude-code', version: '0.9.1' }]);
-    expect(doorsSummary(tool!, 'claude-code')).toBe('direct 2.1.4, for driven work · protocol 0.9.1');
-  });
-
   it('keeps a Chinese word tight to the Chinese word beside it, and a number apart (UX7d-2)', () => {
     i18n.changeLanguage('zh');
-    const [tool] = byTool([claude({ present: false }), { ...claude(), door: 'claude-code-acp', transport: 'protocol', accountOf: 'claude-code', version: '0.9.1' }]);
-    expect(doorsSummary(tool!, 'claude-code')).toBe('直连未安装 · 协议 0.9.1');
     expect(usageSummary(3)).toBe('已测量 3 个会话');
   });
 

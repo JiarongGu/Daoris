@@ -12,7 +12,7 @@ import { type TFunction } from 'i18next';
 import { Fold } from './Fold';
 import type { AgentActs, AgentSection, Question } from '../AgentPage';
 
-export function AccountsFold({ adding, goingBack, signInNewPanel, added, back, busy, now, setGoingBack, acts, tool, t, addedKey, addedWho, offeredName, addedFallback, refusalOf, answered, latest, use, product, readingNow, reading, pooled, labelOf, nextSaid, accountRow, ownLabel, termsOpen, setTermsOpen, keying, addKey, keyDraft, setKeyDraft, askKey, machine, open, toggle, choices }: {
+export function AccountsFold({ adding, goingBack, signInNewPanel, added, back, busy, now, setGoingBack, acts, tool, t, addedKey, addedWho, offeredName, addedFallback, refusalOf, answered, latest, use, product, readingNow, reading, pooled, labelOf, nextSaid, accountRow, ownLabel, firstPress, termsOpen, setTermsOpen, keying, addKey, keyDraft, setKeyDraft, askKey, machine, open, toggle, choices }: {
   adding: boolean;
   goingBack: boolean;
   signInNewPanel: React.ReactNode;
@@ -40,6 +40,7 @@ export function AccountsFold({ adding, goingBack, signInNewPanel, added, back, b
   nextSaid: NextStartSaid | null;
   accountRow: (account: Account) => React.JSX.Element;
   ownLabel: string;
+  firstPress: string | null;
   termsOpen: boolean;
   setTermsOpen: React.Dispatch<React.SetStateAction<boolean>>;
   keying: boolean;
@@ -52,6 +53,7 @@ export function AccountsFold({ adding, goingBack, signInNewPanel, added, back, b
   toggle: (section: AgentSection) => void;
   choices: AccountChoice[];
 }) {
+  const said = nextSaid && tool.accounts.length === 0 && firstPress ? (nextSaid.doors.length > 0 ? { ...nextSaid, takes: '' } : null) : nextSaid;
   return (
     <>
 {adding && (
@@ -135,16 +137,41 @@ export function AccountsFold({ adding, goingBack, signInNewPanel, added, back, b
           )}
           {/* Which account the next start takes and why, in any workspace, above the rows that answer it in parts: a light line, not a setting's row, in the words of the fold's *Next start*; what
               holds the account the order begins on follows in the soft ink, since that is the one a person expects it to take. */}
-          {nextSaid && (
+          {said && (
             <p className="m-0 mb-2 text-small text-ink [overflow-wrap:anywhere]">
-              <span>{nextSaid.takes}</span>
-              {nextSaid.held && <>{t('harness.said.sentences')}<span className="text-ink-soft">{nextSaid.held}</span></>}
-              {nextSaid.doors.map((line) => <span key={line} className="block text-ink-soft">{line}</span>)}
+              {said.takes && <span>{said.takes}</span>}
+              {said.held && <>{t('harness.said.sentences')}<span className="text-ink-soft">{said.held}</span></>}
+              {said.doors.map((line) => <span key={line} className="block text-ink-soft">{line}</span>)}
             </p>
           )}
           <ul className={ACCOUNT_COLUMNS}>
-            {(tool.accounts.length > 0 || tool.present) && <AccountColumnsHead />}
+            {tool.accounts.length > 0 && <AccountColumnsHead />}
+            {tool.accounts.length === 0 && firstPress && (
+              <li className="col-span-full mb-1 text-small text-ink-soft [overflow-wrap:anywhere]">{t('agents.account.none', { press: firstPress })}</li>
+            )}
             {tool.accounts.map(accountRow)}
+            {keying && (
+              <li className="col-span-full">
+              <form className="mt-2 flex flex-wrap items-center gap-2" onSubmit={(event) => { event.preventDefault(); addKey(); }}>
+                <input
+                  autoFocus
+                  type="password"
+                  autoComplete="off"
+                  spellCheck={false}
+                  value={keyDraft}
+                  onChange={(event) => setKeyDraft(event.target.value)}
+                  aria-label={t('harness.profile.keyLabel', { tool: product })}
+                  placeholder={t('harness.profile.keyPlaceholder')}
+                  className="min-w-72 flex-1 rounded-control border border-line-strong bg-raised px-2.5 py-1 font-mono text-small text-ink outline-none placeholder:text-ink-faint"
+                />
+                <Button type="submit" variant="primary" disabled={busy || !keyDraft.trim()}>{t('harness.profile.keySave')}</Button>
+                {/* Held while the key is on its way, so a refusal is never said to nobody. */}
+                <Button variant="ghost" disabled={busy} onClick={() => askKey(false)}>{t('common.cancel')}</Button>
+                {refusalOf('key', '') && <Refused sentence={refusalOf('key', '')!} />}
+                <span className="basis-full text-meta text-ink-faint">{t('harness.profile.keyHint')}</span>
+              </form>
+              </li>
+            )}
             {/* Your own sign-in last, outside Daoris's accounts : its name and its ⓘ, which says all of it, and no state, no who, no reading, no act and no ⋯, since Daoris
                 never asks it anything and never changes it. An agent not installed has none. */}
             {tool.present && <AccountRow name={ownLabel} why={ownLine()} menu={[]} now={now} />}
@@ -164,26 +191,6 @@ export function AccountsFold({ adding, goingBack, signInNewPanel, added, back, b
               </button>
               {termsOpen && <p className="m-0 mt-1 text-meta text-ink-faint">{t('harness.terms')}</p>}
             </div>
-          )}
-          {keying && (
-            <form className="mt-2 flex flex-wrap items-center gap-2" onSubmit={(event) => { event.preventDefault(); addKey(); }}>
-              <input
-                autoFocus
-                type="password"
-                autoComplete="off"
-                spellCheck={false}
-                value={keyDraft}
-                onChange={(event) => setKeyDraft(event.target.value)}
-                aria-label={t('harness.profile.keyLabel', { tool: product })}
-                placeholder={t('harness.profile.keyPlaceholder')}
-                className="min-w-72 flex-1 rounded-control border border-line-strong bg-raised px-2.5 py-1 font-mono text-small text-ink outline-none placeholder:text-ink-faint"
-              />
-              <Button type="submit" variant="primary" disabled={busy || !keyDraft.trim()}>{t('harness.profile.keySave')}</Button>
-              {/* Held while the key is on its way, so a refusal is never said to nobody. */}
-              <Button variant="ghost" disabled={busy} onClick={() => askKey(false)}>{t('common.cancel')}</Button>
-              {refusalOf('key', '') && <Refused sentence={refusalOf('key', '')!} />}
-              <span className="basis-full text-meta text-ink-faint">{t('harness.profile.keyHint')}</span>
-            </form>
           )}
         </section>
       )}
