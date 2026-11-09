@@ -23,6 +23,9 @@ internal sealed class CheckNode : BuiltInNode, IJournalled
 
     public override NodeLook Look => NodeLook.Check;
 
+    public override NodeArrivals Arrives { get; } =
+        NodeArrivals.Taking(("commit", WireValues.Commit)) with { Outputs = new Dictionary<string, string>(StringComparer.Ordinal) { ["commit"] = WireValues.Commit } };
+
     /// <summary>The heavy executor's port: its answer asks a pass, which reconciles it.</summary>
     public INodeDoor? Door(NodeDoorWiring wiring) => wiring.Executor is { } executor
         ? new CheckExecution(executor, (unit, attempt, node) => VerifyRuns.SendOf(wiring.Home, unit, attempt, node))

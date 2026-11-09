@@ -6,7 +6,7 @@ namespace Daoris.Driver;
 /// settle. It starts once its work is still (<see cref="RebaseWaits"/>), and its door performs it off the pass. Arriving: declared before the
 /// palette offers it, so no saved graph holds one until the composition does.
 /// </summary>
-[NodeKind(NodeKinds.Rebase, NodeGroup.Landing, NodeKinds.Line, Arriving = true)]
+[NodeKind(NodeKinds.Rebase, NodeGroup.Git, NodeKinds.Line, Arriving = true)]
 internal sealed class RebaseNode : BuiltInNode, IObserves, IStarts, ITargets, IReadsSteps
 {
     /// <summary>The input it replays and the outputs it carries.</summary>
@@ -35,6 +35,14 @@ internal sealed class RebaseNode : BuiltInNode, IObserves, IStarts, ITargets, IR
 
     public override IReadOnlyDictionary<string, string> Outputs { get; } =
         new Dictionary<string, string>(StringComparer.Ordinal) { [Commit] = WireValues.Commit, [Problem] = WireValues.Problem };
+
+    public override IReadOnlyDictionary<string, IReadOnlyList<string>> OutputsOn { get; } = new Dictionary<string, IReadOnlyList<string>>(StringComparer.Ordinal)
+    {
+        [Commit] = [RebaseOutcomes.Ready], [Problem] = [RebaseOutcomes.Conflicted, RebaseOutcomes.Uncommitted],
+    };
+
+    /// <summary>Its start's waits (<see cref="RebaseWaits"/>): a session's turn in the work's tree, the open operation a member is bound to, and a head's operation not yet ready.</summary>
+    public override IReadOnlyList<string> Waits { get; } = ["turn", "member", "head"];
 
     public override string? Evidence => NodeObserving.EvidenceSchema(NodeKinds.Rebase);
 

@@ -5,7 +5,7 @@ namespace Daoris.Driver;
 /// commits kept on a recovery ref, and what it ended written on the landing record, which the keeper and the press read. It starts only on a
 /// monitor's <c>when merged</c>, so a closed request never reaches it.
 /// </summary>
-[NodeKind(NodeKinds.Tidy, NodeGroup.Landing, NodeKinds.Monitor)]
+[NodeKind(NodeKinds.Tidy, NodeGroup.Git, NodeKinds.Monitor)]
 internal sealed class TidyNode : BuiltInNode, IObserves, IStarts
 {
     /// <summary>Read from the landing record its door wrote, and nothing fails it. Never skipped, since a skip would read as tidied; the person's door is the stop.</summary>
@@ -35,6 +35,9 @@ internal sealed class TidyNode : BuiltInNode, IObserves, IStarts
     public override NodeLook Look => NodeLook.Line;
 
     public override bool ReadsTheLanding => true;
+
+    public override NodeArrivals Arrives { get; } =
+        NodeArrivals.Taking(("work", WireValues.Work), ("commit", WireValues.Commit)) with { Outcomes = ["tidied", "partly"] };
 
     public NodeObservation Observe(NodeReading reading) => TidyReading.Observe(reading);
 

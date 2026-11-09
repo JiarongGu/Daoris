@@ -15,6 +15,12 @@ public sealed record PaletteKind(
 
     /// <summary>The outcomes a node of the kind is reached with, which a step added in the editor declares: a monitor's; none on the rest.</summary>
     public IReadOnlyList<string> Outcomes { get; init; } = [];
+
+    public IReadOnlyDictionary<string, string> Inputs { get; init; } = NodePorts.None;
+
+    public IReadOnlyDictionary<string, string> Outputs { get; init; } = NodePorts.None;
+
+    public IReadOnlyDictionary<string, IReadOnlyList<string>> OutputsOn { get; init; } = NodeArrivals.NoneOn;
 }
 
 /// <summary>
@@ -51,7 +57,10 @@ public sealed record WorkflowPalette(IReadOnlyList<PaletteKind> Kinds, IReadOnly
             .Select(unit => (Row: unit.Row, Unit: unit))
             .Select(each => new PaletteKind(each.Row.Kind, each.Row.Reach, each.Row.ReachBy, each.Row.FailureBy, each.Row.PersonJudges, each.Row.PersonSkips,
                 each.Row.MayEnd, each.Row.Evidenced, each.Row.SkipBy, each.Unit.Options, Leaving(each.Row, decision: each.Unit.Outcomes.Count > 0), each.Unit.RoleTakes,
-                each.Unit.Offered) { Outcomes = each.Unit.Outcomes })
+                each.Unit.Offered)
+            {
+                Outcomes = each.Unit.Outcomes, Inputs = each.Unit.Inputs, Outputs = each.Unit.Outputs, OutputsOn = each.Unit.OutputsOn,
+            })
             .ToArray();
         IReadOnlyList<string> Leaves(Func<NodeAuthority, bool> may) => [.. units.Where(unit => may(unit.Row)).Select(unit => unit.Row.Kind)];
         var wires = WireKinds.All.Select(kind => new PaletteWire(

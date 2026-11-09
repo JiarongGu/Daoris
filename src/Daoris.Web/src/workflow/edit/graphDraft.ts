@@ -1,6 +1,7 @@
 import type { WorkflowPaletteAnswer } from './answers';
 import type { DraftNode, DraftWire, GraphDraft, GraphJson, StepChoice, WireAsk } from './graphDraftTypes';
 import { REFUSED, TAIL_KINDS, tailOf } from './landMethods';
+import { portsOf } from './stepPorts';
 
 // The step editor's draft: a schema-2 graph as the person composes it, the inverse of the run view's drawing
 // (`workflowFlow.ts`, which reads a graph's wires onto edges). Pure: each change returns a new draft, and `graphOf` writes the graph the
@@ -34,7 +35,7 @@ export const emptyDraft = (): GraphDraft => ({ nodes: [], wires: [], end: '', re
 export function stepChoices(palette: WorkflowPaletteAnswer): StepChoice[] {
   return [
     ...palette.kinds.map((kind): StepChoice => ({
-      kind: kind.kind, version: 1, reach: kind.reach, plugin: null, outcomes: kind.outcomes ?? [], outputsOn: {}, inputs: {}, outputs: {}, evidence: null, rejectable: false,
+      kind: kind.kind, version: 1, reach: kind.reach, plugin: null, outcomes: kind.outcomes ?? [], outputsOn: kind.outputsOn ?? {}, inputs: {}, outputs: {}, evidence: null, rejectable: false,
       skippable: true, leaves: kind.leaves ?? [], options: kind.options, roleTakes: kind.roleTakes ?? [], mayEnd: kind.mayEnd,
       offered: kind.offered ?? 'alone',
     })),
@@ -194,10 +195,10 @@ export const outcomesOf = (node: DraftNode): string[] => names(node.node.outcome
 
 /** What a data wire may take from a step: its outputs, and its evidence where it declares one. */
 export const outputsOf = (node: DraftNode): string[] =>
-  [...Object.keys(record(node.node.outputs)), ...(text(node.node.evidence) ? ['evidence'] : [])];
+  [...Object.keys(portsOf(node).outputs), ...(text(node.node.evidence) ? ['evidence'] : [])];
 
 /** What a data wire may give a step: its inputs. */
-export const inputsOf = (node: DraftNode): string[] => Object.keys(record(node.node.inputs));
+export const inputsOf = (node: DraftNode): string[] => Object.keys(portsOf(node).inputs);
 
 /** The wire kinds the palette lets leave a step, or a plain `after` where this build's palette does not hold its kind. */
 export const leavesOf = (palette: WorkflowPaletteAnswer, node: DraftNode): string[] => choiceOf(palette, node.kind)?.leaves ?? ['after'];
@@ -531,11 +532,12 @@ export type CarrySource = { from: string; port: string };
 
 /** The sources a step's input may be carried from, in the draft's order; its own and those after it would close a cycle. */
 export function sourcesOf(draft: GraphDraft, to: string, input: string): CarrySource[] {
-  const schema = text(record(nodeById(draft, to)?.node.inputs)[input]);
-  if (schema === null) return [];
+  const target = nodeById(draft, to);
+  const schema = target ? portsOf(target).inputs[input] : undefined;
+  if (schema === undefined) return [];
   return draft.nodes.flatMap((source) => {
     if (source.id === to || dependsOn(draft, source.id).has(to)) return [];
-    const ports = Object.entries(record(source.node.outputs)).filter(([, made]) => made === schema).map(([port]) => port);
+    const ports = Object.entries(portsOf(source).outputs).filter(([, made]) => made === schema).map(([port]) => port);
     if (text(source.node.evidence) === schema) ports.push('evidence');
     return ports.map((port) => ({ from: source.id, port }));
   });

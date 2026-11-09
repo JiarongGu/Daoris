@@ -90,4 +90,7 @@ public sealed record WorkflowRunStep(WorkflowStep Step, string State, string Det
 
     /// <summary>The unit's integration state, on a graph run's <c>integrate</c> node only, as its record says it.</summary>
     public IntegrationHead? Integration { get; init; }
+
+    /// <summary>What a graph run's node waits on while it stands active or ready, one of its kind's declared waits; null where it waits on none.</summary>
+    public WorkflowRunWait? Wait { get; init; }
 }

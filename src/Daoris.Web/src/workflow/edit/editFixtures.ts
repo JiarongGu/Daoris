@@ -59,6 +59,24 @@ export const PALETTE: WorkflowPaletteAnswer = {
   ] }],
 };
 
+/** The palette as the cut-over offers the Git group: the rebase, its resolution, the merge and the person's task beside the kinds above. */
+export const GIT_PALETTE: WorkflowPaletteAnswer = {
+  ...PALETTE,
+  kinds: [
+    ...PALETTE.kinds,
+    kind('human', 'pressed', { reachBy: 'person', personJudges: true, outcomes: ['done'], leaves: leaving(false, true, true) }),
+    kind('rebase', 'performed', { reachBy: 'git', failureBy: 'git', mayEnd: false, evidenced: true, outcomes: ['ready', 'conflicted', 'uncommitted'],
+      outputsOn: { commit: ['ready'], problem: ['conflicted', 'uncommitted'] }, leaves: leaving(true, false, true),
+      options: [{ name: 'onto', type: 'text', choices: [], required: false }, { name: 'fetch', type: 'switch', choices: [], required: false }] }),
+    kind('resolve', 'performed', { reachBy: 'git', failureBy: 'git', mayEnd: false, evidenced: true, outcomes: ['resolved'], leaves: leaving(true, false, true),
+      options: [{ name: 'resolver', type: 'choice', choices: ['session', 'fresh', 'person'], required: false }] }),
+    kind('merge', 'performed', { reachBy: 'git', failureBy: 'git', evidenced: true, outcomes: ['merged', 'held', 'behind', 'completed'],
+      outputsOn: { commit: ['merged', 'held'], ref: ['merged', 'held'] }, leaves: leaving(true, false, true),
+      options: [{ name: 'method', type: 'choice', choices: ['merge', 'squash', 'fast-forward'], required: false },
+        { name: 'target', type: 'text', choices: [], required: false }, { name: 'message', type: 'text', choices: [], required: false }] }),
+  ],
+};
+
 /** The documents default's graph, as `WORKFLOW_LIST` answers it. */
 export const DOCUMENTS_GRAPH = {
   schemaVersion: 2, entries: ['work'], end: 'line',

@@ -194,12 +194,13 @@ function groupLit(members: DrawnNode[]): Pick<FlowNode, 'state' | 'reached' | 'c
 const without = ({ kind: _kind, outcomes: _outcomes, outcome: _outcome, ...node }: DrawnNode): FlowNode => node;
 
 /**
- * A node's ports: each outcome it declares, then any a way on names that it does not (a run's answer holds only the outcome its decision
- * returned). An outcome is routed where a `when` wire follows it or a `back` wire returns on it; else it ends at a ◎.
+ * A node's ports: each outcome it declares, then any a way on or back names that it does not (a kind's own need not be declared). An
+ * outcome is routed where a `when` wire follows it or a `back` wire returns on it; else it ends at a ◎.
  */
 function portsOf(t: TFunction, node: DrawnNode, wires: DrawnWire[]): ChartPort[] {
   const own = wires.filter((wire) => wire.from === node.id);
-  const named = own.flatMap((wire) => (wire.kind === 'when' && wire.outcome ? [wire.outcome] : []));
+  const named = own.flatMap((wire) => (wire.kind === 'when' && wire.outcome ? [wire.outcome]
+    : wire.kind === 'back' && wire.on && wire.on !== 'rejected' && wire.on !== 'failed' ? [wire.on] : []));
   const declared = [...new Set([...(node.outcomes ?? []), ...named])];
   return declared.map((outcome) => ({
     outcome,
