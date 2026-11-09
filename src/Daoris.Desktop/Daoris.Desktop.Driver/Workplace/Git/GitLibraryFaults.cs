@@ -52,11 +52,10 @@ internal static class GitLibraryFaults
         lock (Gate)
         {
             if (!Settled.Add(home)) return;
-        }
-
-        foreach (var repository in GitLibraryLeases.Left(DaorisHome.Entry(home, HomeEntry.GitLibraryLeases)))
-        {
-            GitLibraryJournal.Faulted(repository, Package);
+            foreach (var repository in GitLibraryLeases.Left(DaorisHome.Entry(home, HomeEntry.GitLibraryLeases)))
+            {
+                GitLibraryJournal.Faulted(repository, Package);
+            }
         }
     }
 
