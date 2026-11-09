@@ -23,7 +23,6 @@ internal static class TestGit
 
     private static Found? _found;
 
-    /// <summary>The git a bare <c>git</c> start finds on this process's <c>PATH</c>, by its whole path; null where none.</summary>
     public static string? InUse => System();
 
     /// <summary>Point <paramref name="info"/> at the system's git, past the launcher, where it names <c>git</c> bare.</summary>

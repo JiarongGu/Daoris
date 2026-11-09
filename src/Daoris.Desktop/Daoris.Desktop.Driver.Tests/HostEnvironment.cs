@@ -7,8 +7,7 @@ namespace Daoris.Desktop.Driver.Tests;
 /// <summary>
 /// The test host's own environment, set once as the assembly loads, before any test runs and so beside none: what the shell that started
 /// it held of Daoris's and of git's locating variables is taken out, as the merge tool's gates take it (its <c>GATE_REMOVED</c>), and
-/// the process's home is a scratch one of this run's. In the pinned git leg (<see cref="PinnedLeg"/>) the pinned MinGit's folder goes first
-/// on <c>PATH</c>.
+/// the process's home is a scratch one of this run's.
 /// </summary>
 /// <remarks>
 /// A spawn handed no home reads this process's (<see cref="SpawnRequest.Home"/>); the driver's own git runs and tools read the home a

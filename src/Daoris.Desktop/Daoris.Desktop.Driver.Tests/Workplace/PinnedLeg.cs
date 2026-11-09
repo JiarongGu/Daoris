@@ -1,27 +1,26 @@
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// The pinned leg of the git library's proofs (GITLIB1d): the same classes run once more with the MinGit the toolchain pins as the
-/// only git on the host's <c>PATH</c>, so the product's own starts and the fixtures' find it beside each other. The leg is asked by
-/// its settings file (<c>git.pinned.process.runsettings</c>), which sets <see cref="Switch"/>.
+/// The git library's proofs run once more with the MinGit the toolchain pins as the only git on the host's <c>PATH</c>, so the product's
+/// own starts and the fixtures' are both that git. Its settings file (<c>git.pinned.process.runsettings</c>) sets <see cref="Switch"/>.
 /// </summary>
 /// <remarks>
 /// Where the pin cannot be had (a platform without one, a fetch that fails) <see cref="Absent"/> says why and every
-/// <see cref="GitLegFactAttribute"/> is skipped with it, never run on the runner's git and called the pinned leg's.
+/// <see cref="GitLegFactAttribute"/> is skipped with it: the runner's git must never pass for the pinned one.
 /// </remarks>
 internal static class PinnedLeg
 {
     internal const string Switch = "DAORIS_PINNED_GIT_LEG";
 
-    /// <summary>Whether this host was started as the pinned leg.</summary>
+    /// <summary>Whether this host is the pinned leg's.</summary>
     internal static bool Requested { get; private set; }
 
-    /// <summary>Why the pinned git is not here, where the leg was asked and it cannot run; null otherwise.</summary>
+    /// <summary>Why the pinned git is not here when the leg needs it; null otherwise.</summary>
     internal static string? Absent { get; private set; }
 
     /// <summary>
-    /// Read the switch and fetch the pin, once, as the host loads; the folder to put first on <c>PATH</c> (the host sets it, being the one
-    /// source that does), or null where the leg was not asked or the pin is absent.
+    /// Read the switch and fetch the pin as the host loads; the folder to put first on <c>PATH</c> (the host sets it, the one source the
+    /// environment census allows), or null outside the leg or without the pin.
     /// </summary>
     internal static string? Apply()
     {
