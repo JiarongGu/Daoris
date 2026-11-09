@@ -18,7 +18,7 @@ public sealed class RuleFileFirstFormCorpusTests
     private static readonly IReadOnlyList<string> Tops = TopsOf(Names, 3);
 
     /// <summary>This repository's file as it stood in the first form, before its rewrite in git's syntax.</summary>
-    private const string RepositoryFirstForm = """
+    internal const string RepositoryFirstForm = """
         { "rules": [
           { "kind": "local", "paths": ["local/"] },
           { "kind": "local", "paths": ["local/lyntai-local.props"], "copy": true },
@@ -33,7 +33,7 @@ public sealed class RuleFileFirstFormCorpusTests
         """;
 
     /// <summary>The person's fixture: every sequence of both reads of rounds 14 to 17.</summary>
-    private const string PersonFirstForm = """
+    internal const string PersonFirstForm = """
         { "rules": [
           { "kind": "local", "paths": ["{drafts,notes}/"] },
           { "kind": "dependency", "paths": ["src/a/node_modules/"] },
@@ -156,7 +156,7 @@ public sealed class RuleFileFirstFormCorpusTests
         }
     }
 
-    private static List<FileRule> FirstFormRules(string text)
+    internal static List<FileRule> FirstFormRules(string text)
     {
         using var document = JsonDocument.Parse(text);
         return [.. document.RootElement.GetProperty("rules").EnumerateArray().Select(FileRuleFile.FirstFormRule)];
@@ -164,7 +164,7 @@ public sealed class RuleFileFirstFormCorpusTests
 
     private static IEnumerable<FirstFormClass> Classes(string path) => RuleFileFirstForm.Words(path).Select(RuleFileFirstForm.ClassOf);
 
-    private static IEnumerable<string> Generated()
+    internal static IEnumerable<string> Generated()
     {
         IEnumerable<string> paths = Tokens;
         IEnumerable<string> all = Tokens;
@@ -177,7 +177,7 @@ public sealed class RuleFileFirstFormCorpusTests
         return all.SelectMany(path => new[] { path, path + "/" }).Distinct(StringComparer.Ordinal).Where(path => RoomPaths.Unfit(path) is null);
     }
 
-    private static List<string> TopsOf(IReadOnlyList<string> names, int depth)
+    internal static List<string> TopsOf(IReadOnlyList<string> names, int depth)
     {
         var tops = new List<string>();
         IEnumerable<string> level = names;
