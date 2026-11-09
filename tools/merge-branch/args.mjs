@@ -184,6 +184,7 @@ export function parseArgs(argv) {
   if (verbs.filter(Boolean).length > 1) {
     throw usageError('give one of --continue, --rerun, --stale, --drop-batch, --plan, --passed, --prune (which takes --plan) and --full on its own');
   }
+  if (options.full && options.gated) throw usageError('--full and --gated are alternatives: --full runs every gate, --gated the reached ones');
   if (batch && batched === 0) throw usageError('--batch names at least one branch after it');
   if (rerun) {
     if (options.rerun.length === 0) throw usageError('--rerun names the gates to run again: --rerun <gate>…');
@@ -198,6 +199,7 @@ export function parseArgs(argv) {
     }
   } else if (options.passed) {
     if (options.branches.length) throw usageError('--passed takes no branch: it asks about the checkout as it stands');
+    if (flags.length > 1) throw usageError('--passed takes nothing else: it only reads the verdicts');
   } else if (options.prune) {
     if (!options.autoPrune) throw usageError('--no-prune is for a merge; --prune is the prune itself');
     if (options.full) throw usageError('--full is for a merge or the checkout; --prune runs no gate');
