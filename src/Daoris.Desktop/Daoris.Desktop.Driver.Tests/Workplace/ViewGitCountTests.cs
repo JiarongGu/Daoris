@@ -27,6 +27,11 @@ public sealed class ViewGitCountTests(ITestOutputHelper output) : LandedFixture
         ["GIT_HISTORY"] = (1, 0),
         ["GIT_BLAME"] = (1, 0),
         ["GIT_COMPARE"] = (2, 0),
+        ["GIT_GRAPH_AGAIN"] = (0, 0),
+        ["GIT_COMMIT_AGAIN"] = (1, 0),
+        ["GIT_HISTORY_AGAIN"] = (1, 0),
+        ["GIT_BLAME_AGAIN"] = (1, 0),
+        ["GIT_COMPARE_AGAIN"] = (1, 0),
         ["GIT_COMMIT_PLAN"] = (8, 0),
         ["GIT_SWITCH_PLAN"] = (5, 0),
         ["GIT_STASH_PLAN"] = (7, 0),
@@ -55,12 +60,29 @@ public sealed class ViewGitCountTests(ITestOutputHelper output) : LandedFixture
         await CountAsync("CHECKOUT_BRANCH", async () => await WorkingTree.BranchAsync(root) == "main");
         await CountAsync("GIT_CHANGES", async () => (await GitChanges.ReadAsync(root)).Value is not null);
         await CountAsync("GIT_HUNKS", async () => (await GitHunks.ReadAsync(root, "shared.txt", GitHunks.Unstaged)).Value is not null);
-        // Each GitReads its own, as a first open is: a second asks nothing, its answer kept by the commit's id.
-        await CountAsync("GIT_GRAPH", async () => (await new GitReads().GraphAsync(root, [tip])).Value is not null);
-        await CountAsync("GIT_COMMIT", async () => (await new GitReads().CommitAsync(root, tip)).Value is not null);
-        await CountAsync("GIT_HISTORY", async () => (await new GitReads().HistoryAsync(root, tip, "work.txt")).Value is not null);
-        await CountAsync("GIT_BLAME", async () => (await new GitReads().BlameAsync(root, tip, "work.txt")).Value is not null);
-        await CountAsync("GIT_COMPARE", async () => (await new GitReads().CompareAsync(root, line, tip)).Value is not null);
+        // A person's repository is settled and the fixture's files are seconds old, so the clock reads a minute ahead; the stamp's
+        // ask of the system file's path, once a git in use, is made before the count.
+        VolumeClock.Seam.Value = _ => DateTime.UtcNow + TimeSpan.FromMinutes(1);
+        try
+        {
+            Assert.NotNull(await GitStamp.OfAsync(root, CancellationToken.None));
+            var reads = new GitReads();
+            await CountAsync("GIT_GRAPH", async () => (await reads.GraphAsync(root, [tip])).Value is not null);
+            await CountAsync("GIT_GRAPH_AGAIN", async () => (await reads.GraphAsync(root, [tip])).Value is not null);
+            await CountAsync("GIT_COMMIT", async () => (await reads.CommitAsync(root, tip)).Value is not null);
+            await CountAsync("GIT_COMMIT_AGAIN", async () => (await reads.CommitAsync(root, tip)).Value is not null);
+            await CountAsync("GIT_HISTORY", async () => (await reads.HistoryAsync(root, tip, "work.txt")).Value is not null);
+            await CountAsync("GIT_HISTORY_AGAIN", async () => (await reads.HistoryAsync(root, tip, "work.txt")).Value is not null);
+            await CountAsync("GIT_BLAME", async () => (await reads.BlameAsync(root, tip, "work.txt")).Value is not null);
+            await CountAsync("GIT_BLAME_AGAIN", async () => (await reads.BlameAsync(root, tip, "work.txt")).Value is not null);
+            await CountAsync("GIT_COMPARE", async () => (await reads.CompareAsync(root, line, tip)).Value is not null);
+            await CountAsync("GIT_COMPARE_AGAIN", async () => (await reads.CompareAsync(root, line, tip)).Value is not null);
+        }
+        finally
+        {
+            VolumeClock.Seam.Value = null;
+        }
+
         await CountAsync("GIT_COMMIT_PLAN", async () => (await new CommitActs(journal).PlanAsync(root, CommitVerbs.Commit, CancellationToken.None)).Value is not null);
         await CountAsync("GIT_SWITCH_PLAN", async () => (await new SwitchActs(journal).PlanAsync(root, "topic", CancellationToken.None)).Value is not null);
         await CountAsync("GIT_STASH_PLAN", async () => (await new StashActs(journal).PlanAsync(root, CancellationToken.None)).Value is not null);
@@ -85,6 +107,7 @@ public sealed class ViewGitCountTests(ITestOutputHelper output) : LandedFixture
         Assert.True(await read(), $"{view} did not answer");
         var report = tally.Report(view);
         output.WriteLine(report);
+        if (view.EndsWith("_AGAIN", StringComparison.Ordinal)) Assert.True(tally.Starts.Count == Budgets[view].Starts, report);
         Assert.True(tally.Starts.Count <= Budgets[view].Starts, report);
         Assert.True(tally.Repeated <= Budgets[view].Repeated, report);
     }

@@ -7,13 +7,10 @@ namespace Daoris.Driver;
 /// </summary>
 /// <remarks>
 /// <para><b>Refused here, every question:</b> a folder that names no git directory; a format the library cannot read
-/// (<see cref="GitLibraryFormats"/>: reftable refs, which libgit2 opens and reads no ref of, SHA-256 objects and any other), read from
-/// the repository's own files once for their stamp; and any replacement (a ref under <c>refs/replace/</c>, loose or packed, or <c>GIT_REPLACE_REF_BASE</c> set), since git reads a
-/// replaced commit's parents, type and tree through it and libgit2 does not.</para>
+/// (<see cref="GitLibraryFormats"/>); and a replacement that can be in force (<see cref="GitReplacements"/>), which libgit2 does not read.</para>
 /// <para><b>Refused by question:</b> for the refs, a branch or remote section in a global file git is handed; for the names, a
-/// <c>diff.orderFile</c> or <c>diff.relative</c> git reads in the repository's, the tree's or that global file, which reorder or cut
-/// the paths it prints. The library, reading the repository's configuration alone, would see neither. Grafts and a shallow boundary
-/// it reads as git does.</para>
+/// <c>diff.orderFile</c> or <c>diff.relative</c> in the repository's, the tree's or that file, which the library would not see.
+/// Grafts and a shallow boundary it reads as git does.</para>
 /// <para><b>Refused by the library itself</b>, at its open: an extension libgit2 does not know (a partial clone's
 /// <c>extensions.partialclone</c> among them) and a folder another account owns. An object a call needs that is not here (a partial
 /// clone's) refuses that call.</para>
@@ -35,7 +32,7 @@ internal static class GitLibraryAdmission
         try
         {
             if (FormatRefusal(GitLibraryFormats.Of(common)) is { } format) return format;
-            if (Replaced(common)) return Replacements;
+            if (GitReplacements.CanBeInForce(common)) return Replacements;
             return question switch
             {
                 GitLibraryQuestion.Refs => ProgramHome.Named is { } home && Handed(home).Any(text => Names(text, "[branch", "[remote")) ? Configuration : null,
@@ -58,15 +55,6 @@ internal static class GitLibraryAdmission
         { Refs: "reftable" } => Reftable,
         _ => RefFormat,
     };
-
-    private static bool Replaced(string common)
-    {
-        if (Environment.GetEnvironmentVariable("GIT_REPLACE_REF_BASE") is { Length: > 0 }) return true;
-        var loose = Path.Combine(common, "refs", "replace");
-        if (Directory.Exists(loose) && Directory.EnumerateFiles(loose, "*", SearchOption.AllDirectories).Any()) return true;
-        var packed = Path.Combine(common, "packed-refs");
-        return File.Exists(packed) && File.ReadLines(packed).Any(line => line.Contains(" refs/replace/", StringComparison.Ordinal));
-    }
 
     private static bool Reordered(string gitDir, string common)
     {

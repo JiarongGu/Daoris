@@ -123,7 +123,7 @@ internal sealed class GitReadOnce
         Func<Task<(int Code, string Stdout, string Stderr)>> ask, CancellationToken ct)
     {
         // A listing from another folder of this repository reading the same configuration serves as well as one read here.
-        var common = GitAskerContext.Of(root);
+        var common = GitStamp.ContextOf(root);
         RefSnapshot.Refs? refs;
         lock (_gate) refs = common is null ? null : _listings.FirstOrDefault(each => string.Equals(each.Context, common, StringComparison.Ordinal))?.Refs;
         refs ??= RefSnapshot.ListedFor(root)
@@ -193,7 +193,7 @@ internal sealed class GitReadOnce
     /// </summary>
     internal static string? TreeOf(string folder, string commit)
     {
-        if (Live is not { } once || GitAskerContext.Of(folder) is not { } context) return null;
+        if (Live is not { } once || GitStamp.ContextOf(folder) is not { } context) return null;
         lock (once._gate)
         {
             return once._listings.Where(each => string.Equals(each.Context, context, StringComparison.Ordinal))
