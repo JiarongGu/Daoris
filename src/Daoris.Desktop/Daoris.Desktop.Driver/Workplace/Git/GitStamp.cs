@@ -129,6 +129,7 @@ internal sealed class GitStamp
             foreach (var name in Variables.Concat(Counted(variable))) if (variable(name) is { } value) walk.Line("variable", $"{name}={value}", tree: false);
             var (packed, refs) = GitPackedRefs.Of(common);
             walk.Fence.Add(packed.Path);
+            if (packed.Unread) walk.Line("packed-unread", packed.Content!, tree: false);
             foreach (var line in refs.Replacements) walk.Line("packed-replace", line, tree: false);
             walk.Folder("replace", Path.Combine(common, "refs", "replace"));
             walk.File("grafts", Path.Combine(common, "info", "grafts"), tree: false);

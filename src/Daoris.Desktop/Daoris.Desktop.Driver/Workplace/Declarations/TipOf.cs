@@ -35,7 +35,14 @@ internal static class TipOf
             string text;
             try
             {
-                if (!File.Exists(loose)) return name == "HEAD" ? (false, null) : (true, GitPackedRefs.Of(common).Refs.Tips.GetValueOrDefault(name));
+                if (!File.Exists(loose))
+                {
+                    if (name == "HEAD") return (false, null);
+                    var (packed, refs) = GitPackedRefs.Of(common);
+                    return packed.Unread ? (false, null) : (true, refs.Tips.GetValueOrDefault(name));
+                }
+
+
                 text = File.ReadAllText(loose).Trim();
             }
             catch (Exception error) when (error is IOException or UnauthorizedAccessException)

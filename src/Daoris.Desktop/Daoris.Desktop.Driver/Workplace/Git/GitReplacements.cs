@@ -19,6 +19,7 @@ internal static class GitReplacements
         if (Directory.Exists(Path.Combine(common, "reftable"))) return true;
         var loose = Path.Combine(common, "refs", "replace");
         if (Directory.Exists(loose) && Directory.EnumerateFiles(loose, "*", SearchOption.AllDirectories).Any()) return true;
-        return GitPackedRefs.Of(common).Refs.Replacements.Count > 0;
+        var (packed, refs) = GitPackedRefs.Of(common);
+        return packed.Unread || refs.Replacements.Count > 0;
     }
 }
