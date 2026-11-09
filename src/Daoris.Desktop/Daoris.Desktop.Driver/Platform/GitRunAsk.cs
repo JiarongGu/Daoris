@@ -19,10 +19,8 @@ public enum GitWait
 /// <param name="Wait">What its run waits on.</param>
 internal sealed record GitRunAsk(string Folder, string Repository, GitWait Wait)
 {
-    /// <summary>
-    /// The whole start as built (the file, the folder, every argument, every variable, the runner and the bound): an ask takes a queued
-    /// ask's answer only under the same key. Null never shares: a start with input, a streamed read, a held act.
-    /// </summary>
+    /// <summary>The whole start as built (the file, the folder, every argument, every variable, the runner and the bound): an ask takes a
+    /// queued ask's answer only under the same key. Null never shares: a start with input, a streamed read, a held act.</summary>
     public string? Start { get; init; }
 
     /// <summary>Whether it may be ended once nobody waits: a read that takes no lock.</summary>
@@ -33,6 +31,9 @@ internal sealed record GitRunAsk(string Folder, string Repository, GitWait Wait)
 
     /// <summary>The folder it removes (a working tree), admitted once the reads inside it have ended or been dropped.</summary>
     public string? Removes { get; init; }
+
+    /// <summary>The working tree it makes (a <c>worktree add</c>): a removal of that tree waits for it as for a git inside it.</summary>
+    public string? Makes { get; init; }
 }
 
 /// <summary>
