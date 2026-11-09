@@ -9,6 +9,8 @@ the per-task record. Entries preserve their original wording so the archive stay
 
 - [x] **DRVREVIEW11 — a start held or thrown after the account walk gives back no staff reservation** (driver): 2026-11-09 `RunState` gives the walk's count and reservation back on disposal where no record opened, so every hold, refusal and throw before the open does, and the two stages' own releases are gone (`TrustHoldTickTests`, failing first).
 
+- [x] **DRVREVIEW12 — the guard that skips the brief for a stopped carried resume never fires** (driver): 2026-11-09 the carried-resume guard reads `Processes.StopMade(sessionId)` as the conclusion does, so a stop made after the door refused the resume ends the part stopped and no brief starts (`LimitCarryTickTests`, the stub holding its refusal alive until the stop, failing first).
+
 ---
 
 ## DRVREVIEW second cycle — the driving review's second cycle (2026-11-09)
