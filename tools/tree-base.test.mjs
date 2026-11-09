@@ -216,7 +216,7 @@ test('`run --real` is refused while a marker stands over the shell it would star
 
   const home = join(checkout, 'home');
   const ran = spawnSync(process.execPath, [join(checkout, 'tools', 'desktop.mjs'), 'run', '--real'], {
-    cwd: checkout, encoding: 'utf8', env: { ...process.env, DAORIS_HOME: home }, timeout: 60_000,
+    cwd: checkout, encoding: 'utf8', env: { ...process.env, DAORIS_HOME: home }, timeout: 60_000, windowsHide: true,
   });
 
   assert.equal(ran.status, 1, `${ran.stdout}${ran.stderr}`);
