@@ -38,6 +38,9 @@ internal sealed record LandReplay(string Now, IReadOnlyList<LandingCommit> Lande
     /// <summary>The joins union left in the replay that were set apart in a commit on top: each file, line and label.</summary>
     internal IReadOnlyList<UnionJoins.Set> Joined { get; init; } = [];
 
+    /// <summary>The headings union kept twice in the replay that were kept once in a commit on top.</summary>
+    internal IReadOnlyList<UnionOnce.Kept> Once { get; init; } = [];
+
     /// <summary>
     /// The files the replay settled by a line rule the owner accepted for integration, each with its writer, which wrote
     /// them again from the replayed tree (<see cref="LineWritten"/>); none where it settled none.
@@ -160,6 +163,7 @@ internal sealed class TreeLandSyncs(TreeContext context, BranchReplays replays)
             Backlog = made.Backlog,
             Tables = made.Tables,
             Joined = made.Joined,
+            Once = made.Once,
             Lined = made.Lined,
             LineWritten = made.LineWritten,
         }, null);
@@ -330,7 +334,7 @@ public static class LandingSyncWords
     /// </summary>
     internal static string Settled(LandReplay replay) =>
         Backlog(replay.Backlog?.Path, replay.Backlog?.Kept ?? 0, replay.Backlog?.Dropped ?? 0)
-        + string.Concat(replay.Tables.Select(table => Table(table.Path, table.Kept, table.Dropped))) + Joined(replay.Joined) + Generated(replay)
+        + string.Concat(replay.Tables.Select(table => Table(table.Path, table.Kept, table.Dropped))) + Joined(replay.Joined) + UnionOnce.Words(replay.Once) + Generated(replay)
         + Lines(replay.Lined);
 
     /// <summary>

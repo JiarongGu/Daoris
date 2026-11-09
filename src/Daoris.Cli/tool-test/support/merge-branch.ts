@@ -110,6 +110,11 @@ interface ClassPlan {
 /** A half's newest gate verdict and how it stands on the tree a CI run gates. */
 export interface Last { verdict: Verdict; standing: Standing }
 export type Reached = { whole: { path: string; why: string }[]; classes: string[]; by: Map<string, string> };
+/** The backlog merged by its rows' ids (`tools/merge-branch/backlog-merge.mjs`), the driver's `BacklogRows.Merge`'s twin. */
+export type RowsMerged = {
+  text: string | null; kept: number; dropped: number; both: { line: number }[];
+  differ: { id: string; ours: string | null; theirs: string | null }[]; twice: string[]; unread: string[];
+};
 /** How a verdict given on one tree stands for another, for its gate, and the paths that say so. */
 export interface Standing { standing: 'exact' | 'records' | 'unreached' | 'stale'; paths: string[]; records: string[] }
 /** What a stage judges by: this tree, the paths another differs by (null when git cannot say), which are records, which reach a gate. */
@@ -268,6 +273,10 @@ export const tool = await import(
   ) => { name: string; verdict: string; exit?: number; wallSeconds?: number; log?: string }[];
   verifyCommitsAnswer: (facts: { commit: string; base: string; declaration: string; commits: { sha: string; merge: boolean; subject: string; trailer: string }[] }) => Record<string, unknown>;
   mergeByBase: (base: string, ours: string, theirs: string) => { text: string | null; kept: number; dropped: number; both: { line: number }[] };
+  mergeByRows: (base: string, ours: string, theirs: string) => RowsMerged;
+  rowOf: (line: string) => { key: string; ids: string[] | null } | null;
+  rowsHeld: (base: string, ours: string, theirs: string, made: string) => { twice: string[]; kept: string[]; lost: string[]; refused: RowsMerged | null };
+  rowsRefused: (path: string, merged: RowsMerged) => string[];
   REACH: readonly Rule[];
   PATH_CHECKS: readonly { gate: string; paths: string[]; why: string }[];
   selectionLines: (gates: Selected[]) => string[];
