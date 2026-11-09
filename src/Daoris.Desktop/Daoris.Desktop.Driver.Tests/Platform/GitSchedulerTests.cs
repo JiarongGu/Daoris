@@ -28,6 +28,8 @@ public sealed class GitSchedulerTests
         using (GitScheduler.AsPerson()) return ask();
     }
 
+    private static Task Ended(CancellationToken token) => Task.Delay(Timeout.Infinite, token).ContinueWith(_ => { }, TaskScheduler.Default);
+
     private static void Most(ref int most, int now)
     {
         int seen;
@@ -403,6 +405,50 @@ public sealed class GitSchedulerTests
         Assert.Equal(5, await scheduler.RunAsync(Read("hung"), _ => Task.FromResult(5), CancellationToken.None).WaitAsync(Soon));
         await Poll.Until(() => { lock (said) return said.Count == 3; });
         lock (said) Assert.Equal(["git.place.apart", "git.stalled", "git.place.exited"], said);
+    }
+
+    [Fact]
+    public async Task A_read_its_last_asker_ended_answers_it_once_the_run_returns_and_says_one_that_outlived_its_kill()
+    {
+        var scheduler = Scheduler(bound: 1, repository: 1);
+        using var leaves = new CancellationTokenSource();
+        var exit = new TaskCompletionSource();
+        var killed = new TaskCompletionSource();
+        var returns = new TaskCompletionSource();
+        var unended = scheduler.RunAsync<int>(Read("hung", endable: true), async token =>
+        {
+            GitPlace.Current!.Bind(() => exit.Task.IsCompleted, () => exit.Task);
+            await Ended(token);
+            killed.SetResult();
+            await returns.Task;
+            throw new ProcessUnendedException(7, "its kill was refused", token);
+        }, leaves.Token);
+        await Poll.Until(() => scheduler.Running == 1);
+        leaves.Cancel();
+        await killed.Task.WaitAsync(Soon);
+
+        // The runner's exit wait is the answer: its asker is not told before it, and is told the git runs on, its place counted apart.
+        Assert.False(unended.IsCompleted);
+        returns.SetResult();
+        var said = await Assert.ThrowsAsync<ProcessUnendedException>(() => unended.WaitAsync(Soon));
+        Assert.Equal(7, said.Pid);
+        Assert.Equal(1, scheduler.Apart);
+        exit.SetResult();
+        await Poll.Until(() => scheduler.Apart == 0);
+
+        // One that ended on its kill answers its asker with the asker's own cancellation.
+        using var left = new CancellationTokenSource();
+        var ended = scheduler.RunAsync(Read("ends", endable: true), async token =>
+        {
+            await Ended(token);
+            token.ThrowIfCancellationRequested();
+            return 0;
+        }, left.Token);
+        await Poll.Until(() => scheduler.Running == 1);
+        left.Cancel();
+        var cancelled = await Assert.ThrowsAnyAsync<OperationCanceledException>(() => ended.WaitAsync(Soon));
+        Assert.IsNotType<ProcessUnendedException>(cancelled);
+        Assert.Equal(left.Token, cancelled.CancellationToken);
     }
 
     [Fact]
