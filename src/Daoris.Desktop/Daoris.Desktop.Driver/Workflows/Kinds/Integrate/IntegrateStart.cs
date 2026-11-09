@@ -163,7 +163,7 @@ public sealed class IntegrateStart(NodeRecordFiles records, Func<IIntegrationDoo
         });
         if (refused is not null) return new(unit, node.Id, PerformedWhat.Refused, refused);
         if (started.Attempt is not { } recorded) return new(unit, node.Id, PerformedWhat.Refused, started.Refused);
-        return await AnswerAsync(unit, recorded, node, ask, config, ct).ConfigureAwait(false);
+        return await StepAuthority.RunAsync(StepAuthority.Of(unit, recorded), () => AnswerAsync(unit, recorded, node, ask, config, ct)).ConfigureAwait(false);
     }
 
     /// <summary>
@@ -179,7 +179,8 @@ public sealed class IntegrateStart(NodeRecordFiles records, Func<IIntegrationDoo
         {
             foreach (var attempt in record.Attempts.Where(attempt => Waiting(record, attempt)).ToList())
             {
-                done.Add(await AnswerAsync(record.Unit, attempt, Declaration(attempt), null, null, ct).ConfigureAwait(false));
+                done.Add(await StepAuthority.RunAsync(StepAuthority.Of(record.Unit, attempt), () => AnswerAsync(record.Unit, attempt, Declaration(attempt), null, null, ct))
+                    .ConfigureAwait(false));
             }
         }
 

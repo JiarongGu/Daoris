@@ -1,5 +1,3 @@
-using System.Collections.Concurrent;
-
 namespace Daoris.Driver;
 
 /// <summary>
@@ -11,42 +9,25 @@ namespace Daoris.Driver;
 /// <param name="lander">Builds the performer for one landing; it lands as the review's Accept lands it, authorized by the review's word.</param>
 /// <param name="log">Told a landing that could not be tried; the machine log's line.</param>
 /// <param name="runs">Whether a landing may begin now: not while an update drains; null always may.</param>
-public sealed class LandingDoor(Func<LandPerformer> lander, Action<string>? log = null, Func<bool>? runs = null) : ILandingDoor
+public sealed class LandingDoor(Func<LandPerformer> lander, Action<string>? log = null, Func<bool>? runs = null) : ILandingDoor, IDoorRuns
 {
-    private readonly ConcurrentDictionary<string, Task> _running = new(StringComparer.Ordinal);
+    private readonly NodeDoorRuns _runs = new(runs);
+
+    NodeDoorRuns IDoorRuns.Runs => _runs;
 
     /// <inheritdoc/>
-    public bool Start(LandStart start)
+    public bool Start(LandStart start) => _runs.Start(start, _ => lander().PerformAsync(start), error =>
     {
-        if (runs is not null && !runs()) return false;
-        var key = $"{start.Unit}\n{start.Node}\n{start.Tip}";
-        // One landing of a node at a tip at a time; the next pass finds it ended and judges again, which lands nothing if nothing moved.
-        var gate = new TaskCompletionSource();
-        if (!_running.TryAdd(key, gate.Task)) return false;
-        using (ExecutionContext.SuppressFlow())
+        if (error is not (DriverException or HttpRequestException or System.Text.Json.JsonException or Microsoft.Data.Sqlite.SqliteException or IOException
+            or UnauthorizedAccessException))
         {
-            _ = Task.Run(async () =>
-            {
-                try
-                {
-                    await lander().PerformAsync(start).ConfigureAwait(false);
-                }
-                catch (Exception error) when (error is DriverException or HttpRequestException or System.Text.Json.JsonException or Microsoft.Data.Sqlite.SqliteException or IOException
-                                                  or UnauthorizedAccessException)
-                {
-                    log?.Invoke($"landing  run {start.Run}: its `land` could not be tried: {error.Message.TrimEnd().TrimEnd('.')}. It is tried again at a later pass.");
-                }
-                finally
-                {
-                    _running.TryRemove(key, out _);
-                    gate.TrySetResult();
-                }
-            });
+            return false;
         }
 
+        log?.Invoke($"landing  run {start.Run}: its `land` could not be tried: {error.Message.TrimEnd().TrimEnd('.')}. It is tried again at a later pass.");
         return true;
-    }
+    });
 
     /// <summary>Completes once every landing started has ended; a test's wait, and a closing loop's.</summary>
-    public Task IdleAsync() => Task.WhenAll(_running.Values);
+    public Task IdleAsync() => _runs.IdleAsync();
 }

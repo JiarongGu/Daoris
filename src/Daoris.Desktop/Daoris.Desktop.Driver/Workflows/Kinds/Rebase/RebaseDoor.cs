@@ -1,9 +1,11 @@
-using System.Collections.Concurrent;
-
 namespace Daoris.Driver;
 
 /// <summary>A run's <c>rebase</c> to perform: its run, node and attempt, the work at its bound tip and the target at the tip the step read.</summary>
-public sealed record RebaseStart(string Run, string Node, int Attempt, RebaseWork Work, RebaseTarget Target);
+public sealed record RebaseStart(string Run, string Node, int Attempt, RebaseWork Work, RebaseTarget Target) : NodeDoorStart
+{
+    /// <summary>Once per run, node and attempt.</summary>
+    public override string Key => $"{Run}\n{Node}\n{Attempt}";
+}
 
 /// <summary>The door a run's <c>rebase</c> is performed through.</summary>
 public interface IRebaseDoor : INodeDoor
@@ -24,9 +26,11 @@ public interface IRebaseDoor : INodeDoor
 /// <param name="home">The Daoris home whose trees, landing records and operations the replay reads, and whose record it writes.</param>
 /// <param name="log">Told what an attempt that could not be tried met; the machine log's line.</param>
 /// <param name="runs">Whether a replay may begin now: not while an update drains; null always may.</param>
-public sealed class RebaseDoor(string home, Action<string>? log = null, Func<bool>? runs = null) : IRebaseDoor
+public sealed class RebaseDoor(string home, Action<string>? log = null, Func<bool>? runs = null) : IRebaseDoor, IDoorRuns
 {
-    private readonly ConcurrentDictionary<string, Task> _running = new(StringComparer.Ordinal);
+    private readonly NodeDoorRuns _runs = new(runs);
+
+    NodeDoorRuns IDoorRuns.Runs => _runs;
 
     /// <summary>The trees a session runs a turn or waits in; null reads none, so no turn holds a replay.</summary>
     public Func<CancellationToken, Task<IReadOnlySet<string>>>? Turning { get; init; }
@@ -41,37 +45,15 @@ public sealed class RebaseDoor(string home, Action<string>? log = null, Func<boo
     }
 
     /// <inheritdoc/>
-    public bool Start(RebaseStart start)
+    public bool Start(RebaseStart start) => _runs.Start(start, ct => PerformAsync(start, ct), error =>
     {
-        if (runs is not null && !runs()) return false;
-        var key = $"{start.Run}\n{start.Node}\n{start.Attempt}";
-        var gate = new TaskCompletionSource();
-        if (!_running.TryAdd(key, gate.Task)) return false;
-        using (ExecutionContext.SuppressFlow())
-        {
-            _ = Task.Run(async () =>
-            {
-                try
-                {
-                    await PerformAsync(start, CancellationToken.None).ConfigureAwait(false);
-                }
-                catch (Exception error) when (error is DriverException or IOException or UnauthorizedAccessException or System.Text.Json.JsonException)
-                {
-                    log?.Invoke($"rebase  run {start.Run}: its `{start.Node}` could not be tried: {error.Message.TrimEnd().TrimEnd('.')}. It is tried again at a later pass.");
-                }
-                finally
-                {
-                    _running.TryRemove(key, out _);
-                    gate.TrySetResult();
-                }
-            });
-        }
-
+        if (error is not (DriverException or IOException or UnauthorizedAccessException or System.Text.Json.JsonException)) return false;
+        log?.Invoke($"rebase  run {start.Run}: its `{start.Node}` could not be tried: {error.Message.TrimEnd().TrimEnd('.')}. It is tried again at a later pass.");
         return true;
-    }
+    });
 
     /// <summary>Completes once every replay started has ended; a test's wait, and a closing loop's.</summary>
-    public Task IdleAsync() => Task.WhenAll(_running.Values);
+    public Task IdleAsync() => _runs.IdleAsync();
 
     /// <summary>The attempt performed once: replayed, its commit kept on its step ref, and what it came to written; nothing where it is written already.</summary>
     internal async Task<RebaseAttempt> PerformAsync(RebaseStart start, CancellationToken ct)

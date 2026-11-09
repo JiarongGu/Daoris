@@ -16,8 +16,11 @@ namespace Daoris.Driver;
 /// <param name="Review">The graph's <c>review</c> node, whose Accept authorizes the landing; null for a graph with none, whose authority is the standing one.</param>
 public sealed record LandStart(
     string Unit, string Run, string Node, string Branch, IReadOnlyList<string> Executors, string Repository, string Workspace, string Tip, string Graph,
-    string? Review)
+    string? Review) : NodeDoorStart
 {
+    /// <summary>One landing of a node at a tip at a time; the next pass finds it ended and judges again, which lands nothing if nothing moved.</summary>
+    public override string Key => $"{Unit}\n{Node}\n{Tip}";
+
     /// <summary>When the node started at this tip (<see cref="NodeStatus.Since"/>); null where it started unclocked.</summary>
     public DateTimeOffset? Since { get; init; }
 

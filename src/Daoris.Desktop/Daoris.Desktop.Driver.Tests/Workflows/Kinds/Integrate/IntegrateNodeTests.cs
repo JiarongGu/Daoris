@@ -121,10 +121,14 @@ public sealed class IntegrateNodeTests : IDisposable
             return Task.FromResult(Requests.GetValueOrDefault((unit, tip)));
         }
 
+        /// <summary>The run's own step each ask was made under.</summary>
+        public List<StepAuthority?> Authorities { get; } = [];
+
         public Task<IntegrationAdmission> AskAsync(IntegrationAsk ask, DriverConfig config, CancellationToken ct)
         {
             if (Down) throw new IOException("the store is not there");
             Asked.Add(ask);
+            Authorities.Add(StepAuthority.Current);
             if (Refuses?.Invoke(ask) is { } refused) return Task.FromResult(refused);
             if (Requests.Values.Any(open => open.ClosedAt is null && open.Branch == ask.Branch))
             {
@@ -176,6 +180,7 @@ public sealed class IntegrateNodeTests : IDisposable
         Assert.Equal((NodeStates.Active, 1, 1), (status.State, status.Attempt, status.Unreconciled));
         var attempt = Assert.Single(Record().Attempts);
         Assert.Equal((IntegrateNodes.Sender, AttemptStates.Settled, T1, IntegrateNodes.Key(RunUnit, T1)), (attempt.Plugin, attempt.State, attempt.Call.SubjectRevision, attempt.Call.IdempotencyKey));
+        Assert.Equal(new StepAuthority(RunId, "integrate", 1, attempt.Call.Invocation), Assert.Single(_door.Authorities));
 
         // Nothing runs it: asked once, and the line's node waits behind it, however many passes.
         await PassAsync(runtime, Config());

@@ -16,7 +16,10 @@ public sealed class PieceLandingsTests : ReviewLandingFixture
         new(_home, _world, new SessionTrees(_home), new SessionEvents(DaorisHome.Entry(_home, HomeEntry.Sessions)), _lines.Add) { HoldsLease = () => true };
 
     private static LandStart Start(string run) =>
-        new(RunUnits.IdOf(run), run, "landing", "branch:engine/p-pc000001", ["pt1"], "engine", "aurora", OpinionStandIn.Tip, "digest", null);
+        new(RunUnits.IdOf(run), run, "landing", "branch:engine/p-pc000001", ["pt1"], "engine", "aurora", OpinionStandIn.Tip, "digest", null)
+        {
+            Authority = StepAuthority.OfDoor(run, "landing", 1),
+        };
 
     private void Partner() =>
         _world.Records.Add(new SessionRecord("pt1", "engine", "completed") { Tree = Copy, Serves = "lead1", Piece = "pc000001", Created = DateTimeOffset.UtcNow });

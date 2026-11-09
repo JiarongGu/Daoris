@@ -16,7 +16,7 @@ public sealed class PushDoorTests : IDisposable
 
     public void Dispose() => GitSeed.Discard(_scratch);
 
-    private PushStart Start(string tip) => new("unit-a", Push, "engine", "default", _scratch, "feature/x", tip);
+    private PushStart Start(string tip) => new("unit-a", Push, "engine", "default", _scratch, "feature/x", tip) { Authority = StepAuthority.OfDoor("unit-a", Push.Id, 1) };
 
     private void Active(string tip) =>
         new NodeRecordFiles(_scratch, () => true).Write(new NodeRecord("unit-a")

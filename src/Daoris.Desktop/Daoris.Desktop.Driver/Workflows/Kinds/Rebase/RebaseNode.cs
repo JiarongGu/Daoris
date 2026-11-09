@@ -84,6 +84,6 @@ internal sealed class RebaseNode : BuiltInNode, IObserves, IStarts, ITargets, IR
         if (kept.Governed.Scope?.Branch is not { Records.Branch: { } grown } || binding.Target is not { Revision: { } onto } target) return;
         var watched = kept.Governed.Watched;
         door.Start(new RebaseStart(kept.Governed.Run, kept.Node.Id, kept.Status.Attempt,
-            new RebaseWork(watched.Root, watched.Repository, watched.Workspace, grown.Branch, tip), new RebaseTarget(target.Ref, onto)));
+            new RebaseWork(watched.Root, watched.Repository, watched.Workspace, grown.Branch, tip), new RebaseTarget(target.Ref, onto)) { Authority = kept.Authority });
     }
 }

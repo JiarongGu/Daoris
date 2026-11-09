@@ -1,9 +1,11 @@
-using System.Collections.Concurrent;
-
 namespace Daoris.Driver;
 
 /// <summary>A run's <c>tidy</c> to perform: its node, and the landing whose chain it ends, at the tip the landing recorded.</summary>
-public sealed record TidyStart(string Unit, NodeDeclaration Node, string Repository, string Workspace, string Root, string Branch, string Tip);
+public sealed record TidyStart(string Unit, NodeDeclaration Node, string Repository, string Workspace, string Root, string Branch, string Tip) : NodeDoorStart
+{
+    /// <summary>Once per node and tip.</summary>
+    public override string Key => $"{Unit}\n{Node.Id}\n{Tip}";
+}
 
 /// <summary>The door a run's <c>tidy</c> is performed through.</summary>
 public interface ITidyDoor : INodeDoor
@@ -23,42 +25,21 @@ public interface ITidyDoor : INodeDoor
 /// <param name="log">Told what a tidy came to; the machine log's line.</param>
 /// <param name="runs">Whether a tidy may begin now: not while an update drains; null always may.</param>
 /// <param name="performs">The work a started tidy does, a test's seam; null is <see cref="PerformAsync"/>.</param>
-public sealed class TidyDoor(string home, Action<string>? log = null, Func<bool>? runs = null, Func<TidyStart, CancellationToken, Task>? performs = null) : ITidyDoor
+public sealed class TidyDoor(string home, Action<string>? log = null, Func<bool>? runs = null, Func<TidyStart, CancellationToken, Task>? performs = null) : ITidyDoor, IDoorRuns
 {
-    private readonly ConcurrentDictionary<string, Task> _running = new(StringComparer.Ordinal);
+    private readonly NodeDoorRuns _runs = new(runs);
+
+    NodeDoorRuns IDoorRuns.Runs => _runs;
 
     /// <inheritdoc/>
-    public bool Start(TidyStart start)
+    public bool Start(TidyStart start) => _runs.Start(start, ct => performs?.Invoke(start, ct) ?? PerformAsync(start, ct), error =>
     {
-        if (runs is not null && !runs()) return false;
-        var key = $"{start.Unit}\n{start.Node.Id}\n{start.Tip}";
-        var gate = new TaskCompletionSource();
-        if (!_running.TryAdd(key, gate.Task)) return false;
-        using (ExecutionContext.SuppressFlow())
-        {
-            _ = Task.Run(async () =>
-            {
-                try
-                {
-                    await (performs?.Invoke(start, CancellationToken.None) ?? PerformAsync(start, CancellationToken.None)).ConfigureAwait(false);
-                }
-                catch (Exception error)
-                {
-                    log?.Invoke($"tidy  {start.Unit}: its `{start.Node.Id}` could not be tried: {error.Message.TrimEnd().TrimEnd('.')}. It is tried again at a later pass.");
-                }
-                finally
-                {
-                    _running.TryRemove(key, out _);
-                    gate.TrySetResult();
-                }
-            });
-        }
-
+        log?.Invoke($"tidy  {start.Unit}: its `{start.Node.Id}` could not be tried: {error.Message.TrimEnd().TrimEnd('.')}. It is tried again at a later pass.");
         return true;
-    }
+    });
 
     /// <summary>Completes once every tidy started has ended; a test's wait, and a closing loop's.</summary>
-    public Task IdleAsync() => Task.WhenAll(_running.Values);
+    public Task IdleAsync() => _runs.IdleAsync();
 
     /// <summary>The chain's parts ended and their branches removed, once its request merged; nothing otherwise.</summary>
     internal async Task PerformAsync(TidyStart start, CancellationToken ct)
