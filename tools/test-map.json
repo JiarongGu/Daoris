@@ -11,6 +11,7 @@
     "src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/GlobalUsings.cs": "a global using of the driver's tests, every half",
     "src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Daoris.Desktop.Driver.Tests.csproj": "the driver's tests' project file, every half",
     "src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/HostEnvironment.cs": "the driver's tests' module initializer: every test runs under the scratch home and the environment it sets, every half",
+    "src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Workplace/Git/GitCommandsStrict.cs": "the driver's tests' module initializer: every test runs the git gate strict, so a start with no row fails the test that starts it, every half",
     "src/Daoris.Desktop/Daoris.Desktop.Modules.Tests/GlobalUsings.cs": "a global using of the modules' tests, both halves",
     "src/Daoris.Desktop/Daoris.Desktop.Modules.Tests/Parallelism.cs": "the modules' tests' assembly attribute: one class at a time",
     "src/Daoris.Desktop/Daoris.Desktop.Modules.Tests/Daoris.Desktop.Modules.Tests.csproj": "the modules' tests' project file, both halves",
