@@ -216,7 +216,7 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they start wi
     its entries are git's ignore patterns, each with a rule set per act (`reach`, `take`, `finish`, a dependency's `across`, an
     output's `builds` and `refuses`), a
     kind naming the defaults an entry leaves out (`FileKindSets`), and an entry covers a top as git's ignore does (the top or a
-    folder above it, case by the checkout's `core.ignorecase`, no `!` taking back under a covered folder). A file without `form`
+    folder above it, case by the checkout's `core.ignorecase`, a path read as written folding case too, no `!` taking back under a covered folder; `GitPatternOracleTests` asks `git check-ignore --no-index` the same of a sample, both settings). A file without `form`
     is the first form, read through `RuleFileFirstForm`: each of its words is stated exactly in git's syntax but one that matches
     a folder without what lies under it (`P/*`), which is read as written. The person's file is rewritten in git's form once none
     of its paths is read as written, its first form set aside beside it; until then the Files tab names each such path with its
