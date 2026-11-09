@@ -328,7 +328,6 @@ public sealed class CitationRecheckTests : IAsyncLifetime
             Task.FromResult<IReadOnlyList<MemoryDue>>([.. due.Take(limit)]);
     }
 
-    /// <summary>An engine that answers what is due and nothing else.</summary>
     private abstract class DueQueueBase : IMemoryEngine
     {
         public abstract Task<IReadOnlyList<MemoryDue>> DueAsync(DateTimeOffset since, int limit, CancellationToken ct = default);

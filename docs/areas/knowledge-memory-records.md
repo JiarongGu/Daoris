@@ -78,7 +78,8 @@ one job each, checked by `verify`.
 10. A server over one checkout watches its refs and knowledge folders and reads again when marked stale or five minutes old (one
     minute where nothing can be watched). A host over registered roots judges each root's signature at most once a minute and
     reads only roots that moved, replacing a moved root's repository with nothing where it now reads none. A file or folder the scan
-    cannot read (held by an editor, denied) is left out of its repository's reading, never the reading's end. The registry counts what the index holds and waits for a reading only while it holds nothing;
+    cannot read (held by an editor, denied) is left out of its repository's reading, never the reading's end; a manifest or lock
+    so held reads as none, a folder import still proposes its repository, and a code map so held answers a problem said. The registry counts what the index holds and waits for a reading only while it holds nothing;
     otherwise the reading runs behind it, so a rescan or a moved root holds no door that resolves a workspace. The repositories'
     summary, which answers the reading itself, waits for it. (from D151, D220)
 11. A refresh reads each repository's generation before the registry, so a write made during the refresh refuses that
@@ -129,7 +130,9 @@ one job each, checked by `verify`.
     after a crash. An outcome no receipt names is held for the person, never replayed. (from D220)
 28. An entry cites records by id, lines, commit and digest. The sweep rechecks them: holding writes a confirmation, failing an
     awaiting end. A repository's sweep asks the engine for more due entries, doubling up to 1,000, until it has written 50, so entries
-    that write nothing (inconclusive, amended, an end pending) do not hold back those behind them. An entry is shown as current only when it was read again and every citation held. The sweep's end names no
+    that write nothing (inconclusive, amended, an end pending) do not hold back those behind them. A repository whose memory cannot
+    be swept loses no other repository's rechecks: they are written, and the pass then ends failed, told by the coordinator. An
+    entry is shown as current only when it was read again and every citation held. The sweep's end names no
     session, so the waits list it as a wait of its own (`GET /api/memory/waits`, the `end` of a wait with no session: its operation,
     repository, entry, revision and reason), *What needs you* shows it as a `memory` row by that operation with no door, and the
     person approves or declines it in the row through the decision by operation, which names no session. An awaiting end whose session
@@ -141,7 +144,8 @@ one job each, checked by `verify`.
 30. A workspace's remote is machine configuration: the home's `remotes.json`, keyed by workspace, the environment overriding.
     The repository's manifest says whether it may share (join, share knowledge); the machine says where. (from D47, D48)
     The service reads this file, and the session boxes' files the driver writes, through `AtomicFile.ReadText`, which shares
-    deletion with the writer's move, so a read inside that move is never refused.
+    deletion with the writer's move, so a read inside that move is never refused; a file held otherwise names no remote for that
+    ask, since a take asks for its remote after it has committed.
 31. Quests: every verb commits locally and succeeds locally. Sync is fetch, rebase and push of operations. The first push wins
     and the loser is kept as a conflict for a person. A take claims by push and awaits the remote's answer (its client gives up after 15 seconds); a take the remote does not
     answer stands unconfirmed and the next sync decides. (from D68, D69)
