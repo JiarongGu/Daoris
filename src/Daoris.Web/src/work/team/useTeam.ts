@@ -2,7 +2,7 @@ import { useTranslation } from 'react-i18next';
 import { useOutsideAgents, useRemoveOutsideAgent } from '../../bridge/sessions/channelOutside';
 import { usePassHelper, useAskHelper, useSessionHelpers } from '../../bridge/sessions/sessionHelpers';
 import type { Session } from '../../data/api';
-import { leadsPieces } from '../identity';
+import { leadsPieces, takesPartner } from '../identity';
 import type { Answered } from '../InlineConfirm';
 import type { BringInChoice } from './BringInAgent';
 import type { MemberThreadProps } from './MemberThread';
@@ -83,7 +83,8 @@ export function useTeam({ attended, here, nameOf, attend, open }: {
     choices: leads ? [
       { door: 'question', onChoose: () => open('askHelper') },
       // A piece and a second opinion both need a tree of its own to be kept apart from; the doors judge the rest.
-      leadsPieces(attended) ? { door: 'piece', onChoose: () => open('askPiece') } : { door: 'piece', off: t('work.team.off.noTree') },
+      takesPartner(attended) ? { door: 'piece', onChoose: () => open('askPiece') }
+        : { door: 'piece', off: t(leadsPieces(attended) ? 'work.team.off.ended' : 'work.team.off.noTree') },
       leadsPieces(attended) ? { door: 'opinion', onChoose: () => open('review') } : { door: 'opinion', off: t('work.team.off.noTree') },
       { door: 'goOn', onChoose: () => open('handOver') },
       // A second request on the ask runs alongside by itself: there is no press to make it, so the dialog says so in a sentence.

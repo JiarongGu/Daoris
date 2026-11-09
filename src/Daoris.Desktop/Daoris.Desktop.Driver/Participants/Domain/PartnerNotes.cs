@@ -56,7 +56,8 @@ public static class PartnerNotes
     public static string Said(string why) => why switch
     {
         PartnerWhy.AskerUnfit => "the session that asked cannot lead a piece",
-        PartnerWhy.AskerGone => "the session that asked is not on this machine",
+        PartnerWhy.AskerEnded => "the session that asked has ended, and no running work is there to receive a piece",
+        PartnerWhy.AskerGone =>"the session that asked is not on this machine",
         PartnerWhy.Blank => "the piece is blank",
         PartnerWhy.PathOutside => "a path it names leads outside the repository",
         PartnerWhy.NoCommit => "the session has no commit to grow from",

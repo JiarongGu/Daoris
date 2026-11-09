@@ -124,6 +124,9 @@ the per-task record. Entries preserve their original wording so the archive stay
 ## UIFIND4 (2026-11-09)
 
 > **UIFIND4** (web, agents): Outcome: an agent's page opens the API-key form under the Daoris accounts it adds to, above *Your own sign-in*; an agent with no account draws no column heads and says what the list is and the one press that adds the first; *Ways in* says each way in as what it gives (*command line*, *conversations*) and what to do where it is not installed, in English and Chinese.
+## UIFIND7, UIFIND12 and UIFIND14 (2026-11-09)
+
+> **UIFIND7 / UIFIND12 / UIFIND14** (web, driver): Outcome: an ended session takes no partner: `PartnerJudge` refuses it as `asker-ended` and the person's ask as `ended`, each with its sentence in both catalogues, and the page offers *Ask another agent to work on a piece…* only while the session runs (`takesPartner`; its review and helper's ask stay); an ended chat is already named by its first words where this machine holds them, and with none it stays *Chat*. The side bar's body holds its scrollbar's width (`DOCK_BODY`), so the states chart is placed by a width the bar no longer takes back and stops flipping between the drawing and the list with edges past its pane (a measured spec draws it at the dock's width). Every door of Get started, in the guide and in Ask Daoris, is one `StarterDoorButton`.
 
 ## UIFIND2, UIFIND3 and UIFIND5 (2026-11-09)
 

@@ -147,7 +147,8 @@ executable, started with a browser argument, is Daoris's own browser, which sess
 25. One list pane on every view: a header with ＋ and ⋯, per-view resize, a 56 px strip when closed, Ctrl+B. Its closing,
     width, chosen item and filters are remembered per view. (from D118)
 26. The side bar and panel hold movable views: *Notifications*, Timeline, Review, Workflow, At work and Ask Daoris on
-    the right, Console and Terminal in the panel, until the viewer moves them. (from D118, D196, D96)
+    the right, Console and Terminal in the panel, until the viewer moves them. The side bar's body holds its scrollbar's width always
+    (`DOCK_BODY`), since a chart placed by the pane's width flips when a scrollbar comes with its drawing and takes that width back. (from D118, D196, D96)
 27. A page is one column. `ViewMain` caps nothing, no block keeps a measure of its own, and the main area lays out by
     its own width, never the viewport's. A cap, if ever set, is one `em` value on `ViewMain`. (from D141, D118)
 28. The menus are *Workspace · Edit · View · Go · Run · Terminal · Help*. One table, `menus/commands.ts`, names every
@@ -236,7 +237,8 @@ executable, started with a browser argument, is Daoris's own browser, which sess
 **The setup guide and the views**
 
 56. A first start opens Settings → Get started while an agent with an account, Daoris's own agent or a repository is
-    missing. Each step reads its state off the machine and names its screen and its command. (from D97, D50)
+    missing. Each step reads its state off the machine and names its screen and its command. Every door to a screen, in the guide and
+    in Ask Daoris's starters and its way back to the guide, is one `StarterDoorButton`, whatever the step's state. (from D97, D50)
 57. Settings has eleven domains, each what a person comes to set, in this order: Get started; Appearance (look and
     language); Driver (how sessions run: its dials, this machine's access, the plugins' settings); AI features; Git; Tools;
     Browser; Disk space (the folders and the keep rules); Updates (the install's update, then its versions); This Daoris

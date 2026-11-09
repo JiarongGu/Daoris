@@ -19,6 +19,8 @@ import { useTabFit } from './tabFit';
  */
 export type DockTab = ViewId | 'preview';
 
+export const DOCK_BODY = 'flex min-h-0 flex-1 flex-col overflow-y-auto [scrollbar-gutter:stable]';
+
 /** A file's preview as the dock's tab: its name, its path for the tip, and its own ×. */
 export type DockPreview = { name: string; path: string; onClose: () => void };
 
@@ -323,7 +325,7 @@ export function RightDock({
 
       {shown
         ? (
-          <div role="tabpanel" aria-labelledby={tabId(shown)} className="flex min-h-0 flex-1 flex-col overflow-y-auto">
+          <div role="tabpanel" aria-labelledby={tabId(shown)} className={DOCK_BODY}>
             {children}
           </div>
         )

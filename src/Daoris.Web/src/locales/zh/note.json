@@ -347,6 +347,7 @@
   "note.partner.kept": "分项的工作未导入仓库：{{why}}。它的副本已为你保留。",
   "note.partner.working": "这个会话是搭档，正在自己的克隆中为会话 {{session}} 做一个分项。",
   "note.partner.why.asker-unfit": "提出请求的会话不能主导分项",
+  "note.partner.why.asker-ended": "提出请求的会话已结束，没有正在运行的工作可以接收分项",
   "note.partner.why.asker-gone": "提出请求的会话不在本机上",
   "note.partner.why.blank": "分项是空的",
   "note.partner.why.path-outside": "它指定的路径指向仓库之外",

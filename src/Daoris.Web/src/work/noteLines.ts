@@ -107,6 +107,7 @@ export const DEPS_REASONS: Readonly<Record<string, { key: string; values: readon
  */
 export const PARTNER_REASONS: Readonly<Record<string, { key: string; values: readonly string[] }>> = {
   'asker-unfit': { key: 'note.partner.why.asker-unfit', values: [] },
+  'asker-ended': { key: 'note.partner.why.asker-ended', values: [] },
   'asker-gone': { key: 'note.partner.why.asker-gone', values: [] },
   blank: { key: 'note.partner.why.blank', values: [] },
   'path-outside': { key: 'note.partner.why.path-outside', values: [] },

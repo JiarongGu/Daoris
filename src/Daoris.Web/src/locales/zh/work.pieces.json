@@ -54,5 +54,6 @@
   "work.pieces.refused.path": "有一个路径指向仓库之外：请指定仓库内的路径。",
   "work.pieces.refused.not-held": "这个会话不在本机上，分项无法送回给它。",
   "work.pieces.refused.unfit": "这个会话不能主导分项：只有在自己的工作树中工作的会话可以。",
+  "work.pieces.refused.ended": "这个会话已结束，没有正在运行的工作可以接收分项。",
   "work.pieces.refused.no-commit": "这个会话的工作树没有可以作为分项起点的提交。"
 }

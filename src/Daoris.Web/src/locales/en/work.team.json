@@ -22,6 +22,7 @@
   "work.team.door.goOn": "Go on with another agent",
   "work.team.door.alongside": "Work alongside",
   "work.team.off.noTree": "This session works in no tree of its own, so nothing it writes or reads could be kept apart.",
+  "work.team.off.ended": "This session has ended: no running work is there to receive a piece.",
   "work.team.note.alongside": "needs no press: a second request on the same ask already runs alongside by itself, in a tree of its own, and joins this line's parts.",
   "work.team.thread.for": "Working for {{title}}",
   "work.team.thread.back": "Back to lead",

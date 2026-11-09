@@ -214,6 +214,7 @@ public static class NoteCodes
     public static readonly NoteReasons Partner = new(
     [
         new(PartnerWhy.AskerUnfit, [], "note.partner.why.asker-unfit"),
+        new(PartnerWhy.AskerEnded, [], "note.partner.why.asker-ended"),
         new(PartnerWhy.AskerGone, [], "note.partner.why.asker-gone"),
         new(PartnerWhy.Blank, [], "note.partner.why.blank"),
         new(PartnerWhy.PathOutside, [], "note.partner.why.path-outside"),

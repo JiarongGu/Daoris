@@ -54,5 +54,6 @@
   "work.pieces.refused.path": "A path leads outside the repository: name paths inside it.",
   "work.pieces.refused.not-held": "This session is not held on this machine, so no piece could come back to it.",
   "work.pieces.refused.unfit": "This session cannot lead a piece: only a session working in a tree of its own does.",
+  "work.pieces.refused.ended": "This session has ended: no running work is there to receive a piece.",
   "work.pieces.refused.no-commit": "This session’s tree has no commit to grow a piece from."
 }
