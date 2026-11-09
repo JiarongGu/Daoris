@@ -125,6 +125,36 @@ public sealed class QuestDeleteTests : IAsyncLifetime
         Assert.Equal(QuestStatus.Taken, (await _quests.FindAsync(quest.Id))!.Status);
     }
 
+    /// <summary>The circle's remotes, which does a thing the moment the delete asks them: what lands between its look and its write.</summary>
+    private sealed class LandingRemotes(Func<Task> landing) : IRemotes
+    {
+        public IRemote? For(string workspace)
+        {
+            landing().GetAwaiter().GetResult();
+            return null;
+        }
+    }
+
+    /// <summary>
+    /// 🔴 What stands on a quest is judged again inside the delete's own write: a session started for it after the look keeps it, where
+    /// a write that re-checked only that it is open would delete it, leaving the session's record naming nothing.
+    /// </summary>
+    [Fact]
+    public async Task A_session_started_after_the_look_keeps_the_quest()
+    {
+        var quest = await Publish(Exchange());
+        var exchange = new QuestExchange(
+            _service, _quests,
+            new LandingRemotes(async () => await _sessions.CreateAsync(quest.Id, "Homebody", "stub", Now)),
+            files: null, _sessions);
+
+        var refused = await exchange.DeleteAsync(quest.Id, Now.AddMinutes(1));
+
+        Assert.Equal(QuestDeleteRefusal.Kept, refused.Refusal);
+        Assert.Contains("was started for it", refused.Message);
+        Assert.NotNull(await _quests.FindAsync(quest.Id));
+    }
+
     /// <summary>A done quest is the record of work, and a declined one the trace of a decision: both stay, and already leave the list.</summary>
     [Theory]
     [InlineData("done", "is Done")]
