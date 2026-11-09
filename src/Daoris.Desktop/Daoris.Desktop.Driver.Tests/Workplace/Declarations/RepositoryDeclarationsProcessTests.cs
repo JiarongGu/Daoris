@@ -207,7 +207,7 @@ public sealed class RepositoryDeclarationsProcessTests : LandedFixture
         await File.WriteAllBytesAsync(Path.Combine(root, DeclarationNames.Manifest), Encoding.UTF8.GetBytes($"a\r{name} after a lone CR\nplain {name}\r\nx\r\n{name} after a CR line\n"));
         await File.WriteAllBytesAsync(Path.Combine(root, DeclarationNames.Gates), [.. Encoding.UTF8.GetBytes($"{name}\n"), 0, .. "binary\n"u8]);
         await File.WriteAllBytesAsync(Path.Combine(root, DeclarationNames.Lanes), Encoding.UTF8.GetBytes($"﻿{name} with a mark\fand a feed\nnone here\n"));
-        await File.WriteAllBytesAsync(Path.Combine(root, "tools.json"), Encoding.UTF8.GetBytes($"{name} in a tool\rcut\n"));
+        await File.WriteAllBytesAsync(Path.Combine(root, "toolbox.json"), Encoding.UTF8.GetBytes($"{name} in a tool\rcut\n"));
         await GitAsync(root, "-c", "core.autocrlf=false", "add", "-A");
         await GitAsync(root, "-c", "user.email=fixture@example.test", "-c", "user.name=Fixture", "commit", "-q", "-m", "the search");
         var commit = await HeadAsync(root);

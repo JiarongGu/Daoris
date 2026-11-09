@@ -11,7 +11,7 @@ public sealed class RulePathsCensusTests
 {
     /// <summary>
     /// The lines that read a rule's paths without matching them: the matcher itself, the first form's translation, the writer, the
-    /// rule's own record and the ones that only show, carry, order or count them; and the integration file's merge rules, whose
+    /// rule's own record and the ones that only show, carry, order, count or weigh them; and the integration file's merge rules, whose
     /// <c>Paths</c> is one attribute pattern, not a rule file's.
     /// </summary>
     private static readonly string[] OnlyShow =
@@ -20,7 +20,8 @@ public sealed class RulePathsCensusTests
         "Files/FilesLooks.cs:rule.Paths.Where(RuleFileFirstForm.Keeps)", "Files/FilesLooks.cs:new FilesLookRule(name, rule.Kind.Word(), rule.Paths",
         "Files/FileAnalysis.cs:ThenBy(rule => rule.Paths[0]", "Files/FileAnalysis.cs:rule.Paths.Concat(WorkspaceMembers.Modules",
         "Files/FilesCommand.cs", "Files/RepositoryFilesReader.cs:rule.Paths[0]", "Files/FileSignatures.cs:rule.Paths.Select(path => path.StartsWith(\"!/\"",
-        "Files/FileAnalysis.cs:hit.Rule.Paths.Where(path => !path.StartsWith('!'))",
+        "Files/FileAnalysis.cs:hit.Rule.Paths.Where(path => !path.StartsWith('!'))", "Deps/WorkspaceOrder.cs:Rule.Paths.Count: > 1",
+        "Declarations/RuleFileKind.cs:DeclarationBound.Texts(rule.Paths)",
         "BacklogMerge.cs:Lines.FirstOrDefault(rule => rule.Paths == path)", "IntegrationDeclaration.cs:Select(rule => rule.Paths)",
     ];
 
