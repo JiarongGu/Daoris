@@ -37,7 +37,7 @@ public sealed class GitLibraryHousekeepingTests : LandedFixture
         Assert.Null(GitLibraryAdmission.RefusalOf(root, GitLibraryQuestion.Refs));
     }
 
-    [Fact]
+    [GitLegFact]
     public async Task A_marker_a_crashed_run_left_for_a_day_stops_no_question()
     {
         var root = await BuildRepositoryAsync("housekeeping-stale");
@@ -48,7 +48,7 @@ public sealed class GitLibraryHousekeepingTests : LandedFixture
         Assert.Null(GitLibraryAdmission.RefusalOf(root, GitLibraryQuestion.Refs));
     }
 
-    [Fact]
+    [GitLegFact]
     public async Task A_marker_outside_the_files_git_rewrites_stops_no_question()
     {
         var root = await BuildRepositoryAsync("housekeeping-other");
