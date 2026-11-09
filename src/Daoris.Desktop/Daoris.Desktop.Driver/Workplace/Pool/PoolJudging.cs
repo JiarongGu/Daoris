@@ -74,7 +74,7 @@ internal static class PoolJudging
         {
             TrackedChange = status.Any(each => each.Value is not ("!!" or "??")),
             UntrackedPath = status.Any(each => each.Value == "??"),
-            LineOwnIgnored = sorted.Own.Count > 0,
+            LineOwnIgnored = sorted.Own.FirstOrDefault() ?? "",
             Head = head,
             RefHolds = head.Length > 0 && await HeldByRefAsync(path, head, ct).ConfigureAwait(false),
         };
