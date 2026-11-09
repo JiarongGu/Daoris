@@ -54,18 +54,21 @@ internal sealed class SessionDeletes(QuestStore quests, SessionStore sessions, A
             : Judge(session, await NamesAsync(ct).ConfigureAwait(false));
 
     /// <summary>
-    /// What names a session: each ask's intake, and each quest's publishing session. Read whole, since a delete is
-    /// rare and a list asks once for all its records.
+    /// What names a session: each ask's intake, each quest's publishing session, and each session a later record continues. Read
+    /// whole, since a delete is rare and a list asks once for all its records.
     /// </summary>
-    private async Task<(IReadOnlyList<Ask> Asks, IReadOnlyList<Quest> Quests)> NamesAsync(CancellationToken ct) =>
-        (asks is null ? [] : await asks.ListAsync(includeClosed: true, ct: ct).ConfigureAwait(false),
-         await quests.ListAsync(includeClosed: true, ct: ct).ConfigureAwait(false));
+    private async Task<Names> NamesAsync(CancellationToken ct) =>
+        new(asks is null ? [] : await asks.ListAsync(includeClosed: true, ct: ct).ConfigureAwait(false),
+            await quests.ListAsync(includeClosed: true, ct: ct).ConfigureAwait(false),
+            await sessions.ContinuedIdsAsync(ct).ConfigureAwait(false));
+
+    private sealed record Names(IReadOnlyList<Ask> Asks, IReadOnlyList<Quest> Quests, IReadOnlySet<string> Continued);
 
     /// <summary>
     /// The record's half of §5.4, in the order a person meets it: whose it is, whether it still runs, whether it served a
     /// quest, what names it, and whether the team holds a copy.
     /// </summary>
-    private static SessionDeleteOutcome Judge(Session session, (IReadOnlyList<Ask> Asks, IReadOnlyList<Quest> Quests) named)
+    private static SessionDeleteOutcome Judge(Session session, Names named)
     {
         var id = session.Id;
         if (session.Origin is { } origin)
@@ -116,6 +119,12 @@ internal sealed class SessionDeletes(QuestStore quests, SessionStore sessions, A
             {
                 Quest = publishedHere.Id,
             };
+        }
+
+        // Taking a link out of a line would make the record before it the head again and leave the one after pointing at nothing.
+        if (named.Continued.Contains(id))
+        {
+            return new(SessionDeleteRefusal.Named, $"Session `{id}` is continued by a later record of its line, which names it.", session);
         }
 
         if (session.Pushed)
