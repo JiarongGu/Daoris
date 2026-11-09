@@ -358,7 +358,8 @@ floor (the git-app design §4.3), for at most 9 starts of a merge press's 39, an
 
 The refs' one listing (`RefSnapshot.ReadAsync`: every branch and copy of origin's, its stored id, its object's type, its upstream in
 full and short, a commit's tree) is read through LibGit2Sharp where the question is admitted, and starts nothing. `GitLibrary` opens
-a `Repository` for one call on the thread pool and disposes it before it answers (`GitLibrary.Open` is zero between calls), libgit2's
+a `Repository` for one call on the thread pool and disposes it before it answers, eight calls at most at once (`GitLibrary.Open` is
+zero between calls, `GitLibrary.AtOnce`), libgit2's
 global, XDG, system and program-data search paths pointed at a folder holding no file. `GitLibraryRefs` prints `for-each-ref`'s
 lines: sorted as bytes, a broken symbolic ref left out, the upstream from the common directory's `branch.` and `remote.` keys through
 the remote's first matching fetch refspec, shortened by git's strict rule. `GitLibraryAdmission` refuses, from the repository's own
