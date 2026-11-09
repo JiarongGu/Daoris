@@ -58,6 +58,10 @@ internal static class FileStamp
     private static readonly ConcurrentDictionary<string, (FileStat Stat, string Content)> Kept = new(StringComparer.Ordinal);
     private static readonly ConcurrentDictionary<(string Path, Type Kind), (string Content, object Parsed)> Parses = new();
 
+    internal static string Hash(ReadOnlySpan<byte> bytes) => Convert.ToHexStringLower(SHA256.HashData(bytes));
+
+    internal static void Forget(string path) => Kept.TryRemove(path, out _);
+
     /// <summary>The stamp of <paramref name="path"/>; with <paramref name="bytes"/>, its bytes read and handed back whatever is kept.</summary>
     internal static FileStamped Of(string path, bool bytes = false)
     {
@@ -82,7 +86,7 @@ internal static class FileStamp
             return new FileStamped(path, stat, "unreadable:" + Guid.NewGuid().ToString("N"), null) { Unread = true };
         }
 
-        var content = Convert.ToHexStringLower(SHA256.HashData(read));
+        var content = Hash(read);
         if (FileStat.Of(path) == stat && stat.SettledAt(now))
         {
             if (Kept.Count >= Bound) Kept.Clear();

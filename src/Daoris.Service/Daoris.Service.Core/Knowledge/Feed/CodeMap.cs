@@ -60,13 +60,21 @@ public static class CodeMapReader
         if (found is null) return new CodeMapRead(null, null, null);
 
         var path = Path.Combine(repositoryRoot, found.Replace('/', Path.DirectorySeparatorChar));
-        if (new FileInfo(path).Length > MaxBytes)
+        try
         {
-            return new CodeMapRead(null, found, $"`{found}` is over {MaxBytes / 1024 / 1024} MB — a code map is a small file.");
-        }
+            if (new FileInfo(path).Length > MaxBytes)
+            {
+                return new CodeMapRead(null, found, $"`{found}` is over {MaxBytes / 1024 / 1024} MB — a code map is a small file.");
+            }
 
-        var (map, problem) = Parse(File.ReadAllText(path), found);
-        return new CodeMapRead(map, found, problem);
+            var (map, problem) = Parse(File.ReadAllText(path), found);
+            return new CodeMapRead(map, found, problem);
+        }
+        catch (Exception error) when (error is IOException or UnauthorizedAccessException)
+        {
+            // A map an editor holds is read again at the next ask: said as a problem, not a failure of the door.
+            return new CodeMapRead(null, found, $"`{found}` cannot be read now: {error.Message}");
+        }
     }
 
     /// <summary>Judge a code map's text whole: the map, or the sentence naming the first break.</summary>

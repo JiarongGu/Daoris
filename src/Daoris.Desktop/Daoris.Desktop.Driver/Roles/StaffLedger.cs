@@ -1,3 +1,4 @@
+using System.Globalization;
 using Microsoft.Data.Sqlite;
 
 namespace Daoris.Driver;
@@ -200,11 +201,10 @@ public sealed class StaffLedger(string home, Func<StoreSettled>? settled = null,
 
     private readonly Lock _gate = new();
 
-    private readonly List<StaffReservation> _reserved = [];
-
-    private readonly Dictionary<string, DateTimeOffset> _marks = new(StringComparer.OrdinalIgnoreCase);
-
     private TimeProvider Clock => clock ?? TimeProvider.System;
+
+    /// <summary>This process's reservations and marks, written under the ledger's lock alone.</summary>
+    internal StaffHolds Holds { get; } = new();
 
     /// <summary>The store's file in this home.</summary>
     public string Location => DesktopStore.LocationIn(home);
@@ -246,7 +246,7 @@ public sealed class StaffLedger(string home, Func<StoreSettled>? settled = null,
             if (reserve && policy.Applied is not null && arranged.Walk.Count > 0)
             {
                 reservation = new StaffReservation(role, StaffKey.Of(arranged.Walk[0].Entry), facts.Now);
-                _reserved.Add(reservation);
+                Holds.Reserve(reservation);
             }
 
             return new StaffTake(policy, facts, arranged, reservation);
@@ -277,7 +277,7 @@ public sealed class StaffLedger(string home, Func<StoreSettled>? settled = null,
     {
         lock (_gate)
         {
-            if (_bound.Remove(number, out var binding) && binding.Reservation is { } reservation) _reserved.Remove(reservation);
+            if (_bound.Remove(number, out var binding) && binding.Reservation is { } reservation) Holds.Release(reservation);
         }
     }
 
@@ -315,7 +315,7 @@ public sealed class StaffLedger(string home, Func<StoreSettled>? settled = null,
         }
         catch (Exception error) when (error is DesktopStoreException or SqliteException or IOException or UnauthorizedAccessException)
         {
-            lock (_gate) if (binding.Reservation is { } reservation) _reserved.Remove(reservation);
+            lock (_gate) if (binding.Reservation is { } reservation) Holds.Release(reservation);
         }
 
         return binding;
@@ -324,13 +324,13 @@ public sealed class StaffLedger(string home, Func<StoreSettled>? settled = null,
     /// <summary>Move <paramref name="reservation"/> to the entry the settled selection took.</summary>
     public void Settle(StaffReservation reservation, ActorEffective taken)
     {
-        lock (_gate) reservation.Choice = StaffKey.Of(taken);
+        lock (_gate) Holds.Settle(reservation, StaffKey.Of(taken));
     }
 
     /// <summary>Give <paramref name="reservation"/> back, once: the start is refused before it opens.</summary>
     public void Release(StaffReservation reservation)
     {
-        lock (_gate) _reserved.Remove(reservation);
+        lock (_gate) Holds.Release(reservation);
     }
 
     /// <summary>
@@ -356,7 +356,7 @@ public sealed class StaffLedger(string home, Func<StoreSettled>? settled = null,
             }
             finally
             {
-                if (reservation is not null) _reserved.Remove(reservation);
+                if (reservation is not null) Holds.Release(reservation);
             }
         }
     }
@@ -364,14 +364,41 @@ public sealed class StaffLedger(string home, Func<StoreSettled>? settled = null,
     /// <summary>Mark <paramref name="agent"/> not answering for <see cref="Mark"/>: a transient episode past its bound, or a driven line's <c>after</c>.</summary>
     public void MarkNotAnswering(string agent)
     {
-        lock (_gate) _marks[agent] = Clock.GetUtcNow() + Mark;
+        lock (_gate) Holds.Mark(agent, Clock.GetUtcNow() + Mark);
     }
 
     /// <summary>A prompt on <paramref name="agent"/> answered: its mark ends.</summary>
     public void Answered(string agent)
     {
-        lock (_gate) _marks.Remove(agent);
+        lock (_gate) Holds.Clear(agent);
     }
+
+    /// <summary>
+    /// The earliest moment after <paramref name="now"/> a fact the clock alone ends moves: a mark's or a reservation's end, the oldest
+    /// counted move leaving its window, the next day where a policy counts one; a store that does not read leaves this process's ends.
+    /// </summary>
+    public DateTimeOffset? NextChange(DateTimeOffset now)
+    {
+        DateTimeOffset? next;
+        lock (_gate) next = Holds.NextEnd(now);
+        try
+        {
+            using var store = DesktopStoreReader.Open(Location);
+            if (store is null || store.Version < StaffPolicies.Step) return next;
+            var oldest = store.Query("SELECT MIN(at) FROM role_moves WHERE at >= $since", row => row.IsDBNull(0) ? null : row.GetString(0),
+                ("$since", StaffJson.Moment(now - StaffMoves.Window))).FirstOrDefault();
+            if (oldest is not null) next = Earlier(next, DateTimeOffset.Parse(oldest, CultureInfo.InvariantCulture, DateTimeStyles.RoundtripKind) + StaffMoves.Window);
+            if (store.Query("SELECT 1 FROM role_policy LIMIT 1", row => row.GetInt32(0)).Count > 0) next = Earlier(next, DayStart(DayStart(now).AddHours(30)));
+        }
+        catch (Exception error) when (error is DesktopStoreException or SqliteException or IOException or UnauthorizedAccessException)
+        {
+            return next;
+        }
+
+        return next;
+    }
+
+    private static DateTimeOffset? Earlier(DateTimeOffset? one, DateTimeOffset other) => one is { } at && at <= other ? at : other;
 
     /// <summary>
     /// The facts of a look, under the lock: <paramref name="line"/>'s tokens and moves off, the window since the policy's <c>since</c> and
@@ -401,17 +428,14 @@ public sealed class StaffLedger(string home, Func<StoreSettled>? settled = null,
         }
 
         var tokens = policy.Applied is { } applied ? TokensToday(role, applied, now) : new Dictionary<StaffKey, StaffTokens>();
-        var reserved = new Dictionary<StaffKey, int>();
-        _reserved.RemoveAll(each => now - each.At >= ReservationLife);
-        foreach (var each in _reserved.Where(each => each.Role == role)) reserved[each.Choice] = reserved.GetValueOrDefault(each.Choice) + 1;
         return line with
         {
             Now = now,
             Window = window,
-            Reserved = reserved,
+            Reserved = Holds.Reserved(role, now),
             Today = today,
             Tokens = tokens,
-            NotAnswering = new Dictionary<string, DateTimeOffset>(_marks.Where(mark => mark.Value > now), StringComparer.OrdinalIgnoreCase),
+            NotAnswering = Holds.Marks(now),
         };
     }
 

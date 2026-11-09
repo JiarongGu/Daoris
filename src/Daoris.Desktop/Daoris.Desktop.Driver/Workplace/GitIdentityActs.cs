@@ -404,7 +404,7 @@ public static partial class GitIdentityActs
     }
 
     /// <summary>Change <c>driver.json</c> in place, keeping every key it has no part in, under the home's lease.</summary>
-    private static void ChangeDriverConfig(string home, Action<JsonObject> change) => DriverConfigFile.Change(home, change);
+    private static void ChangeDriverConfig(string home, Action<JsonObject> change) => DriverConfigWrites.Change(home, change);
 
     internal static string? LastLine(string? words) =>
         words?.Split('\n', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries).LastOrDefault();

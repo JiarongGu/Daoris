@@ -1,13 +1,9 @@
 using System.Collections.Immutable;
 using System.Runtime.InteropServices;
-using System.Text;
 
 namespace Daoris.Driver;
 
-/// <summary>
-/// A declaration's bytes by their content key, and the blob id they hashed to where an ask at a commit proved one. What the store keeps
-/// by content key carries no id, so a checkout's file is never taken for a commit's blob.
-/// </summary>
+/// <summary>A declaration's bytes by their content key, with the blob id an ask at a commit proved, which nothing kept by content key carries.</summary>
 internal sealed record DeclarationBytes(ContentKey Key, ImmutableArray<byte> Bytes, BlobId? Id)
 {
     private const long Held = 160;
@@ -21,11 +17,7 @@ internal sealed record DeclarationBytes(ContentKey Key, ImmutableArray<byte> Byt
     internal static DeclarationBytes Of(byte[] bytes, BlobId? id) => new(ContentKey.Of(bytes), ImmutableCollectionsMarshal.AsImmutableArray(bytes), id);
 
     /// <summary>The bytes as text, read as git's text output is read: UTF-8, a leading byte-order mark taken as the mark it is.</summary>
-    internal string Text()
-    {
-        using var reader = new StreamReader(new MemoryStream(ImmutableCollectionsMarshal.AsArray(Bytes)!, writable: false), Encoding.UTF8, detectEncodingFromByteOrderMarks: true);
-        return reader.ReadToEnd();
-    }
+    internal string Text() => BesideReads.Text(ImmutableCollectionsMarshal.AsArray(Bytes)!);
 }
 
 /// <summary>An entry of a hashed tree: its mode, its object's type and its object's id.</summary>

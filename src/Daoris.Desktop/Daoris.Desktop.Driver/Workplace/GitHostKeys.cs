@@ -67,33 +67,3 @@ public static class GitHostKeys
         }
     }
 }
-
-/// <summary>
-/// <c>driver.json</c> changed in place for a key <see cref="DriverConfig"/> does not model: under the file's
-/// own lock (<see cref="KeepLock"/>), read as it stands, changed, and written whole, every other key kept as written.
-/// </summary>
-public static class DriverConfigFile
-{
-    /// <summary>Change the home's <c>driver.json</c>.</summary>
-    /// <exception cref="DriverException">It does not read as an object, so nothing is written over it.</exception>
-    public static void Change(string home, Action<JsonObject> change)
-    {
-        var path = Path.GetFullPath(DaorisHome.Entry(home, HomeEntry.DriverConfig));
-        Directory.CreateDirectory(Path.GetDirectoryName(path)!);
-        using var held = KeepLock.Take(path);
-        JsonObject root;
-        try
-        {
-            root = File.Exists(path)
-                ? JsonNode.Parse(AtomicFile.ReadText(path)) as JsonObject ?? throw new DriverException($"git: {path} is not an object, so nothing was written (config-unread)")
-                : new JsonObject();
-        }
-        catch (JsonException error)
-        {
-            throw new DriverException($"git: {path} does not read ({error.Message}), so nothing was written (config-unread)");
-        }
-
-        change(root);
-        AtomicFile.WriteText(path, JsonFile.Serialize(root));
-    }
-}

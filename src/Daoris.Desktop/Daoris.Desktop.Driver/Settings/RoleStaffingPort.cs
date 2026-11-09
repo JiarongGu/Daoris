@@ -4,11 +4,12 @@ namespace Daoris.Driver;
 
 /// <summary>
 /// The staffing the store holds, as the fields of a loaded <see cref="DriverConfig"/> hold it:
-/// the actors' orders with the entries that do not read.
+/// the actors' orders with the entries that do not read, and the family's revision read before them.
 /// </summary>
 public sealed record StaffingHeld(
     IReadOnlyDictionary<string, IReadOnlyList<ActorChoice>> Actors,
-    IReadOnlyDictionary<string, string> ActorErrors);
+    IReadOnlyDictionary<string, string> ActorErrors,
+    long Revision);
 
 /// <summary>
 /// Settings' port to the roles' staffing (<c>IRoleStaffing</c>): what the home's own <c>driver.json</c> load asks for the staffing
@@ -56,8 +57,8 @@ public static class RoleStaffingPort
         }
         catch (Exception error) when (error is not OutOfMemoryException)
         {
-            // Whatever the store's own failure is, a load never throws for it: the file's staffing is what it read.
-            return config;
+            // Whatever the store's own failure is, a load never throws for it: the file's staffing is what it read, versioned by nothing.
+            return config with { Effective = Effective.Unversioned };
         }
 
         if (held is null) return config;
@@ -66,6 +67,7 @@ public static class RoleStaffingPort
             Actors = held.Actors,
             ActorErrors = held.ActorErrors,
             AsFile = new FileStaffing(config.Actors),
+            Effective = config.Effective?.Staffed(held.Revision),
         };
     }
 }

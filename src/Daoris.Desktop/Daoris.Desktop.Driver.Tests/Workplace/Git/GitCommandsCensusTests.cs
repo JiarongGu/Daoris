@@ -7,6 +7,7 @@ namespace Daoris.Desktop.Driver.Tests;
 /// literal with a row; the tests run the gate strict, so a start the sources reach some other way and the table does not row fails the test
 /// that starts it. At run time nothing is refused for want of a row.
 /// </summary>
+[Trait(Category.Name, Category.Census)]
 public sealed class GitCommandsCensusTests : IDisposable
 {
     // Each hands on a list its caller built, which this census reads at that caller or the strict run reads as it starts.
