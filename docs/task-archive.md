@@ -5,6 +5,10 @@ the per-task record. Entries preserve their original wording so the archive stay
 
 ---
 
+## OPTIMIZE1d, the censuses and the contracts pre-step (2026-11-09)
+
+> **OPTIMIZE1d (two of three cuts)** (tools): Outcome: a CI run leaves the `censuses` gate to the driver's and the modules' fast halves where both run, says so in its plan and status, and records its pass once they pass (`tools/merge-branch/ci-steps.mjs`, `ci-steps.test.ts`); the page's contracts (103 s cold, alone) are built once as a step before the web gates that run a page script with a contracts pre-script, which start when it ends (`waitFor` in `runGates`). The step trees moved to `tools/merge-branch/step-trees.mjs` to keep `merge-branch.mjs` within its budget.
+
 ## CODESTRREV2a to 2e — the code-structure review's second cycle, merge-tool defects fixed (2026-11-09)
 
 > **CODESTRREV2a** (tools): Outcome: the verdict store's lock (`holdingLock`, now `tools/merge-branch/locks.mjs` over `withRunLock`) is taken over only once its run is gone or it is 30 seconds old and is let go only while it still says what its run wrote, so a live holder is no longer robbed after 10 seconds; the choice rejected a wait-then-steal bound (the defect itself) for a longer wait on a hung run, which ends at the stale bound. Test: `tool-test/merge-branch/locks.test.ts`.

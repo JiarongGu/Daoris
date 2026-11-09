@@ -145,6 +145,7 @@ export const tool = await import(
     memory?: MemoryOptions | null;
     /** A Process gate waits only for what builds its component, the heavy light gates beside it as memory allows. */
     byMemory?: boolean;
+    waitFor?: { gates: string[]; ready: Promise<unknown> } | null;
   }) => Promise<GateResult[]>;
   /** A heavy gate waits for memory rather than failing for want of it. */
   memoryNeed: (gate: { name: string; run: string; memoryGb?: number }) => number;

@@ -138,8 +138,12 @@ finishes first and the whole set runs once.
     merge tool's MOD9 read-scan built the tracked folders' set once per `.cs` file (247 s to 14 s); `LineAccountTests` reads each grid case
     once for its class (`Todays`, `Rules`) and runs the cases eight wide through `GridRun` (185 s to 84 s); `StructureTests` and
     `ShellStructureTests` share one analysis, `DriverTree.Shared` (one compile fewer, about 50 s of CPU, no change in either class's wall);
-    the web's vitest keeps its transformed modules (`fsModuleCache`: the rules gate 87 s to 42 s warm). Still redundant: the `censuses` gate
-    reruns the Census classes that the driver's and modules' fast halves already run (a full CI run could skip it when both run). The modules'
+    the web's vitest keeps its transformed modules (`fsModuleCache`: the rules gate 87 s to 42 s warm). A CI run no longer runs the `censuses`
+    gate beside the driver's and modules' fast halves, which already run the Census classes (the driver's alone take 83 s of test time,
+    2 m 23 s with its build; the gate's 4 m 51 s above was beside a full run), and its pass is recorded from theirs; where either half is kept
+    or does not pass it runs or stays owed. The contracts' cold build (103 s alone) runs once as a step before the web gates that run a page
+    script with a contracts pre-script (`typecheck`, `test`, `build`), which start when it ends while the other gates run beside it, so none
+    holds a light place waiting on the build's lock. The modules'
     fast half does not hang in a worktree: run twice in a session's tree, once alone and once beside the merge queue's driver-process gate, it
     ran its 3,006 tests in about 4 minutes of test time each (the slowest test 5 s, 230 s of test time in all, one class at a time). The
     second run first waited about 3 minutes in `daoris gate run` for a heavy-run place (all three held), which it said, and which has no
@@ -151,8 +155,17 @@ finishes first and the whole set runs once.
     `vmThreads` is the right pool: `threads` ran the same 13 files 1.9 to 2.2 times and `forks` 1.7 to 2.7 times as long. The setup no longer loads
     Storybook (the five files that compose stories set its annotations through `src/test/composeStories.ts`): 13 files at two workers
     ran 26.7, 28.4 and 30.5 s against 32.0, 36.5 and 31.4 s, but the full run took 841 s, inside the machine's noise, so the cut is
-    unproven and the run still takes thirteen minutes. Left: the worker count (WEBGATE1's quarter of the machine, measured at no other
-    count), and the tests that render the whole shell per case. (from OPTIMIZE1d)
+    unproven and the run still takes thirteen minutes. Measured again by file on 2026-11-09 (12,818 tests in 624 files, five workers, the
+    run 8 m 24 s on a machine with one session running; vitest's JSON reporter gives each test's time): the tests are 1,702 s of the
+    2,465 worker seconds, 805 tests of 0.5 to 2 s making 714 s and 78 of over 2 s making 227 s, and `design/stories.test.tsx` (3,434 renders
+    of 48 ms) 164 s; the four `WorkFrame` files, `AskDaoris`, `AgentsView` and `ProjectsView.git` are 40 to 65 s each. A 30-file sample of the
+    smallest files at one worker spends 38% in the setup (the catalogues' load and i18next's start, about 0.2 s a file), 22% in transforms
+    and 13% in the environment; the five slowest files at five workers spend 93% in their tests. The cuts tried and not kept: a user event
+    with no wait between its actions (`delay: null` for every `setup` and direct call) fails 18 of `WorkFrame.landed`'s tests, which hold
+    on the macrotask that wait yields; eleven workers ran the run in 5 m 47 s with the tests' own time up to 2,691 s (210 tests over 2 s
+    against 78), and eight and a `vmMemoryLimit` of 1 GB ran 9 and 12 minutes on a machine other sessions held at 90% CPU, which says
+    only that no figure beside other runs is a measure. Left: the worker count (WEBGATE1's quarter, a CI run's five light gates sharing the
+    machine), the setup's cost in every file, and the tests that render the whole shell per case. (from OPTIMIZE1d)
 
 18. Every process Daoris's work runs is under the application in the system's tree, since Windows lists a process under its
     parent only while that parent runs. A terminal verb that starts heavy work (`daoris gate run`, a gate or a command of the
