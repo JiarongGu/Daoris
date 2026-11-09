@@ -3,11 +3,11 @@ using System.Text.Json;
 namespace Daoris.Driver;
 
 /// <summary>
-/// The repository's declared backlog and its merge by the merge base: a landing's replay that conflicts only in
-/// the backlog, or in it beside files the repository marks generated (<see cref="GeneratedPaths"/>), settles the backlog as the merge tool
-/// settles it: a line one side added is kept, one a side removed is dropped, and a base line both sides changed stays the
-/// session's conflict. In this repository nearly every landing touches the backlog, since each session archives its own row, so a
-/// refusal there cost the session a rebase turn over a line the merge tool settles by itself.
+/// The repository's declared backlog and row tables and their merge: a landing's replay that conflicts only in them, or in them beside
+/// files the repository marks generated (<see cref="GeneratedPaths"/>), settles them as the merge tool settles them: the backlog by its
+/// rows' ids (<see cref="BacklogRows"/>), a row table by the merge base line by line, a line one side added kept, one a side removed
+/// dropped, and a base line both sides changed the session's conflict. In this repository nearly every landing touches the backlog,
+/// since each session archives its own row, so a refusal there cost the session a rebase turn over rows the merge tool settles by itself.
 /// </summary>
 /// <remarks>
 /// <para><b>A twin</b> of <c>tools/merge-branch.mjs</c>'s <c>backlogOf</c> and <c>mergeByBase</c>: no code is shared (the merge tool is
@@ -21,9 +21,6 @@ namespace Daoris.Driver;
 /// </remarks>
 internal static class BacklogMerge
 {
-    /// <summary>The manifest that declares the backlog, at the repository's root.</summary>
-    internal const string Manifest = "daoris.json";
-
     /// <summary>The backlog where the manifest names none, or where there is no manifest.</summary>
     internal const string Default = "TASKS.md";
 
@@ -34,7 +31,15 @@ internal static class BacklogMerge
     /// The backlog merged: its text, or null where both sides changed one base line (or one added inside a run the other replaced); the
     /// lines kept from the changes taken, the base lines they dropped, and each base line both changed (1-based).
     /// </summary>
-    internal sealed record Merged(string? Text, int Kept, int Dropped, IReadOnlyList<int> Both);
+    internal sealed record Merged(string? Text, int Kept, int Dropped, IReadOnlyList<int> Both)
+    {
+        /// <summary>What the backlog's rows left (<see cref="BacklogRows"/>): each row both sides changed, with both texts.</summary>
+        public IReadOnlyList<BacklogRows.Differs> Differ { get; init; } = [];
+
+        public IReadOnlyList<string> Twice { get; init; } = [];
+
+        public IReadOnlyList<string> Unread { get; init; } = [];
+    }
 
     /// <summary>What one replay settled of the backlog, or of one declared row table, summed over its stops: what the landing says.</summary>
     internal sealed record Settled(string Path, int Kept, int Dropped);
@@ -57,12 +62,12 @@ internal static class BacklogMerge
         public IntegrationMergeRule? LineOf(string path) => Lines.FirstOrDefault(rule => rule.Paths == path);
 
         /// <summary>
-        /// The merge <paramref name="path"/> settles by: its accepted line rule's, where one reads (<see cref="LineRules.ByLine"/>), else
-        /// the merge base's. A line rule's pattern that does not read settles nothing.
+        /// The merge <paramref name="path"/> settles by: its accepted line rule's, where one reads (<see cref="LineRules.ByLine"/>), the
+        /// backlog's by its rows' ids (<see cref="BacklogRows.Merge"/>), else the merge base's. A line rule's pattern that does not read settles nothing.
         /// </summary>
         public Merged Merge(string path, string @base, string ours, string theirs)
         {
-            if (LineOf(path) is not { } rule) return ByBase(@base, ours, theirs);
+            if (LineOf(path) is not { } rule) return path == Backlog ? BacklogRows.Merge(@base, ours, theirs) : ByBase(@base, ours, theirs);
             var text = LineRules.Pattern(rule.Line!) is { } line ? LineRules.ByLine(@base, ours, theirs, line) : null;
             return new Merged(text, 0, 0, []);
         }
@@ -181,8 +186,9 @@ internal static class BacklogMerge
     /// replay, <c>main</c> in the merge tool) and its rows go first where both add at one place. The merge tool's <c>mergeByBase</c>, row
     /// for row of <c>backlog-merges.json</c>.
     /// </summary>
-    internal static Merged ByBase(string @base, string ours, string theirs)
+    internal static Merged ByBase(string @base, string ours, string theirs, Func<Hunk, Hunk, bool>? collide = null)
     {
+        collide ??= Collide;
         var b = @base.Split('\n');
         var mine = LineHunks(b, ours.Split('\n'));
         var yours = LineHunks(b, theirs.Split('\n'));
@@ -191,7 +197,7 @@ internal static class BacklogMerge
         foreach (var hunk in yours)
         {
             if (mine.Any(other => Same(other, hunk))) continue;
-            var met = mine.Where(other => Collide(other, hunk)).ToList();
+            var met = mine.Where(other => collide(other, hunk)).ToList();
             if (met.Count > 0) both.Add(Math.Min(hunk.Start, met.Min(other => other.Start)) + 1);
             hunks.Add((hunk, 1));
         }
@@ -234,7 +240,7 @@ internal static class BacklogMerge
     /// </summary>
     internal static async Task<string?> DeclaredAsync(string place, string source, CancellationToken ct)
     {
-        var (listed, entry, _) = await WorkingTree.GitAsync(place, ["ls-tree", "-z", source, "--", Manifest], ct).ConfigureAwait(false);
+        var (listed, entry, _) = await WorkingTree.GitAsync(place, ["ls-tree", "-z", source, "--", DeclarationNames.Manifest], ct).ConfigureAwait(false);
         if (listed != 0) return null;
         var line = entry.TrimEnd('\0');
         if (line.Length == 0) return PathOf(null);
@@ -252,7 +258,7 @@ internal static class BacklogMerge
     internal static async Task<Declared> DeclaredTablesAsync(string place, string source, CancellationToken ct)
     {
         var backlog = await DeclaredAsync(place, source, ct).ConfigureAwait(false);
-        var (found, sha, _) = await WorkingTree.GitAsync(place, ["rev-parse", "--verify", "--quiet", $"{source}:{GeneratedWriters.DeclarationFile}"], ct)
+        var (found, sha, _) = await WorkingTree.GitAsync(place, ["rev-parse", "--verify", "--quiet", $"{source}:{DeclarationNames.Gates}"], ct)
             .ConfigureAwait(false);
         if (found != 0) return new Declared(backlog, []);
         var text = await GitObjectReads.TextAsync(place, sha.Trim(), ct).ConfigureAwait(false);
@@ -326,6 +332,9 @@ internal static class BacklogMerge
         /// <summary>The files the replay settled by an accepted line rule, each once, in the order first met, with the writer that writes them again.</summary>
         internal IReadOnlyList<LineRules.Settled> Lined => _lined;
 
+        /// <summary>What the stop it could not settle says of the backlog's rows, said beside git's conflict; nothing where its rows said nothing.</summary>
+        internal string Refused { get; private set; } = "";
+
         /// <summary>What the line declares to settle by the merge base, read in <paramref name="tree"/> once per replay, with the accepted line rules.</summary>
         internal async Task<Declared> DeclaredAsync(string tree, CancellationToken ct)
         {
@@ -365,7 +374,12 @@ internal static class BacklogMerge
 
             var declared = await DeclaredAsync(tree, ct).ConfigureAwait(false);
             var merged = declared.Merge(path, texts[0], texts[1], texts[2]);
-            if (merged.Text is null) return false;
+            if (merged.Text is null)
+            {
+                Refused = BacklogRows.Refusal(path, merged);
+                return false;
+            }
+
             var (hashed, made, _) = await WorkingTree.GitAsync(tree, ["hash-object", "-w", "--stdin"], merged.Text, ct).ConfigureAwait(false);
             if (hashed != 0) return false;
             var (staged, _, _) = await WorkingTree.GitAsync(

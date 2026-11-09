@@ -295,20 +295,20 @@ internal sealed class RefSnapshot
     /// </summary>
     internal async Task<string?> TreeOfAsync(string commit, CancellationToken ct, string? asker = null)
     {
-        if (asker is not null && _root is { } root && !GitAskerContext.Same(asker, root)) return null;
+        if (asker is not null && _root is { } root && !GitStamp.SameContext(asker, root)) return null;
         if (await RefsAsync(ct).ConfigureAwait(false) is not { } refs) return null;
         return TreeIn(refs, commit);
     }
 
     /// <summary>
     /// The tree of <paramref name="commit"/> from a listing this flow holds of a folder reading <paramref name="folder"/>'s configuration
-    /// (<see cref="GitAskerContext"/>). Nothing is started; null where no such listing has a ref at exactly that commit.
+    /// (<see cref="GitStamp.ContextOf"/>). Nothing is started; null where no such listing has a ref at exactly that commit.
     /// </summary>
     internal static string? TreeHeld(string folder, string commit)
     {
         foreach (var held in Held.Value ?? [])
         {
-            if (held._root is not { } root || !GitAskerContext.Same(folder, root)) continue;
+            if (held._root is not { } root || !GitStamp.SameContext(folder, root)) continue;
             Task<Refs?>? read;
             lock (held._gate) read = held._refs;
             if (read is not { IsCompletedSuccessfully: true, Result: { } refs }) continue;
@@ -326,7 +326,7 @@ internal sealed class RefSnapshot
     {
         foreach (var held in Held.Value ?? [])
         {
-            if (held._root is not { } root || !GitAskerContext.Same(folder, root)) continue;
+            if (held._root is not { } root || !GitStamp.SameContext(folder, root)) continue;
             Task<Refs?>? read;
             lock (held._gate) read = held._refs;
             if (read is { IsCompletedSuccessfully: true, Result: { } refs }) return refs;

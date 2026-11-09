@@ -34,6 +34,8 @@ public sealed partial class CheckoutWritersCensusTests
 
         // Trees of Daoris's own, under the trees home: no checkout of the person's.
         ["BacklogMerge.cs"] = (OwnTree, "a backlog's union, staged in the replay's own tree", ["checkout@tree", "update-index@tree"]),
+        ["BacklogHeld.cs"] = (OwnTree, "a made backlog's rows the rules take out, staged and, in a replay, committed in its own tree or the line's integration tree", ["checkout@place", "commit@place", "update-index@place"]),
+        ["UnionOnce.cs"] = (OwnTree, "a heading union kept twice, kept once and committed in the replay's own tree", ["add@tree", "commit@tree"]),
         ["GeneratedWriters.cs"] = (OwnTree, "generated folders written again and committed in the replay's own tree", ["add@tree", "commit@tree"]),
         ["UnionJoins.cs"] = (OwnTree, "what a union joined, set apart and committed in the replay's own tree", ["add@tree", "commit@tree"]),
         ["VerifyExecution.cs"] =(OwnTree, "a heavy run's own detached tree, made, locked and checked out at the commit sent; git's record of it in the checkout", ["checkout@tree", "worktree@send.Checkout"]),
@@ -44,7 +46,8 @@ public sealed partial class CheckoutWritersCensusTests
         ["UntrackedPatches.cs"] = (OwnTree, "Review's read of a session's own tree: its untracked files added as intents to a private index (GIT_INDEX_FILE) beside the tree's own, never that index, removed with its lock after", ["add@_root"]),
 
         // Refs no checkout has out, each from the tip judged or refused by git itself, and git's record of the trees.
-        ["BranchReplays.cs"] = (Refs, "a branch replayed in its own tree or one made for it (D109 §2), moved from the tip judged while no checkout has it out", ["add@tree", "checkout@tree", "rebase@tree", "rm@tree", "switch@tree", "update-ref@root", "worktree@root"]),
+        ["BranchReplays.cs"] = (Refs, "a branch replayed in its own tree or one made for it (D109 §2), moved from the tip judged while no checkout has it out", ["rebase@tree", "switch@tree", "update-ref@root"]),
+        ["ReplaySettles.cs"] = (OwnTree, "a work replayed and its stops settled in a tree made for it under the trees home and removed after; it moves no branch", ["add@tree", "checkout@tree", "rebase@tree", "rm@tree", "switch@tree", "worktree@root"]),
         ["TreeUpdates.cs"] = (Refs, "a session's branch brought up to date in its own tree, moved from the tip judged while that tree is detached", ["rebase@tree", "switch@full", "switch@tree", "update-ref@root"]),
         ["TreeLandSyncs.cs"] = (Refs, "a session's branch following what landed, moved from the tip judged while its own tree is detached; a delivery's is TreeDeliveries' transaction instead", ["switch@full", "update-ref@sync.Root"]),
         ["TreeBranches.cs"] = (Refs,"a landing's new branch, and its advance from the recorded tip of a branch checked out in no tree; a delivery's are TreeDeliveries' transaction instead; its merge rule writes the checkout only through IntegrationPromotes' effect and holds nothing itself", ["branch@root", "update-ref@root"]),

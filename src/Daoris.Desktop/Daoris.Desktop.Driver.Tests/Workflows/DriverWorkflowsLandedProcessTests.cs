@@ -38,7 +38,7 @@ public sealed class DriverWorkflowsLandedProcessTests : IDisposable
         Directory.CreateDirectory(root);
         await GitAsync(root, "init", "--quiet", "-b", "main");
         await File.WriteAllTextAsync(Path.Combine(root, "README.md"), "# Web app\n");
-        if (declaration is not null) await File.WriteAllTextAsync(Path.Combine(root, LandedGates.File), declaration);
+        if (declaration is not null) await File.WriteAllTextAsync(Path.Combine(root, DeclarationNames.Gates), declaration);
         await GitAsync(root, "add", ".");
         await GitAsync(root, "-c", "user.email=fixture@example.test", "-c", "user.name=Fixture", "commit", "--quiet", "-m", "the line");
         return root;
@@ -81,7 +81,7 @@ public sealed class DriverWorkflowsLandedProcessTests : IDisposable
     {
         var root = await RepositoryAsync(Declared);
         await VerificationAsync(root);
-        var blob = (await GitAsync(root, "rev-parse", $"main:{LandedGates.File}")).Trim();
+        var blob = (await GitAsync(root, "rev-parse", $"main:{DeclarationNames.Gates}")).Trim();
         var tip = (await GitAsync(root, "rev-parse", "main")).Trim();
 
         var (_, plan) = await RunAsync(root, "use", "web-verify", "--repository", "web-app", "--landed", "--plan");
@@ -103,9 +103,9 @@ public sealed class DriverWorkflowsLandedProcessTests : IDisposable
         Assert.Equal(new WorkflowLanded("web-verify", blob), DriverConfig.Load(Config).Workflows["web-app"].Landed);
 
         // Run again after the declaration changed, it accepts the new blob, and says what changed.
-        await File.WriteAllTextAsync(Path.Combine(root, LandedGates.File), """{ "gates": [] }""");
+        await File.WriteAllTextAsync(Path.Combine(root, DeclarationNames.Gates), """{ "gates": [] }""");
         await GitAsync(root, "-c", "user.email=fixture@example.test", "-c", "user.name=Fixture", "commit", "--quiet", "-am", "fewer gates");
-        var fewer = (await GitAsync(root, "rev-parse", $"main:{LandedGates.File}")).Trim();
+        var fewer = (await GitAsync(root, "rev-parse", $"main:{DeclarationNames.Gates}")).Trim();
         var (_, again) = await RunAsync(root, "use", "web-verify", "--repository", "web-app", "--landed");
         Assert.Contains($"  It replaces the gates accepted before, at blob `{blob[..7]}`: what changed is `git diff {blob} {fewer}`.", again);
         Assert.Equal(fewer, DriverConfig.Load(Config).Workflows["web-app"].Landed!.Gates);
@@ -142,7 +142,7 @@ public sealed class DriverWorkflowsLandedProcessTests : IDisposable
         await RunAsync(root, "kind", "work", "feature", "--label", "Feature");
         await RunAsync(root, "use", "docs-to-pr", "--workspace", "work", "--kind", "docs");
         await RunAsync(root, "use", "web-verify", "--repository", "web-app", "--landed");
-        var blob = (await GitAsync(root, "rev-parse", $"main:{LandedGates.File}")).Trim();
+        var blob = (await GitAsync(root, "rev-parse", $"main:{DeclarationNames.Gates}")).Trim();
 
         var (_, shown) = await RunAsync(root, "show", "--repository", "web-app");
 

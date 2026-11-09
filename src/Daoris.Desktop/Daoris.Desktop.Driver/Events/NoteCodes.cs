@@ -256,6 +256,7 @@ public static class NoteCodes
         new(DepsWhy.LinkOut, ["link"], "note.deps.why.link-out"),
         new(DepsWhy.HeldBefore, ["file"], "note.deps.why.held-ignored"),
         new(DepsWhy.Group, ["with"], "note.deps.why.group"),
+        new(DepsWhy.Unsealed, [], "note.deps.why.unsealed"),
         new(ShareWhy.Pattern, [], "note.deps.why.share-pattern"),
         new(ShareWhy.Absent, [], "note.deps.why.share-absent"),
         new(ShareWhy.Unignored, [], "note.deps.why.share-unignored"),

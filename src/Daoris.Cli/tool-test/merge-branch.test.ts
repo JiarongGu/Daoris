@@ -10,7 +10,7 @@ import {
   TOOL, repoRoot, tool, refusal, type Verdict, type CpuTimes, type Gate, type GateTreeFacts, type Worktree, type Facts, type Candidate,
   type Proc, type Folder, type Rule, type Step, type GateResult, type Beside, rehearsalKit, type Reading, type MemoryWait, type Lane,
   type Judging, type Reached, type ClassVerdict, type Standing, type Last, type Judged, type Trees, publish, type CiStatus, type CiGate,
-  BACKLOG_MERGES, INTEGRATION_DECLARATIONS, UNION_JOINS, trackedFiles, processRun, rootScripts, repoPlan, gitRun, repoLanes, ALL, BASE, ALWAYS_REACHED,
+  INTEGRATION_DECLARATIONS, UNION_JOINS, trackedFiles, processRun, rootScripts, repoPlan, gitRun, repoLanes, ALL, BASE, ALWAYS_REACHED,
 } from './support/merge-branch.ts';
 
 /**
@@ -25,7 +25,6 @@ import {
 // The census of test units reads this file's strings as the lane table's data, not as reads; what it does read is declared.
 // test-map: strings name paths as data
 // reaches: * — the lane table's tests hold it to every tracked file and lane, so any file added or moved can fail them
-// reaches: src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/fixtures/backlog-merges.json — the driver's twin reads the table row for row
 // reaches: src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/fixtures/union-joins.json — the driver's twin sets the same joins apart, row for row
 // reaches: src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/fixtures/integration-declarations.json — the driver's twin reads the table row for row
 
@@ -822,52 +821,6 @@ test("a heading straight under a line gets one blank line above it, unless a sid
   ]);
   assert.deepEqual(tool.setApartHeadings(text, [merged]), { text, set: [] });
   assert.equal(tool.setApartHeadings('A.\r\n## B\r\n').text, 'A.\r\n\r\n## B\r\n');
-});
-
-// The backlog merged by its base, a row added or removed beside the other side's kept so, one both edited left.
-test('the backlog merged by its base keeps a row a side added, drops one a side removed, and leaves one both sides edited', () => {
-  const base = ['# Tasks', '', '- [ ] **A1** one.', '- [ ] **A2** two.', '- [ ] **A3** three.', ''].join('\n');
-  // An added row beside a removed one, which git reads as one conflict.
-  const added = tool.mergeByBase(base, base.replace('- [ ] **A2** two.\n', ''), base.replace('- [ ] **A3** three.\n', '- [ ] **A3** three.\n- [ ] **A4** four.\n'));
-  assert.equal(added.text, ['# Tasks', '', '- [ ] **A1** one.', '- [ ] **A3** three.', '- [ ] **A4** four.', ''].join('\n'));
-  assert.deepEqual([added.kept, added.dropped, added.both], [1, 1, []]);
-  // Two rows removed side by side, one by each.
-  const removed = tool.mergeByBase(base, base.replace('- [ ] **A1** one.\n', ''), base.replace('- [ ] **A2** two.\n', ''));
-  assert.equal(removed.text, ['# Tasks', '', '- [ ] **A3** three.', ''].join('\n'));
-  // Rows both add at one place are both kept, this side's first; a row both removed is removed once.
-  const twice = tool.mergeByBase(base, base.replace('**A3** three.\n', '**A3** three.\n- [ ] **B1** mine.\n').replace('- [ ] **A1** one.\n', ''),
-    base.replace('**A3** three.\n', '**A3** three.\n- [ ] **C1** theirs.\n').replace('- [ ] **A1** one.\n', ''));
-  assert.equal(twice.text, ['# Tasks', '', '- [ ] **A2** two.', '- [ ] **A3** three.', '- [ ] **B1** mine.', '- [ ] **C1** theirs.', ''].join('\n'));
-  // One row both sides edited is the person's: no text, and the base's line it is.
-  const edited = tool.mergeByBase(base, base.replace('**A2** two.', '**A2** two, mine.'), base.replace('**A2** two.', '**A2** two, theirs.'));
-  assert.equal(edited.text, null);
-  assert.deepEqual(edited.both, [{ line: 4 }]);
-  // A row one side edited and the other removed is the person's too; the same edit on both sides is not.
-  assert.equal(tool.mergeByBase(base, base.replace('**A2** two.', '**A2** edited.'), base.replace('- [ ] **A2** two.\n', '')).text, null);
-  const same = base.replace('**A2** two.', '**A2** edited.');
-  assert.equal(tool.mergeByBase(base, same, same).text, same);
-});
-
-// The rule is a twin. A landing's replay settles a backlog-only conflict by it, and the driver's BacklogMerge holds the
-// same table, row for row.
-test("the declared backlog and its merge by base read as the table the driver's landing holds too (LANDBACKLOG1)", () => {
-  type Row = { name: string; base: string[]; ours: string[]; theirs: string[]; text: string[] | null; kept: number; dropped: number; both: number[] };
-  const table = JSON.parse(readFileSync(join(repoRoot, BACKLOG_MERGES), 'utf8')) as {
-    paths: { name: string; manifest: string | null; backlog: string | null }[];
-    rows: { name: string; declaration: string | null; tables: string[] }[];
-    merges: Row[];
-  };
-  assert.ok(table.paths.length >= 10 && table.merges.length >= 8 && table.rows.length >= 10, 'the table holds its rows');
-  for (const row of table.paths) assert.equal(tool.backlogOf(row.manifest), row.backlog, row.name);
-  // The declared row tables, merged by the same rule (the merges below), and read by the driver's twin from this table.
-  for (const row of table.rows) assert.deepEqual(tool.rowTablesOf(row.declaration), row.tables, row.name);
-  for (const row of table.merges) {
-    const merged = tool.mergeByBase(row.base.join('\n'), row.ours.join('\n'), row.theirs.join('\n'));
-    assert.deepEqual(
-      { text: merged.text, kept: merged.kept, dropped: merged.dropped, both: merged.both.map((entry: { line: number }) => entry.line) },
-      { text: row.text?.join('\n') ?? null, kept: row.kept, dropped: row.dropped, both: row.both },
-      row.name);
-  }
 });
 
 // A repository's `integration` is read whole, in one place per twin; the driver's IntegrationDeclaration holds the
@@ -2189,7 +2142,7 @@ test('MEMGATE1: the memory a gate needs is its class\'s, or what daoris.gates.js
   assert.deepEqual(needs, {
     universal: 0, 'code-map': 0, 'test-map': 0, 'web-types': 0, 'web-rules': 0, 'tool-tests': 0, comments: 0,
     cli: suite, service: suite, devkit: suite, driver: suite, modules: suite, censuses: suite, web: suite, 'web-unit': suite, 'web-measured': suite,
-    'service-process': half, 'driver-process': half, 'driver-process-git': half, 'modules-process': half,
+    'service-process': half, 'driver-process': half, 'driver-process-git': half, 'driver-process-git-pinned': half, 'modules-process': half,
     rehearse: rehearsal, 'rehearse-family': rehearsal, deployment: rehearsal,
   });
   assert.ok(suite! > 0 && half! >= suite! && rehearsal! >= half!, 'a heavier class needs no less');
@@ -2946,13 +2899,13 @@ test("a verdict stands until a path that reaches its gate changes: a browser tes
     assert.equal(w[gate]!.verdict!.tree, 'F', gate);
     assert.deepEqual(w[gate]!.standing, { standing: 'unreached', paths: [spec], records: ['TASKS.md', 'docs/decisions/D150.md'] }, gate);
   }
-  // Once those pass again on W, the stage accepts it: no second full run.
+  // Passing again on W, the stage approves it.
   const again = [...full, ...inPlan([...BASE, ...ALWAYS_REACHED, 'web']).map((gate) => ({ gate, verdict: 'PASS', tree: 'W', at: at(11) }))];
   assert.deepEqual(tool.stageJudgement({ ...judging('W'), plan: ALL, verdicts: again }).missing, []);
 
-  // A driver change voids the driver's verdicts, and every gate it reaches; the page's and the service's stand.
+  // A driver change voids the driver's verdicts and every gate it reaches.
   const driver = tool.stageJudgement({ ...judging('D'), plan: ALL, verdicts: full });
-  assert.deepEqual(driver.missing, inPlan([...BASE, ...ALWAYS_REACHED, 'driver', 'modules', 'censuses', 'driver-process', 'driver-process-git', 'modules-process', 'rehearse-family', 'deployment']));
+  assert.deepEqual(driver.missing, inPlan([...BASE, ...ALWAYS_REACHED, 'driver', 'modules', 'censuses', 'driver-process', 'driver-process-git', 'driver-process-git-pinned', 'modules-process', 'rehearse-family', 'deployment']));
   const d = Object.fromEntries(driver.gates.map((gate) => [gate.name, gate]));
   assert.deepEqual(d['driver-process']!.stale!.paths, [driverCs]);
   for (const gate of ['service', 'devkit', 'rehearse', 'web']) assert.equal(d[gate]!.standing!.standing, 'unreached', gate);
@@ -4441,14 +4394,14 @@ describe('the tool, end to end in a scratch repository', { concurrency: true }, 
     assert.deepEqual(repo.ran(), ['first']);
     git(repo.root, 'commit', '--quiet', '--no-edit');
 
-    // Both sides edit one row: it is left as git wrote it, named, and no gate runs.
+    // Both sides edit one row: left as git wrote it, said, no gate run.
     const now = backlog();
     branch(repo.root, 'right', { 'TASKS.md': now.replace('**A3** three.', '**A3** three, right.') });
     writeFileSync(join(repo.root, 'TASKS.md'), now.replace('**A3** three.', '**A3** three, main.'));
     git(repo.root, 'commit', '--quiet', '-am', `main moved again${TRAILER}`);
     result = await repo.run(['right']);
     assert.equal(result.status, 1, result.out);
-    assert.match(result.out, /TASKS\.md: both sides changed the same line \(the merge base's line 5\); left for you/);
+    assert.match(result.out, /TASKS\.md: row A3 changed on both sides; left for you: main has ".+, main\.", and the branch has/);
     assert.match(result.out, /conflict in 1 file:\n\s+TASKS\.md/);
     assert.match(backlog(), /^<<<<<<< /m);
     assert.deepEqual(repo.ran(), ['first']);

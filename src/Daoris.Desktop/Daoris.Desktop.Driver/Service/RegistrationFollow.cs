@@ -148,7 +148,7 @@ public static class RegistrationFollow
         {
             var waiting = world.SetupWaiting(name);
             return new(name, RegistryOutcome.NotSetUp,
-                $"`{name}` is not set up on its line `{files.Line}`: no {LineRegistration.ManifestFile} there"
+                $"`{name}` is not set up on its line `{files.Line}`: no {DeclarationNames.Manifest} there"
                 + (waiting is not null
                     ? $". Its set-up waits for your review on `{waiting}`; once it is merged, *Bring up to date* registers it."
                     : $". `daoris place {name} --preset keep --adoption` asks its own session to set it up."),
@@ -159,14 +159,14 @@ public static class RegistrationFollow
         if (composed.ManifestProblem is { } problem)
         {
             return new(name, RegistryOutcome.Unreadable,
-                $"its {LineRegistration.ManifestFile} on {at} does not read: {problem}. Nothing was registered; its row keeps what it held.",
+                $"its {DeclarationNames.Manifest} on {at} does not read: {problem}. Nothing was registered; its row keeps what it held.",
                 files.Line, files.Commit);
         }
 
         if (composed.LanesProblems.Count > 0)
         {
             return new(name, RegistryOutcome.LanesUnreadable,
-                $"its {LineRegistration.LanesFile} on {at} cannot be read: {string.Join("; ", composed.LanesProblems)}. "
+                $"its {DeclarationNames.Lanes} on {at} cannot be read: {string.Join("; ", composed.LanesProblems)}. "
                 + "Nothing was registered; its row keeps what it held.",
                 files.Line, files.Commit);
         }
@@ -196,7 +196,7 @@ public static class RegistrationFollow
     }
 
     private static string DeclaresNothingSaid(string name, string at) =>
-        $"adopted, declares nothing: its line {at} holds a {LineRegistration.ManifestFile} whose `domain` says nothing, so its "
+        $"adopted, declares nothing: its line {at} holds a {DeclarationNames.Manifest} whose `domain` says nothing, so its "
         + $"adoption is recorded and the declaration is as the row held it. `daoris place {name} --preset keep --adoption` asks its own session to "
         + "declare what it owns.";
 

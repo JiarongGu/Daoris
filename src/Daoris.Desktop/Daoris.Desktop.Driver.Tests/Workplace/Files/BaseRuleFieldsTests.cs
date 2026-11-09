@@ -20,7 +20,7 @@ public sealed class BaseRuleFieldsTests
 
         Assert.Empty(read.Problems);
         Assert.Equal("dotnet build -c {configuration}", read.Rules.Single().Builds);
-        Assert.Equal(["node tools/run.mjs"], read.Rules.Single().Refuses);
+        Assert.Equal<string>(["node tools/run.mjs"], read.Rules.Single().Refuses!);
         Assert.Contains("--no-build", Problem("""{ "kind": "output", "paths": ["bin/"], "builds": "dotnet test -c {configuration} --no-build" }"""));
         Assert.Contains("{configuration}", Problem("""{ "kind": "output", "paths": ["bin/"], "builds": "dotnet build" }"""));
         Assert.Contains("`builds` is not a field", Problem("""{ "kind": "scratch", "paths": ["/tmp/"], "builds": "dotnet build -c {configuration}" }"""));
@@ -34,7 +34,7 @@ public sealed class BaseRuleFieldsTests
         Assert.Equal("dotnet build -c {configuration}", signature.Builds);
         Assert.Null(signature.Take);
 
-        var read = RepositoryFilesReader.Read(File.ReadAllText(Path.Combine(WorkspaceRoot.Folder, RepositoryFilesReader.FileName)));
+        var read = RepositoryFilesReader.Read(File.ReadAllText(Path.Combine(WorkspaceRoot.Folder, DeclarationNames.Rules)));
         var rules = FileRules.Of([], read.Rules, PersonFilesRead.Empty, "Daoris", (path, kind) => kind == signature.Kind && signature.Matches(path) ? signature : null);
         var bin = rules.For("src/App/bin/", new FileFloorFacts([], [])).Rule!;
 

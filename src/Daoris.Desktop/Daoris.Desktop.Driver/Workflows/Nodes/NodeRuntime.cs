@@ -475,8 +475,8 @@ public sealed class NodeRuntime(
 
             // What git says for the built-ins this round's record holds waiting on it, read once a pass; the gates its opinion and look wait
             // on, likewise.
-            var reads = await NodeEvaluations.ContentAsync(governed, record, tip, git.Content,
-                    await NodeEvaluations.GitReadsAsync(governed, record, git.Git, ct).ConfigureAwait(false), ct)
+            var reads = await NodeStepReads.ReadAsync(governed, records.Home, await NodeEvaluations.ContentAsync(governed, record, tip, git.Content,
+                    await NodeEvaluations.GitReadsAsync(governed, record, git.Git, ct).ConfigureAwait(false), ct).ConfigureAwait(false), ct)
                 .ConfigureAwait(false);
             var gates = await NodeEvaluations.GatesAsync(governed, record, tip, git.Gates, ct).ConfigureAwait(false);
             var (before, evaluated) = governed.Scope is null
@@ -528,6 +528,7 @@ public sealed class NodeRuntime(
             Keeping.StartDoors(governed, run);
             Keeping.KeepPullRequests(governed);
             Keeping.End(governed, run, said);
+            await Keeping.ReleaseStepsAsync(governed, run, ct).ConfigureAwait(false);
         }
     }
 

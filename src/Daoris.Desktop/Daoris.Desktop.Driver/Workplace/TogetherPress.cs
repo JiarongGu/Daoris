@@ -159,6 +159,8 @@ public sealed class TogetherPress(string home, RebaseTelling.Say say, Func<DateT
         return code == 0 && found.Trim() is { Length: > 0 } commit ? commit : null;
     }
 
+    public Func<TogetherCandidate, string, CancellationToken, Task<string?>>? Delivering { get; init; }
+
     /// <summary>How long the press waits for a landing of a tree it binds.</summary>
     internal static readonly TimeSpan Wait = TimeSpan.FromSeconds(30);
 
@@ -181,7 +183,13 @@ public sealed class TogetherPress(string home, RebaseTelling.Say say, Func<DateT
             foreach (var member in members)
             {
                 if (await GitRefusalAsync(member, ct).ConfigureAwait(false) is { } why) return new(null, $"Nothing was brought together: `{member.Session}` {why}.");
-                pinned.Add(new TogetherMember(member.Session, member.Tree, member.Branch, member.Base, (await TipAsync(member.Tree, ct).ConfigureAwait(false))!)
+                var tip = (await TipAsync(member.Tree, ct).ConfigureAwait(false))!;
+                if (Delivering is not null && await Delivering(member, tip, ct).ConfigureAwait(false) is { } delivering)
+                {
+                    return new(null, $"Nothing was brought together: {delivering}.");
+                }
+
+                pinned.Add(new TogetherMember(member.Session, member.Tree, member.Branch, member.Base, tip)
                 {
                     Quest = member.Quest,
                     Unit = member.Unit,

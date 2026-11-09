@@ -113,7 +113,8 @@ sets the process's environment but those `ProcessEnvironmentCensusTests` names, 
 classes, marked `Parallel=Git` beside `Category=Process`, run four at once in one host with
 `src/Daoris.Desktop/git.process.runsettings` (gate `driver-process-git`, PROC1c): four at once is load, so
 that half runs after the other one, never beside it, and a class marked so is run alone with that file, not
-the other, whose filter leaves it out. A git test copies its
+the other, whose filter leaves it out. The git library's classes run once more on the MinGit the toolchain pins, in `driver-process-git-pinned`
+(`src/Daoris.Desktop/git.pinned.process.runsettings`, which names those classes and sets `DAORIS_PINNED_GIT_LEG`). A git test copies its
 repositories from a seed (`GitSeed`, PROC1h; the plain one is `GitSeed.PlainAsync`) unless it reads the first commit's id or
 time, and removes its scratch with `GitSeed.Remove`: git writes its objects read-only, which `Directory.Delete` refuses on
 Windows (PROCSPEED1). A seed's repositories start no maintenance git behind a commit, a fetch or a push

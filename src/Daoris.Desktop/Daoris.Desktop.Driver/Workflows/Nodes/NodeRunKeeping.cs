@@ -71,6 +71,13 @@ internal sealed class NodeRunKeeping(
                  + "it is judged again once its chain comes back here.");
     }
 
+    /// <summary>A run's step refs let go of at its settled end (<see cref="StepRefs.Releases"/>); one git refuses is let go of at the next pass.</summary>
+    public async Task ReleaseStepsAsync(GovernedUnit governed, RunScope scope, CancellationToken ct)
+    {
+        if (!holdsLease() || records.Read(governed.Unit.Id) is not { } record || !StepRefs.Releases(record) || scope.Root.Length == 0) return;
+        if ((await StepRefs.ReleaseAsync(scope.Root, scope.Run.Run, ct).ConfigureAwait(false)).Done) NodeStepReads.Release(records.Home, scope.Run.Run);
+    }
+
     /// <summary>Whether nothing on the record is still to come: no attempt or word pending, and its graph's end settled or no node of it able to move.</summary>
     private static bool Over(GovernedUnit governed, NodeRecord record)
     {

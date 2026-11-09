@@ -8,4 +8,7 @@ internal sealed record NodeKept(GovernedUnit Governed, RunScope Scope, NodeDecla
 {
     /// <summary>The landing the run's <c>land</c> made, which the steps past it read; null where none is made yet.</summary>
     public LandedBranch? Landed => NodeEvaluations.Landed(Governed, Record.Statuses) is { Unit: var unit } ? NodeObserving.LandingOf(unit) : null;
+
+    /// <summary>The run's own step its door's start carries: the node at its active attempt.</summary>
+    public StepAuthority Authority => StepAuthority.OfDoor(Governed.Run, Node.Id, Status.Attempt);
 }

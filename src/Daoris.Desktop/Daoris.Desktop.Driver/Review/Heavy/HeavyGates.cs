@@ -36,17 +36,14 @@ public sealed record HeavyMarks(bool? Marks, IReadOnlyList<string> Names, string
 /// </remarks>
 public static class HeavyGates
 {
-    /// <summary>The file, at the checkout's root.</summary>
-    public const string FileName = "daoris.gates.json";
-
     /// <summary>The checkout's declared gates, in order.</summary>
     /// <exception cref="DriverException">There is no file, or it does not read: a heavy run cannot tell what to run.</exception>
     public static IReadOnlyList<HeavyGate> Read(string checkout)
     {
-        var file = Path.Combine(checkout, FileName);
+        var file = Path.Combine(checkout, DeclarationNames.Gates);
         if (!File.Exists(file))
         {
-            throw new DriverException($"no {FileName} at {checkout}: `run-heavy` runs the gates a repository declares there, and this one declares none.");
+            throw new DriverException($"no {DeclarationNames.Gates} at {checkout}: `run-heavy` runs the gates a repository declares there, and this one declares none.");
         }
 
         JsonDocument document;
@@ -56,7 +53,7 @@ public static class HeavyGates
         }
         catch (JsonException error)
         {
-            throw new DriverException($"{FileName} is not valid JSON: {error.Message}");
+            throw new DriverException($"{DeclarationNames.Gates} is not valid JSON: {error.Message}");
         }
 
         using (document)
@@ -69,7 +66,7 @@ public static class HeavyGates
             {
                 if (Text(gate, "name") is not { } name || Text(gate, "run") is not { } run)
                 {
-                    throw new DriverException($"{FileName}: every entry in 'gates' needs both 'name' and 'run'.");
+                    throw new DriverException($"{DeclarationNames.Gates}: every entry in 'gates' needs both 'name' and 'run'.");
                 }
 
                 var heavy = false;
@@ -79,7 +76,7 @@ public static class HeavyGates
                     {
                         JsonValueKind.True => true,
                         JsonValueKind.False => false,
-                        _ => throw new DriverException($"{FileName}: `{name}`'s \"heavy\" is true or false, not {marked.GetRawText()}."),
+                        _ => throw new DriverException($"{DeclarationNames.Gates}: `{name}`'s \"heavy\" is true or false, not {marked.GetRawText()}."),
                     };
                 }
 
@@ -101,13 +98,13 @@ public static class HeavyGates
     /// </exception>
     public static HeavyDeclared Resolve(string checkout, string repository, Func<IReadOnlyList<HeavyGate>?> mapped)
     {
-        var declared = File.Exists(Path.Combine(checkout, FileName)) ? Read(checkout) : null;
+        var declared = File.Exists(Path.Combine(checkout, DeclarationNames.Gates)) ? Read(checkout) : null;
         if (declared is not null && declared.Any(gate => gate.Heavy)) return new HeavyDeclared(declared, repository, Mapped: false);
         if (mapped() is { Count: > 0 } gates) return new HeavyDeclared(gates, repository, Mapped: true);
         return declared is not null
             ? new HeavyDeclared(declared, repository, Mapped: false)
             : throw new DriverException(
-                $"no {FileName} at {checkout}, and this machine sets no heavy gates for `{repository}`: `run-heavy` runs the gates a "
+                $"no {DeclarationNames.Gates} at {checkout}, and this machine sets no heavy gates for `{repository}`: `run-heavy` runs the gates a "
                 + $"repository marks heavy there, or those `daoris place heavy {repository} <name>=<command>…` sets here.");
     }
 
@@ -118,7 +115,7 @@ public static class HeavyGates
     /// </summary>
     public static HeavyMarks Marks(string checkout)
     {
-        if (!File.Exists(Path.Combine(checkout, FileName))) return new HeavyMarks(false, [], null);
+        if (!File.Exists(Path.Combine(checkout, DeclarationNames.Gates))) return new HeavyMarks(false, [], null);
         try
         {
             var gates = Read(checkout);
@@ -131,7 +128,7 @@ public static class HeavyGates
         }
         catch (IOException error)
         {
-            return new HeavyMarks(null, [], $"{FileName} could not be read: {error.Message}");
+            return new HeavyMarks(null, [], $"{DeclarationNames.Gates} could not be read: {error.Message}");
         }
     }
 
@@ -157,19 +154,19 @@ public static class HeavyGates
             var neither = mappedFor is null ? "" : $", and this machine sets no heavy gates for `{mappedFor}`";
             return heavy.Count > 0
                 ? new HeavyChoice(heavy, null, 0)
-                : new HeavyChoice([], $"{FileName} marks no gate `\"heavy\": true`{neither}, so there is nothing for `run-heavy` to run.", 2);
+                : new HeavyChoice([], $"{DeclarationNames.Gates} marks no gate `\"heavy\": true`{neither}, so there is nothing for `run-heavy` to run.", 2);
         }
 
         if (declared.FirstOrDefault(gate => gate.Name == named) is not { } chosen)
         {
-            return new HeavyChoice([], $"{FileName} declares no gate `{named}`; its gates: {Names(declared)}.", 2);
+            return new HeavyChoice([], $"{DeclarationNames.Gates} declares no gate `{named}`; its gates: {Names(declared)}.", 2);
         }
 
         return chosen.Heavy
             ? new HeavyChoice([chosen], null, 0)
             : new HeavyChoice(
                 [],
-                $"`{named}` is not marked heavy in {FileName}, so `run-heavy` does not run it: run it as you would, or mark it `\"heavy\": true`. Its heavy gates: {Names(heavy)}.",
+                $"`{named}` is not marked heavy in {DeclarationNames.Gates}, so `run-heavy` does not run it: run it as you would, or mark it `\"heavy\": true`. Its heavy gates: {Names(heavy)}.",
                 1);
     }
 

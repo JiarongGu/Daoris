@@ -23,10 +23,6 @@ public static class OpinionPackets
     /// <summary>The root files a repository's agents are told to read first, in the order named: one harness reads each.</summary>
     private static readonly string[] Instructions = ["AGENTS.md", "CLAUDE.md"];
 
-    private const string Manifest = "daoris.json";
-
-    /// <summary>The gates file by its own name, where a manifest declares none.</summary>
-    private const string GatesFile = "daoris.gates.json";
 
     /// <summary>
     /// An opinion's own folder under the home, where the larger parts of its packet are kept. Refused for an id
@@ -142,7 +138,7 @@ public static class OpinionPackets
 
         var declared = Declared(tree);
         var decisions = Inside(tree, declared.GetValueOrDefault("decisions"));
-        var gates = Inside(tree, declared.GetValueOrDefault("gates")) ?? Inside(tree, GatesFile);
+        var gates = Inside(tree, declared.GetValueOrDefault("gates")) ?? Inside(tree, DeclarationNames.Gates);
         return new OpinionRulesRead(doctrine, decisions, gates);
     }
 
@@ -166,7 +162,7 @@ public static class OpinionPackets
     private static IReadOnlyDictionary<string, string> Declared(string tree)
     {
         var declared = new Dictionary<string, string>(StringComparer.Ordinal);
-        var manifest = Path.Combine(tree, Manifest);
+        var manifest = Path.Combine(tree, DeclarationNames.Manifest);
         if (!File.Exists(manifest)) return declared;
 
         try

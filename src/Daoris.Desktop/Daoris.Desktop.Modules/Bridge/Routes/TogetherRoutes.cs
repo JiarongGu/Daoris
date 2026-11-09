@@ -94,5 +94,8 @@ public sealed class TogetherRoutes(DriverContext context)
     private TogetherPress Press(ServiceClient service) => new(_loop.Home,
         async (at, text, key, token) => (await WordsHead.FollowAsync(
             at, named => service.SayAsync(named, text, null, token, from: DaorisWords.From, key: key)).ConfigureAwait(false)).Said,
-        () => DateTimeOffset.UtcNow);
+        () => DateTimeOffset.UtcNow)
+    {
+        Delivering = (member, tip, _) => Task.FromResult(RebaseDelivering.Of(_loop.Home, member, tip)),
+    };
 }

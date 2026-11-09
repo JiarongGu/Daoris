@@ -27,8 +27,6 @@ public static class RepositoryIndexes
     public static readonly IReadOnlyList<string> Folders =
         ["", "docs", ".claude", ".claude/rules", ".claude/knowledge", ".agents", ".agents/knowledge"];
 
-    private const string Manifest = "daoris.json";
-
     /// <summary>
     /// The repository-relative paths, with forward slashes, of the indexes the tree at <paramref name="root"/> keeps: the
     /// declared router first, then each file named as an index, folder by folder in <see cref="Folders"/>' order and by
@@ -87,11 +85,10 @@ public static class RepositoryIndexes
     /// <summary>
     /// The router the manifest declares, where it is a plain path to a file this tree holds: forward slashes, no leading
     /// <c>./</c>, not rooted, no drive, and no <c>..</c> anywhere in it. Null for anything else, a manifest that does not
-    /// read included: a pointer that might lead out of the tree is not one to hand a session.
-    /// </summary>
+    /// read included: a pointer that might lead out of the tree is not one to hand a session.</summary>
     private static string? Router(string root)
     {
-        var manifest = Path.Combine(root, Manifest);
+        var manifest = Path.Combine(root, DeclarationNames.Manifest);
         if (!File.Exists(manifest)) return null;
 
         string? declared;

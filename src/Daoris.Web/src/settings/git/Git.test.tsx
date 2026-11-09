@@ -5,7 +5,8 @@ import { describe, expect, it, vi } from 'vitest';
 import '../../locales/i18n';
 import { GitDefaults, GitIdentities, GitIdentityRow, GitOwn, type GitActs } from './Git';
 import { GitAdd } from './GitAdd';
-import { ACTS, DEPLOY, EMPTY_PAGE, PAGE, PERSONAL, UNKNOWN_HOST, WORK } from './gitFixtures';
+import { GitReads } from './GitReads';
+import { ACTS, DEPLOY, EMPTY_PAGE, PAGE, PERSONAL, READS, UNKNOWN_HOST, WORK } from './gitFixtures';
 
 // Settings → Git: the organisms drawn from props. GitDomain holds the bridge.
 
@@ -253,5 +254,30 @@ describe('the add form', () => {
 
     expect(await screen.findByRole('alert')).toHaveTextContent('an identity is already named Work');
     expect(screen.getByLabelText('A name for this identity')).toHaveValue('Work');
+  });
+});
+
+describe('the git reads', () => {
+  it('lists each repository with what the library and git each read and why git was asked', () => {
+    draw(<GitReads reads={READS} />);
+
+    const engine = screen.getByText('engine').closest('li')!;
+    expect(within(engine).getByText('library 412')).toBeInTheDocument();
+    expect(within(engine).getByText('git 9')).toBeInTheDocument();
+    expect(within(engine).getByText('a question the library leaves to git · 7')).toBeInTheDocument();
+    expect(within(engine).getByText('replaced objects, which git reads · 2')).toBeInTheDocument();
+    expect(within(engine).getByText('a process ended inside the library here, so git reads until the package changes · 3')).toBeInTheDocument();
+    const archive = screen.getByText('archive').closest('li')!;
+    expect(within(archive).getByText('reftable refs, which git reads · 131')).toBeInTheDocument();
+    expect(within(screen.getByText('site').closest('li')!).queryByText(/·/, { selector: 'li' })).toBeNull();
+  });
+
+  it('says a reason it does not know as it was sent, and that nothing is read yet', () => {
+    const { unmount } = draw(<GitReads reads={[{ repository: 'odd', library: 1, git: 1, reasons: [{ reason: 'new-reason', count: 1 }], last: new Date().toISOString() }]} />);
+    expect(screen.getByText('new-reason · 1')).toBeInTheDocument();
+    unmount();
+
+    draw(<GitReads reads={[]} />);
+    expect(screen.getByText('Nothing read yet')).toBeInTheDocument();
   });
 });

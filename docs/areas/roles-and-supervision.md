@@ -135,7 +135,7 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they start wi
 22. A policy is a row of `role_policy`, bound by a digest to the choices it was set for. Daoris's own writes of the choices
     re-key it. Any other writer leaves it *stale*, and the role walks its order and says so. No row means `order`. (from D226)
 23. Two rules exist. `order` is the default. `weight` is a deterministic pick over the role's last 20 new starts, ties by
-    order, two starts in one look reserved apart, a reservation given back when its walk refuses or throws; a weight is 0 to 10. (from D226)
+    order, two starts in one look reserved apart, a reservation given back when its walk refuses or throws, or its start ends before the record opens (held, refused, thrown); a weight is 0 to 10. (from D226)
 24. A choice may take only some of the role's works, hold a share of the window (1 to 99%), and keep a daily budget of
     starts or reported tokens in the machine's local day. A budget acts at a start only. (from D226)
 25. Presets fill the form and never save: *First that can run*, *Spread evenly* and *Spread by weight*; the two spreads
@@ -353,8 +353,8 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they start wi
     unattributable one is quarantined. A landing is the same window with *Overrule*: the supervisor's `accept` of a `review` step,
     or `approve` or `reject` of a `human` approval (`LandingSteps`, the kit saying which kinds offer which acts and which hold a run
     for the person alone), is kept against the step as it waits on that attempt, refused `answered` once it has moved,
-    `go-ahead-open` on a run a `go-ahead` holds, `landing-pushes` where the landing's plan names a plugin that pushes, and
-    `owner-held` on a line the person stopped or whose quest they paused (`LandingJudge`). The look after the courses
+    `go-ahead-open` on a run a `go-ahead` holds, and `owner-held` on a line the person stopped or whose quest they paused
+    (`LandingJudge`, which reads no plan: a `land` names no plugin, and an approval is judged by its step alone). The look after the courses
     (`LandingReleaseLook`) reads the step, the admission and `OwnerHolds` again and keeps the node's own word on the run's
     record through `RunNodeWords.Word`, carrying its author (`NodeWordBy`: role and decision) and attempt; the decision is live,
     `released`, until the node pass applies the word as the supervisor's (`went-on`) or drops it `stale` where the attempt has
@@ -377,8 +377,8 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they start wi
     role policy's bound), since a hand-over releases that hold. Outside the grants its route's judge refuses the press before any
     card, and the steward's verb says the judge's words; done and
     delete are `QUEST_DONE` and `QUEST_DELETE`, the service's doors sent as the person's records; land is `LAND_SESSION_TREE`
-    and clean the unforced `DISCARD_SESSION_TREE`, each over the session alone, and land is refused `landing-pushes` where
-    the landing's plan names a plugin that pushes: neither ever pushes to a remote. The pause (`StewardPauseAct`) never writes the
+    and clean the unforced `DISCARD_SESSION_TREE`, each over the session alone and judged by the session's own tree
+    alone (`StewardTargets.OwnTreeAsync`): neither ever pushes to a remote, a push being its own `push` step. The pause (`StewardPauseAct`) never writes the
     person's stop: the sessions it stops carry `stopped.paused-quest-steward` (a steward's stop to every reader of the
     person's), its log says `by: steward`, and its unpause, only of a pause the steward made this run and the owner has not
     touched, releases them as the steward's own role release. The update acts (`StewardUpdateAct`) say the install's own
@@ -499,7 +499,7 @@ Web: `agents/roles/*.test.ts(x)` and `agents/setup/*.test.tsx`.
   case goes with COAGENT1. D233 choice 5 removes Ask Daoris's Accept and hand-over proposals, not the hand-over doors a person or
   an agent presses, so the hand-over's model stands; the four fenced roles are edited in the one role editor.
 - **SUPERVISOR1a-i (rest):** the author sweep test, the page's mark with *Overrule* on a question's answer (a referred point's
-  decision has its card), the go-on's process cases.
+  decision has its card), the answers-alone go-on's process case (a parked quest's go-on has one, `SupervisorReferTickTests`).
 - **SUPERVISOR1a-iii:** the installed proof of the activation: a place's supervisor held by a started terminal on the install's
   `app/Daoris.Desktop.exe`, a referred point decided and gone on, and the look in the window.
 - **QUESTIONUI1b, SUPERVISOR1d, SUPERVISOR1f:** the pick on the card; the bench; words.

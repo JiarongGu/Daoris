@@ -34,5 +34,7 @@ internal sealed class ClaimedNode : BuiltInNode, IObserves
 
     public override bool EndsByTheLine => true;
 
-    public NodeObservation Observe(NodeReading reading) => ClaimedReading.Observe(reading);
+    public override IReadOnlyDictionary<string, string> Outputs => ClaimedWork.Outputs;
+
+    public NodeObservation Observe(NodeReading reading) => ClaimedWork.Carried(ClaimedReading.Observe(reading));
 }

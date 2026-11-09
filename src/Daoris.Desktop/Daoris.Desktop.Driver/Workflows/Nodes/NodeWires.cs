@@ -273,7 +273,7 @@ public static class NodeWires
 
         foreach (var node in distinct)
         {
-            foreach (var input in node.Inputs.Keys)
+            foreach (var input in NodePorts.Inputs(node).Keys)
             {
                 var feeding = wires.Where(wire => wire.Kind == WireKinds.Data && Into(wire, node.Id) && wire.To.Port == input).ToList();
                 if (feeding.Count == 0)
@@ -326,7 +326,7 @@ public static class NodeWires
     public static string? SourceSchema(NodeDeclaration node, string port) =>
         port == WireEnd.Evidence
             ? node.Evidence ?? NodeKit.Of(node.Kind)?.Evidence
-            : node.Outputs.TryGetValue(port, out var schema) ? schema : null;
+            : NodePorts.Outputs(node).TryGetValue(port, out var schema) ? schema : null;
 
     /// <summary>Whether <paramref name="wire"/> ends at this graph's <paramref name="node"/>.</summary>
     private static bool Into(Wire wire, string node) => wire.To is { Unit: null } to && to.Node == node;
@@ -386,7 +386,7 @@ public static class NodeWires
                         : $"`{producer.Id}` has no output `{output}`.");
                 }
 
-                if (!to.Inputs.TryGetValue(input, out var taken)) return Refuse(WireRefusal.MissingPort, to.Id, $"`{to.Id}` has no input `{input}`.");
+                if (!NodePorts.Inputs(to).TryGetValue(input, out var taken)) return Refuse(WireRefusal.MissingPort, to.Id, $"`{to.Id}` has no input `{input}`.");
                 if (!string.Equals(produced, taken, StringComparison.Ordinal))
                 {
                     return Refuse(WireRefusal.IncompatibleSchema, to.Id, $"`{producer.Id}`'s `{output}` is `{produced}`, and `{to.Id}`'s input `{input}` takes `{taken}`.");

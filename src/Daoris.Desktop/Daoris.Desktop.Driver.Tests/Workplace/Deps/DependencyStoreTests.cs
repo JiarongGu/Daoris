@@ -30,7 +30,7 @@ public sealed class DependencyStoreTests : IDisposable
         """;
 
     private const string Rules = """
-        { "rules": [ { "kind": "dependency", "paths": ["deps/"], "install": "node install.cjs", "key": ["lock.txt"], "env": ["DEPS_NAMED"], "caches": [".cache/"] } ] }
+        { "rules": [ { "kind": "dependency", "paths": ["deps/"], "install": "node install.cjs", "key": ["lock.txt"], "env": ["DEPS_NAMED"], "caches": [".cache/"] }, { "kind": "output", "paths": ["built/"] } ] }
         """;
 
     private readonly string _scratch = Path.Combine(GitSeed.RepoRoot(), "_fixtures", "deps-store", Guid.NewGuid().ToString("N")[..8]);
@@ -53,7 +53,7 @@ public sealed class DependencyStoreTests : IDisposable
         await GitAsync(Root, "config", "user.name", "Test");
         // A file written back is compared byte for byte: git checks it out as committed.
         await GitAsync(Root, "config", "core.autocrlf", "false");
-        await File.WriteAllTextAsync(Path.Combine(Root, ".gitignore"), "deps/\nout/\n");
+        await File.WriteAllTextAsync(Path.Combine(Root, ".gitignore"), "deps/\nout/\nbuilt/\nstray/\n");
         // CommonJS by its name: the fixture sits under this repository, whose package says its scripts are modules.
         await File.WriteAllTextAsync(Path.Combine(Root, "install.cjs"), Script);
         await File.WriteAllTextAsync(Path.Combine(Root, "daoris.files.json"), Rules);
@@ -161,6 +161,46 @@ public sealed class DependencyStoreTests : IDisposable
         Assert.Contains(why, line.Note);
         Assert.Empty(DependencyStore.Entries(Home));
         Assert.True(Directory.Exists(Path.Combine(tree, "deps", "pkg")), "the tree keeps its own install");
+    }
+
+    [Theory]
+    [InlineData("built/", true)]
+    [InlineData("stray/", false)]
+    public async Task A_fill_seals_in_a_tree_holding_a_declared_build_output_and_not_one_holding_an_ignored_path_no_rule_declares(string held, bool sealedHere)
+    {
+        await MakeAsync("plain");
+        var tree = await TreeAsync("t1");
+        Directory.CreateDirectory(Path.Combine(tree, held));
+        await File.WriteAllTextAsync(Path.Combine(tree, held, "made.bin"), "a build's own");
+
+        var outcome = await StageAsync(tree);
+
+        Assert.Equal(sealedHere, Codes(outcome).Contains(StartNoteCodes.StartedDepsInstalled.Code));
+        Assert.Equal(sealedHere ? 1 : 0, DependencyStore.Entries(Home).Count);
+        if (!sealedHere) Assert.Equal(DepsWhy.HeldBefore, Assert.Single(outcome.Said, each => each.Parts[0].Code == StartNoteCodes.StartedDepsUnstored.Code).Parts[0].Values.Single(value => value.Key == "why").Value);
+    }
+
+    [Fact]
+    public async Task A_seal_the_disk_refuses_is_said_as_not_stored_and_the_record_stays_installed()
+    {
+        await MakeAsync("link-in");
+        var tree = await TreeAsync("t1");
+        DependencyStore.Copying.Value = _ => throw new IOException("the disk is full");
+        TreeFilesOutcome outcome;
+        try
+        {
+            outcome = await StageAsync(tree);
+        }
+        finally
+        {
+            DependencyStore.Copying.Value = null;
+        }
+
+        Assert.DoesNotContain(StartNoteCodes.StartedDepsInstalled.Code, Codes(outcome));
+        var line = Assert.Single(outcome.Said, each => each.Parts.Any(part => part.Code == StartNoteCodes.StartedDepsUnstored.Code));
+        Assert.Equal(DepsWhy.Unsealed, line.Parts[0].Values.Single(value => value.Key == "why").Value);
+        Assert.Equal("installed", TreeFilesRecord.Read(Home, tree)!.Of("deps/")!.How);
+        Assert.Empty(DependencyStore.Entries(Home));
     }
 
     [Fact]

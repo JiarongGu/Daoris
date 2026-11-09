@@ -92,6 +92,8 @@ public sealed class SessionTrees(string home, IWorkplacePluginWire? plugins = nu
     /// <summary>A judged branch replayed, and the grown record's tidying.</summary>
     private BranchReplays Replays => _replays ??= new(_context, Leftovers);
 
+    internal ReplaySettles Settles => Replays.Settles;
+
     /// <summary>Where a session tree's review is measured from.</summary>
     private ReviewRanges Ranges => _ranges ??= new(_context);
 

@@ -331,6 +331,17 @@ test('the driver’s and the service’s tables are this one, cell for cell (HOM
   assert.equal(csharpTwice(readFileSync(serviceFile('DaorisHome.cs'), 'utf8')), HOME_TWICE, 'the service’s refusal');
 });
 
+/** The volume's clock is read from a mark the driver touches in the home's run folder, never in a tree or its git directory. */
+test('the clock mark is a row of the run folder in all three tables (REPOCONFIG1a1)', () => {
+  const mark = ['clock-mark', 'run', 'run/clock.mark', 'run/clock.mark', ''];
+  const ours = HOME_ENTRIES.find((entry) => entry.name === 'clock-mark');
+  assert.ok(ours, 'the CLI’s');
+  assert.deepEqual([ours.name, ours.category, ours.new, ours.old, ours.holds.join('|')], mark);
+  for (const [owner, file] of [['the driver’s', driverFile('DaorisHome.cs')], ['the service’s', serviceFile('DaorisHome.cs')]] as const) {
+    assert.deepEqual(csharpTable(readFileSync(file, 'utf8')).find((row) => row[0] === 'clock-mark'), mark, owner);
+  }
+});
+
 /** A named workspace's Ask Daoris room (`help-<name>`) is an entry beside the default room's. */
 test('the table names a named workspace’s help room beside the default one (HOMEROOMS1)', () => {
   const room = HOME_ENTRIES.find((entry) => entry.name === 'help-rooms');

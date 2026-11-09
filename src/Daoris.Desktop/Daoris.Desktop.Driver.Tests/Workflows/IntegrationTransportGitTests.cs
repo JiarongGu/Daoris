@@ -78,8 +78,8 @@ public sealed class IntegrationTransportGitTests : LandedFixture, IAsyncLifetime
     /// <summary>The line's policy with its gates declared and the line's declaration accepted, as the choice's door requires.</summary>
     private async Task DeclaredGatesAsync(string root)
     {
-        await CommitAsync(root, LandedGates.File, Declaration, "the declaration");
-        var blob = (await GitAsync(root, "rev-parse", $"HEAD:{LandedGates.File}")).Trim();
+        await CommitAsync(root, DeclarationNames.Gates, Declaration, "the declaration");
+        var blob = (await GitAsync(root, "rev-parse", $"HEAD:{DeclarationNames.Gates}")).Trim();
         DriverConfig.Empty.WithLine("engine", "main")
             .WithLinePolicy("engine", new LandingIntegrate(Gates: LandingIntegrate.Declared))
             .WithIntegrationGates("engine", blob)

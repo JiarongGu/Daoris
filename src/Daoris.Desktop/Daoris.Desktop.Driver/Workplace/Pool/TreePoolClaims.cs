@@ -67,7 +67,7 @@ internal sealed class TreePoolClaims(TreePool owner)
             {
                 var found = ClaimIn(write, workspace, repository, number) ?? throw Refused("the pool holds no such claim");
                 var own = string.Equals(found.ClaimRun, owner.Run, StringComparison.Ordinal);
-                if (own && found.Phase != TreeClaimPhases.UndoWaiting) throw Refused("it is this run's own");
+                if (own && found.Phase != TreeClaimPhases.UndoWaiting && !PoolAbandoned.Holds(found.Job)) throw Refused("it is this run's own");
                 if (found.ClaimGeneration != generation) throw Refused("another looker took it first");
 
                 // A run the store holds no row of cannot be told dead, so it holds, as a start that cannot be read does.
@@ -81,6 +81,7 @@ internal sealed class TreePoolClaims(TreePool owner)
                     ("$generation", generation));
                 if (taken != 1) throw Refused("another looker took it first");
                 var now = ClaimIn(write, workspace, repository, number)!;
+                PoolAbandoned.Forget(now.Job);
                 return new TreeClaimed(now, FenceOf(now), null);
             });
         }

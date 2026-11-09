@@ -26,7 +26,7 @@ public sealed class LandedGatesProcessTests : IDisposable
         Directory.CreateDirectory(root);
         await GitAsync(root, "init", "--quiet", "-b", "main");
         await File.WriteAllTextAsync(Path.Combine(root, "README.md"), "# Web app\n");
-        if (declaration is not null) await File.WriteAllTextAsync(Path.Combine(root, LandedGates.File), declaration);
+        if (declaration is not null) await File.WriteAllTextAsync(Path.Combine(root, DeclarationNames.Gates), declaration);
         await GitAsync(root, "add", ".");
         await GitAsync(root, "-c", "user.email=fixture@example.test", "-c", "user.name=Fixture", "commit", "--quiet", "-m", "the line");
         return root;
@@ -36,14 +36,14 @@ public sealed class LandedGatesProcessTests : IDisposable
     public async Task The_routes_blob_is_read_from_the_lines_tip_and_never_from_the_checkout()
     {
         var root = await RepositoryAsync("declared", Declared);
-        var blob = (await GitAsync(root, "rev-parse", $"main:{LandedGates.File}")).Trim();
+        var blob = (await GitAsync(root, "rev-parse", $"main:{DeclarationNames.Gates}")).Trim();
         var tip = (await GitAsync(root, "rev-parse", "main")).Trim();
 
         // In flight in the checkout, and committed on another branch: neither is the line's tip.
         await GitAsync(root, "checkout", "--quiet", "-b", "elsewhere");
-        await File.WriteAllTextAsync(Path.Combine(root, LandedGates.File), """{ "gates": [] }""");
+        await File.WriteAllTextAsync(Path.Combine(root, DeclarationNames.Gates), """{ "gates": [] }""");
         await GitAsync(root, "-c", "user.email=fixture@example.test", "-c", "user.name=Fixture", "commit", "--quiet", "-am", "elsewhere");
-        await File.WriteAllTextAsync(Path.Combine(root, LandedGates.File), """{ "gates": [{ "name": "other", "run": "x" }] }""");
+        await File.WriteAllTextAsync(Path.Combine(root, DeclarationNames.Gates), """{ "gates": [{ "name": "other", "run": "x" }] }""");
 
         var (read, problem) = await LandedGates.ReadAsync(root, "main");
 

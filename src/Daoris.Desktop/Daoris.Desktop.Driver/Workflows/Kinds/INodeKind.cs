@@ -71,4 +71,10 @@ public interface INodeKind
 
     /// <summary>The acts a landing supervisor may make on <paramref name="node"/> while it waits for the person's press, unqualified; none for a kind it never decides.</summary>
     IReadOnlyList<string> LandingActs(NodeDeclaration node);
+
+    /// <summary>The inputs every node of it takes, each with its schema (<see cref="NodePorts"/>), beside those its declaration names.</summary>
+    IReadOnlyDictionary<string, string> Inputs => NodePorts.None;
+
+    /// <summary>The outputs every node of it carries, each with its schema, which its reading puts on its reach.</summary>
+    IReadOnlyDictionary<string, string> Outputs => NodePorts.None;
 }

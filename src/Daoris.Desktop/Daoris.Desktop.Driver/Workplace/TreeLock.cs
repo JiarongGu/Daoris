@@ -76,6 +76,13 @@ public sealed class TreeLock : IDisposable
     internal bool Holds(string home, string checkout) =>
         string.Equals(Path.GetFullPath(_file.Name), Path.GetFullPath(PathOf(home, checkout)), StringComparison.OrdinalIgnoreCase);
 
+    internal bool Live => Volatile.Read(ref _gone) == 0;
+
+    internal bool Covers(string checkout) => string.Equals(Path.GetFileNameWithoutExtension(_file.Name), KeyOf(checkout), StringComparison.Ordinal);
+
+    /// <summary>Whether <paramref name="held"/>, the start's hold as its run carries it (<see cref="StartHold"/>), still holds <paramref name="checkout"/>'s repository.</summary>
+    public static bool InFlow(TreeLock? held, string checkout) => held is { Live: true } && held.Covers(checkout);
+
     /// <summary>The lock this flow holds alone on <paramref name="checkout"/> already, or null: an act reached from inside it runs under it.</summary>
     internal static TreeLock? HeldHere(string home, string checkout) =>
         LockWaits.Holding is TreeLock { Alone: true } outer && outer.Holds(home, checkout) ? outer : null;
@@ -84,8 +91,9 @@ public sealed class TreeLock : IDisposable
     /// Where a checkout's lock is: one file per common git directory, named by its digest, whatever name or workspace the checkout is
     /// registered under. <paramref name="checkout"/> is the checkout or any session tree of it.
     /// </summary>
-    public static string PathOf(string home, string checkout) =>
-        DaorisHome.Entry(home, HomeEntry.Locks, "trees", $"{Convert.ToHexStringLower(SHA256.HashData(Encoding.UTF8.GetBytes(CommonDirOf(checkout))))[..32]}.lock");
+    public static string PathOf(string home, string checkout) => DaorisHome.Entry(home, HomeEntry.Locks, "trees", $"{KeyOf(checkout)}.lock");
+
+    private static string KeyOf(string checkout) => Convert.ToHexStringLower(SHA256.HashData(Encoding.UTF8.GetBytes(CommonDirOf(checkout))))[..32];
 
     /// <summary>
     /// The checkout's common git directory as git resolves it, read from its files so no git is started: a <c>.git</c> folder, or the one

@@ -61,7 +61,7 @@ internal static class NodeEvaluations
         if (scope.Branch is { } branch)
         {
             units[branch.Id] = branch;
-            if (tip is not null) revisions[branch.Id] = tip;
+            if (tip is not null) revisions[branch.Id] = RunMoves.Revision(record.Moves, branch.Id, tip);
         }
 
         var landed = Landed(governed, before);
@@ -70,8 +70,16 @@ internal static class NodeEvaluations
         var own = new Dictionary<string, string?>(StringComparer.Ordinal);
         foreach (var node in scope.Tip is null ? nodes : [])
         {
-            switch (RunSubjects.Of(node, scope.AfterHanded))
+            var observed = RunSubjects.Of(node, scope.AfterHanded);
+            // The work is the run's branch at its tip, read as a branch node reads it.
+            if (observed == RunSubject.Input && RunInputs.Value(node) == WireValues.Work) observed = RunSubject.Branch;
+            switch (observed)
             {
+                case RunSubject.Input:
+                    var (fed, revision) = RunInputs.Of(node, governed.Graph.Wires, before, null, null);
+                    subjects[node.Id] = fed;
+                    if (fed is not null) own[node.Id] = revision;
+                    break;
                 case RunSubject.Quest:
                     subjects[node.Id] = scope.Quest?.Id;
                     break;
@@ -102,6 +110,7 @@ internal static class NodeEvaluations
             Revisions = revisions,
             Subjects = subjects,
             NodeRevisions = own,
+            Targets = WireTargets.Read(nodes, git?.Tip, scope.Branch?.Records.Branch?.Line),
             Units = units,
             Fired = record.Fired.ToHashSet(StringComparer.Ordinal),
             Git = git,

@@ -141,7 +141,7 @@ public sealed class FoundReadsTests : IDisposable
         Assert.True(FoundReads.Finished(Home, "repo", ["stray/notes.txt"]));
         var rule = FoundFiles.Read(Home, "repo").Reading!.Rules.Single(each => each.Paths.Contains("/stray/"));
         Assert.Equal(FileKind.Scratch, rule.Kind);
-        Assert.Equal([FoundReads.WrittenBySession], rule.Evidence);
+        Assert.Equal<string>([FoundReads.WrittenBySession], rule.Evidence);
         var written = Layer();
 
         await Task.Delay(30);

@@ -18,7 +18,7 @@ public sealed class RuleFileFirstFormCorpusTests
     private static readonly IReadOnlyList<string> Tops = TopsOf(Names, 3);
 
     /// <summary>This repository's file as it stood in the first form, before its rewrite in git's syntax.</summary>
-    private const string RepositoryFirstForm = """
+    internal const string RepositoryFirstForm = """
         { "rules": [
           { "kind": "local", "paths": ["local/"] },
           { "kind": "local", "paths": ["local/lyntai-local.props"], "copy": true },
@@ -33,7 +33,7 @@ public sealed class RuleFileFirstFormCorpusTests
         """;
 
     /// <summary>The person's fixture: every sequence of both reads of rounds 14 to 17.</summary>
-    private const string PersonFirstForm = """
+    internal const string PersonFirstForm = """
         { "rules": [
           { "kind": "local", "paths": ["{drafts,notes}/"] },
           { "kind": "dependency", "paths": ["src/a/node_modules/"] },
@@ -100,8 +100,8 @@ public sealed class RuleFileFirstFormCorpusTests
         Assert.Equal([FirstFormClass.Files, FirstFormClass.Files], Classes("{*.js,x}"));
         Assert.Equal([FirstFormClass.Kept, FirstFormClass.Kept], Classes("{bin/,obj/}"));
 
-        Assert.Equal(["/logs/"], RuleFileFirstForm.Entries(new FileRule(FileKind.Cache, ["logs/**/"])).Single().Paths);
-        Assert.Equal(["/*", "!/*/"], RuleFileFirstForm.Entries(new FileRule(FileKind.Cache, ["*"])).Single().Paths);
+        Assert.Equal<string>(["/logs/"], RuleFileFirstForm.Entries(new FileRule(FileKind.Cache, ["logs/**/"])).Single().Paths);
+        Assert.Equal<string>(["/*", "!/*/"], RuleFileFirstForm.Entries(new FileRule(FileKind.Cache, ["*"])).Single().Paths);
         Assert.True(RuleFileFirstForm.Entries(new FileRule(FileKind.Cache, ["P/*"])).Single().FirstForm);
     }
 
@@ -128,7 +128,7 @@ public sealed class RuleFileFirstFormCorpusTests
         AssertSame(person, TopsOf(["drafts", "notes", "src", "App", "a", "bin", "node_modules", "aXb", "x", "scratch", "build", "y.js", "P", "deep", "Xabc", "Y", "logs", "d1", "d.lock", "[x]", "local", "x.txt"], 3));
         var copy = RuleFileFirstForm.Entries(person[4]).Single();
         Assert.Equal("copy", copy.Reach);
-        Assert.Equal(["/local/x.txt", "!/local/x.txt/"], copy.Paths);
+        Assert.Equal<string>(["/local/x.txt", "!/local/x.txt/"], copy.Paths);
         Assert.True(person[5].Across);
     }
 
@@ -140,7 +140,7 @@ public sealed class RuleFileFirstFormCorpusTests
         var tops = TopsOf(["node_modules", ".pnp.cjs", ".yarn", "cache", "obj", "bin", "target", ".venv", "__pycache__", ".pytest_cache", "build", "out", "dist", "x"], 3);
         for (var i = 0; i < shipped.Count; i++)
         {
-            var old = new FileRule(shipped[i].Kind, SignaturesFirstForm[i]);
+            var old = new FileRule(shipped[i].Kind, [.. SignaturesFirstForm[i]]);
             foreach (var top in tops) Assert.True(old.Paths.Any(path => RoomPaths.Declared(path).IsMatch(top)) == shipped[i].Matches(top), $"{string.Join(",", old.Paths)} at {top}");
         }
     }
@@ -156,7 +156,7 @@ public sealed class RuleFileFirstFormCorpusTests
         }
     }
 
-    private static List<FileRule> FirstFormRules(string text)
+    internal static List<FileRule> FirstFormRules(string text)
     {
         using var document = JsonDocument.Parse(text);
         return [.. document.RootElement.GetProperty("rules").EnumerateArray().Select(FileRuleFile.FirstFormRule)];
@@ -164,7 +164,7 @@ public sealed class RuleFileFirstFormCorpusTests
 
     private static IEnumerable<FirstFormClass> Classes(string path) => RuleFileFirstForm.Words(path).Select(RuleFileFirstForm.ClassOf);
 
-    private static IEnumerable<string> Generated()
+    internal static IEnumerable<string> Generated()
     {
         IEnumerable<string> paths = Tokens;
         IEnumerable<string> all = Tokens;
@@ -177,7 +177,7 @@ public sealed class RuleFileFirstFormCorpusTests
         return all.SelectMany(path => new[] { path, path + "/" }).Distinct(StringComparer.Ordinal).Where(path => RoomPaths.Unfit(path) is null);
     }
 
-    private static List<string> TopsOf(IReadOnlyList<string> names, int depth)
+    internal static List<string> TopsOf(IReadOnlyList<string> names, int depth)
     {
         var tops = new List<string>();
         IEnumerable<string> level = names;

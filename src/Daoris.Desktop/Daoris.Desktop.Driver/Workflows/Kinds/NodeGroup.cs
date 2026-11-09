@@ -12,8 +12,8 @@ public enum NodeGroup
     /// <summary>What judges the work before it lands: the gates, the second opinion and the holds.</summary>
     Checks,
 
-    /// <summary>The landing and what follows it to the line.</summary>
-    Landing,
+    /// <summary>What git does with the work on its way to the line: the rebase, its resolution, the merge, the push, the tidy and what watches them.</summary>
+    Git,
 
     /// <summary>Other work and the graph's own wiring.</summary>
     Others,

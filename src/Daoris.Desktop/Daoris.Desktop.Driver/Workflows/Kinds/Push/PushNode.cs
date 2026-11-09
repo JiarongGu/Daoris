@@ -4,7 +4,7 @@ namespace Daoris.Driver;
 /// Daoris's own push of the branch the <c>land</c> made: performed through the push act, reached when git's remote-tracking ref
 /// holds the pushed commit.
 /// </summary>
-[NodeKind(NodeKinds.Push, NodeGroup.Landing, NodeKinds.Land)]
+[NodeKind(NodeKinds.Push, NodeGroup.Git, NodeKinds.Land)]
 internal sealed class PushNode : BuiltInNode, IObserves, IStarts, IAsksReads
 {
     public PassRead Asks => PassRead.Remote;
@@ -45,6 +45,8 @@ internal sealed class PushNode : BuiltInNode, IObserves, IStarts, IAsksReads
 
     public override bool EndsByTheLine => true;
 
+    public override NodeArrivals Arrives { get; } = NodeArrivals.Taking(("ref", WireValues.Ref));
+
     public NodeObservation Observe(NodeReading reading) => PushReading.Observe(reading);
 
     /// <summary>The push act of the act journal, under the loop's lease and drain rules.</summary>
@@ -61,6 +63,6 @@ internal sealed class PushNode : BuiltInNode, IObserves, IStarts, IAsksReads
     {
         if (kept.Doors.Door<IPushDoor>(Row.Kind) is not { } door || kept.Landed is not { } landed || landed.Pushed && landed.PushedTip == landed.Tip) return;
         var watched = kept.Governed.Watched;
-        door.Start(new PushStart(kept.Governed.Unit.Id, kept.Node, watched.Repository, watched.Workspace, watched.Root, landed.Branch, landed.Tip));
+        door.Start(new PushStart(kept.Governed.Unit.Id, kept.Node, watched.Repository, watched.Workspace, watched.Root, landed.Branch, landed.Tip) { Authority = kept.Authority });
     }
 }

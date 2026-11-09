@@ -138,6 +138,23 @@ public sealed class WorkPerformerTests : IDisposable
     private static WorkOutcome Reached => new(WorkStates.Reached, Evidence: new WorkEvidence("acme.deploy/receipt@1:r1", null, null, "deployed"));
 
     [Fact]
+    public async Task A_send_runs_under_its_attempt_s_authority_and_leaves_the_pass_s_flow_without_one()
+    {
+        StepAuthority? read = null;
+        _port.OnPerform = _ =>
+        {
+            read = StepAuthority.Current;
+            return Task.CompletedTask;
+        };
+
+        await StartAsync(Performer());
+
+        var (call, _) = Assert.Single(_port.Sent);
+        Assert.Equal(new StepAuthority(Unit, Deploy.Id, 1, call.Invocation), read);
+        Assert.Null(StepAuthority.Current);
+    }
+
+    [Fact]
     public async Task An_attempt_is_written_on_its_units_record_with_its_start_before_it_is_sent()
     {
         var performer = Performer();

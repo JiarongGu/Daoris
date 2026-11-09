@@ -45,7 +45,7 @@ internal static class TreeLocalInputs
     /// </summary>
     internal static IReadOnlyList<LocalInput> Declared(string checkout)
     {
-        var file = Path.Combine(checkout, GeneratedWriters.DeclarationFile);
+        var file = Path.Combine(checkout, DeclarationNames.Gates);
         var found = new List<LocalInput>();
         try
         {

@@ -7,7 +7,7 @@ import { reachRows } from '../reach-rows.mjs';
 // The .NET suites with a test that reads the page's catalogues or sources.
 const PAGE_READERS = ['service', 'driver', 'modules', 'censuses'];
 
-const DESKTOP_SUITES = ['driver', 'modules', 'censuses', 'driver-process', 'driver-process-git', 'modules-process'];
+const DESKTOP_SUITES = ['driver', 'modules', 'censuses', 'driver-process', 'driver-process-git', 'driver-process-git-pinned', 'modules-process'];
 
 // What the CLI's sources reach; a narrow rule for one of its files names these as well, since the first rule decides.
 const CLI_READERS = ['driver', 'rehearse', 'rehearse-family', 'web', 'deployment'];
@@ -99,6 +99,7 @@ export const REACH = Object.freeze([
   { paths: ['src/Daoris.Devkit/**'], gates: ['devkit'], why: 'its own suite; it is also the universal gates and the code map, which every merge runs' },
   { paths: ['src/Daoris.Desktop/process.runsettings'], gates: ['driver', 'driver-process', 'modules-process'], why: "the Process halves' settings (MOD8), which the driver's CategoryTests read (PROCPAR1)" },
   { paths: ['src/Daoris.Desktop/git.process.runsettings'], gates: ['driver-process-git'], why: "the driver's git-only Process classes' settings, four at once (PROC1c)" },
+  { paths: ['src/Daoris.Desktop/git.pinned.process.runsettings'], gates: ['driver-process-git-pinned'], why: "the settings of the git library's proofs run on the pinned MinGit (GITLIB1d)" },
   // Before the driver's tests, which would place it first: the page's twin reads it too.
   // A vitest's read reaches the web gate's unit run, which runs the vitests; the web gate builds and runs Playwright.
   {
@@ -173,7 +174,7 @@ export const REACH = Object.freeze([
     gates: ['driver', 'service', 'web-unit', 'tool-tests', 'censuses'],
     why: "the driver's ProviderCensusTests, the service's, the page's providerCensus.test.ts and the tools' provider-census.test.ts read the provider census's exceptions (AGENTPROVIDER1a)",
   },
-  { paths: ['src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/**'], gates: ['driver', 'driver-process', 'driver-process-git', 'censuses'], why: "the driver's tests, the fast half and both Process halves, and the censuses among them" },
+  { paths: ['src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/**'], gates: ['driver', 'driver-process', 'driver-process-git', 'driver-process-git-pinned', 'censuses'], why: "the driver's tests, the fast half and the Process halves, and the censuses among them" },
   { paths: ['src/Daoris.Desktop/Daoris.Desktop.Modules.Tests/**'], gates: ['modules', 'modules-process', 'censuses'], why: "the modules' tests, both halves, and the censuses among them" },
   // Before the service's tests, which would place it first: the driver's twin reads it too.
   {

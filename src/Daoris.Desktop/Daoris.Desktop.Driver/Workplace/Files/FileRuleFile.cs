@@ -1,3 +1,4 @@
+using System.Collections.Immutable;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 
@@ -80,7 +81,7 @@ internal static class FileRuleFile
         };
     }
 
-    private static (FileKind Kind, IReadOnlyList<string> Paths) Head(JsonElement each, Func<string, string?> unfit, Func<FileKind, IReadOnlyList<string>> fields)
+    private static (FileKind Kind, ImmutableArray<string> Paths) Head(JsonElement each, Func<string, string?> unfit, Func<FileKind, IReadOnlyList<string>> fields)
     {
         if (each.ValueKind != JsonValueKind.Object) throw new FormatException("is not an object");
         var word = each.TryGetProperty("kind", out var named) && named.ValueKind == JsonValueKind.String ? named.GetString() : null;
@@ -90,7 +91,7 @@ internal static class FileRuleFile
         }
 
         var paths = Strings(each, "paths") ?? [];
-        if (paths.Count == 0) throw new FormatException("names no paths");
+        if (paths.Length == 0) throw new FormatException("names no paths");
         foreach (var path in paths)
         {
             if (unfit(path) is { } why) throw new FormatException($"'{path}' {why}");
@@ -105,7 +106,7 @@ internal static class FileRuleFile
         return (kind, paths);
     }
 
-    private static FileRule Fields(JsonElement each, FileKind kind, IReadOnlyList<string> paths) => new(kind, paths)
+    private static FileRule Fields(JsonElement each, FileKind kind, ImmutableArray<string> paths) => new(kind, paths)
     {
         Install = Text(each, "install"),
         Setup = Strings(each, "setup"),
@@ -139,7 +140,7 @@ internal static class FileRuleFile
         if (rule.Across is { } across) written["across"] = across;
         if (rule.Builds is { } builds) written["builds"] = builds;
         if (rule.Refuses is { } refuses) written["refuses"] = List(refuses);
-        if (rule.Evidence.Count > 0) written["evidence"] = List(rule.Evidence);
+        if (rule.Evidence.Length > 0) written["evidence"] = List(rule.Evidence);
         if (rule.Other is { } other) written["other"] = other.Word();
         if (rule.Size is { } size) written["size"] = new JsonObject { ["files"] = size.Files, ["bytes"] = size.Bytes, ["more"] = size.More };
         return written;
@@ -162,7 +163,7 @@ internal static class FileRuleFile
         : per is "repository" or "tree" ? per
         : throw new FormatException("`per` is not `repository` or `tree`");
 
-    private static IReadOnlyList<string>? Strings(JsonElement each, string name)
+    private static ImmutableArray<string>? Strings(JsonElement each, string name)
     {
         if (!each.TryGetProperty(name, out var value)) return null;
         if (value.ValueKind != JsonValueKind.Array || value.EnumerateArray().Any(item => item.ValueKind != JsonValueKind.String))
@@ -170,7 +171,7 @@ internal static class FileRuleFile
             throw new FormatException($"`{name}` is not a list of strings");
         }
 
-        return [.. value.EnumerateArray().Select(item => item.GetString()!)];
+        return ImmutableArray.CreateRange(value.EnumerateArray().Select(item => item.GetString()!));
     }
 
     private static bool? Flag(JsonElement each, string name) =>

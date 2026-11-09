@@ -32,7 +32,7 @@ internal static class WireEligible
             var port = From(wire) is { Kind: WireReceiptKinds.Reached, Acceptance: { } accepted } && wire.From!.Port is { } name
                 ? name == WireEnd.Evidence ? accepted.Evidence : accepted.Outputs.GetValueOrDefault(name)
                 : null;
-            if (port is not null && wire.To.Port is { } input && node.Inputs.TryGetValue(input, out var schema) && port.Schema == schema) inputs[input] = port;
+            if (port is not null && wire.To.Port is { } input && NodePorts.Inputs(node).TryGetValue(input, out var schema) && port.Schema == schema) inputs[input] = port;
             else waiting.Add(wire.Id);
         }
 
@@ -128,6 +128,7 @@ internal static class WireEligible
                 {
                     // Named only where it is not the record's unit, so a binding on the record's own unit keeps its id.
                     Subject = subjected.Subject == status.Unit ? null : subjected.Subject,
+                    Target = run.Targets.GetValueOrDefault(node.Id),
                     Inputs = inputs,
                     PrerequisiteReceipts = [.. consumed.Distinct(StringComparer.Ordinal).Order(StringComparer.Ordinal)],
                 }

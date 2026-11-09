@@ -280,6 +280,11 @@ public static class NodeLifecycle
             rows.Add(new(from, NodeStates.Skipped, person, "the person passes it over for this graph and run, with their words, where the node allows a skip"));
         }
 
+        foreach (var from in new[] { NodeStates.Blocked, NodeStates.Ready, NodeStates.Invalidated })
+        {
+            rows.Add(new(from, NodeStates.Skipped, daoris, "a producer feeding its input was skipped, so it carries no value: it is skipped with it (WireSkips)"));
+        }
+
         // An opinion's gate passes its attempt over where nothing is asked of it, as the run reads it; never the person's.
         rows.Add(new(NodeStates.Active, NodeStates.Skipped, authority,
             "its kind's record passes its attempt over for this graph and run, where nothing is asked of it (NodeAuthority.SkipBy)"));
@@ -408,6 +413,12 @@ public static class NodeLifecycle
                 if (skipScope.GraphDigest != judged.GraphDigest || (status.Scope is { } own && own != skipScope)) return Refuse(NodeRefusal.NotBound);
                 return To(next with { By = move.Source, Words = null, Code = null, Transient = false, Scope = skipScope });
 
+            case NodeStates.Skipped when move.By == NodeCause.Daoris:
+                if (move.Source != NodeSource.Path) return Refuse(NodeRefusal.NotAuthority);
+                if (string.IsNullOrWhiteSpace(move.Words)) return Refuse(NodeRefusal.NoWords);
+                if (move.Scope is null) return Refuse(NodeRefusal.NoScope);
+                return To(next with { By = NodeSource.Path, Words = move.Words, Code = null, Transient = false, Scope = move.Scope });
+
             case NodeStates.Skipped:
                 if (status.State == NodeStates.Failed ? node.Kind != NodeKinds.Request : !authority.PersonSkips) return Refuse(NodeRefusal.NotSkippable);
                 if (string.IsNullOrWhiteSpace(move.Words)) return Refuse(NodeRefusal.NoWords);
@@ -478,11 +489,15 @@ public static class NodeLifecycle
     /// declared ones exactly, or that check means nothing at run time. A declared one is missing only where the reach's outcome
     /// carries it (<see cref="NodeOutcomes.Carries"/>).
     /// </summary>
-    private static string? Outputs(NodeDeclaration node, NodeAcceptance accepted) =>
-        accepted.Outputs.Keys.Any(name => !node.Outputs.ContainsKey(name)) ? NodeRefusal.UndeclaredOutput
-        : accepted.Outputs.Any(output => !string.Equals(output.Value.Schema, node.Outputs[output.Key], StringComparison.Ordinal)) ? NodeRefusal.OutputSchema
-        : node.Outputs.Keys.Any(name => !accepted.Outputs.ContainsKey(name) && NodeOutcomes.Carries(node, name, accepted.Outcome)) ? NodeRefusal.NoOutput
-        : null;
+    private static string? Outputs(NodeDeclaration node, NodeAcceptance accepted)
+    {
+        // A kind's own output is its reading's to carry; a declared one every reach on an outcome that carries it must.
+        var ports = NodePorts.Outputs(node);
+        return accepted.Outputs.Keys.Any(name => !ports.ContainsKey(name)) ? NodeRefusal.UndeclaredOutput
+            : accepted.Outputs.Any(output => !string.Equals(output.Value.Schema, ports[output.Key], StringComparison.Ordinal)) ? NodeRefusal.OutputSchema
+            : node.Outputs.Keys.Any(name => !accepted.Outputs.ContainsKey(name) && NodeOutcomes.Carries(node, name, accepted.Outcome)) ? NodeRefusal.NoOutput
+            : null;
+    }
 
     /// <summary>The acceptance with every port naming it: one the authority handed in without its acceptance is this reach's.</summary>
     private static NodeAcceptance Owned(NodeAcceptance accepted) => accepted with

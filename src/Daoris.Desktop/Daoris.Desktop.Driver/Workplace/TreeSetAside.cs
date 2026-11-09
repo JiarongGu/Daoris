@@ -164,6 +164,7 @@ internal sealed class TreeSetAside(TreeContext context)
         var tree = Path.TrimEndingDirectorySeparator(Path.GetFullPath(treePath));
         string? to = null;
         string? manifest = null;
+        var shares = TreeFilesRecord.Read(context.Home, tree)?.Shares ?? [];
         if (Directory.Exists(tree))
         {
             var named = AsideName(tree, workspace, repository);
@@ -181,13 +182,6 @@ internal sealed class TreeSetAside(TreeContext context)
                 manifest = Judged(named, repository, branch, slim);
             }
 
-            // A set-aside folder holding a share's link would let a hand's recursive delete of it reach the shared place.
-            if (TreeShares.Unlink(context.Home, tree) is { } linked)
-            {
-                Forget(manifest);
-                return (false, null, TidyKept.Busy, linked);
-            }
-
             SetAsideFaults.Current?.BeforeMove?.Invoke(tree);
             var moved = MoveFolderAside(tree, workspace, repository, "its tree", "its folder", named);
             if (moved.Code is { } kept)
@@ -203,8 +197,12 @@ internal sealed class TreeSetAside(TreeContext context)
             // stays) keeps the tree: put back, as git's refusal below puts it back.
             if (finished is not null && await UncommittedAsync(to!, ct).ConfigureAwait(false) is { } dirty)
             {
-                return PutBack(to!, tree, manifest, TidyKept.Refused, dirty);
+                return PutBackWithShares(to!, tree, manifest, TidyKept.Refused, dirty, shares);
             }
+
+            // A set-aside folder holding a share's link would let a hand's recursive delete of it reach the shared place, so the links come
+            // off once the tree is known to go, in the moved folder, and a tree put back has them again.
+            if (TreeShares.Unlink(context.Home, tree, to) is { } linked) return PutBackWithShares(to!, tree, manifest, TidyKept.Busy, linked, shares);
         }
 
         var (code, _, err) = SetAsideFaults.Current?.RefuseLetGo == true
@@ -224,7 +222,15 @@ internal sealed class TreeSetAside(TreeContext context)
             return (false, null, TidyKept.Refused, $"git would not let go of its tree: {why}");
         }
 
-        return PutBack(to, tree, manifest, TidyKept.Refused, $"git would not let go of its tree ({why})");
+        return PutBackWithShares(to, tree, manifest, TidyKept.Refused, $"git would not let go of its tree ({why})", shares);
+    }
+
+    private (bool Gone, string? To, string? Code, string Sentence) PutBackWithShares(
+        string to, string tree, string? manifest, string code, string why, IReadOnlyList<TreeShare> shares)
+    {
+        var put = PutBack(to, tree, manifest, code, why);
+        if (put.To is null) TreeShares.Relink(context.Home, tree, shares);
+        return put;
     }
 
     /// <summary>

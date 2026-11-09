@@ -242,7 +242,7 @@ internal static partial class UnionJoins
         if (paths.Length == 0) return [];
 
         var union = UnionPatternsOf(await ShowAsync(tree, declaredAt, ".gitattributes", ct).ConfigureAwait(false)).Select(PatternOf).ToList();
-        var folder = DecisionsOf(await ShowAsync(tree, declaredAt, "daoris.json", ct).ConfigureAwait(false));
+        var folder = DecisionsOf(await ShowAsync(tree, declaredAt, DeclarationNames.Manifest, ct).ConfigureAwait(false));
         if (folder is not null)
         {
             // A folder, as `doc-duplicates` asks the disk: a decisions record that is one file holds no note a folder's rule reads.

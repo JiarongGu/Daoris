@@ -41,8 +41,8 @@ public sealed class LandLineRuleLandingTests : LandedFixture
         Directory.CreateDirectory(Path.Combine(root, "tools"));
         await File.WriteAllTextAsync(Path.Combine(root, "docs", "STATUS.md"), Status("shared.txt"));
         await File.WriteAllTextAsync(Path.Combine(root, "tools", "status.mjs"), Writer);
-        await CommitAsync(root, LandedGates.File, declaration, "the status line and its rule");
-        return (await GitAsync(root, "rev-parse", $"HEAD:{LandedGates.File}")).Trim();
+        await CommitAsync(root, DeclarationNames.Gates, declaration, "the status line and its rule");
+        return (await GitAsync(root, "rev-parse", $"HEAD:{DeclarationNames.Gates}")).Trim();
     }
 
     /// <summary>The owner's acceptance of <paramref name="gates"/> for the repository's integration, as the window's door writes it.</summary>
@@ -111,7 +111,7 @@ public sealed class LandLineRuleLandingTests : LandedFixture
     {
         var root = await RepositoryAsync("engine");
         AcceptIntegration(await DeclareAsync(root, Declared()));
-        await CommitAsync(root, LandedGates.File, Declared().Replace("{ \"integration\"", "{ \"note\": 1, \"integration\"", StringComparison.Ordinal),
+        await CommitAsync(root, DeclarationNames.Gates, Declared().Replace("{ \"integration\"", "{ \"note\": 1, \"integration\"", StringComparison.Ordinal),
             "the declaration changed");
         var trees = new SessionTrees(Home);
         var tree = await ConflictOnTheLineAsync(root, trees);
@@ -135,10 +135,10 @@ public sealed class LandLineRuleLandingTests : LandedFixture
         await DeclareAsync(root, "{ \"gates\": [] }\n");
         var trees = new SessionTrees(Home);
         var tree = await trees.OpenAsync(root, "engine", "aurora");
-        await File.WriteAllTextAsync(Path.Combine(tree.Path, LandedGates.File), Declared());
+        await File.WriteAllTextAsync(Path.Combine(tree.Path, DeclarationNames.Gates), Declared());
         await File.WriteAllTextAsync(Path.Combine(tree.Path, "work.txt"), "the work\n");
         await CommitAsync(tree.Path, Path.Combine("docs", "STATUS.md"), Status("shared.txt, work.txt"), "the work");
-        AcceptIntegration((await GitAsync(tree.Path, "rev-parse", $"HEAD:{LandedGates.File}")).Trim());
+        AcceptIntegration((await GitAsync(tree.Path, "rev-parse", $"HEAD:{DeclarationNames.Gates}")).Trim());
         await File.WriteAllTextAsync(Path.Combine(root, "zline.txt"), "the line\n");
         await CommitAsync(root, Path.Combine("docs", "STATUS.md"), Status("shared.txt, zline.txt"), "the line's own");
         var before = await StateAsync(root, tree);

@@ -105,6 +105,14 @@ public static class NodeKinds
     /// its commits kept on a recovery ref, and what it ended written on the landing record, which the keeper and the press read.
     /// </summary>
     public const string Tidy = "tidy";
+
+    public const string Rebase = "rebase";
+
+    /// <summary>A problem a step could not settle, handed to whoever the workflow names, bounded per stop, and returned to its rebase.</summary>
+    public const string Resolve = "resolve";
+
+    /// <summary>A commit moved onto a target ref by a declared method, and nothing else.</summary>
+    public const string Merge = "merge";
 }
 
 /// <summary>
@@ -248,7 +256,17 @@ public static class NodeSource
 /// <param name="Ref">Where its producer keeps it, by record and name: never a machine path.</param>
 /// <param name="Revision">The revision it is made at.</param>
 /// <param name="Acceptance">The acceptance that produced it (<see cref="NodeAcceptance.Id"/>): what invalidates its consumers.</param>
-public sealed record NodePort(string Schema, string Ref, string? Revision, string? Acceptance);
+public sealed record NodePort(string Schema, string Ref, string? Revision, string? Acceptance)
+{
+    /// <summary>The node and attempt that made a value (<see cref="WireValues"/>); null on any other port. Not part of a binding's id.</summary>
+    public NodeProducer? Producer { get; init; }
+
+    /// <summary>A <see cref="WireValues.Commit"/>'s base: the target's tip a replay made it onto, which a merge compares the target with.</summary>
+    public string? Onto { get; init; }
+
+    /// <summary>A <see cref="WireValues.Problem"/>'s stop, by its identity; null on any other port.</summary>
+    public NodeStop? Stop { get; init; }
+}
 
 /// <summary>
 /// Who may report each outcome of a kind: the one thing that differs between kinds. Every other part of the

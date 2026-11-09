@@ -83,7 +83,7 @@ public static class FilesCommand
                 : $"`{repository}` at {Short(commit)}, never read: the found rules below are this reading's, unwritten (`daoris files {repository} read`):",
         ];
         said.AddRange(rules.Over(paths, reading.Floor).Select(Line));
-        if (person.Unread is { } why) said.Add($"Your {PersonFiles.FileName} does not read ({why}): every run, copy and share is held as an ask until it does.");
+        if (person.Unread is { } why) said.Add($"Your {DeclarationNames.PersonRules} does not read ({why}): every run, copy and share is held as an ask until it does.");
         said.AddRange(found.Problems.Concat(own.Problems).Concat(person.Problems).Select(problem => $"Refused: {problem}"));
         return said;
     }
@@ -95,7 +95,7 @@ public static class FilesCommand
         if (file.Copy) parts.Add("copied into each tree");
         if (file.Idle is { } idle) parts.Add(idle);
         if (file.Rule?.Size is { } size) parts.Add($"{(size.More ? "more than " : "")}{size.Files} files, {size.Bytes / 1024} KB");
-        if (file.Rule?.Evidence is { Count: > 0 } evidence) parts.Add(string.Join("; ", evidence));
+        if (file.Rule?.Evidence is { Length: > 0 } evidence) parts.Add(string.Join("; ", evidence));
         if (file.Below.Count > 0) parts.Add("below: " + string.Join(", ", file.Below.Select(each => $"{Layer(each.Layer)} {each.Rule.Kind.Word()}")));
         return $"  {file.Path}  {string.Join(" · ", parts)}";
     }

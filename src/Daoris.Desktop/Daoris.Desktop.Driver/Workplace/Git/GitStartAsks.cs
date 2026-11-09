@@ -16,6 +16,9 @@ internal static class GitStartAsks
         "init", "unpack-objects", "prune", "repack", "pack-refs", "multi-pack-index", "commit-graph",
     };
 
+    // The options of `worktree add` whose value is the next word.
+    private static readonly HashSet<string> AddValued = new(StringComparer.Ordinal) { "-b", "-B", "--reason" };
+
     /// <summary>
     /// The ask of <paramref name="info"/>, git started with <paramref name="arguments"/> by <paramref name="runner"/> under
     /// <paramref name="bound"/>; <paramref name="shares"/> where an identical start's answer may stand for its own.
@@ -33,6 +36,7 @@ internal static class GitStartAsks
             Endable = runner != GitRunner.Held && !fetches && GitEndable.Of(arguments),
             Writes = writes,
             Removes = Removed(folder, arguments),
+            Makes = Made(folder, arguments),
         };
     }
 
@@ -53,6 +57,22 @@ internal static class GitStartAsks
         if (command is not ["worktree", "remove", ..]) return null;
         var path = command.Skip(2).LastOrDefault(word => !word.StartsWith('-'));
         return path is null ? null : Path.GetFullPath(Path.Combine(folder, path));
+    }
+
+    /// <summary>The working tree a <c>worktree add</c> makes, its first word past the options, as a full path; null for every other git.</summary>
+    internal static string? Made(string folder, IReadOnlyList<string> arguments)
+    {
+        var command = GitLaunch.Command(arguments);
+        if (command is not ["worktree", "add", ..]) return null;
+        for (var at = 2; at < command.Count; at++)
+        {
+            var word = command[at];
+            if (word == "--") return at + 1 < command.Count ? Path.GetFullPath(Path.Combine(folder, command[at + 1])) : null;
+            if (AddValued.Contains(word)) at++;
+            else if (!word.StartsWith('-')) return Path.GetFullPath(Path.Combine(folder, word));
+        }
+
+        return null;
     }
 
     /// <summary>The whole start, as one key: the file, the folder, every argument as handed, every variable, the runner and the bound.</summary>

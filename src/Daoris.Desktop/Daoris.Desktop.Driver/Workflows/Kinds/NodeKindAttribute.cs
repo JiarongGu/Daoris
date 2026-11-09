@@ -8,4 +8,8 @@ namespace Daoris.Driver;
 /// marked class once, in that order, and refuses there an id declared twice, an unknown or later kind named after, and a cycle.
 /// </summary>
 [AttributeUsage(AttributeTargets.Class, Inherited = false)]
-internal sealed class NodeKindAttribute(string name, NodeGroup group, params string[] after) : PartAttribute(name, group, after);
+internal sealed class NodeKindAttribute(string name, NodeGroup group, params string[] after) : PartAttribute(name, group, after)
+{
+    /// <summary>Whether the kind is declared before it is offered: not in the palette, refused by a save (<see cref="ArrivingKinds"/>).</summary>
+    public bool Arriving { get; set; }
+}

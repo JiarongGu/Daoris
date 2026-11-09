@@ -47,8 +47,8 @@ is under `src/Daoris.Desktop/Daoris.Desktop.Modules/`.
 | Every delete | `JournaledDeletes.cs`, `ContentHolds.DeleteJudgedAsync` | A delete a door of Daoris's judged, or forced, as the journal's `ref.delete` act pressed by `daoris`, undone by `GIT_REF_UNDO`; where the door's rule keeps the commits, the recovery ref is made in the delete's own transaction, its record names it, and the Undo takes it back |
 | Every keep | `RecoveryKeeps.cs`, `RecoveryCensus.cs`, `RecoveryWorks.cs` | A recovery ref's one naming; a keep that deletes nothing as one `ref.keep` act; each ref a journal record names, dated from its act; the census of the refs no record names; what an unheld ref's work is to the repository's line |
 | The deletes' list | `DeletedBranches.cs`, `GIT_DELETES`, `projects/git/DeletedRefs.tsx` | Every done `ref.delete` act of a repository from the journal alone, each with its Undo open or shut (undone, name stands again, commit gone), under the Branches tab in en and zh |
-| The git scheduler | `Platform/GitScheduler.cs`, `Platform/GitPlaces.cs`, `Platform/GitPlace.cs`, `Platform/GitRunAsk.cs`, `Workplace/Git/GitStartAsks.cs`, `Workplace/Git/GitEndable.cs`, `Workplace/Git/GitMemoAsks.cs`, `Platform/GitCallers.cs`, `Modules/Platform/PipeGitCaller.cs`, `Workplace/Git/GitLazyFetch.cs`, `Workplace/Git/GitObjectReads.cs`, `Workplace/Git/GitObjectAnswer.cs`, `Workplace/Git/GitObjectName.cs`, `Workplace/Git/GitStartInputs.cs`, `Workplace/Git/GitAskerContext.cs` | The one door every git of Daoris's passes: places for the run, a queue per repository, an identical queued start shared, a lock-free read nobody waits on ended, a removal admitted, re-entries told by the caller's ancestry and lent a place, an outlived git counted apart; the gate refusing a git's image with no place; lazy fetch off by a proof per git in use; every object read one `--batch` question through one parser; the memos partitioned by the asking tree's configuration |
-| Reads | `GitReads*.cs`, `GitBranches*.cs`, `GitLaunch.cs`, `GitReadCache.cs` | The page's git reads through Tools' git, cached by commit id |
+| The git scheduler | `Platform/GitScheduler.cs`, `Platform/GitPlaces.cs`, `Platform/GitPlace.cs`, `Platform/GitRunAsk.cs`, `Workplace/Git/GitStartAsks.cs`, `Workplace/Git/GitEndable.cs`, `Workplace/Git/GitMemoAsks.cs`, `Platform/GitCallers.cs`, `Modules/Platform/PipeGitCaller.cs`, `Workplace/Git/GitLazyFetch.cs`, `Workplace/Git/GitObjectReads.cs`, `Workplace/Git/GitObjectAnswer.cs`, `Workplace/Git/GitObjectName.cs`, `Workplace/Git/GitStartInputs.cs` | The one door every git of Daoris's passes: places for the run, a queue per repository, an identical queued start shared, a lock-free read nobody waits on ended, a removal admitted, re-entries told by the caller's ancestry and lent a place, an outlived git counted apart; the gate refusing a git's image with no place; lazy fetch off by a proof per git in use; every object read one `--batch` question through one parser; the memos partitioned by the asking tree's configuration |
+| Reads | `GitReads*.cs`, `GitBranches*.cs`, `GitLaunch.cs`, `GitReadCache.cs`, `Workplace/Git/GitStamp.cs`, `Workplace/Git/GitConfigIncludes.cs`, `Workplace/Git/GitPackedRefs.cs`, `Workplace/Git/GitReplacements.cs`, `Platform/FileStamp.cs`, `Platform/VolumeClock.cs` | The page's git reads through Tools' git; what git reads from objects alone kept by commit id under the asker's stamp and its fence |
 | Line fetch, bring up to date | `TreeRefs.cs`, `TreeSync.cs` | `fetch origin <line>` past the doors and holds; ff-only, replay, delete what merged |
 | Landing plugin wire | `Plugins/LandingPlugins.cs` | Whether a plugin performs pull-request steps (`ProblemOf`, its manifest speaking on `work/perform`), and `work/state` asks |
 | Pull request state | `PullRequestAsks.cs`, `PullRequestStates.cs`, `PullRequestMoments.cs`, `PullRequestBounds.cs`, `PullRequestRecords.cs`, `PullRequestWords.cs` | When a pull request is asked about, its minute, what a completed answer clears, where an opened one is written on its landing record, why one is not asked |
@@ -258,9 +258,11 @@ first, else the oldest that may go; a write passes nothing queued ahead of it an
 (file, folder, arguments, variables, runner, bound) only while that start is queued with no write of its repository queued after it,
 never one running. A read `GitEndable` calls
 lock-free (a `status` with `--no-optional-locks`, a working-tree diff also told `-c diff.autoRefreshIndex=false`) is dropped while
-queued and ended while running once its askers leave; every other git, placed, runs untokened to its end or its bound. A
-`worktree remove` is admitted once the tree's lock-free reads are dropped or ended and its other gits have ended, and holds what is
-asked in the tree after it, which its own git passes. An ask beneath any placed git takes a place that git lends, above the four, one a parent, two deep,
+queued and ended while running once its askers leave, the last answered only once its runner has returned: with its own
+cancellation, or as `ProcessUnendedException` where the git outlived its kill; every other git, placed, runs untokened to its end or
+its bound. A
+`worktree remove` is admitted once the tree's lock-free reads are dropped or ended and its other gits have ended, the `worktree add`
+making it among them, and holds what is asked in the tree or to make it after it, which its own git passes. An ask beneath any placed git takes a place that git lends, above the four, one a parent, two deep,
 deeper refused as `git.start.depth`: a pipe request's caller is told beneath one by its process ancestry (`PipeGitCaller`,
 `GitCallers`, read only while a git holds a place), so a push's hook and a diff's textconv or filter helper that ask the window
 never wait behind the place their own git holds. Lazy fetch is off for every read in a repository with a promisor
@@ -275,9 +277,37 @@ on any other form (`cat-file blob`, `-e`, `-t`, `show <rev>:<path>`, `ls-tree -l
 proof's `-t` alone listed. A blob that answers missing in a repository with a promisor is asked once more as a start allowed to fetch,
 a type or a presence never, and the landed preview says `PREVIEW_UNFETCHED` where that gives none. A commit's fields are never read
 from its stored bytes: its parents are git's history's (a history edit lists them with `rev-list --no-walk --parents`, so a shallow
-boundary is a root and a graft's parents are the graft's), the rest the format reads. The flow memos share an answer between two folders of one
-repository only where their configuration is one (`GitAskerContext`: the common directory, the asking tree's `config.worktree` by
-its bytes, and the folder itself where an `includeIf` is configured), so `GitFacts.SameRepository`, `RefSnapshot.TreeHeld`,
+boundary is a root and a graft's parents are the graft's), the rest the format reads. `GitStamp` is the one stamp of what a git
+answer rests on, for the folder that asks: the git in use, every configuration file git would read there, present or absent (the
+`ProgramData` file on Windows, the system file, `GIT_CONFIG_SYSTEM`'s or the one the git in use names to `git var GIT_CONFIG_SYSTEM`,
+asked once a git in use; Daoris's global file, the person's and the XDG file; the repository's `config` and the tree's
+`config.worktree`; each file an `include.path` or `includeIf.*.path` names, followed to git's depth, conditional or not), the asking
+folder where a `gitdir:` include stands and the tree's `HEAD` where an `onbranch:` one does, the replacements (loose, and the
+`packed-refs` lines under `refs/replace/`), `info/grafts`, `shallow`, `reftable/tables.list` and the variables that change an answer;
+a digest of their contents, each file a `FileStamp` (its length and write time before its bytes and after, the bytes hashed again
+where the stat moved, is a link, or was not two seconds old on the volume's clock when hashed: this machine's on a local fixed volume,
+the write time of the home's `run/clock.mark` on the home's, none elsewhere). `GitStampTests` holds it to git's own
+`config --list --show-origin --show-scope --includes` on the runner's git and the pinned MinGit. `GitReadCache` keeps a graph page, a
+commit's fields and a compare's commits under the asker's stamp, admitted only where the stamp's fence (each input's stat, an absent
+one's nearest folder) read again after git answered is unchanged and settled; a commit's changes, a compare's, a file's history and
+a blame are asked at every ask, in the asking tree under its attributes. `GitReplacements.CanBeInForce` (a loose or packed
+replacement, `GIT_REPLACE_REF_BASE`, or reftable refs) is the library's admission's one judgement of a replacement, reading the
+`packed-refs` parse the stamp reads (`GitPackedRefs`, made once a content). The declarations' store, `RepositoryDeclarations`
+(`Workplace/Declarations/`), answers a declaration present, absent or unread: a checkout's or a home's file by its `FileStamp`, its
+bytes by their `ContentKey`; a file at a commit id from the commit's listing, one `cat-file --batch` start asked the commit, its tree
+and each folder on the way, kept by id only where each object's bytes hash to it (`GitObjectHash`), and its blob kept under its
+`BlobId` only where its bytes hash to it; a blob asked by id answered only by bytes that hash to it, else *unread: replaced*; a
+commit's tracked list kept by commit under the replacement gate's `StatFence`. While `CanBeInForce` holds it asks git by path and
+admits nothing. A `DeclarationVersion` is compared by `Same` alone, an *unread* the same as none and without text; a kind's parse
+(`IDeclarationKind`, the rule file's `RuleFileKind`, its `FileRule` lists and `RepositoryFilesRead`'s immutable arrays, a default
+array refused) and a view (`IDeclarationView`) are kept by the content keys they are made from, a
+parse naming a problem made again at each ask, and contents, tracked lists and indexes are each bounded alone (`DeclarationBound`:
+16, 24 and 4 MB). `TipOf` reads a full ref from its loose file or the `packed-refs` parse, a symbolic ref followed to five, a
+reftable's from git; `GitTreeReads` is the door for path-bearing reads, its search git's with the declarations excluded and their
+lines from the store's bytes; `DeclarationScope` says whether the store or the door asked a start. Every declaration's name is a
+read-only field of `DeclarationNames`, never a constant. The flow memos share an answer between two folders of one
+repository only where the stamp's context is one (`GitStamp.ContextOf`: the common directory, the asking tree's `config.worktree` by
+its bytes, and the folder itself where a `gitdir:` include stands), so `GitFacts.SameRepository`, `RefSnapshot.TreeHeld`,
 `ListedFor` and `GitReadOnce`'s listings never answer a tree with replacements off from one with them on. A git whose kill it outlived leaves the four for a count apart
 (`git.place.apart`, `git.place.exited`), and while its repository holds one the background's asks of it are answered `stalled`. An
 ask waiting for its place is said as the queue of the look's stage whose work asked it (`start.queue=`), as the start gate's wait
@@ -377,20 +407,48 @@ zero between calls, `GitLibrary.AtOnce`), libgit2's
 global, XDG, system and program-data search paths pointed at a folder holding no file. `GitLibraryRefs` prints `for-each-ref`'s
 lines: sorted as bytes, a broken symbolic ref left out, the upstream from the common directory's `branch.` and `remote.` keys through
 the remote's first matching fetch refspec, shortened by git's strict rule. `GitLibraryAdmission` refuses, from the repository's own
-files at each question and by its class (`GitLibraryQuestion`), a folder with no git directory, reftable and any replacement (loose,
-packed or `GIT_REPLACE_REF_BASE`) for every question, a branch or remote section in a global file git is handed for the refs, and a
-`diff.orderFile` or `diff.relative` in the repository's, the tree's or that global file for the names; libgit2 refuses SHA-256, an
+files at each question and by its class (`GitLibraryQuestion`), a folder with no git directory, a format the library cannot read, any
+replacement (loose, packed or `GIT_REPLACE_REF_BASE`) and a rewrite of the packs, the multi-pack index or the commit graph under way
+(`GitLibraryHousekeeping`: `gc.pid`, a `.tmp-` file or a `.lock` in `objects/pack`, a `.lock` in `objects/info` or `objects/info/commit-graphs`, none older
+than twelve hours; reason `housekeeping`) for every question, a branch or remote section in a global file git is handed for the refs, and a
+`diff.orderFile` or `diff.relative` in the repository's, the tree's or that global file for the names; libgit2 refuses an
 extension it does not know and another owner's folder at its open; an object a call needs that is missing refuses the call. Grafts,
 a shallow boundary (before and after a deepen), a split and a sparse index the library reads as git does. A refused question, and
-every one under a test's stand-in runner, is git's. The worktree list, every other ref read and the Git page's branch listing (its
+every one under a test's stand-in runner, is git's. The formats come from `GitLibraryFormats`, the `git.read.formats` probe: a repository's
+`extensions.objectformat` and `extensions.refstorage` (and a `reftable` folder) read from its own configuration with no git started, kept
+for that file's length and write time, so a converted repository is read again at its next question and an unchanged one never (its reads are
+counted for each common directory, `ReadsOf`, so a test asserts its own repository's reads and no neighbour class moves them); only
+SHA-1 objects in files refs are the library's, and each other format is refused by its own word (`sha256`, `reftable`, `object-format`,
+`ref-format`) before the library is opened. `GitLibraryJournal` keeps, per repository in `run/git/library.json`, each reason a question
+went to git (every admission refusal, an unreadable repository, a failed call, a call the library declined) with its count, and the
+answers the library gave; a reason new to a repository is written at once, counts at most every five seconds.
+libgit2 runs in the desktop's process, so a fault there ends the window and .NET cannot catch it: every call appends its open before the library
+is entered and its close after it returns (`GitLibraryLeases`, a file for each process in `run/git/library-leases/`, named by its id and start time,
+unbuffered and written through, so its death keeps each line), and the first question of a start in a home reads the files of processes
+that are gone (`GitLibraryFaults`). A repository such a process ended inside, its last open with no close, is journalled in `library.json`
+as faulted under the library package's version and refused for every question while the package is that one: its reason is `native-fault`,
+which the Git page's listing says, and each refused question is git's. A new package version lifts the refusal; the first fault itself is
+accepted, and a home with none named runs no guard. `GitLibraryFaultProcessTests` kills the owner stand-in's `lease` mode inside a lease
+and proves the next start refusing that repository alone, and the refusal lapsing when the package version moves. Each library answer is also a
+read in the flow's `GitLaunch.Count` (`GitCount.Reads`, beside `Starts` and never one), which `review.read` says as `reads` and `readMs`
+and the bench's times list apart from the starts. Settings → Git lists the journal as *Git reads* (`GitReads.tsx`, `TOOLS_LIST`'s
+`identities.reads`): each repository by its folder's name with the library's answers, git's, and each reason in words. The worktree list, every other ref read and the Git page's branch listing (its
 dates, subjects and distances are the commits') stay git's. This second way has two ends, each a failing test in
 `GitLibraryEndsTests`: a case for each refusal and the questions it refuses fails, naming the refusal, the day the pinned library
 reads it as git does (GITLIB1g deletes that refusal and its path to git), and a case fails the day the git in use, or a git the
 built-in list pins (3.0 or past), makes reftable or SHA-256 repositories by default (GITLIB1g retires the library and its admission
 for the scheduler alone). `GitLibraryWalksTests`, `GitLibraryNamesTests` and `GitLibraryRefsTests` hold each answer equal to git's,
-value for value, and each read the library leaves to git answered through one start. `GitLibraryHoldTests` holds the call's hold on
+value for value, and each read the library leaves to git answered through one start. These classes, `GitLibraryFormatsTests`,
+`GitLibraryCountedTests` and `GitLibraryEndsTests` run twice: on the runner's git in `driver-process-git`, and on the MinGit the built-in
+list pins in `driver-process-git-pinned` (`git.pinned.process.runsettings`, which sets `DAORIS_PINNED_GIT_LEG` for the test host). The host
+fetches the pin into the repository's own `_fixtures/` (`PinnedMinGit`) and puts it first on `PATH`, so the product's starts and the
+fixtures' are both that git (`GitLibraryEndsTests` fails a leg that ran another). Where the pin cannot be had (no pin for the platform, a
+fetch that fails) every `[GitLegFact]` of the leg is skipped with that reason and never run on another git. `GitLibraryHoldTests` holds the call's hold on
 Windows: `repack -ad`, `gc --prune=now`, `commit-graph write` and `multi-pack-index write` under library reads every ten milliseconds
-exit 0, leave no old pack and never ask the `GIT_ASK_YESNO` stand-in, which is first seen asked where a pack is held open. The
+exit 0, leave no old pack and never ask the `GIT_ASK_YESNO` stand-in, which is first seen asked where a pack is held open; it counts no
+reads over a loaded minute (that is the machine's) and holds that one read was answered before git began and one ran beside each command.
+Windows refuses git's rename of a pack over one the library has mapped however it is shared, and `gc` after `repack -a` builds the pack
+of the same name, so `GitLibraryHousekeeping` (`GitLibraryHousekeepingTests`) sends the questions asked while git writes to git (D252). The
 `win-x64` publish lays the native `git2-*.dll` beside the driver, and the deployment rehearsal asks for it (`driverProblems`).
 
 A start's cost, and LibGit2Sharp beside it, measured on 2026-11-09 by `tools/git-library-bench`, which no product project references:

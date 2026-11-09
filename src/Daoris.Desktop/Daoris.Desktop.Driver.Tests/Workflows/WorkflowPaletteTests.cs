@@ -10,7 +10,7 @@ public sealed class WorkflowPaletteTests
     [Fact]
     public void Every_built_in_kind_is_present_with_its_authority_and_its_option_fields()
     {
-        Assert.Equal(NodeKit.Kinds, Bare.Kinds.Select(each => each.Kind));
+        Assert.Equal(NodeKit.Kinds.Where(kind => !NodeKit.Built.IsArriving(kind)), Bare.Kinds.Select(each => each.Kind));
         foreach (var kind in Bare.Kinds)
         {
             var authority = NodeKit.Row(kind.Kind)!;
@@ -60,6 +60,8 @@ public sealed class WorkflowPaletteTests
         Assert.Equal([PullRequestReading.Merged, PullRequestReading.Closed], Kind(NodeKinds.Monitor).Outcomes);
         Assert.Contains(WireKinds.When, Kind(NodeKinds.Monitor).Leaves);
         Assert.All(Bare.Kinds, each => Assert.DoesNotContain(WireKinds.Wait, each.Leaves));
+        Assert.Equal(WireValues.Work, Kind(NodeKinds.Claimed).Outputs[ClaimedWork.Port]);
+        Assert.Empty(Kind(NodeKinds.Claimed).Inputs);
 
         var find = new NodeDeclaration("find", "local-release/find", 1, NodeReach.Performed)
         {

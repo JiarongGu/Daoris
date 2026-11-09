@@ -29,7 +29,7 @@ public sealed class GitLibraryHoldTests : LandedFixture
         return (root, marker, new Dictionary<string, string> { ["GIT_ASK_YESNO"] = script.Replace('\\', '/') });
     }
 
-    private static async Task<int> RunAsync(string cwd, IReadOnlyDictionary<string, string> environment, params string[] arguments)
+    private static async Task<(int Code, string Error)> RunAsync(string cwd, IReadOnlyDictionary<string, string> environment, params string[] arguments)
     {
         var info = new ProcessStartInfo { FileName = "git", WorkingDirectory = cwd, RedirectStandardOutput = true, RedirectStandardError = true, RedirectStandardInput = true };
         foreach (var argument in arguments) info.ArgumentList.Add(argument);
@@ -40,7 +40,7 @@ public sealed class GitLibraryHoldTests : LandedFixture
         var stderr = process.StandardError.ReadToEndAsync();
         await process.WaitForExitAsync();
         await Task.WhenAll(stdout, stderr);
-        return process.ExitCode;
+        return (process.ExitCode, stderr.Result);
     }
 
     private static string[] Packs(string root) => Directory.GetFiles(Path.Combine(root, ".git", "objects", "pack"), "pack-*.*");
@@ -68,17 +68,23 @@ public sealed class GitLibraryHoldTests : LandedFixture
         Assert.True(before.Length >= 6, string.Join(", ", before));
 
         using var stop = new CancellationTokenSource();
-        var answered = 0;
+        int answered = 0, begun = 0, inCall = 0;
         var reads = Task.Run(async () =>
         {
             while (!stop.IsCancellationRequested)
             {
-                if (await GitLibraryRefs.ListingAsync(root, CancellationToken.None) is not null) Interlocked.Increment(ref answered);
+                Interlocked.Increment(ref begun);
+                Volatile.Write(ref inCall, 1);
+                var listing = await GitLibraryRefs.ListingAsync(root, CancellationToken.None);
+                Volatile.Write(ref inCall, 0);
+                if (listing is not null) Interlocked.Increment(ref answered);
                 await Task.Delay(10);
             }
         });
 
-        var codes = new List<(string Command, int Code)>();
+        while (Volatile.Read(ref answered) == 0 && Volatile.Read(ref begun) < 50) await Task.Delay(10);
+        var overlapped = new List<bool>();
+        var codes = new List<(string Command, int Code, string Error)>();
         foreach (var command in new[]
                  {
                      new[] { "repack", "-a", "-d", "-q" },
@@ -88,16 +94,21 @@ public sealed class GitLibraryHoldTests : LandedFixture
                      ["repack", "-a", "-d", "-q", "--write-midx"],
                  })
         {
-            codes.Add((string.Join(' ', command), await RunAsync(root, asking, command)));
+            var began = Volatile.Read(ref begun);
+            var (code, error) = await RunAsync(root, asking, command);
+            overlapped.Add(Volatile.Read(ref begun) > began || Volatile.Read(ref inCall) == 1);
+            codes.Add((string.Join(' ', command), code, error));
         }
 
         stop.Cancel();
         await reads;
 
-        Assert.All(codes, each => Assert.True(each.Code == 0, $"{each.Command} exited {each.Code}"));
+        Assert.All(codes, each => Assert.True(each.Code == 0, $"{each.Command} exited {each.Code}: {each.Error}{(File.Exists(marker) ? " (git asked: " + File.ReadAllText(marker).Trim() + ")" : "")}"));
         Assert.False(File.Exists(marker), File.Exists(marker) ? "git asked: " + await File.ReadAllTextAsync(marker) : "");
         Assert.Empty(before.Where(File.Exists));
-        Assert.True(answered > 10, $"the library answered {answered} reads");
+        var sentToGit = string.Join(", ", GitLibraryJournal.Of(root)?.Reasons.Select(each => $"{each.Key} {each.Value}") ?? []);
+        Assert.True(answered > 0, $"the library answered no read; they went to git: {sentToGit}");
+        Assert.All(overlapped, each => Assert.True(each, $"a command ran with no library read beside it: {answered} answered of {begun}; the others went to git: {sentToGit}"));
         Assert.Equal(0, GitLibrary.Open);
     }
 }

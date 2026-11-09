@@ -92,9 +92,9 @@ public sealed class PersonFilesTests : IDisposable
         PersonFiles.Set(_home, null, new FileRule(FileKind.Scratch, ["tmp/"]));
         var read = PersonFiles.Read(_home);
 
-        Assert.Equal(["local/a.txt"], Assert.Single(read.For("web").Rules).Paths);
+        Assert.Equal<string>(["local/a.txt"], Assert.Single(read.For("web").Rules).Paths);
         Assert.Equal("copy", read.For("WEB").Rules[0].Reach);
-        Assert.Equal(["tmp/"], Assert.Single(read.Machine.Rules).Paths);
+        Assert.Equal<string>(["tmp/"], Assert.Single(read.Machine.Rules).Paths);
         Assert.Equal(["share(*)"], read.Machine.Permissions.Deny);
         Assert.Contains("\"_why\": \"mine\"", File.ReadAllText(PersonFiles.PathOf(_home)), StringComparison.Ordinal);
 
@@ -141,7 +141,7 @@ public sealed class PersonFilesTests : IDisposable
         var rule = Assert.Single(web.Reading.Rules);
         Assert.Equal((FileKind.Dependency, "npm ci"), (rule.Kind, rule.Install));
         Assert.Empty(rule.Key!);
-        Assert.Equal(["beside package-lock.json"], rule.Evidence);
+        Assert.Equal<string>(["beside package-lock.json"], rule.Evidence);
         Assert.Equal(new FileSize(3, 12, More: false), rule.Size);
         Assert.Equal("two", FoundFiles.Read(_home, "api").Reading!.Commit);
         Assert.False(File.Exists(PersonFiles.PathOf(_home)));

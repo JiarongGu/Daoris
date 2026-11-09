@@ -33,64 +33,67 @@ internal sealed class TreePoolTakes(TreePool pool, PoolSeams seams)
             return PoolDone.Not("there is no job to hold the claim's git in, so the pool is not offered here");
         }
 
-        if (await PoolLocks.SetAsync(git, slot.Path, PoolLocks.Claimed(pool.Run), ct).ConfigureAwait(false) is { } lockWhy)
+        return await PoolAbandoned.GuardAsync(job, async () =>
         {
-            pool.Complete(fence, null);
-            return PoolDone.Not(lockWhy);
-        }
+            if (await PoolLocks.SetAsync(git, slot.Path, PoolLocks.Claimed(pool.Run), ct).ConfigureAwait(false) is { } lockWhy)
+            {
+                pool.Complete(fence, null);
+                return PoolDone.Not(lockWhy);
+            }
 
-        var expected = inPlace ? head : ExpectedOf(slot);
-        var judged = inPlace
-            ? new PoolJudged(SlotVerdict.Passed, head, SlotIgnored.None)
-            : await PoolJudging.JudgeAsync(site, slot, await HoldsAsync(slot, ct).ConfigureAwait(false), expected, ct).ConfigureAwait(false);
-        if (!judged.Verdict.Clean)
-        {
-            await ReleaseAsync(git, fence, slot, ct).ConfigureAwait(false);
-            return PoolDone.Not($"{judged.Verdict.Code}: {judged.Verdict.Why}");
-        }
+            var expected = inPlace ? head : ExpectedOf(slot);
+            var judged = inPlace
+                ? new PoolJudged(SlotVerdict.Passed, head, SlotIgnored.None)
+                : await PoolJudging.JudgeAsync(site, slot, await HoldsAsync(slot, ct).ConfigureAwait(false), expected, ct).ConfigureAwait(false);
+            if (!judged.Verdict.Clean)
+            {
+                await ReleaseAsync(git, fence, slot, ct).ConfigureAwait(false);
+                return PoolDone.Not($"{judged.Verdict.Code}: {judged.Verdict.Why}");
+            }
 
-        await seams.ReachedAsync(TreeClaimPhases.Judged, slot.Path).ConfigureAwait(false);
-        var previous = slot.Line;
-        var toolchain = slot.Toolchain;
-        if (!inPlace)
-        {
-            var from = previous.Length > 0 ? previous : Path.GetFileName(slot.Path);
-            var plan = await TakePlans.WriteAsync(site, git, slot.Path, new TakeFacts(take.Start, from, previous, head, job, DateTimeOffset.UtcNow), judged.Ignored, ct)
-                .ConfigureAwait(false);
-            if (seams.BeforeSwitch is { } planted) await planted(slot.Path).ConfigureAwait(false);
-            PoolClearing.DeleteCopies(slot.Path, judged.Ignored.Copies);
-            if (TreeShares.Unlink(site.Home, slot.Path) is { } linked) return await UndoneAsync(git, fence, take, $"busy: {linked}", ct).ConfigureAwait(false);
+            await seams.ReachedAsync(TreeClaimPhases.Judged, slot.Path).ConfigureAwait(false);
+            var previous = slot.Line;
+            var toolchain = slot.Toolchain;
+            if (!inPlace)
+            {
+                var from = previous.Length > 0 ? previous : Path.GetFileName(slot.Path);
+                var plan = await TakePlans.WriteAsync(site, git, slot.Path, new TakeFacts(take.Start, from, previous, head, job, DateTimeOffset.UtcNow), judged.Ignored, ct)
+                    .ConfigureAwait(false);
+                if (seams.BeforeSwitch is { } planted) await planted(slot.Path).ConfigureAwait(false);
+                PoolClearing.DeleteCopies(slot.Path, judged.Ignored.Copies);
+                if (TreeShares.Unlink(site.Home, slot.Path) is { } linked) return await UndoneAsync(git, fence, take, $"busy: {linked}", ct).ConfigureAwait(false);
 
-            var hooks = TreeOpenings.HooksHeld(site.Home);
-            var (switched, _, said) = await git.GitAsync(
-                slot.Path, take.Returns ? [.. hooks, "switch", "--no-overwrite-ignore", take.Branch] : [.. hooks, "switch", "--no-overwrite-ignore", "-c", take.Branch, take.Start], ct)
-                .ConfigureAwait(false);
-            if (switched != 0) return await UndoneAsync(git, fence, take, TreeGit.FirstLine(said), ct).ConfigureAwait(false);
-            if (!take.Returns) RecordGrown(take);
+                var hooks = TreeOpenings.HooksHeld(site.Home);
+                var (switched, _, said) = await git.GitAsync(
+                    slot.Path, take.Returns ? [.. hooks, "switch", "--no-overwrite-ignore", take.Branch] : [.. hooks, "switch", "--no-overwrite-ignore", "-c", take.Branch, take.Start], ct)
+                    .ConfigureAwait(false);
+                if (switched != 0) return await UndoneAsync(git, fence, take, TreeGit.FirstLine(said), ct).ConfigureAwait(false);
+                if (!take.Returns) RecordGrown(take);
 
-            pool.Advance(fence, TreeClaimPhases.Switched);
-            await seams.ReachedAsync(TreeClaimPhases.Switched, slot.Path).ConfigureAwait(false);
+                pool.Advance(fence, TreeClaimPhases.Switched);
+                await seams.ReachedAsync(TreeClaimPhases.Switched, slot.Path).ConfigureAwait(false);
 
-            toolchain = seams.Toolchain is { } read ? await read(slot.Path, ct).ConfigureAwait(false) : await PoolToolchain.KeyAsync(site, slot.Path, ct).ConfigureAwait(false);
-            var renew = slot.Bytes > (seams.RenewBytes ?? PoolLimits.RenewBytes);
-            var moved = await PoolClearing.ClearAsync(site, slot.Path, plan, previous, (slot.Toolchain.Length > 0 && toolchain != slot.Toolchain) || renew, seams.Renaming, ct)
-                .ConfigureAwait(false);
-            if (moved.Held is { } held) return await UndoneAsync(git, fence, take, $"busy: {held} is held by a running process", ct).ConfigureAwait(false);
-            pool.Advance(fence, TreeClaimPhases.Cleared);
-            await seams.ReachedAsync(TreeClaimPhases.Cleared, slot.Path).ConfigureAwait(false);
-        }
+                toolchain = seams.Toolchain is { } read ? await read(slot.Path, ct).ConfigureAwait(false) : await PoolToolchain.KeyAsync(site, slot.Path, ct).ConfigureAwait(false);
+                var renew = slot.Bytes > (seams.RenewBytes ?? PoolLimits.RenewBytes);
+                var moved = await PoolClearing.ClearAsync(site, slot.Path, plan, previous, (slot.Toolchain.Length > 0 && toolchain != slot.Toolchain) || renew, seams.Renaming, ct)
+                    .ConfigureAwait(false);
+                if (moved.Held is { } held) return await UndoneAsync(git, fence, take, $"busy: {held} is held by a running process", ct).ConfigureAwait(false);
+                pool.Advance(fence, TreeClaimPhases.Cleared);
+                await seams.ReachedAsync(TreeClaimPhases.Cleared, slot.Path).ConfigureAwait(false);
+            }
 
-        if (await CheckAsync(site, slot, take.Branch, inPlace ? null : take.Start, strict: !inPlace, ct).ConfigureAwait(false) is { } failed)
-        {
-            return await UndoneAsync(git, fence, take, failed, ct).ConfigureAwait(false);
-        }
+            if (await CheckAsync(site, slot, take.Branch, inPlace ? null : take.Start, strict: !inPlace, ct).ConfigureAwait(false) is { } failed)
+            {
+                return await UndoneAsync(git, fence, take, failed, ct).ConfigureAwait(false);
+            }
 
-        // The mark is written once the check has passed, so the files stage installs here; a slot refused before this stays as it stands.
-        if (!inPlace) TreeFilesRecord.Mark(site.Home, slot.Path, head.Length > 0 ? head : null);
-        pool.Advance(fence, TreeClaimPhases.Checked);
-        await seams.ReachedAsync(TreeClaimPhases.Checked, slot.Path).ConfigureAwait(false);
+            // The mark is written once the check has passed, so the files stage installs here; a slot refused before this stays as it stands.
+            if (!inPlace) TreeFilesRecord.Mark(site.Home, slot.Path, head.Length > 0 ? head : null);
+            pool.Advance(fence, TreeClaimPhases.Checked);
+            await seams.ReachedAsync(TreeClaimPhases.Checked, slot.Path).ConfigureAwait(false);
 
-        return await OpenAsync(take.Site, git, fence, slot, take.Line, take.Session, toolchain, ct).ConfigureAwait(false);
+            return await OpenAsync(take.Site, git, fence, slot, take.Line, take.Session, toolchain, ct).ConfigureAwait(false);
+        });
     }
 
     /// <summary>

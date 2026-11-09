@@ -7,7 +7,7 @@ namespace Daoris.Driver;
 /// person's merge on the platform, named by the plugin that opens it (<see cref="WorkflowGate.StepsOf"/>), and a <c>monitor</c> watches the state
 /// it reports (<see cref="PullRequestReading"/>). The step itself is its plugin's (<see cref="PluginStep"/>).
 /// </summary>
-[NodeKind("*/pull-request", NodeGroup.Landing, NodeKinds.Push)]
+[NodeKind("*/pull-request", NodeGroup.Git, NodeKinds.Push)]
 public sealed record PullRequestStep : PluginStep, IWatchable
 {
     public override NodePart Part(NodeDeclaration node) => base.Part(node) with { Lowered = WorkflowKinds.PullRequest };

@@ -54,7 +54,7 @@ internal static class RoomCheck
                     {
                         problems.Add(verb == "reads"
                             ? $"room {rooms[i].Id} reads {path}, which no tracked file or declared output is"
-                            : $"room {rooms[i].Id} writes {path}, which is neither tracked nor named in {RepositoryFilesReader.FileName}");
+                            : $"room {rooms[i].Id} writes {path}, which is neither tracked nor named in {DeclarationNames.Rules}");
                     }
                 }
 

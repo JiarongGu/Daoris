@@ -86,13 +86,25 @@ public sealed record ResourceRecord(string Unit)
     /// <summary>How many receipts one unit keeps at most, settled ones aside: a completion that would pass it with receipts still owing is held.</summary>
     public const int ReceiptsKept = 32;
 
+    /// <summary>How many keys of dropped settled receipts one unit remembers, oldest forgotten first: past it a replay of the oldest attempt's completion would be taken anew.</summary>
+    public const int GuardKept = 256;
+
     public IReadOnlyList<ResourceReceipt> Receipts { get; init; } = [];
+
+    /// <summary>The keys of settled receipts dropped past <see cref="ReceiptsKept"/>, oldest first: the guard a replay is judged by once its receipt is gone.</summary>
+    public IReadOnlyList<ResourceKey> Dropped { get; init; } = [];
 
     /// <summary>The receipt a plugin already gave for one of its resources, or null: a replay takes none twice.</summary>
     public ResourceReceipt? Of(string plugin, string schema, string resource) => Receipts.FirstOrDefault(receipt =>
         string.Equals(receipt.Plugin, plugin, StringComparison.Ordinal) && string.Equals(receipt.Schema, schema, StringComparison.Ordinal)
         && string.Equals(receipt.Resource, resource, StringComparison.Ordinal));
+
+    /// <summary>Whether a plugin already gave a receipt for one of its resources, kept or dropped once settled.</summary>
+    public bool Gave(string plugin, string schema, string resource) => Of(plugin, schema, resource) is not null || Dropped.Contains(new ResourceKey(plugin, schema, resource));
 }
+
+/// <summary>What names a receipt's resource: its plugin, its schema and the plugin's own id for it.</summary>
+public sealed record ResourceKey(string Plugin, string Schema, string Resource);
 
 /// <summary>
 /// The units' resource records under a home: one file per unit, <c>&lt;home&gt;/workflows/resources/&lt;key&gt;.json</c>,
@@ -226,6 +238,21 @@ public sealed class ResourceRecordFiles(string home, Func<bool>? holdsLease = nu
         }
 
         writer.WriteEndArray();
+        if (record.Dropped.Count > 0)
+        {
+            writer.WriteStartArray("dropped");
+            foreach (var key in record.Dropped)
+            {
+                writer.WriteStartObject();
+                writer.WriteString("plugin", key.Plugin);
+                writer.WriteString("schema", key.Schema);
+                writer.WriteString("resource", key.Resource);
+                writer.WriteEndObject();
+            }
+
+            writer.WriteEndArray();
+        }
+
         writer.WriteEndObject();
     });
 
@@ -254,7 +281,23 @@ public sealed class ResourceRecordFiles(string home, Func<bool>? holdsLease = nu
 
             var twice = receipts.GroupBy(receipt => receipt.Id, StringComparer.Ordinal).Any(group => group.Count() > 1)
                 || receipts.GroupBy(receipt => $"{receipt.Plugin}\n{receipt.Schema}\n{receipt.Resource}", StringComparer.Ordinal).Any(group => group.Count() > 1);
-            return twice ? null : new ResourceRecord(unit) { Receipts = receipts };
+            var dropped = new List<ResourceKey>();
+            if (root.TryGetProperty("dropped", out var forgotten))
+            {
+                if (forgotten.ValueKind != JsonValueKind.Array) return null;
+                foreach (var each in forgotten.EnumerateArray())
+                {
+                    if (each.ValueKind != JsonValueKind.Object || Text(each, "plugin") is not { } plugin || Text(each, "schema") is not { } schema
+                        || Text(each, "resource") is not { } resource)
+                    {
+                        return null;
+                    }
+
+                    dropped.Add(new ResourceKey(plugin, schema, resource));
+                }
+            }
+
+            return twice ? null : new ResourceRecord(unit) { Receipts = receipts, Dropped = dropped };
         }
         catch (Exception error) when (error is JsonException or InvalidOperationException or FormatException)
         {

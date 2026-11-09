@@ -208,7 +208,7 @@ public static class GitGlobalFile
     private static string Quoted(string value) => "\"" + value.Replace("\\", "\\\\").Replace("\"", "\\\"") + "\"";
 
     /// <summary>Git's home on this machine, as Git for Windows finds it: <c>HOME</c>, else <c>HOMEDRIVE</c> and <c>HOMEPATH</c> where a folder, else <c>USERPROFILE</c>.</summary>
-    private static string? UserHome(Func<string, string?> variable)
+    internal static string? UserHome(Func<string, string?> variable)
     {
         if (variable("HOME") is { Length: > 0 } home) return home;
         if (variable("HOMEPATH") is { Length: > 0 } homePath && (variable("HOMEDRIVE") ?? "") + homePath is var candidate && Directory.Exists(candidate))

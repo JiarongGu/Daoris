@@ -33,6 +33,7 @@ internal sealed class TreeFilesStage(string home, string root, string tree, stri
     private readonly HashSet<string> _installOnly = new(StringComparer.Ordinal);
     private IReadOnlyList<StoreDependency> _order = [];
     private FileRules? _rules;
+    private FileFloorFacts _floor = null!;
     private string? _own;
     private CancellationToken _visited;
     private bool _stopped;
@@ -45,7 +46,7 @@ internal sealed class TreeFilesStage(string home, string root, string tree, stri
         _visited = watch.Token;
         var unworked = TreeFilesRecord.Read(home, tree) is { Unworked: true };
         var deps = await StoreDependencyRules.ReadAsync(home, tree, repository, head, ct).ConfigureAwait(false);
-        (_order, _rules) = (deps.Each, deps.Rules);
+        (_order, _rules, _floor) = (deps.Each, deps.Rules, deps.Floor);
         if (deps.Rules.Unread is { } unread) _said.Add(Noted.Of(StartNoteCodes.StartedFilesUnread, $"this machine's file rules for `{repository}` do not read ({unread}), so Daoris held every install and copy they could restrict here.", ("repository", repository), ("why", unread)));
 
         if (unworked && !await WriteBackAsync(ct).ConfigureAwait(false)) return Stop();
@@ -373,14 +374,14 @@ internal sealed class TreeFilesStage(string home, string root, string tree, stri
         var (companions, others) = InstallWrites.Of(tree, changes.Beside, _rules!);
         var current = TreeFilesRecord.Read(home, tree)!;
         var changed = DependencyGroups.Changed(tree, current, dependency.Path, _order);
-        // A fill seals only in a tree that held, as it began, nothing ignored but the folders of the dependencies Daoris placed before it.
-        var held = before.Where(each => each.Value == "!!" && each.Key != dependency.Path && current.Of(each.Key) is null).Select(each => each.Key).FirstOrDefault();
+        var held = FillHeld.Of(before, dependency, current, _rules!, _floor);
         var why = dependency.Rule.Bound == true ? DepsWhy.BoundToTree()
             : changes.Beside.Count > 0 ? DepsWhy.WroteBeside(changes.Beside[0])
             : held is not null ? DepsWhy.HeldIgnored(held)
             : changed.Count > 0 ? DepsWhy.GroupFormed(changed[0].TrimEnd('/'))
             : FillJudgement.Unsealable(tree, dependency.Folder, manifest, outside, (dependency.Rule.Secret ?? []).Select(name => environment.TryGetValue(name, out var value) ? value : ""));
         var sealedHere = why is null && DependencyStore.Seal(home, key, tree, dependency.Folder, manifest, ct);
+        if (why is null && !sealedHere) why = DepsWhy.SealFailed();
         var placement = new TreePlacement(dependency.Path, key, sealedHere ? "sealed" : "installed", outside is null ? manifest : null) { Companions = companions, Others = others };
         var recorded = TreeFilesRecord.WhileUnworked(home, tree, record =>
         {

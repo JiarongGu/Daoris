@@ -238,19 +238,26 @@ public sealed class SupervisorLandingTests : IDisposable
     }
 
     [Fact]
-    public async Task The_steps_own_refusals_read_in_order_and_a_leave_is_refused_for_the_first_two_alone()
+    public void The_steps_own_refusals_read_in_order_and_a_leave_is_refused_for_the_first_two_alone()
     {
         static LandingStep Step(bool goAhead = false, params string[] acts) =>
             new("q7", "review", 1, "reports", acts.Length == 0 ? [SupervisorLandingActs.Accept] : acts) { GoAheadOpen = goAhead };
-        static Func<Task<string?>> Pushes(string? why) => () => Task.FromResult(why);
 
-        Assert.Equal(SupervisorWhy.Answered, await LandingJudge.RefusedAsync(null, "accept", true, Pushes(SupervisorWhy.LandingPushes)));
-        Assert.Equal(SupervisorWhy.GoAheadOpen, await LandingJudge.RefusedAsync(Step(goAhead: true), "accept", true, Pushes(SupervisorWhy.LandingPushes)));
-        Assert.Equal(SupervisorWhy.GoAheadOpen, await LandingJudge.RefusedAsync(Step(goAhead: true), "hold", false, Pushes(null)));
-        Assert.Equal(SupervisorWhy.NotReferred, await LandingJudge.RefusedAsync(Step(), "approve", false, Pushes(null)));
-        Assert.Equal(SupervisorWhy.OwnerHeld, await LandingJudge.RefusedAsync(Step(), "accept", true, Pushes(SupervisorWhy.LandingPushes)));
-        Assert.Equal(SupervisorWhy.LandingPushes, await LandingJudge.RefusedAsync(Step(), "accept", false, Pushes(SupervisorWhy.LandingPushes)));
-        Assert.Null(await LandingJudge.RefusedAsync(Step(), "accept", false, Pushes(null)));
-        Assert.Null(await LandingJudge.RefusedAsync(Step(), "hold", true, Pushes(SupervisorWhy.LandingPushes)));
+        Assert.Equal(SupervisorWhy.Answered, LandingJudge.Refused(null, "accept", true));
+        Assert.Equal(SupervisorWhy.GoAheadOpen, LandingJudge.Refused(Step(goAhead: true), "accept", true));
+        Assert.Equal(SupervisorWhy.GoAheadOpen, LandingJudge.Refused(Step(goAhead: true), "hold", false));
+        Assert.Equal(SupervisorWhy.NotReferred, LandingJudge.Refused(Step(), "approve", false));
+        Assert.Equal(SupervisorWhy.OwnerHeld, LandingJudge.Refused(Step(), "accept", true));
+        Assert.Null(LandingJudge.Refused(Step(), "accept", false));
+        Assert.Null(LandingJudge.Refused(Step(), "hold", true));
+    }
+
+    [Fact]
+    public void A_human_node_s_approve_and_reject_are_refused_nothing_for_the_landing_s_plan()
+    {
+        var approval = new LandingStep("q7", "sign-off", 1, "reports", [SupervisorLandingActs.Approve, SupervisorLandingActs.Reject]);
+
+        Assert.Null(LandingJudge.Refused(approval, SupervisorLandingActs.Approve, ownerHeld: false));
+        Assert.Null(LandingJudge.Refused(approval, SupervisorLandingActs.Reject, ownerHeld: false));
     }
 }

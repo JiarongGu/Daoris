@@ -51,7 +51,7 @@ describe('the git domain', () => {
     // The machine's access is a standing choice of the driver's state, which the shell pushes beside the identities' read.
     await screen.findByText('Git access on this machine');
     expect(screen.getAllByRole('article').map((article) => article.querySelector('header span')?.textContent))
-      .toEqual(['Git identities', 'Defaults by host', 'Your own git sign-ins', 'Git access on this machine']);
+      .toEqual(['Git identities', 'Defaults by host', 'Your own git sign-ins', 'Git reads', 'Git access on this machine']);
     expect(serviceCalls()).toEqual([]);
   });
 

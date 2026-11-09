@@ -191,8 +191,9 @@ const ORGANISMS = new Set<string>([
   './agents/SignIn.tsx',
   // Settings → Get started: the organism over the guide, which reads the machine through `useMachine`.
   './help/setupGuide.tsx',
-  // Settings → Git: the organism over the identities, its own folder's, which holds the presses the cards and rows beside it do not.
+  // Settings → Git and → Updates: domains in folders of their own, past the name rule's reach, each holding the presses its cards do not.
   './settings/git/GitDomain.tsx',
+  './settings/machine/UpdatesDomain.tsx',
 ]);
 
 /**

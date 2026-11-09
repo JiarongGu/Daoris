@@ -12,6 +12,12 @@ internal sealed class BenchRuns(string log, Action<string> echo)
         File.AppendAllText(log, line + "\n");
     }
 
+    internal Task<(double Seconds, int Code)> NpmAsync(string folder, params string[] arguments)
+    {
+        var node = (Environment.GetEnvironmentVariable("PATH") ?? "").Split(Path.PathSeparator).Select(each => Path.Combine(each, "node.exe")).First(File.Exists);
+        return TimedAsync(folder, node, [Path.Combine(Path.GetDirectoryName(node)!, "node_modules", "npm", "bin", "npm-cli.js"), .. arguments]);
+    }
+
     /// <summary>Runs <paramref name="file"/> with <paramref name="arguments"/> in <paramref name="folder"/>; the seconds it took and its exit code.</summary>
     internal async Task<(double Seconds, int Code)> TimedAsync(string folder, string file, params string[] arguments)
     {

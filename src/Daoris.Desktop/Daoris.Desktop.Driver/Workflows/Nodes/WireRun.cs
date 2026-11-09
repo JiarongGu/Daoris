@@ -69,6 +69,9 @@ public sealed record WireRun(string GraphDigest, string Run)
     /// </summary>
     public IReadOnlyDictionary<string, string?> Subjects { get; init; } = ImmutableDictionary<string, string?>.Empty;
 
+    /// <summary>The target each step with one reads, by node id, at the tip read this pass: a start binds it (<see cref="WireTargets"/>).</summary>
+    public IReadOnlyDictionary<string, NodePort> Targets { get; init; } = ImmutableDictionary<string, NodePort>.Empty;
+
     /// <summary>The trigger firings already recorded (<see cref="WireFiring.Key"/>): a trigger fires once per receipt, whatever replays.</summary>
     public IReadOnlySet<string> Fired { get; init; } = ImmutableHashSet<string>.Empty;
 

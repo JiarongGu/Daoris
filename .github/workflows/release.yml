@@ -303,6 +303,10 @@ jobs:
       - name: Driver git process gate
         run: dotnet test src/Daoris.Desktop/Daoris.Desktop.Driver.Tests --settings src/Daoris.Desktop/git.process.runsettings --nologo
 
+      # The git library's proofs on the MinGit the toolchain pins (GITLIB1d), beside the runner's git above.
+      - name: Driver git pinned process gate
+        run: dotnet test src/Daoris.Desktop/Daoris.Desktop.Driver.Tests --settings src/Daoris.Desktop/git.pinned.process.runsettings --nologo
+
       - name: Desktop modules process gate
         run: dotnet test src/Daoris.Desktop/Daoris.Desktop.Modules.Tests --settings src/Daoris.Desktop/process.runsettings --nologo
 

@@ -191,6 +191,51 @@ public sealed class ResourceCleanupTests : IDisposable
         Assert.Equal(("p-new", "old-1"), (kept[^1].Resource, kept[0].Resource));
     }
 
+    private static ResourceReceipt SettledReceipt(int at, DateTimeOffset when) =>
+        new($"r-{at}", Plugin, Preview, $"old-{at}", PluginResourceRoles.Temporary, "deploy", 1, "i-old", when)
+        {
+            Cleanup = new ResourceCleanup(CleanupStates.Settled, $"k-{at}", when, 0) { Disposition = CleanupDispositions.Removed, SettledAt = when },
+        };
+
+    /// <summary>A settled receipt dropped past the bound is still the guard against its attempt's replay: no new receipt, so nothing owes a cleanup again.</summary>
+    [Fact]
+    public async Task A_replay_of_a_dropped_settled_receipts_resource_takes_no_new_receipt()
+    {
+        var performer = Performer();
+        var invocation = await StartAsync(performer);
+        Resources.Write(new ResourceRecord(Unit) { Receipts = [.. Enumerable.Range(0, ResourceRecord.ReceiptsKept).Select(at => SettledReceipt(at, _now))] });
+        Assert.Equal(PerformedWhat.Applied, Assert.Single(performer.Hear([Heard(invocation, Reached(new WorkResource(Preview, "p-new")))], Of, Watched)).What);
+        Assert.DoesNotContain(Receipts(), receipt => receipt.Resource == "old-0");
+
+        var replayed = performer.Hear([Heard(invocation, Reached(new WorkResource(Preview, "old-0")), id: "e2")], Of, Watched);
+
+        Assert.Equal(PerformedWhat.Replay, Assert.Single(replayed).What);
+        Assert.DoesNotContain(Receipts(), receipt => receipt.Resource == "old-0");
+        Assert.DoesNotContain(Receipts(), receipt => !receipt.Settled && receipt.Resource != "p-new");
+        Assert.Equal(ResourceRecord.ReceiptsKept, Receipts().Count);
+    }
+
+    /// <summary>The guard keeps its own bound: past it the oldest dropped key goes, the newest stays.</summary>
+    [Fact]
+    public async Task The_guard_of_dropped_receipts_is_bounded_and_forgets_the_oldest_first()
+    {
+        var performer = Performer();
+        var invocation = await StartAsync(performer);
+        var keys = Enumerable.Range(0, ResourceRecord.GuardKept).Select(at => new ResourceKey(Plugin, Preview, $"gone-{at}")).ToList();
+        Resources.Write(new ResourceRecord(Unit)
+        {
+            Receipts = [.. Enumerable.Range(0, ResourceRecord.ReceiptsKept).Select(at => SettledReceipt(at, _now))],
+            Dropped = keys,
+        });
+
+        performer.Hear([Heard(invocation, Reached(new WorkResource(Preview, "p-new")))], Of, Watched);
+
+        var guard = Resources.Read(Unit)!.Dropped;
+        Assert.Equal(ResourceRecord.GuardKept, guard.Count);
+        Assert.DoesNotContain(guard, key => key.Resource == "gone-0");
+        Assert.Equal("old-0", guard[^1].Resource);
+    }
+
     /// <summary>A reconciliation's answer gives its receipts as a completion does.</summary>
     [Fact]
     public async Task A_reconciliations_resources_are_taken_as_receipts()

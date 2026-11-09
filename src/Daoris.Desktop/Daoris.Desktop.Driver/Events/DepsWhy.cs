@@ -34,6 +34,7 @@ internal static class DepsWhy
     internal const string LinkOut = "link-out";
     internal const string HeldBefore = "held-ignored";
     internal const string Group = "group";
+    internal const string Unsealed = "unsealed";
 
     private const string Yours = ", and this tree is its line's to install in";
 
@@ -73,6 +74,8 @@ internal static class DepsWhy
     internal static DepsReason HeldIgnored(string file) => DepsReason.Of(HeldBefore, $"the tree held `{file}`, which git ignores, as its install began", ("file", file));
 
     internal static DepsReason LinksOut(string link) => DepsReason.Of(LinkOut, $"its link `{link}` leads outside the tree", ("link", link));
+
+    internal static DepsReason SealFailed() => DepsReason.Of(Unsealed, "the store could not take a copy of it, so the next tree installs it again");
 
     internal static DepsReason GroupFormed(string with) => DepsReason.Of(Group, $"its install changed `{with}`, which another dependency placed, so the two are kept as one group", ("with", with));
 }

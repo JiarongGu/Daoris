@@ -17,7 +17,7 @@ internal static class RepositorySetup
     internal static async Task<bool> RunAsync(
         string home, string repository, string tree, string head, IReadOnlyList<StoreDependency> dependencies, List<Noted> said, CancellationToken ct, CancellationToken visited)
     {
-        foreach (var dependency in dependencies.Where(each => each.Rule.Setup is { Count: > 0 }))
+        foreach (var dependency in dependencies.Where(each => each.Rule.Setup is { Length: > 0 }))
         {
             var commands = dependency.Rule.Setup!;
             var perRepository = dependency.Rule.Per == "repository";

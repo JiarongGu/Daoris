@@ -113,7 +113,7 @@ public sealed class WireEvaluationTests
         }
     }
 
-    /// <summary>§E2, §E3: <c>after</c> reads a current reach or this run's skip; <c>data</c> a reach alone, passing its port into the binding.</summary>
+    /// <summary>§E2, §E3: <c>after</c> reads a reach or this run's skip; <c>data</c> a reach alone, into the binding; a skip skips its reader.</summary>
     [Fact]
     public void After_reads_a_reach_or_a_skip_and_data_a_reach_alone()
     {
@@ -139,7 +139,7 @@ public sealed class WireEvaluationTests
         var skipped = new Graph(nodes, wires);
         skipped.Skip("a");
         var third = skipped.Evaluate();
-        Assert.Equal((NodeStates.Skipped, NodeStates.Ready, NodeStates.Blocked), (skipped.State("a"), skipped.State("b"), skipped.State("c")));
+        Assert.Equal((NodeStates.Skipped, NodeStates.Ready, NodeStates.Skipped), (skipped.State("a"), skipped.State("b"), skipped.State("c")));
         Assert.StartsWith("skp-", Assert.Single(third.Of("b")!.Receipts), StringComparison.Ordinal);
         Assert.Equal(["w2"], third.Of("c")!.Waiting);
     }

@@ -16,7 +16,7 @@ namespace Daoris.Desktop.Driver.Tests;
 internal sealed class GitStartTally : IDisposable
 {
     private readonly string _relativeTo;
-    private readonly List<(string Folder, IReadOnlyList<string> Command)> _starts = [];
+    private readonly List<(string Folder, IReadOnlyList<string> Command, DeclarationAsker? Scope)> _starts = [];
     private readonly IDisposable _within;
 
     private GitStartTally(string relativeTo)
@@ -31,7 +31,7 @@ internal sealed class GitStartTally : IDisposable
                 IReadOnlyList<string> command = GitStartInputs.Of(info) is { } asked
                     ? [.. GitLaunch.Command([.. info.ArgumentList]), asked.TrimEnd('\n')]
                     : GitLaunch.Command([.. info.ArgumentList]);
-                lock (_starts) _starts.Add((folder, command));
+                lock (_starts) _starts.Add((folder, command, DeclarationScope.Current));
             }
 
             return Process.Start(info);
@@ -40,6 +40,15 @@ internal sealed class GitStartTally : IDisposable
 
     /// <summary>Count from here until disposed, folders said relative to <paramref name="relativeTo"/>.</summary>
     public static GitStartTally Open(string relativeTo) => new(relativeTo);
+
+    /// <summary>Whose ask each start ran inside (<see cref="DeclarationScope"/>), in the order the gate saw them; null for one outside the store and the door.</summary>
+    public IReadOnlyList<DeclarationAsker?> Scopes
+    {
+        get
+        {
+            lock (_starts) return [.. _starts.Select(start => start.Scope)];
+        }
+    }
 
     /// <summary>Each start as <c>command  @ folder</c>, in the order the gate saw them.</summary>
     public IReadOnlyList<string> Starts
