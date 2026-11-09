@@ -205,7 +205,7 @@ internal static class GitCommands
         rows["worktree"] = new(Verbs: Verbs(["list"], ["add", "lock", "unlock", "move", "remove", "repair", "prune"]));
         rows["stash"] = new(Verbs: Verbs(["list", "show"], ["push", "save", "pop", "apply", "drop", "store", "create", "clear"]), Default: "push");
         rows["notes"] = new(Verbs: Verbs(["list", "show", "get-ref"], ["add", "append", "copy", "edit", "merge", "remove", "prune"]), Default: "list");
-        rows["submodule"] = new(Verbs: Verbs(["status", "summary"], ["update", "init", "sync", "add", "deinit", "absorbgitdirs"]), Default: "status");
+        rows["submodule"] = new(Verbs: Verbs(["summary", "status"], ["update", "init", "sync", "add", "deinit", "absorbgitdirs"]), Default: "status");
         rows["remote"] = new(Verbs: Verbs(["get-url", "show"], ["add", "remove", "rename", "set-url", "set-head", "update", "prune"]), Default: "show");
         // `register`, `start`, `stop` and `unregister` write the person's own configuration and scheduler, which Daoris never starts.
         rows["maintenance"] = new(Verbs: Verbs([], ["run"]));
