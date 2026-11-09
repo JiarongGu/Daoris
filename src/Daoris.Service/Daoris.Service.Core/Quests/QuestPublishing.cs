@@ -68,6 +68,9 @@ internal sealed class QuestPublishing(
                 Quest: null, addressable);
         }
 
+        // The registry matched the name without regard to case; every key below reads the registered spelling.
+        to = target.Repository;
+
         if (!Workspaces.Same(target.InWorkspace, home))
         {
             // The workspace is the unit of sharing, so this is not a permission failure — it is
