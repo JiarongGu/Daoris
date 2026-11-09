@@ -175,6 +175,32 @@ public sealed class ChatPendingProcessTests : IDisposable
     }
 
     /// <summary>
+    /// Ask Daoris started from an earlier conversation and refused at the open before any word took its brief: the replacement is handed the
+    /// brief with the words said to it, and the two list as the one conversation they continue.
+    /// </summary>
+    [Fact]
+    public async Task Ask_Daoris_started_from_an_earlier_one_and_refused_at_the_open_hands_its_replacement_the_brief()
+    {
+        var config = Config("account-1:opus", "ask-daoris", [new ActorChoice("acp-stub", "opus")], "account-1", "account-2");
+        var (runner, ledger, client, _) = Runner();
+        using var r = runner;
+        using var c = client;
+        Events.Append("h0", new SessionEvent { Kind = SessionEventKind.User, Origin = "person", Text = "The port lives in deploy/ports.yaml." });
+        Events.Append("h0", new SessionEvent { Kind = SessionEventKind.Turn, StopReason = "end_turn" });
+        ledger.Chat("h0", "completed", "acp-stub", _root, repository: HelpRoom.Repository);
+
+        var placed = await runner.PlaceHelpFromAsync("h0", "acp-stub", config, order: ActorChoices.Effective("ask-daoris", config));
+        var issued = placed.SessionId ?? throw new InvalidOperationException(placed.Message);
+        await runner.RunHelpAsync(placed, config, _ => Task.FromResult<HelpMachine?>(Machine));
+        Assert.True(runner.Say(issued, "and the docs?"));
+
+        await Poll.Until(() => Prompts("account-2").Length == 1, () => Seen(ledger, issued));
+        var handed = Assert.Single(Prompts("account-2"));
+        Assert.Contains("deploy/ports.yaml", handed, StringComparison.Ordinal);
+        Assert.Contains("and the docs?", handed, StringComparison.Ordinal);
+    }
+
+    /// <summary>
     /// Nothing left to open: the only account refuses the only choice. The press's record ends <c>choice-not-offered</c>, no second record
     /// opens, the conversation says why it did not go on, and the first words wait on the refused record for its go-on.
     /// </summary>

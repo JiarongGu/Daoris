@@ -5,7 +5,7 @@ namespace Daoris.Driver;
 /// its record, and the run over its process, which the runner makes. The record is the service's; the process is this machine's, and never
 /// leaves it.
 /// </summary>
-internal sealed class ChatStarts(IExecutorWiring wiring, ChatTold told)
+internal sealed class ChatStarts(IExecutorWiring wiring, ChatTold told, ChatConclusion conclusion)
 {
     /// <summary>Whether a conversation opens in a tree of its own: said, or else the repository's standing choice.</summary>
     public static bool Isolates(bool? ownTree, DriverConfig config, string repository) =>
@@ -243,93 +243,114 @@ internal sealed class ChatStarts(IExecutorWiring wiring, ChatTold told)
             return new(null, message);
         }
 
-        // The role this start took and its revision, on its binding beside its pick, which a continuation reads.
-        context.Conversations.KeepRole(sessionId, roleTaken, roleRevision);
-        carries?.Bound(sessionId);
-        // A start the person named an account for keeps, on its binding in the desktop store and nowhere else, that they picked the account it
-        // opened on, so the account rule holds the conversation to it. Never the walk's own choice.
-        if (picked) context.Conversations.Pick(sessionId, selection.Profile);
-        // A pick belongs to the conversation, so a new part any move opens on the account the person picked, on the same agent, keeps it and
-        // the rule reads it there as on the part it came from. The same agent is the same provider (s-vii), so a move between one agent's two
-        // doors keeps it, and one between two providers sharing a pool does not. A part on another account or agent is no pick of the
-        // person's; an agent's pick and a record from before hold none.
-        else if (from is not null && context.Conversations.PickedOn(from.Session, selection.Profile)
-            && await service.RecordAsync(from.Session, ct).ConfigureAwait(false) is { Adapter: { Length: > 0 } pickedAgent }
-            && new AgentOfDoor(harnesses.Adapters).Same(pickedAgent, resolved.Id.Value))
-        {
-            context.Conversations.Pick(sessionId, selection.Profile);
-        }
-
-        // The record is open, so the ledger holds the tree and a replay's own look sees it in use.
-        starting?.Dispose();
-        // Marked as this process's start until its spawn's marker replaces it, so a sweep ends it only if this process goes.
-        context.Processes.MarkOpening(sessionId);
-
-        // A new conversation holds no context yet, so it rotates like a start, and only here, at its opening: its account is its process's
-        // home, set at spawn. Its first line says which account and why, and, where it goes on from a limit, the conversation it carries and
-        // the turn the limit refused.
-        RotatedOpening.Say(
-            service, context.Events, sessionId, resolved.Id.Value, selection, from is { Why: HandOverWhy.Limit } ? wiring.LimitCarried(from.Session) : null);
-        // Where a later choice of Chat's order ran, its actor line says which and why, in the local conversation only.
-        if (chosen is not null) RotatedOpening.SayActor(context.Events, sessionId, "chat", chosen, passes);
-        await RotatedOpening.SayStaffAsync(context.Events, harnesses.Staff(), service, null, sessionId, selection, "chat").ConfigureAwait(false);
-
-        // A new conversation that asks its actor's entry on the protocol door owns its attempt from here until it is dispatched or exhausted;
-        // a replacement goes on under the pending start it opens for, its issued id the press's.
-        if (pending is not null)
-        {
-            pending.Entry = chosen!;
-            context.Pending.Link(pending, sessionId);
-        }
-        else if (chosen is not null && resolved.Can.SetAtOpen)
-        {
-            // The replacement runs where the refused record ran: its own tree kept, or the checkout. Its open moves the moving words the
-            // refused record keeps, which it names and read, and any of the person's kept there since, in its own step.
-            var ranIn = tree ?? opened?.Path;
-            context.Pending.Add(new ChatPending(
-                sessionId, "chat", ChatPending.Recovering("chat", order!, config, harnesses.StaffFor(home), roleTaken), chosen, profile, known.Workspace,
-                (owner, token) => StartAsync(
-                    repository, adapter, config, onEnded, owner.Pinned, ownTree: ranIn is null ? false : null, token, ranIn,
-                    new ContinuedFrom(owner.Current, HandOverWhy.NotOffered, HandOverBy.Daoris), order: null, leftBy, owner,
-                    moves: MovedWords.Asked(owner.Current, owner.KeptIds, owner.KeptIds))));
-        }
-
-        // The agent the walk settled on, as the conversation reads it from here on: what it is told, and the run that holds it.
-        var agent = new ChatAgent(harnesses.Adapters, resolved);
-
-        // A conversation in a tree it grew is told its process with its first message. A handed-over conversation also needs its new maker's
-        // attribution: the record it continues may carry a different maker's instruction. Any other conversation, in the person's checkout or
-        // Ask Daoris's, is told nothing ahead of the person's words.
-        // Its run binds here, the record being its line's first in the tree it grew, and the landing it is told is planned with the process its
-        // run is bound to, so it is told the landing its press makes. A chat run whose process names a second opinion is handed the tool that
-        // answers its findings from its spawn.
-        // The files step after its record, only in a tree of Daoris's, never the checkout a conversation may open in.
-        var ours = root is not null && new SessionTrees(home).Holds(workTree);
-        var files = ours
-            ? await TreeFilesStep.RunAsync(
-                home, root!, workTree, known.Repository,
-                line => context.Events.Keep(sessionId, new SessionEvent { Kind = SessionEventKind.Note, Text = line.Note, Parts = line.Parts.Count > 0 ? line.Parts : null }, say: null),
-                ct).ConfigureAwait(false)
-            : TreeFilesOutcome.None;
+        ChatAgent agent;
+        bool ours;
         var answers = false;
-        if (opened is not null)
+        IReadOnlyList<string> continued;
+        // Everything from the record's open to the run is one stretch: a failure or a cancel in it concludes the record, which the run's own
+        // failure does for what comes after, so no record is left queued with only this process going to end it.
+        try
         {
-            var bound = context.ChatRuns.Opened(sessionId, known.Repository, known.Workspace, config);
-            answers = ChatRunBinds.AnswersFindings(bound);
-            told.HoldProcess(sessionId, await told.ProcessAsync(opened.Path, sessionId, config, known, files.Told, agent, ct, bound).ConfigureAwait(false));
-        }
-        else if (from is not null)
-        {
-            answers = await context.ChatRuns.AnswersAsync(sessionId, workTree, config).ConfigureAwait(false);
-            var commits = CommitRules.Resolve(config, known.Repository, known.Workspace);
-            // A part on another maker than the one before it, which left work uncommitted in the tree, is told that maker's trailer too, as a
-            // driven carry-on is.
-            var left = leftBy is not null && await WorkingTree.UncommittedAsync(workTree, ct: ct).ConfigureAwait(false) is { Count: > 0 } ? leftBy : null;
-            told.HoldProcess(sessionId, new ProcessBriefing(agent.Trailers(left), commits.Rule.Mode, commits.Source));
-        }
+            // The role this start took and its revision, on its binding beside its pick, which a continuation reads.
+            context.Conversations.KeepRole(sessionId, roleTaken, roleRevision);
+            carries?.Bound(sessionId);
+            // A start the person named an account for keeps, on its binding in the desktop store and nowhere else, that they picked the account it
+            // opened on, so the account rule holds the conversation to it. Never the walk's own choice.
+            if (picked) context.Conversations.Pick(sessionId, selection.Profile);
+            // A pick belongs to the conversation, so a new part any move opens on the account the person picked, on the same agent, keeps it and
+            // the rule reads it there as on the part it came from. The same agent is the same provider (s-vii), so a move between one agent's two
+            // doors keeps it, and one between two providers sharing a pool does not. A part on another account or agent is no pick of the
+            // person's; an agent's pick and a record from before hold none.
+            else if (from is not null && context.Conversations.PickedOn(from.Session, selection.Profile)
+                && await service.RecordAsync(from.Session, ct).ConfigureAwait(false) is { Adapter: { Length: > 0 } pickedAgent }
+                && new AgentOfDoor(harnesses.Adapters).Same(pickedAgent, resolved.Id.Value))
+            {
+                context.Conversations.Pick(sessionId, selection.Profile);
+            }
 
-        // A conversation that continues another reads the kept folders of its line's parts, whose files its brief names.
-        var continued = from is null ? [] : await ContextBriefs.LineIdsAsync(service, from.Session, ct).ConfigureAwait(false);
+            // The record is open, so the ledger holds the tree and a replay's own look sees it in use.
+            starting?.Dispose();
+            // Marked as this process's start until its spawn's marker replaces it, so a sweep ends it only if this process goes.
+            context.Processes.MarkOpening(sessionId);
+
+            // A new conversation holds no context yet, so it rotates like a start, and only here, at its opening: its account is its process's
+            // home, set at spawn. Its first line says which account and why, and, where it goes on from a limit, the conversation it carries and
+            // the turn the limit refused.
+            RotatedOpening.Say(
+                service, context.Events, sessionId, resolved.Id.Value, selection, from is { Why: HandOverWhy.Limit } ? wiring.LimitCarried(from.Session) : null);
+            // Where a later choice of Chat's order ran, its actor line says which and why, in the local conversation only.
+            if (chosen is not null) RotatedOpening.SayActor(context.Events, sessionId, "chat", chosen, passes);
+            await RotatedOpening.SayStaffAsync(context.Events, harnesses.Staff(), service, null, sessionId, selection, "chat").ConfigureAwait(false);
+
+            // A new conversation that asks its actor's entry on the protocol door owns its attempt from here until it is dispatched or exhausted;
+            // a replacement goes on under the pending start it opens for, its issued id the press's.
+            if (pending is not null)
+            {
+                pending.Entry = chosen!;
+                context.Pending.Link(pending, sessionId);
+            }
+            else if (chosen is not null && resolved.Can.SetAtOpen)
+            {
+                // The replacement runs where the refused record ran: its own tree kept, or the checkout. Its open moves the moving words the
+                // refused record keeps, which it names and read, and any of the person's kept there since, in its own step.
+                var ranIn = tree ?? opened?.Path;
+                context.Pending.Add(new ChatPending(
+                    sessionId, "chat", ChatPending.Recovering("chat", order!, config, harnesses.StaffFor(home), roleTaken), chosen, profile, known.Workspace,
+                    (owner, token) => StartAsync(
+                        repository, adapter, config, onEnded, owner.Pinned, ownTree: ranIn is null ? false : null, token, ranIn,
+                        new ContinuedFrom(owner.Current, HandOverWhy.NotOffered, HandOverBy.Daoris), order: null, leftBy, owner,
+                        moves: MovedWords.Asked(owner.Current, owner.KeptIds, owner.KeptIds))));
+            }
+
+            // The agent the walk settled on, as the conversation reads it from here on: what it is told, and the run that holds it.
+            agent = new ChatAgent(harnesses.Adapters, resolved);
+
+            // A conversation in a tree it grew is told its process with its first message. A handed-over conversation also needs its new maker's
+            // attribution: the record it continues may carry a different maker's instruction. Any other conversation, in the person's checkout or
+            // Ask Daoris's, is told nothing ahead of the person's words.
+            // Its run binds here, the record being its line's first in the tree it grew, and the landing it is told is planned with the process its
+            // run is bound to, so it is told the landing its press makes. A chat run whose process names a second opinion is handed the tool that
+            // answers its findings from its spawn.
+            // The files step after its record, only in a tree of Daoris's, never the checkout a conversation may open in.
+            ours = root is not null && new SessionTrees(home).Holds(workTree);
+            var files = ours
+                ? await TreeFilesStep.RunAsync(
+                    home, root!, workTree, known.Repository,
+                    line => context.Events.Keep(sessionId, new SessionEvent { Kind = SessionEventKind.Note, Text = line.Note, Parts = line.Parts.Count > 0 ? line.Parts : null }, say: null),
+                    ct).ConfigureAwait(false)
+                : TreeFilesOutcome.None;
+            if (opened is not null)
+            {
+                var bound = context.ChatRuns.Opened(sessionId, known.Repository, known.Workspace, config);
+                answers = ChatRunBinds.AnswersFindings(bound);
+                told.HoldProcess(sessionId, await told.ProcessAsync(opened.Path, sessionId, config, known, files.Told, agent, ct, bound).ConfigureAwait(false));
+            }
+            else if (from is not null)
+            {
+                answers = await context.ChatRuns.AnswersAsync(sessionId, workTree, config).ConfigureAwait(false);
+                var commits = CommitRules.Resolve(config, known.Repository, known.Workspace);
+                // A part on another maker than the one before it, which left work uncommitted in the tree, is told that maker's trailer too, as a
+                // driven carry-on is.
+                var left = leftBy is not null && await WorkingTree.UncommittedAsync(workTree, ct: ct).ConfigureAwait(false) is { Count: > 0 } ? leftBy : null;
+                told.HoldProcess(sessionId, new ProcessBriefing(agent.Trailers(left), commits.Rule.Mode, commits.Source));
+            }
+
+            // A conversation that continues another reads the kept folders of its line's parts, whose files its brief names.
+            continued = from is null ? [] : await ContextBriefs.LineIdsAsync(service, from.Session, ct).ConfigureAwait(false);
+        }
+        catch (Exception error)
+        {
+            told.Forget(sessionId);
+            var cancelled = error is OperationCanceledException && ct.IsCancellationRequested;
+            await conclusion.ConcludeAsync(
+                sessionId, "failed",
+                cancelled
+                    ? Noted.Of(ChatNoteCodes.ChatCancelled, "the request that started it was cancelled before its process started.")
+                    : Observation.Failure(error.Message),
+                onEnded).ConfigureAwait(false);
+            if (cancelled) throw;
+            return new(null, error.Message);
+        }
 
         ChatStart? started = null;
         try
