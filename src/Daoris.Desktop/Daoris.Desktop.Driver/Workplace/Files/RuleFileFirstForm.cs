@@ -188,7 +188,7 @@ internal static class RuleFileFirstForm
             var part = word[i];
             string[] choices = part.Token switch
             {
-                FirstFormToken.Literal => [part.Character is '*' or '?' or '[' or ' ' ? "\\" + part.Character : part.Character.ToString()],
+                FirstFormToken.Literal => [part.Character is '*' or '?' or '[' or ' ' ? "\\" + char.ToString(part.Character) : char.ToString(part.Character)],
                 FirstFormToken.Star => ["*"],
                 FirstFormToken.One => ["?"],
                 FirstFormToken.Folders when Opens(word, i) => ["**/"],

@@ -40,7 +40,8 @@ internal static class RepositoryFilesReader
             var (number, rule) = rules[i];
             if (rule.Kind == FileKind.Dependency && rules.Skip(i + 1).Any(later => later.Number != number && GitPattern.Meet(rule, later.Rule)))
             {
-                problems.Add($"rules[{number}]: '{rule.Paths[0]}' is the dependency's path a later rule takes too, so it acts on nothing");
+                problems.Add(string.Create(System.Globalization.CultureInfo.InvariantCulture,
+                    $"rules[{number}]: '{rule.Paths[0]}' is the dependency's path a later rule takes too, so it acts on nothing"));
                 continue;
             }
 

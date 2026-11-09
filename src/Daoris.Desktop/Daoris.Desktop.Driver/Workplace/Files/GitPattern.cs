@@ -164,7 +164,7 @@ internal static class GitPattern
             var c = text[i];
             if (c == '\\' && i + 1 < text.Length)
             {
-                source.Append(Regex.Escape(text[++i].ToString()));
+                source.Append(Regex.Escape(char.ToString(text[++i])));
             }
             else if (c == '*')
             {
@@ -190,7 +190,7 @@ internal static class GitPattern
             }
             else
             {
-                source.Append(Regex.Escape(c.ToString()));
+                source.Append(Regex.Escape(char.ToString(c)));
             }
         }
 
@@ -215,7 +215,7 @@ internal static class GitPattern
         {
             var c = inside[i];
             var range = c == '-' && i > (negated ? 1 : 0) && i + 1 < inside.Length;
-            body.Append(range ? "-" : c is '\\' or ']' or '[' or '^' or '-' ? "\\" + c : c.ToString());
+            body.Append(range ? "-" : c is '\\' or ']' or '[' or '^' or '-' ? "\\" + char.ToString(c) : char.ToString(c));
         }
 
         return body.Append(']').ToString();
