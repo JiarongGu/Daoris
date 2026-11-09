@@ -740,7 +740,10 @@ The rows as round 6 leaves them, rewritten in place; round 5's are the document 
    and its door half, red on a planted fifth setter, on a door running its work through its own `Task.Run`, and on a door kind whose
    work reads no authority; `ActJournalCensusTests` with its run half, red on an `After` awaiting a turn that never ends, the act
    stopped at its deadline and its claim closed, and on an `After` starting git unawaited, its git run in the act's job and awaited by
-   the close, and one started after the close refused.
+   the close, and one started after the close refused. The start's hold carried as a value (§35): `run.State.Starting` handed to the
+   bind, the take and the opens, `TreeLock.InFlow` reading that live handle, never a flow registration; proved through the driver's own
+   stage loop (a driven start of a new run reaching its bind and its open, and a governing write after the hold's dispose refused).
+   `GitCommands`' columns for the trees and refs a start touches built here, for the reserved tree's proofs.
 5. **1e, `check` fed, then `merge`** (driver; their words). First `check`'s `commit` in and out, so `merge`'s proofs run through it:
    a check on a rebased commit, its failure stopping the `merge`, a target moved while it runs rebinding nothing. Then `merge`: the
    methods and targets; into the line, the request at the one door with its expected tip and invocation, never batched, `behind` at
@@ -820,7 +823,10 @@ The rows as round 6 leaves them, rewritten in place; round 5's are the document 
    `check-ref-format`, and `notes`, `replace`, `submodule` and `maintenance` by their verbs, started and never refused for want of a
    row; `GitCommandsCensusTests` red on a planted command with no row, on a command held in a variable, and in the strict run on
    `notes add` with its row removed; a planted direct `TryWriting` in a flow holding the lock red, and a take alone in a flow holding
-   it shared throwing.
+   it shared throwing. The rewrites of a governed branch retired (§35): *Bring up to date* (`BranchReplays`) and a reopened source's
+   go-on sync (`TreeUpdates`) over a branch an open run governs ask that run's `rebase` and write nothing themselves, said; proved
+   over both. An unclassed start fails closed on the branch question only (§35), read as a drop of the branches it names and the
+   folder's current branch; proved by an unrowed drop in a non-strict run.
 7. **1g, the editor, the chart and the run view** (web, contracts, and the declarations h wires): the `Git` group, each kind's
    inspector and inputs, the `rebase` tail and the `merge`'s `behind` way added in one change, the chart's ports and `back` ways, the
    run view's words and waits, in English and Chinese, the generated contracts and types; and what h adds, declared here arriving as
@@ -1949,3 +1955,23 @@ Each finding of the independent Opus read of round 5, its answer and its section
 - A kind that ends a branch without declaring it is refused its own branch, said: the gap shows as a wait, never as a loss.
 - The invariance tests and the recorder see the sequences the fixtures drive, as round 5 said; the recorder's writer assertion runs in
   every run, not only those.
+
+## 35. The read of round 6, written into rows d and f
+
+The read of round 6 found two blocking points, each answered in the rows it touches rather than by a further round; the rest are those
+rows' proofs.
+
+- **The start's hold is a value, not a flow registration** (row d). `GrowTree` takes the start's shared hold inside its own stage, and
+  .NET restores the caller's context when an async method returns, so a registration made there is gone by the bind (`RunBinding`,
+  `WorkflowRunStart`) and the opens (`OpenRecord`), and kept in the loop's flow it would outlive the hold's dispose. The hold travels as
+  `run.State.Starting`, handed to the bind, the take and the opens as §31 hands it to `UndoAsync`, and `TreeLock.InFlow` reads the live
+  handle; `TogetherLocks.TakeAsync` the same. The `merge`'s start-up settling runs through the door runner, never a fifth setter of the
+  run's own step (§28's census).
+- **A governed branch is rewritten only by its run's `rebase`** (row f). *Bring up to date* (`BranchReplays`) and a reopened source's
+  go-on sync (`TreeUpdates`) move a session branch to a commit that does not hold its old tip. Over a branch an open run governs they ask
+  that run's `rebase` and write nothing themselves, said in their words (D228: the `rebase` kind is the one way to replay work); over an
+  ungoverned branch they stand as today. Rejected: a rewrite of a governed branch passing under the lock alone with its old tip on a
+  recovery ref, a second way of replaying a run's work beside its own step.
+- **An unclassed start fails closed on the branch question only** (row f, not blocking). An unrowed command, or an option its row
+  cannot read, is read as a drop of the branches it names and the folder's current branch, which an ungoverned branch's release still
+  passes; the census reads `GitStartAsks.For`'s callers rather than a list of seams, so `PoolGit.GitAsync` is in it.
