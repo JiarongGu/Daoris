@@ -11,7 +11,11 @@ namespace Daoris.Driver;
 /// <param name="Root">The checkout the branch is in.</param>
 /// <param name="Branch">The landed branch, as the landing record names it.</param>
 /// <param name="Tip">The commit the landing made the branch at, which the push is pinned to.</param>
-public sealed record PushStart(string Unit, NodeDeclaration Node, string Repository, string Workspace, string Root, string Branch, string Tip);
+public sealed record PushStart(string Unit, NodeDeclaration Node, string Repository, string Workspace, string Root, string Branch, string Tip) : NodeDoorStart
+{
+    /// <summary>Once per node and commit.</summary>
+    public override string Key => $"{Unit}\n{Node.Id}\n{Tip}";
+}
 
 /// <summary>
 /// The door a run's <c>push</c> is performed through: the person's press of the push act and a workflow's step are one act, so this

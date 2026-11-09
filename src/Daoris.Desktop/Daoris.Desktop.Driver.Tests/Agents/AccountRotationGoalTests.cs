@@ -232,7 +232,7 @@ public sealed class AccountRotationGoalTests : IDisposable
         using var ledger = new StandInLedger();
         using var service = ledger.Client();
         ledger.Publish("q0", "engine");
-        var (id, _) = await service.OpenSessionAsync("q0", "fake", null, "account-1", _home, null);
+        var (id, _) = await HeldOpens.OpenAsync(service, _home, "q0", "fake", "account-1", _home);
         await service.AdvanceAsync(id!, "working");
         ledger.Move("q0", "Done");
         var driver = new Daoris.Driver.Driver(service, Config, roster.Adapters, _home, harnesses: roster);

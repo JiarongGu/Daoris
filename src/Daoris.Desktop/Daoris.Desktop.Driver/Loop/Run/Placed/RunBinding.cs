@@ -11,7 +11,7 @@ internal sealed class RunBinding(IRunWiring wiring) : IRunStage
 {
     public async ValueTask<StartRun?> RunAsync(RunRound run, CancellationToken ct)
     {
-        var runBound = await wiring.BindAtStartAsync(run.Quest, run.Start.Workspace, ct).ConfigureAwait(false);
+        var runBound = await wiring.BindAtStartAsync(run.Quest, run.Start.Workspace, new StartHold(run.State.Starting, run.Start.Root!), ct).ConfigureAwait(false);
         if (runBound.Holds)
         {
             await run.Fresh.LetGoAsync().ConfigureAwait(false);

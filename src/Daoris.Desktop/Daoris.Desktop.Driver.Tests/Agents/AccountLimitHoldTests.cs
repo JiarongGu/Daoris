@@ -69,7 +69,7 @@ public sealed class AccountLimitHoldTests : IDisposable
     private async Task<string> CutOffAsync(ServiceClient service, bool limit = true)
     {
         _ledger.Publish("q1", "engine");
-        var (id, _) = await service.OpenSessionAsync("q1", "acp-stub", null, null, Path.Combine(_home, "engine"), null);
+        var (id, _) = await HeldOpens.OpenAsync(service, _home, "q1", "acp-stub", null, Path.Combine(_home, "engine"));
         await service.AdvanceAsync(id!, "working");
         _ledger.Move("q1", "Taken");
         await service.AdvanceAsync(id!, "failed", note: $"the agent's turn failed with the quest still taken: {Refusal}", limit: limit);
@@ -414,7 +414,7 @@ public sealed class AccountLimitHoldTests : IDisposable
         var cut = await CutOffAsync(service);
         for (var more = 0; more < 2; more++)
         {
-            var (id, _) = await service.OpenSessionAsync("q1", "acp-stub", null, null, Path.Combine(_home, "engine"), null);
+            var (id, _) = await HeldOpens.OpenAsync(service, _home, "q1", "acp-stub", null, Path.Combine(_home, "engine"));
             await service.AdvanceAsync(id!, "failed", note: Refusal, limit: true);
         }
 

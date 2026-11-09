@@ -52,6 +52,6 @@ internal sealed class TidyNode : BuiltInNode, IObserves, IStarts
     {
         if (kept.Doors.Door<ITidyDoor>(Row.Kind) is not { } door || kept.Landed is not { } landed || TidyReading.Tidied(landed)) return;
         var watched = kept.Governed.Watched;
-        door.Start(new TidyStart(kept.Governed.Unit.Id, kept.Node, watched.Repository, watched.Workspace, watched.Root, landed.Branch, landed.Tip));
+        door.Start(new TidyStart(kept.Governed.Unit.Id, kept.Node, watched.Repository, watched.Workspace, watched.Root, landed.Branch, landed.Tip) { Authority = kept.Authority });
     }
 }

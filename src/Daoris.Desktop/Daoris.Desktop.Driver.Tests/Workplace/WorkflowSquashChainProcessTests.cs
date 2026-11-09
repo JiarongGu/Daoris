@@ -167,7 +167,7 @@ public sealed class WorkflowSquashChainProcessTests : IClassFixture<GitSshHost>,
 
         // The push: the landed branch reaches origin through the push act.
         var pushing = new PushDoor(Home);
-        Assert.True(pushing.Start(new PushStart("run:q1", nodes[NodeKinds.Push], "engine", "default", Work, Landed, squashed)));
+        Assert.True(pushing.Start(new PushStart("run:q1", nodes[NodeKinds.Push], "engine", "default", Work, Landed, squashed) { Authority = StepAuthority.OfDoor("q1", "push", 1) }));
         await pushing.IdleAsync();
         Assert.Equal(squashed, await RefAsync(Bare, $"refs/heads/{Landed}"));
 
@@ -203,7 +203,7 @@ public sealed class WorkflowSquashChainProcessTests : IClassFixture<GitSshHost>,
 
         // The tidy: both parts ended once, each branch gone through the journal, each part's commits on a recovery ref.
         var tidying = new TidyDoor(Home);
-        Assert.True(tidying.Start(new TidyStart("run:q1", nodes[NodeKinds.Tidy], "engine", "default", Work, Landed, squashed)));
+        Assert.True(tidying.Start(new TidyStart("run:q1", nodes[NodeKinds.Tidy], "engine", "default", Work, Landed, squashed) { Authority = StepAuthority.OfDoor("q1", "tidy", 1) }));
         await tidying.IdleAsync();
         var tidied = landings.Of("engine", Landed)!.Tidied!;
         Assert.Equal(squashed, tidied.Tip);
@@ -216,7 +216,7 @@ public sealed class WorkflowSquashChainProcessTests : IClassFixture<GitSshHost>,
         Assert.True(TidyReading.Tidied(landings.Of("engine", Landed)));
 
         // Once: a second start at the same tip ends nothing more.
-        Assert.True(tidying.Start(new TidyStart("run:q1", nodes[NodeKinds.Tidy], "engine", "default", Work, Landed, squashed)));
+        Assert.True(tidying.Start(new TidyStart("run:q1", nodes[NodeKinds.Tidy], "engine", "default", Work, Landed, squashed) { Authority = StepAuthority.OfDoor("q1", "tidy", 1) }));
         await tidying.IdleAsync();
         Assert.Equal(tidied, landings.Of("engine", Landed)!.Tidied);
 
@@ -254,7 +254,7 @@ public sealed class WorkflowSquashChainProcessTests : IClassFixture<GitSshHost>,
 
         // A tidy started all the same ends nothing and fails nothing.
         var tidying = new TidyDoor(Home);
-        Assert.True(tidying.Start(new TidyStart("run:q1", nodes[NodeKinds.Tidy], "engine", "default", Work, Landed, squashed)));
+        Assert.True(tidying.Start(new TidyStart("run:q1", nodes[NodeKinds.Tidy], "engine", "default", Work, Landed, squashed) { Authority = StepAuthority.OfDoor("q1", "tidy", 1) }));
         await tidying.IdleAsync();
 
         Assert.Null(landings.Of("engine", Landed)!.Tidied);

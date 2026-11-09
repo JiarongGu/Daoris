@@ -151,7 +151,10 @@ public sealed class TidyRunGitTests : ReviewLandingFixture
         await GitAsync(chain.Root, "update-ref", "-d", $"refs/heads/{chain.Part.Branch}");
 
         await new TidyDoor(_home).PerformAsync(
-            new TidyStart("run:q1", new NodeDeclaration("tidy", NodeKinds.Tidy, 1, NodeReach.Performed), "engine", "default", chain.Root, "feature/q1-fix", chain.Tip), CancellationToken.None);
+            new TidyStart("run:q1", new NodeDeclaration("tidy", NodeKinds.Tidy, 1, NodeReach.Performed), "engine", "default", chain.Root, "feature/q1-fix", chain.Tip)
+            {
+                Authority = StepAuthority.OfDoor("q1", "tidy", 1),
+            }, CancellationToken.None);
 
         var tidied = landings.Of("engine", "feature/q1-fix")!.Tidied!;
         Assert.False(tidied.Partly);

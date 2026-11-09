@@ -117,7 +117,7 @@ public sealed class LateWordServiceProcessTests : IAsyncLifetime
         published.EnsureSuccessStatusCode();
         using var quest = JsonDocument.Parse(await published.Content.ReadAsStringAsync());
         var questId = quest.RootElement.GetProperty("quest").GetProperty("id").GetString()!;
-        var (driven, opened) = await _client!.OpenSessionAsync(questId, "acp-stub", tree: Root);
+        var (driven, opened) = await HeldOpens.OpenAsync(_client!, Home, questId, "acp-stub", null, Root);
         Assert.True(driven is not null, opened);
         foreach (var state in new[] { "starting", "working", "completed" }) await _client.AdvanceAsync(driven!, state);
         var closed = await _http.PostAsJsonAsync($"/api/quests/{questId}/respond", new { action = "decline", reason = "The person closed it." });

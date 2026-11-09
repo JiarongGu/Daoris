@@ -53,7 +53,7 @@ internal interface IRunWiring
     Task<LineCourse> DecideLimitOwnAsync(PriorSession limited, ResumeChoice own, CancellationToken ct);
 
     /// <summary>The run bound to its workflow as it starts, once its tree is open; a bind not made, or a binding that does not read, holds.</summary>
-    Task<WorkflowBind> BindAtStartAsync(QuestView quest, string? workspace, CancellationToken ct);
+    Task<WorkflowBind> BindAtStartAsync(QuestView quest, string? workspace, StartHold hold, CancellationToken ct);
 
     /// <summary>Told a graph run that ended and whose chain came back to a start, so the runtime re-arms for it; null where nothing listens.</summary>
     Action<string>? RunReturned { get; }

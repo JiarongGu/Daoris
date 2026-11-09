@@ -1,55 +1,28 @@
-using System.Collections.Concurrent;
-
 namespace Daoris.Driver;
 
-/// <summary>
-/// Performs a run's <c>push</c> node: the branch the run's <c>land</c> made is pushed to origin by the one push act on the
-/// act journal (<see cref="GitPushActs"/>), under its ref-bound grant, exactly as the person's press pushes it. A push that ends is written on the
-/// landing record, which the node reads against git's remote-tracking ref; one the act refuses fails the node with the act's sentence kept in the
-/// machine log, so a refused push (Write denied, a read-only identity, origin held) is said and never retried on its own.
-/// </summary>
+/// <summary>Performs a run's <c>push</c>: the branch its <c>land</c> made pushed by the one push act (<see cref="GitPushActs"/>) under its ref-bound grant, as the
+/// person's press pushes it. A push that ends is written on the landing record; one the act refuses fails the node with the act's sentence in the machine log,
+/// so a refused push (Write denied, a read-only identity, origin held) is said and never retried on its own.</summary>
 /// <param name="home">The Daoris home whose journal, landing record and node records the push is kept in.</param>
-/// <param name="log">Told what a push came to; the machine log's line.</param>
-/// <param name="runs">Whether a push may begin now: not while an update drains; null always may.</param>
-public sealed class PushDoor(string home, Action<string>? log = null, Func<bool>? runs = null, Func<bool>? holdsLease = null) : IPushDoor
+public sealed class PushDoor(string home, Action<string>? log = null, Func<bool>? runs = null, Func<bool>? holdsLease = null) : IPushDoor, IDoorRuns
 {
     /// <summary>The code a push the act refused fails its node with.</summary>
     public const string Refused = "push-refused";
 
-    private readonly ConcurrentDictionary<string, Task> _running = new(StringComparer.Ordinal);
+    private readonly NodeDoorRuns _runs = new(runs);
+
+    NodeDoorRuns IDoorRuns.Runs => _runs;
 
     /// <inheritdoc/>
-    public bool Start(PushStart start)
+    public bool Start(PushStart start) => _runs.Start(start, ct => PerformAsync(start, ct), error =>
     {
-        if (runs is not null && !runs()) return false;
-        var key = $"{start.Unit}\n{start.Node.Id}\n{start.Tip}";
-        var gate = new TaskCompletionSource();
-        if (!_running.TryAdd(key, gate.Task)) return false;
-        using (ExecutionContext.SuppressFlow())
-        {
-            _ = Task.Run(async () =>
-            {
-                try
-                {
-                    await PerformAsync(start, CancellationToken.None).ConfigureAwait(false);
-                }
-                catch (Exception error) when (error is DriverException or IOException or UnauthorizedAccessException or System.Text.Json.JsonException or Microsoft.Data.Sqlite.SqliteException)
-                {
-                    log?.Invoke($"push  {start.Unit}: its `{start.Node.Id}` could not be tried: {error.Message.TrimEnd().TrimEnd('.')}. It is tried again at a later pass.");
-                }
-                finally
-                {
-                    _running.TryRemove(key, out _);
-                    gate.TrySetResult();
-                }
-            });
-        }
-
+        if (error is not (DriverException or IOException or UnauthorizedAccessException or System.Text.Json.JsonException or Microsoft.Data.Sqlite.SqliteException)) return false;
+        log?.Invoke($"push  {start.Unit}: its `{start.Node.Id}` could not be tried: {error.Message.TrimEnd().TrimEnd('.')}. It is tried again at a later pass.");
         return true;
-    }
+    });
 
     /// <summary>Completes once every push started has ended; a test's wait, and a closing loop's.</summary>
-    public Task IdleAsync() => Task.WhenAll(_running.Values);
+    public Task IdleAsync() => _runs.IdleAsync();
 
     /// <summary>The push act for the landed branch at its tip, and what it came to written: the landing record on success, the node's failure otherwise.</summary>
     internal async Task PerformAsync(PushStart start, CancellationToken ct)
