@@ -528,6 +528,7 @@ public sealed class NodeRuntime(
             Keeping.StartDoors(governed, run);
             Keeping.KeepPullRequests(governed);
             Keeping.End(governed, run, said);
+            await Keeping.ReleaseStepsAsync(governed, run, ct).ConfigureAwait(false);
         }
     }
 

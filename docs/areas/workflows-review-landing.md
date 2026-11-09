@@ -82,7 +82,8 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
 6. A workflow is one file, `<home>/workflows/<id>.json`, on this machine. A version is whole and never edited; a save appends the
    next number. The newest 20 and every version a kept run names are kept. (from D157)
 7. Only graphs are saved. One judge at the one save point refuses steps (`steps-refused`), a `land`
-   with no method (`land-method`) and an `accept` option (`accept`). Only a graph version binds and runs. (from D227, D232)
+   with no method (`land-method`), an `accept` option (`accept`) and a kind marked arriving, declared before the palette offers it
+   (`arriving-kind`, `ArrivingKinds`). Only a graph version binds and runs. (from D227, D232)
 8. A graph holds at most 24 authored nodes and 96 wires, and one landing: one `land`. There is no `handed` kind.
    (from D190, D227, D232)
 9. The opinion, the look and the `review` each come before every landing and are wired straight into it, and no landing may start
@@ -109,9 +110,15 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
     first quest in that repository. (from D157)
 16. One engine: a run bound to a graph version is the node runtime's. A run bound to anything else is held, its problem said.
     (from D190, D227, D232)
-17. A graph run is the unit `run:<run>` of its own node record. `claimed` observes the chain's quests; the gates, the landing's
-    nodes and a plugin's nodes the run's branch at its tip, the branch its tree moved onto where the look learned it, named alike
-    by binding, telling and answers; a `go-ahead` the run's ask. (from D190)
+17. A graph run is the unit `run:<run>` of its own node record. `claimed` observes the chain's quests and carries the run's work
+    on its `work` output; the gates, the landing's nodes and a plugin's nodes the run's branch at its tip, the branch its tree moved
+    onto where the look learned it, named alike by binding, telling and answers; a `go-ahead` the run's ask. A node fed a value on a
+    `data` wire (`work`, `commit`, `ref`, `problem`: `WireValues`) binds to that value (`RunSubject.Input`, `RunInputs`), so a moved
+    input rebinds only what it feeds. A step with a target is bound to the target's tip it read, and its move rebinds the step only
+    while nothing it feeds is active or reached (`WireTargets`). A ref the run's own step moved reads at its `from` while it stands at
+    its `to` (`RunMoves`, on the run's record). A node whose input only a skipped producer feeds is skipped with it, naming it
+    (`WireSkips`). A step's commits stay on `refs/daoris/steps/<run>/<node>/<attempt>` until the run ends with no attempt unsettled
+    (`StepRefs`). (from D190)
 18. The runtime is the record's one writer. A door keeps the person's word (skip, stop, send, ask again, go on, accept, changes, done, approve, reject) on the
     record, and the next pass applies it; a run does not end while a word waits on that pass. A word names its author: the person's names none, a landing supervisor's names its role, its
     decision and the attempt it was released on (`NodeWordBy`), a node taking it as `supervisor` where the person's is `person`. A

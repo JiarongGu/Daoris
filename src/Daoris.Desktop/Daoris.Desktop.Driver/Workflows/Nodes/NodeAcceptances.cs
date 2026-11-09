@@ -51,6 +51,12 @@ public sealed record NodeAcceptance(string Unit, string? SubjectRevision, string
     /// <summary>The unit it observes: its <see cref="Subject"/> where set, else its <see cref="Unit"/>.</summary>
     public string Observes => Subject ?? Unit;
 
+    /// <summary>
+    /// The target's tip a step with a target read when it started (<see cref="WireTargets"/>): a <see cref="WireValues.Ref"/>; null for a
+    /// step with none. In the id only when set, as the subject is.
+    /// </summary>
+    public NodePort? Target { get; init; }
+
     /// <summary>The immutable evidence reference it is reached on; not part of the binding.</summary>
     public NodePort? Evidence { get; init; }
 
@@ -110,6 +116,13 @@ public sealed record NodeAcceptance(string Unit, string? SubjectRevision, string
             Line(Subject);
         }
 
+        if (Target is not null)
+        {
+            Line("target");
+            Line(Target.Ref);
+            Line(Target.Revision);
+        }
+
         return text.ToString();
     }
 }
@@ -128,6 +141,9 @@ public static class NodeLapse
 
     /// <summary>The graph that binds the run changed: on a live graph, the node's place in it.</summary>
     public const string Graph = "graph";
+
+    /// <summary>The target a step read moved, with nothing it feeds active or reached (<see cref="WireTargets"/>).</summary>
+    public const string Target = "target";
 
     /// <summary>The node's declared version changed.</summary>
     public const string Version = "version";

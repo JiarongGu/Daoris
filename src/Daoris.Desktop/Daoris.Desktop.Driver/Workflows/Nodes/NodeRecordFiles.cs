@@ -293,6 +293,7 @@ public sealed class NodeRecordFiles(string home, Func<bool>? holdsLease = null)
             writer.WriteEndArray();
         }
 
+        RunMoveJson.Write(writer, record.Moves);
         writer.WriteEndObject();
     });
 
@@ -358,7 +359,12 @@ public sealed class NodeRecordFiles(string home, Func<bool>? holdsLease = null)
             WritePort(writer, evidence);
         }
 
-        // Written only where set.
+        if (acceptance.Target is { } target)
+        {
+            writer.WritePropertyName("target");
+            WritePort(writer, target);
+        }
+
         if (acceptance.Outcome is { } outcome) writer.WriteString("outcome", outcome);
         WritePorts(writer, "outputs", acceptance.Outputs);
         writer.WriteEndObject();
@@ -376,15 +382,7 @@ public sealed class NodeRecordFiles(string home, Func<bool>? holdsLease = null)
         writer.WriteEndObject();
     }
 
-    private static void WritePort(Utf8JsonWriter writer, NodePort port)
-    {
-        writer.WriteStartObject();
-        writer.WriteString("schema", port.Schema);
-        writer.WriteString("ref", port.Ref);
-        if (port.Revision is { } revision) writer.WriteString("revision", revision);
-        if (port.Acceptance is { } acceptance) writer.WriteString("acceptance", acceptance);
-        writer.WriteEndObject();
-    }
+    private static void WritePort(Utf8JsonWriter writer, NodePort port) => NodePortJson.Write(writer, port);
 
     private static void WriteAttempt(Utf8JsonWriter writer, NodeAttempt attempt)
     {
@@ -567,11 +565,12 @@ public sealed class NodeRecordFiles(string home, Func<bool>? holdsLease = null)
                 }
             }
 
+            if (RunMoveJson.Read(root) is not { } moves) return null;
             return Consistent(unit, statuses, attempts)
                 ? new NodeRecord(unit)
                 {
                     Statuses = statuses.ToImmutableSortedDictionary(StringComparer.Ordinal), Attempts = attempts, Fired = fired, History = history,
-                    Observations = observations, Ended = ended, Pending = pending, Repairs = repairs,
+                    Observations = observations, Ended = ended, Pending = pending, Repairs = repairs, Moves = moves,
                 }
                 : null;
         }
@@ -670,10 +669,13 @@ public sealed class NodeRecordFiles(string home, Func<bool>? holdsLease = null)
 
         NodePort? evidence = null;
         if (element.TryGetProperty("evidence", out var evidenced) && (evidence = ReadPort(evidenced)) is null) return null;
+        NodePort? target = null;
+        if (element.TryGetProperty("target", out var targeted) && (target = ReadPort(targeted)) is null) return null;
         return new NodeAcceptance(unit, Text(element, "revision"), graph, node, version, attempt)
         {
             // Absent where the node observes its own unit.
             Subject = Text(element, "subject"),
+            Target = target,
             Inputs = inputs,
             PrerequisiteReceipts = receipts,
             Evidence = evidence,
@@ -695,10 +697,7 @@ public sealed class NodeRecordFiles(string home, Func<bool>? holdsLease = null)
         return ports;
     }
 
-    private static NodePort? ReadPort(JsonElement element) =>
-        element.ValueKind == JsonValueKind.Object && Text(element, "schema") is { } schema && Text(element, "ref") is { } reference
-            ? new NodePort(schema, reference, Text(element, "revision"), Text(element, "acceptance"))
-            : null;
+    private static NodePort? ReadPort(JsonElement element) => NodePortJson.Read(element);
 
     private static NodeAttempt? ReadAttempt(JsonElement element)
     {

@@ -42,6 +42,9 @@ public static class GraphRefusal
     /// <summary>A <c>data</c> wire into a step that can start on a route of an outcome that does not carry the output it takes.</summary>
     public const string UncarriedOutput = "uncarried-output";
 
+    /// <summary>A node of a kind declared before it is offered, in a graph a person saves (<see cref="ArrivingKinds"/>).</summary>
+    public const string Arriving = "arriving-kind";
+
     /// <summary>
     /// The protected order broken: the opinion and the look come before the landing. The opinion is not asked
     /// to come before the look, whose set-up the review gate holds while an agent reads it.

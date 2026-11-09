@@ -106,11 +106,15 @@ public static class WireEvaluation
         for (var found = true; found;)
         {
             found = false;
-            var current = Receipts(declared, now, run, lapsing.Keys).Values.SelectMany(Named).ToHashSet(StringComparer.Ordinal);
+            var standing = Receipts(declared, now, run, lapsing.Keys);
+            var current = standing.Values.SelectMany(Named).ToHashSet(StringComparer.Ordinal);
             foreach (var node in declared)
             {
-                if (lapsing.ContainsKey(node.Id) || Lapse(node, now[node.Id], run, current, subjects[node.Id]) is not { } lapse) continue;
-                lapsing[node.Id] = lapse;
+                if (lapsing.ContainsKey(node.Id)) continue;
+                var lapse = Lapse(node, now[node.Id], run, current, subjects[node.Id]) ?? WireTargets.Lapse(node, now[node.Id], run, now, wires)
+                    ?? (WireSkips.Lapses(node, now[node.Id], wires, standing) ? (WireWhy.Upstream, null) : null);
+                if (lapse is null) continue;
+                lapsing[node.Id] = lapse.Value;
                 found = true;
             }
         }
@@ -194,6 +198,12 @@ public static class WireEvaluation
             var judged = Eligible(node, status, wires, receipts, run, subjects[node.Id], untaken);
             eligibility.Add(judged);
             if (moved.Contains(node.Id)) continue;
+            if (status.State is NodeStates.Blocked or NodeStates.Ready or NodeStates.Invalidated && WireSkips.Producer(node, wires, receipts) is { } producer)
+            {
+                Make(node, WireSkips.With(producer, run.ScopeOf(node.Id)), WireWhy.Path, producer);
+                continue;
+            }
+
             var to = status.State switch
             {
                 NodeStates.Blocked when judged.Eligible => NodeStates.Ready,

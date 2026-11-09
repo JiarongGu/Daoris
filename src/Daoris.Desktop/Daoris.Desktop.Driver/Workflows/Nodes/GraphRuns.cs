@@ -247,6 +247,7 @@ public enum RunSubject
 
     /// <summary>A go-ahead, a person's task, a wait, a stop and a join: the run itself, with no revision.</summary>
     Run,
+    Input,
 }
 
 /// <summary>
@@ -261,7 +262,7 @@ public static class RunSubjects
     /// build does not know by its place.
     /// </summary>
     public static RunSubject Of(NodeDeclaration node, IReadOnlySet<string> afterHanded) =>
-        NodeKit.Of(node.Kind)?.Subject(node, afterHanded) ?? Placed(node, afterHanded);
+        RunInputs.Port(node) is not null ? RunSubject.Input : NodeKit.Of(node.Kind)?.Subject(node, afterHanded) ?? Placed(node, afterHanded);
 
     /// <summary>The subject of a node placed by the graph: the run's branch at its landing once a path from <c>handed</c> leads to it, else the run's branch.</summary>
     public static RunSubject Placed(NodeDeclaration node, IReadOnlySet<string> afterHanded) =>

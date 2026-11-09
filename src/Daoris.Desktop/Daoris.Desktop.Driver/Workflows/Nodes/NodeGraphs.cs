@@ -47,7 +47,7 @@ public static class NodeGraphs
     /// <param name="onSave">True where the graph is being saved now, rather than read from a file that kept it: a node that
     /// observes the landing, with a way to it that passes no <c>handed</c>, is refused then alone, since a stored version that read before is
     /// never made unreadable by a rule added after it (<c>compatible-builds.md</c>). Current's own graphs are judged on save, as they are drawn.</param>
-    public static IReadOnlyList<WireProblem> Problems(NodeGraph graph, bool saved = true, bool onSave = true)
+    public static IReadOnlyList<WireProblem> Problems(NodeGraph graph, bool saved = true, bool onSave = true, NodeKit? kit = null)
     {
         var problems = new List<WireProblem>();
         void Say(string code, string? wire, string? node, string words) => problems.Add(new(code, wire, node, words));
@@ -143,7 +143,7 @@ public static class NodeGraphs
         // The kinds' rules, which the kit runs: the protected order the gates share, then each kind's own of where its node stands (a push
         // after a branch landing, a monitor on a step that reports a state, a tidy on a monitor's merged route, a hold before the landing, an
         // integrate after its landing, a close at the end), and what a saved graph's landing needs of the kinds that read it.
-        problems.AddRange(NodeKit.Problems(standing, graph, saved && onSave));
+        problems.AddRange(NodeKit.Problems(standing, graph, saved && onSave, kit));
 
         // An event of a plugin's step names the one observed node of an event's plugin step, so two of a plugin's step in one graph are
         // reached by neither (`not-named`, counted only). Said when saved, naming both.

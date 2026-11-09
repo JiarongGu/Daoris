@@ -53,4 +53,8 @@ public abstract class BuiltInNode : INodeKind
     public virtual LandingGuard Guard => LandingGuard.None;
 
     public virtual bool EndsByTheLine => false;
+
+    public virtual IReadOnlyDictionary<string, string> Inputs => NodePorts.None;
+
+    public virtual IReadOnlyDictionary<string, string> Outputs => NodePorts.None;
 }
