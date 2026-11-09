@@ -136,9 +136,9 @@ public sealed class TreeSyncStartsTests : TreeSyncFixture
         Assert.Equal(plainOther, judged[2]);
         Assert.Contains("0 other.txt|work.txt", plain);
         Assert.NotEqual(plain, plainOther);
-        // In the checkout: five answered once, the missing object's two asked each time; in the other repository, which has none of
-        // these commits, each is a missing object's and asked once there.
-        Assert.True(starts.Count == 5 + 2 * 2 + questions.Length, string.Join(" | ", starts));
+        // In the checkout: five answered by the library, the missing object's two git's and asked each time; in the other repository,
+        // which has none of these commits, each is a missing object's and asked of git once there.
+        Assert.True(starts.Count == 2 * 2 + questions.Length, string.Join(" | ", starts));
     }
 
     /// <summary>

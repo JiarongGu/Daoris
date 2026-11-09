@@ -26,7 +26,7 @@ internal static class GitLibraryRefs
         [("", ""), ("refs/", ""), ("refs/tags/", ""), ("refs/heads/", ""), ("refs/remotes/", ""), ("refs/remotes/", "/HEAD")];
 
     /// <summary>The listing in <paramref name="folder"/>; null where git answers it.</summary>
-    internal static Task<string?> ListingAsync(string folder, CancellationToken ct) => GitLibrary.AskAsync(folder, Listing, ct);
+    internal static Task<string?> ListingAsync(string folder, CancellationToken ct) => GitLibrary.AskAsync(folder, GitLibraryQuestion.Refs, Listing, ct);
 
     /// <summary>The listing over one open call's repository; null where any ref's answer is git's to give.</summary>
     internal static string? Listing(GitLibraryCall call)

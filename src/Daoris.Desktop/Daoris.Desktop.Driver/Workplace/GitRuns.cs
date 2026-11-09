@@ -131,9 +131,9 @@ internal static class GitRuns
         // of commits by their ids is asked of its checkout's git once. A call with a variable of its own or a bound (a fetch), one
         // that writes git's input (`update-ref --stdin`) and a test's stand-in answer are always asked as written.
         Func<CancellationToken, Task<(int Code, string Stdout, string Stderr)>> run = token => RunGitAsync(root, arguments, environment, timeout, input, token);
-        return environment is null && timeout is null && input is null && Answered.Value is null
-            ? GitFacts.Asked(root, arguments, run, ct) ?? RefSnapshot.Asked(root, arguments, run, ct) ?? GitReadOnce.Asked(root, arguments, run, ct) ?? run(ct)
-            : run(ct);
+        if (environment is not null || timeout is not null || input is not null || Answered.Value is not null) return run(ct);
+        run = GitLibraryReads.Before(root, arguments, run);
+        return GitFacts.Asked(root, arguments, run, ct) ?? RefSnapshot.Asked(root, arguments, run, ct) ?? GitReadOnce.Asked(root, arguments, run, ct) ?? run(ct);
     }
 
     private static Task<(int Code, string Stdout, string Stderr)> RunGitAsync(

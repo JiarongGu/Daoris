@@ -4,9 +4,10 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// The proof on today's chain: Review's read of a session tree, counted through the one seam, starts <c>12 + I + M</c> git before the
+/// The proof on today's chain: Review's read of a session tree, counted through the one seam, starts <c>7 + M</c> git before the
 /// offer (two more where an untracked file is read, whatever their count), the line's guesses and both <c>--show-toplevel</c>s besides, in
-/// today's order, each with today's arguments (<see cref="GitLaunchTests.Today"/>). Real git, read through <see cref="SessionReviews"/>.
+/// today's order, each with today's arguments (<see cref="GitLaunchTests.Today"/>); its merge-bases and counts (K, B1, B2, I, N1, N2)
+/// are the library's and start none. Real git, read through <see cref="SessionReviews"/>.
 /// </summary>
 /// <remarks>
 /// The fixtures' origin is added after its repository, so it has no <c>refs/remotes/origin/HEAD</c>: origin's <c>HEAD</c> is read
@@ -39,19 +40,19 @@ public sealed class ReviewStartsTests : LandedFixture
         [.. count.Starts.Where(start => start.Budget is GitBudget.Review or GitBudget.Untracked).Select(start => start.Node)];
 
     [Fact]
-    public async Task The_ordinary_review_starts_twelve_and_the_lines_one_guess_before_the_offer()
+    public async Task The_ordinary_review_starts_seven_and_the_lines_one_guess_before_the_offer()
     {
         var (_, trees, tree, began) = await TreeAsync();
 
         var (review, count) = await ReadAsync(trees, tree, began);
 
         Assert.Equal(["own.txt"], review!.Diff!.Files.Select(file => file.Path));
-        // 12: T W S, K P B1 B2 N1 N2, T D, H; and the line's guess, G2 (main), origin's HEAD read unset from its files.
-        Assert.Equal(["T", "W", "S", "K", "P", "G2", "B1", "B2", "N1", "N2", "T", "D", "H"], Nodes(count));
-        Assert.Equal(12 + 1, count.In(GitBudget.Review));
+        // 7: T W S, P, T D, H; and the line's guess, G2 (main), origin's HEAD read unset from its files.
+        Assert.Equal(["T", "W", "S", "P", "G2", "T", "D", "H"], Nodes(count));
+        Assert.Equal(7 + 1, count.In(GitBudget.Review));
         // The work is beyond the line and nothing landed it, so the offer reads after, in a budget of its own.
         Assert.NotNull(review.Offer);
-        Assert.True(count.In(GitBudget.Offer) >= 6, $"the offer started {count.In(GitBudget.Offer)}");
+        Assert.True(count.In(GitBudget.Offer) >= 3, $"the offer started {count.In(GitBudget.Offer)}");
         Assert.Equal(0, count.In(GitBudget.Untracked));
         TodaysArguments(count);
     }
@@ -64,7 +65,7 @@ public sealed class ReviewStartsTests : LandedFixture
 
         var (_, count) = await ReadAsync(trees, tree, began);
 
-        Assert.Equal(["T", "W", "S", "K", "P", "B1", "B2", "N1", "N2", "T", "D", "H"], Nodes(count));
+        Assert.Equal(["T", "W", "S", "P", "T", "D", "H"], Nodes(count));
     }
 
     [Fact]
@@ -76,14 +77,14 @@ public sealed class ReviewStartsTests : LandedFixture
         var (review, count) = await ReadAsync(trees, tree, began);
 
         Assert.Equal(["a.txt", "b.txt", "c.txt"], review!.Uncommitted!.Files.Select(file => file.Path).Order(StringComparer.Ordinal));
-        Assert.Equal(["T", "W", "S", "A", "U", "K", "P", "G2", "B1", "B2", "N1", "N2", "T", "D", "H"], Nodes(count));
+        Assert.Equal(["T", "W", "S", "A", "U", "P", "G2", "T", "D", "H"], Nodes(count));
         Assert.Equal(2, count.In(GitBudget.Untracked));
         TodaysArguments(count);
     }
 
-    /// <summary>A tree that merged the line: the line's base and the record's are two comparable candidates, so I is asked.</summary>
+    /// <summary>A tree that merged the line: the line's base and the record's are two comparable candidates, so I is asked, of the library.</summary>
     [Fact]
-    public async Task Two_comparable_candidates_add_the_independence_read()
+    public async Task Two_comparable_candidates_ask_the_independence_read_of_the_library()
     {
         var (root, trees, tree, began) = await TreeAsync();
         await CommitAsync(root, "line.txt", "theirs\n", "the line moves on");
@@ -92,13 +93,13 @@ public sealed class ReviewStartsTests : LandedFixture
 
         var (_, count) = await ReadAsync(trees, tree, began);
 
-        Assert.Equal(["T", "W", "S", "K", "P", "G2", "B1", "B2", "I", "N1", "N2", "T", "D", "H"], Nodes(count));
+        Assert.Equal(["T", "W", "S", "P", "G2", "T", "D", "H"], Nodes(count));
         TodaysArguments(count);
     }
 
-    /// <summary>A chain step: the record's base and the line's incomparable, so I and M are asked.</summary>
+    /// <summary>A chain step: the record's base and the line's incomparable, so I is asked of the library and M started.</summary>
     [Fact]
-    public async Task A_chain_step_that_merged_the_line_adds_the_independence_read_and_the_merge()
+    public async Task A_chain_step_that_merged_the_line_adds_the_merge()
     {
         var (root, _) = await RepositoryWithOriginAsync("engine");
         var trees = new SessionTrees(Home);
@@ -114,11 +115,11 @@ public sealed class ReviewStartsTests : LandedFixture
         var (review, count) = await ReadAsync(trees, tree, began);
 
         Assert.Equal(["own.txt"], review!.Diff!.Files.Select(file => file.Path));
-        Assert.Equal(["T", "W", "S", "K", "P", "G2", "B1", "B2", "I", "M", "N1", "N2", "T", "D", "H"], Nodes(count));
+        Assert.Equal(["T", "W", "S", "P", "G2", "M", "T", "D", "H"], Nodes(count));
         TodaysArguments(count);
     }
 
-    /// <summary>The record's base displaced by a replay, the branch's grown base in its place: E and the second K are asked.</summary>
+    /// <summary>The record's base displaced by a replay, the branch's grown base in its place: E is started and the second K asked of the library.</summary>
     [Fact]
     public async Task A_displaced_record_asks_the_branch_and_its_grown_base()
     {
@@ -137,7 +138,7 @@ public sealed class ReviewStartsTests : LandedFixture
 
         var (_, count) = await ReadAsync(trees, tree, began);
 
-        Assert.Equal(["T", "W", "S", "K", "E", "K", "P", "G2", "B1", "B2", "I", "N1", "N2", "T", "D", "H"], Nodes(count));
+        Assert.Equal(["T", "W", "S", "E", "P", "G2", "T", "D", "H"], Nodes(count));
         TodaysArguments(count);
     }
 
