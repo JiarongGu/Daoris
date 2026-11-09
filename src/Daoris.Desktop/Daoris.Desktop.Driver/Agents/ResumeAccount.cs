@@ -153,8 +153,19 @@ public static class HeldWords
         HeldBy.Updating => Replaying(repository),
         HeldBy.Tidying => Held(HeldNoteCodes.HeldTidying, $"`{repository}`'s session trees are being cleaned up right now", repository),
         HeldBy.Promoting => Held(HeldNoteCodes.HeldPromoting, $"`{repository}`'s line is being moved to what its integration promoted right now", repository),
+        HeldBy.Reserving => Held(HeldNoteCodes.HeldReserving, $"a step is reserving one of `{repository}`'s trees for its resolver right now", repository),
         _ => Held(HeldNoteCodes.HeldWriting, $"another of Daoris's writes holds `{repository}` right now", repository),
     };
+
+    /// <summary>A step's hand-off reserves the tree the start would run in, until its step lets it go.</summary>
+    /// <param name="tree">The tree's folder name.</param>
+    /// <param name="until">When the step's ask runs out, as the card says it.</param>
+    public static (string Why, Noted Line) Reserved(string repository, string run, string tree, string until)
+    {
+        var why = $"run `{run}`'s `resolve` holds `{tree}` in `{repository}` until {until}, so a session does not start in it until that step "
+                  + "lets it go; it starts at the next look after.";
+        return (why, Whole(HeldNoteCodes.HeldReserved, why, ("run", run), ("tree", tree), ("repository", repository), ("until", until)));
+    }
 
     private static (string Why, Noted Line) Held(NoteCode code, string holder, string repository)
     {

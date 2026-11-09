@@ -75,7 +75,7 @@ internal sealed class WatchNodes
         nodes.Doors = NodeDoors.Wired(new NodeDoorWiring(home, () => HomeLease.HeldHere(home) && !watch.DrainsNow())
         {
             Log = (code, said) => Log?.Info(code, ("said", said)),
-            Landing = () => new LandPerformer(home, new ServiceReviewLandingWorld(service), new SessionTrees(home, landingPlugins),
+            Landing = () => new LandPerformer(home, new ServiceReviewLandingWorld(home, service), new SessionTrees(home, landingPlugins),
                 watch.Events ?? new SessionEvents(DaorisHome.Entry(home, HomeEntry.Sessions)), service.LandingSaid) { Told = hooks.Tell },
             Executor = _executor,
             Integration = watch.IntegrationDoor,
@@ -94,7 +94,7 @@ internal sealed class WatchNodes
             Say = async (session, text, key, token) =>
                 (await WordsHead.FollowAsync(session, at => service.SayAsync(at, text, null, token, from: SaidFrom.Daoris, key: key)).ConfigureAwait(false)).Said,
             Tidy = IntegrationTidies.Through(new SessionTrees(home)),
-            Beside = token => BranchTidying.BesideAsync(service, token),
+            Beside = token => BranchTidying.BesideAsync(home, service, token),
             Told = told => Log?.Info(told.Code, ("repository", told.Repository), ("line", told.Line), ("candidate", told.Candidate), ("request", told.Request),
                 ("outcome", told.Outcome)),
             Said = said => Log?.Info("integration.said", ("said", said)),

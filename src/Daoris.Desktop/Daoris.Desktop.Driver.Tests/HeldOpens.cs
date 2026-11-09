@@ -7,7 +7,7 @@ internal static class HeldOpens
 {
     public static async Task<(string? SessionId, string Message)> OpenAsync(ServiceClient client, string home, string quest, string adapter, string? profile, string tree)
     {
-        var held = StartHold.TryTake(home, tree) ?? throw new InvalidOperationException($"`{tree}`'s repository is held alone.");
+        var held = StartHold.TryTake(home, tree, StartIn.In(tree)) ?? throw new InvalidOperationException($"`{tree}`'s repository is held alone.");
         using (held.Lock)
         {
             return await client.OpenSessionAsync(quest, adapter, null, profile, tree, null, starting: held);

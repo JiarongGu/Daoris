@@ -24,8 +24,9 @@ internal sealed class OpenRecord(IRunWiring wiring) : IRunStage
 
         // A resume tried let go of the starting hold when the park held the tree; the carry-on's open needs it again, until
         // its own record holds the tree.
-        using var restarting = answerKept ? TreeLock.TryStarting(home, start.Root!) : null;
-        if (answerKept && restarting is null) return run.Hold(HeldWords.Holding(quest.To, TreeLock.HolderOf(home, start.Root!)).Why);
+        var restartIn = StartIn.In(state.WorkFolder);
+        using var restarting = answerKept ? TreeLock.TryStarting(home, start.Root!, restartIn) : null;
+        if (answerKept && restarting is null) return run.Hold(TreeLock.StartHeld(home, start.Root!, restartIn, quest.To).Why);
 
         var before = await WorkingTree.HeadAsync(state.WorkFolder, ct).ConfigureAwait(false);
 

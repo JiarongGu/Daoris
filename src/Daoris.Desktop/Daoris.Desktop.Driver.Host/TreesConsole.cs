@@ -153,7 +153,7 @@ internal static class TreesConsole
                     return 1;
                 }
 
-                var inUse = await BranchTidying.HeldTreesAsync(service, CancellationToken.None).ConfigureAwait(false);
+                var inUse = await BranchTidying.HeldTreesAsync(home, service, CancellationToken.None).ConfigureAwait(false);
 
                 if (!ask.Yes)
                 {
@@ -179,7 +179,7 @@ internal static class TreesConsole
                     inUseNow: async token => (await service.ActiveSessionsAsync(token).ConfigureAwait(false))
                         .Select(session => session.Tree).OfType<string>().Where(tree => tree.Length > 0)
                         .ToHashSet(StringComparer.OrdinalIgnoreCase), scope: scope,
-                    beside: token => BranchTidying.BesideAsync(service, token)).ConfigureAwait(false);
+                    beside: token => BranchTidying.BesideAsync(home, service, token)).ConfigureAwait(false);
                 Told(home, PressesTold.TreesSync);
                 // The words are the route's too: what is not fetched, each row, what is left apart, the registry's
                 // following of the lines moved, and the count, 1 where something the proofs cleared did not happen.

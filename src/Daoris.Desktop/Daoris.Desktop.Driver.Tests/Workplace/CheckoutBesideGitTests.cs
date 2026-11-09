@@ -43,7 +43,7 @@ public sealed class CheckoutBesideGitTests : TreeSyncFixture
         var before = await RevAsync(root, "main");
 
         var waited = (await trees.SyncAsync(Repositories(root), Nobody, fetch: true, scope: SyncScope.Everything,
-            beside: token => BranchTidying.BesideAsync(client, token))).Lines.Single();
+            beside: token => BranchTidying.BesideAsync(Home, client, token))).Lines.Single();
 
         Assert.False(waited.Moved);
         Assert.Equal($"{Waits} `main`'s pull waits for it and goes on at the next look once it ends.", waited.Message);
@@ -51,7 +51,7 @@ public sealed class CheckoutBesideGitTests : TreeSyncFixture
 
         await EndedAsync(ledger, client);
         var pulled = (await trees.SyncAsync(Repositories(root), Nobody, scope: SyncScope.Everything,
-            beside: token => BranchTidying.BesideAsync(client, token))).Lines.Single();
+            beside: token => BranchTidying.BesideAsync(Home, client, token))).Lines.Single();
 
         Assert.True(pulled.Moved, pulled.Message);
         Assert.Equal(await RevAsync(root, "origin/main"), await RevAsync(root, "main"));
@@ -67,7 +67,7 @@ public sealed class CheckoutBesideGitTests : TreeSyncFixture
         await client.AdvanceAsync("s1", "completed");
 
         var pulled = (await new SessionTrees(Home).SyncAsync(Repositories(root), Nobody, fetch: true, scope: SyncScope.Everything,
-            beside: token => BranchTidying.BesideAsync(client, token))).Lines.Single();
+            beside: token => BranchTidying.BesideAsync(Home, client, token))).Lines.Single();
 
         Assert.True(pulled.Moved, pulled.Message);
     }
@@ -88,7 +88,7 @@ public sealed class CheckoutBesideGitTests : TreeSyncFixture
             new LandingIntegrate(Gates: LandingIntegrate.NoGates).Resolved(), DateTimeOffset.UtcNow)));
         var asks = new IntegrationSweepAsks(
             new IntegrationReplayAsk("engine", "aurora", root, "main") { Config = DriverConfig.Empty },
-            new IntegrationPromoteAsk("engine", "aurora", root, "main", DriverConfig.Empty, Home) { Beside = token => BranchTidying.BesideAsync(client, token) });
+            new IntegrationPromoteAsk("engine", "aurora", root, "main", DriverConfig.Empty, Home) { Beside = token => BranchTidying.BesideAsync(Home, client, token) });
         var lines = new IntegrationLines(store, TreesHome);
         var before = await RevAsync(root, "main");
 
@@ -124,14 +124,14 @@ public sealed class CheckoutBesideGitTests : TreeSyncFixture
         var (ledger, client) = WorkingIn(root);
         var before = await RevAsync(root, "main");
 
-        var waited = await trees.LandAsync(opened.Path, Subject, beside: token => BranchTidying.BesideAsync(client, token));
+        var waited = await trees.LandAsync(opened.Path, Subject, beside: token => BranchTidying.BesideAsync(Home, client, token));
 
         Assert.False(waited.Landed, waited.Message);
         Assert.Contains($"{Waits} the promotion onto `main` waits for it and goes on at the next look once it ends: nothing was moved.", waited.Message, StringComparison.Ordinal);
         Assert.Equal(before, await RevAsync(root, "main"));
 
         await EndedAsync(ledger, client);
-        var landed = await trees.LandAsync(opened.Path, Subject, beside: token => BranchTidying.BesideAsync(client, token));
+        var landed = await trees.LandAsync(opened.Path, Subject, beside: token => BranchTidying.BesideAsync(Home, client, token));
 
         Assert.True(landed.Landed, landed.Message);
         Assert.Equal("cap the work per frame", (await File.ReadAllTextAsync(Path.Combine(root, "budget.ts"))).Trim());
@@ -147,7 +147,7 @@ public sealed class CheckoutBesideGitTests : TreeSyncFixture
         ledger.Driven("s9", "q9", opened.Path);
         var client = ledger.Client();
 
-        var landed = await trees.LandAsync(opened.Path, Subject, beside: token => BranchTidying.BesideAsync(client, token));
+        var landed = await trees.LandAsync(opened.Path, Subject, beside: token => BranchTidying.BesideAsync(Home, client, token));
 
         Assert.True(landed.Landed, landed.Message);
         Assert.Equal("cap the work per frame", (await File.ReadAllTextAsync(Path.Combine(root, "budget.ts"))).Trim());

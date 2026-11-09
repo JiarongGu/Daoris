@@ -133,7 +133,8 @@ internal sealed class TreesTidyDesk(DriverLoop loop)
         // The verb fetches as it presses (`fetch`); the page's press acts on what its list fetched, and sends none. The lines the press
         // moved are followed by the registry at once where the verb asks (`follow`), as the page's next look would.
         var done = await trees.SyncAsync(repositories, inUse, only, fetch: press.Fetch, cancellationToken,
-            inUseNow: async token => await LinesRoutes.InUseAsync(service, token), scope: scope, beside: token => BranchTidying.BesideAsync(service, token));
+            inUseNow: async token => await LinesRoutes.InUseAsync(_loop.Home, service, token), scope: scope,
+            beside: token => BranchTidying.BesideAsync(_loop.Home, service, token));
         _loop.Nudge();
         var followed = press.Follow
             ? await TreesWords.FollowMovedAsync(service, _loop.Home, () => DriverConfig.Load(_loop.ConfigPath), _loop.Log, cancellationToken)

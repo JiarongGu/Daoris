@@ -106,6 +106,19 @@ public sealed class GitObjectReadsTests : TreeSyncFixture
     }
 
     [Fact]
+    public async Task A_missing_name_longer_than_a_header_is_missing_and_not_a_failure()
+    {
+        var root = await FilesAsync();
+        var name = GitObjectName.At("HEAD", string.Join('/', Enumerable.Repeat(new string('d', 30), 6)));
+
+        Assert.True((await GitObjectReads.InfoAsync(root, name, CancellationToken.None))!.Missing);
+        Assert.True((await GitObjectReads.ReadAsync(root, name, 0, CancellationToken.None))!.Value.Answer.Missing);
+        Assert.Null(await GitObjectReads.TextAsync(root, name, CancellationToken.None));
+        var batch = await GitObjectReads.BatchAsync(root, [name, "HEAD^{tree}"], 64, CancellationToken.None);
+        Assert.True(batch is { Count: 2 } && batch[0].Answer.Missing && batch[1].Answer.Type == "tree");
+    }
+
+    [Fact]
     public async Task A_path_holding_a_line_break_is_read_by_its_id_and_never_written_as_a_question()
     {
         var root = await RepositoryAsync("broken");

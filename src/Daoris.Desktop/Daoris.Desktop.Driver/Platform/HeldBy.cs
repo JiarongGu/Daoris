@@ -20,4 +20,7 @@ public static class HeldBy
 
     /// <summary>A delivery's landing writing its branch's ref.</summary>
     public const string Landing = "landing";
+
+    /// <summary>A step reserving one of its trees for its resolver (<c>TreeReserving</c>).</summary>
+    public const string Reserving = "reserving";
 }

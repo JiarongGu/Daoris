@@ -154,11 +154,11 @@ public sealed class BranchTidying(string home)
         string home, ServiceClient service, Func<CancellationToken, Task<IReadOnlyCollection<string>>>? reviewing, CancellationToken ct,
         DateTimeOffset? now = null) => TidyHolders.InUseAsync(home, service, reviewing, ct, now);
 
-    public static Task<HashSet<string>> HeldTreesAsync(ServiceClient service, CancellationToken ct) => TidyHolders.HeldTreesAsync(service, ct);
+    public static Task<HashSet<string>> HeldTreesAsync(string home, ServiceClient service, CancellationToken ct) => TidyHolders.HeldTreesAsync(home, service, ct);
 
-    public static Task<IReadOnlyList<TreeHolder>> HoldersAsync(ServiceClient service, CancellationToken ct) => TidyHolders.HoldersAsync(service, ct);
+    public static Task<IReadOnlyList<TreeHolder>> HoldersAsync(string home, ServiceClient service, CancellationToken ct) => TidyHolders.HoldersAsync(home, service, ct);
 
-    public static Task<IReadOnlyList<TreeHolder>> BesideAsync(ServiceClient service, CancellationToken ct) => TidyHolders.BesideAsync(service, ct);
+    public static Task<IReadOnlyList<TreeHolder>> BesideAsync(string home, ServiceClient service, CancellationToken ct) => TidyHolders.BesideAsync(home, service, ct);
 
     public static IEnumerable<string> LineTrees(IEnumerable<PriorSession> records, IEnumerable<QuestView> quests) => TidyHolders.LineTrees(records, quests);
 

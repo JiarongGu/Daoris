@@ -354,7 +354,7 @@ public sealed class GitRoutes(DriverContext context)
             return (null, Staged(new ActRun(null, null, $"{repository} has no checkout on this machine: nothing was changed.", Refused: true), repository, null));
         }
 
-        return (new StageContext(repository, root, () => DriverConfig.Load(_loop.ConfigPath).MayChangeCheckout(repository), token => BranchTidying.BesideAsync(service, token)), null);
+        return (new StageContext(repository, root, () => DriverConfig.Load(_loop.ConfigPath).MayChangeCheckout(repository), token => BranchTidying.BesideAsync(_loop.Home, service, token)), null);
     }
 
     /// <summary>An act's answer as the page reads it, with the sentence's notes and no machine path.</summary>

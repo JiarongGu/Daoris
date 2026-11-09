@@ -331,7 +331,7 @@ public sealed class WorkflowRunBindingTests : IDisposable
         var second = new QuestView("q2", "daoris", "web-app", "More docs", "", "Open") { Parent = "q1" };
         var world = new Gated([before, first, second]);
 
-        var held = StartHold.TryTake(_home, Path.Combine(_home, "web-app"))!;
+        var held = StartHold.TryTake(_home, Path.Combine(_home, "web-app"), StartIn.Fresh)!;
         using var holding = held.Lock;
         var starts = new[] { first, second }
             .Select(quest => Task.Run(() => WorkflowRunStart.AtStartAsync(
@@ -379,7 +379,7 @@ public sealed class WorkflowRunBindingTests : IDisposable
         // The chain's first quest names its run without the chain being read, so the gate is never met.
         var quest = new QuestView("q1", "daoris", "web-app", "Docs", "", "Open");
         var world = new Gated([quest]);
-        var held = StartHold.TryTake(_home, Path.Combine(_home, "web-app"))!;
+        var held = StartHold.TryTake(_home, Path.Combine(_home, "web-app"), StartIn.Fresh)!;
         using var holding = held.Lock;
         Task<WorkflowBind> Start() =>
             WorkflowRunStart.AtStartAsync(new WorkflowStarted(quest, "work"), world, _home, config, [], () => At, held, CancellationToken.None);

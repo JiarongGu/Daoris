@@ -157,6 +157,21 @@ public sealed class RepositoryDeclarationsProcessTests : LandedFixture
     }
 
     [Fact]
+    public async Task A_kept_tracked_list_is_not_answered_once_a_replacement_stands()
+    {
+        using var _ = Settled();
+        var root = await RepositoryAsync("tracked-kept");
+        var first = await HeadAsync(root);
+        await CommitAsync(root, $"{Guid.NewGuid():N}.txt", "more\n", "more");
+        var tip = await HeadAsync(root);
+        Assert.Equal(3, (await RepositoryDeclarations.TrackedAsync(root, tip, None)).Count);
+
+        await GitAsync(root, "replace", tip, first);
+
+        Assert.Equal(2, (await RepositoryDeclarations.TrackedAsync(root, tip, None)).Count);
+    }
+
+    [Fact]
     public async Task Two_trees_of_one_repository_share_its_facts_and_two_files_of_one_content_share_a_parse()
     {
         using var _ = Settled();
@@ -207,7 +222,7 @@ public sealed class RepositoryDeclarationsProcessTests : LandedFixture
         await File.WriteAllBytesAsync(Path.Combine(root, DeclarationNames.Manifest), Encoding.UTF8.GetBytes($"a\r{name} after a lone CR\nplain {name}\r\nx\r\n{name} after a CR line\n"));
         await File.WriteAllBytesAsync(Path.Combine(root, DeclarationNames.Gates), [.. Encoding.UTF8.GetBytes($"{name}\n"), 0, .. "binary\n"u8]);
         await File.WriteAllBytesAsync(Path.Combine(root, DeclarationNames.Lanes), Encoding.UTF8.GetBytes($"﻿{name} with a mark\fand a feed\nnone here\n"));
-        await File.WriteAllBytesAsync(Path.Combine(root, "tools.json"), Encoding.UTF8.GetBytes($"{name} in a tool\rcut\n"));
+        await File.WriteAllBytesAsync(Path.Combine(root, "toolbox.json"), Encoding.UTF8.GetBytes($"{name} in a tool\rcut\n"));
         await GitAsync(root, "-c", "core.autocrlf=false", "add", "-A");
         await GitAsync(root, "-c", "user.email=fixture@example.test", "-c", "user.name=Fixture", "commit", "-q", "-m", "the search");
         var commit = await HeadAsync(root);
@@ -243,6 +258,36 @@ public sealed class RepositoryDeclarationsProcessTests : LandedFixture
         var id = (await GitAsync(root, "hash-object", "-w", file)).Trim();
         File.Delete(file);
         return id;
+    }
+
+    [Fact]
+    public async Task A_folder_too_heavy_to_keep_is_still_listed_for_the_file_it_holds()
+    {
+        using var _ = Settled();
+        var root = await RepositoryAsync("heavy");
+        var blob = await BlobAsync(root, "{ \"heavy\": 1 }\n");
+        var rows = string.Concat(Enumerable.Range(0, 20000).Select(at => $"100644 blob {blob}\tfile-{at:D6}.txt\n")) + $"100644 blob {blob}\t{DeclarationNames.Gates}\n";
+        var tree = (await WithInputAsync(root, rows, "mktree")).Trim();
+        var commit = (await WithInputAsync(root, "heavy\n", "commit-tree", tree)).Trim();
+
+        var answer = await RepositoryDeclarations.AtAsync(root, commit, DeclarationNames.Gates, None);
+
+        Assert.Equal(new BlobId(blob), Assert.IsType<DeclarationAnswer.Present>(answer).Content!.Id);
+        Assert.IsType<DeclarationAnswer.Absent>(await RepositoryDeclarations.AtAsync(root, commit, DeclarationNames.Lanes, None));
+    }
+
+    private static async Task<string> WithInputAsync(string root, string input, params string[] arguments)
+    {
+        var info = new ProcessStartInfo { FileName = "git", WorkingDirectory = root, RedirectStandardInput = true, RedirectStandardOutput = true, RedirectStandardError = true };
+        foreach (var argument in new[] { "-c", "user.email=fixture@example.test", "-c", "user.name=Fixture" }.Concat(arguments)) info.ArgumentList.Add(argument);
+        using var process = Process.Start(TestGit.Past(info))!;
+        var stdout = process.StandardOutput.ReadToEndAsync();
+        var stderr = process.StandardError.ReadToEndAsync();
+        await process.StandardInput.WriteAsync(input);
+        process.StandardInput.Close();
+        await process.WaitForExitAsync();
+        Assert.True(process.ExitCode == 0, await stderr);
+        return await stdout;
     }
 
     private static Task<string> HeadAsync(string root) => RevAsync(root, "HEAD");

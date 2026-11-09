@@ -20,14 +20,7 @@ public sealed class DeclarationKernelTests : IDisposable
     public void Dispose()
     {
         VolumeClock.Seam.Value = null;
-        try
-        {
-            Directory.Delete(_scratch, recursive: true);
-        }
-        catch (Exception error) when (error is IOException or UnauthorizedAccessException)
-        {
-            // A link a test made may be held a moment; the run's scratch is cleared with the fixtures.
-        }
+        GitSeed.Discard(_scratch);
     }
 
     [Fact]

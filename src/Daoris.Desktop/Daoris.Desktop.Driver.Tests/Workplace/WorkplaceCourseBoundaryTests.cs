@@ -124,7 +124,7 @@ public sealed class WorkplaceCourseBoundaryTests : IDisposable
         });
         using var client = new ServiceClient("http://ledger.test", null, new HttpClient(handler, disposeHandler: false));
 
-        await new ServiceReviewLandingWorld(client).SayAsync("s1", "Daoris: rebase.", DaorisKeys.Rebase("s1", "0123abc"), default);
+        await new ServiceReviewLandingWorld(Path.Combine(TestHomes.Root, "no-home"), client).SayAsync("s1", "Daoris: rebase.", DaorisKeys.Rebase("s1", "0123abc"), default);
 
         var (path, body) = Assert.Single(bodies);
         Assert.Equal("/api/sessions/s1/say", path);

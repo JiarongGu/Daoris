@@ -271,7 +271,8 @@ every transport refused and git's trace on, the plain run fetching and the told 
 2.39.4, 2.44.1 and 2.45.1 but not 2.44.0 or 2.45.0; a git not so proved is never told it, and its reads there wait outside Daoris
 from their start and are never ended. Every object Daoris reads, a blob's bytes or text, an object's type or its presence, is one
 `cat-file --batch` start asked one question and read by one parser (`GitObjectReads`, `GitObjectAnswer`), its size and type the
-header's, a text decoded as git's text output is (UTF-8, a leading byte-order mark taken as one); a question is one line, so a path
+header's, a text decoded as git's text output is (UTF-8, a leading byte-order mark taken as one); a missing answer repeats the question, so the parser reads to the first line feed and each read's room adds the question's
+bytes; a question is one line, so a path
 holding a line break is asked by the id `rev-parse --verify` resolves for it (`GitObjectName`), and `GitObjectFormsCensusTests` is red
 on any other form (`cat-file blob`, `-e`, `-t`, `show <rev>:<path>`, `ls-tree -l`) or a second parser of the answer, the lazy-fetch
 proof's `-t` alone listed. A blob that answers missing in a repository with a promisor is asked once more as a start allowed to fetch,
@@ -281,7 +282,7 @@ boundary is a root and a graft's parents are the graft's), the rest the format r
 answer rests on, for the folder that asks: the git in use, every configuration file git would read there, present or absent (the
 `ProgramData` file on Windows, the system file, `GIT_CONFIG_SYSTEM`'s or the one the git in use names to `git var GIT_CONFIG_SYSTEM`,
 asked once a git in use; Daoris's global file, the person's and the XDG file; the repository's `config` and the tree's
-`config.worktree`; each file an `include.path` or `includeIf.*.path` names, followed to git's depth, conditional or not), the asking
+`config.worktree`; each file an `include.path` or `includeIf.*.path` names, followed to git's depth, conditional or not, a leading UTF-8 mark skipped as git skips it), the asking
 folder where a `gitdir:` include stands and the tree's `HEAD` where an `onbranch:` one does, the replacements (loose, and the
 `packed-refs` lines under `refs/replace/`), `info/grafts`, `shallow`, `reftable/tables.list` and the variables that change an answer;
 a digest of their contents, each file a `FileStamp` (its length and write time before its bytes and after, the bytes hashed again
@@ -297,13 +298,15 @@ replacement, `GIT_REPLACE_REF_BASE`, or reftable refs) is the library's admissio
 bytes by their `ContentKey`; a file at a commit id from the commit's listing, one `cat-file --batch` start asked the commit, its tree
 and each folder on the way, kept by id only where each object's bytes hash to it (`GitObjectHash`), and its blob kept under its
 `BlobId` only where its bytes hash to it; a blob asked by id answered only by bytes that hash to it, else *unread: replaced*; a
-commit's tracked list kept by commit under the replacement gate's `StatFence`. While `CanBeInForce` holds it asks git by path and
+commit's tracked list kept by commit under the replacement gate's `StatFence` and asked only while no replacement can stand; a listing
+too heavy to keep answers from the walk that read it. While `CanBeInForce` holds it asks git by path and
 admits nothing. A `DeclarationVersion` is compared by `Same` alone, an *unread* the same as none and without text; a kind's parse
 (`IDeclarationKind`, the rule file's `RuleFileKind`, its `FileRule` lists and `RepositoryFilesRead`'s immutable arrays, a default
 array refused) and a view (`IDeclarationView`) are kept by the content keys they are made from, a
 parse naming a problem made again at each ask, and contents, tracked lists and indexes are each bounded alone (`DeclarationBound`:
 16, 24 and 4 MB). `TipOf` reads a full ref from its loose file or the `packed-refs` parse, a symbolic ref followed to five, a
-reftable's from git; `GitTreeReads` is the door for path-bearing reads, its search git's with the declarations excluded and their
+reftable's or an unreadable `packed-refs`' from git (an unreadable one also counts as a replacement that can stand, and puts a line equal to no
+other in the stamp); `GitTreeReads` is the door for path-bearing reads, its search git's with the declarations excluded and their
 lines from the store's bytes; `DeclarationScope` says whether the store or the door asked a start. Every declaration's name is a
 read-only field of `DeclarationNames`, never a constant. Every shipping desktop project builds with the banned-name analyzer over the
 driver's one `BannedSymbols.txt`, which bans a name only once a row has moved its last reader; RS0030 is an error but in the store's
@@ -432,7 +435,7 @@ answers the library gave; a reason new to a repository is written at once, count
 libgit2 runs in the desktop's process, so a fault there ends the window and .NET cannot catch it: every call appends its open before the library
 is entered and its close after it returns (`GitLibraryLeases`, a file for each process in `run/git/library-leases/`, named by its id and start time,
 unbuffered and written through, so its death keeps each line), and the first question of a start in a home reads the files of processes
-that are gone (`GitLibraryFaults`). A repository such a process ended inside, its last open with no close, is journalled in `library.json`
+that are gone (`GitLibraryFaults`), every other question of that start waiting for that reading. A repository such a process ended inside, its last open with no close, is journalled in `library.json`
 as faulted under the library package's version and refused for every question while the package is that one: its reason is `native-fault`,
 which the Git page's listing says, and each refused question is git's. A new package version lifts the refusal; the first fault itself is
 accepted, and a home with none named runs no guard. `GitLibraryFaultProcessTests` kills the owner stand-in's `lease` mode inside a lease
@@ -526,6 +529,8 @@ catalogues (`i18n:check`).
 
 ## Open
 
+- **GITREV3a to m:** the third code review's open defects of the scheduler, the library, the object reads and the stamp, each a row in
+  `TASKS.md` with its evidence.
 - **GITDESIGN1:** git's place (D241, `docs/2026-11-05-git-design.md`): every remote act through the doors, one push, a pull
   request as a place's workflow steps, the path proven in CI against stand-in remotes. G1 to G9 are built; G8-CONVERT1 and G10 remain
   (`TASKS.md`). WORKSETUP1 follows it.

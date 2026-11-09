@@ -301,7 +301,10 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they start wi
     every kind's subjects, `{ kind, subject, repository, generation, acts }`, with the kind's acts the grants cover there, and a subject
     whose supervisor covers none, or whose hold is an agent's, is not listed. An `allow` is listed in three shapes (a held request
     `{ session, request, held }`, a widening `{ proposal }`, a steward's act `{ ask }`) and the verb's `<id>` is the session for the
-    first and the subject's own id for the others; it sends the subject whole as the listing names it. (from D208, D233)
+    first and the subject's own id for the others; it sends the subject whole as the listing names it. A `files` subject
+    `{ repository, start, what, text }` is named by its repository, the verb's `--subject` its text. The verb prints an allow or a
+    held act as an agent's prompt is handed it: Daoris's own words, then the facts its kind's row composed (the listing's `facts`)
+    fenced under the print's own nonce, then the line's course where the facts name a session. (from D208, D233)
 47. It never answers a go-ahead, a sign-in, an access widening, spending, a deletion, a question the repository says to
     ask the person, a preference, an unrecorded or contradicting one, or one that directs it. (from D208)
 48. It is also refused on a question the agent marked the owner's, past the answers-alone bound, and where a person's
@@ -401,8 +404,10 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they start wi
     takes, of a held request, a widening or a steward's act, is kept as an allow decision (`SupervisorAllows`): a file beside the
     session's other decisions (the proposing session's for a widening, the land's session for a land, else the machine's), `went-on`
     at its keeping, and for an allowed `land` `held` until it lands (`went-on`), is overruled, or the steward withdraws it
-    (`stale`, `withdrawn`); the start's sweep closes a held one `stale`. It reads back as `SESSION_SUPERVISOR`'s `allows`, and the
-    line's card says *The supervisor allowed this once* (or refused it) for a held request, with no *Overrule*
+    (`stale`, `withdrawn`); the start's sweep closes a held one `stale`. A leave of any of the three, or of a `files` ask, is kept
+    the same way as a decision `left` at once (`do: leave`, with its bound and reasons; a `files` one, which names no session, in the
+    machine's folder), and the subject stays the person's. It reads back as `SESSION_SUPERVISOR`'s `allows`, and the
+    line's card says *The supervisor allowed this once* (or refused it, or left it to you) for a held request, with no *Overrule*
     (`SupervisorAllowCard`). (from D201, D209, D233)
 52. What the owner does to a repository, a quest or a session makes it the owner's for the run (`owner-set`). Every
     release the steward writes is kept in `roleReleases`, `by: steward`. (from D209)
