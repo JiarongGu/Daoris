@@ -93,7 +93,7 @@ internal sealed class TreeFilesStage(string home, string root, string tree, stri
         _said.AddRange(shared.Said);
         var based = TreeBaseWords.Say(home, tree, deps.Rules, deps.Floor);
         _said.AddRange(based.Said);
-        var copied = await TreeLocalInputs.CopyAsync(root, tree, ct).ConfigureAwait(false);
+        var copied = await TreeLocalInputs.CopyAsync(root, tree, path => TreeCopyPermit.Judge(home, repository, _rules!, path), ct).ConfigureAwait(false);
         if (copied.Copied.Count > 0) RecordCopies(copied.Copied);
         if (copied.Line() is { } line) _said.Add(line);
         foreach (var each in copied.Declined) _said.Add(each.Line());

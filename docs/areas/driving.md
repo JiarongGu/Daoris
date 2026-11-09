@@ -272,7 +272,8 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they start wi
     that it cannot. The page sets the
     person's rules and `permissions` through `FILES_SET`, `FILES_REMOVE` and `FILES_PERMIT` and reads the found layer again
     through `FILES_READ`, each the window's alone and refused on the pipe: an `ask` is allowed in one press, written as the
-    person's `allow` with its maker, and the allow is taken back by the same route. An `ask` that holds a start's `run` is kept in
+    person's `allow` with its maker, and the allow is taken back by the same route. An `ask` that holds a start's `run`, a machine-local input's
+    `copy` (`TreeCopyPermit`, said `started.local-held`; a `deny` says `started.local-denied`) or a `share` is kept in
     `data/files-asks.json` (`FileAsks`) under the start that first met it, for the repository's supervisor of the `files` kind
     (roles area rule 7): its allow is written by `FileAllows` into the repository's own layer with `by` the role and the
     decision, and the start's sweep records the decision made where that allow stands, else the ask waits again; a
