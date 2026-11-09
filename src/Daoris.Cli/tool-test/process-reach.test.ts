@@ -167,6 +167,9 @@ test('a half runs by reach with settings of its own: its filter ANDed with each 
   assert.equal(reach.reachSettings(xml, []), xml, 'nothing kept is the half as it is');
   assert.equal(reach.settingsFilter(reach.reachSettings(xml, ['N.A(b)'])), '(Category=Process&Parallel=Git)&FullyQualifiedName!~N.A\\(b\\).', "VSTest's special characters escaped");
   assert.throws(() => reach.reachSettings('<RunSettings/>', ['N.A']), /no TestCaseFilter/);
+  const commented = `<RunSettings><!-- an example: <TestCaseFilter>Category=Old</TestCaseFilter> -->${xml.slice(xml.indexOf('<RunConfiguration>'))}`;
+  assert.equal(reach.settingsFilter(reach.reachSettings(commented, ['N.A'])), '(Category=Process&Parallel=Git)&FullyQualifiedName!~N.A.', 'the element the run reads is narrowed, not one a comment shows');
+  assert.match(reach.reachSettings(commented, ['N.A']), /<!-- an example: <TestCaseFilter>Category=Old<\/TestCaseFilter> -->/, 'the comment is left as it was');
 });
 
 test("a half is the project and settings its gate's command names, and a command can be told other settings", () => {
