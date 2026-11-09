@@ -41,10 +41,19 @@ internal sealed class PipeHeavyRuns(InstancePipe pipe)
             return IpcJson.Serialize(pipe.RefuseStopping(request));
         }
 
+        // An id a run of this connection holds is another's: overwriting its entry would leave that run out of reach of its stop and
+        // of the connection's end, and its own ending would remove the new run's entry.
+        bool taken;
         lock (_gate)
         {
             if (!_runs.TryGetValue(connection, out var mine)) _runs[connection] = mine = new(StringComparer.Ordinal);
-            mine[request.Id] = stop;
+            taken = !mine.TryAdd(request.Id, stop);
+        }
+
+        if (taken)
+        {
+            stop.Dispose();
+            return IpcJson.Serialize(pipe.RefuseTaken(request));
         }
 
         try
