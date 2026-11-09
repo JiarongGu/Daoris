@@ -111,18 +111,18 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they start wi
 | `QuestHandbacks` | `Service/Quests/QuestHandbacks.cs` | A session's closing note on its quest |
 | `SessionStore`, `SessionLedger`, `Lines` | `Service/Sessions/Sessions.cs`, `Service/Sessions/SessionLedger.cs`, `Service/Sessions/Lines.cs` | Session records, the ledger's opens, moves and says, the tree lock, a line's head; the store and the ledger are roots that wire, each door one line to a part |
 | The session records | `Service/Sessions/Records/` | `Session`, `SessionState`, `SessionKind`, `SaidWord`, `SaidFrom`, `SaidLevel`, and the ledger's outcomes and refusals (`SessionOpenOutcome`, `SessionAdvanceOutcome`, `SessionSayOutcome`, `SessionTakeOutcome`, `SessionAttemptOutcome`, `AskWordOutcome`, `SessionDeleteOutcome` and their refusals), one file each |
-| The store's parts | `Service/Sessions/` | `SessionSchema` (the table, its triggers and upgrades), `SessionColumnNames` (a table's `adapter` and `harness_version` renamed `door` and `door_version` as it opens), `SessionIndexes` (the indexes each record a list answers is read by: who continues it, a quest's last run, the conversation that took a quest, a mirror's id), `SessionRowCodec` (a row and a word read and written), `SessionReads` (finds, the tree and workspace locks, lists, the sync's reads, the review), `SessionWrites` (create, move, mirror, take, the machine-local keeps, delete, the cursors) and `SessionSaidStore` (words kept, taken, moved, marked and settled) |
-| The ledger's parts | `Service/Sessions/` | `SessionOpening` (a quest's, a chat's, Ask Daoris's and an intake's open, and the keyed open that moves words), `SessionAdvances` (the lifecycle table `Allowed`, a move, the go-on out of an ended state and the park after a helper), `SessionHolders` (who holds a tree, the busy sentence), `SessionSays` (the say door and the supervisor's answer), `SessionSaidMoves` (take, mark, take back, move), `SessionAskWords`, `SessionKeeps` (the machine-local facts of a run), `SessionDeletes`, with `SaidAnswers` and `SaidKeeping` the sentences and the one keep of a person's word they share, and `SessionGoAheads` and `SessionReviews` beside them |
+| The store's parts | `Service/Sessions/` | `SessionSchema` (the table, its triggers and upgrades, each alter with its backfill and the rebuild one transaction), `SessionColumnNames` (a table's `adapter` and `harness_version` renamed `door` and `door_version` as it opens), `SessionIndexes` (the indexes each record a list answers is read by: who continues it, a quest's last run, the conversation that took a quest, a mirror's id), `SessionRowCodec` (a row and a word read and written), `SessionReads` (finds, the tree and workspace locks, lists, the sync's reads, the review), `SessionWrites` (create, move, mirror, take, the machine-local keeps, delete, the cursors) and `SessionSaidStore` (words kept, taken, moved, marked and settled) |
+| The ledger's parts | `Service/Sessions/` | `SessionOpening` (a quest's, a chat's, Ask Daoris's and an intake's open, and the keyed open that moves words), `SessionAdvances` (the lifecycle table `Allowed`, a move, the go-on out of an ended state and the park after a helper), `SessionHolders` (who holds a tree, the busy sentence), `SessionSays` (the say door and the supervisor's answer), `SessionSaidMoves` (take, mark, take back, move), `SessionAskWords`, `SessionKeeps` (the machine-local facts of a run), `SessionDeletes` (a record goes only where it served no quest, no ask or quest names it, no later record of its line continues it, and no remote holds it), with `SaidAnswers` and `SaidKeeping` the sentences and the one keep of a person's word they share, and `SessionGoAheads` and `SessionReviews` beside them |
 | `AskStore`, `AskDesk` | `Service/Asks/AskStore.cs`, `Service/Asks/AskDesk.cs` | Ask records, the person's words on them, publishing and deleting; the desk is a root that wires, each door one line to a part |
 | The ask records | `Service/Asks/Records/` | `Ask`, `AskState`, `AskWord` and `AskWordKind`, `AskRequest`, `AskDraft`, `AskOutcome` and `AskRefusal`, the review and kind choices and proposals, one file each |
-| The desk's parts | `Service/Asks/` | `AskStandings` (an ask read against its quests), `AskPublishing` (ask, publish, close: a close is final, a second is refused and the first reason stands), `AskQuests` (the quest an ask becomes), `AskChoices` (review, kind and workflow), `AskGoAheadAnswers` and `AskDeletes` |
+| The desk's parts | `Service/Asks/` | `AskStandings` (an ask read against its quests), `AskPublishing` (ask, publish, close: a new ask is kept by insert only, so an identical ask finishing later leaves the first's row as it stands; a close is final, a second is refused and the first reason stands), `AskQuests` (the quest an ask becomes), `AskChoices` (review, kind and workflow), `AskGoAheadAnswers` and `AskDeletes` |
 
 ## Its rules
 
 ### Quests and the take
 
-1. A quest is `Open`, `Taken`, `Done` or `Declined`. It goes to a registered repository in the same workspace, and its
-   body says why with evidence, never the change. (from D32, D34, D70)
+1. A quest is `Open`, `Taken`, `Done` or `Declined`. It goes to a registered repository in the same workspace, its
+   body says why with evidence, never the change, and it is kept under its receiver's registered spelling. (from D32, D34, D70)
 2. The driver never writes quest state. The session it starts takes, finishes or declines its own quest through its own
    connector, so driven and outside work look the same at the quest layer. (from D46)
 3. A take on a quest shared through a remote claims by push before work starts. It is held, lost (the session stands
@@ -131,7 +131,8 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they start wi
    and the record says why. (from D68, D69)
 5. Two machines' takes on one quest end as a conflict. The loser's work is kept; the person drops it or brings it
    forward as a fresh take that its kept session goes on from. (from D178)
-6. A quest nobody has started on may be deleted, and the delete travels as an operation. (from D95)
+6. A quest nobody has started on may be deleted: what stands on it (a session started for it, a quest waiting on it) is
+   judged again inside the delete's own write, and the delete travels as an operation. (from D95)
 7. A session's handback is the note it gave at done, ready or decline. It is written once, in the same write as the
    move, kept with the session that wrote it, and read whole. (from D219)
 

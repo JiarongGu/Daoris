@@ -142,7 +142,7 @@ public sealed class SessionDeleteTests : IAsyncLifetime
     {
         var intake = await _sessions.CreateAsync(null, "ask #a1b2c3", "stub", Now, kind: SessionKind.Chat, ask: "a1b2c3");
         await _sessions.SetStateAsync(intake.Id, SessionState.Completed, null, null, null, Now.AddMinutes(1));
-        await _asks.SaveAsync(new Ask("a1b2c3", Workspaces.Default, "Please do it.", AskState.Published, "intake", Now, Now)
+        await _asks.InsertAsync(new Ask("a1b2c3", Workspaces.Default, "Please do it.", AskState.Published, "intake", Now, Now)
         {
             Intake = intake.Id,
         });
@@ -195,6 +195,26 @@ public sealed class SessionDeleteTests : IAsyncLifetime
 
         Assert.Equal(SessionDeleteRefusal.NotFound, outcome.Refusal);
         Assert.Contains("`nope1234`", outcome.Message);
+    }
+
+    /// <summary>A record another continues is a link of its line: only the line's last record may go.</summary>
+    [Fact]
+    public async Task A_middle_record_of_a_line_is_refused()
+    {
+        var first = await EndedChat();
+        var middle = await _sessions.CreateAsync(null, "Owner", "stub", Now, kind: SessionKind.Chat, from: first.Id);
+        await _sessions.SetStateAsync(middle.Id, SessionState.Completed, null, null, null, Now.AddMinutes(6));
+        var last = await _sessions.CreateAsync(null, "Owner", "stub", Now, kind: SessionKind.Chat, from: middle.Id);
+        await _sessions.SetStateAsync(last.Id, SessionState.Completed, null, null, null, Now.AddMinutes(7));
+
+        var outcome = await _ledger.DeleteAsync(middle.Id);
+
+        Assert.Equal(SessionDeleteRefusal.Named, outcome.Refusal);
+        Assert.Contains("continued", outcome.Message);
+        Assert.NotNull(await _sessions.FindAsync(middle.Id));
+        Assert.Equal(SessionDeleteRefusal.Named, (await _ledger.JudgeDeleteAsync(first.Id)).Refusal);
+        Assert.Equal([last.Id], await _ledger.DeletableAsync(await _sessions.ListAsync(includeClosed: true)));
+        Assert.Equal(SessionDeleteRefusal.None, (await _ledger.DeleteAsync(last.Id)).Refusal);
     }
 
     /// <summary>The judgement alone deletes nothing: the driver asks it for a refusal's words before its own half.</summary>
