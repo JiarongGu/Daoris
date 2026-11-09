@@ -167,6 +167,9 @@ test('a half runs by reach with settings of its own: its filter ANDed with each 
   assert.equal(reach.reachSettings(xml, []), xml, 'nothing kept is the half as it is');
   assert.equal(reach.settingsFilter(reach.reachSettings(xml, ['N.A(b)'])), '(Category=Process&Parallel=Git)&FullyQualifiedName!~N.A\\(b\\).', "VSTest's special characters escaped");
   assert.throws(() => reach.reachSettings('<RunSettings/>', ['N.A']), /no TestCaseFilter/);
+  const commented = `<RunSettings><!-- an example: <TestCaseFilter>Category=Old</TestCaseFilter> -->${xml.slice(xml.indexOf('<RunConfiguration>'))}`;
+  assert.equal(reach.settingsFilter(reach.reachSettings(commented, ['N.A'])), '(Category=Process&Parallel=Git)&FullyQualifiedName!~N.A.', 'the element the run reads is narrowed, not one a comment shows');
+  assert.match(reach.reachSettings(commented, ['N.A']), /<!-- an example: <TestCaseFilter>Category=Old<\/TestCaseFilter> -->/, 'the comment is left as it was');
 });
 
 test("a half is the project and settings its gate's command names, and a command can be told other settings", () => {
@@ -320,6 +323,16 @@ test('one module changed reaches its classes and the planted class with no reach
   assert.deepEqual(reached.classes, [], 'a path that places nothing reaches nothing, not even the class with no reach');
   reached = reach.classesReached(['src/Desk/Desk.Tests/BetaFixture.cs', 'src/Desk/Desk.Tests/fixtures/alpha-rows.json'], census);
   assert.deepEqual(short(reached.classes), ['AlphaTests', 'BetaTests'], "a test project's file reaches the classes that read it, read as every class is");
+});
+
+test("the census read from a commit finds the service half's classes as the working tree's does", () => {
+  const gate = (JSON.parse(readFileSync(join(repoRoot, 'daoris.gates.json'), 'utf8')) as { gates: { name: string; run: string }[] }).gates
+    .find((each) => each.name === 'service-process')!;
+  const half = reach.halfOf(gate.run)!;
+  const names = (source: { files: string[]; read: (file: string) => string }) => reach.censusOf(half, source.files, source.read).classes.map((each) => each.full);
+  const now = names(reach.repository(repoRoot));
+  assert.ok(now.length > 0, 'the working tree reads the half');
+  assert.deepEqual(names(reach.repository(repoRoot, 'HEAD')), now, "a commit's census reads every source the half's project does");
 });
 
 test("this repository's census: every class carrying the Process trait is read into one half, each declared half reads, and no hand-written reach lacks its reason", () => {

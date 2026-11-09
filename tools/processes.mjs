@@ -166,13 +166,10 @@ export function parseProcessRows(text, form) {
   });
 }
 
-/**
- * Every process on the machine as `{ pid, ppid, command }`, read and changing nothing. Null where the list
- * could not be read, so a failed read is never taken for an empty machine.
- */
 /** The longest a read of the machine's process list may take: a loaded machine's CIM query took tens of seconds, and a census waits for it. */
 const LIST_TIMEOUT_MS = 90_000;
 
+/** Every process on the machine as `{ pid, ppid, command }`, read and changing nothing: null where the list could not be read, never an empty machine. */
 export function processList({ platform = process.platform, run = spawnSync } = {}) {
   if (platform === 'win32') {
     const asked = run('powershell', ['-NoProfile', '-Command',
@@ -206,40 +203,12 @@ export function endOrphans(parent, since) {
 }
 
 /**
- * End what a killed run's shells left running: every process created at or after `since` (epoch milliseconds)
- * whose command line names `folder` and whose parent no longer runs, each with its tree. Answers the pids it ended.
- *
- * 🔴 {@link endOrphans} lists by the dead run's pid, but a killed node's non-detached children end with it on Windows: a
- * step's `cmd.exe` goes, and its child runs on under a dead parent id no listing by the run's pid finds. The gate tree's
- * folder in the command line is what such a process still carries. Only processes whose parent is gone are taken, so a
- * live run's own tree (its parent alive) is never ended, and `since` keeps an older process out.
- */
-export function endStranded(folder, since) {
-  if (process.platform !== 'win32' || typeof folder !== 'string' || folder.length === 0) return [];
-  const forms = [folder.replaceAll('/', '\\'), folder.replaceAll('\\', '/')]
-    .map((form) => `'${form.replaceAll("'", "''").toLowerCase()}'`).join(',');
-  const stranded = powershell(
-    '$all = @(Get-CimInstance Win32_Process -ErrorAction SilentlyContinue); '
-    + '$ids = @{}; foreach ($p in $all) { $ids[[int]$p.ProcessId] = $true }; '
-    + `$forms = @(${forms}); `
-    + `$from = [DateTimeOffset]::FromUnixTimeMilliseconds(${Math.floor(since) - 1000}).LocalDateTime; `
-    + 'foreach ($p in $all) { '
-    + 'if ($p.ProcessId -eq $PID -or -not $p.CommandLine -or $p.CreationDate -lt $from -or $ids.ContainsKey([int]$p.ParentProcessId)) { continue }; '
-    + '$cl = $p.CommandLine.ToLower(); '
-    + 'foreach ($form in $forms) { if ($cl.Contains($form)) { $p.ProcessId; break } } }')
-    .split('\n').map((line) => Number(line.trim())).filter((pid) => Number.isInteger(pid) && pid > 0);
-  for (const pid of stranded) spawnSync('taskkill', ['/F', '/T', '/PID', String(pid)], { stdio: 'ignore', windowsHide: true });
-  return stranded;
-}
-
-/**
- * The roots of what a run's tests left running, from `processes` (`{ pid, ppid, created, command }`, `created` in
- * epoch milliseconds): each process created at or after `since` whose parent is in no row (nothing holds it) and which, or something
- * under it, has `folder` in its command line (as a folder: the name ends there or goes on with a separator). The run's own end reaches
- * its steps by their parent ids, so what a test killed mid-way had already orphaned (a killed child, a detached runner, the gate it
- * started) is held by no tree; but it is found by the folder it names, or by what it started naming it, since a gate run as
- * `node qgate.mjs check` names nothing. `except` lists the pids the run is made of (the runner's own), and a root that is one of them or
- * holds one is left out. A root older than `since` is never taken, so nothing the owner started before the run is.
+ * The roots of what a run's tests left running, from `processes` (`{ pid, ppid, created, command }`, `created` in epoch
+ * milliseconds): each process created at or after `since` whose parent is in no row (nothing holds it) and which, or something
+ * under it, has `folder` in its command line (as a folder: the name ends there or goes on with a separator). The run's own end
+ * reaches its steps by their parent ids, so what a test killed mid-way had already orphaned is held by no tree; it is found by
+ * the folder it names, or by what it started naming it, since a gate run as `node qgate.mjs check` names nothing. `except` lists
+ * the pids the run is made of, and a root that is one of them or holds one is left out. A root older than `since` is never taken.
  */
 export function strandedRoots(processes, { folder, since, except = [] }) {
   const flat = (text) => String(text ?? '').replaceAll('\\', '/').toLowerCase();
@@ -291,8 +260,7 @@ export function parseCreatedRows(text) {
  * it names, and what a killed test had started runs on under a dead parent id, in no tree the run holds. Elsewhere the run's end walks
  * `ps` for what is under each step (`endTree`), and this ends nothing.
  *
- * Nothing outside the run's own tree is touched: a root must be created since the run began, name the scope tree's folder itself or
- * hold a process that does, and neither be the runner nor hold it (`except`).
+ * A root must be created since the run began, name the folder or hold a process that does, and neither be the runner nor hold it (`except`).
  */
 export function endStrandedUnder(folder, since, { except = [], platform = process.platform, run = powershell, end = (pid) => spawnSync('taskkill', ['/F', '/T', '/PID', String(pid)], { stdio: 'ignore', windowsHide: true }) } = {}) {
   if (platform !== 'win32' || typeof folder !== 'string' || folder.length === 0) return [];

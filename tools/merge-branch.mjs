@@ -423,7 +423,7 @@ import { removeWorktree } from './worktree-remove.mjs';
 import { indexLockNote,mentionsIndexLock, readIndexLock } from './index-lock.mjs';
 import { admissionLines, createAdmission, lookAt } from './machine-admission.mjs';
 import { censusOf, classesReached, halfOf, reachSettings, repository, withSettings } from './process-reach.mjs';
-import { endOrphans, endStranded, endStrandedUnder, processList } from './processes.mjs';
+import { endOrphans, endStrandedUnder, processList } from './processes.mjs';
 import { gateSignature, readTrx, signatureKey, signatureOf } from './test-failures.mjs';
 import {
   IN_THE_LINE, MERGE_QUEUE, MERGE_QUEUE_LOG, RUNNER_ACK_MS, SCOPE_TREE, appendScopeRun, appendSighting, candidateOutcome, censusLine, censusTrees, confirmReadings, confirmStep, dropQueued, enqueue,
@@ -443,7 +443,7 @@ import {
 import { REACH } from './merge-branch/reach-table.mjs';
 import { mergeByBase, mergeByRows, rowsRefused } from './merge-branch/backlog-merge.mjs';
 import { holdBacklog } from './merge-branch/backlog-held.mjs';
-import { holdingLock, putComplete } from './merge-branch/locks.mjs';
+import { holdingLock, lockText, putComplete, removeWhileSame, takeLock } from './merge-branch/locks.mjs';
 import { diffPaths, isInside, zPaths } from './merge-branch/paths.mjs';
 import { stepTrees } from './merge-branch/step-trees.mjs';
 import { censusCovers, contractsGates, coverNote, pageScripts, settleCovered, startContractsStep } from './merge-branch/ci-steps.mjs';
@@ -4021,29 +4021,30 @@ function holderSaid(held) {
 }
 
 /**
- * The lock taken for `commit`, put in place complete where none is (`putComplete`), or a refusal naming the run that holds it: one full
- * set beside the merges at a time, since two would load the machine twice over and share one gate tree. A lock whose
- * process no longer runs (its window closed on it) is taken over, and returned as `stale` for the caller to say, with
- * `ended`: the pids `end` ended, the dead pid's direct children started since the lock's `at` with their trees, and the
- * processes since then naming the gate tree's folder whose parent no longer runs (Windows only). `holder` names the run
- * (`full` or `ci`); a refusal is `busy`, which the CI watch reads as a tree to wait for, never a failure.
+ * The lock taken for `commit`, put in place complete where none is (`putComplete`), or a refusal naming the run that holds it: one
+ * full set beside the merges at a time, since two would load the machine twice over and share one gate tree. A lock whose process
+ * no longer runs is taken over, and returned as `stale` for the caller to say, with `ended`: the pids `end` ended (the dead pid's
+ * direct children started since the lock's `at`, with their trees) and those `endStrays` ended (Windows only: since then, naming the
+ * gate tree's folder, their parent gone). `holder` names the run; a refusal is `busy`, which the CI watch reads
+ * as a tree to wait for, never a failure.
  */
-export function takeGateLock(home, { commit, holder = 'full', alive = pidAlive, now = nowIso, end = endOrphans, endStrays = endStranded } = {}) {
+export function takeGateLock(home, { commit, holder = 'full', alive = pidAlive, now = nowIso, end = endOrphans, endStrays = endStrandedUnder } = {}) {
   const file = join(home, GATE_TREE_LOCK);
   mkdirSync(dirname(file), { recursive: true });
   let stale = null;
   for (let attempt = 0; attempt < 3; attempt += 1) {
     if (!putComplete(file, `${JSON.stringify({ pid: process.pid, commit, at: now(), holder })}\n`)) {
+      const seen = lockText(file);
       const held = readGateLock(home, alive);
       if (held?.running) throw Object.assign(new Refusal(holderSaid(held)), { busy: true });
       if (held) {
-        // A run killed outright left its steps' tree running: end what its pid started since the lock's `at`, and the orphans found by the gate tree's folder.
+        // A killed run's steps run on: end what its pid started since the lock's `at`, and the strays found by the gate tree's folder.
         const since = Date.parse(held.at);
         const ended = Number.isNaN(since) ? [] : end(held.pid, since);
         if (!Number.isNaN(since)) ended.push(...endStrays(join(home, GATE_TREE), since).filter((pid) => !ended.includes(pid)));
         stale = { pid: held.pid, commit: held.commit, at: held.at, ended };
       }
-      rmSync(file, { force: true });
+      removeWhileSame(file, seen);
       continue;
     }
     return { stale };
@@ -5868,23 +5869,22 @@ function readCiWatch(home, alive = pidAlive) {
 /**
  * `--ci --watch`: the watch the parent leaves running. One per main checkout: a second says the first runs and ends, 0,
  * so starting it again is harmless; one a dead process left is taken over. It gates main's tip as it moves (`watchCi`), each run
- * `gateCi`'s, and never touches the main checkout's tree or a process it did not start. It ends on `--ci --stop` or a Ctrl+C, every finished verdict kept.
+ * `gateCi`'s, and never touches the main checkout's tree or a process it did not start. It ends on `--ci --stop` or a Ctrl+C.
  */
 async function ciWatchVerb(root, options) {
   const home = verdictsHome(root);
   const file = join(home, CI_WATCH);
   const stopFile = join(home, CI_STOP);
   mkdirSync(dirname(file), { recursive: true });
-  let taken = false;
-  for (let attempt = 0; !taken && attempt < 3; attempt += 1) {
-    taken = putComplete(file, `${JSON.stringify({ pid: process.pid, at: nowIso() })}\n`);
-    if (taken) break;
-    const held = readCiWatch(home);
-    if (held?.running) {
-      console.log(`merge-branch: a CI watch runs here already (pid ${held.pid}, since ${when(held.at)}): this one has nothing to do`);
-      return 0;
-    }
-    rmSync(file, { force: true });
+  const mine = `${JSON.stringify({ pid: process.pid, at: nowIso() })}
+`;
+  const { taken, held } = takeLock(file, mine, (text) => {
+    try { return pidAlive(Number(JSON.parse(text)?.pid)); } catch { return false; }
+  });
+  if (held !== null) {
+    const { pid, at } = JSON.parse(held);
+    console.log(`merge-branch: a CI watch runs here already (pid ${pid}, since ${when(String(at ?? ''))}): this one has nothing to do`);
+    return 0;
   }
   if (!taken) throw new Refusal(`${CI_WATCH} could not be taken: another watch took it at the same moment`);
   rmSync(stopFile, { force: true });

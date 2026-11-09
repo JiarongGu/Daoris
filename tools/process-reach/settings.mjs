@@ -76,7 +76,8 @@ export function reachSettings(xml, kept) {
   if (!kept.length) return xml;
   const narrowed = `(${filter})${kept.map((name) => `&FullyQualifiedName!~${filterValue(`${name}.`)}`).join('')}`;
   const escaped = narrowed.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-  return xml.replace(/<TestCaseFilter>[\s\S]*?<\/TestCaseFilter>/, () => `<TestCaseFilter>${escaped}</TestCaseFilter>`);
+  const element = /<TestCaseFilter>[\s\S]*?<\/TestCaseFilter>/.exec(xml.replace(/<!--[\s\S]*?-->/g, (comment) => ' '.repeat(comment.length)));
+  return `${xml.slice(0, element.index)}<TestCaseFilter>${escaped}</TestCaseFilter>${xml.slice(element.index + element[0].length)}`;
 }
 
 // ---------------------------------------------------------------------------------------------------
