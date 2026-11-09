@@ -12,7 +12,7 @@ internal static class WorkspaceOrder
     internal static (int Place, bool Member) Of(IReadOnlyList<LayerSaid> layers, string path, bool ignoreCase)
     {
         var place = Decider(layers, path, ignoreCase);
-        if (place < 0 || layers[place] is not { Layer: FileLayer.Found, Rule.Paths.Count: > 1 } entry) return (place, false);
+        if (place < 0 || layers[place] is not { Layer: FileLayer.Found, Rule.Paths.Length: > 1 } entry) return (place, false);
         if (GitPattern.LiteralOf(entry.Rule, entry.Rule.Paths[0]) is not { } root || string.Equals(root, path, StringComparison.Ordinal)) return (place, false);
         return (Math.Max(place, Decider(layers, root, ignoreCase)), true);
     }

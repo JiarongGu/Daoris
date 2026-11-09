@@ -64,6 +64,30 @@ public sealed class RepoConfigBenchProcessTests(ITestOutputHelper output)
 
             runs.Say($"| {name} | {cold:0.00} | {warm[Rounds / 2]:0.00} | {starts} | {pass:0.0} | {passStarts} |");
         }
+
+        // The store's bounds: a warm checkout ask is its stat, the bytes kept; a warm commit or tip ask starts nothing and takes under 2 ms.
+        Assert.All(Declarations, file => Assert.Null(FileStamp.Of(Path.Combine(own.Root, file)).Bytes));
+        using var held = GitStartTally.Open(own.Root);
+        var commit = await TimesAsync(() => RepositoryDeclarations.AtAsync(own.Root, own.Commit, DeclarationNames.Gates, CancellationToken.None));
+        var tip = await TimesAsync(() => TipOf.OfAsync(own.Root, "refs/heads/" + Line, CancellationToken.None));
+        runs.Say($"store, warm, {Rounds} asks each: a commit ask {commit[Rounds / 2]:0.000} ms (most {commit[^1]:0.000}), "
+            + $"a tip ask {tip[Rounds / 2]:0.000} ms (most {tip[^1]:0.000}), {held.Starts.Count} git starts");
+        Assert.Empty(held.Starts);
+        Assert.True(commit[Rounds / 2] < 2 && tip[Rounds / 2] < 2, $"a warm commit ask took {commit[Rounds / 2]} ms and a tip ask {tip[Rounds / 2]} ms");
+    }
+
+    private static async Task<List<double>> TimesAsync<T>(Func<Task<T>> ask)
+    {
+        var times = new List<double>();
+        for (var round = 0; round < Rounds; round++)
+        {
+            var watch = Stopwatch.StartNew();
+            _ = await ask();
+            times.Add(watch.Elapsed.TotalMilliseconds);
+        }
+
+        times.Sort();
+        return times;
     }
 
     /// <summary>One repository as the readers are handed it: its root, the commit read at, and its declarations' blobs and texts.</summary>
@@ -81,6 +105,15 @@ public sealed class RepoConfigBenchProcessTests(ITestOutputHelper output)
         {
             if (RefFiles.CommonDirOf(target.Root) is { } common) CountedRefs.Read(common);
         })),
+        ("store: the four files from the checkout (`RepositoryDeclarations.OnDisk`)", Sync(target =>
+        {
+            foreach (var file in Declarations) _ = RepositoryDeclarations.OnDisk(Path.Combine(target.Root, file));
+        })),
+        ("store: the four files at the commit (`RepositoryDeclarations.AtAsync`)", async target =>
+        {
+            foreach (var file in Declarations) _ = await RepositoryDeclarations.AtAsync(target.Root, target.Commit, file, CancellationToken.None);
+        }),
+        ("store: the line's tip (`TipOf`)", async target => _ = await TipOf.OfAsync(target.Root, "refs/heads/" + Line, CancellationToken.None)),
         ("disk: the four files read and parsed", Sync(target =>
         {
             foreach (var file in Declarations.Select(file => Path.Combine(target.Root, file)).Where(File.Exists))

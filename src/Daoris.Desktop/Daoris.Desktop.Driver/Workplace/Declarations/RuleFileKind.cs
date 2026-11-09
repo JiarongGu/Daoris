@@ -17,7 +17,7 @@ internal sealed class RuleFileKind : IDeclarationKind<RepositoryFilesRead>
 
     public RepositoryFilesRead Parse(DeclarationBytes content) => RepositoryFilesReader.Read(content.Text());
 
-    public bool Problem(RepositoryFilesRead parsed) => parsed.Problems.Count > 0;
+    public bool Problem(RepositoryFilesRead parsed) => parsed.Problems.Length > 0;
 
     public long Weigh(RepositoryFilesRead parsed) =>
         64 + DeclarationBound.Texts(parsed.Problems) + parsed.Rules.Sum(rule =>

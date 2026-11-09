@@ -1,3 +1,5 @@
+using System.Collections.Immutable;
+
 namespace Daoris.Driver;
 
 /// <summary>
@@ -5,9 +7,22 @@ namespace Daoris.Driver;
 /// set its kind names (<see cref="FileKindSets"/>), each field null where the entry leaves it out. The found layer adds what the
 /// analysis saw: its evidence, the kind another source said (<see cref="Other"/>) and the size the bounded walk read.
 /// </summary>
+/// <remarks>Its lists are frozen, since a parse is kept by its content and shared; a default array, which throws when enumerated, is refused.</remarks>
 /// <param name="Paths">Git's ignore patterns, read by <see cref="GitPattern"/>; a first-form entry's paths as that form wrote them.</param>
-internal sealed record FileRule(FileKind Kind, IReadOnlyList<string> Paths)
+internal sealed record FileRule(FileKind Kind, ImmutableArray<string> Paths)
 {
+    private readonly ImmutableArray<string> _paths = Made(Paths, nameof(Paths));
+    private readonly ImmutableArray<string>? _setup;
+    private readonly ImmutableArray<string>? _key;
+    private readonly ImmutableArray<string>? _toolchain;
+    private readonly ImmutableArray<string>? _env;
+    private readonly ImmutableArray<string>? _secret;
+    private readonly ImmutableArray<string>? _caches;
+    private readonly ImmutableArray<string>? _refuses;
+    private readonly ImmutableArray<string> _evidence = [];
+
+    public ImmutableArray<string> Paths { get => _paths; init => _paths = Made(value, nameof(Paths)); }
+
     /// <summary>Whether the paths are first-form paths no git pattern states, read by the first form's own matcher.</summary>
     internal bool FirstForm { get; init; }
 
@@ -23,25 +38,25 @@ internal sealed record FileRule(FileKind Kind, IReadOnlyList<string> Paths)
     internal string? Install { get; init; }
 
     /// <summary>The repository's own commands a dependency's install leaves out, run after the installs in an unworked tree.</summary>
-    internal IReadOnlyList<string>? Setup { get; init; }
+    internal ImmutableArray<string>? Setup { get => _setup; init => _setup = Made(value, nameof(Setup)); }
 
     /// <summary>How often <see cref="Setup"/> runs: <c>repository</c> once per recorded key, <c>tree</c> in each tree.</summary>
     internal string? Per { get; init; }
 
     /// <summary>The tracked paths and globs that key a dependency; an empty list keys it by the commit's tree.</summary>
-    internal IReadOnlyList<string>? Key { get; init; }
+    internal ImmutableArray<string>? Key { get => _key; init => _key = Made(value, nameof(Key)); }
 
     /// <summary>The commands whose output keys a dependency, or a tree's build state for an intermediate or a cache.</summary>
-    internal IReadOnlyList<string>? Toolchain { get; init; }
+    internal ImmutableArray<string>? Toolchain { get => _toolchain; init => _toolchain = Made(value, nameof(Toolchain)); }
 
     /// <summary>The names of the variables a dependency's install is given, never their values.</summary>
-    internal IReadOnlyList<string>? Env { get; init; }
+    internal ImmutableArray<string>? Env { get => _env; init => _env = Made(value, nameof(Env)); }
 
     /// <summary>The names of <see cref="Env"/> whose values are also scanned for in what the install wrote.</summary>
-    internal IReadOnlyList<string>? Secret { get; init; }
+    internal ImmutableArray<string>? Secret { get => _secret; init => _secret = Made(value, nameof(Secret)); }
 
     /// <summary>Folders inside a dependency that its tools write and check.</summary>
-    internal IReadOnlyList<string>? Caches { get; init; }
+    internal ImmutableArray<string>? Caches { get => _caches; init => _caches = Made(value, nameof(Caches)); }
 
     /// <summary>A dependency installed in each tree and never stored.</summary>
     internal bool? Bound { get; init; }
@@ -53,9 +68,9 @@ internal sealed record FileRule(FileKind Kind, IReadOnlyList<string> Paths)
     internal string? Builds { get; init; }
 
     /// <summary>The runners the repository integrated with a base's guard, named in the start's words; nothing here enforces them.</summary>
-    internal IReadOnlyList<string>? Refuses { get; init; }
+    internal ImmutableArray<string>? Refuses { get => _refuses; init => _refuses = Made(value, nameof(Refuses)); }
 
-    internal IReadOnlyList<string> Evidence { get; init; } = [];
+    internal ImmutableArray<string> Evidence { get => _evidence; init => _evidence = Made(value, nameof(Evidence)); }
 
     /// <summary>The kind a weaker source said, shown beside the one written.</summary>
     internal FileKind? Other { get; init; }
@@ -83,6 +98,11 @@ internal sealed record FileRule(FileKind Kind, IReadOnlyList<string> Paths)
         Builds = Builds ?? signature.Builds,
         Refuses = Refuses ?? signature.Refuses,
     };
+
+    private static ImmutableArray<string> Made(ImmutableArray<string> list, string field) =>
+        list.IsDefault ? throw new ArgumentException($"a rule's {field} is a default array, which holds nothing to read", field) : list;
+
+    private static ImmutableArray<string>? Made(ImmutableArray<string>? list, string field) => list is { } held ? Made(held, field) : null;
 }
 
 /// <summary>What a bounded walk counted under a path: its files and bytes, and whether it stopped at its bound first.</summary>
