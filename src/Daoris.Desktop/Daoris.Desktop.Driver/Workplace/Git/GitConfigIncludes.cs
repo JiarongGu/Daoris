@@ -18,7 +18,7 @@ internal static class GitConfigIncludes
         var found = new List<GitConfigInclude>();
         string? section = null;
         string? condition = null;
-        var lines = Encoding.UTF8.GetString(bytes).Replace("\r\n", "\n", StringComparison.Ordinal).Split('\n');
+        var lines = Encoding.UTF8.GetString(bytes).TrimStart('﻿').Replace("\r\n", "\n", StringComparison.Ordinal).Split('\n');
         for (var at = 0; at < lines.Length; at++)
         {
             var line = lines[at].TrimStart();
