@@ -345,6 +345,9 @@ internal sealed class BranchReplays(TreeContext context, PassLeftovers leftovers
         /// <summary>The headings union kept twice that it kept once, in a commit on top (<see cref="UnionOnce"/>).</summary>
         public IReadOnlyList<UnionOnce.Kept> Once { get; init; } = [];
 
+        /// <summary>What holding the backlog to its rows settled where git had merged it clean, said (<see cref="BacklogHeld"/>).</summary>
+        public string Departed { get; init; } = "";
+
         /// <summary>The files it settled by a line rule the owner accepted for integration, with their writers; none where none.</summary>
         public IReadOnlyList<LineRules.Settled> Lined { get; init; } = [];
 
@@ -383,11 +386,9 @@ internal sealed class BranchReplays(TreeContext context, PassLeftovers leftovers
         {
             var made = await RebaseStretchesAsync(aside, onto, stretches, switchFirst: false, ct, landing: new BacklogMerge.Stops(onto, lines)).ConfigureAwait(false);
             if (made.Now is null) return made;
-            // The rows' rules run only where git stopped: a clean merge is held to them too.
-            if (await BacklogHeld.RefusedAsync(aside, onto, $"{commits[0].Sha}^", commits[^1].Sha, made.Now, ct).ConfigureAwait(false) is { } unheld)
-            {
-                return new(null, $"the replayed backlog does not hold its rows.{unheld}", true);
-            }
+            var holding = await BacklogHeld.HoldAsync(aside, onto, $"{commits[0].Sha}^", onto, commits[^1].Sha, made.Now, commit: true, ct).ConfigureAwait(false);
+            if (holding.Refused is { } unheld) return new(null, $"the replayed backlog does not hold its rows.{unheld}", true);
+            if (holding.Said.Length > 0) made = made with { Now = await CommitOfAsync(aside, "HEAD", ct).ConfigureAwait(false) ?? made.Now, Departed = holding.Said };
 
             // What union joined in the replay is set apart as the merge tool sets it, in a commit on top.
             var joined = await UnionJoins.SetApartAsync(aside, onto, commits[^1].Sha, ct).ConfigureAwait(false);

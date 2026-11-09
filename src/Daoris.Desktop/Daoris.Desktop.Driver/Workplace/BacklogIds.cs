@@ -12,7 +12,11 @@ namespace Daoris.Driver;
 internal static class BacklogIds
 {
     /// <summary>A row's list: the id it opens with, its key, and every id it covers; null ids where the list does not read.</summary>
-    internal sealed record Listed(string Key, IReadOnlyList<string>? Ids);
+    internal sealed record Listed(string Key, IReadOnlyList<string>? Ids)
+    {
+        /// <summary>Where the list stands in its line: its first character, and the one after its last.</summary>
+        internal (int Start, int End) Span { get; init; }
+    }
 
     /// <summary>A range covers at most this many ids; one wider does not read.</summary>
     internal const int RangeAtMost = 64;
@@ -72,8 +76,28 @@ internal static class BacklogIds
             last = id;
         }
 
-        return new Listed(first.Value, ids.Distinct(StringComparer.Ordinal).ToList());
+        return new Listed(first.Value, ids.Distinct(StringComparer.Ordinal).ToList()) { Span = (at, position) };
     }
+
+    /// <summary>
+    /// <paramref name="ids"/> written as a list that reads back as them: each after the first as its shortest part on the stem before
+    /// it, the last after <c>and</c>; else each in full; null where neither reads back.
+    /// </summary>
+    internal static string? Written(IReadOnlyList<string> ids)
+    {
+        foreach (var shortened in new[] { true, false })
+        {
+            var parts = ids.Select((id, at) => at > 0 && shortened ? Part(ids[at - 1], id) : id).ToList();
+            var list = parts.Count == 1 ? parts[0] : string.Join(", ", parts.Take(parts.Count - 1)) + " and " + parts[^1];
+            if (RowOf($"- [ ] **{list}**")?.Ids is { } read && read.SequenceEqual(ids, StringComparer.Ordinal)) return list;
+        }
+
+        return null;
+    }
+
+    /// <summary>The shortest part of <paramref name="id"/> that the stem of <paramref name="before"/> gives back as it; the whole id where none does.</summary>
+    private static string Part(string before, string id) =>
+        Digits.Matches(id).Select(run => id[run.Index..]).Where(part => Expanded(before, part) == id).OrderBy(part => part.Length).FirstOrDefault() ?? id;
 
     /// <summary>A short part (<c>3d</c>) on the stem of <paramref name="before"/> whose digit run equals the part's own: null where none or two do.</summary>
     private static string? Expanded(string before, string part)

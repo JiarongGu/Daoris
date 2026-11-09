@@ -215,6 +215,40 @@
       "kept": 2, "dropped": 0, "both": [4]
     },
     {
+      "name": "a compound row the work and the line each archived a part of is one row of the ids neither archived, its list written again",
+      "base": ["# Tasks", "", "- [ ] **WFREVIEW3a, 3d, 3l and 3m** the defects.", ""],
+      "ours": ["# Tasks", "", "- [ ] **WFREVIEW3a, 3d and 3m** the defects.", ""],
+      "theirs": ["# Tasks", "", "- [ ] **WFREVIEW3d, 3l and 3m** the defects.", ""],
+      "text": ["# Tasks", "", "- [ ] **WFREVIEW3d and 3m** the defects.", ""],
+      "kept": 1, "dropped": 1, "both": []
+    },
+    {
+      "name": "a compound row the line added words to while the work archived one of its ids keeps the line's words and the ids left",
+      "base": ["# Tasks", "", "- [ ] **WFREVIEW3a, 3d and 3m** the defects.", ""],
+      "ours": ["# Tasks", "", "- [ ] **WFREVIEW3a, 3d and 3m** the defects, then B.", ""],
+      "theirs": ["# Tasks", "", "- [ ] **WFREVIEW3d and 3m** the defects.", ""],
+      "text": ["# Tasks", "", "- [ ] **WFREVIEW3d and 3m** the defects, then B.", ""],
+      "kept": 1, "dropped": 1, "both": []
+    },
+    {
+      "name": "a compound row the work archived whole while the line added words to it is left",
+      "base": ["# Tasks", "", "- [ ] **GITLIB1a to GITLIB1c** the reads.", ""],
+      "ours": ["# Tasks", "", "- [ ] **GITLIB1a to GITLIB1c** the reads, then B.", ""],
+      "theirs": ["# Tasks", "", ""],
+      "text": null,
+      "kept": 0, "dropped": 0, "both": [3],
+      "differ": [{ "id": "GITLIB1a", "ours": "- [ ] **GITLIB1a to GITLIB1c** the reads, then B.", "theirs": null }]
+    },
+    {
+      "name": "a compound row a side split in two is left: its rows cannot be matched to the other's",
+      "base": ["# Tasks", "", "- [ ] **A1a and 1b** the parts.", ""],
+      "ours": ["# Tasks", "", "- [ ] **A1a and 1b** the parts.", ""],
+      "theirs": ["# Tasks", "", "- [ ] **A1a** the first part.", "- [ ] **A1b** the second part.", ""],
+      "text": null,
+      "kept": 0, "dropped": 0, "both": [3],
+      "differ": [{ "id": "A1a", "ours": "- [ ] **A1a and 1b** the parts.", "theirs": "- [ ] **A1a** the first part.\n- [ ] **A1b** the second part." }]
+    },
+    {
       "name": "a compound row covers each id it lists: one a side lists again is refused",
       "base": ["# Tasks", "", "- [ ] **WFREVIEW3a, 3d and 3m** the defects.", ""],
       "ours": ["# Tasks", "", "- [ ] **WFREVIEW3a, 3d and 3m** the defects.", ""],

@@ -54,7 +54,24 @@ export function rowOf(line) {
     }
     last = id;
   }
-  return { key, ids: [...new Set(ids)] };
+  return { key, ids: [...new Set(ids)], span: [start[0].length, position] };
+}
+
+/** `ids` written as a list that reads back as them: each after the first as its shortest part on the stem before it, else each in full; null where neither does. */
+export function writtenIds(ids) {
+  for (const shortened of [true, false]) {
+    const parts = ids.map((id, at) => (at > 0 && shortened ? partOf(ids[at - 1], id) : id));
+    const list = parts.length === 1 ? parts[0] : `${parts.slice(0, -1).join(', ')} and ${parts.at(-1)}`;
+    const read = rowOf(`- [ ] **${list}**`)?.ids;
+    if (read && read.length === ids.length && read.every((id, at) => id === ids[at])) return list;
+  }
+  return null;
+}
+
+/** The shortest part of `id` the stem of `before` gives back as it; the whole id where none does. */
+function partOf(before, id) {
+  const parts = [...id.matchAll(/[0-9]+/g)].map((run) => id.slice(run.index)).filter((part) => expanded(before, part) === id);
+  return parts.sort((x, y) => x.length - y.length)[0] ?? id;
 }
 
 /** A short part on the stem of `before` whose digit run equals the part's own; null where none or two do. */
@@ -173,7 +190,57 @@ const trimmed = (line) => line.replace(/[ \t\r]+$/, '');
 // A row with its whitespace normalised: each run of spaces one space, its line ending and trailing spaces cut.
 const normal = (line) => trimmed(line).replace(/[ \t]+/g, ' ');
 const alike = (x, y) => (x === null || y === null ? x === null && y === null : normal(x) === normal(y));
-const keyOf = (line) => rowOf(line)?.key ?? null;
+// Where a row's list stood in its rest: a row's text is judged without its ids.
+const HOLE = '\u0001';
+const restOf = (row) => (row === null ? null : row.line.slice(0, row.span[0]) + HOLE + row.line.slice(row.span[1]));
+const stands = (b, o, t) => (o === t ? o : o === b ? t : o);
+const covers = (row, id) => row !== null && row.ids.includes(id);
+
+/**
+ * The rows that share an id, on any side, joined into one family, each keyed by the first id met of it (the base's rows first, then
+ * ours, then theirs, each list in its order): every id a row opens with mapped to its family's key.
+ */
+function families(sides) {
+  const parent = new Map();
+  const order = [];
+  const find = (id) => {
+    while (parent.get(id) !== id) {
+      parent.set(id, parent.get(parent.get(id)));
+      id = parent.get(id);
+    }
+    return id;
+  };
+  for (const row of sides.flat()) {
+    for (const id of row.ids) {
+      if (!parent.has(id)) {
+        parent.set(id, id);
+        order.push(id);
+      }
+    }
+    for (const id of row.ids.slice(1)) parent.set(find(id), find(row.ids[0]));
+  }
+  const keys = new Map();
+  for (const id of order) if (!keys.has(find(id))) keys.set(find(id), id);
+  const keyOf = new Map();
+  for (const row of sides.flat()) if (!keyOf.has(row.key)) keyOf.set(row.key, keys.get(find(row.key)));
+  return keyOf;
+}
+
+/**
+ * The line a family of rows makes (`{ line }`, null where it leaves), or null where it is left for the person: each id stands as only one
+ * side changed it, or both alike; the rest takes the side that changed it. Where every id leaves, the row leaves only where no side's
+ * rest changed. A side's own line is kept where the row is that side's; else its list is written again.
+ */
+function takenOf(b, o, t) {
+  const ids = [...new Set([b, o, t].flatMap((row) => row?.ids ?? []))].filter((id) => stands(covers(b, id), covers(o, id), covers(t, id)));
+  const [rb, ro, rt] = [b, o, t].map(restOf);
+  if (ids.length === 0) return (o === null || alike(ro, rb)) && (t === null || alike(rt, rb)) ? { line: null } : null;
+  const side = alike(ro, rt) ? o : alike(ro, rb) ? t : alike(rt, rb) ? o : null;
+  if (side === null) return null;
+  if (side.ids.length === ids.length && side.ids.every((id, at) => id === ids[at])) return { line: side.line };
+  const list = writtenIds(ids);
+  return list === null ? null : { line: restOf(side).replace(HOLE, list) };
+}
 
 /** Two changes meet where the line merge says, and where both add at one place unless both add rows alone. */
 function rowsCollide(x, y) {
@@ -181,9 +248,9 @@ function rowsCollide(x, y) {
     || (x.start === x.end && y.start === y.end && x.start === y.start && ![...x.lines, ...y.lines].every((line) => line.startsWith(MARK)));
 }
 
-/** A side's rows by key; each id it covers twice added to `twice`, each row whose ids do not read to `unread`. */
+/** A side's rows (`{ line, key, ids, span }`); each id it covers twice added to `twice`, each row whose ids do not read to `unread`. */
 function rowsOf(lines, twice, unread) {
-  const rows = new Map();
+  const rows = [];
   const covered = new Set();
   for (const line of lines) {
     const row = rowOf(line);
@@ -196,44 +263,49 @@ function rowsOf(lines, twice, unread) {
       if (!covered.has(id)) covered.add(id);
       else if (!twice.includes(id)) twice.push(id);
     }
-    if (!rows.has(row.key)) rows.set(row.key, line);
+    rows.push({ ...row, line });
   }
   return rows;
 }
 
 /**
- * The backlog merged by its rows' ids, keyed by the id each row opens with: a row only one side added, removed or rewrote takes that
- * side, one both changed alike (trailing spaces aside) is once, in this side's text, and every other is left for the person with both
- * texts (`differ`), never merged word by word. A side covering an id twice (`twice`), or holding a row whose ids do not read
- * (`unread`), is refused before anything merges. The lines that are no row merge by the base, each row standing as its key; there two
- * adds at one place meet unless both add rows alone. With `text` null where anything is left.
+ * The backlog merged by its rows' ids, rows that share an id on any side one row: each id stands as only one side changed it, or both
+ * alike, and the rest of the line takes the one side that changed it, or both alike (whitespace normalised), so a row a side archived
+ * leaves only where the other's copy is the base's or moved, and one both archived in part keeps the ids neither did, its list written
+ * again. Every other row is left for the person with both texts (`differ`), never merged word by word. A side covering an id twice
+ * (`twice`), or holding a row whose ids do not read (`unread`), is refused before anything merges. The lines that are no row merge by the
+ * base, each row standing as its key; there two adds at one place meet unless both add rows alone. With `text` null where anything is left.
  */
 export function mergeByRows(base, ours, theirs) {
   const sides = [base, ours, theirs].map((text) => text.split('\n'));
   const [twice, unread] = [[], []];
-  const [was, mine, yours] = sides.map((lines) => rowsOf(lines, twice, unread));
+  const rows = sides.map((lines) => rowsOf(lines, twice, unread));
   const none = { both: [], differ: [], twice: [], unread: [] };
   if (twice.length || unread.length) return { ...none, text: null, kept: 0, dropped: 0, twice, unread: [...new Set(unread)] };
+  const family = families(rows);
+  const keyOf = (line) => {
+    const row = rowOf(line);
+    return row === null || row.ids === null ? null : family.get(row.key);
+  };
   const taken = new Map();
   const differ = [];
   let [kept, dropped] = [0, 0];
-  for (const key of new Set([...was.keys(), ...mine.keys(), ...yours.keys()])) {
-    const [b, o, t] = [was, mine, yours].map((rows) => rows.get(key) ?? null);
-    let text;
-    if (alike(o, t)) text = o;
-    else if (alike(o, b)) text = t;
-    else if (alike(t, b)) text = o;
-    else {
-      differ.push({ id: key, ours: o, theirs: t });
+  for (const key of new Set(family.values())) {
+    const of = rows.map((side) => side.filter((row) => family.get(row.key) === key));
+    const joined = (side) => (side.length ? side.map((row) => row.line).join('\n') : null);
+    const made = of.some((side) => side.length > 1) ? null : takenOf(of[0][0] ?? null, of[1][0] ?? null, of[2][0] ?? null);
+    if (made === null) {
+      differ.push({ id: key, ours: joined(of[1]), theirs: joined(of[2]) });
       continue;
     }
-    taken.set(key, text);
+    taken.set(key, made.line);
+    const b = of[0][0] ?? null;
     if (b === null) continue;
-    if (text === null) dropped += 1;
-    else if (!alike(text, b)) [kept, dropped] = [kept + 1, dropped + 1];
+    if (made.line === null) dropped += 1;
+    else if (!alike(made.line, b.line)) [kept, dropped] = [kept + 1, dropped + 1];
   }
   if (differ.length) {
-    const lines = differ.filter((row) => was.has(row.id)).map((row) => sides[0].findIndex((line) => keyOf(line) === row.id) + 1);
+    const lines = differ.map((row) => sides[0].findIndex((line) => keyOf(line) === row.id) + 1).filter((line) => line > 0);
     return { ...none, text: null, kept, dropped, both: lines.sort((x, y) => x - y).map((line) => ({ line })), differ };
   }
   const stays = (line) => keyOf(line) === null || taken.get(keyOf(line)) !== null;
@@ -259,17 +331,14 @@ export function mergeByRows(base, ours, theirs) {
   return { ...none, text: out.join('\n'), kept, dropped };
 }
 
-/** A backlog's ids covered twice, and its rows' keys; a row whose ids do not read is known by its key alone. */
-function keysOf(text) {
-  const [twice, covered, keys] = [[], new Set(), new Set()];
-  for (const row of text.split('\n').map(rowOf).filter((each) => each !== null)) {
-    keys.add(row.key);
-    for (const id of row.ids ?? [row.key]) {
-      if (!covered.has(id)) covered.add(id);
-      else if (!twice.includes(id)) twice.push(id);
-    }
+/** A backlog's ids covered twice, and every id it covers in the order met; a row whose ids do not read covers its key alone. */
+function coveredOf(text) {
+  const [twice, ids] = [[], []];
+  for (const id of text.split('\n').map(rowOf).filter((each) => each !== null).flatMap((row) => row.ids ?? [row.key])) {
+    if (!ids.includes(id)) ids.push(id);
+    else if (!twice.includes(id)) twice.push(id);
   }
-  return { twice, keys };
+  return { twice, ids };
 }
 
 /**
@@ -281,8 +350,8 @@ function keysOf(text) {
 export function rowsHeld(base, ours, theirs, made) {
   const merged = mergeByRows(base, ours, theirs);
   if (merged.text === null) return { twice: [], kept: [], lost: [], refused: merged };
-  const [had, rules] = [keysOf(made), keysOf(merged.text)];
-  return { twice: had.twice, kept: [...had.keys].filter((key) => !rules.keys.has(key)), lost: [...rules.keys].filter((key) => !had.keys.has(key)), refused: null };
+  const [had, rules] = [coveredOf(made), coveredOf(merged.text)];
+  return { twice: had.twice, kept: had.ids.filter((id) => !rules.ids.includes(id)), lost: rules.ids.filter((id) => !had.ids.includes(id)), refused: null };
 }
 
 /** What a refused merge says of the backlog's rows, one line each: each id twice, each row whose ids do not read, each row both changed. */

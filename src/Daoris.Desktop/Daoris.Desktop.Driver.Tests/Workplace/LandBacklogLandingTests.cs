@@ -338,10 +338,10 @@ public sealed class LandBacklogLandingTests : LandedFixture
 
     /// <summary>
     /// The line moved A2 under a later heading while the work archived it: git merges that clean and keeps A2, which the rows' rules
-    /// remove, so the made replay is held to them and refused, said, and nothing lands.
+    /// remove since the line's copy is the base's, so the made replay is held to them: A2 leaves in a commit on top, said, and it lands.
     /// </summary>
     [Fact]
-    public async Task A_clean_replay_keeping_a_row_the_line_moved_while_the_work_archived_it_is_refused()
+    public async Task A_clean_replay_keeping_a_row_the_line_moved_while_the_work_archived_it_lands_without_it()
     {
         var root = await RepositoryAsync("engine");
         const string Sections = "# Tasks\n\n- [ ] **A1** one.\n- [ ] **A2** two.\n\n## Later\n";
@@ -351,13 +351,13 @@ public sealed class LandBacklogLandingTests : LandedFixture
         await File.WriteAllTextAsync(Path.Combine(tree.Path, "work.txt"), "the work\n");
         await CommitAsync(tree.Path, "TASKS.md", Sections.Replace("- [ ] **A2** two.\n", ""), "the work, A2 archived");
         await CommitAsync(root, "TASKS.md", Sections.Replace("- [ ] **A2** two.\n", "") + "- [ ] **A2** two.\n", "the line moves A2");
-        var before = await StateAsync(root, tree);
 
-        var refused = await trees.LandAsync(tree.Path, Subject, gate: Lands);
+        var landed = await trees.LandAsync(tree.Path, Subject, gate: Lands);
 
-        Assert.False(refused.Landed, refused.Message);
-        Assert.Contains(" The replay would keep `TASKS.md`'s row `A2`, which one side removed while the other only moved it.", refused.Conflict!.Says);
-        Assert.Equal(before, await StateAsync(root, tree));
+        Assert.True(landed.Landed, landed.Message);
+        Assert.Contains(" `TASKS.md`'s row `A2` left by its rows, where git had kept it: one side removed it while the other only moved it.", landed.Message);
+        Assert.Equal(Sections.Replace("- [ ] **A2** two.\n", ""), await GitAsync(root, "show", $"{Branch}:TASKS.md"));
+        Assert.Equal("Settle the backlog by its rows in the replay", (await GitAsync(root, "log", "-1", "--format=%s", Branch)).Trim());
         Assert.Equal(2, await TreesAsync(root));
     }
 
@@ -410,6 +410,24 @@ public sealed class LandBacklogLandingTests : LandedFixture
         Assert.Contains("`TASKS.md`'s row `A2` changed on both sides and is left for a person: the line has “- [ ] **A2** Do enable A.”, and the work removed it.",
             refused.Conflict!.Says);
         Assert.Equal(before, await StateAsync(root, tree));
+    }
+
+    /// <summary>The work archives 3a of a compound row while the line archives 3l: it lands one row of the ids neither archived.</summary>
+    [Fact]
+    public async Task A_compound_row_each_side_archived_a_part_of_lands_as_one_row_of_the_ids_left()
+    {
+        var root = await RepositoryAsync("engine");
+        const string Compound = "# Tasks\n\n- [ ] **WFREVIEW3a, 3d, 3l and 3m** the defects.\n";
+        await CommitAsync(root, "TASKS.md", Compound, "the backlog");
+        var trees = new SessionTrees(Home);
+        var tree = await trees.OpenAsync(root, "engine", "aurora");
+        await CommitAsync(tree.Path, "TASKS.md", Compound.Replace("3a, 3d, 3l", "3d, 3l"), "the work, 3a archived");
+        await CommitAsync(root, "TASKS.md", Compound.Replace("3d, 3l and", "3d and"), "the line, 3l archived");
+
+        var landed = await trees.LandAsync(tree.Path, Subject, gate: Lands);
+
+        Assert.True(landed.Landed, landed.Message);
+        Assert.Equal("# Tasks\n\n- [ ] **WFREVIEW3d and 3m** the defects.\n", await GitAsync(root, "show", $"{Branch}:TASKS.md"));
     }
 
     private static async Task<string> HeadAsync(string place) => (await GitAsync(place, "rev-parse", "HEAD")).Trim();

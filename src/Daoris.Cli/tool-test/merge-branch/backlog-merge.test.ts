@@ -41,7 +41,10 @@ test("the declared backlog, its rows and its merges read as the table the driver
     'the table holds its rows');
   for (const row of table.paths) assert.equal(tool.backlogOf(row.manifest), row.backlog, row.name);
   for (const row of table.rows) assert.deepEqual(tool.rowTablesOf(row.declaration), row.tables, row.name);
-  for (const row of table.ids) assert.deepEqual(tool.rowOf(row.line), row.key === null ? null : { key: row.key, ids: row.ids }, row.name);
+  for (const row of table.ids) {
+    const read = tool.rowOf(row.line);
+    assert.deepEqual(read && { key: read.key, ids: read.ids }, row.key === null ? null : { key: row.key, ids: row.ids }, row.name);
+  }
   for (const row of table.merges) {
     const [base, ours, theirs] = [row.base, row.ours, row.theirs].map((lines) => lines.join('\n')) as [string, string, string];
     const merged = row.table ? { differ: [], twice: [], unread: [], ...tool.mergeByBase(base, ours, theirs) } : tool.mergeByRows(base, ours, theirs);

@@ -34,6 +34,8 @@ public sealed partial class CheckoutWritersCensusTests
 
         // Trees of Daoris's own, under the trees home: no checkout of the person's.
         ["BacklogMerge.cs"] = (OwnTree, "a backlog's union, staged in the replay's own tree", ["checkout@tree", "update-index@tree"]),
+        ["BacklogHeld.cs"] = (OwnTree, "a made backlog's rows the rules take out, staged and, in a replay, committed in its own tree or the line's integration tree", ["checkout@place", "commit@place", "update-index@place"]),
+        ["UnionOnce.cs"] = (OwnTree, "a heading union kept twice, kept once and committed in the replay's own tree", ["add@tree", "commit@tree"]),
         ["GeneratedWriters.cs"] = (OwnTree, "generated folders written again and committed in the replay's own tree", ["add@tree", "commit@tree"]),
         ["UnionJoins.cs"] = (OwnTree, "what a union joined, set apart and committed in the replay's own tree", ["add@tree", "commit@tree"]),
         ["VerifyExecution.cs"] =(OwnTree, "a heavy run's own detached tree, made, locked and checked out at the commit sent; git's record of it in the checkout", ["checkout@tree", "worktree@send.Checkout"]),

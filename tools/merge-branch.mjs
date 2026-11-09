@@ -442,6 +442,7 @@ import {
 } from './merge-branch/plan.mjs';
 import { REACH } from './merge-branch/reach-table.mjs';
 import { mergeByBase, mergeByRows, rowsRefused } from './merge-branch/backlog-merge.mjs';
+import { holdBacklog } from './merge-branch/backlog-held.mjs';
 import { holdingLock, putComplete } from './merge-branch/locks.mjs';
 import { diffPaths, isInside, zPaths } from './merge-branch/paths.mjs';
 export { USAGE, Refusal, parseArgs } from './merge-branch/args.mjs';
@@ -542,12 +543,7 @@ export function backlogPath(root) {
   return backlogOf(existsSync(manifest) ? readFileSync(manifest, 'utf8') : null);
 }
 
-/**
- * The backlog a manifest's text declares: `TASKS.md` with no manifest; null where it is not JSON or not an object,
- * so nothing is resolved by its base; `documents.backlog` as text, or an object's text `path`, with each backslash a slash; else
- * `TASKS.md`. A twin: a landing's replay reads the line's manifest by the driver's `BacklogMerge.PathOf`, and both hold
- * `backlog-merges.json` among the driver's test fixtures, row for row.
- */
+/** The backlog a manifest's text declares (null where it does not read): the driver's `BacklogMerge.PathOf`, row for row of `backlog-merges.json`. */
 export function backlogOf(text) {
   if (text === null) return 'TASKS.md';
   let manifest;
@@ -732,7 +728,7 @@ function stageText(root, stage, path) {
   return shown.status === 0 ? shown.stdout : null;
 }
 
-/** The backlog's conflict by its rows, each row table's (`declaredRows`) by its base, resolved and staged or left, each said; whether any is resolved. */
+/** The backlog's conflict by its rows, a row table's (`declaredRows`) by its base, staged or left, said; whether any resolved. */
 function resolveBacklog(root, { line = 'HEAD' } = {}) {
   const backlog = backlogPath(root);
   if (backlog === null) console.log('daoris.json: it does not read as an object, so no backlog is resolved by the merge base; left for you');
@@ -3898,7 +3894,7 @@ function reportConflict(branch, unmerged, generated = []) {
   console.log(`merge-branch: merging ${branch} stopped on a conflict in ${count(unmerged.length, 'file')}:`);
   for (const file of unmerged) console.log(`  ${file}`);
   if (generated.length) console.log(`  (and ${count(generated.length, 'generated file')}, written again from the merged tree once these are resolved)`);
-  console.log('  Resolve them (code is never resolved for you; the union records resolve themselves, the backlog by its merge base), git add them,');
+  console.log('  Resolve them (code is never resolved for you; the union records resolve themselves, the backlog by its rows), git add them,');
   console.log('  then node tools/merge-branch.mjs --continue to run the gates. Or git merge --abort.');
   return 1;
 }
@@ -3938,10 +3934,12 @@ async function mergeNext(root, state) {
     const resolved = mergeInProgress(root) && resolveBacklog(root);
     const { blocking, generated } = mergeInProgress(root) ? conflicts(root) : { blocking: [], generated: [] };
     if (blocking.length) return reportConflict(branch, blocking, generated);
-    // A conflict only in what the merge writes anyway goes on to that writing, and one only in the
-    // backlog, resolved by its base, goes on to the gates.
+    // Only in what the merge writes, or the backlog its rows settled: it goes on.
     if (!generated.length && !resolved) throw new Refusal(`git merge ${branch} failed:\n${merged.err || merged.out}`);
   }
+  const rows = holdBacklog(root, backlogPath(root));
+  for (const line of [...rows.said, ...rows.refused]) console.log(line);
+  if (rows.refused.length) return reportConflict(branch, [backlogPath(root)]);
   console.log(`merged ${branch} --no-ff --no-commit${state.branches.length > 1 ? ` (${state.at + 1} of ${state.branches.length})` : ''}`);
   return gateMerge(root, state, plan);
 }
@@ -6293,13 +6291,18 @@ function mergeMember(tree, member, onto, { base, formed = [] } = { base: onto })
   git(tree, ['checkout', '--quiet', '--force', '--detach', onto]);
   const merged = git(tree, ['merge', '--no-ff', '--no-commit', member.tip], { allowFail: true });
   if (merged.status !== 0) {
-    // The row tables the line declares where the candidate started, never what an earlier member declared.
+    // Row tables declared where the candidate began.
     const resolved = mergeInProgress(tree) && resolveBacklog(tree, { line: base });
     const { blocking, generated } = mergeInProgress(tree) ? conflicts(tree) : { blocking: [], generated: [] };
     if (blocking.length || (!generated.length && !resolved)) {
       git(tree, ['merge', '--abort'], { allowFail: true });
       return { conflict: blocking.length ? blocking : [(merged.err || merged.out).trim().split('\n')[0]] };
     }
+  }
+  const rows = holdBacklog(tree, backlogPath(tree));
+  if (rows.refused.length) {
+    git(tree, ['merge', '--abort'], { allowFail: true });
+    return { conflict: rows.refused };
   }
   setApartJoins(tree);
   writeGenerated(tree);
