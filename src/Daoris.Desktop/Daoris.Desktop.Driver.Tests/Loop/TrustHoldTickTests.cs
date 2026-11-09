@@ -121,7 +121,34 @@ public sealed class TrustHoldTickTests : IDisposable
         Assert.Contains(after.Events, line => line.StartsWith("refused", StringComparison.Ordinal));
     }
 
-    private Daoris.Driver.Driver Driver(StandInService service)
+    /// <summary>
+    /// A start held for trust has taken its account's count and its role's staff reservation in the walk before it, and gives both back
+    /// where it holds: a reservation left to its ten minutes counts against a `most` or window quota at every look until then.
+    /// </summary>
+    [Fact]
+    public async Task A_start_held_for_trust_gives_its_staff_reservation_back()
+    {
+        File.WriteAllText(DaorisHome.Entry(_home, HomeEntry.Permissions), """{"defaultsOff":["connector"]}""");
+        var file = DaorisHome.Entry(_home, HomeEntry.DriverConfig);
+        Directory.CreateDirectory(Path.GetDirectoryName(file)!);
+        File.WriteAllText(file, """{ "adapter": "claude-code", "actors": { "build": [ { "agent": "claude-code", "model": "m1" }, { "agent": "claude-code", "model": "m2" } ] } }""");
+        var staffing = new RoleStaffing(_home, () => StoreSettled.Yes);
+        Assert.Equal(StaffingImported.Done, staffing.ImportFile().How);
+        var choices = new[] { new ActorChoice("claude-code", "m1", null), new ActorChoice("claude-code", "m2", null) };
+        var policy = StaffPolicy.Parse(
+            """{"rule":"weight","choices":[{"agent":"claude-code","model":"m1"},{"agent":"claude-code","model":"m2"}]}""").Policy!;
+        RoleDoor.Apply(staffing, RoleChange.Set(RoleCatalog.Seed[0]), null, null, new RolePolicyPress(policy));
+        await using var service = StandInService.Start(_repository);
+        var driver = Driver(service, choices);
+
+        var held = await driver.RunOnceAsync();
+
+        Assert.Single(held.Untrusted);
+        var order = new[] { new ActorEffective("claude-code", "m1", null, "1"), new ActorEffective("claude-code", "m2", null, "2") };
+        Assert.Empty(driver.Context.Harnesses.StaffFor(_home).Preview("build", "build", order).Facts.Reserved);
+    }
+
+    private Daoris.Driver.Driver Driver(StandInService service, ActorChoice[]? choices = null)
     {
         var config = DriverConfig.Empty with
         {
@@ -130,6 +157,7 @@ public sealed class TrustHoldTickTests : IDisposable
             TestBound = 1,
             Commands = new Dictionary<string, IReadOnlyList<string>> { ["claude-code"] = ["node", Harness()] },
         };
+        if (choices is not null) config = ActorChoices.With(config, "build", choices);
         var adapters = ProviderRegistry.Built();
         return new Daoris.Driver.Driver(
             new ServiceClient(service.Url, null, new HttpClient(new SessionChanges(new HttpClientHandler()))), config, adapters, _home,

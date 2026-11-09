@@ -8,6 +8,12 @@ the per-task record. Entries preserve their original wording so the archive stay
 ## TREEPOOL1ab — the bench rerun that proves the bytes saving (2026-11-09)
 
 > **TREEPOOL1ab** (driver; §35.8, §36.4, §37.5, §39): Outcome: measured over a day up to TREEPOOL1aa with the `local/` copy present (its refusal fixed, the line's own empty at all 24 takes), a session in a kept slot writes 97% fewer files and 61% fewer bytes than a fresh tree with `take: base` (25% with `bin/` aside; the web shape under found rules, 20% and none), estimates of files changed; the root's `node_modules` is kept or installed again and not stored, never placed (TREEPOOL1ag), the CLI's now in the root's rule (TREEPOOL1ad), the contention across a finish left to TREEPOOL1ah.
+## TREEPOOL1z, the git oracle and `core.ignorecase` (2026-11-09)
+
+> **TREEPOOL1z** (driver): Outcome: `GitPatternOracleTests` runs git itself (`git check-ignore --no-index`, `core.ignorecase` both ways, each top asked again upper-cased) over the translated patterns of a sample (the first form's corpus at every twentieth generated path with the named words and the excluded parent, and this repository's rule file in form 2) and agrees with `GitPattern` top by top; a kept first-form entry now folds case under `core.ignorecase` as the translated ones do (`RuleFileIgnoreCaseTests`, seen to fail first at `BIN/`).
+
+---
+
 ## CODESTRREV2a to 2e — the code-structure review's second cycle, merge-tool defects fixed (2026-11-09)
 
 > **CODESTRREV2a** (tools): Outcome: the verdict store's lock (`holdingLock`, now `tools/merge-branch/locks.mjs` over `withRunLock`) is taken over only once its run is gone or it is 30 seconds old and is let go only while it still says what its run wrote, so a live holder is no longer robbed after 10 seconds; the choice rejected a wait-then-steal bound (the defect itself) for a longer wait on a hung run, which ends at the stale bound. Test: `tool-test/merge-branch/locks.test.ts`.
@@ -28,6 +34,19 @@ the per-task record. Entries preserve their original wording so the archive stay
 > 21: `WalksHead` and the say door's parameter are deleted; the landing measurement reads the door and the walk's own cost on each branch from one file (`SaidSettledMeasureTests`, run with its variable set).
 > 22: each alter with its backfill, the sessions rebuild, and the quest store's mark and mirror column run through `SchemaColumns.ApplyAsync` in one transaction (`SessionSchemaUpgradeTests`, `QuestLogTests`); the quest store's two pairs were found beside the row.
 > 23: a new ask is kept by insert only (`SaveAsync` is `InsertAsync`; its upsert was used by tests alone, which now go through the doors that change an ask), and a lost insert answers as a repeat and hands its quest to the first ask (`AskDeskTests`); a quest delete judges what stands on it again inside its own transaction (`QuestDeleteTests`, a remotes stub landing a session between the look and the write).
+## DRVREVIEW11 to DRVREVIEW17 — the second review cycle's open driver defects (2026-11-09)
+
+- [x] **DRVREVIEW11 — a start held or thrown after the account walk gives back no staff reservation** (driver): 2026-11-09 `RunState` gives the walk's count and reservation back on disposal where no record opened, so every hold, refusal and throw before the open does, and the two stages' own releases are gone (`TrustHoldTickTests`, failing first).
+
+- [x] **DRVREVIEW12 — the guard that skips the brief for a stopped carried resume never fires** (driver): 2026-11-09 the carried-resume guard reads `Processes.StopMade(sessionId)` as the conclusion does, so a stop made after the door refused the resume ends the part stopped and no brief starts (`LimitCarryTickTests`, the stub holding its refusal alive until the stop, failing first).
+
+- [x] **DRVREVIEW13 — words the run handed back are lost when the conclusion throws** (driver): 2026-11-09 a conclusion that throws with words held says them unreached on the record (`ConclusionThrew`, the stop path's own note) and still throws; the record is running then, so the say door could not keep them, and noting is the choice that loses no more than a stop does (`DriverRunPartsTests`; the wiring in `SessionHold` is read, not driven, since a throwing conclusion under a handed-back word has no stand-in).
+
+- [x] **DRVREVIEW14 — the overlap wait never sees a Done quest still integrating** (driver): 2026-11-09 the overlaps look reads the quests an open integration request names where the open list lacks them (`IntegratingQuests`, one read of every quest and only where one waits) into `Snapshot.IntegratingQuests`, which `OverlapOf` compares; the planner test builds its snapshot as production does (`OverlapPlannerTests`, `WorkOverlapsTests`).
+
+- [x] **DRVREVIEW15 — a take, finish or end that throws between its claim and its undo leaves the claim and the slot lock held** (driver): 2026-11-09 each act runs inside `PoolAbandoned.GuardAsync`, which marks the claim abandoned by its job where the act throws, and `TakeOver` takes an abandoned claim of its own run as a dead run's with its phase kept; the choice was a mark in memory over advancing the phase to `undo-waiting`, which would have hidden a finish's `judged` and `setting-aside` phases from its recovery (`TreePoolStopsGitTests`, failing first).
+- [x] **DRVREVIEW16 — a finish's failed put-back deletes the manifest that keeps what is left aside** (driver): 2026-11-09 `PutBack` forgets the manifest only once no top stands aside, in the finish and its recovery alike (`TreePoolFinishGitTests`, failing first).
+- [x] **DRVREVIEW17 — the look's tidy unlinks a tree's shares before its move and does not restore them when the move is refused** (driver): 2026-11-09 the tidy unlinks them in the moved folder once the tree is known to go, and a folder put back has them made again and recorded (`TreeShares.Relink`; `BranchTidyingFolderTests`, failing first, a held file refusing the rename on Windows).
 
 ---
 

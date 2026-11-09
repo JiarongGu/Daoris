@@ -42,6 +42,28 @@ public sealed class WorkOverlapsTests : IDisposable
     }
 
     [Fact]
+    public async Task A_quest_an_open_request_names_is_read_when_the_open_list_lacks_it_and_the_list_is_read_for_no_other()
+    {
+        var reads = 0;
+        Task<IReadOnlyList<QuestView>> Every(CancellationToken ct)
+        {
+            reads++;
+            return Task.FromResult<IReadOnlyList<QuestView>>([Done("q1"), Done("q3")]);
+        }
+
+        var open = new Snapshot([Done("q2") with { Status = "Taken" }], [], []);
+
+        var read = await IntegratingQuests.ReadAsync(open, new HashSet<string>(StringComparer.OrdinalIgnoreCase) { "Q1", "q2" }, Every);
+        var none = await IntegratingQuests.ReadAsync(open, new HashSet<string> { "q2" }, Every);
+
+        Assert.Equal(["q1"], read.Select(quest => quest.Id));
+        Assert.Empty(none);
+        Assert.Equal(1, reads);
+    }
+
+    private static QuestView Done(string id) => new(id, "Asker", "Game", $"Ask {id}", "Here is why.", "Done");
+
+    [Fact]
     public async Task Two_running_units_whose_branches_change_one_path_are_each_told_once()
     {
         var said = new List<(string Session, string Text, string Key)>();

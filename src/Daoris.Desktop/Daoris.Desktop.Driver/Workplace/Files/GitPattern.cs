@@ -23,7 +23,13 @@ internal static class GitPattern
 
     /// <summary>Whether <paramref name="rule"/> covers <paramref name="top"/>, an ignored top or a path, a folder ending in <c>/</c>.</summary>
     internal static bool Covers(FileRule rule, string top, bool ignoreCase) =>
-        rule.FirstForm ? rule.Paths.Any(each => RoomPaths.Declared(each).IsMatch(top)) : Covers(rule.Paths, top, ignoreCase);
+        rule.FirstForm ? rule.Paths.Any(each => FirstFormMatch(each, top, ignoreCase)) : Covers(rule.Paths, top, ignoreCase);
+
+    private static bool FirstFormMatch(string path, string top, bool ignoreCase)
+    {
+        var declared = RoomPaths.Declared(path);
+        return (ignoreCase ? new Regex(declared.ToString(), declared.Options | RegexOptions.IgnoreCase) : declared).IsMatch(top);
+    }
 
     /// <summary>Whether the entry's <paramref name="patterns"/> cover <paramref name="top"/> as git's ignore does.</summary>
     internal static bool Covers(IReadOnlyList<string> patterns, string top, bool ignoreCase)

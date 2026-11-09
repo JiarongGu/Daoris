@@ -101,5 +101,29 @@ public sealed class DriverRunPartsTests : IDisposable
         Assert.StartsWith("the part agent (StartAgent) could not be built from its root's wiring: ", unbuilt.Message);
     }
 
+    [Fact]
+    public async Task A_conclusion_that_throws_with_words_held_says_them_unreached_and_still_throws()
+    {
+        var said = new List<Noted>();
+
+        var thrown = await Assert.ThrowsAsync<InvalidOperationException>(
+            () => ConclusionThrew.SayingAsync<int>(() => throw new InvalidOperationException("the quest read failed"), held: 2, said.Add));
+
+        Assert.Equal("the quest read failed", thrown.Message);
+        Assert.Equal(["— 2 message(s) the person sent never reached the session: it ended first."], said.Select(note => note.Note));
+    }
+
+    [Fact]
+    public async Task A_conclusion_that_throws_with_no_words_held_says_nothing_and_one_that_returns_is_returned()
+    {
+        var said = new List<Noted>();
+
+        await Assert.ThrowsAsync<InvalidOperationException>(() => ConclusionThrew.SayingAsync<int>(() => throw new InvalidOperationException(), held: 0, said.Add));
+        var returned = await ConclusionThrew.SayingAsync(() => Task.FromResult(7), held: 3, said.Add);
+
+        Assert.Empty(said);
+        Assert.Equal(7, returned);
+    }
+
     private static PartDeclaration Declared(string name, Type type, params string[] after) => new(name, RunPhase.Choose, after, type);
 }

@@ -9,7 +9,8 @@ namespace Daoris.Driver;
 /// A member a stage writes is unwritten until that stage runs, and reading it earlier throws, naming the stage that writes it: a
 /// stage declared without the <c>after</c> its reads need fails at its first run, never on a value left over or a default.
 /// </remarks>
-internal sealed class RunState : IDisposable, IAsyncDisposable
+/// <param name="giveBack">Gives a start's account count and staff reservation back, by its number; null where the run owns none.</param>
+internal sealed class RunState(Action<long>? giveBack = null) : IDisposable, IAsyncDisposable
 {
     private Slot<CarryOnRecord?> _carry;
     private Slot<RecordOpened> _opened;
@@ -173,8 +174,12 @@ internal sealed class RunState : IDisposable, IAsyncDisposable
         set => _tree.Set(value);
     }
 
-    /// <summary>Lets go of the repository's trees where the run never reached the record; once let go, a second does nothing.</summary>
-    public void Dispose() => _starting.Peek()?.Dispose();
+    /// <summary>Lets go of the repository's trees and gives back the walk's count and reservation where no record opened, whose conclusion gives its own.</summary>
+    public void Dispose()
+    {
+        _starting.Peek()?.Dispose();
+        if (Begun is null && _selection.Peek() is { Number: > 0 } walked) giveBack?.Invoke(walked.Number);
+    }
 
     /// <summary>Lets go of the carry-on's move record, ended by its phase unless it is delivered, then of the repository's trees.</summary>
     public async ValueTask DisposeAsync()

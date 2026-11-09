@@ -153,6 +153,23 @@ public sealed class LimitCarryTickTests : IDisposable
         }
     }
 
+    /// <summary>🔴 A stop landing after the door refused the carried resume ends the part stopped and makes no brief's start.</summary>
+    [Fact]
+    public async Task A_stop_made_after_the_door_refused_the_carried_resume_ends_the_part_and_starts_no_brief()
+    {
+        var (service, _, driver) = await LimitedAsync("heldrefusal");
+        await using var _ = service;
+
+        var looking = driver.RunOnceAsync();
+        await Poll.Until(() => Heard().Any(line => line["method"]!.GetValue<string>() == "refusal-sent"), () => Trace(service));
+        Assert.True(driver.Context.Processes.Stop("s2"));
+        await looking.WaitAsync(Poll.Patience);
+
+        var seen = Trace(service);
+        Assert.DoesNotContain(Heard(), line => line["method"]!.GetValue<string>() == "session/prompt" && Blocks(line).Contains("carrying on quest", StringComparison.Ordinal));
+        Assert.True(service.State("s2") == "stopped", seen);
+    }
+
     /// <summary>The first look: the session takes its quest on account-1, says its context and is refused by that account's limit.</summary>
     private async Task<(SessionMessagesTickTests.SaidStandIn Service, List<AccountLine> Lines, Daoris.Driver.Driver Driver)> LimitedAsync(string mode)
     {
@@ -376,12 +393,16 @@ public sealed class LimitCarryTickTests : IDisposable
               } else if (frame.method === 'session/resume' || frame.method === 'session/load') {
                 const id = frame.params?.sessionId;
                 heard({ method: frame.method, conversation: id });
-                if (mode !== 'refused' && existsSync(kept(id))) {
+                if (mode !== 'refused' && mode !== 'heldrefusal' && existsSync(kept(id))) {
                   conversation = id;
                   resumed = true;
                   send({ jsonrpc: '2.0', id: frame.id, result: {} });
                 } else {
                   send({ jsonrpc: '2.0', id: frame.id, error: { code: -32002, message: 'Resource not found: ' + id } });
+                  if (mode === 'heldrefusal') {
+                    heard({ method: 'refusal-sent' });
+                    await new Promise(() => setInterval(() => {}, 1000));
+                  }
                 }
               } else if (frame.method === 'session/prompt') {
                 const blocks = (frame.params?.prompt ?? []).filter((block) => block.type === 'text').map((block) => block.text);
