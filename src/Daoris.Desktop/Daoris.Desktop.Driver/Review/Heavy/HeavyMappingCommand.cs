@@ -133,11 +133,11 @@ public static class HeavyMappingCommand
     {
         if (HeavyMapping.For(config, repository) is not { } gates)
         {
-            output.WriteLine($"heavy: `{repository}` has no heavy gates on this machine{(now ? " now" : "")}: `run-heavy` runs those its own {HeavyGates.FileName} marks.");
+            output.WriteLine($"heavy: `{repository}` has no heavy gates on this machine{(now ? " now" : "")}: `run-heavy` runs those its own {DeclarationNames.Gates} marks.");
             return;
         }
 
-        output.WriteLine($"heavy: `{repository}`'s heavy gates on this machine{(now ? " are now these" : "")}, run in this order where its own {HeavyGates.FileName} marks none:");
+        output.WriteLine($"heavy: `{repository}`'s heavy gates on this machine{(now ? " are now these" : "")}, run in this order where its own {DeclarationNames.Gates} marks none:");
         var width = gates.Max(gate => gate.Name.Length);
         foreach (var gate in gates)
         {
@@ -150,11 +150,11 @@ public static class HeavyMappingCommand
     {
         if (config.HeavyGates.Count == 0)
         {
-            output.WriteLine($"heavy: no repository's heavy gates are set on this machine; `run-heavy` runs those a repository's own {HeavyGates.FileName} marks.");
+            output.WriteLine($"heavy: no repository's heavy gates are set on this machine; `run-heavy` runs those a repository's own {DeclarationNames.Gates} marks.");
             return;
         }
 
-        output.WriteLine($"heavy: the heavy gates set on this machine, each used where its repository's own {HeavyGates.FileName} marks none:");
+        output.WriteLine($"heavy: the heavy gates set on this machine, each used where its repository's own {DeclarationNames.Gates} marks none:");
         foreach (var (repository, gates) in config.HeavyGates.OrderBy(pair => pair.Key, StringComparer.Ordinal))
         {
             output.WriteLine($"  `{repository}`: {string.Join(", ", gates.Select(gate => gate.Name))}");

@@ -75,7 +75,7 @@ internal static class FoundReads
     {
         // A commit git no longer holds cannot be compared: the layer is read again.
         if (await FileGit.ChangedAsync(root, from, to, ct).ConfigureAwait(false) is not { } changed) return true;
-        return changed.Any(path => path == GeneratedWriters.DeclarationFile || FileSignatures.Shipped.Reaches(path));
+        return changed.Any(path => path == DeclarationNames.Gates || FileSignatures.Shipped.Reaches(path));
     }
 
     /// <summary>Whether the toolchain is due; true marks it asked.</summary>

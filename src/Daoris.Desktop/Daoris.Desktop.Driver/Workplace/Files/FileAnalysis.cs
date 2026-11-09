@@ -28,7 +28,7 @@ internal static partial class FileAnalysis
         var tops = await FileGit.IgnoredTopsAsync(root, ct).ConfigureAwait(false);
         var worktrees = (await FileGit.WorktreesAsync(root, ct).ConfigureAwait(false)).Select(path => Inside(root, path)).OfType<string>().ToList();
         var walks = tops.ToDictionary(top => top, top => FileWalk.Of(Path.Combine(root, top)), StringComparer.Ordinal);
-        var gates = await FileGit.ShowAsync(root, commit, GeneratedWriters.DeclarationFile, ct).ConfigureAwait(false);
+        var gates = await FileGit.ShowAsync(root, commit, DeclarationNames.Gates, ct).ConfigureAwait(false);
         var found = new Dictionary<string, FileRule>(StringComparer.Ordinal);
 
         foreach (var top in tops)

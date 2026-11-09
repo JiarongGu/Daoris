@@ -38,12 +38,6 @@ public sealed record ComposedRegistration(JsonObject? Body, bool Declares, strin
 /// </remarks>
 public static partial class LineRegistration
 {
-    /// <summary>The manifest, at the repository's root.</summary>
-    public const string ManifestFile = "daoris.json";
-
-    /// <summary>The lanes, beside it.</summary>
-    public const string LanesFile = "daoris.lanes.json";
-
     /// <summary>
     /// What <c>connect</c> would send for <paramref name="repository"/> from these texts, or why it would not.
     /// </summary>
@@ -53,15 +47,15 @@ public static partial class LineRegistration
     {
         if (Parse(manifest) is not { } parsed)
         {
-            return new(null, false, $"{ManifestFile} is not valid JSON");
+            return new(null, false, $"{DeclarationNames.Manifest} is not valid JSON");
         }
 
         if (parsed is not JsonObject read)
         {
-            return new(null, false, $"{ManifestFile} is not a JSON object");
+            return new(null, false, $"{DeclarationNames.Manifest} is not a JSON object");
         }
 
-        if (!Truthy(read["source"])) return new(null, false, $"{ManifestFile} has no 'source'");
+        if (!Truthy(read["source"])) return new(null, false, $"{DeclarationNames.Manifest} has no 'source'");
 
         // `"remote": null` is what absence means: local, silently. Knowledge feeds only from a joined repository.
         var remote = read["remote"];
@@ -69,7 +63,7 @@ public static partial class LineRegistration
         var knowledge = remote is not null && Truthy(remote is JsonObject told ? told["knowledge"] : null);
         if (knowledge && !join)
         {
-            return new(null, false, $"{ManifestFile} declares remote.knowledge without remote.join — knowledge feeds only from a joined repository");
+            return new(null, false, $"{DeclarationNames.Manifest} declares remote.knowledge without remote.join — knowledge feeds only from a joined repository");
         }
 
         // `{ ...DEFAULTS, ...parsed }`: no packs is none.
@@ -112,7 +106,7 @@ public static partial class LineRegistration
         {
             if (Parse(lanes) is not { } file)
             {
-                lanesProblems.Add($"{LanesFile} is not valid JSON");
+                lanesProblems.Add($"{DeclarationNames.Lanes} is not valid JSON");
             }
             else
             {
@@ -264,7 +258,7 @@ public static partial class LineRegistration
         node?.GetValueKind() == JsonValueKind.String ? node.GetValue<string>().Trim() : "";
 
     private static string Refused(string field, string what) =>
-        $"`{field}` in {ManifestFile} is not {what}, so the service would refuse the registration";
+        $"`{field}` in {DeclarationNames.Manifest} is not {what}, so the service would refuse the registration";
 
     /// <summary>How a quest addresses a lane (<c>repository:lane</c>): the CLI's <c>LANE_ID</c>.</summary>
     [GeneratedRegex("^[a-z][a-z0-9-]*$")]

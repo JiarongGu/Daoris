@@ -13,8 +13,7 @@ public sealed record LineEntry(string Mode, string Type, string Object, string P
 
     /// <summary>
     /// <c>git ls-tree -r -z</c>'s output: <c>&lt;mode&gt; SP &lt;type&gt; SP &lt;object&gt; TAB &lt;path&gt; NUL</c>, the
-    /// path unquoted under <c>-z</c>. A record of any other shape is skipped.
-    /// </summary>
+    /// path unquoted under <c>-z</c>. A record of any other shape is skipped.</summary>
     public static IReadOnlyList<LineEntry> Parse(string output)
     {
         var entries = new List<LineEntry>();
@@ -199,7 +198,6 @@ public static class LayoutReader
     /// <summary>The layouts the CLI writes: a copy of its descriptors' names, kept in step by hand.</summary>
     private static readonly string[] Known = [Older, AgentLayout.Agents];
 
-    private const string Manifest = "daoris.json";
     private const string LockFile = "daoris.lock";
     private const string AgentsFile = "AGENTS.md";
     private const string ClaudeFile = "CLAUDE.md";
@@ -213,7 +211,7 @@ public static class LayoutReader
     [
         .. tree.Where(entry => entry.IsFile || entry.IsLink)
             .Select(entry => entry.Path)
-            .Where(path => path is Manifest or LockFile or AgentsFile or ClaudeFile or SkillsRoot),
+            .Where(path => path == DeclarationNames.Manifest || path is LockFile or AgentsFile or ClaudeFile or SkillsRoot),
     ];
 
     /// <summary>The facts, from the listing of <paramref name="commit"/> and the texts <see cref="Wanted"/> named.</summary>
@@ -227,8 +225,8 @@ public static class LayoutReader
             .GroupBy(entry => entry.Path, StringComparer.Ordinal)
             .ToDictionary(group => group.Key, group => group.First(), StringComparer.Ordinal);
 
-        var adopted = at.TryGetValue(Manifest, out var manifestEntry) && manifestEntry.IsFile;
-        using var manifest = adopted ? Json(Text(Manifest)) : null;
+        var adopted = at.TryGetValue(DeclarationNames.Manifest, out var manifestEntry) && manifestEntry.IsFile;
+        using var manifest = adopted ? Json(Text(DeclarationNames.Manifest)) : null;
         var locked = at.TryGetValue(LockFile, out var lockEntry) && lockEntry.IsFile;
         using var lockDocument = locked ? Json(Text(LockFile)) : null;
 

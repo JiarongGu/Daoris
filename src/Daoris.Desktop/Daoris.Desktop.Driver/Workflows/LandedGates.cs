@@ -20,9 +20,6 @@ public sealed record LandedTip(string Line, string Commit, string Gates);
 /// </remarks>
 public static class LandedGates
 {
-    /// <summary>The declaration's name at a repository's top.</summary>
-    public const string File = GeneratedWriters.DeclarationFile;
-
     /// <summary>The acceptance names the tip's declaration.</summary>
     public const string Accepted = "accepted";
 
@@ -57,7 +54,7 @@ public static class LandedGates
         if (found != 0 || !WorkingTree.IsCommitId(commit)) return (null, $"its line `{line}` names no commit here");
 
         // The tip's entry of that name at the top, `<mode> <type> <object>\t<name>`: a blob alone is a declaration, never a folder.
-        var (listed, entry, problem) = await WorkingTree.GitAsync(root, ["ls-tree", "--full-tree", "-z", commit, "--", File], ct).ConfigureAwait(false);
+        var (listed, entry, problem) = await WorkingTree.GitAsync(root, ["ls-tree", "--full-tree", "-z", commit, "--", DeclarationNames.Gates], ct).ConfigureAwait(false);
         if (listed != 0) return (null, $"git could not list `{line}` at `{TextBounds.ShortCommit(commit, 7)}`: {problem.Trim()}");
         var parts = entry.Split('\t', 2)[0].Split(' ');
         var gates = parts is [_, "blob", var blob] && IsBlob(blob) ? blob : WorkflowSelection.NoGates;

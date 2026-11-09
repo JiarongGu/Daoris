@@ -83,7 +83,7 @@ public static class FilesCommand
                 : $"`{repository}` at {Short(commit)}, never read: the found rules below are this reading's, unwritten (`daoris files {repository} read`):",
         ];
         said.AddRange(rules.Over(paths, reading.Floor).Select(Line));
-        if (person.Unread is { } why) said.Add($"Your {PersonFiles.FileName} does not read ({why}): every run, copy and share is held as an ask until it does.");
+        if (person.Unread is { } why) said.Add($"Your {DeclarationNames.PersonRules} does not read ({why}): every run, copy and share is held as an ask until it does.");
         said.AddRange(found.Problems.Concat(own.Problems).Concat(person.Problems).Select(problem => $"Refused: {problem}"));
         return said;
     }

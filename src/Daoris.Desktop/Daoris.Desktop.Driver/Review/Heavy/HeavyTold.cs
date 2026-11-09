@@ -154,7 +154,7 @@ public static class HeavyTold
             var declared = HeavyGates.Resolve(
                 root, named, () => home is null ? null : HeavyMapping.For(DriverConfig.Load(DriverConfig.ResolvePath(home)), named));
             var heavy = HeavyGates.Choose(declared, null).Gates;
-            var own = declared.Mapped ? File.Exists(Path.Combine(root, HeavyGates.FileName)) ? HeavyGates.Read(root) : [] : declared.Gates;
+            var own = declared.Mapped ? File.Exists(Path.Combine(root, DeclarationNames.Gates)) ? HeavyGates.Read(root) : [] : declared.Gates;
             var names = heavy.Select(gate => gate.Name).ToHashSet(StringComparer.OrdinalIgnoreCase);
             return ([.. own.Where(gate => !gate.Heavy && !names.Contains(gate.Name))], heavy);
         }

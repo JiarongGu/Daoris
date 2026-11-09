@@ -181,7 +181,7 @@ public sealed class LandRebaseLandingTests : LandedFixture
         Accept(declared);
         var trees = new SessionTrees(Home);
         var tree = await trees.OpenAsync(root, "engine", "aurora");
-        await File.WriteAllTextAsync(Path.Combine(tree.Path, LandedGates.File), Declaration(Writer));
+        await File.WriteAllTextAsync(Path.Combine(tree.Path, DeclarationNames.Gates), Declaration(Writer));
         await File.WriteAllTextAsync(Path.Combine(tree.Path, "work.txt"), "the work\n");
         await CommitAsync(tree.Path, "index/map.md", "shared.txt\nwork.txt\n", "the work");
         await File.WriteAllTextAsync(Path.Combine(root, "zline.txt"), "the line\n");
@@ -230,7 +230,7 @@ public sealed class LandRebaseLandingTests : LandedFixture
     {
         var root = await RepositoryAsync("engine");
         AcceptIntegration(await GeneratedDeclaredAsync(root, Writer));
-        await CommitAsync(root, LandedGates.File, Declaration(Writer).Replace("\"gates\": []", "\"gates\": [], \"note\": 1", StringComparison.Ordinal), "the declaration changed");
+        await CommitAsync(root, DeclarationNames.Gates, Declaration(Writer).Replace("\"gates\": []", "\"gates\": [], \"note\": 1", StringComparison.Ordinal), "the declaration changed");
         var trees = new SessionTrees(Home);
         var tree = await trees.OpenAsync(root, "engine", "aurora");
         await File.WriteAllTextAsync(Path.Combine(tree.Path, "work.txt"), "the work\n");
@@ -389,8 +389,8 @@ public sealed class LandRebaseLandingTests : LandedFixture
         Directory.CreateDirectory(Path.Combine(root, "index"));
         await File.WriteAllTextAsync(Path.Combine(root, ".gitattributes"), "index/** linguist-generated\n");
         await File.WriteAllTextAsync(Path.Combine(root, "index", "map.md"), "shared.txt\n");
-        await CommitAsync(root, LandedGates.File, Declaration(writer), "the index and its declaration");
-        return (await GitAsync(root, "rev-parse", $"HEAD:{LandedGates.File}")).Trim();
+        await CommitAsync(root, DeclarationNames.Gates, Declaration(writer), "the index and its declaration");
+        return (await GitAsync(root, "rev-parse", $"HEAD:{DeclarationNames.Gates}")).Trim();
     }
 
     /// <summary>The person's acceptance of <paramref name="gates"/> for the repository's landed route, as <i>Accept the gates</i> writes it.</summary>

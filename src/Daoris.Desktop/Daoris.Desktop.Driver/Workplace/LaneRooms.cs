@@ -33,7 +33,7 @@ internal static partial class LaneRooms
         }
         catch (JsonException)
         {
-            return LaneRoomsRead.None with { Problems = [$"{LineRegistration.LanesFile} is not valid JSON"] };
+            return LaneRoomsRead.None with { Problems = [$"{DeclarationNames.Lanes} is not valid JSON"] };
         }
 
         var problems = LineRegistration.LanesProblemsOf(parsed).ToList();

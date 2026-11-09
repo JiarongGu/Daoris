@@ -279,9 +279,6 @@ public sealed class RemoteSync : IDisposable
         return notes;
     }
 
-    /// <summary>The file a registration is read from: the declaration IS the manifest.</summary>
-    private const string Manifest = "daoris.json";
-
     private async Task<IReadOnlyList<string>> FeedAsync(RemoteSyncPayloads.JoinedRepository repo, CancellationToken ct)
     {
         var notes = new List<string>();
@@ -306,7 +303,7 @@ public sealed class RemoteSync : IDisposable
         // as that commit has it — whatever else is in flight. A modified manifest names none,
         // and the deployment keeps a declaration that named one over it.
         var declaredAt = provenance is not null
-            && (clean || await CheckoutReads.Current.UnmodifiedAsync(repo.Root, Manifest, ct).ConfigureAwait(false))
+            && (clean || await CheckoutReads.Current.UnmodifiedAsync(repo.Root, DeclarationNames.Manifest, ct).ConfigureAwait(false))
                 ? provenance
                 : null;
         var held = declaredAt is null

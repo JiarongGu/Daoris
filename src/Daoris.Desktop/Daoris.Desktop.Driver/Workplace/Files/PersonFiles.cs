@@ -11,8 +11,7 @@ internal sealed record FileScope(IReadOnlyList<FileRule> Rules, FilePermissions 
 
 /// <summary>
 /// The person's layer as read: the <c>machine</c> scope, each repository's, the rules and permissions refused alone, and
-/// <see cref="Unread"/>, why a file that stands does not read.
-/// </summary>
+/// <see cref="Unread"/>, why a file that stands does not read.</summary>
 internal sealed record PersonFilesRead(FileScope Machine, IReadOnlyDictionary<string, FileScope> Repositories, IReadOnlyList<string> Problems)
 {
     internal static readonly PersonFilesRead Empty = new(FileScope.Empty, new Dictionary<string, FileScope>(), []);
@@ -35,8 +34,6 @@ internal sealed record PersonFilesRead(FileScope Machine, IReadOnlyDictionary<st
 /// </summary>
 internal static class PersonFiles
 {
-    internal const string FileName = "files.json";
-
     internal const string LockName = "person-files";
 
     internal static string PathOf(string home) => DaorisHome.Entry(home, HomeEntry.Files);
@@ -52,7 +49,7 @@ internal static class PersonFiles
         }
         catch (Exception error) when (error is IOException or UnauthorizedAccessException)
         {
-            return PersonFilesRead.Empty with { Unread = $"{FileName} could not be opened ({error.GetType().Name})" };
+            return PersonFilesRead.Empty with { Unread = $"{DeclarationNames.PersonRules} could not be opened ({error.GetType().Name})" };
         }
     }
 
@@ -62,9 +59,9 @@ internal static class PersonFiles
         {
             using var document = JsonDocument.Parse(text.TrimStart('﻿'));
             var root = document.RootElement;
-            if (root.ValueKind != JsonValueKind.Object) return PersonFilesRead.Empty with { Unread = $"{FileName} is not a JSON object" };
+            if (root.ValueKind != JsonValueKind.Object) return PersonFilesRead.Empty with { Unread = $"{DeclarationNames.PersonRules} is not a JSON object" };
 
-            if (FileRuleFile.FormOf(root) is not { } form) return PersonFilesRead.Empty with { Unread = FileRuleFile.Unknown(FileName) };
+            if (FileRuleFile.FormOf(root) is not { } form) return PersonFilesRead.Empty with { Unread = FileRuleFile.Unknown(DeclarationNames.PersonRules) };
             var problems = new List<string>();
             var machine = root.TryGetProperty("machine", out var own) ? Scope(own, "machine.", problems, form) : FileScope.Empty;
             var repositories = new Dictionary<string, FileScope>(StringComparer.OrdinalIgnoreCase);
@@ -77,7 +74,7 @@ internal static class PersonFiles
         }
         catch (JsonException error)
         {
-            return PersonFilesRead.Empty with { Unread = $"{FileName} is not valid JSON ({error.Message})" };
+            return PersonFilesRead.Empty with { Unread = $"{DeclarationNames.PersonRules} is not valid JSON ({error.Message})" };
         }
     }
 
@@ -130,7 +127,7 @@ internal static class PersonFiles
             var read = Parse(text);
             if (read.Unread is { } why)
             {
-                throw new DriverException($"{FileName} does not read ({why}), so nothing was written over it: fix the file or remove it, then make the change again.");
+                throw new DriverException($"{DeclarationNames.PersonRules} does not read ({why}), so nothing was written over it: fix the file or remove it, then make the change again.");
             }
 
             root = JsonNode.Parse(text.TrimStart('﻿')) as JsonObject ?? [];

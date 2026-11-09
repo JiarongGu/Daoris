@@ -19,12 +19,12 @@ internal sealed record GitObjectAnswer(bool Missing, string Type, long Size, int
     /// <summary>How long a header may be: an id of 64, the longest type and a size, with room to spare.</summary>
     internal const int HeaderBound = 128;
 
-    /// <summary>The answer in the first <paramref name="count"/> of <paramref name="bytes"/>; null where it is not one git gives (an ambiguous name, a cut header).</summary>
-    internal static GitObjectAnswer? Parse(byte[] bytes, int count)
+    /// <summary>The answer at <paramref name="at"/> in the first <paramref name="count"/> of <paramref name="bytes"/>; null where git gives none such.</summary>
+    internal static GitObjectAnswer? Parse(byte[] bytes, int count, int at = 0)
     {
-        var end = Array.IndexOf(bytes, (byte)'\n', 0, Math.Min(count, Math.Min(bytes.Length, HeaderBound)));
+        var end = at < count ? Array.IndexOf(bytes, (byte)'\n', at, Math.Min(count - at, Math.Min(bytes.Length - at, HeaderBound))) : -1;
         if (end < 0) return null;
-        var header = Encoding.UTF8.GetString(bytes, 0, end);
+        var header = Encoding.UTF8.GetString(bytes, at, end - at);
         if (header.EndsWith(" missing", StringComparison.Ordinal)) return new GitObjectAnswer(true, "", 0, end + 1, 0);
         if (header.Split(' ') is not [{ Length: > 0 }, { Length: > 0 } type, var sized]
             || !long.TryParse(sized, NumberStyles.None, CultureInfo.InvariantCulture, out var size))

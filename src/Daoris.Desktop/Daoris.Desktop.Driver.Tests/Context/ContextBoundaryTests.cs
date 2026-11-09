@@ -90,7 +90,7 @@ public sealed class ContextBoundaryTests : IDisposable
         var other = "c0nv0002";
         var tree = Path.Combine(_home, "tree");
         Directory.CreateDirectory(tree);
-        File.WriteAllText(Path.Combine(tree, HeavyGates.FileName),
+        File.WriteAllText(Path.Combine(tree, DeclarationNames.Gates),
             "{\"gates\":[{\"name\":\"unit\",\"run\":\"npm test\"},{\"name\":\"big\",\"run\":\"dotnet test\",\"heavy\":true}]}");
         var folder = ChatFiles.Folder(_home, session);
         Directory.CreateDirectory(folder);
@@ -113,7 +113,7 @@ public sealed class ContextBoundaryTests : IDisposable
         Assert.DoesNotContain(", in " + ChatFiles.Folder(_home, other), unnamed);
 
         // A tree whose file does not read names no check, and the machine's mapping for the repository stands where the file is absent.
-        File.WriteAllText(Path.Combine(tree, HeavyGates.FileName), "not json");
+        File.WriteAllText(Path.Combine(tree, DeclarationNames.Gates), "not json");
         Assert.NotNull(await ContextBriefs.ComposeAsync(service, events, _home, session, HandOverWhy.Press, conversation: true, tree: tree));
         var config = DriverConfig.Empty.WithHeavyGates("atlas", [new HeavyGate("mapped", "make test", null, true)]);
         Assert.Equal(["mapped"], HeavyMapping.For(config, " ATLAS ")!.Select(gate => gate.Name));
