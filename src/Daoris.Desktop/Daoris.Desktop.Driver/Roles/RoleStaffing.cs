@@ -338,8 +338,7 @@ public sealed class RoleStaffing(string home, Func<StoreSettled>? settled = null
     }
 
     /// <summary>
-    /// A transaction that writes <paramref name="rows"/> (the added roles' staffing) and <paramref name="also"/> together, under the staffing's
-    /// lock, with no seeded role's staffing among them: the catalogue, the policy and the staffing of added roles published as one.
+    /// One transaction under the staffing's lock for <paramref name="rows"/> (added roles' staffing, no seeded role's) and <paramref name="also"/>.
     /// </summary>
     /// <exception cref="DriverException">The staffing is not in the store yet and <paramref name="rows"/> names a role; a lock held past its wait; a write not done.</exception>
     internal void Publish(IReadOnlyList<(string Role, IReadOnlyList<ActorChoice>? Choices)> rows, Action<DesktopWrite> also)
@@ -360,12 +359,19 @@ public sealed class RoleStaffing(string home, Func<StoreSettled>? settled = null
 
     private void Publishing(Action<DesktopWrite> work)
     {
-        using var store = DesktopStore.Open(Location, StoreProcess.Options(Settled));
-        store.Write(Family, write =>
+        try
         {
-            work(write);
-            BeforeCommit?.Invoke();
-        });
+            using var store = DesktopStore.Open(Location, StoreProcess.Options(Settled));
+            store.Write(Family, write =>
+            {
+                work(write);
+                BeforeCommit?.Invoke();
+            });
+        }
+        catch (Exception error) when (error is DesktopStoreException or SqliteException or IOException or UnauthorizedAccessException)
+        {
+            throw new DriverException($"the roles' staffing was not written: the store would not take it ({error.Message}).");
+        }
     }
 
     internal static DriverException NotInStore() =>
@@ -492,22 +498,13 @@ public sealed class RoleStaffing(string home, Func<StoreSettled>? settled = null
     /// <summary>Steps 3 to 5 under the staffing lock: one store transaction that writes the staffing, the re-keyed policies and <paramref name="also"/>.</summary>
     private void Commit(DriverConfig after, IReadOnlyDictionary<string, string> asFound, Action<DesktopWrite>? also, IReadOnlyList<string>? rekey = null)
     {
-        try
+        Publishing(write =>
         {
-            using var store = DesktopStore.Open(Location, StoreProcess.Options(Settled));
-            store.Write(Family, write =>
-            {
-                var bound = rekey is { Count: > 0 } && StaffPolicies.Has(write) ? BoundPolicies(write, rekey) : [];
-                StaffingProjection.Rows(write, after, asFound, Now());
-                Rekeyed(write, bound);
-                also?.Invoke(write);
-                BeforeCommit?.Invoke();
-            });
-        }
-        catch (Exception error) when (error is DesktopStoreException or SqliteException or IOException or UnauthorizedAccessException)
-        {
-            throw new DriverException($"the roles' staffing was not written: the store would not take it ({error.Message}).");
-        }
+            var bound = rekey is { Count: > 0 } && StaffPolicies.Has(write) ? BoundPolicies(write, rekey) : [];
+            StaffingProjection.Rows(write, after, asFound, Now());
+            Rekeyed(write, bound);
+            also?.Invoke(write);
+        });
     }
 
     /// <summary>

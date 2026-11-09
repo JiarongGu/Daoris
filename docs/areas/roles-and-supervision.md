@@ -89,7 +89,7 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they start wi
    settled recorded by the role), each taking effect at its keeping (`AllowKind`) and kept as an allow decision (below). The `files` kind decides an act a person's `ask`
    in the rule file held at a start (`files.allow-run`, `files.allow-copy` at the repository, `files.allow-share` at the narrowest
    place covering both repositories), by writing the held act's own text, never the `ask`'s pattern, into the person's own layer
-   of each repository it reaches, never the machine's, with the role and the decision (`FilesKind`, `FileAllows`); an ask naming
+   of each repository it reaches in one write of the file (all layers or none), never the machine's, with the role and the decision (`FilesKind`, `FileAllows`); an ask naming
    the person (`run(…)@person`) is listed for no supervisor. Its `authority` grants acts as `<kind>.<act>`, only of the kinds it decides, each off on a new record; the seed
    grants `question.answer`, `course.go-on` and `limit.move`. A scope holds one generic supervisor and one per kind
    (`two-roles-one-work`); the machine's generic supervisor may not be removed, scoped away or given kinds (`may-not-be-off`).
@@ -100,7 +100,7 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they start wi
    removing a role touches no running session; a continuation reads the role that takes its work now. (from D212)
 9. One door changes roles: `RoleDoor`, reached by `SET_ROLE`, `SET_ROLES`, `daoris role` and `role_propose`
    applied by the person's press. Each answers the judge's closed codes alike. A press carries the revision it read, which the catalogue's write compares with the revision its own transaction
-   reads (`RoleCatalog.WriteIn`), so two presses read at one revision cannot both write. (from D212, D228)
+   reads (`RoleCatalog.WriteIn`), so two presses read at one revision cannot both write; the terminal's verb sends the revision it planned against, and `role suggested --use` is one batch. (from D212, D228)
 10. A batch is judged whole before anything is written. A role, its staffing, its policy and a place's rules land in one
     store transaction or not at all. (from D226, D229)
 
@@ -135,7 +135,7 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they start wi
 22. A policy is a row of `role_policy`, bound by a digest to the choices it was set for. Daoris's own writes of the choices
     re-key it. Any other writer leaves it *stale*, and the role walks its order and says so. No row means `order`. (from D226)
 23. Two rules exist. `order` is the default. `weight` is a deterministic pick over the role's last 20 new starts, ties by
-    order, two starts in one look reserved apart; a weight is 0 to 10. (from D226)
+    order, two starts in one look reserved apart, a reservation given back when its walk refuses or throws; a weight is 0 to 10. (from D226)
 24. A choice may take only some of the role's works, hold a share of the window (1 to 99%), and keep a daily budget of
     starts or reported tokens in the machine's local day. A budget acts at a start only. (from D226)
 25. Presets fill the form and never save: *First that can run*, *Spread evenly* and *Spread by weight*; the two spreads
@@ -250,7 +250,7 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they start wi
     appointed press names its `kind`. The steward is the catalogue's one steward. Ask Daoris may explain the supervisor, never
     overrule it. (from D233)
 42. A role held by the terminal acts once the window starts its terminal (`START_ROLE_TERMINAL`, the window's alone); unstarted
-    is `not-started`, another holder `not-staffed`, a hold the role no longer reads as `role-changed`; a catalogue that cannot be read ends no hold, which stands until it reads. Unstaffed is off. A
+    is `not-started`, another holder `not-staffed`, a hold the role no longer reads as `role-changed`; a catalogue that cannot be read ends no hold, which stands until it reads, an act's step and a terminal's start saying `role-changed` meanwhile and withdrawing no grant. Unstaffed is off. A
     supervisor decides for a place exactly where its holder is a started terminal or an agent: the holder is the person's
     per-place setting, and no build flag gates it. Held by rules alone, a place behaves as before: a `refer` point waits for
     the person. An agent-held supervisor's subjects are its own look's (`SuperviseLook`, after `course-release`), never listed
@@ -271,10 +271,10 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they start wi
     next look takes the next choice; a failed end, a timeout, a block that does not read or names another subject ends the
     subject's attempts; a block the keeping refuses is dropped (`supervisor.dropped`) and said on the subject's line, ending its attempts, but one
     dropped `role-changed` spends no choice and decides again under the role as it now stands (outcome `role-changed`); a
-    leave is final. The prompt states the reasons' bounds. With no choice ready
+    leave is final. The prompt states the reasons' bounds. With no choice ready, or every choice of its order spent (limited, transient),
     nothing starts, the person's rules stand as they acted, and the subject waits for the person, said once on its line
     (`supervisor.unavailable`) and taken once a choice is ready. The person's word on a subject ends its running turn and drops
-    its result. (from D233, D229)
+    its result, and a cancel that meets a turn already ended is no error; what was said once is forgotten when its subject stops waiting. (from D233, D229)
 43. A hold lives in memory with a generation every act carries, never the key or its hash; a restart starts nothing. A role's
     press through the door ends the holds it no longer staffs and sweeps their decisions. An agent's hold needs no press and lives
     nowhere: its generation is its role's id and revision (`AgentHold`, `agent:<role>@<revision>`), read from the catalogue at
@@ -296,7 +296,7 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they start wi
     decision's file keeps its `kind` and `subject`, and its holder is the hold's as the catalogue's record names it. On a question it
     answers a parked session's recorded question with one offered choice and one to five sourced reasons (`--do answer --choice`,
     under `question.answer`), a decide naming a question the session no longer waits on refused `question-changed`; any subject it may
-    leave to the owner with a bound (`--leave`, under no grant). The holder's verb is `sessions supervise <session> --kind <kind>
+    leave to the owner with a bound (`--leave`, under no grant, but only by the hold that answers its place: another place's holder is refused, as a decide is). The holder's verb is `sessions supervise <session> --kind <kind>
     --subject <id> --generation <g> --do <act> [--choice <label>]`, or `--leave <bound>` in place of `--do`; `SUPERVISOR_WAITING` lists
     every kind's subjects, `{ kind, subject, repository, generation, acts }`, with the kind's acts the grants cover there, and a subject
     whose supervisor covers none, or whose hold is an agent's, is not listed. An `allow` is listed in three shapes (a held request
@@ -319,7 +319,8 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they start wi
     decision is kept beside the questions' with no `question`. A restart empties memory: the start's sweep reads every kind's decision
     files, closes a held or released one stale (`restarted`) and an admitted one interrupted, and remembers each subject final to the
     person (overruled, stale, superseded, interrupted, left) as closed by its kind and subject, so a point overruled before a restart,
-    or one whose overrule line was never written, is listed for no supervisor again and its decide is refused. An agent
+    or one whose overrule line was never written, is listed for no supervisor again and its decide is refused `overruled`; a course,
+    landing or question decision does the same in the run it goes final to the person in (a left one refuses `answered`). An agent
     supervisor's attempt (`SupervisorAttempts`) is written beside the subject's decisions before its turn starts and its outcome
     (decided, left, failed, limited, role-changed) beside it at its end, one per choice of the role's order and one at a time per subject; the
     sweep closes an attempt with no outcome failed and remembers every subject whose attempts ended as closed, so no choice is
@@ -508,14 +509,3 @@ Web: `agents/roles/*.test.ts(x)` and `agents/setup/*.test.tsx`.
   alone, so it waits on D210 carrying or answering the steward design's §4.3a.
 - **ROLEPERM1, PERSONDOOR1c-i:** permission answers through appointed actors; the role's boundary at every door.
 - **SETUPUX1y:** the places tree lit by default, retiring the Roles sections under Setup.
-
-- **The second review cycle's open defects** (ROLESREVIEW2i to 2q; the backlog row of that name points here), one entry each:
-  - **ROLESREVIEW2i — a leave of an allow or files subject skips the coverage check** (modules; `AllowKind.cs:88-94`, `FilesKind.cs:75-79`; the other kinds call `SupervisorDecisionDoor.Covers`): repository A's holder leaves a held request in repository B, whose own supervisor covers it; the static `Left` map hides it from B's supervisor until a restart. Rule 46 says a leave asks no grant: decide whether it still asks coverage.
-  - **ROLESREVIEW2j — an overruled or stale course or landing decision is refused `answered` in the run, `overruled` after a restart** (driver; `SupervisorCourses.cs:71,79`, `SupervisorLandings.cs:29` against `SupervisorKeeping.cs:28`): a decision exists, so `Answered` is set before `ClosedWhy`; a course never calls `Close` where landings do, so `Closed(subject)` at `SupervisePass.cs:31` is false in the run.
-  - **ROLESREVIEW2k — a share allow written to some repositories is reported as written to none** (modules; `FilesKind.cs:58-66`, `FileAllows.Give`): a later repository's `DriverException` leaves the earlier layers holding the allow while the ask settles `made: false` and waits. Unconfirmed that one layer can fail alone.
-  - **ROLESREVIEW2l — a non-throwing "no door" reply to a decision's say ends it `stale` `unsaid`** (driver; `WorkOrders/SupervisorLook.cs:50`, `SupervisorReleasing.cs:66-68`): the lost-response retry covers exceptions only. Low certainty: trace when `SendAsync` returns rather than throws.
-  - **ROLESREVIEW2m — a role verb's presses carry no revision, and `role suggested --use` is not one batch** (driver; `RoleVerbs.cs:77,125,286`): `read: null` lets the plan's copy overwrite a role edited since (rule 9); one press per role leaves the first written when the second is refused.
-  - **ROLESREVIEW2n — the publishing path surfaces store failures raw and drops a refused re-judge's code** (driver; `RoleStaffing.cs:361-369` against `:507-510`; `RoleCatalog.cs:407`): `Commit` wraps store errors in `DriverException`, `Publishing` does not; `WriteIn` throws `new DriverException(refusal.Said)`, so the second of two presses adding roles that take one work fails uncoded, not `two-roles-one-work`.
-  - **ROLESREVIEW2o — a walk that throws leaves its reservation counted for ten minutes** (driver; `StartPlan.cs:305-310,329-377`, `StaffLedger.cs:240-253`): `GiveBack()` runs on refusal paths only, so a cancelled `AccountsAsync` or `LoopAsync` leaves a start counted in the weighted pick, a share and a daily budget until `ReservationLife`.
-  - **ROLESREVIEW2p — an unreadable catalogue is refused with the wrong codes at an act's step and a terminal's start** (modules; `RoleActsLedger.cs:30-32`, `RoleTerminals.cs:26-29`): `Appointed()` is empty, so a queued act is withdrawn `not-granted` for good and a start answers `unknown-role`, where admission says `role-changed`.
-  - **ROLESREVIEW2q — an agent supervisor's turns: a cancel can meet a disposed source, all choices spent says nothing, the unavailable memory never shrinks** (driver; `SupervisorRuns.cs:25,34`, `SupervisePass.cs:24,49`): `Cancel` after `Ended`'s `Dispose` throws out of the look; `left.Count == 0` returns null with nothing said, against rule 42's once-said wait; static `Unavailable` keeps sentences until a restart.

@@ -58,6 +58,26 @@ the per-task record. Entries preserve their original wording so the archive stay
 
 > **FOLDERMOVE2** (install-home-update): Outcome: a cross-volume move-in whose copy landed is a move even where a held file keeps the source from being removed: `FolderMove.Move` returns whether the source went, and `InstallHome.MoveIn` counts the entry moved rather than failed; proved by `FolderMoveTests`.
 
+## ROLESREVIEW2i to 2q — the roles and supervision review's second cycle (2026-11-09)
+
+> **ROLESREVIEW2i** (modules): Outcome: a leave of an allow or files subject asks the same coverage as a decide (`SupervisorDecisionDoor.CoversPlace` for a place no repository names, `Covers` for a held request's repository), so a holder of another place cannot hide a subject from the supervisor that answers it; a leave still asks no grant (`roles-and-supervision.md`, rule 46).
+>
+> **ROLESREVIEW2j** (driver): Outcome: an overruled or stale course or landing decision is refused `overruled` in the run as after a restart (the question's keeping already said so), and a course's overrule or stale release closes its subject at once, as a landing's does.
+>
+> **ROLESREVIEW2k** (driver): Outcome: a share's allow is written into every repository's layer in one read and one write of the person's file (`PersonFiles.EditScopes`), so a failure on a later layer leaves none written and the ask's `made: false` is true; no layer was found to fail alone by a `DriverException`, which only the file's own read raises before any layer is edited, so the write's atomicity is the fix.
+>
+> **ROLESREVIEW2l** (driver): Outcome: a say that comes back as a gateway's, timeout's or throttle's reply with no refusal (`SayAnswer.Lost`: 408, 429, 502, 503, 504) keeps the supervisor's release held to repeat under its receipt, as a thrown lost response does; a 404 and the like stay `no door`, ending the decision `unsaid`. A transport failure already threw, so only a reply that was returned needed the change.
+>
+> **ROLESREVIEW2m** (driver): Outcome: `driver role` set, remove, default and policy plan against the role's revision as the catalogue read it (the press's `revision`, and the write's `read`), so a role edited since is refused moved, not overwritten; `role suggested --use` is one `RoleDoor.ApplyAll` batch judged whole. No refusal inside the batch could be built to show its all-or-none write by a test; the batch is the door's own, pinned by its tests.
+>
+> **ROLESREVIEW2n** (driver): Outcome: the staffing's one publication (`RoleStaffing.Publishing`, which `Commit` now calls) wraps a store failure in a `DriverException` as the commit did, and `RoleCatalog.WriteIn` refuses a late judge's refusal as a `RoleRefusedException` carrying its code, so the second of two presses adding roles that take one work is `two-roles-one-work`.
+>
+> **ROLESREVIEW2o** (driver): Outcome: a start plan's walk that throws (a cancelled account look or order loop) gives its policy reservation back before the exception leaves (`StartPlan.ResolveAsync`), so it no longer counts in the weighted pick, a share or a daily budget until `ReservationLife`.
+>
+> **ROLESREVIEW2p** (modules): Outcome: a catalogue that cannot be read at an act's step (`RoleActsLedger.RunAct`) or a terminal's start (`RoleTerminals.StartAsync`) is `role-changed`, as admission says it, and withdraws no queued act, where it was `not-granted` for good and `unknown-role`.
+>
+> **ROLESREVIEW2q** (driver): Outcome: a cancel that meets a turn already ended is no error (`SupervisorRuns.StopUnwaited`); a subject whose every choice was spent is said once on its line as an unavailable supervisor is (`SupervisePass`); and the said-once memory is cut to the subjects still waiting at each look (`SupervisePass.Forget`).
+
 ## TREEPOOL1ac — shared paths (2026-11-09)
 
 > **TREEPOOL1ac** (driver, web; §35.5, §36.5, §37.4): Outcome: `reach: read` and `write` (refused on a dependency, intermediate, cache or output entry, and never a harness's settings) link each named path into every tree to its one place in the checkout, recorded in the files record's `Shares` before the link is made and only into an absent entry, where `share(path)` is let through, git ignores the path and the place stands in no other repository (`TreeSharing`, `started.share-declined` with its `note.deps.why.share-*` reasons, a file link the machine refuses included); a share counts, and is unlinked, only while its entry reads without following as a link to its place, anything else there the line's, its record dropped and said `tree.share-lost` (`TreeShares`); `TopPartition` partitions a top at recorded and declared share boundaries without entering a link, `SlotIgnored.Shared` moved by no take or finish, a link no share holds refused as foreign; a take unlinks before its switch, a retirement and the tidy's move before theirs; `started.tree-shared` warns that a recursive delete following a link reaches the shared place; proved by `TreeSharesTests` and `TreePoolSharesGitTests` on real junctions and file links.

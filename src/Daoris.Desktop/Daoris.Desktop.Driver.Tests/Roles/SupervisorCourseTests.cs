@@ -164,6 +164,8 @@ public sealed class SupervisorCourseTests : IDisposable
         Assert.Equal([SupervisorState.Stale], await decisions.ReleaseCoursesAsync(Points(Book(SupervisorRules.Hold)).Line(_ => Asker, _ => false), At.AddMinutes(2)));
         Assert.Equal(GoOnMarks.AnswersAlone, Marks.Read("s1")?.Why);
         Assert.Contains("rule-holds", File.ReadAllText(Path.Combine(DaorisHome.Entry(_home, HomeEntry.Sessions, "s1" + QuestionSupervisorDecisions.DecisionsSuffix), kept.Decision + ".states")));
+        Assert.True(decisions.Closed(SupervisorSubject.Point("s1", act.Id, SupervisorKinds.Course)));
+        Assert.Equal(SupervisorWhy.Overruled, (await decisions.CourseAsync(Course(act.Id), Points(Book(SupervisorRules.Refer)).PointOf(Asker, null), At.AddMinutes(3))).Why);
     }
 
     [Fact]
@@ -177,6 +179,8 @@ public sealed class SupervisorCourseTests : IDisposable
         Assert.Equal(SupervisorState.Overruled, await decisions.OverruleAsync("s1", kept.Decision!, (_, _, _) => Task.FromResult(true), At.AddSeconds(10)));
         Assert.Empty(await decisions.ReleaseCoursesAsync(Points(book).Line(_ => Asker, _ => false), At.AddMinutes(2)));
         Assert.Equal(GoOnMarks.AnswersAlone, Marks.Read("s1")?.Why);
+        Assert.True(decisions.Closed(SupervisorSubject.Point("s1", act.Id, SupervisorKinds.Course)));
+        Assert.Equal(SupervisorWhy.Overruled, (await decisions.CourseAsync(Course(act.Id), Points(book).PointOf(Asker, null), At.AddMinutes(3))).Why);
     }
 
     /// <summary>

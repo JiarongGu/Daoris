@@ -23,7 +23,8 @@ internal sealed class RoleTerminals(StandingConfirmation owner, StandingState st
     public async Task<HoldChange> StartAsync(HoldRequest request, Func<HolderOpen, Task<HolderOpened>> open)
     {
         var role = request.Role;
-        if (owner.Appointed().FirstOrDefault(each => each.Id == role) is not { Hold.Kind: { } kind } staffed)
+        if (owner.Slots() is not { } slots) return Refuse(SupervisorWhy.RoleChanged, "The roles cannot be read now, so nothing was started: try again once they read.");
+        if (StandingConfirmation.AppointedOf(slots).FirstOrDefault(each => each.Id == role) is not { Hold.Kind: { } kind } staffed)
         {
             return Refuse(StandingConfirmation.UnknownRole, $"This Daoris has no appointed role `{role}`.");
         }

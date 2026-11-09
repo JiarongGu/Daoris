@@ -15,12 +15,12 @@ public static class FileAllows
         FileRules.Of([], [], PersonFiles.Read(home), ask.Repository).Judge(ask.Text) == FileVerdict.Held;
 
     /// <summary>
-    /// The allow written into each of <paramref name="ask"/>'s repositories' own layers, never the machine's, and never the <c>ask</c>'s
-    /// pattern; how many layers took it (one already holding it took none).
+    /// The allow written into each of <paramref name="ask"/>'s repositories' own layers in one write, never the machine's, and never the
+    /// <c>ask</c>'s pattern; how many layers took it (one already holding it took none).
     /// </summary>
-    /// <exception cref="DriverException">The person's file stands and does not read.</exception>
+    /// <exception cref="DriverException">The person's file stands and does not read; then no layer took it.</exception>
     public static int Give(string home, FileAsk ask, string role, string decision) =>
-        ask.Repositories.Count(repository => PersonPermissions.Add(home, repository, "allow", ask.Text, role, decision));
+        PersonPermissions.AddAll(home, [.. ask.Repositories], "allow", ask.Text, role, decision);
 
     /// <summary>
     /// Every ask a decision has begun on, settled from the file: made where an allow stands under that decision in one of its repositories'

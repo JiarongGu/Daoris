@@ -226,4 +226,18 @@ public sealed class DriverModuleFilesKindTests : DriverModuleBridge
         var late = await DecideAsync(door, ask, Generation(door, ask));
         Assert.Equal((false, SupervisorWhy.Answered), Answer(late));
     }
+
+    [Fact]
+    public async Task A_leave_of_an_ask_in_a_repository_the_holders_role_does_not_cover_is_refused()
+    {
+        if (!OperatingSystem.IsWindows()) return;
+        PersonPermissions.Add(Home, null, "ask", "run(npm *)", null);
+        using var door = await OpenAsync(RoleKit.Repository("elsewhere"));
+        var ask = Held("engine", "run(npm ci)");
+
+        var left = await door.Send("SUPERVISOR_LEAVE", nonce =>
+            new SupervisorLeaveForm(Subject(ask), Generation(door, ask, new RolePlace(Repository: "elsewhere")), "", SupervisorBounds.All[0], Reasons).Proved(door.Key, nonce).Payload());
+
+        Assert.Equal((false, SupervisorWhy.NotStaffed), Answer(left));
+    }
 }

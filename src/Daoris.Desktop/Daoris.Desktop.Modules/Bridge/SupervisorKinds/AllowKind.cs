@@ -85,12 +85,27 @@ internal sealed class AllowKind : ISupervisorKind
             .ConfigureAwait(false);
     }
 
-    public Task<SupervisorDecided> LeaveAsync(DriverLoop loop, SupervisorLeaveForm form, SupervisorHolder holder, CancellationToken ct)
+    public async Task<SupervisorDecided> LeaveAsync(DriverLoop loop, SupervisorLeaveForm form, SupervisorHolder holder, CancellationToken ct)
     {
-        if (form.Subject.IsAsk) return Task.FromResult(StewardAllowSubjects.Leave(loop, form));
-        if (!Standing(loop, form.Subject)) return Task.FromResult(SupervisorDecided.Refused(form.Subject.IsProposal ? SupervisorWhy.Answered : SupervisorWhy.NotHeld));
+        if (form.Subject.IsAsk) return StewardAllowSubjects.Leave(loop, form);
+        if (!Standing(loop, form.Subject)) return SupervisorDecided.Refused(form.Subject.IsProposal ? SupervisorWhy.Answered : SupervisorWhy.NotHeld);
+        // A leave hides the subject from the supervisor that answers it, so only that supervisor's holder may make one.
+        if (await PlaceOfAsync(loop, form.Subject, ct).ConfigureAwait(false) is { } place)
+        {
+            if (SupervisorDecisionDoor.CoversPlace(loop, form.Generation, Kind, place) is { } uncovered) return SupervisorDecided.Refused(uncovered);
+        }
+        else if (loop.Service is { } service
+            && await service.RecordAsync(form.Subject.Session, ct).ConfigureAwait(false) is { Repository: { } repository })
+        {
+            if (SupervisorDecisionDoor.Covers(loop, form.Generation, Kind, repository) is { } uncovered) return SupervisorDecided.Refused(uncovered);
+        }
+        else
+        {
+            return SupervisorDecided.Refused(SupervisorWhy.NotHeld);
+        }
+
         Left[Key(form.Subject)] = 0;
-        return Task.FromResult(new SupervisorDecided(true, null, null, null));
+        return new SupervisorDecided(true, null, null, null);
     }
 
     /// <summary>The place whose supervisor answers a subject, for an agent's keeping to read its grant against; null where the subject names none.</summary>

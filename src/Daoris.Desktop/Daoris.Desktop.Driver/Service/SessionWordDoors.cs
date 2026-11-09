@@ -85,7 +85,14 @@ public sealed class SessionWordDoors
             return new SayAnswer(true, said.Message ?? "") { Word = said.Said is { } word ? SessionReads.ReadWord(word) : null };
         }
 
-        if (sent.Reply.Ok || Refused(sent.Reply) is not { } refusal) return new SayAnswer(false, NoDoor("words to a session that is not running", sent.Reply));
+        if (sent.Reply.Ok || Refused(sent.Reply) is not { } refusal)
+        {
+            return new SayAnswer(false, NoDoor("words to a session that is not running", sent.Reply))
+            {
+                Lost = sent.Reply.Status is 408 or 429 or 502 or 503 or 504,
+            };
+        }
+
         // `continued` names the line's head beside its word, at the status of every other refusal.
         return new SayAnswer(false, refusal.Error ?? sent.Reply.Payload)
         {

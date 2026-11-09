@@ -276,7 +276,7 @@ public sealed class RoleCatalogJudgeTests : IDisposable
         var settled = () => StoreSettled.Yes;
         var designer = Working("designer", ParticipantWork.Design, Workspace());
 
-        var refused = Assert.Throws<DriverException>(() => RoleCatalog.Write(Db, RoleChange.Set(designer with { Filled = RoleRecord.Appointed }), settled));
+        var refused = Assert.Throws<RoleRefusedException>(() => RoleCatalog.Write(Db, RoleChange.Set(designer with { Filled = RoleRecord.Appointed }), settled));
         Assert.Contains("appointed", refused.Message);
         Assert.Empty(Revisions());
 

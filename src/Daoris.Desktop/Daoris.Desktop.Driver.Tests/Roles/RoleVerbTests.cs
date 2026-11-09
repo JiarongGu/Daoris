@@ -326,6 +326,32 @@ public sealed class RoleVerbTests : IDisposable
     }
 
     [Fact]
+    public async Task ROLESREVIEW2m_a_planned_press_carries_the_revision_it_read_and_is_refused_where_the_role_moved_since()
+    {
+        Assert.Equal(0, await Run("set", "designer", "--name", "Designer", "--takes", "design", "claude-code-acp opus high"));
+        var world = new DriverChoicesWorld
+        {
+            Verbs = DriverChoiceVerbs.All,
+            Instance = new InstanceWorld { Home = _home, Environment = _ => null, Out = _out, Error = _error, Verb = "daoris" },
+            ConfigPath = File_,
+            Folder = _home,
+            InAgentJob = () => false,
+        };
+        var before = StaffingProjection.Config(RoleStaffing.Of(File_)!.Read()!);
+        var read = Catalogue().RevisionOf("designer");
+
+        var set = new RoleVerb().Plan(["role", "set", "designer", "--scope", "workspace:studio"], before, world);
+        var policy = new RoleVerb().Plan(["role", "policy", "designer", "--preset", "even"], before, world);
+        Assert.Equal(read, RoleDoor.ReadPress(JsonSerializer.SerializeToElement(set.Payload)).Read);
+        Assert.Equal(read, RoleDoor.ReadPress(JsonSerializer.SerializeToElement(policy.Payload)).Read);
+
+        Assert.Equal(0, await Run("set", "designer", "--scope", "workspace:other"));
+        await Assert.ThrowsAsync<DriverException>(() => set.Act(CancellationToken.None));
+        await Assert.ThrowsAsync<DriverException>(() => policy.Act(CancellationToken.None));
+        Assert.Equal(new RoleScope(RoleScope.Workspace, "other"), Catalogue().Slots.Single(slot => slot.Id == "designer").Role!.Scope);
+    }
+
+    [Fact]
     public async Task Suggested_says_the_table_and_changes_nothing_until_use_sets_each_role_through_the_door()
     {
         Assert.Equal(0, await Run("suggested"));
