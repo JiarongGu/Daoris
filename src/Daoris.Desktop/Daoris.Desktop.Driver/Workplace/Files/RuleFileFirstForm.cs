@@ -68,8 +68,8 @@ internal static class RuleFileFirstForm
 
         var entries = new List<FileRule>();
         if (closed.Count > 0) entries.Add(rule with { Paths = [.. closed.Distinct(StringComparer.Ordinal)] });
-        entries.AddRange(files.Select(patterns => rule with { Paths = patterns }));
-        if (kept.Count > 0) entries.Add(rule with { Paths = kept, FirstForm = true });
+        entries.AddRange(files.Select(patterns => rule with { Paths = [.. patterns] }));
+        if (kept.Count > 0) entries.Add(rule with { Paths = [.. kept], FirstForm = true });
         return entries;
     }
 
@@ -91,8 +91,8 @@ internal static class RuleFileFirstForm
     {
         var plain = entry with { FirstForm = false };
         var (closed, _) = Wordings(path);
-        if (whole) return closed.Count == 0 ? [] : [plain with { Paths = closed }];
-        return [.. Words(path).Where(word => ClassOf(word) == FirstFormClass.Kept).SelectMany(FilesOf).Select(patterns => plain with { Paths = patterns })];
+        if (whole) return closed.Count == 0 ? [] : [plain with { Paths = [.. closed] }];
+        return [.. Words(path).Where(word => ClassOf(word) == FirstFormClass.Kept).SelectMany(FilesOf).Select(patterns => plain with { Paths = [.. patterns] })];
     }
 
     /// <summary>A kept word's files: the word without its trailing <c>**/</c>, as a files-only word, or none where it then ends in <c>/</c>.</summary>

@@ -100,8 +100,8 @@ public sealed class RuleFileFirstFormCorpusTests
         Assert.Equal([FirstFormClass.Files, FirstFormClass.Files], Classes("{*.js,x}"));
         Assert.Equal([FirstFormClass.Kept, FirstFormClass.Kept], Classes("{bin/,obj/}"));
 
-        Assert.Equal(["/logs/"], RuleFileFirstForm.Entries(new FileRule(FileKind.Cache, ["logs/**/"])).Single().Paths);
-        Assert.Equal(["/*", "!/*/"], RuleFileFirstForm.Entries(new FileRule(FileKind.Cache, ["*"])).Single().Paths);
+        Assert.Equal<string>(["/logs/"], RuleFileFirstForm.Entries(new FileRule(FileKind.Cache, ["logs/**/"])).Single().Paths);
+        Assert.Equal<string>(["/*", "!/*/"], RuleFileFirstForm.Entries(new FileRule(FileKind.Cache, ["*"])).Single().Paths);
         Assert.True(RuleFileFirstForm.Entries(new FileRule(FileKind.Cache, ["P/*"])).Single().FirstForm);
     }
 
@@ -128,7 +128,7 @@ public sealed class RuleFileFirstFormCorpusTests
         AssertSame(person, TopsOf(["drafts", "notes", "src", "App", "a", "bin", "node_modules", "aXb", "x", "scratch", "build", "y.js", "P", "deep", "Xabc", "Y", "logs", "d1", "d.lock", "[x]", "local", "x.txt"], 3));
         var copy = RuleFileFirstForm.Entries(person[4]).Single();
         Assert.Equal("copy", copy.Reach);
-        Assert.Equal(["/local/x.txt", "!/local/x.txt/"], copy.Paths);
+        Assert.Equal<string>(["/local/x.txt", "!/local/x.txt/"], copy.Paths);
         Assert.True(person[5].Across);
     }
 
@@ -140,7 +140,7 @@ public sealed class RuleFileFirstFormCorpusTests
         var tops = TopsOf(["node_modules", ".pnp.cjs", ".yarn", "cache", "obj", "bin", "target", ".venv", "__pycache__", ".pytest_cache", "build", "out", "dist", "x"], 3);
         for (var i = 0; i < shipped.Count; i++)
         {
-            var old = new FileRule(shipped[i].Kind, SignaturesFirstForm[i]);
+            var old = new FileRule(shipped[i].Kind, [.. SignaturesFirstForm[i]]);
             foreach (var top in tops) Assert.True(old.Paths.Any(path => RoomPaths.Declared(path).IsMatch(top)) == shipped[i].Matches(top), $"{string.Join(",", old.Paths)} at {top}");
         }
     }

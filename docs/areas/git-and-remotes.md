@@ -299,7 +299,8 @@ and each folder on the way, kept by id only where each object's bytes hash to it
 `BlobId` only where its bytes hash to it; a blob asked by id answered only by bytes that hash to it, else *unread: replaced*; a
 commit's tracked list kept by commit under the replacement gate's `StatFence`. While `CanBeInForce` holds it asks git by path and
 admits nothing. A `DeclarationVersion` is compared by `Same` alone, an *unread* the same as none and without text; a kind's parse
-(`IDeclarationKind`, the rule file's `RuleFileKind`) and a view (`IDeclarationView`) are kept by the content keys they are made from, a
+(`IDeclarationKind`, the rule file's `RuleFileKind`, its `FileRule` lists and `RepositoryFilesRead`'s immutable arrays, a default
+array refused) and a view (`IDeclarationView`) are kept by the content keys they are made from, a
 parse naming a problem made again at each ask, and contents, tracked lists and indexes are each bounded alone (`DeclarationBound`:
 16, 24 and 4 MB). `TipOf` reads a full ref from its loose file or the `packed-refs` parse, a symbolic ref followed to five, a
 reftable's from git; `GitTreeReads` is the door for path-bearing reads, its search git's with the declarations excluded and their

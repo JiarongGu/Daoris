@@ -40,7 +40,7 @@ public sealed class GitPatternOracleTests(ITestOutputHelper output) : IAsyncLife
         var corpus = RuleFileFirstFormCorpusTests.Generated().Where((_, at) => at % 20 == 0)
             .Concat(RuleFileFirstFormCorpusTests.FirstFormRules(RuleFileFirstFormCorpusTests.RepositoryFirstForm).SelectMany(rule => rule.Paths))
             .Concat(RuleFileFirstFormCorpusTests.FirstFormRules(RuleFileFirstFormCorpusTests.PersonFirstForm).SelectMany(rule => rule.Paths));
-        entries.AddRange(corpus.SelectMany(path => RuleFileFirstForm.Entries(new FileRule(FileKind.Scratch, [path]))).Where(entry => !entry.FirstForm).Select(entry => entry.Paths));
+        entries.AddRange(corpus.SelectMany(path => RuleFileFirstForm.Entries(new FileRule(FileKind.Scratch, [path]))).Where(entry => !entry.FirstForm).Select(entry => (IReadOnlyList<string>)entry.Paths));
 
         var tops = RuleFileFirstFormCorpusTests.TopsOf(CorpusNames, 2).Concat(RuleFileFirstFormCorpusTests.TopsOf(CorpusNames[..3], 3));
         await AssertAgreeAsync(entries, tops.Concat(["out/", "out/keep/", "out/keep/x", "out/x", "a/b/c"]));
@@ -52,7 +52,7 @@ public sealed class GitPatternOracleTests(ITestOutputHelper output) : IAsyncLife
         var read = RepositoryFilesReader.Read(File.ReadAllText(Path.Combine(WorkspaceRoot.Folder, DeclarationNames.Rules)));
         Assert.Empty(read.Problems);
         Assert.Empty(read.Rules.Where(rule => rule.FirstForm));
-        var entries = read.Rules.Select(rule => rule.Paths).ToList();
+        var entries = read.Rules.Select(rule => (IReadOnlyList<string>)rule.Paths).ToList();
         var named = entries.SelectMany(paths => paths).Where(path => !path.StartsWith('!')).Select(path => GitPattern.Probe(path)!)
             .SelectMany(top => new[] { top, top + "/", top + "/x", top + "/x/" });
         var tops = RuleFileFirstFormCorpusTests.TopsOf(RepositoryNames[..8], 3).Concat(named).Distinct(StringComparer.Ordinal).ToList();

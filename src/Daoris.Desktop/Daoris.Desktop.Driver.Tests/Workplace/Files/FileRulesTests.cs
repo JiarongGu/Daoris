@@ -10,7 +10,7 @@ public sealed class FileRulesTests
 {
     private static readonly FileFloorFacts NoFloor = new([], []);
 
-    private static FileRule Rule(FileKind kind, params string[] paths) => new(kind, paths);
+    private static FileRule Rule(FileKind kind, params string[] paths) => new(kind, [.. paths]);
 
     private static PersonFilesRead Person(string json) => PersonFiles.Parse(json);
 
@@ -86,7 +86,7 @@ public sealed class FileRulesTests
 
         var placed = rules.For("node_modules/", NoFloor);
         Assert.Equal("npm ci", placed.Rule!.Install);
-        Assert.Equal(["package-lock.json"], placed.Rule.Key);
+        Assert.Equal<string>(["package-lock.json"], placed.Rule.Key!);
         Assert.Null(placed.Idle);
         Assert.Contains("acts on nothing", rules.For("vendor/", NoFloor).Idle, StringComparison.Ordinal);
     }
@@ -133,7 +133,7 @@ public sealed class FileRulesTests
             """);
 
         Assert.Null(person.Unread);
-        Assert.Equal(["/tmp/"], Assert.Single(person.Machine.Rules).Paths);
+        Assert.Equal<string>(["/tmp/"], Assert.Single(person.Machine.Rules).Paths);
         Assert.Equal(["run(npm *)"], person.Machine.Permissions.Ask);
         Assert.Equal(4, person.Problems.Count);
         Assert.Contains(person.Problems, problem => problem.Contains("`copy` is not a field of an `output` rule", StringComparison.Ordinal));

@@ -69,7 +69,7 @@ public static class FilesLooks
     {
         var said = file.Below.Select(each => each.Rule).Reverse().Prepend(file.Rule).OfType<FileRule>().ToList();
         var size = said.Select(rule => rule.Size).FirstOrDefault(found => found is not null);
-        var evidence = said.Select(rule => rule.Evidence).FirstOrDefault(found => found.Count > 0) ?? [];
+        var evidence = said.Select(rule => rule.Evidence).FirstOrDefault(found => found.Length > 0, []);
         return new FilesLookFile(
             file.Path, file.Kind?.Word(), file.Layer is { } layer ? Word(layer) : null, FloorCode(file.Floor), file.Copy, file.Idle is null ? null : "no-install",
             size?.Files, size?.Bytes, size?.More ?? false, evidence,
