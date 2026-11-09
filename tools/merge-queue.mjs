@@ -1,15 +1,9 @@
-#!/usr/bin/env node
 /**
  * The scoped run, the merge queue and the admission between the runners (design
  * `docs/2026-10-24-ci-scope-design.md` §4 and §5.1, §8 row 5). The merge tool's queue verbs (`<branch> --preview`,
  * `<branch> --message <file>`, `--queue`, `--queue --recheck`) and its detached runner (`--queue-run`) read and write these
- * records; each is kept in the main checkout's ignored `local/`.
- *
- * ## Why
- *
- * A merge waits on a scoped run of what it reaches, on a candidate commit in a tree of its own (`local/scope-tree`), so no dispatch waits
- * on the main checkout and main moves only by a fast-forward onto a candidate that passed. The full set stays the background
- * run's, which the install waits for.
+ * records; each is kept in the main checkout's ignored `local/`. A merge waits on a scoped run of what it reaches, on a candidate
+ * commit in a tree of its own (`local/scope-tree`), and main moves only by a fast-forward onto a candidate that passed.
  *
  * ## The queue, `local/merge-queue.json`
  *
@@ -75,13 +69,11 @@
  * settled only when that member promotes (`settleContained`). A candidate that ends any other way (a member handed back, a split,
  * a re-form, a drop) gives it back as its own request (`requestsOf`), merged again with the rest and so judged again: the line
  * never held it if its container fails.
- *
- * Exit codes: 0 · 2 a tool error. `node tools/merge-queue.mjs` prints the queue and the admission record.
  */
 import { randomUUID } from 'node:crypto';
 import { appendFileSync, existsSync, mkdirSync, readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
-import { isMain, writeAtomic } from './fsx.mjs';
+import { writeAtomic } from './fsx.mjs';
 import { signatureKey } from './test-failures.mjs';
 
 export const MERGE_QUEUE = 'local/merge-queue.json';
@@ -96,27 +88,26 @@ export const CANDIDATE_MAX = 8;
 export const RUNNER_ACK_MS = 30_000;
 /** The runner's own recheck of a stop on the base (§4.1 point 4). */
 export const RECHECK_MS = 60 * 60_000;
-/** A candidate re-formed this many times running is held by direct commits (§4.1 point 3). */
 export const HELD_REFORMS = 3;
 /** The git half's budget, unless the gate declares `"scope": { "budgetMinutes": n }` (§4.2 point 5). */
 export const GIT_BUDGET_MINUTES = 8;
-/** The git half's lanes (§4.2 point 5). */
 export const GIT_LANES = 4;
 /** The memory the background leaves unreserved for the scoped peak (§5.1). */
 export const FOREGROUND_HEADROOM_GB = 26;
 /** A background Process-lane gate kept this long takes the slot between scoped tiers (§5.1). */
 export const BACKGROUND_SLOT_WAIT_MS = 60 * 60_000;
-/** The candidate's states, and a member's (§4.1, *Durable state*). */
 export const CANDIDATE_STATES = Object.freeze(['forming', 'running', 'bisecting', 'green', 'promoting', 'promoted', 'held', 'stopped']);
 export const HANDED_BACK = Object.freeze(['pinned', 'pinned with', 'unresolved', 'conflict']);
 
 const iso = (ms) => new Date(ms).toISOString();
 const timeOf = (at) => (typeof at === 'string' ? Date.parse(at) : Number.NaN);
 
+// A file that is there and cannot be read (a scanner holding it for a moment) throws: a writer that took it for an empty record would write the empty one over it.
 function readJson(file, empty) {
   if (!existsSync(file)) return empty();
+  const text = readFileSync(file, 'utf8');
   try {
-    const parsed = JSON.parse(readFileSync(file, 'utf8'));
+    const parsed = JSON.parse(text);
     return parsed && typeof parsed === 'object' ? parsed : empty();
   } catch {
     return empty();
@@ -128,7 +119,7 @@ function readJson(file, empty) {
 
 export const emptyQueue = () => ({ schema: 1, queued: [], previews: {}, candidate: null, stop: null, handedBack: [], runner: null, recheck: null });
 
-/** `local/merge-queue.json`, or an empty queue where there is none or it does not read. */
+/** `local/merge-queue.json`, or an empty queue where there is none or it does not parse. */
 export function readQueue(root) {
   const record = readJson(join(root, MERGE_QUEUE), emptyQueue);
   return { ...emptyQueue(), ...record };
@@ -1016,23 +1007,4 @@ export function queueLines(queue, { branchTip = () => null, now = Date.now() } =
   }
   if (!out.length) out.push('the queue is empty');
   return out;
-}
-
-function main() {
-  const root = process.cwd();
-  for (const line of queueLines(readQueue(root))) console.log(line);
-  const admission = readAdmission(root);
-  console.log(`admission: ${admission.reservations.length} reservation${admission.reservations.length === 1 ? '' : 's'}${admission.scopedTier ? `, a scoped tier ${admission.scopedTier.state}` : ''}`);
-  for (const each of admission.reservations) console.log(`  ${each.gate} (${each.runner}): ${each.needGb} GB, job ${each.job}`);
-  for (const line of overdueWaits(admission)) console.log(`  overdue: ${line}`);
-  return 0;
-}
-
-if (isMain(import.meta.url)) {
-  try {
-    process.exitCode = main();
-  } catch (error) {
-    console.error(`merge-queue: ${error.message}`);
-    process.exitCode = 2;
-  }
 }
