@@ -114,7 +114,7 @@
   "agents.section.show": "Show {{section}}",
   "agents.section.hide": "Hide {{section}}",
   "agents.account.own": "Your own sign-in",
-  "agents.account.none": "No Daoris account yet: these are the accounts its work runs as. “{{press}}” above adds the first.",
+  "agents.account.none": "No Daoris account yet: its starts wait until one is added. “{{press}}” above adds the first.",
   "agents.account.more": "More for {{account}}",
   "agents.account.about": "About {{account}}'s state",
   "agents.account.rename": "Rename…",

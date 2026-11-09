@@ -53,6 +53,7 @@ export function AccountsFold({ adding, goingBack, signInNewPanel, added, back, b
   toggle: (section: AgentSection) => void;
   choices: AccountChoice[];
 }) {
+  const said = nextSaid && tool.accounts.length === 0 && firstPress ? (nextSaid.doors.length > 0 ? { ...nextSaid, takes: '' } : null) : nextSaid;
   return (
     <>
 {adding && (
@@ -136,21 +137,19 @@ export function AccountsFold({ adding, goingBack, signInNewPanel, added, back, b
           )}
           {/* Which account the next start takes and why, in any workspace, above the rows that answer it in parts: a light line, not a setting's row, in the words of the fold's *Next start*; what
               holds the account the order begins on follows in the soft ink, since that is the one a person expects it to take. */}
-          {nextSaid && (
+          {said && (
             <p className="m-0 mb-2 text-small text-ink [overflow-wrap:anywhere]">
-              <span>{nextSaid.takes}</span>
-              {nextSaid.held && <>{t('harness.said.sentences')}<span className="text-ink-soft">{nextSaid.held}</span></>}
-              {nextSaid.doors.map((line) => <span key={line} className="block text-ink-soft">{line}</span>)}
+              {said.takes && <span>{said.takes}</span>}
+              {said.held && <>{t('harness.said.sentences')}<span className="text-ink-soft">{said.held}</span></>}
+              {said.doors.map((line) => <span key={line} className="block text-ink-soft">{line}</span>)}
             </p>
           )}
           <ul className={ACCOUNT_COLUMNS}>
-            {/* Column heads only over rows; with no account the list says what it is and the press that adds the first. */}
             {tool.accounts.length > 0 && <AccountColumnsHead />}
             {tool.accounts.length === 0 && firstPress && (
               <li className="col-span-full mb-1 text-small text-ink-soft [overflow-wrap:anywhere]">{t('agents.account.none', { press: firstPress })}</li>
             )}
             {tool.accounts.map(accountRow)}
-            {/* The API key adds to Daoris's accounts, so its form opens under them and above the person's own sign-in, which is no account of Daoris's. */}
             {keying && (
               <li className="col-span-full">
               <form className="mt-2 flex flex-wrap items-center gap-2" onSubmit={(event) => { event.preventDefault(); addKey(); }}>

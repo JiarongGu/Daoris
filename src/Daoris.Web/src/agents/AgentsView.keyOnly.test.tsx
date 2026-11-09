@@ -80,8 +80,8 @@ describe('the Agents place, an agent held by a key alone', () => {
 
     expect(await screen.findByRole('heading', { level: 1, name: 'DeepSeek Harness' })).toBeTruthy();
     const main = within(screen.getByRole('main'));
-    expect(main.getByText('No Daoris account yet: these are the accounts its work runs as. “Add an API key” above adds the first.')).toBeTruthy();
+    expect(main.getByText('No Daoris account yet: its starts wait until one is added. “Add an API key” above adds the first.')).toBeTruthy();
     expect(main.queryByText('State')).toBeNull();
-    expect(i18n.t('agents.account.none', { press: '添加 API 密钥', lng: 'zh' })).toBe('还没有 Daoris 账户：这里是它的工作所用的账户。上方的“添加 API 密钥”可添加第一个。');
+    expect(i18n.t('agents.account.none', { press: '添加 API 密钥', lng: 'zh' })).toBe('还没有 Daoris 账户：添加之前，它的启动会等待。上方的“添加 API 密钥”可添加第一个。');
   });
 });
