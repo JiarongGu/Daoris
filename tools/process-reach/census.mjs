@@ -182,10 +182,12 @@ export function censusOf(half, files, read) {
     const chain = chainOf(entry);
     const classPairs = chain.flatMap((each) => each.decls.flatMap((d) => traitsIn(d.attributes, constants)));
     const traits = traitMap(classPairs);
-    // In the half when the class's traits hold its filter, or one test's own with them do (a class whose git cases alone are Process).
+    // In the half when, for one test by its name, the class's traits hold its filter, or that test's own with them do (git cases alone).
     const tests = chain.flatMap((each) => each.decls.flatMap((d) => d.methods));
-    const inHalf = filter === null || filterHolds(filter, traits)
-      || tests.some((attributes) => filterHolds(filter, traitMap([...classPairs, ...traitsIn(attributes, constants)])));
+    const inHalf = filter === null || tests.some((attributes) => {
+      const name = `${entry.full}.${/(\w+)\s*$/.exec(attributes)?.[1] ?? ''}`;
+      return filterHolds(filter, traits, name) || filterHolds(filter, traitMap([...classPairs, ...traitsIn(attributes, constants)]), name);
+    });
     if (!inHalf) continue;
     for (const [name, value] of tests.flatMap((attributes) => traitsIn(attributes, constants))) {
       if (!traits.has(name)) traits.set(name, new Set());

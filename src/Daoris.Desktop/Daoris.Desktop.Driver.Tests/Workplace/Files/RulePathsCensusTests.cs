@@ -11,7 +11,7 @@ public sealed class RulePathsCensusTests
 {
     /// <summary>
     /// The lines that read a rule's paths without matching them: the matcher itself, the first form's translation, the writer, the
-    /// rule's own record and the ones that only show, carry, order or count them; and the integration file's merge rules, whose
+    /// rule's own record and the ones that only show, carry, order, count or weigh them; and the integration file's merge rules, whose
     /// <c>Paths</c> is one attribute pattern, not a rule file's.
     /// </summary>
     private static readonly string[] OnlyShow =

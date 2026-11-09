@@ -192,7 +192,7 @@ public sealed class RebaseReplayGitTests : LandedFixture
         await Record.ExceptionAsync(() => Replay.ReplayAsync(work, tree.Path, line, [], stop.Token));
 
         Assert.Equal(2, await TreesAsync(root));
-        var own = Path.Combine(Home, "trees");
+        var own = DaorisHome.Entry(Home, HomeEntry.Trees);
         Assert.DoesNotContain(Directory.Exists(own) ? Directory.EnumerateDirectories(own, $"{BranchReplays.Prefix}*", SearchOption.AllDirectories) : [], _ => true);
     }
 

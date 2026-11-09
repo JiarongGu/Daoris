@@ -22,23 +22,26 @@ public static class DeclarationNames
     public static readonly string Lanes = "daoris.lanes.json";
 
     /// <summary>The person's choices, under the home's data.</summary>
-    public static readonly string DriverConfig = "driver.json";
+    public static readonly string DriverConfig = HomeName(HomeEntry.DriverConfig);
 
     /// <summary>The person's own layer of the file rules, under the home's data.</summary>
-    public static readonly string PersonRules = "files.json";
+    public static readonly string PersonRules = HomeName(HomeEntry.Files);
 
     /// <summary>The layer the analysis found, under the home's data.</summary>
-    public static readonly string FoundRules = "files-found.json";
+    public static readonly string FoundRules = HomeName(HomeEntry.FilesFound);
 
     /// <summary>The asks the file rules hold, under the home's data.</summary>
-    public static readonly string FileAsks = "files-asks.json";
+    public static readonly string FileAsks = HomeName(HomeEntry.FilesAsks);
 
     /// <summary>The folder of the saved workflows, under the home's data.</summary>
-    public static readonly string Workflows = "workflows";
+    public static readonly string Workflows = HomeName(HomeEntry.Workflows);
 
     /// <summary>A repository's declarations, each at its top.</summary>
     public static readonly ImmutableArray<string> Repository = [Manifest, Rules, Gates, Lanes];
 
     /// <summary>The door's exclusion: a pathspec for each of the repository's declarations, so a git search reads none of them.</summary>
     internal static readonly ImmutableArray<string> Excluded = [.. Repository.Select(name => ":(exclude,literal)" + name)];
+
+    // A home declaration's place is the home table's row, so its name is that place's last part and is spelled there alone.
+    private static string HomeName(HomeEntry entry) => entry.New[(entry.New.LastIndexOf('/') + 1)..];
 }

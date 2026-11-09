@@ -45,9 +45,11 @@ public sealed class GitReadsAskTests : IDisposable
 
     private static bool IsDiff(IReadOnlyList<string> arguments) => arguments.Contains("diff");
 
+    /// <summary>A commit is two calls; its fields, the objects' alone, are kept, and its changes, read under the tree's attributes, are not.</summary>
     [Fact]
-    public async Task A_commit_is_two_calls_and_reading_it_again_starts_none()
+    public async Task A_commit_is_two_calls_and_reading_it_again_asks_its_changes_alone()
     {
+        using var _ = SettledClock.Ahead();
         var git = new StandInGit().Answer(IsMeta, Meta(Merge, $"{Line} {Side}", "Merge topic\n\nbody\n")).Answer(IsDiff, OneFile);
         var reads = new GitReads(new GitReadCache(), git.Read);
 
@@ -66,13 +68,15 @@ public sealed class GitReadsAskTests : IDisposable
         Assert.Contains("-p", git.Asked[1]);
         Assert.Equal([$"git show -s {Merge}", $"git diff {Line} {Merge}"], first.Commands);
 
-        // Its id in capitals is the same commit: named only by ids, the answer cannot have changed.
+        // Its id in capitals is the same commit: named only by ids, its fields cannot have changed.
         var again = await reads.CommitAsync(_engine, Merge.ToUpperInvariant());
 
         Assert.True(again.Remembered);
-        Assert.Same(detail, again.Value);
+        Assert.Equal((detail.Commit, detail.Against, detail.Merge, detail.Message), (again.Value!.Commit, again.Value.Against, again.Value.Merge, again.Value.Message));
+        Assert.Equal("a.txt", Assert.Single(again.Value.Changes!.Files).Path);
         Assert.Equal(first.Commands, again.Commands);
-        Assert.Equal(2, git.Asked.Count);
+        Assert.Equal(3, git.Asked.Count);
+        Assert.True(IsDiff(git.Asked[2]));
     }
 
     /// <summary>A root commit has no parent: its changes are read against the empty tree of its repository's hash.</summary>
@@ -133,6 +137,7 @@ public sealed class GitReadsAskTests : IDisposable
     [Fact]
     public async Task A_read_git_did_not_answer_is_not_kept()
     {
+        using var _ = SettledClock.Ahead();
         var git = new StandInGit().Answer(IsMeta, "", code: 128);
         var reads = new GitReads(new GitReadCache(), git.Read);
 
@@ -146,15 +151,18 @@ public sealed class GitReadsAskTests : IDisposable
         Assert.Equal([$"git show -s {Merge}"], first.Commands);
     }
 
-    /// <summary>The fields answered and the changes not: the commit is not answered, and nothing of it is kept.</summary>
+    /// <summary>The fields answered and the changes not: the commit is not answered, and the next ask asks its changes again.</summary>
     [Fact]
     public async Task A_commit_whose_changes_git_did_not_answer_is_not_answered()
     {
+        using var _ = SettledClock.Ahead();
         var git = new StandInGit().Answer(IsMeta, Meta(Merge, Line)).Answer(IsDiff, "", code: 128);
         var reads = new GitReads(new GitReadCache(), git.Read);
 
         Assert.Equal(GitReadRefusal.NotAnswered, (await reads.CommitAsync(_engine, Merge)).Refusal);
-        Assert.Equal(0, reads.Cache.Count);
+        Assert.Equal(GitReadRefusal.NotAnswered, (await reads.CommitAsync(_engine, Merge)).Refusal);
+        Assert.Equal(3, git.Asked.Count);
+        Assert.True(IsDiff(git.Asked[2]));
     }
 
     /// <summary>
@@ -164,6 +172,7 @@ public sealed class GitReadsAskTests : IDisposable
     [Fact]
     public async Task Nothing_read_from_a_shallow_repository_is_kept()
     {
+        using var _ = SettledClock.Ahead();
         File.WriteAllText(Path.Combine(_engine, ".git", "shallow"), Root + "\n");
         var git = new StandInGit().Answer(IsMeta, Meta(Merge, Line)).Answer(IsDiff, OneFile);
         var reads = new GitReads(new GitReadCache(), git.Read);
@@ -179,6 +188,7 @@ public sealed class GitReadsAskTests : IDisposable
     [Fact]
     public async Task An_answer_is_kept_per_repository()
     {
+        using var _ = SettledClock.Ahead();
         var game = Repository("game");
         var git = new StandInGit().Answer(IsMeta, Meta(Merge, Line)).Answer(IsDiff, OneFile);
         var reads = new GitReads(new GitReadCache(), git.Read);
@@ -192,11 +202,12 @@ public sealed class GitReadsAskTests : IDisposable
 
     /// <summary>
     /// A session's tree is a linked worktree of its repository, with one object store between them: what one read is
-    /// kept for the other, by the common git directory its <c>.git</c> file and <c>commondir</c> name.
+    /// kept for the other, by the common git directory its <c>.git</c> file and <c>commondir</c> name. The changes are asked in each.
     /// </summary>
     [Fact]
     public async Task A_linked_worktree_shares_its_repository_s_memory()
     {
+        using var _ = SettledClock.Ahead();
         var own = Directory.CreateDirectory(Path.Combine(_engine, ".git", "worktrees", "s-1")).FullName;
         File.WriteAllText(Path.Combine(own, "commondir"), "../..\n");
         var tree = Directory.CreateDirectory(Path.Combine(_scratch, "trees", "s-1")).FullName;
@@ -208,7 +219,8 @@ public sealed class GitReadsAskTests : IDisposable
         var fromTree = await reads.CommitAsync(tree, Merge);
 
         Assert.True(fromTree.Remembered);
-        Assert.Equal(2, git.Asked.Count);
+        Assert.Equal(3, git.Asked.Count);
+        Assert.True(IsDiff(git.Asked[2]));
     }
 
     /// <summary>
@@ -218,6 +230,7 @@ public sealed class GitReadsAskTests : IDisposable
     [Fact]
     public async Task A_graph_page_is_one_call_and_its_tips_in_any_order_are_one_answer()
     {
+        using var _ = SettledClock.Ahead();
         var answer = string.Concat(Enumerable.Range(0, GitReads.GraphPage + 1).Select(i => Listed(Id(i), Id(i + 1))));
         var git = new StandInGit().Answer(arguments => arguments.Contains("log"), answer);
         var reads = new GitReads(new GitReadCache(), git.Read);
@@ -245,6 +258,7 @@ public sealed class GitReadsAskTests : IDisposable
     [Fact]
     public async Task A_walk_since_two_parted_names_exactly_two_tips_in_their_order()
     {
+        using var _ = SettledClock.Ahead();
         var git = new StandInGit().Answer(arguments => arguments.Contains("log"), Listed(Side, Root, mark: "<") + Listed(Line, Root, mark: ">"));
         var reads = new GitReads(new GitReadCache(), git.Read);
 
@@ -293,11 +307,12 @@ public sealed class GitReadsAskTests : IDisposable
 
     /// <summary>
     /// <c>--follow</c> ignores <c>--skip</c> (Git 2.53 printed nothing for <c>--skip=1</c>), so a page of a file's history asks
-    /// for every commit up to its end and keeps its own hundred: still one call.
+    /// for every commit up to its end and answers its own hundred: one call, asked at every ask, as it reads the tree's attributes too.
     /// </summary>
     [Fact]
-    public async Task A_page_of_a_file_s_history_asks_up_to_its_end_and_keeps_its_own()
+    public async Task A_page_of_a_file_s_history_asks_up_to_its_end_and_is_asked_at_every_ask()
     {
+        using var _ = SettledClock.Ahead();
         var answer = string.Concat(Enumerable.Range(0, 2 * GitReads.HistoryPage + 1)
             .Select(i => "\u0001" + Listed(Id(i), Id(i + 1)).TrimEnd('\0') + "\0\nM\0a.txt\0"));
         var git = new StandInGit().Answer(arguments => arguments.Contains("--follow"), answer);
@@ -314,9 +329,9 @@ public sealed class GitReadsAskTests : IDisposable
         Assert.Equal((Merge, "a.txt", 1), (page.Value.Commit, page.Value.Path, page.Value.Page));
         Assert.Equal($"git log --follow {Merge} -- a.txt", Assert.Single(page.Commands));
 
-        Assert.True((await reads.HistoryAsync(_engine, Merge, "a.txt", page: 1)).Remembered);
-        // Another path is another answer.
-        Assert.False((await reads.HistoryAsync(_engine, Merge, "b.txt", page: 1)).Remembered);
+        Assert.False((await reads.HistoryAsync(_engine, Merge, "a.txt", page: 1)).Remembered);
+        Assert.Equal(2, git.Asked.Count);
+        Assert.Equal(0, reads.Cache.Count);
     }
 
     /// <summary>A path is the repository's: one that is empty, rooted, or climbs out is refused before git is asked.</summary>
@@ -337,8 +352,9 @@ public sealed class GitReadsAskTests : IDisposable
     }
 
     [Fact]
-    public async Task A_blame_is_one_call_and_kept()
+    public async Task A_blame_is_one_call_and_asked_at_every_ask()
     {
+        using var _ = SettledClock.Ahead();
         var answer = $"{Root} 1 1 1\nauthor F\nauthor-mail <f@example.test>\nauthor-time 1\nauthor-tz +0000\nsummary first\nfilename a.txt\n\tone\n";
         var git = new StandInGit().Answer(arguments => arguments.Contains("blame"), answer);
         var reads = new GitReads(new GitReadCache(), git.Read);
@@ -347,8 +363,9 @@ public sealed class GitReadsAskTests : IDisposable
 
         Assert.Equal("one", Assert.Single(Assert.Single(blame.Value!.Runs).Lines).Text);
         Assert.Equal($"git blame {Merge} -- a.txt", Assert.Single(blame.Commands));
-        Assert.True((await reads.BlameAsync(_engine, Merge, "a.txt")).Remembered);
-        Assert.Single(git.Asked);
+        Assert.False((await reads.BlameAsync(_engine, Merge, "a.txt")).Remembered);
+        Assert.Equal(2, git.Asked.Count);
+        Assert.Equal(0, reads.Cache.Count);
     }
 
     /// <summary>A binary file's blame is known from its first line, and git is stopped there; the answer is kept like any other.</summary>
@@ -366,12 +383,13 @@ public sealed class GitReadsAskTests : IDisposable
     }
 
     /// <summary>
-    /// A compare is two calls: the commits only on each side, then what the right side changed since the two parted
-    /// (<c>A...B</c>), or everything that differs (<c>A..B</c>), each kept apart.
+    /// A compare is two calls: the commits only on each side, kept once for both ways, then what the right side changed since the two
+    /// parted (<c>A...B</c>), or everything that differs (<c>A..B</c>), asked at every ask.
     /// </summary>
     [Fact]
-    public async Task A_compare_is_two_calls_and_each_way_is_its_own_answer()
+    public async Task A_compare_is_two_calls_its_commits_kept_for_both_ways_and_its_changes_asked_at_every_ask()
     {
+        using var _ = SettledClock.Ahead();
         var git = new StandInGit()
             .Answer(arguments => arguments.Contains("log"), Listed(Side, Root, mark: "<") + Listed(Line, Root, mark: ">"))
             .Answer(IsDiff, OneFile);
@@ -389,18 +407,24 @@ public sealed class GitReadsAskTests : IDisposable
         Assert.Equal([$"git log --left-right --date-order {Side}...{Line}", $"git diff {Side}...{Line}"], parted.Commands);
 
         var everything = await reads.CompareAsync(_engine, Side, Line, everything: true);
-        Assert.False(everything.Remembered);
-        Assert.Contains($"{Side}..{Line}", git.Asked[3]);
+        Assert.True(everything.Remembered);
+        Assert.True(everything.Value!.Everything);
+        Assert.Equal(3, git.Asked.Count);
+        Assert.Contains($"{Side}..{Line}", git.Asked[2]);
+        Assert.Equal([$"git log --left-right --date-order {Side}...{Line}", $"git diff {Side}..{Line}"], everything.Commands);
 
         Assert.True((await reads.CompareAsync(_engine, Side, Line)).Remembered);
+        Assert.Contains($"{Side}...{Line}", git.Asked[3]);
         Assert.True((await reads.CompareAsync(_engine, Side, Line, everything: true)).Remembered);
-        Assert.Equal(4, git.Asked.Count);
+        Assert.Contains($"{Side}..{Line}", git.Asked[4]);
+        Assert.Equal(5, git.Asked.Count);
     }
 
     /// <summary>The branches holding a commit move with every commit made, so they are read each time and never kept.</summary>
     [Fact]
     public async Task The_branches_holding_a_commit_are_never_kept()
     {
+        using var _ = SettledClock.Ahead();
         var git = new StandInGit().Answer(arguments => arguments.Contains("--contains"), "refs/heads/main\0\0\n");
         var reads = new GitReads(new GitReadCache(), git.Read);
 
@@ -417,6 +441,7 @@ public sealed class GitReadsAskTests : IDisposable
     [Fact]
     public async Task A_ref_is_resolved_to_its_commit_and_never_kept()
     {
+        using var _ = SettledClock.Ahead();
         var git = new StandInGit().Answer(arguments => arguments.Contains("rev-parse"), Merge + "\n");
         var reads = new GitReads(new GitReadCache(), git.Read);
 

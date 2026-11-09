@@ -9,10 +9,10 @@ export function settingsFilter(xml) {
 
 /**
  * Whether a class whose traits are `traits` (a map of name to its values) can hold a test VSTest's `filter` selects: `&`, `|`,
- * `!`, parentheses, and `=`, `!=`, `~`, `!~` on a trait. A condition on a test's name holds: a class read into a half it is not
- * in runs nothing more there, since the half's own filter still chooses its tests.
+ * `!`, parentheses, and `=`, `!=`, `~`, `!~` on a trait, and on `FullyQualifiedName` against a test's full `name` where given. Any
+ * other condition on a name holds: a class read into a half it is not in runs nothing more there, as its filter chooses its tests.
  */
-export function filterHolds(filter, traits) {
+export function filterHolds(filter, traits, name = null) {
   const tokens = filter.match(/\\.|!=|!~|[()&|!=~]|[^()&|!=~\\]+/g) ?? [];
   let at = 0;
   const peek = () => tokens[at];
@@ -21,9 +21,11 @@ export function filterHolds(filter, traits) {
     while (at < tokens.length && !['(', ')', '&', '|'].includes(peek())) text += tokens[at++];
     const parts = /^\s*([^!=~]+?)\s*(!=|!~|=|~)\s*(.*?)\s*$/.exec(text);
     if (!parts) return true;
-    const [, name, op, value] = parts;
-    if (/^(FullyQualifiedName|Name|ClassName|DisplayName)$/.test(name)) return true;
-    const has = [...(traits.get(name) ?? [])].some((each) => (op.endsWith('~') ? each.includes(value) : each === value));
+    const [, field, op, escaped] = parts;
+    const value = escaped.replace(/\\(.)/g, '$1');
+    const named = field === 'FullyQualifiedName' && name !== null ? [name] : null;
+    if (!named && /^(FullyQualifiedName|Name|ClassName|DisplayName)$/.test(field)) return true;
+    const has = [...(named ?? traits.get(field) ?? [])].some((each) => (op.endsWith('~') ? each.includes(value) : each === value));
     return op.startsWith('!') ? !has : has;
   };
   const factor = () => {
