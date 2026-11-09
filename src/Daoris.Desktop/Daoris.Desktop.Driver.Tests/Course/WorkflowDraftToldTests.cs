@@ -82,7 +82,12 @@ public sealed class WorkflowDraftToldTests
         };
         var compact = WorkflowPalette.Build([("local-release", [find])]).Compact();
 
-        Assert.All(NodeKit.Kinds,kind => Assert.Contains($"- `{kind}`:", compact));
+        // A kind marked arriving is declared before it is offered, so the room is never told it.
+        foreach (var kind in NodeKit.Kinds)
+        {
+            if (NodeKit.Built.IsArriving(kind)) Assert.DoesNotContain($"- `{kind}`:", compact);
+            else Assert.Contains($"- `{kind}`:", compact);
+        }
         Assert.Contains("options `method` (choice: ", compact);
         Assert.Contains("- `local-release/find` v1: performed; outcomes `release`, `none`; outputs `release` (local-release/release@1, on `release`)", compact);
         Assert.Equal(WorkflowPalette.DigestOf(compact), WorkflowPalette.DigestOf(WorkflowPalette.Build([("local-release", [find])]).Compact()));
