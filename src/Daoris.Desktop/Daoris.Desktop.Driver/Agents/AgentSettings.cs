@@ -63,6 +63,9 @@ public static class AgentSettings
     /// </summary>
     public static readonly IReadOnlyList<string> Efforts = ["low", "medium", "high", "xhigh"];
 
+    /// <summary>A test's other writer, run once the next write has read the file and cleared before it runs.</summary>
+    internal static readonly AsyncLocal<Action?> AfterRead = new();
+
     /// <summary>What the account's file says about its model and effort (rules 1–3).</summary>
     public static AgentSettingsRead Read(string path)
     {
@@ -92,6 +95,7 @@ public static class AgentSettings
     /// </remarks>
     /// <param name="perModel">An effort per model, by the tool's canonical model name.</param>
     /// <exception cref="DriverException">A value the tool would not read, or a file this build cannot.</exception>
+    /// <exception cref="IOException">Another writer held the file's lock for the whole of the wait; nothing is written.</exception>
     public static AgentSettingsRead Write(
         string path, AgentSettingEdit? model = null, AgentSettingEdit? effort = null,
         IReadOnlyDictionary<string, AgentSettingEdit>? perModel = null)
@@ -102,7 +106,12 @@ public static class AgentSettings
             .Select(entry => (Model: JudgeModel(entry.Key), Effort: entry.Value.Value is { } v ? JudgeEffort(v) : null))
             .ToList();
 
+        // Read, edited and renamed under one hold, so a second change of another key waits for the first rather than writing the object it read.
+        using var held = KeepLock.Take(path);
         var (root, text, problem) = Load(path);
+        var seam = AfterRead.Value;
+        AfterRead.Value = null;
+        seam?.Invoke();
         if (root is null) throw Unwritable(problem!);
 
         if (model is not null)
@@ -160,7 +169,7 @@ public static class AgentSettings
         if (next != text)
         {
             Directory.CreateDirectory(Path.GetDirectoryName(Path.GetFullPath(path))!);
-            AtomicFile.WriteText(path, next);
+            held.Write(path, next);
         }
 
         return Read(path);
