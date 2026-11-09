@@ -165,11 +165,12 @@ public sealed class TreePoolTests : IDisposable
     }
 
     [Fact]
-    public void The_claims_record_of_where_the_slot_stood_is_the_last_step_and_a_claim_written_before_it_reads_as_detached_serving_no_line()
+    public void The_claims_record_of_where_the_slot_stood_is_a_step_after_the_pools_and_a_claim_written_before_it_reads_as_detached_serving_no_line()
     {
         var step = Assert.Single(DesktopStore.Steps, each => each.Version == TreePool.ExpectSince);
         Assert.Equal(DesktopStore.PolicyWriter, step.Writer);
-        Assert.Equal(TreePool.ExpectSince, DesktopStore.Steps.Count);
+        Assert.Same(step, DesktopStore.Steps[TreePool.ExpectSince - 1]);
+        Assert.True(TreePool.ExpectSince > TreePool.Since);
 
         using var store = DesktopStore.Open(DesktopStore.LocationIn(_home), new DesktopStoreOptions { Settled = () => StoreSettled.Yes });
         var columns = store.Query("SELECT name, \"notnull\", dflt_value FROM pragma_table_info('tree_claims')", row => (row.GetString(0), row.GetInt64(1), row.IsDBNull(2) ? null : row.GetString(2)));

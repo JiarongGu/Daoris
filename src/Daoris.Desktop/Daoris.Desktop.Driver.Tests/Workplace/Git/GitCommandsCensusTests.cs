@@ -24,7 +24,7 @@ public sealed class GitCommandsCensusTests : IDisposable
 
     public void Dispose()
     {
-        try { Directory.Delete(_root, recursive: true); } catch (IOException) { } catch (UnauthorizedAccessException) { }
+        GitSeed.Discard(_root);
     }
 
     private static List<string> Problems(IEnumerable<(string File, string Source)> sources)

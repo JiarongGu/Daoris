@@ -13,11 +13,11 @@ public sealed class GitRemotesTests
     private static readonly string[] Projects = ["Daoris.Desktop.Driver", "Daoris.Desktop.Driver.Host", "Daoris.Desktop.Modules", "Daoris.Desktop.App"];
 
     /// <summary>
-    /// Files that name the words and read no address: the reader itself, the read-only classifier of git's commands, and a session's
+    /// Files that name the words and read no address: the reader, the read-only classifier and the table of git's commands, a session's
     /// words on what the command shows under the rewrite, and the push act, which counts the push addresses a remote names (a
     /// push goes to the one its grant names) and says none of them.
     /// </summary>
-    private static readonly string[] Excused = ["GitRemotes.cs", "RefSnapshot.cs", "GitRewriteWords.cs", "GitPushActs.cs"];
+    private static readonly string[] Excused = ["GitRemotes.cs", "RefSnapshot.cs", "GitRewriteWords.cs", "GitPushActs.cs", "GitCommands.cs"];
 
     [Theory]
     [InlineData("daoris::https://github.com/org/engine.git", "https://github.com/org/engine.git")]

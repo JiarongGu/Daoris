@@ -59,7 +59,7 @@ public sealed class SessionResolversTests
         world.Records[0] = world.Records[0] with { State = "completed", Said = [] };
         world.Running.Remove("s-41");
 
-        Assert.Equal(ResolverEnds.Ended, await asking.WaitAsync(TimeSpan.FromSeconds(10)));
+        Assert.Equal(ResolverEnds.Ended, await asking.WaitAsync(Poll.Patience));
         Assert.Equal([("s-41", "settle it", row.Ask)], world.Said);
     }
 
@@ -70,7 +70,7 @@ public sealed class SessionResolversTests
         world.OnSaid = () => world.Running.Add("s-41");
 
         Assert.Equal(ResolverEnds.TimedOut, await world.Resolvers.AskAsync(Row(TimeSpan.FromMilliseconds(200)), "s-41", "settle it", () => false, CancellationToken.None)
-            .WaitAsync(TimeSpan.FromSeconds(10)));
+            .WaitAsync(Poll.Patience));
     }
 
     [Fact]
@@ -83,13 +83,13 @@ public sealed class SessionResolversTests
         var asking = world.Resolvers.AskAsync(Row(TimeSpan.FromMinutes(30)), "s-41", "settle it", () => lapsed, CancellationToken.None);
         await world.Polled(2);
         lapsed = true;
-        Assert.Equal(ResolverEnds.Lapsed, await asking.WaitAsync(TimeSpan.FromSeconds(10)));
+        Assert.Equal(ResolverEnds.Lapsed, await asking.WaitAsync(Poll.Patience));
 
         var stopping = world.Resolvers.AskAsync(Row(TimeSpan.FromMinutes(30)), "s-41", "settle it", () => false, CancellationToken.None);
         await world.Polled(2);
         world.Records[0] = world.Records[0] with { State = "stopped" };
         world.Running.Remove("s-41");
-        Assert.Equal(ResolverEnds.Declined, await stopping.WaitAsync(TimeSpan.FromSeconds(10)));
+        Assert.Equal(ResolverEnds.Declined, await stopping.WaitAsync(Poll.Patience));
     }
 
     [Fact]
@@ -111,7 +111,7 @@ public sealed class SessionResolversTests
             world.Running.Remove("s-41");
         });
 
-        await world.Resolvers.StopAsync(Row(TimeSpan.FromMinutes(30)) with { Session = "s-41" }, CancellationToken.None).WaitAsync(TimeSpan.FromSeconds(10));
+        await world.Resolvers.StopAsync(Row(TimeSpan.FromMinutes(30)) with { Session = "s-41" }, CancellationToken.None).WaitAsync(Poll.Patience);
 
         Assert.Equal([("s-41", EndNoteCodes.EndedResolveAsk.Code)], world.Stopped);
         Assert.DoesNotContain("s-41", world.Running);
