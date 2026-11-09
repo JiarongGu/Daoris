@@ -407,14 +407,17 @@ zero between calls, `GitLibrary.AtOnce`), libgit2's
 global, XDG, system and program-data search paths pointed at a folder holding no file. `GitLibraryRefs` prints `for-each-ref`'s
 lines: sorted as bytes, a broken symbolic ref left out, the upstream from the common directory's `branch.` and `remote.` keys through
 the remote's first matching fetch refspec, shortened by git's strict rule. `GitLibraryAdmission` refuses, from the repository's own
-files at each question and by its class (`GitLibraryQuestion`), a folder with no git directory, a format the library cannot read and any
-replacement (loose, packed or `GIT_REPLACE_REF_BASE`) for every question, a branch or remote section in a global file git is handed for the refs, and a
+files at each question and by its class (`GitLibraryQuestion`), a folder with no git directory, a format the library cannot read, any
+replacement (loose, packed or `GIT_REPLACE_REF_BASE`) and a rewrite of the packs, the multi-pack index or the commit graph under way
+(`GitLibraryHousekeeping`: `gc.pid`, a `.tmp-` file or a `.lock` in `objects/pack`, a `.lock` in `objects/info` or `objects/info/commit-graphs`, none older
+than twelve hours; reason `housekeeping`) for every question, a branch or remote section in a global file git is handed for the refs, and a
 `diff.orderFile` or `diff.relative` in the repository's, the tree's or that global file for the names; libgit2 refuses an
 extension it does not know and another owner's folder at its open; an object a call needs that is missing refuses the call. Grafts,
 a shallow boundary (before and after a deepen), a split and a sparse index the library reads as git does. A refused question, and
 every one under a test's stand-in runner, is git's. The formats come from `GitLibraryFormats`, the `git.read.formats` probe: a repository's
 `extensions.objectformat` and `extensions.refstorage` (and a `reftable` folder) read from its own configuration with no git started, kept
-for that file's length and write time, so a converted repository is read again at its next question and an unchanged one never; only
+for that file's length and write time, so a converted repository is read again at its next question and an unchanged one never (its reads are
+counted for each common directory, `ReadsOf`, so a test asserts its own repository's reads and no neighbour class moves them); only
 SHA-1 objects in files refs are the library's, and each other format is refused by its own word (`sha256`, `reftable`, `object-format`,
 `ref-format`) before the library is opened. `GitLibraryJournal` keeps, per repository in `run/git/library.json`, each reason a question
 went to git (every admission refusal, an unreadable repository, a failed call, a call the library declined) with its count, and the
@@ -442,7 +445,10 @@ fetches the pin into the repository's own `_fixtures/` (`PinnedMinGit`) and puts
 fixtures' are both that git (`GitLibraryEndsTests` fails a leg that ran another). Where the pin cannot be had (no pin for the platform, a
 fetch that fails) every `[GitLegFact]` of the leg is skipped with that reason and never run on another git. `GitLibraryHoldTests` holds the call's hold on
 Windows: `repack -ad`, `gc --prune=now`, `commit-graph write` and `multi-pack-index write` under library reads every ten milliseconds
-exit 0, leave no old pack and never ask the `GIT_ASK_YESNO` stand-in, which is first seen asked where a pack is held open. The
+exit 0, leave no old pack and never ask the `GIT_ASK_YESNO` stand-in, which is first seen asked where a pack is held open; it counts no
+reads over a loaded minute (that is the machine's) and holds that one read was answered before git began and one ran beside each command.
+Windows refuses git's rename of a pack over one the library has mapped however it is shared, and `gc` after `repack -a` builds the pack
+of the same name, so `GitLibraryHousekeeping` (`GitLibraryHousekeepingTests`) sends the questions asked while git writes to git (D252). The
 `win-x64` publish lays the native `git2-*.dll` beside the driver, and the deployment rehearsal asks for it (`driverProblems`).
 
 A start's cost, and LibGit2Sharp beside it, measured on 2026-11-09 by `tools/git-library-bench`, which no product project references:

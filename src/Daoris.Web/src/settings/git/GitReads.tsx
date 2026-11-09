@@ -16,7 +16,7 @@ export type GitLibraryReadShown = {
 
 /** The reasons the driver says; one it does not know is shown as sent. */
 const KNOWN = [
-  'no-repository', 'reftable', 'sha256', 'object-format', 'ref-format', 'replacements', 'configuration', 'unanswered', 'failed', 'native-missing', 'native-fault',
+  'no-repository', 'reftable', 'sha256', 'object-format', 'ref-format', 'replacements', 'configuration', 'housekeeping', 'unanswered', 'failed', 'native-missing', 'native-fault',
 ];
 
 /**
