@@ -6,14 +6,15 @@ namespace Daoris.Driver;
 /// answers instead.
 /// </summary>
 /// <remarks>
-/// <para><b>Refused here, every question:</b> a folder that names no git directory; reftable refs, which libgit2 opens and reads no ref
-/// of; and any replacement (a ref under <c>refs/replace/</c>, loose or packed, or <c>GIT_REPLACE_REF_BASE</c> set), since git reads a
+/// <para><b>Refused here, every question:</b> a folder that names no git directory; a format the library cannot read
+/// (<see cref="GitLibraryFormats"/>: reftable refs, which libgit2 opens and reads no ref of, SHA-256 objects and any other), read from
+/// the repository's own files once for their stamp; and any replacement (a ref under <c>refs/replace/</c>, loose or packed, or <c>GIT_REPLACE_REF_BASE</c> set), since git reads a
 /// replaced commit's parents, type and tree through it and libgit2 does not.</para>
 /// <para><b>Refused by question:</b> for the refs, a branch or remote section in a global file git is handed; for the names, a
 /// <c>diff.orderFile</c> or <c>diff.relative</c> git reads in the repository's, the tree's or that global file, which reorder or cut
 /// the paths it prints. The library, reading the repository's configuration alone, would see neither. Grafts and a shallow boundary
 /// it reads as git does.</para>
-/// <para><b>Refused by the library itself</b>, at its open: SHA-256 objects, an extension libgit2 does not know (a partial clone's
+/// <para><b>Refused by the library itself</b>, at its open: an extension libgit2 does not know (a partial clone's
 /// <c>extensions.partialclone</c> among them) and a folder another account owns. An object a call needs that is not here (a partial
 /// clone's) refuses that call.</para>
 /// </remarks>
@@ -21,6 +22,9 @@ internal static class GitLibraryAdmission
 {
     internal const string NoRepository = "no-repository";
     internal const string Reftable = "reftable";
+    internal const string Sha256 = "sha256";
+    internal const string ObjectFormat = "object-format";
+    internal const string RefFormat = "ref-format";
     internal const string Replacements = "replacements";
     internal const string Configuration = "configuration";
 
@@ -30,7 +34,7 @@ internal static class GitLibraryAdmission
         if (RefFiles.CommonDirOf(folder) is not { } common || RefFiles.GitDirOf(folder) is not { } gitDir) return NoRepository;
         try
         {
-            if (Directory.Exists(Path.Combine(common, "reftable"))) return Reftable;
+            if (FormatRefusal(GitLibraryFormats.Of(common)) is { } format) return format;
             if (Replaced(common)) return Replacements;
             return question switch
             {
@@ -44,6 +48,16 @@ internal static class GitLibraryAdmission
             return NoRepository;
         }
     }
+
+    /// <summary>Why a repository's formats are git's (<see cref="GitLibraryFormats"/>): the library is not opened on them.</summary>
+    private static string? FormatRefusal(GitLibraryFormat format) => format switch
+    {
+        { Readable: true } => null,
+        { Objects: "sha256" } => Sha256,
+        { Objects: not "sha1" } => ObjectFormat,
+        { Refs: "reftable" } => Reftable,
+        _ => RefFormat,
+    };
 
     private static bool Replaced(string common)
     {
