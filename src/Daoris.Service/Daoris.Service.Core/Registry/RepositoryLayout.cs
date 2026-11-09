@@ -176,7 +176,7 @@ public sealed partial class RepositoryLayout
 
     /// <summary>
     /// What the scanner needs of <c>daoris.json</c>, read leniently: a field of the wrong shape is
-    /// absent, and a manifest that cannot be read at all declares nothing, rather than failing the
+    /// absent, and a manifest that cannot be read at all (broken, or held by an editor) declares nothing, rather than failing the
     /// corpus for one repository's file, as <see cref="DaorisLock"/> reads its own.
     /// </summary>
     /// <param name="Harness">The descriptor it names; null when it names none.</param>
@@ -220,7 +220,7 @@ public sealed partial class RepositoryLayout
 
                 return new Manifest(harness, target is not null && !Escapes(target) ? target : null, rooms, documents);
             }
-            catch (JsonException)
+            catch (Exception error) when (error is JsonException or IOException or UnauthorizedAccessException)
             {
                 return None;
             }
