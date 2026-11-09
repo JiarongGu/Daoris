@@ -499,7 +499,7 @@ Web: `agents/roles/*.test.ts(x)` and `agents/setup/*.test.tsx`.
   case goes with COAGENT1. D233 choice 5 removes Ask Daoris's Accept and hand-over proposals, not the hand-over doors a person or
   an agent presses, so the hand-over's model stands; the four fenced roles are edited in the one role editor.
 - **SUPERVISOR1a-i (rest):** the author sweep test, the page's mark with *Overrule* on a question's answer (a referred point's
-  decision has its card), the go-on's process cases.
+  decision has its card), the answers-alone go-on's process case (a parked quest's go-on has one, `SupervisorReferTickTests`).
 - **SUPERVISOR1a-iii:** the installed proof of the activation: a place's supervisor held by a started terminal on the install's
   `app/Daoris.Desktop.exe`, a referred point decided and gone on, and the look in the window.
 - **QUESTIONUI1b, SUPERVISOR1d, SUPERVISOR1f:** the pick on the card; the bench; words.
