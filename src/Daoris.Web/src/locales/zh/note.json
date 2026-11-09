@@ -119,6 +119,8 @@
   "note.started.local-missing": "`{{input}}` 没有复制：仓库的检查项会读取它，而你的检出里没有它。",
   "note.started.local-refused": "`{{input}}` 没有复制：Daoris 只把 `local/` 下、git 在工作树中忽略的文件复制进工作树，而它不是这样的文件。",
   "note.started.local-failed": "`{{input}}` 没有从你的检出复制，因为复制失败了：",
+  "note.started.local-held": "`{{input}}` 没有复制：你的权限中的一条 `ask` 把这次复制留待允许，下次启动会读取。",
+  "note.started.local-denied": "`{{input}}` 没有复制：你的权限拒绝了这次复制。",
   "note.started.tree-shared": "{{shared}}：每一个都是指向你的检出中同一个地方的链接，这个仓库的每个工作树都使用它，所以经由它写入的内容会到达所有工作树。删除时只删除链接本身，绝不删除它下面的内容：跟随链接的递归删除会删掉共享位置的文件，Windows PowerShell 5.1 对联接点执行 `Remove-Item -Recurse` 就会这样，git 的工作树删除也会。共享的单个文件是一个链接，以重命名方式保存会替换它，使它成为这个工作树自己的文件。",
   "note.started.share-declined": "`{{path}}` 没有共享到这个工作树：{{why}}。",
   "note.tree.share-lost": "`{{path}}` 已不再是 Daoris 建立的、指向其共享位置的链接（以重命名方式保存或重新建立文件夹都会替换它），所以它现在是这条线自己的，像任何路径一样按规则归类；共享位置的内容没有被动过。",

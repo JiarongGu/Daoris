@@ -36,6 +36,7 @@
   "work.supervision.allow.title": "The supervisor's answer to a held tool call",
   "work.supervision.allow.once": "The supervisor allowed this once, {{when}}: the call went on.",
   "work.supervision.allow.reject": "The supervisor refused this once, {{when}}: the agent was told, and went on without it.",
+  "work.supervision.allow.leave": "The supervisor left this to you, {{when}}: the call still waits for you.",
   "work.supervision.kind.allow": "an allow",
   "work.supervision.overrule": "Overrule",
   "work.supervision.overruleRefused": "It already went on, so it cannot be overruled."

@@ -117,6 +117,8 @@ internal sealed class SessionsWaitDesk(DriverContext context)
         view.Do,
         view.Role,
         view.Act,
+        view.Bound,
+        Reasons = view.Reasons.Select(reason => new { reason.Says, reason.Source }).ToList(),
         Holder = new { view.Holder.Kind, view.Holder.Parent },
         State = SupervisorStates.Spell(view.State),
         view.Why,

@@ -75,6 +75,22 @@ public sealed class SupervisorAllowRecordTests : IDisposable
     }
 
     [Fact]
+    public void A_leave_is_kept_left_at_once_with_its_bound_and_reasons_and_a_restart_leaves_it_as_it_is()
+    {
+        var decisions = Decisions();
+        var bound = SupervisorBounds.All[0];
+        decisions.AllowKept(Allowed("d6", SupervisorAllowShapes.Request, "s1", SupervisorAllowActs.Leave) with { Bound = bound }, At);
+
+        decisions.AllowMoved("d6", SupervisorState.Overruled, At.AddMinutes(1));
+        var restarted = Decisions();
+        restarted.SweepAtStart(At.AddMinutes(2));
+
+        var read = Assert.Single(restarted.AllowsOf("s1"));
+        Assert.Equal((SupervisorAllowActs.Leave, SupervisorState.Left, bound, At), (read.Do, read.State, read.Bound, read.GoesOnAt));
+        Assert.Equal(Reasons, read.Reasons);
+    }
+
+    [Fact]
     public void A_decision_with_no_session_is_kept_with_the_machines_and_read_by_no_session()
     {
         var decisions = Decisions();

@@ -9,6 +9,9 @@ namespace Daoris.Driver;
 /// </summary>
 public static class SupervisorKindFacts
 {
+    public static Task<string> ComposeAsync(ServiceClient service, string home, string fence, SupervisorFactParts facts, CancellationToken ct) =>
+        ComposeAsync(service, home, facts.Session, fence, facts.Parts, ct);
+
     /// <summary>
     /// <paramref name="parts"/>, each a label and its text, fenced under <paramref name="fence"/>, then the course and the commits of
     /// <paramref name="session"/> where it names a session whose record reads.
@@ -25,4 +28,10 @@ public static class SupervisorKindFacts
 
         return print.ToString();
     }
+}
+
+/// <summary>What a kind's row reads of its subject, unfenced: the session whose course follows and each part's label and text, carried by the listing.</summary>
+public sealed record SupervisorFactParts(string Session, IReadOnlyList<(string Label, string Text)> Parts)
+{
+    public object Wire() => new { Session, Parts = Parts.Select(part => new { part.Label, part.Text }).ToList() };
 }

@@ -5,6 +5,10 @@ the per-task record. Entries preserve their original wording so the archive stay
 
 ---
 
+## SUPERVISOR2 rows e and g — a leave's record, the verb's allow print, the held copy, the files subject (2026-11-10)
+
+> **SUPERVISOR2e, g** (driver, modules, web; `docs/2026-11-08-supervisor-kinds-design.md` §5.1, §6.4): Outcome: a leave of an allow, a widening, a steward's act or a held act is kept as an allow decision `left` with its bound and reasons (`SupervisorAllowed.Bound`, read back by `SESSION_SUPERVISOR`'s `allows`, said by the card); the verb prints an allow or a held act with the facts its kind's row composes (the listing's `facts`, `SupervisorFactParts`) and decides a `files` subject named by its repository; the files stage holds a `copy` an `ask` holds or a `deny` matches (`TreeCopyPermit`, `started.local-held`, `started.local-denied`), and a held `share` is pinned by a stage test.
+
 ## Two library tests that fail beside others (2026-11-09)
 
 > **Quest #05197f6c9c71** (driver; the git library): Outcome: the formats probe counts its reads for each common directory (`GitLibraryFormats.ReadsOf`), so the default-repository test asserts its own reads; the hold test counts no reads over a loaded minute (one answered before git begins, one beside each command) and names git's stderr and the stand-in's asks; and the exit 128 the load exposed (`gc` after `repack -a` renames a pack over the same-named one the library has mapped) is fixed in the admission: a question asked while git rewrites the packs is git's (`GitLibraryHousekeeping`, D252). Ten runs of both classes beside `StructureTests` passed.

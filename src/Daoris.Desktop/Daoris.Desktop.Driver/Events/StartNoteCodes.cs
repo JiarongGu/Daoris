@@ -42,6 +42,8 @@ public static class StartNoteCodes
     public static readonly NoteCode StartedLocalMissing = new("started.local-missing", ["input"]);
     public static readonly NoteCode StartedLocalRefused = new("started.local-refused", ["input"]);
     public static readonly NoteCode StartedLocalFailed = new("started.local-failed", ["input"]);
+    public static readonly NoteCode StartedLocalHeld = new("started.local-held", ["input"]);
+    public static readonly NoteCode StartedLocalDenied = new("started.local-denied", ["input"]);
 
     // The paths linked into a tree to one place every tree uses, why one is not, and a share whose link the line replaced.
     public static readonly NoteCode StartedTreeShared = new("started.tree-shared", ["shared"]);

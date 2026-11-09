@@ -74,6 +74,8 @@ export type AllowRead = {
   act?: string | null;
   state: string;
   why?: string | null;
+  bound?: string | null;
+  reasons?: { says: string; source: string }[];
   holder?: { kind: string; parent?: string | null } | null;
   keptAt: string;
   goesOnAt: string;
