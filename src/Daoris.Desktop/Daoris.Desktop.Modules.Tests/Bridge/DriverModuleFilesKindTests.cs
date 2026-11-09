@@ -218,6 +218,11 @@ public sealed class DriverModuleFilesKindTests : DriverModuleBridge
 
         Assert.Equal((false, SupervisorWhy.NotHeld), Answer(other));
         Assert.True(left.GetProperty("kept").GetBoolean(), left.GetRawText());
+        var record = Path.Combine(DaorisHome.Entry(Home, HomeEntry.Sessions, SupervisorAllows.Machine + QuestionSupervisorDecisions.DecisionsSuffix), left.GetProperty("decision").GetString() + ".json");
+        var kept = JsonDocument.Parse(File.ReadAllText(record)).RootElement.GetProperty("allow");
+        Assert.Equal((SupervisorKinds.Files, SupervisorAllowActs.Leave, SupervisorBounds.All[0], "run(npm ci)", "engine"),
+            (JsonDocument.Parse(File.ReadAllText(record)).RootElement.GetProperty("kind").GetString(), kept.GetProperty("do").GetString(), kept.GetProperty("bound").GetString(),
+                kept.GetProperty("subject").GetString(), kept.GetProperty("repository").GetString()));
         Assert.Empty(await ListedAsync(door));
         Assert.Equal(FileVerdict.Held, Judge("engine", "run(npm ci)"));
         Assert.Single(FileAsks.Read(Home));

@@ -401,8 +401,10 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they start wi
     takes, of a held request, a widening or a steward's act, is kept as an allow decision (`SupervisorAllows`): a file beside the
     session's other decisions (the proposing session's for a widening, the land's session for a land, else the machine's), `went-on`
     at its keeping, and for an allowed `land` `held` until it lands (`went-on`), is overruled, or the steward withdraws it
-    (`stale`, `withdrawn`); the start's sweep closes a held one `stale`. It reads back as `SESSION_SUPERVISOR`'s `allows`, and the
-    line's card says *The supervisor allowed this once* (or refused it) for a held request, with no *Overrule*
+    (`stale`, `withdrawn`); the start's sweep closes a held one `stale`. A leave of any of the three, or of a `files` ask, is kept
+    the same way as a decision `left` at once (`do: leave`, with its bound and reasons; a `files` one, which names no session, in the
+    machine's folder), and the subject stays the person's. It reads back as `SESSION_SUPERVISOR`'s `allows`, and the
+    line's card says *The supervisor allowed this once* (or refused it, or left it to you) for a held request, with no *Overrule*
     (`SupervisorAllowCard`). (from D201, D209, D233)
 52. What the owner does to a repository, a quest or a session makes it the owner's for the run (`owner-set`). Every
     release the steward writes is kept in `roleReleases`, `by: steward`. (from D209)

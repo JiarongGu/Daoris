@@ -77,7 +77,11 @@ internal sealed class FilesKind : ISupervisorKind
         if (Waiting(loop, form.Subject) is not { Decision: null } ask) return Done(SupervisorDecided.Refused(SupervisorWhy.NotHeld));
         if (SupervisorDecisionDoor.CoversPlace(loop, form.Generation, Kind, PlaceOf(loop, ask)) is { } uncovered) return Done(SupervisorDecided.Refused(uncovered));
         Left[Key(loop, ask)] = 0;
-        return Done(new SupervisorDecided(true, null, null, null));
+        var decision = Guid.NewGuid().ToString("N")[..12];
+        var role = loop.Pipe?.StandingConfirmation?.Admit(Kind, PlaceOf(loop, ask), act: null).Role;
+        loop.Supervisor.AllowKept(new SupervisorAllowed(
+            decision, SupervisorAllowShapes.Files, ask.Text, null, ask.Repository, SupervisorAllowActs.Leave, role, ask.What, holder, form.Reasons, Bound: form.Bound), DateTimeOffset.UtcNow);
+        return Done(new SupervisorDecided(true, decision, null, null));
     }
 
     public async Task<string?> FactsAsync(DriverLoop loop, SupervisorSubject subject, string fence, CancellationToken ct)

@@ -243,6 +243,30 @@ public sealed class DriverModuleAllowKindTests : DriverModuleBridge
         Assert.True(left.GetProperty("kept").GetBoolean(), left.GetRawText());
         Assert.Equal(JsonValueKind.Undefined, Listed(await AnswerAsync(module, "SUPERVISOR_WAITING"), SupervisorKinds.Allow).ValueKind);
         Assert.Equal("waiting", JsonDocument.Parse(File.ReadAllText(RuleProposals.PathOf(Home, "p4"))).RootElement.GetProperty("state").GetString());
+        var recorded = Assert.Single(door.Loop.Supervisor.AllowsOf("s1"));
+        Assert.Equal(
+            (left.GetProperty("decision").GetString(), SupervisorAllowShapes.Widening, "p4", SupervisorAllowActs.Leave, Supervisor, SupervisorState.Left, SupervisorBounds.All[0]),
+            (recorded.Id, recorded.Shape, recorded.Subject, recorded.Do, recorded.Role, recorded.State, recorded.Bound));
+        Assert.Equal(Reasons, recorded.Reasons);
+    }
+
+    [Fact]
+    public async Task A_leave_of_a_held_request_is_kept_left_with_its_bound_and_the_request_stays_held_for_the_person()
+    {
+        if (!OperatingSystem.IsWindows()) return;
+        using var door = await OpenAsync();
+        var (ended, subject) = Hold(door.Loop);
+
+        var left = await door.Send("SUPERVISOR_LEAVE", nonce =>
+            new SupervisorLeaveForm(subject, Generation(door, "engine", "once"), "", SupervisorBounds.All[0], Reasons).Proved(door.Key, nonce).Payload());
+
+        Assert.True(left.GetProperty("kept").GetBoolean(), left.GetRawText());
+        Assert.False(ended.IsCompleted);
+        var recorded = Assert.Single(door.Loop.Supervisor.AllowsOf("s1"));
+        Assert.Equal(
+            (left.GetProperty("decision").GetString(), SupervisorAllowShapes.Request, "r1", SupervisorAllowActs.Leave, SupervisorState.Left, SupervisorBounds.All[0]),
+            (recorded.Id, recorded.Shape, recorded.Subject, recorded.Do, recorded.State, recorded.Bound));
+        Assert.Contains(HeldPermissions.Of(door.Loop.Events).Held("s1"), each => each.Request == subject.Id);
     }
 
     [Fact]

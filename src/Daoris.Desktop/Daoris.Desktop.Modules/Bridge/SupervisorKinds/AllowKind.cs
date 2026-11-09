@@ -87,17 +87,21 @@ internal sealed class AllowKind : ISupervisorKind
 
     public async Task<SupervisorDecided> LeaveAsync(DriverLoop loop, SupervisorLeaveForm form, SupervisorHolder holder, CancellationToken ct)
     {
-        if (form.Subject.IsAsk) return StewardAllowSubjects.Leave(loop, form);
+        if (form.Subject.IsAsk) return StewardAllowSubjects.Leave(loop, form, holder);
         if (!Standing(loop, form.Subject)) return SupervisorDecided.Refused(form.Subject.IsProposal ? SupervisorWhy.Answered : SupervisorWhy.NotHeld);
         // A leave hides the subject from the supervisor that answers it, so only that supervisor's holder may make one.
+        RolePlace at;
+        string? session;
         if (await PlaceOfAsync(loop, form.Subject, ct).ConfigureAwait(false) is { } place)
         {
             if (SupervisorDecisionDoor.CoversPlace(loop, form.Generation, Kind, place) is { } uncovered) return SupervisorDecided.Refused(uncovered);
+            (at, session) = (place, RuleProposals.Load(loop.Home).FirstOrDefault(each => each.Id == form.Subject.Id)?.Session);
         }
         else if (loop.Service is { } service
             && await service.RecordAsync(form.Subject.Session, ct).ConfigureAwait(false) is { Repository: { } repository })
         {
             if (SupervisorDecisionDoor.Covers(loop, form.Generation, Kind, repository) is { } uncovered) return SupervisorDecided.Refused(uncovered);
+            (at, session) = (loop.Pipe?.StandingConfirmation?.Placed(repository) ?? new RolePlace(Repository: repository), form.Subject.Session);
         }
         else
         {
@@ -105,7 +109,12 @@ internal sealed class AllowKind : ISupervisorKind
         }
 
         Left[Key(form.Subject)] = 0;
-        return new SupervisorDecided(true, null, null, null);
+        var decision = Guid.NewGuid().ToString("N")[..12];
+        var role = loop.Pipe?.StandingConfirmation?.Admit(Kind, at, act: null).Role;
+        loop.Supervisor.AllowKept(new SupervisorAllowed(
+            decision, form.Subject.IsProposal ? SupervisorAllowShapes.Widening : SupervisorAllowShapes.Request, form.Subject.Id, session, at.Repository ?? "",
+            SupervisorAllowActs.Leave, role, null, holder, form.Reasons, Bound: form.Bound), DateTimeOffset.UtcNow);
+        return new SupervisorDecided(true, decision, null, null);
     }
 
     /// <summary>The place whose supervisor answers a subject, for an agent's keeping to read its grant against; null where the subject names none.</summary>

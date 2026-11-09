@@ -42,6 +42,17 @@ internal static class StewardAllowSubjects
             : new SupervisorDecided(true, decision, null, null);
     }
 
-    public static SupervisorDecided Leave(DriverLoop loop, SupervisorLeaveForm form) =>
-        loop.Pipe?.StewardAllows.Leave(form.Subject.Id) == true ? new SupervisorDecided(true, null, null, null) : SupervisorDecided.Refused(SupervisorWhy.Answered);
+    public static SupervisorDecided Leave(DriverLoop loop, SupervisorLeaveForm form, SupervisorHolder holder)
+    {
+        if (loop.Pipe is not { } pipe || pipe.StewardAllows.Find(form.Subject.Id) is not { } ask) return SupervisorDecided.Refused(SupervisorWhy.Answered);
+        // The record names the target and the role as they stand before the request falls to the person's card.
+        var session = pipe.StewardAllows.TargetOf(ask) is { Kind: OwnerKinds.Session } target ? target.Name : null;
+        var role = pipe.StandingConfirmation.AdmitStewardAllow(ask.Place, ask.Asked.Holder).Role;
+        if (!pipe.StewardAllows.Leave(ask.Id)) return SupervisorDecided.Refused(SupervisorWhy.Answered);
+        var decision = Guid.NewGuid().ToString("N")[..12];
+        loop.Supervisor.AllowKept(new SupervisorAllowed(
+            decision, SupervisorAllowShapes.Steward, ask.Id, session, ask.Place.Repository ?? "", SupervisorAllowActs.Leave, role, ask.Asked.Act, holder, form.Reasons,
+            Bound: form.Bound), DateTimeOffset.UtcNow);
+        return new SupervisorDecided(true, decision, null, null);
+    }
 }

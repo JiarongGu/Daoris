@@ -3,13 +3,17 @@ using System.Text.Json;
 namespace Daoris.Driver;
 
 /// <summary>
-/// An allow decision as the page reads it: which of the three shapes it answered (<see cref="SupervisorAllowShapes"/>), the act it took, who
-/// held it, when, and where it stands. Codes and moments alone, never a sentence.
+/// An allow decision as the page reads it: which shape it answered (<see cref="SupervisorAllowShapes"/>), the act it took, who held it, when,
+/// where it stands, its reasons and a leave's bound. Codes and moments alone, never a sentence.
 /// </summary>
 public sealed record SupervisorAllowView(
     string Id, string Shape, string Subject, string? Session, string Repository, string Do, string? Role, string? Act, SupervisorHolder Holder,
     DateTimeOffset KeptAt, DateTimeOffset GoesOnAt, SupervisorState State, DateTimeOffset StateAt, string? Why)
 {
+    public string? Bound { get; init; }
+
+    public IReadOnlyList<SupervisorReason> Reasons { get; init; } = [];
+
     /// <summary>An allow decision read from its file and state lines (<see cref="SupervisorAllows"/> writes both), or null where the file is not one.</summary>
     internal static SupervisorAllowView? Read(SupervisorDecisionFiles files, string folder, string id)
     {
@@ -31,7 +35,11 @@ public sealed record SupervisorAllowView(
 
             return new SupervisorAllowView(
                 id, shape, subject, Json.Text(root, "session"), Json.Text(allow, "repository") ?? "", act, Json.Text(allow, "role"), Json.Text(allow, "act"),
-                SupervisorHolders.Read(root), kept, Moments.Read(root, "goesOnAt") ?? kept, state, at, why);
+                SupervisorHolders.Read(root), kept, Moments.Read(root, "goesOnAt") ?? kept, state, at, why)
+            {
+                Bound = Json.Text(allow, "bound"),
+                Reasons = [.. Json.Items(root, "reasons").Select(reason => new SupervisorReason(Json.Text(reason, "says") ?? "", Json.Text(reason, "source") ?? ""))],
+            };
         }
         catch (JsonException)
         {
