@@ -33,6 +33,21 @@ internal static class SchemaColumns
     }
 
     /// <summary>
+    /// A column's alter and the statements that fill it, or a rebuild's copy, drop and rename, as one step: a crash or a failure between
+    /// them leaves the store as it was, so the next open does the whole upgrade again. Each statement alone is its own commit, and a
+    /// column found without its backfill is skipped by every later open.
+    /// </summary>
+    public static Task ApplyAsync(ConnectionGate db, string script, CancellationToken ct) =>
+        db.InTransactionAsync(async (transaction, inside) =>
+        {
+            await using var command = db.Command();
+            command.Transaction = transaction;
+            command.CommandText = script;
+            await command.ExecuteNonQueryAsync(inside).ConfigureAwait(false);
+            return true;
+        }, ct);
+
+    /// <summary>
     /// The alter, where another connection opening the same new file may have added the column since the check: the check and
     /// the alter are not one transaction, and that connection's column is the one wanted.
     /// </summary>

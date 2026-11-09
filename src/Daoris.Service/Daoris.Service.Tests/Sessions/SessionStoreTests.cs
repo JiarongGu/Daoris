@@ -834,6 +834,58 @@ public sealed class SessionSchemaUpgradeTests : IAsyncLifetime
         Assert.Null((await sessions.FindAsync(chat.Id))!.Quest);
     }
 
+    /// <summary>
+    /// The rebuild is one step: where it fails after the old table is dropped, the open leaves the store as it found it, so the next
+    /// open rebuilds and keeps every record, instead of finding the rows in the half-made table or its name taken.
+    /// </summary>
+    [Fact]
+    public async Task A_rebuild_that_fails_part_way_leaves_the_store_as_it_found_it()
+    {
+        // A view over the table names a table the drop removes, which the rename that follows refuses.
+        await ExecuteAsync("CREATE VIEW session_names AS SELECT id FROM sessions");
+
+        await Assert.ThrowsAnyAsync<Exception>(() => SessionStore.OpenAsync(_connection));
+
+        Assert.Equal(1L, await ScalarAsync("SELECT COUNT(*) FROM sessions WHERE id = 'old12345'"));
+        Assert.Equal(0L, await ScalarAsync("SELECT COUNT(*) FROM sqlite_master WHERE name = 'sessions_relaxed'"));
+        await ExecuteAsync("DROP VIEW session_names");
+        Assert.NotNull(await (await SessionStore.OpenAsync(_connection)).FindAsync("old12345"));
+    }
+
+    /// <summary>
+    /// A column and the backfill that fills it are one step: where the backfill fails the column goes with it, so the next open adds
+    /// both, instead of finding the column and leaving its rows unfilled for good.
+    /// </summary>
+    [Fact]
+    public async Task A_backfill_that_fails_leaves_no_column_to_skip_it_for_good()
+    {
+        var sessions = await SessionStore.OpenAsync(_connection);
+        await sessions.AdvanceCursorAsync("aurora", pushed: 1_000);
+        await ExecuteAsync("ALTER TABLE sessions DROP COLUMN pushed");
+        await ExecuteAsync("CREATE TRIGGER pushed_refused BEFORE UPDATE OF pushed ON sessions BEGIN SELECT RAISE(ABORT, 'planted'); END");
+
+        await Assert.ThrowsAnyAsync<Exception>(() => SessionStore.OpenAsync(_connection));
+
+        Assert.Equal(0L, await ScalarAsync("SELECT COUNT(*) FROM pragma_table_info('sessions') WHERE name = 'pushed'"));
+        await ExecuteAsync("DROP TRIGGER pushed_refused");
+        var upgraded = await SessionStore.OpenAsync(_connection);
+        Assert.True((await upgraded.FindAsync("old12345"))!.Pushed);
+    }
+
+    private async Task ExecuteAsync(string sql)
+    {
+        await using var command = _connection.CreateCommand();
+        command.CommandText = sql;
+        await command.ExecuteNonQueryAsync();
+    }
+
+    private async Task<long> ScalarAsync(string sql)
+    {
+        await using var command = _connection.CreateCommand();
+        command.CommandText = sql;
+        return Convert.ToInt64(await command.ExecuteScalarAsync());
+    }
+
     /// <summary>Opening twice must not rebuild twice — a guard that ran every time would be a rewrite
     /// of the whole table on every start, and the second one would find nothing to relax.</summary>
     [Fact]
