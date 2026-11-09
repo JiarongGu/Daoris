@@ -148,8 +148,8 @@ public static class WorkingTree
         // and nothing else — a value starting with `-` would be read as an option.
         if (!IsCommitId(held) || !IsCommitId(head)) return TreeRelation.Unknown;
 
-        var (known, _, _) = await GitAsync(root, ["cat-file", "-e", $"{held}^{{commit}}"], ct).ConfigureAwait(false);
-        if (known != 0) return TreeRelation.Unknown;
+        var known = await GitObjectReads.InfoAsync(root, $"{held}^{{commit}}", ct).ConfigureAwait(false);
+        if (known is not { Missing: false }) return TreeRelation.Unknown;
 
         // `--is-ancestor` answers 0 for yes and 1 for no; anything else is git failing to answer.
         var (descends, _, _) = await GitAsync(root, ["merge-base", "--is-ancestor", held, head], ct).ConfigureAwait(false);

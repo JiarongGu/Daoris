@@ -254,6 +254,7 @@ internal static class GitRuns
         {
             info.RedirectStandardInput = true;
             info.StandardInputEncoding = new UTF8Encoding(encoderShouldEmitUTF8Identifier: false);
+            GitStartInputs.Hand(info, input);
         }
 
         try
@@ -288,18 +289,21 @@ internal static class GitRuns
             }
 
             stderr = process.StandardError.ReadToEndAsync(within.Token);
-            var buffer = new byte[Math.Max(0, limit)];
+            // Grown as git writes, so a whole file's bound is not its room.
+            var bound = Math.Max(0, limit);
+            var buffer = new byte[Math.Min(bound, 64 * 1024)];
             var count = 0;
             var stream = process.StandardOutput.BaseStream;
-            while (count < buffer.Length)
+            while (count < bound)
             {
+                if (count == buffer.Length) Array.Resize(ref buffer, (int)Math.Min(bound, 2L * buffer.Length));
                 var got = await Heard(stream.ReadAsync(buffer.AsMemory(count), within.Token), within.Token).ConfigureAwait(false);
                 if (got == 0) break;
                 count += got;
             }
 
             // More than the bound is waiting: git would block on a full pipe, so it is stopped. What it wrote is whole.
-            var bounded = count == buffer.Length && await Heard(stream.ReadAsync(new byte[1], within.Token), within.Token).ConfigureAwait(false) > 0;
+            var bounded = count == bound && await Heard(stream.ReadAsync(new byte[1], within.Token), within.Token).ConfigureAwait(false) > 0;
             if (bounded)
             {
                 OwnedProcesses.End(process);
