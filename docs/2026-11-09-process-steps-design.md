@@ -405,11 +405,12 @@ from has ended, which that candidate's own steps bound, then:
 
 - **`conflicted`**: the request closed `conflicted`, and the line holds `against` by ancestry, past the work's `onto`. What the
   member met is on the line, so a rebase onto it meets it as its own. Every preset routes `conflicted` `back` to its `rebase`.
-- **Asked again at the same tip**: the request closed `conflicted`, and the line does not hold `against`: what the member met never
-  reached the line (its candidate failed, or formed again without it), and a rebase onto the unmoved line would make the same commit.
-  The `integrate` asks a new request at the same tip, in the same attempt, once per ended candidate (keyed by its invocation, the tip
-  and that candidate, so a restart asks once), at most `retry.maxAttempts` (default 3) times for a tip; past that it waits on the
-  person, said ("Waits on you: handed back 3 times for work that never reached `main`"), and *Try again* asks once more.
+- **Held, its recovery defined**: the request closed `conflicted`, and the line does not hold `against`: what the member met never
+  reached the line (its candidate failed, or formed again without it), and a rebase onto the unmoved line would make the same commit,
+  so no way leads back through the `rebase`. The `integrate` holds, active, and its recovery is the same tip asked again: a new
+  request, in the same attempt, once per ended candidate (keyed by its invocation, the tip and that candidate, so a restart asks
+  once), at most `retry.maxAttempts` (default 3) times for a tip. Past that it waits on the person, said ("Waits on you: handed back 3
+  times for work that never reached `main`"), and *Try again* asks once more.
 - **failed**: closed `handed-back` or `dropped`, its words naming the gate, the split or the decide. A gate's failure is no conflict,
   and rebasing fixes nothing: presets route it to the person's task, whose `done` goes `back` to the `rebase`.
 - **`reached`**: settled, as today.
@@ -788,9 +789,10 @@ class.
   `handed-back` (`IntegrationReplays.cs:483-537`, `IntegrationPromoteWords.cs:28-46`, `IntegrationPromotes.cs:289-299`), so B,
   handed back for A, whose candidate then fails, loops through the same tip. Answer: §2.10: an attempt adopts only the request its
   invocation asked; a replay's conflict closes `conflicted` with its `against`; `conflicted` only once the line holds `against`, past
-  the work's `onto`; otherwise asked again at the same tip, once per ended candidate, at most 3 times, then the person; a gate's or a
-  decide's hand-back, or a drop, is failed. Proof: h, the same-tip sequence and a gate hand-back. Class: no attempt can find a closed
-  request it did not ask, and the outcome is read from what closed the request.
+  the work's `onto`; otherwise held, its recovery defined, never a loop through the `rebase`: the same tip asked again, once per ended
+  candidate, at most 3 times, then the person; a gate's or a decide's hand-back, or a drop, is failed. Proof: h, the same-tip
+  sequence and a gate hand-back. Class: no attempt can find a closed request it did not ask, and the outcome is read from what closed
+  the request.
 
 **Opus, round 2.**
 
