@@ -3,11 +3,23 @@
  */
 const escapeRegExp = (text) => text.replace(/[.+^${}()|[\]\\]/g, '\\$&');
 
-/** A lane path as a pattern: `*` stays in a folder, `**` crosses folders, `{a,b}` is either. */
-export function globToRegExp(glob) {
+/** The end of the group opened at `open` and the commas that part its alternatives, or null where it never closes. */
+function groupAt(glob, open) {
+  let depth = 0;
+  const commas = [];
+  for (let at = open; at < glob.length; at += 1) {
+    if (glob[at] === '{') depth += 1;
+    else if (glob[at] === '}' && --depth === 0) return { end: at, commas };
+    else if (glob[at] === ',' && depth === 1) commas.push(at);
+  }
+  return null;
+}
+
+function body(glob) {
   let source = '';
   for (let i = 0; i < glob.length; i += 1) {
     const c = glob[i];
+    const group = c === '{' ? groupAt(glob, i) : null;
     if (c === '*') {
       if (glob[i + 1] === '*') {
         i += 1;
@@ -17,14 +29,17 @@ export function globToRegExp(glob) {
         } else source += '.*';
       } else source += '[^/]*';
     } else if (c === '?') source += '[^/]';
-    else if (c === '{' && glob.indexOf('}', i) > i) {
-      const end = glob.indexOf('}', i);
-      source += `(?:${glob.slice(i + 1, end).split(',').map(escapeRegExp).join('|')})`;
-      i = end;
+    else if (group) {
+      const edges = [i, ...group.commas, group.end];
+      source += `(?:${edges.slice(1).map((edge, k) => body(glob.slice(edges[k] + 1, edge))).join('|')})`;
+      i = group.end;
     } else source += escapeRegExp(c);
   }
-  return new RegExp(`^${source}$`);
+  return source;
 }
+
+/** A lane path as a pattern: `*` stays in a folder, `**` crosses folders, `{a,b}` is either, each alternative a glob of its own. */
+export const globToRegExp = (glob) => new RegExp(`^${body(glob)}$`);
 
 /**
  * A lane's paths as one test: a path is the lane's when one of its globs matches it and none of its `!`

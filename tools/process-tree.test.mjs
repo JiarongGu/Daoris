@@ -53,6 +53,12 @@ test('a process id used again is no parent: a process older than the one named i
   assert.deepEqual(read.outside.find((root) => root.pid === 70)?.startedBy, { pid: 20, name: null });
 });
 
+test('a folder that only starts with the install folder\'s name is no install: what runs from it is no Daoris process', () => {
+  const rows = [...machine(), row(80, 999, 'node.exe', 400, 'node D:\\Programs\\DaorisNotes\\serve.mjs'),
+    row(81, 999, 'node.exe', 410, `node "${install}\\tools\\serve.mjs"`)];
+  assert.deepEqual(census(rows).outside.map((root) => root.pid), [40, 81]);
+});
+
 test('nothing outside is said so, and no application is said so', () => {
   const inside = machine().filter((process) => process.pid < 40);
   assert.deepEqual(said(census(inside)).slice(1), ['process-tree: no Daoris process runs outside it.']);

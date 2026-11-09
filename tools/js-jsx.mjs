@@ -5,14 +5,16 @@
 import { expressionEnd } from './js-template.mjs';
 
 const OPENING = /^<(?:(>)|[A-Za-z_$][\w$.:-]*(?=[\s/>{]))/;
+const GENERIC = /^\s+extends\s+[^=>/\s]/;
 
 /**
  * The index past the element whose `<` is at `start`; the end of `src` where it never closes; -1 where what follows `<` is no
- * element's opening (a generic's `<T,>`). A comment inside an expression is pushed to `comments` as `[from, to)`.
+ * element's opening (a generic's `<T,>` or `<T extends X>`, whose `extends` an attribute would spell `extends=`). A comment inside an expression is pushed to `comments` as `[from, to)`.
  */
 export function jsxEnd(src, start, comments = []) {
   const opening = OPENING.exec(src.slice(start, start + 256));
   if (!opening) return -1;
+  if (GENERIC.test(src.slice(start + opening[0].length, start + 256))) return -1;
   let i = start + opening[0].length;
   // The opening tag's attributes are names, `=`, quoted strings (which may hold a `>`) and expressions.
   while (!opening[1] && i < src.length && src[i] !== '>') {

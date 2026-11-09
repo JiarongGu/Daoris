@@ -74,8 +74,9 @@ export function census(processes) {
     for (let parent = parentOf(app); parent; parent = parentOf(parent)) launchers.add(parent.pid);
   }
 
+  const inInstall = installs.map((root) => new RegExp(`${root.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}(?:[\\\\/"'\\s]|$)`, 'm'));
   const named = (process) => OWN_NAME.test(process.name ?? '')
-    || installs.some((root) => `${process.path ?? ''}\n${process.line ?? ''}`.toLowerCase().includes(root));
+    || inInstall.some((pattern) => pattern.test(`${process.path ?? ''}\n${process.line ?? ''}`.toLowerCase()));
   const daoris = new Set();
   for (const process of processes.filter(named)) {
     daoris.add(process.pid);

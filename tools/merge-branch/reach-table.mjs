@@ -44,7 +44,7 @@ export const REACH = Object.freeze([
   // the tool-tests gate, no longer part of verify. These rules come first and keep what each path reached before.
   {
     paths: [
-      'tools/merge-branch.mjs', 'tools/merge-branch/**', 'tools/move-code.mjs', 'tools/doc-duplicates.mjs', 'tools/process-reach.mjs',
+      'tools/merge-branch.mjs', 'tools/merge-branch/**', 'tools/reach-rows.mjs', 'tools/move-code.mjs', 'tools/doc-duplicates.mjs', 'tools/process-reach.mjs',
       'tools/test-map.mjs', 'tools/test-recall.mjs', 'tools/merge-queue.mjs', 'src/Daoris.Cli/tool-test/**', 'src/Daoris.Cli/test/_fixture.ts',
     ],
     gates: ['tool-tests'],

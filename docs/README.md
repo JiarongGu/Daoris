@@ -261,6 +261,7 @@ holds remaining work (D127/D159). Paths are relative to this file. Historical do
 |`2026-11-09-process-steps-design.md`|Proposed design, round 2: PROCSTEPS1, generic process steps; landing a composition
 |`2026-11-09-process-steps-reads.md`|Reads: PROCSTEPS1
 |`2026-11-09-repo-config-design.md`|Proposed design: REPOCONFIG1, a repository's declarations read once and indexed
+|`2026-11-09-repo-config-reads.md`|Reads: REPOCONFIG1
 
 ## UI, browser, tools and plugin contracts
 

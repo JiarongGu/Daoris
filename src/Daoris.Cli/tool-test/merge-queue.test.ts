@@ -49,6 +49,7 @@ const q = await import(
   CANDIDATE_MAX: number;
   RECHECK_MS: number;
   HELD_REFORMS: number;
+  MERGE_QUEUE: string;
   FOREGROUND_HEADROOM_GB: number;
   BACKGROUND_SLOT_WAIT_MS: number;
   emptyQueue: () => Queue;
@@ -350,6 +351,20 @@ describe('the queue: a frozen request, read before it is queued', () => {
     assert.equal(failing.check(), true, 'a take that cannot be said still ends the run');
     const replaced = tool.watchCandidate(candidate, () => ({ ...candidate, members: [{ ...candidate.members[0]!, request: 'second' }] }), tool.stepTrees({ end: () => {} }));
     assert.equal(replaced.check(), true, 'the same tip queued again is another request');
+  });
+
+  test('a record that exists but cannot be read is no empty queue, which the next write would put in its place', () => {
+    mkdirSync(join(repoRoot, '_fixtures'), { recursive: true });
+    const home = mkdtempSync(join(repoRoot, '_fixtures', 'merge-queue-'));
+    try {
+      mkdirSync(join(home, q.MERGE_QUEUE), { recursive: true });
+      assert.throws(() => q.readQueue(home), /EISDIR/);
+      rmSync(join(home, q.MERGE_QUEUE), { recursive: true });
+      writeFileSync(join(home, q.MERGE_QUEUE), '{ not json');
+      assert.deepEqual(q.readQueue(home).queued, [], 'text that does not parse is read as no queue');
+    } finally {
+      rmSync(home, { recursive: true, force: true });
+    }
   });
 
   test('the record survives a write and a read', () => {
