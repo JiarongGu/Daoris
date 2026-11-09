@@ -168,6 +168,12 @@ internal static class AcpProtocol
         return new { fs = new { readTextFile = false, writeTextFile = false }, terminal = false, _meta = meta };
     }
 
+    /// <summary>The turn's <c>stopReason</c> as the answer states it, read without trusting its shape: unknown where it is not text.</summary>
+    internal static string StopReason(JsonElement result) =>
+        result.ValueKind == JsonValueKind.Object && result.TryGetProperty("stopReason", out var reason) && reason.ValueKind == JsonValueKind.String
+            ? reason.GetString() ?? "unknown"
+            : "unknown";
+
     /// <summary>
     /// The terminal failure a typed client's prompt is answered with: <c>end_turn</c> with
     /// <c>_meta.jetbrains.air.sessionFailure</c> at <c>error</c> severity, written as the error frame a refused prompt is, its

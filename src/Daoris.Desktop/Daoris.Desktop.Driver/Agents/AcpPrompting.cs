@@ -20,7 +20,6 @@ internal sealed class AcpPrompting(ITurnPromptWiring wiring)
     private Task _attempts = Task.CompletedTask;
     private readonly object _attemptsGate = new();
 
-    // Whether this client asked the turn to stop, and how the last turn got cut.
     private volatile bool _cancelAsked;
     private volatile TurnCut? _turnCut;
 
@@ -85,9 +84,7 @@ internal sealed class AcpPrompting(ITurnPromptWiring wiring)
             throw;
         }
 
-        return result.TryGetProperty("stopReason", out var reason)
-            ? reason.GetString() ?? "unknown"
-            : "unknown";
+        return AcpProtocol.StopReason(result);
     }
 
     /// <summary>
@@ -180,15 +177,11 @@ internal sealed class AcpPrompting(ITurnPromptWiring wiring)
             // A word an error handed nothing to, answered before the agent did anything else for it: it is taken after all.
             if (open.Words is not null && wiring.Open.TakeLate(open) is { } own) AskedAll(own);
 
-            // A call a steer cut that never heard again ends with the turn it got cut in, as cut.
             CloseCut();
-            // The turn's own counts, where the agent reported them: the response's `usage`.
             var tokens = result.ValueKind == JsonValueKind.Object && result.TryGetProperty("usage", out var usage)
                 ? TurnTokens.Read(usage, "inputTokens", "outputTokens", "cachedReadTokens", "cachedWriteTokens")
                 : null;
-            var stopReason = result.ValueKind == JsonValueKind.Object && result.TryGetProperty("stopReason", out var reason)
-                ? reason.GetString() ?? "unknown"
-                : "unknown";
+            var stopReason = AcpProtocol.StopReason(result);
             wiring.Emit(new SessionEvent
             {
                 Kind = SessionEventKind.Turn,
