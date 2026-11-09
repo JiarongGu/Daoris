@@ -131,7 +131,7 @@ internal sealed class TreeLandSyncs(TreeContext context, BranchReplays replays)
         LandSync sync, string repository, string workspace, string onto, IReadOnlyList<LandingCommit> kept, CancellationToken ct,
         string? joining = null)
     {
-        var made = await replays.ReplayKeptAsideAsync(sync.Root, workspace, repository, onto, sync.Held.Commits, kept, ct).ConfigureAwait(false);
+        var made = await replays.Settles.ReplayKeptAsideAsync(sync.Root, workspace, repository, onto, sync.Held.Commits, kept, ct).ConfigureAwait(false);
         if (made.Now is not { } now)
         {
             return (null, made.Conflict
