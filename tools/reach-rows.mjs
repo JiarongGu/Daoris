@@ -29,8 +29,8 @@ const declarations = (driverReaders) => ({
 /** The version every desktop assembly is stamped with, which BuildVersionTests reads (UPDATEVERSION, e7e96cfaa6). */
 const canonVersion = (driverReaders) => ({
   paths: ['canon/canon.json'],
-  gates: [...driverReaders],
-  why: 'the release version every desktop assembly is stamped with, which the driver test BuildVersionTests reads beside the stage manifest',
+  gates: [...new Set([...driverReaders, 'service', 'rehearse', 'rehearse-family'])],
+  why: "the release version every desktop assembly is stamped with, which the driver test BuildVersionTests reads beside the stage manifest, and a file the package ships and the service's doctrine scan reads like the rest of `canon/`",
 });
 
 /** The build settings every .NET project builds with, each tree's importing them: where the commit is stamped. */

@@ -130,7 +130,8 @@ executable, started with a browser argument, is Daoris's own browser, which sess
 18. A later launch opens a new main window of the running instance. The application ends with its last main window.
     One driver loop runs per home. (from D171, D104)
 19. Each main window wears its own workspace's waiting count on its taskbar button and in its title. A notification's
-    click brings forward the window that holds its subject. (from D196, D108)
+    click brings forward the window that holds its subject. A press waiting unshown lights the button of the main window last in front
+    while none is in front, and a main window that closes is forgotten there, a button lit on it lighting the first. (from D196, D108)
 20. The shell notifies and decides nothing. A balloon shows when no window has focus, worded from the words the page
     hands it in its language, with the English catalogue as fallback. (from D196, D142)
 21. A render that throws is caught by `PageBoundary`. It offers a reload of the page alone and logs `page.error` with
@@ -310,7 +311,7 @@ suspended in a job of its own. A terminal's `daoris gate run` is the running app
 `HeavyAppRun`), the application runs the gates as its children under the machine's admission (`HeavyTerminalRun`), handed the
 terminal's folder, environment and its own standard handles (`TerminalHandles`, copied from the terminal's process), so the gates
 write where the terminal does, and answers the exit code; the run is held to that connection, so a verb killed or its session ended
-stops it, and the verb's Ctrl+C asks `RUN_STOP`. A terminal whose rights are not the application's (a restricted token, an app
+stops it, and the verb's Ctrl+C asks `RUN_STOP`; an id a run of that connection already holds is refused `id-taken`, never taken over. A terminal whose rights are not the application's (a restricted token, an app
 container, another integrity level: `TerminalRights`) is refused, so a sandbox's work never runs outside it. Where no Daoris takes
 the run, the verb says why in one line and runs it itself.
 Forwarding the gates' output over the pipe was rejected: it would reorder a gate's lines against the run's, and lose a console. Off Windows there are no jobs. The proof is `OwnedProcessesProcessTests` (an owner killed, its child and

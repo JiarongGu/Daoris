@@ -31,7 +31,7 @@ public sealed class ViewGitCountTests(ITestOutputHelper output) : LandedFixture
         ["GIT_SWITCH_PLAN"] = (5, 0),
         ["GIT_STASH_PLAN"] = (7, 0),
         ["GIT_DELETES"] = (0, 0), // the journal alone, where it holds no delete
-        ["LANDED_REVIEW"] = (5, 0),
+        ["LANDED_REVIEW"] = (3, 0),
     };
 
     [Fact]

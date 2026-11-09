@@ -92,4 +92,33 @@ public sealed class PressFlashTests
 
         Assert.Empty(_told);
     }
+
+    [Fact]
+    public void A_main_window_closed_is_never_the_one_lit_for_a_press_asked_after()
+    {
+        var flash = Flash();
+        var second = SecondaryWindow.ForMain(2);
+        flash.CameForward(second);
+        flash.WentBehind(second);
+        flash.Closed(second);
+
+        flash.Told(Waiting(Press("p1")));
+
+        Assert.Equal([(MainWindows.First, true)], _told);
+    }
+
+    [Fact]
+    public void The_window_lit_closing_with_presses_still_waiting_lights_the_first_instead()
+    {
+        var flash = Flash();
+        var second = SecondaryWindow.ForMain(2);
+        flash.CameForward(second);
+        flash.WentBehind(second);
+        flash.Told(Waiting(Press("p1")));
+
+        flash.Closed(second);
+
+        Assert.Equal([(second, true), (MainWindows.First, true)], _told);
+        Assert.Equal(MainWindows.First, flash.Lit);
+    }
 }
