@@ -77,16 +77,26 @@ public sealed partial class HelpRoomSettingsPlacesTests
         Assert.Empty(wrong);
     }
 
-    /// <summary>The driver's, the modules' and the service's own code, and the help room's goldens: not a test, which says what a text must not.</summary>
+    /// <summary>
+    /// The desktop's and the service's own code, each desktop project by name so a merge changing one runs this census, and the
+    /// help room's goldens: not a test, which says what a text must not.
+    /// </summary>
     private static IEnumerable<string> Texts()
     {
-        foreach (var top in new[] { Path.Combine("src", "Daoris.Desktop"), Path.Combine("src", "Daoris.Service") })
-            foreach (var file in Directory.EnumerateFiles(Path.Combine(Root, top), "*.cs", SearchOption.AllDirectories))
-            {
-                var relative = Path.GetRelativePath(Root, file).Replace('\\', '/');
-                if (relative.Contains("/obj/") || relative.Contains("/bin/") || relative.Contains(".Tests/")) continue;
-                yield return file;
-            }
+        IEnumerable<string> desktop =
+        [
+            .. SourceFiles.All("Daoris.Desktop.App", "*.cs"), .. SourceFiles.All(SourceFiles.DriverProject, "*.cs"),
+            .. SourceFiles.All("Daoris.Desktop.Driver.Host", "*.cs"), .. SourceFiles.All("Daoris.Desktop.GitDoor", "*.cs"),
+            .. SourceFiles.All("Daoris.Desktop.Launcher", "*.cs"), .. SourceFiles.All("Daoris.Desktop.Modules", "*.cs"),
+            .. SourceFiles.All("Daoris.Desktop.OwnerStandIn", "*.cs"), .. SourceFiles.All("Daoris.Desktop.PieceStart", "*.cs"),
+        ];
+        foreach (var file in desktop) yield return file;
+        foreach (var file in Directory.EnumerateFiles(Path.Combine(Root, "src", "Daoris.Service"), "*.cs", SearchOption.AllDirectories))
+        {
+            var relative = Path.GetRelativePath(Root, file).Replace('\\', '/');
+            if (relative.Contains("/obj/") || relative.Contains("/bin/") || relative.Contains(".Tests/")) continue;
+            yield return file;
+        }
         foreach (var file in Directory.EnumerateFiles(Path.GetDirectoryName(HelpRoomGoldenTests.GoldenPath("full.md"))!, "*.md")) yield return file;
     }
 }
