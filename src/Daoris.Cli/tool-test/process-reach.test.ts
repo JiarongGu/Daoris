@@ -32,7 +32,7 @@ const reach = await import(
   traitsIn: (attributes: string, constants?: Map<string, string>) => [string, string][];
   reachesIn: (attributes: string) => { areas: string[]; why: string | null }[];
   settingsFilter: (xml: string) => string | null;
-  filterHolds: (filter: string, traits: Map<string, Set<string>>) => boolean;
+  filterHolds: (filter: string, traits: Map<string, Set<string>>, name?: string | null) => boolean;
   reachSettings: (xml: string, kept: string[]) => string;
   halfOf: (run: string) => Half | null;
   withSettings: (run: string, file: string) => string;
@@ -139,6 +139,12 @@ test("a run settings file's filter is read, and a class's traits hold it as VSTe
   assert.equal(reach.filterHolds('(Category=A|Category=B)&!(Parallel=Git)', traits({ Category: ['B'], Parallel: ['Git'] })), false);
   assert.equal(reach.filterHolds('Category~Proc', traits({ Category: ['Process'] })), true);
   assert.equal(reach.filterHolds('FullyQualifiedName~Anything&Category=Process', traits({ Category: ['Process'] })), true, "a test's name is the half's own filter's to choose");
+  const leg = 'Category=Process&(FullyQualifiedName~WalksTests|FullyQualifiedName=N.EndsTests.Ends)';
+  assert.equal(reach.filterHolds(leg, traits({ Category: ['Process'] }), 'N.WalksTests.A_walk'), true, 'a test named is in the half that names it');
+  assert.equal(reach.filterHolds(leg, traits({ Category: ['Process'] }), 'N.EndsTests.Ends'), true);
+  assert.equal(reach.filterHolds(leg, traits({ Category: ['Process'] }), 'N.ActRunTests.A_run'), false, 'one not named is not');
+  assert.equal(reach.filterHolds('FullyQualifiedName!~N.A\\(b\\).', traits({}), 'N.A(b).Case'), false, "a name's escaped characters are read as VSTest reads them");
+  assert.equal(reach.filterHolds('Name~Other&Category=Process', traits({ Category: ['Process'] }), 'N.WalksTests.A_walk'), true, 'any other name condition holds');
   assert.equal(reach.settingsFilter('<RunSettings></RunSettings>'), null);
 });
 
@@ -268,6 +274,14 @@ test("the census reads a half's classes from its sources: their traits, a test's
     [{ unnamed: true, own: false }, { unnamed: false, own: true }, { unnamed: false, own: false }]);
 });
 
+test('a leg that names its classes reads those alone, by each test of theirs, a base\'s included', () => {
+  const settings = 'src/Desk/leg.process.runsettings';
+  const xml = '<RunSettings><RunConfiguration><TestCaseFilter>Category=Process&amp;(FullyQualifiedName~Desk.Tests.BetaTests.|FullyQualifiedName~GitTests)</TestCaseFilter></RunConfiguration></RunSettings>';
+  const census = reach.censusOf({ project: 'src/Desk/Desk.Tests', settings }, [...Object.keys(DESK), settings], (file) => (file === settings ? xml : DESK[file] ?? ''));
+  assert.deepEqual(census.problems, []);
+  assert.deepEqual(short(census.classes.map((each) => each.full)), ['BetaTests', 'GitTests']);
+});
+
 test('a changed path reaches the classes whose reach holds it; what acts unnamed or cannot be placed reaches the whole half', () => {
   const census = deskCensus();
   const at = (path: string): Placed => {
@@ -322,8 +336,14 @@ test("this repository's census: every class carrying the Process trait is read i
     assert.ok(census.classes.length > 0, `${gate.name} has classes`);
     for (const each of census.classes) inHalf.set(`${half.project} ${each.full}`, [...(inHalf.get(`${half.project} ${each.full}`) ?? []), gate.name]);
   }
-  const twice = [...inHalf].filter(([, halves]) => halves.length > 1);
-  assert.deepEqual(twice, [], 'no class is in two halves of one project');
+  // A leg runs classes another half holds once more (the git library's proofs on the pinned MinGit): its filter names each.
+  const filters = new Map(gates.map((gate) => [gate.name, reach.settingsFilter(readFileSync(join(repoRoot, reach.halfOf(gate.run)!.settings), 'utf8')) ?? '']));
+  const legs = new Set([...filters].filter(([, filter]) => /FullyQualifiedName~/.test(filter)).map(([name]) => name));
+  const twice = [...inHalf].filter(([, halves]) => halves.filter((half) => !legs.has(half)).length > 1);
+  assert.deepEqual(twice, [], 'no class is in two halves of one project, but a leg that names it');
+  for (const [key, halves] of inHalf) {
+    for (const leg of halves.filter((half) => legs.has(half))) assert.ok(filters.get(leg)!.includes(key.split(/[.+ ]/).at(-1)!), `${leg} names ${key}`);
+  }
   // Read the plain way: each class a Process trait stands before, in the test projects the halves run, by its own name (a
   // nested class's is the last part of the census's `Outer+Inner`).
   const projects = [...new Set(gates.map((gate) => reach.halfOf(gate.run)!.project))];
