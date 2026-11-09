@@ -5,6 +5,10 @@ the per-task record. Entries preserve their original wording so the archive stay
 
 ---
 
+## TREEPOOL1ab — the bench rerun that proves the bytes saving (2026-11-09)
+
+> **TREEPOOL1ab** (driver; §35.8, §36.4, §37.5, §39): Outcome: measured over a day up to TREEPOOL1aa with the `local/` copy present (its refusal fixed, the line's own empty at all 24 takes), a session in a kept slot writes 97% fewer files and 61% fewer bytes than a fresh tree with `take: base` (25% with `bin/` aside; the web shape under found rules, 20% and none), estimates of files changed; the root's `node_modules` is kept or installed again and not stored, never placed (TREEPOOL1ag), the CLI's now in the root's rule (TREEPOOL1ad), the contention across a finish left to TREEPOOL1ah.
+
 ## TREEPOOL1aa — a kept output as the previous line's build base (2026-11-09)
 
 > **TREEPOOL1aa** (driver, tools; D214; §35.3, §36.3, §37.3, §38.2): Outcome: a take keeps a `base` top's declared configurations as the previous line's build, recorded with its producer and its rule's `builds` and marked `.daoris-base` (a base nothing builds set aside), set aside where the toolchain key moves; `daoris tree build` is the one release, building per framework (`-f`) over MSBuild's own `FileWrites` account, setting aside what that build does not own and keeping the producer, frameworks, commands, commit, exit, moment and count beside the bases (`TreeBaseRelease`); the start says the bases and their integrated runners (`started.tree-base`, `started.tree-base-unguarded`) and each trim (`tree.base-trimmed`), the gate run's admission names the unreleased bases, a marked development host is named with the door (`tree.base-host`, the window's `base-host`); eleven readers guarded and `run --real` refused under a marker, held by the census per call site (`TreeBaseGitTests`, `TreeBaseBuildsProcessTests`, `BuildAccountProcessTests`, `TreeBaseWordsTests`, `tools/tree-base.test.mjs`).

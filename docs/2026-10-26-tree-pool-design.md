@@ -5208,3 +5208,77 @@ are built, aa as §38.2 builds it, with §35.8's two arms and both repository sh
   the product (§38.2, 5); one integrated builder (§38.2, 6); the census keyed per call by two shapes (§38.2, 7). Nothing is asked of the
   owner; the Files tab asks the person to word a kept rule only where their own file holds one.
 - **Owed:** both makers' confirming read of §38, which holds row d and neither row.
+
+## 39. Row ab's measures
+
+*Taken 2026-11-09 by Claude Opus 5.5 with `TreePoolDayBenchProcessTests` as §35.8 and §36.4 extend it (`TREEPOOL_BENCH_SHAPE`, `_ARM`,
+`_TIP`; it does nothing unless `TREEPOOL_BENCH` names a scratch folder). Every figure of files and bytes is an estimate of the files a step
+changed, at their sizes (§36.4, 3), never the bytes the disk wrote. The times are a loaded machine's: the three arms ran at once beside
+other sessions, so they are not compared.*
+
+**Method.** This repository: the 146 first-parent commits of the 24 hours up to TREEPOOL1aa's merge, each made again in the scratch clone
+with the tip's `daoris.files.json` (so every line reads the rule file after rows y, x, z and aa), the clone's `local/` holding a stand-in
+at each path the file copies; a line at every 13th commit (12 takes), each taken, staged, built through the door (`TreeBaseBuilds` at the
+tree's top, then the two desktop test projects, the contracts generation and the web's build), its work committed, let go and finished;
+the found layer read as a look reads it. Arms: `base` (the rules as they stand), `aside` (the control's one machine rule, `bin/` aside)
+and `fresh` (today's open, stage, cold build and removal at the first, middle and last commit). The web shape: a generated npm project
+(240 TypeScript modules, `tsc --noEmit && vite build`, the checkout's own TypeScript and Vite versions) over 104 commits, the found
+layer's rules alone. Between two takes a running process holds one slot file (a .NET program that loads the slot's
+`Daoris.Desktop.Driver.dll` by its path, as a test host does; `dist/index.html` in the web shape).
+
+### 39.1 What it found first
+
+- **Every take was refused `lines-own`** (13 of 13) with the rule file as it stood: the found npm entry names `/src/Daoris.Cli/node_modules/`
+  beside the root and the repository's entry named the root alone, so the member sorted first and its `npm ci`, run in its folder with the
+  found rule's scripts, installed the whole workspace and ran the root's `prepare` (git's `config` and hooks, `docs/index/`): nothing was
+  stored, the root's folder was left the line's own, the web's not stored. This repository's entry now names the member (fixed here);
+  the ordering is TREEPOOL1ad. The refusal names no path (TREEPOOL1ae).
+- **The `local/` copy's refusal is fixed**: the line's own tops read empty before all 24 takes of both arms, the stand-ins copied at every stage.
+
+### 39.2 Per step, this repository (lines 13 to 104, every build whole)
+
+| Mean per line | Take | Files stage | Build | **Per session** |
+|---|---|---|---|---|
+| `base` | 188 files, 7.0 MB | 322 files, 7.3 MB | 322 files, 579 MB | **831 files, 594 MB**, 12 deleted |
+| `aside` (control) | 177 files, 7.0 MB | 322 files, 7.3 MB | 730 files, 1,142 MB | **1,229 files, 1,156 MB**, 2 deleted |
+| `fresh`, the middle commit | open 8,958 files, 103 MB | 17,991 files, 282 MB (placed) | 906 files, 1,150 MB | **27,855 files, 1,535 MB**, 27,595 deleted |
+
+Over all 12 lines: `base` 821 files and 530 MB, `aside` 1,166 files and 962 MB. From line 117 on the Modules tests and the app did not
+compile in any arm (`TaskbarOverlay` unknown, the stand-in props pinning no local pack), so those lines build less and are left out above.
+The first fresh tree also filled the store (17,330 files, 256 MB): 44,678 files and 1,752 MB. The stage's 258 files are `docs/index/`,
+written by the `post-checkout` hook it owes.
+
+**The web shape.** A take of the kept slot: 790 files and 86.8 MB, 1 deleted (the take 56 files, the stage 732, the build 2); a fresh tree:
+981 files and 86.9 MB, 614 deleted. Its stage installs at every take and seals again (365 files in the tree, 367 in the store), since its
+lockfile marks esbuild's own install script and the found layer then keys the install by the commit's tree (`FileAnalysis`), as designed.
+
+### 39.3 Against §11's claim
+
+| | Files fewer per session | Bytes fewer per session |
+|---|---|---|
+| §11 (R5.2) | 91% | 64% |
+| §34, `bin/` aside | 95% | 22% |
+| **`base`**, this repository | **97%** | **61%** |
+| `aside`, this repository | 96% | 25% |
+| the web shape, found rules | 20% | none |
+
+**The bytes' saving holds with `base`**: the door's build writes 579 MB a line against the control's 1,142 MB, the half of §34's that
+moving `bin/` aside cost, and the per-session saving is within three points of §11's. Without `base` it is §34's again. A repository whose
+install the found layer keys by the commit (the web shape) saves files at the checkout and nothing at the install.
+
+### 39.4 The installs, the contention and what broke
+
+- **TREEPOOL1x's placement does not hold in a used slot.** Row x's proof had no found layer and no build: here the web's `node_modules`
+  is stored at line 0 and kept at every take, and the root's is kept where its key holds (7 of 12 takes, nothing written), but at each of
+  the 5 takes where its key moved it is installed again (257 files, 25 MB) and never stored: *the tree held `src/Daoris.Contracts/bin/`,
+  which git ignores, as its install began*. A fill seals only in a tree holding nothing ignored but placed dependencies, which a slot never
+  is after its first build (a base or an intermediate). Not placed from the store at any take: TREEPOOL1ag.
+- **Contention, `base`:** with the DLL held, the take went ahead (a base moves nothing); the door's build of the driver's tests failed
+  (MSB3027, the file locked), so that base was not released and its marker stood (10 others released), and the build after the process
+  stopped released it. No refusal and no stuck slot. **`aside` and the web shape:** not met, since the finish of the line before had set
+  the outputs aside before the process started; a process left running across the finish is still to be measured (TREEPOOL1ah).
+- **A seal that fails is said as a stored install** (TREEPOOL1af): the web shape's line 0, its store empty, its record `installed`.
+- **Space:** the scratch held 7.9 GB (`base`), 12.3 GB (`aside`), 1.7 GB (the first run), under 1 GB each for the rest, each removed at its end.
+
+**Row d's *When*** gains rows ad and ag: the rerun shows the `local/` refusal fixed and row x's placement not confirmed, so row d does not
+start on these numbers until a used slot stores the installs it makes again.
