@@ -3,84 +3,19 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// A run bound to a graph version lands where its record says, and only the commit its <c>land</c> is bound to. A real pass of the runtime makes
-/// <c>land</c> active on the session's branch at its tip, read from git, and the door lands that commit. A commit made between the gate's
-/// judgement and the landing lands nothing, on the branch path and on the merge path; the pass after it judges the new tip, and the door lands that.
+/// A run bound to a graph version lands only the commit its <c>land</c> is bound to: a pass makes it active at the session's branch tip, the door lands
+/// that commit, and a commit made after the gate's judgement lands nothing until the next pass judges the new tip.
 /// </summary>
-/// <remarks>Real git, as the other landing tests, a stand-in for the service's quests and records, and no plugin: nothing reaches a network.</remarks>
 [Trait(Category.Name, Category.Process)]
 [Trait(Category.Parallel, Category.Git)]
-public sealed class GraphRunLandingTests : ReviewLandingFixture
+public sealed class GraphRunLandingTests : GraphRunFixture
 {
-    /// <summary>The least a graph run lands by: <c>claimed</c>, then a <c>land</c> by <paramref name="land"/>'s options.</summary>
-    private static string ClaimedThenLand(string land) => $$"""
-        {"schemaVersion":2,"entries":["claimed"],"end":"landing",
-         "nodes":[{"id":"claimed","kind":"claimed","version":1,"reach":"observed"},{"id":"landing","kind":"land","version":1,"reach":"performed","options":{{land}}}],
-         "wires":[{"id":"c>l","kind":"after","from":"claimed","to":"landing"}]}
-        """;
-
-    private static readonly LandingSubject Work = new("s1", "q1", "Fix the gap");
-
-    /// <summary>No plugin's process: a graph of built-ins sends, asks and tells nothing that answers.</summary>
-    private sealed class NoPlugins : IWorkRuntimePort
-    {
-        public Task<int> PerformAsync(string plugin, WorkPerformCall call, CancellationToken ct) => throw new DriverException("no plugin runs here");
-
-        public Task<(WorkReconcileAnswer Answer, int Generation)> ReconcileStepAsync(string plugin, WorkReconcileCall call, CancellationToken ct) =>
-            throw new DriverException("no plugin runs here");
-
-        public Task<(WorkCleanupAnswer Answer, int Generation)> CleanupAsync(string plugin, WorkCleanupCall call, CancellationToken ct) =>
-            throw new DriverException("no plugin runs here");
-
-        public int? GenerationOf(string plugin) => null;
-
-        public void Owe(IReadOnlySet<string> plugins)
-        {
-        }
-
-        public void Watch(IReadOnlyDictionary<string, IReadOnlyList<WatchedUnit>> awaited)
-        {
-        }
-
-        public IReadOnlyList<WorkStepHeard> TakeSteps() => [];
-    }
-
-    /// <summary>Run q1 bound to a graph version landing by <paramref name="land"/>'s options, its session s1's tree done with one commit.</summary>
-    private async Task<(string Root, string Tree, GrownBranch Branch)> BoundRunAsync(string land)
-    {
-        var root = await RepositoryAsync("engine");
-        var tree = await DoneSessionAsync(root, "s1", "q1");
-        RunHome.Bind(_home, "q1", RunHome.SaveGraph(_home, ClaimedThenLand(land)), DateTimeOffset.UtcNow);
-        return (root, tree, Assert.Single(new SessionBranches(_home).All()));
-    }
-
-    /// <summary>
-    /// One whole pass of the runtime over the run's quest, done (held for the person's yes where <paramref name="held"/>), and its session's branch,
-    /// whose tip is read from git; what the line holds of it read in <paramref name="tree"/>, where given.
-    /// </summary>
-    private async Task PassAsync(string root, GrownBranch branch, string? tree = null, bool held = false, LandingDoor? door = null)
-    {
-        var runtime = new NodeRuntime(new NodeRecordFiles(_home, () => true), new NoPlugins(), () => DateTimeOffset.UtcNow, () => true) { Doors = NodeDoors.None.With(NodeKinds.Land, door) };
-        var pass = await runtime.PassAsync(new NodeRuntimeLook(Config(), Whole: true)
-        {
-            Units = _ => Task.FromResult(new NodeUnitsRead(
-                [RunHome.QuestUnit(RunHome.Quest("q1", "Done") with { Held = held }), RunHome.Branch(branch.Unit!, branch.Branch, branch.At, ["q1"])],
-                new Dictionary<string, string> { ["engine"] = root })),
-            Tips = NodeTips.ReadAsync,
-            Content = (_, tip, ct) => tree is null ? Task.FromResult<HoldContent?>(null) : HoldReads.ContentAsync(new SessionTrees(_home), tree, tip, ct),
-        }, CancellationToken.None);
-        Assert.True(pass.Armed);
-    }
-
     /// <summary>The runtime's door, landing as the performer does: over the fixture's world, trees and faked plugin.</summary>
     private LandingDoor Door() => new(() => new LandPerformer(
         _home, _world, new SessionTrees(_home), new SessionEvents(DaorisHome.Entry(_home, HomeEntry.Sessions)), _lines.Add) { HoldsLease = () => true, Told = _told.Add });
 
     // What the performer told at `work/event`.
     private readonly List<WorkEvent> _told = [];
-
-    /// <summary>A branch made for the person, no plugin asked.</summary>
-    private const string BranchLand = """{"method":"branch","pattern":"feature/{quest}-{slug}"}""";
 
     private NodeStatus Status(string node) => new NodeRecordFiles(_home, () => false).Read(RunUnits.IdOf("q1"))!.Statuses[node];
 
@@ -398,8 +333,6 @@ public sealed class GraphRunLandingTests : ReviewLandingFixture
 
         Assert.Equal([LandingCode.Landed], _lines.Where(line => line.Event == "landing.auto").Select(CodeOf));
     }
-
-    private static string? CodeOf(LandingLine line) => line.Data.First(each => each.Key == "code").Value as string;
 
     /// <summary>A branch method makes its branch from the intent alone, with no plugin asked, and the landing record names it.</summary>
     [Fact]

@@ -16,13 +16,15 @@ internal sealed record LayerSaid(FileLayer Layer, FileRule Rule);
 /// <summary>
 /// A path's effective rule: its kind (null where git tracks it) and the layer that decided, the rule with the fields it left out taken
 /// from its signature, and every earlier match below it. <see cref="Floor"/> says where the floor decided, <see cref="Copy"/> whether
-/// a copy is made, and <see cref="Idle"/> why a dependency acts on nothing.
+/// a copy is made, <see cref="Share"/> its <c>read</c> or <c>write</c> where it is shared, and <see cref="Idle"/> why a dependency acts on nothing.
 /// </summary>
 internal sealed record EffectiveFile(string Path, FileKind? Kind, FileLayer? Layer, FileRule? Rule, IReadOnlyList<LayerSaid> Below)
 {
     internal string? Floor { get; init; }
 
     internal bool Copy { get; init; }
+
+    internal string? Share { get; init; }
 
     internal string? Idle { get; init; }
 }
@@ -71,18 +73,20 @@ internal sealed class FileRules
     /// <summary>What the rules and the floor say of <paramref name="path"/>, an ignored top or a path a rule names.</summary>
     internal EffectiveFile For(string path, FileFloorFacts floor)
     {
-        var said = _rules.Where(each => each.Rule.Matches(path)).ToList();
+        var said = _rules.Where(each => each.Rule.Matches(path, floor.IgnoreCase)).ToList();
         if (FileFloor.TrackedIn(path, floor.Tracked) is not null) return new(path, null, FileLayer.Floor, null, said) { Floor = FileFloor.Tracked };
         if (FileFloor.Held(path, floor.Repositories)) return new(path, FileKind.Repository, FileLayer.Floor, null, said) { Floor = FileFloor.Repository };
         if (said.Count == 0) return new(path, FileKind.Unknown, null, null, []);
 
         var winner = said[^1];
         var rule = winner.Rule.Filled(_signature?.Invoke(path, winner.Rule.Kind));
-        var copy = rule.Kind == FileKind.Local && rule.Copy == true;
-        var settings = copy && FileFloor.IsSettings(path);
+        var copy = rule.Kind == FileKind.Local && FileKindSets.Copies(rule);
+        var share = FileKindSets.Shares(rule) && FileKindSets.Unshared(rule.Kind, rule.Reach) is null;
+        var settings = (copy || share) && FileFloor.IsSettings(path);
         return new(path, rule.Kind, winner.Layer, rule, said[..^1])
         {
             Copy = copy && !settings,
+            Share = share && !settings ? rule.Reach : null,
             Floor = settings ? FileFloor.NeverCopied : null,
             Idle = rule.Kind == FileKind.Dependency && (rule.Install is null || rule.Key is null)
                 ? "it names and inherits no install and no key, so it acts on nothing"

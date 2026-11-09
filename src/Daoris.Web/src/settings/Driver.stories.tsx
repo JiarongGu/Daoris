@@ -2,27 +2,20 @@ import type { Meta, StoryObj } from '@storybook/react-vite';
 import { chinese } from '../design/storyLanguage';
 import { storyWidths } from '../design/storyWidths';
 import { InTheme } from '../plugins/storyIcons';
-import type { UpdateState } from '../update/UpdateBanner';
 import { SETTINGS } from '../bridge/generated/routes';
 import { DriverCards, type DriverFacts } from './DriverCards';
 
-// Settings → Driver, drawn from the shell's facts as `DriverDomain` hands them: the home with its door to This
-// Daoris, where plugins are looked for, the two dials, the cool-off, this machine's sessions' access and the install's
-// update; at the frame's three widths, in English and 中文, light and dark. Each row's
-// value sits on the card's track, not at the far edge.
+// Settings → Driver from the shell's facts as `DriverDomain` hands them, at the frame's three widths, in English and 中文,
+// light and dark: each row's value on the card's track, not at the far edge.
 
 const nothing = () => {};
 
-const UPDATE: UpdateState = { state: 'none', staged: null, mode: null, driven: 0, turns: 0, problem: null, outcome: null, last: null };
-
 const FACTS: DriverFacts = {
-  home: 'C:/somewhere/Daoris',
   pluginsFolder: 'C:/somewhere/Daoris/plugins',
   notify: true,
   coolOff: 60,
   cap: 2,
   machineAccess: { full: false, pauses: [{ pause: 'goAheads', value: 'never' }] },
-  update: UPDATE,
 };
 
 const meta: Meta<typeof DriverCards> = {
@@ -31,8 +24,8 @@ const meta: Meta<typeof DriverCards> = {
   args: {
     facts: FACTS,
     minutes: { cooloff: SETTINGS.find((each) => each.key === 'cooloff')!, quiet: SETTINGS.find((each) => each.key === 'quiet')! },
-    busy: { access: false, update: false },
-    onGo: nothing, onNotify: nothing, onCoolOff: nothing, onCap: nothing, onAccess: nothing, onSayUpdate: nothing,
+    busy: { access: false },
+    onGo: nothing, onNotify: nothing, onCoolOff: nothing, onCap: nothing, onAccess: nothing,
   },
   decorators: [storyWidths.wide],
 };

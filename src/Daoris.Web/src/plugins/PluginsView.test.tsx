@@ -203,6 +203,17 @@ describe('the Plugins view', () => {
     await waitFor(() => expect(calls('PLUGIN_ACTION')).toContainEqual({ id: 'in-app-browser', action: 'help-withdraw', server: 'browser' }));
   });
 
+  it('says a server whose approval an update changed asks again, as the catalogue sends it', async () => {
+    answer([{
+      ...BROWSER,
+      helpServers: [{ name: 'browser', allow: ['browser_navigate'], writes: [], state: 'waits', changed: true }],
+    }]);
+    window.localStorage.setItem('daoris.list.plugins.chosen', 'in-app-browser');
+    show();
+
+    expect(await screen.findByText(/Changed since you approved it/)).toBeInTheDocument();
+  });
+
   it('switches a plugin off at the driver, says so, and asks for the catalogue again', async () => {
     routes.PLUGIN_ACTION = ({ id, action }) => ({ id, action, data: null });
     window.localStorage.setItem('daoris.list.plugins.chosen', 'acme.gate');

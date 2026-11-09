@@ -40,7 +40,7 @@ describe('Settings → This Daoris → Disk space: the dependency store', () => 
 
   it('shows the store with its size, its days and size limit, and its next, a rule the person does not set', async () => {
     invoke.mockImplementation(shell);
-    show(<SettingsView notify={() => {}} section="wiring" onGo={vi.fn()} />);
+    show(<SettingsView notify={() => {}} section="space" onGo={vi.fn()} />);
 
     const card = within(await screen.findByRole('region', { name: 'Disk space' }));
 
@@ -54,7 +54,7 @@ describe('Settings → This Daoris → Disk space: the dependency store', () => 
   it('says the store in 中文', async () => {
     await i18n.changeLanguage('zh');
     invoke.mockImplementation(shell);
-    show(<SettingsView notify={() => {}} section="wiring" onGo={vi.fn()} />);
+    show(<SettingsView notify={() => {}} section="space" onGo={vi.fn()} />);
 
     expect(await screen.findByText('依赖存储')).toBeTruthy();
     expect(screen.getByText('条目在最后一次放置 30 天后移除，超过 10 GB 时更早')).toBeTruthy();

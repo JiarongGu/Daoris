@@ -47,6 +47,7 @@ is under `src/Daoris.Desktop/Daoris.Desktop.Modules/`.
 | Every delete | `JournaledDeletes.cs`, `ContentHolds.DeleteJudgedAsync` | A delete a door of Daoris's judged, or forced, as the journal's `ref.delete` act pressed by `daoris`, undone by `GIT_REF_UNDO`; where the door's rule keeps the commits, the recovery ref is made in the delete's own transaction, its record names it, and the Undo takes it back |
 | Every keep | `RecoveryKeeps.cs`, `RecoveryCensus.cs`, `RecoveryWorks.cs` | A recovery ref's one naming; a keep that deletes nothing as one `ref.keep` act; each ref a journal record names, dated from its act; the census of the refs no record names; what an unheld ref's work is to the repository's line |
 | The deletes' list | `DeletedBranches.cs`, `GIT_DELETES`, `projects/git/DeletedRefs.tsx` | Every done `ref.delete` act of a repository from the journal alone, each with its Undo open or shut (undone, name stands again, commit gone), under the Branches tab in en and zh |
+| The git scheduler | `Platform/GitScheduler.cs`, `Platform/GitPlaces.cs`, `Platform/GitPlace.cs`, `Platform/GitRunAsk.cs`, `Workplace/Git/GitStartAsks.cs`, `Workplace/Git/GitEndable.cs`, `Workplace/Git/GitMemoAsks.cs`, `Platform/GitCallers.cs`, `Modules/Platform/PipeGitCaller.cs`, `Workplace/Git/GitLazyFetch.cs`, `Workplace/Git/GitObjectReads.cs`, `Workplace/Git/GitObjectAnswer.cs`, `Workplace/Git/GitObjectName.cs`, `Workplace/Git/GitStartInputs.cs`, `Workplace/Git/GitAskerContext.cs` | The one door every git of Daoris's passes: places for the run, a queue per repository, an identical queued start shared, a lock-free read nobody waits on ended, a removal admitted, re-entries told by the caller's ancestry and lent a place, an outlived git counted apart; the gate refusing a git's image with no place; lazy fetch off by a proof per git in use; every object read one `--batch` question through one parser; the memos partitioned by the asking tree's configuration |
 | Reads | `GitReads*.cs`, `GitBranches*.cs`, `GitLaunch.cs`, `GitReadCache.cs` | The page's git reads through Tools' git, cached by commit id |
 | Line fetch, bring up to date | `TreeRefs.cs`, `TreeSync.cs` | `fetch origin <line>` past the doors and holds; ff-only, replay, delete what merged |
 | Landing plugin wire | `Plugins/LandingPlugins.cs` | Whether a plugin performs pull-request steps (`ProblemOf`, its manifest speaking on `work/perform`), and `work/state` asks |
@@ -246,8 +247,53 @@ is under `src/Daoris.Desktop/Daoris.Desktop.Modules/`.
 
 ## Git's starts, counted
 
-Every git of Daoris's own reads starts through `GitRuns` and `GitLaunch`, which count it for a flow (`GitLaunch.Count`,
-`WorkingTree.Started`); a test counts a pass's starts at the process gate with the folder each ran in (`GitStartTally`). Measured on
+Every git Daoris's desktop starts runs in a place of `GitScheduler`'s: `GitRuns`' three runners, an act's held step and a pool
+claim's git (`Held`), an identity's `ls-remote` (a person's, waiting outside Daoris), and every question of a git's file through
+`ChildProcess` (the Tools page's version and system configuration, `daoris tool use git`, the version probe, a plugin's declared git
+and its checks); the start gate and `HeldChild` refuse a git's image holding no place at every purpose, said as `git.start.outside`.
+Four run at once; the background and every git waiting outside Daoris (a remote act, an act that may run a hook) hold three together,
+so a person's read always finds the fourth; outside-waiting gits hold at most two and count toward no repository's two; one
+repository runs at most two of the background's reads. Asks queue per repository by common directory, a person's oldest that may go
+first, else the oldest that may go; a write passes nothing queued ahead of it and nothing passes it. An ask shares an identical start
+(file, folder, arguments, variables, runner, bound) only while that start is queued with no write of its repository queued after it,
+never one running. A read `GitEndable` calls
+lock-free (a `status` with `--no-optional-locks`, a working-tree diff also told `-c diff.autoRefreshIndex=false`) is dropped while
+queued and ended while running once its askers leave; every other git, placed, runs untokened to its end or its bound. A
+`worktree remove` is admitted once the tree's lock-free reads are dropped or ended and its other gits have ended, and holds what is
+asked in the tree after it, which its own git passes. An ask beneath any placed git takes a place that git lends, above the four, one a parent, two deep,
+deeper refused as `git.start.depth`: a pipe request's caller is told beneath one by its process ancestry (`PipeGitCaller`,
+`GitCallers`, read only while a git holds a place), so a push's hook and a diff's textconv or filter helper that ask the window
+never wait behind the place their own git holds. Lazy fetch is off for every read in a repository with a promisor
+(`GitLazyFetch`): the git in use (`GitInUse`) is proved once to honour `GIT_NO_LAZY_FETCH`, by two starts in that repository with
+every transport refused and git's trace on, the plain run fetching and the told one not, since git's sources read the variable in
+2.39.4, 2.44.1 and 2.45.1 but not 2.44.0 or 2.45.0; a git not so proved is never told it, and its reads there wait outside Daoris
+from their start and are never ended. Every object Daoris reads, a blob's bytes or text, an object's type or its presence, is one
+`cat-file --batch` start asked one question and read by one parser (`GitObjectReads`, `GitObjectAnswer`), its size and type the
+header's, a text decoded as git's text output is (UTF-8, a leading byte-order mark taken as one); a question is one line, so a path
+holding a line break is asked by the id `rev-parse --verify` resolves for it (`GitObjectName`), and `GitObjectFormsCensusTests` is red
+on any other form (`cat-file blob`, `-e`, `-t`, `show <rev>:<path>`, `ls-tree -l`) or a second parser of the answer, the lazy-fetch
+proof's `-t` alone listed. A blob that answers missing in a repository with a promisor is asked once more as a start allowed to fetch,
+a type or a presence never, and the landed preview says `PREVIEW_UNFETCHED` where that gives none. A commit's fields are never read
+from its stored bytes: its parents are git's history's (a history edit lists them with `rev-list --no-walk --parents`, so a shallow
+boundary is a root and a graft's parents are the graft's), the rest the format reads. The flow memos share an answer between two folders of one
+repository only where their configuration is one (`GitAskerContext`: the common directory, the asking tree's `config.worktree` by
+its bytes, and the folder itself where an `includeIf` is configured), so `GitFacts.SameRepository`, `RefSnapshot.TreeHeld`,
+`ListedFor` and `GitReadOnce`'s listings never answer a tree with replacements off from one with them on. A git whose kill it outlived leaves the four for a count apart
+(`git.place.apart`, `git.place.exited`), and while its repository holds one the background's asks of it are answered `stalled`. An
+ask waiting for its place is said as the queue of the look's stage whose work asked it (`start.queue=`), as the start gate's wait
+is; work begun beside a stage says it to none. A bridge route's gits are a person's (`DriverModule`); the flow memos ask under the flow's token (`GitMemoAsks`). Four censuses
+hold the classes, each run over the driver with each listed member left out in turn and with one planted omission, and red on each
+(`SourceCensus`): every field holding a git answer, with its stamp or its flow (`GitKeepersCensusTests`); every field of the trees'
+and the platform's code keeping a process, a library repository or a place, with what ends it (`GitLifetimesTests`); every file there
+that ends a process early, with what it may end (`GitEndingsCensusTests`); and every file of the driver that starts a process
+(`GitStartsCensusTests` over `GitLaunchTests`' list). `GitSchedulerProcessTests` holds the scheduler on real git: 240 gits over six
+repositories at most four places at once; a person's read placed at once while a push running its hook, a fetch waiting on its
+grant and a background diff whose textconv waits hold the rest; two commits' hooks in two partial clones reading a filtered blob
+back through the service, and four diffs' textconv helpers asking back in, each lent a place and ending 0; a removal while a status
+that locks is queued in its tree; a write's order against reads either side of it. Each git is counted
+for a flow through `GitLaunch` (`GitLaunch.Count`,
+`WorkingTree.Started`); a test counts a pass's starts at the process gate with the folder each ran in and an object read's question,
+its input (`GitStartTally`, `GitStartInputs`). Measured on
 2026-11-06 on the count classes' fixtures, and held there as budgets. *Again* is the same command in the same folder asked again in the
 pass with no write between; *object* is what one held `git cat-file --batch` of the repository could answer instead (a name or an id
 read as its object), *by id* those naming an id alone.
@@ -261,11 +307,11 @@ read as its object), *by id* those naming an id alone.
 | A commit, a compare (first open) | 2 each | 0 | 0 | `ViewGitCountTests` |
 | The commit, switch and stash plans | 8, 5, 7 | 0, 0, 0 | 1 (0), 1 (0), 1 (0) | `ViewGitCountTests` |
 | The deletes (`GIT_DELETES`, the journal holding none) | 0 | 0 | 0 | `ViewGitCountTests` |
-| Review, a tree ahead of its line, its second open | 17 | 0 | 0 | `ReviewGitCountTests` |
+| Review, a tree ahead of its line, its second open (one untracked file, or ten) | 17 | 0 | 0 | `ReviewGitCountTests` |
 | Review, a tree the line holds by content | 18 | 0 | 1 (0) | `ReviewGitCountTests` |
 | A landed session's review | 6 | 0 | 2 (1) | `ViewGitCountTests` |
 | The Accept offer of a tree of work | 8 | 0 | 0 | `OfferGitCountTests` |
-| The look's tidy, six trees (two) | 20 (12) | 1 (`worktree list`, the judgement's own) | 1 (0) | `TidyGitCountTests` |
+| The look's tidy, six trees (two) | 18 (10) | 1 (`worktree list`, the judgement's own) | 1 (0) | `TidyGitCountTests` |
 | A session's start, to its spawn | 15 | 0 | 3 (0) | `StartGitCountTests` |
 | A squash press's landing | 25 | 0 | 4 (1) | `LandGitCountTests` |
 | A merge press's landing | 39 | 3 (the line's commit) | 9 (0) | `LandGitCountTests` |
@@ -274,7 +320,18 @@ The rows above are as the cuts of PERF1 left them (measured again on the same fi
 offer and Review, and a landing lists them twice (its judgement's, and its press's after the write). A test class's own git, each class alone with git's trace per process (`GIT_TRACE2_EVENT`) and the fixture's count
 (`DAORIS_TEST_GIT_SPAWNS`): `OfferGitCountTests` 43 starts (the fixture's 11), 3.7 s in git; `StartGitCountTests` 23, 1.8 s;
 `ViewGitCountTests` 125 (28), 7.1 s; `LandGitCountTests` 127 (7), 8.4 s; `TidyGitCountTests` 148 (19), 10.4 s; `ReviewGitCountTests` 180
-(15), 17.3 s. The other test classes that start git are not counted yet.
+(15), 17.3 s. The other test classes that start git are not counted yet. Before and after the scheduler, measured on 2026-11-09
+with the commit before it (`5cf077b03d`) in a scratch worktree, each class alone on this machine under its agents' load with
+`GIT_TRACE2_EVENT` set to a folder (`dotnet test src/Daoris.Desktop/Daoris.Desktop.Driver.Tests --no-build --filter
+FullyQualifiedName~ReviewGitCountTests`, then `~TidyGitCountTests`) and each top-level git's start and exit summed and swept:
+Review's class 203 gits either way, 26.0 s in git and at most 3 at once before, 25.9 s and 2 after; the look's tidy 113 gits, 18.9 s
+and 1 before, 21.2 s and 1 after. Their gits are asked one after another, so the bound holds none back and the scheduler costs them
+nothing measurable; `GitSchedulerProcessTests`' fan-out ran 240 gits in 69 s, never more than four placed. Every object read one
+`--batch` question (GITLIB1c), measured the same way the same day under a heavier load (each class's tests took over a minute each):
+Review's class 203 gits, 58.8 s in git and at most 2 at once, its views 17, 17 and 18 starts; the tidy's 113 gits, 48.4 s and 1,
+its six trees 18 starts and two 10. The gits are the same as before it, an object read one start where one was (a union join's file
+one where it was two), so the times are the machine's load and not the change. `createdMs` is the gate's
+own figure, read from the install's `review.read`, which git's trace cannot give.
 
 A held reader per repository does not earn its place on these figures. A view asks at most three object questions a pass, one of them
 by id, and the Git page's reads ask none once an id's answer is kept. A landing and the tidy asked more, and the starts are cut without
@@ -285,12 +342,32 @@ head and branch in one `status --porcelain=v2 --branch` (`TreeStatus`); Review a
 repository's files hold none (`RefFiles.Absent`: a loose or packed ref, or a reftable repository, is never called absent); a landed
 review asks the checkout's top once. The switch and stash plans (and the press that judges them) read head, branch, changed tracked paths and files in
 conflict in one `status --porcelain=v2 --branch -z` (`PlanStatus`), the stash plan hands the tip it read to the list instead of asking
-`refs/stash` again, and the commit plan reads the head's tree, parents and message in one `log` (`ActCommits.FactsAsync`). Left asked
+`refs/stash` again, and the commit plan reads the head's tree, parents and message in one `log` (`ActCommits.FactsAsync`). Review reads
+a session tree's untracked files' patches in two starts whatever their count (`UntrackedPatches`, nodes A and U after S): the files are
+added as intents (`add --intent-to-add`, the paths NUL-ended on git's input and literal) to a private index beside the tree's own
+(`GIT_INDEX_FILE`), and one `diff` of it against the tree is split by its file headers in status's order, each patch the bytes a file's
+own `diff --no-index` gave; the tree's index is never written, and the private one is removed with its lock after. Left asked
 again: a landing's line commit (3), which the promotion reads before the gates (they can run long), under the checkout's lock before
 the move, and after it as the proof the move held, and its head, because another process can move either and a landing reads afresh
 before each act; the plans' top, the stash tip and the layout (each a read their press compares by); the tree's files and the status
 Review reads for its own diff. A held reader would still cost its lifetime, the repack hazard and the version
-floor (the git-app design §4.3), for at most 9 starts of a merge press's 39.
+floor (the git-app design §4.3), for at most 9 starts of a merge press's 39, and Review asks it nothing.
+
+A start's cost, and LibGit2Sharp beside it, measured on 2026-11-09 by `tools/git-library-bench`, which no product project references:
+`dotnet build tools/git-library-bench -c Release`, then from the root `tools/git-library-bench/bin/Release/net10.0/git-library-bench.exe`
+with `starts`, `setup --name <n> --source <repo>`, `reads --name <n>`, `threads --name <n>`, `parity` or `opens`, its fixtures under
+`_fixtures/gitlib`. On this machine under its agents' load a `rev-parse HEAD` start costs 0.2 to 0.6 s at the median one at a time
+(two runs), up to 1.7 s with every core busy and 6.6 to 12.9 s when twenty start at once under that load, most of it in `Process.Start`,
+while the command's own work is 2 to 8 ms. Review of a session tree on a clone of this repository, ten untracked files beside its changes, is
+17 starts and 4.2 s at the median through git, 0.65 s in process with the repository held; the untracked cut, measured back to back by the
+bench's `reads` (five passes each), took it from 25 starts and 10.5 s, its untracked tail from 4.3 s over ten starts to 0.35 s over two.
+The look over six trees is 23 starts and 9.7 s against 0.55 s. On vscode (6,358 refs, 170,823 commits) the library
+loses: Review 25.1 s against 19.6 s, its walk of the commits no branch holds 20.4 s against 1.1 s and twenty commits' patches 3.7 s
+against 1.4 s, while a ref, a merge-base, the counts or two trees' file names stay under 55 ms against a second a start. Its answers
+equal git's for refs, the worktree list, history, two commits' diffs, eol and ident attributes, ignore case, and a detached or linked
+tree's status and untracked files; they differ in a rename's similarity score, wherever a filter driver runs, under sparse checkout, and
+on a path past 260 characters in a deep tree, where its status fails. It refuses reftable and SHA-256, and a split or sparse index's
+status. What follows is proposed in `docs/2026-11-09-git-library-design.md`.
 
 ## Where a change goes
 

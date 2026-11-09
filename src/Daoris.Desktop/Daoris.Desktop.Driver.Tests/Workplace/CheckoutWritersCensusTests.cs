@@ -41,6 +41,7 @@ public sealed partial class CheckoutWritersCensusTests
         ["IntegrationReplays.cs"] = (OwnTree, "the line's integration tree: made and removed through git's record of it, merged and committed in, put back at a commit by reset, clean and checkout", ["checkout@?", "clean@?", "commit@tree", "merge@tree", "reset@?", "worktree@ask.Root"]),
         ["IntegrationResolves.cs"] = (OwnTree, "a conflict resolved in the line's integration tree", ["add@tree", "checkout@tree", "rm@tree"]),
         ["OpinionTree.cs"] = (OwnTree, "a second opinion's own copy, detached at the tip judged", ["checkout@?"]),
+        ["UntrackedPatches.cs"] = (OwnTree, "Review's read of a session's own tree: its untracked files added as intents to a private index (GIT_INDEX_FILE) beside the tree's own, never that index, removed with its lock after", ["add@_root"]),
 
         // Refs no checkout has out, each from the tip judged or refused by git itself, and git's record of the trees.
         ["BranchReplays.cs"] = (Refs, "a branch replayed in its own tree or one made for it (D109 §2), moved from the tip judged while no checkout has it out", ["add@tree", "checkout@tree", "rebase@tree", "rm@tree", "switch@tree", "update-ref@root", "worktree@root"]),
@@ -59,7 +60,8 @@ public sealed partial class CheckoutWritersCensusTests
         ["TreeSetAside.cs"] = (Refs, "a tree set aside, through git's record of the trees", ["worktree@root"]),
         ["TreeFilesStage.cs"] = (Refs, "an unworked tree's files git tracks, which only Daoris's own install or hook changed, put back from its commit before anything is handed it", ["checkout@tree"]),
         ["TreePoolTakes.cs"] = (OwnTree, "a kept slot's take or return: the slot switched in place to the line's branch, never forced and with the repository's hooks held, in the claim's job (R4-F7)", ["switch@slot.Path"]),
-        ["PoolTakeovers.cs"] = (OwnTree, "a dead run's take undone: the kept slot detached where the take began, in the takeover's job; its new branch is deleted through the journal's act", ["switch@slot.Path"]),
+        ["PoolUndo.cs"] = (OwnTree, "a take or a return put back where its claim found the kept slot: switched onto the branch it stood on, or detached at the commit, never forced, no ignored file overwritten and the hooks held, in the claim's job; a take's own branch is deleted through the journal's act", ["switch@slot.Path"]),
+        ["SlotStanding.cs"] = (OwnTree, "a kept slot settled stuck, detached where it stands, which writes no file, in the claim's job", ["switch@Slot.Path"]),
         ["TreePoolFinishes.cs"] = (OwnTree, "a finished line's kept slot detached at the line's tip in place, never forced and with the repository's hooks held, in the claim's job", ["switch@slot.Path"]),
         ["PoolFinishRecoveries.cs"] = (OwnTree, "a dead run's finish settled: the kept slot detached at the line's tip again, in the takeover's job", ["switch@slot.Path"]),
         ["TreePoolRetires.cs"] = (Refs, "a retired slot's registration unlocked in the claim's job, and git's record of its vanished folder dropped", ["worktree@site.Root"]),

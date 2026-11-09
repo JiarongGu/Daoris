@@ -1,5 +1,24 @@
 # Rooms first, with an optimised fallback: a session works in place in the room it holds, and a repository without rooms gets kept trees whose ignored content is managed by class (TREEPOOL1, 2026-10-26: round 5, proposed 2026-11-07; round 6 for row 2, proposed 2026-11-07; round 7 for rows 3 and 4, proposed 2026-11-08; round 8 for every file git does not manage, proposed 2026-11-08; round 9 for the rule file and both reads of round 7, proposed 2026-11-08; round 10 for the rule file restricting nothing by default, proposed 2026-11-08; round 11 for both reads of rounds 9 and 10, proposed 2026-11-08; round 12 for both narrow reads of round 11, proposed 2026-11-08; round 13 for both confirming reads of round 12, proposed 2026-11-08)
 
+**Standing (round 17, rows z and aa on both reads of round 16, proposed under D191, D214):** **Both makers read round 16** at
+`cc1db1d83b`: Codex (y, ab and ac answered; z blocked on `P/*` broadening a person's rule, aa on a release by directory) and the
+independent Opus reader (ab and ac answered; one blocking finding each in y, z and aa, four not blocking); neither found committed work
+lost. Row y is being built with its findings. **Round 17 is written by Claude Opus 5.5 from main at `5008192916`** (§38) for rows z and
+aa alone, each closed by a proof that lists no members: the first form translated from the tokens its own reader scans, each word
+files-only, closed or kept as written, a person's file rewritten only once it keeps none, proved by a test generated over the grammar;
+a release named by its producer and covering only the files its build owns, by the build's own account; every reader of a build output
+a call site a census finds, the product's own locators guarded. **Row z is ready to build, aa after it; y is being built; ab runs once
+y, z and aa are built, ac after z; row d waits on §37.5's *When*.**
+
+**Standing (round 16, both reads of round 15, proposed under D191, D214):** **Both makers read round 15** at `7feb03dffb`: Codex
+(y ready; z blocked on the translation; aa, ab and ac ready after it) and the independent Opus reader (ab answered; seven blocking
+findings in y, z, aa and ac); neither found committed work lost. **Round 16 is written by Claude Opus 5.5 from main at `599cbc50b7`**
+(§37) and closes each finding with its class: a slot's row is written from its disk and names no line while an undo waits, which the
+run's look retries; the rule file says its form and the first form is translated exactly but for one named construct, its paths kept a
+union and every reader of them in one form; no top is moved over a path tracked at the take's start, and a base is released only over
+what the door's own build wrote; a share counts only while it is read as a link to its place. **Rows y and z are ready to build, aa and
+ac after z, and ab runs once y, z and aa are built; row d waits on §37.5's *When*.**
+
 **Standing (round 15, both reads of round 14, proposed under D191, D214):** **Both makers read round 14** at `024cee0e28`: Codex
 (x ready; ab ready after its prerequisites; y, z, aa and ac blocked) and the independent Opus reader (x and y ready; ab ready with the
 `local/` copy present; z, aa and ac not ready); neither found committed work lost. **Round 15 is written by Claude Opus 5.5 from main at
@@ -1968,6 +1987,8 @@ confirming read of the passages §33.2 names. *(R14)* Round 14 takes D214's note
 syntax with a rule set per entry, a kept output as the previous line's build base with its guard, this repository's installs made
 sealable, a take refused `busy`, shared paths, and the bench rerun; it adds rows y, x, z, aa and ab before row d and ac after z, and the
 build order of 6a, 3, 4 (its rows a to c built), 6b stands. *(R15)* Round 15 answers both reads of round 14 (§36); the order stands.
+*(R16)* Round 16 answers both reads of round 15 (§37); the order stands. *(R17)* Round 17 answers both reads of round 16 for rows
+z and aa (§38); the order stands.
 
 | Row | Changes | The person sees | Proof |
 |---|---|---|---|
@@ -2093,9 +2114,10 @@ place), and every row's park, placement, relink, exclusive hold and parking name
 
 ### d. ⚖ The pool wired, read only through a test's seam.
 
-- **When.** *(R15)* Waiting on rows y, z and aa built (x is); the bench rerun of row ab taken with the checkout's `local/` copy
-  present, its refusal fixed by row z or measured in the rerun, and row x's placement confirmed in it (§36.4); both makers' confirming reads of round 15 and their reads of the rerun's
-  note; the steward's finding that §11's saving holds on its numbers; and FOUNDATION1's row 1d-i having landed (above).
+- **When.** *(R16)* Waiting on rows y, z and aa built (x is); the bench rerun of row ab taken with the checkout's `local/` copy
+  present, its refusal fixed by row z, as the rerun shows, and row x's placement confirmed in it (§36.4); both makers' confirming reads
+  of the last round that answers a read (round 16, or a later one where it answers this round's reads) and their reads of the rerun's
+  note (§37.5); the steward's finding that §11's saving holds on its numbers; and FOUNDATION1's row 1d-i having landed (above).
 - **Changes.** `keptTrees` read only through the one environment variable row d names, set by the rehearsal and the tick tests alone
   *(O2-F13)*; the driven start's take as a `[RunStage]` of the `Grown` phase before `GrowTree`, its claim on `RunState` *(R4-F2)*, and the
   conversation's where `ChatStarts` chooses its tree, taking from the pool (§5.1) once the start's confirmation is settled *(O2-F15)*, else
@@ -2577,7 +2599,9 @@ slot path, answers the round-3 reader's proposed item 6 *(R4-F1)*.
 | 12 | 2026-11-08, Claude Opus 5.5, from main at `30f8e89eff`: both narrow reads of round 11 answered (§32): the mark held the other way, `unworked`, written by Daoris's making, remaking, take or return and removed before an agent or a terminal is handed the tree, a conversation's open among them, so a tree with no mark, or none that reads, is worked; an unworked tree's leftover tracked changes written back before any placement; a group's member never placed by its own key; a `toolchain` command a read in any tree; a take's set-aside held while its line's record can go on, a no-output line's as its conversation's place is; an install's write another rule names in its record, so clearing it installs the dependency again before `hand`; row 4's husky proof restated; nothing asked of the owner | both, confirming, of rows 3 and 4 (`docs/2026-10-26-tree-pool-reads.md`): the independent Opus reader at `557594b07a`, another round narrowly for row 3 on F2 and for row 4 on F1 (4 findings, 2 blocking); Codex at `f22f391b94`, its round-11 case answered and one case left, blocking for rows 3 and 4; neither found committed work lost *(R13)* | §33, every finding of both *(R13)* |
 | 13 | 2026-11-08, Claude Opus 5.5, from main at `b6908ea79c`: both confirming reads of round 12 answered (§33): a go-on into a tree a return marked removing `unworked` before its resumed turn; the files record written under one lock and the stage reading the mark again before each of its writes, stopping once a terminal has taken it, said, no visit refused; the hook owed in the record until it runs, the other writes read at every unworked stage; a worked tree's hit placed only where each dependency before it was kept or placed; a return that lays work back writing no mark (row i); §17.0's row 4 reading *installed again*; nothing asked of the owner | owed: a final confirming read by both makers, of the passages §33.2 names | — |
 | 14 | 2026-11-08, Claude Opus 5.5, from main at `0369cf64f0`: D214's note on the outputs at a take and the owner's shape for the rule file (§35): patterns in git's syntax, a rule set per entry with a kind as its default set, a kept output as the previous line's build base released by a build and read by the repository's runners (the keyed product weighed and rejected), a repository not wholly git-driven described by a `product` kind, a path reaching a tree own, copied, shared read-only or shared read-write by a link Daoris owns and unlinks first, this repository's installs sealable, a take refused `busy`, the bench rerun specified; rows y, x, z, aa, ab and ac; row d's *When* restated | both at `024cee0e28` (`docs/2026-10-26-tree-pool-reads.md`): Codex, x ready, ab ready once its prerequisites are repaired, y, z, aa and ac blocked; the independent Opus reader, x and y ready, ab ready with the `local/` copy present, z, aa and ac not ready; neither found committed work lost *(R15)* | §36, every finding of both *(R15)* |
-| 15 | 2026-11-09, Claude Opus 5.5, from main at `0435b45df4`: both reads of round 14 answered (§36): the take's undo restoring the recorded branch or detached state and tip, releasing only once restored, else the claim kept; git's cover by parent folder and case, every layer's patterns translated by one unit and proved equal per layer, the translation as the first form's one reader; the found `base` only where nothing found runs the output; the take's rules read once at the new start into its plan; a base released only by a successful build through the door, per project and configuration, `trees base` withdrawn, this repository's runners guarded with a census; the `local/` copy's refusal fixed by a top's partition in row z, extended to shares in row ac; the bench's figures stated as estimates; row d's *When* restated; nothing asked of the owner | owed: both makers' confirming read of §36 | — |
+| 15 | 2026-11-09, Claude Opus 5.5, from main at `0435b45df4`: both reads of round 14 answered (§36): the take's undo restoring the recorded branch or detached state and tip, releasing only once restored, else the claim kept; git's cover by parent folder and case, every layer's patterns translated by one unit and proved equal per layer, the translation as the first form's one reader; the found `base` only where nothing found runs the output; the take's rules read once at the new start into its plan; a base released only by a successful build through the door, per project and configuration, `trees base` withdrawn, this repository's runners guarded with a census; the `local/` copy's refusal fixed by a top's partition in row z, extended to shares in row ac; the bench's figures stated as estimates; row d's *When* restated; nothing asked of the owner | both at `7feb03dffb` (`docs/2026-10-26-tree-pool-reads.md`): Codex, y ready, z blocked on two cases of the translation, aa, ab and ac ready after it; the independent Opus reader, ab answered, seven blocking findings in y, z, aa and ac; neither found committed work lost *(R16)* | §37, every finding of both, each with its class *(R16)* |
+| 16 | 2026-11-09, Claude Opus 5.5, from main at `599cbc50b7`: both reads of round 15 answered (§37): every settled row of a slot written from its disk by one unit, naming no line while an undo waits, which the run's look retries, and no `stuck` slot keeping a branch; a return kept only from `cleared`; the rule file's `form` in the file and the translation idempotent and exact construct by construct, `P/*` the one difference kept beside case, a rule's paths a union and every reader of them through `GitPattern`; no top moved over a path tracked at the take's start; `builds` the door's one command, a base kept per declared configuration and released over exactly what the door built, the base readers' census widened; a share trusted only while read as a link to its place; row d's *When* corrected; the classes closed and three census tests; nothing asked of the owner | both at `cc1db1d83b`: Codex (y, ab and ac answered; z and aa one blocking finding each) and the independent Opus reader (ab and ac answered; one blocking finding each in y, z and aa, four not blocking) | z and aa in round 17 (§38); y being built with its findings |
+| 17 | 2026-11-09, Claude Opus 5.5, from main at `5008192916`, rows z and aa alone (§38), each closed by a proof that lists no members: the first form translated from `Glob`'s own tokens by a partition total by construction, a word git cannot state read as written and the person's file rewritten once it keeps none, no empty first entry and `LiteralOf` naming nothing for a `!`, the equality proved by a corpus test generated over the grammar; a release named by its producer over exactly the files its build owns by the build's own account, the rest set aside, behind a stop where the account is not whole; the product's walking-up readers guarded in the product, one integrated builder, the readers' census per call with today's sites named; nothing asked of the owner | owed: both makers' confirming read of §38 | — |
 
 ## 22. Round 2: both reads of round 1 answered
 
@@ -4077,7 +4101,7 @@ per act:
 | at a **finish** | `finish` | `keep`, `aside` | `keep` where `take` is `keep`, `base` or `renew`; else `aside` |
 | **installed and keyed** | `install`, `key`, `toolchain`, `env`, `secret`, `caches`, `bound` | as §29.2 | dependency only |
 | **shared between repositories** (a store entry) | `across` | boolean | false |
-| **what refuses until this line builds** (§35.3; *(R15)* `refuses` names the integrated runners for the start words and enforces nothing, §36.3) | `builds`, `refuses` | command patterns | `output`: none |
+| **what refuses until this line builds** (§35.3; *(R15)* `refuses` names the integrated runners for the start words and enforces nothing, §36.3) | `builds`, `refuses` | command patterns *(R16: `builds` is the one command the door runs, the signature's, never a pattern, §37.3)* | `output`: none |
 
 `take` carries *when cleared*: `keep` is kept as it stands (a dependency by its key and record); **`base` is kept as the previous
 line's build base** (§35.3); `renew` is kept until the toolchain key moves or the slot passes its size bound, then moved aside whole
@@ -4099,7 +4123,8 @@ repository's file and the person's `files.json` are rewritten in the same chunk)
 ```
 This repository's .NET builds, kept as a base: every `bin/` but the tools', which a later entry sets `aside` *(R15: a `!` would leave
 them to the found layer, §36.2)*. (`bin/` is the signature's own pattern; the repository's file names the runners it has integrated
-with the guard, which the found layer cannot know, and restates the signature's `builds`, since a field is filled whole.)
+with the guard, which the found layer cannot know, and restates the signature's `builds`, since a field is filled whole.) *(R16: the
+entry no longer states `builds`, which the signature's one command fills, and its file says `"form": 2`, §37.2, §37.3.)*
 
 ```json
 { "kind": "output", "take": "aside",
@@ -4324,7 +4349,7 @@ finding to make.
 ### 35.9 The rows, in build order *(R14)*
 
 *(R15: §36.7 restates each row below with what round 15 changed in it, and row d's *When* with the `local/` copy's refusal and
-round 15's confirming reads added.)* Rows y, x, z, aa
+round 15's confirming reads added; R16: §37.7 and §37.5 do so for round 16.)* Rows y, x, z, aa
 and ab are filed in `TASKS.md` under TREEPOOL1, in this order; **row d's *When*** (§17.0) then read: *waiting on
 rows y, x, z and aa built and the bench rerun of row ab taken, on both makers' reads of round 14 and of the rerun's note, on the
 steward's finding that §11's saving holds on its numbers, and on FOUNDATION1's row 1d-i having landed.* Row ac does not hold row d.
@@ -4381,8 +4406,12 @@ reads the line alone).
    HEAD is `Expect` and the branch is `ExpectBranch` (or none). Only then does a take's new branch go through the journal, at
    `claim.Start` and only where it still points there, as today (`:131-135`); a return's branch is the returning line's and stays. The
    busy refusal, a failed check (`TreePoolTakes.cs:147-153`) and the takeover's `FreeAsync` (`PoolTakeovers.cs:83-99`) all call it. A
-   failed check stays `stuck` with its words, its record naming the line it was restored to, not none (`:152`'s `undoneTo: ""`).
-3. **The slot is released only once the restoration holds.** The claim advances to a new phase, `undoing`, before the undo's first git
+   failed check stays `stuck` with its words, its record naming the line it was restored to, not none (`:152`'s `undoneTo: ""`). *(R16:
+   the undo switches onto `ExpectBranch` only where its tip is still `Expect`, and a failed check it restores is released, not `stuck`,
+   §37.1.)*
+3. **The slot is released only once the restoration holds.** *(R16: the transaction entering `undoing` names no line, a step that cannot
+   restore leaves its claim at `undo-waiting` for its own run's look to retry, and a slot whose branch moved is detached at `Expect` and
+   freed, not `stuck`, §37.1.)* The claim advances to a new phase, `undoing`, before the undo's first git
    step; restored, it frees the lock and completes with no settled row, the slot as it was. **Where the restoration does not hold** (A's
    branch moved past `a1` during the claim, or is out in another checkout, or git refuses), **the claim is kept** at `undoing`, its whole
    intent in the store: the slot serves no line, a visit holds back as it does for any switching claim (`TreeClaimKinds.Switching`,
@@ -4430,7 +4459,9 @@ tops are read (`FillJudgement.cs:22`) and by `git check-ignore --no-index`.
 `UnionJoins.cs:157-162`, `:169`); git reads a pattern with no inner slash at any depth and braces literally. An upgrade renaming the
 fields alone would leave a person's `{drafts,notes}/` covering neither folder and `src/{App,Lib}/bin/` nothing, and this repository's
 root `node_modules/` (`daoris.files.json:10`, after the web's at `:7`) would cover the web's too and win as the later rule. **The
-translation** is one unit, `RuleFileFirstForm`, a pure function from the first form to git's, each construct a row of the proof's table:
+translation** is one unit, `RuleFileFirstForm`, a pure function from the first form to git's, each construct a row of the proof's table
+*(R16: the file says its form, a terminal `**` gets no `!`, each brace alternative is escaped, `P/*` is a second difference kept, and a
+rule's paths stay a union; §37.2 restates the table whole)*:
 - each pattern **anchored** with a leading `/`, the old grammar's own reading;
 - **braces expanded**, one pattern per alternative in the order written, at the pattern's place, so the order between entries holds;
 - what git reads and the old grammar read literally **escaped**: a `[` (`UnionJoins.cs:165`), a leading `!` or `#`, a trailing space;
@@ -4495,11 +4526,13 @@ over the ignored tops the judgement listed, and writes **the take's plan**: the 
 markers, and the tops to move. `ClearAsync` is given the plan and reads no rule: it moves exactly the plan's tops and leaves exactly the
 recorded `Bases`; where the toolchain key read after the switch moved, it moves the bases aside too and removes their entries and
 markers, so the record names what is left. A top the judgement passed whose rule at the new start makes it the line's own is the previous
-line's, and moves aside with the outputs. **Proof:** a slot whose last line began at a commit whose file had no `base`, taken at one whose
+line's, and moves aside with the outputs *(R16: never a top holding a path tracked at the new start, whose entries are listed again
+after the switch, §37.3, 1)*. **Proof:** a slot whose last line began at a commit whose file had no `base`, taken at one whose
 file has it: `Bases` and markers written, `bin/` left byte for byte, `ClearAsync` given the plan and no reading of rules; the toolchain
 moved: the bases aside, with no entry and no marker left.
 
-**2. A base is released only by a successful build Daoris ran** (Codex; Opus 2). Sequence closed: A leaves binaries; B changes sources; a
+**2. A base is released only by a successful build Daoris ran** (Codex; Opus 2). *(R16: only the door's own command, for a configuration
+the project declares, releasing exactly the folders that build writes; a gate's step never releases, §37.3, 2.)* Sequence closed: A leaves binaries; B changes sources; a
 restore, a failed build or an editor's design-time build writes `obj/` (or a build fails after copying into `bin/`); §35.3's signal (a)
 releases B's base on those writes; the integrated runner runs A's surviving binary. **Signal (a) is withdrawn:** a write's time cannot
 tell a successful build from a failed one, a restore or a design-time build, nor which configuration was built. **Signal (b) is the one
@@ -4532,7 +4565,7 @@ helper, `tools/tree-base.mjs`, called where a path under a base is resolved to r
 the MCP host `start` resolves (`tools/desktop/commands.mjs:162`); proof-kit's four paths (`tools/proof-kit.mjs:19`, `:22`, `:26`, `:48`);
 the family rehearsal's (`tools/family-rehearsal.mjs:41`) and the e2e host's (`src/Daoris.Web/scripts/e2e-host.mjs:15`). It is never
 called where a path is resolved to find or stop a process (`kill`, `tools/desktop.mjs:84-85`), which stops what runs whatever built it.
-**The census**, `tools/tree-base.test.mjs`: every tracked script under `tools/` and `src/Daoris.Web/scripts/` whose text resolves a path
+**The census**, `tools/tree-base.test.mjs` *(R17: per call site, not per file, §38.2, 7)*: every tracked script under `tools/` and `src/Daoris.Web/scripts/` whose text resolves a path
 under a `bin/` (a `'bin', 'Debug'` or `'Release'` join, a `bin/Debug` string, an `assemblyExe` call) imports the helper or stands in the
 test's list of exempt readers with its reason: the merge tool, whose `--no-build` (`tools/merge-branch.mjs:630`) runs in its own gate
 tree on the build its fast half made in the same run (§11). Red first: today none is guarded. This repository's `bin/` entry names these
@@ -4598,7 +4631,8 @@ set-aside), built by row z with the copy as its one boundary (§36.4) and given 
 **boundary** lies under it: a copy the files record holds, a link the record holds (`Shares`, §35.5), or a path a `reach: read` or
 `write` entry declares, found by descending only along its pattern's literal part (before
 its first wildcard; a share pattern with none is matched against the tops alone). The partition lists entries one folder at a time along
-the way to each boundary and **never enters a link**: a recorded link is classified by its record, never listed, and one no record names
+the way to each boundary and **never enters a link**: a recorded link is classified by its record, never listed *(R16: only while it is
+read, without following it, as a link to the recorded place; else it is the line's, its record dropped, §37.4)*, and one no record names
 is refused at the judgement as foreign, as the walk of links refuses one (`WorkspaceLinks.cs:5-9`). Each boundary is classified apart (a
 copy among `Copies` while its hash holds, a share in `Shared`); each sibling on the way is sorted by the rules as a path of its own, the
 top's pattern covering it (§36.2, 1); and **a top is Daoris's own only where every entry under it is a boundary that holds** (Opus). A
@@ -4634,7 +4668,7 @@ integrated runners (§36.3, 4).
 | **ab** | the `local/` copy present, its refusal fixed by z or measured; the figures as estimates; a day replayed after aa; row x's placement confirmed (§36.4) | ready to run after y, z and aa |
 | **ac** | `TopPartition` at recorded and declared boundaries, never entering a link; `started.tree-shared` (§36.5) | ready to build, after z; does not hold d |
 
-**Row d's *When*** (§17.0) now reads: *waiting on rows y, z and aa built (x is); the bench rerun of row ab taken with the checkout's
+**Row d's *When*** (§17.0) now reads *(R16: corrected in §37.5)*: *waiting on rows y, z and aa built (x is); the bench rerun of row ab taken with the checkout's
 `local/` copy present, its refusal fixed by row z or measured in the rerun, and row x's placement confirmed in it; both makers' confirming reads of round 15 and their reads of the
 rerun's note; the steward's finding that §11's saving holds on its numbers; and FOUNDATION1's row 1d-i having landed.*
 
@@ -4644,4 +4678,533 @@ rerun's note; the steward's finding that §11's saving holds on its numbers; and
 - **Chosen here, within D214's notes**, each beside what it rejected: a kept claim over a `stuck` slot (§36.1); case as git reads it, and
   the first form's translation kept as an older record's reader (§36.2); the analysis not reading a guard in a script (§36.2, 4); the door
   as the only release, per configuration (§36.3); the copy's partition in row z (§36.4). None asks the owner for more.
-- **Owed:** both makers' confirming read of §36, which holds row d and none of the rows above.
+- **Owed:** both makers' confirming read of §36, which holds row d and none of the rows above. *(R16: read, and answered in §37.)*
+
+## 37. Round 16: both reads of round 15 answered *(R16)*
+
+*Written 2026-11-09 by Claude Opus 5.5, from main at `599cbc50b7`, on both makers' reads of §36 at `7feb03dffb`
+(`docs/2026-10-26-tree-pool-reads.md`, *Codex, round 15* and *Opus (independent), round 15*). Nothing was built, run or measured; the
+code is cited as it stands; no `local/` folder was read.*
+
+**The reads.** Codex: y answered and ready; z not ready on two cases of the first form's translation; aa, ab and ac ready once z is
+corrected. The independent Opus reader: ab answered; seven blocking findings, two in y, two in z, two in aa and one in ac, three points
+not blocking and one on row d's *When*. Neither found committed work lost. Each finding is answered below with the sequence it closes
+and its proof, and each is taken as one member of a class whose other members were looked for and closed with it (§37.6). Every answer
+stays inside D214's notes of 2026-11-08, and where one chose between ways, the one rejected is named beside it. Nothing is asked of the
+owner.
+
+### 37.1 TREEPOOL1y: a slot's row names a line only where its disk holds that line *(R16)*
+
+**The class.** `TreePool.WhereIs` answers a line's folder from the slot's row alone (`TreePool.cs:54-59`, through `LinePlaces.cs:22-30`),
+and the takeover decides from a claim's kind and the slot's branch. Opus's two findings are two places where the row or a phase is
+trusted over the disk, and the same trust stands wherever a slot is settled: of the fourteen `new SlotSettled(` under `Workplace/Pool/`,
+six name the slot's line where its disk may hold another (`PoolTakeovers.cs:36`, `:52`, `:88`, `:93`, `:109`; `TreePoolTakes.cs:160`),
+one names none where the undo now restores a line (`PoolTakeovers.cs:97`), and the return arm keeps a return by its branch alone
+(`:79-82`).
+
+1. **The claim records the slot as it found it.** Beside §36.1's `Expect` and `ExpectBranch`, the opening writes `ExpectLine`, the line
+   the slot's row named (`slot.Line`, `TreePoolTakes.cs:24-26`), in the same migration of `tree_claims`; a claim written before it reads
+   as detached at `Expect`, serving no line.
+2. **One unit writes every settled row from a disk read.** `SlotStanding` reads the slot's HEAD and branch and answers the row: the
+   claim's line where the slot is on the claim's branch and the claim has made it that line's (an open that landed; a switching return
+   from `cleared` on, point 4; a claim in place); `ExpectLine` where the slot is on `ExpectBranch` at `Expect`, or detached at `Expect`
+   where `ExpectBranch` is empty; **no line otherwise**. A slot it settles `stuck` is first detached where it stands, which writes no file,
+   so no slot out of the pool keeps a branch checked out and its line can be brought back elsewhere; only where git's own lock file stands
+   (`PoolTakeovers.cs:33-36`, `:49-52`) can it not be, and the words name the branch it holds. Every `SlotSettled` under `Workplace/Pool/`
+   is built by it, and a source census fails on one built elsewhere.
+3. **The transaction that enters `undoing` names no line** (Opus 1). The advance to `undoing` (§36.1, 3) writes, in the same
+   transaction, the slot's row with no line, so while the claim is kept `LinePlaces.Of(A)` answers A as a line that can be brought back,
+   never the slot whose files are `b0`'s; a restored undo completes with the row `SlotStanding` writes, naming A again at `a1`. **The
+   run's look retries its own kept claims:** the step that cannot restore advances its claim to `undo-waiting` and returns; the look takes
+   a claim of its own run at `undo-waiting` by the guarded update a takeover makes (`TreePoolClaims.cs:68-75`), the own-run refusal and
+   the run test left out (`:63`, `:67`), so a look and a takeover never act on one claim twice, and runs the one undo again; a claim at
+   `undoing` is a step still running and is never taken by its own run; a dead run's claim at either phase is taken over as today. While
+   it waits, a start of `ExpectLine` is held for the look as a start of any line a claim names is (§2.3), so that line is never brought
+   back onto the branch the undo waits to switch onto, and the next look that restores or frees the slot ends the hold; the repository's
+   page says why the slot waits (`tree.kept-restoring`, in both languages). **The undo switches onto `ExpectBranch` only where its tip
+   is still `Expect`** (Opus, not blocking): where the tip moved or the branch is gone, the undo detaches at `Expect` instead and the
+   slot, read clean, is freed serving no line (else settled `stuck` as point 2 says), a parked slot whose ignored files are the previous line's outputs and nothing of its own
+   (the judgement passed before the switch, so nothing of the line's own was there); where the branch is out in a checkout no record
+   names, the claim waits, since that passes. **Rejected:** switching onto the moved branch and settling `stuck`, which keeps A's branch
+   checked out in a slot out of the pool, so A could be brought back nowhere; and settling a freeable slot `stuck`, which only a person
+   clears, where every later take judges it from its disk again.
+4. **A switching return is kept only from `cleared` on** (Opus 2). `FreeAsync` keeps a return as the returning line's at any phase
+   (`PoolTakeovers.cs:79-82`), so one cut off at `switched` leaves the previous line's outputs (`wwwroot/`, `dist/`) unmoved and unmarked
+   in the returning line's slot, where its runners use them as its own. Before `cleared` it runs the one undo, as a take does; from
+   `cleared` on, its outputs moved aside and its bases marked, it is kept as the returning line's, as today. A return whose claim found
+   the slot on the claim's own branch (`ExpectBranch` is the claim's branch: §5.1 choice 1, in place) switched nothing and is kept at any
+   phase. **Rejected:** the takeover finishing the clearing from the plan, which leaves the check that never ran to the takeover, a
+   second way to take a slot.
+5. **A refusal whose undo restores the slot releases it** (a sibling of point 3). §36.1 kept a failed check `stuck` naming the line it
+   restored (`TreePoolTakes.cs:147-153`), which keeps that line's branch checked out in a slot out of the pool, and a switch git refuses
+   (`:64`) settles `stuck` with the slot exactly as found. Each runs the one undo; a slot read back as the claim found it and bound to no
+   other checkout (`TreeBinding.RefusalAsync`, as the check reads it, `:137`) is released with the refusal's words, as the busy refusal
+   is; one that is not is detached and settled `stuck`, naming no line.
+6. **A full move-back leaves no aside folder** (Opus, not blocking). Where `ClearAsync`'s refusal moved every top back, it deletes the
+   folder it made under the set-aside root (`PoolClearing.cs:44`, `:49`) and its mark, both Daoris's own and holding nothing, so no
+   folder is held for the line with nothing in it; a move-back that left a top keeps both (§36.1, 5).
+
+**Proof**, beside §36.1's, at different tips: (v) rewritten: A's branch out in a checkout no record names: the claim at `undo-waiting`,
+the row naming no line, `LinePlaces.Of(A)` answering *can be brought back*, A's start held and a visit held back; that checkout lets the
+branch go: the same run's next look restoring the slot, its row naming A at `a1`; A's branch moved past `a1` instead: no switch onto it,
+the slot detached at `a1` and freed serving no line, A's branch checked out nowhere; (viii) a return cut off at `switched`: the takeover's
+undo, the slot as the claim found it, the returning line's branch kept; at `cleared`: kept as the returning line's; in place, at any
+phase: kept; (ix) every top moved back: no aside folder and no mark; (x) a failed check and a refused switch, each restored: released,
+not `stuck`; a slot bound to another checkout: detached, `stuck`, naming no line; (xi) the settle census, red first at the six sites
+above. **Ready to build.**
+
+### 37.2 TREEPOOL1z: the form said in the file, the translation exact construct by construct *(R16)*
+
+**The class.** What a pattern means depends on the form it is read in. Round 15 translated the first form without the file saying which
+form it holds (Opus 3), two of its rows were wrong (Opus 4, Codex 1) and its paths lost their union (Codex 2); and thirteen more places read
+or write a rule's paths in the gates' grammar or as a path by its text (point 4).
+
+1. **The form is said in the file** (Opus 3). Every layer's file gains a top-level `"form"`, which each of Daoris's writers always writes
+   (`FoundFiles`; `PersonFiles`, through the Files tab and the translation; this repository's file, rewritten in row z's chunk): `2` is
+   git's syntax with a rule set per entry. A file without it is the first form and is read through `RuleFileFirstForm`; a form the reader
+   does not know reads as an unreadable file does (`RepositoryFilesReader.cs:24-32`), said. **The translation is idempotent** by
+   construction: its output always carries `"form": 2`, only a file without the field is translated, and the person's file is rewritten
+   under its lock after the field is read again under that lock, so two readers rewrite it once. A repository's hand-written file
+   without the field is said on the Files tab to be read as the first form, so one written in git's syntax that leaves it out is seen
+   being read the old way. **Rejected:** telling the form from the patterns: a leading `/` proves git's form, which the first form refuses
+   (`RoomPaths.cs:49`), but its absence proves nothing, `bin/` reading in both and meaning one top in one and every `bin/` in the other.
+2. **The translation, construct by construct** (Opus 4, Codex 1). The first form's reader matched a top's whole text against one regular
+   expression (`RoomPaths.Declared`, `RoomPaths.cs:22`, through `UnionJoins.Glob`, `UnionJoins.cs:127-170`); git's covers a top where it
+   or a folder above it matches (§36.2, 1). Each first-form path is read as the old reader read it: a trailing `/` gains `**`, then its
+   braces are expanded as `Glob` reads them (the first `}` after a `{`, alternatives split at `,`, each literal, `:157-162`; several
+   groups as their product), each result a path of its own in the order written. Each is then written *(R17: the table is derived
+   from `Glob`'s own tokens by a total partition in §38.1, which finds the two rows it missed and reads `P/*` as written)*:
+
+| First form, as the old reader reads it | Git's form | Exact |
+|---|---|---|
+| any path | anchored with a leading `/`, the old reading's own | yes |
+| a character git reads and the old reader took literally: a `[` (`:165`), a trailing space, and inside a brace alternative also `*` and `?` (`:160`) | escaped with `\`; a leading `!` or `#` cannot arise once anchored, and a `\` is refused in the first form (`RoomPaths.cs:48`) | yes |
+| a `**/` that is a whole segment | as written | yes |
+| a terminal `**` after a `/` (`X/**`, and so every folder path, `X/` reading as `X/**`) | the folder, `/X/`, with **no** `!`: `X/.*` matched `X/` and all under it (Codex's `scratch/**`, Opus's `build/**`) | yes |
+| a terminal `**` joined to its segment (`Xab**`) | `/Xab*`, no `!` | yes |
+| a `**` joined inside a segment, not followed by `/` (`X**Y`) | `X*Y` and `X*/**/*Y` (§36.2) | yes |
+| a `**/` joined to its segment (`X**/Y`) | `XY` and `X*/**/Y` | yes |
+| a path whose last token is a literal character, a `?`, or a `*` after a character of its segment, so that no folder top (ending in `/`) matched it | followed by its `!` with a trailing `/`, so a folder of that name stays uncovered | yes |
+| a last segment that is a lone `*` after `**/` (`X/**/*`), which matched `X/` and all under it | `/X/`, no `!` | yes |
+| a path that matched a folder top without what lies under it: a last segment that is a lone `*` after a folder (`P/*`), which matched `P/` itself, by `*` matching nothing, and the files directly in it, but no folder below it; or an expanded alternative ending in `/` in a path that does not (`{bin/,obj/}`, `P/{a,}`), which matched that folder top alone | the folder, `/P/` | **no**: kept, below |
+| `share: true`, `copy: true` | `across`, `reach: "copy"`; `key`, `caches`, every other field and the `permissions` as written (point 5) | yes |
+
+*(R17: withdrawn, as the broadening Codex's read shows; such a word is read as written until the person words it, §38.1.)*
+**One more difference kept, chosen: a folder top matched without what lies under it** (`P/*`, and an alternative ending in `/`). No
+git pattern covers a folder top without what lies under it, so such a path cannot be written exactly. `/P/` keeps the top it meets
+most, `P/` listed whole, and differs only where a folder or a deeper file under `P` is listed as a top of its own (`P` then holding
+something not ignored), which the first form left to an earlier rule. **Rejected:** `/P/*` with `!/P/*/` for `P/*`, exact on the files
+in `P` and losing `P/` itself, the commonest top such a path meets; and dropping the alternative, which loses that top always. The Files tab lists every
+top whose rule changes by case or by this row (§36.2), read under both.
+3. **A rule's paths stay a union** (Codex 2). One entry's patterns are no union once one of them carries a `!`: `["scratch/", "scratch"]`
+   read as one entry gives `/scratch/`, `/scratch`, `!/scratch/`, the last taking back the first. A first-form rule becomes **one entry
+   holding every translated path that carries no `!`, then one entry after it for each path that carries one**, each entry with the
+   rule's fields. Between entries the later wins and one that does not cover a top leaves it to the earlier (§36.2, 5), so a top any of
+   the rule's paths matched takes the rule, and each path's own exclusion stays inside its own entry. A dependency's acting paths are
+   folders (`StoreDependency.cs:35-36` takes only a path ending in `/`), which carry no `!`, so they stay together in the first entry and
+   its order among the dependencies (`:41`) holds. **Rejected:** an entry per path for every rule, which splits what needs no split and
+   moves a dependency's order.
+4. **Every reader of a rule's paths reads them in one form.** Translated in memory, every layer is git's form after the reader, so each
+   place that read a rule's paths in the gates' grammar, or as a path by its text, reads them through `GitPattern` in row z:
+   `FileRule.Matches` (`FileRule.cs:51`, and through it `FileRules.cs:74`, `StoreDependency.cs:41`, `TreeFilesStage.cs:167`); the
+   dependency a later rule takes (`RepositoryFilesReader.cs:57`) and a room's writes against the rule file (`RoomCheck.cs:53`), both by
+   `RoomPaths.Meet`, now an entry covering the other's literal part; a wildcard-free path read as a path (`StoreDependency.cs:35`,
+   `FilesLooks.cs:11`), a found rule's path read as a top (`FoundReads.cs:40`, `:56`; `FileAnalysis.cs:71`) and a dependency's place
+   (`FileAnalysis.cs:100`), each through `GitPattern.LiteralOf`, the path an anchored pattern with no unescaped wildcard names; the found
+   layer and the Files tab writing a top as a rule (`FileAnalysis.cs:93`, `FilesEdits.cs:16-21`) through `GitPattern.Anchored`, a leading
+   `/` and its escapes, so a root top `bin/` is written `/bin/` and never covers every `bin/`; the shipped signatures' paths, matched
+   beside their manifest's folder (`FileAnalysis.cs:88-95`, `FileSignatures.cs:89-95`), rewritten in git's syntax in the same chunk; the
+   check of a path, `RoomPaths.Unfit` (`FileRuleFile.cs:61`, `FilesEdits.cs:21`), which refuses git's anchor and escape, becoming
+   `GitPattern.Unfit` for form 2; and the floor, which reads a top as a path, never a pattern (`FileFloor.cs:28-30` read a top's own `*`
+   or `{` as a wildcard). **The census**, as row aa's: a test listing every read of a `FileRule`'s `Paths` under `Workplace/` and failing
+   on one that neither passes through `GitPattern` nor stands in its list of readers that only show a path, red first.
+5. **What does not depend on the form.** `key` and `caches` keep the gates' grammar in both forms (`DependencyKeys.cs:52`,
+   `DependencyManifest.cs:135`): they name tracked inputs and folders inside a dependency, never ignored tops, so git's cover by a parent
+   folder and its `!` mean nothing for them. The `permissions`' act patterns match the literal path an act names
+   (`FilePermissions.cs:56-58`) and read the same in both forms. The rule file's `_why` says both. **Rejected:** keys in git's syntax too,
+   which would key every stored dependency again, an install each, for no change of meaning.
+
+**Proof**, beside §36.2's: the table above, row by row, the old reader and the translation through `GitPattern` agreeing over a table of
+tops that holds folder and file tops at several depths, a folder listed whole and the same folder listed in parts, and names holding `[`,
+`*`, `{` and a trailing space, with `GitPattern` against git itself as §36.2 says. **The person's fixture** holds every sequence of both
+reads: round 14's (`{drafts,notes}/`, the root `node_modules/` after the web's, `src/{App,Lib}/bin/`, a `**` inside a segment, a `[`,
+`copy: true`, `share: true`), Codex's `scratch/**` and `["scratch/", "scratch"]` in one rule, Opus's `build/**` and `{*.js,x}`, and this
+round's `Xab**`, `X**/Y`, `P/*`, `{bin/,obj/}` and a dependency rule naming two folders and a file; every top's effective rule is equal
+under both readers, case and the named tops of a folder matched alone aside *(R17: case alone, the proof generated, §38.1)*. A file read twice: translated once, its second read git's form; this repository's rewritten
+file read as form 2, its `bin/` covering every project's (Opus 3); two readers racing on the person's file: one rewrite, one first form
+set aside; a form 3 file read as unreadable, said; the paths census red, then green. **Ready to build** (TREEPOOL1x, before it, is built).
+
+### 37.3 TREEPOOL1aa: nothing moved over a tracked path, and a release only of what the door built *(R16)*
+
+**The classes.** A top listed at one commit and moved after the switch to another (Opus 5), and a release that covers more than its
+build wrote (Opus 6); and the census of a base's readers, which left the product's own readers out (Opus, not blocking).
+
+1. **No top is moved whole over a path tracked at the take's start** (Opus 5). The plan sorts the tops the judgement listed at `a1` by
+   the rules read at `b0` (§36.3, 1). A top inside which `b0` tracks a path is the floor's, its kind none (`FileRules.cs:75`), and §36.3
+   moved it aside as the line's own (`SlotIgnored.cs:30` sorts a kind of none as own), so the switch writes `gen/README.md` into `gen/`
+   and the clearing moves it away, B's tree showing a tracked file deleted; today's `ClearAsync` lists at the new HEAD
+   (`PoolClearing.cs:37-40`) and does not. **The rule:** the plan reads each top against the paths tracked at `take.Start` (read with the
+   rules, as the floor's are), as a path holding another; a top that holds one is planned *listed again*, never moved whole, and after the
+   switch `ClearAsync` lists git's ignored entries inside it (`git status --ignored=matching -- <top>`) and sorts each by the plan's
+   rules, read once, moving, keeping or leaving each as its rule says. This holds for **every move a take makes**: the outputs', the
+   intermediates' at a renewal and the bases' where the toolchain moved. A top that `b0` tracks itself never reaches the clearing, since
+   the switch refuses to write over an ignored file (`--no-overwrite-ignore`, a refusal released as found, §37.1, 5), and a base entry
+   whose top is gone is dropped from the plan. **Rejected:** listing every top again after the switch, which gives up the one reading at
+   the new start for all of them to cover the few a tracked path meets.
+2. **Only the door's own build releases, and only what it built** (Opus 6). `builds` held command patterns (§35.1), so a gate's
+   `dotnet test --no-build` matched `dotnet test` and released a base over A's binaries, and `trees build` ran `-c x64` for a platform
+   folder and released A's `bin/x64/Debug/`. **The rule**, replacing §36.3, 2 on these points:
+   - **`builds` is the one command the door runs**, the signature's (`dotnet build -c {configuration}` for .NET), never a pattern; the
+     reader refuses one holding a flag the signature names as skipping the build (`--no-build`); a Daoris-run gate's step never releases,
+     whatever it runs.
+   - **A base keeps only its project's declared configurations**: `Configurations`, read with the rules at `take.Start` from the project
+     file and the `Directory.Build.props` files above it, Debug and Release where none names it. Every other folder under the base top (a
+     platform's, `bin/x64/`; an undeclared configuration's) is set aside at the take as an `aside` output. A configuration named only by a
+     condition or an import beyond those files reads as undeclared and is set aside, costing a build, never a wrong release.
+   - *(R17: replaced: a release names its producer and covers exactly the files its build owns by the build's own account, every
+     other entry set aside, §38.2.)* **The door releases exactly the folders its build writes.** It runs `builds` for a declared configuration in the project's folder;
+     on exit 0 it reads, by the SDK's evaluation in the tree (`-getProperty:TargetDir`, once for each framework the project builds), the
+     folders that build writes, and releases those alone. Every other entry under the configuration's folder (a framework the project no
+     longer builds, a runtime's folder from a build it did not run) and every folder inside a released one that holds a `*.deps.json` of
+     its own (another build's output: a `publish/`, a runtime identifier's) is set aside, said, before the marker goes. In this repository
+     the app's runtime folder is its own `TargetDir` (`Daoris.Desktop.App.csproj:10`, `:18`), so it is released, and a `publish/` under it
+     is not.
+
+   **Rejected:** releasing the configuration's folder whole, which leaves a runtime's or a publish's folder inside it A's under a removed
+   marker; the build tool's own file list under `obj/`, its internals (§36.3, 2); and evaluating the project at the take, where before the
+   switch the disk holds `a1`'s files, not `b0`'s.
+3. **Every release path, and every reader of a base.** The door is now the one release: signal (a) and the gate's step are withdrawn,
+   `tools/desktop.mjs build` builds through the door (`tools/desktop/commands.mjs:84`), and neither a key that holds, the toolchain's
+   move (which sets the base aside) nor row y's undo (which puts the record back) releases. *(R17: the census is per call site, by two
+   shapes, with today's sites named; the walking-up readers are guarded in the product, not exempt, §38.2.)* **The census** (§36.3, 3) widens from
+   `tools/` and `src/Daoris.Web/scripts/` to tracked C# under `src/`, and names its exempt readers with their reasons: **the product's
+   walking-up readers** (`ServiceHostLocator.cs:80-97`, `KnowledgeConnector.cs:190-197`), which `run` passes the hosts by name
+   (`DAORIS_HTTP_HOST`, `DAORIS_MCP_HOST`, `tools/desktop/environment.mjs:145-149`) from paths the helper checks
+   (`tools/desktop/commands.mjs:159-162`), so their walk is met only by a binary run directly (Opus, not blocking); **tests that read
+   another project's `bin/`** (`Daoris.Desktop.Modules.Tests/Browser/BuiltApplication.cs:16-19`,
+   `Daoris.Desktop.Driver.Tests/Platform/PieceLauncherProcessTests.cs:32`, `OwnedProcessesProcessTests.cs:25`,
+   `Loop/PartnerProcessTests.cs:66`, `DriverHostTests.cs:232`), exempt only where their test project references that project
+   (`Daoris.Desktop.Driver.Tests.csproj:22-35`, `Daoris.Desktop.Modules.Tests.csproj:24`), so the build that runs them wrote it, which the
+   census reads from the project file; and **Daoris's own `daoris gate run`** (`Review/Heavy/HeavyRun.cs:7-21`), which runs a declared
+   gate or the caller's command as given and refuses nothing (D214's principle), its admission line naming the bases the tree holds
+   unreleased. **Rejected** for that runner: building every base first, a whole solution's builds before one filtered test.
+
+**Proof**, beside §36.3's: `gen/` ignored whole at `a1` and `b0` tracking `gen/README.md`: after the take the file in place and the tree
+clean, `gen/`'s other entries sorted one by one; the same top under a renewal and under a toolchain move; a `builds` holding `--no-build`
+refused; a gate's `dotnet test --no-build` leaving the marker; `bin/x64/` set aside at the take and `bin/Debug/` kept; the door's
+`-c Debug` releasing `bin/Debug/net10.0/` and setting aside a `linux-x64/` and a `publish/` beneath it; a configuration the project does
+not declare never released; the census red at the tools' sites and at a test reading a project its own does not reference, then green.
+**Ready to build, after TREEPOOL1z.**
+
+### 37.4 TREEPOOL1ac: a share counts only while it is a link to its place *(R16)*
+
+**The class.** A record of what a tree holds acted on without reading what stands there. Opus 7 is the share; the files record's other
+lists were read for the same trust (point 2).
+
+1. **A share is read before it is trusted** (Opus 7). A save by rename (this repository's atomic writes among them) replaces a single-file
+   symbolic link with an ordinary file, and a folder removed and made again replaces a junction; the record still names it in `Shares`,
+   so the partition sorts the entry `Shared`, the take leaves the line's file for the next line, which reads it as the shared place's, and
+   the unlink at a retirement deletes it, the line's work lost against floor 4. **The rule:** every act that reads a share (the partition
+   of §36.5, the judgement, the files stage, and each unlink before a removal, §35.5) reads the entry first **without following it**, as
+   the walk of links does (`DependencyLinks.Leads`, `DependencyLinks.cs:34-35`; `WorkspaceLinks.cs:36`): a link leading to the recorded
+   place is the share; anything else (an ordinary file or folder, a link leading elsewhere, nothing) is not: its record is dropped, said
+   (`tree.share-lost`, in both languages), and the entry is sorted by the rules as a path of its own, a link leading elsewhere refused as
+   a foreign link. An unlink removes only a link it has just read so. The stage never makes a share over an entry that stands and is not
+   its link, which is the line's (floor 4): the share is declined for that tree, said. A folder's share survives a save inside it, the
+   rename landing in the place; the start words (§36.5) add that a single file shared is a link a save by rename replaces, which makes it
+   the line's own file.
+2. **The record's other lists, read for the same trust.** `Copies` count while their hash holds (`TreeCopies.cs:22-24`); a placement is
+   acted on only once its manifest is read against the tree (`TreeFilesStage.cs:181-185`, `:245-246`); an aside folder's mark is read
+   from the disk (`PoolAsides.cs:40`); `Bases` are read at the plan, an entry whose top is gone dropped (§37.3, 1), and a marker the line
+   removed is its own act on its own guard, written again by the next take while the top is still the previous line's. The plan's tops
+   are read again where a tracked path meets them (§37.3, 1), and the slot's row is written from its disk (§37.1).
+
+**Proof**, beside §36.5's: a single file shared and saved by rename in the tree: the record dropped and said, the file sorted as the
+line's, a take refused `lines-own` for it and a retirement setting it aside, never deleting it; a junction replaced by a folder the line
+made: the same; a share's link pointed elsewhere: refused as foreign; the place untouched in each; an unlink cut off and resumed reading
+the entry again. **Ready to build, after TREEPOOL1z; it does not hold row d.**
+
+### 37.5 Row d's *When*, and TREEPOOL1ab *(R16)*
+
+Opus: *its refusal fixed by row z or measured in the rerun* contradicts §36.4, 2, where a refusal row z did not fix keeps row d from
+starting; and the confirming reads it names should be those of whichever round last answers a read. **Row d's *When*** (§17.0) now
+reads: *waiting on rows y, z and aa built (x is); the bench rerun of row ab taken with the checkout's `local/` copy present, its refusal
+fixed by row z, as the rerun shows, and row x's placement confirmed in it; both makers' confirming reads of the last round that answers
+a read (round 16, or a later one where it answers this round's reads) and their reads of the rerun's note; the steward's finding that
+§11's saving holds on its numbers; and FOUNDATION1's row 1d-i having landed.* **TREEPOOL1ab** both read answered; its day is replayed
+after row aa as §37.3 builds it, and it keeps §35.8's two arms and both repository shapes (Codex). Ready to run once y, z and aa are
+built.
+
+### 37.6 The classes closed, and how their other members were looked for *(R16)*
+
+| Class | Members, the reads' and this round's | How the rest were looked for |
+|---|---|---|
+| a record trusted over the disk | the slot's row while `undoing` (Opus 1); a return by its phase (Opus 2); a `stuck` slot keeping a branch (Opus, not blocking; and a failed check and a refused switch); the plan's tops after the switch (Opus 5); a share (Opus 7); read and sound: copies, placements, aside marks, bases | every `new SlotSettled(` under `Workplace/Pool/` (fourteen), every arm of `RecoverAsync` and `FreeAsync`, and every list of `TreeFilesState` beside the act that reads it |
+| a pattern whose meaning depends on its form | the file's form (Opus 3); a terminal `**` and a brace alternative (Opus 4, Codex 1); the union (Codex 2); a folder top matched alone (`P/*`, an alternative ending in `/`); thirteen places reading or writing a rule's paths outside `FileRule.Matches` | every caller of `RoomPaths` and `UnionJoins.Glob` in the driver, every read of a `FileRule`'s `Paths`, and each construct `UnionJoins.Glob` reads against git's |
+| a release wider than its build | `--no-build` and a platform folder (Opus 6); a framework's, a runtime's or a publish's folder under a configuration | every way a marker is removed, and every folder a .NET build writes under `bin/` |
+| a reader of a path under a base | the product's walking-up readers (Opus, not blocking); tests reading another project's `bin/`; `daoris gate run` | every `'bin'` or `"bin"` join and `bin/Debug` string in tracked code under `src/` and `tools/` |
+
+Three census tests keep the first three closed as the code moves: the settle census (§37.1, 2), the paths census (§37.2, 4) and the base
+readers' census (§37.3, 3), each red first.
+
+### 37.7 The rows, and what is revised *(R16)*
+
+| Row | What §37 answers | Standing |
+|---|---|---|
+| **y** | `ExpectLine`; every settled row written by `SlotStanding` from a disk read, no `stuck` slot keeping a branch; `undoing` naming no line and the look retrying its own claims at `undo-waiting`; the switch back only at `Expect`; a return kept only from `cleared`; a restored refusal released; a full move-back leaving no folder (§37.1) | ready to build |
+| **z** | the `form` field and an idempotent translation; the translation exact construct by construct, a folder top matched alone (`P/*`) the one difference kept beside case; a rule's paths a union; every reader of a rule's paths through `GitPattern`, with a census; `key`, `caches` and `permissions` the same in both forms (§37.2) | ready to build *(R17: not, on both reads of §37; answered in §38.1)* |
+| **aa** | no top moved over a path tracked at the take's start; `builds` the door's one command; a base kept per declared configuration and released over exactly what the door built; the census widened with its exempt readers (§37.3) | ready to build, after z *(R17: not, on both reads of §37; answered in §38.2)* |
+| **ab** | its day after aa as §37.3 builds it; row d's *When* corrected (§37.5) | ready to run after y, z and aa |
+| **ac** | a share counted and unlinked only while it is read as a link to its place, else the line's (§37.4) | ready to build, after z; does not hold d |
+
+- **Revised in place** *(R16)*: the standing; §17.0's paragraph and row d's *When*; §21; §35.1's `builds` row and its first entry's
+  note; §36.1's step 3 and its failed check; §36.2's translation; §36.3's points 1 and 2; §36.5's recorded link; the TREEPOOL1 row of
+  `TASKS.md` on row d, and rows TREEPOOL1y, z, aa, ab and ac.
+- **Chosen here, within D214's notes**, each beside what it rejected: the look retrying its own claims, a start of the line held while
+  it waits, and a slot freed where its branch moved (§37.1, 3); a return kept only from `cleared` (§37.1, 4); a restored refusal
+  released (§37.1, 5); the form said in the file (§37.2, 1); `/P/` for `P/*` (§37.2, 2); the split only for paths carrying a `!` (§37.2,
+  3); keys in the gates' grammar (§37.2, 5); a top listed again only where a tracked path meets it (§37.3, 1); configurations read as
+  text and outputs by the SDK at the door (§37.3, 2); `daoris gate run` refusing nothing (§37.3, 3). None asks the owner for more.
+- **Owed:** both makers' confirming read of §37, which holds row d and none of the rows above.
+
+## 38. Round 17: rows z and aa, each closed by a proof that lists no members *(R17)*
+
+*Written 2026-11-09 by Claude Opus 5.5, from main at `5008192916`, on both makers' reads of §37 at `cc1db1d83b`
+(`docs/2026-10-26-tree-pool-reads.md`, *Codex, round 16* and *Opus (independent), round 16*), for rows z and aa alone: row y is being
+built with its findings, and ab and ac are read answered. Nothing was built, run or measured; the code is cited as it stands; no `local/`
+folder was read.*
+
+**The reads, for these two rows.** Codex: z broadens a person's rule where it writes `P/*` as `/P/`; aa releases `TargetDir`, a
+directory, over another project's binaries. The independent Opus reader: B2, a trailing `**/` and a lone `*` with no row in §37.2's
+table; B3, `run --real` reaching the walking-up readers; and, not blocking, an empty first entry, `LiteralOf` on a `!`, a census counted
+per file, and `build` leaving the MCP host unbuilt. **Why the method changes.** Rounds 14 to 16 each closed a class by a list someone
+wrote (a table of constructs, the cases of a release, the readers of a base), and each next read found the member the list left out
+(the reads' last paragraph, round 16). So this round lists no members. Row z's translation is derived from the scan the old reader runs,
+its words sorted by a partition total by construction, and its exactness shown by a test generated over the grammar; row aa's release is
+stated by its producer and the build's own account of what it owns, and its readers are the call sites a census finds. What a later read
+can still find is a step of a proof that is wrong, which is a failing case of the test that step names, not a row to add.
+
+### 38.1 TREEPOOL1z: the first form translated from its own grammar *(R17)*
+
+**The grammar, read from the code.** A first-form path is one `RoomPaths.Unfit` passes (`RoomPaths.cs:45-53`: not empty, no `\`, no
+leading `/` nor `:`, no `..`, no empty or `.` part once a trailing `/` is trimmed); `Declared` adds `**` to one ending in `/` (`:22`);
+and `UnionJoins.Glob` reads the result left to right as six tokens, each by one branch (`UnionJoins.cs:127-170`), its expression
+anchored at both ends (`:169`) and matched against a top's whole text, a folder top ending in `/`. Nothing else is read:
+
+| Token | Read at | As | Can match nothing |
+|---|---|---|---|
+| `**/` | `:135-142` | `(?:.*/)?`, whole folders or none (W) | yes |
+| `**` not followed by `/` | `:143-146` | `.*`, across folders (D) | yes |
+| `*` | `:148-151` | `[^/]*` (S) | yes |
+| `?` | `:153-156` | `[^/]` (Q) | no |
+| `{` with a `}` after it, to the first one | `:157-162` | one of its alternatives, split at `,`, each literal (`*`, `?`, `/`, `[` and `{` among them), one of them possibly empty | expanded below |
+| any other character, a `{` with no `}` after it among them | `:163-166` | itself (a `[`, `]`, `!`, `#`, `,`, `}` or a space) | no |
+
+**Words.** A path's braces are expanded, their product in the order written, into *words*: sequences of literal characters and the
+four wildcards W, D, S and Q, a brace's characters all literal. A word holding a leading `/`, or an empty, `.` or `..` part, which only
+a brace can make (`{,/}a`, `a/{/,}b`), matches no top git lists and is dropped. A path's set is its words' union, a rule's its paths'.
+
+**What git's form can state.** An entry covers a folder top only with everything under it (§36.2, 1: the first level whose last match
+is positive covers the top and all beneath it), so every entry's cover is *closed*, holding with a folder top every top under it, and
+so is every union of entries. A first-form set is stated exactly only where it is closed; one that holds a folder top without all under
+it is stated by no entries of its rule, nor by restating after them the rule a top beneath would fall to, which is another layer's at
+another commit. Codex's `P/*` is such a set: `P/` and the files directly in it, not `P/deep/`.
+
+**The partition, total by construction.** A word's *tail* is its longest suffix of tokens that can match nothing (W, D and S); its
+*head* is the token before the tail, a literal or a Q, or there is none. Each word is exactly one of:
+
+- **F, files only**: the tail is S's alone, or empty, and the head is not a literal `/`. No string it matches ends in `/`, so it
+  matches file tops only, a closed set. Written: its patterns, then each again with a trailing `/` after a `!`, in an entry of its own
+  (§37.2, 3): `scratch`, `a*`, `X?`, `{*.js,x}`, one file, and a lone `*` (Opus B2), `/*` then `!/*/`.
+- **C, closed by its tail**: the tail holds a D, or a W with an S after it. Such a tail matches every string, so the word's set is its
+  head-part's followed by anything, a closed set. Written in the rule's first entry, with no `!`: where the head is a literal `/`, the
+  head-part without it as a folder (`X/`, `X/**`, `X/**/*`, `**/_fixtures/`, `src/**/obj/`, and a trailing `**/`, so `logs/**/` is
+  `/logs/`, Opus B2); where the head is another literal or a Q, the head-part with a `*` after it (`Xab**` is `/Xab*`); with no head,
+  `/*`, every top (`**`, `**/*`).
+- **K, kept**: every other word: a head `/` with a tail of S's alone or none (`P/*`, `*/*`, a brace alternative ending in `/`:
+  `{bin/,obj/}`, `P/{a,}`'s `P/`), or a tail of W's and S's with no S after its last W (`X**/{a,}`'s `X**/`, read `X(?:.*/)?`). Each
+  matches a folder top, and its tail does not reach under it. Most are not closed; one closed by a D before its head (`X**{/}*`) is K
+  all the same, which costs it only what K costs, below.
+
+F and C are disjoint (F's tail holds no D and no W) and K is what neither is, so every word has one class. A head-part, and an F word
+whole, is written part by part: a literal as itself, escaped with `\` where git reads it (`*`, `?`, `[` and each trailing space; a
+leading `!` or `#` cannot arise once anchored, and a `\` is refused, `RoomPaths.cs:48`); S as `*` and Q as `?`; a W opening a part as
+`**/`; a W joined to the part before it as two patterns, without it and with `*/**/` in its place (`X**/Y`: `XY`, `X*/**/Y`); a D as
+two, `*` and `*/**/*` (`X**Y`: `X*Y`, `X*/**/*Y`), so a word with n of these two gives 2^n patterns, all in its word's entry; then a
+leading `/`. Every row of §37.2's table is one of these cases, and the two it missed (Opus B2) fall out of them.
+
+**A kept word is read as written** (Codex's change, chosen). `RuleFileFirstForm` leaves a K word untranslated: it stands at its rule's
+place in the reading, beside the rule's translated entries, and `GitPattern` answers it by the first form's own matcher
+(`RoomPaths.Declared` over the top, as today), so every reader still reads through `GitPattern` and §37.2, 4's census stands. Its rule
+covers what it covered, at every layer and commit: Codex's `P/deep/` stays `local`. **The person's file is rewritten in form 2 only once
+no rule of it holds a K word.** While one does, the file stays as written and is read exactly, and the Files tab names each such rule,
+the tops it meets today in each repository the home knows, and what each wording git can state would do with them (`/P/`: `P/` and
+everything in it; `/P/*` with `!/P/*/`: the files directly in it, not `P/`); the person's choice of one, or their own wording, is the
+write that rewrites the file under its lock, and an edit of another rule through the tab asks for that choice in the same write, the
+tab writing form 2 only. A repository's tracked file, and any file read at an older commit, is read through the translation and never
+written, so its K words are read as written until that repository rewrites its file, which the tab says. **This repository's file
+holds no K word** (`daoris.files.json:4-17` are F and C words), so its rewrite in row z's chunk is exact. The kept reading ends with the
+first form's reader, by §36.2, 3's condition, of which the person's file rewritten is one: the Files tab's count now includes the
+person's unsettled rules, and row d's last commit deletes the reader where that count reads none.
+
+**Rejected:** `/P/` for `P/*` (§37.2, 2), the broadening Codex's sequence shows; `/P/*` with `!/P/*/`, a narrowing that hands `P/` to an
+earlier rule, no less a change; an exact expansion into several entries, which cannot exist, every entry's cover being closed; a field
+of form 2 holding a first-form path, a second way to write a path in the new form (D228), by which the person's file would never leave
+the old grammar; the whole file read as unreadable, which drops every rule of the person's for one; and a table of constructs, which
+rounds 14 to 16 wrote and each next read found short.
+
+**The two smaller points** (Opus, not blocking, 2). A rule with no C word has no first entry, its F entries standing alone, and no entry
+is ever empty, so the reader's *names no paths* (`FileRuleFile.cs:58`) meets none; this repository's two copy rules
+(`daoris.files.json:5-6`) are one F word each, so each is one entry, its pattern and its `!`. `GitPattern.LiteralOf` names nothing for a
+pattern that opens with `!`, nor for a K word, so the dependencies' paths (`StoreDependency.cs:35`) and the Files tab's
+(`FilesLooks.cs:11`) never read `!/x/` as a folder; a K word's text always holds a `*` or a `{`, which both readers pass over today.
+
+**The proof, generated.** `RuleFileFirstFormCorpusTests` (driver), red first at Opus's B2 words and Codex's `P/*`:
+
+- **The patterns**: every path of up to three tokens over the grammar, each with and without a trailing `/`, filtered by `Unfit`, from
+  the literals `a` and `/`, the wildcards `**/`, `**`, `*` and `?`, a `[`, a space, an unclosed `{`, and the brace groups `{a,}`,
+  `{a,b/}`, `{*,a}` and `{a/,b/}` (empty, holding a `/`, holding a wildcard, ending in `/`), their count asserted so a corpus that
+  shrinks fails; the words named in this section and in both reads (`logs/**/`, `*`, `P/*`, `X**/{a,}`, `X**{/}*`, Codex's `scratch/**`
+  and `["scratch/", "scratch"]`, Opus's `build/**` and `{*.js,x}`); every rule of this repository's file as it stands before the
+  rewrite; §37.2's person's fixture with this round's words added; and the shipped signatures' paths in their first form, against whose
+  translation their rewrite in git's syntax is asserted equal.
+- **The tops**: every path of one to three parts drawn from `a`, `b`, `aa`, `ab`, a fresh `q` and the names the patterns' literals spell
+  (`[`, `a `, `*a`), each as a file top and as a folder top, so a folder listed whole and the same folder listed beneath it, as a path
+  tracked inside makes git list it, both stand; git's cover reads a top by its own folders (§36.2, 1).
+- **Asserted**: (i) every word in exactly one class, by an exhaustive switch over its tail and head; (ii) for every pattern, every top's
+  cover equal under `RoomPaths.Declared` and under the translation read by `GitPattern`, `core.ignorecase` false; (iii) for every
+  ordered pair of one representative pattern of each class and ending, as one rule and as two rules of different kinds, every top's
+  effective rule equal under both, the union and the order; (iv) the same for this repository's file and the person's fixture over a
+  fixture repository's tops, no K word in the repository's, and with `core.ignorecase` true the tops that differ differing only by case;
+  (v) each named word in its named class, so a partition a code change moves is seen. §36.2, 1's oracle runs git itself over the
+  translated patterns of a sample, as a process test.
+
+**The person's real file** is not copied into the corpus, which would put a machine's own paths into the repository. It is read where it
+lives, by the Files tab once row z lands, which names its K rules and lists the tops whose rule differs by case (§36.2); the steward reads
+that on the install before the person settles any. **Ready to build** (TREEPOOL1x, before it, is built).
+
+### 38.2 TREEPOOL1aa: a release is its producer's, over the files its build owns *(R17)*
+
+**The class: a file under a released folder that the release's build does not own.** §37.3, 2 released the folders the door's build
+writes, read by `TargetDir`, and set aside only a folder inside one holding a `*.deps.json` of its own. Codex's sequence is one member:
+A builds `Old.csproj`, B replaces it with `New.csproj` in the same folder, both writing `bin/Debug/net10.0/`, and B's release covers
+`Old.exe`, which a guarded runner then starts as B's. The others: the same replacement made in B's line after the take, or earlier in
+A's own history, which no comparison of two commits sees; a package, a content item or an assembly name the project has dropped; a
+framework or a runtime the build no longer targets; a `publish/` beside its output. A list of them is the table that misses one, so the
+release is stated by what its build owns.
+
+1. **A release names its producer, bound at the build the door ran**: the project file it built (repository-relative), the
+   configuration and the framework, beside §36.3, 2's command, folder, commit, exit and moment. The door builds the one project file
+   beside the base top, in a configuration the project declares (§37.3, 2), once for each framework it builds (`-f`, the frameworks read
+   by the SDK's evaluation in the tree). A base top beside more than one project file has no one producer, and the take sets it aside,
+   said.
+2. **The build's own account.** The door's run of `builds` asks MSBuild, in the same run, for the build's `FileWrites` and
+   `FileWritesShareable` items (the signature's command with `-t:Build -getItem:FileWrites -getItem:FileWritesShareable`, which MSBuild
+   reports after the targets ran): every file the build wrote or found up to date under its output and intermediate folders, the
+   references copied beside it among them. It is the list MSBuild's own incremental clean trusts with deletion: at each build it deletes
+   from the output folder what its previous build listed and this one does not, so a list short of a file the build owns would have
+   MSBuild delete that file on a build with nothing to do. It is the build's report on the run the door saw exit 0, not a file under
+   `obj/` read afterwards, so §36.3, 2's rejection of those stands.
+3. **Released: exactly the account's files under the base.** On exit 0, every other entry under the configuration's folder (`Old.exe`,
+   `Old.dll` and `Old.deps.json`; a dropped package's assembly; a framework's or a runtime's folder the build did not target; a
+   `publish/`) is set aside with the previous line's before the marker goes, said (`tree.base-trimmed`, in both languages, naming the
+   producer and the count), so the folder released holds only what its producer's build owns. A base under which the account names
+   nothing, its producer writing elsewhere, is set aside whole and its entry removed. This replaces §37.3, 2's third point; its first two
+   stand (`builds` the door's one command; a base kept per declared configuration).
+4. **Unmeasured, with a stop.** That `-getItem` reports a build's items after its targets, and that the account is whole on a build with
+   nothing to do, are read from MSBuild's documented switch and its incremental clean, not measured here. Row aa's first commit is the
+   fixture that shows both; where either fails, the row stops and says so, and no release is made by the folder.
+
+**Rejected:** binding the base to its producer at the take and setting it aside where the producer changed (Codex's smallest change),
+which closes a project replaced across the take but not one replaced in the line after it or earlier in the previous line's history,
+nor a dropped reference, and costs a whole build where the account sets aside only the other producer's files; setting the
+configuration's folder aside before every door build, exact and losing the saving the base exists for (§34: the next build copies every
+assembly again); a release by `TargetDir`, a directory (§37.3, 2); and the build's file list under `obj/`, written on paths other than
+success (§36.3, 2).
+
+**The readers, by call site** (Opus B3, and not blocking, 3 and 4).
+
+5. **The product's walking-up readers are guarded in the product** (Opus B3). `ServiceHostLocator.Candidates` and
+   `KnowledgeConnector.Ranked` offer a workspace build only after walking up to `daoris.json` (`ServiceHostLocator.cs:80-97`,
+   `KnowledgeConnector.cs:190-197`), a path only development takes, since an install has no workspace above it. Each passes over a
+   workspace candidate under a standing marker, read from the candidate's folder up to the workspace's top by the driver's own reader of
+   the marker, the unit row aa writes them with; the next candidate is tried, and where none is left, the window's words for a missing
+   host and the session's for a missing connector say the build here is the previous line's and what releases it (`tree.base-host`, in
+   both languages). So the app run from a slot's build reads no base however it is started: `run --real` on a home with no installed
+   hosts (Opus's sequence); a scratch `run` whose MCP host is not built, `commands.mjs:162` passing `''`, which the locator reads as no
+   path; the family rehearsal's driver, which leaves both hosts to the walk (`family-rehearsal.mjs:44-45`); and the app started by hand.
+   **Rejected:** `start` asking about both hosts wherever its environment names neither (Opus's change), which repeats the locator's
+   order in the tool, a second way to choose a host, refuses a `--real` run whose installed hosts the locator would have chosen, and
+   leaves every other start of the app to the walk.
+6. **One integrated builder, and every guarded reader's builder builds through it** (Opus, not blocking, 4). A guarded reader refuses
+   until the door releases, so the builds this repository's scripts run before they read go through the door where a marker stands: one
+   helper, `build(project, configuration)` in `tools/tree-base.mjs`, runs `daoris driver trees build <path>` where a marker stands under
+   the project's output and the plain build where none does. `tools/desktop.mjs build` builds the MCP host too (it builds the web, the
+   HTTP host, the app and the driver host, `commands.mjs:83-89`, while `run` reads the MCP host at `:162`), every one through the helper;
+   `test:web:e2e` builds the HTTP host through it (`package.json:26` runs `dotnet build`, after which `e2e-host.mjs` would refuse); so do
+   the family rehearsal's builds in place (`family-rehearsal.mjs:395`, `:766`); and proof-kit's words name `npm run desktop -- build` for
+   the MCP host too (`proof-kit.mjs:126`). The census pairs each guarded site with the builder that runs before it or that its words
+   name, and fails where that builder does not build the site's project through the helper. **Rejected:** each script finding the marker
+   and calling the door its own way, four copies of one rule.
+7. **The census, per call** (Opus, not blocking, 3). `tools/tree-base.test.mjs` reads the tracked code of `tools/` and `src/` (`.mjs`,
+   `.js`, `.ts`, `.cs`, `.ps1`) and the `package.json` scripts, and lists every **site** that reads a build output, comments aside:
+   **(R1)** a path joined (`join`, `resolve`, `Path.Combine`) with a `bin` part whose next part is a `Debug` or `Release` literal in
+   either case or a name (an identifier or a member access, not a call, a literal or a condition, so `configuration`, `flavour`,
+   `build.Parent.Name`), a string holding `bin/Debug` or `bin/Release`, or a call of a resolver that makes one (`assemblyExe`,
+   `targetExe`, `ownBuilt`); **(R2)** outside tests, a `--no-build`. A site is keyed by its file, its enclosing function or binding and its call's text, never its
+   line, so four calls in one file are four sites (`commands.mjs:100`, `:159`, `:162`, `:164`) and guarding one passes none of the
+   others. Each is **guarded**, its path passed through `tools/tree-base.mjs` or, in the product, the marker's reader, or **exempt** with
+   one reason the test checks against the code; a site in neither list fails, and so does a list entry no site matches. Red first: no
+   site is guarded today. The census as the code stands:
+
+| Sites | What they read | Standing, and how the test checks it |
+|---|---|---|
+| `tools/desktop/commands.mjs` `start`: `:100` the app, `:159` the HTTP host, `:162` the MCP host, `:164` the driver program | what `run` starts and hands the app | guarded, four sites |
+| `tools/proof-kit.mjs`: the HTTP host (`:19-21`), the driver (`:22-24`; `:26` is a file in its folder), the MCP host (`:48-50`) | what the proof runs | guarded, three sites |
+| `tools/family-rehearsal.mjs:41`; `src/Daoris.Web/scripts/e2e-host.mjs:14-16` | the HTTP host each runs | guarded |
+| `ServiceHostLocator.cs:94`; `KnowledgeConnector.cs:195` | the app's development hosts | guarded in the product (point 5) |
+| `tools/desktop.mjs` `kill` (`:85`) and `shot` (`:97`); `commands.mjs` `build` (`:73`) and `doctor` (`:207`, `:208`) | a process found by its path; whether a build is there | exempt, **finds**: the value reaches only `applicationsAt`, `running`, `commandLinesAt`, `ago` or a test of being there; `shot` photographs the window `run` started |
+| `executables.mjs:39` (`assemblyExe`'s body), `session.mjs:25` (`targetExe`'s) | — | exempt, **resolver**: the site is a resolver's own body, and its calls are the sites |
+| `family-rehearsal.mjs:48`, `:50`, `:5978`; `deployment-rehearsal.mjs:1562`; `rehearsal-kit.test.mjs:80` | each rehearsal's own build | exempt, **own output**: the root is `ownBuildRoot`'s, under `_fixtures/`, a `scratch` path never kept as a base, built by the same run with `--artifacts-path` |
+| `knowledge-server.mjs:183` (`homeBins`); `GitSshProgram.cs:41`; `HolderTerminal.cs:240` | a home's `bin/`; Git for Windows' `usr/bin/`; a managed tool's `bin/` | exempt, **no output**: the root is a home or a tool's install |
+| `BuiltApplication.cs:19`; `DriverHostTests.cs:232`, `PieceLauncherProcessTests.cs:32`, `PartnerProcessTests.cs:66`, `OwnedProcessesProcessTests.cs:25`, `GitDoorsLaid.cs:13` | another project's build, read by a test | exempt, **referenced**: the test's project references that project (`Daoris.Desktop.Modules.Tests.csproj:24`; `Daoris.Desktop.Driver.Tests.csproj:22`, `:32`, `:35`, `:29`), so the build that runs the test wrote it; read from the project file |
+| `TaskbarIdentityTests.cs:78`, `DesktopPageTests.cs:39`, `:47`, `ContentProofLossTests.cs:350`, `:374`, `:449`, `FileAnalysisTests.cs:156-169`, `TreeScratchTests.cs:41`, `:114`, `:185`, `:200`, `GitDoorsTests.cs:140`, `:147`, `GitHoldsProcessTests.cs:140`, `KnowledgeConnectorTests.cs:187`, `ServiceHostLocatorTests.cs:235`; `src/Daoris.Cli/test/desktop-tool.test.ts:349-372`, `deployment-rehearsal.test.ts:265-337` | a stand-in tree, or a path compared | exempt, **fixture**: the root is bound under the test's own scratch, or the value reaches only an assertion |
+| `tools/merge-branch.mjs` `noBuildCommand` (`:631`), `rerunCommand` (`:2486`) | a gate's tests, unbuilt | exempt, **merge tool**: run in its own gate tree on the build its fast half made in the same run (§11), never in a slot |
+| `merge-branch.mjs:4365`; `FileAnalysis.cs:258` | the flag in a sentence; other repositories' scripts, read as runner evidence (§29.4) | exempt, **text**: runs nothing |
+
+   `GitDoorsLaid.cs:13` is a reader §37.3, 3's list left out, which the census finds. `daoris gate run` (`Review/Heavy/HeavyRun.cs:7-21`)
+   runs the command it is given and holds no site; it refuses nothing, its admission line naming the bases unreleased (§37.3, 3).
+
+**Proof**, beside §37.3's: Codex's fixture twice, the replacement at `b0` and in B's line after the take: B's door build releasing
+`New`'s files, `Old.exe`, `Old.dll` and `Old.deps.json` set aside and said, a runner naming `Old.exe` finding nothing; the same
+replacement made earlier in A's line; a package reference B drops, its assembly set aside; a build with nothing to do releasing what the
+one that compiled released, the account whole; a project of two frameworks released per framework; a `publish/` and a `linux-x64/` set
+aside; a base beside two project files set aside at the take. `run --real` on a home with no installed hosts and a marker under each
+host's build: the app offered neither, said; a scratch `run` after `build`: no refusal, the MCP host built through the door; the census
+red at its eleven guarded sites and at a new unlisted site, green once guarded, red again at a list entry no site matches; the pairing
+red at a `build` without the MCP host. **Ready to build, after TREEPOOL1z.**
+
+### 38.3 The two classes, the rows, and what is revised *(R17)*
+
+| Class (§37.6) | Closed by | Where a missed member would show |
+|---|---|---|
+| a pattern whose meaning depends on its form | the scan `Glob` runs; a partition of its words total by construction, a K word read as written; the corpus test over every path of up to three tokens and every top of up to three parts | a word the switch puts in F or C whose cover differs: a failing case of the test's (ii) |
+| a release wider than its build | the producer's own account, every other entry set aside before the marker goes | a file the build owns and the account omits: point 4's stop |
+| a reader of a path under a base | every call site of R1 and R2, guarded or exempt for a reason the test checks; each guarded site's builder through the one helper | a reader written in neither shape: R1 or R2 widened, one list |
+
+| Row | What §38 answers | Standing |
+|---|---|---|
+| **z** | the first form translated from `Glob`'s tokens by a total partition, a K word read as written and the person's file rewritten once it keeps none, Codex's `P/*` among them; Opus's trailing `**/` and lone `*` as C and F; no empty first entry, and `LiteralOf` naming nothing for a `!` or a K word; a proof generated over the grammar (§38.1) | ready to build |
+| **aa** | a release named by its producer, over exactly the files its build owns by its own account, the rest set aside, Codex's `Old.csproj` among them; the product's locators guarded in the product; one integrated builder, `build` building the MCP host; the census per call, with today's sites (§38.2) | ready to build, after z; its first commit shows the account whole, or the row stops |
+
+Rows y, ab and ac are untouched, and nothing they depend on moves: y is being built with its findings; ab's day runs once y, z and aa
+are built, aa as §38.2 builds it, with §35.8's two arms and both repository shapes; ac follows z and does not hold row d.
+
+- **Revised in place** *(R17)*: the standing; §17.0's paragraph; §21's rows 16 and 17; §37.2, 2's lead and its kept difference, and
+  its proof's last sentence; §36.3, 3's census and §37.3, 2's third point and 3's census, each pointed here; §37.7's rows z and aa; the
+  rows TREEPOOL1z and TREEPOOL1aa of `TASKS.md`.
+- **Chosen here, within D214's notes**, each beside what it rejected: the partition, a K word read as written and the person's file
+  rewritten once it keeps none (§38.1); a release over its producer build's own account (§38.2, 1-3); the product's locators guarded in
+  the product (§38.2, 5); one integrated builder (§38.2, 6); the census keyed per call by two shapes (§38.2, 7). Nothing is asked of the
+  owner; the Files tab asks the person to word a kept rule only where their own file holds one.
+- **Owed:** both makers' confirming read of §38, which holds row d and neither row.

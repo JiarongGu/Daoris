@@ -80,14 +80,17 @@ public static class UncommittedRecords
         }
     }
 
-    /// <summary>The root's record folders that exist, as the scan names them: repository-relative with forward slashes, each once.</summary>
+    private static readonly string[] DeclaredRoles = ["router", "index", "decisions", "fixes", "archive"];
+
+    /// <summary>The root's record folders and files that exist, as the scan names them: repository-relative with forward slashes, each once.</summary>
     internal static IReadOnlyList<string> Folders(string root, string? documents, string? index)
     {
         var layout = RepositoryLayout.Of(root, DaorisLock.Read(root));
         var seen = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
         var folders = new List<string>();
         // The empty string is the repository's root, whose own records the top-level patterns name.
-        foreach (var named in layout.Roots.Append("docs").Append(documents).Append(index))
+        var declared = DeclaredRoles.Select(layout.PathOf).Concat(layout.Rooms.Select(room => $"{room}/AGENTS.md"));
+        foreach (var named in layout.Roots.Append("docs").Append(documents).Append(index).Concat(declared))
         {
             if (string.IsNullOrWhiteSpace(named)) continue;
             var relative = named.Replace('\\', '/').Trim('/');

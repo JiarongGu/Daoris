@@ -33,6 +33,33 @@ public sealed class TreePoolFinishGitTests : IDisposable
     private static PoolFinish Finish(PoolGitFixture fixture, string line) => new(fixture.Site, "quest-1", line, "main");
 
     [Fact]
+    public async Task A_finish_does_what_each_paths_finish_says_its_kinds_default_where_the_rule_says_none()
+    {
+        var fixture = await FixtureAsync("""
+            { "form": 2, "rules": [
+              { "kind": "intermediate", "paths": ["/obj/"] },
+              { "kind": "scratch", "paths": ["/notes.log"], "finish": "keep" },
+              { "kind": "intermediate", "paths": ["/build.log"], "finish": "aside" }
+            ] }
+            """);
+        var pool = fixture.Pool();
+        var slot = await fixture.MadeAsync(pool, 1, "s-aaaa0001");
+        await WriteAsync(slot, "src/Work.cs", "class Work {}\n");
+        await GitAsync(slot.Path, "add", "src/Work.cs");
+        await GitAsync(slot.Path, "commit", "--quiet", "-m", "work");
+        foreach (var file in new[] { "_fixtures/scratch.txt", "obj/Engine.dll", "notes.log", "build.log" }) await WriteAsync(slot, file, "the line's\n");
+        Assert.True((await pool.EndAsync(new PoolEnd(fixture.Site, 1, "quest-1", "session-1"))).Ok);
+
+        var done = await pool.FinishAsync(Finish(fixture, "s-aaaa0001"));
+
+        Assert.True(done.Ok, done.Refused ?? done.Stuck);
+        Assert.True(File.Exists(Path.Combine(slot.Path, "obj", "Engine.dll")));
+        Assert.True(File.Exists(Path.Combine(slot.Path, "notes.log")));
+        Assert.False(File.Exists(Path.Combine(slot.Path, "build.log")));
+        Assert.False(Directory.Exists(Path.Combine(slot.Path, "_fixtures")));
+    }
+
+    [Fact]
     public async Task A_finish_sets_the_lines_own_paths_aside_with_its_record_detaches_the_slot_and_deletes_the_branch_through_the_journal()
     {
         var fixture = await FixtureAsync();

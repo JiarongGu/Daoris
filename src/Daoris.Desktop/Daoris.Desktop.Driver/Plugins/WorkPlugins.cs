@@ -258,14 +258,16 @@ internal sealed class WorkPlugins(PluginLog log, Func<DateTimeOffset> clock) : I
 
     /// <summary>
     /// A step event taken here and not believed by the performer, counted with this plugin's other
-    /// refusals. A plugin this supervision holds nothing for is passed over.
+    /// refusals. A plugin this supervision holds nothing for is passed over, and false is answered.
     /// </summary>
-    public void Refused(string id, string code)
+    public bool Refused(string id, string code)
     {
         var now = clock();
         lock (_gate)
         {
-            if (_states.TryGetValue(id, out var state)) Refuse(id, state, code, now);
+            if (!_states.TryGetValue(id, out var state)) return false;
+            Refuse(id, state, code, now);
+            return true;
         }
     }
 
@@ -276,7 +278,7 @@ internal sealed class WorkPlugins(PluginLog log, Func<DateTimeOffset> clock) : I
         {
             foreach (var (id, state) in _states)
             {
-                foreach (var (code, count) in state.Tally.Due(now)) log.Refused(id, code, count);
+                foreach (var (code, count) in state.Tally.Due(now)) log.Refused(PlacedWork.PluginOf(id), code, count);
                 if (state.ResyncDue && (state.Resynced is not { } last || now - last >= WorkBounds.Minute)) Tell(id, state);
             }
         }
@@ -354,7 +356,7 @@ internal sealed class WorkPlugins(PluginLog log, Func<DateTimeOffset> clock) : I
 
     private void Refuse(string id, State state, string code, DateTimeOffset now)
     {
-        if (state.Tally.Refused(code, now) is { } count) log.Refused(id, code, count);
+        if (state.Tally.Refused(code, now) is { } count) log.Refused(PlacedWork.PluginOf(id), code, count);
     }
 
     /// <summary>
@@ -430,6 +432,6 @@ internal sealed class WorkPlugins(PluginLog log, Func<DateTimeOffset> clock) : I
         }
 
         var kind = task.Exception?.InnerException is { } error ? PluginFailures.KindOf(error, PluginEvents.Errored) : PluginEvents.Errored;
-        log.Failed(id, HookPoints.Watch, kind, code: null, ms: null, PluginEvents.ByLoop);
+        log.Failed(PlacedWork.PluginOf(id), HookPoints.Watch, kind, code: null, ms: null, PluginEvents.ByLoop);
     }
 }

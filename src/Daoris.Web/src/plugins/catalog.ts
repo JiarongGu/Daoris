@@ -264,10 +264,10 @@ export const shippedChanged = (plugin: Pick<PluginShown, 'shipped'>): boolean =>
 
 /**
  * Its press takes the install's own copy: it is older than the one the install ships and has no record of its own to
- * update from. A plugin whose record is a folder or an offer is updated from it, as before.
+ * update from. A plugin whose record is a folder or an offer is updated from it, as before; a package's is never taken in place.
  */
 export const takesShipped = (plugin: Pick<PluginShown, 'shipped' | 'source'>): boolean =>
-  plugin.shipped?.state === 'older' && plugin.source?.kind !== 'folder' && plugin.source?.kind !== 'offer';
+  plugin.shipped?.state === 'older' && plugin.source?.kind !== 'folder' && plugin.source?.kind !== 'offer' && plugin.source?.kind !== 'package';
 
 const OFFER = 'offer:';
 

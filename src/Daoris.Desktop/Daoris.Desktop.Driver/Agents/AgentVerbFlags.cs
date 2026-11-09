@@ -1,27 +1,38 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// The flags <c>login</c>, <c>trust</c>, <c>key</c> and <c>settings</c> take. <see cref="AgentsCommand.Operands"/> drops a flag it does not
-/// know, so a stray one (<c>--profile work</c>, the retired name of <c>--account</c>) signed the order's first account in, or trusted a
-/// folder for every account, and said nothing: any other flag is refused, as <c>account use</c> refuses its own.
+/// The flags each <c>agent</c> verb takes. <see cref="AgentsCommand.Operands"/> drops a flag it does not know, so a stray one
+/// (<c>--profile work</c>, the retired name of <c>--account</c>; <c>--repo</c> for <c>--repository</c>) signed the order's first account
+/// in, trusted a folder for every account, allowed a rule to every session on the machine or moved the machine's pin, and said nothing:
+/// any other flag is refused, as <c>account use</c> refuses its own.
 /// </summary>
 internal static class AgentVerbFlags
 {
     private static readonly Dictionary<string, string[]> Taken = new(StringComparer.Ordinal)
     {
-        ["login"] = ["--account", "--new", "--name", "--device-code"],
+        ["list"] = ["--again"],
+        ["rules"] = ["--workspace", "--repository", "--note"],
         ["trust"] = ["--account", "--yes", "--dry-run"],
-        ["key"] = ["--account", "--remove"],
         ["settings"] = ["--account", "--for"],
+        ["which"] = ["--workspace", "--json"],
+        ["unpin"] = ["--workspace"],
+        ["profile"] = ["--clear", "--own"],
+        ["install"] = [],
+        ["key"] = ["--account", "--remove"],
+        ["login"] = ["--account", "--new", "--name", "--device-code"],
+        ["update"] = ["--workspace"],
+        ["pin"] = ["--workspace"],
     };
 
-    /// <summary>The refusal of the first flag <paramref name="verb"/> does not take, nothing done; a verb with no row here takes any.</summary>
+    /// <summary>The refusal of the first flag <paramref name="verb"/> does not take, nothing done.</summary>
     internal static void Refuse(string verb, IReadOnlyList<string> args)
     {
-        if (!Taken.TryGetValue(verb, out var flags)) return;
+        // `account use` has the flags of the use settings and refuses a retired one in words of its own.
+        if (!Taken.TryGetValue(verb, out var flags) || (verb == "profile" && args.Count > 1 && args[1] == "use")) return;
         if (args.Skip(1).FirstOrDefault(word => word.StartsWith("--", StringComparison.Ordinal) && !flags.Contains(word, StringComparer.Ordinal)) is { } stray)
         {
-            throw new AgentWords($"`{stray}` is not a flag of `agent {verb}` — it takes {string.Join(", ", flags.Select(flag => $"`{flag}`"))}.");
+            var takes = flags.Length == 0 ? "no flag" : string.Join(", ", flags.Select(flag => $"`{flag}`"));
+            throw new AgentWords($"`{stray}` is not a flag of `agent {verb}` — it takes {takes}.");
         }
     }
 }

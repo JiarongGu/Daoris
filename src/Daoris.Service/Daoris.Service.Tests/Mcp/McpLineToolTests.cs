@@ -158,6 +158,33 @@ public sealed class McpLineToolTests : McpToolsFixture
         Assert.Contains("50,011 characters", cut);
     }
 
+    /// <summary>🔴 Kana, Hangul, fullwidth forms and an emoji weigh three each, counted apart from the service's own weight.</summary>
+    [Fact]
+    public async Task An_answer_of_kana_and_emoji_is_bounded_by_the_briefs_weights()
+    {
+        Assert.Equal(3, LineEvents.Weight("あ"));
+        Assert.Equal(3, LineEvents.Weight("한"));
+        Assert.Equal(3, LineEvents.Weight("Ａ"));
+        Assert.Equal(3, LineEvents.Weight("😀"));
+        Assert.Equal(1, LineEvents.Weight("a"));
+
+        Session kana = null!, emoji = null!;
+        var (tools, _) = await ConnectorAsync(async sessions =>
+        {
+            kana = await PartAsync(sessions);
+            emoji = await PartAsync(sessions, kana, "press");
+            return emoji.Id;
+        });
+        Keep(kana.Id, Enumerable.Range(1, 20).Select(n => Person(n * 2 - 1, $"問{n:00}") + "\n" + Agent(n * 2, new string('あ', 3000))));
+        Keep(emoji.Id, Enumerable.Range(1, 20).Select(n => Person(n * 2 - 1, $"問{n:00}") + "\n" + Agent(n * 2, string.Concat(Enumerable.Repeat("😀", 3000)))));
+
+        var page = await tools.ReadAsync(part: kana.Id, limit: 200);
+        Assert.True(page.Count(c => c == 'あ') * 3 <= LineEvents.Bound, $"{page.Count(c => c == 'あ')} kana on one page");
+
+        page = await tools.ReadAsync(part: emoji.Id, limit: 200);
+        Assert.True(page.Count(char.IsHighSurrogate) * 3 <= LineEvents.Bound, $"{page.Count(char.IsHighSurrogate)} emoji on one page");
+    }
+
     /// <summary>
     /// 🔴 A record off the session's line is refused and nothing of it is read: a part beside the line, one that continues this session,
     /// and one with no link to it at all.

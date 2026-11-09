@@ -173,6 +173,24 @@ public sealed class KnowledgeConnectorTests : IDisposable
         Assert.Equal("scope-home", fromScope!.Environment[DaorisHome.Variable]);
     }
 
+    /// <summary>A workspace build under a kept base's marker is the previous line's build, never offered until the door releases it.</summary>
+    [Fact]
+    public void A_workspace_build_under_a_standing_base_marker_is_passed_over()
+    {
+        var workspace = Path.Combine(_root, "workspace");
+        var deep = Path.Combine(workspace, "src", "Daoris.Desktop", "app", "bin");
+        Directory.CreateDirectory(deep);
+        File.WriteAllText(Path.Combine(workspace, "daoris.json"), "{}");
+        var debug = Path.Combine(workspace, "src", "Daoris.Service", "Daoris.Service.Mcp", "bin", "Debug");
+        Directory.CreateDirectory(debug);
+        File.WriteAllText(Path.Combine(debug, BaseMarker.FileName), """{ "from": "s-aaaa0001", "says": "the previous line's" }""");
+
+        var candidates = KnowledgeConnector.Candidates(null, Home, deep).ToList();
+
+        Assert.DoesNotContain(Path.Combine(debug, "net10.0", KnowledgeConnector.ExecutableName), candidates);
+        Assert.Contains(candidates, c => c.Contains(Path.Combine("bin", "Release"), StringComparison.Ordinal));
+    }
+
     /// <summary>Development: the workspace build after every installed place, found by walking up to the manifest.</summary>
     [Fact]
     public void The_workspace_build_comes_after_the_shells_own_copy_and_the_homes()

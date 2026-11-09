@@ -130,10 +130,10 @@ internal static class GitRuns
         // Within a landing, a read of a ref or a repository is asked of git once; within a judgement, a question
         // of commits by their ids is asked of its checkout's git once. A call with a variable of its own or a bound (a fetch), one
         // that writes git's input (`update-ref --stdin`) and a test's stand-in answer are always asked as written.
-        var run = () => RunGitAsync(root, arguments, environment, timeout, input, ct);
+        Func<CancellationToken, Task<(int Code, string Stdout, string Stderr)>> run = token => RunGitAsync(root, arguments, environment, timeout, input, token);
         return environment is null && timeout is null && input is null && Answered.Value is null
-            ? GitFacts.Asked(root, arguments, run) ?? RefSnapshot.Asked(root, arguments, run) ?? GitReadOnce.Asked(root, arguments, run, ct) ?? run()
-            : run();
+            ? GitFacts.Asked(root, arguments, run, ct) ?? RefSnapshot.Asked(root, arguments, run, ct) ?? GitReadOnce.Asked(root, arguments, run, ct) ?? run(ct)
+            : run(ct);
     }
 
     private static Task<(int Code, string Stdout, string Stderr)> RunGitAsync(
@@ -185,13 +185,15 @@ internal static class GitRuns
             info.StandardInputEncoding = new UTF8Encoding(encoderShouldEmitUTF8Identifier: false);
         }
 
-        // The run, the wait and the guarded tree kill are ChildProcess's. On the caller's own cancellation it
-        // ends git's tree and throws.
+        // Placed by the scheduler, whose token ends a lock-free read nobody waits for; the run, the wait and the guarded tree kill
+        // are ChildProcess's. The caller's own cancellation leaves the ask and throws.
         try
         {
-            var run = input is null
-                ? await ChildProcess.RunAsync(info, bound, ct, closeInput: false).ConfigureAwait(false)
-                : await ChildProcess.RunAsync(info, bound, ct, input, ProcessStarts.Shared).ConfigureAwait(false);
+            await GitLazyFetch.PrepareAsync(info, arguments, ct).ConfigureAwait(false);
+            var ask = GitStartAsks.For(info, arguments, GitRunner.Whole, bound, shares: input is null);
+            var run = await GitScheduler.Shared.RunAsync(ask, token => input is null
+                ? ChildProcess.RunAsync(info, bound, token, closeInput: false)
+                : ChildProcess.RunAsync(info, bound, token, input, ProcessStarts.Shared), ct).ConfigureAwait(false);
             return Answer(run, bound);
         }
         catch (Exception error) when (error is not OperationCanceledException)
@@ -233,40 +235,75 @@ internal static class GitRuns
     /// </remarks>
     internal static Task<(byte[] Bytes, int Count)?> GitBytesAsync(
         string root, IReadOnlyList<string> arguments, int limit, CancellationToken ct) =>
+        GitBytesAsync(root, arguments, limit, input: null, ct);
+
+    /// <summary>The same, git reading <paramref name="input"/> first: <c>cat-file --batch</c> asked its one question.</summary>
+    internal static Task<(byte[] Bytes, int Count)?> GitBytesAsync(
+        string root, IReadOnlyList<string> arguments, int limit, string? input, CancellationToken ct) =>
         // Through the one seam, which raises Started for this runner too (once RunGitAsync's alone).
         GitLaunch.LaunchAsync(
-            GitLaunch.KindOf(arguments), arguments, GitLaunch.Budget, GitRunner.Bytes, () => BytesLaunchedAsync(root, arguments, limit, ct));
+            GitLaunch.KindOf(arguments), arguments, GitLaunch.Budget, GitRunner.Bytes, () => BytesLaunchedAsync(root, arguments, limit, input, ct));
 
     private static async Task<(byte[] Bytes, int Count)?> BytesLaunchedAsync(
-        string root, IReadOnlyList<string> arguments, int limit, CancellationToken ct)
+        string root, IReadOnlyList<string> arguments, int limit, string? input, CancellationToken ct)
     {
         // The blob is read as bytes off the stream beneath; git's own words on the error stream are UTF-8.
         var (info, _) = GitStart(root, arguments, ProgramHome.Named);
         if (info is null) return null;
+        if (input is not null)
+        {
+            info.RedirectStandardInput = true;
+            info.StandardInputEncoding = new UTF8Encoding(encoderShouldEmitUTF8Identifier: false);
+            GitStartInputs.Hand(info, input);
+        }
 
+        try
+        {
+            await GitLazyFetch.PrepareAsync(info, arguments, ct).ConfigureAwait(false);
+            var ask = GitStartAsks.For(info, arguments, GitRunner.Bytes, GitBounds.Of(arguments), shares: false);
+            return await GitScheduler.Shared.RunAsync(ask, token => BytesPlacedAsync(info, arguments, limit, input, token), ct).ConfigureAwait(false);
+        }
+        catch (GitUnplacedException)
+        {
+            return null;
+        }
+    }
+
+    private static async Task<(byte[] Bytes, int Count)?> BytesPlacedAsync(
+        ProcessStartInfo info, IReadOnlyList<string> arguments, int limit, string? input, CancellationToken ct)
+    {
         Process? process = null;
         Task<string>? stderr = null;
         using var within = CancellationTokenSource.CreateLinkedTokenSource(ct);
         try
         {
-            // Through the process-wide gate, off the caller's thread, as the background's.
+            // Through the process-wide gate, off the caller's thread, in its place's class, which the gate reads over the one named here.
             process = await ProcessStarts.Shared.StartAsync(info, ProcessPurpose.Git, StartClass.Background, ct).ConfigureAwait(false)
                       ?? throw new DriverException("git did not start");
             within.CancelAfter(GitBounds.Of(arguments));
             using var ending = Ending(within.Token, process);
+            if (input is not null)
+            {
+                await process.StandardInput.WriteAsync(input.AsMemory(), within.Token).ConfigureAwait(false);
+                process.StandardInput.Close();
+            }
+
             stderr = process.StandardError.ReadToEndAsync(within.Token);
-            var buffer = new byte[Math.Max(0, limit)];
+            // Grown as git writes, so a whole file's bound is not its room.
+            var bound = Math.Max(0, limit);
+            var buffer = new byte[Math.Min(bound, 64 * 1024)];
             var count = 0;
             var stream = process.StandardOutput.BaseStream;
-            while (count < buffer.Length)
+            while (count < bound)
             {
+                if (count == buffer.Length) Array.Resize(ref buffer, (int)Math.Min(bound, 2L * buffer.Length));
                 var got = await Heard(stream.ReadAsync(buffer.AsMemory(count), within.Token), within.Token).ConfigureAwait(false);
                 if (got == 0) break;
                 count += got;
             }
 
             // More than the bound is waiting: git would block on a full pipe, so it is stopped. What it wrote is whole.
-            var bounded = count == buffer.Length && await Heard(stream.ReadAsync(new byte[1], within.Token), within.Token).ConfigureAwait(false) > 0;
+            var bounded = count == bound && await Heard(stream.ReadAsync(new byte[1], within.Token), within.Token).ConfigureAwait(false) > 0;
             if (bounded)
             {
                 OwnedProcesses.End(process);
@@ -348,12 +385,21 @@ internal static class GitRuns
     /// </remarks>
     internal static Task<int> ReadGitAsync(
         string root, IReadOnlyList<string> arguments, Func<ReadOnlyMemory<char>, bool> take, CancellationToken ct) =>
+        (Runs.Value is null && Answered.Value is null ? GitReadOnce.Streamed(root, arguments, take, ct) : null)
+        ?? ReadGitAsync(root, arguments, environment: null, take, ct);
+
+    /// <summary>git read as it answers, with variables of its own (Review's untracked diff names its private index by
+    /// <c>GIT_INDEX_FILE</c>): always asked of git.</summary>
+    internal static Task<int> ReadGitAsync(
+        string root, IReadOnlyList<string> arguments, IReadOnlyDictionary<string, string>? environment, Func<ReadOnlyMemory<char>, bool> take,
+        CancellationToken ct) =>
         // Through the one seam, which raises Started for this runner too (once RunGitAsync's alone).
-        (Runs.Value is null && Answered.Value is null ? GitReadOnce.Streamed(root, arguments, take, ct) : null) ?? GitLaunch.LaunchAsync(
-            GitLaunch.KindOf(arguments), arguments, GitLaunch.Budget, GitRunner.Streamed, () => ReadLaunchedAsync(root, arguments, take, ct));
+        GitLaunch.LaunchAsync(
+            GitLaunch.KindOf(arguments), arguments, GitLaunch.Budget, GitRunner.Streamed, () => ReadLaunchedAsync(root, arguments, environment, take, ct));
 
     private static async Task<int> ReadLaunchedAsync(
-        string root, IReadOnlyList<string> arguments, Func<ReadOnlyMemory<char>, bool> take, CancellationToken ct)
+        string root, IReadOnlyList<string> arguments, IReadOnlyDictionary<string, string>? environment, Func<ReadOnlyMemory<char>, bool> take,
+        CancellationToken ct)
     {
         // The run's test seam stands in for this runner too, so a census holds every answer of Review's graph.
         if (Runs.Value is { } stand)
@@ -365,13 +411,28 @@ internal static class GitRuns
 
         var (info, _) = GitStart(root, arguments, ProgramHome.Named);
         if (info is null) return -1;
+        foreach (var (name, value) in environment ?? new Dictionary<string, string>()) info.Environment[name] = value;
+        try
+        {
+            await GitLazyFetch.PrepareAsync(info, arguments, ct).ConfigureAwait(false);
+            var ask = GitStartAsks.For(info, arguments, GitRunner.Streamed, GitBounds.Of(arguments), shares: false);
+            return await GitScheduler.Shared.RunAsync(ask, token => ReadPlacedAsync(info, arguments, take, token), ct).ConfigureAwait(false);
+        }
+        catch (GitUnplacedException)
+        {
+            return -1;
+        }
+    }
 
+    private static async Task<int> ReadPlacedAsync(
+        ProcessStartInfo info, IReadOnlyList<string> arguments, Func<ReadOnlyMemory<char>, bool> take, CancellationToken ct)
+    {
         Process? process = null;
         Task<string>? stderr = null;
         using var within = CancellationTokenSource.CreateLinkedTokenSource(ct);
         try
         {
-            // Through the process-wide gate, off the caller's thread, as the background's.
+            // Through the process-wide gate, off the caller's thread, in its place's class, which the gate reads over the one named here.
             process = await ProcessStarts.Shared.StartAsync(info, ProcessPurpose.Git, StartClass.Background, ct).ConfigureAwait(false)
                       ?? throw new DriverException("git did not start");
             within.CancelAfter(GitBounds.Of(arguments));

@@ -92,13 +92,13 @@ internal sealed class RefSnapshot
     /// asked again, never read as "no".</para>
     /// </remarks>
     internal static Task<(int Code, string Stdout, string Stderr)>? Asked(
-        string root, IReadOnlyList<string> arguments, Func<Task<(int Code, string Stdout, string Stderr)>> ask)
+        string root, IReadOnlyList<string> arguments, Func<CancellationToken, Task<(int Code, string Stdout, string Stderr)>> ask, CancellationToken ct)
     {
         if (Held.Value is not { Length: > 0 } held || !(GitFacts.ById(arguments) || RefsListing(arguments) || Layout(arguments))) return null;
         var folder = GitFacts.Folder(root);
         for (var at = held.Length - 1; at >= 0; at--)
         {
-            if (held[at]._root == folder) return held[at].AskAsync(arguments, ask);
+            if (held[at]._root == folder) return GitMemoAsks.Joined(held[at].AskAsync(arguments, GitMemoAsks.Under(ask, CancellationToken.None)), ct);
         }
 
         return null;
@@ -287,40 +287,40 @@ internal sealed class RefSnapshot
     /// The tree of the commit <paramref name="commit"/>, where a ref here points at exactly it, as <c>&lt;id&gt;^{tree}</c> answers; null
     /// where none does (a branch moved on, or a commit no ref holds), and the caller asks git.
     /// </summary>
-    internal async Task<string?> TreeOfAsync(string commit, CancellationToken ct)
+    internal async Task<string?> TreeOfAsync(string commit, CancellationToken ct, string? asker = null)
     {
+        if (asker is not null && _root is { } root && !GitAskerContext.Same(asker, root)) return null;
         if (await RefsAsync(ct).ConfigureAwait(false) is not { } refs) return null;
         return TreeIn(refs, commit);
     }
 
     /// <summary>
-    /// The tree of <paramref name="commit"/> from any listing this flow already holds, whichever folder it is read in: an id names its
-    /// tree in every repository, so a listing of the same repository from another tree of it answers as its own does. Nothing is
-    /// started; null where no held listing has a ref at exactly that commit.
+    /// The tree of <paramref name="commit"/> from a listing this flow holds of a folder reading <paramref name="folder"/>'s configuration
+    /// (<see cref="GitAskerContext"/>). Nothing is started; null where no such listing has a ref at exactly that commit.
     /// </summary>
-    internal static string? TreeHeld(string commit)
+    internal static string? TreeHeld(string folder, string commit)
     {
         foreach (var held in Held.Value ?? [])
         {
+            if (held._root is not { } root || !GitAskerContext.Same(folder, root)) continue;
             Task<Refs?>? read;
             lock (held._gate) read = held._refs;
             if (read is not { IsCompletedSuccessfully: true, Result: { } refs }) continue;
             if (TreeIn(refs, commit) is { } tree) return tree;
         }
 
-        return GitReadOnce.TreeOf(commit);
+        return GitReadOnce.TreeOf(folder, commit);
     }
 
     /// <summary>
     /// The listing a snapshot of this flow already read, for the repository <paramref name="folder"/> is a folder of: a tree of it and
-    /// its checkout list the same refs, so one start serves both. Nothing is started; null where none is read.
+    /// its checkout reading one configuration list the same refs, so one start serves both. Nothing is started; null where none is read.
     /// </summary>
     internal static Refs? ListedFor(string folder)
     {
-        if (RefFiles.CommonDirOf(folder) is not { } common) return null;
         foreach (var held in Held.Value ?? [])
         {
-            if (held._root is not { } root || !RefFiles.SameDir(common, RefFiles.CommonDirOf(root))) continue;
+            if (held._root is not { } root || !GitAskerContext.Same(folder, root)) continue;
             Task<Refs?>? read;
             lock (held._gate) read = held._refs;
             if (read is { IsCompletedSuccessfully: true, Result: { } refs }) return refs;

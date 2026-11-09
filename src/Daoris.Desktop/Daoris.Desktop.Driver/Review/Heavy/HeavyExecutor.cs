@@ -420,8 +420,16 @@ public sealed class HeavyExecutor(string home, VerifyWorld? world = null) : IAsy
         }
 
         lock (_gate) _answered.Add(send.Invocation);
-        _world.Said.WriteLine($"verify: {send.Repository} at {TextBounds.ShortCommit(send.Commit, 7)}: {result.Verdict}{(result.Why is { } why ? $" ({why})" : "")}.");
-        _world.Answered?.Invoke(send.Run, send.Invocation);
+        // The result stands on disk: a writer or a callback that throws must not end the loop, which nothing starts again.
+        try
+        {
+            _world.Said.WriteLine($"verify: {send.Repository} at {TextBounds.ShortCommit(send.Commit, 7)}: {result.Verdict}{(result.Why is { } why ? $" ({why})" : "")}.");
+            _world.Answered?.Invoke(send.Run, send.Invocation);
+        }
+        catch (Exception error) when (error is not OperationCanceledException)
+        {
+            Debug.WriteLine($"verify: telling of run {send.Run}'s result failed: {error.Message}");
+        }
     }
 
     internal static VerifyResult Unknown(VerifySend send, string why) => new(send.Invocation, send.Commit, VerifyVerdicts.Unknown, why, []) { Declaration = send.Accepted };

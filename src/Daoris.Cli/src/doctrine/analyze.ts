@@ -8,22 +8,20 @@ import { parseFrontmatter, renderCanonFile } from './document.ts';
 import { findRegion } from './region.ts';
 import { tierRuleBody } from './tierrender.ts';
 import { readCanon, resolveCanonRoot, resolveSelection } from './canon.ts';
-import { DEFAULT_CORE_BUDGET_BYTES, lockIndex, readLock, readManifest } from './config.ts';
+import { DEFAULT_CORE_BUDGET_BYTES, MANIFEST_FILE, lockIndex, readLock, readManifest } from './config.ts';
+import { projectBudget } from './budget.ts';
 import { isEntry, significantTokens, containment } from './twins.ts';
 import { candidateDocuments, sayCandidates } from '../layout/documents.ts';
 import {
   DEFAULT_HARNESS, HARNESSES, harnessVerdict, tierNames, verifyHarnessContract,
 } from '../layout/harness.ts';
 
-// Pre-adoption there is no manifest to resolve a harness from, so this command reads the DEFAULT
-// harness's descriptor — one definition, not a constant quietly asserting one harness's conventions
-// as universal (the exact scatter the descriptor seam retired).
+// Pre-adoption there is no manifest to resolve a harness from, so this reads the DEFAULT harness's descriptor.
 const CLAUDE = HARNESSES[DEFAULT_HARNESS]!;
 const DEFAULT_TARGET = CLAUDE.defaultTarget;
 const TIERS = tierNames(CLAUDE);
-// An older repository has a generated roster in its rules directory. `analyze` runs
-// on repositories that never adopted AND on ones that did, so it skips that name rather than
-// counting a generated file as doctrine somebody wrote.
+// An older repository has a generated roster in its rules directory, which is skipped rather than
+// counted as doctrine somebody wrote.
 const INDEX_FILE = 'RULES_INDEX.md';
 
 /**
@@ -207,27 +205,6 @@ function findTwinsAgainstCanon(
   return twins.sort((a, b) => b.score - a.score);
 }
 
-/** Bytes of always-loaded context after adopting — the number that is paid every session. */
-function projectBudget(
-  root: string, target: string, canon: Canon, selected: readonly CanonFile[],
-  existing: Survey, collisions: readonly string[],
-): { current: number; projected: number } {
-  const current = existing.rules.reduce((sum, f) => sum + f.bytes, 0);
-  const collided = new Set(collisions);
-
-  let added = 0;
-  for (const file of selected) {
-    if (!file.target.startsWith('rules/')) continue;
-    const abs = join(root, target, file.target);
-    // A collision replaces rather than adds; an existing identical file changes nothing.
-    if (existsSync(abs) && !collided.has(file.target)) continue;
-    added += Buffer.byteLength(readText(join(canon.root, file.source)), 'utf8');
-    if (existsSync(abs)) added -= statSync(abs).size;
-  }
-
-  return { current, projected: current + added };
-}
-
 export function analyze(
   { root, canon, packs, switchedOff = {}, target, budgetLimit, lock = null, harness = CLAUDE }:
   {
@@ -251,7 +228,7 @@ export function analyze(
     collisions,
     updates,
     twins: findTwinsAgainstCanon(root, target, canon, selection.files, harness),
-    budget: { ...projectBudget(root, target, canon, selection.files, existing, collisions), limit: budgetLimit },
+    budget: { ...projectBudget(root, target, harness, canon, selection.files, existing, collisions), limit: budgetLimit },
     offers: selection.offers,
     switchedOff: selection.switchedOff,
     // The records this repository seems to keep, by role: named for the session that
@@ -267,21 +244,15 @@ export function analyze(
 export function commandAnalyze({ root, argv, write, packageRoot }: CommandArgs): ExitCode {
   const canon = readCanon(resolveCanonRoot(packageRoot));
 
-  // Works with or without a manifest: before adoption there is none, which is the point.
-  let manifest = null;
-  try {
-    manifest = readManifest(root);
-  } catch {
-    manifest = null;
-  }
+  // None before adoption, which is the point; one that is there and unreadable is `readManifest`'s refusal.
+  const manifest = existsSync(join(root, MANIFEST_FILE)) ? readManifest(root) : null;
 
   const target = manifest?.target ?? DEFAULT_TARGET;
   const budgetLimit = manifest?.coreBudgetBytes ?? DEFAULT_CORE_BUDGET_BYTES;
   const requested = argv.filter((arg) => !arg.startsWith('--'));
   const packs = requested.length ? requested : (manifest?.packs ?? []);
-  // Confirmations belong to the manifest's own pack list: packs named on the command line are a
-  // "what if", and a confirmation naming a pack the what-if leaves out would refuse a question it
-  // is no part of.
+  // Confirmations belong to the manifest's own pack list: packs named on the command line are a "what if", which a
+  // confirmation naming a pack it leaves out would refuse.
   const switchedOff = requested.length ? {} : (manifest?.switchedOff ?? {});
 
   const report = analyze({
@@ -313,10 +284,9 @@ export function commandAnalyze({ root, argv, write, packageRoot }: CommandArgs):
   }
   if (others.length) {
     write(`  ALSO SEEN       ${others.map((h) => `${h.name} (${h.evidence.join(', ')})`).join('; ')}`);
-    // 🔴 The always-loaded tier is a region in `AGENTS.md`, so a
-    // repository already on that convention is not blind to what daoris writes — that file is
-    // exactly where the largest tier lands. Only the on-demand tiers stay out of its reach, and
-    // saying so is the difference between a warning and a wrong one.
+    // 🔴 The always-loaded tier is a region in `AGENTS.md`, so a repository already on that convention is not blind to
+    // what daoris writes there. Only the on-demand tiers stay out of its reach, and saying so is the difference between a
+    // warning and a wrong one.
     const region = CLAUDE.tiers.rules?.region?.file;
     if (region && others.some((h) => h.evidence.includes(region))) {
       write('                  daoris does not generate those layouts — but the always-loaded');

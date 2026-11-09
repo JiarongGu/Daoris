@@ -50,6 +50,21 @@ public sealed class ModelCoolingReadersTests : IDisposable
     }
 
     [Fact]
+    public async Task A_resume_asks_the_walk_for_its_own_account_with_the_record_s_model()
+    {
+        var roster = Roster("account-1");
+        AccountCooling.Cool(_home, Entry("account-1"), Seen);
+        var config = DriverConfig.Empty with { Actors = StaffedRoles.On("fake") };
+
+        var sonnet = await roster.ResumeAsync("fake", config, null, "account-1", StartKind.Driven, model: "sonnet");
+        var opus = await roster.ResumeAsync("fake", config, null, "account-1", StartKind.Driven, model: "opus");
+
+        // A sonnet line is not held by the opus week; the walk is asked for the account, which this stand-in's missing binary refuses.
+        Assert.Null(sonnet.Selection.Cooling);
+        Assert.Equal(Entry("account-1"), opus.Selection.Cooling);
+    }
+
+    [Fact]
     public void An_account_wide_cool_off_holds_every_line()
     {
         var roster = Roster("account-1");

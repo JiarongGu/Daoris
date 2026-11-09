@@ -302,6 +302,26 @@ public sealed class InstructionAccountTests
         Assert.Contains("> I stopped at the menu entries.", composed.Text);
     }
 
+    /// <summary>A plan the state's weight cap shortened, well under the count bound, is not said to be past that bound.</summary>
+    [Fact]
+    public void A_plan_cut_by_the_states_weight_cap_is_not_said_past_the_count_bound()
+    {
+        var plan = new SessionEvent
+        {
+            Kind = SessionEventKind.Plan,
+            Entries = [.. Enumerable.Range(1, 30).Select(n => new PlanEntry($"step {n} " + new string('x', 300), "pending"))],
+        };
+        var brief = ContextBrief.Compose(new BriefLine(HandOverWhy.CarryOn,
+        [
+            new BriefPart("s1", "claude-code", [new SessionEvent { Kind = SessionEventKind.User, Origin = "target", Text = "the quest" }, plan]),
+        ]));
+
+        var state = Section(TargetPrompt.Composed(TargetPromptGoldenTests.CarryOn with { Brief = brief }).Account, "brief-state");
+
+        Assert.DoesNotContain(state.Cuts!, cut => cut.Code == HandedCuts.PlanBound);
+        Assert.True(Cut(state, HandedCuts.BriefList).Count > 0);
+    }
+
     /// <summary>The rules are handed beside the instruction: after the sections handed, before the ones that were not.</summary>
     [Fact]
     public void What_is_handed_beside_goes_after_the_sections_handed_and_before_those_that_were_not()

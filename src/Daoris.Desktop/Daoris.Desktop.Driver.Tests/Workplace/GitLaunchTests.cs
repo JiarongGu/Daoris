@@ -37,11 +37,15 @@ public sealed class GitLaunchTests
         { Range("HEAD"), GitKind.WorktreeDiff, "W" },
         { ["--no-optional-locks", "status", "--porcelain", "-z", "--untracked-files=all"], GitKind.Status, "S" },
         {
+            ["-c", "core.splitIndex=false", "add", "--intent-to-add", "--pathspec-from-file=-", "--pathspec-file-nul"],
+            GitKind.Other, "A"
+        },
+        {
             [
-                "--no-optional-locks", "-c", "core.quotePath=false", "diff", "--no-index", "--no-color", "--no-ext-diff", "--src-prefix=a/",
-                "--dst-prefix=b/", "--", "/dev/null", "new.txt",
+                "--no-optional-locks", "-c", "diff.autoRefreshIndex=false", "-c", "core.quotePath=false", "diff", "--no-color", "--no-ext-diff",
+                "-O/dev/null", "--src-prefix=a/", "--dst-prefix=b/",
             ],
-            GitKind.UntrackedDiff, "U"
+            GitKind.WorktreeDiff, "U"
         },
         { ["symbolic-ref", "--short", "-q", "HEAD"], GitKind.Layout, "H" },
     };
@@ -58,7 +62,7 @@ public sealed class GitLaunchTests
     public void Each_of_todays_review_commands_is_classed_by_its_kind_and_named_by_its_node(string[] arguments, GitKind kind, string node)
     {
         Assert.Equal(kind, GitLaunch.KindOf(arguments));
-        Assert.Equal(node, GitLaunch.NodeOf(arguments, node == "U" ? GitBudget.Untracked : GitBudget.Review));
+        Assert.Equal(node, GitLaunch.NodeOf(arguments, node is "A" or "U" ? GitBudget.Untracked : GitBudget.Review));
         // Outside the review's budgets a start is named by its subcommand: the offer's own `status` is no review's S.
         Assert.Equal(GitLaunch.Command(arguments)[0], GitLaunch.NodeOf(arguments, GitBudget.Offer));
     }
@@ -199,16 +203,16 @@ public sealed class GitLaunchTests
     /// are the seams of their own, each a start a census of its own holds (<c>ProcessStartsCensusTests</c>).
     /// </summary>
     /// <summary>The files, by name, that start a process: a git's start info (GitStart), a start handed to the gate, a child run, the runtime's start, or a git's info built by hand.</summary>
-    private static SortedSet<string> StartFiles(IEnumerable<(string File, string Source)> sources) =>
+    internal static SortedSet<string> StartFiles(IEnumerable<(string File, string Source)> sources) =>
         new(sources.Where(each => Regex.IsMatch(
                 Regex.Replace(each.Source.Replace("\r\n", "\n"), @"//[^\n]*", ""),
                 @"\bGitStart\s*\(|\bProcessStarts\.\w+\.(?:StartAsync|RunAsync)\s*\(|\bStartAsync\s*\(\s*info\b|\bChildProcess\.RunAsync\s*\(|\bProcess\.Start\b|ProcessStartInfo\s*\(\s*""git"))
             .Select(each => each.File), StringComparer.Ordinal);
 
     /// <summary>The files that may start a process, each for the seam it is (how many starts a listed file makes is not pinned).</summary>
-    private static readonly string[] StartingFiles =
+    internal static readonly string[] StartingFiles =
     [
-        "ActSteps.cs", "AgentStarts.cs", "ChildProcess.cs", "CodexUsage.cs", "DoctrineStatusRead.cs",
+        "ActSteps.cs", "AgentStarts.cs", "BuildAccounts.cs", "ChildProcess.cs", "CodexUsage.cs", "DoctrineStatusRead.cs",
         "GeneratedWriters.cs", "GitDoors.cs", "GitIdentityActs.cs", "HarnessActions.cs", "HarnessProbe.cs",
         "HeavyStep.cs", "HookProcess.cs", "LauncherRunner.cs", "PieceLauncher.cs", "PoolGit.cs", "PluginToolRuns.cs", "PluginToolSetUp.cs", "PluginTrialProcess.cs",
         "GitRuns.cs", "ProcessStarts.cs", "ServerPackages.cs", "SetupWorld.cs", "ToolQuestions.cs", "TransportRun.cs", "WorkingTree.cs",

@@ -139,6 +139,19 @@ public sealed class GateRunnerTests : IDisposable
         Assert.Contains("exited 3", report.Results.Single().Detail);
     }
 
+    [Fact]
+    public void A_declared_gate_that_cannot_start_fails_the_run_naming_why()
+    {
+        var declaration = new GateDeclaration { Gates = [new DeclaredGate("lost", "echo hi", "no-such-folder")] };
+
+        var (report, log) = Run(declaration, new StubGate("universal", GateResult.Pass("universal")));
+
+        Assert.False(report.Passed);
+        Assert.Equal(["universal", "lost"], report.Results.Select(r => r.Name));
+        Assert.Contains("no-such-folder", report.Results[1].Detail);
+        Assert.Contains(log, line => line.Contains("FAILED") && line.Contains("lost"));
+    }
+
     /// <summary>
     /// 🔴 The universal half alone — what a repository asks for when its declared gates run somewhere
     /// this command is not.

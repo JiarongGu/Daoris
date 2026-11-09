@@ -13,7 +13,6 @@ public sealed class LandingPlugins(
     Func<PluginEntry, Action<string>, CancellationToken, Task<IHookChannel>>? start = null,
     // Where a plugin's word goes: the console under `plugin:<id>`, or a terminal's own lines.
     Action<string, string>? say = null,
-    TimeSpan? patience = null,
     // The process's machine log. Null writes none.
     MachineLog? log = null,
     // The loop's own record of each plugin's health, in the process that runs the loop. Null keeps none.
@@ -38,20 +37,6 @@ public sealed class LandingPlugins(
 
     /// <summary>After this long an occasion starts no more frames; an entry it did not reach is not asked this time.</summary>
     public static readonly TimeSpan StateBound = TimeSpan.FromSeconds(60);
-
-    /// <summary>
-    /// How long a plugin has to push and open the pull request. Longer than a decision's ten seconds: a
-    /// push and a platform's API are network round trips, and the person pressed and is waiting. The workplace's
-    /// <see cref="LandingPatience.Plugin"/> holds it, which the landing's hold is reckoned past.
-    /// </summary>
-    public static readonly TimeSpan DefaultPatience = LandingPatience.Plugin;
-
-    // A start a test handed in serves the asks too; the driver's own waits StatePatience there rather than a landing's two minutes.
-    private readonly bool _injected = start is not null;
-
-    private readonly Func<PluginEntry, Action<string>, CancellationToken, Task<IHookChannel>> _start =
-        start ?? (async (plugin, onLine, ct) =>
-            await HookChannels.StartAsync(plugin, home, onLine, ct, patience ?? DefaultPatience).ConfigureAwait(false));
 
     /// <summary>The moment an occasion reckons by: whether an entry has been asked in the last minute, and when an answer is asked.</summary>
     public DateTimeOffset Now => _clock();
@@ -204,7 +189,7 @@ public sealed class LandingPlugins(
 
     /// <summary>The plugin's process for an occasion's asks: the injected start where a test hands one, else the driver's own, waiting <see cref="StatePatience"/>.</summary>
     private Task<IHookChannel> StartForStateAsync(PluginEntry plugin, Action<string> onLine, CancellationToken ct) =>
-        _injected ? _start(plugin, onLine, ct) : StartProcessAsync(plugin, onLine, ct);
+        start is { } injected ? injected(plugin, onLine, ct) : StartProcessAsync(plugin, onLine, ct);
 
     private async Task<IHookChannel> StartProcessAsync(PluginEntry plugin, Action<string> onLine, CancellationToken ct) =>
         await HookChannels.StartAsync(plugin, home, onLine, ct, _statePatience).ConfigureAwait(false);

@@ -24,6 +24,8 @@ public static class ServiceHostLocator
 {
     public const string PathVariable = "DAORIS_HTTP_HOST";
 
+    public const string Project = "Daoris.Service.Http";
+
     public static string ExecutableName =>
         OperatingSystem.IsWindows() ? "daoris-knowledge-http.exe" : "daoris-knowledge-http";
 
@@ -87,12 +89,12 @@ public static class ServiceHostLocator
 
         if (directory is not null)
         {
-            var project = Path.Combine(directory.FullName, "src", "Daoris.Service", "Daoris.Service.Http");
+            var project = Path.Combine(directory.FullName, "src", "Daoris.Service", Project);
             foreach (var flavour in new[] { "Debug", "Release" })
             {
-                candidates.Add(new(
-                    Path.Combine(project, "bin", flavour, "net10.0", ExecutableName),
-                    project));
+                var built = Path.Combine(project, "bin", flavour, "net10.0", ExecutableName);
+                if (BaseMarker.Above(built) is not null) continue;
+                candidates.Add(new(built, project));
             }
         }
 

@@ -77,10 +77,19 @@ public sealed class GateRunner(GateContext context, IReadOnlyList<IGate> univers
                 ? context.RepositoryRoot
                 : context.Path(gate.WorkingDirectory);
 
-            var code = Process.RunShell(gate.Run, directory);
-            var result = code == 0
-                ? GateResult.Pass(gate.Name)
-                : GateResult.Fail(gate.Name, $"exited {code}");
+            GateResult result;
+            try
+            {
+                var code = Process.RunShell(gate.Run, directory);
+                result = code == 0
+                    ? GateResult.Pass(gate.Name)
+                    : GateResult.Fail(gate.Name, $"exited {code}");
+            }
+            catch (Exception error) when (error is DevkitException or System.ComponentModel.Win32Exception or IOException)
+            {
+                // A folder that is not there, or a shell that will not start: the gate failed, with the results so far kept.
+                result = GateResult.Fail(gate.Name, $"could not start in '{gate.WorkingDirectory ?? "."}': {error.Message}");
+            }
 
             results.Add(result);
             write(Format(result));

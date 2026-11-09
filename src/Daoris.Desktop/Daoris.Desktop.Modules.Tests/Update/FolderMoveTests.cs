@@ -38,6 +38,20 @@ public sealed class FolderMoveTests : IDisposable
     }
 
     [Fact]
+    public void A_source_that_cannot_be_removed_after_the_copy_landed_is_still_a_move()
+    {
+        var source = Source();
+        var target = Path.Combine(_root, "target");
+
+        var removed = FolderMove.Move(source, target, copying: true, removeSource: _ => throw new IOException("held"));
+
+        Assert.False(removed);
+        Assert.Equal("a", File.ReadAllText(Path.Combine(target, "a.txt")));
+        Assert.Equal("b", File.ReadAllText(Path.Combine(target, "inner", "b.txt")));
+        Assert.True(File.Exists(Path.Combine(source, "a.txt")));
+    }
+
+    [Fact]
     public void A_file_that_fails_to_copy_leaves_no_target_and_the_source_whole()
     {
         var source = Source();
@@ -53,6 +67,35 @@ public sealed class FolderMoveTests : IDisposable
         Assert.False(Directory.Exists(target));
         Assert.True(File.Exists(Path.Combine(source, "a.txt")));
         Assert.True(File.Exists(Path.Combine(source, "inner", "b.txt")));
+    }
+
+    [Fact]
+    public void A_file_that_fails_part_way_leaves_no_partial_file_behind()
+    {
+        var source = Source();
+        var target = Path.Combine(_root, "target");
+
+        Assert.Throws<IOException>(() => FolderMove.Move(source, target, copying: true, copyFile: (from, to) =>
+        {
+            File.WriteAllText(to, "par");
+            throw new IOException("disk full");
+        }));
+
+        Assert.False(Directory.Exists(target));
+        Assert.True(File.Exists(Path.Combine(source, "a.txt")));
+    }
+
+    [Fact]
+    public void A_file_already_at_the_target_is_never_removed_by_a_failed_copy()
+    {
+        var source = Source();
+        var target = Path.Combine(_root, "target");
+        Directory.CreateDirectory(target);
+        File.WriteAllText(Path.Combine(target, "a.txt"), "kept");
+
+        Assert.Throws<IOException>(() => FolderMove.Move(source, target, copying: true));
+
+        Assert.Equal("kept", File.ReadAllText(Path.Combine(target, "a.txt")));
     }
 
     [Fact]

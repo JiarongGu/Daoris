@@ -112,7 +112,7 @@ internal static class DriveConsole
                 service,
                 [
                     // The quests' moves first, its sink never waiting.
-                    new WorkEventTeller(hooks.Tell, () => DateTimeOffset.UtcNow).Teller,
+                    WorkEventNews.Gapped(new WorkEventTeller(hooks.Tell).Teller, hooks.Tell, () => DateTimeOffset.UtcNow),
                     new JournalTeller(sessionLog.TellAsync),
                     WorkEventNews.Gapped(
                         new JournalTeller(hostNews.TellAsync, () => news.Cursor("host"), position => news.Advance("host", position)), hooks.Tell, () => DateTimeOffset.UtcNow),

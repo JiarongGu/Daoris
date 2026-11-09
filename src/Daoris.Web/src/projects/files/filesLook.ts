@@ -39,6 +39,9 @@ export type FilesPermissions = { scope: 'machine' | 'repository'; deny: string[]
 /** One rule of the person's own. */
 export type FilesRule = { scope: 'machine' | 'repository'; kind: FilesKind; paths: string[]; copy?: boolean | null };
 
+/** A path of the person's file git's syntax cannot state, read as written, and its two git wordings. */
+export type FilesKept = { scope: string; kind: FilesKind; path: string; whole: string[]; files: string[] };
+
 /** `FILES`'s answer for a repository, never a machine path. */
 export type FilesLook = {
   repository: string;
@@ -52,6 +55,8 @@ export type FilesLook = {
   /** Why the person's file stands and does not read, where it does not. */
   unread?: string | null;
   problems: string[];
+  kept?: FilesKept[];
+  firstForm?: boolean;
 };
 
 /** The presses of the section: read again, the person's rules set and removed, a permission added or taken back. */
@@ -59,4 +64,5 @@ export type FilesPress =
   | { act: 'read' }
   | { act: 'set'; kind: FilesKind; paths: string[]; copy?: boolean; machine?: boolean }
   | { act: 'remove'; paths: string[]; machine?: boolean }
+  | { act: 'settle'; wordings: { scope: string; path: string; whole: boolean }[] }
   | { act: 'permit'; change: 'add' | 'remove'; list: 'deny' | 'ask' | 'allow'; rule: string; machine?: boolean };

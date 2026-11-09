@@ -236,7 +236,7 @@ public sealed class HelpConversations(string home)
         // Only links within this machine's same workspace count; a damaged cycle is bounded by the ids already read.
         var byId = help.ToDictionary(record => record.Id, StringComparer.Ordinal);
         var keptById = help.ToDictionary(record => record.Id, record => Read(record.Id), StringComparer.Ordinal);
-        string? Previous(string id) => keptById[id] is { Handed: Brief, From: { } from }
+        string? Previous(string id) => keptById[id] is { Handed: Brief or NotOffered, From: { } from }
             && byId.TryGetValue(from, out var previous)
             && string.Equals(previous.Workspace, byId[id].Workspace, StringComparison.OrdinalIgnoreCase) ? from : null;
         var continued = help.Select(record => Previous(record.Id)).OfType<string>().ToHashSet(StringComparer.Ordinal);
@@ -348,6 +348,9 @@ public sealed class HelpConversations(string home)
         var to = Math.Min(end, at + length + half);
         if (from > start && text.IndexOf(' ', from, at - from) is >= 0 and var space) from = space + 1;
         if (to < end && text.LastIndexOf(' ', to - 1, to - (at + length)) is >= 0 and var last) to = last;
+        // With no space to cut at, never half a surrogate pair.
+        if (from > start && char.IsLowSurrogate(text[from])) from++;
+        if (to < end && char.IsHighSurrogate(text[to - 1])) to--;
         return $"{(from > start ? "…" : "")}{text[from..to]}{(to < end ? "…" : "")}";
     }
 

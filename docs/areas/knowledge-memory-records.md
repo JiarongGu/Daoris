@@ -66,8 +66,9 @@ one job each, checked by `verify`.
 5. The lock decides provenance. Canonical entries are the same everywhere and never feed; local entries are what differs.
    (from D5, D21)
 6. Kinds are rule, knowledge, skill, decision, fix, task outcome, index and record. A decision is one entry and each dated note
-   another. An index entry is a heading's prose, a table row or a list item. A record is a finished tree's, on the local host only.
-   (from D134, D151, D195)
+   another. An index entry is a heading's prose, a table row or a list item. A record is a finished tree's, on the local host only:
+   no feed carries one, and a feed naming the kind is refused whole. A search naming repositories narrows to them before it
+   ranks, records included. (from D134, D151, D195)
 7. Every entry keeps its lines. A hit names `path:first-last`; `knowledge_get` reads an entry whole or a range. A search that names
    no kinds answers at most two index entries and three records. (from D151)
 8. Ranking is BM25 over FTS5. With an embedder, meaning is fused with words by reciprocal rank. A long entry is embedded in pieces
@@ -76,12 +77,14 @@ one job each, checked by `verify`.
    knowledge; silence keeps them local. (from D21, D47)
 10. A server over one checkout watches its refs and knowledge folders and reads again when marked stale or five minutes old (one
     minute where nothing can be watched). A host over registered roots judges each root's signature at most once a minute and
-    reads only roots that moved. The registry counts what the index holds and waits for a reading only while it holds nothing;
+    reads only roots that moved, replacing a moved root's repository with nothing where it now reads none. A file or folder the scan
+    cannot read (held by an editor, denied) is left out of its repository's reading, never the reading's end. The registry counts what the index holds and waits for a reading only while it holds nothing;
     otherwise the reading runs behind it, so a rescan or a moved root holds no door that resolves a workspace. The repositories'
     summary, which answers the reading itself, waits for it. (from D151, D220)
 11. A refresh reads each repository's generation before the registry, so a write made during the refresh refuses that
     repository's write. (from D220)
-12. Every hit and `get` carries one `standing:` line: the reading's commit, `+ uncommitted` (waited for three seconds at most,
+12. Every hit and `get` carries one `standing:` line: the reading's commit, `+ uncommitted` (over the record folders the scan reads, the
+    declared documents it reads and each declared room's `AGENTS.md`, which a root's signature covers too; waited for three seconds at most,
     else `not yet read`), a fed reading's commit, and for a decision the notes after it and its `Amended by`/`Superseded by`
     marks. No model judges which record is current. (from D220)
 13. An index a newer build wrote is refused, never rebuilt; the store's quests, sessions and keys stay usable. (from D36)
@@ -129,7 +132,8 @@ one job each, checked by `verify`.
     that write nothing (inconclusive, amended, an end pending) do not hold back those behind them. An entry is shown as current only when it was read again and every citation held. The sweep's end names no
     session, so the waits list it as a wait of its own (`GET /api/memory/waits`, the `end` of a wait with no session: its operation,
     repository, entry, revision and reason), *What needs you* shows it as a `memory` row by that operation with no door, and the
-    person approves or declines it in the row through the decision by operation, which names no session. (from D220)
+    person approves or declines it in the row through the decision by operation, which names no session. An awaiting end whose session
+    was deleted is listed the same way. (from D220)
 29. Another repository's memory is read only through its view, the caller's workspace checked again at each read. (from D220)
 
 **The remote**
@@ -152,7 +156,8 @@ one job each, checked by `verify`.
 32. Records sync, processes never. Session records, channel messages and code maps travel keyed by origin and id, a feed taken
     whole or refused whole. Only local knowledge feeds, replacing that repository's entries. No wire carries a root, a
     transcript or private content. A feed is admitted, ordered and written inside one gate, so one queued behind a declaration
-    that stopped sharing is refused. (from D47)
+    that stopped sharing is refused; a retirement takes the same gate, so a feed admitted before it leaves no provenance behind
+    it. (from D47)
 33. Two trust shapes: local trusts the loopback and binds nothing else; shared gates every route with minted per-person,
     per-machine, expiring keys, stored as a hash. (from D47)
 
@@ -214,8 +219,10 @@ Knowledge view and session memory; `deployment` for the shared host.
    (ignored, written per checkout). The code reads right.
 2. D134 point 3 (union per file, a merge driver rejected) and D151's rejected merge driver vs `.gitattributes:39` (`merge=rows`)
    and `:45` (`merge=notes`), installed by `npm ci`. The code reads right.
-3. Two ways set apart a glued decision note: the `notes` driver (`tools/index-hook.mjs:14-16`) and `setApart` in
-   `tools/merge-branch.mjs:1851` (D106's MERGEJOIN1 note). D228 allows one; the driver is the newer.
+3. The `notes` driver (`tools/index-hook.mjs`) and the merge tool both set a glued decision note apart with `setApart`
+   (`tools/doc-duplicates.mjs`), but the driver also sets apart an undated `**Note, ` line, which `NOTE_LABEL` and its other
+   readers (the service's `DecisionNotes`, the digest) do not take for a label, and the driver's own `UnionJoins` is a third
+   copy of the rule. D228 allows one.
 4. D134 point 2 (no index of the decisions, hand-kept or generated) vs the generated digest `docs/index/decisions.md` (its own
    ORIENT1b note). The code reads right.
 5. D106 (`docs/README.md` and `docs/DECISIONS.md` merge by union) vs `.gitattributes:30-39` (the router by rows, the page not

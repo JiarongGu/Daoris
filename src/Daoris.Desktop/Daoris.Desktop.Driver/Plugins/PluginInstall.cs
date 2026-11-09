@@ -144,7 +144,7 @@ public static class PluginInstall
         var installed = Path.GetFileName(entry.Folder)!;
 
         // The person's press to take the install's own copy of an example they hold an older copy of, whatever record
-        // the copy has or lacks. A copy whose files they changed is never overwritten, and one not older is never taken back.
+        // the copy has or lacks, a package's never taken in place. A copy whose files they changed is never overwritten, and one not older is never taken back.
         PluginSource? source;
         string? problem;
         string? shippedFrom = null;
@@ -173,7 +173,8 @@ public static class PluginInstall
                     return Refuse($"plugin `{installed}` is not older than the {offer.Manifest.Version} this install ships, so there is nothing to take.");
             }
 
-            (source, problem, shippedFrom) = (PluginSource.FromOffer(installed), null, offer.Folder);
+            (source, problem) = PluginSource.Read(entry.Folder);
+            if (source?.Package is null) (source, problem, shippedFrom) = (PluginSource.FromOffer(installed), null, offer.Folder);
         }
         else
         {
@@ -256,7 +257,7 @@ public static class PluginInstall
     /// the new one at its next look.
     /// </summary>
     /// <exception cref="DriverException">Refused, or its folder is held open; the installed version is untouched.</exception>
-    public static PluginUpdatePlan Update(string home, string id, IEnumerable<string> reservedHarnesses, string? offers = null, bool shipped = false)
+    public static PluginUpdatePlan Update(string home, string id, IEnumerable<string> reservedHarnesses, string? offers = null, bool shipped = false, Action<string, string>? move = null)
     {
         var (plan, refusal) = PlanUpdate(home, id, reservedHarnesses, offers, shipped);
         if (plan is null) throw new DriverException($"{refusal} Nothing was replaced.");
@@ -279,7 +280,7 @@ public static class PluginInstall
 
         try
         {
-            PluginFolders.Move(target, aside);
+            PluginFolders.Move(target, aside, move);
         }
         catch (Exception error) when (error is IOException or UnauthorizedAccessException)
         {
@@ -290,20 +291,36 @@ public static class PluginInstall
                 + "update it again. The installed version is untouched.");
         }
 
-        try
-        {
-            PluginFolders.MoveInto(staging, target);
-        }
-        catch (Exception error) when (error is IOException or UnauthorizedAccessException)
-        {
-            PluginFolders.Move(aside, target);
-            PluginFolders.Forget(staging);
-            throw new DriverException($"`{plan.Id}` was not updated: {error.Message} The installed version is untouched.");
-        }
+        SwapIn(staging, target, aside, plan.Id, "updated", move);
 
         // A dot-folder is never read as a plugin, so one that cannot be deleted now is nobody's.
         PluginFolders.Forget(aside);
         return plan;
+    }
+
+    /// <summary>The copy renamed into place; a rename that fails puts <paramref name="aside"/> back, and a rollback that fails too names it as where the plugin lies.</summary>
+    private static void SwapIn(string staging, string target, string aside, string id, string verb, Action<string, string>? move)
+    {
+        try
+        {
+            PluginFolders.MoveInto(staging, target, move);
+        }
+        catch (Exception error) when (error is IOException or UnauthorizedAccessException)
+        {
+            PluginFolders.Forget(staging);
+            try
+            {
+                PluginFolders.Move(aside, target, move);
+            }
+            catch (Exception rollback) when (rollback is IOException or UnauthorizedAccessException)
+            {
+                throw new DriverException(
+                    $"`{id}` was not {verb}: {error.Message} Putting the installed version back failed too ({rollback.Message}): it lies in "
+                    + $"{aside}, and moving that folder to {target} restores it.");
+            }
+
+            throw new DriverException($"`{id}` was not {verb}: {error.Message} The installed version is untouched.");
+        }
     }
 
     /// <summary>
@@ -313,7 +330,7 @@ public static class PluginInstall
     /// replaces. 🔴 Nothing is stopped or started: a process holding the folder makes the move fail, and nothing is taken.
     /// </summary>
     /// <exception cref="DriverException">Refused, or its folder is held open; the installed version is untouched.</exception>
-    public static PluginManifest Replace(string home, string folder, PluginSource source, IEnumerable<string> reservedHarnesses)
+    public static PluginManifest Replace(string home, string folder, PluginSource source, IEnumerable<string> reservedHarnesses, Action<string, string>? move = null)
     {
         if (Placement(home, folder) is { } misplaced) throw new DriverException($"{misplaced} Nothing was copied.");
         var (read, refusal) = Read(folder, reservedHarnesses);
@@ -339,7 +356,7 @@ public static class PluginInstall
 
         try
         {
-            PluginFolders.Move(target, aside);
+            PluginFolders.Move(target, aside, move);
         }
         catch (Exception error) when (error is IOException or UnauthorizedAccessException)
         {
@@ -350,18 +367,7 @@ public static class PluginInstall
                 + "The installed version is untouched.");
         }
 
-        try
-        {
-            PluginFolders.MoveInto(staging, target);
-        }
-        catch (Exception error) when (error is IOException or UnauthorizedAccessException)
-        {
-            PluginFolders.Move(aside, target);
-            PluginFolders.Forget(staging);
-            throw new DriverException($"`{manifest.Id}` was not replaced: {error.Message} The installed version is untouched.");
-        }
-
-        // A dot-folder is never read as a plugin, so one that cannot be deleted now is nobody's.
+        SwapIn(staging, target, aside, manifest.Id, "replaced", move);
         PluginFolders.Forget(aside);
         return manifest;
     }

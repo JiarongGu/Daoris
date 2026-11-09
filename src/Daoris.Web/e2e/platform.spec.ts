@@ -705,7 +705,7 @@ test('a browser is told which tier answers search, and nothing of the intake (AG
   await expect(page.getByText('Search and convergence')).toBeVisible();
   await expect(page.getByText(status.tier, { exact: true }).first()).toBeVisible();
   if (status.note) await expect(page.getByText(status.note, { exact: true })).toBeVisible();
-  await expect(page.getByText(/DAORIS_EMBED_MODEL \(a model's name\)/)).toBeVisible();
+  await expect(page.getByRole('note', { name: /DAORIS_EMBED_MODEL/ })).toBeVisible();
 
   // The intake is absent, not disabled: no row, no control, no agent named.
   await expect(page.getByText('Intake', { exact: true })).toHaveCount(0);

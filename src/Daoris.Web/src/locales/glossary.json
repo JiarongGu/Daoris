@@ -149,7 +149,7 @@
         "settings.ai.search.label", "settings.browser.driving.label", "settings.browser.extensions.label",
         "settings.browser.favorites.address", "settings.browser.favorites.label",
         "settings.browser.favorites.titleField", "settings.browser.links.label", "settings.browser.which.label",
-        "settings.home.label", "settings.language.label",
+        "settings.language.label",
         "settings.commits.label", "settings.helpers.label", "settings.handOver.label","settings.access.full.label", "settings.access.pause.*",
         "settings.heavy.label", "settings.heavy.field.*", "settings.heavy.nameOf", "settings.heavy.runOf", "settings.heavy.cwdOf", "settings.checks.label",
         "settings.lines.repositoryField", "settings.lines.workspaceField", "settings.logs.event",

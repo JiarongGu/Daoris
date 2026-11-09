@@ -183,7 +183,7 @@ internal sealed class RosterSelection(HarnessRoster roster)
         {
             // Ready before any probe: asked for by name, as a pick is; a record that began in the tool's own home goes on there, as a
             // harness keeps a conversation in the home it began in, where every new start takes a Daoris account.
-            var asked = await ChooseAsync(adapter, config, workspace, chosen: named, kind, counts: true, ct, own: named is null).ConfigureAwait(false);
+            var asked = await ChooseAsync(adapter, config, workspace, chosen: named, kind, counts: true, ct, own: named is null, model: unoffered ? null : model).ConfigureAwait(false);
             if (asked is not { Allowed: false, NotReady: AccountReadiness.SignedOut }) return new ResumeChoice(asked, NextHold.Ready) { Answer = answer };
 
             // What the probe learned, the rule read again: the own account is signed out.

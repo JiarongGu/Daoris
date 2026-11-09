@@ -50,7 +50,7 @@ Driver paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/`.
 2. `apiVersion` is read before anything else; a newer one is refused naming both numbers. The hook wire's
    `protocolVersion` is 1. (from D64, D148)
 3. A broken manifest is a named problem on its row, never a crash. A harness name this build carries, or one an
-   earlier plugin declared, refuses the later plugin before anything loads, naming both. A plugin never replaces. (from D64)
+   earlier plugin declared, refuses the later plugin before anything loads, naming both; a server name declared twice in one manifest refuses that plugin. A plugin never replaces. (from D64)
 4. A problem in `icon` or `tools` never refuses the plugin; a problem in `steps` or `resources` does. (from D140, D150, D173)
 5. Off is a row in `plugins.json`, never a rename. An installed plugin is on until the person switches it off; a
    remove clears its row and leaves `.data/<id>`. (from D64, D120)
@@ -75,7 +75,8 @@ Driver paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/`.
     wholesale. A source inside or holding the home is refused. (from D103, D194)
 15. An update shows its plan first: version, command, points, harnesses, servers, skills, steps and resources. It
     applies only on a press or `--yes`. The installed folder is moved aside whole, the copy renamed in, `.data/<id>`
-    untouched, and nothing starts at the press. (from D103)
+    untouched, and nothing starts at the press. A rename that fails puts the installed folder back; where that fails
+    too, the refusal names the `.removing-*` folder the plugin now lies in. (from D103)
 16. A plugin from a package is never updated in place: it is removed and a newer package installed. (from D120)
 17. Offers are `app/plugin-offers/` in the install, laid out each publish from `examples/plugins/`: the GitHub and
     Azure DevOps pull-request plugins and `in-app-browser`. None installs without a press. The driver looks beside the
@@ -92,9 +93,9 @@ Driver paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/`.
     the attempt). A refused place has no process, and the others are served. (from D241, D242)
 18. An offer's installed copy is judged against the shipped one. Same version, other files: `changed`. Older, files
     matching the record's digest: `older`. Older, digest not matching: `changed`. Older, no digest: `older`,
-    unjudged. Newer: the person's, said nothing. A pre-release tag (`1.2.0-beta.1`) is older than the same numbers without one. (from D119)
+    unjudged. Newer: the person's, said nothing. A pre-release tag (`1.2.0-beta.1`) is older than the same numbers without one, and its dotted parts compare number by number (`beta.2` before `beta.10`). (from D119)
 19. A `changed` copy is never overwritten by an update. A copy with no record, or one that does not read, may take
-    the shipped copy (`PLUGIN_UPDATE` with `shipped: true`), which records the offer and keeps `.data/` and the switch. (from D119)
+    the shipped copy (`PLUGIN_UPDATE` with `shipped: true`), which records the offer and keeps `.data/` and the switch; the route also takes one recorded as a folder or an offer, never a package's (rule 16). (from D119)
 20. `plugins new` writes a self-contained folder (manifest with `tools: []`, `plugin.mjs`, `plugin.test.mjs`, README; `work.mjs`
     for a plugin on a work point, and for one that performs, `plugin.contract.test.mjs` and `cycle.json`) and refuses rather than overwrites. It installs nothing and scaffolds no harness. Its samples come from `HookFrames`. (from D101, D150)
 21. `plugins try` starts the plugin as the driver would, in scratch under `<home>/plugins/.trials/`, one sentence per
@@ -106,7 +107,9 @@ Driver paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/`.
     tools; a write only as an accepted write; a generic execution tool never. A server declared through `npx` names the
     package and its version; a session is handed node and that package's script, installed once into the toolchain, never
     `npx` itself, and one that drives Daoris's browser stays under a 512 MB ceiling by a restart between calls (agents
-    area, rule 13). (from D170)
+    area, rule 13). An approval is the person's and stands while the plugin is switched off: its page and the list read
+    it (`HelpGrants.Read(withSwitchedOff)`), the page's press takes it, and a switched-off plugin's grant is handed
+    nothing. (from D170)
 25. What a plugin did is kept without its words: `plugin.*` lines hold names, counts, flags and times. Its words go
     to the console under `plugin:<id>` for this run. (from D119, D94)
 26. An icon is a path inside the folder to an SVG or PNG of at most 32 KiB, a PNG at most 512 px a side. The page gets its bytes as a data URI,
@@ -175,3 +178,4 @@ example's `node --test`.
 - No row: D120's NuGet source (find, show, install by id, update from a source, *Available*, another publisher's installing off, pinned `plugin-offers.json`).
 - No row: PLUGUI1f, the ready and failing states on the page from the loop's health.
 - No row: D119 §5's run of a plugin's own tests, and its kept trial and test results.
+

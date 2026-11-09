@@ -54,6 +54,8 @@ tools/chromium-probe/bin/
 tools/chromium-probe/obj/
 tools/contracts/bin/
 tools/contracts/obj/
+tools/git-library-bench/bin/
+tools/git-library-bench/obj/
 
 # The web UI's build output. `Daoris.Web` builds INTO the HTTP host on purpose, so the API and the page
 # share one origin — which is what makes CORS unnecessary in a real deployment and lets the desktop

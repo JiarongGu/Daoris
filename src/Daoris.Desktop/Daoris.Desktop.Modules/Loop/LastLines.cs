@@ -125,7 +125,7 @@ public sealed class LastLines
         var line = _open.ToString();
         if (_cut)
         {
-            line = TextBounds.Cut(line, MostCharacters - 1, wholePairs: true);
+            line = TextBounds.Cut(line, MostCharacters - 1);
         }
 
         _open.Clear();

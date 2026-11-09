@@ -20,11 +20,13 @@ internal sealed class SupervisorLandings(SupervisorBook book, IDecisionAdmission
             var subject = landing.Subject;
             if (book.Landings.Values.FirstOrDefault(each => each.Subject == subject) is { } decided)
             {
-                refused ??= SupervisorWhy.Answered;
-                if (decided.Do == landing.Do && decided.Generation == landing.Generation && decided.State is SupervisorState.Held or SupervisorState.Left)
+                if (refused is null && decided.Do == landing.Do && decided.Generation == landing.Generation
+                    && decided.State is SupervisorState.Held or SupervisorState.Left)
                 {
                     return Task.FromResult(new SupervisorKept(true, decided.Id, decided.State == SupervisorState.Held ? decided.GoesOnAt : null, null));
                 }
+
+                refused ??= SupervisorStates.OwnersAgain(decided.State) ? SupervisorWhy.Overruled : SupervisorWhy.Answered;
             }
 
             refused ??= book.ClosedWhy(subject);
@@ -70,11 +72,21 @@ internal sealed class SupervisorLandings(SupervisorBook book, IDecisionAdmission
                 var handed = new SupervisorLandingDue(due.Id, due.Session, due.Run, due.Node, due.Attempt, due.Repository, due.Do, due.Generation, due.Words);
                 var admitted = admission.Admit(SupervisorKinds.Landing, new RolePlace(Repository: due.Repository), due.Do);
                 var why = admitted.Why is null && admitted.Generation == due.Generation
-                    ? await line.Why(handed).ConfigureAwait(false) ?? line.Word(handed)
+                    ? await line.Why(handed).ConfigureAwait(false)
                     : SupervisorWhy.RoleChanged;
+                // Live before its word is on the record: a pass between the two would otherwise drop the word as stale, and the accept with it.
+                if (why is null)
+                {
+                    Append(due, SupervisorState.Released, now, why: null);
+                    why = line.Word(handed);
+                }
+
                 var to = why is null ? SupervisorState.Released : why == SupervisorWhy.Worded ? SupervisorState.Superseded : SupervisorState.Stale;
-                Append(due, to, now, to == SupervisorState.Stale ? why : null);
-                if (to != SupervisorState.Released) Close(due, to);
+                if (to != SupervisorState.Released)
+                {
+                    Append(due, to, now, to == SupervisorState.Stale ? why : null);
+                    Close(due, to);
+                }
                 log?.Info(to == SupervisorState.Released ? "supervisor.released" : $"supervisor.{SupervisorStates.Spell(to)}", ("session", due.Session), ("run", due.Run), ("node", due.Node));
                 return to;
             }, ct).ConfigureAwait(false);

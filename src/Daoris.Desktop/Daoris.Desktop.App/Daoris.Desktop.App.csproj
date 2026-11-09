@@ -33,16 +33,6 @@
     <ShenoraChromiumLocales>zh-CN</ShenoraChromiumLocales>
   </PropertyGroup>
 
-  <!-- The engine's launcher is the executable, built CET-enforced, and Windows ends a CET-enforced process outright (fail-fast
-       0xc0000409) when a shell extension's own handled exception resumes under a file picker's right-click menu. After the kit
-       lays the launcher out, build and publish alike, its context validation is relaxed (tools/cet-relax.mjs). -->
-  <Target Name="DaorisRelaxCetBuild" AfterTargets="ShenoraChromiumLayout" Condition="'$(ShenoraChromiumLayout)' == 'true'">
-    <Exec Command="node &quot;$(MSBuildThisFileDirectory)..\..\..\tools\cet-relax.mjs&quot; &quot;$(OutDir)$(AssemblyName.Replace('.App', '')).exe&quot;" />
-  </Target>
-  <Target Name="DaorisRelaxCetPublish" AfterTargets="ShenoraChromiumPublishLayout" Condition="'$(ShenoraChromiumLayout)' == 'true'">
-    <Exec Command="node &quot;$(MSBuildThisFileDirectory)..\..\..\tools\cet-relax.mjs&quot; &quot;$(PublishDir)$(AssemblyName.Replace('.App', '')).exe&quot;" />
-  </Target>
-
   <ItemGroup>
     <PackageReference Include="Shenora.Windows" />
     <!-- Referenced HERE, not only through Shenora.Windows: only a direct reference runs the build that

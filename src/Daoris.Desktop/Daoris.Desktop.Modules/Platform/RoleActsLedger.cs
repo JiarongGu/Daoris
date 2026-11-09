@@ -18,7 +18,8 @@ internal sealed class RoleActsLedger(StandingConfirmation owner, StandingState s
     /// </summary>
     public string? RunAct(string id)
     {
-        var staffed = owner.Appointed();
+        var slots = owner.Slots();
+        IReadOnlyList<RoleRecord> staffed = slots is null ? [] : StandingConfirmation.AppointedOf(slots);
         lock (state.Gate)
         {
             if (state.Acts.TargetOf(id) is { } target && state.OwnerHolds(target))
@@ -27,6 +28,7 @@ internal sealed class RoleActsLedger(StandingConfirmation owner, StandingState s
                 return RoleWhy.OwnerSet;
             }
 
+            if (slots is null) return SupervisorWhy.RoleChanged;
             if (!state.AllowedActs.ContainsKey(id) && state.Acts.ActOf(id) is { } admitted && !StillGranted(staffed, admitted.Role, admitted.Act))
             {
                 state.Acts.Withdraw(id);

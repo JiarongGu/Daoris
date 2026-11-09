@@ -35,7 +35,7 @@ import { type Notify } from '../../design/atoms/Toasts';
 
 export function useCommands({ tab, openSettings, running, attending, lists, attached, view, listed, listShown, closings, placements, holdings, scope, circle, wired, i18n, roster, knowledgeMode, refresh, zoom, open, setWorkIntent, setAsking, setOpening, onSyncNow, notify, t, setPalette, toggleRegion, showNotifications, openWindow, openBrowser, onRefresh, openHelp, askQuickly, setShortcuts, setAbout }: {
   tab: View;
-  openSettings: (section: "driver" | "wiring" | "git" | "start" | "appearance" | "ai" | "tools" | "browser" | "logs", anchor?: SettingsAnchor | undefined) => void;
+  openSettings: (section: SettingsSection, anchor?: SettingsAnchor | undefined) => void;
   running: UseQueryResult<Session[], Error>;
   attending: string | null;
   lists: ListPanes;
@@ -129,7 +129,7 @@ export function useCommands({ tab, openSettings, running, attending, lists, atta
       agents: byTool(Array.isArray(roster.data?.harnesses) ? roster.data.harnesses : [])
         .filter((tool) => tool.present)
         .map((tool) => ({ name: tool.name, label: tool.product ?? tool.name })),
-      domains: SETTINGS_DOMAINS.filter((domain) => attached || !domain.machine).map(({ id, label }) => ({ id, label })),
+      domains: SETTINGS_DOMAINS.filter((domain) => attached || !domain.machine).map(({ id, label, rows }) => ({ id, label, rows })),
       knowledge: knowledgeMode,
       // The session attended on Sessions, with what its header offers; *Answer…* is its card's, offered where its row's is.
       session: view === 'sessions' && offered
@@ -206,7 +206,7 @@ export function useCommands({ tab, openSettings, running, attending, lists, atta
     setup: () => openSettings('start'),
     shortcuts: () => setShortcuts(true),
     // Settings → Driver, where the install's update is: nothing here checks a release channel.
-    update: () => openSettings('driver', 'update'),
+    update: () => openSettings('updates', 'update'),
     about: () => setAbout(true),
   };
   const translate = (key: string, values?: Record<string, unknown>) => (values ? t(key, values) : t(key));

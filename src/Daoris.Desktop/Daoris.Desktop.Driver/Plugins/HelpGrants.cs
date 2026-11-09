@@ -63,18 +63,18 @@ public static class HelpGrants
               + "command runner or an eval would let it change anything with nobody's press.";
     }
 
-    /// <summary>Every server the contributing plugins declare for Ask Daoris, each with the person's approval as it stands.</summary>
-    public static HelpGrantSet Read(string home, PluginCatalog catalog)
+    /// <summary>Every server the contributing plugins declare for Ask Daoris, each with its approval; <paramref name="withSwitchedOff"/> adds a sound plugin's switched off, grants marked <see cref="HelpGrant.Off"/>.</summary>
+    public static HelpGrantSet Read(string home, PluginCatalog catalog, bool withSwitchedOff = false)
     {
         var approvals = Approvals(home) ?? [];
         var grants = new List<HelpGrant>();
-        foreach (var plugin in catalog.Contributing)
+        foreach (var plugin in withSwitchedOff ? catalog.Plugins.Where(each => each.Problem is null) : catalog.Contributing)
         {
             foreach (var server in plugin.Manifest.Servers.Where(server => server.HandedTo(PluginServerTo.Help)))
             {
                 if (Refusal(server) is { } refusal)
                 {
-                    grants.Add(new HelpGrant(plugin.Manifest.Id, server, Refused, refusal));
+                    grants.Add(new HelpGrant(plugin.Manifest.Id, server, Refused, refusal) { Off = !plugin.Enabled });
                     continue;
                 }
 
@@ -83,8 +83,8 @@ public static class HelpGrants
                             && approval.Writes.All(tool => server.Writes.Contains(tool, StringComparer.Ordinal));
                 // An approval on file that differs from the server's tools is said as changed since, never as never approved.
                 grants.Add(exact
-                    ? new HelpGrant(plugin.Manifest.Id, server, Approved, null) { Accepted = approval!.Writes }
-                    : new HelpGrant(plugin.Manifest.Id, server, Waits, null) { Changed = approval is not null });
+                    ? new HelpGrant(plugin.Manifest.Id, server, Approved, null) { Accepted = approval!.Writes, Off = !plugin.Enabled }
+                    : new HelpGrant(plugin.Manifest.Id, server, Waits, null) { Changed = approval is not null, Off = !plugin.Enabled });
             }
         }
 
@@ -142,15 +142,15 @@ public static class HelpGrants
         Save(home, found: true, approvals, [.. approvals.Where(each => !Same(each, plugin, server))]);
     }
 
-    /// <summary>The contributing plugin and its server declared for Ask Daoris, as an approval and Ask Daoris's proposal name them.</summary>
-    /// <exception cref="DriverException">No such plugin here, switched on and sound, offering Ask Daoris that server.</exception>
+    /// <summary>The sound plugin, on or off (an approval stands while it is off), and its server declared for Ask Daoris, as an approval names them.</summary>
+    /// <exception cref="DriverException">No such plugin here, sound, offering Ask Daoris that server.</exception>
     internal static (PluginEntry Entry, PluginServer Server) Declared(PluginCatalog catalog, string plugin, string server)
     {
-        var entry = catalog.Contributing.FirstOrDefault(each => string.Equals(each.Manifest.Id, plugin, StringComparison.OrdinalIgnoreCase));
+        var entry = catalog.Plugins.FirstOrDefault(each => each.Problem is null && string.Equals(each.Manifest.Id, plugin, StringComparison.OrdinalIgnoreCase));
         var declared = entry?.Manifest.Servers.FirstOrDefault(each =>
             string.Equals(each.Name, server, StringComparison.Ordinal) && each.HandedTo(PluginServerTo.Help))
             ?? throw new DriverException(
-                $"no plugin `{plugin}` on this machine, switched on and sound, offers Ask Daoris a server `{server}`; `daoris plugin show {plugin}` says what it offers.");
+                $"no sound plugin `{plugin}` on this machine offers Ask Daoris a server `{server}`; `daoris plugin show {plugin}` says what it offers.");
         return (entry!, declared);
     }
 
@@ -271,12 +271,14 @@ public sealed record HelpGrant(string Plugin, PluginServer Server, string State,
     /// said as asked again rather than as never approved. False for every other state.
     /// </summary>
     public bool Changed { get; init; }
+
+    public bool Off { get; init; }
 }
 
 /// <summary>Every grant, and what Ask Daoris's spawn takes of them: the approved servers, and the rules for their tools.</summary>
 public sealed record HelpGrantSet(IReadOnlyList<HelpGrant> All)
 {
-    private IEnumerable<HelpGrant> Granted => All.Where(grant => grant.State == HelpGrants.Approved);
+    private IEnumerable<HelpGrant> Granted => All.Where(grant => grant.State == HelpGrants.Approved && !grant.Off);
 
     /// <summary>The approved servers, as the protocol door carries one; no other reaches Ask Daoris.</summary>
     public IReadOnlyList<ServerEntry> Servers => [.. Granted.Select(grant =>
@@ -295,7 +297,7 @@ public sealed record HelpGrantSet(IReadOnlyList<HelpGrant> All)
     /// attaches to Daoris's own browser (<see cref="InAppBrowserServers.Placeholder"/> in its command or environment), the first such;
     /// null where no plugin here declares one. *Configured access* draws its state from this, read only, and leads to its plugin's tab.
     /// </summary>
-    public HelpGrant? Browser => All.FirstOrDefault(grant =>
+    public HelpGrant? Browser => All.Where(grant => !grant.Off).FirstOrDefault(grant =>
         grant.Server.Command.Any(part => part.Contains(InAppBrowserServers.Placeholder, StringComparison.Ordinal))
         || grant.Server.Environment.Values.Any(value => value.Contains(InAppBrowserServers.Placeholder, StringComparison.Ordinal)));
 }

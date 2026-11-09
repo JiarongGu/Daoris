@@ -210,7 +210,7 @@ public sealed class RepositoryScanner(string? documents = null, string? index = 
     /// </summary>
     /// <remarks>Two spellings side by side, which only a case-sensitive disk holds, read as the first in ordinal order.</remarks>
     private static string? Readme(string root) =>
-        Directory.EnumerateFiles(root)
+        Listed(() => Directory.EnumerateFiles(root))
             .Select(Path.GetFileName)
             .Where(file => string.Equals(file, ReadmeFile, StringComparison.OrdinalIgnoreCase))
             .Order(StringComparer.Ordinal)
@@ -272,7 +272,17 @@ public sealed class RepositoryScanner(string? documents = null, string? index = 
         if (RepositoryLinks.Crosses(root, relative)) return null;
         var absolute = Path.Combine(root, relative.Replace('/', Path.DirectorySeparatorChar));
         if (!File.Exists(absolute)) return null;
-        var read = Text.ReadDocumentAt(absolute);
+        // A file an editor holds, or one this account may not read, is left out of the reading and not the reading's end.
+        (string Text, int First) read;
+        try
+        {
+            read = Text.ReadDocumentAt(absolute);
+        }
+        catch (Exception error) when (error is IOException or UnauthorizedAccessException)
+        {
+            return null;
+        }
+
         return RepositoryLinks.HeldAsText(root, relative, read.Text) ? null : read;
     }
 
@@ -357,7 +367,7 @@ public sealed class RepositoryScanner(string? documents = null, string? index = 
         // link is some other folder: neither is enumerated.
         if (!Directory.Exists(absolute) || RepositoryLinks.Crosses(root, directory)) yield break;
 
-        foreach (var file in Directory.EnumerateFiles(absolute, "*.md").Order(StringComparer.Ordinal))
+        foreach (var file in Listed(() => Directory.EnumerateFiles(absolute, "*.md")).Order(StringComparer.Ordinal))
         {
             var fileName = Path.GetFileName(file);
             // The index is generated from the others; indexing it would return a table of contents
@@ -387,7 +397,7 @@ public sealed class RepositoryScanner(string? documents = null, string? index = 
 
         // A skill is a directory whose entry point is SKILL.md; its supporting files are read only
         // when the skill runs, so they are not separately addressable knowledge.
-        foreach (var skillDirectory in Directory.EnumerateDirectories(absolute).Order(StringComparer.Ordinal))
+        foreach (var skillDirectory in Listed(() => Directory.EnumerateDirectories(absolute)).Order(StringComparer.Ordinal))
         {
             var skillName = new DirectoryInfo(skillDirectory).Name;
             var relative = $"{directory}/{skillName}/SKILL.md";
@@ -590,17 +600,30 @@ public sealed class RepositoryScanner(string? documents = null, string? index = 
         foreach (var file in Walk(root, folder, within)) yield return file;
     }
 
+    /// <summary>A folder's listing, which is nothing for one this account may not list or that went away mid-read.</summary>
+    private static List<string> Listed(Func<IEnumerable<string>> list)
+    {
+        try
+        {
+            return [.. list()];
+        }
+        catch (Exception error) when (error is IOException or UnauthorizedAccessException)
+        {
+            return [];
+        }
+    }
+
     private static IEnumerable<string> Walk(string root, string folder, Lazy<IgnoredPaths> ignored)
     {
         if (RepositoryLinks.Crosses(root, folder)) yield break;
 
         var absolute = Absolute(root, folder);
-        foreach (var file in Directory.EnumerateFiles(absolute, "*.md"))
+        foreach (var file in Listed(() => Directory.EnumerateFiles(absolute, "*.md")))
         {
             var relative = $"{folder}/{Path.GetFileName(file)}";
             if (!ignored.Value.Covers(relative)) yield return relative;
         }
-        foreach (var below in Directory.EnumerateDirectories(absolute))
+        foreach (var below in Listed(() => Directory.EnumerateDirectories(absolute)))
         {
             var relative = $"{folder}/{Path.GetFileName(below)}";
             if (ignored.Value.Covers($"{relative}/")) continue;

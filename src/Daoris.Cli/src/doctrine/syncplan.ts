@@ -1,5 +1,5 @@
 import type { Canon, Harness, IndexPlan, Lock, Manifest, Move, PlannedWrite, SyncPlan } from './records.ts';
-import { existsSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { readText, sha256 } from '../platform/fsx.ts';
 import { parseFrontmatter, renderCanonFile, stripFrontmatter, stripHeader } from './document.ts';
@@ -8,7 +8,7 @@ import { holds, keepStates } from './keep.ts';
 import { lockIndex } from './config.ts';
 import { indexInput } from './indexgen.ts';
 import { indexPath, renderIndex, spanBody, structureLine, tierRuleBody } from './tierrender.ts';
-import { findRegion } from './region.ts';
+import { ensureImport, findRegion } from './region.ts';
 import { resolveHarness } from '../layout/harness.ts';
 import { folderTiers, isFile, lockLayout, planLeftBehind } from '../layout/layout.ts';
 import { mirrorSources, planMirrors } from '../layout/mirror.ts';
@@ -305,6 +305,18 @@ export function planSync(
     vacating,
     editedSources: new Set(drifted.map((target) => `${to}/${target}`)),
   });
+
+  // The root pointer is written after the files and the region, so damaged markers in it refuse here, as a room's do,
+  // and not once half the sync is on disk with the lock behind it.
+  if (harness.pointer && writes.some((write) => write.in)) {
+    const pointerAt = join(root, harness.pointer.file);
+    try {
+      ensureImport(isFile(pointerAt) ? readFileSync(pointerAt, 'utf8') : null, harness.pointer.imports);
+    } catch (error) {
+      if (error instanceof DaorisError) throw new DaorisError(`${harness.pointer.file}: ${error.message}`, error.exitCode);
+      throw error;
+    }
+  }
 
   const rooms = planRooms({ root, manifest, lock, harness });
   const index = planIndex({ root, harness, lock, from, to, moving, writes, deletes, locked });

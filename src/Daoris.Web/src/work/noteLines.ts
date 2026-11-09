@@ -91,6 +91,14 @@ export const DEPS_REASONS: Readonly<Record<string, { key: string; values: readon
   'link-out': { key: 'note.deps.why.link-out', values: ['link'] },
   'held-ignored': { key: 'note.deps.why.held-ignored', values: ['file'] },
   group: { key: 'note.deps.why.group', values: ['with'] },
+  'share-pattern': { key: 'note.deps.why.share-pattern', values: [] },
+  'share-absent': { key: 'note.deps.why.share-absent', values: [] },
+  'share-unignored': { key: 'note.deps.why.share-unignored', values: [] },
+  'share-repository': { key: 'note.deps.why.share-repository', values: [] },
+  'share-place-link': { key: 'note.deps.why.share-place-link', values: [] },
+  'share-standing': { key: 'note.deps.why.share-standing', values: [] },
+  'share-file-link': { key: 'note.deps.why.share-file-link', values: [] },
+  'share-failed': { key: 'note.deps.why.share-failed', values: ['tail'] },
 };
 
 /**
@@ -299,6 +307,11 @@ export const NOTE_VALUES: Readonly<
   copied: 'names', modules: 'text',
   // The machine-local files a tree's open copied from its checkout, each as code, and one it did not copy.
   inputs: 'names', input: 'text',
+  // The paths a tree's files stage linked to one place every tree uses, each as code.
+  shared: 'names',
+  bases: 'names', runners: 'names', project: 'text',
+  // A rule's setup command that failed, as code.
+  command: 'text',
   // A dependency's folder and its install, what the files stage put back, and git's own files an install changed, each as code.
   path: 'text', install: 'text', written: 'names', changed: 'names',
   why: 'why',

@@ -36,6 +36,7 @@ finishes first and the whole set runs once.
 | The dispatch skill and agents | `.claude/skills/dispatch-subagent/`, `.claude/agents/branch-worker.md`, `branch-scout.md` | how a parent briefs and merges a builder, and the builder's half |
 | The measurement tools | `tools/subagent-usage.mjs`, `tools/subagent-time.mjs` | a builder's tokens and clock, judged against `docs/2026-11-04-consolidation-plan.md`'s targets |
 | The generated index | `docs/index/`, ignored, written by `tools/orient-index.mjs` on checkout, merge and the knowledge server's read | where things are in the code, row by row |
+| The process tree | `HeavyAppRun`, `TerminalStartsCensusTests`, `tools/process-tree.mjs` | a session's heavy checks are the running application's children; the census of the verbs that start a process; a machine's read of what runs outside the tree |
 
 ## Its rules
 
@@ -152,6 +153,13 @@ finishes first and the whole set runs once.
     ran 26.7, 28.4 and 30.5 s against 32.0, 36.5 and 31.4 s, but the full run took 841 s, inside the machine's noise, so the cut is
     unproven and the run still takes thirteen minutes. Left: the worker count (WEBGATE1's quarter of the machine, measured at no other
     count), and the tests that render the whole shell per case. (from OPTIMIZE1d)
+
+18. Every process Daoris's work runs is under the application in the system's tree, since Windows lists a process under its
+    parent only while that parent runs. A terminal verb that starts heavy work (`daoris gate run`, a gate or a command of the
+    caller's) asks the running Daoris, which runs it as its own child and the verb only waits; where none takes it the verb says
+    so in one line and runs it itself. Every other verb that can start a process asks the running Daoris first or is listed in
+    `TerminalStartsCensusTests` with why it may not, and `node tools/process-tree.mjs` lists what still runs outside the tree,
+    under what started it. (from PROCTREE1)
 
 ## Where a change goes
 

@@ -57,6 +57,7 @@ public sealed class CheckoutFreshness : IDisposable
     private readonly string? _checkout;
     private readonly string? _documents;
     private readonly string? _index;
+    private readonly Action<FileSystemWatcher> _enable = null!;
     private int _stale;
     private bool _lost;
     private bool _silent;
@@ -67,10 +68,17 @@ public sealed class CheckoutFreshness : IDisposable
     /// <param name="documents">The documents folder the deployment names, relative to the checkout, or null.</param>
     /// <param name="index">The index folder the deployment names, relative to the checkout, or null.</param>
     public CheckoutFreshness(string checkout, string? documents, string? index)
+        : this(checkout, documents, index, watcher => watcher.EnableRaisingEvents = true)
+    {
+    }
+
+    /// <param name="enable">What starts a watcher: a test makes it fail where inotify's limit would.</param>
+    internal CheckoutFreshness(string checkout, string? documents, string? index, Action<FileSystemWatcher> enable)
     {
         _checkout = checkout;
         _documents = documents;
         _index = index;
+        _enable = enable;
         OpenAll();
     }
 
@@ -311,9 +319,10 @@ public sealed class CheckoutFreshness : IDisposable
     {
         if (!Directory.Exists(folder)) return;
 
+        FileSystemWatcher? watcher = null;
         try
         {
-            var watcher = new FileSystemWatcher(folder)
+            watcher = new FileSystemWatcher(folder)
             {
                 IncludeSubdirectories = recursive,
                 NotifyFilter = NotifyFilters.FileName | NotifyFilters.DirectoryName | NotifyFilters.LastWrite | NotifyFilters.Size,
@@ -343,7 +352,7 @@ public sealed class CheckoutFreshness : IDisposable
                 Heard(e.Name);
             };
             watcher.Error += (_, e) => Failed(e.GetException());
-            watcher.EnableRaisingEvents = true;
+            _enable(watcher);
             lock (_gate)
             {
                 if (_disposed)
@@ -357,7 +366,9 @@ public sealed class CheckoutFreshness : IDisposable
         }
         catch (Exception error) when (error is IOException or ArgumentException or UnauthorizedAccessException or PlatformNotSupportedException)
         {
-            // This folder is unwatched; the deadline covers it, and the others still say.
+            // This folder is unwatched; the deadline covers it, and the others still say. The watcher made is released here,
+            // its handlers with it, and not left to the finalizer.
+            watcher?.Dispose();
         }
     }
 

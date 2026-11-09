@@ -149,6 +149,15 @@ test('an unknown harness is a tool error naming what exists', () => {
   fx.cleanup();
 });
 
+test('a harness named like a member of Object is unknown, never the member', () => {
+  for (const name of ['constructor', 'toString', '__proto__', 'hasOwnProperty']) {
+    const error = captureError(() => resolveHarness(name));
+
+    assert.ok(error instanceof DaorisError, name);
+    assert.match(error.message, /unknown harness/, name);
+  }
+});
+
 test('a recognised but ungenerated harness says so, rather than pretending', () => {
   const error = captureError(() => resolveHarness('agents-md'));
 

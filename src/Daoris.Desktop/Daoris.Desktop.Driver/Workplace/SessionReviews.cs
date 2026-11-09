@@ -78,7 +78,7 @@ public static class SessionReviews
 
     /// <summary>
     /// <c>review.read</c>'s fields: the session, the whole read's time, its depth and starts, each budget's
-    /// starts, the wasted ones, the gate's wait and the creation summed, the files and the untracked files read; never a path. The depth and the
+    /// starts, the wasted ones, the gate's wait and the creation summed, the files and the untracked tail's starts; never a path. The depth and the
     /// wasted starts are the graph's; a read with no graph asked each start after the one before, its depth its starts.
     /// </summary>
     internal static (string Key, object? Value)[] Line(string session, SessionReview? review, GitCount count, ReviewGraph? graph = null)
@@ -99,7 +99,7 @@ public static class SessionReviews
             ("waitedMs", (long)GitLaunched.Ms(starts.Sum(start => start.WaitedTicks))),
             ("createdMs", (long)GitLaunched.Ms(starts.Sum(start => start.CreatedTicks))),
             ("files", review?.Diff?.Files.Count ?? 0),
-            // Uᵣ: the untracked files sent to git before the patch budget stopped them, each one start of its own budget.
+            // The untracked tail's starts: the intents and their diff, two whatever the count, none where no file is read.
             ("untracked", count.In(GitBudget.Untracked)),
         ];
     }

@@ -32,10 +32,10 @@ internal sealed class GitFacts
     /// Until disposed, this flow asks git each fact once. Within a flow that holds them, this is that one's: a landing inside a
     /// landing shares its facts, as <c>TreeContext.OneLook</c> does.
     /// </summary>
-    internal static IDisposable Within()
+    internal static IDisposable Within(CancellationToken flow = default)
     {
         if (Live is not null) return Nothing.Instance;
-        var facts = new GitFacts();
+        var facts = new GitFacts { _flow = flow };
         Current.Value = facts;
         return new Ending(facts);
     }
@@ -87,13 +87,14 @@ internal sealed class GitFacts
     /// <summary>
     /// <paramref name="folder"/> is a working tree of the repository whose checkout is <paramref name="commonDir"/>'s parent (read
     /// once, as git's `--git-common-dir`): a question about refs and commits asked in either is one question. A common dir that is
-    /// not a checkout's `.git` pairs nothing.
+    /// not a checkout's `.git` pairs nothing, nor does a tree reading another configuration (<see cref="GitAskerContext"/>).
     /// </summary>
     internal static void SameRepository(string folder, string commonDir)
     {
         if (Live is not { } facts) return;
         var dir = Path.TrimEndingDirectorySeparator(commonDir.Trim());
         if (!string.Equals(Path.GetFileName(dir), ".git", StringComparison.Ordinal) || Path.GetDirectoryName(dir) is not { } checkout) return;
+        if (!GitAskerContext.Same(folder, checkout)) return;
         var (tree, root) = (Folder(folder), Folder(checkout));
         lock (facts._gate)
         {
@@ -113,9 +114,19 @@ internal sealed class GitFacts
     /// keeps no facts or the command is not one that is kept, and the caller asks git as before.
     /// </summary>
     internal static Task<(int Code, string Stdout, string Stderr)>? Asked(
-        string root, IReadOnlyList<string> arguments, Func<Task<(int Code, string Stdout, string Stderr)>> ask)
+        string root, IReadOnlyList<string> arguments, Func<CancellationToken, Task<(int Code, string Stdout, string Stderr)>> ask, CancellationToken ct)
     {
         if (Live is not { } facts || !Kept(arguments)) return null;
+        return GitMemoAsks.Joined(facts.Held(root, arguments, GitMemoAsks.Under(ask, facts._flow)), ct);
+    }
+
+    // The flow's own token, which every fact is asked under (GitMemoAsks).
+    private CancellationToken _flow;
+
+    private Task<(int Code, string Stdout, string Stderr)> Held(
+        string root, IReadOnlyList<string> arguments, Func<Task<(int Code, string Stdout, string Stderr)>> ask)
+    {
+        var facts = this;
         var folder = Folder(root);
         // A question of refs and commits by full name is the repository's, whichever of its working trees asked it.
         var wide = ById(arguments);

@@ -132,7 +132,7 @@ public static class SessionsPartnerCommand
             if (state?.Partner is { } partner) line += $"  partner {partner}";
             if (state?.Commit is { Length: > 0 } commit) line += $"  {TextBounds.ShortCommit(commit, 7)} at {PieceRefs.Of(ask.Id)}";
             output.WriteLine(line);
-            output.WriteLine($"      {TextBounds.Clip(TextBounds.OneLine(ask.Piece), 100, wholePairs: true)}");
+            output.WriteLine($"      {TextBounds.Clip(TextBounds.OneLine(ask.Piece), 100)}");
         }
 
         return Task.FromResult(0);

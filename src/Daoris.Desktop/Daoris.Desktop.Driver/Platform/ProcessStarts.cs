@@ -118,15 +118,19 @@ public sealed class ProcessStarts
     /// way it is seen through, since a process abandoned as it started would run on unowned. The runtime's refusal to start is
     /// thrown as it threw it.
     /// </summary>
+    /// <exception cref="GitStartRefusedException">A git's image started in no place of the git scheduler's.</exception>
     public Task<Process?> StartAsync(ProcessStartInfo info, ProcessPurpose purpose, StartClass whose, CancellationToken ct)
     {
+        GitPlace.Admit(info, purpose);
+        var place = GitPlace.Current;
         var start = s_within.Value ?? _start;
         return RunAsync(() =>
         {
             var process = start(info);
             OwnedProcesses.Shared.Take(process, purpose);
+            if (process is not null) place?.Bind(process);
             return process;
-        }, whose, ct);
+        }, place?.Whose ?? whose, ct);
     }
 
     /// <summary>
@@ -197,7 +201,7 @@ public sealed class ProcessStarts
         }
 
         // Said to the stage whose work made this start, from here until it is handed its place or gives up its wait.
-        using (s_queue.Value?.Invoke())
+        using (Queued())
         using (ct.Register(() => Abandon(whose, waiting, ct)))
         {
             await waiter.Task.ConfigureAwait(false);
@@ -279,9 +283,11 @@ public sealed class ProcessStarts
         public void Dispose() => s_within.Value = before;
     }
 
+    internal static IDisposable? Queued() => s_queue.Value?.Invoke();
+
     /// <summary>
     /// Run <paramref name="work"/> with each wait for a place that a start of its flow makes said to <paramref name="queue"/>:
-    /// called as a wait begins, and what it returns disposed as the wait ends, handed its place or given
+    /// called as a wait begins (<see cref="Queued"/>, the git scheduler's too), and what it returns disposed as the wait ends, handed its place or given
     /// up. A look's stage hands its span, so its line says the wait as the stage's queue, apart from its hold. Null says them to
     /// nobody: work begun beside a stage, which the stage does not wait on, is never the stage's, until a stage of its own takes it.
     /// </summary>

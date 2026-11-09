@@ -256,6 +256,70 @@ public sealed class SupervisePassTests : IDisposable
     }
 
     [Fact]
+    public async Task ROLESREVIEW2q_every_choice_spent_is_said_once_on_the_line_and_the_subject_waits_for_the_person()
+    {
+        SupervisePass.Forget([]);
+        var (driver, _, _) = Driver((_, _) => Ended("limited"));
+        for (var turn = 1; turn <= 2; turn++)
+        {
+            await new SupervisePass(driver.Context, driver).StartAsync(Point, new Desk(), default);
+            await Until(() => driver.Context.Supervisor.Attempts.Of(Point.Subject).Count == turn && Last(driver)!.Outcome is not null);
+        }
+
+        Assert.Contains("every choice of its order was tried", await new SupervisePass(driver.Context, driver).StartAsync(Point, new Desk(), default));
+        await new SupervisePass(driver.Context, driver).StartAsync(Point, new Desk(), default);
+
+        Assert.Single(driver.Context.Events.After("s1", 0).Events, e => e.Kind == SessionEventKind.Note && e.Text!.Contains("every choice of its order was tried", StringComparison.Ordinal));
+        SupervisePass.Forget([]);
+    }
+
+    [Fact]
+    public async Task ROLESREVIEW2q_the_unavailable_memory_keeps_only_the_subjects_still_waiting()
+    {
+        SupervisePass.Forget([]);
+        var (driver, _, _) = Driver((_, _) => Ended("completed", GoOn), () => new ReviewerChoice(null, null, "cooling", "Claude Code's accounts cool until 14:20."));
+        bool Said(Daoris.Driver.Driver each) => each.Context.Events.After("s1", 0).Events.Count(e => e.Kind == SessionEventKind.Note && e.Text!.Contains("cool until 14:20", StringComparison.Ordinal)) == 1;
+
+        await new SupervisePass(driver.Context, driver).StartAsync(Point, new Desk(), default);
+        await new SupervisePass(driver.Context, driver).StartAsync(Point, new Desk(), default);
+        Assert.True(Said(driver));
+
+        SupervisePass.Forget([Point.Subject]);
+        await new SupervisePass(driver.Context, driver).StartAsync(Point, new Desk(), default);
+        Assert.True(Said(driver));
+
+        SupervisePass.Forget([]);
+        await new SupervisePass(driver.Context, driver).StartAsync(Point, new Desk(), default);
+        Assert.Equal(2, driver.Context.Events.After("s1", 0).Events.Count(e => e.Kind == SessionEventKind.Note && e.Text!.Contains("cool until 14:20", StringComparison.Ordinal)));
+        SupervisePass.Forget([]);
+    }
+
+    [Fact]
+    public void ROLESREVIEW2q_a_cancel_that_meets_a_turn_already_ended_is_no_error()
+    {
+        var runs = new SupervisorRuns();
+        var source = runs.Start(Point.Subject, default)!;
+        source.Dispose();
+
+        Assert.Equal(0, runs.StopUnwaited([]));
+    }
+
+    [Fact]
+    public async Task ROLESREVIEW2a_an_outcome_that_cannot_be_written_still_frees_the_subject_and_its_line()
+    {
+        var (driver, _, _) = Driver((_, _) =>
+        {
+            GitSeed.Discard(DaorisHome.Entry(_home, HomeEntry.Sessions, Point.Subject.Session + QuestionSupervisorDecisions.DecisionsSuffix));
+            return Ended("completed", GoOn);
+        });
+
+        await new SupervisePass(driver.Context, driver).StartAsync(Point, new Desk(), default);
+        await Until(() => !driver.Context.Supervisor.Runs.Running(Point.Subject));
+
+        Assert.DoesNotContain(Point.Subject.Session, driver.Context.Supervisor.Runs.Lines);
+    }
+
+    [Fact]
     public async Task The_person_s_word_ends_a_running_turn_and_drops_its_result()
     {
         var (driver, _, _) = Driver(async (_, ct) =>

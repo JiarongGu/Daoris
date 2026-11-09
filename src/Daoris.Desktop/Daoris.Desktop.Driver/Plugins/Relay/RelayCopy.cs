@@ -33,8 +33,9 @@ public static class RelayCopy
     /// build is used, one without its <see cref="InUse"/> file laid out again, every other build none holds removed, and every removal a
     /// stopped one left deleted. A link met is said once by <paramref name="said"/> and left.
     /// </summary>
+    /// <param name="renamed">Told the removal name of a build just renamed for removal; a test hands in one that holds it.</param>
     /// <exception cref="RelayStop">The copy could not be laid out whole (<c>copy</c>).</exception>
-    public static string LayOut(string home, string source, Action<string> said)
+    public static string LayOut(string home, string source, Action<string> said, Action<string>? renamed = null)
     {
         var bin = DaorisHome.Entry(home, HomeEntry.Bin);
         var builds = Path.Combine(bin, Folder);
@@ -64,9 +65,12 @@ public static class RelayCopy
                 continue;
             }
 
-            if (name.StartsWith(Removing, StringComparison.Ordinal)) Delete(entry);
-            else if (name == build && !File.Exists(Path.Combine(entry, InUse))) Remove(entry, builds);
-            else if (name != build && BuildName.IsMatch(name) && Directory.Exists(entry)) Remove(entry, builds);
+            if (name.StartsWith(Removing, StringComparison.Ordinal))
+            {
+                if (Unheld(entry)) Delete(entry);
+            }
+            else if (name == build && !File.Exists(Path.Combine(entry, InUse))) Remove(entry, builds, renamed);
+            else if (name != build && BuildName.IsMatch(name) && Directory.Exists(entry)) Remove(entry, builds, renamed);
         }
 
         if (!File.Exists(Path.Combine(copy, InUse))) Stage(source, builds, build);
@@ -149,27 +153,39 @@ public static class RelayCopy
         }
     }
 
-    // A build none holds in use: opened alone and closed, then renamed to a removal name of its own, and only then deleted. A relay that
-    // opened its in-use file between the two makes the rename fail, and the build is kept.
-    private static void Remove(string folder, string builds)
+    // A build none holds in use: opened alone and closed, then renamed to a removal name of its own, opened alone again, and only then
+    // deleted. A relay that opened its in-use file between the first open and the rename makes the rename fail on Windows; off it a rename
+    // ignores an open file, so the second open finds the relay, and the build goes back to its name.
+    private static void Remove(string folder, string builds, Action<string>? renamed)
     {
-        var inUse = Path.Combine(folder, InUse);
         try
         {
-            if (File.Exists(inUse))
-            {
-                using (new FileStream(inUse, FileMode.Open, FileAccess.ReadWrite, FileShare.None))
-                {
-                }
-            }
-
+            if (!Unheld(folder)) return;
             var removing = Path.Combine(builds, Removing + Guid.NewGuid().ToString("N"));
             Directory.Move(folder, removing);
-            Delete(removing);
+            renamed?.Invoke(removing);
+            if (Unheld(removing)) Delete(removing);
+            else Directory.Move(removing, folder);
         }
         catch (Exception error) when (error is IOException or UnauthorizedAccessException)
         {
             // Held in use, or held by a scanner: kept, or left under its removal name for the next --where.
+        }
+    }
+
+    /// <summary>Whether no relay holds the folder's <see cref="InUse"/> file: it opens alone, or is not there.</summary>
+    private static bool Unheld(string folder)
+    {
+        var inUse = Path.Combine(folder, InUse);
+        if (!File.Exists(inUse)) return true;
+        try
+        {
+            using var alone = new FileStream(inUse, FileMode.Open, FileAccess.ReadWrite, FileShare.None);
+            return true;
+        }
+        catch (Exception error) when (error is IOException or UnauthorizedAccessException)
+        {
+            return false;
         }
     }
 

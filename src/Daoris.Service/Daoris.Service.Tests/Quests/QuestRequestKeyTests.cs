@@ -150,4 +150,33 @@ public sealed class QuestRequestKeyTests : IAsyncLifetime
         Assert.Null(await _quests.ForgottenIdAsync("game", "engine", "Expose the frame cap", null, default));
         Assert.Equal(QuestPublishRefusal.Cleared, (await Ask("run-a/ask-engine/1")).Refusal);
     }
+
+    /// <summary>Forgotten plain words publish under the next id at every step; only a key, with no next id, is refused.</summary>
+    [Fact]
+    public async Task Forgotten_plain_words_publish_under_the_next_id_at_every_step()
+    {
+        var first = (await Ask(null)).Quest!;
+        await ForgetNumberedAsync(first.Id);
+
+        var second = await Ask(null);
+        Assert.Equal(QuestPublishRefusal.None, second.Refusal);
+        Assert.NotEqual(first.Id, second.Quest!.Id);
+
+        await ForgetNumberedAsync(second.Quest.Id);
+        var third = await Ask(null);
+        Assert.Equal(QuestPublishRefusal.None, third.Refusal);
+        Assert.DoesNotContain(third.Quest!.Id, new[] { first.Id, second.Quest.Id });
+    }
+
+    private async Task ForgetNumberedAsync(string id)
+    {
+        await using (var number = _connection.CreateCommand())
+        {
+            number.CommandText = "UPDATE quest_log SET remote = 1 WHERE quest = $id";
+            number.Parameters.AddWithValue("$id", id);
+            await number.ExecuteNonQueryAsync();
+        }
+
+        Assert.True(await _quests.ForgetAsync(id, Now, default));
+    }
 }

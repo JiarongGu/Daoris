@@ -9,7 +9,9 @@ import { BrowserDomain } from './BrowserDomain';
 import { DriverDomain } from './DriverDomain';
 import { GitDomain } from './git/GitDomain';
 import { LogsDomain } from './LogsDomain';
+import { SpaceDomain } from './SpaceDomain';
 import { ToolsDomain } from './ToolsDomain';
+import { UpdatesDomain } from './machine/UpdatesDomain';
 import { WiringDomain } from './WiringDomain';
 
 /**
@@ -38,6 +40,8 @@ type SettingsDomain = {
   label: string;
   /** A machine's domain, which a browser is never offered: not a disabled one, none. */
   machine: boolean;
+  /** The catalogue keys of its cards and rows, by which the palette finds it in the reader's language. */
+  rows: readonly string[];
   component: ComponentType<SettingsDomainProps>;
 };
 
@@ -46,33 +50,60 @@ type SettingsDomain = {
  * A domain is a `settings/<Name>Domain.tsx` and a row here; the frame renders whichever row is
  * chosen and names none itself, and `domains.test.ts` holds both.
  *
- * Nine in all: what is the machine's or the person's. Every other setting lives on its thing.
+ * Each is what a person comes to set, the machine's or the person's own. Every other setting lives on its thing.
  */
 export const SETTINGS_DOMAINS = [
   // The setup guide leads, named Get started again since Setup names a repository's and a workspace's tab.
   // A browser's holds the one step it can know, the registry.
-  { id: 'start', label: 'settings.domain.start', machine: false, component: GetStartedDomain },
-  { id: 'appearance', label: 'settings.domain.appearance', machine: false, component: AppearanceDomain },
-  { id: 'ai', label: 'settings.domain.ai', machine: false, component: AiDomain },
-  // How this install is set up here: the first of the machine domains. It shows what is
-  // true about this machine's paths, service and loop; the domain that sets a thing keeps its control. A browser is offered none.
-  { id: 'wiring', label: 'settings.domain.wiring', machine: true, component: WiringDomain },
-  // Workspace left for a workspace's page and each repository's: its list is Repositories' list, its
-  // wiring, defaults and clean-up the workspace's page, its rows per repository the repository's Setup.
-  { id: 'driver', label: 'settings.domain.driver', machine: true, component: DriverDomain },
-  // Agents left for a place of its own: an agent is a product with accounts, and its page holds them.
-  // The programs Daoris runs beside its agents: each a file of this machine's, so a browser is
-  // offered no such domain.
-  { id: 'tools', label: 'settings.domain.tools', machine: true, component: ToolsDomain },
+  {
+    id: 'start', label: 'settings.domain.start', machine: false, component: GetStartedDomain,
+    rows: ['setup.step.agent.title', 'setup.step.helper.title', 'setup.step.repositories.title', 'setup.step.rules.title'],
+  },
+  {
+    id: 'appearance', label: 'settings.domain.appearance', machine: false, component: AppearanceDomain,
+    rows: ['settings.theme.label', 'settings.language.label'],
+  },
+  // How sessions run here: the driver's dials, this machine's access and the plugins' settings. Agents left for a
+  // place of its own (an agent is a product with accounts, and its page holds them), Plugins for its place.
+  {
+    id: 'driver', label: 'settings.domain.driver', machine: true, component: DriverDomain,
+    rows: ['settings.notify.label', 'settings.cap.label', 'settings.quiet.label', 'settings.cooloff.label', 'projects.setup.section.access', 'plugin.folder'],
+  },
+  {
+    id: 'ai', label: 'settings.domain.ai', machine: false, component: AiDomain,
+    rows: ['settings.ai.search.label', 'settings.ai.helpMode.label', 'settings.ai.roles.title'],
+  },
   // Who Daoris's git acts as on a code host: identities, a host's default and the person's own
   // sign-ins; the machine's alone, so a browser is offered none.
-  { id: 'git', label: 'settings.domain.git', machine: true, component: GitDomain },
-  // Permissions left as Workspace did: reading across and a workspace's rules are its page's, a repository's its
-  // Setup's, and the rules for every session and the proposals the agent's page's. Plugins left for its place:
-  // nothing about a plugin is set here, and where plugins are looked for is Driver's row.
-  { id: 'browser', label: 'settings.domain.browser', machine: true, component: BrowserDomain },
-  // The machine log: the machine's alone, so a browser is offered no such domain.
-  { id: 'logs', label: 'settings.domain.logs', machine: true, component: LogsDomain },
+  {
+    id: 'git', label: 'settings.domain.git', machine: true, component: GitDomain,
+    rows: ['settings.git.identities', 'settings.git.defaults', 'settings.git.own', 'settings.git.access.machine'],
+  },
+  // The programs Daoris runs beside its agents: each a file of this machine's.
+  { id: 'tools', label: 'settings.domain.tools', machine: true, component: ToolsDomain, rows: ['settings.tools.locations.title'] },
+  {
+    id: 'browser', label: 'settings.domain.browser', machine: true, component: BrowserDomain,
+    rows: ['settings.browser.which.title', 'settings.browser.links.label', 'settings.browser.favorites.title', 'settings.browser.extensions.title'],
+  },
+  // What Daoris keeps on this disk: its folders, each with its size, and the rules that keep and free it.
+  {
+    id: 'space', label: 'settings.domain.space', machine: true, component: SpaceDomain,
+    rows: ['settings.daoris.card.folders', 'settings.daoris.card.space', 'settings.daoris.label.folder.cache', 'settings.daoris.button.freeUp'],
+  },
+  // The install's update, then the versions it carries.
+  { id: 'updates', label: 'settings.domain.updates', machine: true, component: UpdatesDomain, rows: ['settings.update.title', 'settings.daoris.card.versions'] },
+  // How this install is wired here: the terminal and the service first, then the facts behind them. It shows what is
+  // true; the domain that sets a thing keeps its control.
+  {
+    id: 'wiring', label: 'settings.domain.wiring', machine: true, component: WiringDomain,
+    rows: [
+      'settings.daoris.card.terminal', 'settings.daoris.label.putOnPath', 'settings.daoris.card.service', 'settings.daoris.label.changeAddress',
+      'settings.daoris.card.files', 'settings.daoris.card.variables', 'settings.daoris.card.loop', 'settings.daoris.card.knowledge',
+      'settings.daoris.card.logs', 'settings.daoris.card.toolHome',
+    ],
+  },
+  // The machine log, which Help's *Machine log* opens.
+  { id: 'logs', label: 'settings.domain.logs', machine: true, component: LogsDomain, rows: [] },
 ] as const satisfies readonly SettingsDomain[];
 
 /** Settings' domains, by the id each is opened at. */

@@ -20,9 +20,7 @@ public sealed class GitCeilingCensusTests
 
     private static readonly Regex Comments = new(@"//[^\n]*");
 
-    /// <summary>
-    /// The git starts a source builds when it caps none: how many, or zero where it has none or names a cap. Comments are not read.
-    /// </summary>
+    /// <summary>The git starts a source builds when it caps none: how many, or zero where it has none or names a cap. Comments are not read.</summary>
     internal static int Uncapped(string source)
     {
         var code = Comments.Replace(source.Replace("\r\n", "\n"), "");
@@ -34,11 +32,11 @@ public sealed class GitCeilingCensusTests
     {
         ["Install/ToolsChildrenTests.cs"] = "reads the start info GitStart makes for a tool record and starts nothing",
         ["Install/ToolsChildProcessTests.cs"] = "a stub git file answers --version through a node script, in a folder with no repository",
-        ["Loop/LookWaitTests.cs"] = "the start goes to a stand-in starter that starts nothing",
-        ["Participants/RunningSessionsTests.cs"] = "the start goes to a stand-in starter that starts nothing",
         ["Bridge/ReleaseStandIn.cs"] = "a stand-in process that asks git for --version and waits for a file, in no repository",
         ["Roles/HolderKeyStripTests.cs"] = "builds a start info to read its variables and starts nothing",
         ["Workplace/GitLaunchTests.cs"] = "its own census's pattern names a git start in a string and starts nothing",
+        ["Platform/GitSchedulerTests.cs"] = "the gate's starts go to a stand-in starter that starts nothing",
+        ["Workplace/GitLazyFetchTests.cs"] = "builds a start info to read the variable and the place it is asked in, and starts nothing",
     };
 
     private static SortedDictionary<string, int> Scan()

@@ -3,6 +3,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Shenora;
 using Shenora.Core.Ipc;
 using Shenora.Core.Shell;
+using Shenora.Modules.FileDialog;
 using Shenora.Windows;
 
 // The local driver's shell: one window that brings up the local service host —
@@ -69,7 +70,6 @@ internal static class Program
         // what the move did, which ran before the log had its place.
         using var log = Daoris.Driver.MachineLog.Open("desktop");
         log.WatchUnhandled();
-        UiExceptions.Watch(log);
         InstallHome.Log(home, log);
         stages.Log = log;
         var started = DateTimeOffset.UtcNow;
@@ -212,16 +212,31 @@ internal static class Program
             () => [sp.GetRequiredService<MainForm>(), .. sp.GetRequiredService<SecondaryWindowHost>().Reloadable()],
             window => log.Info(PageReloads.Event, ("window", window))));
         builder.Services.AddSingleton<MainForm>();
-        // A tool named as a file: the system's file picker, owned by the window whose page asked, as the
-        // folder picker is: the first main window is hidden while put away, and a dialog owned by it would open behind nobody.
-        builder.Services.AddSingleton<PickFile>(sp => (title, window) => Pickers.File(
-            Pickers.Owner(sp.GetRequiredService<MainForm>(), sp.GetRequiredService<SecondaryWindowHost>(), window), title));
+        // A tool named as a file: the kit's file dialog, owned by the window whose page asked (the first main window is hidden
+        // while put away, and a dialog owned by it would open behind nobody).
+        builder.Services.AddSingleton<PickFile>(sp => async title =>
+        {
+            var picked = await sp.GetRequiredService<IFileDialogs>().OpenFileAsync(new OpenFileOptions
+            {
+                Title = string.IsNullOrWhiteSpace(title) ? "Choose a program" : title,
+                Filters =
+                [
+                    new FileDialogFilter { Name = "Programs", Extensions = ["exe", "cmd", "bat"] },
+                    new FileDialogFilter { Name = "All files", Extensions = ["*"] },
+                ],
+            });
+            return picked.Success ? picked.FilePath : null;
+        });
         // The session-control surface's host half: the page's driver controls land here.
         builder.Services.AddIpcModule<DriverModule>();
         // The one thing a page cannot do: name a directory on this machine. Everything else
         // about managing a repository is an ordinary call to the loopback host.
-        builder.Services.AddSingleton<PickFolder>(sp => window => Pickers.Folder(
-            Pickers.Owner(sp.GetRequiredService<MainForm>(), sp.GetRequiredService<SecondaryWindowHost>(), window)));
+        builder.Services.AddSingleton<PickFolder>(sp => async () =>
+        {
+            var picked = await sp.GetRequiredService<IFileDialogs>().OpenFolderAsync(
+                new OpenFolderOptions { Title = "Choose a repository to add to this machine's registry" });
+            return picked.Success ? picked.FilePath : null;
+        });
         builder.Services.AddIpcModule<RegistryModule>();
         // The machine's wiring — which deployment serves each workspace. The same file
         // `daoris remote` edits; the service has no door onto it, deliberately.
@@ -248,9 +263,12 @@ internal static class Program
         builder.Services.AddSingleton(sp => new MainWindows(() => sp.GetRequiredService<MainForm>().CloseForGood(), log));
         // A terminal's press waiting unshown lights the taskbar button of the main window last in front:
         // the judgement's, told each window's focus and what the pipe says waits; the window is resolved as it is lit.
-        builder.Services.AddSingleton(sp => new PressFlash((window, on) => TaskbarFlash.Set(
-            window == MainWindows.First ? sp.GetRequiredService<MainForm>() : sp.GetRequiredService<SecondaryWindowHost>().FormNamed(window),
-            on)));
+        builder.Services.AddSingleton(sp => new PressFlash((window, on) =>
+        {
+            var form = window == MainWindows.First ? sp.GetRequiredService<MainForm>() : sp.GetRequiredService<SecondaryWindowHost>().FormNamed(window);
+            if (on) Shenora.Windows.TaskbarFlash.Start(form);
+            else Shenora.Windows.TaskbarFlash.Stop(form);
+        }));
         // Daoris's own browser: the engine's own window, in a process of its own
         // (`daoris-browser`: this executable with the browser's argument), with its profile under
         // the home — the home `driver.json` is in, as every machine file's is.
@@ -286,7 +304,7 @@ internal static class Program
         builder.Services.AddIpcModule<WindowsModule>();
         // The page's own report into the machine log: what is used and what fails on the
         // screen, taken only as the catalogue names it — the module is where no word gets through. And
-        // Settings → Logs reading it back, with the file manager for Open the folder: the kit's
+        // Settings → Machine log reading it back, with the file manager for Open the folder: the kit's
         // shell launcher, which `UseWindows` registers, opened only on the folder the module names.
         builder.Services.AddSingleton<OpenFolder>(sp =>
             folder => sp.GetRequiredService<IShellLauncher>().OpenDirectory(folder));
@@ -393,6 +411,20 @@ internal static class Program
 
         builder.UseWindows(new WindowsHostOptions
         {
+            // An exception raised on any window's thread (a dialog's callback, an event handler, a shell extension's managed helper)
+            // is written to the machine log and the pump goes on, on the main window's thread and on every secondary window's own
+            // pump alike (the kit catches each pump's). No dialog of the kit's: the log is the record. A terminating exception is
+            // `WatchUnhandled`'s.
+            Bootstrap = new WinFormsBootstrapOptions
+            {
+                ApplicationName = "Daoris",
+                ShowCrashDialog = false,
+                OnUnhandledException = report =>
+                {
+                    if (report.Source != UnhandledExceptionSource.UiThread) return;
+                    log.Error("error", ("where", "a window's thread"), ("message", report.Exception.GetType().Name + ": " + report.Exception.Message));
+                },
+            },
             MainForm = sp => sp.GetRequiredService<MainForm>(),
             // The app's scheme starts at the kept choice, so the engine and the window's first frame wear it before the
             // page has said it (the window's palette reads it, `MainForm.StartingPalette`), rather than the OS's and then a flip.

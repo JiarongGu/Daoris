@@ -51,13 +51,22 @@ public sealed record RootSignature(string? Commit, long Newest, int Files)
 
         // The root's own top (its declaration, lock and backlog), then each folder the scan walks.
         Visit(root, recursive: false);
-        var layout = RepositoryLayout.Of(root, DaorisLock.Read(root));
-        var seen = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-        foreach (var named in layout.Roots.Append("docs").Append(documents).Append(index))
+        var visited = new List<string>();
+        foreach (var named in UncommittedRecords.Folders(root, documents, index))
         {
-            if (string.IsNullOrWhiteSpace(named)) continue;
-            var folder = Path.GetFullPath(Path.Combine(root, named.Replace('/', Path.DirectorySeparatorChar)));
-            if (seen.Add(folder) && Directory.Exists(folder)) Visit(folder, recursive: true);
+            var place = Path.GetFullPath(Path.Combine(root, named.Replace('/', Path.DirectorySeparatorChar)));
+            // A place inside one already walked is counted once, with it.
+            if (visited.Any(above => place.StartsWith(above + Path.DirectorySeparatorChar, StringComparison.OrdinalIgnoreCase))) continue;
+            if (Directory.Exists(place))
+            {
+                visited.Add(place);
+                Visit(place, recursive: true);
+            }
+            else if (File.Exists(place))
+            {
+                files++;
+                newest = Math.Max(newest, File.GetLastWriteTimeUtc(place).Ticks);
+            }
         }
 
         return new RootSignature(Head(root), newest, files);

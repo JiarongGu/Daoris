@@ -27,7 +27,8 @@ public sealed class DriverModuleFilesTests : DriverModuleBridge
         Assert.All(new[] { set, asked, allowed }, answer => Assert.True(answer.GetProperty("done").GetBoolean()));
         var written = await File.ReadAllTextAsync(FilesFile);
         Assert.Contains("\"by\": \"person\"", written, StringComparison.Ordinal);
-        Assert.Contains("\"copy\": true", written, StringComparison.Ordinal);
+        Assert.Contains("\"reach\": \"copy\"", written, StringComparison.Ordinal);
+        Assert.Contains("\"/local/\"", written, StringComparison.Ordinal);
 
         var taken = await AnswerAsync(module, "FILES_PERMIT", new { repository = "engine", act = "remove", list = "allow", rule = "run(npm ci)" });
         var removed = await AnswerAsync(module, "FILES_REMOVE", new { repository = "engine", paths = new[] { "local/" } });

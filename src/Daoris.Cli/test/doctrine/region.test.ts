@@ -2,7 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { captureError } from '../_fixture.ts';
 import {
-  CLOSE, IMPORT, OPEN, ensureImport, findRegion, hasImport, writeRegion,
+  CLOSE, IMPORT, OPEN, ensureImport, findRegion, hasImport, removeRegion, writeRegion,
 } from '../../src/doctrine/region.ts';
 
 /**
@@ -46,6 +46,29 @@ test('a file with no region reports absent, and gains one appended', () => {
   // 🔴 Their text is not read, moved or rewritten — it is a PREFIX of the result, byte for byte.
   assert.ok(written.startsWith(theirs), written);
   assert.match(written, /<!-- daoris:rules[^>]*-->\nthe tier\n<!-- \/daoris:rules -->/);
+});
+
+test('a file of mixed line endings keeps each line outside the region as it was', () => {
+  const before = 'a\r\nb\r\nc\nd\r\n';
+  const after = 'e\nf\r\n';
+  const held = `${before}${open}\r\nold\r\n${close}\r\n${after}`;
+
+  const written = writeRegion(held, NAME, 'new one\nnew two');
+
+  assert.equal(written, `${before}${open}\r\nnew one\r\nnew two\r\n${close}\r\n${after}`);
+});
+
+test('taking a region out keeps each line left as it was, and ends the file once', () => {
+  assert.equal(removeRegion(`a\r\nb\n\n${open}\nx\n${close}\n`, NAME), 'a\r\nb\n');
+  assert.equal(removeRegion(`a\r\nb\r\n\r\n${open}\r\nx\r\n${close}\r\n`, NAME), 'a\r\nb\r\n');
+});
+
+test('a region that ends a file with no newline stays without one, in either line ending', () => {
+  for (const eol of ['\n', '\r\n']) {
+    const held = `a${eol}b${eol}${open}${eol}old${eol}${close}`;
+
+    assert.equal(writeRegion(held, NAME, 'new'), `a${eol}b${eol}${open}${eol}new${eol}${close}`);
+  }
 });
 
 test('an empty file, or none at all, becomes the region alone', () => {

@@ -59,6 +59,7 @@ public sealed class RoleVerb : ChoiceVerb
             var staffing = RoleStaffing.Of(world.ConfigPath) ?? throw new ChoiceWords(Unkept(world));
             var catalogue = RoleCatalog.Read(staffing.Location);
             var set = new List<string>();
+            var batch = new List<(RoleChange Change, IReadOnlyList<ActorChoice>? Choices, long? Read)>();
             foreach (var each in table)
             {
                 var slot = catalogue.Slots.FirstOrDefault(found => found.Id == each.Role);
@@ -74,9 +75,11 @@ public sealed class RoleVerb : ChoiceVerb
                     continue;
                 }
 
-                RoleDoor.Apply(staffing, RoleChange.Set(slot.Role), each.Choices);
+                batch.Add((RoleChange.Set(slot.Role), each.Choices, slot.Revision));
                 set.Add(each.Role);
             }
+
+            if (batch.Count > 0) RoleDoor.ApplyAll(staffing, batch);
 
             said.WriteLine($"daoris: set {string.Join(", ", set)}. New work takes them; work already running keeps its choices.");
             return 0;
@@ -115,18 +118,15 @@ public sealed class RoleVerb : ChoiceVerb
         {
             ["change"] = "set",
             ["id"] = id,
-            ["role"] = new JsonObject
-            {
-                ["name"] = JsonNode.Parse(role.Name.Json()),
-                ["takes"] = new JsonArray([.. role.Takes.Select(work => (JsonNode)JsonValue.Create(work))]),
-                ["scope"] = new JsonObject { ["kind"] = role.Scope.Kind, ["id"] = role.Scope.Id },
-            },
-            ["policy"] = policy is null ? null : press.Preset is { } preset ? preset : JsonNode.Parse(policy.Write()),
+            ["role"] = RolePayload(role),
+            ["policy"] = policy is null ? null : JsonNode.Parse(policy.Write()),
+            ["policyPreset"] = policy is null ? null : press.Preset,
             ["policyRevision"] = existing.Revision,
+            ["revision"] = catalogue.RevisionOf(id),
         };
         return new(Word, ChoiceRoutes.Role, payload, _ =>
         {
-            RoleDoor.Apply(staffing, RoleChange.Set(role), null, null, press with { Read = existing.Revision });
+            RoleDoor.Apply(staffing, RoleChange.Set(role), null, catalogue.RevisionOf(id), press with { Read = existing.Revision });
             return Task.FromResult<object?>(null);
         }, _ => null, _ =>
         {
@@ -136,6 +136,24 @@ public sealed class RoleVerb : ChoiceVerb
             world.Instance.Out.WriteLine("  New work takes it; work already running keeps its choice.");
             return 0;
         });
+    }
+
+    private static JsonObject RolePayload(RoleRecord role)
+    {
+        var wire = new JsonObject
+        {
+            ["name"] = JsonNode.Parse(role.Name.Json()),
+            ["takes"] = new JsonArray([.. role.Takes.Select(work => (JsonNode)JsonValue.Create(work))]),
+            ["scope"] = new JsonObject { ["kind"] = role.Scope.Kind, ["id"] = role.Scope.Id },
+        };
+        if (role.Hold is not { } hold) return wire;
+        wire["filled"] = RoleRecord.Appointed;
+        wire["kind"] = hold.Kind;
+        if (hold.Decides.Count > 0) wire["decides"] = new JsonArray([.. hold.Decides.Select(kind => (JsonNode)JsonValue.Create(kind))]);
+        wire["authority"] = new JsonArray([.. hold.Acts.Select(act => (JsonNode)JsonValue.Create(act))]);
+        wire["holder"] = hold.Holder;
+        wire["window"] = hold.Window;
+        return wire;
     }
 
     private const string RulesGrammar = SupervisorRulesFlags.Grammar;
@@ -257,24 +275,10 @@ public sealed class RoleVerb : ChoiceVerb
         if (args[1] != "set" && args.Count > 3) throw new ChoiceWords($"`driver role {args[1]}` takes the role's id alone.");
         if (RoleDoor.Judge(catalogue, change, choices) is { } refused) throw new ChoiceWords($"`driver role`: {refused.Said}");
 
-        var payload = all ? new JsonObject { ["change"] = "default-all" } : new JsonObject { ["change"] = args[1], ["id"] = id };
+        var payload = all ? new JsonObject { ["change"] = "default-all" } : new JsonObject { ["change"] = args[1], ["id"] = id, ["revision"] = catalogue.RevisionOf(id) };
         if (change is RoleChange.SetRole { Role: var role })
         {
-            payload["role"] = new JsonObject
-            {
-                ["name"] = JsonNode.Parse(role.Name.Json()),
-                ["takes"] = new JsonArray([.. role.Takes.Select(work => (JsonNode)JsonValue.Create(work))]),
-                ["scope"] = new JsonObject { ["kind"] = role.Scope.Kind, ["id"] = role.Scope.Id },
-            };
-            if (role.Hold is { } hold)
-            {
-                payload["role"]!["filled"] = RoleRecord.Appointed;
-                payload["role"]!["kind"] = hold.Kind;
-                payload["role"]!["authority"] = new JsonArray([.. hold.Acts.Select(act => (JsonNode)JsonValue.Create(act))]);
-                payload["role"]!["holder"] = hold.Holder;
-                payload["role"]!["window"] = hold.Window;
-            }
-
+            payload["role"] = RolePayload(role);
             payload["choices"] = choices is null ? null : new JsonArray([.. choices.Select(choice => (JsonNode)new JsonObject
             {
                 ["agent"] = choice.Agent, ["model"] = choice.Model, ["effort"] = choice.Effort,
@@ -283,7 +287,7 @@ public sealed class RoleVerb : ChoiceVerb
 
         return new(Word, ChoiceRoutes.Role, payload, _ =>
         {
-            RoleDoor.Apply(staffing, change, choices);
+            RoleDoor.Apply(staffing, change, choices, all ? null : catalogue.RevisionOf(id));
             return Task.FromResult<object?>(null);
         }, _ => null, _ =>
         {

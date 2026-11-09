@@ -1,9 +1,6 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
-import {
-  type DownloadCleared, type SpacePlan, type SpaceStarted, useClearDownloads, useOpenLogFolder, useSetupWiring, useSpaceFree, useSystemDownloads, useSystemSpace, useSystemWiring, useUpdateState,
-} from '../bridge/shell';
-import { useSetKeep } from '../bridge/driver';
+import { useOpenLogFolder, useSetupWiring, useSystemWiring } from '../bridge/shell';
 import { failure, useErrorNotify } from '../design/ui';
 import { sentence } from '../locales/format';
 import type { StarterDoor } from '../help/starters';
@@ -16,9 +13,6 @@ import { WiringAddressRow } from './wiring/WiringAddressRow';
 import { WiringCards } from './wiring/WiringCards';
 import { WiringPathRow } from './wiring/WiringPathRow';
 import { WiringTerminalLine } from './wiring/WiringTerminalLine';
-import { WiringDownloads } from './wiring/WiringDownloads';
-import { WiringSpace } from './wiring/WiringSpace';
-import { WiringSpaceFree } from './wiring/WiringSpaceFree';
 
 /** Where each file's door goes: the read names the place by a word, and the page knows its door. */
 const FILE_DOORS: Record<string, StarterDoor> = {
@@ -31,69 +25,28 @@ const FILE_DOORS: Record<string, StarterDoor> = {
 };
 
 /**
- * Settings → This Daoris: how this install is set up here, read from the shell's one
- * reader (`SYSTEM_WIRING`) and drawn as cards. **It shows, and sets only the keep rules and the account's wiring**: the
- * domain that sets a thing keeps its control, and a row whose value is set elsewhere carries a door to where. Its acts are the Downloads row's clearing,
- * listed first and then pressed, which removes only what nothing uses; setting the wiring up: *Open* by a
- * row's id, *Put on my PATH*, *Copy a terminal line* and *Change the service's address*, each said first inside its row, on the
- * account alone; the Disk space card's *Change…*,
- * the keep rules, which have no other place on the page; and that card's *Free up
- * space…*, listed first and then pressed, removing exactly what is listed.
- *
- * - **Machine-only** like every machine domain: a browser is never offered it, and no host route answers any of it.
- * - **Sizes are asked once**, when the page first has its answer: the open itself walks no folder, and the answer to the ask
- *   says it is measuring, which the query reads again every two seconds until each size is counted.
- *
- * The cards are molecules over props, composed by `WiringCards` so a story draws the whole domain; this holds the hooks
- * (`presentational.test.ts`).
+ * Settings → This Daoris: how this install is wired here, from the shell's one reader (`SYSTEM_WIRING`): the terminal and
+ * the service, then the facts behind them. **It shows, and sets only the account's wiring** (*Open* by a row's id, *Put on my
+ * PATH*, *Copy a terminal line*, *Change the service's address*, each said first inside its row); a row set elsewhere carries
+ * a door to where. Machine-only, as every machine domain is. The sizes (the logs', the tool home's) are asked once, when the
+ * page first has its answer, so the open itself walks no folder. `WiringCards` draws the cards; this holds the hooks.
  */
 export function WiringDomain({ notify, onGo }: Pick<SettingsDomainProps, 'notify' | 'onGo'>) {
   const { t } = useTranslation();
   const { query, measure } = useSystemWiring();
-  // The update is the shell's own state, not the wiring's: the Versions card's line.
-  const update = useUpdateState();
   // The Logs card's own *Open folder*; every other row opens by its id.
   const openLogs = useOpenLogFolder();
-  const [busy, setBusy] = useState(false);
-  // The Downloads row's list, read once the person opens it, and the one press after it.
-  // Which row opened it, the Folders card's or the Disk space card's, so the list is drawn under the row that is pressed.
-  const [downloadsOpen, setDownloadsOpen] = useState<false | 'folders' | 'space'>(false);
-  const [cleared, setCleared] = useState<DownloadCleared[] | null>(null);
-  const downloads = useSystemDownloads(downloadsOpen !== false);
-  // The Disk space card's read; its sizes are counted only when the person asks, or by the look once a day.
-  const space = useSystemSpace();
-  const [counting, setCounting] = useState(false);
-  useErrorNotify(space.query.error, notify);
-  const clearDownloads = useClearDownloads();
-  // Each rule's *Change…*, the same `keep` `daoris settings keep` edits; a refusal is said under its editor.
-  const setKeep = useSetKeep();
-  // Free up space…, listed first under the card's head, then pressed; a refusal stays beside the press (R3).
-  const spaceFree = useSpaceFree();
-  const [freeOpen, setFreeOpen] = useState(false);
-  const [plan, setPlan] = useState<SpacePlan | undefined>(undefined);
-  const [freeRefused, setFreeRefused] = useState<SpaceStarted | null>(null);
-  useErrorNotify(downloads.error, notify);
   // Setting it up from the page: Open by id, the account's PATH and the service's address, each said first inside its row.
   const setup = useSetupWiring();
   const asked = useRef(false);
   useErrorNotify(query.error, notify);
 
-  const ask = () => {
-    setBusy(true);
-    measure().catch(failure(notify)).finally(() => setBusy(false));
-  };
-
-  const count = (kinds?: string[]) => {
-    setCounting(true);
-    space.count(kinds).catch(failure(notify)).finally(() => setCounting(false));
-  };
-
   const answered = query.data !== undefined;
   useEffect(() => {
     if (!answered || asked.current) return;
     asked.current = true;
-    ask();
-    // The first answer is the trigger; `ask` closes over nothing that changes what it does.
+    measure().catch(failure(notify));
+    // The first answer is the trigger; `measure` closes over nothing that changes what it does.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [answered]);
 
@@ -105,63 +58,10 @@ export function WiringDomain({ notify, onGo }: Pick<SettingsDomainProps, 'notify
     onSuccess: (answer: SetupAnswer) => (answer.done ? answered.done() : answered.refused(setupSaid(t, answer.why, answer.message))),
     onError: (error: unknown) => answered.refused(sentence(error)),
   });
-  const list = (
-    <WiringDownloads
-      listing={downloads.data}
-      busy={clearDownloads.isPending}
-      cleared={cleared}
-      onClear={(rows) => clearDownloads.mutate(rows, {
-        onSuccess: (answer) => setCleared(answer.cleared),
-        onError: failure(notify),
-      })}
-      onClose={() => { setDownloadsOpen(false); setCleared(null); }}
-    />
-  );
 
   return (
     <WiringCards
       wiring={wiring}
-      update={update.data}
-      busy={busy}
-      onMeasure={ask}
-      onDownloads={() => { setCleared(null); setDownloadsOpen('folders'); }}
-      downloads={downloadsOpen === 'folders' ? list : undefined}
-      space={(
-        <WiringSpace
-          // An answer with no kinds is no disk space this page reads: drawn as still on its way, never as a card of nothing.
-          space={Array.isArray(space.query.data?.kinds) ? space.query.data : undefined}
-          busy={counting}
-          onCount={count}
-          onDownloads={() => { setCleared(null); setDownloadsOpen('space'); }}
-          downloads={downloadsOpen === 'space' ? list : undefined}
-          onKeep={(set, answered) => setKeep.mutate(set, {
-            onSuccess: () => answered.done(),
-            onError: (error) => answered.refused(sentence(error)),
-          })}
-          onFreeUp={() => {
-            setFreeOpen(true);
-            setPlan(undefined);
-            setFreeRefused(null);
-            spaceFree.list.mutate(undefined, { onSuccess: setPlan, onError: failure(notify) });
-          }}
-          freeing={freeOpen ? (
-            <WiringSpaceFree
-              plan={plan}
-              busy={spaceFree.free.isPending || spaceFree.list.isPending}
-              refused={freeRefused}
-              onFree={(units) => spaceFree.free.mutate(units, {
-                // Started: the run's line says the rest, so the list closes; held: said here, the list kept open (R3).
-                onSuccess: (answer) => {
-                  if (answer.run) setFreeOpen(false);
-                  else setFreeRefused(answer);
-                },
-                onError: failure(notify),
-              })}
-              onClose={() => setFreeOpen(false)}
-            />
-          ) : undefined}
-        />
-      )}
       onOpen={(folder) => setup.open.mutate(folder, {
         onSuccess: (answer) => { if (!answer.done) notify(setupSaid(t, answer.why, answer.message)); },
         onError: failure(notify),
@@ -190,7 +90,6 @@ export function WiringDomain({ notify, onGo }: Pick<SettingsDomainProps, 'notify
       })}
       doors={{
         driver: () => onGo({ view: 'settings', section: 'driver' }),
-        tools: () => onGo({ view: 'settings', section: 'tools' }),
         ai: () => onGo({ view: 'settings', section: 'ai' }),
         logs: () => onGo({ view: 'settings', section: 'logs' }),
         file: (door) => onGo(FILE_DOORS[door] ?? { view: 'settings', section: 'driver' }),

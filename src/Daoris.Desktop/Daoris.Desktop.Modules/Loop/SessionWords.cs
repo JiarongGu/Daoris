@@ -98,7 +98,7 @@ public sealed class SessionWords : IDisposable
     /// its text, the names its files are kept under and the door it is said at, and, where it has them, its producer's key, its level
     /// and its display choice. Absent while nothing is held.
     /// </summary>
-    /// <remarks>Its place is the driver library's (<see cref="HeldWordsFile"/>), which takes a cleared or deleted session's words out of it.</remarks>
+    /// <remarks>Its place is the driver library's (<see cref="HeldWordsFile"/>), whose one <c>Forget</c> takes a deleted session's words out through the queue.</remarks>
     public static string HeldPath(string home) => HeldWordsFile.PathOf(home);
 
     /// <summary>The longest held words wait for a move before they are tried again: a move made by another client says nothing here.</summary>
@@ -648,5 +648,6 @@ public sealed class SessionWords : IDisposable
     {
         _loop.Processes.KeptLeft -= OnKeptLeft;
         _stopping.Cancel();
+        _held.Dispose();
     }
 }

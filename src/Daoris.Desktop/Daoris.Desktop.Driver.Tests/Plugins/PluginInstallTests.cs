@@ -121,11 +121,12 @@ public sealed class PluginInstallTests : IDisposable
     {
         var mark = Path.Combine(_root, "ran.txt");
         var source = Source("marks", """{ "id": "acme.marks", "hooks": { "command": ["node", "${plugin}/hook.mjs"], "points": ["session/ended"] } }""");
-        File.WriteAllText(Path.Combine(source, "hook.mjs"), $"require('fs').writeFileSync({System.Text.Json.JsonSerializer.Serialize(mark)}, 'ran');");
+        File.WriteAllText(Path.Combine(source, "hook.mjs"), HookMarks.Script(mark));
+        HookMarks.Prove(Path.Combine(source, "hook.mjs"), mark);
 
         PluginInstall.Add(Home, source, Reserved);
 
-        Assert.False(File.Exists(mark));
+        HookMarks.AssertNone(mark);
     }
 
     /// <summary>What the card reads: the manifest as written, `${plugin}` where it says so and no machine path.</summary>

@@ -32,7 +32,7 @@ of everything it handed, section by section.
 | `ChatReplacement` | `Course/Chat/ChatReplacement.cs` | A start whose agent refused the model at its open: the re-ask, and the replacement opened with its words once the refused run let go |
 | `ChatTurns` | `Loop/Chat/ChatTurns.cs` | A conversation's turn queue: holds, limit waits, edits, stops; the one door of its parts |
 | `TurnState` | `Loop/Chat/Turns/TurnState.cs` | The turns' state under its one gate: what it guards, the keep's lock before it, what a race would break |
-| `TurnPump`, `TurnTakes`, `TurnKeeps`, `TurnHolds`, `TurnStops` | `Loop/Chat/Turns/` | The one pump; a word's take at its level; the keeps on the record, edits, press and send-back; the holds; the stops |
+| `TurnPump`, `TurnTakes`, `TurnKeeps`, `KeepRetry`, `TurnHolds`, `TurnStops` | `Loop/Chat/Turns/` | The one pump; a word's take at its level; the keeps on the record, edits, press and send-back, each keep under a key and asked twice before it is held here alone (`KeepRetry`, so a word the record stored but never answered is held once); the holds; the stops |
 | `ProtocolChat`, `NativeChat` | `Loop/Chat/` | A conversation's transport on each door: the protocol session's turns, steers, retries and stop; the native wire's stdin line per turn and its interrupt |
 | `ChatOptions` | `Loop/Chat/ChatOptions.cs` | A conversation's model and effort as its agent offers them, the person's change of either (never the mode), and the change as last kept |
 | `ChatWords` | `Loop/Chat/ChatWords.cs` | The words said to a live conversation: the person's (framed, kept on the record, at a level or at *now*), Daoris's own, a composed message and the workflow draft it carries |
@@ -41,7 +41,7 @@ of everything it handed, section by section.
 | `ChatWatch`, `ChatWatched` | `Loop/Chat/` | The watch over a conversation's run from its open to its end: opens or resumes its agent, reads how it ended, concludes its record and lets go of what the run held |
 | `ChatConclusion` | `Loop/Chat/ChatConclusion.cs` | How a conversation's record ends: the state and note, the limit a last turn met, the ending note of a run that simply ended |
 | `ProtocolHeld` | `Loop/Chat/ProtocolHeld.cs` | A conversation's session on the protocol door as its run holds it open: what it is handed and set before its first prompt, and what its open's failure says |
-| `ChatStarts` | `Loop/Chat/ChatStarts.cs` | A conversation's start in a repository: its role, harness and account asked before any record exists, then its tree, its open and the run over its process |
+| `ChatStarts` | `Loop/Chat/ChatStarts.cs` | A conversation's start in a repository: its role, harness and account asked before any record exists, then its tree, its open and the run over its process; a failure between its open and its run concludes the record `failed` |
 | `ChatClosing` | `Loop/Chat/ChatClosing.cs` | How conversations end at the driver's hand and a person's: the shell closing stops every one and keeps the update's restart word; a person finishing one |
 | `RepositoryPlacement` | `Loop/Chat/RepositoryPlacement.cs` | Where a conversation in a repository runs and what its agent may do there: its tree, its rules, what it may reach across |
 | `ChatWalk` | `Loop/Chat/ChatWalk.cs` | A new conversation's walk over its actor's effective order, choice by choice, remembering the passes it has said |
@@ -131,7 +131,7 @@ of everything it handed, section by section.
     bound holds it, and the seeded `hold` ends its turn `chat.transient-stopped`. Its limits rule's `wait` (within its
     `upTo`, which `LimitRuled` counts from each limit's judgement: a repeated limit is a new cool-off, and the course holds no
     window of its own for a conversation) and `ask`, and the bound, keep it on its own account before the limit's walk (`LimitRuled`), reading the moves
-    under the line's key; a walk to another choice is counted there. Each act is said and kept as the rule's decision. (from D229)
+    under the line's key; a walk to another choice is counted there, the move of an ended conversation (`EndedLimitMove`) as the live one's. Each act is said and kept as the rule's decision. (from D229)
 
 **Moves between accounts and agents**
 
@@ -185,11 +185,13 @@ of everything it handed, section by section.
     the outgoing agent's note; the entry's other parts; the line's course; what was left out. (from D189, D163, D229)
 32. Its bound is 40,000 weight, with a Han, kana, Hangul or fullwidth character, or a surrogate pair, weighing 3 (search's own Han
     test is a different question and stays as it is). Each section has a cap. Past the bound, the oldest turn and
-    then the oldest word drop. It is kept as the new part's first event, with its account. (from D189)
+    then the oldest word drop. A list the state's weight cap shortens is said as left out (`BriefList`), and only a plan past
+    its 50 steps as past its bound (`PlanBound`). It is kept as the new part's first event, with its account. (from D189)
 33. It never hands the agent's thoughts, a tool call's output (but the last failed check's, bounded), a model's summary, an
     account's name, or anything from a harness's store. A page a turn opened is named by its address without user, query or
     fragment, a file page relative to the tree. (from D189)
-34. `line_read` pages one part at a time, by part id, under the brief's bound. A working session may call it; a reviewer and a
+34. `line_read` pages one part at a time, by part id, under the brief's bound, weighed as the brief weighs (`LineEvents.Weight`
+    is `ContextBrief.CharWeight`'s twin). A working session may call it; a reviewer and a
     helper may not. It carries no counts. A tool's output the driver cut is shown with the length its own mark gives, and no cut
     on either side splits a surrogate pair. (from D189, D229)
 
@@ -224,10 +226,12 @@ of everything it handed, section by section.
 42. Ask Daoris is a conversation in its own room, one at a time per workspace. It proposes, and the person applies every
     change. A limit move opens it again in its room. (from D89, D170, D183, D158)
 43. Its conversations stay on this machine. Only those the person spoke in or named are listed, pinned first, then newest.
-    They resume by kept id. A briefed continuation stays one history row. (from D158, D189)
+    They resume by kept id. A briefed continuation stays one history row, a replacement of its refused start included. (from D158, D189)
 44. A new Ask Daoris conversation started from an earlier one is handed Daoris's brief of that one's line, why `press`, ahead
     of the person's first message, and keeps it as Daoris's first prompt. A repository's *Start a conversation with these
-    words* carries the words alone. (from D158, D233)
+    words* carries the words alone. A start its agent refuses at the open, before a word took the brief, hands it to its
+    replacement (`ChatPending.Unhanded`). Words a stop or a taken-back withdraws give back what they were composed with
+    (`ChatMessage.Untaken`), as a message no turn took does. (from D158, D233)
 
 ## Where a change goes
 

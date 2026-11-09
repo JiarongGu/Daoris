@@ -7,6 +7,7 @@ import { readManifest, readLock } from '../../src/doctrine/config.ts';
 import { planSync, applySync } from '../../src/doctrine/materialize.ts';
 import type { Lock } from '../../src/doctrine/records.ts';
 import { analyze, commandAnalyze } from '../../src/doctrine/analyze.ts';
+import { DaorisError } from '../../src/platform/errors.ts';
 
 const doc = (name: string, body = 'Body.') =>
   `---\nname: ${name}\napplies_when: w\nenforces: e\n---\n\n${body}\n`;
@@ -157,6 +158,35 @@ test('the projected budget counts the rules a pack would add', () => {
   repoFx.cleanup();
 });
 
+/**
+ * 🔴 After adoption a rule's body lives in the region, so the budget is measured there and a rule the region already
+ * holds adds nothing: counting every selected rule again showed a repository over its budget by what it already carried.
+ */
+test('on an adopted repository the budget is the region, and a rule it holds is not added again', () => {
+  const canonFx = seedCanon();
+  const repoFx = makeFixture('analyze-adopted-budget');
+  repoFx.write('daoris.json', JSON.stringify({ source: 's', packs: ['win'] }));
+  const canon = readCanon(canonFx.root);
+  const manifest = readManifest(repoFx.root);
+  applySync({
+    root: repoFx.root, manifest, canonVersion: canon.version, force: false,
+    plan: planSync({ root: repoFx.root, manifest, canon, lock: null }),
+  });
+
+  const adopted = run(repoFx, canonFx, ['win'], readLock(repoFx.root));
+  const wider = (() => {
+    canonFx.write('packs/more/pack.json', '{"name":"more","description":"More"}');
+    canonFx.write('packs/more/rules/more-things.md', doc('more-things', 'Another rule the region does not hold yet.'));
+    return run(repoFx, canonFx, ['win', 'more'], readLock(repoFx.root));
+  })();
+
+  assert.ok(adopted.budget.current > 0, 'the region is measured');
+  assert.equal(adopted.budget.projected, adopted.budget.current);
+  assert.ok(wider.budget.projected > wider.budget.current, 'a rule the region lacks is added');
+  canonFx.cleanup();
+  repoFx.cleanup();
+});
+
 test('a repository with no manifest is analysable — that is the point', () => {
   const canonFx = seedCanon();
   const repoFx = makeFixture('analyze-no-manifest');
@@ -179,6 +209,23 @@ const printed = (repoFx: Fixture, canonFx: Fixture): string => {
   delete process.env.DAORIS_CANON;
   return out.join('\n').replace(/\s+/g, ' ');
 };
+
+test('a manifest that exists and cannot be read is refused, not read as no adoption', () => {
+  const canonFx = seedCanon();
+  const repoFx = makeFixture('analyze-bad-manifest');
+  repoFx.write('daoris.json', '{ not json');
+  process.env.DAORIS_CANON = canonFx.root;
+  try {
+    assert.throws(
+      () => commandAnalyze({ root: repoFx.root, argv: [], write: () => {}, packageRoot: '' }),
+      (error: Error) => error instanceof DaorisError && /daoris.json is not valid JSON/.test(error.message),
+    );
+  } finally {
+    delete process.env.DAORIS_CANON;
+    canonFx.cleanup();
+    repoFx.cleanup();
+  }
+});
 
 /**
  * The verdict a person adopting reads before anything else: the

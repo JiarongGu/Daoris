@@ -5,6 +5,107 @@ the per-task record. Entries preserve their original wording so the archive stay
 
 ---
 
+## TREEPOOL1aa — a kept output as the previous line's build base (2026-11-09)
+
+> **TREEPOOL1aa** (driver, tools; D214; §35.3, §36.3, §37.3, §38.2): Outcome: a take keeps a `base` top's declared configurations as the previous line's build, recorded with its producer and its rule's `builds` and marked `.daoris-base` (a base nothing builds set aside), set aside where the toolchain key moves; `daoris tree build` is the one release, building per framework (`-f`) over MSBuild's own `FileWrites` account, setting aside what that build does not own and keeping the producer, frameworks, commands, commit, exit, moment and count beside the bases (`TreeBaseRelease`); the start says the bases and their integrated runners (`started.tree-base`, `started.tree-base-unguarded`) and each trim (`tree.base-trimmed`), the gate run's admission names the unreleased bases, a marked development host is named with the door (`tree.base-host`, the window's `base-host`); eleven readers guarded and `run --real` refused under a marker, held by the census per call site (`TreeBaseGitTests`, `TreeBaseBuildsProcessTests`, `BuildAccountProcessTests`, `TreeBaseWordsTests`, `tools/tree-base.test.mjs`).
+## KNOWREV2a to KNOWREV2j — the knowledge, memory and records review's second cycle (2026-11-09)
+
+> **KNOWREV2a / 2b / 2c / 2d / 2e / 2f / 2g / 2h / 2i / 2j** (service): Outcome: all ten held against main's tip, each fixed with a regression test and a commit.
+> 2a (e0d2ef97f3): a partial reading replaces each repository whose root it read, one that now yields nothing with nothing (`PartialReadingTests`).
+> 2b (ceff6cfd9a): the scanner leaves out a file or folder it cannot read and reads the rest (`UnreadableFileTests`).
+> 2c (f2e0673ff0): the signature and the `+ uncommitted` status read one list of places, which names the declared router, index, decisions, fixes and archive paths and each room's `AGENTS.md` (`RootSignatureDeclaredTests`).
+> 2d (5dff38f9be): `ConvergenceFound` carries the embedder's failure and `knowledge_convergence` says it first, whether or not groups were found; the HTTP route still answers the groups alone (`ConvergenceFailureToolTests`).
+> 2e (863964cd32): each upsert of a registration, its provenances and its code map resolves the spelling a row already holds, so a second case conflicts with it (`RegistrationKeyCaseTests`); rows an older build already doubled stay as they are.
+> 2f (c649e3341d): `SchemaColumns.AddAsync` takes a duplicate-column error as the column being there (`SchemaColumnsTests`).
+> 2g (55da120b95): the watcher whose enabling throws is disposed with its handlers (`WatcherEnableFailureTests`, through an internal enable seam).
+> 2h (a2122031f5): the in-memory store normalizes a workspace on write, and one contract test compares every read of the two stores after the same writes (`KnowledgeStoreContractTests`).
+> 2i (4fb9bf878c): an awaiting end whose session was deleted is listed as a wait of its own, decided by its row as a sweep's is; an orphaned replacement or staged row is not (`MemoryDecisionTests`).
+> 2j (aa1dcaa440): plain words of a forgotten quest publish under the next id at every step as rule 31 says; only a request key, which has no next id, is refused as cleared (`QuestRequestKeyTests`).
+
+## PLUGREV2 — the plugins review's second cycle (2026-11-09)
+
+> **PLUGREV2a** (driver, plugins): Outcome: an update's or replace's swap-in that fails puts the installed folder back, and a rollback that fails too is refused as a `DriverException` naming the `.removing-*` folder the plugin lies in, the stage forgotten (`PluginInstall.SwapIn`, one tail for both; a `move` hook on `PluginFolders`); proved by `PluginSourceTests`.
+>
+> **PLUGREV2b** (driver, web, plugins): Outcome: a sound plugin switched off keeps its approval on its page and in the list (`HelpGrants.Read(withSwitchedOff)`, its grants marked `Off` and handed nothing), and the page's press approves one (`HelpGrants.Declared` takes a sound plugin, on or off); the Ask Daoris proposal still asks a plugin switched on; proved by `HelpGrantsTests` and `PluginPageTests`.
+>
+> **PLUGREV2c** (driver, plugins): Outcome: a placed plugin's `plugin.step` and `plugin.failed` lines carry its id (`WorkPlugins` logs `PlacedWork.PluginOf(key)`, so `PluginHealth` sees the failure under the plugin), and `HookSet.Refused` counts one refusal at the first place that holds a state, not once per place; proved by `PlacedWorkTests`.
+>
+> **PLUGREV2d** (driver, plugins): Outcome: a look and `Watch` divide the awaited set and apply it through `PlacedWork.Apply`, one lock around both, so a look never applies a set older than one `Watch` stored (the rejected alternative, `Watch` only recording, would have delayed an awaited place's start to the next look); proved by `PlacedWorkTests`.
+>
+> **PLUGREV2e** (driver, plugins): Outcome: `WorkEventTeller` tells rows alone and keeps its cursor in memory (no clock, no gap), and `LoopRun` and `DriveConsole` wrap it in `WorkEventNews.Gapped`, the one place that says the first-place and incomplete-batch `events.missed`; proved by `WorkEventTellerTests` (the bare teller and the wrapped one).
+>
+> **PLUGREV2f** (driver, plugins): Outcome: `RelayCopy` removes a build only after its `in-use` file opens alone a second time in the renamed folder (`Unheld`, also the check before a leftover `.removing-*` is deleted); a build a relay opened in the gap goes back to its name, or where a rename cannot (Windows over an open file) stays under its removal name whole; proved by `RelayCopyTests`.
+>
+> **PLUGREV2g** (driver, plugins): Outcome: the relay's stdout bound is said as 54 lines, the gap, 50 events, their count, an ending's own line and the watermark (said, not folded into the count line, which would have changed what a relay prints); `RelayBatchTests` holds the case that ends through a second client and through the pipe.
+>
+> **PLUGREV2h** (driver, plugins): Outcome: `PluginCatalog.Signature` (the hook set keeps its own) and `LandingPlugins`'s `patience` parameter, `DefaultPatience` and its default start lambda deleted with their assertions; an occasion's asks start through the injected start or `StartProcessAsync` alone, and `LandingPatience.Plugin` is read direct.
+>
+> **PLUGREV2i** (driver, plugins): Outcome: the plugins tests that could not fail now can: the host-token tests read the token in the starting flow after the start (`PlacedWorkTests`, `PluginHostTokenTests`; both fail with `HookSet`'s `finally` removed); the package traversal case names three distinct escape paths; the "starts nothing" checks run the hook's script once as an ES module to prove it writes its mark, then read the mark's absence after a second (`HookMarks`); the always-true `NotNull` is gone; the 4 KB frame cases send a valid frame padded to and one byte past the bound.
+
+## DOCTRINECLIREV2 — the doctrine-and-CLI review's second cycle, fixed defects (2026-11-09)
+
+> **DOCTRINECLIREV2a** (cli): Outcome: `analyze`'s budget projection (`budget.ts`, moved out of `analyze.ts`) measures the region's body beside the repository's own rule files, and a selected rule the region already holds adds only the change in its size, so an adopted repository no longer shows its rules counted again; proved by `analyze.test.ts`.
+
+> **DOCTRINECLIREV2b** (driver): Outcome: `DoctrineStatus.Reopened` counts a core file kept with no text (`absentCore`, a field `status --json` already carries) beside a keep the canon moved past, so the place page offers the reconcile that names it; the choice, a reader-only change that leaves `status --json` and the CLI as they are, rejects a new `reopened: true` from the tool; proved by `DoctrineStatusTests`.
+
+> **DOCTRINECLIREV2c** (devkit): Outcome: the sensitive gate's tree scope reads a file with a UTF-16 byte-order mark as text (`SensitiveGate.IsBinary`), so a leak in a file Windows PowerShell's `>` wrote is found; proved by `SensitiveGateTests`. The staged scope's share stays open as DOCTRINECLIREV2c2.
+
+> **DOCTRINECLIREV2d** (devkit): Outcome: the links gate no longer checks links a document quotes in a fenced block or a code span (`LinkText`), reading fences through the service's `MarkdownFence` compiled into the devkit, so there is no fifth fence reader or second table; proved by `LinksGateTests`.
+
+## HOMELEASE2 and FOLDERMOVE2 — the install-home-update review's second cycle (2026-11-09)
+
+> **HOMELEASE2** (install-home-update): Outcome: a lease judged stale is moved aside in one step and judged by what moved (`HomeLease.RemoveStale`), a lease that is not what was judged stale put back, so a taker's lease written between another's read and removal is never removed; proved by `HomeLeaseTests`.
+
+> **FOLDERMOVE2** (install-home-update): Outcome: a cross-volume move-in whose copy landed is a move even where a held file keeps the source from being removed: `FolderMove.Move` returns whether the source went, and `InstallHome.MoveIn` counts the entry moved rather than failed; proved by `FolderMoveTests`.
+
+## ROLESREVIEW2i to 2q — the roles and supervision review's second cycle (2026-11-09)
+
+> **ROLESREVIEW2i** (modules): Outcome: a leave of an allow or files subject asks the same coverage as a decide (`SupervisorDecisionDoor.CoversPlace` for a place no repository names, `Covers` for a held request's repository), so a holder of another place cannot hide a subject from the supervisor that answers it; a leave still asks no grant (`roles-and-supervision.md`, rule 46).
+>
+> **ROLESREVIEW2j** (driver): Outcome: an overruled or stale course or landing decision is refused `overruled` in the run as after a restart (the question's keeping already said so), and a course's overrule or stale release closes its subject at once, as a landing's does.
+>
+> **ROLESREVIEW2k** (driver): Outcome: a share's allow is written into every repository's layer in one read and one write of the person's file (`PersonFiles.EditScopes`), so a failure on a later layer leaves none written and the ask's `made: false` is true; no layer was found to fail alone by a `DriverException`, which only the file's own read raises before any layer is edited, so the write's atomicity is the fix.
+>
+> **ROLESREVIEW2l** (driver): Outcome: a say that comes back as a gateway's, timeout's or throttle's reply with no refusal (`SayAnswer.Lost`: 408, 429, 502, 503, 504) keeps the supervisor's release held to repeat under its receipt, as a thrown lost response does; a 404 and the like stay `no door`, ending the decision `unsaid`. A transport failure already threw, so only a reply that was returned needed the change.
+>
+> **ROLESREVIEW2m** (driver): Outcome: `driver role` set, remove, default and policy plan against the role's revision as the catalogue read it (the press's `revision`, and the write's `read`), so a role edited since is refused moved, not overwritten; `role suggested --use` is one `RoleDoor.ApplyAll` batch judged whole. No refusal inside the batch could be built to show its all-or-none write by a test; the batch is the door's own, pinned by its tests.
+>
+> **ROLESREVIEW2n** (driver): Outcome: the staffing's one publication (`RoleStaffing.Publishing`, which `Commit` now calls) wraps a store failure in a `DriverException` as the commit did, and `RoleCatalog.WriteIn` refuses a late judge's refusal as a `RoleRefusedException` carrying its code, so the second of two presses adding roles that take one work is `two-roles-one-work`.
+>
+> **ROLESREVIEW2o** (driver): Outcome: a start plan's walk that throws (a cancelled account look or order loop) gives its policy reservation back before the exception leaves (`StartPlan.ResolveAsync`), so it no longer counts in the weighted pick, a share or a daily budget until `ReservationLife`.
+>
+> **ROLESREVIEW2p** (modules): Outcome: a catalogue that cannot be read at an act's step (`RoleActsLedger.RunAct`) or a terminal's start (`RoleTerminals.StartAsync`) is `role-changed`, as admission says it, and withdraws no queued act, where it was `not-granted` for good and `unknown-role`.
+>
+> **ROLESREVIEW2q** (driver): Outcome: a cancel that meets a turn already ended is no error (`SupervisorRuns.StopUnwaited`); a subject whose every choice was spent is said once on its line as an unavailable supervisor is (`SupervisePass`); and the said-once memory is cut to the subjects still waiting at each look (`SupervisePass.Forget`).
+
+## CONVREV2a to 2g and COWORKREVIEW2a — the second cycle's defects of the conversations and co-working reviews (2026-11-09)
+
+> **CONVREV2a to 2g / COWORKREVIEW2a** (driver, service): Outcome: all eight fixed, each with a regression test. 2a, 2b, 2g (`d555a12fcd`): an ended limit move reads the line's limits rule and counts a move to another choice (`LimitRuled` takes no chat), ends its carried run's record, and a copy a start never ran is withdrawn (`ChatLimitCarry.Withdraw` public). COWORKREVIEW2a (`c2be8a0018`): a partner's desk refuses an Ask Daoris conversation as a lead. 2f: a plan the state's weight cap shortened is said with the lists' cut, `PlanBound` only past 50 steps. 2c: a failure or cancel between a chat record's open and its run concludes the record `failed` (`ChatStarts`). 2d: a stop or a taken-back word gives back its extras (`ChatMessage.Untaken`). 2e: the refused start's brief goes to Ask Daoris's replacement (`ChatPending.Unhanded`), and `HelpConversations.List` folds a `not-offered` link as a continuation. Choices: the replacement re-hands the brief and the row folds, rather than recomposing the brief; no published contract changed.
+
+## TREEPOOL1ac — shared paths (2026-11-09)
+
+> **TREEPOOL1ac** (driver, web; §35.5, §36.5, §37.4): Outcome: `reach: read` and `write` (refused on a dependency, intermediate, cache or output entry, and never a harness's settings) link each named path into every tree to its one place in the checkout, recorded in the files record's `Shares` before the link is made and only into an absent entry, where `share(path)` is let through, git ignores the path and the place stands in no other repository (`TreeSharing`, `started.share-declined` with its `note.deps.why.share-*` reasons, a file link the machine refuses included); a share counts, and is unlinked, only while its entry reads without following as a link to its place, anything else there the line's, its record dropped and said `tree.share-lost` (`TreeShares`); `TopPartition` partitions a top at recorded and declared share boundaries without entering a link, `SlotIgnored.Shared` moved by no take or finish, a link no share holds refused as foreign; a take unlinks before its switch, a retirement and the tidy's move before theirs; `started.tree-shared` warns that a recursive delete following a link reaches the shared place; proved by `TreeSharesTests` and `TreePoolSharesGitTests` on real junctions and file links.
+
+## FABRIC-SQUASHCHAIN1 and NODEKIT1 — built parts (2026-11-09)
+
+> **FABRIC-SQUASHCHAIN1** (driver, web; D245): Outcome: a chain's completion past its pull request is fabric steps: `monitor`, `tidy`, the keeper's proof over git, a run's passes reaching both end to end and the web's pull-request readers (BL77, `f479ed63c`; the workflows area).
+>
+> **NODEKIT1** (driver, modules, web; D247): Outcome: every node kind is one folder under `Workflows/Kinds/<Kind>/` registered with `[NodeKind]`, the shared tables gone; the kit, the person's task and approval, the page's kinds generated from the kit and the run view are built (`docs/areas/workflows-review-landing.md`).
+
+## WFREVIEW1 — the code review of the workflows, review and landing area (2026-11-09)
+
+> **WFREVIEW1** (driver): Outcome: a *Reviewed* given before a recheck's findings reached the person answers nothing (the recheck's delivery time is kept beside it, `OpinionGateState.RecheckToPersonAt`), and a delivery is keyed by a generation as well, so a landing retried after its delivery settled withdrawn starts the next generation with its own phases written ahead (store step 24).
+
+## SETTINGSUX1 and UIFIND1 — Settings grouped by what a person comes to set, its folders one list (2026-11-09)
+
+> **SETTINGSUX1 / UIFIND1** (web): Outcome: Settings has eleven domains in the order a person comes to them (Get started, Appearance, Driver, AI features, Git, Tools, Browser, Disk space, Updates, This Daoris, Machine log). Disk space holds the folders as one list (the name, the path on one line cut in the middle by `MiddlePath`, the size, one *Open folder*) and the keep rules; Updates the install's update over its versions; Driver repeats neither the home nor the update; This Daoris leads with the terminal and the service. A row's terminal twin or variable name sits in its ⓘ help (`SettingRow`'s `twin`), and the palette finds each domain by its rows' words in the reader's language (`domainSearch.test.ts`). The doors that opened the space card and the update open Disk space and Updates.
+
+## DESKTOPREV1 — the desktop-app code review's last three defects (2026-11-09)
+
+> **DESKTOPREV1** (modules, driver): Outcome: (6) a `HOLD` card waiting at close was in no `WaitingFor` entry, so the close skipped it, its line stayed unanswered and `Drain` sat out its whole bound; `PipeHolding.CloseAsks` now ends it lost on the stop's own step. (7) `JsonElement.GetString()` throws on a lone surrogate escape on .NET 10 (the claim that it answers U+FFFD was wrong): a payload string made `Accept` throw out of `RunAsync` and a report's text made `LogModule.Take` answer `UNKNOWN_ERROR`, so the pipe now refuses such a payload `shape` under its id (an id or key holding one still closes as no request), the log report drops that value, and `Utf8JsonWriter` writing a lone surrogate as U+FFFD is pinned. (9) the queue owns the held file: `HeldWordsFile.Forget` asks the queue (`IHeldWordsHolder`) to drop a deleted session's words from memory and file together, and edits the file in place only where the process has no queue.
+
+---
+
 ## DOCTRINECLI1 — the doctrine console's Ctrl+C hold and the CLI's Node floor (2026-11-09)
 
 > **DOCTRINECLI1** (driver): Outcome: `DoctrineConsole` holds Ctrl+C through `InterruptHold`, taken before the child starts and removed when it ends, and the CLI's entry refuses a Node below 22 with exit 2 (`bin/node-floor.mjs`), the floor checked once inside the CLI, never by a second process start.
@@ -23538,3 +23639,29 @@ The 26 pointer lines of the parked file's head (the owner's reports and features
 - [x] **ROLESREVIEW1 — defects of the roles-and-supervision code review, each a row** (driver, modules): 2026-11-08 a to h each fixed with a regression test failing first: an agent supervisor takes landing, allow and files subjects, each kind's row composing its facts (the editor refuses no grant to an agent holder); a catalogue unreadable after a role press ends no hold; a steward act is read against its grant again at its step; the role door's revision check is inside the write transaction; a landing step is listed only where it offers a covered act; a dropped block is said on the line and a `role-changed` one begins again; a rules write is judged against the seeded machine rules; a `refer` rule's holds on moves, limits and failures are pinned.
 
 - [x] **TREEPOOL1x — this repository's own installs cannot be kept by the pool** (driver): 2026-11-09 a dependency rule's `setup` run once per repository after the installs (`RepositorySetup`), an `npm ci` of such a rule run without scripts where no lockfile entry has an install script or resolves from git (`InstallScripts`), this repository's two `--install` steps moved there, and a group member a build state's rule keeps no longer removed with its group (the web's vanished `node_modules`); the real repository's placement at a take is TREEPOOL1ab's rerun (`TreeSetupTests`, `InstallScriptsTests`, failing first).
+
+- [x] **PROCTREE1 — every process of Daoris's under its instance** (driver, modules, cli): 2026-11-09 `daoris gate run` asks the running Daoris over its pipe (`RUN_HEAVY`), which runs the gates as its own children with the terminal's folder, environment and standard handles, held to the connection; with none to ask the verb says so and runs them itself; `TerminalStartsCensusTests` names every verb that can start a process, and `node tools/process-tree.mjs` lists what runs outside the tree, for the steward's read of the install (`HeavyAppRunProcessTests`, the census, failing first).
+- [x] **UIFIND6 — an agent's sign-in says itself three times** (web, agents): 2026-11-09 the sign-in's end toasts nothing and its card says who signed in once, with the joining; *Done* on the offered name renames nothing and toasts nothing (`AgentsView.signedIn.test.tsx`).
+
+- [x] **UIFIND8 — *At work* offers the channel to an ended session** (web, work): 2026-11-09 a line's own channel draws no composer once the attended session has ended (`AtWorkChannel.over.test.tsx`).
+
+- [x] **UIFIND9 — a terminal's start card says "with your words:" over no words** (web, person): 2026-11-09 the act reads *start a conversation*, the words their own row where there are any (`ConfirmationsHold.test.tsx`).
+
+- [x] **UIFIND10 — the Ask drawer's subtitle and twin** (web, asks): 2026-11-09 the subtitle is in the body face and the terminal twin stands at the form's foot (`AskComposer.layout.test.tsx`).
+
+- [x] **UIFIND11 — Plugins offers Ask Daoris with no agent, and cuts each name** (web, plugins): 2026-11-09 *Ask Daoris for a plugin* stands only where the driver names an Ask Daoris agent, and a name wraps whole (`PluginList.names.test.tsx`); shot `plugins.png` shows both.
+
+- [x] **UIFIND13 — Knowledge's list is empty until a search** (web, knowledge): 2026-11-09 the list says how many entries are indexed and to type two letters (`HitList.idle.test.tsx`); shot `docs/assets/uireview/knowledge-idle.png`.
+
+- [x] **UIFIND15 — Ask Daoris's setup card says a sign-in for a key-only agent** (web, help): 2026-11-09 the machine read for the starters carried no roster sheet, so no agent was ever key-only; it carries it now and the card says `daoris agent key` (`machine.keyOnly.test.ts`, failing first). The help room's driver rows name no key row; none was added.
+
+- [x] **WFREVIEW3b — a supervisor's release is live only after its word is on the record** (driver): 2026-11-09 the decision is marked released before its word is committed, and a refused word leaves it stale (`SupervisorLandingTests`, failing first).
+- [x] **WFREVIEW3c — a landing's subject refuses a node id holding `/`** (driver): 2026-11-09 the subject reads its run up to the first `/` and its attempt after the last, so a node id keeps any it holds and persisted ids read as before; refusing `/` in a node id at the save was rejected, since it would strand graphs already saved (`SupervisorLandingTests`, failing first).
+- [x] **WFREVIEW3e — a run's `End` judges on a record read before its edit** (driver): 2026-11-09 the judgement is one function, read before the edit and again on the record the edit holds (`NodeRunEndingTests`, failing first).
+- [x] **WFREVIEW3f — a pass can drop a chain's return ask** (driver): 2026-11-09 the pass takes its asks before it reads the units, so an ask landing during the read stays owed (`NodeRunEndingTests`, failing first).
+- [x] **WFREVIEW3g — the node records' listing throws on a record deleted since it was listed** (driver): 2026-11-09 a vanished record is skipped, not listed as unreadable, since nothing is left to mend (`NodeRecordFilesTests`).
+- [x] **WFREVIEW3h — a push's pull-request look that throws still spends its minute** (driver): 2026-11-09 the minutes taken for the ask are given back when the plugin's read throws (`PullRequestMomentsTests`).
+- [x] **WFREVIEW3i — a *Reviewed* git could not check is worded as a commit that does not hold the work** (driver): 2026-11-09 it reads `Unread` with the problem the page words, and still lets nothing land (`ReviewGateTests`).
+- [x] **WFREVIEW3j — the review's serve check keeps serving a re-taken slot's build** (driver): 2026-11-09 a serve carries its tree and the showing's time, and the look lets the tab go once the slot took another line after it (`PooledReadersTests`).
+- [x] **WFREVIEW3k — the verification executor's loop ends on any exception but cancellation** (driver): 2026-11-09 a writer or callback that throws as a result is told no longer faults the loop (`HeavyExecutorFaultTests`).
+- [x] **WFREVIEW3n — a part throwing mid-tidy can lose its error** (driver): 2026-11-09 every fault of a started tidy is logged, and a failed partly write is logged beside the part's own error, which stays the one thrown (`TidyNodeTests`; the partly write's guard is not exercised, since no test makes a part throw).

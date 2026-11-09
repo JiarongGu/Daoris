@@ -293,17 +293,17 @@ test("this repository's web gate runs its unit tests as a light gate of its own,
   assert.equal(scripts['test:web:unit'], 'npm --prefix src/Daoris.Web run test');
   assert.equal(web.run, 'npm run test:web:e2e');
   assert.equal(scripts['test:web:e2e'],
-    'npm --prefix src/Daoris.Web run build && dotnet build src/Daoris.Service/Daoris.Service.Http && npm --prefix src/Daoris.Web run e2e');
-  // A person's whole web run is both, its unit tests first.
+    'npm --prefix src/Daoris.Web run build && node tools/tree-base.mjs build src/Daoris.Service/Daoris.Service.Http && npm --prefix src/Daoris.Web run e2e');
+  // A person's web run is both, its unit tests first.
   assert.equal(scripts['test:web'], 'npm run test:web:unit && npm run test:web:e2e');
   const schedule = tool.laneSchedule(repoPlan, { scripts });
   assert.deepEqual(schedule.components['web-unit'], []);
   assert.deepEqual(schedule.components['web'], ['src/Daoris.Service', 'src/Daoris.Contracts']);
   assert.equal(tool.isProcessLane(unit), false);
   assert.equal(tool.isHeavyGate(unit), true, 'vitest loads the machine, so a Process half waits for it (GATEORDER1)');
-  // The web gate goes before its unit run, so the place service frees goes to the build the light lane's floor waits on.
+  // The web gate goes first, so the place service frees goes to the build the light lane's floor waits on.
   const light = schedule.light.map((gate) => gate.name);
   assert.ok(light.indexOf('web') < light.indexOf('web-unit'), light.join(', '));
-  // Vitest's workers, a quarter of the machine, set in the page's own config, which the unit run reads wherever it runs.
+  // Vitest's workers, a quarter of the machine, set in the page's config.
   assert.match(readFileSync(join(repoRoot, 'src', 'Daoris.Web', 'vite.config.ts'), 'utf8'), /maxWorkers: process\.env\.DAORIS_WEB_WORKERS \?\? '25%'/);
 });

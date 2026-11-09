@@ -6,13 +6,11 @@ namespace Daoris.Driver;
 /// </summary>
 /// <remarks>
 /// <para><b>No kept cursor</b>: an event is a wake, never a replay, so the teller's place is its memory and a restart begins at the
-/// journal's newest position. That place is a gap, so the first the feed hands it is told as one <see cref="WorkEventKinds.Missed"/>, and
-/// so is each batch whose history is incomplete: what moved there is the records' to say.</para>
+/// journal's newest position; its gaps are <see cref="WorkEventNews.Gapped"/>'s, which wraps it.</para>
 /// <para>Its sink never waits, so it is the first of its feed's tellers.</para>
 /// </remarks>
 /// <param name="tell">Where each event goes, in order.</param>
-/// <param name="clock">When a gap is found.</param>
-public sealed class WorkEventTeller(Action<WorkEvent> tell, Func<DateTimeOffset> clock)
+public sealed class WorkEventTeller(Action<WorkEvent> tell)
 {
     private readonly object _gate = new();
     private JournalPosition? _place;
@@ -20,10 +18,8 @@ public sealed class WorkEventTeller(Action<WorkEvent> tell, Func<DateTimeOffset>
     /// <summary>The feed's teller: its batches told, its place loaded from and kept in memory.</summary>
     public JournalTeller Teller => new(TellAsync, Load, Keep);
 
-    /// <summary>A batch's quest moves, after one gap where its history is incomplete.</summary>
     public Task TellAsync(JournalBatch batch)
     {
-        if (batch.Missed) tell(new WorkEvent(WorkEventKinds.Missed, clock()));
         foreach (var row in batch.Rows)
         {
             if (Of(row) is { } told) tell(told);
@@ -39,14 +35,7 @@ public sealed class WorkEventTeller(Action<WorkEvent> tell, Func<DateTimeOffset>
 
     private void Keep(JournalPosition position)
     {
-        bool first;
-        lock (_gate)
-        {
-            first = _place is null;
-            _place = position;
-        }
-
-        if (first) tell(new WorkEvent(WorkEventKinds.Missed, clock()));
+        lock (_gate) _place = position;
     }
 
     /// <summary>The event a journal row is, or null: a quest begun, closed, or out of its close.</summary>

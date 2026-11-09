@@ -148,8 +148,8 @@ public static class WorkingTree
         // and nothing else — a value starting with `-` would be read as an option.
         if (!IsCommitId(held) || !IsCommitId(head)) return TreeRelation.Unknown;
 
-        var (known, _, _) = await GitAsync(root, ["cat-file", "-e", $"{held}^{{commit}}"], ct).ConfigureAwait(false);
-        if (known != 0) return TreeRelation.Unknown;
+        var known = await GitObjectReads.InfoAsync(root, $"{held}^{{commit}}", ct).ConfigureAwait(false);
+        if (known is not { Missing: false }) return TreeRelation.Unknown;
 
         // `--is-ancestor` answers 0 for yes and 1 for no; anything else is git failing to answer.
         var (descends, _, _) = await GitAsync(root, ["merge-base", "--is-ancestor", held, head], ct).ConfigureAwait(false);
@@ -348,9 +348,6 @@ public static class WorkingTree
 
     internal static Task<TreeDiff?> UncommittedDiffAsync(string root, GitRead git, CancellationToken ct) => TreeDiffs.UncommittedDiffAsync(root, git, ct);
 
-    internal static Task<(string? Patch, int? Added)> UntrackedReadAsync(string root, string path, GitRead git, CancellationToken ct) =>
-        TreeDiffs.UntrackedReadAsync(root, path, git, ct);
-
     public static Task<TreeDiff?> DiffBetweenAsync(string root, string from, string to, CancellationToken ct = default) => TreeDiffs.DiffBetweenAsync(root, from, to, ct);
 
     internal static Task<TreeDiff?> DiffBetweenAsync(string root, string from, string to, GitRead git, CancellationToken ct) =>
@@ -509,8 +506,17 @@ public static class WorkingTree
     internal static Task<(byte[] Bytes, int Count)?> GitBytesAsync(string root, IReadOnlyList<string> arguments, int limit, CancellationToken ct) =>
         GitRuns.GitBytesAsync(root, arguments, limit, ct);
 
+    /// <summary>The same, git reading <paramref name="input"/> first: <c>cat-file --batch</c> asked its one question.</summary>
+    internal static Task<(byte[] Bytes, int Count)?> GitBytesAsync(string root, IReadOnlyList<string> arguments, int limit, string input, CancellationToken ct) =>
+        GitRuns.GitBytesAsync(root, arguments, limit, input, ct);
+
     internal static Task<int> ReadGitAsync(string root, IReadOnlyList<string> arguments, Func<ReadOnlyMemory<char>, bool> take, CancellationToken ct) =>
         GitRuns.ReadGitAsync(root, arguments, take, ct);
+
+    internal static Task<int> ReadGitAsync(
+        string root, IReadOnlyList<string> arguments, IReadOnlyDictionary<string, string> environment, Func<ReadOnlyMemory<char>, bool> take,
+        CancellationToken ct) =>
+        GitRuns.ReadGitAsync(root, arguments, environment, take, ct);
 
     /// <summary>
     /// How a review reads git: <c>take</c> is handed git's answer as it comes and answers false once it has what

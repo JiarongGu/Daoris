@@ -81,7 +81,7 @@ public sealed partial class AgentsTextTests
     private static async Task Said(string name)
     {
         var row = Read.Value.GetProperty("rows").EnumerateArray().First(each => each.GetProperty("name").GetString() == name);
-        // A row that lays a Windows binary (a pin of a version already installed) is said on Windows alone.
+        // A row that lays a Windows binary (a pin of a version already installed), or keeps a key, which Windows alone seals, is said on Windows alone.
         if (row.TryGetProperty("onWindows", out var onWindows) && onWindows.GetBoolean() && !OperatingSystem.IsWindows()) return;
         var root =Path.Combine(WorkspaceRoot.Folder, "_fixtures", "agents-text", Guid.NewGuid().ToString("N")[..8]);
         foreach (var sub in new[] { "daoris", "user", "work" }) Directory.CreateDirectory(Path.Combine(root, sub));
@@ -139,13 +139,12 @@ public sealed partial class AgentsTextTests
                 foreach (Match id in Drawn().Matches(text)) known.Add(id.Value);
             }
 
-            // So is a fold's receipt's (drawn at random, as an account's is), read inside `pooled` alone; its moment
-            // is a settling moment like a proposal's, `<at>`.
+            // So is a fold's receipt's, drawn at random and read inside `pooled` alone; its moment is a settling one, `<at>`.
             foreach (var file in row.GetProperty("before").EnumerateObject()) known.UnionWith(Receipts(file.Value.GetString()!));
 
             string Spelled(string text)
             {
-                var spelled = Drawn().Replace(Settled().Replace(text
+                var spelled = Drawn().Replace(Settled().Replace(Opened(text)
                     .Replace(JsonEncodedText.Encode(root).ToString(), "<root>", StringComparison.Ordinal)
                     .Replace(root, "<root>", StringComparison.Ordinal)
                     .Replace(slashed, "<root>", StringComparison.Ordinal)
@@ -232,6 +231,12 @@ public sealed partial class AgentsTextTests
     /// <summary>A proposal's settling moment, or a fold's receipt's, the run's own: the table spells it <c>&lt;at&gt;</c>.</summary>
     [GeneratedRegex("(\"at\": ?)\"\\d{4}-\\d\\d-\\d\\dT[^\"]*\"")]
     private static partial Regex Settled();
+
+    /// <summary>A kept key, sealed anew each time, is spelled by the key it opens to, <c>&lt;sealed sk-…&gt;</c>: an unsealed one matches none.</summary>
+    private static string Opened(string text) => SealedKey().Replace(text, kept => $"<sealed {KeySeal.Open(kept.Value) ?? "?"}>");
+
+    [GeneratedRegex(KeySeal.Prefix + "[A-Za-z0-9+/=]+")]
+    private static partial Regex SealedKey();
 
     /// <summary>An account's id as <see cref="AccountNames.NewId"/> draws it: a run's own, the table spells it <c>&lt;id&gt;</c>.</summary>
     [GeneratedRegex("acct-[0-9a-f]{8}")]

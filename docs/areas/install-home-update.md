@@ -18,7 +18,7 @@ Paths below use `Drv/` for `src/Daoris.Desktop/Daoris.Desktop.Driver/` and `Mod/
 |---|---|---|
 | Launcher | `src/Daoris.Desktop/Daoris.Desktop.Launcher/Program.cs` | The root `Daoris.exe`: taskbar id, starts `app/Daoris.Desktop.exe`, runs a staged swap while nothing runs from `app/` |
 | `InstallHome` | `Mod/Update/InstallHome.cs` | Finds the install above `app/`; sets the home, the account variable once, D105's override, D63's move-in; the working folder; the window's memory |
-| `FolderMove` | `Mod/Update/FolderMove.cs` | A folder moved across volumes: renamed on one volume, else copied whole and the source removed; a failed copy removes what it made, so the target is as it was |
+| `FolderMove` | `Mod/Update/FolderMove.cs` | A folder moved across volumes: renamed on one volume, else copied whole and the source removed; a failed copy removes what it made, so the target is as it was; a copy that landed is a move even where a held file keeps the source (`Move` returns whether it went) |
 | `HomePlacing` | `Mod/Update/HomePlacing.cs` | The one-time rename of an install's entries into D172's places, journalled and recovered |
 | `DaorisHome` | `Drv/Platform/DaorisHome.cs` | The home seam: `Resolve`, `InstallOf`, `Adopt`, `Entry`, `Places`, `FolderOf`, `InstallBin`, `HomeOf` |
 | `ProgramHome` | `Drv/Platform/ProgramHome.cs` | The home a program names once at its entry (the window's and the host's): what carries no home of its own, Daoris's own git and a probe's tools, reads it, never the variable a process inherited; a unit that acts for a home (a fetch's holds, a squash's author) is handed it. `ProcessHomeCensusTests` names each library read of the variable left, with why |
@@ -86,7 +86,8 @@ Paths below use `Drv/` for `src/Daoris.Desktop/Daoris.Desktop.Driver/` and `Mod/
     `run/` may be cleared while Daoris is closed, and logs keep 30 days or fewer. A category is cleaned by Daoris's own acts,
     never by deleting a folder while it runs. (from D172, D195)
 18. One writer per home: `run/home.lease`. An instance holds it for its life; a verb, the first-start migration and the
-    launcher's swap hold it for their act. A stale lease never blocks. A live `driver.lock`, or a lease at the old place,
+    launcher's swap hold it for their act. A stale lease never blocks, and is removed by moving it aside and
+    judging what moved, so a lease written meanwhile is put back. A live `driver.lock`, or a lease at the old place,
     still holds the home. (from D104, D171)
 19. A home has one id, in `data/home.json`, read alike through every path to the folder. (from D171)
 20. A home with no state, on a machine whose `~/.daoris` holds state, moves it in at the first start, `bin/` excepted, and
@@ -135,7 +136,7 @@ Paths below use `Drv/` for `src/Daoris.Desktop/Daoris.Desktop.Driver/` and `Mod/
 33. `publish:desktop -- --to <folder>` has no default folder. It writes only its own names (`Daoris.exe`, `app`, `data`,
     `INSTALLED.md`, `update`). It refuses a non-empty folder with no marker; `--beside` writes next to other things, never over
     one of its names. (from D60, D93)
-34. A republish removes exactly what `app/shell-files.txt` lists and the retired names, then places its own. A publish into an
+34. A republish removes exactly what `app/shell-files.txt` lists (a line naming a path, not one name, is no entry) and the retired names, then places its own. A publish into an
     install carrying a service host, without `--service`, is refused. (from D93)
 35. It publishes only a tree the full gate set passed, unless the folder is under `_fixtures/` or `--force-ungated` is given,
     which it says. `--stage --from-gated <commit>` builds the gate tree's commit under its lock. (from D115, D180)

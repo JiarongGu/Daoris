@@ -140,6 +140,7 @@
         "units": [
           "tools/contracts/ContractsGen.csproj",
           "tools/chromium-probe/ChromiumProbe.csproj",
+          "tools/git-library-bench/GitLibraryBench.csproj",
           "src/Daoris.Devkit/Daoris.Devkit.Cli/Daoris.Devkit.Cli.csproj",
           "src/Daoris.Devkit/Daoris.Devkit.Core/Daoris.Devkit.Core.csproj",
           "src/Daoris.Devkit/Daoris.Devkit.Tests/Daoris.Devkit.Tests.csproj"

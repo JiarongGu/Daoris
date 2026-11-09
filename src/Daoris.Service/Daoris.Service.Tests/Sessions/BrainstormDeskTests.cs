@@ -175,6 +175,36 @@ public sealed class BrainstormDeskTests : IDisposable
         Assert.Contains("was already sent (running)", desk.Send(id, At).Message);
     }
 
+    /// <summary>🔴 A brainstorm stopped or ended unsent is refused a send, never answered as sent.</summary>
+    [Fact]
+    public void Send_is_refused_for_a_brainstorm_stopped_or_ended_before_it_was_sent()
+    {
+        var desk = new BrainstormDesk(_home);
+        var id = desk.Ask("Why?", null, null, At).Brainstorm!.Id;
+        Put(id, "state.json", """{ "state": "frozen", "packet": "sha256:5f1c", "code": null }""");
+        desk.Stop(id, At);
+
+        var pending = desk.Send(id, At);
+        Assert.Equal(BrainstormRefusal.State, pending.Refusal);
+        Assert.Contains("was stopped", pending.Message);
+        Assert.False(File.Exists(Path.Combine(Folder(id), "sent.json")));
+
+        Put(id, "state.json", """{ "state": "ended", "packet": "sha256:5f1c", "code": "stopped" }""");
+        var ended = desk.Send(id, At);
+        Assert.Equal(BrainstormRefusal.State, ended.Refusal);
+        Assert.Contains("was stopped", ended.Message);
+
+        var failed = desk.Ask("How?", null, null, At.AddMinutes(1)).Brainstorm!.Id;
+        Put(failed, "state.json", """{ "state": "ended", "packet": "sha256:5f1c", "code": "no-agent" }""");
+        var unsent = desk.Send(failed, At);
+        Assert.Equal(BrainstormRefusal.State, unsent.Refusal);
+        Assert.Contains("ended (no-agent) before it was sent", unsent.Message);
+
+        Put(failed, "sent.json", """{ "packet": "sha256:5f1c", "at": "2026-10-19T10:00:00Z" }""");
+        Assert.Contains("was already sent (ended)", desk.Send(failed, At).Message);
+        Assert.Equal(BrainstormRefusal.None, desk.Send(failed, At).Refusal);
+    }
+
     /// <summary>Clear removes the records, the packet and the rooms, never a running brainstorm's.</summary>
     [Fact]
     public void Clear_takes_the_records_and_the_rooms_and_never_a_running_brainstorm()

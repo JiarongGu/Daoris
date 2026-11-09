@@ -30,6 +30,34 @@ public sealed class SupervisorLandingTests : IDisposable
 
     private QuestionSupervisorDecisions Decisions() => new(_home, new Admits("g-1")) { LandingApplied = LandingApplied.Of(_home) };
 
+    [Fact]
+    public async Task A_decision_is_live_when_its_word_is_committed_so_a_pass_between_cannot_drop_it_and_a_refused_word_leaves_it_not_live()
+    {
+        var decisions = Decisions();
+        var kept = await decisions.LandingAsync(Landing(), "reports", null, At);
+        var liveAtCommit = new List<bool>();
+
+        Assert.Equal([SupervisorState.Released], await decisions.ReleaseLandingsAsync(
+            new LandingRelease(_ => Task.FromResult<string?>(null), _ => { liveAtCommit.Add(decisions.LandingWords.Live(kept.Decision!)); return null; }), At.AddMinutes(11)));
+        Assert.Equal([true], liveAtCommit);
+
+        var refused = await decisions.LandingAsync(Landing(attempt: 2), "reports", null, At);
+        Assert.Equal([SupervisorState.Stale], await decisions.ReleaseLandingsAsync(
+            new LandingRelease(_ => Task.FromResult<string?>(null), _ => RunNodeWords.Stale), At.AddMinutes(11)));
+        Assert.False(decisions.LandingWords.Live(refused.Decision!));
+    }
+
+    [Theory]
+    [InlineData("review", 1)]
+    [InlineData("gate/review", 2)]
+    [InlineData("a/b/c", 12)]
+    public void A_landings_subject_gives_back_its_node_whether_or_not_the_id_holds_a_slash(string node, int attempt)
+    {
+        Assert.Equal(("q7", node, attempt), SupervisorSubject.Landing("s1", "q7", node, attempt).LandingParts);
+        Assert.Null(new SupervisorSubject(SupervisorKinds.Landing, "s1", "q7/review").LandingParts);
+        Assert.Null(new SupervisorSubject(SupervisorKinds.Landing, "s1", "q7//1").LandingParts);
+    }
+
     private static SupervisorLanding Landing(string act = SupervisorLandingActs.Accept, int attempt = 1, string generation = "g-1") =>
         new("s1", "q7", "review", attempt, generation, act, [new SupervisorReason("The diff is the quest's brief.", "the diff")], new SupervisorHolder(RoleHolders.Terminal, null));
 
@@ -74,6 +102,19 @@ public sealed class SupervisorLandingTests : IDisposable
     }
 
     [Fact]
+    public async Task ROLESREVIEW2b_a_retry_of_a_held_decision_is_refused_where_the_step_now_refuses_it()
+    {
+        var decisions = Decisions();
+        var kept = await decisions.LandingAsync(Landing(), "reports", null, At);
+
+        Assert.Equal(kept.Decision, (await decisions.LandingAsync(Landing(), "reports", null, At.AddMinutes(1))).Decision);
+        var retried = await decisions.LandingAsync(Landing(), "reports", SupervisorWhy.OwnerHeld, At.AddMinutes(2));
+
+        Assert.False(retried.Kept);
+        Assert.Equal(SupervisorWhy.OwnerHeld, retried.Why);
+    }
+
+    [Fact]
     public async Task The_persons_overrule_inside_the_window_keeps_the_step_theirs_and_nothing_is_released_nor_decided_again()
     {
         var decisions = Decisions();
@@ -83,7 +124,7 @@ public sealed class SupervisorLandingTests : IDisposable
         var handed = new List<SupervisorLandingDue>();
         Assert.Empty(await decisions.ReleaseLandingsAsync(Line(handed: handed), At.AddMinutes(11)));
         Assert.Empty(handed);
-        Assert.Equal(SupervisorWhy.Answered, (await decisions.LandingAsync(Landing(), "reports", null, At.AddMinutes(12))).Why);
+        Assert.Equal(SupervisorWhy.Overruled, (await decisions.LandingAsync(Landing(), "reports", null, At.AddMinutes(12))).Why);
         Assert.False(decisions.Refers(SupervisorSubject.Landing("s1", "q7", "review", 1)));
     }
 
@@ -124,6 +165,7 @@ public sealed class SupervisorLandingTests : IDisposable
         Assert.Empty(handed);
         Assert.Equal((SupervisorState.Stale, SupervisorWhy.RoleChanged), (decisions.LandingsOf("s1").Single().State, decisions.LandingsOf("s1").Single().Why));
         Assert.False(decisions.LandingWords.Live(kept.Decision!));
+        Assert.Equal(SupervisorWhy.Overruled, (await decisions.LandingAsync(Landing(), "reports", null, At.AddMinutes(12))).Why);
     }
 
     [Fact]

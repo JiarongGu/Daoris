@@ -75,6 +75,7 @@ internal sealed class FilesKind : ISupervisorKind
     public Task<SupervisorDecided> LeaveAsync(DriverLoop loop, SupervisorLeaveForm form, SupervisorHolder holder, CancellationToken ct)
     {
         if (Waiting(loop, form.Subject) is not { Decision: null } ask) return Done(SupervisorDecided.Refused(SupervisorWhy.NotHeld));
+        if (SupervisorDecisionDoor.CoversPlace(loop, form.Generation, Kind, PlaceOf(loop, ask)) is { } uncovered) return Done(SupervisorDecided.Refused(uncovered));
         Left[Key(loop, ask)] = 0;
         return Done(new SupervisorDecided(true, null, null, null));
     }

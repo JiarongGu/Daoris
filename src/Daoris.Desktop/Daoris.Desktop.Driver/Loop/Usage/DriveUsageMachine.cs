@@ -6,7 +6,7 @@ internal static class DriveUsageMachine
     public const string Text =
         """
           space [--json] [--measure]
-              the free space and each kind Daoris keeps, This Daoris's Disk space twin: its size and when it was
+              the free space and each kind Daoris keeps, Settings → Disk space's twin: its size and when it was
               counted, its rule, when it next goes and when it was last cleaned. --measure counts each kind first,
               each within its own bound. Reads only; removes nothing.
           space free [--kind <id>]... [--early <group>]... [--yes]
@@ -38,7 +38,7 @@ internal static class DriveUsageMachine
           tree clean [--workspace <name>] [--yes]  ·  tree land <session> [--plan] [--branch <name>]
           tree land --entry <id> | --ask <id> [--leave-out <session>]... [--plan]
           tree state [--entries]  ·  tree state <session|branch> [--repository <name>]
-          tree sync [--repository <name>] [--workspace <name>] [--all] [--yes]
+          tree sync [--repository <name>] [--workspace <name>] [--all] [--yes]  ·  tree build <path>
               this machine's session trees and the branches its landings made; remove takes a failed or
               superseded attempt's branch, with its tree where it is still here, on --force, and a branch a landing
               made whose work the line will never hold is withdrawn with --why, its commits kept on a recovery ref
@@ -47,7 +47,9 @@ internal static class DriveUsageMachine
               sync brings each repository up to date after a pull request merged, listed first (it fetches,
               never pushes): those holding Daoris's branches, every one with --all. For clean and sync,
               --workspace takes one workspace's checkouts alone, as its Branches tab does. state alone says each
-              unit of work's milestone, as `work state` does (FABRIC-MILESTONE1a).
+              unit of work's milestone, as `work state` does (FABRIC-MILESTONE1a). build releases a kept output
+              that is the previous line's build: it builds its project and removes the marker the runners refuse
+              by; a failed build releases nothing.
           update [--install <folder>]  ·  update --when-idle | --now | --cancel [--install <folder>]
               what is staged beside the install and how the last swap ended; or install it when idle (the
               default), now (ending what runs as a close does), or not now, as the window's banner does.

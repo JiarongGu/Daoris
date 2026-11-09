@@ -1874,7 +1874,7 @@ test('a rehearsal that runs beside the git half builds what that half builds int
 /**
  * The release rehearsal (the tool's header says why) runs beside the git half only while no desktop test reads the
  * CLI package's folder outside its `src/` and `test/`, which no pack writes, nor runs its bin. Read from every tracked
- * desktop source, and from the stager's own list.
+ * desktop source but its raw strings, and from the stager's own list.
  */
 test('the release rehearsal stages nothing a desktop test reads: they read the CLI package only under src/ and test/, which no pack writes', () => {
   const stager = readFileSync(join(repoRoot, 'tools', 'stage-package.mjs'), 'utf8');
@@ -1888,7 +1888,7 @@ test('the release rehearsal stages nothing a desktop test reads: they read the C
   assert.ok(sources.length >= 100, 'the desktop sources left src/Daoris.Desktop');
   let read = 0;
   for (const path of sources) {
-    const text = readFileSync(join(repoRoot, path), 'utf8');
+    const text = readFileSync(join(repoRoot, path), 'utf8').replace(/"""[^]*?"""/g, '');
     // The install's own CLI is no package of this checkout; the one test running this checkout's bin is a modules Process test, never beside a pack.
     assert.ok(path.endsWith('Bridge/ReconcileStatusProcessTests.cs') || !/Daoris\.Cli"[^;]*daoris\.mjs/.test(text), `${path} names the CLI's bin, which prefers a staged dist/`);
     for (const match of text.matchAll(/Daoris\.Cli"\s*,\s*"([^"]+)"|Daoris\.Cli[\\/]+([^\\/\s"`'<]+)/g)) {

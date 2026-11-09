@@ -50,6 +50,29 @@ public sealed class DriverModuleHelpTests : DriverModuleBridge
         Assert.Contains(Refusals.DriverNotReady, await RefusalAsync(module, "HELP_APPLY", new { id = "p1a2b3c4" }));
     }
 
+    /// <summary>A Not now pressed in another window while the card's Apply holds its claim is refused, and the card stays proposed.</summary>
+    [Fact]
+    public async Task Not_now_is_refused_while_an_Apply_of_the_same_card_holds_its_claim()
+    {
+        var folder = HelpProposals.FolderOf(Home);
+        Directory.CreateDirectory(folder);
+        File.WriteAllText(Path.Combine(folder, "p1a2b3c4.json"), """
+            { "id": "p1a2b3c4", "proposed": "2026-09-29T10:00:00Z", "by": { "session": "h1" }, "kind": "setting",
+              "door": "drive", "target": "engine", "workspace": null, "value": null, "sentence": null,
+              "why": "the person asked", "state": "proposed", "note": null }
+            """);
+        var module = Module();
+
+        using (HelpProposals.Claim(Home, "p1a2b3c4"))
+        {
+            Assert.Contains("being applied already", await RefusalAsync(module, "HELP_DISMISS", new { id = "p1a2b3c4" }));
+            Assert.Equal("proposed", HelpProposals.Find(Home, "p1a2b3c4")!.State);
+        }
+
+        await AnswerAsync(module, "HELP_DISMISS", new { id = "p1a2b3c4" });
+        Assert.Equal("dismissed", HelpProposals.Find(Home, "p1a2b3c4")!.State);
+    }
+
     /// <summary>
     /// A go card's dismiss is a view act. Its card is settled, so no window draws it again, and the answer says the
     /// conversation is told nothing: a go changes nothing, so its dismiss is no word on the quest it names.

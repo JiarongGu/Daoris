@@ -115,6 +115,11 @@
       "id": "ContractsGen",
       "path": "tools/contracts",
       "summary": "writes the page's types for the service's routes and the window's routes"
+    },
+    {
+      "id": "GitLibraryBench",
+      "path": "tools/git-library-bench",
+      "summary": ""
     }
   ],
   "dependencies": [

@@ -5,7 +5,7 @@ import {
 } from '../../bridge/shell';
 import type { useRunNodeWord, useTerminals } from '../../bridge/shell';
 import type { useSessionAtWork } from '../../bridge/sessions/atWork';
-import type { Notify } from '../../design/ui';
+import { type Notify, SESSION_ACTIVE } from '../../design/ui';
 import { cn } from '../../lib/cn';
 import { sentence } from '../../locales/format';
 import { WorkflowRunView } from '../../workflow/WorkflowRunView';
@@ -289,6 +289,7 @@ export function useRegionSurfaces({
             words: lastMessages(lineChannel),
             // The person's words on it, to every part of the line or one repository its messages name.
             recipients: repositoriesOf(lineChannel.items, []),
+            over: !SESSION_ACTIVE.has(attended.state),
             onPost: (post, answered) => postLine.mutate({ session: attended.id, post }, {
               onSuccess: (posted) => (posted.posted ? answered.done() : answered.refused(posted.code ?? 'other')),
               onError: (error) => answered.refused(sentence(error)),

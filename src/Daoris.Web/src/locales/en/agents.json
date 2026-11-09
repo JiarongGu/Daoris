@@ -79,7 +79,7 @@
   "agents.add.title": "Add an account",
   "agents.add.back": "Signing an account back in? Use its row, so it stays the same account.",
   "agents.add.new": "Add a new account",
-  "agents.add.signedIn": "Signed in as {{account}}.",
+  "agents.add.signedInJoined": "Signed in as {{account}}. It joined Daoris's accounts: every workspace's work may run on it.",
   "agents.add.signedInUnnamed": "Signed in — the tool did not say who.",
   "agents.add.keyAdded": "Added the API key {{handle}}.",
   "agents.add.name": "Its name",

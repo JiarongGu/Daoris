@@ -48,6 +48,7 @@ public sealed partial class SettledReadersCensusTests
         ["IntegrateRoutes.cs"] = "the owner's *rebase it* of a superseded commit (INTEGRATE1h): kept, the disposition answered only then",
         ["ReviewLandingWorld.cs"] = "the landing's word to a session, said through the landing world: kept",
         ["SaidDoor.cs"] = "the door hands the answer to the dispatcher, which reads it first",
+        ["KeepRetry.cs"] = "a keep asked again under its key hands the answer back to TurnKeeps, which reads it first",
         ["TogetherRoutes.cs"] = "Bring them together's word to a line's head (LINESTOGETHER1d): kept, or the press says the head could not be told",
         ["OverlapsToldLook.cs"] = "Daoris's word to each of two running units changing one path, told once: kept, the told mark written, no answer read",
         ["QuietWord.cs"] = "the watcher's word to a quiet session, through its inbox: kept with no word where settled, its id read only where there is one, and the episode told either way",
@@ -62,7 +63,7 @@ public sealed partial class SettledReadersCensusTests
     [GeneratedRegex(@"(?<receiver>[\w.]+)\s*\.SayAsync\(")]
     private static partial Regex Say();
 
-    [GeneratedRegex(@"\.(Helpers|Partners)\s*\.HandAsync\(|\.Opinions\s*\.Hand(Word)?Async\(|\bdoor\.KeepAsync\(|\.KeepOrHoldAsync\(")]
+    [GeneratedRegex(@"\.(Helpers|Partners)\s*\.HandAsync\(|\.Opinions\s*\.Hand(Word)?Async\(|\bdoor\.KeepAsync\(|\bKeepRetry\.KeepAsync\(|\.KeepOrHoldAsync\(")]
     private static partial Regex Other();
 
     /// <summary>The names the code gives a service client the say door is called on.</summary>

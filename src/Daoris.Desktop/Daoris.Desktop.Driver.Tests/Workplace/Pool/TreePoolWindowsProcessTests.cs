@@ -4,9 +4,9 @@ using static Daoris.Desktop.Driver.Tests.GitFixture;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// What Windows does to the pool, over real git and real file handles: a switch refused by a file something holds open leaves the slot
-/// <c>stuck</c>, a retirement's rename refused by a handle is <c>busy</c> and the slot stays, a tracked path of 250 characters is
-/// switched in, and a repository that tracks a submodule is never pooled.
+/// What Windows does to the pool, over real git and real file handles: a switch a file something holds open refuses puts the slot back
+/// or leaves it <c>stuck</c> detached, a retirement's rename refused by a handle is <c>busy</c> and the slot stays, a tracked path of 250
+/// characters is switched in, and a repository that tracks a submodule is never pooled.
 /// </summary>
 [Trait(Category.Name, Category.Process)]
 public sealed class TreePoolWindowsProcessTests : IDisposable
@@ -16,18 +16,31 @@ public sealed class TreePoolWindowsProcessTests : IDisposable
     public void Dispose() => _fixture?.Dispose();
 
     [Fact]
-    public async Task A_switch_refused_by_a_held_file_leaves_the_slot_stuck_and_the_new_branch_deleted()
+    public async Task A_switch_refused_by_a_held_file_puts_the_slot_back_or_leaves_it_stuck_naming_no_line_and_the_new_branch_deleted()
     {
         if (!OperatingSystem.IsWindows()) return;
         _fixture = await PoolGitFixture.CreateAsync();
         var pool = _fixture.Pool();
         var slot = await _fixture.LetGoAsync(pool, 1, "s-aaaa0001", "README.md");
+        var tip = (await GitAsync(slot.Path, "rev-parse", "HEAD")).Trim();
         using var held = new FileStream(Path.Combine(slot.Path, "README.md"), FileMode.Open, FileAccess.Read, FileShare.None);
 
         var taken = await pool.TakeAsync(_fixture.Take(1, "s-bbbb0001"));
 
-        Assert.NotNull(taken.Stuck);
-        Assert.Equal(KeptStates.Stuck, pool.Slot(PoolGitFixture.Workspace, PoolGitFixture.Repository, 1)!.State);
+        var row = pool.Slot(PoolGitFixture.Workspace, PoolGitFixture.Repository, 1)!;
+        var standing = ((await GitAsync(slot.Path, "branch", "--show-current")).Trim(), (await GitAsync(slot.Path, "rev-parse", "HEAD")).Trim());
+        if (taken.Stuck is null)
+        {
+            Assert.NotNull(taken.Refused);
+            Assert.Equal(("s-aaaa0001", KeptStates.Kept), (row.Line, row.State));
+            Assert.Equal(("daoris/s-aaaa0001", tip), standing);
+        }
+        else
+        {
+            Assert.Equal(("", KeptStates.Stuck), (row.Line, row.State));
+            Assert.Equal("", standing.Item1);
+        }
+
         Assert.Null(pool.ClaimOn(PoolGitFixture.Workspace, PoolGitFixture.Repository, 1));
         Assert.DoesNotContain("daoris/s-bbbb0001", await _fixture.BranchesAsync());
         Assert.Equal(PoolLocks.Free, Reason(slot.Path));

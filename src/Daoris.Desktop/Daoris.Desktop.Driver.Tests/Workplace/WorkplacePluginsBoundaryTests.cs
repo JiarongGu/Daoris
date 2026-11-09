@@ -224,7 +224,7 @@ public sealed class WorkplacePluginsBoundaryTests : IDisposable
     [Fact]
     public void The_landings_patience_the_states_bounds_and_the_hold_they_bound_keep_their_values()
     {
-        Assert.Equal(TimeSpan.FromMinutes(2), LandingPlugins.DefaultPatience);
+        Assert.Equal(TimeSpan.FromMinutes(2), LandingPatience.Plugin);
         Assert.Equal(TimeSpan.FromSeconds(30), LandingPlugins.StatePatience);
         Assert.Equal(TimeSpan.FromSeconds(60), LandingPlugins.StateBound);
         Assert.Equal(TimeSpan.FromMinutes(5), LandingHolds.Wait);

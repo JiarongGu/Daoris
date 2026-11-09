@@ -34,6 +34,18 @@ public sealed class LinksGateTests : IDisposable
         Assert.Contains("docs/design.md", result.Detail);
     }
 
+    /// <summary>A link cannot hold a space, so a file named with one is linked as `%20`, and is the file the link means.</summary>
+    [Fact]
+    public void A_percent_encoded_link_resolves_to_the_file_it_names()
+    {
+        _fx.Write("docs/the design.md", "the design");
+        _fx.Write("README.md", "see [the design](docs/the%20design.md)");
+
+        var result = Run("README.md", "docs/the design.md");
+
+        Assert.True(result.Passed, result.Detail);
+    }
+
     [Fact]
     public void Links_that_resolve_pass_and_the_count_is_reported()
     {
@@ -90,6 +102,23 @@ public sealed class LinksGateTests : IDisposable
         _fx.Write("README.md", "see [it](docs/design.md#a-heading)");
 
         Assert.True(Run("README.md", "docs/design.md").Passed);
+    }
+
+    /// <summary>🔴 A link quoted in a fence or a code span is followed by nobody, so it is not checked; a real one beside it is.</summary>
+    [Fact]
+    public void A_link_quoted_in_a_fence_or_a_code_span_is_not_checked_but_a_real_one_beside_it_is()
+    {
+        _fx.Write("README.md",
+            "write `[x](docs/span.md)` and ``[y](docs/double `tick`.md)`` like this:\n\n"
+            + "````md\n```\n[z](docs/inner.md)\n```\n[w](docs/outer.md)\n````\n\n"
+            + "~~~\n[v](docs/tilde.md)\n~~~\n\n"
+            + "- an item\n\n  ```\n  [u](docs/item.md)\n  ```\n\n"
+            + "then [real](docs/real.md) and [`code` text](docs/linked.md)\n");
+
+        var result = Run("README.md");
+
+        Assert.False(result.Passed);
+        Assert.Equal("README.md: 'docs/real.md' does not exist\nREADME.md: 'docs/linked.md' does not exist", result.Detail);
     }
 
     [Fact]

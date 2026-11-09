@@ -76,7 +76,7 @@ public sealed class ConvergenceDetector(
     /// <summary>Whether the semantic pass is available. False still finds copies and restatements.</summary>
     public bool SemanticAvailable => embedder is not null && vectors is not null;
 
-    public async Task<IReadOnlyList<ConvergenceCandidate>> FindAsync(
+    public async Task<ConvergenceFound> FindAsync(
         ConvergenceOptions? options = null, CancellationToken ct = default)
     {
         options ??= new ConvergenceOptions();
@@ -89,7 +89,7 @@ public sealed class ConvergenceDetector(
             .Where(e => options.Workspace is null || Workspaces.Same(options.Workspace, e.Workspace))
             .ToList();
 
-        if (considered.Count < 2) return [];
+        if (considered.Count < 2) return new ConvergenceFound([]);
 
         var claimed = new HashSet<string>(StringComparer.Ordinal);
         var candidates = new List<ConvergenceCandidate>();
@@ -99,6 +99,7 @@ public sealed class ConvergenceDetector(
         candidates.AddRange(FindIdentical(considered, claimed));
         candidates.AddRange(FindRestatements(considered, claimed, options.MinimumSimilarity));
 
+        string? semanticFailure = null;
         if (SemanticAvailable)
         {
             // 🔴 The semantic tier not answering costs the semantic half and nothing else:
@@ -111,15 +112,18 @@ public sealed class ConvergenceDetector(
             }
             catch (Exception error) when (error is not OperationCanceledException)
             {
-                // What the text passes found stands; the service's status says which tier is configured.
+                // What the text passes found stands, and the failure goes with it, so no door reads a down endpoint as nothing found.
+                semanticFailure = error.Message;
             }
         }
 
-        return candidates
-            .OrderByDescending(c => c.Method)      // Convergent first: the finding nobody could make by eye
-            .ThenByDescending(c => c.Similarity)
-            .Take(options.MaxCandidates)
-            .ToList();
+        return new ConvergenceFound(
+            candidates
+                .OrderByDescending(c => c.Method)      // Convergent first: the finding nobody could make by eye
+                .ThenByDescending(c => c.Similarity)
+                .Take(options.MaxCandidates)
+                .ToList(),
+            semanticFailure);
     }
 
     /// <summary>Byte-identical bodies. No model, no threshold, no doubt.</summary>

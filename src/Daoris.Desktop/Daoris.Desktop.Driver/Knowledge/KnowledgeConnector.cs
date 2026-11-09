@@ -55,6 +55,8 @@ public static class KnowledgeConnector
     /// <summary>What marks the workspace a development build runs below: its manifest.</summary>
     public const string WorkspaceMarker = "daoris.json";
 
+    public const string Project = "Daoris.Service.Mcp";
+
     /// <summary>
     /// Everything the host needs to find the same store this driver is reading.
     /// </summary>
@@ -189,10 +191,11 @@ public static class KnowledgeConnector
 
         if (workspace is not null)
         {
-            var project = Path.Combine(workspace, "src", "Daoris.Service", "Daoris.Service.Mcp");
+            var project = Path.Combine(workspace, "src", "Daoris.Service", Project);
             foreach (var flavour in new[] { "Debug", "Release" })
             {
-                candidates.Add(Path.Combine(project, "bin", flavour, "net10.0", ExecutableName));
+                var built = Path.Combine(project, "bin", flavour, "net10.0", ExecutableName);
+                if (BaseMarker.Above(built) is null) candidates.Add(built);
             }
         }
 

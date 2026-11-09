@@ -66,13 +66,13 @@ export const isHeavyGate = (gate) => !isProcessLane(gate)
   && (/^npm run (verify|test:web)\b/.test(gate.run.trim()) || /^dotnet test\b/.test(gate.run.trim()));
 
 /**
- * The component a `dotnet test|build|run|publish` command builds: the first two folders of the project it
- * names (`src/Daoris.Desktop`), or null when it names none. A project references only projects of its own component
- * (a test holds it), so gates of two components never build one project.
+ * The component a `dotnet test|build|run|publish` or `tree-base.mjs build` command builds: the first two folders of the
+ * project it names, or null when it names none. A project references only its component's, so two components' gates
+ * never build one project.
  */
 export function dotnetComponent(run) {
   const command = run.trim().replace(/^node tools\/orient-index\.mjs\s+&&\s+/, '').replace(/^node tools\/as-merged\.mjs\s+/, '');
-  const verb = /^dotnet\s+(?:test|build|run|publish)(?=\s|$)(.*)$/.exec(command);
+  const verb = /^(?:dotnet|node tools\/tree-base\.mjs)\s+(?:test|build|run|publish)(?=\s|$)(.*)$/.exec(command);
   if (!verb) return null;
   const args = verb[1].trim().split(/\s+/).filter(Boolean);
   const at = args.indexOf('--project');

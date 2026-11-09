@@ -379,6 +379,7 @@ public sealed class PipeCensusTests
     [InlineData("DAORIS.DRIVER", "FILES_READ", PipeClass.Window)]
     [InlineData("DAORIS.DRIVER", "FILES_SET", PipeClass.Window)]
     [InlineData("DAORIS.DRIVER", "FILES_REMOVE", PipeClass.Window)]
+    [InlineData("DAORIS.DRIVER", "FILES_SETTLE", PipeClass.Window)]
     [InlineData("DAORIS.DRIVER", "FILES_PERMIT", PipeClass.Window)]
     [InlineData("DAORIS.DRIVER", "PERSON_KEY", PipeClass.Window)]
     // Nor what waits at the service's door as the window is told it; the service's own list stays its own door's.

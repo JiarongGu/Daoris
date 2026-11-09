@@ -61,8 +61,8 @@ namespace Daoris.Desktop;
 /// confirmations' lock only inside the gate. The listening is <see cref="PipeListener"/>'s, a connection <see cref="PipeConnection"/>'s,
 /// a request's admission <see cref="PipeAdmission"/>'s, a person's press from its reservation to its ending <see cref="PipeAsking"/>'s,
 /// <c>CANCEL</c>, <c>RESULT</c> and <c>WITHDRAW</c> <see cref="PipeTakeBacks"/>'s, the restart's <see cref="PipeRestore"/>'s, and a
-/// terminal's hold of a conversation, <c>HOLD</c> and <c>LET_GO</c>, <see cref="PipeHolding"/>'s. This type
-/// keeps the wire's words, the serve, the close and the run.</para>
+/// terminal's hold of a conversation, <c>HOLD</c> and <c>LET_GO</c>, <see cref="PipeHolding"/>'s, and a terminal's heavy run,
+/// <c>RUN_HEAVY</c> and <c>RUN_STOP</c>, <see cref="PipeHeavyRuns"/>'s. This type keeps the wire's words, the serve, the close and the run.</para>
 /// </remarks>
 public sealed class InstancePipe : IDisposable
 {
@@ -197,6 +197,7 @@ public sealed class InstancePipe : IDisposable
         TakeBacks = new PipeTakeBacks(this);
         StewardAllows = new StewardAllows(this);
         Holding = new PipeHolding(this, bus);
+        HeavyRuns = new PipeHeavyRuns(this);
         _admission = new PipeAdmission(this);
         _restore = new PipeRestore(this);
         Confirmations.ShownFirst = Keep.Shown;
@@ -239,7 +240,13 @@ public sealed class InstancePipe : IDisposable
     /// <summary>A terminal's hold of a conversation: the window's <c>SESSION_HOLDS</c> reads it and <c>SESSION_LET_GO</c> ends one.</summary>
     public PipeHolding Holding { get; }
 
+    /// <summary>The heavy runs terminals asked for, each held to its connection.</summary>
+    internal PipeHeavyRuns HeavyRuns { get; }
+
     internal IMessageDispatcher Dispatcher { get; }
+
+    /// <summary>Where a request's caller's parents are read, so a hook's or a helper's gits take the place their git lends (<see cref="PipeGitCaller"/>).</summary>
+    internal IProcessTable Processes { get; init; } = new SystemProcesses();
 
     internal string Home { get; }
 
@@ -376,6 +383,7 @@ public sealed class InstancePipe : IDisposable
         }
 
         StewardAllows.Close();
+        Holding.CloseAsks();
         foreach (var (id, confirmation, line) in waiting) KeepAtClose(id, confirmation, line);
     }
 
@@ -501,6 +509,7 @@ public sealed class InstancePipe : IDisposable
     {
         _listener?.Ended(connection);
         Holding.ConnectionEnded(connection);
+        HeavyRuns.ConnectionEnded(connection);
     }
 
     /// <summary>A request on a connection that said its hello: <see cref="PipeAdmission.Accept"/>.</summary>
@@ -614,6 +623,7 @@ public sealed class InstancePipe : IDisposable
             {
                 IpcResponse response;
                 using (role is not null ? PipeDoor.EnterRole(role, client) : PipeDoor.Enter(client))
+                using (PipeGitCaller.Enter(Processes, client, Environment.ProcessId))
                 {
                     response = await Dispatcher.DispatchAsync(request, Lifetime.Token).ConfigureAwait(false);
                 }

@@ -56,8 +56,8 @@ public static class DeletedBranches
         foreach (var act in deletes)
         {
             if (JsonNode.Parse(act.Plan) is not JsonObject plan || plan["ref"]?.GetValue<string>() is not { } full || plan["at"]?.GetValue<string>() is not { } commit) continue;
-            var (known, _, _) = await WorkingTree.GitAsync(root, ["cat-file", "-e", commit + "^{commit}"], ct).ConfigureAwait(false);
-            var closed = undone.Contains(act.Id) ? Undone : names.Contains(full) ? NameTaken : known != 0 ? CommitGone : null;
+            var known = await GitObjectReads.InfoAsync(root, commit + "^{commit}", ct).ConfigureAwait(false) is { Missing: false };
+            var closed = undone.Contains(act.Id) ? Undone : names.Contains(full) ? NameTaken : !known ? CommitGone : null;
             var tag = full.StartsWith("refs/tags/", StringComparison.Ordinal);
             rows.Add(new(act.Id, tag ? "tag" : "branch", full[(tag ? "refs/tags/".Length : "refs/heads/".Length)..], commit, act.At, act.Press,
                 plan["recovery"]?.GetValue<string>(), closed));

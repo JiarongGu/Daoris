@@ -52,7 +52,7 @@ internal static class WorkspaceMembers
     }
 
     /// <summary>The <c>node_modules/</c> path of each member, repository-relative below <paramref name="folder"/> (empty or ending in <c>/</c>).</summary>
-    internal static IEnumerable<string> Modules(string folder, IEnumerable<string> members) => members.Select(member => $"{folder}{member}/node_modules/");
+    internal static IEnumerable<string> Modules(string folder, IEnumerable<string> members) => members.Select(member => $"/{folder}{member}/node_modules/");
 
     private static List<string> Clean(IEnumerable<string> entries) =>
     [

@@ -68,6 +68,22 @@ public sealed class TidyNodeTests : IDisposable
     }
 
     [Fact]
+    public async Task A_tidy_that_fails_with_any_exception_says_so_and_leaves_the_door_free_to_try_again()
+    {
+        var said = new List<string>();
+        var door = new TidyDoor(_home, said.Add, performs: (_, _) => throw new InvalidOperationException("git gave an answer nothing expected"));
+        var tidy = new NodeDeclaration("tidy", NodeKinds.Tidy, 1, NodeReach.Performed);
+        var start = new TidyStart("run:q1", tidy, "engine", "default", _home, "feature/q1-fix", "c0ffee00");
+
+        Assert.True(door.Start(start));
+        await door.IdleAsync();
+
+        Assert.Contains("git gave an answer nothing expected", Assert.Single(said), StringComparison.Ordinal);
+        Assert.True(door.Start(start));
+        await door.IdleAsync();
+    }
+
+    [Fact]
     public void Its_record_reads_back_whole_and_names_a_part_only_at_the_tip_it_ended()
     {
         var landings = new LandedBranches(_home);

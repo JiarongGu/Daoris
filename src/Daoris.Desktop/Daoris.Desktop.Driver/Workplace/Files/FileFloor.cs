@@ -4,7 +4,10 @@ namespace Daoris.Driver;
 /// What a tree's floor is read over: the paths git tracks at its commit, and the ignored tops that are or hold another repository or
 /// tree (a <c>.git</c> below the top, a linked worktree, a bare repository).
 /// </summary>
-internal sealed record FileFloorFacts(IReadOnlyCollection<string> Tracked, IReadOnlyCollection<string> Repositories);
+internal sealed record FileFloorFacts(IReadOnlyCollection<string> Tracked, IReadOnlyCollection<string> Repositories)
+{
+    internal bool IgnoreCase { get; init; }
+}
 
 /// <summary>
 /// The built-in floor (the tree-pool design §30.1), read after every layer, which no rule, role or allow sets aside and none of
@@ -22,13 +25,10 @@ internal static class FileFloor
 
     internal const string NeverCopied = "a harness's or an editor's settings: never copied";
 
-    /// <summary>The first tracked path <paramref name="path"/> names or holds, or null.</summary>
-    internal static string? TrackedIn(string path, IReadOnlyCollection<string> tracked)
-    {
-        if (RoomPaths.IsFile(path)) return tracked.Contains(path) ? path : null;
-        var test = RoomPaths.Declared(path);
-        return tracked.FirstOrDefault(test.IsMatch);
-    }
+    /// <summary>The first tracked path <paramref name="path"/>, a top read as a path and never a pattern, names or holds, or null.</summary>
+    internal static string? TrackedIn(string path, IReadOnlyCollection<string> tracked) =>
+        !path.EndsWith('/') ? tracked.Contains(path) ? path : null
+        : tracked.FirstOrDefault(each => each.StartsWith(path, StringComparison.Ordinal));
 
     /// <summary>Whether <paramref name="path"/> is, holds or lies inside a top that is or holds another repository or tree.</summary>
     internal static bool Held(string path, IReadOnlyCollection<string> repositories) =>

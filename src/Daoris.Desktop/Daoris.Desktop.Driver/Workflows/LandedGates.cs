@@ -67,10 +67,12 @@ public static class LandedGates
     /// <summary>The declaration's text at <paramref name="blob"/>, for the person to read before accepting it; null for <c>none</c>.</summary>
     public static async Task<string?> TextAsync(string root, string blob, CancellationToken ct = default)
     {
-        if (!IsBlob(blob)) return null;
-        return await WorkingTree.GitBytesAsync(root, ["cat-file", "blob", blob], TextLimit, ct).ConfigureAwait(false) is { } read
-            ? Encoding.UTF8.GetString(read.Bytes, 0, read.Count)
-            : null;
+        if (!IsBlob(blob))
+        {
+            return null;
+        }
+
+        return await GitObjectReads.TextAsync(root, blob, TextLimit, ct).ConfigureAwait(false);
     }
 
     /// <summary>A whole blob id as git writes one: 40 lower-case hex, or 64 in a SHA-256 repository.</summary>

@@ -44,6 +44,19 @@ public sealed class RoleDoorTests : IDisposable
     private DriverConfig Config() => StaffingProjection.Config(Staffing.Read()!);
 
     [Fact]
+    public void ROLESREVIEW2n_a_store_failure_in_the_publication_is_the_doors_own_error_and_a_late_refusal_keeps_its_code()
+    {
+        var failing = new RoleStaffing(_home, () => StoreSettled.Yes) { BeforeCommit = () => throw new IOException("disk full") };
+        var failed = Assert.Throws<DriverException>(() => RoleDoor.Apply(failing, RoleChange.Set(Designer()), Opus));
+        Assert.Contains("disk full", failed.Message);
+        Assert.DoesNotContain(Catalogue().Slots, slot => slot.Id == "designer");
+
+        RoleDoor.Apply(Staffing, RoleChange.Set(Designer()), Opus);
+        var twin = Assert.Throws<RoleRefusedException>(() => RoleCatalog.Write(Staffing.Location, RoleChange.Set(Designer() with { Id = "second" }), () => StoreSettled.Yes));
+        Assert.Equal("two-roles-one-work", twin.Code);
+    }
+
+    [Fact]
     public void Every_judge_code_is_refused_at_the_door_and_nothing_is_written()
     {
         RoleDoor.Apply(Staffing, RoleChange.Set(Designer()), Opus);

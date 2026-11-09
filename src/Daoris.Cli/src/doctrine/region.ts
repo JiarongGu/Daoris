@@ -169,12 +169,12 @@ export function writeRegion(text: string, name: string, body: string): string {
     return [...lead, ...block, ''].join(eol);
   }
 
-  const lines = text.split('\n').map((line) => line.replace(/\r$/, ''));
-  return [
-    ...lines.slice(0, found.open - 1),
-    ...block,
-    ...lines.slice(found.close),
-  ].join(eol);
+  // The lines outside keep their own `\r`; only the region takes the majority ending, and none when it ends the file.
+  const lines = text.split('\n');
+  const after = lines.slice(found.close);
+  const own = eol === '\r\n' ? '\r' : '';
+  const written = block.map((line, at) => (at === block.length - 1 && after.length === 0 ? line : `${line}${own}`));
+  return [...lines.slice(0, found.open - 1), ...written, ...after].join('\n');
 }
 
 /**
@@ -193,10 +193,12 @@ export function removeRegion(text: string, name: string): string | null {
   const found = findRegion(text, name);
   if (found.kind === 'absent') return text;
   const eol = lineEnding(text);
-  const lines = text.split('\n').map((line) => line.replace(/\r$/, ''));
+  const lines = text.split('\n');
   const kept = [...lines.slice(0, found.open - 1), ...lines.slice(found.close)];
   while (kept.length && kept[kept.length - 1]!.trim() === '') kept.pop();
-  return kept.length ? `${kept.join(eol)}${eol}` : null;
+  if (!kept.length) return null;
+  kept[kept.length - 1] = kept[kept.length - 1]!.replace(/\r$/, '');
+  return `${kept.join('\n')}${eol}`;
 }
 
 /**

@@ -32,7 +32,7 @@ as a pack.
 | Region text and index | `src/Daoris.Cli/src/doctrine/tierrender.ts`, `indexgen.ts`, `document.ts` | The rules table, the on-demand rows, *Where things are*, and `<target>/INDEX.md`; frontmatter and the provenance header |
 | Documents | `src/Daoris.Cli/src/layout/documents.ts` | The roles a manifest may bind in `documents`, and their checks |
 | Layouts | `src/Daoris.Cli/src/layout/harness.ts`, `layout.ts`, `mirror.ts`, `rooms.ts`, `links.ts` | The `claude-code` and `agents` descriptors, the lock's layout, the skills mirror, rooms, links |
-| Adoption reads | `src/Daoris.Cli/src/doctrine/analyze.ts`, `twins.ts`, `lineendings.ts` | `analyze` (what adopting would do), `doctor` (look-alike documents), the LF pin |
+| Adoption reads | `src/Daoris.Cli/src/doctrine/analyze.ts`, `budget.ts`, `twins.ts`, `lineendings.ts` | `analyze` (what adopting would do, its budget projection in `budget.ts`), `doctor` (look-alike documents), the LF pin |
 | The canon | `canon/core/`, `canon/packs/*/`, `canon/canon.json`, `canon/CHANGELOG.md` | The doctrine itself, its version and why each version changed |
 | Command tree | `Daoris.Desktop.Driver/Platform/CommandGroupAttribute.cs`, `CommandWords.cs`, `Loop/CommandTree.cs` | Each group's mark on its command, the groups collected at start, the router, and the carried CLI's path |
 | Doctrine hand-back | `Daoris.Desktop.Driver.Host/DoctrineConsole.cs` | Runs a word no group owns through the CLI an install carries, marked `DAORIS_HANDED=driver`; the CLI's usage at the end of `daoris help` |
@@ -75,8 +75,9 @@ as a pack.
 
 10. Daoris reads and writes only paths the lock records. Anything else, even in the same folder, is the repository's.
     (from D5)
-11. Every write and delete resolves inside the repository. An escaping path aborts the whole apply before the first write.
-    (from D18)
+11. Every write and delete resolves inside the repository. An escaping path aborts the whole apply before the first write,
+    and so does damaged markers in any file a region is written to: the rules region, the root pointer and a room's pointer
+    are read by the plan. (from D18)
 12. Every file is a real copy. A link, or a link held as text, at a path `sync` writes is refused and never written
     through, `--force` included. (from D3, D117)
 13. What `sync` does is a function of canon × lock × disk. Disk against lock is the only drift. Disk against canon is an
@@ -89,7 +90,9 @@ as a pack.
     documents unlisted, a room with no text, a declared document behind a link, an absent kept core file, or a move
     carrying a kept file (`refuseWhatForceCannot`). (from D117, D230)
 17. Files are written as BOM-less UTF-8 with LF, beside the target and renamed over it. Comparisons normalise line
-    endings on read. `init` pins `* text=auto eol=lf` where the repository says nothing. (from D25)
+    endings on read. A region is written and removed with every line outside it as it was, in a file of mixed endings too;
+    only the region takes the file's majority ending. `init` pins `* text=auto eol=lf` where the repository says nothing.
+    (from D25)
 18. Each written file opens with a provenance header, and each span with a provenance comment. The hash, not the header,
     detects an edit. (from D6)
 19. The lock records each file's hash, the canon version and digest, the layout, the switched-off rows and the mirrors.
@@ -98,7 +101,8 @@ as a pack.
     code-unit order, so it reads the same on every machine. A kept rule's entry names the region once its file migrates.
     (from D2, D117)
 20. `check` is offline and reads no canon. Drift, a missing file, a stale pack, a stale index or region, and a switch the
-    manifest and lock disagree on fail with exit 1. A test deletes the canon and requires a clean exit. (from D8, D71)
+    manifest and lock disagree on fail with exit 1. A test deletes the canon and requires a clean exit. What `check`,
+    `status` and a sync plan list is in code-unit order (`compareOrdinal`), never the machine's collation. (from D8, D71)
 21. The always-loaded budget (`coreBudgetBytes`, default 30000, 26000 here) measures the region's bytes. It reports and
     never fails. Kept rows are reported on every run. (from D28, D54, D230)
 
@@ -123,8 +127,10 @@ as a pack.
 
 **`upstream`**
 
-28. `upstream <file>` or `--all` writes into `canon/` only inside the canon's own checkout. Elsewhere it prints the
-    request's words, each file's body under the canon's frontmatter, and writes nothing across. (from D9, D32, D230)
+28. `upstream <file>` or `--all` writes into `canon/` only inside the canon's own checkout. Elsewhere, and in a package
+    installed under the repository's own `node_modules`, it prints the request's words, each file's body under the canon's
+    frontmatter, and writes nothing across. A bare name that two locked files end is refused naming both, and a locked file
+    that is gone is named missing. (from D9, D32, D230)
 
 **The region and the agent layout**
 
@@ -138,7 +144,10 @@ as a pack.
     fresh. A knowledge document with no frontmatter is listed by its first heading, and counted once. (from D128)
 32. Two layouts, chosen by `harness`: `claude-code` (the default; knowledge and skills under `.claude/`) and `agents`
     (under `.agents/`, with a `.claude/skills/` mirror the lock measures like any copy). Other harnesses are detected and
-    reported, never generated; an unknown name is a tool error. (from D23, D117)
+    reported, never generated; an unknown name, one named like a member of `Object` included, is a tool error. `analyze`
+    reads a manifest that is there, and one it cannot read is refused, not taken for no adoption. Its budget projection
+    (`budget.ts`) measures the region's body, as `inspect` does, beside the repository's own rule files, and a selected
+    rule the region already holds adds only its change in size. (from D23, D117)
 33. A room is a folder with its own `AGENTS.md`, declared in `rooms`. `sync` keeps its `CLAUDE.md` pointer and never writes
     its text; a declared room with no text fails. (from D117)
 34. A repository binds roles to paths in `documents`. The brief and a room take only a word ceiling. `check` fails on a fact
@@ -170,9 +179,14 @@ as a pack.
 
 41. `daoris-devkit verify` runs five universal gates (`sensitive`, `version`, `docs`, `links`, `doctrine`), then the
     declared ones, and stops at the first failure. A skipped gate says skipped; a disabled gate is printed every run.
-    (from D20)
+    A declared gate that cannot start (a folder that is not there) fails with its reason, and the history audit fails when
+    `git cat-file` could not read an object, so it never reports nothing found about what it did not read. (from D20)
+    The `links` gate checks the links a document writes, not those it quotes in a fenced block or a code span; it reads
+    a fence through the service's `MarkdownFence`, compiled into the devkit rather than a fifth reader with a table of its
+    own (D228). The `sensitive` gate's tree scope reads a file with a UTF-16 byte-order mark as text.
 42. Gates are declared in `daoris.gates.json`, which the CLI never reads. Its `devkit` field pins the toolkit version,
-    checked before any gate runs. Its `trees` names the classes of the repository's ignored files (dependencies,
+    checked before any gate runs. A file that is no JSON object, or a `graceDays` that is no whole number, is refused naming
+    the file. Its `trees` names the classes of the repository's ignored files (dependencies,
     intermediates, outputs, `prepare`), which only the driver reads. (from D26, D27, D214)
 43. The `doctrine` gate runs `daoris check` and nothing else. (from D19, D20)
 44. The binary is acquired explicitly, with its published sha256, and never downloaded implicitly. The binary does not
@@ -202,8 +216,9 @@ as a pack.
 52. The driver registers a repository from `daoris.json` and `daoris.lanes.json` read on its line, after a line moves, at
     start, and on `daoris repository register`. A lane's `builds` and `room`, and a laneless group's `room`, declare the
     repository's rooms; the registration sends none of them. (from D34, D124, D214)
-53. A place page offers the reconcile where `daoris status --json` says the canon moved or a keep reopened. The press is
-    the person's (`RECONCILE_PLAN`, `RECONCILE_APPLY`). (from D230)
+53. A place page offers the reconcile where `daoris status --json` says the canon moved or a keep reopened, a core file kept
+    with no text (`absentCore`) counting as reopened as `reconcile` lists it. The press is the person's (`RECONCILE_PLAN`,
+    `RECONCILE_APPLY`). (from D230)
 
 ## Where a change goes
 
@@ -288,3 +303,6 @@ No backlog row holds any of these; each is named only in the decision shown.
 - A `PowerShell(…)` rule for a set-up waits on the canary that a driven Windows session uses that tool, and codex and dsh
   get no safe-work rules until measured (`SetupPress`' summary; D122 point 6).
 - The newer-lock refusal cannot fire until a release moves the canon version past 0.0.1 (`newerLock` in `lockversion.ts`).
+
+- **The second review cycle's open defects** (DOCTRINECLIREV2c2; the backlog row of that name points here), one entry each:
+  - **DOCTRINECLIREV2c2 — the sensitive gate's staged scope still skips a UTF-16 file** (devkit; `SensitiveGate.cs`, `CommandLineGit.StagedText`): the tree scope reads a file with a UTF-16 byte-order mark as text, but the staged scope reads `git show :path` as text already decoded as UTF-8 and skips one holding a NUL. Waits on a choice: `IGit` returning the index's bytes (a contract of the seam its tests fake) so the gate decodes the same way in both scopes.

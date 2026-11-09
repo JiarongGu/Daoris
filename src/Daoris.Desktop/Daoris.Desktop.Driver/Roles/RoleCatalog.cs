@@ -404,7 +404,7 @@ public sealed class RoleCatalog
                 var asked = changes[index];
                 var current = Current();
                 if (reads?[index] is { } seen && current.RevisionOf(asked.Id) != seen) throw Moved(asked.Id, seen, current.RevisionOf(asked.Id));
-                if (current.Judge(asked) is { } refusal) throw new DriverException(refusal.Said);
+                if (current.Judge(asked) is { } refusal) throw new RoleRefusedException(refusal);
 
                 // The whole structure's default is each seeded role not already the seed's, one revision apiece; 0 where none moved.
                 var each = asked is RoleChange.DefaultAllRoles

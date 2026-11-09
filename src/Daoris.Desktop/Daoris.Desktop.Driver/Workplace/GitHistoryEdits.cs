@@ -174,9 +174,14 @@ public static class GitHistoryEdits
         }
 
         var read = new List<HistoryEditRead>();
+        if (await ParentsAsync(root, ids, ct).ConfigureAwait(false) is not { } parentsOf) return Refused($"git could not read the parents of {Short(ids[0])}");
         foreach (var id in ids)
         {
-            if (await CommitReadAsync(root, id, ct).ConfigureAwait(false) is not { } commit) return Refused($"git could not read the commit {Short(id)}");
+            if (!parentsOf.TryGetValue(id, out var parents) || await CommitReadAsync(root, id, parents, ct).ConfigureAwait(false) is not { } commit)
+            {
+                return Refused($"git could not read the commit {Short(id)}");
+            }
+
             if (Refusal(commit) is { } refusal) return Refused(refusal);
             read.Add(commit);
         }
@@ -449,23 +454,44 @@ public static class GitHistoryEdits
         _ => null,
     };
 
-    /// <summary>A commit's headers and message as <c>cat-file commit</c> prints them; null where git could not read it.</summary>
-    private static async Task<HistoryEditRead?> CommitReadAsync(string root, string id, CancellationToken ct)
+    /// <summary>A commit's stored headers and message, with <paramref name="parents"/> as git's history reads them; null where git
+    /// could not read it.</summary>
+    private static async Task<HistoryEditRead?> CommitReadAsync(string root, string id, IReadOnlyList<string> parents, CancellationToken ct)
     {
-        var (code, said, _) = await WorkingTree.GitAsync(root, ["cat-file", "commit", id], ct).ConfigureAwait(false);
-        if (code != 0) return null;
+        if (await GitObjectReads.ReadAsync(root, id, GitObjectReads.Whole, ct).ConfigureAwait(false) is not ({ Missing: false, Type: "commit" } answer, var bytes)
+            || answer.Count != answer.Size)
+        {
+            return null;
+        }
+
+        var said = GitObjectReads.Text(bytes, answer);
         var cut = said.IndexOf("\n\n", StringComparison.Ordinal);
         var (head, message) = cut < 0 ? (said, "") : (said[..cut], said[(cut + 2)..]);
-        var (parents, signed, encoding, author) = (new List<string>(), false, (string?)null, "");
+        var (signed, encoding, author) = (false, (string?)null, "");
         foreach (var line in head.Split('\n'))
         {
-            if (line.StartsWith("parent ", StringComparison.Ordinal)) parents.Add(line["parent ".Length..].Trim());
-            else if (line.StartsWith("author ", StringComparison.Ordinal)) author = line["author ".Length..];
+            if (line.StartsWith("author ", StringComparison.Ordinal)) author = line["author ".Length..];
             else if (line.StartsWith("encoding ", StringComparison.Ordinal)) encoding = line["encoding ".Length..].Trim();
             else if (line.StartsWith("gpgsig ", StringComparison.Ordinal) || line.StartsWith("gpgsig-sha256 ", StringComparison.Ordinal)) signed = true;
         }
 
         return new HistoryEditRead(id, parents, signed, encoding, author, message);
+    }
+
+    /// <summary>Each commit's parents as git's history reads them, a shallow boundary's none and a graft's its own, which no stored
+    /// object's bytes say; null where git could not list them.</summary>
+    private static async Task<Dictionary<string, IReadOnlyList<string>>?> ParentsAsync(string root, IReadOnlyList<string> ids, CancellationToken ct)
+    {
+        var (code, said, _) = await WorkingTree.GitAsync(root, ["rev-list", "--no-walk=unsorted", "--parents", .. ids, "--"], ct).ConfigureAwait(false);
+        if (code != 0) return null;
+        var parents = new Dictionary<string, IReadOnlyList<string>>(StringComparer.Ordinal);
+        foreach (var line in said.Split('\n', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
+        {
+            var words = line.Split(' ');
+            parents[words[0]] = words[1..];
+        }
+
+        return parents;
     }
 
     /// <summary>The commits of <paramref name="range"/>, oldest first; null where git could not list them.</summary>

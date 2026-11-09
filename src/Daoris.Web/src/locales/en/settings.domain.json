@@ -6,6 +6,8 @@
   "settings.domain.tools": "Tools",
   "settings.domain.git": "Git",
   "settings.domain.browser": "Browser",
+  "settings.domain.space": "Disk space",
+  "settings.domain.updates": "Updates",
   "settings.domain.start": "Get started",
   "settings.domain.logs": "Machine log"
 }

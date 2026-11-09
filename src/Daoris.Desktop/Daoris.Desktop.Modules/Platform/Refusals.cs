@@ -305,6 +305,9 @@ public static class Refusals
     /// </summary>
     public const string PreviewNotOnBranch = "PREVIEW_NOT_ON_BRANCH";
 
+    /// <summary>A landed file a partial clone filtered out, which its promisor did not give when asked. INFORMATION.</summary>
+    public const string PreviewUnfetched = "PREVIEW_UNFETCHED";
+
     /// <summary>
     /// A window name this build does not open. Refused rather than sanitised: the name
     /// becomes both an address and a filename, and "nearly a window name" is not one.

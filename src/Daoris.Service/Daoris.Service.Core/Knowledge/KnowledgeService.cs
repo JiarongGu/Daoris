@@ -92,6 +92,7 @@ public sealed class KnowledgeService(
     /// </remarks>
     private readonly ConvergenceDetector _convergence = new(store, embedder, vectors, embedWindow);
     private readonly SemaphoreSlim _refreshLock = new(1, 1);
+    private readonly SemaphoreSlim _feedGate = new(1, 1);
     private bool _everRefreshed;
 
     private KnowledgeAnswers? _answers;
@@ -102,14 +103,14 @@ public sealed class KnowledgeService(
     private KnowledgeRegistrar? _registrar;
 
     private KnowledgeRegistrar Registrar => LazyInitializer.EnsureInitialized(
-        ref _registrar, () => new(store, registry, registrations, _time, RefuseNewerIndex))!;
+        ref _registrar, () => new(store, registry, registrations, _time, RefuseNewerIndex, _feedGate))!;
 
     private KnowledgeAnswers Answers => LazyInitializer.EnsureInitialized(ref _answers, () => new(search, records, RefuseNewerIndex, EnsureIndexedAsync))!;
     private KnowledgeStandings Standings => LazyInitializer.EnsureInitialized(ref _standings, () => new(store, _probes, RootOf, RefuseNewerIndex))!;
     private KnowledgeCitations Citations => LazyInitializer.EnsureInitialized(
         ref _citations, () => new(store, fileUncommitted, rootSignature, RefuseNewerIndex, EnsureIndexedAsync, ReadAgainWhereMovedAsync))!;
     private KnowledgeFeeds Feeds => LazyInitializer.EnsureInitialized(
-        ref _feeds, () => new(store, registrations, ct => RegistryAsync(ct: ct), RegisterAsync, RefuseNewerIndex, _time))!;
+        ref _feeds, () => new(store, registrations, ct => RegistryAsync(ct: ct), RegisterAsync, RefuseNewerIndex, _time, _feedGate))!;
     private KnowledgeCodeMaps CodeMaps => LazyInitializer.EnsureInitialized(ref _codeMaps, () => new(registry, registrations, ReloadRegistryAsync))!;
     private ReadingBehind? _behind;
     private ReadingBehind Behind => LazyInitializer.EnsureInitialized(
@@ -254,7 +255,7 @@ public sealed class KnowledgeService(
     /// restatements; with one it also finds convergence. A feature that returned nothing without an
     /// optional dependency would have made that dependency mandatory in all but name.
     /// </remarks>
-    public async Task<IReadOnlyList<ConvergenceCandidate>> FindConvergenceAsync(
+    public async Task<ConvergenceFound> FindConvergenceAsync(
         ConvergenceOptions? options = null, CancellationToken ct = default)
     {
         RefuseNewerIndex();
@@ -502,6 +503,7 @@ public sealed class KnowledgeService(
             readsRegisteredRoots && registry is not null ? wiring.ContainsKey : null,
             onlyRoots, generations,
             repository => readAt.TryGetValue(repository, out var read) ? read : (null, null),
+            onlyRoots is null ? null : readAt.Keys,
             ct).ConfigureAwait(false);
 
         // A root whose write is refused keeps no reading here, so its next use reads it again.

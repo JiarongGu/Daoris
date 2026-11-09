@@ -510,6 +510,9 @@ public static class SessionEventText
     {
         var start = Math.Max(0, at - SnippetRadius);
         var end = Math.Min(text.Length, at + length + SnippetRadius);
+        // Never half a surrogate pair at either edge.
+        if (start > 0 && char.IsLowSurrogate(text[start])) start++;
+        if (end < text.Length && char.IsHighSurrogate(text[end - 1])) end--;
         var window = TextBounds.OneLine(text[start..end]);
         return $"{(start > 0 ? "…" : "")}{window}{(end < text.Length ? "…" : "")}";
     }

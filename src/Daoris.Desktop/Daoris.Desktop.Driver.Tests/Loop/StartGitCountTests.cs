@@ -72,6 +72,7 @@ public sealed class StartGitCountTests : IDisposable
         {
             var program = Path.GetFileNameWithoutExtension(info.FileName).ToLowerInvariant();
             var arguments = info.ArgumentList.SkipWhile(each => each is "-c" or "core.longpaths=true");
+            if (GitStartInputs.Of(info) is { } asked) arguments = arguments.Append(asked.TrimEnd('\n'));
             lock (starts) starts.Add(program + " " + string.Join(' ', arguments));
             return Process.Start(info);
         }))

@@ -88,11 +88,17 @@ internal sealed class TreeFilesStage(string home, string root, string tree, stri
             if (!TreeFilesRecord.Holding(home, tree, () => { })) return Stop();
         }
 
+        var shared = await TreeSharing.RunAsync(home, root, tree, repository, deps.Rules, deps.Floor, ct).ConfigureAwait(false);
+        _said.AddRange(shared.Said);
+        var based = TreeBaseWords.Say(home, tree, deps.Rules, deps.Floor);
+        _said.AddRange(based.Said);
         var copied = await TreeLocalInputs.CopyAsync(root, tree, ct).ConfigureAwait(false);
         if (copied.Copied.Count > 0) RecordCopies(copied.Copied);
         if (copied.Line() is { } line) _said.Add(line);
         foreach (var each in copied.Declined) _said.Add(each.Line());
-        return Outcome();
+        var outcome = Outcome();
+        var told = string.Join(' ', new[] { outcome.Told, shared.Told, based.Told }.OfType<string>());
+        return told.Length == 0 ? outcome : outcome with { Told = told };
     }
 
     private void RecordCopies(IReadOnlyList<string> copied) => TreeFilesRecord.Change(home, tree, state => state with

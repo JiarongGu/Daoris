@@ -179,6 +179,21 @@ public sealed class RuleProposalsTests : IDisposable
         Assert.Equal("proposed", Read(path).GetProperty("state").GetString());
     }
 
+    /// <summary>A rules file that reads but whose scope for the proposal is no object cannot be written over: the tick says so and goes on.</summary>
+    [Fact]
+    public void A_narrowing_the_rules_file_refuses_to_take_is_left_proposed_and_does_not_fail_the_tick()
+    {
+        const string held = """{ "repositories": { "engine": "x" } }""";
+        File.WriteAllText(PermissionRules.PathOf(_home), held);
+        var path = Proposal("p0000009", "add", scope: "repository", name: "engine", list: "deny", rule: "Bash(rm:*)");
+
+        var said = RuleProposals.Settle(_home, At);
+
+        Assert.Contains("not settled", Assert.Single(said));
+        Assert.Equal(held, File.ReadAllText(PermissionRules.PathOf(_home)));
+        Assert.Equal("proposed", Read(path).GetProperty("state").GetString());
+    }
+
     /// <summary>🔴 The owner's answer: a widening never applies without the person.</summary>
     [Fact]
     public void A_widening_waits_for_the_person_and_changes_nothing()

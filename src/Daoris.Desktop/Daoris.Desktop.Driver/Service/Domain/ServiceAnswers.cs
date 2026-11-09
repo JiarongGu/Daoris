@@ -14,6 +14,9 @@ public sealed record SayAnswer(bool Kept, string Message)
     /// </summary>
     public string? Refusal { get; init; }
 
+    /// <summary>A busy host's answer that is no refusal (a gateway's, a timeout's, a throttle's): the say may have landed, so a keyed say asks again.</summary>
+    public bool Lost { get; init; }
+
     /// <summary>The word as kept: its id, which the record's events say again where the session took it. Null when refused, and when settled.</summary>
     public SaidWordView? Word { get; init; }
 

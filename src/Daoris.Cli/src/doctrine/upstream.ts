@@ -72,9 +72,15 @@ function promotionOf(
 
   const strip = (prefix: string) => (path.startsWith(`${prefix}/`) ? path.slice(prefix.length + 1) : null);
   const normalized = strip(base) ?? strip(manifest.target) ?? path;
-  const entry =
-    locked.get(normalized) ??
-    [...locked.values()].find((candidate) => candidate.target.endsWith(`/${normalized}`));
+  // A bare file name is a convenience for one canonical path; naming two is the person's to settle, never the lock's order.
+  const named = locked.has(normalized)
+    ? [locked.get(normalized)!]
+    : [...locked.values()].filter((candidate) => candidate.target.endsWith(`/${normalized}`));
+  if (named.length > 1) {
+    throw new DaorisError(`'${file}' names more than one canonical file: ${named.map((candidate) => candidate.target).join(', ')} — `
+      + 'give the path of the one to upstream');
+  }
+  const entry = named[0];
 
   if (!entry) {
     // An old path after a move: said where the document went, rather than called local — calling it
@@ -102,7 +108,11 @@ function promotionOf(
     return { target: entry.target, source: entry.source, body, span: true };
   }
 
-  return { target: entry.target, source: entry.source, body: stripHeader(readText(join(root, base, entry.target))), span: false };
+  const copy = join(root, base, entry.target);
+  if (!existsSync(copy)) {
+    throw new DaorisError(`${entry.target} is canonical here but absent from ${base}/ — run 'daoris sync' to put it back, then edit it there.`);
+  }
+  return { target: entry.target, source: entry.source, body: stripHeader(readText(copy)), span: false };
 }
 
 /**
@@ -201,11 +211,13 @@ function promotionsAll(
 
 /**
  * Whether this is the canon's own checkout: the canon this tool reads sits inside the repository. Only there does
- * `upstream` write; anywhere else the canon is an installed package's copy, or another repository's checkout.
+ * `upstream` write; anywhere else the canon is an installed package's copy, or another repository's checkout. A package
+ * installed in the repository's own `node_modules` is a copy too, and a write into it would be lost with the next install.
  */
 export function insideCanon(root: string, canonRoot: string): boolean {
   const rel = relative(resolve(root), resolve(canonRoot));
-  return rel !== '' && rel.split(/[\\/]/)[0] !== '..' && !isAbsolute(rel);
+  const parts = rel.split(/[\\/]/);
+  return rel !== '' && parts[0] !== '..' && !isAbsolute(rel) && !parts.includes('node_modules');
 }
 
 /**

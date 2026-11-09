@@ -111,14 +111,14 @@ public static class LineDeclarationReader
                 continue;
             }
 
-            var read = await WorkingTree.GitBytesAsync(root, ["cat-file", "blob", entry.Object], TextLimit, ct).ConfigureAwait(false);
-            if (read is null)
+            var text = await GitObjectReads.TextAsync(root, entry.Object, TextLimit, ct).ConfigureAwait(false);
+            if (text is null)
             {
                 odd ??= $"git could not read its {path}";
                 continue;
             }
 
-            assign(Encoding.UTF8.GetString(read.Value.Bytes, 0, read.Value.Count));
+            assign(text);
         }
 
         return new(line, commit, null) { Manifest = manifest, Lanes = lanes, FileProblem = odd };

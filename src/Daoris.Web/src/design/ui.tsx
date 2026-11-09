@@ -7,6 +7,7 @@ export * from './atoms/Icon';
 export * from './atoms/Button';
 export * from './atoms/Pill';
 export * from './atoms/Marks';
+export * from './atoms/MiddlePath';
 export * from './atoms/Card';
 export * from './atoms/Drawer';
 export * from './atoms/FormControls';

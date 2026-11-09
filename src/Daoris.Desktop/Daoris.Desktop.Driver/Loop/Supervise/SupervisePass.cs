@@ -46,7 +46,7 @@ internal sealed class SupervisePass(LoopContext context, Driver driver)
 
         var spent = attempts.Spent(subject);
         var left = order.Where((_, at) => !spent.Contains(at + 1)).ToList();
-        if (left.Count == 0) return null;
+        if (left.Count == 0) return SaidUnavailable(waiting, "every choice of its order was tried and none decided it.");
         var choice = await ChooseAsync(waiting, left, ct).ConfigureAwait(false);
         if (!choice.Chosen || choice.Effective is not { } entry) return SaidUnavailable(waiting, choice.Sentence);
 
@@ -80,8 +80,19 @@ internal sealed class SupervisePass(LoopContext context, Driver driver)
         }
         finally
         {
-            attempts.End(ask.Attempt, outcome, DateTimeOffset.UtcNow);
-            context.Supervisor.Runs.Ended(subject);
+            // A subject left running because its outcome would not write would hold its whole line until a restart.
+            try
+            {
+                attempts.End(ask.Attempt, outcome, DateTimeOffset.UtcNow);
+            }
+            catch (Exception error) when (error is IOException or UnauthorizedAccessException)
+            {
+                context.Log?.Warn("supervisor.attempt-failed", ("role", ask.Waiting.Role), ("why", error.GetType().Name));
+            }
+            finally
+            {
+                context.Supervisor.Runs.Ended(subject);
+            }
         }
     }
 
@@ -131,6 +142,11 @@ internal sealed class SupervisePass(LoopContext context, Driver driver)
             : ReviewerChoice.ChooseAsync(
                 context.Harnesses, OpinionRule.None, [], context.Config, workspace: null, ct, actor: ParticipantWork.Supervise, order: left,
                 catalogue: () => RoleCatalog.ReadHome(context.Home), role: waiting.Role, repository: waiting.Repository);
+
+    internal static void Forget(IReadOnlyCollection<SupervisorSubject> waiting)
+    {
+        foreach (var subject in Unavailable.Keys.Where(each => !waiting.Contains(each))) Unavailable.TryRemove(subject, out _);
+    }
 
     // No choice ready: the person's rules stand as they acted, and the subject waits for the person, said once until a choice is ready again.
     private string SaidUnavailable(SupervisorWaiting waiting, string sentence)
