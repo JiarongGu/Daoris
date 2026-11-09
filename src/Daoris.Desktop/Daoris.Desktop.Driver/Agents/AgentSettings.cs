@@ -63,7 +63,6 @@ public static class AgentSettings
     /// </summary>
     public static readonly IReadOnlyList<string> Efforts = ["low", "medium", "high", "xhigh"];
 
-    /// <summary>A test's other writer, run once the next write has read the file and cleared before it runs.</summary>
     internal static readonly AsyncLocal<Action?> AfterRead = new();
 
     /// <summary>What the account's file says about its model and effort (rules 1–3).</summary>
@@ -106,7 +105,6 @@ public static class AgentSettings
             .Select(entry => (Model: JudgeModel(entry.Key), Effort: entry.Value.Value is { } v ? JudgeEffort(v) : null))
             .ToList();
 
-        // Read, edited and renamed under one hold, so a second change of another key waits for the first rather than writing the object it read.
         using var held = KeepLock.Take(path);
         var (root, text, problem) = Load(path);
         var seam = AfterRead.Value;

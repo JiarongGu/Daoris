@@ -189,8 +189,7 @@ public static class RuleProposals
             AfterListed.Value = null;
             seam?.Invoke();
 
-            // 🔴 Under the proposal's own lock, as the person's answer takes it, and read again: an answer that landed since the list was
-            // read is the proposal's state now, and a mark made over it would put a declined proposal back to waiting.
+            // 🔴 Under the proposal's lock, read again: a decline landed since the list is the state, which a mark would put back to waiting.
             KeepLock held;
             try
             {

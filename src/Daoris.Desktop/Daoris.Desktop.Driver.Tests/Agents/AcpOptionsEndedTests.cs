@@ -40,7 +40,6 @@ public sealed class AcpOptionsEndedTests
         Assert.IsNotType<AcpChoiceNotOffered>(failed);
     }
 
-    /// <summary>The agent answers the first set with its own value, which refuses the choice; the stream ends as the set back is asked.</summary>
     [Fact]
     public async Task A_stream_that_ends_while_a_refused_model_is_set_back_is_not_the_agent_refusing_the_set_back()
     {

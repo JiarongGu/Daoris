@@ -125,7 +125,6 @@ internal sealed class AcpPrompting(ITurnPromptWiring wiring)
 
         static async Task<bool> AfterAsync(Task before, IAgentWord words, Func<Task<IReadOnlyList<string>>> attempting)
         {
-            // The failure of the attempt before is its own word's, seen by whoever asked for it; this word's mark goes on after it.
             await Task.WhenAny(before).ConfigureAwait(false);
             var marked = await attempting().ConfigureAwait(false);
             return words.Id is not { } id || marked.Contains(id, StringComparer.Ordinal);

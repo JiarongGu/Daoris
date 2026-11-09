@@ -238,10 +238,6 @@ public sealed class BriefedMoveTests : IDisposable
         Assert.True(goOn is LineAnswer.Wait { OwnFirst: true }, $"the next go-on answered {goOn}");
     }
 
-    /// <summary>
-    /// 🔴 A conversation's go-on reads its own account for the model its record carries: a sonnet chat on an account in its opus-only
-    /// cool-off is not held by it, as <c>EndedLimitMove</c>'s own ask never was.
-    /// </summary>
     [Fact]
     public async Task A_sonnet_conversations_go_on_is_not_held_by_its_accounts_opus_week()
     {
