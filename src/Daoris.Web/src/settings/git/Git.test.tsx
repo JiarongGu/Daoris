@@ -266,6 +266,7 @@ describe('the git reads', () => {
     expect(within(engine).getByText('git 9')).toBeInTheDocument();
     expect(within(engine).getByText('a question the library leaves to git · 7')).toBeInTheDocument();
     expect(within(engine).getByText('replaced objects, which git reads · 2')).toBeInTheDocument();
+    expect(within(engine).getByText('a process ended inside the library here, so git reads until the package changes · 3')).toBeInTheDocument();
     const archive = screen.getByText('archive').closest('li')!;
     expect(within(archive).getByText('reftable refs, which git reads · 131')).toBeInTheDocument();
     expect(within(screen.getByText('site').closest('li')!).queryByText(/·/, { selector: 'li' })).toBeNull();

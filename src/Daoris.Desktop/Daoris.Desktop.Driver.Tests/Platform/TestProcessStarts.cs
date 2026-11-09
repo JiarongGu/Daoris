@@ -56,6 +56,7 @@ internal static class TestProcessStarts
             "Daoris.Desktop.Driver.Tests/Platform/OwnedProcessesProcessTests.cs", "Daoris.Desktop.Driver.Tests/Review/HeavyRunProcessTests.cs",
             "Daoris.Desktop.Driver.Tests/Review/IntegrationVerdictProcessTests.cs", "Daoris.Desktop.Driver.Tests/Settings/DriverConfigFenceProcessTests.cs",
             "Daoris.Desktop.Driver.Tests/Store/KeepLockProcessTests.cs", "Daoris.Desktop.Driver.Tests/Store/RecordLockProcessTests.cs",
+            "Daoris.Desktop.Driver.Tests/Workplace/GitLibraryFaultProcessTests.cs",
             "Daoris.Desktop.Driver.Tests/Workplace/GitRunnersEndTests.cs", "Daoris.Desktop.Driver.Tests/Workplace/IntegrationPromoteGitTests.cs",
             "Daoris.Desktop.Driver.Tests/Workplace/TreeGuardTests.cs", "Daoris.Desktop.Driver.Tests/Workplace/Pool/TreePoolStopsGitTests.cs",
             "Daoris.Desktop.Modules.Tests/Bridge/DriverModuleConversationProcessTests.cs", "Daoris.Desktop.Modules.Tests/Bridge/DriverModuleDriverTests.cs",
