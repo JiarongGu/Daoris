@@ -74,7 +74,7 @@ public sealed class AcpStreamsTests
         refusing = true;
         await Assert.ThrowsAsync<IOException>(streams.EndAllAsync);
 
-        await streams.EndAllAsync().WaitAsync(TimeSpan.FromSeconds(10));
+        await streams.EndAllAsync().WaitAsync(Poll.Patience);
     }
 
     private static AcpStreams Streams(IReadingSink children) => new(
