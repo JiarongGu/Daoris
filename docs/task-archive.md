@@ -4,12 +4,12 @@ Completed work, with the date it closed and what shipped. `TASKS.md` holds only 
 the per-task record. Entries preserve their original wording so the archive stays faithful.
 
 ---
+
 ## The agents-and-harnesses code review, third cycle (2026-11-10)
 
 > **The agents review, third cycle** (driver): Outcome: ten defects fixed, each with a regression test seen to fail first (the stop-reason helper's test failed by not compiling), and thirteen filed as AGENTREV3a to AGENTREV3m with their evidence. A session's end whose saying failed starts the finishing of the tasks it marked, so the end said again no longer waits on them (38598525de, `AcpStreamsTests`). A typed prompt answer whose `_meta` is not an object is no failure and no longer leaves its request unanswered (b1b34310a3, `AcpTypedFailureTests`). The second stand-in's limit marker allows the protocol door's `Internal error: ` preface (efd94a18a7, `AgentErrorsTests`). `agent trust` refuses an account not on this machine instead of making its folder (aed560dc64, `AgentTrustAccountTests`, the text golden's case 1a5172c247). `agent rules default` refuses a workspace or repository scope (a22209a50b, `AgentVerbFlagsTests`). A later refused model leaves an earlier refusal's day as it was (ee4346d2f9, `AgentOffersTests`). `agent key` reaches an account whose key this user cannot open (4561a9961b, `AgentKeyVerbTests`). A preamble or opening the sink refuses leaves both pipes read to their ends (2f3f123f01, `HarnessCaptureDrainTests`). A stand-in with no command names one that runs (a440e375a5, `ProvidersBuiltTests`). The stop reason of a prompt answer is read by one shape-checked `AcpProtocol.StopReason` (8323a993b6, `AcpStopReasonTests`). Read and left: `RetryTable.RestartsResume` has no production caller and the area already says so, the layer door's adoption being its caller; `GitCommandsCensusTests` fails on this tree from the git area's table commit, not from this review.
 
 ---
-
 
 ## CODESTRREV3a to 3e — the code-structure review's third cycle, merge-tool and process-tool defects fixed (2026-11-10)
 
