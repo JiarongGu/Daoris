@@ -441,9 +441,12 @@ import {
   laneSchedule, rootScripts, reuseBuild, slug, readPlan, declaredIn, gatePlan, isStageRehearsal, isGitHalf, dotnetComponent,
 } from './merge-branch/plan.mjs';
 import { REACH } from './merge-branch/reach-table.mjs';
+import { mergeByBase, mergeByRows, rowsRefused } from './merge-branch/backlog-merge.mjs';
+import { holdBacklog } from './merge-branch/backlog-held.mjs';
 import { holdingLock, putComplete } from './merge-branch/locks.mjs';
 import { diffPaths, isInside, zPaths } from './merge-branch/paths.mjs';
 export { USAGE, Refusal, parseArgs } from './merge-branch/args.mjs';
+export { lineHunks, mergeByBase, mergeByRows, rowOf, rowsHeld, rowsRefused } from './merge-branch/backlog-merge.mjs';
 export {
   isProcessGate, isLongGate, isProcessLane, isGitHalf, BESIDE_GIT_HALF, runsBesideGitHalf, STAGE_REHEARSALS, isStageRehearsal, isHeavyGate,
   dotnetComponent, LIGHT_WIDTH, SHARED_PROJECTS, gateComponents, testBuild, noBuildCommand, reuseBuild, laneSchedule, slug, gateKind,
@@ -540,12 +543,7 @@ export function backlogPath(root) {
   return backlogOf(existsSync(manifest) ? readFileSync(manifest, 'utf8') : null);
 }
 
-/**
- * The backlog a manifest's text declares: `TASKS.md` with no manifest; null where it is not JSON or not an object,
- * so nothing is resolved by its base; `documents.backlog` as text, or an object's text `path`, with each backslash a slash; else
- * `TASKS.md`. A twin: a landing's replay reads the line's manifest by the driver's `BacklogMerge.PathOf`, and both hold
- * `backlog-merges.json` among the driver's test fixtures, row for row.
- */
+/** The backlog a manifest's text declares (null where it does not read): the driver's `BacklogMerge.PathOf`, row for row of `backlog-merges.json`. */
 export function backlogOf(text) {
   if (text === null) return 'TASKS.md';
   let manifest;
@@ -706,15 +704,9 @@ export function integrationOf(text) {
 }
 
 /**
- * The files a repository's declaration says settle by rows: `daoris.gates.json`'s
- * `integration.merge`, each rule `{ "paths": file, "by": "rows" }`, read through the whole declaration (`integrationOf`). A file whose conflict is settled as the backlog's is, by the merge base, line by line: a row a side added is kept,
- * one a side removed is dropped, rows both add at one place are both kept, and a base row both changed stays a conflict. No
- * command runs, so no acceptance is read: a `line` rule's `run` writer waits for the acceptance and is passed over (C6, F10).
- *
- * Nothing where the text is null or declares no integration, or where the declaration has a problem (`integrationOf` names it):
- * never a partial read. Each path trimmed, a backslash a slash, once, in the order first declared. A twin: a landing's replay reads
- * the line's declaration by the driver's `BacklogMerge.RowTablesOf`, and both hold `backlog-merges.json` among the driver's test
- * fixtures, row for row.
+ * The files `daoris.gates.json`'s `integration.merge` says settle by rows (`{ "paths": file, "by": "rows" }`), each by the merge base
+ * line by line (`mergeByBase`); a `line` rule's writer waits for the acceptance. Nothing where the declaration has a problem
+ * (`integrationOf`), never a partial read. A twin of the driver's `BacklogMerge.RowTablesOf`, row for row of `backlog-merges.json`.
  */
 export function rowTablesOf(text) {
   const { integration } = integrationOf(text);
@@ -722,104 +714,12 @@ export function rowTablesOf(text) {
 }
 
 /**
- * The row tables the line declares at `line` (the side the work lands on, never the member's copy), by `rowTablesOf`; none where
- * there is no declaration. A merge in the main checkout reads its `HEAD`; a queue candidate's member reads the base the candidate
- * started on, never the candidate's tip, where an earlier member's own `integration.merge` stood (the driver reads
- * `onto` the same way).
+ * The row tables the line declares at `line`, never the member's copy: the checkout's `HEAD`, or the base a queue candidate started on,
+ * never its tip, where an earlier member's own declaration stood (the driver reads `onto` the same way).
  */
 function declaredRows(root, line = 'HEAD') {
   const shown = git(root, ['show', `${line}:daoris.gates.json`], { allowFail: true });
   return shown.status === 0 ? rowTablesOf(shown.out) : [];
-}
-
-/** The changes from `base` to `side`, as hunks of the base's lines `[start, end)` and what replaced them; by the longest common run of lines. */
-export function lineHunks(base, side) {
-  let head = 0;
-  while (head < base.length && head < side.length && base[head] === side[head]) head += 1;
-  let tail = 0;
-  while (tail < base.length - head && tail < side.length - head && base[base.length - 1 - tail] === side[side.length - 1 - tail]) tail += 1;
-  const a = base.slice(head, base.length - tail);
-  const b = side.slice(head, side.length - tail);
-  // The common run's length from each pair of positions to the end, one row of b per line of a.
-  const width = b.length + 1;
-  const run = new Uint32Array((a.length + 1) * width);
-  for (let i = a.length - 1; i >= 0; i -= 1) {
-    for (let j = b.length - 1; j >= 0; j -= 1) {
-      run[i * width + j] = a[i] === b[j] ? run[(i + 1) * width + j + 1] + 1 : Math.max(run[(i + 1) * width + j], run[i * width + j + 1]);
-    }
-  }
-  const hunks = [];
-  let open = null;
-  const close = () => {
-    if (open) hunks.push(open);
-    open = null;
-  };
-  let [i, j] = [0, 0];
-  while (i < a.length || j < b.length) {
-    if (i < a.length && j < b.length && a[i] === b[j]) {
-      close();
-      [i, j] = [i + 1, j + 1];
-      continue;
-    }
-    open ??= { start: head + i, end: head + i, lines: [] };
-    if (j < b.length && (i === a.length || run[i * width + j + 1] >= run[(i + 1) * width + j])) {
-      open.lines.push(b[j]);
-      j += 1;
-    } else {
-      i += 1;
-      open.end = head + i;
-    }
-  }
-  close();
-  return hunks;
-}
-
-const sameHunk = (x, y) => x.start === y.start && x.end === y.end && x.lines.length === y.lines.length && x.lines.every((line, i) => line === y.lines[i]);
-
-/** Whether two sides' hunks touch the same base line, or one adds inside a run the other replaced; adds at one place never do. */
-function hunksCollide(x, y) {
-  if (x.start === x.end && y.start === y.end) return false;
-  if (x.start === x.end) return y.start < x.start && x.start < y.end;
-  if (y.start === y.end) return x.start < y.start && y.start < x.end;
-  return x.start < y.end && y.start < x.end;
-}
-
-/**
- * The backlog merged line by line against its merge base: a line one side added is kept, one a side removed is
- * dropped, and two sides that changed the same base line are a conflict, left for the person. Rows that two sides add at one
- * place are both kept, this side's first. With `text` when nothing collided, and what is kept, dropped and left.
- *
- * A row added or removed beside another's reads to git as one conflict. Union would undo every row a side moved to the
- * archive, so the backlog is not union-merged (`.gitattributes`); its base says which side changed what.
- *
- * A twin: a landing's replay settles a backlog-only conflict by the driver's `BacklogMerge.ByBase`, and both hold
- * `backlog-merges.json` among the driver's test fixtures, row for row. A change here is a change there, in the same commit.
- */
-export function mergeByBase(base, ours, theirs) {
-  const [o, t, b] = [ours, theirs, base].map((text) => text.split('\n'));
-  const mine = lineHunks(b, o).map((hunk) => ({ ...hunk, side: 0 }));
-  const yours = lineHunks(b, t).map((hunk) => ({ ...hunk, side: 1 }));
-  const both = [];
-  const hunks = [...mine];
-  for (const hunk of yours) {
-    const twin = mine.find((other) => sameHunk(other, hunk));
-    if (twin) continue;
-    const met = mine.filter((other) => hunksCollide(other, hunk));
-    if (met.length) both.push({ line: Math.min(hunk.start, ...met.map((other) => other.start)) + 1 });
-    hunks.push(hunk);
-  }
-  const kept = hunks.reduce((sum, hunk) => sum + hunk.lines.length, 0);
-  const dropped = hunks.reduce((sum, hunk) => sum + hunk.end - hunk.start, 0);
-  if (both.length) return { text: null, kept, dropped, both };
-  hunks.sort((x, y) => x.start - y.start || x.end - y.end || x.side - y.side);
-  const out = [];
-  let at = 0;
-  for (const hunk of hunks) {
-    out.push(...b.slice(at, hunk.start), ...hunk.lines);
-    at = hunk.end;
-  }
-  out.push(...b.slice(at));
-  return { text: out.join('\n'), kept, dropped, both };
 }
 
 /** A stage of an unmerged path as git holds it, byte for byte; null where that stage has none (a side that added or deleted it). */
@@ -828,11 +728,7 @@ function stageText(root, stage, path) {
   return shown.status === 0 ? shown.stdout : null;
 }
 
-/**
- * The backlog's conflict, and each declared row table's, in the merge in place resolved by its base and
- * staged, with one line saying so; or, where both sides changed one line, left as git wrote it, with one line naming where.
- * Whether any is resolved. The row tables are the ones `line` declares (`declaredRows`).
- */
+/** The backlog's conflict by its rows, a row table's (`declaredRows`) by its base, staged or left, said; whether any resolved. */
 function resolveBacklog(root, { line = 'HEAD' } = {}) {
   const backlog = backlogPath(root);
   if (backlog === null) console.log('daoris.json: it does not read as an object, so no backlog is resolved by the merge base; left for you');
@@ -846,7 +742,12 @@ function resolveBacklog(root, { line = 'HEAD' } = {}) {
       console.log(`${path}: not resolved by the merge base, since a side added or deleted it; left for you`);
       continue;
     }
-    const merged = mergeByBase(base, ours, theirs);
+    const merged = path === backlog ? mergeByRows(base, ours, theirs) : mergeByBase(base, ours, theirs);
+    const said = rowsRefused(path, merged);
+    if (said.length) {
+      for (const line of said) console.log(line);
+      continue;
+    }
     if (merged.text === null) {
       const where = merged.both.map((entry) => entry.line).join(', ');
       console.log(`${path}: both sides changed the same ${merged.both.length === 1 ? 'line' : 'lines'} (the merge base's line ${where}); left for you`);
@@ -3993,7 +3894,7 @@ function reportConflict(branch, unmerged, generated = []) {
   console.log(`merge-branch: merging ${branch} stopped on a conflict in ${count(unmerged.length, 'file')}:`);
   for (const file of unmerged) console.log(`  ${file}`);
   if (generated.length) console.log(`  (and ${count(generated.length, 'generated file')}, written again from the merged tree once these are resolved)`);
-  console.log('  Resolve them (code is never resolved for you; the union records resolve themselves, the backlog by its merge base), git add them,');
+  console.log('  Resolve them (code is never resolved for you; the union records resolve themselves, the backlog by its rows), git add them,');
   console.log('  then node tools/merge-branch.mjs --continue to run the gates. Or git merge --abort.');
   return 1;
 }
@@ -4033,10 +3934,12 @@ async function mergeNext(root, state) {
     const resolved = mergeInProgress(root) && resolveBacklog(root);
     const { blocking, generated } = mergeInProgress(root) ? conflicts(root) : { blocking: [], generated: [] };
     if (blocking.length) return reportConflict(branch, blocking, generated);
-    // A conflict only in what the merge writes anyway goes on to that writing, and one only in the
-    // backlog, resolved by its base, goes on to the gates.
+    // Only in what the merge writes, or the backlog its rows settled: it goes on.
     if (!generated.length && !resolved) throw new Refusal(`git merge ${branch} failed:\n${merged.err || merged.out}`);
   }
+  const rows = holdBacklog(root, backlogPath(root));
+  for (const line of [...rows.said, ...rows.refused]) console.log(line);
+  if (rows.refused.length) return reportConflict(branch, [backlogPath(root)]);
   console.log(`merged ${branch} --no-ff --no-commit${state.branches.length > 1 ? ` (${state.at + 1} of ${state.branches.length})` : ''}`);
   return gateMerge(root, state, plan);
 }
@@ -6388,13 +6291,18 @@ function mergeMember(tree, member, onto, { base, formed = [] } = { base: onto })
   git(tree, ['checkout', '--quiet', '--force', '--detach', onto]);
   const merged = git(tree, ['merge', '--no-ff', '--no-commit', member.tip], { allowFail: true });
   if (merged.status !== 0) {
-    // The row tables the line declares where the candidate started, never what an earlier member declared.
+    // Row tables declared where the candidate began.
     const resolved = mergeInProgress(tree) && resolveBacklog(tree, { line: base });
     const { blocking, generated } = mergeInProgress(tree) ? conflicts(tree) : { blocking: [], generated: [] };
     if (blocking.length || (!generated.length && !resolved)) {
       git(tree, ['merge', '--abort'], { allowFail: true });
       return { conflict: blocking.length ? blocking : [(merged.err || merged.out).trim().split('\n')[0]] };
     }
+  }
+  const rows = holdBacklog(tree, backlogPath(tree));
+  if (rows.refused.length) {
+    git(tree, ['merge', '--abort'], { allowFail: true });
+    return { conflict: rows.refused };
   }
   setApartJoins(tree);
   writeGenerated(tree);

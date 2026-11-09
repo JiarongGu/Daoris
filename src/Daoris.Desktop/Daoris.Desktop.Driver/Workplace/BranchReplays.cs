@@ -342,6 +342,12 @@ internal sealed class BranchReplays(TreeContext context, PassLeftovers leftovers
         /// <summary>The joins union left that it set apart, in a commit on top; none where it set none.</summary>
         public IReadOnlyList<UnionJoins.Set> Joined { get; init; } = [];
 
+        /// <summary>The headings union kept twice that it kept once, in a commit on top (<see cref="UnionOnce"/>).</summary>
+        public IReadOnlyList<UnionOnce.Kept> Once { get; init; } = [];
+
+        /// <summary>What holding the backlog to its rows settled where git had merged it clean, said (<see cref="BacklogHeld"/>).</summary>
+        public string Departed { get; init; } = "";
+
         /// <summary>The files it settled by a line rule the owner accepted for integration, with their writers; none where none.</summary>
         public IReadOnlyList<LineRules.Settled> Lined { get; init; } = [];
 
@@ -380,10 +386,15 @@ internal sealed class BranchReplays(TreeContext context, PassLeftovers leftovers
         {
             var made = await RebaseStretchesAsync(aside, onto, stretches, switchFirst: false, ct, landing: new BacklogMerge.Stops(onto, lines)).ConfigureAwait(false);
             if (made.Now is null) return made;
+            var holding = await BacklogHeld.HoldAsync(aside, onto, $"{commits[0].Sha}^", onto, commits[^1].Sha, made.Now, commit: true, ct).ConfigureAwait(false);
+            if (holding.Refused is { } unheld) return new(null, $"the replayed backlog does not hold its rows.{unheld}", true);
+            if (holding.Said.Length > 0) made = made with { Now = await CommitOfAsync(aside, "HEAD", ct).ConfigureAwait(false) ?? made.Now, Departed = holding.Said };
 
             // What union joined in the replay is set apart as the merge tool sets it, in a commit on top.
             var joined = await UnionJoins.SetApartAsync(aside, onto, commits[^1].Sha, ct).ConfigureAwait(false);
             if (joined.Count > 0) made = made with { Now = await CommitOfAsync(aside, "HEAD", ct).ConfigureAwait(false) ?? made.Now, Joined = joined };
+            var once = await UnionOnce.KeepOnceAsync(aside, onto, $"{commits[0].Sha}^", commits[^1].Sha, ct).ConfigureAwait(false);
+            if (once.Count > 0) made = made with { Now = await CommitOfAsync(aside, "HEAD", ct).ConfigureAwait(false) ?? made.Now, Once = once };
 
             if (made.Generated.Count > 0)
             {
@@ -574,7 +585,7 @@ internal sealed class BranchReplays(TreeContext context, PassLeftovers leftovers
             .Select(each => each.Trim())
             .Where(each => each.StartsWith("CONFLICT", StringComparison.Ordinal))
             .ToList();
-        return (true, conflicts.Count > 0 ? LineHolds.Joined(conflicts) : Failure(err.Length > 0 ? err : output));
+        return (true, (conflicts.Count > 0 ? LineHolds.Joined(conflicts) : Failure(err.Length > 0 ? err : output)) + backlog.Refused);
     }
 
     /// <summary>The record forgets session branches that are gone, so a name is never judged by a start it no longer has.</summary>

@@ -30,12 +30,15 @@ internal sealed record IntegrationResolved
     /// <summary>The joins union left that were set apart in the merge.</summary>
     public IReadOnlyList<UnionJoins.Set> Joined { get; init; } = [];
 
+    /// <summary>What holding the backlog to its rows settled where git merged it clean, said.</summary>
+    public string Departed { get; init; } = "";
+
     /// <summary>The merge goes on to its commit.</summary>
     public bool Stands => Unsettled.Count == 0;
 
     /// <summary>What the resolve settled, in sentences after the replay's own; nothing where it settled nothing.</summary>
     public string Said =>
-        (Backlog is { } backlog ? Table(backlog.Path, "The backlog", backlog.Kept, backlog.Dropped) : "")
+        (Backlog is { } backlog ? Table(backlog.Path, "The backlog", backlog.Kept, backlog.Dropped) : "") + Departed
         + string.Concat(Tables.Select(table => Table(table.Path, "The declared row table", table.Kept, table.Dropped)))
         + (Joined.Count == 0 ? "" : " Where union had joined it to the line above, it was set apart: " + string.Join(", ", Joined.Select(each => $"`{each.Path}:{each.Line}`")) + ".")
         + (Taken.Count == 0 ? "" : $" {string.Join(", ", Taken.Select(path => $"`{path}`"))} took the candidate's copy, a generated file" + Writing())
@@ -115,6 +118,13 @@ internal static class IntegrationResolves
             if (unsettled.Count > 0) return new IntegrationResolved { Unsettled = unsettled };
         }
 
+        // The rows' rules run only where git stopped: the merge as staged is held to them too.
+        var holding = await HoldAsync(tree, lineBase, onto, tip, ct).ConfigureAwait(false);
+        if (holding.Refused is { } unheld)
+        {
+            return new IntegrationResolved { Unsettled = [holding.Path!], Refused = $"its backlog does not hold its rows.{unheld}" };
+        }
+
         // What union joined is set apart before anything is written again, as the merge tool sets joins apart before its commit.
         var joined = await UnionJoins.StageSetApartAsync(tree, onto, tip, lineBase, merging: true, ct).ConfigureAwait(false);
 
@@ -140,6 +150,17 @@ internal static class IntegrationResolves
         return new IntegrationResolved
         {
             Backlog = stops?.Settled, Tables = stops?.Tables ?? [], Taken = taken, Written = written, Lined = lined, Joined = joined,
+            Departed = holding.Said,
         };
+    }
+
+    /// <summary>The merge in progress, as staged, held to the backlog's rows from its merge base (<see cref="BacklogHeld"/>); nothing where git cannot say.</summary>
+    private static async Task<BacklogHeld.Holding> HoldAsync(string tree, string lineBase, string onto, string tip, CancellationToken ct)
+    {
+        var (wrote, made, _) = await WorkingTree.GitAsync(tree, ["write-tree"], ct).ConfigureAwait(false);
+        var (based, merged, _) = await WorkingTree.GitAsync(tree, ["merge-base", onto, tip], ct).ConfigureAwait(false);
+        return wrote == 0 && based == 0
+            ? await BacklogHeld.HoldAsync(tree, lineBase, merged.Trim(), onto, tip, made.Trim(), commit: false, ct).ConfigureAwait(false)
+            : new BacklogHeld.Holding(null, "");
     }
 }

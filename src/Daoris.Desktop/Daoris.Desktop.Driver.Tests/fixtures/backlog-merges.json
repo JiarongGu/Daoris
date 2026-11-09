@@ -1,5 +1,5 @@
 {
-  "about": "The declared backlog and its merge by the merge base (MERGETASKS1, LANDBACKLOG1; D87's LANDBACKLOG1 note): the table both twins hold, the merge tool's backlogOf and mergeByBase (tools/merge-branch.mjs) and the driver's BacklogMerge, which a landing's replay settles a backlog-only conflict by. Each `paths` row is the text of daoris.json (null where there is none) and the backlog read from it: none is TASKS.md; text that is not JSON, or JSON that is not an object, reads as no backlog (null), so nothing is settled; documents.backlog as text, or as an object's text `path`, is that path with each backslash a slash; anything else is TASKS.md. INTEGRATE1c: each `rows` row is the text of daoris.gates.json (null where there is none) and the files its `integration.merge` declares settle by rows (`by: \"rows\"`; the same merge by the base, line by line, as the backlog's), read by the merge tool's rowTablesOf and the driver's BacklogMerge.RowTablesOf: nothing where the text is not a JSON object, has no integration.merge list, or an entry has no non-blank text `paths`; each path trimmed with each backslash a slash, once, in the order first declared; an entry that is a `line` rule with a `run` writer, or has any other `by`, declares none (the writers wait for the accepted declaration, and no rule keeps one side's copy). INTEGRATE1d: both twins read these rows through the whole declaration's reader (integrationOf, IntegrationDeclaration.Read; `integration-declarations.json`), so a declaration in which that reader names any problem declares none, never a part. Each `merges` row is the base's, our side's and their side's lines (joined by LF; a line keeps its CR), and what the merge makes of them: the merged lines, or null where both sides changed one base line (or one side added inside a run the other replaced), the lines kept from the hunks taken and the base lines they dropped, and each such base line (1-based). Ours is the side the work lands on (main in the merge tool, the line in a replay), and two sides adding at one place keep ours first.",
+  "about": "The declared backlog and its merge by the merge base (MERGETASKS1, LANDBACKLOG1; D87's LANDBACKLOG1 note): the table both twins hold, the merge tool's backlogOf and mergeByBase (tools/merge-branch.mjs) and the driver's BacklogMerge, which a landing's replay settles a backlog-only conflict by. Each `paths` row is the text of daoris.json (null where there is none) and the backlog read from it: none is TASKS.md; text that is not JSON, or JSON that is not an object, reads as no backlog (null), so nothing is settled; documents.backlog as text, or as an object's text `path`, is that path with each backslash a slash; anything else is TASKS.md. INTEGRATE1c: each `rows` row is the text of daoris.gates.json (null where there is none) and the files its `integration.merge` declares settle by rows (`by: \"rows\"`; the same merge by the base, line by line, as the backlog's), read by the merge tool's rowTablesOf and the driver's BacklogMerge.RowTablesOf: nothing where the text is not a JSON object, has no integration.merge list, or an entry has no non-blank text `paths`; each path trimmed with each backslash a slash, once, in the order first declared; an entry that is a `line` rule with a `run` writer, or has any other `by`, declares none (the writers wait for the accepted declaration, and no rule keeps one side's copy). INTEGRATE1d: both twins read these rows through the whole declaration's reader (integrationOf, IntegrationDeclaration.Read; `integration-declarations.json`), so a declaration in which that reader names any problem declares none, never a part. PROCSTEPS1a: each `merges` row is the base's, our side's and their side's lines (joined by LF; a line keeps its CR) and what the merge makes of them: a row marked `table` (a declared row table) by the merge base line by line (mergeByBase, BacklogMerge.ByBase), every other as the backlog, by its rows' ids (mergeByRows, BacklogRows.Merge). A row is a list line whose first bold token opens with an id (each `ids` row: the line, its key, the ids it covers, null ids where its list does not read); a row only one side added, removed or rewrote takes that side, one both changed alike (whitespace normalised: each run of spaces one, the line's end cut) is once, in our text, so a row one side archived leaves only where the other's copy is the base's or only moved, and every other is `differ` (its key and each side's text, null where removed), never merged word by word; a side covering an id twice is `twice`, one with a row whose ids do not read `unread`, refused before anything merges. The lines that are no row merge by the base, each row standing as its key, two adds at one place meeting unless both add rows alone. With the merged lines, or null; the lines kept from the hunks and rows taken and the base lines they dropped; and each base line left (1-based). Ours is the side the work lands on (main in the merge tool, the line in a replay), and two sides adding rows at one place keep ours first. Each `held` row is a made backlog held against those rules once a replay is made (rowsHeld, BacklogHeld.Of): the ids it covers twice, the rows it keeps that the rules leave out, those it lost that they keep, and whether the rules refuse its sides.",
   "paths": [
     { "name": "no manifest is TASKS.md", "manifest": null, "backlog": "TASKS.md" },
     { "name": "a manifest with no documents is TASKS.md", "manifest": "{}", "backlog": "TASKS.md" },
@@ -64,12 +64,13 @@
       "kept": 2, "dropped": 1, "both": []
     },
     {
-      "name": "one row both sides edited is left",
+      "name": "one row both sides edited is left, both texts said",
       "base": ["# Tasks", "", "- [ ] **A1** one.", "- [ ] **A2** two.", "- [ ] **A3** three.", ""],
       "ours": ["# Tasks", "", "- [ ] **A1** one.", "- [ ] **A2** two, ours.", "- [ ] **A3** three.", ""],
       "theirs": ["# Tasks", "", "- [ ] **A1** one.", "- [ ] **A2** two, theirs.", "- [ ] **A3** three.", ""],
       "text": null,
-      "kept": 2, "dropped": 2, "both": [4]
+      "kept": 0, "dropped": 0, "both": [4],
+      "differ": [{ "id": "A2", "ours": "- [ ] **A2** two, ours.", "theirs": "- [ ] **A2** two, theirs." }]
     },
     {
       "name": "a row one side edited and the other removed is left",
@@ -77,15 +78,211 @@
       "ours": ["# Tasks", "", "- [ ] **A1** one.", "- [ ] **A2** edited.", "- [ ] **A3** three.", ""],
       "theirs": ["# Tasks", "", "- [ ] **A1** one.", "- [ ] **A3** three.", ""],
       "text": null,
-      "kept": 1, "dropped": 2, "both": [4]
+      "kept": 0, "dropped": 0, "both": [4],
+      "differ": [{ "id": "A2", "ours": "- [ ] **A2** edited.", "theirs": null }]
     },
     {
-      "name": "a row added inside a run the other side replaced is left",
+      "name": "a row the work archived while the line added a requirement to it is left, never deleted",
+      "base": ["# Tasks", "", "- [ ] **A1** one.", "- [ ] **A2** two: A.", "- [ ] **A3** three.", ""],
+      "ours": ["# Tasks", "", "- [ ] **A1** one.", "- [ ] **A2** two: A, then B.", "- [ ] **A3** three.", ""],
+      "theirs": ["# Tasks", "", "- [ ] **A1** one.", "- [ ] **A3** three.", ""],
+      "text": null,
+      "kept": 0, "dropped": 0, "both": [4],
+      "differ": [{ "id": "A2", "ours": "- [ ] **A2** two: A, then B.", "theirs": null }]
+    },
+    {
+      "name": "a row the work archived while the line removed a word from it is left: a removed word can change what the row asks",
+      "base": ["# Tasks", "", "- [ ] **A1** one.", "- [ ] **A2** Do not enable A.", "- [ ] **A3** three.", ""],
+      "ours": ["# Tasks", "", "- [ ] **A1** one.", "- [ ] **A2** Do enable A.", "- [ ] **A3** three.", ""],
+      "theirs": ["# Tasks", "", "- [ ] **A1** one.", "- [ ] **A3** three.", ""],
+      "text": null,
+      "kept": 0, "dropped": 0, "both": [4],
+      "differ": [{ "id": "A2", "ours": "- [ ] **A2** Do enable A.", "theirs": null }]
+    },
+    {
+      "name": "a row the work archived while the line changed only its spacing leaves the backlog",
+      "base": ["# Tasks", "", "- [ ] **A1** one.", "- [ ] **A2** two:  left a.", "- [ ] **A3** three.", ""],
+      "ours": ["# Tasks", "", "- [ ] **A1** one.", "- [ ] **A2** two: left\ta.  ", "- [ ] **A3** three.", ""],
+      "theirs": ["# Tasks", "", "- [ ] **A1** one.", "- [ ] **A3** three.", ""],
+      "text": ["# Tasks", "", "- [ ] **A1** one.", "- [ ] **A3** three.", ""],
+      "kept": 0, "dropped": 1, "both": []
+    },
+    {
+      "name": "a row the work archived while the line only moved it leaves the backlog",
+      "base": ["# Tasks", "", "- [ ] **A1** one.", "- [ ] **A2** two.", "- [ ] **A3** three.", ""],
+      "ours": ["# Tasks", "", "- [ ] **A1** one.", "- [ ] **A3** three.", "- [ ] **A2** two.", ""],
+      "theirs": ["# Tasks", "", "- [ ] **A1** one.", "- [ ] **A3** three.", ""],
+      "text": ["# Tasks", "", "- [ ] **A1** one.", "- [ ] **A3** three.", ""],
+      "kept": 0, "dropped": 1, "both": []
+    },
+    {
+      "name": "a row both rewrote in words apart is left: no merge writes wording neither side wrote",
+      "base": ["# Tasks", "", "- [ ] **A1** one.", "- [ ] **A2** two: left a and b.", ""],
+      "ours": ["# Tasks", "", "- [ ] **A1** one.", "- [ ] **A2** two, renamed: left a and b.", ""],
+      "theirs": ["# Tasks", "", "- [ ] **A1** one.", "- [ ] **A2** two: left b.", ""],
+      "text": null,
+      "kept": 0, "dropped": 0, "both": [4],
+      "differ": [{ "id": "A2", "ours": "- [ ] **A2** two, renamed: left a and b.", "theirs": "- [ ] **A2** two: left b." }]
+    },
+    {
+      "name": "rows one side replaced while the other added a row among them: each row by its own side",
       "base": ["# Tasks", "", "- [ ] **A1** one.", "- [ ] **A2** two.", "- [ ] **A3** three.", ""],
       "ours": ["# Tasks", "", "- [ ] **A1** one.", "- [ ] **A5** five.", ""],
       "theirs": ["# Tasks", "", "- [ ] **A1** one.", "- [ ] **A2** two.", "- [ ] **B1** new.", "- [ ] **A3** three.", ""],
+      "text": ["# Tasks", "", "- [ ] **A1** one.", "- [ ] **A5** five.", "- [ ] **B1** new.", ""],
+      "kept": 2, "dropped": 2, "both": []
+    },
+    {
+      "name": "2026-11-09: rows the work archived side by side while the line rewrote another and filed one between them and one at the end",
+      "base": ["# Tasks", "", "- [ ] **A1** one.", "- [ ] **A2** two.", "- [ ] **A3** three.", "- [ ] **A4** four.", ""],
+      "ours": ["# Tasks", "", "- [ ] **A1** one, its evidence in the area.", "- [ ] **A2** two.", "- [ ] **B1** filed.", "- [ ] **A3** three.", "- [ ] **A4** four.", "- [ ] **C1** filed too.", ""],
+      "theirs": ["# Tasks", "", "- [ ] **A1** one.", "- [ ] **A4** four.", ""],
+      "text": ["# Tasks", "", "- [ ] **A1** one, its evidence in the area.", "- [ ] **B1** filed.", "- [ ] **A4** four.", "- [ ] **C1** filed too.", ""],
+      "kept": 3, "dropped": 3, "both": []
+    },
+    {
+      "name": "rows one side reordered while the other rewrote one keep the new order and the rewrite",
+      "base": ["# Tasks", "", "- [ ] **A1** one.", "- [ ] **A2** two.", "- [ ] **A3** three.", ""],
+      "ours": ["# Tasks", "", "- [ ] **A3** three.", "- [ ] **A1** one.", "- [ ] **A2** two.", ""],
+      "theirs": ["# Tasks", "", "- [ ] **A1** one, edited.", "- [ ] **A2** two.", "- [ ] **A3** three.", ""],
+      "text": ["# Tasks", "", "- [ ] **A3** three.", "- [ ] **A1** one, edited.", "- [ ] **A2** two.", ""],
+      "kept": 2, "dropped": 2, "both": []
+    },
+    {
+      "name": "one id both sides added in one text is once, at our place",
+      "base": ["# Tasks", "", "- [ ] **A1** one.", "- [ ] **A2** two.", ""],
+      "ours": ["# Tasks", "", "- [ ] **B1** new.", "- [ ] **A1** one.", "- [ ] **A2** two.", ""],
+      "theirs": ["# Tasks", "", "- [ ] **A1** one.", "- [ ] **A2** two.", "- [ ] **B1** new.", ""],
+      "text": ["# Tasks", "", "- [ ] **B1** new.", "- [ ] **A1** one.", "- [ ] **A2** two.", ""],
+      "kept": 1, "dropped": 0, "both": []
+    },
+    {
+      "name": "one id both sides added in different texts is left",
+      "base": ["# Tasks", "", "- [ ] **A1** one.", ""],
+      "ours": ["# Tasks", "", "- [ ] **A1** one.", "- [ ] **B1** ours.", ""],
+      "theirs": ["# Tasks", "", "- [ ] **A1** one.", "- [ ] **B1** theirs.", ""],
       "text": null,
-      "kept": 2, "dropped": 2, "both": [4]
+      "kept": 0, "dropped": 0, "both": [],
+      "differ": [{ "id": "B1", "ours": "- [ ] **B1** ours.", "theirs": "- [ ] **B1** theirs." }]
+    },
+    {
+      "name": "a row both rewrote alike, its trailing spaces aside, is once, in our text",
+      "base": ["# Tasks", "", "- [ ] **A1** one.", "- [ ] **A2** two.", ""],
+      "ours": ["# Tasks", "", "- [ ] **A1** one.", "- [ ] **A2** edited.", ""],
+      "theirs": ["# Tasks", "", "- [ ] **A1** one.", "- [ ] **A2** edited.  ", ""],
+      "text": ["# Tasks", "", "- [ ] **A1** one.", "- [ ] **A2** edited.", ""],
+      "kept": 1, "dropped": 1, "both": []
+    },
+    {
+      "name": "ids match exactly: a row whose id begins with another's is a row of its own",
+      "base": ["# Tasks", "", "- [ ] **A1** one.", "- [ ] **A1a** one's part.", ""],
+      "ours": ["# Tasks", "", "- [ ] **A1** one, edited.", "- [ ] **A1a** one's part.", ""],
+      "theirs": ["# Tasks", "", "- [ ] **A1** one.", ""],
+      "text": ["# Tasks", "", "- [ ] **A1** one, edited.", ""],
+      "kept": 1, "dropped": 2, "both": []
+    },
+    {
+      "name": "a row the line removed with no archive line while the work rewrote it is left",
+      "base": ["# Tasks", "", "- [ ] **A1** one.", "- [ ] **A2** two.", "- [ ] **A3** three.", ""],
+      "ours": ["# Tasks", "", "- [ ] **A1** one.", "- [ ] **A3** three.", ""],
+      "theirs": ["# Tasks", "", "- [ ] **A1** one.", "- [ ] **A2** two, rewritten.", "- [ ] **A3** three.", ""],
+      "text": null,
+      "kept": 0, "dropped": 0, "both": [4],
+      "differ": [{ "id": "A2", "ours": null, "theirs": "- [ ] **A2** two, rewritten." }]
+    },
+    {
+      "name": "two sides adding different lines that are no rows at one place is left",
+      "base": ["# Tasks", "", "- [ ] **A1** one.", ""],
+      "ours": ["# Tasks", "", "- [ ] **A1** one.", "Note: ours.", ""],
+      "theirs": ["# Tasks", "", "- [ ] **A1** one.", "Note: theirs.", ""],
+      "text": null,
+      "kept": 2, "dropped": 0, "both": [4]
+    },
+    {
+      "name": "two sides adding one line that is no row at one place is once",
+      "base": ["# Tasks", "", "- [ ] **A1** one.", ""],
+      "ours": ["# Tasks", "", "- [ ] **A1** one.", "Note.", ""],
+      "theirs": ["# Tasks", "", "- [ ] **A1** one.", "Note.", ""],
+      "text": ["# Tasks", "", "- [ ] **A1** one.", "Note.", ""],
+      "kept": 1, "dropped": 0, "both": []
+    },
+    {
+      "name": "a row and a line that is no row added at one place is left",
+      "base": ["# Tasks", "", "- [ ] **A1** one.", ""],
+      "ours": ["# Tasks", "", "- [ ] **A1** one.", "- [ ] **B1** ours.", ""],
+      "theirs": ["# Tasks", "", "- [ ] **A1** one.", "## Later", ""],
+      "text": null,
+      "kept": 2, "dropped": 0, "both": [4]
+    },
+    {
+      "name": "a compound row the work and the line each archived a part of is one row of the ids neither archived, its list written again",
+      "base": ["# Tasks", "", "- [ ] **WFREVIEW3a, 3d, 3l and 3m** the defects.", ""],
+      "ours": ["# Tasks", "", "- [ ] **WFREVIEW3a, 3d and 3m** the defects.", ""],
+      "theirs": ["# Tasks", "", "- [ ] **WFREVIEW3d, 3l and 3m** the defects.", ""],
+      "text": ["# Tasks", "", "- [ ] **WFREVIEW3d and 3m** the defects.", ""],
+      "kept": 1, "dropped": 1, "both": []
+    },
+    {
+      "name": "a compound row the line added words to while the work archived one of its ids keeps the line's words and the ids left",
+      "base": ["# Tasks", "", "- [ ] **WFREVIEW3a, 3d and 3m** the defects.", ""],
+      "ours": ["# Tasks", "", "- [ ] **WFREVIEW3a, 3d and 3m** the defects, then B.", ""],
+      "theirs": ["# Tasks", "", "- [ ] **WFREVIEW3d and 3m** the defects.", ""],
+      "text": ["# Tasks", "", "- [ ] **WFREVIEW3d and 3m** the defects, then B.", ""],
+      "kept": 1, "dropped": 1, "both": []
+    },
+    {
+      "name": "a compound row the work archived whole while the line added words to it is left",
+      "base": ["# Tasks", "", "- [ ] **GITLIB1a to GITLIB1c** the reads.", ""],
+      "ours": ["# Tasks", "", "- [ ] **GITLIB1a to GITLIB1c** the reads, then B.", ""],
+      "theirs": ["# Tasks", "", ""],
+      "text": null,
+      "kept": 0, "dropped": 0, "both": [3],
+      "differ": [{ "id": "GITLIB1a", "ours": "- [ ] **GITLIB1a to GITLIB1c** the reads, then B.", "theirs": null }]
+    },
+    {
+      "name": "a compound row a side split in two is left: its rows cannot be matched to the other's",
+      "base": ["# Tasks", "", "- [ ] **A1a and 1b** the parts.", ""],
+      "ours": ["# Tasks", "", "- [ ] **A1a and 1b** the parts.", ""],
+      "theirs": ["# Tasks", "", "- [ ] **A1a** the first part.", "- [ ] **A1b** the second part.", ""],
+      "text": null,
+      "kept": 0, "dropped": 0, "both": [3],
+      "differ": [{ "id": "A1a", "ours": "- [ ] **A1a and 1b** the parts.", "theirs": "- [ ] **A1a** the first part.\n- [ ] **A1b** the second part." }]
+    },
+    {
+      "name": "a compound row covers each id it lists: one a side lists again is refused",
+      "base": ["# Tasks", "", "- [ ] **WFREVIEW3a, 3d and 3m** the defects.", ""],
+      "ours": ["# Tasks", "", "- [ ] **WFREVIEW3a, 3d and 3m** the defects.", ""],
+      "theirs": ["# Tasks", "", "- [ ] **WFREVIEW3a, 3d and 3m** the defects.", "- [ ] **WFREVIEW3d** split out.", ""],
+      "text": null,
+      "kept": 0, "dropped": 0, "both": [],
+      "twice": ["WFREVIEW3d"]
+    },
+    {
+      "name": "a row's range covers each id in it: one a side lists again is refused",
+      "base": ["# Tasks", "", "- [ ] **GITLIB1a to GITLIB1d** the reads.", ""],
+      "ours": ["# Tasks", "", "- [ ] **GITLIB1a to GITLIB1d** the reads.", "- [ ] **GITLIB1c** again.", ""],
+      "theirs": ["# Tasks", "", "- [ ] **GITLIB1a to GITLIB1d** the reads.", ""],
+      "text": null,
+      "kept": 0, "dropped": 0, "both": [],
+      "twice": ["GITLIB1c"]
+    },
+    {
+      "name": "a row whose ids do not read is refused before anything merges, never guessed",
+      "base": ["# Tasks", "", "- [ ] **A1** one.", ""],
+      "ours": ["# Tasks", "", "- [ ] **A1** one.", ""],
+      "theirs": ["# Tasks", "", "- [ ] **A1** one.", "- [ ] **A1a to A1zz** too wide.", ""],
+      "text": null,
+      "kept": 0, "dropped": 0, "both": [],
+      "unread": ["- [ ] **A1a to A1zz** too wide."]
+    },
+    {
+      "name": "an id a side holds twice is refused before anything merges, the id said",
+      "base": ["# Tasks", "", "- [ ] **A1** one.", "- [ ] **A2** two.", ""],
+      "ours": ["# Tasks", "", "- [ ] **A2** two.", ""],
+      "theirs": ["# Tasks", "", "- [ ] **A1** one.", "- [ ] **A2** two.", "- [ ] **A1** one, again.", ""],
+      "text": null,
+      "kept": 0, "dropped": 0, "both": [],
+      "twice": ["A1"]
     },
     {
       "name": "the same edit on both sides is one edit",
@@ -113,6 +310,7 @@
     },
     {
       "name": "a declared row table: two branches each add a row at the table's last line (2026-10-28's census set-aside), both kept, ours first",
+      "table": true,
       "base": ["| When | Run |", "|---|---|", "| a test names a login | `node tools/live-logins.mjs` |", "", "Next."],
       "ours": ["| When | Run |", "|---|---|", "| a test names a login | `node tools/live-logins.mjs` |", "| a tool reads git | `node tools/optional-locks.mjs` |", "", "Next."],
       "theirs": ["| When | Run |", "|---|---|", "| a test names a login | `node tools/live-logins.mjs` |", "| a test waits | `node tools/short-waits.mjs` |", "", "Next."],
@@ -121,6 +319,7 @@
     },
     {
       "name": "a declared row table: a row one side added mid-table beside a row the other removed",
+      "table": true,
       "base": ["| When | Run |", "|---|---|", "| one | `a` |", "| two | `b` |", "| three | `c` |"],
       "ours": ["| When | Run |", "|---|---|", "| one | `a` |", "| one and a half | `x` |", "| two | `b` |", "| three | `c` |"],
       "theirs": ["| When | Run |", "|---|---|", "| one | `a` |", "| three | `c` |"],
@@ -129,11 +328,72 @@
     },
     {
       "name": "a declared row table: one row both sides changed differently is a conflict, left to the session",
+      "table": true,
       "base": ["| When | Run |", "|---|---|", "| one | `a` |", "| two | `b` |"],
       "ours": ["| When | Run |", "|---|---|", "| one | `a` |", "| two | `ours` |"],
       "theirs": ["| When | Run |", "|---|---|", "| one | `a` |", "| two | `theirs` |"],
       "text": null,
       "kept": 2, "dropped": 2, "both": [4]
+    }
+  ],
+  "ids": [
+    { "name": "a row's id", "line": "- [ ] **PROCSTEPS1 — generic process steps**", "key": "PROCSTEPS1", "ids": ["PROCSTEPS1"] },
+    { "name": "a finished row's id", "line": "- [x] **A1** one.", "key": "A1", "ids": ["A1"] },
+    { "name": "bold prose is no row", "line": "**Standing direction.**", "key": null, "ids": null },
+    { "name": "a list line whose first bold is no id is no row", "line": "- [ ] see **A1** first.", "key": null, "ids": null },
+    { "name": "ids match exactly: a part's id is its own", "line": "- [ ] **PROCSTEPS1a** the records.", "key": "PROCSTEPS1a", "ids": ["PROCSTEPS1a"] },
+    { "name": "a hyphenated id is one id", "line": "- [ ] **AGENTLYNTAI1b-iii** a part.", "key": "AGENTLYNTAI1b-iii", "ids": ["AGENTLYNTAI1b-iii"] },
+    { "name": "short parts take the stem of the id before them", "line": "- [ ] **WFREVIEW3a, 3d, 3l and 3m — the defects**", "key": "WFREVIEW3a", "ids": ["WFREVIEW3a", "WFREVIEW3d", "WFREVIEW3l", "WFREVIEW3m"] },
+    { "name": "parts by slashes", "line": "- [ ] **AGENTREV2a / 2b / 2c** the cycle.", "key": "AGENTREV2a", "ids": ["AGENTREV2a", "AGENTREV2b", "AGENTREV2c"] },
+    { "name": "a range of letters", "line": "- [ ] **GITLIB1a to GITLIB1d** the reads.", "key": "GITLIB1a", "ids": ["GITLIB1a", "GITLIB1b", "GITLIB1c", "GITLIB1d"] },
+    { "name": "a range whose end is a short part", "line": "- [ ] **WFREVIEW3a to 3c** the defects.", "key": "WFREVIEW3a", "ids": ["WFREVIEW3a", "WFREVIEW3b", "WFREVIEW3c"] },
+    { "name": "a range of numbers, read whole", "line": "- [ ] **A9 to A11** the steps.", "key": "A9", "ids": ["A9", "A10", "A11"] },
+    { "name": "a short part takes the stem whose digit run it shares", "line": "- [ ] **MODELROLE1k3, 1k4** the roles.", "key": "MODELROLE1k3", "ids": ["MODELROLE1k3", "MODELROLE1k4"] },
+    { "name": "a separator before words ends the list", "line": "- [ ] **A1, the first** one.", "key": "A1", "ids": ["A1"] },
+    { "name": "a short part two stems could take does not read", "line": "- [ ] **A1B1a, 1c** both.", "key": "A1B1a", "ids": null },
+    { "name": "a range of anything but one letter or one number does not read", "line": "- [ ] **A1a to A1zz** too wide.", "key": "A1a", "ids": null },
+    { "name": "a range that runs backwards does not read", "line": "- [ ] **A1d to A1a** backwards.", "key": "A1d", "ids": null }
+  ],
+  "held": [
+    {
+      "name": "a replay that holds what its rows keep holds",
+      "base": ["# Tasks", "", "- [ ] **A1** one.", "- [ ] **A2** two.", ""],
+      "ours": ["# Tasks", "", "- [ ] **A1** one, edited.", "- [ ] **A2** two.", ""],
+      "theirs": ["# Tasks", "", "- [ ] **A1** one.", ""],
+      "made": ["# Tasks", "", "- [ ] **A1** one, edited.", ""],
+      "twice": [], "kept": [], "lost": [], "refused": false
+    },
+    {
+      "name": "a clean merge that kept a row the line moved while the work archived it does not hold",
+      "base": ["# Tasks", "", "- [ ] **A1** one.", "- [ ] **A2** two.", "", "## Later", ""],
+      "ours": ["# Tasks", "", "- [ ] **A1** one.", "", "## Later", "- [ ] **A2** two.", ""],
+      "theirs": ["# Tasks", "", "- [ ] **A1** one.", "", "## Later", ""],
+      "made": ["# Tasks", "", "- [ ] **A1** one.", "", "## Later", "- [ ] **A2** two.", ""],
+      "twice": [], "kept": ["A2"], "lost": [], "refused": false
+    },
+    {
+      "name": "a clean merge that holds one id twice does not hold",
+      "base": ["# Tasks", "", "- [ ] **A1** one.", ""],
+      "ours": ["# Tasks", "", "- [ ] **B1** new.", "- [ ] **A1** one.", ""],
+      "theirs": ["# Tasks", "", "- [ ] **A1** one.", "- [ ] **B1** new.", ""],
+      "made": ["# Tasks", "", "- [ ] **B1** new.", "- [ ] **A1** one.", "- [ ] **B1** new.", ""],
+      "twice": ["B1"], "kept": [], "lost": [], "refused": false
+    },
+    {
+      "name": "a made backlog that lost a row its rows keep does not hold",
+      "base": ["# Tasks", "", "- [ ] **A1** one.", ""],
+      "ours": ["# Tasks", "", "- [ ] **A1** one.", ""],
+      "theirs": ["# Tasks", "", "- [ ] **A1** one.", "- [ ] **A3** three.", ""],
+      "made": ["# Tasks", "", "- [ ] **A1** one.", ""],
+      "twice": [], "kept": [], "lost": ["A3"], "refused": false
+    },
+    {
+      "name": "a clean merge of a row the rules leave for a person does not hold",
+      "base": ["# Tasks", "", "- [ ] **A1** one.", "- [ ] **A2** two.", ""],
+      "ours": ["# Tasks", "", "- [ ] **A1** one.", "", "- [ ] **A2** two, moved and edited.", ""],
+      "theirs": ["# Tasks", "", "- [ ] **A1** one.", ""],
+      "made": ["# Tasks", "", "- [ ] **A1** one.", "", "- [ ] **A2** two, moved and edited.", ""],
+      "twice": [], "kept": [], "lost": [], "refused": true
     }
   ]
 }
