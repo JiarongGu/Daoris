@@ -66,28 +66,29 @@ public sealed class LookWaitTests : IDisposable
 
     /// <summary>
     /// A start whose git waited for its place says that wait as its stage's queue, apart from its
-    /// preparation, so a look slow for want of a place is told apart from slow work. The places are a gate of the test's own, held
-    /// full as a fan-out holds git's: the shared gate cannot be held full here, and any gate's wait is said the same way.
+    /// preparation, so a look slow for want of a place is told apart from slow work. The places are a git scheduler of the test's own,
+    /// held full as a fan-out holds git's: the shared one cannot be held full here, and any scheduler's wait is said the same way.
     /// </summary>
     [Fact]
     public async Task A_start_whose_git_waits_for_a_place_says_the_wait_as_its_queue()
     {
         _ledger.Publish("q1", "engine");
-        using var held = new ManualResetEventSlim();
-        var places = new ProcessStarts(1, info =>
+        var held = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var places = new GitScheduler(1, 1, 1) { Said = (_, _) => { } };
+        var ask = new GitRunAsk(_home, _home, GitWait.Read);
+        var holder = places.RunAsync(ask, async _ =>
         {
-            if (info.FileName == "holder") held.Wait(Poll.Patience);
-            return null;
-        });
-        var holder = places.StartAsync(new ProcessStartInfo("holder") { UseShellExecute = false, CreateNoWindow = true }, ProcessPurpose.Agent, CancellationToken.None);
+            await held.Task.WaitAsync(Poll.Patience);
+            return 0;
+        }, CancellationToken.None);
         using (var log = new MachineLog(_home, "driver"))
         {
             var runs = new StandInRuns(_ledger.Client(), _ledger);
             var watch = Watch(log, runs, async (start, opened, token) =>
             {
-                var git = places.StartAsync(new ProcessStartInfo("git") { UseShellExecute = false, CreateNoWindow = true }, ProcessPurpose.Git, StartClass.Background, token);
+                var git = places.RunAsync(ask, _ => Task.FromResult(0), token);
                 await Task.Delay(150, token);
-                held.Set();
+                held.TrySetResult();
                 await git;
                 return await runs.Runner(start, opened, token);
             });
@@ -101,7 +102,7 @@ public sealed class LookWaitTests : IDisposable
             }
             finally
             {
-                held.Set();
+                held.TrySetResult();
                 await _closing.CancelAsync();
                 await Settled(watching);
             }

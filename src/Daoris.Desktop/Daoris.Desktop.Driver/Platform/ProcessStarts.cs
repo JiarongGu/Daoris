@@ -201,7 +201,7 @@ public sealed class ProcessStarts
         }
 
         // Said to the stage whose work made this start, from here until it is handed its place or gives up its wait.
-        using (s_queue.Value?.Invoke())
+        using (Queued())
         using (ct.Register(() => Abandon(whose, waiting, ct)))
         {
             await waiter.Task.ConfigureAwait(false);
@@ -282,6 +282,12 @@ public sealed class ProcessStarts
     {
         public void Dispose() => s_within.Value = before;
     }
+
+    /// <summary>
+    /// The span a wait for a place in this flow is said to, begun now: the stage's queue (<see cref="QueuedToAsync{T}(Func{IDisposable}?, Func{Task{T}})"/>), which the git
+    /// scheduler's wait for a place is said to as well; null in a flow with none.
+    /// </summary>
+    internal static IDisposable? Queued() => s_queue.Value?.Invoke();
 
     /// <summary>
     /// Run <paramref name="work"/> with each wait for a place that a start of its flow makes said to <paramref name="queue"/>:
