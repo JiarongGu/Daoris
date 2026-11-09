@@ -17,7 +17,8 @@ namespace Daoris.Driver;
 /// <para><b>A shared answer</b>: an ask takes another's only where its own start would have been that start (<see cref="GitRunAsk.Start"/>)
 /// and that start is still queued with no write of its repository queued after it, so its answer is as new as the ask's own would be.</para>
 /// <para><b>Ending</b>: a read that takes no lock (<see cref="GitRunAsk.Endable"/>) is dropped while queued and ended while running once
-/// every asker has left. Every other git is dropped only while queued; once placed it runs untokened to its end or its bound.</para>
+/// every asker has left, the last answered once its run returns (a git that outlived its kill as <see cref="ProcessUnendedException"/>).
+/// Every other git is dropped only while queued; once placed it runs untokened to its end or its bound.</para>
 /// <para><b>Re-entry</b>: an ask made beneath a placed git (<see cref="Beneath"/>, told from the caller's process ancestry by
 /// <see cref="GitCallers"/>: a hook of a push asking a read, a diff's textconv helper asking the window) is placed at once in a place
 /// that git lends, above the bound and counted toward none of its caps, one at a time for each parent, to a depth of two; deeper is
@@ -223,7 +224,13 @@ public sealed class GitScheduler
         catch (OperationCanceledException) when (ct.IsCancellationRequested)
         {
             // Left once, here, where this asker's own wait ended: a registration on its token would be disposed by the wait's own end first.
-            Leave(entry);
+            // The read it ended is waited out, so it never returns while that git runs on unsaid.
+            if (Leave(entry))
+            {
+                await entry.Result.Task.ContinueWith(_ => { }, TaskScheduler.Default).ConfigureAwait(false);
+                if (entry.Result.Task.Exception?.InnerException is ProcessUnendedException unended) throw unended;
+            }
+
             throw;
         }
     }
@@ -282,34 +289,43 @@ public sealed class GitScheduler
         timed?.Invoke(Stopwatch.GetTimestamp() - entry.AskedAt);
         GitPlace.Enter(entry.Place!);
         Interlocked.Increment(ref _started);
+        Action answer;
         try
         {
-            var answer = await run(entry.Ask.Endable ? entry.Ending.Token : CancellationToken.None).ConfigureAwait(false);
-            entry.Result.TrySetResult(answer);
+            var value = await run(entry.Ask.Endable ? entry.Ending.Token : CancellationToken.None).ConfigureAwait(false);
+            answer = () => entry.Result.TrySetResult(value);
         }
-        catch (OperationCanceledException) when (entry.Ending.IsCancellationRequested)
+        catch (OperationCanceledException) when (entry.Ending.IsCancellationRequested && entry.Going is { } folder)
         {
-            if (entry.Going is { } folder) entry.Result.TrySetException(GitUnplacedException.Going(folder));
-            else entry.Result.TrySetCanceled();
+            answer = () => entry.Result.TrySetException(GitUnplacedException.Going(folder));
+        }
+        catch (OperationCanceledException ended) when (entry.Ending.IsCancellationRequested && ended is not ProcessUnendedException)
+        {
+            answer = () => entry.Result.TrySetCanceled();
         }
         catch (Exception error)
         {
-            entry.Result.TrySetException(error);
+            answer = () => entry.Result.TrySetException(error);
         }
-        finally
+
+        try
         {
             Ended(entry);
         }
+        finally
+        {
+            answer();
+        }
     }
 
-    /// <summary>An asker left: the last to leave drops a queued git, and ends a running endable read.</summary>
-    private void Leave(Entry entry)
+    /// <summary>An asker left: the last to leave drops a queued git, and ends a running endable read, answered true.</summary>
+    private bool Leave(Entry entry)
     {
         var dropped = false;
         var end = false;
         lock (_gate)
         {
-            if (--entry.Askers > 0 || entry.Done) return;
+            if (--entry.Askers > 0 || entry.Done) return false;
             if (!entry.Placed) dropped = Dequeue(entry) || _lending.Remove(entry);
             else end = entry.Ask.Endable;
         }
@@ -322,6 +338,7 @@ public sealed class GitScheduler
         }
 
         if (end) entry.Ending.Cancel();
+        return end;
     }
 
     /// <summary>A run returned: its place freed where its processes exited, else counted apart until they exit, and said.</summary>
