@@ -15,6 +15,10 @@ the per-task record. Entries preserve their original wording so the archive stay
 
 - [x] **DRVREVIEW14 — the overlap wait never sees a Done quest still integrating** (driver): 2026-11-09 the overlaps look reads the quests an open integration request names where the open list lacks them (`IntegratingQuests`, one read of every quest and only where one waits) into `Snapshot.IntegratingQuests`, which `OverlapOf` compares; the planner test builds its snapshot as production does (`OverlapPlannerTests`, `WorkOverlapsTests`).
 
+- [x] **DRVREVIEW15 — a take, finish or end that throws between its claim and its undo leaves the claim and the slot lock held** (driver): 2026-11-09 each act runs inside `PoolAbandoned.GuardAsync`, which marks the claim abandoned by its job where the act throws, and `TakeOver` takes an abandoned claim of its own run as a dead run's with its phase kept; the choice was a mark in memory over advancing the phase to `undo-waiting`, which would have hidden a finish's `judged` and `setting-aside` phases from its recovery (`TreePoolStopsGitTests`, failing first).
+- [x] **DRVREVIEW16 — a finish's failed put-back deletes the manifest that keeps what is left aside** (driver): 2026-11-09 `PutBack` forgets the manifest only once no top stands aside, in the finish and its recovery alike (`TreePoolFinishGitTests`, failing first).
+- [x] **DRVREVIEW17 — the look's tidy unlinks a tree's shares before its move and does not restore them when the move is refused** (driver): 2026-11-09 the tidy unlinks them in the moved folder once the tree is known to go, and a folder put back has them made again and recorded (`TreeShares.Relink`; `BranchTidyingFolderTests`, failing first, a held file refusing the rename on Windows).
+
 ---
 
 ## DRVREVIEW second cycle — the driving review's second cycle (2026-11-09)

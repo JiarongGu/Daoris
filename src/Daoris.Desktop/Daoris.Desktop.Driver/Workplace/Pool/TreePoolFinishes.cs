@@ -54,74 +54,74 @@ internal sealed class TreePoolFinishes(TreePool pool, PoolSeams seams)
             return PoolDone.Not("there is no job to hold the claim's git in, so the pool is not offered here");
         }
 
-        if (await PoolLocks.SetAsync(git, slot.Path, PoolLocks.Claimed(pool.Run), ct).ConfigureAwait(false) is { } lockWhy)
+        return await PoolAbandoned.GuardAsync(job, async () =>
         {
-            pool.Complete(fence, null);
-            return PoolDone.Not(lockWhy);
-        }
+            if (await PoolLocks.SetAsync(git, slot.Path, PoolLocks.Claimed(pool.Run), ct).ConfigureAwait(false) is { } lockWhy)
+            {
+                pool.Complete(fence, null);
+                return PoolDone.Not(lockWhy);
+            }
 
-        var seed = (seams.Holds is { } holds ? await holds(slot, ct).ConfigureAwait(false) : new SlotJudgementFacts()) with { Claimed = false, Visited = false };
-        var judged = await PoolJudging.JudgeAsync(site, slot, seed, end.Tip, ct).ConfigureAwait(false);
-        if (!judged.Verdict.Clean && judged.Verdict.Code != SlotJudgement.LinesOwn)
-        {
-            await ReleaseAsync(git, fence, slot, ct).ConfigureAwait(false);
-            return PoolDone.Not($"{judged.Verdict.Code}: {judged.Verdict.Why}");
-        }
+            var seed = (seams.Holds is { } holds ? await holds(slot, ct).ConfigureAwait(false) : new SlotJudgementFacts()) with { Claimed = false, Visited = false };
+            var judged = await PoolJudging.JudgeAsync(site, slot, seed, end.Tip, ct).ConfigureAwait(false);
+            if (!judged.Verdict.Clean && judged.Verdict.Code != SlotJudgement.LinesOwn)
+            {
+                await ReleaseAsync(git, fence, slot, ct).ConfigureAwait(false);
+                return PoolDone.Not($"{judged.Verdict.Code}: {judged.Verdict.Why}");
+            }
 
-        // The judgement stops at the line's own ignored paths, which a finish sets aside, so the step after them is asked here.
-        if (judged.Head != end.Tip)
-        {
-            await ReleaseAsync(git, fence, slot, ct).ConfigureAwait(false);
-            return PoolDone.Not($"{SlotJudgement.HeadMoved}: its HEAD changed since its line let it go");
-        }
+            // The judgement stops at the line's own ignored paths, which a finish sets aside, so the step after them is asked here.
+            if (judged.Head != end.Tip)
+            {
+                await ReleaseAsync(git, fence, slot, ct).ConfigureAwait(false);
+                return PoolDone.Not($"{SlotJudgement.HeadMoved}: its HEAD changed since its line let it go");
+            }
 
-        var own = await FinishSort.AsideAsync(site, slot.Path, end.Tip, judged.Ignored, ct).ConfigureAwait(false);
-        var written = WriteManifest(site, finish, end, branch, keep, aside, manifest, own);
-        if (written is not null)
-        {
-            await ReleaseAsync(git, fence, slot, ct).ConfigureAwait(false);
-            return PoolDone.Not($"its manifest could not be written ({written}), so the branch is kept");
-        }
+            var own = await FinishSort.AsideAsync(site, slot.Path, end.Tip, judged.Ignored, ct).ConfigureAwait(false);
+            var written = WriteManifest(site, finish, end, branch, keep, aside, manifest, own);
+            if (written is not null)
+            {
+                await ReleaseAsync(git, fence, slot, ct).ConfigureAwait(false);
+                return PoolDone.Not($"its manifest could not be written ({written}), so the branch is kept");
+            }
 
-        pool.Advance(fence, TreeClaimPhases.SettingAside, opens: aside);
-        await seams.ReachedAsync(TreeClaimPhases.SettingAside, slot.Path).ConfigureAwait(false);
-        if (Move(slot.Path, aside, own) is { } busy)
-        {
-            PutBack(slot.Path, aside, own);
-            SetAsideMarks.Forget(manifest);
-            await ReleaseAsync(git, fence, slot, ct).ConfigureAwait(false);
-            return PoolDone.Not($"busy: {busy}");
-        }
+            pool.Advance(fence, TreeClaimPhases.SettingAside, opens: aside);
+            await seams.ReachedAsync(TreeClaimPhases.SettingAside, slot.Path).ConfigureAwait(false);
+            if (Move(slot.Path, aside, own) is { } busy)
+            {
+                PutBack(slot.Path, aside, own, manifest);
+                await ReleaseAsync(git, fence, slot, ct).ConfigureAwait(false);
+                return PoolDone.Not($"busy: {busy}");
+            }
 
-        SetAsideMarks.MarkMoved(manifest);
-        pool.Advance(fence, TreeClaimPhases.SetAside);
-        await seams.ReachedAsync(TreeClaimPhases.SetAside, slot.Path).ConfigureAwait(false);
+            SetAsideMarks.MarkMoved(manifest);
+            pool.Advance(fence, TreeClaimPhases.SetAside);
+            await seams.ReachedAsync(TreeClaimPhases.SetAside, slot.Path).ConfigureAwait(false);
 
-        var after = await FillJudgement.StatusAsync(slot.Path, ignored: true, ct).ConfigureAwait(false);
-        var reappeared = own.Any(top => after.ContainsKey(top));
-        if (after.Any(each => each.Value != "!!") || reappeared)
-        {
-            PutBack(slot.Path, aside, own);
-            SetAsideMarks.Forget(manifest);
-            await ReleaseAsync(git, fence, slot, ct).ConfigureAwait(false);
-            return PoolDone.Not("the slot changed as its own paths were set aside, so they were put back and the branch is kept");
-        }
+            var after = await FillJudgement.StatusAsync(slot.Path, ignored: true, ct).ConfigureAwait(false);
+            var reappeared = own.Any(top => after.ContainsKey(top));
+            if (after.Any(each => each.Value != "!!") || reappeared)
+            {
+                PutBack(slot.Path, aside, own, manifest);
+                await ReleaseAsync(git, fence, slot, ct).ConfigureAwait(false);
+                return PoolDone.Not("the slot changed as its own paths were set aside, so they were put back and the branch is kept");
+            }
 
-        var hooks = TreeOpenings.HooksHeld(site.Home);
-        var (detached, _, said) = await git.GitAsync(slot.Path, [.. hooks, "switch", "--detach", end.Tip], ct).ConfigureAwait(false);
-        if (detached != 0)
-        {
-            PutBack(slot.Path, aside, own);
-            SetAsideMarks.Forget(manifest);
-            await ReleaseAsync(git, fence, slot, ct).ConfigureAwait(false);
-            return PoolDone.Not($"git would not detach the slot: {TreeGit.FirstLine(said)}");
-        }
+            var hooks = TreeOpenings.HooksHeld(site.Home);
+            var (detached, _, said) = await git.GitAsync(slot.Path, [.. hooks, "switch", "--detach", end.Tip], ct).ConfigureAwait(false);
+            if (detached != 0)
+            {
+                PutBack(slot.Path, aside, own, manifest);
+                await ReleaseAsync(git, fence, slot, ct).ConfigureAwait(false);
+                return PoolDone.Not($"git would not detach the slot: {TreeGit.FirstLine(said)}");
+            }
 
-        pool.Advance(fence, TreeClaimPhases.Detached);
-        await seams.ReachedAsync(TreeClaimPhases.Detached, slot.Path).ConfigureAwait(false);
-        await PoolLocks.SetAsync(git, slot.Path, PoolLocks.Free, ct).ConfigureAwait(false);
-        pool.Complete(fence, await new SlotStanding(slot, claim).ReadAsync(ct).ConfigureAwait(false));
-        return await FinishedAsync(site, finish, end, branch, keep, aside, manifest, own, slot, ct).ConfigureAwait(false);
+            pool.Advance(fence, TreeClaimPhases.Detached);
+            await seams.ReachedAsync(TreeClaimPhases.Detached, slot.Path).ConfigureAwait(false);
+            await PoolLocks.SetAsync(git, slot.Path, PoolLocks.Free, ct).ConfigureAwait(false);
+            pool.Complete(fence, await new SlotStanding(slot, claim).ReadAsync(ct).ConfigureAwait(false));
+            return await FinishedAsync(site, finish, end, branch, keep, aside, manifest, own, slot, ct).ConfigureAwait(false);
+        });
     }
 
     /// <summary>Everything after the slot is detached (or when no slot serves the line): the held folders gathered in, the branch deleted through the journal, the manifest marked <c>deleted</c>.</summary>
@@ -197,15 +197,22 @@ internal sealed class TreePoolFinishes(TreePool pool, PoolSeams seams)
         }
     }
 
-    /// <summary>The tops renamed back into the slot, whole; a top something stands at again stays aside.</summary>
-    internal static void PutBack(string slot, string aside, IReadOnlyList<string> tops)
+    /// <summary>The tops renamed back into the slot, whole, and the manifest forgotten once none stands aside: a top something stands at again stays aside under it.</summary>
+    internal static void PutBack(string slot, string aside, IReadOnlyList<string> tops, string manifest)
     {
+        var left = false;
         foreach (var top in tops)
         {
             var relative = top.TrimEnd('/').Replace('/', Path.DirectorySeparatorChar);
             var source = Path.Combine(aside, relative);
             var target = Path.Combine(slot, relative);
-            if (Path.Exists(target)) continue;
+            var held = Path.Exists(source);
+            if (Path.Exists(target))
+            {
+                left |= held;
+                continue;
+            }
+
             try
             {
                 Directory.CreateDirectory(Path.GetDirectoryName(target)!);
@@ -214,9 +221,11 @@ internal sealed class TreePoolFinishes(TreePool pool, PoolSeams seams)
             }
             catch (Exception error) when (error is IOException or UnauthorizedAccessException)
             {
-                // Left aside with its manifest: the next look's resume reads it.
+                left |= held;
             }
         }
+
+        if (!left) SetAsideMarks.Forget(manifest);
     }
 
     private async Task ReleaseAsync(PoolGit git, ClaimFence fence, KeptTree slot, CancellationToken ct)
