@@ -57,6 +57,7 @@ the per-task record. Entries preserve their original wording so the archive stay
 > **HOMELEASE2** (install-home-update): Outcome: a lease judged stale is moved aside in one step and judged by what moved (`HomeLease.RemoveStale`), a lease that is not what was judged stale put back, so a taker's lease written between another's read and removal is never removed; proved by `HomeLeaseTests`.
 
 > **FOLDERMOVE2** (install-home-update): Outcome: a cross-volume move-in whose copy landed is a move even where a held file keeps the source from being removed: `FolderMove.Move` returns whether the source went, and `InstallHome.MoveIn` counts the entry moved rather than failed; proved by `FolderMoveTests`.
+
 ## ROLESREVIEW2i to 2q — the roles and supervision review's second cycle (2026-11-09)
 
 > **ROLESREVIEW2i** (modules): Outcome: a leave of an allow or files subject asks the same coverage as a decide (`SupervisorDecisionDoor.CoversPlace` for a place no repository names, `Covers` for a held request's repository), so a holder of another place cannot hide a subject from the supervisor that answers it; a leave still asks no grant (`roles-and-supervision.md`, rule 46).
