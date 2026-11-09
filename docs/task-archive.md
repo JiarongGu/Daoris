@@ -5,6 +5,10 @@ the per-task record. Entries preserve their original wording so the archive stay
 
 ---
 
+## Two library tests that fail beside others (2026-11-09)
+
+> **Quest #05197f6c9c71** (driver; the git library): Outcome: the formats probe counts its reads for each common directory (`GitLibraryFormats.ReadsOf`), so the default-repository test asserts its own reads; the hold test counts no reads over a loaded minute (one answered before git begins, one beside each command) and names git's stderr and the stand-in's asks; and the exit 128 the load exposed (`gc` after `repack -a` renames a pack over the same-named one the library has mapped) is fixed in the admission: a question asked while git rewrites the packs is git's (`GitLibraryHousekeeping`, D252). Ten runs of both classes beside `StructureTests` passed.
+
 ## TREEPOOL1ad to ag — what the bench rerun found (2026-11-09)
 
 > **TREEPOOL1ad, ae, af, ag** (driver; §39, §39.4): Outcome: a workspace member the found entry decides installs after its root where a later layer decides the root (`WorkspaceOrder`); a take refused `lines-own` names the top it holds; a seal the disk refuses is said `started.deps-unstored` (`unsealed`), not installed; a fill seals in a tree holding only placed dependencies and declared `output` or `intermediate` tops (`FillHeld`), so a used slot stores the installs it makes again. Row d's wait on these ends; the bench rerun is TREEPOOL1ah.
