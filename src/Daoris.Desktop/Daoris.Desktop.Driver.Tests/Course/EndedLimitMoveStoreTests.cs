@@ -177,6 +177,7 @@ public sealed class EndedLimitMoveStoreTests : IDisposable
         var stand = new ExecutorStand(runner, context);
         stand.Add<IChatHelping>(new NoHelp());
         stand.Add(new ChatHandOver(stand));
+        stand.Add(new LimitWaits(stand));
         var limit = stand.Add(new LimitMove(stand)
         {
             Moves = new ConversationMoves(_home, client, events, store: Store("run-shell")),
@@ -721,5 +722,30 @@ public sealed class EndedLimitMoveStoreTests : IDisposable
         Assert.Empty(Store("run-probe").Of("c1"));
         Assert.Empty(world.Ledger.Opened);
         Assert.NotNull(new LimitBoxes(_home).Read("c1"));
+    }
+
+    /// <summary>🔴 The ended move reads the line's moves rule as the live one does: a line at its bound waits for the person and opens nothing.</summary>
+    [Fact]
+    public async Task An_ended_move_of_a_line_at_its_moves_bound_is_held_for_the_person()
+    {
+        Assert.True(new RoleStaffing(_home, () => StoreSettled.Yes).ImportFile().How is StaffingImported.Done or StaffingImported.Already);
+        var rules = new SupervisorRuleStore(_home);
+        var bound = new SupervisorRule("chat-moves", SupervisorRules.Moves, SupervisorRules.Windows[SupervisorRules.Moves], 1, SupervisorRules.Ask, null, SupervisorRules.Machine, [RoleWork.Chat]);
+        Assert.True(rules.Write(
+            SupervisorRules.Machine, rules.Of(SupervisorRules.Machine).Revision, [.. SupervisorRuleBook.Seeded(3), new SupervisorRule("chat-limits", SupervisorRules.Limits, SupervisorRules.Windows[SupervisorRules.Limits], 1, SupervisorRules.Next, null, SupervisorRules.Machine, [RoleWork.Chat]), bound],
+            SupervisorRuleBook.SeedDoor, SupervisorRuleDoor.World(_home)).Stored);
+        Assert.True(new StaffLedger(_home, () => StoreSettled.Yes).Moves.Record("c0", RoleWork.Chat, "c0", StaffConditions.Limit, SupervisorRules.Next, "talk"));
+        var world = Ended(2);
+        using var c = world.Client;
+        world.Ledger.Edit("c1", record =>
+        {
+            record["from"] = "c0";
+            record["actor"] = RoleWork.Chat;
+        });
+
+        var moved = await world.Limit.MoveEndedAsync("c1", lost: null, Config(), null);
+
+        Assert.Null(moved!.SessionId);
+        Assert.Empty(world.Ledger.Opened);
     }
 }

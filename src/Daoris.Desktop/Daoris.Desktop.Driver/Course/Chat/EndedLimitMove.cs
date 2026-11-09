@@ -79,6 +79,14 @@ internal sealed class EndedLimitMove(IExecutorWiring wiring, LimitMove move)
         // for the picked account alone, starts afresh there once it is ready and keeps the pick, and waits while it cools, so the walk
         // below is for a conversation with no pick.
         var onPick = context.Conversations.PickedOn(sessionId, prior.Profile);
+        // A limit's end is held by its line's limits rule and moves bound as the live move's is, before any walk.
+        var line = LineKeys.Of(sessionId, ServiceClient.ReadRecords(json)).Key;
+        if (!onPick && held is not null && !switching && lost is null && !restarted
+            && LimitRuled.Holds(context, wiring.Of<LimitWaits>(), owner.Rules ??= ConversationRules.Of(context), prior, sessionId, line, null, ranOn) is { } ruled)
+        {
+            return ruled;
+        }
+
         // Each entry has its own trigger, a limit's end, a restart or a conversation proven
         // lost (the conversation lost), and a switch off a cooling account (the words kept). The executor reads the walk, and the course
         // decides; where it holds, the conversation waits, and where it answers a move the executor opens it.
@@ -144,6 +152,7 @@ internal sealed class EndedLimitMove(IExecutorWiring wiring, LimitMove move)
         // The move's record, ended by its phase where the move goes no further before its hand.
         ConversationMove? record = null;
         var toWire = false;
+        ConversationMove? carriedRecord = null;
         var read = new TaskCompletionSource<Task>(TaskCreationOptions.RunContinuationsAsynchronously);
         var decided = false;
         try
@@ -203,12 +212,14 @@ internal sealed class EndedLimitMove(IExecutorWiring wiring, LimitMove move)
                         .ConfigureAwait(false);
             if (started.SessionId is not { } to)
             {
+                carrier?.Withdraw();
                 context.Note(sessionId, LimitNotes.NotMoved(started.Message));
                 return new StartedFrom(null, false, null, started.Message);
             }
 
             opened = true;
             move.Answered();
+            if (elsewhere is { Order: [var other, ..] }) LimitRuled.Moved(context, prior, line, other);
 
             // As the live move's: the open's answer, every word it moved by its id on the new
             // part, the line's head read before anything is handed, then `delivering` and the prompt's mark. A write the store refuses makes
@@ -217,6 +228,7 @@ internal sealed class EndedLimitMove(IExecutorWiring wiring, LimitMove move)
             if (carrier is { Resumed: true })
             {
                 toWire = true;
+                carriedRecord = record;
                 return new StartedFrom(to, true, null, $"`{sessionId}` went on in its own conversation, carried to conversation `{to}` with your words.");
             }
 
@@ -304,7 +316,7 @@ internal sealed class EndedLimitMove(IExecutorWiring wiring, LimitMove move)
             if (record is not null && !toWire) await record.EndAsync().ConfigureAwait(false);
             if (!holding) context.GoingOn.TryRemove(sessionId, out _);
             going.TrySetResult();
-            if (decided) await move.TellEndedAsync(sessionId, toWire, read).ConfigureAwait(false);
+            if (decided) await move.TellEndedAsync(sessionId, toWire, read, carriedRecord).ConfigureAwait(false);
         }
     }
 
