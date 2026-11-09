@@ -15,4 +15,7 @@ public sealed record NodeGitReads(Func<LandedBranch, string?>? RemoteTip = null)
 
     /// <summary>The tip of a full ref in the run's repository, as the pass read it, for a step's target (<see cref="WireTargets"/>); null where none is read.</summary>
     public Func<string, string?>? Tip { get; init; }
+
+    /// <summary>What a run's <c>rebase</c> attempt came to, by run, node and attempt, as its door wrote it (<see cref="RebaseRecords"/>); null where none is read.</summary>
+    public Func<string, string, int, RebaseAttempt?>? Rebased { get; init; }
 }

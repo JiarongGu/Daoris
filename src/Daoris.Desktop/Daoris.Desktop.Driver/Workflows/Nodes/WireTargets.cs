@@ -25,13 +25,13 @@ internal static class WireTargets
     /// The targets the pass hands its steps: each node whose kind names a target, at the tip <paramref name="tip"/> reads; none for a node
     /// whose target's tip is not read, which binds with none.
     /// </summary>
-    public static Dictionary<string, NodePort> Read(IEnumerable<NodeDeclaration> nodes, Func<string, string?>? tip)
+    public static Dictionary<string, NodePort> Read(IEnumerable<NodeDeclaration> nodes, Func<string, string?>? tip, string? line = null)
     {
         var targets = new Dictionary<string, NodePort>(StringComparer.Ordinal);
         if (tip is null) return targets;
         foreach (var node in nodes)
         {
-            if (NodeKit.Of(node.Kind) is ITargets targeting && targeting.Target(node) is { } named && tip(named) is { } at)
+            if (NodeKit.Of(node.Kind) is ITargets targeting && targeting.Target(node, line) is { } named && tip(named) is { } at)
             {
                 targets[node.Id] = new NodePort(WireValues.Ref, named, at, null);
             }

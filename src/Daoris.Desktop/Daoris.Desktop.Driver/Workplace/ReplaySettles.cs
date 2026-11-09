@@ -11,7 +11,7 @@ namespace Daoris.Driver;
 /// </summary>
 internal sealed class ReplaySettles(TreeContext context, PassLeftovers leftovers)
 {
-    /// <summary>Where a replay stopped on a file no rule settles: the commit it was applying and the files left conflicted, before it was aborted.</summary>
+    /// <summary>Where a replay stopped on a file no rule settles: the commit it stood at and the files left conflicted, read before the abort.</summary>
     internal sealed record Stop(string Commit, IReadOnlyList<string> Paths);
 
     /// <summary>What a landing's replay made: the new tip, or null and git's words, and whether those name a conflict.</summary>
@@ -225,7 +225,7 @@ internal sealed class ReplaySettles(TreeContext context, PassLeftovers leftovers
     /// <see cref="BranchReplays.RebaseInAsync"/>'s replay, where a stop whose every conflicted file the repository marks generated
     /// (<see cref="GeneratedPaths"/>) is not the session's conflict: those files take the line's side, the side the replay
     /// builds on, and the replay goes on, a commit left empty by it skipped as git would drop one. Any other stop aborts with git's
-    /// <c>CONFLICT</c> lines, the commit it was applying and its conflicted files read first. The files taken are added to
+    /// <c>CONFLICT</c> lines, the commit it stood at and its conflicted files read first. The files taken are added to
     /// <paramref name="generated"/>. The backlog the line declares, conflicted alone or beside generated files, is settled by its merge
     /// base in <paramref name="backlog"/>, which sums what each stop settled; a base line both sides changed aborts the replay as any conflict does.
     /// </summary>

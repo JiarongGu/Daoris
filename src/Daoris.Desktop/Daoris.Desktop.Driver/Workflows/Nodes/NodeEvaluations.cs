@@ -110,7 +110,7 @@ internal static class NodeEvaluations
             Revisions = revisions,
             Subjects = subjects,
             NodeRevisions = own,
-            Targets = WireTargets.Read(nodes, git?.Tip),
+            Targets = WireTargets.Read(nodes, git?.Tip, scope.Branch?.Records.Branch?.Line),
             Units = units,
             Fired = record.Fired.ToHashSet(StringComparer.Ordinal),
             Git = git,
