@@ -226,7 +226,7 @@ Moves a commit onto a target ref by a declared method, and nothing else.
 | The judgement before the effect | Under the repository's git lock, beside the standing authority, it reads again whether its input is current, as `UnderHoldAsync` does today: the work's tip still the one the input was made from, the quest's submission the same (a closure graph's, `QuestResults.Same`), the step ref still naming the input, the run neither stopped nor superseded. One moved: nothing is written, the attempt is withdrawn (its preparation settled withdrawn), and the moved input rebinds it as any does |
 | State | The delivery, keyed by unit, commit, method, target and generation, its phases written ahead (prepared, ref written, recorded) and settled by phase after a restart, before anything new starts (today's ladder and `LandAttemptSettling`, re-homed); a wait on the checkout's own uncommitted work (`root-dirty`, its status fingerprint, made again when it changes), said and waiting on the person |
 | Words | "Merged 3 commits into `main`." "Behind `main` by 2 commits: rebasing again." "Waits for the repository's checkout to be clean: it has uncommitted work." |
-| Retries, bound | An uncertain effect is never repeated (§3 of the land node's design stands); `behind` is an outcome every composition routes `back` to the rebase its input comes from, and the save refuses a `merge` with no such way (`merge-behind`) |
+| Retries, bound | An uncertain effect is never repeated (§3 of the land node's design stands); `behind` is an outcome every composition routes on: `back` to the rebase its input comes from (directly or through a `check`), or, for a `merge` fed another `merge`'s commit (a release's promotion), to a step with a way on. The save refuses a `merge` whose `behind` leads nowhere (`merge-behind`) |
 
 It is the one step that writes a shared ref: the person's checkout is only fast-forwarded and only while clean and on the target, a
 branch target is recorded in `landings.json`, and a press that waits on a run waits on the attempt of its `merge` it started, so a
@@ -418,9 +418,10 @@ name, as any unknown kind). Field by field:
 | Repairs (a review Accept waiting on a carried-on session) | Dropped with the `land`, the review's acceptance kept: the new `rebase` finds the uncommitted paths and `resolve` asks, its try 1, said |
 | History, observations | Kept, the `merge`'s history gaining "converted from `land`" |
 
-**Restart-safe.** Each write is atomic, and each run's are ordered: the unit records, then the run's record with a mark naming the
-conversion (from and to version), then the binding. The conversion of a record is a function of the old record alone, so a record
-that holds the mark is not converted again and a run whose record holds it while its binding is old has its binding written only.
+**Restart-safe.** Each write is atomic, and each run's are ordered: the unit records, then the run's record, then the binding, each
+record converted carrying a mark naming the conversion (from and to version). The conversion of a record is a function of the old
+record alone, so a record that holds the mark is not converted again, and a run whose records hold it while its binding is old has
+its binding written only.
 The step is recorded done only after every run; one cut short runs again at the next start (HomeMigration's rule), and until then
 a run on an old version is held whole, since this build has no `land`. An older build reads a graph holding `rebase` as an unknown
 kind, held whole, and a rollback is refused while a step's delivery or step ref is open.
@@ -502,7 +503,7 @@ kit with no `land`. The conversion's reading of `land` is the one remnant: row j
    the ref's write: `behind`, nothing written, and through the evaluator back to `rebase` (and `check`, composed as the release is)
    and on to one merge; for each currency read (the work's tip, the quest's submission, the step ref, the run stopped) moved between
    the judgement and the effect: nothing written; a squash's and a merge commit's tree equal to the input's; a two-member together
-   operation in one delivery; a save of a `merge` with no `behind` way refused.
+   operation in one delivery; a save of a `merge` whose `behind` leads nowhere refused.
 6. **1f, `tidy` and `check` fed** (driver; their words): `follow` writing the run's own move, `branch`, `tidy-held`, the step refs
    left to the run's end, the look's tidy disjoint; `check`'s `commit` in and out. Proof: a free tree follows and the pass after it
    lapses nothing, the review's acceptance included; a running tree says why it stays; a pushed branch never rewritten; a squash run
@@ -552,7 +553,7 @@ Each finding, the sequence it closes, round 2's answer, its proof's row, and the
 - **Codex 2, Opus B4 — what was checked is not what lands.** The rebase makes C on T; `check` passes C; the line moves to T′; a merge
   or a squash combines C with T′, unverified. Answer: §2.6, `behind` for every method, the target compared and set at once, every
   preset routing `behind` back through `rebase` and `check`. Proof: e. Class: the method-by-target table moved at each point, and
-  `merge-behind` refusing any graph, shipped or saved, whose `merge` has no way back.
+  `merge-behind` refusing any graph, shipped or saved, whose `merge`'s `behind` leads nowhere.
 - **Codex 3 — a timeout leaves the tree unowned.** Answer: §2.4's journalled hand-off, reserved tree, the resolver stopped and
   awaited before restoration, edits kept on the edits ref. Proof: d. Class: one restoration for every end (resolved, timeout, stop,
   decline, lapse, restart), each a row of one test.
