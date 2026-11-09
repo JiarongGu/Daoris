@@ -80,6 +80,7 @@ internal sealed class WatchNodes
             Executor = _executor,
             Integration = watch.IntegrationDoor,
             Requests = service,
+            Turning = ct => TidyHolders.InUseAsync(home, service, null, ct),
         });
 
         // The transport an open request's line is sent to, run off the pass beside the heavy

@@ -148,4 +148,35 @@ public sealed class TogetherPressTests : LandedFixture
 
         Assert.Contains("brought together already", again.Refused);
     }
+
+    [Fact]
+    public async Task A_member_whose_rebase_reached_is_refused_until_the_step_its_commit_feeds_settles()
+    {
+        var (_, head, beside, _) = await ThreeAsync();
+        var tip = await TipAsync(beside.Path);
+        NodeDeclaration[] nodes = [new("rebase", NodeKinds.Rebase, 1, NodeReach.Performed), new("merge", "acme.git/merge", 1, NodeReach.Performed)];
+        Wire[] wires = [WireEvaluationTests.Data("w1", "rebase", RebaseNode.Commit, "merge", "commit")];
+        var rebase = new NodeStatus("run:q1", "rebase", NodeStates.Reached)
+        {
+            Acceptance = new NodeAcceptance("run:q1", tip, "g", "rebase", 1, 1)
+            {
+                Outputs = new Dictionary<string, NodePort>(StringComparer.Ordinal) { [RebaseNode.Commit] = new(WireValues.Commit, "refs/daoris/steps/q1/rebase/1", "c1", null) },
+            },
+        };
+        var statuses = new Dictionary<string, NodeStatus>(StringComparer.Ordinal) { ["rebase"] = rebase, ["merge"] = new("run:q1", "merge", NodeStates.Active) };
+        Task<string?> Delivering(TogetherCandidate member, string at, CancellationToken _) =>
+            Task.FromResult(RebaseDelivering.Of(member.Session, (nodes, wires, statuses), at, deliveryUnsettled: false));
+
+        var press = new TogetherPress(Home, SayAsync, () => At) { Delivering = Delivering };
+        var refused = await press.PressAsync(Head(head), [Member("s-beside", beside)], CancellationToken.None);
+
+        Assert.Equal("Nothing was brought together: `s-beside` is delivering: bring it in once its merge settles.", refused.Refused);
+        Assert.Empty(new TogetherOperations(Home).All());
+        statuses["merge"] = new("run:q1", "merge", NodeStates.Reached) { Acceptance = new NodeAcceptance("run:q1", "c1", "g", "merge", 1, 1) };
+
+        var bound = await press.PressAsync(Head(head), [Member("s-beside", beside)], CancellationToken.None);
+
+        Assert.Null(bound.Refused);
+        Assert.Equal(tip, Assert.Single(new TogetherOperations(Home).Of(bound.Operation!.Id)!.Members).Tip);
+    }
 }

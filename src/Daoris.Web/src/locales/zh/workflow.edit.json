@@ -177,6 +177,7 @@
   "workflow.edit.kind.monitor": "等待拉取请求合并",
   "workflow.edit.kind.tidy": "清理委托链的分支",
   "workflow.edit.kind.line": "进入主线",
+  "workflow.edit.kind.rebase": "把工作变基到目标上",
   "workflow.edit.kind.human": "你的任务",
   "workflow.edit.kind.look": "你的查看",
   "workflow.edit.kind.go-ahead": "你的放行",

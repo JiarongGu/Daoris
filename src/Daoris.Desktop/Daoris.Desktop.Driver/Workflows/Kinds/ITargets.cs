@@ -6,6 +6,6 @@ namespace Daoris.Driver;
 /// </summary>
 internal interface ITargets
 {
-    /// <summary>The full ref <paramref name="node"/> reads the tip of, or null where its options name none this build can read.</summary>
-    string? Target(NodeDeclaration node);
+    /// <summary>The full ref <paramref name="node"/> reads the tip of, given the run's <paramref name="line"/>; null where none is read.</summary>
+    string? Target(NodeDeclaration node, string? line);
 }

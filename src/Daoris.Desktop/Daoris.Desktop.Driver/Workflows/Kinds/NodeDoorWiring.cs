@@ -22,6 +22,9 @@ internal sealed record NodeDoorWiring(string Home, Func<bool> MayStart)
     /// <summary>The service client a run's <c>request</c> publishes its quest through.</summary>
     public IRequestPort? Requests { get; init; }
 
+    /// <summary>The trees a session runs a turn or waits in (<see cref="TidyHolders.InUseAsync"/>), which a step that replays a work waits on.</summary>
+    public Func<CancellationToken, Task<IReadOnlySet<string>>>? Turning { get; init; }
+
     /// <summary>Tells the machine log <paramref name="said"/> under <paramref name="code"/>.</summary>
     public void Say(string code, string said) => Log?.Invoke(code, said);
 }

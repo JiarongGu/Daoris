@@ -44,14 +44,14 @@ public sealed class NodeKitTests
                 "claimed",
                 "review", "look", "go-ahead", "human",
                 "check", "opinion", "work.requests", "quest.holds", "content.holds",
-                "land", "integrate", "push", "*/pull-request", "monitor", "tidy", "line",
+                "land", "integrate", "push", "*/pull-request", "monitor", "tidy", "line", "rebase",
                 "request", "wait.unit", "quest.close", "all", "stop",
             ],
             order.Select(part => part.Name));
         Assert.Equal(
             [
                 NodeGroup.Work, .. Enumerable.Repeat(NodeGroup.You, 4), .. Enumerable.Repeat(NodeGroup.Checks, 5),
-                .. Enumerable.Repeat(NodeGroup.Landing, 7), .. Enumerable.Repeat(NodeGroup.Others, 5),
+                .. Enumerable.Repeat(NodeGroup.Landing, 8), .. Enumerable.Repeat(NodeGroup.Others, 5),
             ],
             order.Select(part => (NodeGroup)part.Phase));
 

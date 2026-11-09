@@ -105,6 +105,8 @@ public static class NodeKinds
     /// its commits kept on a recovery ref, and what it ended written on the landing record, which the keeper and the press read.
     /// </summary>
     public const string Tidy = "tidy";
+
+    public const string Rebase = "rebase";
 }
 
 /// <summary>
