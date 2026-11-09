@@ -133,7 +133,7 @@ internal sealed class AcpOptions(
                     {
                         await SetAsync(option.Id, opening, ct).ConfigureAwait(false);
                     }
-                    catch (DriverException back)
+                    catch (AcpRefusal back)
                     {
                         say($"[{category} could not be set back to `{opening}`: {back.Message}]");
                         throw new AcpChoiceNotOffered(refused);

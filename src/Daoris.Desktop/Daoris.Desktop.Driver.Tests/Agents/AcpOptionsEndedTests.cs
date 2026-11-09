@@ -39,4 +39,41 @@ public sealed class AcpOptionsEndedTests
         Assert.False(asked, "the stream's end was read as the agent refusing the model");
         Assert.IsNotType<AcpChoiceNotOffered>(failed);
     }
+
+    /// <summary>The agent answers the first set with its own value, which refuses the choice; the stream ends as the set back is asked.</summary>
+    [Fact]
+    public async Task A_stream_that_ends_while_a_refused_model_is_set_back_is_not_the_agent_refusing_the_set_back()
+    {
+        var sets = 0;
+        var agent = new AcpBackgroundTests.Agent((frame, self) =>
+        {
+            switch (frame.GetProperty("method").GetString())
+            {
+                case "initialize":
+                    return AcpBackgroundTests.Ok(frame, """{"protocolVersion":1}""");
+                case "session/new":
+                    return AcpBackgroundTests.Ok(frame, $$"""{"sessionId":"s-1","configOptions":{{Offered}}}""");
+                case "session/set_config_option" when ++sets == 1:
+                    return AcpBackgroundTests.Ok(frame, $$"""{"configOptions":{{Offered}}}""");
+                case "session/set_config_option":
+                    self.Close();
+                    return null;
+                default:
+                    return null;
+            }
+        });
+        var session = new AcpSession(agent.Incoming, agent.Outgoing, _ => { })
+        {
+            Carry = new ActorAsked("claude-code-acp", new("entry", "opus", true), new("account-default", null, false)),
+            ModelRefused = ChoiceReask.Of(_ => Task.FromResult<ActorAsked?>(
+                new ActorAsked("claude-code-acp", new("account-default", null, false), new("account-default", null, false)))),
+        };
+
+        AcpOutcome? outcome = null;
+        _ = await Record.ExceptionAsync(async () =>
+            outcome = await session.RunAsync("D:/fam/Game", "a task", CancellationToken.None).WaitAsync(Poll.Patience));
+
+        Assert.Equal(2, sets);
+        Assert.NotEqual(AcpOutcome.ChoiceNotOffered, outcome?.StopReason);
+    }
 }
