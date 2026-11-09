@@ -5,6 +5,10 @@ the per-task record. Entries preserve their original wording so the archive stay
 
 ---
 
+## CODESTRREV3a to 3e — the code-structure review's third cycle, merge-tool and process-tool defects fixed (2026-11-10)
+
+> **CODESTRREV3 (fixed)** (tools): Outcome: the process census read from a commit reads the service half's sources as the working tree's (`READ` in `tools/process-reach.mjs`); a run taking over a dead gate lock removes only the lock it judged (`removeWhileSame`), and the CI watch's start does the same through `takeLock`; a dead gate run's strays are ended by `endStrandedUnder` alone, `endStranded` removed (it matched the folder as a prefix and spared no runner); `reachSettings` rewrites the element the run reads, not one a comment shows. Each with its regression test (`locks.test.ts`, `processes.test.ts`, `process-reach.test.ts`). Open: CODESTRREV3a and 3b in `TASKS.md` (a lock and a child end judged by pid alone).
+
 ## SUPERVISOR2 rows e and g — a leave's record, the verb's allow print, the held copy, the files subject (2026-11-10)
 
 > **SUPERVISOR2e, g** (driver, modules, web; `docs/2026-11-08-supervisor-kinds-design.md` §5.1, §6.4): Outcome: a leave of an allow, a widening, a steward's act or a held act is kept as an allow decision `left` with its bound and reasons (`SupervisorAllowed.Bound`, read back by `SESSION_SUPERVISOR`'s `allows`, said by the card); the verb prints an allow or a held act with the facts its kind's row composes (the listing's `facts`, `SupervisorFactParts`) and decides a `files` subject named by its repository; the files stage holds a `copy` an `ask` holds or a `deny` matches (`TreeCopyPermit`, `started.local-held`, `started.local-denied`), and a held `share` is pinned by a stage test.

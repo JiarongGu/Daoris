@@ -78,8 +78,8 @@ public static class RegistryImport
                 Uses: Declared.Uses(domain is null ? [] : Strings(domain.Value, "uses"), name));
         }
         // JSON of the wrong shape (an array, a string) throws InvalidOperationException from the element
-        // reads, and is as broken as JSON that will not parse.
-        catch (Exception error) when (error is JsonException or InvalidOperationException)
+        // reads, and is as broken as JSON that will not parse; a manifest an editor holds cannot be read either.
+        catch (Exception error) when (error is JsonException or InvalidOperationException or IOException or UnauthorizedAccessException)
         {
             // A manifest that will not parse is the repository's own problem and its own tooling will
             // say so. Here it means only that we cannot read the declaration — which is not a reason to

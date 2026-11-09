@@ -47,7 +47,7 @@ internal static class GitLazyFetch
     internal static async Task PrepareAsync(ProcessStartInfo info, IReadOnlyList<string> arguments, CancellationToken ct)
     {
         if (s_fetching.Value || s_probing.Value || info.Environment.ContainsKey(Variable)) return;
-        if (RefSnapshot.MayWrite(arguments) || GitStartAsks.WaitOf(arguments, writes: false) != GitWait.Read) return;
+        if (GitCommands.Writes(arguments) || GitStartAsks.WaitOf(arguments, writes: false) != GitWait.Read) return;
         var folder = Path.GetFullPath(string.IsNullOrEmpty(info.WorkingDirectory) ? "." : info.WorkingDirectory);
         if (!Promisor(folder)) return;
         if (await HonouredAsync(info.FileName, folder, ct).ConfigureAwait(false)) info.Environment[Variable] = "1";

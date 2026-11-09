@@ -288,15 +288,49 @@ public sealed class CitationRecheckTests : IAsyncLifetime
         Assert.Equal((MemoryOpKind.Confirm, "behind"), (confirm.Change.Kind, confirm.Change.Target));
     }
 
+    /// <summary>🔴 One repository's memory that cannot be read loses no other repository's rechecks, and its failure is still told.</summary>
+    [Fact]
+    public async Task A_repository_whose_memory_fails_does_not_lose_the_others_rechecks()
+    {
+        var service = await ServeAsync(GitProbe);
+        await service.RegisterAsync(new Registration("aaa-broken", true, null, [], [], [], 0), DateTimeOffset.UtcNow);
+        await using var machine = await MemoryMachine.OpenAsync("memory-sweep-broken");
+        var holds = MemoryCitations.Of([Cited(await service.CiteAsync(Opening))])!;
+        var engines = new Both(new Broken(), new DueQueue([new("sound", 1, holds)]));
+        var sweep = new MemorySweep(machine.Memory, engines, service);
+
+        var told = await Record.ExceptionAsync(() => sweep.RunAsync(DateTimeOffset.UtcNow));
+
+        Assert.NotNull(told);
+        var confirm = Assert.Single(await machine.Memory.ListAsync(MemoryOpState.Ready));
+        Assert.Equal((MemoryOpKind.Confirm, "served", "sound"), (confirm.Change.Kind, confirm.Repository, confirm.Change.Target));
+    }
+
+    private sealed class Both(IMemoryEngine broken, IMemoryEngine sound) : IMemoryEngines
+    {
+        public IMemoryEngine? Open(string name, MemoryReinforcement reinforceOn) => name == "aaa-broken" ? broken : name == "served" ? sound : null;
+    }
+
+    private sealed class Broken : DueQueueBase
+    {
+        public override Task<IReadOnlyList<MemoryDue>> DueAsync(DateTimeOffset since, int limit, CancellationToken ct = default) =>
+            throw new InvalidOperationException("memory.db is unreadable");
+    }
+
     private sealed class Only(string repository, IMemoryEngine engine) : IMemoryEngines
     {
         public IMemoryEngine? Open(string name, MemoryReinforcement reinforceOn) => name == repository ? engine : null;
     }
 
-    private sealed class DueQueue(IReadOnlyList<MemoryDue> due) : IMemoryEngine
+    private sealed class DueQueue(IReadOnlyList<MemoryDue> due) : DueQueueBase
     {
-        public Task<IReadOnlyList<MemoryDue>> DueAsync(DateTimeOffset since, int limit, CancellationToken ct = default) =>
+        public override Task<IReadOnlyList<MemoryDue>> DueAsync(DateTimeOffset since, int limit, CancellationToken ct = default) =>
             Task.FromResult<IReadOnlyList<MemoryDue>>([.. due.Take(limit)]);
+    }
+
+    private abstract class DueQueueBase : IMemoryEngine
+    {
+        public abstract Task<IReadOnlyList<MemoryDue>> DueAsync(DateTimeOffset since, int limit, CancellationToken ct = default);
 
         public Task<IReadOnlyList<MemoryEntry>> SearchAsync(string query, int limit, CancellationToken ct = default) => throw new NotSupportedException();
 

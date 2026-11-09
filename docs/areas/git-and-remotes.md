@@ -262,7 +262,17 @@ queued and ended while running once its askers leave, the last answered only onc
 cancellation, or as `ProcessUnendedException` where the git outlived its kill; every other git, placed, runs untokened to its end or
 its bound. A
 `worktree remove` is admitted once the tree's lock-free reads are dropped or ended and its other gits have ended, the `worktree add`
-making it among them, and holds what is asked in the tree or to make it after it, which its own git passes. An ask beneath any placed git takes a place that git lends, above the four, one a parent, two deep,
+making it among them, and holds what is asked in the tree or to make it after it, which its own git passes. Each start is read before
+it queues, its input included, by one table of git's commands (`GitCommands`, `GitCommandReaders`): a row per command and, where git
+takes one, per verb, classing it a read (nothing written but objects), a write, or a drop (a branch removed, or moved or overwritten
+where its tip may be lost: `branch -d`, `-m`, `-f` and `-C`, `switch -C`, `checkout -B`, `worktree add -B` over a standing name,
+`update-ref -d` or to the zero id and `--stdin`'s `delete`, `symref-*` and unknown lines, `reset` to a commit, `commit --amend`,
+`rebase` on a branch, a fetch or a push into this repository forcing or pruning `refs/heads/`, the repository's own configuration
+read for its refspecs and pruning), with the branches it names and the commit it verifies each at, the trees it touches and the refs it
+writes. The write test (`GitCommands.Writes`), the bounds and the local waits read their columns there. An unrowed start is read as a
+drop of every word it names and the folder's current branch; nothing is refused at run time for want of a row, since
+`GitCommandsCensusTests` holds every literal start in the sources to a row and the tests run the gate strict (`GitStartGate.Strict`).
+An ask beneath any placed git takes a place that git lends, above the four, one a parent, two deep,
 deeper refused as `git.start.depth`: a pipe request's caller is told beneath one by its process ancestry (`PipeGitCaller`,
 `GitCallers`, read only while a git holds a place), so a push's hook and a diff's textconv or filter helper that ask the window
 never wait behind the place their own git holds. Lazy fetch is off for every read in a repository with a promisor

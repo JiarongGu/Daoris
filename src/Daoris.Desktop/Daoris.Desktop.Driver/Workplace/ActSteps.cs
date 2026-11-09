@@ -399,8 +399,8 @@ internal sealed class ActLaunch(ActJournal journal, ActClaim claim, ProcessJob j
                 foreach (var (name, value) in environment) info.Environment[name] = value;
             }
 
-            var ask = GitStartAsks.For(info, arguments, GitRunner.Held, TimeSpan.Zero, shares: false);
-            return await GitScheduler.Shared.RunAsync(ask, _ => PlacedAsync(info, ordinal, arguments, input), CancellationToken.None).ConfigureAwait(false);
+            var ask = GitStartAsks.For(info, arguments, GitRunner.Held, TimeSpan.Zero, shares: false, input);
+            return await GitScheduler.Shared.RunAsync(ask, _ => PlacedAsync(info, ordinal, arguments, ask.Input), CancellationToken.None).ConfigureAwait(false);
         });
 
     private async Task<Ran> PlacedAsync(System.Diagnostics.ProcessStartInfo info, int ordinal, IReadOnlyList<string> arguments, string? input)

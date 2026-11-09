@@ -417,7 +417,7 @@ internal sealed class DriverContinuations(LoopContext context, Driver driver)
                 // A closed quest's resume is carried on once; where it is the person's Accept's own carry-on (the session's
                 // yes is kept), the Accept's count bounds it and the run carries nothing on.
                 carriesOn: SessionWaits.CarriesOn(
-                    service, quest, workTree, resumed: true, () => _context.Processes.StopMade(sessionId) is not null,
+                    home, service, quest, workTree, resumed: true, () => _context.Processes.StopMade(sessionId) is not null,
                     accepted: new CarriedAccepts(home).Of(sessionId) is not null),
                 stopMade: stop => stoppedFirst = stop,
                 movedFirst: true,

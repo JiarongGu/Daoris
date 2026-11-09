@@ -190,10 +190,10 @@ internal static class GitRuns
         try
         {
             await GitLazyFetch.PrepareAsync(info, arguments, ct).ConfigureAwait(false);
-            var ask = GitStartAsks.For(info, arguments, GitRunner.Whole, bound, shares: input is null);
-            var run = await GitScheduler.Shared.RunAsync(ask, token => input is null
+            var ask = GitStartAsks.For(info, arguments, GitRunner.Whole, bound, shares: input is null, input);
+            var run = await GitScheduler.Shared.RunAsync(ask, token => ask.Input is not { } given
                 ? ChildProcess.RunAsync(info, bound, token, closeInput: false)
-                : ChildProcess.RunAsync(info, bound, token, input, ProcessStarts.Shared), ct).ConfigureAwait(false);
+                : ChildProcess.RunAsync(info, bound, token, given, ProcessStarts.Shared), ct).ConfigureAwait(false);
             return Answer(run, bound);
         }
         catch (Exception error) when (error is not OperationCanceledException)
@@ -260,8 +260,8 @@ internal static class GitRuns
         try
         {
             await GitLazyFetch.PrepareAsync(info, arguments, ct).ConfigureAwait(false);
-            var ask = GitStartAsks.For(info, arguments, GitRunner.Bytes, GitBounds.Of(arguments), shares: false);
-            return await GitScheduler.Shared.RunAsync(ask, token => BytesPlacedAsync(info, arguments, limit, input, token), ct).ConfigureAwait(false);
+            var ask = GitStartAsks.For(info, arguments, GitRunner.Bytes, GitBounds.Of(arguments), shares: false, input);
+            return await GitScheduler.Shared.RunAsync(ask, token => BytesPlacedAsync(info, arguments, limit, ask.Input, token), ct).ConfigureAwait(false);
         }
         catch (GitUnplacedException)
         {

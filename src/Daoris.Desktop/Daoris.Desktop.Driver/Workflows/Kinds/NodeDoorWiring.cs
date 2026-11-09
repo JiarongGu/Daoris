@@ -25,6 +25,12 @@ internal sealed record NodeDoorWiring(string Home, Func<bool> MayStart)
     /// <summary>The trees a session runs a turn or waits in (<see cref="TidyHolders.InUseAsync"/>), which a step that replays a work waits on.</summary>
     public Func<CancellationToken, Task<IReadOnlySet<string>>>? Turning { get; init; }
 
+    /// <summary>Who a <c>resolve</c> asks to settle a stop, and how it stops them.</summary>
+    public IResolvers? Resolvers { get; init; }
+
+    /// <summary>A tree's reservation for a hand-off, its holders read through the loop's service (<see cref="TreeReserving"/>).</summary>
+    public Func<TreeHandOff, CancellationToken, Task<TreeReserved>>? Reserve { get; init; }
+
     /// <summary>Tells the machine log <paramref name="said"/> under <paramref name="code"/>.</summary>
     public void Say(string code, string said) => Log?.Invoke(code, said);
 }

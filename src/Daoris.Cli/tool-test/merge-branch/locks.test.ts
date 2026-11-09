@@ -1,8 +1,9 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { existsSync, readdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { makeFixture } from '../../test/_fixture.ts';
+import { refusal, tool } from '../support/merge-branch.ts';
 
 // test-map: reads the merge tool's lock unit only
 // reaches: tool-tests — the unit and its test are the tool-tests gate's
@@ -10,6 +11,9 @@ import { makeFixture } from '../../test/_fixture.ts';
 const locks = await import(new URL('../../../../tools/merge-branch/locks.mjs', import.meta.url).href) as {
   holdingLock: (file: string, fn: () => unknown, options?: { staleMs?: number; lives?: (pid: number) => boolean; now?: () => number; pause?: (ms: number) => void }) => unknown;
   putComplete: (path: string, text: string) => boolean;
+  lockText: (path: string) => string | null;
+  removeWhileSame: (path: string, text: string | null) => boolean;
+  takeLock: (path: string, text: string, live: (held: string) => boolean, attempts?: number) => { taken: boolean; held: string | null };
 };
 
 const SINCE = Date.parse('2026-11-09T09:00:00Z');
@@ -50,6 +54,67 @@ test('CODESTRREV2b: a gate lock is put in place complete, never overwriting anot
     assert.equal(locks.putComplete(lock, '{"pid":2}\n'), false);
     assert.equal(readFileSync(lock, 'utf8'), '{"pid":1}\n', 'the lock another run holds is left whole');
     assert.deepEqual(readdirSync(fx.root), ['gate.lock']);
+  } finally {
+    fx.cleanup();
+  }
+});
+
+test('a run that takes over a dead gate lock never removes the lock another run put in place while it ended the processes of the dead run', () => {
+  const fx = makeFixture('merge-branch-gate-lock-race');
+  try {
+    mkdirSync(join(fx.root, 'local'), { recursive: true });
+    const file = join(fx.root, tool.GATE_TREE_LOCK);
+    writeFileSync(file, `${JSON.stringify({ pid: 4242, commit: 'a'.repeat(40), at: '2026-10-18T10:00:00Z' })}\n`);
+    const other = `${JSON.stringify({ pid: 9999, commit: 'c'.repeat(40), at: '2026-10-18T12:00:00Z', holder: 'ci' })}\n`;
+    // Ending the dead run's processes takes seconds, and a second run that found the same dead lock takes it over in that time.
+    const end = (): number[] => { rmSync(file, { force: true }); writeFileSync(file, other); return []; };
+    const error = refusal(() => tool.takeGateLock(fx.root, { commit: 'b'.repeat(40), alive: (pid: number) => pid === 9999, end, endStrays: () => [] }));
+    assert.match(error.message, /a CI run holds the gate tree already/);
+    assert.equal(readFileSync(file, 'utf8'), other, 'the second run still holds its lock');
+  } finally {
+    fx.cleanup();
+  }
+});
+
+test('removeWhileSame leaves a lock that reads differently, and one that is gone', () => {
+  const fx = makeFixture('merge-branch-lock-same');
+  try {
+    const lock = join(fx.root, 'gate.lock');
+    writeFileSync(lock, 'one');
+    assert.equal(locks.removeWhileSame(lock, 'two'), false);
+    assert.equal(existsSync(lock), true);
+    assert.equal(locks.removeWhileSame(lock, 'one'), true);
+    assert.equal(existsSync(lock), false);
+    assert.equal(locks.removeWhileSame(lock, locks.lockText(lock)), false, 'a lock that was not there is no lock to remove');
+  } finally {
+    fx.cleanup();
+  }
+});
+
+test('takeLock takes a lock no run holds, and leaves the one another run took over while this run judged the dead one', () => {
+  const fx = makeFixture('merge-branch-take-lock');
+  try {
+    const lock = join(fx.root, 'watch.lock');
+    assert.deepEqual(locks.takeLock(lock, 'mine', () => true), { taken: true, held: null });
+    assert.deepEqual(locks.takeLock(lock, 'second', (held) => held === 'mine'), { taken: false, held: 'mine' }, 'a live holder is left');
+    assert.equal(readFileSync(lock, 'utf8'), 'mine');
+
+    writeFileSync(lock, 'dead');
+    const judged: string[] = [];
+    assert.deepEqual(locks.takeLock(lock, 'third', (held) => { judged.push(held); return held !== 'dead'; }), { taken: true, held: null }, 'a dead lock is taken over');
+    assert.equal(readFileSync(lock, 'utf8'), 'third');
+    assert.deepEqual(judged, ['dead']);
+
+    // A second run takes the dead lock over while this one is still judging it: its lock stands.
+    writeFileSync(lock, 'dead');
+    const result = locks.takeLock(lock, 'late', (held) => {
+      if (held !== 'dead') return true;
+      rmSync(lock, { force: true });
+      writeFileSync(lock, 'other');
+      return false;
+    });
+    assert.deepEqual(result, { taken: false, held: 'other' });
+    assert.equal(readFileSync(lock, 'utf8'), 'other');
   } finally {
     fx.cleanup();
   }

@@ -14,6 +14,8 @@ internal static class StepRefs
     public static string Of(string run, string node, int attempt) =>
         $"{Prefix}{run}/{node}/{attempt.ToString(System.Globalization.CultureInfo.InvariantCulture)}";
 
+    public static string EditsOf(string run, string node) => $"{Prefix}{run}/{node}/edits";
+
     /// <summary>The attempt's commit kept on its ref in one transaction, made only where the ref is absent.</summary>
     public static Task<RefRun> KeepAsync(string root, string run, string node, int attempt, string commit, CancellationToken ct) =>
         new RefTransaction().Create(Of(run, node, attempt), commit).RunAsync(root, ct);

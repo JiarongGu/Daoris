@@ -58,7 +58,7 @@ internal static class SessionWaits
     /// <param name="stopped">Whether the person (or the driver) stopped the session, read at each look and again where the words are written.</param>
     /// <param name="accepted">Whether the session's kept Accept is the cause of this resume, read as the run is built.</param>
     public static Func<CancellationToken, Task<TurnCarry>>? CarriesOn(
-        ServiceClient service, QuestView planned, string tree, bool resumed, Func<bool> stopped, bool accepted = false)
+        string home, ServiceClient service, QuestView planned, string tree, bool resumed, Func<bool> stopped, bool accepted = false)
     {
         // A went-on run is carried on once, a turn's end twice; an Accept's carry-on is the Accept's, bounded by its own count, so the
         // run reads null for it and the session is never carried on by two counters.
@@ -69,6 +69,7 @@ internal static class SessionWaits
         {
             if (stopped()) return TurnCarry.None;
             var now = await service.FindQuestAsync(planned.Id, token).ConfigureAwait(false);
+            if (CommitAskers.Of(home, tree) != CommitAskers.TurnsEnd) return TurnCarry.None;
             return await TurnCarries.LookAsync(now is { Status: "Done" } || QuestResults.Submitted(now), stopped, tree, token, limit).ConfigureAwait(false);
         };
     }
