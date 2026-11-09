@@ -17,6 +17,13 @@ internal static class TreeLinks
     /// </summary>
     internal const int LinkWalkLimit = 1_000_000;
 
+    /// <summary>Why git would refuse the tree whole, before any link is taken off it: its lock, which a removal not forced twice never lifts; null where it has none.</summary>
+    internal static string? Locked(string tree)
+    {
+        var gitDir = RefFiles.GitDirOf(tree);
+        return gitDir is not null && File.Exists(Path.Combine(gitDir, "locked")) ? "git holds it locked" : null;
+    }
+
     /// <summary>
     /// Every link in <paramref name="tree"/> taken off as a link, never followed: null where none is left, or the tree is gone; else
     /// why the tree stays, a clause beginning <c>its tree</c> or naming it. The walk never enters a link, skips the tree's own

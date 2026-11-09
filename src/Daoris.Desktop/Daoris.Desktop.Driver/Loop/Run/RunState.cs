@@ -190,6 +190,8 @@ internal sealed class RunState : IDisposable, IAsyncDisposable
         set => _carry.Set(value);
     }
 
+    public string? Begun { get; set; }
+
     /// <summary>The session's record as the service opened it.</summary>
     public RecordOpened Opened
     {

@@ -451,12 +451,21 @@ public sealed class Driver(
         await using var state = new RunState();
         var run = new RunRound(start, registry, untrusted, onOpened, movedOff, movedOffModel, movedFrom, fresh, state);
 
-        foreach (var phase in new[] { RunPhase.Choose, RunPhase.Grown, RunPhase.Placed, RunPhase.Cleared, RunPhase.Opened })
+        try
         {
-            foreach (var stage in RunStages.In(phase))
+            foreach (var phase in new[] { RunPhase.Choose, RunPhase.Grown, RunPhase.Placed, RunPhase.Cleared, RunPhase.Opened })
             {
-                if (await stage.RunAsync(run, ct).ConfigureAwait(false) is { } held) return held;
+                foreach (var stage in RunStages.In(phase))
+                {
+                    if (await stage.RunAsync(run, ct).ConfigureAwait(false) is { } held) return held;
+                }
             }
+        }
+        // The hand's own endings are not armed until the stages before it have run, so a throw between the record's open and the hand,
+        // the files stage's or the lock's, would leave the record `starting` and its tree held until this process ended.
+        catch (Exception error) when (state.Begun is { } begun)
+        {
+            return await RunEndings.BeforeHandAsync(RunWiring, run, begun, error, ct).ConfigureAwait(false);
         }
 
         // The record handed to its session, which runs to its conclusion however it ends.
