@@ -166,7 +166,9 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they start wi
 ### Start, tree and resume
 
 19. The record opens before the spawn. It names the quest, repository, adapter, tree, access setup and the actor's
-    choice. The tree, profile and waiting words are machine-local and never travel. (from D47, D49, D184, D205)
+    choice. The tree, profile and waiting words are machine-local and never travel. A throw or a cancel between the open and
+    the hand ends the record, failed, or stopped where the driver is closing, and lets its tree lock go (`RunEndings.BeforeHandAsync`).
+    (from D47, D49, D184, D205)
 20. A fresh tree is a linked git worktree at `<home>/work/trees/<workspace>/<repository>/s-<8 hex>`, on a new branch
     `daoris/s-<8 hex>`. It grows from the repository's line, or from the branch a chain's step before landed on. A root
     that is not the top of its own repository is refused. (from D51, D82, D86)
@@ -403,7 +405,8 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they start wi
     untracked work keeps it. An ignored folder of more than 5,000 files is too large to look through and keeps it, counted by
     name before any file's time or bytes are read. (from D195, D218)
 50. The person's clean-up press lists every session branch with what it holds and removes those the proof clears,
-    judging each again right before it goes. (from D88)
+    judging each again right before it goes. A removal or press that git would refuse for the tree's lock takes no link off it
+    first. (from D88)
 
 ## Where a change goes
 
@@ -465,6 +468,8 @@ index with `tools/orient-index.mjs`), `test-map` and `code-map` for any new file
 
 - **TREEPOOL1** (D214): rooms first with an optimised fallback for a session's tree; proposed, both makers' reads of
   round 5 owed.
+- **REPOCONFIG1**: one store every reader of a repository's declarations passes, each content parsed once by its blob id
+  (`docs/2026-11-09-repo-config-design.md`); proposed, both makers' reads owed.
 - **SESSWATCH1d, 1e**: the record of quiet episodes, then an automatic end only where it shows such quiet is not work.
 - **SESSWATCH1f**: each pass asked for its own minutes.
 - **ONEWAY1j / SESSCTX1e**: *Go on fresh*, one press per go-on case.

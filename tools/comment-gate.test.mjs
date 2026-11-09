@@ -245,6 +245,16 @@ test('the text of a JSX element is not code: a URL in it is no comment and what 
   assert.deepEqual(comments(src, { jsx: true }).map((c) => [c.line, c.text]), [[1, 'one'], [2, 'two'], [3, 'three'], [5, 'four']]);
 });
 
+test('a generic arrow function with a constraint is no element, so the comments after it are read', () => {
+  const src = [
+    'const mine = <R extends { workspace: string }>(rows: R[]) => rows;',
+    '// one',
+    'const view = <div extends="x">text</div>; // two',
+    'const keep = <T,>(value: T) => value; // three',
+  ].join('\n');
+  assert.deepEqual(comments(src, { jsx: true }).map((c) => [c.line, c.text]), [[2, 'one'], [3, 'two'], [4, 'three']]);
+});
+
 test('a file is read as JSX where it is a tsx one, and its element text is judged by no naming rule', () => {
   const src = 'export const a = <pre>downloading https://github.com/ was here</pre>;\n';
   assert.deepEqual(judge('src/Tools.stories.tsx', null, src), []);

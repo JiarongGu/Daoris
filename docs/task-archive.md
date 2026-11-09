@@ -5,6 +5,12 @@ the per-task record. Entries preserve their original wording so the archive stay
 
 ---
 
+## DRVREVIEW second cycle — the driving review's second cycle (2026-11-09)
+
+> **The driving review, second cycle** (driving code review): Outcome: three defects fixed, each with a regression test seen to fail first, and thirteen filed as DRVREVIEW11 to DRVREVIEW23 with their evidence. A start that throws or is cancelled after its record opens and before the hand (the lock of its tree, the files stage) ends that record, failed or stopped as the driver closes, and lets its tree lock go (60760fb823, `StartFaultBeforeHandTickTests`). A steered word the agent hands back is held without the key it left the record under, so re-saying it is not answered as already kept (3d7bf518ce, `DrivenInboxKeyTests`). A removal or press that git would refuse for the tree's lock takes no link off the tree first (3777c7612b, `TreeLinkRemovalTests`). The service tests do not build on this tree (`LyntaiMemory.cs` names a Lyntai type the restored package lacks), so the service rows were found by reading and filed without a test.
+
+---
+
 ## AGENTREV2a to AGENTREV2f — the agents review's second cycle (2026-11-09)
 
 > **AGENTREV2a / 2b / 2c / 2d / 2e / 2f** (driver): Outcome: all six held against main's tip, each fixed with a regression test seen to fail first; 2a and 2b were built and tested under `DaorisLyntaiLayer`.
