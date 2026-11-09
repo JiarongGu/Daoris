@@ -13,6 +13,8 @@ the per-task record. Entries preserve their original wording so the archive stay
 
 - [x] **DRVREVIEW13 — words the run handed back are lost when the conclusion throws** (driver): 2026-11-09 a conclusion that throws with words held says them unreached on the record (`ConclusionThrew`, the stop path's own note) and still throws; the record is running then, so the say door could not keep them, and noting is the choice that loses no more than a stop does (`DriverRunPartsTests`; the wiring in `SessionHold` is read, not driven, since a throwing conclusion under a handed-back word has no stand-in).
 
+- [x] **DRVREVIEW14 — the overlap wait never sees a Done quest still integrating** (driver): 2026-11-09 the overlaps look reads the quests an open integration request names where the open list lacks them (`IntegratingQuests`, one read of every quest and only where one waits) into `Snapshot.IntegratingQuests`, which `OverlapOf` compares; the planner test builds its snapshot as production does (`OverlapPlannerTests`, `WorkOverlapsTests`).
+
 ---
 
 ## DRVREVIEW second cycle — the driving review's second cycle (2026-11-09)
