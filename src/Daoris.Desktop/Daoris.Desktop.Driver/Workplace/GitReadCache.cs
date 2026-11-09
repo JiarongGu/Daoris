@@ -3,8 +3,8 @@ using System.Diagnostics.CodeAnalysis;
 namespace Daoris.Driver;
 
 /// <summary>
-/// What the reads behind a page keep in memory: answers named only by whole commit ids, least recently
-/// used first out, bounded by bytes. Which answers may be kept, and under what key, is <see cref="GitReads"/>'.
+/// What the reads behind a page keep in memory: answers named only by whole commit ids under the asker's stamp
+/// (<see cref="GitStamp"/>), least recently used first out, bounded by bytes. Which answers may be kept is <see cref="GitReads"/>'.
 /// </summary>
 /// <remarks>
 /// <para><b>Memory only.</b> git's object store is already the cache on disk, and a copy would be a second record; nothing
@@ -98,6 +98,16 @@ public sealed class GitReadCache
             _entries[key] = _order.AddFirst(new Entry(key, value, size));
             _spent += size;
         }
+    }
+
+    /// <summary>The answer kept for <paramref name="ask"/> under <paramref name="stamp"/>, else <paramref name="read"/>'s, kept where the stamp's fence held across it.</summary>
+    internal async Task<(T? Value, bool Kept)> AskAsync<T>(GitStamp stamp, string ask, Func<Task<T?>> read, Func<T, long> weigh) where T : class
+    {
+        var key = stamp.Digest + "\0" + ask;
+        if (TryGet<T>(key, out var kept)) return (kept, true);
+        var value = await read().ConfigureAwait(false);
+        if (value is not null && stamp.Holds()) Keep(key, value, weigh(value));
+        return (value, false);
     }
 
     private sealed record Entry(string Key, object Value, long Size);

@@ -82,7 +82,7 @@ test('the long gates are the real-process halves and the deployment rehearsal, r
 
 test("this repository's Process lane is the real-process halves and the rehearsals; every other gate is light, the web gate too", () => {
   assert.deepEqual(repoPlan.filter((gate) => tool.isProcessLane(gate)).map((gate) => gate.name),
-    ['service-process', 'driver-process', 'driver-process-git', 'modules-process', 'rehearse', 'rehearse-family', 'deployment']);
+    ['service-process', 'driver-process', 'driver-process-git', 'driver-process-git-pinned', 'modules-process', 'rehearse', 'rehearse-family', 'deployment']);
   assert.deepEqual(repoPlan.filter((gate) => !tool.isProcessLane(gate)).map((gate) => gate.name),
     ['universal', 'code-map', 'test-map', 'web-types', 'web-rules', 'cli', 'tool-tests', 'comments', 'service', 'devkit', 'driver', 'modules', 'censuses', 'web', 'web-unit', 'web-measured']);
   // By what each runs, as the long gates are: a renamed gate, a new Process half or a new rehearsal is still one.
@@ -143,8 +143,8 @@ test("this repository's light lane runs the suites' fast halves first, and the P
     ['service', 'driver', 'modules', 'censuses', 'universal', 'code-map', 'test-map', 'web-types', 'web-rules', 'cli', 'tool-tests', 'comments', 'devkit', 'web', 'web-unit', 'web-measured']);
   // The rehearsals right after the git half, beside it, one after the other.
   assert.deepEqual(schedule.process.map((gate) => gate.name),
-    ['service-process', 'driver-process', 'driver-process-git', 'rehearse', 'rehearse-family', 'deployment', 'modules-process']);
-  for (const name of ['service-process', 'driver-process', 'driver-process-git', 'modules-process']) {
+    ['service-process', 'driver-process', 'driver-process-git', 'rehearse', 'rehearse-family', 'deployment', 'driver-process-git-pinned', 'modules-process']);
+  for (const name of ['service-process', 'driver-process', 'driver-process-git', 'driver-process-git-pinned', 'modules-process']) {
     // After the heavy light gates too, so no Process half runs under their load.
     assert.deepEqual(schedule.waits[name], { after: ['service', 'driver', 'modules', 'censuses', 'cli', 'devkit', 'web', 'web-unit', 'web-measured'], component: name === 'service-process' ? 'src/Daoris.Service' : 'src/Daoris.Desktop' }, name);
   }
@@ -159,7 +159,7 @@ test("this repository's light lane runs the suites' fast halves first, and the P
 
 test('a CI run schedules by memory: a Process half waits only for the gates that build its component, and the heavy light gates run beside it (CI1)', () => {
   const schedule = tool.laneSchedule(repoPlan, { byMemory: true });
-  for (const name of ['driver-process', 'driver-process-git', 'modules-process']) {
+  for (const name of ['driver-process', 'driver-process-git', 'driver-process-git-pinned', 'modules-process']) {
     assert.deepEqual(schedule.waits[name], { after: ['driver', 'modules', 'censuses'], component: 'src/Daoris.Desktop' }, name);
   }
   // The rehearsals still wait for the whole light lane: what they build and stage is state, not load.
@@ -210,7 +210,7 @@ test("this repository's light gates run three at once, never two that build one 
     ['service', 'driver', 'modules', 'censuses', 'web', 'universal', 'code-map', 'test-map', 'web-types', 'web-rules', 'cli', 'tool-tests', 'comments', 'devkit', 'web-unit', 'web-measured']);
   assert.deepEqual(schedule.waits['driver-process']!.after, ['service', 'driver', 'modules', 'censuses', 'web', 'cli', 'devkit', 'web-unit', 'web-measured']);
   // Each Process half reuses the build of its own test project's fast half.
-  assert.deepEqual(schedule.reuses, { 'service-process': 'service', 'driver-process': 'driver', 'driver-process-git': 'driver', 'modules-process': 'modules' });
+  assert.deepEqual(schedule.reuses, { 'service-process': 'service', 'driver-process': 'driver', 'driver-process-git': 'driver', 'driver-process-git-pinned': 'driver', 'modules-process': 'modules' });
 });
 
 test("this repository's web gates write the page's types with a generator built into an output of its own, so they build no component beside the .NET gates", () => {
@@ -266,7 +266,7 @@ test('the git half is the Process half run with the git settings, and the rehear
 test("this repository's Process lane runs the release, family and deployment rehearsals beside the git half, one after the other, and every other Process-lane gate alone", () => {
   const schedule = tool.laneSchedule(repoPlan, { scripts: rootScripts() });
   assert.deepEqual(schedule.process.map((gate) => gate.name),
-    ['service-process', 'driver-process', 'driver-process-git', 'rehearse', 'rehearse-family', 'deployment', 'modules-process']);
+    ['service-process', 'driver-process', 'driver-process-git', 'rehearse', 'rehearse-family', 'deployment', 'driver-process-git-pinned', 'modules-process']);
   // Never beside each other: the family runs the CLI's bin, which prefers the dist/ the release rehearsal's pack
   // stages in the CLI's folder and removes again; the deployment rehearsal packs that folder too, and runs the bin
   // too; and two Process-lane gates at once is the measured ceiling.

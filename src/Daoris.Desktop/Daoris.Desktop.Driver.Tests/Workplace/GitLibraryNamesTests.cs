@@ -16,7 +16,7 @@ public sealed class GitLibraryNamesTests : LandedFixture
     private const string Nfd = "café.txt";
     private static readonly string Long = "deep/" + string.Join('/', Enumerable.Repeat("a-segment-of-twenty", 14)) + "/file.txt";
 
-    [Fact]
+    [GitLegFact]
     public async Task Two_commits_changed_names_are_git_s()
     {
         var root = await BuildRepositoryAsync("names");
@@ -36,7 +36,7 @@ public sealed class GitLibraryNamesTests : LandedFixture
         Assert.Null(Daoris.Driver.GitLibraryReads.Asked(["diff", "--name-only", "-z", "--no-renames", from, to, "--", "deep"]));
     }
 
-    [Fact]
+    [GitLegFact]
     public async Task A_split_and_a_sparse_index_leave_two_commits_names_git_s()
     {
         var root = await BuildRepositoryAsync("indexed");

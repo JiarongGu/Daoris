@@ -426,7 +426,7 @@ export const BASE = ['universal', 'code-map', 'test-map', 'cli'];
 export const ALL = repoPlan.map((gate) => gate.name);
 export const ALWAYS_REACHED = ['comments']; // no reach rule names it, so whatever changed reaches it
 // The real-process halves and the deployment rehearsal run only in the full set.
-export const LONG = ['service-process', 'driver-process', 'driver-process-git', 'modules-process', 'deployment'];
+export const LONG = ['service-process', 'driver-process', 'driver-process-git', 'driver-process-git-pinned', 'modules-process', 'deployment'];
 /** What a merge runs by default, the blocking checks; every other gate it reaches is "in the CI beside". */
 export const BLOCKING = ['universal', 'code-map', 'test-map'];
 /** The kept names' table: among the driver's tests, and the page's twin reads it too. */
