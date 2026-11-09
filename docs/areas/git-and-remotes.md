@@ -308,7 +308,14 @@ parse naming a problem made again at each ask, and contents, tracked lists and i
 reftable's or an unreadable `packed-refs`' from git (an unreadable one also counts as a replacement that can stand, and puts a line equal to no
 other in the stamp); `GitTreeReads` is the door for path-bearing reads, its search git's with the declarations excluded and their
 lines from the store's bytes; `DeclarationScope` says whether the store or the door asked a start. Every declaration's name is a
-read-only field of `DeclarationNames`, never a constant. The flow memos share an answer between two folders of one
+read-only field of `DeclarationNames`, never a constant. Every shipping desktop project builds with the banned-name analyzer over the
+driver's one `BannedSymbols.txt`, which bans a name only once a row has moved its last reader; RS0030 is an error but in the store's
+folder, `DaorisHome.cs` and each allowance row's file, one section each of the desktop tree's one `.editorconfig`.
+`DeclarationBoundaryTests` walks every banned reference itself and is red on any other quieting; outside the store no string names a
+declaration (`DeclarationLiteralsCensusTests`, folding through `string` and `Path`), no field keeps an answer but a listed holder
+(`DeclarationKeepersCensusTests`), every kind and view reaches immutable types and reads its contents alone, never the ambient culture
+(`DeclarationParsesCensusTests`, `DeclarationViewsCensusTests`), and a git start or a file open reads a judged declaration only
+through the store (`DeclarationGitCensusTests`, `DeclarationFileCensusTests`, the pipe's grounds a data reader). The flow memos share an answer between two folders of one
 repository only where the stamp's context is one (`GitStamp.ContextOf`: the common directory, the asking tree's `config.worktree` by
 its bytes, and the folder itself where a `gitdir:` include stands), so `GitFacts.SameRepository`, `RefSnapshot.TreeHeld`,
 `ListedFor` and `GitReadOnce`'s listings never answer a tree with replacements off from one with them on. A git whose kill it outlived leaves the four for a count apart

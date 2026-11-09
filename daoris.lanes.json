@@ -178,9 +178,9 @@
       "paths": [".mcp.json", ".codex/**"]
     },
     {
-      "what": "Build settings every desktop project shares, the driver's and the modules' alike.",
+      "what": "Build settings every desktop project shares, the driver's and the modules' alike, and the analyzers' settings they all read.",
       "room": "docs",
-      "paths": ["src/Daoris.Desktop/Directory.Build.props"]
+      "paths": ["src/Daoris.Desktop/Directory.Build.props", "src/Daoris.Desktop/.editorconfig"]
     },
     {
       "what": "Build settings every .NET project of the repository builds with, each tree's importing them: the commit stamped only where a publish builds.",

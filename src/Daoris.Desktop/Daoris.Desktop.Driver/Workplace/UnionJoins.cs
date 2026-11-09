@@ -160,7 +160,7 @@ internal static partial class UnionJoins
             }
             else
             {
-                source.Append(Regex.Escape(c.ToString()));
+                source.Append(Regex.Escape(char.ToString(c)));
             }
         }
 

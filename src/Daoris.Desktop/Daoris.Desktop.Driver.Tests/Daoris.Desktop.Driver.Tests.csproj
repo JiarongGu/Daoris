@@ -13,6 +13,11 @@
     <PackageReference Include="Microsoft.CodeAnalysis.CSharp" />
     <!-- The stand-in SSH host of the doors' process tests (GitSshHost): a loopback server in the test process, nothing installed. -->
     <PackageReference Include="Microsoft.DevTunnels.Ssh.Tcp" />
+    <!-- The banned-name analyzer as files alone, which DeclarationAnalyzerTests loads over a test's compilation: it never runs on this
+         project's own build, whose tests name the store's members. -->
+    <PackageReference Include="Microsoft.CodeAnalysis.BannedApiAnalyzers" GeneratePathProperty="true" ExcludeAssets="all" PrivateAssets="all" />
+    <None Include="$(PkgMicrosoft_CodeAnalysis_BannedApiAnalyzers)/analyzers/dotnet/cs/*.dll" Link="BannedApi/%(Filename)%(Extension)"
+          CopyToOutputDirectory="PreserveNewest" Visible="false" />
   </ItemGroup>
 
   <ItemGroup>

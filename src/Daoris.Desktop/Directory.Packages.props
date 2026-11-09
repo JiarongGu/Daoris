@@ -86,6 +86,9 @@
     <PackageVersion Include="xunit.runner.visualstudio" Version="2.8.2" />
     <!-- The driver's tests only: the structure gate binds every name of the driver's sources to the type it names. -->
     <PackageVersion Include="Microsoft.CodeAnalysis.CSharp" Version="5.0.0" />
+    <!-- The declarations' boundary (REPOCONFIG1): every shipping desktop project's build bans the names BannedSymbols.txt lists, and
+         the driver's tests load the same analyzer over a test's compilation. Matched to the tests' Roslyn, which loads it. -->
+    <PackageVersion Include="Microsoft.CodeAnalysis.BannedApiAnalyzers" Version="5.0.0" />
     <!-- The driver's tests only (D241 point 8): the stand-in SSH host the doors' process tests reach on loopback, so no sshd is
          installed anywhere. Its TCP half brings the protocol package with it. -->
     <PackageVersion Include="Microsoft.DevTunnels.Ssh.Tcp" Version="3.12.42" />
