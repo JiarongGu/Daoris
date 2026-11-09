@@ -89,7 +89,9 @@ the per-task record. Entries preserve their original wording so the archive stay
 
 > **DOCTRINECLIREV2b** (driver): Outcome: `DoctrineStatus.Reopened` counts a core file kept with no text (`absentCore`, a field `status --json` already carries) beside a keep the canon moved past, so the place page offers the reconcile that names it; the choice, a reader-only change that leaves `status --json` and the CLI as they are, rejects a new `reopened: true` from the tool; proved by `DoctrineStatusTests`.
 
-> **DOCTRINECLIREV2c** (devkit): Outcome: the sensitive gate's tree scope reads a file with a UTF-16 byte-order mark as text (`SensitiveGate.IsBinary`), so a leak in a file Windows PowerShell's `>` wrote is found; proved by `SensitiveGateTests`. The staged scope's share stays open as DOCTRINECLIREV2c2.
+> **DOCTRINECLIREV2c** (devkit): Outcome: the sensitive gate's tree scope reads a file with a UTF-16 byte-order mark as text (`SensitiveGate.IsBinary`), so a leak in a file Windows PowerShell's `>` wrote is found; proved by `SensitiveGateTests`. The staged scope's share was DOCTRINECLIREV2c2.
+
+> **DOCTRINECLIREV2c2** (devkit): Outcome: the `IGit` seam's `StagedText` became `StagedBytes` (`git show :path`, undecoded, read by `GitStart.RunBytes`), and the sensitive gate decodes the index's bytes as it does the tree's: binary on a NUL in the first 8,000 bytes unless a UTF-16 byte-order mark says text, so a staged leak ahead of a late NUL is found where the whole-content test skipped it (a staged UTF-16 file was already read, by `Process`'s own byte-order sniffing, and is now read by the gate); proved by `SensitiveGateTests`.
 
 > **DOCTRINECLIREV2d** (devkit): Outcome: the links gate no longer checks links a document quotes in a fenced block or a code span (`LinkText`), reading fences through the service's `MarkdownFence` compiled into the devkit, so there is no fifth fence reader or second table; proved by `LinksGateTests`.
 

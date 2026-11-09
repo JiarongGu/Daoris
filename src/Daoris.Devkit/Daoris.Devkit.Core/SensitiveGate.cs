@@ -171,13 +171,14 @@ public sealed class SensitiveGate(
             // working copy would pass a scan of the copy and still be committed.
             if (scope == ScanScope.Staged)
             {
-                if (git.StagedText(relative) is { } staged && !staged.Contains('\0')) yield return (relative, staged);
+                if (git.StagedBytes(relative) is { } staged && !IsBinary(staged)) yield return (relative, Decode(staged));
                 continue;
             }
 
             var absolute = context.Path(relative);
-            if (!File.Exists(absolute) || IsBinary(absolute)) continue;
-            yield return (relative, File.ReadAllText(absolute));
+            if (!File.Exists(absolute)) continue;
+            var bytes = File.ReadAllBytes(absolute);
+            if (!IsBinary(bytes)) yield return (relative, Decode(bytes));
         }
     }
 
@@ -206,13 +207,18 @@ public sealed class SensitiveGate(
     /// <summary>
     /// A NUL byte in the first block means binary, git's own test, unless a UTF-16 byte-order mark says text (each ASCII character holds a NUL).
     /// </summary>
-    private static bool IsBinary(string file)
+    private static bool IsBinary(ReadOnlySpan<byte> content)
     {
-        using var stream = File.OpenRead(file);
-        Span<byte> head = stackalloc byte[8000];
-        var read = stream.Read(head);
-        if (read >= 2 && (head is [0xFF, 0xFE, ..] || head is [0xFE, 0xFF, ..])) return false;
-        return head[..read].IndexOf((byte)0) >= 0;
+        var head = content[..Math.Min(content.Length, 8000)];
+        if (head is [0xFF, 0xFE, ..] || head is [0xFE, 0xFF, ..]) return false;
+        return head.IndexOf((byte)0) >= 0;
+    }
+
+    /// <summary>The text of a file's bytes as <c>File.ReadAllText</c> reads it: UTF-8, unless a byte-order mark names another encoding.</summary>
+    private static string Decode(byte[] content)
+    {
+        using var reader = new StreamReader(new MemoryStream(content), Encoding.UTF8, detectEncodingFromByteOrderMarks: true);
+        return reader.ReadToEnd();
     }
 
     /// <summary>
@@ -233,8 +239,8 @@ public interface IGit
 
     IReadOnlyList<string> TrackedFiles();
 
-    /// <summary>A staged file's content as the commit will hold it — null when there is none to read.</summary>
-    string? StagedText(string path) => null;
+    /// <summary>A staged file's bytes as the commit will hold them, undecoded — null when there are none to read.</summary>
+    byte[]? StagedBytes(string path) => null;
 }
 
 /// <summary>git, through the command line.</summary>
@@ -253,9 +259,9 @@ public sealed class CommandLineGit(string repositoryRoot) : IGit
     public IReadOnlyList<string> TrackedFiles() => Paths("ls-files", "-z");
 
     /// <summary>The index's copy (`git show :path`), which is what the commit being made will hold.</summary>
-    public string? StagedText(string path)
+    public byte[]? StagedBytes(string path)
     {
-        var output = GitStart.Run(["show", $":{path}"], repositoryRoot);
+        var output = GitStart.RunBytes(["show", $":{path}"], repositoryRoot);
         return output.ExitCode == 0 ? output.Output : null;
     }
 
