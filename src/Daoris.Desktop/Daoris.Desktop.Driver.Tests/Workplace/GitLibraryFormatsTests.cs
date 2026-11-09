@@ -16,17 +16,19 @@ public sealed class GitLibraryFormatsTests : LandedFixture
     {
         var root = await BuildRepositoryAsync("formats-default");
         var common = RefFiles.CommonDirOf(root)!;
-        var before = GitLibraryFormats.Reads;
+        var neighbour = RefFiles.CommonDirOf(await BuildRepositoryAsync("formats-neighbour"))!;
+        var before = GitLibraryFormats.ReadsOf(common);
 
         var format = GitLibraryFormats.Of(common);
         Assert.Equal(new GitLibraryFormat("sha1", "files"), format);
         Assert.Null(GitLibraryAdmission.RefusalOf(root, GitLibraryQuestion.Walks));
+        GitLibraryFormats.Of(neighbour);
         Assert.Equal(format, GitLibraryFormats.Of(common));
-        Assert.Equal(before + 1, GitLibraryFormats.Reads);
+        Assert.Equal(before + 1, GitLibraryFormats.ReadsOf(common));
 
         await GitAsync(root, "config", "daoris.moved", "yes");
         Assert.Equal(format, GitLibraryFormats.Of(common));
-        Assert.Equal(before + 2, GitLibraryFormats.Reads);
+        Assert.Equal(before + 2, GitLibraryFormats.ReadsOf(common));
     }
 
     [GitLegFact]
