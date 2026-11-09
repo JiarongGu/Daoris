@@ -1,13 +1,15 @@
 # A repository's Daoris configuration read once and indexed (REPOCONFIG1)
 
-**Round 4, proposed for both makers' reads before a decision is written** (2026-11-09). The owner finds reading a repository's
+**Round 5, proposed for both makers' reads before a decision is written** (2026-11-09). The owner finds reading a repository's
 Daoris configuration slow and wants it read once and better indexed. Round 1 (§0 to §5) measured every reader (§1, §2, §3) and
 proposed one store every reader passes (§4) and the rows that build it (§5). Both makers read it ([the reads](2026-11-09-repo-config-reads.md))
 and found seventeen blocking sequences and thirteen readers it missed; round 2 (§6 to §17) answers them by class, and supersedes
 round 1 where it differs. Both read round 2 and found seven more and a leak in each census; round 3 (§18 to §28) closes them by
 construction, and supersedes round 2 where it differs. Both read round 3 and found seven more, and a planted member each census
 passed; round 4 (§29 to §40) stops following names and classifies every site where bytes or facts come from a file or from git, and
-supersedes round 3 where it differs. The current rows are §40. Driver paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/`.
+supersedes round 3 where it differs. One maker read round 4 (the other's read stopped at its spend cap) and found five more and the site
+census out of proportion; round 5 (§41 to §55) makes the compiler the census, drops round 4's site census, and supersedes round 4 where
+it differs. The current rows are §55. Driver paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/`.
 It builds on GITLIB1 ([its design](2026-11-09-git-library-design.md)): the stamp it designed (its §10.3 and §14.5), which round 2
 builds first, and its one object read (`GitObjectReads`).
 
@@ -224,7 +226,7 @@ paths.
 
 ## 5. The rows
 
-*Superseded: the current rows are §40.*
+*Superseded: the current rows are §55.*
 
 Each row's proof is the bench run before and after it, with the bench's rows for the store added in the first.
 
@@ -606,7 +608,7 @@ reading the machine's tools, not a repository's configuration, so they stay and 
 
 ## 17. The rows
 
-*Superseded: the current rows are §40.* *Supersede §5's.* REPOCONFIG1a lands first; b and c follow a and are apart; d follows b and c; e follows b. In every row each moved
+*Superseded: the current rows are §55.* *Supersede §5's.* REPOCONFIG1a lands first; b and c follow a and are apart; d follows b and c; e follows b. In every row each moved
 reader's existing tests pass unchanged before a count is lowered, and the bench is run before and after it: the bench measures, the
 tests assert.
 
@@ -921,7 +923,7 @@ The rules of §23, run over the code by hand at this round's commit, find these 
 
 ## 28. The rows
 
-*Superseded: the current rows are §40.*
+*Superseded: the current rows are §55.*
 
 *Supersede §17's.* REPOCONFIG1a lands first; b and c follow a and are apart; d follows b and c, and carries the readers' censuses,
 since they are red on any reader not yet moved; e follows b. In every row each moved reader's existing tests pass unchanged before a count
@@ -986,6 +988,8 @@ Nothing was measured anew for round 3, and nothing in the product changed.
 *Supersedes round 3 where it differs: §23's source half and its run-time halves by §30 to §32, and its parses census's run-time walk
 by §33; §19's third point and §21's mismatch, for an ask by blob id, by §35.4; §21's `driver.json` kind by §35.5; §24's `LimitWaits` row
 by §35.2; §25's N2 mark by §36; §28 by §40.*
+
+*Round 5 drops §29 to §34's site census (§51) and supersedes §40 by §55.*
 
 Both makers read round 3 ([the reads](2026-11-09-repo-config-reads.md), *Codex, round 3* and *Opus (independent), round 3*). Here
 Codex's four blocking gaps are **Codex 1** to **Codex 4**, Opus's three are **X1** to **X3**, and the members each read planted where a
@@ -1329,7 +1333,7 @@ access edit and an identity edit through the writer, the next levels and pointer
 
 ## 40. The rows
 
-*Supersede §28's.* REPOCONFIG1a lands first; b and c follow a and are apart; d follows both; e follows b. c's gates readers (`HeavyGates`,
+*Superseded: the current rows are §55.* *Supersede §28's.* REPOCONFIG1a lands first; b and c follow a and are apart; d follows both; e follows b. c's gates readers (`HeavyGates`,
 `TreeLocalInputs`, `ContextBriefs`, `HeavyTold`) move in b, once its parity table proves their views. The site census lands in a, green
 with a row for every unmoved site naming the row that moves it; each later row deletes its rows as its sites move under the store, and
 adds none but an exemption with its reason. In every row each moved reader's existing tests pass unchanged before a count is lowered, and
@@ -1361,3 +1365,459 @@ the bench is run before and after it: the bench measures, the tests assert.
   by id answering *unread: replaced* with nothing loaded under the id, and its ask by path git's bytes with no id; the rest as §28 says.
 
 Nothing was measured anew for round 4 but the sites, counted from the code, and nothing in the product changed.
+
+## Round 5
+
+*Supersedes round 4 where it differs: §29 to §34's site census by §42 to §46, §51 saying what goes and what stays; §32's run-time half by
+§46; §35.2's `Effective` by §48; §35.5's kind by §49; §40 by §55.*
+
+One maker read round 4 ([the reads](2026-11-09-repo-config-reads.md), *Opus (independent), round 4*); the other's read stopped at its
+spend cap before it answered. The read judged §29 to §34's census out of proportion to what it guards and proposed a smaller construction
+with the same guarantee for every reader that names a declaration. Round 5 adopts it. Here the read's blocking findings are **B1** to
+**B5** as it numbers them, its two other holes **H1** (`Driver.Host` and `AskConsole`) and **H2** (a start's site lost after an `await`),
+and its points that did not block **P1** (the clock mark's twins), **P2** (`Drop`) and **P3** (the search's parity). The code asks for
+three refinements, each said where it falls: the names are banned by symbol rather than hidden in an assembly (§43); `driver.json`'s
+place is handed out as a handle, never a string (§44); and a whole answer of names passes through the door as git gives it (§45).
+Written from the code at `96264878ad`.
+
+## 41. In short
+
+- **A miss costs speed, not correctness** (§42). A reader that passes the store reads fresh bytes; only what is kept can be stale, and the
+  keepers, parses and views censuses hold what is kept. So the readers' census must find every reader that *names* a declaration, which
+  the compiler can, and gives up a reader that reaches one by data, which costs a read and D228's one way.
+- **The compiler is the census** (§43). `Microsoft.CodeAnalysis.BannedApiAnalyzers` makes `DeclarationNames`, the five declaration
+  `HomeEntry` rows and the layers' path helpers an error outside the store's folder; a source test is red on a declaration's name written
+  out, folded as the compiler folds constants. Each ban lands in the row that moves its symbol's last use.
+- **The store resolves its five home entries** (§44): `DaorisHome.Entry`'s probe for them is the store's read, and the `configPath`
+  strings threaded through some 100 files become a `DriverConfigFile` handle whose place no caller holds.
+- **One door for path-bearing git reads** (§45): `GitTreeReads` builds every git read that carries a pathspec, a `<rev>:<path>` or a
+  batch question by path, or lists the tree; a declaration's fact asked through it is the store's.
+- **Kept**: round 3's run-time census by path and object id, keyed by the door's scope rather than the stack (§46); the keepers census,
+  with version types that are no answer and one holder table (§47); the parses census, each kind entering the store frozen (§50); the
+  views and kinds census with §33's ambient rule.
+- **`Effective`** carries driver.json's content key and the revisions of `role_staffing`, `roles`, `role_policy` and `role_starts` in one
+  query, and a look is due again at the ledger's next day (§48). **driver.json's kind is its syntax**, with five views each holding its
+  own problem (§49).
+- **The rows** (§55): a1, a2 and a3 in turn; then b beside c1 and c2; d1 and d2 after both; e after b.
+
+## 42. What a miss costs
+
+A declaration read outside the store reads the file or the blob as it stands, so its answer is current. What it costs is the read the
+store would have saved, and a second way of reading one file (D228). It makes none of the store's answers stale: a checkout's or the
+home's file is trusted by its stat under §9's rule, so a write anything makes, a bypassing writer's included, is read at the next ask;
+and a commit's facts are proven by their own bytes (§19), whoever else reads them. What can be stale is what is *kept*: a parse, a view or
+bytes held past the version they were read at, or a kind whose parse reads more than its bytes. The keepers (§47), the parses (§50) and
+the views and kinds censuses hold those, over everything the store answers; they are the correctness half, and they stay.
+
+Two bounds on the claim. A *writer* that passes the store can lose an update where it does not take the file's lock
+(`StandingChoices.Write` loads outside it today, §49); every writer names its file, so the ban moves each to the store's one writer
+(§35.5). And a reader that reaches a declaration by data and keeps what it read is a file cache like any other, keyed by its own path,
+outside the keepers census, whose answers are the store's (§53).
+
+So the readers' census need not be complete to be correct. It must find every reader that names a declaration, which the compiler does by
+symbol and by constant; a reader that reaches one only by data (a listing's element, a request's path, a name assembled at run time) is
+given up to the run-time half (§46), which sees it on the flows the count tests and the bench run.
+
+## 43. The compiler as the census
+
+**Banned by symbol, not hidden by an assembly.** Two ways make a name unreachable outside the store, weighed against the code:
+
+| | The store in its own assembly | A banned-symbol analyzer |
+|---|---|---|
+| The store's dependencies | `DaorisHome`, `AtomicFile`, the git doors (`WorkingTree`, `GitObjectReads`, the scheduler), `DesktopStore` and the parsers' types are all the driver's, which references `Daoris.Contracts` alone: a store below the driver needs them moved below it first, a split of the driver's 2,563 files; a store above it reaches its readers only through a port, and `DriverConfig.Load`'s 159 static calls through a locator | the store stays in the driver, `Workplace/Declarations/`, beside what it reads |
+| The five home rows | leave `Platform/DaorisHome.cs`, whose rows `home.test.ts` reads as text, in order, against the CLI's and the service's twins | stay in the table; the ban is on the symbol |
+| Whom it holds | other assemblies alone: the modules and the host, never the driver's own files | every project it is added to, the driver's own files among them |
+| What it cannot hold | reflection, and a value from data | the same, and a suppression, which a test holds |
+
+So the ban. `Microsoft.CodeAnalysis.BannedApiAnalyzers` is added to the driver, the modules, the headless host and the application, its
+version in `Directory.Packages.props`, one `BannedSymbols.txt` in the driver's folder linked into the other three, and RS0030 an error
+(`WarningsAsErrors`). A use of a listed symbol is an error in every file but those under `Workplace/Declarations/`, whose own
+`.editorconfig` sets RS0030 to none, and `Platform/DaorisHome.cs`, which declares the rows and lists them in `HomeEntry.Table`.
+`DeclarationBoundaryTests`, a source census as `GitObjectFormsCensusTests` is, is red on any other way RS0030 is quieted (a
+`#pragma warning disable`, a `SuppressMessage`, a `NoWarn`, an `.editorconfig` or `.globalconfig` naming it elsewhere) and on one of the
+four projects without the analyzer.
+
+**What is banned, each in the row that moves its last use**, so every row builds green:
+
+| Symbols | Banned in |
+|---|---|
+| `DeclarationNames.Gates` | b, which moves every reader of the gates file |
+| `DeclarationNames.Manifest`, `.Lanes` and `.Rules` | the later of b and c2 |
+| `HomeEntry.DriverConfig`, `DriverConfig.ResolvePath`, `DeclarationNames.DriverConfig` | c1 |
+| `HomeEntry.Files`, `FilesFound`, `FilesAsks` and `Workflows`; `PersonFiles.PathOf`, `FoundFiles.PathOf`, `FileAsks`' path, `WorkflowStore.PathOf` and `WorkflowStore.Folder`; their names in `DeclarationNames` | c2 |
+| `GitObjectName.At`'s form with a path | d1, with the door (§45) |
+
+`DeclarationNames` (a2) holds every name. The constants each reader declares today (`HeavyGates.FileName`, `LineRegistration.ManifestFile`
+and `LanesFile`, `RepositoryFilesReader.FileName`, `GeneratedWriters.DeclarationFile`, `PersonFiles.FileName`, the workflows' folder
+name in `WorkflowStore`) go in a2, their uses pointed at it, so each declaration has one name to ban.
+
+**The literal check.** `DeclarationLiteralsCensusTests` reads the four projects' compilations, as `StructureAnalysis` makes the driver's,
+and is red outside the store's folder on a string whose path tail is a declaration's name: every constant the compiler folds
+(`IOperation.ConstantValue`: a literal, a `const`, a concatenation or an interpolation of constants), every literal fragment of an
+interpolation or a concatenation that is not constant, and the constant arguments a `Path.Combine` or `Path.Join` call ends with, joined.
+A tail is a declaration's where what follows its last `/`, `\` or `:` equals one of `daoris.json`, `daoris.files.json`,
+`daoris.gates.json`, `daoris.lanes.json`, `driver.json`, `files.json`, `files-found.json` or `files-asks.json`, without regard to case as
+a Windows volume compares names; or where the joined constant arguments end with the workflows' folder under the home (`data/workflows`).
+A message that names a file in words has no such tail and is words. Its rows, each a file of the same name that is no repository's
+declaration: `EngineProfile.RecordPath` (a browser profile's own `daoris.json`), `ServiceHostLocator` and
+`KnowledgeConnector.WorkspaceMarker` (existence walks for the build's workspace), and `DaorisHome.cs`'s table. Planted, each red:
+`File.ReadAllText(Path.Combine(root, "daoris.gates.json"))`; `"daoris." + "gates.json"`; `Path.Combine(home, "data", "driver.json")`;
+`$"{commit}:daoris.gates.json"`; `Path.Combine(home, "data", "workflows")`; and a row left out. Today 24 lines in 18 files of the
+desktop's sources hold a string naming a declaration; a2 points each that names a file at `DeclarationNames`, the four rows' aside.
+
+**What it cannot see**, given up by §42: a name assembled from values that are not constant; a path from data, as
+`Modules/Loop/LoopGrounds.cs:218` hashes each uncommitted path of a tree; and the home table's walkers, which take the rows as values
+(`SystemWiring`, `SpaceFloor` through `HomeEntry.Named`, `SpaceFree`, `ToolHomeLeftovers`, `WiringPlaces`, `HomePlacing`): they size,
+list and move places, reading no content, and where they resolve a declaration's place they reach the store's probe (§44).
+
+**H1.** The headless host carries the analyzer and the literal check, so it names no declaration; 25 of its files hold today one of
+driver.json's helpers, which move in c1 (§44). `AskConsole.cs:190-191` reads each file the person names to send with an ask: a path from
+data and the person's attachment, as `WorkflowTerminal` reads a file the person names, never Daoris's configuration; it needs no row.
+
+## 44. The home's five entries, resolved by the store (B2)
+
+`DaorisHome.Entry` reads what it locates: `Choose` (`Platform/DaorisHome.cs:283-289`) calls `Holds` (`:299-316`), which enumerates a
+folder entry (`:302`) and opens and parses a JSON entry (`:307-309`) to judge whether the new place holds it. **For the five declaration
+entries the probe is the store's**: `Holds` asks `RepositoryDeclarations.Holds(entry, place)` where the entry is one of the store's (the
+table's file may name them), and the store answers from its own ask of that place: present with a clean syntax for a JSON entry, a
+listing that is not empty for the workflows' folder, kept by its stat. So the one resolution stays `DaorisHome`'s, the probe's read is the
+store's first read of the file rather than a second, and a table walker that resolves a declaration's place reads it through the store
+too. `Holds` stays as it is for every other entry.
+
+**The callers**, counted at `96264878ad` in the driver, the modules, the host and the application: 33 references to the five rows in 25
+files outside `DaorisHome.cs` (`DriverConfig` 19, `Workflows` 12, `Files`, `FilesFound` and `FilesAsks` one each); `DriverConfig.ResolvePath`
+82 in 50 files; `DriverConfig.HomeOf` 47 in 27; `DriverConfig.Load` 159 calls; `WorkflowStore.PathOf` and `Folder` 15 in 9. The read's
+some 60 counts the rows' callers with the helpers they reach. Each stops compiling outside the store when c1 or c2 bans its symbol, so
+each moves in that row, by what it does:
+
+| What the caller does | Today | Moves to |
+|---|---|---|
+| loads a home's choices | `DriverConfig.Load(DriverConfig.ResolvePath(home))`, 23 calls | `DriverConfig.Of(home)`, the store's ask |
+| hands driver.json's place to a command, a wiring or a watch | `var configPath = DriverConfig.ResolvePath()`, the `ConfigPath` properties, `config ?? DriverConfig.ResolvePath(home)` parameters | `DriverConfigFile`, a handle the store makes from a home or from the environment, carrying `Home` and, inside the store alone, its place; `DriverConfig.Load(file)` |
+| finds the home from the file | `DriverConfig.HomeOf(path)` | `file.Home` |
+| stamps the file | `HomeWrites.Stamp(DriverConfig.ResolvePath(home))` (`Course/Chat/LimitWaits.cs:395`), `HomePart.File(configPath)` (`Events/HomeWatch.cs:159`) | the store's version of it (§47) |
+| writes it | `StandingChoices.Write(path, …)` (14 callers, `Roles/RoleStaffing.cs:331` among them), `DriverConfigDisk.Save`, `DriverConfigFile.Change` | the store's one writer (§35.5, §49) |
+| reads a part of it | `GitAccessKeys.Load` (`Workplace/GitAccessKeys.cs:94`), `GitIdentityUse.Read` (`Workplace/GitIdentityUse.cs:84`), the staffing import (`RoleStaffing.cs:236-242`), the wiring page's facts (`Loop/WiringFiles.cs:118-145`) | the kind's views (§49) |
+| reads the workflows, the person's layer, the found layer or the asks | `HomeEntry.Workflows` (12), `WorkflowStore.PathOf`, the layers' own readers | the store's asks, `WorkflowFiles`, `PersonFiles`, `FoundFiles` and `FileAsks` moved under its folder (c2) |
+
+A sentence that must say where the file is takes the handle's words, which name its place for the person; a caller that hands those words
+to a file API reads by data (§53). Row a lands green: no row bans a symbol before the row that moves its last use, so a1 to a3 change no
+caller of these.
+
+## 45. One door for path-bearing git reads (B1)
+
+`GitTreeReads` (`Workplace/Declarations/`) builds and runs every git read that carries a pathspec, a `<rev>:<path>` argument or a batch
+question by path, or that lists the tree: `ls-tree`; `diff`, `log` and `show` asked `--name-only`, `--name-status` or `--raw`; `grep`;
+`rev-list` and `log` with a pathspec; and `rev-parse --verify <rev>:<path>`. Its members take typed arguments (a revision, a path, a list
+of paths), never an argument list, and each runs inside the store's scope (§46). It answers four ways:
+
+1. **A declaration's own fact, from the store**: its entry at a commit (a `<rev>:<path>`, an `ls-tree` of named paths, a batch question
+   by path) from the store's hashed listing; its bytes from the store's ask by path; whether it changed between two commits, by the two
+   entries' ids (§35.6); its lines holding a name, from its bytes (below). Every other path of the same ask as git answers it.
+2. **A search** (`grep`): git's start with every declaration excluded (`DeclarationNames.Excluded`, the spread of
+   `:(exclude,literal)<name>`, the door's own), and the declarations' lines from the store's bytes, so git reads no declaration for it.
+3. **A whole answer of names and ids** (a whole `ls-tree -r`, a name diff between commits or against the tree): git's answer whole,
+   each declaration in it as the name and id the tree gives. A name and an id are a fact of the tree, of the same object the store's
+   listing proves; answering them from the store costs a start for each commit not yet listed and changes no answer, and leaving them
+   out changes the answer of every caller that must see a changed declaration as any changed file (P2: the grounds over uncommitted
+   paths, `LoopGrounds.cs:214-218`; a merge's conflicts; the Changes page). So nothing is dropped, and `DeclarationPaths.Drop` goes.
+4. **History with a pathspec** (`rev-list`, `log`): git's for every path. The store holds no history, and whether a declaration changed
+   is the first way's question, never a history's.
+
+**B1's two sequences.** Comparing `rev-parse --verify A:daoris.gates.json` with B's needs the gates' name: written out it is red in the
+literal check from a3, through `DeclarationNames.Gates` it does not compile outside the store from b, and a hand-built `<rev>:<path>` is
+red in the door's census from d1; asked through the door it is the store's entry at A, compared by id.
+`rev-list -1 A..B -- daoris.gates.json` needs the name the same way, and its shape, `rev-list` with a pathspec, is the door's alone from
+d1. Handed a path from data, the door asks git for a history, which reads fresh and keeps no version (§42).
+
+**The search's parity** (P3). The declarations' lines are found as today's pipeline finds them (`Workplace/Files/FileGit.cs:52-61`):
+`git grep -I -F` matches each line its bytes split at LF; a file holding a NUL in its first 8,000 bytes is binary and gives none; and the
+answer is split again by `ReplaceLineEndings` (`:60`), which also breaks a line at a lone CR, NEL, a line or paragraph separator or a
+form feed, keeping only the first piece, the one that carries the file's name. So the store matches the names in each LF line by ordinal
+and answers that line cut at the first other line ending `ReplaceLineEndings` knows. One answer can differ, as §35.6 said: a declaration
+marked `-diff` in the asking tree was hidden from `grep -I`, and is searched now.
+
+**Its census.** `GitTreeReadsCensusTests`, as `GitObjectFormsCensusTests` holds the object reads to one form: outside the door's file,
+red on a constant `ls-tree`, `grep`, `--name-only`, `--name-status` or `--raw` in a git argument list (the expression handed to a git door,
+or a list its member builds and hands to one); on such a list holding `rev-list` or `log` beside `--`; and on an interpolation or a
+concatenation that puts `:` between two values in one, but push's refspecs (`Workplace/GitPushActs.cs:39`,
+`Workplace/GitHelperPush.cs:97`), its two rows. A table of subcommands that starts nothing (`GitBounds`, `GitLaunch`, `RefSnapshot`) is
+no argument list. `GitObjectName.At`'s form with a path is banned by symbol outside the door. Shown red on B1's two sequences planted
+outside the door and on a row left out. Counted by their words today: `ls-tree` on 21 lines in 20 files, a name diff on 45, `grep` on 2, a
+`<rev>:<path>` on 15 (11 through `GitObjectName.At`, 4 by hand: `GeneratedWriters.cs:55`, `BacklogMerge.cs:264`, `RepositorySetup.cs:56`,
+`EvidenceReader.cs:211`), `rev-list` and `log` with a pathspec on at least 6; d1 moves them, and its first run lists the sites exactly.
+
+## 46. The run-time half, by the door's scope (H2)
+
+Round 4 found a start's site from its stack, and after an `await` inside a forwarder the caller's frame is gone: `GitObjectReads.ReadAsync`
+awaits `NamedAsync` (`Workplace/Git/GitObjectReads.cs:28`, again under `GitLazyFetch.Fetching()` at `:32`), which awaits
+`rev-parse --verify` (`:66`) and then starts `cat-file` (`:68`) from a continuation holding no frame of the caller that named the path. **The
+run-time half is keyed by the door, not the stack.** Every member of the store and of `GitTreeReads` does its work inside
+`DeclarationScope`, an `AsyncLocal` it sets on entry, as `GitLazyFetch.Fetching()` scopes its fetching ask (`GitLazyFetch.cs:26`). An
+`AsyncLocal` flows across every `await`, so the start at `:68` carries the scope of the ask begun at `:28`. The process gate's tally
+(`GitStartTally`) records the scope with each start.
+
+Round 3's census stands on that record (`DeclarationGitCensusTests`), over `LandGitCountTests`, `TidyGitCountTests`,
+`StartGitCountTests`, `ViewGitCountTests` and the bench's flows: a start outside the scope is red where its arguments or batch questions
+name a declaration's path (a pathspec's element, the path of a `<rev>:<path>`, an `ls-tree` path) or a declaration's object id. The ids
+are the declaration entries at every commit the run's starts named, listed after the run through the store's listing, and seeded with
+every accepted id driver.json holds and every frozen id the integration store's epochs hold, so a blob-only read is seen (round 4's §32).
+A start inside the scope is judged too: one naming a declaration other than in the door's exclusion is red, since the door asks the
+store for it. Round 3's held files stand beside it (`DeclarationFileCensusTests`): an open of a declaration's file outside the store on
+the bench's flows is red; a stat passes a held handle, and costs a read, no more (§42).
+
+A declaration is judged at run time from the row that bans its name (§43), so both land in a3 green and narrow with each row. Planted in
+a3 against a test's set of names, each red: a `cat-file` started after an `await` in a forwarder outside the scope, naming a declaration's
+id; a blob-only read of an accepted id with no commit named; an open of a held declaration through a helper that swallows its error.
+
+## 47. Keepers, and versions that are no answer (B3)
+
+**An answer is a parse, a view or bytes** of the store: a kind's value, a view's value, a `DeclarationBytes`, and what a view composes from
+them at an ask (`DriverConfig` with its staffing laid over it). **A version is no answer**: `ContentKey`, `BlobId`, `DeclarationVersion` (a
+content key, or *absent*, or *unread*), `StoreRevisions` (each family's name and revision), and `Effective`, made of these (§48). The
+parses census holds each version type to its declared members (ids, numbers, strings of ids), so no version carries an answer.
+
+The keepers census is round 3's (§23) over answers alone: red on an answer written into a static field, an instance field outside its
+constructor, an element of a collection a field holds, a `??=` target or a `Lazy<>`, whatever the field's type; and in a type that asks
+the store, on every field the fixed point does not prove answer-free. Beside it, **a holder table**, as `GitKeepersCensusTests` lists git's
+holders: a field that keeps an answer for one flow, said with the flow that ends it; red on a holder left out and on a listed one gone. The
+members the read named:
+
+| Member | What it keeps | Its place |
+|---|---|---|
+| `LimitWaits._stamp` (`Course/Chat/LimitWaits.cs:92`, compared at `:90`) | the look's stamp | a `LimitStamp`: `Effective` (§48) beside the parts that are no declaration (the cooling store, the harness settings, the account folders, `:387-409`); a version |
+| the pipe's grounds (`Modules/Loop/LoopGrounds.cs:231`) | the checkout manifest's hash until Confirm | the store's `DeclarationVersion` of the checkout's manifest, compared at Confirm with a fresh ask; a version |
+| `HomeWatch`'s part stamps (`Events/HomeWatch.cs:27`, `:53`; the config topic at `:159`; the workflows in the gates topic) | each file's stamp, by length and write time | for a declaration, the store's version as text; every other part's stamp as now |
+| `WatchRun._config` (`Loop/Watch/WatchRun.cs:42`, set at `:331`) | the look's choices, so a torn file keeps the pace it had | the one holder: one look's `DriverConfig`, swapped whole at each tick and read by that look's wait and link 8's pass (`:233`); the config topic's wake starts the next tick |
+
+So a content key or a store revision held across looks is no keeper, and the one answer held past a call is a listed holder with its
+flow.
+
+## 48. `Effective`, every family the move reads (B4)
+
+The limit move reads more than `role_staffing`. `ElsewhereAsync` reads the role catalogue (`RoleCatalog.ReadHome`,
+`Course/Chat/LimitMove.cs:585`: the `roles` table, written as the family `roles`, `Roles/RoleCatalog.cs:121`, `:392`) and arranges the
+order (`RoleOrders.Arranged`, `LimitMove.cs:589`), which asks the ledger's preview (`Roles/RoleOrders.cs:65`). The preview reads the
+role's policy joined with its staffing (`role_policy` and `role_staffing`, `Roles/StaffLedger.cs:36-39`) and its facts: the starts in its
+window and today's counts (`role_starts`, `:391-395`), against the day's start by the clock (`:396`). Every write of the desktop store
+moves its family's revision in its own transaction (`Store/DesktopStore.cs:231-233`).
+
+**`Effective` is driver.json's content key and the revisions of `role_staffing`, `roles`, `role_policy` and `role_starts`, read in one
+query** (`SELECT family, revision FROM store_revisions WHERE family IN (…)`, `Revisions()`'s shape, `DesktopStore.cs:303-305`), and
+*unversioned* where the store throws (§35.2). The families are a list beside the move (`LimitMove.Reads`), held by `LimitMoveReadsTests`:
+the move run over a store whose queries are recorded, red where a query reads a table of a family the list leaves out. Not every family:
+any write (news, acts, deliveries) would move a stamp over all of them, and the look would never skip.
+
+**The clock, found beside it.** Today's counts turn at the day's start, which no write marks, so a wait held by a spent daily budget
+skips until `_due`. The look is due again no later than the ledger's next day start where the role's policy counts a day.
+
+Proof (c1), each with driver.json and `role_staffing` untouched and the look moving the conversation as the move then says: a wait with
+no allowed ready account, then a policy edit allowing one; a role added to the catalogue that takes the work; a start counted against a
+budget; the day turning on a seam clock; the staffing store throwing once, and the look after it not skipping. `LimitMoveReadsTests` red
+on a planted query of a family the list leaves out.
+
+## 49. driver.json: its syntax the kind, five views (B5)
+
+The read's sequence needs one correction from the code. `"cap": "4"` does not fail the load today: `Int` reads only a JSON number and
+answers none for a string (`Settings/DriverConfigReader.cs:372-375`), so the cap is the default (`:27`). The load fails on a number that
+is not whole (`"cap": 4.5`, the throw at `:374`) and on a root that is not an object (`:20`); on the first, `GitAccessKeys.Load`
+(`GitAccessKeys.cs:90-102`) and `GitIdentityUse.Read` (`GitIdentityUse.cs:80-92`) still answer their levels and pointers, and on the
+second, none. The readers also differ in syntax: the record reads a key written twice as its last value in its first place
+(`JsonKeeping.Once`, `DriverConfigReader.cs:16`), while the levels and the pointers parse with `JsonNode.Parse`.
+
+**The kind is the syntax** (§21's pattern): the text as the file reads (UTF-8, a byte-order mark taken), and its JSON as one immutable
+element, or its syntax problem with its line and byte. **Five views**, each validating its own part over the kind and answering its own
+value or its own problem, as its reader does now:
+
+| View | Today's reader | Its problem |
+|---|---|---|
+| the record | `DriverConfigReader.Parse` | `DriverConfigUnreadableException`'s words; the load fails |
+| the access levels | `GitAccessKeys.Of` | the levels fall to none |
+| the identity pointers | `GitIdentityUse.Of` | the pointers fall to none |
+| the staffing import's part | `RoleStaffing.Parse` over the bytes read at `RoleStaffing.cs:242` | `StaffingImported.Unread`, with its words |
+| the wiring page's facts | `WiringFiles.Written` and `Parses` (`Loop/WiringFiles.cs:118-145`) | `unparsed`, a code, beside the stamp's write time |
+
+The import reads the file under the staffing's lock and writes the store; its read is the store's writer's read of the bytes as they stand
+(§35.5), so it never starts from a kept parse.
+
+**Parity is a table**, as §21's: each of today's five readers run over every driver.json the tests write and the mixed-validity fixtures,
+its outcome recorded, and each view equal to it cell by cell before that reader's own parse is deleted. The fixtures: `"cap": "4"` beside
+an identity pointer (the record's default cap, the pointer resolved); `"cap": 4.5` beside one (the load failing, the pointer resolving); a
+malformed pointer beside a valid record; a key written twice; a root that is an array; text that is not JSON; a byte-order mark. A cell
+that differs is a change of answer. The one expected is a key written twice: one syntax gives every view the record's rule, and c1 names
+that change with its test, or keeps each view's own rule where the table shows a reader depends on it.
+
+**One writer.** `StandingChoices.Write` loads the file (`Settings/StandingChoices.cs:91`) outside the lock `Save` takes (`:92`), so two
+writes at once can lose one; under the store's writer the read is inside the lock (§35.5).
+
+## 50. The parses census, landable
+
+Round 4's census by declared types (§33) holds every type a kind or a view reaches to an immutable concrete type. **A kind enters the
+store frozen**, in the row that adds it, so the census is green at every row and needs no table of rows:
+
+| Types | Frozen in |
+|---|---|
+| the rule file's kind, the kernel's first: `FileRule.Paths`, `RepositoryFilesRead.Rules` and `Problems` as `ImmutableArray<>` | a2, with the 9 constructions of `FileRule` in the driver and the 28 in the tests |
+| the gates file's syntax and its views; the manifest's and the lanes file's kinds and their commit views | b |
+| driver.json's syntax and its five views: `DriverConfig`'s read-only interface members as frozen collections, its builders and its `with` edits making them | c1 |
+| the person's and the found layers' kinds; a workflow's kind | c2 |
+| a tree's effective rules and §11's other views | d2 |
+
+driver.json's kind itself is one cloned `JsonElement`, an immutable leaf; its views freeze where they enter, in c1.
+
+## 51. Dropped from round 4
+
+§29 to §34's site census goes: the summaries and the three classes (§30), `PathRoots`, `GitShapes` as the census's table (§31), the guard
+types `NotDeclarationPath` and `DeclarationPaths` with `Drop` (§30), the run-time half by the stack (§32), and the exemption rows and their
+counts (§30, §34). What stays of them: §31's rule for what `GitReadCache` keeps (an answer whose starts read the objects alone; changes,
+history and blame asked at every ask, §35.1), held by `GitReadCacheTests`' two trees rather than a table; §33's declared types and its
+ambient rule, in the parses and the views and kinds censuses; §32's seeds, in §46.
+
+## 52. The reads answered (round 5)
+
+| Finding | Answer | Section | Row |
+|---|---|---|---|
+| **B1** Paths inside revisions unseen | The names banned and the literal check, so neither sequence can name the gates outside the store; path-bearing shapes and `<rev>:<path>` built only by the door, which answers a declaration's fact from the store | §43, §45 | a3, b, d1 |
+| **B2** `DaorisHome.Entry` reads what it locates | The store's probe for its five entries; every caller moved by what it does, driver.json's place a handle; each ban in the row that moves its last use, so a lands green | §44 | c1, c2 |
+| **B3** The keepers census flags the design's own moves | Answers are parses, views and bytes; content keys and revisions are versions; `WatchRun._config` the one holder, with its flow | §47 | a2, a3, c1, c2 |
+| **B4** `Effective` misses what the move reads | driver.json's content key and four families' revisions in one query; the day's start; `LimitMoveReadsTests`; a policy edit among the tests | §48 | c1 |
+| **B5** driver.json's one kind changes other answers | The syntax the kind, five views each with its own problem; the parity table; `"cap": "4"` corrected to `"cap": 4.5` | §49 | c1 |
+| **H1** `Driver.Host`, `AskConsole.cs:190-191` | The host carries the analyzer; the attachment is the person's file, data | §43 | a3, c1 |
+| **H2** A start's site lost after an `await` | Keyed by the door's `AsyncLocal` scope, recorded at the process gate | §46 | a3 |
+| **P1** The clock mark's twins | Its row in the driver's, the CLI's and the service's tables at once | §55 | a1 |
+| **P2** `Drop` | Goes; a whole answer passes through whole | §45 | d1 |
+| **P3** The search's parity | The store cuts each LF line as `ReplaceLineEndings` does | §45 | a2, b |
+| **The census's proportion** | The compiler is the census; §29 to §34 dropped | §42, §43, §51 | a3 |
+| **The rows** | a in three, c in two, d in two; each ban, kind and census in its row | §55 | all |
+
+## 53. What stays open
+
+- **A reader that reaches a declaration by data** passes the compiler. It reads fresh bytes and costs a read; the run-time half sees it on
+  the flows the count tests and the bench run. Proving a value from data is no declaration's path took §29 to §34's machinery, out of
+  proportion to a read's cost.
+- **A file cache keyed by a data path** that happens to hold a declaration is outside the keepers census, whose answers are the store's;
+  its staleness is that cache's own, as for any file, and `GitKeepersCensusTests` holds a git answer kept.
+- **Between a3 and d1** a name not yet banned can gain a reader outside the store; the run-time half judges it from its row. A ban before
+  its row's move would break the build.
+- **A key written twice in driver.json**: the parity table decides in c1 whether the access and identity views keep their own rule.
+- **`DriverConfigFile`'s words** name a place for the person; handed to a file API they are data.
+- **Both makers' reads**: round 4 and round 5 have one maker's read each, the other's owed.
+
+## 54. Rejected in round 5
+
+- **The store in an assembly of its own** (§43): its dependencies are the driver's, so it needs a split of the driver below it or a port
+  and a locator above it, and its home rows leave a table three twins read as text.
+- **Every ban in a3, the unmoved readers allowed by a list**: a list of rows each later row deletes; a ban in the row that frees it needs
+  none.
+- **A whole answer's declarations from the store** (§45, the third way): a start for each commit not yet listed, for no change of answer;
+  and dropping them changes the answers of every caller that must see them.
+- **`Effective` over every family's revision** (§48): any write would move it, and the look would never skip.
+- **`WatchRun._config` removed**: a torn file would leave the wait with no pace; it is the holder table's one row.
+- **The site census** (§29 to §34): §42.
+
+## 55. The rows
+
+*Supersede §40's.* a1, a2 and a3 land in turn; then b beside c1, and c2 after c1; d1 after b and c2, d2 after d1; e after b. In every row
+each moved reader's existing tests pass unchanged before a count is lowered, the bench is run before and after it, and the row's bans
+(§43) and kinds (§50) are added with the build green.
+
+- **a1. The stamp and the gate** (driver; cli and service for one row). GITLIB1's stamp: `FileStamp` under §9's rule with the volume's
+  clock from the mark in the home (§36), `HomeEntry.ClockMark` added to the driver's, the CLI's (`src/platform/home.ts`) and the
+  service's (`Daoris.Service.Core/Platform/DaorisHome.cs`) tables in one place (P1); `GitStamp` with every candidate git reads, present
+  or absent (§7, §20), `GitAskerContext` folded into it; `GitReadCache` keyed by it, admitting under the fence of stats before and after
+  (§19), keeping only answers whose starts read the objects alone (a graph page, a commit's own fields, a compare's commit list) and
+  asking a commit's changes, a compare's, a file's history and blame at every ask (§35.1); `GitReplacements.CanBeInForce` lifted from the
+  library's admission, its `packed-refs` parse made once a `FileStamp` version and shared with a2's `TipOf` (§36). Proof:
+  `GitAskerContextTests`, `GitReadCacheTests` and the flow memos' tests unchanged; `GitStampTests` with git as the oracle against each
+  git Daoris starts, §20's five planted files and a same-length rewrite of each stamp file inside the clock's grain; a replacement added,
+  a graph read and the replacement removed, the answer refused by its fence; two trees of one repository, one marking a changed file
+  `-diff`, each commit's page as git answers in that tree, and an attribute file edited between two asks read at the second;
+  `ViewGitCountTests` moved (the graph kept by id after its first open, a commit's page and a compare one start after the first, a
+  history and a blame one start each open); a share's clock lagging by a seam, its racy stat hashed again; `home.test.ts` with the mark's
+  row in all three tables; `GitKeepersCensusTests` naming the stamp.
+- **a2. The kernel** (driver). `ContentKey`, `BlobId` and the version types (§47); the hashed listing (§19); `TipOf`; the checkout and
+  home index; the three answers (§21); the ask by blob id answered only by bytes that hash to it (§35.4); `IDeclarationKind` and
+  `IDeclarationView` with the contents handle; a bound per kind (§25); `DeclarationScope` (§46); `GitTreeReads` and the store's answers to
+  it (§45), no caller moved; `DeclarationNames` with every name, today's constants gone and every reader's literal name pointed at it
+  (§43); the rule file's kind, frozen (§50). Proof: a unit test of each key and each invalidation (a stat moved; a racy stat hashed again
+  and never promoted; a stat moved during the read; a link; a loose, a packed, a symbolic and a `daoris/` ref moved; a replacement keeping
+  no listing; two contexts; two trees of one content; a blob not hashing to its id; each cause of *unread* kept for none; a parse with a
+  problem made again; a size past a reader's limit); §19's sequences (a blob kept, a replacement of it added, the next ask git's bytes; a
+  commit, its tree and a folder each replaced in turn, nothing admitted; `refs/replace/` beside `core.useReplaceRefs=false`, passed
+  through; a replacement added after the gate and removed after the listing, nothing admitted; a tracked list read across an add and a
+  remove of a replacement, refused by its fence); §35.4's (a blob kept and a replacement of it added, asked by id *unread: replaced*, by
+  path git's bytes with no id); the door's search over fixtures holding a lone CR, a NUL and a name after a CR, equal to `FileGit`'s; the
+  weights against the allocations; the rule file's readers' tests unchanged with its kind frozen; the bench's store rows, a warm checkout
+  ask at its stat and a warm commit or tip ask at no start and under 2 ms.
+- **a3. The boundary and the censuses** (driver, modules). The analyzer on the four projects with the store's folder and `DaorisHome.cs`
+  allowed and its list empty, and `DeclarationBoundaryTests` (§43); `DeclarationLiteralsCensusTests` with its four rows (§43); the keepers
+  census and its holder table (§47); the parses census by declared types (§50); the views and kinds census with the ambient rule (§33);
+  `DeclarationGitCensusTests` and `DeclarationFileCensusTests` by the scope, seeded, each judging the names banned (§46). Proof: the
+  analyzer red on a planted use of a banned symbol in a test's compilation and silent on it under the store's folder; the boundary test red
+  on a planted `#pragma`, `SuppressMessage`, `NoWarn` and second `.editorconfig`; the literal check red on §43's five planted names and on
+  a row left out; the keepers census red on round 3's planted keepers (an `IReadOnlyList<Regex>` made from a view by a helper and held in
+  a record a field's dictionary keeps; an `object` field set from a view; a `??=` of a hash of a store answer; a static dictionary filled
+  with an answer handed to it) and green on a field holding a `ContentKey` or an `Effective`; the parses census red on an
+  `IReadOnlyList<string>` member and on an array behind one; the views and kinds census red on a view whose helper in another file calls
+  `PersonFiles.Read`, on a kind whose parse calls `RoleStaffingPort.Fill`, on a view asking its contents for a key its record does not
+  hold, and on `ToLower()` and `Order()` left to the ambient culture; the run-time censuses red on §46's three planted reads.
+- **b. The gates file's one parse, the commit readers and every reader of the gates** (driver). `GatesDeclaration` as §21's syntax with
+  each view's own validation, and the parity table over every gates blob in this repository's history, the tests' fixtures and §21's
+  mixed-validity fixtures, each parser deleted once its column is equal; §10's tip and commit rows, with the manifest's, the lanes file's
+  and the rule file's kinds and their commit views; §24's commit members (`UnionJoins`, `FileAnalysis`' commit asks, `LayoutGit`'s
+  declarations, `DirectGateRuns`, `IntegrationJudging`); the gates' tree and checkout readers (`HeavyGates`, `TreeLocalInputs`,
+  `ContextBriefs`, `HeavyTold`, and `OpinionPackets.RulesIn` reading the fixed name, `documents.gates` going, §36); X3's three (§35.6),
+  `FileGit.LinesAsync` through the door's search; the asks by id (§35.4); `TreeReadMemo.Kept.Declared`, `BacklogMerge`'s `_declared` and
+  `TogetherChecks`' memo removed; `DeclarationNames.Gates` banned, and with c2 landed `.Manifest`, `.Lanes` and `.Rules`. Proof: each moved reader's tests unchanged; the mixed-validity
+  fixtures, each view answering its parser's cell; a malformed gates file said, then fixed in place and read; the line moving during a
+  replay; a link of identical bytes refused; the offline partial clone's follow said, nothing kept, read once its promisor answers; a
+  missing commit said unread, not absent; an oversize manifest said, never parsed as a prefix; `TogetherAccepts` with a tag shadowing its
+  line; X1's sequence on `IntegrationAcceptance` (the text *unread: replaced*, nothing integrated as accepted, the page saying so); the
+  gates' change between two commits found by entry ids; `LayoutReaderTests` unchanged over the store's manifest view; the analysis's hits
+  equal before and after the exclusion on every fixture; the run-time censuses green judging the gates. Then `LandGitCountTests`,
+  `TidyGitCountTests` and `StartGitCountTests` lowered, and the bench's line and commit rows at one listing a new commit and one read a new
+  content.
+- **c1. driver.json: its handle, its kind, its views and its one writer** (driver, modules). §44's table for driver.json across the four
+  projects: `DriverConfigFile` in place of every `configPath`, `DriverConfig.Of(home)` and `DriverConfig.Load(file)` the store's asks,
+  `HomeOf` as `file.Home`, the store's probe for its entry; §49's kind and five views, frozen (§50), with `SourceFile` and `Fill` laid at
+  each ask (§21); the one writer, with `StandingChoices.Write`, `DriverConfigDisk.Save` and the two key edits its callers,
+  `DriverConfigFile.Change` gone and the three migration steps exempt (§35.5); `LimitWaits` stamped by `LimitStamp` (§47, §48);
+  `HomeWatch`'s config part and `TreeReadMemo.Home` by the store's version; `WatchRun._config` the holder table's row;
+  `HomeEntry.DriverConfig`, `DriverConfig.ResolvePath` and `DeclarationNames.DriverConfig` banned. Proof: each moved reader's tests
+  unchanged, the host's commands' among them; round 2's three sequences for the load (`role_staffing` changed with driver.json untouched,
+  the next load answering the new actors; the staffing store throwing once, that load answering the file's staffing and the next the
+  store's; two homes of equal bytes sharing one parse, each load and save carrying its own `SourceFile`); §48's; §49's parity table and
+  fixtures, `"cap": 4.5` beside an identity pointer failing the load while the pointer resolves; an access edit and an identity edit
+  through the writer, read at once in the same flow; two standing choices written at once, neither lost; an in-place write of the same
+  length inside the clock's grain, asked again at 3 s, reading the new content; a write during the read kept for none; the keepers census
+  green with `WatchRun._config` its one holder. The bench's driver.json rows at a stat each.
+- **c2. The other checkout and home readers** (driver, modules). §10's checkout and home rows but the gates' and driver.json's:
+  `RegistryOperations`; `RegistryModule`'s declaration editor as the manifest's writer; `LoopGrounds` by version (§47); `RepositoryIndexes`,
+  `StandingBlocks` and `CodeMapFile`; `PersonFiles` with `PersonFilesForm.Rewrite`, `FoundFiles` with `FoundReads`' writes, and `FileAsks`;
+  the workflows (`WorkflowFiles`, `WorkflowStore`), `StampedWorkflows` removed and `WorkflowHomeTopic` and the gates topic's workflows by
+  version; §11's listings per ask; `RemoteSync`'s check exempt as git's (§24); the store's probe for the four other entries;
+  `HomeEntry.Files`, `FilesFound`, `FilesAsks` and `Workflows`, the layers' path helpers, `WorkflowStore.Folder` and their names banned, and
+  with b landed `DeclarationNames.Manifest`, `.Lanes` and `.Rules`. Proof: each moved reader's tests unchanged; a child process writing
+  the person's layer, read at the next ask; a workflow written by another process listed and its topic published; an index file in one of
+  two trees with one manifest found in that tree alone; `core.autocrlf=true`, the manifest still unmodified; the pipe's grounds refusing a
+  manifest edited between the press and Confirm. The bench's checkout and home rows at a stat each.
+- **d1. The door** (driver, modules). Every path-bearing git read moved into `GitTreeReads` (§45); `GitObjectName.At`'s form with a path
+  banned outside it; `GitTreeReadsCensusTests` with push's two rows. Proof: each moved caller's tests unchanged; the census red on B1's two
+  sequences planted outside the door and on a row left out; a whole `ls-tree -r` and a name diff answering their declarations as git lists
+  them; the run-time censuses green over every count test with every name banned; the count tests within the budgets b, c1 and c2 left.
+- **d2. The views and the analysis's kept parts** (driver). §11's views with their key tests and N5's key, each frozen (§50); §12's parts
+  as §19 and §22 restate them (the tracked list by commit under its fence, ignore-case by the stamp, the search fresh); `FilesLooks`
+  naming its line's ref in full. Proof: the analysis's, the files stage's and the Files page's tests unchanged; two repositories sharing
+  three ids and differing in personal rules, two views; an ignored output added at an unchanged `HEAD`, and tree B's new top, each judged
+  `Output`; two trees of one commit, one marking a writer script `-diff`, each judged as git judges it; a `core.ignorecase` change moving
+  the stamp; the bench's files-stage and Files page rows warm at three starts, two where the tree has no ignored top, from 11 and 10.
+- **e. Saved** (driver). §14.2's tables without the stamp's digest (§19), the bound at admission and the trim. Proof, the misses first: a
+  replacement made while the desktop is down, the cold start's ask passed through to git; a blob saved and a replacement of it made while
+  the desktop is down, the cold start's ask by id *unread: replaced* with nothing loaded under the id, and its ask by path git's bytes with
+  no id; a replacement added, a commit read and the replacement removed, then a restart, no row; the promisor down, nothing saved, and
+  saved once it answers; a blob row whose bytes do not hash to its id refused at its load; a fill past the bound within it after every
+  insert, each kind counted; the trim. Then the hits: the bench's follow over 20 repositories run twice with the driver made again
+  between, 0 git starts the second time where no line moved (the top from its files, the tips from the refs' files, listings and blobs from
+  the store), the toolchain digest's processes and any stamp ask counted apart.
+
+Nothing was measured anew for round 5 but the counts of §44 and §45, taken from the code, and nothing in the product changed.
