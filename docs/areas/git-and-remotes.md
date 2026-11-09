@@ -307,20 +307,24 @@ read as its object), *by id* those naming an id alone.
 | A commit, a compare (first open) | 2 each | 0 | 0 | `ViewGitCountTests` |
 | The commit, switch and stash plans | 8, 5, 7 | 0, 0, 0 | 1 (0), 1 (0), 1 (0) | `ViewGitCountTests` |
 | The deletes (`GIT_DELETES`, the journal holding none) | 0 | 0 | 0 | `ViewGitCountTests` |
-| Review, a tree ahead of its line, its second open (one untracked file, or ten) | 16 | 0 | 0 | `ReviewGitCountTests` |
-| Review, a tree the line holds by content | 17 | 0 | 1 (0) | `ReviewGitCountTests` |
-| A landed session's review | 5 | 0 | 2 (1) | `ViewGitCountTests` |
-| The Accept offer of a tree of work | 5 | 0 | 0 | `OfferGitCountTests` |
-| The look's tidy, six trees (two) | 17 (9) | 1 (`worktree list`, the judgement's own) | 1 (0) | `TidyGitCountTests` |
+| Review, a tree ahead of its line, its second open (one untracked file, or ten) | 10 | 0 | 0 | `ReviewGitCountTests` |
+| Review, a tree the line holds by content | 11 | 0 | 1 (0) | `ReviewGitCountTests` |
+| A landed session's review | 3 | 0 | 2 (1) | `ViewGitCountTests` |
+| The Accept offer of a tree of work | 3 | 0 | 0 | `OfferGitCountTests` |
+| The look's tidy, six trees (two) | 5 (5) | 1 (`worktree list`, the judgement's own) | 1 (0) | `TidyGitCountTests` |
 | A session's start, to its spawn (the files stage's `core.ignorecase` among them; the landing plan's layout one start) | 20 | 0 | 3 (0) | `StartGitCountTests` |
-| A squash press's landing | 22 | 0 | 4 (1) | `LandGitCountTests` |
-| A merge press's landing | 36 | 3 (the line's commit) | 9 (0) | `LandGitCountTests` |
+| A squash press's landing | 19 | 0 | 4 (1) | `LandGitCountTests` |
+| A merge press's landing | 32 | 3 (the line's commit) | 9 (0) | `LandGitCountTests` |
 
 The rows above are as the cuts of PERF1 left them (measured again on the same fixtures); the refs are listed once for a repository in the
 offer and Review, and a landing lists them twice (its judgement's, and its press's after the write), each listing the library's where
 admitted. Measured on 2026-11-09 on the count classes' fixtures before the library took the listing and after: Review 17 to 16 (by
 content 18 to 17), a landed review 6 to 5, the offer 6 to 5, the tidy's six trees 18 to 17 (two 10 to 9), a session's start 21 to 20,
-a squash landing 24 to 22 and a merge landing 38 to 36; Branches stays 2, its listing git's. A test class's own git, each class alone with git's trace per process (`GIT_TRACE2_EVENT`) and the fixture's count
+a squash landing 24 to 22 and a merge landing 38 to 36; Branches stays 2, its listing git's. With the merge-bases, the counts and two
+commits' names the library's as well, measured the same day on the same fixtures: Review 16 to 10 (by content 17 to 11), a landed
+review 5 to 3, the offer 5 to 3, the tidy's six trees 17 to 5 (two 9 to 5), a squash landing 22 to 19 and a merge landing 36 to 32;
+a session's start stays 20 and the Git page's views as they were. The branches' date listing a flow keeps from one open to the next
+(`BranchesByDate`) is one start more where another flow let it go between them. A test class's own git, each class alone with git's trace per process (`GIT_TRACE2_EVENT`) and the fixture's count
 (`DAORIS_TEST_GIT_SPAWNS`): `OfferGitCountTests` 43 starts (the fixture's 11), 3.7 s in git; `StartGitCountTests` 23, 1.8 s;
 `ViewGitCountTests` 125 (28), 7.1 s; `LandGitCountTests` 127 (7), 8.4 s; `TidyGitCountTests` 148 (19), 10.4 s; `ReviewGitCountTests` 180
 (15), 17.3 s. The other test classes that start git are not counted yet. Before and after the scheduler, measured on 2026-11-09
@@ -357,19 +361,34 @@ Review reads for its own diff. A held reader would still cost its lifetime, the 
 floor (the git-app design §4.3), for at most 9 starts of a merge press's 39, and Review asks it nothing.
 
 The refs' one listing (`RefSnapshot.ReadAsync`: every branch and copy of origin's, its stored id, its object's type, its upstream in
-full and short, a commit's tree) is read through LibGit2Sharp where the question is admitted, and starts nothing. `GitLibrary` opens
+full and short, a commit's tree) is read through LibGit2Sharp where the question is admitted, and starts nothing. So are a plain
+read's merge-bases, counts and two commits' changed names, whoever asks them: `GitRuns` asks `GitLibraryReads` beneath its flow memos
+before any git, which tells the read by its arguments exactly (git's own options `--no-optional-locks` and `-c core.quotePath=false`
+alone) and answers it in git's words. `GitLibraryWalks` answers `merge-base` of two commits, `--is-ancestor` and `--independent`,
+`rev-list --count` over tips, `^` and `--not` exclusions and `A..B`, and `--left-right --count A...B`; a merge-base with more than one
+best base (a criss-cross) is git's, whose choice among them is its own, found where a commit both tips reach is not reachable from the
+base libgit2 gave. `GitLibraryNames` answers two commits' `diff --name-only --no-renames`, sorted as git's tree order sorts them, a
+rename as its two paths; a gitlink that changed without `--ignore-submodules=none`, a path git would quote without `-z`, rename
+detection, a filter and a path after `--` are git's. A revision is read as git's rules read it (`GitLibraryRevisions`: a full id,
+`HEAD`, a full ref, or a short name by git's rules before a short id), and one holding an operator, one a file in the git directory
+could answer, or one whose object is missing is git's. `GitLibrary` opens
 a `Repository` for one call on the thread pool and disposes it before it answers, eight calls at most at once (`GitLibrary.Open` is
 zero between calls, `GitLibrary.AtOnce`), libgit2's
 global, XDG, system and program-data search paths pointed at a folder holding no file. `GitLibraryRefs` prints `for-each-ref`'s
 lines: sorted as bytes, a broken symbolic ref left out, the upstream from the common directory's `branch.` and `remote.` keys through
 the remote's first matching fetch refspec, shortened by git's strict rule. `GitLibraryAdmission` refuses, from the repository's own
-files at each question, a folder with no git directory, reftable, any replacement (loose, packed or `GIT_REPLACE_REF_BASE`) and a
-branch or remote section in a global file git is handed; libgit2 refuses SHA-256, an extension it does not know and another owner's
-folder at its open; a tip whose object is missing refuses the call. A refused question, and every one under a test's stand-in runner,
-is git's `for-each-ref`. The worktree list, every other ref read and the Git page's branch listing (its dates, subjects and
-distances are the commits') stay git's. This second way has two ends, each a failing test in `GitLibraryRefsTests`: it fails, naming
-the refusal, the day the pinned library reads a refused case as git does (GITLIB1g deletes that refusal), and the day the git in use
-makes reftable or SHA-256 repositories by default (GITLIB1g retires the library). `GitLibraryHoldTests` holds the call's hold on
+files at each question and by its class (`GitLibraryQuestion`), a folder with no git directory, reftable and any replacement (loose,
+packed or `GIT_REPLACE_REF_BASE`) for every question, a branch or remote section in a global file git is handed for the refs, and a
+`diff.orderFile` or `diff.relative` in the repository's, the tree's or that global file for the names; libgit2 refuses SHA-256, an
+extension it does not know and another owner's folder at its open; an object a call needs that is missing refuses the call. Grafts,
+a shallow boundary (before and after a deepen), a split and a sparse index the library reads as git does. A refused question, and
+every one under a test's stand-in runner, is git's. The worktree list, every other ref read and the Git page's branch listing (its
+dates, subjects and distances are the commits') stay git's. This second way has two ends, each a failing test in
+`GitLibraryEndsTests`: a case for each refusal and the questions it refuses fails, naming the refusal, the day the pinned library
+reads it as git does (GITLIB1g deletes that refusal and its path to git), and a case fails the day the git in use, or a git the
+built-in list pins (3.0 or past), makes reftable or SHA-256 repositories by default (GITLIB1g retires the library and its admission
+for the scheduler alone). `GitLibraryWalksTests`, `GitLibraryNamesTests` and `GitLibraryRefsTests` hold each answer equal to git's,
+value for value, and each read the library leaves to git answered through one start. `GitLibraryHoldTests` holds the call's hold on
 Windows: `repack -ad`, `gc --prune=now`, `commit-graph write` and `multi-pack-index write` under library reads every ten milliseconds
 exit 0, leave no old pack and never ask the `GIT_ASK_YESNO` stand-in, which is first seen asked where a pack is held open. The
 `win-x64` publish lays the native `git2-*.dll` beside the driver, and the deployment rehearsal asks for it (`driverProblems`).

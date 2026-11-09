@@ -30,10 +30,10 @@ internal static class GitLibrary
     /// <summary>
     /// <paramref name="call"/>'s answer over <paramref name="folder"/>'s repository, opened for it alone; null where refused or failed.
     /// </summary>
-    internal static async Task<T?> AskAsync<T>(string folder, Func<GitLibraryCall, T?> call, CancellationToken ct)
+    internal static async Task<T?> AskAsync<T>(string folder, GitLibraryQuestion question, Func<GitLibraryCall, T?> call, CancellationToken ct)
         where T : class
     {
-        if (GitLibraryAdmission.RefusalOf(folder) is not null) return null;
+        if (GitLibraryAdmission.RefusalOf(folder, question) is not null) return null;
         if (RefFiles.GitDirOf(folder) is not { } gitDir || RefFiles.CommonDirOf(folder) is not { } commonDir) return null;
         await s_calls.WaitAsync(ct).ConfigureAwait(false);
         try
