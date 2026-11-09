@@ -26,6 +26,12 @@
     <PackageReference Include="System.Security.Cryptography.ProtectedData" />
   </ItemGroup>
 
+  <!-- The git library (GITLIB1d): a repository's refs as they are stored, one `Repository` a call, named under `Workplace/Git/` alone;
+       its native `git2-*.dll` is laid beside the driver by the `win-x64` publish, as SQLite's is. -->
+  <ItemGroup>
+    <PackageReference Include="LibGit2Sharp" />
+  </ItemGroup>
+
   <!-- Lyntai's agent layer (AGENTLYNTAI1, D248): taken by the driver alone and named in it by `Agents/Layer/` and the providers' folders
        alone (`LayerCensusTests`). Only Lyntai's local build carries it, so it is referenced only where that build is in use; without
        `local/lyntai-local.props` the driver builds as before, with no Lyntai assembly. -->

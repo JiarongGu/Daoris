@@ -265,7 +265,7 @@ public sealed class TreeSyncStartsTests : TreeSyncFixture
         Assert.Equal(asked, snapshot);
         Assert.Contains("feature/pushed: ahead 1", asked);
         Assert.Contains("feature/gone: on remote False", asked);
-        Assert.Single(starts, each => each.StartsWith("for-each-ref", StringComparison.Ordinal));
+        Assert.DoesNotContain(starts, each => each.StartsWith("for-each-ref", StringComparison.Ordinal));
     }
 
     /// <summary>A write in the judgement's own flow drops what it read: the next question reads the ref as it is now.</summary>

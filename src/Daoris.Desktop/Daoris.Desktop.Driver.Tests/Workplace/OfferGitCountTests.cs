@@ -15,7 +15,7 @@ namespace Daoris.Desktop.Driver.Tests;
 public sealed class OfferGitCountTests(ITestOutputHelper output) : LandedFixture
 {
     // The offer's own work, measured on the starts of its judgement.
-    private const int Ceiling = 8;
+    private const int Ceiling = 5;
 
     [Fact]
     public async Task A_tree_with_work_to_land_is_judged_with_no_git_asked_twice_and_within_its_ceiling()
