@@ -586,7 +586,7 @@ export function useSummary(use: AgentAccounts, count: number): string {
 export function doorsSummary(tool: Tool, adapter: string | undefined): string {
   return tool.doors.map((door) => {
     const word = i18n.t(door.transport === 'protocol' ? 'harness.wire.acp' : 'harness.wire.pipe');
-    if (!door.present) return i18n.t('agents.doors.absent', { door: word });
+    if (!door.present) return i18n.t(door.installs === false ? 'agents.doors.absentByMaker' : 'agents.doors.absent', { door: word });
     const version = versionOnly(door.version ?? '');
     return i18n.t(door.door === adapter ? 'agents.doors.driven' : 'agents.doors.door', { door: word, version });
   }).join(' · ');

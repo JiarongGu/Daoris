@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { screen, within } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 
 // An agent held by a key alone on the Agents place, over the mocked bridge.
 const { invoke, notifyReady } = vi.hoisted(() => ({
@@ -60,5 +61,27 @@ describe('the Agents place, an agent held by a key alone', () => {
     // The zh footer is a sentence of its own, not the sign-in one translated.
     expect(i18n.t('agents.page.terminalKey', { agent: 'dsh', lng: 'zh' })).toContain('daoris agent key dsh');
     expect(i18n.t('agents.page.terminalKey', { agent: 'dsh', lng: 'zh' })).not.toContain('agent login');
+  });
+
+  it('opens the API-key form under the accounts it adds to, above Your own sign-in', async () => {
+    show(<Place first="dsh" />);
+
+    await userEvent.click(await screen.findByRole('button', { name: 'Add an API key' }));
+    const field = screen.getByLabelText('API key for DeepSeek Harness');
+    const own = screen.getByText('Your own sign-in');
+    expect(field.compareDocumentPosition(own) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(screen.getByText('account-1').compareDocumentPosition(field) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+  });
+
+  it('says an empty accounts list is empty and which press adds the first, with no column heads', async () => {
+    invoke.mockImplementation(async (_module: string, type: string) => (
+      type === 'HARNESSES' ? { ...ROSTER, harnesses: [{ ...ROSTER.harnesses[0], profiles: [] }] } : WIRING));
+    show(<Place first="dsh" />);
+
+    expect(await screen.findByRole('heading', { level: 1, name: 'DeepSeek Harness' })).toBeTruthy();
+    const main = within(screen.getByRole('main'));
+    expect(main.getByText('No Daoris account yet: these are the accounts its work runs as. “Add an API key” above adds the first.')).toBeTruthy();
+    expect(main.queryByText('State')).toBeNull();
+    expect(i18n.t('agents.account.none', { press: '添加 API 密钥', lng: 'zh' })).toBe('还没有 Daoris 账户：这里是它的工作所用的账户。上方的“添加 API 密钥”可添加第一个。');
   });
 });
