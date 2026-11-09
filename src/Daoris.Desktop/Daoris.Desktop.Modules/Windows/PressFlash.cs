@@ -76,6 +76,32 @@ public sealed class PressFlash(Action<string, bool> flash)
     }
 
     /// <summary>A window goes behind another, or is minimized: no main window is in front, until one comes forward.</summary>
+    /// <summary>
+    /// A main window closed: it is no more the one last in front, and a button lit on it lights the first main window, if presses
+    /// still wait unshown with none in front, since a window that is gone flashes for nobody.
+    /// </summary>
+    public void Closed(string window)
+    {
+        if (!IsMain(window)) return;
+        string? relit = null;
+        lock (_gate)
+        {
+            if (_front == window) _front = null;
+            if (_last == window) _last = MainWindows.First;
+            if (_lit == window)
+            {
+                _lit = null;
+                if (_known.Count > 0 && _front is null)
+                {
+                    _lit = _last;
+                    relit = _last;
+                }
+            }
+        }
+
+        if (relit is not null) flash(relit, true);
+    }
+
     public void WentBehind(string window)
     {
         if (!IsMain(window)) return;

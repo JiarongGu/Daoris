@@ -20,6 +20,23 @@ public sealed class TreeLinkRemovalTests : BranchTidyingFixture
     private static readonly Func<CancellationToken, Task<IReadOnlySet<string>>> NoneRunning =
         _ => Task.FromResult<IReadOnlySet<string>>(new HashSet<string>());
 
+    /// <summary>A tree git holds locked is refused by git whole, so no link is taken off it and it stays as it stands.</summary>
+    [Fact]
+    public async Task A_removal_git_refuses_for_the_trees_lock_leaves_the_links_in_the_tree()
+    {
+        var root = await RepositoryAsync("engine");
+        var trees = new SessionTrees(_home);
+        var tree = await LandedTreeAsync(trees, root);
+        var file = await LinkOutAsync(tree.Path, Path.Combine("build", "linked"));
+        await GitAsync(root, "worktree", "lock", "--reason", "the person's own", tree.Path);
+
+        var removal = await trees.RemoveAsync(tree.Path);
+
+        Assert.False(removal.Removed, removal.Message);
+        Assert.True(Directory.Exists(Path.Combine(tree.Path, "build", "linked")), "the link was taken off a tree that stayed");
+        Assert.Equal(Persons, await File.ReadAllTextAsync(file));
+    }
+
     /// <summary>The person's removal, forced: an untracked junction at the tree's top goes as a link.</summary>
     [Fact]
     public async Task A_forced_removal_leaves_what_a_link_in_the_tree_points_at()

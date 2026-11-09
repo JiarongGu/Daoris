@@ -121,7 +121,7 @@ internal sealed class InboxHolds(InboxState state)
         {
             if (state.Closed) return false;
             // Off the record once steered: held again in this process alone.
-            state.Held.Insert(0, message with { Kept = false, Attempting = null, Went = null });
+            state.Held.Insert(0, message with { Kept = false, Key = null, Attempting = null, Went = null });
             state.Publish();
             return true;
         }

@@ -265,3 +265,7 @@ function pageReads(file: string, text: string, files: readonly string[]): string
   }
   return [...reads];
 }
+
+test("the module that builds the lane table's rows reaches the tool-tests that hold the table", () => {
+  assert.ok(reaches(['tools/reach-rows.mjs']).includes('tool-tests'));
+});

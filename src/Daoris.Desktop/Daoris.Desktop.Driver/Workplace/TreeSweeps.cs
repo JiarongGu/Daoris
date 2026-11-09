@@ -242,6 +242,12 @@ internal sealed class TreeSweeps(
             else if (now.Tree is { } pressed)
             {
                 // Each link in the tree goes as a link first, since git's removal follows a junction out of it.
+                if (TreeLinks.Locked(pressed) is { } locked)
+                {
+                    results.Add(new(now, false, $"its tree stays: {locked}."));
+                    continue;
+                }
+
                 if (TreeLinks.Unlinked(pressed) is { } linked)
                 {
                     results.Add(new(now, false, linked));
