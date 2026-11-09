@@ -434,6 +434,7 @@ public sealed record HomeEntry(string Name, HomeCategory Category, string New, s
     public static readonly HomeEntry GitAsks = new("git-asks", HomeCategory.Run, "run/git/asks", "run/git/asks");
     public static readonly HomeEntry GitCheckouts = new("git-checkouts", HomeCategory.Run, "run/git/checkouts.json", "run/git/checkouts.json");
     public static readonly HomeEntry GitLibrary = new("git-library", HomeCategory.Run, "run/git/library.json", "run/git/library.json");
+    public static readonly HomeEntry GitLibraryLeases = new("git-library-leases", HomeCategory.Run, "run/git/library-leases", "run/git/library-leases");
     public static readonly HomeEntry GitHome = new("git-home", HomeCategory.Run, "run/git/home", "run/git/home");
     public static readonly HomeEntry GitSessions = new("git-sessions", HomeCategory.Run, "run/git/sessions", "run/git/sessions");
     public static readonly HomeEntry ClockMark = new("clock-mark", HomeCategory.Run, "run/clock.mark", "run/clock.mark");
@@ -454,7 +455,7 @@ public sealed record HomeEntry(string Name, HomeCategory Category, string New, s
         Deps, TreeFiles,
         Toolchain, ToolVersions, Bin,
         HomeLease, DriverLock, Running, Locks, Spawn, Starts, Hooks, Probing, SessionPids, Requests, EdgeRecord, Pipe, HomeMove,
-        GitHeld, GitGrants, GitUsed, GitAsks, GitCheckouts, GitLibrary, GitHome, GitSessions, ClockMark, Logs,
+        GitHeld, GitGrants, GitUsed, GitAsks, GitCheckouts, GitLibrary, GitLibraryLeases, GitHome, GitSessions, ClockMark, Logs,
     ];
 
     /// <summary>The entry of this name, or null where the table holds none.</summary>

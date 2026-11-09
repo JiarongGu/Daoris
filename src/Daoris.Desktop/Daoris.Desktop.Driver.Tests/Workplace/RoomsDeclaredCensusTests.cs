@@ -44,7 +44,7 @@ public sealed class RoomsDeclaredCensusTests(ITestOutputHelper output)
         Assert.Equal(["/local/shenora-local.props", "!/local/shenora-local.props/"], read.Rules[2].Paths);
         Assert.Equal("copy", read.Rules[2].Reach);
         Assert.Equal(["/src/Daoris.Web/node_modules/"], read.Rules[4].Paths);
-        Assert.Equal(["/node_modules/", "/src/Daoris.Cli/node_modules/"], read.Rules[5].Paths);
+        Assert.Equal(["/node_modules/", """/src/Daoris.Cli/node_modules/"""], read.Rules[5].Paths);
         Assert.DoesNotContain("trees", File.ReadAllText(Path.Combine(checkout, GeneratedWriters.DeclarationFile)).Split('"'));
     }
 

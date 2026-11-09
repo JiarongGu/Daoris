@@ -473,8 +473,8 @@ index with `tools/orient-index.mjs`), `test-map` and `code-map` for any new file
   round 5 owed.
 - **REPOCONFIG1**: one store every reader of a repository's declarations passes, each content parsed once by its bytes' key and
   a commit's facts proven by their own hashes, the declarations' names banned by symbol outside it so the compiler finds every reader
-  that names one, and path-bearing git reads through one door (`docs/2026-11-09-repo-config-design.md`); round 5 proposed, both
-  makers' reads of it owed.
+  that names one and a table holding each use kept outside it, and path-bearing git reads through one door
+  (`docs/2026-11-09-repo-config-design.md`); round 6 proposed, both makers' reads of it owed.
 - **SESSWATCH1d, 1e**: the record of quiet episodes, then an automatic end only where it shows such quiet is not work.
 - **SESSWATCH1f**: each pass asked for its own minutes.
 - **ONEWAY1j / SESSCTX1e**: *Go on fresh*, one press per go-on case.

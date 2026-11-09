@@ -445,6 +445,9 @@ import { mergeByBase, mergeByRows, rowsRefused } from './merge-branch/backlog-me
 import { holdBacklog } from './merge-branch/backlog-held.mjs';
 import { holdingLock, putComplete } from './merge-branch/locks.mjs';
 import { diffPaths, isInside, zPaths } from './merge-branch/paths.mjs';
+import { stepTrees } from './merge-branch/step-trees.mjs';
+import { censusCovers, contractsGates, coverNote, pageScripts, settleCovered, startContractsStep } from './merge-branch/ci-steps.mjs';
+export { stepTrees, endTree, descendants } from './merge-branch/step-trees.mjs';
 export { USAGE, Refusal, parseArgs } from './merge-branch/args.mjs';
 export { lineHunks, mergeByBase, mergeByRows, rowOf, rowsHeld, rowsRefused } from './merge-branch/backlog-merge.mjs';
 export {
@@ -2584,75 +2587,6 @@ function duration(ms) {
 export const STEP_ENDED = -1;
 
 /**
- * The step trees a run has running, each by its step's own pid, so a superseded or stopped run ends every one at
- * once. `end(why)` ends each held tree (`endTree`, the seam) and leaves `ended` saying why; a step started after it starts
- * nothing (`guarded`). `release` answers whether the run ended that step, so its own exit is not read as the gate's.
- */
-export function stepTrees({ end = endTree } = {}) {
-  const live = new Set();
-  const ended = new Set();
-  const trees = {
-    ended: null,
-    hold(pid) {
-      live.add(pid);
-    },
-    release(pid) {
-      live.delete(pid);
-      return ended.delete(pid);
-    },
-    end(why) {
-      trees.ended ??= why;
-      for (const pid of [...live]) {
-        ended.add(pid);
-        end(pid);
-      }
-    },
-  };
-  return trees;
-}
-
-/**
- * End a step's whole tree by the step's own pid, never by image name (the owner's processes share the names).
- * On Windows a kill reaches the one process it names, and a shell's command outlives it, so `taskkill /T`
- * ends what the step started too. Elsewhere `ps` says what is under it, each then killed. What a process of the tree left
- * running after its own parent ended is in no tree, and no build server is shut down: the run's are its own
- * (`BESIDE_ENVIRONMENT`), and the owner's are not to be touched.
- */
-export function endTree(pid, { platform = process.platform, run = spawnSync, kill = (each, signal) => process.kill(each, signal) } = {}) {
-  if (platform === 'win32') {
-    run('taskkill', ['/T', '/F', '/PID', String(pid)], { stdio: 'ignore', windowsHide: true });
-    return;
-  }
-  const listed = run('ps', ['-A', '-o', 'pid=', '-o', 'ppid='], { encoding: 'utf8' });
-  for (const each of [pid, ...descendants(listed.stdout ?? '', pid)]) {
-    try {
-      kill(each, 'SIGKILL');
-    } catch {
-      // Already ended.
-    }
-  }
-}
-
-/** The pids under `pid` in a `ps -o pid= -o ppid=` listing, at any depth. */
-export function descendants(listing, pid) {
-  const children = new Map();
-  for (const line of listing.split('\n')) {
-    const [child, parent] = line.trim().split(/\s+/).map(Number);
-    if (Number.isInteger(child) && Number.isInteger(parent)) children.set(parent, [...(children.get(parent) ?? []), child]);
-  }
-  const found = [];
-  const walk = (at) => {
-    for (const child of children.get(at) ?? []) {
-      if (child === pid || found.includes(child)) continue;
-      found.push(child);
-      walk(child);
-    }
-  };
-  walk(pid);
-  return found;
-}
-
-/**
  * One command through the platform shell, as the devkit runs a declared gate, its output into `fd`.
  * The gate runners take it as a parameter, so their logic is tested without starting a process. Given the run's
  * `trees`, its child is held there while it runs, and a step the run ended answers `STEP_ENDED`.
@@ -3206,7 +3140,7 @@ async function runInTurn(root, gates, dir, { keepGoing, run, print, beside = () 
  */
 export async function runGates(root, gates, dir, {
   keepGoing = false, oneAtATime = false, width = LIGHT_WIDTH, scripts = null, run = runGate, print = console.log, halt = () => false, memory = null, byMemory = false,
-  admission = null,
+  admission = null, waitFor = null,
 } = {}) {
   const schedule = laneSchedule(gates, { scripts: scripts ?? rootScripts(root), width, byMemory });
   const passed = new Map();
@@ -3259,12 +3193,14 @@ export async function runGates(root, gates, dir, {
     const running = new Map();
     const held = new Set();
     let thrown = null;
+    let readying = Boolean(waitFor);
+    waitFor?.ready.then(() => { readying = false; });
     try {
       for (;;) {
         for (const gate of [...waiting]) {
           if (halted() || running.size >= schedule.width) break;
           const builds = schedule.components[gate.name];
-          if (builds.some((component) => held.has(component))) continue;
+          if (builds.some((component) => held.has(component)) || (readying && waitFor.gates.includes(gate.name))) continue;
           waiting.splice(waiting.indexOf(gate), 1);
           for (const component of builds) held.add(component);
           running.set(gate.name, one(gate, {}).catch((error) => { thrown ??= error; }).finally(() => {
@@ -3273,8 +3209,8 @@ export async function runGates(root, gates, dir, {
             ended.get(gate.name).resolve();
           }));
         }
-        if (!running.size) break;
-        await Promise.race(running.values());
+        if (!running.size && !readying) break;
+        await Promise.race([...running.values(), ...(readying ? [waitFor.ready] : [])]);
       }
     } finally {
       // A gate the stop left unstarted has ended too, for whatever waits on it.
@@ -3438,10 +3374,11 @@ const headCommit = (root) => git(root, ['rev-parse', 'HEAD'], { allowFail: true 
  */
 function runRecorded(root, gates, dir, {
   keepGoing = false, oneAtATime = false, branch = null, onResult = () => {}, onStart = () => {}, halt = undefined, trees = null, width = LIGHT_WIDTH, byMemory = false,
-  kind = null, gateVerdict = () => true, step = gateStep,
+  kind = null, gateVerdict = () => true, step = gateStep, waitFor = null,
 } = {}) {
   const commit = headCommit(root);
   return runGates(root, gates, dir, {
+    waitFor,
     keepGoing,
     oneAtATime,
     halt,
@@ -5727,9 +5664,18 @@ async function gateCi(root, options, { stopAsked = () => false } = {}) {
     if (composed.length) writeStatus();
     let results = [];
     let stageFailed = null;
+    const covers = censusCovers(gates);
+    const served = contractsGates(gates, rootScripts(tree), pageScripts(tree));
+    for (const [name, by] of covers) {
+      Object.assign(gateOf(name) ?? {}, { note: coverNote(by) });
+      console.log(`  ${name}: ${coverNote(by)} (OPTIMIZE1d)`);
+    }
     if (gates.length) {
       console.log('a guest on the machine: below normal priority, the Process lane at normal (CIPRIO1, FAMILYFAIL1c); a Process half\'s failures are re-run alone once its lane is quiet (FLAKE1)');
-      results = await runRecorded(tree, gates, dir, {
+      if (served.length) console.log(`  contracts: built once before ${served.join(', ')}, which then start and reuse it (OPTIMIZE1d)`);
+      const ready = served.length ? startContractsStep(tree, dir, guarded(gateStep, trees)) : null;
+      results = await runRecorded(tree, gates.filter((gate) => !covers.has(gate.name)), dir, {
+        waitFor: ready && { gates: served, ready },
         // A plain run keeps going past a failure: its point is the whole picture. A stage's run needs every gate
         // green, so its first failure ends it (below, in `onResult`): nothing more starts and the gates running are ended.
         keepGoing: true,
@@ -5757,6 +5703,10 @@ async function gateCi(root, options, { stopAsked = () => false } = {}) {
     } else {
       console.log(`  nothing to run: every gate's verdict stands on this tree${composed.length ? `, or its classes' do (${composed.map((gate) => gate.name).join(', ')})` : ''}`);
     }
+    settleCovered(covers, results, {
+      record: (name, by) => addVerdicts(home, [{ gate: name, verdict: 'PASS', tree: treeId, at: nowIso(), commit, branch: null, kind, covered: by }]),
+      mark: (name, entry) => Object.assign(gateOf(name) ?? {}, entry),
+    });
     for (const gate of status.gates) if (gate.state === 'waiting' || gate.state === 'running') gate.state = 'not run';
 
     const judgedAfter = ciPlan({ ...standing, owe, plan: names, verdicts: readVerdicts(home).verdicts, ageWhole: kind === 'stage' });

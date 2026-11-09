@@ -34,6 +34,7 @@ internal static class GitLibrary
         where T : class
     {
         var began = System.Diagnostics.Stopwatch.GetTimestamp();
+        if (GitLibraryFaults.RefusalOf(folder) is { } fault) return Fell<T>(folder, fault);
         if (GitLibraryAdmission.RefusalOf(folder, question) is { } refusal) return Fell<T>(folder, refusal);
         if (RefFiles.GitDirOf(folder) is not { } gitDir || RefFiles.CommonDirOf(folder) is not { } commonDir) return Fell<T>(folder, GitLibraryAdmission.NoRepository);
         await s_calls.WaitAsync(ct).ConfigureAwait(false);
@@ -63,6 +64,7 @@ internal static class GitLibrary
     {
         if (!s_settled.Value) return (null, GitLibraryJournal.Native);
         Interlocked.Increment(ref s_open);
+        var lease = GitLibraryFaults.Enter(folder);
         try
         {
             using var repository = new Repository(folder);
@@ -74,6 +76,7 @@ internal static class GitLibrary
         }
         finally
         {
+            GitLibraryFaults.Leave(lease);
             Interlocked.Decrement(ref s_open);
         }
     }

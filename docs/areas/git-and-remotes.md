@@ -405,7 +405,15 @@ for that file's length and write time, so a converted repository is read again a
 SHA-1 objects in files refs are the library's, and each other format is refused by its own word (`sha256`, `reftable`, `object-format`,
 `ref-format`) before the library is opened. `GitLibraryJournal` keeps, per repository in `run/git/library.json`, each reason a question
 went to git (every admission refusal, an unreadable repository, a failed call, a call the library declined) with its count, and the
-answers the library gave; a reason new to a repository is written at once, counts at most every five seconds. Each answer is also a
+answers the library gave; a reason new to a repository is written at once, counts at most every five seconds.
+libgit2 runs in the desktop's process, so a fault there ends the window and .NET cannot catch it: every call appends its open before the library
+is entered and its close after it returns (`GitLibraryLeases`, a file for each process in `run/git/library-leases/`, named by its id and start time,
+unbuffered and written through, so its death keeps each line), and the first question of a start in a home reads the files of processes
+that are gone (`GitLibraryFaults`). A repository such a process ended inside, its last open with no close, is journalled in `library.json`
+as faulted under the library package's version and refused for every question while the package is that one: its reason is `native-fault`,
+which the Git page's listing says, and each refused question is git's. A new package version lifts the refusal; the first fault itself is
+accepted, and a home with none named runs no guard. `GitLibraryFaultProcessTests` kills the owner stand-in's `lease` mode inside a lease
+and proves the next start refusing that repository alone, and the refusal lapsing when the package version moves. Each library answer is also a
 read in the flow's `GitLaunch.Count` (`GitCount.Reads`, beside `Starts` and never one), which `review.read` says as `reads` and `readMs`
 and the bench's times list apart from the starts. Settings → Git lists the journal as *Git reads* (`GitReads.tsx`, `TOOLS_LIST`'s
 `identities.reads`): each repository by its folder's name with the library's answers, git's, and each reason in words. The worktree list, every other ref read and the Git page's branch listing (its

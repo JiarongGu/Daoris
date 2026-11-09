@@ -212,6 +212,7 @@ export const HOME_ENTRIES = [
   row('git-asks', 'run', 'run/git/asks', 'run/git/asks'),
   row('git-checkouts', 'run', 'run/git/checkouts.json', 'run/git/checkouts.json'),
   row('git-library', 'run', 'run/git/library.json', 'run/git/library.json'),
+  row('git-library-leases', 'run', 'run/git/library-leases', 'run/git/library-leases'),
   row('git-home', 'run', 'run/git/home', 'run/git/home'),
   row('git-sessions', 'run', 'run/git/sessions', 'run/git/sessions'),
   row('clock-mark', 'run', 'run/clock.mark', 'run/clock.mark'),

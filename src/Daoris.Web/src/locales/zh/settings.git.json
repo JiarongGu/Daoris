@@ -218,5 +218,6 @@
   "settings.git.reads.reason.configuration": "库不读取的配置",
   "settings.git.reads.reason.unanswered": "库交给 git 的问题",
   "settings.git.reads.reason.failed": "库读取失败",
-  "settings.git.reads.reason.native-missing": "库未安装"
+  "settings.git.reads.reason.native-missing": "库未安装",
+  "settings.git.reads.reason.native-fault": "进程曾在此仓库的库调用中结束，库更新前由 git 读取"
 }

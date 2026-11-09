@@ -1,14 +1,15 @@
 # Generic process steps, landing only a composition of them (PROCSTEPS1)
 
-**Proposed design, round 5, documents only** (2026-11-09). The owner's direction: a workflow's steps are each declared in one focus; a
+**Proposed design, round 6, documents only** (2026-11-09). The owner's direction: a workflow's steps are each declared in one focus; a
 step may do a lot, but today none says what it is focused on, and the landing has no rebase of its own. Then, twice: Daoris runs a
 workflow system, so the steps are generic kinds any process composes, and *landing* is a composition at the workflow level, never
 a step in code. Round 1 (the document at `0422e84b1b`), round 2 (at `fd03c57109`), round 3 (at `fd2c1421c6`) and round 4 (at
 `b62716d462`) were each read by both makers (`docs/2026-11-09-process-steps-reads.md`); round 3 answered round 2's reads in place and
-stated the integration against its code (§2.6, §2.10), and round 4 answered round 3's in §11 to §18. Round 5 answers round 4's reads in
-§19 to §25, which change the sections they name and hold where they differ, rewrites the rows (§7) in place, and says per finding its
-answer and its section in §26. §9 says, per round 2 and round 1 finding, the sequence it closes, the code the answer rests on, its
-proof's row and the census or test that closes its class; §10 keeps the passages rounds 2 to 5 replaced. Read with
+stated the integration against its code (§2.6, §2.10), and round 4 answered round 3's in §11 to §18. Round 5 (at `880e551fe8`)
+answered round 4's reads in §19 to §26; it was read by the independent Opus reader alone. Round 6 answers that read in §27 to §33,
+which change the sections they name and hold where they differ, rewrites the rows (§7) in place, and says per finding its answer and
+its section in §34. §9 says, per round 2 and round 1 finding, the sequence it closes, the code the answer rests on, its
+proof's row and the census or test that closes its class; §10 keeps the passages rounds 2 to 6 replaced. Read with
 `docs/areas/workflows-review-landing.md`, the node
 kit design (`docs/2026-11-06-node-kit-design.md`, every kind one unit under `Workflows/Kinds/<Kind>/`), the land node's design
 (`docs/2026-11-01-land-node-design.md`), D215 (the integration), D228 and D232. Paths are under
@@ -17,7 +18,9 @@ integration, the acceptances, the readers and the deletes again at `56d8498990` 
 together operations, the deliveries, the requests, a chain's advance, the run's keeping and binding, the node states and the
 migration's steps at `9e7ba088df` for round 4; the start's bind and the repository's lock, the git gate and its start asks, the act
 runner, the holders, the tree removals, the together press and settling, the requests' adoption and the carried Accepts at
-`4bef320159` for round 5.
+`4bef320159` for round 5; the doors and their starts, the act runner's judgement, the repository's lock and its takers, the start's
+hold, the pool's undo, the session locks, the git gate's reading of a command, the migration's binding writes and the line's
+admission at `799e28c49e` for round 6.
 
 ## 1. What one `land` does today, and what 2026-11-09 showed
 
@@ -670,7 +673,7 @@ the migration it is a step of (row j).
 
 ## 7. Rows, in order
 
-The rows as round 5 leaves them, rewritten in place; round 4's are the document at `b62716d462`.
+The rows as round 6 leaves them, rewritten in place; round 5's are the document at `880e551fe8`.
 
 1. **PROCSTEPS1a, the records by their rows' ids** (driver, tools; waits on nothing; being built): §2.3's backlog rules and
    post-check in `BacklogMerge` and its twin `mergeByBase`, union's keep-once for a non-blank line both sides added. It serves
@@ -703,10 +706,15 @@ The rows as round 5 leaves them, rewritten in place; round 4's are the document 
    while a step its commit feeds has not settled, pressed Together: refused, said, and bound once that step settled; a member with
    an unsettled delivery or an open request refused the same.
 4. **1d, `resolve`** (driver, modules; its words): the hand-off in its own record (`TreeHandOffs`, §13), written under the tree's
-   landing hold, read by the trees' holders (their reads taking the home) and by `TreeRemovals` under that hold, never by the act
-   journal (§23); the reserved tree, every write or removal of it refused at the git gate but its hand-off's own, by the attempt's
-   `StepAuthority`, which `WorkPerformer` sets and this row first needs (§20, §23); the ask's key exempting the resolver's own turn; the
-   act runner's deadline over its callbacks (§25); the ask, the continue with the settling, the proof, the tries per stop, the
+   landing hold and then the repository's lock alone once the holders are read (§29), read by the trees' holders (their reads taking
+   the home), by `TreeRemovals` under the landing hold and by every start inside its shared hold (`TryStarting` naming its tree, the
+   service's opens asserting the hold, §29), never by the act journal (§23); the run's own step (`StepAuthority`, §28), which this row
+   first needs: carried on every door's start and set by the kit's door runner (`TidyDoor`, `LandingDoor`, `PushDoor` and the
+   `rebase`'s door moved onto it), by `IntegrateStart` around each attempt's answer, by `WorkPerformer`, and by the hand-off for its
+   resolver; the reserved tree, every write or drop touching its folder or the refs it covers refused at the git gate but its
+   hand-off's own (§23, §30); the ask's key exempting the resolver's own turn, its session lock and let-go under the row's authority
+   (§29); the act runner's deadline over its callbacks, the gate handing a callback's git to the act's launch and the close awaiting it
+   (§25, §32); the ask, the continue with the settling, the proof, the tries per stop, the
    restoration with the resolver's HEAD on the edits ref, the `uncommitted` problem with its blobs, one asker to commit
    (`CommitAskers`, §13), the carried Accept, `rebase-tail`, the card's wait. Proof: a code conflict asked once with its files and hunks and
    resolved; a four-stop replay asking each stop as its own try 1; a records stop after it settled with no ask; the line moving 50
@@ -724,8 +732,15 @@ The rows as round 5 leaves them, rewritten in place; round 4's are the document 
    a removal that took the landing hold first, the hand-off then using a tree of Daoris's own; a planted door's
    `worktree remove --force` and `switch` in a reserved tree refused at the gate, before and after a restart with the row open; the
    resolver's ask starting in its reserved tree, and the person's word to that session waiting, said, until the row closes;
-   `ActJournalCensusTests` with its run half, red on an `After` awaiting a turn that never ends, the act stopped at its deadline and
-   its claim closed.
+   a start racing the reservation in both orders: the start holding first, the hand-off reserving nothing and then finding the session
+   a holder; the hand-off first, the start held at that look and then waiting on the row, said; a start in a reserved tree through each
+   of `TryStarting`'s six callers held, and a planted service open with no hold throwing; the resolver's `worktree lock` at its start
+   and `unlock` at its end passing the gate, the look's let-go of a reserved tree leaving its lock, said; `update-ref
+   refs/heads/<reserved branch>` and `worktree unlock <tree>` from the checkout's root refused; `StepAuthorityCensusTests`' source half
+   and its door half, red on a planted fifth setter, on a door running its work through its own `Task.Run`, and on a door kind whose
+   work reads no authority; `ActJournalCensusTests` with its run half, red on an `After` awaiting a turn that never ends, the act
+   stopped at its deadline and its claim closed, and on an `After` starting git unawaited, its git run in the act's job and awaited by
+   the close, and one started after the close refused.
 5. **1e, `check` fed, then `merge`** (driver; their words). First `check`'s `commit` in and out, so `merge`'s proofs run through it:
    a check on a rebased commit, its failure stopping the `merge`, a target moved while it runs rebinding nothing. Then `merge`: the
    methods and targets; into the line, the request at the one door with its expected tip and invocation, never batched, `behind` at
@@ -736,7 +751,11 @@ The rows as round 5 leaves them, rewritten in place; round 4's are the document 
    §21) and `merge-behind` over both; `root-dirty`; into a branch, today's facts by the target's kind
    (`LandingAdvance` re-homed, §15) and the landing provenance; the together re-read, and the operation's attempt written and settled
    by the head's `merge`, the look's settling of `landing` and `uncertain` moved into it with an unpromoted close read as unmade (§14,
-   §22); a line request dropped or handed back by a decide failing to the person's task (§24); the press waiting on its attempt. Proof:
+   §22), its writers asserting the head's `merge` by authority (§32); a line request dropped or handed back by a decide failing to the
+   person's task (§24); the line's admission under the landing hold and the lock shared, both let go before the line's run is sent off
+   the flow, `IntegrationLines.RunAsync` asserting no hold (§31); the press waiting on its attempt and answered from the run's record
+   by its `merge`'s end or the node the run stands at, `LandOutcomes` no longer read by it (§33); a withdrawal at a moved tip keyed by
+   the tree's tip and the start's (§33). Proof:
    each method onto the line and onto a branch; for each method onto the line, the line moved between the check and the admission,
    between the admission and the form, and between the form and the promotion, and another epoch's request queued beside it: `behind`
    or formed again, never batched, nothing unverified lands, and through the evaluator back to `rebase` and `check` and on to one
@@ -753,17 +772,26 @@ The rows as round 5 leaves them, rewritten in place; round 4's are the document 
    nothing written, or the `merge` admitted and the press refused, said; a planted delivery start outside the hold throwing; a `merge`'s
    request dropped by the steward and one handed back by a decide, each failed with its words and reaching the person's task, and
    one a decide lands `merged`; the orphan-write census by its recorder (§25), red on the head's call to `TogetherOperations.Landing`
-   removed and on it moved under a condition no sequence meets; a
+   removed, on it moved under a condition no sequence meets, and on a member's `merge` calling it (§32); a
    pattern branch checked out waiting, said, and going on once switched off, a completed one ending `completed` and routed `back` to
    its `rebase`, one moved by another hand failing `moved`, one Daoris never made failing `exists`; a release promotion onto a
-   standing `release` advancing it; a branch `merge`'s landing record admitting its `integrate`'s request.
+   standing `release` advancing it; a branch `merge`'s landing record admitting its `integrate`'s request; a line admission whose
+   request the same process then promotes, never refused by its own hold, and a planted line run reached under a hold throwing; each
+   end of a `merge` (closed already, gone, superseded or undone, nothing to land, a gate's wait, a moved tip, a dirty carry-on) giving
+   the press an outcome the desk words, never *landing* where nothing will land, and *landing* only while its delivery is prepared
+   (WFREVIEW3a); a refusal at a moved tip keyed by the tree's tip and the start's, so a tree moving T1→T2→T1 is tried again at T1
+   (WFREVIEW3l).
 6. **1f, `tidy` and the branch removals** (driver; its words): `follow` writing the run's own move, `branch`, `tidy-held`, the step
    refs left to the run's end; `BranchRemovals` (§12, §20), the one release of a branch's removal, read under the repository's
    `TreeLock` held alone through the removal, refusing an open run's branch to every remover but that run's own step read from the
-   flow's `StepAuthority`; `RunGovernance` with its writers asserting the lock, the start's bind and a run's reopening under it shared;
-   the git gate's `Unbranches` and its table of write commands, refusing a branch's removal without a release, the opening's undo
-   through it; a delivery's end written by the release and the next generation read from it; the `merge`'s end of its branch on
-   `completed` (§21). Proof: a free tree follows and
+   flow's `StepAuthority`, its node active on that attempt and its kind declaring the branch its own (`IEndsBranches`, §28);
+   `ActPlan.Judge` and `Make` returning their releases, `ActRuns` running the effects under them (§28); `RunGovernance` with its five
+   inputs, the assertion at each one writer by the governing fields it changes, *Keep* passing by what it writes, and the migration's
+   binding writes routed through the bindings' writer under its run (§32), the start's bind and a run's reopening under the lock
+   shared; the git gate's one table (`GitCommands`), total by `GitCommandsCensusTests` and the strict run, refusing a drop without a
+   release, `MayWrite`, the bounds and the waits reading its columns (§30); one taker of the lock alone (§31); the opening's undo under
+   the flow's hold, the pool's taking it alone where it has none (§31); a delivery's end written by the release and the next generation
+   read from it; the `merge`'s end of its branch on `completed` (§21). Proof: a free tree follows and
    the pass after it lapses nothing, the review's acceptance included; a running tree says why it stays; a pushed branch never
    rewritten; a squash run with a `branch` tidy and `git gc --prune=now` between every pass finds every commit a later step or an
    unsettled attempt reads; both interleavings of a start's bind and a release of its branch: the bind first, the removal kept, said
@@ -778,7 +806,21 @@ The rows as round 5 leaves them, rewritten in place; round 4's are the document 
    by it with its recovery ref and end row, the `rebase` onto the line replaying step 2's commits alone, a fresh P, R2 admitted, step
    1's delivery row unchanged, and a restart between the end and the `rebase`; the same in *A pull request* with step 1's pull request
    merged before step 2, its `tidy` later refused at the fresh P's tip; a completed P checked out in a tree: the `merge` waiting,
-   said, with no outcome.
+   said, with no outcome. Round 6's: the run's own `tidy` at its end node ending its chain's parts and the run then ending; the
+   `integrate` at `conflicted` ending its request branch (its fixture closing the request with h's word, h proving it again at its own
+   close); the `merge` at `completed` ending P under its git lock, the release reusing that hold; a release read in `Judge` reaching its
+   effect step, and a removal step whose judgement returned none refused at the gate; a door's task that outlived its node's stop not
+   exempt; `StepAuthorityCensusTests`' end half over every `IEndsBranches` kind, red on one whose door drops the authority; *Keep*
+   outside the lock passing and a planted governing write outside it throwing; `RunRebindsStep`'s rebinds through the bindings' writer
+   under the migration; `BranchOwnershipCensusTests` red on `RunRebindsStep.cs:41` before it is routed and on a planted sixth input;
+   the pool's make and take undone under the start's hold, a takeover under the lock alone, and one finding it held leaving the claim
+   for the next look; each drop refused without a release and passing with one: `update-ref -d HEAD`, `branch -m <new>` with no old
+   name, `symref-delete` and `symref-update` lines, a fetch pruning by the repository's configuration into a mirror refspec,
+   `branch -f`, `branch -C`, `switch -C` and `worktree add -B`; `merge-tree`, `diff-tree`, `diff-index`, `grep`, `count-objects` and
+   `check-ref-format`, and `notes`, `replace`, `submodule` and `maintenance` by their verbs, started and never refused for want of a
+   row; `GitCommandsCensusTests` red on a planted command with no row, on a command held in a variable, and in the strict run on
+   `notes add` with its row removed; a planted direct `TryWriting` in a flow holding the lock red, and a take alone in a flow holding
+   it shared throwing.
 7. **1g, the editor, the chart and the run view** (web, contracts, and the declarations h wires): the `Git` group, each kind's
    inspector and inputs, the `rebase` tail and the `merge`'s `behind` way added in one change, the chart's ports and `back` ways, the
    run view's words and waits, in English and Chinese, the generated contracts and types; and what h adds, declared here arriving as
@@ -798,7 +840,7 @@ The rows as round 5 leaves them, rewritten in place; round 4's are the document 
    same-tip asking, the request branch's end, its outcome waiting for the removal, §12, nothing told, no disposition for a run's
    request, *rebase it* retired with its route verb and the page's button); `TurnCarries` re-homed onto `WorkTreeReads` and
    `resolve`'s commit words, standing down by `CommitAskers`, and `SessionWaits.CarriesOn` asking it, `CarriedAccepts` and its file
-   deleted (§25); the `land` kind, `LandPerformer`, `LandTries`, `LandCarry`,
+   deleted (§25); the `land` kind, `LandPerformer`, `LandOutcomes` (§33), `LandTries`, `LandCarry`,
    `RebaseTelling`, `LandingRules`, `IMakesLanding`, `TogetherAccepts` (its re-read re-homed in the head's `merge`) and the
    arriving mark with its refusal removed; the press waiting on the `merge`; the area document rewritten. Proof: every shipped
    file judged by the save; §5's table over every `land` state and every preset, a custom
@@ -829,9 +871,11 @@ The rows as round 5 leaves them, rewritten in place; round 4's are the document 
    adoption's write and the attempt's, the request closing meanwhile, found by its invocation through the adoption; the node's stop
    letting an adopted request go, never dropping it; a waiting attempt at the upgrade given its adoption, the pre-h request keeping
    its requester and no invocation; a went-on resume of a session whose run's `rebase` will read its tree carried on by its `resolve`
-   alone; the residue census by the home's declared layout, red on `carried-accepts.json` before its row and on a planted file name;
-   `GraphInvarianceTests` over every shipped preset, the two-`merge` release graph and the converted fixtures, red on the planted
-   selection by `"landing"`, by list order and behind a helper.
+   alone; the residue census by the home's declared layout and the repository's `refs/daoris/` namespaces and configuration keys, red
+   on `carried-accepts.json` before its row, on a planted file name, on a planted `refs/daoris/land/<run>` and on a planted
+   `daoris.land.<run>` key (§32); `GraphInvarianceTests` over every shipped preset, the two-`merge` release graph and the converted
+   fixtures, every id the contract marks renamed, red on the planted selection by `"landing"`, by list order, behind a helper and by a
+   wire's id (§32).
 9. **1i, the installed window** (the steward): `dev-line` on the install through a day's rows: records conflicts settled with no
    session asked, a code conflict resolved within its bound, a resolve cut by a restart and taken up again, a restart mid-`merge`, a
    converted run carried.
@@ -969,6 +1013,15 @@ Round 2's answers, kept as they were given; where round 3 changed one, §9.1 say
   the cut-over: g. A measurable floor for j: §7.
 
 ## 10. Earlier rounds, superseded where a later one changes them
+
+Round 5 is the document at `880e551fe8`. Round 6 rewrote its §7 in place; the passages of §2 to §26 that round 6 changes stand as
+written above, and where they differ §28 to §33 hold: §20's `WorkPerformer` as the one setter of `StepAuthority` (§28); §20's table
+of removals beside `RefSnapshot.MayWrite`, and its refusal at run time of a command the table does not class (§30); §20's three
+inputs of `RunGovernance` and its writers asserting the lock at every write (§32); §20's opening's undo under the start's shared hold
+alone (§31); §22's judgement into the line under the landing hold and then the git lock (§31); §23's row written under the landing
+hold alone, the gate keyed by the folder git runs in, and the resolver's commands kept off the gate as a whole (§29, §30); §25's
+callbacks starting git through the act's launch by their own choice, its residue by the home's layout alone, its invariance by node
+ids alone, and its recorder by presence alone (§32); and §26's second open item, which §30 closes.
 
 Round 4 is the document at `b62716d462`. Round 5 rewrote its §7 in place; the passages of §2 to §17 that round 5 changes stand as
 written above, and where they differ §20 to §25 hold: §2.7's caller "named by run, node and attempt", §12's release reading the open
@@ -1601,3 +1654,298 @@ Each finding of round 4's reads, its answer and its section; the proofs are in �
   by its name.
 - A door that writes a session's tree without reading the holders still writes beside a running session: the gate keeps reserved trees
   only, and the session's half is not designed here.
+
+## 27. Round 6: what it changes, and the code it rests on
+
+Round 6 answers the independent Opus reader's read of round 5 (the last section of the reads), read against the code at
+`799e28c49e`; Codex's read of round 5 did not run. Each answer is placed where a member not yet found meets it: the run's own step
+carried on each door's start and set where the door's work begins, and a release returned by the act's judgement, never set inside it
+(§28); the reservation read inside the start's shared hold, which every session start takes (§29); one table of git's commands, total
+by a census at test time, reading what each start drops and the trees and refs it touches (§30); one taker of the repository's lock
+alone that reuses the flow's own hold, and no hold carried into the line's run (§31); and the census leaks closed at the writers, the
+gate and the declared ids (§32). Two open defects of the land path, WFREVIEW3a and 3l, are answered by the `merge` kind's ends (§33).
+§28 to §33 change the sections they name and hold where they differ (§10 lists them); §7 is rewritten in place; §34 says, per finding,
+its answer and its section, and what stays open by construction.
+
+## 28. Round 6: the run's own step, carried on each door's start (§20)
+
+**The gap (N1).** §20 made `WorkPerformer` the one setter of `StepAuthority`, but it starts only `check` (`CheckNode.cs:38`) and
+plugin steps (`PluginStep.cs:60`). A `tidy` is started from `NodeRunKeeping.StartDoors` (`:17-26`) through `TidyNode.Keep` (`:51-55`)
+on its door, whose work runs in a `Task.Run` under `ExecutionContext.SuppressFlow` (`TidyDoor.cs:37-54`), its `TidyStart` (`:6`)
+naming no run, attempt or invocation; `integrate` keeps its own attempts (`IntegrateStart.cs:147-165`, reached from
+`NodeRuntime.cs:507`) and answers them at every pass (`:174-187`); `merge` is a door kind, as `land` is. So the run's own `tidy` at its
+end node finds P governed by its own run and keeps it, `partly` at every pass, and the run never ends; an `integrate` waits at
+`conflicted` for ever (§12), and a `merge` at `completed` (§21). And a release set flow-scoped inside `ActPlan.Judge` (`ActRuns.cs:130`),
+an awaited callee, never reaches the effect steps its caller runs (`:185`): what a callee sets in its flow does not flow back.
+
+**Carried on the start, set where the work begins.** `StepAuthority` (run, node, attempt, and the attempt's invocation where its kind
+keeps one, else the door's start key) has no setter: a flow gets one only through `StepAuthority.RunAsync(authority, work)`, which runs
+`work` under it. Its callers are four, each where a kind's work begins:
+
+- **The kit's door runner** (`NodeDoorRuns`, under `Workflows/Kinds/`). Every door kind's start is a `DoorStart` carrying its
+  authority, made by `NodeKept` from the run, the node and its active status (and on the pass by `NodeStarting`), so a door's start
+  without one does not compile. The runner is the one way a door's work leaves the pass: idempotent by the start's key, refused while
+  the drain says no, the pass's flow suppressed, and then the work run under `StepAuthority.RunAsync(start.Authority, …)` inside the
+  task. `TidyDoor`, `LandingDoor` and `PushDoor` each keep their own copy of the first three today (`TidyDoor.cs:31-58`,
+  `LandingDoor.cs:26`, `PushDoor.cs:28`); they become the runner's callers, and `rebase`, `resolve` and `merge` are written on it.
+- **`IntegrateStart`**, around each attempt's answer (`AnswerAsync`), from its start and its reconcile alike, by that attempt.
+- **`WorkPerformer`**, for `check` and plugin steps, as §20 has it.
+- **`TreeHandOffs`**, for its resolver: the hand-off's ask and the session lock of its tree (§29).
+
+**The release reads the authority current, and the kind's own declaration.** It exempts a governed branch only where the
+authority's node is active on that attempt in its run's record, read under the lock, and the node's kind declares the branch its own.
+Each kind that ends a branch declares what it ends (`IEndsBranches`, in its own folder): `tidy` its chain's parts by its input and, by
+its follow, its work's branch; `integrate` its request branch; `merge` its own target on `completed`. The release asks the kind of the
+authority's node, keeping no table of its own. So a door's task that outlives its node's stop is no longer exempt, and a kind added
+later that ends a branch declares it there or meets the refusal, said with its own run.
+
+**The judgement returns its releases.** `ActPlan.Judge` returns an `ActJudgement`, its refusal or the releases its reads made, and
+`Make` returns the releases its steps need beside them; `ActRuns.RunAsync` runs the effect steps and the close under them
+(`BranchReleases.RunAsync(releases, …)`), so the gate meets them in the flow of every step's launch. A release, like an authority, has no
+setter, so a callee cannot set one for its caller, and the shape that lost it does not compile.
+
+**The census, `StepAuthorityCensusTests`**, in two halves. Source: `StepAuthority.RunAsync` is called by the four alone, and
+`ExecutionContext.SuppressFlow` and `Task.Run` under `Workflows/Kinds/` only by the door runner; red on a planted fifth caller and on a
+planted door that runs its work through a `Task.Run` of its own. Execution: every `IStarts` kind of `NodeKit.Built` whose door is wired
+is started on a fixture whose work reads `StepAuthority.Current`, equal to its start's; and every `IEndsBranches` kind runs its end over
+a fixture run that governs the branch, which goes; red on a planted `IEndsBranches` kind whose door drops the authority (kept, said
+with its own run). Proof: d for the setters and the source half, f for the ends (§7).
+
+## 29. Round 6: the reservation read inside the start's hold (§23)
+
+**The gap (N2).** §23 wrote the hand-off's row under the tree's landing hold, which no start takes. A start's exclusion is the
+repository's `TreeLock` held shared, from before it chooses its tree (`GrowTree.cs:96-98`) until its record is open
+(`OpenRecord.cs:122`), as `TreeLock.cs:13-17` defines it; and a start whose record is not yet open is no holder
+(`TidyHolders.cs:62-83`). So the person's word starts S, which reads no row; the hand-off reads the holders, writes its row, detaches
+the tree and rebases; S's agent runs in the tree mid-rebase, and at the restoration S's commits and edits go to the edits ref and the
+abort resets the tree, so they leave S's branch.
+
+**The reservation takes the start's exclusion.** The hand-off takes the tree's landing hold, then the repository's lock alone (through
+the one taker, §31, its holder word `reserving`), reads the holders (the home passed, §23), writes its row (`reserved`) and lets both
+go; only then does it prepare the tree. As a replay asks the ledger inside its hold (`TreeLock.cs:13-17`), whichever comes first the
+other sees. A hand-off that finds the lock held writes nothing and is asked again at the next pass, said ("Waits: a session is starting
+in `daoris`").
+
+**Every start reads the row in its hold.** `TreeLock.TryStarting` names what it starts in (`StartIn.Tree(tree, key)`, `StartIn.Fresh`
+for a tree it opens, `StartIn.None` for a hold that starts no session, as `TogetherGuards.cs:93`'s), and once it holds reads
+`TreeHandOffs.Of(tree)`: a row whose key is not the start's gives no hold, said ("Waits: run `r-12`'s `resolve` holds `wt-3` until
+15:02"). Its six callers (`GrowTree.cs:28, 96`, `OpenRecord.cs:27`, `ChatStarts.cs:201`, `GoingOnRun.cs:170`, `TogetherGuards.cs:93`)
+each name it, and a start not yet written cannot take the hold without naming its tree; the service's opens (`OpenSessionAsync`,
+`OpenSessionMovingAsync`) assert that their flow holds the start's hold for the tree they open in (the shared hold registered in the
+flow, §31). A start's bringing up to date before its hold (`GrowTree.cs:90-93`) reads the row first, so it does not write a reserved
+tree only to be held; its git would be refused at the gate in any case (§23).
+
+**Both orders.** The start first: the hand-off cannot hold the lock alone while S holds it shared, so it reserves nothing; once S's
+record is open the holders name S, and the hand-off does as §2.4 point 2 says of a tree a session runs in. The reservation first: S
+cannot hold the lock while the hand-off holds it alone, and is carried to the next look; there it holds, reads the row and waits, said,
+until the row closes.
+
+**The resolver's own start and lock.** The row records the ask's key and, at `asked`, the resolver's session. The start carrying the
+key is held by no row and runs under the row's authority (`TreeHandOffs.AuthorityFor`), so its `worktree lock` (`OpenRecord.cs:116`,
+`SessionLocks.HoldAsync`, `:59-72`) passes the gate; the session's let-go (`SessionLocks.LetGoAsync`, `:78-84`) runs under the
+authority the row gives that session while it is open. Both take the authority as a parameter, so each caller passes the row's or
+none. The look's let-go (`LetGoUnheldAsync`) reads the reserved trees among the holders (§23) and leaves their locks, said; were it to
+try, the gate refuses it. Proof: d (§7).
+
+## 30. Round 6: one table of git's commands, total by a census (§20, §23)
+
+**The gaps.** §20's table missed shapes that drop a branch: `update-ref -d HEAD`, which git follows to the branch HEAD names;
+`branch -m <new>`, which renames the current branch, named by no argument; `symref-delete` and `symref-update` lines in
+`update-ref --stdin`; a fetch that prunes by configuration; and overwrites that drop a branch's commits (`branch -f` and `-C`,
+`switch -C`, `worktree add -B`). And it refused what Daoris needs: `MayWrite` reads every command it does not know as a write
+(`RefSnapshot.cs:250`), so `merge-tree` (eleven sites), `diff-tree`, `diff-index`, `grep`, `count-objects` and `check-ref-format`, and
+`notes`, `replace`, `submodule` and `maintenance`, would each be refused at run time until given a row.
+
+**One table, three classes.** `GitCommands` (`Workplace/Git/GitCommands.cs`) is the one table of the git commands Daoris starts, a row
+per command and, where git takes one, per verb. `RefSnapshot.MayWrite`, `GitBounds`' questions (`GitBounds.cs:25-31`) and
+`GitStartAsks`' local writes (`:13-17`) read their columns from it, so a command gets its row once (D228). Each row classes a start,
+read from its arguments, its input, the folder it runs in and the effective configuration:
+
+- **Read**: nothing written but objects. `rev-parse`, `rev-list`, `log`, `show`, `diff`, `diff-tree`, `diff-index`, `diff-files`,
+  `cat-file`, `ls-files`, `ls-tree`, `for-each-ref`, `show-ref`, `merge-base`, `name-rev`, `describe`, `blame`, `cherry`, `shortlog`,
+  `grep`, `count-objects`, `check-ignore`, `check-attr`, `check-ref-format`, `var`, `version`, `status`, `ls-remote`; `merge-tree`,
+  whose `--write-tree` writes objects no ref holds; `config`'s reading forms, `branch`'s listing forms, `symbolic-ref` with one name,
+  `worktree list`; `notes list`, `show` and `get-ref`; `replace -l`; `submodule status` and `summary`.
+- **Write**: refs, the index, a tree or configuration, never by its shape a branch's removal or a move that drops its commits. A
+  commit, merge, cherry-pick, revert or `am` moving the branch HEAD names to a descendant; a branch, tree or tag created; a switch of
+  HEAD; a `rebase` on a detached head (the `rebase` kind's and the hand-off's); `update-index`, `read-tree`, `add`, `rm`, `mv`,
+  `apply`, `restore`; `worktree add` without `-B`, and `lock`, `unlock`, `move`, `remove` and `repair`, each with the tree it names;
+  `notes` `add`, `append`, `copy`, `edit`, `merge`, `remove` and `prune`, which write under `refs/notes/` alone, where git places any
+  notes ref; `replace` with a replacement, `-d` or `--graft`, which write under `refs/replace/` and change what every later read of
+  those objects answers; `submodule` `update`, `init`, `sync`, `add`, `deinit` and `absorbgitdirs`, which write `.gitmodules`, the
+  configuration and the submodules' own repositories; `maintenance run`, `gc`, `prune`, `repack`, `pack-refs`, `commit-graph` and
+  `multi-pack-index`, which write objects, packs and refs that are no branch (`refs/prefetch/`); a fetch or a push whose destinations
+  reach no branch here. `maintenance register`, `start`, `stop` and `unregister` write the person's own configuration and scheduler:
+  their row says Daoris starts none, and a source naming one fails the census.
+- **Drops**: may remove a branch or move it to a commit that does not hold its tip. The row names the branches. `branch` with `-d`,
+  `-D`, `--delete`, `-m`, `-M` or `--move` (the old name, or the folder's current branch where only the new one is given, and the new
+  one under `-M` where it stands), `-C`, `-f` or `--force` (the name overwritten); `switch -C`, `checkout -B` and `worktree add -B`
+  (the name); `update-ref -d` and `update-ref` to the zero id, followed through a symbolic ref unless `--no-deref`, so `-d HEAD` names
+  the branch HEAD names in the folder; `update-ref <ref> <new> <old>` of a branch where `<new>` does not hold `<old>`, which the gate
+  reads before the start; `update-ref --stdin` lines `delete`, `update` to the zero id or to a commit not holding the old one,
+  `symref-delete` and `symref-update` (the ref named, followed unless `option no-deref`), and a verb the reader does not know, read as
+  dropping its first field's ref; `symbolic-ref -d`, and `symbolic-ref` naming a branch first; `reset` to a commit, `commit --amend`,
+  `rebase` on a branch with its `--continue` and `--skip` (the branch its state names), `cherry-pick --abort`, `revert --abort`, and
+  `pull --rebase` or `pull` under `pull.rebase` (the folder's current branch, where the target does not hold its tip); `filter-branch`
+  (each ref it rewrites); `fetch`, `pull`, `remote update` and `remote prune` whose effective refspecs (their arguments, else
+  `remote.<name>.fetch` and `remote.<name>.mirror`) reach `refs/heads/`, forced (`+`, `--force`, `--update-head-ok`) or pruned
+  (`--prune`, `-p`, `--prune-tags`, `-c fetch.prune`, `-c remote.<name>.prune`, or the repository's or the person's configuration of
+  those, unless `--no-prune`): every branch the destination's pattern matches; `push` to a remote that is this repository (`.`, or a
+  path whose common directory is its own) deleting, forcing, mirroring or pruning a destination under `refs/heads/`.
+
+A drop needs a release for each branch it names, at the commit it verifies, as §20's removal does; a drop that verifies no commit (an
+`update-ref` of a branch with no old value) is refused. Daoris's own drops are few, and each carries its release: the journalled
+delete, the person's ref acts, the opening's undo, a history edit's rewrite (its `Make` returning the releases, §28), the `tidy`'s
+follow and the `merge`'s end on `completed`.
+
+**Total by a census at test time.** `GitCommandsCensusTests` reads every git start in the source, each call of the gate's seams
+(`WorkingTree.GitAsync`, `RunGitAsync`, `ActLaunch.HeldGitAsync`, `RefTransaction`'s verbs, `ActStepPlan`'s kinds): its command and
+verb are literals, or constants of a declared set, each with its row; red on a planted `["frobnicate", …]` and on a start whose command
+is a variable. Its run half: the tests run the gate strict, so a start whose command or verb has no row fails the test that starts it;
+red on a fixture starting `notes add` with its row removed. At run time the gate refuses nothing for want of a row: the census is
+total over what Daoris starts, so an unknown command fails the census, never a person's run.
+
+**What a start touches, for the reserved tree.** The ask (`GitStartAsks.For`) reads from the table, beside `Unbranches`, the trees a
+start touches (the folder it runs in, `-C`, `--work-tree`, and the tree a `worktree` verb names) and the refs it writes or drops,
+wherever it runs. A row reserves its tree's folder and the refs it covers, the tree's branch and the node's edits ref; a write or a
+drop touching either is refused unless its flow carries that hand-off's authority. Red on `update-ref refs/heads/<reserved branch>` and
+on `worktree unlock <tree>`, each started from the checkout's root. Proof: f for the table, d for the reserved tree (§7).
+
+## 31. Round 6: holds that never refuse their own write (§20, §22)
+
+**One taker of the lock alone.** A second open of `TreeLock` in one process is refused (`TreeLock.cs:34-40`), so a flow that holds it
+and asks again refuses itself. `TreeLock.Alone(home, checkout, repository, by)` is its one taker alone: it returns the flow's own
+alone hold, borrowed (`HeldHere`, its dispose doing nothing), or takes it; `TryWriting` and `TryReplaying` become private to it. A take
+alone in a flow that holds the same checkout shared throws, since at run time it would refuse itself. The start's shared hold is
+registered in the flow as an alone one is (`LockWaits.Holding`), so `TreeLock.InFlow(home, checkout)` answers either, which the
+governing writers' assertion (§32), the service's opens (§29) and the line's entry read. Census: no source outside `TreeLock` calls
+`TryWriting` or `TryReplaying`; red on a planted direct take in a flow that holds the lock. So a release reached from a flow already
+holding the lock (the `merge`'s end on `completed` under its git lock, a removal under an act's hold) reuses it, as `ActRuns` does
+today (`ActRuns.cs:119-124`).
+
+**A line admission that does not refuse its own promotion.** A press's admission runs the line inline today
+(`IntegrationPresses.cs:38`), and the promotion takes the lock alone (`IntegrationPromotes.cs:365`), so a hold kept across the
+admission would refuse it in this very process, as `TreeMerges.cs:166-168` says. The `merge` into the line holds the work tree's
+landing hold and the repository's lock shared (the request's write governs a branch, §32) across its judgement and the request's
+admission, writes the request, lets both go, and sends the line's run off the flow to the transport, as an `integrate`'s request is
+sent (`IntegrateStart.cs:238`); it never runs the line itself. `IntegrationLines.RunAsync` asserts that its flow holds no `TreeLock` of
+the repository, shared or alone, since its promotion takes it; a path that reaches the line holding one throws at its first test. Into
+a branch the `merge` holds the landing hold and the lock alone through the `update-ref` and the record (§22), and reaches no line.
+
+**The pool's opening undo, under the lock.** `TreeOpenings.UndoAsync` takes the flow's hold as a parameter, so each caller holds one.
+A pool make or take reached from a start runs it under the start's shared hold, beside which no release passes, and the branch it made
+a moment ago is recorded by no run. One reached with no hold (`TreePoolMakes.cs:55, 62`, `TreePoolTakes.cs:112`,
+`PoolTakeovers.cs:117`, a takeover from the look among them) takes the lock alone through the one taker first; one that finds it held
+leaves the claim at its phase for the pool's next look, as a takeover held does today. Proof: e for the line, f for the taker and the
+undo (§7).
+
+## 32. Round 6: the census leaks, closed at the writers, the gate and the declared ids (§20, §25)
+
+**Ownership.** `RunGovernance` reads five inputs, each declared with its writers: the bindings; the runs' ends; the units and parts; the
+branches an open run's `merge` made (the delivery store's rows of a branch delivery, and `landings.json`'s record and advance naming
+them); and the requests an open run's `integrate` asked or adopted (the integration store's requests by their asking invocation and
+`integration_adoptions`, §24, read by the attempt's key until h writes those). The assertion sits at each input's one writer and fires on
+a write that changes what a run governs: the writer compares the record's governing fields before and after (a binding's run,
+repository, workspace and units; a record's `Ended`; a part's tree and branch; a delivery's ref; a request's branch and asker), as
+`NodeRecordFiles.Edit` compares `Ended`, and throws where the flow holds neither the repository's lock, shared or alone
+(`TreeLock.InFlow`), nor the home's migration. The person's *Keep* (`WorkflowRunBindings.cs:192-198`) writes `Kept` alone, which no
+release reads, so it passes with no hold, by what it writes. The migration's binding writes (`RunRebindsStep.cs:41`,
+`BindingFilesStep`, h's conversion) go through the bindings' one writer (`WorkflowRunFiles.Write`, taking the migration's write as
+its sink, so the salvage copy is still kept) under the migration's run, which holds the home's lease before anything reads the home
+(`HomeMigration.cs:15-18`), so no start or release runs beside it. `BranchOwnershipCensusTests` reads each input's paths and tables
+and finds every write of them in the source, each its input's writer: red on `RunRebindsStep.cs:41`'s `run.Write(path, …)` until it
+is routed, on a planted sixth input with no writer, and on a planted governing write outside any hold; a *Keep* outside the lock
+passes.
+
+**Journal.** An `After` that starts git without awaiting it returns within its deadline, its git running after the act closed and
+outside the lock. `ActRuns` runs each callback in a flow marked with its act's claim, and the gate hands a git started in that flow to
+the act's launch (`ActLaunch.HeldGitAsync`), so it runs in the act's job; the act closes only once every git its callbacks started has
+exited, bounded by the callback's deadline, past which the job's processes are ended as a step's are; a start in that flow after its
+act closed is refused. A callback leaves the flow only by suppressing it, which §28's census forbids outside the door runner and
+`MachineFacts.cs:538`. Red on the planted `After` starting `WorkingTree.GitAsync` unawaited: its git runs in the act's job under the
+act's lock, the close waits for it, and one started after the close is refused.
+
+**Residue.** The census's members gain the repository's own layout: every ref namespace Daoris writes under `refs/daoris/` (each
+writer's literal prefix: the step refs, the act refs, the recovery refs, the edits ref) and every git configuration key it writes (each
+key or section passed to `config` in a writing form, read through the table's `config` row). Each has a row in the conversion's table;
+the captured home's repositories are scanned beside its files, every ref under `refs/daoris/` and every key in a Daoris section matched
+to a row. Red on a planted `refs/daoris/land/<run>` writer and on a planted `daoris.land.<run>` key, each before its row.
+
+**Invariance.** `GraphInvarianceTests` rename every id the graph's contract marks as one (the nodes', the wires', and any a later field
+adds), read from the contract's schema rather than a list, and list the nodes and the wires in another order. Red on
+`Wires.Single(w => w.Id == "d4")`.
+
+**Recorder.** Each write member §14 names declares its writer by authority and asserts it: `TogetherOperations.Landing`, `Correlate`
+and `Settle` throw unless the flow's `StepAuthority` names a `merge` of the operation's head's run (the operation records its head),
+and the `merge`'s settling at the driver's start runs each attempt under that attempt's authority. The recorder keeps the authority
+beside each call and fails a call from another writer. Red on a member's `merge` calling `TogetherOperations.Landing`, beside round 5's
+red on the head's call removed.
+
+**Reserved-tree gate.** Keyed by the trees and refs a start touches (§30). Red on a write to the reserved branch's ref and on
+`worktree unlock <tree>`, each from the checkout's root. Proof: d for the journal and the reserved tree, e for the recorder, f for
+ownership, h for the residue and invariance (§7).
+
+## 33. Round 6: a press answered by its `merge`'s end, and a moved tip keyed by both tips (§2.6)
+
+**The press's outcome (WFREVIEW3a).** Today a press that waits on the performer reads an in-memory table the performer fills only after
+`trees.LandAsync` returns (`PerformedWaits.cs:13-26`, `LandOutcomes.cs:10-21`), so a closed land (already, gone, superseded or undone),
+nothing to land, a gate's wait, a moved tip and a dirty carry-on keep nothing, and the press says *accepted; landing* where nothing will
+land (`TreesLandDesk.cs:164-166, 188`). In the composition the press waits on the attempt of its `merge` it started (§2.6), and its
+answer is read from the run's record, never from a table a performer fills: the `merge`'s settled outcome, or, while none it started
+has settled, the node the run stands at with that kind's wait (§2), which the record always holds. Each end is one shape the desk words:
+`merged`; `held`, already on the target or nothing to land (the `rebase` `ready` at the target's tip); `behind`; failed `exists`,
+`moved` or a hook's refusal; `completed`; withdrawn by the judgement, naming what moved (the work's tip, the quest's submission, the
+run stopped or superseded, the landing undone); a gate's wait (the `review` or `opinion` before the `merge`, on the person); the
+`rebase`'s `uncommitted` with its `resolve` asking (the dirty carry-on, which `TreesLandDesk`'s `Carried` reads from that ask); and
+`root-dirty`. *Landing* is said only while the `merge`'s delivery is prepared and unsettled, and a press past its bound answers with the
+node the run stands at. `LandOutcomes` goes with `LandPerformer` at h.
+
+**A moved tip, keyed by both tips (WFREVIEW3l).** Today a refusal at a moved tip is kept with the run's tip (`LandPerformer.cs:187`),
+so a tree that moves T1→T2 and back to T1 with the same status is not tried again until a press. The `merge`'s judgement that finds
+the work moved withdraws its attempt and records both tips on it: the tree's tip it read and the input's tip its start was made from.
+The node starts again once the tree's tip differs from the one recorded: back at T1 it is tried again, and at T2 the moved input
+rebinds it, as any does. Proof: e (§7).
+
+## 34. The reads answered (round 6)
+
+Each finding of the independent Opus read of round 5, its answer and its section; the proofs are in §7's rows.
+
+- **N1, the run's own-step authority has no setter on an exempt path** (`CheckNode.cs:38`, `PluginStep.cs:60`,
+  `NodeRunKeeping.cs:17-26`, `TidyNode.cs:51-55`, `TidyDoor.cs:6, 39`, `IntegrateStart.cs:147-165`, `NodeRuntime.cs:507`,
+  `ActRuns.cs:130, 185`). Answer: the authority carried on each door's start and set by the kit's door runner inside the door's task,
+  by `IntegrateStart` around each attempt's answer, by `WorkPerformer`, and by the hand-off for its resolver; the release reading the
+  authority's node current and its kind's declaration of what it ends; `Judge` and `Make` returning their releases, under which
+  `ActRuns` runs the effects. §28; the setters in d, the four ends proved in f.
+- **N2, the reservation does not exclude a session start** (`GrowTree.cs:96-98`, `OpenRecord.cs:122`, `TreeLock.cs:13-17`,
+  `TidyHolders.cs:62-83`). Answer: the hand-off reads the holders and writes its row under the landing hold and then the lock alone;
+  every start reads the row inside its shared hold, `TryStarting` naming its tree; the service's opens assert the hold. §29; proof d,
+  both orders.
+- **The gate's table.** Total by a source census and a strict run at test time, refusing nothing at run time for want of a row; every
+  shape found classed as a drop with the branches it names; each read command given its row, and `notes`, `replace`, `submodule` and
+  `maintenance` classed by their verbs; one table for the snapshot, the bounds and the waits (§30). The pool's undo under the lock
+  (§31). The resolver's `worktree lock` and `unlock` under its row's authority (§29). Proof d and f.
+- **The census leaks.** Ownership: five inputs, the assertion at each one writer by what the write changes, the migration's writes
+  routed through it, the census by the inputs' paths and tables. Journal: a callback's git handed to the act's launch, the close
+  awaiting it. Residue: the repository's refs and configuration keys. Invariance: every id the contract marks. Recorder: the writer
+  asserted by its authority. Reserved-tree gate: keyed by the trees and refs a start touches. §30, §32.
+- **Self-refusals.** The line's admission letting every hold go before the line runs off the flow, the line's entry asserting none;
+  one taker alone, reusing the flow's hold. §31; proof e and f.
+- **Not blocking.** *Keep* passes the assertion by what it writes (§32; proof f). The reserved tree keyed by its refs (§30; proof d).
+- **Rows.** a to j stay in order; N1's setters in d; f's assertion ships with *Keep* and the migration's binding writes handled; d
+  proves a start racing the reservation, e a line admission that does not refuse its own promotion, f the run's own `tidy` at its end
+  node, a release read in `Judge` reaching its effect step, *Keep* and the pool's undo.
+- **WFREVIEW3a and 3l**, open defects of the land path h deletes, are answered by the `merge`'s ends. §33; proof e.
+
+**What stays open by construction.**
+
+- The gate holds the git Daoris starts; the person's own git, another tool's and a resolver's own commands in its tree do not pass it,
+  so what they remove is found gone and said.
+- The table reads git's commands as the git Daoris supports documents them; the census makes it total over the commands and verbs Daoris
+  starts, not over an option a later git adds to a command already classed.
+- A configuration changed between the gate's read and git's own (prune set in that moment) is read as it was; the window is the
+  start's own.
+- A session started outside the driver (the person's own agent in a tree) takes no hold and reads no row: the reservation keeps
+  Daoris's starts.
+- A kind that ends a branch without declaring it is refused its own branch, said: the gap shows as a wait, never as a loss.
+- The invariance tests and the recorder see the sequences the fixtures drive, as round 5 said; the recorder's writer assertion runs in
+  every run, not only those.
