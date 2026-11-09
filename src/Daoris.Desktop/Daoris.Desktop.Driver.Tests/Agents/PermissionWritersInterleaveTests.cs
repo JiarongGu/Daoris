@@ -77,6 +77,25 @@ public sealed class PermissionWritersInterleaveTests : IDisposable
         Assert.Equal(["Bash(c:*)"], rules.Deny);
     }
 
+    // 🔴 The person's decline lands after the tick has listed the proposal and before it takes the proposal's lock.
+    [Theory]
+    [InlineData("remove", "ask", "Bash(b:*)")]
+    [InlineData("add", "deny", "Bash(c:*)")]
+    public void A_decline_that_lands_after_the_tick_listed_a_proposal_stays_declined(string action, string list, string rule)
+    {
+        Propose("p3", action, list, rule);
+        var before = PermissionRules.Load(_home).Machine;
+        RuleProposals.AfterListed.Value = () => RuleProposals.Answer(_home, "p3", accept: false, "No.", At);
+
+        RuleProposals.Settle(_home, At);
+
+        Assert.Equal(ProposalState.Declined, RuleProposals.Load(_home).Single().State);
+        var after = PermissionRules.Load(_home).Machine;
+        Assert.Equal(before.Allow, after.Allow);
+        Assert.Equal(before.Ask, after.Ask);
+        Assert.Equal(before.Deny, after.Deny);
+    }
+
     [Fact]
     public void A_setups_allows_and_the_persons_removal_of_A_leave_A_removed_and_the_setups_rules_added()
     {

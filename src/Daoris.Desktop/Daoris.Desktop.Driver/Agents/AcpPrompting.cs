@@ -111,7 +111,7 @@ internal sealed class AcpPrompting(ITurnPromptWiring wiring)
     /// <summary>
     /// A kept word's attempt, marked on its record before the wire, after every attempt asked for before it, so two words said at once
     /// are written in the order their dispatcher handed them. Completed at once for words kept nowhere, and for the driver's own prompts.
-    /// True where the word may be written: nothing marks it, or the record named it marked. Never faults.
+    /// True where the word may be written: nothing marks it, or the record named it marked. A mark that fails faults its own word alone.
     /// </summary>
     public Task<bool> Attempted(IAgentWord? words)
     {
@@ -125,7 +125,7 @@ internal sealed class AcpPrompting(ITurnPromptWiring wiring)
 
         static async Task<bool> AfterAsync(Task before, IAgentWord words, Func<Task<IReadOnlyList<string>>> attempting)
         {
-            await before.ConfigureAwait(false);
+            await Task.WhenAny(before).ConfigureAwait(false);
             var marked = await attempting().ConfigureAwait(false);
             return words.Id is not { } id || marked.Contains(id, StringComparer.Ordinal);
         }

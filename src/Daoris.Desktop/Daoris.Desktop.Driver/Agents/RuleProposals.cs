@@ -87,7 +87,10 @@ public static class RuleProposals
 {
     public const string Folder = "proposals";
 
-    private static readonly Regex IdShape = new("^[A-Za-z0-9_-]+$", RegexOptions.CultureInvariant);
+    /// <summary>A test's other writer, run once the tick has listed its proposals and cleared before it runs, ahead of the next proposal's lock.</summary>
+    internal static readonly AsyncLocal<Action?> AfterListed = new();
+
+    private static readonly Regex IdShape =new("^[A-Za-z0-9_-]+$", RegexOptions.CultureInvariant);
 
     /// <summary>Every readable proposal under the home, newest first. An unreadable file is left out.</summary>
     public static IReadOnlyList<RuleProposal> Load(string home)
@@ -182,6 +185,25 @@ public static class RuleProposals
         {
             var path = PathOf(home, proposal.Id);
             ChangeEffect effect;
+            var seam = AfterListed.Value;
+            AfterListed.Value = null;
+            seam?.Invoke();
+
+            // 🔴 Under the proposal's lock, read again: a decline landed since the list is the state, which a mark would put back to waiting.
+            KeepLock held;
+            try
+            {
+                held = KeepLock.Take(path);
+            }
+            catch (IOException busy)
+            {
+                said.Retry($"rules  #{proposal.Id} not settled: {busy.Message}");
+                continue;
+            }
+
+            using var _ = held;
+            if (Parse(path) is not { State: ProposalState.Proposed }) continue;
+
             // 🔴 Read afresh for each proposal, and saved at once: one copy read before the loop
             // and saved after each narrowing would write back whatever the person changed meanwhile —
             // a deny they just added could be undone by the driver applying something else.

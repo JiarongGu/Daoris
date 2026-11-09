@@ -328,7 +328,7 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/Agents/` unless they s
 44. A model the agent does not offer stops the process before any prompt, with no strike, and the walk goes on. A running
     session never moves to another choice. The record keeps what was asked, acknowledged and ran. (from D205)
 45. An account's own model and effort live in the tool's own settings file under that account, for Claude Code only. Daoris
-    offers nothing for a tool whose settings it has not read. `max` is refused as an account default. (from D98)
+    offers nothing for a tool whose settings it has not read. `max` is refused as an account default. The file is read, edited and renamed under its keep lock (`AgentSettings.Write`), so two changes of different keys both stand. (from D98)
 46. A conversation's model and effort options are the ones the agent offered on its wire. The session's mode is never offered
     as an option. (from D98)
 47. Lyntai's agent layer (`Lyntai.Core` and `Lyntai.Providers.Basic`, never the metapackage) is taken by the driver alone, from
@@ -338,7 +338,7 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/Agents/` unless they s
     options by its folder alone, with no `global using` of it and no layer-own id (`LayerCensusTests`). `Agents/Layer/`, each
     provider folder's `Layer/` and their tests compile only under `DaorisLyntaiLayer`. There Codex's usage question is read through
     the layer (`LayerUsageRead`, bound when the driver loads), and Claude Code's too, Lyntai's reader keeping the installed server's
-    null-id model scope; without it today's readers read both. A layer door's failure enters as a `NormalizedFailure`, built in
+    null-id model scope; without it today's readers read both. A layer run reads to the end of each pipe and of its turn and throws the first failure of keeping a line after (`LauncherRunner`, `LayerRun`), as `HarnessCapture` does, and a leg that fails to set up lets its lineage token go. A layer door's failure enters as a `NormalizedFailure`, built in
     `Agents/Layer/` alone (`LayerFailures`), and `AgentErrors.OfNormalized` answers it with no table read; nothing but tests calls that answer yet, so a layer door's failure does not reach the one reader today, and `HarnessRoster.LimitedTrusted` has no caller either. (from D213, D248)
 
 ## Where a change goes

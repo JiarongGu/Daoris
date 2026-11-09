@@ -97,6 +97,31 @@ public sealed class LayerRunProcessTests : IDisposable
     }
 
     [Fact]
+    public async Task A_reading_the_sink_cannot_keep_leaves_the_harness_running_to_its_terminal_and_is_thrown_after()
+    {
+        var command = LayerTestProvider.Scenario(
+            _scratch, new { @out = new object[] { "first", new { t = "text", text = "second" } }, wait = 600, after = new object[] { new { t = "end", subtype = "success" } } });
+        var run = new LayerRun(
+            LayerTestProvider.Registration(command),
+            new LayerStart(LayerTestProvider.Id, "the prompt", Path.Combine(_scratch, "transcript.log"), TimeSpan.FromHours(1)),
+            new LauncherSeat(ContainedKind.Agent, StartClass.Background, Home: null, Log: null),
+            exists: _ => true);
+        var readings = new List<WireReading>();
+        run.HandSink(ReadingSinks.On<WireReading>(reading =>
+        {
+            if (reading is WireReading.Shown { Text: "second" }) throw new InvalidOperationException("the record is full");
+            lock (readings) readings.Add(reading);
+        }));
+        await using var _ = run;
+
+        await run.OpenAsync(CancellationToken.None);
+        var failed = await Assert.ThrowsAsync<InvalidOperationException>(() => run.EndAsync(CancellationToken.None)).WaitAsync(Poll.Patience);
+
+        Assert.Equal("the record is full", failed.Message);
+        Assert.Contains("shown — the turn ended: success", readings.Select(Said));
+    }
+
+    [Fact]
     public async Task A_resume_is_a_start_of_its_own_with_its_own_container_and_a_closed_run_disposes_its_own()
     {
         var (first, _) = Run(new { @out = new object[] { new { t = "start", id = "conv-1" }, new { t = "end" } } });

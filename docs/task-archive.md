@@ -5,6 +5,18 @@ the per-task record. Entries preserve their original wording so the archive stay
 
 ---
 
+## AGENTREV2a to AGENTREV2f — the agents review's second cycle (2026-11-09)
+
+> **AGENTREV2a / 2b / 2c / 2d / 2e / 2f** (driver): Outcome: all six held against main's tip, each fixed with a regression test seen to fail first; 2a and 2b were built and tested under `DaorisLyntaiLayer`.
+> 2a (70b0e427af): `LauncherRunner`'s stderr and stdout reads and `LayerRun`'s turn read to the end and throw the first failure after, as `HarnessCapture` does, so a line the seat or sink cannot keep neither blocks the child on a full pipe nor kills it mid-work (`LauncherRunnerProcessTests`, `LayerRunProcessTests`); the stdout read, which the row did not name, had the same flaw.
+> 2b (70b0e427af): a leg that fails to set up lets its lineage token go (`LayerHoldProcessTests`), and the run's token is set before the leg's preamble and opening readings are handed, so they carry it.
+> 2c (ada7896998): `ChatGoOn.SwitchableAsync` asks the roster for `record.ModelOn(adapter)` (`BriefedMoveTests`).
+> 2d (86c2c8bbdb): `AgentSettings.Write` reads, edits and renames the file under its `KeepLock`, with a read seam as `PermissionChange` has (`AgentSettingsInterleaveTests`).
+> 2e (506539c926): the tick takes the proposal's keep lock before settling it and reads its state again, skipping one that is no longer proposed (`PermissionWritersInterleaveTests`).
+> 2f (b44ea41ed1, 3d5fe4dc93, f652d104b8): the set back catches `AcpRefusal` alone, so a stream's end is not read as a refusal (`AcpOptionsEndedTests`); a word's mark waits for the one before it to finish, not to succeed (`AcpAttemptedChainTests`); `AcpWire.ReadAsync` disposes each frame's `JsonDocument`, with no test, since that is a pooled-buffer return with no behaviour to fail.
+
+---
+
 ## TREEPOOL1aa — a kept output as the previous line's build base (2026-11-09)
 
 > **TREEPOOL1aa** (driver, tools; D214; §35.3, §36.3, §37.3, §38.2): Outcome: a take keeps a `base` top's declared configurations as the previous line's build, recorded with its producer and its rule's `builds` and marked `.daoris-base` (a base nothing builds set aside), set aside where the toolchain key moves; `daoris tree build` is the one release, building per framework (`-f`) over MSBuild's own `FileWrites` account, setting aside what that build does not own and keeping the producer, frameworks, commands, commit, exit, moment and count beside the bases (`TreeBaseRelease`); the start says the bases and their integrated runners (`started.tree-base`, `started.tree-base-unguarded`) and each trim (`tree.base-trimmed`), the gate run's admission names the unreleased bases, a marked development host is named with the door (`tree.base-host`, the window's `base-host`); eleven readers guarded and `run --real` refused under a marker, held by the census per call site (`TreeBaseGitTests`, `TreeBaseBuildsProcessTests`, `BuildAccountProcessTests`, `TreeBaseWordsTests`, `tools/tree-base.test.mjs`).

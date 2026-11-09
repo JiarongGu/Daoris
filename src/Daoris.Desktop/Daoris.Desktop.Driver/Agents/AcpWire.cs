@@ -40,7 +40,8 @@ internal sealed class AcpWire(TextWriter outgoing, Action<string> say, Func<bool
             JsonElement frame;
             try
             {
-                frame = JsonDocument.Parse(line).RootElement.Clone();
+                using var document = JsonDocument.Parse(line);
+                frame = document.RootElement.Clone();
             }
             catch (JsonException)
             {

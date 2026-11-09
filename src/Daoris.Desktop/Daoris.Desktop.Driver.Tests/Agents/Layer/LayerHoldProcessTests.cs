@@ -75,6 +75,37 @@ public sealed class LayerHoldProcessTests : IDisposable
     }
 
     [Fact]
+    public async Task A_leg_that_fails_to_set_up_lets_its_token_go()
+    {
+        // A transcript folder that is a file cannot be opened, after the token is issued.
+        var blocked = Path.Combine(_scratch, "blocked");
+        File.WriteAllText(blocked, "a file");
+        var (run, host, _) = Held(new { @out = Answered }, start => start with { Transcript = Path.Combine(blocked, "s1.log") });
+        await using var _ = run;
+
+        await run.SpawnAsync("s1", _bound.Token);
+        await Assert.ThrowsAnyAsync<Exception>(() => run.OpenAsync(_bound.Token));
+
+        Assert.Equal(["keep s1", "bracket p1", "spawn p1"], host.Asked);
+    }
+
+    [Fact]
+    public async Task A_legs_opening_readings_carry_its_own_lineage_token()
+    {
+        var (run, _, _) = Held(new { @out = Answered }, start => start with { Preamble = "the preamble" });
+        await using var _ = run;
+        var readings = new List<WireReading>();
+        run.HandSink(ReadingSinks.On<WireReading>(reading => { lock (readings) readings.Add(reading); }));
+
+        await run.SpawnAsync("s1", _bound.Token);
+        await run.OpenAsync(_bound.Token);
+        await run.EndAsync(_bound.Token);
+
+        Assert.Equal("the preamble", Assert.IsType<WireReading.Shown>(readings[0]).Text);
+        Assert.All(readings, reading => Assert.Equal("p1", reading.Process));
+    }
+
+    [Fact]
     public async Task A_go_on_resumes_its_conversation_with_the_held_words_under_a_token_of_its_own_and_no_bound()
     {
         var (run, host, said) = Held(new { echo = true, env = Token, @out = Answered });
