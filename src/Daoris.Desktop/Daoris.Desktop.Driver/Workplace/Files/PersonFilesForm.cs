@@ -37,10 +37,10 @@ internal static class PersonFilesForm
     {
         var written = Write(home, (read, root) =>
         {
-            if (read.Unread is { } why) throw new DriverException($"{PersonFiles.FileName} does not read ({why}), so nothing was written over it.");
+            if (read.Unread is { } why) throw new DriverException($"{DeclarationNames.PersonRules} does not read ({why}), so nothing was written over it.");
             return read is { FirstForm: true, Keeps: true } ? Translated(root, read, wordings) : null;
         });
-        if (!written) throw new DriverException($"{PersonFiles.FileName} holds no path read as written: nothing to word.");
+        if (!written) throw new DriverException($"{DeclarationNames.PersonRules} holds no path read as written: nothing to word.");
     }
 
     /// <summary>
@@ -51,7 +51,7 @@ internal static class PersonFilesForm
     {
         if (read.Problems.Count > 0)
         {
-            throw new DriverException($"{PersonFiles.FileName} is read in its first form and {read.Problems[0]}: fix that rule, then make the change again.");
+            throw new DriverException($"{DeclarationNames.PersonRules} is read in its first form and {read.Problems[0]}: fix that rule, then make the change again.");
         }
 
         var moved = (JsonObject)root.DeepClone();

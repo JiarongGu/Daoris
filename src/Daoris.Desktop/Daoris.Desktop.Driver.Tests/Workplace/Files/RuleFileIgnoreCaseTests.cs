@@ -28,7 +28,7 @@ public sealed class RuleFileIgnoreCaseTests
     [Fact]
     public void This_repositorys_file_in_gits_syntax_reads_a_top_and_its_upper_cased_spelling_alike()
     {
-        var read = RepositoryFilesReader.Read(File.ReadAllText(Path.Combine(WorkspaceRoot.Folder, RepositoryFilesReader.FileName)));
+        var read = RepositoryFilesReader.Read(File.ReadAllText(Path.Combine(WorkspaceRoot.Folder, DeclarationNames.Rules)));
         Assert.Empty(read.Problems);
         int Rule(string path) => read.Rules.ToList().FindLastIndex(rule => rule.Matches(path, true));
         var differ = RuleFileFirstFormCorpusTests.TopsOf(Names, 3).Append("BIN/")

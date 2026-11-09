@@ -27,7 +27,7 @@ internal sealed class VerifyExecution(string home, VerifySend send, CandidateJob
         Directory.CreateDirectory(_folder);
         if (send.Accepted is null) return (Unknown("no gates are accepted for this repository's verification, so nothing runs until the person accepts them"), false);
         // The declaration is read as git objects at the commit, the blob the person accepted, never a tree's file.
-        var (listed, entry, problem) = await WorkingTree.GitAsync(send.Checkout, ["ls-tree", "--full-tree", "-z", send.Commit, "--", HeavyGates.FileName], ct).ConfigureAwait(false);
+        var (listed, entry, problem) = await WorkingTree.GitAsync(send.Checkout, ["ls-tree", "--full-tree", "-z", send.Commit, "--", DeclarationNames.Gates], ct).ConfigureAwait(false);
         if (listed != 0) return (Unknown($"git could not read {TextBounds.ShortCommit(send.Commit, 7)} here: {problem.Trim()}"), false);
         var parts = entry.Split('\t', 2)[0].Split(' ');
         var tip = parts is [_, "blob", var blob] ? blob.Trim() : HeavyExecutor.NoDeclaration;

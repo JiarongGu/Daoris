@@ -34,7 +34,7 @@ public sealed class BaseRuleFieldsTests
         Assert.Equal("dotnet build -c {configuration}", signature.Builds);
         Assert.Null(signature.Take);
 
-        var read = RepositoryFilesReader.Read(File.ReadAllText(Path.Combine(WorkspaceRoot.Folder, RepositoryFilesReader.FileName)));
+        var read = RepositoryFilesReader.Read(File.ReadAllText(Path.Combine(WorkspaceRoot.Folder, DeclarationNames.Rules)));
         var rules = FileRules.Of([], read.Rules, PersonFilesRead.Empty, "Daoris", (path, kind) => kind == signature.Kind && signature.Matches(path) ? signature : null);
         var bin = rules.For("src/App/bin/", new FileFloorFacts([], [])).Rule!;
 

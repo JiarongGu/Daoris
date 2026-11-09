@@ -50,6 +50,33 @@ internal static class GitObjectReads
             : null;
 
     /// <summary>
+    /// The objects <paramref name="names"/> ask, each answered whole up to <paramref name="limit"/>, by one start asked a line each: the
+    /// store's listing of a commit, its tree and each folder on a path's way. Null where git failed, a name is not one line, or an answer
+    /// came short of its size.
+    /// </summary>
+    internal static async Task<IReadOnlyList<(GitObjectAnswer Answer, byte[] Bytes)>?> BatchAsync(
+        string root, IReadOnlyList<GitObjectName> names, int limit, CancellationToken ct)
+    {
+        if (names.Count == 0 || names.Any(name => !name.Framed)) return null;
+        var room = (long)(GitObjectAnswer.HeaderBound + Math.Max(0, limit) + 1) * names.Count;
+        var read = await WorkingTree.GitBytesAsync(root, ["cat-file", "--batch"], (int)Math.Min(room, Whole), string.Concat(names.Select(name => name.Question + "\n")), ct)
+            .ConfigureAwait(false);
+        if (read is not { } bytes) return null;
+
+        var answers = new List<(GitObjectAnswer, byte[])>(names.Count);
+        var at = 0;
+        foreach (var _ in names)
+        {
+            if (GitObjectAnswer.Parse(bytes.Bytes, bytes.Count, at) is not { } answer || answer.Count < answer.Size) return null;
+            answers.Add((answer, bytes.Bytes));
+            // Git writes a line feed after each object's bytes.
+            at = answer.Start + (answer.Missing ? 0 : answer.Count + 1);
+        }
+
+        return answers;
+    }
+
+    /// <summary>
     /// An answer's bytes as text, read as git's text output is read: UTF-8, a leading byte-order mark taken as the mark it is.
     /// </summary>
     internal static string Text(byte[] bytes, GitObjectAnswer answer)

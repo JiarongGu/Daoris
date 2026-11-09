@@ -8,7 +8,7 @@ internal sealed class ContextReviewOperations : IContextReview
     [ModuleInitializer]
     internal static void Install() => ContextReview.Current = new ContextReviewOperations();
 
-    public string GatesFile => HeavyGates.FileName;
+    public string GatesFile => DeclarationNames.Gates;
 
     public IReadOnlyList<HeavyGate> DeclaredGates(string checkout) => HeavyGates.Read(checkout);
 

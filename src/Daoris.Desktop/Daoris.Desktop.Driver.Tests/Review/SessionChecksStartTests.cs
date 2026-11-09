@@ -80,7 +80,7 @@ public sealed class SessionChecksStartTests : IDisposable
         Git(checkout, "config", "user.email", "checks@example.com");
         Git(checkout, "config", "user.name", "FABRIC-PIPELINE1b");
         File.WriteAllText(
-            Path.Combine(checkout, HeavyGates.FileName),
+            Path.Combine(checkout, DeclarationNames.Gates),
             """{"gates":[{"name":"universal","run":"npm run verify"},{"name":"driver","run":"dotnet test src/Driver","heavy":true}]}""");
         Git(checkout, "add", "-A");
         Git(checkout, "commit", "-qm", "the starting point");

@@ -61,7 +61,7 @@ public static class IntegrationAcceptance
     internal static async Task<string?> BlobAtAsync(string root, string commit, CancellationToken ct)
     {
         var (listed, entry, _) = await WorkingTree.GitAsync(
-            root, ["ls-tree", "--full-tree", "-z", commit, "--", GeneratedWriters.DeclarationFile], ct).ConfigureAwait(false);
+            root, ["ls-tree", "--full-tree", "-z", commit, "--", DeclarationNames.Gates], ct).ConfigureAwait(false);
         if (listed != 0) return null;
         // `<mode> <type> <object>\t<name>`: a blob alone is a declaration.
         var line = entry.TrimEnd('\0');

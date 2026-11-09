@@ -92,15 +92,15 @@ public static class LineDeclarationReader
         if (found != 0 || !WorkingTree.IsCommitId(commit)) return new(line, null, $"its line `{line}` names no commit here");
 
         var (listed, output, problem) = await WorkingTree.GitAsync(
-            root, ["ls-tree", "-z", commit, "--", LineRegistration.ManifestFile, LineRegistration.LanesFile], ct).ConfigureAwait(false);
+            root, ["ls-tree", "-z", commit, "--", DeclarationNames.Manifest, DeclarationNames.Lanes], ct).ConfigureAwait(false);
         if (listed != 0) return new(line, null, $"git could not list `{line}` at `{TextBounds.ShortCommit(commit, 7)}`: {problem.Trim()}");
 
         var entries = LineEntry.Parse(output);
         string? manifest = null, lanes = null, odd = null;
         foreach (var (path, assign) in new (string, Action<string>)[]
                  {
-                     (LineRegistration.ManifestFile, text => manifest = text),
-                     (LineRegistration.LanesFile, text => lanes = text),
+                     (DeclarationNames.Manifest, text => manifest = text),
+                     (DeclarationNames.Lanes, text => lanes = text),
                  })
         {
             var entry = entries.FirstOrDefault(each => each.Path == path);

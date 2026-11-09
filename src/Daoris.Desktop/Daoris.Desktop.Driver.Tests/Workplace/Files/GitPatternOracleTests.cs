@@ -49,7 +49,7 @@ public sealed class GitPatternOracleTests(ITestOutputHelper output) : IAsyncLife
     [Fact]
     public async Task This_repositorys_rule_file_in_gits_syntax_reads_as_git_reads_it()
     {
-        var read = RepositoryFilesReader.Read(File.ReadAllText(Path.Combine(WorkspaceRoot.Folder, RepositoryFilesReader.FileName)));
+        var read = RepositoryFilesReader.Read(File.ReadAllText(Path.Combine(WorkspaceRoot.Folder, DeclarationNames.Rules)));
         Assert.Empty(read.Problems);
         Assert.Empty(read.Rules.Where(rule => rule.FirstForm));
         var entries = read.Rules.Select(rule => rule.Paths).ToList();

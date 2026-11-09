@@ -269,7 +269,7 @@ public sealed class FileAnalysisTests : IDisposable
         Write("verb", ".gitignore", "node_modules/\nout/\n");
         Write("verb", "package-lock.json", """{ "lockfileVersion": 3, "packages": { "": {} } }""");
         Write("verb", "package.json", """{ "name": "verb" }""");
-        Write("verb", RepositoryFilesReader.FileName, """{ "rules": [ { "kind": "output", "paths": ["out/"] } ] }""");
+        Write("verb", DeclarationNames.Rules, """{ "rules": [ { "kind": "output", "paths": ["out/"] } ] }""");
         var commit = await Commit("verb");
         Write("verb", "out/app.js");
         var home = Path.Combine(_scratch, "home");
@@ -291,9 +291,9 @@ public sealed class FileAnalysisTests : IDisposable
     public async Task The_repository_s_layer_is_read_at_the_line_s_tip_and_a_working_file_s_change_acts_on_nothing()
     {
         Write("layer", ".gitignore", "out/\n");
-        Write("layer", RepositoryFilesReader.FileName, """{ "rules": [ { "kind": "output", "paths": ["out/"] } ] }""");
+        Write("layer", DeclarationNames.Rules, """{ "rules": [ { "kind": "output", "paths": ["out/"] } ] }""");
         var commit = await Commit("layer");
-        Write("layer", RepositoryFilesReader.FileName, """{ "rules": [ { "kind": "scratch", "paths": ["out/"] } ] }""");
+        Write("layer", DeclarationNames.Rules, """{ "rules": [ { "kind": "scratch", "paths": ["out/"] } ] }""");
 
         var read = await RepositoryFilesReader.AtAsync(Path.Combine(_scratch, "layer"), commit, CancellationToken.None);
 

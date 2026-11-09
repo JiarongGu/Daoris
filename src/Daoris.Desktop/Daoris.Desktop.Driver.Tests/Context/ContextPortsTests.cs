@@ -47,10 +47,10 @@ public sealed class ContextPortsTests : IDisposable
     public void The_installed_review_operations_are_Review_s_and_read_the_gates_as_the_brief_did()
     {
         Assert.IsType<ContextReviewOperations>(ContextReview.Current);
-        Assert.Equal(HeavyGates.FileName, ContextReview.Current.GatesFile);
+        Assert.Equal(DeclarationNames.Gates, ContextReview.Current.GatesFile);
         var tree = Path.Combine(_home, "tree");
         Directory.CreateDirectory(tree);
-        File.WriteAllText(Path.Combine(tree, HeavyGates.FileName), "{\"gates\":[{\"name\":\"unit\",\"run\":\"npm test\"}]}");
+        File.WriteAllText(Path.Combine(tree, DeclarationNames.Gates), "{\"gates\":[{\"name\":\"unit\",\"run\":\"npm test\"}]}");
         Assert.Equal(HeavyGates.Read(tree), ContextReview.Current.DeclaredGates(tree));
         Assert.Throws<DriverException>(() => ContextReview.Current.DeclaredGates(_home));
 

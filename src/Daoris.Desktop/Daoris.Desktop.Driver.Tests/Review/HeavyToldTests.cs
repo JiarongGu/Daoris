@@ -85,9 +85,9 @@ public sealed class HeavyToldTests : IDisposable
         Assert.Null(HeavyTold.For(_fixture.Checkout, Home));
 
         // A file `run-heavy` would refuse tells nothing either: the session runs its gates as it would.
-        File.WriteAllText(Path.Combine(_fixture.Checkout, HeavyGates.FileName), "{ not json");
+        File.WriteAllText(Path.Combine(_fixture.Checkout, DeclarationNames.Gates), "{ not json");
         Assert.Null(HeavyTold.For(_fixture.Checkout, Home));
-        File.WriteAllText(Path.Combine(_fixture.Checkout, HeavyGates.FileName), """{"gates":[{"name":"build","heavy":true}]}""");
+        File.WriteAllText(Path.Combine(_fixture.Checkout, DeclarationNames.Gates), """{"gates":[{"name":"build","heavy":true}]}""");
         Assert.Null(HeavyTold.For(_fixture.Checkout, Home));
     }
 
