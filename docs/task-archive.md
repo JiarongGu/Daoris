@@ -5,6 +5,10 @@ the per-task record. Entries preserve their original wording so the archive stay
 
 ---
 
+## TREEPOOL1ad to ag — what the bench rerun found (2026-11-09)
+
+> **TREEPOOL1ad, ae, af, ag** (driver; §39, §39.4): Outcome: a workspace member the found entry decides installs after its root where a later layer decides the root (`WorkspaceOrder`); a take refused `lines-own` names the top it holds; a seal the disk refuses is said `started.deps-unstored` (`unsealed`), not installed; a fill seals in a tree holding only placed dependencies and declared `output` or `intermediate` tops (`FillHeld`), so a used slot stores the installs it makes again. Row d's wait on these ends; the bench rerun is TREEPOOL1ah.
+
 ## TREEPOOL1ab — the bench rerun that proves the bytes saving (2026-11-09)
 
 > **TREEPOOL1ab** (driver; §35.8, §36.4, §37.5, §39): Outcome: measured over a day up to TREEPOOL1aa with the `local/` copy present (its refusal fixed, the line's own empty at all 24 takes), a session in a kept slot writes 97% fewer files and 61% fewer bytes than a fresh tree with `take: base` (25% with `bin/` aside; the web shape under found rules, 20% and none), estimates of files changed; the root's `node_modules` is kept or installed again and not stored, never placed (TREEPOOL1ag), the CLI's now in the root's rule (TREEPOOL1ad), the contention across a finish left to TREEPOOL1ah.

@@ -35,9 +35,10 @@ internal static class StoreDependencyRules
         var paths = reading.Tops.Concat(rules.Rules.SelectMany(each => each.Rule.Paths.Select(path => GitPattern.LiteralOf(each.Rule, path))).OfType<string>())
             .Where(path => path.EndsWith('/'))
             .Distinct(StringComparer.Ordinal);
+        var layers = rules.Rules;
         var each = rules.Over(paths, reading.Floor)
             .Where(file => file is { Kind: FileKind.Dependency, Idle: null, Floor: null, Rule: not null })
-            .Select(file => (Order: WorkspaceOrder.Of(rules.Rules, file.Path, reading.Floor.IgnoreCase), Dependency: new StoreDependency(file.Path, file.Rule!)))
+            .Select(file => (Order: WorkspaceOrder.Of(layers, file.Path, reading.Floor.IgnoreCase), Dependency: new StoreDependency(file.Path, file.Rule!)))
             .OrderBy(pair => pair.Order.Place).ThenBy(pair => pair.Order.Member).ThenBy(pair => pair.Dependency.Path, StringComparer.Ordinal)
             .Select(pair => pair.Dependency)
             .ToList();

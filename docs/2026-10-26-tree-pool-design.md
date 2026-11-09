@@ -5232,7 +5232,7 @@ layer's rules alone. Between two takes a running process holds one slot file (a 
   beside the root and the repository's entry named the root alone, so the member sorted first and its `npm ci`, run in its folder with the
   found rule's scripts, installed the whole workspace and ran the root's `prepare` (git's `config` and hooks, `docs/index/`): nothing was
   stored, the root's folder was left the line's own, the web's not stored. This repository's entry now names the member (fixed here);
-  the ordering is TREEPOOL1ad. The refusal names no path (TREEPOOL1ae).
+  the ordering is fixed (TREEPOOL1ad: a member the found entry decides takes its root's place where a later layer decides the root). The refusal now names the path (TREEPOOL1ae).
 - **The `local/` copy's refusal is fixed**: the line's own tops read empty before all 24 takes of both arms, the stand-ins copied at every stage.
 
 ### 39.2 Per step, this repository (lines 13 to 104, every build whole)
@@ -5273,11 +5273,16 @@ install the found layer keys by the commit (the web shape) saves files at the ch
   the 5 takes where its key moved it is installed again (257 files, 25 MB) and never stored: *the tree held `src/Daoris.Contracts/bin/`,
   which git ignores, as its install began*. A fill seals only in a tree holding nothing ignored but placed dependencies, which a slot never
   is after its first build (a base or an intermediate). Not placed from the store at any take: TREEPOOL1ag.
+  *Chosen where the design made no choice* (TREEPOOL1ag, small, local, reversible): the fill's hold names the ignored tops the seal does not
+  answer for, and a top whose effective rule is an `output` or an `intermediate` is not among them (`FillHeld`), since an install reads no
+  build product; a `cache`, a `local` copy, a `scratch` path or a top no rule names still holds it, an install able to read any of those
+  and its bytes then reaching a store entry whose key names none of them. A take whose key moved now stores and places the root's
+  `node_modules` in a slot holding `bin/` and `obj/`; the bench's rerun is TREEPOOL1ah's and row d's.
 - **Contention, `base`:** with the DLL held, the take went ahead (a base moves nothing); the door's build of the driver's tests failed
   (MSB3027, the file locked), so that base was not released and its marker stood (10 others released), and the build after the process
   stopped released it. No refusal and no stuck slot. **`aside` and the web shape:** not met, since the finish of the line before had set
   the outputs aside before the process started; a process left running across the finish is still to be measured (TREEPOOL1ah).
-- **A seal that fails is said as a stored install** (TREEPOOL1af): the web shape's line 0, its store empty, its record `installed`.
+- **A seal that fails was said as a stored install** (TREEPOOL1af, fixed: `started.deps-unstored`, reason `unsealed`): the web shape's line 0, its store empty, its record `installed`.
 - **Space:** the scratch held 7.9 GB (`base`), 12.3 GB (`aside`), 1.7 GB (the first run), under 1 GB each for the rest, each removed at its end.
 
 **Row d's *When*** gains rows ad and ag: the rerun shows the `local/` refusal fixed and row x's placement not confirmed, so row d does not
