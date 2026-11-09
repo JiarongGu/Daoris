@@ -28,7 +28,7 @@ public interface IRoleAct
     string? PersonRoute => null;
 
     /// <summary>
-    /// The act's conditions that read a dependency (<c>landing-pushes</c>, <c>no-tree</c>), judged again under the gates of its target and
+    /// The act's conditions that read a dependency (<c>no-tree</c>), judged again under the gates of its target and
     /// its dependencies before its handler runs: null where they hold, else the refusal's code.
     /// </summary>
     Task<string?> UnderGatesAsync(RoleActRun run, CancellationToken ct) => Task.FromResult<string?>(null);

@@ -103,10 +103,18 @@ public sealed class SlotJudgementTests
         {
             "TrackedChange" => Clean with { TrackedChange = true },
             "UntrackedPath" => Clean with { UntrackedPath = true },
-            _ => Clean with { LineOwnIgnored = true },
+            _ => Clean with { LineOwnIgnored = "src/Lib/bin/" },
         });
 
         Assert.Equal((5, code), (verdict.Step, verdict.Code));
+    }
+
+    [Fact]
+    public void Step_5_a_line_s_own_ignored_path_is_named_in_the_refusal()
+    {
+        var verdict = SlotJudgement.Judge(Clean with { LineOwnIgnored = "src/Lib/bin/" });
+
+        Assert.Contains("`src/Lib/bin/`", verdict.Why);
     }
 
     [Fact]

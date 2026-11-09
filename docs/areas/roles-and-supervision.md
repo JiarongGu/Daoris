@@ -353,8 +353,8 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they start wi
     unattributable one is quarantined. A landing is the same window with *Overrule*: the supervisor's `accept` of a `review` step,
     or `approve` or `reject` of a `human` approval (`LandingSteps`, the kit saying which kinds offer which acts and which hold a run
     for the person alone), is kept against the step as it waits on that attempt, refused `answered` once it has moved,
-    `go-ahead-open` on a run a `go-ahead` holds, `landing-pushes` where the landing's plan names a plugin that pushes, and
-    `owner-held` on a line the person stopped or whose quest they paused (`LandingJudge`). The look after the courses
+    `go-ahead-open` on a run a `go-ahead` holds, and `owner-held` on a line the person stopped or whose quest they paused
+    (`LandingJudge`, which reads no plan: a `land` names no plugin, and an approval is judged by its step alone). The look after the courses
     (`LandingReleaseLook`) reads the step, the admission and `OwnerHolds` again and keeps the node's own word on the run's
     record through `RunNodeWords.Word`, carrying its author (`NodeWordBy`: role and decision) and attempt; the decision is live,
     `released`, until the node pass applies the word as the supervisor's (`went-on`) or drops it `stale` where the attempt has
@@ -377,8 +377,8 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they start wi
     role policy's bound), since a hand-over releases that hold. Outside the grants its route's judge refuses the press before any
     card, and the steward's verb says the judge's words; done and
     delete are `QUEST_DONE` and `QUEST_DELETE`, the service's doors sent as the person's records; land is `LAND_SESSION_TREE`
-    and clean the unforced `DISCARD_SESSION_TREE`, each over the session alone, and land is refused `landing-pushes` where
-    the landing's plan names a plugin that pushes: neither ever pushes to a remote. The pause (`StewardPauseAct`) never writes the
+    and clean the unforced `DISCARD_SESSION_TREE`, each over the session alone and judged by the session's own tree
+    alone (`StewardTargets.OwnTreeAsync`): neither ever pushes to a remote, a push being its own `push` step. The pause (`StewardPauseAct`) never writes the
     person's stop: the sessions it stops carry `stopped.paused-quest-steward` (a steward's stop to every reader of the
     person's), its log says `by: steward`, and its unpause, only of a pause the steward made this run and the owner has not
     touched, releases them as the steward's own role release. The update acts (`StewardUpdateAct`) say the install's own

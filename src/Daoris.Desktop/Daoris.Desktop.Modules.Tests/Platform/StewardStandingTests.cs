@@ -34,9 +34,6 @@ public sealed class StewardStandingTests : Bridge
         /// <summary>What the owner's marks read the quest and session scopes by; none reads nothing, as the acts of a repository need.</summary>
         public IOwnerScopes? Scopes { get; set; }
 
-        /// <summary>The plugin the landing's plan names as the one that pushes the branch, or none.</summary>
-        public string? Pushing { get; set; }
-
         /// <summary>What the hand-over's judge answers: kept, or refused with its code and its words.</summary>
         public (string Why, string Message)? HandOverRefused { get; set; }
 
@@ -46,7 +43,6 @@ public sealed class StewardStandingTests : Bridge
         {
             if (request.Type == RoleRoutes.Act) return await SupervisorDoor.ActAsync(Pipe, request.Payload, cancellationToken, Scopes, World);
             lock (Ran) Ran.Add((request.Type!, PipeDoor.Role));
-            if (request.Type == "LANDING") return new { Session = "s1", Form = "branch", Plugin = Pushing };
             if (request.Type == "SESSION_HAND_OVER")
             {
                 return HandOverRefused is { } refused
@@ -546,11 +542,11 @@ public sealed class StewardStandingTests : Bridge
     }
 
     [Fact]
-    public async Task A_landing_whose_plan_names_a_pushing_plugin_is_refused_and_the_press_is_never_sent()
+    public async Task A_landing_is_judged_by_its_tree_alone_and_its_plan_is_never_read_for_a_plugin()
     {
         if (!OperatingSystem.IsWindows()) return;
         using var log = new MachineLog(Home, "desktop");
-        var driver = new StewardModule { Pushing = "push-to-origin" };
+        var driver = new StewardModule();
         Seed(driver);
         var (dispatcher, services) = Compose(log, driver);
         using var composed = services;
@@ -562,10 +558,10 @@ public sealed class StewardStandingTests : Bridge
         await using var connected = client;
         var answer = await client.AnswerAsync(id);
 
-        Assert.False(answer.GetProperty("data").GetProperty("done").GetBoolean(), answer.GetRawText());
-        Assert.Equal("landing-pushes", answer.GetProperty("data").GetProperty("why").GetString());
-        Assert.DoesNotContain("LAND_SESSION_TREE", driver.Ran.Select(each => each.Route));
-        Assert.Empty(judge.StewardActsNow());
+        Assert.True(answer.GetProperty("data").GetProperty("done").GetBoolean(), answer.GetRawText());
+        Assert.DoesNotContain("LANDING", driver.Ran.Select(each => each.Route));
+        Assert.Contains("LAND_SESSION_TREE", driver.Ran.Select(each => each.Route));
+        Assert.Equal(StewardActNames.Land, Assert.Single(judge.StewardActsNow()).Act);
     }
 
     [Theory]

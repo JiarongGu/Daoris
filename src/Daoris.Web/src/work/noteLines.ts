@@ -91,6 +91,7 @@ export const DEPS_REASONS: Readonly<Record<string, { key: string; values: readon
   'link-out': { key: 'note.deps.why.link-out', values: ['link'] },
   'held-ignored': { key: 'note.deps.why.held-ignored', values: ['file'] },
   group: { key: 'note.deps.why.group', values: ['with'] },
+  unsealed: { key: 'note.deps.why.unsealed', values: [] },
   'share-pattern': { key: 'note.deps.why.share-pattern', values: [] },
   'share-absent': { key: 'note.deps.why.share-absent', values: [] },
   'share-unignored': { key: 'note.deps.why.share-unignored', values: [] },
