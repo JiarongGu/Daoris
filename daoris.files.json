@@ -9,7 +9,7 @@
     { "kind": "dependency", "paths": ["/src/Daoris.Web/node_modules/"],
       "key": ["src/Daoris.Web/package-lock.json", "src/Daoris.Web/package.json", "src/Daoris.Web/.npmrc"],
       "caches": [".cache/", ".vite/", ".vite-temp/"] },
-    { "kind": "dependency", "paths": ["/node_modules/"],
+    { "kind": "dependency", "paths": ["/node_modules/", "/src/Daoris.Cli/node_modules/"],
       "key": ["package-lock.json", "package.json", "src/Daoris.Cli/package.json", ".npmrc"],
       "setup": ["node tools/merge-rows.mjs --install", "node tools/index-hook.mjs --install"], "per": "repository" },
     { "kind": "intermediate", "paths": ["/src/**/obj/", "/tools/**/obj/"], "toolchain": ["dotnet --version"] },

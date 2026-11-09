@@ -5,6 +5,9 @@ the per-task record. Entries preserve their original wording so the archive stay
 
 ---
 
+## TREEPOOL1ab — the bench rerun that proves the bytes saving (2026-11-09)
+
+> **TREEPOOL1ab** (driver; §35.8, §36.4, §37.5, §39): Outcome: measured over a day up to TREEPOOL1aa with the `local/` copy present (its refusal fixed, the line's own empty at all 24 takes), a session in a kept slot writes 97% fewer files and 61% fewer bytes than a fresh tree with `take: base` (25% with `bin/` aside; the web shape under found rules, 20% and none), estimates of files changed; the root's `node_modules` is kept or installed again and not stored, never placed (TREEPOOL1ag), the CLI's now in the root's rule (TREEPOOL1ad), the contention across a finish left to TREEPOOL1ah.
 ## TREEPOOL1z, the git oracle and `core.ignorecase` (2026-11-09)
 
 > **TREEPOOL1z** (driver): Outcome: `GitPatternOracleTests` runs git itself (`git check-ignore --no-index`, `core.ignorecase` both ways, each top asked again upper-cased) over the translated patterns of a sample (the first form's corpus at every twentieth generated path with the named words and the excluded parent, and this repository's rule file in form 2) and agrees with `GitPattern` top by top; a kept first-form entry now folds case under `core.ignorecase` as the translated ones do (`RuleFileIgnoreCaseTests`, seen to fail first at `BIN/`).

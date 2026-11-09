@@ -91,6 +91,7 @@ public sealed class ShortWaitsCensusTests
         ($"{Driver}/Loop/LookWorkBenchProcessTests.cs: TimeSpan StageBudget", "an elapsed-time bound that states the claim: a look's overlaps, and a whole pass, where nothing moved take a second at most"),
         ($"{Driver}/Loop/MeetingTests.cs: TimeSpan Second", "an input: a meeting's minute shrunk, which the product spends"),
         ($"{Driver}/Loop/MeetingTests.cs: TimeSpan Tenth", "an input: a meeting's minute shrunk, which the product spends"),
+        ($"{Driver}/Workplace/Pool/BenchHolder.cs: WaitAsync(TimeSpan.FromMinutes(1))", "the bench's holder says it holds its file as it starts, and one that says nothing in a minute fails the bench rather than hang it"),
         ($"{Driver}/Workflows/GraphPressTests.cs: WaitAsync(TimeSpan.FromMilliseconds(20))", "a window in which nothing happens: past the bound the ask is no longer waited on, and the claim is that it says false"),
         ($"{Driver}/Workflows/GraphPressTests.cs: WaitAsync(TimeSpan.FromMinutes(1))", "the product's own timeout argument on its pass asks, not a wait of the test's: its answer is read after the pass is done"),
         ($"{Driver}/Workplace/RefWatchProcessTests.cs: TimeSpan Within", "an elapsed-time bound that states the claim: a judgement begun within a second of git's exit"),
