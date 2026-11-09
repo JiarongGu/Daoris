@@ -30,10 +30,6 @@ public sealed class DeclarationLiteralsCensusTests
         ["Daoris.Desktop.Driver/Platform/DeclarationNames.cs DeclarationNames.Rules"] = "the one holder of the names",
         ["Daoris.Desktop.Driver/Platform/DeclarationNames.cs DeclarationNames.Gates"] = "the one holder of the names",
         ["Daoris.Desktop.Driver/Platform/DeclarationNames.cs DeclarationNames.Lanes"] = "the one holder of the names",
-        ["Daoris.Desktop.Driver/Platform/DeclarationNames.cs DeclarationNames.DriverConfig"] = "the one holder of the names",
-        ["Daoris.Desktop.Driver/Platform/DeclarationNames.cs DeclarationNames.PersonRules"] = "the one holder of the names",
-        ["Daoris.Desktop.Driver/Platform/DeclarationNames.cs DeclarationNames.FoundRules"] = "the one holder of the names",
-        ["Daoris.Desktop.Driver/Platform/DeclarationNames.cs DeclarationNames.FileAsks"] = "the one holder of the names",
     };
 
     private static readonly Lazy<SortedSet<string>> Found = new(() => Keys(DesktopCompilations.Each.SelectMany(DeclarationLiterals.Hits)));
