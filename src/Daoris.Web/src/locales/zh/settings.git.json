@@ -216,7 +216,7 @@
   "settings.git.reads.reason.ref-format": "库不认识的引用格式",
   "settings.git.reads.reason.replacements": "被替换的对象，由 git 读取",
   "settings.git.reads.reason.configuration": "库不读取的配置",
-  "settings.git.reads.reason.housekeeping": "git 正在重写包或其索引，库不与它同时打开",
+  "settings.git.reads.reason.housekeeping": "git 正在重写对象文件及其索引，库不与它同时打开",
   "settings.git.reads.reason.unanswered": "库交给 git 的问题",
   "settings.git.reads.reason.failed": "库读取失败",
   "settings.git.reads.reason.native-missing": "库未安装",
