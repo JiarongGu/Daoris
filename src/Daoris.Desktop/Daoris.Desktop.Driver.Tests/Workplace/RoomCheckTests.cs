@@ -213,11 +213,13 @@ public sealed class RoomCheckTests
         Assert.Contains("declares no rooms", report.Said(), StringComparison.Ordinal);
     }
 
+    /// <summary>A rule reaching a tracked path is git's to cover, as its ignore is: the rule is kept, and the floor keeps the path git's.</summary>
     [Fact]
-    public void A_rule_reaching_a_tracked_path_fails_the_check_with_its_reason()
+    public void A_rule_reaching_a_tracked_path_is_kept_and_fails_nothing()
     {
         var report = Check("""{ "lanes": [ { "id": "a", "paths": ["a/**"], "builds": {} } ] }""", Outputs("a/"), "a/x.cs");
 
-        Assert.Contains("rules[1]: 'a/' holds a/x.cs, which git tracks", report.Problems);
+        Assert.True(report.Passes, string.Join("\n", report.Problems));
+        Assert.Equal([FileKind.Output], report.Rules.Select(rule => rule.Kind));
     }
 }
