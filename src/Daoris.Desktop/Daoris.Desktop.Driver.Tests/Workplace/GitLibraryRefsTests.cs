@@ -30,7 +30,7 @@ public sealed class GitLibraryRefsTests : LandedFixture
         return code == 0 ? stdout : null;
     }
 
-    [Fact]
+    [GitLegFact]
     public async Task The_library_lists_what_git_lists_in_every_folder_of_a_repository()
     {
         var (root, _) = await RepositoryWithOriginAsync("engine");
@@ -68,7 +68,7 @@ public sealed class GitLibraryRefsTests : LandedFixture
         Assert.Equal(0, GitLibrary.Open);
     }
 
-    [Fact]
+    [GitLegFact]
     public async Task A_fan_out_of_forty_calls_holds_at_most_eight_repositories_open_and_none_after()
     {
         var root = await BuildRepositoryAsync("fanned");
@@ -94,7 +94,7 @@ public sealed class GitLibraryRefsTests : LandedFixture
         }
     }
 
-    [Fact]
+    [GitLegFact]
     public async Task A_tip_whose_object_is_missing_is_answered_by_git()
     {
         var root = await BuildRepositoryAsync("missing");
