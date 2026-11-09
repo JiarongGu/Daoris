@@ -61,6 +61,22 @@ public sealed class AcpStreamsTests
         Assert.Empty(told.Ends);
     }
 
+    [Fact]
+    public async Task A_session_end_whose_saying_failed_ends_what_it_left_for_the_end_said_again()
+    {
+        var refusing = false;
+        var root = new AcpConsole(_ => { if (refusing) throw new IOException("the console is gone"); }, AcpConsole.Quiet);
+        var streams = new AcpStreams(
+            new SessionStreams(new SessionOutput(), "d-1"), root, _ => { }, AcpConsole.Quiet, children: new Told());
+        Take(streams, "s-1", Spawned("a1", "One", "one"));
+        Take(streams, "s-1", JsonSerializer.Serialize(new { sessionUpdate = "async_task_spawned", asyncTaskId = "t1", name = "Build" }));
+
+        refusing = true;
+        await Assert.ThrowsAsync<IOException>(streams.EndAllAsync);
+
+        await streams.EndAllAsync().WaitAsync(TimeSpan.FromSeconds(10));
+    }
+
     private static AcpStreams Streams(IReadingSink children) => new(
         new SessionStreams(new SessionOutput(), "d-1"), new AcpConsole(_ => { }, AcpConsole.Quiet), _ => { }, AcpConsole.Quiet,
         children: children);

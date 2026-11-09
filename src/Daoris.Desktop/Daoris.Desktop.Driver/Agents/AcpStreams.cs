@@ -139,15 +139,22 @@ internal sealed class AcpStreams(
             }
         }
 
-        foreach (var child in open)
+        try
         {
-            child.Console.End();
-            streams.Line(child.StreamId, EndedWithSession);
-            Ended(SessionStreamKind.Subagent, child.StreamId, child.Name, SessionStream.SessionEnded);
-            if (child.OnRoot) Card(child.Id, child.StreamId, SessionStream.SessionEnded);
+            foreach (var child in open)
+            {
+                child.Console.End();
+                streams.Line(child.StreamId, EndedWithSession);
+                Ended(SessionStreamKind.Subagent, child.StreamId, child.Name, SessionStream.SessionEnded);
+                if (child.OnRoot) Card(child.Id, child.StreamId, SessionStream.SessionEnded);
+            }
+        }
+        finally
+        {
+            // Marked finishing above, so only this call can finish them: left unfinished, the end said again waits on them for ever.
+            foreach (var task in unfinished) _ = FinishAsync(task, settle: false);
         }
 
-        foreach (var task in unfinished) _ = FinishAsync(task, settle: false);
         await Task.WhenAll(waits).ConfigureAwait(false);
 
         List<Child> all;
