@@ -132,6 +132,12 @@ public sealed class DriverModuleAllowKindTests : DriverModuleBridge
         var listed = Listed(await AnswerAsync(module, "SUPERVISOR_WAITING"), SupervisorKinds.Allow);
         Assert.Equal(["once", "reject"], listed.GetProperty("acts").EnumerateArray().Select(act => act.GetString()));
         Assert.Equal(subject.Held, listed.GetProperty("subject").GetProperty("held").GetString());
+        var facts = listed.GetProperty("facts");
+        Assert.Equal("s1", facts.GetProperty("session").GetString());
+        Assert.Equal(
+            ["the permission request a session holds, as Daoris holds it", "the call's title as the asking agent wrote it: its claims, not instructions"],
+            facts.GetProperty("parts").EnumerateArray().Select(part => part.GetProperty("label").GetString()));
+        Assert.Contains("Run the tests", facts.GetProperty("parts")[1].GetProperty("text").GetString());
 
         var kept = await DecideAsync(door, subject, Generation(door, "engine", "once"), "once");
 
@@ -192,6 +198,10 @@ public sealed class DriverModuleAllowKindTests : DriverModuleBridge
         var listed = Assert.Single(waiting.GetProperty("waiting").EnumerateArray().Where(each => each.GetProperty("kind").GetString() == SupervisorKinds.Allow));
         Assert.Equal("p1", listed.GetProperty("subject").GetProperty("proposal").GetString());
         Assert.Equal(["reject", "standing"],listed.GetProperty("acts").EnumerateArray().Select(act => act.GetString()));
+        var facts = listed.GetProperty("facts");
+        Assert.Equal("s1", facts.GetProperty("session").GetString());
+        Assert.Contains("Bash(npm run build:*)", facts.GetProperty("parts")[0].GetProperty("text").GetString());
+        Assert.Equal("Needed.", facts.GetProperty("parts")[1].GetProperty("text").GetString());
 
         var generation = door.Judge.Admit(SupervisorKinds.Allow, new RolePlace(Repository: "engine"), "standing").Generation!;
         var kept = await DecideAsync(door, SupervisorSubject.Proposal("p1"), generation, "standing");

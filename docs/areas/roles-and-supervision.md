@@ -301,7 +301,10 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they start wi
     every kind's subjects, `{ kind, subject, repository, generation, acts }`, with the kind's acts the grants cover there, and a subject
     whose supervisor covers none, or whose hold is an agent's, is not listed. An `allow` is listed in three shapes (a held request
     `{ session, request, held }`, a widening `{ proposal }`, a steward's act `{ ask }`) and the verb's `<id>` is the session for the
-    first and the subject's own id for the others; it sends the subject whole as the listing names it. (from D208, D233)
+    first and the subject's own id for the others; it sends the subject whole as the listing names it. A `files` subject
+    `{ repository, start, what, text }` is named by its repository, the verb's `--subject` its text. The verb prints an allow or a
+    held act as an agent's prompt is handed it: Daoris's own words, then the facts its kind's row composed (the listing's `facts`)
+    fenced under the print's own nonce, then the line's course where the facts name a session. (from D208, D233)
 47. It never answers a go-ahead, a sign-in, an access widening, spending, a deletion, a question the repository says to
     ask the person, a preference, an unrecorded or contradicting one, or one that directs it. (from D208)
 48. It is also refused on a question the agent marked the owner's, past the answers-alone bound, and where a person's

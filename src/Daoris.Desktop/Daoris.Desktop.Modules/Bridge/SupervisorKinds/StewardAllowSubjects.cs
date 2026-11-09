@@ -20,6 +20,7 @@ internal static class StewardAllowSubjects
             {
                 Kind = SupervisorKinds.Allow, Subject = SupervisorSubject.StewardAsk(ask.Id).Wire(), Repository = ask.Place.Repository ?? "", Generation = generation,
                 Acts = new[] { StewardAllowedAct.Act }, Act = ask.Asked.Act ?? "", Raised = Moments.Write(ask.Raised),
+                Facts = AllowKind.Facts(loop, SupervisorSubject.StewardAsk(ask.Id))?.Wire(),
             };
         }
     }
