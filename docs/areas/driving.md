@@ -472,7 +472,8 @@ index with `tools/orient-index.mjs`), `test-map` and `code-map` for any new file
 - **TREEPOOL1** (D214): rooms first with an optimised fallback for a session's tree; proposed, both makers' reads of
   round 5 owed.
 - **REPOCONFIG1**: one store every reader of a repository's declarations passes, each content parsed once by its bytes' key and
-  a commit's facts proven by their own hashes (`docs/2026-11-09-repo-config-design.md`); round 3 proposed, both makers' reads of it owed.
+  a commit's facts proven by their own hashes, and every file, parse, process and git site classified against it
+  (`docs/2026-11-09-repo-config-design.md`); round 4 proposed, both makers' reads of it owed.
 - **SESSWATCH1d, 1e**: the record of quiet episodes, then an automatic end only where it shows such quiet is not work.
 - **SESSWATCH1f**: each pass asked for its own minutes.
 - **ONEWAY1j / SESSCTX1e**: *Go on fresh*, one press per go-on case.
