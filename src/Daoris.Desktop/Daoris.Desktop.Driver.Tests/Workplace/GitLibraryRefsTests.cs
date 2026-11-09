@@ -142,6 +142,32 @@ public sealed class GitLibraryRefsTests : LandedFixture
     }
 
     [Fact]
+    public async Task A_fan_out_of_forty_calls_holds_at_most_eight_repositories_open_and_none_after()
+    {
+        var root = await BuildRepositoryAsync("fanned");
+        var most = 0;
+        var calls = Enumerable.Range(0, 40).Select(_ => GitLibrary.AskAsync(root, call =>
+        {
+            var open = GitLibrary.Open;
+            InterlockedMax(ref most, open);
+            Thread.Sleep(20);
+            return call.Repository.Head.CanonicalName;
+        }, CancellationToken.None));
+
+        Assert.All(await Task.WhenAll(calls), head => Assert.Equal("refs/heads/main", head));
+        Assert.InRange(most, 2, GitLibrary.AtOnce);
+        Assert.Equal(0, GitLibrary.Open);
+
+        static void InterlockedMax(ref int most, int seen)
+        {
+            for (var was = Volatile.Read(ref most); seen > was; was = Volatile.Read(ref most))
+            {
+                if (Interlocked.CompareExchange(ref most, seen, was) == was) return;
+            }
+        }
+    }
+
+    [Fact]
     public async Task A_tip_whose_object_is_missing_is_answered_by_git()
     {
         var root = await BuildRepositoryAsync("missing");

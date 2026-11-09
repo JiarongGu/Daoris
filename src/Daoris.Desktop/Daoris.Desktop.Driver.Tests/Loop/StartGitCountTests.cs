@@ -109,11 +109,10 @@ public sealed class StartGitCountTests : IDisposable
 
     // What the ceiling allows: the line is guessed once, and a fresh tree's `merge-base` and `log` against itself are not asked. The
     // opening asks the checkout and the tree each for a working root (two folders, two facts), makes the tree with its hooks held and
-    // lets the opening lock go; the session locks its tree once its record is open. The files stage reads the rules once (tracked
-    // names, ignored tops, linked worktrees, the two rule files, and `core.ignorecase`, which git's ignore patterns are matched by),
-    // writes back what a cut-off start left (`status`) and runs the owed `post-checkout` hook. The rest are the start's reads of the
-    // tree's layout and line, the landing plan's layout asked once for the plan and its judgement together.
-    private const int Ceiling = 21;
+    // lets the opening lock go; the session locks its tree once its record is open. The files stage reads the rules once (tracked names,
+    // ignored tops, linked worktrees, the two rule files, `core.ignorecase`), writes back what a cut-off start left (`status`) and runs the
+    // owed `post-checkout` hook. The rest are the start's reads of the tree's layout and line, the landing plan's layout one start.
+    private const int Ceiling = 20;
 
     private void Git(params string[] arguments)
     {

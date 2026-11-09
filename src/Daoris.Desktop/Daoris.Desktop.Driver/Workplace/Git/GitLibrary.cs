@@ -17,10 +17,14 @@ namespace Daoris.Driver;
 /// </remarks>
 internal static class GitLibrary
 {
+    /// <summary>The calls that run at once in the process; a fan-out over many repositories waits for one to end.</summary>
+    internal const int AtOnce = 8;
+
     private static readonly Lazy<bool> s_settled = new(Settle, LazyThreadSafetyMode.ExecutionAndPublication);
+    private static readonly SemaphoreSlim s_calls = new(AtOnce, AtOnce);
     private static int s_open;
 
-    /// <summary>The repositories open now: zero between calls.</summary>
+    /// <summary>The repositories open now: zero between calls, never above <see cref="AtOnce"/>.</summary>
     internal static int Open => Volatile.Read(ref s_open);
 
     /// <summary>
@@ -31,7 +35,15 @@ internal static class GitLibrary
     {
         if (GitLibraryAdmission.RefusalOf(folder) is not null) return null;
         if (RefFiles.GitDirOf(folder) is not { } gitDir || RefFiles.CommonDirOf(folder) is not { } commonDir) return null;
-        return await Task.Run(() => Call(folder, gitDir, commonDir, call), ct).ConfigureAwait(false);
+        await s_calls.WaitAsync(ct).ConfigureAwait(false);
+        try
+        {
+            return await Task.Run(() => Call(folder, gitDir, commonDir, call), ct).ConfigureAwait(false);
+        }
+        finally
+        {
+            s_calls.Release();
+        }
     }
 
     private static T? Call<T>(string folder, string gitDir, string commonDir, Func<GitLibraryCall, T?> call)

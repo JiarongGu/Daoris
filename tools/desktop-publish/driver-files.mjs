@@ -1,5 +1,5 @@
 // What an install's driver folder must hold: the host the launchers run, and the git library's native file, which the `win-x64`
-// publish lays beside the driver as it lays SQLite's (GITLIB1d). Without it every ref question is git's, which works and costs starts.
+// publish lays beside the driver as it lays SQLite's. Without it every ref question is git's, which works and costs starts.
 import { existsSync, readdirSync } from 'node:fs';
 import { join } from 'node:path';
 import { DRIVER_EXE, DRIVER_HOME } from './launchers.mjs';

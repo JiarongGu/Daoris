@@ -199,8 +199,8 @@ public sealed class LandGitCountTests : IDisposable
     // Every landing under Current performs its delivery, each effect's outcome read after it and never assumed: the branch's ref made
     // through one ref transaction (its symbolic-ref check and `update-ref --stdin`) and read back, a merge's line read after its press
     // (`rev-parse`, `merge-base --is-ancestor`).
-    private const int SquashCeiling = 25;
-    private const int MergeCeiling = 39;
+    private const int SquashCeiling = 22;
+    private const int MergeCeiling = 36;
 
     private const string VerifyQuiet = "git rev-parse --verify --quiet ";
 

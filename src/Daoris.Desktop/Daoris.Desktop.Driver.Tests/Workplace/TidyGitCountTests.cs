@@ -51,9 +51,9 @@ public sealed class TidyGitCountTests(ITestOutputHelper output) : BranchTidyingF
 
     // On six trees, asking per tree takes 57 git starts and the one list 38: each tree's branch asked of the tree, the checkout's top and its trees
     // asked by each stage, the session branches listed again, and every branch listed by date and each pair's files compared both ways
-    // per branch. Measured 26, two trees 14, with the checkout's trees listed twice, by the stages and by the
-    // judgement; 20, two trees 12, with each branch's tree the refs' one listing's (`%(tree)`), no start a branch.
-    private const int Ceiling = 20;
+    // per branch. Measured 26, two trees 14, with the checkout's trees listed twice, by the stages and by the judgement; 20, two trees
+    // 12, with each branch's tree the refs' one listing's (`%(tree)`), no start a branch; 17, two trees 9, with that listing the library's.
+    private const int Ceiling = 17;
 
     /// <summary>The git a look asks, its second over the same home: the first reads what a running driver's first look reads.</summary>
     private async Task<List<string>> WarmLookAsync()

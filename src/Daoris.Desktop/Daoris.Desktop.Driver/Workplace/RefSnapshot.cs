@@ -150,10 +150,7 @@ internal sealed class RefSnapshot
         }
     }
 
-    /// <summary>
-    /// The one read: every branch here and every copy of origin's, with what each points at and its upstream. The library's where it
-    /// admits the question (<see cref="GitLibraryRefs"/>), else one git start; a test's stand-in runner is always asked.
-    /// </summary>
+    /// <summary>The one read of every branch and origin copy: the library's where admitted (<see cref="GitLibraryRefs"/>), else one start.</summary>
     internal static async Task<string?> ReadAsync(string root, CancellationToken ct)
     {
         if (GitRuns.Runs.Value is null && GitRuns.Answered.Value is null
