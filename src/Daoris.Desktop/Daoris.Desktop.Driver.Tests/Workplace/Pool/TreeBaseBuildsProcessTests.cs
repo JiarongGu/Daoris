@@ -51,6 +51,46 @@ public sealed class TreeBaseBuildsProcessTests : IDisposable
     }
 
     [Fact]
+    public async Task A_project_of_two_frameworks_is_built_once_for_each_and_the_release_is_recorded_with_its_commands_commit_exit_and_moment()
+    {
+        await SeedAsync("<TargetFrameworks>net10.0;net8.0</TargetFrameworks>", "Library");
+        var stale = Path.Combine(Tree, "App", "bin", "Debug", "net6.0", "App.dll");
+        Directory.CreateDirectory(Path.GetDirectoryName(stale)!);
+        await File.WriteAllTextAsync(stale, "s-aaaa0001's\n");
+        var head = (await GitAsync(Tree, "rev-parse", "HEAD")).Trim();
+        var before = DateTimeOffset.UtcNow;
+
+        var said = new StringWriter();
+        var exit = await TreeBaseBuilds.BuildAsync(Home, Path.Combine(Tree, "App"), said, said);
+
+        Assert.True(exit == 0, said.ToString());
+        Assert.True(File.Exists(Path.Combine(Tree, "App", "bin", "Debug", "net10.0", "App.dll")));
+        Assert.True(File.Exists(Path.Combine(Tree, "App", "bin", "Debug", "net8.0", "App.dll")));
+        Assert.False(Directory.Exists(Path.GetDirectoryName(stale)));
+        var release = Assert.Single(TreeFilesRecord.Read(Home, Tree)!.Released);
+        Assert.Equal(("App/bin/Debug/", "App/App.csproj", "Debug", head, 0, 1), (release.Path, release.Project, release.Configuration, release.Commit, release.Exit, release.Trimmed));
+        Assert.Equal(["net10.0", "net8.0"], release.Frameworks);
+        Assert.Equal(2, release.Commands.Count);
+        Assert.All(release.Commands, command => Assert.StartsWith("dotnet build -c Debug App.csproj -f net", command, StringComparison.Ordinal));
+        Assert.InRange(release.At, before, DateTimeOffset.UtcNow);
+    }
+
+    [Fact]
+    public async Task A_base_whose_record_names_no_build_is_set_aside_whole_and_is_no_base()
+    {
+        await SeedAsync(builds: "");
+
+        var said = new StringWriter();
+        var exit = await TreeBaseBuilds.BuildAsync(Home, Path.Combine(Tree, "App"), said, said);
+
+        Assert.True(exit == 0, said.ToString());
+        Assert.Contains("names no build", said.ToString());
+        Assert.Empty(TreeFilesRecord.Read(Home, Tree)!.Bases);
+        Assert.False(Directory.Exists(Output));
+        Assert.True(File.Exists(Path.Combine(Aside, "App", "bin", "Debug", "net10.0", "App.dll")));
+    }
+
+    [Fact]
     public async Task A_restore_and_a_failed_build_release_nothing_and_the_marker_stands()
     {
         await SeedAsync();
@@ -82,29 +122,30 @@ public sealed class TreeBaseBuildsProcessTests : IDisposable
     }
 
     /// <summary>A checkout whose program the previous line built, its <c>bin/Debug/</c> kept as that line's base: recorded and marked.</summary>
-    private async Task SeedAsync()
+    private async Task SeedAsync(
+        string frameworks = "<TargetFramework>net10.0</TargetFramework>", string kind = "Exe", string builds = "dotnet build -c {configuration}")
     {
         var app = Path.Combine(Tree, "App");
         Directory.CreateDirectory(app);
         Directory.CreateDirectory(Home);
         foreach (var name in new[] { "Directory.Build.props", "Directory.Build.targets", "Directory.Packages.props" }) await File.WriteAllTextAsync(Path.Combine(Tree, name), "<Project />");
         await File.WriteAllTextAsync(Path.Combine(app, "App.csproj"),
-            """
+            $"""
             <Project Sdk="Microsoft.NET.Sdk">
               <PropertyGroup>
-                <OutputType>Exe</OutputType>
-                <TargetFramework>net10.0</TargetFramework>
+                <OutputType>{kind}</OutputType>
+                {frameworks}
               </PropertyGroup>
             </Project>
             """);
-        await File.WriteAllTextAsync(Path.Combine(app, "Program.cs"), "System.Console.WriteLine(\"hi\");");
+        await File.WriteAllTextAsync(Path.Combine(app, "Program.cs"), kind == "Exe" ? "System.Console.WriteLine(\"hi\");" : "public static class Greeting { public static string Text => \"hi\"; }");
         await File.WriteAllTextAsync(Path.Combine(Tree, ".gitignore"), "bin/\nobj/\n");
         await GitAsync(Tree, "init", "--quiet", "-b", "main");
         await GitAsync(Tree, "add", ".");
         await GitAsync(Tree, "-c", "user.email=fixture@example.test", "-c", "user.name=Fixture", "commit", "--quiet", "-m", "first");
         Assert.Equal(0, Run(app, "build", "-nodeReuse:false", "--nologo", "-v", "q"));
 
-        var kept = new TreeBase("App/bin/Debug/", "s-aaaa0001", "0000000", DateTimeOffset.UtcNow, "App/App.csproj", "Debug") { Aside = Aside };
+        var kept = new TreeBase("App/bin/Debug/", "s-aaaa0001", "0000000", DateTimeOffset.UtcNow, "App/App.csproj", "Debug") { Aside = Aside, Builds = builds };
         TreeBases.Write(Home, Tree, [kept]);
     }
 

@@ -66,6 +66,31 @@ public sealed class RelayCopyTests : IDisposable
         }
     }
 
+    /// <summary>A relay that opens its in-use file in the removal's gap keeps the build, back at its name or, where a rename cannot, whole under its removal name.</summary>
+    [Fact]
+    public void A_build_a_relay_opened_in_the_gap_before_the_rename_is_not_deleted()
+    {
+        var held = RelayCopy.LayOut(Home, Source("one", "one"), _ => { });
+        FileStream? relay = null;
+        string? renamedTo = null;
+        try
+        {
+            RelayCopy.LayOut(Home, Source("two", "two"), _ => { }, renamed: removing =>
+            {
+                renamedTo = removing;
+                relay = new FileStream(Path.Combine(removing, RelayCopy.InUse), FileMode.Open, FileAccess.Read, FileShare.ReadWrite | FileShare.Delete);
+            });
+
+            Assert.NotNull(relay);
+            var kept = Directory.Exists(held) ? held : renamedTo!;
+            Assert.True(File.Exists(Path.Combine(kept, "daoris-driver.dll")), "a build a relay held in the gap was deleted");
+        }
+        finally
+        {
+            relay?.Dispose();
+        }
+    }
+
     [Fact]
     public void A_removal_stopped_partway_is_deleted_by_the_next_and_a_relay_never_runs_from_it()
     {

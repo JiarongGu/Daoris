@@ -236,6 +236,7 @@
   "settings.daoris.why.no-answer": "没有应答",
   "settings.daoris.why.foreign": "应答的是另一个安装的服务",
   "settings.daoris.why.no-host": "没有找到宿主程序",
+  "settings.daoris.why.base-host": "这里的宿主开发构建是上一条线的；对它运行 `daoris tree build` 即可释放它",
   "settings.daoris.why.unstartable": "宿主无法启动",
   "settings.daoris.why.exited": "宿主已结束",
   "settings.daoris.why.never-answered": "从未应答",

@@ -68,6 +68,17 @@ public sealed class DoctrineStatusTests
     }
 
     [Fact]
+    public void A_kept_core_file_with_no_text_is_a_reopened_keep_and_is_offered()
+    {
+        var status = DoctrineStatus.Parse(Answer(kept: """
+            [ { "target": "rules/kept.md", "reason": "ours", "canon": "2222", "now": null, "reopened": false, "absentCore": true } ]
+            """))!;
+
+        Assert.Equal(1, status.Reopened);
+        Assert.True(status.Offers);
+    }
+
+    [Fact]
     public void Nothing_moved_offers_nothing()
     {
         var status = DoctrineStatus.Parse(Answer())!;

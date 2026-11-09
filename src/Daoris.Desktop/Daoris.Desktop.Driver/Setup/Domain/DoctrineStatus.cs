@@ -38,7 +38,7 @@ public sealed record DoctrineStatus
 
     public int Retired { get; init; }
 
-    /// <summary>How many of the repository's keeps the canon's file moved past since they were judged.</summary>
+    /// <summary>How many keeps <c>reconcile</c> lists as reopened: the canon's file moved past them, or a core file is kept with no text.</summary>
     public int Reopened { get; init; }
 
     /// <summary>The version of the newer canon that wrote the lock, which the tool never rolls back; null where none did.</summary>
@@ -75,7 +75,8 @@ public sealed record DoctrineStatus
                 Added = Count(update, "added"),
                 Retired = Count(update, "retired"),
                 Reopened = Field(root, "kept") is { ValueKind: JsonValueKind.Array } kept
-                    ? kept.EnumerateArray().Count(each => each.ValueKind == JsonValueKind.Object && Field(each, "reopened") is { ValueKind: JsonValueKind.True })
+                    ? kept.EnumerateArray().Count(each => each.ValueKind == JsonValueKind.Object
+                        && (Field(each, "reopened") is { ValueKind: JsonValueKind.True } || Field(each, "absentCore") is { ValueKind: JsonValueKind.True }))
                     : 0,
                 NewerLock = newer is { } locked ? Text(locked, "locked") ?? "" : null,
             };

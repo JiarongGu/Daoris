@@ -5,6 +5,9 @@ the per-task record. Entries preserve their original wording so the archive stay
 
 ---
 
+## TREEPOOL1aa — a kept output as the previous line's build base (2026-11-09)
+
+> **TREEPOOL1aa** (driver, tools; D214; §35.3, §36.3, §37.3, §38.2): Outcome: a take keeps a `base` top's declared configurations as the previous line's build, recorded with its producer and its rule's `builds` and marked `.daoris-base` (a base nothing builds set aside), set aside where the toolchain key moves; `daoris tree build` is the one release, building per framework (`-f`) over MSBuild's own `FileWrites` account, setting aside what that build does not own and keeping the producer, frameworks, commands, commit, exit, moment and count beside the bases (`TreeBaseRelease`); the start says the bases and their integrated runners (`started.tree-base`, `started.tree-base-unguarded`) and each trim (`tree.base-trimmed`), the gate run's admission names the unreleased bases, a marked development host is named with the door (`tree.base-host`, the window's `base-host`); eleven readers guarded and `run --real` refused under a marker, held by the census per call site (`TreeBaseGitTests`, `TreeBaseBuildsProcessTests`, `BuildAccountProcessTests`, `TreeBaseWordsTests`, `tools/tree-base.test.mjs`).
 ## KNOWREV2a to KNOWREV2j — the knowledge, memory and records review's second cycle (2026-11-09)
 
 > **KNOWREV2a / 2b / 2c / 2d / 2e / 2f / 2g / 2h / 2i / 2j** (service): Outcome: all ten held against main's tip, each fixed with a regression test and a commit.
@@ -18,6 +21,42 @@ the per-task record. Entries preserve their original wording so the archive stay
 > 2h (a2122031f5): the in-memory store normalizes a workspace on write, and one contract test compares every read of the two stores after the same writes (`KnowledgeStoreContractTests`).
 > 2i (4fb9bf878c): an awaiting end whose session was deleted is listed as a wait of its own, decided by its row as a sweep's is; an orphaned replacement or staged row is not (`MemoryDecisionTests`).
 > 2j (aa1dcaa440): plain words of a forgotten quest publish under the next id at every step as rule 31 says; only a request key, which has no next id, is refused as cleared (`QuestRequestKeyTests`).
+
+## PLUGREV2 — the plugins review's second cycle (2026-11-09)
+
+> **PLUGREV2a** (driver, plugins): Outcome: an update's or replace's swap-in that fails puts the installed folder back, and a rollback that fails too is refused as a `DriverException` naming the `.removing-*` folder the plugin lies in, the stage forgotten (`PluginInstall.SwapIn`, one tail for both; a `move` hook on `PluginFolders`); proved by `PluginSourceTests`.
+>
+> **PLUGREV2b** (driver, web, plugins): Outcome: a sound plugin switched off keeps its approval on its page and in the list (`HelpGrants.Read(withSwitchedOff)`, its grants marked `Off` and handed nothing), and the page's press approves one (`HelpGrants.Declared` takes a sound plugin, on or off); the Ask Daoris proposal still asks a plugin switched on; proved by `HelpGrantsTests` and `PluginPageTests`.
+>
+> **PLUGREV2c** (driver, plugins): Outcome: a placed plugin's `plugin.step` and `plugin.failed` lines carry its id (`WorkPlugins` logs `PlacedWork.PluginOf(key)`, so `PluginHealth` sees the failure under the plugin), and `HookSet.Refused` counts one refusal at the first place that holds a state, not once per place; proved by `PlacedWorkTests`.
+>
+> **PLUGREV2d** (driver, plugins): Outcome: a look and `Watch` divide the awaited set and apply it through `PlacedWork.Apply`, one lock around both, so a look never applies a set older than one `Watch` stored (the rejected alternative, `Watch` only recording, would have delayed an awaited place's start to the next look); proved by `PlacedWorkTests`.
+>
+> **PLUGREV2e** (driver, plugins): Outcome: `WorkEventTeller` tells rows alone and keeps its cursor in memory (no clock, no gap), and `LoopRun` and `DriveConsole` wrap it in `WorkEventNews.Gapped`, the one place that says the first-place and incomplete-batch `events.missed`; proved by `WorkEventTellerTests` (the bare teller and the wrapped one).
+>
+> **PLUGREV2f** (driver, plugins): Outcome: `RelayCopy` removes a build only after its `in-use` file opens alone a second time in the renamed folder (`Unheld`, also the check before a leftover `.removing-*` is deleted); a build a relay opened in the gap goes back to its name, or where a rename cannot (Windows over an open file) stays under its removal name whole; proved by `RelayCopyTests`.
+>
+> **PLUGREV2g** (driver, plugins): Outcome: the relay's stdout bound is said as 54 lines, the gap, 50 events, their count, an ending's own line and the watermark (said, not folded into the count line, which would have changed what a relay prints); `RelayBatchTests` holds the case that ends through a second client and through the pipe.
+>
+> **PLUGREV2h** (driver, plugins): Outcome: `PluginCatalog.Signature` (the hook set keeps its own) and `LandingPlugins`'s `patience` parameter, `DefaultPatience` and its default start lambda deleted with their assertions; an occasion's asks start through the injected start or `StartProcessAsync` alone, and `LandingPatience.Plugin` is read direct.
+>
+> **PLUGREV2i** (driver, plugins): Outcome: the plugins tests that could not fail now can: the host-token tests read the token in the starting flow after the start (`PlacedWorkTests`, `PluginHostTokenTests`; both fail with `HookSet`'s `finally` removed); the package traversal case names three distinct escape paths; the "starts nothing" checks run the hook's script once as an ES module to prove it writes its mark, then read the mark's absence after a second (`HookMarks`); the always-true `NotNull` is gone; the 4 KB frame cases send a valid frame padded to and one byte past the bound.
+
+## DOCTRINECLIREV2 — the doctrine-and-CLI review's second cycle, fixed defects (2026-11-09)
+
+> **DOCTRINECLIREV2a** (cli): Outcome: `analyze`'s budget projection (`budget.ts`, moved out of `analyze.ts`) measures the region's body beside the repository's own rule files, and a selected rule the region already holds adds only the change in its size, so an adopted repository no longer shows its rules counted again; proved by `analyze.test.ts`.
+
+> **DOCTRINECLIREV2b** (driver): Outcome: `DoctrineStatus.Reopened` counts a core file kept with no text (`absentCore`, a field `status --json` already carries) beside a keep the canon moved past, so the place page offers the reconcile that names it; the choice, a reader-only change that leaves `status --json` and the CLI as they are, rejects a new `reopened: true` from the tool; proved by `DoctrineStatusTests`.
+
+> **DOCTRINECLIREV2c** (devkit): Outcome: the sensitive gate's tree scope reads a file with a UTF-16 byte-order mark as text (`SensitiveGate.IsBinary`), so a leak in a file Windows PowerShell's `>` wrote is found; proved by `SensitiveGateTests`. The staged scope's share stays open as DOCTRINECLIREV2c2.
+
+> **DOCTRINECLIREV2d** (devkit): Outcome: the links gate no longer checks links a document quotes in a fenced block or a code span (`LinkText`), reading fences through the service's `MarkdownFence` compiled into the devkit, so there is no fifth fence reader or second table; proved by `LinksGateTests`.
+
+## HOMELEASE2 and FOLDERMOVE2 — the install-home-update review's second cycle (2026-11-09)
+
+> **HOMELEASE2** (install-home-update): Outcome: a lease judged stale is moved aside in one step and judged by what moved (`HomeLease.RemoveStale`), a lease that is not what was judged stale put back, so a taker's lease written between another's read and removal is never removed; proved by `HomeLeaseTests`.
+
+> **FOLDERMOVE2** (install-home-update): Outcome: a cross-volume move-in whose copy landed is a move even where a held file keeps the source from being removed: `FolderMove.Move` returns whether the source went, and `InstallHome.MoveIn` counts the entry moved rather than failed; proved by `FolderMoveTests`.
 
 ## TREEPOOL1ac — shared paths (2026-11-09)
 

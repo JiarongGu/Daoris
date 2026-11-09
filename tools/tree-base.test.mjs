@@ -10,7 +10,8 @@
  * for one reason this test checks against the code; a site in neither list fails, and so does an entry no site matches.
  */
 import assert from 'node:assert/strict';
-import { existsSync, mkdirSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { spawnSync } from 'node:child_process';
+import { cpSync, existsSync, mkdirSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { after, test } from 'node:test';
 import { fileURLToPath } from 'node:url';
@@ -35,7 +36,7 @@ const REASONS = {
   referenced: (site, _text, entry) => referenced(site.file, entry.project),
   fixture: (site) => TEST.test(site.file),
   'merge tool': (site) => site.file === 'tools/merge-branch.mjs' && site.shape === 'R2' && !/out\.push\(/.test(site.statement),
-  text: (site) => /out\.push\(|new\(\$@"|\/--no-build\//.test(site.statement),
+  text: (site) => /out\.push\(|new\(\$@"|\/--no-build\/|const string \w+ = "--no-build";/.test(site.statement),
 };
 
 /** Every site of the tree as it stands, by file and the text its statement holds; an empty text takes every site of a test file. */
@@ -94,6 +95,7 @@ const CENSUS = [
   { file: 'tools/merge-branch.mjs', text: 'export const rerunCommand', why: 'merge tool' },
   { file: 'tools/merge-branch.mjs', text: 'out.push(', why: 'text' },
   { file: 'src/Daoris.Desktop/Daoris.Desktop.Driver/Workplace/Files/FileAnalysis.cs', text: '--no-build|', why: 'text' },
+  { file: 'src/Daoris.Desktop/Daoris.Desktop.Driver/Workplace/Files/FileKindSets.cs', text: 'const string SkipsBuild = "--no-build"', why: 'text' },
   { file: 'tools/tree-base.mjs', text: "const output = join(project, 'bin', configuration)", why: 'finds' },
   { file: 'tools/tree-base.mjs', text: '/--no-build/', why: 'text' },
 ];
@@ -187,4 +189,30 @@ test('the one builder builds through the door where a marker stands under the co
   build(project, 'Release', { runner });
   assert.deepEqual(ran, [`daoris tree build ${join(project, 'bin', 'Debug')}`, `dotnet build ${project} -c Release`]);
   assert.equal(existsSync(join(project, 'bin', 'Debug', MARKER)), true);
+});
+
+test('`run --real` is refused while a marker stands over the shell it would start, before it reads a home or starts anything', () => {
+  const checkout = join(scratch, 'real');
+  for (const folder of ['tools', join('src', 'Daoris.Cli', 'src')]) {
+    cpSync(join(root, folder), join(checkout, folder), { recursive: true, filter: (from) => !/[/\\](node_modules|bin|obj)$/.test(from) });
+  }
+  cpSync(join(root, 'src', 'Daoris.Cli', 'package.json'), join(checkout, 'src', 'Daoris.Cli', 'package.json'));
+  writeFileSync(join(checkout, 'package.json'), JSON.stringify({ type: 'module' }));
+  mkdirSync(join(checkout, '.git'));
+  const app = join(checkout, 'src', 'Daoris.Desktop', 'Daoris.Desktop.App');
+  const built = join(app, 'bin', 'Debug', 'net10.0');
+  mkdirSync(built, { recursive: true });
+  writeFileSync(join(app, 'Daoris.Desktop.App.csproj'), '<Project><PropertyGroup><AssemblyName>Daoris.Desktop.App</AssemblyName></PropertyGroup></Project>');
+  for (const file of ['Daoris.Desktop.exe', 'Daoris.Desktop.App.dll']) writeFileSync(join(built, file), "the previous line's\n");
+  writeFileSync(join(app, 'bin', 'Debug', MARKER), JSON.stringify({ from: 's-aaaa0001', says: "this output is the previous line's build; run `daoris tree build bin/Debug` first" }));
+
+  const home = join(checkout, 'home');
+  const ran = spawnSync(process.execPath, [join(checkout, 'tools', 'desktop.mjs'), 'run', '--real'], {
+    cwd: checkout, encoding: 'utf8', env: { ...process.env, DAORIS_HOME: home }, timeout: 60_000,
+  });
+
+  assert.equal(ran.status, 1, `${ran.stdout}${ran.stderr}`);
+  assert.match(ran.stderr, /Daoris\.Desktop\.exe: this output is the previous line's build; run `daoris tree build bin\/Debug` first/);
+  assert.doesNotMatch(ran.stdout, /--real/);
+  assert.equal(existsSync(home), false);
 });

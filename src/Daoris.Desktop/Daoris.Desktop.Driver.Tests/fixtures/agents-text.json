@@ -6047,8 +6047,7 @@
       "out": [
         "daoris: `claude-code` account `<id>` is the API key …wxyz.",
         "  Kept in <root>/daoris/profiles/keys.json — machine-local, tracked by nothing, shown back only as its last four.",
-        "  `daoris agent account rename claude-code <id> <name>` gives it a name of yours (ACCT2), and",
-        "  `daoris agent account join claude-code <id> <workspace>…|--machine` puts it in a list a start runs on."
+        "  `daoris agent account rename claude-code <id> <name>` gives it a name of yours."
       ],
       "err": [],
       "after": {
@@ -6074,8 +6073,7 @@
       "out": [
         "daoris: `claude-code` account `<id>` is the API key …9999.",
         "  Kept in <root>/daoris/profiles/keys.json — machine-local, tracked by nothing, shown back only as its last four.",
-        "  `daoris agent account rename claude-code <id> <name>` gives it a name of yours (ACCT2), and",
-        "  `daoris agent account join claude-code <id> <workspace>…|--machine` puts it in a list a start runs on."
+        "  `daoris agent account rename claude-code <id> <name>` gives it a name of yours."
       ],
       "err": [],
       "after": {
@@ -6108,8 +6106,7 @@
       "out": [
         "daoris: `claude-code` account `<id>` is the API key …3333.",
         "  Kept in <root>/daoris/profiles/keys.json — machine-local, tracked by nothing, shown back only as its last four.",
-        "  `daoris agent account rename claude-code <id> <name>` gives it a name of yours (ACCT2), and",
-        "  `daoris agent account join claude-code <id> <workspace>…|--machine` puts it in a list a start runs on."
+        "  `daoris agent account rename claude-code <id> <name>` gives it a name of yours."
       ],
       "err": [],
       "after": {
@@ -6201,8 +6198,7 @@
       "out": [
         "daoris: `dsh` account `<id>` is the API key …1234.",
         "  Kept in <root>/daoris/profiles/keys.json — machine-local, tracked by nothing, shown back only as its last four.",
-        "  `daoris agent account rename dsh <id> <name>` gives it a name of yours (ACCT2), and",
-        "  `daoris agent account join dsh <id> <workspace>…|--machine` puts it in a list a start runs on."
+        "  `daoris agent account rename dsh <id> <name>` gives it a name of yours."
       ],
       "err": [],
       "after": {

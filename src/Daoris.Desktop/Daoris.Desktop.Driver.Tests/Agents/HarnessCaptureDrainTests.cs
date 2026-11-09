@@ -55,4 +55,27 @@ public sealed class HarnessCaptureDrainTests : IDisposable
         Assert.Null(stdout.ReadLine());
         Assert.True(stderr.Ended);
     }
+
+    private sealed class RefusingLines : IReadingSink
+    {
+        public bool Watched => false;
+
+        public void Read(WireReading reading)
+        {
+            if (reading is WireReading.Shown) throw new IOException("the console refused the line");
+        }
+    }
+
+    [Fact]
+    public async Task A_line_the_sink_refuses_leaves_the_pipe_read_to_its_end_before_the_failure_is_thrown()
+    {
+        var stderr = new StringReader("one\ntwo\nthree");
+        var told = new List<string>();
+
+        await Assert.ThrowsAsync<IOException>(() => HarnessCapture.PumpAsync(
+            stderr, TextWriter.Null, new RefusingLines(), CancellationToken.None, also: told.Add));
+
+        Assert.Null(stderr.ReadLine());
+        Assert.Equal(["one", "two", "three"], told);
+    }
 }

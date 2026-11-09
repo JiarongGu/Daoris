@@ -99,7 +99,7 @@ internal sealed class LoopRun(
                 service,
                 [
                     // The quests' moves first, its sink never waiting, so no wake waits on the news teller's reads of the service.
-                    new WorkEventTeller(told => shared.Hooks?.Tell(told), () => DateTimeOffset.UtcNow).Teller,
+                    WorkEventNews.Gapped(new WorkEventTeller(told => shared.Hooks?.Tell(told)).Teller, told => shared.Hooks?.Tell(told), () => DateTimeOffset.UtcNow),
                     // The driven work's parks and ends told at `work/event` as they are claimed, and the teller's gaps.
                     WorkEventNews.Gapped(
                         NewsFeed("lease", news, service, row => !row.Marks.Contains("chat", StringComparer.Ordinal), ct, told => shared.Hooks?.Tell(told)),

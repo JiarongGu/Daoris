@@ -3,8 +3,8 @@ namespace Daoris.Driver;
 /// <summary>
 /// One relay's watermark and batch: the plugin's first line settling a
 /// loss at once, each frame after it moving the watermark, at most one gap line however many gaps, at most <see cref="Events"/> event lines
-/// and a count past them, the diagnostics tallied, and every batch closing on its watermark. So stdout holds at most 53 lines and stderr one
-/// line for each diagnostic kind, whatever reaches the pipe.
+/// and a count past them, the diagnostics tallied, and every batch closing on its watermark. So stdout holds at most 54 lines (the gap, the
+/// events, their count, an ending's own line, the watermark) and stderr one line for each diagnostic kind, whatever reaches the pipe.
 /// </summary>
 /// <param name="since">The watermark <c>--since</c> gave, already checked; null where none is given.</param>
 /// <param name="kinds">The kinds printed; a kind left out still moves the watermark, so filtering is never taken for loss.</param>
