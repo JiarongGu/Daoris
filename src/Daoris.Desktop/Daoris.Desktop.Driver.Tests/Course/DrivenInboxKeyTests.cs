@@ -48,6 +48,18 @@ public sealed class DrivenInboxKeyTests
         Assert.False(string.IsNullOrEmpty(held.Key));
     }
 
+    [Fact]
+    public void A_steered_word_the_agent_hands_back_is_held_here_without_the_key_it_left_the_record_under()
+    {
+        var inbox = Inbox();
+
+        Assert.True(inbox.HandBack(new ChatMessage("go first", []) { Id = "said-1", Key = "keep/abc", Kept = true }));
+
+        var held = Assert.IsType<ChatMessage>(inbox.NextOrClose()?.Held);
+        Assert.False(held.Kept);
+        Assert.Null(held.Key);
+    }
+
     private sealed class Silent : ISaidDoor
     {
         public Task<SayAnswer> KeepAsync(ChatMessage word, CancellationToken ct) => throw new HttpRequestException("no answer");

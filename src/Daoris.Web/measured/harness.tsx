@@ -13,6 +13,7 @@ import * as parts from '../src/work/head/PartsFlow.stories';
 import * as session from '../src/work/head/SessionFlow.stories';
 import * as landing from '../src/projects/git/LandingFlow.stories';
 import * as head from '../src/work/AttendedSession.head.stories';
+import { sideBarTimeline } from './sideBarTimeline';
 import * as workflow from '../src/workflow/WorkflowFlow.stories';
 import * as graph from '../src/workflow/GraphFlow.stories';
 import * as runView from '../src/workflow/WorkflowRunFlow.stories';
@@ -44,6 +45,7 @@ const books: Record<string, Record<string, ComponentType>> = {
   quest: composeStories(quest) as unknown as Record<string, ComponentType>,
   // A session's states: the return on its lane, the outcomes as one node.
   session: composeStories(session) as unknown as Record<string, ComponentType>,
+  sidebar: sideBarTimeline as unknown as Record<string, ComponentType>,
   // A session's parts: a fork and a retry, an asked part from a faint node, the landing plan as a dashed node.
   parts: composeStories(parts) as unknown as Record<string, ComponentType>,
   // How a landed branch landed: tries and advances stacked, the push and the pull request hung apart from the landing.

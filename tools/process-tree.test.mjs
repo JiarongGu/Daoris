@@ -2,7 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { census, installOf, said } from './process-tree.mjs';
 
-const install = 'C:\\Users\\someone\\AppData\\Local\\Daoris';
+const install = 'D:\\Programs\\Daoris';
 const row = (pid, ppid, name, created, line = name, path = null) => ({ pid, ppid, name, path, line, created });
 
 /** A machine: the launcher that started the application, its tree, and a gate run whose shell has gone. */
@@ -51,6 +51,12 @@ test('a process id used again is no parent: a process older than the one named i
   const read = census(rows);
   assert.equal(read.applications[0].inside, 7);
   assert.deepEqual(read.outside.find((root) => root.pid === 70)?.startedBy, { pid: 20, name: null });
+});
+
+test('a folder that only starts with the install folder\'s name is no install: what runs from it is no Daoris process', () => {
+  const rows = [...machine(), row(80, 999, 'node.exe', 400, 'node D:\\Programs\\DaorisNotes\\serve.mjs'),
+    row(81, 999, 'node.exe', 410, `node "${install}\\tools\\serve.mjs"`)];
+  assert.deepEqual(census(rows).outside.map((root) => root.pid), [40, 81]);
 });
 
 test('nothing outside is said so, and no application is said so', () => {

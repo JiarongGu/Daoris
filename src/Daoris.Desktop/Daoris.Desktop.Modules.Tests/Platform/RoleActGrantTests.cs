@@ -21,4 +21,23 @@ public sealed class RoleActGrantTests : Bridge
         Assert.Equal(RoleWhy.NotGranted, judge.RunAct(admitted.ActId!));
         Assert.Equal(RoleActStates.Cancelled, judge.ActState(admitted.ActId!));
     }
+
+    /// <summary>A catalogue that cannot be read at an act's step withdraws no grant: the act says <c>role-changed</c> as admission does and runs once it reads.</summary>
+    [Fact]
+    public void ROLESREVIEW2p_an_unreadable_catalogue_at_the_step_is_role_changed_and_withdraws_nothing()
+    {
+        var judge = new StandingConfirmation(Home, null, new StandingConfirmationTests.Placed(StandingPlace.Outside),
+            walk: new StandingConfirmationTests.Walked()).Probing(new RoleKit.Probe());
+        var (_, key) = RoleKit.Start(judge, RoleKit.Stewarding(share: null));
+        var nonce = SupervisorProof.Nonce();
+        var admitted = RoleKit.JudgeAct(judge, RoleKit.Act(key!, nonce, RoleKit.GenerationOf(judge, AppointedRoles.Steward)), nonce);
+        var readable = judge.Slots;
+
+        judge.Slots = () => null;
+        Assert.Equal(SupervisorWhy.RoleChanged, judge.RunAct(admitted.ActId!));
+        Assert.Equal(RoleActStates.Admitted, judge.ActState(admitted.ActId!));
+
+        judge.Slots = readable;
+        Assert.Null(judge.RunAct(admitted.ActId!));
+    }
 }

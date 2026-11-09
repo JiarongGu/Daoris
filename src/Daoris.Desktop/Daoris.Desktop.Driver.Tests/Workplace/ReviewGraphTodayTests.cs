@@ -79,8 +79,8 @@ public sealed class ReviewGraphTodayTests : LandedFixture
         Assert.Equal(chain.Where(Program).Select(Spelled).Distinct(), graph.Where(Program).Select(Spelled));
 
         // The rest: each of the chain's starts ran in the graph, or is answered by one it ran: the same question asked before, a part
-        // of the layout's one rev-parse, or a branch's commit from the listing of the refs. The graph's extras are speculative ones,
-        // the layout's rev-parse and the listing.
+        // of the layout's one rev-parse, or a branch's commit from the listing of the refs, git's or the library's. The graph's extras are
+        // speculative ones, the layout's rev-parse and the listing.
         var ran = graph.Select(Asked).ToHashSet(StringComparer.Ordinal);
         var left = graph.Select(Spelled).ToList();
         foreach (var start in chain)
@@ -89,7 +89,7 @@ public sealed class ReviewGraphTodayTests : LandedFixture
             var asked = Asked(start);
             var answered = ran.Contains(asked)
                 || Layout.Contains(asked) && ran.Contains(string.Join(' ', GitReadOnce.Layout))
-                || asked.StartsWith("rev-parse --verify --quiet refs/", StringComparison.Ordinal) && ran.Any(each => each.StartsWith("for-each-ref ", StringComparison.Ordinal));
+                || asked.StartsWith("rev-parse --verify --quiet refs/", StringComparison.Ordinal);
             Assert.True(answered, $"today's chain ran `git {Spelled(start)}`, which the graph neither ran nor answered");
         }
 

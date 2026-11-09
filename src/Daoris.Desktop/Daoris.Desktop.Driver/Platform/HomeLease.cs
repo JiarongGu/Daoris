@@ -129,7 +129,11 @@ public sealed class HomeLease : IDisposable
     /// <summary>Take the home, or null with the live holder that already has it.</summary>
     /// <param name="what">A verb's own words, which a refusal names; never its arguments.</param>
     /// <exception cref="HomeLeaseException">The lease changed under every attempt, or could not be written.</exception>
-    public static HomeLease? TryAcquire(string home, LeaseKind kind, out LeaseHolder? holder, string? what = null)
+    public static HomeLease? TryAcquire(string home, LeaseKind kind, out LeaseHolder? holder, string? what = null) =>
+        TryAcquire(home, kind, out holder, what, judgedStale: null);
+
+    /// <param name="judgedStale">Called with the lease's path between judging it stale and removing it: a test writes another's lease there.</param>
+    internal static HomeLease? TryAcquire(string home, LeaseKind kind, out LeaseHolder? holder, string? what, Action<string>? judgedStale)
     {
         Directory.CreateDirectory(home);
         foreach (var older in OlderIn(home))
@@ -167,9 +171,8 @@ public sealed class HomeLease : IDisposable
                 return null;
             }
 
-            // Stale. Removed only while it still says what is judged stale, so a lease another has just taken is not the one
-            // removed.
-            if (Read(path, out _) == seen) TryDelete(path);
+            judgedStale?.Invoke(path);
+            RemoveStale(path, seen);
         }
 
         throw new HomeLeaseException(
@@ -392,6 +395,37 @@ public sealed class HomeLease : IDisposable
         {
             busy = true;
             return null;
+        }
+    }
+
+    /// <summary>
+    /// Moved aside in one step, then judged by what moved: a read then a delete leaves room for another taker to write its lease
+    /// between them, which the delete would take. A lease other than the one judged stale is put back, never over another.
+    /// </summary>
+    private static void RemoveStale(string path, string seen)
+    {
+        var aside = $"{path}.{Guid.NewGuid():N}.stale";
+        try
+        {
+            File.Move(path, aside, overwrite: false);
+        }
+        catch (Exception error) when (error is IOException or UnauthorizedAccessException)
+        {
+            // Gone already, or held open for a moment: the loop looks again.
+            return;
+        }
+
+        try
+        {
+            if (Read(aside, out _) != seen) File.Move(aside, path, overwrite: false);
+        }
+        catch (Exception error) when (error is IOException or UnauthorizedAccessException)
+        {
+            // A third taker wrote at the path meanwhile, so nothing is put back; a release checks what the file says.
+        }
+        finally
+        {
+            TryDelete(aside);
         }
     }
 

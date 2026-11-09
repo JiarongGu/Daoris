@@ -18,7 +18,7 @@ executable, started with a browser argument, is Daoris's own browser, which sess
 | Unit | File | Its job |
 |---|---|---|
 | `Program` | `App/Program.cs` | Composes the shell: the browser argument first, home, log, host start, engine, modules, dispatcher middleware |
-| `MainForm`, `SecondaryWindowHost`, `SecondaryChrome` | `App/MainForm.cs`, `App/SecondaryWindowHost.cs`, `App/SecondaryChrome.cs` | The frameless main window; and the routes that open another main window (`main:<n>`) for a later launch and framed secondary windows (`monitor`, `session:<id>`) on the kit's `ChromiumWindowHost`, which makes each window and keeps its geometry, while Daoris describes its chrome and hands each window its `SecondaryChrome` (theme, count, title, identity, page reload) |
+| `MainForm`, `SecondaryWindowHost`, `SecondaryChrome` | `App/MainForm.cs`, `App/SecondaryWindowHost.cs`, `App/SecondaryChrome.cs` | The frameless main window; and the routes that open another main window (`main:<n>`) for a later launch and framed secondary windows (`monitor`, `session:<id>`) on the kit's `ChromiumWindowHost`, which makes each window and keeps its geometry, while Daoris describes its chrome and hands each window its `SecondaryChrome` (theme, count, title, identity, page reload); `Modules/Windows/PageThemeOrder.cs` decides the theme on the window's thread, so a page's word that lands beside the OS's change is the one worn |
 | The kit's dialogs, exception sink and launcher | `App/Program.cs` (`PickFile`, `PickFolder`, `Bootstrap`) | A system file or folder picker is the kit's `IFileDialogs`, owned by the window whose page asked and shown on a thread of its own (a census holds that no source shows one itself); a window thread's exception reaches the machine log through the kit's `OnUnhandledException` and the pump goes on, with no dialog of the kit's. The kit's layout builds the executable (the engine's launcher, CET-enforced) with its context validation relaxed, since a shell extension's handled exception under a picker's right-click menu otherwise fail-fasts the process (`0xc0000409`, code 0x30) |
 | `DriverModule` and the route classes | `Modules/Bridge/DriverModule.cs`, `Modules/Bridge/Routes/<Domain>Routes.cs` | `DAORIS.DRIVER`: one handler class per domain, each route `[DriverRoute]`, each press `[Publishes]` |
 | Route-class helpers | `Modules/Bridge/Routes/GitRefDesk.cs`, `GitAnswers.cs`, `LinesWires.cs`, `WorkWires.cs`, `SweepWires.cs`, `TreesTidyDesk.cs`, `WorkflowAnswers.cs`, `DriverStateAnswer.cs`, `HelpScreenDoors.cs`, `HelpMachineDesk.cs`, `HelpProposalFacts.cs`, `TreesLandDesk.cs`, `LandPresses.cs`, `TreesReviewWires.cs`, `SessionsMoveDesk.cs`, `SessionsAskDesk.cs`, `SessionsWaitDesk.cs`, `SessionsRecordDesk.cs`, `SessionsGroupsDesk.cs`, `SessionsGroupsWires.cs` | A route class keeps its marks and one-line doors (so callers and the page's bridge file are unchanged); the bodies and wire shapes of git's ref acts, the lines, work and sweep answers, the clean-up and sync, the workflow answers, the driver's state, Ask Daoris's Apply doors, room judges and proposal facts, the landing press, answered once per session and held in words while it goes on (`LandPresses`), with the review and preview wires, and a session's moves, asks, waits, record and groups sit in types of their own beside it (D231) |
@@ -130,7 +130,8 @@ executable, started with a browser argument, is Daoris's own browser, which sess
 18. A later launch opens a new main window of the running instance. The application ends with its last main window.
     One driver loop runs per home. (from D171, D104)
 19. Each main window wears its own workspace's waiting count on its taskbar button and in its title. A notification's
-    click brings forward the window that holds its subject. (from D196, D108)
+    click brings forward the window that holds its subject. A press waiting unshown lights the button of the main window last in front
+    while none is in front, and a main window that closes is forgotten there, a button lit on it lighting the first. (from D196, D108)
 20. The shell notifies and decides nothing. A balloon shows when no window has focus, worded from the words the page
     hands it in its language, with the English catalogue as fallback. (from D196, D142)
 21. A render that throws is caught by `PageBoundary`. It offers a reload of the page alone and logs `page.error` with
@@ -147,7 +148,8 @@ executable, started with a browser argument, is Daoris's own browser, which sess
 25. One list pane on every view: a header with ＋ and ⋯, per-view resize, a 56 px strip when closed, Ctrl+B. Its closing,
     width, chosen item and filters are remembered per view. (from D118)
 26. The side bar and panel hold movable views: *Notifications*, Timeline, Review, Workflow, At work and Ask Daoris on
-    the right, Console and Terminal in the panel, until the viewer moves them. (from D118, D196, D96)
+    the right, Console and Terminal in the panel, until the viewer moves them. The side bar's body holds its scrollbar's width always
+    (`DOCK_BODY`), since a chart placed by the pane's width flips when a scrollbar comes with its drawing and takes that width back. (from D118, D196, D96)
 27. A page is one column. `ViewMain` caps nothing, no block keeps a measure of its own, and the main area lays out by
     its own width, never the viewport's. A cap, if ever set, is one `em` value on `ViewMain`. (from D141, D118)
 28. The menus are *Workspace · Edit · View · Go · Run · Terminal · Help*. One table, `menus/commands.ts`, names every
@@ -236,7 +238,8 @@ executable, started with a browser argument, is Daoris's own browser, which sess
 **The setup guide and the views**
 
 56. A first start opens Settings → Get started while an agent with an account, Daoris's own agent or a repository is
-    missing. Each step reads its state off the machine and names its screen and its command. (from D97, D50)
+    missing. Each step reads its state off the machine and names its screen and its command. Every door to a screen, in the guide and
+    in Ask Daoris's starters and its way back to the guide, is one `StarterDoorButton`, whatever the step's state. (from D97, D50)
 57. Settings has eleven domains, each what a person comes to set, in this order: Get started; Appearance (look and
     language); Driver (how sessions run: its dials, this machine's access, the plugins' settings); AI features; Git; Tools;
     Browser; Disk space (the folders and the keep rules); Updates (the install's update, then its versions); This Daoris
@@ -307,8 +310,8 @@ A child is joined as its start returns, so what it starts in that instant is out
 suspended in a job of its own. A terminal's `daoris gate run` is the running application's: the verb asks over the pipe (`RUN_HEAVY`,
 `HeavyAppRun`), the application runs the gates as its children under the machine's admission (`HeavyTerminalRun`), handed the
 terminal's folder, environment and its own standard handles (`TerminalHandles`, copied from the terminal's process), so the gates
-write where the terminal does, and answers the exit code; the run is held to that connection, so a verb killed or its session ended
-stops it, and the verb's Ctrl+C asks `RUN_STOP`. A terminal whose rights are not the application's (a restricted token, an app
+write where the terminal does, and answers the exit code; the run counts among its connection's requests under way, so one past `PipeLimits.InFlight` is refused `busy` before any run is admitted; it is held to that connection, so a verb killed or its session ended
+stops it, and the verb's Ctrl+C asks `RUN_STOP`; an id a run of that connection already holds is refused `id-taken`, never taken over. A terminal whose rights are not the application's (a restricted token, an app
 container, another integrity level: `TerminalRights`) is refused, so a sandbox's work never runs outside it. Where no Daoris takes
 the run, the verb says why in one line and runs it itself.
 Forwarding the gates' output over the pipe was rejected: it would reorder a gate's lines against the run's, and lose a console. Off Windows there are no jobs. The proof is `OwnedProcessesProcessTests` (an owner killed, its child and

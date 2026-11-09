@@ -216,7 +216,7 @@ public sealed class RelayRunTests : IDisposable
     {
         var relay = Start(World(), since: $"{Run}:1");
         await using var plugin = await ConnectAsync(First(1));
-        await SendAsync(plugin, Parked(2), Parked(3, Word), Parked(3), Parked(3), "{\"run\":\"" + Word + "\"}", "not json", new string('x', 5000));
+        await SendAsync(plugin, Parked(2), Parked(3, Word), Parked(3), Parked(3), "{\"run\":\"" + Word + "\"}", "not json", Parked(4) + new string(' ', 5000));
         var ran = await relay;
         Said(ran);
         Assert.Equal(

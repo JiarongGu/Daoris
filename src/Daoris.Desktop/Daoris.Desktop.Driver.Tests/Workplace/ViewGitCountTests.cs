@@ -18,7 +18,7 @@ public sealed class ViewGitCountTests(ITestOutputHelper output) : LandedFixture
     // unchanged. Asked twice: the stash plan's `refs/stash` (the plan's state, and the stash step's own read of it), left for the plan's own cut.
     private static readonly Dictionary<string, (int Starts, int Repeated)> Budgets = new(StringComparer.Ordinal)
     {
-        ["GIT_BRANCHES"] = (3, 0),
+        ["GIT_BRANCHES"] = (2, 0),
         ["CHECKOUT_BRANCH"] = (1, 0),
         ["GIT_CHANGES"] = (5, 0),
         ["GIT_HUNKS"] = (5, 0),
@@ -31,7 +31,7 @@ public sealed class ViewGitCountTests(ITestOutputHelper output) : LandedFixture
         ["GIT_SWITCH_PLAN"] = (5, 0),
         ["GIT_STASH_PLAN"] = (7, 0),
         ["GIT_DELETES"] = (0, 0), // the journal alone, where it holds no delete
-        ["LANDED_REVIEW"] = (6, 0),
+        ["LANDED_REVIEW"] = (3, 0),
     };
 
     [Fact]

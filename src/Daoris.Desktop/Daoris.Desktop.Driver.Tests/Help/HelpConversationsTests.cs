@@ -65,6 +65,23 @@ public sealed class HelpConversationsTests : IDisposable
         Assert.Equal("h2", Assert.Single(history.List(records, Events, Resumes, search: "Earlier answer").Conversations).Session);
     }
 
+    /// <summary>A refused briefed start's replacement is one row with the line it continues.</summary>
+    [Fact]
+    public void A_replacement_of_a_refused_briefed_start_is_one_conversation_with_the_line_it_continues()
+    {
+        Said("h1", "Original question about the port", "Earlier answer");
+        Said("h3", "Held words", "Next answer");
+        var history = new HelpConversations(_home);
+        history.StartedFrom("h2", "h1", HelpConversations.Brief);
+        history.StartedFrom("h3", "h2", HelpConversations.NotOffered);
+
+        var listed = history.List([Help("h1"), Help("h2", "failed"), Help("h3", "working")], Events, Resumes);
+
+        var row = Assert.Single(listed.Conversations);
+        Assert.Equal("h3", row.Session);
+        Assert.Equal("Original question about the port", row.Opening);
+    }
+
     [Fact]
     public void A_conversation_is_listed_by_its_first_question_with_a_line_of_its_last_answer()
     {

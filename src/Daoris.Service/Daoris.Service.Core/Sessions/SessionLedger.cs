@@ -49,12 +49,6 @@ public sealed class SessionLedger(
     public MemoryOpStore Memory => sessions.Memory;
 
     /// <summary>
-    /// Whether the say door walks the line's head (row d-ii): always, but for the landing measurement's copy of the door as it stood before
-    /// the row (<c>SaidSettledMeasureTests</c>), since the walk is code and not schema, so dropping a table cannot make that copy.
-    /// </summary>
-    internal bool WalksHead { get; init; } = true;
-
-    /// <summary>
     /// The "repository" an Ask Daoris session is recorded in. No repository can be
     /// called this — a colon is in no folder name — so it never collides with a registered one.
     /// </summary>
@@ -205,7 +199,7 @@ public sealed class SessionLedger(
         string id, string? text, IReadOnlyList<string>? files, DateTimeOffset now, CancellationToken ct = default, string? channel = null,
         string? from = null, string? key = null, string? level = null, bool running = false,
         string? decision = null, string? question = null, string? choice = null, bool settled = false, bool ending = false) =>
-        says.SayAsync(WalksHead, id, text, files, now, ct, channel, from, key, level, running, decision, question, choice, settled, ending);
+        says.SayAsync(id, text, files, now, ct, channel, from, key, level, running, decision, question, choice, settled, ending);
 
     /// <summary>Put a park the driver took up back as it stood, less the supervisor's word; see <see cref="SessionSays.RestoreParkAsync"/>.</summary>
     public Task<SessionAdvanceOutcome> RestoreParkAsync(

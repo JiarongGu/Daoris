@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using System.Runtime.ExceptionServices;
 using Lyntai.Agents;
 
 namespace Daoris.Driver;
@@ -41,6 +42,9 @@ internal sealed class LayerRun(
     private Leg? _leg;
 
     private int _generation;
+
+    // The token of the process being made ready, set before its opening readings are handed, which `_leg` is not yet.
+    private string? _proc;
 
     private bool _goneOn;
 
@@ -144,7 +148,7 @@ internal sealed class LayerRun(
         await DisposeAsync().ConfigureAwait(false);
     }
 
-    public override void HandSink(IReadingSink sink) => _sink = new StampedSink(sink, () => hold?.Start.Session, () => _generation, () => _leg?.Proc);
+    public override void HandSink(IReadingSink sink) => _sink = new StampedSink(sink, () => hold?.Start.Session, () => _generation, () => _proc);
 
     public override void HandCarriers(RunCarriers carriers) => Carriers = carriers;
 
@@ -214,6 +218,23 @@ internal sealed class LayerRun(
     {
         if (_leg is { } before) await before.Turn.ConfigureAwait(ConfigureAwaitOptions.SuppressThrowing);
         var proc = hold is null ? null : await hold.TokenAsync(first, ct).ConfigureAwait(false);
+        _proc = proc;
+        var spawned = false;
+        try
+        {
+            SetUp(proc, resume, first, opening, preamble, named, () => spawned = true);
+        }
+        catch (Exception) when (!spawned && proc is not null && hold is not null)
+        {
+            // Issued and never handed a process, which the token set would hold unwatched for the process's life.
+            await hold.SpawnedAsync(proc, Task.FromResult<Process?>(null)).ConfigureAwait(false);
+            throw;
+        }
+    }
+
+    private void SetUp(
+        string? proc, string? resume, bool first, IReadOnlyList<SessionEvent>? opening, string? preamble, Action named, Action spawned)
+    {
         var prompt = string.Join('\n', Input.Lines());
         LauncherRunner? runner = null;
         var readings = new LayerReadings(start.Transport, start.Clock, start.CoolOff, new LayerRefusals(registration.ModelRefusals), registration.Steps)
@@ -268,6 +289,7 @@ internal sealed class LayerRun(
         };
         leg = new Leg(readings, runner, container, proc, Beside(), named);
         leg.Spawned = proc is null || hold is null ? leg.Started.Task : hold.SpawnedAsync(proc, leg.Started.Task);
+        spawned();
         _leg = leg;
         leg.Turn = Task.Run(() => TurnAsync(leg, session, options));
     }
@@ -275,13 +297,25 @@ internal sealed class LayerRun(
     /// <summary>The turn, to its terminal: a stop ends it through the runner's kill, never a token, so its terminal is still read.</summary>
     private async Task TurnAsync(Leg leg, IAgentSession session, AgentSessionOptions options)
     {
+        // An event that cannot be kept ends nothing: leaving the stream would kill the harness mid-work. The first failure is thrown once
+        // the turn has read to its terminal.
+        ExceptionDispatchInfo? failure = null;
         try
         {
             await foreach (var evt in session.StreamAsync(options, CancellationToken.None).ConfigureAwait(false))
             {
-                if (leg.Streams?.Take(evt) == true) continue;
-                Handed(leg, leg.Readings.Read(evt));
+                try
+                {
+                    if (leg.Streams?.Take(evt) == true) continue;
+                    Handed(leg, leg.Readings.Read(evt));
+                }
+                catch (Exception error) when (error is not OperationCanceledException)
+                {
+                    failure ??= ExceptionDispatchInfo.Capture(error);
+                }
             }
+
+            failure?.Throw();
         }
         finally
         {

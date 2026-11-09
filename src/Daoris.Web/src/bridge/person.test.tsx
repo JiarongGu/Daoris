@@ -186,6 +186,19 @@ describe("the person's door over the bridge", () => {
     expect(fetcher).not.toHaveBeenCalled();
   });
 
+  it('keeps a telling heard while its first read is on the way, over the older read that lands after it', async () => {
+    let answer: (value: unknown) => void = () => {};
+    invoke.mockImplementation((_module: string, type: string) =>
+      (type === 'SERVICE_CONFIRMATIONS' ? new Promise((resolve) => { answer = resolve; }) : Promise.resolve(null)));
+    const { result } = renderHook(() => useServiceConfirmations(true), { wrapper: wrapper() });
+    await waitFor(() => expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'SERVICE_CONFIRMATIONS', {}));
+
+    act(() => { eventHandlers.get('DAORIS.SERVICE_CONFIRMATIONS')!({ seq: 3, waiting: [HELD, OTHER] }); });
+    await act(async () => { answer({ seq: 2, waiting: [HELD] }); });
+
+    await waitFor(() => expect(result.current.waiting.map((each) => each.id)).toEqual(['h1', 'h2']));
+  });
+
   it('lists none without the key', async () => {
     invoke.mockImplementation(async () => null);
     const none = renderHook(() => useServiceConfirmations(false), { wrapper: wrapper() });

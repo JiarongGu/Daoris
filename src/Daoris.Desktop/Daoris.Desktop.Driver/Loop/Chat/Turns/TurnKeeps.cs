@@ -153,6 +153,7 @@ internal sealed class TurnKeeps(
         {
             state.Holding = text is null && level is null ? null : Changed(holding, text, level, newId);
             if (withdrawn) state.TakeOff([holding]);
+            if (text is null && level is null) holding.Untaken?.Invoke();
         }
         else
         {
@@ -161,6 +162,7 @@ internal sealed class TurnKeeps(
             var old = state.Waiting[at];
             state.Waiting.RemoveAt(at);
             if (withdrawn) state.TakeOff([old]);
+            if (text is null && level is null) old.Untaken?.Invoke();
             if (text is not null || level is not null)
             {
                 var word = Changed(old, text, level, newId);

@@ -114,9 +114,9 @@ export function useServiceConfirmations(held: boolean): { waiting: Confirmation[
   useShenoraEvent<ServiceConfirmationsTold>('DAORIS', 'SERVICE_CONFIRMATIONS', (told) => {
     const now = serviceOf(told);
     const kept = client.getQueryData<ServiceConfirmationsTold>(keys.serviceTold);
-    // Kept once this window has read, where it is newer: the bus may deliver one late, and the read may land after a telling.
-    if (!now || kept === undefined) return;
-    if (now.seq !== null && kept.seq !== null && now.seq <= kept.seq) return;
+    // Kept where this window holds the key and it is newer: a read on its way may be older, and keeps the newer of the two.
+    if (!now || !held) return;
+    if (now.seq !== null && kept?.seq != null && now.seq <= kept.seq) return;
     client.setQueryData<ServiceConfirmationsTold>(keys.serviceTold, now);
   });
   const told = useQuery({

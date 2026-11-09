@@ -140,8 +140,8 @@ internal sealed class LandedGraph(ReviewGraph graph, TreeContext context, string
     /// <summary><c>ReadsAsync</c>: whether a gone branch's work reads on the line, the content proof (Π) on its forms.</summary>
     private async Task<LandedReads> ReadsAsync(ReviewRead need)
     {
-        var held = Run("Lcommit", [need], () => Git(["cat-file", "-e", $"{entry.Tip}^{{commit}}"]));
-        if ((await held.Answer.ConfigureAwait(false)).Code != 0) return new(LandedReads.CommitsGone, null, [], null);
+        var held = Run("Lcommit", [need], () => GitObjectReads.InfoAsync(root, $"{entry.Tip}^{{commit}}", ct));
+        if (await held.Answer.ConfigureAwait(false) is not { Missing: false }) return new(LandedReads.CommitsGone, null, [], null);
 
         var (line, lineNode) = await LineAsync([held.Node]).ConfigureAwait(false);
         var forms = new List<LandedProofs.LineForm>();

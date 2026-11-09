@@ -297,7 +297,7 @@ directly from `Plugins/`; a session's trees take it, and `SessionTrees` makes it
 The landing and pull-request refusals and a workflow's reading of the plugins use `IWorkplacePluginCatalog` and the
 `IWorkplacePluginEntry` it answers, which `PluginCatalog` and `PluginEntry` implement. The plugin id's shape is `PluginIds`'
 alone, and the landing's patience and the door words are Workplace's pure `LandingPatience` and `WorkplaceDoors`, which
-`LandingPlugins.DefaultPatience` and `PluginEvents` alias.
+`PluginEvents` aliases (the door words).
 
 Workplace names no Work orders type. What the landing, the archive and the tidy read are Workplace's own: the quest result
 rule (`QuestResults`), the place a done's evidence is read (`EvidenceAt`), the session group words (`SessionGroup`), the offers

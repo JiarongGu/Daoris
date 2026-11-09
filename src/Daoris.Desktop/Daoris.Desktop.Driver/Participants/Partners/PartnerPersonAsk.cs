@@ -24,7 +24,10 @@ public static class PartnerAskWhy
     /// <summary>The session's tree has no commit to grow a piece from.</summary>
     public const string NoCommit = "no-commit";
 
-    public static readonly IReadOnlyList<string> All = [Blank, TooLong, Agent, Path, NotHeld, Unfit, NoCommit];
+    /// <summary>The session has ended: no running work is there to receive the piece.</summary>
+    public const string Ended = "ended";
+
+    public static readonly IReadOnlyList<string> All = [Blank, TooLong, Agent, Path, NotHeld, Unfit, Ended, NoCommit];
 }
 
 /// <summary>Where a lead's tree stood at the ask: its commit, or null where none is read, and its uncommitted paths.</summary>
@@ -73,6 +76,11 @@ public static class PartnerPersonAsk
             return No(PartnerAskWhy.Unfit,
                 $"Session `{session}` cannot lead a piece: only a session working in a tree of its own does, never a partner, a helper, a reviewer, "
                 + "an intake or Ask Daoris's conversation.");
+        }
+
+        if (SessionStates.IsEnded(lead.State))
+        {
+            return No(PartnerAskWhy.Ended, $"Session `{session}` has ended, and no running work is there to receive a piece.");
         }
 
         var stood = await read(lead.Tree, ct).ConfigureAwait(false);

@@ -75,7 +75,8 @@ Driver paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/`.
     wholesale. A source inside or holding the home is refused. (from D103, D194)
 15. An update shows its plan first: version, command, points, harnesses, servers, skills, steps and resources. It
     applies only on a press or `--yes`. The installed folder is moved aside whole, the copy renamed in, `.data/<id>`
-    untouched, and nothing starts at the press. (from D103)
+    untouched, and nothing starts at the press. A rename that fails puts the installed folder back; where that fails
+    too, the refusal names the `.removing-*` folder the plugin now lies in. (from D103)
 16. A plugin from a package is never updated in place: it is removed and a newer package installed. (from D120)
 17. Offers are `app/plugin-offers/` in the install, laid out each publish from `examples/plugins/`: the GitHub and
     Azure DevOps pull-request plugins and `in-app-browser`. None installs without a press. The driver looks beside the
@@ -106,7 +107,9 @@ Driver paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/`.
     tools; a write only as an accepted write; a generic execution tool never. A server declared through `npx` names the
     package and its version; a session is handed node and that package's script, installed once into the toolchain, never
     `npx` itself, and one that drives Daoris's browser stays under a 512 MB ceiling by a restart between calls (agents
-    area, rule 13). (from D170)
+    area, rule 13). An approval is the person's and stands while the plugin is switched off: its page and the list read
+    it (`HelpGrants.Read(withSwitchedOff)`), the page's press takes it, and a switched-off plugin's grant is handed
+    nothing. (from D170)
 25. What a plugin did is kept without its words: `plugin.*` lines hold names, counts, flags and times. Its words go
     to the console under `plugin:<id>` for this run. (from D119, D94)
 26. An icon is a path inside the folder to an SVG or PNG of at most 32 KiB, a PNG at most 512 px a side. The page gets its bytes as a data URI,
@@ -176,13 +179,3 @@ example's `node --test`.
 - No row: PLUGUI1f, the ready and failing states on the page from the loop's health.
 - No row: D119 §5's run of a plugin's own tests, and its kept trial and test results.
 
-- **The second review cycle's open defects** (PLUGREV2a to 2i; the backlog row of that name points here), one entry each:
-  - **PLUGREV2a — a failed rollback in an update loses the installed plugin from the catalogue** (driver, plugins): `PluginInstall.cs` Update (~299) and Replace (~359) move the folder aside, and when the swap-in throws the rollback `PluginFolders.Move(aside, target)` runs unguarded; if it throws too, a raw `IOException` leaves the plugin only under `.removing-<id>-<stamp>`, which the catalogue never reads, and staging is not forgotten. Wrap the rollback and name the aside folder in a `DriverException`; needs a move hook in `PluginFolders`.
-  - **PLUGREV2b — a switched-off plugin's approved server reads as waiting, and its Approve is refused** (driver, web, plugins): `HelpGrants.Read` (`HelpGrants.cs:71`) reads only `catalog.Contributing`, while `PLUGINS` (`PluginsRoutes.cs:47,74`) and `PluginPage.Read` (`PluginPage.cs:41-48`) list an off plugin's servers with no grant; approve a server, switch the plugin off, open its page: "waits" and a press `HelpGrants.Declared` (`:149`) refuses.
-  - **PLUGREV2c — a placed plugin's refusal and failure lines carry no plugin name and its health is filed under the process key** (driver, plugins): `WorkPlugins.cs:279,357,433` pass the key `plugin\u001f<repo>\u001f<ws>` to `PluginLog`, whose `Name` shape refuses the control character, so `plugin.step` and `plugin.failed` lines have `plugin` null and `PluginHealth` never sees them; `HookSet.Refused` (`HookSet.cs:435-438`) also counts a refusal once per place. Log `PlacedWork.PluginOf(key)`.
-  - **PLUGREV2d — a look can apply a stale awaited set** (driver, plugins): `HookSet.ReconcileAsync` (`HookSet.cs:131-132`) computes `_placed.Divide()` and applies it with no lock shared with `Watch` (`:405-406`); a `Watch` between the two stores the new set, then the look applies the old one, so a newly awaited place starts only at the next look. One lock around divide-and-apply, or `Watch` only records.
-  - **PLUGREV2e — the teller's gaps are said two ways (D228)** (driver, plugins): `WorkEventTeller.cs:26,40-50` makes the first-place and incomplete-batch `events.missed` that `WorkEventNews.Gapped` (`WorkEventNews.cs:29-52`) also makes; both are wired in `LoopRun.cs:102-104` and `DriveConsole.cs:115-117`. The teller tells rows only, wrapped in `Gapped`; its gap asserts move to the wrapped teller.
-  - **PLUGREV2f — the relay's copy can be deleted under a relay that starts at the wrong moment off Windows** (driver, plugins): `RelayCopy.cs:154-169` `Remove` opens `in-use` exclusively, closes it, then renames; POSIX rename ignores open files and `FileShare` is advisory, so a relay whose `Hold` succeeds in the gap has its folder renamed and deleted (also the `.removing-*` delete at `:67`). Re-open `removing/in-use` exclusively before the delete, else rename back.
-  - **PLUGREV2g — the relay's stdout bound is said as 53 lines and can be 54** (driver, plugins): `RelayBatch.cs:6`; a batch with a gap and over 50 events that ends through `End(RelaySaid.SecondClient)` or `Stopped("pipe")` prints the gap, 50 events, the count, the ending and `read up to`; `RelayBatchTests`' bound case ends only through `End()`. Say 54 or fold the ending into the count line, with that case added.
-  - **PLUGREV2h — two dead second ways (D228)** (driver, plugins): `PluginCatalog.Signature` (`PluginCatalog.cs:106,115-119`) is read only by `PluginCatalogTests` (`HookSet.cs:754` has its own); `LandingPlugins`'s `patience` parameter, `DefaultPatience` and the default start lambda (`LandingPlugins.cs:16,47,52-54`) are never reached since `StartForStateAsync` uses `StartProcessAsync`. Delete them with their assertions.
-  - **PLUGREV2i — plugins tests that cannot fail** (driver, plugins): `Assert.Null(HookProcess.HostToken.Value)` after an awaited call (`PlacedWorkTests.cs:113`, `PluginHostTokenTests.cs:133`; an `AsyncLocal` set in an async method never flows back, so deleting `HookSet`'s `finally` (`:257-261`) keeps them green); `PluginPackageTests.cs:155-156` asserts one path twice and the stage is under `Home/plugins`, not `_root`; the "starts nothing" checks (`PluginInstallTests.cs:120`, `PluginSourceTests.cs:400`, `PluginPackageTests.cs:298`) read a mark file right after a synchronous call; `PluginPackageTests.cs:243-244`'s `else Assert.NotNull(read)` is always true; the 4 KB frame cases (`RelayBatchTests.cs:59`, `RelayRunTests.cs:219`) send non-JSON, refused at any bound.

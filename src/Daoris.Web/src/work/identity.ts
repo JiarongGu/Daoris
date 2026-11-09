@@ -1,5 +1,5 @@
 import i18n from '../locales/i18n';
-import { type Ask, HELP_REPOSITORY, type Quest, type Session } from '../data/api';
+import { type Ask, HELP_REPOSITORY, type Quest, type Session, SESSION_ACTIVE } from '../data/api';
 
 // The working surface's derived identity. Pure, so
 // the rail and the head cannot disagree about what a session is called — which is the whole reason
@@ -119,6 +119,9 @@ export const isHelp = (session: Session): boolean => session.repository === HELP
  */
 export const leadsPieces = (session: Session): boolean =>
   Boolean(session.tree) && !session.serves && !isOpinion(session) && !isIntake(session) && !isHelp(session);
+
+// An ended session has no running work to receive a piece, as the driver's `PartnerJudge` says; its review stays on `leadsPieces`.
+export const takesPartner = (session: Session): boolean => leadsPieces(session) && SESSION_ACTIVE.has(session.state);
 
 /**
  * Which machine holds this session — or null when it is the deployment's own.

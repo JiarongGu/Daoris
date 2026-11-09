@@ -87,6 +87,63 @@ public sealed class PipeHeavyRunsTests : Bridge
         Assert.Contains("run-heavy: stopped while `command` ran", Text(said));
     }
 
+    [Fact]
+    public async Task An_id_a_run_of_this_connection_already_holds_is_refused_and_its_stop_still_reaches_the_first()
+    {
+        if (!OperatingSystem.IsWindows()) return;
+        var (pipe, client, services, log) = await ServeAsync();
+        using var _ = services;
+        using var __ = log;
+        using var ___ = pipe;
+        await using var ____ = client;
+        using var output = new AnonymousPipeServerStream(PipeDirection.In);
+        var said = new StringBuilder();
+        var reading = Read(output, said);
+
+        var run = await client.SendAsync(InstancePipe.Module, HeavyTerminalRun.Type, Payload(output, "ping", "-n", "60", "127.0.0.1"));
+        await UntilAsync(() => Text(said).Contains("run-heavy: `command`: ping"));
+        await client.SendAsync(InstancePipe.Module, HeavyTerminalRun.Type, Payload(output, "cmd", "/c", "echo", "second"), id: run);
+        var refused = await client.AnswerAsync(run);
+        Assert.False(refused.GetProperty("success").GetBoolean(), refused.GetRawText());
+        Assert.Equal(InstancePipe.IdTaken, refused.GetProperty("error").GetProperty("code").GetString());
+
+        var stop = await client.AnswerAsync(await client.SendAsync(InstancePipe.Module, HeavyTerminalRun.StopType, new { id = run }));
+        Assert.True(stop.GetProperty("success").GetBoolean(), stop.GetRawText());
+        var answer = await client.AnswerAsync(run);
+        output.DisposeLocalCopyOfClientHandle();
+        await reading;
+
+        Assert.Equal(1, answer.GetProperty("data").GetProperty("exit").GetInt32());
+        Assert.DoesNotContain("second", Text(said));
+    }
+
+    /// <summary>A run counts among the connection's requests under way, so one past its room is answered busy before any run is admitted.</summary>
+    [Fact]
+    public async Task A_run_past_the_connections_room_is_answered_busy_and_never_taken()
+    {
+        if (!OperatingSystem.IsWindows()) return;
+        var (pipe, client, services, log) = await ServeAsync(new PipeLimits { InFlight = 1 });
+        using var _ = services;
+        using var __ = log;
+        using var ___ = pipe;
+        await using var ____ = client;
+        using var output = new AnonymousPipeServerStream(PipeDirection.In);
+        var said = new StringBuilder();
+        var reading = Read(output, said);
+
+        var run = await client.SendAsync(InstancePipe.Module, HeavyTerminalRun.Type, Payload(output, "ping", "-n", "60", "127.0.0.1"));
+        await UntilAsync(() => Text(said).Contains("run-heavy: `command`: ping"));
+        var past = await client.AnswerAsync(await client.SendAsync(InstancePipe.Module, HeavyTerminalRun.Type, Payload(output, "cmd", "/c", "echo", "past-the-room")));
+
+        Assert.False(past.GetProperty("success").GetBoolean(), past.GetRawText());
+        Assert.Equal(InstancePipe.Busy, past.GetProperty("error").GetProperty("code").GetString());
+        await client.AnswerAsync(await client.SendAsync(InstancePipe.Module, HeavyTerminalRun.StopType, new { id = run }));
+        await client.AnswerAsync(run);
+        output.DisposeLocalCopyOfClientHandle();
+        await reading;
+        Assert.DoesNotContain("past-the-room", Text(said));
+    }
+
     /// <summary>A run of <paramref name="command"/> as a heavy run's own command, from the scratch home, writing to <paramref name="output"/>.</summary>
     private object Payload(AnonymousPipeServerStream output, params string[] command)
     {
@@ -134,7 +191,7 @@ public sealed class PipeHeavyRunsTests : Bridge
         }
     }
 
-    private async Task<(InstancePipe Pipe, PipeClient Client, ServiceProvider Services, MachineLog Log)> ServeAsync()
+    private async Task<(InstancePipe Pipe, PipeClient Client, ServiceProvider Services, MachineLog Log)> ServeAsync(PipeLimits? limits = null)
     {
         var log = new MachineLog(Home, "desktop");
         var services = new ServiceCollection();
@@ -142,7 +199,7 @@ public sealed class PipeHeavyRunsTests : Bridge
         services.AddSingleton<IIpcRequestTracker>(new IpcRequestTracker(Bus, new IpcRequestTrackerOptions { GracePeriod = TimeSpan.FromMilliseconds(50) }));
         services.UseMessageDispatcher((_, _) => { });
         var provider = services.BuildServiceProvider();
-        var pipe = new InstancePipe(provider.GetRequiredService<IMessageDispatcher>(), Bus, Home, log, version: "9.9.9-test");
+        var pipe = new InstancePipe(provider.GetRequiredService<IMessageDispatcher>(), Bus, Home, log, version: "9.9.9-test", limits: limits);
         var client = await PipeClient.ConnectAsync(pipe.Serve()!);
         await client.HelloAsync(HomeIdentity.Ensure(Home)!);
         return (pipe, client, provider, log);

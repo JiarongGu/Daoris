@@ -386,7 +386,7 @@ public static class InstallHome
             try
             {
                 var target = Path.Combine(home, name);
-                if (Directory.Exists(entry)) FolderMove.Move(entry, target);
+                if (Directory.Exists(entry)) _ = FolderMove.Move(entry, target);
                 else File.Move(entry, target, overwrite: false);
                 moved.Add(name);
             }

@@ -370,6 +370,8 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
 - **FABRIC-SQUASHCHAIN1:** the monitor and the tidy are built, read and proved end to end (rule 31); nothing left but the owner's acceptance on an install.
 - **FABRIC-PERFORM1l:** the pull-request event keeps its fields; WORKFLOW1j and 1k on observed nodes.
 - **LANDNODE1j:** the installed window's proof.
+- **PROCSTEPS1:** designed in `docs/2026-11-09-process-steps-design.md`: `rebase`, `resolve`, `merge` and a generic `tidy` as kinds
+  of the kit, `check` fed a commit, the `land` kind removed, and every preset a composition of them.
 - **REVIEWFLOW1c and LINESTOGETHER1:** a session's steps as one flow, proven in the installed window.
 - **WORKSETUP1:** no pull request is made by default; a place that needs one composes it from `push` and `<plugin>/pull-request` steps in its
   workflow, and the first such place is proved end to end on the install.

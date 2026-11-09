@@ -148,10 +148,10 @@ internal sealed class FinishedRecords(TreeSetAside setAside)
     internal static async Task<(IReadOnlyList<FinishedCommit>? Commits, string? Unread, string? Failed)> CommitsAsync(
         string root, FinishedTree tree, CancellationToken ct)
     {
-        // `cat-file -e <full id>`: 1 is git's word that the object is missing; any other failure is no answer (git-ref-absence.md).
-        var (tipCode, _, tipErr) = await WorkingTree.GitAsync(root, ["cat-file", "-e", tree.Tip], ct).ConfigureAwait(false);
-        if (tipCode == 1) return (null, "its tip no longer reads, so its commits are not listed", null);
-        if (tipCode != 0) return (null, null, $"git could not say whether its tip reads: {TreeGit.FirstLine(tipErr)}");
+        // Missing is git's word that the object is not here; no answer is not that (git-ref-absence.md).
+        var tip = await GitObjectReads.InfoAsync(root, tree.Tip, ct).ConfigureAwait(false);
+        if (tip is { Missing: true }) return (null, "its tip no longer reads, so its commits are not listed", null);
+        if (tip is null) return (null, null, "git could not say whether its tip reads");
         if (tree.GrewFrom is not { } grew) return (null, "the commit it grew from is not known, so its commits are not listed", null);
         // `-z` with no rename detection, so each file is `added\tremoved\tpath\0` and its path is git's
         // own bytes, never quoted or escaped for display; the header is `\x1e<id>\x1f<subject>`, its subject ending at the first line break.

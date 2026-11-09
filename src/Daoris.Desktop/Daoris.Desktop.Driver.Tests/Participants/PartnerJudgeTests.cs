@@ -41,6 +41,20 @@ public sealed class PartnerJudgeTests
         Assert.Equal(PartnerWhy.NoCommit, PartnerJudge.Refusal(Ask(@base: "main"), Lead()));
     }
 
+    /// <summary>🔴 A lead that has ended has no running work to receive the piece: each ending is refused in its own code, a live state is not.</summary>
+    [Theory]
+    [InlineData("completed", true)]
+    [InlineData("declined", true)]
+    [InlineData("stood-down", true)]
+    [InlineData("failed", true)]
+    [InlineData("stopped", true)]
+    [InlineData("working", false)]
+    [InlineData("awaiting-person", false)]
+    public void A_lead_that_has_ended_takes_no_partner(string state, bool ended)
+    {
+        Assert.Equal(ended ? PartnerWhy.AskerEnded : null, PartnerJudge.Refusal(Ask(), Lead() with { State = state }));
+    }
+
     /// <summary>
     /// 🔴 With no measured row, the production choice admits nobody; an ask that names no agent is refused before any walk,
     /// never substituted.

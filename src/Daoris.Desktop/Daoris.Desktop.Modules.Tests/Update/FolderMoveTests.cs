@@ -38,6 +38,20 @@ public sealed class FolderMoveTests : IDisposable
     }
 
     [Fact]
+    public void A_source_that_cannot_be_removed_after_the_copy_landed_is_still_a_move()
+    {
+        var source = Source();
+        var target = Path.Combine(_root, "target");
+
+        var removed = FolderMove.Move(source, target, copying: true, removeSource: _ => throw new IOException("held"));
+
+        Assert.False(removed);
+        Assert.Equal("a", File.ReadAllText(Path.Combine(target, "a.txt")));
+        Assert.Equal("b", File.ReadAllText(Path.Combine(target, "inner", "b.txt")));
+        Assert.True(File.Exists(Path.Combine(source, "a.txt")));
+    }
+
+    [Fact]
     public void A_file_that_fails_to_copy_leaves_no_target_and_the_source_whole()
     {
         var source = Source();

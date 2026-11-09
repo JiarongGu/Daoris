@@ -50,8 +50,7 @@ public sealed class LinksGate(IGit git) : IGate
             if (!File.Exists(absolute)) continue;
 
             var directory = Path.GetDirectoryName(absolute)!;
-            // Plain read: the pattern is line-ending agnostic, so normalizing would buy nothing here.
-            foreach (Match match in Link.Matches(File.ReadAllText(absolute)))
+            foreach (Match match in Link.Matches(LinkText.Of(File.ReadAllText(absolute))))
             {
                 var target = match.Groups[1].Value;
                 if (!IsCheckable(target)) continue;

@@ -509,9 +509,9 @@ internal sealed class LandedCleanups(
             .ConfigureAwait(false);
         if (code != 0)
         {
-            // `cat-file -e` exits 1, saying nothing, for an object the repository does not have; every other failure is unread (git-ref-absence).
-            var (has, _, _) = await WorkingTree.GitAsync(root, ["cat-file", "-e", entry.Tip], ct).ConfigureAwait(false);
-            return has == 1 && WorkingTree.IsCommitId(entry.Tip) ? (LandedGone.Missing, null, null, null) : null;
+            // Missing is git's word for an object the repository does not have; no answer is unread (git-ref-absence).
+            var has = await GitObjectReads.InfoAsync(root, entry.Tip, ct).ConfigureAwait(false);
+            return has is { Missing: true } && WorkingTree.IsCommitId(entry.Tip) ? (LandedGone.Missing, null, null, null) : null;
         }
 
         // An act's own ref holds an index's blobs until its record expires, never a landing's work.

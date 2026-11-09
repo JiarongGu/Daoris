@@ -2,7 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { spawn } from 'node:child_process';
 import { createInterface } from 'node:readline';
-import { writeFileSync } from 'node:fs';
+import { rmSync, writeFileSync } from 'node:fs';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import vm from 'node:vm';
@@ -123,6 +123,7 @@ test('the doctrine tool check names what an install lacks, and passes on a sound
   const sound = () => {
     for (const name of CLI_LAUNCHERS) fx.write(`install/${CLI_BIN.join('/')}/${name}`, 'launcher\n');
     fx.write(`install/${DRIVER_HOME.join('/')}/${DRIVER_EXE}`, 'host\n');
+    fx.write(`install/${DRIVER_HOME.join('/')}/git2-5853918.dll`, 'native\n');
     fx.write(`${pkg}/${CLI_ENTRY.join('/')}`, '// entry\n');
     fx.write(`${pkg}/dist/cli.js`, '// built\n');
     fx.write(`${pkg}/package.json`, '{"name":"daoris","version":"0.4.2"}');
@@ -131,6 +132,9 @@ test('the doctrine tool check names what an install lacks, and passes on a sound
   const install = join(fx.root, 'install');
   sound();
   assert.deepEqual(cliProblems(install, '0.4.2'), []);
+  rmSync(join(install, ...DRIVER_HOME, 'git2-5853918.dll'));
+  assert.deepEqual(cliProblems(install, '0.4.2'), [`${DRIVER_HOME.join('/')}/git2-*.dll, the git library's native file, is not there`]);
+  sound();
 
   assert.deepEqual(cliProblems(install, '0.4.3'), [
     `${CLI_PACKAGE.join('/')}/package.json says 0.4.2, not 0.4.3`,

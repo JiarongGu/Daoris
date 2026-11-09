@@ -4,8 +4,8 @@ namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
 /// The lease's teller of the quests' moves, each <c>quests</c> row
-/// of the journal the kind it says, handed to its sink in position order; a take told nothing; one <c>events.missed</c> at the first place
-/// of its life and one for each batch whose history is incomplete; its cursor held in memory and never kept.
+/// of the journal the kind it says, handed to its sink in position order; a take told nothing; its cursor held in memory and never kept,
+/// and its gaps said once, by the wrapper that tells them.
 /// </summary>
 public sealed class WorkEventTellerTests
 {
@@ -15,7 +15,7 @@ public sealed class WorkEventTellerTests
 
     private readonly List<WorkEvent> _told = [];
 
-    private WorkEventTeller Teller() => new(_told.Add, () => Now);
+    private WorkEventTeller Teller() => new(_told.Add);
 
     private static JournalEntry Quest(long position, string change, string? old, string state, string quest = "48f8ed9121ec", string family = "quests") =>
         new(position, Moved.ToUnixTimeMilliseconds(), quest, family, change, old, state, null, null, null, [], "team", quest);
@@ -101,27 +101,42 @@ public sealed class WorkEventTellerTests
             _told);
     }
 
-    /// <summary>
-    /// 🔴 The place a teller with no cursor is handed is a gap: one <c>events.missed</c> at the first place of its life, none at later ones,
-    /// and one for each batch whose history is incomplete, before that batch's own events. Its cursor is its memory alone.
-    /// </summary>
+    /// <summary>The teller tells rows alone: its cursor is its memory, and a gap is no row, so it says none (<see cref="WorkEventNews.Gapped"/> says it).</summary>
     [Fact]
-    public async Task Its_first_place_and_each_incomplete_batch_are_told_as_one_gap_and_its_cursor_is_memory()
+    public async Task Its_cursor_is_memory_and_it_tells_rows_alone_whatever_gap_it_is_handed()
     {
-        var teller = Teller();
-        var feed = teller.Teller;
+        var feed = Teller().Teller;
         Assert.Null(feed.Load!());
 
         feed.Keep!(new JournalPosition("store-1", 40));
         feed.Keep!(new JournalPosition("store-1", 41));
+        await feed.Told(Batch(true, Quest(90, "state", "Taken", "Done")));
+
         Assert.Equal(new JournalPosition("store-1", 41), feed.Load!());
+        Assert.Equal([WorkEventKinds.QuestClosed], _told.Select(each => each.Kind).ToList());
+    }
+
+    /// <summary>
+    /// 🔴 Wrapped as the lease's feed runs it, the place a teller with no cursor is handed is a gap: one <c>events.missed</c> at the first
+    /// place of its life, none at later ones, and one for each batch whose history is incomplete, before that batch's own events.
+    /// </summary>
+    [Fact]
+    public async Task Wrapped_its_first_place_and_each_incomplete_batch_are_told_as_one_gap()
+    {
+        var feed = WorkEventNews.Gapped(Teller().Teller, _told.Add, () => Now);
+        Assert.Null(feed.Load!());
+
+        feed.Keep!(new JournalPosition("store-1", 40));
+        feed.Keep!(new JournalPosition("store-1", 41));
         Assert.Equal([new WorkEvent(WorkEventKinds.Missed, Now)], _told);
 
         await feed.Told(Batch(true, Quest(90, "state", "Taken", "Done")));
 
         Assert.Equal([WorkEventKinds.Missed, WorkEventKinds.Missed, WorkEventKinds.QuestClosed], _told.Select(each => each.Kind).ToList());
         // A second teller's life is its own: it says its own first gap.
-        Teller().Teller.Keep!(new JournalPosition("store-1", 41));
+        var second = WorkEventNews.Gapped(Teller().Teller, _told.Add, () => Now);
+        Assert.Null(second.Load!());
+        second.Keep!(new JournalPosition("store-1", 41));
         Assert.Equal(3, _told.Count(each => each.Kind == WorkEventKinds.Missed));
     }
 }

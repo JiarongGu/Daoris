@@ -123,7 +123,7 @@ public sealed class LandGitCountTests : IDisposable
     {
         var root = await RepositoryAsync("engine");
         var sha = (await GitAsync(root, "rev-parse", "HEAD")).Trim();
-        string[] ask = ["merge-base", sha, sha];
+        string[] ask = ["merge-base", "--all", sha, sha];
         var starts = new List<string>();
         Task child;
         using (Counting(starts))
@@ -155,7 +155,7 @@ public sealed class LandGitCountTests : IDisposable
         var root = await RepositoryAsync("engine");
         var starts = new List<string>();
         var sha = (await GitAsync(root, "rev-parse", "HEAD")).Trim();
-        string[] ask = ["merge-base", sha, sha];
+        string[] ask = ["merge-base", "--all", sha, sha];
         using (Counting(starts))
         using (GitFacts.Within())
         {
@@ -199,8 +199,8 @@ public sealed class LandGitCountTests : IDisposable
     // Every landing under Current performs its delivery, each effect's outcome read after it and never assumed: the branch's ref made
     // through one ref transaction (its symbolic-ref check and `update-ref --stdin`) and read back, a merge's line read after its press
     // (`rev-parse`, `merge-base --is-ancestor`).
-    private const int SquashCeiling = 25;
-    private const int MergeCeiling = 39;
+    private const int SquashCeiling = 19;
+    private const int MergeCeiling = 32;
 
     private const string VerifyQuiet = "git rev-parse --verify --quiet ";
 

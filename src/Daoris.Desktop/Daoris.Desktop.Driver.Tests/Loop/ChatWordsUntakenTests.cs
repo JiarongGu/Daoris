@@ -68,4 +68,44 @@ public sealed class ChatWordsUntakenTests : IDisposable
         Assert.Empty(context.Handing);
         turns.Gone();
     }
+
+    /// <summary>Words a stop or a taken-back hands back give back their brief and browser line for the words said again.</summary>
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task A_waiting_word_handed_back_gives_its_extras_back_for_the_words_said_again(bool takenBack)
+    {
+        using var runner = new ChatRunner(
+            new ChatLedger().Client(), ProviderRegistry.Built(), _home, new SessionProcesses(DaorisHome.Entry(_home, HomeEntry.Sessions)));
+        var context = runner.Context;
+        var running = new TaskCompletionSource();
+        var turns = new ChatTurns(
+            ready: () => Task.FromResult(true), take: async (_, sent) => { sent(); await running.Task; },
+            interrupt: () => Task.CompletedTask, changed: _ => { });
+        context.Turned[Id] = new Turned(turns);
+        var words = new ChatWords(context, new ChatTold(context, context.ChatRuns), new AttentionWatch());
+        Assert.True(words.Say(Id, "the turn in flight", out _));
+        await Poll.Until(() => turns.Running, () => "the first turn never began");
+
+        var brief = new ComposedBrief([], []);
+        context.Handing[Id] = new Handing(brief);
+        context.Browsers[Id] = "the browser line";
+        Assert.True(words.Say(Id, "waiting", out _));
+        Assert.Empty(context.Handing);
+
+        if (takenBack)
+        {
+            Assert.Equal(QueueEdit.Done, turns.EditQueued(turns.State.Queued.Single().Id!, null));
+        }
+        else
+        {
+            var stop = await turns.StopAsync();
+            Assert.Single(stop.Withdrawn);
+        }
+
+        Assert.Same(brief, context.Handing[Id].Brief);
+        Assert.Equal("the browser line", context.Browsers[Id]);
+        running.SetResult();
+        turns.Gone();
+    }
 }

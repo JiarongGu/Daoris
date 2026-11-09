@@ -307,6 +307,7 @@ internal sealed class LimitMove(IExecutorWiring wiring) : IExecutor
                         .ConfigureAwait(false);
             if (started.SessionId is not { } to)
             {
+                carrier?.Withdraw();
                 context.Note(sessionId, LimitNotes.NotMoved(started.Message));
                 return new StartedFrom(null, false, null, started.Message);
             }

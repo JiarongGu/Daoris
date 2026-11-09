@@ -17,10 +17,13 @@ internal static class PersonPermissions
     /// repository's; an allow is written with <paramref name="by"/>. False where the list already held it.
     /// </summary>
     /// <exception cref="DriverException">No such list, a pattern naming none of Daoris's acts, or a file that stands and does not read.</exception>
-    internal static bool Add(string home, string? repository, string list, string rule, string? by, string? decision = null)
+    internal static bool Add(string home, string? repository, string list, string rule, string? by, string? decision = null) =>
+        AddAll(home, [repository], list, rule, by, decision) > 0;
+
+    internal static int AddAll(string home, IReadOnlyList<string?> repositories, string list, string rule, string? by, string? decision = null)
     {
         Check(list, rule);
-        return PersonFiles.EditScope(home, repository, scope =>
+        return PersonFiles.EditScopes(home, repositories, scope =>
         {
             var held = Held(scope, list);
             if (held.Any(each => Rule(each) == rule)) return 0;
@@ -28,7 +31,7 @@ internal static class PersonPermissions
             else if (decision is { Length: > 0 }) held.Add(new JsonObject { ["rule"] = rule, ["by"] = by, ["decision"] = decision });
             else held.Add(new JsonObject { ["rule"] = rule, ["by"] = by });
             return 1;
-        }) > 0;
+        });
     }
 
     /// <summary>Each entry of the list naming <paramref name="rule"/> taken out; false where none did.</summary>

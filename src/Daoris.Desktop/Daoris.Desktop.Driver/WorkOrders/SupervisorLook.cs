@@ -41,12 +41,13 @@ internal sealed class SupervisorLook(ILookWiring wiring) : ILookPass
 
     /// <summary>
     /// The release through the service's say: no text, its decision, question and choice, the receipt as the say's key. Kept answers
-    /// the word's id; a refusal its word; a lost response throws, which the release keeps held to repeat.
+    /// the word's id; a refusal its word; a lost response (a throw, or a busy host's reply) keeps the release held to repeat.
     /// </summary>
     private async Task<SupervisorSaid> SayAsync(string session, string decision, string question, string choice, string key, CancellationToken ct)
     {
         var said = await wiring.Service.SayAsync(
             session, "", ct: ct, from: SupervisorHanded.From, key: key, supervised: (decision, question, choice)).ConfigureAwait(false);
+        if (said.Lost) return new SupervisorSaid(null, null, Lost: true);
         return said.Kept && said.Word?.Id is { } word ? new SupervisorSaid(word, null) : new SupervisorSaid(null, said.Refusal ?? "unsaid");
     }
 }

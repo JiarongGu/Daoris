@@ -76,6 +76,9 @@ public sealed record ChatMessage(string Text, IReadOnlyList<KeptFile> Files) : I
     /// </summary>
     internal Action? Went { get; init; }
 
+    /// <summary>Gives back what this message took once, where it is withdrawn and handed back to the person.</summary>
+    internal Action? Untaken { get; init; }
+
     /// <summary>
     /// The person's words a conversation goes on with, kept on its record while it has ended: its first
     /// turn, each word its own block on the protocol door and said again under its id as the door takes it. The record

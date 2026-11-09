@@ -31,7 +31,7 @@ import { useWaitPanelHeight } from './waitPanelHeight';
 import { waitsOf } from './waits';
 import { useWaitsOnScreen } from './waitsOnScreen';
 import { useTeam } from '../team/useTeam';
-import { leadsPieces } from '../identity';
+import { leadsPieces, takesPartner } from '../identity';
 
 /**
  * What waits on the attended session's person: its helpers, pieces, hand-over, tool calls, answers
@@ -84,6 +84,7 @@ export function useAttendedWaits({
   // The pieces it asked other agents to write: this machine's own files, so only for its own record. A
   // session working in a tree of its own leads them, driven or a conversation; a partner, a helper, a reviewer or an intake leads none.
   const leads = Boolean(attended && here && leadsPieces(attended));
+  const takes = Boolean(attended && here && takesPartner(attended));
   const partnerPieces = useSessionPartners(attended && here ? attended.id : null);
   // Its agent's own ask to hand it over: this machine's own files, so only for its own record.
   const handOverAsk = useSessionHandOverAsk(attended && here ? attended.id : null);
@@ -115,7 +116,7 @@ export function useAttendedWaits({
   const pieceSection: PieceSection | null = attended && here && (leads || (partnerPieces.data?.length ?? 0) > 0) ? {
     pieces: partnerPieces.data ?? [],
     nameOf: (agent: string) => agentRoster.names?.[agent] ?? agent,
-    ask: leads ? {
+    ask: takes ? {
       from: attended.door,
       roster: agentRoster,
       busy: actions.askingPartner,

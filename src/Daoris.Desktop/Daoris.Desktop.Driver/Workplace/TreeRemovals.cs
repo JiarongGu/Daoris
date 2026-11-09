@@ -254,6 +254,7 @@ internal sealed class TreeRemovals(TreeContext context, TreeFollows follows, Con
 
         // Git's removal follows a junction out of the tree and deletes what it points at, so each link in it goes as a
         // link first, forced or not; a tree whose links cannot all go stays.
+        if (TreeLinks.Locked(full) is { } locked) return await KeptAsync($"the tree at {path} stays: {locked}.").ConfigureAwait(false);
         if (TreeLinks.Unlinked(full) is { } linked) return await KeptAsync($"the tree at {path} stays: {linked}.").ConfigureAwait(false);
 
         // A tree past Windows' 260 characters is removed with long paths, which every git call here says:

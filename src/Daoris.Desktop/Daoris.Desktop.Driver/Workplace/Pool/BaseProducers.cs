@@ -34,10 +34,10 @@ internal static class BaseProducers
                 : $"{top} is beside {projects.Count} project files, so it has no one producer");
         }
 
-        var declared = Declared(await ShowAsync(git, slot, commit, projects[0], ct).ConfigureAwait(false));
+        var declared = Declared(await ShowAsync(slot, commit, projects[0], ct).ConfigureAwait(false));
         for (var above = folder; declared is null; above = FolderOf(above))
         {
-            if (await ShowAsync(git, slot, commit, above + "Directory.Build.props", ct).ConfigureAwait(false) is { } props)
+            if (await ShowAsync(slot, commit, above + "Directory.Build.props", ct).ConfigureAwait(false) is { } props)
             {
                 declared = Declared(props);
                 break;
@@ -67,10 +67,10 @@ internal static class BaseProducers
         }
     }
 
-    private static async Task<string?> ShowAsync(PoolGit git, string slot, string commit, string path, CancellationToken ct)
+    private static async Task<string?> ShowAsync(string slot, string commit, string path, CancellationToken ct)
     {
-        var (code, text, _) = await git.GitAsync(slot, ["show", $"{commit}:{path}"], ct).ConfigureAwait(false);
-        return code == 0 ? text : null;
+        var name = GitObjectName.At(commit, path);
+        return await GitObjectReads.TextAsync(slot, name, ct).ConfigureAwait(false);
     }
 
     /// <summary>The folder holding <paramref name="path"/>, repository-relative and ending <c>/</c>; empty for the top.</summary>

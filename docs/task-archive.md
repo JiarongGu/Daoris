@@ -8,6 +8,46 @@ the per-task record. Entries preserve their original wording so the archive stay
 ## TREEPOOL1ab — the bench rerun that proves the bytes saving (2026-11-09)
 
 > **TREEPOOL1ab** (driver; §35.8, §36.4, §37.5, §39): Outcome: measured over a day up to TREEPOOL1aa with the `local/` copy present (its refusal fixed, the line's own empty at all 24 takes), a session in a kept slot writes 97% fewer files and 61% fewer bytes than a fresh tree with `take: base` (25% with `bin/` aside; the web shape under found rules, 20% and none), estimates of files changed; the root's `node_modules` is kept or installed again and not stored, never placed (TREEPOOL1ag), the CLI's now in the root's rule (TREEPOOL1ad), the contention across a finish left to TREEPOOL1ah.
+## CODESTRREV2a to 2e — the code-structure review's second cycle, merge-tool defects fixed (2026-11-09)
+
+> **CODESTRREV2a** (tools): Outcome: the verdict store's lock (`holdingLock`, now `tools/merge-branch/locks.mjs` over `withRunLock`) is taken over only once its run is gone or it is 30 seconds old and is let go only while it still says what its run wrote, so a live holder is no longer robbed after 10 seconds; the choice rejected a wait-then-steal bound (the defect itself) for a longer wait on a hung run, which ends at the stale bound. Test: `tool-test/merge-branch/locks.test.ts`.
+
+> **CODESTRREV2b** (tools): Outcome: `takeGateLock` puts its lock in place complete (`putComplete`: written beside, linked in), so a second run never reads it empty and removes it; the CI watch's lock, which had the same create-then-write shape, takes the same path. Test: `locks.test.ts`.
+
+> **CODESTRREV2c** (tools): Outcome: `treeDrift`, `laneReport`, `branchChanges` and the scoped and reform reads of a change's paths all go through `diffPaths` (`-z`, `--no-renames`; `tools/merge-branch/paths.mjs`), so a non-ASCII path is placed by the lane table and no longer makes every verdict stale. Test: `tool-test/merge-branch/paths.test.ts`.
+
+> **CODESTRREV2d** (tools): Outcome: `enqueueVerb` asks `isInside(local/, file)`, which refuses another drive and the folder itself and takes a name that merely starts with two dots. Test: `paths.test.ts`.
+
+> **CODESTRREV2e** (tools): Outcome: the `canon/canon.json` row names `service`, `rehearse` and `rehearse-family` beside the driver's readers, so it reaches every gate `canon/**` does. Test: `reach-table.test.ts`.
+## DRVREVIEW18 to DRVREVIEW23 — the driving review's six service defects (2026-11-09)
+
+> **DRVREVIEW18 / 19 / 20 / 21 / 22 / 23** (service): Outcome: all six held against main's tip; each fixed with a regression test seen to fail first (21 is a removal, proved by the build and its measurement running), the service tests built against the local Lyntai pack (the props file copied into this tree), which the first row's note said they needed.
+> 18: a quest is kept under its receiver's registered spelling, so `Engine` and `engine` are one open quest and the receiver's queue reads it (`QuestExchangeTests`).
+> 19: a session record another record continues is refused as `Named` by the delete and the list's `Deletable`, so only a line's last record goes (`SessionDeleteTests`); a design choice: it reuses `Named` and adds no refusal to the published contract.
+> 20: the open's reopen repair replays outside the write and writes only a row whose replay keeps a reopen, so a step gone on after its source's reopen is not rewritten at every open (`QuestReopenTests`, counted by a trigger on the table).
+> 21: `WalksHead` and the say door's parameter are deleted; the landing measurement reads the door and the walk's own cost on each branch from one file (`SaidSettledMeasureTests`, run with its variable set).
+> 22: each alter with its backfill, the sessions rebuild, and the quest store's mark and mirror column run through `SchemaColumns.ApplyAsync` in one transaction (`SessionSchemaUpgradeTests`, `QuestLogTests`); the quest store's two pairs were found beside the row.
+> 23: a new ask is kept by insert only (`SaveAsync` is `InsertAsync`; its upsert was used by tests alone, which now go through the doors that change an ask), and a lost insert answers as a repeat and hands its quest to the first ask (`AskDeskTests`); a quest delete judges what stands on it again inside its own transaction (`QuestDeleteTests`, a remotes stub landing a session between the look and the write).
+
+---
+
+## DRVREVIEW second cycle — the driving review's second cycle (2026-11-09)
+
+> **The driving review, second cycle** (driving code review): Outcome: three defects fixed, each with a regression test seen to fail first, and thirteen filed as DRVREVIEW11 to DRVREVIEW23 with their evidence. A start that throws or is cancelled after its record opens and before the hand (the lock of its tree, the files stage) ends that record, failed or stopped as the driver closes, and lets its tree lock go (60760fb823, `StartFaultBeforeHandTickTests`). A steered word the agent hands back is held without the key it left the record under, so re-saying it is not answered as already kept (3d7bf518ce, `DrivenInboxKeyTests`). A removal or press that git would refuse for the tree's lock takes no link off the tree first (3777c7612b, `TreeLinkRemovalTests`). The service tests do not build on this tree (`LyntaiMemory.cs` names a Lyntai type the restored package lacks), so the service rows were found by reading and filed without a test.
+
+---
+
+## AGENTREV2a to AGENTREV2f — the agents review's second cycle (2026-11-09)
+
+> **AGENTREV2a / 2b / 2c / 2d / 2e / 2f** (driver): Outcome: all six held against main's tip, each fixed with a regression test seen to fail first; 2a and 2b were built and tested under `DaorisLyntaiLayer`.
+> 2a (70b0e427af): `LauncherRunner`'s stderr and stdout reads and `LayerRun`'s turn read to the end and throw the first failure after, as `HarnessCapture` does, so a line the seat or sink cannot keep neither blocks the child on a full pipe nor kills it mid-work (`LauncherRunnerProcessTests`, `LayerRunProcessTests`); the stdout read, which the row did not name, had the same flaw.
+> 2b (70b0e427af): a leg that fails to set up lets its lineage token go (`LayerHoldProcessTests`), and the run's token is set before the leg's preamble and opening readings are handed, so they carry it.
+> 2c (ada7896998): `ChatGoOn.SwitchableAsync` asks the roster for `record.ModelOn(adapter)` (`BriefedMoveTests`).
+> 2d (86c2c8bbdb): `AgentSettings.Write` reads, edits and renames the file under its `KeepLock`, with a read seam as `PermissionChange` has (`AgentSettingsInterleaveTests`).
+> 2e (506539c926): the tick takes the proposal's keep lock before settling it and reads its state again, skipping one that is no longer proposed (`PermissionWritersInterleaveTests`).
+> 2f (b44ea41ed1, 3d5fe4dc93, f652d104b8): the set back catches `AcpRefusal` alone, so a stream's end is not read as a refusal (`AcpOptionsEndedTests`); a word's mark waits for the one before it to finish, not to succeed (`AcpAttemptedChainTests`); `AcpWire.ReadAsync` disposes each frame's `JsonDocument`, with no test, since that is a pooled-buffer return with no behaviour to fail.
+
+---
 
 ## TREEPOOL1aa — a kept output as the previous line's build base (2026-11-09)
 
@@ -25,6 +65,68 @@ the per-task record. Entries preserve their original wording so the archive stay
 > 2h (a2122031f5): the in-memory store normalizes a workspace on write, and one contract test compares every read of the two stores after the same writes (`KnowledgeStoreContractTests`).
 > 2i (4fb9bf878c): an awaiting end whose session was deleted is listed as a wait of its own, decided by its row as a sweep's is; an orphaned replacement or staged row is not (`MemoryDecisionTests`).
 > 2j (aa1dcaa440): plain words of a forgotten quest publish under the next id at every step as rule 31 says; only a request key, which has no next id, is refused as cleared (`QuestRequestKeyTests`).
+
+## PLUGREV2 — the plugins review's second cycle (2026-11-09)
+
+> **PLUGREV2a** (driver, plugins): Outcome: an update's or replace's swap-in that fails puts the installed folder back, and a rollback that fails too is refused as a `DriverException` naming the `.removing-*` folder the plugin lies in, the stage forgotten (`PluginInstall.SwapIn`, one tail for both; a `move` hook on `PluginFolders`); proved by `PluginSourceTests`.
+>
+> **PLUGREV2b** (driver, web, plugins): Outcome: a sound plugin switched off keeps its approval on its page and in the list (`HelpGrants.Read(withSwitchedOff)`, its grants marked `Off` and handed nothing), and the page's press approves one (`HelpGrants.Declared` takes a sound plugin, on or off); the Ask Daoris proposal still asks a plugin switched on; proved by `HelpGrantsTests` and `PluginPageTests`.
+>
+> **PLUGREV2c** (driver, plugins): Outcome: a placed plugin's `plugin.step` and `plugin.failed` lines carry its id (`WorkPlugins` logs `PlacedWork.PluginOf(key)`, so `PluginHealth` sees the failure under the plugin), and `HookSet.Refused` counts one refusal at the first place that holds a state, not once per place; proved by `PlacedWorkTests`.
+>
+> **PLUGREV2d** (driver, plugins): Outcome: a look and `Watch` divide the awaited set and apply it through `PlacedWork.Apply`, one lock around both, so a look never applies a set older than one `Watch` stored (the rejected alternative, `Watch` only recording, would have delayed an awaited place's start to the next look); proved by `PlacedWorkTests`.
+>
+> **PLUGREV2e** (driver, plugins): Outcome: `WorkEventTeller` tells rows alone and keeps its cursor in memory (no clock, no gap), and `LoopRun` and `DriveConsole` wrap it in `WorkEventNews.Gapped`, the one place that says the first-place and incomplete-batch `events.missed`; proved by `WorkEventTellerTests` (the bare teller and the wrapped one).
+>
+> **PLUGREV2f** (driver, plugins): Outcome: `RelayCopy` removes a build only after its `in-use` file opens alone a second time in the renamed folder (`Unheld`, also the check before a leftover `.removing-*` is deleted); a build a relay opened in the gap goes back to its name, or where a rename cannot (Windows over an open file) stays under its removal name whole; proved by `RelayCopyTests`.
+>
+> **PLUGREV2g** (driver, plugins): Outcome: the relay's stdout bound is said as 54 lines, the gap, 50 events, their count, an ending's own line and the watermark (said, not folded into the count line, which would have changed what a relay prints); `RelayBatchTests` holds the case that ends through a second client and through the pipe.
+>
+> **PLUGREV2h** (driver, plugins): Outcome: `PluginCatalog.Signature` (the hook set keeps its own) and `LandingPlugins`'s `patience` parameter, `DefaultPatience` and its default start lambda deleted with their assertions; an occasion's asks start through the injected start or `StartProcessAsync` alone, and `LandingPatience.Plugin` is read direct.
+>
+> **PLUGREV2i** (driver, plugins): Outcome: the plugins tests that could not fail now can: the host-token tests read the token in the starting flow after the start (`PlacedWorkTests`, `PluginHostTokenTests`; both fail with `HookSet`'s `finally` removed); the package traversal case names three distinct escape paths; the "starts nothing" checks run the hook's script once as an ES module to prove it writes its mark, then read the mark's absence after a second (`HookMarks`); the always-true `NotNull` is gone; the 4 KB frame cases send a valid frame padded to and one byte past the bound.
+
+## DOCTRINECLIREV2 — the doctrine-and-CLI review's second cycle, fixed defects (2026-11-09)
+
+> **DOCTRINECLIREV2a** (cli): Outcome: `analyze`'s budget projection (`budget.ts`, moved out of `analyze.ts`) measures the region's body beside the repository's own rule files, and a selected rule the region already holds adds only the change in its size, so an adopted repository no longer shows its rules counted again; proved by `analyze.test.ts`.
+
+> **DOCTRINECLIREV2b** (driver): Outcome: `DoctrineStatus.Reopened` counts a core file kept with no text (`absentCore`, a field `status --json` already carries) beside a keep the canon moved past, so the place page offers the reconcile that names it; the choice, a reader-only change that leaves `status --json` and the CLI as they are, rejects a new `reopened: true` from the tool; proved by `DoctrineStatusTests`.
+
+> **DOCTRINECLIREV2c** (devkit): Outcome: the sensitive gate's tree scope reads a file with a UTF-16 byte-order mark as text (`SensitiveGate.IsBinary`), so a leak in a file Windows PowerShell's `>` wrote is found; proved by `SensitiveGateTests`. The staged scope's share was DOCTRINECLIREV2c2.
+
+> **DOCTRINECLIREV2c2** (devkit): Outcome: the `IGit` seam's `StagedText` became `StagedBytes` (`git show :path`, undecoded, read by `GitStart.RunBytes`), and the sensitive gate decodes the index's bytes as it does the tree's: binary on a NUL in the first 8,000 bytes unless a UTF-16 byte-order mark says text, so a staged leak ahead of a late NUL is found where the whole-content test skipped it (a staged UTF-16 file was already read, by `Process`'s own byte-order sniffing, and is now read by the gate); proved by `SensitiveGateTests`.
+
+> **DOCTRINECLIREV2d** (devkit): Outcome: the links gate no longer checks links a document quotes in a fenced block or a code span (`LinkText`), reading fences through the service's `MarkdownFence` compiled into the devkit, so there is no fifth fence reader or second table; proved by `LinksGateTests`.
+
+## HOMELEASE2 and FOLDERMOVE2 — the install-home-update review's second cycle (2026-11-09)
+
+> **HOMELEASE2** (install-home-update): Outcome: a lease judged stale is moved aside in one step and judged by what moved (`HomeLease.RemoveStale`), a lease that is not what was judged stale put back, so a taker's lease written between another's read and removal is never removed; proved by `HomeLeaseTests`.
+
+> **FOLDERMOVE2** (install-home-update): Outcome: a cross-volume move-in whose copy landed is a move even where a held file keeps the source from being removed: `FolderMove.Move` returns whether the source went, and `InstallHome.MoveIn` counts the entry moved rather than failed; proved by `FolderMoveTests`.
+
+## ROLESREVIEW2i to 2q — the roles and supervision review's second cycle (2026-11-09)
+
+> **ROLESREVIEW2i** (modules): Outcome: a leave of an allow or files subject asks the same coverage as a decide (`SupervisorDecisionDoor.CoversPlace` for a place no repository names, `Covers` for a held request's repository), so a holder of another place cannot hide a subject from the supervisor that answers it; a leave still asks no grant (`roles-and-supervision.md`, rule 46).
+>
+> **ROLESREVIEW2j** (driver): Outcome: an overruled or stale course or landing decision is refused `overruled` in the run as after a restart (the question's keeping already said so), and a course's overrule or stale release closes its subject at once, as a landing's does.
+>
+> **ROLESREVIEW2k** (driver): Outcome: a share's allow is written into every repository's layer in one read and one write of the person's file (`PersonFiles.EditScopes`), so a failure on a later layer leaves none written and the ask's `made: false` is true; no layer was found to fail alone by a `DriverException`, which only the file's own read raises before any layer is edited, so the write's atomicity is the fix.
+>
+> **ROLESREVIEW2l** (driver): Outcome: a say that comes back as a gateway's, timeout's or throttle's reply with no refusal (`SayAnswer.Lost`: 408, 429, 502, 503, 504) keeps the supervisor's release held to repeat under its receipt, as a thrown lost response does; a 404 and the like stay `no door`, ending the decision `unsaid`. A transport failure already threw, so only a reply that was returned needed the change.
+>
+> **ROLESREVIEW2m** (driver): Outcome: `driver role` set, remove, default and policy plan against the role's revision as the catalogue read it (the press's `revision`, and the write's `read`), so a role edited since is refused moved, not overwritten; `role suggested --use` is one `RoleDoor.ApplyAll` batch judged whole. No refusal inside the batch could be built to show its all-or-none write by a test; the batch is the door's own, pinned by its tests.
+>
+> **ROLESREVIEW2n** (driver): Outcome: the staffing's one publication (`RoleStaffing.Publishing`, which `Commit` now calls) wraps a store failure in a `DriverException` as the commit did, and `RoleCatalog.WriteIn` refuses a late judge's refusal as a `RoleRefusedException` carrying its code, so the second of two presses adding roles that take one work is `two-roles-one-work`.
+>
+> **ROLESREVIEW2o** (driver): Outcome: a start plan's walk that throws (a cancelled account look or order loop) gives its policy reservation back before the exception leaves (`StartPlan.ResolveAsync`), so it no longer counts in the weighted pick, a share or a daily budget until `ReservationLife`.
+>
+> **ROLESREVIEW2p** (modules): Outcome: a catalogue that cannot be read at an act's step (`RoleActsLedger.RunAct`) or a terminal's start (`RoleTerminals.StartAsync`) is `role-changed`, as admission says it, and withdraws no queued act, where it was `not-granted` for good and `unknown-role`.
+>
+> **ROLESREVIEW2q** (driver): Outcome: a cancel that meets a turn already ended is no error (`SupervisorRuns.StopUnwaited`); a subject whose every choice was spent is said once on its line as an unavailable supervisor is (`SupervisePass`); and the said-once memory is cut to the subjects still waiting at each look (`SupervisePass.Forget`).
+
+## CONVREV2a to 2g and COWORKREVIEW2a — the second cycle's defects of the conversations and co-working reviews (2026-11-09)
+
+> **CONVREV2a to 2g / COWORKREVIEW2a** (driver, service): Outcome: all eight fixed, each with a regression test. 2a, 2b, 2g (`d555a12fcd`): an ended limit move reads the line's limits rule and counts a move to another choice (`LimitRuled` takes no chat), ends its carried run's record, and a copy a start never ran is withdrawn (`ChatLimitCarry.Withdraw` public). COWORKREVIEW2a (`c2be8a0018`): a partner's desk refuses an Ask Daoris conversation as a lead. 2f: a plan the state's weight cap shortened is said with the lists' cut, `PlanBound` only past 50 steps. 2c: a failure or cancel between a chat record's open and its run concludes the record `failed` (`ChatStarts`). 2d: a stop or a taken-back word gives back its extras (`ChatMessage.Untaken`). 2e: the refused start's brief goes to Ask Daoris's replacement (`ChatPending.Unhanded`), and `HelpConversations.List` folds a `not-offered` link as a continuation. Choices: the replacement re-hands the brief and the row folds, rather than recomposing the brief; no published contract changed.
 
 ## TREEPOOL1ac — shared paths (2026-11-09)
 
@@ -53,6 +155,13 @@ the per-task record. Entries preserve their original wording so the archive stay
 ## DOCTRINECLI1 — the doctrine console's Ctrl+C hold and the CLI's Node floor (2026-11-09)
 
 > **DOCTRINECLI1** (driver): Outcome: `DoctrineConsole` holds Ctrl+C through `InterruptHold`, taken before the child starts and removed when it ends, and the CLI's entry refuses a Node below 22 with exit 2 (`bin/node-floor.mjs`), the floor checked once inside the CLI, never by a second process start.
+## UIFIND4 (2026-11-09)
+
+> **UIFIND4** (web, agents): Outcome: an agent's page opens the API-key form under the Daoris accounts it adds to, above *Your own sign-in*; an agent with no account draws no column heads and says what the list is and the one press that adds the first; *Ways in* says each way in as what it gives (*command line*, *conversations*) and what to do where it is not installed, in English and Chinese.
+## UIFIND7, UIFIND12 and UIFIND14 (2026-11-09)
+
+> **UIFIND7 / UIFIND12 / UIFIND14** (web, driver): Outcome: an ended session takes no partner: `PartnerJudge` refuses it as `asker-ended` and the person's ask as `ended`, each with its sentence in both catalogues, and the page offers *Ask another agent to work on a piece…* only while the session runs (`takesPartner`; its review and helper's ask stay); an ended chat is already named by its first words where this machine holds them, and with none it stays *Chat*. The side bar's body holds its scrollbar's width (`DOCK_BODY`), so the states chart is placed by a width the bar no longer takes back and stops flipping between the drawing and the list with edges past its pane (a measured spec draws it at the dock's width). Every door of Get started, in the guide and in Ask Daoris, is one `StarterDoorButton`.
+
 ## UIFIND2, UIFIND3 and UIFIND5 (2026-11-09)
 
 > **UIFIND2 / UIFIND3 / UIFIND5** (web): Outcome: the Files tab leads with its paths and the person's rules, its layers, twin, commit and acts behind one fold, and an unreadable checkout says what to check; the ring never draws taller than its card is wide, so two repositories stay in one view; a blocked clean-up row with an unknown owner says its reason once, the press first, in English and Chinese.
@@ -23609,3 +23718,7 @@ The 26 pointer lines of the parked file's head (the owner's reports and features
 - [x] **WFREVIEW3j — the review's serve check keeps serving a re-taken slot's build** (driver): 2026-11-09 a serve carries its tree and the showing's time, and the look lets the tab go once the slot took another line after it (`PooledReadersTests`).
 - [x] **WFREVIEW3k — the verification executor's loop ends on any exception but cancellation** (driver): 2026-11-09 a writer or callback that throws as a result is told no longer faults the loop (`HeavyExecutorFaultTests`).
 - [x] **WFREVIEW3n — a part throwing mid-tidy can lose its error** (driver): 2026-11-09 every fault of a started tidy is logged, and a failed partly write is logged beside the part's own error, which stays the one thrown (`TidyNodeTests`; the partly write's guard is not exercised, since no test makes a part throw).
+
+- [x] **GITLIB1a to GITLIB1d — the untracked cut, the scheduler, one object question, the library for refs** (driver, modules): 2026-11-09 Review's untracked files in two starts whatever their count (ten files 25 starts and 10.5 s to 17 and 4.2 s); one scheduler every Daoris git passes (four running, a person's read always placed, a queue per repository, shared queued starts, only lock-free reads ended, hooks and helpers lent places, the gate refusing an unplaced git), its four censuses proved by mutation and its Process class on real git; every object read one `cat-file --batch` question through one parser; the refs' one listing through LibGit2Sharp per call, admitted per question, with parity and Windows hold tests (`GitSchedulerTests`, `GitSchedulerProcessTests`, `GitObjectReadsTests`, `GitLibraryRefsTests`, `GitLibraryHoldTests`).
+- [x] **GITLIB1e to GITLIB1g — merge-bases and counts, two commits' changed names, the second way's ends held** (driver): 2026-11-09 every plain `merge-base` (two commits, `--is-ancestor`, `--independent`), `rev-list --count` and two commits' `diff --name-only --no-renames` answered by LibGit2Sharp per call where admitted, a criss-cross's base and every refused case git's, equal to git's on every parity case; Review 16 to 10 starts, the offer 5 to 3, the tidy's six trees 17 to 5, a landed review 5 to 3, a squash landing 22 to 19, a merge landing 36 to 32; each refusal held by a case that fails the day the library reads it as git does, and the library's retirement by a git in use or pinned that makes reftable or SHA-256 by default (`GitLibraryWalksTests`, `GitLibraryNamesTests`, `GitLibraryEndsTests`).
+- [x] **DESKREV2 — the second code review's open defects of the desktop app** (app, modules): 2026-11-09 a page's `SET_THEME` is no longer overwritten by the OS's theme, since whether the page has said is looked at on the window's thread after the post (`PageThemeOrder`, proved over its post seam with no window opened: `PageThemeOrderTests`); a `RUN_HEAVY` past its connection's room is answered `busy` before any run is admitted (`PipeHeavyRunsTests`).

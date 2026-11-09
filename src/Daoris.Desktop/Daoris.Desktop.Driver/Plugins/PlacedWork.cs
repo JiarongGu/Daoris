@@ -25,6 +25,7 @@ internal sealed class PlacedWork
     private sealed record Cell(string Plugin, int Index, WorkPlace Place);
 
     private readonly Lock _gate = new();
+    private readonly Lock _applying = new();
     private readonly Dictionary<string, Cell> _cells = new(StringComparer.Ordinal);
     private readonly Dictionary<(string Plugin, string Unit), string> _unitKeys = [];
     private HashSet<string> _placed = new(StringComparer.Ordinal);
@@ -98,6 +99,12 @@ internal sealed class PlacedWork
 
             return told;
         }
+    }
+
+    /// <summary><see cref="Divide"/> and <paramref name="apply"/> as one step, so the one that divided first applies first and no process is left told an older set.</summary>
+    public void Apply(Action<IReadOnlyDictionary<string, IReadOnlyList<WatchedUnit>>> apply)
+    {
+        lock (_applying) apply(Divide());
     }
 
     /// <summary>The keys of every place a placed plugin has been told for, or the plugin's own key where it is not placed.</summary>

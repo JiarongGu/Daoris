@@ -76,6 +76,8 @@
     <PackageVersion Include="SQLitePCLRaw.bundle_e_sqlite3" Version="3.0.5" />
     <!-- The seal an API key is kept under (`KeySeal`): DPAPI for the current Windows user. -->
     <PackageVersion Include="System.Security.Cryptography.ProtectedData" Version="10.0.14" />
+    <!-- The git library's (GITLIB1d): pinned, read by its admission at each question; an upgrade reruns GitLibraryAdmissionTests. -->
+    <PackageVersion Include="LibGit2Sharp" Version="0.32.0" />
   </ItemGroup>
 
   <ItemGroup>

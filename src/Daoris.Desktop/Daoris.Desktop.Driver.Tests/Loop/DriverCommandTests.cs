@@ -143,7 +143,7 @@ public sealed class DriverCommandTests
         var program = TreesConsoleSource.Read(Path.Combine(SourceRoot(), "Daoris.Desktop.Driver.Host"));
         Assert.Contains("case [\"sync\", ..]", program);
         Assert.Contains("var scope = TreesCommand.Scope(ask);", program);
-        Assert.Contains("| sync [--repository <name>] [--workspace <name>] [--all] [--yes]]", program);
+        Assert.Contains("| sync [--repository <name>] [--workspace <name>] [--all] [--yes]", program);
         // What is not fetched is said once, first, on the list and on the press alike: the list's here, the press's in the
         // words the route answers too (`TreesWords.Sync`).
         // The list's words are the library's too (`TreesPlanWords.SyncPlan`), which the route answers, so each says it once there.

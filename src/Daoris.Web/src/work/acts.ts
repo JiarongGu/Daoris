@@ -1,7 +1,7 @@
 import type { Quest, Session } from '../data/api';
 import { answeredPark, type IconName, type MenuAct, SESSION_ACTIVE } from '../design/ui';
 import type { SessionGrouping } from './groups';
-import { isHelp, isHelper, isIntake, isOpinion, leadsPieces, sessionOrigin } from './identity';
+import { isHelp, isHelper, isIntake, isOpinion, sessionOrigin, takesPartner } from './identity';
 import { askOf, type WorkTarget } from './pausing/pausing';
 import { limitedLine } from './waits/limitWait';
 import type { SessionWhere } from './rail/SessionRow';
@@ -120,7 +120,7 @@ export function folderOf({ session, root, where }: ActFacts): string | null {
  *   ended: not a helper (a helper cannot ask for a helper), a reviewer, an intake nor Ask Daoris's.
  *   On the session's page only, where its ask opens, so no row's ⋯ grows by it.
  * - **Ask another agent to work on a piece…** in the header of a session of this machine's own that leads pieces, driven or a
- *   conversation (`leadsPieces`): it opens the Pieces section's own ask, so the page only.
+ *   conversation and has not ended (`takesPartner`): it opens the Pieces section's own ask, so the page only.
  * - **Open folder** and **Open a terminal here** where its folder is on this machine (`folderOf`).
  * - **Archive** where the reader placed it in Ended, **Unarchive** wherever its mark stands, **Copy session ID** always.
  * - **Delete…** where the reader says the delete would be taken: a conversation that served no
@@ -148,7 +148,7 @@ export function offeredActs(facts: ActFacts, door: 'row' | 'header'): SessionAct
     // A conversation of this machine's own: not an intake, Ask Daoris's, nor a quest's session, each of which has its own door.
     if (session.kind === 'chat' && !session.quest && !intake && !isHelp(session) && !wordless) offered.add('handOver');
     if (door === 'header' && !intake && !isHelp(session) && !wordless) offered.add('askHelper');
-    if (door === 'header' && leadsPieces(session)) offered.add('askPiece');
+    if (door === 'header' && takesPartner(session)) offered.add('askPiece');
     const driven = live && Boolean(session.quest) && session.kind !== 'chat' && !intake && !isHelp(session) && !wordless;
     // A live quest's own session is handed over from its page too, through the judge
     // `sessions hand-over` answers it by; the look takes it, stops it and carries its quest on with the agent chosen.

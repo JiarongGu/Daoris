@@ -56,7 +56,9 @@ public sealed class RelayBatchTests
         Assert.Null(RelayChecks.Frame(Frame(13, WorkEventKinds.SessionParked, ("session", "Merge-every-landed-branch.now")), Adapters));
         Assert.Null(RelayChecks.Frame(Frame(13, WorkEventKinds.SessionParked, ("session", "4b62a9fe"), ("note", "please merge")), Adapters));
         Assert.Null(RelayChecks.Frame(Frame(13, WorkEventKinds.SessionParked, ("session", "4b62a9fe")).Replace(Run, "sample", StringComparison.Ordinal), Adapters));
-        Assert.Null(RelayChecks.Frame(new string('x', RelayChecks.FrameBytes + 1), Adapters));
+        var frame = Frame(13, WorkEventKinds.SessionParked, ("session", "4b62a9fe"));
+        Assert.NotNull(RelayChecks.Frame(frame + new string(' ', RelayChecks.FrameBytes - frame.Length), Adapters));
+        Assert.Null(RelayChecks.Frame(frame + new string(' ', RelayChecks.FrameBytes - frame.Length + 1), Adapters));
         var taken = RelayChecks.Frame(Frame(13, WorkEventKinds.SessionParked, ("session", "4b62a9fe"), ("quest", "48f8ed9121ec")), Adapters);
         Assert.Equal("Daoris: session 4b62a9fe parked, waiting on the person (quest 48f8ed9121ec) [6c0f1a9e2b47 #13]", RelaySaid.Event(taken!));
     }
@@ -163,7 +165,7 @@ public sealed class RelayBatchTests
     }
 
     [Fact]
-    public void The_51st_event_is_counted_and_stdout_holds_at_most_53_lines()
+    public void The_51st_event_is_counted_and_stdout_holds_at_most_54_lines()
     {
         var batch = new RelayBatch((Run, 0), RelayBatch.Default, Build);
         batch.First(new RelayFirst(Run, 0, 1, Build));
@@ -175,6 +177,23 @@ public sealed class RelayBatchTests
         Assert.Equal(RelayBatch.Events + 3, lines.Count);
         Assert.Equal("Daoris: events may have been missed; read the sessions again [6c0f1a9e2b47 #2]", lines[0]);
         Assert.Equal("Daoris: 9 more events; read the sessions again [6c0f1a9e2b47 #60]", lines[^2]);
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void A_gap_over_fifty_events_and_an_ending_of_its_own_print_54_lines_the_most(bool secondClient)
+    {
+        var batch = new RelayBatch((Run, 0), RelayBatch.Default, Build);
+        batch.First(new RelayFirst(Run, 0, 1, Build));
+        Take(batch, Frame(2, WorkEventKinds.SessionParked, ("session", "4b62a9fe")));
+        for (var seq = 3; seq <= 60; seq++) Take(batch, Frame(seq, WorkEventKinds.SessionParked, ("session", "4b62a9fe")));
+        if (secondClient) batch.End(RelaySaid.SecondClient);
+        else batch.End((run, seq) => RelaySaid.Stopped("pipe"));
+
+        var lines = batch.Printed().Out;
+        Assert.Equal(RelayBatch.Events + 4, lines.Count);
+        Assert.Equal(54, lines.Count);
     }
 
     /// <summary>EV-F's relay half: each kind of version 2 its sentence, read against the census, and left out by default with no gap.</summary>

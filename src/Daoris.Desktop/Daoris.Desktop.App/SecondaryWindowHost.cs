@@ -198,6 +198,7 @@ public sealed class SecondaryWindowHost : ISecondaryWindows, IDisposable
             // Its count and workspace go with it: one opened again under its name holds nothing until its page tells it.
             _waiting?.Closed(name);
             _scopes?.Closed(name);
+            _flash?.Closed(name);
             // The last main window closing, the first put away, ends the application.
             _mains?.Closed(name);
         };

@@ -38,22 +38,21 @@ public sealed class TidyGitCountTests(ITestOutputHelper output) : BranchTidyingF
         // The stages' reading, and the judgement's own, which it takes so a later look's guard reads git afresh.
         Assert.True(many.Count(each => each == "worktree list --porcelain") <= 2, report);
         Assert.All(many.Where(each => each.StartsWith("for-each-ref", StringComparison.Ordinal)).GroupBy(each => each), listed => Assert.Single(listed));
-        Assert.True(many.Count - few.Count <= 4 * PerBranch, report);
+        Assert.True(many.Count(each => !Dated(each)) - few.Count(each => !Dated(each)) <= 4 * PerBranch, report);
         Assert.Single(many, each => each.StartsWith("rev-list --branches=daoris/*", StringComparison.Ordinal));
         Assert.DoesNotContain(many, each => each.StartsWith("log --oneline", StringComparison.Ordinal) || each.StartsWith("merge-base --is-ancestor", StringComparison.Ordinal));
         Assert.True(many.Count <= Ceiling, report);
     }
 
-    // The end's judgement of a branch's own commits: where it left the line, which is also whether the line holds its tip, its
-    // tree, and the files it changed. What no branch of the person's holds is one walk of every session branch, not a start a branch
-    // (separate starts for the line's ancestry, the tree, where it left the line, its files, and its commits no person's branch holds would be 5 a branch).
-    private const int PerBranch = 2;
+    // The end's judgement of a branch's own commits: where it left the line and the files it changed, both the library's, and what
+    // no branch of the person's holds, one walk of every session branch (separate starts would be 5 a branch).
+    private const int PerBranch = 0;
 
-    // On six trees, asking per tree takes 57 git starts and the one list 38: each tree's branch asked of the tree, the checkout's top and its trees
-    // asked by each stage, the session branches listed again, and every branch listed by date and each pair's files compared both ways
-    // per branch. Measured 26, two trees 14, with the checkout's trees listed twice, by the stages and by the
-    // judgement; 20, two trees 12, with each branch's tree the refs' one listing's (`%(tree)`), no start a branch.
-    private const int Ceiling = 20;
+    // Six trees or two, each branch's tree, base and files the library's; one more where the date listing a look keeps is let go
+    // by another class between the two looks.
+    private const int Ceiling = 6;
+
+    private static bool Dated(string start) => start == string.Join(' ', BranchesByDate.Ask);
 
     /// <summary>The git a look asks, its second over the same home: the first reads what a running driver's first look reads.</summary>
     private async Task<List<string>> WarmLookAsync()

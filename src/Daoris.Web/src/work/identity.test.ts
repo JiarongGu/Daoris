@@ -6,7 +6,7 @@ import { HELP_REPOSITORY, type Ask, type Quest, type Session } from '../data/api
 import { aQuest } from '../quests/aQuest';
 import {
   askName, inTree, isHelp, isHelper, isPartner, leadsPieces, linkedSessions, ownTree, questName, sessionOrigin, sessionTitle, shortened,
-  treeName,
+  takesPartner, treeName,
 } from './identity';
 
 const session = (over: Partial<Session> = {}): Session => ({
@@ -398,5 +398,16 @@ describe('who leads a piece (COAGENT1c)', () => {
     for (const other of [{ serves: 's9' }, { serves: 's9', piece: 'p1' }, { opinion: 'o1' }, { ask: 'a1' }, { repository: HELP_REPOSITORY }]) {
       expect(leadsPieces(session({ kind: 'chat', tree, ...other }))).toBe(false);
     }
+  });
+
+  // The driver's `PartnerJudge`: a lead that has ended has no running work to receive a piece.
+  it('takes a partner only while it runs', () => {
+    const tree = 'C:/somewhere/data/trees/engine/s-1';
+    for (const state of ['queued', 'starting', 'working', 'awaiting-person'] as const) expect(takesPartner(session({ tree, state }))).toBe(true);
+    for (const state of ['completed', 'declined', 'stood-down', 'failed', 'stopped'] as const) {
+      expect(takesPartner(session({ tree, state }))).toBe(false);
+      expect(leadsPieces(session({ tree, state }))).toBe(true);
+    }
+    expect(takesPartner(session({ state: 'working' }))).toBe(false);
   });
 });

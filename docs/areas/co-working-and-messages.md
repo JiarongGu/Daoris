@@ -165,7 +165,7 @@ The agent's half is the canon skill `canon/packs/co-working/skills/co-working/SK
     (`ended.awaits-helper`), held and unparked; the answer reopens it once. A helper ending with no answer brings it to the person. (from D203)
 31. A partner writes one piece in a clone with no remote, at the asked commit. Daoris reads its files and writes one frozen commit; the
     piece lands only when the lead merges it. At most two pieces are open per lead. A lead is a session working in a tree of its own,
-    driven or a conversation (`StartAdmission.LeadsPiece`, the page's `leadsPieces`); a conversation hears a piece's answer as a turn
+    driven or a conversation (`StartAdmission.LeadsPiece`, the page's `leadsPieces`), and not ended: `PartnerJudge` and the person's ask refuse an ended lead (`asker-ended`, `ended`), and the page offers the ask only while the lead runs (`takesPartner`); a conversation hears a piece's answer as a turn
     of its own between its turns, queued behind a turn in flight, as a helper's answer is. Only the person asks one today. A handed piece is
     taken in when the look first reads its commit as an ancestor of the lead's tree's branch (recorded with the lead's commit, never
     unset; a cherry-pick is not that), and not taken in when the lead's record completed without it. Where the lead's tree is gone,
@@ -293,6 +293,3 @@ and `universal`. The twin fixtures (`senders.json`, `participant-work.json`, `he
 - **BRAINSTORM1b2, 1b3, 1c, 1d, 1e, 1f, 1a2b, 1a4**: the CLI's stop and id, a limit on a real door, the measured run, a caller from another repository and the page, the skeptical pass, a workflow step, a no-connector pass test, a pass's traces.
 - **STEWARDROLE1d**: the steward's activation (until a holder holds the steward, the desk answers `not-staffed`). **1e, 1f, 1g**: its hand-over, go-on and set-up. **SUPERVISOR1a-iii**: the supervisor offered.
 - **COWORKVIEW1** row f, after BRAINSTORM1d and AGENTROOM1b. **MSG1j**, **SESSONE1c-look**: the installed canaries.
-
-- **The second review cycle's open defects** (COWORKREVIEW2a; the backlog row of that name points here), one entry each:
-  - **COWORKREVIEW2a — a partner's desk judges who may lead one piece without Ask Daoris's guard** (service; `Sessions/PartnerDesk.cs:65-70` against `Sessions/HelperDesk.cs:103-105`): `PartnerDesk.OpenAsync` refuses an opinion, a helper and an intake as the lead but not `SessionLedger.IsHelp(lead)`, nor does the driver's `PartnerAdmission`, so `partner` opened with an Ask Daoris conversation's id as `lead` is kept, where a helper's ask for it is refused. Not fixed: no page door offers it (`leadsPieces` needs a tree of its own); whether Ask Daoris may lead a piece is the owner's reading, and the fix reaches the driver's admission and `fixtures/helper-askers.json`.

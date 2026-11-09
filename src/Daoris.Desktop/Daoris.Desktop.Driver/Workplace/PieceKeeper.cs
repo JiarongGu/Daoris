@@ -230,8 +230,8 @@ public static class PieceCopy
     /// <returns>Null where the copy stands at the base; otherwise its code (<see cref="PartnerWhy.BaseMissing"/>) and git's reason.</returns>
     public static async Task<(string Code, string Why)?> MakeAsync(string root, string copy, string @base, CancellationToken ct)
     {
-        var (has, _, missing) = await WorkingTree.GitAsync(root, ["cat-file", "-e", @base + "^{commit}"], ct).ConfigureAwait(false);
-        if (has != 0) return (PartnerWhy.BaseMissing, missing.Trim());
+        var has = await GitObjectReads.InfoAsync(root, @base + "^{commit}", ct).ConfigureAwait(false);
+        if (has is not { Missing: false }) return (PartnerWhy.BaseMissing, has is null ? "git could not say whether it holds the base" : $"{@base} is not a commit here");
         var parent = Path.GetDirectoryName(Path.GetFullPath(copy))!;
         Directory.CreateDirectory(parent);
         var (cloned, _, cloneError) = await WorkingTree.GitAsync(

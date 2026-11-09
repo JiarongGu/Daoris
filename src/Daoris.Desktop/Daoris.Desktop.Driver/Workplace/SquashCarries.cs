@@ -52,8 +52,8 @@ internal static class SquashCarries
         var texts = new List<string>(3);
         foreach (var side in new[] { mergeBase, onto, tip })
         {
-            var (read, text, _) = await WorkingTree.GitAsync(cwd, ["cat-file", "blob", $"{side}:{backlog}"], ct).ConfigureAwait(false);
-            if (read != 0) return false;
+            var text = await GitObjectReads.TextAsync(cwd, GitObjectName.At(side, backlog), ct).ConfigureAwait(false);
+            if (text is null) return false;
             texts.Add(text);
         }
 

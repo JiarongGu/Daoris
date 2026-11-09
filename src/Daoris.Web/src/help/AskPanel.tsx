@@ -4,6 +4,7 @@ import { cn } from '../lib/cn';
 import { isComposing } from '../lib/composing';
 import { Button, Icon, Inline, Prose, Tip } from '../design/ui';
 import { Splitter } from '../work/frame/frame';
+import { StarterDoorButton } from './StarterDoorButton';
 import type { Starter, StarterDoor } from './starters';
 
 /** The conversation, as the organism hands it over: the record, the composer, and the way to start again. */
@@ -137,9 +138,11 @@ export function AskPanel({
                     <Inline text={t('help.command', { command: starter.command })} />
                   </p>
                 )}
-                <Button className="mt-2 text-small" onClick={() => onGo(starter.door)}>
-                  {t(`help.door.${starter.door.section ?? starter.door.view}`)}
-                </Button>
+                <div className="mt-2">
+                  <StarterDoorButton onClick={() => onGo(starter.door)}>
+                    {t(`help.door.${starter.door.section ?? starter.door.view}`)}
+                  </StarterDoorButton>
+                </div>
               </li>
             ))}
           </ul>
@@ -147,14 +150,12 @@ export function AskPanel({
 
       {/* What is missing now, above; what is missing in the order a setup goes, one press away. */}
       {setup && setup.done < setup.of && (
-        <Button
-          variant="ghost"
-          className="mt-2 px-0 text-small text-accent"
-          onClick={() => onGo({ view: 'settings', section: 'start' })}
-        >
-          <Icon name="plan" size={13} />
-          {t('help.setup', setup)}
-        </Button>
+        <div className="mt-2">
+          <StarterDoorButton onClick={() => onGo({ view: 'settings', section: 'start' })}>
+            <Icon name="plan" size={13} />
+            {t('help.setup', setup)}
+          </StarterDoorButton>
+        </div>
       )}
     </>
   );

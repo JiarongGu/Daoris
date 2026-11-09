@@ -101,10 +101,10 @@ public sealed class ChatRunner : IDisposable, IChatPressing, IChatSendBacks, IEx
         _told = new ChatTold(_context, _context.ChatRuns);
         _words = new ChatWords(_context, _told, _answers);
         _turns = new ChatTurnDoors(_context, _answers);
-        _starts = new ChatStarts(this, _told);
         _sendBack = new ChatSendBack(this, _context.ChatRuns);
         _walk = new ChatWalk(_context);
         _conclusion = new ChatConclusion(this);
+        _starts = new ChatStarts(this, _told, _conclusion);
         var watch = new ChatWatch(this, _told, _conclusion, _answers);
         _closing = new ChatClosing(this, _conclusion);
         _run = new ChatRun(

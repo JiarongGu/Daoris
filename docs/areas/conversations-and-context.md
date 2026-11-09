@@ -41,7 +41,7 @@ of everything it handed, section by section.
 | `ChatWatch`, `ChatWatched` | `Loop/Chat/` | The watch over a conversation's run from its open to its end: opens or resumes its agent, reads how it ended, concludes its record and lets go of what the run held |
 | `ChatConclusion` | `Loop/Chat/ChatConclusion.cs` | How a conversation's record ends: the state and note, the limit a last turn met, the ending note of a run that simply ended |
 | `ProtocolHeld` | `Loop/Chat/ProtocolHeld.cs` | A conversation's session on the protocol door as its run holds it open: what it is handed and set before its first prompt, and what its open's failure says |
-| `ChatStarts` | `Loop/Chat/ChatStarts.cs` | A conversation's start in a repository: its role, harness and account asked before any record exists, then its tree, its open and the run over its process |
+| `ChatStarts` | `Loop/Chat/ChatStarts.cs` | A conversation's start in a repository: its role, harness and account asked before any record exists, then its tree, its open and the run over its process; a failure between its open and its run concludes the record `failed` |
 | `ChatClosing` | `Loop/Chat/ChatClosing.cs` | How conversations end at the driver's hand and a person's: the shell closing stops every one and keeps the update's restart word; a person finishing one |
 | `RepositoryPlacement` | `Loop/Chat/RepositoryPlacement.cs` | Where a conversation in a repository runs and what its agent may do there: its tree, its rules, what it may reach across |
 | `ChatWalk` | `Loop/Chat/ChatWalk.cs` | A new conversation's walk over its actor's effective order, choice by choice, remembering the passes it has said |
@@ -131,7 +131,7 @@ of everything it handed, section by section.
     bound holds it, and the seeded `hold` ends its turn `chat.transient-stopped`. Its limits rule's `wait` (within its
     `upTo`, which `LimitRuled` counts from each limit's judgement: a repeated limit is a new cool-off, and the course holds no
     window of its own for a conversation) and `ask`, and the bound, keep it on its own account before the limit's walk (`LimitRuled`), reading the moves
-    under the line's key; a walk to another choice is counted there. Each act is said and kept as the rule's decision. (from D229)
+    under the line's key; a walk to another choice is counted there, the move of an ended conversation (`EndedLimitMove`) as the live one's. Each act is said and kept as the rule's decision. (from D229)
 
 **Moves between accounts and agents**
 
@@ -185,7 +185,8 @@ of everything it handed, section by section.
     the outgoing agent's note; the entry's other parts; the line's course; what was left out. (from D189, D163, D229)
 32. Its bound is 40,000 weight, with a Han, kana, Hangul or fullwidth character, or a surrogate pair, weighing 3 (search's own Han
     test is a different question and stays as it is). Each section has a cap. Past the bound, the oldest turn and
-    then the oldest word drop. It is kept as the new part's first event, with its account. (from D189)
+    then the oldest word drop. A list the state's weight cap shortens is said as left out (`BriefList`), and only a plan past
+    its 50 steps as past its bound (`PlanBound`). It is kept as the new part's first event, with its account. (from D189)
 33. It never hands the agent's thoughts, a tool call's output (but the last failed check's, bounded), a model's summary, an
     account's name, or anything from a harness's store. A page a turn opened is named by its address without user, query or
     fragment, a file page relative to the tree. (from D189)
@@ -225,10 +226,12 @@ of everything it handed, section by section.
 42. Ask Daoris is a conversation in its own room, one at a time per workspace. It proposes, and the person applies every
     change. A limit move opens it again in its room. (from D89, D170, D183, D158)
 43. Its conversations stay on this machine. Only those the person spoke in or named are listed, pinned first, then newest.
-    They resume by kept id. A briefed continuation stays one history row. (from D158, D189)
+    They resume by kept id. A briefed continuation stays one history row, a replacement of its refused start included. (from D158, D189)
 44. A new Ask Daoris conversation started from an earlier one is handed Daoris's brief of that one's line, why `press`, ahead
     of the person's first message, and keeps it as Daoris's first prompt. A repository's *Start a conversation with these
-    words* carries the words alone. (from D158, D233)
+    words* carries the words alone. A start its agent refuses at the open, before a word took the brief, hands it to its
+    replacement (`ChatPending.Unhanded`). Words a stop or a taken-back withdraws give back what they were composed with
+    (`ChatMessage.Untaken`), as a message no turn took does. (from D158, D233)
 
 ## Where a change goes
 
@@ -315,12 +318,3 @@ of everything it handed, section by section.
   older build left is removed once at the start by the home migration's `turn-marks` step
   (`Daoris.Desktop.Driver/Transitional/Migration/TurnMarksStep.cs`). `TerminalConversationCensusTests` holds all of it.
 - **MSG1h, MSG1i, STEER3:** next-step words on Codex's and the native doors; other steering measured.
-
-- **The second review cycle's open defects** (CONVREV2a to 2g; the backlog row of that name points here), one entry each:
-  - **CONVREV2a — an ended limit move's carried run that never writes its prompt leaves its move row at `delivering`** (driver; `Course/Chat/EndedLimitMove.cs:219` and `:307`): the live move keeps `carriedRecord` and passes it to `TellEndedAsync` (`LimitMove.cs:326`, `:421`), the ended one calls `TellEndedAsync(sessionId, toWire, read)` without it, so a carried resume that dies before its first prompt is never ended by its phase and blocks the line's moves until the next come-up. Not fixed: the regression test is a process case (`ChatLimitCarryProcessTests` with a stub that dies after `session/load`), which this review's test rule does not run.
-  - **CONVREV2b — an ended limit move ignores the line's limits rule and counts no move to another choice** (driver; `Course/Chat/EndedLimitMove.cs:77-131` against `LimitMove.cs:149` and `:316`): the live move reads `LimitRuled.Holds` before the walk and `LimitRuled.Moved` after the open, so a chat whose rule says `ask` or `wait` waits, but once its shell restarts the ended record (`LimitWaits.OneAsync` to `MoveEndedAsync`) walks at once and a move to another agent is not counted against the moves bound. Not fixed: whether the ended move is meant to apply rule 19 is the owner's reading, and the fix reaches `LimitRuled`'s inputs.
-  - **CONVREV2c — a failure after a chat's record opens strands it `queued`** (driver; `Loop/Chat/ChatStarts.cs:247-332`, outside the `try` at `:335`): `RotatedOpening.SayStaffAsync`, `TreeFilesStep.RunAsync`, `ChatRuns.AnswersAsync`, `WorkingTree.UncommittedAsync` and `ContextBriefs.LineIdsAsync` can throw (an HTTP or git failure, a cancelled `ct`); the record stays `queued` with its opening mark, which only this process going ends, and `told.HoldProcess` and `Pending.Link` stay set; `ChatRun`'s catch concludes the record `failed`, this stretch does not. Not fixed: the fix wraps a long stretch of the start and its test needs a cancelled start over the real keyed open.
-  - **CONVREV2d — a stop or a taken-back word drops the one-time extras its message was composed with** (driver; `Loop/Chat/Turns/TurnStops.cs:82-91`, `:117` and `Turns/TurnKeeps.cs:176-187`): `ChatWords.Compose` consumed the brief, browser line, draft and the start's process and block (`ChatExtras.Take`, `told.With`), and the withdrawn words go back to the person as text alone, so Ask Daoris started from an earlier conversation, stopped before its first turn and said again never gets its brief (rule 44) or its standing block (rule 35); CONVREV11 gave extras back only where `Take`, `KeepAsync` or `TakeNowAsync` answer null. Not fixed: the message carries the extras, so giving them back reaches `ChatExtras` and `TurnState`'s withdrawn type.
-  - **CONVREV2e — an Ask Daoris conversation started from an earlier one loses its brief when the agent refuses the model at the open** (driver; `Help/ChatHelp.cs:81`, `Loop/Chat/ChatWatch.cs:58`, `Help/HelpStart.cs:247-263`): the refused run's disposer removes `Handing[issued]`, and the replacement is opened with `StartedFrom(…, NotOffered)` and no brief; the replacement then also lists as a second history row (`HelpConversations.List` folds only `Brief` links, rule 43). Not fixed: whether the replacement re-hands the brief or the row folds `NotOffered` is a choice.
-  - **CONVREV2f — a plan cut by the brief's state weight cap is said as "past its bound of 50"** (driver; `Context/Domain/ContextBrief.cs:383-392` and `Accounted` at `:593`; `Context/Domain/StandingBlock.cs:95`): the state halves its longest list until it fits `StateCap`, then the account reports `HandedCuts.PlanBound` with the count shown and `ListLimit` 50, so a plan of 30 long steps reads "15 left out past its bound of 50"; the standing block's memory entries reuse `BriefList` the same way. Not fixed: a code for the weight-cap cut needs twin rows in both catalogues and `HandedCuts.Values`.
-  - **CONVREV2g — a carried limit move's copy stays in the new account's home when the start fails before the carried run** (driver; `Course/Chat/ChatLimitCarry.cs:34-52` copies in `Planned`; `Loop/Chat/ChatStarts.cs:202`, `:239` and the other early returns come back with no session id and never call `carries.RunAsync`; `Withdraw` is private): `LimitMove.cs:308-312` and `EndedLimitMove.cs:204-208` do not withdraw, so a held `TreeLock` or a refused open leaves the conversation file in the account's home. Not fixed: the withdrawal belongs on the carry's own door, a process-level case.

@@ -388,8 +388,8 @@ public static class ContextBrief
         }
 
         if (Weight(rendered) > StateCap) rendered = clipped.Head(rendered, StateCap);
-        var listsLeft = uncommitted.Count - shown[0] + commits.Count - shown[1];
-        return (rendered.Length == 0 ? null : rendered, listsLeft, steps.Count - shown[2]);
+        var listsLeft = uncommitted.Count - shown[0] + commits.Count - shown[1] + Math.Min(steps.Count, ListLimit) - shown[2];
+        return (rendered.Length == 0 ? null : rendered, listsLeft, Math.Max(0, steps.Count - ListLimit));
     }
 
     private static string List(IReadOnlyList<string> entries, int shown) =>

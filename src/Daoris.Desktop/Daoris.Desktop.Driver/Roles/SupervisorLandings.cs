@@ -26,7 +26,7 @@ internal sealed class SupervisorLandings(SupervisorBook book, IDecisionAdmission
                     return Task.FromResult(new SupervisorKept(true, decided.Id, decided.State == SupervisorState.Held ? decided.GoesOnAt : null, null));
                 }
 
-                refused ??= SupervisorWhy.Answered;
+                refused ??= SupervisorStates.OwnersAgain(decided.State) ? SupervisorWhy.Overruled : SupervisorWhy.Answered;
             }
 
             refused ??= book.ClosedWhy(subject);

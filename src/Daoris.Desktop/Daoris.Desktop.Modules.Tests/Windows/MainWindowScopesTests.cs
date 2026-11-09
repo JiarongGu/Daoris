@@ -178,7 +178,7 @@ public sealed class MainWindowScopesTests
         Assert.Contains("Activated += (_, _) => scopes.CameForward(MainWindows.First);", first);
         Assert.Contains("(session, quest) => scopes.PickFor(driver.Slices, session, quest)", first);
         Assert.Contains("Payload = new { Session = session, Window = window }", first);
-        Assert.Contains("form.Activated += (_, _) => scopes.CameForward(name);", host);
+        Assert.Contains("form.Activated += (_, _) => _scopes.CameForward(name);", host);
         Assert.Contains("scopes?.Closed(name);", host);
         Assert.Contains("waiting?.Closed(name);", host);
         Assert.Contains("_icon.BalloonTipClicked += (_, _) => Open(_about, _aboutQuest);", tray);

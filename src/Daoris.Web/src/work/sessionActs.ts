@@ -59,7 +59,7 @@ const HELPER_REFUSALS = new Set([
 ]);
 
 /** The codes a piece's ask answers by (the bridge's `PartnerAskWhy`), each said in the catalogue's words. */
-const PIECE_REFUSALS = new Set(['blank', 'too-long', 'agent', 'path', 'not-held', 'unfit', 'no-commit', 'no-piece', 'state', 'no-copy', 'unknown-act']);
+const PIECE_REFUSALS = new Set(['blank', 'too-long', 'agent', 'path', 'not-held', 'unfit', 'ended', 'no-commit', 'no-piece', 'state', 'no-copy', 'unknown-act']);
 
 /** A piece's refusal in the catalogue's words, by its code; one a later driver adds is said in the driver's own sentence. */
 export const pieceSaid = (t: Translate, why: string | null, message: string) =>
