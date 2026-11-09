@@ -447,8 +447,8 @@ public sealed class Driver(
         Consideration start, IReadOnlyList<RepoView> registry, List<TrustHold> untrusted, Action onOpened, FreshTree fresh, CancellationToken ct,
         string? movedOff = null, (string Agent, string Model)? movedOffModel = null, string? movedFrom = null)
     {
-        // The state lets go of the repository's trees and the carry-on's move record with the run, on every way out.
-        await using var state = new RunState();
+        // The state lets go of the repository's trees, the carry-on's move record and an unopened start's count with the run, on every way out.
+        await using var state = new RunState(number => Context.Harnesses.Release(number));
         var run = new RunRound(start, registry, untrusted, onOpened, movedOff, movedOffModel, movedFrom, fresh, state);
 
         try
