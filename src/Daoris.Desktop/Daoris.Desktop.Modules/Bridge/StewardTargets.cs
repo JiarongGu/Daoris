@@ -1,10 +1,9 @@
-using System.Text.Json;
 using Daoris.Driver;
 
 namespace Daoris.Desktop;
 
 /// <summary>The conditions of the steward's quest and tree acts that read a dependency, each judged again under the gates of the act's
-/// target: a quest that exists, a session's tree this home opened, and a landing that pushes nothing.</summary>
+/// target: a quest that exists and a session's tree this home opened.</summary>
 internal static class StewardTargets
 {
     /// <summary>A quest the service holds.</summary>
@@ -33,21 +32,5 @@ internal static class StewardTargets
         var verdict = verdicts.FirstOrDefault(each => string.Equals(each.Quest.Id, record.Quest, StringComparison.OrdinalIgnoreCase));
         return OwnerHolds.Holds(record, verdicts, own)
                || verdict is { Verdict: StartVerdict.TransientHeld or StartVerdict.Exhausted or StartVerdict.PolicyHeld };
-    }
-
-    /// <summary>
-    /// A tree's landing, which never pushes to a remote: its plan, read through the landing's own open route, names no plugin that
-    /// pushes the branch once it is made. A plan that cannot be read is no plan that pushes nothing, so the act is refused.
-    /// </summary>
-    public static async Task<string?> LandsWithoutPushingAsync(RoleActRun run, string session, CancellationToken ct)
-    {
-        if (await OwnTreeAsync(run, session, ct).ConfigureAwait(false) is { } refused) return refused;
-        if (run.Route is not { } dispatch) return StewardWhy.NoRoute;
-        var plan = await dispatch("LANDING", JsonSerializer.SerializeToElement(new { id = session }), ct).ConfigureAwait(false);
-        if (!plan.TryGetProperty("success", out var success) || success.ValueKind != JsonValueKind.True) return StewardWhy.Refused;
-        return plan.TryGetProperty("data", out var data) && data.ValueKind == JsonValueKind.Object
-               && data.TryGetProperty("plugin", out var plugin) && plugin.ValueKind != JsonValueKind.Null
-            ? StewardWhy.LandingPushes
-            : null;
     }
 }

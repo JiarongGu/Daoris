@@ -16,10 +16,7 @@ public sealed record DecisionAdmitted(string? Generation, string? Why)
 {
     public static DecisionAdmitted Refused(string why) => new(null, why);
 
-    /// <summary>
-    /// The overrule window the effective supervisor's role keeps (<see cref="RoleHold.Window"/>), within the decisions' shortest and
-    /// longest; null keeps <see cref="QuestionSupervisorDecisions.Window"/>.
-    /// </summary>
+    /// <summary>The overrule window the effective supervisor's role keeps (<see cref="RoleHold.Window"/>), within the decisions' shortest and longest; null keeps <see cref="QuestionSupervisorDecisions.Window"/>.</summary>
     public TimeSpan? Window { get; init; }
 
     public string? Role { get; init; }
@@ -131,8 +128,6 @@ public static class SupervisorWhy
     public const string Reserved = "reserved";
 
     public const string Worded = "worded";
-    public const string LandingPushes = "landing-pushes";
-    public const string NoPlan = "no-plan";
 
     // Why a decision goes stale (`supervisor.stale`).
     public const string Tampered = "tampered";

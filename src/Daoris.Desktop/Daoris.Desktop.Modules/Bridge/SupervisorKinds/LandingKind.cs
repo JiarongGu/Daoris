@@ -1,15 +1,12 @@
-using System.Text.Json;
 using Daoris.Driver;
 
 namespace Daoris.Desktop;
 
 /// <summary>
 /// The landing kind: a <c>review</c> step waiting for the person's Accept, or a <c>human</c> approval waiting for Approve or Reject, its
-/// subject <c>{ session, landing }</c> naming the run, the node and the attempt it waits on. Its decide is held for the role's window with
-/// <i>Overrule</i> and then released as the node's own word on the run's record; its leave is a hold, the person's at once. The step, the
-/// person's stop or pause of its line and the landing's plan are read again at the keeping, so a decide naming a step that has moved is
-/// refused <c>answered</c>, one on a held line <c>owner-held</c>, one whose plan names a plugin that pushes <c>landing-pushes</c>, and any on
-/// a run a go-ahead holds <c>go-ahead-open</c>.
+/// subject <c>{ session, landing }</c> naming the run, the node and the attempt. Its decide is held for the role's window with <i>Overrule</i>
+/// and then released as the node's own word on the run's record; its leave is a hold, the person's at once. The step and the person's stop or
+/// pause of its line are read again at the keeping: a moved step is refused <c>answered</c>, a held line <c>owner-held</c>, a go-ahead's run <c>go-ahead-open</c>.
 /// </summary>
 internal sealed class LandingKind : ISupervisorKind
 {
@@ -69,27 +66,10 @@ internal sealed class LandingKind : ISupervisorKind
         if (SupervisorDecisionDoor.Covers(loop, keeping.Generation, Kind, repository) is { } uncovered) return SupervisorDecided.Refused(uncovered);
         var landing = new SupervisorLanding(
             keeping.Subject.Session, parts.Run, parts.Node, parts.Attempt, keeping.Generation, keeping.Do, keeping.Reasons, keeping.Holder, keeping.Bound);
-        var refused = await LandingJudge.RefusedAsync(
-            LandingSteps.Find(loop.Home, parts.Run, parts.Node, parts.Attempt), keeping.Do, OwnerHolds.Holds(record, loop.Look.Latest),
-            () => PushesAsync(loop, record.Session, ct)).ConfigureAwait(false);
+        var refused = LandingJudge.Refused(
+            LandingSteps.Find(loop.Home, parts.Run, parts.Node, parts.Attempt), keeping.Do, OwnerHolds.Holds(record, loop.Look.Latest));
         var kept = await loop.Supervisor.LandingAsync(landing, repository, refused, DateTimeOffset.UtcNow, ct).ConfigureAwait(false);
         return SupervisorDecided.Of(kept, SupervisorWhy.NotReferred);
-    }
-
-    // The landing's plan, read through the landing's own route: a plugin it names pushes the branch once made, and a plan that cannot be read is no plan that pushes nothing.
-    private static async Task<string?> PushesAsync(DriverLoop loop, string session, CancellationToken ct)
-    {
-        try
-        {
-            var plan = await new TreesLandDesk(loop).LandAsync(new TreesLandDesk.LandAsk(session, null, Press: false), ct).ConfigureAwait(false);
-            var read = JsonSerializer.SerializeToElement(plan, JsonSerializerOptions.Web);
-            if (read.ValueKind != JsonValueKind.Object || !read.TryGetProperty("form", out _)) return SupervisorWhy.NoPlan;
-            return read.TryGetProperty("plugin", out var plugin) && plugin.ValueKind != JsonValueKind.Null ? SupervisorWhy.LandingPushes : null;
-        }
-        catch (Exception error) when (error is not OperationCanceledException)
-        {
-            return SupervisorWhy.NoPlan;
-        }
     }
 
     private sealed record Keeping(
