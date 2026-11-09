@@ -214,10 +214,11 @@ public sealed class RoomCheckTests
     }
 
     [Fact]
-    public void A_rule_reaching_a_tracked_path_fails_the_check_with_its_reason()
+    public void A_rule_reaching_a_tracked_path_is_kept_and_fails_nothing()
     {
         var report = Check("""{ "lanes": [ { "id": "a", "paths": ["a/**"], "builds": {} } ] }""", Outputs("a/"), "a/x.cs");
 
-        Assert.Contains("rules[1]: 'a/' holds a/x.cs, which git tracks", report.Problems);
+        Assert.True(report.Passes, string.Join("\n", report.Problems));
+        Assert.Equal([FileKind.Output], report.Rules.Select(rule => rule.Kind));
     }
 }

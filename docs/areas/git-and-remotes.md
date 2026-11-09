@@ -279,8 +279,9 @@ boundary is a root and a graft's parents are the graft's), the rest the format r
 repository only where their configuration is one (`GitAskerContext`: the common directory, the asking tree's `config.worktree` by
 its bytes, and the folder itself where an `includeIf` is configured), so `GitFacts.SameRepository`, `RefSnapshot.TreeHeld`,
 `ListedFor` and `GitReadOnce`'s listings never answer a tree with replacements off from one with them on. A git whose kill it outlived leaves the four for a count apart
-(`git.place.apart`, `git.place.exited`), and while its repository holds one the background's asks of it are answered `stalled`. A
-bridge route's gits are a person's (`DriverModule`); the flow memos ask under the flow's token (`GitMemoAsks`). Four censuses
+(`git.place.apart`, `git.place.exited`), and while its repository holds one the background's asks of it are answered `stalled`. An
+ask waiting for its place is said as the queue of the look's stage whose work asked it (`start.queue=`), as the start gate's wait
+is; work begun beside a stage says it to none. A bridge route's gits are a person's (`DriverModule`); the flow memos ask under the flow's token (`GitMemoAsks`). Four censuses
 hold the classes, each run over the driver with each listed member left out in turn and with one planted omission, and red on each
 (`SourceCensus`): every field holding a git answer, with its stamp or its flow (`GitKeepersCensusTests`); every field of the trees'
 and the platform's code keeping a process, a library repository or a place, with what ends it (`GitLifetimesTests`); every file there

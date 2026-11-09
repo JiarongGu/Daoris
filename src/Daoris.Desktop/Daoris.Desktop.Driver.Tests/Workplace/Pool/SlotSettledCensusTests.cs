@@ -49,8 +49,8 @@ public sealed partial class SlotSettledCensusTests
 
     private static List<(string File, string Source)> Pool()
     {
-        var driver = SourceFiles.Project("Daoris.Desktop.Driver");
-        return [.. SourceFiles.All("Daoris.Desktop.Driver", "*.cs")
+        var driver = SourceFiles.Project(SourceFiles.DriverProject);
+        return [.. SourceFiles.All(SourceFiles.DriverProject, "*.cs")
             .Select(file => (File: Path.GetRelativePath(driver, file).Replace('\\', '/'), Source: File.ReadAllText(file)))
             .Where(each => each.File.StartsWith("Workplace/Pool/", StringComparison.Ordinal))];
     }

@@ -11,7 +11,7 @@ import { GitDomain } from './git/GitDomain';
 import { LogsDomain } from './LogsDomain';
 import { SpaceDomain } from './SpaceDomain';
 import { ToolsDomain } from './ToolsDomain';
-import { UpdatesDomain } from './UpdatesDomain';
+import { UpdatesDomain } from './machine/UpdatesDomain';
 import { WiringDomain } from './WiringDomain';
 
 /**
