@@ -7,6 +7,26 @@ namespace Daoris.Driver;
 /// </summary>
 internal sealed class RunEndings(IRunWiring wiring, RunRound run, string sessionId, string agent, string workTree, bool locksTree)
 {
+    /// <summary>
+    /// A throw between the record's open and the hand, whose own endings are not armed yet: the record ends as the hand's would end it,
+    /// closed where the driver is closing, failed otherwise, and its tree lock let go.
+    /// </summary>
+    public static async Task<StartRun> BeforeHandAsync(IRunWiring wiring, RunRound run, string sessionId, Exception error, CancellationToken ct)
+    {
+        var tree = run.State.WorkTree;
+        var endings = new RunEndings(wiring, run, sessionId, run.State.Agent, tree, wiring.Context.Trees.Holds(tree));
+        try
+        {
+            return error is OperationCanceledException && ct.IsCancellationRequested
+                ? await endings.ClosedAsync().ConfigureAwait(false)
+                : await endings.FailedAsync(error).ConfigureAwait(false);
+        }
+        finally
+        {
+            await endings.LetGoAsync().ConfigureAwait(false);
+        }
+    }
+
     /// <summary>The stop made of the session before a close cut its conclusion off, told as its run lets go.</summary>
     public SessionStop? StoppedFirst { get; set; }
 

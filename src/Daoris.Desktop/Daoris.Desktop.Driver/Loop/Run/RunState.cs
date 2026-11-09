@@ -190,6 +190,9 @@ internal sealed class RunState : IDisposable, IAsyncDisposable
         set => _carry.Set(value);
     }
 
+    /// <summary>The id of the record the service opened for this run, set the moment it answered, before anything after it can throw; null before.</summary>
+    public string? Begun { get; set; }
+
     /// <summary>The session's record as the service opened it.</summary>
     public RecordOpened Opened
     {

@@ -105,6 +105,9 @@ internal sealed class OpenRecord(IRunWiring wiring) : IRunStage
                 $"refused  #{quest.Id} → {quest.To}: {message}", false, null, start.GoesOn ? $"the service refused the open: {message}" : null);
         }
 
+        // From here a throw leaves a record the service holds, which the run ends rather than leave it `starting`.
+        state.Begun = sessionId;
+
         // The open's answer with every word it moved, by its id on the new session, then `delivering` and the prompt's mark before the
         // take. A write the store refuses stops the take of the moved words, which wait on the new session for its own go-on.
         var fenced = carry is null ? null : await carry.FenceAsync(sessionId, keyed?.Moved ?? []).ConfigureAwait(false);
