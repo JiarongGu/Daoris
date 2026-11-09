@@ -11,6 +11,8 @@ the per-task record. Entries preserve their original wording so the archive stay
 
 - [x] **DRVREVIEW12 — the guard that skips the brief for a stopped carried resume never fires** (driver): 2026-11-09 the carried-resume guard reads `Processes.StopMade(sessionId)` as the conclusion does, so a stop made after the door refused the resume ends the part stopped and no brief starts (`LimitCarryTickTests`, the stub holding its refusal alive until the stop, failing first).
 
+- [x] **DRVREVIEW13 — words the run handed back are lost when the conclusion throws** (driver): 2026-11-09 a conclusion that throws with words held says them unreached on the record (`ConclusionThrew`, the stop path's own note) and still throws; the record is running then, so the say door could not keep them, and noting is the choice that loses no more than a stop does (`DriverRunPartsTests`; the wiring in `SessionHold` is read, not driven, since a throwing conclusion under a handed-back word has no stand-in).
+
 ---
 
 ## DRVREVIEW second cycle — the driving review's second cycle (2026-11-09)

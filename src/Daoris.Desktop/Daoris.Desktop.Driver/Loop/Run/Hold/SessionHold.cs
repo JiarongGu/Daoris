@@ -384,13 +384,21 @@ internal sealed class SessionHold(IRunWiring wiring)
 
         // The ending is the last run's: the protocol door's, or a native run's retry's or go-on's, read of its own exit and the
         // harness's own words since.
-        var concluded = await conclude(
-                end.Exit, end.Usage, turnFailed,
-                end.Ending with
-                {
-                    SetupChanged = left.Count > 0 ? swapped : null,
-                    Transient = retry,
-                })
+        void SayUnreached(Noted unreached)
+        {
+            output?.Append(sessionId, unreached.Note);
+            context.Events.Keep(sessionId, new SessionEvent { Kind = SessionEventKind.Note, Text = unreached.Note, Parts = unreached.Parts }, say: null);
+        }
+
+        var concluded = await ConclusionThrew.SayingAsync(
+                () => conclude(
+                    end.Exit, end.Usage, turnFailed,
+                    end.Ending with
+                    {
+                        SetupChanged = left.Count > 0 ? swapped : null,
+                        Transient = retry,
+                    }),
+                left.Count, SayUnreached)
             .ConfigureAwait(false);
 
         // The words its failed door never delivered wait on its ended record to go again: kept once the conclusion moved it, since the
@@ -398,9 +406,7 @@ internal sealed class SessionHold(IRunWiring wiring)
         // it since, which ends it with them unreached as any stop does, since words on its record would carry it on past the stop.
         if (left.Count > 0 && swapped is not null && turnFailed is null && context.Processes.StopMade(sessionId) is not null)
         {
-            var unreached = WordsNotes.Unreached(left.Count, "never reached the session", UnreachedWhy.EndedFirst);
-            output?.Append(sessionId, unreached.Note);
-            context.Events.Keep(sessionId, new SessionEvent { Kind = SessionEventKind.Note, Text = unreached.Note, Parts = unreached.Parts }, say: null);
+            SayUnreached(WordsNotes.Unreached(left.Count, "never reached the session", UnreachedWhy.EndedFirst));
         }
         else if (left.Count > 0)
         {
