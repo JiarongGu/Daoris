@@ -35,7 +35,6 @@ internal sealed class SessionSays(QuestStore quests, SessionStore sessions, AskS
     /// <para><b>Keeping them on the ask is the door's</b>, beside this and never inside it: a park's answer at
     /// once, words to an ended record once the session took them.</para>
     /// </remarks>
-    /// <param name="walksHead">Whether the door walks the line's head (row d-ii): always, but for the landing measurement's copy of the door as it stood before the row.</param>
     /// <param name="files">What the person gave with the words: only each one's name is kept, never where it is.</param>
     /// <param name="channel">The channel message the words are: kept on the word, so its door tells the ask nothing more.</param>
     /// <param name="from">
@@ -62,7 +61,7 @@ internal sealed class SessionSays(QuestStore quests, SessionStore sessions, AskS
     /// record refuses as before.
     /// </param>
     public async Task<SessionSayOutcome> SayAsync(
-        bool walksHead, string id, string? text, IReadOnlyList<string>? files, DateTimeOffset now, CancellationToken ct = default, string? channel = null,
+        string id, string? text, IReadOnlyList<string>? files, DateTimeOffset now, CancellationToken ct = default, string? channel = null,
         string? from = null, string? key = null, string? level = null, bool running = false,
         string? decision = null, string? question = null, string? choice = null, bool settled = false, bool ending = false)
     {
@@ -123,9 +122,7 @@ internal sealed class SessionSays(QuestStore quests, SessionStore sessions, AskS
 
             // The line's head, read inside this step, so no part opens between this
             // judgement and the keep below. One probe a hop on `sessions_from`, and one on `sessions_quest` for a driven part with none.
-            var line = walksHead
-                ? await Lines.WalkAsync(sessions, session, inside).ConfigureAwait(false)
-                : new LineWalk(session, [session], LineEnd.Head);
+            var line = await Lines.WalkAsync(sessions, session, inside).ConfigureAwait(false);
 
             // Row p (the design §3.4 rule 5): asked first, before any refusal but the record's absence, so a retry after the take is answered
             // as kept whatever the record is doing now (a re-say at the head, a record running again, a record the line has left). A word still

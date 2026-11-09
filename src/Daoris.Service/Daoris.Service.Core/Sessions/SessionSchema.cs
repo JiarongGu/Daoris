@@ -60,9 +60,8 @@ internal static class SessionSchema
 
         await SessionColumnNames.RenameAsync(db, ct).ConfigureAwait(false);
 
-        // Records made before a column existed must survive its arrival: a session record is the
-        // reviewable trace of work that actually happened, and a store that dropped them on an upgrade
-        // would lose exactly the history the person reviews.
+        // Records made before a column existed must survive its arrival: a session record is the reviewable trace of work,
+        // and a store that dropped them on an upgrade would lose exactly the history the person reviews.
         foreach (var (column, definition) in new[]
         {
             ("workspace", $"workspace TEXT NOT NULL DEFAULT '{Workspaces.Default}'"),
@@ -78,28 +77,23 @@ internal static class SessionSchema
 
         await RelaxQuestAsync(db, ct).ConfigureAwait(false);
 
-        // After the rebuild above so it cannot drop them: whose record a row is, and the order
-        // this store wrote them in. Both are DERIVED for rows that already exist — a mirrored row's id
-        // already carries its origin, and the order rows were written in is the order they were
-        // inserted — so a store from before the sync pushes and serves every record it holds.
+        // After the rebuild above so it cannot drop them: whose record a row is, and the order this store wrote them in.
+        // Both are DERIVED for rows that already exist — a mirrored row's id carries its origin, and insertion is the order
+        // written — so a store from before the sync pushes and serves every record it holds.
         if (!await SchemaColumns.HasAsync(db, "sessions", "origin", ct).ConfigureAwait(false))
         {
-            await using var alter = db.Command();
-            alter.CommandText = """
+            await SchemaColumns.ApplyAsync(db, """
                 ALTER TABLE sessions ADD COLUMN origin TEXT NULL;
                 UPDATE sessions SET origin = substr(id, 1, instr(id, '/') - 1) WHERE instr(id, '/') > 0;
-                """;
-            await alter.ExecuteNonQueryAsync(ct).ConfigureAwait(false);
+                """, ct).ConfigureAwait(false);
         }
 
         if (!await SchemaColumns.HasAsync(db, "sessions", "revision", ct).ConfigureAwait(false))
         {
-            await using var alter = db.Command();
-            alter.CommandText = """
+            await SchemaColumns.ApplyAsync(db, """
                 ALTER TABLE sessions ADD COLUMN revision INTEGER NOT NULL DEFAULT 0;
                 UPDATE sessions SET revision = rowid;
-                """;
-            await alter.ExecuteNonQueryAsync(ct).ConfigureAwait(false);
+                """, ct).ConfigureAwait(false);
         }
 
         // The ask an intake answers. After the rebuild, like the pair above, so it cannot drop it.
@@ -295,20 +289,17 @@ internal static class SessionSchema
             await journal.ExecuteNonQueryAsync(ct).ConfigureAwait(false);
         }
 
-        // Whether a record went up to a remote, after the cursor it is derived from. For rows that
-        // already exist it is read once from that cursor: a record of this machine's at or before what its workspace
-        // pushed is examined by a push, so it is marked, which errs toward refusing a delete (a record of a repository
-        // that had not joined is marked too). From here on a push marks what it sent.
+        // Whether a record went up to a remote. For rows that already exist it is read once from the cursor: a record of this
+        // machine's at or before what its workspace pushed is examined by a push, so it is marked, which errs toward refusing a
+        // delete (a record of a repository that had not joined is marked too). From here on a push marks what it sent.
         if (!await SchemaColumns.HasAsync(db, "sessions", "pushed", ct).ConfigureAwait(false))
         {
-            await using var alter = db.Command();
-            alter.CommandText = """
+            await SchemaColumns.ApplyAsync(db, """
                 ALTER TABLE sessions ADD COLUMN pushed INTEGER NULL;
                 UPDATE sessions SET pushed = 1
                 WHERE origin IS NULL AND revision <= COALESCE(
                   (SELECT c.pushed FROM session_cursor c WHERE c.workspace = sessions.workspace COLLATE NOCASE), 0);
-                """;
-            await alter.ExecuteNonQueryAsync(ct).ConfigureAwait(false);
+                """, ct).ConfigureAwait(false);
         }
     }
 
@@ -331,8 +322,7 @@ internal static class SessionSchema
             if (constrained == 0) return;
         }
 
-        await using var rebuild = db.Command();
-        rebuild.CommandText = $"""
+        await SchemaColumns.ApplyAsync(db, $"""
             CREATE TABLE sessions_relaxed (
               id         TEXT PRIMARY KEY,
               quest      TEXT NULL,
@@ -358,7 +348,6 @@ internal static class SessionSchema
             DROP TABLE sessions;
             ALTER TABLE sessions_relaxed RENAME TO sessions;
             CREATE INDEX IF NOT EXISTS sessions_repository ON sessions (repository, state);
-            """;
-        await rebuild.ExecuteNonQueryAsync(ct).ConfigureAwait(false);
+            """, ct).ConfigureAwait(false);
     }
 }

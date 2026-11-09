@@ -16,6 +16,15 @@ the per-task record. Entries preserve their original wording so the archive stay
 > **CODESTRREV2d** (tools): Outcome: `enqueueVerb` asks `isInside(local/, file)`, which refuses another drive and the folder itself and takes a name that merely starts with two dots. Test: `paths.test.ts`.
 
 > **CODESTRREV2e** (tools): Outcome: the `canon/canon.json` row names `service`, `rehearse` and `rehearse-family` beside the driver's readers, so it reaches every gate `canon/**` does. Test: `reach-table.test.ts`.
+## DRVREVIEW18 to DRVREVIEW23 — the driving review's six service defects (2026-11-09)
+
+> **DRVREVIEW18 / 19 / 20 / 21 / 22 / 23** (service): Outcome: all six held against main's tip; each fixed with a regression test seen to fail first (21 is a removal, proved by the build and its measurement running), the service tests built against the local Lyntai pack (the props file copied into this tree), which the first row's note said they needed.
+> 18: a quest is kept under its receiver's registered spelling, so `Engine` and `engine` are one open quest and the receiver's queue reads it (`QuestExchangeTests`).
+> 19: a session record another record continues is refused as `Named` by the delete and the list's `Deletable`, so only a line's last record goes (`SessionDeleteTests`); a design choice: it reuses `Named` and adds no refusal to the published contract.
+> 20: the open's reopen repair replays outside the write and writes only a row whose replay keeps a reopen, so a step gone on after its source's reopen is not rewritten at every open (`QuestReopenTests`, counted by a trigger on the table).
+> 21: `WalksHead` and the say door's parameter are deleted; the landing measurement reads the door and the walk's own cost on each branch from one file (`SaidSettledMeasureTests`, run with its variable set).
+> 22: each alter with its backfill, the sessions rebuild, and the quest store's mark and mirror column run through `SchemaColumns.ApplyAsync` in one transaction (`SessionSchemaUpgradeTests`, `QuestLogTests`); the quest store's two pairs were found beside the row.
+> 23: a new ask is kept by insert only (`SaveAsync` is `InsertAsync`; its upsert was used by tests alone, which now go through the doors that change an ask), and a lost insert answers as a repeat and hands its quest to the first ask (`AskDeskTests`); a quest delete judges what stands on it again inside its own transaction (`QuestDeleteTests`, a remotes stub landing a session between the look and the write).
 
 ---
 

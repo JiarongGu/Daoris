@@ -215,6 +215,39 @@ public sealed class QuestLogTests : IAsyncLifetime
     }
 
     /// <summary>
+    /// The mark's column and its backfill are one step: where the backfill fails the column goes with it, so the next open starts the
+    /// mark at the highest sequence the log holds instead of finding the column and leaving it at zero for good.
+    /// </summary>
+    [Fact]
+    public async Task A_mark_backfill_that_fails_leaves_no_column_to_skip_it_for_good()
+    {
+        await Publish("Kept");
+        await using (var older = _connection.CreateCommand())
+        {
+            older.CommandText = """
+                DROP TRIGGER IF EXISTS quest_sequence_issued;
+                ALTER TABLE quest_machine DROP COLUMN sequence;
+                CREATE TRIGGER sequence_refused BEFORE UPDATE OF sequence ON quest_machine BEGIN SELECT RAISE(ABORT, 'planted'); END;
+                """;
+            await older.ExecuteNonQueryAsync();
+        }
+
+        await Assert.ThrowsAnyAsync<Exception>(() => QuestStore.OpenAsync(_connection));
+
+        await using (var after = _connection.CreateCommand())
+        {
+            after.CommandText = "SELECT COUNT(*) FROM pragma_table_info('quest_machine') WHERE name = 'sequence'";
+            Assert.Equal(0L, Convert.ToInt64(await after.ExecuteScalarAsync()));
+            after.CommandText = "DROP TRIGGER sequence_refused";
+            await after.ExecuteNonQueryAsync();
+        }
+
+        var upgraded = await QuestStore.OpenAsync(_connection);
+        var next = await upgraded.PublishAsync("Asker", "Owner", "Next", "b", Now.AddHours(3));
+        Assert.Equal(2L, Assert.Single(await upgraded.HistoryAsync(next.Id)).Sequence);
+    }
+
+    /// <summary>
     /// The claim the log exists to make true: what the platform reads is what replaying the history
     /// gives — for every quest, whatever it carries and however it ended, a chain's step included.
     /// </summary>

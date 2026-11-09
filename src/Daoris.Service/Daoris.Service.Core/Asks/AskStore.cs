@@ -207,18 +207,15 @@ public sealed class AskStore
                     $"{Workspaces.Normalize(workspace)}:{sentence.Trim()}" + (again == 0 ? "" : $"#again{again}"))))[..6]
             .ToLowerInvariant();
 
-    /// <summary>Write the ask whole — insert, or replace the row this id already names.</summary>
-    public Task SaveAsync(Ask ask, CancellationToken ct = default) => _db.RunAsync(async () =>
+    /// <summary>Keep a new ask by insert only: false where the id holds one, whose row stays as it is, since a later whole-row write from a stale read would undo what a door did to it.</summary>
+    public Task<bool> InsertAsync(Ask ask, CancellationToken ct = default) => _db.RunAsync<bool>(async () =>
     {
         await using var command = _db.Command();
-        // The review choices are written with a new ask, from its composer, and only appended after: a later save
-        // of the whole record never drops one a door appended meanwhile. The kind and workflow choices likewise.
+        // The review, kind and workflow choices are written with a new ask and only appended after.
         command.CommandText = """
             INSERT INTO asks (id, workspace, sentence, state, tier, asked, updated, asker, note, links, attachments, proposal, quests, intake, review_choices, workflow_choices, short_title, paths)
             VALUES ($id, $workspace, $sentence, $state, $tier, $asked, $updated, $asker, $note, $links, $attachments, $proposal, $quests, $intake, $reviewChoices, $workflowChoices, $short, $paths)
-            ON CONFLICT (id) DO UPDATE SET
-              state = $state, tier = $tier, updated = $updated, note = $note,
-              links = $links, attachments = $attachments, proposal = $proposal, quests = $quests, intake = $intake
+            ON CONFLICT (id) DO NOTHING
             """;
         command.Parameters.AddWithValue("$reviewChoices", Json(ask.ReviewChoices, (w, choice) =>
         {
@@ -254,7 +251,7 @@ public sealed class AskStore
             w.WriteEndObject();
         }));
         command.Parameters.AddWithValue("$quests", Json(ask.Quests, (w, id) => w.WriteStringValue(id)));
-        await command.ExecuteNonQueryAsync(ct).ConfigureAwait(false);
+        return await command.ExecuteNonQueryAsync(ct).ConfigureAwait(false) > 0;
     }, ct);
 
     /// <summary>
