@@ -23,15 +23,13 @@ internal sealed class SecondaryChrome : IReloadableWindow
 {
     private readonly OptimizedForm _form;
     private readonly bool _main;
-    private readonly Func<bool> _startsDark;
     private readonly ChromiumEngine _engine;
     private readonly ILogger<ChromiumView> _viewLog;
     private readonly TaskbarOverlay? _badge;
     private readonly Microsoft.Win32.UserPreferenceChangedEventHandler _themeChanged;
     private ChromiumView? _view;
     private volatile bool _failed;
-    private bool _pageSaid;
-    private bool _pageDark;
+    private readonly PageThemeOrder _theme;
     private int _waitingCount;
     private string? _workspace;
 
@@ -44,10 +42,10 @@ internal sealed class SecondaryChrome : IReloadableWindow
         _form = form;
         Name = name;
         _main = SecondaryWindow.IsMain(name);
-        _startsDark = startsDark;
         _engine = engine;
         _viewLog = viewLog;
         _view = form.Controls.OfType<ChromiumView>().SingleOrDefault();
+        _theme = new PageThemeOrder(startsDark, work => form.Post(work), Theme);
 
         // The main window's taskbar identity, or this would be a button beside the main one's, grouped by the executable it no longer is.
         TaskbarWear.Wear(form);
@@ -65,14 +63,11 @@ internal sealed class SecondaryChrome : IReloadableWindow
         _themeChanged = (_, changed) =>
         {
             if (changed.Category != Microsoft.Win32.UserPreferenceCategory.General) return;
-            // Once the page has said, it decides, and pushes again when the OS changes: an explicit choice is never undone by the OS.
-            if (_pageSaid) return;
-            // Posted, never Invoked: this arrives on the system-events thread and every window here runs its own pump.
-            form.Post(() => Theme(_startsDark()));
+            _theme.SystemChanged();
         };
         Microsoft.Win32.SystemEvents.UserPreferenceChanged += _themeChanged;
 
-        form.HandleCreated += (_, _) => Theme(_pageSaid ? _pageDark : _startsDark());
+        form.HandleCreated += (_, _) => Theme(_theme.Current);
         form.Load += async (_, _) => await WatchBrowserAsync();
         // `SystemEvents` holds a STATIC list, so a window that closed without unsubscribing is kept alive by it, and every window the
         // person ever opened would still be handling theme changes.
@@ -135,9 +130,7 @@ internal sealed class SecondaryChrome : IReloadableWindow
     /// <summary>The theme the page in this window is in, the viewer's choice where there is one. Called on this window's thread.</summary>
     public void FollowPage(bool dark)
     {
-        _pageSaid = true;
-        _pageDark = dark;
-        Theme(dark);
+        _theme.PageSaid(dark);
     }
 
     /// <summary>Paint the theme on this window's own frame: the background under the page, and the caption and border the OS draws.</summary>

@@ -258,7 +258,9 @@ first, else the oldest that may go; a write passes nothing queued ahead of it an
 (file, folder, arguments, variables, runner, bound) only while that start is queued with no write of its repository queued after it,
 never one running. A read `GitEndable` calls
 lock-free (a `status` with `--no-optional-locks`, a working-tree diff also told `-c diff.autoRefreshIndex=false`) is dropped while
-queued and ended while running once its askers leave; every other git, placed, runs untokened to its end or its bound. A
+queued and ended while running once its askers leave, the last answered only once its runner has returned: with its own
+cancellation, or as `ProcessUnendedException` where the git outlived its kill; every other git, placed, runs untokened to its end or
+its bound. A
 `worktree remove` is admitted once the tree's lock-free reads are dropped or ended and its other gits have ended, and holds what is
 asked in the tree after it, which its own git passes. An ask beneath any placed git takes a place that git lends, above the four, one a parent, two deep,
 deeper refused as `git.start.depth`: a pipe request's caller is told beneath one by its process ancestry (`PipeGitCaller`,

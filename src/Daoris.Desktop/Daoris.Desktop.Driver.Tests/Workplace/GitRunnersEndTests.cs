@@ -5,8 +5,8 @@ namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
 /// Each of the three git runners returns only once its process has exited: <c>RunGitAsync</c> beneath <see cref="WorkingTree.GitAsync(string, IReadOnlyList{string}, CancellationToken)"/>,
-/// <see cref="WorkingTree.ReadGitAsync"/> and <see cref="WorkingTree.GitBytesAsync"/>, cancelled during the process's creation and
-/// while it runs; and one whose kill is refused says <c>git.unended</c> rather than returning as if it had ended.
+/// <see cref="WorkingTree.ReadGitAsync"/> and <see cref="WorkingTree.GitBytesAsync"/>, asked a status taking no lock (a read the scheduler
+/// ends), cancelled during its creation and while it runs; and one whose kill is refused says <c>git.unended</c>, its place counted apart.
 /// </summary>
 /// <remarks>
 /// <see cref="GitStreamEndsTests"/> sees that git's tree is ended, by a marker a grandchild would have written; never
@@ -17,7 +17,7 @@ namespace Daoris.Desktop.Driver.Tests;
 [Trait(Category.Name, Category.Process)]
 public sealed class GitRunnersEndTests : IDisposable
 {
-    private static readonly string[] Waits = ["status"];
+    private static readonly string[] Waits = ["--no-optional-locks", "status"];
 
     private readonly string _root;
     private readonly List<Process> _watched = [];
@@ -132,6 +132,7 @@ public sealed class GitRunnersEndTests : IDisposable
             Assert.Equal(watched.Id, unended.Pid);
             Assert.Contains("refused by the test", unended.Reason);
             Assert.False(watched.HasExited);
+            Assert.True(GitScheduler.Shared.Apart > 0, "a git that runs on was not counted apart");
         }
 
         // Closed first: the log holds its file while open.

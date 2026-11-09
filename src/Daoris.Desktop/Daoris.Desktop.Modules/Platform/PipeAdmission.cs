@@ -15,6 +15,8 @@ internal sealed class PipeAdmission(InstancePipe pipe)
     private readonly PipeCensus _census = pipe.Census;
     private readonly TimeProvider _clock = pipe.Clock;
 
+    private const string BusySentence = "this terminal has as much under way as Daoris takes from one; send it again once one answers.";
+
     private PipeConfirmations Confirmations => pipe.Confirmations;
 
     /// <summary>
@@ -28,7 +30,11 @@ internal sealed class PipeAdmission(InstancePipe pipe)
         {
             // A hold of a conversation already open waits for the person's Confirm, as a press does.
             if (request.Type == "HOLD") return (null, pipe.Holding.AskAsync(request, connection));
-            if (request.Type == HeavyTerminalRun.Type) return (null, pipe.HeavyRuns.RunAsync(request, connection));
+            if (request.Type == HeavyTerminalRun.Type)
+            {
+                return connection.HasRoom ? (null, pipe.HeavyRuns.RunAsync(request, connection)) : (IpcJson.Serialize(pipe.Refuse(request, InstancePipe.Busy, BusySentence)), null);
+            }
+
             return (IpcJson.Serialize(request.Type switch
             {
                 "HELLO" => pipe.Hello(request, connection),
@@ -68,7 +74,7 @@ internal sealed class PipeAdmission(InstancePipe pipe)
         }
 
         if (!InstancePipe.IsKey(key)) return (IpcJson.Serialize(pipe.Refuse(request, InstancePipe.KeyMissing, "a request carries a key of its own, 16 to 128 characters.")), null);
-        if (!connection.HasRoom) return (IpcJson.Serialize(pipe.Refuse(request, InstancePipe.Busy, "this terminal has as much under way as Daoris takes from one; send it again once one answers.")), null);
+        if (!connection.HasRoom) return (IpcJson.Serialize(pipe.Refuse(request, InstancePipe.Busy, BusySentence)), null);
 
         // A start sent with `hold: true` holds what it opens, so a connection holding a conversation is refused it.
         var holding = hold && @class == PipeClass.Person && PipeHolding.Opens(request.Module, request.Type);
