@@ -63,15 +63,25 @@ public sealed class MemorySweep(MemoryOpStore ops, IMemoryEngines engines, Knowl
     {
         var pending = await ops.PendingAsync(ct).ConfigureAwait(false);
         var rechecks = new List<MemoryRecheck>();
+        var failures = new List<Exception>();
         foreach (var row in (await knowledge.RegistryAsync(ct: ct).ConfigureAwait(false)).DistinctBy(row => row.Repository, StringComparer.Ordinal))
         {
             var repository = row.Repository;
-            if (engines.Open(repository, MemoryReinforcement.None) is not { } engine) continue;
-            var scope = new MemoryWorkspaceCheck(knowledge, row.InWorkspace);
-            await SweepAsync(repository, engine, scope, now, pending, rechecks, ct).ConfigureAwait(false);
+            try
+            {
+                if (engines.Open(repository, MemoryReinforcement.None) is not { } engine) continue;
+                var scope = new MemoryWorkspaceCheck(knowledge, row.InWorkspace);
+                await SweepAsync(repository, engine, scope, now, pending, rechecks, ct).ConfigureAwait(false);
+            }
+            catch (Exception error) when (error is not OperationCanceledException)
+            {
+                // One repository's unreadable memory loses no other's rechecks; the pass still ends failed, told by its coordinator.
+                failures.Add(error);
+            }
         }
 
         if (rechecks.Count > 0) await ops.SweepAsync(rechecks, now, ct).ConfigureAwait(false);
+        if (failures.Count > 0) throw new AggregateException("A repository's memory could not be swept.", failures);
         return rechecks.Count;
     }
 

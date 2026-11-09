@@ -67,9 +67,20 @@ public sealed record RemoteConfig(string Url, string Key)
 
         if (!File.Exists(path)) return map;
 
-        // A file that will not parse is a file that names no remote. The sync loop, not this reader, is
+        // A file that will not parse, or that cannot be read this moment, is a file that names no remote: this is asked on a
+        // take's path, after it committed, and the next ask reads again. The sync loop, not this reader, is
         // where "you configured a remote and it does not work" gets said out loud.
-        if (ParseObject(AtomicFile.ReadText(path)) is not { } root) return map;
+        string text;
+        try
+        {
+            text = AtomicFile.ReadText(path);
+        }
+        catch (Exception error) when (error is IOException or UnauthorizedAccessException)
+        {
+            return map;
+        }
+
+        if (ParseObject(text) is not { } root) return map;
 
         foreach (var entry in root.EnumerateObject())
         {

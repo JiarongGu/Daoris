@@ -146,8 +146,8 @@ public sealed class DaorisLock
                 mirrors);
         }
         // Wrong shape as well as wrong syntax: an element read on a number or an array throws
-        // InvalidOperationException, and a lock like that failed the whole refresh.
-        catch (Exception error) when (error is JsonException or InvalidOperationException)
+        // InvalidOperationException, and a lock like that failed the whole refresh. A lock an editor holds is no lock either.
+        catch (Exception error) when (error is JsonException or InvalidOperationException or IOException or UnauthorizedAccessException)
         {
             return Empty;
         }

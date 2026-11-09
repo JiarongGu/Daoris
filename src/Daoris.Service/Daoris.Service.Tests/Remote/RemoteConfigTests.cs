@@ -51,6 +51,19 @@ public sealed class RemoteConfigTests : IDisposable
     }
 
     [Fact]
+    public void A_file_another_process_holds_names_no_remote_until_it_is_read_again()
+    {
+        File.WriteAllText(ConfigPath, """{ "aurora": { "url": "https://aurora.example.com", "key": "dk_aurorakey" } }""");
+
+        using (new FileStream(ConfigPath, FileMode.Open, FileAccess.ReadWrite, FileShare.None))
+        {
+            Assert.Empty(RemoteConfig.Load(Env(), ConfigPath));
+        }
+
+        Assert.Equal("dk_aurorakey", RemoteConfig.Load(Env(), ConfigPath)["aurora"].Key);
+    }
+
+    [Fact]
     public void The_file_names_a_remote_per_workspace()
     {
         File.WriteAllText(ConfigPath, """

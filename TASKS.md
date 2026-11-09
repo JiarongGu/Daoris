@@ -36,6 +36,8 @@ area document under `docs/areas/`. Each row's earlier full text is in git at `9f
 ## Knowledge, memory and records
 
 - [ ] **KNOWCENTRAL2 — the memory coordinator built** (service, connector, driver, web; D220): left **2i**, the installed measurement, which also looks for repeated or conflicting entries about one fact (PROFILEFIX1's re-open condition). → `docs/2026-10-31-memory-coordinator-design.md` §8
+- [ ] **KNOWREV3a — a deleted session's memory rows wait with no one to decide them** (service): `SessionWrites.DeleteAsync` (`Core/Sessions/SessionWrites.cs:341-348`) leaves its `memory_ops`; `MemoryOpStore.WaitsAsync` joins `sessions` (`MemoryOpStore.cs:199-203`) and the sweep-waits read takes `kind = 'end'` alone (`MemoryOpWaits.cs:14-17`), so after a delete its staged rows can be neither Kept nor Dropped and its awaiting replacement (a `supersede`) is listed nowhere, while `PendingAsync` keeps its predecessors' ends from being swept again.
+- [ ] **KNOWREV3b — a memory search across repositories fills its ten places from the first repositories by name** (connector): `MemoryTools.SearchAsync` (`Mcp/MemoryTools.cs:68-78,89`) asks each member's engine for `Limit` entries in name order and shows `found.Take(Limit)`, so a workspace whose first repository matches ten entries shows none of the later ones'; the engines give no score to merge by, so it needs a choice (a round-robin, or a place per repository).
 
 
 ## Install, home and update
