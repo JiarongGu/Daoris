@@ -125,6 +125,15 @@ internal sealed class GitLaunched(GitRunner runner, GitKind kind, string node, G
     public static double Ms(long ticks) => ticks * 1000.0 / Stopwatch.Frequency;
 }
 
+/// <summary>One question the git library answered in process (<see cref="GitLibrary"/>), counted beside the starts and told apart from them.</summary>
+/// <param name="Question">The class of question (<see cref="GitLibraryQuestion"/>).</param>
+/// <param name="Ticks">The whole read, in ticks of <see cref="Stopwatch"/>, from the ask to the answer.</param>
+internal sealed record GitLibraryRead(string Question, long Ticks)
+{
+    /// <summary>The read in milliseconds.</summary>
+    public double Ms => GitLaunched.Ms(Ticks);
+}
+
 /// <summary>
 /// The one counting seam beneath every git the driver starts: <c>RunGitAsync</c>,
 /// <c>ReadGitAsync</c> and <c>GitBytesAsync</c> each start through <see cref="LaunchAsync"/>, which raises
@@ -169,6 +178,10 @@ internal static class GitLaunch
         s_count.Value = count;
         return count;
     }
+
+    /// <summary>One answer the library gave this flow, counted in every count the flow holds, as a start is.</summary>
+    internal static void Answered(GitLibraryQuestion question, long began) =>
+        s_count.Value?.AddRead(new GitLibraryRead(question.ToString(), Stopwatch.GetTimestamp() - began));
 
     internal static void Ended(GitCount count, GitCount? outer)
     {
@@ -294,12 +307,16 @@ internal sealed class GitCount : IDisposable
 {
     private readonly GitCount? _outer;
     private readonly ConcurrentQueue<GitLaunched> _starts = new();
+    private readonly ConcurrentQueue<GitLibraryRead> _reads = new();
     private readonly long _began = Stopwatch.GetTimestamp();
 
     internal GitCount(GitCount? outer) => _outer = outer;
 
     /// <summary>Every start so far, in the order the seam saw them.</summary>
     public IReadOnlyList<GitLaunched> Starts => [.. _starts];
+
+    /// <summary>Every answer the library gave in process, in order: none of them a start.</summary>
+    public IReadOnlyList<GitLibraryRead> Reads => [.. _reads];
 
     /// <summary>How long since the count began.</summary>
     public long ElapsedTicks => Stopwatch.GetTimestamp() - _began;
@@ -308,6 +325,12 @@ internal sealed class GitCount : IDisposable
     {
         _starts.Enqueue(launched);
         _outer?.Add(launched);
+    }
+
+    internal void AddRead(GitLibraryRead read)
+    {
+        _reads.Enqueue(read);
+        _outer?.AddRead(read);
     }
 
     /// <summary>The starts in <paramref name="budget"/>.</summary>

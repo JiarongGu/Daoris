@@ -33,6 +33,7 @@ internal static class GitLibrary
     internal static async Task<T?> AskAsync<T>(string folder, GitLibraryQuestion question, Func<GitLibraryCall, T?> call, CancellationToken ct)
         where T : class
     {
+        var began = System.Diagnostics.Stopwatch.GetTimestamp();
         if (GitLibraryAdmission.RefusalOf(folder, question) is { } refusal) return Fell<T>(folder, refusal);
         if (RefFiles.GitDirOf(folder) is not { } gitDir || RefFiles.CommonDirOf(folder) is not { } commonDir) return Fell<T>(folder, GitLibraryAdmission.NoRepository);
         await s_calls.WaitAsync(ct).ConfigureAwait(false);
@@ -41,6 +42,7 @@ internal static class GitLibrary
             var (answer, why) = await Task.Run(() => Call(folder, gitDir, commonDir, call), ct).ConfigureAwait(false);
             if (answer is null) return Fell<T>(folder, why ?? GitLibraryJournal.Unanswered);
             GitLibraryJournal.Answered(folder);
+            GitLaunch.Answered(question, began);
             return answer;
         }
         finally

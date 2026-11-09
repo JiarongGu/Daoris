@@ -137,6 +137,8 @@ public static class GitReviewCommand
                 $"{at + 1,3}  {start.Node,-4}  {Budget(start.Budget),-9}  {Runner(start.Runner),-8}  {Ms(start.WaitedTicks),6}  {Ms(start.CreatedTicks),7}  {Ms(start.RanTicks),7}  git {string.Join(' ', start.Arguments)}"));
         }
 
+        var reads = count.Reads;
+        if (reads.Count > 0) text.AppendLine(Invariant($"  {reads.Count} reads by the library: {reads.Sum(read => read.Ms):0} ms ({string.Join(", ", reads.GroupBy(read => read.Question).Select(each => $"{each.Key} {each.Count()}"))})"));
         text.AppendLine(Invariant(
             $"  {starts.Count} starts, {(graph is null ? $"depth {starts.Count} (one after another)" : $"depth {graph.Depth} (as a graph, {graph.Wasted} wasted)")}, {GitLaunched.Ms(count.ElapsedTicks):0} ms: waited {Ms(starts.Sum(start => start.WaitedTicks))}, created {Ms(starts.Sum(start => start.CreatedTicks))}, ran {Ms(starts.Sum(start => start.RanTicks))}"));
         return text.ToString();

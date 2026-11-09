@@ -101,6 +101,9 @@ public static class SessionReviews
             ("files", review?.Diff?.Files.Count ?? 0),
             // The untracked tail's starts: the intents and their diff, two whatever the count, none where no file is read.
             ("untracked", count.In(GitBudget.Untracked)),
+            // The library's answers in process, none of them a start, and the time they took.
+            ("reads", count.Reads.Count),
+            ("readMs", (long)count.Reads.Sum(read => read.Ms)),
         ];
     }
 
