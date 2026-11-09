@@ -148,7 +148,7 @@ internal static class TreeSharing
         StartNoteCodes.StartedTreeShared,
         $"{Listed(shares)}: each is a link to one place in your checkout that every tree of this repository uses, so what is written through it "
         + "reaches them all. Remove such a link itself, never what lies under it: a recursive delete that follows a link deletes the shared "
-        + "place's files, as Windows PowerShell 5.1's `Remove-Item -Recurse` over a junction does, and git's worktree removal. A single file "
+        + "place's files, as Windows PowerShell 5.1's `Remove-Item -Recurse` over a junction does, and `git worktree remove`. A single file "
         + "shared is a link a save by rename replaces, which makes it this tree's own file.",
         ("shared", (IReadOnlyList<string>)[.. shares.Select(share => share.Path)]));
 
