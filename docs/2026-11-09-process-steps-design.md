@@ -1,16 +1,20 @@
 # Generic process steps, landing only a composition of them (PROCSTEPS1)
 
-**Proposed design, round 3, documents only** (2026-11-09). The owner's direction: a workflow's steps are each declared in one focus; a
+**Proposed design, round 4, documents only** (2026-11-09). The owner's direction: a workflow's steps are each declared in one focus; a
 step may do a lot, but today none says what it is focused on, and the landing has no rebase of its own. Then, twice: Daoris runs a
 workflow system, so the steps are generic kinds any process composes, and *landing* is a composition at the workflow level, never
-a step in code. Round 1 (the document at `0422e84b1b`) and round 2 (at `fd03c57109`) were each read by both makers
-(`docs/2026-11-09-process-steps-reads.md`); round 3 answers round 2's reads in place, and states the integration against its code
-(§2.6, §2.10). §9 says, per finding, the sequence it closes, the code the answer rests on, its proof's row and the census or test
-that closes its class; §10 keeps the passages rounds 2 and 3 replaced. Read with `docs/areas/workflows-review-landing.md`, the node
+a step in code. Round 1 (the document at `0422e84b1b`), round 2 (at `fd03c57109`) and round 3 (at `fd2c1421c6`) were each read by
+both makers (`docs/2026-11-09-process-steps-reads.md`); round 3 answered round 2's reads in place, and stated the integration against
+its code (§2.6, §2.10). Round 4 answers round 3's reads in §11 to §17, which change the sections they name and hold where they differ,
+rewrites the rows (§7) in place, and says per finding its answer and its section in §18. §9 says, per round 2 and round 1 finding, the
+sequence it closes, the code the answer rests on, its proof's row and the census or test that closes its class; §10 keeps the
+passages rounds 2 and 3 replaced. Read with `docs/areas/workflows-review-landing.md`, the node
 kit design (`docs/2026-11-06-node-kit-design.md`, every kind one unit under `Workflows/Kinds/<Kind>/`), the land node's design
 (`docs/2026-11-01-land-node-design.md`), D215 (the integration), D228 and D232. Paths are under
 `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name another root. The code was read at `2d28c2f168` and `0422e84b1b`; the
-integration, the acceptances, the readers and the deletes again at `56d8498990` for round 3.
+integration, the acceptances, the readers and the deletes again at `56d8498990` for round 3; the ref acts, the act journal, the
+together operations, the deliveries, the requests, a chain's advance, the run's keeping and binding, the node states and the
+migration's steps at `9e7ba088df` for round 4.
 
 ## 1. What one `land` does today, and what 2026-11-09 showed
 
@@ -660,6 +664,8 @@ the migration it is a step of (row j).
 
 ## 7. Rows, in order
 
+The rows as round 4 leaves them, rewritten in place; round 3's are the document at `fd2c1421c6`.
+
 1. **PROCSTEPS1a, the records by their rows' ids** (driver, tools; waits on nothing; being built): §2.3's backlog rules and
    post-check in `BacklogMerge` and its twin `mergeByBase`, union's keep-once for a non-blank line both sides added. It serves
    today's landing, the integration's member merge and the tree's update at once. Proof: `fixtures/backlog-merges.json` rows run by
@@ -667,7 +673,8 @@ the migration it is a step of (row j).
    word removed and a word added (each `conflicted`); two different rewrites; a delete with no archive against a rewrite; one id
    added twice; two inserts at one place, equal and not; exact ids beside a longer one; compound ids by list and by range; an input
    holding an id twice; the post-check over a clean merge that kept an archived row and over one that let an archive win over the
-   line's change. Over real git (`LandBacklogLandingTests`, failing first): a replay whose row the work archived while the line
+   line's change; a backlog row whose head is a compound id (`WFREVIEW3a, 3d, 3l and 3m`), the work archiving 3a while the line
+   archives 3l, reopening no finished item. Over real git (`LandBacklogLandingTests`, failing first): a replay whose row the work archived while the line
    moved it lands with no session asked, and one whose row the line changed stops naming the row with both texts.
 2. **1b, values on the wires** (driver): `work`, `commit` with its `onto`, `ref` with its producer, `problem` with its producer and
    stop's identity; `claimed`'s `work` output; `RunSubject.Input`; step refs per attempt and their keeping; the bound on a target's
@@ -677,17 +684,19 @@ the migration it is a step of (row j).
    recorded own move followed by a pass lapses nothing; a step ref an attempt reads survives a restart and `git gc --prune=now`, and
    goes at the run's settled end; a save holding an arriving kind refused.
 3. **1c, `rebase`** (driver; its words): the kind, arriving; its door; the replay-and-settle unit moved into its folder with its
-   other callers; `onto: target`; its start, waiting while its work is bound to an open together operation; the inclusion record's
-   leaving out; its reruns. Proof: one test per outcome over real git; a chain's step 2 rebased onto the chain's branch replays only
+   other callers; `onto: target`; its start, reading `TogetherBinding` (§14): a member waiting while its operation is open, the head
+   until its operation is `ready` at its tip; the inclusion record's leaving out; its reruns. Proof: one test per outcome over real git; a chain's step 2 rebased onto the chain's branch replays only
    its own commits and fast-forwards with the line moved meanwhile, and a squash chain the same (`TreeBranches`' advance cases, run
    through the kind); 2026-11-09's sequence (three works archiving their rows one after another while the line moved) reaches
    `ready` with no session asked where the line left the row as the base had it, and `conflicted` naming the row where it changed
    it; the person's checkout, the work's branch and its tree unchanged byte for byte; a stop mid-replay leaves no scratch tree; a
    session mid-turn holds it `ready`, said; a member bound to an open operation never starts, and once the operation landed a
-   member whose commits the head replayed as new ids, and one whose line the head reverted, replays nothing.
-4. **1d, `resolve`** (driver, modules; its words): the journalled hand-off and the reserved tree, the ask, the continue with the
-   settling, the proof, the tries per stop, the restoration with the resolver's HEAD on the edits ref, the `uncommitted` problem with
-   its blobs, the carried Accept, `rebase-tail`, the card's wait. Proof: a code conflict asked once with its files and hunks and
+   member whose commits the head replayed as new ids, and one whose line the head reverted, replays nothing; a head whose operation
+   is `asked`, `replaying` or `checking` stays `ready`, said, and starts at `ready`.
+4. **1d, `resolve`** (driver, modules; its words): the hand-off in its own record (`TreeHandOffs`, §13), read by the trees' holders
+   and never by the act journal, and the reserved tree; the ask, the continue with the settling, the proof, the tries per stop, the
+   restoration with the resolver's HEAD on the edits ref, the `uncommitted` problem with its blobs, one asker to commit
+   (`CommitAskers`, §13), the carried Accept, `rebase-tail`, the card's wait. Proof: a code conflict asked once with its files and hunks and
    resolved; a four-stop replay asking each stop as its own try 1; a records stop after it settled with no ask; the line moving 50
    times while it waits making one ask; a stop met again after a rebind going on from its count; the bound spent failing to the
    person's task, said on the card, and that task's `done` returning to the rebase; a resolution touching an unnamed file refused; a
@@ -695,13 +704,18 @@ the migration it is a step of (row j).
    hand-off open, each ending with the resolver stopped and awaited first, the tree on its branch at its tip, the edits on the edits
    ref and applied at the next ask, the entry closed; a resolver that commits, and one that runs `rebase --continue`, then times out,
    its commits on the edits ref; an `uncommitted` resolution committing exactly the problem's blobs keeping the review, and one
-   changing another path asking it again; nothing else taking the tree while it is reserved.
+   changing another path asking it again; nothing else taking the tree while it is reserved; R1's hand-off open for 30 minutes while
+   R2's candidate promotes and the checkout's tree update runs, neither held, the look's tidy, a landing, a session start and
+   `TurnCarries` keeping off R1's tree, each said, and a writer's reconcile leaving the record open; a done quest's dirty tree whose
+   run has a `rebase` asked by its `resolve` alone, and one no `rebase` reads asked by `TurnCarries` alone; `ActJournalCensusTests`.
 5. **1e, `check` fed, then `merge`** (driver; their words). First `check`'s `commit` in and out, so `merge`'s proofs run through it:
    a check on a rebased commit, its failure stopping the `merge`, a target moved while it runs rebinding nothing. Then `merge`: the
    methods and targets; into the line, the request at the one door with its expected tip and invocation, never batched, `behind` at
    the replay, the promotion's compare-and-set; into a branch, the `update-ref` compare-and-set; the delivery and its ladder re-homed
    with `LandAttemptSettling`, a line delivery's phases read from its request; the authority and the judgement before the effect, read
-   again at the promotion; `behind` and `merge-behind`; `root-dirty`; the together re-read; the press waiting on its attempt. Proof:
+   again at the promotion; `behind` and `merge-behind`; `root-dirty`; into a branch, today's facts by the target's kind
+   (`LandingAdvance` re-homed, §15) and the landing provenance; the together re-read, and the operation's attempt written and settled
+   by the head's `merge`, the look's settling of `landing` and `uncertain` moved into it (§14); the press waiting on its attempt. Proof:
    each method onto the line and onto a branch; for each method onto the line, the line moved between the check and the admission,
    between the admission and the form, and between the form and the promotion, and another epoch's request queued beside it: `behind`
    or formed again, never batched, nothing unverified lands, and through the evaluator back to `rebase` and `check` and on to one
@@ -709,27 +723,42 @@ the migration it is a step of (row j).
    read (the work's tip, the quest's submission, the step ref, the run stopped) moved between the admission and the promotion: the
    member lapsed, nothing moved, the `merge` rebound; a stop at each phase ends in one delivery; a press and a pass merge once; a
    squash's and a merge commit's tree equal to the input's; a two-member together operation in one delivery, and a member moved
-   since it was bound refused with nothing written; a save of a `merge` whose `behind` leads nowhere refused.
-6. **1f, `tidy`** (driver; its words): `follow` writing the run's own move, `branch`, `tidy-held`, the step refs left to the run's
-   end, the journalled delete refusing an open run's branch to every caller but that run's own steps. Proof: a free tree follows and
+   since it was bound refused with nothing written; a save of a `merge` whose `behind` leads nowhere refused; the head's `merge`
+   writing the operation's attempt before its first phase and settling it `landed`, each member's run then replaying nothing, `held`
+   and ending, `behind` setting it back to `ready`, and a restart after each phase settling it once; the orphan-write census; a
+   pattern branch checked out waiting, said, and going on once switched off, a completed one failing `completed` to the person's
+   task, one moved by another hand failing `moved`, one Daoris never made failing `exists`; a release promotion onto a standing
+   `release` advancing it; a branch `merge`'s landing record admitting its `integrate`'s request.
+6. **1f, `tidy` and the branch removals** (driver; its words): `follow` writing the run's own move, `branch`, `tidy-held`, the step
+   refs left to the run's end; `BranchRemovals` (§12), the one release of a branch's removal, refusing an open run's branch to every
+   remover but that run's own steps, `RefTransaction` staging a branch's removal only with it, the opening's undo through it; a
+   delivery's end written by the release and the next generation read from it. Proof: a free tree follows and
    the pass after it lapses nothing, the review's acceptance included; a running tree says why it stays; a pushed branch never
    rewritten; a squash run with a `branch` tidy and `git gc --prune=now` between every pass finds every commit a later step or an
-   unsettled attempt reads; `BranchDeleteCensusTests`, the delete's callers exactly §2.7's; each caller over an open run's branch
-   keeps it, said with the run, and takes it once the run has ended; the run's own `tidy` ends it.
+   unsettled attempt reads; `BranchRemovalCensusTests`, red on each of §12's planted members; each caller over an open run's branch
+   keeps it, said with the run, and takes it once the run has ended, a create's Undo, a rename and a rename's Undo among them; the
+   run's own `tidy` ends it; an opening's undo released; a delivered branch its run's own step removed, then the same intent
+   started: the next generation, the first delivery's row unchanged; refused while the removal's act is open; a delete's Undo
+   taking the end back.
 7. **1g, the editor, the chart and the run view** (web, contracts, and the declarations h wires): the `Git` group, each kind's
    inspector and inputs, the `rebase` tail and the `merge`'s `behind` way added in one change, the chart's ports and `back` ways, the
    run view's words and waits, in English and Chinese, the generated contracts and types; and what h adds, declared here arriving as
    the kinds are, so the contracts are generated once: `integrate`'s `ref` input and its `conflicted` outcome, its same-tip and
-   decide waits, `push`'s `ref`, `line`'s `commit`, a `merge`'s wait in the line's integration. Drawn and tested on the arriving
+   decide waits and its wait on a branch it could not end, `push`'s `ref`, `line`'s `commit`, a `merge`'s wait in the line's
+   integration and on a branch a tree has checked out, the head's wait on its operation. Drawn and tested on the arriving
    kinds and ports, offered at h, so the cut-over ships nothing the window cannot draw. Proof: page tests, the web typecheck,
    `i18n:check` and `names:check -- --strict`, stories at 80, 39 and 25rem in both themes.
 8. **1h, the cut-over** (driver, modules; web for *rebase it*'s retirement): the shipped graphs and `WorkflowPresets` recomposed by
-   §3, `SetupPresets` by the `merge`; §5's conversion; the readers bound to their producers (§2.8); the integration by §2.10 (the
-   request's invocation, the `conflicted` close and `against`, the same-tip asking, the request branch's end, nothing told, no
-   disposition for a run's request, *rebase it* retired with its route verb and the page's button); `TurnCarries` re-homed onto
-   `WorkTreeReads` and `resolve`'s commit words; the `land` kind, `LandPerformer`, `LandTries`, `LandCarry`, `RebaseTelling`,
-   `LandingRules`, `IMakesLanding` and the arriving mark with its refusal removed; the press waiting on the `merge`; the area
-   document rewritten. Proof: every shipped file judged by the save; §5's table over every `land` state and every preset, a custom
+   §3, *Release* with `review` before `rebase` (§15), `SetupPresets` by the `merge`; §5's conversion as §16 completes it (every
+   retained binding, every state, attempts carried apart from states, the requests' invocation, the binding's `Resolved`, last in
+   its migration); the readers bound to their producers (§2.8), the bound intent and `NodeKinds.Land` deleted and `GraphMoves` the
+   one reader of moves (§17); the integration by §2.10 (the request's invocation, the `conflicted` close and `against`, the
+   same-tip asking, the request branch's end, its outcome waiting for the removal, §12, nothing told, no disposition for a run's
+   request, *rebase it* retired with its route verb and the page's button); `TurnCarries` re-homed onto `WorkTreeReads` and
+   `resolve`'s commit words, standing down by `CommitAskers`; the `land` kind, `LandPerformer`, `LandTries`, `LandCarry`,
+   `RebaseTelling`, `LandingRules`, `IMakesLanding`, `TogetherAccepts` (its re-read re-homed in the head's `merge`) and the
+   arriving mark with its refusal removed; the press waiting on the `merge`; the area document rewritten. Proof: every shipped
+   file judged by the save; §5's table over every `land` state and every preset, a custom
    graph, two open runs bound to two source versions (each keeps its own delivery), a graph at the old bounds, and a refused
    conversion recovered as a new run with nothing moved twice; each converted then passed once: no acceptance lapses (an upstream
    acceptance's id changed and the review resting on it still accepted), no effect or ask repeated, every input fed, a pull-request
@@ -742,7 +771,16 @@ the migration it is a step of (row j).
    on the person); a member whose candidate promoted ending `conflicted`, its request branch ended, its rebase onto the line meeting
    the conflict and its `resolve` asked; a gate hand-back ending failed and reaching the person's task, never the rebase; a together
    member moved between the operation's ready and the head's effect: nothing written, checked again; no disposition for a run's
-   request; `NodeKitTests` with no `land`; the census of doors that land.
+   request; `NodeKitTests` with no `land`; the census of doors that land. Round 4's: the request branch across a restart (the
+   `rebase` makes W, a fast-forward makes P and delivery D settles, the gates hand W back, the `integrate` ends P, the person's
+   task is done, the `rebase` makes W again: the next generation makes P, a new request is admitted; a restart after the removal's
+   act, after the end's row, and between the new generation's phases, each ending with one P, one new request and D unchanged);
+   a removal kept by a tree holding the request branch, the `integrate` waiting, said, with no outcome; a run ended before the
+   upgrade, converted, then reopened by its chain and going on bound to the conversion; a stopped `land` beside an active task
+   staying stopped; an invalidated and an unknown one with an attempt unsettled, settled before anything starts; a request open at
+   the upgrade settling after it, its `integrate` reached; the binding's resolved options read by the `merge`; §16's three-part
+   census over the captured home; §17's selection census and the two-`merge` release graph; the conversion after `StoreNamesStep`,
+   its own copy of the store kept.
 9. **1i, the installed window** (the steward): `dev-line` on the install through a day's rows: records conflicts settled with no
    session asked, a code conflict resolved within its bound, a resolve cut by a restart and taken up again, a restart mid-`merge`, a
    converted run carried.
@@ -881,6 +919,14 @@ Round 2's answers, kept as they were given; where round 3 changed one, §9.1 say
 
 ## 10. Earlier rounds, superseded where a later one changes them
 
+Round 3 is the document at `fd2c1421c6`. Round 4 rewrote its §7 in place; the passages of §2 to §5 that round 4 changes stand as
+written above, and where they differ §11 to §17 hold: §2.2's start and §2.6's together (§14); §2.4's hand-off as "an act of the
+journal" (§13); §2.6 into a branch, with "failed `exists`" for every branch (§15); §2.7's callers and its census (§12); §2.10's
+request branch ended "before its outcome is written" with nothing said of a removal that fails (§12); §3's *Release* row (§15); §4's
+`TurnCarries` and `TogetherOperations` rows (§13, §14); §5's "reads nothing another step writes", "a run that has ended is finished
+history and is not converted", the table's "`land` failed, rejected or unknown" row and its states with no stopped or invalidated
+row, and its census of records a `land` writes alone (§16); §2.8's selection census by symbols alone (§17).
+
 Round 2 is the document at `fd03c57109`; these are its passages round 3 replaced, kept as history.
 
 - §2.2: "A finished attempt `resolve` wrote onto a commit the target does not hold (an integration's candidate, §2.4) starts once
@@ -928,3 +974,279 @@ Round 1 is the document at `0422e84b1b`; these are its passages round 2 replaced
 - §7: the rows were a records, b wires (with a `back` wire on an outcome), c `rebase`, d `resolve`, e `merge`, f `tidy` and `check`,
   g the cut-over, h the web, i the installed window, j the conversion removed "once no home saved before 1g's release can start".
 - §8: "The look's own branch tidy (`BranchTidying`) beside a workflow's `tidy`: which one ends a session branch no workflow tidies."
+
+## 11. Round 4: what it changes, and the code it rests on
+
+Round 4 answers both makers' reads of round 3, read against the code at `9e7ba088df`: the ref acts and the opening's undo, the act
+journal, the together operations and their readers, the delivery store, the integration's requests and admission, a chain's advance,
+the run's keeping and binding, the node states and the migration's steps. Each answer is a construction: one unit every member of its
+class passes through, so a member nobody has found yet meets it too, and a census that names the planted member it goes red on.
+§12 to §17 change the sections they name and hold where they differ (§10 lists them); §7 is rewritten in place as the rows now are;
+§18 says, per finding, its answer and its section, and what round 4 does not close by construction.
+
+## 12. Round 4: one owner of every branch removal (§2.7, §2.10)
+
+**What removes a branch today**, read from every `RefTransaction` that deletes or renames and every git command line in the driver:
+the journalled delete (`JournaledDeletes.DeleteAsync`, with `ForcedAsync` and `ContentHolds.DeleteJudgedAsync` over it); the person's
+ref acts, each its own transaction outside it (`GitRefActs.DeleteAsync:127`; a create's Undo, `UndoAsync:86`; a rename, whose
+`RefTransaction.Rename` deletes the old name, and a rename's Undo, whose `ReverseRename` deletes the new one, `GitRefActs.cs:368-545`);
+and an opening's undo, a bare `git branch -D` (`TreeOpenings.cs:118`, reached from `TreeOpening`, `TreePoolMakes`, `TreePoolTakes`
+and `PoolTakeovers`). Every other ref removal is of a ref of Daoris's own, never a branch: recovery refs (`CommitActs`,
+`ContentHolds.DropKeptVerifiedAsync`, `GitHistoryEdits`), act refs (`ActRefs`), a partner piece's ref (`PartnerActRunner`), and the
+step refs, which only the run's end-keeping removes (§2.1).
+
+**The guard, inside the transaction.** `BranchRemovals` (`Workplace/BranchRemovals.cs`) is the one door a branch leaves by.
+`RefTransaction` refuses to stage a delete or a rename of a `refs/heads/` ref (its `Delete`, `Rename` and `ReverseRename` throw
+`ArgumentException`, which every act already reads as a refusal before anything is written); a branch's removal is staged only by
+`RefTransaction.Release(BranchRelease)`, and a `BranchRelease` is made only by `BranchRemovals.ReleaseAsync(repository, branch, commit,
+by)`, its constructor private to that file. `by` names who removes it: the person (window or terminal), the look, an opening, or a
+run's step (run, node, attempt). The release reads the open runs' governed branches, as `TidyHolders` reads the trees, and refuses a
+branch an open run governs unless `by` is that run's own step, said in the caller's words with the run (§2.7). So a delete, a
+create's Undo, a rename's old name, a rename Undo's new name and an opening's undo meet one rule, and a caller not yet written cannot
+stage a branch's removal without asking it. The opening's undo becomes a released transaction verified at the commit the opening made
+the branch at: it removes only a branch that open made a moment ago and recorded nowhere, which no run governs.
+
+**The census, `BranchRemovalCensusTests`**, in three parts, each with the member it goes red on: no source outside `RefTransaction`
+hands git a branch removal (`branch -d`, `-D`, `-m` or `-M`, `update-ref -d` of a `refs/heads/` ref), red on a planted
+`["branch", "-D", name]`; staging a delete of `refs/heads/x` without a release throws, red on a planted unit that stages one; every
+caller of `ReleaseAsync` is one of §2.7's table with the person's four ref acts and the opening's undo added, red on a new caller.
+
+**A delivery's ref ended, and its next generation (Codex 1).** A delivered delivery answers every later start of the same unit,
+commit, method and target with itself, and only a withdrawn one takes the next generation (`DeliveryStore.cs:307-311`), so a request
+branch the run's own `integrate` ended could never be made again at the same commit, and the next admission finds no branch. The
+release records ends: where the branch it releases is the ref a delivered delivery made, standing at the commit that delivery
+settled, the removal's act names the delivery in its plan, and once the act has closed done (its postcondition: the ref absent) a row
+of `delivery_ends` is written (the delivery's key, the act, its recovery ref, when); the delivery's own row is unchanged.
+`DeliveryStore.Start` answers a delivered delivery with a proven end as it answers a withdrawn one, by the next generation. Uncertain
+effects first: it refuses the next generation while the ending act is open or its outcome unknown, which every writer's reconcile
+settles first (`ActReconciler.UnderLockAsync`), and, as today, while any delivery of the unit is not settled. A restart that finds
+the act closed done with no end row writes the row, keyed by delivery and act, so it is written once. A delete's Undo that puts the
+branch back removes the end row in the same act, and is refused where a later generation has made the branch again, the name being
+taken (the Undo's rule today). The ends are the release's, so a delivered branch any remover ends (the run's own `integrate`, the
+look's clean-up of an ended run's branch, the person's delete once the run ended) lets the same commit be delivered again, a run
+reopened by §16 included.
+
+**`conflicted` and failed wait for the removal.** The `integrate` writes its outcome only once its request branch's removal is
+proven. A removal refused or kept (a tree has the branch checked out, it moved, or an act on it is open) holds the node active, said
+with the removal's clause ("Waits: `feature/q-1` was not ended, since `wt-3` has it checked out"), tried again at each pass, the wait
+on that tree's or that act's end alone; so no way leads back to the `rebase` while a stale request branch stands for its
+`onto: target` to read.
+
+## 13. Round 4: the hand-off's own record, and one asker to commit (§2.4, §4)
+
+**Not an act of the journal (N5).** The journal holds acts that close within their steps' deadlines, and every writer of a checkout
+reconciles them: `ActReconciler.UnderLockAsync` reads every unclosed act of the repository's shared git directory (`:53`), holds every
+writer while one runs here (`:143-147`), and takes over and closes one that does not (`:164-177`); the promotion
+(`IntegrationPromotes.cs:370-375`) and the tree update (`TreeSync.cs:214`) ask it. A hand-off recorded there would hold another run's
+promotion for the resolver's 30 minutes, or be closed by the first writer while the resolver still writes.
+
+**`TreeHandOffs`** (`Workflows/Kinds/Resolve/TreeHandOffs.cs`) is a table of the desktop store, one row per tree: the tree, its
+repository, branch and tip, the run, node and attempt, the stop's identity, the resolver, the phase (`reserved`, `prepared`, `asked`,
+`restoring`), opened and closed. A row is written before anything is written in the tree, each phase written ahead, and closed by
+§2.4 point 4's restoration. It is read by tree, `Of(tree)`, and whole only at the driver's start, `Open()`, which restores each open
+row by its phase before any pass (§2.4 point 6). Its readers are the trees' holders: `TidyHolders.ReadHoldersAsync`, behind
+`InUseAsync`, `HeldTreesAsync`, `HoldersAsync` and `BesideAsync`, names a reserved tree held by "run `r-12`'s `resolve`", so every
+door that already reads the holders before it removes, rebases, lands in or writes a session's tree keeps off it; a session's start
+in that tree waits, said; the same work's `rebase` stays `ready` behind its own `resolve`. A writer of the repository that writes no
+session tree (the promotion, the checkout's tree update, a replay in a tree of Daoris's own) does not read it, and no writer's
+reconcile closes it. `ActJournalCensusTests` names every act kind with its steps, each bounded by its deadline: red on a planted act
+kind that holds a tree across turns with no bounded step.
+
+**One asker to commit (N9).** Today a done quest's dirty tree is asked by `TurnCarries` at a turn's end and an Accept's by
+`LandCarry`, sharing one bound (`TurnCarry.cs:26`, `LandCarry.Bound`); beside `resolve`'s `uncommitted` that would be two askers with
+two counts. `CommitAskers.Of(tree)` (`Workplace/CommitAskers.cs`) is the one answer to who asks a tree's session to commit: the
+`resolve` of an open run whose `rebase` is fed that tree's work and has neither reached nor been skipped; nobody while a hand-off
+reserves the tree; else the turn's end. `TurnCarries` asks only where it answers the turn's end, so it stands down where a `rebase`
+will read the tree: the `rebase` waits for the turn to end (§2.2), finds the paths, and its `resolve` asks, try 1. A tree is asked by
+one door and counted by that door's bound: `resolve`'s tries per stop for a run's work, `TurnCarry.Bound` for work no `rebase` reads;
+`LandCarry`'s share of the bound goes with it. The commit words (`LandCarry.CommitWords`, `resolve`'s words at h) are read by
+`TurnCarries` and `resolve` alone, both behind `CommitAskers.Of`, and the say census (§7 h) is red on a third reader of them.
+
+## 14. Round 4: the together operation's landing, by the head's `merge` (§2.2, §2.6, §4)
+
+**Today** `TogetherOperations.Landing` and `Settle(Landed)` are written only by the combined Accept (`TogetherAccepts.cs:116, 151`),
+reached only from `LandPerformer.cs:259-262`, which also holds the head until its operation is `ready` (`:253-257`); the look settles
+an operation left `landing` or `uncertain` by `TogetherSettle.Decide` (`TogetherWatch.SettleAsync`). The head is no member
+(`DeliveryReach.cs:47`), so round 3's start rule, reading `bound` alone, let the head's `rebase` start mid-join, and once
+`LandPerformer` went nothing wrote the landing: every member `bound` for ever.
+
+**`TogetherBinding.Of(work)`** (`Workplace/TogetherBinding.cs`) is the one read of an operation's hold on a work: a member of an open
+operation; the head of one before `ready` (`asked`, `replaying`, `checking`); the head of one `ready` at the work's tip; the head of
+one `landing` or `uncertain`; or none. `rebase`'s start reads it: a member waits while its operation is open (§2.2); the head waits
+until its operation is `ready` at the work's tip, said ("Waits for `s-41` and `s-42` to be brought in: checking"), and a head whose tip
+left the operation's checked tip waits for the look to check it again (`TogetherOperations.HeadAt`). `DeliveryReach`'s `bound` is this
+read.
+
+**The head's `merge` writes the attempt and settles it.** After its judgement and the together re-read (§2.6), before its delivery's
+first phase, the head's `merge` writes the operation's attempt (`TogetherOperations.Landing`, `ready` to `landing`): the form its
+method's, the target its own, `Expected` the target's tip the judgement read, `Pinned` the operation's checked tip (the `work` its
+`rebase` was fed), `Replayed` its input commit; a line request admitted is correlated (`Correlate(request)`). The attempt is written
+with the delivery's prepared phase, so a restart reads them together. It is settled by phase: `merged` or `held`, `Landed`, the
+resulting tip correlated, so every member is reached `brought-into` and its `rebase` leaves its work out (§2.6); `behind`, a hook's
+refusal or an attempt withdrawn with nothing written, `Unmade`, back to `ready`; cut by a restart, the merge's settling (§2.6's
+ladder) decides it by `TogetherSettle.Decide` over the delivery's phases before anything new starts. The look's settling of `landing`
+and `uncertain` moves into the merge's settling, so one unit settles the attempt; `TogetherWatch` keeps stepping the phases before
+`ready` and dropping an operation whose sessions went. `DeliveryReach`'s brought-into finds the head's delivery by `Replayed`, the
+commit the merge delivered, not by the pinned tip.
+
+**Census.** The orphan-write census: each write member of the records the `land` path writes (§5's census names them: the together
+operation's `Landing`, `Correlate` and `Settle`, the delivery's phases, `landings.json`'s record and advance, the press's outcome) has
+a caller in source outside the units h deletes; red on a planted removal of the head `merge`'s call to `TogetherOperations.Landing`,
+which leaves it called by nothing.
+
+## 15. Round 4: `merge` into a branch keeps today's refusals (§2.6, §3)
+
+**What a chain's advance refuses today** (`TreeBranches.cs:320-390`, `LandingAdvance.Refusal`): a branch no landing of Daoris's made
+(`exists`); one moved off its landing record's tip, since what moved it may be somebody's; one a working tree has checked out; one
+whose work the line already holds, or whose pull request completed or was abandoned; one the work does not grow from; one that already
+holds it all. Round 3 kept only the compare-and-set, so an `update-ref` could move a branch under a person's checkout, whose next commit
+would revert the step.
+
+**The judgement reads those facts**, under the git lock before the `update-ref`, through `LandingAdvance`'s own unit re-homed in
+`merge`'s folder, by the target's kind:
+
+| Target | Read |
+|---|---|
+| A pattern: a work's branch (`feature/{quest}-{slug}`) | Daoris's own, by its landing record. None: failed `exists`. Off the record's tip: failed `moved`, today's words. Checked out in a working tree: waits, active, said ("Waits for `wt-3` to switch off `feature/q-1`"), the wait on that tree's act alone, read again at each pass. Its work on the line by the content proof, or its pull request completed or abandoned by the platform's kept word: failed `completed`, today's words, to the person's task. Not grown from: `behind`. All held: `held` |
+| A fixed name (`release`) | A standing branch the workflow advances, no work's: no landing record is asked and `exists` never applies. Checked out: waits, as above. Not grown from: `behind`. Absent: made |
+
+**Release** composes `review` → `rebase` → `check` → `merge` → `line` → `tidy` → the release plugin's steps: `review` before `rebase`,
+as in every other preset, so its Accept is carried across the composition (§2.4's rule) and a moved line runs the rebase and the check
+again without asking the person again.
+
+**Provenance.** A `merge` into a branch writes `landings.json`'s record or advance with who accepted (the person where a review's
+Accept stands before it in the run, else automatic) and the `integrate` provenance (the version's `integrate` fed its `ref`, with that
+node's `request`), as the `land` writes them, so the node route's request is admitted on the same reading
+(`IntegrationRequests.NodeJudgement`, `:128-158`; `RecordedAsync`, `:226-260`).
+
+## 16. Round 4: the conversion, over every retained run and every state (§5)
+
+**Every retained binding (Codex 2).** An ended run is not finished history: `NodeRunKeeping.Reopen` (`:96-100`) lifts its end when its
+chain comes back here, and the start keeps its binding (`WorkflowRunStart.cs:147`), so it would go on bound to a `land`. The conversion
+reads every binding the run files keep, open or ended, held or not, and converts each bound to a version holding a `land` as §5
+converts an open one, its `Ended` marker kept as it was. Where the save refuses that version's conversion, an ended run keeps its end
+and its records as history, its binding marked unconverted, and its reopening binds it afresh to the place's choice as a first start
+binds it: §5's recovery, taken when the run comes back.
+
+**Every state (Codex 3).** §5's table is keyed by `NodeStates.All` and gains two rows: `land` stopped, `rebase` and `merge` stopped,
+each with the stop's words, time and door, and `resolve` and the person's task not started, since a stop is the person's word for this
+work and a new binding keeps it (`NodeStates.Bound` leaves it out); `land` invalidated, `rebase` and `merge` not started, judged afresh
+on the converted binding. `land` unknown leaves the "judged afresh" row for the active one: an outcome not established is reconciled
+before any new attempt. Attempts move apart from states: every `land` attempt not settled, whatever its node's state (an active or
+unknown node's, a stopped or invalidated node's `Unreconciled`), is carried onto `merge` as unreconciled, and the merge's settling,
+run at the start before any pass, settles each by its delivery's phases before any converted node starts an attempt; nothing restarts
+over an effect not settled.
+
+**What h newly reads.** *The requests' invocation (N7).* Requests carry no invocation (`IntegrationStore.cs:64-67`), so a request open
+at the upgrade that settles after it would be found by no attempt: the attempt withdrawn (`IntegrateStart.cs:234, 269-284`), the new
+ask refused (`IntegrationRequests.cs:226-233, 405-414`), the node failed with its work on the line. The requests gain an `invocation`,
+added by the desktop store's own schema step at its next version; the conversion writes, for each `integrate` attempt waiting on the
+door (not settled with an outcome, its node active or unknown on it), the attempt's invocation onto the request `FindByKey(unit, tip)`
+returns, which is the request that attempt adopted before h. A request no waiting attempt reads keeps none and is never adopted after.
+*The binding's resolved `Land`* (`WorkflowRunBinding.cs:47`, resolved from the first `land` at `WorkflowRunBindings.cs:136-139`)
+becomes `Resolved`, each node's open options as the bind resolved them, keyed by node id; the conversion writes the `land`'s under the
+`merge` that keeps its id (its `pattern` as the target, its `key`) and its `plugin` under the plugin step its composition feeds, and a
+bind after h resolves every node that leaves options open.
+
+**Its place in the migration.** The conversion opens the desktop store (deliveries, requests, the journal), which `StoreNamesStep`
+copies before its own open upgrades it, and reads the workflow files `WorkflowsStep` and `PushStepsStep` write and the bindings
+`RunRebindsStep` writes; so §5's "reads nothing another step writes" is false. It stands last in its migration, after every step, and
+keeps its own copy of each store and file before it opens it to write.
+
+**The census, in three parts.** *Residue*: a home captured from the build before h (`fixtures/homes/pre-h/`, written by that build's
+own runs through every `land` state of `NodeStates.All` and every attempt state, with an ended run, a held one, a request open, a
+together operation landing, a branch delivery and a pull-request run) is converted, then every file and store row of it scanned: none
+but the workflows' kept versions and the salvage names the kind `land` or a digest of a version holding one; red on a planted record
+kind that keeps the bound digest and that the table omits, and on an ended run left unconverted. *States*: the table's rows over
+`NodeStates.All` and `AttemptStates.All`; red on a planted state. *Reads*: each run of the captured home passed once after the
+conversion, under h's readers: no node fails, withdraws, asks again or lapses where its record had an answer; red on N7's sequence with
+the invocation left unwritten, and on a `merge` whose resolved options are missing.
+
+## 17. Round 4: the selection census, over the comparers and the bound intent (§2.8)
+
+**What compiles away.** h deletes `NodeKinds.Land`, `LandNodes` with `LandingOf` and `BoundLand`, `WorkflowProcess.Landing` and
+`WorkflowRunBinding.Land`, so every reader of them is a compile error at h, found or not: the 42 comparisons of `NodeKinds.Land` in 23
+sources, and the readers of the bound intent (`WorkflowProcesses.cs:118-141`, `IntegrateChoice.cs:37`, `GraphGate.cs:117`,
+`WorkflowGate.cs:67-93, 356`, `TreeLandPlans.cs:91, 164`, `LandingPress.cs:130`, `OpinionGateLook.cs:237`,
+`WorkflowGraphRun.cs:180, 367-370`, `TogetherAccepts.cs:133`). Each goes:
+
+| Readers | Go to |
+|---|---|
+| `GraphRuns.AfterHanded`, `GraphStanding`, `WorkflowGraphRun` (the handed node and its defaults) | The data wires (§2.1): `RunSubject.Input`; the `merge`'s own options |
+| `GraphGate` (the handed node), `OpinionGateLook` (the automatic accept) | The `merge`s the reviewed work feeds, by wire; the protected order |
+| `WorkflowGate` (`JudgesHolds`, `LandsByRuntime`, `Land`, the pressed settings), `WorkflowProcesses` (no landing, the bound intent), `IntegrateCarry`, `IntegrateChoice` | `GraphMoves.Any`; the `merge` feeding each `integrate` its `ref`; a `merge`'s options with the binding's `Resolved` for that node |
+| `TreeLandPlans`, `LandingPress` | The `merge` the press names, waiting on its attempt (§2.6) |
+| `WorkflowNamed` (its kinds; a graph lands once) | A named graph holds a move; several `merge`s allowed |
+| `WorkflowPresets`, `WorkflowDefaults.DerivedLand`, `WorkflowWords`' graph from words, `HelpWorkflowRoutes.HoldsLanding` | Every move (`GraphMoves.All`), the composition's `merge` naming its method and target |
+| `IntegrateNode`, `PushNode` (`after` the `land`, their save rules) | Their `ref` inputs (§2.8) |
+| `WorkflowRunBindings` (the first `land`) | `Resolved`, every node (§16) |
+| `MigratedGraphs`, `PushedGraphs`, `WorkflowMigration` | Steps of the migration h's replaces, deleted with it; where h ships inside `nocompat1` they run before the conversion, which converts what they write |
+| `Kinds/Land/` | Deleted (§5) |
+
+**What would compile: a reader of the first move.** `GraphMoves` (`Workflows/Nodes/GraphMoves.cs`) is the one reader of moves by kind:
+`Feeding(node, port)`, the `IMoves` producer a wire names (through `NodeEvaluations.InputOf`); `All(graph)`, every move in the graph's
+order; `Any(graph)`. It has no first and no single. `MoveSelectionCensusTests`: `IMoves` and `NodeKinds.Merge` are named only by the
+kit's declarations and save rules, `GraphMoves` and the conversion; `GraphMoves.All` is called only by the chart, `WorkflowPresets`,
+`SetupPresets` and the save rules; no source outside the conversion writes `"land"` as a kind. Red on a planted
+`graph.Nodes.First(node => kinds.Of(node) is IMoves)`, on a planted `GraphMoves.All(graph)[0]` in a new reader, and on a planted
+`kind == "land"`. Beside it, over a release graph with two `merge`s, each reader asked its question answers for the `merge` its wire
+names.
+
+## 18. The reads answered (round 4)
+
+Each finding of round 3's reads, its answer and its section; the proofs are in §7's rows.
+
+**Codex, round 3.**
+
+- **1, a deleted request branch strands an unchanged retry** (`DeliveryStore.cs:307-311`). Answer: the release of §12 records a
+  delivered delivery's end once its removal's act closed done; `Start` takes the next generation from a proven end, the first row
+  unchanged, refused while the act is open or unknown; an Undo takes the end back. The `integrate` writes no outcome until its branch's
+  removal is proven. §12; proof f, and the sequence across a restart in h.
+- **2, ended runs reopen** (`NodeRunKeeping.cs:96-100`, `WorkflowRunStart.cs:147`). Answer: every retained binding converted, its
+  ended marker kept; a refused one rebound at its reopening. §16; proof h.
+- **3, stopped and invalidated unmapped** (`NodeContract.cs:145`). Answer: both mapped, Stop kept on `rebase` and `merge`; `unknown`
+  moved to the active row; every unsettled attempt carried onto `merge` whatever its node's state and settled before anything starts;
+  the table keyed by `NodeStates.All`. §16; proof h.
+- **4, deletes outside `JournaledDeletes`** (`GitRefActs.cs:86, 127`, the rename and its Undo, `TreeOpenings.cs:118`). Answer: a
+  branch's removal staged only with `BranchRemovals`' release, every remover through it. §12; proof f.
+- **The conversion census, its states and excluded runs.** Answer: §16's residue, states and reads parts.
+
+**Opus, round 3.**
+
+- **The records post-check, compound ids in backlog rows.** Row a's proof line (§7 a); §2.3's rule is row a's, stated as it is built.
+- **The conversion census.** §16: the residue over a home captured before h, the states, and the reads h newly makes (the requests'
+  invocation, the binding's `Resolved`).
+- **The selection census.** §17: the comparers and the bound intent deleted, so the compiler finds every reader; `GraphMoves` with no
+  first, and its source census.
+- **The delete census.** §12.
+- **N5, the hand-off holds the repository** (`ActReconciler.cs:53, 143-147, 164-177`). Answer: `TreeHandOffs`, a record read by tree
+  through the trees' holders, never the journal. §13; proof d.
+- **N6, nothing writes the together landing** (`TogetherAccepts.cs:116, 151`, `LandPerformer.cs:253-262`, `DeliveryReach.cs:47-55`).
+  Answer: `TogetherBinding` holding the head's `rebase` until `ready`; the head's `merge` writing the attempt before its first phase and
+  settling it by phase, the look's settling moved into it. §14; proof c and e.
+- **N7, requests open at the upgrade carry no invocation** (`IntegrationStore.cs:64-67`, `IntegrateStart.cs:234, 269-284`,
+  `IntegrationRequests.cs:226-233, 411-414`). Answer: the column, and the conversion writing each waiting attempt's invocation onto the
+  request it adopted. §16; proof h.
+- **N8, `merge` into a branch drops today's refusals** (`TreeBranches.cs:320-325, 362-390`). Answer: `LandingAdvance`'s facts read by
+  the target's kind, a checked-out branch waiting and a completed one failing. §15; proof e.
+- **N9, two askers to commit** (`TurnCarry.cs:26`). Answer: `CommitAskers`, one asker per tree, `TurnCarries` standing down where a
+  `rebase` reads the tree and while a hand-off holds it. §13; proof d and h.
+- **Not blocking.** `exists` against the release promotion: a fixed-name target asks no landing record (§15). Release's `behind` past
+  `review`: `review` before `rebase` (§15). The landing provenance a branch `merge` writes (§15). The conversion's open of the store
+  `StoreNamesStep` upgrades: last in its migration, its own copy kept (§16). `conflicted` when the branch's removal fails: the
+  `integrate` waits, said, with no outcome (§12).
+- **Rows.** The proofs found missing (a's compound rows; d's promotion and tree update beside a hand-off; e's together landing and a
+  branch checked out or completed; h's pre-h request, the binding's options and every comparer) are in §7.
+
+**What round 4 does not close by construction.**
+
+- The release's read of the open runs and the branch's removal are not one step across the workflow store and git: a run that binds a
+  branch between the read and the transaction finds it gone at its next pass and is held by its own problem, the commits on the
+  recovery ref and the Undo putting the branch back. The guard reads; it does not lock a run's binding, which nothing here designs.
+- The residue census reads what the build before h writes on the paths the capture drives; a record kind that build writes only on a
+  path the capture does not drive is in no part of it. The capture drives every `land` state, every attempt state and the record kinds
+  §5's census names, so it is as complete as those lists.
+- `MoveSelectionCensusTests` is a source census: a reader that finds a move through a helper of its own, naming neither `IMoves`, the
+  constant nor the word, passes it; the two-`merge` graph proves the readers that exist.
+- `TidyHolders` is read by the doors that read it today; a door that writes a session's tree without reading the holders keeps off
+  neither a session nor a hand-off, and round 4 adds no census of those doors.
