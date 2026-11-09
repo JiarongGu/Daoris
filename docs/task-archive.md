@@ -77,6 +77,9 @@ the per-task record. Entries preserve their original wording so the archive stay
 > **ROLESREVIEW2p** (modules): Outcome: a catalogue that cannot be read at an act's step (`RoleActsLedger.RunAct`) or a terminal's start (`RoleTerminals.StartAsync`) is `role-changed`, as admission says it, and withdraws no queued act, where it was `not-granted` for good and `unknown-role`.
 >
 > **ROLESREVIEW2q** (driver): Outcome: a cancel that meets a turn already ended is no error (`SupervisorRuns.StopUnwaited`); a subject whose every choice was spent is said once on its line as an unavailable supervisor is (`SupervisePass`); and the said-once memory is cut to the subjects still waiting at each look (`SupervisePass.Forget`).
+## CONVREV2a to 2g and COWORKREVIEW2a — the second cycle's defects of the conversations and co-working reviews (2026-11-09)
+
+> **CONVREV2a to 2g / COWORKREVIEW2a** (driver, service): Outcome: all eight fixed, each with a regression test. 2a, 2b, 2g (`d555a12fcd`): an ended limit move reads the line's limits rule and counts a move to another choice (`LimitRuled` takes no chat), ends its carried run's record, and a copy a start never ran is withdrawn (`ChatLimitCarry.Withdraw` public). COWORKREVIEW2a (`c2be8a0018`): a partner's desk refuses an Ask Daoris conversation as a lead. 2f: a plan the state's weight cap shortened is said with the lists' cut, `PlanBound` only past 50 steps. 2c: a failure or cancel between a chat record's open and its run concludes the record `failed` (`ChatStarts`). 2d: a stop or a taken-back word gives back its extras (`ChatMessage.Untaken`). 2e: the refused start's brief goes to Ask Daoris's replacement (`ChatPending.Unhanded`), and `HelpConversations.List` folds a `not-offered` link as a continuation. Choices: the replacement re-hands the brief and the row folds, rather than recomposing the brief; no published contract changed.
 
 ## TREEPOOL1ac — shared paths (2026-11-09)
 

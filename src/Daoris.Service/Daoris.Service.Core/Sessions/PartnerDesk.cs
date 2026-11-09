@@ -66,7 +66,6 @@ public sealed class PartnerDesk(SessionStore sessions, PartnerBox? box = null, b
                 lead.Opinion is { } reads ? $"Session `{lead.Id}` reads another session's work for second opinion `{reads}`, and cannot lead a piece"
                 : lead.Serves is { } serves ? $"Session `{lead.Id}` serves session `{serves}` itself, and cannot lead a piece"
                 : lead.Ask is { } intake ? $"Session `{lead.Id}` is the intake for ask `#{intake}`, and cannot lead a piece"
-                // As the helper's desk holds Ask Daoris: it works in no tree of its own to lead a piece from.
                 : SessionLedger.IsHelp(lead) ? $"Session `{lead.Id}` is Ask Daoris's conversation, and Ask Daoris cannot lead a piece"
                 : string.Equals(Trees.Normalize(lead.Tree), tree, StringComparison.Ordinal)
                     ? $"`{tree}` is session `{lead.Id}`'s own tree: a partner writes a clone of its own"

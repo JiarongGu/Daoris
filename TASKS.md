@@ -44,7 +44,6 @@ area document under `docs/areas/`. Each row's earlier full text is in git at `9f
 
 ## Driving
 
-- [ ] **COWORKREVIEW2a — the co-working review's second cycle** (service, driver): 1 defect open. → `docs/areas/co-working-and-messages.md`, Open
 - [ ] **DRVREVIEW10 — a park clears every word kept for the running session** (service; `Sessions/SessionAdvances.cs:184-187`, `clearSaid: true`): its comment states it as intended ("the answer it went on with is not this park's"), and a word is taken off the record once on the wire, so what a park clears is a word not yet taken. Not fixed: whether such a word is the person's unseen work to keep, or only the answer the run went on with, is the owner's reading; keeping them risks sending an answer twice.
 
 - [ ] **SESSWATCH1d — measured on the install** (the parent with the owner; after 1a and 1b have run about two weeks; design §9 row 4). Quiet episodes by door and state, the real harnesses' idle CPU, and a D200 note naming which cells allow an automatic end.
@@ -53,7 +52,6 @@ area document under `docs/areas/`. Each row's earlier full text is in git at `9f
 ## Conversations and context
 
 - [ ] **SESSCTX1 — Daoris manages a session's context** (driver, modules, web-shell; D189): **SESSCTX1a** resume and a fresh part measured on each door, in HELPMODE1a3's spend sitting; then **SESSCTX1e** *Go on fresh*, re-cut as a hand-over to the same agent and account (`daoris session hand-over`, ONEWAY1j), lifting `HandOver.SameAgent`'s refusal. → `docs/2026-10-20-session-context-design.md` §6; `docs/areas/conversations-and-context.md`, Open
-- [ ] **CONVREV2a to 2g — the conversations review's second cycle** (driver): 7 defects open. → `docs/areas/conversations-and-context.md`, Open
 - [ ] **RPC1g — a terminal's conversation is the running Daoris's** (driver host, modules; D238): left **g5**, seen on the install. → `docs/2026-11-06-terminal-conversation-design.md` §6
 
 ## Agents and harnesses

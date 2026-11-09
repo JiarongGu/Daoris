@@ -11,7 +11,6 @@ internal static class LimitRuled
     /// <summary>
     /// Whether the rules keep <paramref name="sessionId"/> on its own account: waiting there as a picked account's conversation does, the rule's
     /// act said and kept; null where the walk goes on as it always did. Its moves are read under <paramref name="line"/>, its line's key.
-    /// An ended conversation has no <paramref name="chat"/> to wait: the wake's look already holds it.
     /// </summary>
     public static StartedFrom? Holds(
         ChatContext context, LimitWaits waits, ConversationRules rules, PriorSession prior, string sessionId, string line, ITurnedChat? chat, string ranOn)
