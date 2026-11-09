@@ -215,6 +215,7 @@ public sealed class GitScheduler
 
         if (!joined) _ = DriveAsync(entry, run, s_timed.Value);
         Pump();
+        await QueuedAsync(entry, ct).ConfigureAwait(false);
         try
         {
             return (T)(await entry.Result.Task.WaitAsync(ct).ConfigureAwait(false))!;
@@ -224,6 +225,25 @@ public sealed class GitScheduler
             // Left once, here, where this asker's own wait ended: a registration on its token would be disposed by the wait's own end first.
             Leave(entry);
             throw;
+        }
+    }
+
+    /// <summary>An ask waiting for its place, said to its stage's queue as the start gate's wait is, until placed, dropped or left.</summary>
+    private async Task QueuedAsync(Entry entry, CancellationToken ct)
+    {
+        lock (_gate)
+        {
+            if (entry.Placed) return;
+        }
+
+        using var waiting = ProcessStarts.Queued();
+        if (waiting is null) return;
+        try
+        {
+            await entry.Go.Task.WaitAsync(ct).ConfigureAwait(false);
+        }
+        catch (OperationCanceledException)
+        {
         }
     }
 

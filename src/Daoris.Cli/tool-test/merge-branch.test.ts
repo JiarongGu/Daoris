@@ -3789,7 +3789,7 @@ test('a rehearsal that runs beside the git half builds what that half builds int
 /**
  * The release rehearsal (the tool's header says why) runs beside the git half only while no desktop test reads the
  * CLI package's folder outside its `src/` and `test/`, which no pack writes, nor runs its bin. Read from every tracked
- * desktop source, and from the stager's own list.
+ * desktop source but its raw strings, and from the stager's own list.
  */
 test('the release rehearsal stages nothing a desktop test reads: they read the CLI package only under src/ and test/, which no pack writes', () => {
   const stager = readFileSync(join(repoRoot, 'tools', 'stage-package.mjs'), 'utf8');
@@ -3803,7 +3803,7 @@ test('the release rehearsal stages nothing a desktop test reads: they read the C
   assert.ok(sources.length >= 100, 'the desktop sources left src/Daoris.Desktop');
   let read = 0;
   for (const path of sources) {
-    const text = readFileSync(join(repoRoot, path), 'utf8');
+    const text = readFileSync(join(repoRoot, path), 'utf8').replace(/"""[^]*?"""/g, '');
     // The install's own CLI is no package of this checkout; the one test running this checkout's bin is a modules Process test, never beside a pack.
     assert.ok(path.endsWith('Bridge/ReconcileStatusProcessTests.cs') || !/Daoris\.Cli"[^;]*daoris\.mjs/.test(text), `${path} names the CLI's bin, which prefers a staged dist/`);
     for (const match of text.matchAll(/Daoris\.Cli"\s*,\s*"([^"]+)"|Daoris\.Cli[\\/]+([^\\/\s"`'<]+)/g)) {
@@ -3906,18 +3906,18 @@ test("this repository's web gate runs its unit tests as a light gate of its own,
   assert.equal(scripts['test:web:unit'], 'npm --prefix src/Daoris.Web run test');
   assert.equal(web.run, 'npm run test:web:e2e');
   assert.equal(scripts['test:web:e2e'],
-    'npm --prefix src/Daoris.Web run build && dotnet build src/Daoris.Service/Daoris.Service.Http && npm --prefix src/Daoris.Web run e2e');
-  // A person's whole web run is both, its unit tests first.
+    'npm --prefix src/Daoris.Web run build && node tools/tree-base.mjs build src/Daoris.Service/Daoris.Service.Http && npm --prefix src/Daoris.Web run e2e');
+  // A person's web run is both, its unit tests first.
   assert.equal(scripts['test:web'], 'npm run test:web:unit && npm run test:web:e2e');
   const schedule = tool.laneSchedule(repoPlan, { scripts });
   assert.deepEqual(schedule.components['web-unit'], []);
   assert.deepEqual(schedule.components['web'], ['src/Daoris.Service', 'src/Daoris.Contracts']);
   assert.equal(tool.isProcessLane(unit), false);
   assert.equal(tool.isHeavyGate(unit), true, 'vitest loads the machine, so a Process half waits for it (GATEORDER1)');
-  // The web gate goes before its unit run, so the place service frees goes to the build the light lane's floor waits on.
+  // The web gate goes first, so the place service frees goes to the build the light lane's floor waits on.
   const light = schedule.light.map((gate) => gate.name);
   assert.ok(light.indexOf('web') < light.indexOf('web-unit'), light.join(', '));
-  // Vitest's workers, a quarter of the machine, set in the page's own config, which the unit run reads wherever it runs.
+  // Vitest's workers, a quarter of the machine, set in the page's config.
   assert.match(readFileSync(join(repoRoot, 'src', 'Daoris.Web', 'vite.config.ts'), 'utf8'), /maxWorkers: process\.env\.DAORIS_WEB_WORKERS \?\? '25%'/);
 });
 

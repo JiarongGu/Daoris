@@ -176,7 +176,7 @@ internal sealed class ChatLimitCarry(
         return started;
     }
 
-    private void Withdraw()
+    public void Withdraw()
     {
         if (selection.ProfileHome is { Length: > 0 } home && prior.Tree is { Length: > 0 } tree)
         {

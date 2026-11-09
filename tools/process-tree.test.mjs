@@ -2,7 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { census, installOf, said } from './process-tree.mjs';
 
-const install = 'C:\\Users\\someone\\AppData\\Local\\Daoris';
+const install = 'D:\\Programs\\Daoris';
 const row = (pid, ppid, name, created, line = name, path = null) => ({ pid, ppid, name, path, line, created });
 
 /** A machine: the launcher that started the application, its tree, and a gate run whose shell has gone. */

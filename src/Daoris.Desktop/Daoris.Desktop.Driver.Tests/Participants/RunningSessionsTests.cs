@@ -164,19 +164,20 @@ public sealed class RunningSessionsTests
     {
         long now = 0;
         var stages = new LookStages(clock: () => Volatile.Read(ref now));
-        using var held = new ManualResetEventSlim();
-        var starts = new ProcessStarts(1, info =>
+        var held = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var places = new GitScheduler(1, 1, 1) { Said = (_, _) => { } };
+        var ask = new GitRunAsk(Path.GetFullPath("_beside"), Path.GetFullPath("_beside"), GitWait.Read);
+        var holder = places.RunAsync(ask, async _ =>
         {
-            if (info.FileName == "holder") held.Wait(Poll.Patience);
-            return null;
-        });
-        var holder = starts.StartAsync(new ProcessStartInfo("holder") { UseShellExecute = false, CreateNoWindow = true }, ProcessPurpose.Agent, CancellationToken.None);
+            await held.Task.WaitAsync(Poll.Patience);
+            return 0;
+        }, CancellationToken.None);
         var waiting = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
         var waited = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
         var running = new RunningSessions();
         Func<CancellationToken, Task<IReadOnlyList<string>>> work = async _ =>
         {
-            var git = starts.StartAsync(new ProcessStartInfo("git") { UseShellExecute = false, CreateNoWindow = true }, ProcessPurpose.Git, StartClass.Background, CancellationToken.None);
+            var git = places.RunAsync(ask, _ => Task.FromResult(0), CancellationToken.None);
             waiting.SetResult();
             await git;
             waited.SetResult();
@@ -195,7 +196,7 @@ public sealed class RunningSessionsTests
                 });
                 await waiting.Task.WaitAsync(Poll.Patience);
                 Interlocked.Add(ref now, 2000);
-                held.Set();
+                held.SetResult();
                 await waited.Task.WaitAsync(Poll.Patience);
             });
         }

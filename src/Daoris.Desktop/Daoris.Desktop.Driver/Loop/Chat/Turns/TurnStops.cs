@@ -115,6 +115,7 @@ internal sealed class TurnStops(TurnState state, Func<Task> interrupt)
         // person's to put back in the composer, and it stays on the record for a later turn. Nor is Daoris's own word:
         // the stop takes it with the turn.
         withdrawn.RemoveAll(message => !message.Theirs);
+        foreach (var message in withdrawn) message.Untaken?.Invoke();
         return !cancelled && withdrawn.Count == 0 ? TurnStop.Nothing : new TurnStop(cancelled, withdrawn);
     }
 

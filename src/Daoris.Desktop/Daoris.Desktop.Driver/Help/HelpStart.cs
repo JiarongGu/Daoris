@@ -250,6 +250,12 @@ internal sealed class HelpStart(IExecutorWiring wiring) : IExecutor
     {
         var placed = await PlaceReplacementAsync(pending, config, ct).ConfigureAwait(false);
         if (placed.SessionId is not { } id) return new(null, placed.Message);
+        if (pending.Unhanded is { } unhanded)
+        {
+            wiring.Context.Handing[id] = unhanded;
+            pending.Unhanded = null;
+        }
+
         try
         {
             new HelpConversations(wiring.Context.Home).StartedFrom(id, pending.Current, HelpConversations.NotOffered);
