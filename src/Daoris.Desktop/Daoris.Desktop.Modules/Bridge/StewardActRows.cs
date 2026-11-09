@@ -174,7 +174,6 @@ public static class StewardWhy
     public const string AlreadyPaused = "already-paused";
     public const string NothingToPause = "nothing-to-pause";
     public const string NothingStaged = "nothing-staged";
-    public const string LandingPushes = "landing-pushes";
     public const string OwnerHeld = "owner-held";
 }
 

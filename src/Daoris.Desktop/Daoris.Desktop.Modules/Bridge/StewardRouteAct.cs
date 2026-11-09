@@ -27,7 +27,7 @@ public sealed class StewardRouteAct(
     public static StewardRouteAct Delete { get; } = new(StewardActNames.Delete, "QUEST_DELETE", ["quest"], "quest", OwnerKinds.Quest, StewardTargets.QuestExistsAsync);
 
     /// <summary>A session's tree landed on its line: <c>LAND_SESSION_TREE { id }</c> alone, never its branch, answers or follow, and never pushed.</summary>
-    public static StewardRouteAct Land { get; } = new(StewardActNames.Land, "LAND_SESSION_TREE", ["id"], "id", OwnerKinds.Session, StewardTargets.LandsWithoutPushingAsync);
+    public static StewardRouteAct Land { get; } = new(StewardActNames.Land, "LAND_SESSION_TREE", ["id"], "id", OwnerKinds.Session, StewardTargets.OwnTreeAsync);
 
     /// <summary>A session's tree cleaned: <c>DISCARD_SESSION_TREE { id }</c> unforced, so a tree holding work nobody landed stays.</summary>
     public static StewardRouteAct Clean { get; } = new(StewardActNames.Clean, "DISCARD_SESSION_TREE", ["id"], "id", OwnerKinds.Session, StewardTargets.OwnTreeAsync);
