@@ -287,6 +287,17 @@ public static class AgentsCommand
     internal static string AccountNamed(string home, string owner, string given) =>
         AccountNames.Resolve(HarnessSettings.Profiles(home, owner), AccountNames.Of(home, owner), given) ?? given.Trim();
 
+    /// <summary>Refused rather than made: a setting or a trust is not how an account comes to exist, and a sign-in alone makes one.</summary>
+    internal static void AccountHere(string home, string owner, string account)
+    {
+        var accounts = HarnessSettings.Profiles(home, owner);
+        if (!accounts.Contains(account, StringComparer.Ordinal))
+        {
+            throw new AgentWords($"`{owner}` has no account `{account}` on this machine — accounts that exist: "
+                + (accounts.Count > 0 ? string.Join(", ", accounts) : "(none)"));
+        }
+    }
+
     /// <summary>
     /// <c>settings &lt;agent&gt; [--account &lt;account&gt;] [model &lt;v&gt;] [effort &lt;v&gt; [--for &lt;model&gt;]]</c>: an
     /// account's own model and effort, in the tool's own settings file under that account. Given nothing to change it says what the file
@@ -320,13 +331,7 @@ public static class AgentsCommand
                 $"`{owner}` has no Daoris account named here — Daoris never works in the tool's own configuration home. "
                 + "Name one of Daoris's accounts with `--account <name>` (`daoris agent list` shows them), sign in to one with "
                 + $"`daoris agent login {owner} --new`, or set the model with the tool itself.");
-        // Refused rather than made: a setting is not how an account comes to exist.
-        var accounts = HarnessSettings.Profiles(home, owner);
-        if (!accounts.Contains(account, StringComparer.Ordinal))
-        {
-            throw new AgentWords($"`{owner}` has no account `{account}` on this machine — accounts that exist: "
-                + (accounts.Count > 0 ? string.Join(", ", accounts) : "(none)"));
-        }
+        AccountHere(home, owner, account);
 
         var where = Path.Combine(HarnessSettings.ProfileHome(home, owner, account), settingsFile);
         int Said(AgentSettingsRead held)

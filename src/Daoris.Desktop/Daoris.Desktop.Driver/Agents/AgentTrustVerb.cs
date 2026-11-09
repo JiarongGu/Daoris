@@ -33,6 +33,7 @@ internal static class AgentTrustVerb
         var owner = roster.Adapters.OwnerOfAgent(name).Value;
         if (owner != name) Say($"{AgentsCommand.Prefix}: `{name}` runs as `{owner}`'s accounts — this is one of them.");
         var profile = AgentsCommand.FlagValue(args, "--account") is { } named ? AgentsCommand.AccountNamed(home, owner, named) : null;
+        if (profile is not null) AgentsCommand.AccountHere(home, owner, profile);
         // With no account named, the set in its order: the order's accounts that are here, then the rest.
         IReadOnlyList<string> accounts = profile is not null ? [profile] : SetOf(path, home, owner);
         if (accounts.Count == 0)
