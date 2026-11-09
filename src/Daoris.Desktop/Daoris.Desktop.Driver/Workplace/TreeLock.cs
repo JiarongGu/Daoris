@@ -129,10 +129,26 @@ public sealed class TreeLock : IDisposable
 
     /// <summary>
     /// Hold the checkout for a session starting in it or one of its trees, beside any other start — or null while a replay or a writer
-    /// holds it.
+    /// holds it, or while an open hand-off reserves the tree <paramref name="into"/> names and the start does not carry its ask's key.
     /// </summary>
-    public static TreeLock? TryStarting(string home, string checkout) =>
-        TryOpen(PathOf(home, checkout), FileAccess.Read, FileShare.Read, by: null);
+    /// <remarks>The hand-off is read inside the hold, which its reservation takes alone, so of a start and a reservation each sees the other.</remarks>
+    public static TreeLock? TryStarting(string home, string checkout, StartIn into)
+    {
+        var held = TryOpen(PathOf(home, checkout), FileAccess.Read, FileShare.Read, by: null);
+        if (held is null || Reserved(home, into) is null) return held;
+        held.Dispose();
+        return null;
+    }
+
+    /// <summary>What a start <see cref="TryStarting"/> refused says: the hand-off that reserves its tree, or what holds the repository alone.</summary>
+    public static (string Why, Noted Line) StartHeld(string home, string checkout, StartIn into, string repository) =>
+        Reserved(home, into) is { } row
+            ? HeldWords.Reserved(repository, row.Run, Path.GetFileName(row.Tree), row.UntilSaid)
+            : HeldWords.Holding(repository, HolderOf(home, checkout));
+
+    /// <summary>The open hand-off that keeps <paramref name="into"/> from its tree, or null: none reserves it, or the start carries its ask's key.</summary>
+    internal static TreeHandOff? Reserved(string home, StartIn into) =>
+        into.Tree is { } tree && new TreeHandOffs(home).Of(tree) is { } row && !string.Equals(row.Ask, into.Key, StringComparison.Ordinal) ? row : null;
 
     /// <summary>
     /// Hold the checkout alone, to replay or tidy its trees — or null while a session is starting in it or one of its trees, or another
@@ -210,6 +226,7 @@ public sealed class TreeLock : IDisposable
         Promoting => $"`{repository}`'s line was being moved to what its integration promoted",
         Acting => $"a git act was changing `{repository}`'s checkout, or its record being reconciled (see the repository's page)",
         Landing => $"a landing was writing one of `{repository}`'s branches",
+        HeldBy.Reserving => $"a step was reserving one of `{repository}`'s trees for its resolver",
         _ => $"a session was starting in `{repository}`, or another of Daoris's writes held it",
     };
 

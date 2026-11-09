@@ -98,6 +98,12 @@ public sealed partial class CheckoutWritersCensusTests
         ["TreeDeliveries.cs"] = "a delivery's landing (LANDNODE1b2): its branch made, moved on from the tip judged, or its tree's own verified at the tip or replayed in place while that tree is detached, one transaction in its phase",
     };
 
+    /// <summary>Files that hold a checkout alone to write no git, only a record every start reads inside its hold: what each writes.</summary>
+    private static readonly Dictionary<string, string> ExcludesStarts = new(StringComparer.Ordinal)
+    {
+        ["TreeReserving.cs"] = "a hand-off's row (`TreeHandOffs`), written once the holders are read; the tree is prepared after the hold is let go",
+    };
+
     /// <summary>Writers of a checkout that start no git of Daoris's and so take no lock: how each is fenced instead.</summary>
     private static readonly Dictionary<string, string> Fenced = new(StringComparer.Ordinal)
     {
@@ -222,7 +228,9 @@ public sealed partial class CheckoutWritersCensusTests
         }
 
         var taking = sources.Where(each => each.Value.Contains("TreeLock.TryWriting(", StringComparison.Ordinal)).Select(each => each.Key);
-        Assert.Equal(HeldIn.Values.Concat(RefsHeldAlone.Keys).Distinct().Order(StringComparer.Ordinal), taking.Order(StringComparer.Ordinal));
+        Assert.Equal(
+            HeldIn.Values.Concat(RefsHeldAlone.Keys).Concat(ExcludesStarts.Keys).Distinct().Order(StringComparer.Ordinal), taking.Order(StringComparer.Ordinal));
+        Assert.All(ExcludesStarts.Keys, holder => Assert.DoesNotContain("GitAsync(", sources[holder], StringComparison.Ordinal));
         foreach (var (holder, what) in RefsHeldAlone)
         {
             Assert.False(string.IsNullOrWhiteSpace(what), holder);

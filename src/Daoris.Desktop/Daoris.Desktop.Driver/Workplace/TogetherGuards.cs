@@ -66,9 +66,10 @@ internal static class TogetherGuard
 internal sealed class TogetherLocks : IDisposable
 {
     private readonly IReadOnlyList<LandingHold> _holds;
-    private readonly TreeLock _trees;
 
-    private TogetherLocks(IReadOnlyList<LandingHold> holds, TreeLock trees) => (_holds, _trees) = (holds, trees);
+    private TogetherLocks(IReadOnlyList<LandingHold> holds, StartHold hold) => (_holds, Hold) = (holds, hold);
+
+    public StartHold Hold { get; }
 
     /// <summary>Take (1) for every tree, then (2); null with the words where one is held past <paramref name="within"/>.</summary>
     public static async Task<(TogetherLocks? Held, string? Refused)> TakeAsync(
@@ -90,7 +91,7 @@ internal sealed class TogetherLocks : IDisposable
 
             // The checkout's lock, named by any of its trees.
             var checkout = trees[0];
-            if (TreeLock.TryStarting(home, checkout) is not { } shared) return (null, HeldWords.Holding(repository, TreeLock.HolderOf(home, checkout)).Why);
+            if (StartHold.TryTake(home, checkout, StartIn.None) is not { } shared) return (null, TreeLock.StartHeld(home, checkout, StartIn.None, repository).Why);
             var held = new TogetherLocks([.. holds], shared);
             holds.Clear();
             return (held, null);
@@ -103,7 +104,7 @@ internal sealed class TogetherLocks : IDisposable
 
     public void Dispose()
     {
-        _trees.Dispose();
+        Hold.Lock.Dispose();
         foreach (var hold in _holds.Reverse()) hold.Dispose();
     }
 }

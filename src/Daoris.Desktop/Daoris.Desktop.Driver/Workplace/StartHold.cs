@@ -15,6 +15,7 @@ public sealed record StartHold(TreeLock Lock, string Checkout) : IStartHold
         if (!TreeLock.InFlow(Lock, tree ?? Checkout)) throw new InvalidOperationException($"{what} was asked outside the start's hold on `{tree ?? Checkout}`.");
     }
 
-    /// <summary>The start's hold on <paramref name="checkout"/>, or null while a replay or a writer holds it alone; its lock is the caller's to let go.</summary>
-    public static StartHold? TryTake(string home, string checkout) => TreeLock.TryStarting(home, checkout) is { } held ? new StartHold(held, checkout) : null;
+    /// <summary>The start's hold on <paramref name="checkout"/>, or null where <see cref="TreeLock.TryStarting"/> gives none; its lock is the caller's to let go.</summary>
+    public static StartHold? TryTake(string home, string checkout, StartIn into) =>
+        TreeLock.TryStarting(home, checkout, into) is { } held ? new StartHold(held, checkout) : null;
 }

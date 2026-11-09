@@ -18,7 +18,7 @@ public interface IReviewLandingWorld : IWorkplaceLandingWorld, IOpinionWorld
 }
 
 /// <summary>The world over this machine's service: the quests read once per instance, since a look builds one.</summary>
-public sealed class ServiceReviewLandingWorld(ServiceClient service) : IReviewLandingWorld
+public sealed class ServiceReviewLandingWorld(string home, ServiceClient service) : IReviewLandingWorld
 {
     private IReadOnlyList<QuestView>? _every;
     private IReadOnlyDictionary<string, QuestView>? _quests;
@@ -43,12 +43,13 @@ public sealed class ServiceReviewLandingWorld(ServiceClient service) : IReviewLa
     public async Task<IReadOnlySet<string>> InUseAsync(CancellationToken ct) =>
         (await service.ActiveSessionsAsync(ct).ConfigureAwait(false))
         .Select(session => session.Tree).OfType<string>().Where(tree => tree.Length > 0)
+        .Concat(new TreeHandOffs(home).Open().Select(row => row.Tree))
         .ToHashSet(StringComparer.OrdinalIgnoreCase);
 
-    public Task<IReadOnlyList<TreeHolder>> BesideAsync(CancellationToken ct) => BranchTidying.BesideAsync(service, ct);
+    public Task<IReadOnlyList<TreeHolder>> BesideAsync(CancellationToken ct) => BranchTidying.BesideAsync(home, service, ct);
 
     /// <summary>A new world over the same service, so nothing this one read is kept.</summary>
-    public IReviewLandingWorld Again() => new ServiceReviewLandingWorld(service);
+    public IReviewLandingWorld Again() => new ServiceReviewLandingWorld(home, service);
 
     // Said at the head of the session's line where it went on, under the landing's key.
     public async Task<SayAnswer?> SayAsync(string session, string text, string key, CancellationToken ct) =>

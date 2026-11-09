@@ -198,8 +198,9 @@ internal sealed class ChatStarts(IExecutorWiring wiring, ChatTold told, ChatConc
 
         var isolated = tree is null && Isolates(ownTree, config, repository);
         // In the checkout itself too, so no writer moves it between the commit read below and the record that holds it.
-        using var starting = TreeLock.TryStarting(home, root!);
-        if (starting is null) return new(null, HeldWords.Holding(known.Repository, TreeLock.HolderOf(home, root!)).Why);
+        var startIn = tree is not null ? StartIn.In(tree) : isolated ? StartIn.Fresh : StartIn.In(root!);
+        using var starting = TreeLock.TryStarting(home, root!, startIn);
+        if (starting is null) return new(null, TreeLock.StartHeld(home, root!, startIn, known.Repository).Why);
 
         TreeOpened? opened = null;
         if (isolated)

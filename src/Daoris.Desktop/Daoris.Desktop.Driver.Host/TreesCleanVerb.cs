@@ -23,7 +23,7 @@ internal static class TreesCleanVerb
 
         var repositories = taken.Repositories;
         // Every session of a quest judges its tree, a retry waiting on a limit among them.
-        var inUse = await BranchTidying.HeldTreesAsync(service, CancellationToken.None).ConfigureAwait(false);
+        var inUse = await BranchTidying.HeldTreesAsync(home, service, CancellationToken.None).ConfigureAwait(false);
 
         if (!ask.Yes)
         {
