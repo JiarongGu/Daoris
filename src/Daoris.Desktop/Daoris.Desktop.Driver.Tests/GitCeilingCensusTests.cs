@@ -34,8 +34,6 @@ public sealed class GitCeilingCensusTests
     {
         ["Install/ToolsChildrenTests.cs"] = "reads the start info GitStart makes for a tool record and starts nothing",
         ["Install/ToolsChildProcessTests.cs"] = "a stub git file answers --version through a node script, in a folder with no repository",
-        ["Loop/LookWaitTests.cs"] = "the start goes to a stand-in starter that starts nothing",
-        ["Participants/RunningSessionsTests.cs"] = "the start goes to a stand-in starter that starts nothing",
         ["Bridge/ReleaseStandIn.cs"] = "a stand-in process that asks git for --version and waits for a file, in no repository",
         ["Roles/HolderKeyStripTests.cs"] = "builds a start info to read its variables and starts nothing",
         ["Workplace/GitLaunchTests.cs"] = "its own census's pattern names a git start in a string and starts nothing",
