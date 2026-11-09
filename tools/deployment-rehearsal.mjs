@@ -75,10 +75,11 @@ import {
 } from './rehearsal-kit.mjs';
 // The install's layout, from the script that makes it — never a second spelling of it.
 import {
-  BUILD_MANIFEST, CLI_BIN, CLI_ENTRY, CLI_HOME, CLI_LAUNCHERS, CLI_PACKAGE, DRIVER_EXE, DRIVER_HOME, CONNECTOR_EXE, CONNECTOR_HOME, GIT_DOORS, HOME, HOST_EXE, HOST_HOME, KEPT_LOCALES,
+  BUILD_MANIFEST, CLI_BIN, CLI_ENTRY, CLI_HOME, CLI_LAUNCHERS, CLI_PACKAGE, DRIVER_HOME, CONNECTOR_EXE, CONNECTOR_HOME, GIT_DOORS, HOME, HOST_EXE, HOST_HOME, KEPT_LOCALES,
   LAUNCHER, MARKER, OFFERED_PLUGINS, OWN, PLUGIN_OFFERS, RESOURCES, RETIRED_BROWSER_EXE, RETIRED_IN_APP, RETIRED_LAUNCHERS, SHELL_EXE, SHELL_FILES,
   SHELL_HOME, STAGE, STAGED, SWAP_JOURNAL, promoteStage, unstage, writeManifest,
 } from './desktop-publish.mjs';
+import { driverProblems } from './desktop-publish/driver-files.mjs';
 
 // ---------------------------------------------------------------------------------------------
 // Everything above the divider runs; everything below it is asserted by
@@ -163,8 +164,7 @@ export function cliProblems(install, version) {
   for (const name of CLI_LAUNCHERS) {
     if (!existsSync(join(install, ...CLI_BIN, name))) problems.push(`${CLI_BIN.join('/')}/${name} is not there`);
   }
-  // The driver's host the launchers run.
-  if (!existsSync(join(install, ...DRIVER_HOME, DRIVER_EXE))) problems.push(`${DRIVER_HOME.join('/')}/${DRIVER_EXE} is not there`);
+  problems.push(...driverProblems(install));
   const pkg = join(install, ...CLI_PACKAGE);
   const where = CLI_PACKAGE.join('/');
   for (const file of [CLI_ENTRY.join('/'), 'dist/cli.js', 'package.json', 'canon/canon.json']) {

@@ -66,8 +66,8 @@ public sealed class ReviewGitCountTests(ITestOutputHelper output) : BranchTidyin
 
     // The starts that remain are the offer's own judgement of the tree's commits, one question of each; the two counts ask
     // again without origin's line where it is missing.
-    private const int SmallCeiling = 17;
-    private const int HeldCeiling = 18;
+    private const int SmallCeiling = 16;
+    private const int HeldCeiling = 17;
 
     private string Report(List<string> starts)
     {
