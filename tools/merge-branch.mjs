@@ -443,7 +443,7 @@ import {
 import { REACH } from './merge-branch/reach-table.mjs';
 import { mergeByBase, mergeByRows, rowsRefused } from './merge-branch/backlog-merge.mjs';
 import { holdBacklog } from './merge-branch/backlog-held.mjs';
-import { holdingLock, lockText, putComplete, removeWhileSame } from './merge-branch/locks.mjs';
+import { holdingLock, lockText, putComplete, removeWhileSame, takeLock } from './merge-branch/locks.mjs';
 import { diffPaths, isInside, zPaths } from './merge-branch/paths.mjs';
 import { stepTrees } from './merge-branch/step-trees.mjs';
 import { censusCovers, contractsGates, coverNote, pageScripts, settleCovered, startContractsStep } from './merge-branch/ci-steps.mjs';
@@ -5869,23 +5869,22 @@ function readCiWatch(home, alive = pidAlive) {
 /**
  * `--ci --watch`: the watch the parent leaves running. One per main checkout: a second says the first runs and ends, 0,
  * so starting it again is harmless; one a dead process left is taken over. It gates main's tip as it moves (`watchCi`), each run
- * `gateCi`'s, and never touches the main checkout's tree or a process it did not start. It ends on `--ci --stop` or a Ctrl+C, every finished verdict kept.
+ * `gateCi`'s, and never touches the main checkout's tree or a process it did not start. It ends on `--ci --stop` or a Ctrl+C.
  */
 async function ciWatchVerb(root, options) {
   const home = verdictsHome(root);
   const file = join(home, CI_WATCH);
   const stopFile = join(home, CI_STOP);
   mkdirSync(dirname(file), { recursive: true });
-  let taken = false;
-  for (let attempt = 0; !taken && attempt < 3; attempt += 1) {
-    taken = putComplete(file, `${JSON.stringify({ pid: process.pid, at: nowIso() })}\n`);
-    if (taken) break;
-    const held = readCiWatch(home);
-    if (held?.running) {
-      console.log(`merge-branch: a CI watch runs here already (pid ${held.pid}, since ${when(held.at)}): this one has nothing to do`);
-      return 0;
-    }
-    rmSync(file, { force: true });
+  const mine = `${JSON.stringify({ pid: process.pid, at: nowIso() })}
+`;
+  const { taken, held } = takeLock(file, mine, (text) => {
+    try { return pidAlive(Number(JSON.parse(text)?.pid)); } catch { return false; }
+  });
+  if (held !== null) {
+    const { pid, at } = JSON.parse(held);
+    console.log(`merge-branch: a CI watch runs here already (pid ${pid}, since ${when(String(at ?? ''))}): this one has nothing to do`);
+    return 0;
   }
   if (!taken) throw new Refusal(`${CI_WATCH} could not be taken: another watch took it at the same moment`);
   rmSync(stopFile, { force: true });

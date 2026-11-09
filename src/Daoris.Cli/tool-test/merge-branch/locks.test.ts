@@ -13,6 +13,7 @@ const locks = await import(new URL('../../../../tools/merge-branch/locks.mjs', i
   putComplete: (path: string, text: string) => boolean;
   lockText: (path: string) => string | null;
   removeWhileSame: (path: string, text: string | null) => boolean;
+  takeLock: (path: string, text: string, live: (held: string) => boolean, attempts?: number) => { taken: boolean; held: string | null };
 };
 
 const SINCE = Date.parse('2026-11-09T09:00:00Z');
@@ -85,6 +86,35 @@ test('removeWhileSame leaves a lock that reads differently, and one that is gone
     assert.equal(locks.removeWhileSame(lock, 'one'), true);
     assert.equal(existsSync(lock), false);
     assert.equal(locks.removeWhileSame(lock, locks.lockText(lock)), false, 'a lock that was not there is no lock to remove');
+  } finally {
+    fx.cleanup();
+  }
+});
+
+test('takeLock takes a lock no run holds, and leaves the one another run took over while this run judged the dead one', () => {
+  const fx = makeFixture('merge-branch-take-lock');
+  try {
+    const lock = join(fx.root, 'watch.lock');
+    assert.deepEqual(locks.takeLock(lock, 'mine', () => true), { taken: true, held: null });
+    assert.deepEqual(locks.takeLock(lock, 'second', (held) => held === 'mine'), { taken: false, held: 'mine' }, 'a live holder is left');
+    assert.equal(readFileSync(lock, 'utf8'), 'mine');
+
+    writeFileSync(lock, 'dead');
+    const judged: string[] = [];
+    assert.deepEqual(locks.takeLock(lock, 'third', (held) => { judged.push(held); return held !== 'dead'; }), { taken: true, held: null }, 'a dead lock is taken over');
+    assert.equal(readFileSync(lock, 'utf8'), 'third');
+    assert.deepEqual(judged, ['dead']);
+
+    // A second run takes the dead lock over while this one is still judging it: its lock stands.
+    writeFileSync(lock, 'dead');
+    const result = locks.takeLock(lock, 'late', (held) => {
+      if (held !== 'dead') return true;
+      rmSync(lock, { force: true });
+      writeFileSync(lock, 'other');
+      return false;
+    });
+    assert.deepEqual(result, { taken: false, held: 'other' });
+    assert.equal(readFileSync(lock, 'utf8'), 'other');
   } finally {
     fx.cleanup();
   }

@@ -50,3 +50,17 @@ export function putComplete(path, text) {
     rmSync(beside, { force: true });
   }
 }
+
+/**
+ * `text` put in place as the lock at `path`, taking over one `live` (given the other run's text) says no run holds; a lock another run
+ * put in place meanwhile is left. `held` is the text of a live run's lock, null where no run holds one or the attempts ran out.
+ */
+export function takeLock(path, text, live, attempts = 3) {
+  for (let attempt = 0; attempt < attempts; attempt += 1) {
+    if (putComplete(path, text)) return { taken: true, held: null };
+    const seen = lockText(path);
+    if (seen !== null && live(seen)) return { taken: false, held: seen };
+    removeWhileSame(path, seen);
+  }
+  return { taken: false, held: null };
+}
