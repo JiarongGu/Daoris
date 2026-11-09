@@ -58,6 +58,7 @@ public static class PartEnds
         ["ended.timeout"] = "stopped-daoris",
         ["ended.gone"] = "stopped-daoris",
         ["ended.source-reopened"] = "stopped-daoris",
+        ["ended.resolve-ask"] = "stopped-daoris",
         ["ended.background-cut"] = "stopped-daoris",
         ["ended.went-on"] = "stopped-daoris",
         ["ended.went-on-exit"] = "stopped-daoris",
