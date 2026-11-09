@@ -12,16 +12,7 @@ namespace Daoris.Desktop.Driver.Tests;
 [Trait(Category.Parallel, Category.Git)]
 public sealed class GitReadsStampTests : LandedFixture
 {
-    private static IDisposable Settled()
-    {
-        VolumeClock.Seam.Value = _ => DateTime.UtcNow + TimeSpan.FromMinutes(1);
-        return new Ended(() => VolumeClock.Seam.Value = null);
-    }
-
-    private sealed class Ended(Action end) : IDisposable
-    {
-        public void Dispose() => end();
-    }
+    private static IDisposable Settled() => SettledClock.Ahead();
 
     [Fact]
     public async Task A_replacement_added_before_a_graph_read_and_removed_after_it_is_refused_by_the_fence()
