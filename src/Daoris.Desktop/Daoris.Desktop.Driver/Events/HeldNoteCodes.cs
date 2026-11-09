@@ -64,6 +64,10 @@ public static class HeldNoteCodes
     public static readonly NoteCode HeldTidying = new("held.tidying", ["repository"]);
     public static readonly NoteCode HeldPromoting = new("held.promoting", ["repository"]);
     public static readonly NoteCode HeldWriting = new("held.writing", ["repository"]);
+    public static readonly NoteCode HeldReserving = new("held.reserving", ["repository"]);
+
+    // A step's hand-off reserves the very tree the start would run in, until its step lets it go.
+    public static readonly NoteCode HeldReserved = new("held.reserved", ["run", "tree", "repository", "until"]);
     public static readonly NoteCode HeldAnswering = new("held.answering", ["session"]);
     public static readonly NoteCode HeldConfigUnread = new("held.config-unread", []);
     public static readonly NoteCode HeldLead = new("held.lead", []);

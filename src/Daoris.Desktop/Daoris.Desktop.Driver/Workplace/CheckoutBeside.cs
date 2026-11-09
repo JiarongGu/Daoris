@@ -4,7 +4,11 @@ using static Daoris.Driver.TreeGit;
 namespace Daoris.Driver;
 
 /// <summary>A tree a session holds as the ledger says (<see cref="BranchTidying.HoldersAsync"/>), with the session that holds it.</summary>
-public sealed record TreeHolder(string Tree, string Session);
+public sealed record TreeHolder(string Tree, string Session)
+{
+    /// <summary>The step whose hand-off reserves the tree, as its words name it (run <c>r-12</c>'s <c>resolve</c>); null for a session's hold.</summary>
+    public string? Step { get; init; }
+}
 
 /// <summary>
 /// Whether a writer of a checkout waits for a session working there: the line's pull and a

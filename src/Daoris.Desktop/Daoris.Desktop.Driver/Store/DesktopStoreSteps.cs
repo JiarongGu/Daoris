@@ -726,5 +726,30 @@ internal static class DesktopStoreSteps
             ALTER TABLE tree_claims ADD COLUMN expect_branch TEXT NOT NULL DEFAULT '';
             ALTER TABLE tree_claims ADD COLUMN expect_line TEXT NOT NULL DEFAULT '';
             """)),
+
+        // A tree handed to a step's resolver, Workflows': one open row per tree, written before anything is written in it and closed by its
+        // restoration, so a hand-off outlives a turn and a restart where a lock's handle would not. A new table an older build never opens.
+        new(DesktopStore.HandOffsVersion, PolicyWriter, write => write.Execute(
+            """
+            CREATE TABLE tree_hand_offs (
+              id         INTEGER PRIMARY KEY AUTOINCREMENT,
+              tree       TEXT NOT NULL,
+              repository TEXT NOT NULL,
+              branch     TEXT NOT NULL,
+              tip        TEXT NOT NULL,
+              run        TEXT NOT NULL,
+              node       TEXT NOT NULL,
+              attempt    INTEGER NOT NULL,
+              stop       TEXT NOT NULL,
+              resolver   TEXT NOT NULL,
+              ask        TEXT NOT NULL,
+              session    TEXT,
+              phase      TEXT NOT NULL,
+              until      TEXT NOT NULL,
+              opened     TEXT NOT NULL,
+              closed     TEXT
+            );
+            CREATE UNIQUE INDEX tree_hand_offs_open ON tree_hand_offs (tree) WHERE closed IS NULL;
+            """)),
     ];
 }

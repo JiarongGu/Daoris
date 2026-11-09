@@ -8,6 +8,9 @@ the per-task record. Entries preserve their original wording so the archive stay
 ## SUPERVISOR2 rows e and g — a leave's record, the verb's allow print, the held copy, the files subject (2026-11-10)
 
 > **SUPERVISOR2e, g** (driver, modules, web; `docs/2026-11-08-supervisor-kinds-design.md` §5.1, §6.4): Outcome: a leave of an allow, a widening, a steward's act or a held act is kept as an allow decision `left` with its bound and reasons (`SupervisorAllowed.Bound`, read back by `SESSION_SUPERVISOR`'s `allows`, said by the card); the verb prints an allow or a held act with the facts its kind's row composes (the listing's `facts`, `SupervisorFactParts`) and decides a `files` subject named by its repository; the files stage holds a `copy` an `ask` holds or a `deny` matches (`TreeCopyPermit`, `started.local-held`, `started.local-denied`), and a held `share` is pinned by a stage test.
+## The git-and-remotes code review, third cycle (2026-11-10)
+
+> **Quest #a029250468bd** (driver; the git scheduler, library, object reads and stamp): Outcome: six defects fixed, each with a regression test seen to fail first, and thirteen filed as GITREV3a to GITREV3m with their evidence. An unreadable `packed-refs` is unknown (a replacement can stand, a ref is git's, the stamp carries a line equal to no other) where it was read as holding nothing; a missing object name longer than a header is missing and no longer a git failure; a kept tracked list is not answered once a replacement stands; an include opening a file that begins with a byte-order mark is named; every question of a start waits for the native-fault guard's first reading; a listing too heavy to keep answers the file its folder holds, not an absent one.
 
 ## Two library tests that fail beside others (2026-11-09)
 

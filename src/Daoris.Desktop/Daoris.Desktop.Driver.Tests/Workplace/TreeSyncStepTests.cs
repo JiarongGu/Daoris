@@ -63,7 +63,7 @@ public sealed class TreeSyncStepTests : TreeSyncFixture
         var stepTip = await RevAsync(root, step.Branch);
         var line = await RevAsync(root, "main");
 
-        using (var starting = TreeLock.TryStarting(Home, root))
+        using (var starting = TreeLock.TryStarting(Home, root, StartIn.Fresh))
         {
             Assert.NotNull(starting);
             var held = await trees.SyncAsync(Repositories(root), Nobody, fetch: true);

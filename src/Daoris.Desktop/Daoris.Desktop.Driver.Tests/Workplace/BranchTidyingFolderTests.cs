@@ -324,7 +324,7 @@ public sealed class BranchTidyingFolderTests : BranchTidyingFixture
             BeforeDeleting = async _ =>
             {
                 await closing.CancelAsync();
-                using var starting = TreeLock.TryStarting(_home, root);
+                using var starting = TreeLock.TryStarting(_home, root, StartIn.Fresh);
                 heldThen = starting is null;
             },
         };
