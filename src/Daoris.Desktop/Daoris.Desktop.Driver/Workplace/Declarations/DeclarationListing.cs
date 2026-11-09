@@ -65,7 +65,6 @@ internal static class DeclarationListing
         }
 
         foreach (var (key, value, weight) in admitted) DeclarationBound.Indexes.Keep(key, value, weight);
-        // A listing too heavy to keep, or let go beside this call, is the read's own: what the walk reached is the answer.
         return Kept(commit, folders) ?? new Listed(reached ? entries : null, null, Unproven: false);
     }
 

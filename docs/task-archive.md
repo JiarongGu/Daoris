@@ -5,6 +5,10 @@ the per-task record. Entries preserve their original wording so the archive stay
 
 ---
 
+## The git-and-remotes code review, third cycle (2026-11-10)
+
+> **Quest #a029250468bd** (driver; the git scheduler, library, object reads and stamp): Outcome: six defects fixed, each with a regression test seen to fail first, and thirteen filed as GITREV3a to GITREV3m with their evidence. An unreadable `packed-refs` is unknown (a replacement can stand, a ref is git's, the stamp carries a line equal to no other) where it was read as holding nothing; a missing object name longer than a header is missing and no longer a git failure; a kept tracked list is not answered once a replacement stands; an include opening a file that begins with a byte-order mark is named; every question of a start waits for the native-fault guard's first reading; a listing too heavy to keep answers the file its folder holds, not an absent one.
+
 ## Two library tests that fail beside others (2026-11-09)
 
 > **Quest #05197f6c9c71** (driver; the git library): Outcome: the formats probe counts its reads for each common directory (`GitLibraryFormats.ReadsOf`), so the default-repository test asserts its own reads; the hold test counts no reads over a loaded minute (one answered before git begins, one beside each command) and names git's stderr and the stand-in's asks; and the exit 128 the load exposed (`gc` after `repack -a` renames a pack over the same-named one the library has mapped) is fixed in the admission: a question asked while git rewrites the packs is git's (`GitLibraryHousekeeping`, D252). Ten runs of both classes beside `StructureTests` passed.

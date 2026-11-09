@@ -18,17 +18,7 @@ public sealed class GitPackedRefsUnreadTests : IDisposable
         File.WriteAllText(Path.Combine(_root, ".git", "HEAD"), "ref: refs/heads/main\n");
     }
 
-    public void Dispose()
-    {
-        try
-        {
-            Directory.Delete(_root, recursive: true);
-        }
-        catch (Exception error) when (error is IOException or UnauthorizedAccessException)
-        {
-            // The run's scratch is cleared with the fixtures.
-        }
-    }
+    public void Dispose() => GitSeed.Discard(_root);
 
     private static string? NoSystem(string name) => name == "GIT_CONFIG_NOSYSTEM" ? "1" : null;
 

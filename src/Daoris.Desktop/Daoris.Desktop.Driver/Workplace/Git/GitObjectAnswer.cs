@@ -19,7 +19,6 @@ internal sealed record GitObjectAnswer(bool Missing, string Type, long Size, int
     /// <summary>How long a found object's header may be: an id of 64, the longest type and a size, with room to spare. A missing one echoes its question beside it.</summary>
     internal const int HeaderBound = 128;
 
-    /// <summary>The room of an answer to <paramref name="question"/> before its object's bytes: the header, and the question a missing answer repeats.</summary>
     internal static int HeaderRoom(string question) => HeaderBound + Encoding.UTF8.GetByteCount(question);
 
     /// <summary>The answer at <paramref name="at"/> in the first <paramref name="count"/> of <paramref name="bytes"/>; null where git gives none such.</summary>
