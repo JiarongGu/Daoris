@@ -5,6 +5,12 @@ the per-task record. Entries preserve their original wording so the archive stay
 
 ---
 
+## TREEPOOL1z, the git oracle and `core.ignorecase` (2026-11-09)
+
+> **TREEPOOL1z** (driver): Outcome: `GitPatternOracleTests` runs git itself (`git check-ignore --no-index`, `core.ignorecase` both ways, each top asked again upper-cased) over the translated patterns of a sample (the first form's corpus at every twentieth generated path with the named words and the excluded parent, and this repository's rule file in form 2) and agrees with `GitPattern` top by top; a kept first-form entry now folds case under `core.ignorecase` as the translated ones do (`RuleFileIgnoreCaseTests`, seen to fail first at `BIN/`).
+
+---
+
 ## CODESTRREV2a to 2e — the code-structure review's second cycle, merge-tool defects fixed (2026-11-09)
 
 > **CODESTRREV2a** (tools): Outcome: the verdict store's lock (`holdingLock`, now `tools/merge-branch/locks.mjs` over `withRunLock`) is taken over only once its run is gone or it is 30 seconds old and is let go only while it still says what its run wrote, so a live holder is no longer robbed after 10 seconds; the choice rejected a wait-then-steal bound (the defect itself) for a longer wait on a hung run, which ends at the stale bound. Test: `tool-test/merge-branch/locks.test.ts`.

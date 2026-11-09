@@ -164,7 +164,7 @@ public sealed class RuleFileFirstFormCorpusTests
 
     private static IEnumerable<FirstFormClass> Classes(string path) => RuleFileFirstForm.Words(path).Select(RuleFileFirstForm.ClassOf);
 
-    private static IEnumerable<string> Generated()
+    internal static IEnumerable<string> Generated()
     {
         IEnumerable<string> paths = Tokens;
         IEnumerable<string> all = Tokens;
