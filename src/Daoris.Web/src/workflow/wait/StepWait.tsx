@@ -1,7 +1,7 @@
 import type { TFunction } from 'i18next';
 import { useTranslation } from 'react-i18next';
-import { Inline } from '../design/ui';
-import type { RunStep, RunWait } from './run';
+import { Inline } from '../../design/ui';
+import type { RunStep, RunWait } from '../run';
 
 // What a run's step waits on, said under it: its kind's declared wait (`NODE_KINDS`' `waits`) in the reader's words, with the facts the
 // record names and, where it has them, since when and until when. The driver says which wait it is; the words are the page's.

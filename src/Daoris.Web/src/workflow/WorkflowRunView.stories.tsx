@@ -4,7 +4,7 @@ import { chinese } from '../design/storyLanguage';
 import { Button } from '../design/ui';
 import {
   answerOf, CHAT_RUN, CHECK_UNKNOWN_HELD, checkRun, FAILED, GO_AHEAD_REFUSAL, GRAPH_RUN, GRAPH_RUN_ADDED_LOOK, GRAPH_RUN_DECIDED, GRAPH_RUN_GO_AHEAD, GRAPH_RUN_GO_AHEAD_KEPT,
-  GRAPH_RUN_REQUESTS, GRAPH_RUN_REVIEW, GRAPH_RUN_UNJUDGED,
+  GRAPH_RUN_REQUESTS, GRAPH_RUN_RESOLVING, GRAPH_RUN_REVIEW, GRAPH_RUN_UNJUDGED,
   HELD_FOR_OPINION, IN_REVIEW, LANDED, MERGED, OPINION_DISPUTED, OPINION_SETTLED, PULL_REQUEST_OPEN, SEVERAL, WAITING_ON_YOU, WORKING,
 } from './runFixtures';
 import type { NodeWordAsk } from './run';
@@ -286,6 +286,17 @@ export const GraphRunDecidedAt39remDark: Story = { ...GraphRunDecided, decorator
 export const GraphRunDecidedAt39remChinese: Story = { ...GraphRunDecided, decorators: [rem(39), chinese] };
 export const GraphRunDecidedAt25rem: Story = { ...GraphRunDecided, decorators: [rem(25)] };
 export const GraphRunDecidedAt25remChineseDark: Story = { ...GraphRunDecided, decorators: [rem(25), chinese, dark] };
+
+/**
+ * **A Git step's wait**: the rebase stopped `conflicted`, and the resolution says under it whom it waits on, the files, its try and its bound.
+ * At 80, 39 and 25rem, in English and 中文, light and dark.
+ */
+export const GraphRunResolving: Story = { args: { answer: answerOf(GRAPH_RUN_RESOLVING), here: null }, decorators: [rem(80)] };
+export const GraphRunResolvingChineseDark: Story = { ...GraphRunResolving, decorators: [rem(80), chinese, dark] };
+export const GraphRunResolvingAt39remDark: Story = { ...GraphRunResolving, decorators: [rem(39), dark] };
+export const GraphRunResolvingAt39remChinese: Story = { ...GraphRunResolving, decorators: [rem(39), chinese] };
+export const GraphRunResolvingAt25rem: Story = { ...GraphRunResolving, decorators: [rem(25)] };
+export const GraphRunResolvingAt25remChineseDark: Story = { ...GraphRunResolving, decorators: [rem(25), chinese, dark] };
 
 /**
  * **A review's changes**: the review waiting on your Accept offers *Ask for changes…* beside its stop, which asks for your words

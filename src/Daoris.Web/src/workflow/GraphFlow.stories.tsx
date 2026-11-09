@@ -4,7 +4,7 @@ import type { Meta, StoryObj } from '@storybook/react-vite';
 import { atWidths, inDark, inLight } from '../design/flowFrames';
 import { chinese } from '../design/storyLanguage';
 import { FlowChart } from './chart/FlowChart';
-import { MERGE_GRAPH, RELEASE_GRAPH, TWO_OUTCOMES_GRAPH } from './graphFixtures';
+import { INTEGRATED_GIT_GRAPH, MERGE_GRAPH, RELEASE_GRAPH, TWO_OUTCOMES_GRAPH } from './graphFixtures';
 import { drawnFromJson, graphFlow } from './graphFlow';
 
 // One drawing of a workflow graph, through the chart's components: the shipped release
@@ -56,6 +56,12 @@ export const MergeChinese: Story = { args: { graph: MERGE_GRAPH }, decorators: [
 export const TwoOutcomes: Story = { args: { graph: TWO_OUTCOMES_GRAPH }, decorators: light };
 export const TwoOutcomesChinese: Story = { args: { graph: TWO_OUTCOMES_GRAPH }, decorators: [chinese, atWidths(REM), inLight] };
 export const TwoOutcomesDark: Story = { args: { graph: TWO_OUTCOMES_GRAPH }, decorators: [atWidths(REM), inDark] };
+
+/** **The Git kinds composed** (*Integrated*): each way back a return leaving its outcome's port, the failures to your task. */
+export const IntegratedGit: Story = { args: { graph: INTEGRATED_GIT_GRAPH }, decorators: light };
+export const IntegratedGitDark: Story = { args: { graph: INTEGRATED_GIT_GRAPH }, decorators: [atWidths(REM), inDark] };
+export const IntegratedGitChinese: Story = { args: { graph: INTEGRATED_GIT_GRAPH }, decorators: [chinese, atWidths(REM), inLight] };
+export const IntegratedGitChineseDark: Story = { args: { graph: INTEGRATED_GIT_GRAPH }, decorators: [chinese, atWidths(REM), inDark] };
 
 /** **A step selected**: the data wires of the step that records the release are drawn, dotted, outside the nodes at the right; nothing moves. */
 export const ReleaseData: Story = { args: { selected: 'release' }, decorators: light };

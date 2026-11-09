@@ -56,6 +56,10 @@ export type PaletteKind = {
   offered?: string;
   /** The outcomes a step of the kind is reached with, which an added step declares (a monitor's). Absent or empty: none. */
   outcomes?: string[];
+  inputs?: Record<string, string>;
+  outputs?: Record<string, string>;
+  /** Each output carried on some outcomes alone, with them (a rebase's `commit` on `ready`); absent from a driver before it. */
+  outputsOn?: Record<string, string[]>;
 };
 
 /** A wire kind: whether it makes its target eligible, and the kinds that may leave it (null: any node). */

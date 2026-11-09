@@ -1,8 +1,8 @@
 import { render, screen } from '@testing-library/react';
 import { afterEach, describe, expect, it } from 'vitest';
-import { NODE_KINDS } from '../data/generated/service';
-import i18n from '../locales/i18n';
-import type { RunStep } from './run';
+import { NODE_KINDS } from '../../data/generated/service';
+import i18n from '../../locales/i18n';
+import type { RunStep } from '../run';
 import { StepWait, waitSaid } from './StepWait';
 
 // A step's wait is said under it in the reader's language, from its kind's declared waits (`workflow.wait.<kind>.<code>`) and the facts the

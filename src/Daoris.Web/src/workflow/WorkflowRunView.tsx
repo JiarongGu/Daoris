@@ -15,7 +15,7 @@ import { whySaid } from './routeSaid';
 import { addedSaid, chatChecksSaid, graphSaid, noRunSaid, placeSaid, requestSaid, runSaid, stateSaid, stepWord } from './runSaid';
 import { stepTitle } from './said';
 import { CheckHeld } from './CheckHeld';
-import { StepWait } from './StepWait';
+import { StepWait } from './wait/StepWait';
 import { type RunMarks, WorkflowChart } from './WorkflowChart';
 import { WorkflowHold } from './WorkflowHold';
 
