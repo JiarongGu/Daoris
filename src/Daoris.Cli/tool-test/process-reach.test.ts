@@ -322,6 +322,16 @@ test('one module changed reaches its classes and the planted class with no reach
   assert.deepEqual(short(reached.classes), ['AlphaTests', 'BetaTests'], "a test project's file reaches the classes that read it, read as every class is");
 });
 
+test("the census read from a commit finds the service half's classes as the working tree's does", () => {
+  const gate = (JSON.parse(readFileSync(join(repoRoot, 'daoris.gates.json'), 'utf8')) as { gates: { name: string; run: string }[] }).gates
+    .find((each) => each.name === 'service-process')!;
+  const half = reach.halfOf(gate.run)!;
+  const names = (source: { files: string[]; read: (file: string) => string }) => reach.censusOf(half, source.files, source.read).classes.map((each) => each.full);
+  const now = names(reach.repository(repoRoot));
+  assert.ok(now.length > 0, 'the working tree reads the half');
+  assert.deepEqual(names(reach.repository(repoRoot, 'HEAD')), now, "a commit's census reads every source the half's project does");
+});
+
 test("this repository's census: every class carrying the Process trait is read into one half, each declared half reads, and no hand-written reach lacks its reason", () => {
   const { files, read } = reach.repository(repoRoot);
   const gates = (JSON.parse(readFileSync(join(repoRoot, 'daoris.gates.json'), 'utf8')) as { gates: { name: string; run: string }[] }).gates

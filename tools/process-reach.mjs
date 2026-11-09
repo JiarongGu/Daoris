@@ -68,8 +68,9 @@ export { halfOf, withSettings, referencedProjects, areaOf, censusOf, pathReach, 
 // ---------------------------------------------------------------------------------------------------
 // Reading C#
 
-/** What the census reads of a commit: the desktop's sources, projects and run settings, and the declared gates. */
-const READ = (path) => path === 'daoris.gates.json' || (path.startsWith('src/Daoris.Desktop/') && /\.(cs|csproj|runsettings|props|targets)$/.test(path));
+/** What the census reads of a commit: the sources, projects and run settings of the desktop and the service, whose test projects the halves run, and the declared gates. */
+const READ = (path) => path === 'daoris.gates.json'
+  || ((path.startsWith('src/Daoris.Desktop/') || path.startsWith('src/Daoris.Service/')) && /\.(cs|csproj|runsettings|props|targets)$/.test(path));
 
 /**
  * The repository's tracked files at `commit` (the working tree's when null), `/`-separated, and a reader of each. A commit's
