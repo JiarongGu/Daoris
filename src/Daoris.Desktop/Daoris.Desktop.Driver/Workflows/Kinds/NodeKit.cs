@@ -1,3 +1,4 @@
+using System.Reflection;
 using Daoris.Contracts.Parts;
 
 namespace Daoris.Driver;
@@ -20,11 +21,14 @@ public sealed class NodeKit
     private readonly Dictionary<string, BuiltInNode> _units;
     private readonly Dictionary<string, PluginStep> _halves;
     private readonly Dictionary<string, BuiltInNode> _drawn;
+    private readonly HashSet<string> _arriving;
 
-    private NodeKit(IReadOnlyList<PartDeclaration> order, IReadOnlyList<(PartDeclaration Declared, INodeKind Unit)> built)
+    private NodeKit(IReadOnlyList<PartDeclaration> order, IReadOnlyList<(PartDeclaration Declared, INodeKind Unit)> built, IEnumerable<string>? arriving = null)
     {
         Order = order;
         _built = built;
+        _arriving = arriving?.ToHashSet(StringComparer.Ordinal)
+            ?? [.. built.Where(each => each.Declared.Type.GetCustomAttribute<NodeKindAttribute>()?.Arriving == true).Select(each => each.Declared.Name)];
         Units = [.. built.Select(each => each.Unit).OfType<BuiltInNode>()];
         _units = Units.ToDictionary(unit => unit.Row.Kind, StringComparer.Ordinal);
         _halves = built.Where(each => each.Unit is PluginStep)
@@ -47,12 +51,19 @@ public sealed class NodeKit
     /// rules of where it stands, each said against the node it is about, then, for a graph a person saves now, what the landing's readers need
     /// (<see cref="LandingRules"/>). The rules every graph is held to are <see cref="NodeGraphs.Problems"/>'.
     /// </summary>
-    internal static IReadOnlyList<WireProblem> Problems(GraphStanding standing, NodeGraph graph, bool savedNow = false) =>
+    internal static IReadOnlyList<WireProblem> Problems(GraphStanding standing, NodeGraph graph, bool savedNow = false, NodeKit? kit = null) =>
     [
         .. ProtectedOrder.Problems(standing),
         .. standing.ById.Values.SelectMany(node => Of(node.Kind)?.Problems(graph, node) ?? []),
         .. savedNow ? LandingRules.Problems(standing) : [],
+        .. savedNow ? ArrivingKinds.Problems(graph, kit ?? Built) : [],
     ];
+
+    /// <summary>Whether <paramref name="kind"/> is declared before it is offered (<see cref="NodeKindAttribute.Arriving"/>).</summary>
+    public bool IsArriving(string kind) => _arriving.Contains(kind);
+
+    /// <summary>This kit with <paramref name="kind"/> marked arriving, as a build that declares it before offering it reads it.</summary>
+    internal NodeKit Arriving(string kind) => new(Order, _built, [.. _arriving, kind]);
 
     /// <summary>A built-in kind's contract row, or null for any other kind.</summary>
     public static NodeAuthority? Row(string kind) => Built.Find(kind) is BuiltInNode unit ? unit.Row : null;
@@ -89,7 +100,8 @@ public sealed class NodeKit
     /// This kit as an older build's reads, one that lacks <paramref name="kind"/>: a declaration naming it is
     /// no kind there.
     /// </summary>
-    public NodeKit Without(string kind) => new(Order.Where(part => part.Name != kind).ToList(), [.. _built.Where(each => each.Declared.Name != kind)]);
+    public NodeKit Without(string kind) =>
+        new(Order.Where(part => part.Name != kind).ToList(), [.. _built.Where(each => each.Declared.Name != kind)], _arriving.Where(each => each != kind));
 
     /// <exception cref="PartOrderException">
     /// A mark on a class that is no unit of its name's sort (a kind's <see cref="BuiltInNode"/>, a half's <see cref="PluginStep"/>), or a kind whose

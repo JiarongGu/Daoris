@@ -319,6 +319,9 @@ public sealed record NodeRecord(string Unit)
     /// </summary>
     public IReadOnlyList<NodeRepair> Repairs { get; init; } = [];
 
+    /// <summary>The refs a run's own steps moved, in the order they moved them (<see cref="RunMoves"/>). Empty on every unit's record.</summary>
+    public IReadOnlyList<RunMove> Moves { get; init; } = [];
+
     /// <summary>The attempt an invocation names, or null.</summary>
     public NodeAttempt? Invoked(string invocation) =>
         Attempts.LastOrDefault(attempt => string.Equals(attempt.Call.Invocation, invocation, StringComparison.Ordinal));

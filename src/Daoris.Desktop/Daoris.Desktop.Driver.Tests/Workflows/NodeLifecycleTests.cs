@@ -60,7 +60,7 @@ public sealed class NodeLifecycleTests
         return moved.Status;
     }
 
-    /// <summary>The move a row asks for, as its cause would make it: the kind's own source, the attempt, a binding, a code, the person's words.</summary>
+    /// <summary>The move a row asks for, as its cause would make it.</summary>
     private static NodeMove MoveFor(NodeTransition row, NodeAuthority authority, NodeStatus status) => (row.To, row.By) switch
     {
         // The person settles a held attempt on their own word, their evidence the person's.
@@ -74,6 +74,7 @@ public sealed class NodeLifecycleTests
         (NodeStates.Rejected, _) => new NodeMove(row.To, row.By) { Attempt = status.Attempt, Words = "not what was asked" },
         // A record's skip names its source and the attempt, never the person's words.
         (NodeStates.Skipped, NodeCause.Authority) => new NodeMove(row.To, row.By) { Source = authority.SkipBy ?? authority.ReachBy, Attempt = status.Attempt, Scope = Run },
+        (NodeStates.Skipped, NodeCause.Daoris) => new NodeMove(row.To, row.By) { Source = NodeSource.Path, Words = "w", Scope = Run },
         (NodeStates.Skipped, _) => new NodeMove(row.To, row.By) { Words = "not what was asked", Scope = Run },
         (NodeStates.Unknown, _) => new NodeMove(row.To, row.By) { Attempt = status.Attempt },
         (NodeStates.Active, _) => new NodeMove(row.To, row.By) { Binding = Bind(status.Attempt + 1), Scope = Run },
@@ -89,7 +90,7 @@ public sealed class NodeLifecycleTests
         NodeStates.Rejected when !authority.PersonJudges => NodeRefusal.NotJudged,
         NodeStates.Failed when authority.FailureBy is null => NodeRefusal.NoFailureAuthority,
         NodeStates.Skipped when row.By == NodeCause.Authority => authority.SkipBy is null ? NodeRefusal.NotAuthority : null,
-        NodeStates.Skipped when !authority.PersonSkips => NodeRefusal.NotSkippable,
+        NodeStates.Skipped when row.By != NodeCause.Daoris && !authority.PersonSkips => NodeRefusal.NotSkippable,
         _ => null,
     };
 
@@ -115,6 +116,7 @@ public sealed class NodeLifecycleTests
             "failed>skipped:person",
             // An opinion's gate passes it over where nothing is asked of it.
             "active>skipped:authority",
+            "blocked>skipped:daoris", "ready>skipped:daoris", "invalidated>skipped:daoris",
             "skipped>blocked:person", "skipped>invalidated:daoris",
             "blocked>stopped:person", "ready>stopped:person", "active>stopped:person", "unknown>stopped:person", "invalidated>stopped:person",
             "active>invalidated:daoris", "reached>invalidated:daoris", "failed>invalidated:daoris", "rejected>invalidated:daoris",
@@ -147,7 +149,7 @@ public sealed class NodeLifecycleTests
         }
     }
 
-    /// <summary>A move the table does not hold is refused whoever asks; one it holds for another cause is refused naming the cause.</summary>
+    /// <summary>A move the table does not hold is refused; one held for another cause is refused naming the cause.</summary>
     [Theory]
     [MemberData(nameof(Kinds))]
     public void A_move_the_table_does_not_hold_is_refused_whoever_asks(string kind)
@@ -299,7 +301,7 @@ public sealed class NodeLifecycleTests
         Assert.Null(started.Binding!.Outcome);
     }
 
-    /// <summary>A person rejects only a node whose kind lets a person judge it, a plugin's only where it declares so, and always with words.</summary>
+    /// <summary>A person rejects only a node a person may judge, a plugin's where it says so, with words.</summary>
     [Fact]
     public void A_rejection_is_a_persons_with_words_on_a_node_a_person_may_judge()
     {
@@ -392,9 +394,8 @@ public sealed class NodeLifecycleTests
     }
 
     /// <summary>
-    /// Canary 43: every state the three gates keep (the opinion's, the look's, the go-ahead's), read from its
-    /// records alone, is a move the one table takes on the started node, by the kind's own authority or in the person's words, and the state
-    /// that says nothing yet is no move: no gate keeps a state model of its own beside the nodes'.
+    /// Canary 43: every state the three gates keep, read from its records alone, is a move the one table takes on the started node, by the
+    /// kind's authority or in the person's words, and one that says nothing yet is no move: no gate keeps a state model beside the nodes'.
     /// </summary>
     [Fact]
     public void Every_state_a_gates_record_says_is_a_move_the_one_table_takes()
@@ -583,9 +584,8 @@ public sealed class NodeLifecycleTests
     }
 
     /// <summary>
-    /// <c>integrate</c> is a built-in kind that waits, reached and failed by the integration
-    /// record and by nothing else, never passed over and never the person's to reject, whose start has an effect outside its record, so a new
-    /// attempt waits until the last is known.
+    /// <c>integrate</c> is a built-in kind that waits, reached and failed by the integration record alone, never passed over or the person's
+    /// to reject, whose start has an effect outside its record, so a new attempt waits until the last is known.
     /// </summary>
     [Fact]
     public void Integrate_waits_on_the_integration_record_and_is_never_skipped()
@@ -814,7 +814,7 @@ public sealed class NodeLifecycleTests
         Assert.Equal(NodeStates.Active, NodeLifecycle.Apply(human, asked, Start(2)).Status.State);
     }
 
-    /// <summary>Defect 2: every outcome names its attempt: a late failure, rejection, unknown or reach of attempt 1 never lands on attempt 2.</summary>
+    /// <summary>Defect 2: every outcome names its attempt: a late one of attempt 1 never lands on attempt 2.</summary>
     [Fact]
     public void A_late_outcome_of_an_earlier_attempt_never_lands_on_the_current_one()
     {

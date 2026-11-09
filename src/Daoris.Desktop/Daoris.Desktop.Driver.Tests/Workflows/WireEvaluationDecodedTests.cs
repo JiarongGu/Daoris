@@ -199,7 +199,7 @@ public sealed class WireEvaluationDecodedTests
     }
 
     /// <summary>
-    /// The trap of <i>lets go</i> read as <i>reached</i>: the gate's skip satisfies <c>after</c> and no <c>data</c> wire, holds for its own
+    /// The trap of <i>lets go</i> read as <i>reached</i>: the gate's skip satisfies <c>after</c> and skips the step it feeds, holds for its own
     /// run alone, and, being the gate's judgement of its commit, lapses on a newer one, where the person's skip of the look holds.
     /// </summary>
     [Fact]
@@ -220,13 +220,14 @@ public sealed class WireEvaluationDecodedTests
 
         var g = Skipped();
         var evaluated = g.Evaluate();
-        Assert.Equal((NodeStates.Skipped, NodeStates.Ready, NodeStates.Blocked), (g.State("opinion"), g.State("look"), g.State("deploy")));
+        Assert.Equal((NodeStates.Skipped, NodeStates.Ready, NodeStates.Skipped), (g.State("opinion"), g.State("look"), g.State("deploy")));
         Assert.StartsWith("skp-", Assert.Single(evaluated.Of("look")!.Receipts), StringComparison.Ordinal);
         Assert.Equal(["b"], evaluated.Of("deploy")!.Waiting);
+        Assert.Contains("`opinion`", g.Statuses["deploy"].Words);
 
         g.Run = g.Run with { Run = "run-2" };
         Assert.Equal(WireWhy.SkipScope, g.Evaluate().Moves.Single(move => move.Node == "opinion").Why);
-        Assert.Equal(NodeStates.Blocked, g.State("look"));
+        Assert.Equal((NodeStates.Blocked, NodeStates.Invalidated), (g.State("look"), g.State("deploy")));
 
         var newer = Skipped();
         newer.Evaluate();

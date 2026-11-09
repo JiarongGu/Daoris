@@ -12,4 +12,7 @@ public sealed record NodeGitReads(Func<LandedBranch, string?>? RemoteTip = null)
     /// that commit; null where it is not read there.
     /// </summary>
     public Func<string, string?, HoldContent?>? Content { get; init; }
+
+    /// <summary>The tip of a full ref in the run's repository, as the pass read it, for a step's target (<see cref="WireTargets"/>); null where none is read.</summary>
+    public Func<string, string?>? Tip { get; init; }
 }

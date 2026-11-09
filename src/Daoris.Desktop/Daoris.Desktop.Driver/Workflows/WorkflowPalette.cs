@@ -46,7 +46,7 @@ public sealed record WorkflowPalette(IReadOnlyList<PaletteKind> Kinds, IReadOnly
     /// </summary>
     public static WorkflowPalette Build(IEnumerable<(string Plugin, IReadOnlyList<NodeDeclaration> Steps)> plugins)
     {
-        var units = NodeKit.Built.Units;
+        var units = NodeKit.Built.Units.Where(unit => !NodeKit.Built.IsArriving(unit.Row.Kind)).ToList();
         var kinds = units
             .Select(unit => (Row: unit.Row, Unit: unit))
             .Select(each => new PaletteKind(each.Row.Kind, each.Row.Reach, each.Row.ReachBy, each.Row.FailureBy, each.Row.PersonJudges, each.Row.PersonSkips,
