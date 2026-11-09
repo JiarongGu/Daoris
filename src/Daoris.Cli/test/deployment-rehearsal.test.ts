@@ -123,6 +123,7 @@ test('the doctrine tool check names what an install lacks, and passes on a sound
   const sound = () => {
     for (const name of CLI_LAUNCHERS) fx.write(`install/${CLI_BIN.join('/')}/${name}`, 'launcher\n');
     fx.write(`install/${DRIVER_HOME.join('/')}/${DRIVER_EXE}`, 'host\n');
+    fx.write(`install/${DRIVER_HOME.join('/')}/git2-5853918.dll`, 'native\n');
     fx.write(`${pkg}/${CLI_ENTRY.join('/')}`, '// entry\n');
     fx.write(`${pkg}/dist/cli.js`, '// built\n');
     fx.write(`${pkg}/package.json`, '{"name":"daoris","version":"0.4.2"}');
