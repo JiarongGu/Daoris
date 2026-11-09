@@ -167,8 +167,9 @@ internal sealed class GoingOnRun(IExecutorWiring wiring, ChatGoOn owner)
         // moved: a conversation in it asks nothing.
         var inSync = own ? await owner.StartInSyncAsync(record.Tree!, ct).ConfigureAwait(false) : null;
         // One in the checkout itself holds it too, until the ledger holds it again below.
-        using var starting = TreeLock.TryStarting(_context.Home, known.Root!);
-        if (starting is null) return owner.Held(sessionId, HeldWords.Holding(known.Repository, TreeLock.HolderOf(_context.Home, known.Root!)));
+        var startIn = StartIn.In(record.Tree!);
+        using var starting = TreeLock.TryStarting(_context.Home, known.Root!, startIn);
+        if (starting is null) return owner.Held(sessionId, TreeLock.StartHeld(_context.Home, known.Root!, startIn, known.Repository));
 
         // 🔴 The ledger's one move out of an ended state, with the person's words waiting, before anything
         // is spawned: it holds the tree again, and refuses where another session holds it.

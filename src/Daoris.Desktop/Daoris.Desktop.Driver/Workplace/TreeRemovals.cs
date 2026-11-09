@@ -14,6 +14,9 @@ internal sealed class TreeRemovals(TreeContext context, TreeFollows follows, Con
     /// <summary>How long a discard waits for a landing of its tree before it leaves the tree.</summary>
     private static readonly TimeSpan DiscardWait = TimeSpan.FromSeconds(30);
 
+    internal static string Reserved(string path, TreeHandOff row) =>
+        $"the tree at {path} stays: run `{row.Run}`'s `resolve` holds it until {row.UntilSaid}; stop that step to discard it.";
+
     /// <summary>
     /// Remove a session tree — <b>and only a session tree</b>: anything outside the trees home is
     /// somebody's checkout, and is refused before git is asked anything.
@@ -55,6 +58,8 @@ internal sealed class TreeRemovals(TreeContext context, TreeFollows follows, Con
         // landing's own tidy holds it already.
         using var landingHold = landing ? null : await LandingHolds.TakeAsync(context.Home, full, ct, DiscardWait).ConfigureAwait(false);
         if (!landing && landingHold is null) return new(false, $"the tree at {path} stays: a landing of it was still under way.");
+
+        if (new TreeHandOffs(context.Home).Of(full) is { } handOff) return new(false, Reserved(path, handOff));
 
         // Keep the repository's starts out from the ledger read through the removal. A stale lock can name an ended
         // session while a later one holds the same tree, so the live-tree check precedes the lock owner's record.

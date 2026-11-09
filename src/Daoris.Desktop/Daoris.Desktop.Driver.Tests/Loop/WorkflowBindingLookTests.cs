@@ -151,7 +151,7 @@ public sealed class WorkflowBindingLookTests : IDisposable
             // A start binds its run before its take, and the look says what it bound: the stand-in's run binds as the real start does.
             Runner = async (start, opened, ct) =>
             {
-                var hold = StartHold.TryTake(_home, Path.Combine(_home, "engine"))!;
+                var hold = StartHold.TryTake(_home, Path.Combine(_home, "engine"), StartIn.Fresh)!;
                 WorkflowBind bound;
                 using (hold.Lock)
                 {

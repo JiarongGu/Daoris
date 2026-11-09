@@ -48,8 +48,8 @@ public sealed class TreeLockTests : IDisposable
     [Fact]
     public void Two_starts_in_one_repository_hold_it_together()
     {
-        using var first = TreeLock.TryStarting(_home, _engine);
-        using var second = TreeLock.TryStarting(_home, _engine);
+        using var first = TreeLock.TryStarting(_home, _engine, StartIn.Fresh);
+        using var second = TreeLock.TryStarting(_home, _engine, StartIn.Fresh);
 
         Assert.NotNull(first);
         Assert.NotNull(second);
@@ -62,7 +62,7 @@ public sealed class TreeLockTests : IDisposable
     [Fact]
     public void A_replay_is_refused_while_a_start_holds_the_repository_and_takes_it_once_the_start_lets_go()
     {
-        var starting = TreeLock.TryStarting(_home, _engine);
+        var starting = TreeLock.TryStarting(_home, _engine, StartIn.Fresh);
         Assert.NotNull(starting);
 
         Assert.Null(TreeLock.TryReplaying(_home, _engine, "engine", TreeLock.Updating));
@@ -79,11 +79,11 @@ public sealed class TreeLockTests : IDisposable
         var replaying = TreeLock.TryReplaying(_home, _engine, "engine", TreeLock.Updating);
         Assert.NotNull(replaying);
 
-        Assert.Null(TreeLock.TryStarting(_home, _engine));
+        Assert.Null(TreeLock.TryStarting(_home, _engine, StartIn.Fresh));
         Assert.Null(TreeLock.TryReplaying(_home, _engine, "engine", TreeLock.Tidying));
 
         replaying!.Dispose();
-        using var starting = TreeLock.TryStarting(_home, _engine);
+        using var starting = TreeLock.TryStarting(_home, _engine, StartIn.Fresh);
         Assert.NotNull(starting);
     }
 
@@ -94,7 +94,7 @@ public sealed class TreeLockTests : IDisposable
     [Fact]
     public void A_writer_of_the_checkout_holds_the_repository_alone_in_the_one_lock_with_starts_and_replays()
     {
-        var starting = TreeLock.TryStarting(_home, _engine);
+        var starting = TreeLock.TryStarting(_home, _engine, StartIn.Fresh);
         Assert.Null(TreeLock.TryWriting(_home, _engine, "engine", TreeLock.Promoting));
         starting!.Dispose();
 
@@ -109,10 +109,10 @@ public sealed class TreeLockTests : IDisposable
             Assert.True(RepositoryHolds.Held(_home, "engine"));
             Assert.Null(TreeLock.TryWriting(_home, _engine, "engine", TreeLock.Updating));
             Assert.Null(TreeLock.TryReplaying(_home, _engine, "engine", TreeLock.Updating));
-            Assert.Null(TreeLock.TryStarting(_home, _engine));
+            Assert.Null(TreeLock.TryStarting(_home, _engine, StartIn.Fresh));
         }
 
-        using var shared = TreeLock.TryStarting(_home, _engine);
+        using var shared = TreeLock.TryStarting(_home, _engine, StartIn.Fresh);
         Assert.False(shared!.Alone);
     }
 
@@ -126,12 +126,12 @@ public sealed class TreeLockTests : IDisposable
         var tree = TreeOf(_engine, "s-1");
         using var writing = TreeLock.TryWriting(_home, _engine, "engine", TreeLock.Updating);
 
-        Assert.Null(TreeLock.TryStarting(_home, _engine + Path.DirectorySeparatorChar));
-        Assert.Null(TreeLock.TryStarting(_home, Path.Combine(_engine, "..", "engine")));
+        Assert.Null(TreeLock.TryStarting(_home, _engine + Path.DirectorySeparatorChar, StartIn.Fresh));
+        Assert.Null(TreeLock.TryStarting(_home, Path.Combine(_engine, "..", "engine"), StartIn.Fresh));
         Assert.Null(TreeLock.TryWriting(_home, _engine, "engine-again", TreeLock.Promoting));
-        Assert.Null(TreeLock.TryStarting(_home, tree));
+        Assert.Null(TreeLock.TryStarting(_home, tree, StartIn.In(tree)));
         Assert.Equal(TreeLock.PathOf(_home, _engine), TreeLock.PathOf(_home, tree));
-        if (OperatingSystem.IsWindows()) Assert.Null(TreeLock.TryStarting(_home, _engine.ToUpperInvariant()));
+        if (OperatingSystem.IsWindows()) Assert.Null(TreeLock.TryStarting(_home, _engine.ToUpperInvariant(), StartIn.Fresh));
     }
 
     /// <summary>Another checkout is its own, whatever its repository is named: a replay holds only its own.</summary>
@@ -140,8 +140,8 @@ public sealed class TreeLockTests : IDisposable
     {
         using var replaying = TreeLock.TryReplaying(_home, _engine, "engine", TreeLock.Updating);
 
-        using var game = TreeLock.TryStarting(_home, Checkout("game"));
-        using var elsewhere = TreeLock.TryStarting(_home, Checkout(Path.Combine("other", "engine")));
+        using var game = TreeLock.TryStarting(_home, Checkout("game"), StartIn.Fresh);
+        using var elsewhere = TreeLock.TryStarting(_home, Checkout(Path.Combine("other", "engine")), StartIn.Fresh);
         Assert.NotNull(game);
         Assert.NotNull(elsewhere);
     }
@@ -176,7 +176,7 @@ public sealed class TreeLockTests : IDisposable
         }
 
         Assert.Null(TreeLock.HolderOf(_home, _engine));
-        using (TreeLock.TryStarting(_home, _engine))
+        using (TreeLock.TryStarting(_home, _engine, StartIn.Fresh))
         {
             Assert.Null(TreeLock.HolderOf(_home, _engine));
             Assert.Equal("a session was starting in `engine`, or another of Daoris's writes held it", TreeLock.Held("engine", null));
@@ -210,7 +210,7 @@ public sealed class TreeLockTests : IDisposable
         File.WriteAllText(Path.Combine(old, "game.lock"), "");
         using var live = new FileStream(Path.Combine(old, "game.lock"), FileMode.Open, FileAccess.ReadWrite, FileShare.None);
 
-        using (TreeLock.TryStarting(_home, _engine)) { }
+        using (TreeLock.TryStarting(_home, _engine, StartIn.Fresh)) { }
 
         Assert.False(File.Exists(Path.Combine(old, "engine.lock")));
         Assert.True(File.Exists(Path.Combine(old, "game.lock")));
@@ -228,7 +228,7 @@ public sealed class TreeLockTests : IDisposable
         LockWaits.Seen.Value = what => { lock (seen) seen.Add(what); };
         var record = RecordLock.PathOf(_home, "probe.json");
 
-        using (TreeLock.TryStarting(_home, _engine))
+        using (TreeLock.TryStarting(_home, _engine, StartIn.Fresh))
         {
             RecordLock.Take(record).Dispose();
         }

@@ -25,8 +25,9 @@ internal sealed class GrowTree(IRunWiring wiring) : IRunStage
         TreeStanding? priorStands = null, entryStands = null;
         if (priorTree is not null || (entryTree is not null && context.Trees.Holds(entryTree)))
         {
-            using var returning = TreeLock.TryStarting(home, root);
-            if (returning is null) return run.Hold(HeldWords.Holding(quest.To, TreeLock.HolderOf(home, root)).Why);
+            var returningIn = StartIn.In(priorTree ?? entryTree!);
+            using var returning = TreeLock.TryStarting(home, root, returningIn);
+            if (returning is null) return run.Hold(TreeLock.StartHeld(home, root, returningIn, quest.To).Why);
             if (priorTree is not null) priorStands = await context.Trees.EnsureAsync(root, priorTree, ct).ConfigureAwait(false);
             if (entryTree is not null && context.Trees.Holds(entryTree))
             {
@@ -87,14 +88,16 @@ internal sealed class GrowTree(IRunWiring wiring) : IRunStage
         // A session going on in a tree that stands starts from the line where the line came to hold some of its commits, and is told
         // what is done; a step whose source the person reopened is first brought up to date with the source's new submission. Asked
         // before this start's own hold below, since bringing a tree up to date holds the repository's trees alone.
+        var startIn = (resumedIn ?? joinedIn) is { } goesIn ? StartIn.In(goesIn) : isolated ? StartIn.Fresh : StartIn.In(root);
+        if (TreeLock.Reserved(home, startIn) is not null) return run.Hold(TreeLock.StartHeld(home, root, startIn, quest.To).Why);
         var inSync = resumedIn is { } reopenedIn && start.Resumes is { } goesFrom
                      && (ReopenTelling.BringsToSource(quest, goesFrom) || Planner.BringsForwardToSource(quest, start))
             ? await GoOnInSyncAsync(reopenedIn, quest, broughtForward: start.BroughtForward is not null, ct).ConfigureAwait(false)
             : (resumedIn ?? joinedIn) is { } goingOn ? await StartInSyncAsync(goingOn, ct).ConfigureAwait(false) : null;
 
         // A start in the checkout itself holds it too, so no writer moves it between the commit this start reads and the record.
-        var starting = TreeLock.TryStarting(home, root);
-        if (starting is null) return run.Hold(HeldWords.Holding(quest.To, TreeLock.HolderOf(home, root)).Why);
+        var starting = TreeLock.TryStarting(home, root, startIn);
+        if (starting is null) return run.Hold(TreeLock.StartHeld(home, root, startIn, quest.To).Why);
         run.State.Starting = starting;
 
         // git's guess at the checkout's line, asked once for the tree's opening and the landing the session is told of.

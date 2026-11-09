@@ -195,7 +195,7 @@ public sealed class StageActsGitTests : TreeSyncFixture
         await WriteAsync(root, "lines.txt", Edited((2, "two")));
         var press = await PressAsync(root, StageVerbs.Stage, "lines.txt");
 
-        using var starting = TreeLock.TryStarting(Home, root);
+        using var starting = TreeLock.TryStarting(Home, root, StartIn.Fresh);
         var run = await Acts().RunAsync(Context(root), press, CancellationToken.None);
 
         Assert.NotNull(starting);

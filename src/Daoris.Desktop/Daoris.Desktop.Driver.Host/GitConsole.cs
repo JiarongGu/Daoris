@@ -139,7 +139,7 @@ internal static class GitConsole
                         .Where(row => string.Equals(row.Repository, repository, StringComparison.OrdinalIgnoreCase) && !string.IsNullOrWhiteSpace(row.Root))
                         .Select(row => row.Root).FirstOrDefault(root => Directory.Exists(root)),
                     () => journal,
-                    (repository, checkout) => new StageContext(repository, checkout, () => DriverConfig.Load(configPath).MayChangeCheckout(repository), token => BranchTidying.BesideAsync(service, token)));
+                    (repository, checkout) => new StageContext(repository, checkout, () => DriverConfig.Load(configPath).MayChangeCheckout(repository), token => BranchTidying.BesideAsync(home, service, token)));
                 return await GitStashDropCommand.RunAsync(args, world, InstanceHost.World(home, "git"), closing.Token).ConfigureAwait(false);
             }
             catch (Exception error) when (error is DriverException or HttpRequestException or System.Text.Json.JsonException or IOException)

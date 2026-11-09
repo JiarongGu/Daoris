@@ -451,6 +451,8 @@
   "note.held.tidying": "It does not go on yet: `{{repository}}`'s session trees are being cleaned up right now, so a session does not start in one of its trees until that is done; it starts at the next look. Your words wait on it.",
   "note.held.promoting": "It does not go on yet: `{{repository}}`'s line is being moved to what its integration promoted right now, so a session does not start in one of its trees until that is done; it starts at the next look. Your words wait on it.",
   "note.held.writing": "It does not go on yet: another of Daoris's writes holds `{{repository}}` right now, so a session does not start in one of its trees until that is done; it starts at the next look. Your words wait on it.",
+  "note.held.reserving": "It does not go on yet: a step is reserving one of `{{repository}}`'s trees for its resolver right now, so a session does not start in one of its trees until that is done; it starts at the next look. Your words wait on it.",
+  "note.held.reserved": "It does not go on yet: run `{{run}}`'s `resolve` holds `{{tree}}` in `{{repository}}` until {{until}}, so a session does not start in it until that step lets it go; it starts at the next look after. Your words wait on it.",
   "note.held.answering": "It does not go on yet: Ask Daoris is answering in conversation `{{session}}`; once its turn ends, a word said here takes these with it. Your words wait on it.",
   "note.held.config-unread": "It does not go on yet: this machine's driver.json could not be read:",
   "note.held.lead": "It does not go on yet:",

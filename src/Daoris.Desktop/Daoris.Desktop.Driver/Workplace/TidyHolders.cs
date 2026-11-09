@@ -17,7 +17,7 @@ internal static class TidyHolders
         string home, ServiceClient service, Func<CancellationToken, Task<IReadOnlyCollection<string>>>? reviewing, CancellationToken ct,
         DateTimeOffset? now = null)
     {
-        var held = (await ReadHoldersAsync(service, writing: false, ct, (home, now ?? DateTimeOffset.UtcNow)).ConfigureAwait(false))
+        var held = (await ReadHoldersAsync(home, service, writing: false, ct, now ?? DateTimeOffset.UtcNow).ConfigureAwait(false))
             .Select(each => each.Tree).ToHashSet(StringComparer.OrdinalIgnoreCase);
         if (reviewing is not null) held.UnionWith(TreesOf(new SessionTrees(home).TreesRoot, await reviewing(ct).ConfigureAwait(false)));
         return held;
@@ -40,27 +40,33 @@ internal static class TidyHolders
     /// The trees sessions hold, for every door that removes or rebases one: a session running or waiting on the person, a
     /// record the person's words or its own helper wait on, and the newest part of each quest still open, whatever that part's state, since
     /// its line goes on in that tree (a retry waiting on a limit among them). A tree is judged by every session of its quest, never only by
-    /// the run that opened it.
+    /// the run that opened it. A tree a step's hand-off reserves is held too, by that step.
     /// </summary>
-    public static async Task<HashSet<string>> HeldTreesAsync(ServiceClient service, CancellationToken ct) =>
-        (await HoldersAsync(service, ct).ConfigureAwait(false)).Select(each => each.Tree).ToHashSet(StringComparer.OrdinalIgnoreCase);
+    public static async Task<HashSet<string>> HeldTreesAsync(string home, ServiceClient service, CancellationToken ct) =>
+        (await HoldersAsync(home, service, ct).ConfigureAwait(false)).Select(each => each.Tree).ToHashSet(StringComparer.OrdinalIgnoreCase);
 
     /// <summary>
     /// The trees sessions hold, as <see cref="HeldTreesAsync"/> reads them, each with a session that holds it: what a writer of
     /// a checkout names when it waits for the session working there. Thrown where the service does not answer, which a writer reads as held.
     /// </summary>
-    public static Task<IReadOnlyList<TreeHolder>> HoldersAsync(ServiceClient service, CancellationToken ct) => ReadHoldersAsync(service, writing: false, ct);
+    public static Task<IReadOnlyList<TreeHolder>> HoldersAsync(string home, ServiceClient service, CancellationToken ct) =>
+        ReadHoldersAsync(home, service, writing: false, ct);
 
     /// <summary>
     /// The sessions a writer of a checkout waits for: <see cref="HoldersAsync"/>'s, except that a quest's newest part counts only
     /// while it will go on (never one completed, declined, or failed with no limit to wait out), since deferring a write to the person's
     /// checkout is not keeping a tree from deletion.
     /// </summary>
-    public static Task<IReadOnlyList<TreeHolder>> BesideAsync(ServiceClient service, CancellationToken ct) => ReadHoldersAsync(service, writing: true, ct);
+    public static Task<IReadOnlyList<TreeHolder>> BesideAsync(string home, ServiceClient service, CancellationToken ct) =>
+        ReadHoldersAsync(home, service, writing: true, ct);
 
-    /// <param name="spoken">The home and the time the look's tidy keeps the sessions the person spoke to by; null for every other door.</param>
+    /// <summary>The trees open hand-offs reserve, each held by its step, so every door that reads the holders keeps off it.</summary>
+    private static IEnumerable<TreeHolder> Reserved(string home) =>
+        new TreeHandOffs(home).Open().Select(row => new TreeHolder(row.Tree, row.Session ?? "") { Step = $"run `{row.Run}`'s `resolve`" });
+
+    /// <param name="spoken">The time the look's tidy keeps the sessions the person spoke to by; null for every other door.</param>
     private static async Task<IReadOnlyList<TreeHolder>> ReadHoldersAsync(
-        ServiceClient service, bool writing, CancellationToken ct, (string Home, DateTimeOffset Now)? spoken = null)
+        string home, ServiceClient service, bool writing, CancellationToken ct, DateTimeOffset? spoken = null)
     {
         // Asked at once, as the snapshot asks its reads: each is the whole list on a home of thousands of records, so one after another
         // the three cost their sum where together they cost the slowest.
@@ -73,7 +79,8 @@ internal static class TidyHolders
         var records = await recordsRead.ConfigureAwait(false);
         held.AddRange(records.Where(record => !record.Teammate && record.WordsWaiting && record.Tree is { Length: > 0 })
             .Select(record => new TreeHolder(record.Tree!, record.Session)));
-        if (spoken is { } asked) held.AddRange(SpokenTo(asked.Home, records, asked.Now));
+        if (spoken is { } now) held.AddRange(SpokenTo(home, records, now));
+        held.AddRange(Reserved(home));
         var waiting = records.Where(record => HelperWaitTrees.HoldsTree(record) && record.Tree is { Length: > 0 } && record.Quest is { Length: > 0 }).ToList();
         var quests = await questsRead.ConfigureAwait(false);
         var taken = quests.Where(quest => quest.Status == "Taken").Select(quest => quest.Id).ToHashSet(StringComparer.OrdinalIgnoreCase);

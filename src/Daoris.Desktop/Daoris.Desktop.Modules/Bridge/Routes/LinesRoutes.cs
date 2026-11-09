@@ -427,7 +427,7 @@ public sealed class LinesRoutes(DriverContext context)
     {
         var service = loop.Service ?? throw NotReady();
         var registry = await service.RegistryAsync(cancellationToken);
-        var inUse = await InUseAsync(service, cancellationToken);
+        var inUse = await InUseAsync(loop.Home, service, cancellationToken);
         return (Checkouts(registry, repository, workspace), inUse);
     }
 
@@ -448,8 +448,8 @@ public sealed class LinesRoutes(DriverContext context)
             .ToList();
 
     /// <summary>The trees sessions still hold, as the service's ledger says now: the driver's one reading.</summary>
-    internal static Task<HashSet<string>> InUseAsync(ServiceClient service, CancellationToken cancellationToken) =>
-        BranchTidying.HeldTreesAsync(service, cancellationToken);
+    internal static Task<HashSet<string>> InUseAsync(string home, ServiceClient service, CancellationToken cancellationToken) =>
+        BranchTidying.HeldTreesAsync(home, service, cancellationToken);
 
     // where each repository's work is reviewed before it lands, the screens' half of
     // `daoris place review`, sent by `bridge/lines.ts`. Declared only: nothing here composes a step, gates or serves.

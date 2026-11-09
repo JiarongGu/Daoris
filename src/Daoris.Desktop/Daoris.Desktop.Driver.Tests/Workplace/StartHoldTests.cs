@@ -16,7 +16,7 @@ public sealed class StartHoldTests : TestHome
     public void A_start_s_hold_carried_as_a_value_holds_its_repository_until_it_is_let_go()
     {
         var other = Directory.CreateDirectory(Path.Combine(Home, "shop")).FullName;
-        var held = StartHold.TryTake(Home, Checkout)!;
+        var held = StartHold.TryTake(Home, Checkout, StartIn.Fresh)!;
 
         Assert.True(TreeLock.InFlow(held.Lock, Checkout));
         Assert.False(TreeLock.InFlow(held.Lock, other));
@@ -31,7 +31,7 @@ public sealed class StartHoldTests : TestHome
     public async Task A_run_s_bind_after_the_hold_s_dispose_is_refused_and_writes_nothing()
     {
         using var ledger = new StandInLedger();
-        var held = StartHold.TryTake(Home, Checkout)!;
+        var held = StartHold.TryTake(Home, Checkout, StartIn.Fresh)!;
         held.Lock.Dispose();
 
         await Assert.ThrowsAsync<InvalidOperationException>(() => WorkflowRunStart.AtStartAsync(
@@ -45,7 +45,7 @@ public sealed class StartHoldTests : TestHome
     public async Task A_run_s_bind_under_its_live_hold_is_written()
     {
         using var ledger = new StandInLedger();
-        var held = StartHold.TryTake(Home, Checkout)!;
+        var held = StartHold.TryTake(Home, Checkout, StartIn.Fresh)!;
         using (held.Lock)
         {
             var bound = await WorkflowRunStart.AtStartAsync(
@@ -64,7 +64,7 @@ public sealed class StartHoldTests : TestHome
         using var ledger = new StandInLedger();
         ledger.Publish("q1", "engine");
         var client = ledger.Client();
-        var held = StartHold.TryTake(Home, Checkout)!;
+        var held = StartHold.TryTake(Home, Checkout, StartIn.Fresh)!;
         held.Lock.Dispose();
 
         await Assert.ThrowsAsync<InvalidOperationException>(() => client.OpenSessionAsync("q1", "stub", tree: Checkout));
