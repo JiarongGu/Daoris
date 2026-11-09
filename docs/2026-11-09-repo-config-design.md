@@ -14,7 +14,7 @@ the asking tree's context (`GitAskerContext`) and the refs' version (`CountedRef
 - **Nothing is read twice because it changed; it is read twice because no reader knows another read it.** Some 40 readers in the
   driver and the modules each read their own file their own way, and three keep a cache of their own (`StampedWorkflows` by write time
   and length, `TreeReadMemo.Kept.Declared` by the refs' version, `BacklogMerge`'s `_declared` for one flow). A landing reads its line's
-  gates blob up to five times; the tidy reads it once per held tree after every move of the line; a watch's start reads every
+  gates blob up to four times; the tidy reads it once per held tree after every move of the line; a watch's start reads every
   repository's manifest and lanes at its line, five starts each, 100 for a home of 20. A start runs the whole file analysis again
   (11 starts on this repository, 5.2 s under load) for parts its commit fixes.
 - **One store**, `RepositoryDeclarations`: bytes and parse held by content (the git blob id, which a checkout's file is hashed to as
