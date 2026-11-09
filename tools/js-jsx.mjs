@@ -5,6 +5,7 @@
 import { expressionEnd } from './js-template.mjs';
 
 const OPENING = /^<(?:(>)|[A-Za-z_$][\w$.:-]*(?=[\s/>{]))/;
+const GENERIC = /^\s+extends\s+[^=>/\s]/;
 
 /**
  * The index past the element whose `<` is at `start`; the end of `src` where it never closes; -1 where what follows `<` is no
@@ -13,6 +14,8 @@ const OPENING = /^<(?:(>)|[A-Za-z_$][\w$.:-]*(?=[\s/>{]))/;
 export function jsxEnd(src, start, comments = []) {
   const opening = OPENING.exec(src.slice(start, start + 256));
   if (!opening) return -1;
+  // `<T extends X>(` is a generic arrow's type parameter, as the compiler reads it; an attribute named extends is `extends=`.
+  if (GENERIC.test(src.slice(start + opening[0].length, start + 256))) return -1;
   let i = start + opening[0].length;
   // The opening tag's attributes are names, `=`, quoted strings (which may hold a `>`) and expressions.
   while (!opening[1] && i < src.length && src[i] !== '>') {
