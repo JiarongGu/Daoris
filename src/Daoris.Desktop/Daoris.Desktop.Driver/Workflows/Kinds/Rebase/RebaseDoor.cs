@@ -3,7 +3,6 @@ namespace Daoris.Driver;
 /// <summary>A run's <c>rebase</c> to perform: its run, node and attempt, the work at its bound tip and the target at the tip the step read.</summary>
 public sealed record RebaseStart(string Run, string Node, int Attempt, RebaseWork Work, RebaseTarget Target) : NodeDoorStart
 {
-    /// <summary>Once per run, node and attempt.</summary>
     public override string Key => $"{Run}\n{Node}\n{Attempt}";
 }
 
@@ -17,15 +16,10 @@ public interface IRebaseDoor : INodeDoor
     Task<string?> WaitsAsync(RebaseWork work, CancellationToken ct);
 }
 
-/// <summary>
-/// Performs a run's <c>rebase</c>: its work replayed onto its target in a tree of Daoris's own (<see cref="RebaseReplay"/>), leaving out what the
-/// target holds by ancestry or patch, by the squash the target's landing record names, and by an operation that brought the work in as its member
-/// (the inclusion record, <see cref="TogetherBinding.BroughtIn"/>). The commit made is kept on the attempt's step ref (<see cref="StepRefs"/>),
-/// and what the attempt came to is written on <see cref="RebaseRecords"/>, which the step's reading reaches it from.
-/// </summary>
+/// <summary>Performs a run's <c>rebase</c>: its work replayed onto its target in a tree of Daoris's own (<see cref="RebaseReplay"/>), leaving out what the target
+/// holds by ancestry or patch, by its landing record's squash and by an operation that brought the work in (<see cref="TogetherBinding.BroughtIn"/>); the commit
+/// kept on the attempt's step ref (<see cref="StepRefs"/>) and what it came to written on <see cref="RebaseRecords"/>, which the step's reading reaches.</summary>
 /// <param name="home">The Daoris home whose trees, landing records and operations the replay reads, and whose record it writes.</param>
-/// <param name="log">Told what an attempt that could not be tried met; the machine log's line.</param>
-/// <param name="runs">Whether a replay may begin now: not while an update drains; null always may.</param>
 public sealed class RebaseDoor(string home, Action<string>? log = null, Func<bool>? runs = null) : IRebaseDoor, IDoorRuns
 {
     private readonly NodeDoorRuns _runs = new(runs);

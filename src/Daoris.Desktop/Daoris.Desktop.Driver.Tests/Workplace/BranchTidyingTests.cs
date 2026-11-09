@@ -734,7 +734,7 @@ public sealed class BranchTidyingTests : IDisposable
         var tree = DaorisHome.Entry(_home, HomeEntry.Trees, "default", "engine", "s-77af1391");
         foreach (var limited in new[] { false, true })
         {
-            var (id, _) = await client.OpenSessionAsync("q1", "stub", null, "account-1", tree, null);
+            var (id, _) = await HeldOpens.OpenAsync(client, _home, "q1", "stub", "account-1", tree);
             await client.AdvanceAsync(id!, "working");
             await client.AdvanceAsync(id!, "failed", note: "the agent's turn failed before it took its quest.", limit: limited);
         }

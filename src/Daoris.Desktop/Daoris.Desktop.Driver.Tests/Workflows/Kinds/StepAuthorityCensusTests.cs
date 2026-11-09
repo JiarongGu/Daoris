@@ -34,7 +34,7 @@ public sealed partial class StepAuthorityCensusTests
 
     /// <summary>The files that set the authority beside the four, and those under the kinds that leave the pass beside the runner.</summary>
     internal static IReadOnlyList<string> Strays(IEnumerable<(string Path, string Text)> sources) =>
-        [.. sources.Where(each => Sets().IsMatch(each.Text) && !Setters.Contains(each.Path) && each.Path != "Workflows/Kinds/StepAuthority.cs")
+        [.. sources.Where(each => Sets().IsMatch(each.Text) && !Setters.Contains(each.Path) && each.Path != "Workplace/StepAuthority.cs")
              .Select(each => $"{each.Path} sets the run's own step")
              .Concat(sources.Where(each => each.Path.StartsWith("Workflows/Kinds/", StringComparison.Ordinal) && each.Path != Runner && LeavesThePass().IsMatch(each.Text))
                  .Select(each => $"{each.Path} runs a door's work off the pass by itself"))];

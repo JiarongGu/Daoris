@@ -1,14 +1,9 @@
 namespace Daoris.Driver;
 
-/// <summary>
-/// Performs a run's <c>push</c> node: the branch the run's <c>land</c> made is pushed to origin by the one push act on the
-/// act journal (<see cref="GitPushActs"/>), under its ref-bound grant, exactly as the person's press pushes it. A push that ends is written on the
-/// landing record, which the node reads against git's remote-tracking ref; one the act refuses fails the node with the act's sentence kept in the
-/// machine log, so a refused push (Write denied, a read-only identity, origin held) is said and never retried on its own.
-/// </summary>
+/// <summary>Performs a run's <c>push</c>: the branch its <c>land</c> made pushed by the one push act (<see cref="GitPushActs"/>) under its ref-bound grant, as the
+/// person's press pushes it. A push that ends is written on the landing record; one the act refuses fails the node with the act's sentence in the machine log,
+/// so a refused push (Write denied, a read-only identity, origin held) is said and never retried on its own.</summary>
 /// <param name="home">The Daoris home whose journal, landing record and node records the push is kept in.</param>
-/// <param name="log">Told what a push came to; the machine log's line.</param>
-/// <param name="runs">Whether a push may begin now: not while an update drains; null always may.</param>
 public sealed class PushDoor(string home, Action<string>? log = null, Func<bool>? runs = null, Func<bool>? holdsLease = null) : IPushDoor, IDoorRuns
 {
     /// <summary>The code a push the act refused fails its node with.</summary>

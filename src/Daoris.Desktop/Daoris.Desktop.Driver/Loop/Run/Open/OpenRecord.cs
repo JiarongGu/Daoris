@@ -79,20 +79,21 @@ internal sealed class OpenRecord(IRunWiring wiring) : IRunStage
         state.Carry = carry;
 
         fresh.Asked();
+        var starting = new StartHold(restarting ?? state.Starting, start.Root!);
         // A carry-on that keeps its record is opened through the keyed door whether or not it hands a word, under the key its record names.
         var keyed = moves is null && carry is null
             ? null
             : await service
                 .OpenSessionMovingAsync(
                     quest.Id, agent, selection.Version, selection.Profile, workTree, before, continues, moves, ct,
-                    setup: SetupQuests.IsSetup(quest.Title), access: access.Values, opens: carry is null ? null : openKey)
+                    setup: SetupQuests.IsSetup(quest.Title), access: access.Values, opens: carry is null ? null : openKey, starting: starting)
                 .ConfigureAwait(false);
         var (sessionId, message) = keyed is not null
             ? (keyed.SessionId, keyed.Message)
             : await service
                 .OpenSessionAsync(
                     quest.Id, agent, selection.Version, selection.Profile, workTree, before, ct,
-                    setup: SetupQuests.IsSetup(quest.Title), from: continues, access: access.Values)
+                    setup: SetupQuests.IsSetup(quest.Title), from: continues, access: access.Values, starting: starting)
                 .ConfigureAwait(false);
         if (sessionId is null)
         {

@@ -121,7 +121,6 @@ public sealed class IntegrateNodeTests : IDisposable
             return Task.FromResult(Requests.GetValueOrDefault((unit, tip)));
         }
 
-        /// <summary>The run's own step each ask was made under.</summary>
         public List<StepAuthority?> Authorities { get; } = [];
 
         public Task<IntegrationAdmission> AskAsync(IntegrationAsk ask, DriverConfig config, CancellationToken ct)

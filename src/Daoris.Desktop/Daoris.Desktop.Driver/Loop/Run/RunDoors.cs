@@ -51,8 +51,8 @@ internal sealed class RunDoors(Driver driver) : IRunWiring
         return course;
     }
 
-    Task<WorkflowBind> IRunWiring.BindAtStartAsync(QuestView quest, string? workspace, CancellationToken ct) =>
-        StartBinding.AtStartAsync(Context, quest, workspace, ct);
+    Task<WorkflowBind> IRunWiring.BindAtStartAsync(QuestView quest, string? workspace, StartHold hold, CancellationToken ct) =>
+        StartBinding.AtStartAsync(Context, quest, workspace, hold, ct);
 
     Action<string>? IRunWiring.RunReturned => driver.RunReturned;
 

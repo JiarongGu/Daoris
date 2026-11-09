@@ -405,19 +405,17 @@ public sealed class WorkPerformer(NodeRecordFiles records, IWorkPerformPort port
     internal static NodeAcceptance Accepted(NodeDeclaration node, string word, NodeAcceptance binding, WorkOutcome outcome) =>
         WorkOutcomes.Accepted(node, word, binding, outcome);
 
-    /// <summary>
-    /// One delivery of an attempt, its key unchanged: acknowledged, it is sent by this loop's process of that generation; failed or unanswered,
-    /// its outcome is unknown until reconciled. A cancelled token is the loop ending, which writes nothing more. The receipt is applied after
-    /// its await to the record as it is then: it counts its delivery, and moves to sent only an attempt still waiting for
-    /// it; an outcome heard or held meanwhile stays, and so does every other attempt and node on the unit.
-    /// </summary>
+    /// <summary>One delivery of an attempt under its own step's authority, its key unchanged: acknowledged, it is sent by this loop's process of that
+    /// generation; failed or unanswered, its outcome is unknown until reconciled. A cancelled token is the loop ending, which writes nothing more. The receipt
+    /// is applied after its await to the record as it is then: it counts its delivery, and moves to sent only an attempt still waiting for it; an outcome
+    /// heard or held meanwhile stays, and so does every other attempt and node on the unit.</summary>
     private async Task<WorkPerformed> SendAsync(string unit, NodeAttempt attempt, NodeDeclaration node, string what, CancellationToken ct)
     {
         var invocation = attempt.Call.Invocation;
         int generation;
         try
         {
-            generation = await StepAuthority.RunAsync(StepAuthority.Of(unit, attempt), async () =>
+            generation = await StepAuthority.RunAsync(StepAuthorities.Of(unit, attempt), async () =>
             {
                 if (!OnPort(attempt)) return await port.PerformAsync(attempt.Plugin, attempt.Call, ct).ConfigureAwait(false);
 

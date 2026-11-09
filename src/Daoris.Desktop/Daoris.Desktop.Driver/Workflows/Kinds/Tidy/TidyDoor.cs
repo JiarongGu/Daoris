@@ -3,7 +3,6 @@ namespace Daoris.Driver;
 /// <summary>A run's <c>tidy</c> to perform: its node, and the landing whose chain it ends, at the tip the landing recorded.</summary>
 public sealed record TidyStart(string Unit, NodeDeclaration Node, string Repository, string Workspace, string Root, string Branch, string Tip) : NodeDoorStart
 {
-    /// <summary>Once per node and tip.</summary>
     public override string Key => $"{Unit}\n{Node.Id}\n{Tip}";
 }
 
@@ -14,13 +13,9 @@ public interface ITidyDoor : INodeDoor
     bool Start(TidyStart start);
 }
 
-/// <summary>
-/// Performs a run's <c>tidy</c>: once the landing's pull request merged, each part of its chain (the session branch of every unit
-/// the landing carries) is ended on the line. Its commits are kept on a recovery ref first, and its branch then goes through the journal's
-/// delete (<see cref="JournaledDeletes"/>, the <c>ref.delete</c> act with its Undo), resting on that ref. What it ended is
-/// written on the landing record (<see cref="ChainTidied"/>), the one judgement the keeper and the press read for those parts. It starts only
-/// on a monitor's <c>when merged</c>, and where the request did not merge it ends nothing and fails nothing.
-/// </summary>
+/// <summary>Performs a run's <c>tidy</c>: once the landing's pull request merged, each part of its chain (the session branch of every unit the landing
+/// carries) is ended on the line, its commits kept on a recovery ref and its branch then gone through the journal's delete (<see cref="JournaledDeletes"/>), and
+/// what it ended written on the landing record (<see cref="ChainTidied"/>). Where the request did not merge it ends nothing and fails nothing.</summary>
 /// <param name="home">The Daoris home whose landing and session records the tidy reads and writes.</param>
 /// <param name="log">Told what a tidy came to; the machine log's line.</param>
 /// <param name="runs">Whether a tidy may begin now: not while an update drains; null always may.</param>
@@ -91,10 +86,8 @@ public sealed class TidyDoor(string home, Action<string>? log = null, Func<bool>
             .Select(each => each.Branch)
             .Distinct(StringComparer.Ordinal);
 
-    /// <summary>
-    /// One part ended: its tip kept on a recovery ref in an act of the journal's, then its branch deleted through the journal resting on that
-    /// ref, never one a tree has checked out (git's own delete refuses that, and the journal's does not ask). Null where its branch is gone already.
-    /// </summary>
+    /// <summary>One part ended: its tip kept on a recovery ref in an act of the journal's, then its branch deleted through the journal resting on that
+    /// ref, never one a tree has checked out (git's own delete refuses that, and the journal's does not ask). Null where its branch is gone already.</summary>
     private async Task<TidiedPart?> EndAsync(TidyStart start, string branch, IReadOnlyDictionary<string, string> trees, CancellationToken ct)
     {
         var full = $"refs/heads/{branch}";

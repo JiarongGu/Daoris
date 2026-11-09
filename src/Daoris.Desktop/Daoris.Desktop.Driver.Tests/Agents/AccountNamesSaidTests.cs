@@ -291,7 +291,7 @@ public sealed class AccountNamesSaidTests : IDisposable
         Wire(s => s.WithDefault("stub", "account-1"));
         var roster = Built();
         _ledger.Publish("q1", "engine");
-        var (cut, _) = await service.OpenSessionAsync("q1", "acp-stub", null, "account-1", Path.Combine(_home, "engine"), null);
+        var (cut, _) = await HeldOpens.OpenAsync(service, _home, "q1", "acp-stub", "account-1", Path.Combine(_home, "engine"));
         await service.AdvanceAsync(cut!, "working");
         _ledger.Move("q1", "Taken");
         const string refusal = "the ACP agent refused the call: You've hit your individual spend limit · … · your weekly limit resets Oct 3, 4pm (Asia/Kathmandu)";
