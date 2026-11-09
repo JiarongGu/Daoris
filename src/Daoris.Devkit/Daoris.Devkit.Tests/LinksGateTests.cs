@@ -104,6 +104,23 @@ public sealed class LinksGateTests : IDisposable
         Assert.True(Run("README.md", "docs/design.md").Passed);
     }
 
+    /// <summary>🔴 A link quoted in a fence or a code span is followed by nobody, so it is not checked; a real one beside it is.</summary>
+    [Fact]
+    public void A_link_quoted_in_a_fence_or_a_code_span_is_not_checked_but_a_real_one_beside_it_is()
+    {
+        _fx.Write("README.md",
+            "write `[x](docs/span.md)` and ``[y](docs/double `tick`.md)`` like this:\n\n"
+            + "````md\n```\n[z](docs/inner.md)\n```\n[w](docs/outer.md)\n````\n\n"
+            + "~~~\n[v](docs/tilde.md)\n~~~\n\n"
+            + "- an item\n\n  ```\n  [u](docs/item.md)\n  ```\n\n"
+            + "then [real](docs/real.md) and [`code` text](docs/linked.md)\n");
+
+        var result = Run("README.md");
+
+        Assert.False(result.Passed);
+        Assert.Equal("README.md: 'docs/real.md' does not exist\nREADME.md: 'docs/linked.md' does not exist", result.Detail);
+    }
+
     [Fact]
     public void A_link_to_a_directory_resolves()
     {

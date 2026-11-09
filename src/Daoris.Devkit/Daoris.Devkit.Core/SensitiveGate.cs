@@ -204,13 +204,14 @@ public sealed class SensitiveGate(
     }
 
     /// <summary>
-    /// A NUL byte in the first block means binary, which is the same test git itself uses.
+    /// A NUL byte in the first block means binary, git's own test, unless a UTF-16 byte-order mark says text (each ASCII character holds a NUL).
     /// </summary>
     private static bool IsBinary(string file)
     {
         using var stream = File.OpenRead(file);
         Span<byte> head = stackalloc byte[8000];
         var read = stream.Read(head);
+        if (read >= 2 && (head is [0xFF, 0xFE, ..] || head is [0xFE, 0xFF, ..])) return false;
         return head[..read].IndexOf((byte)0) >= 0;
     }
 

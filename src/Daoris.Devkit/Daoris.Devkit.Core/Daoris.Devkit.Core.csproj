@@ -5,4 +5,8 @@
          no reflection-based serialization, no dynamic code. Warn at build rather than at publish. -->
     <IsAotCompatible>true</IsAotCompatible>
   </PropertyGroup>
+  <ItemGroup>
+    <!-- The one fence reader: the service's, compiled in so the links gate reads a fence as every other reader does. -->
+    <Compile Include="..\..\Daoris.Service\Daoris.Service.Core\Knowledge\Ingest\MarkdownFence.cs" Link="MarkdownFence.cs" />
+  </ItemGroup>
 </Project>
