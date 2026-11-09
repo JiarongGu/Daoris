@@ -131,6 +131,8 @@ export const tool = await import(
   // @ts-expect-error — untyped workspace tooling; the same seam dogfood.test.ts documents
   '../../../../tools/merge-branch.mjs') as {
   parseArgs: (argv: string[]) => Options;
+  laneReport: (root: string, branch: string) => string[];
+  treeDrift: (root: string, from: string, to: string) => string[] | null;
   runGate: (root: string, gate: Gate, dir: string, options?: { step?: Step; noBuild?: boolean; trees?: Trees | null } & Beside) => Promise<GateResult>;
   runGates: (root: string, gates: Gate[], dir: string, options?: {
     keepGoing?: boolean;

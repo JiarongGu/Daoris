@@ -269,3 +269,10 @@ function pageReads(file: string, text: string, files: readonly string[]): string
 test("the module that builds the lane table's rows reaches the tool-tests that hold the table", () => {
   assert.ok(reaches(['tools/reach-rows.mjs']).includes('tool-tests'));
 });
+
+test('CODESTRREV2e: a file of canon/ with a narrow rule of its own reaches every gate the whole folder does', () => {
+  const folder = runs(['canon/README.md']);
+  for (const gate of ['service', 'rehearse', 'rehearse-family']) assert.ok(folder.includes(gate), `canon/** runs ${gate}`);
+  const version = runs(['canon/canon.json']);
+  assert.deepEqual(folder.filter((gate) => !version.includes(gate)), [], 'canon/canon.json runs less than canon/**');
+});

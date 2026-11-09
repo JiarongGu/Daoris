@@ -66,7 +66,7 @@ const sleep = (ms) => Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 
 const stamp = (now) => `${JSON.stringify({ pid: process.pid, since: new Date(now()).toISOString() })}\n`;
 
 /** Put the text at `path` with no overwrite, written to `beside` first so it is never read half written: whether it is there now. */
-function putIfAbsent(path, beside, text) {
+export function putIfAbsent(path, beside, text) {
   writeFileSync(beside, text);
   try {
     linkSync(beside, path);
