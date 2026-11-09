@@ -58,7 +58,7 @@ internal static class GitObjectReads
         string root, IReadOnlyList<GitObjectName> names, int limit, CancellationToken ct)
     {
         if (names.Count == 0 || names.Any(name => !name.Framed)) return null;
-        var room = (long)(GitObjectAnswer.HeaderBound + Math.Max(0, limit) + 1) * names.Count;
+        var room = names.Sum(name => (long)GitObjectAnswer.HeaderRoom(name.Question) + Math.Max(0, limit) + 1);
         var read = await WorkingTree.GitBytesAsync(root, ["cat-file", "--batch"], (int)Math.Min(room, Whole), string.Concat(names.Select(name => name.Question + "\n")), ct)
             .ConfigureAwait(false);
         if (read is not { } bytes) return null;
@@ -97,7 +97,7 @@ internal static class GitObjectReads
 
     private static async Task<(GitObjectAnswer Answer, byte[] Bytes)?> AskAsync(string root, string question, int limit, CancellationToken ct)
     {
-        var read = await WorkingTree.GitBytesAsync(root, ["cat-file", "--batch"], GitObjectAnswer.HeaderBound + Math.Max(0, limit), question + "\n", ct)
+        var read = await WorkingTree.GitBytesAsync(root, ["cat-file", "--batch"], GitObjectAnswer.HeaderRoom(question) + Math.Max(0, limit), question + "\n", ct)
             .ConfigureAwait(false);
         // The header's room, unused by a short header, is not more of the object than the asker's limit.
         return read is { } bytes && GitObjectAnswer.Parse(bytes.Bytes, bytes.Count) is { } answer

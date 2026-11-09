@@ -16,13 +16,16 @@ namespace Daoris.Driver;
 /// <param name="Count">How many of its bytes the read holds.</param>
 internal sealed record GitObjectAnswer(bool Missing, string Type, long Size, int Start, int Count)
 {
-    /// <summary>How long a header may be: an id of 64, the longest type and a size, with room to spare.</summary>
+    /// <summary>How long a found object's header may be: an id of 64, the longest type and a size, with room to spare. A missing one echoes its question beside it.</summary>
     internal const int HeaderBound = 128;
+
+    /// <summary>The room of an answer to <paramref name="question"/> before its object's bytes: the header, and the question a missing answer repeats.</summary>
+    internal static int HeaderRoom(string question) => HeaderBound + Encoding.UTF8.GetByteCount(question);
 
     /// <summary>The answer at <paramref name="at"/> in the first <paramref name="count"/> of <paramref name="bytes"/>; null where git gives none such.</summary>
     internal static GitObjectAnswer? Parse(byte[] bytes, int count, int at = 0)
     {
-        var end = at < count ? Array.IndexOf(bytes, (byte)'\n', at, Math.Min(count - at, Math.Min(bytes.Length - at, HeaderBound))) : -1;
+        var end = at < count ? Array.IndexOf(bytes, (byte)'\n', at, Math.Min(count, bytes.Length) - at) : -1;
         if (end < 0) return null;
         var header = Encoding.UTF8.GetString(bytes, at, end - at);
         if (header.EndsWith(" missing", StringComparison.Ordinal)) return new GitObjectAnswer(true, "", 0, end + 1, 0);
