@@ -147,7 +147,7 @@ internal sealed class RebaseReplay(ReplaySettles settles)
     }
 
     /// <summary>The stopped commit's patch id: the same stop met again after a rebind, whatever id its replay gave it.</summary>
-    private static async Task<string?> PatchIdAsync(string root, string commit, CancellationToken ct)
+    internal static async Task<string?> PatchIdAsync(string root, string commit, CancellationToken ct)
     {
         var (shown, patch, _) = await WorkingTree.GitAsync(root, ["show", "--format=", "--no-color", commit], ct).ConfigureAwait(false);
         if (shown != 0) return null;

@@ -336,7 +336,7 @@ internal sealed class HandToSession(IRunWiring wiring) : IRunStage
                 // the quest as the conclusion reads it, by the conclusion's own rule.
                 waitsOnBackground: SessionWaits.OnBackground(service, quest, sessionId, resumed: start.Resumes is not null),
                 // A turn that ends with the quest done and the tree uncommitted is carried on, not concluded.
-                carriesOn: SessionWaits.CarriesOn(service, quest, workTree, resumed: start.Resumes is not null, () => context.Processes.StopMade(sessionId) is not null),
+                carriesOn: SessionWaits.CarriesOn(home, service, quest, workTree, resumed: start.Resumes is not null, () => context.Processes.StopMade(sessionId) is not null),
                 // Where the first prompt's write returns, the carry-on's moved words are `sent`, then taken.
                 written: delivering is null ? null : delivering.Written,
                 // Its agent's refusal of the entry's model at the open is re-asked; a new start's walk may answer a later entry on the same

@@ -18,4 +18,7 @@ public sealed record NodeGitReads(Func<LandedBranch, string?>? RemoteTip = null)
 
     /// <summary>What a run's <c>rebase</c> attempt came to, by run, node and attempt, as its door wrote it (<see cref="RebaseRecords"/>); null where none is read.</summary>
     public Func<string, string, int, RebaseAttempt?>? Rebased { get; init; }
+
+    /// <summary>What a run's <c>resolve</c> came to and waits on, by run, node and attempt, as its door wrote it (<see cref="ResolveRecords"/>); null where none is read.</summary>
+    public Func<string, string, int, (ResolveAttempt? Made, string? Waits)>? Resolved { get; init; }
 }

@@ -14,7 +14,7 @@ public sealed partial class StepAuthorityCensusTests
     private static readonly string[] Setters =
     [
         "Workflows/Kinds/NodeDoorRuns.cs", "Workflows/Kinds/Integrate/IntegrateStart.cs", "Workflows/Nodes/WorkPerformer.cs",
-        "Workflows/Kinds/Resolve/TreeHandOffs.cs",
+        "Workflows/Kinds/Resolve/ResolveDoor.cs",
     ];
 
     private const string Runner = "Workflows/Kinds/NodeDoorRuns.cs";
@@ -60,7 +60,11 @@ public sealed partial class StepAuthorityCensusTests
     /// <summary>Every door a kind keeps its node on, built from a wiring that holds every piece; a kind journalled or started through its own attempts is not one.</summary>
     private static IReadOnlyList<(string Kind, INodeDoor Door)> KeptDoors(string home)
     {
-        var wiring = new NodeDoorWiring(home, () => true) { Landing = () => null!, Turning = _ => Task.FromResult<IReadOnlySet<string>>(new HashSet<string>()) };
+        var wiring = new NodeDoorWiring(home, () => true)
+        {
+            Landing = () => null!, Turning = _ => Task.FromResult<IReadOnlySet<string>>(new HashSet<string>()), Resolvers = new CensusResolvers(),
+            Reserve = (_, _) => Task.FromResult(new TreeReserved(null, null, "census")),
+        };
         return [.. NodeKit.Built.Units
             .Where(unit => unit is IStarts and not IJournalled and not IntegrateNode and not RequestNode)
             .Select(unit => (unit.Row.Kind, Door: ((IStarts)unit).Door(wiring)))
@@ -78,6 +82,7 @@ public sealed partial class StepAuthorityCensusTests
         var home = Path.Combine(WorkspaceRoot.Folder, "_fixtures", "test-homes", Guid.NewGuid().ToString("N")[..8]);
         var doors = KeptDoors(home);
         Assert.Contains(doors, each => each.Kind == NodeKinds.Rebase);
+        Assert.Contains(doors, each => each.Kind == NodeKinds.Resolve);
         Assert.Empty(Unrun(doors));
         foreach (var (kind, door) in doors)
         {
@@ -106,4 +111,13 @@ public sealed partial class StepAuthorityCensusTests
     }
 
     private sealed class PlantedDoor : INodeDoor;
+
+    private sealed class CensusResolvers : IResolvers
+    {
+        public Task<(string? Session, string? Why)> SessionAsync(TreeHandOff row, CancellationToken ct) => throw new NotSupportedException();
+
+        public Task<string> AskAsync(TreeHandOff row, string session, string words, Func<bool> lapsed, CancellationToken ct) => throw new NotSupportedException();
+
+        public Task StopAsync(TreeHandOff row, CancellationToken ct) => throw new NotSupportedException();
+    }
 }

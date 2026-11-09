@@ -18,6 +18,10 @@ public sealed record RebaseAttempt(string Run, string Node, int Attempt, string 
 
     public IReadOnlyList<string> LeftOut { get; init; } = [];
 
+    public IReadOnlyList<RebaseUncommitted> Uncommitted { get; init; } = [];
+
+    public string? Resolution { get; init; }
+
     /// <summary>The problem's stop, where it has one.</summary>
     [JsonIgnore]
     public NodeStop? Stop => StopSort is { } sort ? new NodeStop(sort, PatchId, Paths) : null;

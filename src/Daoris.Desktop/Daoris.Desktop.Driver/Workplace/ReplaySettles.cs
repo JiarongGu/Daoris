@@ -114,6 +114,9 @@ internal sealed class ReplaySettles(TreeContext context, PassLeftovers leftovers
         }
     }
 
+    internal async Task<BacklogMerge.Stops> StopsAsync(string root, string repository, string onto, CancellationToken ct) =>
+        new(onto, Config() is { } config ? await LineRules.AcceptedAsync(config, root, repository, onto, ct).ConfigureAwait(false) : []);
+
     /// <summary>
     /// A tree of Daoris's own for one replay, under the trees home, detached at <paramref name="at"/>: what a
     /// replay a kill cut off left in the repository's trees moved aside first (<see cref="PassLeftovers"/>), then the
@@ -260,48 +263,43 @@ internal sealed class ReplaySettles(TreeContext context, PassLeftovers leftovers
     private static async Task<(bool Failed, string Words, Stop? Stop)> RebaseTakingGeneratedAsync(
         string tree, string onto, string upstream, List<string> generated, BacklogMerge.Stops backlog, CancellationToken ct)
     {
-        var (code, output, err) = await WorkingTree.GitAsync(
-            tree, ["-c", "rebase.updateRefs=false", "-c", "rebase.autoStash=false", "rebase", "--onto", onto, upstream],
-            environment: null, SyncBounds.Replay, ct).ConfigureAwait(false);
-        string[] paths = [];
+        var (code, output, err, paths) = await SettleStopsAsync(
+            tree, ["-c", "rebase.updateRefs=false", "-c", "rebase.autoStash=false", "rebase", "--onto", onto, upstream], generated, backlog, partly: false, ct)
+            .ConfigureAwait(false);
+        if (code == 0) return (false, "", null);
+        var stopped = paths.Count > 0 && await CommitOfAsync(tree, "REBASE_HEAD", ct).ConfigureAwait(false) is { } at ? new Stop(at, [.. paths]) : null;
+        await WorkingTree.GitAsync(tree, ["rebase", "--abort"], ct).ConfigureAwait(false);
+        var conflicts = (output + "\n" + err).Split('\n')
+            .Select(each => each.Trim())
+            .Where(each => each.StartsWith("CONFLICT", StringComparison.Ordinal))
+            .ToList();
+        return (true, (conflicts.Count > 0 ? LineHolds.Joined(conflicts) : Failure(err.Length > 0 ? err : output)) + backlog.Refused, stopped);
+    }
+
+    /// <summary>
+    /// A replay begun by <paramref name="first"/> (null: the tree stands at a stop), each stop the rules settle gone on from, until its end or a stop
+    /// they do not: git's answer and that stop's paths, the rebase left there; <paramref name="partly"/>, what may be settled is, for a resolver.
+    /// </summary>
+    internal static async Task<(int Code, string Output, string Err, IReadOnlyList<string> Paths)> SettleStopsAsync(
+        string tree, IReadOnlyList<string>? first, List<string> generated, BacklogMerge.Stops backlog, bool partly, CancellationToken ct)
+    {
+        var (code, output, err) = first is null ? (1, "", "") : await WorkingTree.GitAsync(tree, [.. first], environment: null, SyncBounds.Replay, ct).ConfigureAwait(false);
+        IReadOnlyList<string> paths = [];
         // Each stop is one commit; a bound on them keeps a replay that never settles from going round for ever.
         for (var stops = 0; code != 0 && stops < GeneratedPaths.StopsAtMost; stops++)
         {
             var (listed, unmerged, _) = await WorkingTree.GitAsync(tree, ["--no-optional-locks", "-c", "core.quotePath=false", "diff", "--name-only", "--diff-filter=U"], ct)
                 .ConfigureAwait(false);
             paths = unmerged.Split('\n', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
-            if (listed != 0 || paths.Length == 0) break;
-            // The backlog is asked of only where the generated files alone do not settle the stop, so a replay that meets none reads no
-            // manifest; its other files must all be generated, and its own conflict must settle by its base.
-            // The declared row tables are settled by the merge base as the backlog is.
-            var settled = new HashSet<string>(StringComparer.Ordinal);
-            if (await GeneratedPaths.AllAsync(tree, paths, ct).ConfigureAwait(false) is not true)
+            if (listed != 0 || paths.Count == 0) break;
+            var (taking, left) = await SettleAtAsync(tree, paths, backlog, partly, ct).ConfigureAwait(false);
+            if (taking is null)
             {
-                var declared = await backlog.DeclaredAsync(tree, ct).ConfigureAwait(false);
-                var mine = paths.Where(declared.Settles).ToArray();
-                var others = paths.Where(path => !declared.Settles(path)).ToArray();
-                if (mine.Length == 0
-                    || (others.Length > 0 && await GeneratedPaths.AllAsync(tree, others, ct).ConfigureAwait(false) is not true))
-                {
-                    break;
-                }
-
-                var all = true;
-                foreach (var path in mine)
-                {
-                    if (!await backlog.SettleAsync(tree, path, ct).ConfigureAwait(false))
-                    {
-                        all = false;
-                        break;
-                    }
-
-                    settled.Add(path);
-                }
-
-                if (!all) break;
+                paths = left;
+                break;
             }
 
-            foreach (var path in paths.Where(path => !settled.Contains(path)))
+            foreach (var path in taking)
             {
                 // The line's side, `--ours` in a rebase; a path the line removed goes, as it does there.
                 var (taken, _, _) = await WorkingTree.GitAsync(tree, ["checkout", "--ours", "--", path], ct).ConfigureAwait(false);
@@ -310,21 +308,48 @@ internal sealed class ReplaySettles(TreeContext context, PassLeftovers leftovers
                 if (!generated.Contains(path, StringComparer.Ordinal)) generated.Add(path);
             }
 
-            paths = [];
+            paths = left;
+            if (left.Count > 0) break;
             // Nothing left of the commit once its generated files are the line's: skipped, as a commit that becomes empty is dropped.
             var (same, _, _) = await WorkingTree.GitAsync(tree, ["--no-optional-locks", "diff", "--cached", "--quiet", "HEAD"], ct).ConfigureAwait(false);
             (code, output, err) = await WorkingTree.GitAsync(
-                tree, same == 0 ? ["rebase", "--skip"] : ["-c", "core.editor=:", "rebase", "--continue"], environment: null, SyncBounds.Replay, ct)
-                .ConfigureAwait(false);
+                tree, same == 0 ? ["rebase", "--skip"] : ["-c", "core.editor=:", "-c", "merge.conflictStyle=diff3", "rebase", "--continue"], environment: null,
+                SyncBounds.Replay, ct).ConfigureAwait(false);
         }
 
-        if (code == 0) return (false, "", null);
-        var stopped = paths.Length > 0 && await CommitOfAsync(tree, "REBASE_HEAD", ct).ConfigureAwait(false) is { } at ? new Stop(at, paths) : null;
-        await WorkingTree.GitAsync(tree, ["rebase", "--abort"], ct).ConfigureAwait(false);
-        var conflicts = (output + "\n" + err).Split('\n')
-            .Select(each => each.Trim())
-            .Where(each => each.StartsWith("CONFLICT", StringComparison.Ordinal))
-            .ToList();
-        return (true, (conflicts.Count > 0 ? LineHolds.Joined(conflicts) : Failure(err.Length > 0 ? err : output)) + backlog.Refused, stopped);
+        return (code, output, err, paths);
+    }
+
+    /// <summary>One stop's generated files to take at the line's copy and those left, the backlog settled in place; whole, any left takes nothing.</summary>
+    private static async Task<(IReadOnlyList<string>? Taking, IReadOnlyList<string> Left)> SettleAtAsync(
+        string tree, IReadOnlyList<string> paths, BacklogMerge.Stops backlog, bool partly, CancellationToken ct)
+    {
+        // The backlog is asked of only where the generated files alone do not settle the stop, so a replay that meets none reads no
+        // manifest; whole, its other files must all be generated, and its own conflict must settle by its base.
+        if (await GeneratedPaths.AllAsync(tree, paths, ct).ConfigureAwait(false) is true) return (paths, []);
+        var declared = await backlog.DeclaredAsync(tree, ct).ConfigureAwait(false);
+        var mine = paths.Where(declared.Settles).ToArray();
+        var others = paths.Where(path => !declared.Settles(path)).ToArray();
+        if (!partly && (mine.Length == 0 || (others.Length > 0 && await GeneratedPaths.AllAsync(tree, others, ct).ConfigureAwait(false) is not true)))
+        {
+            return (null, paths);
+        }
+
+        var left = new List<string>();
+        foreach (var path in mine)
+        {
+            if (await backlog.SettleAsync(tree, path, ct).ConfigureAwait(false)) continue;
+            if (!partly) return (null, paths);
+            left.Add(path);
+        }
+
+        var taking = new List<string>();
+        foreach (var path in others)
+        {
+            if (!partly || await GeneratedPaths.AllAsync(tree, [path], ct).ConfigureAwait(false) is true) taking.Add(path);
+            else left.Add(path);
+        }
+
+        return (taking, [.. left.Order(StringComparer.Ordinal)]);
     }
 }
