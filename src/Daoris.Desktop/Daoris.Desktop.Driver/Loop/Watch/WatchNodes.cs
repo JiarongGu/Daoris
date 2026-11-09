@@ -31,6 +31,7 @@ internal sealed class WatchNodes
     private readonly Func<DriverConfig> _config;
     private readonly HeavyExecutor _executor;
     private readonly IntegrationTransport _transport;
+    private readonly OpenHandOffs _handOffs;
     private PassAsks? _asks;
     private System.Threading.Timer? _due;
     private int _wholeAsked;
@@ -72,6 +73,13 @@ internal sealed class WatchNodes
         // while an update drains. A run's `land` lands as the review's Accept lands it; a unit's `integrate`
         // asks the door a test hands, else the home's own; a run's `request` publishes through this loop's service client.
         var landingPlugins = new LandingPlugins(home, say: (plugin, line) => watch.Output?.Append($"plugin:{plugin}", line), pluginLog: hooks.Log);
+        // A run's `resolve` asks the tree's session through the say door and stops its turn through the session's stop door.
+        var resolvers = new SessionResolvers(new ResolverSessions(
+            service.RecordsAsync,
+            (session, text, key, token) => service.SayAsync(session, text, null, token, from: DaorisWords.From, key: key),
+            session => watch.Processes.Running.Contains(session, StringComparer.OrdinalIgnoreCase),
+            (session, note) => watch.Processes.Stop(session, reason: note)));
+        _handOffs = new OpenHandOffs(home, resolvers, said => Log?.Info("resolve.run", ("said", said)));
         nodes.Doors = NodeDoors.Wired(new NodeDoorWiring(home, () => HomeLease.HeldHere(home) && !watch.DrainsNow())
         {
             Log = (code, said) => Log?.Info(code, ("said", said)),
@@ -81,6 +89,8 @@ internal sealed class WatchNodes
             Integration = watch.IntegrationDoor,
             Requests = service,
             Turning = ct => TidyHolders.InUseAsync(home, service, null, ct),
+            Resolvers = resolvers,
+            Reserve = (row, ct) => TreeReserving.ReserveAsync(home, service, new TreeHandOffs(home), row, ct),
         });
 
         // The transport an open request's line is sent to, run off the pass beside the heavy
@@ -182,6 +192,9 @@ internal sealed class WatchNodes
         NodeRuntimePass pass;
         try
         {
+            // A hand-off the driver's last run left open is put back before this run's first pass starts anything in its tree.
+            if (HomeLease.HeldHere(home)) await _handOffs.BeforePassAsync(token).ConfigureAwait(false);
+
             // A set naming a plugin anew starts its process here, with no plan, as the plan's supervision does at the look it
             // wakes; withdrawn first where the choices no longer arm the runtime, so it starts nothing for a removed graph.
             if (Interlocked.Exchange(ref _superviseAsked, 0) == 1 && !await Runtime.WithdrawAsync(_config(), token).ConfigureAwait(false))

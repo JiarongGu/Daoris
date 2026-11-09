@@ -196,14 +196,96 @@ public sealed class ResolveDoorGitTests : LandedFixture
         Assert.Equal(ResolveSteps.Stopped, (await new ResolveTree(new SessionTrees(Home).Settles).PrepareAsync(hand, CancellationToken.None)).Kind);
         Offs.Advance(row, TreeHandOffPhases.Asked, "s-41");
         await File.WriteAllTextAsync(Path.Combine(tree.Path, "f0.txt"), "mid-edit\n");
-        var resolvers = new Scripted(Settle);
+        var seen = "";
+        var resolvers = new Scripted(async asked =>
+        {
+            seen = await File.ReadAllTextAsync(Path.Combine(asked.Tree, "f0.txt"));
+            return await Settle(asked);
+        });
+        var restart = new OpenHandOffs(Home, resolvers) { HandOffs = Offs };
 
-        await ResolveDoor.RestoreOpenAsync(Home, Offs, resolvers, CancellationToken.None);
+        await restart.BeforePassAsync(CancellationToken.None);
 
         Assert.Equal([true], resolvers.StoppedMidRebase);
         await AsHandedAsync(tree, start.Work.Tip);
         Assert.Equal("mid-edit\n", await GitAsync(tree.Path, "show", $"{StepRefs.EditsOf("r1", "resolve")}:f0.txt"));
         Assert.Null(Offs.Of(tree.Path));
+
+        await Door(resolvers).PerformAsync(start, CancellationToken.None);
+        Assert.Equal("mid-edit\n", seen.ReplaceLineEndings("\n"));
+        Assert.Equal(ResolveNode.Resolved, new ResolveRecords(Home).Of("r1", "resolve", 1)!.Outcome);
+    }
+
+    [Fact]
+    public async Task Only_what_a_restart_found_open_is_restored_and_a_later_pass_leaves_a_live_hand_off_alone()
+    {
+        var (_, tree, start) = await ConflictAsync(stops: 1);
+        var restart = new OpenHandOffs(Home, new Scripted(Settle)) { HandOffs = Offs };
+        await restart.BeforePassAsync(CancellationToken.None);
+        var live = Offs.Write(new TreeHandOff(tree.Path, "engine", tree.Branch, start.Work.Tip, "r1", "resolve", 1, "stop", "session",
+            TreeHandOff.AskKey("r1", "resolve", 1, 1), TreeHandOffPhases.Reserved, DateTimeOffset.UtcNow, DateTimeOffset.UtcNow.AddMinutes(30)))!;
+
+        await restart.BeforePassAsync(CancellationToken.None);
+
+        Assert.Equal(live.Id, Offs.Of(tree.Path)?.Id);
+    }
+
+    [Fact]
+    public async Task The_loop_s_resolver_timed_out_mid_edit_is_stopped_through_its_stop_door_before_the_tree_goes_back()
+    {
+        var (_, tree, start) = await ConflictAsync(stops: 1);
+        var running = false;
+        string? atStop = null;
+        Noted? stoppedWith = null;
+        var resolvers = new SessionResolvers(new ResolverSessions(
+            _ => Task.FromResult<IReadOnlyCollection<PriorSession>>([new PriorSession("s-41", tree.Path, "completed") { Created = DateTimeOffset.UtcNow }]),
+            async (_, _, _, _) =>
+            {
+                await File.WriteAllTextAsync(Path.Combine(tree.Path, "f0.txt"), "half\n");
+                running = true;
+                return new SayAnswer(true, "kept");
+            },
+            _ => running,
+            (_, note) =>
+            {
+                atStop = File.ReadAllText(Path.Combine(tree.Path, "f0.txt"));
+                stoppedWith = note;
+                running = false;
+                return true;
+            })
+        {
+            Poll = TimeSpan.FromMilliseconds(10),
+        });
+
+        await Door(resolvers).PerformAsync(start with { Each = TimeSpan.FromMilliseconds(300) }, CancellationToken.None);
+
+        Assert.Equal("half\n", atStop?.ReplaceLineEndings("\n"));
+        Assert.Equal(EndNoteCodes.EndedResolveAsk.Code, stoppedWith?.Parts[0].Code);
+        await AsHandedAsync(tree, start.Work.Tip);
+        Assert.Equal("half\n", await GitAsync(tree.Path, "show", $"{StepRefs.EditsOf("r1", "resolve")}:f0.txt"));
+        Assert.Null(Offs.Of(tree.Path));
+        Assert.Null(new ResolveRecords(Home).Of("r1", "resolve", 1));
+    }
+
+    [Fact]
+    public async Task The_person_s_stop_of_the_resolver_mid_edit_stops_it_first_keeps_its_edits_and_fails_said()
+    {
+        var (_, tree, start) = await ConflictAsync(stops: 1);
+        var resolvers = new Scripted(async row =>
+        {
+            await File.WriteAllTextAsync(Path.Combine(row.Tree, "f0.txt"), "half\n");
+            return ResolverEnds.Declined;
+        });
+
+        await Door(resolvers).PerformAsync(start, CancellationToken.None);
+
+        Assert.Equal([true], resolvers.StoppedMidRebase);
+        await AsHandedAsync(tree, start.Work.Tip);
+        Assert.Equal("half\n", await GitAsync(tree.Path, "show", $"{StepRefs.EditsOf("r1", "resolve")}:f0.txt"));
+        Assert.Null(Offs.Of(tree.Path));
+        var made = new ResolveRecords(Home).Of("r1", "resolve", 1)!;
+        Assert.Equal(NodeStates.Failed, made.Outcome);
+        Assert.Contains("the person stopped or declined it", made.Said, StringComparison.Ordinal);
     }
 
     [Fact]
@@ -232,7 +314,7 @@ public sealed class ResolveDoorGitTests : LandedFixture
 
     private List<string> Logged { get; } = [];
 
-    private ResolveDoor Door(Scripted resolvers) => new(Home, resolvers, Reserve, Logged.Add) { Lapsed = _ => false, HandOffs = Offs };
+    private ResolveDoor Door(IResolvers resolvers) => new(Home, resolvers, Reserve, Logged.Add) { Lapsed = _ => false, HandOffs = Offs };
 
     private Task<TreeReserved> Reserve(TreeHandOff row, CancellationToken ct) => Task.FromResult(new TreeReserved(Offs.Write(row), null, null));
 

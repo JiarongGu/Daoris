@@ -114,6 +114,7 @@ public static class EndNoteCodes
 
     // A take lost to the person's reopen of the work its step grew from, not to another machine's take.
     public static readonly NoteCode EndedLostClaimReopened = new("ended.lost-claim-reopened", []);
+    public static readonly NoteCode EndedResolveAsk = new("ended.resolve-ask", []);
 
     // A quest's session stopped to go on with another agent: the agent it went to, never an account or a path.
     public static readonly NoteCode EndedHandedOver = new("ended.handed-over", ["agent"]);
