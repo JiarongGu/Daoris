@@ -220,7 +220,9 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/Agents/` unless they s
     machine or workspace lists. The person's pick at a start is the one exception, and a pick whose folder is gone is refused,
     never moved; a handed quest's named account that is gone walks on within the agent's accounts. (from D197)
 28. The person's own sign-in is outside the set. Daoris never signs it in or out, never asks it anything and never starts work
-    in it. (from D197, D175)
+    in it. (from D197, D175) On the agent's page it is the list's last row, under the accounts and the API-key form that adds to them; an
+    agent with no account draws no column heads and says what the list is and the press that adds the first; *Ways in* says each way in by what it gives
+    (*command line*, *conversations*), and one not installed says what to do about it.
 29. The walk: under `goal` (the default) a near account goes last, then the most room in the tightest window the account's
     provider reported (any window it declares, by what is left under the curve, or of the window where the curve table has none;
     rooms within a five-point band tie; an account with no number ranks as one with no room; not under `switch: off`), then
