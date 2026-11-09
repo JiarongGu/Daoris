@@ -24,7 +24,7 @@ internal static class DependencyStore
     /// <summary>How many files are copied at once: eight, past which a measured copy gets no faster.</summary>
     private static readonly int AtOnce = Math.Clamp(Environment.ProcessorCount, 1, 8);
 
-    /// <summary>The test seam: run with each file's path before a placement copies it, where a test cuts a placement off. Production sets none.</summary>
+    /// <summary>The test seam: run with each file's path before a seal or a placement copies it, where a test cuts either off. Production sets none.</summary>
     internal static readonly AsyncLocal<Action<string>?> Copying = new();
 
     internal static string EntryOf(string home, string key) => DaorisHome.Entry(home, HomeEntry.Deps, key);
@@ -65,8 +65,10 @@ internal static class DependencyStore
             foreach (var each in manifest.Folders) Directory.CreateDirectory(Path.Combine(into, each));
             AtOnceEach(manifest.Files, ct, each =>
             {
+                var from = Path.Combine(tree, folder, each.Path);
+                Copying.Value?.Invoke(from);
                 var to = Path.Combine(into, each.Path);
-                File.Copy(Path.Combine(tree, folder, each.Path), to);
+                File.Copy(from, to);
                 File.SetAttributes(to, File.GetAttributes(to) | FileAttributes.ReadOnly);
             });
             AtomicFile.WriteText(Path.Combine(making, ManifestName), manifest.ToJson().ToJsonString());

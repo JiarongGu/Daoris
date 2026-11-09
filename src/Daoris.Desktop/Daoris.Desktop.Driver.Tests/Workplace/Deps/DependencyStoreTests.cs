@@ -164,6 +164,29 @@ public sealed class DependencyStoreTests : IDisposable
     }
 
     [Fact]
+    public async Task A_seal_the_disk_refuses_is_said_as_not_stored_and_the_record_stays_installed()
+    {
+        await MakeAsync("link-in");
+        var tree = await TreeAsync("t1");
+        DependencyStore.Copying.Value = _ => throw new IOException("the disk is full");
+        TreeFilesOutcome outcome;
+        try
+        {
+            outcome = await StageAsync(tree);
+        }
+        finally
+        {
+            DependencyStore.Copying.Value = null;
+        }
+
+        Assert.DoesNotContain(StartNoteCodes.StartedDepsInstalled.Code, Codes(outcome));
+        var line = Assert.Single(outcome.Said, each => each.Parts.Any(part => part.Code == StartNoteCodes.StartedDepsUnstored.Code));
+        Assert.Equal(DepsWhy.Unsealed, line.Parts[0].Values.Single(value => value.Key == "why").Value);
+        Assert.Equal("installed", TreeFilesRecord.Read(Home, tree)!.Of("deps/")!.How);
+        Assert.Empty(DependencyStore.Entries(Home));
+    }
+
+    [Fact]
     public async Task A_failed_install_leaves_the_folder_absent_and_a_tracked_change_is_written_back()
     {
         await MakeAsync("fail");

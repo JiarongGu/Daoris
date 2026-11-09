@@ -381,6 +381,7 @@ internal sealed class TreeFilesStage(string home, string root, string tree, stri
             : changed.Count > 0 ? DepsWhy.GroupFormed(changed[0].TrimEnd('/'))
             : FillJudgement.Unsealable(tree, dependency.Folder, manifest, outside, (dependency.Rule.Secret ?? []).Select(name => environment.TryGetValue(name, out var value) ? value : ""));
         var sealedHere = why is null && DependencyStore.Seal(home, key, tree, dependency.Folder, manifest, ct);
+        if (why is null && !sealedHere) why = DepsWhy.SealFailed();
         var placement = new TreePlacement(dependency.Path, key, sealedHere ? "sealed" : "installed", outside is null ? manifest : null) { Companions = companions, Others = others };
         var recorded = TreeFilesRecord.WhileUnworked(home, tree, record =>
         {

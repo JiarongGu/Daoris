@@ -101,6 +101,7 @@
   "note.deps.why.link-out": "它的链接 `{{link}}` 指向工作树之外",
   "note.deps.why.held-ignored": "它的安装开始时，工作树中已有 git 忽略的 `{{file}}`",
   "note.deps.why.group": "它的安装改动了另一个依赖放置的 `{{with}}`，所以两者作为一组保留",
+  "note.deps.why.unsealed": "存储未能复制它，所以下一个工作树会再次安装它",
   "note.deps.why.share-pattern": "它的模式不指向唯一一个路径，而共享只能是一个地方",
   "note.deps.why.share-absent": "你的检出在那里什么也没有，而 Daoris 不会在其中建立文件",
   "note.deps.why.share-unignored": "git 在这个工作树和你的检出中都不忽略它，而 git 管理的路径归 git",
