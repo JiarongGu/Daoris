@@ -24,11 +24,22 @@ internal static class AgentVerbFlags
         ["pin"] = ["--workspace"],
     };
 
+    /// <summary>The verbs whose next word is a verb of their own, read by its place.</summary>
+    private static readonly Dictionary<string, IReadOnlyList<string>> Words = new(StringComparer.Ordinal)
+    {
+        ["profile"] = AgentAccountsCommand.ProfileVerbs,
+        ["rules"] = AgentRulesVerb.Verbs,
+    };
+
     /// <summary>The refusal of the first flag <paramref name="verb"/> does not take, nothing done.</summary>
     internal static void Refuse(string verb, IReadOnlyList<string> args)
     {
-        // `account use` has the flags of the use settings and refuses a retired one in words of its own.
-        if (!Taken.TryGetValue(verb, out var flags) || (verb == "profile" && args.Count > 1 && args[1] == "use")) return;
+        if (!Taken.TryGetValue(verb, out var flags)) return;
+
+        // A flag is its verb's: a word where the verb stands that is not one is refused in the verb's own words, as the window
+        // refuses it. `account use` has the flags of the use settings and refuses a retired one in words of its own.
+        if (args.Count > 1 && Words.TryGetValue(verb, out var words)
+            && (!words.Contains(args[1], StringComparer.Ordinal) || (verb == "profile" && args[1] == "use"))) return;
         if (args.Skip(1).FirstOrDefault(word => word.StartsWith("--", StringComparison.Ordinal) && !flags.Contains(word, StringComparer.Ordinal)) is { } stray)
         {
             var takes = flags.Length == 0 ? "no flag" : string.Join(", ", flags.Select(flag => $"`{flag}`"));

@@ -87,6 +87,19 @@ public sealed class AgentVerbFlagsTests : IDisposable
         Assert.True(Directory.Exists(HarnessSettings.ProfileHome(Home, "claude-code", "work")), "an account was removed");
     }
 
+    /// <summary>A flag is its verb's, so a word the terminal does not have where the verb stands is refused first, as the window refuses it.</summary>
+    [Theory]
+    [InlineData("unknown agent profile verb 'join'", "profile", "join", "claude-code", "account-3", "--machine")]
+    [InlineData("unknown rules verb 'grant'", "rules", "grant", "Bash(git push:*)", "--repo", "engine")]
+    public async Task An_unknown_verb_is_refused_before_a_flag_it_carries(string says, params string[] words)
+    {
+        var exit = await AgentsCommand.RunAsync(words, World(), CancellationToken.None);
+
+        Assert.Equal(2, exit);
+        Assert.Contains(says, _error.ToString());
+        Assert.DoesNotContain("is not a flag of", _error.ToString());
+    }
+
     [Fact]
     public async Task The_flags_a_verb_takes_are_still_read()
     {
