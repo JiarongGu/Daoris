@@ -65,7 +65,7 @@ public sealed class SaidSettledMeasureTests : IDisposable
         return line;
     }
 
-    private static async Task<(SqliteConnection Connection, SessionStore Sessions, SessionLedger Ledger)> OpenAsync(string path, bool walksHead = true)
+    private static async Task<(SqliteConnection Connection, SessionStore Sessions, SessionLedger Ledger)> OpenAsync(string path)
     {
         var connection = new SqliteConnection(new SqliteConnectionStringBuilder { DataSource = path, Mode = SqliteOpenMode.ReadWriteCreate }.ToString());
         await connection.OpenAsync();
@@ -74,7 +74,7 @@ public sealed class SaidSettledMeasureTests : IDisposable
         var store = new InMemoryKnowledgeStore();
         var service = new KnowledgeService(
             store, new LexicalKnowledgeSearch(store), new EmptyKnowledgeSource(), DisclosurePolicy.LocalOnly, registry: new Registry());
-        return (connection, sessions, new SessionLedger(quests, sessions, service) { WalksHead = walksHead });
+        return (connection, sessions, new SessionLedger(quests, sessions, service));
     }
 
     private static async Task<long> ScalarAsync(SqliteConnection connection, string sql)
@@ -433,16 +433,16 @@ public sealed class SaidSettledMeasureTests : IDisposable
     }
 
     /// <summary>
-    /// The head walk's landing limit, prepared on a scratch service: the say door's p95 with the head walked
-    /// inside its step against the same door with none, paired as the other measurements are, on two copies of one seeded file, alternated call by call.
-    /// The walk is code, not schema, so the copy before is the ledger with <c>WalksHead</c> off over the same file. Each branch of the walk is
-    /// measured: a chat with no successor (one probe on <c>sessions_from</c>), a driven part with no successor (a second, its quest's last run
-    /// here, on <c>sessions_quest</c>), and a chain of three parts said to at its first (before the row kept there, after it refused
-    /// <c>Continued</c> with two hops) and at its head. The limit itself is the install's, which the parent measures: this run prepares it and
+    /// The head walk's landing limit, prepared on a scratch service: the say door's p50 and p95 on each branch of the walk, and the walk's
+    /// own beside them, each timed alone on the same record just before the say, so the walk's share of the door is read from one file.
+    /// The walk is code and no schema, so there is no door without it to pair with. The branches are
+    /// a chat with no successor (one probe on <c>sessions_from</c>), a driven part with no successor (a second, its quest's last run
+    /// here, on <c>sessions_quest</c>), and a chain of three parts said to at its first (refused <c>Continued</c> with two hops) and at its
+    /// head. The limit itself is the install's, which the parent measures: this run prepares it and
     /// says its figures. Held to <c>DAORIS_MEASURE_SAID=head</c>; <c>DAORIS_MEASURE_PAIRS</c> sets the rounds (400 by default).
     /// </summary>
     [Fact]
-    public async Task The_say_door_is_measured_paired_with_and_without_the_head_walk_on_each_branch()
+    public async Task The_say_door_and_the_head_walk_are_measured_on_each_branch()
     {
         if (Environment.GetEnvironmentVariable(Variable) != "head") return;
 
@@ -522,12 +522,8 @@ public sealed class SaidSettledMeasureTests : IDisposable
         _said.WriteLine($"seeded {chats.Count} chats, {driven.Count} driven parts, {chains.Count} chains of three and {settled} settlements");
         await seedConnection.DisposeAsync();
         SqlitePools.Release(path);
-        var beforePath = Path.Combine(_root, "before.db");
-        File.Copy(path, beforePath);
-        var (beforeConnection, beforeSessions, beforeLedger) = await OpenAsync(beforePath, walksHead: false);
-        await using var ownedBefore = beforeConnection;
-        var (afterConnection, afterSessions, afterLedger) = await OpenAsync(path);
-        await using var ownedAfter = afterConnection;
+        var (connection, sessions, ledger) = await OpenAsync(path);
+        await using var owned = connection;
 
         string[] names =
         [
@@ -535,9 +531,9 @@ public sealed class SaidSettledMeasureTests : IDisposable
             "driven: a new word", "driven: the same key while it waits", "driven: the retry after the take",
             "chain: a say to its first part", "chain: the say at its head",
         ];
-        Dictionary<string, List<double>> Fresh() => names.ToDictionary(name => name, _ => new List<double>());
-        var before = Fresh();
-        var after = Fresh();
+        string[] walks = ["walk: a chat", "walk: a driven part", "walk: a chain's first part", "walk: a chain's head"];
+        Dictionary<string, List<double>> Fresh() => names.Concat(walks).ToDictionary(name => name, _ => new List<double>());
+        var measured = Fresh();
 
         async Task<(double Ms, SessionSayOutcome Outcome)> TimeAsync(Func<Task<SessionSayOutcome>> say)
         {
@@ -546,10 +542,20 @@ public sealed class SaidSettledMeasureTests : IDisposable
             return (clock.Elapsed.TotalMilliseconds, outcome);
         }
 
-        async Task RoundAsync(bool row, string chat, string run, (string First, string Head) chain, int each, Dictionary<string, List<double>> into)
+        async Task WalkAsync(string walk, string id, Dictionary<string, List<double>> into)
         {
-            var ledger = row ? afterLedger : beforeLedger;
-            var sessions = row ? afterSessions : beforeSessions;
+            var named = (await sessions.FindAsync(id))!;
+            var clock = Stopwatch.StartNew();
+            await Lines.WalkAsync(sessions, named);
+            into[walk].Add(clock.Elapsed.TotalMilliseconds);
+        }
+
+        async Task RoundAsync(string chat, string run, (string First, string Head) chain, int each, Dictionary<string, List<double>> into)
+        {
+            await WalkAsync("walk: a chat", chat, into);
+            await WalkAsync("walk: a driven part", run, into);
+            await WalkAsync("walk: a chain's first part", chain.First, into);
+            await WalkAsync("walk: a chain's head", chain.Head, into);
             foreach (var (branch, id) in new[] { ("chat", chat), ("driven", run) })
             {
                 var key = $"head:{branch}:{each}";
@@ -566,7 +572,7 @@ public sealed class SaidSettledMeasureTests : IDisposable
             }
 
             var (firstMs, toFirst) = await TimeAsync(() => ledger.SayAsync(chain.First, $"words {each}", null, now, key: $"head:chain:{each}", from: SaidFrom.Daoris, settled: true));
-            Assert.Equal(row ? SessionSayRefusal.Continued : SessionSayRefusal.None, toFirst.Refusal);
+            Assert.Equal(SessionSayRefusal.Continued, toFirst.Refusal);
             into["chain: a say to its first part"].Add(firstMs);
             if (toFirst.Word is { } left) await sessions.TakeSaidAsync(chain.First, [left.Id]);
             var (headMs, atHead) = await TimeAsync(() => ledger.SayAsync(chain.Head, $"words {each}", null, now, key: $"head:chain-head:{each}", from: SaidFrom.Daoris, settled: true));
@@ -580,41 +586,28 @@ public sealed class SaidSettledMeasureTests : IDisposable
         for (var each = 0; each < 40; each++)
         {
             var (chat, run, chain) = Pick();
-            await RoundAsync(false, chat, run, chain, -1 - each, Fresh());
-            await RoundAsync(true, chat, run, chain, -1 - each, Fresh());
+            await RoundAsync(chat, run, chain, -1 - each, Fresh());
         }
 
         for (var each = 0; each < rounds; each++)
         {
             var (chat, run, chain) = Pick();
-            if (each % 2 == 0)
-            {
-                await RoundAsync(false, chat, run, chain, each, before);
-                await RoundAsync(true, chat, run, chain, each, after);
-            }
-            else
-            {
-                await RoundAsync(true, chat, run, chain, each, after);
-                await RoundAsync(false, chat, run, chain, each, before);
-            }
+            await RoundAsync(chat, run, chain, each, measured);
         }
 
-        void Ratio(string label, IReadOnlyList<double> was, IReadOnlyList<double> now_)
+        void Report(string label, IReadOnlyList<double> times)
         {
-            var a = was.Order().ToArray();
-            var b = now_.Order().ToArray();
+            var sorted = times.Order().ToArray();
             _said.WriteLine(string.Create(
-                CultureInfo.InvariantCulture,
-                $"{label}: {a.Length} pairs; before p50 {Percentile(a, 0.5):F2} p95 {Percentile(a, 0.95):F2} ms, after p50 {Percentile(b, 0.5):F2} p95 {Percentile(b, 0.95):F2} ms; p95 ratio {Percentile(b, 0.95) / Percentile(a, 0.95):F3}, p50 ratio {Percentile(b, 0.5) / Percentile(a, 0.5):F3}"));
+                CultureInfo.InvariantCulture, $"{label}: {sorted.Length} calls, p50 {Percentile(sorted, 0.5):F2} ms, p95 {Percentile(sorted, 0.95):F2} ms"));
         }
 
-        foreach (var name in names) Ratio(name, before[name], after[name]);
-        List<double> Pooled(Dictionary<string, List<double>> from, string prefix) =>
-            [.. from.Where(pair => pair.Key.StartsWith(prefix, StringComparison.Ordinal)).SelectMany(pair => pair.Value)];
-        Ratio("say door pooled, a chat with no successor", Pooled(before, "chat:"), Pooled(after, "chat:"));
-        Ratio("say door pooled, a driven part with no successor", Pooled(before, "driven:"), Pooled(after, "driven:"));
-        Ratio("say door pooled, both branches with no successor", [.. Pooled(before, "chat:"), .. Pooled(before, "driven:")], [.. Pooled(after, "chat:"), .. Pooled(after, "driven:")]);
-        Ratio("say door pooled, every say", [.. before.Values.SelectMany(times => times)], [.. after.Values.SelectMany(times => times)]);
-        Assert.True(after.Values.All(times => times.Max() < 5000) && before.Values.All(times => times.Max() < 5000), "a call took seconds");
+        foreach (var name in names.Concat(walks)) Report(name, measured[name]);
+        List<double> Pooled(string prefix) =>
+            [.. measured.Where(pair => pair.Key.StartsWith(prefix, StringComparison.Ordinal)).SelectMany(pair => pair.Value)];
+        Report("say door pooled, a chat with no successor", Pooled("chat:"));
+        Report("say door pooled, a driven part with no successor", Pooled("driven:"));
+        Report("say door pooled, every say", [.. names.SelectMany(name => measured[name])]);
+        Assert.True(measured.Values.All(times => times.Max() < 5000), "a call took seconds");
     }
 }
