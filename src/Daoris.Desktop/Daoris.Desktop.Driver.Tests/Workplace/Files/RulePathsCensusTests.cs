@@ -20,8 +20,7 @@ public sealed class RulePathsCensusTests
         "Files/FilesLooks.cs:rule.Paths.Where(RuleFileFirstForm.Keeps)", "Files/FilesLooks.cs:new FilesLookRule(name, rule.Kind.Word(), rule.Paths",
         "Files/FileAnalysis.cs:ThenBy(rule => rule.Paths[0]", "Files/FileAnalysis.cs:rule.Paths.Concat(WorkspaceMembers.Modules",
         "Files/FilesCommand.cs", "Files/RepositoryFilesReader.cs:rule.Paths[0]", "Files/FileSignatures.cs:rule.Paths.Select(path => path.StartsWith(\"!/\"",
-        "Files/FileAnalysis.cs:hit.Rule.Paths.Where(path => !path.StartsWith('!'))", "Deps/WorkspaceOrder.cs:Rule.Paths.Count: > 1",
-        "Declarations/RuleFileKind.cs:DeclarationBound.Texts(rule.Paths)",
+        "Files/FileAnalysis.cs:hit.Rule.Paths.Where(path => !path.StartsWith('!'))",
         "BacklogMerge.cs:Lines.FirstOrDefault(rule => rule.Paths == path)", "IntegrationDeclaration.cs:Select(rule => rule.Paths)",
         "Deps/WorkspaceOrder.cs:Rule.Paths.Length: > 1", "Declarations/RuleFileKind.cs:DeclarationBound.Texts(rule.Paths)",
     ];
