@@ -3,7 +3,7 @@
  * both put in place complete (`run-lock.mjs`), so no run reads one half written or removes one another run took since.
  */
 import { randomBytes } from 'node:crypto';
-import { rmSync } from 'node:fs';
+import { readFileSync, rmSync } from 'node:fs';
 import { putIfAbsent, withRunLock } from '../run-lock.mjs';
 
 /** How long a verdict write may hold its lock: a write takes milliseconds, so a longer one is a run that hung or died. */
@@ -17,6 +17,25 @@ const STORE_STALE_MS = 30_000;
  */
 export function holdingLock(file, fn, { staleMs = STORE_STALE_MS, ...clock } = {}) {
   return withRunLock(`${file}.lock`, fn, { staleMs, ...clock });
+}
+
+/** The lock's text at `path`; null where there is none or it cannot be read. */
+export function lockText(path) {
+  try {
+    return readFileSync(path, 'utf8');
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * The lock at `path` removed only while it still reads as `text`, which a caller judged dead: the lock a second run put in place
+ * since is that run's own. Whether this removed it.
+ */
+export function removeWhileSame(path, text) {
+  if (text === null || lockText(path) !== text) return false;
+  rmSync(path, { force: true });
+  return true;
 }
 
 /**

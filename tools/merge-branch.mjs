@@ -443,7 +443,7 @@ import {
 import { REACH } from './merge-branch/reach-table.mjs';
 import { mergeByBase, mergeByRows, rowsRefused } from './merge-branch/backlog-merge.mjs';
 import { holdBacklog } from './merge-branch/backlog-held.mjs';
-import { holdingLock, putComplete } from './merge-branch/locks.mjs';
+import { holdingLock, lockText, putComplete, removeWhileSame } from './merge-branch/locks.mjs';
 import { diffPaths, isInside, zPaths } from './merge-branch/paths.mjs';
 import { stepTrees } from './merge-branch/step-trees.mjs';
 import { censusCovers, contractsGates, coverNote, pageScripts, settleCovered, startContractsStep } from './merge-branch/ci-steps.mjs';
@@ -4021,12 +4021,12 @@ function holderSaid(held) {
 }
 
 /**
- * The lock taken for `commit`, put in place complete where none is (`putComplete`), or a refusal naming the run that holds it: one full
- * set beside the merges at a time, since two would load the machine twice over and share one gate tree. A lock whose
- * process no longer runs (its window closed on it) is taken over, and returned as `stale` for the caller to say, with
- * `ended`: the pids `end` ended, the dead pid's direct children started since the lock's `at` with their trees, and the
- * processes since then naming the gate tree's folder whose parent no longer runs (Windows only). `holder` names the run
- * (`full` or `ci`); a refusal is `busy`, which the CI watch reads as a tree to wait for, never a failure.
+ * The lock taken for `commit`, put in place complete where none is (`putComplete`), or a refusal naming the run that holds it: one
+ * full set beside the merges at a time, since two would load the machine twice over and share one gate tree. A lock whose process
+ * no longer runs is taken over, and returned as `stale` for the caller to say, with `ended`: the pids `end` ended (the dead pid's
+ * direct children started since the lock's `at`, with their trees) and those `endStrays` ended (Windows only: since then, naming the
+ * gate tree's folder, their parent gone). `holder` names the run; a refusal is `busy`, which the CI watch reads
+ * as a tree to wait for, never a failure.
  */
 export function takeGateLock(home, { commit, holder = 'full', alive = pidAlive, now = nowIso, end = endOrphans, endStrays = endStranded } = {}) {
   const file = join(home, GATE_TREE_LOCK);
@@ -4034,16 +4034,17 @@ export function takeGateLock(home, { commit, holder = 'full', alive = pidAlive, 
   let stale = null;
   for (let attempt = 0; attempt < 3; attempt += 1) {
     if (!putComplete(file, `${JSON.stringify({ pid: process.pid, commit, at: now(), holder })}\n`)) {
+      const seen = lockText(file);
       const held = readGateLock(home, alive);
       if (held?.running) throw Object.assign(new Refusal(holderSaid(held)), { busy: true });
       if (held) {
-        // A run killed outright left its steps' tree running: end what its pid started since the lock's `at`, and the orphans found by the gate tree's folder.
+        // A killed run's steps run on: end what its pid started since the lock's `at`, and the strays found by the gate tree's folder.
         const since = Date.parse(held.at);
         const ended = Number.isNaN(since) ? [] : end(held.pid, since);
         if (!Number.isNaN(since)) ended.push(...endStrays(join(home, GATE_TREE), since).filter((pid) => !ended.includes(pid)));
         stale = { pid: held.pid, commit: held.commit, at: held.at, ended };
       }
-      rmSync(file, { force: true });
+      removeWhileSame(file, seen);
       continue;
     }
     return { stale };
