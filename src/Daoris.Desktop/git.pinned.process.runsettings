@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  The git library's proofs run once more with the MinGit the toolchain pins (GITLIB1d): the parity classes (GitLibraryReads' shapes
+  against git) and GitLibraryEndsTests, with that git the only one on the test host's PATH, so the product's starts and the
+  fixtures' are both the pinned git's. The same classes run on the runner's git in git.process.runsettings; each leg compares the
+  library with the git it runs.
+
+  The switch is the one DAORIS_PINNED_GIT_LEG the test host reads as it loads (HostEnvironment). Where the pin cannot be had on a
+  machine, every test of the leg is skipped saying why, never run on another git and passed. One class at a time: the library's classes
+  assert its process-wide open count (GitLibrary.Open), which a second of them running beside moves, and the leg runs nothing else.
+
+  The name ends in process.runsettings on purpose: the merge tool reads a gate run with such a file as a Process half, so this one
+  keeps its trx and re-runs a failed test alone. Its filter is in the file for the same reason as the other's.
+-->
+<RunSettings>
+  <RunConfiguration>
+    <TestCaseFilter>Category=Process&amp;Parallel=Git&amp;(FullyQualifiedName~GitLibraryWalksTests|FullyQualifiedName~GitLibraryNamesTests|FullyQualifiedName~GitLibraryFormatsTests|FullyQualifiedName~GitLibraryRefsTests|FullyQualifiedName~GitLibraryCountedTests|FullyQualifiedName~GitLibraryEndsTests)</TestCaseFilter>
+    <EnvironmentVariables>
+      <DAORIS_PINNED_GIT_LEG>1</DAORIS_PINNED_GIT_LEG>
+    </EnvironmentVariables>
+  </RunConfiguration>
+  <xUnit>
+    <ParallelizeTestCollections>true</ParallelizeTestCollections>
+    <MaxParallelThreads>1</MaxParallelThreads>
+  </xUnit>
+</RunSettings>

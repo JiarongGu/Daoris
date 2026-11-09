@@ -10,7 +10,7 @@ namespace Daoris.Desktop.Driver.Tests;
 [Trait(Category.Parallel, Category.Git)]
 public sealed class GitLibraryCountedTests : LandedFixture
 {
-    [Fact]
+    [GitLegFact]
     public async Task A_library_answer_is_a_read_in_the_flow_s_count_and_never_a_start()
     {
         var root = await BuildRepositoryAsync("counted-answer");
@@ -31,7 +31,7 @@ public sealed class GitLibraryCountedTests : LandedFixture
         Assert.Empty(outer.Starts);
     }
 
-    [Fact]
+    [GitLegFact]
     public async Task A_read_the_library_leaves_to_git_is_a_start_and_no_read()
     {
         var root = await BuildRepositoryAsync("counted-refused");
@@ -44,7 +44,7 @@ public sealed class GitLibraryCountedTests : LandedFixture
         Assert.Single(count.Starts);
     }
 
-    [Fact]
+    [GitLegFact]
     public async Task The_review_s_log_line_and_the_bench_s_times_say_reads_and_starts_apart()
     {
         var root = await BuildRepositoryAsync("counted-line");

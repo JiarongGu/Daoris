@@ -7,7 +7,8 @@ namespace Daoris.Desktop.Driver.Tests;
 /// <summary>
 /// The test host's own environment, set once as the assembly loads, before any test runs and so beside none: what the shell that started
 /// it held of Daoris's and of git's locating variables is taken out, as the merge tool's gates take it (its <c>GATE_REMOVED</c>), and
-/// the process's home is a scratch one of this run's.
+/// the process's home is a scratch one of this run's. In the pinned git leg (<see cref="PinnedLeg"/>) the pinned MinGit's folder goes first
+/// on <c>PATH</c>.
 /// </summary>
 /// <remarks>
 /// A spawn handed no home reads this process's (<see cref="SpawnRequest.Home"/>); the driver's own git runs and tools read the home a
@@ -27,6 +28,8 @@ internal static partial class HostEnvironment
     [ModuleInitializer]
     internal static void Set()
     {
+        // Read before the removal below takes the switch out with the rest of Daoris's variables.
+        var pinned = PinnedLeg.Apply();
         // The goldens' write switch is the suite's own, never Daoris's, so it is the one kept.
         foreach (var name in Environment.GetEnvironmentVariables().Keys.Cast<string>()
                      .Where(name => Removed().IsMatch(name) && !string.Equals(name, GoldenWriteSwitch, StringComparison.OrdinalIgnoreCase))
@@ -37,6 +40,7 @@ internal static partial class HostEnvironment
 
         Directory.CreateDirectory(Home);
         Environment.SetEnvironmentVariable(DaorisHome.Variable, Home);
+        if (pinned is not null) Environment.SetEnvironmentVariable("PATH", pinned + Path.PathSeparator + Environment.GetEnvironmentVariable("PATH"));
         AppDomain.CurrentDomain.ProcessExit += (_, _) =>
         {
             try { Directory.Delete(Home, recursive: true); } catch (IOException) { } catch (UnauthorizedAccessException) { }
