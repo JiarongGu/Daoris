@@ -106,7 +106,7 @@ function withoutComments(text, file) {
 }
 
 function trackedFiles(root) {
-  const listed = spawnSync('git', ['ls-files', '-z', '--', 'tools', 'src'], { cwd: root, encoding: 'utf8' });
+  const listed = spawnSync('git', ['ls-files', '-z', '--', 'tools', 'src'], { cwd: root, encoding: 'utf8', windowsHide: true });
   if (listed.status !== 0) throw new Error(`git could not list the tracked files: ${listed.stderr}`);
   return listed.stdout.split('\0').filter((file) => /\.(mjs|js|ts|cs|ps1)$/.test(file) && !file.includes('node_modules/'));
 }
@@ -134,7 +134,7 @@ function refuseAndExit(message) {
 }
 
 function runOrExit(command, args, options = {}) {
-  const ran = spawnSync(command, args, { stdio: 'inherit', ...options });
+  const ran = spawnSync(command, args, { stdio: 'inherit', windowsHide: true, ...options });
   if (ran.status !== 0) process.exit(ran.status ?? 2);
   return ran.status;
 }

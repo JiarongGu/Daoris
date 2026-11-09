@@ -8,6 +8,8 @@ namespace Daoris.Driver;
 /// </summary>
 internal static class AgentRulesVerb
 {
+    internal static IReadOnlyList<string> Verbs { get; } = ["list", "allow", "ask", "deny", "remove", "default", "proposals", "accept", "decline"];
+
     internal static string RulesHome(AgentsWorld world, HomeEntry entry) =>
         world.Instance.Home ?? throw new AgentWords($"{DaorisHome.Sentence} (wanted: {entry.New})");
 
@@ -126,7 +128,7 @@ internal static class AgentRulesVerb
             }
 
             default:
-                throw new AgentWords($"unknown rules verb '{verb}' — one of: list, allow, ask, deny, remove, default, proposals, accept, decline");
+                throw new AgentWords($"unknown rules verb '{verb}' — one of: {string.Join(", ", Verbs)}");
         }
     }
 

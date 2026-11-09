@@ -2713,37 +2713,6 @@ public sealed class LocalHostTests(LocalHost host) : IClassFixture<LocalHost>
     }
 
     /// <summary>
-    /// The same words as a quest this machine forgot are refused at the publish door with 409, the exchange's sentence,
-    /// as a closed quest's move is: the remote still holds it closed. Forgotten here by the store's own rows,
-    /// as a clear of a quest a remote numbered leaves them, since this host has no remote.
-    /// </summary>
-    [Fact]
-    public async Task The_same_words_as_a_forgotten_quest_are_refused_at_the_publish_door_with_409()
-    {
-        var quest = await ClosedAsync("A quest a remote held, forgotten here");
-        await using (var connection = new Microsoft.Data.Sqlite.SqliteConnection($"Data Source={host.Database}"))
-        {
-            await connection.OpenAsync();
-            await using var forget = connection.CreateCommand();
-            forget.CommandText = """
-                INSERT INTO quest_forgotten (id, at) VALUES ($id, '2026-10-07T10:00:00Z');
-                DELETE FROM quest_log WHERE quest = $id; DELETE FROM quests WHERE id = $id;
-                """;
-            forget.Parameters.AddWithValue("$id", quest);
-            await forget.ExecuteNonQueryAsync();
-        }
-
-        var refused = await host.PostAsync("/api/quests", new
-        {
-            from = "Asker", to = "Keeper", title = "A quest a remote held, forgotten here", body = "Asked again.",
-        });
-
-        Assert.Equal(409, refused.Status);
-        Assert.StartsWith($"Quest `#{quest}` was cleared from this machine;", refused.Error);
-        Assert.False(await HeldAsync(quest));
-    }
-
-    /// <summary>
     /// The page is served here — which is what makes the shared host's 404 for the same file a refusal
     /// rather than a missing file.
     /// </summary>

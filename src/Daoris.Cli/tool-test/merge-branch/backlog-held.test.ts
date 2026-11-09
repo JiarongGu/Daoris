@@ -41,7 +41,7 @@ test('a clean merge keeping a row the line moved while the work archived it take
     said: ['TASKS.md: row A2 left by its rows, where git had kept it: one side removed it while the other only moved it'], refused: [],
   });
   assert.equal(readFileSync(join(root, 'TASKS.md'), 'utf8'), SECTIONS.replace('- [ ] **A2** two.\n', ''));
-  assert.equal(spawnSync('git', ['diff', '--quiet', '--', 'TASKS.md'], { cwd: root }).status, 0, 'the change is staged');
+  assert.equal(spawnSync('git', ['diff', '--quiet', '--', 'TASKS.md'], { cwd: root, windowsHide: true }).status, 0, 'the change is staged');
 });
 
 test("a clean merge losing the line's words in a row the work archived is refused, both texts said", () => {
