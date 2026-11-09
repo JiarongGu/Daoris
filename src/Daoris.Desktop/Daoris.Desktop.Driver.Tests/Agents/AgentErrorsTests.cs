@@ -23,6 +23,18 @@ public sealed class AgentErrorsTests
             adapters, adapters.Door(adapter), new DoorFailure("protocol", code, kind, status, words, DoorWhere.Prompt), Seen, TimeZoneInfo.Utc);
     }
 
+    /// <summary>The second stand-in's limit as its protocol door says it, behind the preface every refused call carries (its program's own words).</summary>
+    [Theory]
+    [InlineData("alt-acp-stub", "Internal error: alt-stub: quota spent (session) · refills 7am (UTC)")]
+    [InlineData("alt-stub", "alt-stub: quota spent (session) · refills 7am (UTC)")]
+    public void The_second_stand_in_s_limit_reads_a_limit_with_or_without_the_door_s_preface(string door, string words)
+    {
+        var read = Read(door, -32603, null, words);
+
+        Assert.Equal(AgentErrorKind.Limit, read.Kind);
+        Assert.True(read.Limit!.Stated);
+    }
+
     /// <summary>The overloaded frame, source-derived: <c>-32603</c> with <c>data.errorKind: "overloaded"</c>.</summary>
     [Fact]
     public void The_install_s_529_with_its_kind_reads_transient_on_claude_code_acp_from_its_owner_s_table()

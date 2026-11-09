@@ -11,11 +11,12 @@ internal static class AltStubWords
     private const string Channel = "the stand-in's program, as its scenario prints it";
 
     public static LimitWords Limits { get; } = new(
-        Markers: [@"^alt-stub: quota spent \((?<hit>.+?)\)$"],
+        Markers: [@"(?:^|: )alt-stub: quota spent \((?<hit>.+?)\)$"],
         Resets: [@"^refills (?<when>.+?)(?: \((?<zone>[^()]*)\))?$"],
         Recorded:
         [
             new("alt-stub: quota spent (session) · refills 7am (<zone>)", "2026-11-06", Channel),
+            new("Internal error: alt-stub: quota spent (session) · refills 7am (<zone>)", "2026-11-06", Channel),
         ]);
 
     public static SignInWords SignIn { get; } = new(
