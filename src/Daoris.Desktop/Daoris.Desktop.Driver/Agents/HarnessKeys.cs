@@ -109,6 +109,9 @@ public static class HarnessKeys
         return named;
     }
 
+    public static bool Holds(string home, string harness, string profile) =>
+        Read(home).TryGetValue(harness, out var held) && held.ContainsKey(profile);
+
     /// <summary>The key an account is, or null for a sign-in.</summary>
     public static string? Of(string home, string harness, string profile) =>
         Read(home).TryGetValue(harness, out var held) && held.TryGetValue(profile, out var kept) ? KeySeal.Open(kept) : null;

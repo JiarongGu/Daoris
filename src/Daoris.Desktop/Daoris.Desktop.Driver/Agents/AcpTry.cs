@@ -77,7 +77,7 @@ internal sealed class AcpTry(ITurnPromptWiring wiring, AcpPrompting prompting)
                     }),
                     answered: frame => prompting.Answered(open, frame), admit: () => wiring.Open.Admit(passage, open, () => !ct.IsCancellationRequested))
                 .ConfigureAwait(false);
-            return result.TryGetProperty("stopReason", out var reason) ? reason.GetString() ?? "unknown" : "unknown";
+            return AcpProtocol.StopReason(result);
         }
         catch (AcpTurnedAway) when (ct.IsCancellationRequested)
         {

@@ -196,7 +196,8 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/Agents/` unless they s
 23. A permission request reaching the driver is refused, except in the asking mode on the protocol door, where it is held for the
     person to allow once or refuse. (from D81, D184)
 24. Folder trust is written only on the person's act naming the folder, one flag in the harness's own file. With no account
-    named it trusts the folder for every account of the set, never the person's own home. Trust gates a start only where
+    named it trusts the folder for every account of the set, never the person's own home; an account it names must be one on
+    this machine, refused rather than made (`AgentsCommand.AccountHere`, as `settings` does). Trust gates a start only where
     the handed rules would not let the connector through. (from D73, D197)
 25. A session reads the workspace's registered checkouts by default and writes another only where the person declared it.
     Reading is the read checkout's setting. (from D107)

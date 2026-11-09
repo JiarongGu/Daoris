@@ -69,7 +69,7 @@ internal static class StubProvider
             // A door onto the stand-in's accounts: the sign-in, the login question and the limit words are the stub's.
             new LentPart(PoolFacts.None, TablesPart.None, UsagePart.None),
             Known<IDoorOffers>.Absent, new PosturesPart(null, null, null, null),
-            Known<ISpawn>.Declared(new StandInSpawn("acp-stub", "acp-agent.mjs", protocol: true), Evidence),
+            Known<ISpawn>.Declared(new StandInSpawn("acp-stub", "agent.mjs", protocol: true), Evidence),
             Known<IDialect>.Absent,
             new AbilitiesPart(
                 Known<bool>.Declared(true, Evidence),

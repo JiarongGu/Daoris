@@ -56,6 +56,32 @@ public sealed class HarnessCaptureDrainTests : IDisposable
         Assert.True(stderr.Ended);
     }
 
+    [Fact]
+    public async Task An_opening_the_sink_refuses_leaves_both_pipes_drained_before_the_failure_is_thrown()
+    {
+        var stdout = new StringReader(string.Join('\n', Said("one"), Said("two")));
+        var stderr = new Slow();
+
+        await Assert.ThrowsAsync<IOException>(() => HarnessCapture.CaptureStructuredAsync(
+            stdout, stderr, Path.Combine(_root, "s2.log"), new Refusing(), new ClaudeStreamJson(), prompt: "go", CancellationToken.None));
+
+        Assert.Null(stdout.ReadLine());
+        Assert.True(stderr.Ended);
+    }
+
+    [Fact]
+    public async Task A_preamble_the_sink_refuses_leaves_both_pipes_drained_before_the_failure_is_thrown()
+    {
+        var stdout = new StringReader("one\ntwo");
+        var stderr = new Slow();
+
+        await Assert.ThrowsAsync<IOException>(() => HarnessCapture.CaptureAsync(
+            stdout, stderr, Path.Combine(_root, "p1.log"), new RefusingLines(), CancellationToken.None, preamble: "set up"));
+
+        Assert.Null(stdout.ReadLine());
+        Assert.True(stderr.Ended);
+    }
+
     private sealed class RefusingLines : IReadingSink
     {
         public bool Watched => false;

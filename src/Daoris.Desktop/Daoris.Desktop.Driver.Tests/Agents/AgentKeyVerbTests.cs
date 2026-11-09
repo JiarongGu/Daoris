@@ -67,6 +67,23 @@ public sealed class AgentKeyVerbTests : IDisposable
     }
 
     [Fact]
+    public async Task A_key_that_cannot_be_opened_is_replaced_and_removed_like_any_other()
+    {
+        if (!OperatingSystem.IsWindows()) return;
+        Directory.CreateDirectory(HarnessSettings.ProfileHome(Home, "claude-code", "work"));
+        File.WriteAllText(DaorisHome.Entry(Home, HomeEntry.Keys), "{\"claude-code\":{\"work\":\"" + KeySeal.Prefix + "AAAAAAAA\"}}");
+
+        var replaced = await AgentsCommand.RunAsync(["key", "claude-code", "--account", "work"], World("sk-ant-api03-fixed-abcd\n"), CancellationToken.None);
+        Assert.True(replaced == 0, _error.ToString());
+        Assert.Equal("sk-ant-api03-fixed-abcd", HarnessKeys.Of(Home, "claude-code", "work"));
+
+        File.WriteAllText(DaorisHome.Entry(Home, HomeEntry.Keys), "{\"claude-code\":{\"work\":\"" + KeySeal.Prefix + "AAAAAAAA\"}}");
+        var removed = await AgentsCommand.RunAsync(["key", "claude-code", "--account", "work", "--remove"], World(), CancellationToken.None);
+        Assert.True(removed == 0, _error.ToString());
+        Assert.DoesNotContain(KeySeal.Prefix, File.ReadAllText(DaorisHome.Entry(Home, HomeEntry.Keys)));
+    }
+
+    [Fact]
     public async Task A_key_is_set_into_a_dsh_account_that_has_none_and_removed_with_the_account_kept()
     {
         if (!OperatingSystem.IsWindows()) return;

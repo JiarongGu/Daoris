@@ -106,6 +106,11 @@ internal static class AgentRulesVerb
 
             case "default":
             {
+                if (scope != RuleScope.Machine)
+                {
+                    throw new AgentWords("a default is the machine's, never one workspace's or repository's — leave out `--workspace` and `--repository`.");
+                }
+
                 var operands = Needed("<id>");
                 var id = operands[0];
                 var state = operands.Length > 1 ? operands[1] : null;

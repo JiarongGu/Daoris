@@ -1243,19 +1243,12 @@
         "work/engine/"
       ],
       "before": {},
-      "exit": 0,
-      "out": [
-        "daoris: trusting `<root>/work/engine` for `claude-code`, as the account `play` — in its own file:",
-        "  <root>/daoris/profiles/agents/claude-code/play/.claude.json",
-        "  This is what the agent asks the first time it runs in a folder. Once it is granted, the",
-        "  folder's own settings and `permissions.allow` apply there, and the agent stops asking.",
-        "  Daoris writes that one flag and nothing else in the file.",
-        "  Granted."
+      "exit": 2,
+      "out": [],
+      "err": [
+        "daoris: `claude-code` has no account `play` on this machine — accounts that exist: work"
       ],
-      "err": [],
-      "after": {
-        "daoris/profiles/agents/claude-code/play/.claude.json": "{\n  \"projects\": {\n    \"<root>/work/engine\": {\n      \"hasTrustDialogAccepted\": true\n    }\n  }\n}\n"
-      }
+      "after": {}
     },
     {
       "name": "trust, an agent it does not know",

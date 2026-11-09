@@ -135,7 +135,7 @@ internal static class AgentLongCommand
                     + (accounts.Count > 0 ? string.Join(", ", accounts) : "(none)"));
             }
 
-            if (!keyOnly && HarnessKeys.Of(home, owner, account) is null)
+            if (!keyOnly && !HarnessKeys.Holds(home, owner, account))
             {
                 throw new AgentWords(
                     $"`{account}` is not an API key account — it is a sign-in, so sign in again with `daoris agent login {owner}`.");
