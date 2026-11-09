@@ -87,7 +87,6 @@ public sealed class AgentVerbFlagsTests : IDisposable
         Assert.True(Directory.Exists(HarnessSettings.ProfileHome(Home, "claude-code", "work")), "an account was removed");
     }
 
-    /// <summary>A flag is its verb's, so a word the terminal does not have where the verb stands is refused first, as the window refuses it.</summary>
     [Theory]
     [InlineData("unknown agent profile verb 'join'", "profile", "join", "claude-code", "account-3", "--machine")]
     [InlineData("unknown rules verb 'grant'", "rules", "grant", "Bash(git push:*)", "--repo", "engine")]

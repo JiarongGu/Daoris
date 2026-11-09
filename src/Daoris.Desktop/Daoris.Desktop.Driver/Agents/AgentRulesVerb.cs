@@ -8,7 +8,6 @@ namespace Daoris.Driver;
 /// </summary>
 internal static class AgentRulesVerb
 {
-    /// <summary>The words after <c>rules</c>.</summary>
     internal static IReadOnlyList<string> Verbs { get; } = ["list", "allow", "ask", "deny", "remove", "default", "proposals", "accept", "decline"];
 
     internal static string RulesHome(AgentsWorld world, HomeEntry entry) =>
