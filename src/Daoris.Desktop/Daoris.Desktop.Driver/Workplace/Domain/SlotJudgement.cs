@@ -68,8 +68,8 @@ public sealed record SlotJudgementFacts
 
     public bool UntrackedPath { get; init; }
 
-    /// <summary>An ignored path that is neither the slot's kept kinds nor Daoris's own copy, a dependency whose record fails among them.</summary>
-    public bool LineOwnIgnored { get; init; }
+    /// <summary>An ignored path that is neither the slot's kept kinds nor Daoris's own copy, a dependency whose record fails among them: the first such top, empty where none.</summary>
+    public string LineOwnIgnored { get; init; } = "";
 
     // Step 6: where the line let it go.
     public string Head { get; init; } = "tip";
@@ -134,7 +134,7 @@ public static class SlotJudgement
         if (facts.OperationHalfDone) return new(4, HalfDone, "a git operation is half done in it");
         if (facts.TrackedChange) return new(5, Changed, "it holds a tracked change");
         if (facts.UntrackedPath) return new(5, Changed, "it holds an untracked path");
-        if (facts.LineOwnIgnored) return new(5, LinesOwn, "it holds an ignored path that is its line's own");
+        if (facts.LineOwnIgnored.Length > 0) return new(5, LinesOwn, $"it holds an ignored path that is its line's own: `{facts.LineOwnIgnored}`");
         if (facts.Expected.Length == 0 || !string.Equals(facts.Head, facts.Expected, StringComparison.Ordinal))
         {
             return new(6, HeadMoved, "its HEAD changed since its line let it go");

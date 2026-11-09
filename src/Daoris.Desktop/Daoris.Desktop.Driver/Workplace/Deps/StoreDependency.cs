@@ -35,11 +35,11 @@ internal static class StoreDependencyRules
         var paths = reading.Tops.Concat(rules.Rules.SelectMany(each => each.Rule.Paths.Select(path => GitPattern.LiteralOf(each.Rule, path))).OfType<string>())
             .Where(path => path.EndsWith('/'))
             .Distinct(StringComparer.Ordinal);
-        var order = rules.Rules.Select(each => each.Rule).ToList();
+        var layers = rules.Rules;
         var each = rules.Over(paths, reading.Floor)
             .Where(file => file is { Kind: FileKind.Dependency, Idle: null, Floor: null, Rule: not null })
-            .Select(file => (Order: order.FindLastIndex(rule => rule.Matches(file.Path, reading.Floor.IgnoreCase) && rule.Kind == FileKind.Dependency), Dependency: new StoreDependency(file.Path, file.Rule!)))
-            .OrderBy(pair => pair.Order).ThenBy(pair => pair.Dependency.Path, StringComparer.Ordinal)
+            .Select(file => (Order: WorkspaceOrder.Of(layers, file.Path, reading.Floor.IgnoreCase), Dependency: new StoreDependency(file.Path, file.Rule!)))
+            .OrderBy(pair => pair.Order.Place).ThenBy(pair => pair.Order.Member).ThenBy(pair => pair.Dependency.Path, StringComparer.Ordinal)
             .Select(pair => pair.Dependency)
             .ToList();
         each = [.. await InstallScripts.ApplyAsync(tree, commit, each, ct).ConfigureAwait(false)];

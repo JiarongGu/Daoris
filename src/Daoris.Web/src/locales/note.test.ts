@@ -270,7 +270,7 @@ describe('the page’s map of a note’s codes, held to both writers', () => {
   /** Why the files stage kept, left, placed or stored a dependency is a reason family of its own, held key for key with its values. */
   it('words every reason the files stage gives for a dependency, with the values each says', () => {
     const declared = reasons('Deps');
-    expect(declared.length).toBe(27);
+    expect(declared.length).toBe(28);
     const page = Object.values(DEPS_REASONS).map(({ key, values }) => ({ key, values: [...values] }));
     const byKey = (a: { key: string }, b: { key: string }) => a.key.localeCompare(b.key);
     expect(page.sort(byKey)).toEqual([...declared].sort(byKey));
