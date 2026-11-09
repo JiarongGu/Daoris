@@ -291,7 +291,6 @@ public sealed class DriverModuleWorkflowTests : DriverModuleBridge
         Assert.Contains("keeps no v9", (await RefusalAsync(module, "WORKFLOW_SHOW", new { id = "web-verify", version = 9 })));
 
         var palette = await AnswerAsync(module, "WORKFLOW_PALETTE", new { });
-        // A kind marked arriving is declared before it is offered, so the palette names every kind but those.
         Assert.Equal(
             NodeKit.Kinds.Where(kind => !NodeKit.Built.IsArriving(kind)),
             palette.GetProperty("kinds").EnumerateArray().Select(each => each.GetProperty("kind").GetString()));

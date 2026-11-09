@@ -9,9 +9,8 @@ export function settingsFilter(xml) {
 
 /**
  * Whether a class whose traits are `traits` (a map of name to its values) can hold a test VSTest's `filter` selects: `&`, `|`,
- * `!`, parentheses, and `=`, `!=`, `~`, `!~` on a trait. Given a test's full `name`, a `FullyQualifiedName` condition is read
- * against it, so a half that names its classes (a leg running some once more) reads those alone. Any other condition on a name
- * holds: a class read into a half it is not in runs nothing more there, since the half's own filter still chooses its tests.
+ * `!`, parentheses, and `=`, `!=`, `~`, `!~` on a trait, and on `FullyQualifiedName` against a test's full `name` where given. Any
+ * other condition on a name holds: a class read into a half it is not in runs nothing more there, as its filter chooses its tests.
  */
 export function filterHolds(filter, traits, name = null) {
   const tokens = filter.match(/\\.|!=|!~|[()&|!=~]|[^()&|!=~\\]+/g) ?? [];

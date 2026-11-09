@@ -7,8 +7,6 @@ namespace Daoris.Desktop.Driver.Tests;
 /// in memory is held without a process. A repository here is a folder with a <c>.git</c> folder in it, which is all the
 /// reads look at before they ask git. <c>GitReadsTests</c> reads the same views from real repositories.
 /// </summary>
-/// <remarks>A test of what is kept or not reads the clock a minute ahead (<see cref="SettledClock"/>): the stand-in's folders are seconds
-/// old, and an answer resting on them would never be kept, so a test that nothing is kept would hold whatever the reads did.</remarks>
 public sealed class GitReadsAskTests : IDisposable
 {
     // Each holds hex letters, so a read asked in capitals is a read of the same commit only where the reads say so.
@@ -47,10 +45,7 @@ public sealed class GitReadsAskTests : IDisposable
 
     private static bool IsDiff(IReadOnlyList<string> arguments) => arguments.Contains("diff");
 
-    /// <summary>
-    /// A commit is two calls, and reading it again is one: its fields are read from the objects alone and kept, and its changes read the
-    /// asking tree's attributes as well, so they are asked at every ask.
-    /// </summary>
+    /// <summary>A commit is two calls; its fields, the objects' alone, are kept, and its changes, read under the tree's attributes, are not.</summary>
     [Fact]
     public async Task A_commit_is_two_calls_and_reading_it_again_asks_its_changes_alone()
     {
@@ -156,10 +151,7 @@ public sealed class GitReadsAskTests : IDisposable
         Assert.Equal([$"git show -s {Merge}"], first.Commands);
     }
 
-    /// <summary>
-    /// The fields answered and the changes not: the commit is not answered, at this ask or the next, and the next asks its changes again.
-    /// Its fields are the objects' alone, so they are kept.
-    /// </summary>
+    /// <summary>The fields answered and the changes not: the commit is not answered, and the next ask asks its changes again.</summary>
     [Fact]
     public async Task A_commit_whose_changes_git_did_not_answer_is_not_answered()
     {
@@ -315,8 +307,7 @@ public sealed class GitReadsAskTests : IDisposable
 
     /// <summary>
     /// <c>--follow</c> ignores <c>--skip</c> (Git 2.53 printed nothing for <c>--skip=1</c>), so a page of a file's history asks
-    /// for every commit up to its end and answers its own hundred: still one call. A file's history reads the asking tree's attributes as
-    /// well as the objects, so it is asked at every ask.
+    /// for every commit up to its end and answers its own hundred: one call, asked at every ask, as it reads the tree's attributes too.
     /// </summary>
     [Fact]
     public async Task A_page_of_a_file_s_history_asks_up_to_its_end_and_is_asked_at_every_ask()
@@ -360,7 +351,6 @@ public sealed class GitReadsAskTests : IDisposable
         Assert.Empty(git.Asked);
     }
 
-    /// <summary>A blame is one call, and reads the asking tree's attributes as well as the objects, so it is asked at every ask.</summary>
     [Fact]
     public async Task A_blame_is_one_call_and_asked_at_every_ask()
     {
@@ -393,9 +383,8 @@ public sealed class GitReadsAskTests : IDisposable
     }
 
     /// <summary>
-    /// A compare is two calls: the commits only on each side, then what the right side changed since the two parted
-    /// (<c>A...B</c>), or everything that differs (<c>A..B</c>). The commits are the objects' alone and kept once for both ways; the
-    /// changes read the asking tree's attributes as well, so each way's are asked at every ask.
+    /// A compare is two calls: the commits only on each side, kept once for both ways, then what the right side changed since the two
+    /// parted (<c>A...B</c>), or everything that differs (<c>A..B</c>), asked at every ask.
     /// </summary>
     [Fact]
     public async Task A_compare_is_two_calls_its_commits_kept_for_both_ways_and_its_changes_asked_at_every_ask()

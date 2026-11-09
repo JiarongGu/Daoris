@@ -70,7 +70,7 @@ public sealed class WorkflowDraftToldTests
         Assert.DoesNotContain("options `brief`", new ChatMessage("again", []) { Draft = draft with { Palette = draft.Palette! with { Text = null } } }.Prompt);
     }
 
-    /// <summary>The flowchart design §8.3: the palette the room is handed names each kind with its options and a plugin step's outcomes and outputs.</summary>
+    /// <summary>The flowchart design §8.3: the palette the room is handed names each kind offered (none marked arriving) with its options and a plugin step's outcomes and outputs.</summary>
     [Fact]
     public void The_palette_told_names_the_kinds_their_options_and_a_plugin_step_s_outcomes_and_outputs()
     {
@@ -82,7 +82,6 @@ public sealed class WorkflowDraftToldTests
         };
         var compact = WorkflowPalette.Build([("local-release", [find])]).Compact();
 
-        // A kind marked arriving is declared before it is offered, so the room is never told it.
         foreach (var kind in NodeKit.Kinds)
         {
             if (NodeKit.Built.IsArriving(kind)) Assert.DoesNotContain($"- `{kind}`:", compact);

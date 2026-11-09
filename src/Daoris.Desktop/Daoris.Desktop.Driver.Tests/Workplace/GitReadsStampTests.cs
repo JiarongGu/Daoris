@@ -6,18 +6,14 @@ namespace Daoris.Desktop.Driver.Tests;
 /// What the page's reads keep, on real git: an answer is kept under the asker's stamp only where the stamp's fence held across the read,
 /// and only where git read objects alone for it, so a commit's changes are asked in the tree that asks, under its attributes.
 /// </summary>
-/// <remarks>The fixture's files are seconds old, so the clock is read a minute ahead: a person's repository is settled, and a fence
-/// refused here is refused by its stats, not by its age.</remarks>
 [Trait(Category.Name, Category.Process)]
 [Trait(Category.Parallel, Category.Git)]
 public sealed class GitReadsStampTests : LandedFixture
 {
-    private static IDisposable Settled() => SettledClock.Ahead();
-
     [Fact]
     public async Task A_replacement_added_before_a_graph_read_and_removed_after_it_is_refused_by_the_fence()
     {
-        using var _ = Settled();
+        using var _ = SettledClock.Ahead();
         var root = await RepositoryAsync("engine");
         var first = (await GitAsync(root, "rev-parse", "HEAD")).Trim();
         await CommitAsync(root, "more.txt", "more\n", "the tip");
@@ -51,7 +47,7 @@ public sealed class GitReadsStampTests : LandedFixture
     [Fact]
     public async Task Two_trees_one_marking_a_changed_file_minus_diff_each_read_a_commits_changes_as_git_does_there()
     {
-        using var _ = Settled();
+        using var _ = SettledClock.Ahead();
         var a = await RepositoryAsync("engine");
         await CommitAsync(a, "data.txt", "one\ntwo\n", "the data");
         var commit = (await GitAsync(a, "rev-parse", "HEAD")).Trim();
@@ -74,7 +70,7 @@ public sealed class GitReadsStampTests : LandedFixture
     [Fact]
     public async Task An_attribute_file_edited_between_two_asks_is_read_at_the_second()
     {
-        using var _ = Settled();
+        using var _ = SettledClock.Ahead();
         var root = await RepositoryAsync("engine");
         await CommitAsync(root, "data.txt", "one\ntwo\n", "the data");
         var commit = (await GitAsync(root, "rev-parse", "HEAD")).Trim();

@@ -336,11 +336,10 @@ test("this repository's census: every class carrying the Process trait is read i
     assert.ok(census.classes.length > 0, `${gate.name} has classes`);
     for (const each of census.classes) inHalf.set(`${half.project} ${each.full}`, [...(inHalf.get(`${half.project} ${each.full}`) ?? []), gate.name]);
   }
-  // A leg runs classes another half holds once more (the git library's proofs on the pinned MinGit): its filter names each.
   const filters = new Map(gates.map((gate) => [gate.name, reach.settingsFilter(readFileSync(join(repoRoot, reach.halfOf(gate.run)!.settings), 'utf8')) ?? '']));
   const legs = new Set([...filters].filter(([, filter]) => /FullyQualifiedName~/.test(filter)).map(([name]) => name));
   const twice = [...inHalf].filter(([, halves]) => halves.filter((half) => !legs.has(half)).length > 1);
-  assert.deepEqual(twice, [], 'no class is in two halves of one project, but a leg that names it');
+  assert.deepEqual(twice, [], 'no class is in two halves of one project, but a leg running it once more, whose filter names it');
   for (const [key, halves] of inHalf) {
     for (const leg of halves.filter((half) => legs.has(half))) assert.ok(filters.get(leg)!.includes(key.split(/[.+ ]/).at(-1)!), `${leg} names ${key}`);
   }
