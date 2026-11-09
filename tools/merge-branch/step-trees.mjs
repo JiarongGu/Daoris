@@ -1,0 +1,73 @@
+/**
+ * The trees of the steps a run has running, and ending one by its pid: the run's stop reaches each step and what it started.
+ */
+import { spawnSync } from 'node:child_process';
+
+/**
+ * The step trees a run has running, each by its step's own pid, so a superseded or stopped run ends every one at
+ * once. `end(why)` ends each held tree (`endTree`, the seam) and leaves `ended` saying why; a step started after it starts
+ * nothing (`guarded`). `release` answers whether the run ended that step, so its own exit is not read as the gate's.
+ */
+export function stepTrees({ end = endTree } = {}) {
+  const live = new Set();
+  const ended = new Set();
+  const trees = {
+    ended: null,
+    hold(pid) {
+      live.add(pid);
+    },
+    release(pid) {
+      live.delete(pid);
+      return ended.delete(pid);
+    },
+    end(why) {
+      trees.ended ??= why;
+      for (const pid of [...live]) {
+        ended.add(pid);
+        end(pid);
+      }
+    },
+  };
+  return trees;
+}
+
+/**
+ * End a step's whole tree by the step's own pid, never by image name (the owner's processes share the names).
+ * On Windows a kill reaches the one process it names, and a shell's command outlives it, so `taskkill /T`
+ * ends what the step started too. Elsewhere `ps` says what is under it, each then killed. What a process of the tree left
+ * running after its own parent ended is in no tree, and no build server is shut down: the run's are its own
+ * (`BESIDE_ENVIRONMENT`), and the owner's are not to be touched.
+ */
+export function endTree(pid, { platform = process.platform, run = spawnSync, kill = (each, signal) => process.kill(each, signal) } = {}) {
+  if (platform === 'win32') {
+    run('taskkill', ['/T', '/F', '/PID', String(pid)], { stdio: 'ignore', windowsHide: true });
+    return;
+  }
+  const listed = run('ps', ['-A', '-o', 'pid=', '-o', 'ppid='], { encoding: 'utf8' });
+  for (const each of [pid, ...descendants(listed.stdout ?? '', pid)]) {
+    try {
+      kill(each, 'SIGKILL');
+    } catch {
+      // Already ended.
+    }
+  }
+}
+
+/** The pids under `pid` in a `ps -o pid= -o ppid=` listing, at any depth. */
+export function descendants(listing, pid) {
+  const children = new Map();
+  for (const line of listing.split('\n')) {
+    const [child, parent] = line.trim().split(/\s+/).map(Number);
+    if (Number.isInteger(child) && Number.isInteger(parent)) children.set(parent, [...(children.get(parent) ?? []), child]);
+  }
+  const found = [];
+  const walk = (at) => {
+    for (const child of children.get(at) ?? []) {
+      if (child === pid || found.includes(child)) continue;
+      found.push(child);
+      walk(child);
+    }
+  };
+  walk(pid);
+  return found;
+}

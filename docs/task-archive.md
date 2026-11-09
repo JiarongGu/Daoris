@@ -13,6 +13,9 @@ the per-task record. Entries preserve their original wording so the archive stay
 > **TREEPOOL1z** (driver): Outcome: `GitPatternOracleTests` runs git itself (`git check-ignore --no-index`, `core.ignorecase` both ways, each top asked again upper-cased) over the translated patterns of a sample (the first form's corpus at every twentieth generated path with the named words and the excluded parent, and this repository's rule file in form 2) and agrees with `GitPattern` top by top; a kept first-form entry now folds case under `core.ignorecase` as the translated ones do (`RuleFileIgnoreCaseTests`, seen to fail first at `BIN/`).
 
 ---
+## OPTIMIZE1d, the censuses and the contracts pre-step (2026-11-09)
+
+> **OPTIMIZE1d (two of three cuts)** (tools): Outcome: a CI run leaves the `censuses` gate to the driver's and the modules' fast halves where both run, says so in its plan and status, and records its pass once they pass (`tools/merge-branch/ci-steps.mjs`, `ci-steps.test.ts`); the page's contracts (103 s cold, alone) are built once as a step before the web gates that run a page script with a contracts pre-script, which start when it ends (`waitFor` in `runGates`). The step trees moved to `tools/merge-branch/step-trees.mjs` to keep `merge-branch.mjs` within its budget.
 
 ## CODESTRREV2a to 2e — the code-structure review's second cycle, merge-tool defects fixed (2026-11-09)
 
