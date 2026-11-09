@@ -4,14 +4,12 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// Each of the three git runners, asked a read its caller's cancellation ends, returns only once its process has exited:
-/// <c>RunGitAsync</c> beneath <see cref="WorkingTree.GitAsync(string, IReadOnlyList{string}, CancellationToken)"/>,
-/// <see cref="WorkingTree.ReadGitAsync"/> and <see cref="WorkingTree.GitBytesAsync"/>, cancelled during the process's creation and
-/// while it runs; and one whose kill is refused says <c>git.unended</c> rather than returning as if it had ended.
+/// Each of the three git runners returns only once its process has exited: <c>RunGitAsync</c> beneath <see cref="WorkingTree.GitAsync(string, IReadOnlyList{string}, CancellationToken)"/>,
+/// <see cref="WorkingTree.ReadGitAsync"/> and <see cref="WorkingTree.GitBytesAsync"/>, asked a status taking no lock (a read the scheduler
+/// ends), cancelled during its creation and while it runs; and one whose kill is refused says <c>git.unended</c>, its place counted apart.
 /// </summary>
 /// <remarks>
-/// The read is a status that takes no lock: the scheduler ends a read nobody waits on only where it takes none, and runs every other
-/// git on once its asker has left (<see cref="GitSchedulerTests"/>). <see cref="GitStreamEndsTests"/> sees that git's tree is ended, by a marker a grandchild would have written; never
+/// <see cref="GitStreamEndsTests"/> sees that git's tree is ended, by a marker a grandchild would have written; never
 /// that the runner returned after the exit. The stand-in is a node that waits and ignores its input, started in git's place through the
 /// gate's test seam (<see cref="ProcessStarts.Within"/>); its pid is watched through a handle of the test's own, which the runner's
 /// dispose of its own cannot close. Fixtures live under the repository's gitignored <c>_fixtures/</c>. Nothing here reaches a network.
@@ -134,8 +132,7 @@ public sealed class GitRunnersEndTests : IDisposable
             Assert.Equal(watched.Id, unended.Pid);
             Assert.Contains("refused by the test", unended.Reason);
             Assert.False(watched.HasExited);
-            // Its place is counted apart until it exits: other classes' gits may be counted beside it, never fewer.
-            Assert.True(GitScheduler.Shared.Apart > 0, "a git that runs on left its place in the bound");
+            Assert.True(GitScheduler.Shared.Apart > 0, "a git that runs on was not counted apart");
         }
 
         // Closed first: the log holds its file while open.

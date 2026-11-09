@@ -17,9 +17,8 @@ namespace Daoris.Driver;
 /// <para><b>A shared answer</b>: an ask takes another's only where its own start would have been that start (<see cref="GitRunAsk.Start"/>)
 /// and that start is still queued with no write of its repository queued after it, so its answer is as new as the ask's own would be.</para>
 /// <para><b>Ending</b>: a read that takes no lock (<see cref="GitRunAsk.Endable"/>) is dropped while queued and ended while running once
-/// every asker has left, the last answered once its run has returned: with its cancellation, or with the
-/// <see cref="ProcessUnendedException"/> of a git that outlived its kill. Every other git is dropped only while queued; once placed it runs
-/// untokened to its end or its bound.</para>
+/// every asker has left, the last answered once its run returns (a git that outlived its kill as <see cref="ProcessUnendedException"/>).
+/// Every other git is dropped only while queued; once placed it runs untokened to its end or its bound.</para>
 /// <para><b>Re-entry</b>: an ask made beneath a placed git (<see cref="Beneath"/>, told from the caller's process ancestry by
 /// <see cref="GitCallers"/>: a hook of a push asking a read, a diff's textconv helper asking the window) is placed at once in a place
 /// that git lends, above the bound and counted toward none of its caps, one at a time for each parent, to a depth of two; deeper is
@@ -158,7 +157,6 @@ public sealed class GitScheduler
     /// <paramref name="run"/> is handed the token it runs under: its askers' for an endable read, none for every other git. Cancelling
     /// <paramref name="ct"/> leaves the ask: this caller is answered with its cancellation, and the git is dropped or ended as above.
     /// </summary>
-    /// <exception cref="ProcessUnendedException">This caller's leaving ended the read, and its git outlived its kill.</exception>
     /// <exception cref="GitUnplacedException">Its tree is being removed, its repository is stalled, or it is a re-entry too deep.</exception>
     internal async Task<T> RunAsync<T>(GitRunAsk ask, Func<CancellationToken, Task<T>> run, CancellationToken ct)
     {
@@ -226,18 +224,15 @@ public sealed class GitScheduler
         catch (OperationCanceledException) when (ct.IsCancellationRequested)
         {
             // Left once, here, where this asker's own wait ended: a registration on its token would be disposed by the wait's own end first.
-            // The last asker of the read its leaving ended waits out the runner's exit wait, so it never returns while the git runs on
-            // unsaid; a git that ended answers it with its own cancellation.
-            if (Leave(entry) && await UnendedAsync(entry).ConfigureAwait(false) is { } unended) throw unended;
+            // The read it ended is waited out, so it never returns while that git runs on unsaid.
+            if (Leave(entry))
+            {
+                await entry.Result.Task.ContinueWith(_ => { }, TaskScheduler.Default).ConfigureAwait(false);
+                if (entry.Result.Task.Exception?.InnerException is ProcessUnendedException unended) throw unended;
+            }
+
             throw;
         }
-    }
-
-    /// <summary>The end of a run its askers' leaving ended: the git that outlived its kill, else null.</summary>
-    private static async Task<ProcessUnendedException?> UnendedAsync(Entry entry)
-    {
-        await entry.Result.Task.ContinueWith(_ => { }, TaskScheduler.Default).ConfigureAwait(false);
-        return entry.Result.Task.Exception?.InnerException as ProcessUnendedException;
     }
 
     /// <summary>An ask waiting for its place, said to its stage's queue as the start gate's wait is, until placed, dropped or left.</summary>
@@ -313,7 +308,6 @@ public sealed class GitScheduler
             answer = () => entry.Result.TrySetException(error);
         }
 
-        // Answered once its place is freed or counted apart, so an asker told the git runs on finds it counted.
         try
         {
             Ended(entry);

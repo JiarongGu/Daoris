@@ -436,7 +436,6 @@ public sealed class GitSchedulerTests
         exit.SetResult();
         await Poll.Until(() => scheduler.Apart == 0);
 
-        // One that ended on its kill answers its asker with the asker's own cancellation.
         using var left = new CancellationTokenSource();
         var ended = scheduler.RunAsync(Read("ends", endable: true), async token =>
         {
