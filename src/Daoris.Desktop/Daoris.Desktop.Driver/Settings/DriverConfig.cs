@@ -545,6 +545,9 @@ public sealed record DriverConfig(
     /// </summary>
     internal FileStaffing? AsFile { get; init; }
 
+    /// <summary>What the load decided these choices from (<see cref="Driver.Effective"/>); null for choices built in memory.</summary>
+    public Effective? Effective { get; init; }
+
     /// <summary>The choices in the file at <paramref name="path"/> (<see cref="DriverConfigDisk.Load"/>); a missing file is the empty config's, not an error.</summary>
     /// <exception cref="DriverConfigUnreadableException">The file is there and does not read: it names the file, and where the parser stopped.</exception>
     public static DriverConfig Load(string path) => DriverConfigDisk.Load(path);

@@ -45,6 +45,8 @@ public sealed class RoleCatalog
     /// <summary>The store's version this family's tables arrive at.</summary>
     internal const int Step = 10;
 
+    public const string Family = "roles";
+
     /// <summary>The seeded roles in the screen's order, one per id of <see cref="ActorChoices.Ids"/> and the two appointed: Defaults/roles.json, carried in the assembly.</summary>
     public static IReadOnlyList<RoleRecord> Seed { get; } = ReadSeed();
 
@@ -389,7 +391,7 @@ public sealed class RoleCatalog
     public static IReadOnlyList<long> WriteAll(string location, IReadOnlyList<RoleChange> changes, Func<StoreSettled>? settled = null)
     {
         using var store = DesktopStore.Open(location, StoreProcess.Options(settled));
-        return store.Write("roles", write => WriteIn(write, changes));
+        return store.Write(Family, write => WriteIn(write, changes));
     }
 
     /// <summary><see cref="WriteAll"/> inside a transaction the caller holds, so a role, its staffing and its policy are published in one; <paramref name="reads"/> holds each change's read revision, compared with the transaction's own.</summary>

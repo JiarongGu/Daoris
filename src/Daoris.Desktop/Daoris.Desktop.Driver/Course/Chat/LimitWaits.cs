@@ -36,7 +36,7 @@ internal sealed class LimitWaits(IExecutorWiring wiring) : IExecutor
     private readonly SemaphoreSlim _looking = new(1, 1);
     private volatile bool _read;
     private volatile bool _dirty = true;
-    private string? _stamp;
+    private LimitStamp? _stamp;
     private DateTimeOffset? _due;
 
     /// <summary>What the course answered each wake, by session: a test hears it; no person reads it.</summary>
@@ -85,9 +85,10 @@ internal sealed class LimitWaits(IExecutorWiring wiring) : IExecutor
         if (context.Closing || !await _looking.WaitAsync(0, ct).ConfigureAwait(false)) return [];
         try
         {
-            var stamp = Stamp();
+            var staff = Staff();
+            var stamp = LimitStamp.Of(context.Home, config, staff).Beside(Accounts());
             var now = context.Harnesses.Clock();
-            if (_read && !_dirty && stamp == _stamp && (_due is not { } due || now < due)) return [];
+            if (_read && !_dirty && LimitStamp.Same(stamp, _stamp) && (_due is not { } due || now < due)) return [];
             _dirty = false;
             _stamp = stamp;
 
@@ -117,6 +118,8 @@ internal sealed class LimitWaits(IExecutorWiring wiring) : IExecutor
                 _held.TryRemove(gone, out _);
             }
 
+            // A fact the clock alone ends (a mark, a reservation, a counted move, the day) moves no stamp, so the look is due by it.
+            if (!_held.IsEmpty && staff?.NextChange(now) is { } change && (next is null || change < next)) next = change;
             _due = next;
             return woke;
         }
@@ -380,11 +383,10 @@ internal sealed class LimitWaits(IExecutorWiring wiring) : IExecutor
         record.PersonStopped && record.Note?.StartsWith(ChatEnded.EndedByPersonNote, StringComparison.Ordinal) == true;
 
     /// <summary>
-    /// What the wait is computed from, by file times alone: the cooling store, the harness settings, the agents' account
-    /// folders and the machine's <c>driver.json</c>. <i>Try now</i> and a sign-in end a cool-off in the store; an added account changes
-    /// the settings or its agent's folder.
+    /// The accounts' parts of the stamp, by file times alone: the cooling store, the harness settings and the agents' account folders.
+    /// <i>Try now</i> and a sign-in end a cool-off in the store; an added account changes the settings or its agent's folder.
     /// </summary>
-    private string Stamp()
+    private string Accounts()
     {
         var parts = new List<string>
         {
@@ -392,7 +394,6 @@ internal sealed class LimitWaits(IExecutorWiring wiring) : IExecutor
             HomeWrites.Stamp(context.Harnesses.SettingsPath),
             // The settings the roster folds the account set from (HarnessSettings.Profiles) beside them.
             HomeWrites.Stamp(DaorisHome.Entry(context.Home, HomeEntry.Harnesses)),
-            HomeWrites.Stamp(DriverConfig.ResolvePath(context.Home)),
         };
         try
         {
@@ -409,5 +410,17 @@ internal sealed class LimitWaits(IExecutorWiring wiring) : IExecutor
         }
 
         return string.Join("|", parts);
+    }
+
+    private StaffLedger? Staff()
+    {
+        try
+        {
+            return context.Harnesses.StaffFor(context.Home);
+        }
+        catch (Exception error) when (error is DesktopStoreException or IOException or UnauthorizedAccessException)
+        {
+            return null;
+        }
     }
 }

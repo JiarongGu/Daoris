@@ -1,3 +1,5 @@
+using System.Collections.Immutable;
+
 namespace Daoris.Driver;
 
 /// <summary>
@@ -18,6 +20,10 @@ namespace Daoris.Driver;
 [Executor("limit-move", ExecutorPhase.Move)]
 internal sealed class LimitMove(IExecutorWiring wiring) : IExecutor
 {
+    /// <summary>Every family of the desktop's store the move reads, the preview's and the rules': the wait's stamp reads their revisions.</summary>
+    internal static readonly ImmutableArray<string> Reads =
+        [RoleStaffing.Family, RoleCatalog.Family, StaffPolicies.Family, StaffLedger.Family, SupervisorRuleStore.Family, StaffMoves.Family, BindingStore.Family];
+
     private ChatContext context => wiring.Context;
 
     private IChatRunning runner => wiring;
