@@ -24,7 +24,7 @@ internal sealed class WorkReceipting(
         var at = clock();
         var (refused, code) = Receipts.Edit<string?>(unit, record =>
         {
-            var fresh = resources.Where(resource => record.Of(attempt.Plugin, resource.Schema, resource.Id) is null).ToList();
+            var fresh = resources.Where(resource => !record.Gave(attempt.Plugin, resource.Schema, resource.Id)).ToList();
             if (fresh.Count == 0) return (null, null);
             var owing = record.Receipts.Count(receipt => !receipt.Settled);
             if (owing + fresh.Count > ResourceRecord.ReceiptsKept) return (null, TooManyResources);
@@ -34,7 +34,8 @@ internal sealed class WorkReceipting(
                 attempt.Node, attempt.Attempt, attempt.Call.Invocation, at) { Superseded = superseded });
             var dropped = record.Receipts.Where(receipt => receipt.Settled).Take(Math.Max(0, record.Receipts.Count + fresh.Count - ResourceRecord.ReceiptsKept)).ToList();
             var kept = record.Receipts.Where(receipt => !dropped.Contains(receipt));
-            return (record with { Receipts = [.. kept, .. taken] }, null);
+            var guard = record.Dropped.Concat(dropped.Select(receipt => new ResourceKey(receipt.Plugin, receipt.Schema, receipt.Resource)));
+            return (record with { Receipts = [.. kept, .. taken], Dropped = [.. guard.TakeLast(ResourceRecord.GuardKept)] }, null);
         });
         if ((refused ?? code) is not { } why) return null;
         if (why == TooManyResources && unsettled)

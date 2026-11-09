@@ -16,10 +16,7 @@ public sealed record DecisionAdmitted(string? Generation, string? Why)
 {
     public static DecisionAdmitted Refused(string why) => new(null, why);
 
-    /// <summary>
-    /// The overrule window the effective supervisor's role keeps (<see cref="RoleHold.Window"/>), within the decisions' shortest and
-    /// longest; null keeps <see cref="QuestionSupervisorDecisions.Window"/>.
-    /// </summary>
+    /// <summary>The overrule window the effective supervisor's role keeps (<see cref="RoleHold.Window"/>), within the decisions' shortest and longest; null keeps <see cref="QuestionSupervisorDecisions.Window"/>.</summary>
     public TimeSpan? Window { get; init; }
 
     public string? Role { get; init; }

@@ -177,10 +177,7 @@ public static class StewardWhy
     public const string OwnerHeld = "owner-held";
 }
 
-/// <summary>
-/// The steward's acts, each one route's exact form, its conditions judged under the gates of its
-/// target and its dependencies immediately before its handler, and its handler's effect recorded as the steward's.
-/// </summary>
+/// <summary>The steward's acts, each one route's exact form, its conditions judged under the gates of its target and dependencies before its handler, its effect recorded as the steward's.</summary>
 public static class StewardActRows
 {
     /// <summary>Every row, in the table's order.</summary>
