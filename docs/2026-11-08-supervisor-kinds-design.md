@@ -532,6 +532,8 @@ written there (§30.4):
 Row g builds this with §30's rows 6a, 3 and 6b, as §30.5 there says (*a supervisor's allow lands with the supervisor kinds' rows; until
 then every `ask` is the person's*).
 
+*Built choices, small and reversible:* a held `copy` (a machine-local input the gates read, `TreeCopyPermit`) says `started.local-held`, and a denied one `started.local-denied`, as a held share says `started.share-declined`, since `started.files-waiting` counts the installs alone. A leave of an allow or a held act is the allow decision's own record (act `leave`, state `left`, the bound and reasons), kept in the machine's folder where its subject names no session, as a held act names a repository. The listing carries each allow's and held act's facts so the terminal's print is what an agent's prompt holds.
+
 ### 5.2 The steward's acts *(R2-O1, R2-O4, R2-C4)*
 
 The steward and the supervisor do different work: the steward makes the management acts its grants list (rule 51), and a supervisor

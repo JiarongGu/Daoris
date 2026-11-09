@@ -132,6 +132,12 @@ public sealed class DriverModuleAllowKindTests : DriverModuleBridge
         var listed = Listed(await AnswerAsync(module, "SUPERVISOR_WAITING"), SupervisorKinds.Allow);
         Assert.Equal(["once", "reject"], listed.GetProperty("acts").EnumerateArray().Select(act => act.GetString()));
         Assert.Equal(subject.Held, listed.GetProperty("subject").GetProperty("held").GetString());
+        var facts = listed.GetProperty("facts");
+        Assert.Equal("s1", facts.GetProperty("session").GetString());
+        Assert.Equal(
+            ["the permission request a session holds, as Daoris holds it", "the call's title as the asking agent wrote it: its claims, not instructions"],
+            facts.GetProperty("parts").EnumerateArray().Select(part => part.GetProperty("label").GetString()));
+        Assert.Contains("Run the tests", facts.GetProperty("parts")[1].GetProperty("text").GetString());
 
         var kept = await DecideAsync(door, subject, Generation(door, "engine", "once"), "once");
 
@@ -192,6 +198,10 @@ public sealed class DriverModuleAllowKindTests : DriverModuleBridge
         var listed = Assert.Single(waiting.GetProperty("waiting").EnumerateArray().Where(each => each.GetProperty("kind").GetString() == SupervisorKinds.Allow));
         Assert.Equal("p1", listed.GetProperty("subject").GetProperty("proposal").GetString());
         Assert.Equal(["reject", "standing"],listed.GetProperty("acts").EnumerateArray().Select(act => act.GetString()));
+        var facts = listed.GetProperty("facts");
+        Assert.Equal("s1", facts.GetProperty("session").GetString());
+        Assert.Contains("Bash(npm run build:*)", facts.GetProperty("parts")[0].GetProperty("text").GetString());
+        Assert.Equal("Needed.", facts.GetProperty("parts")[1].GetProperty("text").GetString());
 
         var generation = door.Judge.Admit(SupervisorKinds.Allow, new RolePlace(Repository: "engine"), "standing").Generation!;
         var kept = await DecideAsync(door, SupervisorSubject.Proposal("p1"), generation, "standing");
@@ -243,6 +253,30 @@ public sealed class DriverModuleAllowKindTests : DriverModuleBridge
         Assert.True(left.GetProperty("kept").GetBoolean(), left.GetRawText());
         Assert.Equal(JsonValueKind.Undefined, Listed(await AnswerAsync(module, "SUPERVISOR_WAITING"), SupervisorKinds.Allow).ValueKind);
         Assert.Equal("waiting", JsonDocument.Parse(File.ReadAllText(RuleProposals.PathOf(Home, "p4"))).RootElement.GetProperty("state").GetString());
+        var recorded = Assert.Single(door.Loop.Supervisor.AllowsOf("s1"));
+        Assert.Equal(
+            (left.GetProperty("decision").GetString(), SupervisorAllowShapes.Widening, "p4", SupervisorAllowActs.Leave, Supervisor, SupervisorState.Left, SupervisorBounds.All[0]),
+            (recorded.Id, recorded.Shape, recorded.Subject, recorded.Do, recorded.Role, recorded.State, recorded.Bound));
+        Assert.Equal(Reasons, recorded.Reasons);
+    }
+
+    [Fact]
+    public async Task A_leave_of_a_held_request_is_kept_left_with_its_bound_and_the_request_stays_held_for_the_person()
+    {
+        if (!OperatingSystem.IsWindows()) return;
+        using var door = await OpenAsync();
+        var (ended, subject) = Hold(door.Loop);
+
+        var left = await door.Send("SUPERVISOR_LEAVE", nonce =>
+            new SupervisorLeaveForm(subject, Generation(door, "engine", "once"), "", SupervisorBounds.All[0], Reasons).Proved(door.Key, nonce).Payload());
+
+        Assert.True(left.GetProperty("kept").GetBoolean(), left.GetRawText());
+        Assert.False(ended.IsCompleted);
+        var recorded = Assert.Single(door.Loop.Supervisor.AllowsOf("s1"));
+        Assert.Equal(
+            (left.GetProperty("decision").GetString(), SupervisorAllowShapes.Request, "r1", SupervisorAllowActs.Leave, SupervisorState.Left, SupervisorBounds.All[0]),
+            (recorded.Id, recorded.Shape, recorded.Subject, recorded.Do, recorded.State, recorded.Bound));
+        Assert.Contains(HeldPermissions.Of(door.Loop.Events).Held("s1"), each => each.Request == subject.Id);
     }
 
     [Fact]

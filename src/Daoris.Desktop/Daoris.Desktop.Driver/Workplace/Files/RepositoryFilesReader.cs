@@ -1,3 +1,4 @@
+using System.Collections.Immutable;
 using System.Text.Json;
 
 namespace Daoris.Driver;
@@ -19,7 +20,7 @@ internal static class RepositoryFilesReader
             if (FileRuleFile.FormOf(root) is not { } form) return RepositoryFilesRead.None with { Problems = [FileRuleFile.Unknown(DeclarationNames.Rules)] };
             var problems = new List<string>();
             var numbered = FileRuleFile.Numbered(root, "", problems, form);
-            return new RepositoryFilesRead(Judged(numbered, problems), problems) { FirstForm = form != FileRuleFile.Form };
+            return new RepositoryFilesRead([.. Judged(numbered, problems)], [.. problems]) { FirstForm = form != FileRuleFile.Form };
         }
         catch (JsonException)
         {
@@ -51,7 +52,7 @@ internal static class RepositoryFilesReader
 }
 
 /// <summary>A repository's own rules, or none, and why a rule or the file does not read.</summary>
-internal sealed record RepositoryFilesRead(IReadOnlyList<FileRule> Rules, IReadOnlyList<string> Problems)
+internal sealed record RepositoryFilesRead(ImmutableArray<FileRule> Rules, ImmutableArray<string> Problems)
 {
     internal static readonly RepositoryFilesRead None = new([], []);
 

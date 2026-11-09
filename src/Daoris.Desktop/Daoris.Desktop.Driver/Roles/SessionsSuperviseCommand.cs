@@ -213,8 +213,7 @@ public static class SessionsSuperviseCommand
         foreach (var each in waiting)
         {
             if (SubjectOf(each) is not { } subject) continue;
-            var said = subject.Kind == SupervisorKinds.Allow ? SuperviseAllows.Says(each, subject)
-                : subject.Kind == SupervisorKinds.Files ? $"allow {subject.Id} in {subject.Session}, asked at start {subject.Act?.Start}"
+            var said = SuperviseAllows.Reads(subject) ? SuperviseAllows.Says(each, subject)
                 : subject.Kind != SupervisorKinds.Question
                 ? $"rule refers point {subject.Id}: {Text(each, "count")} at {Text(each, "n")}"
                 : $"question {subject.Id}  asked {Text(each, "asked")}";
@@ -243,7 +242,18 @@ public static class SessionsSuperviseCommand
             return 1;
         }
 
-        if (subject.Kind == SupervisorKinds.Allow) return await SuperviseAllows.PrintAsync(listed, subject, id, output).ConfigureAwait(false);
+        if (SuperviseAllows.Reads(subject))
+        {
+            // A session may hold several requests and a repository several held acts, each its own print.
+            var code = 0;
+            foreach (var each in waiting.Where(each => SubjectOf(each) is { } named && SuperviseAllows.Reads(named) && SuperviseAllows.Names(named, id)))
+            {
+                code |= await SuperviseAllows.PrintAsync(world, each, SubjectOf(each)!, id, output, ct).ConfigureAwait(false);
+            }
+
+            return code;
+        }
+
         if (subject.Kind != SupervisorKinds.Question)
         {
             return await SupervisePointPrint.PrintAsync(world, id, SupervisePointPrint.Waiting(listed, subject), output, ct).ConfigureAwait(false);
@@ -328,13 +338,13 @@ public static class SessionsSuperviseCommand
         }
 
         // The decision, or the leave as the role's second act, each proved over its own route's canonical bytes, the subject whole in them.
-        // An allow names its shape (a held request, a widening, a steward's act) as the listing says it, never by a session id alone.
+        // An allow names its shape (a held request, a widening, a steward's act) and a held act its start and kind as the listing says them.
         var subject = new SupervisorSubject(draft.Kind, id, draft.Subject);
-        if (draft.Kind == SupervisorKinds.Allow)
+        if (draft.Kind is SupervisorKinds.Allow or SupervisorKinds.Files)
         {
-            if (await SuperviseAllows.FindAsync(instance, id, draft.Subject, ct).ConfigureAwait(false) is not { } listed)
+            if (await SuperviseAllows.FindAsync(instance, id, draft.Subject, draft.Kind, ct).ConfigureAwait(false) is not { } listed)
             {
-                await output.WriteLineAsync($"sessions supervise: no allow `{draft.Subject}` waits for the supervisor; list again.").ConfigureAwait(false);
+                await output.WriteLineAsync($"sessions supervise: no {draft.Kind} `{draft.Subject}` waits for the supervisor; list again.").ConfigureAwait(false);
                 return 1;
             }
 

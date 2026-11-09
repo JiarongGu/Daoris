@@ -22,7 +22,7 @@ internal static class InstallScripts
         var applied = new List<StoreDependency>();
         foreach (var dependency in dependencies)
         {
-            if (dependency.Rule is not { Setup.Count: > 0, Install: Ci })
+            if (dependency.Rule is not { Setup.Length: > 0, Install: Ci })
             {
                 applied.Add(dependency);
                 continue;

@@ -67,7 +67,7 @@ internal static class DependencyKeys
     /// <summary>Whether a tracked file that keys <paramref name="dependency"/> has a working change in the tree.</summary>
     internal static async Task<bool> InputChangedAsync(string tree, StoreDependency dependency, CancellationToken ct)
     {
-        if (dependency.Rule.Key is not { Count: > 0 } key) return false;
+        if (dependency.Rule.Key is not { Length: > 0 } key) return false;
         var (code, said, _) = await WorkingTree.GitAsync(
             tree, ["--no-optional-locks", "status", "--porcelain", "-z", "--untracked-files=no", "--", .. key.Select(path => $":(glob){path}")], ct).ConfigureAwait(false);
         return code != 0 || said.Length > 0;

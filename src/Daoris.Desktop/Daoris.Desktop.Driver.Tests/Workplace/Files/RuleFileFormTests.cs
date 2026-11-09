@@ -52,7 +52,7 @@ public sealed class RuleFileFormTests : IDisposable
     {
         var second = RepositoryFilesReader.Read("""{ "form": 2, "rules": [ { "kind": "output", "paths": ["bin/"], "take": "base" } ] }""");
         Assert.Empty(second.Problems);
-        Assert.Equal(["bin/"], second.Rules.Single().Paths);
+        Assert.Equal<string>(["bin/"], second.Rules.Single().Paths);
         Assert.True(second.Rules.Single().Matches("src/App/bin/"));
 
         var first = RepositoryFilesReader.Read("""{ "rules": [ { "kind": "output", "paths": ["bin/"] } ] }""");
