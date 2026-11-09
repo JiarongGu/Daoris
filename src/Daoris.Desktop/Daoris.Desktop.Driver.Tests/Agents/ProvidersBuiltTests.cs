@@ -278,6 +278,7 @@ public sealed class ProvidersBuiltTests
             var expected = Assert.Throws<DriverException>(() => ProviderRegistry.Built().Start(door, target, null)).Message;
 
             Assert.Contains($"the {name} adapter needs a command", expected);
+            Assert.Contains($"[\"node\", \"path/to/agent.mjs\", \"--door\", \"{(name == "stub" ? "native" : "protocol")}\"]", expected);
             Assert.Equal(expected, Assert.Throws<DriverException>(() => ProviderRegistry.Built().Chat(door, chat, null)).Message);
             Assert.Equal(expected, Assert.Throws<DriverException>(() => ProviderRegistry.Built().Start(door, target, [])).Message);
         }

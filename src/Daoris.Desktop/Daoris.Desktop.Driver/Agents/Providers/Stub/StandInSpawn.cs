@@ -24,5 +24,5 @@ internal sealed class StandInSpawn(string id, string example, bool protocol) : I
             ? command
             : throw new DriverException(
                 $"the {id} adapter needs a command — name one in driver.json: "
-                + "{ \"commands\": { \"" + id + "\": [\"node\", \"path/to/" + example + "\"] } }");
+                + "{ \"commands\": { \"" + id + "\": [\"node\", \"path/to/" + example + "\", \"--door\", \"" + (protocol ? "protocol" : "native") + "\"] } }");
 }
