@@ -39,7 +39,6 @@ public sealed class PluginCatalogTests : IDisposable
         var catalog = PluginCatalog.Load(_home);
 
         Assert.Empty(catalog.Plugins);
-        Assert.Equal("", catalog.Signature);
     }
 
     [Fact]
@@ -493,25 +492,6 @@ public sealed class PluginCatalogTests : IDisposable
         Assert.True(adapters.AgentNamed("boxed-agent")!.Home.StartsInOwnHome);
     }
 
-    /// <summary>What the loop watches between ticks: a plugin added, removed, enabled or disabled changes it; nothing else does.</summary>
-    [Fact]
-    public void The_signature_moves_when_the_set_of_enabled_plugins_moves_and_only_then()
-    {
-        Plugin("acme.agent", """{ "id": "acme.agent", "harnesses": [ { "name": "acme-agent", "command": ["acme"] } ] }""");
-        var one = PluginCatalog.Load(_home).Signature;
-
-        Assert.Equal(one, PluginCatalog.Load(_home).Signature);
-
-        PluginState.Disable(_home, "acme.agent");
-        var off = PluginCatalog.Load(_home).Signature;
-        Assert.NotEqual(one, off);
-
-        Plugin("b.other", """{ "id": "b.other", "hooks": { "command": ["node", "h.mjs"], "points": ["session/ended"] } }""");
-        Assert.NotEqual(off, PluginCatalog.Load(_home).Signature);
-    }
-
-    // ——— Servers: what a plugin hands every session, beside the knowledge host.
-
     [Fact]
     public void Servers_are_read_with_the_placeholder_expanded_and_offered_as_the_wire_names_them()
     {
@@ -531,9 +511,7 @@ public sealed class PluginCatalogTests : IDisposable
         Assert.Equal([Path.Combine(folder, "serve.mjs"), "--headless"], server.Arguments);
         Assert.Equal(Path.Combine(folder, "data"), server.Environment["BROWSER_DATA"]);
 
-        // The loop watches the signature: a plugin that hands a new server is a change worth a reconcile.
         Plugin("second", """{ "id": "second", "servers": [ { "name": "other", "command": ["other"] } ] }""");
-        Assert.NotEqual(catalog.Signature, PluginCatalog.Load(_home).Signature);
         Assert.Equal(2, PluginCatalog.Load(_home).Servers.Count);
     }
 

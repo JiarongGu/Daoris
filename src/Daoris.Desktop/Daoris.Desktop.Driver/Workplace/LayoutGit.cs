@@ -41,9 +41,9 @@ public static class LayoutGit
         {
             var entry = tree.First(item => item.Path == path);
             if (!WorkingTree.IsCommitId(entry.Object)) continue;
-            if (await WorkingTree.GitBytesAsync(root, ["cat-file", "blob", entry.Object], TextLimit, ct).ConfigureAwait(false) is { } read)
+            if (await GitObjectReads.TextAsync(root, entry.Object, TextLimit, ct).ConfigureAwait(false) is { } text)
             {
-                texts[path] = Encoding.UTF8.GetString(read.Bytes, 0, read.Count);
+                texts[path] = text;
             }
         }
 

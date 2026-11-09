@@ -124,7 +124,7 @@ public sealed class SupervisorLandingTests : IDisposable
         var handed = new List<SupervisorLandingDue>();
         Assert.Empty(await decisions.ReleaseLandingsAsync(Line(handed: handed), At.AddMinutes(11)));
         Assert.Empty(handed);
-        Assert.Equal(SupervisorWhy.Answered, (await decisions.LandingAsync(Landing(), "reports", null, At.AddMinutes(12))).Why);
+        Assert.Equal(SupervisorWhy.Overruled, (await decisions.LandingAsync(Landing(), "reports", null, At.AddMinutes(12))).Why);
         Assert.False(decisions.Refers(SupervisorSubject.Landing("s1", "q7", "review", 1)));
     }
 
@@ -165,6 +165,7 @@ public sealed class SupervisorLandingTests : IDisposable
         Assert.Empty(handed);
         Assert.Equal((SupervisorState.Stale, SupervisorWhy.RoleChanged), (decisions.LandingsOf("s1").Single().State, decisions.LandingsOf("s1").Single().Why));
         Assert.False(decisions.LandingWords.Live(kept.Decision!));
+        Assert.Equal(SupervisorWhy.Overruled, (await decisions.LandingAsync(Landing(), "reports", null, At.AddMinutes(12))).Why);
     }
 
     [Fact]

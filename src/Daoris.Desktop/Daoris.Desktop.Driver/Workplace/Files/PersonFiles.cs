@@ -117,7 +117,9 @@ internal static class PersonFiles
         return edit(rules);
     });
 
-    internal static int EditScope(string home, string? repository, Func<JsonObject, int> edit)
+    internal static int EditScope(string home, string? repository, Func<JsonObject, int> edit) => EditScopes(home, [repository], edit);
+
+    internal static int EditScopes(string home, IReadOnlyList<string?> repositories, Func<JsonObject, int> edit)
     {
         var path = PathOf(home);
         using var held = RecordLock.Take(RecordLock.PathOf(home, LockName));
@@ -135,8 +137,7 @@ internal static class PersonFiles
             if (read.FirstForm) root = PersonFilesForm.Translated(root, read);
         }
 
-        var scope = repository is null ? Child(root, "machine") : Child(Child(root, "repositories"), repository);
-        var changed = edit(scope);
+        var changed = repositories.Sum(repository => edit(repository is null ? Child(root, "machine") : Child(Child(root, "repositories"), repository)));
         if (changed == 0) return 0;
         Directory.CreateDirectory(Path.GetDirectoryName(path)!);
         AtomicFile.WriteText(path, root.ToJsonString(new JsonSerializerOptions { WriteIndented = true }).ReplaceLineEndings("\n") + "\n");

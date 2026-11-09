@@ -129,7 +129,7 @@ public sealed class HookSet(
             var waits = exited.ToDictionary(id => id, id => _work.Exited(id, now), StringComparer.Ordinal);
             // A plugin that takes the host's token is placed, its work process one per place awaiting it.
             _placed.Place(hostToken is null ? [] : catalog.Contributing.Where(PlacedWork.Takes).Select(p => p.Manifest.Id));
-            _work.Watch(_placed.Divide());
+            _placed.Apply(_work.Watch);
             var contributing = catalog.Contributing.ToDictionary(p => p.Manifest.Id, p => p, StringComparer.Ordinal);
             _work.Keep(catalog.Contributing.Select(p => (p.Manifest.Id, Build(p)))
                 .Concat(_placed.Places().Where(key => contributing.ContainsKey(PlacedWork.PluginOf(key)))
@@ -403,7 +403,7 @@ public sealed class HookSet(
     public void Watch(IReadOnlyDictionary<string, IReadOnlyList<WatchedUnit>> awaited)
     {
         _placed.Await(awaited);
-        _work.Watch(_placed.Divide());
+        _placed.Apply(_work.Watch);
     }
 
     /// <summary>
@@ -434,7 +434,11 @@ public sealed class HookSet(
     /// </summary>
     public void Refused(string plugin, string code)
     {
-        foreach (var key in _placed.KeysOf(plugin)) _work.Refused(key, code);
+        // One refusal is one count: the first place this supervision holds takes it, never each place.
+        foreach (var key in _placed.KeysOf(plugin))
+        {
+            if (_work.Refused(key, code)) break;
+        }
     }
 
     /// <summary>The generation of the plugin's work process while one is up and listened to, else null; of a placed plugin, one of its places'.</summary>

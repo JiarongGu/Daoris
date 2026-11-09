@@ -185,6 +185,24 @@ public sealed class GitHistoryEditTests : TreeSyncFixture
         Assert.Contains("root", run.Run.Said);
     }
 
+    [Theory]
+    [InlineData("shallow")]
+    [InlineData("info/grafts")]
+    public async Task A_commit_git_reads_with_no_parent_a_shallow_boundary_or_a_grafted_root_is_refused_as_a_root(string file)
+    {
+        if (!OperatingSystem.IsWindows()) return;
+        var root = await TopicAsync();
+        await GitAsync(root, "branch", "other", "main");
+        var picked = await RevAsync(root, "topic");
+        var tip = await RevAsync(root, "other");
+        await File.WriteAllTextAsync(Path.Combine(root, ".git", file), picked + "\n");
+
+        var run = await GitHistoryEdits.EditAsync(Runs(), Ask(root, "pick", "other", picked), "window", "window", CancellationToken.None);
+
+        await NothingMovedAsync(root, "other", tip, run);
+        Assert.Contains("root", run.Run.Said);
+    }
+
     [Fact]
     public async Task A_signed_commit_is_refused_and_nothing_moves()
     {

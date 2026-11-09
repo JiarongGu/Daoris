@@ -146,6 +146,30 @@ public sealed class HelpGrantsTests : IDisposable
         Assert.Empty(HelpGrants.Read(_home, catalog).Servers);
     }
 
+    /// <summary>The person's approval stands while the plugin is switched off, read for a page or a list and approved there, and hands Ask Daoris nothing meanwhile.</summary>
+    [Fact]
+    public void A_switched_off_plugins_approval_reads_as_approved_for_a_page_and_can_be_made_there_and_is_handed_nothing()
+    {
+        Tickets();
+        HelpGrants.Approve(_home, PluginCatalog.Load(_home), "acme.tickets", "tickets", readsOnly: false);
+        PluginState.Disable(_home, "acme.tickets");
+        var off = PluginCatalog.Load(_home);
+
+        var page = HelpGrants.Read(_home, off, withSwitchedOff: true);
+
+        Assert.Equal(HelpGrants.Approved, Assert.Single(page.All).State);
+        Assert.Empty(page.Servers);
+        Assert.Empty(page.Allow);
+        Assert.Empty(page.Ask);
+        Assert.Null(page.Browser);
+        Assert.Empty(HelpGrants.Read(_home, off).All);
+
+        HelpGrants.Withdraw(_home, "acme.tickets", "tickets");
+        HelpGrants.Approve(_home, off, "acme.tickets", "tickets", readsOnly: true);
+        Assert.Equal(["search", "get_issue"], Assert.Single(HelpGrants.Read(_home, off, withSwitchedOff: true).All).Server.Allow);
+        Assert.Empty(HelpGrants.Read(_home, off, withSwitchedOff: true).Servers);
+    }
+
     [Fact]
     public void A_withdrawal_hands_nothing_again_and_an_unreadable_file_approves_nothing()
     {

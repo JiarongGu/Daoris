@@ -173,6 +173,27 @@ public sealed class FileAnalysisTests : IDisposable
     }
 
     [Fact]
+    public async Task A_dotnet_bin_is_found_a_base_its_signature_s_build_releases_and_set_aside_where_a_found_script_runs_it_without_building()
+    {
+        Write("based", ".gitignore", "bin/\nobj/\n");
+        Write("based", "src/Api/Api.csproj", "<Project Sdk=\"Microsoft.NET.Sdk\" />");
+        Write("based", "src/Cli/Cli.csproj", "<Project Sdk=\"Microsoft.NET.Sdk\" />");
+        Write("based", "scripts/serve.sh", "#!/bin/sh\n./src/Cli/bin/Debug/net10.0/Cli.exe --serve\n");
+        var commit = await Commit("based");
+        Write("based", "src/Api/bin/Debug/Api.dll");
+        Write("based", "src/Cli/bin/Debug/Cli.dll");
+
+        var (reading, _) = await Read("based", commit);
+
+        var api = Found(reading, "src/Api/bin/");
+        Assert.Equal(("base", "dotnet build -c {configuration}"), (api.Take, api.Builds));
+        Assert.Null(api.Refuses);
+        var cli = Found(reading, "src/Cli/bin/");
+        Assert.Equal("aside", cli.Take);
+        Assert.Contains(cli.Evidence, said => said.Contains("scripts/serve.sh", StringComparison.Ordinal));
+    }
+
+    [Fact]
     public async Task Cargo_s_target_is_an_intermediate_until_a_script_runs_it_without_building()
     {
         Write("cargo", ".gitignore", "target/\n");

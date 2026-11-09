@@ -68,7 +68,7 @@ internal sealed class SupervisorCourses(SupervisorBook book, IDecisionAdmission 
             var refused = Judge(course, point);
             if (refused is null && book.Courses.Values.FirstOrDefault(each => each.Session == course.Session && each.Point == course.Point) is { } decided)
             {
-                refused = SupervisorWhy.Answered;
+                refused = SupervisorStates.OwnersAgain(decided.State) ? SupervisorWhy.Overruled : SupervisorWhy.Answered;
                 if (decided.Do == course.Do && decided.Generation == course.Generation && decided.State is SupervisorState.Held or SupervisorState.Left)
                 {
                     return Task.FromResult(new SupervisorKept(true, decided.Id, decided.State == SupervisorState.Held ? decided.GoesOnAt : null, null));
@@ -166,6 +166,7 @@ internal sealed class SupervisorCourses(SupervisorBook book, IDecisionAdmission 
     private void Append(SupervisorCourseDecision decision, SupervisorState to, DateTimeOffset at, string? why)
     {
         (decision.State, decision.StateAt, decision.Why) = (to, at, why);
+        if (SupervisorStates.OwnersAgain(to)) book.Closed[SupervisorSubject.Point(decision.Session, decision.Point, decision.Kind)] = to;
         SupervisorDecisionFiles.TryAppend(book.Files.StatesOf(decision.Session, decision.Id), SupervisorDecisionFiles.StateLine(to, at, why, null));
     }
 

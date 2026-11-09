@@ -18,6 +18,7 @@ internal sealed class SuperviseLook(ILookWiring wiring) : ILookPass
             round.Events.Add($"supervisor: {stopped} turn(s) ended, the person having answered first.");
         }
 
+        SupervisePass.Forget([.. waiting.Select(each => each.Subject)]);
         supervisor.Attempts.CloseOverdue(DateTimeOffset.UtcNow, TimeSpan.FromMinutes(SupervisePass.Minutes + 1));
         foreach (var subject in waiting)
         {

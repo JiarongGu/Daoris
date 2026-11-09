@@ -33,6 +33,26 @@ public sealed class PersonFilesTests : IDisposable
     }
 
     [Fact]
+    public void An_edit_of_several_scopes_is_one_write_and_one_that_throws_on_a_later_scope_writes_none()
+    {
+        var seen = new List<string?>();
+
+        var changed = PersonFiles.EditScopes(_home, ["x", "y"], scope => { seen.Add((string?)scope["mark"]); scope["mark"] = "n"; return 1; });
+
+        Assert.Equal((2, 2), (changed, seen.Count));
+        Assert.Equal(2, File.ReadAllText(PersonFiles.PathOf(_home)).Split("\"mark\": \"n\"").Length - 1);
+        var before = File.ReadAllText(PersonFiles.PathOf(_home));
+        var turn = 0;
+        Assert.Throws<DriverException>(() => PersonFiles.EditScopes(_home, ["x", "z"], scope =>
+        {
+            scope["mark"] = "m";
+            return ++turn < 2 ? 1 : throw new DriverException("the second layer failed");
+        }));
+
+        Assert.Equal(before, File.ReadAllText(PersonFiles.PathOf(_home)));
+    }
+
+    [Fact]
     public async Task A_write_waits_for_another_edit_of_the_file_so_neither_is_lost()
     {
         var lockPath = RecordLock.PathOf(_home, PersonFiles.LockName);

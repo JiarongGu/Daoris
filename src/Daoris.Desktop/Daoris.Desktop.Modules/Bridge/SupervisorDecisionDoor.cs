@@ -91,6 +91,14 @@ public static class SupervisorDecisionDoor
     internal static string? Covers(DriverLoop loop, string generation, string kind, string repository) =>
         loop.Pipe?.StandingConfirmation is { } judge ? judge.Covers(generation, kind, repository) : SupervisorWhy.NotStaffed;
 
+    /// <summary>Whether the hold of <paramref name="generation"/> answers <paramref name="kind"/> at any <paramref name="place"/>, asking no grant; null where it does, else why not.</summary>
+    internal static string? CoversPlace(DriverLoop loop, string generation, string kind, RolePlace place)
+    {
+        if (loop.Pipe?.StandingConfirmation is not { } judge) return SupervisorWhy.NotStaffed;
+        var admitted = judge.Admit(kind, place, act: null);
+        return admitted.Why ?? (admitted.Generation == generation ? null : SupervisorWhy.RoleChanged);
+    }
+
     private static ISupervisorKind? RowOf(string kind) => Rows.FirstOrDefault(row => row.Kind == kind);
 
     // Who holds the role, as the judge read it from the catalogue's record of the hold.

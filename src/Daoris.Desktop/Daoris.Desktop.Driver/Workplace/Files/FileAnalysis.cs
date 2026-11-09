@@ -92,7 +92,11 @@ internal static partial class FileAnalysis
                 {
                     foreach (var top in tops.Where(top => !found.ContainsKey(top) && GitPattern.Covers([path, .. hit.Rule.Paths.Where(each => each.StartsWith('!'))], top, false)))
                     {
-                        found[top] = hit.Rule with { Paths = Top(top), Evidence = [$"beside {hit.File}, by the {hit.Row.Toolchain} signature"], Size = walks[top].Size };
+                        found[top] = hit.Rule with
+                        {
+                            Paths = Top(top), Evidence = [$"beside {hit.File}, by the {hit.Row.Toolchain} signature"], Size = walks[top].Size,
+                            Take = hit.Rule.Kind == FileKind.Output && hit.Rule.Builds is not null ? "base" : hit.Rule.Take,
+                        };
                     }
                 }
 
@@ -131,14 +135,14 @@ internal static partial class FileAnalysis
 
     /// <summary>
     /// The repository's tracked scripts, read at the commit in one search: a script running an intermediate without its tool's check
-    /// makes it an output, the other kind kept as its evidence; a folder no source reached is an output where a step a gate, a hook or a
+    /// makes it an output, the other kind kept as its evidence, and one running a base sets it aside; a folder no source reached is an output where a step a gate, a hook or a
     /// lifecycle script runs writes it, scratch where another script writes it, and stays for the later sources where one only names it.
     /// </summary>
     private static async Task Scripts(
         string root, string commit, FileSignatures signatures, IReadOnlyList<string> tops, Dictionary<string, FileRule> found, string? gates,
         string lifecycle, CancellationToken ct)
     {
-        var asked = tops.Where(top => !found.TryGetValue(top, out var rule) || rule.Kind == FileKind.Intermediate).ToList();
+        var asked = tops.Where(top => !found.TryGetValue(top, out var rule) || rule.Kind == FileKind.Intermediate || rule.Take == "base").ToList();
         var names = asked.ToDictionary(top => top, top => top.TrimEnd('/'), StringComparer.Ordinal);
         var lines = await FileGit.LinesAsync(root, commit, [.. names.Values.Distinct(StringComparer.Ordinal)], signatures.Scripts, ct).ConfigureAwait(false);
         foreach (var top in asked)
@@ -146,15 +150,17 @@ internal static partial class FileAnalysis
             var naming = Named(names[top]);
             var said = lines.Where(line => naming.IsMatch(line.Line)).ToList();
             if (said.Count == 0) continue;
-            if (found.TryGetValue(top, out var intermediate))
+            if (found.TryGetValue(top, out var known))
             {
                 if (said.FirstOrDefault(line => Runs(names[top]).IsMatch(line.Line)) is { File: { } runner })
                 {
-                    found[top] = intermediate with
-                    {
-                        Kind = FileKind.Output, Toolchain = null, Other = FileKind.Intermediate,
-                        Evidence = [.. intermediate.Evidence, $"{runner} runs it without building"],
-                    };
+                    found[top] = known.Kind == FileKind.Intermediate
+                        ? known with
+                        {
+                            Kind = FileKind.Output, Toolchain = null, Other = FileKind.Intermediate,
+                            Evidence = [.. known.Evidence, $"{runner} runs it without building"],
+                        }
+                        : known with { Take = "aside", Evidence = [.. known.Evidence, $"{runner} runs it without building, so it is set aside, never kept as a base"] };
                 }
 
                 continue;

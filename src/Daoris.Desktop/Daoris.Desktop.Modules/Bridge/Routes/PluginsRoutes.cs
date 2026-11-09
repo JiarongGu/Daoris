@@ -44,7 +44,7 @@ public sealed class PluginsRoutes(DriverContext context)
         var catalog = PluginCatalog.Load(_loop.Home, reserved);
         var running = new HashSet<string>(_loop.RunningPlugins, StringComparer.Ordinal);
         // The person's approvals of what each plugin offers Ask Daoris.
-        var grants = HelpGrants.Read(_loop.Home, catalog);
+        var grants = HelpGrants.Read(_loop.Home, catalog, withSwitchedOff: true);
         var offered = PluginOffers.Load(OffersFolder, _loop.Home, reserved);
         return new
         {

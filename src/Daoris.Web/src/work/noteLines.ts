@@ -309,6 +309,7 @@ export const NOTE_VALUES: Readonly<
   inputs: 'names', input: 'text',
   // The paths a tree's files stage linked to one place every tree uses, each as code.
   shared: 'names',
+  bases: 'names', runners: 'names', project: 'text',
   // A rule's setup command that failed, as code.
   command: 'text',
   // A dependency's folder and its install, what the files stage put back, and git's own files an install changed, each as code.

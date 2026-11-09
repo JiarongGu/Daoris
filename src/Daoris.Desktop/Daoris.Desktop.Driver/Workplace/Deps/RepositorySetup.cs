@@ -48,8 +48,8 @@ internal static class RepositorySetup
         var lines = new List<string> { $"path\t{dependency.Path}" };
         lines.AddRange(commands.Select(command => $"command\t{command}"));
         var manifest = dependency.Runs.Length == 0 ? "package.json" : dependency.Runs + "/package.json";
-        var (read, text, _) = await WorkingTree.GitAsync(tree, ["show", $"{head}:{manifest}"], ct).ConfigureAwait(false);
-        lines.Add($"scripts\t{(read == 0 ? ScriptsOf(text) : "")}");
+        var text = await GitObjectReads.TextAsync(tree, GitObjectName.At(head, manifest), ct).ConfigureAwait(false);
+        lines.Add($"scripts\t{(text is not null ? ScriptsOf(text) : "")}");
         foreach (var named in commands.SelectMany(command => command.Split(' ', StringSplitOptions.RemoveEmptyEntries)).Select(word => word.Trim('"', '\'')).Distinct(StringComparer.Ordinal))
         {
             var path = dependency.Runs.Length == 0 ? named : dependency.Runs + "/" + named;

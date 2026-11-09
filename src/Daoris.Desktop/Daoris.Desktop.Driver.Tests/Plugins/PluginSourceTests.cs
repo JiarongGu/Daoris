@@ -337,6 +337,31 @@ public sealed class PluginSourceTests : IDisposable
         Assert.Equal(["acme.gate"], Directory.GetDirectories(DaorisHome.Entry(Home, HomeEntry.Plugins)).Select(Path.GetFileName));
     }
 
+    /// <summary>A swap-in that fails and a rollback that fails with it: the refusal names the folder the installed plugin now lies in, and the stage is forgotten.</summary>
+    [Fact]
+    public void An_update_whose_rollback_fails_too_names_the_folder_the_installed_plugin_lies_in_and_forgets_the_stage()
+    {
+        var source = Checkout();
+        PluginInstall.Add(Home, source, Reserved);
+        File.WriteAllText(Path.Combine(source, "gate.mjs"), "// v2");
+        var installed = Installed("acme.gate");
+        var root = DaorisHome.Entry(Home, HomeEntry.Plugins);
+
+        // Not retried by `MoveFolder`, so the failure is at once.
+        void Move(string from, string to)
+        {
+            if (to == installed) throw new FileNotFoundException("the target is not there to take it");
+            Directory.Move(from, to);
+        }
+
+        var thrown = Assert.Throws<DriverException>(() => PluginInstall.Update(Home, "acme.gate", Reserved, Offers, move: Move));
+
+        var aside = Assert.Single(Directory.GetDirectories(root, ".removing-acme.gate-*"));
+        Assert.Contains(Path.GetFileName(aside), thrown.Message);
+        Assert.Equal("// v1", File.ReadAllText(Path.Combine(aside, "gate.mjs")));
+        Assert.Empty(Directory.GetDirectories(root, ".updating-*"));
+    }
+
     // ── An offer, installed and then updated ───────────────────────────────────────────────────────
 
     private const string Offered = """
@@ -402,10 +427,11 @@ public sealed class PluginSourceTests : IDisposable
         var mark = Path.Combine(_root, "ran.txt");
         Folder(Path.Combine(Offers, "acme.marks"),
             """{ "id": "acme.marks", "hooks": { "command": ["node", "${plugin}/hook.mjs"], "points": ["session/ended"] } }""",
-            ("hook.mjs", $"require('fs').writeFileSync({JsonSerializer.Serialize(mark)}, 'ran');"));
+            ("hook.mjs", HookMarks.Script(mark)));
+        HookMarks.Prove(Path.Combine(Offers, "acme.marks", "hook.mjs"), mark);
 
         PluginInstall.AddOffer(Home, Offers, "acme.marks", Reserved);
 
-        Assert.False(File.Exists(mark));
+        HookMarks.AssertNone(mark);
     }
 }

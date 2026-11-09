@@ -294,6 +294,22 @@ internal sealed class StartPlan
     public async Task<SettledSelection> ResolveAsync(
         CancellationToken ct, bool counts = true, (ActorEffective Entry, string? Account)? refused = null, long except = 0)
     {
+        StaffReservation? held = null;
+        try
+        {
+            return await WalkAsync(ct, counts, refused, except, reservation => held = reservation).ConfigureAwait(false);
+        }
+        catch
+        {
+            // A walk that throws opens nothing, so its reservation would count in every pick until it expired.
+            if (held is not null) Staff!.Release(held);
+            throw;
+        }
+    }
+
+    private async Task<SettledSelection> WalkAsync(
+        CancellationToken ct, bool counts, (ActorEffective Entry, string? Account)? refused, long except, Action<StaffReservation> reserved)
+    {
         IReadOnlyCollection<string>? PassedFor(ActorEffective entry) =>
             refused is { Entry: var at, Account: { } account } && at == entry ? [account] : null;
 
@@ -307,6 +323,7 @@ internal sealed class StartPlan
             take = counts ? Staff!.Take(Role, Work, Order, LineFacts) : Staff!.Preview(Role, Work, Order, LineFacts);
             order = [.. take.Arrangement.Walk.Select(each => each.Entry)];
             staffed = take.Arrangement.Passed;
+            if (take.Reservation is { } kept) reserved(kept);
         }
 
         var policy = take?.Policy.Applied is not null;

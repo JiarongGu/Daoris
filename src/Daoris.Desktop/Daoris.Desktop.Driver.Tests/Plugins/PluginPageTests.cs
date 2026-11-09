@@ -78,6 +78,22 @@ public sealed class PluginPageTests : IDisposable
         Assert.Contains("browser  `browser`; handed to every session beside Daoris's own knowledge host", shown);
     }
 
+    /// <summary>A plugin switched off keeps the approval the person made, and its page says approved rather than waiting.</summary>
+    [Fact]
+    public void A_switched_off_plugins_page_says_the_approval_the_person_made()
+    {
+        Install("acme.tools", """
+            { "id": "acme.tools", "servers": [
+                { "name": "tickets", "command": ["tickets"], "to": ["help"], "allow": ["search"] } ] }
+            """);
+        HelpGrants.Approve(Home, PluginCatalog.Load(Home), "acme.tools", "tickets", readsOnly: true);
+        PluginState.Disable(Home, "acme.tools");
+
+        var page = PluginPage.Read(Home, "acme.tools");
+
+        Assert.Equal(HelpGrants.Approved, Assert.Single(page.Servers).Help);
+    }
+
     /// <summary>
     /// The page answers the steps a plugin declares and what they create, and the terminal's <c>plugins show</c>
     /// says each in the words an update's change says it.

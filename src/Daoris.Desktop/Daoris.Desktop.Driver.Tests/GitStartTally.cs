@@ -27,7 +27,11 @@ internal sealed class GitStartTally : IDisposable
             if (Path.GetFileNameWithoutExtension(info.FileName).Equals("git", StringComparison.OrdinalIgnoreCase))
             {
                 var folder = Path.GetRelativePath(_relativeTo, info.WorkingDirectory).Replace('\\', '/');
-                lock (_starts) _starts.Add((folder, GitLaunch.Command([.. info.ArgumentList])));
+                // An object read's question is its input: two of them start the same command.
+                IReadOnlyList<string> command = GitStartInputs.Of(info) is { } asked
+                    ? [.. GitLaunch.Command([.. info.ArgumentList]), asked.TrimEnd('\n')]
+                    : GitLaunch.Command([.. info.ArgumentList]);
+                lock (_starts) _starts.Add((folder, command));
             }
 
             return Process.Start(info);

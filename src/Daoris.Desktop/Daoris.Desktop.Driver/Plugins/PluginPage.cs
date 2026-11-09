@@ -38,7 +38,7 @@ public static class PluginPage
         var (entry, manifest, catalog) = Installed(home, id);
         var plugin = entry.Manifest.Id;
         // What it offers Ask Daoris, with the person's approval as it stands.
-        var grants = HelpGrants.Read(home, catalog).All.Where(grant => string.Equals(grant.Plugin, plugin, StringComparison.OrdinalIgnoreCase)).ToList();
+        var grants = HelpGrants.Read(home, catalog, withSwitchedOff: true).All.Where(grant => string.Equals(grant.Plugin, plugin, StringComparison.OrdinalIgnoreCase)).ToList();
         PageServer Granted(PageServer page, PluginServer server)
         {
             if (!server.HandedTo(PluginServerTo.Help)) return page;

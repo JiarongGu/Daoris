@@ -319,8 +319,8 @@ public static class GitRefActs
             {
                 var (stands, _, _) = await WorkingTree.GitAsync(checkout, ["rev-parse", "--verify", "--quiet", full], token).ConfigureAwait(false);
                 if (stands == 0) return $"a {noun} named `{name}` already exists, so act `{record.Id}` was not undone";
-                var (known, _, _) = await WorkingTree.GitAsync(checkout, ["cat-file", "-e", id + "^{commit}"], token).ConfigureAwait(false);
-                if (known != 0) return $"the commit act `{record.Id}` deleted `{name}` at is no longer in the repository, so it was not undone";
+                var known = await GitObjectReads.InfoAsync(checkout, id + "^{commit}", token).ConfigureAwait(false);
+                if (known is not { Missing: false }) return $"the commit act `{record.Id}` deleted `{name}` at is no longer in the repository, so it was not undone";
                 if (section is not null && await SectionAsync(checkout, name).ConfigureAwait(false) is not null)
                 {
                     return $"a `branch.{name}` section stands already, so act `{record.Id}` was not undone";

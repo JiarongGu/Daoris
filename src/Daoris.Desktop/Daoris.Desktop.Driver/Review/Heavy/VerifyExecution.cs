@@ -39,9 +39,11 @@ internal sealed class VerifyExecution(string home, VerifySend send, CandidateJob
         string? text = null;
         if (tip != HeavyExecutor.NoDeclaration)
         {
-            var read = await WorkingTree.GitBytesAsync(send.Checkout, ["cat-file", "blob", tip], 256 * 1024, ct).ConfigureAwait(false);
-            if (read is null) return (Unknown($"the accepted declaration {TextBounds.ShortCommit(tip, 7)} could not be read here"), false);
-            text = Encoding.UTF8.GetString(read.Value.Bytes, 0, read.Value.Count);
+            text = await GitObjectReads.TextAsync(send.Checkout, tip, 256 * 1024, ct).ConfigureAwait(false);
+            if (text is null)
+            {
+                return (Unknown($"the accepted declaration {TextBounds.ShortCommit(tip, 7)} could not be read here"), false);
+            }
         }
 
         IReadOnlyList<DeclaredGate> declared = text is null

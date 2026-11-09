@@ -75,7 +75,7 @@ internal sealed class TreePoolFinishes(TreePool pool, PoolSeams seams)
             return PoolDone.Not($"{SlotJudgement.HeadMoved}: its HEAD changed since its line let it go");
         }
 
-        var own = judged.Ignored.Own;
+        var own = await FinishSort.AsideAsync(site, slot.Path, end.Tip, judged.Ignored, ct).ConfigureAwait(false);
         var written = WriteManifest(site, finish, end, branch, keep, aside, manifest, own);
         if (written is not null)
         {

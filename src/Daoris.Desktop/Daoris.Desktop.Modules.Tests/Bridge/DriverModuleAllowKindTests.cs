@@ -244,4 +244,19 @@ public sealed class DriverModuleAllowKindTests : DriverModuleBridge
         Assert.Equal(JsonValueKind.Undefined, Listed(await AnswerAsync(module, "SUPERVISOR_WAITING"), SupervisorKinds.Allow).ValueKind);
         Assert.Equal("waiting", JsonDocument.Parse(File.ReadAllText(RuleProposals.PathOf(Home, "p4"))).RootElement.GetProperty("state").GetString());
     }
+
+    [Fact]
+    public async Task A_leave_of_a_request_in_a_repository_the_holders_role_does_not_cover_is_refused_and_the_request_stays_held()
+    {
+        if (!OperatingSystem.IsWindows()) return;
+        using var door = await OpenAsync(RoleKit.Repository("elsewhere"));
+        var (_, subject) = Hold(door.Loop);
+        var generation = Generation(door, "elsewhere", "once");
+
+        var left = await door.Send("SUPERVISOR_LEAVE", nonce => new SupervisorLeaveForm(subject, generation, "", SupervisorBounds.All[0], Reasons).Proved(door.Key, nonce).Payload());
+
+        Assert.False(left.GetProperty("kept").GetBoolean());
+        Assert.Equal(SupervisorWhy.NotStaffed, left.GetProperty("why").GetString());
+        Assert.Contains(HeldPermissions.Of(door.Loop.Events).Held("s1"), each => each.Request == subject.Id);
+    }
 }

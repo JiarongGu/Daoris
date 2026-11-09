@@ -103,10 +103,8 @@ internal static partial class UnionJoins
         return Spaced(text, lines, GluedLabels(lines));
     }
 
-    /// <summary>
-    /// A union record's text with one blank line set before each heading the merge joined to the line above, a join either of
-    /// <paramref name="sides"/> already held excepted.
-    /// </summary>
+    /// <summary>A union record's text with one blank line set before each heading the merge joined to the line above, a join
+    /// either of <paramref name="sides"/> already held excepted.</summary>
     internal static (string Text, IReadOnlyList<(int Line, string Label)> Set) SetApartHeadings(string text, IReadOnlyList<string> sides)
     {
         var lines = text.Split('\n');
@@ -248,8 +246,8 @@ internal static partial class UnionJoins
         if (folder is not null)
         {
             // A folder, as `doc-duplicates` asks the disk: a decisions record that is one file holds no note a folder's rule reads.
-            var (typed, kind, _) = await WorkingTree.GitAsync(tree, ["cat-file", "-t", $"{declaredAt}:{folder}"], ct).ConfigureAwait(false);
-            if (typed != 0 || kind.Trim() != "tree") folder = null;
+            var typed = await GitObjectReads.InfoAsync(tree, GitObjectName.At(declaredAt, folder), ct).ConfigureAwait(false);
+            if (typed is not { Type: "tree" }) folder = null;
         }
 
         var set = new List<Set>();
@@ -276,9 +274,7 @@ internal static partial class UnionJoins
     /// <summary>A file as <paramref name="commit"/> holds it, its bytes read as UTF-8; null where it holds none or git could not say.</summary>
     private static async Task<string?> ShowAsync(string tree, string commit, string path, CancellationToken ct)
     {
-        var (found, sha, _) = await WorkingTree.GitAsync(tree, ["rev-parse", "--verify", "--quiet", $"{commit}:{path}"], ct).ConfigureAwait(false);
-        if (found != 0) return null;
-        var (read, text, _) = await WorkingTree.GitAsync(tree, ["cat-file", "blob", sha.Trim()], ct).ConfigureAwait(false);
-        return read == 0 ? text : null;
+        var name = GitObjectName.At(commit, path);
+        return await GitObjectReads.TextAsync(tree, name, ct).ConfigureAwait(false);
     }
 }

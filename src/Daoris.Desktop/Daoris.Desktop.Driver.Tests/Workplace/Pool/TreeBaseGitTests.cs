@@ -78,6 +78,57 @@ public sealed class TreeBaseGitTests : IDisposable
     }
 
     [Fact]
+    public async Task A_base_records_the_build_its_rule_names_and_one_no_build_releases_is_set_aside()
+    {
+        var fixture = await FixtureAsync();
+        await File.WriteAllTextAsync(Path.Combine(fixture.Root, "daoris.files.json"), """
+            { "form": 2, "rules": [ { "kind": "output", "paths": ["bin/", "out/"], "take": "base" } ] }
+            """);
+        await File.AppendAllTextAsync(Path.Combine(fixture.Root, ".gitignore"), "out/\n");
+        await GitAsync(fixture.Root, "commit", "--quiet", "-am", "keep out/ too");
+        fixture.Start = (await GitAsync(fixture.Root, "rev-parse", "HEAD")).Trim();
+        var pool = fixture.Pool();
+        var slot = await BuiltAsync(fixture, pool, "s-aaaa0001", "bin/Debug/net10.0/Engine.dll", "out/Debug/Engine.dll");
+
+        var taken = await pool.TakeAsync(fixture.Take(1, "s-bbbb0001"));
+
+        Assert.True(taken.Ok, taken.Refused ?? taken.Stuck);
+        Assert.Equal("dotnet build -c {configuration}", Assert.Single(TreeFilesRecord.Read(fixture.Home, slot.Path)!.Bases).Builds);
+        Assert.False(Directory.Exists(Path.Combine(slot.Path, "out")));
+        Assert.Null(BaseMarker.Above(Path.Combine(slot.Path, "out", "Debug", "Engine.dll")));
+    }
+
+    [Fact]
+    public async Task A_new_sdk_pinned_at_the_start_moves_the_toolchain_and_sets_the_bases_aside_with_no_entry_and_no_marker_left()
+    {
+        var fixture = await FixtureAsync();
+        await File.WriteAllTextAsync(Path.Combine(fixture.Root, "daoris.files.json"), """
+            { "form": 2, "rules": [
+              { "kind": "output", "paths": ["bin/"], "take": "base" },
+              { "kind": "intermediate", "paths": ["/obj/"], "toolchain": ["git cat-file -p HEAD:global.json"] }
+            ] }
+            """);
+        await File.WriteAllTextAsync(Path.Combine(fixture.Root, "global.json"), """{ "sdk": { "version": "10.0.100" } }""");
+        await GitAsync(fixture.Root, "add", ".");
+        await GitAsync(fixture.Root, "commit", "--quiet", "-m", "pin the SDK");
+        fixture.Start = (await GitAsync(fixture.Root, "rev-parse", "HEAD")).Trim();
+        var pool = fixture.Pool();
+        var slot = await BuiltAsync(fixture, pool, "s-aaaa0001", "bin/Debug/net10.0/Engine.dll");
+        await File.WriteAllTextAsync(Path.Combine(fixture.Root, "global.json"), """{ "sdk": { "version": "10.0.200" } }""");
+        await GitAsync(fixture.Root, "commit", "--quiet", "-am", "a new SDK");
+        var start = (await GitAsync(fixture.Root, "rev-parse", "HEAD")).Trim();
+
+        var taken = await pool.TakeAsync(fixture.Take(1, "s-bbbb0001", start));
+
+        Assert.True(taken.Ok, taken.Refused ?? taken.Stuck);
+        Assert.False(File.Exists(Path.Combine(slot.Path, "bin", "Debug", "net10.0", "Engine.dll")));
+        Assert.Empty(TreeFilesRecord.Read(fixture.Home, slot.Path)?.Bases ?? []);
+        Assert.Empty(Directory.EnumerateFiles(PoolClearing.AsideRoot(fixture.Site), BaseMarker.FileName, SearchOption.AllDirectories));
+        Assert.Contains(Directory.EnumerateFiles(PoolClearing.AsideRoot(fixture.Site), "Engine.dll", SearchOption.AllDirectories), path => path.Contains("Debug", StringComparison.Ordinal));
+        Assert.Equal("", (await GitAsync(slot.Path, "status", "--porcelain")).Trim());
+    }
+
+    [Fact]
     public async Task A_top_holding_a_path_the_start_tracks_is_never_moved_whole_and_its_other_entries_are_sorted_one_by_one()
     {
         var fixture = await FixtureAsync();

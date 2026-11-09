@@ -121,7 +121,11 @@ internal sealed class DrivenProtocolDoor(IRunWiring wiring)
                 // The session's voice, located per run rather than once, because a machine can gain the host between looks; a machine
                 // that has none still drives, without a connector.
                 var connector = wiring.Connector(sessionId, scope, run.Proc);
-                if (connector is null)
+                if (connector is null && BaseHosts.PassedOver(AppContext.BaseDirectory, KnowledgeConnector.Project) is { } marked)
+                {
+                    SaidByCode(BaseHosts.Said(marked));
+                }
+                else if (connector is null)
                 {
                     Said(noConnector ?? (scope is null ? NoConnectorForSession : DriverIntakes.NoConnectorForIntake));
                 }
