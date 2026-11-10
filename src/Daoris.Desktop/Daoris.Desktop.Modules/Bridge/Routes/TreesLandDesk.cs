@@ -150,11 +150,9 @@ internal sealed class TreesLandDesk(DriverLoop loop)
     }
 
     /// <summary>
-    /// The press on a run whose <c>land</c> the runtime performs: its Accept is the review's word,
-    /// kept above, and it lands nothing and builds no plugin wire. It forgets a refusal nothing changed since (the press is the person's try
-    /// again), asks a whole pass, and waits within <see cref="GraphPasses.Bound"/> for the landing that pass starts; it answers what the landing
-    /// came to, or <i>accepted; landing</i> past the bound. A workflow with no review needs no Accept, and this press is only that try.
-    /// A gate held only by the review this press <paramref name="accepted"/> is read before the pass applies it, and holds nothing.
+    /// The press on a run whose <c>land</c> the runtime performs: its Accept is the review's word, kept above, and it lands nothing and builds no
+    /// plugin wire. It is the person's try again, answered with what that try came to (<see cref="PerformedAnswers"/>); a workflow with no review
+    /// needs no Accept. A gate held only by the review this press <paramref name="accepted"/> is read before the pass applies it, and holds nothing.
     /// </summary>
     private async Task<object?> PerformedPressAsync(LandAsk asked, string id, LandingGate gate, WorkflowProcess process, bool accepted, CancellationToken ct)
     {
@@ -164,12 +162,7 @@ internal sealed class TreesLandDesk(DriverLoop loop)
         if (gate.Refusal is { } held && !LandPresses.HeldByOwnAccept(gate, accepted)) return Pressed(id, held, gate, TreesWords.Land(held, []), []);
         if ((gate.Tip ?? gate.GraphPart()?.Commit) is not { } tip) return Refused(id, TreesWords.NotJudged(id));
 
-        var outcome = await PerformedWaits.AwaitAsync(_loop, id, unit, tip, ct);
-        var carried = outcome is { Landed: false } && process.Graph?.Nodes.FirstOrDefault(node => node.Kind == NodeKinds.Review) is { } review
-                      && RunRepairs.Of(new NodeRecordFiles(_loop.Home), unit, review.Id) is not null;
-        var landed = outcome is null ? new TreeLanding(false, LandPresses.Landing)
-            : carried ? outcome with { Message = LandPresses.Carried }
-            : outcome;
+        var landed = PerformedAnswers.Of(await PerformedWaits.AwaitAsync(_loop, id, unit, tip, ct));
         _loop.Nudge();
         var followed = asked.Follow && landed.Landed
             ? await TreesWords.FollowMovedAsync(_loop.Service ?? throw NotReady(), _loop.Home, () => DriverConfig.Load(_loop.ConfigPath), _loop.Log, ct)
@@ -177,23 +170,13 @@ internal sealed class TreesLandDesk(DriverLoop loop)
         return Pressed(id, landed, gate, TreesWords.Land(landed, []).Followed(followed), followed?.Out ?? []);
     }
 
-    /// <summary>
-    /// What a chat run's press waits for where the runtime performs its <c>land</c>: the landing the pass starts at the
-    /// press's tip, within <see cref="GraphPasses.Bound"/>, or <i>accepted; landing</i> past it. As <see cref="PerformedPressAsync"/>, for the
-    /// conversation's press, which keeps its own reservation and answer.
-    /// </summary>
+    /// <summary>As <see cref="PerformedPressAsync"/>, for a chat run's press, which keeps its own reservation and answer.</summary>
     private async Task<TreeLanding> PerformedLandingAsync(string id, LandingGate gate, WorkflowProcess process, bool accepted, CancellationToken ct)
     {
         if (gate.Refusal is { } held && !LandPresses.HeldByOwnAccept(gate, accepted)) return held;
         if ((gate.Tip ?? gate.GraphPart()?.Commit) is not { } tip) return new TreeLanding(false, TreesWords.NotJudged(id).Error.FirstOrDefault() ?? "nothing was judged.");
 
-        var unit = RunUnits.IdOf(process.BoundRun!);
-        var outcome = await PerformedWaits.AwaitAsync(_loop, id, unit, tip, ct);
-        var carried = outcome is { Landed: false } && process.Graph?.Nodes.FirstOrDefault(node => node.Kind == NodeKinds.Review) is { } review
-                      && RunRepairs.Of(new NodeRecordFiles(_loop.Home), unit, review.Id) is not null;
-        return outcome is null ? new TreeLanding(false, LandPresses.Landing)
-            : carried ? outcome with { Message = LandPresses.Carried }
-            : outcome;
+        return PerformedAnswers.Of(await PerformedWaits.AwaitAsync(_loop, id, RunUnits.IdOf(process.BoundRun!), tip, ct));
     }
 
     /// <summary>

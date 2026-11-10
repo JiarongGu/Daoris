@@ -7,16 +7,17 @@ namespace Daoris.Driver;
 public static class LandTries
 {
     /// <summary>
-    /// Whether a run's work is worth a try now: its first, and a hold's at every pass; a refusal only once its tree's tip or status moved
-    /// since it, so a pass never repeats one that nothing changed; and a try that closed, only at a tip other than its own, or at once where what closed it (undone, gone, superseded) is read again before this asks.
+    /// Whether a run's work is worth a try now: its first, and a hold's at every pass; a refusal only once its tree's tip or status, or the tip its land started at where one is kept
+    /// (<paramref name="start"/>), moved since it, so a pass never repeats one that nothing changed; and a try that closed, only at a tip other than its own, or at once where what closed it (undone, gone, superseded) is read again before this asks.
     /// A refusal for the checkout's own work waits on the checkout's status alone (<paramref name="root"/>; null tries again).
     /// </summary>
-    public static bool ShouldTry(LandEntry entry, string? tip, string status, string? root = null) => entry.Last switch
+    public static bool ShouldTry(LandEntry entry, string? tip, string status, string? root = null, string? start = null) => entry.Last switch
     {
         null => true,
         { Code: var code } last when LandingCode.WaitsOnRoot(code) => root is null || !string.Equals(last.Status, root, StringComparison.Ordinal),
         { Code: var code } last when LandingCode.OnChange(code) =>
-            !string.Equals(last.Tip, tip, StringComparison.Ordinal) || !string.Equals(last.Status, status, StringComparison.Ordinal),
+            !string.Equals(last.Tip, tip, StringComparison.Ordinal) || !string.Equals(last.Status, status, StringComparison.Ordinal)
+            || (last.Start is not null && !string.Equals(last.Start, start, StringComparison.OrdinalIgnoreCase)),
         // A hold, a review and a second opinion wait on the person or another agent, not on the tree, so each is read again at
         // every look.
         { Code: LandingCode.Held or LandingCode.Unreviewed or LandingCode.Opinion or LandingCode.Queued } => true,
