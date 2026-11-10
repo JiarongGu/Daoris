@@ -7,11 +7,9 @@ using Lyntai.Processes;
 namespace Daoris.Driver;
 
 /// <summary>
-/// The usage port's layer implementation: one read through the layer's
-/// <see cref="IAgentUsageSource"/>, in a spawn's container of its own over <see cref="LauncherRunner"/>'s live stdin. It states the
-/// question (the harness, the command, the recorded answers, the freshness) and names itself in the history's source. The spawn is the roster's:
-/// the command and toolchain the roster resolved, composed by the one shell into the program, its prefix and its environment; the version
-/// read on any binary as the usage reader reads it, with no probe; the patience the reader's.
+/// The usage port's layer implementation: one read through the layer's <see cref="IAgentUsageSource"/>, in a spawn's container of its own
+/// over <see cref="LauncherRunner"/>'s live stdin, named in the history's source. The spawn is the roster's: its resolved command and
+/// toolchain composed by the one shell, the version read on any binary as the usage reader reads it, the patience the reader's.
 /// </summary>
 /// <param name="runner">The runner a read's container spawns through; a test's stands in. Null is Daoris's launcher.</param>
 internal sealed class LayerUsageRead(UsageQuestion today, LayerUsageVendor vendor, Func<LauncherSeat, TimeSpan, IProcessRunner>? runner = null)

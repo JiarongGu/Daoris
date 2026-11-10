@@ -260,7 +260,6 @@ internal sealed class LauncherRunner(LauncherSeat seat, TimeSpan? patience = nul
         }
         finally
         {
-            // A callback that throws must not leave a prompt-reading child waiting for its end.
             try { process.StandardInput.Close(); }
             catch (Exception error) when (error is IOException or ObjectDisposedException) { }
         }

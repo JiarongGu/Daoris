@@ -124,10 +124,7 @@ internal static class AgentAccountLines
             anySaid ? null : "no account has said what it has left yet: Daoris spreads starts across them by its own sessions");
     }
 
-    /// <summary>
-    /// One line for each of an account's cooling entries: the whole account's and each family's, so a model family's cool-off is never
-    /// hidden behind another entry of the same account. <paramref name="account"/> null is the agent's own sign-in.
-    /// </summary>
+    /// <summary>One line for each of an account's cooling entries, the whole account's first; null is the agent's own sign-in.</summary>
     public static IReadOnlyList<string> CoolingLinesOf(
         IEnumerable<CoolingEntry> cooling, string owner, string? account, DateTimeOffset now, TimeZoneInfo zone) =>
         [.. cooling

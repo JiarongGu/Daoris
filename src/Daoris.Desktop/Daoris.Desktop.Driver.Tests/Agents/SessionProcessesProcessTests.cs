@@ -47,10 +47,7 @@ public sealed class SessionProcessesProcessTests : IDisposable
 
     private string MarkedProcess() => File.ReadAllText(Path.Combine(Markers, Session + ".pid")).Split(' ')[0];
 
-    /// <summary>
-    /// A stop pressed after a process exited and before the run's retry is tracked flagged the exited entry alone, which the retry's
-    /// tracking then dropped: the retry ran unstopped. The stop and its reason go on to the entry that replaces it.
-    /// </summary>
+    /// <summary>A stop pressed after a process exited and before its retry is tracked goes on, with its reason, to the retry.</summary>
     [Fact]
     public async Task A_stop_pressed_between_a_process_s_exit_and_its_retry_is_carried_onto_the_retry()
     {

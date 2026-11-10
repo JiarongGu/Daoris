@@ -194,7 +194,11 @@ internal static class AgentListCommand
                 + (profile.Key is { } handle ? $" API key {handle}" : "")
                 + (marks.Count > 0 ? $" ({string.Join(", ", marks)})" : ""));
 
-            foreach (var cooled in AgentAccountLines.CoolingLinesOf(cooling, owner, profile.Name, now, zone)) lines.Add($"{Under}{gap} {cooled}");
+            foreach (var cooled in AgentAccountLines.CoolingLinesOf(cooling, owner, profile.Name, now, zone))
+            {
+                lines.Add($"{Under}{gap} {cooled}");
+            }
+
             // What its agent last said about its windows, and how long ago: a reading, never a judgement.
             if (AccountWindows.SaidOf(home, owner, profile.Name, now) is { } said)
             {

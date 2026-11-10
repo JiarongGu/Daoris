@@ -60,10 +60,7 @@ internal sealed class AcpReader(ITurnReadWiring wiring, AcpWire wire)
         }
     }
 
-    /// <summary>
-    /// A line the transcript or the record cannot keep is lost, not the reader: its end would say the agent's stream had ended while the
-    /// agent lives.
-    /// </summary>
+    /// <summary>A line the transcript cannot keep is lost, not the reader, whose end would say the agent's stream ended.</summary>
     private static void Kept(Action keep)
     {
         try

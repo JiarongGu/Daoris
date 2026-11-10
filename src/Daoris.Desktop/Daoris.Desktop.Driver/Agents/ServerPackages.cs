@@ -86,7 +86,6 @@ public static class ServerPackages
     private static readonly System.Text.RegularExpressions.Regex Semver = new(
         @"^[0-9]+\.[0-9]+\.[0-9]+-[0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*\z", System.Text.RegularExpressions.RegexOptions.CultureInvariant);
 
-    /// <summary>A version that names one folder: numeric, or a complete semver with its prerelease (<c>1.0.0-rc.1</c>), which no range reads.</summary>
     internal static bool IsExact(string version) => Tools.IsExactVersion(version) || Semver.IsMatch(version);
 
     private static async Task<string> InstallAsync(

@@ -187,7 +187,6 @@ public static class AgentsCommand
     /// nothing. A pin with nothing installed at it answers <c>missing</c>, exit 0. With <c>--json</c> it is one object on the standard
     /// output, which the real-run tools read (<c>proof-kit.mjs</c>, <c>acp-trust-probe.mjs</c>).
     /// </summary>
-    /// <summary>The command <c>driver.json</c>'s <c>commands</c> names for an agent, which every verb that runs or asks its binary uses; null names none.</summary>
     internal static IReadOnlyList<string>? ConfiguredCommand(string home, string name) =>
         DriverConfig.Load(DriverConfig.ResolvePath(home)).Commands.GetValueOrDefault(name);
 

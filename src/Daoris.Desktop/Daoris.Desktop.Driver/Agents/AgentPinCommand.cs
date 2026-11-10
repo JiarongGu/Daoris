@@ -227,7 +227,6 @@ internal static class AgentPinCommand
             .ConfigureAwait(false);
     }
 
-    /// <summary>The updater's words: the command this machine runs the agent as (its configured one, else the declared), then its update arguments.</summary>
     internal static IReadOnlyList<string> UpdateWords(ToolSpec program, IReadOnlyList<string>? configured) =>
         [.. program.Command(configured), .. program.UpdateArguments!];
 

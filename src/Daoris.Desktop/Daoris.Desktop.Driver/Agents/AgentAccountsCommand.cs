@@ -312,7 +312,9 @@ internal static class AgentAccountsCommand
                     return 0;
                 }
 
-                var others = AgentAccountLines.CoolingNow(AccountCooling.Read(at.Home, now), owner);
+                var cooling = AccountCooling.Read(at.Home, now);
+                var others = AgentAccountLines
+                    .CoolingNow(cooling, owner);
                 at.Say($"{Prefix}: {who} is not cooling, so nothing changed — "
                     + (others.Count > 0 ? $"cooling now: {string.Join(", ", others)}." : $"no account of `{owner}` is cooling."));
                 return 0;
