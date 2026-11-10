@@ -63,13 +63,18 @@ public sealed class HelpRoutes(DriverContext context)
 
             var snapshot = await service.SnapshotAsync(cancellationToken).ConfigureAwait(false);
             var spelled = HeldWorkspace(snapshot, circle);
+            var focus = HelpFocusRoutes.Asked(press.Focus, snapshot.Repositories);
             var held = _loop.Processes.Running;
             var runningHere = snapshot.Active.Where(session =>
                 session.Repository == HelpRoom.Repository && held.Contains(session.Id, StringComparer.OrdinalIgnoreCase)
                 && string.Equals(session.Workspace, circle, StringComparison.OrdinalIgnoreCase)).ToList();
             if (runningHere.FirstOrDefault(session => !chat.Finishing(session.Id)) is { } running)
             {
-                return new { SessionId = running.Id, Message = $"Ask Daoris `{running.Id}` is carried on.", Running = true, Workspace = circle };
+                return new
+                {
+                    SessionId = running.Id, Message = $"Ask Daoris `{running.Id}` is carried on.", Running = true, Workspace = circle,
+                    Focus = HelpFocusRoutes.Started(_loop.Home, running.Id, circle, null),
+                };
             }
 
             // one the person finished is winding up, and the person's words are a new conversation's. It is waited for
@@ -92,9 +97,10 @@ public sealed class HelpRoutes(DriverContext context)
             if (place.SessionId is not { } id) return new { SessionId = (string?)null, place.Message, Running = false, Workspace = circle };
 
             starting.Placed(circle, id);
+            var started = HelpFocusRoutes.Started(_loop.Home, id, circle, focus);
             _ = Task.Run(() => RunPlacedAsync(chat, place, config));
             _loop.Nudge();
-            return new { SessionId = id, place.Message, Running = false, Starting = true, Workspace = circle };
+            return new { SessionId = id, place.Message, Running = false, Starting = true, Workspace = circle, Focus = started };
         }
         finally
         {
@@ -485,6 +491,10 @@ public sealed class HelpRoutes(DriverContext context)
     [DriverRoute("HELP_CONVERSATIONS", PipeClass.Open)]
     private async Task<object?> HelpConversationsAsync(HelpConversationsRead press, CancellationToken cancellationToken)
     {
+        // `about`, a place's conversations (ASKSCOPE2b), is never asked beside a workspace.
+        var about = HelpFocusRoutes.Place(press.About);
+        if (about is not null && !string.IsNullOrWhiteSpace(press.Workspace)) throw new DriverException("both: a list is one workspace's or one place's, not both.");
+
         // `help list` in the verb's words, `--json` its own answer.
         if (press.Said)
         {
@@ -495,6 +505,7 @@ public sealed class HelpRoutes(DriverContext context)
                 Limit = press.Limit is { } limit ? (int)Math.Clamp(limit, 1, HelpConversations.PageLimit) : null,
                 Workspace = press.Workspace,
                 All = press.All,
+                About = about?.Said,
                 Json = press.Json,
             };
             return await SessionsVerbs.HelpSaidAsync(_context, listed, cancellationToken).ConfigureAwait(false);
@@ -506,7 +517,7 @@ public sealed class HelpRoutes(DriverContext context)
             records, _loop.Events, Resumes, press.Q,
             (int)Math.Clamp(press.Offset ?? 0, 0, int.MaxValue),
             (int)Math.Clamp(press.Limit ?? HelpConversations.PageLimit, 0, HelpConversations.PageLimit),
-            press.Workspace);
+            press.Workspace, about);
         return HistoryAnswer(listing);
     }
 
@@ -518,9 +529,9 @@ public sealed class HelpRoutes(DriverContext context)
     {
         Conversations = listing.Conversations.Select(row => new
         {
-            // the mode it ran under, its record's, after whether it runs, then the workspace it started in.
+            // the mode it ran under, its record's, after whether it runs, then the workspace it started in, then its focus.
             row.Session, row.Title, row.Name, row.Opening, row.About, row.Created, row.Last, row.Pinned, row.Live, row.Mode, row.Workspace,
-            row.Resumable, row.From, row.Handed, row.Found, row.FoundLine, row.Parts,
+            Focus = row.Focus.Wire(), FocusNext = row.FocusNext?.Wire(), row.Resumable, row.From, row.Handed, row.Found, row.FoundLine, row.Parts,
         }).ToArray(),
         listing.Cut,
         listing.Total,
@@ -618,9 +629,10 @@ public sealed class HelpRoutes(DriverContext context)
             if (place.SessionId is not { } placedId) return new { SessionId = (string?)null, place.Message, From = id, Workspace = circle };
 
             starting.Placed(circle, placedId);
+            var focus = await HelpFocusRoutes.CarriedAsync(_loop, id, placedId, circle, cancellationToken).ConfigureAwait(false);
             _ = Task.Run(() => RunPlacedAsync(chat, place, config));
             _loop.Nudge();
-            return new { SessionId = placedId, place.Message, From = id, Workspace = circle };
+            return new { SessionId = placedId, place.Message, From = id, Workspace = circle, Focus = focus };
         }
         finally
         {
