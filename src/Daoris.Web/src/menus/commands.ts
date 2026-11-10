@@ -527,7 +527,7 @@ export const COMMANDS: readonly CommandSpec[] = [
     keywords: 'quick ask chat question daoris 快速 提问 问道衍', run: (doors) => doors.quickAsk(),
   },
   {
-    id: 'help.changeFocus', menu: 'help', group: 'ask', label: 'help.focus.change', icon: 'help', shell: true,
+    id: 'help.changeFocus', menu: 'help', group: 'ask', label: 'menu.help.changeFocus', title: (_, t) => t('help.focus.change'), icon: 'help', shell: true,
     keywords: 'focus change scope ask daoris about workspace repository machine 聚焦 更改 范围 问道衍', run: (doors) => doors.changeFocus(),
   },
   {
