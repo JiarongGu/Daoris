@@ -20,10 +20,7 @@ namespace Daoris.Knowledge;
 /// </remarks>
 public sealed class HelpProposalBox(string? home)
 {
-    /// <summary>
-    /// The kinds this box writes, each with the connector's tool that proposes it, in the order the room allows
-    /// them; the driver's <c>HelpProposalKinds</c> lists the same.
-    /// </summary>
+    /// <summary>The kinds this box writes, each with the connector's tool, in the order the room allows them.</summary>
     public static readonly IReadOnlyList<(string Kind, string Tool)> Kinds =
     [
         ("ask", "ask_propose"),

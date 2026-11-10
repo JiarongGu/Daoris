@@ -82,9 +82,7 @@ internal sealed class HelpApplying(string home, HelpProposal proposal, HelpPlan 
     }
 }
 
-/// <summary>
-/// The kinds Ask Daoris still proposes, one line each, in the order the room allows their tools.
-/// </summary>
+/// <summary>The kinds Ask Daoris still proposes, in the order the room allows their tools.</summary>
 internal static class HelpProposalKinds
 {
     public static readonly IReadOnlyList<IHelpProposalKind> All =

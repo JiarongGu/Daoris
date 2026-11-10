@@ -2,11 +2,7 @@ using Daoris.Driver;
 
 namespace Daoris.Desktop.Modules.Tests;
 
-/// <summary>
-/// Ask Daoris's doors that start nothing: each is the code the screen's own route runs, tested here without a
-/// process, so a worktree's fast half holds them. <c>HelpDoorsTests</c> holds the doors that start one, or ask the
-/// roster again.
-/// </summary>
+/// <summary>Ask Daoris's doors that start nothing, tested without a process.</summary>
 public sealed class HelpFileDoorsTests : Bridge
 {
     private DriverModule Module() => new(Bus, new DriverLoop(Bus, new HostSupervisor("http://localhost:0"), "http://localhost:0"));

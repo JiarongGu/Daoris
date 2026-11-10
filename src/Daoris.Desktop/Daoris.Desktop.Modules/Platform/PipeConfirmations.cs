@@ -263,10 +263,6 @@ public sealed class PipeConfirmations : IDisposable
     /// </summary>
     public Action<PipeConfirmation, PipeEnding>? Settled { get; set; }
 
-    /// <summary>
-    /// Told what a confirmed press's verb answered, by the press's id and the response as the pipe wrote it, once it has run. A press whose
-    /// answer names an ask or a quest is kept with the conversation that pressed it.
-    /// </summary>
     public Action<string, string>? Answered { get; set; }
 
     /// <summary>

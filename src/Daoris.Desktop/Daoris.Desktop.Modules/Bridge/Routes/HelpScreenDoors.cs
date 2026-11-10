@@ -28,13 +28,11 @@ internal sealed class HelpScreenDoors(DriverContext context, ServiceClient? serv
         return await asks.AskAsync(workspace, sentence, [], [], null, ct, review, reviewWords, shortTitle: shortTitle).ConfigureAwait(false);
     }
 
-    // HISTORY_CLEAR's own clear of exactly the units the card listed: the driver library's one owner, each unit judged
-    // again as it goes; the outcome comes back whole, and a service that does not answer throws before anything is removed.
+    // HISTORY_CLEAR's own clear of exactly the units the card listed, each judged again as it goes.
     public Task<HistoryOutcome> ClearHistoryAsync(HistoryScope scope, string id, IReadOnlyList<HistoryUnitName> units, CancellationToken ct) =>
         HistoryClearing.ClearAsync(HistoryRoutes.WorldOf(_loop), scope, id, units, PluginEvents.Screen, ct);
 
-    // TREES_SYNC_PLAN's own list: the same checkouts and sessions, and each line fetched as the person,
-    // whose press this is, over the repositories holding Daoris's branches and the one a card names.
+    // TREES_SYNC_PLAN's own list, each line fetched as the person whose press this is.
     public async Task<SyncPlan> SyncPlanAsync(string? repository, string? workspace, CancellationToken ct)
     {
         var (repositories, inUse) = await LinesRoutes.CheckoutsAndSessionsAsync(_loop, repository, ct, workspace).ConfigureAwait(false);
@@ -57,7 +55,6 @@ internal sealed class HelpScreenDoors(DriverContext context, ServiceClient? serv
     /// <summary>A card naming a repository includes it, as `--repository` does; none, and the default.</summary>
     private static SyncScope? Named(string? repository) => repository is null ? null : SyncScope.Named([repository]);
 
-    // `daoris plugin add`'s copy; the loop is asked to look and starts what the plugin runs there. Nothing runs here.
     public void AddPlugin(string folder)
     {
         PluginInstall.Add(_loop.Home, folder, ProviderRegistry.Built().Names);

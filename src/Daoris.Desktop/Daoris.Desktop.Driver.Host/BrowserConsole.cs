@@ -1,9 +1,8 @@
 namespace Daoris.Driver.Host;
 
 /// <summary>
-/// Daoris's browser from a terminal (ONEWAY1ai-i; the oneway design §6 X3): <c>daoris browser favorite|extensions|use|links</c>, on the
-/// typed operations Settings' browser section calls (<see cref="BrowserFavorites"/>, <see cref="BrowserSettings"/>), said by
-/// <see cref="BrowserWords"/>. The files are the home's; the browser reads them each time it starts.
+/// <c>daoris browser favorite|extensions|use|links</c>: the typed operations Settings' browser section calls, pressed where Daoris
+/// runs (<see cref="BrowserPresses"/>) and said by <see cref="BrowserWords"/>.
 /// </summary>
 internal static class BrowserConsole
 {

@@ -6,10 +6,7 @@ using Microsoft.Extensions.Hosting;
 
 namespace Daoris.Knowledge.Mcp;
 
-/// <summary>
-/// The connector's server as a session meets it: its tool classes, as the one list the host registers and the tests read,
-/// and what it says before the first search.
-/// </summary>
+/// <summary>The connector's server as a session meets it: its tool classes, as the one list the host registers, and what it says first.</summary>
 /// <remarks>
 /// <para>Each tool class takes only the services its tools use, and the SDK builds it from the host's services for each
 /// call. A new class of tools is one new file and one line in <see cref="ToolTypes"/>; nothing finds one by scanning. The

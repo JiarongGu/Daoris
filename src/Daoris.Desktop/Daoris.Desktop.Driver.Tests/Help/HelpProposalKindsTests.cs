@@ -16,10 +16,7 @@ namespace Daoris.Driver.Tests;
 [Trait(Category.Name, Category.Census)]
 public sealed partial class HelpProposalKindsTests
 {
-    /// <summary>
-    /// The kinds, and the connector's tool that proposes each, in the order the room allows them — the
-    /// service's <c>HelpProposalBoxKindsTests</c> holds the same table, line for line.
-    /// </summary>
+    /// <summary>The kinds, and the connector's tool that proposes each, in the order the room allows them.</summary>
     private static readonly (string Kind, string Tool)[] Table =
     [
         ("ask", "ask_propose"),
