@@ -30,10 +30,12 @@ internal sealed class PipeAsking(InstancePipe pipe)
         var (request, binding, mine, connection, place) = (reserved.Request, reserved.Binding, reserved.Line, reserved.Connection, reserved.Place);
         var id = request.Id;
         IReadOnlyList<PipeReading> asked;
+        PressViewed? viewed;
         try
         {
             using var reading = CancellationTokenSource.CreateLinkedTokenSource(_lifetime.Token, reserved.Reading.Token);
             asked = await row.ReadAsync(pipe.Grounds, request.Payload, _clock, reading.Token).ConfigureAwait(false);
+            viewed = await PressViews.ReadAsync(pipe.Grounds, request.Module, request.Type, request.Payload, reading.Token).ConfigureAwait(false);
         }
         catch (Exception error) when (error is not OutOfMemoryException)
         {
@@ -54,7 +56,7 @@ internal sealed class PipeAsking(InstancePipe pipe)
             return;
         }
 
-        if (row.Refusal(asked) is { } words)
+        if ((row.Refusal(asked) ?? viewed?.Refusal) is { } words)
         {
             Confirmations.Let(place);
             EndReserved(reserved, pipe.Refuse(request, InstancePipe.NotAllowed, words));
@@ -74,7 +76,7 @@ internal sealed class PipeAsking(InstancePipe pipe)
         var record = new PipeWaitingRecord(
             Guid.NewGuid().ToString("N"), id, binding, request.Module, request.Type,
             keyed ? null : request.Payload is { ValueKind: not JsonValueKind.Undefined } sent ? sent.GetRawText() : "",
-            keyed ? [] : asked, connection.Asker, reserved.Asked, null, keyed, PipeWaitingRecord.Waiting);
+            keyed ? [] : asked, reserved.Asker, reserved.Asked, null, keyed, PipeWaitingRecord.Waiting);
         if (!_keep.Keep(record))
         {
             Confirmations.Let(place);
@@ -94,9 +96,9 @@ internal sealed class PipeAsking(InstancePipe pipe)
 
         var payload = request.Payload;
         var shown = Confirmations.Ask(
-            place, request.Module, request.Type, fields, connection.Asker, why,
+            place, request.Module, request.Type, fields, reserved.Asker, why,
             judge: row.Grounds.Count == 0 ? null : ct => JudgeAsync(row, payload, asked, ct), checkWithin: row.Grounds.Count == 0 ? null : row.Bound,
-            @as: new PipeAsAsked(record.Confirmation, record.Asked, Keyed: keyed, WaitedOn: waitedOn, Hold: reserved.Hold));
+            @as: new PipeAsAsked(record.Confirmation, record.Asked, Keyed: keyed, WaitedOn: waitedOn, Hold: reserved.Hold, View: viewed?.View));
         lock (_state.Gate)
         {
             _state.WaitingFor[id] = shown.Shown.Id;

@@ -82,6 +82,7 @@ internal sealed class ChatRun(
             // Ask Daoris's place under the mode the person chose, refused where its agent has none such.
             var ran = goOn is null ? null : HelpModes.Recorded(goOn.Record.HelpMode);
             (place, modeSaid, helpMode) = HelpPlacement.UnderMode(place, agent, config, ran);
+            place = place with { Posture = ChatHolds.Posture(place.Posture ?? agent.Posture, helpMode) };
 
             // One going on under another mode than it last ran under runs under the new one, and its record says so before anything is spawned,
             // as its transcript's first line does.
@@ -92,7 +93,7 @@ internal sealed class ChatRun(
 
             // Its process as its door makes it, with its toolchain's environment and its tools at the start, as every driven session's.
             // Its own record on the request, so a take through the connector its harness starts marks it.
-            var request = SpawnRequests.Chat(place.Name, workTree, service.BaseUrl, sessionId) with
+            var request = SpawnRequests.Chat(place.Name, workTree, service.BaseUrl, sessionId, processes.Delegates, place.Workspace) with
             {
                 Command = config.Commands.GetValueOrDefault(agent.Name),
                 Asked = carrying,
@@ -143,7 +144,11 @@ internal sealed class ChatRun(
                 rules = language.Write(home, sessionId, new HandedRules(
                     composed, [.. PermissionRules.HardDeny(file), .. heavy.HardDeny is { } sentence ? [sentence] : (IEnumerable<string>)[]], guard,
                     // Which agent made each call, and each subagent's start and stop.
-                    ChildLineage.PathOf(home, sessionId)));
+                    ChildLineage.PathOf(home, sessionId))
+                {
+                    // On a door with no wire, a call its harness would ask about is asked of the person through Daoris below full access.
+                    Asked = !agent.Abilities.HeldOnWire && helpMode != HelpModes.Full,
+                });
                 if (!agent.Abilities.RulesOnWire) agent.HandSettings(info, rules);
                 else meta = agent.Meta(rules, skillPlugins);
             }
@@ -357,6 +362,7 @@ internal sealed class ChatRun(
                 Carried = overriding is not null ? null
                     : notCarried => _ = service.TryKeepActorAsync(sessionId, null, choice, notCarried, ct: CancellationToken.None),
                 OffersRead = offers => options.KeepOffers(agent.Name, selection, sessionId, offers),
+                Permissions = ChatHolds.Door(Context.Events, sessionId, helpMode),
                 Pending = pending,
                 Shown = said => Context.TakeShown(sessionId, said),
                 ModelRefused = ChoiceReask.Of(pending is null ? null : async refusal =>

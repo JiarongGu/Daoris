@@ -90,6 +90,11 @@ public static class AskWorkflowCommand
         return WorkOrdersWorkflows.Current.Unusable(world.Home, workflow);
     }
 
+    public static Task<int> PressAsync(AskWorkflowAsk ask, AskWorkflowWorld world, TextWriter output, InstanceWorld? instance, CancellationToken ct = default) =>
+        InstanceDoor.ThroughAsync(instance, PersonPresses.AskWorkflow,
+            InstanceDoor.Said(("ask", ask.Ask), ("kind", ask.Kind), ("workflow", ask.Workflow), ("words", ask.Words)),
+            () => RunAsync(ask, world, output, ct), output, ct);
+
     /// <summary>Set the choice on the ask, as its page's will, and print the service's sentence.</summary>
     public static async Task<int> RunAsync(AskWorkflowAsk ask, AskWorkflowWorld world, TextWriter output, CancellationToken ct = default)
     {

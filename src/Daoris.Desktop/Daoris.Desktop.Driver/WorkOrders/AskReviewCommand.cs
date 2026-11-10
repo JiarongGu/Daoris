@@ -120,6 +120,10 @@ public static class AskReviewCommand
               + "Nothing was kept.";
     }
 
+    public static Task<int> PressAsync(AskReviewAsk ask, AskReviewWorld world, TextWriter output, InstanceWorld? instance, CancellationToken ct = default) =>
+        InstanceDoor.ThroughAsync(instance, PersonPresses.AskReview, InstanceDoor.Said(("ask", ask.Ask), ("choice", ask.Choice), ("words", ask.Words)),
+            () => RunAsync(ask, world, output, ct), output, ct);
+
     /// <summary>Set the choice on the ask, as its page's <i>Set</i> does, and print the service's sentence.</summary>
     public static async Task<int> RunAsync(AskReviewAsk ask, AskReviewWorld world, TextWriter output, CancellationToken ct = default)
     {

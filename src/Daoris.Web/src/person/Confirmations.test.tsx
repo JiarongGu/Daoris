@@ -68,6 +68,18 @@ describe("the window's confirmation of a terminal's press", () => {
     expect(draw([]).container).toBeEmptyDOMElement();
   });
 
+  it("says what a press means by its route's view, with the command it is, Ask Daoris named as asking", () => {
+    draw([{
+      source: 'pipe', id: 'c9', module: 'DAORIS.DRIVER', route: 'REGISTRY_REWIRE',
+      fields: [{ name: '/repository', type: 'string', value: 'engine' }, { name: '/workspace', type: 'string', value: 'work' }],
+      asker: { process: null, pid: 77, session: 'h1', help: true },
+      view: { kind: 'repository-move', facts: { repository: 'engine', from: 'default', to: 'work' }, command: 'daoris repository wire engine --workspace work' },
+    }]);
+
+    expect(screen.getByText(/Moves engine from workspace default to workspace work/)).toBeTruthy();
+    expect(screen.getByText('daoris repository wire engine --workspace work')).toBeTruthy();
+  });
+
   it('says sessions say in plain words: the session with its repository and short id, the words quoted, each path whole', () => {
     draw([SAY]);
 
@@ -86,6 +98,21 @@ describe("the window's confirmation of a terminal's press", () => {
     expect(card).not.toHaveTextContent('SESSION_INPUT');
     expect(card).toHaveTextContent('Sent by bash, process 4120. · asked 1m ago');
     expect(card).toHaveTextContent('Daoris cannot tell whether you ran this or an agent did. Confirm only what you ran.');
+  });
+
+  it("names Ask Daoris, or the session, as asking where its press proved the key Daoris handed it", () => {
+    draw([
+      { ...STOP, asker: { process: 'pwsh', pid: 77, session: 'h1', help: true } },
+      { ...UNKNOWN, asker: { process: 'bash', pid: 78, session: '9b1e0d2a', help: false } },
+    ]);
+
+    const [help, session] = screen.getAllByRole('group');
+    expect(help).toHaveTextContent('Ask Daoris asks for this, with the key Daoris handed its conversation.');
+    expect(session).toHaveTextContent('Session 9b1e0d2a asks for this, with the key Daoris handed it.');
+    for (const card of [help, session]) {
+      expect(card).not.toHaveTextContent('Sent by');
+      expect(card).not.toHaveTextContent('Daoris cannot tell whether you ran this');
+    }
   });
 
   it('opens the route and every value raw under Details', async () => {

@@ -247,6 +247,8 @@ holds remaining work (D127/D159). Paths are relative to this file. Historical do
 |`2026-11-05-merge-tool-design.md`|Proposed design: MERGETOOL1 (D237)
 |`2026-11-06-terminal-conversation-design.md`|Proposed design: RPC1g (D238)
 |`2026-11-06-map-ux-design.md`|Proposed design: MAPUX1 (D239)
+|`2026-11-10-isolation-beyond-git-survey.md`|Survey: PLACEWORK1a, parallel work beyond git (D254)
+|`2026-11-10-place-work-design.md`|Proposed design: PLACEWORK1 (D254)
 |`2026-11-06-backlog-plan-2.md`|Plan: backlog chunks BL31-BL57
 |`2026-11-06-event-channel-design.md`|Proposed design: EVENTHOOK1d/e, CHANNELJOIN1 (D244)
 |`2026-11-06-event-hook-measurements.md`|Evidence: EVENTHOOK1a measured
@@ -262,6 +264,9 @@ holds remaining work (D127/D159). Paths are relative to this file. Historical do
 |`2026-11-09-process-steps-reads.md`|Reads: PROCSTEPS1
 |`2026-11-09-repo-config-design.md`|Proposed design: REPOCONFIG1, a repository's declarations read once and indexed
 |`2026-11-09-repo-config-reads.md`|Reads: REPOCONFIG1
+|`2026-11-10-agent-free-census.md`|Census: AGENTFREE1, what a session narrows (D253 point 7)
+|`2026-11-11-ask-scope-ux-design.md`|Proposed design: ASKSCOPE2 (D253)
+|`2026-11-11-one-way-to-ask-design.md`|Proposed design: ASKFULL1g (D253)
 
 ## UI, browser, tools and plugin contracts
 

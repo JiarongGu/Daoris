@@ -1,3 +1,5 @@
+using Daoris.Contracts.Quests;
+
 namespace Daoris.Driver.Host;
 
 /// <summary>
@@ -6,7 +8,7 @@ namespace Daoris.Driver.Host;
 /// <remarks>
 /// <code>
 /// daoris ask [--workspace &lt;name&gt;] [--to &lt;repo&gt;] [--file &lt;path&gt;]… [--url &lt;address&gt;]… "…"
-/// daoris ask publish &lt;id&gt; --to &lt;repo&gt;
+/// daoris ask publish &lt;id&gt; --to &lt;repo&gt; [--require "&lt;the person's words&gt;" "&lt;the check&gt;"]…
 /// daoris ask close &lt;id&gt; --reason "…"
 /// daoris ask delete &lt;id&gt;
 /// daoris ask go-ahead &lt;id&gt; &lt;n&gt; approve|refuse ["…"]
@@ -49,6 +51,7 @@ internal static class AskConsole
         var files = new List<string>();
         var links = new List<string>();
         var words = new List<string>();
+        var requirements = new List<QuestRequirementWire>();
 
         for (var i = 0; i < args.Length; i++)
         {
@@ -77,6 +80,7 @@ internal static class AskConsole
                 case "--workflow-words": workflowWords = Value(); break;
                 case "--set-workflow": setWorkflow = Value(); break;
                 case "--clear": clearWorkflow = true; break;
+                case "--require": requirements.Add(new QuestRequirementWire(Value(), Value())); break;
                 default: words.Add(args[i]); break;
             }
         }
@@ -119,21 +123,24 @@ internal static class AskConsole
                     return Usage(workflowProblem!);
                 }
 
-                return await AskWorkflowCommand.RunAsync(set, workflows, Console.Out).ConfigureAwait(false);
+                return await AskWorkflowCommand.PressAsync(set, workflows, Console.Out, InstanceHost.World("ask")).ConfigureAwait(false);
             }
 
             if (setReview is not null)
             {
                 if (AskReviewCommand.Read(setReview, words, out var setProblem) is not { } chosen) return Usage(setProblem!);
                 // The ask page's twin: its *Set*, and *Apply* on an intake's proposal.
-                return await AskReviewCommand.RunAsync(chosen, reviews, Console.Out).ConfigureAwait(false);
+                return await AskReviewCommand.PressAsync(chosen, reviews, Console.Out, InstanceHost.World("ask")).ConfigureAwait(false);
             }
 
             if (publish is not null)
             {
                 if (to is null) return Usage("--publish needs --to: the repository the ask becomes a quest for");
-                return Report(await service.PublishAskAsync(publish, to).ConfigureAwait(false));
+                var session = Environment.GetEnvironmentVariable(DriverChoicesCommand.SessionVariable);
+                return Report(await service.PublishAskAsync(publish, to, session, requirements).ConfigureAwait(false));
             }
+
+            if (requirements.Count > 0) return Usage("--require goes with --publish: a requirement travels on the quest an ask becomes");
 
             if (close is not null)
             {
@@ -220,7 +227,7 @@ internal static class AskConsole
     {
         Console.Error.WriteLine($"ask: {why}");
         Console.Error.WriteLine("usage: daoris ask [--workspace <name>] [--to <repo>] [--file <path>]… [--url <address>]… \"…\"");
-        Console.Error.WriteLine("       daoris ask publish <id> --to <repo>");
+        Console.Error.WriteLine("       daoris ask publish <id> --to <repo> [--require \"<the person's words>\" \"<the check>\"]…");
         Console.Error.WriteLine("       daoris ask close <id> --reason \"…\"");
         Console.Error.WriteLine("       daoris ask delete <id>");
         Console.Error.WriteLine("       daoris ask go-ahead <id> <n> approve|refuse [\"…\"]");

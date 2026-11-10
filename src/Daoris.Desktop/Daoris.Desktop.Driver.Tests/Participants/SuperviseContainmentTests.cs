@@ -73,7 +73,8 @@ public sealed class SuperviseContainmentTests : IDisposable
         var (file, meta, _) = driver.HandRules(adapter, info, "s-sup1", null, "engine", Copy, kept: null, supervise: true);
         var (plain, plainMeta, _) = driver.HandRules(adapter, new ProcessStartInfo("claude"), "s-plain", null, "engine", Copy, kept: null);
 
-        static int Guards(string path) => JsonNode.Parse(File.ReadAllText(path))!["hooks"]?["PreToolUse"]?.AsArray().Count ?? 0;
+        static int Guards(string path) => JsonNode.Parse(File.ReadAllText(path))!["hooks"]?["PreToolUse"]?.AsArray()
+            .Count(entry => (string?)entry?["matcher"] == TreeGuardHook.Matcher) ?? 0;
         Assert.True(Guards(file!) > Guards(plain!), "the supervise turn is handed the tree guard whatever the defaults say");
         if (adapter.Can.RulesOnWire)
         {

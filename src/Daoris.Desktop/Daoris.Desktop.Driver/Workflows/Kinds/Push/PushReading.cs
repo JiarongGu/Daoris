@@ -9,6 +9,7 @@ internal static class PushReading
     public static NodeObservation Observe(NodeReading reading)
     {
         if (NodeObserving.OfBranch(reading) is { } refused) return refused;
+        if (NothingToDeliver.Empty(reading.Unit) is { } nothing) return NodeObserving.Seen(reading, NodeStates.Skipped, nothing) with { Source = NodeSource.Landing };
         var landing = NodeObserving.LandingOf(reading.Unit);
         if (landing is not { Pushed: true, PushedTip: { } pushed }) return NodeObserving.Seen(reading, null, "the branch was not pushed yet");
         if (reading.Git?.RemoteTip is not { } remoteTip)

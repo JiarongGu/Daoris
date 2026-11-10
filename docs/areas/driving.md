@@ -115,7 +115,7 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they start wi
 | The ledger's parts | `Service/Sessions/` | `SessionOpening` (a quest's, a chat's, Ask Daoris's and an intake's open, and the keyed open that moves words), `SessionAdvances` (the lifecycle table `Allowed`, a move, the go-on out of an ended state and the park after a helper), `SessionHolders` (who holds a tree, the busy sentence), `SessionSays` (the say door and the supervisor's answer), `SessionSaidMoves` (take, mark, take back, move), `SessionAskWords`, `SessionKeeps` (the machine-local facts of a run), `SessionDeletes` (a record goes only where it served no quest, no ask or quest names it, no later record of its line continues it, and no remote holds it), with `SaidAnswers` and `SaidKeeping` the sentences and the one keep of a person's word they share, and `SessionGoAheads` and `SessionReviews` beside them |
 | `AskStore`, `AskDesk` | `Service/Asks/AskStore.cs`, `Service/Asks/AskDesk.cs` | Ask records, the person's words on them, publishing and deleting; the desk is a root that wires, each door one line to a part |
 | The ask records | `Service/Asks/Records/` | `Ask`, `AskState`, `AskWord` and `AskWordKind`, `AskRequest`, `AskDraft`, `AskOutcome` and `AskRefusal`, the review and kind choices and proposals, one file each |
-| The desk's parts | `Service/Asks/` | `AskStandings` (an ask read against its quests), `AskPublishing` (ask, publish, close: a new ask is kept by insert only, so an identical ask finishing later leaves the first's row as it stands; a close is final, a second is refused and the first reason stands), `AskQuests` (the quest an ask becomes), `AskChoices` (review, kind and workflow), `AskGoAheadAnswers` and `AskDeletes` |
+| The desk's parts | `Service/Asks/` | `AskStandings` (an ask read against its quests), `AskPublishing` (ask, publish, close: a new ask is kept by insert only, so an identical ask finishing later leaves the first's row as it stands; a close is final, a second is refused and the first reason stands), `AskPublishGuard` (each receiver asked once, and no session's publish beside the ask's intake), `AskQuests` (the quest an ask becomes), `AskChoices` (review, kind and workflow), `AskGoAheadAnswers` and `AskDeletes` |
 
 ## Its rules
 
@@ -147,7 +147,9 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they start wi
 11. The cap counts what the driver started, passes included (helpers, partners, opinions, brainstorms), never a
     conversation the person holds. It is at least one. (from D130, D181)
 12. In a repository without its own trees, one session runs at a time, in the root. With trees on, sessions run side by
-    side, one per tree; only a resume or a carry-on goes back into an existing tree. (from D51, D167)
+    side, one per tree; only a resume, a carry-on, or a later quest of the same run (a chain's step there) goes back into an
+    existing tree. A later quest of a line that is a run of its own starts in a tree and on a branch of its own, a further part
+    of the line, so no two runs work one branch (`RoundJoining`, `LineRuns`, the run rule `QuestRuns`). (from D51, D167, D260)
 13. A quest held by a session in flight does not start again: one working it, or a start still opening. Each start is
     reserved (quest, tree, place under the cap) before it begins. (from D181)
 14. Under the landing rule's `overlap: wait`, a first start whose declared paths meet earlier unintegrated work in the
@@ -394,9 +396,15 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they start wi
     and a requirement must quote them. (from D65, D133)
 44. An intake is a session in the workspace's room under `<home>/work/rooms/intake`, recorded as a chat that names its
     ask. It reads the declarations and publishes quests. It runs only where an Intake actor is set, one per ask, in
-    slots the quests leave. A parked intake ends when the person answers the ask. (from D65, D205)
+    slots the quests leave. A parked intake ends when the person answers the ask. An ask asks each receiver once: a publish to a
+    receiver it holds an open, taken or done quest for, by another hand than that quest's publisher, answers that quest and
+    publishes nothing; one publisher's several quests to a receiver are its pieces of the work. While its intake is queued, starting
+    or working, or before any intake has served it, a session's publish other than the intake's is refused, naming the intake; the
+    person's press never is. The answer to a new ask the declarations left open says the intake publishes it where Intake is set. A
+    publish names the session that made it (a session's terminal names its own) and says when it carries no requirement. (from D65, D205, D255)
 45. An ask's or a quest's work is paused and resumed whole here, and abandoned by a listed second press that discards
-    only what nothing else holds. (from D132)
+    only what nothing else holds and stops every live step of the work's runs as the person's, with their reason, so no review or
+    landing of it stays offered. (from D132)
 46. The records of one line share an entry key, `<origin>/<repository>`. A line's head is found by walking `from`
     forward, at most 256 hops, and a cycle or the bound reads as no head. (from D167, D212)
 

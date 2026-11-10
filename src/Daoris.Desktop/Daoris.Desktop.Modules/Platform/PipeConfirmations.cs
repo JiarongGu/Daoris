@@ -6,9 +6,10 @@ namespace Daoris.Desktop;
 
 /// <summary>
 /// The terminal that asks, as the operating system names the pipe's client: its process's name and id, never a word the
-/// asker wrote. Null where the system would not say.
+/// asker wrote. Null where the system would not say. <see cref="Session"/> is the session whose delegate key its press proved, and
+/// <see cref="Help"/> that it is Ask Daoris's, so the card names it as asking.
 /// </summary>
-public sealed record PipeAsker(string? Process, int? Pid);
+public sealed record PipeAsker(string? Process, int? Pid, string? Session = null, bool Help = false);
 
 /// <summary>
 /// One value a press carries, as the card shows it (as the card shows a body's): <see cref="Name"/> its JSON
@@ -37,7 +38,7 @@ public sealed record PipeConfirmation(
     string Id, string Module, string Route, IReadOnlyList<PipeConfirmationField> Fields, PipeAsker Asker,
     DateTimeOffset Asked, DateTimeOffset? Expires = null, DateTimeOffset? ShownAt = null, IReadOnlyList<PipeNamed>? Named = null,
     bool WaitedOn = true, bool Checking = false, int? CheckWithin = null, bool Keyed = false, bool Restored = false, bool Hold = false,
-    string? Standing = null);
+    string? Standing = null, PressView? View = null);
 
 /// <summary>What waits, told whole at each change, numbered so a window keeps the newest telling (as <c>UNDER_WAY</c> is).</summary>
 public sealed record PipeConfirmationsNow(long Seq, IReadOnlyList<PipeConfirmation> Waiting);
@@ -67,11 +68,11 @@ public enum PipeConfirmationEnd
 /// <summary>
 /// What the pipe already made of a press it asks: its id, minted before its record is
 /// written; when it is asked and shown, where it is restored from its record; whether it carries a key; whether it is restored; and
-/// whether a terminal waits on its line for it; whether its Confirm also makes a hold.
+/// whether a terminal waits on its line for it; whether its Confirm also makes a hold; and what its route's view says it means.
 /// </summary>
 public sealed record PipeAsAsked(
     string Id, DateTimeOffset? Asked = null, DateTimeOffset? ShownAt = null, bool Keyed = false, bool Restored = false, bool WaitedOn = true,
-    bool Hold = false);
+    bool Hold = false, PressView? View = null);
 
 /// <summary>How a confirmation ended, and where a ground moved, which one and how (<see cref="PipeConfirmationEnd.Changed"/> alone).</summary>
 public sealed record PipeEnding(PipeConfirmationEnd End, PipeGroundChange? Change = null);
@@ -365,7 +366,8 @@ public sealed class PipeConfirmations : IDisposable
                 Keyed: @as?.Keyed ?? false,
                 Restored: @as?.Restored ?? false,
                 Hold: @as?.Hold ?? false,
-                Standing: standing), judge);
+                Standing: standing,
+                View: @as?.View), judge);
             // Its ask's line and its place are made together under the lock, so its end can be said only after its ask.
             Write("asked", held.Shown, standing);
             _waiting.Add(held);
@@ -760,6 +762,8 @@ public sealed class PipeConfirmations : IDisposable
 
     private static string Named(PipeAsker asker) => asker switch
     {
+        { Help: true } => "Ask Daoris",
+        { Session: { } session } => $"session {session}",
         { Process: { Length: > 0 } process, Pid: { } pid } => $"{process} ({pid})",
         { Pid: { } pid } => $"process {pid}",
         _ => "a terminal",

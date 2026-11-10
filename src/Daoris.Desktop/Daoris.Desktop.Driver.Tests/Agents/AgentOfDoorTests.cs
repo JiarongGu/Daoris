@@ -40,6 +40,18 @@ public sealed class AgentOfDoorTests : IDisposable
         Assert.False(string.Equals("claude-code", "claude-code-acp", StringComparison.OrdinalIgnoreCase), "the old carry's identity comparison");
     }
 
+    /// <summary>A door's provider is the registry's one lookup, which the reach and the agent of a door both ask.</summary>
+    [Fact]
+    public void A_name_is_answered_by_the_registry_s_one_lookup_that_returns_null_for_an_unknown_one()
+    {
+        var registry = ProviderRegistry.Built();
+
+        Assert.Equal("claude-code", registry.ProviderNamed("claude-code-acp")?.Id.Value);
+        Assert.Equal("codex", registry.ProviderNamed(" codex ")?.Id.Value);
+        Assert.Null(registry.ProviderNamed("p-gone"));
+        Assert.Equal(registry.ProviderNamed("claude-code-acp"), new ProviderReach(registry).ProviderOf("claude-code-acp"));
+    }
+
     /// <summary>
     /// Two plugins' doors naming <c>claude-code-acp</c> share its pool (<c>OwnerOf</c> equal) and are each a provider of their own: never one
     /// agent, so a pick is not carried between them; a door joined to <c>claude-code</c> is that agent's.

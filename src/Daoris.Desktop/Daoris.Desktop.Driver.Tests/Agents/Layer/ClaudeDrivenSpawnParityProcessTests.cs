@@ -55,6 +55,21 @@ public sealed class ClaudeDrivenSpawnParityProcessTests : IDisposable
         Assert.Equal(Pairs(info.ArgumentList.SkipWhile(each => each != "-p")), [.. layer.Where(each => each != FlowTools)]);
     }
 
+    /// <summary>The layer's door has no field for the sources a holder's start hands, so such a start stays on today's spawn, whose arguments carry them.</summary>
+    [Fact]
+    public void A_driven_start_handed_the_sources_alone_stays_on_today_s_spawn_which_carries_them()
+    {
+        var request = Request("acceptEdits");
+        var spawn = ProviderRegistry.Built().Door(ClaudeDrivenLayer.Door).Spawned();
+        var info = Shell.Start(spawn.Start(request), request);
+        spawn.HandSourcesAlone(info);
+
+        var alone = ClaudeDrivenLayer.Run(null!, new TransportStart(info, StartClass.Background), request);
+
+        Assert.Contains("--setting-sources", info.ArgumentList);
+        Assert.Null(alone);
+    }
+
     private async Task<IReadOnlyList<string>> LayerArgumentsAsync(SpawnRequest request, RunCarriers? carriers, IReadOnlyList<string> plugins)
     {
         var program = LayerTestProvider.Shim(_scratch, LayerTestProvider.Scenario(_scratch, new { argv = true, @out = Array.Empty<object>() }), "claude");

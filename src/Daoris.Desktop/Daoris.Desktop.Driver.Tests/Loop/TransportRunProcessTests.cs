@@ -27,6 +27,10 @@ public sealed class TransportRunProcessTests : IDisposable
             if (!fs.existsSync(rest[0])) { fs.writeFileSync(rest[0], '1'); console.log('not a frame'); process.exit(1); }
             init('conv-1'); said('second run'); result(); break;
           }
+          case 'againhangs': {
+            if (!fs.existsSync(rest[0])) { fs.writeFileSync(rest[0], '1'); process.exit(1); }
+            setInterval(() => {}, 1000); break;
+          }
           case 'resume': {
             let heard = '';
             process.stdin.setEncoding('utf8');
@@ -430,6 +434,33 @@ public sealed class TransportRunProcessTests : IDisposable
 
         Assert.True(run.Process!.HasExited);
         var end = Lineage()[^1];
+        Assert.Equal(("end", proc, false), (end.GetProperty("by").GetString(), end.GetProperty("proc").GetString(), end.GetProperty("clean").GetBoolean()));
+        Assert.Equal(TokenReading.Gone, tokens.Reading(proc));
+    }
+
+    /// <summary>A run let go while its retry hangs lets go the retry's process and capture, its own lineage token ended unclean: the leg the run holds is the retry's.</summary>
+    [Fact]
+    public async Task A_run_let_go_while_its_retry_hangs_ends_the_retry_s_process_and_not_the_first_s()
+    {
+        var tokens = new LineageTokens(Environment.ProcessId, DateTime.UtcNow);
+        using var within = LineageTokens.Within(tokens);
+        var adapter = Scripted(_home, structured: true);
+        await using var run = Over(adapter, Prepare(adapter, null).WithArguments("againhangs", Path.Combine(_home, "marker")));
+        Hand(run, new SessionOutput(), keepAs: "scripted", own: new HarnessWords());
+
+        await run.ResumeAsync("conv-1", Bound, new ResumeAsk(
+            "conv-1", [], Continuations.Opening("scripted", null, null, answer: false, findings: false, persons: true)));
+        var ending = run.EndAsync(Bound);
+        await Poll.Until(() => File.Exists(ChildLineage.PathOf(_home, "s1"))
+            && Lineage().Count(line => line.GetProperty("by").GetString() == "start") >= 2);
+
+        var retried = run.Process!;
+        var proc = run.Proc!;
+        await run.AbandonAsync();
+        await ending;
+
+        Assert.True(retried.HasExited);
+        var end = Lineage().Last(line => line.GetProperty("by").GetString() == "end");
         Assert.Equal(("end", proc, false), (end.GetProperty("by").GetString(), end.GetProperty("proc").GetString(), end.GetProperty("clean").GetBoolean()));
         Assert.Equal(TokenReading.Gone, tokens.Reading(proc));
     }

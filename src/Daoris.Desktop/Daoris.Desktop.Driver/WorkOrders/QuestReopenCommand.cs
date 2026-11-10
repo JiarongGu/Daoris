@@ -67,6 +67,10 @@ public static class QuestReopenCommand
             ask.Quest, new QuestSubmissionRef(submission.Machine, submission.Sequence), ask.Note, ct).ConfigureAwait(false), output);
     }
 
+    public static Task<int> PressAsync(QuestReopenAsk ask, ServiceClient service, TextWriter output, InstanceWorld? instance, CancellationToken ct = default) =>
+        InstanceDoor.ThroughAsync(instance, ask.GoOn ? PersonPresses.QuestGoOn : PersonPresses.QuestReopen,
+            InstanceDoor.Said(("quest", ask.Quest), ("note", ask.Note)), () => RunAsync(ask, service, output, ct), output, ct);
+
     /// <summary>The service's sentence, said; a refusal is an answer, not a tool error.</summary>
     private static int Say((bool Ok, string Message) answer, TextWriter output)
     {

@@ -99,6 +99,20 @@ public sealed class McpMemoryToolsTests : McpToolsFixture
         Assert.Equal(before, _memory.State());
     }
 
+    /// <summary>🔴 A search shares its ten places round-robin, so a repository first by name does not crowd out the others.</summary>
+    [Fact]
+    public async Task A_search_shares_its_ten_places_among_the_repositories()
+    {
+        var tools = await AsAsync("chat");
+        for (var i = 0; i < 12; i++) _memory.Engine("Asker").Keep($"Asker also draws map number {i}.");
+
+        var found = await tools.SearchAsync("map");
+
+        Assert.Contains("`Owner:m1`", found);
+        Assert.Equal(10, found.Split('\n').Count(line => line.StartsWith("- `", StringComparison.Ordinal)));
+        Assert.Equal(9, found.Split('\n').Count(line => line.StartsWith("- `Asker:", StringComparison.Ordinal)));
+    }
+
     /// <summary>🔴 An unnamed caller running in no registered repository has no workspace, so every door refuses, its own reads too.</summary>
     [Fact]
     public async Task With_no_ambient_workspace_every_door_refuses()

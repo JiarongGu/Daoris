@@ -34,12 +34,13 @@ public static class GitWiring
     };
 
     /// <summary>
-    /// Taken out of every child's environment: an inherited one could prompt, or trace a header or a secret; and the holder key,
-    /// which only the holder's terminal is handed, added back by its own start alone.
+    /// Taken out of every child's environment: an inherited one could prompt, or trace a header or a secret; and the holder key and a
+    /// session's delegate key, which only the holder's terminal and that session are handed, each added back by its own start alone.
     /// </summary>
     public static readonly IReadOnlyList<string> Removed =
     [
         "SSH_ASKPASS", "SSH_ASKPASS_REQUIRE", "GIT_TRACE_CURL", "GIT_CURL_VERBOSE", "GCM_TRACE", "GCM_TRACE_SECRETS", ChildMarks.RoleKeyVariable,
+        ChildMarks.DelegateKeyVariable,
         GitRouting.HostTokenVariable, .. ChildMarks.MessagingVariables,
     ];
 

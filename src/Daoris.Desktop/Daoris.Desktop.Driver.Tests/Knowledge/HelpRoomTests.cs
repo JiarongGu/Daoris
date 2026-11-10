@@ -168,11 +168,11 @@ public sealed class HelpRoomTests : IDisposable
         Assert.DoesNotContain("mcp__daoris-knowledge__hand_propose", allowed);
         Assert.DoesNotContain("mcp__daoris-knowledge__accept_propose", allowed);
         // Moving a registered repository to a workspace, by name, a card the person applies like the rest.
-        Assert.Contains("mcp__daoris-knowledge__repository_propose", allowed);
+        Assert.DoesNotContain("mcp__daoris-knowledge__repository_propose", allowed);
         // Archiving or unarchiving sessions, a card the person applies like the rest.
         Assert.Contains("mcp__daoris-knowledge__session_propose", allowed);
         Assert.DoesNotContain("mcp__daoris-knowledge__permission_propose", allowed);
-        Assert.DoesNotContain(allowed, rule => rule.StartsWith("Bash", StringComparison.Ordinal)
+        Assert.DoesNotContain(allowed, rule => (rule.StartsWith("Bash", StringComparison.Ordinal) && !HelpRoom.Verb.Contains(rule))
             || rule.StartsWith("Edit", StringComparison.Ordinal) || rule.StartsWith("Write", StringComparison.Ordinal));
     }
 
@@ -198,8 +198,8 @@ public sealed class HelpRoomTests : IDisposable
 
     /// <summary>
     /// With a checkout it may read, what it is handed adds the connector's <c>checkout_read</c>, which
-    /// the driver judges at every call, and no <c>Read</c> rule or git prefix on any checkout, so no command at all and nothing that
-    /// writes. The refusal of a shell stands: in the agent's asking mode anything else is asked, and refused.
+    /// the driver judges at every call, and no <c>Read</c> rule or git prefix on any checkout, so no command but Daoris's own verb and
+    /// nothing that writes. The refusal of a shell stands: in the agent's asking mode anything else is asked, and refused.
     /// </summary>
     [Fact]
     public void Its_rules_read_the_checkouts_through_the_tool_and_run_no_command()
@@ -210,7 +210,8 @@ public sealed class HelpRoomTests : IDisposable
 
         Assert.Equal([.. HelpRoom.Allowed, PermissionRules.ReadRule(kept), $"mcp__{KnowledgeConnector.ServerName}__checkout_read"], rules.Allow);
         Assert.DoesNotContain(rules.Allow, rule => rule.StartsWith("Edit", StringComparison.Ordinal) || rule.StartsWith("Write", StringComparison.Ordinal));
-        Assert.DoesNotContain(rules.Allow, rule => rule.StartsWith("Bash", StringComparison.Ordinal) || rule.Contains("console-ui", StringComparison.Ordinal));
+        Assert.DoesNotContain(rules.Allow, rule => (rule.StartsWith("Bash", StringComparison.Ordinal) && !HelpRoom.Verb.Contains(rule))
+            || rule.Contains("console-ui", StringComparison.Ordinal));
     }
 
     /// <summary>
@@ -229,7 +230,7 @@ public sealed class HelpRoomTests : IDisposable
         // A write the person has not accepted is asked, which its asking mode refuses.
         Assert.Equal(["mcp__tickets__create_issue"], rules.Ask);
         Assert.Contains("mcp__tickets__delete", rules.Deny);
-        Assert.DoesNotContain(rules.Allow, rule => rule.StartsWith("Bash", StringComparison.Ordinal)
+        Assert.DoesNotContain(rules.Allow, rule => (rule.StartsWith("Bash", StringComparison.Ordinal) && !HelpRoom.Verb.Contains(rule))
             || rule.StartsWith("Edit", StringComparison.Ordinal) || rule.StartsWith("Write", StringComparison.Ordinal));
     }
 

@@ -35,19 +35,6 @@ internal sealed class HelpSettingProposals : IHelpProposalKind
     ];
 
     /// <summary>
-    /// Its target is a repository, save a retry's, which is a quest; <c>across … write-to &lt;other&gt;</c> names a
-    /// second repository in its value.
-    /// </summary>
-    public HelpNames Named(HelpProposal proposal, HelpMachineFacts facts)
-    {
-        var words = proposal.Door == "across" ? (proposal.Value ?? "").Split(' ', StringSplitOptions.RemoveEmptyEntries) : [];
-        var other = words is ["write-to", var to, ..] ? to : null;
-        // A retry's quest is named as a record, filed under its repository's workspace.
-        var quest = proposal.Door == "retry" ? HelpNames.OfParked(facts, (proposal.Target ?? "").Trim().TrimStart('#').Trim()) : [];
-        return new([proposal.Workspace], [proposal.Door == "retry" ? null : proposal.Target, other, proposal.Repository]) { Records = quest };
-    }
-
-    /// <summary>
     /// Each door's target, which its Apply marks the owner's: the quest for <c>retry</c>; for every other
     /// door its repository, or its workspace where the plan is the workspace's (a line, a landing, a language). A machine's door
     /// (each of <see cref="MachineSettings.All"/>) names neither, and marks nothing.

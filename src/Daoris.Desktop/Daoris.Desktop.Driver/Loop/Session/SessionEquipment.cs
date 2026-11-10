@@ -6,7 +6,7 @@ namespace Daoris.Driver;
 /// The spawn, prepared for either kind of session: the adapter's process, the toolchain's environment on it, and for a dsh home
 /// Daoris made, its profile written. Shared by a quest's session and an ask's intake, so neither can forget a line the other carries.
 /// </summary>
-internal sealed class SessionEquipment(string home, DriverConfig config)
+internal sealed class SessionEquipment(string home, DriverConfig config, SessionDelegates delegates)
 {
     /// <returns>The process to start, and what this harness is doing that Daoris could not govern.</returns>
     /// <param name="prepared">The process a resume prepared, given the same environment; null prepares a start.</param>
@@ -41,7 +41,7 @@ internal sealed class SessionEquipment(string home, DriverConfig config)
 
     /// <summary>What a start of <paramref name="target"/> asks of <paramref name="adapter"/>'s spawn, under the machine's command for it.</summary>
     public SpawnRequest Request(AgentDoor adapter, SessionTarget target) =>
-        SpawnRequests.Of(target, config.Commands.GetValueOrDefault(adapter.Id.Value));
+        SpawnRequests.Of(target, config.Commands.GetValueOrDefault(adapter.Id.Value), delegates);
 
     /// <summary>
     /// Whether the rules this session would be handed let it call the connector's <paramref name="tool"/> unasked: the same

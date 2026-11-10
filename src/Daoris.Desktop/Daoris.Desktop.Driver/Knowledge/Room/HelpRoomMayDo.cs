@@ -23,9 +23,11 @@ internal sealed class HelpRoomMayDo : IHelpRoomSection
         var text = new StringBuilder();
         text.Append("## What you may do\n\n");
         text.Append("You read, you advise, and you propose. You change nothing yourself: every change is the person's, made\n");
-        text.Append("on a screen or with a terminal command, and the two always do the same thing. When a change would\n");
-        text.Append("help, name both — the screen and where on it, and the command — and, where the person wants it made,\n");
-        text.Append("propose it with the tool for its kind (below). A proposal is a card with Apply and Not now; nothing\n");
+        text.Append("on a screen or with a terminal command, and the two always do the same thing. You run that command,\n");
+        text.Append("Daoris's own (`daoris`): a read answers at once, and each change it presses waits on the person's card in\n");
+        text.Append("Daoris's window, naming you as asking, and runs on their yes. When a change would help, name both — the\n");
+        text.Append("screen and where on it, and the command — and, where the person wants it made, press it with the command\n");
+        text.Append("or propose it with the tool for its kind (below). A proposal is a card with Apply and Not now; nothing\n");
         // What an Apply did is Daoris's word, never the person's; a Not now is still theirs.
         text.Append("changes until the person presses Apply. What the Apply did comes back to you as Daoris's word, starting\n");
         text.Append("`Daoris:` and naming by id any ask or quest it published; a Not now comes back as their next message. Daoris\n");
@@ -34,8 +36,9 @@ internal sealed class HelpRoomMayDo : IHelpRoomSection
         text.Append("`daoris-knowledge` (the registry, its knowledge, its quests) when the question needs more than this page.\n\n");
         // Asked to clean up a tree Daoris made, the helper otherwise says it could change nothing and lists
         // commands, and never that this is a mode the person could change. Said, and where; full access is never proposed.
-        text.Append("This is restricted mode. In full access you would act on this machine yourself; only the person chooses it,\n");
-        text.Append("with `daoris ask-daoris mode full`, from the next conversation's start. When they ask why you cannot do\n");
+        text.Append("This is restricted mode: each change you press waits on the person's yes. In full access you would act on\n");
+        text.Append("this machine as the person, each press of yours run at once; only the person chooses it, with\n");
+        text.Append("`daoris ask-daoris mode full`, from the next conversation's start. When they ask why you cannot do\n");
         text.Append("something yourself, say so and where it is chosen: it is never yours to propose.\n\n");
         // A discard of a session branch granted is the helper's to do through its tool.
         var discards = machine.Housekeeping.Contains(ConfiguredAccess.DiscardBranch);
@@ -238,7 +241,7 @@ internal sealed class HelpRoomMayDo : IHelpRoomSection
     };
 
     /// <summary>
-    /// The section in full access: it acts on this machine itself, with every server the plugins here
+    /// The section in full access: it acts on this machine as the person, Daoris's verbs among it, with every server the plugins here
     /// declare; and the doctrine still speaks, a repository's work through a quest and Daoris's own housekeeping its to do. Nothing
     /// restricted mode's alone is said: no shell refused, nothing waiting for approval, no reading switched off.
     /// </summary>
@@ -246,18 +249,19 @@ internal sealed class HelpRoomMayDo : IHelpRoomSection
     {
         var text = new StringBuilder();
         text.Append("## What you may do\n\n");
-        text.Append("You act on this machine yourself, as the person chose: a shell, file edits, Daoris's own command (`daoris`)\n");
-        text.Append("and the plugins' servers below, with no asking. What you do is your own act, not a proposal,\n");
-        text.Append("so say what you will do before you do it, and what you did after; the proposal tools (below) still serve\n");
-        text.Append("where the person would rather press it themselves. Read the family through `daoris-knowledge` (the registry,\n");
-        text.Append("its knowledge, its quests) when the question needs more than this page.\n\n");
+        text.Append("You act on this machine as the person, as they chose: a shell, file edits and the plugins' servers below,\n");
+        text.Append("with no asking, and Daoris's own command (`daoris`),\n");
+        text.Append("where each press runs at once as the person's own, said on this conversation.\n");
+        text.Append("What you do is their act done for them, not a proposal, so say what you will do before you do it, and what\n");
+        text.Append("you did after; propose with the tools (below) only what the person asks to see first. Read the family\n");
+        text.Append("through `daoris-knowledge` (the registry, its knowledge, its quests) when the question needs more than this\n");
+        text.Append("page.\n\n");
         // Words, not a gate; the mode is the gate.
         text.Append("A repository's own work (its branches, its uncommitted work, what is ready to push) is still asked for through\n");
         text.Append("a quest: propose an ask for it with `ask_propose`, so that repository's agent does it with its own tools, or\n");
         text.Append("take the person there with `go_propose`, the repository and their words filled.\n");
         text.Append("Daoris's own housekeeping is yours to do: its trees, the session branches whose work landed, and its home.\n");
-        text.Append("Never push, sign in, or handle a key: those stay the person's own presses, and where your agent takes\n");
-        text.Append("Daoris's rules, the person's own denies still hold.\n\n");
+        text.Append("Where your agent takes Daoris's rules, the person's own denies still hold.\n\n");
         if (machine.PluginServers.Count > 0)
         {
             var servers = string.Join(", ", machine.PluginServers.Select(server => $"`{server.Server}` (plugin `{server.Plugin}`)"));

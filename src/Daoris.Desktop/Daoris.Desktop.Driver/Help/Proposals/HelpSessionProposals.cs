@@ -40,13 +40,6 @@ internal sealed class HelpSessionProposals : IHelpProposalKind
 
     public HelpProposal Read(HelpProposal proposal, JsonElement file) => HelpSessionHelperDoors.Read(proposal, file);
 
-    /// <summary>
-    /// Each session it names by id, filed under the workspace its record says. Archive what ended names none by id,
-    /// and takes every ended row Sessions' list places, as before.
-    /// </summary>
-    public HelpNames Named(HelpProposal proposal, HelpMachineFacts facts) =>
-        new([proposal.Workspace], [proposal.Repository]) { Records = [.. Ids(proposal).SelectMany(id => HelpNames.OfSession(facts, id))] };
-
     public HelpPlan Plan(HelpProposal proposal, DriverConfig config, HelpMachineFacts facts)
     {
         static HelpPlan Refused(string why) => new(why, "", "", null);
@@ -147,7 +140,9 @@ internal sealed class HelpSessionProposals : IHelpProposalKind
     private static HelpPlan EndedPlan(HelpMachineFacts facts)
     {
         // Under a circle, only the workspace's own rows; a row no session record files is left out.
-        var mine = facts.Placed.Where(row => HelpProposalScope.InCircle(facts, row.Session)).ToList();
+        var mine = facts.Placed.Where(row => facts.Circle is not { Length: > 0 } circle
+            || (facts.Sessions.FirstOrDefault(each => string.Equals(each.Id, row.Session, StringComparison.OrdinalIgnoreCase)) is { } record
+                && string.Equals(RemoteTarget.Workspace(record.Workspace), RemoteTarget.Workspace(circle), StringComparison.OrdinalIgnoreCase))).ToList();
         var ended = mine.Where(row => row.Group == SessionGroup.Ended && !row.Archived).Select(row => row.Session).ToList();
         var (you, review) = (mine.Count(row => row.Group == SessionGroup.You), mine.Count(row => row.Group == SessionGroup.Review));
         var stays = (you, review) switch

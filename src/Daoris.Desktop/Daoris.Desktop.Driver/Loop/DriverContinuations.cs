@@ -359,7 +359,8 @@ internal sealed class DriverContinuations(LoopContext context, Driver driver)
             // conversation it kept.
             var prepared = !adapter.Can.ResumesByRestart
                 ? null
-                : _context.Adapters.Resume(adapter, SpawnRequests.Of(target, config.Commands.GetValueOrDefault(adapter.Id.Value)) with { Resume = kept.Conversation });
+                : _context.Adapters.Resume(adapter,
+                    SpawnRequests.Of(target, config.Commands.GetValueOrDefault(adapter.Id.Value), _context.Processes.Delegates) with { Resume = kept.Conversation });
             var (info, harnessNotice) = _driver.Prepare(adapter, target, selection, prepared);
             // A set-up step going on with the person's words shows it again in its own tab: opened
             // again where the person closed it, and brought forward. Said, never held, where it will not open: the words go on.
@@ -374,7 +375,8 @@ internal sealed class DriverContinuations(LoopContext context, Driver driver)
             var connectors = ConnectorPlans.For(sessionId, start.Workspace, servers);
             var handed = adapter.ServerHanding()?.Hand(info, home, connectors);
             // The skills plugins hand sessions, as its first run gets them, gone with this run.
-            var (skills, skillPlugins) = SpawnSkills.Hand(_context.Adapters, adapter, info, home, sessionId, _context.Catalog, PluginServerTo.Sessions);
+            var (skills, skillPlugins) = SpawnSkills.Hand(
+                _context.Adapters, adapter, info, home, sessionId, _context.Catalog, PluginServerTo.Sessions, OwnTools.Machine(home, info));
             using var skilled = new Disposer(() => SpawnFiles.RemoveFolder(skills));
             // It goes on under the checks its repository sets now, as it goes on under the prompts
             // standing now: their deny rules handed again where its agent takes Daoris's rules, and kept by its id for `run-heavy` while

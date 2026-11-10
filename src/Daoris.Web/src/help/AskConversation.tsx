@@ -13,6 +13,7 @@ import { type ChatLimitHeld } from '../work/waits/limitWait';
 import { type FirstWords, type Sent, type Draft, NO_DRAFT, NEW_DRAFT, type AskOpening } from './ask/askTypes';
 import { useHelpSlotParts } from './ask/useHelpSlotParts';
 import { useHelpFollow } from './ask/useHelpFollow';
+import { AskHeld } from './ask/AskHeld';
 import { useHelpMode } from './ask/useHelpMode';
 import { useHelpSend } from './ask/useHelpSend';
 import { useHelpHistory } from './ask/useHelpHistory';
@@ -294,7 +295,7 @@ export function useAskConversation(
     : known?.title || (spoken?.session === shown.id ? spoken.title : t('help.head.untitled'));
 
   const slot: AskConversationSlot = {
-    body: conversation, proposals: proposed, published, composer, ended,
+    body: conversation, proposals: <><AskHeld session={shown?.id} live={live} />{proposed}</>, published, composer, ended,
     note: end.isPending ? <p role="status" className="m-0 text-small text-ink-soft">{t('help.finishing')}</p>
       : limitLine ? <>{limitLine}{note}</> : note,
     onNew: shown ? onNew : undefined,

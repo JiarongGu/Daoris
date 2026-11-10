@@ -30,7 +30,8 @@ import { Discards, EntryWork, type HeadOpinion, type HeadReview, type LandingPla
 import type { EntryPress } from '../review/EntryAccept';
 import { Note } from '../Note';
 import { Left, Said } from './HeadNote';
-import { type HeadLink, linkRow, requestRow } from './headRows';
+import { type HeadLink, linkRow } from './headRows';
+import { type AskOrigin, originsOf, OriginLinks, startedRows, startingOf } from './startedFrom';
 import type { HelperWaits } from '../waits/HelperAsks';
 import { CoWorkers } from '../team/CoWorkers';
 import { MemberThread } from '../team/MemberThread';
@@ -110,9 +111,9 @@ export type { HeadOpinion, HeadReview, LandingPlan, WorkAsk } from '../review/La
  * can be passed unconditionally.
  */
 export function SessionHead({
-  session, quest, opening, taking, lastTurn, resolving = false, onResolve, onAnswerAsk,
+  session, quest, opening, brief, taking, lastTurn, resolving = false, onResolve, onAnswerAsk,
   onAnswerSession, onAnswerChoice, answerPick, branch, ownBranch, onReview, onDiscardBranch, discardingBranch = false, headed = false, goAheads = [], onGoAhead,
-  ownSignIn = false, nameOf, lands, landing, planning, onLand, onSayRebase, onName, discards, onDiscardTree, review, behind, opinion, onOpenQuest,
+  ownSignIn = false, nameOf, lands, landing, planning, onLand, onSayRebase, onName, discards, onDiscardTree, review, behind, opinion, onOpenQuest, ask,
   continues, helps, onOpenSession, heavy, process, workAsk, workBusy = false, toEvent, rules, ruleAsk, seek, helpers, permissions, answers, gitAsks,
   question = null, parkBox = false, pieces, entry, waitingOn, gitAccess, terminalHold, supervisorCourse, supervision = NO_SUPERVISION,
 }: {
@@ -189,12 +190,14 @@ export function SessionHead({
   /** A landing or a discard of its work is on its way, pressed here or at the foot: the line's press waits for it. */
   workBusy?: boolean;
   /**
-   * Open the quest it serves: the door beside the request as written in *Details*. Absent where nothing can open
-   * it, and then the request is shown with no door.
+   * Open the quest it serves: the press its *Started from* names it by, in the head and in *Details*. Absent where
+   * nothing can open it, and then the quest is named with no door.
    */
   onOpenQuest?: (quest: Quest) => void;
+  /** The ask it came from, its id and its words where the frame holds the record: an intake's own, or the one its line began in. */
+  ask?: AskOrigin | null;
   /**
-   * The session its record says it continues (`from`), where the frame holds it, with its title. Absent, *Details*
+   * The session its record says it continues (`from`), where the frame holds it, with its title. Absent, *Started from*
    * says the record's id, with no door.
    */
   continues?: HeadLink | null;
@@ -304,6 +307,7 @@ export function SessionHead({
   quest?: Quest | null;
   /** What the person first said in it, where this machine holds its record — a conversation's name. */
   opening?: string | null;
+  brief?: string | null;
   resolving?: boolean;
   /**
    * How a parked session is finished or declined, and a finish's close of its quest. Absent where nothing can
@@ -341,6 +345,7 @@ export function SessionHead({
   const gitAsked = gitAsksFor(gitAsks?.waits ?? [], session.id);
   const own = useRef<HTMLElement>(null);
   const { sought, letGo } = useSought(own, seek);
+  const origins = originsOf(t, session, quest, ask, continues, { onOpenQuest, onOpenAsk: onAnswerAsk, onOpenSession });
 
   return (
     // Where the foot's *To the top* puts the focus: every wait stands here with its reading. The
@@ -557,6 +562,12 @@ export function SessionHead({
       {/* The reference, a folded *Details*, its line naming the quest,
           the agent and the start, so the conversation is not pushed down by facts that are looked up. The tree's machine
           path is the repository's on hover; an intake names its ask, never `repository: ask #…`. */}
+      {origins.length > 0 && (
+        <p className="m-0 flex min-w-0 flex-wrap items-baseline gap-x-4 gap-y-1 text-small text-ink-soft">
+          <span className="text-ink-faint">{t('work.origin.from')}</span>
+          <OriginLinks origins={origins} t={t} />
+        </p>
+      )}
       <DetailsFold
         summary={[
           intake ? t('work.scope.ask', { id: session.ask }) : session.quest ? t('work.scope.quest', { id: session.quest }) : null,
@@ -567,9 +578,9 @@ export function SessionHead({
           intake
             ? { label: t('work.intake.ask'), value: `#${session.ask}`, mono: true }
             : { label: t('work.head.repository'), value: <span title={session.tree ?? undefined}>{session.repository}</span> },
-          requestRow(t, quest, session.kind === 'chat' ? opening : null, session.quest ?? session.ask, onOpenQuest),
-          // Whom it continues and whom it helps, the record's own links, each a door where the frame holds it.
-          linkRow(t, t('work.head.continues'), session.from, continues, onOpenSession),
+          // Where it came from and the requirement it started with, each said by the record that holds it.
+          ...startedRows(t, origins, startingOf(quest, ask, session, opening, brief)),
+          // Whom it helps, the record's own link, a door where the frame holds it.
           linkRow(t, t('work.head.helping'), session.opinion ? null : session.serves, helps, onOpenSession),
           // Its heavy run: the head's line opens to its gates here, or its wait with the holder a door.
           ...(heavy ? [heavy] : []),

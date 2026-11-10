@@ -4,6 +4,8 @@ import { Button, drawerOpen, Icon, type Notify, watchDrawers } from '../design/u
 import { ago, clockOf, sentence } from '../locales/format';
 import type { UpdateMode, UpdateState } from '../update/UpdateBanner';
 import { useNow } from '../work/useNow';
+import { askerSaid, type PipeAsker } from './askerSaid';
+import { type PressView, PressViewLine } from './PressViewLine';
 import { standingSaid } from './standingSaid';
 
 /**
@@ -35,14 +37,11 @@ export type Confirmation = {
   fields: ConfirmationField[];
   /** The values a terminal's press's sentence names by role; absent from a shell before them, which names none. */
   named?: ConfirmationNamed[];
-  /** What sent it, as the system names the pipe's client; null where nothing can say (the service's). */
-  asker?: { process?: string | null; pid?: number | null } | null;
+  /** What sent it, as the system names the pipe's client or a session's proved key names it; null where nothing can say (the service's). */
+  asker?: PipeAsker | null;
   /** When it is asked. It waits, whichever its source, until the person answers or its asker takes it back. */
   asked?: string | null;
-  /**
-   * Whether it is shown: a terminal's press by any window's word, which moves no clock; the service's by this window's own judgement,
-   * since its door hears none.
-   */
+  /** Whether it is shown: a terminal's press by any window's word; the service's by this window's own judgement, its door hearing none. */
   shown?: boolean;
   /** Whether a terminal still waits on its line for a terminal's press (§8.1); null where the shell does not say. */
   waitedOn?: boolean | null;
@@ -58,6 +57,7 @@ export type Confirmation = {
   hold?: boolean;
   /** The pipe's code for where its terminal stands where that is to be said, as `untold`; null or absent otherwise. */
   standing?: string | null;
+  view?: PressView | null;
 };
 
 /**
@@ -370,6 +370,7 @@ function Card({ waiting, onAnswer, notify, onShown, names, onOpenPlan, update, o
       {/* The decision region (§3.4): its head through its buttons, bounded whatever the press carries. */}
       <div ref={region} data-press-region="" className="grid gap-1.5">
         <p className="m-0">{head.text}</p>
+        {waiting.view && <PressViewLine view={waiting.view} />}
         {others.length > 0 && (
           <dl className="m-0 grid gap-y-0.5 text-small">
             {others.map((each) => (
@@ -408,12 +409,7 @@ function Card({ waiting, onAnswer, notify, onShown, names, onOpenPlan, update, o
           </div>
         )}
         <p className="m-0 text-small text-ink-soft">
-          {/* A restored press's asker is said as its record's, which a process of the account could have written. */}
-          {asker?.process && asker.pid != null
-            ? t(restored ? 'person.restored' : 'person.asker.process', { process: asker.process, pid: asker.pid })
-            : asker?.pid != null
-              ? t(restored ? 'person.restoredPid' : 'person.asker.pid', { pid: asker.pid })
-              : t(restored ? 'person.restoredUnknown' : 'person.asker.unknown')}
+          {askerSaid(t, asker, restored)}
           {waiting.asked
             ? <> · <span className={old ? 'font-semibold text-ink' : undefined}>{t('person.asked', { ago: ago(waiting.asked) })}</span></>
             : null}
@@ -427,7 +423,7 @@ function Card({ waiting, onAnswer, notify, onShown, names, onOpenPlan, update, o
         </p>
         {/* The one Confirm that lets a terminal speak in this conversation says so plainly. */}
         {waiting.hold === true && <p className="m-0 text-small font-semibold text-ink">{t('person.hold')}</p>}
-        <p className="m-0 text-small">{t('person.cannotTell')}</p>
+        {!asker?.session && <p className="m-0 text-small">{t('person.cannotTell')}</p>}
         <div ref={buttons} data-press-buttons="" className="flex flex-wrap items-center gap-2">
           {checking ? (
             // While its Confirm is judged, its buttons are replaced by what is under way.

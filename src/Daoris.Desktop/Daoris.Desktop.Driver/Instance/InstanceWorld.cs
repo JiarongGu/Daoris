@@ -64,6 +64,9 @@ public sealed class InstanceWorld : IToolTerminal
     /// </summary>
     public Func<bool> RoleTerminal { get; init; } = () => TerminalRole.Held;
 
+    /// <summary>The delegate key the entry took (<see cref="DelegateKey.Taken"/>), whose proof a person's press carries.</summary>
+    public Func<DelegateHeld?> Delegate { get; init; } = () => DelegateKey.Taken;
+
     /// <summary>A person's press sent through <see cref="InstanceDoor.PressAsync"/> from this terminal.</summary>
     public Task<int> PressAsync(InstanceRoute route, object? payload, Func<Task<int>> alone, Func<JsonElement, int> words, CancellationToken ct) =>
         InstanceDoor.PressAsync(route, payload, alone, words, this, ct);

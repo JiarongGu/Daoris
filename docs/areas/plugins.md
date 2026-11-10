@@ -63,7 +63,9 @@ Driver paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/`.
 9. Daoris pushes through its own push act and opens no pull request; a plugin's `pull-request` step on `work/perform` does, as the
    person. No plugin is started for a landing, and a `work/land` point is no longer spoken. A decision waits 10 s. (from D100, D101, D241)
 10. `work/state` asks one plugin: the one that pushed the branch, else the landing rule's, and only if installed, on,
-    sound and listening. A frame waits 30 s, no frame starts after 60 s, an entry is asked once a minute at most. (from D148)
+    sound and listening. A frame waits 30 s, no frame starts after 60 s, an entry is asked once a minute at most. A landing with no
+    answer (its plugin never started, or no address was kept) that the keeper proved its line holds reads as its pull request merged,
+    so a run's monitor goes on and its pull-request step not started yet is passed over (`PullRequestReading.OnTheLine`). (from D148)
 11. It is asked at LAND3's tidy, the clean-up's look, bringing up to date's look, *Ask again*, origin's line moving,
     after Daoris pushes, and window focus while a pull request is open. Never at a press that removes, a read or a timer. (from D148)
 12. A `completed` answer clears a branch only where git confirms: the target is the line, the merge commit is held
@@ -91,6 +93,10 @@ Driver paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/`.
     that place's origin and hands its token to that process alone. An attempt goes to the place its unit was told for; the runtime
     sees the plugin's id, its generations unique across the places (`GenerationOf(plugin, held)` fences against the process that took
     the attempt). A refused place has no process, and the others are served. (from D241, D242)
+17b. `work/perform`'s params carry `options`, an object of the performed node's graph options (`NodeDeclaration.Options`) by name, each
+    its JSON value, or its text where that is not JSON; none are written where the node has none. `WorkPerformer` fills them at every
+    delivery from the declaration it performs and never keeps them on the attempt's record, so an edited graph reaches a redelivery;
+    the kit's `work.mjs` hands them to `act()` as `call.options`, `{}` when absent.
 18. An offer's installed copy is judged against the shipped one. Same version, other files: `changed`. Older, files
     matching the record's digest: `older`. Older, digest not matching: `changed`. Older, no digest: `older`,
     unjudged. Newer: the person's, said nothing. A pre-release tag (`1.2.0-beta.1`) is older than the same numbers without one, and its dotted parts compare number by number (`beta.2` before `beta.10`). (from D119)

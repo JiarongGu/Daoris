@@ -247,9 +247,11 @@ public static class GraphPasses
     /// The person's Accept kept on the run's record for the <c>review</c> the graph waits on, true where it is kept: the press is
     /// that Accept, so it never lands past the review itself, and the pass it then asks reaches the review and readies the landing.
     /// </param>
+    /// <param name="keep">The press kept as the review's Accept on the run's way to it (<see cref="EarlyAccepts"/>), before the pass is asked.</param>
     public static async Task<LandingGate> PressAsync(
         Func<CancellationToken, Task<LandingGate>> answer, Func<CancellationToken, Task<LandingGate>> read,
-        Func<TimeSpan, CancellationToken, Task<bool>>? pass, CancellationToken ct, Func<GraphGateState, CancellationToken, Task<bool>>? accept = null)
+        Func<TimeSpan, CancellationToken, Task<bool>>? pass, CancellationToken ct, Func<GraphGateState, CancellationToken, Task<bool>>? accept = null,
+        Func<GraphGateState, CancellationToken, Task<bool>>? keep = null)
     {
         var gate = await answer(ct).ConfigureAwait(false);
         if (pass is not null && accept is not null && gate.GraphHolds
@@ -259,6 +261,7 @@ public static class GraphPasses
         }
 
         if (pass is null || !gate.GraphHolds || gate.GraphPart() is not { AsksPass: true } graph) return gate;
+        if (keep is not null) await keep(graph, ct).ConfigureAwait(false);
         if (!graph.PressWaits)
         {
             await pass(TimeSpan.Zero, ct).ConfigureAwait(false);

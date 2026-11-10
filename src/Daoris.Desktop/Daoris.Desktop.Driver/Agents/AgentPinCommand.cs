@@ -215,16 +215,20 @@ internal static class AgentPinCommand
                 + $"--workspace {ShellWord.Of(named, "<workspace>")}` sets one.");
         }
 
-        if (toolchain.Program.UpdateArguments is not { Count: > 0 } update)
+        if (toolchain.Program.UpdateArguments is not { Count: > 0 })
         {
             throw new AgentWords($"`{name}` declares no updater — it updates itself, or its package manager does.");
         }
 
         Say($"{Prefix}: updating `{name}`. Never mid-session and never unasked: a tool that changed");
         Say("  under a running loop is a moving target nobody diffed.");
-        return await AgentLongCommand.TerminalAsync(world, [.. toolchain.Program.Binary, .. update], toolchain, $"`{name}`'s updater", ct)
+        return await AgentLongCommand.TerminalAsync(
+            world, UpdateWords(toolchain.Program, AgentsCommand.ConfiguredCommand(HarnessSettings.HomeOf(path), name)), toolchain, $"`{name}`'s updater", ct)
             .ConfigureAwait(false);
     }
+
+    internal static IReadOnlyList<string> UpdateWords(ToolSpec program, IReadOnlyList<string>? configured) =>
+        [.. program.Command(configured), .. program.UpdateArguments!];
 
     /// <summary>
     /// Move a pin to the newest release: resolve the newest to one exact version, then pin it exactly as <c>pin</c> does. The pin

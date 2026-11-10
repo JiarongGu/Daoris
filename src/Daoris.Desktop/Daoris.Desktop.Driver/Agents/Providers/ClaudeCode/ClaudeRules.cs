@@ -8,10 +8,8 @@ namespace Daoris.Driver;
 /// session is. Its native door carries the file by <c>--settings</c>, its protocol door in <c>_meta.claudeCode.options.settings</c>.
 /// </summary>
 /// <remarks>
-/// <b>Its own context</b>: every file also says <see cref="OwnContext"/>, so a session's skills are its
-/// tree's and its per-session plugin copy's (<see cref="ClaudeSkills"/>), its connectors the ones it is handed, and its memory Daoris's.
-/// Claude Code 2.1.314 reads each key from the command-line tier for that invocation alone, and moves nothing in the account's home; the
-/// account's home is never written (<see cref="HarnessSettings.ProfileHome"/>).
+/// The file says nothing of the account's auto-memory, synced skills and plugins or connectors: the account's own settings decide them,
+/// as for the same harness run by hand. The account's home is never written (<see cref="HarnessSettings.ProfileHome"/>).
 /// </remarks>
 public sealed class ClaudeRules : IRuleLanguage
 {
@@ -24,26 +22,15 @@ public sealed class ClaudeRules : IRuleLanguage
     /// <summary>The harness's own hard denials, kept by naming them in the list.</summary>
     public const string HarnessDefaults = TraceSpawnFiles.HarnessDefaults;
 
-    /// <summary>
-    /// The keys that keep a session's context its own: no auto-memory, and none of the skills, plugins or connectors the vendor syncs to
-    /// the account it runs as.
-    /// </summary>
-    public static IReadOnlyList<(string Key, bool Value)> OwnContext { get; } =
-    [
-        ("autoMemoryEnabled", false),
-        ("syncClaudeAiSkills", false),
-        ("syncClaudeAiPlugins", false),
-        ("disableClaudeAiConnectors", true),
-    ];
-
     /// <inheritdoc/>
     /// <remarks>The lineage hook is Claude Code's own (<see cref="ClaudeLineageHook"/>), installed here for the file it is handed.</remarks>
     public string Write(string home, string sessionId, HandedRules rules) =>
         Render(
             home, sessionId, rules.Rules, rules.HardDeny, rules.Guard,
-            rules.Lineage is { } file ? ClaudeLineageHook.For(home, sessionId, file) : null);
+            rules.Lineage is { } file ? ClaudeLineageHook.For(home, sessionId, file) : null,
+            rules.Asked ? ClaudeAskHook.For(home, sessionId) : null);
 
-    /// <summary>Write the file for one session, which every session is handed for its own context at least.</summary>
+    /// <summary>Write the file for one session, which every session is handed, its permissions at least.</summary>
     /// <param name="hardDeny">
     /// What auto mode's classifier is told as hard denials (<see cref="PermissionRules.HardDeny"/>), or
     /// empty for none. Required, so no spawn forgets to say: a session on either door is handed
@@ -54,8 +41,13 @@ public sealed class ClaudeRules : IRuleLanguage
     /// The lineage hook for this session, or null for none: on the connector's calls and each subagent's start and
     /// stop, beside the guard, never instead of it.
     /// </param>
+    /// <param name="ask">
+    /// The permission ask for this session, or null for none: on every tool call, after the guard and the lineage hook, asking Daoris
+    /// about a call the harness would ask about and given this file to judge by.
+    /// </param>
     public static string Render(
-        string home, string sessionId, RuleLists rules, IReadOnlyList<string> hardDeny, TreeGuardHook? guard = null, LineageHook? lineage = null)
+        string home, string sessionId, RuleLists rules, IReadOnlyList<string> hardDeny, TreeGuardHook? guard = null, LineageHook? lineage = null,
+        AskHook? ask = null)
     {
         var told = hardDeny.Where(entry => entry != HarnessDefaults).Distinct(StringComparer.Ordinal).ToList();
 
@@ -72,7 +64,6 @@ public sealed class ClaudeRules : IRuleLanguage
                 ["deny"] = new JsonArray([.. rules.Deny.Select(rule => (JsonNode)rule)]),
             },
         };
-        foreach (var (key, value) in OwnContext) document[key] = value;
 
         // 🔴 `$defaults` FIRST, always: a `hard_deny` list without it replaces the harness's
         // built-in list, whose entry is the rule against sending data out. No `autoMode` key at all when
@@ -88,7 +79,7 @@ public sealed class ClaudeRules : IRuleLanguage
         // 🔴 EXEC form — `args` present — so the harness spawns node directly with the script and the
         // tree as one argument each. Shell form would run the line through Git Bash or PowerShell on
         // Windows, and a path survives neither's quoting reliably.
-        if (guard is not null || lineage is not null)
+        if (guard is not null || lineage is not null || ask is not null)
         {
             var before = new JsonArray();
             if (guard is not null)
@@ -109,6 +100,19 @@ public sealed class ClaudeRules : IRuleLanguage
             }
 
             var hooks = new JsonObject();
+            // Last, so the guard's refusal is read first: the harness takes a refusal from any hook over an allow.
+            JsonObject? asking = ask is null ? null : new JsonObject
+            {
+                ["matcher"] = AskHook.Matcher,
+                ["hooks"] = new JsonArray(new JsonObject
+                {
+                    ["type"] = "command",
+                    ["command"] = ask.Node,
+                    ["args"] = new JsonArray(ask.Script, ask.Requests, ask.Session, path, AskHook.BoundSeconds.ToString(System.Globalization.CultureInfo.InvariantCulture)),
+                    // The hold's bound, and a minute for the answer to be read and said.
+                    ["timeout"] = AskHook.BoundSeconds + 60,
+                }),
+            };
             if (lineage is not null)
             {
                 // FABRIC-C1a: which agent made each call to the connector, and each subagent's start and stop, appended to the
@@ -121,12 +125,14 @@ public sealed class ClaudeRules : IRuleLanguage
                     ["timeout"] = 10,
                 });
                 before.Add(new JsonObject { ["matcher"] = LineageHook.Matcher, ["hooks"] = Lineage() });
+                if (asking is not null) before.Add(asking);
                 hooks["PreToolUse"] = before;
                 hooks["SubagentStart"] = new JsonArray(new JsonObject { ["hooks"] = Lineage() });
                 hooks["SubagentStop"] = new JsonArray(new JsonObject { ["hooks"] = Lineage() });
             }
             else
             {
+                if (asking is not null) before.Add(asking);
                 hooks["PreToolUse"] = before;
             }
 

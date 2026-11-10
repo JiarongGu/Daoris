@@ -35,22 +35,6 @@ public sealed class HelpDeleteProposals : IHelpProposalKind
     // A session's delete belongs to this kind, not the `session` kind.
     public IReadOnlyList<string> Doors { get; } = ["quest", "ask", "session"];
 
-    /// <summary>The quest, the ask or the session it names by id, filed under the workspace its record says.</summary>
-    HelpNames IHelpProposalKind.Named(HelpProposal proposal, HelpMachineFacts facts)
-    {
-        var id = proposal.Target?.Trim().TrimStart('#') ?? "";
-        return new([proposal.Workspace], [proposal.Repository])
-        {
-            Records = proposal.Door switch
-            {
-                "quest" => HelpNames.OfQuest(facts, id),
-                "ask" => HelpNames.OfAsk(facts, id),
-                "session" => HelpNames.OfSession(facts, id),
-                _ => [],
-            },
-        };
-    }
-
     public HelpPlan Plan(HelpProposal proposal, DriverConfig config, HelpMachineFacts facts)
     {
         var id = proposal.Target?.Trim().TrimStart('#') ?? "";
@@ -197,10 +181,7 @@ public sealed class HelpDeleteProposals : IHelpProposalKind
 
 /// <summary>A quest as the service answered it, with its own reading of whether it may be deleted.</summary>
 /// <param name="Status">`Open`, `Taken`, `Done` or `Declined`, as the service spells it.</param>
-/// <param name="Workspace">
-/// The circle it is held in, as the service answered it, the default where a host answers none: what a conversation bound to
-/// one workspace judges a proposal naming it by.
-/// </param>
+/// <param name="Workspace">The circle it is held in, as the service answered it, the default where a host answers none.</param>
 public sealed record HelpQuestFacts(string Id, string Title, string To, string Status, bool Deletable, string Workspace = RemoteTarget.DefaultWorkspace);
 
 /// <summary>An ask as the service answered it, with the quests it became and whether it may be deleted.</summary>

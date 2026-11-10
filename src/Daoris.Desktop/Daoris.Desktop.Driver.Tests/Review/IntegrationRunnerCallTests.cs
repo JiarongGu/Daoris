@@ -16,7 +16,7 @@ public sealed class IntegrationRunnerCallTests
 
     private static readonly KeyValuePair<string, string>[] Installed =
     [
-        new("PATH", "X:/daoris/bin"), new("SystemRoot", "X:/windows"), new("DAORIS_HOME", "X:/daoris/home"), new("DAORIS_ROLE_KEY", "secret"),
+        new("PATH", "X:/daoris/bin"), new("SystemRoot", "X:/windows"), new("DAORIS_HOME", "X:/daoris/home"), new("DAORIS_ROLE_KEY", "secret"), new("DAORIS_DELEGATE_KEY", "secret"),
         new("daoris_session_id", "s-1"), new("GIT_DIR", "X:/daoris/other/.git"), new("MERGE_BRANCH_FULL", "1"), new("NODE_OPTIONS", "--trace"),
         new("KEEP_ME", "kept"), new("DAORIS_VERIFY_COMMIT", "an earlier call's"),
     ];
@@ -96,6 +96,7 @@ public sealed class IntegrationRunnerCallTests
         Assert.Equal("--trace", environment["NODE_OPTIONS"]);
         Assert.False(environment.ContainsKey("DAORIS_HOME"));
         Assert.False(environment.ContainsKey("DAORIS_ROLE_KEY"));
+        Assert.False(environment.ContainsKey("DAORIS_DELEGATE_KEY"));
         Assert.False(Environment(Ask("probe")).ContainsKey("DAORIS_ADMISSION_HOLD"));
     }
 

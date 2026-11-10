@@ -19,12 +19,6 @@ public sealed class EntryAccepts(ServiceClient service, string home, SessionTree
         return [.. entry.Parts.Where(part => offering.Contains(part.Session))];
     }
 
-    /// <summary>
-    /// The part a session's own Accept is named for: its entry's first, the records
-    /// sharing its key oldest first by <c>created</c> then id, as <see cref="SessionEntries.Read"/> orders an entry's parts. Null where
-    /// the session has no record here or is its entry's only part: it lands alone.
-    /// </summary>
-    public static SessionRecord? EntryLead(IReadOnlyList<SessionRecord> records, string session) => EntryLandings.LeadOf(records, session);
 
     /// <summary>An ask's own entries: one per repository, by its name, never its intake.</summary>
     public static IReadOnlyList<SessionEntry> EntriesOf(string ask, IReadOnlyList<SessionEntry> entries) =>

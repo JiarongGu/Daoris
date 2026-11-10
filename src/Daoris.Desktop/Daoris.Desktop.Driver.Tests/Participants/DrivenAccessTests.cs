@@ -43,11 +43,11 @@ public sealed class DrivenAccessTests : IDisposable
     [InlineData("claude-code", AccessRules.Auto, null, null)]
     [InlineData("claude-code", AccessRules.Asking, null, "default")]
     [InlineData("claude-code", AccessRules.Unrestricted, null, "bypassPermissions")]
-    [InlineData("claude-code-acp", AccessRules.Auto, null, null)]
+    [InlineData("claude-code-acp", AccessRules.Auto, "?auto|acceptEdits", null)]
     // AUTONOMY1b3a: the asking mode's posture is marked too, so the protocol door holds each request for the person.
     [InlineData("claude-code-acp", AccessRules.Asking, "!?default", null)]
     [InlineData("claude-code-acp", AccessRules.Unrestricted, "!bypassPermissions", null)]
-    [InlineData("codex-acp", AccessRules.Auto, null, null)]
+    [InlineData("codex-acp", AccessRules.Auto, "?agent", null)]
     // Codex's asking mode is the one whose boundary is the session's own tree, edits inside it unasked, anything past it asked.
     [InlineData("codex-acp", AccessRules.Asking, "!?workspace-write", null)]
     [InlineData("codex-acp", AccessRules.Unrestricted, "!agent-full-access", null)]
@@ -113,7 +113,7 @@ public sealed class DrivenAccessTests : IDisposable
 
         var asking = DrivenAccess.For(Permissions(AccessRules.Asking), "engine", Adapter("claude-code")).Said;
         Assert.Contains("`default`", asking);
-        Assert.Contains("only what its rules allow", asking);
+        Assert.Contains("through Daoris's hook", asking);
         Assert.Contains("refused", asking);
 
         var codex = DrivenAccess.For(Permissions(AccessRules.Unrestricted), "engine", Adapter("codex-acp")).Said;
@@ -127,10 +127,10 @@ public sealed class DrivenAccessTests : IDisposable
 
     /// <summary>
     /// Under asking, the protocol door holds each request for the person to allow once or refuse, and one
-    /// nobody answers is refused at its bound; the native door has no wire to hold one on, and says so plainly.
+    /// nobody answers is refused at its bound; the native door, with no wire to hold one on, asks through Daoris's hook alike.
     /// </summary>
     [Fact]
-    public void Asking_says_the_protocol_door_holds_each_request_for_the_person_and_the_native_door_cannot()
+    public void Asking_says_each_door_holds_each_request_for_the_person()
     {
         var acp = DrivenAccess.For(Permissions(AccessRules.Asking), "engine", Adapter("claude-code-acp")).Said;
         Assert.Contains("waits for the person", acp);
@@ -143,8 +143,9 @@ public sealed class DrivenAccessTests : IDisposable
         Assert.DoesNotContain("refuses every", codex);
 
         var native = DrivenAccess.For(Permissions(AccessRules.Asking), "engine", Adapter("claude-code")).Said;
-        Assert.Contains("cannot hold", native);
-        Assert.Contains("only what its rules allow", native);
+        Assert.Contains("waits for the person", native);
+        Assert.Contains("through Daoris", native);
+        Assert.DoesNotContain("cannot hold", native);
         Assert.DoesNotContain('\n', acp + codex + native);
     }
 

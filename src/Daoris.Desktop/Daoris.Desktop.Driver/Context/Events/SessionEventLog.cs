@@ -175,6 +175,23 @@ public sealed class SessionEvents(string directory) : IWorkplaceEventHistory
     }
 
     /// <summary>
+    /// The brief each of these sessions' starts is given (<see cref="StartBrief"/>), bounded and with its cut said: the first
+    /// event of the part that continues another. Machine-local as <see cref="Openings"/> is; a session whose start carried none has none.
+    /// </summary>
+    public IReadOnlyDictionary<string, string> Briefs(IEnumerable<string> sessionIds)
+    {
+        var briefs = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+        foreach (var id in sessionIds.Distinct(StringComparer.OrdinalIgnoreCase))
+        {
+            if (!SessionEventText.IsId(id)) continue;
+            var brief = Lines(Path.Combine(directory, $"{id}.events.jsonl")).Select(StartBrief.Of).FirstOrDefault(said => said is not null);
+            if (brief is not null) briefs[id] = brief;
+        }
+
+        return briefs;
+    }
+
+    /// <summary>
     /// What the person first said in a session, whole: the request a conversation handed to another agent is told
     /// of. Null where the person said none (a driven session's composed target is not them), no record, or an id that is not one.
     /// </summary>

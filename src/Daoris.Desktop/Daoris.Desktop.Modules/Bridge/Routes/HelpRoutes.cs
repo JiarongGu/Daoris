@@ -304,7 +304,7 @@ public sealed class HelpRoutes(DriverContext context)
         var service = _loop.Service ?? throw NotReady();
         var proposal = HelpProposals.Find(_loop.Home, id)
             ?? throw new DriverException($"there is no proposal `#{id}` on this machine.");
-        if (proposal.State != "proposed") throw new DriverException($"proposal `#{id}` is already {proposal.State}.");
+        if (proposal.State != "proposed") return AppliedAgain(proposal);
         // The card's revision: without one there is no card this Apply stands for.
         var shown = press.Revision;
         if (string.IsNullOrEmpty(shown)) throw new DriverException($"proposal `#{id}` was pressed with no card to stand for; its revision is missing, so it is drawn again.");
@@ -314,7 +314,7 @@ public sealed class HelpRoutes(DriverContext context)
             ?? throw new DriverException($"proposal `#{id}` is being applied already, from another window.");
         // The winner may have settled it between the read above and the claim.
         proposal = HelpProposals.Find(_loop.Home, id) ?? proposal;
-        if (proposal.State != "proposed") throw new DriverException($"proposal `#{id}` is already {proposal.State}.");
+        if (proposal.State != "proposed") return AppliedAgain(proposal);
         // the editor's press on a draft card names each change it took into the draft and each it left.
         proposal = proposal with { Taken = press.Taken, Left = press.Left };
 
@@ -349,6 +349,13 @@ public sealed class HelpRoutes(DriverContext context)
         if (proposal.Kind is "ask" or "delete" or "session" or "pause" or "clear") _loop.Nudge();
 
         return ApplyAnswer(proposal, applied);
+    }
+
+    /// <summary>A press on a card already settled: answered with what its first press came to, and logged with its reason.</summary>
+    private object AppliedAgain(HelpProposal proposal)
+    {
+        _loop.Log?.Write("info", HelpAppliedAgain.Event, HelpAppliedAgain.Line(proposal));
+        return ApplyAnswer(proposal, HelpAppliedAgain.Answer(_loop.Home, proposal));
     }
 
     /// <summary>What an Apply's plan acts on (<see cref="HelpProposals.Owned"/>), as the owner's mark names it.</summary>

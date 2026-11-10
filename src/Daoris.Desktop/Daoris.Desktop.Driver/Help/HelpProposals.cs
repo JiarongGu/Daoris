@@ -186,9 +186,8 @@ public sealed record HelpMachineFacts(
     // Every kind's.
 
     /// <summary>
-    /// The workspace the conversation that proposed it is bound to, read from its record
-    /// (<see cref="HelpCircle.OfRecord"/>): a proposal naming another workspace, a repository of another, or every workspace at once
-    /// is refused before its kind judges it (<see cref="HelpProposalScope"/>). Null for <c>default</c>'s room, the whole machine.
+    /// The workspace the conversation that proposed it belongs to, read from its record (<see cref="HelpCircle.OfRecord"/>): the
+    /// focus of what a list shows first, no limit on what a proposal names. Null for <c>default</c>'s room, the whole machine.
     /// </summary>
     public string? Circle { get; init; }
 
@@ -423,11 +422,6 @@ public sealed record HelpPlan(string? Refusal, string Describe, string Terminal,
     /// <summary>What an approval or a withdrawal names, every tool; null for every other plan.</summary>
     public HelpGrantView? Grant { get; init; }
 
-    // The repository kind's.
-
-    /// <summary>For a move the route takes: what moves, and where to; null for every other kind.</summary>
-    public HelpRepositoryMove? Move { get; init; }
-
     // The role kind's.
 
     /// <summary>For a role change the judge takes: the change, its choices and the revision read; null for every other kind.</summary>
@@ -487,7 +481,7 @@ public sealed record HelpApplied(bool Applied, string Told)
 /// <remarks>Each kind's file declares the doors its Apply goes through as its own interface, gathered here.</remarks>
 public interface IHelpDoors :
     IHelpAccountDoors, IHelpAgentDoors, IHelpAskDoors, IHelpBrowserDoors, IHelpClearDoors,
-    IHelpDeleteDoors, IHelpPauseDoors, IHelpPluginDoors, IHelpRepositoryDoors, IHelpSessionDoors,
+    IHelpDeleteDoors, IHelpPauseDoors, IHelpPluginDoors, IHelpSessionDoors,
     IHelpSettingDoors, IHelpSyncDoors
 {
 }
@@ -638,16 +632,11 @@ public static class HelpProposals
     /// <summary>The doors <paramref name="kind"/> takes, as its file spells them; none for a kind none judges. What the owner's census sweep reads.</summary>
     public static IReadOnlyList<string> DoorsOf(string kind) => HelpProposalKinds.Find(kind)?.Doors ?? [];
 
-    /// <summary>
-    /// Judge a proposal with the route's own code, against the machine as it stands: first against the workspace its conversation is
-    /// bound to (<see cref="HelpProposalScope"/>), then by its kind.
-    /// </summary>
+    /// <summary>Judge a proposal with the route's own code, against the machine as it stands, by its kind; the workspace it names is its kind's to judge.</summary>
     public static HelpPlan Plan(HelpProposal proposal, DriverConfig config, HelpMachineFacts facts) =>
         HelpProposalKinds.Find(proposal.Kind) is not { } kind
             ? new HelpPlan(Unknown(proposal.Kind), "", "", null)
-            : HelpProposalScope.Refusal(kind.Named(proposal, facts), facts) is { } outside
-                ? new HelpPlan(outside, "", "", null)
-                : kind.Plan(proposal, config, facts);
+            : kind.Plan(proposal, config, facts);
 
     /// <summary>
     /// A card drawn for the person: <c>HELP_PROPOSALS</c> calls this for each proposal it shows, with the plan it

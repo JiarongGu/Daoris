@@ -37,7 +37,7 @@ one job each, checked by `verify`.
 | Connector host | `Mcp/Program.cs`, `Mcp/KnowledgeServer.cs` | The stdio MCP server; `ToolTypes` is the one list of tool classes |
 | HTTP knowledge reads | `src/Daoris.Contracts/Knowledge/KnowledgeContracts.cs`, the HTTP host's `Routes/KnowledgeRoutes.cs` | Status, protocol, repositories, search (its tier in `x-daoris-tier`), entry, entries and convergence, each declared once as its request record; the driver sends the records, and the page sends them by name with its generated types (`data/api.ts`) |
 | Knowledge tools | `Mcp/KnowledgeSearchTools.cs` | `knowledge_search`, `knowledge_get`, `knowledge_repositories`, `knowledge_convergence`, `registry`, `knowledge_refresh` |
-| Memory tools | `Mcp/MemoryTools.cs` | `memory_search`, `memory_get`, `memory_write`, `memory_end`, `memory_propose` |
+| Memory tools | `Mcp/MemoryTools.cs` | `memory_search`, `memory_get`, `memory_write`, `memory_end`, `memory_propose`; a search across a workspace's repositories gives each a fair share of its ten places, taking turns in repository order with each engine's own order within, since the engines give no score to merge by |
 | `ToolClasses` | `Mcp/ToolClasses.cs` | Each tool's class: read, restricted or publish |
 | `CallTable`, `SessionWorks` | `Mcp/CallTable.cs` (`Refusal` 121-144), `Mcp/RoleFilter.cs` | What each kind of work is served; filters `tools/list` and every call |
 | Call guards | `Mcp/CallLineageFilter.cs`, `ArgumentFilter.cs`, `WaitingFilter.cs` | Lineage proof, missing arguments, the waiting line |
@@ -123,7 +123,8 @@ one job each, checked by `verify`.
     untaken. (from D220)
 25. Every change is a `memory_ops` row: `staged` by its session, released at the session's commit point (a landing's record, or
     a main-tree session's completion), then `ready` or `awaiting`, `applying`, and `applied`, `stale` or `held`; a proposal never applies and ends `answered`, `declined`, `stale` or `dropped`. Nothing staged
-    applies by itself; a stopped session's rows wait for the person's Keep or Drop. (from D220)
+    applies by itself; a stopped session's rows wait for the person's Keep or Drop, and deleting a session drops its staged rows,
+    while its awaiting end or replacement, with no session left, is a wait of its own. (from D220)
 26. An end or a replacement waits for an approver other than its proposer. Until a second opinion may approve, that is the
     person. (from D220)
 27. Only the service applies. A row is marked `applying` in one transaction and settled in another; a keyed receipt settles it

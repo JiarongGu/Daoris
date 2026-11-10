@@ -73,6 +73,7 @@ internal static class DriverStateAnswer
             {
                 Grant(loop, ConfiguredAccess.HousekeepingGrant, access, ConfiguredAccess.HousekeepingBuilt),
                 Grant(loop, ConfiguredAccess.SettingsGrant, access, ConfiguredAccess.SettingsBuilt),
+                new HelpGrantRow(ConfiguredAccess.ActsGrant, access.Acts, ActFamilies.Built, false, false, null),
                 new HelpGrantRow(
                     ConfiguredAccess.CheckoutsGrant, [.. readable.Where(access.Reads)], readable,
                     loop.Chat?.GrantPending(ConfiguredAccess.CheckoutsGrant, access) == true, false, null),

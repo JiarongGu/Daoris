@@ -48,11 +48,13 @@ internal sealed class AllowKind : ISupervisorKind
         }
 
         waiting.AddRange(StewardAllowSubjects.Waiting(loop));
+        waiting.AddRange(PressAllowSubjects.Waiting(loop));
         return waiting;
     }
 
     public async Task<SupervisorDecided> DecideAsync(DriverLoop loop, SupervisorDecideForm form, SupervisorHolder holder, CancellationToken ct) =>
         form.Subject.IsAsk ? await StewardAllowSubjects.DecideAsync(loop, form, holder).ConfigureAwait(false)
+        : form.Subject.IsPress ? PressAllowSubjects.Decide(loop, form, holder)
         : form.Subject.IsProposal ? Widening(loop, form, holder)
         : await HeldAsync(loop, form, holder).ConfigureAwait(false);
 
@@ -68,6 +70,12 @@ internal sealed class AllowKind : ISupervisorKind
             if (loop.Pipe?.StewardAllows.Find(subject.Id) is not { } ask) return null;
             var said = $"the steward asks to make `{ask.Asked.Act}` outside its grants\nplace: {ask.Place.Repository ?? ask.Place.Workspace ?? "the machine"}";
             return new("", [("the steward's act outside its grants: Daoris's own record", said)]);
+        }
+
+        if (subject.IsPress)
+        {
+            if (loop.Pipe?.SessionPresses.Find(subject.Id) is not { } press) return null;
+            return new(press.Session, [("the working session's press asked of the person: Daoris's own record", $"the session presses `{press.Route}`\nplace: {press.Place.Repository ?? "the machine"}")]);
         }
 
         if (subject.IsProposal)
@@ -86,6 +94,7 @@ internal sealed class AllowKind : ISupervisorKind
     public async Task<SupervisorDecided> LeaveAsync(DriverLoop loop, SupervisorLeaveForm form, SupervisorHolder holder, CancellationToken ct)
     {
         if (form.Subject.IsAsk) return StewardAllowSubjects.Leave(loop, form, holder);
+        if (form.Subject.IsPress) return PressAllowSubjects.Leave(loop, form, holder);
         if (!Standing(loop, form.Subject)) return SupervisorDecided.Refused(form.Subject.IsProposal ? SupervisorWhy.Answered : SupervisorWhy.NotHeld);
         // A leave hides the subject from the supervisor that answers it, so only that supervisor's holder may make one.
         RolePlace at;
@@ -120,6 +129,7 @@ internal sealed class AllowKind : ISupervisorKind
     {
         await Task.CompletedTask;
         if (subject.IsAsk) return loop.Pipe?.StewardAllows.Find(subject.Id)?.Place;
+        if (subject.IsPress) return loop.Pipe?.SessionPresses.Find(subject.Id)?.Place;
         if (!subject.IsProposal) return null;
         return RuleProposals.Load(loop.Home).FirstOrDefault(each => each.Id == subject.Id) is { } proposal ? Placed(loop, proposal.Change) : null;
     }

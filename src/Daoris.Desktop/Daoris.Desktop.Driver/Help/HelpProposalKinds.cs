@@ -35,14 +35,6 @@ internal interface IHelpProposalKind
     /// <summary>The fields only this kind carries, read from a file; one the file lacks reads as null.</summary>
     HelpProposal Read(HelpProposal proposal, JsonElement file) => proposal;
 
-    /// <summary>
-    /// The workspaces and repositories it names: what a conversation bound to one workspace may name only of its own,
-    /// judged before <see cref="Plan"/> (<see cref="HelpProposalScope"/>). By default the file's <c>workspace</c> and
-    /// <c>repository</c>; a kind whose target or value names one says so in its file, and one naming a quest, an ask or a session
-    /// by id names that record with its workspace, as the facts its judge reads hold it.
-    /// </summary>
-    HelpNames Named(HelpProposal proposal, HelpMachineFacts facts) => new([proposal.Workspace], [proposal.Repository]);
-
     /// <summary>Judge a proposal with the route's own code, against the machine as it stands.</summary>
     HelpPlan Plan(HelpProposal proposal, DriverConfig config, HelpMachineFacts facts);
 
@@ -91,13 +83,13 @@ internal sealed class HelpApplying(string home, HelpProposal proposal, HelpPlan 
     {
         if (applied && published is { Names: true }) HelpProposals.KeepPublished(home, proposal, published);
         HelpProposals.Settle(home, proposal.Id, applied ? "applied" : "refused", note);
+        HelpAppliedAgain.Keep(home, proposal.Id, told);
         return new HelpApplied(applied, told);
     }
 }
 
 /// <summary>
-/// The kinds Ask Daoris proposes, one line each, in the order the room allows their tools. A new kind
-/// is a file under <c>Help/Proposals/</c> and a line here.
+/// The kinds Ask Daoris still proposes, one line each, in the order the room allows their tools.
 /// </summary>
 internal static class HelpProposalKinds
 {
@@ -112,7 +104,6 @@ internal static class HelpProposalKinds
         new HelpPluginProposals(),
         new HelpBrowserProposals(),
         new HelpSyncProposals(),
-        new HelpRepositoryProposals(),
         new HelpSessionProposals(),
         new HelpPauseProposals(),
         new HelpClearProposals(),

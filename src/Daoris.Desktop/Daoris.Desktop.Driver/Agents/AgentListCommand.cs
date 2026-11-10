@@ -124,7 +124,7 @@ internal static class AgentListCommand
         var kept = new HarnessReport(name, true, null, null, null, null,
             [.. reads.Accounts.Select(read => new ProfileReport(read.Key, "", read.Value.Login, Read: read.Value.At))]);
         var report = await HarnessProbe.ProbeAsync(
-            name, toolchain, command: null, settings, home, ct, accountOf: owner, prior: kept, again: again,
+            name, toolchain, command: AgentsCommand.ConfiguredCommand(home, name), settings, home, ct, accountOf: owner, prior: kept, again: again,
             // A door asks no account: its list is its owner's, said under the owner.
             asks: again && owner == name ? null : _ => false,
             clock: () => now,
@@ -178,7 +178,6 @@ internal static class AgentListCommand
         var col = Math.Max(16, report.Profiles.Select(profile => Shown(profile.Name).Length).DefaultIfEmpty(0).Max());
         var gap = new string(' ', col);
         var cooling = AccountCooling.Read(home, now);
-        CoolingEntry? CoolingOf(string? account) => cooling.FirstOrDefault(entry => Same(entry.Agent, owner) && Same(entry.Account ?? "", account ?? ""));
 
         // Daoris starts nothing in the tool's own home, so with no account its starts wait for a sign-in.
         if (report.Profiles.Count == 0) lines.Add($"{Under}{NoAccounts(owner)}");
@@ -195,7 +194,11 @@ internal static class AgentListCommand
                 + (profile.Key is { } handle ? $" API key {handle}" : "")
                 + (marks.Count > 0 ? $" ({string.Join(", ", marks)})" : ""));
 
-            if (CoolingOf(profile.Name) is { } cooled) lines.Add($"{Under}{gap} {AgentAccountsCommand.CoolingLine(cooled, now, zone)}");
+            foreach (var cooled in AgentAccountLines.CoolingLinesOf(cooling, owner, profile.Name, now, zone))
+            {
+                lines.Add($"{Under}{gap} {cooled}");
+            }
+
             // What its agent last said about its windows, and how long ago: a reading, never a judgement.
             if (AccountWindows.SaidOf(home, owner, profile.Name, now) is { } said)
             {
@@ -226,7 +229,7 @@ internal static class AgentListCommand
             lines.Add($"{Under}`daoris agent login {name} --new` signs in to one of Daoris's");
         }
 
-        if (CoolingOf(null) is { } ownCooling) lines.Add($"{Under}its own sign-in: {AgentAccountsCommand.CoolingLine(ownCooling, now, zone)}");
+        foreach (var ownCooling in AgentAccountLines.CoolingLinesOf(cooling, owner, null, now, zone)) lines.Add($"{Under}its own sign-in: {ownCooling}");
 
         // What the fold changed while it is unsaid, until *Got it* on the agent's page marks it said.
         string[] unsaid = [.. (settings.Pooled.GetValueOrDefault(owner) ?? []).Where(receipt => !receipt.Said).SelectMany(receipt => PoolLines(receipt, Shown))];

@@ -82,6 +82,8 @@ public interface IPipeGroundWorld
     /// </summary>
     Task<string?> RegistrationAsync(string name, CancellationToken cancellationToken);
 
+    Task<IReadOnlyList<PipeRegistered>> RegistryAsync(CancellationToken cancellationToken);
+
     /// <summary>A quest's status by its id; null where the service has none.</summary>
     Task<string?> QuestAsync(string id, CancellationToken cancellationToken);
 
@@ -401,7 +403,7 @@ public sealed class LoopGround(PipeGroundKind kind, string what, IReadOnlyList<s
 
     /// <summary>The files <see cref="IPipeGroundWorld.FingerprintAsync"/> reads.</summary>
     public static readonly IReadOnlyList<string> Files =
-        ["plugin-folder", "plugin-new", "plugin-try", "plugin-offer", "plugin-update", "tree", "attachments", "file", "declaration", "notices", "workflow-file"];
+        ["plugin-folder", "plugin-new", "plugin-try", "plugin-offer", "plugin-update", "tree", "attachments", "file", "import-folder", "declaration", "notices", "workflow-file"];
 
     /// <summary>A wait the loop holds, by the payload's <paramref name="fields"/>.</summary>
     public static LoopGround Wait(string wait, params string[] fields) => new(PipeGroundKind.Wait, wait, fields);

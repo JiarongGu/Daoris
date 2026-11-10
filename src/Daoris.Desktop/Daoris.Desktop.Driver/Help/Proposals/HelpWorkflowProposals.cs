@@ -50,10 +50,6 @@ internal sealed class HelpWorkflowProposals : IHelpProposalKind
 
     private const string Drafts = "draft";
 
-    /// <summary>Its scope is one word, a repository's name or a workspace's, which its judge finds which of.</summary>
-    public HelpNames Named(HelpProposal proposal, HelpMachineFacts facts) =>
-        new([proposal.Workspace], [proposal.Repository]) { Either = [proposal.Scope] };
-
     public HelpProposal Read(HelpProposal proposal, JsonElement file)
     {
         if (file.ValueKind != JsonValueKind.Object) return proposal;

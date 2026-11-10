@@ -7,12 +7,11 @@ namespace Daoris.Knowledge.Mcp;
 /// <summary>
 /// One quest's handback, read whole: the note its session closed it with through <c>quest_respond</c>, by the quest's id
 /// or the id of the session that served it, in any state, from this session's workspace as <c>quest_list</c> scopes it. The steward
-/// that archives a closed row reads its handback here rather than in the whole list, and another session of the workspace reads what
-/// a sibling did. Read-only; the words are <see cref="HandbackReader"/>'s, which every door answers.
-/// </summary>
+/// that archives a closed row reads its handback here, and another session reads what a sibling did. Read-only; the words are
+/// <see cref="HandbackReader"/>'s, which every door answers.</summary>
 /// <param name="quests">Where the quest and its history are read.</param>
 /// <param name="circle">Which workspace the read answers from.</param>
-/// <param name="ledger">Where a session's record is read, for an id that names a session.</param>
+/// <param name="ledger">Where a session's record is read, for a session's id.</param>
 [McpServerToolType]
 public sealed class HandbackTools(QuestStore quests, WorkspaceScope circle, SessionLedger? ledger = null)
 {
@@ -28,7 +27,6 @@ public sealed class HandbackTools(QuestStore quests, WorkspaceScope circle, Sess
         [Description(WorkspaceArgument)] string? workspace = null,
         CancellationToken ct = default)
     {
-        if (circle.Refused(workspace) is { } outside) return outside;
         var scope = await circle.ResolveAsync(workspace, ct).ConfigureAwait(false);
         return (await new HandbackReader(quests, ledger).ReadAsync(id, scope, ct).ConfigureAwait(false)).Said;
     }

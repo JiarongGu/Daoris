@@ -12,16 +12,14 @@ namespace Daoris.Driver;
 /// <para><b>Judged at every call, whatever the agent</b>: the record named is an Ask Daoris conversation's;
 /// the operation is chosen in <see cref="ConfiguredAccess"/>, so a revoke refuses the next call, and handed at this start
 /// (its newest receipt, <see cref="HelpWired"/>), so a grant chosen since takes the next start as its room and allow-list do, which
-/// the conversation's next turn is (<see cref="ChatRunner.HelpAccessChosen"/>); the
-/// repository is registered in the conversation's workspace, read from its record (<see cref="HelpCircle.OfRecord"/>), and has a
-/// checkout here. Targets are a repository and branch names, never a path.</para>
+/// the conversation's next turn is (<see cref="ChatRunner.HelpAccessChosen"/>); the repository is registered, in any workspace,
+/// and has a checkout here. Targets are a repository and branch names, never a path.</para>
 ///
 /// <para><b>The judges, as the person's doors call them</b>: a look is the cleanup's git half (<see cref="SessionTrees.SweepPartAsync"/>),
 /// which asks no plugin, since a tool's call is no person's look; a clean-up is the cleanup's press with the branches
 /// named (<see cref="SessionTrees.CleanAsync"/>), each judged again before it goes; a discard is the branch's own, unforced
 /// (<see cref="SessionBranchDiscard.DiscardAsync"/>), which keeps a branch whose tree a running or waiting session holds. Nothing
-/// is forced, and no recovery ref is dropped.</para>
-/// </remarks>
+/// is forced, and no recovery ref is dropped.</para></remarks>
 /// <param name="service">The loop's service once it answers; null before, when every request is refused saying so.</param>
 public sealed partial class HelpHousekeeping(string home, Func<ServiceClient?> service)
 {
@@ -70,8 +68,8 @@ public sealed partial class HelpHousekeeping(string home, Func<ServiceClient?> s
             return await InspectAsync(mine, ledger, circle, ct).ConfigureAwait(false);
         }
 
-        if (Place(operation, request.Repository, registry, circle) is { Refusal: { } refused }) return refused;
-        var row = Place(operation, request.Repository, registry, circle).Row!;
+        if (Place(operation, request.Repository, registry) is { Refusal: { } refused }) return refused;
+        var row = Place(operation, request.Repository, registry).Row!;
         if (operation == ConfiguredAccess.Inspect) return await InspectAsync([row], ledger, circle, ct).ConfigureAwait(false);
 
         var names = request.Branches.Where(name => !string.IsNullOrWhiteSpace(name)).Select(name => name.Trim()).Distinct(StringComparer.Ordinal).ToList();
@@ -85,8 +83,8 @@ public sealed partial class HelpHousekeeping(string home, Func<ServiceClient?> s
             : await DiscardAsync(row, names, ledger, ct).ConfigureAwait(false);
     }
 
-    /// <summary>The registry's row a request names, or the refusal: none named, none registered, another workspace's, no checkout here.</summary>
-    private static (RepoView? Row, HousekeepingAnswer? Refusal) Place(string operation, string? repository, IReadOnlyList<RepoView> registry, string? circle)
+    /// <summary>The registry's row a request names, in any workspace, or the refusal: none named, none registered, no checkout here.</summary>
+    private static (RepoView? Row, HousekeepingAnswer? Refusal) Place(string operation, string? repository, IReadOnlyList<RepoView> registry)
     {
         if (string.IsNullOrWhiteSpace(repository))
         {
@@ -99,19 +97,13 @@ public sealed partial class HelpHousekeeping(string home, Func<ServiceClient?> s
             return (null, HousekeepingAnswer.Refused(operation, HousekeepingAnswer.Unknown, $"`{repository.Trim()}` is no repository registered here."));
         }
 
-        if (named.FirstOrDefault(row => Within(row.Workspace, circle)) is not { } row)
-        {
-            return (null, HousekeepingAnswer.Refused(operation, HousekeepingAnswer.Outside,
-                $"This conversation is workspace `{circle}`'s, and `{named[0].Repository}` is a repository of another workspace: its housekeeping "
-                + "is done from a conversation started from a window on that workspace."));
-        }
-
+        var row = named[0];
         return string.IsNullOrWhiteSpace(row.Root) || !Directory.Exists(row.Root)
             ? (null, HousekeepingAnswer.Refused(operation, HousekeepingAnswer.NoCheckout, $"`{row.Repository}` has no checkout on this machine, so it has no branches of Daoris's here."))
             : (row, null);
     }
 
-    /// <summary>Whether a registration's workspace is the conversation's; every one where it has none (<c>default</c>'s room, the whole machine).</summary>
+    /// <summary>Whether a registration's workspace is the conversation's, which an unnamed inspect lists first; every one where it has none (<c>default</c>'s room, the whole machine).</summary>
     private static bool Within(string? workspace, string? circle) =>
         circle is not { Length: > 0 }
         || string.Equals(RemoteTarget.Workspace(workspace), RemoteTarget.Workspace(circle), StringComparison.OrdinalIgnoreCase);

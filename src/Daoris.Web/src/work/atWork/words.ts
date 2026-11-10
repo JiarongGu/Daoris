@@ -72,10 +72,7 @@ export function waitingOnLine(t: TFunction, exchanges: readonly AtWorkExchange[]
   return t('work.atWork.waitingOn', { what: what.join('; ') });
 }
 
-/**
- * How a part joined, by what its record and quest say; the strip's own words where it only began
- * (retried, resumed, carried on, handed over, moved). Null for a part that simply opened.
- */
+/** How a part joined, by what its record and quest say, else the strip's own words; null for a part that simply opened. */
 export function joinedLine(t: TFunction, joined: AtWorkJoined): string | null {
   const part = (n: number | undefined) => (n === undefined ? t('work.atWork.routed.anotherSession') : t('work.parts.number', { n }));
   const quest = joined.quest ?? '';

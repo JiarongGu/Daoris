@@ -28,6 +28,9 @@ public sealed record StandingNow(IReadOnlyList<RoleHoldNow> Holds, IReadOnlyList
     public IReadOnlyList<DeskRequestNow> StewardDesk { get; init; } = [];
 
     public IReadOnlyList<StewardLandNow> StewardLands { get; init; } = [];
+
+    /// <summary>The presses Ask Daoris made in full access this run, newest first, from memory alone: the line's second group.</summary>
+    public IReadOnlyList<HelpPressNow> HelpPresses { get; init; } = [];
 }
 
 /// <summary>
@@ -148,6 +151,7 @@ public sealed class StandingConfirmation : IDecisionAdmission
         Log = log ?? MachineLog.None;
         Caller = caller ?? new StandingCaller();
         Clock = clock ?? TimeProvider.System;
+        HelpPresses = new HelpPressRecord(Clock);
         Walk = walk ?? HolderWalk.System;
         RunStarted = Clock.GetUtcNow();
         DeskCaller = desk ?? (Caller is StandingCaller jobs ? Desktop.DeskCaller.System(jobs) : new DeskCaller(_ => null, new SystemProcesses(), Clock, Environment.ProcessId));
@@ -199,6 +203,9 @@ public sealed class StandingConfirmation : IDecisionAdmission
     internal SupervisorFound Supervising(string kind, RolePlace place) => SupervisorResolution.Find(SlotsNow(), kind, place, Wider());
 
     internal RolePlace Placed(string repository) => new(Wider().WorkspaceOf.GetValueOrDefault(repository), repository);
+
+    /// <summary>What Ask Daoris pressed this run in full access, with no card: the window's list of it.</summary>
+    public HelpPressRecord HelpPresses { get; }
 
     /// <summary>The steward's desk: the requests, which grant nothing.</summary>
     public StewardDesk Desk { get; }
@@ -261,6 +268,7 @@ public sealed class StandingConfirmation : IDecisionAdmission
             {
                 StewardActs = stewardActs,
                 StewardDesk = Desk.Now(),
+                HelpPresses = HelpPresses.Now(),
             };
         }
     }
