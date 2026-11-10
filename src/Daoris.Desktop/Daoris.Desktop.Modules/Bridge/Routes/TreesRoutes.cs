@@ -327,8 +327,6 @@ public sealed class TreesRoutes(DriverLoop loop, ReadLeaves reads, LandPresses p
         Carried = carried is null ? null : new { carried.Carries, carried.Awaiting },
     };
 
-    /// <summary>The part a session's own Accept is named for: the library's, <see cref="EntryAccepts.EntryLead"/>.</summary>
-    public static SessionRecord? EntryLead(IReadOnlyList<SessionRecord> records, string session) => EntryAccepts.EntryLead(records, session);
 
     /// <summary>A landing's left-out commits on the wire: short id, subject, why, and the line's commit with its patch.</summary>
     public static object[]? LeftOut(IReadOnlyList<LeftOutCommit>? leftOut) => leftOut?
