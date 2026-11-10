@@ -42,7 +42,7 @@ export type HelpProposal = {
   /** A digest of the plan the card shows: the Apply sends it back, and the host applies only a plan still that one. */
   revision?: string;
   /** A change of the role catalogue (`role`) is the generic card: its sentence, its `daoris role` command, Apply. */
-  kind: 'ask' | 'agent' | 'go' | 'plugin' | 'browser' | 'sync' | 'clear' | 'workflow' | 'setup' | 'role';
+  kind: 'ask' | 'go' | 'plugin' | 'browser' | 'sync' | 'clear' | 'workflow' | 'setup' | 'role';
   describe: string;
   terminal: string;
   why: string;

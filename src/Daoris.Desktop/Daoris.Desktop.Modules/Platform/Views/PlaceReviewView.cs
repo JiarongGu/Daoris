@@ -37,38 +37,68 @@ public sealed class PlaceReviewView : IPressView
             return PressViewed.Refused(refused.Message);
         }
 
-        var notes = new List<string>();
+        var notes = new List<PressSaid>();
         if (edit.Put is { Procedure: { } procedure })
         {
             if (!scoped.Circle)
             {
                 var root = machine.Facts.Registered.FirstOrDefault(each => string.Equals(each.Repository, scoped.Repository, StringComparison.OrdinalIgnoreCase)).Root;
-                if (root is not { Length: > 0 })
-                {
-                    notes.Add($"Not checked: `{scoped.Repository}` has no checkout on this machine; a set-up step sits until its tree holds `{procedure}`.");
-                }
+                if (root is not { Length: > 0 }) notes.Add(new PressSaid("review-unchecked", ("repository", scoped.Repository!), ("procedure", procedure)));
                 else if (!ReviewRules.Holds(root, procedure)) return PressViewed.Refused(ReviewRules.NotHeld(scoped.Repository!, procedure));
-                else notes.Add($"`{procedure}` is in `{scoped.Repository}`'s checkout here.");
+                else notes.Add(new PressSaid("review-held", ("repository", scoped.Repository!), ("procedure", procedure)));
             }
-            else notes.AddRange(ReviewRules.Lacking(machine.Facts.Registered, edit, procedure).Select(lacking => ReviewRules.SitsUntil(lacking, procedure)));
+            else notes.AddRange(ReviewRules.Lacking(machine.Facts.Registered, edit, procedure)
+                .Select(lacking => new PressSaid("review-sits-until", ("repository", lacking), ("procedure", procedure))));
         }
 
-        var whose = scoped.Circle ? $"each repository of workspace `{scoped.Workspace}` that sets none of its own" : $"`{scoped.Repository}`";
-        var head = edit.Clear
-            ? scoped.Circle
-                ? $"Clears workspace `{scoped.Workspace}`'s review rule: each repository there keeps its own, else none."
-                : $"Clears `{scoped.Repository}`'s review rule: it takes its workspace's again, else none."
-            : edit.None ? $"Declares that `{scoped.Repository}` has no review environment, whatever its workspace says."
-            : edit.Drop is not null ? $"Stops declaring `{edit.Drop}` for {whose}."
-            : edit.Put is null ? $"Makes {(scoped.Circle ? $"workspace `{scoped.Workspace}`'s" : $"`{scoped.Repository}`'s")} review rule {(edit.Required == true ? "required" : "not required")}."
-            : $"Declares the review environment `{edit.Put.Name}` for {whose}.";
-        var map = scoped.Circle ? after.WorkspaceReviews : after.Reviews;
-        List<string> said = map.TryGetValue((scoped.Circle ? scoped.Workspace : scoped.Repository)!, out var standing)
-            ? [.. ReviewRules.Says(standing), .. ReviewRules.Gate(standing)]
-            : [];
+        var prefix = scoped.Circle ? "review-workspace-" : "review-";
         var facts = scoped.Facts();
-        facts["describe"] = string.Join(" ", [head, .. said, .. notes]);
-        return PressViewed.Shown(new PressView("review", facts, $"daoris place review {scoped.Words} {Words(edit)}"));
+        string kind;
+        if (edit.Clear) kind = prefix + "clear";
+        else if (edit.None) kind = "review-none";
+        else if (edit.Drop is not null)
+        {
+            kind = prefix + "drop";
+            facts["environment"] = edit.Drop;
+        }
+        else if (edit.Put is null) kind = prefix + (edit.Required == true ? "required" : "not-required");
+        else
+        {
+            kind = prefix + "declare";
+            facts["environment"] = edit.Put.Name ?? "";
+        }
+
+        var map = scoped.Circle ? after.WorkspaceReviews : after.Reviews;
+        var also = map.TryGetValue((scoped.Circle ? scoped.Workspace : scoped.Repository)!, out var standing) ? Said(standing) : [];
+        return PressViewed.Shown(new PressView(kind, facts, $"daoris place review {scoped.Words} {Words(edit)}", [.. also, .. notes]));
+    }
+
+    private static List<PressSaid> Said(ReviewRule rule)
+    {
+        if (rule.IsNone) return [new PressSaid("review-none-here")];
+        var names = rule.Environments.Select(each => each.Name).ToList();
+        var said = new List<PressSaid>();
+        if (rule.Required)
+        {
+            said.Add(new PressSaid("review-shown-required", ("environment", names[0])));
+            if (names.Count > 1) said.Add(new PressSaid("review-instead", ("environments", string.Join(", ", names.Skip(1)))));
+        }
+        else said.Add(new PressSaid("review-optional", ("environments", string.Join(", ", names))));
+
+        foreach (var environment in rule.Environments)
+        {
+            if (environment.Kind != "local")
+            {
+                said.Add(new PressSaid("review-procedure", ("environment", environment.Name), ("procedure", environment.Procedure)));
+                continue;
+            }
+
+            said.Add(new PressSaid("review-local", ("address", environment.Address ?? "")));
+            if (environment.Run is { } run) said.Add(new PressSaid("review-local-run", ("run", run)));
+        }
+
+        said.Add(new PressSaid("review-waiting"));
+        return said;
     }
 
     private static string Words(ReviewEdit edit)

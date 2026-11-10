@@ -23,7 +23,6 @@ public sealed partial class HelpProposalKindsTests
     private static readonly (string Kind, string Tool)[] Table =
     [
         ("ask", "ask_propose"),
-        ("agent", "agent_propose"),
         ("go", "go_propose"),
         ("plugin", "plugin_propose"),
         ("browser", "browser_propose"),
@@ -122,7 +121,7 @@ public sealed partial class HelpProposalKindsTests
 
     /// <summary>
     /// Each kind's doors, which Ask Daoris's coverage is held against, are doors its twin writes: each
-    /// spelled in the service's writer of that kind, and the agent's, a list on both sides, the same list.
+    /// spelled in the service's writer of that kind.
     /// </summary>
     [Fact]
     public void Every_kinds_doors_are_the_ones_its_twin_writes()
@@ -136,13 +135,6 @@ public sealed partial class HelpProposalKindsTests
                 Assert.Contains(kind.Kind == "workflow" ? WorkflowDoorsWritten[door] : $"\"{door}\"", writer);
             }
         }
-
-        var agent = ServiceSettingDoors().Match(File.ReadAllText(CoreFile("HelpAgentProposalWriter.cs")));
-        Assert.True(agent.Success, "the service's agent doors are a list, `Doors`.");
-        Assert.Equal(
-            new HelpAgentProposals().Doors,
-            Regex.Matches(agent.Groups[1].Value, "\"([a-z-]+)\"").Select(match => match.Groups[1].Value));
-        Assert.DoesNotContain("default", new HelpAgentProposals().Doors);
     }
 
     /// <summary>The page's card takes exactly the kinds this side judges: the <c>kind</c> of its proposal type.</summary>
@@ -167,7 +159,4 @@ public sealed partial class HelpProposalKindsTests
 
     [GeneratedRegex(@"export type HelpProposal = \{[^}]*?\bkind:\s*([^;]+);", RegexOptions.Singleline)]
     private static partial Regex CardKinds();
-
-    [GeneratedRegex(@"IReadOnlyList<string> Doors\s*=\s*\[([^\]]*)\]")]
-    private static partial Regex ServiceSettingDoors();
 }

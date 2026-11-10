@@ -8,12 +8,11 @@ namespace Daoris.Desktop.Modules.Tests;
 /// <summary>
 /// **Ask Daoris's Apply goes through the screen's own door**: each door the module hands the
 /// driver's <see cref="HelpProposals.ApplyAsync"/> is the code the screen's route runs — the driver's file
-/// as <c>SET_*</c> edits it, an account's settings as <c>SET_AGENT_SETTINGS</c> writes them, an update as
-/// <c>HARNESS_ACTION</c> starts it, and a delete through the local host's own route — never a second path.
+/// as <c>SET_*</c> edits it, an account's settings as <c>SET_AGENT_SETTINGS</c> writes them, and a delete
+/// through the local host's own route — never a second path.
 /// </summary>
 /// <remarks>
-/// 🔴 <b>No real agent runs here.</b> An update runs a stand-in script as the agent's command, and the
-/// service is a stand-in handler that records what it is asked.
+/// 🔴 <b>No real agent runs here.</b> The service is a stand-in handler that records what it is asked.
 /// </remarks>
 [Trait(Category.Name, Category.Process)]
 public sealed class HelpDoorsTests : Bridge
@@ -26,47 +25,6 @@ public sealed class HelpDoorsTests : Bridge
         Module().HelpDoors(null).Change(config => config.WithDrivable("engine", true));
 
         Assert.Contains("engine", DriverConfig.Load(DriverConfigPath).Drivable);
-    }
-
-    /// <summary>
-    /// An update is <c>HARNESS_ACTION</c>'s own start: the agent's updater runs under its own console key,
-    /// its end is the same <c>HARNESS_ENDED</c> news the Agents screen hears, and the conversation hears it too.
-    /// </summary>
-    [Fact]
-    public async Task An_update_runs_the_agents_own_updater_and_its_end_is_heard_by_the_screen_and_the_conversation()
-    {
-        var fake = Path.Combine(Home, "fake-claude.mjs");
-        File.WriteAllText(fake, """
-            const args = process.argv.slice(2).join(' ');
-            if (args === 'update') { console.log('updated to 9.9.10'); process.exit(0); }
-            if (args === 'auth status') { console.log(JSON.stringify({ loggedIn: true })); process.exit(0); }
-            console.log('claude 9.9.9');
-            """);
-        File.WriteAllText(DriverConfigPath, $$"""
-            { "drivable": [], "holds": [], "commands": { "claude-code": ["node", {{JsonSerializer.Serialize(fake)}}] } }
-            """);
-        var ended = new TaskCompletionSource<(int Code, string? Problem)>(TaskCreationOptions.RunContinuationsAsynchronously);
-
-        await Module().HelpDoors(null).StartAgentActionAsync(
-            "claude-code", "update", null, (code, problem) => ended.TrySetResult((code, problem)), CancellationToken.None);
-
-        Assert.Equal((0, (string?)null), await ended.Task.WaitAsync(Poll.Patience));
-        Assert.Contains(Raised, message => message.Type == "HARNESS_ENDED"
-            && JsonSerializer.SerializeToElement(message.Payload).GetProperty("Action").GetString() == "update");
-        Assert.Contains(Raised, message => message.Type == "SESSION_OUTPUT"
-            && JsonSerializer.Serialize(message.Payload).Contains("claude-code:update")
-            && JsonSerializer.Serialize(message.Payload).Contains("updated to 9.9.10"));
-    }
-
-
-    /// <summary>A door with no Update is refused in the words <c>HARNESS_ACTION</c> refuses it with.</summary>
-    [Fact]
-    public async Task An_update_on_a_door_with_none_is_refused_as_the_agents_screens_route_refuses_it()
-    {
-        var refused = await Assert.ThrowsAsync<DriverException>(() =>
-            Module().HelpDoors(null).StartAgentActionAsync("dsh", "update", null, (_, _) => { }, CancellationToken.None));
-
-        Assert.Contains("declares no updater", refused.Message);
     }
 
     /// <summary>

@@ -186,7 +186,6 @@ export type HelpSettled = {
    * workspace Add repository or Import a folder opens filled with (`workspace`), on those two parts alone.
    */
   go?: HelpPlace | null;
-  harnessAction?: { harness: string; action: 'update' | 'pin' } | null;
   /** The card still stands for another press: a sync card's look, which settles nothing. A host without it answers none. */
   stands?: boolean;
   /** The plan is no longer the one the card showed: nothing is applied, `message` says what it is now, and the card stands. */

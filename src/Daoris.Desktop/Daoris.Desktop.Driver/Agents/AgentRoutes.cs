@@ -20,7 +20,7 @@ public static class AgentRoutes
     /// <summary><c>agent settings &lt;agent&gt; model|effort …</c>: an account's own model and effort.</summary>
     public static InstanceRoute Settings { get; } = Person("SET_AGENT_SETTINGS");
 
-    /// <summary><c>agent unpin</c> and <c>agent profile add|remove|default|rename|join</c>: the Agents place's own actions.</summary>
+    /// <summary><c>agent unpin|update|pin</c> and <c>agent profile add|remove|default|rename|join</c>: the Agents place's own actions.</summary>
     public static InstanceRoute Harness { get; } = Person("HARNESS_ACTION");
 
     /// <summary><c>agent profile order|ready|use</c>: the Accounts place's order, <i>Try now</i> and how a list is used.</summary>
@@ -48,11 +48,10 @@ public static class AgentRoutes
             "alone: the key is read from this terminal's standard input, and no press carries a key across the pipe", AgentHome.Wiring),
         ("agent login <agent> [--new|--account <account>] …", null,
             "alone: the agent's own sign-in runs at this terminal, the person answering it; its end is published under the lease", AgentHome.Wiring),
-        ("agent pin <agent> <version> [--workspace <name>]", null,
-            "alone: a maker's release is downloaded here, or npm installs it at this terminal; the pin is published under the lease", AgentHome.Wiring),
-        ("agent update <agent> [--workspace <name>]", null,
-            "alone: a pin's move is a pin, published under the lease; unpinned, the agent's own updater runs at this terminal and writes the machine",
-            AgentHome.Wiring),
+        ("agent pin <agent> <version>", Harness, "the Agents place's pin: the version installed where Daoris keeps it, then pinned", AgentHome.Wiring),
+        ("agent update <agent>", Harness, "the Agents place's Update: a pin's move, or the agent's own updater", AgentHome.Wiring),
+        ("agent pin <agent> <version> --workspace <name>", null, "alone: HARNESS_ACTION's pin names no workspace", AgentHome.Wiring),
+        ("agent update <agent> --workspace <name>", null, "alone: HARNESS_ACTION's update names no workspace", AgentHome.Wiring),
     ];
 
     /// <summary>The home a verb of this program's writes: its row's, by its first word.</summary>

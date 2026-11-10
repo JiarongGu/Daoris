@@ -45,11 +45,6 @@ export type HarnessRun = {
    */
   run: (harness: string, action: HarnessRunAction, profile?: string, version?: string, answered?: Answered) => void;
   /**
-   * Follow an action the machine already started for the person (Ask Daoris's Apply of an update
-   * or a pin): its console shows under the tool doing it, and its end is said, as for one started here.
-   */
-  follow: (harness: string, action: 'update' | 'pin') => void;
-  /**
    * The driver's sentence where a sign-in's start is refused, or null. The sign-in's panel stays up and says it,
    * since a refusal is said where its action is started; `retry` starts the same sign-in again, `dismiss` closes the panel.
    */
@@ -270,16 +265,8 @@ function useRunState(notify: Notify): HarnessRun {
     setSigningInNew(null);
   };
 
-  // Already started, so nothing is sent: only the end is waited for, as a process started here waits.
-  const follow: HarnessRun['follow'] = (harness, action) => {
-    if (inFlight !== null) return;
-    setRunning(`${harness}:${action}`);
-    runningRef.current = `${harness}:${action}`;
-    setInFlight(`${harness}:${action}`);
-  };
-
   return {
-    running, inFlight, runningProfile, signingInNew, busy: act.isPending || inFlight !== null, run, follow,
+    running, inFlight, runningProfile, signingInNew, busy: act.isPending || inFlight !== null, run,
     refusal, retry, dismiss, failure, otherWay, switchWay,
     added, settleAdded: () => setAdded(null),
   };

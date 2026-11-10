@@ -45,7 +45,6 @@ public static class KnowledgeServer
         typeof(OpinionTools),
         // A brainstorm pass's result tools, refused to every session the driver names no brainstorm turn for.
         typeof(BrainstormTools),
-        typeof(HelpAgentTool),
         typeof(HelpAskTool),
         typeof(HelpBrowserTool),
         typeof(HelpClearTool),

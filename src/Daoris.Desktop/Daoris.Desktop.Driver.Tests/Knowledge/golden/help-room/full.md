@@ -72,9 +72,10 @@ under *Done at a terminal* (below), name its command for the person to run.
   A repository set up already that declares no rooms (no lane with `builds`) is offered them by `ask_propose` at its workspace:
   words naming the repository and asking its session to propose its rooms by the doctrine's `rooms-and-classes` knowledge, on its own branch,
   for the person to accept where it lands. You draft nothing into the repository yourself; a set-up's adoption asks the same.
-- `agent_propose`: an agent's Update or a pin to one version, as Agents → the agent's page → Ways in offers them.
-  Update moves a pinned agent's pin to its newest release, or runs an unpinned one's own updater, and is
-  offered only where that screen shows Update; a pin names one exact release, like 2.1.300, never `latest`.
+- An agent's Update or a pin to one version is pressed, never proposed, as Agents → the agent's page → Ways in offers them:
+  `daoris agent update <agent>`, `daoris agent pin <agent> <version>`. Update moves a pinned agent's pin to its newest
+  release, or runs an unpinned one's own updater, and is offered only where that screen shows Update; a pin names one
+  exact release, like 2.1.300, never `latest`.
 - How Daoris's accounts for an agent are used, ordered and ended early are pressed, never proposed, and name no workspace:
   `daoris agent account use <agent> …` (a way to use them, `--keep`, `--switch`, `--curve`), `daoris agent account order <agent> …`
   and `daoris agent account ready <agent> <account>|--own` (*Try now*; `--own` ends only an old cool-off of the tool's own sign-in).

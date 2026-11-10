@@ -38,20 +38,34 @@ public sealed class PlaceOpinionView : IPressView
             return PressViewed.Refused(refused.Message);
         }
 
-        var whose = scoped.Circle ? $"each repository of workspace `{scoped.Workspace}` that sets none of its own" : $"`{scoped.Repository}`";
-        var head = edit.Clear
-            ? scoped.Circle
-                ? $"Clears workspace `{scoped.Workspace}`'s second-opinion rule: each repository there keeps its own, else none."
-                : $"Clears `{scoped.Repository}`'s second-opinion rule: it takes its workspace's again, else none."
-            : edit.None ? $"Declares that `{scoped.Repository}` has no second opinion, whatever its workspace says."
-            : $"Sets the second opinion for {whose}.";
+        var kind = edit.Clear ? (scoped.Circle ? "opinion-workspace-clear" : "opinion-clear")
+            : edit.None ? "opinion-none"
+            : scoped.Circle ? "opinion-workspace-set" : "opinion-set";
         var adapters = ProviderRegistry.Built().WithPlugins(machine.Facts.Plugins);
-        List<string> said = (scoped.Circle ? after.WorkspaceOpinions : after.Opinions).TryGetValue((scoped.Circle ? scoped.Workspace : scoped.Repository)!, out var standing)
-            ? [.. OpinionRules.Says(standing, OpinionRules.SameAgent(standing, ActorChoices.BuildAgent(machine.Config), adapters)), .. OpinionRules.Gate(standing)]
+        var also = (scoped.Circle ? after.WorkspaceOpinions : after.Opinions).TryGetValue((scoped.Circle ? scoped.Workspace : scoped.Repository)!, out var standing)
+            ? Said(standing, OpinionRules.SameAgent(standing, ActorChoices.BuildAgent(machine.Config), adapters))
             : [];
-        var facts = scoped.Facts();
-        facts["describe"] = string.Join(" ", [head, .. said]);
-        return PressViewed.Shown(new PressView("opinion", facts, $"daoris place opinion {scoped.Words} {Words(edit)}"));
+        return PressViewed.Shown(new PressView(kind, scoped.Facts(), $"daoris place opinion {scoped.Words} {Words(edit)}", also));
+    }
+
+    private static List<PressSaid> Said(OpinionRule rule, IReadOnlyList<string> sameAgent)
+    {
+        if (rule.IsNone) return [new PressSaid("opinion-none-here")];
+        var reviewers = string.Join(", ", rule.Reviewers);
+        var landing = rule.On.Contains(OpinionRules.Landing);
+        var steps = rule.On.Contains(OpinionRules.Steps);
+        var said = new List<PressSaid> { new(landing ? "opinion-landing" : "opinion-chain", ("reviewers", reviewers)) };
+        if (landing && steps) said.Add(new PressSaid("opinion-steps-too"));
+        if (rule.Verify) said.Add(new PressSaid("opinion-verify"));
+        said.Add(new PressSaid(rule.Required ? "opinion-required" : "opinion-not-required"));
+        said.Add(new PressSaid("opinion-bound", ("minutes", rule.Bound.ToString(CultureInfo.InvariantCulture))));
+        if (!rule.Recheck) said.Add(new PressSaid("opinion-no-recheck"));
+        var same = rule.Reviewers.Where(reviewer => sameAgent.Contains(reviewer, StringComparer.OrdinalIgnoreCase)).ToList();
+        if (same.Count > 0) said.Add(new PressSaid("opinion-same-agent", ("agents", string.Join(", ", same))));
+        if (landing) said.Add(new PressSaid("opinion-waiting"));
+        if (steps) said.Add(new PressSaid("opinion-step-waiting"));
+        if (rule.Verify) said.Add(new PressSaid("opinion-safe-not-handed"));
+        return said;
     }
 
     private static string Words(OpinionEdit edit)

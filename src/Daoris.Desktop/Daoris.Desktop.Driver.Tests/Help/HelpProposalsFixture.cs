@@ -63,19 +63,6 @@ public abstract class HelpProposalsFixture : IDisposable
     /// </summary>
     protected static readonly HelpMachineFacts Machine = Facts with
     {
-        Doors =
-        [
-            new HelpDoorFacts("claude-code")
-            {
-                Present = true, Updates = "tool", Channel = "claude-code-releases",
-            },
-            new HelpDoorFacts("claude-code-acp")
-            {
-                Present = true, Updates = "pin", Pinned = "0.84.0", Package = "@agentclientprotocol/claude-agent-acp",
-            },
-            new HelpDoorFacts("dsh") { Present = true },
-            new HelpDoorFacts("codex-acp") { Present = false, Updates = "tool", Package = "@zed-industries/codex-acp" },
-        ],
         Quests =
         [
             new HelpQuestFacts("q1a2b3c4", "Cap the chunk budget", "engine", "Open", Deletable: true),
@@ -149,19 +136,6 @@ public abstract class HelpProposalsFixture : IDisposable
 public sealed class HelpStandInDoors : IHelpDoors
 {
     public List<string> Calls { get; } = [];
-
-    public Action<int, string?>? Ended { get; private set; }
-
-    /// <summary>An action that ends before its start is answered: a pin already installed does.</summary>
-    public bool EndsAtOnce { get; init; }
-
-    public Task StartAgentActionAsync(string harness, string action, string? version, Action<int, string?> ended, CancellationToken ct)
-    {
-        Calls.Add($"HARNESS_ACTION {harness} {action} {version}".TrimEnd());
-        Ended = ended;
-        if (EndsAtOnce) ended(0, null);
-        return Task.CompletedTask;
-    }
 
     /// <summary>What the ask door answers (the ids it names are what the conversation's list keeps); by default an ask and no quest.</summary>
     public AskAnswer Asked { get; set; } = new(true, "Asked.", "a1", null);

@@ -155,9 +155,6 @@ public sealed record HelpMachineFacts(
     /// </summary>
     public string? Circle { get; init; }
 
-    /// <summary>Each door as the Agents screen's roster reads it, for an agent's update or pin and an account's settings.</summary>
-    public IReadOnlyList<HelpDoorFacts> Doors { get; init; } = [];
-
     /// <summary>The git identities on this machine (labels and hosts, never a key or a token), for a <c>git-use</c> door's judge.</summary>
     public IReadOnlyList<HelpGitIdentity> GitIdentities { get; init; } = [];
 
@@ -264,26 +261,6 @@ public sealed record HelpMachineFacts(
     public IReadOnlyDictionary<string, WorkflowDraftTold> Drafts { get; init; } = new Dictionary<string, WorkflowDraftTold>(StringComparer.Ordinal);
 }
 
-/// <summary>One door as the Agents screen reads it: what its Update does, whether it pins, whose accounts it runs as.</summary>
-/// <param name="Name">The harness, as `daoris agent` spells it.</param>
-public sealed record HelpDoorFacts(string Name)
-{
-    public bool Present { get; init; }
-
-    /// <summary>The roster's `updates`: `pin`, `tool`, or null for none.</summary>
-    public string? Updates { get; init; }
-
-    /// <summary>This machine's pin for it, or null.</summary>
-    public string? Pinned { get; init; }
-
-    /// <summary>The package a pin installs from, or null.</summary>
-    public string? Package { get; init; }
-
-    /// <summary>The maker's release channel a pin installs from, or null.</summary>
-    public string? Channel { get; init; }
-
-}
-
 /// <summary>
 /// A proposal judged: what it changes, the terminal command that does the same, and the edit to
 /// make — or the route's refusal, and nothing to make.
@@ -364,7 +341,7 @@ public sealed record HelpApplied(bool Applied, string Told)
 /// </summary>
 /// <remarks>Each kind's file declares the doors its Apply goes through as its own interface, gathered here.</remarks>
 public interface IHelpDoors :
-    IHelpAgentDoors, IHelpAskDoors, IHelpBrowserDoors, IHelpClearDoors,
+    IHelpAskDoors, IHelpBrowserDoors, IHelpClearDoors,
     IHelpPluginDoors, IHelpConfigDoors, IHelpSyncDoors
 {
 }

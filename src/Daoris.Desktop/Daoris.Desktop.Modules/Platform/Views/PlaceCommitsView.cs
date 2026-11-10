@@ -37,15 +37,20 @@ public sealed class PlaceCommitsView : IPressView
             return PressViewed.Refused(refused.Message);
         }
 
-        var whose = scoped.Circle ? $"each repository of workspace `{scoped.Workspace}` that sets none of its own" : $"`{scoped.Repository}`";
-        var describe = (scoped.Circle ? after.WorkspaceCommits : after.Commits).TryGetValue((scoped.Circle ? scoped.Workspace : scoped.Repository)!, out var rule)
-            ? $"Sets the commit rule for {whose}: `{rule.Mode}`. " + CommitRules.Says(rule.Mode) + (rule.Convention is { } convention ? $" Commit messages follow this convention: \"{convention}\"" : "")
-            : scoped.Circle
-                ? $"Clears workspace `{scoped.Workspace}`'s commit rule: each repository there keeps its own, else work is committed as it goes."
-                : $"Clears `{scoped.Repository}`'s commit rule: it takes its workspace's again, else work is committed as it goes.";
         var facts = scoped.Facts();
-        facts["describe"] = describe;
-        return PressViewed.Shown(new PressView("commits", facts, $"daoris place commits {scoped.Words} {Words(edit)}"));
+        var kind = (scoped.Circle ? "commits-workspace-" : "commits-")
+            + ((scoped.Circle ? after.WorkspaceCommits : after.Commits).TryGetValue((scoped.Circle ? scoped.Workspace : scoped.Repository)!, out var rule) ? "set" : "clear");
+        if (rule is not null)
+        {
+            facts["mode"] = rule.Mode;
+            if (rule.Convention is { } convention)
+            {
+                facts["convention"] = convention;
+                kind += "-convention";
+            }
+        }
+
+        return PressViewed.Shown(new PressView(kind, facts, $"daoris place commits {scoped.Words} {Words(edit)}"));
     }
 
     private static string Words(CommitEdit edit)

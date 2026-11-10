@@ -37,15 +37,20 @@ public sealed class PlaceHelpersView : IPressView
             return PressViewed.Refused(refused.Message);
         }
 
-        var whose = scoped.Circle ? $"each repository of workspace `{scoped.Workspace}` that sets none of its own" : $"`{scoped.Repository}`";
-        var describe = (scoped.Circle ? after.WorkspaceHelpers : after.Helpers).TryGetValue((scoped.Circle ? scoped.Workspace : scoped.Repository)!, out var rule)
-            ? $"Sets the helpers rule for {whose}: {HelperRules.Listed(rule)}. " + HelperRules.Says(rule.Mode)
-            : scoped.Circle
-                ? $"Clears workspace `{scoped.Workspace}`'s helpers rule: each repository there keeps its own, else each helper waits for your yes."
-                : $"Clears `{scoped.Repository}`'s helpers rule: it takes its workspace's again, else each helper waits for your yes.";
         var facts = scoped.Facts();
-        facts["describe"] = describe;
-        return PressViewed.Shown(new PressView("helpers", facts, $"daoris place helpers {scoped.Words} {Words(edit)}"));
+        var kind = (scoped.Circle ? "helpers-workspace-" : "helpers-")
+            + ((scoped.Circle ? after.WorkspaceHelpers : after.Helpers).TryGetValue((scoped.Circle ? scoped.Workspace : scoped.Repository)!, out var rule) ? "set" : "clear");
+        if (rule is not null)
+        {
+            facts["mode"] = rule.Mode;
+            if (rule.Agents.Count > 0)
+            {
+                facts["agents"] = string.Join(", ", rule.Agents);
+                kind += "-agents";
+            }
+        }
+
+        return PressViewed.Shown(new PressView(kind, facts,$"daoris place helpers {scoped.Words} {Words(edit)}"));
     }
 
     private static string Words(HelperEdit edit)

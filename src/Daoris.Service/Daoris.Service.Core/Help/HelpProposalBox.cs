@@ -27,7 +27,6 @@ public sealed class HelpProposalBox(string? home)
     public static readonly IReadOnlyList<(string Kind, string Tool)> Kinds =
     [
         ("ask", "ask_propose"),
-        ("agent", "agent_propose"),
         ("go", "go_propose"),
         ("plugin", "plugin_propose"),
         ("browser", "browser_propose"),
@@ -53,10 +52,6 @@ public sealed class HelpProposalBox(string? home)
         string sentence, string workspace, string why, string? session, DateTimeOffset at,
         string? review = null, string? reviewWords = null, string? shortTitle = null) =>
         new HelpAskProposalWriter(file).Propose(sentence, workspace, why, session, at, review, reviewWords, shortTitle);
-
-    /// <inheritdoc cref="HelpAgentProposalWriter.Propose"/>
-    public (string? Id, string Message) ProposeAgent(string action, string agent, string? version, string why, string? session, DateTimeOffset at) =>
-        new HelpAgentProposalWriter(file).Propose(action, agent, version, why, session, at);
 
     /// <inheritdoc cref="HelpGoProposalWriter.Propose"/>
     public (string? Id, string Message) ProposeGo(

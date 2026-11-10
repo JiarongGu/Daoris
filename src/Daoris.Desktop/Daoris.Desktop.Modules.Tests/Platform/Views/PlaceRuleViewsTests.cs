@@ -32,10 +32,10 @@ public sealed class PlaceRuleViewsTests
             """{"repository":"engine","put":{"name":"dev","kind":"local","procedure":"README.md","address":"http://localhost:4200"},"required":true}""",
             Rooted(null));
 
-        Assert.Equal("review", viewed.View!.Kind);
-        Assert.Equal("daoris place review engine dev --kind local --procedure README.md --address http://localhost:4200 --required", viewed.View.Command);
-        Assert.Contains("Declares the review environment `dev` for `engine`.", viewed.View.Facts["describe"]);
-        Assert.Contains("waits for you", viewed.View.Facts["describe"]);
+        Assert.Equal("daoris place review engine dev --kind local --procedure README.md --address http://localhost:4200 --required", viewed.View!.Command);
+        Assert.Equal(("review-declare", "engine", "dev"), (viewed.View.Kind, viewed.View.Facts["repository"], viewed.View.Facts["environment"]));
+        Assert.Equal(["review-shown-required", "review-local", "review-waiting", "review-unchecked"], viewed.View.Also!.Select(said => said.Kind));
+        Assert.Equal("http://localhost:4200", viewed.View.Also![1].Facts["address"]);
     }
 
     [Fact]
@@ -44,7 +44,7 @@ public sealed class PlaceRuleViewsTests
         var viewed = await View(new PlaceReviewView(), """{"workspace":"work","clear":true}""");
 
         Assert.Equal("daoris place review --workspace work --clear", viewed.View!.Command);
-        Assert.Contains("Clears workspace `work`'s review rule", viewed.View.Facts["describe"]);
+        Assert.Equal(("review-workspace-clear", "work"), (viewed.View.Kind, viewed.View.Facts["workspace"]));
     }
 
     [Theory]
@@ -72,7 +72,7 @@ public sealed class PlaceRuleViewsTests
         var unchecked_ = await View(new PlaceReviewView(), put, Rooted(null));
 
         Assert.Contains("is not a file in `engine`'s checkout", held.Refusal);
-        Assert.Contains("Not checked", unchecked_.View!.Facts["describe"]);
+        Assert.Equal("review-unchecked", unchecked_.View!.Also![^1].Kind);
     }
 
     [Fact]
@@ -81,7 +81,9 @@ public sealed class PlaceRuleViewsTests
         var viewed = await View(new PlaceOpinionView(), """{"repository":"engine","set":{"reviewers":["codex-acp"],"required":true}}""");
 
         Assert.Equal("daoris place opinion engine --agents codex-acp --required", viewed.View!.Command);
-        Assert.Contains("Sets the second opinion for `engine`.", viewed.View.Facts["describe"]);
+        Assert.Equal("opinion-set", viewed.View.Kind);
+        Assert.Equal(["opinion-landing", "opinion-required", "opinion-bound", "opinion-waiting"], viewed.View.Also!.Select(said => said.Kind));
+        Assert.Equal("codex-acp", viewed.View.Also![0].Facts["reviewers"]);
     }
 
     [Theory]
@@ -97,13 +99,14 @@ public sealed class PlaceRuleViewsTests
     }
 
     [Theory]
-    [InlineData("""{"repository":"engine","set":{"mode":"on","agents":["codex-acp"]}}""", "daoris place helpers engine --mode on --agents codex-acp")]
-    [InlineData("""{"workspace":"work","clear":true}""", "daoris place helpers --workspace work --clear")]
-    public async Task A_helpers_rule_is_shown_with_its_command(string json, string command)
+    [InlineData("""{"repository":"engine","set":{"mode":"on","agents":["codex-acp"]}}""", "helpers-set-agents", "daoris place helpers engine --mode on --agents codex-acp")]
+    [InlineData("""{"repository":"engine","set":{"mode":"off"}}""", "helpers-set", "daoris place helpers engine --mode off")]
+    [InlineData("""{"workspace":"work","clear":true}""", "helpers-workspace-clear", "daoris place helpers --workspace work --clear")]
+    public async Task A_helpers_rule_is_shown_with_its_command(string json, string kind, string command)
     {
         var viewed = await View(new PlaceHelpersView(), json);
 
-        Assert.Equal(("helpers", command), (viewed.View!.Kind, viewed.View.Command));
+        Assert.Equal((kind, command), (viewed.View!.Kind, viewed.View.Command));
     }
 
     [Fact]
@@ -116,21 +119,21 @@ public sealed class PlaceRuleViewsTests
     }
 
     [Theory]
-    [InlineData("""{"repository":"engine","set":{"mode":"ask","convention":"Imperative subject line."}}""", "daoris place commits engine --mode ask --convention \"Imperative subject line.\"")]
-    [InlineData("""{"repository":"engine","set":{"convention":""}}""", "daoris place commits engine --no-convention")]
-    [InlineData("""{"repository":"engine","clear":true}""", "daoris place commits engine --clear")]
-    public async Task A_commit_rule_is_shown_with_its_command(string json, string command)
+    [InlineData("""{"repository":"engine","set":{"mode":"ask","convention":"Imperative subject line."}}""", "commits-set-convention", "daoris place commits engine --mode ask --convention \"Imperative subject line.\"")]
+    [InlineData("""{"repository":"engine","set":{"convention":""}}""", "commits-set", "daoris place commits engine --no-convention")]
+    [InlineData("""{"repository":"engine","clear":true}""", "commits-clear", "daoris place commits engine --clear")]
+    public async Task A_commit_rule_is_shown_with_its_command(string json, string kind, string command)
     {
         var viewed = await View(new PlaceCommitsView(), json);
 
-        Assert.Equal(("commits", command), (viewed.View!.Kind, viewed.View.Command));
+        Assert.Equal((kind, command), (viewed.View!.Kind, viewed.View.Command));
     }
 
     [Fact]
-    public async Task A_commit_rule_says_how_work_is_committed_and_quotes_its_convention()
+    public async Task A_commit_rule_names_its_mode_and_carries_its_convention_as_a_value()
     {
         var viewed = await View(new PlaceCommitsView(), """{"repository":"engine","set":{"mode":"at-end","convention":"Short."}}""");
 
-        Assert.Contains("Commit messages follow this convention: \"Short.\"", viewed.View!.Facts["describe"]);
+        Assert.Equal(("at-end", "Short."), (viewed.View!.Facts["mode"], viewed.View.Facts["convention"]));
     }
 }

@@ -51,7 +51,7 @@ public static class BrainstormPermissions
     /// </summary>
     internal static readonly string[] ConnectorTools =
     [
-        "agent_propose", "ask_propose", "brainstorm_give", "brainstorm_synthesize",
+        "ask_propose", "brainstorm_give", "brainstorm_synthesize",
         "browser_propose", "channel_post", "channel_read", "checkout_read", "clear_propose", "go_ahead_ask", "go_propose",
         "handback_read", "handover_propose", "helper_answer", "helper_ask", "housekeeping_clean_up", "housekeeping_discard_branch",
         "housekeeping_inspect",

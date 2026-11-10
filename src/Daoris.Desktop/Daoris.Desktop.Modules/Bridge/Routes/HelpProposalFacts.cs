@@ -98,28 +98,6 @@ public sealed class HelpProposalFacts(DriverContext context)
             Registered = [.. snapshot.Repositories.Select(known => (known.Repository, (string?)known.Workspace, known.Root))],
         };
 
-        if (proposals.Any(proposal => proposal.Kind == "agent"))
-        {
-            var roster = await _loop.Harnesses.RosterAsync(config, ct: ct).ConfigureAwait(false);
-            var settings = _loop.Harnesses.Settings;
-            facts = facts with
-            {
-                Doors = [.. roster.Select(report =>
-                {
-                    var toolchain = _loop.Harnesses.AgentOf(report.Adapter);
-                    var pinned = settings.ResolveVersion(report.Adapter, null, null);
-                    return new HelpDoorFacts(report.Adapter)
-                    {
-                        Present = report.Present,
-                        Updates = toolchain is null ? null : HarnessActions.UpdateOf(toolchain, pinned),
-                        Pinned = pinned,
-                        Package = toolchain?.Program.Package,
-                        Channel = toolchain?.Program.Channel,
-                    };
-                })],
-            };
-        }
-
         if (JudgedAgainstRecords(proposals))
         {
             var (quests, asks) = await HelpRecordFacts.ReadAsync(service, ct).ConfigureAwait(false);

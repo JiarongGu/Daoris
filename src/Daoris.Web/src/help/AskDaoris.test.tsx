@@ -1261,31 +1261,6 @@ describe('Ask Daoris, with an agent named', () => {
     APPLIED = APPLIED_SETTING;
   });
 
-  /**
-   * An update the person applied is followed by the Agents screen where the application holds its
-   * running action; drawn alone, with nothing holding one, the card still applies.
-   */
-  it('applies an agent\'s update with nothing above to follow it', async () => {
-    SESSIONS = [HELP];
-    PROPOSALS = [{
-      id: 'u1p2d3a4', kind: 'agent', describe: 'Update `claude-code` with its own updater.',
-      terminal: 'daoris agent update claude-code', why: 'the person asked for the newest',
-    }];
-    APPLIED = {
-      message: 'Started: `#u1p2d3a4` — Update `claude-code` with its own updater.', applied: true,
-      harnessAction: { harness: 'claude-code', action: 'update' },
-    };
-    bridge();
-    show();
-
-    const cards = await screen.findByRole('list', { name: 'what Ask Daoris proposes' });
-    await userEvent.click(within(cards).getByRole('button', { name: 'Apply' }));
-
-    await waitFor(() => expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'HELP_APPLY', { payload: { id: 'u1p2d3a4' } }));
-    PROPOSALS = [];
-    APPLIED = APPLIED_SETTING;
-  });
-
   /** The next conversation opens ahead, and the one that ended stays in front until it is spoken in. */
   it('says a conversation that ended has, and that a message starts the next', async () => {
     SESSIONS = [{ ...HELP, state: 'completed' }];

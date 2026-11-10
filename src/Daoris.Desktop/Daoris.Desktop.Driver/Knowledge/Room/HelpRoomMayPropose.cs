@@ -27,10 +27,10 @@ internal sealed class HelpRoomMayPropose : IHelpRoomSection
         text.Append("- `ask_propose`: something to start, as an ask at a workspace, with an optional short title (at most 40 characters,\n");
         text.Append("  the few words that tell it apart in a list, the person's own where they gave one).\n");
         text.Append(RoomsProposal.Ask());
-        // Each is on the agent's page; there is no `default` door.
-        text.Append("- `agent_propose`: an agent's Update or a pin to one version, as Agents → the agent's page → Ways in offers them.\n");
-        text.Append("  Update moves a pinned agent's pin to its newest release, or runs an unpinned one's own updater, and is\n");
-        text.Append("  offered only where that screen shows Update; a pin names one exact release, like 2.1.300, never `latest`.\n");
+        text.Append("- An agent's Update or a pin to one version is pressed, never proposed, as Agents → the agent's page → Ways in offers them:\n");
+        text.Append("  `daoris agent update <agent>`, `daoris agent pin <agent> <version>`. Update moves a pinned agent's pin to its newest\n");
+        text.Append("  release, or runs an unpinned one's own updater, and is offered only where that screen shows Update; a pin names one\n");
+        text.Append("  exact release, like 2.1.300, never `latest`.\n");
         // Daoris's accounts for an agent are one set that serves every workspace, so these name none.
         text.Append("- How Daoris's accounts for an agent are used, ordered and ended early are pressed, never proposed, and name no workspace:\n");
         text.Append("  `daoris agent account use <agent> …` (a way to use them, `--keep`, `--switch`, `--curve`), `daoris agent account order <agent> …`\n");

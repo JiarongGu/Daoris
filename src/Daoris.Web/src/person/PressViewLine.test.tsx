@@ -32,4 +32,23 @@ describe('PressViewLine', () => {
     expect(said.tagName).toBe('P');
     expect(said.textContent).toContain('lab 里还没有仓库');
   });
+
+  it('says a rule with its mode sentence and each further sentence, in both languages', async () => {
+    const view = {
+      kind: 'commits-set',
+      facts: { repository: 'engine', mode: 'at-end' },
+      command: 'daoris place commits engine --mode at-end',
+      also: [{ kind: 'opinion-bound', facts: { minutes: '20' } }],
+    };
+    await i18n.changeLanguage('en');
+    const { unmount } = render(<PressViewLine view={view} />);
+    expect(screen.getByText(/Sets the commit rule for engine: at-end\. One commit is made when the work is done\./)).toBeTruthy();
+    expect(screen.getByText('One pass takes at most 20 minutes.')).toBeTruthy();
+    unmount();
+
+    await i18n.changeLanguage('zh');
+    render(<PressViewLine view={view} />);
+    expect(screen.getByText(/工作完成时进行一次提交/)).toBeTruthy();
+    expect(screen.getByText('一轮最多 20 分钟。')).toBeTruthy();
+  });
 });

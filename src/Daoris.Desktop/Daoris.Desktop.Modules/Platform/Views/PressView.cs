@@ -5,9 +5,19 @@ namespace Daoris.Desktop;
 /// <summary>
 /// What a person's press means, as its route's own code reads it against the machine now: <see cref="Kind"/> the page's sentence
 /// (<c>person.view.&lt;kind&gt;</c> in both catalogues), <see cref="Facts"/> the values that sentence names, and <see cref="Command"/>
-/// the <c>daoris</c> command the press is, spelled for any shell. The card shows it above every value the press carries.
+/// the <c>daoris</c> command the press is, spelled for any shell. <see cref="Also"/> are further sentences the same press means, each worded
+/// by its own kind. The card shows it above every value the press carries.
 /// </summary>
-public sealed record PressView(string Kind, IReadOnlyDictionary<string, string> Facts, string Command);
+public sealed record PressView(string Kind, IReadOnlyDictionary<string, string> Facts, string Command, IReadOnlyList<PressSaid>? Also = null);
+
+/// <summary>One more sentence of a press's meaning: <c>person.view.&lt;kind&gt;</c> with the values it names.</summary>
+public sealed record PressSaid(string Kind, IReadOnlyDictionary<string, string> Facts)
+{
+    public PressSaid(string kind, params (string Name, string Value)[] facts)
+        : this(kind, facts.ToDictionary(fact => fact.Name, fact => fact.Value, StringComparer.Ordinal))
+    {
+    }
+}
 
 /// <summary>A press's view, or the sentence its route refuses it with, which ends the press before any card.</summary>
 public sealed record PressViewed(PressView? View, string? Refusal)
@@ -48,6 +58,7 @@ public static class PressViews
         new WorkResumeView(),
         new AccountSettingsView(),
         new AccountUseView(),
+        new AgentUpdateView(),
         PlaceSwitchView.Drivable(),
         PlaceSwitchView.Hold(),
         PlaceSwitchView.Trees(),

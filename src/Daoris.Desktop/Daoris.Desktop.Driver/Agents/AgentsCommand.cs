@@ -131,8 +131,7 @@ public static class AgentsCommand
             if (verb == "install") return await AgentLongCommand.InstallAsync(args, world, ct).ConfigureAwait(false);
             if (verb == "key") return await AgentLongCommand.KeyAsync(args, world, ct).ConfigureAwait(false);
             if (verb == "login") return await AgentLoginCommand.LoginAsync(args, world, ct).ConfigureAwait(false);
-            if (verb == "pin") return await AgentPinCommand.PinAsync(args, world, ct).ConfigureAwait(false);
-            if (verb == "update") return await AgentPinCommand.UpdateAsync(args, world, ct).ConfigureAwait(false);
+            if (verb is "pin" or "update") return await PressAsync(world, AgentPinCommand.Press(args, world), ct).ConfigureAwait(false);
 
             // A person's grant from a session's terminal is refused before a word of it is said: no route takes it.
             if (verb == "trust" && Changes(args) && world.Instance.Environment(DriverChoicesCommand.SessionVariable) is { Length: > 0 })

@@ -15,7 +15,6 @@ public sealed class HelpProposalBoxTests : HelpProposalBoxFixture
     {
         Assert.Null(Box().ProposeAsk(" ", "work", "a reason", "h1", Now).Id);
         Assert.Null(new HelpProposalBox(null).ProposeAsk("Start it.", "work", "a reason", "h1", Now).Id);
-        Assert.Null(Box().ProposeAgent("update", "claude-code", null, " ", "h1", Now).Id);
         Assert.Null(new HelpProposalBox(null).ProposeGo("quests", null, null, null, "a reason", "h1", Now).Id);
     }
 }
