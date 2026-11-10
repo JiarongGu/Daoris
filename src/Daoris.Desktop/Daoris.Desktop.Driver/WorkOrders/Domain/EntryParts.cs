@@ -1,10 +1,9 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// The session a new quest's start continues: its entry's key and
-/// the parts it already has on this machine, and where the start stands to the entry's tree. A new quest of an entry goes into the
-/// tree its newest part here held when nothing live holds it, and otherwise runs alongside in a tree of its own, as a further
-/// part of the same entry; nothing waits.
+/// The session a new quest's start continues: its entry's key, the parts it already has on this machine, and where the start stands to
+/// the entry's tree. A new quest of an entry goes into the tree its newest own part here held when nothing live holds it, and otherwise
+/// runs alongside in a tree of its own; nothing waits.
 /// </summary>
 /// <param name="Key">The entry's key, <c>&lt;origin&gt;/&lt;repository&gt;</c>, as the records answer it.</param>
 /// <param name="Parts">The entry's earlier parts here: the last run on this machine of each of its other quests, newest first.</param>
@@ -12,6 +11,9 @@ public sealed record EntryParts(string Key, IReadOnlyList<PriorSession> Parts)
 {
     /// <summary>The part whose tree the start goes into, free: the newest part's. Null where it runs alongside.</summary>
     public PriorSession? Into { get; init; }
+
+    /// <summary>The parts of <see cref="Parts"/> that are the start's own run: where its landing branch is read from.</summary>
+    public IReadOnlyList<PriorSession> Run { get; init; } = [];
 
     /// <summary>The live session holding the entry's tree, where the start runs alongside instead; null where none does.</summary>
     public string? HeldBy { get; init; }

@@ -96,6 +96,7 @@ internal static class NodeEvaluations
                     {
                         if (before[node.Id].Binding is { } bound && bound.Observes == held.Id) own[node.Id] = bound.SubjectRevision;
                         else if (before[node.Id].Binding is null && held.Records.Branch?.Held is { } merged) own[node.Id] = merged.Tip;
+                        else if (before[node.Id].Binding is null && ReviewedTip.Of(governed.Graph, before, held.Id) is { } reviewed) own[node.Id] = reviewed;
                     }
                     break;
                 default:
