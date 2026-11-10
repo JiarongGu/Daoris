@@ -19,6 +19,9 @@ internal interface IWorkOrdersWorkflows
     /// </summary>
     string? Unusable(string home, string workflow);
 
+    /// <summary>The steps (<c>&lt;run&gt;/&lt;node&gt;</c>) stopped as the person's of each run <paramref name="of"/> takes, by its id and ask.</summary>
+    Task<IReadOnlyList<string>> EndRunsAsync(string home, Func<string, string?, bool> of, string words, Func<DateTimeOffset> clock, CancellationToken ct);
+
     /// <summary>
     /// The workflow a repository's work follows where it names no kind, and, for each of <paramref name="kinds"/> in order, the one that kind
     /// maps to with what it lowers of the person's part against the first (null where either does not read).
