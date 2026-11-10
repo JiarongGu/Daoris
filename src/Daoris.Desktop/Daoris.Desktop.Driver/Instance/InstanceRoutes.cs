@@ -102,7 +102,7 @@ public static class OpenRoutes
         ("git review <session>", null,
             "alone: its `--time` counts and times the git this process starts itself (GITAPP1a-i), which a route's answer cannot carry; SESSION_DIFF answers the page's shape only"),
         ("workflow", null,
-            "alone: WORKFLOW_RUN answers the page's shape only, and `workflow keep` writes its run; `workflow skip` and `stop` are the person's press (WORKFLOW_NODE), and `workflow fix` is WORK_HELD's"),
+            "alone: WORKFLOW_RUN answers the page's shape only, and `workflow keep` writes its run; `workflow skip`, `stop`, `accept` and the other node words are the person's press (WORKFLOW_NODE), and `workflow fix` is WORK_HELD's"),
         ("plugins show <id>", null, "alone: its words name the plugin's folders on this machine, which PLUGIN's page answers apart, and no said line carries"),
         ("plugins activity <id>", null, "alone: a read of the machine log this process reads itself; with no log its words name the log's folder"),
         ("plugins try <folder|id>", null, "alone: a trial starts the plugin as this terminal's own child, and its words name the folder it tried"),
@@ -114,7 +114,7 @@ public static class OpenRoutes
         // service's own doors, which the service writes once whoever asks.
         ("drive", null, "alone: it is a loop, the home's lease's holder, refused where the desktop holds the home unless `--share` (DRV8a)"),
         ("update", null, "alone: a request file under the home the desktop's updater watches (D139); its window twin is the update banner, no route"),
-        ("quest delete|accept|done|reopen|go-on|check|review", null, "alone: the service's door, its one writer, as the page's own HTTP call is (§7.1)"),
+        ("quest check", null, "alone: the service's door, its one writer, as the page's own HTTP call is (§7.1)"),
         ("ask \"…\"", null, "alone: the service publishes an ask, its one writer, as the page's own HTTP call does (§7.1)"),
         ("sync status", null, "alone: a read of the service's own standing (`/api/sync`), as the page's read is"),
     ];
@@ -290,6 +290,42 @@ public static class PersonPresses
     /// </summary>
     public static InstanceRoute WorkHeld { get; } = Person("WORK_HELD");
 
+    /// <summary><c>quest done &lt;id&gt; [--note "…"]</c>: a quest closed as the person's own done.</summary>
+    public static InstanceRoute QuestDone { get; } = Person("QUEST_DONE");
+
+    /// <summary><c>quest delete &lt;id&gt;</c>: a quest made by mistake deleted.</summary>
+    public static InstanceRoute QuestDelete { get; } = Person("QUEST_DELETE");
+
+    /// <summary><c>quest accept &lt;id&gt;</c>: a done's departure from what the person required, accepted.</summary>
+    public static InstanceRoute QuestAccept { get; } = Person("QUEST_ACCEPT");
+
+    /// <summary><c>quest reopen &lt;id&gt; [--note "…"]</c>: a sealed submission reopened.</summary>
+    public static InstanceRoute QuestReopen { get; } = Person("QUEST_REOPEN");
+
+    /// <summary><c>quest go-on &lt;id&gt;</c>: the step a source's reopen held gone on with the new work.</summary>
+    public static InstanceRoute QuestGoOn { get; } = Person("QUEST_GO_ON");
+
+    /// <summary><c>quest review &lt;id&gt; …</c>: the person's verdict on a review, or the chain's choice at its gate.</summary>
+    public static InstanceRoute QuestReview { get; } = Person("QUEST_REVIEW");
+
+    /// <summary><c>quest workflow &lt;id&gt; …</c>: a quest's own kind and workflow, or none.</summary>
+    public static InstanceRoute QuestWorkflow { get; } = Person("QUEST_WORKFLOW");
+
+    /// <summary><c>ask workflow &lt;id&gt; …</c> and <c>ask --set-workflow</c>: an ask's kind and workflow, or none.</summary>
+    public static InstanceRoute AskWorkflow { get; } = Person("ASK_WORKFLOW");
+
+    /// <summary><c>ask review &lt;id&gt; …</c> and <c>ask --set-review</c>: an ask's review choice.</summary>
+    public static InstanceRoute AskReview { get; } = Person("ASK_REVIEW");
+
+    /// <summary><c>repository retire [&lt;name&gt;]</c>: a repository taken off the registry.</summary>
+    public static InstanceRoute RegistryRetire { get; } = Person("REGISTRY_RETIRE");
+
+    /// <summary><c>repository wire &lt;repository&gt; --workspace &lt;name&gt;</c>: a repository wired to another workspace.</summary>
+    public static InstanceRoute RegistryRewire { get; } = Person("REGISTRY_REWIRE");
+
+    /// <summary><c>repository import [&lt;folder&gt;]</c>: every repository a folder's subdirectories propose, registered.</summary>
+    public static InstanceRoute RegistryImport { get; } = Person("REGISTRY_IMPORT");
+
     /// <summary>Each person's press a verb sends over the pipe, in the verb's words, with its route.</summary>
     public static IReadOnlyList<(string Verb, InstanceRoute Route)> Presses { get; } =
     [
@@ -332,10 +368,23 @@ public static class PersonPresses
         ("workflow skip <run> <node> \"…\"", WorkflowNode),
         ("workflow stop <run> <node> [\"…\"]", WorkflowNode),
         ("workflow changes <run> <node> \"…\"", WorkflowNode),
+        ("workflow accept <run> <node> [\"…\"]", WorkflowNode),
         ("workflow done <run> <node> [\"…\"]", WorkflowNode),
         ("workflow approve <run> <node> [\"…\"]", WorkflowNode),
         ("workflow reject <run> <node> [\"…\"]", WorkflowNode),
         ("workflow fix <run> [<node>]", WorkHeld),
+        ("quest done <id> [--note \"…\"]", QuestDone),
+        ("quest delete <id>", QuestDelete),
+        ("quest accept <id>", QuestAccept),
+        ("quest reopen <id> [--note \"…\"]", QuestReopen),
+        ("quest go-on <id>", QuestGoOn),
+        ("quest review <id> reviewed|not-yet|skip|off|on|<environment> [\"…\"]", QuestReview),
+        ("quest workflow <id> [--kind <kind>] [--workflow <id>|current]|--clear [\"…\"]", QuestWorkflow),
+        ("ask workflow <id> [--kind <kind>] [--workflow <id>|current]|--clear [\"…\"]", AskWorkflow),
+        ("ask review <id> on|<environment>|off [\"…\"]", AskReview),
+        ("repository retire [<name>]", RegistryRetire),
+        ("repository wire <repository> --workspace <name>", RegistryRewire),
+        ("repository import [<folder>] [--workspace <name>]", RegistryImport),
         ("sessions archive <id>…", SessionArchive),
         ("sessions unarchive <id>…", SessionArchive),
         ("sessions stop <id>", SessionStop),

@@ -76,12 +76,6 @@ public static class GitIdentityCommand
             return 2;
         }
 
-        if (Changes(args) && world.Environment(DriverChoicesCommand.SessionVariable) is { Length: > 0 })
-        {
-            await error.WriteLineAsync($"git: {DriverChoicesCommand.SessionsTerminal}").ConfigureAwait(false);
-            return 1;
-        }
-
         IReadOnlyDictionary<string, string?> flags;
         IReadOnlyList<string> words;
         try
@@ -94,7 +88,16 @@ public static class GitIdentityCommand
             return 1;
         }
 
-        Task<int> Alone() => ActAsync(words, flags, world, output, error, ct);
+        async Task<int> Alone()
+        {
+            if (Changes(args) && world.Environment(DriverChoicesCommand.SessionVariable) is { Length: > 0 })
+            {
+                await error.WriteLineAsync($"git: {DriverChoicesCommand.SessionsTerminal}").ConfigureAwait(false);
+                return 1;
+            }
+
+            return await ActAsync(words, flags, world, output, error, ct).ConfigureAwait(false);
+        }
         if (!Widens(words, flags)) return await Alone().ConfigureAwait(false);
         if (Pressed(words, flags) is not { } press) return await Alone().ConfigureAwait(false);
         return await world.Press(press.Route, press.Payload, Alone, _ =>
