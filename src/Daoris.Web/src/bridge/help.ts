@@ -9,7 +9,7 @@ import { onTold, toldGraph, toldSessions } from '../help/openDraft';
 import type { HelpProposal } from '../help/ProposalCard';
 import type { HelpPlace } from '../help/places';
 import { type Place, placeSaid } from '../help/focus';
-import type { HelpPublishedEntry } from '../help/published';
+import type { HelpPublishedEntry } from '../help/published/published';
 import { call, pressBound } from './call';
 import { syncLookBound } from './repositories/lines';
 import { logEvent } from './log';

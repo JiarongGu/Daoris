@@ -6,8 +6,8 @@ import { type HelpSettled, useHelpProposals, useHelpPublished, useSettleHelp } f
 import { useHeldHarnessRun } from '../../agents/harnessRuns';
 import { draftDoor, placeDoor } from '../places';
 import { type HelpProposal, ProposalCard } from '../ProposalCard';
-import { publishedCounts, publishedItems } from '../published';
-import { PublishedList } from '../PublishedList';
+import { publishedCounts, publishedItems } from '../published/published';
+import { PublishedList } from '../published/PublishedList';
 import { type StarterDoor } from '../starters';
 import { type Session } from '../../data/api';
 import { type TFunction } from 'i18next';
