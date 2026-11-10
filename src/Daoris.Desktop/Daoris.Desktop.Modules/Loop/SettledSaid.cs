@@ -1,3 +1,5 @@
+using Daoris.Driver;
+
 namespace Daoris.Desktop;
 
 /// <summary>
@@ -7,10 +9,11 @@ namespace Daoris.Desktop;
 public static class SettledSaid
 {
     /// <summary>The pipe's <see cref="PipeConfirmations.Settled"/> sink over a telling of Daoris's word into a conversation.</summary>
-    public static Action<PipeConfirmation, PipeEnding> Of(Func<Func<string, string, string, bool>?> tell, PressedEnds? ends = null) => (shown, ending) =>
+    public static Action<PipeConfirmation, PipeEnding> Of(
+        Func<Func<string, string, string, bool>?> tell, PressedEnds? ends = null, Action<string, HelpPublishedEntry>? keep = null) => (shown, ending) =>
     {
         if (!shown.Asker.Help || shown.Asker.Session is not { } session) return;
-        if (ending.End == PipeConfirmationEnd.Confirmed) ends?.Wait(shown);
+        if (ending.End == PipeConfirmationEnd.Confirmed) ends?.Wait(shown, tell(), keep);
         if (Word(shown, ending.End) is { } word) tell()?.Invoke(session, word, $"press-settled/{shown.Id}");
     };
 

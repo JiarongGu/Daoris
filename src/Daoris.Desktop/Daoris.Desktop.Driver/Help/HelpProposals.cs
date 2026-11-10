@@ -160,11 +160,6 @@ public sealed record HelpMachineFacts(
     /// <summary>This machine's plugins, for a landing rule that names one and a plugin proposal.</summary>
     public PluginCatalog Plugins { get; init; } = PluginCatalog.None;
 
-    // The browser kind's.
-
-    /// <summary>What Daoris's browser's files hold, read by the desktop for a browser proposal; null where none is read.</summary>
-    public HelpBrowserFacts? Browser { get; init; }
-
     // The clear kind's.
 
     /// <summary>
@@ -340,7 +335,7 @@ public sealed record HelpApplied(bool Applied, string Told)
 /// </summary>
 /// <remarks>Each kind's file declares the doors its Apply goes through as its own interface, gathered here.</remarks>
 public interface IHelpDoors :
-    IHelpAskDoors, IHelpBrowserDoors, IHelpClearDoors,
+    IHelpAskDoors, IHelpClearDoors,
     IHelpPluginDoors, IHelpConfigDoors, IHelpSyncDoors
 {
 }

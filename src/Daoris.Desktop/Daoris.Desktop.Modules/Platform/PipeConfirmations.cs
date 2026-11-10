@@ -265,6 +265,8 @@ public sealed class PipeConfirmations : IDisposable
     /// </summary>
     public Action<PipeConfirmation, PipeEnding>? Settled { get; set; }
 
+    public Action<string, string>? Answered { get; set; }
+
     /// <summary>
     /// Whether a Confirm of a press of this module's route takes nothing now, and the press waits: every press while
     /// Daoris closes or an update applies, and while an update drains, the presses that would add to what it waits on. Asked

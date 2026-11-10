@@ -31,6 +31,9 @@ internal sealed class HelpRoomMayPropose : IHelpRoomSection
         text.Append("  `daoris agent update <agent>`, `daoris agent pin <agent> <version>`. Update moves a pinned agent's pin to its newest\n");
         text.Append("  release, or runs an unpinned one's own updater, and is offered only where that screen shows Update; a pin names one\n");
         text.Append("  exact release, like 2.1.300, never `latest`.\n");
+        text.Append("- Daoris's browser's settings are pressed, never proposed, as Settings → Browser sets them: `daoris browser use daoris|edge`,\n");
+        text.Append("  `daoris browser links system|daoris`, `daoris browser extensions offer|refuse` and `daoris browser favorite add|remove <address>`\n");
+        text.Append("  (`--title` names a favorite added); a favorite removed is one the list below keeps. Each but `links` holds from the browser's next start.\n");
         // Daoris's accounts for an agent are one set that serves every workspace, so these name none.
         text.Append("- How Daoris's accounts for an agent are used, ordered and ended early are pressed, never proposed, and name no workspace:\n");
         text.Append("  `daoris agent account use <agent> …` (a way to use them, `--keep`, `--switch`, `--curve`), `daoris agent account order <agent> …`\n");
@@ -64,11 +67,6 @@ internal sealed class HelpRoomMayPropose : IHelpRoomSection
         text.Append("  An `approve` proposes the person's approval of what a plugin's server offers you (its `id`, its `server`,\n");
         text.Append("  and in `writes` only the writes outside Daoris they said they accept): the card names every tool, and you\n");
         text.Append("  are handed it from your next conversation once they press Apply. A `withdraw` takes an approval back.\n");
-        // The browser's settings, each as `daoris browser` spells it.
-        text.Append("- `browser_propose`: Daoris's browser's settings, as Settings → Browser sets them: `use` `daoris` or `edge`,\n");
-        text.Append("  `links` `system` or `daoris`, `extensions` `offer` or `refuse`,\n");
-        text.Append("  or a `favorite` to `add` (its address, and a title if wanted) or `remove` (one the list below keeps).\n");
-        text.Append("  Each but `links` holds from the browser's next start.\n");
         // Bring up to date, whose look fetches and so is the person's press, as on the screen.
         text.Append("- `sync_propose`: bring repositories up to date after a pull request merged, as the workspace's page →\n");
         text.Append("  Branches → Updates does: each line fast-forwarded from `origin`, the branches still at\n");

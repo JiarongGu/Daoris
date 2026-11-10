@@ -5,6 +5,12 @@ the per-task record. Entries preserve their original wording so the archive stay
 
 ---
 
+## ASKFULL1g's browser kind, keeping and early ends — the last proposal kinds pressed (2026-11-11)
+
+> **ASKFULL1g, browser and g-ii** (driver, modules, service, web): Outcome: `daoris browser favorite add|remove|use|links|extensions` presses the Person routes `BROWSER_FAVORITE` and `BROWSER_SETTING`, their Confirm card the routes' views (`BrowserFavoriteView`, `BrowserSettingView`), the alone path the same `BrowserPresses` unit; the browser proposal kind and its service tool are gone whole; an ask or quest a pressed verb's answer names is kept with its conversation and named in the press line (`Loop/PressedEnds.cs`, `Confirmations.Answered`); an update or pin that fails before it starts, or ends before its settle is registered, is said at its end. Proof: `BrowserViewsTests`, `BrowserPersonRoutesTests`, `PressedEndsTests`, the modules census, the room goldens and the service's tool tests.
+
+---
+
 ## PLACEWORK1h (part) — a system reached through a console: plan, review, apply (2026-11-11)
 
 > **PLACEWORK1h, part** (driver, modules, web, examples): Outcome: a plugin declares `systems` and answers `plan/read` and `apply/perform` (`Plugins/Domain/PluginSystems.cs`, `Plugins/Systems/`); a session's plans are kept per record as numbered files under the home's work folder and its Review shows the newest one resource by resource, before and after, in the diff pane (`Departments/Systems/`, `SESSION_DIFF`); the workflow's `apply` step runs one apply at a time through its door, and an apply whose resources moved since the plan fails with words naming each one's present version, which the way back hands the work (`Workflows/Kinds/Apply/`); `examples/plugins/stand-in-system/` is a system to try it on. Proof: `PluginSystemsTests`, `SystemPlanTests`, `ApplyDoorTests`, `NodeKitTests`, each seen failing first, and `SystemPlanProcessTests` (plan, review, apply, stale, plan again) on the stand-in's real process.

@@ -192,6 +192,7 @@ internal sealed class PipeAsking(InstancePipe pipe)
         if (ending.End == PipeConfirmationEnd.Confirmed && _keep.Begun(confirmation))
         {
             await pipe.RunAsync(request, id, binding, answered, begun: () => _keep.Forget(confirmation)).ConfigureAwait(false);
+            if (answered.Task.IsCompletedSuccessfully) Confirmations.Answered?.Invoke(confirmation, answered.Task.Result);
             return;
         }
 

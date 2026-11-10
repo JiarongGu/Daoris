@@ -61,12 +61,7 @@ public sealed class HelpProposalFacts(DriverContext context)
         proposal.Kind == "go" && !string.IsNullOrWhiteSpace(proposal.Item)
         && string.Equals(proposal.Target?.Trim(), view, StringComparison.OrdinalIgnoreCase);
 
-    /// <summary>
-    /// The driver's file and the names the machine holds: its registered repositories and their circles, the agents it has, and the quests
-    /// the last tick parked. For the kinds that need them, each door as the Agents screen's roster reads it, and every quest
-    /// and ask with the service's own reading of whether it may be deleted, or this machine's sessions for a go naming one
-    /// — asked only then.
-    /// </summary>
+    /// <summary>The driver's file and the names the machine holds; for the kinds that need them, the roster, the quests and asks, and the sessions, asked only then.</summary>
     internal async Task<(DriverConfig Config, HelpMachineFacts Facts)> FactsAsync(
         ServiceClient service, IReadOnlyCollection<HelpProposal> proposals, CancellationToken ct)
     {
@@ -158,11 +153,6 @@ public sealed class HelpProposalFacts(DriverContext context)
             }
 
             facts = facts with { Places = places };
-        }
-
-        if (proposals.Any(proposal => proposal.Kind == "browser"))
-        {
-            facts = facts with { Browser = BrowserModule.HelpFacts(BrowserModule.Home) };
         }
 
         return (config, facts);

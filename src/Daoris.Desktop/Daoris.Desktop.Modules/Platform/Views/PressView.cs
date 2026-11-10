@@ -76,6 +76,8 @@ public static class PressViews
         new PlaceCommitsView(),
         new RetryQuestView(),
         new GitUseView(),
+        new BrowserFavoriteView(),
+        new BrowserSettingView(),
     ];
 
     /// <summary>The view of <paramref name="module"/>'s <paramref name="route"/>; null where the route has none.</summary>

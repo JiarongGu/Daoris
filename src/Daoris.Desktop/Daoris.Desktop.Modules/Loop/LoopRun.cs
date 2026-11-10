@@ -247,12 +247,25 @@ internal sealed class LoopRun(
             // A press no terminal waits on, told at `work/event` as it settles, after its record says how.
             var toldHooks = SettledTelling.Of(() => shared.Hooks, () => DateTimeOffset.UtcNow);
             // One of Ask Daoris's is also said in its conversation.
-            var saidChat = SettledSaid.Of(() => loop.Chat is { } chat ? chat.Tell : null, loop.PressedEnds);
+            Func<Func<string, string, string, bool>?> tellChat = () => loop.Chat is { } chat ? chat.Tell : null;
+            Action<string, HelpPublishedEntry> keepPublished = (session, entry) =>
+            {
+                try
+                {
+                    new HelpPublished(loop.Home).Keep(session, entry);
+                }
+                catch (Exception error) when (error is IOException or UnauthorizedAccessException or DriverException)
+                {
+                    // Only this conversation's list is short by one: the ask and the quest stand, and their lists name them.
+                }
+            };
+            var saidChat = SettledSaid.Of(tellChat, loop.PressedEnds, keepPublished);
             served.Confirmations.Settled = (shown, ending) =>
             {
                 toldHooks(shown, ending);
                 saidChat(shown, ending);
             };
+            served.Confirmations.Answered = (id, answer) => loop.PressedEnds.Answered(id, answer, tellChat(), keepPublished);
             served.Grounds = new LoopGrounds(loop, served);
             served.Delegates = session => DelegateTiers.Of(loop, session);
             // A restart forgets every steward's release, so what an earlier run left in the file is withdrawn before the first look;
