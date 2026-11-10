@@ -261,7 +261,8 @@ export function sittingSentence(sitting: Consideration): string {
 const SAID: Record<string, readonly string[]> = {
   AtCapacity: ['cap'],
   // `overlaps`: a start held under `overlap: wait` until the earlier quest's work is integrated.
-  RepositoryBusy: ['serving', 'opening', 'tree', 'treeOpening', 'treeThisLook', 'repository', 'queued', 'repositoryOpening', 'overlaps'],
+  // `place`: the place's writer holds it, its turn running or, with paths, parked with uncommitted paths of its own.
+  RepositoryBusy: ['serving', 'opening', 'tree', 'treeOpening', 'treeThisLook', 'place', 'queued', 'repositoryOpening', 'overlaps'],
   Waiting: ['asked', 'unreadRunning', 'unread', 'unreadAtCommit', 'missing', 'unreviewed', 'departed'],
   NotAdopted: ['unregistered', 'noRoot', 'noConnector'],
   WaitsForOpinion: ['landing', 'steps'],
@@ -287,6 +288,7 @@ function saidSentence(sitting: Consideration): string | null {
   if (said.code === 'cap' && said.cap == null) return null;
   if (said.code === 'overlaps' && !said.paths?.length) return null;
   const context = said.code === 'unreviewed' && said.environment ? 'unreviewedIn'
+    : said.code === 'place' && said.paths?.length ? 'placeKept'
     : sitting.verdict === 'WaitsForOpinion' && !said.state ? `${said.code}Unjudged`
     : said.code;
   return i18n.t(`work.sitting.${sitting.verdict}`, {

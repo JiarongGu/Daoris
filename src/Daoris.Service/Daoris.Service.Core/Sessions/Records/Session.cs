@@ -115,6 +115,9 @@ public sealed record Session(
     /// <summary>The attempt a supervisor's turn decides for, read before every other mark; this machine's own, as <see cref="Serves"/> is.</summary>
     public string? Decides { get; init; }
 
+    /// <summary>The uncommitted paths of its own a parked line keeps its git place with (<see cref="SessionPlaceLease"/>); this machine's own.</summary>
+    public IReadOnlyList<string>? HoldsPlace { get; init; }
+
     /// <summary>
     /// The session this one continues: a conversation handed over, a quest's session carried on
     /// after a hand-over or onto another account after a limit — null for every other session, and for a record from before.

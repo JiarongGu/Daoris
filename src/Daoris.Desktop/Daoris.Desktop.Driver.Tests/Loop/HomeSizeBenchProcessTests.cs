@@ -82,8 +82,9 @@ public sealed class HomeSizeBenchProcessTests(ITestOutputHelper output) : IAsync
         var large = await MeasuredAsync($"the review of the tree with {Built} ignored files", () => ReviewAsync(trees, Home.Large));
         var small = await MeasuredAsync("a small tree's review", () => ReviewAsync(trees, Home.Trees[^1]));
 
-        // A start's own parts before its spawn that do not wait on a model: its checkout's status, its tree grown, its record opened.
-        await MeasuredAsync("a start's clean checkout", () => WorkingTree.CleanAsync(Home.Root, CancellationToken.None));
+        // A start's own parts before its spawn that do not wait on a model: its place's manifest, its tree grown, its record opened.
+        var manifests = new ManifestStore(Home.Home, "default", BenchHome.Repository);
+        await MeasuredAsync("a start's manifest", () => ManifestReader.GitAsync(Home.Root, manifests.Content, CancellationToken.None));
         await MeasuredAsync("a start's tree", () => trees.OpenAsync(Home.Root, BenchHome.Repository, "default"));
         await MeasuredAsync("a start's record", () => Home.Client.OpenChatAsync(BenchHome.Repository, "stub"));
 

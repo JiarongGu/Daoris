@@ -1,11 +1,11 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// The harness and the account the start runs as, asked before its record opens for the same reason as the clean checkout: a record
-/// for a spawn that could never have happened would hold the repository and explain nothing. A missing binary, an account signed out
-/// and an agent the roster does not know are each held with the sentence that names their fix, never thrown out of the look.
+/// The harness and the account the start runs as, asked before its record opens: a record for a spawn that could never have happened
+/// would hold the place and explain nothing. A missing binary, an account signed out and an agent the roster does not know are each
+/// held with the sentence that names their fix, never thrown out of the look.
 /// </summary>
-[RunStage("account", RunPhase.Choose, "clean")]
+[RunStage("account", RunPhase.Choose, "agent")]
 internal sealed class AccountWalk(IRunWiring wiring) : IRunStage
 {
     public async ValueTask<StartRun?> RunAsync(RunRound run, CancellationToken ct)

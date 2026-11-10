@@ -1,0 +1,118 @@
+using Daoris.Driver;
+
+namespace Daoris.Desktop.Driver.Tests;
+
+/// <summary>
+/// A git place's manifest at a turn's start and end: git's status with each listed path's content hash, kept under the home with
+/// the text of each new file in the place's content store. The start against the place's last end finds what the person changed
+/// meanwhile; the end against the start is the turn's own, and what of it stays uncommitted is what the line keeps the place with.
+/// </summary>
+[Trait(Category.Parallel, Category.Git)]
+public sealed class ManifestTests : IDisposable
+{
+    private readonly string _scratch = ConformanceScratch.New("manifest");
+    private string Place => Path.Combine(_scratch, "reports");
+    private string Home => Path.Combine(_scratch, "home");
+
+    public void Dispose() => ConformanceScratch.Remove(_scratch);
+
+    private async Task<string> RepositoryAsync()
+    {
+        Directory.CreateDirectory(Place);
+        await GitFixture.RunAsync(Place, "init", "-q", "-b", "main");
+        File.WriteAllText(Path.Combine(Place, "kept.md"), "kept\n");
+        File.WriteAllText(Path.Combine(Place, "notes.md"), "first\n");
+        await GitFixture.RunAsync(Place, "add", "-A");
+        await GitFixture.RunAsync(Place, "-c", "user.name=t", "-c", "user.email=t@t", "commit", "-q", "-m", "one");
+        return Place;
+    }
+
+    [Fact]
+    public async Task The_start_finds_the_person_s_edit_made_between_turns_and_the_end_names_the_turn_s_own_uncommitted_paths()
+    {
+        var root = await RepositoryAsync();
+        var store = new ManifestStore(Home, "default", "reports");
+
+        var lastEnd = await ManifestReader.GitAsync(root, store.Content, CancellationToken.None);
+        File.WriteAllText(Path.Combine(root, "notes.md"), "the person's line\n");
+        File.WriteAllText(Path.Combine(root, "new.txt"), "a new file\n");
+        var start = await ManifestReader.GitAsync(root, store.Content, CancellationToken.None);
+
+        var outside = PlaceChangesSince.Between(lastEnd, start, committed: []);
+        Assert.Equal(["new.txt"], outside.Added);
+        Assert.Equal(["notes.md"], outside.Changed);
+        Assert.Empty(outside.Removed);
+
+        File.WriteAllText(Path.Combine(root, "draft.md"), "the session's\n");
+        File.Delete(Path.Combine(root, "kept.md"));
+        var end = await ManifestReader.GitAsync(root, store.Content, CancellationToken.None);
+
+        var turn = PlaceChangesSince.Between(start, end, committed: []);
+        Assert.Equal(["draft.md", "kept.md"], turn.All);
+        Assert.Equal(["draft.md", "kept.md"], PlaceChangesSince.OwnUncommitted(start, end));
+        Assert.Equal(["new.txt", "notes.md"], PlaceChangesSince.NotOwn(start, end));
+
+        // Kept under the home by record and moment, and read back as written.
+        store.Keep("s-1a2b3c4d", ManifestMoment.End, end);
+        Assert.Equal(end.Entries, store.Read("s-1a2b3c4d", ManifestMoment.End)!.Entries);
+        Assert.Equal(end.Head, store.Last()!.Head);
+
+        // The text of each new file went to the content store, by its hash.
+        var draft = end.Entries.Single(entry => entry.Path == "draft.md");
+        Assert.Equal("the session's\n", File.ReadAllText(store.Content.PathOf(draft.Sha256!)));
+        Assert.Null(end.Entries.Single(entry => entry.Path == "kept.md").Sha256);
+    }
+
+    [Fact]
+    public async Task A_commit_between_turns_names_its_paths_and_a_clean_place_lists_none()
+    {
+        var root = await RepositoryAsync();
+        var store = new ManifestStore(Home, "default", "reports");
+
+        var before = await ManifestReader.GitAsync(root, store.Content, CancellationToken.None);
+        Assert.Empty(before.Entries);
+        Assert.Equal("main", before.Branch);
+
+        File.WriteAllText(Path.Combine(root, "kept.md"), "committed by the person\n");
+        await GitFixture.RunAsync(root, "-c", "user.name=t", "-c", "user.email=t@t", "commit", "-q", "-am", "two");
+        var after = await ManifestReader.GitAsync(root, store.Content, CancellationToken.None);
+        var committed = await ManifestReader.CommittedBetweenAsync(root, before.Head, after.Head, CancellationToken.None);
+
+        Assert.Equal(["kept.md"], PlaceChangesSince.Between(before, after, committed).Changed);
+    }
+
+    [Fact]
+    public void The_content_store_keeps_text_alone_and_stops_at_its_bound()
+    {
+        var content = new ContentStore(Path.Combine(Home, "blobs"), bound: 10);
+
+        Assert.True(content.Keep("abc", "short\n"u8.ToArray()));
+        Assert.False(content.Keep("bin", [0x41, 0x00, 0x42]));
+        Assert.False(content.Keep("big", "more than ten bytes\n"u8.ToArray()));
+        Assert.True(content.Full);
+        Assert.True(File.Exists(content.PathOf("abc")));
+        Assert.False(File.Exists(content.PathOf("bin")));
+
+        content.Sweep(named: new HashSet<string>());
+        Assert.False(File.Exists(content.PathOf("abc")));
+    }
+
+    [Fact]
+    public void The_keeping_holds_a_place_s_newest_twenty_and_every_named_one()
+    {
+        var store = new ManifestStore(Home, "default", "reports");
+        var empty = new RunManifest("git", "c0ffee", "main", DateTimeOffset.UnixEpoch, []);
+        for (var i = 0; i < 23; i++)
+        {
+            store.Keep($"s-{i:D8}", ManifestMoment.Start, empty with { At = DateTimeOffset.UnixEpoch.AddMinutes(i) });
+        }
+
+        store.Tidy(named: new HashSet<string>(StringComparer.Ordinal) { "s-00000000" });
+
+        Assert.NotNull(store.Read("s-00000000", ManifestMoment.Start));
+        Assert.Null(store.Read("s-00000001", ManifestMoment.Start));
+        Assert.Null(store.Read("s-00000002", ManifestMoment.Start));
+        Assert.NotNull(store.Read("s-00000003", ManifestMoment.Start));
+        Assert.Equal(21, Directory.GetFiles(Path.Combine(Home, "work", "places", "default", "reports", "manifests")).Length);
+    }
+}
