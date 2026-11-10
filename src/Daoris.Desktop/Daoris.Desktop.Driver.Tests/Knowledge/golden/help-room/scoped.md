@@ -8,6 +8,9 @@ this machine: how to set up a workspace, what a screen means, why a start was re
 a repository, write a rule, or start a task. Written by Daoris each time the conversation opens; an
 edit here is overwritten.
 
+Its focus is workspace `alpha`: what the person chose this conversation to be about, and where its
+tools start. The focus limits nothing: name a workspace, or `all`, to look beyond it.
+
 This conversation is workspace `alpha`'s: the person started it from a window on that workspace.
 The repositories and their lines, the sessions, quests and asks, the finished work and where work has
 got to that this room lists are `alpha`'s alone, and each count here counts `alpha`'s; another

@@ -1,9 +1,14 @@
+using System.Text.Json;
+
 namespace Daoris.Desktop;
 
-// The payloads of HelpRoutes' presses, each named for its route.
+// The payloads of HelpRoutes' and HelpFocusRoutes' presses, each named for its route.
 
-/// <summary>A blank workspace is the default's.</summary>
-public sealed record StartHelp(string? Workspace);
+/// <summary>A blank workspace is the default's; no focus is its home's (`help/focus.ts`'s place).</summary>
+public sealed record StartHelp(string? Workspace, JsonElement? Focus = null);
+
+/// <summary>The place a conversation is to be about, as `help/focus.ts` spells it.</summary>
+public sealed record HelpFocusPress(string Session, JsonElement? Focus, bool Said = false);
 
 /// <summary>No revision is a press with no card to stand for, which the driver refuses; <c>Taken</c> and <c>Left</c> are the draft editor's changes.</summary>
 public sealed record HelpApply(string Id, string? Revision, IReadOnlyList<string>? Taken, IReadOnlyList<string>? Left);
@@ -25,6 +30,6 @@ public sealed record HelpPublishedRead(string Session);
 
 public sealed record HelpWiredRead(string Session);
 
-/// <summary>A page of conversations: <c>Offset</c> and <c>Limit</c> count them, <c>Q</c> searches, a blank workspace is every workspace's; the terminal's flags (<c>Said</c>, <c>All</c>, <c>Json</c>) ask for its words.</summary>
+/// <summary>A page of conversations: <c>Offset</c> and <c>Limit</c> count them, <c>Q</c> searches, a blank workspace is every workspace's, <c>About</c> a place's; the terminal's flags (<c>Said</c>, <c>All</c>, <c>Json</c>) ask for its words.</summary>
 public sealed record HelpConversationsRead(
-    string? Q, long? Offset, long? Limit, string? Workspace, bool Said = false, bool All = false, bool Json = false);
+    string? Q, long? Offset, long? Limit, string? Workspace, bool Said = false, bool All = false, bool Json = false, JsonElement? About = null);

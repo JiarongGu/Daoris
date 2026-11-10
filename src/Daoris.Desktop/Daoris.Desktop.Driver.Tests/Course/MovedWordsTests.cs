@@ -87,7 +87,7 @@ public sealed class MovedWordsTests : IDisposable
             DriverConfig config, IReadOnlyList<RepoView> registry, RepoView known, string repository, string workTree,
             IReadOnlyList<string>? continued = null, bool answers = false) => throw new NotSupportedException();
 
-        public ChatPlace HelpPlace(string room, IReadOnlyList<HelpRead> reads, string? workspace = null) => throw new NotSupportedException();
+        public ChatPlace HelpPlace(string room, IReadOnlyList<HelpRead> reads, string? workspace = null, HelpFocus? focus = null) => throw new NotSupportedException();
 
         public Task<bool> AnswersFindingsAsync(string sessionId, string tree, DriverConfig config) => Task.FromResult(false);
 

@@ -567,9 +567,13 @@ internal sealed class LimitMove(IExecutorWiring wiring) : IExecutor
             // Its history names no earlier conversation; its brief still says which it continues.
         }
 
-        var (room, reads) = await help.HelpRoomNowAsync(id, KnowledgeRoomPaths.GoesOnIn(context.Home, prior.Workspace, prior.Tree), ct).ConfigureAwait(false);
+        // The new part is about what the one it carries is about, in the same room.
+        var roomIn = KnowledgeRoomPaths.GoesOnIn(context.Home, prior.Workspace, prior.Tree);
+        help.CarryFocus(prior.Session, id, roomIn);
+        var (room, reads) = await help.HelpRoomNowAsync(id, roomIn, ct).ConfigureAwait(false);
         return await runner.RunAsync(
-                prior.Actor ?? "ask-daoris", id, placed.Message, new ChatAgent(context.Harnesses.Adapters, resolved), selection, config, runner.HelpPlace(room, reads, prior.Workspace), onEnded, ct,
+                prior.Actor ?? "ask-daoris", id, placed.Message, new ChatAgent(context.Harnesses.Adapters, resolved), selection, config,
+                runner.HelpPlace(room, reads, prior.Workspace, help.FocusOf(id, roomIn)), onEnded, ct,
                 chosen: placed.Chosen)
             .ConfigureAwait(false);
     }

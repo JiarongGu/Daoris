@@ -154,6 +154,7 @@
   "person.route.HELP_START_FROM": "从之前的对话开始与问道衍的新对话",
   "person.route.HELP_RENAME": "为与问道衍的一段对话改名",
   "person.route.HELP_PIN": "置顶与问道衍的一段对话，或取消置顶",
+  "person.route.HELP_FOCUS": "更改与问道衍的一段对话的聚焦",
   "person.route.PLACE_APPLY": "应用一个位置的配置",
   "person.route.RECONCILE_APPLY": "请一个仓库自己的会话将其与典章对齐",
   "person.route.SET_ACCESS": "更改智能体可以触及的范围",

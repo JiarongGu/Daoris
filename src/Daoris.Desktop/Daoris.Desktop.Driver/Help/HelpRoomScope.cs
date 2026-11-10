@@ -1,7 +1,7 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// A workspace's room reads its workspace: the machine's facts (as
+/// A room reads the place its conversation is about: the machine's facts (as
 /// <see cref="HelpFacts.Read"/> reads them, and the driver's own files beside them) projected to one workspace before any section
 /// counts or lists them, so another workspace's never fills its lists. What the machine holds for every workspace (the agents and
 /// their accounts, sign-in and usage, the plugins and their approvals, Daoris's browser, the driver and its cap) is kept whole.
@@ -15,8 +15,11 @@ namespace Daoris.Driver;
 /// </remarks>
 internal static class HelpRoomScope
 {
-    /// <summary>The facts of <paramref name="whole"/> that are <paramref name="workspace"/>'s, with the machine's kept whole.</summary>
-    public static HelpMachineSources Project(HelpMachineSources whole, string workspace)
+    /// <summary>The facts a room for <paramref name="place"/> reads: the whole machine's, else its workspace's, the machine's kept whole.</summary>
+    public static HelpMachineSources Project(HelpMachineSources whole, HelpFocus place) =>
+        HelpRoom.ScopeOf(place.Workspace) is { } workspace ? Project(whole, workspace) : whole;
+
+    private static HelpMachineSources Project(HelpMachineSources whole, string workspace)
     {
         bool Ours(string? circle) => string.Equals(RemoteTarget.Workspace(circle), workspace, StringComparison.OrdinalIgnoreCase);
 
