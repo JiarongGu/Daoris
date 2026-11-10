@@ -1,11 +1,10 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// Performs a run's <c>apply</c>: the newest change set its work planned handed to the system's adapter, applied under each operation's
-/// precondition, or read before and after each write where the system declares none, and what it came to kept beside the plan and
-/// written on the node. Applied and unchanged reach it; stale and changed while applying fail it with words naming each such resource's
-/// present version, which its way back tells the work; any other refusal fails it in the adapter's words. One apply runs at a time in
-/// this door, so one applier writes to a system.
+/// Performs a run's <c>apply</c>: the newest plan its work made, applied by the system's adapter under each precondition (or read
+/// before and after each write where it declares none) and what it came to written on the node. Applied and unchanged reach it; stale
+/// and changed while applying fail it naming each such resource's present version, which its way back tells the work; any other
+/// refusal fails it in the adapter's words. One apply runs at a time in this door, so one applier writes to a system.
 /// </summary>
 public sealed class ApplyDoor(
     string home, Func<SystemPlace, CancellationToken, Task<IHookChannel>> adapters, Action<string>? log = null, Func<bool>? runs = null,
@@ -14,7 +13,6 @@ public sealed class ApplyDoor(
     /// <summary>The code a stale plan fails its node with.</summary>
     public const string Stale = "stale";
 
-    /// <summary>The code an unguarded system's apply fails its node with where a resource read back differs from its write.</summary>
     public const string ChangedWhileApplying = "changed-while-applying";
 
     /// <summary>The code an apply the adapter refused otherwise fails its node with.</summary>

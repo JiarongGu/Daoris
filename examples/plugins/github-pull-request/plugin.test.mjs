@@ -251,13 +251,11 @@ const ANSWERS = {
   'work/perform': (answer, frame) => (answer !== null && typeof answer === 'object' && !Array.isArray(answer) && answer.invocation === frame.invocation
     ? null
     : `${JSON.stringify(answer)}, which does not acknowledge \`${frame.invocation}\` — { "invocation": "${frame.invocation}" }`),
-  // A plan: each operation names its resource, its op and its precondition's kind.
   'plan/read': (answer) => (answer !== null && typeof answer === 'object' && Array.isArray(answer.operations)
     && answer.operations.every((op) => op !== null && typeof op === 'object' && typeof op.resource === 'string' && op.resource.length > 0
       && ['create', 'update', 'delete'].includes(op.op) && typeof op.precondition?.kind === 'string' && op.precondition.kind.length > 0)
     ? null
     : `${JSON.stringify(answer)}, which is not a change set — { "operations": [{ "resource", "op": "create" | "update" | "delete", "before", "after", "precondition": { "kind", "version" } }] }`),
-  // What an apply came to: unchanged applies nothing, and stale names the resource refused and what each stale one is now.
   'apply/perform': (answer) => (answer !== null && typeof answer === 'object' && ['applied', 'unchanged', 'stale', 'failed'].includes(answer.state)
     && (answer.applied === undefined || (Array.isArray(answer.applied) && answer.applied.every((each) => typeof each === 'string')))
     && (answer.state !== 'unchanged' || !(answer.applied?.length > 0))

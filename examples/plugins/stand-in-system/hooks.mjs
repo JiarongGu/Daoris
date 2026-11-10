@@ -1,10 +1,8 @@
 // The stand-in system's adapter on the hook wire: JSON-RPC 2.0, one frame per line on stdin and stdout, stderr its console.
 // It answers the two system points a plugin that declares `systems` speaks:
 //  plan/read      the intended changes read against the system as it stands, answered as typed operations with their preconditions
-//  apply/perform  a reviewed change set applied under those preconditions: `applied`, `unchanged`, or `stale` with each refused
-//                 resource's present version
-// Its store is the data folder's state.json (system.mjs); DAORIS_PLUGIN_DATA says where that is. Both systems it declares are that
-// store: `stand-in` guarded by each key's etag, `stand-in-unguarded` by nothing of its own, as plugin.json says.
+//  apply/perform  a reviewed change set applied under them: `applied`, `unchanged`, or `stale` with each refused resource's present version
+// Its store is DAORIS_PLUGIN_DATA's state.json (system.mjs), declared twice in plugin.json: guarded by its etags, and by `none`.
 import { mkdirSync, readFileSync } from 'node:fs';
 import { createInterface } from 'node:readline';
 import { apply, keep, plan, read } from './system.mjs';

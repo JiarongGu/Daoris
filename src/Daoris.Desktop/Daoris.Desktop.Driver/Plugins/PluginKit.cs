@@ -291,7 +291,6 @@ public static class PluginKit
         // and the hook set tells every plugin that works the awaited set at `work/watch`, a performer included, so performing brings that.
         if (named.Any(point => point is HookPoints.Watch or HookPoints.Perform) && !named.Contains(HookPoints.Step)) named.Add(HookPoints.Step);
         if (named.Contains(HookPoints.Perform) && !named.Contains(HookPoints.Watch)) named.Add(HookPoints.Watch);
-        // A system is planned at one point and applied at the other, so the manifest names both or the catalogue refuses it.
         if (named.Any(point => HookPoints.System.Contains(point, StringComparer.Ordinal))) named.AddRange(HookPoints.System.Except(named, StringComparer.Ordinal));
         var chosen = Points.Where(point => named.Contains(point.Name, StringComparer.Ordinal)).ToList();
         var folder = PluginKitFiles.FolderIn(parent, id);

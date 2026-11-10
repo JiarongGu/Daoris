@@ -2,7 +2,7 @@ namespace Daoris.Driver;
 
 /// <summary>
 /// What a run's work is told when its apply goes back: refused as stale, the plan having read versions that moved before the apply,
-/// or changed while applying, a resource of an unguarded system read back other than it was written. Either way it plans again from
+/// or changed while applying, a resource of an unguarded system read back other than its write. Either way it plans again from
 /// the system as it stands, with each such resource's present value and version.
 /// </summary>
 public static class SystemStaleWords

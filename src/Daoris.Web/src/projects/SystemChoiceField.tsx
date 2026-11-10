@@ -10,7 +10,6 @@ export const systemsOffered = (plugins: readonly PluginEntry[]): SystemOffered[]
     .filter((plugin) => plugin.enabled && !plugin.problem)
     .flatMap((plugin) => (plugin.systems ?? []).map((each) => ({ system: `${plugin.id}/${each.id}`, name: each.name, plugin: plugin.name })));
 
-/** The systems, `<plugin>/<system>`, whose adapter declares its precondition `none`: a department of one is unguarded. */
 export const unguardedSystems = (plugins: readonly PluginEntry[]): ReadonlySet<string> =>
   new Set(plugins.flatMap((plugin) => (plugin.systems ?? []).filter((each) => each.preconditions === 'none').map((each) => `${plugin.id}/${each.id}`)));
 

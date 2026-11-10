@@ -4,7 +4,7 @@ namespace Daoris.Driver;
 /// The apply of a system whose adapter declares its precondition <c>none</c> (design §5.5): the system guards no write, so the lease
 /// keeps one applier and this reads each resource just before writing it and again after. A resource planned alone at
 /// <see cref="HookPoints.PlanRead"/> is the read: no operation says the system holds it, one names its present value and version.
-/// A version other than the plan's is <c>stale</c>, nothing of it written; a resource read back still to change was
+/// A version other than the plan's is <c>stale</c>, nothing of it written; a resource read back still to change is
 /// <c>changed</c> while applying, by another writer.
 /// </summary>
 public sealed class SystemReadBack(IHookChannel channel, SystemPlace place)

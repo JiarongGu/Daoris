@@ -30,9 +30,8 @@ export function etagOf(key, value, serial) {
 }
 
 /**
- * The typed operations a set of intended changes comes to, each with the precondition it is applied under: `create` where the key
- * is absent (it must still be absent), `update` and `delete` under the etag read now. A change that changes nothing is left out, so
- * a change planned alone is also a read: an empty answer says the store holds it. `kind` is the system's declared precondition.
+ * The typed operations intended changes come to, under the system's declared precondition `kind`: `create` where the key is absent,
+ * `update` and `delete` under the etag read now. A change that changes nothing is left out, so a change planned alone is a read.
  */
 export function plan(state, changes, kind = 'etag') {
   const operations = [];
@@ -71,9 +70,8 @@ function inPlace(state, operation) {
 }
 
 /**
- * Apply `operations` in order under their preconditions, or answer `unchanged` where the store already holds what each asks. A stale
- * plan changes nothing and is answered `stale` with what each stale resource is now; otherwise each is written and its new etag minted.
- * Unguarded, as a system declaring `none` is, nothing is checked: Daoris reads each resource before and after its write.
+ * Apply `operations` in order, or answer `unchanged` where the store holds each. Guarded, a stale plan changes nothing and is answered
+ * `stale` with each stale resource now; unguarded (`none`), nothing is checked, and Daoris reads each key before and after its write.
  */
 export function apply(state, operations, { guarded = true } = {}) {
   if (operations.every((operation) => inPlace(state, operation))) return { state, answer: { state: 'unchanged', applied: [] } };

@@ -43,7 +43,6 @@ export type RepositoryRowFacts = RepositoryStanding & {
   entries?: number | null;
   /** How many of Daoris's branches it holds on this machine (§4.1): a shell's, absent in a browser. */
   branches?: number;
-  /** A system department whose adapter declares its precondition `none`: the lease and a read-back alone guard its apply. */
   unguarded?: boolean;
 };
 

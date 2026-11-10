@@ -23,7 +23,6 @@ export type PluginEntry = {
   name: string;
   version: string;
   description: string;
-  /** The systems it adapts, each with what its writes are guarded by: `etag`, `serial`, `changeset` or `none`. */
   systems?: { id: string; name: string; preconditions?: string }[];
   /** The person's word (`plugins.json`), independent of whether the plugin is sound. */
   enabled: boolean;

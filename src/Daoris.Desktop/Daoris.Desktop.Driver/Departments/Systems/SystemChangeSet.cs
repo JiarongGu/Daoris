@@ -33,10 +33,7 @@ public static class SystemApplyStates
     /// <summary>Nothing to change: every resource already held what the plan asks, so the system wrote nothing.</summary>
     public const string Unchanged = "unchanged";
 
-    /// <summary>
-    /// Daoris's own, never an adapter's answer: a system guarded by nothing (<see cref="SystemPreconditions.None"/>) wrote a resource
-    /// and read it back holding something else, so another writer changed it while the plan applied.
-    /// </summary>
+    /// <summary>Daoris's own, never an adapter's: an unguarded system's resource read back other than its write, changed by another writer.</summary>
     public const string Changed = "changed";
 }
 
