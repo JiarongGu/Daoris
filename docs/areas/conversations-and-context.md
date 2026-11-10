@@ -210,7 +210,8 @@ of everything it handed, section by section.
     person waits on no answer to it. (from D162, D163, D164, D230)
 38. A session is listed only the tools its kind may call: the core 18 plus its kind's. Ask Daoris gets every tool but the turns and the memory changes. A Claude
     session keeps its account's auto-memory and synced skills, plugins and connectors, as by hand. Daoris writes no account home.
-    (from D230, D253)
+    Each start of every kind is handed a delegate key beside its id; a press its verb proves with it is put to the person on a card
+    naming the session, Ask Daoris's tier aside (roles-and-supervision 56-58). (from D230, D253)
 
 **Counts and the handed account**
 

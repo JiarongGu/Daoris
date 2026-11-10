@@ -6,9 +6,10 @@ namespace Daoris.Desktop;
 
 /// <summary>
 /// The terminal that asks, as the operating system names the pipe's client: its process's name and id, never a word the
-/// asker wrote. Null where the system would not say.
+/// asker wrote. Null where the system would not say. <see cref="Session"/> is the session whose delegate key its press proved, and
+/// <see cref="Help"/> that it is Ask Daoris's, so the card names it as asking.
 /// </summary>
-public sealed record PipeAsker(string? Process, int? Pid);
+public sealed record PipeAsker(string? Process, int? Pid, string? Session = null, bool Help = false);
 
 /// <summary>
 /// One value a press carries, as the card shows it (as the card shows a body's): <see cref="Name"/> its JSON
@@ -760,6 +761,8 @@ public sealed class PipeConfirmations : IDisposable
 
     private static string Named(PipeAsker asker) => asker switch
     {
+        { Help: true } => "Ask Daoris",
+        { Session: { } session } => $"session {session}",
         { Process: { Length: > 0 } process, Pid: { } pid } => $"{process} ({pid})",
         { Pid: { } pid } => $"process {pid}",
         _ => "a terminal",

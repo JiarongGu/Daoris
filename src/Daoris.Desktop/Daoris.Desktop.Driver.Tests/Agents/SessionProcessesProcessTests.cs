@@ -67,6 +67,23 @@ public sealed class SessionProcessesProcessTests : IDisposable
         Assert.False(processes.Stop(Session));
     }
 
+    /// <summary>A session's process ending forgets the delegate keys drawn up to it; one drawn after it is tracked belongs to a start still coming, and stays.</summary>
+    [Fact]
+    public void The_session_s_process_end_forgets_its_delegate_keys_and_keeps_one_still_coming()
+    {
+        var processes = new SessionProcesses(Markers);
+        processes.Delegates.Draw(Session);
+        var tracked = processes.Track(Session, Holding());
+        var coming = processes.Delegates.Draw(Session);
+        Assert.Equal(2, processes.Delegates.Of(Session).Count);
+
+        tracked.Dispose();
+        Assert.Equal(KeyedProof.Hash(coming), Assert.Single(processes.Delegates.Of(Session)));
+
+        processes.Delegates.Forget(Session);
+        Assert.Empty(processes.Delegates.Of(Session));
+    }
+
     /// <summary>The second start's end, the first still running: still run here, stoppable from the window, marked as the first's.</summary>
     [Fact]
     public async Task A_second_start_that_ends_leaves_the_live_one_running_stoppable_and_marked()

@@ -107,6 +107,7 @@ public static class WiringVariables
         ["DAORIS_BRAINSTORM_ROOM"] = "handed to a brainstorm pass's connector by the driver: the room its answer is judged against",
         ["DAORIS_QUEST_ATTACHMENTS"] = "handed to a session by the driver: its quest's kept files",
         ["DAORIS_SESSION_ID"] = "handed to a session or its connector by the driver",
+        ["DAORIS_DELEGATE_KEY"] = "a session's delegate key, drawn at each start of a session Daoris runs and handed to that start alone, whose verb proves a press with it; a secret never shown, removed from every Daoris process at its entry and from every other start",
         ["DAORIS_SESSION_ROLE"] = "handed to a session's connector by the driver: the role its start took, which its memory changes name",
         ["DAORIS_SESSION_ROLE_REVISION"] = "handed to a session's connector by the driver: that role's revision",
         ["DAORIS_LINEAGE_PROC"] = "handed to a session's process, its hook and its connector by the driver: the token its lineage lines name it by",
