@@ -120,12 +120,17 @@ export function nameOfEntry(entry: SessionEntry | undefined, askNames: Readonly<
 }
 
 /** The listed row's facts about its entry: how many parts it holds, and all their ids. Absent where it is a record alone. */
-export type EntryFacts = { parts: number; ids: readonly string[] };
+export type EntryFacts = { parts: number; ids: readonly string[]; quests: number };
 
 /** The facts of each entry's leading row, by that row's id; only entries of more than one part carry a count worth saying. */
 export function entryFacts(entries: readonly SessionEntry[] | undefined): Map<string, EntryFacts> {
   return new Map((entries ?? []).map((entry): [string, EntryFacts] => [
-    entry.leading, { parts: entry.parts.length, ids: entry.parts.map((part) => part.session) },
+    entry.leading, {
+      parts: entry.parts.length,
+      ids: entry.parts.map((part) => part.session),
+      // How many different quests its parts hold: a row of a line holding several says which one it is on.
+      quests: new Set(entry.parts.flatMap((part) => (part.quest ? [part.quest] : []))).size,
+    },
   ]));
 }
 

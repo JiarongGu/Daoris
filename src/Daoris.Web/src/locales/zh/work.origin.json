@@ -1,0 +1,14 @@
+{
+  "work.origin.from": "起点",
+  "work.origin.started": "起始要求",
+  "work.origin.askId": "需求 #{{id}}",
+  "work.origin.kind.quest": "委托",
+  "work.origin.kind.ask": "需求",
+  "work.origin.kind.earlier": "先前会话",
+  "work.origin.kind.room": "问 Daoris 的房间，位于",
+  "work.origin.kind.repository": "聊天所在仓库",
+  "work.origin.with.requirements": "委托的要求",
+  "work.origin.with.questWords": "委托的原话（它没有要求）",
+  "work.origin.with.askWords": "需求的原话",
+  "work.origin.with.firstMessage": "第一条消息"
+}

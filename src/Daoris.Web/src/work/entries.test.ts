@@ -63,7 +63,8 @@ describe('the session list by entry', () => {
 
   it('counts the parts of each entry on its leading row', () => {
     const facts = entryFacts(EVIDENCE_ENTRIES);
-    expect(facts.get('ap000003')).toEqual({ parts: 3, ids: ['ap000001', 'ap000002', 'ap000003'] });
+    expect(facts.get('ap000003')).toMatchObject({ parts: 3, ids: ['ap000001', 'ap000002', 'ap000003'] });
+    expect(facts.get('ap000003')?.quests).toBe(new Set(EVIDENCE_ENTRIES[0].parts.map((part) => part.quest).filter(Boolean)).size);
     expect(facts.get('ap000001')).toBeUndefined();
   });
 

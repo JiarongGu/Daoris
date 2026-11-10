@@ -33,6 +33,7 @@ import type { useAttendedWaits } from '../waits/useAttendedWaits';
 import { type LineSupervision, supervisionChip } from './lineSupervision';
 import { leadingAgentOf, nextPress, type SessionFactsOf, sessionFacts, sessionFactsTip } from './headFacts';
 import type { HeadLink } from './headRows';
+import type { AskOrigin } from './startedFrom';
 import { DeleteAsk, SessionPageHead, StopAsk } from './SessionPageHead';
 import type { useAttendedRecord } from './useAttendedRecord';
 import type { useHeadAsks } from './useHeadAsks';
@@ -203,6 +204,10 @@ export function useAttendedHead({
   // Named as its row is: the entry's name, its ask's, where an ask began it, read under the rail's own key; otherwise
   // the record's own.
   const entryAsk = channelAsk ? (entryAsks ?? []).find((ask) => ask.id === channelAsk) : undefined;
+  const originAskId = attended?.ask ?? channelAsk;
+  const originAsk: AskOrigin | null = originAskId
+    ? { id: originAskId, words: (entryAsks ?? []).find((ask) => ask.id === originAskId)?.sentence ?? null }
+    : null;
   const attendedTitle = attended
     ? nameOfEntry(attendedEntry ?? undefined, entryAsk ? { [entryAsk.id]: askName(entryAsk) } : {})
       ?? sessionTitle(attended, quest, openings[attended.id])
@@ -357,5 +362,5 @@ export function useAttendedHead({
     />
   );
 
-  return { setChatHeld, limitLine, headLink, continues, helps, pageMenu, pageHead };
+  return { setChatHeld, limitLine, headLink, continues, helps, originAsk, pageMenu, pageHead };
 }
