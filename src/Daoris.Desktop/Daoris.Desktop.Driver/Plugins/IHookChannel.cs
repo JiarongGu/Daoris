@@ -31,6 +31,13 @@ public interface IHookChannel : IAsyncDisposable
             new DriverException($"this channel does not answer `{HookPoints.State}`."), PluginEvents.Errored));
 
     /// <summary>
+    /// A system point's request (<see cref="HookPoints.System"/>), its answer unread. A channel that has no such answer fails as the plugin's
+    /// error, which the apply says and the plan refuses on.
+    /// </summary>
+    Task<JsonElement> SystemAsync(string point, object payload, CancellationToken ct) =>
+        Task.FromException<JsonElement>(PluginFailures.Mark(new DriverException($"this channel does not answer `{point}`."), PluginEvents.Errored));
+
+    /// <summary>
     /// What moved of what the driver holds, its answer not read. A channel that has no such answer fails
     /// as the plugin's error, which an observation contains.
     /// </summary>
