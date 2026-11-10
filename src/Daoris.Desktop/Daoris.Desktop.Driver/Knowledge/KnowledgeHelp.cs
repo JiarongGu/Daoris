@@ -5,6 +5,10 @@ internal interface IHelpMachineSources
 {
     HelpMachine Describe(IHelpRoomSection section, HelpMachine machine);
     HelpMachine Describe(string? workspace);
+
+    /// <summary>The room of <paramref name="home"/> written for <paramref name="focus"/> (<see cref="HelpMachine.Within(string?, HelpFocus?)"/>).</summary>
+    HelpMachine Describe(string? home, HelpFocus focus) =>
+        Describe(KnowledgeHelp.Current.ScopeOf(focus.Workspace)) with { Focus = focus, Home = home };
 }
 
 public interface IKnowledgeParkedQuest
@@ -27,6 +31,7 @@ internal interface IKnowledgeHelp
     string? GoesOnIn(string home, string? workspace, string? tree);
     bool SaidNotReadYet(string home);
     IReadOnlyList<string?> Unread(string home);
+    HelpFocus? FocusWritten(string home, string? workspace);
     string Prepare(string home, HelpMachine machine);
     IReadOnlyList<HelpRead> HandedCheckouts(string home, string session);
     IReadOnlyList<(string Id, string Name)> Views { get; }

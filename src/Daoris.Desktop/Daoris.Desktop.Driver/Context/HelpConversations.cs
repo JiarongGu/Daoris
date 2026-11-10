@@ -19,6 +19,16 @@ public sealed record HelpKept(string? Name, DateTimeOffset? Pinned, string? From
 
     /// <summary>Each place it held, first to last, none twice; null where it kept none.</summary>
     public IReadOnlyList<HelpFocus>? Foci { get; init; }
+
+    /// <summary>Each message that carried a change of focus, first to last (<see cref="HelpFocusMark"/>).</summary>
+    public IReadOnlyList<HelpFocusMark> Marks { get; init; } = [];
+
+    public bool Equals(HelpKept? other) =>
+        other is not null && Name == other.Name && Pinned == other.Pinned && From == other.From && Handed == other.Handed
+        && Equals(Focus, other.Focus) && Equals(FocusNext, other.FocusNext)
+        && (Foci ?? []).SequenceEqual(other.Foci ?? []) && Marks.SequenceEqual(other.Marks);
+
+    public override int GetHashCode() => HashCode.Combine(Name, Pinned, From, Handed, Focus, FocusNext);
 }
 
 /// <summary>One row of Ask Daoris's history: a conversation of this machine's the person spoke in.</summary>
@@ -177,6 +187,9 @@ public sealed class HelpConversations(string home)
                 Foci = root.TryGetProperty("foci", out var foci) && foci.ValueKind == JsonValueKind.Array
                     ? foci.EnumerateArray().Select(HelpFocus.Read).OfType<HelpFocus>().Distinct().ToList() is { Count: > 0 } held ? held : null
                     : null,
+                Marks = root.TryGetProperty("marks", out var marks) && marks.ValueKind == JsonValueKind.Array
+                    ? [.. marks.EnumerateArray().Select(HelpFocusMark.Read).OfType<HelpFocusMark>()]
+                    : [],
             };
         }
         catch (Exception error) when (error is JsonException or IOException or UnauthorizedAccessException)
@@ -426,6 +439,13 @@ public sealed class HelpConversations(string home)
         {
             writer.WriteStartArray("foci");
             foreach (var place in foci) place.Write(writer);
+            writer.WriteEndArray();
+        }
+
+        if (kept.Marks.Count > 0)
+        {
+            writer.WriteStartArray("marks");
+            foreach (var mark in kept.Marks) mark.Write(writer);
             writer.WriteEndArray();
         }
 

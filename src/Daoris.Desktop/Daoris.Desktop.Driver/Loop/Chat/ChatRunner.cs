@@ -424,7 +424,8 @@ public sealed class ChatRunner : IDisposable, IChatPressing, IChatSendBacks, IEx
         _walk.AskAsync(actor, order, config, workspace, profile, ct, refused, counts, except);
 
     /// <summary>Where Ask Daoris's conversation runs (<see cref="HelpPlacement.In"/>).</summary>
-    internal ChatPlace HelpPlace(string room, IReadOnlyList<HelpRead> reads, string? workspace = null) => HelpPlacement.In(_home, room, reads, workspace);
+    internal ChatPlace HelpPlace(string room, IReadOnlyList<HelpRead> reads, string? workspace = null, HelpFocus? focus = null) =>
+        HelpPlacement.In(_home, room, reads, workspace, focus);
 
     /// <inheritdoc cref="HelpAccessSwap.Chosen"/>
     public void HelpAccessChosen(string mode) => Executors.Of<HelpAccessSwap>().Chosen(mode);
@@ -587,7 +588,7 @@ public sealed class ChatRunner : IDisposable, IChatPressing, IChatSendBacks, IEx
         bool answers) =>
         RepositoryPlace(config, registry, known, repository, workTree, continued, answers);
 
-    ChatPlace IChatRunning.HelpPlace(string room, IReadOnlyList<HelpRead> reads, string? workspace) => HelpPlace(room, reads, workspace);
+    ChatPlace IChatRunning.HelpPlace(string room, IReadOnlyList<HelpRead> reads, string? workspace, HelpFocus? focus) => HelpPlace(room, reads, workspace, focus);
 
     Task<bool> IChatRunning.AnswersFindingsAsync(string sessionId, string tree, DriverConfig config) => AnswersFindingsAsync(sessionId, tree, config);
 

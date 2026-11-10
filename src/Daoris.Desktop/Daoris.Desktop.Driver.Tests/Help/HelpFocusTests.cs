@@ -108,6 +108,27 @@ public sealed class HelpFocusTests : IDisposable
         Assert.Equal([Engine], kept.Foci);
     }
 
+    /// <summary>
+    /// A focus chosen before the first words reopens an agent opened ahead under a room for another place, and nothing else: not one
+    /// opened under the same place, not one never started, not one spoken in.
+    /// </summary>
+    [Fact]
+    public void A_focus_chosen_before_words_reopens_an_agent_opened_ahead_under_another_place()
+    {
+        var record = Help("h1");
+        Choose(record, Engine);
+        Assert.False(HelpFocusAhead.Reopens(_home, "h1", Events));
+
+        new HelpWired(_home).Keep("h1", new HelpReceipt { At = Monday, Door = "claude-code", Folder = "room", Focus = HelpFocus.OfWorkspace("Games") });
+        Assert.True(HelpFocusAhead.Reopens(_home, "h1", Events));
+        Choose(record, HelpFocus.OfWorkspace("games"));
+        Assert.False(HelpFocusAhead.Reopens(_home, "h1", Events));
+
+        Choose(record, Engine);
+        Said("h1", "Why does the release wait?");
+        Assert.False(HelpFocusAhead.Reopens(_home, "h1", Events));
+    }
+
     [Fact]
     public void A_change_after_words_waits_for_the_next_message_and_choosing_the_focus_again_clears_it()
     {

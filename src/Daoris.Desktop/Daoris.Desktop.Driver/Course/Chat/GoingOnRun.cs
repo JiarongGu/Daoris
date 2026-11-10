@@ -303,10 +303,11 @@ internal sealed class GoingOnRun(IExecutorWiring wiring, ChatGoOn owner)
         var now = await _context.ReadAgainAsync(sessionId, ct).ConfigureAwait(false);
         var words = Continuations.HandedAfterMove(record.Waiting, now);
         if (words.Count == 0) return await owner.TakenBackAsync(record, ct).ConfigureAwait(false);
-        // The focus these words take, a change told in one line ahead of them.
-        var change = HelpFocusTurn.Apply(_context.Home, sessionId, record.Workspace, await FocusRegistryAsync(ct).ConfigureAwait(false));
+        // The room it ran in, its workspace's, or the machine's where it started there before each workspace had its own; the focus
+        // these words take, its room's own where none was chosen, a change told in one line ahead of them.
+        var roomIn = KnowledgeRoomPaths.GoesOnIn(_context.Home, record.Workspace, record.Tree);
         var ask = new ResumeAsk(
-            kept.Conversation, change is null ? words : HelpFocusTurn.Ahead(words, change.Line),
+            kept.Conversation, _help.TakeFocus(sessionId, roomIn, words, await FocusRegistryAsync(ct).ConfigureAwait(false)),
             woke is { } until
                 ? LimitNotes.Resumed(until)
                 : Continuations.OpeningNoted(adapter.Id.Value, selection.Version, record.DoorVersion, answer: false),
@@ -316,13 +317,11 @@ internal sealed class GoingOnRun(IExecutorWiring wiring, ChatGoOn owner)
             Resent = owner.Resent(sessionId, LimitHeld.Waiting(_context.Events.After(sessionId, 0).Events, record.Limit)),
         };
 
-        // The room it ran in, its workspace's, or the machine's where it started there before each workspace had its own.
-        var (room, reads) = await _help.HelpRoomNowAsync(sessionId, KnowledgeRoomPaths.GoesOnIn(_context.Home, record.Workspace, record.Tree), ct)
-            .ConfigureAwait(false);
+        var (room, reads) = await _help.HelpRoomNowAsync(sessionId, roomIn, ct).ConfigureAwait(false);
         handed = true;
         return await _runner.RunAsync(
             record.Actor ?? "ask-daoris", sessionId, $"Ask Daoris `{sessionId}` goes on with your words in its own conversation.", new ChatAgent(_context.Harnesses.Adapters, adapter), selection, config,
-            _runner.HelpPlace(room, reads, record.Workspace), onEnded, ct, new GoingOn(record, ask) { Proc = proc }).ConfigureAwait(false);
+            _runner.HelpPlace(room, reads, record.Workspace, _help.FocusOf(sessionId, roomIn)), onEnded, ct, new GoingOn(record, ask) { Proc = proc }).ConfigureAwait(false);
     }
 
     /// <summary>The registry a focus is resolved against; null where the service did not answer, which widens nothing.</summary>

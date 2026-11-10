@@ -23,9 +23,10 @@ internal static class HelpPlacement
     /// person's denies for that workspace in its rules beside the checkouts its room grants, every workspace's.</para>
     /// </remarks>
     /// <param name="workspace">The workspace its record keeps: what setting it aside is judged by; null is <c>default</c>.</param>
-    internal static ChatPlace In(string home, string room, IReadOnlyList<HelpRead> reads, string? workspace = null)
+    /// <param name="focus">The focus its room is written for, whose workspace its tools start at; null starts them at its room's.</param>
+    internal static ChatPlace In(string home, string room, IReadOnlyList<HelpRead> reads, string? workspace = null, HelpFocus? focus = null)
     {
-        var circle = HelpCircle.Of(home, room, workspace);
+        var circle = focus is null ? HelpCircle.Of(home, room, workspace) : HelpCircle.OfFocus(focus);
         // The housekeeping the person chose, and the settings, read once for this start,
         // so its allow-list and its receipt say the same; each tool's call is judged again by the record then (HelpHousekeeping,
         // HelpSettings).

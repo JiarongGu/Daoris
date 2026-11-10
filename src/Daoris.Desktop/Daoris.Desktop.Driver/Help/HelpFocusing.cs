@@ -8,13 +8,19 @@ public sealed record HelpFocusAnswer(string Session, HelpFocus? Focus, HelpFocus
 {
     /// <summary>The answer as <c>HELP_FOCUS</c> gives it: <c>{ session, focus, focusNext }</c>, or <c>{ session, refused, said }</c>.</summary>
     public IReadOnlyDictionary<string, object?> Wire() => Refused is null
-        ? new Dictionary<string, object?> { ["session"] = Session, ["focus"] = Focus?.Wire(), ["focusNext"] = FocusNext?.Wire() }
+        ? new Dictionary<string, object?> { ["session"] = Session, ["focus"] = Focus?.Wire(), ["focusNext"] = FocusNext?.Wire(), ["reopens"] = Reopens }
         : new Dictionary<string, object?> { ["session"] = Session, ["refused"] = Refused, ["said"] = Said };
 
     /// <summary>The answer in the terminal's words.</summary>
     public string Line => Refused is not null ? $"help: {Said}"
-        : FocusNext is { } next ? $"help: {Session}'s focus becomes {HelpFocusing.Named(next)} with its next words; it is {HelpFocusing.Named(Focus!)} until then."
-        : $"help: {Session}'s focus is {HelpFocusing.Named(Focus!)}.";
+        : FocusNext is { } next ? $"help: {Session}'s focus becomes {next.Named} with its next words; it is {Focus!.Named} until then."
+        : $"help: {Session}'s focus is {Focus!.Named}.";
+
+    /// <summary>
+    /// Whether its agent, opened ahead of any words under a room written for another place, was ended for the choice, so the conversation
+    /// is opened ahead again under the focus chosen (<see cref="HelpFocusAhead"/>).
+    /// </summary>
+    public bool Reopens { get; init; }
 }
 
 /// <summary>
@@ -52,7 +58,7 @@ public sealed class HelpFocusing(string home)
 
         if (Spelled(asked, registry) is not { } place)
         {
-            return Refuse(session, UnknownPlace, $"there is no {Named(asked)} on this machine, so the focus stays as it is.");
+            return Refuse(session, UnknownPlace, $"there is no {asked.Named} on this machine, so the focus stays as it is.");
         }
 
         var conversation = new HarnessConversations(home).Read(session);
@@ -92,14 +98,6 @@ public sealed class HelpFocusing(string home)
                 && string.Equals(known.Repository, asked.Repository, StringComparison.OrdinalIgnoreCase)) is { } repository
             ? HelpFocus.OfRepository(repository.Workspace, repository.Repository)
             : null,
-    };
-
-    /// <summary>A place in the terminal's and the agent's words.</summary>
-    public static string Named(HelpFocus place) => place.Kind switch
-    {
-        HelpFocus.MachineKind => "this machine",
-        HelpFocus.WorkspaceKind => $"workspace `{place.Workspace}`",
-        _ => $"repository `{place.Repository}` in workspace `{place.Workspace}`",
     };
 
     private static HelpFocusAnswer Refuse(string session, string code, string said) => new(session, null, null, code, said);

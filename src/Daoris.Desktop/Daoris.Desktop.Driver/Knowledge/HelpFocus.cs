@@ -53,6 +53,14 @@ public sealed record HelpFocus
         _ => MachineKind,
     };
 
+    /// <summary>The place in the terminal's, the room's and the agent's words.</summary>
+    public string Named => Kind switch
+    {
+        MachineKind => "this machine",
+        WorkspaceKind => $"workspace `{Workspace}`",
+        _ => $"repository `{Repository}` in workspace `{Workspace}`",
+    };
+
     /// <summary>The place a terminal's words name, or null for none.</summary>
     public static HelpFocus? FromSaid(string? said)
     {

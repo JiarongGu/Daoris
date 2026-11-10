@@ -43,18 +43,20 @@ public sealed class HelpFocusRoutes(DriverContext context)
         var registry = await service.RegistryAsync(cancellationToken).ConfigureAwait(false);
         var answer = new HelpFocusing(_loop.Home)
             .Choose(press.Session, records, registry, _loop.Events, adapter => SessionsVerbs.Resumes(_loop, adapter), asked);
-        if (answer.Refused is null) Swap(press.Session);
-        return answer.Wire();
+        return (answer.Refused is null ? answer with { Reopens = Swap(press.Session) } : answer).Wire();
     }
 
     /// <summary>
     /// A change waiting takes the next turn, as a change of access does: a running conversation's agent ends at its turn's end, or
-    /// now where idle, and its next words resume it under the new focus (<see cref="HelpFocusTurn"/>).
+    /// now where idle, and its next words resume it under the new focus (<see cref="HelpFocusTurn"/>). One opened ahead under another
+    /// place ends now, and the answer says so, so the page opens it ahead again (<see cref="HelpFocusAhead"/>).
     /// </summary>
-    private void Swap(string session)
+    private bool Swap(string session)
     {
-        if (!SessionEventText.IsId(session)) return;
-        _loop.Chat?.HelpFocusChosen(session, new HelpConversations(_loop.Home).Read(session).FocusNext is not null);
+        if (!SessionEventText.IsId(session)) return false;
+        var reopens = HelpFocusAhead.Reopens(_loop.Home, session, _loop.Events);
+        _loop.Chat?.HelpFocusChosen(session, reopens || new HelpConversations(_loop.Home).Read(session).FocusNext is not null);
+        return reopens;
     }
 
     /// <summary>The place a press names, or null where it names none or a shape that is none.</summary>
@@ -68,7 +70,7 @@ public sealed class HelpFocusRoutes(DriverContext context)
     {
         if (Place(wire) is not { } asked) return null;
         return HelpFocusing.Spelled(asked, registry)
-            ?? throw new DriverException($"there is no {HelpFocusing.Named(asked)} on this machine, so no conversation was started.");
+            ?? throw new DriverException($"there is no {asked.Named} on this machine, so no conversation was started.");
     }
 
     /// <summary>

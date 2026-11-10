@@ -89,6 +89,12 @@ public sealed record HelpReceipt
     /// as housekeeping's are (<see cref="HelpSettings"/>). None for a start before.
     /// </summary>
     public IReadOnlyList<string> Settings { get; init; } = [];
+
+    /// <summary>The focus its room was written for; null on a start before.</summary>
+    public HelpFocus? Focus { get; init; }
+
+    /// <summary>Where its connector starts: the focus's workspace, or <see cref="HelpWired.All"/> for this machine; null on a start before.</summary>
+    public string? Starts { get; init; }
 }
 
 /// <summary>A plugin's skill composed for the start: <c>plugin:skill</c>, its <see cref="HelpWired"/> state and why.</summary>
@@ -156,6 +162,9 @@ public sealed record HelpHanded(string Mode, bool GoesOn, string Harness, Transp
 
     /// <summary>The chosen settings the place is composed with.</summary>
     public IReadOnlyList<string> Settings { get; init; } = [];
+
+    /// <summary>The workspace its connector is bound to (<see cref="HelpCircle"/>); null for the whole machine.</summary>
+    public string? Circle { get; init; }
 }
 
 /// <summary>
@@ -183,6 +192,9 @@ public sealed class HelpWired(string home)
 
     /// <summary>The protocol transport.</summary>
     public const string Protocol = "protocol";
+
+    /// <summary>A connector bound to no workspace, which answers for every one: a focus on this machine.</summary>
+    public const string All = "all";
 
     /// <summary>A transport's word in the receipt.</summary>
     public static string TransportWord(Daoris.Driver.Transport transport) => transport == Daoris.Driver.Transport.Protocol ? Protocol : Native;
@@ -505,6 +517,17 @@ public sealed class HelpWired(string home)
         Text(writer, "posture", receipt.Posture);
         Text(writer, "permissionMode", receipt.PermissionMode);
         writer.WriteString("folder", receipt.Folder);
+        if (receipt.Focus is { } focus)
+        {
+            writer.WritePropertyName("focus");
+            focus.Write(writer);
+        }
+        else
+        {
+            writer.WriteNull("focus");
+        }
+
+        Text(writer, "starts", receipt.Starts);
         Strings(writer, "tools", receipt.Tools);
         writer.WriteStartArray("skills");
         foreach (var skill in receipt.Skills)
@@ -605,6 +628,8 @@ public sealed class HelpWired(string home)
             Posture = Json.NonEmpty(element, "posture"),
             PermissionMode = Json.NonEmpty(element, "permissionMode"),
             Folder = folder,
+            Focus = element.TryGetProperty("focus", out var focus) ? HelpFocus.Read(focus) : null,
+            Starts = Json.NonEmpty(element, "starts"),
             Tools = Json.Strings(element, "tools"),
             Skills = [.. Json.Items(element, "skills")
                 .Where(skill => Json.NonEmpty(skill, "name") is not null && Json.NonEmpty(skill, "state") is not null)

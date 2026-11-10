@@ -377,8 +377,12 @@ export const useRenameHelp = () =>
       call('HELP_RENAME', rename.name ? { id: rename.id, name: rename.name } : { id: rename.id }) as Promise<{ session: string; name: string | null }>,
   });
 
+/**
+ * `reopens`: the focus was chosen before any words, and the agent opened ahead under another place ended for it, so the page opens
+ * the conversation ahead again under the focus chosen.
+ */
 export type HelpFocusAnswer =
-  | { session: string; focus: Place; focusNext: Place | null; refused?: undefined }
+  | { session: string; focus: Place; focusNext: Place | null; reopens?: boolean; refused?: undefined }
   | { session: string; refused: 'unknown-place' | 'not-help' | 'ended'; said: string };
 
 /** Choose a conversation's focus at once, so a reload or another window shows it; after its first words its next words take it. */

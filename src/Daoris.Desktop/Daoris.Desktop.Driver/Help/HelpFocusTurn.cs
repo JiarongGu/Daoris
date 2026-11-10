@@ -16,10 +16,10 @@ public sealed record HelpFocusChange(HelpFocus From, HelpFocus To, HelpFocus? Go
     /// The one line the agent is told ahead of the person's words and the preface: agent-facing, in English, never translated.
     /// </summary>
     public string Line => Gone is { } gone
-        ? $"Focus is now {HelpFocusing.Named(To)}: {(gone.Repository is { } repository ? $"repository `{repository}`" : HelpFocusing.Named(gone))} is no longer on this machine. {Reach}"
+        ? $"Focus is now {To.Named}: {(gone.Repository is { } repository ? $"repository `{repository}`" : gone.Named)} is no longer on this machine. {Reach}"
         : To.Kind == HelpFocus.MachineKind
-            ? $"Focus is now this machine: every workspace (was {HelpFocusing.Named(From)})."
-            : $"Focus is now {HelpFocusing.Named(To)} (was {HelpFocusing.Named(From)}). {Reach}";
+            ? $"Focus is now this machine: every workspace (was {From.Named})."
+            : $"Focus is now {To.Named} (was {From.Named}). {Reach}";
 }
 
 /// <summary>
@@ -33,20 +33,26 @@ public static class HelpFocusTurn
     /// <summary>Apply the focus the next words take; the change, or null where the turn runs under the focus it ran under.</summary>
     /// <param name="workspace">The conversation's home workspace.</param>
     /// <param name="registry">The registered repositories now; null where they could not be read, which widens nothing.</param>
-    public static HelpFocusChange? Apply(string home, string session, string? workspace, IReadOnlyList<RepoView>? registry)
+    /// <param name="first">The person's message these words start with, which keeps the change (<see cref="HelpFocusMark"/>); null for none.</param>
+    public static HelpFocusChange? Apply(
+        string home, string session, string? workspace, IReadOnlyList<RepoView>? registry, SaidWordView? first = null)
     {
         HelpFocusChange? change = null;
         new HelpConversations(home).Change(session, kept =>
         {
             var held = HelpFoci.Of(kept, workspace);
             var wanted = held.FocusNext ?? held.Focus;
-            var (place, gone) = registry is null ? (wanted, null) : Resolved(wanted, registry);
+            // Its home is never gone while it speaks there, though a workspace with no repository is in no registry row.
+            var (place, gone) = registry is null || wanted.Equals(HelpFocus.Home(workspace)) ? (wanted, null) : Resolved(wanted, registry);
             if (!place.Equals(held.Focus) || gone is not null) change = new(held.Focus, place, gone);
             return kept with
             {
                 Focus = place,
                 FocusNext = null,
                 Foci = held.Foci.Contains(place) ? held.Foci : [.. held.Foci, place],
+                Marks = change is null || first is null
+                    ? kept.Marks
+                    : [.. kept.Marks, new HelpFocusMark(first.Id, first.At, change.From, change.To, change.Widened)],
             };
         });
         return change;

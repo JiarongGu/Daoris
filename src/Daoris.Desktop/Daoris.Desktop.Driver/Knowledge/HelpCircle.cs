@@ -26,6 +26,12 @@ public static class HelpCircle
     public static string? Of(string home, string room, string? workspace) => KnowledgeHelp.Current.GoesOnIn(home, workspace, room);
 
     /// <summary>
+    /// The workspace a conversation focused on <paramref name="focus"/> starts at: the focus's workspace, a repository's its own; null for
+    /// this machine and for <c>default</c>, which answer for every workspace.
+    /// </summary>
+    public static string? OfFocus(HelpFocus focus) => KnowledgeHelp.Current.ScopeOf(focus.Workspace);
+
+    /// <summary>
     /// The workspace a conversation's record focuses what it lists on: Ask Daoris's, its room's,
     /// the record's tree being the room it ran in. Null for any other record, for none, and for the whole machine's room.
     /// </summary>

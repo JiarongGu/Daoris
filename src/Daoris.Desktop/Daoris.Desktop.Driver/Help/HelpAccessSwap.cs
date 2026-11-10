@@ -132,7 +132,14 @@ internal sealed class HelpAccessSwap(IExecutorWiring wiring) : IExecutor
         try
         {
             var catalog = PluginCatalog.Load(context.Home, ProviderRegistry.Built().Names);
-            new HelpWired(context.Home).Keep(sessionId, HelpWired.Compose(handed, catalog, HelpGrants.Read(context.Home, catalog), DateTimeOffset.UtcNow));
+            // The focus its room was written for, as its file holds it at this start, and where its connector starts.
+            var receipt = HelpWired.Compose(handed, catalog, HelpGrants.Read(context.Home, catalog), DateTimeOffset.UtcNow) with
+            {
+                // With none kept, the focus is its room's place, where its connector is bound.
+                Focus = new HelpFocusing(context.Home).Applied(sessionId, handed.Circle),
+                Starts = handed.Circle ?? HelpWired.All,
+            };
+            new HelpWired(context.Home).Keep(sessionId, receipt);
             WiredKept?.Invoke(sessionId);
         }
         catch (Exception error) when (error is IOException or UnauthorizedAccessException)

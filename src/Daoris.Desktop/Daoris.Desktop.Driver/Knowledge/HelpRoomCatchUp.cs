@@ -35,7 +35,8 @@ public sealed class HelpRoomCatchUp(string home, Func<HelpMachine?> describe, Ma
                 {
                     try
                     {
-                        KnowledgeHelp.Current.Prepare(home, machine.Within(workspace));
+                        // For the focus it was last written for, so a catch-up never writes another place's room.
+                        KnowledgeHelp.Current.Prepare(home, machine.Within(workspace, KnowledgeHelp.Current.FocusWritten(home, workspace)));
                     }
                     catch (Exception error)
                     {

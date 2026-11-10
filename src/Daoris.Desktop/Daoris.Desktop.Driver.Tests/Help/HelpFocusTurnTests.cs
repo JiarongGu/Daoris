@@ -69,10 +69,18 @@ public sealed class HelpFocusTurnTests : IDisposable
         Assert.True(widened!.Widened);
 
         Kept.Change("h2", kept => kept with { Focus = HelpFocus.OfWorkspace("Gone"), Foci = [HelpFocus.OfWorkspace("Gone")] });
-        var gone = HelpFocusTurn.Apply(_home, "h2", "Gone", Registry);
+        var gone = HelpFocusTurn.Apply(_home, "h2", "Games", Registry);
         Assert.Equal(HelpFocus.Machine, gone!.To);
         Assert.Equal(HelpFocus.OfWorkspace("Gone"), gone.Gone);
         Assert.Equal(HelpFocus.Machine, Kept.Read("h2").Focus);
+    }
+
+    /// <summary>A home workspace with no repository is in no registry row, and is still never widened as gone.</summary>
+    [Fact]
+    public void Its_home_is_never_widened_though_no_repository_names_it()
+    {
+        Assert.Null(HelpFocusTurn.Apply(_home, "h1", "Empty", Registry));
+        Assert.Equal(HelpFocus.OfWorkspace("Empty"), Kept.Read("h1").Focus);
     }
 
     [Fact]
@@ -87,5 +95,24 @@ public sealed class HelpFocusTurnTests : IDisposable
         Assert.Equal("Focus is now this machine: every workspace (was workspace `Games`).\n\nAnd in its tests?", ahead[0].Text);
         Assert.Equal("w1", ahead[0].Id);
         Assert.Equal("And its docs?", ahead[1].Text);
+    }
+
+    /// <summary>The message that carried a change keeps it on the record, a widening marked; one that changed nothing keeps nothing.</summary>
+    [Fact]
+    public void The_message_that_carried_a_change_keeps_it_and_one_that_changed_nothing_keeps_nothing()
+    {
+        var at = new DateTimeOffset(2026, 11, 11, 14, 2, 0, TimeSpan.Zero);
+        var word = new SaidWordView("w1", "What blocks the release?", at, [], false);
+        Assert.Null(HelpFocusTurn.Apply(_home, "h1", "Games", Registry, word));
+        Assert.Empty(Kept.Read("h1").Marks);
+
+        Kept.Change("h1", kept => kept with { FocusNext = Engine });
+        HelpFocusTurn.Apply(_home, "h1", "Games", Registry, word with { Id = "w2" });
+        Kept.Change("h1", kept => kept with { FocusNext = HelpFocus.OfRepository("Games", "tools") });
+        HelpFocusTurn.Apply(_home, "h1", "Games", Registry, word with { Id = "w3" });
+
+        Assert.Equal(
+            [new HelpFocusMark("w2", at, Games, Engine, false), new HelpFocusMark("w3", at, Engine, Games, true)],
+            Kept.Read("h1").Marks);
     }
 }
