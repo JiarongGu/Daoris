@@ -190,6 +190,7 @@
   "workflow.edit.kind.rebase": "Rebase the work onto its target",
   "workflow.edit.kind.resolve": "Hand a conflict to its resolver",
   "workflow.edit.kind.merge": "Merge the commit into its target",
+  "workflow.edit.kind.apply": "Apply the reviewed changes to the system",
   "workflow.edit.option.rebase.onto": "What it rebases onto",
   "workflow.edit.option.rebase.onto.hint": "Left unset, the target of the merge it feeds; or `line`, or a branch's name.",
   "workflow.edit.option.rebase.fetch": "Fetch the target first",

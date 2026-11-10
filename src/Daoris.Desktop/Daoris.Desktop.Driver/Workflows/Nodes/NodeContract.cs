@@ -60,6 +60,9 @@ public static class NodeKinds
     /// </summary>
     public const string Integrate = "integrate";
 
+    /// <summary>A system place's apply of its reviewed change set, under each operation's precondition: <see cref="ApplyNode"/>.</summary>
+    public const string Apply = "apply";
+
     /// <summary>
     /// The hold on the work's own requests: observed from the quests the run's sessions published,
     /// placed after <c>claimed</c> and before the landing. A kind and no option of <c>claimed</c>, because an older build reads an option as

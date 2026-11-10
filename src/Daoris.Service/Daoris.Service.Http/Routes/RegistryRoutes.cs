@@ -81,7 +81,8 @@ public sealed class RegistryRoutes(HostWiring host) : IRouteModule
                     ? null
                     : new DeclaredLane(lane.Id ?? "", lane.Title ?? "", lane.Summary ?? "", lane.Steward ?? false))),
             Kind: PlaceKinds.Of(body.Kind),
-            Excludes: body.Excludes is null ? null : [.. body.Excludes.Where(glob => !string.IsNullOrWhiteSpace(glob)).Select(glob => glob.Trim())]);
+            Excludes: body.Excludes is null ? null : [.. body.Excludes.Where(glob => !string.IsNullOrWhiteSpace(glob)).Select(glob => glob.Trim())],
+            System: PlaceKinds.SystemOf(body.System));
 
         // A shared deployment holds many machines' copies of one declaration, so it orders them by the commit each carries, as it
         // orders their knowledge. A local host's registration is this machine's own: nothing to order.
@@ -183,6 +184,7 @@ public sealed class RegistryRoutes(HostWiring host) : IRouteModule
         {
             Kind = r.PlaceKind,
             Excludes = r.Excludes ?? [],
+            System = r.PlaceKind == PlaceKinds.System ? r.System : null,
         }).ToArray();
 
     // Read from the repository's own committed file where it has a checkout here, else what is fed or brought down from the

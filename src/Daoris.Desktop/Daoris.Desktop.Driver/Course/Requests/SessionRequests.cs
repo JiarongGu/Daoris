@@ -57,7 +57,10 @@ public static class SessionMove
     /// <summary>A native session's permission ask (<see cref="ClaudeAskHook"/>): the tool in Operation, the call in Text; keyed as a say is.</summary>
     public const string Permit = "permit";
 
-    public static bool Known(string move) => move is Stop or Finish or Decline or Say or TakeBack or Housekeep or Set or Read or Permit;
+    /// <summary>A session's <c>system_plan</c>: its changes as a JSON list in Text, taken by its loop and answered in <see cref="SystemPlanAnswer"/>'s shape.</summary>
+    public const string Plan = "plan";
+
+    public static bool Known(string move) => move is Stop or Finish or Decline or Say or TakeBack or Housekeep or Set or Read or Permit or Plan;
 }
 
 /// <summary>Who asked, as the machine log's <c>door</c> names a door: a word, never a sentence.</summary>
@@ -74,6 +77,9 @@ public static class RequestDoor
 
     /// <summary>Ask Daoris's housekeeping tool: the agent's, through its connector, never the person's.</summary>
     public const string Help = "help";
+
+    /// <summary>A working session's own connector tool, such as <c>system_plan</c>: the agent's, never the person's.</summary>
+    public const string Connector = "connector";
 }
 
 /// <summary>One move asked of one session, for whichever loop on the home runs it.</summary>
@@ -537,6 +543,13 @@ public sealed partial class SessionRequests(string home)
         var path = AnswerPath(request);
         Directory.CreateDirectory(Folder);
         AtomicFile.WriteText(path, ToJson(answer.Setting, answer.Done, answer.Code, answer.Said));
+    }
+
+    /// <summary>What became of a system plan, written beside it in housekeeping's answer's fields.</summary>
+    public void Answer(SessionRequest request, SystemPlanAnswer answer)
+    {
+        Directory.CreateDirectory(Folder);
+        AtomicFile.WriteText(AnswerPath(request), ToJson(SessionMove.Plan, answer.Done, answer.Code, answer.Said));
     }
 
     /// <summary>What became of a checkout read, written beside it in the same fields with what is read as <c>text</c>.</summary>

@@ -20,16 +20,12 @@ namespace Daoris.Knowledge;
 /// </remarks>
 public sealed class HelpProposalBox(string? home)
 {
-    /// <summary>
-    /// The kinds this box writes, each with the connector's tool that proposes it, in the order the room allows
-    /// them; the driver's <c>HelpProposalKinds</c> lists the same.
-    /// </summary>
+    /// <summary>The kinds this box writes, each with the connector's tool, in the order the room allows them.</summary>
     public static readonly IReadOnlyList<(string Kind, string Tool)> Kinds =
     [
         ("ask", "ask_propose"),
         ("go", "go_propose"),
         ("plugin", "plugin_propose"),
-        ("browser", "browser_propose"),
         ("sync", "sync_propose"),
         ("clear", "clear_propose"),
         ("workflow", "workflow_propose"),
@@ -62,11 +58,6 @@ public sealed class HelpProposalBox(string? home)
         string action, string? id, string? folder, string? repository, string why, string? session, DateTimeOffset at,
         string? offer = null, string? server = null, IReadOnlyList<string>? writes = null) =>
         new HelpPluginProposalWriter(file).Propose(action, id, folder, repository, why, session, at, offer, server, writes);
-
-    /// <inheritdoc cref="HelpBrowserProposalWriter.Propose"/>
-    public (string? Id, string Message) ProposeBrowser(
-        string door, string? value, string? address, string? title, string why, string? session, DateTimeOffset at) =>
-        new HelpBrowserProposalWriter(file).Propose(door, value, address, title, why, session, at);
 
     /// <inheritdoc cref="HelpSyncProposalWriter.Propose"/>
     public (string? Id, string Message) ProposeSync(

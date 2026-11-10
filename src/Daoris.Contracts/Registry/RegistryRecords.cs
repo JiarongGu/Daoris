@@ -43,8 +43,10 @@ public sealed record RegistrationResponse(
     string? Root, bool Joined, bool SharesKnowledge, string Workspace, string? DefaultBranch, bool Addressable,
     IReadOnlyList<string> Uses, IReadOnlyList<LaneWire>? Lanes = null)
 {
-    /// <summary>The place's kind: <c>git</c>, or <c>folder</c> for one driven in place by its manifest. Absent from an older host, which is git.</summary>
+    /// <summary>The place's kind: <c>git</c>, <c>folder</c> or <c>system</c>. Absent from an older host, which is git.</summary>
     public string? Kind { get; init; }
 
     public IReadOnlyList<string>? Excludes { get; init; }
+
+    public string? System { get; init; }
 }

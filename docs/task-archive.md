@@ -5,6 +5,24 @@ the per-task record. Entries preserve their original wording so the archive stay
 
 ---
 
+## PLACEWORK1h (part) — a real session plans a system, and a system is a department (2026-11-11)
+
+> **PLACEWORK1h, second part** (service, driver, web, examples): Outcome: a session in a system department calls the connector's `system_plan`, which the loop hands to the department's plugin, keeps under the session's record and answers with the plan's number and resources (Service `Systems/SystemPlanBox.cs`, `Mcp/SystemPlanTools.cs`; driver `Departments/Systems/SystemPlanning.cs`); the tool is served to that session alone (D270); a department registers as a system with no root and its plugin's `<plugin>/<system>`, through *A system…* on the add or `daoris repository add --system`, refused where no switched-on plugin declares it; two sessions planning at once keep their own plans and the second apply is refused as stale; an apply answered `none` settles with nothing written. Proof: `McpSystemPlanToolTests`, `RegistrationStoreTests`, `SystemAddTests`, `SystemPlanningTests`, `SystemChoiceField.test`, `CoreSetTests` (seen failing first), and `SystemPlanToolProcessTests` on the stand-in's real process.
+
+---
+
+## ASKFULL1g's browser kind, keeping and early ends — the last proposal kinds pressed (2026-11-11)
+
+> **ASKFULL1g, browser and g-ii** (driver, modules, service, web): Outcome: `daoris browser favorite add|remove|use|links|extensions` presses the Person routes `BROWSER_FAVORITE` and `BROWSER_SETTING`, their Confirm card the routes' views (`BrowserFavoriteView`, `BrowserSettingView`), the alone path the same `BrowserPresses` unit; the browser proposal kind and its service tool are gone whole; an ask or quest a pressed verb's answer names is kept with its conversation and named in the press line (`Loop/PressedEnds.cs`, `Confirmations.Answered`); an update or pin that fails before it starts, or ends before its settle is registered, is said at its end. Proof: `BrowserViewsTests`, `BrowserPersonRoutesTests`, `PressedEndsTests`, the modules census, the room goldens and the service's tool tests.
+
+---
+
+## PLACEWORK1h (part) — a system reached through a console: plan, review, apply (2026-11-11)
+
+> **PLACEWORK1h, part** (driver, modules, web, examples): Outcome: a plugin declares `systems` and answers `plan/read` and `apply/perform` (`Plugins/Domain/PluginSystems.cs`, `Plugins/Systems/`); a session's plans are kept per record as numbered files under the home's work folder and its Review shows the newest one resource by resource, before and after, in the diff pane (`Departments/Systems/`, `SESSION_DIFF`); the workflow's `apply` step runs one apply at a time through its door, and an apply whose resources moved since the plan fails with words naming each one's present version, which the way back hands the work (`Workflows/Kinds/Apply/`); `examples/plugins/stand-in-system/` is a system to try it on. Proof: `PluginSystemsTests`, `SystemPlanTests`, `ApplyDoorTests`, `NodeKitTests`, each seen failing first, and `SystemPlanProcessTests` (plan, review, apply, stale, plan again) on the stand-in's real process.
+
+---
+
 ## PLACEWORK1d — the isolate step, its count, and the trees switch converted (2026-11-11)
 
 > **PLACEWORK1d** (driver, modules, web, tools): Outcome: a workflow that starts with an `isolate` step (*Work apart* in its editor) gives each of a repository's sessions a tree of its own, and its `at-once` says how many run at once; without one they work in the checkout one at a time under the writer's lease. The planner reads the count; the work order carries the step's value through its Workflows port; `daoris place trees` and its press are gone, answering `TreesMoved` with where the step is; the tests, fixtures and the family rehearsal (`tools/rehearsal-apart.mjs`) bind the step in its place. Proof: the converted planner, tick, standing and setup tests, the text fixtures, `HelpRoomTests` and the driver build; the censuses run at the CI boundary.

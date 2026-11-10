@@ -58,6 +58,7 @@ public sealed class PermissionRulesTests : IDisposable
         "mcp__daoris-knowledge__memory_write",
         "mcp__daoris-knowledge__memory_end",
         "mcp__daoris-knowledge__memory_propose",
+        "mcp__daoris-knowledge__system_plan",
     ];
 
     /// <summary>What the `commit` default allows, a rename among it.</summary>
@@ -203,6 +204,7 @@ public sealed class PermissionRulesTests : IDisposable
     [InlineData("memory_write")]
     [InlineData("memory_end")]
     [InlineData("memory_propose")]
+    [InlineData("system_plan")]
     public void The_opinion_tools_reach_a_session_by_default(string tool)
     {
         var rules = PermissionRules.Compose(PermissionRules.Load(_home), "default", "engine");

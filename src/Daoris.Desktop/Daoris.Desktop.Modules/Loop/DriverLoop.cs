@@ -162,7 +162,7 @@ public sealed class DriverLoop(
 
     private NoticesStateSlice? _notices;
 
-    /// <summary>The updates and pins Ask Daoris pressed, whose ends are said in its conversation.</summary>
+    /// <summary>What Ask Daoris's confirmed presses did, said in its conversation: an update's or pin's end, and the ask or quest a verb published.</summary>
     public PressedEnds PressedEnds { get; } = new();
 
     /// <summary>

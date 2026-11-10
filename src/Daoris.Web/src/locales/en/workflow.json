@@ -55,6 +55,7 @@
   "workflow.step.rebase": "The rebase",
   "workflow.step.resolve": "The resolution",
   "workflow.step.merge": "The merge",
+  "workflow.step.apply": "The apply",
   "workflow.step.line": "On the line",
   "workflow.step.quest.close": "The quest's close",
   "workflow.step.all": "The join",
