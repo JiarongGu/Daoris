@@ -4,11 +4,7 @@ using Daoris.Driver;
 
 namespace Daoris.Driver.Tests;
 
-/// <summary>
-/// What every kind's proposal tests stand on: a home of the test's own with the proposals folder, the
-/// file as the service's box writes it, the machine a proposal is judged against, and an Apply through
-/// <see cref="HelpStandInDoors"/>, whose doors each kind's test file adds.
-/// </summary>
+/// <summary>What every kind's proposal tests stand on: a home, the file as the box writes it, the machine, and an Apply through <see cref="HelpStandInDoors"/>.</summary>
 public abstract class HelpProposalsFixture : IDisposable
 {
     protected readonly string _home = Path.Combine(TestHomes.Root, "daoris-help-plans-" + Guid.NewGuid().ToString("N")[..8]);
@@ -71,16 +67,14 @@ public abstract class HelpProposalsFixture : IDisposable
         [
             new HelpDoorFacts("claude-code")
             {
-                Present = true, Updates = "tool", Channel = "claude-code-releases", Owner = "claude-code",
-                Accounts = ["work"], SettingsKnown = true, Product = "Claude Code",
+                Present = true, Updates = "tool", Channel = "claude-code-releases",
             },
             new HelpDoorFacts("claude-code-acp")
             {
                 Present = true, Updates = "pin", Pinned = "0.84.0", Package = "@agentclientprotocol/claude-agent-acp",
-                Owner = "claude-code", Accounts = ["work"], SettingsKnown = true,
             },
-            new HelpDoorFacts("dsh") { Present = true, Owner = "dsh", Product = "DeepSeek" },
-            new HelpDoorFacts("codex-acp") { Present = false, Updates = "tool", Package = "@zed-industries/codex-acp", Owner = "codex-acp" },
+            new HelpDoorFacts("dsh") { Present = true },
+            new HelpDoorFacts("codex-acp") { Present = false, Updates = "tool", Package = "@zed-industries/codex-acp" },
         ],
         Quests =
         [
@@ -166,40 +160,6 @@ public sealed class HelpStandInDoors : IHelpDoors
         Calls.Add($"HARNESS_ACTION {harness} {action} {version}".TrimEnd());
         Ended = ended;
         if (EndsAtOnce) ended(0, null);
-        return Task.CompletedTask;
-    }
-
-    /// <summary>What the use's door refuses with, as `ACCOUNT_USE` would; null to make it.</summary>
-    public string? UseRefusal { get; init; }
-
-    public Task SetAccountUseAsync(string harness, UseChange change, CancellationToken ct)
-    {
-        if (UseRefusal is { } refused) throw new DriverException(refused);
-        var curve = change.Curve is { } set
-            ? string.Join(";", UseCurve.Windows.Where(window => set[window] is not null)
-                .Select(window => $"{window}={string.Join(",", set[window]!.Select(point => $"{point.Elapsed}:{point.Used}"))}"))
-            : "";
-        Calls.Add($"ACCOUNT_USE {harness} use={change.Use} keep={change.Keep} noKeep={change.NoKeep} early={change.Early} near={change.Near} "
-            + $"switch={change.Switch} curve={curve} noCurve={change.NoCurve}");
-        return Task.CompletedTask;
-    }
-
-    /// <summary>What the order's door refuses with, as `ACCOUNT_USE` would; null to make it.</summary>
-    public string? OrderRefusal { get; init; }
-
-    /// <summary>Whether the account is still cooling when the ready's door ends it.</summary>
-    public bool ReadyEnded { get; init; } = true;
-
-    public Task<bool> ReadyAccountAsync(string harness, string? account, CancellationToken ct)
-    {
-        Calls.Add($"ACCOUNT_USE {harness} ready {account ?? "own"}");
-        return Task.FromResult(ReadyEnded);
-    }
-
-    public Task SetAccountOrderAsync(string harness, IReadOnlyList<string> accounts, bool clear, CancellationToken ct)
-    {
-        if (OrderRefusal is { } refused) throw new DriverException(refused);
-        Calls.Add($"ACCOUNT_USE {harness} order {string.Join(",", accounts)} clear={clear}");
         return Task.CompletedTask;
     }
 

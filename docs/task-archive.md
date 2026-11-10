@@ -5,6 +5,12 @@ the per-task record. Entries preserve their original wording so the archive stay
 
 ---
 
+## AGENTFREE1c — the person's settings, memory file, Chrome on both doors and Codex home reach a session (2026-11-11)
+
+> **AGENTFREE1c** (driver; D266): Outcome: the person's `settings.json` merges into a Claude session's rules beneath Daoris's, the repository's and the account's, lists joining so their denies hold and a value entering only where nothing above sets one, sign-in, mode, plugin and hook-off keys kept out, a pass shaped for one job taking nothing that widens it (`ClaudeOwnSettings`); their `CLAUDE.md` appended to the system prompt, the native door through `--append-system-prompt-file`, the protocol door through `systemPrompt.append`, Chrome there through `extraArgs.chrome` (`ClaudeOwnMemory`); their Codex home handed as codex-acp's `CODEX_CONFIG` (`config.toml` where the account's sets nothing, `AGENTS.md`, skills, prompts; `CodexOwnHome`, `Platform/TomlReader`); rule defaults `own-settings` and `own-memory`. Census row 22 (other providers' sign-ins) kept as the person's own; row 29 measured on Claude Code 2.1.322 (`-p` starts a repository's servers with no approval). Proof: `OwnSettingsTests`, `OwnMemoryTests`, `CodexOwnHomeTests`, each seen failing first.
+
+---
+
 ## APPROVE1u, v, w, x — a refused plugin start said as refused, a live run keeps its branch, a tidied chain's clean-up ends, a stopped review leaves Ready for you (2026-11-11)
 
 > **APPROVE1u, v, w, x** (driver, modules): Outcome: the desktop's start of a plugin first asks the API token of the identity serving origin; the work workspace's only identity is SSH with no token, so the start was refused, logged `unstartable` and counted as a crash until the plugin read `unsound`: a refused hand is now said `refused`, never makes it unsound, and is asked again each minute (`Plugins/HandRefusals.cs`); the person's token is the way on. A run with live steps keeps its session-branch entry, so its landing binds (`Workflows/RunHeldUnits.cs`). A chain's clean-up completes when the look's own tidy already removed its landing (`Kinds/Tidy/TidiedByTheLook.cs`). *Ready for you* drops sessions of a run whose review the person stopped (`Workflows/StoppedRuns.cs`, `NeedsAPerson`). Proof: `RefusedHandTests`, `RunHeldTraceTests`, `TidyAfterTheLookTests`, `StoppedReviewAttentionTests`, each seen failing first.

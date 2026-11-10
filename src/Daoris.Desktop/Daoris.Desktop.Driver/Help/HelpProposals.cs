@@ -21,23 +21,6 @@ public sealed record HelpProposal(
     /// </summary>
     public string? Repository { get; init; }
 
-    // The agent kind's: the <c>use</c> door's fields, as <see cref="HelpAgentProposals.Read"/> reads them from a file.
-
-    /// <summary>How a scope's list is used, as the proposal names it; null where it names nothing of it.</summary>
-    public UseChange? AccountUse { get; init; }
-
-    /// <summary>
-    /// The <c>use</c> door's curve where the file's breaks a rule: the twins' sentence, which its card refuses with;
-    /// null where it names no curve or a curve that reads.
-    /// </summary>
-    public string? AccountCurveRefused { get; init; }
-
-    /// <summary>The <c>order</c> door's list or clear, as the file names them; null for any other door.</summary>
-    public AccountOrder? AccountOrder { get; init; }
-
-    /// <summary>The <c>ready</c> door's account: an id, or <c>own</c> for the tool's own sign-in; null for any other door.</summary>
-    public string? ReadyAccount { get; init; }
-
     // The ask kind's.
 
     /// <summary>
@@ -181,14 +164,6 @@ public sealed record HelpMachineFacts(
     /// <summary>This machine's plugins, for a landing rule that names one and a plugin proposal.</summary>
     public PluginCatalog Plugins { get; init; } = PluginCatalog.None;
 
-    // The agent kind's: the machine's wiring a proposal is judged against, <c>harnesses.json</c> as the screen reads it.
-
-    /// <summary>The lists, defaults and settings, for a default's scope and a use's; null where nothing is read.</summary>
-    public HarnessSettings? Wiring { get; init; }
-
-    /// <summary>The accounts cooling now, for a <c>ready</c>'s judge; none where nothing is read.</summary>
-    public IReadOnlyList<CoolingEntry> Cooling { get; init; } = [];
-
     // The browser kind's.
 
     /// <summary>What Daoris's browser's files hold, read by the desktop for a browser proposal; null where none is read.</summary>
@@ -307,19 +282,6 @@ public sealed record HelpDoorFacts(string Name)
     /// <summary>The maker's release channel a pin installs from, or null.</summary>
     public string? Channel { get; init; }
 
-    public string? Product { get; init; }
-
-    /// <summary>Whose accounts it runs as; null is itself.</summary>
-    public string? Owner { get; init; }
-
-    /// <summary>The owner's accounts on this machine, by name.</summary>
-    public IReadOnlyList<string> Accounts { get; init; } = [];
-
-    /// <summary>Whether Daoris knows the tool's own settings file, and so offers its model and effort.</summary>
-    public bool SettingsKnown { get; init; }
-
-    /// <summary>The name its accounts live under.</summary>
-    public string AccountsOf => Owner is { Length: > 0 } owner ? owner : Name;
 }
 
 /// <summary>

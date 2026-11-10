@@ -7,13 +7,9 @@ namespace Daoris.Driver.Tests;
 public sealed class HelpSettingProposalsTests : HelpProposalsFixture
 {
     [Theory]
-    [InlineData("drive", "engine", null, null, "daoris place drive engine", "Drive `engine`")]
-    [InlineData("hold", "game", null, null, "daoris place hold game", "Hold `game`")]
-    [InlineData("trees", "engine", null, "on", "daoris place trees engine on", "own tree")]
     [InlineData("line", "engine", null, "develop", "daoris place line engine develop", "`engine`'s line to `develop`")]
     [InlineData("line", null, "work", "--clear", "daoris place line --workspace work --clear", "Clear workspace `work`'s line")]
     [InlineData("notify", null, null, "off", "daoris settings notify off", "Stop saying")]
-    // Reading and writing across, and two dials.
     [InlineData("across", "engine", null, "read off", "daoris place across engine read off", "read by no agent outside it")]
     [InlineData("across", "engine", null, "read on", "daoris place across engine read on", "never a write")]
     [InlineData("across", null, "work", "read off", "daoris place across --workspace work read off", "Each checkout in workspace `work` that sets none of its own")]
@@ -476,9 +472,9 @@ public sealed class HelpSettingProposalsTests : HelpProposalsFixture
     public void Applying_a_plan_makes_the_edit_the_screens_route_makes()
     {
         var config = DriverConfig.Empty;
-        config = HelpProposals.Plan(Setting("drive", "engine"), config, Facts).Apply!(config);
+        config = HelpProposals.Plan(Setting("line", "engine", null, "develop"), config, Facts).Apply!(config);
 
-        Assert.Contains("engine", config.Drivable);
+        Assert.Equal("develop", config.Lines["engine"]);
     }
 
     /// <summary>Across and a cap, applied as `SET_READ_ACROSS`, `SET_WRITE_ACROSS` and the terminal make them.</summary>
@@ -561,8 +557,7 @@ public sealed class HelpSettingProposalsTests : HelpProposalsFixture
     {
         (string Door, string? Target, string? Workspace, string? Value)[] samples =
         [
-            ("drive", "engine", null, null), ("undrive", "engine", null, null), ("hold", "engine", null, null),
-            ("resume", "engine", null, null), ("trees", "engine", null, "off"), ("line", "engine", null, "main"),
+            ("line", "engine", null, "main"),
             ("across", "engine", null, "read on"), ("standing", "engine", null, "dev only"),
             ("language", null, "work", "zh"), ("review", "engine", null, "none"), ("opinion", "engine", null, "none"),
             ("helpers", "engine", null, "--mode on"), ("commits", null, "work", "--mode ask"),
@@ -579,7 +574,7 @@ public sealed class HelpSettingProposalsTests : HelpProposalsFixture
 
     /// <summary>What the route would refuse is refused here in its own words, and never shown to the person.</summary>
     [Theory]
-    [InlineData("drive", "nowhere", null, null, "`nowhere` is not registered")]
+    [InlineData("line", "nowhere", null, "develop", "`nowhere` is not registered")]
     [InlineData("line", null, "elsewhere", "develop", "no workspace `elsewhere`")]
     [InlineData("line", "engine", null, "bad..name", "not a branch name git would take")]
     // What `daoris place across` refuses, in its words, and the names a helper can invent.
@@ -619,10 +614,10 @@ public sealed class HelpSettingProposalsTests : HelpProposalsFixture
     [Fact]
     public async Task A_setting_is_applied_through_the_edit_the_screens_route_makes()
     {
-        var (setting, doors, _) = await ApplyAsync(Setting("drive", "engine"));
+        var (setting, doors, _) = await ApplyAsync(Setting("line", "engine", null, "develop"));
 
         Assert.True(setting.Applied);
         Assert.Equal(["change"], doors.Calls);
-        Assert.Contains("engine", doors.Config.Drivable);
+        Assert.Equal("develop", doors.Config.Lines["engine"]);
     }
 }

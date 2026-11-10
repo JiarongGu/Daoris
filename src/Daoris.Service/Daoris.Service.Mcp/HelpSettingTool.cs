@@ -42,7 +42,7 @@ public sealed class HelpSettingTool(IntakeScope? intake = null, HelpProposalBox?
         "Ask Daoris only: propose a change to how this machine drives its repositories, for the person to "
         + "apply. It becomes a card saying what it changes and the terminal command that does the same, with "
         + "Apply and Not now; nothing changes until the person presses Apply, and their answer comes back as "
-        + "their next message. Each door is a `daoris place`, `daoris settings` or `daoris quest` verb: drive, undrive, hold, resume, trees, line, "
+        + "their next message. Each door is a `daoris place`, `daoris settings` or `daoris quest` verb: line, "
         + "across, standing, language, review, opinion, helpers, commits, retry, notify, cap, "
         + "cooloff, quiet, keep, git-use. A role's agents are no setting: `role_propose` proposes them. `quiet` sets how long a session may say "
         + "nothing and run nothing before Daoris looks in on it, 5 to 120 minutes; a session is never stopped for running long. `git-use` points a repository's remote (the target; `--remote <name>` for one other than origin) or a workspace's host "
@@ -81,11 +81,11 @@ public sealed class HelpSettingTool(IntakeScope? intake = null, HelpProposalBox?
         + "for a push, a merge, a discard, a sign-in or an account's key: those "
         + "stay the person's own presses.")]
     public string ProposeSetting(
-        [Description("The door, as its terminal verb spells it: drive, undrive, hold, resume, trees, line, across, standing, language, review, opinion, helpers, commits, retry, notify, cap, cooloff, quiet, keep or git-use.")]
+        [Description("The door, as its terminal verb spells it: line, across, standing, language, review, opinion, helpers, commits, retry, notify, cap, cooloff, quiet, keep or git-use.")]
         string door,
         [Description("Why: what the person asked, and what the change would do. The person decides on this.")]
         string why,
-        [Description("The repository, for drive, undrive, hold, resume, trees, across, standing, and a line, a language, a review, a second opinion, a helpers rule or a commit rule set for one repository; for retry, the quest's id, as the room lists the parked and the held ones.")]
+        [Description("The repository, for across, standing, and a line, a language, a review, a second opinion, a helpers rule or a commit rule set for one repository; for retry, the quest's id, as the room lists the parked and the held ones.")]
         string? target = null,
         [Description("The workspace, for a line, a language, a review, a second opinion, a helpers rule or a commit rule, or `across … read`, set for every repository in it. Name this or target, not both.")]
         string? workspace = null,
