@@ -22,9 +22,7 @@ internal interface IHelpProposalKind
     /// <summary>The connector's tool that proposes it, which the room allows.</summary>
     string Tool { get; }
 
-    /// <summary>
-    /// The doors it takes, as the file's <c>door</c> spells them and its judge reads them: a door not here is refused.
-    /// </summary>
+    /// <summary>The doors it takes, as the file's <c>door</c> spells them and its judge reads them: a door not here is refused.</summary>
     IReadOnlyList<string> Doors { get; }
 
     /// <summary>The fields only this kind carries, read from a file; one the file lacks reads as null.</summary>
@@ -88,7 +86,6 @@ internal static class HelpProposalKinds
     [
         new HelpAskProposals(),
         new HelpGoProposals(),
-        new HelpPluginProposals(),
         new HelpSyncProposals(),
         new HelpClearProposals(),
         new HelpWorkflowProposals(),

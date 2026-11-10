@@ -144,7 +144,8 @@ public sealed class StageActs(ActJournal journal)
             return Said($"`{context.Repository}`'s checkout is a session's tree, which a person's act never writes");
         }
 
-        if (await CheckoutBeside.RefusesAsync(context.Beside, context.Checkout, context.Repository, what, "is refused; try again once it ends", ct).ConfigureAwait(false) is { } beside)
+        if (await CheckoutBeside.RefusesAsync(context.Beside, context.Checkout, context.Repository, what, "is refused; try again once it ends", ct, place: true)
+                .ConfigureAwait(false) is { } beside)
         {
             return Said(beside);
         }

@@ -755,31 +755,6 @@ public sealed class McpToolsTests : McpToolsFixture
         Assert.All(written, file => Assert.Equal("h1e1p000", file.GetProperty("by").GetProperty("session").GetString()));
     }
 
-    /// <summary>
-    /// Ask Daoris proposes adding a plugin that has landed, from its folder in a repository's
-    /// checkout, or switching one on or off; the file names the conversation, and a malformed one writes nothing.
-    /// </summary>
-    [Fact]
-    public void Ask_Daoris_proposes_adding_a_plugin_or_switching_one()
-    {
-        var home = Path.Combine(_root, "help-plugin-home");
-        var tools = new HelpPluginTool(intake: new IntakeScope(null, "h1e1p000"), help: new HelpProposalBox(home));
-
-        Assert.Contains("Proposed", tools.ProposePlugin("add", "the person wants quests held overnight", repository: "house-plugins", folder: "quiet-hours"));
-        Assert.Contains("Proposed", tools.ProposePlugin("enable", "the person wants it on", id: "example.lands"));
-        Assert.Contains("Nothing was proposed", tools.ProposePlugin("add", "no folder named"));
-        // One of the install's own by its id, and an update of an installed one.
-        Assert.Contains("Proposed", tools.ProposePlugin("add", "the person wants pull requests opened", offer: "github-pull-request"));
-        Assert.Contains("Proposed", tools.ProposePlugin("update", "a newer one has landed", id: "example.lands"));
-
-        var written = Directory.GetFiles(HelpProposalBox.FolderOf(home))
-            .Select(path => JsonDocument.Parse(File.ReadAllText(path)).RootElement)
-            .ToList();
-        Assert.Equal(["add", "add", "enable", "update"], written.Select(file => file.GetProperty("door").GetString()).Order());
-        Assert.All(written, file => Assert.Equal(("plugin", "h1e1p000"),
-            (file.GetProperty("kind").GetString(), file.GetProperty("by").GetProperty("session").GetString())));
-    }
-
     /// <summary>What an agent reading the list is told: what each quest carries, what follows it, what it follows.</summary>
     [Fact]
     public async Task The_list_says_what_a_quest_carries_what_follows_it_and_what_it_follows()

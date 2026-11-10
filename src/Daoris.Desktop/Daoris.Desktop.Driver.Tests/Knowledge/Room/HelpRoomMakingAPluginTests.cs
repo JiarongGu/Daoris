@@ -22,8 +22,9 @@ public sealed class HelpRoomMakingAPluginTests
         foreach (var point in HookPoints.All) Assert.Contains($"`{point}`", agents);
         Assert.Contains("makes it with its tests", agents);
         Assert.Contains("the person decides where plugins live (a repository of their own, connected like any other)", agents);
-        Assert.Contains("never propose adding one that has not landed", agents);
-        Assert.Contains("`plugin_propose`", agents);
+        Assert.Contains("never add one that has not landed", agents);
+        Assert.Contains("press `daoris plugin add <folder>`", agents);
+        Assert.DoesNotContain("plugin_propose", agents);
         // The doors: the terminal twins of what a plugin card applies.
         Assert.Contains("`daoris plugin add <folder>`, `daoris plugin enable|disable <id>`", agents);
     }

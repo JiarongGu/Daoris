@@ -152,48 +152,6 @@ public sealed class HelpStandInDoors : IHelpDoors
         return Task.FromResult(HistoryCleared ?? new HistoryOutcome(scope, id) { Listed = units.Count });
     }
 
-    /// <summary>What the plugin door refuses in its own words, for a plugin that moved since the card is drawn.</summary>
-    public string? PluginRefusal { get; init; }
-
-    public void AddPlugin(string folder)
-    {
-        Calls.Add($"PLUGIN_ADD {folder}");
-        if (PluginRefusal is { } refused) throw new DriverException(refused);
-    }
-
-    public void SwitchPlugin(string id, bool on) => Calls.Add($"PLUGIN_ACTION {(on ? "enable" : "disable")} {id}");
-
-    public void AddOffer(string id)
-    {
-        Calls.Add($"PLUGIN_INSTALL {id}");
-        if (PluginRefusal is { } refused) throw new DriverException(refused);
-    }
-
-    public Task UpdatePluginAsync(string id, CancellationToken ct)
-    {
-        Calls.Add($"PLUGIN_UPDATE {id}");
-        return PluginRefusal is { } refused ? Task.FromException(new DriverException(refused)) : Task.CompletedTask;
-    }
-
-    /// <summary>
-    /// The home whose approvals a plugin's approve and withdraw write, through <see cref="HelpGrants"/> as the page's press does;
-    /// null records the call only.
-    /// </summary>
-    public string? GrantsHome { get; init; }
-
-    public void ApproveHelp(string plugin, string server, IReadOnlyList<string> writes)
-    {
-        Calls.Add($"HELP_APPROVE {plugin} {server} {string.Join(",", writes)}".TrimEnd());
-        if (GrantsHome is { } home) HelpGrants.Approve(home, PluginCatalog.Load(home), plugin, server, writes);
-    }
-
-    public void WithdrawHelp(string plugin, string server)
-    {
-        Calls.Add($"HELP_WITHDRAW {plugin} {server}");
-        if (GrantsHome is { } home) HelpGrants.Withdraw(home, plugin, server);
-    }
-
-
     public DriverConfig Config { get; private set; } = DriverConfig.Empty;
 
     public void Change(Func<DriverConfig, DriverConfig> edit)

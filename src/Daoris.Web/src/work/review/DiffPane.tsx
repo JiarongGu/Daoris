@@ -25,6 +25,7 @@ import { reviewHolds, reviewState } from '../gates/review';
 import { PassNote } from './PassNote';
 import { NothingToLand, ReviewFailed, ReviewFiles, ReviewHead, ReviewReading } from './ReviewFrame';
 import { PlaceNote } from './PlaceNote';
+import { UnattributedNote } from './UnattributedNote';
 
 /** How a reader likes the changes laid out — a per-viewer convenience, like the frame's widths. */
 const LAYOUT = 'daoris.reviewLayout';
@@ -484,9 +485,14 @@ export function DiffPane({
 
   // Where the work landed, above whatever is read: the landed branch's changes, or the tree's.
   const place = diff.data?.source === 'place';
-  const note = place
-    ? <PlaceNote />
-    : landed ? <LandedNote landed={landed} source={diff.data?.source === 'branch' ? 'branch' : 'tree'} /> : null;
+  const note = (
+    <>
+      {place
+        ? <PlaceNote />
+        : landed ? <LandedNote landed={landed} source={diff.data?.source === 'branch' ? 'branch' : 'tree'} /> : null}
+      <UnattributedNote paths={diff.data?.unattributed} />
+    </>
+  );
 
   // The answer below the frame: held at reduced opacity while a newer read is on its way, so nothing jumps.
   const body = (content: ReactNode) => (

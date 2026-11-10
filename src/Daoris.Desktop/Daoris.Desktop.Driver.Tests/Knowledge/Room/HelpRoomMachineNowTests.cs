@@ -30,7 +30,7 @@ public sealed class HelpRoomMachineNowTests
             + "`example.packaged` (on, installed from a package), "
             + "`example.broken` (on, contributes nothing: `apiVersion` must be an integer., no record of where it came from)", some);
         Assert.Contains("- Plugins: none installed.", HelpRoom.Render(HelpRoomFixture.Machine));
-        Assert.Contains("an `update` (the plugin's `id`) takes a", some);
+        Assert.Contains("`daoris plugin update <id> --yes` (a newer copy from where it came", some);
         Assert.Contains("`daoris plugin add --offer <id>`, `daoris plugin update <id>`", some);
     }
 

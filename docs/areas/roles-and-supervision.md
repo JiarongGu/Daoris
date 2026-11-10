@@ -443,17 +443,20 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they start wi
     held quest (`quest retry`), a git identity's use (`git use`, every form pressed) and the machine's notify, cap, cool-off, quiet and keep rules
     (`settings notify|cap|cooloff|quiet|keep`), an agent's update and pin (`agent update|pin`) and Daoris's browser's settings and
     favorites (`browser use|links|extensions|favorite add|remove`, the person's presses `BROWSER_SETTING` and `BROWSER_FAVORITE`, which
-    the terminal sends where Daoris runs and writes alone where it does not), and a role's change (`role set|remove|default|policy|rules`,
+    the terminal sends where Daoris runs and writes alone where it does not), a role's change (`role set|remove|default|policy|rules`,
     one view of `SET_ROLE`, judged by the role door's judges against the catalogue, staffing and rules held now; a supervisor's record
-    and a place's rules ride it before and after). A press of Ask Daoris's that
+    and a place's rules ride it before and after), and a plugin's add from a folder, install of an offer, update, switch, remove and
+    approval or withdrawal of what its server offers Ask Daoris (`plugin add|update|enable|disable|remove`, `plugins approve|withdraw`,
+    the views of `PLUGIN_ADD`, `PLUGIN_INSTALL`, `PLUGIN_UPDATE` and `PLUGIN_ACTION`, judged as the Plugins place judges them; what the
+    plugin runs as its manifest writes it, or every tool an approval names, rides the card). A press of Ask Daoris's that
     no line waits on is said in its conversation once it settles, as Daoris's word (`SettledSaid`); an update or a pin says its end there,
     a failure before it starts and an end before the settle registers it included, and an ask or a quest a pressed verb's answer names is
     kept with the conversation (`HelpPublished`) and named in its line (`PressedEnds`). A working session's tier is its repository's access setup, read at the press from the place its key was handed for
     (`SessionDelegates.PlaceOf`, `DelegateTiers`): unrestricted runs its proved press at once as its own (rule 52); asking and the
     judged default put it on a card naming the session. Each proposal still proposed is a kind under `Help/Proposals/`, judged
     by its route's own code against the machine now and applied only by the person's *Apply* through that route; a kind goes
-    whole, tool to card, with the change that gives its route a view (the setting, agent, browser and role kinds are gone; the ask,
-    plugin, sync, clear, workflow and setup kinds remain, with `go`). `sessions archive --ended` stays a terminal's own, an archive being
+    whole, tool to card, with the change that gives its route a view (the setting, agent, browser, role and plugin kinds are gone; the
+    ask, sync, clear, workflow and setup kinds remain, with `go`). `sessions archive --ended` stays a terminal's own, an archive being
     this machine's mark and undone by *Unarchive*. (from D89, D170, D253, D261)
 57. Restricted mode adds the access the person configures: housekeeping, chosen settings (notify, language, cap, cool-off
     and quiet), checkouts and families of acts, each request
@@ -476,7 +479,7 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they start wi
     of every action. The room's doors table says where each change is and whether Ask Daoris proposes it, a proposing row naming a
     door its kind takes; *Done at a terminal* names the acts no proposal takes, by their commands. (from D110, D170, D233, D261)
 61. A plugin's servers and skills reach Ask Daoris only where its manifest declares them for it, approved by the person
-    in restricted mode. A plugin changes Daoris only through the proposal doors. (from D170, D183)
+    in restricted mode. A plugin changes Daoris only through the person's presses, each on its card. (from D170, D183, D261)
 62. The room says each role's staffing, policy and last seven days, so *why did this run on Opus?* is answered from
     the records. (from D226)
 
