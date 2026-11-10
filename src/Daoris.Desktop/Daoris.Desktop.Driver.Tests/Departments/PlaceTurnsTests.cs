@@ -74,8 +74,9 @@ public sealed class PlaceTurnsTests : IDisposable
         File.WriteAllText(Path.Combine(Place, "draft.md"), "the session's\n");
         Assert.Equal(["draft.md"], await EndAsync("s-aaaaaaaa"));
 
-        // Its next turn carries its own path in, so it is not told it is someone else's, and keeps it where the turn left it.
-        Assert.Equal(new PlaceTold([], []), await StartAsync("s-aaaaaaaa"));
+        // Its next turn carries its own path in, so it is not told it is someone else's, and keeps it where the turn left it; no tool
+        // event of the turn named it, so it is told the path changed by none of its tools.
+        Assert.Equal(new PlaceTold([], []) { Unattributed = ["draft.md"] }, await StartAsync("s-aaaaaaaa"));
         Assert.Equal(["draft.md"], await EndAsync("s-aaaaaaaa"));
 
         // A part carrying the line on carries the path in from the record it continues.

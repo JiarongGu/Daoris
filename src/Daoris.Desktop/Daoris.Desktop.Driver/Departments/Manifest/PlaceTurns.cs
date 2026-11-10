@@ -8,10 +8,23 @@ namespace Daoris.Driver;
 public static class PlaceTurns
 {
     /// <summary>Read and keep the start's manifest of <paramref name="record"/> working in <paramref name="root"/>, and what it is told.</summary>
-    /// <param name="continues">The record a carry-on continues, whose end's own paths it carries in; null for a first start.</param>    /// <returns>What the session is told, or null where the place reads no manifest.</returns>
+    /// <param name="continues">The record a carry-on continues, whose end's own paths it carries in; null for a first start.</param>
+    /// <param name="events">The line's last turn's events, read from the home's session records where none are given.</param>
+    /// <returns>What the session is told, or null where the place reads no manifest.</returns>
     public static async Task<PlaceTold?> StartAsync(
         string home, string workspace, string department, string root, string record, string? continues, CancellationToken ct,
-        PlaceExcludes? excludes = null)
+        PlaceExcludes? excludes = null, IReadOnlyList<SessionEvent>? events = null)
+    {
+        // Read before this start's manifest replaces a go-on's own last start.
+        var prior = new ManifestStore(home, workspace, department).Read(record, ManifestMoment.End) is not null ? record : continues;
+        var unattributed = prior is null ? [] : TurnUnattributed.Of(home, prior, events);
+        return await StartReadAsync(home, workspace, department, root, record, continues, excludes, ct).ConfigureAwait(false) is { } told
+            ? told with { Unattributed = unattributed }
+            : null;
+    }
+
+    private static async Task<PlaceTold?> StartReadAsync(
+        string home, string workspace, string department, string root, string record, string? continues, PlaceExcludes? excludes, CancellationToken ct)
     {
         if (PlaceKind.At(root) == PlaceKind.Folder) return FolderTurns.Start(home, workspace, department, root, record, null, excludes);
         var store = new ManifestStore(home, workspace, department);

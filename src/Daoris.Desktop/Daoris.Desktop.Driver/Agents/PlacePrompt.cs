@@ -12,9 +12,9 @@ internal static class PlacePrompt
     /// <summary>The section, or empty where the place found nothing to tell.</summary>
     public static string Told(PlaceTold? told)
     {
-        if (told is { Kind: PlaceKind.Folder }) return FolderPrompt.Told(told);
-        if (told is null || told.Outside.Count + told.Others.Count == 0) return "";
-        var text = "\n\n## Your place\n";
+        if (told is { Kind: PlaceKind.Folder }) return FolderPrompt.Told(told) + Unattributed(told);
+        if (told is null || told.Outside.Count + told.Others.Count + told.Unattributed.Count == 0) return "";
+        var text = "\n\n## Your place\n" + Unattributed(told);
         if (told.Outside.Count > 0)
         {
             text += $"\nSince the last session here these changed outside Daoris: {Listed(told.Outside)}. "
@@ -30,6 +30,13 @@ internal static class PlacePrompt
 
         return text;
     }
+
+    /// <summary>The sentence for what the line's last turn changed by none of its tools, or empty.</summary>
+    private static string Unattributed(PlaceTold told) =>
+        told.Unattributed.Count == 0
+            ? ""
+            : $"\nWhile your last turn ran these changed by none of your tools: {Listed(told.Unattributed)}. The person or another program "
+              + "may have changed them beside you: read each again before you change it, and keep what the person changed.\n";
 
     /// <summary>How many paths of both lists the bound left unnamed.</summary>
     public static int Left(PlaceTold? told) =>

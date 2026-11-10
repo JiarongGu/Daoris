@@ -28,11 +28,13 @@ public static class TreesReviewWires
     /// <remarks>Never a machine path: the checkout the branch is read in is the registry's, and the page has no use for it.</remarks>
     public static object ReviewAnswer(
         string session, TreeDiff? diff, string source, LandedReview? landed, bool treeGone, TreeDiff? uncommitted = null,
-        LineBehind? behind = null, string? treeBranch = null, LandOffer? offer = null) => new
+        LineBehind? behind = null, string? treeBranch = null, LandOffer? offer = null, IReadOnlyList<string>? unattributed = null) => new
     {
         Session = session,
         Base = diff?.Base ?? "",
         diff?.Truncated,
+        // The paths a turn in place changed that no tool of its run named (`TurnUnattributed`); null where none.
+        Unattributed = unattributed is { Count: > 0 } ? unattributed : null,
         Files = (diff?.Files ?? []).Select(file => new
         {
             file.Path,

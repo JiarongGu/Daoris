@@ -174,6 +174,8 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they start wi
     commit clears it. A folder that is no git repository is worked in place the same way: its turn alone holds it, its start
     reads every file's size, time and hash and is told what changed outside Daoris and that there is no git there, its end
     marks nothing, and its review is the files the turn changed with each text file's diff (`FolderTurns`, `PlaceChanges`).
+    In either kind a path the turn changed that no tool event of its run names, from its start on, is said as changed while it
+    ran by none of its tools, above its review and to the line at its next turn (`TurnUnattributed`).
     A git place's first in-place start marks its common git directory with its home, and another home on
     this machine is held there while that home stands (`PlaceHomeMarker`). A pull or a promotion that would move the repository's
     own checkout waits only for the lease's holder there, a turn running or a line parked with uncommitted paths of its own, read

@@ -11,9 +11,12 @@ public sealed record PlaceTold(IReadOnlyList<string> Outside, IReadOnlyList<stri
 
     public bool TooLarge { get; init; }
 
+    /// <summary>What the line's last turn here changed by none of its tools (<see cref="TurnUnattributed"/>), sorted.</summary>
+    public IReadOnlyList<string> Unattributed { get; init; } = [];
+
     public bool Equals(PlaceTold? other) =>
         other is not null && Outside.SequenceEqual(other.Outside, StringComparer.Ordinal) && Others.SequenceEqual(other.Others, StringComparer.Ordinal)
-        && Kind == other.Kind && TooLarge == other.TooLarge;
+        && Kind == other.Kind && TooLarge == other.TooLarge && Unattributed.SequenceEqual(other.Unattributed, StringComparer.Ordinal);
 
     public override int GetHashCode() => HashCode.Combine(Outside.Count, Others.Count, Kind, TooLarge);
 }
