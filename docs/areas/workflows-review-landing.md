@@ -281,7 +281,9 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
     active or unknown, every subject its nodes observe is held (`RunHeldUnits`, `RunHeldTraceTests`), so a run whose review the person
     accepted still finds the branch its `land` binds. (from D88, D102, D232)
 38. A pull request's state is asked of the plugin that opened it, at most once a minute per pull request. A landed session's
-    review reads its landed branch. (from D113, D148)
+    review reads its landed branch. A session in a folder's review is its turn's change set from its manifests, each text file
+    with its diff and a file that is not text with none; it names no base, and a folder's page and review say that branches,
+    history, integration and landing are git's. (from D113, D148, D254)
 39. Integration is one run per line, outside every run, with fixed steps. `done` and `steward` requests need declared, accepted
     gates. The line's policy is `linePolicies`, how the line is integrated; who requests and where a conflict goes are the
     `integrate` step's, the bound version's in a run and, outside one (the sweep, the steward's door, the recheck at promotion, the

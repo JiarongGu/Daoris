@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import type { Registration } from '../data/api';
+import { isFolder, type Registration } from '../data/api';
+import { FolderNoGit } from './FolderNoGit';
 import { sentence } from '../locales/format';
 import { AddProjectDrawer, ImportFolderDrawer, ManageProjectDrawer } from './ProjectManage';
 import { projectsItem, workspaceItem } from '../app/opener';
@@ -289,7 +290,9 @@ export function useProjectsView({
           held={driver.data ? named(driver.data.holds, shown.repository) : undefined}
           onOpenSetup={onOpenSetup ? () => onOpenSetup(shown.repository) : undefined}
           // Its branches and its line's history: a shell's, each read only while its tab shows.
-          branches={attached
+          branches={attached && isFolder(shown)
+            ? <FolderNoGit />
+            : attached
             ? (
               <RepositoryBranches
                 repository={shown.repository}
@@ -301,7 +304,9 @@ export function useProjectsView({
               />
             )
             : undefined}
-          history={attached
+          history={attached && isFolder(shown)
+            ? <FolderNoGit />
+            : attached
             ? <RepositoryHistory repository={shown.repository} workspace={workspaceOf(shown)} here={Boolean(shown.root)} />
             : undefined}
           // Its checkout's changes, where the person let Daoris change its files (Setup's Reach), read while its tab shows.
@@ -309,7 +314,9 @@ export function useProjectsView({
             ? <RepositoryChanges repository={shown.repository} workspace={workspaceOf(shown)} here={Boolean(shown.root)} />
             : undefined}
           // Its queue, candidates and history, read while its tab shows.
-          integration={attached ? <RepositoryIntegration repository={shown.repository} notify={notify} /> : undefined}
+          integration={attached && isFolder(shown)
+            ? <FolderNoGit />
+            : attached ? <RepositoryIntegration repository={shown.repository} notify={notify} /> : undefined}
           files={attached && Boolean(shown.root) ? <RepositoryFiles repository={shown.repository} /> : undefined}
           tab={tab}
           onTab={onTab}

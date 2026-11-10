@@ -62,6 +62,8 @@ export function AddProjectDrawer({ onClose, onAdded, notify, initialWorkspace }:
       // What the shell found there, stated: registered is addressable, adopted is disciplined —
       // and a row that said adopted without a manifest would be driven with no connector.
       adopted: found.adopted,
+      // A folder that is no git checkout is a department of its own kind, worked in place by its manifest.
+      kind: found.git ? 'git' : 'folder',
       ...(workspace.trim() ? { workspace: workspace.trim() } : {}),
       ...(found.adopted
         ? {
@@ -130,7 +132,7 @@ export function AddProjectDrawer({ onClose, onAdded, notify, initialWorkspace }:
           <p className="mt-2 flex flex-wrap items-baseline gap-1.5">
             <Chip accent>{found.name}</Chip>
             <Chip>{found.adopted ? t('projects.manage.adopted') : t('projects.manage.notAdopted')}</Chip>
-            <Chip>{found.git ? t('projects.manage.git') : t('projects.manage.noGit')}</Chip>
+            <Chip>{found.git ? t('projects.manage.git') : t('projects.manage.folder')}</Chip>
           </p>
           {found.summary && <p className="mt-2 text-body text-ink-soft">{found.summary}</p>}
 
@@ -144,8 +146,8 @@ export function AddProjectDrawer({ onClose, onAdded, notify, initialWorkspace }:
           )}
 
           {!found.git && (
-            <p className="mt-3 border-l-[3px] border-warn bg-raised px-3.5 py-2 text-body text-ink-soft">
-              {t('projects.manage.noGitWarning')}
+            <p className="mt-3 border-l-[3px] border-line-strong bg-raised px-3.5 py-2 text-body text-ink-soft">
+              {t('projects.manage.folderNote')}
             </p>
           )}
 

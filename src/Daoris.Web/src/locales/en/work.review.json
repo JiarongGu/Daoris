@@ -60,6 +60,8 @@
   "work.review.uncommitted_other": "Not committed yet · {{count}} files",
   "work.review.uncommittedTruncated": "More uncommitted files than are listed here; `git status` in the tree has the rest.",
   "work.review.uncommittedNoPatch": "This file is not committed, and its patch is too large, or not text, to show here. It is in the tree.",
+  "work.review.placeNoPatch": "This file is not text, or is past what the folder's store keeps, so it is compared by its size and hash, with no diff. It is in the folder.",
+  "work.review.place.note": "This department is a folder: these are the files this session changed, against what the folder held when it started. History, branches and landing are git's, and a folder has none.",
   "work.review.committedNothing": "This session has committed nothing yet; its work is below, not committed.",
   "work.review.pullRequest": "Open the pull request",
   "work.review.chatPress.busy": "A turn is running in this conversation; press Accept once it ends.",

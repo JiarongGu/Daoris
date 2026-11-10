@@ -128,10 +128,11 @@ export type SessionDiff = {
   truncated: string | null;
   files: DiffFile[];
   /**
-   * Where the files were read from: the session's own tree, or its landed branch in the repository's
-   * checkout once the tree cannot be read. An answer without it names none, which is the tree.
+   * Where the files were read from: the session's own tree, its landed branch in the repository's
+   * checkout once the tree cannot be read, or a folder's manifests (`place`), whose files are the turn's change set against what the
+   * folder held at its start, with no base and nothing of git's. An answer without it names none, which is the tree.
    */
-  source?: 'tree' | 'branch';
+  source?: 'tree' | 'branch' | 'place';
   /** Where this session's work landed, where this machine's landing record holds it. */
   landed?: LandedWork | null;
   /**
