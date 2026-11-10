@@ -451,8 +451,11 @@ public sealed class TransportRunProcessTests : IDisposable
         await run.ResumeAsync("conv-1", Bound, new ResumeAsk(
             "conv-1", [], Continuations.Opening("scripted", null, null, answer: false, findings: false, persons: true)));
         var ending = run.EndAsync(Bound);
+        // The retry's start is written before its spawn, and the run holds its leg only once its capture is open, where the retry
+        // closes the input's retry: let go any sooner, the run would end the first leg's process, which has exited, and not the retry's.
         await Poll.Until(() => File.Exists(ChildLineage.PathOf(_home, "s1"))
-            && Lineage().Count(line => line.GetProperty("by").GetString() == "start") >= 2);
+            && Lineage().Where(line => line.GetProperty("by").GetString() == "start").Select(line => line.GetProperty("proc").GetString()).ToList() is [_, var second]
+            && run.Proc == second && !run.Input.MayRetry);
 
         var retried = run.Process!;
         var proc = run.Proc!;
