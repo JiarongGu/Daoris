@@ -23,7 +23,9 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they start wi
 | `RunState` | `Loop/Run/RunState.cs` | What a run carries from stage to stage on its `RunRound`: the agent, the account and how it was walked, the access setup, the tree and the repository's trees held until the record is open, the binding, the set-up step, what the continue stage settled and the opened record; a member read before the stage that writes it throws, naming that stage; the state lets go of the held trees and the carry-on's move record with the run |
 | `GrowTree` | `Loop/Run/Tree/` | The `Grown` phase: the tree the session runs in, found where an earlier session worked or grown from the line, with the repository's trees held until the record is open; a hold lets the fresh tree go |
 | `StartAgent`, `AccountWalk`, `StartAccess` | `Loop/Run/Choose/` | The `Choose` phase, in this order, before anything is grown, locked or opened: the agent, the account the walk or a resume takes, the access setup |
-| `RunManifest`, `ManifestReader`, `ManifestStore`, `ContentStore`, `PlaceChangesSince` | `Departments/Manifest/` | A git place's manifest (its status with each listed path's hash) kept at `<home>/work/places/<workspace>/<department>/manifests/`, the newest 20 and every named one; each new text file's blob beside it, the store bounded at 1 GB; the paths changed between two manifests, the turn's own still uncommitted and those not its own |
+| `RunManifest`, `ManifestReader`, `ManifestStore`, `ContentStore`, `PlaceChangesSince`, `PlaceTurns` | `Departments/Manifest/` | A git place's manifest (its status with each listed path's hash) kept at `<home>/work/places/<workspace>/<department>/manifests/`, the newest 20 and every named one; each new text file's blob beside it, the store bounded at 1 GB; the paths changed between two manifests, the turn's own still uncommitted and those not its own; a turn's start and end in its place (`PlaceTurns`: the start kept with its root and the paths its line carried in, the end read once, a record's found under any place of the home) |
+| `PlaceHomeMarker`, `PlaceHome` | `Departments/`, `Loop/Run/Choose/` | The marker in a git place's common git directory naming the home that works it in place, and the start's stage that holds another home's start there |
+| `PlacePrompt`, `PlaceTold`, `PlaceDenies`, `PlaceAccount` | `Agents/`, `Context/` | What a start in its place is told of it (the `place` section, bounded at 30 paths a list), the denies its rules take where it found paths not its own, and the section's account |
 | `PlaceHolders` | `WorkOrders/Domain/` | The place's holder at a look, as the ledger's lease reads it, and the sentence a start sits with |
 | `StewardPlace`, `RunBinding`, `SetUpStep` | `Loop/Run/Placed/` | The `Placed` phase, once the tree is open and held and before the record opens: a steward's start, the workflow binding and the role it names, a set-up step's procedure and tab; a hold lets the fresh tree go |
 | `TrustedTree`, `GoOnRecord` | `Loop/Run/Trust/`, `Loop/Run/Continue/` | The `Cleared` phase: whether the harness trusts the tree (`TrustAsk`, asked again of an account a resume's words walk to), then the record the person's words wait on, continued or handed on in a new session |
@@ -153,7 +155,13 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they start wi
     uncommitted paths of its own (`holds_place`) until a turn commits them, they are discarded or the person lets others work
     there. A park with nothing uncommitted holds nothing. The open and the move into a running state take it, the move out of
     one writes the mark or none, and nothing renews it on a clock; a start sits behind the holder in the planner's order
-    (`SittingFact.Place`). Passes and a session in a tree of its own take no lease. With trees on, sessions run side by
+    (`SittingFact.Place`). Under the lease a start reads and keeps its place's manifest with the paths its line carried in,
+    and is told what changed there outside Daoris since the last session and the uncommitted paths not its own, whose
+    add-all, commit-all and stash its rules then deny (`PlaceTurns`, `PlaceDenies`); every move out of a running state, the
+    orphan sweep's stop included, reads the turn's end once and sends what of its own stays uncommitted as the mark, so a
+    commit clears it. A git place's first in-place start marks its common git directory with its home, and another home on
+    this machine is held there while that home stands (`PlaceHomeMarker`). A pull or a promotion that would move the checkout
+    waits for the session the ledger holds there, read inside the checkout's hold. Passes and a session in a tree of its own take no lease. With trees on, sessions run side by
     side, one per tree; only a resume, a carry-on, or a later quest of the same run (a chain's step there) goes back into an
     existing tree. A later quest of a line that is a run of its own starts in a tree and on a branch of its own, a further part
     of the line, so no two runs work one branch (`RoundJoining`, `LineRuns`, the run rule `QuestRuns`). (from D51, D167, D254,
@@ -173,7 +181,8 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they start wi
     open as `TakenElsewhere`. (from D80, D178)
 18. At each start the plugins are asked first, and a hold names the plugin. A start held at spawn (a harness absent or
     signed out, a tree that would not grow, trust not given) reports its sentence as the quest's reason. Uncommitted work
-    in the place does not hold a start: the lease and the manifest say whose it is. (from D64, D73, D254)
+    in the place does not hold a start: the lease and the manifest say whose it is. A start in a checkout another Daoris home
+    on this machine works in place is held, naming no path (`PlaceHome`). (from D64, D73, D254)
 
 ### Start, tree and resume
 

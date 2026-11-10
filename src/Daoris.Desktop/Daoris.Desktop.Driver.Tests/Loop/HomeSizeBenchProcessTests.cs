@@ -83,8 +83,15 @@ public sealed class HomeSizeBenchProcessTests(ITestOutputHelper output) : IAsync
         var small = await MeasuredAsync("a small tree's review", () => ReviewAsync(trees, Home.Trees[^1]));
 
         // A start's own parts before its spawn that do not wait on a model: its place's manifest, its tree grown, its record opened.
-        var manifests = new ManifestStore(Home.Home, "default", BenchHome.Repository);
-        await MeasuredAsync("a start's manifest", () => ManifestReader.GitAsync(Home.Root, manifests.Content, CancellationToken.None));
+        // Its manifest as a turn in place reads it: the place's last manifest, git's status with each listed path's hash, kept; a
+        // second start compares with the first's end.
+        await MeasuredAsync("a turn's end in place", async () =>
+        {
+            await PlaceTurns.StartAsync(Home.Home, "default", BenchHome.Repository, Home.Root, "s-bench001", null, CancellationToken.None);
+            return await PlaceTurns.EndAsync(Home.Home, "s-bench001", CancellationToken.None);
+        });
+        var manifest = await MeasuredAsync("a start's manifest", () =>
+            PlaceTurns.StartAsync(Home.Home, "default", BenchHome.Repository, Home.Root, "s-bench002", "s-bench001", CancellationToken.None));
         await MeasuredAsync("a start's tree", () => trees.OpenAsync(Home.Root, BenchHome.Repository, "default"));
         await MeasuredAsync("a start's record", () => Home.Client.OpenChatAsync(BenchHome.Repository, "stub"));
 
@@ -93,6 +100,7 @@ public sealed class HomeSizeBenchProcessTests(ITestOutputHelper output) : IAsync
 
         // Each read that reads the session list once is allowed that read: the rest is the driver's own.
         Within("the look", look - list, LookBudget);
+        Within("a start's manifest", manifest, BesideBudget);
         Within("the nodes' read", nodes - list, BesideBudget);
         // A tree's ignored build costs a read nothing: its kept read is its two statuses, and its review a tracked tree's.
         Within("the large tree's kept read", kept, ReviewBudget);
