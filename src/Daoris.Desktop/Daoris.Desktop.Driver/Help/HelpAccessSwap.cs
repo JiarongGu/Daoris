@@ -87,12 +87,14 @@ internal sealed class HelpAccessSwap(IExecutorWiring wiring) : IExecutor
     }
 
     /// <summary>
-    /// A conversation's run is over: what its start handed is not compared with the person's access, so nothing is pending.
-    /// Said before its end is told, so the state judged at that word reads it gone.
+    /// A conversation's run is over: what its start handed is not compared with the person's access, so nothing is pending, and its
+    /// delegate keys go with its mode, so no press is judged by a mode no longer held. Said before its end is told, so the state judged at
+    /// that word reads it gone.
     /// </summary>
     public void Forget(string sessionId)
     {
         var context = wiring.Context;
+        context.Processes.Delegates.Forget(sessionId);
         context.HelpModes.TryRemove(sessionId, out _);
         context.AccessHanded.TryRemove(sessionId, out _);
         context.HelpEnding.TryRemove(sessionId, out _);

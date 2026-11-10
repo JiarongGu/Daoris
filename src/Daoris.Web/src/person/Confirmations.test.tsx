@@ -88,6 +88,21 @@ describe("the window's confirmation of a terminal's press", () => {
     expect(card).toHaveTextContent('Daoris cannot tell whether you ran this or an agent did. Confirm only what you ran.');
   });
 
+  it("names Ask Daoris, or the session, as asking where its press proved the key Daoris handed it", () => {
+    draw([
+      { ...STOP, asker: { process: 'pwsh', pid: 77, session: 'h1', help: true } },
+      { ...UNKNOWN, asker: { process: 'bash', pid: 78, session: '9b1e0d2a', help: false } },
+    ]);
+
+    const [help, session] = screen.getAllByRole('group');
+    expect(help).toHaveTextContent('Ask Daoris asks for this, with the key Daoris handed its conversation.');
+    expect(session).toHaveTextContent('Session 9b1e0d2a asks for this, with the key Daoris handed it.');
+    for (const card of [help, session]) {
+      expect(card).not.toHaveTextContent('Sent by');
+      expect(card).not.toHaveTextContent('Daoris cannot tell whether you ran this');
+    }
+  });
+
   it('opens the route and every value raw under Details', async () => {
     draw([SAY]);
 

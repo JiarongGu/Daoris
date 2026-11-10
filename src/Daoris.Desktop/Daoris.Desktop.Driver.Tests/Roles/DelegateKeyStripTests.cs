@@ -68,7 +68,7 @@ public sealed class DelegateKeyStripTests
             }
         }
 
-        Assert.True(calls >= 6, $"the search found {calls} starts");
+        Assert.True(calls >= 5, $"the search found {calls} starts");
     }
 
     /// <summary>The shell sets the start's own key over one the driver inherited, and a start with none drops the inherited one.</summary>

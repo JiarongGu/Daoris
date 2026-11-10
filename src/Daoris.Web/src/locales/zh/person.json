@@ -29,6 +29,8 @@
   "person.asker.process": "由 {{process}} 发出，进程 {{pid}}。",
   "person.asker.pid": "由进程 {{pid}} 发出。",
   "person.asker.unknown": "Daoris 无法说出是什么发出了它。",
+  "person.asker.help": "问道衍请求执行此操作，凭 Daoris 交给其对话的密钥。",
+  "person.asker.session": "会话 {{session}} 请求执行此操作，凭 Daoris 交给它的密钥。",
   "person.restored": "记录显示它在 Daoris 重启前由 {{process}}（进程 {{pid}}）发出。",
   "person.restoredPid": "记录显示它在 Daoris 重启前由进程 {{pid}} 发出。",
   "person.restoredUnknown": "记录未说明 Daoris 重启前是什么发出了它。",

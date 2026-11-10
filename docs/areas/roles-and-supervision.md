@@ -44,6 +44,7 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they start wi
 | `SupervisorAllows`, `SupervisorAllowView`, `StewardAllows`, `StewardLandRoutes`, `SupervisorAllowCard` | `Roles/SupervisorAllows.cs`, `Roles/SupervisorAllowView.cs`, `Modules/Platform/StewardAllows.cs`, `Modules/Bridge/Routes/StewardLandRoutes.cs`, `Web/work/head/SupervisorAllowCard.tsx` | The allow decisions kept, moved and read back as `SESSION_SUPERVISOR`'s `allows`; the steward's request waiting for the allow supervisor and its allowed `land` in its window with the person's *Overrule* |
 | `SupervisorBook`, `SupervisorDecisionFiles`, `SupervisorKeeping`, `SupervisorReleasing`, `SupervisorSweeps`, `SupervisorTickets`, `SupervisorReads`, `SupervisorAttempts` | `Roles/Supervisor*.cs` | The decisions' shared memory (live decisions, session locks, closed questions) and its one move in the book; the files, keeping, releasing, sweeps, tickets and reads each reach it and keep no state; an agent supervisor's attempts beside the decisions |
 | `SessionsSuperviseCommand`, `SupervisorQuarantine`, `HolderKey` | `Roles/SessionsSuperviseCommand.cs`, `Roles/SupervisorQuarantine.cs`, `Roles/HolderKey.cs`, `Roles/SupervisorProof.cs` | The holder's verb; unattributed words taken back; the key and the role terminal's verbs; the proof |
+| `DelegateKey`, `SessionDelegates`, `DelegateProof`, `PipeDelegate` | `Agents/DelegateKey.cs`, `Agents/SessionDelegates.cs`, `Agents/DelegateProof.cs`, `Modules/Platform/PipeDelegate.cs` | The key every session's start is handed (`DAORIS_DELEGATE_KEY`) and its verb takes; the hashes kept by session; the proof over a press's route, payload and key; the pipe's tier for a proved press |
 | `StandingConfirmation` | `Modules/Platform/StandingConfirmation.cs` | The roles' terminals this run: holds, generations, holders; the act judge over the catalogue. The doors; the memory is `StandingState`'s under its one lock, which `RoleTerminals` (starts, catalogue changes, a holder's end), `RoleJudge` (the role method, the decisions' admission), `RoleActsLedger` (acts, operations, the owner's marks) and `StewardRecord` (the steward's acts this run) reach |
 | Steward | `Roles/StewardCommand.cs`, `Roles/StewardAsked.cs`, `Modules/Bridge/StewardActRows.cs`, `Modules/Bridge/StewardRouteAct.cs`, `Modules/Bridge/StewardHandOverAct.cs`, `Modules/Bridge/StewardPauseAct.cs`, `Modules/Bridge/StewardUpdateAct.cs`, `Modules/Bridge/StewardTargets.cs`, `Modules/Bridge/Routes/QuestEndRoutes.cs`, `Modules/Platform/RoleActs.cs`, `Modules/Platform/StewardAsk.cs` | `steward <act>` over `ROLE_ACT`, and its words when an act asks the owner; the eighteen acts and the set-up act, the route acts among them; pending operations; an act outside the granted ones sent on as its person's press |
 | `StartAdmission`, `CallTable` | `Participants/Domain/StartAdmission.cs`, `Service/Daoris.Service.Mcp/CallTable.cs` | Who may ask for a co-worker; which tools each work is served |
@@ -424,13 +425,19 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they start wi
 55. Ask Daoris answers from the records, takes the person to a place (`go`), starts work as an ask the intake turns into
     quests, or proposes a change. A quest's or session's own acts stay in its own conversation: accepting a departure and
     handing a landed branch to a landing plugin are the person's own presses, never proposed. (from D161, D193, D233)
-56. In restricted mode, the default, it reads and proposes. Each proposal is a kind under `Help/Proposals/`, judged by
-    its route's own code against the machine now, and applied only by the person's *Apply* through that route. (from D89, D170)
+56. The modes differ only in who says yes to a press of Daoris's verb, which both run. Every session's start is handed a delegate
+    key of its own, kept only as a hash in memory by session, stripped from every other start and forgotten at its process's end,
+    its conversation's end and an access swap; the verb proves a person's press with it over the hello's nonce. In restricted mode,
+    the default, it reads and proposes, and a proved press waits on a card naming Ask Daoris and runs on the person's yes. Each
+    proposal is a kind under `Help/Proposals/`, judged by its route's own code against the machine now, and applied only by the
+    person's *Apply* through that route. (from D89, D170, D253)
 57. Restricted mode adds the access the person configures: housekeeping, chosen settings (notify, language, cap, cool-off
     and quiet) and checkouts, each request
     judged at the call by the door's own judges. No settings grant reaches a role. (from D183, D205)
-58. Full access runs its harness's unrestricted mode. Only the person chooses it (Settings, the panel's chip, `help
-    mode`), never Ask Daoris. A change of mode or access takes the next turn and is said. (from D183)
+58. Full access runs its harness's unrestricted mode, and a press it proves runs at once with no card as the person's own, said
+    once on its conversation's console and logged `help.pressed`. A proof that does not hold, a nonce used already or a session
+    holding no key is refused `delegate-unproved`. Only the person chooses it (Settings, the panel's chip, `help mode`), never
+    Ask Daoris. A change of mode or access takes the next turn and is said. (from D183, D253)
 59. What each start handed is recorded at the start and shown on the panel, never worked out again. (from D183)
 60. A proposal kind, a room's door row or a terminal verb exists only where one is wanted; no census asks one of every
     action. The room's doors table says where each change is and whether Ask Daoris proposes it, a proposing row naming a

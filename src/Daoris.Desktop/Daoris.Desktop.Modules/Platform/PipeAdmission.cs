@@ -24,7 +24,9 @@ internal sealed class PipeAdmission(InstancePipe pipe)
     /// once the press it begins or joins answers. A press is admitted only where the connection has room for one more under way.
     /// </summary>
     /// <param name="hold">That it is sent with <c>hold: true</c>: a start that holds what it opens, once the person confirms it.</param>
-    public (string? Now, Task<string>? Later) Accept(IpcRequest request, string? key, PipeConnection connection, bool hold = false)
+    /// <param name="claim">The <c>delegate</c> it is sent with: a session's proof of the key its start was handed (<see cref="PipeDelegate"/>).</param>
+    public (string? Now, Task<string>? Later) Accept(
+        IpcRequest request, string? key, PipeConnection connection, bool hold = false, PipeDelegateClaim? claim = null)
     {
         if (string.Equals(request.Module, InstancePipe.Module, StringComparison.OrdinalIgnoreCase))
         {
@@ -115,6 +117,15 @@ internal sealed class PipeAdmission(InstancePipe pipe)
         // no card, so nothing is shaped for one; every other press asks as before.
         var covered = @class == PipeClass.Person && !holding && !asked && pipe.Holding.Covers(connection, request);
 
+        // A press proved by the delegate key its session's start was handed is judged by that session's tier, its nonce used up: run as
+        // the person's with no card, asked naming the session, or refused.
+        PipeDelegateJudgement? delegated = null;
+        if (claim is not null && @class == PipeClass.Person && !holding && !asked && !covered)
+        {
+            delegated = pipe.Delegate.Judge(request, key!, claim, connection);
+            if (delegated.Tier == PipeDelegateTier.Refused) return (IpcJson.Serialize(pipe.Refuse(request, PipeDelegate.Unproved, PipeDelegate.UnprovedSentence)), null);
+        }
+
         // A person's press is shown to the window with every value it carries, so one the card could not show whole is not asked.
         IReadOnlyList<PipeConfirmationField>? fields = null;
         string? placeSaid = null;
@@ -123,11 +134,14 @@ internal sealed class PipeAdmission(InstancePipe pipe)
             if (PipeCensus.SecretRefusal(request.Type, request.Payload) is { } secret) return (IpcJson.Serialize(pipe.Refuse(request, InstancePipe.Shape, $"{Capitalized(secret)} Nothing was asked.")), null);
             var (shown, unshown) = PipeConfirmations.FieldsOf(request.Payload);
             if (unshown is not null) return (IpcJson.Serialize(pipe.Refuse(request, InstancePipe.Shape, $"{Capitalized(unshown)} Nothing was asked.")), null);
-            fields = shown;
-            // A join from a process in an agents' job is refused before any card.
-            var (inside, said) = PipeOutsideOnly.Judge(request.Module, request.Type, pipe.StandingConfirmation.Caller, connection.Client);
-            if (inside is not null) return (IpcJson.Serialize(pipe.Refuse(request, inside, PipeOutsideOnly.InsideSentence)), null);
-            placeSaid = said;
+            if (delegated?.Tier != PipeDelegateTier.Covered) fields = shown;
+            // A join from a process in an agents' job is refused before any card; a proved session's press is known for what it is.
+            if (delegated is null)
+            {
+                var (inside, said) = PipeOutsideOnly.Judge(request.Module, request.Type, pipe.StandingConfirmation.Caller, connection.Client);
+                if (inside is not null) return (IpcJson.Serialize(pipe.Refuse(request, inside, PipeOutsideOnly.InsideSentence)), null);
+                placeSaid = said;
+            }
         }
 
         var binding = new PipeBinding(
@@ -168,6 +182,7 @@ internal sealed class PipeAdmission(InstancePipe pipe)
         if (mine is null) return (null, Held(answer));
         if (fields is null)
         {
+            if (delegated is { Tier: PipeDelegateTier.Covered }) pipe.Delegate.Pressed(delegated, request);
             _ = pipe.RunAsync(request, id, binding, mine, role: role, client: connection.Client);
             return (null, answer);
         }
@@ -189,7 +204,7 @@ internal sealed class PipeAdmission(InstancePipe pipe)
 
         // From here the press is a reservation, its id said to its terminal before its
         // grounds are read, so a withdrawal, a close or a lost line has a press to end; every ending from here is journaled.
-        var reserved = new PipeReserved(request, binding, mine, connection, place, _clock.GetUtcNow(), holding);
+        var reserved = new PipeReserved(request, binding, mine, connection, place, _clock.GetUtcNow(), holding, delegated?.Asker);
         lock (_state.Gate)
         {
             _state.Reserved[id] = reserved;

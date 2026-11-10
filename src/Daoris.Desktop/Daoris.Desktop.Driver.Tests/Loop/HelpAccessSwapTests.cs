@@ -160,6 +160,31 @@ public sealed class HelpAccessSwapTests : IDisposable
         chat.Turn.SetResult();
     }
 
+    /// <summary>
+    /// A press Ask Daoris made in full access is said once on its own conversation's console, naming the route as the person's own press;
+    /// the conversation's run being over forgets its keys and its mode together.
+    /// </summary>
+    [Fact]
+    public void A_full_access_press_is_said_on_its_conversation_and_its_run_s_end_forgets_its_keys()
+    {
+        var runner = Runner();
+        Running(runner, "h1", HelpModes.Full);
+        Running(runner, "h2", HelpModes.Full);
+        runner.Context.Processes.Delegates.Draw("h1");
+
+        runner.HelpPressed("h1", "DRIVER.WORK_PAUSE");
+
+        Assert.Contains("DRIVER.WORK_PAUSE", Console("h1"));
+        Assert.Contains("as your own press", Console("h1"));
+        Assert.DoesNotContain("WORK_PAUSE", Console("h2"));
+        Assert.Equal(HelpModes.Full, runner.HelpModeOf("h1"));
+
+        runner.Executors.Of<HelpAccessSwap>().Forget("h1");
+
+        Assert.Empty(runner.Context.Processes.Delegates.Of("h1"));
+        Assert.Null(runner.HelpModeOf("h1"));
+    }
+
     /// <summary>A housekeeping grant given while a turn runs takes its next turn the same way, naming what it grants.</summary>
     [Fact]
     public async Task A_grant_given_ends_a_running_conversation_at_its_turn_s_end()

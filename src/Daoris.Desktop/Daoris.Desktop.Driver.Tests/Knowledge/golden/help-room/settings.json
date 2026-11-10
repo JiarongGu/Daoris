@@ -1,6 +1,8 @@
 {
   "permissions": {
     "allow": [
+      "Bash(daoris:*)",
+      "PowerShell(daoris:*)",
       "mcp__daoris-knowledge__registry",
       "mcp__daoris-knowledge__knowledge_search",
       "mcp__daoris-knowledge__knowledge_get",

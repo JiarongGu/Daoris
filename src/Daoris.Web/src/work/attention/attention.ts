@@ -8,6 +8,7 @@ import type { Tool } from '../../agents/tools';
 import { askName, questName, sessionTitle } from '../identity';
 import type { Attention, AttentionKind } from './AttentionRow';
 import { accountRowWorded } from './accountWords';
+import { askerSaid } from '../../person/askerSaid';
 import { endSentences, entryDetail, entryName, type GraphEnd, type UnreadableRecord } from '../head/milestone';
 import { heldWorded } from './heldWorded';
 import { taskRead } from './taskRead';
@@ -605,15 +606,9 @@ function agentNamed(harness: string, tools: readonly Tool[] = []): string {
  */
 function confirmationWorded(waiting: NonNullable<PushedAttention['confirmation']>): Pick<Attention, 'title' | 'detail'> {
   const act = `person.route.${waiting.route}`;
-  const asker = waiting.asker;
   return {
     title: i18n.exists(act) ? i18n.t('person.ask.to', { act: i18n.t(act) }) : i18n.t('person.ask.for', { act: waiting.route }),
-    detail: [
-      asker?.process && asker.pid != null
-        ? i18n.t('person.asker.process', { process: asker.process, pid: asker.pid })
-        : asker?.pid != null ? i18n.t('person.asker.pid', { pid: asker.pid }) : i18n.t('person.asker.unknown'),
-      i18n.t('work.attention.confirmationWhy'),
-    ].join(' '),
+    detail: [askerSaid(i18n.t, waiting.asker), i18n.t('work.attention.confirmationWhy')].join(' '),
   };
 }
 

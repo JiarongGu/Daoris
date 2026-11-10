@@ -209,7 +209,9 @@ of everything it handed, section by section.
     only by a message a turn takes: one refused (finishing, held, gone) gives them back to the words said again, and the
     person waits on no answer to it. (from D162, D163, D164, D230)
 38. A session is listed only the tools its kind may call: the core 18 plus its kind's. Ask Daoris gets every tool but the turns and the memory changes. A Claude
-    session runs with auto-memory and synced skills, plugins and connectors off. No account home is written. (from D230)
+    session runs with auto-memory and synced skills, plugins and connectors off. No account home is written. Each start of every
+    kind is handed a delegate key beside its id; a press its verb proves with it is put to the person on a card naming the session,
+    Ask Daoris's tier aside (roles-and-supervision 56-58). (from D230, D253)
 
 **Counts and the handed account**
 

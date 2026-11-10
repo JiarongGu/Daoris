@@ -53,9 +53,16 @@ public static class HelpRoom
     /// </remarks>
     public const string Posture = "default";
 
-    /// <summary>The tools the room allows: reading the family, and nothing that writes anywhere.</summary>
+    /// <summary>
+    /// Daoris's own verb, in the forms the harness matches: run unasked, since a change it presses waits on the person's card in the
+    /// window, which names Ask Daoris as asking, and a read changes nothing.
+    /// </summary>
+    public static readonly IReadOnlyList<string> Verb = ["Bash(daoris:*)", "PowerShell(daoris:*)"];
+
+    /// <summary>The tools the room allows: reading the family and Daoris's own verb, and nothing that writes without the person.</summary>
     public static readonly IReadOnlyList<string> Allowed =
     [
+        .. Verb,
         $"mcp__{KnowledgeConnector.ServerName}__registry",
         $"mcp__{KnowledgeConnector.ServerName}__knowledge_search",
         $"mcp__{KnowledgeConnector.ServerName}__knowledge_get",

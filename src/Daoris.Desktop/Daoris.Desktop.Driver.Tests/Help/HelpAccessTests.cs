@@ -57,6 +57,20 @@ public sealed class HelpAccessTests : IDisposable
         Assert.Contains($"`{Adapter(name).FullPosture}`", access.Said);
     }
 
+    /// <summary>
+    /// Restricted runs Daoris's own verb unasked, in both forms the harness matches, since each change it presses waits on the person's
+    /// card; the room's allow-list and each start's rules name it.
+    /// </summary>
+    [Fact]
+    public void Restricted_runs_Daoris_s_own_verb_unasked()
+    {
+        var allow = HelpPlacement.In(_home, HelpRoom.PathOf(_home), []).Rules(PermissionFile.Empty, "s1").Allow;
+
+        Assert.Contains("Bash(daoris:*)", allow);
+        Assert.Contains("PowerShell(daoris:*)", allow);
+        Assert.Equal(HelpRoom.Verb, HelpRoom.Allowed.Take(HelpRoom.Verb.Count));
+    }
+
     /// <summary>A harness with no mode that asks nothing mapped is refused in full access, naming it, and the person's two ways on.</summary>
     [Theory]
     [InlineData("dsh")]
