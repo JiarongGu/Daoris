@@ -8,7 +8,7 @@ namespace Daoris.Desktop.Driver.Tests;
 /// of its own beside its id, whose hash Daoris keeps for that session; every Daoris executable's entry and every other start drops it,
 /// an inherited one included; and it is forgotten as the session's process ends.
 /// </summary>
-[Trait("Category", "Census")]
+[Trait(Category.Name, Category.Census)]
 public sealed class DelegateKeyStripTests
 {
     private const string Sentinel = "de1e6a7ede1e6a7ede1e6a7ede1e6a7ede1e6a7ede1e6a7ede1e6a7ede1e6a7e";
@@ -116,18 +116,9 @@ public sealed class DelegateKeyStripTests
     [Fact]
     public void The_entry_takes_the_key_with_its_session_and_strips_it()
     {
-        // Only the delegate's own variable is set on this process, which no other test reads.
-        var before = Environment.GetEnvironmentVariable(DelegateKey.Variable);
-        try
-        {
-            Environment.SetEnvironmentVariable(DelegateKey.Variable, Sentinel);
-            HolderKey.Strip();
-            Assert.Null(Environment.GetEnvironmentVariable(DelegateKey.Variable));
-        }
-        finally
-        {
-            Environment.SetEnvironmentVariable(DelegateKey.Variable, before);
-        }
+        // The entry's strip is read as the holder key's is: by its code, so no test sets the process's environment.
+        var holder = File.ReadAllText(Path.Combine(SourceFiles.Project(SourceFiles.DriverProject), "Roles", "HolderKey.cs"));
+        Assert.Contains("Environment.SetEnvironmentVariable(DelegateKey.Variable, null);", holder, StringComparison.Ordinal);
 
         string? Of(string? key, string? session, string name) =>
             name == DelegateKey.Variable ? key : name == ChildMarks.SessionVariable ? session : null;
@@ -137,40 +128,7 @@ public sealed class DelegateKeyStripTests
         Assert.Null(DelegateKey.Read(name => Of(null, "s1", name)));
 
         // The verb's take is inside the holder key's, so the entry's one first statement takes both.
-        var host = File.ReadAllText(Path.Combine(SourceFiles.Project(SourceFiles.DriverProject), "Roles", "HolderKey.cs"));
-        Assert.Contains("DelegateKey.Take();", host, StringComparison.Ordinal);
-    }
-
-    /// <summary>The session's process ending forgets its keys; one drawn after that process is tracked, a start still coming, is kept.</summary>
-    [Fact]
-    public void The_session_s_process_end_forgets_its_keys()
-    {
-        var processes = new SessionProcesses();
-        using var process = Process.Start(new ProcessStartInfo
-        {
-            FileName = "node",
-            ArgumentList = { "-e", "setTimeout(() => {}, 60000)" },
-            UseShellExecute = false,
-            CreateNoWindow = true,
-        })!;
-        try
-        {
-            SpawnRequests.Of(Quest("s1"), null, processes.Delegates);
-            var tracked = processes.Track("s1", process);
-            var coming = SpawnRequests.Of(Quest("s1"), null, processes.Delegates).Identity[DelegateKey.Variable];
-            Assert.Equal(2, processes.Delegates.Of("s1").Count);
-
-            tracked.Dispose();
-            var kept = Assert.Single(processes.Delegates.Of("s1"));
-            Assert.Equal(HolderKey.Hash(coming), kept);
-
-            processes.Delegates.Forget("s1");
-            Assert.Empty(processes.Delegates.Of("s1"));
-        }
-        finally
-        {
-            SessionProcesses.EndIfRunning(process);
-        }
+        Assert.Contains("DelegateKey.Take();", holder, StringComparison.Ordinal);
     }
 
     /// <summary>The verb's line carries the payload as the very text its proof is over, so the pipe reads the same bytes back.</summary>

@@ -20,8 +20,8 @@ public sealed class SessionDelegates
     /// <summary>A new key for <paramref name="session"/>, in hex, its hash kept for it.</summary>
     public string Draw(string session)
     {
-        var key = HolderKey.Draw();
-        var held = (HolderKey.Hash(key)!, Interlocked.Increment(ref _drawn));
+        var key = KeyedProof.Draw();
+        var held = (KeyedProof.Hash(key)!, Interlocked.Increment(ref _drawn));
         _held.AddOrUpdate(session, _ => [held], (_, kept) => kept.Add(held));
         return key;
     }

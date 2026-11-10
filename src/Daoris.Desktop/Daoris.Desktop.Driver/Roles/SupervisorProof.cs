@@ -1,4 +1,3 @@
-using System.Security.Cryptography;
 using System.Text.Json;
 
 namespace Daoris.Driver;
@@ -19,18 +18,11 @@ public static class SupervisorRoutes
     public const string Waiting = "SUPERVISOR_WAITING";
 }
 
-/// <summary>
-/// The holder's proof: an HMAC-SHA256 keyed by the key's SHA-256 over the
-/// hello's nonce and the form's canonical bytes. The verb makes it from the key in its environment; the judge checks it against the hash
-/// in memory and the connection's nonce. The key never crosses the pipe.
-/// </summary>
+/// <summary>The holder's proof, made as <see cref="KeyedProof"/> makes one, over the form's canonical bytes.</summary>
 public static class SupervisorProof
 {
-    /// <summary>The nonce's length in bytes, drawn for each connection's hello.</summary>
-    public const int NonceBytes = 32;
-
-    /// <summary>A fresh nonce for one connection's hello, in hex.</summary>
-    public static string Nonce() => Convert.ToHexStringLower(RandomNumberGenerator.GetBytes(NonceBytes));
+    /// <summary>A fresh nonce for one connection's hello, in hex, of <see cref="KeyedProof.NonceBytes"/> bytes.</summary>
+    public static string Nonce() => KeyedProof.Nonce();
 
     /// <summary>
     /// <paramref name="route"/>'s canonical bytes, as one compact JSON array, UTF-8: its name first, so a proof over one act is never
@@ -75,25 +67,12 @@ public static class SupervisorProof
         return stream.ToArray();
     }
 
-    /// <summary>The proof, in hex, from the key's hash, the nonce (hex) and the canonical form; null where the nonce is not hex.</summary>
-    public static string? Prove(byte[] hash, string nonce, byte[] form)
-    {
-        if (Bytes(nonce) is not { } drawn) return null;
-        byte[] message = [.. drawn, .. form];
-        return Convert.ToHexStringLower(HMACSHA256.HashData(hash, message));
-    }
+    /// <summary>The proof, in hex, from the key's hash, the nonce (hex) and the canonical form (<see cref="KeyedProof.Prove(byte[], string, byte[])"/>).</summary>
+    public static string? Prove(byte[] hash, string nonce, byte[] form) => KeyedProof.Prove(hash, nonce, form);
 
     /// <summary>The proof the verb sends, from the key itself; null where the key or the nonce is not what it should be.</summary>
-    public static string? Prove(string key, string nonce, byte[] form) =>
-        HolderKey.Hash(key) is { } hash ? Prove(hash, nonce, form) : null;
+    public static string? Prove(string key, string nonce, byte[] form) => KeyedProof.Prove(key, nonce, form);
 
-    /// <summary>Whether <paramref name="proof"/> is the proof over <paramref name="nonce"/> and <paramref name="form"/> by the key whose hash is <paramref name="hash"/>, compared in constant time.</summary>
-    public static bool Verify(byte[] hash, string nonce, byte[] form, string? proof)
-    {
-        if (Prove(hash, nonce, form) is not { } expected || proof is not { Length: 64 } || !proof.All(Uri.IsHexDigit)) return false;
-        return CryptographicOperations.FixedTimeEquals(Convert.FromHexString(expected), Convert.FromHexString(proof));
-    }
-
-    private static byte[]? Bytes(string? hex) =>
-        hex is { Length: NonceBytes * 2 } && hex.All(Uri.IsHexDigit) ? Convert.FromHexString(hex) : null;
+    /// <summary>Whether <paramref name="proof"/> is the proof over <paramref name="nonce"/> and <paramref name="form"/> by the key whose hash is <paramref name="hash"/>.</summary>
+    public static bool Verify(byte[] hash, string nonce, byte[] form, string? proof) => KeyedProof.Verify(hash, nonce, form, proof);
 }

@@ -4,7 +4,7 @@ namespace Daoris.Driver;
 
 /// <summary>
 /// A session's proof that it pressed: an HMAC-SHA256 keyed by its delegate key's SHA-256 over the connection's hello nonce and the
-/// press's canonical bytes, as the holder's proof is made (<see cref="SupervisorProof"/>). The verb sends it beside the press as
+/// press's canonical bytes, as the holder's proof is made (<see cref="KeyedProof"/>). The verb sends it beside the press as
 /// <c>delegate: { session, proof }</c>; the pipe checks it against the hashes Daoris holds for that session. The key never crosses the pipe.
 /// </summary>
 public static class DelegateProof
@@ -35,7 +35,7 @@ public static class DelegateProof
 
     /// <summary>The proof the verb sends, from the key itself; null where the key or the nonce is not what it should be.</summary>
     public static string? Prove(string key, string nonce, string module, string route, string payload, string requestKey) =>
-        SupervisorProof.Prove(key, nonce, Canonical(module, route, payload, requestKey));
+        KeyedProof.Prove(key, nonce, Canonical(module, route, payload, requestKey));
 
     /// <summary>Whether <paramref name="proof"/> is made by the key of any of <paramref name="hashes"/> over this nonce and press.</summary>
     public static bool Verify(
@@ -44,7 +44,7 @@ public static class DelegateProof
         var form = Canonical(module, route, payload, requestKey);
         var proved = false;
         // Every hash is tried, so how long the check takes says nothing of which one matched.
-        foreach (var hash in hashes) proved |= SupervisorProof.Verify(hash, nonce, form, proof);
+        foreach (var hash in hashes) proved |= KeyedProof.Verify(hash, nonce, form, proof);
         return proved;
     }
 }

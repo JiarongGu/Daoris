@@ -1,5 +1,3 @@
-using System.Security.Cryptography;
-
 namespace Daoris.Driver;
 
 /// <summary>
@@ -22,22 +20,18 @@ public static class HolderKey
     public const string Variable = ChildMarks.RoleKeyVariable;
 
     /// <summary>The key's length in bytes, and so its hex text's in characters twice that.</summary>
-    public const int Bytes = 32;
+    public const int Bytes = KeyedProof.KeyBytes;
 
     private static string? _taken;
 
     /// <summary>A new key, in hex: drawn at each appointment and never reused.</summary>
-    public static string Draw() => Convert.ToHexStringLower(RandomNumberGenerator.GetBytes(Bytes));
+    public static string Draw() => KeyedProof.Draw();
 
     /// <summary>The key's SHA-256, which the instance keeps in memory and the proof is keyed by; null for a text that is no key.</summary>
-    public static byte[]? Hash(string? key) => Read(key) is { } bytes ? SHA256.HashData(bytes) : null;
+    public static byte[]? Hash(string? key) => KeyedProof.Hash(key);
 
     /// <summary>The key's bytes, or null where <paramref name="key"/> is not 64 hex characters.</summary>
-    public static byte[]? Read(string? key)
-    {
-        if (key is not { Length: Bytes * 2 } || !key.All(Uri.IsHexDigit)) return null;
-        return Convert.FromHexString(key);
-    }
+    public static byte[]? Read(string? key) => KeyedProof.Read(key);
 
     /// <summary>
     /// A Daoris executable's first act: the variable taken out of this process's environment, so no start it builds afterwards
