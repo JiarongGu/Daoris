@@ -51,6 +51,14 @@ public static class QuestDoneCommand
         return ok ? 0 : 1;
     }
 
+    /// <summary>
+    /// The verb: the person's press, sent to the running Daoris and confirmed in its window, its lines the route's; else
+    /// <see cref="RunAsync"/>, the direct post.
+    /// </summary>
+    public static Task<int> PressAsync(QuestDoneAsk ask, ServiceClient service, TextWriter output, InstanceWorld? instance, CancellationToken ct = default) =>
+        InstanceDoor.ThroughAsync(instance, PersonPresses.QuestDone, InstanceDoor.Said(("quest", ask.Quest), ("note", ask.Note)),
+            () => RunAsync(ask, service, output, ct), output, ct);
+
     /// <summary>A quest's id, never a flag.</summary>
     private static bool Id(string word) => word.TrimStart('#').Length > 0 && !word.StartsWith('-');
 }

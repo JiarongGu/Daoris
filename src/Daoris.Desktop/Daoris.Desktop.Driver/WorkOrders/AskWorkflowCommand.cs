@@ -90,6 +90,15 @@ public static class AskWorkflowCommand
         return WorkOrdersWorkflows.Current.Unusable(world.Home, workflow);
     }
 
+    /// <summary>
+    /// The verb: the person's press, sent to the running Daoris and confirmed in its window, its lines the route's; else
+    /// <see cref="RunAsync"/>, the direct post. A clear sends neither <c>kind</c> nor <c>workflow</c>.
+    /// </summary>
+    public static Task<int> PressAsync(AskWorkflowAsk ask, AskWorkflowWorld world, TextWriter output, InstanceWorld? instance, CancellationToken ct = default) =>
+        InstanceDoor.ThroughAsync(instance, PersonPresses.AskWorkflow,
+            InstanceDoor.Said(("ask", ask.Ask), ("kind", ask.Kind), ("workflow", ask.Workflow), ("words", ask.Words)),
+            () => RunAsync(ask, world, output, ct), output, ct);
+
     /// <summary>Set the choice on the ask, as its page's will, and print the service's sentence.</summary>
     public static async Task<int> RunAsync(AskWorkflowAsk ask, AskWorkflowWorld world, TextWriter output, CancellationToken ct = default)
     {

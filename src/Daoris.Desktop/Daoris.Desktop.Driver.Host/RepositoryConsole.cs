@@ -37,8 +37,13 @@ internal static class RepositoryConsole
                 case "retire" when operands.Count <= 1:
                 {
                     var repository = operands.Count == 1 ? operands[0] : Path.GetFileName(Path.TrimEndingDirectorySeparator(root));
-                    Console.WriteLine(dry ? RegistryWords.RetireDry(repository) : RegistryWords.Retired(await service.RetireAsync(repository).ConfigureAwait(false)));
-                    return 0;
+                    if (dry)
+                    {
+                        Console.WriteLine(RegistryWords.RetireDry(repository));
+                        return 0;
+                    }
+
+                    return await RepositoryPresses.PressRetireAsync(repository, service, Console.Out, InstanceHost.World("repository")).ConfigureAwait(false);
                 }
 
                 case "wire" when operands.Count == 1 && workspace is not null:
@@ -49,17 +54,20 @@ internal static class RepositoryConsole
                         return 0;
                     }
 
-                    var (ok, message) = await service.WireRepositoryAsync(operands[0], workspace).ConfigureAwait(false);
-                    (ok ? Console.Out : Console.Error).WriteLine($"daoris: {message}");
-                    return ok ? 0 : 1;
+                    return await RepositoryPresses.PressWireAsync(operands[0], workspace, service, Console.Out, InstanceHost.World("repository")).ConfigureAwait(false);
                 }
 
                 case "import" when operands.Count <= 1:
                 {
                     // Absolute, always: the service is another process, which may sit in another folder.
                     var folder = operands.Count == 1 ? Path.GetFullPath(operands[0], root) : null;
-                    Console.WriteLine(dry ? RegistryWords.ImportDry(folder, workspace) : RegistryWords.Imported(await service.ImportAsync(folder, workspace).ConfigureAwait(false)));
-                    return 0;
+                    if (dry)
+                    {
+                        Console.WriteLine(RegistryWords.ImportDry(folder, workspace));
+                        return 0;
+                    }
+
+                    return await RepositoryPresses.PressImportAsync(folder, workspace, service, Console.Out, InstanceHost.World("repository")).ConfigureAwait(false);
                 }
 
                 default:

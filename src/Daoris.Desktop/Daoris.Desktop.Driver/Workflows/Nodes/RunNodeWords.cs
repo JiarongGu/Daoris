@@ -254,7 +254,7 @@ public static class RunNodeWords
         "usage: daoris workflow skip <run> <node> \"…\"  ·  daoris workflow stop <run> <node> [\"…\"]\n"
         + "       daoris workflow send <run> <node>  (a ready request under `start: you`)\n"
         + "       daoris workflow ask-again <run> <node>  ·  daoris workflow go-on <run> <node> \"…\"  (a declined request)\n"
-        + "       daoris workflow changes <run> <node> \"…\"  (a review: what the work should change before it lands)\n"
+        + "       daoris workflow accept <run> <node> [\"…\"]  ·  daoris workflow changes <run> <node> \"…\"  (a review: your Accept of the work, or what it should change before it lands)\n"
         + "       daoris workflow done <run> <node> [\"…\"]  ·  daoris workflow approve|reject <run> <node> [\"…\"]  (your task, with a note if you like)\n"
         + "       pass a node of a run bound to a graph version over with your words, or stop it, your words if you have any; the run's\n"
         + "       id and its nodes are what `workflow run` prints. Kept on the run's record, and Daoris's next look applies it.";
@@ -271,7 +271,7 @@ public static class RunNodeWords
         (UnreadVersion, _) =>
             $"workflow: the graph version run {done.Run} is bound to does not read here ({done.Detail}), so the run is held whole and nothing on it is changed.",
         (NotNode, _) => $"workflow: run {done.Run}'s graph has no node `{done.Node}`; `workflow run` names its nodes.",
-        (NotAct, _) => $"workflow: `{done.Act}` is not a word for a run's node: say skip, stop, send, ask-again, go-on, changes, done, approve or reject.",
+        (NotAct, _) => $"workflow: `{done.Act}` is not a word for a run's node: say skip, stop, send, ask-again, go-on, accept, changes, done, approve or reject.",
         (NotTask, _) => $"workflow: `{done.Node}` is no task of yours, and only your task is done, and only an approval approved or rejected.",
         (NotWaiting, _) =>
             $"workflow: `{done.Node}` on run {done.Run} is {done.State} now and waits for no {done.Act} of yours: a waiting task takes done, a waiting approval approve or reject.",
@@ -282,6 +282,7 @@ public static class RunNodeWords
             $"workflow: asking for changes on `{done.Node}` sends your words to the work, and none were given: say what should change.",
         (NodeRefusal.NotInTable, NodeWordActs.Changes) =>
             $"workflow: `{done.Node}` on run {done.Run} is {done.State} now, so it waits on no Accept to ask changes of.",
+        (NodeRefusal.NotInTable, NodeWordActs.Accept) => $"workflow: `{done.Node}` on run {done.Run} is {done.State} now, so it waits on no Accept of yours.",
         (Ended, _) => $"workflow: run {done.Run} ended at quest #{done.Detail}, so nothing of its graph moves again until its chain comes back here.",
         (Worded, _) => $"workflow: `{done.Node}` on run {done.Run} already has your word, which Daoris's next look applies.",
         (Promoted, _) => $"workflow: `{done.Node}` on run {done.Run} has promoted onto the line, and nothing reverses the line, so there is nothing to stop: its record reads its reach.",

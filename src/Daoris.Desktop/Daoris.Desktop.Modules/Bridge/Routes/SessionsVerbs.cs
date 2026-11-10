@@ -16,14 +16,13 @@ namespace Daoris.Desktop;
 /// </remarks>
 internal static class SessionsVerbs
 {
-    /// <summary>The verb's lines and exit code, as an answer carries them (<see cref="TreesSaid.ToWire"/>).</summary>
-    public static async Task<object> SaidAsync(DriverContext context, SessionsAsk ask, CancellationToken ct)
+    /// <summary>The world the sessions verbs run in for a terminal's route: this Daoris's service, home, conversation runner and record writer.</summary>
+    public static SessionsWorld WorldOf(DriverContext context)
     {
         var loop = context.Loop;
         var service = loop.Service ?? throw DriverArguments.NotReady();
         var config = DriverConfig.Load(loop.ConfigPath);
-        var output = new StringWriter { NewLine = "\n" };
-        var world = new SessionsWorld(service, loop.Home, config, DriverContext.UnadoptedOf(loop, config), loop.Log)
+        return new SessionsWorld(service, loop.Home, config, DriverContext.UnadoptedOf(loop, config), loop.Log)
         {
             CoolingOf = (adapter, profile, model) => loop.Harnesses.CoolingOf(adapter ?? "", profile, model),
             // `sessions partner`'s read of the lead's tree, the loop's, as the page's press reads it.
@@ -33,6 +32,14 @@ internal static class SessionsVerbs
             // A verb's line on a session's record is the loop's, so one writer numbers it.
             Notes = (id, note) => HandOverAskNotes.Say(loop.Events, loop.Output, id, note),
         };
+    }
+
+    /// <summary>The verb's lines and exit code, as an answer carries them (<see cref="TreesSaid.ToWire"/>).</summary>
+    public static async Task<object> SaidAsync(DriverContext context, SessionsAsk ask, CancellationToken ct)
+    {
+        var loop = context.Loop;
+        var output = new StringWriter { NewLine = "\n" };
+        var world = WorldOf(context);
 
         var code = await SessionsCommand.RunAsync(ask, world, output, ct).ConfigureAwait(false);
         loop.Nudge();
