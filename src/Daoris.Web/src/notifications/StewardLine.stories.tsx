@@ -37,7 +37,7 @@ const DESK: DeskRequestNow[] = [
   },
 ];
 const STANDING: StandingConfirmationNow = {
-  holds: [STEWARD], holders: [], stewardActs: ACTS, stewardDesk: DESK, stewardLands: [],
+  holds: [STEWARD], holders: [], stewardActs: ACTS, stewardDesk: DESK, stewardLands: [], helpPresses: [],
 };
 
 const meta = {

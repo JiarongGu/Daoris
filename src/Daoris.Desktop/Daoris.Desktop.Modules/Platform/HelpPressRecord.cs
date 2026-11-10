@@ -8,8 +8,8 @@ namespace Daoris.Desktop;
 /// (<paramref name="Module"/> and <paramref name="Route"/>), the conversation that pressed it, what the press named, when, and
 /// <paramref name="Outcome"/>: <c>running</c>, <c>done</c> or <c>failed</c>.
 /// </summary>
-/// <param name="Scope">The scope a work press names (<c>WORK_PAUSE</c>'s), which its reverse press carries back.</param>
-/// <param name="Target">What the press named: its id, quest, repository or session, whichever it carried first.</param>
+/// <param name="Scope">The field that named what the press acted on (<c>quest</c>, <c>ask</c>, <c>repository</c> or <c>session</c>), which a reverse press carries back.</param>
+/// <param name="Target">What the press named in that field.</param>
 public sealed record HelpPressNow(
     string Id, string Module, string Route, string Session, string? Scope, string? Target, DateTimeOffset At, string Outcome);
 
@@ -33,7 +33,8 @@ public sealed class HelpPressRecord(TimeProvider clock)
     public string Began(IpcRequest request, string session)
     {
         var id = Guid.NewGuid().ToString("N")[..12];
-        var press = new HelpPressNow(id, request.Module ?? "", request.Type ?? "", session, Named(request, "scope"), Target(request), clock.GetUtcNow(), Running);
+        var (scope, target) = Subject(request);
+        var press = new HelpPressNow(id, request.Module ?? "", request.Type ?? "", session, scope, target, clock.GetUtcNow(), Running);
         lock (_gate)
         {
             _presses.Add(press);
@@ -73,8 +74,18 @@ public sealed class HelpPressRecord(TimeProvider clock)
         }
     }
 
-    private static string? Target(IpcRequest request) =>
-        Named(request, "id") ?? Named(request, "quest") ?? Named(request, "repository") ?? Named(request, "session");
+    private static readonly string[] s_scopes = ["quest", "ask", "repository", "session"];
+
+    /// <summary>What the press named and the field that named it (<c>quest</c>, <c>ask</c>, <c>repository</c> or <c>session</c>), the first it carried.</summary>
+    private static (string? Scope, string? Target) Subject(IpcRequest request)
+    {
+        foreach (var scope in s_scopes)
+        {
+            if (Named(request, scope) is { } target) return (scope, target);
+        }
+
+        return (null, null);
+    }
 
     private static string? Named(IpcRequest request, string field) =>
         request.Payload is { ValueKind: JsonValueKind.Object } payload && payload.TryGetProperty(field, out var value)

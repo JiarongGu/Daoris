@@ -29,7 +29,7 @@ public sealed class HelpPressRecordTests : IDisposable
     public void A_press_is_kept_running_with_its_conversation_and_what_it_named_then_ends_with_its_outcome()
     {
         var record = new HelpPressRecord(TimeProvider.System);
-        var id = record.Began(Press("WORK_PAUSE", """{"scope":"quest","id":"q1"}"""), "s1a2b3c4");
+        var id = record.Began(Press("WORK_PAUSE", """{"quest":"q1"}"""), "s1a2b3c4");
         var running = Assert.Single(record.Now());
         Assert.Equal(("WORK_PAUSE", "s1a2b3c4", "quest", "q1", HelpPressRecord.Running), (running.Route, running.Session, running.Scope, running.Target, running.Outcome));
 
@@ -38,7 +38,7 @@ public sealed class HelpPressRecordTests : IDisposable
         record.Ended(record.Began(Press("SET_HOLD", """{"repository":"engine","held":true}"""), "s1a2b3c4"), false);
         var now = record.Now();
         Assert.Equal(["SET_HOLD", "WORK_PAUSE"], now.Select(each => each.Route));
-        Assert.Equal(("engine", HelpPressRecord.Failed), (now[0].Target, now[0].Outcome));
+        Assert.Equal(("repository", "engine", HelpPressRecord.Failed), (now[0].Scope, now[0].Target, now[0].Outcome));
     }
 
     [Fact]
@@ -63,7 +63,7 @@ public sealed class HelpPressRecordTests : IDisposable
     public void The_standing_row_tells_the_presses()
     {
         var judge = new StandingConfirmation(_home, null, new StandingConfirmationTests.Placed(StandingPlace.Outside));
-        var id = judge.HelpPresses.Began(Press("WORK_PAUSE", """{"scope":"quest","id":"q1"}"""), "s1");
+        var id = judge.HelpPresses.Began(Press("WORK_PAUSE", """{"quest":"q1"}"""), "s1");
         Assert.Equal(id, Assert.Single(judge.Now().HelpPresses).Id);
     }
 }

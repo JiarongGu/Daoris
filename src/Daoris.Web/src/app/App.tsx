@@ -415,7 +415,7 @@ export function App() {
                   onOpenAsk={(entry) => openAsk(entry.ask)}
                   onMarkAsk={(entry) => markChannel.mutate({ ask: entry.ask, through: entry.newest?.at })}
                   onOpenAnswer={(notice) => { if (notice.session) openAnswer(notice.session, notice.repository); }}
-                  standing={<NotificationsStanding notify={notify} />}
+                  standing={<NotificationsStanding notify={notify} onOpenHelp={openHelp} />}
                 />
               )}
               notificationsShow={notificationsShow}
