@@ -103,7 +103,7 @@ public sealed class PipeDelegate(InstancePipe pipe)
         {
             HelpModes.Full => new(PipeDelegateTier.Covered, Session: claim.Session, Say: session.Say, PlaceOf: session.PlaceOf),
             HelpModes.Restricted when granted => new(PipeDelegateTier.Covered, Session: claim.Session, Say: session.Say, PlaceOf: session.PlaceOf),
-            HelpModes.Restricted => new(PipeDelegateTier.Asked, asker with { Help = true }),
+            HelpModes.Restricted => new(PipeDelegateTier.Asked, asker with { Help = true }, PlaceOf: session.PlaceOf),
             null when session.Permissions == AccessRules.Unrestricted => new(PipeDelegateTier.Covered, Session: claim.Session, Own: true),
             null => new(PipeDelegateTier.Asked, asker, claim.Session, Repository: session.Repository),
             _ => new(PipeDelegateTier.Asked, asker),
@@ -134,18 +134,26 @@ public sealed class PipeDelegate(InstancePipe pipe)
         }, TaskScheduler.Default);
     }
 
-    /// <summary>The press's place, read beside its run: one that cannot be read is a press that names no place.</summary>
+    /// <summary>The press's place, read beside its run.</summary>
     private async Task PlaceAsync(Func<IpcRequest, CancellationToken, Task<HelpPressPlace?>> placeOf, IpcRequest request, string kept)
     {
+        if (await ReadPlaceAsync(placeOf, request, CancellationToken.None).ConfigureAwait(false) is not { } place) return;
+        pipe.StandingConfirmation.HelpPresses.Placed(kept, place);
+        pipe.TellDriverState();
+    }
+
+    /// <summary>The place an Ask Daoris press named, read beside its run or before its card; one that cannot be read names none.</summary>
+    internal static async Task<HelpPressPlace?> ReadPlaceAsync(
+        Func<IpcRequest, CancellationToken, Task<HelpPressPlace?>>? placeOf, IpcRequest request, CancellationToken ct)
+    {
+        if (placeOf is null) return null;
         try
         {
-            if (await placeOf(request, CancellationToken.None).ConfigureAwait(false) is not { } place) return;
-            pipe.StandingConfirmation.HelpPresses.Placed(kept, place);
-            pipe.TellDriverState();
+            return await placeOf(request, ct).ConfigureAwait(false);
         }
         catch (Exception error) when (error is DriverException or IOException or InvalidOperationException or HttpRequestException)
         {
-            // Said as no place; the press itself ran.
+            return null;
         }
     }
 

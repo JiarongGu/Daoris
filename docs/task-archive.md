@@ -5,6 +5,12 @@ the per-task record. Entries preserve their original wording so the archive stay
 
 ---
 
+## ASKSCOPE2's counts, the card's place line and the *Asked you* rows (2026-11-11)
+
+> **ASKSCOPE2, the rest of 2e-2i** (service, driver, modules, web): Outcome: `knowledge_search` and `quest_list` say how many they found as they answer (`CallFound`), noted as `found` beside the call's place, so the receipt says *Searched workspace … · N found*; a restricted press reads its place before its card through the delegate that judges full-access presses, and the card says *In …, outside this conversation's focus (…)* only when it lies beyond (`HelpCardPlace`); an asked press is kept marked asked from waiting to allowed, refused, changed or unanswered (`HelpAskedPress`), and the receipt and Notifications list it apart with no *Resume*; a press naming only a quest is judged at the repository its quest asks (`HelpPressPlace.QuestOnly`). Proof: `CallPlaceFilterTests`, `McpHelpCircleTests`, `HelpBeyondTests`, `HelpPressBeyondTests`, `PipeDelegateTests`, `BeyondReceipt`, `HelpPressLine` and `helpPlaceSaid` in both languages, seen failing first.
+
+---
+
 ## The process halves' reds after the place work (2026-11-11)
 
 > **CI reds, process halves** (driver, modules): Outcome: the chat classes' stand-ins set apart the place section a conversation in a plain folder is told before its first words (driving rule 12; `StubPlace.cs`); the transport test waits for the retry's leg, whose lineage start is written before its spawn; the review's read flows pass their own token, so a review the page leaves no longer keeps its git running (FIX-LOG); the git half, the limit-move crash, the server keeper and the cap count pass on main as they stand. Left: the place section is filed under the browser's note (`chat.told-browser`), so the page says the agent was told of Daoris's browser — a note code of its own with its words. Proof: each class run filtered, green but `ChatAttachmentTests`' browser case; 319 memo-read tests.

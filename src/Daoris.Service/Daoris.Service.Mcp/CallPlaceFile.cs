@@ -11,7 +11,7 @@ namespace Daoris.Knowledge.Mcp;
 /// </summary>
 /// <remarks>
 /// <para><b>The file is the contract</b> (<c>.claude/knowledge/twins.md</c>): <c>&lt;home&gt;/sessions/&lt;session&gt;/places.jsonl</c>,
-/// one JSON object a line (<c>at</c>, <c>tool</c>, <c>act</c>, <c>workspace?</c>, <c>repository?</c>, <c>what?</c>), LF, UTF-8 with no
+/// one JSON object a line (<c>at</c>, <c>tool</c>, <c>act</c>, <c>workspace?</c>, <c>repository?</c>, <c>what?</c>, <c>found?</c>), LF, UTF-8 with no
 /// BOM. 🔴 The driver's <c>HelpPlaceNotes.FileName</c> is the same name.</para>
 /// <para><b>Only for Ask Daoris bound to a workspace.</b> The session is the connector's <c>DAORIS_SESSION_ID</c>, the home its
 /// rules home, and the workspace its <c>DAORIS_SESSION_WORKSPACE</c>, which the driver hands Ask Daoris's connector alone. One
@@ -59,6 +59,7 @@ public sealed class CallPlaceFile
         if (place.Workspace is { } workspace) line["workspace"] = workspace;
         if (place.Repository is { } repository) line["repository"] = repository;
         if (place.What is { } what) line["what"] = what;
+        if (place.Found is { } found) line["found"] = found;
         try
         {
             Append(Path, line.ToJsonString());

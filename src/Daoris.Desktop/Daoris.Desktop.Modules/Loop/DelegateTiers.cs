@@ -21,13 +21,16 @@ internal static class DelegateTiers
         };
     }
 
-    /// <summary>The place an Ask Daoris press named, judged against its conversation's applied focus now; null where none reads.</summary>
+    /// <summary>The place an Ask Daoris press named, a quest's the repository it asks, judged against its conversation's applied focus now; null where none reads.</summary>
     private static async Task<HelpPressPlace?> HelpPlaceAsync(DriverLoop loop, string session, Shenora.Core.Ipc.IpcRequest request, CancellationToken ct)
     {
         if (loop.Service is not { } service) return null;
         var registry = await service.RegistryAsync(ct).ConfigureAwait(false);
         var focus = new HelpFocusing(loop.Home).Applied(session, loop.Processes.Delegates.PlaceOf(session)?.Workspace);
-        return HelpPressPlace.Of(request.Payload, focus, registry);
+        var questTo = HelpPressPlace.QuestOnly(request.Payload) is { } quest
+            ? (await service.FindQuestAsync(quest, ct).ConfigureAwait(false))?.To
+            : null;
+        return HelpPressPlace.Of(request.Payload, focus, registry, questTo);
     }
 
     /// <summary>The place's permission prompts as its access setup resolves now; null where it names none or the file does not read.</summary>

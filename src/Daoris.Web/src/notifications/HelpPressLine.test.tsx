@@ -45,7 +45,9 @@ describe("Notifications' group of what Ask Daoris pressed", () => {
 
   it('reads the presses field by field and leaves out one it cannot read', () => {
     expect(standingOf({ helpPresses: [{ id: 'a', module: 'DAORIS.DRIVER', route: 'WORK_PAUSE', session: 's1', at: '2026-11-10T10:00:00Z', outcome: 'done', target: 'q1', scope: 'quest' }, { id: 'b' }, 'x'] })?.helpPresses)
-      .toEqual([{ id: 'a', module: 'DAORIS.DRIVER', route: 'WORK_PAUSE', session: 's1', at: '2026-11-10T10:00:00Z', outcome: 'done', target: 'q1', scope: 'quest', place: null, beyond: false }]);
+      .toEqual([{ id: 'a', module: 'DAORIS.DRIVER', route: 'WORK_PAUSE', session: 's1', at: '2026-11-10T10:00:00Z', outcome: 'done', target: 'q1', scope: 'quest', place: null, beyond: false, asked: false }]);
+    expect(standingOf({ helpPresses: [{ id: 'a', route: 'WORK_PAUSE', session: 's1', at: '2026-11-10T10:00:00Z', outcome: 'refused', asked: true }] })?.helpPresses[0])
+      .toMatchObject({ outcome: 'refused', asked: true });
     expect(standingOf({ helpPresses: [{ id: 'a', route: 'SET_HOLD', session: 's1', at: '2026-11-10T10:00:00Z', outcome: 'done', place: { kind: 'workspace', workspace: 'Work' }, beyond: true }] })?.helpPresses[0])
       .toMatchObject({ place: { kind: 'workspace', workspace: 'Work' }, beyond: true });
     expect(standingOf({})?.helpPresses).toEqual([]);
@@ -64,6 +66,36 @@ describe("Notifications' group of what Ask Daoris pressed", () => {
     const list = screen.getAllByRole('listitem');
     expect(list[0]!.querySelector('[data-help-place]')?.textContent).toBe(beyond);
     expect(list[1]!.querySelector('[data-help-place]')?.textContent).toBe(within_);
+  });
+
+  it.each([
+    ['en', 'Ask Daoris asked you to confirm 1 press since Daoris started', 'Asked you', 'Refused', 'in api, outside its focus'],
+    ['zh', '自 Daoris 启动以来，Ask Daoris 已请你确认 1 项操作', '已请你确认', '已拒绝', '在 api 中，在其聚焦之外'],
+  ])("lists the presses that asked the person apart from those that ran, each with its card's state (%s)", async (language, said, heading, state, place) => {
+    await i18n.changeLanguage(language);
+    const asked = press('h5', 'WORK_PAUSE', {
+      scope: 'quest', target: 'q2', outcome: 'refused', asked: true, place: { kind: 'repository', workspace: 'Work', repository: 'api' }, beyond: true,
+    });
+    const onOpen = vi.fn();
+    render(<HelpPressLine standing={{ ...STANDING, helpPresses: [asked, ...PRESSES] }} onOpen={onOpen} onReverse={vi.fn()} defaultOpen />);
+
+    expect(screen.getByText(i18n.t('notifications.helpPressed.line', { count: 2 }))).toBeInTheDocument();
+    expect(screen.getByText(said)).toBeInTheDocument();
+    expect(within(screen.getByRole('list', { name: i18n.t('notifications.helpPressed.list') })).getAllByRole('listitem')).toHaveLength(2);
+    const row = within(screen.getByRole('list', { name: heading })).getByRole('listitem');
+    expect(row.querySelector('[data-help-outcome]')?.textContent).toBe(state);
+    expect(row.querySelector('[data-help-place]')?.textContent).toBe(place);
+    // A press the person answered is theirs: it opens its conversation and offers no reverse.
+    expect(within(row).getAllByRole('button')).toHaveLength(1);
+    await userEvent.click(within(row).getByRole('button'));
+    expect(onOpen).toHaveBeenCalledWith(asked);
+  });
+
+  it('draws the line for presses that only asked the person', () => {
+    const asked = press('h6', 'WORK_PAUSE', { outcome: 'waiting', asked: true });
+    render(<HelpPressLine standing={{ ...STANDING, helpPresses: [asked] }} onOpen={vi.fn()} onReverse={vi.fn()} />);
+    expect(screen.getByText('Ask Daoris asked you to confirm 1 press since Daoris started')).toBeInTheDocument();
+    expect(screen.queryByText(/pressed .* for you in full access/)).toBeNull();
   });
 
   it('offers a reverse press only for a pause that was done', () => {

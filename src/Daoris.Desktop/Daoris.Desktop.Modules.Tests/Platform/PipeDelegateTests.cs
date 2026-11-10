@@ -29,6 +29,7 @@ public sealed class PipeDelegateTests : Bridge
     private readonly ConcurrentQueue<(string Session, string Route)> _said = new();
     private readonly ConcurrentDictionary<string, string> _access = new(StringComparer.Ordinal);
     private readonly ConcurrentDictionary<string, IReadOnlyList<string>> _families = new(StringComparer.Ordinal);
+    private readonly ConcurrentDictionary<string, HelpPressPlace> _places = new(StringComparer.Ordinal);
 
     [Fact]
     public async Task A_full_access_Ask_Daoris_press_runs_at_once_with_no_card_said_on_its_conversation_and_logged()
@@ -75,6 +76,34 @@ public sealed class PipeDelegateTests : Bridge
         Assert.Equal(PipeAnswered.Answered, (await pipe.Confirmations.AnswerAsync(card.Id, confirm: true)).Outcome);
         Assert.True((await client.AnswerAsync(id)).GetProperty("success").GetBoolean());
         Assert.Equal(1, driver.Ran("SESSION_ARCHIVE"));
+        Assert.Empty(_said);
+    }
+
+    [Fact]
+    public async Task A_restricted_Ask_Daoris_press_beyond_its_focus_says_so_on_its_card_and_is_kept_as_asked_until_answered()
+    {
+        if (!OperatingSystem.IsWindows()) return;
+        var (pipe, client, nonce, driver, services, log) = await ServeAsync();
+        using var _ = services;
+        using var __ = log;
+        using var ___ = pipe;
+        await using var ____ = client;
+        var key = _delegates.Draw("h1");
+        _modes["h1"] = HelpModes.Restricted;
+        _places["h1"] = new HelpPressPlace(HelpFocus.OfWorkspace("Work"), true, HelpFocus.OfWorkspace("Games"));
+
+        await SendProvedAsync(client, "SESSION_ARCHIVE", new { ids = new[] { Archived }, archived = true }, "h1", key, nonce);
+        await UntilAsync(() => pipe.Confirmations.Now().Waiting.Count == 1);
+        var card = Assert.Single(pipe.Confirmations.Now().Waiting);
+
+        Assert.Equal(HelpFocus.OfWorkspace("Work").Wire(), card.HelpPlace!.Place);
+        Assert.Equal(HelpFocus.OfWorkspace("Games").Wire(), card.HelpPlace.Focus);
+        Assert.True(JsonSerializer.SerializeToElement(card, Wire).GetProperty("helpPlace").GetProperty("beyond").GetBoolean());
+        await UntilAsync(() => pipe.StandingConfirmation.Now().HelpPresses is [{ Asked: true, Outcome: HelpPressRecord.Waiting, Beyond: true }]);
+
+        Assert.Equal(PipeAnswered.Answered, (await pipe.Confirmations.AnswerAsync(card.Id, confirm: false)).Outcome);
+        await UntilAsync(() => pipe.StandingConfirmation.Now().HelpPresses is [{ Asked: true, Outcome: HelpPressRecord.Refused }]);
+        Assert.Equal(0, driver.Ran("SESSION_ARCHIVE"));
         Assert.Empty(_said);
     }
 
@@ -293,6 +322,7 @@ public sealed class PipeDelegateTests : Bridge
             {
                 Permissions = _access.GetValueOrDefault(session),
                 Families = _families.GetValueOrDefault(session) ?? [],
+                PlaceOf = _places.TryGetValue(session, out var place) ? (_, _) => Task.FromResult<HelpPressPlace?>(place) : null,
             };
         }
 

@@ -245,7 +245,9 @@ of everything it handed, section by section.
     workspace's repositories, each judged by its own judge and none refused for the workspace it names. What a turn looked at
     or did beyond its focus is one folded receipt under that turn (`help/focus/BeyondReceipt.tsx`, `HELP_BEYOND`), only as
     Daoris's doors saw it: each call its connector answered naming a workspace or a repository, noted in the session's
-    `places.jsonl` (`CallPlaceFilter`), and each press it made in full access whose place was beyond, judged against the focus
+    `places.jsonl` (`CallPlaceFilter`) with how many a search's or the quests' answer found, as its tool says it answering
+    (`CallFound`), and each press it made whose place was beyond, one run in full access as *Did* and one asked on a card as
+    *Asked you* with the card's state, judged against the focus
     held then (`HelpBeyond`: nothing is beyond this machine, a repository's own workspace is near), each row offering *Make …
     the focus*; a shell command is never parsed. The focus is chosen
     in the chip that leads the panel's composer bar, a picker of the window's place, *Recent*, this machine and the other

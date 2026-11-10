@@ -5,8 +5,8 @@ namespace Daoris.Knowledge.Mcp;
 /// <summary>
 /// A call that named a place beyond the session's own, as Daoris's door saw it: what it did (<see cref="Search"/>, <see cref="Read"/>,
 /// <see cref="Propose"/> or <see cref="Press"/>), the workspace (or <c>all</c>) and the repository its arguments named, and what it
-/// named of them: a search's query, a read's path, a proposal's kind, an act's tool. Read from the call's arguments alone; the
-/// agent's words are never read.
+/// named of them: a search's query, a read's path, a proposal's kind, an act's tool, from the call's arguments alone, the agent's words
+/// never read; and how many a search's answer <see cref="Found"/>, where its tool said so (<see cref="CallFound"/>).
 /// </summary>
 public sealed record CallPlace(string Tool, string Act, string? Workspace, string? Repository, string? What)
 {
@@ -16,6 +16,8 @@ public sealed record CallPlace(string Tool, string Act, string? Workspace, strin
     public const string Press = "press";
 
     private const string ProposalSuffix = "_propose";
+
+    public int? Found { get; init; }
 
     /// <summary>The place a call named, or null where it named no workspace or repository, or its tool is none the table classes.</summary>
     public static CallPlace? Of(string? tool, IDictionary<string, JsonElement>? arguments)

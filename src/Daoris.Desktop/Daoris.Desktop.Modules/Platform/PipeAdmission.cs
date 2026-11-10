@@ -203,7 +203,10 @@ internal sealed class PipeAdmission(InstancePipe pipe)
 
         // From here the press is a reservation, its id said to its terminal before its
         // grounds are read, so a withdrawal, a close or a lost line has a press to end; every ending from here is journaled.
-        var reserved = new PipeReserved(request, binding, mine, connection, place, _clock.GetUtcNow(), holding, delegated?.Asker);
+        var reserved = new PipeReserved(request, binding, mine, connection, place, _clock.GetUtcNow(), holding, delegated?.Asker)
+        {
+            PlaceOf = delegated?.PlaceOf,
+        };
         lock (_state.Gate)
         {
             _state.Reserved[id] = reserved;
