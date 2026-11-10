@@ -13,9 +13,9 @@ public static class PageSettings
     public static string Write()
     {
         var text = new StringBuilder();
-        text.Append("\n/** A machine setting as the driver declares it once: its one key, the route that sets it, its words' prefix, whether Ask Daoris ");
-        text.Append("proposes it, and the Settings domain whose card draws its row, or null where another card does. */\n");
-        text.Append("export type MachineSetting = { readonly key: string; readonly route: DriverRoute; readonly words: string; readonly door: boolean; ");
+        text.Append("\n/** A machine setting as the driver declares it once: its one key, the route that sets it, its words' prefix, ");
+        text.Append("and the Settings domain whose card draws its row, or null where another card does. */\n");
+        text.Append("export type MachineSetting = { readonly key: string; readonly route: DriverRoute; readonly words: string; ");
         text.Append("readonly card: string | null; readonly least: number | null; readonly most: number | null };\n");
         text.Append("\n/** Every machine setting, in the order the Driver domain draws its rows. */\n");
         text.Append("export const SETTINGS: readonly MachineSetting[] = [\n");
@@ -23,7 +23,7 @@ public static class PageSettings
         {
             var card = setting.Card is { } domain ? Quoted(domain) : "null";
             text.Append($"  {{ key: {Quoted(setting.Key)}, route: {Quoted(setting.Route)}, words: {Quoted(setting.Words)}, ");
-            text.Append($"door: {(setting.Door ? "true" : "false")}, card: {card}, least: {Number(setting.Least)}, most: {Number(setting.Most)} }},\n");
+            text.Append($"card: {card}, least: {Number(setting.Least)}, most: {Number(setting.Most)} }},\n");
         }
 
         text.Append("];\n");

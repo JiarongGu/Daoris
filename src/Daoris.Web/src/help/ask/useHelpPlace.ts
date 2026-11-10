@@ -11,18 +11,18 @@ import { GOING_ON_POLL } from './askTypes';
 
 export function useHelpPlace() {
   const { t, i18n } = useTranslation();
-  // The workspace the panel's conversations are in: the window's; where it
-  // shows every workspace, the one there is, or `default` where none is registered. Null where it shows several, so a start
-  // asks which; undefined while this machine's workspaces are still being read. One unreadable is none registered.
-  const { workspace: scoped, setWorkspace } = useScope();
+  // The workspace the panel's conversations start in: the window's; where it shows every workspace, the one there is, or
+  // `default`, the machine's room, where several or none are registered (`every` says it shows several); undefined while this
+  // machine's workspaces are still being read. One unreadable is none registered.
+  const { workspace: scoped } = useScope();
   const circles = useWorkspaces();
   const registered = circles.data ?? (circles.isError ? [] : undefined);
-  const here: string | null | undefined = scoped
-    ?? (registered === undefined ? undefined : registered.length > 1 ? null : registered[0] ?? DEFAULT_WORKSPACE);
+  const every = scoped === null && (registered?.length ?? 0) > 1;
+  const here: string | undefined = scoped
+    ?? (registered === undefined ? undefined : registered.length === 1 ? registered[0]! : DEFAULT_WORKSPACE);
   const inHere = (workspace?: string) => typeof here === 'string' && sameWorkspace(workspace ?? DEFAULT_WORKSPACE, here);
-  // What a start names, read at its press: the workspace it is in, or none where the window chose none and none is registered,
-  // which is `default`'s. Never `default` read for a window that shows several.
-  const startIn = (workspace: string) => (scoped === null && registered?.length === 0 ? undefined : workspace);
+  // What a start names, read at its press: the workspace it is in, or none for `default`'s on a window that chose none.
+  const startIn = (workspace: string) => (scoped === null && sameWorkspace(workspace, DEFAULT_WORKSPACE) ? undefined : workspace);
   // The window's workspace now, for an answer that arrives after it moved.
   const hereNow = useRef(here);
   useEffect(() => {
@@ -44,20 +44,18 @@ export function useHelpPlace() {
   const readied = typeof here === 'string' ? help.readiedIn(here) : null;
   const helpSessions = (sessions.data ?? []).filter((session) => session.repository === HELP_REPOSITORY);
   // The window's workspace's conversations: its newest is shown, and its running one carried on. A window on every
-  // workspace shows the newest of any, named; one whose workspaces are still being read shows none yet.
-  const mine = here === null ? helpSessions : helpSessions.filter((session) => inHere(session.workspace));
+  // workspace shows the newest of any; one whose workspaces are still being read shows none yet.
+  const mine = every ? helpSessions : helpSessions.filter((session) => inHere(session.workspace));
   const newest = mine
     .filter((session) => !help.unspoken.includes(session.id))
     .sort((a, b) => b.created.localeCompare(a.created))[0] ?? null;
   const picked = chosen ? helpSessions.find((session) => session.id === chosen) ?? null : null;
   const shown = picked ?? (newest && newest.id !== cleared ? newest : null);
   const live = shown ? SESSION_ACTIVE.has(shown.state) : false;
-  // The workspace the conversation shown started in; another workspace's is read here, named, and gone on in only once the
-  // window has switched to it: words are never taken up in another workspace from this one.
+  // The workspace the conversation shown started in, its home: one of another goes on here, its head saying so.
   const shownIn = shown ? workspaceOf(shown) : null;
-  const elsewhere = shown !== null && typeof here === 'string' && !inHere(shown.workspace);
   useEffect(() => {
     if (goingOn && shown?.id === goingOn && live) setGoingOn(null);
   }, [goingOn, shown?.id, live]);
-  return { here, registered, chosen, setChosen, shown, live, picked, helpSessions, readied, t, setGoingOn, sessions, help, setCleared, hereNow, elsewhere, startIn, mine, newest, shownIn, i18n, setWorkspace };
+  return { here, every, scoped, registered, chosen, setChosen, shown, live, picked, helpSessions, readied, t, setGoingOn, sessions, help, setCleared, hereNow, startIn, mine, newest, shownIn, i18n };
 }

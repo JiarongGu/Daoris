@@ -7,27 +7,6 @@ namespace Daoris.Driver.Tests;
 public sealed class HelpSettingProposalsTests : HelpProposalsFixture
 {
     [Theory]
-    [InlineData("line", "engine", null, "develop", "daoris place line engine develop", "`engine`'s line to `develop`")]
-    [InlineData("line", null, "work", "--clear", "daoris place line --workspace work --clear", "Clear workspace `work`'s line")]
-    [InlineData("notify", null, null, "off", "daoris settings notify off", "Stop saying")]
-    [InlineData("across", "engine", null, "read off", "daoris place across engine read off", "read by no agent outside it")]
-    [InlineData("across", "engine", null, "read on", "daoris place across engine read on", "never a write")]
-    [InlineData("across", null, "work", "read off", "daoris place across --workspace work read off", "Each checkout in workspace `work` that sets none of its own")]
-    [InlineData("across", "engine", null, "read --clear", "daoris place across engine read --clear", "takes its workspace's reading again")]
-    [InlineData("across", "game", null, "write-to engine", "daoris place across game write-to engine", "your standing say-so")]
-    [InlineData("across", "game", null, "write-to engine --clear", "daoris place across game write-to engine --clear", "no longer write into `engine`")]
-    [InlineData("cap", null, null, "3", "daoris settings cap 3", "at most 3 sessions at once")]
-    // How long an account cools when its limit names no time, as `daoris settings cooloff` takes it.
-    [InlineData("cooloff", null, null, "90", "daoris settings cooloff 90", "cools for 90 minutes")]
-    [InlineData("cooloff", null, null, "1", "daoris settings cooloff 1", "cools for 1 minute before")]
-    // Each kind's keep rule, as `daoris settings keep <kind> <rule>` takes it, judged by the one judgement.
-    [InlineData("keep", null, null, "set-aside 30", "daoris settings keep set-aside 30", "kept 30 days; its package folders go an hour after the move")]
-    [InlineData("keep", null, null, "set-aside whole", "daoris settings keep set-aside whole", "kept 14 days, whole")]
-    [InlineData("keep", null, null, "downloads never", "daoris settings keep downloads never", "stays until you remove it")]
-    [InlineData("keep", null, null, "logs 7", "daoris settings keep logs 7", "machine log is kept 7 days")]
-    [InlineData("keep", null, null, "logs default", "daoris settings keep logs default", "machine log is kept 30 days")]
-    [InlineData("keep", null, null, "history 365", "daoris settings keep history 365", "records go 365 days after their last move")]
-    [InlineData("keep", null, null, "history never", "daoris settings keep history never", "records stay until you clear them")]
     // A quest its strikes parked, started again as the drawer's Retry and `daoris quest retry` do, `#` or not.
     [InlineData("retry", "q1a2b3c4", null, null, "daoris quest retry q1a2b3c4", "`#q1a2b3c4` may be started again")]
     [InlineData("retry", "#q1a2b3c4", null, null, "daoris quest retry q1a2b3c4", "what already happened is still in the records")]
@@ -42,64 +21,6 @@ public sealed class HelpSettingProposalsTests : HelpProposalsFixture
         Assert.Equal(terminal, plan.Terminal);
         Assert.Contains(says, plan.Describe);
         Assert.NotNull(plan.Apply);
-    }
-
-    /// <summary>
-    /// A standing answer for a registered repository, planned in the person's words with the terminal's
-    /// spelling, and applied as `SET_STANDING` and `daoris place standing` make it; cleared with `--clear`. One for a
-    /// repository this machine does not hold, and blank words, are refused in the driver's own sentences.
-    /// </summary>
-    [Fact]
-    public void A_standing_answer_is_planned_in_the_persons_words_and_applied_as_the_terminal_makes_it()
-    {
-        var plan = HelpProposals.Plan(Setting("standing", "engine", null, "dev writes allowed; prod only on a yes"), DriverConfig.Empty, Facts);
-
-        Assert.Null(plan.Refusal);
-        Assert.Equal("daoris place standing engine \"dev writes allowed; prod only on a yes\"", plan.Terminal);
-        Assert.Contains("handed to every session in `engine`", plan.Describe);
-        var config = plan.Apply!(DriverConfig.Empty);
-        Assert.Equal("dev writes allowed; prod only on a yes", config.StandingFor("engine")!.Says);
-        Assert.NotNull(config.StandingFor("engine")!.At);
-
-        var clear = HelpProposals.Plan(Setting("standing", "engine", null, "--clear"), config, Facts);
-        Assert.Equal("daoris place standing engine --clear", clear.Terminal);
-        Assert.Null(clear.Apply!(config).StandingFor("engine"));
-
-        Assert.Contains("is not registered on this machine", HelpProposals.Plan(Setting("standing", "elsewhere", null, "dev only"), DriverConfig.Empty, Facts).Refusal);
-        Assert.Equal(DriverConfig.StandingRefusal, HelpProposals.Plan(Setting("standing", "engine", null, new string('x', 2_001)), DriverConfig.Empty, Facts).Refusal);
-    }
-
-    /// <summary>
-    /// A session language for a registered repository or a workspace, judged by the closed table and
-    /// the registry, planned with the terminal's spelling and applied as `SET_LANGUAGE` and `daoris place language` make it.
-    /// One of the kind's doors, listed by the service's setting writer.
-    /// </summary>
-    [Fact]
-    public void A_session_language_is_judged_by_the_table_and_the_registry_and_applied_as_the_terminal_makes_it()
-    {
-        var plan = HelpProposals.Plan(Setting("language", "engine", null, "zh"), DriverConfig.Empty, Facts);
-
-        Assert.Null(plan.Refusal);
-        Assert.Equal("daoris place language engine zh", plan.Terminal);
-        Assert.Contains("Sessions in `engine` write to you in Simplified Chinese (简体中文)", plan.Describe);
-        var config = plan.Apply!(DriverConfig.Empty);
-        Assert.Equal("zh", config.Languages["engine"]);
-
-        var shared = HelpProposals.Plan(Setting("language", null, "work", "EN"), config, Facts);
-        Assert.Equal("daoris place language --workspace work en", shared.Terminal);
-        Assert.Contains("that sets none of its own write to you in English", shared.Describe);
-        config = shared.Apply!(config);
-        Assert.Equal("en", config.WorkspaceLanguages["work"]);
-
-        var clear = HelpProposals.Plan(Setting("language", "engine", null, "--clear"), config, Facts);
-        Assert.Equal("daoris place language engine --clear", clear.Terminal);
-        Assert.False(clear.Apply!(config).Languages.ContainsKey("engine"));
-
-        Assert.Equal(SessionLanguages.Refusal("fr"), HelpProposals.Plan(Setting("language", "engine", null, "fr"), DriverConfig.Empty, Facts).Refusal);
-        Assert.Contains("`en` or `zh`", HelpProposals.Plan(Setting("language", "engine", null, null), DriverConfig.Empty, Facts).Refusal);
-        Assert.Contains("is not registered on this machine", HelpProposals.Plan(Setting("language", "elsewhere", null, "zh"), DriverConfig.Empty, Facts).Refusal);
-        Assert.Contains("no workspace `elsewhere`", HelpProposals.Plan(Setting("language", null, "elsewhere", "zh"), DriverConfig.Empty, Facts).Refusal);
-        Assert.Contains("a repository or a workspace", HelpProposals.Plan(Setting("language", "engine", "work", "zh"), DriverConfig.Empty, Facts).Refusal);
     }
 
     /// <summary>
@@ -452,54 +373,6 @@ public sealed class HelpSettingProposalsTests : HelpProposalsFixture
     }
 
     /// <summary>
-    /// The service's setting writer shape-checks a language against a deliberate copy of the table's codes
-    /// (<c>HelpSettingProposalWriter.Languages</c>), read here as text since the two share no code, so a language added to the table is
-    /// one the box takes, and the box takes none the table does not hold.
-    /// </summary>
-    [Fact]
-    public void The_service_box_takes_the_languages_the_table_holds()
-    {
-        var writer = System.IO.File.ReadAllText(HelpProposalKindsTests.CoreFile("HelpSettingProposalWriter.cs"));
-        var listed = System.Text.RegularExpressions.Regex.Match(writer, @"IReadOnlyList<string> Languages\s*=\s*\[([^\]]*)\]");
-
-        Assert.True(listed.Success, "the service's session languages are a list, `Languages`.");
-        Assert.Equal(
-            SessionLanguages.Table.Select(row => row.Code),
-            System.Text.RegularExpressions.Regex.Matches(listed.Groups[1].Value, "\"([a-z-]+)\"").Select(match => match.Groups[1].Value));
-    }
-
-    [Fact]
-    public void Applying_a_plan_makes_the_edit_the_screens_route_makes()
-    {
-        var config = DriverConfig.Empty;
-        config = HelpProposals.Plan(Setting("line", "engine", null, "develop"), config, Facts).Apply!(config);
-
-        Assert.Equal("develop", config.Lines["engine"]);
-    }
-
-    /// <summary>Across and a cap, applied as `SET_READ_ACROSS`, `SET_WRITE_ACROSS` and the terminal make them.</summary>
-    [Fact]
-    public void Applying_across_and_a_cap_makes_the_edit_the_terminal_makes()
-    {
-        var config = DriverConfig.Empty;
-        config = HelpProposals.Plan(Setting("across", "engine", null, "read off"), config, Facts).Apply!(config);
-        config = HelpProposals.Plan(Setting("across", null, "work", "read off"), config, Facts).Apply!(config);
-        config = HelpProposals.Plan(Setting("across", "game", null, "write-to engine"), config, Facts).Apply!(config);
-        config = HelpProposals.Plan(Setting("cap", value: "3"), config, Facts).Apply!(config);
-
-        Assert.False(config.ReadAcross["engine"]);
-        Assert.False(config.WorkspaceReadAcross["work"]);
-        Assert.Equal(["engine"], config.WriteAcross["game"]);
-        Assert.Equal(3, config.Cap);
-
-        config = HelpProposals.Plan(Setting("across", "engine", null, "read --clear"), config, Facts).Apply!(config);
-        config = HelpProposals.Plan(Setting("across", "game", null, "write-to engine --clear"), config, Facts).Apply!(config);
-
-        Assert.False(config.ReadAcross.ContainsKey("engine"));
-        Assert.False(config.WriteAcross.ContainsKey("game"));
-    }
-
-    /// <summary>
     /// A retry is the edit <c>RETRY_QUEST</c> and <c>daoris quest retry</c> make — a park carrying no count forgiven at
     /// the number its line's failures rule parked it at, as the look read the rules, not erased, so as many more failures park it again.
     /// </summary>
@@ -557,12 +430,9 @@ public sealed class HelpSettingProposalsTests : HelpProposalsFixture
     {
         (string Door, string? Target, string? Workspace, string? Value)[] samples =
         [
-            ("line", "engine", null, "main"),
-            ("across", "engine", null, "read on"), ("standing", "engine", null, "dev only"),
-            ("language", null, "work", "zh"), ("review", "engine", null, "none"), ("opinion", "engine", null, "none"),
+            ("review", "engine", null, "none"), ("opinion", "engine", null, "none"),
             ("helpers", "engine", null, "--mode on"), ("commits", null, "work", "--mode ask"),
-            ("retry", "q1a2b3c4", null, null), ("notify", null, null, "on"), ("cap", null, null, "1"),
-            ("cooloff", null, null, "90"), ("quiet", null, null, "15"), ("keep", null, null, "logs 14"), ("git-use", "engine", null, "--clear"),
+            ("retry", "q1a2b3c4", null, null), ("git-use", "engine", null, "--clear"),
         ];
 
         Assert.Equal(new HelpSettingProposals().Doors, samples.Select(sample => sample.Door));
@@ -574,28 +444,8 @@ public sealed class HelpSettingProposalsTests : HelpProposalsFixture
 
     /// <summary>What the route would refuse is refused here in its own words, and never shown to the person.</summary>
     [Theory]
-    [InlineData("line", "nowhere", null, "develop", "`nowhere` is not registered")]
-    [InlineData("line", null, "elsewhere", "develop", "no workspace `elsewhere`")]
-    [InlineData("line", "engine", null, "bad..name", "not a branch name git would take")]
-    // What `daoris place across` refuses, in its words, and the names a helper can invent.
-    [InlineData("across", "engine", null, "write-to engine", "`engine` writes in its own tree already")]
-    [InlineData("across", "engine", null, "write-to nowhere", "`nowhere` is not registered")]
-    [InlineData("across", "engine", null, "write-to", "a relationship names the repository it may write into")]
-    [InlineData("across", null, "work", "write-to engine", "a relationship is declared from one repository")]
-    [InlineData("across", "engine", "work", "read off", "a repository or a workspace")]
-    [InlineData("across", null, null, "read off", "a repository or a workspace")]
-    [InlineData("across", "engine", null, "read sometimes", "`read on|off|--clear`")]
-    [InlineData("across", "engine", null, "peek", "`across` sets `read on|off|--clear` or `write-to <other> [--clear]`")]
-    [InlineData("cap", null, null, "0", "`cap 0` is not a change the driver makes")]
-    [InlineData("cooloff", null, null, "0", "`cooloff 0` is not a change the driver makes")]
-    [InlineData("cooloff", null, null, "soon", "`cooloff soon` is not a change the driver makes")]
-    // Out of its kind's bounds, a choice its kind does not take, a kind not the person's, and words that are no rule.
-    [InlineData("keep", null, null, "logs 60", "`logs` keeps 7 to 30 days or `default`; 60 days is out of its bounds")]
-    [InlineData("keep", null, null, "logs never", "never is out of its bounds")]
-    [InlineData("keep", null, null, "trees 30", "`trees` is no kind whose rule you set here")]
-    [InlineData("keep", null, null, "history 10", "`history` keeps 30 to 3650 days")]
-    [InlineData("keep", null, null, "set-aside soon", "`soon` is no rule of `set-aside`")]
-    [InlineData("keep", null, null, "set-aside", "`keep` takes a kind and its rule")]
+    [InlineData("helpers", "nowhere", null, "--mode on", "`nowhere` is not registered")]
+    [InlineData("helpers", null, "elsewhere", "--mode on", "no workspace `elsewhere`")]
     // A quest id a helper can invent, or one not parked, which forgiven would run past its strikes;
     // or one no stop of the person's holds; the refusal names what the last look parked and what it held.
     [InlineData("retry", "q9none00", null, null, "`#q9none00` is neither parked nor held by your stop on this machine")]
@@ -614,10 +464,10 @@ public sealed class HelpSettingProposalsTests : HelpProposalsFixture
     [Fact]
     public async Task A_setting_is_applied_through_the_edit_the_screens_route_makes()
     {
-        var (setting, doors, _) = await ApplyAsync(Setting("line", "engine", null, "develop"));
+        var (setting, doors, _) = await ApplyAsync(Setting("commits", null, "work", "--mode at-end"));
 
         Assert.True(setting.Applied);
         Assert.Equal(["change"], doors.Calls);
-        Assert.Equal("develop", doors.Config.Lines["engine"]);
+        Assert.Equal("""{"mode":"at-end"}""", CommitRules.ToJson(doors.Config.WorkspaceCommits["work"]));
     }
 }

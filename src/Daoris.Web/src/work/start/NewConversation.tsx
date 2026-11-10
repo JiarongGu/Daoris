@@ -8,7 +8,9 @@ import { isComposing } from '../../lib/composing';
 import type { Account } from '../../agents/tools';
 import { Button, Icon, Inline, Menu, Tip } from '../../design/ui';
 import { type AgentChoice, AgentChip } from './AgentChip';
-import { CHIP, RepositoryPicker, type StartRepository } from './RepositoryPicker';
+import { CHIP } from '../../design/atoms/ChipCombobox';
+import type { Place } from '../../help/focus';
+import { RepositoryPicker, type StartRepository } from './RepositoryPicker';
 
 export type { StartRepository } from './RepositoryPicker';
 
@@ -203,10 +205,10 @@ export function NewConversation({
   /** The checkout's branch for the chosen repository, for the tree chip. Absent, the checkout is said plain. A hook: keep it stable. */
   readCheckout?: CheckoutReader;
   /**
-   * *Make it a task with Daoris…*: hands the draft, with a line naming the repository chosen above it, to Ask Daoris as
-   * a draft the person sends. Absent, the press is not offered. The composer keeps its own draft.
+   * *Make it a task with Daoris…*: hands the draft, as typed, to Ask Daoris as a draft the person sends, with the repository
+   * chosen as its conversation's focus. Absent, the press is not offered. The composer keeps its own draft.
    */
-  onMakeTask?: (text: string) => void;
+  onMakeTask?: (text: string, focus?: Place) => void;
 }) {
   const { t } = useTranslation();
   const promptId = useId();
@@ -385,7 +387,10 @@ export function NewConversation({
         {onMakeTask && (
           <Button
             variant="ghost" disabled={!words} className="ml-auto"
-            onClick={() => onMakeTask(repository ? `${t('work.start.taskIn', { repository })}\n\n${words}` : words)}
+            onClick={() => {
+              const workspace = repositories.find((row) => row.name === repository)?.workspace;
+              onMakeTask(words, repository && workspace ? { kind: 'repository', workspace, repository } : undefined);
+            }}
           >
             {t('work.start.task')}
           </Button>

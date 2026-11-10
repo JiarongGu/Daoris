@@ -437,13 +437,16 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they start wi
     means and the command it is, above every value it carries; the views are a repository's move (`repository wire`), a session's
     archive, unarchive and delete, a quest's and an ask's delete (`ask --delete` is a press of its own, `ASK_DELETE`) and the
     pause and resume of an ask's or a quest's work, an account's model and effort (`agent settings`), and how an agent's accounts are
-    used, ordered and ended early (`agent account use|order|ready`, one view of `ACCOUNT_USE`), and a repository's drive, hold and
-    own-tree switches (`place drive|undrive|hold|resume|trees`). A press of Ask Daoris's that
+    used, ordered and ended early (`agent account use|order|ready`, one view of `ACCOUNT_USE`), a repository's drive, hold and
+    own-tree switches (`place drive|undrive|hold|resume|trees`), a line, a session language, a standing answer and reading and
+    writing across (`place line|language|standing|across`) and the machine's notify, cap, cool-off, quiet and keep rules
+    (`settings notify|cap|cooloff|quiet|keep`). A press of Ask Daoris's that
     no line waits on is said in its conversation once it settles, as Daoris's word (`SettledSaid`). A working session's tier is its repository's access setup, read at the press from the place its key was handed for
     (`SessionDelegates.PlaceOf`, `DelegateTiers`): unrestricted runs its proved press at once as its own (rule 52); asking and the
     judged default put it on a card naming the session. Each proposal still proposed is a kind under `Help/Proposals/`, judged
     by its route's own code against the machine now and applied only by the person's *Apply* through that route; a kind goes
-    whole, tool to card, with the change that gives its route a view (the setting, ask, agent, plugin, browser, sync,
+    whole, tool to card, with the change that gives its route a view (the setting kind keeps its review, opinion, helpers,
+    commits, retry and git-use doors; the ask, agent, plugin, browser, sync,
     clear, workflow, setup and role kinds remain, with `go`; the agent kind keeps `update` and `pin`, whose verbs run at the
     terminal and have no press yet). `sessions archive --ended` stays a terminal's own, an archive being
     this machine's mark and undone by *Unarchive*. (from D89, D170, D253, D261)

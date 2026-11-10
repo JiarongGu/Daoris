@@ -1,6 +1,7 @@
 import { type ReactNode, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { Compose, OpenGroup } from '../app/opener';
+import type { Place } from '../help/focus';
 import { useAsks } from '../data/queries';
 import {
   useSessionEvents, usePushedCalls, withCall, useRemotes, useRunNodeWord, useTerminals,
@@ -180,8 +181,8 @@ export function WorkFrame({
    * the attended session is put down, the prompt owed the focus, the words put above any already typed.
    */
   compose?: (Compose & { id: number }) | null;
-  /** *Make it a task with Daoris…* in the composer: its draft, to Ask Daoris as a draft the person sends. */
-  onMakeTask?: (text: string) => void;
+  /** *Make it a task with Daoris…* in the composer: its draft, to Ask Daoris as a draft the person sends, and its focus. */
+  onMakeTask?: (text: string, focus?: Place) => void;
   /**
    * Ask Daoris, as a tab of the right dock: one right region, as VS Code's chat is a view of its secondary side bar, never a
    * second column beside the dock. Absent where no shell is attached.

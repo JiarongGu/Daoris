@@ -51,6 +51,16 @@ public static class PressViews
         PlaceSwitchView.Drivable(),
         PlaceSwitchView.Hold(),
         PlaceSwitchView.Trees(),
+        MachineSettingView.Notify(),
+        MachineSettingView.Cap(),
+        MachineSettingView.CoolOff(),
+        MachineSettingView.Quiet(),
+        new KeepRuleView(),
+        new PlaceLineView(),
+        new PlaceLanguageView(),
+        new PlaceStandingView(),
+        PlaceAcrossView.Read(),
+        PlaceAcrossView.WriteTo(),
     ];
 
     /// <summary>The view of <paramref name="module"/>'s <paramref name="route"/>; null where the route has none.</summary>

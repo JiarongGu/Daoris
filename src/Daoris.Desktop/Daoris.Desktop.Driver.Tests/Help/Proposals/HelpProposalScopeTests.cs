@@ -16,8 +16,7 @@ public sealed class HelpProposalScopeTests : HelpProposalsFixture
 
     /// <summary>
     /// <c>engine</c> is <c>alpha</c>'s, <c>game</c> is <c>beta</c>'s. Each has a quest, an ask and a session, as each
-    /// kind's facts read them: the delete's and a go's records, the pause's works, the clear's plans, and the sessions where
-    /// Sessions' list places them.
+    /// kind's facts read them.
     /// </summary>
     private static readonly HelpMachineFacts Two = Facts with
     {
@@ -79,9 +78,8 @@ public sealed class HelpProposalScopeTests : HelpProposalsFixture
     public void A_setting_naming_another_workspace_s_repository_is_judged_by_its_kind()
     {
         Reaches(Setting("drive", target: "game"));
-        Reaches(Setting("line", workspace: "beta", value: "trunk"));
-        Reaches(Setting("across", target: "engine", value: "write-to game"));
-        Reaches(Setting("cap", value: "3"));
+        Reaches(Setting("helpers", workspace: "beta", value: "--mode on"));
+        Reaches(Setting("commits", target: "engine", value: "--mode ask"));
         Assert.Contains("not registered", Refusal(Setting("drive", target: "nowhere")));
     }
 

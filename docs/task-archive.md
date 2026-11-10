@@ -5,6 +5,12 @@ the per-task record. Entries preserve their original wording so the archive stay
 
 ---
 
+## WFREVIEW3a, 3l — a performed land's press says what it came to, a moved tip waits on both tips (2026-11-11)
+
+> **WFREVIEW3a, 3l** (driver, modules): Outcome: every try the land performer makes keeps its end under its own code (`Workplace/LandEnds.cs`), and the desk answers a press from that end (`Bridge/PerformedAnswers.cs`): *landing* only where no try ended within the twenty-second bound, *carried* only where the session was carried on, never guessed from a repair on the record; the graph's and the chat's paths keep the tree's tip and the start's tip (`AutoTry.Start`) and try again once either moves, so a tree back at its start tip lands with no press. The `merge` kind's runtime stays PROCSTEPS1's. Proof: `PerformedEndsTests` (Process, Git; all four seen failing first), `LandEndsTests`, `LandTriesMovedTests`, `PerformedAnswersTests`.
+
+---
+
 ## AGENTFREE1c — the person's settings, memory file, Chrome on both doors and Codex home reach a session (2026-11-11)
 
 > **AGENTFREE1c** (driver; D266): Outcome: the person's `settings.json` merges into a Claude session's rules beneath Daoris's, the repository's and the account's, lists joining so their denies hold and a value entering only where nothing above sets one, sign-in, mode, plugin and hook-off keys kept out, a pass shaped for one job taking nothing that widens it (`ClaudeOwnSettings`); their `CLAUDE.md` appended to the system prompt, the native door through `--append-system-prompt-file`, the protocol door through `systemPrompt.append`, Chrome there through `extraArgs.chrome` (`ClaudeOwnMemory`); their Codex home handed as codex-acp's `CODEX_CONFIG` (`config.toml` where the account's sets nothing, `AGENTS.md`, skills, prompts; `CodexOwnHome`, `Platform/TomlReader`); rule defaults `own-settings` and `own-memory`. Census row 22 (other providers' sign-ins) kept as the person's own; row 29 measured on Claude Code 2.1.322 (`-p` starts a repository's servers with no approval). Proof: `OwnSettingsTests`, `OwnMemoryTests`, `CodexOwnHomeTests`, each seen failing first.
