@@ -16,17 +16,11 @@ public static class PullRequestReading
     /// <summary>The states a pull request reports, in order.</summary>
     public static readonly IReadOnlyList<string> States = [Merged, Closed];
 
-    /// <summary>
-    /// Whether the landing's pull request merged, a squash merge included: the plugin answered it completed, or, with no answer, the line
-    /// holds the landed branch (<see cref="OnTheLine"/>).
-    /// </summary>
+    /// <summary>Whether the landing's pull request merged, a squash merge included: the plugin answered it completed, or with no answer the line holds it.</summary>
     public static bool IsMerged(LandedBranch landing) =>
         landing.PullRequestState is { State: PullRequestStates.Completed } ? !MergedElsewhere(landing) : landing.PullRequestState is null && OnTheLine(landing) is not null;
 
-    /// <summary>
-    /// The keeper's proof that the line the work grew from holds the landed branch (by ancestry or by content), which reads as its pull
-    /// request merged where no plugin's answer says otherwise: a request completed on the platform that no plugin answered for; else null.
-    /// </summary>
+    /// <summary>The keeper's proof that the line the work grew from holds the landed branch: a request completed on the platform no plugin answered for.</summary>
     public static HeldFact? OnTheLine(LandedBranch landing) =>
         landing.Held is { } held && (landing.Line is null || string.Equals(held.Line, landing.Line, StringComparison.Ordinal)) ? held : null;
 

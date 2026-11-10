@@ -359,7 +359,6 @@ function Run({ run, here, doors, controls, named, onNodeWord, onHeld }: {
       : <StepBrief run={run} step={step} here={here === id} pill={pill} onPick={pick} />;
     return [id, {
       reached: reached.has(id),
-      // A stopped step is drawn stopped, never with the live mark of where the run stands, though the run stands there.
       at: id === at && step.state !== 'stopped',
       mark: mark(true),
       // Its node on the flowchart: its state's word in `runTone`'s tone, done only where it is (a skip stays in view
