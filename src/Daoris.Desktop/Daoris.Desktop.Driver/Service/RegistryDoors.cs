@@ -22,6 +22,8 @@ public sealed class RegistryDoors
         {
             Lanes = [.. (repo.Lanes ?? []).Select(lane => lane.Id).OfType<string>().Where(id => id.Length > 0)],
             Excludes = repo.Excludes ?? [],
+            Kind = PlaceKind.Of(repo.Kind) ?? PlaceKind.Git,
+            System = PlaceKind.Of(repo.Kind) == PlaceKind.System ? SystemPlace.Of(repo.System) : null,
         };
 
     /// <summary>Every repository this host holds, in every circle — what the page's scope is read from.</summary>
@@ -120,6 +122,15 @@ public sealed class RegistryDoors
     public async Task<ConnectDone> ConnectAsync(string root, string? workspace, CancellationToken ct = default)
     {
         var plan = RegistryConnect.Plan(root, workspace, _service.BaseUrl);
+        var sent = await _service.SendAsync(RegistrationOf(plan.Body), ct).ConfigureAwait(false);
+        if (!sent.Reply.Ok) throw Refused($"the service refused the registration: {ServiceSaid(sent.Reply)}", 2);
+        return new ConnectDone(plan, sent.Answer?.Workspace);
+    }
+
+    /// <summary>A system reached only through its console, registered as <see cref="SystemAdd.Plan"/> composes it from the plugins in <paramref name="home"/>.</summary>
+    public async Task<ConnectDone> AddSystemAsync(string home, string system, string? name, string? workspace, CancellationToken ct = default)
+    {
+        var plan = SystemAdd.Plan(home, system, name, workspace, _service.BaseUrl);
         var sent = await _service.SendAsync(RegistrationOf(plan.Body), ct).ConfigureAwait(false);
         if (!sent.Reply.Ok) throw Refused($"the service refused the registration: {ServiceSaid(sent.Reply)}", 2);
         return new ConnectDone(plan, sent.Answer?.Workspace);

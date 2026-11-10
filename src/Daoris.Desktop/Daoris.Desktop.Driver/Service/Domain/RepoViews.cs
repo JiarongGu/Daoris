@@ -17,6 +17,12 @@ public sealed record RepoView(
 
     /// <summary>The person's own globs a folder's manifest passes by, beside its defaults, as its registration keeps them.</summary>
     public IReadOnlyList<string> Excludes { get; init; } = [];
+
+    /// <summary>Its kind (<see cref="PlaceKind"/>), a repository's where the host does not say.</summary>
+    public string Kind { get; init; } = PlaceKind.Git;
+
+    /// <summary>A system department's adapter as its registration names it; null for any other kind.</summary>
+    public SystemPlace? System { get; init; }
 }
 
 /// <summary>One lane of a repository, as the registry answers it: what a quest addresses as `repository:id`.</summary>

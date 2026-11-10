@@ -54,6 +54,7 @@ public static class KnowledgeServer
         // And its chosen settings (HELPMODE1c3): the same kind of request, each setting refused unless the person granted it.
         typeof(ChosenSettingsTools),
         typeof(CheckoutTools),
+        typeof(SystemPlanTools),
     ];
 
     /// <summary>

@@ -92,6 +92,9 @@ public static class CallTable
         "go_ahead_ask", "handover_propose", "opinion_answer", "permission_propose", "question_ask", "review_ready", "review_serve",
     ], StringComparer.Ordinal);
 
+    /// <summary>A system department's plan: served to a quest's session there beside its own, and to no work in a repository or a folder.</summary>
+    public const string SystemPlan = "system_plan";
+
     /// <summary>A conversation's own: a quest's session's but the question it parks on and a set-up step's two.</summary>
     private static readonly HashSet<string> Conversing = new(
         ["go_ahead_ask", "handover_propose", "opinion_answer", "permission_propose"], StringComparer.Ordinal);
@@ -148,7 +151,10 @@ public static class CallTable
             { Work: ParticipantWork.AskDaoris } => Ordinary(name, askDaoris: true) ?? Unowned(name, "Ask Daoris"),
             { Work: ParticipantWork.Help } => Serving(name) ?? Channelled(name) ?? Ordinary(name) ?? Outside(name, Helping, "a helper"),
             { Work: ParticipantWork.Intake } => Ordinary(name) ?? Unowned(name, "an intake") ?? Outside(name, Intaking, "an intake"),
-            { Work: ParticipantWork.Build or ParticipantWork.Design or ParticipantWork.Exact } => Ordinary(name) ?? Outside(name, Working, "a quest's session"),
+            { Work: ParticipantWork.Build or ParticipantWork.Design or ParticipantWork.Exact } => name == SystemPlan
+                ? work.InSystem ? null : Forbidden(
+                    "`system_plan` is a system department's, and this session works in a repository or a folder, whose work changes its files. Nothing was planned.")
+                : Ordinary(name) ?? Outside(name, Working, "a quest's session"),
             { Work: ParticipantWork.Chat } => Ordinary(name) ?? Outside(name, Conversing, "a conversation"),
             _ => Unknown(name, kind),
         };
@@ -189,7 +195,9 @@ public static class CallTable
     /// <c>HelperBox</c> refuses to the same works: the table offers a session nothing its box refuses.
     /// </summary>
     private static CallRefusal? Unowned(string name, string who) =>
-        name == "helper_ask"
+        name == SystemPlan
+            ? Forbidden($"`system_plan` is refused to {who}: it works in no department of its own, so there is no system to plan against. Nothing was planned.")
+        : name == "helper_ask"
             ? Forbidden($"`helper_ask` is refused to {who}: it works in no repository of its own, so there is no helper to ask. Nothing was done.")
         : MemoryChanges.Contains(name)
             ? Forbidden($"`{name}` is refused to {who}: it works in no repository of its own, so it changes no repository's memory. Ask an "

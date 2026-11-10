@@ -108,8 +108,8 @@ Driver paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/`.
     loop's set, so the kit does not scaffold them. `plan/read` takes `{ system, changes: [{ resource, value } | { resource, remove }] }`
     and answers `{ operations: [{ resource, op: create | update | delete, before, after, precondition: { kind, version } }] }`, a version
     null where the resource must still be absent; `apply/perform` takes `{ system, plan, operations }` and answers `applied` with the
-    resources applied, `stale` with the first `refused` and each stale resource's `present` value and version, or `failed` with its
-    `message`. An answer of another shape is refused, nothing kept. `examples/plugins/stand-in-system` is the proof's adapter, a
+    resources applied, `none` with none where the system already holds what every operation asks and wrote nothing, `stale` with the
+    first `refused` and each stale resource's `present` value and version, or `failed` with its `message`. An answer of another shape is refused, nothing kept. `examples/plugins/stand-in-system` is the proof's adapter, a
     key-value store with an etag per key in its data folder, offered nowhere.
 18. An offer's installed copy is judged against the shipped one. Same version, other files: `changed`. Older, files
     matching the record's digest: `older`. Older, digest not matching: `changed`. Older, no digest: `older`,

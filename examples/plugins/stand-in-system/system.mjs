@@ -64,11 +64,17 @@ function presentOf(state, resource) {
   return present ? { resource, exists: true, value: present.value, version: present.etag } : { resource, exists: false, value: null, version: null };
 }
 
+function inPlace(state, operation) {
+  const present = state.items[operation.resource];
+  return operation.op === 'delete' ? !present : present?.value === operation.after;
+}
+
 /**
- * Apply `operations` in order under their preconditions. Every precondition is checked first, so a stale plan changes nothing and
- * is answered `stale` with what each stale resource is now; otherwise each is written and its new etag minted.
+ * Apply `operations` in order under their preconditions, or answer `none` where the store already holds what each asks. A stale plan
+ * changes nothing and is answered `stale` with what each stale resource is now; otherwise each is written and its new etag minted.
  */
 export function apply(state, operations) {
+  if (operations.every((operation) => inPlace(state, operation))) return { state, answer: { state: 'none', applied: [] } };
   const stale = operations.filter((operation) => !holds(state, operation));
   if (stale.length > 0) {
     return { state, answer: { state: 'stale', applied: [], refused: stale[0].resource, present: stale.map((operation) => presentOf(state, operation.resource)) } };
