@@ -69,6 +69,7 @@ public static class ToolClasses
         ["settings_quiet"] = ToolClass.Restricted,
         ["memory_write"] = ToolClass.Restricted,
         ["memory_end"] = ToolClass.Restricted,
+        ["system_plan"] = ToolClass.Restricted,
     };
 
     /// <summary>The reads, which a refusal names as what remains.</summary>

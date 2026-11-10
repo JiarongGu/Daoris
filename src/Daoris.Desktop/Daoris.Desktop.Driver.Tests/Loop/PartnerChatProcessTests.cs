@@ -164,7 +164,7 @@ public sealed class PartnerChatProcessTests : IDisposable
     private string Agent()
     {
         var script = Path.Combine(_home, "acp-partner-chat-agent.mjs");
-        File.WriteAllText(script, """
+        File.WriteAllText(script, StubPlace.Js + """
             import { appendFileSync } from 'node:fs';
             import { createInterface } from 'node:readline';
             if (process.argv.includes('--version')) { console.log('acp-stub 1.0.0'); process.exit(0); }
@@ -184,7 +184,7 @@ public sealed class PartnerChatProcessTests : IDisposable
                 send({ jsonrpc: '2.0', id: frame.id, result: { sessionId: conversation } });
               } else if (frame.method === 'session/prompt') {
                 const raw = frame.params.prompt.filter((block) => block.type === 'text').map((block) => block.text).join(' | ');
-                const text = raw.replace(/(\n\n| \| )?Daoris's standing block for this session: [\s\S]*$/, '');
+                const text = placeApart(raw.replace(/(\n\n| \| )?Daoris's standing block for this session: [\s\S]*$/, '')).said;
                 note('prompt: ' + text);
                 await new Promise((resolve) => setTimeout(resolve, text === 'slow' ? 4000 : 100));
                 say('heard');

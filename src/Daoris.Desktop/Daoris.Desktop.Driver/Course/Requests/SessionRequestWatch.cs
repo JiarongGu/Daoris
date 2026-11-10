@@ -124,6 +124,9 @@ public sealed class SessionRequestWatch : IAsyncDisposable
     /// </summary>
     public Func<SessionRequest, CancellationToken, Task<CheckoutAnswer>>? Checkout { get; init; }
 
+    /// <summary>A loop's half of <c>system_plan</c> for a session it runs (<see cref="SystemPlanning"/>), answered beside the request; null takes none.</summary>
+    public Func<SessionRequest, CancellationToken, Task<SystemPlanAnswer>>? Plan { get; init; }
+
     /// <summary>Holds a native session's permission ask (<see cref="NativePermits"/>) without waiting here, so other requests go on; null takes none.</summary>
     public Func<SessionRequest, Task>? Permit { get; init; }
 
@@ -157,6 +160,7 @@ public sealed class SessionRequestWatch : IAsyncDisposable
         Housekeep = CourseHelp.Current.Housekeeping(home, service);
         Set = CourseHelp.Current.Settings(home, service);
         Checkout = new HelpCheckouts(home, service).AnswerAsync;
+        Plan = new SystemPlanning(home, service).AnswerAsync;
         // Made before the watch starts, so its watcher opens at once and the first request after an install is
         // heard, not found at the listing. Both loops (the desktop's and the headless host's) build their watch here.
         Directory.CreateDirectory(_requests.Folder);
@@ -319,6 +323,7 @@ public sealed class SessionRequestWatch : IAsyncDisposable
         SessionMove.Set => Set is not null && _runsHere(pending.Session),
         // And for a checkout read.
         SessionMove.Read => Checkout is not null && _runsHere(pending.Session),
+        SessionMove.Plan => Plan is not null && _runsHere(pending.Session),
         SessionMove.Permit => Permit is not null && _runsHere(pending.Session),
         _ => _runsHere(pending.Session) && (!Resolves(pending) || _service() is not null),
     };
@@ -340,6 +345,7 @@ public sealed class SessionRequestWatch : IAsyncDisposable
         if (pending.Move == SessionMove.Housekeep) return await HousekeepAsync(pending, ct).ConfigureAwait(false);
         if (pending.Move == SessionMove.Set) return await SetAsync(pending, ct).ConfigureAwait(false);
         if (pending.Move == SessionMove.Read) return await ReadCheckoutAsync(pending, ct).ConfigureAwait(false);
+        if (pending.Move == SessionMove.Plan) return await PlanAsync(pending, ct).ConfigureAwait(false);
         if (pending.Move == SessionMove.Permit)
         {
             if (Permit is not { } permit || !_runsHere(pending.Session) || _requests.Take(pending) is not { } asked) return null;
@@ -545,6 +551,36 @@ public sealed class SessionRequestWatch : IAsyncDisposable
         catch (Exception error) when (error is IOException or UnauthorizedAccessException)
         {
             // Unwritten: the tool waits out its time and says it may still be under way.
+        }
+
+        return request;
+    }
+
+    /// <summary>A system plan, taken where this loop runs the session and handed to <see cref="Plan"/>; its answer, a failure's included, written beside it.</summary>
+    private async Task<SessionRequest?> PlanAsync(SessionRequest pending, CancellationToken ct)
+    {
+        if (Plan is not { } plan || !_runsHere(pending.Session)) return null;
+        if (_requests.Take(pending) is not { } request) return null;
+
+        SystemPlanAnswer answer;
+        try
+        {
+            answer = await plan(request, ct).ConfigureAwait(false);
+        }
+        catch (Exception error) when (
+            error is DriverException or HttpRequestException or System.Text.Json.JsonException or IOException or UnauthorizedAccessException
+            || (error is TaskCanceledException && !ct.IsCancellationRequested))
+        {
+            answer = SystemPlanAnswer.Refusal(SystemPlanAnswer.Failed, $"Daoris could not plan it ({error.Message.TrimEnd('.')}).");
+        }
+
+        try
+        {
+            _requests.Answer(request, answer);
+        }
+        catch (Exception error) when (error is IOException or UnauthorizedAccessException)
+        {
+            // Unwritten: the tool waits out its time and says the adapter may still be reading.
         }
 
         return request;

@@ -11,7 +11,8 @@ export const REGISTERED_TOOLS: readonly string[] = [
   'line_read', 'memory_end', 'memory_get', 'memory_propose', 'memory_search', 'memory_write', 'opinion_answer', 'opinion_give',
   'partner_answer', 'permission_propose', 'plugin_propose', 'quest_list', 'quest_publish', 'quest_respond', 'question_ask',
   'registry', 'review_ready', 'review_serve', 'role_propose', 'settings_cap',
-  'settings_cooloff', 'settings_language', 'settings_notify', 'settings_quiet', 'setup_propose', 'sync_propose', 'workflow_propose',
+  'settings_cooloff', 'settings_language', 'settings_notify', 'settings_quiet', 'setup_propose', 'sync_propose', 'system_plan',
+  'workflow_propose',
 ];
 
 type Column = { only: readonly string[] } | { allBut: readonly string[] };
@@ -37,7 +38,7 @@ const COLUMNS: Record<string, Column> = {
   chat: { only: [...CORE, ...CONVERSING] },
   // Neither works in a repository of its own, so neither has a helper to ask.
   intake: { only: without(CORE, [...MEMORY_CHANGES, 'helper_ask']) },
-  'ask-daoris': { allBut: [...TURNS, 'helper_ask', ...MEMORY_CHANGES] },
+  'ask-daoris': { allBut: [...TURNS, 'helper_ask', ...MEMORY_CHANGES, 'system_plan'] },
   help: {
     only: [
       ...without(CORE, ['channel_post', 'channel_read', 'memory_propose', 'quest_publish', 'quest_respond', ...MEMORY_CHANGES]),

@@ -218,6 +218,25 @@ public sealed class RegistrationStoreTests : IAsyncLifetime
         Assert.Null(PlaceKinds.Of("a system"));
     }
 
+    /// <summary>A system department keeps its kind and its adapter's system, with no root, and silence preserves the system.</summary>
+    [Fact]
+    public async Task A_system_department_keeps_its_adapter_s_system_and_silence_preserves_it()
+    {
+        var added = await _store.UpsertAsync(Declared() with { Kind = PlaceKinds.System, System = "stand-in-system/stand-in" }, Now);
+        Assert.Equal(PlaceKinds.System, added.PlaceKind);
+        Assert.Equal("stand-in-system/stand-in", added.System);
+
+        var kept = await _store.UpsertAsync(Declared() with { Kind = null, System = null }, Now.AddDays(1));
+        Assert.Equal("stand-in-system/stand-in", kept.System);
+        var read = Assert.Single(await _store.AllAsync());
+        Assert.Equal((PlaceKinds.System, "stand-in-system/stand-in"), (read.PlaceKind, read.System));
+
+        Assert.Equal("stand-in-system/stand-in", PlaceKinds.SystemOf(" stand-in-system/stand-in "));
+        Assert.Null(PlaceKinds.SystemOf("C:/systems/stand-in"));
+        Assert.Null(PlaceKinds.SystemOf("stand-in-system"));
+        Assert.Null(PlaceKinds.SystemOf("a/b/c"));
+    }
+
     /// <summary>
     /// What commit this deployment's copy stands on, kept beside the registrations and gone with them.
     /// A leftover row would refuse the first feed after a repository re-joined, as though a commit it
