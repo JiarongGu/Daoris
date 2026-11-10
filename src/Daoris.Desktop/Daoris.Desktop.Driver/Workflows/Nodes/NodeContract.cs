@@ -312,10 +312,7 @@ public sealed record NodeAuthority(string Kind, string Reach, string ReachBy, st
     /// </summary>
     public string? SkipBy { get; init; }
 
-    /// <summary>
-    /// The source that reaches a pressed node by what it observes, beside its press: a <c>review</c> whose landing is seen made, the
-    /// landing record's (git's), so a reach nobody pressed says it was observed and is never the person's. Null for every other kind.
-    /// </summary>
+    /// <summary>The source an observed reach of a pressed kind carries: a <c>review</c> seen landed is git's, never the person's.</summary>
     public string? ObservedBy { get; init; }
 }
 

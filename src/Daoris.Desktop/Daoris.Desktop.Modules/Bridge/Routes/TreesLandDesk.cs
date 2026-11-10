@@ -124,7 +124,7 @@ internal sealed class TreesLandDesk(DriverLoop loop)
         var shown = gate;
         // where the run's graph waits on its review, this press is the person's Accept, kept on the run's record for the pass.
         var accepted = false;
-        // on its way to the review, the press is kept as that review's Accept (D256).
+        // on its way to the review, the press is kept as that review's Accept.
         var kept = false;
         gate = await GraphPasses.PressAsync(
             token => new OpinionPresses(_loop.Home, service).PressedAsync(id, shown, asked.Answers, tree, questId, token),
@@ -216,7 +216,7 @@ internal sealed class TreesLandDesk(DriverLoop loop)
         var pressed = await ChatPresses.PressAsync(
             _loop.Home, new ChatPressAsk(id, tree, chatRun, repository, workspace, live), _loop.Chat,
             // a graph-bound run's gate is the quest's, its graph part judged by the pass this press asks
-            // after the candidate it submitted, and the press's Accept the review's word, kept on the way to it (D256).
+            // after the candidate it submitted, and the press's Accept the review's word, kept on the way to it.
             async (tip, token) => await GraphPasses.PressAsync(
                 async held => await presses.PressedAsync(
                     id, await trees.GateAsync(tree, null, world, id, held, tip: tip, run: chatRun), asked.Answers, tree, null, held, chatRun),

@@ -3,7 +3,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// The person's Accept pressed while the run is still on its way to its review (D256): kept on the run's record as the review's Accept, left
+/// The person's Accept pressed while the run is still on its way to its review: kept on the run's record as the review's Accept, left
 /// there by every pass the review has not begun at, and applied at the first that finds it waiting at the commit pressed on; dropped where the
 /// work moved to another commit, and giving way to the person's own later word.
 /// </summary>

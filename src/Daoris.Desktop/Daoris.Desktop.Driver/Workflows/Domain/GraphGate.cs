@@ -227,8 +227,7 @@ public static class GraphGate
 /// The person's press on a run held by its graph: the press keeps its order, its answer kept first and
 /// the gate read with the graph's part; where that part holds for a judgement not made yet, the press asks the loop for a whole pass, waits for
 /// it within <see cref="Bound"/>, and reads the gate again, so it lands at the same press where that pass made <c>handed</c> active at the commit.
-/// Past the bound it is refused as read, its answer kept, and the next press or look lands it; a run with a review keeps the press as that
-/// review's Accept on its way there (<see cref="EarlyAccepts"/>), so its door answers it accepted.
+/// Past the bound it is refused as read, its answer kept, and the next press or look lands it.
 /// </summary>
 public static class GraphPasses
 {
@@ -248,10 +247,7 @@ public static class GraphPasses
     /// The person's Accept kept on the run's record for the <c>review</c> the graph waits on, true where it is kept: the press is
     /// that Accept, so it never lands past the review itself, and the pass it then asks reaches the review and readies the landing.
     /// </param>
-    /// <param name="keep">
-    /// The person's Accept kept for the run's <c>review</c> while the run is on its way to it (<see cref="EarlyAccepts"/>, D256): a judgement not
-    /// made yet, or a wait on a node before the review. Kept before the pass is asked, so the pass that finds the review waiting applies it.
-    /// </param>
+    /// <param name="keep">The press kept as the review's Accept on the run's way to it (<see cref="EarlyAccepts"/>), before the pass is asked.</param>
     public static async Task<LandingGate> PressAsync(
         Func<CancellationToken, Task<LandingGate>> answer, Func<CancellationToken, Task<LandingGate>> read,
         Func<TimeSpan, CancellationToken, Task<bool>>? pass, CancellationToken ct, Func<GraphGateState, CancellationToken, Task<bool>>? accept = null,

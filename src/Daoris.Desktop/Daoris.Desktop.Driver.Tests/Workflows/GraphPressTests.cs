@@ -82,7 +82,7 @@ public sealed class GraphPressTests
         Assert.Equal(["answer kept"], _did);
     }
 
-    /// <summary>A press on a run still on its way to its review is kept as that review's Accept before the pass is asked (D256).</summary>
+    /// <summary>A press on a run still on its way to its review is kept as that review's Accept before the pass is asked.</summary>
     [Fact]
     public async Task A_press_before_the_graph_is_judged_or_the_review_waits_is_kept_as_the_reviews_accept()
     {

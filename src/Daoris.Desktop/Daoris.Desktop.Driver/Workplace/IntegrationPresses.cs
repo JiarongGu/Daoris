@@ -11,8 +11,7 @@ internal static class IntegrationPresses
 {
     /// <summary>
     /// Merge <paramref name="tip"/> of <paramref name="branch"/> into <paramref name="line"/> as the press's: true where the line now holds it,
-    /// else the sentence the press is refused with (the conflict or the hook in today's words, or what holds it), and its landing code where it
-    /// has one of its own: <see cref="LandingCode.Queued"/> for a merge left waiting in its line's integration, tried again at the next look.
+    /// else the sentence the press is refused with (the conflict or the hook in today's words, or what holds it), and its own code if any.
     /// </summary>
     /// <param name="delivered">A delivery's merge, admitted by its intent's method rather than the rule's.</param>
     /// <param name="message">A delivery's rendered message, the merge commit's own with the maker's line; null makes today's <c>Merge branch</c>.</param>

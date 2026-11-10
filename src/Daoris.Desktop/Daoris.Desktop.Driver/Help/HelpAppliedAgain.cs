@@ -27,11 +27,11 @@ public static class HelpAppliedAgain
         }
         catch (Exception error) when (error is IOException or UnauthorizedAccessException or JsonException)
         {
-            // A later press is answered with the settled state alone, as one from before the outcome was kept.
+            // A later press is answered with the settled state alone.
         }
     }
 
-    /// <summary>The answer to a press on <paramref name="proposal"/>, settled already: its state, and what the first press told where it was kept.</summary>
+    /// <summary>The answer to a press on <paramref name="proposal"/>, settled already: its state, and what the first press told, where kept.</summary>
     public static HelpApplied Answer(string home, HelpProposal proposal)
     {
         var told = Told(home, proposal.Id);

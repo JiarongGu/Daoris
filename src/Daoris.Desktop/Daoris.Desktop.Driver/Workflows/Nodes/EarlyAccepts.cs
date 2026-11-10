@@ -1,7 +1,7 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// The person's Accept pressed while the run is still on its way to its review (D256): its graph not judged at the press's commit yet, or a
+/// The person's Accept pressed while the run is still on its way to its review: its graph not judged at the press's commit yet, or a
 /// node before the review still to settle. Kept on the run's record as the review's Accept and applied at the first pass that finds the review
 /// waiting, never refused while the run is on its way there. The review beginning at another commit than the one pressed on (the work moved,
 /// a new attempt), the review settling another way, and the person's own later word on it each end it.

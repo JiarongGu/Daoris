@@ -3,7 +3,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// A review reached because its landing was seen made, with nobody's press, says it was observed: its source is the landing record's
+/// A review reached because its landing is seen made, with nobody's press, reads as observed: its source is the landing record's
 /// (git's), never the person's, which only their Accept carries.
 /// </summary>
 public sealed class ReviewObservedTests : NodeRunFixture

@@ -32,10 +32,7 @@ internal sealed class ReviewNode : BuiltInNode, IObserves, IPressed
 
     public override IReadOnlyList<string> LandingActs(NodeDeclaration node) => [NodeWordActs.Accept];
 
-    /// <summary>
-    /// Reached where its landing is seen made, read as a <c>land</c>'s reach is: an observed reach, the landing record's, since a landing seen
-    /// is not a press; the person's Accept reaches it through their word alone.
-    /// </summary>
+    /// <summary>Reached where its landing is seen made, as a <c>land</c>'s reach is, as the landing record's: a landing seen is not a press.</summary>
     public NodeObservation Observe(NodeReading reading) => LandReading.Observe(reading, NodeSource.Git);
 
     /// <summary>The person's Accept, and their changes with their words.</summary>
