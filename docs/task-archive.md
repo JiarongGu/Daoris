@@ -5,6 +5,12 @@ the per-task record. Entries preserve their original wording so the archive stay
 
 ---
 
+## APPROVE1q, r, s, t — every node word routed, nothing to deliver ends a run, a stopped step drawn stopped (2026-11-11)
+
+> **APPROVE1q, r, s, t** (driver, web): Outcome: the `workflow` group's verb list lacked `accept`, `send`, `ask-again` and `go-on`, and routed `done`, `approve` and `reject` to the driver's own command, which refused them; every node word now routes to `WorkflowNodeCommand` and the usage names each (`Loop/CommandTree.cs`, `DriveUsageMachine.cs`, `DriverWorkflowsCommand.cs`). After a `land` on an empty landing every step not yet started is skipped as nothing to deliver, an active push through the landing record (`Workflows/Nodes/NothingToDeliver.cs`, `PushNode`, `PushReading`); once the line holds the landed branch, push and pull-request steps not yet started are skipped, the monitor reading no plugin answer as merged (`PullRequestReading`): the pull-request plugin had failed to start all day, so the step was never sent. A stopped step is no longer drawn as the live current one (`WorkflowRunView.tsx`). Proof: `WorkflowNodeWordsRouteTests`, `NothingToDeliverTests`, `RunViewStopped.test.tsx`, each seen failing first. Left: a pull-request step already sent to a plugin is not closed when the line holds the branch.
+
+---
+
 ## APPROVE1k, l, m — a later quest its own tree, a shared branch's event to the run awaiting it, a ready landing bound (2026-11-11)
 
 > **APPROVE1k, l, m** (driver; D260): Outcome: a later quest of a line goes into an earlier tree only when it is that run's own part (a step in the same chain, same repository), else a tree and branch of its own (`WorkOrders/Domain/LineRuns.cs`, `RoundJoining.cs`; `EntryParts.Run` read by `GrowTree.EntryLanded`); the run rule lives once (`Service/Domain/QuestRuns.cs`), so `Workplace/RunParts.cs` names no Workflows type (StructureTests green); an event on a branch two runs share goes to each run whose own node waits for it at that commit, else each whose graph names that step (`Workflows/Nodes/ToldRuns.cs`, `WorkObserver`); a landing `ready` with no binding binds at the commit the review accepted (`ReviewedTip.cs`). Proof: `SharedRunBranchTests`, `ReadyLandingTests`, `EntryPartsPlanTests`, the tick tests, `NodeRuntimeTests`, `StructureTests`, Driver.Tests' census (1787). The shared-branch test's red was the runtime fixture's port, which never answered what it had told.
