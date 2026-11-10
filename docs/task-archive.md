@@ -5,6 +5,12 @@ the per-task record. Entries preserve their original wording so the archive stay
 
 ---
 
+## ASKFULL1d — the window lists what Ask Daoris pressed (2026-11-10)
+
+> **ASKFULL1d** (modules, web; D253 point 1): Outcome: each press Ask Daoris's key ran with no card is kept this run (route, conversation, target, time, outcome; the newest 100; a restart empties it; `Modules/Platform/HelpPressRecord.cs`), told to the windows at the press and at its answer and read as `standingConfirmation.helpPresses`; Notifications shows them as a folded section in the standing slot (`notifications/HelpPressLine.tsx`) in the window's route words with their outcome, each opening Ask Daoris's panel, a done pause offering *Resume*. Proof: `HelpPressRecordTests`, `PipeDelegateTests`, `HelpPressLine.test.tsx` in both languages. Left: a reverse for other acts, and opening the exact conversation.
+
+---
+
 ## CODESTRREV3a, b and KNOWREV3a, b — a lock's holder by pid and start, a deleted session's staged memory dropped, a fair memory search (2026-11-10)
 
 > **CODESTRREV3a, b** (tools): Outcome: the gate tree's and the CI watch's locks record their holder's process start beside its pid, and `running` means the pid lives and is that holder (`tools/merge-branch/holder.mjs`: `processStart`, `sameHolder`, `holderRuns`); a take-over ends only the children created after the dead holder began and before its pid was taken again (`endOrphans(parent, since, until)`). Proof: `tool-test/merge-branch/holder.test.ts` (not seen failing first).

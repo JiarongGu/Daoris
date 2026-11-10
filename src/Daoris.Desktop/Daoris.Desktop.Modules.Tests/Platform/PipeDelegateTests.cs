@@ -46,6 +46,8 @@ public sealed class PipeDelegateTests : Bridge
         Assert.Equal(1, driver.Ran("WORK_PAUSE"));
         Assert.Empty(pipe.Confirmations.Now().Waiting);
         Assert.Equal(("h1", $"{DriverModule.Name}.WORK_PAUSE"), Assert.Single(_said));
+        await UntilAsync(() => pipe.StandingConfirmation.Now().HelpPresses is [{ Outcome: HelpPressRecord.Done }]);
+        Assert.Equal(("WORK_PAUSE", "h1", "q1"), pipe.StandingConfirmation.Now().HelpPresses.Select(each => (each.Route, each.Session, each.Target)).Single());
         Assert.Contains(
             $$"""{"session":"h1","route":"{{DriverModule.Name}}.WORK_PAUSE","door":"terminal"}""", Logged(PipeDelegate.PressedEvent));
     }
