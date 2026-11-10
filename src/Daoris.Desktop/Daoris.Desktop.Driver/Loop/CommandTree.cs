@@ -94,7 +94,8 @@ public static class CommandTree
             "session" => ["sessions", .. rest],
             "settings" => ["driver", .. rest],
             "tree" => ["trees", .. rest],
-            "workflow" when verb is "run" or "keep" or "skip" or "stop" or "changes" or "fix" => ["workflow", .. rest],
+            // A run's own words, every act the node door takes among them, are the host's.
+            "workflow" when verb is "run" or "keep" or "fix" || (verb is not null && NodeWordActs.All.Contains(verb, StringComparer.Ordinal)) => ["workflow", .. rest],
             "workflow" => ["driver", "workflow", .. rest],
             _ => [group, .. rest],
         };
