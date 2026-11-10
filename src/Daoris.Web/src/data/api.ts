@@ -535,6 +535,8 @@ export const api = {
     send('RespondQuest', { id, action, reason }).then(({ answer }) => answer),
   // The person's yes to a done's departure from what they required: what it held goes on.
   acceptQuest: (id: string) => send('AcceptQuest', { id }).then(({ answer }) => answer),
+  // The person's *Let others work here* on a parked line keeping its checkout with uncommitted paths of its own.
+  releasePlace: (id: string) => send('ReleasePlace', { id }).then(({ answer }) => answer),
   // The person's own done, with their words where they wrote any; never respond's door, which is an agent's done.
   personDone: (id: string, note: string | null) =>
     send('MarkQuestDone', { id, ...(note ? { note } : {}) }).then(({ answer }) => answer),
