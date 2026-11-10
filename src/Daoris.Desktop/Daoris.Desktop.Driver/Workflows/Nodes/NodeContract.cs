@@ -57,10 +57,7 @@ public static class NodeKinds
     /// </summary>
     public const string Integrate = "integrate";
 
-    /// <summary>
-    /// A system place's apply: the reviewed change set the run's work planned, applied by the system's adapter under each operation's
-    /// precondition; a stale plan fails it with the present versions, for a way back to plan again. Its start is <see cref="ApplyNode"/>.
-    /// </summary>
+    /// <summary>A system place's apply of its reviewed change set, under each operation's precondition: <see cref="ApplyNode"/>.</summary>
     public const string Apply = "apply";
 
     /// <summary>

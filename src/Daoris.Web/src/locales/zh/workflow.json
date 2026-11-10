@@ -52,6 +52,7 @@
   "workflow.step.rebase": "变基",
   "workflow.step.resolve": "解决冲突",
   "workflow.step.merge": "合并",
+  "workflow.step.apply": "应用",
   "workflow.step.line": "进入主线",
   "workflow.step.quest.close": "委托的关闭",
   "workflow.step.all": "汇合",

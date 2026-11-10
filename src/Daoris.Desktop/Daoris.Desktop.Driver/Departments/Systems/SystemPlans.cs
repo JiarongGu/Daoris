@@ -36,7 +36,7 @@ public sealed class SystemPlans(string home)
     public void Applied(string record, int plan, SystemApplied applied) =>
         AtomicFile.WriteText(Path.Combine(FolderOf(record), $"applied-{plan}.json"), JsonSerializer.Serialize(applied, Json) + "\n");
 
-    /// <summary>What <paramref name="record"/>'s plan <paramref name="plan"/> came to, or null where it was not applied.</summary>
+    /// <summary>What <paramref name="record"/>'s plan <paramref name="plan"/> came to, or null before its apply.</summary>
     public SystemApplied? AppliedOf(string record, int plan)
     {
         var file = Path.Combine(FolderOf(record), $"applied-{plan}.json");

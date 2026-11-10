@@ -77,19 +77,13 @@ public static class HookPoints
     /// </summary>
     public const string Event = "work/event";
 
-    /// <summary>
-    /// A request to a system's adapter: a session's intended changes read against the system as it stands, answered as typed operations,
-    /// each with the precondition it is applied under (<see cref="SystemWire"/>).
-    /// </summary>
+    /// <summary>A system adapter's request: intended changes answered as typed operations with their preconditions (<see cref="SystemWire"/>).</summary>
     public const string PlanRead = "plan/read";
 
-    /// <summary>A request to a system's adapter: a reviewed change set applied under its preconditions, answered applied, stale or failed.</summary>
+    /// <summary>A system adapter's request: a reviewed change set applied under its preconditions, answered applied, stale or failed.</summary>
     public const string ApplyPerform = "apply/perform";
 
-    /// <summary>
-    /// The system wire's points: asked only of a plugin that declares <c>systems</c> (<see cref="PluginSystems"/>), by the apply's door and
-    /// the plan, never by the loop's set. Outside <see cref="All"/>, whose points the kit scaffolds for every plugin.
-    /// </summary>
+    /// <summary>Asked of a plugin declaring <c>systems</c> by a plan and an apply alone; outside <see cref="All"/>, which the kit scaffolds.</summary>
     public static readonly IReadOnlyList<string> System = [PlanRead, ApplyPerform];
 }
 

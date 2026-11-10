@@ -8,7 +8,7 @@ import { join } from 'node:path';
 /** The file the store is kept in, under the plugin's data folder. */
 export const STATE = 'state.json';
 
-/** The store as it stands: `{ items: { [key]: { value, etag } }, serial }`; empty where nothing was written yet. */
+/** The store as it stands: `{ items: { [key]: { value, etag } }, serial }`; empty before the first write. */
 export function read(data) {
   const file = join(data, STATE);
   if (!existsSync(file)) return { items: {}, serial: 0 };

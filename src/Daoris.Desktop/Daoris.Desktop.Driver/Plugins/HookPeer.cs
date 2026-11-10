@@ -190,10 +190,7 @@ public sealed class HookPeer(
             + "`mergeCommit` and `sourceCommit` in full.");
     }
 
-    /// <summary>
-    /// A system point's request (<see cref="HookPoints.System"/>), its answer handed back unread: <see cref="SystemWire"/> reads it by shape.
-    /// A point the plugin does not listen on is not asked.
-    /// </summary>
+    /// <summary>A system point's request, asked only where the plugin listens; <see cref="SystemWire"/> reads its answer by shape.</summary>
     public async Task<JsonElement> SystemAsync(string point, object payload, CancellationToken ct)
     {
         if (!HookPoints.System.Contains(point, StringComparer.Ordinal) || !Points.Contains(point, StringComparer.Ordinal))

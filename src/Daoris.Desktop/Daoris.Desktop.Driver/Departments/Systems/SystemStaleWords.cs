@@ -1,8 +1,8 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// What a run's work is told when its apply was stale: the plan read versions that moved before it was applied, so it plans again from
-/// the system as it stands, with each stale resource's present value and version.
+/// What a run's work is told when its apply is refused as stale: the plan read versions that moved before the apply, so it plans again
+/// from the system as it stands, with each stale resource's present value and version.
 /// </summary>
 public static class SystemStaleWords
 {
