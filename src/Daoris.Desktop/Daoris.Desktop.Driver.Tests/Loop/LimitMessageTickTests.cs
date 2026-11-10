@@ -68,9 +68,7 @@ public sealed class LimitMessageTickTests : IDisposable
         using var client = new ServiceClient(service.Url, null);
         var config = StaffedRoles.Config("acp-stub") with
         {
-            Drivable = ["engine"],
-            Trees = ["engine"],
-            TestBound = 1,
+            Drivable = ["engine"],            TestBound = 1,
             PollSeconds = 1,
             Commands = new Dictionary<string, IReadOnlyList<string>> { ["acp-stub"] = ["node", AcpAgent(), Log] },
         };

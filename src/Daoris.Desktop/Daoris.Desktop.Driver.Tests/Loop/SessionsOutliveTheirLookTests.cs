@@ -910,13 +910,13 @@ public sealed class SessionsOutliveTheirLookTests : IDisposable
         catch (OperationCanceledException) { }
     }
 
-    private static DriverConfig Config(bool trees = true, int cap = 3) => DriverConfig.Empty with
+    private DriverConfig Config(bool trees = true, int cap = 3) => DriverConfig.Empty with
     {
         Drivable = ["engine", "tools"],
         Actors = StaffedRoles.On("stub"),
         Cap = cap,
         PollSeconds = 1,
-        Trees = trees ? ["engine"] : [],
+        DefaultWorkflow = trees ? IsolatedPlaces.In(_home) : null,
     };
 
     /// <param name="timeout">The client's own timeout, where a test meets it; the client's default otherwise.</param>
@@ -939,7 +939,7 @@ public sealed class SessionsOutliveTheirLookTests : IDisposable
     {
         var config = DaorisHome.Entry(_home, HomeEntry.DriverConfig);
         File.WriteAllText(config, $$"""
-            { "drivable": ["engine", "tools"], "adapter": "stub", "cap": 3, "pollSeconds": {{pollSeconds}}, "trees": ["engine"] }
+            { "drivable": ["engine", "tools"], "adapter": "stub", "cap": 3, "pollSeconds": {{pollSeconds}} }
             """);
         var service = _ledger.Client();
         var runs = new StandInRuns(service, _ledger);

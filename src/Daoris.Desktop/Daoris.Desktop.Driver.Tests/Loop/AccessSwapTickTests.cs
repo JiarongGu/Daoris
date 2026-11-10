@@ -75,9 +75,7 @@ public sealed class AccessSwapTickTests : IDisposable
     {
         (DriverConfig.Empty with
         {
-            Drivable = ["engine"],
-            Trees = ["engine"],
-            Actors = StaffedRoles.On("acp-stub"),
+            Drivable = ["engine"],            Actors = StaffedRoles.On("acp-stub"),
             TestBound = 1,
             PollSeconds = 1,
             Commands = new Dictionary<string, IReadOnlyList<string>> { ["acp-stub"] = ["node", ProtocolAgent(), Log, Go] },
@@ -137,9 +135,7 @@ public sealed class AccessSwapTickTests : IDisposable
         File.WriteAllText(DaorisHome.Entry(_home, HomeEntry.Harnesses), """{"defaults":{"claude-code":"work"}}""");
         (DriverConfig.Empty with
         {
-            Drivable = ["engine"],
-            Trees = ["engine"],
-            Actors = StaffedRoles.On("claude-code"),
+            Drivable = ["engine"],            Actors = StaffedRoles.On("claude-code"),
             TestBound = 1,
             Commands = new Dictionary<string, IReadOnlyList<string>> { ["claude-code"] = ["node", NativeHarness(), Log, Taken, Go] },
         }).WithAccess(new AccessEdit { Repository = "engine", Set = [new(AccessRules.Permissions, AccessRules.Asking)] }).Save(ConfigPath);

@@ -51,7 +51,7 @@ public sealed class ContinuedChoiceTests : IDisposable
 
     /// <summary>Build's order: <c>first</c> · opus, then <c>second</c> · sonnet; the legacy <c>adapter</c> key written through as <c>first</c>.</summary>
     private static DriverConfig Config => ActorChoices.With(
-        DriverConfig.Empty with { Drivable = ["engine"], Trees = ["engine"], Actors = StaffedRoles.On("first"), PollSeconds = 1 },
+        DriverConfig.Empty with { Drivable = ["engine"], Actors = StaffedRoles.On("first"), PollSeconds = 1 },
         "build", [new ActorChoice("first", "opus"), new ActorChoice("second", "sonnet")]);
 
     private void Cool(string agent, DateTimeOffset until) =>

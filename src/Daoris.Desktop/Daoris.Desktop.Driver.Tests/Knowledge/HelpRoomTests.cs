@@ -272,8 +272,7 @@ public sealed class HelpRoomTests : IDisposable
     {
         var config = DriverConfig.Empty with
         {
-            Drivable = ["console-ui", "reports-db"], Holds = ["reports-db"], Trees = ["console-ui"],
-            Cap = 4, Actors = StaffedRoles.On("claude-code", "claude-code-acp", "claude-code-acp"),
+            Drivable = ["console-ui", "reports-db"], Holds = ["reports-db"],            Cap = 4, Actors = StaffedRoles.On("claude-code", "claude-code-acp", "claude-code-acp"),
         };
         var snapshot = new Snapshot(
             [],

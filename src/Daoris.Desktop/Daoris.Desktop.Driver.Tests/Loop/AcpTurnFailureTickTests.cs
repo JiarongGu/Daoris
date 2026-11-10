@@ -93,7 +93,7 @@ public sealed class AcpTurnFailureTickTests : IDisposable
         var config = DriverConfig.Empty with
         {
             Drivable = ["engine"],
-            Trees = trees ? ["engine"] : [],
+            DefaultWorkflow = trees ? IsolatedPlaces.In(_home) : null,
             Actors = StaffedRoles.On("acp-stub"),
             TestBound = 1,
             PollSeconds = 1,

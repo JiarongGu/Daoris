@@ -563,17 +563,6 @@ public sealed record DriverConfig(
             ? DriverConfigWriter.Written(this)
             : JsonKeeping.Kept(Source, DriverConfigDisk.Understood(this), DriverConfigWriter.Written(this), Sets);
 
-    /// <summary>
-    /// The trees switch's old names, read by no code of the driver and neither read from nor written to <c>driver.json</c>: a place's
-    /// sessions work apart where its workflow's <c>isolate</c> step says (<see cref="PlaceIsolates"/>). Kept only until the test fixtures
-    /// that still set it are converted to the step, then deleted.
-    /// </summary>
-    internal IReadOnlyList<string> Trees { get; init; } = [];
-
-    internal DriverConfig WithTrees(string repository, bool ownTree) => this with { Trees = DriverConfigEdits.Toggle(Trees, repository, ownTree) };
-
-    internal bool OpensOwnTree(string repository) => Trees.Contains(repository, StringComparer.OrdinalIgnoreCase);
-
     /// <summary>This machine's answer to "may I drive that repository, now" — one flag flipped at a time.</summary>
     public DriverConfig WithDrivable(string repository, bool drivable) => this with
     {
