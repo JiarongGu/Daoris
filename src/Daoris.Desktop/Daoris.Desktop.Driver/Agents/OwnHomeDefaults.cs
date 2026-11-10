@@ -13,6 +13,9 @@ public static class OwnHomeDefaults
     /// <summary>The user-scope servers of the person's own tool home.</summary>
     public const string ServersId = "own-servers";
 
+    /// <summary>The plugins the person's own tool home installed and enables.</summary>
+    public const string PluginsId = "own-plugins";
+
     /// <summary>The defaults, in the order the rules list them after Daoris's own.</summary>
     public static IReadOnlyList<PermissionDefault> Defaults { get; } =
     [
@@ -23,6 +26,9 @@ public static class OwnHomeDefaults
             ServersId, RuleList.Allow, [],
             "A session is handed the servers of your own tool home, but one named as Daoris's connector or carrying a Daoris key; "
             + "a review, helper or partner pass is handed none."),
+        new(
+            PluginsId, RuleList.Allow, [],
+            "A session is handed the plugins your own tool home installed and enables, read where they are installed."),
     ];
 
     /// <summary>The families <paramref name="rules"/> leave on.</summary>
@@ -32,6 +38,7 @@ public static class OwnHomeDefaults
         var families = OwnFamilies.None;
         if (On(rules, SkillsId)) families |= OwnFamilies.Skills;
         if (!connectorOnly && On(rules, ServersId)) families |= OwnFamilies.Servers;
+        if (On(rules, PluginsId)) families |= OwnFamilies.Plugins;
         return families;
     }
 

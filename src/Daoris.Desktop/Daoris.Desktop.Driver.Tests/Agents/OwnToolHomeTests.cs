@@ -158,6 +158,51 @@ public sealed class OwnToolHomeTests : IDisposable
         Assert.False(File.Exists(Path.Combine(Assert.Single(skills), ".mcp.json")));
     }
 
+    /// <summary>
+    /// A plugin the person's user settings enable is handed at its user-scope install folder, read in place as their own run reads it,
+    /// and never removed with the session; one switched off, installed for a project alone, or whose folder is gone is not.
+    /// </summary>
+    [Fact]
+    public void The_plugins_the_persons_settings_enable_are_handed_in_place_and_outlive_the_session()
+    {
+        PersonsPieces();
+        var tidy = Path.Combine(ToolHome, "plugins", "cache", "market", "tidy", "1.0.0");
+        var off = Path.Combine(ToolHome, "plugins", "cache", "market", "off", "1.0.0");
+        var project = Path.Combine(ToolHome, "plugins", "cache", "market", "project", "1.0.0");
+        foreach (var each in new[] { tidy, off, project }) Put(Path.Combine(each, ".claude-plugin", "plugin.json"), "{}");
+        Put(Path.Combine(ToolHome, "settings.json"), JsonSerializer.Serialize(new
+        {
+            enabledPlugins = new Dictionary<string, bool> { ["tidy@market"] = true, ["off@market"] = false, ["project@market"] = true, ["gone@market"] = true },
+        }));
+        Put(Path.Combine(ToolHome, "plugins", "installed_plugins.json"), JsonSerializer.Serialize(new
+        {
+            version = 2,
+            plugins = new Dictionary<string, object[]>
+            {
+                ["tidy@market"] = [new { scope = "user", installPath = tidy, version = "1.0.0" }],
+                ["off@market"] = [new { scope = "user", installPath = off, version = "1.0.0" }],
+                ["project@market"] = [new { scope = "project", projectPath = "somewhere", installPath = project, version = "1.0.0" }],
+                ["gone@market"] = [new { scope = "user", installPath = Path.Combine(ToolHome, "plugins", "cache", "gone"), version = "1.0.0" }],
+            },
+        }));
+
+        var (folder, plugins) = ClaudeSkills.Layout.Own(Home, "s8", Tools(OwnFamilies.Plugins));
+
+        Assert.Null(folder);
+        Assert.Equal([tidy], plugins);
+
+        var info = new ProcessStartInfo();
+        var (handed, all) = SpawnSkills.Hand(
+            ProviderRegistry.Built(), ProviderRegistry.Built().Door("claude-code"), info, Home, "s9", PluginCatalog.Load(Home), PluginServerTo.Sessions,
+            Tools(OwnFamilies.Plugins | OwnFamilies.Skills));
+        Assert.Equal(["--plugin-dir", all[0], "--plugin-dir", tidy], info.ArgumentList);
+        SpawnFiles.RemoveFolder(handed);
+        Assert.True(File.Exists(Path.Combine(tidy, ".claude-plugin", "plugin.json")));
+
+        var switched = PermissionRules.SwitchDefault(PermissionFile.Empty, OwnHomeDefaults.PluginsId, on: false);
+        Assert.False(OwnHomeDefaults.Families(switched, connectorOnly: false).HasFlag(OwnFamilies.Plugins));
+    }
+
     [Fact]
     public void Both_claude_doors_are_handed_the_own_plugin_beside_daoris_plugins_and_it_goes_with_the_session()
     {

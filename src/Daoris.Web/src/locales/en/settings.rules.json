@@ -12,6 +12,7 @@
   "settings.rules.defaultWhy.tree-guard": "{{why}}",
   "settings.rules.defaultWhy.own-skills": "{{why}}",
   "settings.rules.defaultWhy.own-servers": "{{why}}",
+  "settings.rules.defaultWhy.own-plugins": "{{why}}",
   "settings.rules.hook": "a hook on {{tools}}",
   "settings.rules.list.allow": "allow",
   "settings.rules.list.ask": "ask",

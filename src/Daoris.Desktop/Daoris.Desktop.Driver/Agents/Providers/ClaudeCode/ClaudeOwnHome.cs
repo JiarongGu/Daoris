@@ -36,20 +36,24 @@ internal static class ClaudeOwnHome
     public static string GlobalFile(OwnTools tools) =>
         tools.Environment(HomeVariable) is { Length: > 0 } named ? Path.Combine(named, ClaudeTrust.FileName) : Path.Combine(tools.UserHome, ClaudeTrust.FileName);
 
-    /// <summary>The session's <c>own</c> plugin under <paramref name="home"/>'s spawn folder; none where nothing of the person's is handed.</summary>
+    /// <summary>
+    /// The session's <c>own</c> plugin under <paramref name="home"/>'s spawn folder, then the person's enabled plugins in place
+    /// (<see cref="ClaudeOwnPlugins"/>); the folder is null where nothing was laid out in it, so a removal never reaches the person's.
+    /// </summary>
     public static (string? Folder, IReadOnlyList<string> Plugins) Write(string home, string sessionId, OwnTools tools)
     {
         var own = Place(tools);
         if (tools.Families == OwnFamilies.None || !Directory.Exists(own) && !File.Exists(GlobalFile(tools))) return (null, []);
         if (Same(tools.Session(HomeVariable) ?? Path.Combine(tools.UserHome, ".claude"), own)) return (null, []);
 
+        var installed = tools.Families.HasFlag(OwnFamilies.Plugins) ? ClaudeOwnPlugins.Enabled(own) : [];
         var folder = DaorisHome.Entry(home, HomeEntry.Spawn, $"{sessionId}.plugins");
         var plugin = Path.Combine(folder, Folder);
         if (Directory.Exists(plugin)) Directory.Delete(plugin, recursive: true);
 
         var copied = tools.Families.HasFlag(OwnFamilies.Skills) && Directory.Exists(own) && CopyPieces(own, plugin);
         var served = tools.Families.HasFlag(OwnFamilies.Servers) && ClaudeOwnServers.Write(GlobalFile(tools), plugin);
-        if (!copied && !served) return (null, []);
+        if (!copied && !served) return (null, installed);
 
         Directory.CreateDirectory(Path.Combine(plugin, ".claude-plugin"));
         JsonFile.Write(Path.Combine(plugin, ".claude-plugin", "plugin.json"), writer =>
@@ -59,7 +63,7 @@ internal static class ClaudeOwnHome
             writer.WriteString("description", "What your own tool home holds, as Daoris handed it to this session.");
             writer.WriteEndObject();
         });
-        return (folder, [plugin]);
+        return (folder, [plugin, .. installed]);
     }
 
     private static bool CopyPieces(string own, string plugin)

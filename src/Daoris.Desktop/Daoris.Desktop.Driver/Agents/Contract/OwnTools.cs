@@ -13,6 +13,9 @@ public enum OwnFamilies
 
     /// <summary>Its user-scope servers.</summary>
     Servers = 2,
+
+    /// <summary>The plugins it installed and enables.</summary>
+    Plugins = 4,
 }
 
 /// <summary>
