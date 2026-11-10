@@ -11,13 +11,14 @@ public static class FolderTurns
     /// <summary>Read and keep the start's manifest of <paramref name="record"/> in the folder at <paramref name="root"/>.</summary>
     /// <returns>What the session is told, or null where the place is not read as a folder.</returns>
     public static PlaceTold? Start(
-        string home, string workspace, string department, string root, string record, ManifestBounds? bounds = null)
+        string home, string workspace, string department, string root, string record, ManifestBounds? bounds = null,
+        PlaceExcludes? excludes = null)
     {
         if (Directory.Exists(Path.Combine(root, ".jj")) || !Directory.Exists(root)) return null;
         var store = new ManifestStore(home, workspace, department);
         var last = store.Last();
         if (last is { Kind: not PlaceKind.Folder }) return null;
-        var start = FolderManifestReader.Read(root, store.Content, last, bounds ?? ManifestBounds.Default);
+        var start = FolderManifestReader.Read(root, store.Content, last, bounds ?? ManifestBounds.Default, excludes);
         store.Keep(record, ManifestMoment.Start, start with { Own = [] });
         var outside = last is null ? [] : FolderChanges.Between(last, start).All;
         return new PlaceTold(outside, []) { Kind = PlaceKind.Folder, TooLarge = start.TooLarge };
@@ -27,7 +28,7 @@ public static class FolderTurns
     /// <returns>No path: a folder is held by its turn alone.</returns>
     public static IReadOnlyList<string> End(ManifestStore store, string record, RunManifest start)
     {
-        var end = FolderManifestReader.Read(start.Root!, store.Content, start, ManifestBounds.Default);
+        var end = FolderManifestReader.Read(start.Root!, store.Content, start, ManifestBounds.Default, PlaceExcludes.Of(start.Excludes));
         store.Keep(record, ManifestMoment.End, end with { Own = [] });
         return [];
     }

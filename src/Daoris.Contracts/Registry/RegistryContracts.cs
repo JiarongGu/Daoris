@@ -13,12 +13,14 @@ namespace Daoris.Contracts.Registry;
 /// likewise. The commit and its base are a checkout's, read by the rules of a feed's: a shared host orders declarations by them.
 /// <c>Adopted</c> is false only from a door that looked and found no manifest. <c>Lanes</c> are the words of the lanes it declares,
 /// never their paths; null is unstated and preserves the row's, as a null <c>Kind</c> (<c>git</c> or <c>folder</c>) does.
+/// <c>Excludes</c> are a folder's own globs its manifest passes by, beside its defaults: null preserves, empty clears.
 /// </summary>
 public sealed record RegisterRepository(
     string Repository, IReadOnlyList<string>? Packs, DomainRequest? Domain, string? Root,
     bool? Join, bool? ShareKnowledge, string? Workspace, string? DefaultBranch,
     string? Commit = null, DateTimeOffset? CommittedAt = null, string? Branch = null, string? Base = null,
-    bool? Adopted = null, IReadOnlyList<LaneWire>? Lanes = null, string? Kind = null) : IRoute<RegisteredResponse>
+    bool? Adopted = null, IReadOnlyList<LaneWire>? Lanes = null, string? Kind = null,
+    IReadOnlyList<string>? Excludes = null) : IRoute<RegisteredResponse>
 {
     public static string Method => "POST";
     public static string Path => "/api/registry";
