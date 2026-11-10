@@ -22,10 +22,7 @@ export type StandingConfirmationNow = {
   helpPresses: HelpPressNow[];
 };
 
-/**
- * How an Ask Daoris press stands: one run with no card is under way, done or not done; one that asked the person on a card is its
- * card's state.
- */
+/** How an Ask Daoris press stands: one run with no card under way, done or not; one asked on a card, its card's state. */
 export const HELP_PRESS_OUTCOMES = ['running', 'done', 'failed', 'waiting', 'allowed', 'refused', 'changed', 'unanswered'] as const;
 export type HelpPressOutcome = (typeof HELP_PRESS_OUTCOMES)[number];
 

@@ -7,11 +7,10 @@ namespace Daoris.Desktop;
 public sealed record HelpBeyondRead(string Session);
 
 /// <summary>
-/// What an Ask Daoris conversation looked at and did beyond its focus, the page's `bridge/helpBeyond.ts`
-/// (`docs/2026-11-11-ask-scope-ux-design.md` §4): the places its connector noted (<see cref="HelpBeyond"/>) and the presses it made this
-/// run whose place lay beyond its focus at the press (<see cref="HelpPressRecord"/>), one that asked the person on a card answered as
-/// <c>asked</c> with its card's state. The page draws one receipt under
-/// each turn from them, by time. Only what passes Daoris's own doors is listed; a shell command is never parsed.
+/// What an Ask Daoris conversation looked at and did beyond its focus, the page's `bridge/helpBeyond.ts` (`docs/2026-11-11-ask-scope-
+/// ux-design.md` §4): the places its connector noted (<see cref="HelpBeyond"/>) and the presses it made this run whose place lay beyond
+/// its focus at the press (<see cref="HelpPressRecord"/>), one asked on a card as <c>asked</c>. The page draws one receipt under each
+/// turn from them, by time. Only what passes Daoris's own doors is listed; a shell command is never parsed.
 /// </summary>
 public sealed class HelpBeyondRoutes(DriverContext context)
 {

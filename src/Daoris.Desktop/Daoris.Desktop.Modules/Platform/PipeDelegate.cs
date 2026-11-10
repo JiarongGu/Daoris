@@ -142,10 +142,7 @@ public sealed class PipeDelegate(InstancePipe pipe)
         pipe.TellDriverState();
     }
 
-    /// <summary>
-    /// The place an Ask Daoris press named, read beside its run or before its card: one that cannot be read is a press that names no
-    /// place, and the press goes on.
-    /// </summary>
+    /// <summary>The place an Ask Daoris press named, read beside its run or before its card; one that cannot be read names none.</summary>
     internal static async Task<HelpPressPlace?> ReadPlaceAsync(
         Func<IpcRequest, CancellationToken, Task<HelpPressPlace?>>? placeOf, IpcRequest request, CancellationToken ct)
     {

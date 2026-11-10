@@ -39,7 +39,6 @@ export type PipeConfirmation = {
   hold?: boolean | null;
   /** Where its terminal stands, as the pipe's code, where that is to be said; absent from a shell without it. */
   standing?: string | null;
-  /** The place an Ask Daoris press named, whether beyond its conversation's focus, and that focus; absent for any other press. */
   helpPlace?: unknown;
 };
 

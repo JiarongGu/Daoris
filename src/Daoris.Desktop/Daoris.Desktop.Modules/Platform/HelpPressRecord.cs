@@ -5,10 +5,9 @@ using Shenora.Core.Ipc;
 namespace Daoris.Desktop;
 
 /// <summary>
-/// One press Ask Daoris made this run: the route as the window words it (<paramref name="Module"/> and <paramref name="Route"/>), the
-/// conversation that pressed it, what the press named, when, and <paramref name="Outcome"/>: for one run with no card <c>running</c>,
-/// <c>done</c> or <c>failed</c>; for one that asked the person on a card (<see cref="Asked"/>) its card's state, <c>waiting</c>,
-/// <c>allowed</c>, <c>refused</c>, <c>changed</c> or <c>unanswered</c>.
+/// One press Ask Daoris made this run: the route as the window words it (<paramref name="Module"/>, <paramref name="Route"/>), its
+/// conversation, what it named, when, and <paramref name="Outcome"/>: <c>running</c>, <c>done</c> or <c>failed</c> for one run with no
+/// card; for one <see cref="Asked"/> on a card its state, <c>waiting</c>, <c>allowed</c>, <c>refused</c>, <c>changed</c> or <c>unanswered</c>.
 /// </summary>
 /// <param name="Scope">The field that named what the press acted on (<c>quest</c>, <c>ask</c>, <c>repository</c> or <c>session</c>), which a reverse press carries back.</param>
 /// <param name="Target">What the press named in that field.</param>
@@ -26,9 +25,8 @@ public sealed record HelpPressNow(
 }
 
 /// <summary>
-/// Ask Daoris's presses of this run, for the window's group in Notifications and the turns' receipts: those run with no card, and
-/// those put to the person on a card, apart. Memory alone, so a restart empties it, as the steward's acts are. The newest
-/// <see cref="Kept"/> are held.
+/// Ask Daoris's presses of this run, run with no card or asked on one, for Notifications and the turns' receipts: memory alone, so a
+/// restart empties it, as the steward's acts are. The newest <see cref="Kept"/> are held.
 /// </summary>
 public sealed class HelpPressRecord(TimeProvider clock)
 {
@@ -51,10 +49,7 @@ public sealed class HelpPressRecord(TimeProvider clock)
     /// <summary>A covered press begun on <paramref name="session"/>'s conversation: its id, for <see cref="Ended"/>.</summary>
     public string Began(IpcRequest request, string session) => Keep(request, session, Running, null, asked: false);
 
-    /// <summary>
-    /// A press <paramref name="session"/>'s conversation asked the person on a card, with the place it named where one reads: its id,
-    /// for <see cref="Answered"/>.
-    /// </summary>
+    /// <summary>A press <paramref name="session"/>'s conversation asked on a card, with the place it named: its id, for <see cref="Answered"/>.</summary>
     public string Asked(IpcRequest request, string session, HelpPressPlace? place) => Keep(request, session, Waiting, place, asked: true);
 
     /// <summary>An asked press's card ended: its state from how.</summary>

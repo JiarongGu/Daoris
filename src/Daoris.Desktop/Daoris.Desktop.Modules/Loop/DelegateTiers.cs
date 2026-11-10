@@ -21,10 +21,7 @@ internal static class DelegateTiers
         };
     }
 
-    /// <summary>
-    /// The place an Ask Daoris press named, a quest's the repository it asks, judged against its conversation's applied focus now; null
-    /// where none reads.
-    /// </summary>
+    /// <summary>The place an Ask Daoris press named, a quest's the repository it asks, judged against its conversation's applied focus now; null where none reads.</summary>
     private static async Task<HelpPressPlace?> HelpPlaceAsync(DriverLoop loop, string session, Shenora.Core.Ipc.IpcRequest request, CancellationToken ct)
     {
         if (loop.Service is not { } service) return null;

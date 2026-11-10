@@ -3,9 +3,8 @@ using Microsoft.Extensions.DependencyInjection;
 namespace Daoris.Knowledge.Mcp;
 
 /// <summary>
-/// Each answered call that named a place, noted after its tool ran (<see cref="CallPlaceFile"/>): what passes Daoris's own door is
-/// what Ask Daoris's receipt may claim, so a call its tool refused, or a filter before it, claims nothing. A search's line keeps how
-/// many its answer found where its tool said so (<see cref="CallFound"/>).
+/// Each answered call that named a place, noted after its tool ran with what it found (<see cref="CallPlaceFile"/>, <see cref="CallFound"/>):
+/// what passes Daoris's own door is what Ask Daoris's receipt may claim, so a call its tool refused, or a filter before it, claims nothing.
 /// </summary>
 public static class CallPlaceFilter
 {

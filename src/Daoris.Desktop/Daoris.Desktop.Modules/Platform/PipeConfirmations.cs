@@ -24,10 +24,9 @@ public sealed record PipeConfirmationField(string Name, string Type, string Valu
 /// <see cref="ShownAt"/> is when a window first said its card is in front of the person, null until then; it moves no
 /// clock. <see cref="Expires"/> is always null: a terminal's press waits until the person answers, and the field
 /// stays for the page's card, which draws the service door's presses by the same shape. <see cref="Named"/> is the values its
-/// sentence names by role (<see cref="PipeWording"/>), a field added beside <see cref="Fields"/>, which still holds every
-/// value. <see cref="WaitedOn"/> is whether a terminal still waits on its line for it;
-/// <see cref="Checking"/> that its Confirm is being judged against the grounds it is asked on, its buttons replaced while it
-/// is; <see cref="CheckWithin"/> the longest that judgement may take, in milliseconds, which the page's Confirm waits for.
+/// sentence names by role (<see cref="PipeWording"/>), beside <see cref="Fields"/>, which holds every value. <see cref="WaitedOn"/> is
+/// whether a terminal still waits on its line for it; <see cref="Checking"/> that its Confirm is being judged against the grounds it is
+/// asked on, its buttons replaced meanwhile; <see cref="CheckWithin"/> the longest that judgement may take, in milliseconds.
 /// <see cref="Keyed"/> that it carries a key, so it is not kept across a restart; <see cref="Restored"/> that it
 /// is asked before Daoris restarted and waits again from its record, its <see cref="Asker"/> the record's word, never the system's.
 /// <see cref="Hold"/> that its Confirm also lets its terminal speak for the person in the conversation until it lets go.
@@ -67,10 +66,9 @@ public enum PipeConfirmationEnd
 }
 
 /// <summary>
-/// What the pipe already made of a press it asks: its id, minted before its record is
-/// written; when it is asked and shown, where it is restored from its record; whether it carries a key; whether it is restored; and
-/// whether a terminal waits on its line for it; whether its Confirm also makes a hold; what its route's view says it means; and the
-/// place an Ask Daoris press named.
+/// What the pipe already made of a press it asks: its id, minted before its record is written; when it is asked and shown, where it
+/// is restored from its record; whether it carries a key; whether it is restored; whether a terminal waits on its line for it; whether
+/// its Confirm also makes a hold; what its route's view says it means; and the place an Ask Daoris press named.
 /// </summary>
 public sealed record PipeAsAsked(
     string Id, DateTimeOffset? Asked = null, DateTimeOffset? ShownAt = null, bool Keyed = false, bool Restored = false, bool WaitedOn = true,

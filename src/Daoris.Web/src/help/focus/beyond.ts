@@ -1,10 +1,7 @@
 import type { Place } from '../focus';
 import type { HelpPressOutcome } from '../../person/standing';
 
-/**
- * What one Ask Daoris turn did beyond its conversation's focus, as Daoris's doors saw it (the driver's `HelpBeyondEntry`): `asked` is a
- * press it put to the person on a card, apart from a `press` that ran.
- */
+/** What one Ask Daoris turn did beyond its focus, as Daoris's doors saw it (the driver's `HelpBeyondEntry`); `asked` is one put on a card. */
 export type BeyondEntry = {
   at: string;
   act: 'search' | 'read' | 'propose' | 'press' | 'asked';

@@ -106,7 +106,6 @@ const LAND: Confirmation = {
 export const PlanDoor: Story = { args: { waiting: [LAND], onOpenPlan: () => {} } };
 export const PlanDoorChinese: Story = { args: { waiting: [LAND], onOpenPlan: () => {} }, decorators: [chinese] };
 
-/** Ask Daoris's restricted press in a workspace outside its conversation's focus, its card naming both. */
 const BEYOND: Confirmation = {
   ...STOP, id: 'c9', asker: { process: null, pid: 77, session: 'h1', help: true },
   helpPlace: { place: { kind: 'workspace', workspace: 'Work' }, beyond: true, focus: { kind: 'workspace', workspace: 'Games' } },

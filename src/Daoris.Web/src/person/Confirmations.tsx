@@ -59,7 +59,6 @@ export type Confirmation = {
   hold?: boolean;
   /** The pipe's code for where its terminal stands where that is to be said, as `untold`; null or absent otherwise. */
   standing?: string | null;
-  /** The place an Ask Daoris press named and its conversation's focus; null or absent for any other press. */
   helpPlace?: HelpCardPlace | null;
   view?: PressView | null;
 };

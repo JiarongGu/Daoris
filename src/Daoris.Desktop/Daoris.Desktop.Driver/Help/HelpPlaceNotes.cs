@@ -3,10 +3,7 @@ using System.Text.RegularExpressions;
 
 namespace Daoris.Driver;
 
-/// <summary>
-/// One call an Ask Daoris connector noted as naming a place: when, what it did, the workspace (or <c>all</c>) and the repository it
-/// named, what it named of them, and how many a search's answer found where its tool said so.
-/// </summary>
+/// <summary>One call an Ask Daoris connector noted as naming a place: when, what it did, the workspace (or <c>all</c>) and repository it named, what of them, and how many a search found.</summary>
 public sealed record HelpPlaceNote(DateTimeOffset At, string Act, string? Workspace, string? Repository, string? What, int? Found = null);
 
 /// <summary>
