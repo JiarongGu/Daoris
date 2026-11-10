@@ -10,7 +10,7 @@ internal sealed class PlaceHome(IRunWiring wiring) : IRunStage
 {
     public ValueTask<StartRun?> RunAsync(RunRound run, CancellationToken ct) =>
         ValueTask.FromResult(
-            wiring.Context.Config.OpensOwnTree(run.Quest.To) || run.Start.Root is not { } root
+            run.Start.Isolate is not null || run.Start.Root is not { } root
                 || PlaceHomeMarker.Claim(wiring.Context.Home, root, run.Quest.To) is not { } refused
                 ? null
                 : run.Hold(refused));

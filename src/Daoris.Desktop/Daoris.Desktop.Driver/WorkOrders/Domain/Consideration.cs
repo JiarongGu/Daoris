@@ -9,6 +9,12 @@ public sealed record Consideration(
     QuestView Quest, StartVerdict Verdict, string Reason, string? Root = null, string? Workspace = null) : IPlannedStart
 {
     /// <summary>
+    /// The isolate step the start was planned under, which the start performs (a tree of its own) and carries, so a save between the plan
+    /// and the start never changes where it works; null where its place's workflow sets nothing apart and it works in place.
+    /// </summary>
+    public IsolateStep? Isolate { get; init; }
+
+    /// <summary>
     /// For a start that RESUMES a waiting quest: the session that asked and waited, whose tree the resume carries on in. Null for
     /// every first start.
     /// </summary>

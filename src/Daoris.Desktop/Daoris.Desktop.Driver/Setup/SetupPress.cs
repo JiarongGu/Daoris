@@ -51,7 +51,7 @@ public static class SetupPress
             Builds = builds,
             Alone = !config.Drivable.Contains(row.Repository, StringComparer.OrdinalIgnoreCase),
         };
-        var refusals = ConfigurationRefusals(config, unadopted, row).ToList();
+        var refusals = ConfigurationRefusals(config, unadopted, row, world.IsolationOf(config, row) is not null).ToList();
         if (row.Root is null) return plan with { Refusals = refusals };
 
         var line = await world.ReadLineAsync(row, config, ct).ConfigureAwait(false);
@@ -132,7 +132,7 @@ public static class SetupPress
             Alone =!config.Drivable.Contains(row.Repository, StringComparer.OrdinalIgnoreCase),
             Case = SetupCase.Reconcile,
         };
-        var refusals = ConfigurationRefusals(config, unadopted, row).ToList();
+        var refusals = ConfigurationRefusals(config, unadopted, row, world.IsolationOf(config, row) is not null).ToList();
         if (row.Root is null) return plan with { Refusals = refusals };
 
         var line = await world.ReadLineAsync(row, config, ct).ConfigureAwait(false);
@@ -194,7 +194,8 @@ public static class SetupPress
     /// where the repository is not driven is admitted alone (<see cref="SetupPlan.Alone"/>). Read by the press and by a
     /// place's plan over the configuration it would leave, so the two refuse alike.
     /// </summary>
-    public static IReadOnlyList<SetupRefusal> ConfigurationRefusals(DriverConfig config, bool unadopted, RepoView row)
+    /// <param name="apart">Whether the workflow the repository follows sets its sessions apart, each in a tree of its own.</param>
+    public static IReadOnlyList<SetupRefusal> ConfigurationRefusals(DriverConfig config, bool unadopted, RepoView row, bool apart)
     {
         if (row.Root is null)
         {
@@ -216,13 +217,13 @@ public static class SetupPress
                 + "which rides the pipe. Choose an ACP agent for Build in Agents → Roles, or with `daoris role set build \"<agent>\"`."));
         }
 
-        // A tree per session is the repository's own, on its Setup → Driving.
-        if (!config.OpensOwnTree(row.Repository))
+        // A tree per session is the repository's workflow's: its `isolate` step.
+        if (!apart)
         {
             refusals.Add(new(SetupRefusals.NoOwnTree,
                 $"`{row.Repository}`'s sessions run in its checkout, not a tree of their own, and a set-up rewrites what "
-                + "every later session there reads, so it lands on a branch of its own. Give it trees under Repositories → "
-                + $"the repository's page → Setup → Driving, or with `daoris place trees {row.Repository} on`."));
+                + "every later session there reads, so it lands on a branch of its own. Start the workflow it follows with "
+                + "*Work apart* (its `isolate` step) in the workflow's editor, or choose a set-up preset whose workflow holds one."));
         }
 
         return refusals;

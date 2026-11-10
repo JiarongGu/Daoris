@@ -16,6 +16,15 @@ public sealed record Snapshot(
     public IKnowledgeSnapshot Within(IReadOnlyList<QuestView> quests, IReadOnlyList<RepoView> repositories, IReadOnlyList<SessionView> active) =>
         this with { Quests = quests, Repositories = repositories, Active = active };
 
+    /// <summary>
+    /// The <c>isolate</c> step of each repository whose workflow sets its work apart (<see cref="PlaceIsolates"/>), read by the look; a
+    /// repository absent runs one session at a time in its own place.
+    /// </summary>
+    public IReadOnlyDictionary<string, IsolateStep> Isolations { get; init; } = new Dictionary<string, IsolateStep>(StringComparer.OrdinalIgnoreCase);
+
+    /// <summary>The isolate step <paramref name="repository"/>'s work starts under, or null where it works in place.</summary>
+    public IsolateStep? IsolationOf(string repository) => Isolations.GetValueOrDefault(repository);
+
     public IReadOnlyDictionary<string, int> Strikes { get; init; } =
         Strikes ?? new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
 

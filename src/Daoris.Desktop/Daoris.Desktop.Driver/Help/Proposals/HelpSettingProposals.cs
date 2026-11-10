@@ -104,10 +104,7 @@ internal sealed class HelpSettingProposals : IHelpProposalKind
                 planned = ($"Resume `{target}`.", $"daoris place resume {target}", c => c.WithHold(target!, false));
                 break;
             case "trees":
-                planned = value == "on"
-                    ? ($"Sessions in `{target}` open their own tree.", $"daoris place trees {target} on", c => c.WithTrees(target!, true))
-                    : ($"Sessions in `{target}` work in its checkout.", $"daoris place trees {target} off", c => c.WithTrees(target!, false));
-                break;
+                return Refused(DriverChoicesCommand.TreesMoved, "", "");
             case "line":
             {
                 var branch = value == "--clear" ? null : value;

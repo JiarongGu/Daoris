@@ -27,7 +27,6 @@ internal static class DriverConfigReader
             Cap: Math.Max(1, Int(root, "cap") ?? empty.Cap),
             PollSeconds: Math.Max(1, Int(root, "pollSeconds") ?? empty.PollSeconds),
             Commands: CommandMap(root),
-            Trees: Json.Strings(root,"trees"),
             // Absent means ON: every machine that already has a driver.json predates this
             // field, and reading silence as "off" would ship the feature switched off everywhere it
             // matters most — a machine that has been driving for a while.

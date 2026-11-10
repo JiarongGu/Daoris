@@ -50,6 +50,7 @@ public static class HomeMigration
         new StandingGrantStep(),
         new SupervisorStep(),
         new AbandonedRunsStep(),
+        new PlaceWorkStep(),
     ];
 
 

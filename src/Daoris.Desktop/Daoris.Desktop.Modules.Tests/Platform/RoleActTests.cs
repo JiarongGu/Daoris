@@ -468,6 +468,8 @@ public sealed class RoleActTests : IDisposable
 
         public bool OwnTree(string? tree) => tree is not null && Root.Length > 0 && tree.StartsWith(System.IO.Path.Combine(Root, "trees"), StringComparison.OrdinalIgnoreCase);
 
+        public Task<bool> ApartAsync(string repository, CancellationToken ct) => Task.FromResult(Config().OpensOwnTree(repository));
+
         public bool Stoppable { get; set; } = true;
 
         public bool StopHere(string id, Noted note)

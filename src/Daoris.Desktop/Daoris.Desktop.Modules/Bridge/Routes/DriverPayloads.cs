@@ -7,7 +7,6 @@ public sealed record SetDrivable(string Repository, bool Drivable);
 
 public sealed record SetHold(string Repository, bool Held);
 
-public sealed record SetTrees(string Repository, bool OwnTree);
 
 public sealed record SetCheckoutWrites(string Repository, bool Allow);
 

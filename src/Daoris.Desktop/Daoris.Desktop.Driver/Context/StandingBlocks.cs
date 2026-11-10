@@ -30,12 +30,14 @@ public static class StandingBlocks
     /// <paramref name="facts"/> with this machine's for its repository and <paramref name="workspace"/>: the routing standing, for a
     /// <paramref name="work"/> that may publish (<see cref="RoutingStanding.Told"/>), and the person's choices.
     /// </summary>
-    public static StandingFacts OnMachine(StandingFacts facts, string work, DriverConfig config, IReadOnlyList<RepoView> registry, string? workspace)
+    /// <param name="apart">Whether the work runs apart from its place's other sessions, in a tree of its own, so its routing is open.</param>
+    public static StandingFacts OnMachine(
+        StandingFacts facts, string work, DriverConfig config, IReadOnlyList<RepoView> registry, string? workspace, bool apart = false)
     {
         var known = facts.Repository is { } repository
             ? registry.FirstOrDefault(each => string.Equals(each.Repository, repository, StringComparison.OrdinalIgnoreCase))
             : null;
-        var routing = RoutingStanding.Told(work, config, known);
+        var routing = RoutingStanding.Told(work, config, known, apart);
         return facts with
         {
             Workspace = workspace,

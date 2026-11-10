@@ -197,7 +197,8 @@ public static class PlaceProjection
             if (driven && !checkout) needs.Add(new PlaceNeed("no-checkout"));
             if (driven && !known.Adopted) needs.Add(new PlaceNeed("not-adopted"));
             return new PlaceRow(
-                workspace, known.Repository, driven, Named(config.Holds, known.Repository), config.OpensOwnTree(known.Repository), checkout, known.Adopted,
+                workspace, known.Repository, driven, Named(config.Holds, known.Repository),
+                workflows is not null && PlaceIsolates.Of(workflows, config, known.Repository, known.Workspace) is not null, checkout, known.Adopted,
                 ValuesOf(known.Repository, workspace, PlaceSource.RepositoryLevel), works, needs, AdoptionOf(known, quests));
         }
 

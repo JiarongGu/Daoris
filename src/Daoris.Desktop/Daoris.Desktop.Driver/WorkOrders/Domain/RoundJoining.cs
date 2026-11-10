@@ -13,7 +13,7 @@ internal sealed class RoundJoining(PlanRound round)
     {
         var snapshot = round.Snapshot;
         var quest = start.Quest;
-        if (!round.Config.OpensOwnTree(quest.To) || EntryParts.KeyOf(quest, snapshot) is not { } key) return start;
+        if (start.Isolate is null || EntryParts.KeyOf(quest, snapshot) is not { } key) return start;
         var parts = EntryParts.Earlier(key, quest, snapshot);
         if (parts.Count == 0) return start;
 

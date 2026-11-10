@@ -48,13 +48,7 @@ internal static class DriverChoicesList
         foreach (var repository in choices.Drivable)
         {
             var held = FindName(choices.Holds, repository) is not null;
-            var trees = FindName(choices.Trees, repository) is not null;
-            Say($"  drivable   {repository}{(held ? "  (held by you — `daoris place resume` releases it)" : "")}{(trees ? "  (sessions open their own tree — D51)" : "")}");
-        }
-
-        foreach (var repository in choices.Trees.Where(each => FindName(choices.Drivable, each) is null))
-        {
-            Say($"  trees      {repository}  (sessions there open their own tree when anything spawns one)");
+            Say($"  drivable   {repository}{(held ? "  (held by you — `daoris place resume` releases it)" : "")}");
         }
 
         foreach (var (repository, branch) in choices.Lines) Say($"  line       {repository}  {branch}");
