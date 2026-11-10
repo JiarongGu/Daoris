@@ -93,8 +93,11 @@ executable, started with a browser argument, is Daoris's own browser, which sess
     `Daoris-Person` to an address of this machine, never to a remote (`PersonHeader`), so the host enforces it. (from D156)
 12. The page asks `PERSON_KEY` and sends `Daoris-Person` on writes only. No session ever holds the key. `PERSON_KEY` answers
     the proved key, and none for a host the shell adopted or whose proof failed; the window says so, and the host's own held asks
-    are then not read into *Notifications* by the window. A terminal's verb that posts a person's door straight to the host
-    carries no key and is refused there until the verbs present one. (from D156)
+    are then not read into *Notifications* by the window. A terminal's verb never posts a person's door to the host itself: where
+    Daoris runs it is the person's press of a `Person` route (rule 14), whose in-process service client holds the key (a quest's
+    accept, reopen, go-on, review, workflow, done and delete, an ask's workflow and review, a repository's retire, wire and
+    import, a plugin's replace, a run's node acts including Accept, a git identity or access change); with none running the verb
+    acts alone or refuses as before. (from D156, D253)
 13. Reads are open. An agent's doors are judged as an agent's. The person's doors need the key. An unclassed write is
     refused. A refusal is a 403 with a code, never a 500. (from D156)
 14. A terminal's press of a `Person` route and a request the host holds for the person are one request row in

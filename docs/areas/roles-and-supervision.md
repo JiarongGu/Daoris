@@ -423,7 +423,8 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they start wi
 
 55. Ask Daoris answers from the records, takes the person to a place (`go`), starts work as an ask the intake turns into
     quests, or proposes a change. A quest's or session's own acts stay in its own conversation: accepting a departure and
-    handing a landed branch to a landing plugin are the person's own presses, never proposed. (from D161, D193, D233)
+    handing a landed branch to a landing plugin are the person's own presses, never proposed; a run's Accept has a terminal
+    verb (`daoris workflow accept <run> <node>`), still the person's press. (from D161, D193, D233, D253)
 56. In restricted mode, the default, it reads and proposes. Each proposal is a kind under `Help/Proposals/`, judged by
     its route's own code against the machine now, and applied only by the person's *Apply* through that route. (from D89, D170)
 57. Restricted mode adds the access the person configures: housekeeping, chosen settings (notify, language, cap, cool-off
