@@ -567,7 +567,7 @@ internal sealed class LimitMove(IExecutorWiring wiring) : IExecutor
             // Its history names no earlier conversation; its brief still says which it continues.
         }
 
-        // The new part goes on about what the one it carries was about, in the same room.
+        // The new part is about what the one it carries is about, in the same room.
         var roomIn = KnowledgeRoomPaths.GoesOnIn(context.Home, prior.Workspace, prior.Tree);
         help.CarryFocus(prior.Session, id, roomIn);
         var (room, reads) = await help.HelpRoomNowAsync(id, roomIn, ct).ConfigureAwait(false);

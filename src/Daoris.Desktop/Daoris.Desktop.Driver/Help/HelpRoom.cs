@@ -128,7 +128,7 @@ public static class HelpRoom
         return room;
     }
 
-    /// <summary>The focus the room of <paramref name="workspace"/> was last written for by this process; null for its home's own.</summary>
+    /// <summary>The focus this process last wrote the room of <paramref name="workspace"/> for; null for its home's own.</summary>
     internal static HelpFocus? FocusWritten(string home, string? workspace) =>
         Said.GetValueOrDefault(Path.GetFullPath(PathOf(home, workspace)))?.Focus;
 

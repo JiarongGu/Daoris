@@ -3,7 +3,7 @@ using Daoris.Desktop.Driver.Tests;
 namespace Daoris.Driver.Tests;
 
 /// <summary>
-/// A start's receipt names the focus its room was written for and where its connector starts (`docs/2026-11-11-ask-scope-ux-design.md`
+/// A start's receipt names the focus its room is written for and where its connector starts (`docs/2026-11-11-ask-scope-ux-design.md`
 /// §6, <c>HELP_WIRED</c>): the focus's workspace, a repository's own, or <c>all</c> for this machine.
 /// </summary>
 public sealed class HelpWiredFocusTests : IDisposable

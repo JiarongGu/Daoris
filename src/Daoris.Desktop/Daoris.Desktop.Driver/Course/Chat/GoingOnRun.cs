@@ -304,7 +304,7 @@ internal sealed class GoingOnRun(IExecutorWiring wiring, ChatGoOn owner)
         var words = Continuations.HandedAfterMove(record.Waiting, now);
         if (words.Count == 0) return await owner.TakenBackAsync(record, ct).ConfigureAwait(false);
         // The room it ran in, its workspace's, or the machine's where it started there before each workspace had its own; the focus
-        // these words take, its room's own where none was chosen, a change told in one line ahead of them.
+        // these words take, its room's own where none is chosen, a change told in one line ahead of them.
         var roomIn = KnowledgeRoomPaths.GoesOnIn(_context.Home, record.Workspace, record.Tree);
         var ask = new ResumeAsk(
             kept.Conversation, _help.TakeFocus(sessionId, roomIn, words, await FocusRegistryAsync(ct).ConfigureAwait(false)),

@@ -15,15 +15,10 @@ namespace Daoris.Driver;
 /// </remarks>
 internal static class HelpRoomScope
 {
-    /// <summary>
-    /// The facts of <paramref name="whole"/> a room written for <paramref name="place"/> reads: the whole machine for this machine and
-    /// for <c>default</c>; a workspace's own, with the machine's kept whole; a repository's workspace's, whose own the room's
-    /// <i>In focus</i> gathers first (<see cref="HelpRoomInFocus"/>).
-    /// </summary>
+    /// <summary>The facts a room for <paramref name="place"/> reads: the whole machine's, else its workspace's, the machine's kept whole.</summary>
     public static HelpMachineSources Project(HelpMachineSources whole, HelpFocus place) =>
         HelpRoom.ScopeOf(place.Workspace) is { } workspace ? Project(whole, workspace) : whole;
 
-    /// <summary>The facts of <paramref name="whole"/> that are <paramref name="workspace"/>'s, with the machine's kept whole.</summary>
     private static HelpMachineSources Project(HelpMachineSources whole, string workspace)
     {
         bool Ours(string? circle) => string.Equals(RemoteTarget.Workspace(circle), workspace, StringComparison.OrdinalIgnoreCase);

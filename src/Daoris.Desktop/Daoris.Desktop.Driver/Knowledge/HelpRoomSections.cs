@@ -27,7 +27,6 @@ internal static class HelpRoomSections
     public static readonly IReadOnlyList<IHelpRoomSection> All =
     [
         new HelpRoomIntro(),
-        // A repository's own, first, where the conversation is about one.
         new HelpRoomInFocus(),
         new HelpRoomMayDo(),
         new HelpRoomMayPropose(),

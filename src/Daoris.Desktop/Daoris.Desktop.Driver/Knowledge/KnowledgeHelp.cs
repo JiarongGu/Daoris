@@ -6,7 +6,6 @@ internal interface IHelpMachineSources
     HelpMachine Describe(IHelpRoomSection section, HelpMachine machine);
     HelpMachine Describe(string? workspace);
 
-    /// <summary>The room of <paramref name="home"/> written for <paramref name="focus"/> (<see cref="HelpMachine.Within(string?, HelpFocus?)"/>).</summary>
     HelpMachine Describe(string? home, HelpFocus focus) =>
         Describe(KnowledgeHelp.Current.ScopeOf(focus.Workspace)) with { Focus = focus, Home = home };
 }

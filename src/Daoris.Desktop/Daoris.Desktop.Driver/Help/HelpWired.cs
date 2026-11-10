@@ -90,7 +90,7 @@ public sealed record HelpReceipt
     /// </summary>
     public IReadOnlyList<string> Settings { get; init; } = [];
 
-    /// <summary>The focus its room was written for; null on a start before.</summary>
+    /// <summary>The focus its room is written for; null on a start before.</summary>
     public HelpFocus? Focus { get; init; }
 
     /// <summary>Where its connector starts: the focus's workspace, or <see cref="HelpWired.All"/> for this machine; null on a start before.</summary>

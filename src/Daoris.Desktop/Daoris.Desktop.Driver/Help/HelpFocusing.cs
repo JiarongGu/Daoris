@@ -16,10 +16,7 @@ public sealed record HelpFocusAnswer(string Session, HelpFocus? Focus, HelpFocus
         : FocusNext is { } next ? $"help: {Session}'s focus becomes {next.Named} with its next words; it is {Focus!.Named} until then."
         : $"help: {Session}'s focus is {Focus!.Named}.";
 
-    /// <summary>
-    /// Whether its agent, opened ahead of any words under a room written for another place, was ended for the choice, so the conversation
-    /// is opened ahead again under the focus chosen (<see cref="HelpFocusAhead"/>).
-    /// </summary>
+    /// <summary>Whether its agent, opened ahead under another place, ends for the choice, so the page opens it ahead again (<see cref="HelpFocusAhead"/>).</summary>
     public bool Reopens { get; init; }
 }
 
