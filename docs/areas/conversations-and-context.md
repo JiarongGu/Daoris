@@ -241,11 +241,17 @@ of everything it handed, section by section.
     repository's own first under *In focus*; its first lines name the focus and that it limits nothing, and its tools start at
     the focus's workspace (`all` for this machine), which the start's receipt names beside the focus. It reads another
     workspace by naming it, or every workspace with `all`, and proposes, inspects, reads checkouts and sets settings in any
-    workspace's repositories, each judged by its own judge and none refused for the workspace it names. Chosen before its
-    first words the focus is its first, and an agent opened ahead under another place ends at once so the page opens it ahead
-    again (`reopens`); chosen after, it waits for the next words: a running agent ends at its turn's end, or now if idle, as for
-    an access change, and the words resume it under the new focus, a gone place widened, the agent told in one line ahead of
-    them. (from D89, D170, D183, D158, D253)
+    workspace's repositories, each judged by its own judge and none refused for the workspace it names. The focus is chosen
+    in the chip that leads the panel's composer bar, a picker of the window's place, *Recent*, this machine and the other
+    workspaces with their repositories (`help/focus/FocusPicker.tsx`), and named under the conversation's title as a
+    breadcrumb marking a focus outside the window's workspace, a home that is not the window's, a change waiting and a place
+    gone (`FocusCrumb.tsx`). A choice is sent at once (`HELP_FOCUS`). Chosen before its first words the focus is its first,
+    carried by the start where none was opened ahead, and an agent opened ahead under another place ends at once so the page
+    opens it ahead again (`reopens`); chosen after, it waits for the next words: a running agent ends at its turn's end, or
+    now if idle, as for an access change, and the words resume it under the new focus, a gone place widened, the agent told
+    in one line ahead of them. A new conversation takes the window's workspace, this machine in a window on every workspace,
+    which asks nothing; one from *New conversation* in the head takes the shown one's applied focus. A conversation of
+    another home goes on where it is shown, the window unmoved. (from D89, D170, D183, D158, D253)
 43. Its conversations stay on this machine. Only those the person spoke in or named are listed, pinned first, then newest,
     every workspace's, one workspace's, or those about a place: homed there or inside it, or that held a focus there.
     They resume by kept id. A briefed continuation stays one history row, a replacement of its refused start included. (from D158, D189)

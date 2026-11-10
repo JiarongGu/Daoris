@@ -67,8 +67,10 @@ export function useAskConversation(
 ) {
   const { here, every, scoped, registered, chosen, setChosen, shown, live, picked, helpSessions, readied, t, setGoingOn, sessions, help, setCleared, hereNow, startIn, mine, newest, shownIn, i18n } = useHelpPlace();
   const { goesOn, setHistoryOpen, setOpenedRow, shownListing, setHistoryRefusal, rowOf, listing, search, historyScope, historyRefusal, historyOpen, setSearch, known, shownRow, readOnly, checking } = useHelpHistory({ here: every ? null : here, registered, helper, chosen, setChosen, shown, live, picked });
-  // The focus a start carries, read at its press from the focus hook below, which needs the opening round this one keeps.
+  // The focus a start carries, read at its press from the focus hook below, which needs the opening round this one keeps; and
+  // where a focus handed in with a draft goes.
   const startFocus = useRef<() => Place | undefined>(() => undefined);
+  const takeFocus = useRef<(focus: Place, into: string | null) => void>(() => {});
   // Where the person left the list from: the row they opened and the list's scroll, put back as they return; and
   // what is put back the next time the list opens.
   const [left, setLeft] = useState<{ row: string; scroll: number } | null>(null);
@@ -171,7 +173,7 @@ export function useAskConversation(
     setRefusal(why);
     putBack(text, files);
   };
-  const { onNew, closeHistory, openRow, beginFrom, setRound, onGoOnBrief, joining, onSend, choose, choosing, setChoosing, openHistory } = useHelpSend({ where, sends, setSent, send, giveBack, t, setGoingOn, sessions, shown, sent, turns, live, helpSessions, help, setCleared, hereNow, setChosen, setFirstWords, setSpoken, firstWords, goesOn, setRefusal, startedFrom, setStartedFrom, here, putBack, drafts, setDrafts, start, startIn, startFocus: () => startFocus.current(), helper, mine, readiedLive, readying, opening, editDraft, onOpened, newest, setHistoryOpen, setFocusBox, end, setLeft, setOpenedRow, shownListing, setFocusHead, setHistoryRefusal, setRestore, left, rowOf, startFrom, setFocusWhenListed });
+  const { onNew, closeHistory, openRow, beginFrom, setRound, onGoOnBrief, joining, onSend, choose, choosing, setChoosing, openHistory } = useHelpSend({ where, sends, setSent, send, giveBack, t, setGoingOn, sessions, shown, sent, turns, live, helpSessions, help, setCleared, hereNow, setChosen, setFirstWords, setSpoken, firstWords, goesOn, setRefusal, startedFrom, setStartedFrom, here, putBack, drafts, setDrafts, start, startIn, startFocus: () => startFocus.current(), takeFocus: (focus, into) => takeFocus.current(focus, into), helper, mine, readiedLive, readying, opening, editDraft, onOpened, newest, setHistoryOpen, setFocusBox, end, setLeft, setOpenedRow, shownListing, setFocusHead, setHistoryRefusal, setRestore, left, rowOf, startFrom, setFocusWhenListed });
   const history = (
     <AskHistory
       rows={shownListing?.conversations ?? []}
@@ -222,6 +224,7 @@ export function useAskConversation(
     shown, known, shownIn, here, window: every ? null : scoped ?? here ?? null, readied: readiedLive ? readied : null, setRound, onGo: onGo ?? (() => {}),
   });
   startFocus.current = focusing.startFocus;
+  takeFocus.current = focusing.take;
 
   const earlierParts = (shownRow?.parts ?? []).filter((id) => id !== shown?.id);
   const conversation = shown ? (<>

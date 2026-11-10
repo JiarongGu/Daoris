@@ -17,7 +17,7 @@ import { type WordsAnswer, type SessionTurns } from '../../bridge/sessions/conve
 import { type TFunction } from 'i18next';
 import { type Session } from '../../data/api';
 
-export function useHelpSend({ where, sends, setSent, send, giveBack, t, setGoingOn, sessions, shown, sent, turns, live, helpSessions, help, setCleared, hereNow, setChosen, setFirstWords, setSpoken, firstWords, goesOn, setRefusal, startedFrom, setStartedFrom, here, putBack, drafts, setDrafts, start, startIn, startFocus, helper, mine, readiedLive, readying, opening, editDraft, onOpened, newest, setHistoryOpen, setFocusBox, end, setLeft, setOpenedRow, shownListing, setFocusHead, setHistoryRefusal, setRestore, left, rowOf, startFrom, setFocusWhenListed }: {
+export function useHelpSend({ where, sends, setSent, send, giveBack, t, setGoingOn, sessions, shown, sent, turns, live, helpSessions, help, setCleared, hereNow, setChosen, setFirstWords, setSpoken, firstWords, goesOn, setRefusal, startedFrom, setStartedFrom, here, putBack, drafts, setDrafts, start, startIn, startFocus, takeFocus, helper, mine, readiedLive, readying, opening, editDraft, onOpened, newest, setHistoryOpen, setFocusBox, end, setLeft, setOpenedRow, shownListing, setFocusHead, setHistoryRefusal, setRestore, left, rowOf, startFrom, setFocusWhenListed }: {
   where: HelpWhere | undefined;
   sends: React.RefObject<number>;
   setSent: React.Dispatch<React.SetStateAction<Sent[]>>;
@@ -50,6 +50,8 @@ export function useHelpSend({ where, sends, setSent, send, giveBack, t, setGoing
   startIn: (workspace: string) => string | undefined;
   /** The focus a new conversation starts with, where the person chose one before its first words. */
   startFocus: () => Place | undefined;
+  /** A focus handed in with a draft: for the conversation `into`, or the new one where none. */
+  takeFocus: (focus: Place, into: string | null) => void;
   helper: string | null;
   mine: Session[];
   readiedLive: boolean;
@@ -364,6 +366,8 @@ export function useHelpSend({ where, sends, setSent, send, giveBack, t, setGoing
       // its own words (the composer's hand-over) is kept apart from them by one.
       const apart = /\n\s*$/.test(opening.text) ? '' : '\n\n';
       editDraft(key, (was) => ({ ...was, text: [opening.text, was.text.trim()].filter(Boolean).join(apart) }));
+      // The focus its door chose: the new conversation's first, or a change the running one's next words take.
+      if (opening.focus) takeFocus(opening.focus, key === NEW_DRAFT ? null : key);
     } else onSend(opening.text, []);
     // From the effect, never the render: the holder clears what is sent.
     onOpened?.();

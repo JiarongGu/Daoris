@@ -435,19 +435,20 @@ describe('a new conversation', () => {
     await userEvent.click(await screen.findByRole('option', { name: /game/ }));
     await userEvent.click(screen.getByRole('button', { name: 'Make it a task with Daoris…' }));
 
-    expect(onMakeTask).toHaveBeenCalledWith('In game:\n\nFix the build');
+    // The repository goes as the conversation's focus, the words as typed.
+    expect(onMakeTask).toHaveBeenCalledWith('Fix the build', { kind: 'repository', workspace: 'aurora', repository: 'game' });
     expect(onStart).not.toHaveBeenCalled();
     expect(onDraft).not.toHaveBeenCalled();
     expect(screen.getByRole('textbox', { name: 'What would you like to work on?' })).toHaveValue('Fix the build');
   });
 
-  it('offers the quiet press in Chinese, naming the repository with its glossary word', async () => {
+  it('offers the quiet press in Chinese, the words as typed', async () => {
     await i18n.changeLanguage('zh');
     const onMakeTask = vi.fn();
     show({ onMakeTask, draft: '修复构建' });
     await userEvent.click(screen.getByRole('button', { name: '请道衍把它整理成任务…' }));
 
-    expect(onMakeTask).toHaveBeenCalledWith('在仓库 engine 中：\n\n修复构建');
+    expect(onMakeTask).toHaveBeenCalledWith('修复构建', { kind: 'repository', workspace: 'aurora', repository: 'engine' });
   });
 
   it('offers no such press where nothing hands it on', () => {

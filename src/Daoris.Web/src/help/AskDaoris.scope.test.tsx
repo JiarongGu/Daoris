@@ -31,6 +31,7 @@ import i18n from '../locales/i18n';
 import { useStateHub } from '../bridge/state/stateHub';
 import { WorkspaceScopeProvider, useScope } from '../data/scope';
 import { AskDaoris } from './AskDaoris';
+import type { AskOpening } from './ask/askTypes';
 
 type Payload = Record<string, unknown>;
 type Start = { sessionId: string | null; message: string };
@@ -105,7 +106,7 @@ function Window() {
   );
 }
 
-function show(workspace: string | null) {
+function show(workspace: string | null, opening?: AskOpening) {
   const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   return render(
     <QueryClientProvider client={client}>
@@ -113,7 +114,7 @@ function show(workspace: string | null) {
       <WorkspaceScopeProvider initial={workspace}>
         <Window />
         <Tooltip.Provider>
-          <AskDaoris onGo={vi.fn()} onClose={vi.fn()} />
+          <AskDaoris onGo={vi.fn()} onClose={vi.fn()} opening={opening ?? null} />
         </Tooltip.Provider>
       </WorkspaceScopeProvider>
     </QueryClientProvider>,
@@ -206,6 +207,18 @@ describe('Ask Daoris follows the window’s workspace (ASKSCOPE1d)', () => {
 
     await waitFor(() => expect(sent('START_HELP')).toHaveLength(2));
     expect(sent('START_HELP')[1]).toEqual({ workspace: 'games', focus: { kind: 'repository', workspace: 'games', repository: 'engine' } });
+  });
+
+  it('starts a task handed from the new conversation’s composer focused on its repository, its words as typed', async () => {
+    const engine = { kind: 'repository' as const, workspace: 'games', repository: 'engine' };
+    bridge();
+    show('games', { text: 'Fix the build', id: 1, draft: true, focus: engine });
+
+    expect(await screen.findByRole('button', { name: 'Ask Daoris’s focus: repository engine in games' })).toBeInTheDocument();
+    await waitFor(() => expect(screen.getByLabelText('Message')).toHaveValue('Fix the build'));
+    await userEvent.click(screen.getByRole('button', { name: 'Send' }));
+
+    await waitFor(() => expect(sent('START_HELP').at(-1)).toEqual({ workspace: 'games', focus: engine }));
   });
 
   it('sends a focus chosen for the conversation opened ahead at once, and opens it ahead again when the driver ended it', async () => {

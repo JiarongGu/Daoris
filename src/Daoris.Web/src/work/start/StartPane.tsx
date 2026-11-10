@@ -2,6 +2,7 @@ import { useCheckoutBranch } from '../../bridge/repositories/git';
 import type { Session } from '../../data/api';
 import type { useRegistry } from '../../data/queries';
 import { type Notify, SESSION_ACTIVE } from '../../design/ui';
+import type { Place } from '../../help/focus';
 import { AddProjectDrawer, ImportFolderDrawer } from '../../projects/ProjectManage';
 import { ownTree, sessionOrigin } from '../identity';
 import type { HandOverRoster } from './HandOverAsk';
@@ -29,7 +30,7 @@ export function StartPane({ start, registered, sessions, agentRoster, defaultHar
   agentRoster: HandOverRoster;
   defaultHarness?: string;
   notify: Notify;
-  onMakeTask?: (text: string) => void;
+  onMakeTask?: (text: string, focus?: Place) => void;
   attend: (id: string) => void;
 }) {
   const {

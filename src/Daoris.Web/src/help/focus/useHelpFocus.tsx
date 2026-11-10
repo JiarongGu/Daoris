@@ -32,7 +32,9 @@ export function useHelpFocus({ shown, known, shownIn, here, window, readied, set
   readied: string | null;
   setRound: React.Dispatch<React.SetStateAction<number>>;
   onGo: (door: StarterDoor) => void;
-}): { chip: ReactNode; crumb: ReactNode; startFocus: () => Place | undefined; inherit: () => void } {
+}): {
+  chip: ReactNode; crumb: ReactNode; startFocus: () => Place | undefined; inherit: () => void; take: (place: Place, into: string | null) => void;
+} {
   const registry = useRegistry('machine');
   const press = useFocusPress();
   const [ahead, setAhead] = useState<Place | null>(null);
@@ -66,15 +68,19 @@ export function useHelpFocus({ shown, known, shownIn, here, window, readied, set
     },
     onError: (error) => setRefused(sentence(error)),
   });
-  const choose = (place: Place) => {
+  // For the conversation `into`, or, where none, the next to start: kept ahead and sent to the one opened ahead.
+  const take = (place: Place, into: string | null) => {
     setRefused(null);
-    setRecent(keepFocusRecent(place));
-    if (shown) {
-      send(shown.id, place);
+    if (into !== null) {
+      send(into, place);
       return;
     }
     setAhead(samePlace(place, fallback) ? null : place);
     if (readied) send(readied, place);
+  };
+  const choose = (place: Place) => {
+    setRecent(keepFocusRecent(place));
+    take(place, shown?.id ?? null);
   };
 
   const chip = (
@@ -112,5 +118,6 @@ export function useHelpFocus({ shown, known, shownIn, here, window, readied, set
     inherit: () => {
       if (shown) setAhead(samePlace(focus, fallback) ? null : focus);
     },
+    take,
   };
 }
