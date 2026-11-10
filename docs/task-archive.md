@@ -5,6 +5,12 @@ the per-task record. Entries preserve their original wording so the archive stay
 
 ---
 
+## APPROVE1c, e, f, j — an early Accept kept, an observed review git's, a landing that needs no review worded so, a second Apply answered (2026-11-10)
+
+> **APPROVE1c, e, f, j** (driver, modules, web; D256): Outcome: an Accept pressed before the gate judged the run, or before its review is active, is kept on the run's record for the commit pressed on and applied by the first pass that finds the review active, answered *Accepted; it lands at the next look* (`Workflows/Nodes/EarlyAccepts.cs`), ending where the review begins at another commit, the person says a later word, or the run ends; a review reached by seeing its landing is recorded as git's, never the person's; an automatic landing whose line holds everything closes its entry (`line-holds`) and one tried again at each look says so (`queued`), neither worded as waiting for review; a second Apply on a settled card answers *Already applied* with the first's outcome and logs `help.apply.again` (`Help/HelpAppliedAgain.cs`). Proof: `EarlyAcceptsTests`, `GraphPressTests`, `ReviewObservedTests`, `LandTriesLineTests`, `HelpAppliedAgainTests`, `landingLineNote.test.ts`. Not seen in the window.
+
+---
+
 ## AGENTFREE1a — the census of what a session narrows, and its first two lifts (2026-11-10)
 
 > **AGENTFREE1a** (driver; D253 point 7): Outcome: `docs/2026-11-10-agent-free-census.md`, 29 rows, each narrowing with what it stops, why, and kept or lifted. Lifted: a Claude session keeps its account's memory, synced skills, plugins and connectors (the four account keys gone from its settings file; `AccountContextTests` replaces `OwnContextTests`); the tree guard lets a subagent's call write inside its own worktree, which Claude makes under the repository's main checkout, checked against the session's repository, the session's own agent still writing only in its tree (`Workplace/hooks/subagent-worktree.mjs`, `SubagentWorktreeShippedTests`, the node test beside it). The worktree's place was read from the installed binary, not measured in a real session; `TreeGuardTests` (a Process class) not run.

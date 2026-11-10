@@ -130,7 +130,7 @@ internal sealed class TreeMerges(TreeContext context)
         if (string.IsNullOrWhiteSpace(ahead))
         {
             // An empty merge commit would say work moved when none did.
-            return new(false, $"`{canonical}` already holds everything on `{branch}` — nothing to merge.");
+            return new(false, $"`{canonical}` already holds everything on `{branch}` — nothing to merge.") { Refusal = LandingCode.LineHolds };
         }
 
         // 🔴 The root's state, read as late as possible. A tree-state observation is a fact about a
@@ -167,11 +167,11 @@ internal sealed class TreeMerges(TreeContext context)
         // and reads them again before it moves it, and a hold taken here would refuse that one in this very process.
         if (delivering is not null && await delivering.BeginMergeAsync(canonical, frozen).ConfigureAwait(false) is { } unbegun) return new(false, $"Nothing was merged: {unbegun}.");
         // Current's delivery is admitted by its rule and says today's message, as the press always has.
-        var (carried, refused) = await IntegrationPresses.MergeAsync(
+        var (carried, refused, code) = await IntegrationPresses.MergeAsync(
             context.Home, context.Config(), root, repository, workspace, canonical, branch, frozen, ct, beside, delivered: delivering is { Live: false },
             message: delivering?.Template, automatic: delivering?.Accepted == AcceptedBy.Auto).ConfigureAwait(false);
         if (delivering is not null) await delivering.MergedAsync(root, canonical, frozen, carried ? null : refused, ct).ConfigureAwait(false);
-        if (!carried) return new(false, refused!);
+        if (!carried) return new(false, refused!) { Refusal = code };
 
         var landed = ahead.Trim().Split('\n').Length;
         // The line moved: the registry follows it at the next look, whichever door pressed this.
