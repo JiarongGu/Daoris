@@ -450,6 +450,8 @@ public sealed class PipeConfirmTests : Bridge
         if (!OperatingSystem.IsWindows()) return;
         var clock = new HeldClock();
         var grounds = new StubGrounds();
+        for (var each = 0; each < 10; each++) grounds.Session($"s000000{each}", "completed");
+        grounds.Session("s0000010", "completed");
         var (pipe, client, driver, services, log) = await ServeAsync(grounds, clock);
         using var _ = services;
         using var __ = log;

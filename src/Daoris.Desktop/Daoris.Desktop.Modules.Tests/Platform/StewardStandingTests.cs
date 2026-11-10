@@ -60,7 +60,11 @@ public sealed class StewardStandingTests : Bridge
     {
         var standing = new StandingConfirmation(
             Home, log, new StandingConfirmationTests.Placed(StandingPlace.Outside), walk: new StandingConfirmationTests.Walked()).Staff(RoleKit.Steward(acts));
-        var pipe = new InstancePipe(dispatcher, Bus, Home, log, version: "9.9.9-test", standing: standing) { Grounds = new StubGrounds() };
+        // The quest the acts name is open here, as a quest press's view reads it at the ask.
+        var pipe = new InstancePipe(dispatcher, Bus, Home, log, version: "9.9.9-test", standing: standing)
+        {
+            Grounds = new StubGrounds { Quests = { ["q1"] = "Open" } },
+        };
         Assert.NotNull(pipe.Serve());
         var (change, key) = RoleKit.Start(standing, RoleKit.Stewarding(share: null));
         Assert.True(change.Answer.Done, change.Answer.Message);
@@ -135,7 +139,11 @@ public sealed class StewardStandingTests : Bridge
     {
         var standing = new StandingConfirmation(
             Home, log, new StandingConfirmationTests.Placed(StandingPlace.Outside), walk: new StandingConfirmationTests.Walked()).Probing(probe);
-        var pipe = new InstancePipe(dispatcher, Bus, Home, log, version: "9.9.9-test", standing: standing) { Grounds = new StubGrounds() };
+        // The repository the hold names is registered here, as a switch press's view reads it at the ask.
+        var pipe = new InstancePipe(dispatcher, Bus, Home, log, version: "9.9.9-test", standing: standing)
+        {
+            Grounds = new StubGrounds { Registered = { "engine" } },
+        };
         Assert.NotNull(pipe.Serve());
         var (change, key) = RoleKit.Start(standing, RoleKit.Stewarding(share: null));
         Assert.True(change.Answer.Done, change.Answer.Message);

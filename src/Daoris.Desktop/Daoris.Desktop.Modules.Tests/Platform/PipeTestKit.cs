@@ -108,8 +108,9 @@ internal sealed class HeldClock : TimeProvider
 
 /// <summary>
 /// The loop's readers of a press's grounds as a test holds them: each world fact a dictionary the test moves between
-/// the ask and the Confirm, a read of a route answered from <see cref="Reads"/> (an empty object where none is set), every read
-/// counted, and the whole of it made to throw (<see cref="Fails"/>) or held open until the test lets it (<see cref="Hold"/>).
+/// the ask and the Confirm, a read of a route answered from <see cref="Reads"/> (an empty object where none is set; the list's
+/// <c>SESSION_GROUPS</c> places <see cref="Sessions"/>, as a session press's view reads them at the ask), every read counted, and the
+/// whole of it made to throw (<see cref="Fails"/>) or held open until the test lets it (<see cref="Hold"/>).
 /// </summary>
 internal sealed class StubGrounds : IPipeGroundWorld
 {
@@ -181,7 +182,11 @@ internal sealed class StubGrounds : IPipeGroundWorld
     public async Task<IReadOnlyList<PipeRegistered>> RegistryAsync(CancellationToken cancellationToken)
     {
         await Read(cancellationToken);
-        return [.. Placed.Select(each => new PipeRegistered(each.Key, each.Value))];
+        // A name only registered is listed in no workspace, as one placed is in its own.
+        return [
+            .. Placed.Select(each => new PipeRegistered(each.Key, each.Value)),
+            .. Registered.Where(name => !Placed.ContainsKey(name)).Select(name => new PipeRegistered(name, null)),
+        ];
     }
 
     public async Task<IReadOnlyDictionary<string, string>?> TipsAsync(string repository, CancellationToken cancellationToken)
@@ -228,8 +233,25 @@ internal sealed class StubGrounds : IPipeGroundWorld
     {
         await Read(cancellationToken);
         var asked = payload is null ? (JsonElement?)null : JsonSerializer.SerializeToElement(payload, Shenora.Core.Ipc.IpcJson.Options);
-        return JsonSerializer.SerializeToElement(Reads.TryGetValue(route, out var answer) ? answer(asked) : new { }, Shenora.Core.Ipc.IpcJson.Options);
+        var answered = Reads.TryGetValue(route, out var answer) ? answer(asked) : route == "SESSION_GROUPS" ? Listed() : new { };
+        return JsonSerializer.SerializeToElement(answered, Shenora.Core.Ipc.IpcJson.Options);
     }
+
+    /// <summary>Each held session as the list places it: running in Working, waiting on the person in You, else ended, and deletable.</summary>
+    private object Listed() => new
+    {
+        sessions = Sessions.Select(each => new
+        {
+            session = each.Key,
+            group = each.Value.State switch
+            {
+                "queued" or "starting" or "working" => Daoris.Driver.SessionGroup.Working,
+                "awaiting-person" => Daoris.Driver.SessionGroup.You,
+                _ => Daoris.Driver.SessionGroup.Ended,
+            },
+            deletable = true,
+        }).ToArray(),
+    };
 
     public async Task<string?> HeldAsync(string wait, JsonElement? payload, CancellationToken cancellationToken)
     {
