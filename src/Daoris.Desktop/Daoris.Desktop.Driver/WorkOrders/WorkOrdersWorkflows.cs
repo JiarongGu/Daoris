@@ -29,6 +29,12 @@ internal interface IWorkOrdersWorkflows
     /// </summary>
     (string Otherwise, IReadOnlyList<(string Name, IReadOnlyList<string>? Lowers)> Kinds) KindsOf(
         string home, DriverConfig config, string repository, string workspace, IReadOnlyList<string> kinds);
+
+    /// <summary>
+    /// The <c>isolate</c> step of each of <paramref name="repositories"/> whose workflow sets its work apart, by repository: the newest
+    /// version of the workflow its work follows by default. A repository absent works in place.
+    /// </summary>
+    IReadOnlyDictionary<string, IsolateStep> Isolations(string home, DriverConfig config, IReadOnlyList<RepoView> repositories);
 }
 
 /// <summary>The required Workflows operations, resolved only where a unit's obligations, a saved workflow or a kind's mapping is read.</summary>

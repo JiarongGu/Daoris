@@ -10,7 +10,7 @@ public static class PlaceIsolates
     {
         var workflow = WorkflowSelection.Resolve(config, repository, workspace, task: null).Workflow;
         if (workflow == WorkflowSelection.Current || !WorkflowNamed.IsId(workflow)) return null;
-        return IsolateStep.In(workflows.Load(workflow)?.Read.Versions.LastOrDefault()?.Graph);
+        return IsolateSteps.In(workflows.Load(workflow)?.Read.Versions.LastOrDefault()?.Graph);
     }
 
     /// <summary>The step of each of <paramref name="repositories"/> whose workflow sets its work apart, by repository.</summary>

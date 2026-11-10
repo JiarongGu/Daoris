@@ -44,4 +44,7 @@ internal sealed class WorkOrdersWorkflowsOperations : IWorkOrdersWorkflows
 
         return (otherwise, mapped);
     }
+
+    public IReadOnlyDictionary<string, IsolateStep> Isolations(string home, DriverConfig config, IReadOnlyList<RepoView> repositories) =>
+        PlaceIsolates.Of(WorkflowPorts.Store(home), config, repositories);
 }

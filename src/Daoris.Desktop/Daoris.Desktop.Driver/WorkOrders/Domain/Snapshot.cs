@@ -17,7 +17,7 @@ public sealed record Snapshot(
         this with { Quests = quests, Repositories = repositories, Active = active };
 
     /// <summary>
-    /// The <c>isolate</c> step of each repository whose workflow sets its work apart (<see cref="PlaceIsolates"/>), read by the look; a
+    /// The <c>isolate</c> step of each repository whose workflow sets its work apart (<see cref="IWorkOrdersWorkflows.Isolations"/>), read by the look; a
     /// repository absent runs one session at a time in its own place.
     /// </summary>
     public IReadOnlyDictionary<string, IsolateStep> Isolations { get; init; } = new Dictionary<string, IsolateStep>(StringComparer.OrdinalIgnoreCase);

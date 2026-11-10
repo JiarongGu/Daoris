@@ -17,6 +17,6 @@ internal sealed class SnapshotLook(ILookWiring wiring) : ILookPass
         // is read is held by one of the two, whichever the ledger's answer missed.
         round.State.ReservedBefore = wiring.Runs.Reserved;
         var snapshot = await wiring.Stages.TimeAsync("snapshot", () => wiring.Service.SnapshotAsync(ct)).ConfigureAwait(false);
-        round.State.Snapshot = snapshot with { Isolations = PlaceIsolates.Of(WorkflowPorts.Store(wiring.Home), wiring.Config, snapshot.Repositories) };
+        round.State.Snapshot = snapshot with { Isolations = WorkOrdersWorkflows.Current.Isolations(wiring.Home, wiring.Config, snapshot.Repositories) };
     }
 }

@@ -193,5 +193,8 @@ public sealed class WorkOrdersPortsTests : IDisposable
             KindsAsked.AddRange(kinds);
             return ("`stand` v1", [("`first` v2", ["drops a step"]), ("`second` v1", null)]);
         }
+
+        public IReadOnlyDictionary<string, IsolateStep> Isolations(string home, DriverConfig config, IReadOnlyList<RepoView> repositories) =>
+            new Dictionary<string, IsolateStep>();
     }
 }

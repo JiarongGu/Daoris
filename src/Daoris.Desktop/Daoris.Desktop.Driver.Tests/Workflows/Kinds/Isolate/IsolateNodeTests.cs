@@ -35,18 +35,18 @@ public sealed class IsolateNodeTests
     [Fact]
     public void Its_options_read_into_the_step_the_start_carries_an_unwritten_one_as_its_default()
     {
-        Assert.Equal(new IsolateStep(IsolateStep.Auto, null, false), IsolateStep.Of(Step()));
+        Assert.Equal(new IsolateStep(IsolateStep.Auto, null, false), IsolateSteps.Of(Step()));
         Assert.Equal(new IsolateStep(IsolateStep.Worktree, 3, true),
-            IsolateStep.Of(Step((IsolateStep.KindOption, "\"worktree\""), (IsolateStep.AtOnceOption, "\"3\""), (IsolateStep.OverlapOption, "\"wait\""))));
-        Assert.Equal(IsolateStep.Trees, IsolateStep.Of(IsolateStep.Trees.Declaration("apart")));
+            IsolateSteps.Of(Step((IsolateStep.KindOption, "\"worktree\""), (IsolateStep.AtOnceOption, "\"3\""), (IsolateStep.OverlapOption, "\"wait\""))));
+        Assert.Equal(IsolateStep.Trees, IsolateSteps.Of(IsolateSteps.Declaration(IsolateStep.Trees, "apart")));
     }
 
     [Fact]
     public void A_graph_with_no_isolate_step_is_read_as_in_place()
     {
-        Assert.Null(IsolateStep.In(Graph(["work"], Work)));
-        Assert.Null(IsolateStep.In(null));
-        Assert.Equal(new IsolateStep(IsolateStep.Auto, 2, false), IsolateStep.In(Graph(["apart"], Step((IsolateStep.AtOnceOption, "\"2\"")), Work)));
+        Assert.Null(IsolateSteps.In(Graph(["work"], Work)));
+        Assert.Null(IsolateSteps.In(null));
+        Assert.Equal(new IsolateStep(IsolateStep.Auto, 2, false), IsolateSteps.In(Graph(["apart"], Step((IsolateStep.AtOnceOption, "\"2\"")), Work)));
     }
 
     [Fact]

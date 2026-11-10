@@ -19,7 +19,7 @@ internal sealed class IsolateNode : BuiltInNode, IObserves
         NodeOptionFields.Choice(IsolateStep.OverlapOption, IsolateStep.Overlaps),
     ];
 
-    public override string? Problem(NodeDeclaration node) => IsolateStep.Problem(node);
+    public override string? Problem(NodeDeclaration node) => IsolateSteps.Problem(node);
 
     public override string NeverEndBecause => "it sets the work apart, and the work comes after it.";
 

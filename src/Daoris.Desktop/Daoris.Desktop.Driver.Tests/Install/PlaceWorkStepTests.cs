@@ -29,7 +29,7 @@ public sealed class PlaceWorkStepTests : IDisposable
         if (waitsIn is not null) root["linePolicies"] = new JsonObject { [waitsIn] = new JsonObject { ["integrate"] = new JsonObject { ["overlap"] = "wait" } } };
         File.WriteAllText(DriverFile, root.ToJsonString());
         Store.Write("flow", JsonNode.Parse("""
-            {"id":"flow","name":"Flow","versions":[{"version":1,"graph":{"schemaVersion":2,"entries":["work"],"end":"line",
+            {"id":"flow","name":"Flow","versions":[{"version":1,"at":"2026-11-01T09:00:00Z","door":"screen","schema":2,"graph":{"schemaVersion":2,"entries":["work"],"end":"line",
              "nodes":[{"id":"work","kind":"claimed","version":1,"reach":"observed"},
                       {"id":"landing","kind":"land","version":1,"reach":"performed","options":{"method":"merge"}},
                       {"id":"line","kind":"line","version":1,"reach":"observed"}],
@@ -54,7 +54,7 @@ public sealed class PlaceWorkStepTests : IDisposable
         }
     }
 
-    private IsolateStep? Newest(string workflow) => IsolateStep.In(Store.Load(workflow)?.Read.Versions.LastOrDefault()?.Graph);
+    private IsolateStep? Newest(string workflow) => IsolateSteps.In(Store.Load(workflow)?.Read.Versions.LastOrDefault()?.Graph);
 
     private HomeMigrationRun Run()
     {
@@ -70,6 +70,7 @@ public sealed class PlaceWorkStepTests : IDisposable
 
         Run();
 
+        Assert.Null(Store.Load("flow")!.Read.Versions[^1].Problem);
         Assert.Equal(IsolateStep.Trees, Newest("flow"));
         Assert.Equal(2, Store.Load("flow")!.Read.Versions.Count);
         Assert.Null(JsonNode.Parse(File.ReadAllText(DriverFile))!["trees"]);
@@ -101,6 +102,7 @@ public sealed class PlaceWorkStepTests : IDisposable
 
         Run();
 
+        Assert.Null(Store.Load("flow")!.Read.Versions[^1].Problem);
         Assert.Null(Newest("flow"));
         Assert.Null(JsonNode.Parse(File.ReadAllText(DriverFile))!["trees"]);
     }
