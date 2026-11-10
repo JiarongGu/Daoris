@@ -340,7 +340,7 @@
   "help.grants.none.checkouts": "这里没有允许外部智能体读取的检出，所以没有可选的。仓库在其页面 → 配置 → 边界 中启用。",
   "help.grants.never.checkouts": "按检出内的路径读取文件内容、文件夹条目、`git status` 和 `git branch --list`；从不读取 git 忽略的内容或 git 自己的文件夹，也从不运行 `git log`、`diff` 或 `show`，它们的输出选项可以写入文件。",
   "help.grants.never.settings": "访问模式、这些授权、账户、插件批准、跨仓库读取、长期答复、审阅、第二意见、助手、提交、落地、驱动和各项保护措施都不在其中。",
-  "help.grants.never.acts": "删除、落地、接受离开和所有设置仍需在卡片上确认。",
+  "help.grants.never.acts": "删除、落地、采纳离开和所有设置仍需在卡片上确认。",
   "help.published.title": "本对话发布的",
   "help.published.list": "本对话发布的内容",
   "help.published.quests": "{{count}} 项委托",
