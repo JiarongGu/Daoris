@@ -1,11 +1,12 @@
-import { type KeyboardEvent, useRef, useState } from 'react';
+import { useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { cn } from '../../lib/cn';
-import { CHIP, ChipCombobox, type ComboGroup, type ComboKeys, type ComboRow } from '../../design/atoms/ChipCombobox';
+import { CHIP, ChipCombobox, type ComboGroup, type ComboRow } from '../../design/atoms/ChipCombobox';
 import { Icon, type IconName } from '../../design/ui';
 import { type Place, placeSaid, samePlace } from '../focus';
 import { focusChip, type FocusChipWords } from './focusChip';
 import { type FocusRow, focusRows, type PlaceRepository } from './focusPlaces';
+import { useFolds } from './useFolds';
 
 /** Each kind's icon: this machine, a workspace, a repository (the icon set's `projects`), and a place no longer here. */
 export const FOCUS_ICON: Record<FocusChipWords['icon'], IconName> = {
@@ -26,9 +27,10 @@ const nameOf = (place: Place, machine: string) => (place.kind === 'machine' ? ma
  * @param repositories This machine's repositories with their workspaces; undefined while they are read, which disables the chip.
  * @param wider Where a gone focus widens to with the next message.
  */
-export function FocusPicker({ focus, next, window, repositories, recent, onChoose, narrow = false, gone = false, wider = null, reveal, defaultOpen }: {
+export function FocusPicker({ focus, next, window, repositories, recent, onChoose, narrow = false, gone = false, wider = null, widened = null, reveal, defaultOpen }: {
   focus: Place;
   next: Place | null;
+  widened?: Place | null;
   window: string | null;
   repositories: readonly PlaceRepository[] | undefined;
   recent: readonly Place[];
@@ -41,10 +43,10 @@ export function FocusPicker({ focus, next, window, repositories, recent, onChoos
   defaultOpen?: boolean;
 }) {
   const { t } = useTranslation();
-  const [open, setOpen] = useState<ReadonlySet<string>>(new Set());
+  const { open, setOpen, onKeyOver } = useFolds();
   // The places the list last drew, by row value, so a choice made from a search is the place it showed.
   const drawn = useRef(new Map<string, Place>());
-  const words = focusChip({ focus, next: gone ? wider : next, window, narrow, gone });
+  const words = focusChip({ focus, next: gone ? wider : next, window, narrow, gone, widened });
   const machine = t('help.focus.machine');
 
   if (repositories === undefined) {
@@ -127,29 +129,7 @@ export function FocusPicker({ focus, next, window, repositories, recent, onChoos
     return placeSaid(focus);
   };
 
-  // → unfolds the active workspace at the field's end; ← folds it at its start, or goes from a repository up to its workspace.
-  const onKey = (event: KeyboardEvent<HTMLInputElement>, keys: ComboKeys) => {
-    if (keys.active === null || event.currentTarget.value.trim()) return false;
-    // The first row of the value is the active one, as the combobox finds it.
-    const row = rowsFor('').find((each) => each.key === keys.active);
-    if (!row) return false;
-    const workspace = row.place.kind === 'machine' ? null : row.place.workspace.toLowerCase();
-    if (event.key === 'ArrowRight' && keys.atEnd && row.place.kind === 'workspace' && !row.open) {
-      setOpen(new Set([...open, workspace!]));
-      return true;
-    }
-    if (event.key !== 'ArrowLeft' || !keys.atStart) return false;
-    if (row.place.kind === 'repository' && row.nested) {
-      keys.setActive(rowsFor('').find((each) => each.place.kind === 'workspace' && !each.nested
-        && each.place.workspace.toLowerCase() === workspace)?.key ?? null);
-      return true;
-    }
-    if (row.place.kind === 'workspace' && row.open) {
-      setOpen(new Set([...open].filter((each) => each !== workspace)));
-      return true;
-    }
-    return false;
-  };
+  const onKey = onKeyOver(rowsFor);
 
   const choose = (value: string) => onChoose(drawn.current.get(value) ?? focus);
 
