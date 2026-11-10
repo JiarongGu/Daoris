@@ -97,7 +97,7 @@ export function useHelpFocus({ shown, known, shownIn, here, window, readied, set
         onChoose={choose}
         reveal={reveal}
       />
-      {refused && <p role="alert" className="m-0 text-small text-danger wrap-anywhere">{refused}</p>}
+      {refused && <p role="alert" className="m-0 text-small text-ink-danger wrap-anywhere">{refused}</p>}
     </div>
   );
   const crumb = shown ? (
