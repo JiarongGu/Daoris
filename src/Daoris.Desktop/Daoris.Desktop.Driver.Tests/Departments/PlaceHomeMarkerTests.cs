@@ -7,6 +7,7 @@ namespace Daoris.Desktop.Driver.Tests;
 /// its common git directory naming its home, and every other home's in-place start there is refused; a home that is gone gives it up.
 /// A folder that is no git checkout takes none.
 /// </summary>
+[Trait(Category.Name, Category.Process)]
 [Trait(Category.Parallel, Category.Git)]
 public sealed class PlaceHomeMarkerTests : IDisposable
 {

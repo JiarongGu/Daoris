@@ -320,6 +320,12 @@ internal sealed class ChatStarts(IExecutorWiring wiring, ChatTold told, ChatConc
                     line => context.Events.Keep(sessionId, new SessionEvent { Kind = SessionEventKind.Note, Text = line.Note, Parts = line.Parts.Count > 0 ? line.Parts : null }, say: null),
                     ct).ConfigureAwait(false)
                 : TreeFilesOutcome.None;
+            // In the person's own checkout, read under the lease its open took, as a driven turn's start is.
+            if (!ours && await ChatPlaceTold.ToldAsync(home, known.Workspace, known.Repository, workTree, sessionId, from?.Session, ct).ConfigureAwait(false) is { } inPlace)
+            {
+                told.HoldPlace(sessionId, inPlace);
+            }
+
             if (opened is not null)
             {
                 var bound = context.ChatRuns.Opened(sessionId, known.Repository, known.Workspace, config);

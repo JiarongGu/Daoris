@@ -10,7 +10,7 @@ public static class ManifestReader
 {
     /// <summary>The manifest of the git place at <paramref name="root"/>.</summary>
     /// <exception cref="InvalidOperationException">git could not read its status.</exception>
-    public static async Task<RunManifest> GitAsync(string root, ContentStore content, CancellationToken ct)
+    public static async Task<RunManifest> OfPlaceAsync(string root, ContentStore content, CancellationToken ct)
     {
         var (code, stdout, stderr) = await WorkingTree.GitAsync(
             root, ["--no-optional-locks", "status", "--porcelain=v2", "-z", "--branch", "--untracked-files=all"], ct).ConfigureAwait(false);

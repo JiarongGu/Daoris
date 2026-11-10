@@ -19,6 +19,8 @@ internal interface IWorkOrdersWorkflows
     /// </summary>
     string? Unusable(string home, string workflow);
 
+    IReadOnlyList<PersonWait> PersonWaits(string home);
+
     Task<IReadOnlyList<string>> EndRunsAsync(string home, Func<string, string?, bool> of, string words, Func<DateTimeOffset> clock, CancellationToken ct);
 
     /// <summary>
