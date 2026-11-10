@@ -94,11 +94,12 @@ test('a merge runs the baseline and what each changed path can reach, but the lo
     // The rotation-use table, among the driver's fixtures, which its twin reads, and the
     // page's curve rules.
     ['the rotation-use table', ['src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/fixtures/rotation-use.json'], [...BASE, 'driver', 'web-unit']],
-    // The driver family's shared tables sit in the driver's fixtures, with no CLI reader left: the
-    // landing sentences, which cycle governs a unit, the bytes an edit of driver.json writes, a named graph
-    // as a version, and a graph judged when saved; the CLI's keep lock test still reads the lock rows, and verify runs it at every merge.
+    // The landing sentences' table sits in the driver's fixtures, and the modules' twin is its one reader.
+    ["the landing sentences' table", ['src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/fixtures/landing-says.json'], [...BASE, 'modules']],
+    // The driver family's other shared tables sit in the driver's fixtures, with no CLI reader left: which cycle governs a unit,
+    // the bytes an edit of driver.json writes, a named graph as a version, and a graph judged when saved; the CLI's keep lock
+    // test still reads the lock rows, and verify runs it at every merge.
     ["the driver's tables the CLI's TypeScript left", [
-      'src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/fixtures/landing-says.json',
       'src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/fixtures/graph-homes.json',
       'src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/fixtures/driver-config-keeps.json',
       'src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/fixtures/workflow-graph-versions.json',
