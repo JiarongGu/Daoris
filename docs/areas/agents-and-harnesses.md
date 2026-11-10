@@ -170,8 +170,16 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/Agents/` unless they s
     file's user-scope servers in that plugin's `.mcp.json`, but one named as Daoris's connector or whose environment names a
     `DAORIS_` variable, and none to a pass held to Daoris's connector alone (`own-servers`); each plugin its user settings
     enable at its user-scope install folder, read in place (`own-plugins`); and its Chrome switch as `--chrome` on the native
-    door (`own-chrome`). Nothing is handed to a session in the person's own home, on a plugin's door or under a scratch home.
-    Its settings file, its memory file and Codex's home are not handed. (from D230, D253, D262)
+    door and the SDK's `extraArgs` on the protocol door (`own-chrome`); its `settings.json` merged into the session's rules file
+    beneath Daoris's rules, the repository's project settings in the session's folder and the account's own, a list joined and a
+    value only where none of them sets one, without what signs in, sets the mode, names plugins or switches hooks off, a variable
+    the session's process holds or any provider's or Daoris's, and without what widens a session shaped for one job (`own-settings`,
+    `ClaudeOwnSettings`); and its `CLAUDE.md` appended to the system prompt, by `--append-system-prompt-file` on the native door and
+    on the SDK's preset on the protocol door (`own-memory`, `ClaudeOwnMemory`). A Codex session is handed the person's Codex home
+    (`CODEX_HOME`, else `.codex`) as codex-acp's `CODEX_CONFIG`: its `config.toml` where the account's sets nothing, never the
+    provider, sign-in, approval policy, sandbox or trusted projects, and its `AGENTS.md` and the folders of its skills and prompts in
+    `developer_instructions` after the account's own (`CodexOwnHome`); its servers are not handed. Nothing is handed to a session in
+    the person's own home, on a plugin's door or under a scratch home. (from D230, D253, D262, D266)
 16. The standing block is composed by the driver for every kind of session, handed at a start and at a move, never on a
     resume. The whole first prompt stays under `StandingBlock.Budget` (30,000 characters, the text `DAORIS_TARGET` carries too); past it the block goes in
     its own file and the prompt names it. (from D230)
@@ -181,7 +189,7 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/Agents/` unless they s
 **Permissions and posture**
 
 18. What an agent may do is Daoris's rules in three scopes (machine, workspace, repository) in `permissions.json`, beneath the
-    defaults `connector`, `commit`, `no-push`, `no-publish`, `tree-guard` and the four of the person's own tool home (rule 15),
+    defaults `connector`, `commit`, `no-push`, `no-publish`, `tree-guard` and the six of the person's own tool home (rule 15),
     each switched off by the person but `no-push`, which
     is fixed and opened only by the session's git access Write. The union is handed as the harness's command-line settings tier;
     the harness's own precedence decides, and `deny` wins. `tree-guard` refuses a write outside the session's tree and its declared
