@@ -196,7 +196,9 @@ executable, started with a browser argument, is Daoris's own browser, which sess
 39. There is no text editor. A file's preview is a read-only side-bar tab from the session's tree, or from the branch it landed on once its tree is gone
     (`SESSION_FILE`). It shows at most 256 KiB, and a path outside the tree is refused. (from D55, D111)
 40. *New conversation* starts from the person's words in a repository they pick, with tree, agent and account chips.
-    `START_CHAT` carries a request id, and one id never starts twice. (from D162)
+    `START_CHAT` carries a request id, and one id never starts twice. Its repository picker and Ask Daoris's focus picker are
+    one combobox (`design/atoms/ChipCombobox.tsx`). *Make it a task with Daoris…* hands Ask Daoris the words as typed with the
+    repository as the conversation's focus. (from D162)
 
 **The design language**
 

@@ -38,7 +38,8 @@ import { useHarnesses } from './agents/agents';
  */
 export const useStartHelp = () =>
   useMutation({
-    mutationFn: (workspace?: string) => call('START_HELP', workspace ? { workspace } : {}) as Promise<
+    mutationFn: ({ workspace, focus }: { workspace?: string; focus?: Place } = {}) =>
+      call('START_HELP', { ...(workspace ? { workspace } : {}), ...(focus ? { focus } : {}) }) as Promise<
       { sessionId: string | null; message: string; running?: boolean; starting?: boolean; finishing?: boolean }>,
   });
 

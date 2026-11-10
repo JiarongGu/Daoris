@@ -2,7 +2,7 @@ import type * as React from 'react';
 import { type ReactNode } from 'react';
 import { sentence } from '../../locales/format';
 import { Button } from '../../design/ui';
-import { type HelpConversationRow, sameWorkspace } from '../history';
+import { type HelpConversationRow } from '../history';
 import { accountNames } from '../../work/accountNames';
 import { namer } from '../../settings/accounts/namer';
 import { type ChatLimitHeld, chatLimitWaitSaid, limitWaitOf } from '../../work/waits/limitWait';
@@ -15,7 +15,7 @@ import { type AccountsAnswer, type AccountUseChange } from '../../settings/accou
 import { type StopAnswer } from '../../bridge/sessions/sessions';
 import { type StoppedWaiting } from '../../bridge/sessions/conversation';
 
-export function useHelpSlotParts({ shown, limitHeld, roster, t, shownIn, accounts, i18n, startFrom, stop, stopWaiting, accountUse, limitRefusal, elsewhere, beginFrom, live, setLimitRefusal, startedFrom, line, ended, picked, checking, goesOn, onNew, shownRow, press, choose, setFocusBox, registered, choosing, start, startChosen, setChoosing, here, setWorkspace }: {
+export function useHelpSlotParts({ shown, limitHeld, roster, t, shownIn, accounts, i18n, startFrom, stop, stopWaiting, accountUse, limitRefusal, beginFrom, live, setLimitRefusal, startedFrom, line, ended, picked, checking, goesOn, onNew, shownRow, press, choose, setFocusBox, choosing, setChoosing }: {
   shown: Session | null;
   limitHeld: { session: string; held: ChatLimitHeld; } | null;
   roster: UseQueryResult<HarnessRoster, Error>;
@@ -28,7 +28,6 @@ export function useHelpSlotParts({ shown, limitHeld, roster, t, shownIn, account
   stopWaiting: UseMutationResult<StoppedWaiting, Error, string, unknown>;
   accountUse: UseMutationResult<{ door: string; action: string; profile?: string | null | undefined; ended?: boolean | undefined; }, Error, { door: string; action: "said" | "order" | "use" | "ready"; accounts?: string[] | undefined; profile?: string | undefined; ids?: string[] | undefined; } & AccountUseChange, unknown>;
   limitRefusal: { session: string; sentence: string; } | null;
-  elsewhere: boolean;
   beginFrom: (id: string, chosenIn?: string | undefined) => void;
   live: boolean;
   setLimitRefusal: React.Dispatch<React.SetStateAction<{ session: string; sentence: string; } | null>>;
@@ -43,13 +42,8 @@ export function useHelpSlotParts({ shown, limitHeld, roster, t, shownIn, account
   press: (key: string, onClick: () => void) => React.JSX.Element;
   choose: (id: string) => void;
   setFocusBox: React.Dispatch<React.SetStateAction<number>>;
-  registered: string[] | undefined;
   choosing: { from?: string | undefined; unknown?: boolean | undefined; } | null;
-  start: UseMutationResult<{ sessionId: string | null; message: string; running?: boolean | undefined; starting?: boolean | undefined; finishing?: boolean | undefined; }, Error, string | undefined, unknown>;
-  startChosen: (circle: string) => void;
   setChoosing: React.Dispatch<React.SetStateAction<{ from?: string | undefined; unknown?: boolean | undefined; } | null>>;
-  here: string | null | undefined;
-  setWorkspace: (workspace: string | null) => void;
 }) {
   // The conversation shown waits for its account's limit, as its events say, above the box. Its way out
   // is Ask Daoris's own door (`ResumeWords.HelpDoor`): a new conversation from this one, never the generic hand-over, which refuses
@@ -72,7 +66,7 @@ export function useHelpSlotParts({ shown, limitHeld, roster, t, shownIn, account
       lines={limitLines}
       busy={startFrom.isPending || stop.isPending || stopWaiting.isPending || accountUse.isPending}
       refusal={limitRefusal?.session === shown.id ? limitRefusal.sentence : null}
-      onGoOnNow={elsewhere ? undefined : () => beginFrom(shown.id)}
+      onGoOnNow={() => beginFrom(shown.id)}
       onStop={live ? () => stop.mutate(shown.id) : undefined}
       onStopWaiting={live ? undefined : () => {
         setLimitRefusal(null);
@@ -121,50 +115,12 @@ export function useHelpSlotParts({ shown, limitHeld, roster, t, shownIn, account
             </>
           ) : undefined;
 
-  // Ahead of what the next words do: which workspace a start on a window
-  // that shows several is in, asked with a press per workspace; another workspace's conversation named, with the switch that
-  // goes on in it, where this window can show that workspace; and on a window that shows every workspace, whose each is.
-  const switchable = shownIn !== null && registered?.find((name) => sameWorkspace(name, shownIn));
-  const goesOnThere = elsewhere && (live || goesOn || (picked !== null && checking));
+  // Ahead of what the next words do: words that wait while this machine's workspaces are read, which go once they are.
   const note: ReactNode = choosing ? (
-    <>
-      {line('help.scope.which')}
-      <div className="flex flex-wrap gap-2">
-        {registered === undefined
-          ? <p role="status" className="m-0 text-small text-ink-soft">{t('help.scope.reading')}</p>
-          : registered.map((name) => (
-            <Button key={name} disabled={start.isPending || startFrom.isPending} onClick={() => startChosen(name)}>
-              {t('help.scope.startIn', { workspace: name })}
-            </Button>
-          ))}
-        <Button variant="ghost" onClick={() => setChoosing(null)}>{t('common.cancel')}</Button>
-      </div>
-    </>
-  ) : elsewhere ? (
-    <>
-      {line('help.scope.elsewhere', { workspace: shownIn!, here: here as string })}
-      {!goesOnThere ? own : switchable ? (
-        <Button
-          variant="primary"
-          onClick={() => {
-            setWorkspace(switchable);
-            setFocusBox((was) => was + 1);
-          }}
-        >
-          {t('help.scope.switch', { workspace: switchable })}
-        </Button>
-      ) : (
-        <>
-          {line('help.scope.notOffered', { workspace: shownIn!, here: here as string })}
-          {press('help.history.startFrom', () => beginFrom(shown!.id))}
-        </>
-      )}
-    </>
-  ) : shown && here === null ? (
-    <>
-      {line('help.scope.in', { workspace: shownIn! })}
-      {own}
-    </>
+    <div className="flex flex-wrap items-center gap-2">
+      <p role="status" className="m-0 text-small text-ink-soft">{t('help.scope.reading')}</p>
+      <Button variant="ghost" onClick={() => setChoosing(null)}>{t('common.cancel')}</Button>
+    </div>
   ) : own;
   return { limitLine, note };
 }
