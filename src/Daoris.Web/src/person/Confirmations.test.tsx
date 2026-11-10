@@ -68,6 +68,18 @@ describe("the window's confirmation of a terminal's press", () => {
     expect(draw([]).container).toBeEmptyDOMElement();
   });
 
+  it("says what a press means by its route's view, with the command it is, Ask Daoris named as asking", () => {
+    draw([{
+      source: 'pipe', id: 'c9', module: 'DAORIS.DRIVER', route: 'REGISTRY_REWIRE',
+      fields: [{ name: '/repository', type: 'string', value: 'engine' }, { name: '/workspace', type: 'string', value: 'work' }],
+      asker: { process: null, pid: 77, session: 'h1', help: true },
+      view: { kind: 'repository-move', facts: { repository: 'engine', from: 'default', to: 'work' }, command: 'daoris repository wire engine --workspace work' },
+    }]);
+
+    expect(screen.getByText(/Moves engine from workspace default to workspace work/)).toBeTruthy();
+    expect(screen.getByText('daoris repository wire engine --workspace work')).toBeTruthy();
+  });
+
   it('says sessions say in plain words: the session with its repository and short id, the words quoted, each path whole', () => {
     draw([SAY]);
 

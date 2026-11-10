@@ -206,7 +206,6 @@ public sealed class HelpStandInDoors : IHelpDoors
     public Task SetAccountUseAsync(string harness, UseChange change, CancellationToken ct)
     {
         if (UseRefusal is { } refused) throw new DriverException(refused);
-        // The switch and each window of the curve, as `session=0:90;weekly=0:30,100:100`.
         var curve = change.Curve is { } set
             ? string.Join(";", UseCurve.Windows.Where(window => set[window] is not null)
                 .Select(window => $"{window}={string.Join(",", set[window]!.Select(point => $"{point.Elapsed}:{point.Used}"))}"))
@@ -346,14 +345,6 @@ public sealed class HelpStandInDoors : IHelpDoors
         if (GrantsHome is { } home) HelpGrants.Withdraw(home, plugin, server);
     }
 
-    // IHelpRepositoryDoors
-    public (bool Ok, string Message) Wired { get; set; } = (true, "`engine` is now in workspace `studio`.");
-
-    public Task<(bool Ok, string Message)> WireRepositoryAsync(string repository, string workspace, CancellationToken ct)
-    {
-        Calls.Add($"POST /api/registry/{repository}/workspace {workspace}");
-        return Task.FromResult(Wired);
-    }
 
     // IHelpSessionDoors
     public (bool Ok, string Message) Archived { get; set; } = (true, "Archived it.");

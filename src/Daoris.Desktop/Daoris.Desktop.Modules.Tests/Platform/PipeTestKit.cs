@@ -122,6 +122,8 @@ internal sealed class StubGrounds : IPipeGroundWorld
     /// <summary>What a name resolves to where the test says; a name only <see cref="Registered"/> resolves to itself.</summary>
     public Dictionary<string, string> Registrations { get; } = new(StringComparer.OrdinalIgnoreCase);
 
+    public Dictionary<string, string?> Placed { get; } = new(StringComparer.OrdinalIgnoreCase);
+
     public Dictionary<string, string> Quests { get; } = new(StringComparer.Ordinal);
 
     public Dictionary<string, string> Asks { get; } = new(StringComparer.Ordinal);
@@ -174,6 +176,12 @@ internal sealed class StubGrounds : IPipeGroundWorld
     {
         await Read(cancellationToken);
         return Registrations.TryGetValue(name, out var resolved) ? resolved : Registered.Contains(name) ? name : null;
+    }
+
+    public async Task<IReadOnlyList<PipeRegistered>> RegistryAsync(CancellationToken cancellationToken)
+    {
+        await Read(cancellationToken);
+        return [.. Placed.Select(each => new PipeRegistered(each.Key, each.Value))];
     }
 
     public async Task<IReadOnlyDictionary<string, string>?> TipsAsync(string repository, CancellationToken cancellationToken)

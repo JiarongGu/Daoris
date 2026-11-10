@@ -194,6 +194,7 @@ public static class PermissionRules
             "A session writes files only inside its own tree: an edit, a write or a shell command's write "
             + "anywhere else is refused, through links as well. A change needed elsewhere is a quest.",
             Hook: TreeGuardHook.Matcher),
+        .. OwnHomeDefaults.Defaults,
     ];
 
     /// <summary>

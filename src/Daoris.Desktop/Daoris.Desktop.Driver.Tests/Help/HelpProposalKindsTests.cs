@@ -31,7 +31,6 @@ public sealed partial class HelpProposalKindsTests
         ("plugin", "plugin_propose"),
         ("browser", "browser_propose"),
         ("sync", "sync_propose"),
-        ("repository", "repository_propose"),
         ("session", "session_propose"),
         ("pause", "pause_propose"),
         ("clear", "clear_propose"),
@@ -49,7 +48,6 @@ public sealed partial class HelpProposalKindsTests
         ["new"] = """WriteNull("base")""",
         ["edit"] = """WriteNumber("base",""",
         ["use"] = """WriteBoolean("choose",""",
-        // The draft door from the draft's fingerprint, written only with one.
         ["draft"] = """WriteString("draft",""",
     };
 

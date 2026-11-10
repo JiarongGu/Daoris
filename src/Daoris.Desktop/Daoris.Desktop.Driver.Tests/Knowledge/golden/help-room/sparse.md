@@ -100,9 +100,9 @@ under *Done at a terminal* (below), name its command for the person to run.
   then lists what the press would do; apply acts on those rows only. Daoris never pushes.
 - Never proposed: accepting a quest's departure, and handing a landed branch to a landing plugin. They are the
   person's own presses, on the quest's page and in the review, where `go_propose` takes them.
-- `repository_propose`: move a repository registered here to a workspace, as its page's Manage →
-  Move to workspace does. Name it as `registry` lists it, and the workspace: one the room lists,
-  or a new name, which the move starts. It changes one row of this machine's registry and touches no file.
+- A repository registered here is moved to a workspace by pressing, never proposed:
+  `daoris repository wire <repository> --workspace <name>`, a workspace the room lists or a new name, which the
+  move starts. Its card shows the person the move; one the registry would refuse is answered to you at once and never shown.
   Adding or importing a repository needs a folder, which stays the person's pick: `go_propose` opens
   Repositories' `add` or `import` with the workspace filled, and the person picks the folder there.
 - `role_propose`: add, change or remove a role of this machine's role catalogue, as Agents →
