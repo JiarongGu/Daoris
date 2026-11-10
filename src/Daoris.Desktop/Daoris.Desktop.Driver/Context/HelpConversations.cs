@@ -5,11 +5,20 @@ namespace Daoris.Driver;
 
 /// <summary>
 /// What the person keeps of one Ask Daoris conversation: the name they gave it, when they pinned it, and the earlier
-/// conversation it started from with what it is handed. <see cref="None"/> where they kept nothing.
+/// conversation it started from with what it is handed, and its focus (<see cref="HelpFoci"/>). <see cref="None"/> where they kept nothing.
 /// </summary>
 public sealed record HelpKept(string? Name, DateTimeOffset? Pinned, string? From, string? Handed)
 {
     public static HelpKept None { get; } = new(null, null, null, null);
+
+    /// <summary>The place its last turn ran under; null until its first words, or one chosen before them.</summary>
+    public HelpFocus? Focus { get; init; }
+
+    /// <summary>The place chosen and not yet applied, which its next words apply; null for none.</summary>
+    public HelpFocus? FocusNext { get; init; }
+
+    /// <summary>Each place it held, first to last, none twice; null where it kept none.</summary>
+    public IReadOnlyList<HelpFocus>? Foci { get; init; }
 }
 
 /// <summary>One row of Ask Daoris's history: a conversation of this machine's the person spoke in.</summary>
@@ -64,6 +73,12 @@ public sealed record HelpConversation(string Session, string State)
     /// kept, on an agent whose door resumes. One from before ids were kept for it is offered a new conversation from its words.
     /// </summary>
     public bool Resumable { get; init; }
+
+    /// <summary>The place its last turn ran under, its home's until one is applied (<see cref="HelpFoci"/>).</summary>
+    public HelpFocus Focus { get; init; } = HelpFocus.Machine;
+
+    /// <summary>The place chosen for its next words, or null.</summary>
+    public HelpFocus? FocusNext { get; init; }
 
     /// <summary>The earlier conversation it started from, or null.</summary>
     public string? From { get; init; }
@@ -155,7 +170,14 @@ public sealed class HelpConversations(string home)
             var root = document.RootElement;
             if (root.ValueKind != JsonValueKind.Object) return HelpKept.None;
             return new HelpKept(
-                Json.NonEmpty(root, "name"), Time(root, "pinned"), Json.NonEmpty(root, "from"), Json.NonEmpty(root, "handed"));
+                Json.NonEmpty(root, "name"), Time(root, "pinned"), Json.NonEmpty(root, "from"), Json.NonEmpty(root, "handed"))
+            {
+                Focus = Place(root, "focus"),
+                FocusNext = Place(root, "focusNext"),
+                Foci = root.TryGetProperty("foci", out var foci) && foci.ValueKind == JsonValueKind.Array
+                    ? foci.EnumerateArray().Select(HelpFocus.Read).OfType<HelpFocus>().Distinct().ToList() is { Count: > 0 } held ? held : null
+                    : null,
+            };
         }
         catch (Exception error) when (error is JsonException or IOException or UnauthorizedAccessException)
         {
@@ -216,9 +238,10 @@ public sealed class HelpConversations(string home)
     /// <param name="offset">Where the page starts in the whole list; below 0 is 0.</param>
     /// <param name="limit">The most the page holds; below 1, or above <see cref="PageLimit"/>, is <see cref="PageLimit"/>.</param>
     /// <param name="workspace">The workspace whose conversations are listed; null, or blank, for every workspace's.</param>
+    /// <param name="about">The place whose conversations are listed (<see cref="HelpFoci.About"/>), kept as a workspace is; null for any.</param>
     public HelpListing List(
         IEnumerable<SessionRecord> records, SessionEvents events, Func<string, bool> resumes, string? search = null,
-        int offset = 0, int limit = PageLimit, string? workspace = null)
+        int offset = 0, int limit = PageLimit, string? workspace = null, HelpFocus? about = null)
     {
         var wanted = search?.Trim();
         if (wanted is not null && !SessionEventText.Searchable(wanted)) return new([], 0, null);
@@ -229,6 +252,7 @@ public sealed class HelpConversations(string home)
         var help = records
             .Where(record => record.Repository == KnowledgeRoomIdentity.Repository && !record.Teammate && SessionEventText.IsId(record.Id))
             .Where(record => circle is null || string.Equals(record.Workspace, circle, StringComparison.OrdinalIgnoreCase))
+            .Where(record => about is null || HelpFoci.About(about, record.Workspace, Read(record.Id)))
             .ToList();
         var openings = events.Openings(help.Select(record => record.Id));
 
@@ -301,6 +325,7 @@ public sealed class HelpConversations(string home)
             var (said, _) = events.Spoken(each.Record.Id);
             var answer = said.LastOrDefault(passage => passage.Kind == SessionEventKind.Message).Text;
             var conversation = conversations.Read(each.Record.Id);
+            var foci = HelpFoci.Of(each.Kept, each.Record.Workspace);
             return new HelpConversation(each.Record.Id, each.Record.State)
             {
                 Parts = parts[each.Record.Id],
@@ -313,6 +338,8 @@ public sealed class HelpConversations(string home)
                 Live = each.Record.Live,
                 Mode = HelpModeNames.Recorded(each.Record.HelpMode),
                 Workspace = each.Record.Workspace,
+                Focus = foci.Focus,
+                FocusNext = foci.FocusNext,
                 Resumable = conversation is not null && resumes(conversation.Adapter),
                 From = each.Kept.From,
                 Handed = each.Kept.Handed,
@@ -354,7 +381,8 @@ public sealed class HelpConversations(string home)
         return $"{(from > start ? "…" : "")}{text[from..to]}{(to < end ? "…" : "")}";
     }
 
-    private void Change(string session, Func<HelpKept, HelpKept> edit)
+    /// <summary>Edit what is kept of a conversation under the one writer's gate; a file left holding nothing is removed.</summary>
+    internal void Change(string session, Func<HelpKept, HelpKept> edit)
     {
         var path = PathOf(session);
         lock (Gate)
@@ -382,8 +410,30 @@ public sealed class HelpConversations(string home)
         if (kept.Pinned is { } pinned) writer.WriteString("pinned", Moments.Write(pinned));
         if (kept.From is { } from) writer.WriteString("from", from);
         if (kept.Handed is { } handed) writer.WriteString("handed", handed);
+        if (kept.Focus is { } focus)
+        {
+            writer.WritePropertyName("focus");
+            focus.Write(writer);
+        }
+
+        if (kept.FocusNext is { } next)
+        {
+            writer.WritePropertyName("focusNext");
+            next.Write(writer);
+        }
+
+        if (kept.Foci is { Count: > 0 } foci)
+        {
+            writer.WriteStartArray("foci");
+            foreach (var place in foci) place.Write(writer);
+            writer.WriteEndArray();
+        }
+
         writer.WriteEndObject();
     }
 
     private static DateTimeOffset? Time(JsonElement element, string name) => Moments.Read(element, name);
+
+    private static HelpFocus? Place(JsonElement element, string name) =>
+        element.TryGetProperty(name, out var place) ? HelpFocus.Read(place) : null;
 }

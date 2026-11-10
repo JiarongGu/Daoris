@@ -46,6 +46,10 @@ public sealed class HelpThroughInstanceTests
             new("list") { Search = "remote", Offset = 5, Limit = 10, Workspace = "aurora", Json = true }, "HELP_CONVERSATIONS",
             """{"q":"remote","offset":5,"limit":10,"workspace":"aurora","json":true,"said":true}"""),
         "list --all" => (new("list") { All = true }, "HELP_CONVERSATIONS", """{"all":true,"said":true}"""),
+        "list --about" => (new("list") { About = "Games/engine" }, "HELP_CONVERSATIONS",
+            """{"about":{"kind":"repository","workspace":"Games","repository":"engine"},"said":true}"""),
+        "focus" => (new("focus") { Id = Id, Text = "Games/engine" }, "HELP_FOCUS",
+            $$"""{"session":"{{Id}}","focus":{"kind":"repository","workspace":"Games","repository":"engine"},"said":true}"""),
         _ => throw new ArgumentOutOfRangeException(nameof(name)),
     };
 
@@ -55,6 +59,7 @@ public sealed class HelpThroughInstanceTests
     [InlineData("pin")]
     [InlineData("unpin")]
     [InlineData("delete --yes")]
+    [InlineData("focus")]
     public async Task A_help_press_through_the_instance_waits_for_the_window_and_prints_the_lines_it_answers(string name)
     {
         if (!OperatingSystem.IsWindows()) return;
@@ -83,6 +88,7 @@ public sealed class HelpThroughInstanceTests
     [InlineData("list")]
     [InlineData("list --search --offset --limit --workspace --json")]
     [InlineData("list --all")]
+    [InlineData("list --about")]
     public async Task The_list_is_read_through_the_instance_and_waits_on_nothing(string name)
     {
         if (!OperatingSystem.IsWindows()) return;

@@ -51,6 +51,28 @@ internal sealed class HelpAccessSwap(IExecutorWiring wiring) : IExecutor
     }
 
     /// <summary>
+    /// The person chose another focus for a conversation running here: a change of focus takes its next turn as a
+    /// change of access does, since its start's room is for the focus it started under. Its agent ends at its turn's end, or now
+    /// where it is idle; a choice back to the applied focus (<paramref name="waiting"/> false) withdraws an end not yet begun.
+    /// </summary>
+    public void Refocused(string sessionId, bool waiting)
+    {
+        var context = wiring.Context;
+        if (!context.HelpModes.ContainsKey(sessionId)) return;
+        if (!waiting)
+        {
+            context.HelpEnding.TryRemove(new KeyValuePair<string, bool>(sessionId, true));
+            return;
+        }
+
+        if (context.HelpEnding.TryGetValue(sessionId, out var due) && !due) return;
+        context.HelpEnding[sessionId] = true;
+        context.Processes.Delegates.Forget(sessionId);
+        var idle = !wiring.Taking(sessionId);
+        if (idle && context.HelpEnding.TryUpdate(sessionId, false, true)) wiring.Finish(sessionId);
+    }
+
+    /// <summary>
     /// The Ask Daoris conversations running here under another access than the one chosen now, by session, in order: each ends at its
     /// turn's end, and its next words resume it under the access chosen. What the page's <i>pending</i> marks read.
     /// </summary>

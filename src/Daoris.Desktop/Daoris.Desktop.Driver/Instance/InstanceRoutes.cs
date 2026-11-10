@@ -245,6 +245,9 @@ public static class PersonPresses
     /// <summary><c>help pin &lt;id&gt;</c> and <c>unpin</c>: an Ask Daoris conversation kept at the top of its history, or not.</summary>
     public static InstanceRoute HelpPin { get; } = Person("HELP_PIN");
 
+    /// <summary><c>help focus &lt;id&gt; &lt;place&gt;</c>: what an Ask Daoris conversation is about, taken with its next words.</summary>
+    public static InstanceRoute HelpFocus { get; } = Person("HELP_FOCUS");
+
     /// <summary><c>opinion ask &lt;session&gt;</c>: a second opinion asked, spending an account at the person's choice.</summary>
     public static InstanceRoute AskOpinion { get; } = Person("ASK_OPINION");
 
@@ -355,6 +358,7 @@ public static class PersonPresses
         ("help rename <id> \"…\"|--clear", HelpRename),
         ("help pin <id>", HelpPin),
         ("help unpin <id>", HelpPin),
+        ("help focus <id> machine|<workspace>|<workspace>/<repository>", HelpFocus),
         ("help delete <id> --yes", SessionDelete),
         ("opinion ask <session>", AskOpinion),
         ("opinion stop <opinion>", StopOpinion),

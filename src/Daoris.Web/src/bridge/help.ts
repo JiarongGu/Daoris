@@ -8,6 +8,7 @@ import { type HelpListing, joinPages, listingPage, sameWorkspace } from '../help
 import { onTold, toldGraph, toldSessions } from '../help/openDraft';
 import type { HelpProposal } from '../help/ProposalCard';
 import type { HelpPlace } from '../help/places';
+import type { Place } from '../help/focus';
 import type { HelpPublishedEntry } from '../help/published';
 import { call, pressBound } from './call';
 import { syncLookBound } from './repositories/lines';
@@ -374,6 +375,16 @@ export const useRenameHelp = () =>
   useMutation({
     mutationFn: (rename: { id: string; name: string | null }) =>
       call('HELP_RENAME', rename.name ? { id: rename.id, name: rename.name } : { id: rename.id }) as Promise<{ session: string; name: string | null }>,
+  });
+
+export type HelpFocusAnswer =
+  | { session: string; focus: Place; focusNext: Place | null; refused?: undefined }
+  | { session: string; refused: 'unknown-place' | 'not-help' | 'ended'; said: string };
+
+/** Choose a conversation's focus at once, so a reload or another window shows it; after its first words its next words take it. */
+export const useHelpFocus = () =>
+  useMutation({
+    mutationFn: (choice: { session: string; focus: Place }) => call('HELP_FOCUS', choice) as Promise<HelpFocusAnswer>,
   });
 
 /** Pin an Ask Daoris conversation to the top of its history, or unpin it. */
