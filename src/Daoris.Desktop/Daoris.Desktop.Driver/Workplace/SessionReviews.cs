@@ -50,8 +50,7 @@ public static class SessionReviews
         using var count = GitLaunch.Count();
         SessionReview? review;
         var graph = new ReviewGraph();
-        // A review writes nothing, so each question its stages share is asked of git once (GitReadOnce), under the review's token:
-        // the read left by its last caller ends the gits it shares.
+        // A review writes nothing, so each question its stages share is asked of git once (GitReadOnce), ended with the review.
         using (GitLaunch.Within(GitBudget.Review))
         using (GitReadOnce.Within(ct))
         {

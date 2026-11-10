@@ -67,7 +67,6 @@ public sealed class ProtocolChatTests : IDisposable
         Assert.True(runner.Finish(id!));
         await Until(() => service.State(id!) == "completed", Seen);
 
-        // The folder it works in is told its place with the first message alone, under the writer's lease.
         Assert.Equal(
             ["initialize", "session/new", "place: folder", "prompt: first", "routing: not driven", "prompt: second", "session/close", "stdin ended"],
             HeardLines());
