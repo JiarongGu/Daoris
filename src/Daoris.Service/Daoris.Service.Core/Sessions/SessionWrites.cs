@@ -337,7 +337,7 @@ internal sealed class SessionWrites(SessionStore store)
     /// Remove a record whole. Blind, like every write here: whether a record may go is the ledger's
     /// judgement, made before this is asked. False when there is none.
     /// <para>Its links to finished trees' records go with it, and a record left with no session,
-    /// in the same transaction, as the history clear's and the single delete's callers hold it.</para>
+    /// in the same transaction, as the history clear's and the single delete's callers hold it; its staged memory rows are dropped there too.</para>
     /// </summary>
     public Task<bool> DeleteAsync(string id, CancellationToken ct = default) => _db.InTransactionAsync<bool>(async (_, inside) =>
     {
@@ -346,6 +346,7 @@ internal sealed class SessionWrites(SessionStore store)
         command.Parameters.AddWithValue("$id", id);
         var deleted = await command.ExecuteNonQueryAsync(inside).ConfigureAwait(false) > 0;
         await WorkRecordStore.ForgetSessionAsync(_db, id, inside).ConfigureAwait(false);
+        await MemoryOpStore.DropStagedOfAsync(_db, id, inside).ConfigureAwait(false);
         return deleted;
     }, ct);
 
