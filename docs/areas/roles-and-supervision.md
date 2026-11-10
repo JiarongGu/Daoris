@@ -428,7 +428,8 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they start wi
     its route's own code against the machine now, and applied only by the person's *Apply* through that route. (from D89, D170)
 57. Restricted mode adds the access the person configures: housekeeping, chosen settings (notify, language, cap, cool-off
     and quiet) and checkouts, each request
-    judged at the call by the door's own judges. No settings grant reaches a role. (from D183, D205)
+    judged at the call by the door's own judges, in any workspace's repositories; the checkouts it is handed are every
+    readable one on the machine, its own workspace's first. No settings grant reaches a role. (from D183, D205, D253)
 58. Full access runs its harness's unrestricted mode. Only the person chooses it (Settings, the panel's chip, `help
     mode`), never Ask Daoris. A change of mode or access takes the next turn and is said. (from D183)
 59. What each start handed is recorded at the start and shown on the panel, never worked out again. (from D183)

@@ -38,10 +38,10 @@ internal sealed class HelpRoomIntro : IHelpRoomSection
     }
 
     /// <summary>
-    /// What binds its tools to its workspace. Restricted: its connector and its checkouts
-    /// are its workspace's, and another, or all, is refused. Full access (the trap is a workspace's
-    /// label read as confinement): its shell reaches the whole machine, so the workspace is said to be no fence, and what stays
-    /// scoped is said as such. Words, not a gate; the mode is the gate.
+    /// What its workspace is to its tools: where they start, never a fence. Restricted: its connector answers for its workspace
+    /// unless it names another, or all, and it may read every workspace's checkouts and propose into any. Full access (the trap is
+    /// a workspace's label read as confinement): its shell reaches the whole machine, so the workspace is said to be no fence.
+    /// Words, not a gate; the mode is the gate.
     /// </summary>
     private static string Bound(string workspace, bool full)
     {
@@ -49,15 +49,15 @@ internal sealed class HelpRoomIntro : IHelpRoomSection
         if (full)
         {
             text.Append($"Full access is not confined to `{workspace}`: your shell and file edits reach this whole machine, other workspaces'\n");
-            text.Append($"checkouts and records among them. `{workspace}` is where this conversation belongs, not a fence around it, so leave\n");
-            text.Append("another workspace's work to a conversation started from a window on that workspace.\n");
-            text.Append($"`daoris-knowledge` still answers for `{workspace}` alone, and a proposal naming another workspace is refused.\n\n");
+            text.Append($"checkouts and records among them. `{workspace}` is where this conversation belongs and starts, not a fence around it.\n");
+            text.Append($"`daoris-knowledge` answers for `{workspace}` unless a call names another workspace, or `all`, and a proposal may name\n");
+            text.Append("another workspace's repository.\n\n");
             return text.ToString();
         }
 
-        text.Append($"`daoris-knowledge` answers for `{workspace}` alone: its registry, its search, its reads and its quests are `{workspace}`'s,\n");
-        text.Append($"and a call naming another workspace, or `all`, is refused. The checkouts you may read are `{workspace}`'s, and a\n");
-        text.Append("proposal naming another workspace or one of its repositories is refused before the person sees it.\n\n");
+        text.Append($"`daoris-knowledge` answers for `{workspace}` unless a call names another workspace, or `all`: its registry, its search,\n");
+        text.Append($"its reads and its quests are `{workspace}`'s by default. The checkouts you may read are every workspace's, `{workspace}`'s\n");
+        text.Append("first, and a proposal may name another workspace or one of its repositories.\n\n");
         return text.ToString();
     }
 
@@ -73,8 +73,8 @@ internal sealed class HelpRoomIntro : IHelpRoomSection
         text.Append($"got to that this room lists are `{workspace}`'s alone, and each count here counts `{workspace}`'s; another\n");
         text.Append("workspace's are not listed. The agents and their accounts, sign-in and usage, the plugins and what the\n");
         text.Append("person approved of them, Daoris's browser, the driver and its cap on sessions at once, and the roles'\n");
-        text.Append("starts and moves of the last 7 days, are this machine's, shared by every workspace. Asked about another workspace, say this conversation is\n");
-        text.Append($"`{workspace}`'s, and that a conversation started from a window on that workspace reads it.\n\n");
+        text.Append($"starts and moves of the last 7 days, are this machine's, shared by every workspace. This conversation is `{workspace}`'s and\n");
+        text.Append("starts there: it reads another workspace by naming it, or every workspace with `all`, and may propose into any.\n\n");
         return text.ToString();
     }
 }

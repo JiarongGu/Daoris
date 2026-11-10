@@ -59,27 +59,26 @@ public sealed class HelpCircleTests : IDisposable
     }
 
     /// <summary>
-    /// 🔴 The checkout grants intersect: the checkouts a workspace's room may read are its own workspace's, and of those only the
-    /// ones reading across already allows (a repository's own setting, then its workspace's). <c>default</c>'s room reads
-    /// every readable one.
+    /// 🔴 The checkouts a room may read are every readable one on the machine (a repository's own setting, then its workspace's),
+    /// a workspace's room listing its own workspace's first.
     /// </summary>
     [Fact]
-    public void A_workspace_s_room_reads_its_own_checkouts_where_reading_across_allows()
+    public void A_workspace_s_room_reads_every_checkout_where_reading_across_allows_its_own_first()
     {
         var whole = HelpRoomScopeFixture.Machine();
-        Assert.Equal(["engine"], whole.Within("alpha").Reads.Select(read => read.Name));
-        Assert.Equal(["console"], whole.Within("beta").Reads.Select(read => read.Name));
+        Assert.Equal(["engine", "console", "tools"], whole.Within("alpha").Reads.Select(read => read.Name));
+        Assert.Equal(["console", "engine", "tools"], whole.Within("beta").Reads.Select(read => read.Name));
         Assert.Equal(["console", "engine", "tools"], whole.Reads.Select(read => read.Name));
 
         var room = HelpRoom.Render(whole.Within("alpha"));
         Assert.Contains("- `engine` (workspace `alpha`)\n", room);
-        Assert.DoesNotContain("/beta/console", room);
-        Assert.DoesNotContain("/default/tools", room);
+        Assert.Contains("- `console` (workspace `beta`)\n", room);
+        Assert.True(room.IndexOf("- `engine` (workspace `alpha`)", StringComparison.Ordinal) < room.IndexOf("- `console` (workspace `beta`)", StringComparison.Ordinal));
 
         var off = DriverConfig.Empty.WithReadAcross("engine", false).WithWorkspaceReadAcross("beta", false);
         var narrowed = HelpRoom.Describe(off, new Snapshot([], HelpRoomScopeFixture.Registry, []), [], [], asks: 0);
-        Assert.Empty(narrowed.Within("alpha").Reads);
-        Assert.Empty(narrowed.Within("beta").Reads);
+        Assert.Equal(["tools"], narrowed.Within("alpha").Reads.Select(read => read.Name));
+        Assert.Equal(["tools"], narrowed.Within("beta").Reads.Select(read => read.Name));
         Assert.Equal(["tools"], narrowed.Reads.Select(read => read.Name));
     }
 
@@ -137,13 +136,14 @@ public sealed class HelpCircleTests : IDisposable
             return at;
         }
 
-        Before(restricted, "`daoris-knowledge` answers for `alpha` alone");
-        Before(restricted, "The checkouts you may read are `alpha`'s");
+        Before(restricted, "`daoris-knowledge` answers for `alpha` unless a call names another workspace, or `all`");
+        Before(restricted, "The checkouts you may read are every workspace's, `alpha`'s");
+        Before(restricted, "a proposal may name another workspace or one of its repositories");
         Assert.DoesNotContain("not confined", restricted);
 
         Before(full, "Full access is not confined to `alpha`: your shell and file edits reach this whole machine");
-        Before(full, "`alpha` is where this conversation belongs, not a fence around it");
-        Before(full, "`daoris-knowledge` still answers for `alpha` alone");
+        Before(full, "`alpha` is where this conversation belongs and starts, not a fence around it");
+        Before(full, "`daoris-knowledge` answers for `alpha` unless a call names another workspace, or `all`");
         Assert.DoesNotContain("The checkouts you may read are", full);
 
         foreach (var machine in new[] { whole, whole with { Mode = HelpModes.Full } })

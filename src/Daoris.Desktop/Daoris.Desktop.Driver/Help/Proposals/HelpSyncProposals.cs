@@ -32,13 +32,6 @@ internal sealed class HelpSyncProposals : IHelpProposalKind
 
     public IReadOnlyList<string> Doors { get; } = ["sync"];
 
-    /// <summary>
-    /// Its target is a repository and its workspace the one its look and press are scoped to; naming neither, they
-    /// reach every workspace at once.
-    /// </summary>
-    public HelpNames Named(HelpProposal proposal, HelpMachineFacts facts) =>
-        new([Workspace(proposal)], [Repository(proposal)]) { Every = Workspace(proposal) is null && Repository(proposal) is null };
-
     public HelpProposal Read(HelpProposal proposal, JsonElement file)
     {
         if (!file.TryGetProperty("listed", out var listed) || listed.ValueKind != JsonValueKind.Array)

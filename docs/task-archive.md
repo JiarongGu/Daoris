@@ -5,6 +5,9 @@ the per-task record. Entries preserve their original wording so the archive stay
 
 ---
 
+## ASKFULL1c — Ask Daoris reaches every workspace (2026-11-10)
+
+> **ASKFULL1c** (service, driver; D253 point 3): Outcome: an Ask Daoris conversation's connector answers a named workspace and `all` (`WorkspaceScope.ResolveAsync`, the bound workspace answering only where none is named; its refusals deleted from the knowledge, quest and handback tools); a proposal, a housekeeping call, a checkout read and a setting are judged by their own judges with no workspace refusal (`HelpProposalScope` and every kind's `Named` deleted); the restricted grant hands every readable checkout, the room's own workspace first; the room still projects its own workspace and says it may reach the rest. A repository registered in several workspaces resolves to its first registration for housekeeping and checkout reads. Proof: `McpHelpCircleTests`, `HelpProposalScopeTests`, `HelpCheckoutsTests`, `HelpHousekeepingTests`, `HelpChosenSettingsTests`, `HelpCircleTests`, `HelpRoomScopeTests`, the `scoped` room golden. Not seen in the window.
 ## PLACEWORK1a — the survey of parallel work beyond git (2026-11-10)
 
 > **PLACEWORK1a** (records; D254): Outcome: `docs/2026-11-10-isolation-beyond-git-survey.md`. No agent product isolates work that is not in git: each uses a worktree, a cloud machine with a branch, or nothing, and Claude Code's worktree hooks are the one seam for another mechanism. Four candidates ranked for D254, first a writer's lease per place with a manifest at each run's start, isolation providers by kind of place (worktree, jj workspace, copy-on-write clone, a full copy) and a return merged against the manifest; places reached through a console take plan, review and apply. PLACEWORK1b designs from it.

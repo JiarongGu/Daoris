@@ -24,42 +24,6 @@ internal sealed class HelpRoleProposals : IHelpProposalKind
     public HelpProposal Read(HelpProposal proposal, JsonElement file) =>
         proposal with { RolePress = file.TryGetProperty("press", out var press) && press.ValueKind == JsonValueKind.Object ? press.Clone() : null };
 
-    /// <summary>
-    /// A role scoped to a workspace or a repository names it, the scope the press gives and the one the role stands in;
-    /// <c>default-all</c> reaches every workspace.
-    /// </summary>
-    public HelpNames Named(HelpProposal proposal, HelpMachineFacts facts)
-    {
-        if (proposal.Door == "default-all") return new([null], [null]) { Every = true };
-        var scopes = new List<(string? Kind, string? Id)>();
-        // The supervisor's rules name the place they are for.
-        if (proposal.Target?.Trim() == SupervisorRuleDoor.Id && proposal.RolePress is { } rules && Text(rules, "place")?.Split(':', 2) is [var kind, var id])
-        {
-            scopes.Add((kind, id));
-        }
-
-        if (proposal.RolePress is { } press && press.TryGetProperty("scope", out var scope) && scope.ValueKind == JsonValueKind.Object)
-        {
-            scopes.Add((Text(scope, "kind"), Text(scope, "id")));
-        }
-
-        if (facts.Home is { } home && proposal.Target?.Trim() is { Length: > 0 } target)
-        {
-            try
-            {
-                if (RoleCatalog.ReadHome(home).Slots.FirstOrDefault(slot => slot.Id == target)?.Role?.Scope is { } now) scopes.Add((now.Kind, now.Id));
-            }
-            catch (DriverException)
-            {
-                // Plan refuses a catalogue that does not read.
-            }
-        }
-
-        return new(
-            [.. scopes.Select(each => each.Kind == RoleScope.Workspace ? each.Id : null)],
-            [.. scopes.Select(each => each.Kind == RoleScope.Repository ? each.Id : null)]);
-    }
-
     public HelpPlan Plan(HelpProposal proposal, DriverConfig config, HelpMachineFacts facts)
     {
         static HelpPlan Refused(string why) => new(why, "", "", null);

@@ -5,10 +5,9 @@ using Microsoft.Data.Sqlite;
 namespace Daoris.Service.Tests;
 
 /// <summary>
-/// An Ask Daoris conversation in a workspace's room is handed a connector bound to
-/// that workspace by its record, never by its arguments. Its search, its reads, the registry and the quests answer from that
-/// workspace alone, and a call naming another workspace, or `all`, is refused and says so. A connector bound to none, as
-/// <c>default</c>'s room's is, answers as before.
+/// An Ask Daoris conversation in a workspace's room is handed a connector whose default workspace is that
+/// workspace's, by its record. Its search, its reads, the registry and the quests answer from it unless a call names another
+/// workspace, or `all`, which they then answer. A connector with no default, as <c>default</c>'s room's is, answers as before.
 /// </summary>
 public sealed class McpHelpCircleTests : IAsyncLifetime
 {
@@ -60,7 +59,7 @@ public sealed class McpHelpCircleTests : IAsyncLifetime
     private QuestTools Quests(string? bound) => new(_quests, new QuestExchange(_service, _quests), Circle(bound));
 
     [Fact]
-    public async Task A_bound_conversation_s_search_answers_from_its_workspace_and_refuses_another_or_all()
+    public async Task A_bound_conversation_s_search_starts_in_its_workspace_and_reads_another_or_all_when_named()
     {
         var tools = Search("alpha");
 
@@ -70,32 +69,29 @@ public sealed class McpHelpCircleTests : IAsyncLifetime
         Assert.DoesNotContain("`ledger`", own);
         Assert.Contains("1 result(s)", await tools.SearchAsync("hydration", workspace: " ALPHA "));
 
-        foreach (var other in new[] { "beta", "all", "ALL" })
-        {
-            var refused = await tools.SearchAsync("hydration", workspace: other);
-            Assert.StartsWith("Refused: this conversation is workspace `alpha`'s", refused);
-            Assert.DoesNotContain("`ledger`", refused);
-        }
+        var beta = await tools.SearchAsync("hydration", workspace: "beta");
+        Assert.Contains("in workspace `beta`", beta);
+        Assert.Contains("`ledger`", beta);
+        Assert.DoesNotContain("Refused", beta);
 
-        Assert.Contains(
-            "never from every workspace", await tools.SearchAsync("hydration", workspace: "all"));
-        Assert.Contains("never from workspace `beta`", await tools.SearchAsync("hydration", workspace: "beta"));
+        foreach (var all in new[] { "all", "ALL" })
+        {
+            var every = await tools.SearchAsync("hydration", workspace: all);
+            Assert.Contains("2 result(s) for \"hydration\" across every workspace on this machine", every);
+        }
     }
 
     [Fact]
-    public async Task A_bound_conversation_reads_its_own_workspace_s_entries_and_refuses_another_s()
+    public async Task A_bound_conversation_reads_another_workspace_s_entries()
     {
         var tools = Search("alpha");
 
         Assert.Contains("Cap hydration work per frame.", await tools.GetAsync("engine:docs/DECISIONS.md#D1"));
-
-        var refused = await tools.GetAsync("ledger:docs/DECISIONS.md#D1");
-        Assert.StartsWith("Refused: `ledger:docs/DECISIONS.md#D1` is not workspace `alpha`'s", refused);
-        Assert.DoesNotContain("Cap hydration work per frame.", refused);
+        Assert.Contains("Cap hydration work per frame.", await tools.GetAsync("ledger:docs/DECISIONS.md#D1"));
     }
 
     [Fact]
-    public async Task A_bound_conversation_s_registry_and_repositories_are_its_workspace_s()
+    public async Task A_bound_conversation_s_registry_and_repositories_start_in_its_workspace_and_widen_when_named()
     {
         var tools = Search("alpha");
 
@@ -103,24 +99,24 @@ public sealed class McpHelpCircleTests : IAsyncLifetime
         Assert.Contains("The family in workspace `alpha`", registry);
         Assert.Contains("`engine`", registry);
         Assert.DoesNotContain("ledger", registry);
-        Assert.StartsWith("Refused:", await tools.RegistryAsync("beta"));
-        Assert.StartsWith("Refused:", await tools.RegistryAsync("all"));
+        Assert.Contains("ledger", await tools.RegistryAsync("beta"));
+        Assert.Contains("ledger", await tools.RegistryAsync("all"));
 
         var repositories = await tools.RepositoriesAsync();
         Assert.Contains("| engine | alpha |", repositories);
         Assert.DoesNotContain("ledger", repositories);
-        Assert.StartsWith("Refused:", await tools.RepositoriesAsync("all"));
-        Assert.StartsWith("Refused:", await tools.ConvergenceAsync(workspace: "beta"));
+        Assert.Contains("| ledger | beta |", await tools.RepositoriesAsync("all"));
+        Assert.DoesNotContain("Refused", await tools.ConvergenceAsync(workspace: "beta"));
     }
 
     [Fact]
-    public async Task A_bound_conversation_s_quests_are_its_workspace_s()
+    public async Task A_bound_conversation_s_quests_start_in_its_workspace_and_widen_when_named()
     {
         var tools = Quests("alpha");
 
         Assert.Equal("No open quests in workspace `alpha`.", await tools.ListQuestsAsync());
-        Assert.StartsWith("Refused:", await tools.ListQuestsAsync(workspace: "beta"));
-        Assert.StartsWith("Refused:", await tools.ListQuestsAsync(workspace: "all"));
+        Assert.Equal("No open quests in workspace `beta`.", await tools.ListQuestsAsync(workspace: "beta"));
+        Assert.DoesNotContain("Refused", await tools.ListQuestsAsync(workspace: "all"));
     }
 
     /// <summary><c>default</c>'s room is the whole machine: its connector is bound to none, and answers as before.</summary>

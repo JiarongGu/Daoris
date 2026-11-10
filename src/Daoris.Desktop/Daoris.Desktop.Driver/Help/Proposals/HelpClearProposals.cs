@@ -37,18 +37,6 @@ internal sealed class HelpClearProposals : IHelpProposalKind
 
     public IReadOnlyList<string> Doors { get; } = ["quest", "ask", "failed", "workspace"];
 
-    /// <summary>
-    /// A workspace's clear names the workspace as its target. A quest's, an ask's and a closed quest's
-    /// failed sessions' name a record by id, filed under the workspace the plan read for it says.
-    /// </summary>
-    public HelpNames Named(HelpProposal proposal, HelpMachineFacts facts) =>
-        new([proposal.Workspace, proposal.Door == "workspace" ? proposal.Target : null], [proposal.Repository])
-        {
-            Records = UnitOf(proposal, facts) is { } unit
-                ? [unit.Kind == HistoryKinds.Ask ? HelpNames.Ask(unit.Id, unit.Workspace) : HelpNames.Quest(unit.Id, unit.Workspace)]
-                : [],
-        };
-
     /// <summary>The unit a quest's, an ask's or a failed clear names, as <see cref="OnePlan"/> finds it; null for none.</summary>
     private static HistoryUnitPlan? UnitOf(HelpProposal proposal, HelpMachineFacts facts)
     {

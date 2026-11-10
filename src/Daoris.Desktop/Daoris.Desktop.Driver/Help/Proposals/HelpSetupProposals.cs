@@ -36,10 +36,6 @@ internal sealed class HelpSetupProposals : IHelpProposalKind
         };
     }
 
-    /// <summary>Its target is the repository it sets up; a place's ask names each of its repositories.</summary>
-    public HelpNames Named(HelpProposal proposal, HelpMachineFacts facts) =>
-        new([proposal.Workspace], [proposal.Target, proposal.Repository, .. proposal.Place?.Repositories ?? []]);
-
     /// <summary>
     /// The set-up acts on its repository, which its Apply marks the owner's. A place's Apply writes nothing, but
     /// the repositories it opens a set-up for are the ones the room may name, so they are marked as the press's is.
