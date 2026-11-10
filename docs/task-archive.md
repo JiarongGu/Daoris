@@ -5,6 +5,13 @@ the per-task record. Entries preserve their original wording so the archive stay
 
 ---
 
+## PLACEWORK1e (part) and ASKSCOPE2's history and divider (2026-11-11)
+
+> **PLACEWORK1e (part)** (service, driver, modules, web): Outcome: a plain folder registers as a `folder` place (`PlaceKinds`, the registry's `kind` column; the window's Add drawer shows its kind) and is worked in place under the lease with its own manifest and content store (`FolderManifestReader`, `FolderExcludes`, `ManifestBounds`, `FolderChanges`, `FolderTurns`, `FolderPrompt`); its review lists the files a turn changed against its start's manifest with text diffs (`Departments/Review/PlaceChanges.cs`, `TextPatch.cs`; `SESSION_DIFF` answering `source: place`); its Branches, History and Integration tabs say only git offers them. Proof: `FolderPlaceTests`, `PlaceChangesTests`, `RegistrationFollowTests`, `RegistrationStoreTests`, `RegistryImportTests`, `DriverModuleTreesTests`, `PlaceNote.test.tsx` (not seen failing first).
+> **ASKSCOPE2's history and divider** (driver, modules, web): Outcome: Ask Daoris's history shows by home under *All workspaces* and *About a place*, a row's focus chip where its focus left home (`historyHome.ts`, `ShowingPicker`, `HistoryShowing`); `HELP_CONVERSATIONS` and `ask-daoris list --json` carry `marks`; the transcript draws a divider above the message that carried a focus change (`FocusDivider`); the palette's *Change focus…* opens the picker and the pending chip narrows by container query; the census, usage and route reds of 2a-2d fixed. Proof: the help, menus, app and conversation tests (1228), `HelpFocusTests`, `HelpCommandTests`, `HelpRoomDoorsTests`. The chip and breadcrumb seen in the installed window.
+
+---
+
 ## APPROVE1y's check and AGENTFREE1's Codex servers — `plugin try` asks the start's token question, a Codex session gets the person's servers (2026-11-11)
 
 > **APPROVE1y (the check), AGENTFREE1 (Codex servers)** (driver): Outcome: `daoris plugin try` adds a `host-token` step for a plugin that takes the token, asking the same `PluginHostToken.Hand` the desktop's start asks on the origin of the checkout it runs in, failing "this plugin's start needs an API token on identity X; set it in Settings → Git" (`Plugins/PluginTrialHand.cs`); the person's own Codex `mcp_servers` (local programs) are added to `session/new` and the resume after the plan's servers, the plan's name winning a clash, `daoris-knowledge`, a `DAORIS_` variable, a disabled or remote server kept out, all off under `own-servers` and for connector-only passes (`Providers/Codex/CodexOwnServers.cs`, `ISpawn.OwnServers`). Proof: `PluginTrialHandTests`, `CodexOwnServersTests`. Not run against a real Codex session.
