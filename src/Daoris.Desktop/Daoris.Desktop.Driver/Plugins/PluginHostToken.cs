@@ -1,7 +1,10 @@
 namespace Daoris.Driver;
 
 /// <summary>What a plugin's start is told of the API token it may carry: the token, or the words that refuse the start.</summary>
-public sealed record HostTokenHand(string? Token, string? Refusal);
+/// <param name="Token">The token to hand, or null.</param>
+/// <param name="Refusal">The words that refuse the start, or null.</param>
+/// <param name="NeedsToken">The label of the serving identity where the refusal is that it holds no API token.</param>
+public sealed record HostTokenHand(string? Token, string? Refusal, string? NeedsToken = null);
 
 /// <summary>
 /// The API token of the identity serving a place's origin, handed to one plugin process: <c>DAORIS_HOST_TOKEN</c>, set by
@@ -36,7 +39,7 @@ public static class PluginHostToken
 
         return GitTokens.Read(home, identity.Id, GitTokens.Api) is { Length: > 0 } token
             ? new HostTokenHand(token, null)
-            : Refuse($"{identity.Label} has no API token set for {host}");
+            : Refuse($"{identity.Label} has no API token set for {host}") with { NeedsToken = identity.Label };
     }
 
     private static HostTokenHand Refuse(string why) => new(null, $"{why}, so the plugin was not started");
