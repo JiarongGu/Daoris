@@ -613,7 +613,7 @@ describe('a session’s page header and its acts', () => {
     expect(await within(header).findByText(/^engine · working · continues from Codex · its account was near its limit · /)).toBeInTheDocument();
     const head = screen.getByRole('button', { name: /^Details/ }).closest('header')!;
     fireEvent.click(within(head).getByRole('button', { name: /^Details/ }));
-    fireEvent.click(within(within(head).getByText('Continues').nextElementSibling as HTMLElement).getByRole('button', { name: 'Open session' }));
+    fireEvent.click(within(within(head).getByText('Started from', { selector: 'dt' }).nextElementSibling as HTMLElement).getByRole('button'));
     expect(onSelect).toHaveBeenCalledWith('e4r1i3r0');
   });
 

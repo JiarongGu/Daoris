@@ -151,6 +151,7 @@ export function SessionList({
         // The ask's heading says whose it is, so each row there is the line of work's own name (its leading part's).
         name={byAsk ? null : facts.name}
         parts={facts.entry?.parts}
+        quests={facts.entry?.quests}
         grouping={grouping}
         place={byState && parent?.repository !== session.repository ? placeOf(facts) : null}
         archived={Boolean(grouping?.archived) && !underArchived}

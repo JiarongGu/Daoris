@@ -5,6 +5,12 @@ the per-task record. Entries preserve their original wording so the archive stay
 
 ---
 
+## SESSIONORIGIN1 — a session shows where it started from and what it started with (2026-11-10)
+
+> **SESSIONORIGIN1** (web): Outcome: a session's head and *Details* say *Started from* as a press that opens it (its quest, ask, earlier session, repository, or Ask Daoris's room and workspace; `work/head/startedFrom.tsx` `originsOf`) and *Started with* (the quest's requirements, else its words, else the ask's words, else the first message; `startingOf`), and *How this came to be* takes the same; a rail line holding several quests says which each session holds, and a quest its own ask published is no longer worded a sibling's. Proof: `SessionHead.origin.test.tsx`, `SessionRow.quests.test.tsx`, both languages. Left as SESSIONORIGIN1b: the brief a start was handed, which no record keeps. Not seen in the window.
+
+---
+
 ## ASKFULL1b — every person-only verb reaches the running Daoris (2026-11-10)
 
 > **ASKFULL1b** (driver, modules; D253 points 2 and 4): Outcome: with Daoris running, `quest accept`, `reopen`, `go-on`, `review`, `workflow`, `done` and `delete`, `ask workflow` and `review`, `repository retire`, `wire` and `import`, a plugin's replacement, `git identity` and `git access` press Person routes over the pipe (new: QUEST_ACCEPT, QUEST_REOPEN, QUEST_GO_ON, QUEST_REVIEW, QUEST_WORKFLOW, ASK_WORKFLOW, ASK_REVIEW, REGISTRY_RETIRE, REGISTRY_REWIRE, REGISTRY_IMPORT, PLUGIN_REPLACE), the window's Confirm card standing for the person and the in-process service client calling with the person key; `daoris workflow accept <run> <node>` presses WORKFLOW_NODE's accept; with none running each verb acts alone or refuses a session's terminal as before. Proof: `PersonVerbRoutesTests`, `PipeCensusTests`, `WorkflowNodeCommandTests`, `PluginCommandTests`, the censuses, the help-room goldens. Not seen in the window; the delegate key (1a) covers these routes for Ask Daoris in full access.

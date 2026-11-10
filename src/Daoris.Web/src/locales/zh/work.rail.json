@@ -29,6 +29,7 @@
   "work.rail.moved": "变动于 {{ago}}",
   "work.rail.parts": "{{count}} 段",
   "work.rail.parts_other": "{{count}} 段",
+  "work.rail.holds": "持有 {{quest}}",
   "work.rail.continues": "接续「{{title}}」",
   "work.rail.helps": "协助「{{title}}」",
   "work.rail.under": "为「{{title}}」工作",

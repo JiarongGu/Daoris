@@ -60,7 +60,7 @@ export function AttendedPane({
   } = record;
   const { ownBranch, landEntry, entryOffered, entryAccept, workAskAt } = work;
   const { waits, pieceSection, toEvent, ruleAskAt, seekAt } = waitsState;
-  const { continues, helps } = headState;
+  const { continues, helps, originAsk } = headState;
   const { taking, lastTurns } = boxState;
   if (!attended || !waits) return null;
   const attendedParts = entryOfSession(entries, attended.id);
@@ -86,6 +86,7 @@ export function AttendedPane({
       toEvent={toEvent}
       seek={seekAt('head')}
       quest={quest}
+      ask={originAsk}
       opening={openings[attended.id]}
       taking={taking[attended.id]}
       lastTurn={lastTurns[attended.id]}

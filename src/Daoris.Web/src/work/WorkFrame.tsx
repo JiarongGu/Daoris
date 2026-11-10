@@ -226,8 +226,8 @@ export function WorkFrame({
   // it moves or another view of its region is shown: a shell outlives that, as VS Code's terminal does.
   const terminals = useTerminals();
 
-  // The ask its entry came from, for the head's name: the rail's read, so it costs nothing it does not already ask.
-  const entryAsks = useAsks(true, channelAsk !== null);
+  // The ask its entry came from, or an intake serves, for the head's name and *Started from*: the rail's read.
+  const entryAsks = useAsks(true, channelAsk !== null || Boolean(attended?.ask));
   const boxState = useAttendedBox({
     t, attended, here, intake, oneTurn, conversation, live, quest, sessions: sessions.data, attendedEntry, groups: groups.data,
   });
