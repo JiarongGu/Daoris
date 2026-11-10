@@ -11,15 +11,17 @@ public sealed class WorkplaceRolesBoundaryTests : IDisposable
     [Fact]
     public void Git_and_tool_hands_strip_the_literal_holder_key_and_keep_unrelated_environment()
     {
-        Assert.Equal(["SSH_ASKPASS", "SSH_ASKPASS_REQUIRE", "GIT_TRACE_CURL", "GIT_CURL_VERBOSE", "GCM_TRACE", "GCM_TRACE_SECRETS", "DAORIS_ROLE_KEY", "DAORIS_HOST_TOKEN", "CLAUDE_CODE_MESSAGING_SOCKET", "CLAUDE_CODE_MESSAGING_TOKEN"], GitWiring.Removed);
+        Assert.Equal(["SSH_ASKPASS", "SSH_ASKPASS_REQUIRE", "GIT_TRACE_CURL", "GIT_CURL_VERBOSE", "GCM_TRACE", "GCM_TRACE_SECRETS", "DAORIS_ROLE_KEY", "DAORIS_DELEGATE_KEY", "DAORIS_HOST_TOKEN", "CLAUDE_CODE_MESSAGING_SOCKET", "CLAUDE_CODE_MESSAGING_TOKEN"], GitWiring.Removed);
         foreach (var tool in new[] { false, true })
         {
             var start = new ProcessStartInfo("unused") { UseShellExecute = false, CreateNoWindow = true };
             start.Environment["DAORIS_ROLE_KEY"] = new string('1', 64);
+            start.Environment["DAORIS_DELEGATE_KEY"] = new string('2', 64);
             start.Environment["WORKPLACE_TEST_VALUE"] = "retained";
             if (tool) Tools.Hand(start, _home);
             else GitWiring.Hand(start);
             Assert.False(start.Environment.ContainsKey("DAORIS_ROLE_KEY"));
+            Assert.False(start.Environment.ContainsKey("DAORIS_DELEGATE_KEY"));
             Assert.Equal("retained", start.Environment["WORKPLACE_TEST_VALUE"]);
         }
     }

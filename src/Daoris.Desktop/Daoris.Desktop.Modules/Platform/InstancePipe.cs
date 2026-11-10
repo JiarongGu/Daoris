@@ -198,6 +198,7 @@ public sealed class InstancePipe : IDisposable
         StewardAllows = new StewardAllows(this);
         Holding = new PipeHolding(this, bus);
         HeavyRuns = new PipeHeavyRuns(this);
+        Delegate = new PipeDelegate(this);
         _admission = new PipeAdmission(this);
         _restore = new PipeRestore(this);
         Confirmations.ShownFirst = Keep.Shown;
@@ -225,6 +226,13 @@ public sealed class InstancePipe : IDisposable
     /// standing confirmation's are. None reads nothing, so every press that names a ground is refused <see cref="UnreadGrounds"/>.
     /// </summary>
     public IPipeGroundWorld? Grounds { get; set; }
+
+    /// <summary>The sessions Daoris started, as a proved press reads them, the loop's; none refuses every proof.</summary>
+    public Func<string, PipeDelegateSession?>? Delegates { get; set; }
+
+    internal PipeDelegate Delegate { get; }
+
+    internal void TellDriverState() => StatePublisher.Publish(_bus, StateScopes.Driver);
 
     internal PipeState State { get; } = new();
 
@@ -514,8 +522,9 @@ public sealed class InstancePipe : IDisposable
 
     /// <summary>A request on a connection that said its hello: <see cref="PipeAdmission.Accept"/>.</summary>
     /// <param name="hold">That it is sent with <c>hold: true</c> beside its envelope.</param>
-    internal (string? Now, Task<string>? Later) Accept(IpcRequest request, string? key, PipeConnection connection, bool hold = false) =>
-        _admission.Accept(request, key, connection, hold);
+    internal (string? Now, Task<string>? Later) Accept(
+        IpcRequest request, string? key, PipeConnection connection, bool hold = false, PipeDelegateClaim? claim = null) =>
+        _admission.Accept(request, key, connection, hold, claim);
 
     /// <summary>The kit's tracker told a request's progress: forwarded to the connection that sent it, and to nobody else.</summary>
     private Task Progressed(EventMessage message)

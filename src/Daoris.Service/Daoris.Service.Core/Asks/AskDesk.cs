@@ -32,12 +32,12 @@ public sealed class AskDesk
     private readonly AskGoAheadAnswers goAheads;
     private readonly AskDeletes deletes;
 
-    public AskDesk(KnowledgeService service, AskStore asks, QuestExchange exchange, QuestFiles? files)
+    public AskDesk(KnowledgeService service, AskStore asks, QuestExchange exchange, QuestFiles? files, SessionStore? sessions = null)
     {
         // The files an ask keeps, until it becomes quests: the home's AskFiles.
         var askFiles = files?.For(HomeEntry.AskFiles);
         standings = new(asks, exchange);
-        publishing = new(service, asks, exchange, askFiles, standings, new AskQuests(exchange, askFiles));
+        publishing = new(service, asks, exchange, askFiles, standings, new AskQuests(exchange, askFiles), new AskPublishGuard(exchange, sessions));
         choices = new(asks, standings);
         goAheads = new(asks, standings);
         deletes = new(asks, exchange, askFiles, standings);

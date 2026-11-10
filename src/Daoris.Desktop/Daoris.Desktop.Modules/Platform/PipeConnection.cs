@@ -81,7 +81,7 @@ internal sealed class PipeConnection(InstancePipe pipe, NamedPipeServerStream st
             _ = ReadAsync();
             // The hello first, within its bound: anything else closes the connection unanswered.
             if (await NextAsync(pipe.Limits.Hello, waitWhileBusy: false).ConfigureAwait(false) is not { } first
-                || Parse(first) is not ({ } hello, _, _)
+                || Parse(first) is not ({ } hello, _, _, _)
                 || !string.Equals(hello.Module, InstancePipe.Module, StringComparison.OrdinalIgnoreCase) || hello.Type != "HELLO")
             {
                 return;
@@ -93,7 +93,7 @@ internal sealed class PipeConnection(InstancePipe pipe, NamedPipeServerStream st
 
             while (await NextAsync(pipe.Limits.Idle, waitWhileBusy: true).ConfigureAwait(false) is { } line)
             {
-                if (Parse(line) is not ({ } request, var key, var hold)) return;
+                if (Parse(line) is not ({ } request, var key, var hold, var claim)) return;
                 // A string no reader can take (a lone surrogate escape) would throw in whatever reads it first: told, not run.
                 if (request.Payload is { } payload && !Readable(payload))
                 {
@@ -101,7 +101,7 @@ internal sealed class PipeConnection(InstancePipe pipe, NamedPipeServerStream st
                     continue;
                 }
 
-                var (now, later) = pipe.Accept(request, key, this, hold);
+                var (now, later) = pipe.Accept(request, key, this, hold, claim);
                 if (now is not null)
                 {
                     await WriteAsync(now).ConfigureAwait(false);
@@ -206,10 +206,10 @@ internal sealed class PipeConnection(InstancePipe pipe, NamedPipeServerStream st
     }
 
     /// <summary>
-    /// The kit's envelope on a line, the <c>key</c> beside it (its sender's secret, which binds the id),
-    /// and <c>hold</c> beside it (a start that holds what it opens); null where the line is no request.
+    /// The kit's envelope on a line, the <c>key</c> beside it (its sender's secret, which binds the id), <c>hold</c> (a start that
+    /// holds what it opens) and <c>delegate</c> (<see cref="PipeDelegateClaim"/>); null where the line is no request.
     /// </summary>
-    private static (IpcRequest Request, string? Key, bool Hold)? Parse(string line)
+    private static (IpcRequest Request, string? Key, bool Hold, PipeDelegateClaim? Claim)? Parse(string line)
     {
         try
         {
@@ -219,7 +219,7 @@ internal sealed class PipeConnection(InstancePipe pipe, NamedPipeServerStream st
                 ? named.GetString()
                 : null;
             var hold = document.RootElement.TryGetProperty("hold", out var held) && held.ValueKind == JsonValueKind.True;
-            return (request, key, hold);
+            return (request, key, hold, PipeDelegateClaim.Of(document.RootElement));
         }
         catch (Exception error) when (error is JsonException or NotSupportedException or ArgumentException or InvalidOperationException)
         {

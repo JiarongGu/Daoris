@@ -192,7 +192,7 @@ public sealed class IntegrationVerdictProcessTests : LandedFixture, IDisposable
         Start =
         [
             .. System.Environment.GetEnvironmentVariables().Cast<System.Collections.DictionaryEntry>().Select(entry => KeyValuePair.Create((string)entry.Key, (string)entry.Value!)),
-            KeyValuePair.Create("DAORIS_HOME", "X:/daoris/home"), KeyValuePair.Create("DAORIS_ROLE_KEY", "secret"), KeyValuePair.Create("GIT_DIR", "X:/daoris/other/.git"),
+            KeyValuePair.Create("DAORIS_HOME", "X:/daoris/home"), KeyValuePair.Create("DAORIS_ROLE_KEY", "secret"), KeyValuePair.Create("DAORIS_DELEGATE_KEY", "secret"), KeyValuePair.Create("GIT_DIR", "X:/daoris/other/.git"),
             KeyValuePair.Create("MERGE_BRANCH_FULL", "1"),
         ],
         Waiting = new AdmissionWaiting(TimeSpan.FromMilliseconds(30), TimeSpan.FromMinutes(1), TimeSpan.FromMilliseconds(100), () => DateTimeOffset.UtcNow, KeepLock.Lives),

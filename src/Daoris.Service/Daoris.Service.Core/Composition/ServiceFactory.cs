@@ -413,7 +413,7 @@ public static class ServiceFactory
         var exchange = new QuestExchange(service, quests, remotes, files, sessions, asks);
         // The home a park's question is filed under (the proposals' box names it on a local host; a shared host has none).
         var ledger = new SessionLedger(quests, sessions, service, asks, proposals?.Home, opinions);
-        var askDesk = new AskDesk(service, asks, exchange, files);
+        var askDesk = new AskDesk(service, asks, exchange, files, sessions);
         return new ComposedService(
             service, quests, exchange,
             // The ledger reads the registry for the one thing a chat cannot inherit from a quest: which

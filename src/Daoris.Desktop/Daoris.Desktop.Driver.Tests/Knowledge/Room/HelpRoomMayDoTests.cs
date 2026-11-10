@@ -311,13 +311,16 @@ public sealed class HelpRoomMayDoTests
         Assert.Contains("`daoris ask-daoris mode full`", room);
         Assert.Contains("never yours to propose", room);
         Assert.Contains("You change nothing yourself", room);
+        // It runs Daoris's own verb, and each change that verb presses waits on the person's card.
+        Assert.Contains("Daoris's own (`daoris`)", room);
+        Assert.Contains("each change it presses waits on the person's card", room);
     }
 
     /// <summary>
     /// In full access the room says it acts on this machine itself, with every server the plugins
     /// here declare and nothing to approve; it says nothing that is restricted mode's alone (no shell, nothing changed, servers
     /// waiting, reading switched off); and the doctrine still speaks: a repository's work through a quest, Daoris's housekeeping its
-    /// own, a push and a key the person's.
+    /// own. Its verb's presses are the person's, run at once and said here; it proposes only what the person asks to see first.
     /// </summary>
     [Fact]
     public void In_full_access_the_room_says_it_acts_itself_and_drops_what_is_restricted_modes_alone()
@@ -330,11 +333,14 @@ public sealed class HelpRoomMayDoTests
             PluginServersWaiting = [new("acme.wiki", "wiki", ["lookup"])],
         });
 
-        Assert.Contains("You act on this machine yourself, as the person chose", room);
+        Assert.Contains("You act on this machine as the person, as they chose", room);
+        Assert.Contains("each press runs at once as the person's own, said on this conversation", room);
+        Assert.Contains("only what the person asks to see first", room);
         Assert.Contains("say what you will do before you do it", room);
         Assert.Contains("`ask_propose`", room);
         Assert.Contains("Daoris's own housekeeping is yours to do", room);
-        Assert.Contains("Never push, sign in, or handle a key", room);
+        Assert.Contains("the person's own denies still hold", room);
+        Assert.DoesNotContain("Never push, sign in, or handle a key", room);
         Assert.Contains("every server they declare, with nothing to approve: `tickets` (plugin `acme.tickets`), `browser` (plugin `in-app-browser`)", room);
         foreach (var restricted in new[]
                  {

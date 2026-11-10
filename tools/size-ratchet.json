@@ -74,7 +74,7 @@
   "src/Daoris.Service/Daoris.Service.Http.Tests/LocalHostTests.cs": 168117,
   "src/Daoris.Service/Daoris.Service.Tests/Asks/HistoryDeskTests.cs": 46623,
   "src/Daoris.Service/Daoris.Service.Tests/Knowledge/IndexEntriesTests.cs": 51361,
-  "src/Daoris.Service/Daoris.Service.Tests/Mcp/McpToolsTests.cs": 52327,
+  "src/Daoris.Service/Daoris.Service.Tests/Mcp/McpToolsTests.cs": 52326,
   "src/Daoris.Service/Daoris.Service.Tests/Platform/ChangeStreamTests.cs": 41731,
   "src/Daoris.Service/Daoris.Service.Tests/Quests/QuestClosureTests.cs": 45770,
   "src/Daoris.Service/Daoris.Service.Tests/Remote/QuestReopenSyncTests.cs": 63780,
@@ -113,7 +113,7 @@
   "src/Daoris.Web/src/workflow/WorkflowRunView.test.tsx": 62910,
   "tools/deployment-rehearsal.mjs": 107332,
   "tools/family-rehearsal.mjs": 368077,
-  "tools/merge-branch.mjs": 430568,
+  "tools/merge-branch.mjs": 430505,
   "tools/merge-queue.mjs": 65580,
   "tools/rehearsal-kit.mjs": 56329,
   "tools/rehearsal-kit.test.mjs": 45819

@@ -184,9 +184,11 @@ public static class AskDoorViews
         this ServiceClient service, string ask, string? kind, string? workflow, string? words, CancellationToken ct = default) =>
         service.AnsweredAsync(new ChooseAskWorkflow(ask.TrimStart('#'), kind, workflow, string.IsNullOrWhiteSpace(words) ? null : words.Trim()), ct);
 
-    /// <summary>A person turns an ask into a quest for <paramref name="to"/>.</summary>
-    public static Task<AskAnswer> PublishAskAsync(this ServiceClient service, string id, string to, CancellationToken ct = default) =>
-        service.AnsweredAsync(new PublishAsk(id.TrimStart('#'), to), ct);
+    /// <summary>An ask turned into a quest for <paramref name="to"/>, as <see cref="AskPublishRequest"/> sends it.</summary>
+    public static Task<AskAnswer> PublishAskAsync(
+        this ServiceClient service, string id, string to, string? session = null, IReadOnlyList<QuestRequirementWire>? requirements = null,
+        CancellationToken ct = default) =>
+        service.AnsweredAsync(AskPublishRequest.Of(id, to, session, requirements ?? []), ct);
 
     /// <summary>A person closes their own ask, with the reason.</summary>
     public static Task<AskAnswer> CloseAskAsync(this ServiceClient service, string id, string reason, CancellationToken ct = default) =>

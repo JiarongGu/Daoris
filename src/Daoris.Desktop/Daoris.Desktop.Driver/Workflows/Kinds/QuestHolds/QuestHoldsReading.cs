@@ -20,6 +20,7 @@ internal static class QuestHoldsReading
         _ when !QuestResults.Judged(quest) => "its quest's done is not in, or was taken back",
         { Held: true, Hold: null } when yes => "its done is held for your yes",
         { Held: true, Hold: { } code } when evidence && code != EvidenceCodes.Unreviewed => "its done is held for its evidence's verdict",
+        _ when yes => UncheckedDones.Of(quest),
         _ => null,
     };
 
