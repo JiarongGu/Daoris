@@ -10,6 +10,7 @@ import { callHead, type SessionGrouping, shownOf } from '../groups';
 import { isHelper, isIntake, isOpinion, ownTree, sessionOrigin, sessionTitle } from '../identity';
 import { ListRowDoor } from '../frame/ListPane';
 import { movedAt } from './rail';
+import { runWaitFact } from './runWaitFact';
 import { useNow } from '../useNow';
 import type { HeavyPart } from '../heavySlot';
 import { heavyLine } from '../HeavySlotLine';
@@ -317,6 +318,9 @@ export function placedFact(
   grouping: SessionGrouping | null | undefined, shown: string,
 ): { line: string; values?: Record<string, unknown>; tip: string } | null {
   if (!grouping) return null;
+  // A step of its run waiting on the person placed it, whatever else its record says.
+  const waits = runWaitFact(grouping);
+  if (waits) return waits;
   // A pause that holds its quest is the reason before every other, a stop's hold included.
   if (grouping.pausedBy) {
     return {

@@ -318,6 +318,9 @@ public sealed class DriverLoop(
     /// <summary>The runs waiting on a person's task, for <i>What needs you</i>; none before a pass has read.</summary>
     public IReadOnlyList<HumanTask> HumanTasks => _state.Watch?.HumanTasks ?? [];
 
+    /// <summary>The run steps waiting on the person, for Sessions' groups and so <i>What needs you</i>; none before the watch is wired.</summary>
+    public IReadOnlyList<PersonWait> PersonWaits => _state.Watch?.PersonWaits ?? [];
+
     /// <summary>The landed branches whose integration waits for the owner's card, for <i>What needs you</i> and the Integration tab; none before a pass.</summary>
     public IReadOnlyList<IntegrationCardWait> CardWaits => _state.Watch?.CardWaits ?? [];
 

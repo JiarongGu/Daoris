@@ -53,5 +53,6 @@ public static class SessionsGroupsWires
         // the call a working session's agent is inside, as the loop heard it, which its row and head say with how long;
         // whether it waits on the person's answer to its permission request.
         Calling = row.Calling is { } call ? new { call.Title, call.Since, call.Waiting, call.Told } : null,
+        Waits = row.Waits?.Select(wait => new { wait.Run, wait.Node, wait.Why, wait.Since }).ToArray(),
     };
 }

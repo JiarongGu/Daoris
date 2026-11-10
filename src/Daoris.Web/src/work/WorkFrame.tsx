@@ -45,6 +45,7 @@ import { useFrameLayout } from './frame/useFrameLayout';
 import { useDockViews } from './frame/useDockViews';
 import { useRegionSurfaces } from './frame/regionSurface';
 import { useSessionsList } from './rail/useSessionsList';
+import { opensRun } from './rail/runWaitFact';
 import { AttendedPane } from './head/AttendedPane';
 import { useAtWorkSeek } from './atWork/exchangeSeek';
 import { partRowsOf } from './head/partRows';
@@ -368,8 +369,13 @@ export function WorkFrame({
     session, record, work, views, frame, boxState, asks, agentRoster, attend, runNodeWord, atWork, atWorkSeek: atWorkSeek.seek,
   });
   const { surface, previewSurface, consoleView, streamTabs, shown, pickStream, stopStream, withWhose } = regions;
+  // A row its run's waits placed opens on its run's view, where the step that waits is acted on.
+  const attendRow = (id: string) => {
+    attend(id);
+    if (opensRun(groups.data, id)) openView('workflow');
+  };
   const spec = useSessionsList({
-    t, notify, selected, elsewhere, viewLayout, group, onGroupBrought, session, frame, boxState, asks, chosen, attend, newConversationPressed,
+    t, notify, selected, elsewhere, viewLayout, group, onGroupBrought, session, frame, boxState, asks, chosen, attend: attendRow, newConversationPressed,
   });
   const partRows = partRowsOf(sessions.data, rootOf, where, spent);
   const { partBox, seek } = useSeekPart();
