@@ -151,19 +151,6 @@ public static class EntryLandings
     /// </summary>
     public static string Candidate(string name, int n) => n <= 1 ? name : $"{name}-{n}";
 
-    /// <summary>
-    /// The part a session's own Accept is named for: its entry's first, the records
-    /// sharing its key oldest first by <c>created</c> then id, as <see cref="SessionEntries.Read"/> orders an entry's parts. Null where
-    /// the session has no record here or is its entry's only part: it lands as before. <c>EntryAccepts.EntryLead</c> answers it.
-    /// </summary>
-    public static SessionRecord? LeadOf(IReadOnlyList<SessionRecord> records, string session)
-    {
-        if (records.FirstOrDefault(record => record.Id == session) is not { } own) return null;
-        var parts = records.Where(record => string.Equals(record.EntryKey, own.EntryKey, StringComparison.Ordinal))
-            .OrderBy(record => record.Created).ThenBy(record => record.Id, StringComparer.Ordinal)
-            .ToList();
-        return parts.Count > 1 ? parts[0] : null;
-    }
 
     /// <summary>
     /// Whether <paramref name="earlier"/>'s work is superseded by a later part's, from two trials over trees: the later

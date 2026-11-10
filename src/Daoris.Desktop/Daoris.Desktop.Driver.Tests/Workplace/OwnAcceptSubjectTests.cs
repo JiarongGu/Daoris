@@ -5,8 +5,8 @@ namespace Daoris.Desktop.Driver.Tests;
 /// <summary>
 /// Every door that lands one session names it as the review's Accept does, by one call
 /// (<see cref="SessionTrees.OwnSubjectAsync"/>): the review's <c>LANDING</c> and <c>LAND_SESSION_TREE</c>, the
-/// terminal's <c>trees land</c> and the look's landing at done. A part of an entry with others is named for its entry's first part and
-/// joins the entry's branch; a session alone, a merge rule and a name the person entered land as before. The tree here is one no git
+/// terminal's <c>trees land</c> and the look's landing at done. A part of an entry with others of its run is named for the run's first part
+/// and joins the entry's branch; a session alone in its run, a merge rule and a name the person entered land as before. The tree here is one no git
 /// holds, so the entry's branch is the rule's name for the first part, read with no git; <c>EntryLandingTests</c> holds the door
 /// over real git.
 /// </summary>
@@ -19,9 +19,24 @@ public sealed class OwnAcceptSubjectTests : IDisposable
     private readonly Dictionary<string, QuestView> _quests = new(StringComparer.OrdinalIgnoreCase)
     {
         ["q1"] = new("q1", "game", "engine", "Fix the gap", "Fix it.", "Done"),
-        ["q2"] = new("q2", "game", "engine", "Check the gap", "Check it.", "Done"),
+        ["q2"] = new("q2", "game", "engine", "Check the gap", "Check it.", "Done") { Parent = "q1" },
         ["q3"] = new("q3", "game", "engine", "Paint the wall", "Paint it.", "Done"),
     };
+
+    /// <summary>
+    /// Two quests one ask sent to one repository are two runs in one entry: each lands on its own quest's branch and joins nothing, as the
+    /// later one named for the earlier did not.
+    /// </summary>
+    [Fact]
+    public async Task Each_run_of_an_entry_lands_on_its_own_quests_branch()
+    {
+        Rule(GraphLand.Branch("feature/{quest}-{slug}"));
+        List<SessionRecord> entry = [Record("s1", "ask:a3/engine", "q1", 1), Record("s3", "ask:a3/engine", "q3", 2)];
+
+        var later = await SubjectAsync("s3", "q3", entry);
+
+        Assert.Equal(("s3", "q3", null, false), (later.Session, later.Quest, later.EntryBranch, later.Joins));
+    }
 
     public OwnAcceptSubjectTests()
     {
@@ -35,7 +50,7 @@ public sealed class OwnAcceptSubjectTests : IDisposable
         GitSeed.Discard(_scratch);
     }
 
-    /// <summary>The row's choice: a later part of an entry lands under its entry's first part's name, recording its own session.</summary>
+    /// <summary>A later part of an entry's run, its chain's next step here, lands under the run's first part's name, recording its own session.</summary>
     [Fact]
     public async Task A_part_of_an_entry_with_others_joins_its_entrys_branch_named_for_its_first_part()
     {

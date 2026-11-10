@@ -147,17 +147,18 @@ public sealed class WorkplaceWorkOrdersBoundaryTests : IDisposable
     }
 
     [Fact]
-    public void An_entrys_lead_is_its_oldest_part_only_where_the_session_shares_its_entry_with_another()
+    public async Task An_entrys_lead_is_its_oldest_part_only_where_the_session_shares_its_entry_with_another()
     {
         SessionRecord Record(string id, int minute, string? entry = null) =>
             new(id, "engine", "completed") { Created = T0.AddMinutes(minute), Entry = entry };
         SessionRecord[] records = [Record("b", 2, "quest:q1/engine"), Record("a", 1, "quest:q1/engine"), Record("c", 3), Record("d", 4, "quest:q9/engine")];
+        Task<SessionRecord?> Lead(string session) => RunParts.LeadOfAsync(records, session, _ => Task.FromResult<QuestView?>(null));
 
-        Assert.Equal("a", EntryAccepts.EntryLead(records, "b")!.Id);
-        Assert.Equal("a", EntryAccepts.EntryLead(records, "a")!.Id);
-        Assert.Null(EntryAccepts.EntryLead(records, "c"));
-        Assert.Null(EntryAccepts.EntryLead(records, "d"));
-        Assert.Null(EntryAccepts.EntryLead(records, "gone"));
+        Assert.Equal("a", (await Lead("b"))!.Id);
+        Assert.Equal("a", (await Lead("a"))!.Id);
+        Assert.Null(await Lead("c"));
+        Assert.Null(await Lead("d"));
+        Assert.Null(await Lead("gone"));
     }
 
     [Fact]
