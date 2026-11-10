@@ -75,7 +75,8 @@ internal static class TidyHolders
         var questsRead = service.EveryQuestAsync(ct);
         await Task.WhenAll(activeRead, recordsRead, questsRead).ConfigureAwait(false);
         var held = (await activeRead.ConfigureAwait(false))
-            .Where(session => session.Tree is { Length: > 0 }).Select(session => new TreeHolder(session.Tree!, session.Id)).ToList();
+            .Where(session => session.Tree is { Length: > 0 })
+            .Select(session => new TreeHolder(session.Tree!, session.Id) { Leases = PlaceHolders.Leases(session) }).ToList();
         var records = await recordsRead.ConfigureAwait(false);
         held.AddRange(records.Where(record => !record.Teammate && record.WordsWaiting && record.Tree is { Length: > 0 })
             .Select(record => new TreeHolder(record.Tree!, record.Session)));

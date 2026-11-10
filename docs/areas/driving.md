@@ -173,8 +173,10 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they start wi
     reads every file's size, time and hash and is told what changed outside Daoris and that there is no git there, its end
     marks nothing, and its review is the files the turn changed with each text file's diff (`FolderTurns`, `PlaceChanges`).
     A git place's first in-place start marks its common git directory with its home, and another home on
-    this machine is held there while that home stands (`PlaceHomeMarker`). A pull or a promotion that would move the checkout
-    waits for the session the ledger holds there, read inside the checkout's hold. Passes and a session in a tree of its own take no lease. Under the step, sessions run side by
+    this machine is held there while that home stands (`PlaceHomeMarker`). A pull or a promotion that would move the repository's
+    own checkout waits only for the lease's holder there, a turn running or a line parked with uncommitted paths of its own, read
+    inside the checkout's hold (`CheckoutBeside`, `PlaceHolders.Leases`); in a session's own tree it waits for any session running,
+    waiting or held to go on there. Passes and a session in a tree of its own take no lease. Under the step, sessions run side by
     side, one per tree; only a resume, a carry-on, or a later quest of the same run (a chain's step there) goes back into an
     existing tree. A later quest of a line that is a run of its own starts in a tree and on a branch of its own, a further part
     of the line, so no two runs work one branch (`RoundJoining`, `LineRuns`, the run rule `QuestRuns`). (from D51, D167, D254,

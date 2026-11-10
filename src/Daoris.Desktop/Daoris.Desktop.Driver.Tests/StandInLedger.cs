@@ -47,7 +47,7 @@ internal sealed class StandInLedger : HttpMessageHandler
     private string? _claimWhy;
 
     /// <summary>
-    /// The take a person's bring-forward made (SYNCMERGE1b0), as the claim's answer names it beside the claim, for every quest; none while
+    /// The take a person's bring-forward made, as the claim's answer names it beside the claim, for every quest; none while
     /// null, as a host before the field answers.
     /// </summary>
     public ForwardTake? ClaimForward
@@ -115,7 +115,7 @@ internal sealed class StandInLedger : HttpMessageHandler
             _clock = _clock.AddSeconds(1);
             _claimForward = new ForwardTake("desk", 7, _clock, standing);
             _claim = standing;
-            // The quest list names the holder beside this machine's id (SYNCMERGE1b1), as the press settles it: here is "desk" always.
+            // The quest list names the holder beside this machine's id, as the press settles it: here is "desk" always.
             _holder = holder;
             return _claimForward;
         }
@@ -203,7 +203,7 @@ internal sealed class StandInLedger : HttpMessageHandler
     private TaskCompletionSource _changed = new(TaskCreationOptions.RunContinuationsAsynchronously);
     private const string ChangeEpoch = "5ad1e";
 
-    /// <summary>Every family the service's change stream answers, in its order (PUSH1d1).</summary>
+    /// <summary>Every family the service's change stream answers, in its order.</summary>
     private static readonly string[] ChangeFamilies = ["sessions", "quests", "asks", "channel", "words"];
 
     /// <summary>
@@ -268,7 +268,7 @@ internal sealed class StandInLedger : HttpMessageHandler
     }
 
     /// <summary>
-    /// A write the change stream answers as <paramref name="families"/>, moved together: a connector's ask or channel post (PUSH1d1),
+    /// A write the change stream answers as <paramref name="families"/>, moved together: a connector's ask or channel post,
     /// which this stand-in holds nothing of.
     /// </summary>
     public void Wrote(params string[] families)
@@ -407,7 +407,7 @@ internal sealed class StandInLedger : HttpMessageHandler
     }
 
     /// <summary>
-    /// An ask proposed in <paramref name="workspace"/> and served by no intake yet, the newest (UX6d1): a look whose config
+    /// An ask proposed in <paramref name="workspace"/> and served by no intake yet, the newest: a look whose config
     /// names an intake's adapter starts one for it. Its tier is the service's for a new ask, the declarations'; a
     /// <paramref name="tier"/> of <c>named</c> is a named ask whose quest is deleted, which no intake serves.
     /// </summary>
@@ -868,7 +868,8 @@ internal sealed class StandInLedger : HttpMessageHandler
                     }
 
                     session["state"] = to;
-                    // The record moved now, as the ledger keeps it (`updated`), which a step's go-on is compared with (FABRIC-CLOSE1c13).
+                    // A step's go-on is compared with `updated`; a move out of a running state writes the place's mark or none.
+                    session["holdsPlace"] = body["holdsPlace"]?.DeepClone();
                     _clock = _clock.AddSeconds(1);
                     session["updated"] = _clock.ToString("O");
                     if (!_moves.TryGetValue(id, out var moves)) _moves[id] = moves = [];
