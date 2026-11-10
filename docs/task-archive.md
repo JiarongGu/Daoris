@@ -5,6 +5,35 @@ the per-task record. Entries preserve their original wording so the archive stay
 
 ---
 
+## SESSIONORIGIN1b — a start's handed brief in Started with, a line's own intake quest its own (2026-11-10)
+
+> **SESSIONORIGIN1b** (driver, modules, web): Outcome: the record already kept a go-on's or hand-over's first message whole (the event carrying `Continues`), so nothing new is stored: `SESSION_OPENINGS` answers `{openings, briefs}` (`Context/Events/StartBrief.cs`, `SessionEventLog.Briefs()`), a brief cut at 4000 characters with its length said, and *Started with* shows a folded *Handed brief* beside the quest's or ask's words or alone; a quest its own line's ask's intake published opens its part instead of being marked `asked` (`SessionEntryReader` `LinesOwn`), and the page's corrective wording is gone. Proof: `StartBriefTests`, `DriverModuleBriefsTests`, `SessionEntryOwnIntakeTests`, `SessionHead.origin.test.tsx` (not seen failing first).
+
+---
+
+## ASKFULL1d — the window lists what Ask Daoris pressed (2026-11-10)
+
+> **ASKFULL1d** (modules, web; D253 point 1): Outcome: each press Ask Daoris's key ran with no card is kept this run (route, conversation, target, time, outcome; the newest 100; a restart empties it; `Modules/Platform/HelpPressRecord.cs`), told to the windows at the press and at its answer and read as `standingConfirmation.helpPresses`; Notifications shows them as a folded section in the standing slot (`notifications/HelpPressLine.tsx`) in the window's route words with their outcome, each opening Ask Daoris's panel, a done pause offering *Resume*. Proof: `HelpPressRecordTests`, `PipeDelegateTests`, `HelpPressLine.test.tsx` in both languages. Left: a reverse for other acts, and opening the exact conversation.
+
+---
+
+## CODESTRREV3a, b and KNOWREV3a, b — a lock's holder by pid and start, a deleted session's staged memory dropped, a fair memory search (2026-11-10)
+
+> **CODESTRREV3a, b** (tools): Outcome: the gate tree's and the CI watch's locks record their holder's process start beside its pid, and `running` means the pid lives and is that holder (`tools/merge-branch/holder.mjs`: `processStart`, `sameHolder`, `holderRuns`); a take-over ends only the children created after the dead holder began and before its pid was taken again (`endOrphans(parent, since, until)`). Proof: `tool-test/merge-branch/holder.test.ts` (not seen failing first).
+> **KNOWREV3a, b** (service, connector): Outcome: deleting a session drops its staged memory rows in the same transaction, nothing staged applying by itself, and an awaiting replacement whose session is gone is listed as a wait with no session; a memory search across repositories takes its ten places round-robin across the members, each engine's order kept within. Proof: `MemoryDecisionTests` (seen failing first), `McpMemoryToolsTests`.
+
+## PLACEWORK1b — the design for work in place under a writer's lease (2026-11-10)
+
+> **PLACEWORK1b** (records; D254, D258): Outcome: `docs/2026-11-10-place-work-design.md`. The writer's lease is the ledger's, held by a running turn and, in a git place, by a line's uncommitted work; a manifest at each turn's start and end with a text content store; four place kinds (git, jj, folder, system); an `isolate` node kind with `kind`, `at-once` and `overlap` and four providers, each place kind's return (git's landing, a folder's or jj's `return`); systems through plan, review and `apply`; the migration (`PlaceWorkStep` converts `trees` and `overlap`). D258: the count on the step, not a place setting; the lease lasts a turn. Rows 1c-1j wait for the owner's read.
+
+---
+
+## ASKFULL1a — a delegate key for every session, its press judged by its tier (2026-11-10)
+
+> **ASKFULL1a** (driver, modules, web; D253 points 1, 5, 6): Outcome: every session Daoris starts is handed its own delegate key (`DAORIS_DELEGATE_KEY`, drawn per start in `Platform/DelegateKey.cs`, its hash held by session in `Agents/SessionDelegates.cs`, forgotten at the process's end, the conversation's end and an access swap; stripped at every executable's entry and dropped from every other start beside `DAORIS_ROLE_KEY`); the `daoris` verb takes it at its entry and proves a person's press over the hello's nonce (`Instance/DelegateProof.cs`, one keyed-proof type `Platform/KeyedProof.cs` shared with the holder key and the supervisor's proof). The pipe judges a proved press by its tier (`Modules/Platform/PipeDelegate.cs`, seam `InstancePipe.Delegates`): a full-access Ask Daoris press runs with no card, said on its conversation (`HelpPressed`) and logged `help.pressed`; restricted's goes to the card naming Ask Daoris; another kind's to a card naming its session; a bad proof, a reused nonce or a session with no key is refused `delegate-unproved`. Restricted Ask Daoris runs `daoris` (`Bash(daoris:*)`, `PowerShell(daoris:*)`), and the room says full access acts as the person and restricted asks. The person-route words ASKFULL1b's routes lacked are in both catalogues. Proof: `PipeDelegateTests`, `DelegateKeyStripTests`, `SessionProcessesProcessTests`, `HelpAccessSwapTests`, the room goldens, both projects' censuses. Not seen in the window.
+
+---
+
 ## APPROVE1a, b, h — an ask published once, a done checked against nothing waits unchecked, an abandon ends its runs' waits (2026-11-10)
 
 > **APPROVE1a, b, h** (service, driver; D255): Outcome: `AskPublishGuard` runs first in `AskPublishing.PublishAsync`: a publish to a receiver the ask already holds an open, taken or done quest for, from another publisher than that quest's, answers with that quest and publishes nothing, and a session's publish is refused while the ask's intake is queued, starting or working or before any intake served it, the person's own press never refused; `daoris ask publish` names its session and takes `--require "<words>" "<check>"`, and a publish with no requirement says so; the creation sentence names the intake's condition instead of *Nothing was published*. A done of a quest from an ask carrying no requirement waits at `quest.holds` as *unchecked*, naming the note to read (D255; rejected: the ask's words as one requirement at publish). Abandoning an ask stops every live step of its runs through the person's own stop on the run's step (`AbandonRuns`). Proof: `AskPublishOnceTests`, `AskPublishRequestTests`, `AbandonRunsTests`, `QuestHoldsNodeTests`. Service.Http.Tests not run; not seen in the window.

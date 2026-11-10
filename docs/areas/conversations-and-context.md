@@ -210,7 +210,8 @@ of everything it handed, section by section.
     person waits on no answer to it. (from D162, D163, D164, D230)
 38. A session is listed only the tools its kind may call: the core 18 plus its kind's. Ask Daoris gets every tool but the turns and the memory changes. A Claude
     session keeps its account's auto-memory and synced skills, plugins and connectors, as by hand. Daoris writes no account home.
-    (from D230, D253)
+    Each start of every kind is handed a delegate key beside its id; a press its verb proves with it is put to the person on a card
+    naming the session, Ask Daoris's tier aside (roles-and-supervision 56-58). (from D230, D253)
 
 **Counts and the handed account**
 
@@ -220,7 +221,9 @@ of everything it handed, section by section.
     where a count is above zero. They are never instructions and never another agent's text. (from D229)
 41. Everything handed is accounted: each section's size, source and cuts, by `HandedSections` and `HandedCuts` codes. The
     account rides the event of the instruction or first message. A section that could have been handed and was not is
-    said, with why. (from D143, D189)
+    said, with why. The words themselves of a go-on's or hand-over's first message stay on its event, and the openings route
+    answers them as `briefs`, bounded (`StartBrief`, 4000 characters, the cut said with the full length), for the head's
+    *Started with*; they are no session's opening. (from D143, D189)
 
 **Ask Daoris**
 

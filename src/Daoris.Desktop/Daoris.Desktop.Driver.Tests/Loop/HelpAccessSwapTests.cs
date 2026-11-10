@@ -138,6 +138,47 @@ public sealed class HelpAccessSwapTests : IDisposable
         Assert.Equal(1, chat.Finished);
     }
 
+    /// <summary>A swap forgets the conversation's delegate key at once; one whose access did not change keeps its own.</summary>
+    [Fact]
+    public async Task A_swap_forgets_the_conversation_s_delegate_key_and_leaves_the_others()
+    {
+        var runner = Runner();
+        var chat = Running(runner, "h1", HelpModes.Full);
+        Running(runner, "h2", HelpModes.Restricted);
+        var processes = runner.Context.Processes;
+        processes.Delegates.Draw("h1");
+        processes.Delegates.Draw("h2");
+        await Talking(chat);
+
+        runner.HelpAccessChosen(HelpModes.Restricted);
+
+        Assert.Empty(processes.Delegates.Of("h1"));
+        Assert.Single(processes.Delegates.Of("h2"));
+        chat.Turn.SetResult();
+    }
+
+    /// <summary>A full-access press is said on its own conversation's console; its run's end forgets its keys and its mode together.</summary>
+    [Fact]
+    public void A_full_access_press_is_said_on_its_conversation_and_its_run_s_end_forgets_its_keys()
+    {
+        var runner = Runner();
+        Running(runner, "h1", HelpModes.Full);
+        Running(runner, "h2", HelpModes.Full);
+        runner.Context.Processes.Delegates.Draw("h1");
+
+        runner.HelpPressed("h1", "DRIVER.WORK_PAUSE");
+
+        Assert.Contains("DRIVER.WORK_PAUSE", Console("h1"));
+        Assert.Contains("as your own press", Console("h1"));
+        Assert.DoesNotContain("WORK_PAUSE", Console("h2"));
+        Assert.Equal(HelpModes.Full, runner.HelpModeOf("h1"));
+
+        runner.Executors.Of<HelpAccessSwap>().Forget("h1");
+
+        Assert.Empty(runner.Context.Processes.Delegates.Of("h1"));
+        Assert.Null(runner.HelpModeOf("h1"));
+    }
+
     /// <summary>A housekeeping grant given while a turn runs takes its next turn the same way, naming what it grants.</summary>
     [Fact]
     public async Task A_grant_given_ends_a_running_conversation_at_its_turn_s_end()

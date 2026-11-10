@@ -162,7 +162,10 @@ executable, started with a browser argument, is Daoris's own browser, which sess
 30. The right-click menu is the page's own, offering the surface's acts from their one owner plus text, link and code
     groups. The engine's menu stays in text fields and is suppressed elsewhere. (from D138)
 31. *Notifications* is one view, opened by the title bar's bell. Its groups are presses waiting, *What needs you*,
-    messages, and *Done and failed*. There is no *Confirm all*. A *What needs you* row is answered, never dismissed. (from D196)
+    messages, and *Done and failed*. There is no *Confirm all*. A *What needs you* row is answered, never dismissed. Beside the
+    presses waiting stand two lines that are no rows and count toward no group or the bell: the steward's, and what Ask Daoris pressed
+    in full access with no card this run (`HelpPressLine`, from `STATE`'s `standingConfirmation.helpPresses`), each press in the
+    window's own words, with its outcome, a press to open its conversation and a pause's *Resume*; a restart empties it. (from D196, D253)
 32. .NET judges *What needs you*. A row acts where one press is safe. No row starts a process to find a fact out.
     Overview keeps one summary line per group. (from D150, D181, D196)
 33. What announces depends on what waits and how urgent it is. An agent's message never reaches the desktop. The notify
@@ -181,7 +184,8 @@ executable, started with a browser argument, is Daoris's own browser, which sess
     that opens it, the quest, the ask it came from, the earlier session a hand-over or a go-on continues; a conversation names its
     repository and Ask Daoris its room and workspace (`work/head/startedFrom.tsx`). *Details* repeats it and has *Started with*,
     the requirement it began with, whole, said by the record it is: the quest's requirements, else the quest's words, else the
-    ask's, else a conversation's first message; the "How this came to be" fold says it where the trace draws no requirements. A
+    ask's, else a conversation's first message, and beside any of them the *Handed brief* its start was given (folded, read from
+    `SESSION_OPENINGS`' `briefs`); the "How this came to be" fold says it where the trace draws no requirements. A
     rail row of a line holding several quests names the quest its own session holds.
 38. Every wait shows in the head and in the foot's panel above the composer. Both places get the same press from the
     frame, and a press in one disables the other. One pure rule (`work/waits/waits.ts`) says which waits stand. (from D168, D185)

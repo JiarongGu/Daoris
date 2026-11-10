@@ -16,7 +16,32 @@ export type StandingConfirmationNow = {
   stewardDesk: DeskRequestNow[];
   /** The steward's lands a supervisor allowed that wait their window, soonest first: the line says when each lands and offers *Overrule*. */
   stewardLands: StewardLandNow[];
+  /** What Ask Daoris pressed this run in full access, newest first, from Daoris's memory: the second group of *Notifications*' line. */
+  helpPresses: HelpPressNow[];
 };
+
+/**
+ * One press Ask Daoris made in full access with no card, as `STATE`'s `standingConfirmation.helpPresses` says it (the modules'
+ * `HelpPressNow`): the route as the window words it, the conversation that pressed it, what it named, when and how it ended.
+ */
+export type HelpPressNow = {
+  id: string;
+  module: string;
+  route: string;
+  session: string;
+  scope: string | null;
+  target: string | null;
+  at: string;
+  outcome: 'running' | 'done' | 'failed';
+};
+
+/** The owner's own press that takes back an Ask Daoris press the window already sends: the work's resume, for a pause. */
+export type HelpReverse = 'resume';
+
+/** The reverse press of a press Ask Daoris made: only a done pause, naming the quest or ask its resume carries. */
+export function helpReverse(press: HelpPressNow): HelpReverse | null {
+  return press.route === 'WORK_PAUSE' && press.outcome === 'done' && (press.scope === 'quest' || press.scope === 'ask') && press.target ? 'resume' : null;
+}
 
 /**
  * A `land` of the steward's that a supervisor allowed and that waits its window, as `STATE`'s `standingConfirmation.stewardLands` says

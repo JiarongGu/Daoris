@@ -1,11 +1,13 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
-  retryNotice, standingOf, useDriver, useRetryQuest, useSetDrivable, useSetHold, useSetTrees,
+  retryNotice, standingOf, useDriver, useResumeWork, useRetryQuest, useSetDrivable, useSetHold, useSetTrees,
 } from '../bridge/shell';
+import type { WorkScopeName } from '../work/pausing/pausing';
+import { HelpPressLine } from './HelpPressLine';
 import { useOverruleStewardLand } from '../bridge/stewardLand';
 import { failure, type Notify } from '../design/ui';
-import { type StewardActNow, type StewardLandNow, stewardReverse } from '../person/standing';
+import { type HelpPressNow, type StewardActNow, type StewardLandNow, helpReverse, stewardReverse } from '../person/standing';
 import { StewardLine } from './StewardLine';
 
 /**
@@ -14,7 +16,7 @@ import { StewardLine } from './StewardLine';
  * it. Who holds the supervisor and the steward is their roles'. The view draws it in its slot (`NotificationsView`'s
  * `standing`), so the view presses no hook itself.
  */
-export function NotificationsStanding({ notify }: { notify: Notify }) {
+export function NotificationsStanding({ notify, onOpenHelp }: { notify: Notify; onOpenHelp: () => void }) {
   const { t } = useTranslation();
   const standing = standingOf(useDriver().data?.standingConfirmation);
   const setDrivable = useSetDrivable();
@@ -22,6 +24,7 @@ export function NotificationsStanding({ notify }: { notify: Notify }) {
   const setHold = useSetHold();
   const retry = useRetryQuest();
   const overruleLand = useOverruleStewardLand();
+  const resumeWork = useResumeWork();
   const [stewardRefused, setStewardRefused] = useState<string | null>(null);
   /** The person's *Overrule* of an allowed land: it does not land and their own card follows; said when the window had already closed. */
   const overrule = (land: StewardLandNow) => {
@@ -46,8 +49,15 @@ export function NotificationsStanding({ notify }: { notify: Notify }) {
       retry.mutate({ quest }, { onSuccess: (state) => notify(t(...retryNotice(quest, state))), onError });
     }
   };
+  /** The reverse of a press Ask Daoris made: a pause's own *Resume*, sent as the work pages send it. */
+  const reverseHelp = (press: HelpPressNow) => {
+    if (helpReverse(press) === 'resume' && press.scope && press.target) {
+      resumeWork.mutate({ scope: press.scope as WorkScopeName, id: press.target }, { onError: failure(notify) });
+    }
+  };
   return (
     <>
+      <HelpPressLine standing={standing} busy={resumeWork.isPending} onOpen={() => onOpenHelp()} onReverse={reverseHelp} />
       <StewardLine
         standing={standing}
         refused={stewardRefused}
